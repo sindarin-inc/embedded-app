@@ -640,11 +640,8 @@ void LocalStore::syncFromRemote(
     // TODO: Thinking more about this, we should probably trust the caller of `syncFromRempte` to
     // call from whatever queue is most fitting based on the context. In tests, this might not be in
     // a queue.
-    log_d("GOING TO RUN");
     auto queue = DispatchGetCore0BackgroundQueue();
-    // TODOODODOD: WHYYYY does this not run from the test?
     queue->dispatch([this] {
-        log_d("RUNNING");
         auto httpCode =
             this->telemetry_.uploadAndResetTelemetry(this->fileSystem, this->telemetry_);
         if (httpCode != 201) {
@@ -658,8 +655,6 @@ void LocalStore::syncFromRemote(
 
     // Run this work on a separate thread, since it's long running
     queue->dispatch([this, syncReason, progressCallback] {
-        log_d("SYNCING");
-
         CheckSyncRequest checkSyncRequest;
         CheckSyncResponse checkSyncResponse = {};
         int checkSyncFailures = 0;
@@ -924,7 +919,6 @@ void LocalStore::syncFromRemote(
             checkSyncRequest.since = serverSince;
 
             SHOW_HEAP();
-            log_i("CHECK SYNC AGAIN");
             SindarinAPI::getInstance()->checkSync(checkSyncRequest, &checkSyncResponse,
                                                   this->telemetry_);
 
@@ -952,17 +946,15 @@ void LocalStore::syncFromRemote(
             }
         }
 
+#if !TESTS
         // Artificially delay so the user has the satisfaction of seeing the list done
-        // #if !TESTS
         Delay(1000);
-        // #endif
+#endif
 
         if (booksAlreadySynced && articlesAlreadySynced) {
             progressCallback(ContentSyncState{.state = ContentSyncState::State::AlreadySynced});
         } else if (booksNowSynced || articlesNowSynced) {
-            log_d("synced1");
             progressCallback(ContentSyncState{.state = ContentSyncState::State::Synced});
-            log_d("synced2");
         } else if (checkSyncFailures > 0) {
             progressCallback(ContentSyncState{.state = ContentSyncState::State::Failure,
                                               .message = "Failed to check sync"});
