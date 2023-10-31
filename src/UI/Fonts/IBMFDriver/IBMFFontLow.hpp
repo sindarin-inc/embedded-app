@@ -31,6 +31,8 @@ private:
 
     MemoryPtr currentFontData_{nullptr};
 
+    GlyphCode unknownGlyphCode_{0};
+
 public:
     IBMFFontLow(const uint8_t *fontData, uint32_t length) noexcept {
 

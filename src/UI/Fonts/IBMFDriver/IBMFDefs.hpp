@@ -487,8 +487,8 @@ const constexpr GlyphCode DONT_CARE_CODE = 0x7FFC;
 const constexpr GlyphCode ZERO_WIDTH_CODE = 0x7FFD;
 const constexpr GlyphCode SPACE_CODE = 0x7FFE;
 const constexpr GlyphCode NO_GLYPH_CODE = 0x7FFF;
-const constexpr GlyphCode UNKNOWN_GLYPH_CODE = 844; // This is part of the Sol Font.
 
-const constexpr char32_t ZERO_WIDTH_CODEPOINT = 65279;
+const constexpr char32_t ZERO_WIDTH_CODEPOINT = 0xFEFF; // U+0FEFF
+const constexpr char32_t UNKNOWN_CODEPOINT = 0xE05E;    // U+E05E This is part of the Sol Font.
 
 } // namespace ibmf_defs
