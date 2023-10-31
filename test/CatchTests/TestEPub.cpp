@@ -95,6 +95,7 @@ TEST_CASE("Test EPub Books Rendering") {
         ASSERT_VIEW_UNCHANGED("SecondScreen");
 
 #if 0
+        // The following is kept as it would be useful if other books are integrated to the test.
         // }
 
         // SECTION("Book 2") {
