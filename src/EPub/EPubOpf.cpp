@@ -36,7 +36,7 @@ void EPubOpf::parse(const std::shared_ptr<uint8_t[]> &buffer, uint32_t length,
 
             auto it = manifest_.find(idref);
             if (it != manifest_.end()) {
-                spine_.push_back(SpineItem{.item = &it->second, .readableToCChapterIndex = -1});
+                spine_.push_back(SpineItem{.item = &it->second, .readableChapterIndex = -1});
             } else {
                 log_e("Spine idref not found in manifest: %s", idref.c_str());
             }
@@ -44,7 +44,8 @@ void EPubOpf::parse(const std::shared_ptr<uint8_t[]> &buffer, uint32_t length,
 
         for (int32_t i = 0; i < readable->toc.size(); i++) {
             int32_t spineIdx = getSpineIdx(readable->toc[i].href);
-            spine_[spineIdx].readableToCChapterIndex = i;
+            spine_[spineIdx].readableChapterIndex = i;
+            // log_w("Spine idx for chapter %" PRIi32 " is %" PRIi32, i, spineIdx);
         }
     } else {
         log_e("Failed to parse EPub opf %s: %s", path_, result.description());
@@ -71,17 +72,32 @@ auto EPubOpf::getSpineIdx(const std::string &href) const -> int {
     return 0;
 }
 
-auto EPubOpf::getReadableToCChapterIndex(const std::string &href) const -> int {
+auto EPubOpf::getReadableChapterIndex(const std::string &href) const -> int {
     int spineIdx = getSpineIdx(href);
 
     while (spineIdx >= 0) {
-        if (spine_[spineIdx].readableToCChapterIndex != -1) {
-            return spine_[spineIdx].readableToCChapterIndex;
+        if (spine_[spineIdx].readableChapterIndex != -1) {
+            return spine_[spineIdx].readableChapterIndex;
         }
         spineIdx -= 1;
     }
 
     return -1;
+}
+
+auto EPubOpf::getSpineReadableChapterIndex(Idx spineIdx) const -> int {
+
+    return spine_[spineIdx].readableChapterIndex;
+}
+
+auto EPubOpf::getChapterFirstSpineIdx(Idx spineIdx) const -> Idx {
+    Idx chapterSpineIdx = spineIdx;
+
+    while ((spine_[chapterSpineIdx].readableChapterIndex == -1) && (chapterSpineIdx > 0)) {
+        chapterSpineIdx--;
+    }
+
+    return chapterSpineIdx;
 }
 
 auto EPubOpf::exists(const std::string &id) const -> bool {

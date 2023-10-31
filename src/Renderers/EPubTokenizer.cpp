@@ -750,84 +750,164 @@ auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, S
 
         REND_WLOG("Reading a book...");
 
-        currentFileIdx_ = fromPlace.getFileIdx();
-        currentStreamOffset_ = 0;
+        currentFileIdx_ = stream_->getChapterFirstSpineIdx(fromPlace.getFileIdx());
 
-        REND_PROFILE_START(loadXHTMLFile)
+        REND_PROFILE_START(tokenizeProcess);
 
-        bool startOffset = false;
+        bool completed = false;
 
-        pugi::xml_document *doc;
-
-        // Bypass empty chapters, if any
         do {
-            doc = &loadXHTMLAt(currentFileIdx_);
-            body_ = doc->child("html").child("body");
-            for (auto node : body_.children()) {
-                startOffset = searchStart(node);
-                if (startOffset != 0) {
-                    break;
-                }
-            }
-            if (startOffset == 0) {
-                if ((currentFileIdx_ + 1) < stream_->getSpineCount()) {
-                    currentFileIdx_ += 1;
-                    fromPlace = {fromPlace.getOffset(), currentFileIdx_};
-                } else {
-                    pager_.setEndOfFile();
-                    break;
-                }
-            }
-        } while (startOffset == 0);
+            currentStreamOffset_ = 0;
 
-        REND_PROFILE_END(loadXHTMLFile)
+            REND_PROFILE_START(loadXHTMLFile)
+            pugi::xml_document &doc = loadXHTMLAt(currentFileIdx_);
+            REND_PROFILE_END(loadXHTMLFile)
 
-        if (startOffset != 0) {
-            REND_PROFILE_START(tokenizeProcess);
-
+            body_ = doc.child("html").child("body");
             pugi::xml_node node = body_.first_child();
 
             if (node) {
                 do {
-                    REND_WLOG("Node name: %s", node.name());
                     if (!interpret(node)) {
-                        break;
-                    }
-                    node = node.next_sibling();
-                } while (node);
-
-                REND_WLOG("currentStreamOffset_: %" PRIu32, currentStreamOffset_);
-
-                if (!node || (currentStreamOffset_ == END_OFFSET)) {
-                    REND_WLOG("-------------- End of chapter detected --------------");
-                    if (currentPageTxtOffset_ <= currentTxtOffset_) {
-                        currentTxtOffset_ -= currentPageTxtOffset_;
+                        completed = true; // The page is complete
                     } else {
-                        currentTxtOffset_ = 0;
+                        node = node.next_sibling();
                     }
-                    REND_WLOG("End of Chapter, end of page: currentTxtOffset: %" PRIu32
-                              ", currentPageTxtOffset: %" PRIu32,
-                              currentTxtOffset_, currentPageTxtOffset_);
-                    currentPageTxtOffset_ = 0;
-                    Idx maxIdx = stream_->getSpineCount();
-                    if ((fromPlace.getFileIdx() + 1) < maxIdx) {
-                        pager_.setNextPagePlace(
-                            {0, static_cast<uint16_t>(fromPlace.getFileIdx() + 1)});
-                    } else {
-                        REND_WLOG("-------------- End of book detected --------------");
-                        pager_.setEndOfFile();
-                    }
-                }
-
-                pager_.completeLastLine();
-
-            } else {
-                log_e("File is of the wrong format");
-                REND_EXIT_SIM;
+                } while (node && !completed);
             }
 
-            REND_PROFILE_END(tokenizeProcess);
-        }
+            if (!node) {
+                // We are at the end of the current file
+                // Pointing at next file, we will try to complete the current
+                // page if it was not completely processed by the current file.
+                currentFileIdx_ += 1;
+
+                // We break the process of paging if
+                // - we are passed the end of the book
+                // - the new current file is the beginning of a chapter
+                if (stream_->getSpineReadableChapterIndex(currentFileIdx_) != -1) {
+                    log_w("We are at the beginning of a new chapter...");
+                }
+                if (!completed) {
+                    if ((currentFileIdx_ >= stream_->getSpineCount()) ||
+                        (stream_->getSpineReadableChapterIndex(currentFileIdx_) != -1)) {
+                        if (currentFileIdx_ >= stream_->getSpineCount()) {
+                            if (currentPageTxtOffset_ <= currentTxtOffset_) {
+                                currentTxtOffset_ -= currentPageTxtOffset_;
+                            } else {
+                                currentTxtOffset_ = 0;
+                            }
+                            REND_WLOG("End of Chapter, end of page: currentTxtOffset: %" PRIu32
+                                      ", currentPageTxtOffset: %" PRIu32,
+                                      currentTxtOffset_, currentPageTxtOffset_);
+                            currentPageTxtOffset_ = 0;
+                            pager_.setEndOfFile();
+                            break;
+                            // } else {
+                            //     pager_.completeLastLine();
+                            //     break;
+                        } else {
+                            completed = true;
+                            pager_.setNextPagePlace({0, currentFileIdx_});
+                        }
+                    }
+                } else {
+                    if (currentFileIdx_ < stream_->getSpineCount()) {
+                        pager_.setNextPagePlace({0, currentFileIdx_});
+                    }
+                }
+            }
+
+        } while (!completed);
+
+        REND_PROFILE_END(tokenizeProcess);
+
+        // This is the old code that was used when a new page was used for the beginning of each
+        // spine. Do not remove for now.
+
+        // currentFileIdx_ = fromPlace.getFileIdx();
+
+        // REND_PROFILE_START(tokenizeProcess)
+
+        // do {
+        //     currentStreamOffset_ = 0;
+
+        //     uint32_t startOffset = 0;
+
+        //     pugi::xml_document *doc;
+
+        //     // Bypass empty chapters, if any
+        //     do {
+        //         doc = &loadXHTMLAt(currentFileIdx_);
+        //         body_ = doc->child("html").child("body");
+        //         for (auto node : body_.children()) {
+        //             startOffset = searchStart(node);
+        //             if (startOffset != 0) {
+        //                 break;
+        //             }
+        //         }
+        //         if (startOffset == 0) {
+        //             if ((currentFileIdx_ + 1) < stream_->getSpineCount()) {
+        //                 currentFileIdx_ += 1;
+        //                 fromPlace = {fromPlace.getOffset(), currentFileIdx_};
+        //             } else {
+        //                 pager_.setEndOfFile();
+        //                 break;
+        //             }
+        //         }
+        //     } while (startOffset == 0);
+
+        //     if (startOffset != 0) {
+
+        //         pugi::xml_node node = body_.first_child();
+
+        //         if (node) {
+        //             do {
+        //                 REND_WLOG("Node name: %s", node.name());
+        //                 if (!interpret(node)) {
+        //                     break;
+        //                 }
+        //                 node = node.next_sibling();
+        //             } while (node);
+
+        //             REND_WLOG("currentStreamOffset_: %" PRIu32, currentStreamOffset_);
+
+        //             if (!node || (currentStreamOffset_ == END_OFFSET)) {
+        //                 REND_WLOG("-------------- End of spine detected --------------");
+        //                 if (currentPageTxtOffset_ <= currentTxtOffset_) {
+        //                     currentTxtOffset_ -= currentPageTxtOffset_;
+        //                 } else {
+        //                     currentTxtOffset_ = 0;
+        //                 }
+        //                 REND_WLOG("End of Spine, end of page: currentTxtOffset: %" PRIu32
+        //                           ", currentPageTxtOffset: %" PRIu32,
+        //                           currentTxtOffset_, currentPageTxtOffset_);
+        //                 currentPageTxtOffset_ = 0;
+        //                 Idx maxIdx = stream_->getSpineCount();
+        //                 currentFileIdx_ = fromPlace.getFileIdx() + 1;
+        //                 if (currentFileIdx_ < maxIdx) {
+        //                     if ((stream_->getSpineReadableChapterIndex(currentFileIdx_) == -1) &&
+        //                         !pageCompleted_) {
+        //                         pager_.completeLastLine();
+        //                         continue;
+        //                     }
+        //                     pager_.setNextPagePlace({0, static_cast<uint16_t>(currentFileIdx_)});
+        //                 } else {
+        //                     REND_WLOG("-------------- End of book detected --------------");
+        //                     pager_.setEndOfFile();
+        //                 }
+        //             }
+
+        //             pager_.completeLastLine();
+        //             break;
+        //         } else {
+        //             log_e("File is of the wrong format");
+        //             REND_EXIT_SIM;
+        //             break;
+        //         }
+        //     }
+        // } while (!pageCompleted_);
+        // REND_PROFILE_END(tokenizeProcess);
     }
 
     REND_WLOG("End of job: Page start: %s, next page at: %s",

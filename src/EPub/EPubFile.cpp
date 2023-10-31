@@ -152,9 +152,16 @@ auto EPubFile::getXHTMLFile(const std::string &path) -> pugi::xml_document & {
     return currentFileDoc_;
 }
 
-auto EPubFile::getReadableToCChapterIndex(const std::shared_ptr<EPubPlace> &ePubPlace) const
-    -> int {
-    return opf_->getReadableToCChapterIndex(ePubPlace->getHRef());
+auto EPubFile::getReadableChapterIndex(const std::shared_ptr<EPubPlace> &ePubPlace) const -> int {
+    return opf_->getReadableChapterIndex(ePubPlace->getHRef());
+}
+
+auto EPubFile::getSpineReadableChapterIndex(Idx spineIdx) const -> int {
+    return opf_->getSpineReadableChapterIndex(spineIdx);
+}
+
+auto EPubFile::getChapterFirstSpineIdx(Idx spineIdx) const -> Idx {
+    return opf_->getChapterFirstSpineIdx(spineIdx);
 }
 
 auto EPubFile::hasDictionary(const std::string &chapterID) -> bool {
