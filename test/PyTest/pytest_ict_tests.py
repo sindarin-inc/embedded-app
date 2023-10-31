@@ -180,7 +180,21 @@ def write_nvs(ict_client, port, btmac, ict_ssid, ict_pw, cloudtoken):
         time.sleep(2)
         port = wait_for_port_by_device_name(dut_port_name, dut_port_index)
         logger.info("dut port: " + port)
-        ret = subprocess.run(parts)
+        parts = [
+                os.environ["IDF_PATH"] + "/components/partition_table/parttool.py",
+                "--port",
+                port,
+                "write_partition",
+                "--partition-name=nvs",
+                "--input",
+                binfname,
+            ]
+        print("command:")
+        print(' '.join(parts))
+        # write nvs partition to dut
+        ret = subprocess.run(
+            parts
+        )
 
     os.remove(csvfname)
     os.remove(binfname)
@@ -277,12 +291,10 @@ def port(request: FixtureRequest) -> t.Optional[str]:
 class OverrideIdfSerial(IdfSerial):
     def __init__(self, ict_client: MFICTClient, *args: Any, **kwargs: Any) -> None:
         self.ict_client = ict_client
-        logger.info("overrideidfserial")
-
+        logger.info("opening temple")
+        self.ict_client.open_right_temple()
         self.ict_client.dut_programming_mode()
-        logger.info("prog mode")
-
-        #super().__init__(*args, **kwargs)
+        # super().__init__(*args, **kwargs)
         s = False
         while s == False:
             try:
@@ -291,7 +303,11 @@ class OverrideIdfSerial(IdfSerial):
             except Exception as e:
                     logger.info("retry!")
                     s = False
-                    self.ict_client.reset_dut()
+                    #self.ict_client.reset_dut()
+                    self.ict_client.dut_programming_mode()
+                    port = wait_for_port_by_device_name(dut_port_name, dut_port_index)
+                    logger.info("found dut port: " + port)
+                    kwargs["port"] = port
                     time.sleep(2)
                     input("try again")
 
@@ -601,8 +617,10 @@ class TestFullContentSync:
         # Wait for serial port to come back
         # first wait for DUT device to show up
         port = wait_for_port_by_device_name(dut_port_name, dut_port_index)
+        logger.info("found port again " + port)
         # then connect to serial relay for log parsing
         dut.serial.connect_dut_log_port()
+        logger.info("back")
 
         # connect to serial relay for log parsing
         #logger.info("connect dut log port")
