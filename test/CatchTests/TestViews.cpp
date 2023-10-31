@@ -331,7 +331,7 @@ TEST_CASE("Test some views independently") {
 
     SECTION("Test things that need prefs") {
         PreferencesStore prefs;
-        prefs.begin();
+        prefs.begin("./test/CatchTests/TestData/simprefs.ini");
         prefs.invertSetting.remove();
         prefs.font.remove();
         prefs.lineSpacing.remove();
