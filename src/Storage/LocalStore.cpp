@@ -656,6 +656,7 @@ void LocalStore::syncFromRemote(
             checkSyncRequest.bookmarks = bookmarks;
             checkSyncRequest.storedUuids = storedUuids;
             checkSyncRequest.skipContent = true;
+            checkSyncRequest.skipSummary = true;
             checkSyncRequest.ptBattery = PreferencesStore::lastPageTurnerBattery;
             checkSyncRequest.battery = (uint8_t)battery_.getBatteryPercentage();
             checkSyncRequest.ptBuild = this->prefs_.lastPageTurnerBuild.get().value_or("");

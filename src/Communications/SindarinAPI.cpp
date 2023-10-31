@@ -104,9 +104,49 @@ auto SindarinAPI::checkSync(const std::string &url, CheckSyncRequest &req, Check
 
     SHOW_HEAP();
 
+    StaticJsonDocument<2000> filter;
+    filter["next"] = true;
+    filter["message"] = true;
+    filter["previous"] = true;
+    filter["count"] = true;
+    filter["page_size"] = true;
+    filter["results"]["synced"] = true;
+    filter["results"]["books_since"] = true;
+    filter["results"]["articles_since"] = true;
+    filter["results"]["timezone"] = true;
+    auto setFieldsForType = [&filter](const char *type) {
+        filter["results"][type][0]["uuid"] = true;
+        filter["results"][type][0]["url"] = true;
+        filter["results"][type][0]["readable"]["uuid"] = true;
+        filter["results"][type][0]["readable"]["title"] = true;
+        filter["results"][type][0]["readable"]["readable_type"] = true;
+        filter["results"][type][0]["readable"]["date_created"] = true;
+        filter["results"][type][0]["readable"]["date_modified"] = true;
+        filter["results"][type][0]["readable"]["date_published"] = true;
+        filter["results"][type][0]["readable"]["toc"][0]["title"] = true;
+        filter["results"][type][0]["readable"]["toc"][0]["href"] = true;
+        filter["results"][type][0]["readable"]["toc"][0]["txt_offset"] = true;
+        filter["results"][type][0]["readable"]["toc"][0]["end_txt_offset"] = true;
+        filter["results"][type][0]["readable"]["authors"] = true;
+        filter["results"][type][0]["readable"]["files"] = true;
+        filter["results"][type][0]["placemark"] = true;
+        filter["results"][type][0]["chapter"] = true;
+        filter["results"][type][0]["chapter_offset"] = true;
+        filter["results"][type][0]["bookmarks"] = true;
+        filter["results"][type][0]["is_archived"] = true;
+        filter["results"][type][0]["is_downloaded"] = true;
+        filter["results"][type][0]["date_created"] = true;
+        filter["results"][type][0]["date_modified"] = true;
+        filter["results"][type][0]["modified_timestamp"] = true;
+        filter["results"][type][0]["modified_timestamp"] = true;
+    };
+    setFieldsForType("books");
+    setFieldsForType("articles");
+    // log_w("Filter: %s", DumpJson(filter).c_str());
     auto respJson = std::make_unique<SpiRamJsonDocument>(1024 + contentLength * 3);
-    auto error = ArduinoJson::deserializeJson(*respJson, *stream);
-
+    auto error =
+        ArduinoJson::deserializeJson(*respJson, *stream, DeserializationOption::Filter(filter));
+    // log_w("Resp JSON: %s", DumpJson(*respJson).c_str());
     SHOW_HEAP();
 
     if (error.code() != DeserializationError::Ok) {

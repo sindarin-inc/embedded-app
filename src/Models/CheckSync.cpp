@@ -43,6 +43,7 @@ auto ConvertToJson(const CheckSyncRequest &src, JsonVariant dst) -> bool {
     dst["git_hash"] = src.gitHash;
     dst["sn"] = src.sn;
     dst["skip_content"] = src.skipContent;
+    dst["skip_summary"] = src.skipSummary;
 
     return true;
 }
