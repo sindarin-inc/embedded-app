@@ -51,10 +51,6 @@ public:
     ReadableFileVector files;
     ReadableBookmarksVector bookmarks;
     ReadableTableOfContentsChapterVector toc;
-    // hasSummary denotes if any of the chapters have a summary, used for determining if we should
-    // show the summary menu item
-    bool hasSummary = false;
-    bool hasDictionary = false;
 
     // Local state
     std::shared_ptr<Place> place, placePrev;
@@ -162,13 +158,6 @@ public:
         for (const auto &chapter : j["toc"].as<JsonArray>()) {
             toc.emplace_back();
             toc.back().fromJson(chapter);
-            // Check if any chapter has a summary, if so, set hasSummary
-            if (!hasSummary && chapter["summary"].as<std::string>().size() > 0) {
-                hasSummary = true;
-            }
-            if (!hasDictionary && chapter["dictionary"].as<JsonArray>().size() > 0) {
-                hasDictionary = true;
-            }
         }
 
         // Temporary migration for stored pocket articles that don't have a readable_type

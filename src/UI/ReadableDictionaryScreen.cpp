@@ -110,11 +110,6 @@ void ReadableDictionaryScreen::processCommand(RemoteCommand command) {
         back();
         setNeedsRerender();
         break;
-    case RemoteCommand::DOWN:
-        preservePlace_ = prevPlace_;
-        setFirstLoad();
-        setNeedsRerender();
-        break;
     case RemoteCommand::ENTER:
     case RemoteCommand::RIGHT:
         if (atEnd_) {

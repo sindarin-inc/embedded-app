@@ -124,27 +124,8 @@ auto LocalStore::loadToc(const std::shared_ptr<Readable> &readable) -> bool {
     for (const auto &chapter : tocJson) {
         readable->toc.emplace_back();
         readable->toc.back().fromJson(chapter);
-
-        // Check if any chapter has a summary, if so, set hasSummary
-        if (!readable->hasSummary && chapter["summary"].as<std::string>().size() > 0) {
-            readable->hasSummary = true;
-        }
-        // Check if any chapter has a summary, if so, set hasSummary
-        if (!readable->hasDictionary && chapter["dictionary"].as<JsonArray>().size() > 0) {
-            readable->hasDictionary = true;
-        }
     }
     log_d("Loaded %zu chapters from %s", readable->toc.size(), tocPath.c_str());
-    if (readable->hasSummary) {
-        log_d("Readable %s has summary", readable->uuid.c_str());
-    } else {
-        log_d("Readable %s has no summary", readable->uuid.c_str());
-    }
-    if (readable->hasDictionary) {
-        log_d("Readable %s has dictionary", readable->uuid.c_str());
-    } else {
-        log_d("Readable %s has no dictionary", readable->uuid.c_str());
-    }
     tocFile.close();
     return true;
 }
