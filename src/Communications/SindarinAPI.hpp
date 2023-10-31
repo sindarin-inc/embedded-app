@@ -2,6 +2,7 @@
 #include <ArduinoJson.h>
 #include <esp_http_client.h>
 #include <functional>
+#include <utility>
 
 #include "Communications/HttpClient.hpp"
 #include "Misc/Telemetry.hpp"
@@ -36,12 +37,13 @@ enum SindarinError {
 
 class SindarinAPI {
 public:
-    SindarinAPI() = default;
+    SindarinAPI(std::string baseUrl) { baseUrl_ = std::move(baseUrl); }
     SindarinAPI(SindarinAPI const &) = delete;
 
     static auto getInstance() -> std::shared_ptr<SindarinAPI>;
-    static auto isSindarinUrl(const char *url) -> bool;
 
+    void overrideBaseUrl(std::string baseUrl) { baseUrl_ = std::move(baseUrl); }
+    auto isSindarinUrl(const char *url) -> bool;
     void setAccessToken(const std::string &accessToken);
 
     auto checkSync(CheckSyncRequest &req, CheckSyncResponse *resp, Telemetry &telemetry) -> int;
@@ -61,5 +63,6 @@ public:
 
 protected:
     static std::shared_ptr<SindarinAPI> instance;
+    std::string baseUrl_;
     std::string accessToken_;
 };

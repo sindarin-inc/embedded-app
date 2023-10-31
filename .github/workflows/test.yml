@@ -33,7 +33,12 @@ jobs:
 
       - name: Run unit tests
         run: |
-          ./.pio/build/tests/program --reporter console --reporter junit::out=catch-results.xml
+          ./.pio/build/tests/program --reporter console --reporter junit::out=catch-results-0.xml
+
+      # Because of a FreeRTOS startup/shutdown issue, these must be run separately
+      - name: Run epub tests
+        run: |
+          ./.pio/build/tests/program '[epub]' --reporter console --reporter junit::out=catch-results-1.xml
 
       - name: Test Report
         uses: dorny/test-reporter@v1
@@ -41,7 +46,7 @@ jobs:
         if: success() || failure()
         with:
           name: Catch2 Test Results
-          path: catch-results.xml
+          path: catch-results-*.xml
           reporter: java-junit
 
       - uses: actions/upload-artifact@v3

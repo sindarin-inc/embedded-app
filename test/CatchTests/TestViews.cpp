@@ -363,7 +363,7 @@ TEST_CASE("Test some views independently") {
         prefs.rectW.remove();
         prefs.rectH.remove();
         prefs.noSetupMode.set(true);
-        PosixFileSystem fileSystem;
+        PosixFileSystem fileSystem("./test/CatchTests/TestData");
         Telemetry telemetry = Telemetry(fileSystem, prefs);
 
         SECTION("Test OffsetAdjustScreen") {
@@ -404,9 +404,7 @@ TEST_CASE("Test some views independently") {
 }
 
 TEST_CASE("Test bmp file rendering") {
-    SetupFileSystemMock("TestData");
-
-    PosixFileSystem fs;
+    PosixFileSystem fs("./test/CatchTests/TestData");
     fs.begin();
     // create and render a full screen bitmap view
     auto display = createDisplay();
