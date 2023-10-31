@@ -74,18 +74,6 @@ TEST_CASE("Run a basic content sync", "[.][content-sync]") {
         std::filesystem::remove_all(tmpDir);
     };
 
-    // TODO: To test migrations, we should create a readables.json with a txt.gz readable
-    // Then content sync
-    // And make sure there's now an epub for the readable
-
-    // for placemarks, we want to test three cases:
-    // * If there is a txt file the txt place should be used
-    // * If there is an epub file the epub place shoudl be used
-    // * If the place is 0/null we shouldn't use it at all
-
-    // Also probably good to write a local store migration test that tests the placemark format
-    // migration
-
     PreferencesStore prefs;
     prefs.begin(StringFormat("%s/prefs.ini", tmpDir).c_str());
     prefs.cloudToken.set("test-token");
