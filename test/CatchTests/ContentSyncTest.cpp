@@ -65,10 +65,14 @@ auto setupTestServer()
 
 TEST_CASE("Run a basic content sync", "[.][content-sync]") {
     // Create a temporary directory for the content
-    // TODO: This is a general temp dir, we should create a subdir we can delete
-    std::filesystem::path tmpDir = std::filesystem::temp_directory_path();
+    std::filesystem::path tmpPath = std::filesystem::temp_directory_path();
+    auto tmpTemplate = StringFormat("%sXXXXXX", tmpPath.string().c_str());
+    auto tmpDir = mkdtemp(tmpTemplate.data());
     std::filesystem::create_directories(tmpDir);
-    // defer { std::filesystem::remove_all(tmpDir); };
+    defer {
+        log_i("Cleaning up tmpdir: %s", tmpDir);
+        std::filesystem::remove_all(tmpDir);
+    };
 
     // TODO: To test migrations, we should create a readables.json with a txt.gz readable
     // Then content sync
@@ -83,9 +87,9 @@ TEST_CASE("Run a basic content sync", "[.][content-sync]") {
     // migration
 
     PreferencesStore prefs;
-    prefs.begin(StringFormat("%s/prefs.ini", tmpDir.string().c_str()).c_str());
+    prefs.begin(StringFormat("%s/prefs.ini", tmpDir).c_str());
     prefs.cloudToken.set("test-token");
-    PosixFileSystem fs(tmpDir.string());
+    PosixFileSystem fs(tmpDir);
     Telemetry telemetry(fs, prefs);
     Battery battery(fs, prefs, telemetry);
     // Need to have at least one battery measurement
