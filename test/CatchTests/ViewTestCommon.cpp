@@ -49,6 +49,9 @@ void appMainTask(void *parameters) {
 }
 
 void StartFreeRtos(bool runAppMain) {
+    // If we're not running the full app, we can just call render directly and don't need to signal
+    FakeEinkET013TT1SkipSignalling = !runAppMain;
+
     // The FreeRTOS tick handler happens via SIGALRM, and it also kicks off preemptive task
     // switching, which is not what we want on the main thread, since it's not a real FreeRTOS task.
     // Just disable SIGALRM on this thread so that it only happens on FreeRTOS tasks.
@@ -70,12 +73,9 @@ void StartFreeRtos(bool runAppMain) {
 }
 
 void StartAppMain(FONT_CHOICES font, int x, int y, int lineSpacing) {
-
     // Skip waveform processing. Technically not a FreeRTOS thing but this is a convenient spot to
     // do it
     FakeEinkET013TT1SkipWaveform = true;
-    // If we're not running the full app, we can just call render directly and don't need to signal
-    FakeEinkET013TT1SkipSignalling = true;
 
     auto prefsFile = "test/CatchTests/TestData/simprefs.ini";
     // Delete the prefs file and start fresh
