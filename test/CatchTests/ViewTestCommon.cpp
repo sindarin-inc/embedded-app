@@ -81,12 +81,19 @@ void StartAppMain(FONT_CHOICES font, int x, int y, int lineSpacing) {
     // Delete the prefs file and start fresh
     std::filesystem::remove(prefsFile);
     prefs.begin(prefsFile);
+    prefs.invertSetting.set(0);
     prefs.font.set(font);
     prefs.lineSpacing.set(lineSpacing);
     prefs.rectX.set(x);
     prefs.rectY.set(y);
     prefs.rectW.set(256 - x * 2);
     prefs.rectH.set(256 - y * 2);
+    prefs.sortCriteria.set(0);
+    prefs.sortDirection.set(0);
+    prefs.firstRead.set(0);
+    prefs.pageTransitionArrows.set(false);
+    prefs.lastReadableId.remove();
+    prefs.readablePlace.remove("93d56842");
     prefs.noSetupMode.set(true);
 
     StartFreeRtos(true);
