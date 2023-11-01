@@ -185,6 +185,7 @@ portBASE_TYPE xPortStartScheduler( void )
     int iSignal;
     sigset_t xSignals;
 
+    xSchedulerEnd = pdFALSE;
     hMainThread = pthread_self();
 
     /* Start the timer that generates the tick ISR(SIGALRM).
