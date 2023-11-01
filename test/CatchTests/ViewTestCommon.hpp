@@ -11,7 +11,7 @@ void StartFreeRtos(bool runAppMain = false);
 
 void StopFreeRtos();
 
-void StartAppMain(FONT_CHOICES font = FONT_CHOICES::PREFS_SOL_MEDIUM, int x = 42, int y = 30,
+void StartAppMain(FONT_CHOICES font = FONT_CHOICES::PREFS_SOL_SMALL, int x = 42, int y = 30,
                   int lineSpacing = 0);
 
 void SetImagesFolder(std::string folder);

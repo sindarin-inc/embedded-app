@@ -79,15 +79,15 @@ TEST_CASE("Test glyph rendering") {
     };
 
     SECTION("Test small font Glyphs") {
-        renderGlyphs("GlyphTestS", 12, 16, display->style.solSansSmall.readableFont);
+        renderGlyphs("GlyphTests/GlyphTestS", 12, 16, display->style.solSansSmall.readableFont);
     }
 
     SECTION("Test medium font Glyphs") {
-        renderGlyphs("GlyphTestM", 10, 14, display->style.solSansMedium.readableFont);
+        renderGlyphs("GlyphTests/GlyphTestM", 10, 14, display->style.solSansMedium.readableFont);
     }
 
     SECTION("Test large font Glyphs") {
-        renderGlyphs("GlyphTestL", 8, 12, display->style.solSansLarge.readableFont);
+        renderGlyphs("GlyphTests/GlyphTestL", 8, 12, display->style.solSansLarge.readableFont);
     }
 
     FakeEinkET013TT1SkipSignalling = false;

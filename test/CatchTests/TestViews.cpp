@@ -43,40 +43,6 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
         WAIT_FOR_DRAW();
         WAIT_FOR_DRAW();
 
-        ASSERT_VIEW_UNCHANGED("Settings");
-
-        SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW();
-        WAIT_FOR_DRAW();
-
-        ASSERT_VIEW_UNCHANGED("ReadingSettings");
-
-        SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW();
-        WAIT_FOR_DRAW();
-
-        ASSERT_VIEW_UNCHANGED("TextSizeM");
-
-        SendRemoteCommand(UP);
-        WAIT_FOR_DRAW();
-
-        ASSERT_VIEW_UNCHANGED("TextSizeS");
-
-        SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW();
-
-        ASSERT_VIEW_UNCHANGED("TextSizeS2");
-
-        SendRemoteCommand(LEFT);
-        WAIT_FOR_DRAW();
-        WAIT_FOR_DRAW();
-        SendRemoteCommand(LEFT);
-        WAIT_FOR_DRAW();
-        WAIT_FOR_DRAW();
-
-        SendRemoteCommand(DOWN);
-        WAIT_FOR_DRAW();
-
         SendRemoteCommand(ENTER);
         WAIT_FOR_DRAW();
         WAIT_FOR_DRAW();
