@@ -48,7 +48,10 @@ void appMainTask(void *parameters) {
     vTaskDelete(NULL);
 }
 
-void StartFreeRtos(bool runAppMain, FONT_CHOICES font, int x, int y, int lineSpacing) {
+void StartFreeRtos(bool runAppMain) {
+    // If we're not running the full app, we can just call render directly and don't need to signal
+    FakeEinkET013TT1SkipSignalling = !runAppMain;
+
     // The FreeRTOS tick handler happens via SIGALRM, and it also kicks off preemptive task
     // switching, which is not what we want on the main thread, since it's not a real FreeRTOS task.
     // Just disable SIGALRM on this thread so that it only happens on FreeRTOS tasks.
@@ -57,11 +60,22 @@ void StartFreeRtos(bool runAppMain, FONT_CHOICES font, int x, int y, int lineSpa
     sigaddset(&mask, SIGALRM);
     pthread_sigmask(SIG_BLOCK, &mask, NULL);
 
+    // Start the FreeRTOS scheduler
+    SchedulerThread = std::make_unique<std::thread>([runAppMain]() {
+        if (runAppMain) {
+            // ESP-IDF does `app_main` in a task as well. We need to do this so we can use
+            // FreeRTOS-timed stuff like vTaskDelay
+            xTaskCreate(appMainTask, "app_main", 10000, NULL, 1, NULL);
+        }
+        log_i("Starting FreeRTOS scheduler");
+        vTaskStartScheduler();
+    });
+}
+
+void StartAppMain(FONT_CHOICES font, int x, int y, int lineSpacing) {
     // Skip waveform processing. Technically not a FreeRTOS thing but this is a convenient spot to
     // do it
     FakeEinkET013TT1SkipWaveform = true;
-    // If we're not running the full app, we can just call render directly and don't need to signal
-    FakeEinkET013TT1SkipSignalling = !runAppMain;
 
     auto prefsFile = "test/CatchTests/TestData/simprefs.ini";
     // Delete the prefs file and start fresh
@@ -82,16 +96,8 @@ void StartFreeRtos(bool runAppMain, FONT_CHOICES font, int x, int y, int lineSpa
     prefs.readablePlace.remove("93d56842");
     prefs.noSetupMode.set(true);
 
-    // Start the FreeRTOS scheduler
-    SchedulerThread = std::make_unique<std::thread>([runAppMain]() {
-        if (runAppMain) {
-            // ESP-IDF does `app_main` in a task as well. We need to do this so we can use
-            // FreeRTOS-timed stuff like vTaskDelay
-            xTaskCreate(appMainTask, "app_main", 10000, NULL, 1, NULL);
-        }
-        log_i("Starting FreeRTOS scheduler");
-        vTaskStartScheduler();
-    });
+    StartFreeRtos(true);
+
     // Wait for screen refresh at boot (from screenClearedAtShutdown)
     WAIT_FOR_DRAW();
 }

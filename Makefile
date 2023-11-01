@@ -10,7 +10,10 @@ lldb:
 
 .PHONY: test
 test:
-	pio run -e tests -t upload
+	pio run -e tests
+	.pio/build/tests/program
+	.pio/build/tests/program '[epub]'
+	.pio/build/tests/program '[content-sync]'
 
 .PHONY: check_idf
 check_idf:

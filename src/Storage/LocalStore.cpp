@@ -608,6 +608,9 @@ void LocalStore::syncFromRemote(
 
     progressCallback(ContentSyncState{.state = ContentSyncState::State::UploadTelemetry});
 
+    // TODO: Thinking more about this, we should probably trust the caller of `syncFromRempte` to
+    // call from whatever queue is most fitting based on the context. In tests, this might not be in
+    // a queue.
     auto queue = DispatchGetCore0BackgroundQueue();
     queue->dispatch([this] {
         auto httpCode =
@@ -858,9 +861,10 @@ void LocalStore::syncFromRemote(
             }
 
             // Store since date values for next sync
-            log_i("%sSetting last%sSince to %s/%s", failedDownload ? "Not " : "",
+            log_i("%sSetting %ssSince to %s", failedDownload ? "Not " : "",
                   ReadableModelTypeToString(modelType).c_str(),
-                  checkSyncResponse.booksSince.c_str(), checkSyncResponse.articlesSince.c_str());
+                  modelType == ReadablesModelType::Book ? checkSyncResponse.booksSince.c_str()
+                                                        : checkSyncResponse.articlesSince.c_str());
             std::string serverSince;
             if (!failedDownload) {
                 if (checkSyncResponse.booksSince != "") {
@@ -915,8 +919,10 @@ void LocalStore::syncFromRemote(
             }
         }
 
+#if !TESTS
         // Artificially delay so the user has the satisfaction of seeing the list done
         Delay(1000);
+#endif
 
         if (booksAlreadySynced && articlesAlreadySynced) {
             progressCallback(ContentSyncState{.state = ContentSyncState::State::AlreadySynced});
