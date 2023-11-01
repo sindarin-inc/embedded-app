@@ -889,9 +889,10 @@ void LocalStore::syncFromRemote(
             }
 
             // Store since date values for next sync
-            log_i("%sSetting last%sSince to %s/%s", failedDownload ? "Not " : "",
+            log_i("%sSetting %ssSince to %s", failedDownload ? "Not " : "",
                   ReadableModelTypeToString(modelType).c_str(),
-                  checkSyncResponse.booksSince.c_str(), checkSyncResponse.articlesSince.c_str());
+                  modelType == ReadablesModelType::Book ? checkSyncResponse.booksSince.c_str()
+                                                        : checkSyncResponse.articlesSince.c_str());
             std::string serverSince;
             if (!failedDownload) {
                 if (checkSyncResponse.booksSince != "") {
