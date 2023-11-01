@@ -188,6 +188,11 @@ portBASE_TYPE xPortStartScheduler( void )
     xSchedulerEnd = pdFALSE;
     hMainThread = pthread_self();
 
+#if __APPLE__
+    // Name the thread, for easier viewing in a debugger
+    pthread_setname_np("Scheduler");
+#endif
+
     /* Start the timer that generates the tick ISR(SIGALRM).
      * Interrupts are disabled here already. */
     prvSetupTimerInterrupt();
