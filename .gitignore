@@ -15,7 +15,6 @@ __pycache__
 # Simulator prefs
 simprefs.ini
 simprefs.bak
-sindarin-app
 *.old
 build
 screenshot.png
