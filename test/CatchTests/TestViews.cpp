@@ -1,4 +1,3 @@
-#if 1
 #include <catch_amalgamated.hpp>
 
 // Allow access to protected methods from tests
@@ -397,5 +396,3 @@ TEST_CASE("Test bmp file rendering") {
         ASSERT_VIEW_UNCHANGED("BitmapViewBooks");
     }
 }
-
-#endif
