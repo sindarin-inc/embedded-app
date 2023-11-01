@@ -166,6 +166,7 @@ auto CheckViewUnchanged(std::string key) -> ViewTestResult {
     };
 
     // Create the TestRun directory if needed
+    std::filesystem::create_directory(GetDirectory(directory + testRunPrefix));
     std::filesystem::create_directory(GetDirectory(directory + testRunPrefix + key));
 
     // Render out the FakeEinkET013TT1ParticlePositions to a png
