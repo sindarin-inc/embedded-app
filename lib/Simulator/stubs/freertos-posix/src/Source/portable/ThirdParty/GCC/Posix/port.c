@@ -134,6 +134,9 @@ portSTACK_TYPE * pxPortInitialiseStack( portSTACK_TYPE * pxTopOfStack,
     size_t ulStackSize;
     int iRet;
 
+    // NOTE: I find this highly suspect. Almost certainly, if FreeRTOS is going to be
+    // able to start, stop, and start again, pthread_once is almost certainly the wrong
+    // thing here.
     ( void ) pthread_once( &hSigSetupThread, prvSetupSignalsAndSchedulerPolicy );
 
     /*
