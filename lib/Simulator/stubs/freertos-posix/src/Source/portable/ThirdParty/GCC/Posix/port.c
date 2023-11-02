@@ -247,6 +247,8 @@ portBASE_TYPE xPortStartScheduler( void )
         vPortCancelThread( xTimerGetTimerDaemonTaskHandle() );
     #endif /* configUSE_TIMERS */
 
+    // TODO: We almost certainly want to call `vPortCancelThread` on any outstanding threads here
+
     // Clear SIG_RESUME (SIGUSR1), because it might have fired again while we were shutting things down.
     // TODO: Why wasn't this consumed by the above sigwait?
     clear_pending_signal(SIG_RESUME);
