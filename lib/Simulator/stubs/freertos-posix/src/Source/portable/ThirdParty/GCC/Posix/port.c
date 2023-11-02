@@ -461,6 +461,8 @@ static void * prvWaitForStart( void * pvParams )
 
 #if __APPLE__
     // Name the thread, for easier viewing in a debugger
+    // NOTE: This must happen after prvSuspendSelf (once the scheduler resumes
+    // the task) otherwise `pcTaskGetName might not return the correct name.
     pthread_setname_np(pcTaskGetName( NULL ));
 #endif
 
