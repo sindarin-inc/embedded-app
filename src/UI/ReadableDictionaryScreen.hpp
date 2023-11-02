@@ -20,15 +20,16 @@
 class ReadableDictionaryScreen : public Screen, public EinkView {
 public:
     ReadableDictionaryScreen(PreferencesStore &prefs, std::shared_ptr<Readable> readable,
-                             DisplaySystem &display, Renderer &epubRenderer)
-        : EinkView(display), prefs_(prefs), readable_(std::move(readable)),
-          epubRenderer_(epubRenderer), renderer_(display), display_(display),
-          upperLeftTextView_(display, upperLeftText_), leftArrowView_(display, ArrowUp) {}
+                             DisplaySystem &display, Renderer &renderer)
+        : EinkView(display), prefs_(prefs), readable_(std::move(readable)), renderer_(renderer),
+          display_(display), upperLeftTextView_(display, upperLeftText_),
+          leftArrowView_(display, ArrowUp) {}
 
     auto layout(LayoutContext &context, Size size) -> Size override;
     void drawInRect(Rect rect) override;
     auto checkAtEnd() -> bool;
     void render(DisplaySystem &display) override;
+    void restoreRendererStream();
 
     void processCommand(RemoteCommand command) override;
 
@@ -41,8 +42,7 @@ public:
 protected:
     PreferencesStore &prefs_;
     std::shared_ptr<Readable> readable_;
-    Renderer &epubRenderer_;
-    Renderer renderer_;
+    Renderer &renderer_;
     DisplaySystem &display_;
 
     std::string loadedChapterId_ = "";
@@ -50,6 +50,7 @@ protected:
     std::shared_ptr<TxtPlace> newPlace_ = nullptr;
     std::shared_ptr<TxtPlace> prevPlace_ = nullptr;
     std::shared_ptr<TxtPlace> preservePlace_ = nullptr;
+    std::shared_ptr<RendererStream> rendererStream_;
     bool atEnd_ = false;
 
     std::string upperLeftText_ = "Dismiss";

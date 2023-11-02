@@ -23,10 +23,8 @@ void ReadableSummaryScreen::drawInRect(Rect rect) {
     bottomRightTextView_.draw();
 }
 
-void ReadableSummaryScreen::setPlaceInReadable(std::shared_ptr<Place> placeInReadable,
-                                               int currentChapterIdx) {
+void ReadableSummaryScreen::setPlaceInReadable(std::shared_ptr<EPubPlace> placeInReadable) {
     placeInReadable_ = std::move(placeInReadable);
-    currentChapterIdx_ = currentChapterIdx;
     preservePlace_ = nullptr;
 }
 
@@ -61,9 +59,14 @@ void ReadableSummaryScreen::render(DisplaySystem &display) {
     if (firstLoad_) {
         std::shared_ptr<TxtPlace> placeInSummary =
             std::dynamic_pointer_cast<TxtPlace>(Place::factory(0));
+        if (rendererStream_ == nullptr) {
+            rendererStream_ = renderer_.getStream();
+        }
+        auto epubStream = std::dynamic_pointer_cast<EPubFile>(rendererStream_);
+        auto chapterId = epubStream->getIdByHref(placeInReadable_->getHRef());
 
         SpiramString summaryString =
-            readable_->summary(placeInReadable_, placeInSummary, showUnread_, currentChapterIdx_);
+            epubStream->getSummaryContent(chapterId, placeInReadable_, placeInSummary, showUnread_);
 
         if (preservePlace_) {
             placeInSummary = preservePlace_;
@@ -109,9 +112,15 @@ void ReadableSummaryScreen::resetBoundingBox(DisplayRect oldDisplayBoundingBox) 
     display_.setBoundingBox(oldDisplayBoundingBox);
 }
 
+void ReadableSummaryScreen::restoreRendererStream() {
+    renderer_.setStream(rendererStream_);
+    rendererStream_ = nullptr;
+}
+
 void ReadableSummaryScreen::processCommand(RemoteCommand command) {
     switch (command) {
     case RemoteCommand::UP:
+        restoreRendererStream();
         back();
         setNeedsRerender();
         break;
@@ -124,6 +133,7 @@ void ReadableSummaryScreen::processCommand(RemoteCommand command) {
     case RemoteCommand::ENTER:
     case RemoteCommand::RIGHT:
         if (atEnd_) {
+            restoreRendererStream();
             back();
         }
 

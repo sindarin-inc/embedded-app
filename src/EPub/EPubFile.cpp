@@ -164,28 +164,141 @@ auto EPubFile::getChapterFirstSpineIdx(Idx spineIdx) const -> Idx {
     return opf_->getChapterFirstSpineIdx(spineIdx);
 }
 
+auto EPubFile::hasSummary(const std::string &chapterID) -> bool {
+    std::string summaryID = "summary-" + chapterID;
+
+    auto hasDirectChapterSummary = opf_->exists(summaryID);
+    if (hasDirectChapterSummary) {
+        return hasDirectChapterSummary;
+    }
+
+    // Walk the chapters backwards in the spine to see if the chapter id matches
+    auto summaryChapterHref = opf_->getHrefByID(summaryID);
+    auto summaryChapterIdx = opf_->getReadableToCChapterIndex(summaryChapterHref);
+
+    return summaryChapterIdx != -1;
+}
+
+auto EPubFile::getSummaryContent(std::string &chapterID,
+                                 const std::shared_ptr<EPubPlace> &placeInReadable,
+                                 std::shared_ptr<TxtPlace> &placeInSummary, bool includeUnread)
+    -> SpiramString {
+
+    if (!hasSummary(chapterID)) {
+        log_e("This chapter does not have a summary.");
+        return "This chapter does not have a summary.";
+    }
+
+    // Load the summary xhtml content
+    auto chapterHref = opf_->getHrefByID(chapterID);
+    auto chapterIdx = readable_->findEPubHRefChapterIdx(chapterHref);
+    if (chapterIdx == -1) {
+        chapterIdx = opf_->getReadableToCChapterIndex(chapterHref);
+        chapterHref = getToc()[chapterIdx].href;
+        chapterID = opf_->getIdByHref(chapterHref);
+    }
+
+    log_d("Loading summary for chapter: %s (href: %s, chapter idx: %d)", chapterID.c_str(),
+          chapterHref.c_str(), chapterIdx);
+    SpiramString summaryText;
+
+    for (const auto &chapter : getToc()) {
+        auto sameChapter = (placeInReadable->isFor(DocType::EPUB) && chapter.href == chapterHref) ||
+                           (placeInReadable->isFor(DocType::TXT) &&
+                            chapter.txtOffset < placeInReadable->getOffset() &&
+                            placeInReadable->getOffset() < chapter.endTxtOffset);
+        auto futureChapter = (placeInReadable->isFor(DocType::EPUB) &&
+                              readable_->findEPubHRefChapterIdx(chapter.href) > chapterIdx) ||
+                             (placeInReadable->isFor(DocType::TXT) &&
+                              placeInReadable->getOffset() < chapter.txtOffset);
+        auto pastOrSameChapter = (placeInReadable->isFor(DocType::EPUB) &&
+                                  readable_->findEPubHRefChapterIdx(chapter.href) <= chapterIdx) ||
+                                 (placeInReadable->isFor(DocType::TXT) &&
+                                  placeInReadable->getOffset() >= chapter.txtOffset);
+
+        if (pastOrSameChapter) {
+            placeInSummary->setOffset(summaryText.length());
+        }
+
+        if (futureChapter && !includeUnread) {
+            break;
+        }
+
+        if (sameChapter && !includeUnread && chapter.partialChapterSummary != nullptr &&
+            !chapter.partialChapterSummary->text.empty()) {
+            summaryText += chapter.title;
+            summaryText += StringFormat(" (%d%% read)\n\n", chapter.partialChapterSummary->readPct);
+            summaryText += chapter.partialChapterSummary->text;
+            summaryText += "\n\n";
+        } else {
+            std::string currentChapterId = opf_->getIdByHref(chapter.href);
+            std::string currentSummaryPath = opf_->getHrefByID("summary-" + currentChapterId);
+            pugi::xml_document &currentDoc = getXHTMLFile(currentSummaryPath);
+
+            for (auto node : currentDoc.child("html").child("body").children()) {
+                // If the node is p or other nodes with child nodes
+                if (std::string(node.name()) == "p") {
+                    for (auto child : node.children()) {
+                        if (child.type() == pugi::node_pcdata) { // If child is plain character data
+                            summaryText += child.value();
+                        }
+                        if (std::string(child.name()) == "br") {
+                            summaryText += "\n";
+                        }
+                    }
+                    summaryText += "\n\n";
+                } else if (std::string(node.name()) == "h1") {
+                    summaryText += node.text().get();
+                    summaryText += "\n\n";
+                } else if (std::string(node.name()) == "br") {
+                    summaryText += "\n";
+                } else {
+                    summaryText += node.text().get();
+                }
+            }
+        }
+    }
+
+    return summaryText;
+}
+
 auto EPubFile::hasDictionary(const std::string &chapterID) -> bool {
     std::string dictionaryID = "dictionary-" + chapterID;
 
-    return opf_->exists(dictionaryID);
+    auto hasDirectChapterDictionary = opf_->exists(dictionaryID);
+    if (hasDirectChapterDictionary) {
+        return hasDirectChapterDictionary;
+    }
+
+    // Walk the chapters backwards in the spine to see if the chapter id matches
+    auto dictionaryChapterHref = opf_->getHrefByID(dictionaryID);
+    auto dictionaryChapterIdx = opf_->getReadableToCChapterIndex(dictionaryChapterHref);
+
+    return dictionaryChapterIdx != -1;
 }
 
-auto EPubFile::getDictionaryContent(const std::string &chapterID,
-                                    const std::shared_ptr<Place> &placeInReadable,
-                                    std::shared_ptr<Place> &placeInDictionary) -> std::string {
+auto EPubFile::getDictionaryContent(std::string &chapterID,
+                                    const std::shared_ptr<EPubPlace> &placeInReadable,
+                                    std::shared_ptr<TxtPlace> &placeInDictionary) -> SpiramString {
 
     if (!hasDictionary(chapterID)) {
         log_e("This chapter does not have any dictionary definitions.");
         return "This chapter does not have any dictionary definitions.";
     }
 
-    // Convert chapterID to dictionary file path
-    std::string dictionaryID = "dictionary-" + chapterID;
-    std::string dictionaryPath = opf_->getHrefByID(dictionaryID);
-
     // Load the dictionary xhtml content
     int fileOffset = placeInReadable->getOffset();
     auto chapterHref = opf_->getHrefByID(chapterID);
+    auto chapterIdx = readable_->findEPubHRefChapterIdx(chapterHref);
+    if (chapterIdx == -1) {
+        chapterIdx = opf_->getReadableToCChapterIndex(chapterHref);
+        chapterHref = getToc()[chapterIdx].href;
+        chapterID = opf_->getIdByHref(chapterHref);
+    }
+
+    // Convert chapterID to dictionary file path
+    std::string dictionaryID = "dictionary-" + chapterID;
+    std::string dictionaryPath = opf_->getHrefByID(dictionaryID);
     // int currentOffset = findCharOffsetAtFileOffset(chapterHref, fileOffset);
     int currentOffset = fileOffset;
     pugi::xml_document &doc = getXHTMLFile(dictionaryPath);
@@ -193,8 +306,8 @@ auto EPubFile::getDictionaryContent(const std::string &chapterID,
     pugi::xml_node prevNode;
     int closestLocation = -1;
 
-    log_d("Loading dictionary for chapter: %s. Current offset: %d", chapterID.c_str(),
-          currentOffset);
+    log_d("Loading dictionary for chapter: %s. (href: %s, chapter idx: %d) Current offset: %d",
+          chapterID.c_str(), chapterHref.c_str(), chapterIdx, currentOffset);
     // Search for the closest data-locations attribute closest to currentOffset without going over
     for (auto p : doc.child("html").child("body").children("p")) {
         int location = p.attribute("data-locations").as_int();
@@ -227,8 +340,8 @@ auto EPubFile::getDictionaryContent(const std::string &chapterID,
         closestLocation = closestNode.attribute("data-locations").as_int();
     }
 
-    std::string dictionaryText;
-    std::string beforeClosestNodeText;
+    SpiramString dictionaryText;
+    SpiramString beforeClosestNodeText;
     if (closestLocation != -1) {
         // Construct the text with the XML before the closest node
         for (auto p : doc.child("html").child("body").children("p")) {
@@ -250,7 +363,7 @@ auto EPubFile::getDictionaryContent(const std::string &chapterID,
 
         // Set the place in the dictionary based on the length of the text before the closest node
         uint32_t charOffset = beforeClosestNodeText.length();
-        placeInDictionary = Place::factory(charOffset);
+        placeInDictionary = std::dynamic_pointer_cast<TxtPlace>(Place::factory(charOffset));
 
         // Concatenate to form the full dictionaryText
         dictionaryText = beforeClosestNodeText + dictionaryText;

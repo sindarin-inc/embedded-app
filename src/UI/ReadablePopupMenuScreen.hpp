@@ -22,7 +22,7 @@ public:
           lightingAdjustScreen_(display, prefs, lightingController, telemetry),
           readableSeekScreen_(prefs, readable, renderer),
           readableTableOfContentsScreen_(prefs, readable, renderer, display, telemetry),
-          readableSummaryScreen_(prefs, readable, display),
+          readableSummaryScreen_(prefs, readable, display, renderer),
           readableDictionaryScreen_(prefs, readable, display, renderer) {
         this->setCurrentScreen(*this);
 

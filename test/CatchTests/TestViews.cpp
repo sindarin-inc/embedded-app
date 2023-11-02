@@ -26,7 +26,7 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
     SetupFileSystemMock("TestData");
     SetImagesFolder("Images");
 
-    StartFreeRtos();
+    StartAppMain();
 
     // First screen renders twice once with a full refresh and once with a AU4
     WAIT_FOR_DRAW();
@@ -35,17 +35,12 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
     ASSERT_VIEW_UNCHANGED("FirstScreen");
 
     // TODO: Currently there's a problem with starting and stopping the scheduler that makes the
-    // tests lock up with multiple SECTIONs, otherwise we should split up indivitual test flows into
+    // tests lock up with multiple SECTIONs, otherwise we should split up individual test flows into
     // multiple sections so that all the state resets between tests.
     SECTION("Render a bunch of views") {
         // Send a remote command for left (for Settings)
         SendRemoteCommand(LEFT);
         WAIT_FOR_DRAW();
-        WAIT_FOR_DRAW();
-
-        ASSERT_VIEW_UNCHANGED("Settings");
-
-        SendRemoteCommand(DOWN);
         WAIT_FOR_DRAW();
 
         SendRemoteCommand(ENTER);
@@ -289,21 +284,15 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
         SendRemoteCommand(ENTER);
         WAIT_FOR_DRAW();
         ASSERT_VIEW_UNCHANGED("Summary6");
-        SendRemoteCommand(ENTER);
+        SendRemoteCommand(DOWN);
         WAIT_FOR_DRAW();
         ASSERT_VIEW_UNCHANGED("Summary7");
         SendRemoteCommand(ENTER);
         WAIT_FOR_DRAW();
         ASSERT_VIEW_UNCHANGED("Summary8");
-        SendRemoteCommand(DOWN);
+        SendRemoteCommand(ENTER);
         WAIT_FOR_DRAW();
         ASSERT_VIEW_UNCHANGED("Summary9");
-        SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW();
-        ASSERT_VIEW_UNCHANGED("Summary10");
-        SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW();
-        ASSERT_VIEW_UNCHANGED("Summary11");
         SendRemoteCommand(UP);
         WAIT_FOR_DRAW();
         ASSERT_VIEW_UNCHANGED("Dawn4");
@@ -331,7 +320,7 @@ TEST_CASE("Test some views independently") {
 
     SECTION("Test things that need prefs") {
         PreferencesStore prefs;
-        prefs.begin();
+        prefs.begin("./test/CatchTests/TestData/simprefs.ini");
         prefs.invertSetting.remove();
         prefs.font.remove();
         prefs.lineSpacing.remove();
@@ -340,7 +329,7 @@ TEST_CASE("Test some views independently") {
         prefs.rectW.remove();
         prefs.rectH.remove();
         prefs.noSetupMode.set(true);
-        PosixFileSystem fileSystem;
+        PosixFileSystem fileSystem("./test/CatchTests/TestData");
         Telemetry telemetry = Telemetry(fileSystem, prefs);
 
         SECTION("Test OffsetAdjustScreen") {
@@ -381,9 +370,7 @@ TEST_CASE("Test some views independently") {
 }
 
 TEST_CASE("Test bmp file rendering") {
-    SetupFileSystemMock("TestData");
-
-    PosixFileSystem fs;
+    PosixFileSystem fs("./test/CatchTests/TestData");
     fs.begin();
     // create and render a full screen bitmap view
     auto display = createDisplay();

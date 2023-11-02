@@ -18,8 +18,8 @@
 class ReadableSummaryScreen : public Screen, public EinkView {
 public:
     ReadableSummaryScreen(PreferencesStore &prefs, std::shared_ptr<Readable> readable,
-                          DisplaySystem &display)
-        : EinkView(display), prefs_(prefs), readable_(std::move(readable)), renderer_(display),
+                          DisplaySystem &display, Renderer &renderer)
+        : EinkView(display), prefs_(prefs), readable_(std::move(readable)), renderer_(renderer),
           display_(display), upperLeftTextView_(display, upperLeftText_),
           bottomRightTextView_(display, bottomRightText_), leftArrowView_(display, ArrowUp),
           rightArrowView_(display, ArrowDown) {}
@@ -28,6 +28,7 @@ public:
     void drawInRect(Rect rect) override;
     auto checkAtEnd() -> bool;
     void render(DisplaySystem &display) override;
+    void restoreRendererStream();
 
     void processCommand(RemoteCommand command) override;
 
@@ -35,22 +36,22 @@ public:
     void resetBoundingBox(DisplayRect oldDisplayBoundingBox);
     void setPlacemark();
     void setFirstLoad() { firstLoad_ = true; }
-    void setPlaceInReadable(std::shared_ptr<Place> placeInReadable, int currentChapterIdx);
+    void setPlaceInReadable(std::shared_ptr<EPubPlace> placeInReadable);
 
 protected:
     PreferencesStore &prefs_;
     std::shared_ptr<Readable> readable_;
-    Renderer renderer_;
+    Renderer &renderer_;
     DisplaySystem &display_;
 
     bool firstLoad_ = true;
     bool showUnread_ = false;
-    std::shared_ptr<Place> placeInReadable_;
+    std::shared_ptr<EPubPlace> placeInReadable_;
     std::shared_ptr<TxtPlace> newPlace_;
     std::shared_ptr<TxtPlace> prevPlace_;
     std::shared_ptr<TxtPlace> preservePlace_;
+    std::shared_ptr<RendererStream> rendererStream_;
     bool atEnd_ = false;
-    int currentChapterIdx_ = -1;
 
     std::string upperLeftText_ = "Dismiss";
     std::string bottomRightText_;

@@ -1,0 +1,85 @@
+{
+    "next": "",
+    "previous": null,
+    "count": 1,
+    "page_size": 1,
+    "results": {
+        "books": [
+            {
+                "uuid": "66d82199-8f42-4309-af14-7e6783e4183c",
+                "url": "/user/books/66d82199-8f42-4309-af14-7e6783e4183c/",
+                "readable": {
+                    "uuid": "66d82199-8f42-4309-af14-7e6783e4183c",
+                    "title": "The Alchemyst",
+                    "readable_type": "book",
+                    "date_created": "2023-10-25T19:43:05.646748-07:00",
+                    "date_modified": "2023-10-25T19:56:50.733387-07:00",
+                    "date_published": null,
+                    "year_published": null,
+                    "toc": [
+                        {
+                            "title": "Cover",
+                            "href": "OEBPS/xhtml/Scot_9780375843174_epub3_cvi_r1.xhtml",
+                            "txt_offset": 0,
+                            "end_txt_offset": 729
+                        },
+                        {
+                            "title": "Books by Michael Scott",
+                            "href": "OEBPS/xhtml/Scot_9780375843174_epub3_adc_r1.xhtml",
+                            "txt_offset": 729,
+                            "end_txt_offset": 1007,
+                            "summary": ""
+                        }
+                    ],
+                    "cover_images": [
+                        {
+                            "uuid": "f582cc19-4c87-4914-88a1-704336ba2054",
+                            "file": "https://nyc3.digitaloceanspaces.com/sol-cloud/uploads/cover_images/f582cc19-4c87-4914-88a1-704336ba2054.cover.jpg",
+                            "filetype": "jpg",
+                            "size": 3015338,
+                            "name": "66d82199-8f42-4309-af14-7e6783e4183c.cover.jpg",
+                            "date_created": "2023-10-25T19:43:07.722610-07:00"
+                        }
+                    ],
+                    "authors": [
+                        {
+                            "uuid": "ba8ef5f3-8235-430b-b9b8-d931bbb1ad2e",
+                            "name": "Michael Scott",
+                            "description": null
+                        }
+                    ],
+                    "files": [
+                        {
+                            "uuid": "7bb1c7be-41a2-4662-80ed-3c0b890b02cf",
+                            "name": "66d82199-8f42-4309-af14-7e6783e4183c.epub",
+                            "size": 826235,
+                            "filetype": "epub",
+                            "uploaded_at": "2023-10-25T19:43:05.632790-07:00",
+                            "sha_hash": "61ec056bc4003d782b07cd2ee34f1e09a61784f1db44c01dfdb11c9eb43c132e",
+                            "file": "https://nyc3.digitaloceanspaces.com/sol-cloud/uploads/readables/7bb1c7be-41a2-4662-80ed-3c0b890b02cf.epub",
+                            "file_original": "https://nyc3.digitaloceanspaces.com/sol-cloud/uploads/readables/7bb1c7be-41a2-4662-80ed-3c0b890b02cf.epub",
+                            "file_proxied": "http://localhost:55011/epub/alchemyst.epub"
+                        }
+                    ],
+                    "source": null,
+                    "categories": [],
+                    "is_processing": false
+                },
+                "placemark": 0,
+                "chapter_offset": 433,
+                "chapter": "OEBPS/xhtml/Scot_9780375843174_epub3_adc_r1.xhtml",
+                "bookmarks": [],
+                "is_archived": false,
+                "is_downloaded": true,
+                "date_archived": null,
+                "date_created": "2023-10-25T19:43:37.789066-07:00",
+                "date_modified": "2023-10-27T06:02:06.372167-07:00",
+                "date_downloaded": "2023-10-27T06:02:06.372162-07:00",
+                "modified_timestamp": "1698411726"
+            }
+        ],
+        "books_since": "1698411727",
+        "synced": false,
+        "timezone": "America/Los_Angeles"
+    }
+}

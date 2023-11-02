@@ -51,10 +51,6 @@ public:
     ReadableFileVector files;
     ReadableBookmarksVector bookmarks;
     ReadableTableOfContentsChapterVector toc;
-    // hasSummary denotes if any of the chapters have a summary, used for determining if we should
-    // show the summary menu item
-    bool hasSummary = false;
-    bool hasDictionary = false;
 
     // Local state
     std::shared_ptr<Place> place, placePrev;
@@ -124,116 +120,6 @@ public:
 
     [[nodiscard]] auto telemetryPlacemarkMetrics() const -> std::map<std::string, TelemetryVariant>;
 
-    auto summary(const std::shared_ptr<Place> &placeInReadable,
-                 const std::shared_ptr<TxtPlace> &placeInSummary, bool includeUnread,
-                 int currentChapterIdx) -> SpiramString {
-        SpiramString summary;
-
-        for (const auto &chapter : toc) {
-            auto sameChapter =
-                (placeInReadable->isFor(DocType::EPUB) &&
-                 chapter.href ==
-                     std::dynamic_pointer_cast<EPubPlace>(placeInReadable)->getHRef()) ||
-                (placeInReadable->isFor(DocType::TXT) &&
-                 chapter.txtOffset < placeInReadable->getOffset() &&
-                 placeInReadable->getOffset() < chapter.endTxtOffset);
-            auto futureChapter = (placeInReadable->isFor(DocType::EPUB) &&
-                                  findEPubHRefChapterIdx(chapter.href) > currentChapterIdx) ||
-                                 (placeInReadable->isFor(DocType::TXT) &&
-                                  placeInReadable->getOffset() < chapter.txtOffset);
-            auto pastOrSameChapter = (placeInReadable->isFor(DocType::EPUB) &&
-                                      findEPubHRefChapterIdx(chapter.href) <= currentChapterIdx) ||
-                                     (placeInReadable->isFor(DocType::TXT) &&
-                                      placeInReadable->getOffset() >= chapter.txtOffset);
-
-            if (pastOrSameChapter) {
-                placeInSummary->setOffset(summary.length());
-            }
-
-            if (futureChapter && !includeUnread) {
-                break;
-            }
-
-            if (sameChapter && !includeUnread && chapter.partialChapterSummary != nullptr &&
-                !chapter.partialChapterSummary->text.empty()) {
-                summary += chapter.title;
-                summary += StringFormat(" (%d%% read)\n\n", chapter.partialChapterSummary->readPct);
-                summary += chapter.partialChapterSummary->text;
-                summary += "\n\n";
-            } else {
-                summary += chapter.title;
-                summary += "\n\n";
-                if (!chapter.summary.empty()) {
-                    summary += chapter.summary;
-                    summary += "\n\n";
-                }
-            }
-        }
-
-        return summary;
-    }
-
-    auto definitions(const std::string &chapterId,
-                     const std::shared_ptr<Place> &placeInDictionaryOut) -> SpiramString {
-        // This code generates the dictionaryString for an entire chapter. It returns the
-        // dictionaryString as well as the position of the word closest to the current page using
-        // the placeInDictionaryOut out-value.
-
-        // NOTE(john): Punting for now since this is going to get included in the epub file
-        return "";
-        /*
-        SpiramString dictionaryString;
-
-        std::deque<SpiramString> lastFiveWords;
-
-        log_d("Looking for definitions for place %s in %zu chapters",
-        placeInReadable.str().c_str(), toc.size());
-
-        auto chapter = findChapter(placeInReadable);
-        if (chapter == nullptr) {
-            log_e("Failed to find chapter for place %lu", placeInReadable);
-            return "No definitions found in this chapter.";
-        }
-
-        std::map<unsigned long, ReadableDictionary *> locationDictMap;
-
-        for (ReadableDictionary &dict : chapter->dictionary) {
-            for (const auto &location : dict.locations) {
-                locationDictMap[location] = &dict;
-            }
-        }
-
-        log_d("Found %zu definitions", locationDictMap.size());
-
-        for (const auto &entry : locationDictMap) {
-            const auto &dict = *(entry.second);
-
-            if (std::find(lastFiveWords.begin(), lastFiveWords.end(), dict.word) !=
-                lastFiveWords.end()) {
-                continue;
-            }
-
-            if (placeInReadable >= (chapter->txtOffset + entry.first)) {
-                *placeInDictionary = dictionaryString.length();
-            }
-
-            dictionaryString += dict.word + ": " + dict.definition + "\n\n";
-
-            lastFiveWords.push_back(dict.word);
-            if (lastFiveWords.size() > 5) {
-                lastFiveWords.pop_front();
-            }
-        }
-
-        if (locationDictMap.empty()) {
-            log_w("No definitions found for %s", title.c_str());
-            return "No definitions found in this chapter.";
-        }
-
-        return dictionaryString;
-        */
-    }
-
     [[nodiscard]] auto authorString() const -> SpiramString {
         if (authors.size() == 0) {
             log_w("Blank author for %s", title.c_str());
@@ -272,13 +158,6 @@ public:
         for (const auto &chapter : j["toc"].as<JsonArray>()) {
             toc.emplace_back();
             toc.back().fromJson(chapter);
-            // Check if any chapter has a summary, if so, set hasSummary
-            if (!hasSummary && chapter["summary"].as<std::string>().size() > 0) {
-                hasSummary = true;
-            }
-            if (!hasDictionary && chapter["dictionary"].as<JsonArray>().size() > 0) {
-                hasDictionary = true;
-            }
         }
 
         // Temporary migration for stored pocket articles that don't have a readable_type

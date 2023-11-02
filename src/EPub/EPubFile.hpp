@@ -96,10 +96,15 @@ public:
     auto getSpineReadableChapterIndex(Idx spineIdx) const -> int;
     auto getChapterFirstSpineIdx(Idx spineIdx) const -> Idx;
 
+    auto hasSummary(const std::string &chapterID) -> bool;
+    auto getSummaryContent(std::string &chapterID,
+                           const std::shared_ptr<EPubPlace> &placeInReadable,
+                           std::shared_ptr<TxtPlace> &placeInSummary, bool includeUnread)
+        -> SpiramString;
     auto hasDictionary(const std::string &chapterID) -> bool;
-    auto getDictionaryContent(const std::string &chapterID,
-                              const std::shared_ptr<Place> &placeInReadable,
-                              std::shared_ptr<Place> &placeInDictionary) -> std::string;
+    auto getDictionaryContent(std::string &chapterID,
+                              const std::shared_ptr<EPubPlace> &placeInReadable,
+                              std::shared_ptr<TxtPlace> &placeInDictionary) -> SpiramString;
 
 private:
     Unzipper epubUnzipper_;

@@ -1,5 +1,3 @@
-#if 0
-
 #include <catch_amalgamated.hpp>
 
 // Allow access to protected methods from tests
@@ -28,12 +26,12 @@
 
 extern auto UIGetCurrentScreen() -> Screen *;
 
-TEST_CASE("Test EPub Books Rendering") {
+TEST_CASE("Test EPub Books Rendering", "[.][epub]") {
 
     SetupFileSystemMock("EPubTestData");
     SetImagesFolder("EPubImages");
 
-    StartFreeRtos(true, FONT_CHOICES::PREFS_SOL_SMALL, 10, 10, -2);
+    StartAppMain(FONT_CHOICES::PREFS_SOL_SMALL, 10, 10, -2);
 
     // First screen renders twice once with a full refresh and once with a AU4
     WAIT_FOR_DRAW();
@@ -67,7 +65,7 @@ TEST_CASE("Test EPub Books Rendering") {
                 }
 
                 std::stringstream fname;
-                fname << "Book1/" << fileIdx + 1 << "-" << pageNbr++;
+                fname << "TestBook/" << fileIdx + 1 << "-" << pageNbr++;
 
                 ASSERT_VIEW_UNCHANGED(fname.str());
 
@@ -94,6 +92,8 @@ TEST_CASE("Test EPub Books Rendering") {
 
         ASSERT_VIEW_UNCHANGED("SecondScreen");
 
+#if 0
+        // The following is kept as it would be useful if other books are integrated to the test.
         // }
 
         // SECTION("Book 2") {
@@ -196,9 +196,8 @@ TEST_CASE("Test EPub Books Rendering") {
             UNSCOPED_INFO("Unable to get ReadableScreen instance for Book3.");
             CHECK(false);
         }
+#endif
     }
 
     StopFreeRtos();
 }
-
-#endif

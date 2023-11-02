@@ -30,7 +30,7 @@ auto LittleFSFileSystem::format() -> bool {
 
 auto LittleFSFileSystem::begin() -> bool {
     // register littlefs filesystem
-    esp_vfs_littlefs_conf_t config = {.base_path = getPrefix(),
+    esp_vfs_littlefs_conf_t config = {.base_path = getPrefix().c_str(),
                                       .partition_label = partitionLabel,
                                       .format_if_mount_failed = false};
     esp_err_t err = esp_vfs_littlefs_register(&config);

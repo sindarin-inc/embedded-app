@@ -237,11 +237,11 @@ void ReadableScreen::render(DisplaySystem &display) {
             "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n";
 
         auto streamFirstTime = std::make_shared<StdStringStream>(message);
-        firstTimeRenderer_.setStream(streamFirstTime);
+        renderer_.setStream(streamFirstTime);
 
         prefs_.firstRead.set(true);
-        ignoreNextPress_ = true;
-        firstTimeRenderer_.renderFirstPage();
+        showingFirstTimeView_ = true;
+        renderer_.renderFirstPage();
 
         if (prefs_.fastTransitions.get().value_or(false)) {
             display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
@@ -260,11 +260,12 @@ void ReadableScreen::render(DisplaySystem &display) {
             "to start reading... \n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n";
 
         auto streamFirstTime = std::make_shared<StdStringStream>(message);
-        firstTimeRenderer_.setStream(streamFirstTime);
+        renderer_.setStream(streamFirstTime);
 
         prefs_.firstAutopilotRead.set(true);
-        ignoreNextPress_ = true;
-        firstTimeRenderer_.renderFirstPage();
+        showingFirstTimeView_ = true;
+        renderer_.renderFirstPage();
+
         if (prefs_.fastTransitions.get().value_or(false)) {
             display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
         } else {
@@ -549,8 +550,9 @@ void ReadableScreen::processCommand(RemoteCommand command) {
         return;
     }
 
-    if (ignoreNextPress_) {
-        ignoreNextPress_ = false;
+    if (showingFirstTimeView_) {
+        showingFirstTimeView_ = false;
+        renderer_.setStream(stream_);
         setNeedsRerender();
         return;
     }

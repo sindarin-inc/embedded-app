@@ -107,19 +107,22 @@ void ReadablePopupMenuScreen::populatePopupMenu() {
         back();
     }));
 
-    if (readable_->hasSummary) {
-        addMenuItem(MenuItem("Summary", [this]() {
-            readableSummaryScreen_.setPlaceInReadable(renderer_.getCurrentPlace(),
-                                                      currentChapterIdx_);
-            readableSummaryScreen_.setFirstLoad();
-            setCurrentScreen(readableSummaryScreen_);
-        }));
-    }
-
     if (renderer_.getCurrentPlace()->isFor(DocType::EPUB)) {
         auto stream = std::dynamic_pointer_cast<EPubFile>(renderer_.getStream());
         auto chapterId = stream->getIdByHref(
             std::dynamic_pointer_cast<EPubPlace>(renderer_.getCurrentPlace())->getHRef());
+
+        if (stream->hasSummary(chapterId)) {
+            addMenuItem(MenuItem("Summary", [this]() {
+                auto epubPlace = std::dynamic_pointer_cast<EPubPlace>(renderer_.getCurrentPlace());
+                readableSummaryScreen_.setPlaceInReadable(epubPlace);
+                readableSummaryScreen_.setFirstLoad();
+                setCurrentScreen(readableSummaryScreen_);
+            }));
+        } else {
+            log_d("No summary for chapter %s", chapterId.c_str());
+        }
+
         if (stream->hasDictionary(chapterId)) {
             addMenuItem(MenuItem("Dictionary", [this]() {
                 auto epubPlace = std::dynamic_pointer_cast<EPubPlace>(renderer_.getCurrentPlace());
@@ -131,7 +134,7 @@ void ReadablePopupMenuScreen::populatePopupMenu() {
             log_d("No dictionary for chapter %s", chapterId.c_str());
         }
     } else {
-        log_d("Not an EPub, so no dictionary");
+        log_d("Not an EPub, so no summary or dictionary");
     }
 
     addMenuItem(MenuItem("Brightness", [this]() {

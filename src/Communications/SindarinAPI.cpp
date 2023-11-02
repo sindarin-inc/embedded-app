@@ -21,13 +21,13 @@ std::shared_ptr<SindarinAPI> SindarinAPI::instance = nullptr;
 
 auto SindarinAPI::getInstance() -> std::shared_ptr<SindarinAPI> {
     if (instance == nullptr) {
-        instance = std::make_shared<SindarinAPI>();
+        instance = std::make_shared<SindarinAPI>(SINDARIN_SERVER_URL);
     }
     return instance;
 }
 
 auto SindarinAPI::isSindarinUrl(const char *url) -> bool {
-    return HasPrefix(url, SINDARIN_SERVER_URL);
+    return HasPrefix(url, baseUrl_.c_str());
 }
 
 auto SindarinAPI::setAuth(HttpClient &client) -> esp_err_t {
@@ -43,7 +43,7 @@ void SindarinAPI::setAccessToken(const std::string &token) { accessToken_ = toke
 
 auto SindarinAPI::checkSync(CheckSyncRequest &req, CheckSyncResponse *resp, Telemetry &telemetry)
     -> int {
-    auto url = StringFormat(SINDARIN_SERVER_URL "/sync/%ss/",
+    auto url = StringFormat("%s/sync/%ss/", baseUrl_.c_str(),
                             ReadableModelTypeToString(req.modelType).c_str());
     log_d("Checking sync for %s: %s", ReadableModelTypeToString(req.modelType).c_str(),
           url.c_str());
@@ -104,9 +104,49 @@ auto SindarinAPI::checkSync(const std::string &url, CheckSyncRequest &req, Check
 
     SHOW_HEAP();
 
+    StaticJsonDocument<2000> filter;
+    filter["next"] = true;
+    filter["message"] = true;
+    filter["previous"] = true;
+    filter["count"] = true;
+    filter["page_size"] = true;
+    filter["results"]["synced"] = true;
+    filter["results"]["books_since"] = true;
+    filter["results"]["articles_since"] = true;
+    filter["results"]["timezone"] = true;
+    auto setFieldsForType = [&filter](const char *type) {
+        filter["results"][type][0]["uuid"] = true;
+        filter["results"][type][0]["url"] = true;
+        filter["results"][type][0]["readable"]["uuid"] = true;
+        filter["results"][type][0]["readable"]["title"] = true;
+        filter["results"][type][0]["readable"]["readable_type"] = true;
+        filter["results"][type][0]["readable"]["date_created"] = true;
+        filter["results"][type][0]["readable"]["date_modified"] = true;
+        filter["results"][type][0]["readable"]["date_published"] = true;
+        filter["results"][type][0]["readable"]["toc"][0]["title"] = true;
+        filter["results"][type][0]["readable"]["toc"][0]["href"] = true;
+        filter["results"][type][0]["readable"]["toc"][0]["txt_offset"] = true;
+        filter["results"][type][0]["readable"]["toc"][0]["end_txt_offset"] = true;
+        filter["results"][type][0]["readable"]["authors"] = true;
+        filter["results"][type][0]["readable"]["files"] = true;
+        filter["results"][type][0]["placemark"] = true;
+        filter["results"][type][0]["chapter"] = true;
+        filter["results"][type][0]["chapter_offset"] = true;
+        filter["results"][type][0]["bookmarks"] = true;
+        filter["results"][type][0]["is_archived"] = true;
+        filter["results"][type][0]["is_downloaded"] = true;
+        filter["results"][type][0]["date_created"] = true;
+        filter["results"][type][0]["date_modified"] = true;
+        filter["results"][type][0]["modified_timestamp"] = true;
+        filter["results"][type][0]["modified_timestamp"] = true;
+    };
+    setFieldsForType("books");
+    setFieldsForType("articles");
+    // log_w("Filter: %s", DumpJson(filter).c_str());
     auto respJson = std::make_unique<SpiRamJsonDocument>(1024 + contentLength * 3);
-    auto error = ArduinoJson::deserializeJson(*respJson, *stream);
-
+    auto error =
+        ArduinoJson::deserializeJson(*respJson, *stream, DeserializationOption::Filter(filter));
+    // log_w("Resp JSON: %s", DumpJson(*respJson).c_str());
     SHOW_HEAP();
 
     if (error.code() != DeserializationError::Ok) {
@@ -136,7 +176,7 @@ auto SindarinAPI::checkSync(const std::string &url, CheckSyncRequest &req, Check
 }
 
 auto SindarinAPI::checkFirmware(FirmwareResponse *resp) -> int {
-    HttpClient client(SINDARIN_SERVER_URL "/firmware/");
+    HttpClient client(StringFormat("%s/firmware/", baseUrl_.c_str()).c_str());
 
     auto err = setAuth(client);
     if (err != ESP_OK) {
@@ -226,7 +266,8 @@ auto SindarinAPI::uploadTelemetryFile(SFile &telemetryFile, const std::string &l
     int totalSize = header.size() + telemetryFile.size() + footer.size();
     auto contentType = "multipart/form-data; boundary=" + boundary;
 
-    HttpClient client(SINDARIN_SERVER_URL "/telemetry/", contentType.c_str(), HTTP_METHOD_POST);
+    HttpClient client(StringFormat("%s/telemetry/", baseUrl_.c_str()).c_str(), contentType.c_str(),
+                      HTTP_METHOD_POST);
 
     auto err = setAuth(client);
     if (err != ESP_OK) {
@@ -281,8 +322,8 @@ auto SindarinAPI::uploadTelemetryFile(SFile &telemetryFile, const std::string &l
 }
 
 auto SindarinAPI::uploadCrashReport(SFile &crashFile, const std::string &contentType) -> int {
-    HttpClient client(SINDARIN_SERVER_URL "/coredumps/", contentType.c_str(), HTTP_METHOD_POST,
-                      true);
+    HttpClient client(StringFormat("%s/coredumps/", baseUrl_.c_str()).c_str(), contentType.c_str(),
+                      HTTP_METHOD_POST, true);
     auto err = setAuth(client);
     if (err != ESP_OK) {
         return ERR_SET_AUTH;
