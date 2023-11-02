@@ -456,6 +456,9 @@ static void * prvWaitForStart( void * pvParams )
 {
     Thread_t * pxThread = pvParams;
 
+    // Allow threads to cancel at any time
+    pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL);
+
     prvSuspendSelf( pxThread );
 
     /* Resumed for the first time, unblocks all signals. */
