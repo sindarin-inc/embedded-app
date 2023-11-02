@@ -180,6 +180,25 @@ void vPortStartFirstTask( void )
 }
 /*-----------------------------------------------------------*/
 
+void clear_pending_signal(int sig) {
+    sigset_t set, oldset;
+
+    // Block the signal
+    sigemptyset(&set);
+    sigaddset(&set, sig);
+    pthread_sigmask(SIG_BLOCK, &set, &oldset);
+
+    // Check if signal is pending
+    sigpending(&set);
+    if (sigismember(&set, sig)) {
+        int signum;
+        sigwait(&set, &signum);  // Wait for and remove signal
+    }
+
+    // Restore the original signal mask
+    pthread_sigmask(SIG_SETMASK, &oldset, NULL);
+}
+
 /*
  * See header file for description.
  */
@@ -227,6 +246,10 @@ portBASE_TYPE xPortStartScheduler( void )
         /* Cancel the Timer task and free its resources */
         vPortCancelThread( xTimerGetTimerDaemonTaskHandle() );
     #endif /* configUSE_TIMERS */
+
+    // Clear SIG_RESUME (SIGUSR1), because it might have fired again while we were shutting things down.
+    // TODO: Why wasn't this consumed by the above sigwait?
+    clear_pending_signal(SIG_RESUME);
 
     /* Restore original signal mask. */
     ( void ) pthread_sigmask( SIG_SETMASK, &xSchedulerOriginalSignalMask, NULL );
