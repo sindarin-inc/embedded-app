@@ -246,7 +246,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
                 vTaskDelay(1000 / portTICK_PERIOD_MS);
             }
             log_d("Background loop task exited");
-            vTaskDelete(NULL);
+            vTaskDelete(nullptr);
             },
             "BackgroundPowerLoop", 4096, nullptr, 1, nullptr, 1);
         BackgroundSyncAndSleep(powerManager, prefs, localStore, telemetry);
@@ -331,7 +331,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
                 vTaskDelay(60000 / portTICK_PERIOD_MS);
             }
             log_d("Sync loop task exited");
-            vTaskDelete(NULL);
+            vTaskDelete(nullptr);
             },
             "BackgroundSync", 4096, nullptr, 1, nullptr, 1);
     }
