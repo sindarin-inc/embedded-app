@@ -37,6 +37,8 @@ enum class PowerState {
     // Screen lighting enabled ~10-60mA, inactivity timer disabled (will force powerOff 5s after
     // showing the depleted UI), UI disabled
     ActiveBatteryDepleted,
+    // On the way to shutting down
+    ShuttingDown,
     // Screens/lighting disabled ~6-7mA, inactivity timer disabled.
     Background,
     // Deep sleep with ULP magnetometer and periodic wakeups ~100uA
