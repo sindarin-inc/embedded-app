@@ -31,7 +31,7 @@ public:
                    const std::shared_ptr<Readable> &readable, PreferencesStore &prefs,
                    Telemetry &telemetry, LocalStore &localStore, FileSystem &fileSystem,
                    LightingController &lightingController)
-        : EinkView(display), renderer_(display), firstTimeRenderer_(display), readable_(readable),
+        : EinkView(display), stream_(stream), renderer_(display), readable_(readable),
           prefs_(prefs), telemetry_(telemetry), localStore_(localStore), fileSystem_(fileSystem),
           display_(display), popupMenuScreen_(display, prefs, readable, lightingController,
                                               renderer_, localStore_, telemetry_),
@@ -128,8 +128,8 @@ protected:
 
     void drawArrows(bool eraseArrow);
 
+    std::shared_ptr<RendererStream> stream_;
     Renderer renderer_;
-    Renderer firstTimeRenderer_;
     std::shared_ptr<Readable> readable_;
     PreferencesStore &prefs_;
     Telemetry &telemetry_;
@@ -137,7 +137,7 @@ protected:
     FileSystem &fileSystem_;
 
     bool inBookmark_ = false;
-    bool ignoreNextPress_ = false;
+    bool showingFirstTimeView_ = false;
 
     std::shared_ptr<Place> newPlace_ = nullptr;
     bool atEnd_ = false;
