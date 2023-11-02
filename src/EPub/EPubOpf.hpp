@@ -22,7 +22,8 @@ public:
 
     struct SpineItem {
         ManifestItem *item;
-        int readableChapterIndex; // = -1 if not a chapter in the readable TOC
+        int chapterIndex;
+        bool chapterStart;
     };
 
     [[nodiscard]] auto getSpine(Idx idx) const -> const SpineItem & { return spine_[idx]; }
@@ -37,8 +38,8 @@ public:
 
     auto getSpineIdx(const std::string &href) const -> int;
 
-    auto getReadableChapterIndex(const std::string &href) const -> int;
-    auto getSpineReadableChapterIndex(Idx spineIdx) const -> int;
+    auto getChapterIndex(const std::string &href) const -> int;
+    auto spineIndexIsChapterStart(Idx spineIdx) const -> bool;
     auto getChapterFirstSpineIdx(Idx spineIdx) const -> Idx;
 
     auto exists(const std::string &id) const -> bool;

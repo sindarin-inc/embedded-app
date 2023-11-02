@@ -152,12 +152,12 @@ auto EPubFile::getXHTMLFile(const std::string &path) -> pugi::xml_document & {
     return currentFileDoc_;
 }
 
-auto EPubFile::getReadableChapterIndex(const std::shared_ptr<EPubPlace> &ePubPlace) const -> int {
-    return opf_->getReadableChapterIndex(ePubPlace->getHRef());
+auto EPubFile::getChapterIndex(const std::shared_ptr<EPubPlace> &ePubPlace) const -> int {
+    return opf_->getChapterIndex(ePubPlace->getHRef());
 }
 
-auto EPubFile::getSpineReadableChapterIndex(Idx spineIdx) const -> int {
-    return opf_->getSpineReadableChapterIndex(spineIdx);
+auto EPubFile::spineIndexIsChapterStart(Idx spineIdx) const -> bool {
+    return opf_->spineIndexIsChapterStart(spineIdx);
 }
 
 auto EPubFile::getChapterFirstSpineIdx(Idx spineIdx) const -> Idx {
@@ -174,7 +174,7 @@ auto EPubFile::hasSummary(const std::string &chapterID) -> bool {
 
     // Walk the chapters backwards in the spine to see if the chapter id matches
     auto summaryChapterHref = opf_->getHrefByID(summaryID);
-    auto summaryChapterIdx = opf_->getReadableChapterIndex(summaryChapterHref);
+    auto summaryChapterIdx = opf_->getChapterIndex(summaryChapterHref);
 
     return summaryChapterIdx != -1;
 }
@@ -193,7 +193,7 @@ auto EPubFile::getSummaryContent(std::string &chapterID,
     auto chapterHref = opf_->getHrefByID(chapterID);
     auto chapterIdx = readable_->findEPubHRefChapterIdx(chapterHref);
     if (chapterIdx == -1) {
-        chapterIdx = opf_->getReadableChapterIndex(chapterHref);
+        chapterIdx = opf_->getChapterIndex(chapterHref);
         chapterHref = getToc()[chapterIdx].href;
         chapterID = opf_->getIdByHref(chapterHref);
     }
@@ -272,7 +272,7 @@ auto EPubFile::hasDictionary(const std::string &chapterID) -> bool {
 
     // Walk the chapters backwards in the spine to see if the chapter id matches
     auto dictionaryChapterHref = opf_->getHrefByID(dictionaryID);
-    auto dictionaryChapterIdx = opf_->getReadableChapterIndex(dictionaryChapterHref);
+    auto dictionaryChapterIdx = opf_->getChapterIndex(dictionaryChapterHref);
 
     return dictionaryChapterIdx != -1;
 }
@@ -291,7 +291,7 @@ auto EPubFile::getDictionaryContent(std::string &chapterID,
     auto chapterHref = opf_->getHrefByID(chapterID);
     auto chapterIdx = readable_->findEPubHRefChapterIdx(chapterHref);
     if (chapterIdx == -1) {
-        chapterIdx = opf_->getReadableChapterIndex(chapterHref);
+        chapterIdx = opf_->getChapterIndex(chapterHref);
         chapterHref = getToc()[chapterIdx].href;
         chapterID = opf_->getIdByHref(chapterHref);
     }

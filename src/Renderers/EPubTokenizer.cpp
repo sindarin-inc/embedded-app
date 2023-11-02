@@ -785,12 +785,12 @@ auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, S
                 // We break the process of paging if
                 // - we are passed the end of the book
                 // - the new current file is the beginning of a chapter
-                if (stream_->getSpineReadableChapterIndex(currentFileIdx_) != -1) {
+                if (stream_->spineIndexIsChapterStart(currentFileIdx_)) {
                     log_w("We are at the beginning of a new chapter...");
                 }
                 if (!completed) {
                     if ((currentFileIdx_ >= stream_->getSpineCount()) ||
-                        (stream_->getSpineReadableChapterIndex(currentFileIdx_) != -1)) {
+                        (stream_->spineIndexIsChapterStart(currentFileIdx_))) {
                         if (currentFileIdx_ >= stream_->getSpineCount()) {
                             if (currentPageTxtOffset_ <= currentTxtOffset_) {
                                 currentTxtOffset_ -= currentPageTxtOffset_;
@@ -886,7 +886,7 @@ auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, S
         //                 Idx maxIdx = stream_->getSpineCount();
         //                 currentFileIdx_ = fromPlace.getFileIdx() + 1;
         //                 if (currentFileIdx_ < maxIdx) {
-        //                     if ((stream_->getSpineReadableChapterIndex(currentFileIdx_) == -1) &&
+        //                     if ((stream_->spineIndexIsChapterStart(currentFileIdx_)) &&
         //                         !pageCompleted_) {
         //                         pager_.completeLastLine();
         //                         continue;

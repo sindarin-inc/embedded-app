@@ -92,8 +92,8 @@ public:
         return 0;
     }
 
-    auto getReadableChapterIndex(const std::shared_ptr<EPubPlace> &ePubPlace) const -> int;
-    auto getSpineReadableChapterIndex(Idx spineIdx) const -> int;
+    auto getChapterIndex(const std::shared_ptr<EPubPlace> &ePubPlace) const -> int;
+    auto spineIndexIsChapterStart(Idx spineIdx) const -> bool;
     auto getChapterFirstSpineIdx(Idx spineIdx) const -> Idx;
 
     auto hasSummary(const std::string &chapterID) -> bool;
