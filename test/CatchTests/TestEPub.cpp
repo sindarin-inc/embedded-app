@@ -54,18 +54,18 @@ TEST_CASE("Test EPub Books Rendering", "[.][epub]") {
             WAIT_FOR_DRAW();
 
             int pageNbr = 1;
-            uint16_t fileIdx = 0;
+            uint16_t spineIdx = 0;
 
             for (;;) {
                 StreamPlace streamPlace = readableScreen->getStreamPlace();
 
-                if (streamPlace.getFileIdx() != fileIdx) {
-                    fileIdx = streamPlace.getFileIdx();
+                if (streamPlace.getSpineIdx() != spineIdx) {
+                    spineIdx = streamPlace.getSpineIdx();
                     pageNbr = 1;
                 }
 
                 std::stringstream fname;
-                fname << "TestBook/" << fileIdx + 1 << "-" << pageNbr++;
+                fname << "TestBook/" << spineIdx + 1 << "-" << pageNbr++;
 
                 ASSERT_VIEW_UNCHANGED(fname.str());
 
@@ -114,18 +114,18 @@ TEST_CASE("Test EPub Books Rendering", "[.][epub]") {
             // WAIT_FOR_DRAW();
 
             int pageNbr = 1;
-            uint16_t fileIdx = 0;
+            uint16_t spineIdx = 0;
 
             for (;;) {
                 StreamPlace streamPlace = readableScreen->getStreamPlace();
 
-                if (streamPlace.getFileIdx() != fileIdx) {
-                    fileIdx = streamPlace.getFileIdx();
+                if (streamPlace.getSpineIdx() != spineIdx) {
+                    spineIdx = streamPlace.getSpineIdx();
                     pageNbr = 1;
                 }
 
                 std::stringstream fname;
-                fname << "Book2/" << fileIdx + 1 << "-" << pageNbr++;
+                fname << "Book2/" << spineIdx + 1 << "-" << pageNbr++;
 
                 ASSERT_VIEW_UNCHANGED(fname.str());
 
@@ -172,18 +172,18 @@ TEST_CASE("Test EPub Books Rendering", "[.][epub]") {
             // WAIT_FOR_DRAW();
 
             int pageNbr = 1;
-            uint16_t fileIdx = 0;
+            uint16_t spineIdx = 0;
 
             for (;;) {
                 StreamPlace streamPlace = readableScreen->getStreamPlace();
 
-                if (streamPlace.getFileIdx() != fileIdx) {
-                    fileIdx = streamPlace.getFileIdx();
+                if (streamPlace.getSpineIdx() != spineIdx) {
+                    spineIdx = streamPlace.getSpineIdx();
                     pageNbr = 1;
                 }
 
                 std::stringstream fname;
-                fname << "Book3/" << fileIdx + 1 << "-" << pageNbr++;
+                fname << "Book3/" << spineIdx + 1 << "-" << pageNbr++;
 
                 ASSERT_VIEW_UNCHANGED(fname.str());
 

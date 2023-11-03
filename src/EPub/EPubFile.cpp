@@ -174,7 +174,7 @@ auto EPubFile::hasSummary(const std::string &chapterID) -> bool {
 
     // Walk the chapters backwards in the spine to see if the chapter id matches
     auto summaryChapterHref = opf_->getHrefByManifestId(summaryID);
-    auto summaryChapterIdx = opf_->getReadableChapterIdx(summaryChapterHref);
+    auto summaryChapterIdx = opf_->getChapterIdx(summaryChapterHref);
 
     return summaryChapterIdx != -1;
 }
@@ -273,7 +273,7 @@ auto EPubFile::hasDictionary(const std::string &chapterID) -> bool {
 
     // Walk the chapters backwards in the spine to see if the chapter id matches
     auto dictionaryChapterHref = opf_->getHrefByManifestId(dictionaryID);
-    auto dictionaryChapterIdx = opf_->getReadableChapterIdx(dictionaryChapterHref);
+    auto dictionaryChapterIdx = opf_->getChapterIdx(dictionaryChapterHref);
 
     return dictionaryChapterIdx != -1;
 }
