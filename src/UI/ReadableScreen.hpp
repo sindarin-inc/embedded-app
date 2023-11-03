@@ -47,7 +47,11 @@ public:
         if (!prefs_.cesMode.get().value_or(false) && !thePlace.empty()) {
             readable_->place = Place::factory(thePlace);
         } else {
-            readable_->place = std::make_shared<TxtPlace>();
+            if (stream->isFor(DocType::TXT)) {
+                readable_->place = std::make_shared<TxtPlace>(0);
+            } else {
+                readable_->place = std::make_shared<EPubPlace>(0, "");
+            }
         }
         // for the animation bits since we may end up coming back to this constructor after being
         // interrupted.
