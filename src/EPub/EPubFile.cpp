@@ -190,8 +190,25 @@ auto EPubFile::getToc() -> ReadableTableOfContentsChapterVector {
             ReadableTableOfContentsChapter chapter;
             chapter.title = navPointChild.child("a").child_value();
             chapter.href = navPointChild.child("a").attribute("href").value();
-            // ... set other chapter properties as needed ...
+            pugi::xml_attribute epubOffsetAttr =
+                navPointChild.child("a").attribute("data-epub-offset");
+            if (epubOffsetAttr) {
+                chapter.epubOffset =
+                    static_cast<uint32_t>(strtoul(epubOffsetAttr.value(), nullptr, 10));
+            } else {
+                chapter.epubOffset = 0;
+            }
+            pugi::xml_attribute endEpubOffsetAttr =
+                navPointChild.child("a").attribute("data-end-epub-offset");
+            if (endEpubOffsetAttr) {
+                chapter.endEpubOffset =
+                    static_cast<uint32_t>(strtoul(endEpubOffsetAttr.value(), nullptr, 10));
+            } else {
+                chapter.epubOffset = 0;
+            }
 
+            // log_w("Chapter %s: %s (%" PRIu32 " - %" PRIu32 ")", chapter.title.c_str(),
+            //       chapter.href.c_str(), chapter.epubOffset, chapter.endEpubOffset);
             toc.push_back(chapter);
 
             // Recurse into child <ol> elements, if any
