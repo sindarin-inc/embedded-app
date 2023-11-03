@@ -33,8 +33,8 @@ void ReadablePopupMenuScreen::setUpPopupMenu() {
             chapterPagesRemainingString =
                 StringFormat("%d page%s left", SOL_PAGE_NUMBER(chapterPagesRemaining),
                              SOL_PAGE_NUMBER(chapterPagesRemaining) == 1 ? "" : "s");
-            // log_w("Chapter %d, %s, current:%lu=%lu+%lu end:%lu", currentChapterIdx_,
-            //       chapter.title.c_str(), currentOffset, chapter.epubOffset,
+            // log_w("Chapter %d, %s, current:%" PRIu32 "=%" PRIu32 "+%" PRIu32 " end:%" PRIu32,
+            //       currentChapterIdx_, chapter.title.c_str(), currentOffset, chapter.epubOffset,
             //       renderer_.getTxtOffset(), lastChapterEndOffset);
         } else {
             log_w("Couldn't find chapter index (%d) for href %s", currentChapterIdx_,
