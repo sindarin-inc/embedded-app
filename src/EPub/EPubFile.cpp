@@ -340,7 +340,7 @@ auto EPubFile::hasDictionary(const std::string &chapterId) -> bool {
     auto hasDirectChapterDictionary = opf_->exists(dictionaryId);
     auto hasToc = opf_->exists("nav");
     if (hasDirectChapterDictionary && hasToc) {
-        return hasDirectChapterDictionary && hasToc;
+        return true;
     }
 
     // Walk the chapters backwards in the spine to see if the chapter id matches
