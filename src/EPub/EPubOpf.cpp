@@ -1,6 +1,7 @@
 #include "EPubOpf.hpp"
 
 #include <cstring>
+#include <limits>
 #include <pugixml.hpp>
 
 #include "EPubDefs.hpp"
@@ -68,7 +69,9 @@ void EPubOpf::extractPath(const char *fname, std::string &path) {
 }
 
 auto EPubOpf::getSpineIdx(const std::string &href) const -> SpineIdx {
-    for (SpineIdx spineIdx = 0; spineIdx < spine_.size(); spineIdx++) {
+    for (SpineIdx spineIdx = 0;
+         spineIdx < std::min(spine_.size(), (size_t)std::numeric_limits<SpineIdx>::max());
+         spineIdx++) {
         if (spine_[spineIdx].item->href == href) {
             return spineIdx;
         }
