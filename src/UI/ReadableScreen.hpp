@@ -44,15 +44,10 @@ public:
         std::string thePlace = prefs_.readablePlace.get(readable_->shortenedUuid.c_str());
         log_d("readablePlace: \"%s\"", thePlace.c_str());
 
-        if (!prefs_.cesMode.get().value_or(false) && !thePlace.empty()) {
-            readable_->place = Place::factory(thePlace);
-        } else {
-            if (stream->isFor(DocType::TXT)) {
-                readable_->place = std::make_shared<TxtPlace>(0);
-            } else {
-                readable_->place = std::make_shared<EPubPlace>(0, "");
-            }
+        if (!prefs_.cesMode.get().value_or(false)) {
+            readable_->place = Place::factory(thePlace, stream->getDocType());
         }
+
         // for the animation bits since we may end up coming back to this constructor after being
         // interrupted.
         newPlace_ = readable_->place;

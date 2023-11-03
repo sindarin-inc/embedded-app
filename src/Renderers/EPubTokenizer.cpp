@@ -923,12 +923,6 @@ auto EPubTokenizer::toStreamPlace(const std::shared_ptr<Place> place) const -> S
         std::shared_ptr<EPubPlace> ePubPlace = std::dynamic_pointer_cast<EPubPlace>(place);
         uint16_t spineIdx = stream_->getSpineIdx(ePubPlace->getHRef());
         return {place->getOffset(), spineIdx};
-    } else if (place->isFor(DocType::TXT)) {
-        if (place->isZero()) {
-            return {0, 0};
-        } else {
-            assert(false && "Using a TXT place in an EPUB file!");
-        }
     } else {
         log_e("Wrong Place Type: %" PRIu8, static_cast<uint8_t>(place->getDocType()));
         REND_EXIT_SIM;
