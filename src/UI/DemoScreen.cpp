@@ -99,6 +99,17 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
                 display.xAbsolute(128 - glass_small_left_width / 2),
                 display.yAbsolute(128 - glass_small_left_height / 2 + yOffsetOverall),
                 GLASS_SMALL_LEFT_BITS, glass_small_left_width, glass_small_left_height, display.fg);
+
+            // Show serial number in tiny text in the bottom
+            display.setFont(static_cast<Font *>(&ibmf75Face1));
+            message = "SN: " + GetSerialNumber();
+            display.drawSingleLineOfText(
+                message.c_str(),
+                display.xAbsolute(display.xAbsoluteCenter() -
+                                  display.getTextWidth(message.c_str()) / 2),
+                display.yAbsolute(display.yAbsoluteMax() -
+                                  2 * display.getTextHeight(message.c_str())));
+
             display.updateDisplay(DisplaySystem::UpdateType::PARTIAL, false, 0,
                                   DisplaySystem::UpdateType::FAST, {{0, 0}, {255, 140}});
             nextInterval_ = 500;
