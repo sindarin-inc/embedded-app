@@ -50,7 +50,6 @@ public:
     ReadableAuthorVector authors;
     ReadableFileVector files;
     ReadableBookmarksVector bookmarks;
-    ReadableTableOfContentsChapterVector toc;
 
     // Local state
     std::shared_ptr<Place> place, placePrev;
@@ -98,25 +97,6 @@ public:
     [[nodiscard]] auto isArticle() const -> bool {
         return readableType == "pocket_article" || readableType == "email_article";
     }
-    auto findChapter(unsigned long placeInReadable) -> ReadableTableOfContentsChapter * {
-        for (auto &chapter : toc) {
-            if (placeInReadable >= chapter.txtOffset && placeInReadable < chapter.endTxtOffset) {
-                return &chapter;
-            }
-        }
-        return nullptr;
-    }
-
-    auto findEPubHRefChapterIdx(const std::string &href) -> int16_t {
-        int16_t idx = 0;
-        for (auto &chapter : toc) {
-            if (chapter.href == href) {
-                return idx;
-            }
-            idx++;
-        }
-        return -1;
-    }
 
     [[nodiscard]] auto telemetryPlacemarkMetrics() const -> std::map<std::string, TelemetryVariant>;
 
@@ -153,11 +133,6 @@ public:
         for (const auto &bookmark : j["bookmarks"].as<JsonArray>()) {
             bookmarks.emplace_back();
             bookmarks.back().fromJson(bookmark);
-        }
-        toc.clear();
-        for (const auto &chapter : j["toc"].as<JsonArray>()) {
-            toc.emplace_back();
-            toc.back().fromJson(chapter);
         }
 
         // Temporary migration for stored pocket articles that don't have a readable_type

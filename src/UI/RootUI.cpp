@@ -142,7 +142,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
         if (HasSuffix(path, ".epub")) {
             log_i("Opening %s as epub", path.c_str());
-            localStore.loadToc(readable);
             stream = fileSystem.newEPubRendererStream(path.c_str(), readable);
         } else if (HasSuffix(path, ".txt.gz")) {
             log_i("Opening %s as gzip", path.c_str());

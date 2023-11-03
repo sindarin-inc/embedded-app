@@ -8,6 +8,7 @@
 #include "Misc/SpiramAllocator.hpp"
 #include "Misc/Unzipper.hpp"
 #include "Models/DocType.hpp"
+#include "Models/Readable.hpp"
 #include "Renderers/RendererStream.hpp"
 
 class EPubFile : public RendererStream {
@@ -44,10 +45,6 @@ public:
 
     [[nodiscard]] auto getFile(const std::string &path)
         -> std::pair<std::shared_ptr<uint8_t[]>, uint32_t>;
-
-    [[nodiscard]] inline auto getToc() const -> ReadableTableOfContentsChapterVector {
-        return readable_->toc;
-    }
 
     [[nodiscard]] inline auto getSpineIdx(const std::string &href) const -> uint16_t {
         return opf_->getSpineIdx(href);
@@ -94,8 +91,12 @@ public:
     }
 
     auto getChapterIdx(const std::shared_ptr<EPubPlace> &ePubPlace) const -> ChapterIdx;
+    auto getChapterIdx(const std::string &href) const -> ChapterIdx;
     auto spineIdxIsChapterStart(SpineIdx spineIdx) const -> bool;
     auto getChapterFirstSpineIdx(SpineIdx spineIdx) const -> SpineIdx;
+
+    auto hasToc() -> bool;
+    auto getToc() -> ReadableTableOfContentsChapterVector;
 
     auto hasSummary(const std::string &chapterId) -> bool;
     auto getSummaryContent(std::string &chapterId,

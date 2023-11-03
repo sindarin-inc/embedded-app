@@ -919,16 +919,18 @@ auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, S
 }
 
 auto EPubTokenizer::getStreamPlaceFromTxtOffset(uint32_t txtOffset) const -> StreamPlace {
+    // This method is undoubtedly wrong now that we no longer keep txtOffsets. By using epubOffsets,
+    // we're basically giving up on trying to find the correct offset
     if (txtOffset > 0) {
         for (const auto &tocEntry : stream_->getToc()) {
-            if ((txtOffset >= tocEntry.txtOffset) && (txtOffset < tocEntry.endTxtOffset)) {
-                uint16_t spineIdx = stream_->getSpineIdx(tocEntry.href);
-                uint32_t charOffset = txtOffset - tocEntry.txtOffset;
+            if ((txtOffset >= tocEntry.epubOffset) && (txtOffset < tocEntry.endEpubOffset)) {
+                uint16_t spineIdx = stream_->getSpineIdx(std::string(tocEntry.href));
+                uint32_t charOffset = txtOffset - tocEntry.epubOffset;
                 if (charOffset == 0) {
                     return {0, spineIdx};
                 } else {
                     uint32_t offset =
-                        stream_->findFileOffsetAtCharOffset(tocEntry.href, charOffset);
+                        stream_->findFileOffsetAtCharOffset(std::string(tocEntry.href), charOffset);
                     return {offset, spineIdx};
                 }
                 break;

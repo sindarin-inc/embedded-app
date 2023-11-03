@@ -12,19 +12,21 @@ class EPubOpf {
 public:
     EPubOpf(const char *path) : path_(path) {}
 
-    void parse(const std::shared_ptr<uint8_t[]> &buffer, uint32_t length,
-               const std::shared_ptr<Readable> &readable);
-
     struct ManifestItem {
         std::string href;
         std::string mediaType;
     };
-
     struct SpineItem {
         ManifestItem *item;
         int chapterIdx;
         bool chapterStart;
     };
+
+    void parse(const std::shared_ptr<uint8_t[]> &buffer, uint32_t length,
+               const std::shared_ptr<Readable> &readable);
+    void loadSpine(const ReadableTableOfContentsChapterVector &toc);
+    auto findChapterIdxInToc(const ReadableTableOfContentsChapterVector &toc, SpineItem &spineItem)
+        -> ChapterIdx;
 
     [[nodiscard]] auto getSpine(SpineIdx idx) const -> const SpineItem & { return spine_[idx]; }
 
