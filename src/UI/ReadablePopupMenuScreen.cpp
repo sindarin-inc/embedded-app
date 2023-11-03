@@ -25,14 +25,18 @@ void ReadablePopupMenuScreen::setUpPopupMenu() {
             auto &lastChapter = toc[stream->getToc().size() - 1];
             auto lastChapterEndOffset = lastChapter.endEpubOffset;
 
-            placeStringForBottom = StringFormat("%d of %d", SOL_PAGE_NUMBER(currentOffset),
-                                                SOL_PAGE_NUMBER(lastChapterEndOffset));
+            if (currentOffset < lastChapterEndOffset) {
+                placeStringForBottom = StringFormat("%d of %d", SOL_PAGE_NUMBER(currentOffset),
+                                                    SOL_PAGE_NUMBER(lastChapterEndOffset));
+            }
 
             // Determine how many Sol Pages are left in the chapter
-            auto chapterPagesRemaining = chapter.endEpubOffset - currentOffset;
-            chapterPagesRemainingString =
-                StringFormat("%d page%s left", SOL_PAGE_NUMBER(chapterPagesRemaining),
-                             SOL_PAGE_NUMBER(chapterPagesRemaining) == 1 ? "" : "s");
+            if (chapter.endEpubOffset > currentOffset) {
+                auto chapterPagesRemaining = chapter.endEpubOffset - currentOffset;
+                chapterPagesRemainingString =
+                    StringFormat("%d page%s left", SOL_PAGE_NUMBER(chapterPagesRemaining),
+                                 SOL_PAGE_NUMBER(chapterPagesRemaining) == 1 ? "" : "s");
+            }
             // log_w("Chapter %d, %s, current:%" PRIu32 "=%" PRIu32 "+%" PRIu32 " end:%" PRIu32,
             //       currentChapterIdx_, chapter.title.c_str(), currentOffset, chapter.epubOffset,
             //       renderer_.getTxtOffset(), lastChapterEndOffset);
@@ -46,9 +50,12 @@ void ReadablePopupMenuScreen::setUpPopupMenu() {
                                             SOL_PAGE_NUMBER(lengthOfFile));
     }
 
-    popupMenuView_.setFooter1Text(chapterPagesRemainingString);
-
-    popupMenuView_.setFooter2Text(placeStringForBottom);
+    if (chapterPagesRemainingString != "") {
+        popupMenuView_.setFooter1Text(chapterPagesRemainingString);
+    }
+    if (placeStringForBottom != "") {
+        popupMenuView_.setFooter2Text(placeStringForBottom);
+    }
 
     SolClock &theClock = SolClock::getInstance();
     auto timeString = theClock.getTimeString();
