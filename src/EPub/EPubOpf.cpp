@@ -127,12 +127,26 @@ auto EPubOpf::getChapterFirstSpineIdx(SpineIdx spineIdx) const -> SpineIdx {
     return chapterSpineIdx;
 }
 
-auto EPubOpf::spineIdxIsChapterStart(Idx spineIdx) const -> bool {
+auto EPubOpf::spineIdxIsChapterStart(SpineIdx spineIdx) const -> bool {
     return spine_[spineIdx].chapterStart;
 }
 
-auto EPubOpf::getChapterFirstSpineIdx(Idx spineIdx) const -> Idx {
-    Idx chapterSpineIdx = spineIdx;
+auto EPubOpf::getChapterFirstSpineIdx(SpineIdx spineIdx) const -> SpineIdx {
+    SpineIdx chapterSpineIdx = spineIdx;
+
+    while (!spine_[chapterSpineIdx].chapterStart && (chapterSpineIdx > 0)) {
+        chapterSpineIdx--;
+    }
+
+    return chapterSpineIdx;
+}
+
+auto EPubOpf::spineIdxIsChapterStart(SpineIdx spineIdx) const -> bool {
+    return spine_[spineIdx].chapterStart;
+}
+
+auto EPubOpf::getChapterFirstSpineIdx(SpineIdx spineIdx) const -> SpineIdx {
+    SpineIdx chapterSpineIdx = spineIdx;
 
     while (!spine_[chapterSpineIdx].chapterStart && (chapterSpineIdx > 0)) {
         chapterSpineIdx--;
