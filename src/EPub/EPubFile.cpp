@@ -178,7 +178,7 @@ auto EPubFile::hasToc() -> bool {
 }
 
 auto EPubFile::getToc() -> ReadableTableOfContentsChapterVector {
-    std::string tocId = "nav"; // Example ID, ensure this is correct for your case
+    std::string tocId = "nav";
     std::string tocPath = opf_->getHrefByManifestId(tocId);
     pugi::xml_document &tocDoc = getXHTMLFile(tocPath);
 

@@ -125,34 +125,6 @@ auto EPubOpf::getChapterFirstSpineIdx(SpineIdx spineIdx) const -> SpineIdx {
     return chapterSpineIdx;
 }
 
-auto EPubOpf::spineIdxIsChapterStart(SpineIdx spineIdx) const -> bool {
-    return spine_[spineIdx].chapterStart;
-}
-
-auto EPubOpf::getChapterFirstSpineIdx(SpineIdx spineIdx) const -> SpineIdx {
-    SpineIdx chapterSpineIdx = spineIdx;
-
-    while (!spine_[chapterSpineIdx].chapterStart && (chapterSpineIdx > 0)) {
-        chapterSpineIdx--;
-    }
-
-    return chapterSpineIdx;
-}
-
-auto EPubOpf::spineIdxIsChapterStart(SpineIdx spineIdx) const -> bool {
-    return spine_[spineIdx].chapterStart;
-}
-
-auto EPubOpf::getChapterFirstSpineIdx(SpineIdx spineIdx) const -> SpineIdx {
-    SpineIdx chapterSpineIdx = spineIdx;
-
-    while (!spine_[chapterSpineIdx].chapterStart && (chapterSpineIdx > 0)) {
-        chapterSpineIdx--;
-    }
-
-    return chapterSpineIdx;
-}
-
 auto EPubOpf::exists(const std::string &id) const -> bool {
     log_d("Checking if %s exists in manifest: %d", id.c_str(),
           manifest_.find(id) != manifest_.end());
