@@ -119,6 +119,8 @@ public:
         return renderer_.getStreamPlace(readable_->place);
     }
 
+    auto getStream() { return stream_; }
+
 protected:
     void processCommandDemoMode(RemoteCommand command);
     void processCommandAutoPilot(RemoteCommand command);

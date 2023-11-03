@@ -230,36 +230,40 @@ auto PowerManager::begin() -> esp_err_t {
         [this]() {
 #if !DISABLE_POWER_MANAGEMENT
         DispatchGetCore1BackgroundQueue()->dispatch([this]() {
-            // If USB is connected, disable operation unless we've disabled this behavior
-            if (USBConnected() && !prefs_.allowUsageWhileCharging.get().value_or(false)) {
-                log_i("USB connected, switching to ActiveUSBCharging");
-                state_ = PowerState::ActiveUSBCharging;
-                inactivityTimer_.setTimeoutMs(inactivityTimeoutMs());
-                DispatchGetUiQueue()->dispatch([this]() {
-                    if (stateChangeCallback_ != nullptr) {
-                        stateChangeCallback_(state_);
-                    }
-                });
-            } else if (!USBConnected() && state_ == PowerState::ActiveUSBCharging) {
-                log_i("USB disconnected, rebooting to Active");
-                reboot();
-            } else if (USBConnected() && pmConfig_.light_sleep_enable == true) {
-                // USB is connected so disable light sleep
-                pmConfig_.light_sleep_enable = false;
-                auto err = esp_pm_configure(&pmConfig_);
-                if (err != ESP_OK) {
-                    log_e("Failed to disable light sleep with err %s", esp_err_to_name(err));
-                } else {
-                    log_d("Disabled light sleep");
+            if (USBConnected()) {
+                // If USB is connected, disable operation unless we've disabled this behavior
+                if (!prefs_.allowUsageWhileCharging.get().value_or(false)) {
+                    log_i("USB connected, switching to ActiveUSBCharging");
+                    state_ = PowerState::ActiveUSBCharging;
+                    inactivityTimer_.setTimeoutMs(inactivityTimeoutMs());
+                    DispatchGetUiQueue()->dispatch([this]() {
+                        if (stateChangeCallback_ != nullptr) {
+                            stateChangeCallback_(state_);
+                        }
+                    });
                 }
-            } else if (!USBConnected() && pmConfig_.light_sleep_enable == false) {
-                // USB is disconnected so enable light sleep
-                pmConfig_.light_sleep_enable = true;
-                auto err = esp_pm_configure(&pmConfig_);
-                if (err != ESP_OK) {
-                    log_e("Failed to enable light sleep with err %s", esp_err_to_name(err));
-                } else {
-                    log_d("Enabled light sleep");
+                if (pmConfig_.light_sleep_enable == true) {
+                    // USB is connected so disable light sleep
+                    pmConfig_.light_sleep_enable = false;
+                    auto err = esp_pm_configure(&pmConfig_);
+                    if (err != ESP_OK) {
+                        log_e("Failed to disable light sleep with err %s", esp_err_to_name(err));
+                    } else {
+                        log_d("Disabled light sleep");
+                    }
+                }
+            } else { // !USBConnected()
+                if (state_ == PowerState::ActiveUSBCharging) {
+                    log_i("USB disconnected, rebooting to Active");
+                    reboot();
+                } else if (pmConfig_.light_sleep_enable == false) {
+                    pmConfig_.light_sleep_enable = true;
+                    auto err = esp_pm_configure(&pmConfig_);
+                    if (err != ESP_OK) {
+                        log_e("Failed to enable light sleep with err %s", esp_err_to_name(err));
+                    } else {
+                        log_d("Enabled light sleep");
+                    }
                 }
             }
         });

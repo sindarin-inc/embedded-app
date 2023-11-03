@@ -46,7 +46,7 @@ public:
     [[nodiscard]] auto getFile(const std::string &path)
         -> std::pair<std::shared_ptr<uint8_t[]>, uint32_t>;
 
-    [[nodiscard]] inline auto getSpineIdx(const std::string &href) const -> uint16_t {
+    [[nodiscard]] inline auto getSpineIdx(const std::string &href) const -> SpineIdx {
         return opf_->getSpineIdx(href);
     }
 

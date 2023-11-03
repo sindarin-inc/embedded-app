@@ -3,6 +3,7 @@
 #include <utility>
 
 #include "Displays/DisplaySystem.hpp"
+#include "EPub/EPubDefs.hpp"
 #include "Misc/BMPImage.hpp"
 #include "Misc/Platform.hpp"
 #include "Models/Place.hpp"
@@ -147,7 +148,7 @@ public:
         }
     }
     [[nodiscard]] inline auto getOffset() const -> uint32_t { return offset_; }
-    [[nodiscard]] inline auto getSpineIdx() const -> Idx { return spineIdx_; }
+    [[nodiscard]] inline auto getSpineIdx() const -> SpineIdx { return spineIdx_; }
 
     [[nodiscard]] inline auto operator==(const StreamPlace &rhs) const -> bool {
         return (offset_ == rhs.offset_) && (spineIdx_ == rhs.spineIdx_);

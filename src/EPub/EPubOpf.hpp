@@ -41,6 +41,7 @@ public:
     auto getSpineIdx(const std::string &href) const -> SpineIdx;
 
     auto getChapterIdx(const std::string &href) const -> ChapterIdx;
+    auto getChapterIdx(SpineIdx spineIdx) const -> ChapterIdx;
     auto spineIdxIsChapterStart(SpineIdx spineIdx) const -> bool;
     auto getChapterFirstSpineIdx(SpineIdx spineIdx) const -> SpineIdx;
 

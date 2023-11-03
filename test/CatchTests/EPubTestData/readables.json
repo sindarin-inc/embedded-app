@@ -1,32 +1,58 @@
 {
     "readables": [
         {
-            "uuid": "00491216-5612-4863-8735-b42004f3e64a",
+            "uuid": "88e192cd-3af3-4c1a-9452-269e85ecbd90",
             "title": "Test Book",
-            "date_created": "2023-05-23T08:44:55.813541-07:00",
-            "date_modified": "2023-05-23T08:44:55.813554-07:00",
+            "date_created": "2023-11-03T09:45:09.907085-07:00",
+            "date_modified": "2023-11-03T09:47:23.138416-07:00",
             "date_published": "null",
+            "readable_type": "book",
             "authors": [
                 {
-                    "uuid": "91ae1429-c6d4-4b8b-88fa-81041d838f92",
-                    "name": "Author Book 1",
+                    "uuid": "bf0fa663-6d70-4bfc-9f5c-f07b29625a27",
+                    "name": "The Team",
                     "description": "null"
                 }
             ],
             "files": [
                 {
-                    "uuid": "06aa0331-2758-49d5-83d8-f2e4929ee333",
-                    "name": "TestBook.epub",
-                    "size": 292351,
+                    "uuid": "54d4f423-080d-4bf0-8a45-afa75ed6c200",
+                    "name": "88e192cd-3af3-4c1a-9452-269e85ecbd90.epub.txt",
+                    "size": 49639,
+                    "filetype": "txt",
+                    "sha_hash": "e945eb11000c7055b2d56a1f0ba7b8c2b9f6a2f38814744c4d4955c4325bd21a",
+                    "file": "https://nyc3.digitaloceanspaces.com/sol-cloud/uploads/readables/54d4f423-080d-4bf0-8a45-afa75ed6c200.epub.txt",
+                    "readable_type": "book"
+                },
+                {
+                    "uuid": "25302be6-6437-4cc5-9ca2-f37653819b77",
+                    "name": "88e192cd-3af3-4c1a-9452-269e85ecbd90.epub",
+                    "size": 306107,
                     "filetype": "epub",
-                    "uploaded_at": "2022-10-20T08:44:53.847361-07:00",
-                    "sha_hash": "db07de86d749785a210282636c412ada8efc7046f8bb55a7ba06527714e89344",
-                    "file": "06aa0331-2758-49d5-83d8-f2e4929ee333.epub",
+                    "sha_hash": "4cd1f0ccc5246a12ddb2ad11e55bc307174bcd753ce6c33fb0118fb8cea87f9c",
+                    "file": "https://nyc3.digitaloceanspaces.com/sol-cloud/uploads/readables/25302be6-6437-4cc5-9ca2-f37653819b77.epub",
+                    "readable_type": "book"
+                },
+                {
+                    "uuid": "e9e203be-c989-41b4-a060-ec6a39cd6446",
+                    "name": "88e192cd-3af3-4c1a-9452-269e85ecbd90.epub-original",
+                    "size": 2780449,
+                    "filetype": "epub-original",
+                    "sha_hash": "e003121fad07eb61152c98c6ffe05b4636fae4ae9ef105ac2de0514242532e99",
+                    "file": "https://nyc3.digitaloceanspaces.com/sol-cloud/uploads/readables/e9e203be-c989-41b4-a060-ec6a39cd6446.epub-original",
+                    "readable_type": "book"
+                },
+                {
+                    "uuid": "df7b5c32-ed74-4f06-b114-48367f46649f",
+                    "name": "88e192cd-3af3-4c1a-9452-269e85ecbd90.epub.utf8_txt",
+                    "size": 50736,
+                    "filetype": "utf8_txt",
+                    "sha_hash": "8cfe6f2333ddcd425826d06684228a5e48e2e9f385d49e431ad6078fd5474527",
+                    "file": "https://nyc3.digitaloceanspaces.com/sol-cloud/uploads/readables/df7b5c32-ed74-4f06-b114-48367f46649f.epub.utf8_txt",
                     "readable_type": "book"
                 }
             ],
-            "toc": [],
-            "readable_type": "book"
+            "toc": []
         }
     ]
 }

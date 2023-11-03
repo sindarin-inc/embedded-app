@@ -30,6 +30,7 @@ void EPubOpf::parse(const std::shared_ptr<uint8_t[]> &buffer, uint32_t length,
                 ManifestItem{.href = item.attribute("href").value(),
                              .mediaType = item.attribute("media-type").value()};
         }
+
         int lastChapterIdx = -1;
 
         for (auto itemref : spine.children("itemref")) {
@@ -91,7 +92,7 @@ void EPubOpf::extractPath(const char *fname, std::string &path) {
 }
 
 auto EPubOpf::getSpineIdx(const std::string &href) const -> SpineIdx {
-    for (int spineIdx = 0; spineIdx < spine_.size(); spineIdx++) {
+    for (SpineIdx spineIdx = 0; spineIdx < spine_.size(); spineIdx++) {
         if (spine_[spineIdx].item->href == href) {
             return spineIdx;
         }
@@ -100,7 +101,11 @@ auto EPubOpf::getSpineIdx(const std::string &href) const -> SpineIdx {
 }
 
 auto EPubOpf::getChapterIdx(const std::string &href) const -> ChapterIdx {
-    int spineIdx = getSpineIdx(href);
+    SpineIdx spineIdx = getSpineIdx(href);
+    return spine_[spineIdx].chapterIdx;
+}
+
+auto EPubOpf::getChapterIdx(SpineIdx spineIdx) const -> ChapterIdx {
     return spine_[spineIdx].chapterIdx;
 }
 

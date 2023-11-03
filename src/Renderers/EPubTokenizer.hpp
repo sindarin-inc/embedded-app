@@ -89,8 +89,6 @@ public:
                                            StreamPlace *toPlace = nullptr)
         -> std::pair<StreamPlace, StreamPlace> override;
 
-    [[nodiscard]] auto getStreamPlaceFromTxtOffset(uint32_t txtOffset) const -> StreamPlace;
-
     [[nodiscard]] auto toStreamPlace(const std::shared_ptr<Place> place) const
         -> StreamPlace override;
 
