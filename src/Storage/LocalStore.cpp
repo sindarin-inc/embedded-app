@@ -1170,7 +1170,8 @@ auto LocalStore::readableFilePathForWriting(const std::shared_ptr<Readable> &rea
     return StringFormat("/%s/%s.txt.gz", readable->readableType.c_str(), readable->uuid.c_str());
 }
 
-auto LocalStore::readableFilePathForReading(const std::shared_ptr<Readable> &readable) const
+auto LocalStore::readableFilePathForReading(FileSystem &fileSystem,
+                                            const std::shared_ptr<Readable> &readable)
     -> std::string {
     // We look for the readable file in the following order:
     // We first try the most modern path style:
@@ -1238,6 +1239,11 @@ auto LocalStore::readableFilePathForReading(const std::shared_ptr<Readable> &rea
     }
     // log_w("Unable to find readable file for %s (%s)", readable->title.c_str(), uuid.c_str());
     return "";
+}
+
+auto LocalStore::readableFilePathForReading(const std::shared_ptr<Readable> &readable) const
+    -> std::string {
+    return LocalStore::readableFilePathForReading(fileSystem, readable);
 }
 
 auto LocalStore::readableGetUncompressedSize(const std::shared_ptr<Readable> &readable) const

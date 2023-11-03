@@ -137,6 +137,9 @@ public:
     [[nodiscard]] auto readableFilePathForWriting(const std::shared_ptr<Readable> &readable) const
         -> std::string;
     // When reading, we will take whatever readable file type that's available
+    [[nodiscard]] static auto readableFilePathForReading(FileSystem &fileSystem,
+                                                         const std::shared_ptr<Readable> &readable)
+        -> std::string;
     [[nodiscard]] auto readableFilePathForReading(const std::shared_ptr<Readable> &readable) const
         -> std::string;
     [[nodiscard]] auto readableGetUncompressedSize(const std::shared_ptr<Readable> &readable) const

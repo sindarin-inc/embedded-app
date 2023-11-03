@@ -355,6 +355,9 @@ TEST_CASE("Test some views independently") {
             readable->fromJson((*readablesJsonDoc)["readables"][1]);
 
             Renderer renderer(*display);
+            auto path = LocalStore::readableFilePathForReading(fileSystem, readable);
+            auto stream = fileSystem.newEPubRendererStream(path.c_str(), readable);
+            renderer.setStream(stream);
             ReadableTableOfContentsScreen screen(prefs, readable, renderer, *display, telemetry);
             screen.loadMenuItems();
 
