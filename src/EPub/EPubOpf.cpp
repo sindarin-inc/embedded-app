@@ -59,6 +59,9 @@ void EPubOpf::loadSpine(const ReadableTableOfContentsChapterVector &toc) {
             lastChapterIdx = chapterIdx;
             chapterStart = true;
         }
+        // log_w("Spine item %s chapter %d chapterStart %d", spineItem.item->href.c_str(),
+        // chapterIdx,
+        //       chapterStart);
         spineWithChapters.push_back(SpineItem{
             .item = spineItem.item, .chapterIdx = lastChapterIdx, .chapterStart = chapterStart});
     }
@@ -72,6 +75,7 @@ auto EPubOpf::findChapterIdxInToc(const ReadableTableOfContentsChapterVector &to
     // Walk the spine and compare the href to the toc. If the href isn't found in the toc, walk the
     // spine backwards until the href is found
     for (auto &chapter : toc) {
+        // log_w("%d: Comparing %s to %s", idx, chapter.href.c_str(), spineItem.item->href.c_str());
         if (chapter.href == spineItem.item->href) {
             return idx;
         }

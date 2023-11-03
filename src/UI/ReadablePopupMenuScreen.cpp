@@ -13,7 +13,8 @@ void ReadablePopupMenuScreen::setUpPopupMenu() {
         currentChapterIdx_ = stream->getChapterIdx(chapterHref);
 
         if (currentChapterIdx_ >= 0) {
-            auto &chapter = stream->getToc()[currentChapterIdx_];
+            const auto &toc = stream->getToc();
+            auto &chapter = toc[currentChapterIdx_];
 
             // TODO(john): This isn't exactly right because `place->getOffset()` is a byte offset,
             // not a letter offset from the beginning of the chapter. The chapters always start with
@@ -21,7 +22,7 @@ void ReadablePopupMenuScreen::setUpPopupMenu() {
             auto currentOffset = chapter.epubOffset + renderer_.getTxtOffset();
 
             // Get the end offset of the last chapter (to determine the length of the book)
-            auto &lastChapter = stream->getToc()[stream->getToc().size() - 1];
+            auto &lastChapter = toc[stream->getToc().size() - 1];
             auto lastChapterEndOffset = lastChapter.endEpubOffset;
 
             placeStringForBottom = StringFormat("%d of %d", SOL_PAGE_NUMBER(currentOffset),

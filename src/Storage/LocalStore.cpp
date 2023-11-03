@@ -553,6 +553,7 @@ void LocalStore::syncFromRemote(
             checkSyncRequest.storedUuids = storedUuids;
             checkSyncRequest.skipContent = true;
             checkSyncRequest.skipSummary = true;
+            checkSyncRequest.skipToc = true;
             checkSyncRequest.ptBattery = PreferencesStore::lastPageTurnerBattery;
             checkSyncRequest.battery = (uint8_t)battery_.getBatteryPercentage();
             checkSyncRequest.ptBuild = this->prefs_.lastPageTurnerBuild.get().value_or("");
@@ -1363,6 +1364,17 @@ void LocalStore::migrateTxtPlacemarksToEpubPlacemarks() {
     }
 }
 
+void LocalStore::deleteAllToCJson() {
+    // Remove the toc directory, logging each entry being deleted
+    FileList tocFiles;
+    fileSystem.listDir("/toc", tocFiles);
+    for (auto &toc : tocFiles) {
+        log_d("Deleting %s", toc.c_str());
+        fileSystem.remove("/toc/" + toc);
+    }
+    fileSystem.remove("/toc");
+}
+
 void LocalStore::garbageCollectPreferences() {
     log_i("Running NVS garbage collection");
     prefs_.logStats();
@@ -1416,6 +1428,10 @@ void LocalStore::migrateIfNeeded() {
         }
         case 1: {
             migrateTxtPlacemarksToEpubPlacemarks();
+            break;
+        }
+        case 2: {
+            deleteAllToCJson();
             break;
         }
         default:
