@@ -230,15 +230,16 @@ auto EPubFile::hasSummary(const std::string &chapterId) -> bool {
     std::string summaryId = "summary-" + chapterId;
 
     auto hasDirectChapterSummary = opf_->exists(summaryId);
-    if (hasDirectChapterSummary) {
-        return hasDirectChapterSummary;
+    auto hasToc = opf_->exists("nav");
+    if (hasDirectChapterSummary && hasToc) {
+        return hasDirectChapterSummary && hasToc;
     }
 
     // Walk the chapters backwards in the spine to see if the chapter id matches
     auto summaryChapterHref = opf_->getHrefByManifestId(summaryId);
     auto summaryChapterIdx = opf_->getChapterIdx(summaryChapterHref);
 
-    return summaryChapterIdx != -1;
+    return summaryChapterIdx != -1 && hasToc;
 }
 
 auto EPubFile::getSummaryContent(std::string &chapterId,
@@ -254,8 +255,10 @@ auto EPubFile::getSummaryContent(std::string &chapterId,
     // Load the summary xhtml content
     auto chapterHref = opf_->getHrefByManifestId(chapterId);
     auto chapterIdx = opf_->getChapterIdx(chapterHref);
-    if (getToc()[chapterIdx].href != chapterHref) {
-        chapterHref = getToc()[chapterIdx].href;
+    log_w("Chapter href: %s, chapter idx: %d, toc href: %s", chapterHref.c_str(), chapterIdx,
+          std::string(getToc()[chapterIdx].href).c_str());
+    if (std::string(getToc()[chapterIdx].href) != chapterHref) {
+        chapterHref = std::string(getToc()[chapterIdx].href);
         chapterId = opf_->getManifestIdByHref(chapterHref);
     }
 
@@ -320,15 +323,16 @@ auto EPubFile::hasDictionary(const std::string &chapterId) -> bool {
     std::string dictionaryId = "dictionary-" + chapterId;
 
     auto hasDirectChapterDictionary = opf_->exists(dictionaryId);
-    if (hasDirectChapterDictionary) {
-        return hasDirectChapterDictionary;
+    auto hasToc = opf_->exists("nav");
+    if (hasDirectChapterDictionary && hasToc) {
+        return hasDirectChapterDictionary && hasToc;
     }
 
     // Walk the chapters backwards in the spine to see if the chapter id matches
     auto dictionaryChapterHref = opf_->getHrefByManifestId(dictionaryId);
     auto dictionaryChapterIdx = opf_->getChapterIdx(dictionaryChapterHref);
 
-    return dictionaryChapterIdx != -1;
+    return dictionaryChapterIdx != -1 && hasToc;
 }
 
 auto EPubFile::getDictionaryContent(std::string &chapterId,
@@ -344,8 +348,8 @@ auto EPubFile::getDictionaryContent(std::string &chapterId,
     int fileOffset = placeInReadable->getOffset();
     auto chapterHref = opf_->getHrefByManifestId(chapterId);
     auto chapterIdx = opf_->getChapterIdx(chapterHref);
-    if (getToc()[chapterIdx].href != chapterHref) {
-        chapterHref = getToc()[chapterIdx].href;
+    if (std::string(getToc()[chapterIdx].href) != chapterHref) {
+        chapterHref = std::string(getToc()[chapterIdx].href);
         chapterId = opf_->getManifestIdByHref(chapterHref);
     }
 
