@@ -143,22 +143,19 @@ void ReadablePopupMenuScreen::populatePopupMenu() {
         onReport();
     }));
 
-    if (renderer_.getCurrentPlace()->isFor(DocType::EPUB)) {
-        auto stream = std::dynamic_pointer_cast<EPubFile>(renderer_.getStream());
-        if (stream->hasToc()) {
-            addMenuItem(MenuItem("Contents", [this]() {
-                readableTableOfContentsScreen_.loadMenuItems();
-                readableTableOfContentsScreen_.setNearestChapterSelection(
-                    renderer_.getCurrentPlace());
-                readableTableOfContentsScreen_.setFirstLoad();
-                setCurrentScreen(readableTableOfContentsScreen_);
-            }));
-        } else {
-            addMenuItem(MenuItem("Seek", [this]() {
-                readableSeekScreen_.setFirstLoad();
-                setCurrentScreen(readableSeekScreen_);
-            }));
-        }
+    auto stream = renderer_.getStream();
+    if (stream->isFor(DocType::EPUB) && std::dynamic_pointer_cast<EPubFile>(stream)->hasToc()) {
+        addMenuItem(MenuItem("Contents", [this]() {
+            readableTableOfContentsScreen_.loadMenuItems();
+            readableTableOfContentsScreen_.setNearestChapterSelection(renderer_.getCurrentPlace());
+            readableTableOfContentsScreen_.setFirstLoad();
+            setCurrentScreen(readableTableOfContentsScreen_);
+        }));
+    } else {
+        addMenuItem(MenuItem("Seek", [this]() {
+            readableSeekScreen_.setFirstLoad();
+            setCurrentScreen(readableSeekScreen_);
+        }));
     }
 }
 
