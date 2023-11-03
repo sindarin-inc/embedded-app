@@ -9,6 +9,7 @@
 #include "Renderers/RendererStream.hpp"
 #include "Storage/PosixFileSystem.hpp"
 #include "UI/BitmapScreen.hpp"
+#include "UI/DemoScreen.hpp"
 #include "UI/LayoutTestScreen.hpp"
 #include "UI/LineSpacingScreen.hpp"
 #include "UI/OffsetAdjustScreen.hpp"
@@ -365,6 +366,13 @@ TEST_CASE("Test some views independently") {
             screen.render(*display);
             FakeEinkET013TT1SkipSignalling = false;
             ASSERT_VIEW_UNCHANGED("ReadableTableOfContentsScreen");
+        }
+
+        SECTION("Test DemoScreen") {
+            LightingController lightingController;
+            DemoScreen screen(*display, prefs, lightingController);
+            screen.render(*display);
+            ASSERT_VIEW_UNCHANGED("DemoScreen");
         }
     }
 }
