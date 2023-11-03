@@ -172,13 +172,10 @@ void ReadableTableOfContentsScreen::loadMenuItems() {
 
 void ReadableTableOfContentsScreen::setPlacemark() {
     auto chapter = readable_->toc[getCurrSelection()];
-    if (readable_->place->isFor(DocType::TXT)) {
-        readable_->place->setOffset(chapter.txtOffset);
-    } else if (readable_->place->isFor(DocType::EPUB)) {
-        readable_->place->setOffset(0);
-        std::shared_ptr<EPubPlace> ePubPlace =
-            std::dynamic_pointer_cast<EPubPlace>(readable_->place);
-        ePubPlace->setHRef(chapter.href);
+    if (renderer_.getStream()->isFor(DocType::TXT)) {
+        readable_->place = std::make_shared<TxtPlace>(chapter.txtOffset);
+    } else if (renderer_.getStream()->isFor(DocType::EPUB)) {
+        readable_->place = std::make_shared<EPubPlace>(0, chapter.href);
     }
     renderer_.setCurrentPlace(readable_->place);
     prefs_.readablePlace.set(readable_->shortenedUuid.c_str(), readable_->place->str());

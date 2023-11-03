@@ -20,7 +20,8 @@ public:
     [[nodiscard]] inline auto getOffset() const -> uint32_t { return offset_; }
     inline void setOffset(uint32_t offset) { offset_ = offset; }
 
-    static auto factory(const std::string &placeStr) -> std::shared_ptr<Place>;
+    static auto factory(const std::string &placeStr, DocType docType = DocType::NONE)
+        -> std::shared_ptr<Place>;
     static auto factory(const uint32_t offset) -> std::shared_ptr<Place>;
     static auto factory(const uint32_t offset, const std::string &href) -> std::shared_ptr<Place>;
 
