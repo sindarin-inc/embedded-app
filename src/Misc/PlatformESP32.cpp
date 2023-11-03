@@ -164,6 +164,9 @@ auto HardwareDeinit() -> esp_err_t {
         log_e("Failed to delete I2C driver with err %s", esp_err_to_name(err));
     }
 
+    // Force the display off
+    DigitalWrite(DISPLAY_RST, 0);
+
     return err;
 }
 
