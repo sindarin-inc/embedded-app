@@ -178,6 +178,10 @@ auto EPubFile::hasToc() -> bool {
 }
 
 auto EPubFile::getToc() -> ReadableTableOfContentsChapterVector {
+    if (toc_) {
+        return *toc_;
+    }
+
     std::string tocId = "nav";
     std::string tocPath = opf_->getHrefByManifestId(tocId);
     pugi::xml_document &tocDoc = getXHTMLFile(tocPath);
@@ -223,6 +227,7 @@ auto EPubFile::getToc() -> ReadableTableOfContentsChapterVector {
         processNavPoints(navPoint, toc);
     }
 
+    toc_ = std::make_shared<ReadableTableOfContentsChapterVector>(toc);
     return toc;
 }
 

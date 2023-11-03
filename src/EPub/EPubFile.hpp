@@ -112,6 +112,7 @@ public:
 private:
     Unzipper epubUnzipper_;
     const std::shared_ptr<Readable> readable_;
+    std::shared_ptr<ReadableTableOfContentsChapterVector> toc_;
 
     pugi::xml_document currentFileDoc_;
 
