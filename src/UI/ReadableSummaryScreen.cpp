@@ -63,7 +63,7 @@ void ReadableSummaryScreen::render(DisplaySystem &display) {
             rendererStream_ = renderer_.getStream();
         }
         auto epubStream = std::dynamic_pointer_cast<EPubFile>(rendererStream_);
-        auto chapterId = epubStream->getIdByHref(placeInReadable_->getHRef());
+        auto chapterId = epubStream->getManifestIdByHref(placeInReadable_->getHRef());
 
         SpiramString summaryString =
             epubStream->getSummaryContent(chapterId, placeInReadable_, placeInSummary, showUnread_);

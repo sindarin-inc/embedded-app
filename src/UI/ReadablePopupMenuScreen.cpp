@@ -109,7 +109,7 @@ void ReadablePopupMenuScreen::populatePopupMenu() {
 
     if (renderer_.getCurrentPlace()->isFor(DocType::EPUB)) {
         auto stream = std::dynamic_pointer_cast<EPubFile>(renderer_.getStream());
-        auto chapterId = stream->getIdByHref(
+        auto chapterId = stream->getManifestIdByHref(
             std::dynamic_pointer_cast<EPubPlace>(renderer_.getCurrentPlace())->getHRef());
 
         if (stream->hasSummary(chapterId)) {

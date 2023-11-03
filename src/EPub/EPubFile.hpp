@@ -53,12 +53,13 @@ public:
         return opf_->getSpineIdx(href);
     }
 
-    [[nodiscard]] inline auto getHrefByID(const std::string &id) const -> std::string {
-        return opf_->getHrefByID(id);
+    [[nodiscard]] inline auto getHrefByManifestId(const std::string &manifestId) const
+        -> std::string {
+        return opf_->getHrefByManifestId(manifestId);
     }
 
-    [[nodiscard]] inline auto getIdByHref(const std::string &href) const -> std::string {
-        return opf_->getIdByHref(href);
+    [[nodiscard]] inline auto getManifestIdByHref(const std::string &href) const -> std::string {
+        return opf_->getManifestIdByHref(href);
     }
 
     [[nodiscard]] auto getXHTMLFile(const std::string &path) -> pugi::xml_document &;

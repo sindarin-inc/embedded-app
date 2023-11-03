@@ -173,8 +173,8 @@ auto EPubFile::hasSummary(const std::string &chapterID) -> bool {
     }
 
     // Walk the chapters backwards in the spine to see if the chapter id matches
-    auto summaryChapterHref = opf_->getHrefByID(summaryID);
-    auto summaryChapterIdx = opf_->getChapterIdx(summaryChapterHref);
+    auto summaryChapterHref = opf_->getHrefByManifestId(summaryID);
+    auto summaryChapterIdx = opf_->getReadableChapterIdx(summaryChapterHref);
 
     return summaryChapterIdx != -1;
 }
@@ -190,12 +190,12 @@ auto EPubFile::getSummaryContent(std::string &chapterID,
     }
 
     // Load the summary xhtml content
-    auto chapterHref = opf_->getHrefByID(chapterID);
+    auto chapterHref = opf_->getHrefByManifestId(chapterID);
     auto chapterIdx = readable_->findEPubHRefChapterIdx(chapterHref);
     if (chapterIdx == -1) {
         chapterIdx = opf_->getChapterIdx(chapterHref);
         chapterHref = getToc()[chapterIdx].href;
-        chapterID = opf_->getIdByHref(chapterHref);
+        chapterID = opf_->getManifestIdByHref(chapterHref);
     }
 
     log_d("Loading summary for chapter: %s (href: %s, chapter idx: %d)", chapterID.c_str(),
@@ -231,8 +231,9 @@ auto EPubFile::getSummaryContent(std::string &chapterID,
             summaryText += chapter.partialChapterSummary->text;
             summaryText += "\n\n";
         } else {
-            std::string currentChapterId = opf_->getIdByHref(chapter.href);
-            std::string currentSummaryPath = opf_->getHrefByID("summary-" + currentChapterId);
+            std::string currentChapterId = opf_->getManifestIdByHref(chapter.href);
+            std::string currentSummaryPath =
+                opf_->getHrefByManifestId("summary-" + currentChapterId);
             pugi::xml_document &currentDoc = getXHTMLFile(currentSummaryPath);
 
             for (auto node : currentDoc.child("html").child("body").children()) {
@@ -271,8 +272,8 @@ auto EPubFile::hasDictionary(const std::string &chapterID) -> bool {
     }
 
     // Walk the chapters backwards in the spine to see if the chapter id matches
-    auto dictionaryChapterHref = opf_->getHrefByID(dictionaryID);
-    auto dictionaryChapterIdx = opf_->getChapterIdx(dictionaryChapterHref);
+    auto dictionaryChapterHref = opf_->getHrefByManifestId(dictionaryID);
+    auto dictionaryChapterIdx = opf_->getReadableChapterIdx(dictionaryChapterHref);
 
     return dictionaryChapterIdx != -1;
 }
@@ -288,17 +289,17 @@ auto EPubFile::getDictionaryContent(std::string &chapterID,
 
     // Load the dictionary xhtml content
     int fileOffset = placeInReadable->getOffset();
-    auto chapterHref = opf_->getHrefByID(chapterID);
+    auto chapterHref = opf_->getHrefByManifestId(chapterID);
     auto chapterIdx = readable_->findEPubHRefChapterIdx(chapterHref);
     if (chapterIdx == -1) {
         chapterIdx = opf_->getChapterIdx(chapterHref);
         chapterHref = getToc()[chapterIdx].href;
-        chapterID = opf_->getIdByHref(chapterHref);
+        chapterID = opf_->getManifestIdByHref(chapterHref);
     }
 
     // Convert chapterID to dictionary file path
     std::string dictionaryID = "dictionary-" + chapterID;
-    std::string dictionaryPath = opf_->getHrefByID(dictionaryID);
+    std::string dictionaryPath = opf_->getHrefByManifestId(dictionaryID);
     // int currentOffset = findCharOffsetAtFileOffset(chapterHref, fileOffset);
     int currentOffset = fileOffset;
     pugi::xml_document &doc = getXHTMLFile(dictionaryPath);

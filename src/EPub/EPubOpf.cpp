@@ -101,15 +101,15 @@ auto EPubOpf::exists(const std::string &id) const -> bool {
     return manifest_.find(id) != manifest_.end();
 }
 
-auto EPubOpf::getHrefByID(const std::string &id) const -> std::string {
-    auto it = manifest_.find(id);
+auto EPubOpf::getHrefByManifestId(const std::string &manifestId) const -> std::string {
+    auto it = manifest_.find(manifestId);
     if (it != manifest_.end()) {
         return it->second.href;
     }
     return "";
 }
 
-auto EPubOpf::getIdByHref(const std::string &href) const -> std::string {
+auto EPubOpf::getManifestIdByHref(const std::string &href) const -> std::string {
     for (auto &item : manifest_) {
         if (item.second.href == href) {
             return item.first;
