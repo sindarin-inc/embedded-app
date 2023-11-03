@@ -491,7 +491,8 @@ auto EPubFile::open() -> bool {
     } else {
         opf_ = std::make_shared<EPubOpf>(manifest.rootfilePaths[0].c_str());
         opf_->parse(opfBuffer, length, readable_);
-        opf_->loadSpine(getToc());
+        auto toc = getToc();
+        opf_->loadSpine(toc);
     }
     EPUB_PROFILE_END(EPubOpf)
 
