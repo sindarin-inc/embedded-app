@@ -17,7 +17,7 @@ void ReadablePopupMenuScreen::setUpPopupMenu() {
         if (currentChapterIdx_ == -1) {
             auto stream = std::dynamic_pointer_cast<EPubFile>(renderer_.getStream());
             auto ePubPlace = std::dynamic_pointer_cast<EPubPlace>(place);
-            currentChapterIdx_ = stream->getChapterIndex(ePubPlace);
+            currentChapterIdx_ = stream->getChapterIdx(ePubPlace);
         }
 
         if (currentChapterIdx_ >= 0) {
