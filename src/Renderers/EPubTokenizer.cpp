@@ -886,7 +886,7 @@ auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, S
         //                 Idx maxIdx = stream_->getSpineCount();
         //                 currentFileIdx_ = fromPlace.getFileIdx() + 1;
         //                 if (currentFileIdx_ < maxIdx) {
-        //                     if ((stream_->spineIndexIsChapterStart(currentFileIdx_)) &&
+        //                     if ((stream_->spineIdxIsChapterStart(currentFileIdx_)) &&
         //                         !pageCompleted_) {
         //                         pager_.completeLastLine();
         //                         continue;

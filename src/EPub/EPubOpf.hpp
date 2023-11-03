@@ -26,7 +26,7 @@ public:
         bool chapterStart;
     };
 
-    [[nodiscard]] auto getSpine(Idx idx) const -> const SpineItem & { return spine_[idx]; }
+    [[nodiscard]] auto getSpine(SpineIdx idx) const -> const SpineItem & { return spine_[idx]; }
 
     [[nodiscard]] auto getFullPath(const std::string &fileName) const -> std::string {
         return basePath_ + fileName;
@@ -36,11 +36,11 @@ public:
 
     void extractPath(const char *fname, std::string &path);
 
-    auto getSpineIdx(const std::string &href) const -> int;
+    auto getSpineIdx(const std::string &href) const -> SpineIdx;
 
-    auto getChapterIdx(const std::string &href) const -> int;
-    auto spineIdxIsChapterStart(Idx spineIdx) const -> bool;
-    auto getChapterFirstSpineIdx(Idx spineIdx) const -> Idx;
+    auto getChapterIdx(const std::string &href) const -> ChapterIdx;
+    auto spineIdxIsChapterStart(SpineIdx spineIdx) const -> bool;
+    auto getChapterFirstSpineIdx(SpineIdx spineIdx) const -> SpineIdx;
 
     auto exists(const std::string &id) const -> bool;
 

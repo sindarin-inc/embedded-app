@@ -193,7 +193,7 @@ private:
 
     // The offset where we are tokenizing
     uint32_t currentStreamOffset_;
-    uint16_t currentFileIdx_;
+    SpineIdx currentFileIdx_;
 
     // The byte offset ignoring all tag bytes.
     uint32_t currentTxtOffset_ = 0;

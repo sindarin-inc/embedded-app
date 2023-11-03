@@ -152,15 +152,15 @@ auto EPubFile::getXHTMLFile(const std::string &path) -> pugi::xml_document & {
     return currentFileDoc_;
 }
 
-auto EPubFile::getChapterIdx(const std::shared_ptr<EPubPlace> &ePubPlace) const -> int {
+auto EPubFile::getChapterIdx(const std::shared_ptr<EPubPlace> &ePubPlace) const -> ChapterIdx {
     return opf_->getChapterIdx(ePubPlace->getHRef());
 }
 
-auto EPubFile::spineIdxIsChapterStart(Idx spineIdx) const -> bool {
+auto EPubFile::spineIdxIsChapterStart(SpineIdx spineIdx) const -> bool {
     return opf_->spineIdxIsChapterStart(spineIdx);
 }
 
-auto EPubFile::getChapterFirstSpineIdx(Idx spineIdx) const -> Idx {
+auto EPubFile::getChapterFirstSpineIdx(SpineIdx spineIdx) const -> SpineIdx {
     return opf_->getChapterFirstSpineIdx(spineIdx);
 }
 
