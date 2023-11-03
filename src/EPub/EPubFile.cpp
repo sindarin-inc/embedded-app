@@ -247,7 +247,7 @@ auto EPubFile::hasSummary(const std::string &chapterId) -> bool {
     auto hasDirectChapterSummary = opf_->exists(summaryId);
     auto hasToc = opf_->exists("nav");
     if (hasDirectChapterSummary && hasToc) {
-        return hasDirectChapterSummary && hasToc;
+        return true;
     }
 
     // Walk the chapters backwards in the spine to see if the chapter id matches
