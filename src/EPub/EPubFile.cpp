@@ -264,7 +264,7 @@ auto EPubFile::getSummaryContent(std::string &chapterId,
     SpiramString summaryText;
 
     for (const auto &chapter : getToc()) {
-        auto sameChapter = chapter.href == chapterHref;
+        // auto sameChapter = chapter.href == chapterHref;
         auto futureChapter = opf_->getChapterIdx(std::string(chapter.href)) > chapterIdx;
         auto pastOrSameChapter = opf_->getChapterIdx(std::string(chapter.href)) <= chapterIdx;
 
@@ -277,8 +277,8 @@ auto EPubFile::getSummaryContent(std::string &chapterId,
         }
 
         // TODO: Fix partialChapterSummary by having the server return them in the UserReadable and
-        // then storing them somewhere else that's not the ToC if (sameChapter && !includeUnread &&
-        // chapter.partialChapterSummary != nullptr &&
+        // then storing them somewhere else that's not the ToC
+        // if (sameChapter && !includeUnread && chapter.partialChapterSummary != nullptr &&
         //     !chapter.partialChapterSummary->text.empty()) {
         //     summaryText += chapter.title;
         //     summaryText += StringFormat(" (%d%% read)\n\n",

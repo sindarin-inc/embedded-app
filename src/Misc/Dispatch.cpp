@@ -70,9 +70,6 @@ void DispatchQueue::beginShutdown(bool graceful) {
         auto quit = new WorkItem{.op = nullptr, .quit = true};
         xQueueSend(q_, (void *)&quit, portMAX_DELAY);
     }
-    // Create a long delay that forces the shutdown to pause
-    log_e("Create a long delay that forces the shutdown to pause");
-    vTaskDelay(pdMS_TO_TICKS(10000));
 }
 
 auto DispatchQueue::waitForShutdown(int timeoutMs) -> bool {
