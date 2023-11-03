@@ -97,13 +97,13 @@ public:
     auto spineIdxIsChapterStart(SpineIdx spineIdx) const -> bool;
     auto getChapterFirstSpineIdx(SpineIdx spineIdx) const -> SpineIdx;
 
-    auto hasSummary(const std::string &chapterID) -> bool;
-    auto getSummaryContent(std::string &chapterID,
+    auto hasSummary(const std::string &chapterId) -> bool;
+    auto getSummaryContent(std::string &chapterId,
                            const std::shared_ptr<EPubPlace> &placeInReadable,
                            std::shared_ptr<TxtPlace> &placeInSummary, bool includeUnread)
         -> SpiramString;
-    auto hasDictionary(const std::string &chapterID) -> bool;
-    auto getDictionaryContent(std::string &chapterID,
+    auto hasDictionary(const std::string &chapterId) -> bool;
+    auto getDictionaryContent(std::string &chapterId,
                               const std::shared_ptr<EPubPlace> &placeInReadable,
                               std::shared_ptr<TxtPlace> &placeInDictionary) -> SpiramString;
 
