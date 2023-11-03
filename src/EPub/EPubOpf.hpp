@@ -22,7 +22,7 @@ public:
 
     struct SpineItem {
         ManifestItem *item;
-        int chapterIndex;
+        int chapterIdx;
         bool chapterStart;
     };
 
@@ -38,8 +38,8 @@ public:
 
     auto getSpineIdx(const std::string &href) const -> int;
 
-    auto getChapterIndex(const std::string &href) const -> int;
-    auto spineIndexIsChapterStart(Idx spineIdx) const -> bool;
+    auto getChapterIdx(const std::string &href) const -> int;
+    auto spineIdxIsChapterStart(Idx spineIdx) const -> bool;
     auto getChapterFirstSpineIdx(Idx spineIdx) const -> Idx;
 
     auto exists(const std::string &id) const -> bool;

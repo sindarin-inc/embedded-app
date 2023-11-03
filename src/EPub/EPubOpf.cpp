@@ -31,21 +31,21 @@ void EPubOpf::parse(const std::shared_ptr<uint8_t[]> &buffer, uint32_t length,
                              .mediaType = item.attribute("media-type").value()};
         }
 
-        int lastChapterIndex = -1;
+        int lastChapterIdx = -1;
 
         for (auto itemref : spine.children("itemref")) {
             std::string idref = itemref.attribute("idref").value();
 
             auto it = manifest_.find(idref);
             if (it != manifest_.end()) {
-                auto chapterIndex = readable->findEPubHRefChapterIdx(it->second.href);
+                auto chapterIdx = readable->findEPubHRefChapterIdx(it->second.href);
                 bool chapterStart = false;
-                if (chapterIndex != -1) {
-                    lastChapterIndex = chapterIndex;
+                if (chapterIdx != -1) {
+                    lastChapterIdx = chapterIdx;
                     chapterStart = true;
                 }
                 spine_.push_back(SpineItem{.item = &it->second,
-                                           .chapterIndex = lastChapterIndex,
+                                           .chapterIdx = lastChapterIdx,
                                            .chapterStart = chapterStart});
             } else {
                 log_e("Spine idref not found in manifest: %s", idref.c_str());
@@ -76,12 +76,12 @@ auto EPubOpf::getSpineIdx(const std::string &href) const -> int {
     return 0;
 }
 
-auto EPubOpf::getChapterIndex(const std::string &href) const -> int {
+auto EPubOpf::getChapterIdx(const std::string &href) const -> int {
     int spineIdx = getSpineIdx(href);
-    return spine_[spineIdx].chapterIndex;
+    return spine_[spineIdx].chapterIdx;
 }
 
-auto EPubOpf::spineIndexIsChapterStart(Idx spineIdx) const -> bool {
+auto EPubOpf::spineIdxIsChapterStart(Idx spineIdx) const -> bool {
     return spine_[spineIdx].chapterStart;
 }
 
