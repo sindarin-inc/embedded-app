@@ -30,7 +30,6 @@ void EPubOpf::parse(const std::shared_ptr<uint8_t[]> &buffer, uint32_t length,
                 ManifestItem{.href = item.attribute("href").value(),
                              .mediaType = item.attribute("media-type").value()};
         }
-
         int lastChapterIdx = -1;
 
         for (auto itemref : spine.children("itemref")) {
