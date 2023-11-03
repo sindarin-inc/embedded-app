@@ -127,7 +127,7 @@ auto EPubOpf::getChapterFirstSpineIdx(SpineIdx spineIdx) const -> SpineIdx {
     return chapterSpineIdx;
 }
 
-auto EPubOpf::spineIndexIsChapterStart(Idx spineIdx) const -> bool {
+auto EPubOpf::spineIdxIsChapterStart(Idx spineIdx) const -> bool {
     return spine_[spineIdx].chapterStart;
 }
 
