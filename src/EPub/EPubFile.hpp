@@ -49,7 +49,7 @@ public:
         return readable_->toc;
     }
 
-    [[nodiscard]] inline auto getSpineIdx(const std::string &href) const -> uint16_t {
+    [[nodiscard]] inline auto getSpineIdx(const std::string &href) const -> SpineIdx {
         return opf_->getSpineIdx(href);
     }
 
@@ -94,6 +94,7 @@ public:
     }
 
     auto getChapterIdx(const std::shared_ptr<EPubPlace> &ePubPlace) const -> ChapterIdx;
+    auto getChapterIdx(SpineIdx spineIdx) const -> ChapterIdx;
     auto spineIdxIsChapterStart(SpineIdx spineIdx) const -> bool;
     auto getChapterFirstSpineIdx(SpineIdx spineIdx) const -> SpineIdx;
 

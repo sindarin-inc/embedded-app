@@ -54,25 +54,28 @@ TEST_CASE("Test EPub Books Rendering", "[.][epub]") {
             WAIT_FOR_DRAW();
 
             int pageNbr = 1;
-            uint16_t spineIdx = 0;
+            ChapterIdx chapterIdx = 0;
+            auto epubFile = std::dynamic_pointer_cast<EPubFile>(readableScreen->getStream());
 
-            for (;;) {
-                StreamPlace streamPlace = readableScreen->getStreamPlace();
+            if (epubFile != nullptr) {
+                for (;;) {
+                    StreamPlace streamPlace = readableScreen->getStreamPlace();
+                    ChapterIdx idx = epubFile->getChapterIdx(streamPlace.getSpineIdx());
+                    if (idx != chapterIdx) {
+                        chapterIdx = idx;
+                        pageNbr = 1;
+                    }
 
-                if (streamPlace.getSpineIdx() != spineIdx) {
-                    spineIdx = streamPlace.getSpineIdx();
-                    pageNbr = 1;
+                    std::stringstream fname;
+                    fname << chapterIdx + 1 << "-" << pageNbr++;
+
+                    ASSERT_VIEW_UNCHANGED(fname.str());
+
+                    if (readableScreen->checkAtEnd()) break;
+
+                    SendRemoteCommand(ENTER);
+                    WAIT_FOR_DRAW();
                 }
-
-                std::stringstream fname;
-                fname << "TestBook/" << spineIdx + 1 << "-" << pageNbr++;
-
-                ASSERT_VIEW_UNCHANGED(fname.str());
-
-                if (readableScreen->checkAtEnd()) break;
-
-                SendRemoteCommand(ENTER);
-                WAIT_FOR_DRAW();
             }
 
         } else {

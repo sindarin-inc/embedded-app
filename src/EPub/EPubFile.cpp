@@ -156,6 +156,10 @@ auto EPubFile::getChapterIdx(const std::shared_ptr<EPubPlace> &ePubPlace) const 
     return opf_->getChapterIdx(ePubPlace->getHRef());
 }
 
+auto EPubFile::getChapterIdx(SpineIdx spineIdx) const -> ChapterIdx {
+    return opf_->getChapterIdx(spineIdx);
+}
+
 auto EPubFile::spineIdxIsChapterStart(SpineIdx spineIdx) const -> bool {
     return opf_->spineIdxIsChapterStart(spineIdx);
 }

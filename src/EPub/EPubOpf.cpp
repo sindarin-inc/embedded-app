@@ -68,7 +68,7 @@ void EPubOpf::extractPath(const char *fname, std::string &path) {
 }
 
 auto EPubOpf::getSpineIdx(const std::string &href) const -> SpineIdx {
-    for (int spineIdx = 0; spineIdx < spine_.size(); spineIdx++) {
+    for (SpineIdx spineIdx = 0; spineIdx < spine_.size(); spineIdx++) {
         if (spine_[spineIdx].item->href == href) {
             return spineIdx;
         }
@@ -77,7 +77,11 @@ auto EPubOpf::getSpineIdx(const std::string &href) const -> SpineIdx {
 }
 
 auto EPubOpf::getChapterIdx(const std::string &href) const -> ChapterIdx {
-    int spineIdx = getSpineIdx(href);
+    SpineIdx spineIdx = getSpineIdx(href);
+    return spine_[spineIdx].chapterIdx;
+}
+
+auto EPubOpf::getChapterIdx(SpineIdx spineIdx) const -> ChapterIdx {
     return spine_[spineIdx].chapterIdx;
 }
 
