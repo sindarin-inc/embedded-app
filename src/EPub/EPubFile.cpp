@@ -152,6 +152,13 @@ auto EPubFile::getXHTMLFile(const std::string &path) -> pugi::xml_document & {
     return currentFileDoc_;
 }
 
+auto EPubFile::calculateFileSize(const std::string &href) -> uint32_t {
+    auto filePath = opf_->getFullPath(href);
+    auto [buffer, size] = getFile(filePath);
+
+    return size;
+}
+
 auto EPubFile::getChapterIdx(const std::shared_ptr<EPubPlace> &ePubPlace) const -> ChapterIdx {
     return opf_->getChapterIdx(ePubPlace->getHRef());
 }
@@ -187,6 +194,7 @@ auto EPubFile::getToc() -> ReadableTableOfContentsChapterVector {
     pugi::xml_document &tocDoc = getXHTMLFile(tocPath);
 
     ReadableTableOfContentsChapterVector toc;
+    uint32_t cumulativeOffset = 0;
 
     std::function<void(pugi::xml_node, ReadableTableOfContentsChapterVector &)> processNavPoints;
     processNavPoints = [&](pugi::xml_node navPoint, ReadableTableOfContentsChapterVector &toc) {
@@ -200,7 +208,7 @@ auto EPubFile::getToc() -> ReadableTableOfContentsChapterVector {
                 chapter.epubOffset =
                     static_cast<uint32_t>(strtoul(epubOffsetAttr.value(), nullptr, 10));
             } else {
-                chapter.epubOffset = 0;
+                chapter.epubOffset = cumulativeOffset;
             }
             pugi::xml_attribute endEpubOffsetAttr =
                 navPointChild.child("a").attribute("data-end-epub-offset");
@@ -208,7 +216,9 @@ auto EPubFile::getToc() -> ReadableTableOfContentsChapterVector {
                 chapter.endEpubOffset =
                     static_cast<uint32_t>(strtoul(endEpubOffsetAttr.value(), nullptr, 10));
             } else {
-                chapter.epubOffset = 0;
+                auto fileSize = calculateFileSize(std::string(chapter.href));
+                cumulativeOffset += fileSize;
+                chapter.endEpubOffset = cumulativeOffset;
             }
 
             // log_w("Chapter %s: %s (%" PRIu32 " - %" PRIu32 ")", chapter.title.c_str(),
