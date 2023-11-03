@@ -4,6 +4,7 @@
 #define protected public
 #define private public
 #include "Misc/BMPImage.hpp"
+#include "Misc/Defer.hpp"
 #include "Misc/Telemetry.hpp"
 #include "Renderers/RendererDefs.hpp"
 #include "Renderers/RendererStream.hpp"
@@ -32,6 +33,7 @@ TEST_CASE("Test EPub Books Rendering", "[.][epub]") {
     SetImagesFolder("EPubImages");
 
     StartAppMain(FONT_CHOICES::PREFS_SOL_SMALL, 10, 10, -2);
+    defer { StopFreeRtos(); };
 
     // First screen renders twice once with a full refresh and once with a AU4
     WAIT_FOR_DRAW();
@@ -201,6 +203,4 @@ TEST_CASE("Test EPub Books Rendering", "[.][epub]") {
         }
 #endif
     }
-
-    StopFreeRtos();
 }

@@ -61,7 +61,8 @@ void StartFreeRtos(bool runAppMain) {
     pthread_sigmask(SIG_BLOCK, &mask, NULL);
 
     // Start the FreeRTOS scheduler
-    SchedulerThread = std::make_unique<std::thread>([runAppMain]() {
+    assert(SchedulerThread == nullptr && "FreeRTOS scheduler already started");
+    SchedulerThread = std::make_shared<std::thread>([runAppMain]() {
         if (runAppMain) {
             // ESP-IDF does `app_main` in a task as well. We need to do this so we can use
             // FreeRTOS-timed stuff like vTaskDelay
@@ -69,6 +70,7 @@ void StartFreeRtos(bool runAppMain) {
         }
         log_i("Starting FreeRTOS scheduler");
         vTaskStartScheduler();
+        log_i("FreeRTOS scheduler exited");
     });
 }
 
@@ -103,8 +105,10 @@ void StartAppMain(FONT_CHOICES font, int x, int y, int lineSpacing) {
 }
 
 void StopFreeRtos() {
+    log_i("Stopping FreeRTOS scheduler");
     vTaskEndScheduler();
     (*SchedulerThread).join();
+    SchedulerThread = nullptr;
     log_i("Stopped FreeRTOS scheduler");
 }
 

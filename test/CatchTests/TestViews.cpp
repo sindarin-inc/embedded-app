@@ -1,10 +1,10 @@
-#if 1
 #include <catch_amalgamated.hpp>
 
 // Allow access to protected methods from tests
 #define protected public
 #define private public
 #include "Misc/BMPImage.hpp"
+#include "Misc/Defer.hpp"
 #include "Misc/Telemetry.hpp"
 #include "Renderers/RendererStream.hpp"
 #include "Storage/PosixFileSystem.hpp"
@@ -27,6 +27,7 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
     SetImagesFolder("Images");
 
     StartAppMain();
+    defer { StopFreeRtos(); };
 
     // First screen renders twice once with a full refresh and once with a AU4
     WAIT_FOR_DRAW();
@@ -297,8 +298,6 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
         WAIT_FOR_DRAW();
         ASSERT_VIEW_UNCHANGED("Dawn4");
     }
-
-    StopFreeRtos();
 }
 
 TEST_CASE("Test some views independently") {
@@ -397,5 +396,3 @@ TEST_CASE("Test bmp file rendering") {
         ASSERT_VIEW_UNCHANGED("BitmapViewBooks");
     }
 }
-
-#endif

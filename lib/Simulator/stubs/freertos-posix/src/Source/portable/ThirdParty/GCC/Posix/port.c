@@ -134,6 +134,9 @@ portSTACK_TYPE * pxPortInitialiseStack( portSTACK_TYPE * pxTopOfStack,
     size_t ulStackSize;
     int iRet;
 
+    // NOTE: I find this highly suspect. Almost certainly, if FreeRTOS is going to be
+    // able to start, stop, and start again, pthread_once is almost certainly the wrong
+    // thing here.
     ( void ) pthread_once( &hSigSetupThread, prvSetupSignalsAndSchedulerPolicy );
 
     /*
@@ -177,6 +180,25 @@ void vPortStartFirstTask( void )
 }
 /*-----------------------------------------------------------*/
 
+void clear_pending_signal(int sig) {
+    sigset_t set, oldset;
+
+    // Block the signal
+    sigemptyset(&set);
+    sigaddset(&set, sig);
+    pthread_sigmask(SIG_BLOCK, &set, &oldset);
+
+    // Check if signal is pending
+    sigpending(&set);
+    if (sigismember(&set, sig)) {
+        int signum;
+        sigwait(&set, &signum);  // Wait for and remove signal
+    }
+
+    // Restore the original signal mask
+    pthread_sigmask(SIG_SETMASK, &oldset, NULL);
+}
+
 /*
  * See header file for description.
  */
@@ -185,7 +207,13 @@ portBASE_TYPE xPortStartScheduler( void )
     int iSignal;
     sigset_t xSignals;
 
+    xSchedulerEnd = pdFALSE;
     hMainThread = pthread_self();
+
+#if __APPLE__
+    // Name the thread, for easier viewing in a debugger
+    pthread_setname_np("Scheduler");
+#endif
 
     /* Start the timer that generates the tick ISR(SIGALRM).
      * Interrupts are disabled here already. */
@@ -218,6 +246,12 @@ portBASE_TYPE xPortStartScheduler( void )
         /* Cancel the Timer task and free its resources */
         vPortCancelThread( xTimerGetTimerDaemonTaskHandle() );
     #endif /* configUSE_TIMERS */
+
+    // TODO: We almost certainly want to call `vPortCancelThread` on any outstanding threads here
+
+    // Clear SIG_RESUME (SIGUSR1), because it might have fired again while we were shutting things down.
+    // TODO: Why wasn't this consumed by the above sigwait?
+    clear_pending_signal(SIG_RESUME);
 
     /* Restore original signal mask. */
     ( void ) pthread_sigmask( SIG_SETMASK, &xSchedulerOriginalSignalMask, NULL );
@@ -447,6 +481,9 @@ static void * prvWaitForStart( void * pvParams )
 {
     Thread_t * pxThread = pvParams;
 
+    // Allow threads to cancel at any time
+    pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL);
+
     prvSuspendSelf( pxThread );
 
     /* Resumed for the first time, unblocks all signals. */
@@ -455,6 +492,8 @@ static void * prvWaitForStart( void * pvParams )
 
 #if __APPLE__
     // Name the thread, for easier viewing in a debugger
+    // NOTE: This must happen after prvSuspendSelf (once the scheduler resumes
+    // the task) otherwise `pcTaskGetName might not return the correct name.
     pthread_setname_np(pcTaskGetName( NULL ));
 #endif
 
