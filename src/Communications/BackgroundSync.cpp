@@ -37,14 +37,17 @@ void BackgroundSyncInternal(PowerManager &powerManager, PreferencesStore &prefs,
             } else {
                 return;
             }
-            xEventGroupSetBits(backgroundGroup, 1);
+            if (backgroundGroup != nullptr) {
+                xEventGroupSetBits(backgroundGroup, 1);
+            }
         }
         });
 
     // Wait for content sync to finish
     auto bits =
-        xEventGroupWaitBits(backgroundGroup, 1, pdTRUE, pdTRUE, pdMS_TO_TICKS(5 * 60 * 1000));
+        xEventGroupWaitBits(backgroundGroup, 1, pdTRUE, pdTRUE, pdMS_TO_TICKS(10 * 60 * 1000));
     if (!(bits & 1)) {
+        // TODO: Make a proper way to cancel the sync if it's still running
         log_w("Content sync timed out");
     }
     xEventGroupClearBits(backgroundGroup, 1);
@@ -68,33 +71,25 @@ void BackgroundSyncInternal(PowerManager &powerManager, PreferencesStore &prefs,
     auto firmwareDownloader = std::make_shared<FirmwareDownloader>(prefs, true);
     firmwareDownloader->downloadFirmware(
         [firmwareDownloader, &localStore, &backgroundGroup](const FirmwareDownloadState &state) {
-        switch (state.state) {
-        case FirmwareDownloadState::Idle:
-        case FirmwareDownloadState::ConnectingWifi:
-        case FirmwareDownloadState::CheckingForLatest:
-        case FirmwareDownloadState::Downloading:
-        case FirmwareDownloadState::Installing:
-        case FirmwareDownloadState::Installed:
-            return;
-        case FirmwareDownloadState::AlreadyDownloaded:
-            log_i("Firmware download for %s already queued.",
-                  firmwareDownloader->response.latestGlassesFirmware.version.c_str());
-            break;
-        case FirmwareDownloadState::Downloaded:
-            log_i("Firmware download for %s successful. Mark for install.",
-                  firmwareDownloader->response.latestGlassesFirmware.version.c_str());
-            localStore.saveFirmware(firmwareDownloader->response.latestGlassesFirmware);
-            break;
-        case FirmwareDownloadState::Failure:
+        if (state.state == FirmwareDownloadState::Failure) {
             log_i("Firmware download for %s failed with error: %s",
                   firmwareDownloader->response.latestGlassesFirmware.version.c_str(),
                   state.message.c_str());
-            break;
-        case FirmwareDownloadState::AlreadyUpToDate:
+        } else if (state.state == FirmwareDownloadState::AlreadyDownloaded) {
+            log_i("Firmware download for %s already queued.",
+                  firmwareDownloader->response.latestGlassesFirmware.version.c_str());
+        } else if (state.state == FirmwareDownloadState::Downloaded) {
+            log_i("Firmware download for %s successful. Mark for install.",
+                  firmwareDownloader->response.latestGlassesFirmware.version.c_str());
+            localStore.saveFirmware(firmwareDownloader->response.latestGlassesFirmware);
+        } else if (state.state == FirmwareDownloadState::AlreadyUpToDate) {
             log_i("Firmware up to date.");
-            break;
+        } else {
+            return;
         }
-        xEventGroupSetBits(backgroundGroup, 1);
+        if (backgroundGroup != nullptr) {
+            xEventGroupSetBits(backgroundGroup, 1);
+        }
     });
 
     // Wait for firmware download to finish
@@ -124,10 +119,12 @@ void BackgroundSyncInternal(PowerManager &powerManager, PreferencesStore &prefs,
             } else {
                 return;
             }
-            xEventGroupSetBits(backgroundGroup, 1);
+            if (backgroundGroup != nullptr) {
+                xEventGroupSetBits(backgroundGroup, 1);
+            }
         });
 
-        auto bits =
+        bits =
             xEventGroupWaitBits(backgroundGroup, 1, pdTRUE, pdTRUE, pdMS_TO_TICKS(2 * 60 * 1000));
         if (!(bits & 1)) {
             log_w("Coredump upload timed out");
@@ -136,6 +133,7 @@ void BackgroundSyncInternal(PowerManager &powerManager, PreferencesStore &prefs,
     }
 
     vEventGroupDelete(backgroundGroup);
+    backgroundGroup = nullptr;
 }
 
 void BackgroundSync(PowerManager &powerManager, PreferencesStore &prefs, LocalStore &localStore,

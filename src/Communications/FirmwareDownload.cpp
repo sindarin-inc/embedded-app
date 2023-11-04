@@ -19,7 +19,7 @@ void FirmwareDownloader::downloadFirmware(
 
     auto setState = [progressCallback, this](FirmwareDownloadState state) {
         // Don't call the callback if we've been cancelled
-        if (canelled_) {
+        if (cancelled_) {
             return;
         }
         progressCallback(std::move(state));
