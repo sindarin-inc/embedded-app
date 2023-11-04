@@ -85,8 +85,58 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, St
         // REND_WLOG("Current Character: %c (%02" PRIX8 "H)",
         //       (((curChar >= ' ') && (curChar < 127)) ? curChar : ' '), curChar);
 
-        switch (curChar) {
-        case '\n':
+        if (curChar > ' ') {
+            // newToken.tokenId = TokenId::TEXT; // already set at beginning of loop
+            lastToken_ = &newToken;
+            uint16_t textCharCount = 0;
+
+            do {
+                if ((curChar <= 0x7FU) || (curChar >= 0xC0U)) {
+                    textCharCount += 1;
+                }
+                if (!tokens_.cStrIsFull()) {
+                    tokens_.addByte(newToken, curChar);
+                } else {
+                    break;
+                }
+                nextByte();
+            } while ((curChar > ' ') && (curChar != '-') &&
+                     ((textCharCount < maxTextTokenCharSize_) || (curChar >= 0x80U)));
+
+            tokens_.endOfCStr();
+
+            // The last test of the while above is to get a complete UTF8 multi-bytes character
+            // if the maximum word size is reached
+
+            pageCompleted = addTokenToPage(newToken, backwards);
+        } else if ((curChar == ' ') || (curChar == '\t')) {
+
+            if (lastToken_ != nullptr) {
+                lastToken_->spacesAfter++;
+                pager_.addSpaceWidth();
+            }
+            // newToken.tokenId = TokenId::SPACE;
+            // tokens_.setSpaceSize(newToken);
+            // pageCompleted = addTokenToPage(newToken, backwards, " ", 1);
+            nextByte();
+        } else if (curChar == '-') {
+            nextByte();
+            if (curChar != '-') {
+                newToken.tokenId = TokenId::HYPHEN;
+                pageCompleted = addTokenToPage(newToken, backwards, "-", 1);
+            } else {
+                nextByte();
+                if (curChar != '-') {
+                    newToken.tokenId = TokenId::ENDASH;
+                    pageCompleted = addTokenToPage(newToken, backwards, "--", 2);
+                } else {
+                    nextByte();
+                    newToken.tokenId = TokenId::EMDASH;
+                    pageCompleted = addTokenToPage(newToken, backwards, "---", 3);
+                }
+            }
+            lastToken_ = &newToken;
+        } else if (curChar == '\n') {
             if (tokens_.getTokenCount() == 0) {
                 // of a newline character appears at the beginning of the parsing process, it must
                 // be an end of paragraph, as the preceding newline was absorbed by the preceding
@@ -139,65 +189,8 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, St
                     }
                 }
             }
-            break;
-
-        case ' ':
-        case '\t':
-            if (lastToken_ != nullptr) {
-                lastToken_->spacesAfter++;
-                pager_.addSpaceWidth();
-            }
-            // newToken.tokenId = TokenId::SPACE;
-            // tokens_.setSpaceSize(newToken);
-            // pageCompleted = addTokenToPage(newToken, backwards, " ", 1);
+        } else {
             nextByte();
-            break;
-
-        case '-':
-            nextByte();
-            if (curChar != '-') {
-                newToken.tokenId = TokenId::HYPHEN;
-                pageCompleted = addTokenToPage(newToken, backwards, "-", 1);
-            } else {
-                nextByte();
-                if (curChar != '-') {
-                    newToken.tokenId = TokenId::ENDASH;
-                    pageCompleted = addTokenToPage(newToken, backwards, "--", 2);
-                } else {
-                    nextByte();
-                    newToken.tokenId = TokenId::EMDASH;
-                    pageCompleted = addTokenToPage(newToken, backwards, "---", 3);
-                }
-            }
-            lastToken_ = &newToken;
-            break;
-
-        // All other characters are considered part of a text token,
-        default:
-            // newToken.tokenId = TokenId::TEXT; // already set at beginning of loop
-            lastToken_ = &newToken;
-            uint16_t textCharCount = 0;
-
-            do {
-                if ((curChar <= 0x7FU) || (curChar >= 0xC0U)) {
-                    textCharCount += 1;
-                }
-                if (!tokens_.cStrIsFull()) {
-                    tokens_.addByte(newToken, curChar);
-                } else {
-                    break;
-                }
-                nextByte();
-            } while ((curChar > ' ') && (curChar != '-') &&
-                     ((textCharCount < maxTextTokenCharSize_) || (curChar >= 0x80U)));
-
-            tokens_.endOfCStr();
-
-            // The last test of the while above is to get a complete UTF8 multi-bytes character
-            // if the maximum word size is reached
-
-            pageCompleted = addTokenToPage(newToken, backwards);
-            break;
         }
     }
 
