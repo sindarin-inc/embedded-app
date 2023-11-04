@@ -47,6 +47,7 @@ void BackgroundSyncInternal(PowerManager &powerManager, PreferencesStore &prefs,
     if (!(bits & 1)) {
         log_w("Content sync timed out");
     }
+    xEventGroupClearBits(backgroundGroup, 1);
 
     if (!WiFi::getInstance().connected()) {
         log_w("WiFi not connected, ending background sync");
@@ -67,21 +68,31 @@ void BackgroundSyncInternal(PowerManager &powerManager, PreferencesStore &prefs,
     auto firmwareDownloader = std::make_shared<FirmwareDownloader>(prefs, true);
     firmwareDownloader->downloadFirmware(
         [firmwareDownloader, &localStore, &backgroundGroup](const FirmwareDownloadState &state) {
-        if (state.state == FirmwareDownloadState::Failure) {
-            log_i("Firmware download for %s failed with error: %s",
-                  firmwareDownloader->response.latestGlassesFirmware.version.c_str(),
-                  state.message.c_str());
-        } else if (state.state == FirmwareDownloadState::AlreadyDownloaded) {
+        switch (state.state) {
+        case FirmwareDownloadState::Idle:
+        case FirmwareDownloadState::ConnectingWifi:
+        case FirmwareDownloadState::CheckingForLatest:
+        case FirmwareDownloadState::Downloading:
+        case FirmwareDownloadState::Installing:
+        case FirmwareDownloadState::Installed:
+            return;
+        case FirmwareDownloadState::AlreadyDownloaded:
             log_i("Firmware download for %s already queued.",
                   firmwareDownloader->response.latestGlassesFirmware.version.c_str());
-        } else if (state.state == FirmwareDownloadState::Downloaded) {
+            break;
+        case FirmwareDownloadState::Downloaded:
             log_i("Firmware download for %s successful. Mark for install.",
                   firmwareDownloader->response.latestGlassesFirmware.version.c_str());
             localStore.saveFirmware(firmwareDownloader->response.latestGlassesFirmware);
-        } else if (state.state == FirmwareDownloadState::AlreadyUpToDate) {
+            break;
+        case FirmwareDownloadState::Failure:
+            log_i("Firmware download for %s failed with error: %s",
+                  firmwareDownloader->response.latestGlassesFirmware.version.c_str(),
+                  state.message.c_str());
+            break;
+        case FirmwareDownloadState::AlreadyUpToDate:
             log_i("Firmware up to date.");
-        } else {
-            return;
+            break;
         }
         xEventGroupSetBits(backgroundGroup, 1);
     });
@@ -92,6 +103,7 @@ void BackgroundSyncInternal(PowerManager &powerManager, PreferencesStore &prefs,
         firmwareDownloader->cancel();
         log_w("Firmware download timed out");
     }
+    xEventGroupClearBits(backgroundGroup, 1);
 
     // Upload core dumps
     FileList coreDumpFiles;
@@ -120,6 +132,7 @@ void BackgroundSyncInternal(PowerManager &powerManager, PreferencesStore &prefs,
         if (!(bits & 1)) {
             log_w("Coredump upload timed out");
         }
+        xEventGroupClearBits(backgroundGroup, 1);
     }
 
     vEventGroupDelete(backgroundGroup);
