@@ -368,7 +368,25 @@ TEST_CASE("Test some views independently") {
             FakeEinkET013TT1SkipSignalling = false;
             ASSERT_VIEW_UNCHANGED("ReadableTableOfContentsScreen");
         }
-    }
+
+        SECTION("Test ReleaseNotesScreen") {
+            PosixFileSystem fs("./test/CatchTests/TestData/ReleaseNotesScreen/");
+            Telemetry telemetry(fs, prefs);
+            Battery battery(fs, prefs, telemetry);
+            LightingController lightingController;
+            PowerManager power(fs, prefs, lightingController, *display, telemetry);
+            LocalStore localStore(fs, prefs, battery, telemetry);
+
+            (*display).style.setFontFamily((*display).style.solSansSmall);
+
+            Firmware firmware;
+            auto upgradeAvailable = localStore.getPendingFirmwareUpdate(firmware);
+            REQUIRE(upgradeAvailable);
+            ReleaseNotesScreen screen(*display, prefs, power, localStore, firmware);
+            screen.render(*display);
+            ASSERT_VIEW_UNCHANGED("ReleaseNotesScreen");
+        };
+    };
 }
 
 TEST_CASE("Test bmp file rendering") {
