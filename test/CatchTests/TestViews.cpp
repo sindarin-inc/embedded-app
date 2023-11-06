@@ -383,7 +383,7 @@ TEST_CASE("Test some views independently") {
 
             Renderer renderer(*display);
             auto path = LocalStore::readableFilePathForReading(fileSystem, readable);
-            auto stream = fileSystem.newRendererStream(path.c_str());
+            auto stream = fileSystem.newGzipRendererStream(path.c_str());
             renderer.setStream(stream);
 
             ReadableScreen readableScreen(stream, *display, readable, prefs, telemetry, fileSystem,
