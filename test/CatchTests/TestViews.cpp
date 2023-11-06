@@ -301,56 +301,16 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
     }
 }
 
-TEST_CASE("Test CES mode (demo mode)") {
-
-    auto display = createDisplay();
-    PreferencesStore prefs;
-    prefs.begin("./test/CatchTests/TestData/simprefs.ini");
-    prefs.invertSetting.remove();
-    prefs.font.remove();
-    prefs.lineSpacing.remove();
-    prefs.rectX.remove();
-    prefs.rectY.remove();
-    prefs.rectW.remove();
-    prefs.rectH.remove();
-    prefs.noSetupMode.set(true);
-    prefs.cesMode.set(true);
-    PosixFileSystem fileSystem("./test/CatchTests/TestData");
-    Telemetry telemetry = Telemetry(fileSystem, prefs);
-    Battery battery(fileSystem, prefs, telemetry);
-    LocalStore localStore(fileSystem, prefs, battery, telemetry);
-    LightingController lightingController;
-
-    SECTION("Test Last Question in CES mode") {
-        auto readable = std::make_shared<Readable>();
-        auto readablesJsonDoc = LoadJsonDoc(fileSystem, "/readables.json");
-        readable->fromJson((*readablesJsonDoc)["readables"][0]);
-
-        Renderer renderer(*display);
-        auto path = LocalStore::readableFilePathForReading(fileSystem, readable);
-        auto stream = fileSystem.newRendererStream(path.c_str());
-        renderer.setStream(stream);
-
-        auto *readableScreen = new ReadableScreen(stream, *display, readable, prefs, telemetry,
-                                                  localStore, fileSystem, lightingController);
-        readableScreen->render(*display);
-        ASSERT_VIEW_UNCHANGED("DemoMode1");
-
-        ReadableTableOfContentsScreen screen(prefs, readable, renderer, *display, telemetry);
-        screen.loadMenuItems();
-
-        // This view renders twice, once with a full refresh and once with a AU4 so we need to
-        // not wait on the signaling otherwise we'll hang here.
-        FakeEinkET013TT1SkipSignalling = true;
-        screen.render(*display);
-        FakeEinkET013TT1SkipSignalling = false;
-        ASSERT_VIEW_UNCHANGED("DemoMode2");
-    }
-}
-
 TEST_CASE("Test some views independently") {
     // Just create and render a PowerDepletedScreen
     auto display = createDisplay();
+
+    FakeEinkET013TT1SkipSignalling = true;
+    FakeEinkET013TT1SkipWaveform = true;
+    defer {
+        FakeEinkET013TT1SkipWaveform = false;
+        FakeEinkET013TT1SkipSignalling = false;
+    };
 
     SECTION("Test PowerDepletedScreen") {
         PowerDepletedScreen screen;
@@ -409,12 +369,27 @@ TEST_CASE("Test some views independently") {
             ReadableTableOfContentsScreen screen(prefs, readable, renderer, *display, telemetry);
             screen.loadMenuItems();
 
-            // This view renders twice, once with a full refresh and once with a AU4 so we need to
-            // not wait on the signaling otherwise we'll hang here.
-            FakeEinkET013TT1SkipSignalling = true;
             screen.render(*display);
-            FakeEinkET013TT1SkipSignalling = false;
             ASSERT_VIEW_UNCHANGED("ReadableTableOfContentsScreen");
+        }
+
+        SECTION("Test Last Question in CES mode") {
+            LightingController lightingController;
+            prefs.cesMode.set(true);
+
+            auto readable = std::make_shared<Readable>();
+            auto readablesJsonDoc = LoadJsonDoc(fileSystem, "/readables.json");
+            readable->fromJson((*readablesJsonDoc)["readables"][0]);
+
+            Renderer renderer(*display);
+            auto path = LocalStore::readableFilePathForReading(fileSystem, readable);
+            auto stream = fileSystem.newRendererStream(path.c_str());
+            renderer.setStream(stream);
+
+            ReadableScreen readableScreen(stream, *display, readable, prefs, telemetry, fileSystem,
+                                          lightingController);
+            readableScreen.render(*display);
+            ASSERT_VIEW_UNCHANGED("CesMode");
         }
     }
 }
@@ -424,6 +399,12 @@ TEST_CASE("Test bmp file rendering") {
     fs.begin();
     // create and render a full screen bitmap view
     auto display = createDisplay();
+    FakeEinkET013TT1SkipSignalling = true;
+    FakeEinkET013TT1SkipWaveform = true;
+    defer {
+        FakeEinkET013TT1SkipWaveform = false;
+        FakeEinkET013TT1SkipSignalling = false;
+    };
 
     SECTION("Test bitmap view Books (grayscale)") {
         SFile file = fs.open("/books.bmp");
