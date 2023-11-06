@@ -40,17 +40,13 @@ public:
         renderer_.setStream(stream);
 
         std::string thePlace = prefs_.readablePlace.get(readable_->shortenedUuid.c_str());
-        log_d("readablePlace: \"%s\"", thePlace.c_str());
-
-        if (!prefs_.cesMode.get().value_or(false)) {
-            readable_->place = Place::factory(thePlace, stream->getDocType());
-        } else {
-            if (stream->isFor(DocType::TXT)) {
-                readable_->place = std::make_shared<TxtPlace>(0);
-            } else {
-                readable_->place = std::make_shared<EPubPlace>(0, "");
-            }
+        if (prefs_.cesMode.get().value_or(false)) {
+            // For CES mode we intentionally want to ignore the saved place
+            thePlace = "";
         }
+
+        log_d("readablePlace: \"%s\"", thePlace.c_str());
+        readable_->place = Place::factory(thePlace, stream->getDocType());
 
         // for the animation bits since we may end up coming back to this constructor after being
         // interrupted.
