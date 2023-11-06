@@ -154,9 +154,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             return nullptr;
         }
 
-        auto *readableScreen =
-            new ReadableScreen(stream, *display, readable, this->prefs_, this->telemetry_,
-                               localStore, fileSystem, lightingController);
+        auto *readableScreen = new ReadableScreen(stream, *display, readable, this->prefs_,
+                                                  this->telemetry_, fileSystem, lightingController);
 
         this->telemetry_.logMetric(TelemetryField::METRIC_READABLE_OPEN, readable->uuid,
                                    readable->telemetryPlacemarkMetrics());

@@ -1,6 +1,5 @@
 #include "Misc/Menu.hpp"
 #include "Misc/Telemetry.hpp"
-#include "Storage/LocalStore.hpp"
 #include "UI/Components/PopupMenuView.hpp"
 #include "UI/ContainerScreen.hpp"
 #include "UI/LightingAdjustScreen.hpp"
@@ -16,9 +15,9 @@ public:
     ReadablePopupMenuScreen(DisplaySystem &display, PreferencesStore &prefs,
                             const std::shared_ptr<Readable> &readable,
                             LightingController &lightingController, Renderer &renderer,
-                            LocalStore &localStore, Telemetry &telemetry)
+                            Telemetry &telemetry)
         : display_(display), prefs_(prefs), readable_(readable), renderer_(renderer),
-          popupMenuView_(display), localStore_(localStore), telemetry_(telemetry),
+          popupMenuView_(display), telemetry_(telemetry),
           lightingAdjustScreen_(display, prefs, lightingController, telemetry),
           readableSeekScreen_(prefs, readable, renderer),
           readableTableOfContentsScreen_(prefs, readable, renderer, display, telemetry),
@@ -77,7 +76,6 @@ protected:
     std::shared_ptr<Readable> readable_;
     Renderer &renderer_;
     PopupMenuView popupMenuView_;
-    LocalStore &localStore_;
     Telemetry &telemetry_;
 
     bool firstLoad_ = true;
