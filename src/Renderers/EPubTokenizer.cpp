@@ -1059,7 +1059,7 @@ auto EPubTokenizer::addTokenToPage(Token &token, const char *str, uint8_t strSiz
                  ((uint16_t)TokenId::NEWLINE | (uint16_t)TokenId::ENDPARAGRAPH)) == 0) {
                 if (backwards_) {
                     if (token.streamPlace >= *toPlace_) {
-                        // So we are at the location correspondig to the end of the requested
+                        // So we are at the location corresponding to the end of the requested
                         // page.
                         pageCompleted_ = true;
                         if (currentPageTxtOffset_ <= currentTxtOffset_) {

@@ -15,12 +15,16 @@ void ReadablePopupMenuScreen::setUpPopupMenu() {
         if (currentChapterIdx_ >= 0) {
             const auto &toc = stream->getToc();
             auto &chapter = toc[currentChapterIdx_];
-
             // TODO(john): This isn't exactly right because `place->getOffset()` is a byte offset,
             // not a letter offset from the beginning of the chapter. The chapters always start with
             // extra html-y stuff at the start so this is always inflated by some amount.
-            auto currentOffset = chapter.epubOffset + renderer_.getTxtOffset();
+            auto currentOffset = 0;
 
+            if (stream->isAnArticle()) {
+                currentOffset = chapter.epubOffset + renderer_.getCurrentPlace()->getOffset();
+            } else {
+                currentOffset = chapter.epubOffset + renderer_.getTxtOffset();
+            }
             // Get the end offset of the last chapter (to determine the length of the book)
             auto &lastChapter = toc[stream->getToc().size() - 1];
             auto lastChapterEndOffset = lastChapter.endEpubOffset;
@@ -31,15 +35,17 @@ void ReadablePopupMenuScreen::setUpPopupMenu() {
             }
 
             // Determine how many Sol Pages are left in the chapter
-            if (chapter.endEpubOffset > currentOffset) {
+            if (chapter.endEpubOffset > currentOffset && !stream->isAnArticle()) {
                 auto chapterPagesRemaining = chapter.endEpubOffset - currentOffset;
                 chapterPagesRemainingString =
                     StringFormat("%d page%s left", SOL_PAGE_NUMBER(chapterPagesRemaining),
                                  SOL_PAGE_NUMBER(chapterPagesRemaining) == 1 ? "" : "s");
             }
-            // log_w("Chapter %d, %s, current:%" PRIu32 "=%" PRIu32 "+%" PRIu32 " end:%" PRIu32,
+            // log_w("Chapter %d, %s, current:%" PRIu32 "=%" PRIu32 "+%" PRIu32 "(% " PRIu32
+            //       ") end: % " PRIu32,
             //       currentChapterIdx_, chapter.title.c_str(), currentOffset, chapter.epubOffset,
-            //       renderer_.getTxtOffset(), lastChapterEndOffset);
+            //       renderer_.getTxtOffset(), renderer_.getCurrentPlace()->getOffset(),
+            //       lastChapterEndOffset);
         } else {
             log_w("Couldn't find chapter index (%d) for href %s", currentChapterIdx_,
                   chapterHref.c_str());
