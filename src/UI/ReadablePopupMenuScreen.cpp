@@ -30,8 +30,15 @@ void ReadablePopupMenuScreen::setUpPopupMenu() {
             auto lastChapterEndOffset = lastChapter.endEpubOffset;
 
             if (currentOffset < lastChapterEndOffset) {
-                placeStringForBottom = StringFormat("%d of %d", SOL_PAGE_NUMBER(currentOffset),
-                                                    SOL_PAGE_NUMBER(lastChapterEndOffset));
+                if (stream->isAnArticle()) {
+                    placeStringForBottom =
+                        StringFormat("%d of %d page%s", SOL_PAGE_NUMBER(currentOffset),
+                                     SOL_PAGE_NUMBER(lastChapterEndOffset),
+                                     SOL_PAGE_NUMBER(lastChapterEndOffset) == 1 ? "" : "s");
+                } else {
+                    placeStringForBottom = StringFormat("%d of %d", SOL_PAGE_NUMBER(currentOffset),
+                                                        SOL_PAGE_NUMBER(lastChapterEndOffset));
+                }
             }
 
             // Determine how many Sol Pages are left in the chapter
