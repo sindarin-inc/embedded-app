@@ -18,13 +18,8 @@ void ReadablePopupMenuScreen::setUpPopupMenu() {
             // TODO(john): This isn't exactly right because `place->getOffset()` is a byte offset,
             // not a letter offset from the beginning of the chapter. The chapters always start with
             // extra html-y stuff at the start so this is always inflated by some amount.
-            auto currentOffset = 0;
+            auto currentOffset = chapter.epubOffset + renderer_.getCurrentPlace()->getOffset();
 
-            if (stream->isAnArticle()) {
-                currentOffset = chapter.epubOffset + renderer_.getCurrentPlace()->getOffset();
-            } else {
-                currentOffset = chapter.epubOffset + renderer_.getTxtOffset();
-            }
             // Get the end offset of the last chapter (to determine the length of the book)
             auto &lastChapter = toc[stream->getToc().size() - 1];
             auto lastChapterEndOffset = lastChapter.endEpubOffset;
