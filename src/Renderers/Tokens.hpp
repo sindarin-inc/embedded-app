@@ -10,7 +10,7 @@ class Tokens {
 private:
     DisplaySystem &display_;
 
-    TokensArray tokens_{0};
+    TokensArray tokens_{{nullptr}};
     Idx tokensTailIdx_{0};
     Idx tokensHeadIdx_{0};
 
