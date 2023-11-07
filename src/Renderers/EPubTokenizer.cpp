@@ -1907,9 +1907,13 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint32_t len) -> bool 
                         } else {
                             break;
                         }
+                        if (curChar == '-') {
+                            nextByte();
+                            break;
+                        }
                         nextByte();
                     }
-                } while ((curChar > ' ') && (curChar != '-') &&
+                } while ((curChar > ' ') &&
                          ((textCharCount_ < maxTextTokenCharSize_) || (curChar >= 0x80U)));
 
                 // The last test of the while above is to get a complete UTF8 multi-bytes

@@ -85,7 +85,24 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, St
         // REND_WLOG("Current Character: %c (%02" PRIX8 "H)",
         //       (((curChar >= ' ') && (curChar < 127)) ? curChar : ' '), curChar);
 
-        if (curChar > ' ') {
+        if (curChar == '-') {
+            nextByte();
+            if (curChar != '-') {
+                newToken.tokenId = TokenId::HYPHEN;
+                pageCompleted = addTokenToPage(newToken, backwards, "-", 1);
+            } else {
+                nextByte();
+                if (curChar != '-') {
+                    newToken.tokenId = TokenId::ENDASH;
+                    pageCompleted = addTokenToPage(newToken, backwards, "--", 2);
+                } else {
+                    nextByte();
+                    newToken.tokenId = TokenId::EMDASH;
+                    pageCompleted = addTokenToPage(newToken, backwards, "---", 3);
+                }
+            }
+            lastToken_ = &newToken;
+        } else if (curChar > ' ') {
             // newToken.tokenId = TokenId::TEXT; // already set at beginning of loop
             lastToken_ = &newToken;
             uint16_t textCharCount = 0;
@@ -99,8 +116,12 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, St
                 } else {
                     break;
                 }
+                if (curChar == '-') {
+                    nextByte();
+                    break;
+                }
                 nextByte();
-            } while ((curChar > ' ') && (curChar != '-') &&
+            } while ((curChar > ' ') &&
                      ((textCharCount < maxTextTokenCharSize_) || (curChar >= 0x80U)));
 
             tokens_.endOfCStr();
@@ -119,23 +140,6 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, St
             // tokens_.setSpaceSize(newToken);
             // pageCompleted = addTokenToPage(newToken, backwards, " ", 1);
             nextByte();
-        } else if (curChar == '-') {
-            nextByte();
-            if (curChar != '-') {
-                newToken.tokenId = TokenId::HYPHEN;
-                pageCompleted = addTokenToPage(newToken, backwards, "-", 1);
-            } else {
-                nextByte();
-                if (curChar != '-') {
-                    newToken.tokenId = TokenId::ENDASH;
-                    pageCompleted = addTokenToPage(newToken, backwards, "--", 2);
-                } else {
-                    nextByte();
-                    newToken.tokenId = TokenId::EMDASH;
-                    pageCompleted = addTokenToPage(newToken, backwards, "---", 3);
-                }
-            }
-            lastToken_ = &newToken;
         } else if (curChar == '\n') {
             if (tokens_.getTokenCount() == 0) {
                 // of a newline character appears at the beginning of the parsing process, it must
