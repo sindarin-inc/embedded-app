@@ -7,6 +7,7 @@
 #include <string>
 #include <unordered_map>
 
+#include "Misc/SpiramAllocator.hpp"
 #include "Storage/FileSystem.hpp"
 
 static const constexpr bool UNZIPPER_DEBUG = false;
@@ -95,7 +96,7 @@ private:
     static constexpr const uint32_t DIR_END_SIGNATURE = 0x06054b50;
 
     static const int BUFFER_SIZE = 1024 * 16;
-    uint8_t buffer_[BUFFER_SIZE];
+    std::shared_ptr<uint8_t[]> buffer_;
 
     struct FileEntry {
         uint32_t startPos;       // in zip file
@@ -132,7 +133,9 @@ private:
     mz_stream zstr_;
 
 public:
-    Unzipper(FileSystem &fs, const char *filePath) : fileSystem_(fs), filePath_(filePath) {}
+    Unzipper(FileSystem &fs, const char *filePath) : fileSystem_(fs), filePath_(filePath) {
+        buffer_ = SpiRamArrayPtr<uint8_t>(BUFFER_SIZE);
+    }
     ~Unzipper() {
         if (isOpen_) {
             close();

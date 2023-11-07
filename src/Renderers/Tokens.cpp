@@ -168,7 +168,7 @@ void Tokens::freeTokens(Idx fromTokenIdx, uint16_t count) {
         // Not all tokens are using the pool
         if (((uint16_t)id & POOL_TOKENS) != 0) {
             // Free space in string pool
-            Idx poolIdx = tokens_[lastTokenPoolIdx].cStr - cStrPool_.data();
+            Idx poolIdx = tokens_[lastTokenPoolIdx].cStr - cStrPool_.get();
 
             if constexpr (REND_DEBUG) {
                 if (poolIdx >= CSTR_POOL_SIZE) {

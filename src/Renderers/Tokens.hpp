@@ -10,11 +10,11 @@ class Tokens {
 private:
     DisplaySystem &display_;
 
-    TokensArray tokens_{};
+    TokensArray tokens_{0};
     Idx tokensTailIdx_{0};
     Idx tokensHeadIdx_{0};
 
-    CStrPool cStrPool_{};
+    CStrPool cStrPool_;
     Idx cStrPoolTailIdx_{0};
     Idx cStrPoolHeadIdx_{0};
 
@@ -46,7 +46,10 @@ private:
     }
 
 public:
-    Tokens(DisplaySystem &display) : display_(display) {}
+    Tokens(DisplaySystem &display) : display_(display) {
+        cStrPool_ = SpiRamArrayPtr<char>(CSTR_POOL_SIZE);
+        // tokens_ = SpiRamArrayPtr<Token>(TOKENS_SIZE);
+    }
     [[nodiscard]] inline auto operator[](renderer_defs::Idx idx) const -> const Token & {
         return tokens_[idx];
     }

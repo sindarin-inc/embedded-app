@@ -76,8 +76,8 @@ auto Unzipper::open() -> bool {
         off_t ecdOffset = length - fileCentralSize;
 
         if (!file_.seek(ecdOffset, SSeekSet)) ERR(2);
-        if (file_.read(buffer_, fileCentralSize) != fileCentralSize) ERR(3);
-        if (getuint32(buffer_) != DIR_END_SIGNATURE) {
+        if (file_.read(buffer_.get(), fileCentralSize) != fileCentralSize) ERR(3);
+        if (getuint32(buffer_.get()) != DIR_END_SIGNATURE) {
             // There must be a comment in the last entry. Search for the beginning of the entry
             off_t endOffset = ecdOffset - 65536;
             if (endOffset < 0) {
@@ -87,12 +87,12 @@ auto Unzipper::open() -> bool {
             bool found = false;
             while (!found && (ecdOffset > endOffset)) {
                 if (!file_.seek(ecdOffset, SSeekSet)) ERR(4);
-                if (file_.read(buffer_, fileCentralSize + 5) != (fileCentralSize + 5)) ERR(5);
-                auto p = (uint8_t *)memmem(buffer_, fileCentralSize + 5, "PK\5\6", 4);
+                if (file_.read(buffer_.get(), fileCentralSize + 5) != (fileCentralSize + 5)) ERR(5);
+                auto p = (uint8_t *)memmem(buffer_.get(), fileCentralSize + 5, "PK\5\6", 4);
                 if (p != nullptr) {
-                    ecdOffset += (p - buffer_);
+                    ecdOffset += (p - buffer_.get());
                     if (!file_.seek(ecdOffset, SSeekSet)) ERR(6);
-                    if (file_.read(buffer_, fileCentralSize) != fileCentralSize) ERR(7);
+                    if (file_.read(buffer_.get(), fileCentralSize) != fileCentralSize) ERR(7);
                     found = true;
                     break;
                 }
@@ -499,7 +499,7 @@ auto Unzipper::readFile(uint8_t *fileData, uint32_t fileDataSize) -> uint32_t {
                     log_w("File size to read: %" PRIu16, size);
                 }
 
-                if (file_.read((uint8_t *)buffer_, size) != size) {
+                if (file_.read(buffer_.get(), size) != size) {
                     mz_inflateEnd(&zstr_);
                     err = 24;
                     goto error;
@@ -508,7 +508,7 @@ auto Unzipper::readFile(uint8_t *fileData, uint32_t fileDataSize) -> uint32_t {
                 current_++;
 
                 zstr_.avail_in = size;
-                zstr_.next_in = (unsigned char *)buffer_;
+                zstr_.next_in = (unsigned char *)buffer_.get();
 
                 zret = mz_inflate(&zstr_, MZ_NO_FLUSH);
 

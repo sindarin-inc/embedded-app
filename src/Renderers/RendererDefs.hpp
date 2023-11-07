@@ -205,8 +205,11 @@ struct LineInfo {
 };
 #pragma pack(pop)
 
+// The following definition is supposed to work when allocation is
+// done in the SPIRAM, but it's not. No compilation errror.
+// using TokensArray = std::shared_ptr<Token[]>;
 using TokensArray = std::array<Token, TOKENS_SIZE>;
-using CStrPool = std::array<char, CSTR_POOL_SIZE>;
+using CStrPool = std::shared_ptr<char[]>;
 
 using Line = std::array<char, MAX_BYTES_PER_LINE>;
 using Lines = std::array<LineInfo, LINES_SIZE>;
