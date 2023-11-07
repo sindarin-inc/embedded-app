@@ -104,7 +104,7 @@ auto SindarinAPI::checkSync(const std::string &url, CheckSyncRequest &req, Check
 
     SHOW_HEAP();
 
-    StaticJsonDocument<2000> filter;
+    SpiRamJsonDocument filter(2000);
     filter["next"] = true;
     filter["message"] = true;
     filter["previous"] = true;

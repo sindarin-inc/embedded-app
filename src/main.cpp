@@ -92,7 +92,7 @@ bool bootCompleted = false;
 // they all complete in a tight loop, thus maximizing sleep time.
 void PollingLoopTask(void *parameter) {
     int factoryResetStartTimeMs = 0;
-    for (;;) {
+    while (powerManager.state() != PowerState::ShuttingDown) {
         // check if factory reset button is held down
         if (DigitalRead(FACTORY_RESET_BUTTON) == 0) {
             // prevent inactivity sleep while button held down
@@ -132,11 +132,12 @@ void PollingLoopTask(void *parameter) {
         // This happens after the delay, so that the first check can run with a faster fade.
         lightingController.checkAmbientLight();
     }
+    log_d("PollingLoopTask exited");
     vTaskDelete(nullptr);
 }
 
 void StatsTask(void *parameter) {
-    for (;;) {
+    while (powerManager.state() != PowerState::ShuttingDown) {
         // Spit out data on locks every 30s
         vTaskDelay(30000 / portTICK_PERIOD_MS);
 #if !SIMULATOR && !DISABLE_POWER_MANAGEMENT
@@ -240,10 +241,12 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         // Spin up a task just to check the temple and battery
         xTaskCreatePinnedToCore(
             [](void *) {
-            for (;;) {
+            while (powerManager.state() != PowerState::ShuttingDown) {
                 powerManager.loop();
                 vTaskDelay(1000 / portTICK_PERIOD_MS);
             }
+            log_d("Background loop task exited");
+            vTaskDelete(nullptr);
             },
             "BackgroundPowerLoop", 4096, nullptr, 1, nullptr, 1);
         BackgroundSyncAndSleep(powerManager, prefs, localStore, telemetry);
@@ -322,11 +325,13 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         // Also kick off a task to try to content sync every minute or so
         xTaskCreatePinnedToCore(
             [](void *) {
-            for (;;) {
+            while (powerManager.state() != PowerState::ShuttingDown) {
                 PreferencesStore::syncReason = SyncReason::Periodic;
                 BackgroundSync(powerManager, prefs, localStore, telemetry);
                 vTaskDelay(60000 / portTICK_PERIOD_MS);
             }
+            log_d("Sync loop task exited");
+            vTaskDelete(nullptr);
             },
             "BackgroundSync", 4096, nullptr, 1, nullptr, 1);
     }

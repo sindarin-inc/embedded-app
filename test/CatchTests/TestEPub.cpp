@@ -4,6 +4,7 @@
 #define protected public
 #define private public
 #include "Misc/BMPImage.hpp"
+#include "Misc/Defer.hpp"
 #include "Misc/Telemetry.hpp"
 #include "Renderers/RendererDefs.hpp"
 #include "Renderers/RendererStream.hpp"
@@ -32,6 +33,7 @@ TEST_CASE("Test EPub Books Rendering", "[.][epub]") {
     SetImagesFolder("EPubImages");
 
     StartAppMain(FONT_CHOICES::PREFS_SOL_SMALL, 10, 10, -2);
+    defer { StopFreeRtos(); };
 
     // First screen renders twice once with a full refresh and once with a AU4
     WAIT_FOR_DRAW();
@@ -54,25 +56,28 @@ TEST_CASE("Test EPub Books Rendering", "[.][epub]") {
             WAIT_FOR_DRAW();
 
             int pageNbr = 1;
-            uint16_t fileIdx = 0;
+            ChapterIdx chapterIdx = 0;
+            auto epubFile = std::dynamic_pointer_cast<EPubFile>(readableScreen->getStream());
 
-            for (;;) {
-                StreamPlace streamPlace = readableScreen->getStreamPlace();
+            if (epubFile != nullptr) {
+                for (;;) {
+                    StreamPlace streamPlace = readableScreen->getStreamPlace();
+                    ChapterIdx idx = epubFile->getChapterIdx(streamPlace.getSpineIdx());
+                    if (idx != chapterIdx) {
+                        chapterIdx = idx;
+                        pageNbr = 1;
+                    }
 
-                if (streamPlace.getFileIdx() != fileIdx) {
-                    fileIdx = streamPlace.getFileIdx();
-                    pageNbr = 1;
+                    std::stringstream fname;
+                    fname << chapterIdx + 1 << "-" << pageNbr++;
+
+                    ASSERT_VIEW_UNCHANGED(fname.str());
+
+                    if (readableScreen->checkAtEnd()) break;
+
+                    SendRemoteCommand(ENTER);
+                    WAIT_FOR_DRAW();
                 }
-
-                std::stringstream fname;
-                fname << "TestBook/" << fileIdx + 1 << "-" << pageNbr++;
-
-                ASSERT_VIEW_UNCHANGED(fname.str());
-
-                if (readableScreen->checkAtEnd()) break;
-
-                SendRemoteCommand(ENTER);
-                WAIT_FOR_DRAW();
             }
 
         } else {
@@ -114,18 +119,18 @@ TEST_CASE("Test EPub Books Rendering", "[.][epub]") {
             // WAIT_FOR_DRAW();
 
             int pageNbr = 1;
-            uint16_t fileIdx = 0;
+            uint16_t spineIdx = 0;
 
             for (;;) {
                 StreamPlace streamPlace = readableScreen->getStreamPlace();
 
-                if (streamPlace.getFileIdx() != fileIdx) {
-                    fileIdx = streamPlace.getFileIdx();
+                if (streamPlace.getSpineIdx() != spineIdx) {
+                    spineIdx = streamPlace.getSpineIdx();
                     pageNbr = 1;
                 }
 
                 std::stringstream fname;
-                fname << "Book2/" << fileIdx + 1 << "-" << pageNbr++;
+                fname << "Book2/" << spineIdx + 1 << "-" << pageNbr++;
 
                 ASSERT_VIEW_UNCHANGED(fname.str());
 
@@ -172,18 +177,18 @@ TEST_CASE("Test EPub Books Rendering", "[.][epub]") {
             // WAIT_FOR_DRAW();
 
             int pageNbr = 1;
-            uint16_t fileIdx = 0;
+            uint16_t spineIdx = 0;
 
             for (;;) {
                 StreamPlace streamPlace = readableScreen->getStreamPlace();
 
-                if (streamPlace.getFileIdx() != fileIdx) {
-                    fileIdx = streamPlace.getFileIdx();
+                if (streamPlace.getSpineIdx() != spineIdx) {
+                    spineIdx = streamPlace.getSpineIdx();
                     pageNbr = 1;
                 }
 
                 std::stringstream fname;
-                fname << "Book3/" << fileIdx + 1 << "-" << pageNbr++;
+                fname << "Book3/" << spineIdx + 1 << "-" << pageNbr++;
 
                 ASSERT_VIEW_UNCHANGED(fname.str());
 
@@ -198,6 +203,4 @@ TEST_CASE("Test EPub Books Rendering", "[.][epub]") {
         }
 #endif
     }
-
-    StopFreeRtos();
 }

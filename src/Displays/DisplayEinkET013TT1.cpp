@@ -90,7 +90,8 @@ void DisplayEinkET013TT1::invertDisplay(bool newInvert) {
 void DisplayEinkET013TT1::updateDisplay(DisplaySystem::UpdateType updateType, bool clearFrameBuffer,
                                         int vcomNudge, DisplaySystem::UpdateType altUpdateType,
                                         Rect altRect) {
-    if (!DispatchGetUiQueue()->isInQueue()) {
+    auto queue = DispatchGetUiQueue(false);
+    if (queue == nullptr || !queue->isInQueue()) {
         log_w("updateDisplay called from outside the UI queue.");
     }
     int adjustedVcom = driver_.getVcom() + vcomNudge;

@@ -35,7 +35,7 @@ public:
     }
 
     [[nodiscard]] auto getPlaceAtBeginningOfFile(StreamPlace streamPlace) const -> StreamPlace {
-        return {0, streamPlace.getFileIdx()};
+        return {0, streamPlace.getSpineIdx()};
     }
 
     [[nodiscard]] auto getPlaceAtBeginningOfDocument() const -> StreamPlace { return {0, 0}; }
@@ -45,12 +45,12 @@ public:
     }
 
     [[nodiscard]] auto addOffset(StreamPlace streamPlace, uint32_t offset) const -> StreamPlace {
-        return {streamPlace.getOffset() + offset, streamPlace.getFileIdx()};
+        return {streamPlace.getOffset() + offset, streamPlace.getSpineIdx()};
     };
 
     [[nodiscard]] virtual auto goBackward(StreamPlace streamPlace, uint32_t offset) -> StreamPlace {
         return {(streamPlace.getOffset() >= offset) ? streamPlace.getOffset() - offset : 0,
-                streamPlace.getFileIdx()};
+                streamPlace.getSpineIdx()};
     }
 
     [[nodiscard]] virtual auto toStreamPlace(const std::shared_ptr<Place> place) const

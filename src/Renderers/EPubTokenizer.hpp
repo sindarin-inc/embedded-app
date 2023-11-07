@@ -89,14 +89,12 @@ public:
                                            StreamPlace *toPlace = nullptr)
         -> std::pair<StreamPlace, StreamPlace> override;
 
-    [[nodiscard]] auto getStreamPlaceFromTxtOffset(uint32_t txtOffset) const -> StreamPlace;
-
     [[nodiscard]] auto toStreamPlace(const std::shared_ptr<Place> place) const
         -> StreamPlace override;
 
     [[nodiscard]] inline auto toPlace(const StreamPlace &streamPlace) const
         -> std::shared_ptr<Place> override {
-        const EPubOpf::SpineItem &spineItem = stream_->getSpine(streamPlace.getFileIdx());
+        const EPubOpf::SpineItem &spineItem = stream_->getSpine(streamPlace.getSpineIdx());
         return std::make_shared<EPubPlace>(streamPlace.getOffset(), spineItem.item->href);
     }
 
@@ -193,7 +191,7 @@ private:
 
     // The offset where we are tokenizing
     uint32_t currentStreamOffset_;
-    uint16_t currentFileIdx_;
+    uint16_t currentSpineIdx_;
 
     // The byte offset ignoring all tag bytes.
     uint32_t currentTxtOffset_ = 0;
@@ -237,7 +235,7 @@ private:
     auto toUtf8(uint32_t val) -> char *;
 
     [[nodiscard]] auto getCharEntity(const char *str) -> std::pair<const char *, const char *>;
-    [[nodiscard]] auto loadXHTMLAt(Idx fileIdx) -> pugi::xml_document &;
+    [[nodiscard]] auto loadXHTMLAt(Idx spineIdx) -> pugi::xml_document &;
     [[nodiscard]] auto interpret(pugi::xml_node node) -> bool;
     [[nodiscard]] auto addStrToPage(const pugi::char_t *str, uint32_t len) -> bool;
     [[nodiscard]] auto searchStart(pugi::xml_node node) -> uint32_t;

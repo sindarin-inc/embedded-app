@@ -42,6 +42,7 @@ auto ConvertToJson(const CheckSyncRequest &src, JsonVariant dst) -> bool {
     dst["build"] = src.build;
     dst["git_hash"] = src.gitHash;
     dst["sn"] = src.sn;
+    dst["skip_toc"] = src.skipToc;
     dst["skip_content"] = src.skipContent;
     dst["skip_summary"] = src.skipSummary;
 

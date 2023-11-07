@@ -31,6 +31,7 @@ public:
 
     std::string since;
     ReadablesModelType modelType;
+    bool skipToc;
     bool skipContent;
     bool skipSummary;
     SyncReason syncReason;

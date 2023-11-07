@@ -442,6 +442,9 @@ void PowerManager::releaseLED() {
 }
 
 void PowerManager::beginShutdown() {
+    auto previousState = state_;
+    state_ = PowerState::ShuttingDown;
+
     auto taskName = pcTaskGetName(nullptr);
     log_d("beginShutdown from task %s", taskName);
 
@@ -451,9 +454,10 @@ void PowerManager::beginShutdown() {
         beginShutdownCallback_();
     }
 
-    if (state_ == PowerState::Active || state_ == PowerState::ActiveOverTemp ||
-        state_ == PowerState::ActiveUSBCharging || state_ == PowerState::ActiveForcedOn ||
-        state_ == PowerState::ActiveBatteryDepleted) {
+    if (previousState == PowerState::Active || previousState == PowerState::ActiveOverTemp ||
+        previousState == PowerState::ActiveUSBCharging ||
+        previousState == PowerState::ActiveForcedOn ||
+        previousState == PowerState::ActiveBatteryDepleted) {
         lightingController_.disableLighting(200);
         // Delay to see the fade.
         // TODO: Use a callback instead

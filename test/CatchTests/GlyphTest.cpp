@@ -1,5 +1,6 @@
 #include <catch_amalgamated.hpp>
 
+#include "Misc/Defer.hpp"
 #include "UI/Screen.hpp"
 #include "ViewTestCommon.hpp"
 #include "sindarin-debug.h"
@@ -50,6 +51,10 @@ TEST_CASE("Test glyph rendering") {
 
     FakeEinkET013TT1SkipSignalling = true;
     FakeEinkET013TT1SkipWaveform = true;
+    defer {
+        FakeEinkET013TT1SkipWaveform = false;
+        FakeEinkET013TT1SkipSignalling = false;
+    };
 
     std::vector<std::string> glyphs = {
         "0",  "1", "2", "3", "4", "5", "6",  "7", "8", "9", "a", "b", "c", "d", "e", "f",

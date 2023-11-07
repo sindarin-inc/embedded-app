@@ -2,6 +2,7 @@
 
 #include <NimBLEClient.h>
 #include <NimBLEDevice.h>
+#include <esp_wifi.h>
 
 #include "BLEAbstractions.hpp"
 #include "Communications/BLEManager.hpp"
@@ -10,7 +11,6 @@
 #endif
 #include "Misc/StringUtil.hpp"
 #include "Storage/PreferencesStore.hpp"
-#include "esp_wifi.h"
 #include "sindarin-debug.h"
 
 class BLESettings : BLECharacteristicProvider {
