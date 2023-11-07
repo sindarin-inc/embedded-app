@@ -129,22 +129,6 @@ def get_tidy_invocation(
         start.append(name)
     for arg in extra_arg:
         start.append("-extra-arg=%s" % arg)
-
-    # Avoid error about "error: empty struct has size 0 in C, size 1 in C++" in espressif code
-    start.append("-extra-arg=-Wno-extern-c-compat")
-    # Don't use the standard system includes
-    # From: https://stackoverflow.com/questions/60712261/how-to-prevent-osx-gcc-to-always-search-usr-local-include
-    start.append("-extra-arg=-Xclang")
-    start.append("-extra-arg=-nostdsysteminc")
-    # Add all the c++ libraries
-    # TODO: Why doesn't this happen by default via idf.py clang-check
-    clang_bin_dir = os.path.dirname(clang_tidy_binary)
-    start.append(f"-extra-arg=-isystem{clang_bin_dir}/../xtensa-esp32s3-elf/include")
-    start.append(f"-extra-arg=-isystem{clang_bin_dir}/../xtensa-esp32s3-elf/include/c++/11.2.0/")
-    start.append(
-        f"-extra-arg=-isystem{clang_bin_dir}/../xtensa-esp32s2-elf/include/c++/11.2.0/xtensa-esp32s2-elf/"
-    )
-
     for arg in extra_arg_before:
         start.append("-extra-arg-before=%s" % arg)
     start.append("-p=" + build_path)

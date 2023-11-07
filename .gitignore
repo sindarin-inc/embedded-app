@@ -17,6 +17,7 @@ simprefs.ini
 simprefs.bak
 *.old
 build
+build-clang
 screenshot.png
 current.png
 next.png
