@@ -13,6 +13,7 @@
 #include "UI/LineSpacingScreen.hpp"
 #include "UI/OffsetAdjustScreen.hpp"
 #include "UI/PowerDepletedScreen.hpp"
+#include "UI/ReadableScreen.hpp"
 #include "UI/ReadableTableOfContentsScreen.hpp"
 #include "UI/ReleaseNotesScreen.hpp"
 #include "UI/ResizeBoxScreen.hpp"
@@ -304,6 +305,13 @@ TEST_CASE("Test some views independently") {
     // Just create and render a PowerDepletedScreen
     auto display = createDisplay();
 
+    FakeEinkET013TT1SkipSignalling = true;
+    FakeEinkET013TT1SkipWaveform = true;
+    defer {
+        FakeEinkET013TT1SkipWaveform = false;
+        FakeEinkET013TT1SkipSignalling = false;
+    };
+
     SECTION("Test PowerDepletedScreen") {
         PowerDepletedScreen screen;
         screen.render(*display);
@@ -361,12 +369,45 @@ TEST_CASE("Test some views independently") {
             ReadableTableOfContentsScreen screen(prefs, readable, renderer, *display, telemetry);
             screen.loadMenuItems();
 
-            // This view renders twice, once with a full refresh and once with a AU4 so we need to
-            // not wait on the signaling otherwise we'll hang here.
-            FakeEinkET013TT1SkipSignalling = true;
             screen.render(*display);
-            FakeEinkET013TT1SkipSignalling = false;
             ASSERT_VIEW_UNCHANGED("ReadableTableOfContentsScreen");
+        }
+
+        SECTION("Test Last Question in CES mode") {
+            LightingController lightingController;
+            prefs.cesMode.set(true);
+
+            auto readable = std::make_shared<Readable>();
+            auto readablesJsonDoc = LoadJsonDoc(fileSystem, "/readables.json");
+            readable->fromJson((*readablesJsonDoc)["readables"][0]);
+
+            Renderer renderer(*display);
+            auto path = LocalStore::readableFilePathForReading(fileSystem, readable);
+            auto stream = fileSystem.newGzipRendererStream(path.c_str());
+            renderer.setStream(stream);
+
+            ReadableScreen readableScreen(stream, *display, readable, prefs, telemetry, fileSystem,
+                                          lightingController);
+            readableScreen.render(*display);
+            ASSERT_VIEW_UNCHANGED("CesMode");
+        }
+
+        SECTION("Test ReleaseNotesScreen") {
+            PosixFileSystem fs("./test/CatchTests/TestData/ReleaseNotesScreen/");
+            Telemetry telemetry(fs, prefs);
+            Battery battery(fs, prefs, telemetry);
+            LightingController lightingController;
+            PowerManager power(fs, prefs, lightingController, *display, telemetry);
+            LocalStore localStore(fs, prefs, battery, telemetry);
+
+            (*display).style.setFontFamily((*display).style.solSansSmall);
+
+            Firmware firmware;
+            auto upgradeAvailable = localStore.getPendingFirmwareUpdate(firmware);
+            REQUIRE(upgradeAvailable);
+            ReleaseNotesScreen screen(*display, prefs, power, localStore, firmware);
+            screen.render(*display);
+            ASSERT_VIEW_UNCHANGED("ReleaseNotesScreen");
         }
     }
 }
@@ -376,6 +417,12 @@ TEST_CASE("Test bmp file rendering") {
     fs.begin();
     // create and render a full screen bitmap view
     auto display = createDisplay();
+    FakeEinkET013TT1SkipSignalling = true;
+    FakeEinkET013TT1SkipWaveform = true;
+    defer {
+        FakeEinkET013TT1SkipWaveform = false;
+        FakeEinkET013TT1SkipSignalling = false;
+    };
 
     SECTION("Test bitmap view Books (grayscale)") {
         SFile file = fs.open("/books.bmp");

@@ -5,7 +5,6 @@
 #include "Models/ReadableBookmark.hpp"
 #include "Renderers/RendererStream.hpp"
 #include "Sensors/LightingController.hpp"
-#include "Storage/LocalStore.hpp"
 #include "Storage/PreferencesStore.hpp"
 #include "UI/Components/ArrowView.hpp"
 #include "UI/ContainerScreen.hpp"
@@ -29,12 +28,11 @@ class ReadableScreen : public ContainerScreen, public EinkView {
 public:
     ReadableScreen(const std::shared_ptr<RendererStream> &stream, DisplaySystem &display,
                    const std::shared_ptr<Readable> &readable, PreferencesStore &prefs,
-                   Telemetry &telemetry, LocalStore &localStore, FileSystem &fileSystem,
+                   Telemetry &telemetry, FileSystem &fileSystem,
                    LightingController &lightingController)
         : EinkView(display), stream_(stream), renderer_(display), readable_(readable),
-          prefs_(prefs), telemetry_(telemetry), localStore_(localStore), fileSystem_(fileSystem),
-          display_(display), popupMenuScreen_(display, prefs, readable, lightingController,
-                                              renderer_, localStore_, telemetry_),
+          prefs_(prefs), telemetry_(telemetry), fileSystem_(fileSystem), display_(display),
+          popupMenuScreen_(display, prefs, readable, lightingController, renderer_, telemetry_),
           leftArrowView_(display, ArrowLeft), rightArrowView_(display, ArrowRight),
           upArrowView_(display, ArrowUp), downArrowView_(display, ArrowDown) {
 
@@ -42,11 +40,13 @@ public:
         renderer_.setStream(stream);
 
         std::string thePlace = prefs_.readablePlace.get(readable_->shortenedUuid.c_str());
-        log_d("readablePlace: \"%s\"", thePlace.c_str());
-
-        if (!prefs_.cesMode.get().value_or(false)) {
-            readable_->place = Place::factory(thePlace, stream->getDocType());
+        if (prefs_.cesMode.get().value_or(false)) {
+            // For CES mode we intentionally want to ignore the saved place
+            thePlace = "";
         }
+
+        log_d("readablePlace: \"%s\"", thePlace.c_str());
+        readable_->place = Place::factory(thePlace, stream->getDocType());
 
         // for the animation bits since we may end up coming back to this constructor after being
         // interrupted.
@@ -134,7 +134,6 @@ protected:
     std::shared_ptr<Readable> readable_;
     PreferencesStore &prefs_;
     Telemetry &telemetry_;
-    LocalStore &localStore_;
     FileSystem &fileSystem_;
 
     bool inBookmark_ = false;
