@@ -391,6 +391,40 @@ auto LocalStore::processReadablePlacemarksFromServer(const std::shared_ptr<Reada
     return false;
 }
 
+auto LocalStore::processReadablePartialChapterSummary(
+    const std::shared_ptr<Readable> &readable,
+    const std::shared_ptr<UserReadablePartialChapterSummary> &partialChapterSummary) -> bool {
+    auto path = readableFilePathForReading(readable);
+    auto docType = RendererStream::parseDocType(path.c_str());
+    auto prefsPlaceString = prefs_.readablePlace.get(readable->shortenedUuid.c_str());
+
+    // Store partial summary in json file, then load it in EPubFile::getSummaryContent
+    if (docType == DocType::EPUB && partialChapterSummary != nullptr) {
+        // Check if partial summary already exists and matches place, otherwise store partial
+        // summary in json file
+        auto partialSummaryPath = readable->partialSummaryFilePath();
+        SFile partialSummaryFile = fileSystem.open(partialSummaryPath.c_str(), FILE_READ, false);
+        if (partialSummaryFile) {
+            // Check if partial summary already exists and matches place
+            auto storedPartialSummary = std::make_unique<SpiRamJsonDocument>();
+            auto error = deserializeJson(*storedPartialSummary, partialSummaryFile);
+            partialSummaryFile.close();
+            if (error.code() != DeserializationError::Ok) {
+                log_e("Failed to deserialize partial summary file: %s", error.c_str());
+                return false;
+            }
+            auto storedPlaceString = (*storedPartialSummary)["place"].as<std::string>();
+
+            return false;
+        }
+
+        return true;
+    }
+}
+
+return false;
+}
+
 void LocalStore::resetReadablesPlacemarkChanged(const ReadablesVector &readables) {
     auto modelType = this->readablesModelType(const_cast<ReadablesVector &>(readables));
 
@@ -500,7 +534,7 @@ void LocalStore::syncFromRemote(
 
     progressCallback(ContentSyncState{.state = ContentSyncState::State::UploadTelemetry});
 
-    // TODO: Thinking more about this, we should probably trust the caller of `syncFromRempte` to
+    // TODO: Thinking more about this, we should probably trust the caller of `syncFromRemote` to
     // call from whatever queue is most fitting based on the context. In tests, this might not be in
     // a queue.
     auto queue = DispatchGetCore0BackgroundQueue();
@@ -852,6 +886,13 @@ auto LocalStore::processReadables(const ReadablesVector &readables,
                                                 userReadable.ePubPlace)) {
             log_i("Placemark for %s updated to %s", userReadable.readable->title.c_str(),
                   prefs_.readablePlace.get(userReadable.readable->shortenedUuid.c_str()).c_str());
+        }
+
+        if (processReadablePartialChapterSummary(userReadable.readable,
+                                                 userReadable.partialChapterSummary)) {
+            log_i("Partial chapter summary for %s updated to %s",
+                  userReadable.readable->title.c_str(),
+                  userReadable.partialChapterSummary->ePubPlace->str().c_str());
         }
 
         auto unchanged = isReadableUnchanged(readables, userReadable.readable, true);

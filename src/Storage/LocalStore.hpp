@@ -11,6 +11,7 @@
 #include "Models/Place.hpp"
 #include "Models/Readable.hpp"
 #include "Models/UserReadable.hpp"
+#include "Models/UserReadablePartialChapterSummary.hpp"
 #include "Storage/FileSystem.hpp"
 #include "Storage/PreferencesStore.hpp"
 
@@ -107,7 +108,9 @@ public:
     auto processReadablePlacemarksFromServer(const std::shared_ptr<Readable> &readable,
                                              const std::shared_ptr<TxtPlace> &txtPlace,
                                              const std::shared_ptr<EPubPlace> &ePubPlace) -> bool;
-    auto processToCFromServer(const std::shared_ptr<Readable> &readable) -> bool;
+    auto processReadablePartialChapterSummary(
+        const std::shared_ptr<Readable> &readable,
+        const std::shared_ptr<UserReadablePartialChapterSummary> &partialChapterSummary) -> bool;
     void resetReadablesPlacemarkChanged(const ReadablesVector &readables);
     void resetReadablesArchivedChanged(const ReadablesVector &readables);
     void resetReadablesBookmarksChanged(const ReadablesVector &readables);

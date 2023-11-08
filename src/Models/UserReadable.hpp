@@ -4,6 +4,7 @@
 #include "Models/JsonSerializable.hpp"
 #include "Models/Place.hpp"
 #include "Models/Readable.hpp"
+#include "Models/UserReadablePartialChapterSummary.hpp"
 
 class UserReadable : JsonSerializable {
 public:
@@ -13,6 +14,7 @@ public:
     SpiramString uuid;
     std::shared_ptr<TxtPlace> txtPlace;
     std::shared_ptr<EPubPlace> ePubPlace;
+    std::shared_ptr<UserReadablePartialChapterSummary> partialChapterSummary = nullptr;
 
     bool isArchived;
     std::shared_ptr<Readable> readable = nullptr;
@@ -40,6 +42,13 @@ public:
         if (txtPlace->isFor(DocType::NONE) && ePubPlace->isFor(DocType::NONE)) {
             log_w("Failed to parse UserReadable with JSON: No Txt or EPub location detected.");
             return false;
+        }
+
+        if (j.containsKey("partial_chapter_summary")) {
+            partialChapterSummary = std::make_shared<UserReadablePartialChapterSummary>();
+            partialChapterSummary->fromJson(j["partial_chapter_summary"]);
+        } else {
+            partialChapterSummary = nullptr;
         }
 
         isArchived = j["is_archived"].as<bool>();

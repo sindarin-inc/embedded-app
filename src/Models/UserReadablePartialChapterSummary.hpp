@@ -4,6 +4,7 @@
 
 #include "Misc/SpiramAllocator.hpp"
 #include "Models/JsonSerializable.hpp"
+#include "Models/Place.hpp"
 
 class UserReadablePartialChapterSummary : public JsonSerializable {
 public:
@@ -11,15 +12,17 @@ public:
     ~UserReadablePartialChapterSummary() override = default;
 
     SpiramString text;
-    uint32_t placemark;
+    std::shared_ptr<EPubPlace> ePubPlace;
     uint8_t readPct;
 
     auto fromJson(const JsonObject &j) -> bool override {
-        if (!j.containsKey("text") || !j.containsKey("placemark") || !j.containsKey("read_pct")) {
+        if (!j.containsKey("text") || !j.containsKey("chapter") ||
+            !j.containsKey("chapter_offset") || !j.containsKey("read_pct")) {
             return false;
         }
         text = j["text"].as<std::string>();
-        placemark = j["placemark"].as<uint32_t>();
+        ePubPlace = std::dynamic_pointer_cast<EPubPlace>(
+            Place::factory(j["chapter_offset"].as<uint32_t>(), j["chapter"].as<std::string>()));
         readPct = j["read_pct"].as<uint8_t>();
 
         return true;
