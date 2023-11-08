@@ -72,6 +72,7 @@ public:
     auto operator==(const char *str) const -> bool { return this->compare(str) == 0; }
 };
 
+// NOLINTNEXTLINE(readability-identifier-naming) - ArduinoJson requires this name
 auto convertToJson(const SpiramString &src, JsonVariant dst) -> bool;
 
 auto operator==(const std::string &stdStr, const SpiramString &spiramStr) -> bool;
@@ -79,7 +80,7 @@ auto operator==(const std::string &stdStr, const SpiramString &spiramStr) -> boo
 namespace std {
 template <>
 struct hash<SpiramString> {
-    size_t operator()(const SpiramString &s) const noexcept {
+    auto operator()(const SpiramString &s) const noexcept -> size_t {
         // You can use the hash function for std::string as a base.
         // This assumes that the hash of the characters data is enough
         // and the custom allocator does not affect the hash.
