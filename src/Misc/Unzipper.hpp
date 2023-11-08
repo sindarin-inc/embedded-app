@@ -2,9 +2,11 @@
 
 #include <cinttypes>
 #include <cstring>
+#include <esp_heap_caps.h>
 #include <memory>
 #include <miniz/miniz.h>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 
 #include "Misc/SpiramAllocator.hpp"
@@ -99,27 +101,70 @@ private:
     std::shared_ptr<uint8_t[]> buffer_;
 
     struct FileEntry {
-        uint32_t startPos;       // in zip file
-        uint32_t compressedSize; // in zip file
-        uint32_t size;           // once decompressed
-        uint16_t method;         // compress method (0 = not compressed, 8 = DEFLATE)
+        uint32_t startPos_;       // in zip file
+        uint32_t compressedSize_; // in zip file
+        uint32_t size_;           // once decompressed
+        uint16_t method_;         // compress method (0 = not compressed, 8 = DEFLATE)
+
+        FileEntry(uint32_t startPos, uint32_t compressedSize, uint32_t size, uint16_t method)
+            : startPos_(startPos), compressedSize_(compressedSize), size_(size), method_(method) {}
     };
 
-    typedef std::unordered_map<std::string, std::shared_ptr<FileEntry>, std::hash<std::string>>
-        FileEntries;
+    using FilePathPtr = std::shared_ptr<char[]>;
 
-    FileEntries fileEntries_;
-    std::shared_ptr<FileEntry> currentFileEntry_;
+    struct Hasher {
+        auto operator()(const FilePathPtr &fp) const -> size_t {
+            return std::hash<std::string_view>()(std::string_view(fp.get(), std::strlen(fp.get())));
+        }
+    };
+
+    struct Comparator {
+        auto operator()(const FilePathPtr &lhs, const FilePathPtr &rhs) const -> bool {
+            return strcmp(lhs.get(), rhs.get()) == 0;
+        }
+    };
+
+    // template <class T>
+    // struct custom_allocator {
+    //     custom_allocator() noexcept {}
+    //     template <class U>
+    //     custom_allocator(const custom_allocator<U> &) noexcept {}
+    //     T *allocate(std::size_t n) { return static_cast<T *>(::operator new(n * sizeof(T))); }
+    //     void deallocate(T *p, std::size_t n) { ::delete (p); }
+    // };
+
+    template <class T>
+    struct Allocator {
+        typedef T value_type;
+        Allocator() noexcept {};
+        // Allocator(const Allocator &) noexcept {};
+        template <class O>
+        Allocator(const Allocator<O> &) noexcept {};
+
+        void deallocate(T *p, size_t n) { heap_caps_free((void *)p); };
+        T *allocate(size_t n) {
+            return static_cast<T *>(heap_caps_malloc(n * sizeof(T), MALLOC_CAP_SPIRAM));
+        };
+    };
+
+    using FileEntriesMap = std::unordered_map<const FilePathPtr, int, Hasher, Comparator,
+                                              Allocator<std::pair<const FilePathPtr, int>>>;
+    using FileEntriesMapPtr = std::shared_ptr<FileEntriesMap>;
+
+    FileEntriesMapPtr fileEntriesMap_;
+    SpiramVector<FileEntry> fileEntries_;
+    FileEntry *currentFileEntry_;
 
     // As long as we are operating as little endian, the following is ok
     [[nodiscard]] inline auto getuint32(const uint8_t *b) const -> uint32_t {
         return *(uint32_t *)b;
     }
+
     [[nodiscard]] inline auto getuint16(const uint8_t *b) const -> uint16_t {
         return *(uint16_t *)b;
     }
 
-    auto cleanFilePath(const char *filePath) -> char *;
+    auto cleanFilePath(const std::string &filePath) -> FilePathPtr;
 
     uint16_t repeat_;
     uint16_t remains_;
@@ -135,12 +180,16 @@ private:
 public:
     Unzipper(FileSystem &fs, const char *filePath) : fileSystem_(fs), filePath_(filePath) {
         buffer_ = SpiRamArrayPtr<uint8_t>(BUFFER_SIZE);
+        fileEntriesMap_ = SpiRamPtr<FileEntriesMap>();
+        // fileEntriesMap_ = std::make_shared<FileEntriesMap>();
     }
+
     ~Unzipper() {
         if (isOpen_) {
             close();
         }
     }
+
     auto open() -> bool;
     void close();
 

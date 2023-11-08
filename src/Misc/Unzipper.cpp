@@ -19,6 +19,7 @@ static void spiZFree(void *opaque, void *address) {
 auto Unzipper::open() -> bool {
 
     // Open zip file
+    log_d("FileSystem open...");
     if (!fileSystem_.exists(filePath_)) {
         log_e("File doesn´t exists: %s", filePath_.c_str());
         return false;
@@ -31,6 +32,8 @@ auto Unzipper::open() -> bool {
     isOpen_ = true;
 
     int err = 99;
+
+    SHOW_HEAP();
 
 #define ERR(e)                                                                                     \
     {                                                                                              \
@@ -124,9 +127,11 @@ auto Unzipper::open() -> bool {
             if ((entries == nullptr) || (entries.get() == nullptr)) ERR(10);
             if (file_.read(entries.get(), length) != length) ERR(11);
 
-            // fileEntries_.resize(count);
-            // uint32_t fileEntryOffset = startOffset;
             uint32_t fileEntryOffset = 0;
+
+            log_d("Build entries structure...");
+            SHOW_HEAP();
+
             while (count > 0) {
                 auto *dirFileHeader = (DirFileHeader *)&entries[fileEntryOffset];
 
@@ -135,13 +140,16 @@ auto Unzipper::open() -> bool {
                 }
 
                 const char *fName = (char *)&entries[fileEntryOffset + sizeof(DirFileHeader)];
-                std::string filePath = std::string(fName, dirFileHeader->filePathLength);
 
-                std::shared_ptr<FileEntry> fe = std::make_shared<FileEntry>(
-                    FileEntry{dirFileHeader->headerOffset, dirFileHeader->compressedSize,
-                              dirFileHeader->uncompressedSize, dirFileHeader->compresionMethod});
+                FilePathPtr filePath = SpiRamArrayPtr<char>(dirFileHeader->filePathLength + 1);
+                memcpy(filePath.get(), fName, dirFileHeader->filePathLength);
+                filePath.get()[dirFileHeader->filePathLength] = '\0';
 
-                fileEntries_[filePath] = std::move(fe);
+                fileEntries_.emplace_back(
+                    dirFileHeader->headerOffset, dirFileHeader->compressedSize,
+                    dirFileHeader->uncompressedSize, dirFileHeader->compresionMethod);
+
+                (*fileEntriesMap_)[filePath] = fileEntries_.size() - 1;
 
                 fileEntryOffset += sizeof(DirFileHeader) + dirFileHeader->filePathLength +
                                    dirFileHeader->extraFieldLength +
@@ -164,17 +172,19 @@ auto Unzipper::open() -> bool {
         showEntries();
     }
 
+    SHOW_HEAP();
+
     return completed;
 }
 
 void Unzipper::close() {
     if (isOpen_) {
-        if (currentFileEntry_ != nullptr) {
-            currentFileEntry_.reset();
-        };
+
         currentFileEntry_ = nullptr;
 
+        fileEntriesMap_->clear();
         fileEntries_.clear();
+
         if (file_) {
             file_.close();
         }
@@ -329,10 +339,11 @@ canonicalize_path(char * path, int debug)
 #endif
 
 // This method cleans filePath path that may contain relation folders (like '..').
-auto Unzipper::cleanFilePath(const char *filePath) -> char * {
-    char *str = new char[strlen(filePath) + 1];
+auto Unzipper::cleanFilePath(const std::string &filePath) -> FilePathPtr {
+    auto fp = SpiRamArrayPtr<char>(filePath.length() + 1);
+    char *str = fp.get();
 
-    const char *s = filePath;
+    const char *s = filePath.data();
     const char *u;
     char *t = str;
 
@@ -359,7 +370,7 @@ auto Unzipper::cleanFilePath(const char *filePath) -> char * {
         ;
     }
 
-    return str;
+    return fp;
 }
 
 auto Unzipper::getFileSize() -> uint32_t {
@@ -368,9 +379,9 @@ auto Unzipper::getFileSize() -> uint32_t {
         return 0;
     }
     if constexpr (UNZIPPER_DEBUG) {
-        log_d("File size: %" PRIu32, currentFileEntry_->size + 1);
+        log_d("File size: %" PRIu32, currentFileEntry_->size_ + 1);
     }
-    return currentFileEntry_->size + 1;
+    return currentFileEntry_->size_ + 1;
 }
 
 auto Unzipper::fileExists(const std::string &filePath) -> bool {
@@ -378,20 +389,20 @@ auto Unzipper::fileExists(const std::string &filePath) -> bool {
         return false;
     }
 
-    std::string cleanedFilePath = cleanFilePath(filePath.c_str());
+    FilePathPtr cleanedFilePath = cleanFilePath(filePath);
 
-    return fileEntries_.find(cleanedFilePath) != fileEntries_.end();
+    return fileEntriesMap_->find(cleanedFilePath) != fileEntriesMap_->end();
 }
 
 void Unzipper::showEntries() {
     if constexpr (UNZIPPER_DEBUG) {
         std::cout << "---- Files available: ----" << std::endl;
-        for (auto &f : fileEntries_) {
-            std::cout << "pos: " << std::setw(7) << f.second->startPos
-                      << " zip size: " << std::setw(7) << f.second->compressedSize
-                      << " out size: " << std::setw(7) << f.second->size
-                      << " method: " << std::setw(1) << f.second->method << " name: <" << f.first
-                      << ">" << std::endl;
+        for (auto &f : *fileEntriesMap_) {
+            FileEntry *fe = &fileEntries_[f.second];
+            std::cout << "pos: " << std::setw(7) << fe->startPos_ << " zip size: " << std::setw(7)
+                      << fe->compressedSize_ << " out size: " << std::setw(7) << fe->size_
+                      << " method: " << std::setw(1) << fe->method_ << " name: <" << f.first << ">"
+                      << std::endl;
         }
         std::cout << "[End of List]" << std::endl;
     }
@@ -403,18 +414,18 @@ auto Unzipper::openFile(const std::string &filePath) -> bool {
         return false;
     }
 
-    std::string cleanedFilePath = cleanFilePath(filePath.c_str());
+    FilePathPtr cleanedFilePath = cleanFilePath(filePath);
 
-    if (auto it = fileEntries_.find(cleanedFilePath); it == fileEntries_.end()) {
-        log_e("Unzipper openFile: File not found: <%s>", cleanedFilePath.c_str());
+    if (auto it = fileEntriesMap_->find(cleanedFilePath); it == fileEntriesMap_->end()) {
+        log_e("Unzipper openFile: File not found: <%s>", cleanedFilePath.get());
         showEntries();
     } else {
-        currentFileEntry_ = it->second;
+        currentFileEntry_ = &fileEntries_[it->second];
         int err = 0;
         bool completed = false;
 
         while (true) {
-            if (!file_.seek(currentFileEntry_->startPos, SSeekSet)) ERR(13);
+            if (!file_.seek(currentFileEntry_->startPos_, SSeekSet)) ERR(13);
             if (file_.read((uint8_t *)&fileHeader_, sizeof(FileHeader)) != sizeof(FileHeader))
                 ERR(14);
 
@@ -434,18 +445,13 @@ auto Unzipper::openFile(const std::string &filePath) -> bool {
     return false;
 }
 
-void Unzipper::closeFile() {
-    if (currentFileEntry_ != nullptr) {
-        currentFileEntry_.reset();
-    }
-    currentFileEntry_ = nullptr;
-}
+void Unzipper::closeFile() { currentFileEntry_ = nullptr; }
 
 auto Unzipper::readFile(uint8_t *fileData, uint32_t fileDataSize) -> uint32_t {
     // log_d("getFile: %s", filePath);
 
     if (!isOpen_ || (currentFileEntry_ == nullptr) ||
-        ((currentFileEntry_->size + 1) != fileDataSize)) {
+        ((currentFileEntry_->size_ + 1) != fileDataSize)) {
         return 0;
     }
 
@@ -455,21 +461,22 @@ auto Unzipper::readFile(uint8_t *fileData, uint32_t fileDataSize) -> uint32_t {
     bool completed = false;
     while (true) {
 
-        if (!file_.seek(currentFileEntry_->startPos + sizeof(FileHeader) +
+        if (!file_.seek(currentFileEntry_->startPos_ + sizeof(FileHeader) +
                             fileHeader_.filePathLength + fileHeader_.extraFieldLength,
                         SSeekSet))
             ERR(17);
 
         if (fileData == nullptr) ERR(18);
-        fileData[currentFileEntry_->size] = 0;
+        fileData[currentFileEntry_->size_] = 0;
 
-        if (currentFileEntry_->method == 0) { // No Compression
-            if (file_.read((uint8_t *)fileData, currentFileEntry_->size) != currentFileEntry_->size)
+        if (currentFileEntry_->method_ == 0) { // No Compression
+            if (file_.read((uint8_t *)fileData, currentFileEntry_->size_) !=
+                currentFileEntry_->size_)
                 ERR(19);
-        } else if (currentFileEntry_->method == 8) { // Deflate compression
+        } else if (currentFileEntry_->method_ == 8) { // Deflate compression
 
-            repeat_ = currentFileEntry_->compressedSize / BUFFER_SIZE;
-            remains_ = currentFileEntry_->compressedSize % BUFFER_SIZE;
+            repeat_ = currentFileEntry_->compressedSize_ / BUFFER_SIZE;
+            remains_ = currentFileEntry_->compressedSize_ % BUFFER_SIZE;
             current_ = 0;
 
             zstr_.zalloc = spiZAlloc;
@@ -479,7 +486,7 @@ auto Unzipper::readFile(uint8_t *fileData, uint32_t fileDataSize) -> uint32_t {
             zstr_.opaque = nullptr;
             zstr_.next_in = nullptr;
             zstr_.avail_in = 0;
-            zstr_.avail_out = currentFileEntry_->size;
+            zstr_.avail_out = currentFileEntry_->size_;
             zstr_.next_out = (unsigned char *)fileData;
 
             int zret = mz_inflateInit2(&zstr_, -15);
@@ -538,7 +545,7 @@ error:
         fileSize = 0;
         log_e("Unzipper readFile: Error!: %d", err);
     } else {
-        fileSize = currentFileEntry_->size + 1;
+        fileSize = currentFileEntry_->size_ + 1;
     }
 
     return fileSize;

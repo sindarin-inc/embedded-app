@@ -208,7 +208,8 @@ struct LineInfo {
 // The following definition is supposed to work when allocation is
 // done in the SPIRAM, but it's not. No compilation errror.
 // using TokensArray = std::shared_ptr<Token[]>;
-using TokensArray = std::array<Token, TOKENS_SIZE>;
+// using TokensArray = std::array<Token, TOKENS_SIZE>;
+using TokensArray = std::unique_ptr<Token[]>;
 using CStrPool = std::shared_ptr<char[]>;
 
 using Line = std::array<char, MAX_BYTES_PER_LINE>;

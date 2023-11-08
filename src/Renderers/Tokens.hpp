@@ -10,7 +10,8 @@ class Tokens {
 private:
     DisplaySystem &display_;
 
-    TokensArray tokens_{{nullptr}};
+    // TokensArray tokens_{{nullptr}};
+    TokensArray tokens_;
     Idx tokensTailIdx_{0};
     Idx tokensHeadIdx_{0};
 
@@ -49,7 +50,9 @@ public:
     Tokens(DisplaySystem &display) : display_(display) {
         cStrPool_ = SpiRamArrayPtr<char>(CSTR_POOL_SIZE);
         // tokens_ = SpiRamArrayPtr<Token>(TOKENS_SIZE);
+        tokens_ = std::make_unique<Token[]>(TOKENS_SIZE);
     }
+
     [[nodiscard]] inline auto operator[](renderer_defs::Idx idx) const -> const Token & {
         return tokens_[idx];
     }
