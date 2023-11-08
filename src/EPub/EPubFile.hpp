@@ -91,11 +91,12 @@ public:
     }
     auto calculateFileSize(const std::string &href) -> uint32_t;
 
-    auto getChapterIdx(const std::shared_ptr<EPubPlace> &ePubPlace) const -> ChapterIdx;
-    auto getChapterIdx(const std::string &href) const -> ChapterIdx;
-    auto getChapterIdx(SpineIdx spineIdx) const -> ChapterIdx;
-    auto spineIdxIsChapterStart(SpineIdx spineIdx) const -> bool;
-    auto getChapterFirstSpineIdx(SpineIdx spineIdx) const -> SpineIdx;
+    [[nodiscard]] auto getChapterIdx(const std::shared_ptr<EPubPlace> &ePubPlace) const
+        -> ChapterIdx;
+    [[nodiscard]] auto getChapterIdx(const std::string &href) const -> ChapterIdx;
+    [[nodiscard]] auto getChapterIdx(SpineIdx spineIdx) const -> ChapterIdx;
+    [[nodiscard]] auto spineIdxIsChapterStart(SpineIdx spineIdx) const -> bool;
+    [[nodiscard]] auto getChapterFirstSpineIdx(SpineIdx spineIdx) const -> SpineIdx;
 
     auto hasToc() -> bool;
     auto getToc() -> ReadableTableOfContentsChapterVector;

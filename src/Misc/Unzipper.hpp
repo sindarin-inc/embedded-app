@@ -101,13 +101,13 @@ private:
     std::shared_ptr<uint8_t[]> buffer_;
 
     struct FileEntry {
-        uint32_t startPos_;       // in zip file
-        uint32_t compressedSize_; // in zip file
-        uint32_t size_;           // once decompressed
-        uint16_t method_;         // compress method (0 = not compressed, 8 = DEFLATE)
+        uint32_t startPos;       // in zip file
+        uint32_t compressedSize; // in zip file
+        uint32_t size;           // once decompressed
+        uint16_t method;         // compress method (0 = not compressed, 8 = DEFLATE)
 
         FileEntry(uint32_t startPos, uint32_t compressedSize, uint32_t size, uint16_t method)
-            : startPos_(startPos), compressedSize_(compressedSize), size_(size), method_(method) {}
+            : startPos(startPos), compressedSize(compressedSize), size(size), method(method) {}
     };
 
     using FilePathPtr = std::shared_ptr<char[]>;
@@ -136,13 +136,14 @@ private:
     template <class T>
     struct Allocator {
         typedef T value_type;
-        Allocator() noexcept {};
+        Allocator() noexcept = default;
+        ;
         // Allocator(const Allocator &) noexcept {};
         template <class O>
         Allocator(const Allocator<O> &) noexcept {};
 
         void deallocate(T *p, size_t n) { heap_caps_free((void *)p); };
-        T *allocate(size_t n) {
+        auto allocate(size_t n) -> T * {
             return static_cast<T *>(heap_caps_malloc(n * sizeof(T), MALLOC_CAP_SPIRAM));
         };
     };

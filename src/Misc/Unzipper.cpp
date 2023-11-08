@@ -379,9 +379,9 @@ auto Unzipper::getFileSize() -> uint32_t {
         return 0;
     }
     if constexpr (UNZIPPER_DEBUG) {
-        log_d("File size: %" PRIu32, currentFileEntry_->size_ + 1);
+        log_d("File size: %" PRIu32, currentFileEntry_->size + 1);
     }
-    return currentFileEntry_->size_ + 1;
+    return currentFileEntry_->size + 1;
 }
 
 auto Unzipper::fileExists(const std::string &filePath) -> bool {
@@ -399,9 +399,9 @@ void Unzipper::showEntries() {
         std::cout << "---- Files available: ----" << std::endl;
         for (auto &f : *fileEntriesMap_) {
             FileEntry *fe = &fileEntries_[f.second];
-            std::cout << "pos: " << std::setw(7) << fe->startPos_ << " zip size: " << std::setw(7)
-                      << fe->compressedSize_ << " out size: " << std::setw(7) << fe->size_
-                      << " method: " << std::setw(1) << fe->method_ << " name: <" << f.first << ">"
+            std::cout << "pos: " << std::setw(7) << fe->startPos << " zip size: " << std::setw(7)
+                      << fe->compressedSize << " out size: " << std::setw(7) << fe->size
+                      << " method: " << std::setw(1) << fe->method << " name: <" << f.first << ">"
                       << std::endl;
         }
         std::cout << "[End of List]" << std::endl;
@@ -425,7 +425,7 @@ auto Unzipper::openFile(const std::string &filePath) -> bool {
         bool completed = false;
 
         while (true) {
-            if (!file_.seek(currentFileEntry_->startPos_, SSeekSet)) ERR(13);
+            if (!file_.seek(currentFileEntry_->startPos, SSeekSet)) ERR(13);
             if (file_.read((uint8_t *)&fileHeader_, sizeof(FileHeader)) != sizeof(FileHeader))
                 ERR(14);
 
@@ -451,7 +451,7 @@ auto Unzipper::readFile(uint8_t *fileData, uint32_t fileDataSize) -> uint32_t {
     // log_d("getFile: %s", filePath);
 
     if (!isOpen_ || (currentFileEntry_ == nullptr) ||
-        ((currentFileEntry_->size_ + 1) != fileDataSize)) {
+        ((currentFileEntry_->size + 1) != fileDataSize)) {
         return 0;
     }
 
@@ -461,22 +461,21 @@ auto Unzipper::readFile(uint8_t *fileData, uint32_t fileDataSize) -> uint32_t {
     bool completed = false;
     while (true) {
 
-        if (!file_.seek(currentFileEntry_->startPos_ + sizeof(FileHeader) +
+        if (!file_.seek(currentFileEntry_->startPos + sizeof(FileHeader) +
                             fileHeader_.filePathLength + fileHeader_.extraFieldLength,
                         SSeekSet))
             ERR(17);
 
         if (fileData == nullptr) ERR(18);
-        fileData[currentFileEntry_->size_] = 0;
+        fileData[currentFileEntry_->size] = 0;
 
-        if (currentFileEntry_->method_ == 0) { // No Compression
-            if (file_.read((uint8_t *)fileData, currentFileEntry_->size_) !=
-                currentFileEntry_->size_)
+        if (currentFileEntry_->method == 0) { // No Compression
+            if (file_.read((uint8_t *)fileData, currentFileEntry_->size) != currentFileEntry_->size)
                 ERR(19);
-        } else if (currentFileEntry_->method_ == 8) { // Deflate compression
+        } else if (currentFileEntry_->method == 8) { // Deflate compression
 
-            repeat_ = currentFileEntry_->compressedSize_ / BUFFER_SIZE;
-            remains_ = currentFileEntry_->compressedSize_ % BUFFER_SIZE;
+            repeat_ = currentFileEntry_->compressedSize / BUFFER_SIZE;
+            remains_ = currentFileEntry_->compressedSize % BUFFER_SIZE;
             current_ = 0;
 
             zstr_.zalloc = spiZAlloc;
@@ -486,7 +485,7 @@ auto Unzipper::readFile(uint8_t *fileData, uint32_t fileDataSize) -> uint32_t {
             zstr_.opaque = nullptr;
             zstr_.next_in = nullptr;
             zstr_.avail_in = 0;
-            zstr_.avail_out = currentFileEntry_->size_;
+            zstr_.avail_out = currentFileEntry_->size;
             zstr_.next_out = (unsigned char *)fileData;
 
             int zret = mz_inflateInit2(&zstr_, -15);
@@ -545,7 +544,7 @@ error:
         fileSize = 0;
         log_e("Unzipper readFile: Error!: %d", err);
     } else {
-        fileSize = currentFileEntry_->size_ + 1;
+        fileSize = currentFileEntry_->size + 1;
     }
 
     return fileSize;
