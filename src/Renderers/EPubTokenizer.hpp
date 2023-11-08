@@ -1,7 +1,7 @@
 #pragma once
 
 #include <array>
-#include <map>
+#include <unordered_map>
 
 #include "EPub/EPubFile.hpp"
 #include "Misc/SpiramAllocator.hpp"

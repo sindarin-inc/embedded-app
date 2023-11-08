@@ -1,12 +1,12 @@
 #include "HtmlCleaner.hpp"
 
 #include <functional>
-#include <map>
+#include <unordered_map>
 
 #include "sindarin-debug.h"
 
 // NOLINTNEXTLINE(cert-err58-cpp)
-std::map<std::string, std::string> elementMap = {
+std::unordered_map<std::string, std::string> elementMap = {
     /* clang-format off */
     {"&nbsp;", " "},
     {"&lt;", "<"},

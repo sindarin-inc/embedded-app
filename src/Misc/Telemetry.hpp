@@ -1,6 +1,6 @@
 #pragma once
 
-#include <map>
+#include <unordered_map>
 
 #include "Misc/Dispatch.hpp"
 #include "Misc/Platform.hpp"
@@ -35,18 +35,19 @@ public:
     Telemetry(FileSystem &fs, PreferencesStore &prefs) : fileSystem_(fs), prefs_(prefs) {}
     Telemetry(const Telemetry &) = delete;
 
-    void logMetricData(TelemetryField field, std::map<std::string, TelemetryVariant> data = {}) {
+    void logMetricData(TelemetryField field,
+                       std::unordered_map<std::string, TelemetryVariant> data = {}) {
         logMetricImpl(field, "", data);
     }
 
     template <typename T>
     void logMetric(TelemetryField field, T value,
-                   std::map<std::string, TelemetryVariant> data = {}) {
+                   std::unordered_map<std::string, TelemetryVariant> data = {}) {
         logMetricImpl(field, value, data);
     }
 
     auto variantToJson(const TelemetryVariant &v) -> std::string;
-    auto mapToJson(const std::map<std::string, TelemetryVariant> &data) -> std::string;
+    auto mapToJson(const std::unordered_map<std::string, TelemetryVariant> &data) -> std::string;
 
     static auto metricLogPath() -> std::string { return "/metrics/telemetry.jsonl"; }
 
@@ -62,7 +63,7 @@ private:
 
     template <typename T>
     void logMetricImpl(TelemetryField field, T value,
-                       std::map<std::string, TelemetryVariant> &data) {
+                       std::unordered_map<std::string, TelemetryVariant> &data) {
         static_assert(
             std::disjunction_v<std::is_same<T, float>, std::is_same<T, uint32_t>,
                                std::is_same<T, uint16_t>, std::is_same<T, int>,

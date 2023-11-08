@@ -62,7 +62,8 @@ auto Telemetry::variantToJson(const TelemetryVariant &v) -> std::string {
     }
 }
 
-auto Telemetry::mapToJson(const std::map<std::string, TelemetryVariant> &data) -> std::string {
+auto Telemetry::mapToJson(const std::unordered_map<std::string, TelemetryVariant> &data)
+    -> std::string {
     std::string json;
     for (const auto &kv : data) {
         json += StringFormat(",\"%s\":%s", kv.first.c_str(), variantToJson(kv.second).c_str());

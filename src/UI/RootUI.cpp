@@ -75,7 +75,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     display_ = display;
     auto lastMagReading = power_.getLastMagReading();
 
-    std::map<std::string, TelemetryVariant> bootData = {
+    std::unordered_map<std::string, TelemetryVariant> bootData = {
         {"fw", kVersionString},
         {"sha", kGitHash},
         {"bc", prefs_.bootCount.get().value_or(0)},
@@ -1447,7 +1447,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
 #if USE_BLE
     debugSettingsMenu->addMenuItem(MenuItem("Set BLE Power", [this, display, debugSettingsMenu]() {
-        static std::map<esp_power_level_t, std::string> blePowerOptions = {
+        static std::unordered_map<esp_power_level_t, std::string> blePowerOptions = {
             {ESP_PWR_LVL_P3, "+3dBm"}, {ESP_PWR_LVL_N0, "0dBm"},    {ESP_PWR_LVL_N3, "-3dBm"},
             {ESP_PWR_LVL_N9, "-9dBm"}, {ESP_PWR_LVL_N18, "-18dBm"}, {ESP_PWR_LVL_N24, "-24dBm"},
         };

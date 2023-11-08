@@ -2,8 +2,8 @@
 
 #include <cstdint>
 #include <deque>
-#include <map>
 #include <string>
+#include <unordered_map>
 #include <variant>
 #include <vector>
 
@@ -98,7 +98,8 @@ public:
         return readableType == "pocket_article" || readableType == "email_article";
     }
 
-    [[nodiscard]] auto telemetryPlacemarkMetrics() const -> std::map<std::string, TelemetryVariant>;
+    [[nodiscard]] auto telemetryPlacemarkMetrics() const
+        -> std::unordered_map<std::string, TelemetryVariant>;
 
     [[nodiscard]] auto authorString() const -> SpiramString {
         if (authors.size() == 0) {
