@@ -23,11 +23,9 @@ void ReadablePopupMenuScreen::setUpPopupMenu() {
             // If current spine item is not the first in the chapter, add offsets of previous spine
             // items in chapter to get the correct offset
             auto previousSpineOffset = 0;
-            if (!stream->spineIdxIsChapterStart(spineIdx)) {
-                auto chapterStartSpineIdx = stream->getChapterFirstSpineIdx(spineIdx);
-                for (auto i = chapterStartSpineIdx; i < spineIdx; i++) {
-                    previousSpineOffset += stream->getUncompressedSize(i);
-                }
+            auto chapterStartSpineIdx = stream->getChapterFirstSpineIdx(spineIdx);
+            for (auto i = chapterStartSpineIdx; i < spineIdx; i++) {
+                previousSpineOffset += stream->getUncompressedSize(i);
             }
             auto currentOffset =
                 chapter.epubOffset + previousSpineOffset + renderer_.getCurrentPlace()->getOffset();
