@@ -118,7 +118,7 @@ private:
         return *(uint16_t *)b;
     }
 
-    auto cleanFilePath(const char *filePath) -> char *;
+    auto cleanFilePath(const char *filePath) -> std::string;
 
     uint16_t repeat_;
     uint16_t remains_;

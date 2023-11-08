@@ -329,8 +329,10 @@ canonicalize_path(char * path, int debug)
 #endif
 
 // This method cleans filePath path that may contain relation folders (like '..').
-auto Unzipper::cleanFilePath(const char *filePath) -> char * {
-    char *str = new char[strlen(filePath) + 1];
+auto Unzipper::cleanFilePath(const char *filePath) -> std::string {
+    std::string ret(strlen(filePath), '\0');
+
+    char *str = ret.data();
 
     const char *s = filePath;
     const char *u;
@@ -359,7 +361,7 @@ auto Unzipper::cleanFilePath(const char *filePath) -> char * {
         ;
     }
 
-    return str;
+    return ret;
 }
 
 auto Unzipper::getFileSize() -> uint32_t {
