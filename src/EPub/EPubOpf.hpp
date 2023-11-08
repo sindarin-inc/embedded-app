@@ -13,8 +13,8 @@ public:
     EPubOpf(const char *path) : path_(path) {}
 
     struct ManifestItem {
-        std::string href;
-        std::string mediaType;
+        SpiramString href;
+        SpiramString mediaType;
     };
     struct SpineItem {
         ManifestItem *item;
@@ -55,9 +55,9 @@ private:
 
     std::string basePath_;
 
-    using ManifestMap = std::unordered_map<std::string, ManifestItem>;
-    using ManifestIterator = std::unordered_map<std::string, ManifestItem>::iterator;
-    using SpineVector = std::vector<SpineItem>;
+    using ManifestMap = SpiramMap<SpiramString, ManifestItem>;
+    using ManifestIterator = SpiramMap<SpiramString, ManifestItem>::iterator;
+    using SpineVector = SpiramVector<SpineItem>;
 
     std::string title_;
     std::string creator_;

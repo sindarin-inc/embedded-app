@@ -1,5 +1,6 @@
 #pragma once
 
+#include <ArduinoJson.h>
 #include <cstdlib>
 #include <esp_heap_caps.h>
 #include <functional>
@@ -47,14 +48,45 @@ auto operator!=(const SpiramAllocator<T> &, const SpiramAllocator<U> &) -> bool 
     return false;
 }
 
-typedef std::basic_string<char, std::char_traits<char>, SpiramAllocator<char>> SpiramString;
-auto operator==(const SpiramString &spiramStr, const std::string &stdStr) -> bool;
+class SpiramString : public std::basic_string<char, std::char_traits<char>, SpiramAllocator<char>> {
+public:
+    using Base = std::basic_string<char, std::char_traits<char>, SpiramAllocator<char>>;
+    // Inherit constructors
+    using Base::Base;
 
-// For some reason in the sim (and on idf only on linux) the compiler is dumb and can't derive these
-// from the equality operator. I think the <=> (spaceship operator) in c++ is supposed to fix this.
-auto operator!=(const SpiramString &spiramStr, const std::string &stdStr) -> bool;
+    // TODO: Consider making this explicit so it's obvious when we're doing a copy
+    SpiramString(const std::string &str)
+        : basic_string(str.begin(), str.end(), SpiramAllocator<char>()) {}
+
+    // TODO: Consider making this explicit so it's obvious when we're doing a copy
+    operator std::string() const { return std::string(this->begin(), this->end()); }
+
+    using Base::operator=;
+
+    auto operator==(const SpiramString &str) const -> bool {
+        return this->compare(str.c_str()) == 0;
+    }
+    auto operator==(const std::string &stdStr) const -> bool {
+        return this->compare(stdStr.c_str()) == 0;
+    }
+    auto operator==(const char *str) const -> bool { return this->compare(str) == 0; }
+};
+
+auto convertToJson(const SpiramString &src, JsonVariant dst) -> bool;
+
 auto operator==(const std::string &stdStr, const SpiramString &spiramStr) -> bool;
-auto operator!=(const std::string &stdStr, const SpiramString &spiramStr) -> bool;
+
+namespace std {
+template <>
+struct hash<SpiramString> {
+    size_t operator()(const SpiramString &s) const noexcept {
+        // You can use the hash function for std::string as a base.
+        // This assumes that the hash of the characters data is enough
+        // and the custom allocator does not affect the hash.
+        return std::hash<std::string_view>{}(std::string_view(s.data(), s.size()));
+    }
+};
+} // namespace std
 
 template <typename T>
 class CustomDeleter {
@@ -87,6 +119,10 @@ auto SpiRamArrayPtr(size_t len) -> std::shared_ptr<T[]> {
 
 template <typename T>
 using SpiramVector = std::vector<T, SpiramAllocator<T>>;
+
+template <typename K, typename V>
+using SpiramMap = std::unordered_map<K, V, std::hash<K>, std::equal_to<K>,
+                                     SpiramAllocator<std::pair<const K, V>>>;
 
 class SpiramStringBuf : public std::streambuf {
 public:
