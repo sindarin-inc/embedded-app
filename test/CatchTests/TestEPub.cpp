@@ -89,13 +89,13 @@ TEST_CASE("Test EPub Books Rendering", "[.][epub]") {
         WAIT_FOR_DRAW();
         WAIT_FOR_DRAW();
 
-        ASSERT_VIEW_UNCHANGED("MainMenu");
+        ASSERT_VIEW_UNCHANGED("LastPagePopupMenu");
 
         SendRemoteCommand(ENTER);
         WAIT_FOR_DRAW();
         WAIT_FOR_DRAW();
 
-        ASSERT_VIEW_UNCHANGED("SecondScreen");
+        ASSERT_VIEW_UNCHANGED("MainMenu");
 
 #if 0
         // The following is kept as it would be useful if other books are integrated to the test.
