@@ -4,6 +4,7 @@
 #include <map>
 
 #include "EPub/EPubFile.hpp"
+#include "Misc/SpiramAllocator.hpp"
 #include "Tokenizer.hpp"
 
 // EPubTokenizer
@@ -145,9 +146,9 @@ private:
                                HEADER, FIGURE, FIGCAPTION, TABLE, TH, TR, TD, THEAD };
     // clang-format on
 
-    using Tags = std::unordered_map<std::string, Tag>;
-    using Entities = std::unordered_map<std::string, const char *>;
-    using Characters = std::unordered_map<std::string, const char *>;
+    using Tags = SpiramMap<SpiramString, Tag>;
+    using Entities = SpiramMap<SpiramString, const char *>;
+    using Characters = SpiramMap<SpiramString, const char *>;
 
     // Hash HTML tags
     static Tags tags;
