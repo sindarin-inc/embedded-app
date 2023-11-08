@@ -59,7 +59,7 @@ public:
         : basic_string(str.begin(), str.end(), SpiramAllocator<char>()) {}
 
     // TODO: Consider making this explicit so it's obvious when we're doing a copy
-    operator std::string() const { return std::string(this->begin(), this->end()); }
+    operator std::string() const { return {this->begin(), this->end()}; }
 
     using Base::operator=;
 
