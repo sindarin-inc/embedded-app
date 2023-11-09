@@ -67,5 +67,6 @@ clang-tidy: check_idf
 		pip install --upgrade pyclang ; \
 		echo "Clang-tidy should now be installed. Please reload your IDF environment with:" \
 		echo ". $$IDF_PATH/export.sh" ; \
+		exit 1 ; \
 	fi
 	IDF_TOOLCHAIN=clang idf.py -B build-clang clang-check --run-clang-tidy-py scripts/run-clang-tidy.py --run-clang-tidy-options "-fix -header-filter=embedded-app/src/.*" --exclude-paths managed_components --exclude-paths components
