@@ -35,7 +35,7 @@ void EPubOpf::parse(const std::shared_ptr<uint8_t[]> &buffer, uint32_t length,
         for (auto itemref : spine.children("itemref")) {
             std::string idref = itemref.attribute("idref").value();
 
-            auto it = manifest_.find(idref);
+            auto it = manifest_.find(static_cast<SpiramString>(idref));
             if (it != manifest_.end()) {
                 spine_.push_back(SpineItem{.item = &it->second});
             } else {
@@ -130,14 +130,14 @@ auto EPubOpf::getChapterFirstSpineIdx(SpineIdx spineIdx) const -> SpineIdx {
 
 auto EPubOpf::exists(const std::string &id) const -> bool {
     log_d("Checking if %s exists in manifest: %d", id.c_str(),
-          manifest_.find(id) != manifest_.end());
-    return manifest_.find(id) != manifest_.end();
+          manifest_.find(static_cast<SpiramString>(id)) != manifest_.end());
+    return manifest_.find(static_cast<SpiramString>(id)) != manifest_.end();
 }
 
 auto EPubOpf::getHrefByManifestId(const std::string &manifestId) const -> std::string {
-    auto it = manifest_.find(manifestId);
+    auto it = manifest_.find(static_cast<SpiramString>(manifestId));
     if (it != manifest_.end()) {
-        return it->second.href;
+        return static_cast<std::string>(it->second.href);
     }
     return "";
 }
@@ -145,7 +145,7 @@ auto EPubOpf::getHrefByManifestId(const std::string &manifestId) const -> std::s
 auto EPubOpf::getManifestIdByHref(const std::string &href) const -> std::string {
     for (auto &item : manifest_) {
         if (item.second.href == href) {
-            return item.first;
+            return static_cast<std::string>(item.first);
         }
     }
     return "";

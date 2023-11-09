@@ -73,14 +73,16 @@ public:
 
     [[nodiscard]] auto getRelativeFilePath(const std::string &filename, SpineIdx spineIdx) const
         -> std::string {
-        std::string mainFilePath = opf_->getFullPath(opf_->getSpine(spineIdx).item->href);
+        std::string mainFilePath =
+            opf_->getFullPath(static_cast<std::string>(opf_->getSpine(spineIdx).item->href));
         std::string path;
         opf_->extractPath(mainFilePath.c_str(), path);
         return path + filename;
     }
 
     [[nodiscard]] auto getUncompressedSize(SpineIdx spineIdx) -> uint32_t {
-        std::string filePath = opf_->getFullPath(opf_->getSpine(spineIdx).item->href);
+        std::string filePath =
+            opf_->getFullPath(static_cast<std::string>(opf_->getSpine(spineIdx).item->href));
         // log_w("Loading file %s", filePath.c_str());
         if (epubUnzipper_.openFile(filePath.c_str())) {
             uint32_t size = epubUnzipper_.getFileSize();

@@ -54,12 +54,10 @@ public:
     // Inherit constructors
     using Base::Base;
 
-    // TODO: Consider making this explicit so it's obvious when we're doing a copy
-    SpiramString(const std::string &str)
+    explicit SpiramString(const std::string &str)
         : basic_string(str.begin(), str.end(), SpiramAllocator<char>()) {}
 
-    // TODO: Consider making this explicit so it's obvious when we're doing a copy
-    operator std::string() const { return {this->begin(), this->end()}; }
+    explicit operator std::string() const { return {this->begin(), this->end()}; }
 
     using Base::operator=;
 
@@ -72,8 +70,10 @@ public:
     auto operator==(const char *str) const -> bool { return this->compare(str) == 0; }
 };
 
-// NOLINTNEXTLINE(readability-identifier-naming) - ArduinoJson requires this name
-auto convertToJson(const SpiramString &src, JsonVariant dst) -> bool;
+namespace ARDUINOJSON_NAMESPACE {
+template <>
+struct IsString<SpiramString> : true_type {};
+} // namespace ARDUINOJSON_NAMESPACE
 
 auto operator==(const std::string &stdStr, const SpiramString &spiramStr) -> bool;
 

@@ -135,7 +135,7 @@ auto Unzipper::open() -> bool {
                 }
 
                 const char *fName = (char *)&entries[fileEntryOffset + sizeof(DirFileHeader)];
-                std::string filePath = std::string(fName, dirFileHeader->filePathLength);
+                auto filePath = SpiramString(fName, dirFileHeader->filePathLength);
 
                 std::shared_ptr<FileEntry> fe = std::make_shared<FileEntry>(
                     FileEntry{dirFileHeader->headerOffset, dirFileHeader->compressedSize,
@@ -382,7 +382,7 @@ auto Unzipper::fileExists(const std::string &filePath) -> bool {
 
     std::string cleanedFilePath = cleanFilePath(filePath.c_str());
 
-    return fileEntries_.find(cleanedFilePath) != fileEntries_.end();
+    return fileEntries_.find(static_cast<SpiramString>(cleanedFilePath)) != fileEntries_.end();
 }
 
 void Unzipper::showEntries() {
@@ -407,7 +407,8 @@ auto Unzipper::openFile(const std::string &filePath) -> bool {
 
     std::string cleanedFilePath = cleanFilePath(filePath.c_str());
 
-    if (auto it = fileEntries_.find(cleanedFilePath); it == fileEntries_.end()) {
+    if (auto it = fileEntries_.find(static_cast<SpiramString>(cleanedFilePath));
+        it == fileEntries_.end()) {
         log_e("Unzipper openFile: File not found: <%s>", cleanedFilePath.c_str());
         showEntries();
     } else {

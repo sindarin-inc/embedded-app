@@ -480,7 +480,7 @@ auto EPubTokenizer::getCharEntity(const char *str) -> std::pair<const char *, co
         } else if (number) {
             return {toUtf8(strtol(theStr.c_str(), nullptr, 10)), str};
         } else {
-            auto search = entities.at(theStr);
+            auto search = entities.at(static_cast<SpiramString>(theStr));
             if (search != nullptr) {
                 return {search, str};
             }
@@ -492,7 +492,7 @@ auto EPubTokenizer::getCharEntity(const char *str) -> std::pair<const char *, co
 
 auto EPubTokenizer::loadXHTMLAt(Idx spineIdx) -> pugi::xml_document & {
     const EPubOpf::SpineItem &spineItem = stream_->getSpine(spineIdx);
-    return stream_->getXHTMLFile(spineItem.item->href);
+    return stream_->getXHTMLFile(static_cast<std::string>(spineItem.item->href));
 }
 
 #if 0
@@ -1773,7 +1773,7 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint32_t len) -> bool 
                         .tokenId = TokenId::TEXT,
                         .spacesAfter = 0};
             do {
-                auto chIt = superscriptCharacters.find(std::string((char *)&curChar, 1));
+                auto chIt = superscriptCharacters.find(SpiramString((char *)&curChar, 1));
                 if (chIt != superscriptCharacters.end()) {
                     const char *script = chIt->second;
                     while (*script) {
@@ -1807,7 +1807,7 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint32_t len) -> bool 
                         .tokenId = TokenId::TEXT,
                         .spacesAfter = 0};
             do {
-                auto chIt = subscriptCharacters.find(std::string((char *)&curChar, 1));
+                auto chIt = subscriptCharacters.find(SpiramString((char *)&curChar, 1));
                 if (chIt != subscriptCharacters.end()) {
                     const char *script = chIt->second;
                     while (*script) {

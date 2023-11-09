@@ -96,7 +96,8 @@ public:
     [[nodiscard]] inline auto toPlace(const StreamPlace &streamPlace) const
         -> std::shared_ptr<Place> override {
         const EPubOpf::SpineItem &spineItem = stream_->getSpine(streamPlace.getSpineIdx());
-        return std::make_shared<EPubPlace>(streamPlace.getOffset(), spineItem.item->href);
+        return std::make_shared<EPubPlace>(streamPlace.getOffset(),
+                                           static_cast<std::string>(spineItem.item->href));
     }
 
     [[nodiscard]] auto streamSize() const -> size_t override {
