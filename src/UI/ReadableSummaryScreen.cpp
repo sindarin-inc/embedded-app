@@ -3,6 +3,7 @@
 #include <utility>
 
 #include "Misc/SpiramAllocator.hpp"
+#include "Models/UserReadablePartialChapterSummary.hpp"
 
 auto ReadableSummaryScreen::layout(LayoutContext &context, Size size) -> Size {
     context.setViewFrame(leftArrowView_, {{0, -5}, {10, 5}});
@@ -65,8 +66,20 @@ void ReadableSummaryScreen::render(DisplaySystem &display) {
         auto epubStream = std::dynamic_pointer_cast<EPubFile>(rendererStream_);
         auto chapterId = epubStream->getManifestIdByHref(placeInReadable_->getHRef());
 
-        SpiramString summaryString =
-            epubStream->getSummaryContent(chapterId, placeInReadable_, placeInSummary, showUnread_);
+        SpiramString summaryString;
+        auto partialChapterSummary =
+            UserReadablePartialChapterSummary::loadForReadable(fileSystem_, readable_);
+        if (!showUnread_ && partialChapterSummary != nullptr &&
+            !partialChapterSummary->text.empty()) {
+            // summaryString += chapter.title;
+            // TODO: Look up chapter title
+            summaryString = StringFormat(" (%d%% read)\n\n", partialChapterSummary->readPct);
+            summaryString += partialChapterSummary->text;
+            summaryString += "\n\n";
+        } else {
+            summaryString = epubStream->getSummaryContent(chapterId, placeInReadable_,
+                                                          placeInSummary, showUnread_);
+        }
 
         if (preservePlace_) {
             placeInSummary = preservePlace_;

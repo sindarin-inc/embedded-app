@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Misc/SpiramAllocator.hpp"
 #include "Models/Json.hpp"
 #include "Models/JsonSerializable.hpp"
 #include "Models/Place.hpp"
@@ -45,8 +46,10 @@ public:
         }
 
         if (j.containsKey("partial_chapter_summary")) {
-            partialChapterSummary = std::make_shared<UserReadablePartialChapterSummary>();
-            partialChapterSummary->fromJson(j["partial_chapter_summary"]);
+            partialChapterSummary = SpiRamPtr<UserReadablePartialChapterSummary>();
+            if (!partialChapterSummary->fromJson(j["partial_chapter_summary"])) {
+                partialChapterSummary = nullptr;
+            }
         } else {
             partialChapterSummary = nullptr;
         }

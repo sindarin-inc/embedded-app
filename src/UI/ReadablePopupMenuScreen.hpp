@@ -12,7 +12,7 @@
 class ReadablePopupMenuScreen : public ContainerScreen, public View, public Menu {
 
 public:
-    ReadablePopupMenuScreen(DisplaySystem &display, PreferencesStore &prefs,
+    ReadablePopupMenuScreen(DisplaySystem &display, PreferencesStore &prefs, FileSystem &fileSystem,
                             const std::shared_ptr<Readable> &readable,
                             LightingController &lightingController, Renderer &renderer,
                             Telemetry &telemetry)
@@ -21,7 +21,7 @@ public:
           lightingAdjustScreen_(display, prefs, lightingController, telemetry),
           readableSeekScreen_(prefs, readable, renderer),
           readableTableOfContentsScreen_(prefs, readable, renderer, display, telemetry),
-          readableSummaryScreen_(prefs, readable, display, renderer),
+          readableSummaryScreen_(prefs, fileSystem, readable, display, renderer),
           readableDictionaryScreen_(prefs, readable, display, renderer) {
         this->setCurrentScreen(*this);
 

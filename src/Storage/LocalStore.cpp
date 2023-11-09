@@ -394,35 +394,56 @@ auto LocalStore::processReadablePlacemarksFromServer(const std::shared_ptr<Reada
 auto LocalStore::processReadablePartialChapterSummary(
     const std::shared_ptr<Readable> &readable,
     const std::shared_ptr<UserReadablePartialChapterSummary> &partialChapterSummary) -> bool {
-    auto path = readableFilePathForReading(readable);
-    auto docType = RendererStream::parseDocType(path.c_str());
-    auto prefsPlaceString = prefs_.readablePlace.get(readable->shortenedUuid.c_str());
 
-    // Store partial summary in json file, then load it in EPubFile::getSummaryContent
-    if (docType == DocType::EPUB && partialChapterSummary != nullptr) {
-        // Check if partial summary already exists and matches place, otherwise store partial
-        // summary in json file
-        auto partialSummaryPath = readable->partialSummaryFilePath();
-        SFile partialSummaryFile = fileSystem.open(partialSummaryPath.c_str(), FILE_READ, false);
-        if (partialSummaryFile) {
-            // Check if partial summary already exists and matches place
-            auto storedPartialSummary = std::make_unique<SpiRamJsonDocument>();
-            auto error = deserializeJson(*storedPartialSummary, partialSummaryFile);
-            partialSummaryFile.close();
-            if (error.code() != DeserializationError::Ok) {
-                log_e("Failed to deserialize partial summary file: %s", error.c_str());
-                return false;
-            }
-            auto storedPlaceString = (*storedPartialSummary)["place"].as<std::string>();
-
-            return false;
-        }
-
-        return true;
+    // TODO: Delete any existing partial summary?
+    if (partialChapterSummary == nullptr) {
+        log_e("Partial summary is null");
+        return false;
     }
-}
 
-return false;
+    // TODO: This doesn't work if the readable hasn't been downloaded yet
+    auto path = readableFilePathForWriting(readable);
+    auto docType = RendererStream::parseDocType(path.c_str());
+    // Only supported for epub
+    if (docType != DocType::EPUB) {
+        log_e("Doc not epub %d", docType);
+        return false;
+    }
+
+    auto existingPartialSummary =
+        UserReadablePartialChapterSummary::loadForReadable(fileSystem, readable);
+    // Check if the existing summary is for the same place. If so don't overwrite it.
+    if (existingPartialSummary != nullptr &&
+        existingPartialSummary->ePubPlace == partialChapterSummary->ePubPlace) {
+        log_e("Existing summary is the same");
+        return false;
+    }
+
+    // Otherwise write the updated partial summary to the json file
+    auto doc = std::make_unique<SpiRamJsonDocument>(
+        std::min(2048, (int)partialChapterSummary->text.length() * 2));
+    bool serialized = convertToJson(*partialChapterSummary, *doc);
+    if (!serialized) {
+        log_e("Failed to serialize partial summary");
+        return false;
+    }
+
+    auto partialSummaryPath = readable->partialSummaryFilePath();
+    fileSystem.remove(partialSummaryPath.c_str());
+    auto file = fileSystem.open(partialSummaryPath.c_str(), FILE_WRITE, false);
+    if (!file) {
+        log_e("Failed to open partial summary file for writing");
+        return false;
+    }
+
+    // Write the partial summary to the json file
+    auto len = serializeJson(*doc, file);
+    if (len == 0) {
+        log_e("Failed to write partial summary to json file");
+        return false;
+    }
+
+    return true;
 }
 
 void LocalStore::resetReadablesPlacemarkChanged(const ReadablesVector &readables) {
@@ -1334,6 +1355,7 @@ void LocalStore::readableFilePurge(const std::shared_ptr<Readable> &readable) {
     fileSystem.remove(StringFormat("/%s/%s.txt", type.c_str(), uuid.c_str()));
     fileSystem.remove(StringFormat("/%s/%s.epub", type.c_str(), uuid.c_str()));
     fileSystem.remove(StringFormat("/toc/%s-toc.json", uuid.c_str()));
+    fileSystem.remove(StringFormat("/summary/%s-summary.json", uuid.c_str()));
 
     if (readable->files.size() > 0) {
         fileSystem.remove(StringFormat("/%s.epub", readable->file().name.c_str()));

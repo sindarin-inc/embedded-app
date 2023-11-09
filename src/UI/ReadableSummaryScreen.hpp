@@ -17,10 +17,11 @@
 
 class ReadableSummaryScreen : public Screen, public EinkView {
 public:
-    ReadableSummaryScreen(PreferencesStore &prefs, std::shared_ptr<Readable> readable,
-                          DisplaySystem &display, Renderer &renderer)
-        : EinkView(display), prefs_(prefs), readable_(std::move(readable)), renderer_(renderer),
-          display_(display), upperLeftTextView_(display, upperLeftText_),
+    ReadableSummaryScreen(PreferencesStore &prefs, FileSystem &fileSystem,
+                          std::shared_ptr<Readable> readable, DisplaySystem &display,
+                          Renderer &renderer)
+        : EinkView(display), prefs_(prefs), fileSystem_(fileSystem), readable_(std::move(readable)),
+          renderer_(renderer), display_(display), upperLeftTextView_(display, upperLeftText_),
           bottomRightTextView_(display, bottomRightText_), leftArrowView_(display, ArrowUp),
           rightArrowView_(display, ArrowDown) {}
 
@@ -40,6 +41,7 @@ public:
 
 protected:
     PreferencesStore &prefs_;
+    FileSystem &fileSystem_;
     std::shared_ptr<Readable> readable_;
     Renderer &renderer_;
     DisplaySystem &display_;

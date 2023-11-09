@@ -2,14 +2,42 @@
 
 #include <string>
 
+#include "Misc/Defer.hpp"
 #include "Misc/SpiramAllocator.hpp"
 #include "Models/JsonSerializable.hpp"
 #include "Models/Place.hpp"
+#include "Storage/FileSystem.hpp"
 
 class UserReadablePartialChapterSummary : public JsonSerializable {
 public:
     UserReadablePartialChapterSummary() = default;
     ~UserReadablePartialChapterSummary() override = default;
+
+    static auto loadForReadable(FileSystem &fileSystem, std::shared_ptr<Readable> readable)
+        -> std::shared_ptr<UserReadablePartialChapterSummary> {
+        auto partialSummaryPath = readable->partialSummaryFilePath();
+        auto file = fileSystem.open(partialSummaryPath.c_str(), FILE_READ, false);
+        // Check if partial summary already exists
+        if (!file) {
+            return nullptr;
+        }
+        defer { file.close(); };
+
+        auto doc = std::make_unique<SpiRamJsonDocument>(file.size() * 2);
+        auto error = deserializeJson(*doc, file);
+        if (error.code() != DeserializationError::Ok) {
+            log_e("Failed to deserialize partial summary file: %s", error.c_str());
+            return nullptr;
+        }
+
+        auto partialSummary = std::make_shared<UserReadablePartialChapterSummary>();
+        if (!partialSummary->fromJson(doc->as<JsonObject>())) {
+            log_e("Failed to parse partial summary file: %s", partialSummaryPath.c_str());
+            return nullptr;
+        }
+
+        return partialSummary;
+    }
 
     SpiramString text;
     std::shared_ptr<EPubPlace> ePubPlace;

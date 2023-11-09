@@ -32,7 +32,8 @@ public:
                    LightingController &lightingController)
         : EinkView(display), stream_(stream), renderer_(display), readable_(readable),
           prefs_(prefs), telemetry_(telemetry), fileSystem_(fileSystem), display_(display),
-          popupMenuScreen_(display, prefs, readable, lightingController, renderer_, telemetry_),
+          popupMenuScreen_(display, prefs, fileSystem, readable, lightingController, renderer_,
+                           telemetry_),
           leftArrowView_(display, ArrowLeft), rightArrowView_(display, ArrowRight),
           upArrowView_(display, ArrowUp), downArrowView_(display, ArrowDown) {
 

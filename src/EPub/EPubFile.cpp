@@ -282,7 +282,6 @@ auto EPubFile::getSummaryContent(std::string &chapterId,
     SpiramString summaryText;
 
     for (const auto &chapter : getToc()) {
-        // auto sameChapter = chapter.href == chapterHref;
         auto futureChapter = opf_->getChapterIdx(std::string(chapter.href)) > chapterIdx;
         auto pastOrSameChapter = opf_->getChapterIdx(std::string(chapter.href)) <= chapterIdx;
 
@@ -294,15 +293,6 @@ auto EPubFile::getSummaryContent(std::string &chapterId,
             break;
         }
 
-        // TODO: Fix partialChapterSummary by having the server return them in the UserReadable and
-        // then storing them somewhere else that's not the ToC
-        // if (sameChapter && !includeUnread && chapter.partialChapterSummary != nullptr &&
-        //     !chapter.partialChapterSummary->text.empty()) {
-        //     summaryText += chapter.title;
-        //     summaryText += StringFormat(" (%d%% read)\n\n",
-        //     chapter.partialChapterSummary->readPct); summaryText +=
-        //     chapter.partialChapterSummary->text; summaryText += "\n\n";
-        // } else {
         std::string currentChapterId = opf_->getManifestIdByHref(std::string(chapter.href));
         std::string currentSummaryPath = opf_->getHrefByManifestId("summary-" + currentChapterId);
         pugi::xml_document &currentDoc = getXHTMLFile(currentSummaryPath);
@@ -328,7 +318,6 @@ auto EPubFile::getSummaryContent(std::string &chapterId,
                 summaryText += node.text().get();
             }
         }
-        // }
     }
 
     return summaryText;
