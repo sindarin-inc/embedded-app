@@ -373,8 +373,9 @@ TEST_CASE("Test some views independently") {
             ASSERT_VIEW_UNCHANGED("ReadableTableOfContentsScreen");
         }
 
+        LightingController lightingController;
+
         SECTION("Test Last Question in CES mode") {
-            LightingController lightingController;
             prefs.cesMode.set(true);
 
             auto readable = std::make_shared<Readable>();
@@ -390,6 +391,24 @@ TEST_CASE("Test some views independently") {
                                           lightingController);
             readableScreen.render(*display);
             ASSERT_VIEW_UNCHANGED("CesMode");
+        }
+
+        SECTION("Test EPUB image rendering with alternate bounding box") {
+            display->setBoundingBox(DisplayRect{10, 10, 236, 236});
+
+            auto readable = std::make_shared<Readable>();
+            auto readablesJsonDoc = LoadJsonDoc(fileSystem, "/readables-lq-epub.json");
+            readable->fromJson((*readablesJsonDoc)["readables"][0]);
+
+            Renderer renderer(*display);
+            auto path = LocalStore::readableFilePathForReading(fileSystem, readable);
+            auto stream = fileSystem.newEPubRendererStream(path.c_str(), readable);
+            renderer.setStream(stream);
+
+            ReadableScreen readableScreen(stream, *display, readable, prefs, telemetry, fileSystem,
+                                          lightingController);
+            readableScreen.render(*display);
+            ASSERT_VIEW_UNCHANGED("EpubImage");
         }
 
         SECTION("Test ReleaseNotesScreen") {
