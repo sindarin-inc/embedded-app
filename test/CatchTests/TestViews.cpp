@@ -394,7 +394,7 @@ TEST_CASE("Test some views independently") {
         }
 
         SECTION("Test EPUB image rendering with alternate bounding box") {
-            display->setBoundingBox(DisplayRect{10, 10, 236, 236});
+            display->setBoundingBox(DisplayRect{10, 20, 236, 236});
 
             auto readable = std::make_shared<Readable>();
             auto readablesJsonDoc = LoadJsonDoc(fileSystem, "/readables-lq-epub.json");
