@@ -291,9 +291,12 @@ def port(request: FixtureRequest) -> t.Optional[str]:
 class OverrideIdfSerial(IdfSerial):
     def __init__(self, ict_client: MFICTClient, *args: Any, **kwargs: Any) -> None:
         self.ict_client = ict_client
-        logger.info("opening temple")
-        self.ict_client.open_right_temple()
-        self.ict_client.dut_programming_mode()
+        ict_mode = self.ict_client.get_ict_mode()
+
+        if ict_mode == 1:
+            logger.info("opening temple")
+            self.ict_client.open_right_temple()
+            self.ict_client.dut_programming_mode()
         
         s = False
         while s == False:
