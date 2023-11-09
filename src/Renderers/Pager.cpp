@@ -358,9 +358,10 @@ auto Pager::displayPage(int16_t numSkipLines) -> uint8_t {
                 REND_WLOG("Dark Picture Percentage: %" PRIu8, darkPicturePercent);
 
                 display_.fillScreen(display_.bg);
-                display_.drawXBitmap((display_.width() - width) / 2,
-                                     (display_.height() - height) / 2, bitmap, width, height,
-                                     display_.fg);
+                display_.drawXBitmap(display_.xAbsolute((display_.absoluteWidth() - width) / 2),
+                                     display_.yAbsolute((display_.absoluteHeight() - height) / 2),
+                                     bitmap, width, height, display_.fg);
+
                 break;
             } else {
                 log_e("Picture not there!!");
