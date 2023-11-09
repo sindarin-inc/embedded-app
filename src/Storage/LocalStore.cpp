@@ -406,7 +406,7 @@ auto LocalStore::processReadablePartialChapterSummary(
     auto docType = RendererStream::parseDocType(path.c_str());
     // Only supported for epub
     if (docType != DocType::EPUB) {
-        log_e("Doc not epub %d", docType);
+        log_e("Doc not epub %hhu", docType);
         return false;
     }
 

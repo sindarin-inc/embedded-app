@@ -13,7 +13,7 @@ public:
     UserReadablePartialChapterSummary() = default;
     ~UserReadablePartialChapterSummary() override = default;
 
-    static auto loadForReadable(FileSystem &fileSystem, std::shared_ptr<Readable> readable)
+    static auto loadForReadable(FileSystem &fileSystem, const std::shared_ptr<Readable> &readable)
         -> std::shared_ptr<UserReadablePartialChapterSummary> {
         auto partialSummaryPath = readable->partialSummaryFilePath();
         auto file = fileSystem.open(partialSummaryPath.c_str(), FILE_READ, false);
