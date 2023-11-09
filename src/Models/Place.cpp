@@ -45,7 +45,7 @@ auto Place::factory(const std::string &placeStr, DocType docType) -> std::shared
                 }
             }
         }
-    } else {
+    } else if (placeStr.length() > 0) {
         offset = strtol(placeStr.c_str(), nullptr, 10);
         return std::make_shared<TxtPlace>(offset);
     }
