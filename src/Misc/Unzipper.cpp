@@ -361,6 +361,7 @@ auto Unzipper::cleanFilePath(const char *filePath) -> std::string {
         ;
     }
 
+    ret.resize(strlen(ret.data()));
     return ret;
 }
 
