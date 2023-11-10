@@ -401,18 +401,17 @@ auto LocalStore::processReadablePartialChapterSummary(
         return false;
     }
 
-    // TODO: This doesn't work if the readable hasn't been downloaded yet
     auto path = readableFilePathForWriting(readable);
     auto docType = RendererStream::parseDocType(path.c_str());
     // Only supported for epub
     if (docType != DocType::EPUB) {
-        log_e("Doc not epub %hhu", docType);
         return false;
     }
 
     auto existingPartialSummary =
         UserReadablePartialChapterSummary::loadForReadable(fileSystem, readable);
-    // Check if the existing summary is for the same place. If so don't overwrite it.
+    // Check if the existing summary is for the same place. If so, don't overwrite it if we dont
+    // need to.
     if (existingPartialSummary != nullptr &&
         existingPartialSummary->ePubPlace == partialChapterSummary->ePubPlace) {
         log_e("Existing summary is the same");
