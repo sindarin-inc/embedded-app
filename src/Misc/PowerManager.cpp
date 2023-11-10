@@ -8,6 +8,7 @@
 #include <ulp_riscv.h>
 #include <ulp_riscv_i2c.h>
 
+#include "Communications/WiFi.hpp"
 #include "Misc/Dispatch.hpp"
 #include "Platform.hpp"
 #include "Sensors/TempleAngle.hpp"
@@ -453,6 +454,9 @@ void PowerManager::beginShutdown() {
     log_d("beginShutdown from task %s", taskName);
 
     battery.saveLastBatteryReport();
+
+    // Disconnect WiFi as a quick-and-dirty way to cancel long running syncs
+    WiFi::getInstance().disconnectWiFi();
 
     if (beginShutdownCallback_ != nullptr) {
         beginShutdownCallback_();
