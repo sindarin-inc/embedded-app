@@ -360,32 +360,32 @@ auto IBMFFaceLow::ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2, FIX
         if (dist < kerning) {
             kerning = dist;
         }
-        if ((i > 0) && (distLeft[i - 1] >= 0)) {
-            dist = distLeft[i - 1] + distRight[i];
-            if (dist < kerning) {
-                kerning = dist;
-            }
-        }
-        if ((i < (hight - 1)) && (distLeft[i + 1] >= 0)) {
-            dist = distLeft[i + 1] + distRight[i];
-            if (dist < kerning) {
-                kerning = dist;
-            }
-        }
+        // if ((i > 0) && (distLeft[i - 1] >= 0)) {
+        //     dist = distLeft[i - 1] + distRight[i];
+        //     if (dist < kerning) {
+        //         kerning = dist;
+        //     }
+        // }
+        // if ((i < (hight - 1)) && (distLeft[i + 1] >= 0)) {
+        //     dist = distLeft[i + 1] + distRight[i];
+        //     if (dist < kerning) {
+        //         kerning = dist;
+        //     }
+        // }
     }
-    if ((firstIdx > 0) && (distRight[firstIdx - 1] >= 0)) {
-        dist = distLeft[firstIdx] + distRight[firstIdx - 1];
-        if (dist < kerning) {
-            kerning = dist;
-        }
-    }
-    uint8_t lastIdx = firstIdx + length - 1;
-    if ((lastIdx < (hight - 1)) && (distRight[lastIdx + 1] >= 0)) {
-        dist = distLeft[lastIdx] + distRight[lastIdx + 1];
-        if (dist < kerning) {
-            kerning = dist;
-        }
-    }
+    // if ((firstIdx > 0) && (distRight[firstIdx - 1] >= 0)) {
+    //     dist = distLeft[firstIdx] + distRight[firstIdx - 1];
+    //     if (dist < kerning) {
+    //         kerning = dist;
+    //     }
+    // }
+    // uint8_t lastIdx = firstIdx + length - 1;
+    // if ((lastIdx < (hight - 1)) && (distRight[lastIdx + 1] >= 0)) {
+    //     dist = distLeft[lastIdx] + distRight[lastIdx + 1];
+    //     if (dist < kerning) {
+    //         kerning = dist;
+    //     }
+    // }
 
     int addedWildcard;
 
