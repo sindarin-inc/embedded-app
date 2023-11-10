@@ -257,9 +257,10 @@ auto EPubFile::hasSummary(const std::string &chapterId) -> bool {
     return summaryChapterIdx != -1 && hasToc;
 }
 
-auto EPubFile::getSummaryContent(std::string &chapterId,
-                                 const std::shared_ptr<EPubPlace> &placeInReadable,
-                                 std::shared_ptr<TxtPlace> &placeInSummary, bool includeUnread)
+auto EPubFile::getSummaryContent(
+    std::string &chapterId, const std::shared_ptr<EPubPlace> &placeInReadable,
+    std::shared_ptr<TxtPlace> &placeInSummary,
+    std::shared_ptr<UserReadablePartialChapterSummary> partialChapterSummary, bool includeUnread)
     -> SpiramString {
 
     if (!hasSummary(chapterId)) {
@@ -282,6 +283,7 @@ auto EPubFile::getSummaryContent(std::string &chapterId,
     SpiramString summaryText;
 
     for (const auto &chapter : getToc()) {
+        auto sameChapter = chapter.href == chapterHref;
         auto futureChapter = opf_->getChapterIdx(std::string(chapter.href)) > chapterIdx;
         auto pastOrSameChapter = opf_->getChapterIdx(std::string(chapter.href)) <= chapterIdx;
 
@@ -293,29 +295,38 @@ auto EPubFile::getSummaryContent(std::string &chapterId,
             break;
         }
 
-        std::string currentChapterId = opf_->getManifestIdByHref(std::string(chapter.href));
-        std::string currentSummaryPath = opf_->getHrefByManifestId("summary-" + currentChapterId);
-        pugi::xml_document &currentDoc = getXHTMLFile(currentSummaryPath);
+        if (sameChapter && !includeUnread && partialChapterSummary != nullptr &&
+            !partialChapterSummary->text.empty()) {
+            summaryText += chapter.title;
+            summaryText += StringFormat(" (%d%% read)\n\n", partialChapterSummary->readPct);
+            summaryText += partialChapterSummary->text;
+            summaryText += "\n\n";
+        } else {
+            std::string currentChapterId = opf_->getManifestIdByHref(std::string(chapter.href));
+            std::string currentSummaryPath =
+                opf_->getHrefByManifestId("summary-" + currentChapterId);
+            pugi::xml_document &currentDoc = getXHTMLFile(currentSummaryPath);
 
-        for (auto node : currentDoc.child("html").child("body").children()) {
-            // If the node is p or other nodes with child nodes
-            if (std::string(node.name()) == "p") {
-                for (auto child : node.children()) {
-                    if (child.type() == pugi::node_pcdata) { // If child is plain character data
-                        summaryText += child.value();
+            for (auto node : currentDoc.child("html").child("body").children()) {
+                // If the node is p or other nodes with child nodes
+                if (std::string(node.name()) == "p") {
+                    for (auto child : node.children()) {
+                        if (child.type() == pugi::node_pcdata) { // If child is plain character data
+                            summaryText += child.value();
+                        }
+                        if (std::string(child.name()) == "br") {
+                            summaryText += "\n";
+                        }
                     }
-                    if (std::string(child.name()) == "br") {
-                        summaryText += "\n";
-                    }
+                    summaryText += "\n\n";
+                } else if (std::string(node.name()) == "h1") {
+                    summaryText += node.text().get();
+                    summaryText += "\n\n";
+                } else if (std::string(node.name()) == "br") {
+                    summaryText += "\n";
+                } else {
+                    summaryText += node.text().get();
                 }
-                summaryText += "\n\n";
-            } else if (std::string(node.name()) == "h1") {
-                summaryText += node.text().get();
-                summaryText += "\n\n";
-            } else if (std::string(node.name()) == "br") {
-                summaryText += "\n";
-            } else {
-                summaryText += node.text().get();
             }
         }
     }
