@@ -296,7 +296,8 @@ auto EPubFile::getSummaryContent(
         }
 
         if (sameChapter && !includeUnread && partialChapterSummary != nullptr &&
-            !partialChapterSummary->text.empty()) {
+            !partialChapterSummary->text.empty() &&
+            partialChapterSummary->ePubPlace->getHRef() == chapter.href) {
             summaryText += chapter.title;
             summaryText += StringFormat(" (%d%% read)\n\n", partialChapterSummary->readPct);
             summaryText += partialChapterSummary->text;
