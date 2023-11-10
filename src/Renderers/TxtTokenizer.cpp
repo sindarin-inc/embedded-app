@@ -166,7 +166,8 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, St
                 if (!pageCompleted) {
                     do {
                         nextByte();
-                    } while ((curChar != '\0') && (curChar < ' ') && (curChar != '\n') && (curChar != '\t'));
+                    } while ((curChar != '\0') && (curChar < ' ') && (curChar != '\n') &&
+                             (curChar != '\t'));
                     if (curChar == '\n') {
                         // log_w("Stream relative offset:%" PRIu32, streamRelativeOffset);
                         if (backwards && !tokens_.isEmpty() &&
