@@ -2,7 +2,7 @@
 
 // NOLINTNEXTLINE(readability-identifier-naming) - ArduinoJson requires this name
 auto convertToJson(const UserReadablePartialChapterSummary &src, JsonVariant dst) -> bool {
-    if (src.ePubPlace == nullptr) || src.text.length() == 0) {
+    if (src.ePubPlace == nullptr || src.text.length() == 0) {
         return false;
     }
 
