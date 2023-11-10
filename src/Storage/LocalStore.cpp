@@ -428,6 +428,11 @@ auto LocalStore::processReadablePartialChapterSummary(
         return false;
     }
 
+    if (!fileSystem.createDir("/summary")) {
+        log_e("could not create /summary directory");
+        return false;
+    }
+
     auto partialSummaryPath = readable->partialSummaryFilePath();
     fileSystem.remove(partialSummaryPath.c_str());
     auto file = fileSystem.open(partialSummaryPath.c_str(), FILE_WRITE, false);
