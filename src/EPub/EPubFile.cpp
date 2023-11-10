@@ -382,14 +382,16 @@ auto EPubFile::getDictionaryContent(std::string &chapterId,
     std::string dictionaryId = "dictionary-" + chapterId;
     std::string dictionaryPath = opf_->getHrefByManifestId(dictionaryId);
     // int currentOffset = findCharOffsetAtFileOffset(chapterHref, fileOffset);
-    int currentOffset = fileOffset;
+    int currentOffset = fileOffset + previousSpineOffset;
     pugi::xml_document &doc = getXHTMLFile(dictionaryPath);
     pugi::xml_node closestNode;
     pugi::xml_node prevNode;
     int closestLocation = -1;
 
-    log_d("Loading dictionary for chapter: %s. (href: %s, chapter idx: %d) Current offset: %d",
-          chapterId.c_str(), chapterHref.c_str(), chapterIdx, currentOffset);
+    log_d("Loading dictionary for chapter: %s. (href: %s, chapter idx: %d) Current offset: %d "
+          "(file:%d+prev:%d)",
+          chapterId.c_str(), chapterHref.c_str(), chapterIdx, currentOffset, fileOffset,
+          previousSpineOffset);
     // Search for the closest data-locations attribute closest to currentOffset without going over
     for (auto p : doc.child("html").child("body").children("p")) {
         int location = p.attribute("data-locations").as_int();
