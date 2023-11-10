@@ -6,7 +6,7 @@
 
 #include "sindarin-debug.h"
 
-auto IsTempleOpen(int8_t x, int8_t z) -> bool {
+auto IsTempleOpen(int8_t x, int8_t z, float *angleOut) -> bool {
     // There is a pretty spectacular bug here where this math sometimes does stuff like this:
     // D (19244) Sol: Mag: x=-2 z=12 -9.462322º
     // D (20434) Sol: Mag: x=-2 z=12 -783158239771330399125549088768.000000º
@@ -30,6 +30,9 @@ auto IsTempleOpen(int8_t x, int8_t z) -> bool {
         angle += 180;
     } else if (angle > 135) {
         angle -= 180;
+    }
+    if (angleOut != nullptr) {
+        *angleOut = angle;
     }
     // Define an angle, above which we will declare the temple as open and below which we will
     // declare it as closed. This value was discovered experimentally.

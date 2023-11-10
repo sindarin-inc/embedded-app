@@ -315,11 +315,15 @@ void PowerManager::loop() {
     checkUsb();
 #if USE_MMC5603
     bool templeOpen;
+    Xyz8bit prevMagReading = lastMagReading_;
+    float prevMagAngle = lastMagAngle_;
     auto err = isTempleOpen(templeOpen);
     if (err != ESP_OK) {
         log_e("Error checking temple state %d, ignoring.", err);
     } else if (templeOpen_ != templeOpen) {
-        log_i("Temple is %s", templeOpen ? "open" : "closed");
+        log_i("Temple is %s (%d, %d, %.1fº, previously %d %d %.1fº)",
+              templeOpen ? "open" : "closed", lastMagReading_.x, lastMagReading_.z, lastMagAngle_,
+              prevMagReading.x, prevMagReading.z, prevMagAngle);
         switch (state_) {
         case PowerState::Active:
         case PowerState::ActiveUSBCharging:
@@ -369,7 +373,7 @@ auto PowerManager::isTempleOpen(bool &open) -> esp_err_t {
         log_e("Failed to read magnetometer");
         return err;
     }
-    open = IsTempleOpen(lastMagReading_.x, lastMagReading_.z);
+    open = IsTempleOpen(lastMagReading_.x, lastMagReading_.z, &lastMagAngle_);
 #else
     open = true;
 #endif
