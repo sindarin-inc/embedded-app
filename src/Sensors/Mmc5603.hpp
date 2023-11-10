@@ -51,7 +51,7 @@ public:
     auto readXZ8Bit(Xyz8bit &out) -> esp_err_t;
 
     // Read the temperature in degrees Celsius
-    auto readTemperature(float &temp) -> esp_err_t;
+    auto readTemperature(int &temp) -> esp_err_t;
 
 private:
     bool configured_ = false;
