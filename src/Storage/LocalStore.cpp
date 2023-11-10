@@ -397,7 +397,6 @@ auto LocalStore::processReadablePartialChapterSummary(
 
     // TODO: Delete any existing partial summary?
     if (partialChapterSummary == nullptr) {
-        log_e("Partial summary is null");
         return false;
     }
 
@@ -412,9 +411,7 @@ auto LocalStore::processReadablePartialChapterSummary(
         UserReadablePartialChapterSummary::loadForReadable(fileSystem, readable);
     // Check if the existing summary is for the same place. If so, don't overwrite it if we dont
     // need to.
-    if (existingPartialSummary != nullptr &&
-        existingPartialSummary->ePubPlace == partialChapterSummary->ePubPlace) {
-        log_e("Existing summary is the same");
+    if (existingPartialSummary != nullptr && existingPartialSummary == partialChapterSummary) {
         return false;
     }
 

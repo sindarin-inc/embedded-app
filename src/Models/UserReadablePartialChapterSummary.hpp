@@ -59,6 +59,10 @@ public:
 
         return true;
     }
+
+    auto operator==(const UserReadablePartialChapterSummary &other) const -> bool {
+        return text == other.text && ePubPlace == other.ePubPlace && readPct == other.readPct;
+    }
 };
 
 // NOLINTNEXTLINE(readability-identifier-naming) - ArduinoJson requires this name
