@@ -44,9 +44,11 @@ public:
     auto getChapterIdx(SpineIdx spineIdx) const -> ChapterIdx;
     auto spineIdxIsChapterStart(SpineIdx spineIdx) const -> bool;
     auto getChapterFirstSpineIdx(SpineIdx spineIdx) const -> SpineIdx;
+    auto getChapterFirstHref(const std::string &spineHRef) const -> std::string;
 
     auto exists(const std::string &id) const -> bool;
 
+    // TODO: It'd probably be good practice to use a type alias for manifest IDs
     auto getHrefByManifestId(const std::string &manifestId) const -> std::string;
     auto getManifestIdByHref(const std::string &href) const -> std::string;
 

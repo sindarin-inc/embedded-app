@@ -258,10 +258,12 @@ auto EPubFile::hasSummary(const std::string &chapterId) -> bool {
 }
 
 auto EPubFile::getSummaryContent(
-    std::string &chapterId, const std::shared_ptr<EPubPlace> &placeInReadable,
-    std::shared_ptr<TxtPlace> &placeInSummary,
+    const std::shared_ptr<EPubPlace> &placeInReadable, std::shared_ptr<TxtPlace> &placeInSummary,
     const std::shared_ptr<UserReadablePartialChapterSummary> &partialChapterSummary,
     bool includeUnread) -> SpiramString {
+
+    auto chapterHref = opf_->getChapterFirstHref(placeInReadable->getHRef());
+    auto chapterId = opf_->getManifestIdByHref(chapterHref);
 
     if (!hasSummary(chapterId)) {
         log_e("This chapter does not have a summary.");
@@ -269,13 +271,18 @@ auto EPubFile::getSummaryContent(
     }
 
     // Load the summary xhtml content
-    auto chapterHref = opf_->getHrefByManifestId(chapterId);
     auto chapterIdx = opf_->getChapterIdx(chapterHref);
     log_w("Chapter href: %s, chapter idx: %d, toc href: %s", chapterHref.c_str(), chapterIdx,
           std::string(getToc()[chapterIdx].href).c_str());
     if (std::string(getToc()[chapterIdx].href) != chapterHref) {
         chapterHref = std::string(getToc()[chapterIdx].href);
         chapterId = opf_->getManifestIdByHref(chapterHref);
+    }
+
+    std::string partialSummaryChapterHRef = "";
+    if (partialChapterSummary != nullptr && !partialChapterSummary->text.empty()) {
+        auto summarySpineHref = partialChapterSummary->ePubPlace->getHRef();
+        partialSummaryChapterHRef = opf_->getChapterFirstHref(summarySpineHref);
     }
 
     log_d("Loading summary for chapter: %s (href: %s, chapter idx: %d)", chapterId.c_str(),
@@ -295,17 +302,20 @@ auto EPubFile::getSummaryContent(
             break;
         }
 
-        if (sameChapter && !includeUnread && partialChapterSummary != nullptr &&
-            !partialChapterSummary->text.empty() &&
-            partialChapterSummary->ePubPlace->getHRef() == chapter.href) {
+        if (sameChapter && !includeUnread && partialSummaryChapterHRef == chapter.href) {
             summaryText += chapter.title;
             summaryText += StringFormat(" (%d%% read)\n\n", partialChapterSummary->readPct);
             summaryText += partialChapterSummary->text;
             summaryText += "\n\n";
         } else {
-            std::string currentChapterId = opf_->getManifestIdByHref(std::string(chapter.href));
+            std::string currentChapterId =
+                opf_->getManifestIdByHref(static_cast<std::string>(chapter.href));
             std::string currentSummaryPath =
                 opf_->getHrefByManifestId("summary-" + currentChapterId);
+            if (currentSummaryPath == "") {
+                log_w("No summary for %s", chapter.href.c_str());
+                continue;
+            }
             pugi::xml_document &currentDoc = getXHTMLFile(currentSummaryPath);
 
             for (auto node : currentDoc.child("html").child("body").children()) {

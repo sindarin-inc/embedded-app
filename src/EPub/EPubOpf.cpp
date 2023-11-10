@@ -128,6 +128,12 @@ auto EPubOpf::getChapterFirstSpineIdx(SpineIdx spineIdx) const -> SpineIdx {
     return chapterSpineIdx;
 }
 
+auto EPubOpf::getChapterFirstHref(const std::string &spineHRef) const -> std::string {
+    auto spineIdx = getSpineIdx(spineHRef);
+    auto chapterSpineIdx = getChapterFirstSpineIdx(spineIdx);
+    return static_cast<std::string>(getSpine(chapterSpineIdx).item->href);
+}
+
 auto EPubOpf::exists(const std::string &id) const -> bool {
     log_d("Checking if %s exists in manifest: %d", id.c_str(),
           manifest_.find(static_cast<SpiramString>(id)) != manifest_.end());

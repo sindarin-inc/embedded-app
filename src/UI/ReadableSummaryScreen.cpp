@@ -64,12 +64,11 @@ void ReadableSummaryScreen::render(DisplaySystem &display) {
             rendererStream_ = renderer_.getStream();
         }
         auto epubStream = std::dynamic_pointer_cast<EPubFile>(rendererStream_);
-        auto chapterId = epubStream->getManifestIdByHref(placeInReadable_->getHRef());
 
         auto partialChapterSummary =
             UserReadablePartialChapterSummary::loadForReadable(fileSystem_, readable_);
-        auto summaryString = epubStream->getSummaryContent(
-            chapterId, placeInReadable_, placeInSummary, partialChapterSummary, showUnread_);
+        auto summaryString = epubStream->getSummaryContent(placeInReadable_, placeInSummary,
+                                                           partialChapterSummary, showUnread_);
 
         if (preservePlace_) {
             placeInSummary = preservePlace_;

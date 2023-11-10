@@ -105,7 +105,7 @@ public:
 
     auto hasSummary(const std::string &chapterId) -> bool;
     auto getSummaryContent(
-        std::string &chapterId, const std::shared_ptr<EPubPlace> &placeInReadable,
+        const std::shared_ptr<EPubPlace> &placeInReadable,
         std::shared_ptr<TxtPlace> &placeInSummary,
         const std::shared_ptr<UserReadablePartialChapterSummary> &partialChapterSummary,
         bool includeUnread) -> SpiramString;
