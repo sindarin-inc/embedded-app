@@ -104,11 +104,11 @@ public:
     auto getToc() -> ReadableTableOfContentsChapterVector;
 
     auto hasSummary(const std::string &chapterId) -> bool;
-    auto getSummaryContent(std::string &chapterId,
-                           const std::shared_ptr<EPubPlace> &placeInReadable,
-                           std::shared_ptr<TxtPlace> &placeInSummary,
-                           std::shared_ptr<UserReadablePartialChapterSummary> partialChapterSummary,
-                           bool includeUnread) -> SpiramString;
+    auto getSummaryContent(
+        std::string &chapterId, const std::shared_ptr<EPubPlace> &placeInReadable,
+        std::shared_ptr<TxtPlace> &placeInSummary,
+        const std::shared_ptr<UserReadablePartialChapterSummary> &partialChapterSummary,
+        bool includeUnread) -> SpiramString;
     auto hasDictionary(const std::string &chapterId) -> bool;
     auto getDictionaryContent(std::string &chapterId,
                               const std::shared_ptr<EPubPlace> &placeInReadable,

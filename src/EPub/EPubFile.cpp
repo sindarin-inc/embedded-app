@@ -260,8 +260,8 @@ auto EPubFile::hasSummary(const std::string &chapterId) -> bool {
 auto EPubFile::getSummaryContent(
     std::string &chapterId, const std::shared_ptr<EPubPlace> &placeInReadable,
     std::shared_ptr<TxtPlace> &placeInSummary,
-    std::shared_ptr<UserReadablePartialChapterSummary> partialChapterSummary, bool includeUnread)
-    -> SpiramString {
+    const std::shared_ptr<UserReadablePartialChapterSummary> &partialChapterSummary,
+    bool includeUnread) -> SpiramString {
 
     if (!hasSummary(chapterId)) {
         log_e("This chapter does not have a summary.");
