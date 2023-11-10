@@ -363,9 +363,19 @@ auto EPubFile::getDictionaryContent(std::string &chapterId,
     int fileOffset = placeInReadable->getOffset();
     auto chapterHref = opf_->getHrefByManifestId(chapterId);
     auto chapterIdx = opf_->getChapterIdx(chapterHref);
+    auto spineIdx = opf_->getSpineIdx(chapterHref);
+    auto previousSpineOffset = 0;
     if (std::string(getToc()[chapterIdx].href) != chapterHref) {
         chapterHref = std::string(getToc()[chapterIdx].href);
         chapterId = opf_->getManifestIdByHref(chapterHref);
+        // If we're looking at a spine item that doesn't match the chapter, we need to calculate the
+        // offset to match how the server is calculating word locations, which is cumulatively
+        // adding the size of each spine item
+        auto chapterStartSpineIdx = getChapterFirstSpineIdx(spineIdx);
+        for (auto i = chapterStartSpineIdx; i < spineIdx; i++) {
+            previousSpineOffset += getUncompressedSize(i);
+        }
+        log_d("Calculated previousSpineOffset: %d", previousSpineOffset);
     }
 
     // Convert chapterId to dictionary file path
