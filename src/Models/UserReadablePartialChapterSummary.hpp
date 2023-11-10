@@ -53,6 +53,10 @@ public:
             Place::factory(j["chapter_offset"].as<uint32_t>(), j["chapter"].as<std::string>()));
         readPct = j["read_pct"].as<uint8_t>();
 
+        if (text.length() == 0 || ePubPlace->isZero()) {
+            return false;
+        }
+
         return true;
     }
 };

@@ -440,6 +440,7 @@ auto LocalStore::processReadablePartialChapterSummary(
         log_e("Failed to open partial summary file for writing");
         return false;
     }
+    defer { file.close(); };
 
     // Write the partial summary to the json file
     auto len = serializeJson(*doc, file);
