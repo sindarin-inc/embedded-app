@@ -371,9 +371,13 @@ auto Unzipper::getFileSize() -> uint32_t {
         return 0;
     }
     if constexpr (UNZIPPER_DEBUG) {
-        log_d("File size: %" PRIu32, currentFileEntry_->size + 1);
+        log_d("File size: %" PRIu32, currentFileEntry_->size);
     }
-    return currentFileEntry_->size + 1;
+    return currentFileEntry_->size;
+}
+
+auto Unzipper::getFileBufferSize() -> uint32_t {
+    return getFileSize() + 1; // +1 for the null terminator
 }
 
 auto Unzipper::fileExists(const std::string &filePath) -> bool {

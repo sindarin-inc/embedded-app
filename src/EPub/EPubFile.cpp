@@ -85,7 +85,7 @@ auto EPubFile::getFile(const std::string &completeFilePath)
         log_e("Unzipper Failed to open file %s", completeFilePath.c_str());
     } else {
         EPUB_PROFILE_START(UnzipperGetFileSize);
-        auto size = epubUnzipper_.getFileSize();
+        auto size = epubUnzipper_.getFileBufferSize();
         EPUB_PROFILE_END(UnzipperGetFileSize);
 
         if (size > 0) {
@@ -152,6 +152,18 @@ auto EPubFile::getXHTMLFile(const std::string &path) -> pugi::xml_document & {
     return currentFileDoc_;
 }
 
+auto EPubFile::getUncompressedSize(SpineIdx spineIdx) -> uint32_t {
+    std::string filePath =
+        opf_->getFullPath(static_cast<std::string>(opf_->getSpine(spineIdx).item->href));
+    // log_w("Loading file %s", filePath.c_str());
+    if (epubUnzipper_.openFile(filePath.c_str())) {
+        uint32_t size = epubUnzipper_.getFileSize();
+        epubUnzipper_.closeFile();
+        return size;
+    }
+    return 0;
+}
+
 auto EPubFile::calculateFileSize(const std::string &href) -> uint32_t {
     auto filePath = opf_->getFullPath(href);
     auto [buffer, size] = getFile(filePath);
@@ -177,6 +189,15 @@ auto EPubFile::spineIdxIsChapterStart(SpineIdx spineIdx) const -> bool {
 
 auto EPubFile::getChapterFirstSpineIdx(SpineIdx spineIdx) const -> SpineIdx {
     return opf_->getChapterFirstSpineIdx(spineIdx);
+}
+
+auto EPubFile::getOffsetPreviousSpineItemsInChapter(SpineIdx spineIdx) -> uint32_t {
+    auto previousSpineOffset = 0;
+    auto chapterStartSpineIdx = getChapterFirstSpineIdx(spineIdx);
+    for (auto i = chapterStartSpineIdx; i < spineIdx; i++) {
+        previousSpineOffset += getUncompressedSize(i);
+    }
+    return previousSpineOffset;
 }
 
 auto EPubFile::hasToc() -> bool {
@@ -382,10 +403,7 @@ auto EPubFile::getDictionaryContent(std::string &chapterId,
         // If we're looking at a spine item that doesn't match the chapter, we need to calculate the
         // offset to match how the server is calculating word locations, which is cumulatively
         // adding the size of each spine item
-        auto chapterStartSpineIdx = getChapterFirstSpineIdx(spineIdx);
-        for (auto i = chapterStartSpineIdx; i < spineIdx; i++) {
-            previousSpineOffset += getUncompressedSize(i);
-        }
+        previousSpineOffset = getOffsetPreviousSpineItemsInChapter(spineIdx);
         log_d("Calculated previousSpineOffset: %d", previousSpineOffset);
     }
 
