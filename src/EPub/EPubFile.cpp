@@ -89,8 +89,9 @@ auto EPubFile::getFile(const std::string &completeFilePath)
         EPUB_PROFILE_END(UnzipperGetFileSize);
 
         if (size > 0) {
-            size += 1; // Add +1 for null terminator set in `readFile`
+            size += 1; // Add +1 for null terminator in buffer
             buffer = SpiRamArrayPtr<uint8_t>(size);
+            buffer[size] = 0;
 
             if (buffer != nullptr) {
                 EPUB_PROFILE_START(UnzipperReadFromFile);
