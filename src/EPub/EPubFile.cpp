@@ -97,10 +97,13 @@ auto EPubFile::getFile(const std::string &completeFilePath)
                 uint32_t length = epubUnzipper_.readFile(buffer.get(), size);
                 epubUnzipper_.closeFile();
                 EPUB_PROFILE_END(UnzipperReadFromFile);
-                if (length == size) {
+                if (length == size + 1) {
                     // if (readable_->isArticle()) log_w("article");
 
                     return {std::move(buffer), length};
+                } else {
+                    log_w("Failed to read file %s, read %d bytes, expected %d",
+                          completeFilePath.c_str(), length, size + 1);
                 }
             } else {
                 epubUnzipper_.closeFile();
