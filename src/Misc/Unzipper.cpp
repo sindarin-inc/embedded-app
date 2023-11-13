@@ -376,10 +376,6 @@ auto Unzipper::getFileSize() -> uint32_t {
     return currentFileEntry_->size;
 }
 
-auto Unzipper::getFileBufferSize() -> uint32_t {
-    return getFileSize() + 1; // +1 for the null terminator
-}
-
 auto Unzipper::fileExists(const std::string &filePath) -> bool {
     if (!isOpen_) {
         return false;

@@ -141,7 +141,6 @@ public:
     void close();
 
     auto getFileSize() -> uint32_t;
-    auto getFileBufferSize() -> uint32_t;
     auto readFile(uint8_t *fileData, uint32_t fileDataSize) -> uint32_t;
     auto fileExists(const std::string &filePath) -> bool;
     void showEntries();

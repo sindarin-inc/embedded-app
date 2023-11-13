@@ -85,7 +85,10 @@ auto EPubFile::getFile(const std::string &completeFilePath)
         log_e("Unzipper Failed to open file %s", completeFilePath.c_str());
     } else {
         EPUB_PROFILE_START(UnzipperGetFileSize);
-        auto size = epubUnzipper_.getFileBufferSize();
+        auto size = epubUnzipper_.getFileSize();
+        if (size > 0) {
+            size += 1; // Add +1 for null terminator
+        }
         EPUB_PROFILE_END(UnzipperGetFileSize);
 
         if (size > 0) {
