@@ -29,51 +29,7 @@ dut_port_index = 0
 dut_log_port_name = "SOL Mainframe ICT"
 dut_log_port_index = 1
 
-test_config_filename = "test/PyTest/pytest_config.csv"
-full_sync_test = 0
-cfg_ssid = ""
-cfg_password = ""
-cfg_token = ""
-config_read = False
-
 test_user_cloud_token = "c7092bfc68fac544fbe46e75ef06948b867a4854ce4271c2f9fea16abfd20125"
-
-def full_test_config_exists():
-    if os.path.isfile(test_config_filename):
-        return True
-    return False
-
-def get_test_config():
-    global full_sync_test
-    global cfg_ssid
-    global cfg_password
-    global cfg_token
-    global config_read
-    if config_read:
-        return
-
-    if full_test_config_exists():
-        with open(test_config_filename, newline='') as csvfile:
-            rdr = csv.reader(csvfile, delimiter=',')
-            for row in rdr:
-                print(', '.join(row))
-                if row[0] == 'ssid':
-                    cfg_ssid = row[1]
-                elif row[0] == 'password':
-                    cfg_password = row[1]
-                elif row[0] == 'token':
-                    cfg_token = row[1]
-                elif row[0] == 'fullsync':
-                    full_sync_test = int(row[1])
-                    print("got fs: " + str(full_sync_test))
-    config_read = True
-
-def run_full_sync():
-    get_test_config()
-    global full_sync_test
-    if full_sync_test <= 0:
-        return False
-    return True
 
 def get_nvs_partition_size():
         file_path = "esp32s3-64MB.csv"
