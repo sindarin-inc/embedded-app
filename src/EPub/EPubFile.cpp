@@ -3,6 +3,8 @@
 #include "EPubDefs.hpp"
 #include "EPubMetaFile.hpp"
 
+#define DICTIONARY_FUDGE_BYTES 10
+
 auto EPubFile::findFileOffsetAtCharOffset(const std::string &path, uint32_t charOffset)
     -> uint32_t {
 
@@ -372,6 +374,9 @@ auto EPubFile::getDictionaryContent(std::string &chapterId,
 
     // Load the dictionary xhtml content
     int fileOffset = placeInReadable->getOffset();
+    if (fileOffset >= DICTIONARY_FUDGE_BYTES) {
+        fileOffset -= DICTIONARY_FUDGE_BYTES;
+    }
     auto chapterHref = opf_->getHrefByManifestId(chapterId);
     auto chapterIdx = opf_->getChapterIdx(chapterHref);
     auto spineIdx = opf_->getSpineIdx(chapterHref);
@@ -405,8 +410,9 @@ auto EPubFile::getDictionaryContent(std::string &chapterId,
           previousSpineOffset);
     // Search for the closest data-locations attribute closest to currentOffset without going over
     for (auto p : doc.child("html").child("body").children("p")) {
+        std::string word = p.child_value();
         int location = p.attribute("data-locations").as_int();
-        log_d("Found dictionary location: %d", location);
+        log_d("Found dictionary location for \"%s\": %d", word.c_str(), location);
 
         // If currentOffset is 0, set the closestNode as the first node
         if (currentOffset == 0 || closestNode == nullptr) {
