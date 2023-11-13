@@ -234,12 +234,6 @@ def generate_and_write_nvs(ict_client, dut, ssid, password, fullsync):
         wifi_password = password
 
     logger.info("params user " + wifi_ssid + " password " + wifi_password)
-    logger.info("closing dut serial 1")
-    dut.serial.close()
-    logger.info("serial closed")
-
-    # put dut into programming mode
-    ict_client.dut_programming_mode()
 
     # look for jtag port
     time.sleep(2)
@@ -250,6 +244,7 @@ def generate_and_write_nvs(ict_client, dut, ssid, password, fullsync):
     write_nvs(ict_client, port, btmac, wifi_ssid, wifi_password, test_user_cloud_token)
 
     logger.info("reset")
+    logger.info("exiting programming mode")
     ict_client.reset_dut()
 
     time.sleep(2)
@@ -326,16 +321,6 @@ class OverrideIdfSerial(IdfSerial):
 
         # Close the serial port
         self.close()
-
-        # Reset the DUT (to exit programming mode)
-        self.ict_client.reset_dut()
-
-        # Wait for device to go away and come back again
-        # If we don't do this, we may discover and attempt to connect to the port too quickly, then it will de-enumerate.
-        time.sleep(2)
-        port = wait_for_port_by_device_name(dut_port_name, dut_port_index)
-
-        self.connect_dut_log_port()
 
     def connect_dut_log_port(self):
         max_attempts = 3
