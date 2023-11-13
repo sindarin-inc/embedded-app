@@ -14,7 +14,6 @@ public:
     SpiramString name;
     int size;
     SpiramString filetype;
-    SpiramString uploadedAt;
     SpiramString shaHash;
     //! URL to download the file
     SpiramString file;
@@ -31,8 +30,7 @@ public:
             }
         } else {
             if (!j.containsKey("uuid") || !j.containsKey("name") || !j.containsKey("size") ||
-                !j.containsKey("filetype") || !j.containsKey("uploaded_at") ||
-                !j.containsKey("sha_hash")) {
+                !j.containsKey("filetype") || !j.containsKey("sha_hash")) {
                 log_w("Failed to parse ReadableFile %s", DumpJson(j).c_str());
                 return false;
             }
@@ -42,7 +40,6 @@ public:
         name = j["name"].as<std::string>();
         size = j["size"];
         filetype = j["filetype"].as<std::string>();
-        uploadedAt = j["uploaded_at"].as<std::string>();
         shaHash = j["sha_hash"].as<std::string>();
         file = j["file"].as<std::string>();
 

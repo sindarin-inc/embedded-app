@@ -201,11 +201,7 @@ auto SolClock::calculateNextSyncTime(time_t now) -> time_t {
     }
 
     // Add the random number of seconds to the nextEventEpoch between 0 and 10 minutes
-    std::random_device rd;
-    std::mt19937 gen(esp_random());
-    std::uniform_int_distribution<> distr(0, 600);
-
-    int randomSeconds = distr(gen);
+    int randomSeconds = esp_random() % 600;
     nextEventEpoch += randomSeconds;
 
     // Update nextEventTime to reflect the addition of randomSeconds

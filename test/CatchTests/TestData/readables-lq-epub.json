@@ -1,0 +1,31 @@
+{
+    "readables": [
+        {
+            "uuid": "d7570c42-18a9-4795-a44e-9cee09b9fe3e",
+            "title": "The Last Question",
+            "date_created": "2023-11-06T17:00:32.736226-08:00",
+            "date_modified": "2023-11-06T17:01:04.259814-08:00",
+            "date_published": "null",
+            "authors": [
+                {
+                    "uuid": "91ae1429-c6d4-4b8b-88fa-81041d838f92",
+                    "name": "Isaac Asimov",
+                    "description": "null"
+                }
+            ],
+            "files": [
+                {
+                    "uuid": "90d6e50b-813b-4ead-87a3-a53471725ed4",
+                    "name": "d7570c42-18a9-4795-a44e-9cee09b9fe3e.epub",
+                    "size": 472395,
+                    "filetype": "epub",
+                    "sha_hash": "c086e46c4b5fccf7e2bf681699ed63a83e95a9f58c055d2c1b40f69770f4b1e6",
+                    "file": "https://nyc3.digitaloceanspaces.com/sol-cloud/uploads/readables/90d6e50b-813b-4ead-87a3-a53471725ed4.epub",
+                    "readable_type": "book"
+                }
+            ],
+            "toc": [],
+            "readable_type": "book"
+        }
+    ]
+}

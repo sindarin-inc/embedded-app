@@ -11,6 +11,7 @@
 #include "Models/Place.hpp"
 #include "Models/Readable.hpp"
 #include "Models/UserReadable.hpp"
+#include "Models/UserReadablePartialChapterSummary.hpp"
 #include "Storage/FileSystem.hpp"
 #include "Storage/PreferencesStore.hpp"
 
@@ -86,7 +87,6 @@ public:
 
     auto begin() -> bool;
     auto loadReadablesFromFile(ReadablesVector &readables, const std::string &path) -> bool;
-    auto loadToc(const std::shared_ptr<Readable> &readable) -> bool;
 
     // Convenience methods
     auto books() -> ReadablesVector & { return books_; };
@@ -108,7 +108,9 @@ public:
     auto processReadablePlacemarksFromServer(const std::shared_ptr<Readable> &readable,
                                              const std::shared_ptr<TxtPlace> &txtPlace,
                                              const std::shared_ptr<EPubPlace> &ePubPlace) -> bool;
-    auto processToCFromServer(const std::shared_ptr<Readable> &readable) -> bool;
+    auto processReadablePartialChapterSummary(
+        const std::shared_ptr<Readable> &readable,
+        const std::shared_ptr<UserReadablePartialChapterSummary> &partialChapterSummary) -> bool;
     void resetReadablesPlacemarkChanged(const ReadablesVector &readables);
     void resetReadablesArchivedChanged(const ReadablesVector &readables);
     void resetReadablesBookmarksChanged(const ReadablesVector &readables);
@@ -129,7 +131,6 @@ public:
     void deleteReadables(bool restart = true);
     void deleteArticles(bool restart = true);
     void deleteReadableFiles(const ReadablesVector &readables, bool restart);
-    auto saveTableOfContents(const std::shared_ptr<Readable> &readable) -> bool;
     auto removeStopWords(const SpiramString &title) -> std::string;
     void sortReadables(ReadablesVector &readables);
     void purgeReadableToc(const std::shared_ptr<Readable> &readable);
@@ -139,6 +140,9 @@ public:
     [[nodiscard]] auto readableFilePathForWriting(const std::shared_ptr<Readable> &readable) const
         -> std::string;
     // When reading, we will take whatever readable file type that's available
+    [[nodiscard]] static auto readableFilePathForReading(FileSystem &fileSystem,
+                                                         const std::shared_ptr<Readable> &readable)
+        -> std::string;
     [[nodiscard]] auto readableFilePathForReading(const std::shared_ptr<Readable> &readable) const
         -> std::string;
     [[nodiscard]] auto readableGetUncompressedSize(const std::shared_ptr<Readable> &readable) const
@@ -156,12 +160,13 @@ public:
     // Clean up old keys in NVS
     void garbageCollectPreferences();
     void migrateTxtPlacemarksToEpubPlacemarks();
+    void deleteAllToCJson();
     void migrateIfNeeded();
 
     FileSystem &fileSystem;
 
 private:
-    const uint32_t latestMigrationVersion_ = 2;
+    const uint32_t latestMigrationVersion_ = 3;
     PreferencesStore &prefs_;
     Battery &battery_;
     Telemetry &telemetry_;

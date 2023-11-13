@@ -8,6 +8,8 @@
 #include "Misc/SpiramAllocator.hpp"
 #include "Misc/Unzipper.hpp"
 #include "Models/DocType.hpp"
+#include "Models/Readable.hpp"
+#include "Models/UserReadablePartialChapterSummary.hpp"
 #include "Renderers/RendererStream.hpp"
 
 class EPubFile : public RendererStream {
@@ -26,11 +28,11 @@ public:
 
     [[nodiscard]] auto isAnArticle() const -> bool { return readable_->isArticle(); }
 
-    // [[nodiscard]] inline auto getSpineIdxForOffset(uint32_t offset) const -> Idx {
+    // [[nodiscard]] inline auto getSpineIdxForOffset(uint32_t offset) const -> SpineIdx {
     //     return opf_->getSpineIdxForOffset(offset);
     // }
 
-    [[nodiscard]] inline auto getSpine(Idx idx) const -> const EPubOpf::SpineItem & {
+    [[nodiscard]] inline auto getSpine(SpineIdx idx) const -> const EPubOpf::SpineItem & {
         return opf_->getSpine(idx);
     }
 
@@ -45,20 +47,17 @@ public:
     [[nodiscard]] auto getFile(const std::string &path)
         -> std::pair<std::shared_ptr<uint8_t[]>, uint32_t>;
 
-    [[nodiscard]] inline auto getToc() const -> ReadableTableOfContentsChapterVector {
-        return readable_->toc;
-    }
-
-    [[nodiscard]] inline auto getSpineIdx(const std::string &href) const -> uint16_t {
+    [[nodiscard]] inline auto getSpineIdx(const std::string &href) const -> SpineIdx {
         return opf_->getSpineIdx(href);
     }
 
-    [[nodiscard]] inline auto getHrefByID(const std::string &id) const -> std::string {
-        return opf_->getHrefByID(id);
+    [[nodiscard]] inline auto getHrefByManifestId(const std::string &manifestId) const
+        -> std::string {
+        return opf_->getHrefByManifestId(manifestId);
     }
 
-    [[nodiscard]] inline auto getIdByHref(const std::string &href) const -> std::string {
-        return opf_->getIdByHref(href);
+    [[nodiscard]] inline auto getManifestIdByHref(const std::string &href) const -> std::string {
+        return opf_->getManifestIdByHref(href);
     }
 
     [[nodiscard]] auto getXHTMLFile(const std::string &path) -> pugi::xml_document &;
@@ -73,16 +72,18 @@ public:
 
     [[nodiscard]] inline auto isOpen() const -> bool { return fileOpen_; }
 
-    [[nodiscard]] auto getRelativeFilePath(const std::string &filename, Idx spineIdx) const
+    [[nodiscard]] auto getRelativeFilePath(const std::string &filename, SpineIdx spineIdx) const
         -> std::string {
-        std::string mainFilePath = opf_->getFullPath(opf_->getSpine(spineIdx).item->href);
+        std::string mainFilePath =
+            opf_->getFullPath(static_cast<std::string>(opf_->getSpine(spineIdx).item->href));
         std::string path;
         opf_->extractPath(mainFilePath.c_str(), path);
         return path + filename;
     }
 
-    [[nodiscard]] auto getUncompressedSize(Idx spineIdx) -> uint32_t {
-        std::string filePath = opf_->getFullPath(opf_->getSpine(spineIdx).item->href);
+    [[nodiscard]] auto getUncompressedSize(SpineIdx spineIdx) -> uint32_t {
+        std::string filePath =
+            opf_->getFullPath(static_cast<std::string>(opf_->getSpine(spineIdx).item->href));
         // log_w("Loading file %s", filePath.c_str());
         if (epubUnzipper_.openFile(filePath.c_str())) {
             uint32_t size = epubUnzipper_.getFileSize();
@@ -91,17 +92,32 @@ public:
         }
         return 0;
     }
+    auto calculateFileSize(const std::string &href) -> uint32_t;
 
-    auto getReadableToCChapterIndex(const std::shared_ptr<EPubPlace> &ePubPlace) const -> int;
+    auto getChapterIdx(const std::shared_ptr<EPubPlace> &ePubPlace) const -> ChapterIdx;
+    auto getChapterIdx(const std::string &href) const -> ChapterIdx;
+    auto getChapterIdx(SpineIdx spineIdx) const -> ChapterIdx;
+    auto spineIdxIsChapterStart(SpineIdx spineIdx) const -> bool;
+    auto getChapterFirstSpineIdx(SpineIdx spineIdx) const -> SpineIdx;
 
-    auto hasDictionary(const std::string &chapterID) -> bool;
-    auto getDictionaryContent(const std::string &chapterID,
-                              const std::shared_ptr<Place> &placeInReadable,
-                              std::shared_ptr<Place> &placeInDictionary) -> std::string;
+    auto hasToc() -> bool;
+    auto getToc() -> ReadableTableOfContentsChapterVector;
+
+    auto hasSummary(const std::string &chapterId) -> bool;
+    auto getSummaryContent(
+        const std::shared_ptr<EPubPlace> &placeInReadable,
+        std::shared_ptr<TxtPlace> &placeInSummary,
+        const std::shared_ptr<UserReadablePartialChapterSummary> &partialChapterSummary,
+        bool includeUnread) -> SpiramString;
+    auto hasDictionary(const std::string &chapterId) -> bool;
+    auto getDictionaryContent(std::string &chapterId,
+                              const std::shared_ptr<EPubPlace> &placeInReadable,
+                              std::shared_ptr<TxtPlace> &placeInDictionary) -> SpiramString;
 
 private:
     Unzipper epubUnzipper_;
     const std::shared_ptr<Readable> readable_;
+    std::shared_ptr<ReadableTableOfContentsChapterVector> toc_;
 
     pugi::xml_document currentFileDoc_;
 

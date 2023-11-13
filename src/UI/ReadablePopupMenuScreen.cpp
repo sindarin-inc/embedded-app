@@ -7,39 +7,57 @@ void ReadablePopupMenuScreen::setUpPopupMenu() {
     std::string chapterPagesRemainingString;
 
     if (place->isFor(DocType::EPUB)) {
-        localStore_.loadToc(readable_);
-
-        auto &chapterHref = std::dynamic_pointer_cast<EPubPlace>(place)->getHRef();
-        currentChapterIdx_ = readable_->findEPubHRefChapterIdx(chapterHref);
-
-        // If the chapter isn't found in the ToC, find it in the spine and walk backwards until we
-        // find a chapter that is found in the ToC.
-        if (currentChapterIdx_ == -1) {
-            auto stream = std::dynamic_pointer_cast<EPubFile>(renderer_.getStream());
-            auto ePubPlace = std::dynamic_pointer_cast<EPubPlace>(place);
-            currentChapterIdx_ = stream->getReadableToCChapterIndex(ePubPlace);
-        }
+        auto stream = std::dynamic_pointer_cast<EPubFile>(renderer_.getStream());
+        auto ePubPlace = std::dynamic_pointer_cast<EPubPlace>(place);
+        auto &chapterHref = ePubPlace->getHRef();
+        currentChapterIdx_ = stream->getChapterIdx(chapterHref);
 
         if (currentChapterIdx_ >= 0) {
-            auto &chapter = readable_->toc[currentChapterIdx_];
-
+            const auto &toc = stream->getToc();
+            auto &chapter = toc[currentChapterIdx_];
+            auto spineIdx = renderer_.getStreamPlace(renderer_.getCurrentPlace()).getSpineIdx();
             // TODO(john): This isn't exactly right because `place->getOffset()` is a byte offset,
             // not a letter offset from the beginning of the chapter. The chapters always start with
             // extra html-y stuff at the start so this is always inflated by some amount.
-            auto currentOffset = chapter.txtOffset + renderer_.getTxtOffset();
+
+            // If current spine item is not the first in the chapter, add offsets of previous spine
+            // items in chapter to get the correct offset
+            auto previousSpineOffset = 0;
+            auto chapterStartSpineIdx = stream->getChapterFirstSpineIdx(spineIdx);
+            for (auto i = chapterStartSpineIdx; i < spineIdx; i++) {
+                previousSpineOffset += stream->getUncompressedSize(i);
+            }
+            auto currentOffset =
+                chapter.epubOffset + previousSpineOffset + renderer_.getCurrentPlace()->getOffset();
 
             // Get the end offset of the last chapter (to determine the length of the book)
-            auto &lastChapter = readable_->toc[readable_->toc.size() - 1];
-            auto lastChapterEndOffset = lastChapter.endTxtOffset;
+            auto &lastChapter = toc[stream->getToc().size() - 1];
+            auto lastChapterEndOffset = lastChapter.endEpubOffset;
 
-            placeStringForBottom = StringFormat("%d of %d", SOL_PAGE_NUMBER(currentOffset),
-                                                SOL_PAGE_NUMBER(lastChapterEndOffset));
+            if (currentOffset < lastChapterEndOffset) {
+                if (stream->isAnArticle()) {
+                    placeStringForBottom =
+                        StringFormat("%d of %d page%s", SOL_PAGE_NUMBER(currentOffset),
+                                     SOL_PAGE_NUMBER(lastChapterEndOffset),
+                                     SOL_PAGE_NUMBER(lastChapterEndOffset) == 1 ? "" : "s");
+                } else {
+                    placeStringForBottom = StringFormat("%d of %d", SOL_PAGE_NUMBER(currentOffset),
+                                                        SOL_PAGE_NUMBER(lastChapterEndOffset));
+                }
+            }
 
             // Determine how many Sol Pages are left in the chapter
-            auto chapterPagesRemaining = chapter.endTxtOffset - currentOffset;
-            chapterPagesRemainingString =
-                StringFormat("%d page%s left", SOL_PAGE_NUMBER(chapterPagesRemaining),
-                             SOL_PAGE_NUMBER(chapterPagesRemaining) == 1 ? "" : "s");
+            if (chapter.endEpubOffset > currentOffset && !stream->isAnArticle()) {
+                auto chapterPagesRemaining = chapter.endEpubOffset - currentOffset;
+                chapterPagesRemainingString =
+                    StringFormat("%d page%s left", SOL_PAGE_NUMBER(chapterPagesRemaining),
+                                 SOL_PAGE_NUMBER(chapterPagesRemaining) == 1 ? "" : "s");
+            }
+            // log_w("Chapter %d, %s, current:%d=%" PRIu32 "+%" PRIu32 "(%" PRIu32 ") end: %"
+            // PRIu32,
+            //       currentChapterIdx_, chapter.title.c_str(), currentOffset, chapter.epubOffset,
+            //       renderer_.getTxtOffset(), renderer_.getCurrentPlace()->getOffset(),
+            //       lastChapterEndOffset);
         } else {
             log_w("Couldn't find chapter index (%d) for href %s", currentChapterIdx_,
                   chapterHref.c_str());
@@ -50,9 +68,12 @@ void ReadablePopupMenuScreen::setUpPopupMenu() {
                                             SOL_PAGE_NUMBER(lengthOfFile));
     }
 
-    popupMenuView_.setFooter1Text(chapterPagesRemainingString);
-
-    popupMenuView_.setFooter2Text(placeStringForBottom);
+    if (chapterPagesRemainingString != "") {
+        popupMenuView_.setFooter1Text(chapterPagesRemainingString);
+    }
+    if (placeStringForBottom != "") {
+        popupMenuView_.setFooter2Text(placeStringForBottom);
+    }
 
     SolClock &theClock = SolClock::getInstance();
     auto timeString = theClock.getTimeString();
@@ -86,7 +107,6 @@ void ReadablePopupMenuScreen::addMenuItem(const MenuItem &newItem) {
 
 void ReadablePopupMenuScreen::populatePopupMenu() {
     resetMenuItems();
-    localStore_.loadToc(readable_);
 
     addMenuItem(MenuItem("Main Menu", [this]() { onMainMenu(); }));
 
@@ -107,19 +127,22 @@ void ReadablePopupMenuScreen::populatePopupMenu() {
         back();
     }));
 
-    if (readable_->hasSummary) {
-        addMenuItem(MenuItem("Summary", [this]() {
-            readableSummaryScreen_.setPlaceInReadable(renderer_.getCurrentPlace(),
-                                                      currentChapterIdx_);
-            readableSummaryScreen_.setFirstLoad();
-            setCurrentScreen(readableSummaryScreen_);
-        }));
-    }
-
     if (renderer_.getCurrentPlace()->isFor(DocType::EPUB)) {
         auto stream = std::dynamic_pointer_cast<EPubFile>(renderer_.getStream());
-        auto chapterId = stream->getIdByHref(
+        auto chapterId = stream->getManifestIdByHref(
             std::dynamic_pointer_cast<EPubPlace>(renderer_.getCurrentPlace())->getHRef());
+
+        if (stream->hasSummary(chapterId)) {
+            addMenuItem(MenuItem("Summary", [this]() {
+                auto epubPlace = std::dynamic_pointer_cast<EPubPlace>(renderer_.getCurrentPlace());
+                readableSummaryScreen_.setPlaceInReadable(epubPlace);
+                readableSummaryScreen_.setFirstLoad();
+                setCurrentScreen(readableSummaryScreen_);
+            }));
+        } else {
+            log_d("No summary for chapter %s", chapterId.c_str());
+        }
+
         if (stream->hasDictionary(chapterId)) {
             addMenuItem(MenuItem("Dictionary", [this]() {
                 auto epubPlace = std::dynamic_pointer_cast<EPubPlace>(renderer_.getCurrentPlace());
@@ -131,7 +154,7 @@ void ReadablePopupMenuScreen::populatePopupMenu() {
             log_d("No dictionary for chapter %s", chapterId.c_str());
         }
     } else {
-        log_d("Not an EPub, so no dictionary");
+        log_d("Not an EPub, so no summary or dictionary");
     }
 
     addMenuItem(MenuItem("Brightness", [this]() {
@@ -145,11 +168,8 @@ void ReadablePopupMenuScreen::populatePopupMenu() {
         onReport();
     }));
 
-    auto hasToc = readable_->toc.size() >= 1;
-    log_d("hasToc = %d, readable_.toc.size: %zu", hasToc, readable_->toc.size());
-    // If readable has a ToC with at least 1 element, show the ToC screen.
-    // Otherwise, show the seek screen.
-    if (hasToc) {
+    auto stream = renderer_.getStream();
+    if (stream->isFor(DocType::EPUB) && std::dynamic_pointer_cast<EPubFile>(stream)->hasToc()) {
         addMenuItem(MenuItem("Contents", [this]() {
             readableTableOfContentsScreen_.loadMenuItems();
             readableTableOfContentsScreen_.setNearestChapterSelection(renderer_.getCurrentPlace());

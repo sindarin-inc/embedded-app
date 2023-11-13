@@ -1,6 +1,5 @@
 #include "Misc/Menu.hpp"
 #include "Misc/Telemetry.hpp"
-#include "Storage/LocalStore.hpp"
 #include "UI/Components/PopupMenuView.hpp"
 #include "UI/ContainerScreen.hpp"
 #include "UI/LightingAdjustScreen.hpp"
@@ -13,16 +12,16 @@
 class ReadablePopupMenuScreen : public ContainerScreen, public View, public Menu {
 
 public:
-    ReadablePopupMenuScreen(DisplaySystem &display, PreferencesStore &prefs,
+    ReadablePopupMenuScreen(DisplaySystem &display, PreferencesStore &prefs, FileSystem &fileSystem,
                             const std::shared_ptr<Readable> &readable,
                             LightingController &lightingController, Renderer &renderer,
-                            LocalStore &localStore, Telemetry &telemetry)
+                            Telemetry &telemetry)
         : display_(display), prefs_(prefs), readable_(readable), renderer_(renderer),
-          popupMenuView_(display), localStore_(localStore), telemetry_(telemetry),
+          popupMenuView_(display), telemetry_(telemetry),
           lightingAdjustScreen_(display, prefs, lightingController, telemetry),
           readableSeekScreen_(prefs, readable, renderer),
           readableTableOfContentsScreen_(prefs, readable, renderer, display, telemetry),
-          readableSummaryScreen_(prefs, readable, display),
+          readableSummaryScreen_(prefs, fileSystem, readable, display, renderer),
           readableDictionaryScreen_(prefs, readable, display, renderer) {
         this->setCurrentScreen(*this);
 
@@ -77,11 +76,10 @@ protected:
     std::shared_ptr<Readable> readable_;
     Renderer &renderer_;
     PopupMenuView popupMenuView_;
-    LocalStore &localStore_;
     Telemetry &telemetry_;
 
     bool firstLoad_ = true;
-    int currentChapterIdx_ = -1;
+    ChapterIdx currentChapterIdx_ = -1;
 
     std::shared_ptr<MenuItemView> archiveMenuItemView_;
     std::shared_ptr<MenuItemView> unarchiveMenuItemView_;

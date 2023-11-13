@@ -31,7 +31,9 @@ public:
 
     std::string since;
     ReadablesModelType modelType;
+    bool skipToc;
     bool skipContent;
+    bool skipSummary;
     SyncReason syncReason;
     uint8_t ptBattery;
     uint8_t battery;

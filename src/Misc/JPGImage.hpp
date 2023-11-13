@@ -1,7 +1,7 @@
 #if USE_JPG_DECODER
 #pragma once
 
-#include <Misc/SpiramAllocator.hpp>
+#include "Misc/SpiramAllocator.hpp"
 
 class JPGImage {
 public:

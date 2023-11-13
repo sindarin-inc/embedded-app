@@ -300,7 +300,7 @@ auto Mmc5603::readXZ8Bit(Xyz8bit &out) -> esp_err_t {
     return err;
 }
 
-auto Mmc5603::readTemperature(float &temp) -> esp_err_t {
+auto Mmc5603::readTemperature(int &temp) -> esp_err_t {
     configureIfNeeded();
 
     Mmc5603Ctrl0Value ctrl0Value;
@@ -321,7 +321,10 @@ auto Mmc5603::readTemperature(float &temp) -> esp_err_t {
         log_e("Failed to read from MMC5603_REG_TOUT (error: %s)", esp_err_to_name(err));
         return err;
     }
-    temp = (float)raw * 0.8f - 75.0f;
+
+    // temp = (float)raw * 0.8f - 75.0f;
+    temp = raw * 8 - 750;
+    temp = temp / 10;
 
     return err;
 }

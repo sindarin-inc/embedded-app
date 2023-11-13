@@ -104,8 +104,7 @@ private:
         uint16_t method;         // compress method (0 = not compressed, 8 = DEFLATE)
     };
 
-    typedef std::unordered_map<std::string, std::shared_ptr<FileEntry>, std::hash<std::string>>
-        FileEntries;
+    typedef SpiramMap<SpiramString, std::shared_ptr<FileEntry>> FileEntries;
 
     FileEntries fileEntries_;
     std::shared_ptr<FileEntry> currentFileEntry_;
@@ -118,7 +117,7 @@ private:
         return *(uint16_t *)b;
     }
 
-    auto cleanFilePath(const char *filePath) -> char *;
+    auto cleanFilePath(const char *filePath) -> std::string;
 
     uint16_t repeat_;
     uint16_t remains_;

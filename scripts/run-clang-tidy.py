@@ -129,22 +129,6 @@ def get_tidy_invocation(
         start.append(name)
     for arg in extra_arg:
         start.append("-extra-arg=%s" % arg)
-
-    # Avoid error about "error: empty struct has size 0 in C, size 1 in C++" in espressif code
-    start.append("-extra-arg=-Wno-extern-c-compat")
-    # Don't use the standard system includes
-    # From: https://stackoverflow.com/questions/60712261/how-to-prevent-osx-gcc-to-always-search-usr-local-include
-    start.append("-extra-arg=-Xclang")
-    start.append("-extra-arg=-nostdsysteminc")
-    # Add all the c++ libraries
-    # TODO: Why doesn't this happen by default via idf.py clang-check
-    clang_bin_dir = os.path.dirname(clang_tidy_binary)
-    start.append(f"-extra-arg=-isystem{clang_bin_dir}/../xtensa-esp32s3-elf/include")
-    start.append(f"-extra-arg=-isystem{clang_bin_dir}/../xtensa-esp32s3-elf/include/c++/11.2.0/")
-    start.append(
-        f"-extra-arg=-isystem{clang_bin_dir}/../xtensa-esp32s2-elf/include/c++/11.2.0/xtensa-esp32s2-elf/"
-    )
-
     for arg in extra_arg_before:
         start.append("-extra-arg-before=%s" % arg)
     start.append("-p=" + build_path)
@@ -315,16 +299,29 @@ def main():
     parser.add_argument(
         "-line-filter",
         default=None,
-        help="List of files with line ranges to filter thewarnings.",
+        help="List of files with line ranges to filter the warnings.",
     )
     if yaml:
         parser.add_argument(
             "-export-fixes",
-            metavar="filename",
+            metavar="file_or_directory",
             dest="export_fixes",
             help=(
-                "Create a yaml file to store suggested fixes in, "
-                "which can be applied with clang-apply-replacements."
+                "A directory or a yaml file to store suggested fixes in, "
+                "which can be applied with clang-apply-replacements. If the "
+                "parameter is a directory, the fixes of each compilation unit are "
+                "stored in individual yaml files in the directory."
+            ),
+        )
+    else:
+        parser.add_argument(
+            "-export-fixes",
+            metavar="directory",
+            dest="export_fixes",
+            help=(
+                "A directory to store suggested fixes in, which can be applied "
+                "with clang-apply-replacements. The fixes of each compilation unit are "
+                "stored in individual yaml files in the directory."
             ),
         )
     parser.add_argument(
@@ -392,14 +389,34 @@ def main():
 
     clang_tidy_binary = find_binary(args.clang_tidy_binary, "clang-tidy", build_path)
 
-    tmpdir = None
     if args.fix:
         clang_apply_replacements_binary = find_binary(
             args.clang_apply_replacements_binary, "clang-apply-replacements", build_path
         )
 
-    if args.fix or args.export_fixes:
-        tmpdir = tempfile.mkdtemp()
+    combine_fixes = False
+    export_fixes_dir = None
+    delete_fixes_dir = False
+    if args.export_fixes is not None:
+        # if a directory is given, create it if it does not exist
+        if args.export_fixes.endswith(os.path.sep) and not os.path.isdir(args.export_fixes):
+            os.makedirs(args.export_fixes)
+
+        if not os.path.isdir(args.export_fixes):
+            if not yaml:
+                raise RuntimeError(
+                    "Cannot combine fixes in one yaml file. Either install PyYAML or specify an output"
+                    " directory."
+                )
+
+            combine_fixes = True
+
+        if os.path.isdir(args.export_fixes):
+            export_fixes_dir = args.export_fixes
+
+    if export_fixes_dir is None and (args.fix or combine_fixes):
+        export_fixes_dir = tempfile.mkdtemp()
+        delete_fixes_dir = True
 
     try:
         invocation = get_tidy_invocation(
@@ -422,7 +439,6 @@ def main():
         )
         invocation.append("-list-checks")
         invocation.append("-")
-        # print("INVOCATION" + " ".join(invocation))
         if args.quiet:
             # Even with -quiet we still want to check if we can call clang-tidy.
             with open(os.devnull, "w") as dev_null:
@@ -457,7 +473,7 @@ def main():
                 args=(
                     args,
                     clang_tidy_binary,
-                    tmpdir,
+                    export_fixes_dir,
                     build_path,
                     task_queue,
                     lock,
@@ -481,14 +497,14 @@ def main():
         # This is a sad hack. Unfortunately subprocess goes
         # bonkers with ctrl-c and we start forking merrily.
         print("\nCtrl-C detected, goodbye.")
-        if tmpdir:
-            shutil.rmtree(tmpdir)
+        if delete_fixes_dir:
+            shutil.rmtree(export_fixes_dir)
         os.kill(0, 9)
 
-    if yaml and args.export_fixes:
+    if combine_fixes:
         print("Writing fixes to " + args.export_fixes + " ...")
         try:
-            merge_replacement_files(tmpdir, args.export_fixes)
+            merge_replacement_files(export_fixes_dir, args.export_fixes)
         except:
             print("Error exporting fixes.\n", file=sys.stderr)
             traceback.print_exc()
@@ -497,15 +513,14 @@ def main():
     if args.fix:
         print("Applying fixes ...")
         try:
-            apply_fixes(args, clang_apply_replacements_binary, tmpdir)
+            apply_fixes(args, clang_apply_replacements_binary, export_fixes_dir)
         except:
             print("Error applying fixes.\n", file=sys.stderr)
             traceback.print_exc()
             return_code = 1
 
-    if tmpdir:
-        shutil.rmtree(tmpdir)
-    print("RETURN CODE " + str(return_code))
+    if delete_fixes_dir:
+        shutil.rmtree(export_fixes_dir)
     sys.exit(return_code)
 
 

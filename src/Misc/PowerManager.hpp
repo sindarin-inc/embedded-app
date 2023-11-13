@@ -20,7 +20,7 @@
 #include <esp_pm.h>
 #endif
 
-static constexpr auto MAX_OPERATIONAL_TEMPERATURE_C = 50.0f;
+static constexpr int MAX_OPERATIONAL_TEMPERATURE_C = 50;
 
 enum class PowerState {
     Booting,
@@ -37,6 +37,8 @@ enum class PowerState {
     // Screen lighting enabled ~10-60mA, inactivity timer disabled (will force powerOff 5s after
     // showing the depleted UI), UI disabled
     ActiveBatteryDepleted,
+    // On the way to shutting down
+    ShuttingDown,
     // Screens/lighting disabled ~6-7mA, inactivity timer disabled.
     Background,
     // Deep sleep with ULP magnetometer and periodic wakeups ~100uA
@@ -245,6 +247,7 @@ protected:
     bool templeOpen_ = false;
     BootInfo bootInfo_;
     Xyz8bit lastMagReading_ = {};
+    float lastMagAngle_ = 0;
 #if !DISABLE_POWER_MANAGEMENT
     esp_pm_config_t pmConfig_;
 #endif

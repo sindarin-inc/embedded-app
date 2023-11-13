@@ -220,6 +220,9 @@ public:
     auto xAbsoluteMax() -> int { return 255; }
     auto yAbsoluteMax() -> int { return 255; }
 
+    auto absoluteWidth() -> int { return 256; }
+    auto absoluteHeight() -> int { return 256; }
+
     [[nodiscard]] virtual auto darkPictureVComAdj(uint8_t darkPixelsPercent) const -> int {
         return 0;
     }

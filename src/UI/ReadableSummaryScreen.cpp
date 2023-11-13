@@ -3,6 +3,7 @@
 #include <utility>
 
 #include "Misc/SpiramAllocator.hpp"
+#include "Models/UserReadablePartialChapterSummary.hpp"
 
 auto ReadableSummaryScreen::layout(LayoutContext &context, Size size) -> Size {
     context.setViewFrame(leftArrowView_, {{0, -5}, {10, 5}});
@@ -23,10 +24,8 @@ void ReadableSummaryScreen::drawInRect(Rect rect) {
     bottomRightTextView_.draw();
 }
 
-void ReadableSummaryScreen::setPlaceInReadable(std::shared_ptr<Place> placeInReadable,
-                                               int currentChapterIdx) {
+void ReadableSummaryScreen::setPlaceInReadable(std::shared_ptr<EPubPlace> placeInReadable) {
     placeInReadable_ = std::move(placeInReadable);
-    currentChapterIdx_ = currentChapterIdx;
     preservePlace_ = nullptr;
 }
 
@@ -61,9 +60,15 @@ void ReadableSummaryScreen::render(DisplaySystem &display) {
     if (firstLoad_) {
         std::shared_ptr<TxtPlace> placeInSummary =
             std::dynamic_pointer_cast<TxtPlace>(Place::factory(0));
+        if (rendererStream_ == nullptr) {
+            rendererStream_ = renderer_.getStream();
+        }
+        auto epubStream = std::dynamic_pointer_cast<EPubFile>(rendererStream_);
 
-        SpiramString summaryString =
-            readable_->summary(placeInReadable_, placeInSummary, showUnread_, currentChapterIdx_);
+        auto partialChapterSummary =
+            UserReadablePartialChapterSummary::loadForReadable(fileSystem_, readable_);
+        auto summaryString = epubStream->getSummaryContent(placeInReadable_, placeInSummary,
+                                                           partialChapterSummary, showUnread_);
 
         if (preservePlace_) {
             placeInSummary = preservePlace_;
@@ -109,9 +114,15 @@ void ReadableSummaryScreen::resetBoundingBox(DisplayRect oldDisplayBoundingBox) 
     display_.setBoundingBox(oldDisplayBoundingBox);
 }
 
+void ReadableSummaryScreen::restoreRendererStream() {
+    renderer_.setStream(rendererStream_);
+    rendererStream_ = nullptr;
+}
+
 void ReadableSummaryScreen::processCommand(RemoteCommand command) {
     switch (command) {
     case RemoteCommand::UP:
+        restoreRendererStream();
         back();
         setNeedsRerender();
         break;
@@ -124,6 +135,7 @@ void ReadableSummaryScreen::processCommand(RemoteCommand command) {
     case RemoteCommand::ENTER:
     case RemoteCommand::RIGHT:
         if (atEnd_) {
+            restoreRendererStream();
             back();
         }
 

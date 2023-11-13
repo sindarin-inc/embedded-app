@@ -5,7 +5,7 @@
 
 #include "sindarin-debug.h"
 
-auto Place::factory(const std::string &placeStr) -> std::shared_ptr<Place> {
+auto Place::factory(const std::string &placeStr, DocType docType) -> std::shared_ptr<Place> {
 
     uint32_t offset = 0;
     std::string href;
@@ -45,18 +45,22 @@ auto Place::factory(const std::string &placeStr) -> std::shared_ptr<Place> {
                 }
             }
         }
-    } else {
+    } else if (placeStr.length() > 0) {
         offset = strtol(placeStr.c_str(), nullptr, 10);
         return std::make_shared<TxtPlace>(offset);
     }
 
-    return std::make_shared<TxtPlace>(0);
-
-    // log_e("Unable to parse place string properly: \"%s\"", placeStr.c_str());
-    // if constexpr (REND_ON_ERROR_EXIT) {
-    //     exit(1);
-    // }
-    // return std::make_shared<NonePlace>();
+    if (docType == DocType::TXT) {
+        return std::make_shared<TxtPlace>(0);
+    } else if (docType == DocType::EPUB) {
+        return std::make_shared<EPubPlace>(0, "");
+    } else {
+        log_e("Unable to parse place string properly: \"%s\"", placeStr.c_str());
+        if constexpr (REND_ON_ERROR_EXIT) {
+            exit(1);
+        }
+        return std::make_shared<NonePlace>();
+    }
 }
 
 auto Place::factory(const uint32_t offset, const std::string &href) -> std::shared_ptr<Place> {

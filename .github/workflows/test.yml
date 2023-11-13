@@ -33,12 +33,16 @@ jobs:
 
       - name: Run unit tests
         run: |
-          ./.pio/build/tests/program --reporter console --reporter junit::out=catch-results-0.xml
+          ./.pio/build/tests/program --reporter console --reporter junit::out=catch-results-main.xml
 
       # Because of a FreeRTOS startup/shutdown issue, these must be run separately
       - name: Run epub tests
         run: |
-          ./.pio/build/tests/program '[epub]' --reporter console --reporter junit::out=catch-results-1.xml
+          ./.pio/build/tests/program '[epub]' --reporter console --reporter junit::out=catch-results-epub.xml
+
+      - name: Run epub tests
+        run: |
+          ./.pio/build/tests/program '[epub]' --reporter console --reporter junit::out=catch-results-sync.xml
 
       - name: Test Report
         uses: dorny/test-reporter@v1

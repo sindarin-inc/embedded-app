@@ -6,7 +6,6 @@ auto convertToJson(const ReadableFile &src, JsonVariant dst) -> bool {
     dst["name"] = src.name;
     dst["size"] = src.size;
     dst["filetype"] = src.filetype;
-    dst["uploaded_at"] = src.uploadedAt;
     dst["sha_hash"] = src.shaHash;
     dst["file"] = src.file;
     dst["readable_type"] = src.readableType;

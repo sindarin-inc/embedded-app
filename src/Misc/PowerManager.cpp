@@ -8,6 +8,7 @@
 #include <ulp_riscv.h>
 #include <ulp_riscv_i2c.h>
 
+#include "Communications/WiFi.hpp"
 #include "Misc/Dispatch.hpp"
 #include "Platform.hpp"
 #include "Sensors/TempleAngle.hpp"
@@ -230,36 +231,40 @@ auto PowerManager::begin() -> esp_err_t {
         [this]() {
 #if !DISABLE_POWER_MANAGEMENT
         DispatchGetCore1BackgroundQueue()->dispatch([this]() {
-            // If USB is connected, disable operation unless we've disabled this behavior
-            if (USBConnected() && !prefs_.allowUsageWhileCharging.get().value_or(false)) {
-                log_i("USB connected, switching to ActiveUSBCharging");
-                state_ = PowerState::ActiveUSBCharging;
-                inactivityTimer_.setTimeoutMs(inactivityTimeoutMs());
-                DispatchGetUiQueue()->dispatch([this]() {
-                    if (stateChangeCallback_ != nullptr) {
-                        stateChangeCallback_(state_);
-                    }
-                });
-            } else if (!USBConnected() && state_ == PowerState::ActiveUSBCharging) {
-                log_i("USB disconnected, rebooting to Active");
-                reboot();
-            } else if (USBConnected() && pmConfig_.light_sleep_enable == true) {
-                // USB is connected so disable light sleep
-                pmConfig_.light_sleep_enable = false;
-                auto err = esp_pm_configure(&pmConfig_);
-                if (err != ESP_OK) {
-                    log_e("Failed to disable light sleep with err %s", esp_err_to_name(err));
-                } else {
-                    log_d("Disabled light sleep");
+            if (USBConnected()) {
+                // If USB is connected, disable operation unless we've disabled this behavior
+                if (!prefs_.allowUsageWhileCharging.get().value_or(false)) {
+                    log_i("USB connected, switching to ActiveUSBCharging");
+                    state_ = PowerState::ActiveUSBCharging;
+                    inactivityTimer_.setTimeoutMs(inactivityTimeoutMs());
+                    DispatchGetUiQueue()->dispatch([this]() {
+                        if (stateChangeCallback_ != nullptr) {
+                            stateChangeCallback_(state_);
+                        }
+                    });
                 }
-            } else if (!USBConnected() && pmConfig_.light_sleep_enable == false) {
-                // USB is disconnected so enable light sleep
-                pmConfig_.light_sleep_enable = true;
-                auto err = esp_pm_configure(&pmConfig_);
-                if (err != ESP_OK) {
-                    log_e("Failed to enable light sleep with err %s", esp_err_to_name(err));
-                } else {
-                    log_d("Enabled light sleep");
+                if (pmConfig_.light_sleep_enable == true) {
+                    // USB is connected so disable light sleep
+                    pmConfig_.light_sleep_enable = false;
+                    auto err = esp_pm_configure(&pmConfig_);
+                    if (err != ESP_OK) {
+                        log_e("Failed to disable light sleep with err %s", esp_err_to_name(err));
+                    } else {
+                        log_d("Disabled light sleep");
+                    }
+                }
+            } else { // !USBConnected()
+                if (state_ == PowerState::ActiveUSBCharging) {
+                    log_i("USB disconnected, rebooting to Active");
+                    reboot();
+                } else if (pmConfig_.light_sleep_enable == false) {
+                    pmConfig_.light_sleep_enable = true;
+                    auto err = esp_pm_configure(&pmConfig_);
+                    if (err != ESP_OK) {
+                        log_e("Failed to enable light sleep with err %s", esp_err_to_name(err));
+                    } else {
+                        log_d("Enabled light sleep");
+                    }
                 }
             }
         });
@@ -311,11 +316,15 @@ void PowerManager::loop() {
     checkUsb();
 #if USE_MMC5603
     bool templeOpen;
+    Xyz8bit prevMagReading = lastMagReading_;
+    float prevMagAngle = lastMagAngle_;
     auto err = isTempleOpen(templeOpen);
     if (err != ESP_OK) {
         log_e("Error checking temple state %d, ignoring.", err);
     } else if (templeOpen_ != templeOpen) {
-        log_i("Temple is %s", templeOpen ? "open" : "closed");
+        log_i("Temple is %s (%d, %d, %.1fº, previously %d %d %.1fº)",
+              templeOpen ? "open" : "closed", lastMagReading_.x, lastMagReading_.z, lastMagAngle_,
+              prevMagReading.x, prevMagReading.z, prevMagAngle);
         switch (state_) {
         case PowerState::Active:
         case PowerState::ActiveUSBCharging:
@@ -339,13 +348,13 @@ void PowerManager::loop() {
         templeOpen_ = templeOpen;
     }
 
-    float temperature;
+    int temperature;
     err = magSensor_.readTemperature(temperature);
     if (err != ESP_OK) {
         log_e("Error reading temperature %d, ignoring.", err);
     } else if (state_ != PowerState::ActiveOverTemp &&
                temperature > MAX_OPERATIONAL_TEMPERATURE_C) {
-        log_e("Temperature is too high (%.1f)! Going to sleep.", temperature);
+        log_e("Temperature is too high (%d)! Going to sleep.", temperature);
         state_ = PowerState::ActiveOverTemp;
         inactivityTimer_.setTimeoutMs(inactivityTimeoutMs());
         DispatchGetUiQueue()->dispatch([this]() {
@@ -365,7 +374,7 @@ auto PowerManager::isTempleOpen(bool &open) -> esp_err_t {
         log_e("Failed to read magnetometer");
         return err;
     }
-    open = IsTempleOpen(lastMagReading_.x, lastMagReading_.z);
+    open = IsTempleOpen(lastMagReading_.x, lastMagReading_.z, &lastMagAngle_);
 #else
     open = true;
 #endif
@@ -438,18 +447,25 @@ void PowerManager::releaseLED() {
 }
 
 void PowerManager::beginShutdown() {
+    auto previousState = state_;
+    state_ = PowerState::ShuttingDown;
+
     auto taskName = pcTaskGetName(nullptr);
     log_d("beginShutdown from task %s", taskName);
 
     battery.saveLastBatteryReport();
 
+    // Disconnect WiFi as a quick-and-dirty way to cancel long running syncs
+    WiFi::getInstance().disconnectWiFi();
+
     if (beginShutdownCallback_ != nullptr) {
         beginShutdownCallback_();
     }
 
-    if (state_ == PowerState::Active || state_ == PowerState::ActiveOverTemp ||
-        state_ == PowerState::ActiveUSBCharging || state_ == PowerState::ActiveForcedOn ||
-        state_ == PowerState::ActiveBatteryDepleted) {
+    if (previousState == PowerState::Active || previousState == PowerState::ActiveOverTemp ||
+        previousState == PowerState::ActiveUSBCharging ||
+        previousState == PowerState::ActiveForcedOn ||
+        previousState == PowerState::ActiveBatteryDepleted) {
         lightingController_.disableLighting(200);
         // Delay to see the fade.
         // TODO: Use a callback instead

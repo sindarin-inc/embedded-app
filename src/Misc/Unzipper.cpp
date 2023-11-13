@@ -135,7 +135,7 @@ auto Unzipper::open() -> bool {
                 }
 
                 const char *fName = (char *)&entries[fileEntryOffset + sizeof(DirFileHeader)];
-                std::string filePath = std::string(fName, dirFileHeader->filePathLength);
+                auto filePath = SpiramString(fName, dirFileHeader->filePathLength);
 
                 std::shared_ptr<FileEntry> fe = std::make_shared<FileEntry>(
                     FileEntry{dirFileHeader->headerOffset, dirFileHeader->compressedSize,
@@ -329,8 +329,10 @@ canonicalize_path(char * path, int debug)
 #endif
 
 // This method cleans filePath path that may contain relation folders (like '..').
-auto Unzipper::cleanFilePath(const char *filePath) -> char * {
-    char *str = new char[strlen(filePath) + 1];
+auto Unzipper::cleanFilePath(const char *filePath) -> std::string {
+    std::string ret(strlen(filePath), '\0');
+
+    char *str = ret.data();
 
     const char *s = filePath;
     const char *u;
@@ -359,7 +361,8 @@ auto Unzipper::cleanFilePath(const char *filePath) -> char * {
         ;
     }
 
-    return str;
+    ret.resize(strlen(ret.data()));
+    return ret;
 }
 
 auto Unzipper::getFileSize() -> uint32_t {
@@ -380,7 +383,7 @@ auto Unzipper::fileExists(const std::string &filePath) -> bool {
 
     std::string cleanedFilePath = cleanFilePath(filePath.c_str());
 
-    return fileEntries_.find(cleanedFilePath) != fileEntries_.end();
+    return fileEntries_.find(static_cast<SpiramString>(cleanedFilePath)) != fileEntries_.end();
 }
 
 void Unzipper::showEntries() {
@@ -405,7 +408,8 @@ auto Unzipper::openFile(const std::string &filePath) -> bool {
 
     std::string cleanedFilePath = cleanFilePath(filePath.c_str());
 
-    if (auto it = fileEntries_.find(cleanedFilePath); it == fileEntries_.end()) {
+    if (auto it = fileEntries_.find(static_cast<SpiramString>(cleanedFilePath));
+        it == fileEntries_.end()) {
         log_e("Unzipper openFile: File not found: <%s>", cleanedFilePath.c_str());
         showEntries();
     } else {

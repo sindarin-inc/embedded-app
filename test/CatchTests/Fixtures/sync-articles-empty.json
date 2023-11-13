@@ -1,0 +1,12 @@
+{
+    "next": "https://api.sindarin.com/sync/books/?cursor=cD00NjEy",
+    "previous": null,
+    "count": 0,
+    "page_size": 0,
+    "results": {
+        "articles": [],
+        "articles_since": "1698411727",
+        "synced": true,
+        "timezone": "America/Los_Angeles"
+    }
+}

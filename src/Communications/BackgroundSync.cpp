@@ -37,16 +37,20 @@ void BackgroundSyncInternal(PowerManager &powerManager, PreferencesStore &prefs,
             } else {
                 return;
             }
-            xEventGroupSetBits(backgroundGroup, 1);
+            if (backgroundGroup != nullptr) {
+                xEventGroupSetBits(backgroundGroup, 1);
+            }
         }
         });
 
     // Wait for content sync to finish
     auto bits =
-        xEventGroupWaitBits(backgroundGroup, 1, pdTRUE, pdTRUE, pdMS_TO_TICKS(5 * 60 * 1000));
+        xEventGroupWaitBits(backgroundGroup, 1, pdTRUE, pdTRUE, pdMS_TO_TICKS(10 * 60 * 1000));
     if (!(bits & 1)) {
+        // TODO: Make a proper way to cancel the sync if it's still running
         log_w("Content sync timed out");
     }
+    xEventGroupClearBits(backgroundGroup, 1);
 
     if (!WiFi::getInstance().connected()) {
         log_w("WiFi not connected, ending background sync");
@@ -83,7 +87,9 @@ void BackgroundSyncInternal(PowerManager &powerManager, PreferencesStore &prefs,
         } else {
             return;
         }
-        xEventGroupSetBits(backgroundGroup, 1);
+        if (backgroundGroup != nullptr) {
+            xEventGroupSetBits(backgroundGroup, 1);
+        }
     });
 
     // Wait for firmware download to finish
@@ -92,6 +98,7 @@ void BackgroundSyncInternal(PowerManager &powerManager, PreferencesStore &prefs,
         firmwareDownloader->cancel();
         log_w("Firmware download timed out");
     }
+    xEventGroupClearBits(backgroundGroup, 1);
 
     // Upload core dumps
     FileList coreDumpFiles;
@@ -112,17 +119,21 @@ void BackgroundSyncInternal(PowerManager &powerManager, PreferencesStore &prefs,
             } else {
                 return;
             }
-            xEventGroupSetBits(backgroundGroup, 1);
+            if (backgroundGroup != nullptr) {
+                xEventGroupSetBits(backgroundGroup, 1);
+            }
         });
 
-        auto bits =
+        bits =
             xEventGroupWaitBits(backgroundGroup, 1, pdTRUE, pdTRUE, pdMS_TO_TICKS(2 * 60 * 1000));
         if (!(bits & 1)) {
             log_w("Coredump upload timed out");
         }
+        xEventGroupClearBits(backgroundGroup, 1);
     }
 
     vEventGroupDelete(backgroundGroup);
+    backgroundGroup = nullptr;
 }
 
 void BackgroundSync(PowerManager &powerManager, PreferencesStore &prefs, LocalStore &localStore,

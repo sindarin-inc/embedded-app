@@ -397,6 +397,10 @@ auto WiFi::connectWiFiSettingWithTimeout(int timeoutMs, const std::string &ssid,
 }
 
 void WiFi::disconnectWiFi() {
+    if (wiFiState_ == UNINITIALIZED) {
+        return;
+    }
+
     SHOW_HEAP();
     log_i("Disconnecting WiFi");
 

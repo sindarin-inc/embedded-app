@@ -1,10 +1,10 @@
 #pragma once
 
 #include <functional>
-#include <map>
 #include <memory>
 #include <optional>
 #include <string>
+#include <unordered_map>
 #include <unordered_set>
 #include <utility>
 
@@ -145,5 +145,5 @@ protected:
     int sublayoutIndex_ = 0;
 
     // Collection of inline sublayouts. Only used when the layout lambda creates a sublayout.
-    std::map<int, std::shared_ptr<LayoutContext>> sublayouts_;
+    std::unordered_map<int, std::shared_ptr<LayoutContext>> sublayouts_;
 };

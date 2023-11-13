@@ -1,10 +1,9 @@
 #pragma once
 
+#include <freertos/FreeRTOS.h>
+#include <freertos/timers.h>
 #include <functional>
 #include <utility>
-
-#include "freertos/FreeRTOS.h"
-#include "freertos/timers.h"
 
 class InactivityTimer {
 public:

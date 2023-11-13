@@ -12,20 +12,23 @@ class EPubOpf {
 public:
     EPubOpf(const char *path) : path_(path) {}
 
-    void parse(const std::shared_ptr<uint8_t[]> &buffer, uint32_t length,
-               const std::shared_ptr<Readable> &readable);
-
     struct ManifestItem {
-        std::string href;
-        std::string mediaType;
+        SpiramString href;
+        SpiramString mediaType;
     };
-
     struct SpineItem {
         ManifestItem *item;
-        int readableToCChapterIndex; // = -1 if not a chapter in the readable TOC
+        int chapterIdx;
+        bool chapterStart;
     };
 
-    [[nodiscard]] auto getSpine(Idx idx) const -> const SpineItem & { return spine_[idx]; }
+    void parse(const std::shared_ptr<uint8_t[]> &buffer, uint32_t length,
+               const std::shared_ptr<Readable> &readable);
+    void loadSpine(const ReadableTableOfContentsChapterVector &toc);
+    auto findChapterIdxInToc(const ReadableTableOfContentsChapterVector &toc, SpineItem &spineItem)
+        -> ChapterIdx;
+
+    [[nodiscard]] auto getSpine(SpineIdx idx) const -> const SpineItem & { return spine_[idx]; }
 
     [[nodiscard]] auto getFullPath(const std::string &fileName) const -> std::string {
         return basePath_ + fileName;
@@ -35,23 +38,28 @@ public:
 
     void extractPath(const char *fname, std::string &path);
 
-    auto getSpineIdx(const std::string &href) const -> int;
+    auto getSpineIdx(const std::string &href) const -> SpineIdx;
 
-    auto getReadableToCChapterIndex(const std::string &href) const -> int;
+    auto getChapterIdx(const std::string &href) const -> ChapterIdx;
+    auto getChapterIdx(SpineIdx spineIdx) const -> ChapterIdx;
+    auto spineIdxIsChapterStart(SpineIdx spineIdx) const -> bool;
+    auto getChapterFirstSpineIdx(SpineIdx spineIdx) const -> SpineIdx;
+    auto getChapterFirstHref(const std::string &spineHRef) const -> std::string;
 
     auto exists(const std::string &id) const -> bool;
 
-    auto getHrefByID(const std::string &id) const -> std::string;
-    auto getIdByHref(const std::string &href) const -> std::string;
+    // TODO: It'd probably be good practice to use a type alias for manifest IDs
+    auto getHrefByManifestId(const std::string &manifestId) const -> std::string;
+    auto getManifestIdByHref(const std::string &href) const -> std::string;
 
 private:
     const char *path_;
 
     std::string basePath_;
 
-    using ManifestMap = std::unordered_map<std::string, ManifestItem>;
-    using ManifestIterator = std::unordered_map<std::string, ManifestItem>::iterator;
-    using SpineVector = std::vector<SpineItem>;
+    using ManifestMap = SpiramMap<SpiramString, ManifestItem>;
+    using ManifestIterator = SpiramMap<SpiramString, ManifestItem>::iterator;
+    using SpineVector = SpiramVector<SpineItem>;
 
     std::string title_;
     std::string creator_;

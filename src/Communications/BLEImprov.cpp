@@ -2,9 +2,10 @@
 
 #include "BLEImprov.hpp"
 
+#include <esp_wifi.h>
+
 #include "Communications/WiFi.hpp"
 #include "config.h"
-#include "esp_wifi.h"
 #include "sindarin-debug.h"
 
 // Time to wait for WiFi scanning to complete. Should not trigger if the event handler fires a

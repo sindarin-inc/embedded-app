@@ -3,6 +3,7 @@
 #include <utility>
 
 #include "Displays/DisplaySystem.hpp"
+#include "EPub/EPubDefs.hpp"
 #include "Misc/BMPImage.hpp"
 #include "Misc/Platform.hpp"
 #include "Models/Place.hpp"
@@ -136,8 +137,8 @@ static const uint16_t POOL_TOKENS = (uint16_t)TokenId::TEXT | (uint16_t)TokenId:
 
 class StreamPlace {
 public:
-    StreamPlace(uint32_t offset, Idx fileIdx) : offset_(offset), fileIdx_(fileIdx) {}
-    StreamPlace() : offset_(0), fileIdx_(0) {}
+    StreamPlace(uint32_t offset, Idx spineIdx) : offset_(offset), spineIdx_(spineIdx) {}
+    StreamPlace() : offset_(0), spineIdx_(0) {}
 
     inline void setOffset(uint32_t offset) { offset_ = offset; }
     inline void incOffset() { offset_ += 1; }
@@ -147,30 +148,30 @@ public:
         }
     }
     [[nodiscard]] inline auto getOffset() const -> uint32_t { return offset_; }
-    [[nodiscard]] inline auto getFileIdx() const -> Idx { return fileIdx_; }
+    [[nodiscard]] inline auto getSpineIdx() const -> SpineIdx { return spineIdx_; }
 
     [[nodiscard]] inline auto operator==(const StreamPlace &rhs) const -> bool {
-        return (offset_ == rhs.offset_) && (fileIdx_ == rhs.fileIdx_);
+        return (offset_ == rhs.offset_) && (spineIdx_ == rhs.spineIdx_);
     }
 
     [[nodiscard]] inline auto operator>=(const StreamPlace &rhs) const -> bool {
-        return (fileIdx_ > rhs.fileIdx_) ||
-               ((fileIdx_ == rhs.fileIdx_) && (offset_ >= rhs.offset_));
+        return (spineIdx_ > rhs.spineIdx_) ||
+               ((spineIdx_ == rhs.spineIdx_) && (offset_ >= rhs.offset_));
     }
 
     [[nodiscard]] auto str() const -> std::string {
         std::string s;
         s = "[offset:";
         s += std::to_string(offset_);
-        s.append(", fileIdx:");
-        s += std::to_string(fileIdx_);
+        s.append(", spineIdx:");
+        s += std::to_string(spineIdx_);
         s.append("]");
         return s;
     }
 
 private:
     uint32_t offset_;
-    Idx fileIdx_;
+    Idx spineIdx_;
 };
 
 // A token is simply a place in the buffer and a token identifer

@@ -1,10 +1,10 @@
-#if 1
 #include <catch_amalgamated.hpp>
 
 // Allow access to protected methods from tests
 #define protected public
 #define private public
 #include "Misc/BMPImage.hpp"
+#include "Misc/Defer.hpp"
 #include "Misc/Telemetry.hpp"
 #include "Renderers/RendererStream.hpp"
 #include "Storage/PosixFileSystem.hpp"
@@ -13,6 +13,7 @@
 #include "UI/LineSpacingScreen.hpp"
 #include "UI/OffsetAdjustScreen.hpp"
 #include "UI/PowerDepletedScreen.hpp"
+#include "UI/ReadableScreen.hpp"
 #include "UI/ReadableTableOfContentsScreen.hpp"
 #include "UI/ReleaseNotesScreen.hpp"
 #include "UI/ResizeBoxScreen.hpp"
@@ -26,7 +27,8 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
     SetupFileSystemMock("TestData");
     SetImagesFolder("Images");
 
-    StartFreeRtos();
+    StartAppMain();
+    defer { StopFreeRtos(); };
 
     // First screen renders twice once with a full refresh and once with a AU4
     WAIT_FOR_DRAW();
@@ -35,17 +37,12 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
     ASSERT_VIEW_UNCHANGED("FirstScreen");
 
     // TODO: Currently there's a problem with starting and stopping the scheduler that makes the
-    // tests lock up with multiple SECTIONs, otherwise we should split up indivitual test flows into
+    // tests lock up with multiple SECTIONs, otherwise we should split up individual test flows into
     // multiple sections so that all the state resets between tests.
     SECTION("Render a bunch of views") {
         // Send a remote command for left (for Settings)
         SendRemoteCommand(LEFT);
         WAIT_FOR_DRAW();
-        WAIT_FOR_DRAW();
-
-        ASSERT_VIEW_UNCHANGED("Settings");
-
-        SendRemoteCommand(DOWN);
         WAIT_FOR_DRAW();
 
         SendRemoteCommand(ENTER);
@@ -289,32 +286,31 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
         SendRemoteCommand(ENTER);
         WAIT_FOR_DRAW();
         ASSERT_VIEW_UNCHANGED("Summary6");
-        SendRemoteCommand(ENTER);
+        SendRemoteCommand(DOWN);
         WAIT_FOR_DRAW();
         ASSERT_VIEW_UNCHANGED("Summary7");
         SendRemoteCommand(ENTER);
         WAIT_FOR_DRAW();
         ASSERT_VIEW_UNCHANGED("Summary8");
-        SendRemoteCommand(DOWN);
+        SendRemoteCommand(ENTER);
         WAIT_FOR_DRAW();
         ASSERT_VIEW_UNCHANGED("Summary9");
-        SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW();
-        ASSERT_VIEW_UNCHANGED("Summary10");
-        SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW();
-        ASSERT_VIEW_UNCHANGED("Summary11");
         SendRemoteCommand(UP);
         WAIT_FOR_DRAW();
         ASSERT_VIEW_UNCHANGED("Dawn4");
     }
-
-    StopFreeRtos();
 }
 
 TEST_CASE("Test some views independently") {
     // Just create and render a PowerDepletedScreen
     auto display = createDisplay();
+
+    FakeEinkET013TT1SkipSignalling = true;
+    FakeEinkET013TT1SkipWaveform = true;
+    defer {
+        FakeEinkET013TT1SkipWaveform = false;
+        FakeEinkET013TT1SkipSignalling = false;
+    };
 
     SECTION("Test PowerDepletedScreen") {
         PowerDepletedScreen screen;
@@ -331,7 +327,7 @@ TEST_CASE("Test some views independently") {
 
     SECTION("Test things that need prefs") {
         PreferencesStore prefs;
-        prefs.begin();
+        prefs.begin("./test/CatchTests/TestData/simprefs.ini");
         prefs.invertSetting.remove();
         prefs.font.remove();
         prefs.lineSpacing.remove();
@@ -367,15 +363,70 @@ TEST_CASE("Test some views independently") {
             readable->fromJson((*readablesJsonDoc)["readables"][1]);
 
             Renderer renderer(*display);
+            auto path = LocalStore::readableFilePathForReading(fileSystem, readable);
+            auto stream = fileSystem.newEPubRendererStream(path.c_str(), readable);
+            renderer.setStream(stream);
             ReadableTableOfContentsScreen screen(prefs, readable, renderer, *display, telemetry);
             screen.loadMenuItems();
 
-            // This view renders twice, once with a full refresh and once with a AU4 so we need to
-            // not wait on the signaling otherwise we'll hang here.
-            FakeEinkET013TT1SkipSignalling = true;
             screen.render(*display);
-            FakeEinkET013TT1SkipSignalling = false;
             ASSERT_VIEW_UNCHANGED("ReadableTableOfContentsScreen");
+        }
+
+        LightingController lightingController;
+
+        SECTION("Test Last Question in CES mode") {
+            prefs.cesMode.set(true);
+
+            auto readable = std::make_shared<Readable>();
+            auto readablesJsonDoc = LoadJsonDoc(fileSystem, "/readables.json");
+            readable->fromJson((*readablesJsonDoc)["readables"][0]);
+
+            Renderer renderer(*display);
+            auto path = LocalStore::readableFilePathForReading(fileSystem, readable);
+            auto stream = fileSystem.newGzipRendererStream(path.c_str());
+            renderer.setStream(stream);
+
+            ReadableScreen readableScreen(stream, *display, readable, prefs, telemetry, fileSystem,
+                                          lightingController);
+            readableScreen.render(*display);
+            ASSERT_VIEW_UNCHANGED("CesMode");
+        }
+
+        SECTION("Test EPUB image rendering with alternate bounding box") {
+            display->setBoundingBox(DisplayRect{10, 20, 236, 236});
+
+            auto readable = std::make_shared<Readable>();
+            auto readablesJsonDoc = LoadJsonDoc(fileSystem, "/readables-lq-epub.json");
+            readable->fromJson((*readablesJsonDoc)["readables"][0]);
+
+            Renderer renderer(*display);
+            auto path = LocalStore::readableFilePathForReading(fileSystem, readable);
+            auto stream = fileSystem.newEPubRendererStream(path.c_str(), readable);
+            renderer.setStream(stream);
+
+            ReadableScreen readableScreen(stream, *display, readable, prefs, telemetry, fileSystem,
+                                          lightingController);
+            readableScreen.render(*display);
+            ASSERT_VIEW_UNCHANGED("EpubImage");
+        }
+
+        SECTION("Test ReleaseNotesScreen") {
+            PosixFileSystem fs("./test/CatchTests/TestData/ReleaseNotesScreen/");
+            Telemetry telemetry(fs, prefs);
+            Battery battery(fs, prefs, telemetry);
+            LightingController lightingController;
+            PowerManager power(fs, prefs, lightingController, *display, telemetry);
+            LocalStore localStore(fs, prefs, battery, telemetry);
+
+            (*display).style.setFontFamily((*display).style.solSansSmall);
+
+            Firmware firmware;
+            auto upgradeAvailable = localStore.getPendingFirmwareUpdate(firmware);
+            REQUIRE(upgradeAvailable);
+            ReleaseNotesScreen screen(*display, prefs, power, localStore, firmware);
+            screen.render(*display);
+            ASSERT_VIEW_UNCHANGED("ReleaseNotesScreen");
         }
     }
 }
@@ -385,6 +436,12 @@ TEST_CASE("Test bmp file rendering") {
     fs.begin();
     // create and render a full screen bitmap view
     auto display = createDisplay();
+    FakeEinkET013TT1SkipSignalling = true;
+    FakeEinkET013TT1SkipWaveform = true;
+    defer {
+        FakeEinkET013TT1SkipWaveform = false;
+        FakeEinkET013TT1SkipSignalling = false;
+    };
 
     SECTION("Test bitmap view Books (grayscale)") {
         SFile file = fs.open("/books.bmp");
@@ -408,5 +465,3 @@ TEST_CASE("Test bmp file rendering") {
         ASSERT_VIEW_UNCHANGED("BitmapViewBooks");
     }
 }
-
-#endif
