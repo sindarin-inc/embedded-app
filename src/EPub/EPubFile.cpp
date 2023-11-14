@@ -102,8 +102,8 @@ auto EPubFile::getFile(const std::string &completeFilePath)
 
                     return {std::move(buffer), length};
                 } else {
-                    log_w("Failed to read file %s, read %d bytes, expected %d",
-                          completeFilePath.c_str(), length, size + 1);
+                    log_w("Failed to read file %s, read %" PRIu32 " bytes, expected %" PRIu32,
+                          completeFilePath.c_str(), length, size);
                 }
             } else {
                 epubUnzipper_.closeFile();
