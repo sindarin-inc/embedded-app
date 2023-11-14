@@ -89,7 +89,8 @@ auto EPubFile::getFile(const std::string &completeFilePath)
         EPUB_PROFILE_END(UnzipperGetFileSize);
 
         if (size > 0) {
-            buffer = SpiRamArrayPtr<uint8_t>(size + 1);
+            uint32_t bufferSize = size + 1;
+            buffer = SpiRamArrayPtr<uint8_t>(bufferSize);
             buffer[size] = 0; // Pugixml requires null termination
 
             if (buffer != nullptr) {
@@ -100,7 +101,7 @@ auto EPubFile::getFile(const std::string &completeFilePath)
                 if (length == size) {
                     // if (readable_->isArticle()) log_w("article");
 
-                    return {std::move(buffer), length};
+                    return {std::move(buffer), bufferSize};
                 } else {
                     log_w("Failed to read file %s, read %" PRIu32 " bytes, expected %" PRIu32,
                           completeFilePath.c_str(), length, size);
