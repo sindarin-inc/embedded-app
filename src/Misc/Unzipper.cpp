@@ -448,7 +448,7 @@ void Unzipper::closeFile() {
 auto Unzipper::readFile(uint8_t *fileData, uint32_t fileDataSize) -> uint32_t {
     // log_d("getFile: %s", filePath);
 
-    if (!isOpen_ || (currentFileEntry_ == nullptr) || (currentFileEntry_->size != fileDataSize)) {
+    if (!isOpen_ || (currentFileEntry_ == nullptr) || (currentFileEntry_->size > fileDataSize)) {
         return 0;
     }
 
@@ -540,7 +540,7 @@ error:
         fileSize = 0;
         log_e("Unzipper readFile: Error!: %d", err);
     } else {
-        fileSize = currentFileEntry_->size + 1;
+        fileSize = currentFileEntry_->size;
     }
 
     return fileSize;

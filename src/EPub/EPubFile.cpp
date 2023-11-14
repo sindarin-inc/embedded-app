@@ -97,7 +97,7 @@ auto EPubFile::getFile(const std::string &completeFilePath)
                 uint32_t length = epubUnzipper_.readFile(buffer.get(), size);
                 epubUnzipper_.closeFile();
                 EPUB_PROFILE_END(UnzipperReadFromFile);
-                if (length == size + 1) {
+                if (length == size) {
                     // if (readable_->isArticle()) log_w("article");
 
                     return {std::move(buffer), length};
