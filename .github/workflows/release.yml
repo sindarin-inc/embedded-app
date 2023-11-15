@@ -30,6 +30,7 @@ jobs:
           -F "elf=@${{ steps.download.outputs.download-path }}/embedded-app.elf;type=application/octet-stream" \
           -F "role=DEBUG" \
           -F "device=GLASSES" \
+          -f "git_sha=${{ github.sha }}" \
           -F "release_notes=TODO"
 
       - name: Create the flasher script
