@@ -29,6 +29,7 @@ dut_log_port_name = "SOL Mainframe ICT"
 dut_log_port_index = 1
 
 
+
 @pytest.fixture
 def port(request: FixtureRequest) -> t.Optional[str]:
     """Overridden to make sure we pick the right USB port for the DUT"""
