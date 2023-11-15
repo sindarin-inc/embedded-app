@@ -37,7 +37,7 @@ jobs:
 
       - uses: EndBug/add-and-commit@v9
         with:
-          add: "apps"
+          add: "*.py"
           author_name: Python Formatting Robot
           author_email: robot@sindarin.com
           message: "Committing black python code formatter and isort changes"
