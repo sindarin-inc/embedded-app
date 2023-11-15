@@ -81,8 +81,8 @@ public:
         return path + filename;
     }
 
+    auto getUncompressedSize(const std::string &href) -> uint32_t;
     auto getUncompressedSize(SpineIdx spineIdx) -> uint32_t;
-    auto calculateFileSize(const std::string &href) -> uint32_t;
 
     auto getChapterIdx(const std::shared_ptr<EPubPlace> &ePubPlace) const -> ChapterIdx;
     auto getChapterIdx(const std::string &href) const -> ChapterIdx;

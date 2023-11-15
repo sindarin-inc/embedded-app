@@ -89,7 +89,8 @@ auto EPubFile::getFile(const std::string &completeFilePath)
         EPUB_PROFILE_END(UnzipperGetFileSize);
 
         if (size > 0) {
-            buffer = SpiRamArrayPtr<uint8_t>(size + 1);
+            uint32_t bufferSize = size + 1;
+            buffer = SpiRamArrayPtr<uint8_t>(bufferSize);
             buffer[size] = 0; // Pugixml requires null termination
 
             if (buffer != nullptr) {
@@ -100,7 +101,7 @@ auto EPubFile::getFile(const std::string &completeFilePath)
                 if (length == size) {
                     // if (readable_->isArticle()) log_w("article");
 
-                    return {std::move(buffer), length};
+                    return {std::move(buffer), bufferSize};
                 } else {
                     log_w("Failed to read file %s, read %" PRIu32 " bytes, expected %" PRIu32,
                           completeFilePath.c_str(), length, size);
@@ -156,9 +157,8 @@ auto EPubFile::getXHTMLFile(const std::string &path) -> pugi::xml_document & {
     return currentFileDoc_;
 }
 
-auto EPubFile::getUncompressedSize(SpineIdx spineIdx) -> uint32_t {
-    std::string filePath =
-        opf_->getFullPath(static_cast<std::string>(opf_->getSpine(spineIdx).item->href));
+auto EPubFile::getUncompressedSize(const std::string &href) -> uint32_t {
+    std::string filePath = opf_->getFullPath(href);
     // log_w("Loading file %s", filePath.c_str());
     if (epubUnzipper_.openFile(filePath.c_str())) {
         uint32_t size = epubUnzipper_.getFileSize();
@@ -168,11 +168,8 @@ auto EPubFile::getUncompressedSize(SpineIdx spineIdx) -> uint32_t {
     return 0;
 }
 
-auto EPubFile::calculateFileSize(const std::string &href) -> uint32_t {
-    auto filePath = opf_->getFullPath(href);
-    auto [buffer, size] = getFile(filePath);
-
-    return size;
+auto EPubFile::getUncompressedSize(SpineIdx spineIdx) -> uint32_t {
+    return getUncompressedSize(static_cast<std::string>(opf_->getSpine(spineIdx).item->href));
 }
 
 auto EPubFile::getChapterIdx(const std::shared_ptr<EPubPlace> &ePubPlace) const -> ChapterIdx {
@@ -241,7 +238,7 @@ auto EPubFile::getToc() -> ReadableTableOfContentsChapterVector {
                 chapter.endEpubOffset =
                     static_cast<uint32_t>(strtoul(endEpubOffsetAttr.value(), nullptr, 10));
             } else {
-                auto fileSize = calculateFileSize(std::string(chapter.href));
+                auto fileSize = getUncompressedSize(static_cast<std::string>(chapter.href));
                 cumulativeOffset += fileSize;
                 chapter.endEpubOffset = cumulativeOffset;
             }
