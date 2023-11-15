@@ -16,7 +16,7 @@ from pytest import MonkeyPatch
 from pytest_embedded_idf.dut import IdfDut
 from pytest_embedded_idf.serial import IdfSerial
 
-from ict import MFICTClient
+from ict import MFICTClient, MODE_MAINFRAME_TESTER, MODE_FINAL_TESTER
 from power import PowerTester
 from util import maybe_format, wait_for_port_by_device_name
 
@@ -207,30 +207,6 @@ def generate_and_write_nvs(ict_client, dut, ssid, password, fullsync):
     port = wait_for_port_by_device_name(dut_port_name, dut_port_index)
     logger.info("post program nvs dut port: " + port)
 
-def left_open_value(mode):
-    if mode == 0:
-        return 75
-    else:
-        return 0
-    
-def right_open_value(mode):
-    if mode == 0:
-        return -70
-    else:
-        return 0
-
-def left_closed_value(mode):
-    if mode == 0:
-        return 0
-    else:
-        return -75
-
-def right_closed_value(mode):
-    if mode == 0:
-        return 0
-    else:
-        return 100
-
 @pytest.fixture
 def port(request: FixtureRequest) -> t.Optional[str]:
     """Overridden to make sure we pick the right USB port for the DUT"""
@@ -244,7 +220,7 @@ class OverrideIdfSerial(IdfSerial):
         self.ict_client = ict_client
         ict_mode = self.ict_client.get_ict_mode()
 
-        if ict_mode == 1:
+        if ict_mode == MODE_FINAL_TESTER:
             logger.info("opening temple")
             self.ict_client.open_right_temple()
             self.ict_client.dut_programming_mode()
@@ -270,7 +246,7 @@ class OverrideIdfSerial(IdfSerial):
         logger.info("start ict mode " + str(ict_mode))
 
         # Wake up from sleep if necessary
-        self.ict_client.set_servo("right", right_open_value(ict_mode))
+        self.ict_client.open_right_temple()
         
         # The DUT is flashed here unless using --skip-autoflash=True
         super()._start()
@@ -357,7 +333,7 @@ def ict_client():
     # Set everything up to be discoverable over USB
     client = MFICTClient()
     client.clear_input()
-    if client.get_ict_mode() == 1:
+    if client.get_ict_mode() == MODE_FINAL_TESTER:
         logger.info("ict client opening dut temple")
         client.open_right_temple()
 
@@ -375,8 +351,8 @@ def ict_client():
     ict_mode = client.get_ict_mode()
 
     # Reset everything back to a default state
-    client.set_servo("right", right_open_value(ict_mode))
-    client.set_servo("left", left_open_value(ict_mode))
+    client.open_right_temple()
+    client.open_left_temple()
     client.set_power(False)
 
 
@@ -424,7 +400,7 @@ class TestWithIctOnly:
 @pytest.mark.usefixtures("power_client")
 @pytest.mark.ict
 @pytest.mark.power
-@pytest.mark.skipif(MFICTClient().get_ict_mode() == 1, reason="not board tester")
+@pytest.mark.skipif(MFICTClient().get_ict_mode() != MODE_MAINFRAME_TESTER, reason="not mainframe tester")
 class TestPowerConsumption:
     def test_power(self, dut: OverrideDut, ict_client: MFICTClient, power_client: PowerTester, ssid, password, fullsync) -> None:
 
@@ -445,7 +421,7 @@ class TestPowerConsumption:
         ict_client.clear_input()
 
         ict_client.set_power(False)
-        ict_client.set_servo("left", 0)
+        ict_client.close_left_temple()
 
         power_client.turn_on()
 
@@ -456,9 +432,9 @@ class TestPowerConsumption:
         power_client.expect_current((10, 30), 3)
 
         logger.info("Powering on DUT")
-        ict_client.set_servo("right", -70)
+        ict_client.open_right_temple()
         time.sleep(0.5)
-        ict_client.set_servo("left", 75)
+        ict_client.open_left_temple()
 
         # Wait for serial port to come back
         # first wait for DUT device to show up
@@ -533,7 +509,7 @@ class TestPowerConsumption:
 
 @pytest.mark.usefixtures("ict_client")
 @pytest.mark.ict
-@pytest.mark.skipif((MFICTClient().get_ict_mode()) == 0, reason="not glasses tester")
+@pytest.mark.skipif(MFICTClient().get_ict_mode() != MODE_FINAL_TESTER, reason="not final tester")
 class TestFullContentSync:
     def test_full_content_sync(self, dut: OverrideDut, ict_client: MFICTClient, ssid, password, fullsync) -> None:
         logger.info("TestFullContentSync")

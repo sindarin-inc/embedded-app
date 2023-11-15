@@ -8,9 +8,13 @@ import zipfile
 import shutil
 
 from util import find_port_by_device_name, wait_for_port_by_device_name, find_ports_by_device_name
+from typing import Final
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
+
+MODE_MAINFRAME_TESTER: Final = 0
+MODE_FINAL_TESTER: Final = 1
 
 class MFICTClient:
     def __init__(self, baudrate=115200, timeout=1):
@@ -23,7 +27,7 @@ class MFICTClient:
         self.ser = serial.Serial(port, baudrate, timeout=timeout, rtscts=False, dsrdtr=False)
 
         self.mode = self.get_ict_mode()
-        if self.mode == 1:
+        if self.mode == MODE_FINAL_TESTER:
             self.open_right_temple()
 
         # check if ICT update is required
@@ -91,7 +95,7 @@ class MFICTClient:
 
         # also close right temple (prevent JTAG port if glasses tester)
         dut_jtag_port = ""
-        if self.mode == 1:
+        if self.mode == MODE_FINAL_TESTER:
             # get jtag port now, so we can wait for it to go away
             dut_jtag_port = wait_for_port_by_device_name("USB JTAG/serial debug unit", 0, timeout=10)
             logger.info("before programming mode, dut jtag port is " + dut_jtag_port)
@@ -102,7 +106,7 @@ class MFICTClient:
         self.ser.close()
         self.ser = None
 
-        if self.mode == 1:
+        if self.mode == MODE_FINAL_TESTER:
             # wait for jtag port to go away
             logger.info("close temple, wait for jtag port " + dut_jtag_port + " to go away")
             jtag_ports = [dut_jtag_port]
@@ -157,7 +161,7 @@ class MFICTClient:
         self.ser = serial.Serial(port, baudrate, timeout=timeout, rtscts=False, dsrdtr=False)
         logger.info("flash successful")
 
-        if self.mode == 1:
+        if self.mode == MODE_FINAL_TESTER:
             self.open_right_temple()
             # wait for dut jtag to reappear
             dut_after = wait_for_port_by_device_name("USB JTAG/serial debug unit", 0, timeout=10)
@@ -297,10 +301,9 @@ class MFICTClient:
         self.write("GETMODE")
         time.sleep(0.1)
         resp = self.read()
-        logger.info("getmode got: " + resp)
         parts = resp.split(" ")
         if parts[0] == "Invalid":
-            return 0
+            return MODE_MAINFRAME_TESTER
         modestr = resp.split(" ")[1]
         return int(modestr)
     
@@ -320,25 +323,25 @@ class MFICTClient:
         self.set_gpio0(1)
 
     def left_open_value(self):
-        if self.mode == 0:
+        if self.mode == MODE_MAINFRAME_TESTER:
             return 75
         else:
             return 0
         
     def right_open_value(self):
-        if self.mode == 0:
+        if self.mode == MODE_MAINFRAME_TESTER:
             return -70
         else:
             return 0
 
     def left_closed_value(self):
-        if self.mode == 0:
+        if self.mode == MODE_MAINFRAME_TESTER:
             return 0
         else:
             return -75
 
     def right_closed_value(self):
-        if self.mode == 0:
+        if self.mode == MODE_MAINFRAME_TESTER:
             return 0
         else:
             return 100
