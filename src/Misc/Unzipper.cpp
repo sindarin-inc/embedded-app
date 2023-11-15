@@ -371,9 +371,9 @@ auto Unzipper::getFileSize() -> uint32_t {
         return 0;
     }
     if constexpr (UNZIPPER_DEBUG) {
-        log_d("File size: %" PRIu32, currentFileEntry_->size + 1);
+        log_d("File size: %" PRIu32, currentFileEntry_->size);
     }
-    return currentFileEntry_->size + 1;
+    return currentFileEntry_->size;
 }
 
 auto Unzipper::fileExists(const std::string &filePath) -> bool {
@@ -448,8 +448,7 @@ void Unzipper::closeFile() {
 auto Unzipper::readFile(uint8_t *fileData, uint32_t fileDataSize) -> uint32_t {
     // log_d("getFile: %s", filePath);
 
-    if (!isOpen_ || (currentFileEntry_ == nullptr) ||
-        ((currentFileEntry_->size + 1) != fileDataSize)) {
+    if (!isOpen_ || (currentFileEntry_ == nullptr) || (currentFileEntry_->size > fileDataSize)) {
         return 0;
     }
 
@@ -465,7 +464,6 @@ auto Unzipper::readFile(uint8_t *fileData, uint32_t fileDataSize) -> uint32_t {
             ERR(17);
 
         if (fileData == nullptr) ERR(18);
-        fileData[currentFileEntry_->size] = 0;
 
         if (currentFileEntry_->method == 0) { // No Compression
             if (file_.read((uint8_t *)fileData, currentFileEntry_->size) != currentFileEntry_->size)
@@ -542,7 +540,7 @@ error:
         fileSize = 0;
         log_e("Unzipper readFile: Error!: %d", err);
     } else {
-        fileSize = currentFileEntry_->size + 1;
+        fileSize = currentFileEntry_->size;
     }
 
     return fileSize;

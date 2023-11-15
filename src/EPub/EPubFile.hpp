@@ -81,24 +81,15 @@ public:
         return path + filename;
     }
 
-    [[nodiscard]] auto getUncompressedSize(SpineIdx spineIdx) -> uint32_t {
-        std::string filePath =
-            opf_->getFullPath(static_cast<std::string>(opf_->getSpine(spineIdx).item->href));
-        // log_w("Loading file %s", filePath.c_str());
-        if (epubUnzipper_.openFile(filePath.c_str())) {
-            uint32_t size = epubUnzipper_.getFileSize();
-            epubUnzipper_.closeFile();
-            return size;
-        }
-        return 0;
-    }
-    auto calculateFileSize(const std::string &href) -> uint32_t;
+    auto getUncompressedSize(const std::string &href) -> uint32_t;
+    auto getUncompressedSize(SpineIdx spineIdx) -> uint32_t;
 
     auto getChapterIdx(const std::shared_ptr<EPubPlace> &ePubPlace) const -> ChapterIdx;
     auto getChapterIdx(const std::string &href) const -> ChapterIdx;
     auto getChapterIdx(SpineIdx spineIdx) const -> ChapterIdx;
     auto spineIdxIsChapterStart(SpineIdx spineIdx) const -> bool;
     auto getChapterFirstSpineIdx(SpineIdx spineIdx) const -> SpineIdx;
+    auto getOffsetPreviousSpineItemsInChapter(SpineIdx spineIdx) -> uint32_t;
 
     auto hasToc() -> bool;
     auto getToc() -> ReadableTableOfContentsChapterVector;

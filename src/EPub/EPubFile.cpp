@@ -89,7 +89,9 @@ auto EPubFile::getFile(const std::string &completeFilePath)
         EPUB_PROFILE_END(UnzipperGetFileSize);
 
         if (size > 0) {
-            buffer = SpiRamArrayPtr<uint8_t>(size);
+            uint32_t bufferSize = size + 1;
+            buffer = SpiRamArrayPtr<uint8_t>(bufferSize);
+            buffer[size] = 0; // Pugixml requires null termination
 
             if (buffer != nullptr) {
                 EPUB_PROFILE_START(UnzipperReadFromFile);
@@ -99,7 +101,10 @@ auto EPubFile::getFile(const std::string &completeFilePath)
                 if (length == size) {
                     // if (readable_->isArticle()) log_w("article");
 
-                    return {std::move(buffer), length};
+                    return {std::move(buffer), bufferSize};
+                } else {
+                    log_w("Failed to read file %s, read %" PRIu32 " bytes, expected %" PRIu32,
+                          completeFilePath.c_str(), length, size);
                 }
             } else {
                 epubUnzipper_.closeFile();
@@ -152,11 +157,19 @@ auto EPubFile::getXHTMLFile(const std::string &path) -> pugi::xml_document & {
     return currentFileDoc_;
 }
 
-auto EPubFile::calculateFileSize(const std::string &href) -> uint32_t {
-    auto filePath = opf_->getFullPath(href);
-    auto [buffer, size] = getFile(filePath);
+auto EPubFile::getUncompressedSize(const std::string &href) -> uint32_t {
+    std::string filePath = opf_->getFullPath(href);
+    // log_w("Loading file %s", filePath.c_str());
+    if (epubUnzipper_.openFile(filePath.c_str())) {
+        uint32_t size = epubUnzipper_.getFileSize();
+        epubUnzipper_.closeFile();
+        return size;
+    }
+    return 0;
+}
 
-    return size;
+auto EPubFile::getUncompressedSize(SpineIdx spineIdx) -> uint32_t {
+    return getUncompressedSize(static_cast<std::string>(opf_->getSpine(spineIdx).item->href));
 }
 
 auto EPubFile::getChapterIdx(const std::shared_ptr<EPubPlace> &ePubPlace) const -> ChapterIdx {
@@ -177,6 +190,15 @@ auto EPubFile::spineIdxIsChapterStart(SpineIdx spineIdx) const -> bool {
 
 auto EPubFile::getChapterFirstSpineIdx(SpineIdx spineIdx) const -> SpineIdx {
     return opf_->getChapterFirstSpineIdx(spineIdx);
+}
+
+auto EPubFile::getOffsetPreviousSpineItemsInChapter(SpineIdx spineIdx) -> uint32_t {
+    auto previousSpineOffset = 0;
+    auto chapterStartSpineIdx = getChapterFirstSpineIdx(spineIdx);
+    for (auto i = chapterStartSpineIdx; i < spineIdx; i++) {
+        previousSpineOffset += getUncompressedSize(i);
+    }
+    return previousSpineOffset;
 }
 
 auto EPubFile::hasToc() -> bool {
@@ -216,7 +238,7 @@ auto EPubFile::getToc() -> ReadableTableOfContentsChapterVector {
                 chapter.endEpubOffset =
                     static_cast<uint32_t>(strtoul(endEpubOffsetAttr.value(), nullptr, 10));
             } else {
-                auto fileSize = calculateFileSize(std::string(chapter.href));
+                auto fileSize = getUncompressedSize(static_cast<std::string>(chapter.href));
                 cumulativeOffset += fileSize;
                 chapter.endEpubOffset = cumulativeOffset;
             }
@@ -382,10 +404,7 @@ auto EPubFile::getDictionaryContent(std::string &chapterId,
         // If we're looking at a spine item that doesn't match the chapter, we need to calculate the
         // offset to match how the server is calculating word locations, which is cumulatively
         // adding the size of each spine item
-        auto chapterStartSpineIdx = getChapterFirstSpineIdx(spineIdx);
-        for (auto i = chapterStartSpineIdx; i < spineIdx; i++) {
-            previousSpineOffset += getUncompressedSize(i);
-        }
+        previousSpineOffset = getOffsetPreviousSpineItemsInChapter(spineIdx);
         log_d("Calculated previousSpineOffset: %d", previousSpineOffset);
     }
 
