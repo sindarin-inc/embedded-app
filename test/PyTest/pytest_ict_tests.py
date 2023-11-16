@@ -586,7 +586,7 @@ class TestMainframeFullContentSync:
 @pytest.mark.fullsync
 @pytest.mark.skipif(MFICTClient().get_ict_mode() != MODE_FINAL_TESTER, reason="not final tester")
 class TestFinalFullContentSync:
-    def test_full_content_sync(self, dut: OverrideDut, ict_client: MFICTClient, ssid, password) -> None:
+    def test_final_full_content_sync(self, dut: OverrideDut, ict_client: MFICTClient, ssid, password) -> None:
         logger.info("TestFullContentSync")
         generate_and_write_nvs(ict_client, dut, ssid, password, "1")
 
