@@ -4,7 +4,6 @@ import statistics
 import time
 
 from ppk2_api.ppk2_api import PPK2_MP
-
 from util import find_port_by_device_name
 
 logger = logging.getLogger(__name__)

@@ -1,9 +1,8 @@
+import hashlib
 import json
 import os
-import hashlib
 from pathlib import Path
 from time import strftime
-
 
 max_id_length = 10
 
@@ -45,7 +44,7 @@ def generate_readables(path):
         elif file.suffix == ".epub":
             name = file.name
             author = "Local Only"
-            
+
         # Get SHA256 of file
         with open(file, "rb") as f:
             sha256 = hashlib.sha256(f.read()).hexdigest()

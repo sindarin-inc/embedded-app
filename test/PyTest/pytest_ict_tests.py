@@ -1,24 +1,24 @@
+import csv
 import logging
+import os
+import platform
+import subprocess
+import sys
 import termios
 import time
 import typing as t
 from typing import Any
-import platform
-import os
-import csv
-import sys
-import subprocess
 
 import pytest
 import serial
 from _pytest.fixtures import FixtureRequest
+from power import PowerTester
 from pytest import MonkeyPatch
 from pytest_embedded_idf.dut import IdfDut
 from pytest_embedded_idf.serial import IdfSerial
-
-from ict import MFICTClient, MODE_MAINFRAME_TESTER, MODE_FINAL_TESTER
-from power import PowerTester
 from util import maybe_format, wait_for_port_by_device_name
+
+from ict import MODE_FINAL_TESTER, MODE_MAINFRAME_TESTER, MFICTClient
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -31,19 +31,21 @@ dut_log_port_index = 1
 
 test_user_cloud_token = "c7092bfc68fac544fbe46e75ef06948b867a4854ce4271c2f9fea16abfd20125"
 
-def get_nvs_partition_size():
-        file_path = "esp32s3-64MB.csv"
-        nvs_size = ""
-        # Correct code to extract size of 'nvs' partition
-        with open(file_path, "r") as file:
-            csv_reader = csv.reader(file, delimiter=",")
-            for row in csv_reader:
-                if row[0] == "nvs":
-                    nvs_size = row[4]
 
-        # Convert hexadecimal to decimal
-        nvs_size_decimal = int(nvs_size, 16)
-        return nvs_size_decimal
+def get_nvs_partition_size():
+    file_path = "esp32s3-64MB.csv"
+    nvs_size = ""
+    # Correct code to extract size of 'nvs' partition
+    with open(file_path, "r") as file:
+        csv_reader = csv.reader(file, delimiter=",")
+        for row in csv_reader:
+            if row[0] == "nvs":
+                nvs_size = row[4]
+
+    # Convert hexadecimal to decimal
+    nvs_size_decimal = int(nvs_size, 16)
+    return nvs_size_decimal
+
 
 def clear_nvs(port):
     logger.info("Clearing NVS")
@@ -57,6 +59,7 @@ def clear_nvs(port):
             "--partition-name=nvs",
         ]
     )
+
 
 def write_nvs(ict_client, port, btmac, ict_ssid, ict_pw, cloudtoken):
     parts = btmac.split(":")
@@ -73,11 +76,11 @@ def write_nvs(ict_client, port, btmac, ict_ssid, ict_pw, cloudtoken):
     fp.write("sindarin-app,namespace,,\n")
     # write paired tt address
     fp.write("paired-tt,data,u64," + str(btmac_int) + "\n")
-    fp.write("no-setup,data,u8,1\n");
+    fp.write("no-setup,data,u8,1\n")
     # Write a cloud-token so the glasses don't try to go back into ship mode upon sleep
     fp.write("cloud-token,data,string," + cloudtoken + "\n")
 
-    wifi_settings_json = "\"{\"\"settings\"\":[{\"\"ssid\"\":\"\"" + ict_ssid + "\"\",\"\"password\"\":\"\"" + ict_pw + "\"\"}]}\""
+    wifi_settings_json = '"{""settings"":[{""ssid"":""' + ict_ssid + '"",""password"":""' + ict_pw + '""}]}"'
 
     fp.write("wifi-settings,data,string," + wifi_settings_json + "\n")
     # Skip the onboarding thing since it has a bunch of animations
@@ -109,27 +112,25 @@ def write_nvs(ict_client, port, btmac, ict_ssid, ict_pw, cloudtoken):
     ret.check_returncode()
 
     parts = [
-                os.environ["IDF_PATH"] + "/components/partition_table/parttool.py",
-                "--port",
-                port,
-                "write_partition",
-                "--partition-name=nvs",
-                "--input",
-                binfname,
-            ]
-    
+        os.environ["IDF_PATH"] + "/components/partition_table/parttool.py",
+        "--port",
+        port,
+        "write_partition",
+        "--partition-name=nvs",
+        "--input",
+        binfname,
+    ]
+
     print("command:")
-    print(' '.join(parts))
+    print(" ".join(parts))
 
     # write nvs partition to dut
-    ret = subprocess.run(
-        parts
-    )
+    ret = subprocess.run(parts)
 
     max_retries = 5
     retry = 0
     while ret.returncode != 0 and retry < max_retries:
-        logger.info('retry')
+        logger.info("retry")
         retry += 1
         ict_client.dut_programming_mode()
         # look for jtag port
@@ -137,25 +138,24 @@ def write_nvs(ict_client, port, btmac, ict_ssid, ict_pw, cloudtoken):
         port = wait_for_port_by_device_name(dut_port_name, dut_port_index)
         logger.info("nvs retry dut port: " + port)
         parts = [
-                os.environ["IDF_PATH"] + "/components/partition_table/parttool.py",
-                "--port",
-                port,
-                "write_partition",
-                "--partition-name=nvs",
-                "--input",
-                binfname,
-            ]
+            os.environ["IDF_PATH"] + "/components/partition_table/parttool.py",
+            "--port",
+            port,
+            "write_partition",
+            "--partition-name=nvs",
+            "--input",
+            binfname,
+        ]
         print("command:")
-        print(' '.join(parts))
+        print(" ".join(parts))
         # write nvs partition to dut
-        ret = subprocess.run(
-            parts
-        )
+        ret = subprocess.run(parts)
 
     os.remove(csvfname)
     os.remove(binfname)
 
     ret.check_returncode()
+
 
 def clear_content_and_restart(ict_client):
     # go to system menu, clear all content and restart
@@ -175,6 +175,7 @@ def clear_content_and_restart(ict_client):
     ict_client.tt_up()
     time.sleep(1.0)
     ict_client.tt_enter()
+
 
 def generate_and_write_nvs(ict_client, dut, ssid, password, fullsync):
     # write nvs
@@ -207,6 +208,7 @@ def generate_and_write_nvs(ict_client, dut, ssid, password, fullsync):
     port = wait_for_port_by_device_name(dut_port_name, dut_port_index)
     logger.info("post program nvs dut port: " + port)
 
+
 @pytest.fixture
 def port(request: FixtureRequest) -> t.Optional[str]:
     """Overridden to make sure we pick the right USB port for the DUT"""
@@ -224,22 +226,22 @@ class OverrideIdfSerial(IdfSerial):
             logger.info("opening temple")
             self.ict_client.open_right_temple()
             self.ict_client.dut_programming_mode()
-        
+
         s = False
         while s == False:
             try:
                 s = True
                 super().__init__(*args, **kwargs)
             except Exception as e:
-                    logger.info("failed to open dut port, retrying")
-                    s = False
-                    
-                    logger.info("dut going into programming mode")
-                    self.ict_client.dut_programming_mode()
-                    port = wait_for_port_by_device_name(dut_port_name, dut_port_index)
-                    logger.info("found dut port: " + port)
-                    kwargs["port"] = port
-                    logger.info("retrying connect to " + port)
+                logger.info("failed to open dut port, retrying")
+                s = False
+
+                logger.info("dut going into programming mode")
+                self.ict_client.dut_programming_mode()
+                port = wait_for_port_by_device_name(dut_port_name, dut_port_index)
+                logger.info("found dut port: " + port)
+                kwargs["port"] = port
+                logger.info("retrying connect to " + port)
 
     def _start(self):
         ict_mode = self.ict_client.get_ict_mode()
@@ -247,7 +249,7 @@ class OverrideIdfSerial(IdfSerial):
 
         # Wake up from sleep if necessary
         self.ict_client.open_right_temple()
-        
+
         # The DUT is flashed here unless using --skip-autoflash=True
         super()._start()
 
@@ -362,6 +364,7 @@ def power_client():
     yield client
     client.turn_off()
 
+
 @pytest.mark.usefixtures("ict_client")
 @pytest.mark.ict
 @pytest.mark.skip(reason="Does not work because ActiveUSBCharging blocks it")
@@ -402,8 +405,9 @@ class TestWithIctOnly:
 @pytest.mark.power
 @pytest.mark.skipif(MFICTClient().get_ict_mode() != MODE_MAINFRAME_TESTER, reason="not mainframe tester")
 class TestPowerConsumption:
-    def test_power(self, dut: OverrideDut, ict_client: MFICTClient, power_client: PowerTester, ssid, password, fullsync) -> None:
-
+    def test_power(
+        self, dut: OverrideDut, ict_client: MFICTClient, power_client: PowerTester, ssid, password, fullsync
+    ) -> None:
         generate_and_write_nvs(ict_client, dut, ssid, password, fullsync)
 
         logger.info("Testing voltage rails")
@@ -477,9 +481,9 @@ class TestPowerConsumption:
         # wait for ICT pageturner connect
         dut.expect("Connected to PageTurner", timeout=20)
         logger.info("got pageturner message")
-        
+
         time.sleep(5.0)
-        
+
         # turntouch button
         ict_client.tt_enter()
 
@@ -507,11 +511,14 @@ class TestPowerConsumption:
         logger.info("Measuring deep sleep current")
         power_client.expect_current((50, 100), 5)
 
+
 @pytest.mark.usefixtures("ict_client")
 @pytest.mark.ict
 @pytest.mark.skipif(MFICTClient().get_ict_mode() != MODE_FINAL_TESTER, reason="not final tester")
 class TestFullContentSync:
-    def test_full_content_sync(self, dut: OverrideDut, ict_client: MFICTClient, ssid, password, fullsync) -> None:
+    def test_full_content_sync(
+        self, dut: OverrideDut, ict_client: MFICTClient, ssid, password, fullsync
+    ) -> None:
         logger.info("TestFullContentSync")
         generate_and_write_nvs(ict_client, dut, ssid, password, fullsync)
 
@@ -520,10 +527,10 @@ class TestFullContentSync:
         ict_client.clear_input()
 
         logger.info("turn off usb power to dut")
-        
+
         # todo: turn off power if running on batteries
         ict_client.set_power(False)
-        
+
         ict_client.open_right_temple()
         ict_client.open_left_temple()
 
@@ -536,8 +543,8 @@ class TestFullContentSync:
         logger.info("back")
 
         # connect to serial relay for log parsing
-        #logger.info("connect dut log port")
-        #dut.serial.connect_dut_log_port()
+        # logger.info("connect dut log port")
+        # dut.serial.connect_dut_log_port()
         logger.info("reset dut")
         ict_client.reset_dut()
 
@@ -563,7 +570,7 @@ class TestFullContentSync:
         # wait for ICT pageturner connect
         dut.expect("Connected to PageTurner", timeout=20)
         logger.info("got pageturner message")
-        
+
         time.sleep(5.0)
 
         # content has been cleared and we have restarted,

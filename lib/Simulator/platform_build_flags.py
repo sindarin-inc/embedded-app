@@ -2,9 +2,8 @@
 import argparse
 import os
 import pathlib
-import subprocess
-import sys
 import shutil
+import subprocess
 import sys
 
 parser = argparse.ArgumentParser(description="Generate build flags for simulator.")
@@ -44,9 +43,7 @@ component_libs = [
     "ArduinoJson",
 ]
 
-lib_includes += "\n" + "\n".join(
-    [f"-I{components_dir}/{lib}" for lib in component_libs]
-)
+lib_includes += "\n" + "\n".join([f"-I{components_dir}/{lib}" for lib in component_libs])
 
 # Build the big flags list
 flags = [
@@ -97,11 +94,7 @@ if args.sdl:
         arch_flag = f"-arch {arch}"
 
     # Get the needed SDL flags
-    sdl_flags = (
-        subprocess.check_output("sdl2-config --cflags --libs", shell=True)
-        .decode("utf-8")
-        .strip()
-    )
+    sdl_flags = subprocess.check_output("sdl2-config --cflags --libs", shell=True).decode("utf-8").strip()
     flags += [
         arch_flag,
         sdl_flags,
@@ -116,11 +109,7 @@ if args.openssl:
     # Try with macOS Homebrew to find OpenSSL
     if sys.platform == "darwin" and shutil.which("brew") is not None:
         # TODO: Handle error
-        openssl_prefix = (
-            subprocess.check_output("brew --prefix openssl", shell=True)
-            .decode("utf-8")
-            .strip()
-        )
+        openssl_prefix = subprocess.check_output("brew --prefix openssl", shell=True).decode("utf-8").strip()
         try:
             subprocess.check_output(f"ls {openssl_prefix}", shell=True)
         except subprocess.CalledProcessError:
