@@ -99,7 +99,6 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
                 display.xAbsolute(128 - glass_small_left_width / 2),
                 display.yAbsolute(128 - glass_small_left_height / 2 + yOffsetOverall),
                 GLASS_SMALL_LEFT_BITS, glass_small_left_width, glass_small_left_height, display.fg);
-
             display.updateDisplay(DisplaySystem::UpdateType::PARTIAL, false, 0,
                                   DisplaySystem::UpdateType::FAST, {{0, 0}, {255, 140}});
             nextInterval_ = 500;
@@ -226,7 +225,6 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
                 display.yAbsolute(128 - glass_small_right_height / 2 + yOffsetOverall),
                 GLASS_SMALL_RIGHT_BITS, glass_small_right_width, glass_small_right_height,
                 display.fg);
-
             display.updateDisplay(DisplaySystem::UpdateType::PARTIAL, false, 0,
                                   DisplaySystem::UpdateType::FAST, {{0, 0}, {255, 140}});
             nextInterval_ = 500;
