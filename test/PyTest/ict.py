@@ -166,6 +166,7 @@ class MFICTClient:
         if self.mode == MODE_FINAL_TESTER:
             self.open_right_temple()
             # wait for dut jtag to reappear
+            self.reset_dut()
             dut_after = wait_for_port_by_device_name("USB JTAG/serial debug unit", 0, timeout=10)
             logger.info("after ict programming, dut port is " + dut_after)
 
