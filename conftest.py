@@ -6,6 +6,7 @@ def pytest_addoption(parser):
     parser.addoption("--password", action="store", default="")
     parser.addoption("--fullsync", action="store_true", default=False, help="run full sync tests")
 
+
 def pytest_collection_modifyitems(config, items):
     if config.getoption("--fullsync"):
         return

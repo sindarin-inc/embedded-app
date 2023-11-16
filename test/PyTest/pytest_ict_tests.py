@@ -176,6 +176,7 @@ def clear_content_and_restart(ict_client):
     time.sleep(1.0)
     ict_client.tt_enter()
 
+
 def generate_and_write_nvs(ict_client, dut, ssid, password):
     # write nvs
     # read ict's bluetooth mac
@@ -397,6 +398,7 @@ class TestWithIctOnly:
         # dut.expect("Sol: Temple is closed", timeout=10)
         # dut.expect("Sol: Entering deep sleep, wake up with magnetometer", timeout=10)
 
+
 # Power Consumption test
 # only supported on mainframe tester
 @pytest.mark.usefixtures("ict_client")
@@ -406,7 +408,6 @@ class TestWithIctOnly:
 @pytest.mark.skipif(MFICTClient().get_ict_mode() != MODE_MAINFRAME_TESTER, reason="not mainframe tester")
 class TestPowerConsumption:
     def test_power(self, dut: OverrideDut, ict_client: MFICTClient, power_client: PowerTester) -> None:
-
         generate_and_write_nvs(ict_client, dut, "", "")
 
         logger.info("Testing voltage rails")
@@ -504,6 +505,7 @@ class TestPowerConsumption:
         logger.info("Measuring deep sleep current")
         power_client.expect_current((50, 100), 5)
 
+
 def perform_sync(dut, ict_client, ssid, password):
     full = True
     if ssid == "" and password == "":
@@ -518,7 +520,7 @@ def perform_sync(dut, ict_client, ssid, password):
     logger.info("found port again " + port)
     # then connect to serial relay for log parsing
     dut.serial.connect_dut_log_port()
-    
+
     logger.info("reset dut")
     ict_client.reset_dut()
 
@@ -544,7 +546,7 @@ def perform_sync(dut, ict_client, ssid, password):
     # wait for ICT pageturner connect
     dut.expect("Connected to PageTurner", timeout=20)
     logger.info("got pageturner message")
-    
+
     time.sleep(5.0)
 
     # content has been cleared and we have restarted,
@@ -558,6 +560,7 @@ def perform_sync(dut, ict_client, ssid, password):
         dut.expect("books are in sync", timeout=180)
         dut.expect("articles are in sync", timeout=180)
 
+
 @pytest.mark.usefixtures("ict_client")
 @pytest.mark.usefixtures("power_client")
 @pytest.mark.ict
@@ -565,7 +568,9 @@ def perform_sync(dut, ict_client, ssid, password):
 @pytest.mark.fullsync
 @pytest.mark.skipif(MFICTClient().get_ict_mode() != MODE_MAINFRAME_TESTER, reason="not mainframe tester")
 class TestMainframeFullContentSync:
-    def test_mainframe_full_content_sync(self, dut: OverrideDut, ict_client: MFICTClient, power_client: PowerTester, ssid, password) -> None:
+    def test_mainframe_full_content_sync(
+        self, dut: OverrideDut, ict_client: MFICTClient, power_client: PowerTester, ssid, password
+    ) -> None:
         logger.info("TestMainframeFullContentSync")
         generate_and_write_nvs(ict_client, dut, ssid, password, "1")
 
@@ -574,12 +579,13 @@ class TestMainframeFullContentSync:
         ict_client.clear_input()
         ict_client.set_power(False)
         time.sleep(0.5)
-        
+
         # turn on battery power from PPK
         power_client.turn_on()
 
         # dut is in battery power mode, ready to perform full content sync
         perform_sync(dut, ict_client, ssid, password)
+
 
 @pytest.mark.usefixtures("ict_client")
 @pytest.mark.ict
