@@ -7,14 +7,16 @@ from serial.tools import list_ports
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
+
 def find_ports_by_device_name(device_name):
     ports = list_ports.comports()
     devices = []
     for port in ports:
         if device_name in port.description:
             devices.append(port.device)
-    
+
     return devices
+
 
 def find_port_by_device_name(device_name, index=0):
     ports = list_ports.comports()
