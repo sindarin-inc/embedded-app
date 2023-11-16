@@ -416,6 +416,9 @@ TEST_CASE("Test some views independently") {
             DemoScreen screen(*display, prefs, lightingController);
             screen.render(*display);
             ASSERT_VIEW_UNCHANGED("DemoScreen");
+            screen.processCommand(UP);
+            screen.render(*display);
+            ASSERT_VIEW_UNCHANGED("DemoScreenSerial");
         }
     }
 }
