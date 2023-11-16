@@ -1,9 +1,10 @@
 import argparse
-import curlify
 import os
-import requests
 import re
-from typing import List, Dict
+from typing import Dict, List
+
+import curlify
+import requests
 
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 GITHUB_REPOSITORY = os.getenv("GITHUB_REPOSITORY")

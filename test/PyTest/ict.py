@@ -1,16 +1,16 @@
 import logging
-import time
-import serial
 import os
-import subprocess
-
-import zipfile
 import shutil
+import subprocess
+import time
+import zipfile
 
+import serial
 from util import find_port_by_device_name, wait_for_port_by_device_name
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
+
 
 class MFICTClient:
     def __init__(self, baudrate=115200, timeout=1):
@@ -40,32 +40,32 @@ class MFICTClient:
         shutil.rmtree(firmware_dir)
 
     def get_firmware_filename(self):
-        dir = 'ict'
+        dir = "ict"
         results = []
-        results += [each for each in os.listdir(dir) if each.endswith('.zip')]
+        results += [each for each in os.listdir(dir) if each.endswith(".zip")]
         if len(results) != 1:
             logger.info("could not find ict firmware file")
             return ""
 
         # unzip file
-        zip_fname = dir + '/' + results[0]
-        with zipfile.ZipFile(zip_fname, 'r') as zip_ref:
+        zip_fname = dir + "/" + results[0]
+        with zipfile.ZipFile(zip_fname, "r") as zip_ref:
             zip_ref.extractall(dir)
 
-        zip_dir = zip_fname.split('.')[0]
+        zip_dir = zip_fname.split(".")[0]
         firmware_files = os.listdir(zip_dir)
         results = []
-        results += [each for each in firmware_files if each.endswith('.sh')]
-        flash_script_file = zip_dir + '/' + results[0]
+        results += [each for each in firmware_files if each.endswith(".sh")]
+        flash_script_file = zip_dir + "/" + results[0]
 
         results = []
-        results += [each for each in firmware_files if each.endswith('.hex')]
-        hex_file = zip_dir + '/' + results[0]
+        results += [each for each in firmware_files if each.endswith(".hex")]
+        hex_file = zip_dir + "/" + results[0]
 
         return hex_file, flash_script_file, zip_dir
-    
+
     def get_firmware_version_string(self, firmware_filename):
-        f = open(firmware_filename, 'rb')
+        f = open(firmware_filename, "rb")
 
         # version string is located at offset 0x30 within the app partition
         # thus, 0x10030
@@ -98,9 +98,9 @@ class MFICTClient:
         logger.info("Found ICT JTAG on port: " + port)
 
         # split arguments for esptool command to flash the firmware
-        f = open(script_filename, 'r')
+        f = open(script_filename, "r")
         flash_script = f.read()
-        flash_script_parts = flash_script.split(' ')
+        flash_script_parts = flash_script.split(" ")
         parts = []
         for p in flash_script_parts:
             p = p.strip()
@@ -113,16 +113,14 @@ class MFICTClient:
         parts.insert(2, port)
 
         # replace the firmware filename with the full path
-        del parts[len(parts)-1]
+        del parts[len(parts) - 1]
         parts.append(firmware_filename)
-        flashcmd = ' '.join(parts)
+        flashcmd = " ".join(parts)
 
         logger.info("flashing firmware with command: " + flashcmd)
 
         # run esptool to flash ict firmware
-        res = subprocess.run(
-            parts
-        )
+        res = subprocess.run(parts)
 
         if res.returncode != 0:
             logger.info("failed to flash ict firmware")
@@ -199,7 +197,7 @@ class MFICTClient:
 
     def clear_input(self):
         """Sometimes there can be garbage on the serial line due to pytest trying to use the ICT as the DUT. This routine gets us back to a clean state."""
-        self.write("");
+        self.write("")
         # TODO: Would be nice to really wait instead of sleeping
         # Allow time for the message to be processed and an ACK to be sent
         time.sleep(0.3)
@@ -217,21 +215,21 @@ class MFICTClient:
         resp = self.read()
         btmac = resp.split(" ")[1]
         return btmac
-    
+
     def get_wifi_ssid(self):
         self.write("SSID")
         time.sleep(0.1)
         resp = self.read()
         ssid = resp.split(" ")[1]
         return ssid
-    
+
     def get_wifi_password(self):
         self.write("PASS")
         time.sleep(0.1)
         resp = self.read()
         password = resp.split(" ")[1]
         return password
-    
+
     def tt_enter(self):
         self.write_with_ack("TTENT")
         self.flush_read_buffer()
@@ -245,6 +243,6 @@ class MFICTClient:
             return "none"
         version = resp.split(" ")[1]
         return version
-    
+
     def program(self):
         self.write("PROGRAM")

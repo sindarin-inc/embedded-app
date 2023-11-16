@@ -751,6 +751,16 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
     });
 }
 
+void DemoScreen::drawSerial(DisplaySystem &display) {
+    // Show serial number in tiny text in the bottom
+    display.setFont(static_cast<Font *>(&ibmf75Face1));
+    std::string message = "SN: " + GetSerialNumber();
+    display.drawSingleLineOfText(
+        message.c_str(),
+        display.xAbsolute(display.xAbsoluteCenter() - display.getTextWidth(message.c_str()) / 2),
+        display.yAbsolute(display.yAbsoluteMax() - 2 * display.getTextHeight(message.c_str())));
+}
+
 void DemoScreen::drawSkipMessage(DisplaySystem &display, bool inverted) {
     std::string message = "Press \ue000 to skip";
     display.setFont(static_cast<Font *>(&ibmf75Face0));
@@ -918,9 +928,14 @@ void DemoScreen::processCommand(RemoteCommand command) {
             setNeedsRerender();
         }
         break;
+    case RemoteCommand::UP:
+        // If we're on page 0 or 1 and the user hits up, show the serial number.
+        if (currentScreen_ <= 1) {
+            drawSerial(display_);
+        }
+        break;
     case RemoteCommand::RIGHT:
     case RemoteCommand::DOWN:
-    case RemoteCommand::UP:
     case RemoteCommand::BACK:
         break;
     case RemoteCommand::ANIMATION:

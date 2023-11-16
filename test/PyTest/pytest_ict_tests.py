@@ -1,23 +1,23 @@
+import csv
 import logging
+import os
+import platform
 import termios
 import time
 import typing as t
 from typing import Any
-import platform
-import os
-import csv
 
 import pytest
 import serial
 from _pytest.fixtures import FixtureRequest
+from power import PowerTester
 from pytest import MonkeyPatch
+from pytest_embedded.log import live_print_call
 from pytest_embedded_idf.dut import IdfDut
 from pytest_embedded_idf.serial import IdfSerial
-from pytest_embedded.log import live_print_call
+from util import maybe_format, wait_for_port_by_device_name
 
 from ict import MFICTClient
-from power import PowerTester
-from util import maybe_format, wait_for_port_by_device_name
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -103,11 +103,13 @@ class OverrideIdfSerial(IdfSerial):
         fp.write("sindarin-app,namespace,,\n")
         # write paired tt address
         fp.write("paired-tt,data,u64," + str(btmac_int) + "\n")
-        fp.write("no-setup,data,u8,1\n");
+        fp.write("no-setup,data,u8,1\n")
         # Write a cloud-token so the glasses don't try to go back into ship mode upon sleep
         fp.write("cloud-token,data,string,FAKECLOUDTOKEN\n")
 
-        wifi_settings_json = "\"{\"\"settings\"\":[{\"\"ssid\"\":\"\"" + ict_ssid + "\"\",\"\"password\"\":\"\"" + ict_pw + "\"\"}]}\""
+        wifi_settings_json = (
+            '"{""settings"":[{""ssid"":""' + ict_ssid + '"",""password"":""' + ict_pw + '""}]}"'
+        )
 
         fp.write("wifi-settings,data,string," + wifi_settings_json + "\n")
         # Skip the onboarding thing since it has a bunch of animations
@@ -356,7 +358,7 @@ class TestPowerConsumption:
 
         # wait 5 seconds
         time.sleep(5)
-        
+
         # turntouch button
         ict_client.tt_enter()
 

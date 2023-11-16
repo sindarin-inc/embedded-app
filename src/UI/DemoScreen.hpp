@@ -27,6 +27,7 @@ protected:
     void drawDoubleLine(DisplaySystem &display, std::string one, std::string two);
     void drawTripleLine(DisplaySystem &display, std::string one, std::string two, std::string three,
                         bool invert = false);
+    void drawSerial(DisplaySystem &display);
 
     void finishDemo();
 
