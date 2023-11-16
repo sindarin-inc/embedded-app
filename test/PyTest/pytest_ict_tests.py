@@ -176,8 +176,7 @@ def clear_content_and_restart(ict_client):
     time.sleep(1.0)
     ict_client.tt_enter()
 
-
-def generate_and_write_nvs(ict_client, dut, ssid, password, fullsync):
+def generate_and_write_nvs(ict_client, dut, ssid, password):
     # write nvs
     # read ict's bluetooth mac
     btmac = ict_client.get_bt_mac()
@@ -186,7 +185,7 @@ def generate_and_write_nvs(ict_client, dut, ssid, password, fullsync):
     wifi_ssid = ict_client.get_wifi_ssid()
     wifi_password = ict_client.get_wifi_password()
 
-    if ssid != "" and password != "" and fullsync != "":
+    if ssid != "" and password != "":
         wifi_ssid = ssid
         wifi_password = password
 
@@ -398,17 +397,17 @@ class TestWithIctOnly:
         # dut.expect("Sol: Temple is closed", timeout=10)
         # dut.expect("Sol: Entering deep sleep, wake up with magnetometer", timeout=10)
 
-
+# Power Consumption test
+# only supported on mainframe tester
 @pytest.mark.usefixtures("ict_client")
 @pytest.mark.usefixtures("power_client")
 @pytest.mark.ict
 @pytest.mark.power
 @pytest.mark.skipif(MFICTClient().get_ict_mode() != MODE_MAINFRAME_TESTER, reason="not mainframe tester")
 class TestPowerConsumption:
-    def test_power(
-        self, dut: OverrideDut, ict_client: MFICTClient, power_client: PowerTester, ssid, password, fullsync
-    ) -> None:
-        generate_and_write_nvs(ict_client, dut, ssid, password, fullsync)
+    def test_power(self, dut: OverrideDut, ict_client: MFICTClient, power_client: PowerTester) -> None:
+
+        generate_and_write_nvs(ict_client, dut, "", "")
 
         logger.info("Testing voltage rails")
 
@@ -490,12 +489,6 @@ class TestPowerConsumption:
         # wait for wifi connection
         dut.expect("Connected, IP address", timeout=30)
 
-        # if fullsync, wait for it
-        if fullsync != "":
-            logger.info("waiting for full sync")
-            dut.expect("books are in sync", timeout=180)
-            dut.expect("articles are in sync", timeout=180)
-
         logger.info("Sleeping")
         ict_client.set_servo("right", 0)
 
@@ -511,74 +504,97 @@ class TestPowerConsumption:
         logger.info("Measuring deep sleep current")
         power_client.expect_current((50, 100), 5)
 
+def perform_sync(dut, ict_client, ssid, password):
+    full = True
+    if ssid == "" and password == "":
+        full = False
+
+    ict_client.open_right_temple()
+    ict_client.open_left_temple()
+
+    # Wait for serial port to come back
+    # first wait for DUT device to show up
+    port = wait_for_port_by_device_name(dut_port_name, dut_port_index)
+    logger.info("found port again " + port)
+    # then connect to serial relay for log parsing
+    dut.serial.connect_dut_log_port()
+    
+    logger.info("reset dut")
+    ict_client.reset_dut()
+
+    maybe_format(dut)
+    dut.expect("Sol: Error-free boot!", timeout=30)
+    logger.info("got boot message")
+
+    # wait for ICT pageturner connect
+    dut.expect("Connected to PageTurner", timeout=20)
+    logger.info("got pageturner message")
+
+    # wait 5 seconds
+    time.sleep(5)
+
+    clear_content_and_restart(ict_client)
+
+    # at this point the dut will restart
+    # wait again for startup messages
+
+    dut.expect("Sol: Error-free boot!", timeout=30)
+    logger.info("got boot message")
+
+    # wait for ICT pageturner connect
+    dut.expect("Connected to PageTurner", timeout=20)
+    logger.info("got pageturner message")
+    
+    time.sleep(5.0)
+
+    # content has been cleared and we have restarted,
+    # so we should be on the content sync option now
+    ict_client.tt_enter()
+
+    # wait for wifi connection
+    dut.expect("Connected, IP address", timeout=30)
+
+    if full == True:
+        dut.expect("books are in sync", timeout=180)
+        dut.expect("articles are in sync", timeout=180)
 
 @pytest.mark.usefixtures("ict_client")
+@pytest.mark.usefixtures("power_client")
 @pytest.mark.ict
-@pytest.mark.skipif(MFICTClient().get_ict_mode() != MODE_FINAL_TESTER, reason="not final tester")
-class TestFullContentSync:
-    def test_full_content_sync(
-        self, dut: OverrideDut, ict_client: MFICTClient, ssid, password, fullsync
-    ) -> None:
-        logger.info("TestFullContentSync")
-        generate_and_write_nvs(ict_client, dut, ssid, password, fullsync)
+@pytest.mark.power
+@pytest.mark.fullsync
+@pytest.mark.skipif(MFICTClient().get_ict_mode() != MODE_MAINFRAME_TESTER, reason="not mainframe tester")
+class TestMainframeFullContentSync:
+    def test_mainframe_full_content_sync(self, dut: OverrideDut, ict_client: MFICTClient, power_client: PowerTester, ssid, password) -> None:
+        logger.info("TestMainframeFullContentSync")
+        generate_and_write_nvs(ict_client, dut, ssid, password, "1")
 
         # Note: If the IdfDut tries to connect to the ICT serial port to flash it, it dumps a bunch of serial
         # garbage to the ICT that will cause it to fail the next command. This clears the input buffer by sending a newline.
         ict_client.clear_input()
+        ict_client.set_power(False)
+        time.sleep(0.5)
+        
+        # turn on battery power from PPK
+        power_client.turn_on()
 
+        # dut is in battery power mode, ready to perform full content sync
+        perform_sync(dut, ict_client, ssid, password)
+
+@pytest.mark.usefixtures("ict_client")
+@pytest.mark.ict
+@pytest.mark.fullsync
+@pytest.mark.skipif(MFICTClient().get_ict_mode() != MODE_FINAL_TESTER, reason="not final tester")
+class TestFinalFullContentSync:
+    def test_full_content_sync(self, dut: OverrideDut, ict_client: MFICTClient, ssid, password) -> None:
+        logger.info("TestFullContentSync")
+        generate_and_write_nvs(ict_client, dut, ssid, password, "1")
+
+        # Note: If the IdfDut tries to connect to the ICT serial port to flash it, it dumps a bunch of serial
+        # garbage to the ICT that will cause it to fail the next command. This clears the input buffer by sending a newline.
+        ict_client.clear_input()
         logger.info("turn off usb power to dut")
-
-        # todo: turn off power if running on batteries
         ict_client.set_power(False)
 
-        ict_client.open_right_temple()
-        ict_client.open_left_temple()
-
-        # Wait for serial port to come back
-        # first wait for DUT device to show up
-        port = wait_for_port_by_device_name(dut_port_name, dut_port_index)
-        logger.info("found port again " + port)
-        # then connect to serial relay for log parsing
-        dut.serial.connect_dut_log_port()
-        logger.info("back")
-
-        # connect to serial relay for log parsing
-        # logger.info("connect dut log port")
-        # dut.serial.connect_dut_log_port()
-        logger.info("reset dut")
-        ict_client.reset_dut()
-
-        maybe_format(dut)
-        dut.expect("Sol: Error-free boot!", timeout=30)
-        logger.info("got boot message")
-
-        # wait for ICT pageturner connect
-        dut.expect("Connected to PageTurner", timeout=20)
-        logger.info("got pageturner message")
-
-        # wait 5 seconds
-        time.sleep(5)
-
-        clear_content_and_restart(ict_client)
-
-        # at this point the dut will restart
-        # wait again for startup messages
-
-        dut.expect("Sol: Error-free boot!", timeout=30)
-        logger.info("got boot message")
-
-        # wait for ICT pageturner connect
-        dut.expect("Connected to PageTurner", timeout=20)
-        logger.info("got pageturner message")
-
-        time.sleep(5.0)
-
-        # content has been cleared and we have restarted,
-        # so we should be on the content sync option now
-        ict_client.tt_enter()
-
-        # wait for wifi connection
-        dut.expect("Connected, IP address", timeout=30)
-
-        dut.expect("books are in sync", timeout=180)
-        dut.expect("articles are in sync", timeout=180)
+        # final tester now running on batteries, ready to perform full content sync
+        perform_sync(dut, ict_client, ssid, password)
