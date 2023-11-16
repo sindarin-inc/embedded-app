@@ -572,7 +572,7 @@ class TestMainframeFullContentSync:
         self, dut: OverrideDut, ict_client: MFICTClient, power_client: PowerTester, ssid, password
     ) -> None:
         logger.info("TestMainframeFullContentSync")
-        generate_and_write_nvs(ict_client, dut, ssid, password, "1")
+        generate_and_write_nvs(ict_client, dut, ssid, password)
 
         # Note: If the IdfDut tries to connect to the ICT serial port to flash it, it dumps a bunch of serial
         # garbage to the ICT that will cause it to fail the next command. This clears the input buffer by sending a newline.
@@ -594,7 +594,7 @@ class TestMainframeFullContentSync:
 class TestFinalFullContentSync:
     def test_final_full_content_sync(self, dut: OverrideDut, ict_client: MFICTClient, ssid, password) -> None:
         logger.info("TestFullContentSync")
-        generate_and_write_nvs(ict_client, dut, ssid, password, "1")
+        generate_and_write_nvs(ict_client, dut, ssid, password)
 
         # Note: If the IdfDut tries to connect to the ICT serial port to flash it, it dumps a bunch of serial
         # garbage to the ICT that will cause it to fail the next command. This clears the input buffer by sending a newline.
