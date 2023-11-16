@@ -17,9 +17,7 @@ auto IsTempleOpen(int8_t x, int8_t z, float *angleOut) -> bool {
     // It only seems to happen when downloading files, and disabling interrupts seems to fix it.
     // Looks like it's probably this: https://github.com/espressif/esp-idf/issues/11690 and is
     // supposedly fixed in IDF 5.1.1
-    vTaskSuspendAll();
     float angle = atan2f(x, z) * 180.0f / M_PI;
-    xTaskResumeAll();
     // log_d("Mag: x=%d z=%d %fº", x, z, angle);
     // Experimentally I've seen the following ranges:
     // -17º (closed) to 104º (open) (midpoint = 43.5º)
