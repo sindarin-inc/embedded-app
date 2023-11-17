@@ -318,16 +318,16 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry,
     log_i("Downloaded+wrote %d bytes in %.2fs (%.1f KB/s)", fileLength,
           diskWriteDuration / 1000000.0f, diskWriteBps / 1000);
 
-    // Open the file to make sure it's the right size
+    // Make sure the file is the right size
     size_t fileSize = 0;
-    auto sizedFile = fileSystem.open(fullPath.c_str());
     if (gzip) {
-        GUnzipStream gzStream(sizedFile);
+        auto file = fileSystem.open(fullPath);
+        GUnzipStream gzStream(file);
         fileSize = gzStream.size();
+        file.close();
     } else {
-        fileSize = sizedFile.size();
+        fileSize = fileSystem.size(fullPath);
     }
-    sizedFile.close();
 
     if (length != fileSize) {
         // TODO: What's the best API to get errors from the stream?
