@@ -79,12 +79,12 @@ auto LocalStore::loadReadablesFromFile(ReadablesVector &readables, const std::st
             log_e("Failed to parse Readable");
             continue;
         }
-        auto path = readableFilePathForReading(readable);
+        auto [path, size] = readableFilePathForReading(readable);
         if (path.empty()) {
             log_w("Couldn't find readable with path %s", path.c_str());
             continue;
         }
-        int fileSize = readableGetUncompressedSize(readable, path);
+        int fileSize = readableGetUncompressedSize(readable, path, size);
 
         if (fileSize >= 0 && readable->files.size() && fileSize != readable->file(path).size) {
             log_w("File size mismatch for %s (%d on disk vs %d in local store), ignoring",
@@ -106,10 +106,10 @@ auto LocalStore::isReadableUnchanged(const ReadablesVector &readables,
                                      const std::shared_ptr<Readable> &readable,
                                      bool ignoreFileSizeCheck) -> bool {
     for (const auto &r : readables) {
-        auto path = readableFilePathForReading(r);
+        auto [path, size] = readableFilePathForReading(r);
         if (r->uuid == readable->uuid && !path.empty()) {
             // First check if file is different
-            int fileSize = readableGetUncompressedSize(readable, path);
+            int fileSize = readableGetUncompressedSize(readable, path, size);
 
             if (fileSize <= 0) {
                 log_w("Couldn't get file size for %s", path.c_str());
@@ -196,7 +196,7 @@ void LocalStore::storedReadableUuids(const ReadablesVector &readables,
 
         // If we have a txt file and an epub exists among the readable->files(), don't add it to
         // storedUuids so it gets downloaded
-        auto path = readableFilePathForReading(readable);
+        auto [path, size] = readableFilePathForReading(readable);
         if (RendererStream::parseDocType(path.c_str()) == DocType::TXT) {
             auto foundEpub = false;
             for (const auto &file : readable->files) {
@@ -357,7 +357,7 @@ auto LocalStore::processReadablePlacemarksFromServer(const std::shared_ptr<Reada
                                                      const std::shared_ptr<TxtPlace> &txtPlace,
                                                      const std::shared_ptr<EPubPlace> &ePubPlace)
     -> bool {
-    auto path = readableFilePathForReading(readable);
+    auto [path, size] = readableFilePathForReading(readable);
     auto docType = RendererStream::parseDocType(path.c_str());
     auto prefsPlaceString = prefs_.readablePlace.get(readable->shortenedUuid.c_str());
 
@@ -1235,7 +1235,7 @@ auto LocalStore::readableFilePathForWriting(const std::shared_ptr<Readable> &rea
 
 auto LocalStore::readableFilePathForReading(FileSystem &fileSystem,
                                             const std::shared_ptr<Readable> &readable)
-    -> std::string {
+    -> std::pair<std::string, size_t> {
     // We look for the readable file in the following order:
     // We first try the most modern path style:
     // /[readableType]/[uuid].epub
@@ -1258,59 +1258,68 @@ auto LocalStore::readableFilePathForReading(FileSystem &fileSystem,
     std::string path;
 
     path = StringFormat("/%s/%s.epub", type.c_str(), uuid.c_str());
-    if (fileSystem.exists(path)) {
-        return path;
+    auto size = fileSystem.size(path);
+    if (size != 0) {
+        return {path, size};
     }
     path = StringFormat("/%s/%s.txt.gz", type.c_str(), uuid.c_str());
-    if (fileSystem.exists(path)) {
-        return path;
+    size = fileSystem.size(path);
+    if (size != 0) {
+        return {path, size};
     }
     path = StringFormat("/%s/%s.txt", type.c_str(), uuid.c_str());
-    if (fileSystem.exists(path)) {
-        return path;
+    size = fileSystem.size(path);
+    if (size != 0) {
+        return {path, size};
     }
 
     if (type == "book") {
         // Previously we also stored books in the root directory
         if (readable->files.size() > 0) {
             path = StringFormat("/%s.epub", readable->file().name.c_str());
-            if (fileSystem.exists(path)) {
-                return path;
+            size = fileSystem.size(path);
+            if (size != 0) {
+                return {path, size};
             }
             path = StringFormat("/%s.gz", readable->file().name.c_str());
-            if (fileSystem.exists(path)) {
-                return path;
+            size = fileSystem.size(path);
+            if (size != 0) {
+                return {path, size};
             }
             path = StringFormat("/%s", readable->file().name.c_str());
-            if (fileSystem.exists(path)) {
-                return path;
+            size = fileSystem.size(path);
+            if (size != 0) {
+                return {path, size};
             }
         }
     } else {
         path = StringFormat("/articles/%s.epub", uuid.c_str());
-        if (fileSystem.exists(path)) {
-            return path;
+        size = fileSystem.size(path);
+        if (size != 0) {
+            return {path, size};
         }
         path = StringFormat("/articles/%s.txt.gz", uuid.c_str());
-        if (fileSystem.exists(path)) {
-            return path;
+        size = fileSystem.size(path);
+        if (size != 0) {
+            return {path, size};
         }
         path = StringFormat("/articles/%s.txt", uuid.c_str());
-        if (fileSystem.exists(path)) {
-            return path;
+        size = fileSystem.size(path);
+        if (size != 0) {
+            return {path, size};
         }
     }
     // log_w("Unable to find readable file for %s (%s)", readable->title.c_str(), uuid.c_str());
-    return "";
+    return {"", 0};
 }
 
 auto LocalStore::readableFilePathForReading(const std::shared_ptr<Readable> &readable) const
-    -> std::string {
+    -> std::pair<std::string, size_t> {
     return LocalStore::readableFilePathForReading(fileSystem, readable);
 }
 
 auto LocalStore::readableGetUncompressedSize(const std::shared_ptr<Readable> &readable,
-                                             const std::string &path) const -> int {
+                                             const std::string &path, size_t size) const -> int {
     if (path.empty()) {
         return -1;
     }
@@ -1324,7 +1333,7 @@ auto LocalStore::readableGetUncompressedSize(const std::shared_ptr<Readable> &re
         GUnzipStream gzStream(file);
         return gzStream.size();
     } else {
-        return fileSystem.size(path);
+        return size;
     }
 }
 

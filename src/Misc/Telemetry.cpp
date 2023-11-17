@@ -73,10 +73,6 @@ auto Telemetry::mapToJson(const std::unordered_map<std::string, TelemetryVariant
 
 auto Telemetry::uploadAndResetTelemetry(FileSystem &fileSystem, Telemetry &telemetry) -> int {
     auto localPath = telemetry.metricLogPath();
-    if (!fileSystem.exists(localPath)) {
-        log_w("Log file %s does not exist", localPath.c_str());
-        return -1;
-    }
 
     auto file = fileSystem.open(localPath, FILE_READ);
     if (!file) {

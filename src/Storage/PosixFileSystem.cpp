@@ -30,7 +30,6 @@ auto PosixFileSystem::size(const std::string &path) const -> size_t {
     struct stat buffer;
     auto err = stat(prefixedPath.c_str(), &buffer);
     if (err != 0) {
-        log_e("stat failed: %s", path.c_str());
         return 0;
     }
     return buffer.st_size;

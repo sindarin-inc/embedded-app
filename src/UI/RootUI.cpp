@@ -138,7 +138,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         // TODO: Would be better to not allocate / delete these all the time
 
         std::shared_ptr<RendererStream> stream;
-        auto path = localStore.readableFilePathForReading(readable);
+        auto [path, size] = localStore.readableFilePathForReading(readable);
 
         if (HasSuffix(path, ".epub")) {
             log_i("Opening %s as epub", path.c_str());

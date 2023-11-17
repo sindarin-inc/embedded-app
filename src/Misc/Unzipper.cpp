@@ -17,12 +17,7 @@ static void spiZFree(void *opaque, void *address) {
 }
 
 auto Unzipper::open() -> bool {
-
     // Open zip file
-    if (!fileSystem_.exists(filePath_)) {
-        log_e("File doesn´t exists: %s", filePath_.c_str());
-        return false;
-    }
     file_ = fileSystem_.open(filePath_, "r");
     if (!file_) {
         log_e("Unable to open file: %s", filePath_.c_str());
