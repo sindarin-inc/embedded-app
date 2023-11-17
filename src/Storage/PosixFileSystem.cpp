@@ -25,6 +25,17 @@ auto PosixFileSystem::exists(const std::string &path) const -> bool {
     return (stat(prefixedPath.c_str(), &buffer) == 0);
 }
 
+auto PosixFileSystem::size(const std::string &path) const -> size_t {
+    auto prefixedPath = createPath(path);
+    struct stat buffer;
+    auto err = stat(prefixedPath.c_str(), &buffer);
+    if (err != 0) {
+        log_e("stat failed: %s", path.c_str());
+        return 0;
+    }
+    return buffer.st_size;
+}
+
 auto PosixFileSystem::listDir(const std::string &path, FileList &files, int limit) const -> int {
     auto prefixedPath = createPath(path);
     DIR *dp = opendir(prefixedPath.c_str());

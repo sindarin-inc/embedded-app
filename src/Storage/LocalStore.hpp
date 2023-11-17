@@ -145,8 +145,8 @@ public:
         -> std::string;
     [[nodiscard]] auto readableFilePathForReading(const std::shared_ptr<Readable> &readable) const
         -> std::string;
-    [[nodiscard]] auto readableGetUncompressedSize(const std::shared_ptr<Readable> &readable) const
-        -> int;
+    [[nodiscard]] auto readableGetUncompressedSize(const std::shared_ptr<Readable> &readable,
+                                                   const std::string &path) const -> int;
     void readableFilePurge(const std::shared_ptr<Readable> &readable);
 
     // Save a firmware JSON for future use. Indicates that firmware has already been successfully

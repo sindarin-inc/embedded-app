@@ -13,6 +13,7 @@ public:
     auto open(const std::string &path, const char *mode = FILE_READ,
               const bool create = false) const -> SFile override;
     [[nodiscard]] auto exists(const std::string &path) const -> bool override;
+    auto size(const std::string &path) const -> size_t override;
     auto listDir(const std::string &path, FileList &files, int limit = 0) const -> int override;
     auto listDirWithSubdirectories(const std::string &path, FileList &files, FileList &dirs) const
         -> int override;

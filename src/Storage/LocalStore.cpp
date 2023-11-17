@@ -84,7 +84,7 @@ auto LocalStore::loadReadablesFromFile(ReadablesVector &readables, const std::st
             log_w("Couldn't find readable with path %s", path.c_str());
             continue;
         }
-        int fileSize = readableGetUncompressedSize(readable);
+        int fileSize = readableGetUncompressedSize(readable, path);
 
         if (fileSize >= 0 && readable->files.size() && fileSize != readable->file(path).size) {
             log_w("File size mismatch for %s (%d on disk vs %d in local store), ignoring",
@@ -109,7 +109,7 @@ auto LocalStore::isReadableUnchanged(const ReadablesVector &readables,
         auto path = readableFilePathForReading(r);
         if (r->uuid == readable->uuid && !path.empty()) {
             // First check if file is different
-            int fileSize = readableGetUncompressedSize(readable);
+            int fileSize = readableGetUncompressedSize(readable, path);
 
             if (fileSize <= 0) {
                 log_w("Couldn't get file size for %s", path.c_str());
@@ -1309,29 +1309,23 @@ auto LocalStore::readableFilePathForReading(const std::shared_ptr<Readable> &rea
     return LocalStore::readableFilePathForReading(fileSystem, readable);
 }
 
-auto LocalStore::readableGetUncompressedSize(const std::shared_ptr<Readable> &readable) const
-    -> int {
-    auto path = readableFilePathForReading(readable);
+auto LocalStore::readableGetUncompressedSize(const std::shared_ptr<Readable> &readable,
+                                             const std::string &path) const -> int {
     if (path.empty()) {
         return -1;
     }
-    auto file = fileSystem.open(path);
-    if (!file) {
-        log_w("Failed to open readable file to check size %s", path.c_str());
-        return -1;
-    }
-
-    int fileSize = -1;
-    // If the path has a .gz suffix interpret it as a GZip file
     if (HasSuffix(path, ".gz")) {
+        auto file = fileSystem.open(path);
+        if (!file) {
+            log_w("Failed to open readable file to check size %s", path.c_str());
+            return -1;
+        }
+        defer { file.close(); };
         GUnzipStream gzStream(file);
-        fileSize = gzStream.size();
+        return gzStream.size();
     } else {
-        fileSize = file.size();
+        return fileSystem.size(path);
     }
-    file.close();
-
-    return fileSize;
 }
 
 void LocalStore::readableFilePurge(const std::shared_ptr<Readable> &readable) {

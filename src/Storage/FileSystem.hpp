@@ -46,6 +46,11 @@ public:
         assert(0);
         return false;
     };
+    [[nodiscard]] virtual auto size(const std::string &path) const -> size_t {
+        log_e("Abstract");
+        assert(0);
+        return 0;
+    }
     virtual auto listDir(const std::string &path, FileList &files, int limit = 0) const -> int {
         log_e("Abstract");
         assert(0);
