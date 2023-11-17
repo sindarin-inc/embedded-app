@@ -64,7 +64,7 @@ auto CrashReportWriter::writeCrashReportIfExists() -> bool {
         return false;
     }
 
-    if (!mpData.addKeyValue("git_version", kGitHash)) {
+    if (!mpData.addKeyValue("git_version", AppVersion)) {
         return false;
     }
 

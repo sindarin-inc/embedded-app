@@ -33,7 +33,6 @@ extern PreferencesStore prefs;
 extern void UIInnerLoop(RemoteCommand command);
 extern "C" void app_main(void); // NOLINT(readability-identifier-naming)
 std::shared_ptr<std::thread> SchedulerThread;
-const char *kGitHash = "SIMULATOR";
 extern PosixFileSystem fileSystem;
 
 std::string directory;

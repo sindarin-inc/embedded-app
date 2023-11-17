@@ -18,6 +18,3 @@ set(REQUIRES src)
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 project(embedded-app)
-
-include(./scripts/CheckGit.cmake)
-CheckGitSetup()

@@ -1,3 +1,0 @@
-#include "GitVersion.hpp"
-
-const char *kGitHash = "@GIT_HASH@";

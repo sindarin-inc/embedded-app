@@ -614,7 +614,7 @@ void LocalStore::syncFromRemote(
             checkSyncRequest.battery = (uint8_t)battery_.getBatteryPercentage();
             checkSyncRequest.ptBuild = this->prefs_.lastPageTurnerBuild.get().value_or("");
             checkSyncRequest.build = kVersionString;
-            checkSyncRequest.gitHash = kGitHash;
+            checkSyncRequest.gitHash = AppVersion;
             checkSyncRequest.sn = GetSerialNumber();
 
             auto nextPageCounter = 0;

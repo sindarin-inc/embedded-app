@@ -77,7 +77,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     std::unordered_map<std::string, TelemetryVariant> bootData = {
         {"fw", kVersionString},
-        {"sha", kGitHash},
+        {"sha", AppVersion},
         {"bc", prefs_.bootCount.get().value_or(0)},
         {"br", power_.getBootInfo().telemetryStr()},
         {"mag_x", lastMagReading.x},

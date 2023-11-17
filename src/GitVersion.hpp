@@ -1,6 +1,8 @@
-#ifndef GIT_VERSION_H
-#define GIT_VERSION_H
+#pragma once
 
-extern const char *kGitHash;
-
-#endif // GIT_VERSION_H
+#if SIMULATOR
+#define AppVersion "SIMULATOR"
+#else
+#include <esp_app_desc.h>
+#define AppVersion (esp_app_get_description()->version)
+#endif
