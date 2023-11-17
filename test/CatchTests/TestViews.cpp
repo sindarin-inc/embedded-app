@@ -364,7 +364,7 @@ TEST_CASE("Test some views independently") {
             readable->fromJson((*readablesJsonDoc)["readables"][1]);
 
             Renderer renderer(*display);
-            auto path = LocalStore::readableFilePathForReading(fileSystem, readable);
+            auto [path, size] = LocalStore::readableFilePathForReading(fileSystem, readable);
             auto stream = fileSystem.newEPubRendererStream(path.c_str(), readable);
             renderer.setStream(stream);
             ReadableTableOfContentsScreen screen(prefs, readable, renderer, *display, telemetry);
@@ -384,7 +384,7 @@ TEST_CASE("Test some views independently") {
             readable->fromJson((*readablesJsonDoc)["readables"][0]);
 
             Renderer renderer(*display);
-            auto path = LocalStore::readableFilePathForReading(fileSystem, readable);
+            auto [path, size] = LocalStore::readableFilePathForReading(fileSystem, readable);
             auto stream = fileSystem.newGzipRendererStream(path.c_str());
             renderer.setStream(stream);
 
@@ -402,7 +402,7 @@ TEST_CASE("Test some views independently") {
             readable->fromJson((*readablesJsonDoc)["readables"][0]);
 
             Renderer renderer(*display);
-            auto path = LocalStore::readableFilePathForReading(fileSystem, readable);
+            auto [path, size] = LocalStore::readableFilePathForReading(fileSystem, readable);
             auto stream = fileSystem.newEPubRendererStream(path.c_str(), readable);
             renderer.setStream(stream);
 
