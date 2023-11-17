@@ -473,6 +473,8 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         } else {
             rootUi.setup(&myDisplay, localStore, fileSystem, lightingController);
             UIInnerLoop(RemoteCommand::NONE);
+            log_i("First screen rendered after boot in %" PRIu64 " ms",
+                  esp_timer_get_time() / 1000);
         }
         SHOW_HEAP();
     });

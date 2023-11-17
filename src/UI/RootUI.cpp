@@ -1674,7 +1674,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             auto readableScreen = createReadableScreen(*it);
             if (readableScreen != nullptr) {
                 this->display_->setFont(this->display_->style.getFontFamily().readableFont);
-                log_i("Setting Readable Screen on boot in %.0f ms", esp_timer_get_time() / 1000.0f);
                 this->setCurrentScreen(*readableScreen);
                 log_i("Resuming readable %s at place %s", (*it)->title.c_str(),
                       (*it)->place->str().c_str());
@@ -1720,7 +1719,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         // calibration
         // screen
 
-        log_i("Setting Menu Screen on boot in %.0f ms", esp_timer_get_time() / 1000.0f);
         setCurrentScreen(*mainMenu);
 
         /*
