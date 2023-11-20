@@ -11,7 +11,6 @@
 #include "Communications/SindarinAPI.hpp"
 #include "Communications/WiFi.hpp"
 #include "EPub/EPubFile.hpp"
-#include "GitVersion.hpp"
 #include "Inputs/RemoteInput.hpp"
 #include "Misc/BootLoopDetection.hpp"
 #include "Misc/FactoryReset.hpp"
@@ -76,8 +75,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     auto lastMagReading = power_.getLastMagReading();
 
     std::unordered_map<std::string, TelemetryVariant> bootData = {
-        {"fw", kVersionString},
-        {"sha", AppVersion},
+        {"fw", SemanticVersionString()},
+        {"sha", GitVersionString()},
         {"bc", prefs_.bootCount.get().value_or(0)},
         {"br", power_.getBootInfo().telemetryStr()},
         {"mag_x", lastMagReading.x},
@@ -242,9 +241,10 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     auto makeReleaseNotesMenuItem =
         [this, &localStore, display, mainMenu](const Firmware &firmware) {
         log_i("Found pending firmware update %s", firmware.version.c_str());
-        return MenuItem("Upgrade Software",
-                        StringFormat("From %s to %s", kVersionString, firmware.version.c_str()),
-                        [this, display, mainMenu, &localStore, firmware]() {
+        return MenuItem(
+            "Upgrade Software",
+            StringFormat("From %s to %s", SemanticVersionString(), firmware.version.c_str()),
+            [this, display, mainMenu, &localStore, firmware]() {
             auto releaseNotesScreen =
                 new ReleaseNotesScreen(*display, this->prefs_, power_, localStore, firmware);
             display->clearDisplay();
@@ -257,7 +257,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 setCurrentScreen(*mainMenu);
                 delete releaseNotesScreen;
             });
-        });
+            });
     };
 
     if (prefs_.firmwareLoaded.get().has_value()) {

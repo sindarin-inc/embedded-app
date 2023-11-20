@@ -3,7 +3,6 @@
 #include <utility>
 
 #include "FileDownload.hpp"
-#include "GitVersion.hpp"
 #include "Misc/Battery.hpp"
 #include "Misc/Defer.hpp"
 #include "Misc/Platform.hpp"

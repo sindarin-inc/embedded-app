@@ -9,7 +9,6 @@
 #include "Communications/MultiPartData.hpp"
 #include "Communications/SindarinAPI.hpp"
 #include "Communications/WiFi.hpp"
-#include "GitVersion.hpp"
 #include "Misc/Dispatch.hpp"
 #include "Misc/Platform.hpp"
 #include "Misc/StringUtil.hpp"

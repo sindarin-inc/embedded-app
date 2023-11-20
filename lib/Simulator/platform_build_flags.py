@@ -127,4 +127,11 @@ if args.openssl:
         "-lssl -lcrypto",
     ]
 
+
+ret = subprocess.run(["git", "describe", "--always", "--tags", "--dirty"], stdout=subprocess.PIPE, text=True)
+git_version = ret.stdout.strip()[:31]
+flags += [
+    f'-DGIT_VERSION=\\"{git_version}\\"',
+]
+
 print(" ".join(flags))
