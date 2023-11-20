@@ -72,11 +72,8 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v3
         with:
+          fetch-depth: 0
           submodules: "recursive"
-
-      # We need tags for git describe
-      - name: Get tags
-        run: git fetch --depth=1 origin +refs/tags/*:refs/tags/*
 
       - name: esp-idf build
         uses: espressif/esp-idf-ci-action@v1
