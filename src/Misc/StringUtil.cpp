@@ -58,13 +58,21 @@ auto HasPrefix(const char *str, const char *pre) -> bool {
 }
 
 auto Commify(uint32_t n) -> std::string {
-    std::string str = StringFormat("%d", n);
-    int insertPosition = str.length() - 3;
-    while (insertPosition > 0) {
-        str.insert(insertPosition, ",");
-        insertPosition -= 3;
+    std::string original = std::to_string(n);
+    std::string formatted;
+    formatted.reserve(original.length() +
+                      (original.length() - 1) / 3); // Reserve enough space for commas
+
+    int count = 0;
+    for (int i = original.length() - 1; i >= 0; --i) {
+        formatted = original[i] + formatted; // Prepend character
+        if (++count == 3 && i > 0) {
+            formatted = "," + formatted; // Prepend comma
+            count = 0;
+        }
     }
-    return str;
+
+    return formatted;
 }
 
 auto CaseInsensitiveCompare(const std::string &str1, const std::string &str2) -> bool {
