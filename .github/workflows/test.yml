@@ -15,9 +15,11 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v3
         with:
-          repository: ${{ github.event.pull_request.head.repo.full_name }}
-          ref: ${{ github.event.pull_request.head.ref }}
           submodules: "recursive"
+
+      # We need tags for git describe
+      - name: Get tags
+        run: git fetch --depth=1 origin +refs/tags/*:refs/tags/*
 
       - name: Set up Python
         uses: actions/setup-python@v4

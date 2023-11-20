@@ -19,6 +19,10 @@ jobs:
         with:
           submodules: "recursive"
 
+      # We need tags for git describe
+      - name: Get tags
+        run: git fetch --depth=1 origin +refs/tags/*:refs/tags/*
+
       # NOTE: This depends on the correct version of IDF being pre-installed on the tester laptops.
 
       - name: Install PPK2
