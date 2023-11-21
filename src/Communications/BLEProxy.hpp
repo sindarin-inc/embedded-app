@@ -18,11 +18,12 @@ public:
     void configureCharacteristics(BLEService *service) override;
 
     void
-    setWebRequestHandler(std::function<void(const std::string &, const std::string &)> handler);
+    setWebRequestHandler(std::function<void(const std::string &, const SpiramString &)> handler);
 
 protected:
     PreferencesStore *prefs_;
     BLECharacteristic *proxyCharacteristic_;
+    std::function<void(const std::string &, const SpiramString &)> webRequestHandler_;
 
     void writeUrlToCharacteristic(BLECharacteristic *characteristic, const std::string &url);
     void writeBodyToCharacteristic(BLECharacteristic *characteristic, const SpiramString &body);
@@ -40,6 +41,16 @@ protected:
             }
 
             log_d("BLEProxy::CharacteristicCallbacks::onWrite: %s", value.c_str());
+            // Send the body to the web request handler.
+            size_t equalsIndex = value.find('=');
+            if (equalsIndex != std::string::npos) {
+                std::string key = value.substr(0, equalsIndex);
+                SpiramString body = SpiramString(value.substr(equalsIndex + 1));
+                enclosed->writeBodyToCharacteristic(characteristic, body);
+                if (enclosed->webRequestHandler_) {
+                    enclosed->webRequestHandler_(key, body);
+                }
+            }
         }
     };
 };

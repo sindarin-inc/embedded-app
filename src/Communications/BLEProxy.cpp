@@ -25,7 +25,7 @@ void BLEProxy::configureCharacteristics(BLEService *service) {
 };
 
 void BLEProxy::setWebRequestHandler(
-    std::function<void(const std::string &, const std::string &)> handler) {
+    std::function<void(const std::string &, const SpiramString &)> handler) {
     webRequestHandler_ = std::move(handler);
 }
 

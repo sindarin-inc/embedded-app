@@ -69,6 +69,9 @@ BLEImprov bleWifi;
 TTRemoteInput ttRemoteInput(prefs);
 #endif
 
+#include "Communications/BLEProxy.hpp"
+BLEProxy bleProxy(&prefs);
+
 #include "Sensors/LightingController.hpp"
 LightingController lightingController;
 
@@ -394,6 +397,8 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     bleSettings.attachTTRemoteInput(&ttRemoteInput);
 #endif
 #endif
+
+    bleProxy.configureCharacteristics(sindarinService);
 
     if (!bleSindarinService.start()) {
         bootErrors.push_back({.type = BootError::Type::BLESindarin});
