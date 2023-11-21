@@ -47,8 +47,6 @@ extern Screen *UIGetCurrentScreen();
 
 extern "C" void app_main(void); // NOLINT(readability-identifier-naming)
 
-const char *kGitHash = "SIMULATOR";
-
 #define SCALE 2
 
 // Will be set by PlatformSimulator.cpp SetLeftScreenLight() and SetRightScreenLight()

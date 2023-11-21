@@ -41,7 +41,7 @@ void BLESettings::writeDeviceSerialToCharacteristic(BLECharacteristic *character
 
 void BLESettings::writeFirmwareVersionToCharacteristic(BLECharacteristic *characteristic,
                                                        const std::string &key) {
-    std::string value = StringFormat("%s=%s", key.c_str(), kVersionString);
+    std::string value = StringFormat("%s=%s", key.c_str(), SemanticVersionString());
     log_i("GATT client reading firmware version: %s", value.c_str());
     characteristic->setValue(value);
     characteristic->notify();

@@ -46,4 +46,3 @@ set(ulp_exp_dep_srcs "Misc/PowerManager.cpp")
 ulp_embed_binary(${ulp_app_name} "${ulp_riscv_sources}" "${ulp_exp_dep_srcs}")
 
 target_compile_options(${COMPONENT_TARGET} PUBLIC ${compile_options})
-target_link_libraries(${COMPONENT_LIB} PUBLIC git_version)

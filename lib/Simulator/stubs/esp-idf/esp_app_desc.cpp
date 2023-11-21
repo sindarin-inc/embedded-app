@@ -6,7 +6,11 @@
 esp_app_desc_t app_desc = {.magic_word = 0xABCD1234,
                            .secure_version = 1,
                            .reserv1 = {0, 0},
+#ifdef GIT_VERSION
+                           .version = GIT_VERSION,
+#else
                            .version = "1.0.0",
+#endif
                            .project_name = "MyProject",
                            .time = "12:34:56",
                            .date = "2023-08-31",

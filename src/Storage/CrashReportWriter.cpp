@@ -5,7 +5,6 @@
 #include <esp_flash.h>
 
 #include "Communications/MultiPartData.hpp"
-#include "GitVersion.hpp"
 #include "Misc/Platform.hpp"
 #include "Version.hpp"
 
@@ -64,7 +63,7 @@ auto CrashReportWriter::writeCrashReportIfExists() -> bool {
         return false;
     }
 
-    if (!mpData.addKeyValue("git_version", kGitHash)) {
+    if (!mpData.addKeyValue("git_version", GitVersionString())) {
         return false;
     }
 
@@ -72,7 +71,7 @@ auto CrashReportWriter::writeCrashReportIfExists() -> bool {
         return false;
     }
 
-    if (!mpData.addKeyValue("fw_version", kVersionString)) {
+    if (!mpData.addKeyValue("fw_version", SemanticVersionString())) {
         return false;
     }
 

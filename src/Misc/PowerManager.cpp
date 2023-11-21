@@ -506,7 +506,7 @@ void PowerManager::reboot() {
     esp_restart();
 }
 
-void PowerManager::scheduleSync(SyncReason reason, int time) {
+void PowerManager::scheduleSync(SyncReason reason, time_t time) {
     PreferencesStore::syncReason = reason;
     PreferencesStore::nextSyncTime = time;
     log_d("Sync on %s scheduled for %" PRIu64, ToString(PreferencesStore::syncReason),
@@ -523,7 +523,7 @@ void PowerManager::deepSleep(SleepReason reason) {
 
     // This is the block of code that calculates the time for the next WiFi sync. All code that
     // sets PreferencesStore::syncReason / PreferencesStore::nextSyncTime should happen here
-    auto now = SolClock::getInstance().getEpochTime();
+    time_t now = SolClock::getInstance().getEpochTime();
     switch (reason) {
     case SleepReason::Inactivity:
         if (!prefs_.noDeliverOnClose.get().value_or(false) &&

@@ -13,7 +13,6 @@
 
 #include "Communications/HtmlCleaner.hpp"
 #include "Communications/WiFi.hpp"
-#include "GitVersion.hpp"
 #include "Misc/Crypto.hpp"
 #include "Misc/Defer.hpp"
 #include "Misc/GUnzipStream.hpp"
@@ -613,8 +612,8 @@ void LocalStore::syncFromRemote(
             checkSyncRequest.ptBattery = PreferencesStore::lastPageTurnerBattery;
             checkSyncRequest.battery = (uint8_t)battery_.getBatteryPercentage();
             checkSyncRequest.ptBuild = this->prefs_.lastPageTurnerBuild.get().value_or("");
-            checkSyncRequest.build = kVersionString;
-            checkSyncRequest.gitHash = kGitHash;
+            checkSyncRequest.build = SemanticVersionString();
+            checkSyncRequest.gitHash = GitVersionString();
             checkSyncRequest.sn = GetSerialNumber();
 
             auto nextPageCounter = 0;
@@ -1414,7 +1413,8 @@ auto LocalStore::getPendingFirmwareUpdate(Firmware &firmware) -> bool {
         return false;
     }
 
-    return SemVerCompareVersions(kVersionString, firmware.version) == SemVerComparison::LessThan;
+    return SemVerCompareVersions(SemanticVersionString(), firmware.version) ==
+           SemVerComparison::LessThan;
 }
 
 void LocalStore::resetFirmware() { fileSystem.remove(firmwarePath); }

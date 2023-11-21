@@ -298,8 +298,13 @@ auto WiFi::connectWiFi(const std::string &ssid, const std::string &password) -> 
     } else {
         log_i("Using provided WiFi credentials: %s/%s", ssid.c_str(), password.c_str());
         wifiConfig.sta.sae_pwe_h2e = WPA3_SAE_PWE_BOTH;
+        // We do not need to null terminate `wifi_config_t`'s `ssid` and `password` fields so we can
+        // ignore warnings about potential null termination missing.
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstringop-truncation"
         strncpy((char *)wifiConfig.sta.ssid, ssid.c_str(), sizeof(wifiConfig.sta.ssid));
         strncpy((char *)wifiConfig.sta.password, password.c_str(), sizeof(wifiConfig.sta.password));
+#pragma GCC diagnostic pop
     }
 
     err = esp_wifi_set_mode(WIFI_MODE_STA);

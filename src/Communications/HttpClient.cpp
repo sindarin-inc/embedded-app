@@ -5,7 +5,6 @@
 #include <iostream>
 #include <string>
 
-#include "GitVersion.hpp"
 #include "Misc/StringUtil.hpp"
 #include "Version.hpp"
 #include "sindarin-debug.h"
@@ -13,7 +12,7 @@
 HttpClient::HttpClient(const char *url, const char *contentType, esp_http_client_method_t method,
                        bool gzip) {
     url_ = strdup(url);
-    userAgent_ = StringFormat("SolReader/%s (%s)", kVersionString, kGitHash);
+    userAgent_ = StringFormat("SolReader/%s (%s)", SemanticVersionString(), GitVersionString());
 
     esp_http_client_config_t config{
         .url = url_,

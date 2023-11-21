@@ -59,12 +59,23 @@ auto HasPrefix(const char *str, const char *pre) -> bool {
 
 auto Commify(uint32_t n) -> std::string {
     std::string str = StringFormat("%d", n);
-    int insertPosition = str.length() - 3;
-    while (insertPosition > 0) {
-        str.insert(insertPosition, ",");
-        insertPosition -= 3;
+    std::string result;
+    // Reserve enough space to avoid reallocations
+    result.reserve(str.length() + str.length() / 3);
+
+    int count = 0;
+    for (int i = str.length() - 1; i >= 0; --i) {
+        result.push_back(str[i]);
+        ++count;
+        if (count == 3 && i > 0) {
+            result.push_back(',');
+            count = 0;
+        }
     }
-    return str;
+
+    // Since we built the string in reverse
+    std::reverse(result.begin(), result.end());
+    return result;
 }
 
 auto CaseInsensitiveCompare(const std::string &str1, const std::string &str2) -> bool {

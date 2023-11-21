@@ -84,7 +84,7 @@ public:
         popupMenuScreen_.onReport = [this, &display]() {
             setNeedsRerender();
             auto metrics = readable_->telemetryPlacemarkMetrics();
-            metrics["fw"] = kVersionString;
+            metrics["fw"] = SemanticVersionString();
             telemetry_.logMetric(TelemetryField::METRIC_REPORT, readable_->uuid.c_str(), metrics);
             static std::vector<std::string> reportMsg = {
                 "Thank you, our team will", "review this page for", "formatting issues."};

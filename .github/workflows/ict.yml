@@ -17,6 +17,7 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v3
         with:
+          fetch-depth: 0
           submodules: "recursive"
 
       # NOTE: This depends on the correct version of IDF being pre-installed on the tester laptops.

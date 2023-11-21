@@ -11,7 +11,6 @@
 #include "Communications/SindarinAPI.hpp"
 #include "Communications/WiFi.hpp"
 #include "EPub/EPubFile.hpp"
-#include "GitVersion.hpp"
 #include "Inputs/RemoteInput.hpp"
 #include "Misc/BootLoopDetection.hpp"
 #include "Misc/FactoryReset.hpp"
@@ -76,8 +75,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     auto lastMagReading = power_.getLastMagReading();
 
     std::unordered_map<std::string, TelemetryVariant> bootData = {
-        {"fw", kVersionString},
-        {"sha", kGitHash},
+        {"fw", SemanticVersionString()},
+        {"sha", GitVersionString()},
         {"bc", prefs_.bootCount.get().value_or(0)},
         {"br", power_.getBootInfo().telemetryStr()},
         {"mag_x", lastMagReading.x},
@@ -242,9 +241,10 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     auto makeReleaseNotesMenuItem =
         [this, &localStore, display, mainMenu](const Firmware &firmware) {
         log_i("Found pending firmware update %s", firmware.version.c_str());
-        return MenuItem("Upgrade Software",
-                        StringFormat("From %s to %s", kVersionString, firmware.version.c_str()),
-                        [this, display, mainMenu, &localStore, firmware]() {
+        return MenuItem(
+            "Upgrade Software",
+            StringFormat("From %s to %s", SemanticVersionString(), firmware.version.c_str()),
+            [this, display, mainMenu, &localStore, firmware]() {
             auto releaseNotesScreen =
                 new ReleaseNotesScreen(*display, this->prefs_, power_, localStore, firmware);
             display->clearDisplay();
@@ -257,7 +257,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 setCurrentScreen(*mainMenu);
                 delete releaseNotesScreen;
             });
-        });
+            });
     };
 
     if (prefs_.firmwareLoaded.get().has_value()) {
@@ -1674,7 +1674,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             auto readableScreen = createReadableScreen(*it);
             if (readableScreen != nullptr) {
                 this->display_->setFont(this->display_->style.getFontFamily().readableFont);
-                log_i("Setting Readable Screen on boot in %.0f ms", esp_timer_get_time() / 1000.0f);
                 this->setCurrentScreen(*readableScreen);
                 log_i("Resuming readable %s at place %s", (*it)->title.c_str(),
                       (*it)->place->str().c_str());
@@ -1720,7 +1719,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         // calibration
         // screen
 
-        log_i("Setting Menu Screen on boot in %.0f ms", esp_timer_get_time() / 1000.0f);
         setCurrentScreen(*mainMenu);
 
         /*

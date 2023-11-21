@@ -263,7 +263,7 @@ protected:
 
     void deepSleepInternal(SleepReason reason);
 
-    void scheduleSync(SyncReason reason, int timeFromNow);
+    void scheduleSync(SyncReason reason, time_t time);
 
     // Fully power down the device (assuming USB is disconnected and left temple closed)
     // Note: This should be used sparingly as it's unintuitive to the user if you get into

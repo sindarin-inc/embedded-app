@@ -29,9 +29,9 @@ public:
         serialNumberView_.setText(serialStr);
 
 #ifdef GITHASH
-        std::string buildString = StringFormat("Reader Firmware:  %s", kVersionString);
+        std::string buildString = StringFormat("Reader Firmware:  %s", SemanticVersionString());
 #else
-        std::string buildString = StringFormat("Reader Firmware: %s", kVersionString);
+        std::string buildString = StringFormat("Reader Firmware: %s", SemanticVersionString());
 #endif
 
         auto wifiMac = StringFormat("WiFi MAC: %s", GetMacAddress().c_str());

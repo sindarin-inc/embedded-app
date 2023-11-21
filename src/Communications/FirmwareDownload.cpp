@@ -7,7 +7,6 @@
 
 #include "Communications/FileDownload.hpp"
 #include "Communications/WiFi.hpp"
-#include "GitVersion.hpp"
 #include "Misc/Dispatch.hpp"
 #include "Misc/SemVer.hpp"
 #include "Misc/StringUtil.hpp"
@@ -53,7 +52,7 @@ void FirmwareDownloader::downloadFirmware(
             return;
         }
 
-        versionString = kVersionString;
+        versionString = SemanticVersionString();
         log_d("Existing version: %s, server version: %s", versionString.c_str(),
               response.latestGlassesFirmware.version.c_str());
         if (SemVerCompareVersions(response.latestGlassesFirmware.version, versionString) !=
