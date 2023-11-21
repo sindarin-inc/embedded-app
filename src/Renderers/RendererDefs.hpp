@@ -101,7 +101,7 @@ static constexpr uint32_t END_OFFSET = 999999999U;
 // - "Place" as a variable suffix, defines a character index in the file stream
 // - "Idx" as a variable suffix, defines an index in one of the arrays maintained by this class
 
-using Idx = uint16_t;
+using Idx = int;
 
 // These are the different tokens so as we parse a buffer, we more easily know what to do with the
 // text. Bits are assigned to each such that they can be combined in a mask for comparisons.

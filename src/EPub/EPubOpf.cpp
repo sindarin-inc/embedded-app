@@ -102,15 +102,19 @@ auto EPubOpf::getSpineIdx(const std::string &href) const -> SpineIdx {
             return spineIdx;
         }
     }
-    return 0;
+    return -1;
 }
 
 auto EPubOpf::getChapterIdx(const std::string &href) const -> ChapterIdx {
     SpineIdx spineIdx = getSpineIdx(href);
+    if (spineIdx == -1) {
+        return -1;
+    }
     return spine_[spineIdx].chapterIdx;
 }
 
 auto EPubOpf::getChapterIdx(SpineIdx spineIdx) const -> ChapterIdx {
+    log_w("getChapterIdx: %d: %d", spineIdx, spine_[spineIdx].chapterIdx);
     return spine_[spineIdx].chapterIdx;
 }
 
