@@ -506,7 +506,7 @@ void PowerManager::reboot() {
     esp_restart();
 }
 
-void PowerManager::scheduleSync(SyncReason reason, int time) {
+void PowerManager::scheduleSync(SyncReason reason, uint64_t time) {
     PreferencesStore::syncReason = reason;
     PreferencesStore::nextSyncTime = time;
     log_d("Sync on %s scheduled for %" PRIu64, ToString(PreferencesStore::syncReason),
