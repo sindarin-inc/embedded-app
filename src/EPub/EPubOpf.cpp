@@ -114,7 +114,6 @@ auto EPubOpf::getChapterIdx(const std::string &href) const -> ChapterIdx {
 }
 
 auto EPubOpf::getChapterIdx(SpineIdx spineIdx) const -> ChapterIdx {
-    log_w("getChapterIdx: %d: %d", spineIdx, spine_[spineIdx].chapterIdx);
     return spine_[spineIdx].chapterIdx;
 }
 
@@ -124,7 +123,6 @@ auto EPubOpf::spineIdxIsChapterStart(SpineIdx spineIdx) const -> bool {
 
 auto EPubOpf::getChapterFirstSpineIdx(SpineIdx spineIdx) const -> SpineIdx {
     SpineIdx chapterSpineIdx = spineIdx;
-
     while (!spine_[chapterSpineIdx].chapterStart && (chapterSpineIdx > 0)) {
         chapterSpineIdx--;
     }

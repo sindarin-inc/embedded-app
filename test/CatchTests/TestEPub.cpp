@@ -119,7 +119,7 @@ TEST_CASE("Test EPub Books Rendering", "[.][epub]") {
             // WAIT_FOR_DRAW();
 
             int pageNbr = 1;
-            uint16_t spineIdx = 0;
+            int spineIdx = 0;
 
             for (;;) {
                 StreamPlace streamPlace = readableScreen->getStreamPlace();
@@ -177,7 +177,7 @@ TEST_CASE("Test EPub Books Rendering", "[.][epub]") {
             // WAIT_FOR_DRAW();
 
             int pageNbr = 1;
-            uint16_t spineIdx = 0;
+            int spineIdx = 0;
 
             for (;;) {
                 StreamPlace streamPlace = readableScreen->getStreamPlace();

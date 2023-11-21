@@ -921,7 +921,10 @@ auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, S
 auto EPubTokenizer::toStreamPlace(const std::shared_ptr<Place> place) const -> StreamPlace {
     if (place->isFor(DocType::EPUB)) {
         std::shared_ptr<EPubPlace> ePubPlace = std::dynamic_pointer_cast<EPubPlace>(place);
-        uint16_t spineIdx = stream_->getSpineIdx(ePubPlace->getHRef());
+        int spineIdx = stream_->getSpineIdx(ePubPlace->getHRef());
+        if (spineIdx == -1) {
+            return getPlaceAtBeginningOfDocument();
+        }
         return {place->getOffset(), spineIdx};
     } else {
         log_e("Wrong Place Type: %" PRIu8, static_cast<uint8_t>(place->getDocType()));
