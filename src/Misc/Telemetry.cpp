@@ -71,7 +71,8 @@ auto Telemetry::mapToJson(const std::unordered_map<std::string, TelemetryVariant
     return json;
 }
 
-auto Telemetry::uploadAndResetTelemetry(FileSystem &fileSystem, Telemetry &telemetry) -> int {
+auto Telemetry::uploadAndResetTelemetry(FileSystem &fileSystem, Telemetry &telemetry, bool useBle)
+    -> int {
     auto localPath = telemetry.metricLogPath();
 
     auto file = fileSystem.open(localPath, FILE_READ);
@@ -80,7 +81,8 @@ auto Telemetry::uploadAndResetTelemetry(FileSystem &fileSystem, Telemetry &telem
         return -1;
     }
 
-    int httpCode = SindarinAPI::getInstance()->uploadTelemetryFile(file, localPath, fileSystem);
+    int httpCode =
+        SindarinAPI::getInstance()->uploadTelemetryFile(file, localPath, fileSystem, useBle);
     file.close();
 
     log_d("Telemetry log upload http code: %d", httpCode);

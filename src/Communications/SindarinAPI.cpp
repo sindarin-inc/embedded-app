@@ -213,7 +213,7 @@ auto SindarinAPI::downloadReadable(const std::shared_ptr<Readable> &readable,
 }
 
 auto SindarinAPI::uploadTelemetryFile(SFile &telemetryFile, const std::string &localPath,
-                                      FileSystem &fileSystem) -> int {
+                                      FileSystem &fileSystem, bool useBle) -> int {
     // Construct the headers and footers for multipart file upload
     static std::string boundary = "SIND12345";
     std::string header = "--" + boundary + "\r\n" +
@@ -225,8 +225,13 @@ auto SindarinAPI::uploadTelemetryFile(SFile &telemetryFile, const std::string &l
     int totalSize = header.size() + telemetryFile.size() + footer.size();
     auto contentType = "multipart/form-data; boundary=" + boundary;
 
-    HttpClient client(StringFormat("%s/telemetry/", baseUrl_.c_str()).c_str(), contentType.c_str(),
-                      HTTP_METHOD_POST);
+    if (useBle) {
+        BLEHttpClient client(StringFormat("%s/telemetry/", baseUrl_.c_str()).c_str(),
+                             contentType.c_str(), HTTP_METHOD_POST);
+    } else {
+        HttpClient client(StringFormat("%s/telemetry/", baseUrl_.c_str()).c_str(),
+                          contentType.c_str(), HTTP_METHOD_POST);
+    }
 
     auto err = setAuth(client);
     if (err != ESP_OK) {

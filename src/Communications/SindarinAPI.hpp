@@ -4,6 +4,7 @@
 #include <functional>
 #include <utility>
 
+#include "Communications/BLEHttpClient.hpp"
 #include "Communications/HttpClient.hpp"
 #include "Misc/Telemetry.hpp"
 #include "Models/CheckSync.hpp"
@@ -56,7 +57,7 @@ public:
                           const std::function<void(int percentage)> &progressCallback) -> int;
 
     auto uploadTelemetryFile(SFile &telemetryFile, const std::string &localPath,
-                             FileSystem &fileSystem) -> int;
+                             FileSystem &fileSystem, bool useBle = false) -> int;
     auto uploadCrashReport(SFile &crashFile, const std::string &contentType) -> int;
 
     auto setAuth(HttpClient &client) -> esp_err_t;
