@@ -549,20 +549,25 @@ auto EPubFile::open() -> bool {
 
 auto EPubFile::hasFont() -> bool { return font_ != nullptr; }
 
-auto EPubFile::getFont() -> IBMFFont * { return font_.get(); }
+auto EPubFile::getFont() -> IBMFFont * { return (font_ != nullptr) ? font_.get() : nullptr; }
 
 void EPubFile::loadFont() {
-    std::string fontPath = opf_->getFullPath("ibmf/font.ibmf");
+    std::string href = opf_->getHrefByManifestId("ibmf_font");
+    if (!href.empty()) {
+        std::string fontPath = opf_->getFullPath(href);
 
-    if (epubUnzipper_.fileExists(fontPath)) {
-        uint32_t size;
-        std::tie(fontData_, size) = getFile(fontPath);
-        if (size > 0) {
-            fontLow_ = std::make_shared<IBMFFontLow>(fontData_.get(), size - 1);
-            if (fontLow_ != nullptr) {
-                font_ = std::make_shared<IBMFFont>(*fontLow_.get(), 0);
+        if (epubUnzipper_.fileExists(fontPath)) {
+            uint32_t size;
+            std::tie(fontData_, size) = getFile(fontPath);
+            if (size > 0) {
+                fontLow_ = std::make_shared<IBMFFontLow>(fontData_.get(), size - 1);
+                if (fontLow_ != nullptr) {
+                    font_ = std::make_shared<IBMFFont>(*fontLow_.get(), 0);
+                }
             }
         }
+    } else {
+        font_ = nullptr;
     }
 }
 
