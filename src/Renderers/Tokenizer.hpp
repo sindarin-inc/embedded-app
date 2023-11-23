@@ -30,8 +30,8 @@ public:
     // Get the largest token to accept to have on a single line. As this ia an approximation, the
     // "G" character is a compromise between a very small width character (like the lowercase "l")
     // and a very large one (like the uppercase "W").
-    void computeMaxTextTokenCharSize() {
-        maxTextTokenCharSize_ = display_.width() / display_.getTextWidth("G");
+    void computeMaxTextTokenCharSize(uint16_t charWidth) {
+        maxTextTokenCharSize_ = display_.width() / charWidth;
     }
 
     [[nodiscard]] auto getPlaceAtBeginningOfFile(StreamPlace streamPlace) const -> StreamPlace {

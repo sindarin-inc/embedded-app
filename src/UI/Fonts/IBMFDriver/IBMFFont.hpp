@@ -58,6 +58,15 @@ public:
         }
     }
 
+    inline void setOpticalKerning(bool value) {
+        if constexpr (IBMF_TRACING) {
+            LOGD("setOpticalKerning()");
+        }
+        if (isInitialized()) {
+            font_->getFace(faceIndex_)->setOpticalkerning(value);
+        }
+    }
+
     [[nodiscard]] inline auto getResolution() const -> PixelResolution {
         if constexpr (IBMF_TRACING) {
             LOGD("getResolution()");

@@ -196,7 +196,7 @@ typedef Bitmap *BitmapPtr;
 #pragma pack(push, 1)
 
 // FIX16 is a floating point value in 16 bits fixed point notation, 6 bits of fraction
-// Idem for FIX14, but for 14 bits fixed point notation notation
+// Idem for FIX14, but for 14 bits fixed point notation
 
 typedef int16_t FIX16;
 typedef int16_t FIX14;

@@ -1514,13 +1514,27 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                         if (closeTextToken()) {
                             return false;
                         }
-                        // put a SPACE
-                        if (lastToken_ != nullptr) {
-                            lastToken_->spacesAfter++;
-                            if (lastToken_->spacesAfter == 1) {
-                                pager_.addSpaceWidth();
-                            }
+                        if (!beginningOfPage_) {
+                            Token &newToken = tokens_.getNextAvailable();
+                            newToken = {.cStr = nullptr,
+                                        .picture = nullptr,
+                                        .streamPlace = {currentStreamOffset_, currentSpineIdx_},
+                                        .pixWidth = 0,
+                                        .pixHeight = 0,
+                                        .length = 0,
+                                        .tokenId = TokenId::NEWLINE,
+                                        .spacesAfter = 0};
+                            lastToken_ = nullptr;
+
+                            addTokenToPage(newToken, "\n", 1);
                         }
+                        // put a SPACE
+                        // if (lastToken_ != nullptr) {
+                        //     lastToken_->spacesAfter++;
+                        //     if (lastToken_->spacesAfter == 1) {
+                        //         pager_.addSpaceWidth();
+                        //     }
+                        // }
                     }
                     break;
 
@@ -1722,8 +1736,7 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint32_t len) -> bool 
 
     // REND_WLOG("Started at offset: %" PRIu32, streamOffset);
 
-    uint8_t curChar = *str++;
-    len--;
+    uint8_t curChar;
 
     // Keep it DRY
 
@@ -1731,15 +1744,25 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint32_t len) -> bool 
         if (len == 0) {
             curChar = 0;
         } else {
-            curChar = *str++;
-            len--;
-            streamOffset++;
+            if (false && (len >= 3) && (str[0] == ((pugi::char_t)0xE3)) &&
+                (str[1] == ((pugi::char_t)0x80)) && (str[2] == ((pugi::char_t)0x80))) {
+                curChar = ' ';
+                str += 3;
+                len -= 3;
+                streamOffset += 3;
+            } else {
+                curChar = *str++;
+                len--;
+                streamOffset++;
+            }
             if (backwards_) {
                 currentTxtOffset_++;
                 currentPageTxtOffset_++;
             }
         }
     };
+
+    nextByte();
 
     if (beginningOfPage_) {
         while ((curChar != 0) && isspace(curChar)) {
@@ -1914,7 +1937,7 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint32_t len) -> bool 
                         nextByte();
                     }
                 } while ((curChar > ' ') &&
-                         ((textCharCount_ < maxTextTokenCharSize_) || (curChar >= 0x80U)));
+                         ((textCharCount_ < maxTextTokenCharSize_) || ((curChar & 0xC0U) == 0x80)));
 
                 // The last test of the while above is to get a complete UTF8 multi-bytes
                 // character if the maximum word size is reached

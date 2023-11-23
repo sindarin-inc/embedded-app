@@ -11,6 +11,9 @@
 #include "Models/Readable.hpp"
 #include "Models/UserReadablePartialChapterSummary.hpp"
 #include "Renderers/RendererStream.hpp"
+#include "UI/Fonts/Font.hpp"
+#include "UI/Fonts/IBMFDriver/IBMFFont.hpp"
+#include "UI/Fonts/IBMFDriver/IBMFFontLow.hpp"
 
 class EPubFile : public RendererStream {
 public:
@@ -94,6 +97,10 @@ public:
     auto hasToc() -> bool;
     auto getToc() -> ReadableTableOfContentsChapterVector;
 
+    auto hasFont() -> bool;
+    auto getFont() -> IBMFFont *;
+    void loadFont();
+
     auto hasSummary(const std::string &chapterId) -> bool;
     auto getSummaryContent(
         const std::shared_ptr<EPubPlace> &placeInReadable,
@@ -119,6 +126,10 @@ private:
     // std::unique_ptr<pugi::char_t[]> currentFileBuffer_;
     std::shared_ptr<uint8_t[]> currentFileBuffer_;
     std::string currentFilePath_;
+
+    std::shared_ptr<IBMFFontLow> fontLow_;
+    std::shared_ptr<IBMFFont> font_;
+    std::shared_ptr<uint8_t[]> fontData_;
 
     auto open() -> bool;
     void close();

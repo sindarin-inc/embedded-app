@@ -29,6 +29,7 @@ private:
     GlyphsInfoPtr glyphsInfo_{nullptr};
     PixelsPoolPtr pixelsPool_{nullptr};
     LigKernStepsPtr ligKernSteps_{nullptr};
+    bool opticalKerning{true};
 
 public:
     IBMFFaceLow() = default;
@@ -77,6 +78,8 @@ public:
         return (glyphCode < faceHeader_->glyphCount) ? (*glyphsInfo_)[glyphCode].ligKernPgmIndex
                                                      : NO_LIG_KERN_PGM;
     }
+
+    inline auto setOpticalkerning(bool value) { opticalKerning = value; }
 
     inline auto setResolution(PixelResolution res) -> void { resolution_ = res; }
 

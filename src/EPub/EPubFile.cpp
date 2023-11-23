@@ -538,11 +538,32 @@ auto EPubFile::open() -> bool {
     }
     EPUB_PROFILE_END(EPubOpf)
 
+    loadFont();
+
     PROFILE_END_LOG_MS(openEPub);
 
     // log_d("Total size of all ePub text is %d", opf_->getTotalSize());
     fileOpen_ = true;
     return true;
+}
+
+auto EPubFile::hasFont() -> bool { return font_ != nullptr; }
+
+auto EPubFile::getFont() -> IBMFFont * { return font_.get(); }
+
+void EPubFile::loadFont() {
+    std::string fontPath = opf_->getFullPath("ibmf/font.ibmf");
+
+    if (epubUnzipper_.fileExists(fontPath)) {
+        uint32_t size;
+        std::tie(fontData_, size) = getFile(fontPath);
+        if (size > 0) {
+            fontLow_ = std::make_shared<IBMFFontLow>(fontData_.get(), size - 1);
+            if (fontLow_ != nullptr) {
+                font_ = std::make_shared<IBMFFont>(*fontLow_.get(), 0);
+            }
+        }
+    }
 }
 
 void EPubFile::close() {

@@ -17,9 +17,21 @@ auto Renderer::renderPage(std::shared_ptr<Place> fromPlace, int16_t numSkipLines
 
     // This needs to happen before loading into buffer since it will affect what we load into the
     // buffer.
-    display_.setFont(display_.style.getFontFamily().readableFont);
 
-    tokenizer_->computeMaxTextTokenCharSize();
+    Font *theFont = display_.style.getFontFamily().readableFont;
+    bool tailoredFont = false;
+    if (tokenizer_->isFor(DocType::EPUB)) {
+        auto stream = std::dynamic_pointer_cast<EPubFile>(getStream());
+        if (stream->hasFont()) {
+            theFont = stream->getFont();
+            stream->getFont()->setOpticalKerning(false);
+            tailoredFont = true;
+        }
+    }
+
+    display_.setFont(theFont);
+
+    tokenizer_->computeMaxTextTokenCharSize(tailoredFont ? 17 : display_.getTextWidth("G"));
 
     // std::cout << "Pager Line Count: " << pager_.getLineCount() << std::endl;
     // std::cout << "currentPlace: " << currentPlace_.str()
@@ -30,8 +42,8 @@ auto Renderer::renderPage(std::shared_ptr<Place> fromPlace, int16_t numSkipLines
 
     // std::cout << "Pager Line Count: " << pager_.getLineCount() << std::endl;
 
-    // We only re-tokenize if required (or forced through the forceRefresh param). May already been
-    // done from the getPreviousPlace() method.
+    // We only re-tokenize if required (or forced through the forceRefresh param). May already
+    // been done from the getPreviousPlace() method.
 
     if (pager_.linesIsEmpty() || (!(startPlace == pager_.getStreamPlaceOfFirstLine())) ||
         forceRefresh) {
@@ -56,8 +68,20 @@ auto Renderer::renderPage(std::shared_ptr<Place> fromPlace, int16_t numSkipLines
 // Seeks backwards and returns the place of one page previous.
 auto Renderer::goBackwardsOnePage(StreamPlace endPlace) -> StreamPlace {
 
-    display_.setFont(display_.style.getFontFamily().readableFont);
-    tokenizer_->computeMaxTextTokenCharSize();
+    Font *theFont = display_.style.getFontFamily().readableFont;
+    bool tailoredFont = false;
+    if (tokenizer_->isFor(DocType::EPUB)) {
+        auto stream = std::dynamic_pointer_cast<EPubFile>(getStream());
+        if (stream->hasFont()) {
+            theFont = stream->getFont();
+            stream->getFont()->setOpticalKerning(false);
+            tailoredFont = true;
+        }
+    }
+
+    display_.setFont(theFont);
+
+    tokenizer_->computeMaxTextTokenCharSize(tailoredFont ? 17 : display_.getTextWidth("G"));
 
     // The following is done to compute the maximum number of characters a display
     // screen can get. The character "G" is a good compromize between smaller
@@ -86,8 +110,8 @@ auto Renderer::goBackwardsOnePage(StreamPlace endPlace) -> StreamPlace {
 
     // log_e("After goBackward(): seekPlace: %s", seekPlace.str().c_str());
 
-    // Tokenize it the same as you would for a forwards render. seekPlace will be returned to be at
-    // a UTF8 character boundary
+    // Tokenize it the same as you would for a forwards render. seekPlace will be returned to be
+    // at a UTF8 character boundary
 
     if (!(seekPlace == endPlace)) {
         StreamPlace lastPlace = endPlace;
@@ -117,7 +141,6 @@ auto Renderer::goBackwardsOnePage(StreamPlace endPlace) -> StreamPlace {
 }
 
 auto Renderer::getPreviousPlace() -> std::shared_ptr<Place> {
-
     PROFILE_START(goBackwardsOnePage);
 
     previousPlace_ = goBackwardsOnePage(currentPlace_);
