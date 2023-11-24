@@ -75,8 +75,6 @@ auto EPubFile::findCharOffsetAtFileOffset(const std::string &path, uint32_t file
 auto EPubFile::getFile(const std::string &completeFilePath)
     -> std::pair<std::shared_ptr<uint8_t[]>, uint32_t> {
 
-    std::shared_ptr<uint8_t[]> buffer = nullptr;
-
     EPUB_PROFILE_START(UnzipperOpenFile);
     auto res = epubUnzipper_.openFile(completeFilePath);
     EPUB_PROFILE_END(UnzipperOpenFile);
@@ -90,7 +88,7 @@ auto EPubFile::getFile(const std::string &completeFilePath)
 
         if (size > 0) {
             uint32_t bufferSize = size + 1;
-            buffer = SpiRamArrayPtr<uint8_t>(bufferSize);
+            auto buffer = SpiRamArrayPtr<uint8_t>(bufferSize);
             buffer[size] = 0; // Pugixml requires null termination
 
             if (buffer != nullptr) {

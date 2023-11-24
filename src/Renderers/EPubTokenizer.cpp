@@ -1914,7 +1914,7 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint32_t len) -> bool 
                         nextByte();
                     }
                 } while ((curChar > ' ') &&
-                         ((textCharCount_ < maxTextTokenCharSize_) || (curChar >= 0x80U)));
+                         ((textCharCount_ < maxTextTokenCharSize_) || ((curChar & 0xC0U) == 0x80)));
 
                 // The last test of the while above is to get a complete UTF8 multi-bytes
                 // character if the maximum word size is reached
