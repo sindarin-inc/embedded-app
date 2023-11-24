@@ -1733,6 +1733,7 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
 auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint32_t len) -> bool {
 
     uint32_t streamOffset = currentStreamOffset_;
+    uint32_t lastIncrement = 0;
 
     // REND_WLOG("Started at offset: %" PRIu32, streamOffset);
 
@@ -1740,20 +1741,22 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint32_t len) -> bool 
 
     // Keep it DRY
 
-    auto nextByte = [&curChar, &str, &len, &streamOffset, this]() -> void {
+    auto nextByte = [&curChar, &str, &len, &streamOffset, &lastIncrement, this]() -> void {
         if (len == 0) {
             curChar = 0;
         } else {
-            if (false && (len >= 3) && (str[0] == ((pugi::char_t)0xE3)) &&
+            if ((len >= 3) && (str[0] == ((pugi::char_t)0xE3)) &&
                 (str[1] == ((pugi::char_t)0x80)) && (str[2] == ((pugi::char_t)0x80))) {
                 curChar = ' ';
                 str += 3;
                 len -= 3;
-                streamOffset += 3;
+                streamOffset += lastIncrement;
+                lastIncrement = 3;
             } else {
                 curChar = *str++;
                 len--;
-                streamOffset++;
+                streamOffset += lastIncrement;
+                lastIncrement = 1;
             }
             if (backwards_) {
                 currentTxtOffset_++;

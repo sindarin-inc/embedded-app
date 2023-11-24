@@ -34,7 +34,7 @@ The renderer, when called to generate a page, checks for the presence of a tailo
 ---
 **The issue**: `space` character is not used. U+3000 is used to create some gap at the beginning of paragraphs. 
 
-**The solution**: 
+**The solution**: The `nextByte()` lambda in EPubTokenizer translates the U+3000 as a space for the parsing process. In the IBMFFont driver, U+3000 is now processed as a space too (maybe not required as it is translated in the `nextByte()` lambda)
 
 ---
 **The Issue**: Sequences of CJK glyphs are often longer than the space available in a single line. Cutting the sequence arbitrarily may cause ponctuation characters to appear at wrong places.
