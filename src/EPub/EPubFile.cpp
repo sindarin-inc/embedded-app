@@ -88,8 +88,7 @@ auto EPubFile::getFile(const std::string &completeFilePath)
 
         if (size > 0) {
             uint32_t bufferSize = size + 1;
-            // buffer = SpiRamArrayPtr<uint8_t>(bufferSize);
-            auto buffer = std::make_unique<uint8_t[]>(bufferSize);
+            auto buffer = SpiRamArrayPtr<uint8_t>(bufferSize);
             buffer[size] = 0; // Pugixml requires null termination
 
             if (buffer != nullptr) {
