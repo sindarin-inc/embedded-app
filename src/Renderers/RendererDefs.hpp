@@ -89,7 +89,7 @@ static constexpr uint16_t MAX_BYTES_TO_RETRIEVE =
     (MAX_BYTES_PER_PARAGRAPH + MAX_BYTES_PER_DISPLAY_PAGE);
 static constexpr uint16_t CSTR_POOL_SIZE = 2000;
 static constexpr uint16_t TOKENS_SIZE = 500;
-static constexpr uint16_t MAX_BYTES_PER_LINE = 200;
+static constexpr uint16_t MAX_CHARS_PER_LINE = 200;
 static constexpr uint16_t LINES_SIZE = 36;
 static constexpr uint16_t PAGE_INDEX_SIZE = 500;
 
@@ -186,7 +186,7 @@ struct Token {
     // This basically gives each token knowledge of where the paragraph
     // start is for where it's located. It's useful for looking backwards
     // while rendering a back page command.
-    const char *cStr;
+    const char32_t *cStr;
     std::shared_ptr<BMPImage> picture;
     StreamPlace streamPlace;
     uint16_t pixWidth;  // Width in pixels. Used with pictures and text tokens
@@ -206,9 +206,9 @@ struct LineInfo {
 #pragma pack(pop)
 
 using TokensArray = std::array<Token, TOKENS_SIZE>;
-using CStrPool = std::array<char, CSTR_POOL_SIZE>;
+using CStrPool = std::array<char32_t, CSTR_POOL_SIZE>;
 
-using Line = std::array<char, MAX_BYTES_PER_LINE>;
+using Line = std::array<char32_t, MAX_CHARS_PER_LINE>;
 using Lines = std::array<LineInfo, LINES_SIZE>;
 
 using PageIndex = std::array<uint32_t, PAGE_INDEX_SIZE>;

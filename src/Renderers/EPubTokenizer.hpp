@@ -148,8 +148,8 @@ private:
     // clang-format on
 
     using Tags = SpiramMap<SpiramString, Tag>;
-    using Entities = SpiramMap<SpiramString, const char *>;
-    using Characters = SpiramMap<SpiramString, const char *>;
+    using Entities = SpiramMap<SpiramString, const char32_t>;
+    using Characters = SpiramMap<SpiramString, const char32_t>;
 
     // Hash HTML tags
     static Tags tags;
@@ -225,18 +225,18 @@ private:
 
     bool inTableRow_;
 
-    static const constexpr char *LEVEL_CHAR = "-o-o-";
+    static const constexpr char32_t *LEVEL_CHAR = U"-o-o-";
 
     // Could eventually be made smaller.
     // For now, used only for bracketing <a> tags pcdata
-    char preText_[21];
-    char postText_[21];
+    char32_t preText_[21];
+    char32_t postText_[21];
 
     // used to transform HTML character entities to their UTF8 char.
     char utf8Ch_[6];
     auto toUtf8(uint32_t val) -> char *;
 
-    [[nodiscard]] auto getCharEntity(const char *str) -> std::pair<const char *, const char *>;
+    [[nodiscard]] auto getCharEntity(const char *str) -> std::pair<char32_t, const char *>;
     [[nodiscard]] auto loadXHTMLAt(Idx spineIdx) -> pugi::xml_document &;
     [[nodiscard]] auto interpret(pugi::xml_node node) -> bool;
     [[nodiscard]] auto addStrToPage(const pugi::char_t *str, uint32_t len) -> bool;
@@ -259,12 +259,24 @@ private:
         return true;
     }
 
+    [[nodiscard]] static inline auto isSpaces(const char32_t *cstr) -> bool {
+        while (*cstr) {
+            if (!isspace(*cstr)) {
+                if ((*cstr != U'\U000000A0') && (*cstr != U'\U00003000')) {
+                    return false;
+                }
+            }
+            cstr++;
+        }
+        return true;
+    }
+
     // Called when it's time to close the last textToken, if there is any waiting to be closed.
     // Returns true if page is completed.
     auto closeTextToken(bool addPostText = false) -> bool {
         if (textToken_ != nullptr) {
             if (addPostText && (postText_[0] != '\0')) {
-                tokens_.addBytes(*textToken_, postText_);
+                tokens_.addChars(*textToken_, postText_);
             }
             tokens_.endOfCStr();
             lastToken_ = textToken_;
@@ -276,8 +288,8 @@ private:
         }
     }
 
-    void startNewPageWithToken(Token &token, const char *str, uint8_t strSize);
+    void startNewPageWithToken(Token &token, const char32_t *str, uint8_t strSize);
 
-    auto addTokenToPage(Token &token, const char *str = nullptr, uint8_t strSize = 0) -> bool;
+    auto addTokenToPage(Token &token, const char32_t *str = nullptr, uint8_t strSize = 0) -> bool;
     auto findNodeEndOffset(pugi::xml_node node) -> uint32_t;
 };

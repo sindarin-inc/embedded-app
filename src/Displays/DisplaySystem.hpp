@@ -170,14 +170,29 @@ public:
 
     // MARK: - Text rendering code
     auto getFont() -> Font *;
+
     void drawSingleLineOfText(const std::string &line, int x, int y, bool inverted = false);
+    void drawSingleLineOfText(const std::u32string &line, int x, int y, bool inverted = false);
+
     void drawSingleLineOfCenteredText(const std::string &line);
+    void drawSingleLineOfCenteredText(const std::u32string &line);
+
     void getTextSize(const std::string &buffer, uint16_t *w, uint16_t *h);
+    void getTextSize(const std::u32string &buffer, uint16_t *w, uint16_t *h);
+
     auto getTextHeight() -> int;
+
     auto getTextHeight(const std::string &buffer) -> int;
+    auto getTextHeight(const std::u32string &buffer) -> int;
+
     auto getTextWidth(const std::string &buffer) -> int;
+    auto getTextWidth(const std::u32string &buffer) -> int;
 
     inline auto getTextWidthQuick(const char *buffer) -> int {
+        return static_cast<IBMFFont *>(font_)->getTextWidthQuick(buffer);
+    }
+
+    inline auto getTextWidthQuick(const char32_t *buffer) -> int {
         return static_cast<IBMFFont *>(font_)->getTextWidthQuick(buffer);
     }
 

@@ -3,7 +3,7 @@
 // Add a token to the tokens list. The null terminated string is *not* copied to the pool and is
 // expected to be a literal. The token may not be added if there is no space remaining in the tokens
 // array.
-auto Tokens::add(Token &token, const char *str, uint8_t length) -> bool {
+auto Tokens::add(Token &token, const char32_t *str, uint8_t length) -> bool {
     if (!isFull()) {
         if (str != nullptr) {
             token.cStr = str;
@@ -36,14 +36,14 @@ auto Tokens::add(Token &token, const char *str, uint8_t length) -> bool {
 
 // Add a byte to the token string. The byte is copied to the pool. The token's length is adjusted. A
 // call to endCStr() will be required to complete the null terminated string.
-void Tokens::addByte(Token &token, uint8_t b) {
-    // REND_WLOG("Adding byte %02" PRIX8 "H to last token at %" PRIu16 ".", b, cStrPoolCount_);
+void Tokens::addChar(Token &token, char32_t c) {
+    // REND_WLOG("Adding char %08" PRIX32 "H to last token at %" PRIu16 ".", c, cStrPoolCount_);
     if (!cStrIsFull()) {
         if (token.cStr == nullptr) {
             token.cStr = &cStrPool_[cStrPoolTailIdx_];
             token.length = 0;
         }
-        cStrPool_[cStrPoolTailIdx_] = b;
+        cStrPool_[cStrPoolTailIdx_] = c;
         token.length++; // must be done BEFORE the call to incrCStrPoolTailIdx()
         incrCStrPoolTailIdx(token);
     } else {
@@ -52,18 +52,18 @@ void Tokens::addByte(Token &token, uint8_t b) {
     }
 }
 
-void Tokens::addBytes(Token &token, const char *str) {
+void Tokens::addChars(Token &token, const char32_t *str) {
     while (*str) {
-        addByte(token, *str++);
+        addChar(token, *str++);
     }
 }
 
-void Tokens::insertBytesAtEnd(Token &token, const char *str) {
+void Tokens::insertCharsAtEnd(Token &token, const char32_t *str) {
     if (token.cStr != nullptr) {
         cStrPoolTailIdx_ = (cStrPoolTailIdx_ == 0) ? (CSTR_POOL_SIZE - 1) : cStrPoolTailIdx_ - 1;
 
         while (*str) {
-            addByte(token, *str++);
+            addChar(token, *str++);
         }
         endOfCStr();
     }
@@ -71,6 +71,38 @@ void Tokens::insertBytesAtEnd(Token &token, const char *str) {
 
 // Associate the string to the token. The string will be copied to the pool. No other characters can
 // be added to the token after it.
+void Tokens::addStr(Token &token, const std::u32string &str) {
+    // REND_WLOG("Adding byte %02" PRIX8 "H to last token at %" PRIu16 ".", b, cStrPoolCount_);
+
+    uint16_t len = str.length();
+    if ((getCStrPoolCount() + len) < (CSTR_POOL_SIZE - 2)) {
+        const char32_t *s = str.c_str();
+        if (token.cStr == nullptr) {
+            token.cStr = &cStrPool_[cStrPoolTailIdx_];
+        }
+        while (len--) {
+            cStrPool_[cStrPoolTailIdx_] = *s++;
+            token.length++; // must be done BEFORE the call to incrCStrPoolTailIdx(). DO NOT
+                            // OPTIMIZE!
+            incrCStrPoolTailIdx(token);
+        }
+        endOfCStr();
+
+        if constexpr (REND_DEBUG) {
+            if (std::char_traits<char32_t>::length(token.cStr) != token.length) {
+                REND_ELOG("Hum... token length wrong: %zu vs %" PRIu16, strlen(token.cStr),
+                          token.length);
+            }
+            // log_d("After: tokensCount_: %" PRIu16 ", token length: %" PRIu16
+            //       ", cStrPoolCount_: %" PRIu16,
+            //       tokensCount_, token.length, cStrPoolCount_);
+        }
+    } else {
+        log_e("cStrPool_[] is too small!");
+        REND_EXIT_SIM;
+    }
+}
+
 void Tokens::addStr(Token &token, const std::string &str) {
     // REND_WLOG("Adding byte %02" PRIX8 "H to last token at %" PRIu16 ".", b, cStrPoolCount_);
 
@@ -89,7 +121,7 @@ void Tokens::addStr(Token &token, const std::string &str) {
         endOfCStr();
 
         if constexpr (REND_DEBUG) {
-            if (strlen(token.cStr) != token.length) {
+            if (std::char_traits<char32_t>::length(token.cStr) != token.length) {
                 REND_ELOG("Hum... token length wrong: %zu vs %" PRIu16, strlen(token.cStr),
                           token.length);
             }

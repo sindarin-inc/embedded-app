@@ -11,8 +11,8 @@ Here is the list of elements that were problematic and their correction done in 
 **The solution**: An application named font-generator is responsible of generating a tailored font for a EPub. The font contains only the characters in use in the book using the GNU Unifont bitmap glyphs. The font is located (by hand for now) in the `ibmf/font.ibmf` path in the EPub.
 
 - The CJK characters are located in the following code point groups: `U+2E80..U+9FFF`, `U+FE10..U+FE6F`, `U+FF00..U+FFEF`
-- The characters used for CJK have their `advance` field set to `8` or `16` pixels wide.
-- The non-CJK characters get their `advance` field set to `bitmap_width + 1` pixels wide.
+- The characters used for CJK have their `advance` field set to `16` pixels wide (monospaced).
+- The non-CJK characters get their `advance` field set to `bitmap_width + 1` pixels wide (proportional).
 
 ### EPubFile class adjustments
 
@@ -42,6 +42,6 @@ The renderer, when called to generate a page, checks for the presence of a tailo
 **The solution**: 
 
 ---
-**The issue**: CJK glyphs are not well processed by the optical kerning algorithm.
+**The issue**: CJK glyphs must be presented as monospaced, not proportional.
 
 **The solution**: When a font is loaded from the EPub, the optical kerning algorithm is disabled.

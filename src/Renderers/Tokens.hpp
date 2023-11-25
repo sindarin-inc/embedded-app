@@ -29,7 +29,7 @@ private:
 
         if (cStrPoolTailIdx_ == 0) {
             if ((getCStrPoolCount() + token.length) < (CSTR_POOL_SIZE - 2)) {
-                memcpy(&cStrPool_[0], token.cStr, token.length);
+                memcpy(&cStrPool_[0], token.cStr, token.length * 4);
                 token.cStr = &cStrPool_[0];
                 cStrPoolTailIdx_ = token.length;
             } else {
@@ -124,12 +124,13 @@ public:
 
     [[nodiscard]] inline auto isFull() const -> bool { return (cStrIsFull() || tokensIsFull()); }
 
-    [[nodiscard]] auto add(Token &token, const char *str = nullptr, uint8_t length = 0) -> bool;
+    [[nodiscard]] auto add(Token &token, const char32_t *str = nullptr, uint8_t length = 0) -> bool;
 
-    void addByte(Token &token, uint8_t b);
-    void addBytes(Token &token, const char *str);
+    void addChar(Token &token, char32_t c);
+    void addChars(Token &token, const char32_t *str);
+    void addStr(Token &token, const std::u32string &str);
     void addStr(Token &token, const std::string &str);
-    void insertBytesAtEnd(Token &token, const char *str);
+    void insertCharsAtEnd(Token &token, const char32_t *str);
 
     // Adds a null character at the end of a cStr that is in the cStr pool
     inline void endOfCStr() {

@@ -19,6 +19,7 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, St
     -> std::pair<StreamPlace, StreamPlace> {
 
     uint32_t streamRelativeOffset = 0;
+    uint32_t lastIncrement = 0;
 
     lastToken_ = nullptr;
     tokens_.clear();
@@ -41,12 +42,15 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, St
 
     // Keep it DRY
 
-    uint8_t curChar = stream_->getNextByte();
+    char32_t curChar;
 
-    auto nextByte = [this, &curChar, &streamRelativeOffset]() -> void {
+    auto nextByte = [this, &curChar, &streamRelativeOffset, &lastIncrement]() -> void {
         curChar = stream_->getNextByte();
-        streamRelativeOffset++;
+        streamRelativeOffset += lastIncrement;
+        lastIncrement = 1;
     };
+
+    nextByte();
 
     // If we go backwards, get rid of the first bytes that could be the end of a line/paragraph
     if (backwards && (fromPlace.getOffset() != 0)) {
@@ -85,20 +89,20 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, St
         // REND_WLOG("Current Character: %c (%02" PRIX8 "H)",
         //       (((curChar >= ' ') && (curChar < 127)) ? curChar : ' '), curChar);
 
-        if (curChar == '-') {
+        if (curChar == U'-') {
             nextByte();
-            if (curChar != '-') {
+            if (curChar != U'-') {
                 newToken.tokenId = TokenId::HYPHEN;
-                pageCompleted = addTokenToPage(newToken, backwards, "-", 1);
+                pageCompleted = addTokenToPage(newToken, backwards, U"-", 1);
             } else {
                 nextByte();
-                if (curChar != '-') {
+                if (curChar != U'-') {
                     newToken.tokenId = TokenId::ENDASH;
-                    pageCompleted = addTokenToPage(newToken, backwards, "--", 2);
+                    pageCompleted = addTokenToPage(newToken, backwards, U"--", 2);
                 } else {
                     nextByte();
                     newToken.tokenId = TokenId::EMDASH;
-                    pageCompleted = addTokenToPage(newToken, backwards, "---", 3);
+                    pageCompleted = addTokenToPage(newToken, backwards, U"---", 3);
                 }
             }
             lastToken_ = &newToken;
@@ -112,7 +116,7 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, St
                     textCharCount += 1;
                 }
                 if (!tokens_.cStrIsFull()) {
-                    tokens_.addByte(newToken, curChar);
+                    tokens_.addChar(newToken, curChar);
                 } else {
                     break;
                 }

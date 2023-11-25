@@ -147,6 +147,8 @@ auto DisplaySystem::getFont() -> Font * { return font_; }
 // Eventually, we could add an optional argument at the end to wrap the text
 // and return whether the text was wrapped or not.
 // But that's for another day.
+
+// UTF-8 version
 void DisplaySystem::drawSingleLineOfText(const std::string &line, int x, int y, bool inverted) {
     if (font_ != nullptr) {
         if (font_->isA(FontType::GFX)) {
@@ -178,7 +180,29 @@ void DisplaySystem::drawSingleLineOfText(const std::string &line, int x, int y, 
     }
 }
 
+// char32_t version
+void DisplaySystem::drawSingleLineOfText(const std::u32string &line, int x, int y, bool inverted) {
+    if ((font_ != nullptr) && font_->isA(FontType::IBMF)) {
+        gfxClass_->startWrite();
+        ibmf_defs::Bitmap canvas;
+        canvas.pixels = canvasBuffer_;
+        canvas.dim = ibmf_defs::Dim(canvasWidth_, canvasHeight_);
+        static_cast<IBMFFont *>(font_)->drawSingleLineOfText(
+            canvas, Pos(xOffset(x), yOffset(y + getTextHeight() - lineSpacing_ - 3)), line,
+            inverted ? !invertedDisplay_ : invertedDisplay_);
+        gfxClass_->endWrite();
+    }
+}
+
+// UTF-8 version
 void DisplaySystem::drawSingleLineOfCenteredText(const std::string &line) {
+    this->drawSingleLineOfText(
+        line, this->xAbsolute(this->xAbsoluteCenter() - this->getTextWidth(line.c_str()) / 2),
+        this->yAbsolute(this->yAbsoluteCenter() - this->getTextHeight() / 2));
+}
+
+// char32_t version
+void DisplaySystem::drawSingleLineOfCenteredText(const std::u32string &line) {
     this->drawSingleLineOfText(
         line, this->xAbsolute(this->xAbsoluteCenter() - this->getTextWidth(line.c_str()) / 2),
         this->yAbsolute(this->yAbsoluteCenter() - this->getTextHeight() / 2));
@@ -194,6 +218,14 @@ void DisplaySystem::getTextSize(const std::string &buffer, uint16_t *w, uint16_t
             *w = dim.width;
             *h = dim.height;
         }
+    }
+}
+
+void DisplaySystem::getTextSize(const std::u32string &buffer, uint16_t *w, uint16_t *h) {
+    if ((font_ != nullptr) && font_->isA(FontType::IBMF)) {
+        Dim dim = static_cast<IBMFFont *>(font_)->getTextSize(buffer);
+        *w = dim.width;
+        *h = dim.height;
     }
 }
 
@@ -213,6 +245,14 @@ auto DisplaySystem::getTextHeight(const std::string &buffer) -> int {
     return h;
 }
 
+auto DisplaySystem::getTextHeight(const std::u32string &buffer) -> int {
+    uint16_t h = 0;
+    if ((font_ != nullptr) && font_->isA(FontType::IBMF)) {
+        h = static_cast<IBMFFont *>(font_)->getTextHeight(buffer);
+    }
+    return h;
+}
+
 auto DisplaySystem::getTextWidth(const std::string &buffer) -> int {
     uint16_t w = 0;
     if (font_ != nullptr) {
@@ -223,6 +263,14 @@ auto DisplaySystem::getTextWidth(const std::string &buffer) -> int {
         } else {
             w = static_cast<IBMFFont *>(font_)->getTextWidth(buffer);
         }
+    }
+    return w;
+}
+
+auto DisplaySystem::getTextWidth(const std::u32string &buffer) -> int {
+    uint16_t w = 0;
+    if ((font_ != nullptr) && font_->isA(FontType::IBMF)) {
+        w = static_cast<IBMFFont *>(font_)->getTextWidth(buffer);
     }
     return w;
 }

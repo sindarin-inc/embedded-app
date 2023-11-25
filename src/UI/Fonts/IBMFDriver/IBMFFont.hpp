@@ -30,6 +30,7 @@ private:
     /// @param handler Call. The callback closure handler.
     ///
     auto ligKernUTF8Map(const std::string &line, LigKernMappingHandler handler) const -> void;
+    auto ligKernU32Map(const std::u32string &line, LigKernMappingHandler handler) const -> void;
 
 public:
     IBMFFont(IBMFFontLow &ibmFont, int index) noexcept
@@ -86,15 +87,22 @@ public:
 
     void drawSingleLineOfText(ibmf_defs::Bitmap &canvas, ibmf_defs::Pos pos,
                               const std::string &line, bool inverted) const;
+    void drawSingleLineOfText(ibmf_defs::Bitmap &canvas, ibmf_defs::Pos pos,
+                              const std::u32string &line, bool inverted) const;
+
     auto getTextSize(const std::string &buffer) -> ibmf_defs::Dim;
+    auto getTextSize(const std::u32string &buffer) -> ibmf_defs::Dim;
+
     auto getTextWidth(const std::string &buffer) -> int;
+    auto getTextWidth(const std::u32string &buffer) -> int;
 
     auto getTextHeight(const std::string &buffer) -> int;
+    auto getTextHeight(const std::u32string &buffer) -> int;
 
     // Non-validating algorithm
     auto toChar32(const char **str) -> char32_t;
 
-    // inline auto getTextWidthQuick(const char *buffer) -> int { return getTextWidth(buffer); }
+    // UTF-8 version
     inline auto getTextWidthQuick(const char *buffer) -> int16_t {
         if constexpr (IBMF_TRACING) {
             LOGD("getTextWidthQuick()");
@@ -109,6 +117,31 @@ public:
             int16_t xoff;
             FIX16 advance;
             GlyphCode glyphCode = font_->translate(toChar32(&buffer));
+
+            if (face->getGlyphHorizontalMetrics(glyphCode, &xoff, &advance)) {
+                width +=
+                    (*buffer == '\0') ? (face->getGlyphWidth(glyphCode) - xoff) : (advance >> 6);
+            }
+        }
+        // log_w(" width: %" PRIi16, width);
+        return width;
+    }
+
+    // char32_t version
+    inline auto getTextWidthQuick(const char32_t *buffer) -> int16_t {
+        if constexpr (IBMF_TRACING) {
+            LOGD("getTextWidthQuick()");
+        }
+
+        int16_t width = 0;
+        auto face = font_->getFace(faceIndex_);
+
+        // log_w("word: %s", buffer);
+
+        while (*buffer) {
+            int16_t xoff;
+            FIX16 advance;
+            GlyphCode glyphCode = font_->translate(*buffer++);
 
             if (face->getGlyphHorizontalMetrics(glyphCode, &xoff, &advance)) {
                 width +=

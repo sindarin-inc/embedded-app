@@ -25,295 +25,295 @@ EPubTokenizer::Tags EPubTokenizer::tags
 
 EPubTokenizer::Entities EPubTokenizer::entities 
   = {
-    {"nbsp",   "\xC2\xA0"},     // no-break space = non-breaking space, U+00A0 ISOnum
-    {"iexcl",  "\xC2\xA1"},     // inverted exclamation mark, U+00A1 ISOnum
-    {"cent",   "\xC2\xA2"},     // cent sign, U+00A2 ISOnum
-    {"pound",  "\xC2\xA3"},     // pound sign, U+00A3 ISOnum
-    {"curren", "\xC2\xA4"},     // currency sign, U+00A4 ISOnum
-    {"yen",    "\xC2\xA5"},     // yen sign = yuan sign, U+00A5 ISOnum
-    {"brvbar", "\xC2\xA6"},     // broken bar = broken vertical bar, U+00A6 ISOnum
-    {"sect",   "\xC2\xA7"},     // section sign, U+00A7 ISOnum
-    {"uml",    "\xC2\xA8"},     // diaeresis = spacing diaeresis, U+00A8 ISOdia
-    {"copy",   "\xC2\xA9"},     // copyright sign, U+00A9 ISOnum
-    {"ordf",   "\xC2\xAA"},     // feminine ordinal indicator, U+00AA ISOnum
-    {"laquo",  "\xC2\xAB"},     // left-pointing double angle quotation mark = left pointing guillemet, U+00AB ISOnum
-    {"not",    "\xC2\xAC"},     // not sign = angled dash, U+00AC ISOnum
-    {"shy",    "\xC2\xAD"},     // soft hyphen = discretionary hyphen, U+00AD ISOnum
-    {"reg",    "\xC2\xAE"},     // registered sign = registered trade mark sign, U+00AE ISOnum
-    {"macr",   "\xC2\xAF"},     // macron = spacing macron = overline = APL overbar, U+00AF ISOdia
-    {"deg",    "\xC2\xB0"},     // degree sign, U+00B0 ISOnum
-    {"plusmn", "\xC2\xB1"},     // plus-minus sign = plus-or-minus sign, U+00B1 ISOnum
-    {"sup2",   "\xC2\xB2"},     // superscript two = superscript digit two = squared, U+00B2 ISOnum
-    {"sup3",   "\xC2\xB3"},     // superscript three = superscript digit three = cubed, U+00B3 ISOnum
-    {"acute",  "\xC2\xB4"},     // acute accent = spacing acute, U+00B4 ISOdia
-    {"micro",  "\xC2\xB5"},     // micro sign, U+00B5 ISOnum
-    {"para",   "\xC2\xB6"},     // pilcrow sign = paragraph sign, U+00B6 ISOnum
-    {"middot", "\xC2\xB7"},     // middle dot = Georgian comma = Greek middle dot, U+00B7 ISOnum
-    {"cedil",  "\xC2\xB8"},     // cedilla = spacing cedilla, U+00B8 ISOdia
-    {"sup1",   "\xC2\xB9"},     // superscript one = superscript digit one, U+00B9 ISOnum
-    {"ordm",   "\xC2\xBA"},     // masculine ordinal indicator, U+00BA ISOnum
-    {"raquo",  "\xC2\xBB"},     // right-pointing double angle quotation mark = right pointing guillemet, U+00BB ISOnum
-    {"frac14", "\xC2\xBC"},     // vulgar fraction one quarter = fraction one quarter, U+00BC ISOnum
-    {"frac12", "\xC2\xBD"},     // vulgar fraction one half = fraction one half, U+00BD ISOnum
-    {"frac34", "\xC2\xBE"},     // vulgar fraction three quarters = fraction three quarters, U+00BE ISOnum
-    {"iquest", "\xC2\xBF"},     // inverted question mark = turned question mark, U+00BF ISOnum
-    {"Agrave", "\xC3\x80"},     // latin capital letter A with grave = latin capital letter A grave, U+00C0 ISOlat1
-    {"Aacute", "\xC3\x81"},     // latin capital letter A with acute, U+00C1 ISOlat1
-    {"Acirc",  "\xC3\x82"},     // latin capital letter A with circumflex, U+00C2 ISOlat1
-    {"Atilde", "\xC3\x83"},     // latin capital letter A with tilde, U+00C3 ISOlat1
-    {"Auml",   "\xC3\x84"},     // latin capital letter A with diaeresis, U+00C4 ISOlat1
-    {"Aring",  "\xC3\x85"},     // latin capital letter A with ring above = latin capital letter A ring, U+00C5 ISOlat1
-    {"AElig",  "\xC3\x86"},     // latin capital letter AE = latin capital ligature AE, U+00C6 ISOlat1
-    {"Ccedil", "\xC3\x87"},     // latin capital letter C with cedilla, U+00C7 ISOlat1
-    {"Egrave", "\xC3\x88"},     // latin capital letter E with grave, U+00C8 ISOlat1
-    {"Eacute", "\xC3\x89"},     // latin capital letter E with acute, U+00C9 ISOlat1
-    {"Ecirc",  "\xC3\x8A"},     // latin capital letter E with circumflex, U+00CA ISOlat1
-    {"Euml",   "\xC3\x8B"},     // latin capital letter E with diaeresis, U+00CB ISOlat1
-    {"Igrave", "\xC3\x8C"},     // latin capital letter I with grave, U+00CC ISOlat1
-    {"Iacute", "\xC3\x8D"},     // latin capital letter I with acute, U+00CD ISOlat1
-    {"Icirc",  "\xC3\x8E"},     // latin capital letter I with circumflex, U+00CE ISOlat1
-    {"Iuml",   "\xC3\x8F"},     // latin capital letter I with diaeresis, U+00CF ISOlat1
-    {"ETH",    "\xC3\x90"},     // latin capital letter ETH, U+00D0 ISOlat1
-    {"Ntilde", "\xC3\x91"},     // latin capital letter N with tilde, U+00D1 ISOlat1
-    {"Ograve", "\xC3\x92"},     // latin capital letter O with grave, U+00D2 ISOlat1
-    {"Oacute", "\xC3\x93"},     // latin capital letter O with acute, U+00D3 ISOlat1
-    {"Ocirc",  "\xC3\x94"},     // latin capital letter O with circumflex, U+00D4 ISOlat1
-    {"Otilde", "\xC3\x95"},     // latin capital letter O with tilde, U+00D5 ISOlat1
-    {"Ouml",   "\xC3\x96"},     // latin capital letter O with diaeresis, U+00D6 ISOlat1
-    {"times",  "\xC3\x97"},     // multiplication sign, U+00D7 ISOnum
-    {"Oslash", "\xC3\x98"},     // latin capital letter O with stroke = latin capital letter O slash, U+00D8 ISOlat1
-    {"Ugrave", "\xC3\x99"},     // latin capital letter U with grave, U+00D9 ISOlat1
-    {"Uacute", "\xC3\x9A"},     // latin capital letter U with acute, U+00DA ISOlat1
-    {"Ucirc",  "\xC3\x9B"},     // latin capital letter U with circumflex, U+00DB ISOlat1
-    {"Uuml",   "\xC3\x9C"},     // latin capital letter U with diaeresis, U+00DC ISOlat1
-    {"Yacute", "\xC3\x9D"},     // latin capital letter Y with acute, U+00DD ISOlat1
-    {"THORN",  "\xC3\x9E"},     // latin capital letter THORN, U+00DE ISOlat1
-    {"szlig",  "\xC3\x9F"},     // latin small letter sharp s = ess-zed, U+00DF ISOlat1
-    {"agrave", "\xC3\xA0"},     // latin small letter a with grave = latin small letter a grave, U+00E0 ISOlat1
-    {"aacute", "\xC3\xA1"},     // latin small letter a with acute, U+00E1 ISOlat1
-    {"acirc",  "\xC3\xA2"},     // latin small letter a with circumflex, U+00E2 ISOlat1
-    {"atilde", "\xC3\xA3"},     // latin small letter a with tilde, U+00E3 ISOlat1
-    {"auml",   "\xC3\xA4"},     // latin small letter a with diaeresis, U+00E4 ISOlat1
-    {"aring",  "\xC3\xA5"},     // latin small letter a with ring above = latin small letter a ring, U+00E5 ISOlat1
-    {"aelig",  "\xC3\xA6"},     // latin small letter ae = latin small ligature ae, U+00E6 ISOlat1
-    {"ccedil", "\xC3\xA7"},     // latin small letter c with cedilla, U+00E7 ISOlat1
-    {"egrave", "\xC3\xA8"},     // latin small letter e with grave, U+00E8 ISOlat1
-    {"eacute", "\xC3\xA9"},     // latin small letter e with acute, U+00E9 ISOlat1
-    {"ecirc",  "\xC3\xAA"},     // latin small letter e with circumflex, U+00EA ISOlat1
-    {"euml",   "\xC3\xAB"},     // latin small letter e with diaeresis, U+00EB ISOlat1
-    {"igrave", "\xC3\xAC"},     // latin small letter i with grave, U+00EC ISOlat1
-    {"iacute", "\xC3\xAD"},     // latin small letter i with acute, U+00ED ISOlat1
-    {"icirc",  "\xC3\xAE"},     // latin small letter i with circumflex, U+00EE ISOlat1
-    {"iuml",   "\xC3\xAF"},     // latin small letter i with diaeresis, U+00EF ISOlat1
-    {"eth",    "\xC3\xB0"},     // latin small letter eth, U+00F0 ISOlat1
-    {"ntilde", "\xC3\xB1"},     // latin small letter n with tilde, U+00F1 ISOlat1
-    {"ograve", "\xC3\xB2"},     // latin small letter o with grave, U+00F2 ISOlat1
-    {"oacute", "\xC3\xB3"},     // latin small letter o with acute, U+00F3 ISOlat1
-    {"ocirc",  "\xC3\xB4"},     // latin small letter o with circumflex, U+00F4 ISOlat1
-    {"otilde", "\xC3\xB5"},     // latin small letter o with tilde, U+00F5 ISOlat1
-    {"ouml",   "\xC3\xB6"},     // latin small letter o with diaeresis, U+00F6 ISOlat1
-    {"divide", "\xC3\xB7"},     // division sign, U+00F7 ISOnum
-    {"oslash", "\xC3\xB8"},     // latin small letter o with stroke, = latin small letter o slash, U+00F8 ISOlat1
-    {"ugrave", "\xC3\xB9"},     // latin small letter u with grave, U+00F9 ISOlat1
-    {"uacute", "\xC3\xBA"},     // latin small letter u with acute, U+00FA ISOlat1
-    {"ucirc",  "\xC3\xBB"},     // latin small letter u with circumflex, U+00FB ISOlat1
-    {"uuml",   "\xC3\xBC"},     // latin small letter u with diaeresis, U+00FC ISOlat1
-    {"yacute", "\xC3\xBD"},     // latin small letter y with acute, U+00FD ISOlat1
-    {"thorn",  "\xC3\xBE"},     // latin small letter thorn, U+00FE ISOlat1
-    {"yuml",   "\xC3\xBF"},     // latin small letter y with diaeresis, U+00FF ISOlat1
-    {"quot",   R"(")"},         // quotation mark, U+0022 ISOnum
-    {"amp",    R"(&)"},         // ampersand, U+0026 ISOnum
-    {"lt",     R"(<)"},         // less-than sign, U+003C ISOnum
-    {"gt",     R"(>)"},         // greater-than sign, U+003E ISOnum
-    {"apos",   R"(')"},         // apostrophe = APL quote, U+0027 ISOnum
-    {"OElig",  "\xC5\x92"},     // latin capital ligature OE, U+0152 ISOlat2
-    {"oelig",  "\xC5\x93"},     // latin small ligature oe, U+0153 ISOlat2
-    {"Scaron", "\xC5\xA0"},     // latin capital letter S with caron, U+0160 ISOlat2
-    {"scaron", "\xC5\xA1"},     // latin small letter s with caron, U+0161 ISOlat2
-    {"Yuml",   "\xC5\xB8"},     // latin capital letter Y with diaeresis, U+0178 ISOlat2
-    {"circ",   "\xCB\x86"},     // modifier letter circumflex accent, U+02C6 ISOpub
-    {"tilde",  "\xCB\x9C"},     // small tilde, U+02DC ISOdia
-    {"ensp",   "\xE2\x80\x82"}, // en space, U+2002 ISOpub
-    {"emsp",   "\xE2\x80\x83"}, // em space, U+2003 ISOpub
-    {"thinsp", "\xE2\x80\x89"}, // thin space, U+2009 ISOpub
-    {"zwnj",   "\xE2\x80\x8C"}, // zero width non-joiner, U+200C NEW RFC 2070
-    {"zwj",    "\xE2\x80\x8D"}, // zero width joiner, U+200D NEW RFC 2070
-    {"lrm",    "\xE2\x80\x8E"}, // left-to-right mark, U+200E NEW RFC 2070
-    {"rlm",    "\xE2\x80\x8F"}, // right-to-left mark, U+200F NEW RFC 2070
-    {"ndash",  "\xE2\x80\x93"}, // en dash, U+2013 ISOpub
-    {"mdash",  "\xE2\x80\x94"}, // em dash, U+2014 ISOpub
-    {"lsquo",  "\xE2\x80\x98"}, // left single quotation mark, U+2018 ISOnum
-    {"rsquo",  "\xE2\x80\x99"}, // right single quotation mark, U+2019 ISOnum
-    {"sbquo",  "\xE2\x80\x9A"}, // single low-9 quotation mark, U+201A NEW
-    {"ldquo",  "\xE2\x80\x9C"}, // left double quotation mark,  U+201C ISOnum
-    {"rdquo",  "\xE2\x80\x9D"}, // right double quotation mark, U+201D ISOnum
-    {"bdquo",  "\xE2\x80\x9E"}, // double low-9 quotation mark, U+201E NEW
-    {"dagger", "\xE2\x80\xA0"}, // dagger, U+2020 ISOpub
-    {"Dagger", "\xE2\x80\xA1"}, // double dagger, U+2021 ISOpub
-    {"permil", "\xE2\x80\xB0"}, // per mille sign, U+2030 ISOtech
-    {"lsaquo", "\xE2\x80\xB9"}, // single left-pointing angle quotation mark, U+2039 ISO proposed
-    {"rsaquo", "\xE2\x80\xBA"}, // single right-pointing angle quotation mark, U+203A ISO proposed
-    {"euro",   "\xE2\x80\xAC"}, // euro sign, U+20AC NEW
+    {"nbsp",   U'\U000000A0'}, // no-break space = non-breaking space, U+00A0 ISOnum
+    {"iexcl",  U'\U000000A1'}, // inverted exclamation mark, U+00A1 ISOnum
+    {"cent",   U'\U000000A2'}, // cent sign, U+00A2 ISOnum
+    {"pound",  U'\U000000A3'}, // pound sign, U+00A3 ISOnum
+    {"curren", U'\U000000A4'}, // currency sign, U+00A4 ISOnum
+    {"yen",    U'\U000000A5'}, // yen sign = yuan sign, U+00A5 ISOnum
+    {"brvbar", U'\U000000A6'}, // broken bar = broken vertical bar, U+00A6 ISOnum
+    {"sect",   U'\U000000A7'}, // section sign, U+00A7 ISOnum
+    {"uml",    U'\U000000A8'}, // diaeresis = spacing diaeresis, U+00A8 ISOdia
+    {"copy",   U'\U000000A9'}, // copyright sign, U+00A9 ISOnum
+    {"ordf",   U'\U000000AA'}, // feminine ordinal indicator, U+00AA ISOnum
+    {"laquo",  U'\U000000AB'}, // left-pointing double angle quotation mark = left pointing guillemet, U+00AB ISOnum
+    {"not",    U'\U000000AC'}, // not sign = angled dash, U+00AC ISOnum
+    {"shy",    U'\U000000AD'}, // soft hyphen = discretionary hyphen, U+00AD ISOnum
+    {"reg",    U'\U000000AE'}, // registered sign = registered trade mark sign, U+00AE ISOnum
+    {"macr",   U'\U000000AF'}, // macron = spacing macron = overline = APL overbar, U+00AF ISOdia
+    {"deg",    U'\U000000B0'}, // degree sign, U+00B0 ISOnum
+    {"plusmn", U'\U000000B1'}, // plus-minus sign = plus-or-minus sign, U+00B1 ISOnum
+    {"sup2",   U'\U000000B2'}, // superscript two = superscript digit two = squared, U+00B2 ISOnum
+    {"sup3",   U'\U000000B3'}, // superscript three = superscript digit three = cubed, U+00B3 ISOnum
+    {"acute",  U'\U000000B4'}, // acute accent = spacing acute, U+00B4 ISOdia
+    {"micro",  U'\U000000B5'}, // micro sign, U+00B5 ISOnum
+    {"para",   U'\U000000B6'}, // pilcrow sign = paragraph sign, U+00B6 ISOnum
+    {"middot", U'\U000000B7'}, // middle dot = Georgian comma = Greek middle dot, U+00B7 ISOnum
+    {"cedil",  U'\U000000B8'}, // cedilla = spacing cedilla, U+00B8 ISOdia
+    {"sup1",   U'\U000000B9'}, // superscript one = superscript digit one, U+00B9 ISOnum
+    {"ordm",   U'\U000000BA'}, // masculine ordinal indicator, U+00BA ISOnum
+    {"raquo",  U'\U000000BB'}, // right-pointing double angle quotation mark = right pointing guillemet, U+00BB ISOnum
+    {"frac14", U'\U000000BC'}, // vulgar fraction one quarter = fraction one quarter, U+00BC ISOnum
+    {"frac12", U'\U000000BD'}, // vulgar fraction one half = fraction one half, U+00BD ISOnum
+    {"frac34", U'\U000000BE'}, // vulgar fraction three quarters = fraction three quarters, U+00BE ISOnum
+    {"iquest", U'\U000000BF'}, // inverted question mark = turned question mark, U+00BF ISOnum
+    {"Agrave", U'\U000000C0'}, // latin capital letter A with grave = latin capital letter A grave, U+00C0 ISOlat1
+    {"Aacute", U'\U000000C1'}, // latin capital letter A with acute, U+00C1 ISOlat1
+    {"Acirc",  U'\U000000C2'}, // latin capital letter A with circumflex, U+00C2 ISOlat1
+    {"Atilde", U'\U000000C3'}, // latin capital letter A with tilde, U+00C3 ISOlat1
+    {"Auml",   U'\U000000C4'}, // latin capital letter A with diaeresis, U+00C4 ISOlat1
+    {"Aring",  U'\U000000C5'}, // latin capital letter A with ring above = latin capital letter A ring, U+00C5 ISOlat1
+    {"AElig",  U'\U000000C6'}, // latin capital letter AE = latin capital ligature AE, U+00C6 ISOlat1
+    {"Ccedil", U'\U000000C7'}, // latin capital letter C with cedilla, U+00C7 ISOlat1
+    {"Egrave", U'\U000000C8'}, // latin capital letter E with grave, U+00C8 ISOlat1
+    {"Eacute", U'\U000000C9'}, // latin capital letter E with acute, U+00C9 ISOlat1
+    {"Ecirc",  U'\U000000CA'}, // latin capital letter E with circumflex, U+00CA ISOlat1
+    {"Euml",   U'\U000000CB'}, // latin capital letter E with diaeresis, U+00CB ISOlat1
+    {"Igrave", U'\U000000CC'}, // latin capital letter I with grave, U+00CC ISOlat1
+    {"Iacute", U'\U000000CD'}, // latin capital letter I with acute, U+00CD ISOlat1
+    {"Icirc",  U'\U000000CE'}, // latin capital letter I with circumflex, U+00CE ISOlat1
+    {"Iuml",   U'\U000000CF'}, // latin capital letter I with diaeresis, U+00CF ISOlat1
+    {"ETH",    U'\U000000D0'}, // latin capital letter ETH, U+00D0 ISOlat1
+    {"Ntilde", U'\U000000D1'}, // latin capital letter N with tilde, U+00D1 ISOlat1
+    {"Ograve", U'\U000000D2'}, // latin capital letter O with grave, U+00D2 ISOlat1
+    {"Oacute", U'\U000000D3'}, // latin capital letter O with acute, U+00D3 ISOlat1
+    {"Ocirc",  U'\U000000D4'}, // latin capital letter O with circumflex, U+00D4 ISOlat1
+    {"Otilde", U'\U000000D5'}, // latin capital letter O with tilde, U+00D5 ISOlat1
+    {"Ouml",   U'\U000000D6'}, // latin capital letter O with diaeresis, U+00D6 ISOlat1
+    {"times",  U'\U000000D7'}, // multiplication sign, U+00D7 ISOnum
+    {"Oslash", U'\U000000D8'}, // latin capital letter O with stroke = latin capital letter O slash, U+00D8 ISOlat1
+    {"Ugrave", U'\U000000D9'}, // latin capital letter U with grave, U+00D9 ISOlat1
+    {"Uacute", U'\U000000DA'}, // latin capital letter U with acute, U+00DA ISOlat1
+    {"Ucirc",  U'\U000000DB'}, // latin capital letter U with circumflex, U+00DB ISOlat1
+    {"Uuml",   U'\U000000DC'}, // latin capital letter U with diaeresis, U+00DC ISOlat1
+    {"Yacute", U'\U000000DD'}, // latin capital letter Y with acute, U+00DD ISOlat1
+    {"THORN",  U'\U000000DE'}, // latin capital letter THORN, U+00DE ISOlat1
+    {"szlig",  U'\U000000DF'}, // latin small letter sharp s = ess-zed, U+00DF ISOlat1
+    {"agrave", U'\U000000E0'}, // latin small letter a with grave = latin small letter a grave, U+00E0 ISOlat1
+    {"aacute", U'\U000000E1'}, // latin small letter a with acute, U+00E1 ISOlat1
+    {"acirc",  U'\U000000E2'}, // latin small letter a with circumflex, U+00E2 ISOlat1
+    {"atilde", U'\U000000E3'}, // latin small letter a with tilde, U+00E3 ISOlat1
+    {"auml",   U'\U000000E4'}, // latin small letter a with diaeresis, U+00E4 ISOlat1
+    {"aring",  U'\U000000E5'}, // latin small letter a with ring above = latin small letter a ring, U+00E5 ISOlat1
+    {"aelig",  U'\U000000E6'}, // latin small letter ae = latin small ligature ae, U+00E6 ISOlat1
+    {"ccedil", U'\U000000E7'}, // latin small letter c with cedilla, U+00E7 ISOlat1
+    {"egrave", U'\U000000E8'}, // latin small letter e with grave, U+00E8 ISOlat1
+    {"eacute", U'\U000000E9'}, // latin small letter e with acute, U+00E9 ISOlat1
+    {"ecirc",  U'\U000000EA'}, // latin small letter e with circumflex, U+00EA ISOlat1
+    {"euml",   U'\U000000EB'}, // latin small letter e with diaeresis, U+00EB ISOlat1
+    {"igrave", U'\U000000EC'}, // latin small letter i with grave, U+00EC ISOlat1
+    {"iacute", U'\U000000ED'}, // latin small letter i with acute, U+00ED ISOlat1
+    {"icirc",  U'\U000000EE'}, // latin small letter i with circumflex, U+00EE ISOlat1
+    {"iuml",   U'\U000000EF'}, // latin small letter i with diaeresis, U+00EF ISOlat1
+    {"eth",    U'\U000000F0'}, // latin small letter eth, U+00F0 ISOlat1
+    {"ntilde", U'\U000000F1'}, // latin small letter n with tilde, U+00F1 ISOlat1
+    {"ograve", U'\U000000F2'}, // latin small letter o with grave, U+00F2 ISOlat1
+    {"oacute", U'\U000000F3'}, // latin small letter o with acute, U+00F3 ISOlat1
+    {"ocirc",  U'\U000000F4'}, // latin small letter o with circumflex, U+00F4 ISOlat1
+    {"otilde", U'\U000000F5'}, // latin small letter o with tilde, U+00F5 ISOlat1
+    {"ouml",   U'\U000000F6'}, // latin small letter o with diaeresis, U+00F6 ISOlat1
+    {"divide", U'\U000000F7'}, // division sign, U+00F7 ISOnum
+    {"oslash", U'\U000000F8'}, // latin small letter o with stroke, = latin small letter o slash, U+00F8 ISOlat1
+    {"ugrave", U'\U000000F9'}, // latin small letter u with grave, U+00F9 ISOlat1
+    {"uacute", U'\U000000FA'}, // latin small letter u with acute, U+00FA ISOlat1
+    {"ucirc",  U'\U000000FB'}, // latin small letter u with circumflex, U+00FB ISOlat1
+    {"uuml",   U'\U000000FC'}, // latin small letter u with diaeresis, U+00FC ISOlat1
+    {"yacute", U'\U000000FD'}, // latin small letter y with acute, U+00FD ISOlat1
+    {"thorn",  U'\U000000FE'}, // latin small letter thorn, U+00FE ISOlat1
+    {"yuml",   U'\U000000FF'}, // latin small letter y with diaeresis, U+00FF ISOlat1
+    {"quot",   U'\U00000022'}, // quotation mark, U+0022 ISOnum
+    {"amp",    U'\U00000026'}, // ampersand, U+0026 ISOnum
+    {"lt",     U'\U0000003C'}, // less-than sign, U+003C ISOnum
+    {"gt",     U'\U0000003E'}, // greater-than sign, U+003E ISOnum
+    {"apos",   U'\U00000027'}, // apostrophe = APL quote, U+0027 ISOnum
+    {"OElig",  U'\U00000152'}, // latin capital ligature OE, U+0152 ISOlat2
+    {"oelig",  U'\U00000153'}, // latin small ligature oe, U+0153 ISOlat2
+    {"Scaron", U'\U00000160'}, // latin capital letter S with caron, U+0160 ISOlat2
+    {"scaron", U'\U00000161'}, // latin small letter s with caron, U+0161 ISOlat2
+    {"Yuml",   U'\U00000178'}, // latin capital letter Y with diaeresis, U+0178 ISOlat2
+    {"circ",   U'\U000002C6'}, // modifier letter circumflex accent, U+02C6 ISOpub
+    {"tilde",  U'\U000002DC'}, // small tilde, U+02DC ISOdia
+    {"ensp",   U'\U00002002'}, // en space, U+2002 ISOpub
+    {"emsp",   U'\U00002003'}, // em space, U+2003 ISOpub
+    {"thinsp", U'\U00002009'}, // thin space, U+2009 ISOpub
+    {"zwnj",   U'\U0000200C'}, // zero width non-joiner, U+200C NEW RFC 2070
+    {"zwj",    U'\U0000200D'}, // zero width joiner, U+200D NEW RFC 2070
+    {"lrm",    U'\U0000200E'}, // left-to-right mark, U+200E NEW RFC 2070
+    {"rlm",    U'\U0000200F'}, // right-to-left mark, U+200F NEW RFC 2070
+    {"ndash",  U'\U00002013'}, // en dash, U+2013 ISOpub
+    {"mdash",  U'\U00002014'}, // em dash, U+2014 ISOpub
+    {"lsquo",  U'\U00002018'}, // left single quotation mark, U+2018 ISOnum
+    {"rsquo",  U'\U00002019'}, // right single quotation mark, U+2019 ISOnum
+    {"sbquo",  U'\U0000201A'}, // single low-9 quotation mark, U+201A NEW
+    {"ldquo",  U'\U0000201C'}, // left double quotation mark,  U+201C ISOnum
+    {"rdquo",  U'\U0000201D'}, // right double quotation mark, U+201D ISOnum
+    {"bdquo",  U'\U0000201E'}, // double low-9 quotation mark, U+201E NEW
+    {"dagger", U'\U00002020'}, // dagger, U+2020 ISOpub
+    {"Dagger", U'\U00002021'}, // double dagger, U+2021 ISOpub
+    {"permil", U'\U00002030'}, // per mille sign, U+2030 ISOtech
+    {"lsaquo", U'\U00002039'}, // single left-pointing angle quotation mark, U+2039 ISO proposed
+    {"rsaquo", U'\U0000203A'}, // single right-pointing angle quotation mark, U+203A ISO proposed
+    {"euro",   U'\U000020AC'}, // euro sign, U+20AC NEW
 };
 
 EPubTokenizer::Characters EPubTokenizer::superscriptCharacters
 {
-    {"0", "\xE2\x81\xB0"},
-    {"1", "\xC2\xB9"},    
-    {"2", "\xC2\xB2"},    
-    {"3", "\xC2\xB3"},    
-    {"4", "\xE2\x81\xB4"},
-    {"5", "\xE2\x81\xB5"},
-    {"6", "\xE2\x81\xB6"},
-    {"7", "\xE2\x81\xB7"},
-    {"8", "\xE2\x81\xB8"},
-    {"9", "\xE2\x81\xB9"},
+    {"0", U'\U00002070'},
+    {"1", U'\U000000B9'},    
+    {"2", U'\U000000B2'},    
+    {"3", U'\U000000B3'},    
+    {"4", U'\U00002074'},
+    {"5", U'\U00002075'},
+    {"6", U'\U00002076'},
+    {"7", U'\U00002077'},
+    {"8", U'\U00002078'},
+    {"9", U'\U00002079'},
 
-    {"A", "\xEE\x81\x81"}, 
-    {"B", "\xEE\x81\x82"}, 
-    {"C", "\xEE\x81\x83"}, 
-    {"D", "\xEE\x81\x84"}, 
-    {"E", "\xEE\x81\x85"}, 
-    {"F", "\xEE\x81\x86"}, 
-    {"G", "\xEE\x81\x87"}, 
-    {"H", "\xEE\x81\x88"}, 
-    {"I", "\xEE\x81\x89"}, 
-    {"J", "\xEE\x81\x8A"}, 
-    {"K", "\xEE\x81\x8B"}, 
-    {"L", "\xEE\x81\x8C"}, 
-    {"M", "\xEE\x81\x8D"}, 
-    {"N", "\xEE\x81\x8E"}, 
-    {"O", "\xEE\x81\x8F"}, 
-    {"P", "\xEE\x81\x90"}, 
-    {"Q", "\xEE\x81\x91"}, 
-    {"R", "\xEE\x81\x92"}, 
-    {"S", "\xEE\x81\x93"}, 
-    {"T", "\xEE\x81\x94"}, 
-    {"U", "\xEE\x81\x95"}, 
-    {"V", "\xEE\x81\x96"}, 
-    {"W", "\xEE\x81\x97"}, 
-    {"X", "\xEE\x81\x98"}, 
-    {"Y", "\xEE\x81\x99"}, 
-    {"Z", "\xEE\x81\x9A"},
+    {"A", U'\U0000E041'}, 
+    {"B", U'\U0000E042'}, 
+    {"C", U'\U0000E043'}, 
+    {"D", U'\U0000E044'}, 
+    {"E", U'\U0000E045'}, 
+    {"F", U'\U0000E046'}, 
+    {"G", U'\U0000E047'}, 
+    {"H", U'\U0000E048'}, 
+    {"I", U'\U0000E049'}, 
+    {"J", U'\U0000E04A'}, 
+    {"K", U'\U0000E04B'}, 
+    {"L", U'\U0000E04C'}, 
+    {"M", U'\U0000E04D'}, 
+    {"N", U'\U0000E04E'}, 
+    {"O", U'\U0000E04F'}, 
+    {"P", U'\U0000E050'}, 
+    {"Q", U'\U0000E051'}, 
+    {"R", U'\U0000E052'}, 
+    {"S", U'\U0000E053'}, 
+    {"T", U'\U0000E054'}, 
+    {"U", U'\U0000E055'}, 
+    {"V", U'\U0000E056'}, 
+    {"W", U'\U0000E057'}, 
+    {"X", U'\U0000E058'}, 
+    {"Y", U'\U0000E059'}, 
+    {"Z", U'\U0000E05A'},
 
-    {"a", "\xEE\x81\x9F"}, 
-    {"b", "\xEE\x81\xA0"}, 
-    {"c", "\xEE\x81\xA1"}, 
-    {"d", "\xEE\x81\xA2"}, 
-    {"e", "\xEE\x81\xA3"}, 
-    {"f", "\xEE\x81\xA4"}, 
-    {"g", "\xEE\x81\xA5"}, 
-    {"h", "\xEE\x81\xA6"}, 
-    {"i", "\xEE\x81\xA7"}, 
-    {"j", "\xEE\x81\xA8"}, 
-    {"k", "\xEE\x81\xA9"}, 
-    {"l", "\xEE\x81\xAA"}, 
-    {"m", "\xEE\x81\xAB"}, 
-    {"n", "\xEE\x81\xAC"}, 
-    {"o", "\xEE\x81\xAD"}, 
-    {"p", "\xEE\x81\xAE"}, 
-    {"q", "\xEE\x81\xAF"}, 
-    {"r", "\xEE\x81\xB0"}, 
-    {"s", "\xEE\x81\xB1"}, 
-    {"t", "\xEE\x81\xB2"}, 
-    {"u", "\xEE\x81\xB3"}, 
-    {"v", "\xEE\x81\xB4"}, 
-    {"w", "\xEE\x81\xB5"}, 
-    {"x", "\xEE\x81\xB6"}, 
-    {"y", "\xEE\x81\xB7"}, 
-    {"z", "\xEE\x81\xB8"}, 
+    {"a", U'\U0000E05F'}, 
+    {"b", U'\U0000E060'}, 
+    {"c", U'\U0000E061'}, 
+    {"d", U'\U0000E062'}, 
+    {"e", U'\U0000E063'}, 
+    {"f", U'\U0000E064'}, 
+    {"g", U'\U0000E065'}, 
+    {"h", U'\U0000E066'}, 
+    {"i", U'\U0000E067'}, 
+    {"j", U'\U0000E068'}, 
+    {"k", U'\U0000E069'}, 
+    {"l", U'\U0000E06A'}, 
+    {"m", U'\U0000E06B'}, 
+    {"n", U'\U0000E06C'}, 
+    {"o", U'\U0000E06D'}, 
+    {"p", U'\U0000E06E'}, 
+    {"q", U'\U0000E06F'}, 
+    {"r", U'\U0000E070'}, 
+    {"s", U'\U0000E071'}, 
+    {"t", U'\U0000E072'}, 
+    {"u", U'\U0000E073'}, 
+    {"v", U'\U0000E074'}, 
+    {"w", U'\U0000E075'}, 
+    {"x", U'\U0000E076'}, 
+    {"y", U'\U0000E077'}, 
+    {"z", U'\U0000E078'}, 
 
-    {"*", "\xEE\x81\xB9"},
-    {"+", "\xE2\x81\xBA"},
-    {"-", "\xE2\x81\xBB"},
-    {"=", "\xE2\x81\xBC"},
-    {"(", "\xE2\x81\xBD"},
-    {")", "\xE2\x81\xBE"},
-    {"[", "\xEE\x81\xBB"},
-    {"]", "\xEE\x81\xBC"},
-    {",", "\xEE\x81\x9B"},
-    {".", "\xEE\x81\x9C"},
-    {"/", "\xEE\x81\x9D"},
+    {"*", U'\U0000E079'},
+    {"+", U'\U0000207A'},
+    {"-", U'\U0000207B'},
+    {"=", U'\U0000207C'},
+    {"(", U'\U0000207D'},
+    {")", U'\U0000207E'},
+    {"[", U'\U0000E07B'},
+    {"]", U'\U0000E07C'},
+    {",", U'\U0000E05B'},
+    {".", U'\U0000E05C'},
+    {"/", U'\U0000E05D'},
 };
 
 EPubTokenizer::Characters EPubTokenizer::subscriptCharacters
 {
-    {"0", "\xE2\x82\x80"},
-    {"1", "\xE2\x82\x81"},
-    {"2", "\xE2\x82\x82"},
-    {"3", "\xE2\x82\x83"},
-    {"4", "\xE2\x82\x84"},
-    {"5", "\xE2\x82\x85"},
-    {"6", "\xE2\x82\x86"},
-    {"7", "\xE2\x82\x87"},
-    {"8", "\xE2\x82\x88"},
-    {"9", "\xE2\x82\x89"},
+    {"0", U'\U00002080'},
+    {"1", U'\U00002081'},
+    {"2", U'\U00002082'},
+    {"3", U'\U00002083'},
+    {"4", U'\U00002084'},
+    {"5", U'\U00002085'},
+    {"6", U'\U00002086'},
+    {"7", U'\U00002087'},
+    {"8", U'\U00002088'},
+    {"9", U'\U00002089'},
 
-    {"A", "\xEE\x80\x85"},
-    {"B", "\xEE\x80\x86"},
-    {"C", "\xEE\x80\x87"},
-    {"D", "\xEE\x80\x88"},
-    {"E", "\xEE\x80\x89"},
-    {"F", "\xEE\x80\x8A"},
-    {"G", "\xEE\x80\x8B"},
-    {"H", "\xEE\x80\x8C"},
-    {"I", "\xEE\x80\x8D"},
-    {"J", "\xEE\x80\x8E"},
-    {"K", "\xEE\x80\x8F"},
-    {"L", "\xEE\x80\x90"},
-    {"M", "\xEE\x80\x91"},
-    {"N", "\xEE\x80\x92"},
-    {"O", "\xEE\x80\x93"},
-    {"P", "\xEE\x80\x94"},
-    {"Q", "\xEE\x80\x95"},
-    {"R", "\xEE\x80\x96"},
-    {"S", "\xEE\x80\x97"},
-    {"T", "\xEE\x80\x98"},
-    {"U", "\xEE\x80\x99"},
-    {"V", "\xEE\x80\x9A"},
-    {"W", "\xEE\x80\x9B"},
-    {"X", "\xEE\x80\x9C"},
-    {"Y", "\xEE\x80\x9D"},
-    {"Z", "\xEE\x80\x9E"},
+    {"A", U'\U0000E005'},
+    {"B", U'\U0000E006'},
+    {"C", U'\U0000E007'},
+    {"D", U'\U0000E008'},
+    {"E", U'\U0000E009'},
+    {"F", U'\U0000E00A'},
+    {"G", U'\U0000E00B'},
+    {"H", U'\U0000E00C'},
+    {"I", U'\U0000E00D'},
+    {"J", U'\U0000E00E'},
+    {"K", U'\U0000E00F'},
+    {"L", U'\U0000E010'},
+    {"M", U'\U0000E011'},
+    {"N", U'\U0000E012'},
+    {"O", U'\U0000E013'},
+    {"P", U'\U0000E014'},
+    {"Q", U'\U0000E015'},
+    {"R", U'\U0000E016'},
+    {"S", U'\U0000E017'},
+    {"T", U'\U0000E018'},
+    {"U", U'\U0000E019'},
+    {"V", U'\U0000E01A'},
+    {"W", U'\U0000E01B'},
+    {"X", U'\U0000E01C'},
+    {"Y", U'\U0000E01D'},
+    {"Z", U'\U0000E01E'},
 
-    {"a", "\xEE\x80\xA3"},
-    {"b", "\xEE\x80\xA4"},
-    {"c", "\xEE\x80\xA5"},
-    {"d", "\xEE\x80\xA6"},
-    {"e", "\xEE\x80\xA7"},
-    {"f", "\xEE\x80\xA8"},
-    {"g", "\xEE\x80\xA9"},
-    {"h", "\xEE\x80\xAA"},
-    {"i", "\xEE\x80\xAB"},
-    {"j", "\xEE\x80\xAC"},
-    {"k", "\xEE\x80\xAD"},
-    {"l", "\xEE\x80\xAE"},
-    {"m", "\xEE\x80\xAF"},
-    {"n", "\xEE\x80\xB0"},
-    {"o", "\xEE\x80\xB1"},
-    {"p", "\xEE\x80\xB2"},
-    {"q", "\xEE\x80\xB3"},
-    {"r", "\xEE\x80\xB4"},
-    {"s", "\xEE\x80\xB5"},
-    {"t", "\xEE\x80\xB6"},
-    {"u", "\xEE\x80\xB7"},
-    {"v", "\xEE\x80\xB8"},
-    {"w", "\xEE\x80\xB9"},
-    {"x", "\xEE\x80\xBA"},
-    {"y", "\xEE\x80\xBB"},
-    {"z", "\xEE\x80\xBC"},
+    {"a", U'\U0000E023'},
+    {"b", U'\U0000E024'},
+    {"c", U'\U0000E025'},
+    {"d", U'\U0000E026'},
+    {"e", U'\U0000E027'},
+    {"f", U'\U0000E028'},
+    {"g", U'\U0000E029'},
+    {"h", U'\U0000E02A'},
+    {"i", U'\U0000E02B'},
+    {"j", U'\U0000E02C'},
+    {"k", U'\U0000E02D'},
+    {"l", U'\U0000E02E'},
+    {"m", U'\U0000E02F'},
+    {"n", U'\U0000E030'},
+    {"o", U'\U0000E031'},
+    {"p", U'\U0000E032'},
+    {"q", U'\U0000E033'},
+    {"r", U'\U0000E034'},
+    {"s", U'\U0000E035'},
+    {"t", U'\U0000E036'},
+    {"u", U'\U0000E037'},
+    {"v", U'\U0000E038'},
+    {"w", U'\U0000E039'},
+    {"x", U'\U0000E03A'},
+    {"y", U'\U0000E03B'},
+    {"z", U'\U0000E03C'},
 
-    {"*", "\xEE\x80\xBD"},
-    {"+", "\xE2\x82\x8A"},
-    {"-", "\xE2\x82\x8B"},
-    {"=", "\xE2\x82\x8C"},
-    {"(", "\xE2\x82\x8D"},
-    {")", "\xE2\x82\x8E"},
-    {"[", "\xEE\x80\xBF"},
-    {"]", "\xEE\x81\x80"},
-    {",", "\xEE\x80\x9F"},
-    {".", "\xEE\x80\xA0"},
-    {"/", "\xEE\x80\xA1"},
+    {"*", U'\U0000E03D'},
+    {"+", U'\U0000208A'},
+    {"-", U'\U0000208B'},
+    {"=", U'\U0000208C'},
+    {"(", U'\U0000208D'},
+    {")", U'\U0000208E'},
+    {"[", U'\U0000E03F'},
+    {"]", U'\U0000E040'},
+    {",", U'\U0000E01F'},
+    {".", U'\U0000E020'},
+    {"/", U'\U0000E021'},
 };
 
 // clang-format on
@@ -455,10 +455,10 @@ auto EPubTokenizer::toUtf8(uint32_t val) -> char * {
     return utf8Ch_;
 }
 
-// From the string that follow the '&' character, retrieve the entity's UTF8 or the unicode UTF8
+// From the string that follow the '&' character, retrieve the entity's UTF32 or the unicode UTF32
 // corresponding to the decimal (&#...;) or hexadecimal number (&#x...;). It returns the
 // corresponding UTF8 translation and the next position in the input string.
-auto EPubTokenizer::getCharEntity(const char *str) -> std::pair<const char *, const char *> {
+auto EPubTokenizer::getCharEntity(const char *str) -> std::pair<char32_t, const char *> {
     unsigned int len = 0;
     bool number = *str == '#';
     if (number) {
@@ -476,18 +476,18 @@ auto EPubTokenizer::getCharEntity(const char *str) -> std::pair<const char *, co
     if (*str == ';') {
         str++;
         if (hexNumber) {
-            return {toUtf8(strtol(theStr.c_str(), nullptr, 16)), str};
+            return {char32_t(strtol(theStr.c_str(), nullptr, 16)), str};
         } else if (number) {
-            return {toUtf8(strtol(theStr.c_str(), nullptr, 10)), str};
+            return {char32_t(strtol(theStr.c_str(), nullptr, 10)), str};
         } else {
-            auto search = entities.at(static_cast<SpiramString>(theStr));
-            if (search != nullptr) {
-                return {search, str};
+            auto search = entities.find(static_cast<SpiramString>(theStr));
+            if (search != entities.end()) {
+                return {search->second, str};
             }
         }
     }
 
-    return {"", str};
+    return {U'\U00000000', str};
 }
 
 auto EPubTokenizer::loadXHTMLAt(Idx spineIdx) -> pugi::xml_document & {
@@ -998,10 +998,10 @@ void EPubTokenizer::processPictureTag(pugi::xml_node node) {
 // was cleared (the token parameter was not accepted to be part of the previous page, so we need
 // to keep it alive in the next page to come). This must also take care of the cStr pool pointer
 // unless a str parameter is present, meaning a constant string that is outside of the pool.
-void EPubTokenizer::startNewPageWithToken(Token &token, const char *str, uint8_t strSize) {
+void EPubTokenizer::startNewPageWithToken(Token &token, const char32_t *str, uint8_t strSize) {
 
     Token tempToken;
-    std::string tempStr;
+    std::u32string tempStr;
     std::shared_ptr<BMPImage> picture = std::move(token.picture);
     if (str == nullptr && (token.length != 0)) {
         tempStr = token.cStr;
@@ -1279,7 +1279,7 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                                         .spacesAfter = 0};
                             lastToken_ = nullptr;
 
-                            addTokenToPage(newToken, "\n", 1);
+                            addTokenToPage(newToken, U"\n", 1);
                         }
                     }
                 }
@@ -1297,7 +1297,7 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                     return false;
                 }
 
-                char listLineStart[50];
+                char32_t listLineStart[50];
 
                 if (listLevel_ >= 0) {
                     if (listType_[listLevel_] == ListType::ORDERED) {
@@ -1363,7 +1363,7 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                                 .spacesAfter = 0};
                     lastToken_ = nullptr;
 
-                    if (addTokenToPage(newToken, "{TABLE}", 7)) {
+                    if (addTokenToPage(newToken, U"{TABLE}", 7)) {
                         return false;
                     }
                 }
@@ -1455,7 +1455,7 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                                         .spacesAfter = 0};
                             lastToken_ = nullptr;
 
-                            addTokenToPage(newToken, "\n", 1);
+                            addTokenToPage(newToken, U"\n", 1);
                         }
                     }
                     break;
@@ -1489,7 +1489,7 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                                         .spacesAfter = 0};
                             lastToken_ = nullptr;
 
-                            addTokenToPage(newToken, "\n", 1);
+                            addTokenToPage(newToken, U"\n", 1);
                         }
                     }
                     updatePagerIndent(false);
@@ -1579,7 +1579,7 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                                         .spacesAfter = 0};
                             lastToken_ = nullptr;
 
-                            addTokenToPage(newToken, "\n", 1);
+                            addTokenToPage(newToken, U"\n", 1);
                         }
                     }
                     updatePagerIndent(false);
@@ -1605,7 +1605,7 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                                         .spacesAfter = 0};
                             lastToken_ = nullptr;
 
-                            addTokenToPage(newToken, "\n", 1);
+                            addTokenToPage(newToken, U"\n", 1);
                         }
                     }
                     updatePagerIndent(false);
@@ -1629,7 +1629,7 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                                         .spacesAfter = 0};
                             lastToken_ = nullptr;
 
-                            addTokenToPage(newToken, "\n", 1);
+                            addTokenToPage(newToken, U"\n", 1);
                         }
                     }
                     break;
@@ -1663,7 +1663,7 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                                     .spacesAfter = 0};
                         lastToken_ = nullptr;
 
-                        if (addTokenToPage(newToken, "{END TABLE}", 11)) {
+                        if (addTokenToPage(newToken, U"{END TABLE}", 11)) {
                             return false;
                         }
                     }
@@ -1737,11 +1737,11 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint32_t len) -> bool 
 
     // REND_WLOG("Started at offset: %" PRIu32, streamOffset);
 
-    uint8_t curChar;
+    char32_t curChar;
 
     // Keep it DRY
 
-    auto nextByte = [&curChar, &str, &len, &streamOffset, &lastIncrement, this]() -> void {
+    auto nextChar = [&curChar, &str, &len, &streamOffset, &lastIncrement, this]() -> void {
         if (len == 0) {
             curChar = 0;
         } else {
@@ -1765,11 +1765,11 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint32_t len) -> bool 
         }
     };
 
-    nextByte();
+    nextChar();
 
     if (beginningOfPage_) {
         while ((curChar != 0) && isspace(curChar)) {
-            nextByte();
+            nextChar();
         }
     }
 
@@ -1804,13 +1804,13 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint32_t len) -> bool 
                     const char *script = chIt->second;
                     while (*script) {
                         if (!tokens_.cStrIsFull()) {
-                            tokens_.addByte(newToken, *script++);
+                            tokens_.addChar(newToken, *script++);
                         } else {
                             break;
                         }
                     }
                 }
-                nextByte();
+                nextChar();
             } while (curChar != 0);
 
             if (newToken.length > 0) {
@@ -1838,13 +1838,13 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint32_t len) -> bool 
                     const char *script = chIt->second;
                     while (*script) {
                         if (!tokens_.cStrIsFull()) {
-                            tokens_.addByte(newToken, *script++);
+                            tokens_.addChar(newToken, *script++);
                         } else {
                             break;
                         }
                     }
                 }
-                nextByte();
+                nextChar();
             } while (curChar != 0);
 
             if (newToken.length > 0) {
@@ -1871,15 +1871,15 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint32_t len) -> bool 
             }
 
             if ((textToken_->length == 0) && (preText_[0] != '\0')) {
-                tokens_.addBytes(*textToken_, preText_);
+                tokens_.addChars(*textToken_, preText_);
                 preText_[0] = '\0';
             }
 
             if (curChar == '-') {
                 textToken_->tokenId = startOfHeader_ ? TokenId::HTEXT : TokenId::HYPHEN;
                 startOfHeader_ = false;
-                tokens_.addByte(*textToken_, '-');
-                nextByte();
+                tokens_.addChar(*textToken_, '-');
+                nextChar();
                 closeTextToken();
             } else {
                 if (startOfHeader_) {
@@ -1899,22 +1899,22 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint32_t len) -> bool 
                             streamOffset += (newStrLocation - str);
                             while (*trans && !tokens_.cStrIsFull()) {
                                 if (*trans > ' ') {
-                                    tokens_.addByte(*textToken_, *trans);
+                                    tokens_.addChar(*textToken_, *trans);
                                 }
                                 trans++;
                             }
 
                             textCharCount_ += 1;
                             str = newStrLocation;
-                            nextByte();
+                            nextChar();
                         } else {
                             if (!tokens_.cStrIsFull()) {
-                                tokens_.addByte(*textToken_, curChar);
+                                tokens_.addChar(*textToken_, curChar);
                                 textCharCount_ += 1;
                             } else {
                                 break;
                             }
-                            nextByte();
+                            nextChar();
                         }
                     } else {
                         if ((curChar <= 0x7FU) || (curChar >= 0xC0U)) {
@@ -1922,22 +1922,22 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint32_t len) -> bool 
                         }
                         if (!tokens_.cStrIsFull()) {
                             // if (curChar == 0xC2U) {
-                            //     nextByte();
+                            //     nextChar();
                             //     if (curChar == 0xA0U) {
                             //         curChar = ' ';
                             //     } else {
-                            //         tokens_.addByte(newToken, 0xC2U);
+                            //         tokens_.addChar(newToken, 0xC2U);
                             //     }
                             // }
-                            tokens_.addByte(*textToken_, curChar);
+                            tokens_.addChar(*textToken_, curChar);
                         } else {
                             break;
                         }
                         if (curChar == '-') {
-                            nextByte();
+                            nextChar();
                             break;
                         }
-                        nextByte();
+                        nextChar();
                     }
                 } while ((curChar > ' ') &&
                          ((textCharCount_ < maxTextTokenCharSize_) || ((curChar & 0xC0U) == 0x80)));
@@ -1967,9 +1967,9 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint32_t len) -> bool 
                 // } else {
                 // log_e("Lost a space....");
             }
-            nextByte();
+            nextChar();
         } else {
-            nextByte();
+            nextChar();
         }
 
         if (pageCompleted_) {
