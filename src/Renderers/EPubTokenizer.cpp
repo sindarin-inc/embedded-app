@@ -480,9 +480,9 @@ auto EPubTokenizer::getCharEntity(const char *str) -> std::pair<const char *, co
         } else if (number) {
             return {toUtf8(strtol(theStr.c_str(), nullptr, 10)), str};
         } else {
-            auto search = entities.at(static_cast<SpiramString>(theStr));
-            if (search != nullptr) {
-                return {search, str};
+            auto search = entities.find(static_cast<SpiramString>(theStr));
+            if (search != entities.end()) {
+                return {search->second, str};
             }
         }
     }
