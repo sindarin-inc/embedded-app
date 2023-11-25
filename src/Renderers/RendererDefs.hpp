@@ -15,8 +15,8 @@ namespace renderer_defs {
 // The following defines are helpers for code development
 // That is specific to the renderer
 
-#define REND_DEBUGGING 0     // Show debugging messages where appropriate
-#define REND_EXIT_ON_ERROR 0 // Simulator Only!!
+#define REND_DEBUGGING 1     // Show debugging messages where appropriate
+#define REND_EXIT_ON_ERROR 1 // Simulator Only!!
 #define REND_PROFILING 0     // Speed measurements
 #define REND_STATISTICS 0    // Stats on Tokens size and Lines size
 
@@ -186,7 +186,7 @@ struct Token {
     // This basically gives each token knowledge of where the paragraph
     // start is for where it's located. It's useful for looking backwards
     // while rendering a back page command.
-    const char32_t *cStr;
+    const char32_t *c32Str;
     std::shared_ptr<BMPImage> picture;
     StreamPlace streamPlace;
     uint16_t pixWidth;  // Width in pixels. Used with pictures and text tokens

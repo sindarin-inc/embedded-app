@@ -1,5 +1,51 @@
 #include "Pager.hpp"
 
+char Pager::utf8Ch_[6];
+
+auto Pager::toUtf8(char32_t val) -> char * {
+    char *s = utf8Ch_;
+    if (val <= 0x7F) {
+        // Plain ASCII
+        *s++ = (char)val;
+        *s = 0;
+    } else if (val <= 0x07FF) {
+        // 2-byte unicode
+        *s++ = (char)(((val >> 6) & 0x1F) | 0xC0);
+        *s++ = (char)(((val >> 0) & 0x3F) | 0x80);
+        *s = 0;
+    } else if (val <= 0xFFFF) {
+        // 3-byte unicode
+        *s++ = (char)(((val >> 12) & 0x0F) | 0xE0);
+        *s++ = (char)(((val >> 6) & 0x3F) | 0x80);
+        *s++ = (char)(((val >> 0) & 0x3F) | 0x80);
+        *s = 0;
+    } else if (val <= 0x10FFFF) {
+        // 4-byte unicode
+        *s++ = (char)(((val >> 18) & 0x07) | 0xF0);
+        *s++ = (char)(((val >> 12) & 0x3F) | 0x80);
+        *s++ = (char)(((val >> 6) & 0x3F) | 0x80);
+        *s++ = (char)(((val >> 0) & 0x3F) | 0x80);
+        *s = 0;
+    } else {
+        // error - use replacement character
+        *s++ = (char)0xEF;
+        *s++ = (char)0xBF;
+        *s++ = (char)0xBD;
+        *s = 0;
+    }
+    return utf8Ch_;
+}
+
+auto Pager::toString(const char32_t *c32Str) -> std::string {
+    std::string str;
+
+    while (*c32Str) {
+        str += toUtf8(*c32Str++);
+    }
+
+    return str;
+}
+
 // Takes the last token entered in the tokens_[] array and include it in the page.
 //
 // The dontStop parameter is used in the context of the TXT file format when going backward, such
@@ -31,7 +77,7 @@ auto Pager::addLastTokenToPage(bool dontStop) -> bool {
         if (token.tokenId == TokenId::ITEXT) {
             leftIndent_ += token.pixWidth; // For next lines
             // log_w("IText (%s) new left indent %" PRIu16 ", Current Line Width: %" PRIu16,
-            //     token.cStr, leftIndent_, currentLineWidth_);
+            //     token.c32Str, leftIndent_, currentLineWidth_);
         }
         uint16_t heightRequired =
             (token.tokenId == TokenId::HTEXT)
@@ -276,16 +322,16 @@ void Pager::getLine(LineInfo &lineStruct, Line &line) const {
         auto tokenId = tokens_[tokenIdx].tokenId;
         if (((uint16_t)tokenId & ((uint16_t)TokenId::NEWLINE | (uint16_t)TokenId::ENDPARAGRAPH)) ==
             0) {
-            if (tokens_[tokenIdx].cStr != nullptr) {
-                // strcat(line.data(), tokens_[tokenIdx].cStr);
-                memcpy(line.data() + lineIdx, tokens_[tokenIdx].cStr, tokens_[tokenIdx].length);
+            if (tokens_[tokenIdx].c32Str != nullptr) {
+                // strcat(line.data(), tokens_[tokenIdx].c32Str);
+                memcpy(&line[lineIdx], tokens_[tokenIdx].c32Str, tokens_[tokenIdx].length * 4);
                 lineIdx += tokens_[tokenIdx].length;
             }
             if (tokens_[tokenIdx].spacesAfter) {
-                line[lineIdx++] = ' ';
+                line[lineIdx++] = U' ';
             }
             // for (int i = 0; i < tokens_[tokenIdx].spacesAfter; i++) {
-            //     line[lineIdx++] = ' ';
+            //     line[lineIdx++] = U' ';
             // }
         }
     }
@@ -333,10 +379,10 @@ auto Pager::displayPage(int16_t numSkipLines) -> uint8_t {
         switch (token.tokenId) {
         case TokenId::PICTURE:
             REND_WLOG("[%" PRIu16 "] %s: <PICTURE> %s", lineIdx, token.streamPlace.str().c_str(),
-                      token.cStr);
+                      toString(token.c32Str).c_str());
             if ((token.picture == nullptr) || (token.picture.get() == nullptr)) {
                 REND_PROFILE_START(ReadPictureFromEPub);
-                auto [buffer, len] = stream_->getFile(token.cStr);
+                auto [buffer, len] = stream_->getFile(toString(token.c32Str));
                 REND_PROFILE_END(ReadPictureFromEPub);
 
                 if (buffer != nullptr) {
@@ -371,10 +417,10 @@ auto Pager::displayPage(int16_t numSkipLines) -> uint8_t {
 
         case TokenId::EPICTURE:
             REND_WLOG("[%" PRIu16 "] %s: <EPICTURE> %s", lineIdx, token.streamPlace.str().c_str(),
-                      token.cStr);
+                      toString(token.c32Str).c_str());
             if ((token.picture == nullptr) || (token.picture.get() == nullptr)) {
                 REND_PROFILE_START(ReadPictureFromEPub);
-                auto [buffer, len] = stream_->getFile(token.cStr);
+                auto [buffer, len] = stream_->getFile(toString(token.c32Str));
                 REND_PROFILE_END(ReadPictureFromEPub);
 
                 if (buffer != nullptr) {
@@ -455,7 +501,7 @@ auto Pager::displayPage(int16_t numSkipLines) -> uint8_t {
                 //       display_.getTextWidth(line.data()) + lines_[lineIdx].leftIndent,
                 //       lines_[lineIdx].leftIndent);
                 REND_WLOG("[%" PRIu16 "] %s: <%s>", lineIdx, token.streamPlace.str().c_str(),
-                          line.data());
+                          toString(line.data()).c_str());
                 display_.drawSingleLineOfText(line.data(), lines_[lineIdx].leftIndent,
                                               deciToPix(deciY));
             } else {
@@ -507,7 +553,7 @@ void Pager::show() const {
                  tokens_.nextTokenIdx(tokenIdx)) {
                 if (((uint16_t)tokens_[tokenIdx].tokenId &
                      ((uint16_t)TokenId::NEWLINE | (uint16_t)TokenId::ENDPARAGRAPH)) == 0) {
-                    std::cout << tokens_[tokenIdx].cStr;
+                    std::cout << tokens_[tokenIdx].c32Str;
                     if (tokens_[tokenIdx].spacesAfter) {
                         std::cout << " ";
                     }

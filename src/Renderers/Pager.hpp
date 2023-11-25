@@ -13,6 +13,10 @@
 // the current display region. The last page retrieved is found in the lines_[] circular array.
 class Pager {
 private:
+    // used to transform HTML character entities to their UTF8 char.
+    static char utf8Ch_[6];
+    static auto toUtf8(char32_t val) -> char *;
+
     Tokens &tokens_;
     DisplaySystem &display_;
     std::shared_ptr<EPubFile> stream_;
@@ -191,6 +195,8 @@ public:
     [[nodiscard]] inline auto pixToDeci(uint16_t pixValue) const -> uint16_t {
         return ((int)(NEWLINE_DECI_LINE_HEIGHT * pixValue)) / display_.getTextHeight();
     }
+
+    static auto toString(const char32_t *c32Str) -> std::string;
 
     void show() const;
 

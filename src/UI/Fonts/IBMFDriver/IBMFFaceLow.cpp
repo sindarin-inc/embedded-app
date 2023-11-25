@@ -522,13 +522,6 @@ auto IBMFFaceLow::getGlyph(GlyphCode glyphCode, Glyph &appGlyph, bool loadBitmap
         .lineHeight = faceHeader_->lineHeight,
         .ligatureAndKernPgmIndex = glyphInfo->ligKernPgmIndex};
 
-    // appGlyph.metrics = {
-    //     .xoff = (int16_t) - (glyphOffsets.x + ((caching) ? glyphInfo->horizontalOffset : 0)),
-    //     .yoff = (int16_t) - (glyphOffsets.y + ((caching) ? glyphInfo->verticalOffset : 0)),
-    //     .advance = glyphInfo->advance,
-    //     .lineHeight = faceHeader_->lineHeight,
-    //     .ligatureAndKernPgmIndex = glyphInfo->ligKernPgmIndex};
-
     // showGlyph(appGlyph, glyphCode & 0xFF);
     return true;
 }
@@ -574,29 +567,6 @@ auto IBMFFaceLow::getGlyphMetrics(GlyphCode glyphCode, Glyph &appGlyph) -> bool 
 
     return true;
 }
-
-// auto IBMFFaceLow::getGlyphApproxWidth(GlyphCode glyphCode, int16_t *approxWidth) -> bool {
-
-//     if ((glyphCode == SPACE_CODE) || ((glyphCode < faceHeader_->glyphCount)
-//         ((*glyphsInfo_)[glyphCode].bitmapWidth == 0))) { // send as a space character
-//         *approxWidth = static_cast<int16_t>(faceHeader_->spaceSize);
-//         return true;
-//     }
-
-//     if (glyphCode >= faceHeader_->glyphCount) {
-//         return false;
-//     }
-
-//     GlyphInfo *glyphInfo = &(*glyphsInfo_)[glyphCode];
-
-//     if (glyphInfo == nullptr) {
-//         return false;
-//     }
-
-//     *approxWidth = glyphInfo->bitmapWidth + 1;
-
-//     return true;
-// }
 
 auto IBMFFaceLow::showBitmap(const Bitmap &bitmap) const -> void {
     if constexpr (DEBUG) {

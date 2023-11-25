@@ -74,7 +74,7 @@
 //   For all the other token types, the text *must* come from constant expressions and added to the
 //   token when calling the addTokenToPage() method.
 //
-// - When creating a new Token, *NEVER* initialize the .cStr and .length to something else than
+// - When creating a new Token, *NEVER* initialize the .c32Str and .length to something else than
 //   nullptr and 0.
 //
 // TBC
@@ -225,16 +225,12 @@ private:
 
     bool inTableRow_;
 
-    static const constexpr char32_t *LEVEL_CHAR = U"-o-o-";
+    static const constexpr char *LEVEL_CHAR = "-o-o-";
 
     // Could eventually be made smaller.
     // For now, used only for bracketing <a> tags pcdata
     char32_t preText_[21];
     char32_t postText_[21];
-
-    // used to transform HTML character entities to their UTF8 char.
-    char utf8Ch_[6];
-    auto toUtf8(uint32_t val) -> char *;
 
     [[nodiscard]] auto getCharEntity(const char *str) -> std::pair<char32_t, const char *>;
     [[nodiscard]] auto loadXHTMLAt(Idx spineIdx) -> pugi::xml_document &;
@@ -262,7 +258,7 @@ private:
     [[nodiscard]] static inline auto isSpaces(const char32_t *cstr) -> bool {
         while (*cstr) {
             if (!isspace(*cstr)) {
-                if ((*cstr != U'\U000000A0') && (*cstr != U'\U00003000')) {
+                if (*cstr != U'\U000000A0') {
                     return false;
                 }
             }

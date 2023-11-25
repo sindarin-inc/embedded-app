@@ -1,20 +1,24 @@
 #include "Tokens.hpp"
 
+#include <cuchar>
+
+#include "Pager.hpp"
+
 // Add a token to the tokens list. The null terminated string is *not* copied to the pool and is
 // expected to be a literal. The token may not be added if there is no space remaining in the tokens
 // array.
 auto Tokens::add(Token &token, const char32_t *str, uint8_t length) -> bool {
     if (!isFull()) {
         if (str != nullptr) {
-            token.cStr = str;
+            token.c32Str = str;
             token.length = length;
         }
 
-        if ((token.pixWidth == 0) && (token.cStr != nullptr) && (token.cStr[0] != '\n')) {
+        if ((token.pixWidth == 0) && (token.c32Str != nullptr) && (token.c32Str[0] != '\n')) {
             token.pixWidth = (token.tokenId == TokenId::ITEXT)
-                                 ? display_.getTextWidth(token.cStr)
-                                 : display_.getTextWidthQuick(token.cStr);
-            // log_w("Token width of %s is %" PRIu16, token.cStr, token.pixWidth);
+                                 ? display_.getTextWidth(token.c32Str)
+                                 : display_.getTextWidthQuick(token.c32Str);
+            // log_w("Token width of %s is %" PRIu16, token.c32Str, token.pixWidth);
         }
 
         if constexpr (REND_DEBUG) {
@@ -39,8 +43,8 @@ auto Tokens::add(Token &token, const char32_t *str, uint8_t length) -> bool {
 void Tokens::addChar(Token &token, char32_t c) {
     // REND_WLOG("Adding char %08" PRIX32 "H to last token at %" PRIu16 ".", c, cStrPoolCount_);
     if (!cStrIsFull()) {
-        if (token.cStr == nullptr) {
-            token.cStr = &cStrPool_[cStrPoolTailIdx_];
+        if (token.c32Str == nullptr) {
+            token.c32Str = &cStrPool_[cStrPoolTailIdx_];
             token.length = 0;
         }
         cStrPool_[cStrPoolTailIdx_] = c;
@@ -59,7 +63,7 @@ void Tokens::addChars(Token &token, const char32_t *str) {
 }
 
 void Tokens::insertCharsAtEnd(Token &token, const char32_t *str) {
-    if (token.cStr != nullptr) {
+    if (token.c32Str != nullptr) {
         cStrPoolTailIdx_ = (cStrPoolTailIdx_ == 0) ? (CSTR_POOL_SIZE - 1) : cStrPoolTailIdx_ - 1;
 
         while (*str) {
@@ -77,8 +81,8 @@ void Tokens::addStr(Token &token, const std::u32string &str) {
     uint16_t len = str.length();
     if ((getCStrPoolCount() + len) < (CSTR_POOL_SIZE - 2)) {
         const char32_t *s = str.c_str();
-        if (token.cStr == nullptr) {
-            token.cStr = &cStrPool_[cStrPoolTailIdx_];
+        if (token.c32Str == nullptr) {
+            token.c32Str = &cStrPool_[cStrPoolTailIdx_];
         }
         while (len--) {
             cStrPool_[cStrPoolTailIdx_] = *s++;
@@ -89,9 +93,9 @@ void Tokens::addStr(Token &token, const std::u32string &str) {
         endOfCStr();
 
         if constexpr (REND_DEBUG) {
-            if (std::char_traits<char32_t>::length(token.cStr) != token.length) {
-                REND_ELOG("Hum... token length wrong: %zu vs %" PRIu16, strlen(token.cStr),
-                          token.length);
+            if (std::char_traits<char32_t>::length(token.c32Str) != token.length) {
+                REND_ELOG("Hum... token length wrong: %zu vs %" PRIu16,
+                          std::char_traits<char32_t>::length(token.c32Str), token.length);
             }
             // log_d("After: tokensCount_: %" PRIu16 ", token length: %" PRIu16
             //       ", cStrPoolCount_: %" PRIu16,
@@ -109,11 +113,14 @@ void Tokens::addStr(Token &token, const std::string &str) {
     uint16_t len = str.length();
     if ((getCStrPoolCount() + len) < (CSTR_POOL_SIZE - 2)) {
         const char *s = str.c_str();
-        if (token.cStr == nullptr) {
-            token.cStr = &cStrPool_[cStrPoolTailIdx_];
+        if (token.c32Str == nullptr) {
+            token.c32Str = &cStrPool_[cStrPoolTailIdx_];
         }
         while (len--) {
-            cStrPool_[cStrPoolTailIdx_] = *s++;
+            std::mbstate_t state{}; // zero-initialized to initial state
+            char32_t c32;
+            std::mbrtoc32(&c32, s++, 1, &state);
+            cStrPool_[cStrPoolTailIdx_] = c32;
             token.length++; // must be done BEFORE the call to incrCStrPoolTailIdx(). DO NOT
                             // OPTIMIZE!
             incrCStrPoolTailIdx(token);
@@ -121,9 +128,9 @@ void Tokens::addStr(Token &token, const std::string &str) {
         endOfCStr();
 
         if constexpr (REND_DEBUG) {
-            if (std::char_traits<char32_t>::length(token.cStr) != token.length) {
-                REND_ELOG("Hum... token length wrong: %zu vs %" PRIu16, strlen(token.cStr),
-                          token.length);
+            if (std::char_traits<char32_t>::length(token.c32Str) != token.length) {
+                REND_ELOG("Hum... token length wrong: %zu vs %" PRIu16,
+                          std::char_traits<char32_t>::length(token.c32Str), token.length);
             }
             // log_d("After: tokensCount_: %" PRIu16 ", token length: %" PRIu16
             //       ", cStrPoolCount_: %" PRIu16,
@@ -153,7 +160,7 @@ void Tokens::freeTokens(Idx fromTokenIdx, uint16_t count) {
         //         while (tokenIdx != lastTokenIdx) {
         //             if ((tokens_[tokenIdx].tokenId == TokenId::TEXT) ||
         //                 (tokens_[tokenIdx].tokenId == TokenId::PICTURE)) {
-        //                 Idx poolIdx = (Idx)(tokens_[tokenIdx].cStr - cStrPool_.data());
+        //                 Idx poolIdx = (Idx)(tokens_[tokenIdx].c32Str - cStrPool_.data());
         //                 Idx poolHead = cStrPoolHeadIdx_;
         //                 if ((cStrPoolHeadIdx_ + tokens_[tokenIdx].length + 1) >= CSTR_POOL_SIZE)
         //                 {
@@ -200,7 +207,7 @@ void Tokens::freeTokens(Idx fromTokenIdx, uint16_t count) {
         // Not all tokens are using the pool
         if (((uint16_t)id & POOL_TOKENS) != 0) {
             // Free space in string pool
-            Idx poolIdx = tokens_[lastTokenPoolIdx].cStr - cStrPool_.data();
+            Idx poolIdx = tokens_[lastTokenPoolIdx].c32Str - cStrPool_.data();
 
             if constexpr (REND_DEBUG) {
                 if (poolIdx >= CSTR_POOL_SIZE) {
@@ -245,8 +252,8 @@ void Tokens::showToken(Idx tokenIdx) const {
               token.length);
         if ((uint16_t)token.tokenId & ((uint16_t)TokenId::TEXT | (uint16_t)TokenId::ITEXT |
                                        (uint16_t)TokenId::HTEXT | (uint16_t)TokenId::NTEXT)) {
-            if (token.cStr != nullptr) {
-                log_d("Text Content: \"%s\"", token.cStr);
+            if (token.c32Str != nullptr) {
+                log_d("Text Content: \"%s\"", Pager::toString(token.c32Str).c_str());
             } else {
                 log_e("Text content is null!!");
             }

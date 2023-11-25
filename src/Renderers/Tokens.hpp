@@ -29,8 +29,8 @@ private:
 
         if (cStrPoolTailIdx_ == 0) {
             if ((getCStrPoolCount() + token.length) < (CSTR_POOL_SIZE - 2)) {
-                memcpy(&cStrPool_[0], token.cStr, token.length * 4);
-                token.cStr = &cStrPool_[0];
+                memcpy(&cStrPool_[0], token.c32Str, token.length * 4);
+                token.c32Str = &cStrPool_[0];
                 cStrPoolTailIdx_ = token.length;
             } else {
                 log_e("cStrPool_[] is too small!");

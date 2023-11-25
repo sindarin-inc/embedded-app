@@ -111,7 +111,8 @@
         "__verbose_abort": "cpp",
         "charconv": "cpp",
         "format": "cpp",
-        "span": "cpp"
+        "span": "cpp",
+        "cuchar": "cpp"
     },
     "editor.formatOnSave": true,
     "editor.defaultFormatter": "xaver.clang-format",

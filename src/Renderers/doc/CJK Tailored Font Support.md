@@ -2,7 +2,7 @@
 
 **CJK**: Chinese, Japanese and Korean
 
-Here is the list of elements that were problematic and their correction done in this branch:
+Here is the list of elements that were problematic and the actions taken in this branch:
 
 ### Font generation
 
@@ -34,7 +34,7 @@ The renderer, when called to generate a page, checks for the presence of a tailo
 ---
 **The issue**: `space` character is not used. U+3000 is used to create some gap at the beginning of paragraphs. 
 
-**The solution**: The `nextByte()` lambda in EPubTokenizer translates the U+3000 as a space for the parsing process. In the IBMFFont driver, U+3000 is now processed as a space too (maybe not required as it is translated in the `nextByte()` lambda)
+**The solution**: As CJK characters are expected to be all monospaced (same width of 16 pixels) it is preferable to keep it that way for the moment.
 
 ---
 **The Issue**: Sequences of CJK glyphs are often longer than the space available in a single line. Cutting the sequence arbitrarily may cause ponctuation characters to appear at wrong places.
@@ -44,4 +44,9 @@ The renderer, when called to generate a page, checks for the presence of a tailo
 ---
 **The issue**: CJK glyphs must be presented as monospaced, not proportional.
 
-**The solution**: When a font is loaded from the EPub, the optical kerning algorithm is disabled.
+**The solution**: When a font is loaded from the EPub, the optical kerning algorithm is disabled. The font generator fixes the advance parameter value of all CJK related glyphs to 16 pixels.
+
+---
+**The issue**: Some punctuation code points are tailored for vertical writing. They must be transformed for hotizontal writing. This is the case when a book as been typesetted for vertical, bottom up reading.
+
+**The solution**: A table in the Tokenizer identifies the characters that needs to be transformed: The following are part of that table: https://www.unicode.org/charts/PDF/UFE30.pdf . These are used in vertical typewriting of books and are to be replaced with those that are part of the followings: https://en.wikipedia.org/wiki/CJK_Symbols_and_Punctuation . For the later, the font-generator application loads by default the corresponding characters required for horizontal typesetting when vertical punctuation characters are found in the book.

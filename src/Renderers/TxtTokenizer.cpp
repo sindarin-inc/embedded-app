@@ -69,7 +69,7 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, St
 
         Token &newToken = tokens_.getNextAvailable();
 
-        newToken = {.cStr = nullptr,
+        newToken = {.c32Str = nullptr,
                     .picture = nullptr,
                     .streamPlace = addOffset(fromPlace, streamRelativeOffset),
                     .pixWidth = 0,
@@ -149,7 +149,7 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, St
                 // of a newline character appears at the beginning of the parsing process, it must
                 // be an end of paragraph, as the preceding newline was absorbed by the preceding
                 // page
-                newToken = {.cStr = nullptr,
+                newToken = {.c32Str = nullptr,
                             .picture = nullptr,
                             .streamPlace = addOffset(fromPlace, streamRelativeOffset),
                             .pixWidth = 0,
@@ -157,7 +157,7 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, St
                             .length = 0,
                             .tokenId = TokenId::ENDPARAGRAPH,
                             .spacesAfter = 0};
-                pageCompleted = addTokenToPage(newToken, backwards, "\n", 1);
+                pageCompleted = addTokenToPage(newToken, backwards, U"\n", 1);
                 nextByte();
                 // No two or more lines with only a \n are allowed.
                 while (curChar == '\n') {
@@ -166,12 +166,12 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, St
             } else {
                 newToken.tokenId = TokenId::NEWLINE;
                 lastToken_ = nullptr;
-                pageCompleted = addTokenToPage(newToken, backwards, "\n", 1);
+                pageCompleted = addTokenToPage(newToken, backwards, U"\n", 1);
                 if (!pageCompleted) {
                     do {
                         nextByte();
-                    } while ((curChar != '\0') && (curChar < ' ') && (curChar != '\n') &&
-                             (curChar != '\t'));
+                    } while ((curChar != U'\0') && (curChar < U' ') && (curChar != U'\n') &&
+                             (curChar != U'\t'));
                     if (curChar == '\n') {
                         // log_w("Stream relative offset:%" PRIu32, streamRelativeOffset);
                         if (backwards && !tokens_.isEmpty() &&
@@ -183,7 +183,7 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, St
 
                         Token &newToken = tokens_.getNextAvailable();
 
-                        newToken = {.cStr = nullptr,
+                        newToken = {.c32Str = nullptr,
                                     .picture = nullptr,
                                     .streamPlace = addOffset(fromPlace, streamRelativeOffset),
                                     .pixWidth = 0,
@@ -191,7 +191,7 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, St
                                     .length = 0,
                                     .tokenId = TokenId::ENDPARAGRAPH,
                                     .spacesAfter = 0};
-                        pageCompleted = addTokenToPage(newToken, backwards, "\n", 1);
+                        pageCompleted = addTokenToPage(newToken, backwards, U"\n", 1);
                         nextByte();
                         // No two or more lines with only a \n are allowed.
                         while (curChar == '\n') {
