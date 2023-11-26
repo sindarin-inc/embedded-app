@@ -150,6 +150,7 @@ private:
     using Tags = SpiramMap<SpiramString, Tag>;
     using Entities = SpiramMap<SpiramString, const char32_t>;
     using Characters = SpiramMap<SpiramString, const char32_t>;
+    using CJKTransList = SpiramMap<char32_t, char32_t>;
 
     // Hash HTML tags
     static Tags tags;
@@ -162,6 +163,9 @@ private:
 
     // Subscript Characters UTF-8 codification
     static Characters subscriptCharacters;
+ 
+    // CJK translation from verical typesetting to horizontal typesetting
+    static CJKTransList cjkTransList;
 
     // Where the tokenizer will start to parse tokens
     StreamPlace fromPlace_;

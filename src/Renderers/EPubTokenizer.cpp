@@ -316,6 +316,40 @@ EPubTokenizer::Characters EPubTokenizer::subscriptCharacters
     {"/", U'\U0000E021'},
 };
 
+EPubTokenizer::CJKTransList EPubTokenizer::cjkTransList = {
+  { U'\U0000FE30', U'\U00002025' },
+  { U'\U0000FE31', U'\U00002014' },
+  { U'\U0000FE32', U'\U00002013' },
+  { U'\U0000FE33', U'\U0000005F' },
+  { U'\U0000FE34', U'\U0000005F' },
+  { U'\U0000FE35', U'\U00000028' },
+  { U'\U0000FE36', U'\U00000029' },
+  { U'\U0000FE37', U'\U0000007B' },
+  { U'\U0000FE38', U'\U0000007D' },
+  { U'\U0000FE39', U'\U00003014' },
+  { U'\U0000FE3A', U'\U00003015' },
+  { U'\U0000FE3B', U'\U00003010' },
+  { U'\U0000FE3C', U'\U00003011' },
+  { U'\U0000FE3D', U'\U0000300A' },
+  { U'\U0000FE3E', U'\U0000300B' },
+  { U'\U0000FE3F', U'\U00003008' },
+  { U'\U0000FE40', U'\U00003009' },
+  { U'\U0000FE41', U'\U0000300C' },
+  { U'\U0000FE42', U'\U0000300D' },
+  { U'\U0000FE43', U'\U0000300E' },
+  { U'\U0000FE44', U'\U0000300F' },
+  { U'\U0000FE45', U'\U0000FE51' },
+  { U'\U0000FE47', U'\U0000005B' },
+  { U'\U0000FE48', U'\U0000005D' },
+  { U'\U0000FE49', U'\U0000203E' },
+  { U'\U0000FE4A', U'\U0000203E' },
+  { U'\U0000FE4B', U'\U0000203E' },
+  { U'\U0000FE4C', U'\U0000203E' },
+  { U'\U0000FE4D', U'\U0000005F' },
+  { U'\U0000FE4E', U'\U0000005F' },
+  { U'\U0000FE4F', U'\U0000005F' },
+};
+
 // clang-format on
 
 auto EPubTokenizer::searchStart(pugi::xml_node node) -> uint32_t {
@@ -1652,6 +1686,11 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint32_t len) -> bool 
                 if (backwards_) {
                     currentTxtOffset_ += size;
                     currentPageTxtOffset_ += size;
+                }
+
+                auto trans = cjkTransList.find(curChar);
+                if (trans != cjkTransList.end()) {
+                    curChar = trans->second;
                 }
             } else {
                 curChar = 0;
