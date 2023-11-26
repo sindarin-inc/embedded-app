@@ -147,6 +147,10 @@ public:
         return atEOF_ ? StreamPlace() : nextPagePlace_;
     }
 
+    [[nodiscard]] inline auto getCurrentLineWidthRemaining() const -> int16_t {
+        return (maxLineWidth_ - rightIndent_) - currentLineWidth_;
+    }
+
     inline void setNextPagePlace(StreamPlace place) { nextPagePlace_ = place; }
 
     void setFirstLineIdxBackward();

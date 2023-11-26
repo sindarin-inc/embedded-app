@@ -15,8 +15,8 @@ namespace renderer_defs {
 // The following defines are helpers for code development
 // That is specific to the renderer
 
-#define REND_DEBUGGING 0     // Show debugging messages where appropriate
-#define REND_EXIT_ON_ERROR 0 // Simulator Only!!
+#define REND_DEBUGGING 1     // Show debugging messages where appropriate
+#define REND_EXIT_ON_ERROR 1 // Simulator Only!!
 #define REND_PROFILING 0     // Speed measurements
 #define REND_STATISTICS 0    // Stats on Tokens size and Lines size
 

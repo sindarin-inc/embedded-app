@@ -7,6 +7,7 @@
 #include <memory>
 #include <sstream>
 #include <string>
+#include <unordered_set>
 
 template <typename T>
 struct SpiramAllocator {

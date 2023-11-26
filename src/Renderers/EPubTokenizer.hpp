@@ -2,6 +2,7 @@
 
 #include <array>
 #include <unordered_map>
+#include <unordered_set>
 
 #include "EPub/EPubFile.hpp"
 #include "Misc/SpiramAllocator.hpp"
@@ -151,6 +152,9 @@ private:
     using Entities = SpiramMap<SpiramString, const char32_t>;
     using Characters = SpiramMap<SpiramString, const char32_t>;
     using CJKTransList = SpiramMap<char32_t, char32_t>;
+    using SpaceChars = std::unordered_set<char32_t>;
+    using LeftBreaks = std::unordered_set<char32_t>;
+    using RightBreaks = std::unordered_set<char32_t>;
 
     // Hash HTML tags
     static Tags tags;
@@ -163,7 +167,11 @@ private:
 
     // Subscript Characters UTF-8 codification
     static Characters subscriptCharacters;
- 
+
+    static SpaceChars spaceChars;
+    static LeftBreaks leftBreaks;
+    static RightBreaks rightBreaks;
+
     // CJK translation from verical typesetting to horizontal typesetting
     static CJKTransList cjkTransList;
 
@@ -259,16 +267,24 @@ private:
         return true;
     }
 
+    [[nodiscard]] static inline auto isSpace(char32_t ch) -> bool {
+        return spaceChars.find(ch) != spaceChars.end();
+    }
+
     [[nodiscard]] static inline auto isSpaces(const char32_t *cstr) -> bool {
         while (*cstr) {
-            if (!isspace(*cstr)) {
-                if (*cstr != U'\U000000A0') {
-                    return false;
-                }
+            if (!isSpace(*cstr)) {
+                return false;
             }
             cstr++;
         }
         return true;
+    }
+
+    [[nodiscard]] static inline auto isCJK(const char32_t ch) -> bool {
+        return ((ch >= U'\U00002E80') && (ch <= U'\U00009FFF')) ||
+               ((ch >= U'\U0000FE10') && (ch <= U'\U0000FE6F')) ||
+               ((ch >= U'\U0000FF00') && (ch <= U'\U0000FFEF'));
     }
 
     // Called when it's time to close the last textToken, if there is any waiting to be closed.

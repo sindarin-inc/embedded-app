@@ -350,6 +350,75 @@ EPubTokenizer::CJKTransList EPubTokenizer::cjkTransList = {
   { U'\U0000FE4F', U'\U0000005F' },
 };
 
+EPubTokenizer::SpaceChars EPubTokenizer::spaceChars {
+  U'\n',
+  U'\r',
+  U'\t',
+  U'\v',
+  U'\f',
+  U' ' ,
+  U'\U000000A0',
+  U'\U0000202F',
+  U'\U00002000',
+  U'\U00002001',
+  U'\U00002002',
+  U'\U00002003',
+  U'\U00002004',
+  U'\U00002005',
+  U'\U00002006',
+  U'\U00002007',
+  U'\U00002008',
+  U'\U00002009',
+  U'\U0000200A',
+  U'\U0000200B',
+  U'\U0000200C',
+  U'\U0000200D',
+  U'\U0000200E',
+  U'\U0000200F',
+  U'\U00003000',
+};
+
+EPubTokenizer::LeftBreaks EPubTokenizer::leftBreaks {
+  U'(',
+  U'[',
+  U'{',
+  U'\U00003008',
+  U'\U0000300A',
+  U'\U0000300C',
+  U'\U0000300E',
+  U'\U00003010',
+  U'\U00003014',
+  U'\U00003016',
+  U'\U00003018',
+  U'\U0000301A',
+  U'\U0000301D',
+};
+
+EPubTokenizer::RightBreaks EPubTokenizer::rightBreaks {
+  U')',
+  U']',
+  U'}',
+  U',',
+  U'.',
+  U';',
+  U'!',
+  U'?',
+  U'-',
+  U'\U00003000',
+  U'\U00003001',
+  U'\U00003002',
+  U'\U00003009',
+  U'\U0000300B',
+  U'\U0000300D',
+  U'\U0000300F',
+  U'\U00003011',
+  U'\U00003015',
+  U'\U00003017',
+  U'\U00003019',
+  U'\U0000301B',
+  U'\U0000301E',
+};
+
 // clang-format on
 
 auto EPubTokenizer::searchStart(pugi::xml_node node) -> uint32_t {
@@ -1701,7 +1770,7 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint32_t len) -> bool 
     nextChar();
 
     if (beginningOfPage_) {
-        while ((curChar != 0) && isspace(curChar)) {
+        while ((curChar != 0) && isSpace(curChar)) {
             nextChar();
         }
     }
@@ -1814,11 +1883,11 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint32_t len) -> bool 
                     startOfHeader_ = false;
                 }
 
+#if 0
                 do {
                     // log_d("Current Character: %c (%02" PRIX8 "H)",
                     //       (((curChar >= ' ') && (curChar < 127)) ? curChar : ' '),
                     //       curChar);
-
                     if (curChar == U'&') {
                         auto [trans, newStrLocation] = getCharEntity(str);
                         if (trans != 0) {
@@ -1862,6 +1931,63 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint32_t len) -> bool 
                         nextChar();
                     }
                 } while ((curChar > U' ') && ((textCharCount_ < maxTextTokenCharSize_)));
+#else
+                static char32_t c32Str[50];
+                Idx c32StrIdx = 0;
+                char32_t lastChar;
+
+                while (curChar != 0) {
+                    // log_d("Current Character: %c (%02" PRIX8 "H)",
+                    //       (((curChar >= ' ') && (curChar < 127)) ? curChar : ' '),
+                    //       curChar);
+                    if (c32StrIdx >= 49) {
+                        break;
+                    }
+                    if (curChar == U'&') {
+                        auto [trans, newStrLocation] = getCharEntity(str);
+                        if (trans != 0) {
+                            len -= (newStrLocation - str);
+                            streamOffset += (newStrLocation - str);
+                            c32Str[c32StrIdx++] = lastChar = trans;
+                            str = newStrLocation;
+                        } else {
+                            c32Str[c32StrIdx++] = lastChar = curChar;
+                        }
+                    } else {
+                        c32Str[c32StrIdx++] = lastChar = curChar;
+                    }
+                    c32Str[c32StrIdx] = 0;
+
+                    log_w("Pager remaining: %" PRIi16 ", TextWidth: %" PRIi32,
+                          pager_.getCurrentLineWidthRemaining(), display_.getTextWidth(c32Str));
+
+                    if (pager_.getCurrentLineWidthRemaining() < display_.getTextWidth(c32Str)) {
+                        if ((rightBreaks.find(lastChar) == rightBreaks.end()) && (c32StrIdx > 1) &&
+                            (c32StrIdx < 49)) {
+                            c32Str[--c32StrIdx] = 0;
+                        } else {
+                            textCharCount_ += 1;
+                            nextChar();
+                        }
+                        break;
+                    }
+
+                    textCharCount_ += 1;
+                    nextChar();
+
+                    if (rightBreaks.find(lastChar) != rightBreaks.end()) {
+                        break;
+                    }
+
+                    if ((leftBreaks.find(curChar) != leftBreaks.end()) &&
+                        (leftBreaks.find(lastChar) == leftBreaks.end())) {
+                        break;
+                    }
+                }
+
+                c32Str[c32StrIdx] = 0;
+                tokens_.addChars(*textToken_, c32Str);
+#endif
 
                 // if we reach the end of the pcdata, we keep the textToken open. It will be
                 // completed with other pcdata, or by the next tag that is known to require that
@@ -1875,7 +2001,8 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint32_t len) -> bool 
                     // pageCompleted_ = addTokenToPage(newToken);
                 }
             }
-        } else if ((curChar == U' ') || (curChar == U'\t')) {
+        } else if ((curChar == U' ') || (curChar == U'\t') ||
+                   ((curChar > U' ') && isSpace(curChar))) {
             closeTextToken();
             if (lastToken_ != nullptr) {
                 lastToken_->spacesAfter++;
