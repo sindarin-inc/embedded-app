@@ -511,6 +511,8 @@ void LocalStore::syncFromRemote(
         return;
     }
 
+    progressCallback(ContentSyncState{.state = ContentSyncState::State::ConnectingWifi});
+
     if (!WiFi::getInstance().connectWiFiFromSettings()) {
         this->telemetry_.logMetric(TelemetryField::METRIC_WIFI, "sync-wifi-failed");
         progressCallback(ContentSyncState{.state = ContentSyncState::State::Failure,
@@ -581,6 +583,8 @@ void LocalStore::syncFromRemote(
         bool articlesAlreadySynced = false;
         bool booksNowSynced = false;
         bool articlesNowSynced = false;
+        int booksDownloaded = 0;
+        int articlesDownloaded = 0;
 
         progressCallback(ContentSyncState{.state = ContentSyncState::State::CheckingSync});
 
@@ -618,6 +622,14 @@ void LocalStore::syncFromRemote(
 
             auto nextPageCounter = 0;
             auto nextPageUrl = std::string();
+            int totalCount = 0;
+            auto downloadIndex = 0;
+
+            progressCallback(
+                ContentSyncState{.state = modelType == ReadablesModelType::Book
+                                              ? ContentSyncState::State::SyncingBooks
+                                              : ContentSyncState::State::SyncingArticles});
+
             while (nextPageUrl.length() || nextPageCounter == 0) {
                 if (nextPageCounter == 0) {
                     log_d("Fetching first page of %ss",
@@ -630,17 +642,6 @@ void LocalStore::syncFromRemote(
                     StringFormat("sync-%ss-page", ReadableModelTypeToString(modelType).c_str())
                         .c_str(),
                     {{"page", nextPageCounter}});
-
-                ContentSyncState syncState;
-                if (modelType == ReadablesModelType::Book) {
-                    progressCallback(
-                        ContentSyncState{.state = ContentSyncState::State::SyncingBooks});
-                    syncState = {.state = ContentSyncState::State::Syncing};
-                } else if (modelType == ReadablesModelType::Article) {
-                    progressCallback(
-                        ContentSyncState{.state = ContentSyncState::State::SyncingArticles});
-                    syncState = {.state = ContentSyncState::State::Syncing};
-                }
 
                 nextPageCounter += 1;
                 if (nextPageCounter > MAX_NUMBER_OF_PAGES_TO_BACKFILL) {
@@ -658,6 +659,7 @@ void LocalStore::syncFromRemote(
                     SHOW_HEAP();
                     httpCode = SindarinAPI::getInstance()->checkSync(
                         checkSyncRequest, &checkSyncResponse, this->telemetry_);
+                    totalCount = checkSyncResponse.totalCount;
                     SHOW_HEAP();
                 } else {
                     httpCode =
@@ -731,61 +733,20 @@ void LocalStore::syncFromRemote(
                     break;
                 }
 
-                // Count books/articles to download and delete
-                syncState.tasks.reserve(readablesToDownload.size() + readablesToDelete.size());
-                auto tasksIndex = 0;
-
-                if (modelType == ReadablesModelType::Book) {
-                    for (const auto &userReadable : readablesToDelete) {
-                        syncState.tasks.push_back(ContentSyncState::Task{
-                            .message =
-                                StringFormat("Delete: %s", userReadable.readable->title.c_str()),
-                            .percentage = 0,
-                        });
-                    }
-
-                    for (const auto &userReadable : readablesToDownload) {
-                        syncState.tasks.push_back(ContentSyncState::Task{
-                            .message =
-                                StringFormat("Get: %s", userReadable.readable->title.c_str()),
-                            .percentage = 0,
-                        });
-                    }
-                } else {
-                    if (readablesToDelete.size() > 0) {
-                        syncState.tasks.push_back(ContentSyncState::Task{
-                            .message = "Delete: Archived articles",
-                            .percentage = 0,
-                        });
-                    }
-                    if (readablesToDownload.size() > 0) {
-                        syncState.tasks.push_back(ContentSyncState::Task{
-                            .message = "Get: Articles and newsletters",
-                            .percentage = 0,
-                        });
-                    }
-                }
                 // Check if we have any readables to download/delete, and if not, continue paging
-                if (syncState.tasks.size() == 0) {
+                if (readablesToDelete.size() == 0 && readablesToDownload.size() == 0) {
                     log_i("No %ss to download or delete, continuing to next page",
                           ReadableModelTypeToString(modelType).c_str());
-                    if (modelType == ReadablesModelType::Book) {
-                        progressCallback(
-                            ContentSyncState{.state = ContentSyncState::State::SyncingBooks});
-                    } else if (modelType == ReadablesModelType::Article) {
-                        progressCallback(
-                            ContentSyncState{.state = ContentSyncState::State::SyncingArticles});
-                    }
                     continue;
                 }
-                progressCallback(syncState);
 
-                processReadableDeletion(readablesToDelete, *readables, tasksIndex, syncState,
-                                        progressCallback);
-                failedDownload =
-                    processReadableDownload(readablesToDownload, *readables, tasksIndex, syncState,
-                                            progressCallback, modelType) ||
-                    failedDownload;
+                processReadableDeletion(readablesToDelete, *readables);
+                failedDownload = processReadableDownload(
+                                     readablesToDownload, *readables, downloadIndex,
+                                     modelType == ReadablesModelType::Book ? booksDownloaded
+                                                                           : articlesDownloaded,
+                                     progressCallback, modelType, totalCount) ||
+                                 failedDownload;
                 if (failedDownload) {
                     log_d("Failed to process %ss, have %zu %ss",
                           ReadableModelTypeToString(modelType).c_str(), readables->size(),
@@ -796,8 +757,6 @@ void LocalStore::syncFromRemote(
                                      ReadableModelTypeToString(modelType).c_str())
                             .c_str());
                 }
-
-                progressCallback(syncState);
             }
 
             if (!this->saveReadables(*readables)) {
@@ -868,15 +827,12 @@ void LocalStore::syncFromRemote(
             }
         }
 
-#if !TESTS
-        // Artificially delay so the user has the satisfaction of seeing the list done
-        Delay(1000);
-#endif
-
         if (booksAlreadySynced && articlesAlreadySynced) {
             progressCallback(ContentSyncState{.state = ContentSyncState::State::AlreadySynced});
         } else if (booksNowSynced || articlesNowSynced) {
-            progressCallback(ContentSyncState{.state = ContentSyncState::State::Synced});
+            progressCallback(ContentSyncState{.state = ContentSyncState::State::Synced,
+                                              .booksDownloaded = booksDownloaded,
+                                              .articlesDownloaded = articlesDownloaded});
         } else if (checkSyncFailures > 0) {
             progressCallback(ContentSyncState{.state = ContentSyncState::State::Failure,
                                               .message = "Failed to check sync"});
@@ -942,40 +898,28 @@ auto LocalStore::processReadables(const ReadablesVector &readables,
     return std::make_pair(readablesToDownload, readablesToDelete);
 }
 
-void LocalStore::processReadableDeletion(
-    const UserReadablesVector &readablesToDelete, ReadablesVector &readables, int &tasksIndex,
-    ContentSyncState &syncState, const std::function<void(ContentSyncState)> &progressCallback) {
-    for (int i = 0; i < readablesToDelete.size(); i++) {
-
-        syncState.tasks[tasksIndex].percentage = (float(i + 1) / readablesToDelete.size()) * 100;
-
-        log_i("Deleting %s", readablesToDelete[i].readable->title.c_str());
-        readableFilePurge(readablesToDelete[i].readable);
-        removeReadable(readables, readablesToDelete[i].readable);
+void LocalStore::processReadableDeletion(const UserReadablesVector &readablesToDelete,
+                                         ReadablesVector &readables) {
+    for (const auto &i : readablesToDelete) {
+        log_i("Deleting %s", i.readable->title.c_str());
+        readableFilePurge(i.readable);
+        removeReadable(readables, i.readable);
     }
-
-    // All article deletions take a single task line item
-    if (readablesToDelete.size() > 0) {
-        tasksIndex += 1;
-    }
-    progressCallback(syncState);
 }
 
 auto LocalStore::processReadableDownload(
-    const UserReadablesVector &readablesToDownload, ReadablesVector &readables, int &tasksIndex,
-    ContentSyncState &syncState, const std::function<void(ContentSyncState)> &progressCallback,
-    ReadablesModelType modelType) -> bool {
+    const UserReadablesVector &readablesToDownload, ReadablesVector &readables, int &downloadIndex,
+    int &successfullyDownloaded, const std::function<void(ContentSyncState)> &progressCallback,
+    ReadablesModelType modelType, int totalCount) -> bool {
     bool failedDownload = false;
 
     if (readablesToDownload.size() == 0) {
-        progressCallback(syncState);
         return failedDownload;
     }
 
-    float pctPerReadable = 100.0 / readablesToDownload.size();
-    for (int i = 0; i < readablesToDownload.size(); i++) {
-        float currPercentage = (float)i * pctPerReadable;
-        const auto &userReadable = readablesToDownload[i];
+    float pctPerReadable = 100.0 / totalCount;
+    for (const auto &userReadable : readablesToDownload) {
+        float currPercentage = (float)downloadIndex * pctPerReadable;
         const auto &readable = userReadable.readable;
         auto path = readableFilePathForWriting(readable);
         log_i("Downloading %s (file=%s, url=%s)", readable->title.c_str(), path.c_str(),
@@ -985,17 +929,16 @@ auto LocalStore::processReadableDownload(
         for (int t = 0; t < NUMBER_OF_READABLE_DOWNLOAD_TRIES; t++) {
             auto httpCode = SindarinAPI::getInstance()->downloadReadable(
                 readable, this->fileSystem, this->telemetry_, path,
-                [progressCallback, &syncState, tasksIndex, currPercentage, pctPerReadable,
-                 modelType](int percentage) {
-                if (modelType == ReadablesModelType::Book) {
-                    syncState.tasks[tasksIndex].percentage = percentage;
-                } else if (modelType == ReadablesModelType::Article) {
-                    float pctThisReadable = (float)percentage * pctPerReadable / 100.0;
-                    syncState.tasks[tasksIndex].percentage = currPercentage + pctThisReadable;
-                }
-                progressCallback(syncState);
+                [progressCallback, currPercentage, pctPerReadable, modelType](int percentage) {
+                int pctThisReadable = percentage * pctPerReadable;
+                progressCallback(
+                    ContentSyncState{.state = modelType == ReadablesModelType::Book
+                                                  ? ContentSyncState::State::SyncingBooks
+                                                  : ContentSyncState::State::SyncingArticles,
+                                     .percentage = int(currPercentage + (pctThisReadable / 100))});
                 });
             if (httpCode == 200) {
+                successfullyDownloaded += 1;
                 addReadable(readables, readable);
                 log_d("File successfully downloaded.");
                 purgeReadableToc(readable);
@@ -1032,15 +975,7 @@ auto LocalStore::processReadableDownload(
             }
         }
 
-        if (modelType == ReadablesModelType::Book) {
-            tasksIndex += 1;
-        }
-    }
-
-    progressCallback(syncState);
-
-    if (modelType == ReadablesModelType::Article) {
-        tasksIndex += 1;
+        downloadIndex += 1;
     }
 
     return failedDownload;

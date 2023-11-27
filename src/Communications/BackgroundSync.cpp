@@ -8,7 +8,6 @@
 #include "Communications/WiFi.hpp"
 #include "Misc/Platform.hpp"
 #include "Misc/Telemetry.hpp"
-#include "UI/ContentSyncScreen.hpp"
 #include "config.h"
 
 void BackgroundSyncInternal(PowerManager &powerManager, PreferencesStore &prefs,

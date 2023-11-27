@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "Components/BoxView.hpp"
+#include "UI/Screen.hpp"
 
 class MsgPopup : public Screen {
 

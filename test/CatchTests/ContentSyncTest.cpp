@@ -119,7 +119,6 @@ TEST_CASE("Run a basic content sync", "[.][content-sync]") {
         case ContentSyncState::CheckingSync:
         case ContentSyncState::SyncingBooks:
         case ContentSyncState::SyncingArticles:
-        case ContentSyncState::Syncing:
             break;
         case ContentSyncState::Synced:
         case ContentSyncState::AlreadySynced:
