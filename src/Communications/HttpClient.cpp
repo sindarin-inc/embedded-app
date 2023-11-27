@@ -6,4 +6,4 @@ HttpClient::HttpClient(const char *url, const char *contentType, esp_http_client
     url_ = strdup(url);
 }
 
-HttpClient::~HttpClient() {}
+HttpClient::~HttpClient() = default;
