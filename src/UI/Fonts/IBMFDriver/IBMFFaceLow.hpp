@@ -81,6 +81,8 @@ public:
 
     inline auto setOpticalkerning(bool value) { opticalKerning = value; }
 
+    inline auto isOpticalKerningEnabled() const -> bool { return opticalKerning; }
+
     inline auto setResolution(PixelResolution res) -> void { resolution_ = res; }
 
     auto ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2, FIX16 *kern) -> bool;

@@ -404,7 +404,6 @@ EPubTokenizer::RightBreaks EPubTokenizer::rightBreaks {
   U'!',
   U'?',
   U'-',
-  U'\U00003000',
   U'\U00003001',
   U'\U00003002',
   U'\U00003009',
@@ -417,6 +416,7 @@ EPubTokenizer::RightBreaks EPubTokenizer::rightBreaks {
   U'\U00003019',
   U'\U0000301B',
   U'\U0000301E',
+  U'\U0000FF0E',
 };
 
 // clang-format on
@@ -1851,7 +1851,7 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint32_t len) -> bool 
                 // After the following call, newToken may become irrelevant
                 addTokenToPage(newToken);
             }
-        } else if (curChar > U' ') {
+        } else if ((curChar > U' ') && !isSpace(curChar)) {
             if (textToken_ == nullptr) {
                 textToken_ = &tokens_.getNextAvailable();
 
@@ -1958,22 +1958,30 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint32_t len) -> bool 
                     }
                     c32Str[c32StrIdx] = 0;
 
-                    log_w("Pager remaining: %" PRIi16 ", TextWidth: %" PRIi32,
-                          pager_.getCurrentLineWidthRemaining(), display_.getTextWidth(c32Str));
+                    if (isCJK(lastChar)) {
+                        // log_w("Pager remaining: %" PRIi16 ", TextWidthQuick: %" PRIi32,
+                        //       pager_.getCurrentLineWidthRemaining(),
+                        //       display_.getTextWidthQuick(c32Str));
 
-                    if (pager_.getCurrentLineWidthRemaining() < display_.getTextWidth(c32Str)) {
-                        if ((rightBreaks.find(lastChar) == rightBreaks.end()) && (c32StrIdx > 1) &&
-                            (c32StrIdx < 49)) {
-                            c32Str[--c32StrIdx] = 0;
-                        } else {
-                            textCharCount_ += 1;
-                            nextChar();
+                        if (pager_.getCurrentLineWidthRemaining() <
+                            display_.getTextWidthQuick(c32Str)) {
+                            if ((rightBreaks.find(lastChar) == rightBreaks.end()) &&
+                                (c32StrIdx > 1) && (c32StrIdx < 49)) {
+                                c32Str[--c32StrIdx] = 0;
+                            } else {
+                                textCharCount_ += 1;
+                                nextChar();
+                            }
+                            break;
                         }
-                        break;
                     }
 
                     textCharCount_ += 1;
                     nextChar();
+
+                    if (isSpace(curChar)) {
+                        break;
+                    }
 
                     if (rightBreaks.find(lastChar) != rightBreaks.end()) {
                         break;
@@ -1985,8 +1993,10 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint32_t len) -> bool 
                     }
                 }
 
-                c32Str[c32StrIdx] = 0;
-                tokens_.addChars(*textToken_, c32Str);
+                if (c32StrIdx > 0) {
+                    c32Str[c32StrIdx] = 0;
+                    tokens_.addChars(*textToken_, c32Str);
+                }
 #endif
 
                 // if we reach the end of the pcdata, we keep the textToken open. It will be

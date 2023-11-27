@@ -148,6 +148,8 @@ public:
     }
 
     [[nodiscard]] inline auto getCurrentLineWidthRemaining() const -> int16_t {
+        // log_w("maxLineWidth: %" PRIu16 ", rightIndent: %" PRIu16 ", currentLineWidth_: %" PRIu16,
+        //       maxLineWidth_, rightIndent_, currentLineWidth_);
         return (maxLineWidth_ - rightIndent_) - currentLineWidth_;
     }
 

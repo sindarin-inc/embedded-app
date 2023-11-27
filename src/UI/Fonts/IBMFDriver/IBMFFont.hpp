@@ -119,8 +119,9 @@ public:
             GlyphCode glyphCode = font_->translate(toChar32(&buffer));
 
             if (face->getGlyphHorizontalMetrics(glyphCode, &xoff, &advance)) {
-                width +=
-                    (*buffer == '\0') ? (face->getGlyphWidth(glyphCode) - xoff) : (advance >> 6);
+                width += (*buffer == '\0')
+                             ? (face->getGlyphWidth(glyphCode) - xoff)
+                             : (advance >> 6) + (face->isOpticalKerningEnabled() ? 0 : 1);
             }
         }
         // log_w(" width: %" PRIi16, width);
@@ -144,8 +145,9 @@ public:
             GlyphCode glyphCode = font_->translate(*buffer++);
 
             if (face->getGlyphHorizontalMetrics(glyphCode, &xoff, &advance)) {
-                width +=
-                    (*buffer == '\0') ? (face->getGlyphWidth(glyphCode) - xoff) : (advance >> 6);
+                width += (*buffer == '\0')
+                             ? (face->getGlyphWidth(glyphCode) - xoff)
+                             : (advance >> 6) + (face->isOpticalKerningEnabled() ? 0 : 1);
             }
         }
         // log_w(" width: %" PRIi16, width);
