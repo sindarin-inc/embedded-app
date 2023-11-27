@@ -126,6 +126,9 @@ template <typename K, typename V>
 using SpiramMap = std::unordered_map<K, V, std::hash<K>, std::equal_to<K>,
                                      SpiramAllocator<std::pair<const K, V>>>;
 
+template <typename T>
+using SpiramSet = std::unordered_set<T, std::hash<T>, std::equal_to<T>, SpiramAllocator<T>>;
+
 class SpiramStringBuf : public std::streambuf {
 public:
     SpiramStringBuf(const SpiramString &str) {

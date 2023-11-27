@@ -403,6 +403,7 @@ EPubTokenizer::RightBreaks EPubTokenizer::rightBreaks {
   U';',
   U'!',
   U'?',
+  U':',
   U'-',
   U'\U00003001',
   U'\U00003002',
@@ -416,6 +417,11 @@ EPubTokenizer::RightBreaks EPubTokenizer::rightBreaks {
   U'\U00003019',
   U'\U0000301B',
   U'\U0000301E',
+  U'\U00004E00',
+  U'\U0000FF01',
+  U'\U0000FF02',
+  U'\U0000FF07',
+  U'\U0000FF0C',
   U'\U0000FF0E',
 };
 
@@ -683,6 +689,8 @@ auto EPubTokenizer::forwardToNextPageOffset(pugi::xml_node node) const -> uint32
 //
 // 12) When the page to be displayed is ready
 //
+// 13) To generate a new paragraph when two <br> tag are encountered in a row
+//
 // ----
 
 auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, StreamPlace *toPlace)
@@ -752,6 +760,10 @@ auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, S
     // ----> 11) When the page to be displayed is ready
 
     pageCompleted_ = false;
+
+    // ----> 13) To generate a new paragraph when two <br> tag are encountered in a row
+
+    brEncountered_ = false;
 
     // ---
 
@@ -1405,6 +1417,11 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
 
         if (!pageCompleted_) {
             if (tagIt != tags.end()) {
+
+                if (tagIt->second != Tag::BREAK) {
+                    brEncountered_ = false;
+                }
+
                 switch (tagIt->second) {
                 case Tag::H1:
                 case Tag::H2:
@@ -1503,9 +1520,12 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                                         .pixWidth = 0,
                                         .pixHeight = 0,
                                         .length = 0,
-                                        .tokenId = TokenId::NEWLINE,
+                                        .tokenId = brEncountered_ ? TokenId::ENDPARAGRAPH
+                                                                  : TokenId::NEWLINE,
                                         .spacesAfter = 0};
                             lastToken_ = nullptr;
+
+                            brEncountered_ = !brEncountered_;
 
                             addTokenToPage(newToken, U"\n", 1);
                         }
@@ -1674,6 +1694,8 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
         // Count forward the number of non-tag bytes (for estimating page number)
         // currentTxtOffset_ = 0;
 
+        brEncountered_ = false;
+
         if (!tokenizingStarted_) {
             if (((currentSpineIdx_ == fromPlace_.getSpineIdx()) &&
                  ((currentStreamOffset_ + len) >= fromPlace_.getOffset())) ||
@@ -1718,11 +1740,37 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint32_t len) -> bool 
 
     // REND_WLOG("Started at offset: %" PRIu32, streamOffset);
 
-    char32_t curChar;
+    char32_t curChar = 0;
+
+    const pugi::char_t *prevStr;
+    uint32_t prevLen;
+    char32_t prevChar;
+    uint32_t prevStreamOffset;
+    uint32_t prevIncrement;
+    uint32_t prevTxtOffset;
+    uint32_t prevPageTxtOffset;
 
     // Keep it DRY
 
-    auto nextChar = [&curChar, &str, &len, &streamOffset, &lastIncrement, this]() -> void {
+    auto previousChar = [&]() -> void {
+        str = prevStr;
+        len = prevLen;
+        curChar = prevChar;
+        streamOffset = prevStreamOffset;
+        lastIncrement = prevIncrement;
+        currentTxtOffset_ = prevTxtOffset;
+        currentPageTxtOffset_ = prevPageTxtOffset;
+    };
+
+    auto nextChar = [&]() -> void {
+        prevStr = str;
+        prevLen = len;
+        prevChar = curChar;
+        prevStreamOffset = streamOffset;
+        prevIncrement = lastIncrement;
+        prevTxtOffset = currentTxtOffset_;
+        prevPageTxtOffset = currentPageTxtOffset_;
+
         if (len == 0) {
             curChar = 0;
         } else {
@@ -1956,7 +2004,6 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint32_t len) -> bool 
                     } else {
                         c32Str[c32StrIdx++] = lastChar = curChar;
                     }
-                    c32Str[c32StrIdx] = 0;
 
                     if (isCJK(lastChar)) {
                         // log_w("Pager remaining: %" PRIi16 ", TextWidthQuick: %" PRIi32,
@@ -1965,9 +2012,31 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint32_t len) -> bool 
 
                         if (pager_.getCurrentLineWidthRemaining() <
                             display_.getTextWidthQuick(c32Str)) {
-                            if ((rightBreaks.find(lastChar) == rightBreaks.end()) &&
-                                (c32StrIdx > 1) && (c32StrIdx < 49)) {
-                                c32Str[--c32StrIdx] = 0;
+                            if (rightBreaks.find(lastChar) == rightBreaks.end()) {
+                                // The last glyphs is a normal glyph, don't keep it as it will be
+                                // shown beyond line right margin. If there is only one or two, they
+                                // will be pushed on next line anyway (two because the first one can
+                                // be a leftBreak)
+                                if (c32StrIdx > 2) {
+                                    c32StrIdx -= 1;
+                                } else {
+                                    textCharCount_ += 1;
+                                    nextChar();
+                                }
+                            } else if (c32StrIdx > 3) {
+                                // The last glyphs is a right break glyph. We can't keep it there as
+                                // it will cause the whole token to appear on next line unless there
+                                // is less than 4 glyphs. Don't let it stay alone on next line. That
+                                // means we have to return back one glyph to be processed again such
+                                // that at least one glyph will preceed the right break glyph.
+                                textCharCount_ -= 1;
+                                previousChar();
+
+                                if (c32StrIdx > 2) {
+                                    c32StrIdx -= 2;
+                                } else {
+                                    c32StrIdx = 0;
+                                }
                             } else {
                                 textCharCount_ += 1;
                                 nextChar();

@@ -152,9 +152,9 @@ private:
     using Entities = SpiramMap<SpiramString, const char32_t>;
     using Characters = SpiramMap<SpiramString, const char32_t>;
     using CJKTransList = SpiramMap<char32_t, char32_t>;
-    using SpaceChars = std::unordered_set<char32_t>;
-    using LeftBreaks = std::unordered_set<char32_t>;
-    using RightBreaks = std::unordered_set<char32_t>;
+    using SpaceChars = SpiramSet<char32_t>;
+    using LeftBreaks = SpiramSet<char32_t>;
+    using RightBreaks = SpiramSet<char32_t>;
 
     // Hash HTML tags
     static Tags tags;
@@ -168,6 +168,7 @@ private:
     // Subscript Characters UTF-8 codification
     static Characters subscriptCharacters;
 
+    // CJK support for breaking sequence of glyphs at some convenient locations
     static SpaceChars spaceChars;
     static LeftBreaks leftBreaks;
     static RightBreaks rightBreaks;
@@ -202,6 +203,9 @@ private:
 
     // used for <h1>..<h6>
     bool startOfHeader_;
+
+    // a <br> tag was encountered before the current one.
+    bool brEncountered_;
 
     // The offset where we are tokenizing
     uint32_t currentStreamOffset_;
