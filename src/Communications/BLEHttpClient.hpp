@@ -3,16 +3,19 @@
 // Technically we're not using anything Arduino here, but there's a bug in Arduino where it has to
 // come first or it breaks compilation
 // See: https://github.com/espressif/arduino-esp32/issues/6247
-#include <esp_http_client.h>
 #include <map>
 #include <memory>
 
+#if USE_BLE_SERVER_PROXY
+#include "Communications/BLEProxy.hpp"
+#endif
+
 #include "Communications/HttpClient.hpp"
+#include "Misc/StringUtil.hpp"
 
 class BLEHttpClient {
 public:
-    BLEHttpClient(const char *url, const char *contentType = "",
-                  esp_http_client_method_t method = HTTP_METHOD_GET, bool gzip = false);
+    BLEHttpClient(const char *url, const char *contentType = "");
     BLEHttpClient(const BLEHttpClient &) = delete;
 
     ~BLEHttpClient();
@@ -41,5 +44,7 @@ private:
     char *url_;
     std::string userAgent_;
     esp_http_client_handle_t client_;
+    std::vector<std::pair<SpiramString, SpiramString>> requestHeaders_;
+    SpiramString requestBody_;
     std::multimap<std::string, std::string, CaseInsensitive> responseHeaders_;
 };

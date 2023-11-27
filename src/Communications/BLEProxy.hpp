@@ -4,29 +4,30 @@
 #include <NimBLEDevice.h>
 #include <esp_wifi.h>
 
-#include "BLEAbstractions.hpp"
-#include "Communications/BLEManager.hpp"
+#include "Communications/BLEAbstractions.hpp"
 #include "Misc/StringUtil.hpp"
-#include "Storage/PreferencesStore.hpp"
 #include "sindarin-debug.h"
 
 class BLEProxy : BLECharacteristicProvider {
 public:
-    BLEProxy(PreferencesStore *prefs);
+    BLEProxy();
     BLEProxy(BLEProxy const &) = delete;
 
+    static auto getInstance() -> std::shared_ptr<BLEProxy>;
+
     void configureCharacteristics(BLEService *service) override;
+
+    void writeUrl(const SpiramString &url);
+    void writeHeader(const SpiramString &header, const SpiramString &value);
+    void writeBody(const SpiramString &body);
 
     void
     setWebRequestHandler(std::function<void(const std::string &, const SpiramString &)> handler);
 
 protected:
-    PreferencesStore *prefs_;
+    static std::shared_ptr<BLEProxy> instance;
     BLECharacteristic *proxyCharacteristic_;
     std::function<void(const std::string &, const SpiramString &)> webRequestHandler_;
-
-    void writeUrlToCharacteristic(BLECharacteristic *characteristic, const std::string &url);
-    void writeBodyToCharacteristic(BLECharacteristic *characteristic, const SpiramString &body);
 
     class CharacteristicCallbacks : public BLECharacteristicCallbacks {
     public:
@@ -46,7 +47,7 @@ protected:
             if (equalsIndex != std::string::npos) {
                 std::string key = value.substr(0, equalsIndex);
                 SpiramString body = SpiramString(value.substr(equalsIndex + 1));
-                enclosed->writeBodyToCharacteristic(characteristic, body);
+                enclosed->writeBody(body);
                 if (enclosed->webRequestHandler_) {
                     enclosed->webRequestHandler_(key, body);
                 }

@@ -502,9 +502,8 @@ void LocalStore::resetReadablesBookmarksChanged(const ReadablesVector &readables
 }
 
 void LocalStore::syncFromRemote(
-    auto wifiConnected = false;
-
     SyncReason syncReason, const std::function<void(ContentSyncState state)> &progressCallback) {
+    auto wifiConnected = false;
     if (!WiFi::getInstance().hasWiFiCredentials()) {
         this->telemetry_.logMetric(TelemetryField::METRIC_WIFI, "sync-wifi-no-credentials");
         progressCallback(

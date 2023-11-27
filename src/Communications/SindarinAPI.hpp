@@ -4,7 +4,9 @@
 #include <functional>
 #include <utility>
 
+#if USE_BLE_SERVER_REMOTE
 #include "Communications/BLEHttpClient.hpp"
+#endif
 #include "Communications/HttpClient.hpp"
 #include "Misc/Telemetry.hpp"
 #include "Models/CheckSync.hpp"
