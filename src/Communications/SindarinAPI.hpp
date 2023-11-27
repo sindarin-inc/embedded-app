@@ -8,6 +8,7 @@
 #include "Communications/BLEHttpClient.hpp"
 #endif
 #include "Communications/HttpClient.hpp"
+#include "Communications/WiFiHttpClient.hpp"
 #include "Misc/Telemetry.hpp"
 #include "Models/CheckSync.hpp"
 #include "Models/Firmware.hpp"
@@ -57,7 +58,8 @@ public:
     auto downloadReadable(const std::shared_ptr<Readable> &readable, FileSystem &fileSystem,
                           Telemetry &telemetry, const std::string &path,
                           const std::function<void(int percentage)> &progressCallback) -> int;
-
+    auto createClient(const std::string &url, const std::string &contentType,
+                      esp_http_client_method_t method, bool useBle) -> std::shared_ptr<HttpClient>;
     auto uploadTelemetryFile(SFile &telemetryFile, const std::string &localPath,
                              FileSystem &fileSystem, bool useBle = false) -> int;
     auto uploadCrashReport(SFile &crashFile, const std::string &contentType) -> int;

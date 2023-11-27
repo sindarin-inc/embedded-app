@@ -51,7 +51,7 @@ auto SindarinAPI::checkSync(CheckSyncRequest &req, CheckSyncResponse *resp, Tele
 
 auto SindarinAPI::checkSync(const std::string &url, CheckSyncRequest &req, CheckSyncResponse *resp,
                             Telemetry &telemetry) -> int {
-    HttpClient client(url.c_str(), "application/json", HTTP_METHOD_POST);
+    WiFiHttpClient client(url.c_str(), "application/json", HTTP_METHOD_POST);
     auto err = setAuth(client);
     if (err != ESP_OK) {
         return ERR_SET_AUTH;
@@ -75,8 +75,9 @@ auto SindarinAPI::checkSync(const std::string &url, CheckSyncRequest &req, Check
 
     int writeLength = client.write(reqBody.get(), bodyLength);
     if (writeLength != bodyLength) {
-        auto message = StringFormat("HttpClient failed to write (writeLength=%d, bodyLength=%zu)",
-                                    writeLength, bodyLength);
+        auto message =
+            StringFormat("WiFiHttpClient failed to write (writeLength=%d, bodyLength=%zu)",
+                         writeLength, bodyLength);
         log_w("%s", message.c_str());
         telemetry.logMetric(TelemetryField::METRIC_SYNC_STATUS, "sync-failed",
                             {{"message", message.c_str()}});
@@ -135,7 +136,7 @@ auto SindarinAPI::checkSync(const std::string &url, CheckSyncRequest &req, Check
 }
 
 auto SindarinAPI::checkFirmware(FirmwareResponse *resp) -> int {
-    HttpClient client(StringFormat("%s/firmware/", baseUrl_.c_str()).c_str());
+    WiFiHttpClient client(StringFormat("%s/firmware/", baseUrl_.c_str()).c_str());
 
     auto err = setAuth(client);
     if (err != ESP_OK) {
@@ -212,6 +213,21 @@ auto SindarinAPI::downloadReadable(const std::shared_ptr<Readable> &readable,
     return httpCode;
 }
 
+auto SindarinAPI::createClient(const std::string &url, const std::string &contentType,
+                               esp_http_client_method_t method, bool useBle)
+    -> std::shared_ptr<HttpClient> {
+    if (useBle) {
+#if USE_BLE_SERVER_PROXY
+        return std::make_shared<BLEHttpClient>(url.c_str(), contentType.c_str(), method);
+#else
+        return nullptr;
+#endif
+    } else {
+        // Return an instance of WiFiHttpClient
+        return std::make_shared<WiFiHttpClient>(url.c_str(), contentType.c_str(), method);
+    }
+}
+
 auto SindarinAPI::uploadTelemetryFile(SFile &telemetryFile, const std::string &localPath,
                                       FileSystem &fileSystem, bool useBle) -> int {
     // Construct the headers and footers for multipart file upload
@@ -225,35 +241,28 @@ auto SindarinAPI::uploadTelemetryFile(SFile &telemetryFile, const std::string &l
     // Create client with multipart headers and write the header
     int totalSize = header.size() + telemetryFile.size() + footer.size();
     auto contentType = "multipart/form-data; boundary=" + boundary;
-
-    if (useBle) {
-#if USE_BLE_SERVER_PROXY
-        BLEHttpClient client(url.c_str(), contentType.c_str());
-#else
-        HttpClient client(url.c_str(), contentType.c_str(), HTTP_METHOD_POST);
-        return 0;
-#endif
-    } else {
-        HttpClient client(url.c_str(), contentType.c_str(), HTTP_METHOD_POST);
+    auto client = createClient(url, contentType, HTTP_METHOD_POST, useBle);
+    if (client == nullptr) {
+        return ERR_CLIENT_OPEN;
     }
 
-    auto err = setAuth(client);
+    auto err = setAuth(*(client.get()));
     if (err != ESP_OK) {
         return ERR_SET_AUTH;
     }
 
-    err = client.setHeader("X-Serial-Number", GetSerialNumber().c_str());
+    err = client->setHeader("X-Serial-Number", GetSerialNumber().c_str());
     if (err != ESP_OK) {
         return ERR_SET_HEADER;
     }
 
-    err = client.open(totalSize);
+    err = client->open(totalSize);
     if (err != ESP_OK) {
         return ERR_CLIENT_OPEN;
     }
-    defer { client.close(); };
+    defer { client->close(); };
 
-    auto bytesWritten = client.write(header.c_str(), header.size());
+    auto bytesWritten = client->write(header.c_str(), header.size());
     if (bytesWritten != header.size()) {
         log_e("Telemetry multipart write failure (%d < %zu)", bytesWritten, header.size());
         return ERR_CLIENT_WRITE;
@@ -266,10 +275,10 @@ auto SindarinAPI::uploadTelemetryFile(SFile &telemetryFile, const std::string &l
     int writeSize = telemetryFile.size();
     while (totalBytesWritten < writeSize) {
         auto bytesRead = telemetryFile.readBytes(buffer.get(), bufferSize);
-        auto bytesWritten = client.write(buffer.get(), bytesRead);
+        auto bytesWritten = client->write(buffer.get(), bytesRead);
         if (bytesWritten != bytesRead) {
-            log_w("client.write failed (bytesWritten == %d)", bytesWritten);
-            if (!client.connected) {
+            log_w("client->write failed (bytesWritten == %d)", bytesWritten);
+            if (!client->connected) {
                 log_w("Connection closed, bailing out");
                 return ERR_CLIENT_DISCONNECTED;
             }
@@ -278,20 +287,20 @@ auto SindarinAPI::uploadTelemetryFile(SFile &telemetryFile, const std::string &l
     }
 
     // Write the multipart footer
-    bytesWritten = client.write(footer.c_str(), footer.size());
+    bytesWritten = client->write(footer.c_str(), footer.size());
     if (bytesWritten < footer.size()) {
-        log_w("client.write failed (%d < %zu)", bytesWritten, footer.size());
+        log_w("client->write failed (%d < %zu)", bytesWritten, footer.size());
         return ERR_CLIENT_WRITE;
     }
 
     // Send request and fetch response
-    client.fetchHeaders();
-    return client.getStatusCode();
+    client->fetchHeaders();
+    return client->getStatusCode();
 }
 
 auto SindarinAPI::uploadCrashReport(SFile &crashFile, const std::string &contentType) -> int {
-    HttpClient client(StringFormat("%s/coredumps/", baseUrl_.c_str()).c_str(), contentType.c_str(),
-                      HTTP_METHOD_POST, true);
+    WiFiHttpClient client(StringFormat("%s/coredumps/", baseUrl_.c_str()).c_str(),
+                          contentType.c_str(), HTTP_METHOD_POST, true);
     auto err = setAuth(client);
     if (err != ESP_OK) {
         return ERR_SET_AUTH;

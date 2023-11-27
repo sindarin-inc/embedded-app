@@ -3,8 +3,8 @@
 #include <esp_timer.h>
 #include <utility>
 
-#include "Communications/HttpClient.hpp"
 #include "Communications/SindarinAPI.hpp"
+#include "Communications/WiFiHttpClient.hpp"
 #include "Misc/Defer.hpp"
 #include "Misc/GUnzipStream.hpp"
 #include "Misc/RateLimiter.hpp"
@@ -12,11 +12,11 @@
 
 auto DownloadFile(
     const char *url, const std::function<bool(int httpCode, int contentLength)> &openedConnection,
-    const std::function<size_t(HttpClient &client, int index, int contentLength)> &readWrite,
+    const std::function<size_t(WiFiHttpClient &client, int index, int contentLength)> &readWrite,
     const std::function<void(int bytesWritten, float percentage)> &progressCallback, bool gzip)
     -> int {
 
-    HttpClient client(url);
+    WiFiHttpClient client(url);
 
     auto sindarinApi = SindarinAPI::getInstance();
     if (sindarinApi->isSindarinUrl(url)) {
@@ -150,7 +150,7 @@ auto DownloadFile(const char *url,
 
     return DownloadFile(
         url, openedConnection,
-        [buffer, bufferSize, writeBytes](HttpClient &client, int index, int contentLength) {
+        [buffer, bufferSize, writeBytes](WiFiHttpClient &client, int index, int contentLength) {
         int readLen =
             client.read((char *)buffer.get(), std::min(bufferSize, contentLength - index));
 
@@ -214,7 +214,7 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry,
         return true;
     };
 
-    auto reader = [bufferQueue](HttpClient &client, int index, int contentLength) -> size_t {
+    auto reader = [bufferQueue](WiFiHttpClient &client, int index, int contentLength) -> size_t {
         auto *data = (uint8_t *)heap_caps_malloc(bufferSize, MALLOC_CAP_SPIRAM);
         if (data == nullptr) {
             log_e("heap_caps_malloc(%d) failed", bufferSize);
