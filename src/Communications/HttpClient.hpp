@@ -36,7 +36,7 @@ public:
 
     // auto perform() -> esp_err_t;
 
-    virtual auto write(const char *body, int length) -> int;
+    virtual auto write(const char *body, int length) -> int = 0;
 
     virtual auto makeWriteStream() -> std::shared_ptr<HttpOstream<4096>> = 0;
 
