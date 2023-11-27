@@ -39,34 +39,24 @@ auto BLEHttpClient::fetchHeaders() -> int {
 
     return statusCode;
 }
-// Assuming that HttpOstream and HttpIstream are defined somewhere
-auto BLEHttpClient::makeWriteStream() -> std::shared_ptr<HttpOstream<4096>> {
-    // Return a nullptr or a default instance, depending on your design
-    return nullptr;
-}
 
-auto BLEHttpClient::close() -> esp_err_t {
-    // Perform minimal closing operations or just return a success code
-    return ESP_OK;
-}
+auto BLEHttpClient::getStatusCode() -> int { return 0; }
 
-auto BLEHttpClient::makeReadStream() -> std::shared_ptr<HttpIstream<4096>> {
-    // Return a nullptr or a default instance
-    return nullptr;
-}
+auto BLEHttpClient::read(char *buffer, int length) -> int { return 0; }
 
-auto BLEHttpClient::isChunkedResponse() -> bool {
-    // Return a default value, typically false
-    return false;
-}
+auto BLEHttpClient::open(int contentLength) -> esp_err_t { return ESP_OK; }
 
-auto BLEHttpClient::writeChunkedData(const char *data, int length) -> bool {
-    // You can choose to do nothing and return true or handle as needed
-    return true;
-}
+auto BLEHttpClient::getResponseHeader(const char *key, char **value) -> esp_err_t { return ESP_OK; }
 
-auto BLEHttpClient::endChunkedData() -> bool {
-    // As above, do minimal or no operation and return true
-    return true;
-}
+auto BLEHttpClient::makeWriteStream() -> std::shared_ptr<HttpOstream<4096>> { return nullptr; }
+
+auto BLEHttpClient::close() -> esp_err_t { return ESP_OK; }
+
+auto BLEHttpClient::makeReadStream() -> std::shared_ptr<HttpIstream<4096>> { return nullptr; }
+
+auto BLEHttpClient::isChunkedResponse() -> bool { return false; }
+
+auto BLEHttpClient::writeChunkedData(const char *data, int length) -> bool { return true; }
+
+auto BLEHttpClient::endChunkedData() -> bool { return true; }
 #endif

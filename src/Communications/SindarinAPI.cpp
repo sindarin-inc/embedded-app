@@ -2,6 +2,9 @@
 
 #include <utility>
 
+#if USE_BLE_SERVER_PROXY
+#include "Communications/BLEHttpClient.hpp"
+#endif
 #include "FileDownload.hpp"
 #include "Misc/Battery.hpp"
 #include "Misc/Defer.hpp"

@@ -19,7 +19,7 @@ public:
                   esp_http_client_method_t method = HTTP_METHOD_GET);
     BLEHttpClient(const BLEHttpClient &) = delete;
 
-    ~BLEHttpClient() override;
+    ~BLEHttpClient() override = default;
 
     auto setHeader(const char *key, const char *value) -> esp_err_t override;
 

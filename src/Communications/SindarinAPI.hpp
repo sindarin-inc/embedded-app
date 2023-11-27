@@ -4,9 +4,6 @@
 #include <functional>
 #include <utility>
 
-#if USE_BLE_SERVER_PROXY
-#include "Communications/BLEHttpClient.hpp"
-#endif
 #include "Communications/HttpClient.hpp"
 #include "Communications/WiFiHttpClient.hpp"
 #include "Misc/Telemetry.hpp"
