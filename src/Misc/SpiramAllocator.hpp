@@ -73,7 +73,7 @@ public:
     }
     auto operator==(const char *str) const -> bool { return this->compare(str) == 0; }
 
-    auto substr(size_t pos = 0, size_t len = npos) const -> SpiramString {
+    [[nodiscard]] auto substr(size_t pos = 0, size_t len = npos) const -> SpiramString {
         return SpiramString(Base::substr(pos, len), SpiramAllocator<char>());
     }
 };
