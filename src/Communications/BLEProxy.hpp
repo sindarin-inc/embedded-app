@@ -12,7 +12,7 @@ class BLEProxy : BLECharacteristicProvider {
 public:
     BLEProxy();
     BLEProxy(BLEProxy const &) = delete;
-    ~BLEProxy() = default;
+    virtual ~BLEProxy() = default;
 
     static auto getInstance() -> std::shared_ptr<BLEProxy>;
 
