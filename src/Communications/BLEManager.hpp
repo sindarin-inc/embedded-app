@@ -5,6 +5,7 @@
 #include <NimBLEDevice.h>
 #include <memory>
 
+#include "Communications/BLEAbstractions.hpp"
 #include "sindarin-debug.h"
 
 class BLEManager {
@@ -56,6 +57,7 @@ protected:
             // We should experiment some more with these values after shipping -- there might be a
             // sweet spot that's faster than the defaults but still low power.
             // server->updateConnParams(desc->conn_handle, 36, 90, 2, 600);
+            NimBLEDevice::setMTU(MTU_CHUNK_SIZE);
         }
         void onDisconnect(BLEServer *server) override {
             SHOW_HEAP();

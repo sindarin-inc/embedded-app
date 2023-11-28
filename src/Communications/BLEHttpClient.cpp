@@ -8,6 +8,8 @@ BLEHttpClient::BLEHttpClient(const char *url, const char *contentType,
     url_ = strdup(url);
     client_ = nullptr;
     connected = false;
+    requestBody_ = "";
+    requestHeaders_.clear();
 }
 
 auto BLEHttpClient::setHeader(const char *key, const char *value) -> esp_err_t {
@@ -17,7 +19,7 @@ auto BLEHttpClient::setHeader(const char *key, const char *value) -> esp_err_t {
 }
 
 auto BLEHttpClient::write(const char *body, int length) -> int {
-    requestBody_ = SpiramString(body);
+    requestBody_.append(body, length);
 
     return length;
 }

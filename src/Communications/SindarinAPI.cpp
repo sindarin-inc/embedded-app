@@ -219,7 +219,7 @@ auto SindarinAPI::downloadReadable(const std::shared_ptr<Readable> &readable,
 auto SindarinAPI::createClient(const std::string &url, const std::string &contentType,
                                esp_http_client_method_t method, bool useBle)
     -> std::shared_ptr<HttpClient> {
-    if (useBle) {
+    if (useBle || true) {
 #if USE_BLE_SERVER_PROXY
         return std::make_shared<BLEHttpClient>(url.c_str(), contentType.c_str(), method);
 #else
