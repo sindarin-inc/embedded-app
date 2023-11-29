@@ -43,7 +43,7 @@ The renderer, when called to generate a page, checks for the presence of a tailo
 **The solution**: Gaps at beginning of paragraphs are removed. the U+3000 if present elsewhere will be shown.
 
 ---
-**The Issue**: Sequences of CJK glyphs are often longer than the space available in a single line. Cutting the sequence arbitrarily may cause ponctuation characters to appear at wrong places. The notion of word in asian languages is often non-existant beyond the use of punctuation characters to separate the stream of glyphs into tokens.
+**The Issue**: Sequences of CJK glyphs are often longer than the space available in a single line. Cutting the sequence arbitrarily may cause punctuation characters to appear at wrong places. The notion of word in asian languages is often non-existant beyond the use of punctuation characters to separate the stream of glyphs into tokens.
 
 **The solution**: As glyphs are retrieved to construct the sequence of tokens, the following aspects are taken into consideration to break the sequence into tokens:
 
