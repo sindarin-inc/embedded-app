@@ -35,7 +35,7 @@ void BLEProxy::configureCharacteristics(BLEService *service) {
 };
 
 void BLEProxy::registerSubscriptionStatusCallback(const SubscriptionStatusCallback &callback) {
-    subscriptionStatusCallback_ = std::move(callback);
+    subscriptionStatusCallback_ = callback;
 }
 
 void BLEProxy::setWebRequestHandler(
