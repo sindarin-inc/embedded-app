@@ -196,6 +196,10 @@ public:
         return static_cast<IBMFFont *>(font_)->getTextWidthQuick(buffer);
     }
 
+    inline auto getCharWidthQuick(const char32_t ch) -> int {
+        return static_cast<IBMFFont *>(font_)->getCharWidthQuick(ch);
+    }
+
     // MARK: - Graphic drawing code
 
     // Basically Adafruit_GFX::drawRect with the necessary partial refresh stuff

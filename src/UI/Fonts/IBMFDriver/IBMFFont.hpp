@@ -155,4 +155,19 @@ public:
         // log_w(" width: %" PRIi16, width);
         return width;
     }
+
+    inline auto getCharWidthQuick(const char32_t ch) -> int16_t {
+        auto face = font_->getFace(faceIndex_);
+        int16_t xoff;
+        FIX16 advance;
+        GlyphCode glyphCode = font_->translate(ch);
+        if (face->getGlyphHorizontalMetrics(glyphCode, &xoff, &advance)) {
+            // width += (*buffer == '\0')
+            //              ? (face->getGlyphWidth(glyphCode) - xoff)
+            //              : (advance >> 6) + (face->isOpticalKerningEnabled() ? 0 : 1);
+            return (advance >> 6) + (face->isOpticalKerningEnabled() ? 0 : 1);
+        } else {
+            return 0;
+        }
+    }
 };

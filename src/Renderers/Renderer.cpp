@@ -31,7 +31,7 @@ auto Renderer::renderPage(std::shared_ptr<Place> fromPlace, int16_t numSkipLines
 
     display_.setFont(theFont);
 
-    tokenizer_->computeMaxTextTokenCharSize(tailoredFont ? 17 : display_.getTextWidth("G"));
+    tokenizer_->computeMaxTextTokenCharSize(display_.getTextWidth("G"));
 
     // std::cout << "Pager Line Count: " << pager_.getLineCount() << std::endl;
     // std::cout << "currentPlace: " << currentPlace_.str()

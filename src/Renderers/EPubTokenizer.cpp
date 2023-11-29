@@ -1419,6 +1419,9 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
             if (tagIt != tags.end()) {
 
                 if (tagIt->second != Tag::BREAK) {
+                    // As we are not at a <br> tag, we can safely reset the fact that we are not
+                    // facing a  double <br> sequence. The brEncoutered_ is used to discover a
+                    // sequence of two <br> tags that would generate an end-of-paragraph.
                     brEncountered_ = false;
                 }
 
@@ -1694,6 +1697,8 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
         // Count forward the number of non-tag bytes (for estimating page number)
         // currentTxtOffset_ = 0;
 
+        // As we are in a pcdata, reset the fact that we may have encountered a first <br> tag. Used
+        // to discover a sequence of two <br> tags that would generate an end-of-paragraph.
         brEncountered_ = false;
 
         if (!tokenizingStarted_) {
@@ -1734,6 +1739,13 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
 }
 
 auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint32_t len) -> bool {
+
+    auto isLeftBreak = [&](char32_t ch) {
+        return this->leftBreaks.find(ch) != this->leftBreaks.end();
+    };
+    auto isRightBreak = [&](char32_t ch) {
+        return this->rightBreaks.find(ch) != this->rightBreaks.end();
+    };
 
     uint32_t streamOffset = currentStreamOffset_;
     uint32_t lastIncrement = 0;
@@ -1982,7 +1994,14 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint32_t len) -> bool 
 #else
                 static char32_t c32Str[50];
                 Idx c32StrIdx = 0;
+                int width = 0;
+                int chWidth;
+                int lastWidth = 0;
                 char32_t lastChar;
+
+                if (streamOffset >= 11027) {
+                    log_w("Started...");
+                }
 
                 while (curChar != 0) {
                     // log_d("Current Character: %c (%02" PRIX8 "H)",
@@ -2005,25 +2024,33 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint32_t len) -> bool 
                         c32Str[c32StrIdx++] = lastChar = curChar;
                     }
 
+                    c32Str[c32StrIdx] = 0;
+                    chWidth = display_.getCharWidthQuick(curChar);
+
                     if (isCJK(lastChar)) {
                         // log_w("Pager remaining: %" PRIi16 ", TextWidthQuick: %" PRIi32,
-                        //       pager_.getCurrentLineWidthRemaining(),
-                        //       display_.getTextWidthQuick(c32Str));
+                        //       pager_.getCurrentLineWidthRemaining(), width + chWidth);
 
-                        if (pager_.getCurrentLineWidthRemaining() <
-                            display_.getTextWidthQuick(c32Str)) {
-                            if (rightBreaks.find(lastChar) == rightBreaks.end()) {
-                                // The last glyphs is a normal glyph, don't keep it as it will be
-                                // shown beyond line right margin. If there is only one or two, they
-                                // will be pushed on next line anyway (two because the first one can
-                                // be a leftBreak)
+                        if (pager_.getCurrentLineWidthRemaining() < (width + chWidth)) {
+                            if (!isRightBreak(lastChar)) {
+                                // The last glyphs is not a right break glyph, don't keep it as it
+                                // will be shown beyond line right margin. If there is only one or
+                                // two, they will be pushed on next line anyway (two because the
+                                // first one can be a leftBreak)
                                 if (c32StrIdx > 2) {
                                     c32StrIdx -= 1;
                                 } else {
                                     textCharCount_ += 1;
+                                    lastWidth = width;
+                                    width = (chWidth + width);
                                     nextChar();
+                                    // if ((c32StrIdx > 1) && isRightBreak(curChar)) {
+                                    //     textCharCount_ -= 1;
+                                    //     previousChar();
+                                    //     width = lastWidth;
+                                    // }
                                 }
-                            } else if (c32StrIdx > 3) {
+                            } else if (c32StrIdx > 2) {
                                 // The last glyphs is a right break glyph. We can't keep it there as
                                 // it will cause the whole token to appear on next line unless there
                                 // is less than 4 glyphs. Don't let it stay alone on next line. That
@@ -2031,14 +2058,12 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint32_t len) -> bool 
                                 // that at least one glyph will preceed the right break glyph.
                                 textCharCount_ -= 1;
                                 previousChar();
-
-                                if (c32StrIdx > 2) {
-                                    c32StrIdx -= 2;
-                                } else {
-                                    c32StrIdx = 0;
-                                }
+                                width = lastWidth;
+                                c32StrIdx -= 2;
                             } else {
                                 textCharCount_ += 1;
+                                lastWidth = width;
+                                width = (chWidth + width);
                                 nextChar();
                             }
                             break;
@@ -2046,18 +2071,12 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint32_t len) -> bool 
                     }
 
                     textCharCount_ += 1;
+                    lastWidth = width;
+                    width = (chWidth + width);
                     nextChar();
 
-                    if (isSpace(curChar)) {
-                        break;
-                    }
-
-                    if (rightBreaks.find(lastChar) != rightBreaks.end()) {
-                        break;
-                    }
-
-                    if ((leftBreaks.find(curChar) != leftBreaks.end()) &&
-                        (leftBreaks.find(lastChar) == leftBreaks.end())) {
+                    if (isSpace(curChar) || isRightBreak(lastChar) ||
+                        (isLeftBreak(curChar) && !isLeftBreak(lastChar))) {
                         break;
                     }
                 }
