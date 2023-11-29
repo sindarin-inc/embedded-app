@@ -2,6 +2,7 @@
 
 #include "Communications/BLEHttpClient.hpp"
 
+#include <cstddef>
 #include <esp_timer.h>
 #include <utility>
 
@@ -93,7 +94,7 @@ auto BLEHttpClient::fetchHeaders() -> int {
     while (!responseFetched_) {
         vTaskDelay(100 / portTICK_PERIOD_MS);
         auto currentTime = esp_timer_get_time();
-        if (currentTime - startTime > timeout * 1000) {
+        if (currentTime - startTime > static_cast<long long>(timeout *) 1000) {
             log_e("Timed out waiting for response");
             return -1;
         }

@@ -39,7 +39,7 @@ void BLEProxy::registerSubscriptionStatusCallback(const SubscriptionStatusCallba
 }
 
 void BLEProxy::registerWebRequestHandler(const WebRequestHandler &handler) {
-    webRequestHandler_ = std::move(handler);
+    webRequestHandler_ = handler;
 }
 
 void BLEProxy::writeUrl(const SpiramString &url, const SpiramString &method) {
