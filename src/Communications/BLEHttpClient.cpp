@@ -2,6 +2,11 @@
 
 #include "Communications/BLEHttpClient.hpp"
 
+#include <esp_timer.h>
+#include <utility>
+
+#include "Misc/Defer.hpp"
+
 BLEHttpClient::BLEHttpClient(const char *url, const char *contentType,
                              esp_http_client_method_t method)
     : HttpClient(url, contentType, method) {
@@ -27,6 +32,36 @@ auto BLEHttpClient::write(const char *body, int length) -> int {
 auto BLEHttpClient::fetchHeaders() -> int {
     int statusCode = 0;
     auto bleProxy = BLEProxy::getInstance();
+    // If not connected, using FreeRTOS, xSemaphoreTake, and DispatchQueue::dispatchOneOff, wait up
+    // to 30s to ensure BLE is connected. If not, bail.
+    if (!connected) {
+        // Wait for BLE to connect
+
+        SemaphoreHandle_t requestCompleteSemaphore = xSemaphoreCreateBinary();
+        defer { vSemaphoreDelete(requestCompleteSemaphore); };
+        auto waitForBLEConnect = [this]() {
+            while (!connected) {
+                log_d("Waiting for BLE to connect...");
+                vTaskDelay(1000 / portTICK_PERIOD_MS);
+            }
+        };
+
+        DispatchQueue::dispatchOneOff(
+            [waitForBLEConnect, requestCompleteSemaphore]() {
+            waitForBLEConnect();
+            xSemaphoreGive(requestCompleteSemaphore);
+            UBaseType_t watermark = uxTaskGetStackHighWaterMark(NULL);
+            log_d("BLE sync task stack high watermark: %d", watermark);
+            },
+            4000, 2, 1);
+
+        // Wait for disk write to complete
+        auto timeout = 30000;
+        if (xSemaphoreTake(requestCompleteSemaphore, timeout / portTICK_PERIOD_MS) != pdTRUE) {
+            log_e("Timed out waiting for BLE to connect");
+            return -1;
+        }
+    }
 
     // Write URL
     bleProxy->writeUrl(url_);
@@ -38,6 +73,12 @@ auto BLEHttpClient::fetchHeaders() -> int {
 
     // Write body
     bleProxy->writeBody(requestBody_);
+
+    // Dispatch queue to advertise sync service
+
+    // Dispatch queue to wait for response
+    DispatchQueue::dispatchOneOff(
+        [this, &statusCode]() { auto bleProxy = BLEProxy::getInstance(); }, 4000, 2, 1);
 
     return statusCode;
 }

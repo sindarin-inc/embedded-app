@@ -22,6 +22,8 @@ public:
     void writeHeader(const SpiramString &header, const SpiramString &value);
     void writeBody(const SpiramString &body);
 
+    void writeResponseBody(const SpiramString &body);
+
     void
     setWebRequestHandler(std::function<void(const std::string &, const SpiramString &)> handler);
 
@@ -48,7 +50,7 @@ protected:
             if (equalsIndex != std::string::npos) {
                 std::string key = value.substr(0, equalsIndex);
                 SpiramString body = SpiramString(value.substr(equalsIndex + 1));
-                enclosed->writeBody(body);
+                enclosed->writeResponseBody(body);
                 if (enclosed->webRequestHandler_) {
                     enclosed->webRequestHandler_(key, body);
                 }

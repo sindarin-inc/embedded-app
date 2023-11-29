@@ -122,7 +122,7 @@ protected:
                 // Authenticated-only settings
                 else if (settingKey == "pair") {
                     enclosed->prefs_->bleAdvertisingKey.set(settingValue);
-                    BLEManager::getInstance()->setManfacturerData(settingValue);
+                    BLEManager::getInstance()->setManufacturerData(settingValue);
                 } else if (settingKey == "cloud-token") {
                     log_w("Setting cloud access token to %s", settingValue.c_str());
                     this->enclosed->prefs_->cloudToken.set(settingValue);

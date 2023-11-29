@@ -70,6 +70,11 @@ TTRemoteInput ttRemoteInput(prefs);
 #endif
 
 #if USE_BLE_SERVER_PROXY
+#include "Communications/BLESyncService.hpp"
+BLESyncService bleSyncService;
+#endif
+
+#if USE_BLE_SERVER_PROXY
 #include "Communications/BLEProxy.hpp"
 #endif
 
@@ -380,7 +385,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 #if USE_BLE_SERVER_REMOTE || USE_BLE_SERVER_SETTINGS || USE_BLE_SERVER_IMPROV
     auto bleManager = BLEManager::getInstance();
     if (prefs.bleAdvertisingKey.get().has_value()) {
-        bleManager->setManfacturerData(prefs.bleAdvertisingKey.get().value_or(""));
+        bleManager->setManufacturerData(prefs.bleAdvertisingKey.get().value_or(""));
     }
 #endif
 
@@ -399,12 +404,18 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 #endif
 #endif
 
-#if USE_BLE_SERVER_PROXY
-    BLEProxy::getInstance()->configureCharacteristics(sindarinService);
-#endif
-
     if (!bleSindarinService.start()) {
         bootErrors.push_back({.type = BootError::Type::BLESindarin});
+    }
+#endif
+
+#if USE_BLE_SERVER_PROXY
+    // TODO: The BLE Sync Service should only be advertised when needed (during BLE sync)
+    auto syncService = bleSyncService.configureService(bleManager->server());
+    BLEProxy::getInstance()->configureCharacteristics(syncService);
+
+    if (!bleSyncService.start()) {
+        bootErrors.push_back({.type = BootError::Type::BLESync});
     }
 #endif
 

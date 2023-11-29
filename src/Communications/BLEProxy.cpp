@@ -93,4 +93,23 @@ void BLEProxy::writeBody(const SpiramString &body) {
     }
 }
 
+void BLEProxy::writeResponseBody(const SpiramString &body) {
+    // Chunk the body into 256 byte chunks
+    int numChunks = body.length() / MTU_CHUNK_SIZE;
+
+    // If there's a remainder, add one more chunk
+    if (body.length() % MTU_CHUNK_SIZE != 0) {
+        numChunks++;
+    }
+
+    // Send each chunk
+    for (int i = 0; i < numChunks; i++) {
+        SpiramString chunk = body.substr(i * MTU_CHUNK_SIZE, MTU_CHUNK_SIZE);
+        SpiramString value = SpiRamStringFormat("R%d/%d:%s", i + 1, numChunks, chunk.c_str());
+        log_i("GATT client writing response body chunk %d/%d: %s", i + 1, numChunks, value.c_str());
+        proxyCharacteristic_->setValue(value);
+        proxyCharacteristic_->notify();
+    }
+}
+
 #endif // USE_BLE_SERVER_PROXY

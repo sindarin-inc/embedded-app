@@ -18,7 +18,7 @@ public:
 
     // Extra field to advertise in the advertising packet. Mobile apps use this to identify devices
     // that belong to the logged in account.
-    void setManfacturerData(const std::string &manufacturerData) {
+    void setManufacturerData(const std::string &manufacturerData) {
         server()->getAdvertising()->setManufacturerData(manufacturerData);
     }
 

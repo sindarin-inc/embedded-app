@@ -11,6 +11,7 @@
 #endif
 
 #include "Communications/HttpClient.hpp"
+#include "Misc/Dispatch.hpp"
 #include "Misc/StringUtil.hpp"
 
 class BLEHttpClient : public HttpClient {

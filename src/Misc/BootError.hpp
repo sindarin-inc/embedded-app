@@ -12,12 +12,13 @@ struct BootError {
         BLE = 7,
         BLEWifi = 8,
         BLESindarin = 9,
-        BLEManagerAdvertising = 10,
-        WiFi = 11,
-        Preferences = 12,
-        AmbientLight = 13,
-        Magnetometer = 14,
-        LocalStore = 15,
+        BLESync = 10,
+        BLEManagerAdvertising = 11,
+        WiFi = 12,
+        Preferences = 13,
+        AmbientLight = 14,
+        Magnetometer = 15,
+        LocalStore = 16,
     };
     Type type;
 
@@ -39,6 +40,8 @@ struct BootError {
             return "BLE/Wifi";
         case BLESindarin:
             return "BLE/Sindarin";
+        case BLESync:
+            return "BLE/Sync";
         case BLEManagerAdvertising:
             return "BLE/ManagerAdvertising";
         case WiFi:
