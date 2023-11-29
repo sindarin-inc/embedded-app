@@ -46,13 +46,18 @@ public:
     auto writeChunkedData(const char *data, int length) -> bool override;
 
     auto endChunkedData() -> bool override;
+
+    auto handleWebRequest(const SpiramString &key, const SpiramString &body) -> bool;
+
     bool connected;
 
 private:
     char *url_;
-    std::string userAgent_;
-    esp_http_client_handle_t client_;
+    int statusCode_;
+    esp_http_client_method_t requestMethod_;
     std::vector<std::pair<SpiramString, SpiramString>> requestHeaders_;
     SpiramString requestBody_;
+    SpiramString responseBody_;
+    bool responseFetched_;
     std::multimap<std::string, std::string, CaseInsensitive> responseHeaders_;
 };

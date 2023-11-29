@@ -11,10 +11,10 @@ BLEHttpClient::BLEHttpClient(const char *url, const char *contentType,
                              esp_http_client_method_t method)
     : HttpClient(url, contentType, method) {
     url_ = strdup(url);
-    client_ = nullptr;
     connected = false;
     requestBody_ = "";
     requestHeaders_.clear();
+    requestMethod_ = method;
 
     auto bleProxy = BLEProxy::getInstance();
     bleProxy->registerSubscriptionStatusCallback(
@@ -34,13 +34,17 @@ auto BLEHttpClient::write(const char *body, int length) -> int {
 }
 
 auto BLEHttpClient::fetchHeaders() -> int {
-    int statusCode = 0;
     auto bleProxy = BLEProxy::getInstance();
-    // If not connected, using FreeRTOS, xSemaphoreTake, and DispatchQueue::dispatchOneOff, wait up
-    // to 30s to ensure BLE is connected. If not, bail.
+    statusCode_ = 0;
+    responseFetched_ = false;
+    responseBody_ = "";
+    responseHeaders_.clear();
+
+    // Dispatch queue to advertise sync service
+    // TODO: Right now the service is being advertised at boot
+    // If not connected, wait up to 30s to ensure BLE is connected. If not, bail.
     if (!connected) {
         // Wait for BLE to connect
-
         SemaphoreHandle_t requestCompleteSemaphore = xSemaphoreCreateBinary();
         defer { vSemaphoreDelete(requestCompleteSemaphore); };
         auto waitForBLEConnect = [this]() {
@@ -67,8 +71,13 @@ auto BLEHttpClient::fetchHeaders() -> int {
         }
     }
 
+    bleProxy->registerWebRequestHandler([this](const SpiramString &key, const SpiramString &body) {
+        return this->handleWebRequest(key, body);
+    });
+
     // Write URL
-    bleProxy->writeUrl(url_);
+    SpiramString method = SpiramString(requestMethod_ == HTTP_METHOD_GET ? "GET" : "POST");
+    bleProxy->writeUrl(url_, method);
 
     // Write headers
     for (auto &header : requestHeaders_) {
@@ -78,16 +87,38 @@ auto BLEHttpClient::fetchHeaders() -> int {
     // Write body
     bleProxy->writeBody(requestBody_);
 
-    // Dispatch queue to advertise sync service
+    // Wait for response up to 30s
+    auto timeout = 30000;
+    auto startTime = esp_timer_get_time();
+    while (!responseFetched_) {
+        vTaskDelay(100 / portTICK_PERIOD_MS);
+        auto currentTime = esp_timer_get_time();
+        if (currentTime - startTime > timeout * 1000) {
+            log_e("Timed out waiting for response");
+            return -1;
+        }
+    }
 
-    // Dispatch queue to wait for response
-    DispatchQueue::dispatchOneOff(
-        [this, &statusCode]() { auto bleProxy = BLEProxy::getInstance(); }, 4000, 2, 1);
-
-    return statusCode;
+    return statusCode_;
 }
 
-auto BLEHttpClient::getStatusCode() -> int { return 0; }
+auto BLEHttpClient::handleWebRequest(const SpiramString &key, const SpiramString &body) -> bool {
+    if (key == "S") {
+        // Status code
+        statusCode_ = atoi(body.c_str());
+    } else if (key == "B") {
+        // Body
+        responseBody_.append(body);
+    } else if (key == "E") {
+        // End of request
+        responseFetched_ = true;
+        return true;
+    }
+
+    return false;
+}
+
+auto BLEHttpClient::getStatusCode() -> int { return statusCode_; }
 
 auto BLEHttpClient::read(char *buffer, int length) -> int { return 0; }
 

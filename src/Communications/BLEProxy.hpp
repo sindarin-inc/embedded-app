@@ -8,6 +8,9 @@
 #include "Misc/StringUtil.hpp"
 #include "sindarin-debug.h"
 
+using WebRequestHandler = std::function<void(const SpiramString &, const SpiramString &)>;
+using SubscriptionStatusCallback = std::function<void(bool)>;
+
 class BLEProxy : BLECharacteristicProvider {
 public:
     BLEProxy();
@@ -18,22 +21,19 @@ public:
 
     void configureCharacteristics(BLEService *service) override;
 
-    void writeUrl(const SpiramString &url);
+    void writeUrl(const SpiramString &url, const SpiramString &method);
     void writeHeader(const SpiramString &header, const SpiramString &value);
     void writeBody(const SpiramString &body);
 
-    void writeResponseBody(const SpiramString &body);
+    void writeResponseBody(const SpiramString &key, const SpiramString &body);
 
-    void
-    setWebRequestHandler(std::function<void(const std::string &, const SpiramString &)> handler);
-
-    using SubscriptionStatusCallback = std::function<void(bool)>;
+    void registerWebRequestHandler(const WebRequestHandler &handler);
     void registerSubscriptionStatusCallback(const SubscriptionStatusCallback &callback);
 
 protected:
     static std::shared_ptr<BLEProxy> instance;
     BLECharacteristic *proxyCharacteristic_;
-    std::function<void(const std::string &, const SpiramString &)> webRequestHandler_;
+    WebRequestHandler webRequestHandler_;
     SubscriptionStatusCallback subscriptionStatusCallback_;
 
     class CharacteristicCallbacks : public BLECharacteristicCallbacks {
@@ -62,9 +62,8 @@ protected:
             // Send the body to the web request handler.
             size_t equalsIndex = value.find('=');
             if (equalsIndex != std::string::npos) {
-                std::string key = value.substr(0, equalsIndex);
+                SpiramString key = SpiramString(value.substr(0, equalsIndex));
                 SpiramString body = SpiramString(value.substr(equalsIndex + 1));
-                enclosed->writeResponseBody(body);
                 if (enclosed->webRequestHandler_) {
                     enclosed->webRequestHandler_(key, body);
                 }

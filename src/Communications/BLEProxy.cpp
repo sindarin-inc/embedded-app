@@ -38,12 +38,11 @@ void BLEProxy::registerSubscriptionStatusCallback(const SubscriptionStatusCallba
     subscriptionStatusCallback_ = callback;
 }
 
-void BLEProxy::setWebRequestHandler(
-    std::function<void(const std::string &, const SpiramString &)> handler) {
+void BLEProxy::registerWebRequestHandler(const WebRequestHandler &handler) {
     webRequestHandler_ = std::move(handler);
 }
 
-void BLEProxy::writeUrl(const SpiramString &url) {
+void BLEProxy::writeUrl(const SpiramString &url, const SpiramString &method) {
     // Chunk the URL into smaller chunks
     int numChunks = url.length() / MTU_CHUNK_SIZE;
     if (url.length() % MTU_CHUNK_SIZE != 0) {
@@ -53,8 +52,9 @@ void BLEProxy::writeUrl(const SpiramString &url) {
     for (int i = 0; i < numChunks; i++) {
         SpiramString chunk = url.substr(i * MTU_CHUNK_SIZE, MTU_CHUNK_SIZE);
         SpiramString chunkedValue =
-            SpiRamStringFormat("U%d/%d:%s", i + 1, numChunks, chunk.c_str());
-        log_i("GATT client writing URL chunk %d/%d: %s", i + 1, numChunks, chunkedValue.c_str());
+            SpiRamStringFormat("U%d/%d:%s:%s", i + 1, numChunks, method.c_str(), url.c_str());
+        log_i("GATT client writing URL chunk %d/%d: %s %s", i + 1, numChunks, method.c_str(),
+              chunkedValue.c_str());
         proxyCharacteristic_->setValue(chunkedValue);
         proxyCharacteristic_->notify();
     }
@@ -92,25 +92,6 @@ void BLEProxy::writeBody(const SpiramString &body) {
         SpiramString chunk = body.substr(i * MTU_CHUNK_SIZE, MTU_CHUNK_SIZE);
         SpiramString value = SpiRamStringFormat("B%d/%d:%s", i + 1, numChunks, chunk.c_str());
         log_i("GATT client writing body chunk %d/%d: %s", i + 1, numChunks, value.c_str());
-        proxyCharacteristic_->setValue(value);
-        proxyCharacteristic_->notify();
-    }
-}
-
-void BLEProxy::writeResponseBody(const SpiramString &body) {
-    // Chunk the body into 256 byte chunks
-    int numChunks = body.length() / MTU_CHUNK_SIZE;
-
-    // If there's a remainder, add one more chunk
-    if (body.length() % MTU_CHUNK_SIZE != 0) {
-        numChunks++;
-    }
-
-    // Send each chunk
-    for (int i = 0; i < numChunks; i++) {
-        SpiramString chunk = body.substr(i * MTU_CHUNK_SIZE, MTU_CHUNK_SIZE);
-        SpiramString value = SpiRamStringFormat("R%d/%d:%s", i + 1, numChunks, chunk.c_str());
-        log_i("GATT client writing response body chunk %d/%d: %s", i + 1, numChunks, value.c_str());
         proxyCharacteristic_->setValue(value);
         proxyCharacteristic_->notify();
     }
