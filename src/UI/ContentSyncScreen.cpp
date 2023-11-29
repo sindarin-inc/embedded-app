@@ -8,7 +8,8 @@
 
 ContentSyncScreen::ContentSyncScreen(DisplaySystem &display, LocalStore &localStore,
                                      PreferencesStore &prefs, Telemetry &telemetry)
-    : EinkView(display), localStore_(localStore), prefs_(prefs), telemetry_(telemetry) {
+    : EinkView(display), localStore_(localStore), prefs_(prefs), telemetry_(telemetry),
+      cancelView_(display, "Press \ue000 to cancel", &ibmf75Face0) {
     for (auto &textView : textViews_) {
         textView = std::make_shared<SingleLineTextView>(display, "", &ibmf75Face0);
     }
@@ -70,6 +71,10 @@ auto ContentSyncScreen::layout(LayoutContext &context, Size size) -> Size {
         context.setViewFrame(*popupView_, popupTextRect.inset(-10));
     }
 
+    context.setViewFrame(cancelView_, Rect::fromSize(size).inset(10),
+                         LayoutOptionsSizeToFit | LayoutOptionsAlignCenterHorizontal |
+                             LayoutOptionsAlignBottom);
+
     return {size.width, size.height};
 }
 
@@ -89,6 +94,7 @@ void ContentSyncScreen::drawInRect(Rect rect) {
     if (!popupTextView_->isHidden()) {
         (*popupTextView_).draw();
     }
+    cancelView_.draw();
 }
 
 void ContentSyncScreen::showPopup(const std::string &message) {
@@ -101,7 +107,7 @@ void ContentSyncScreen::showPopup(const std::string &message) {
 
 void ContentSyncScreen::render(DisplaySystem &display) {
     int adjustedXPadding = 42;
-    int adjustedYPadding = display.defaultYPadding;
+    int adjustedYPadding = 10;
     setFrame({{display.xAbsolute(adjustedXPadding), display.yAbsolute(adjustedYPadding)},
               {display.defaultScreenWidth - 2 * adjustedXPadding,
                display.defaultScreenHeight - 2 * adjustedYPadding}});
@@ -129,7 +135,6 @@ void ContentSyncScreen::render(DisplaySystem &display) {
         checkmarkViews_[0]->setHidden(false);
         checkmarkViews_[1]->setHidden(false);
         progressBarsViews_[2]->setProgress(state_.percentage);
-        log_e("Update progress for books to: %d", state_.percentage);
         break;
     case ContentSyncState::SyncingArticles:
         progressBarsViews_[0]->setProgress(100);
@@ -139,7 +144,6 @@ void ContentSyncScreen::render(DisplaySystem &display) {
         checkmarkViews_[1]->setHidden(false);
         checkmarkViews_[2]->setHidden(false);
         progressBarsViews_[3]->setProgress(state_.percentage);
-        log_e("Update progress for articles to: %d", state_.percentage);
         break;
     case ContentSyncState::AlreadySynced:
     case ContentSyncState::Synced: {
@@ -179,9 +183,21 @@ void ContentSyncScreen::render(DisplaySystem &display) {
     nextUpdate_ = DisplaySystem::UpdateType::FAST_WITH_VCOM_NUDGE;
 }
 
+void ContentSyncScreen::cancel() {
+    if (cancel_ != nullptr) {
+        *cancel_ = true;
+        telemetry_.logMetric(TelemetryField::METRIC_SYNC_STATUS, "sync-cancelled");
+    }
+    WiFi::getInstance().disconnectWiFi();
+    showPopup("Sync cancelled!\n\nRebooting system...");
+    render(display_);
+    vTaskDelay(3000 / portTICK_PERIOD_MS);
+    PowerManager::getInstance().reboot();
+}
+
 void ContentSyncScreen::processCommand(RemoteCommand command) {
-    if ((command == RemoteCommand::ENTER) && !WiFi::getInstance().hasWiFiCredentials()) {
-        back();
+    if (command == RemoteCommand::ENTER) {
+        cancel();
     }
 };
 
@@ -192,14 +208,10 @@ void ContentSyncScreen::fail(const std::string &message) {
                                {{"message", message}});
     state_.state = ContentSyncState::Failure;
     state_.message = message;
-    setNeedsRerender();
     render(display_);
     vTaskDelay(3000 / portTICK_PERIOD_MS);
     WiFi::getInstance().disconnectWiFi();
-#if !SIMULATOR
     PowerManager::getInstance().reboot();
-#endif
-    back();
 }
 
 void ContentSyncScreen::begin() {
@@ -217,8 +229,14 @@ void ContentSyncScreen::begin() {
 
     // Rate limit to not update more than every 1s, and only if the percentage has changed
     auto rl = std::make_shared<RateLimiter>(1, 20, 1);
+    cancel_ = std::make_shared<bool>(false);
     DispatchGetCore0BackgroundQueue()->dispatch([this, rl]() {
-        localStore_.syncFromRemote(SyncReason::Manual, [this, rl](const ContentSyncState &state) {
+        localStore_.syncFromRemote(SyncReason::Manual, cancel_,
+                                   [this, rl](const ContentSyncState &state) {
+            if (cancel_ != nullptr && *cancel_) {
+                return;
+            }
+
             PowerManager::getInstance().feedInactivityTimer();
             if (state.state == ContentSyncState::Failure ||
                 state.state == ContentSyncState::Synced ||
@@ -244,11 +262,21 @@ void ContentSyncScreen::begin() {
                     log_d("Content sync done, rebooting");
                     Delay(2000);
                     PowerManager::getInstance().reboot();
-                } else if (state.state == ContentSyncState::Failure ||
-                           state.state == ContentSyncState::AlreadySynced) {
-                    log_d("Content sync done, waiting 5 seconds before going back");
-                    Delay(5000);
+                } else if (state.state == ContentSyncState::AlreadySynced) {
+                    log_d("Content sync already synced");
+                    Delay(2000);
                     back();
+                } else if (state.state == ContentSyncState::Failure) {
+                    // If we got any new content force a restart, otherwise just go back
+                    if (state.booksDownloaded > 0 || state.articlesDownloaded > 0) {
+                        log_d("Content sync failed, but we got new content, rebooting");
+                        Delay(2000);
+                        PowerManager::getInstance().reboot();
+                    } else {
+                        log_d("Content sync failed, going back");
+                        Delay(2000);
+                        back();
+                    }
                 }
             });
         });

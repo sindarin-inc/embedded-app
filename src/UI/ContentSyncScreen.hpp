@@ -31,6 +31,7 @@ protected:
     Telemetry &telemetry_;
     ContentSyncState state_;
     DisplaySystem::UpdateType nextUpdate_ = DisplaySystem::UpdateType::FULL;
+    std::shared_ptr<bool> cancel_;
 
     // UI
     std::array<std::shared_ptr<SingleLineTextView>, 4> textViews_;
@@ -38,7 +39,9 @@ protected:
     std::array<std::shared_ptr<ProgressBarView>, 4> progressBarsViews_;
     std::shared_ptr<BoxView> popupView_;
     std::shared_ptr<MultiLineTextView> popupTextView_;
+    SingleLineTextView cancelView_;
 
+    void cancel();
     void showPopup(const std::string &message);
     void fail(const std::string &message);
     void updateState(const ContentSyncState &state) {

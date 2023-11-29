@@ -502,7 +502,8 @@ void LocalStore::resetReadablesBookmarksChanged(const ReadablesVector &readables
 }
 
 void LocalStore::syncFromRemote(
-    SyncReason syncReason, const std::function<void(ContentSyncState state)> &progressCallback) {
+    SyncReason syncReason, std::shared_ptr<bool> cancel,
+    const std::function<void(ContentSyncState state)> &progressCallback) {
     if (!WiFi::getInstance().hasWiFiCredentials()) {
         this->telemetry_.logMetric(TelemetryField::METRIC_WIFI, "sync-wifi-no-credentials");
         progressCallback(
@@ -520,6 +521,10 @@ void LocalStore::syncFromRemote(
         return;
     }
 
+    if (cancel != nullptr && *cancel) {
+        return;
+    }
+
     // If we don't have a clock that's accurate, sync it
     if (SolClock::getInstance().getEpochTime() < 1000000000) {
         log_i("Clock not set, syncing from internet");
@@ -534,6 +539,10 @@ void LocalStore::syncFromRemote(
             this->telemetry_.logMetric(TelemetryField::METRIC_CLOCK_SET, "failure",
                                        {{"run-time", GetRunTimeMs()}});
         }
+    }
+
+    if (cancel != nullptr && *cancel) {
+        return;
     }
 
     // Uncomment below line to set your access token for local development
@@ -562,7 +571,11 @@ void LocalStore::syncFromRemote(
     // call from whatever queue is most fitting based on the context. In tests, this might not be in
     // a queue.
     auto queue = DispatchGetCore0BackgroundQueue();
-    queue->dispatch([this] {
+    queue->dispatch([this, cancel] {
+        if (cancel != nullptr && *cancel) {
+            return;
+        }
+
         auto httpCode =
             this->telemetry_.uploadAndResetTelemetry(this->fileSystem, this->telemetry_);
         if (httpCode != 201) {
@@ -575,7 +588,11 @@ void LocalStore::syncFromRemote(
     });
 
     // Run this work on a separate thread, since it's long running
-    queue->dispatch([this, syncReason, progressCallback] {
+    queue->dispatch([this, syncReason, progressCallback, cancel] {
+        if (cancel != nullptr && *cancel) {
+            return;
+        }
+
         CheckSyncRequest checkSyncRequest;
         CheckSyncResponse checkSyncResponse = {};
         int checkSyncFailures = 0;
@@ -590,6 +607,10 @@ void LocalStore::syncFromRemote(
 
         std::vector<ReadablesVector *> readablesList = {&books_, &articles_};
         for (auto &readables : readablesList) {
+            if (cancel != nullptr && *cancel) {
+                return;
+            }
+
             bool failedDownload = false;
             auto modelType = readablesModelType(const_cast<ReadablesVector &>(*readables));
             auto since = this->readablesSince(modelType);
@@ -654,6 +675,9 @@ void LocalStore::syncFromRemote(
                     break;
                 }
 
+                if (cancel != nullptr && *cancel) {
+                    return;
+                }
                 int httpCode = 0;
                 if (nextPageCounter == 1) {
                     SHOW_HEAP();
@@ -665,6 +689,9 @@ void LocalStore::syncFromRemote(
                     httpCode =
                         SindarinAPI::getInstance()->checkSync(nextPageUrl.c_str(), checkSyncRequest,
                                                               &checkSyncResponse, this->telemetry_);
+                }
+                if (cancel != nullptr && *cancel) {
+                    return;
                 }
                 log_d("Server has %d %ss, next page: %s", checkSyncResponse.totalCount,
                       ReadableModelTypeToString(modelType).c_str(), nextPageUrl.c_str());
@@ -705,6 +732,9 @@ void LocalStore::syncFromRemote(
                 auto [readablesToDownload, readablesToDelete] =
                     this->processReadables(*readables, userReadables);
 
+                if (cancel != nullptr && *cancel) {
+                    return;
+                }
                 SHOW_HEAP();
                 log_d("%ss to download: %zu", ReadableModelTypeToString(modelType).c_str(),
                       readablesToDownload.size());
@@ -742,7 +772,7 @@ void LocalStore::syncFromRemote(
 
                 processReadableDeletion(readablesToDelete, *readables);
                 failedDownload = processReadableDownload(
-                                     readablesToDownload, *readables, downloadIndex,
+                                     readablesToDownload, *readables, cancel, downloadIndex,
                                      modelType == ReadablesModelType::Book ? booksDownloaded
                                                                            : articlesDownloaded,
                                      progressCallback, modelType, totalCount) ||
@@ -790,6 +820,10 @@ void LocalStore::syncFromRemote(
                 continue;
             }
 
+            if (cancel != nullptr && *cancel) {
+                return;
+            }
+
             // Update the since dates and try once more to sync to ensure we don't miss anything
             storedUuids.clear();
             this->storedReadableUuids(*readables, storedUuids);
@@ -827,6 +861,10 @@ void LocalStore::syncFromRemote(
             }
         }
 
+        if (cancel != nullptr && *cancel) {
+            return;
+        }
+
         if (booksAlreadySynced && articlesAlreadySynced) {
             progressCallback(ContentSyncState{.state = ContentSyncState::State::AlreadySynced});
         } else if (booksNowSynced || articlesNowSynced) {
@@ -835,6 +873,8 @@ void LocalStore::syncFromRemote(
                                               .articlesDownloaded = articlesDownloaded});
         } else if (checkSyncFailures > 0) {
             progressCallback(ContentSyncState{.state = ContentSyncState::State::Failure,
+                                              .booksDownloaded = booksDownloaded,
+                                              .articlesDownloaded = articlesDownloaded,
                                               .message = "Failed to check sync"});
         } else {
             progressCallback(ContentSyncState{.state = ContentSyncState::State::AlreadySynced,
@@ -908,9 +948,10 @@ void LocalStore::processReadableDeletion(const UserReadablesVector &readablesToD
 }
 
 auto LocalStore::processReadableDownload(
-    const UserReadablesVector &readablesToDownload, ReadablesVector &readables, int &downloadIndex,
-    int &successfullyDownloaded, const std::function<void(ContentSyncState)> &progressCallback,
-    ReadablesModelType modelType, int totalCount) -> bool {
+    const UserReadablesVector &readablesToDownload, ReadablesVector &readables,
+    std::shared_ptr<bool> cancel, int &downloadIndex, int &successfullyDownloaded,
+    const std::function<void(ContentSyncState)> &progressCallback, ReadablesModelType modelType,
+    int totalCount) -> bool {
     bool failedDownload = false;
 
     if (readablesToDownload.size() == 0) {
@@ -919,6 +960,10 @@ auto LocalStore::processReadableDownload(
 
     float pctPerReadable = 100.0 / totalCount;
     for (const auto &userReadable : readablesToDownload) {
+        if (cancel != nullptr && *cancel) {
+            return true;
+        }
+
         float currPercentage = (float)downloadIndex * pctPerReadable;
         const auto &readable = userReadable.readable;
         auto path = readableFilePathForWriting(readable);
@@ -927,15 +972,19 @@ auto LocalStore::processReadableDownload(
         SHOW_HEAP();
 
         for (int t = 0; t < NUMBER_OF_READABLE_DOWNLOAD_TRIES; t++) {
+            if (cancel != nullptr && *cancel) {
+                return true;
+            }
+
             auto httpCode = SindarinAPI::getInstance()->downloadReadable(
-                readable, this->fileSystem, this->telemetry_, path,
+                readable, this->fileSystem, this->telemetry_, path, cancel,
                 [progressCallback, currPercentage, pctPerReadable, modelType](int percentage) {
-                int pctThisReadable = percentage * pctPerReadable;
+                int pctThisReadable = percentage * pctPerReadable / 100;
                 progressCallback(
                     ContentSyncState{.state = modelType == ReadablesModelType::Book
                                                   ? ContentSyncState::State::SyncingBooks
                                                   : ContentSyncState::State::SyncingArticles,
-                                     .percentage = int(currPercentage + (pctThisReadable / 100))});
+                                     .percentage = int(currPercentage + pctThisReadable)});
                 });
             if (httpCode == 200) {
                 successfullyDownloaded += 1;

@@ -10,14 +10,27 @@
 #include "Misc/Telemetry.hpp"
 #include "config.h"
 
+std::shared_ptr<bool> cancel;
+
+void BackgroundSyncCancel() {
+    if (cancel != nullptr) {
+        *cancel = true;
+    }
+}
+
 void BackgroundSyncInternal(PowerManager &powerManager, PreferencesStore &prefs,
                             LocalStore &localStore, Telemetry &telemetry) {
     // Create a notification group to wait for background tasks
     auto backgroundGroup = xEventGroupCreate();
+    defer {
+        vEventGroupDelete(backgroundGroup);
+        backgroundGroup = nullptr;
+    };
     auto &fileSystem = localStore.fileSystem;
 
+    cancel = std::make_shared<bool>(false);
     localStore.syncFromRemote(
-        PreferencesStore::syncReason,
+        PreferencesStore::syncReason, cancel,
         [&powerManager, &backgroundGroup, &telemetry](const ContentSyncState &state) {
         powerManager.feedInactivityTimer();
 
@@ -46,10 +59,14 @@ void BackgroundSyncInternal(PowerManager &powerManager, PreferencesStore &prefs,
     auto bits =
         xEventGroupWaitBits(backgroundGroup, 1, pdTRUE, pdTRUE, pdMS_TO_TICKS(10 * 60 * 1000));
     if (!(bits & 1)) {
-        // TODO: Make a proper way to cancel the sync if it's still running
+        *cancel = true;
         log_w("Content sync timed out");
     }
     xEventGroupClearBits(backgroundGroup, 1);
+
+    if (*cancel) {
+        return;
+    }
 
     if (!WiFi::getInstance().connected()) {
         log_w("WiFi not connected, ending background sync");
@@ -65,6 +82,10 @@ void BackgroundSyncInternal(PowerManager &powerManager, PreferencesStore &prefs,
     } else {
         telemetry.logMetric(TelemetryField::METRIC_CLOCK_SET, "failure",
                             {{"run-time", GetRunTimeMs()}});
+    }
+
+    if (*cancel) {
+        return;
     }
 
     auto firmwareDownloader = std::make_shared<FirmwareDownloader>(prefs, true);
@@ -91,6 +112,10 @@ void BackgroundSyncInternal(PowerManager &powerManager, PreferencesStore &prefs,
         }
     });
 
+    if (*cancel) {
+        return;
+    }
+
     // Wait for firmware download to finish
     bits = xEventGroupWaitBits(backgroundGroup, 1, pdTRUE, pdTRUE, pdMS_TO_TICKS(5 * 60 * 1000));
     if (!(bits & 1)) {
@@ -98,6 +123,10 @@ void BackgroundSyncInternal(PowerManager &powerManager, PreferencesStore &prefs,
         log_w("Firmware download timed out");
     }
     xEventGroupClearBits(backgroundGroup, 1);
+
+    if (*cancel) {
+        return;
+    }
 
     // Upload core dumps
     FileList coreDumpFiles;
@@ -130,9 +159,6 @@ void BackgroundSyncInternal(PowerManager &powerManager, PreferencesStore &prefs,
         }
         xEventGroupClearBits(backgroundGroup, 1);
     }
-
-    vEventGroupDelete(backgroundGroup);
-    backgroundGroup = nullptr;
 }
 
 void BackgroundSync(PowerManager &powerManager, PreferencesStore &prefs, LocalStore &localStore,

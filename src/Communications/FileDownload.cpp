@@ -13,8 +13,12 @@
 auto DownloadFile(
     const char *url, const std::function<bool(int httpCode, int contentLength)> &openedConnection,
     const std::function<size_t(HttpClient &client, int index, int contentLength)> &readWrite,
+    std::shared_ptr<bool> cancel,
     const std::function<void(int bytesWritten, float percentage)> &progressCallback, bool gzip)
     -> int {
+    if (cancel != nullptr && *cancel) {
+        return ERR_CANCELLED;
+    }
 
     HttpClient client(url);
 
@@ -94,6 +98,10 @@ auto DownloadFile(
     RateLimiter rl(5, 20, 10);
 
     while (totalReadLen < contentLength) {
+        if (cancel != nullptr && *cancel) {
+            return ERR_CANCELLED;
+        }
+
         int readLen = readWrite(client, totalReadLen, contentLength);
         if (readLen <= 0) {
             log_w("readWrite failed (readLen == %d)", readLen);
@@ -142,6 +150,7 @@ auto DownloadFile(
 auto DownloadFile(const char *url,
                   const std::function<bool(int httpCode, int contentLength)> &openedConnection,
                   const std::function<size_t(const uint8_t *buf, size_t size)> &writeBytes,
+                  std::shared_ptr<bool> cancel,
                   const std::function<void(int bytesWritten, float percentage)> &progressCallback,
                   bool gzip) -> int {
 
@@ -161,12 +170,12 @@ auto DownloadFile(const char *url,
 
         return readLen;
         },
-        progressCallback, gzip);
+        cancel, progressCallback, gzip);
 }
 
 auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry, const char *path,
-                  int length, const std::function<void(float percentage)> &progressCallback,
-                  bool gzip) -> int {
+                  int length, std::shared_ptr<bool> cancel,
+                  const std::function<void(float percentage)> &progressCallback, bool gzip) -> int {
 
     std::string fullPath(path);
 
@@ -289,8 +298,8 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry,
     // Spin up the downloader task
     int httpCode;
     DispatchQueue::dispatchOneOff(
-        [url, openedConnection, reader, gzip, &httpCode, bufferQueue]() {
-        httpCode = DownloadFile(url, openedConnection, reader, nullptr, gzip);
+        [url, openedConnection, reader, gzip, &httpCode, bufferQueue, cancel]() {
+        httpCode = DownloadFile(url, openedConnection, reader, cancel, nullptr, gzip);
         // Once we get here the download is done, so we can signal the writer task to exit
         DataBlock block = {nullptr, 0};
         if (xQueueSend(bufferQueue, &block, portMAX_DELAY) != pdPASS) {
@@ -317,6 +326,10 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry,
     float diskWriteBps = fileLength / (diskWriteDuration / 1000000.0f);
     log_i("Downloaded+wrote %d bytes in %.2fs (%.1f KB/s)", fileLength,
           diskWriteDuration / 1000000.0f, diskWriteBps / 1000);
+
+    if (cancel != nullptr && *cancel) {
+        return ERR_CANCELLED;
+    }
 
     // Make sure the file is the right size
     size_t fileSize = 0;
