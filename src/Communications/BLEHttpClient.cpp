@@ -50,7 +50,7 @@ auto BLEHttpClient::fetchHeaders() -> int {
             [waitForBLEConnect, requestCompleteSemaphore]() {
             waitForBLEConnect();
             xSemaphoreGive(requestCompleteSemaphore);
-            UBaseType_t watermark = uxTaskGetStackHighWaterMark(NULL);
+            UBaseType_t watermark = uxTaskGetStackHighWaterMark(nullptr);
             log_d("BLE sync task stack high watermark: %d", watermark);
             },
             4000, 2, 1);
