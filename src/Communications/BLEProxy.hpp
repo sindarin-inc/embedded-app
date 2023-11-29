@@ -27,16 +27,30 @@ public:
     void
     setWebRequestHandler(std::function<void(const std::string &, const SpiramString &)> handler);
 
+    using SubscriptionStatusCallback = std::function<void(bool)>;
+    void registerSubscriptionStatusCallback(const SubscriptionStatusCallback &callback);
+
 protected:
     static std::shared_ptr<BLEProxy> instance;
     BLECharacteristic *proxyCharacteristic_;
     std::function<void(const std::string &, const SpiramString &)> webRequestHandler_;
+    SubscriptionStatusCallback subscriptionStatusCallback_;
 
     class CharacteristicCallbacks : public BLECharacteristicCallbacks {
     public:
         BLEProxy *enclosed;
 
         CharacteristicCallbacks(BLEProxy *enclosure) { enclosed = enclosure; }
+
+        void onSubscribe(NimBLECharacteristic *characteristic, ble_gap_conn_desc *desc,
+                         uint16_t subValue) override {
+            log_d("BLEProxy::CharacteristicCallbacks::onSubscribe: %d", subValue);
+
+            if (enclosed->subscriptionStatusCallback_) {
+                bool isConnected = (subValue != 0);
+                enclosed->subscriptionStatusCallback_(isConnected);
+            }
+        }
 
         void onWrite(NimBLECharacteristic *characteristic, ble_gap_conn_desc *desc) override {
             std::string value = characteristic->getValue();

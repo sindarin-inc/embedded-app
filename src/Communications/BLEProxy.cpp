@@ -34,6 +34,10 @@ void BLEProxy::configureCharacteristics(BLEService *service) {
     this->proxyCharacteristic_ = characteristic;
 };
 
+void BLEProxy::registerSubscriptionStatusCallback(const SubscriptionStatusCallback &callback) {
+    subscriptionStatusCallback_ = std::move(callback);
+}
+
 void BLEProxy::setWebRequestHandler(
     std::function<void(const std::string &, const SpiramString &)> handler) {
     webRequestHandler_ = std::move(handler);

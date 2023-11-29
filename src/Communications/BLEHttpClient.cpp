@@ -15,6 +15,10 @@ BLEHttpClient::BLEHttpClient(const char *url, const char *contentType,
     connected = false;
     requestBody_ = "";
     requestHeaders_.clear();
+
+    auto bleProxy = BLEProxy::getInstance();
+    bleProxy->registerSubscriptionStatusCallback(
+        [this](bool connected) { this->connected = connected; });
 }
 
 auto BLEHttpClient::setHeader(const char *key, const char *value) -> esp_err_t {
