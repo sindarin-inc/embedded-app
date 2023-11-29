@@ -94,7 +94,7 @@ auto BLEHttpClient::fetchHeaders() -> int {
     while (!responseFetched_) {
         vTaskDelay(100 / portTICK_PERIOD_MS);
         auto currentTime = esp_timer_get_time();
-        if (currentTime - startTime > static_cast<long long>(timeout *) 1000) {
+        if (currentTime - startTime > static_cast<long long>(timeout) * 1000) {
             log_e("Timed out waiting for response");
             return -1;
         }
@@ -104,7 +104,14 @@ auto BLEHttpClient::fetchHeaders() -> int {
 }
 
 auto BLEHttpClient::handleWebRequest(const SpiramString &key, const SpiramString &body) -> bool {
-    if (key == "S") {
+    // If the key contains more than a single character, it's re-requesting a chunk of the body
+    if (key.length() > 1) {
+        // Re-send the body chunk requested: B123=. chunkNumber is after the first character and
+        // before the =.
+        auto bleProxy = BLEProxy::getInstance();
+        int chunkNumber = atoi(key.substr(1, key.length() - 2).c_str());
+        bleProxy->writeBody(requestBody_, chunkNumber);
+    } else if (key == "S") {
         // Status code
         log_d("Got status code: %s", body.c_str());
         statusCode_ = atoi(body.c_str());

@@ -21,9 +21,12 @@ public:
 
     void configureCharacteristics(BLEService *service) override;
 
+    auto countChunks(const SpiramString &body) -> int;
+
     void writeUrl(const SpiramString &url, const SpiramString &method);
     void writeHeader(const SpiramString &header, const SpiramString &value);
     void writeBody(const SpiramString &body);
+    void writeBody(const SpiramString &body, int chunkNumber);
 
     void writeResponseBody(const SpiramString &key, const SpiramString &body);
 
