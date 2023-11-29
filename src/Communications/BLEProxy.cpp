@@ -52,7 +52,7 @@ void BLEProxy::writeUrl(const SpiramString &url, const SpiramString &method) {
     for (int i = 0; i < numChunks; i++) {
         SpiramString chunk = url.substr(i * MTU_CHUNK_SIZE, MTU_CHUNK_SIZE);
         SpiramString chunkedValue =
-            SpiRamStringFormat("U%d/%d:%s:%s", i + 1, numChunks, method.c_str(), url.c_str());
+            SpiRamStringFormat("U=%d/%d:%s:%s", i + 1, numChunks, method.c_str(), url.c_str());
         log_i("GATT client writing URL chunk %d/%d: %s %s", i + 1, numChunks, method.c_str(),
               chunkedValue.c_str());
         proxyCharacteristic_->setValue(chunkedValue);
@@ -71,7 +71,7 @@ void BLEProxy::writeHeader(const SpiramString &header, const SpiramString &value
 
     for (int i = 0; i < numChunks; i++) {
         SpiramString chunk = headerValue.substr(i * MTU_CHUNK_SIZE, MTU_CHUNK_SIZE);
-        SpiramString value = SpiRamStringFormat("H%d/%d:%s", i + 1, numChunks, chunk.c_str());
+        SpiramString value = SpiRamStringFormat("H=%d/%d:%s", i + 1, numChunks, chunk.c_str());
         log_i("GATT client writing header chunk %d/%d: %s", i + 1, numChunks, value.c_str());
         proxyCharacteristic_->setValue(value);
         proxyCharacteristic_->notify();
@@ -90,11 +90,15 @@ void BLEProxy::writeBody(const SpiramString &body) {
     // Send each chunk
     for (int i = 0; i < numChunks; i++) {
         SpiramString chunk = body.substr(i * MTU_CHUNK_SIZE, MTU_CHUNK_SIZE);
-        SpiramString value = SpiRamStringFormat("B%d/%d:%s", i + 1, numChunks, chunk.c_str());
+        SpiramString value = SpiRamStringFormat("B=%d/%d:%s", i + 1, numChunks, chunk.c_str());
         log_i("GATT client writing body chunk %d/%d: %s", i + 1, numChunks, value.c_str());
         proxyCharacteristic_->setValue(value);
         proxyCharacteristic_->notify();
     }
+
+    log_i("GATT client writing end of request");
+    proxyCharacteristic_->setValue(SpiramString("E="));
+    proxyCharacteristic_->notify();
 }
 
 #endif // USE_BLE_SERVER_PROXY

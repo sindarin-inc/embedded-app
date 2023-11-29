@@ -59,8 +59,8 @@ auto BLEHttpClient::fetchHeaders() -> int {
             [waitForBLEConnect, requestCompleteSemaphore]() {
             waitForBLEConnect();
             xSemaphoreGive(requestCompleteSemaphore);
-            UBaseType_t watermark = uxTaskGetStackHighWaterMark(nullptr);
-            log_d("BLE sync task stack high watermark: %d", watermark);
+            // UBaseType_t watermark = uxTaskGetStackHighWaterMark(nullptr);
+            // log_d("BLE sync task stack high watermark: %d", watermark);
             },
             4000, 2, 1);
 
@@ -106,13 +106,22 @@ auto BLEHttpClient::fetchHeaders() -> int {
 auto BLEHttpClient::handleWebRequest(const SpiramString &key, const SpiramString &body) -> bool {
     if (key == "S") {
         // Status code
+        log_d("Got status code: %s", body.c_str());
         statusCode_ = atoi(body.c_str());
     } else if (key == "B") {
         // Body
-        responseBody_.append(body);
+        // Extract chunk (e.g. "B1/2:chunk")
+        auto slashIndex = body.find('/');
+        auto colonIndex = body.find(':');
+        auto chunkNumber = atoi(body.substr(1, slashIndex - 1).c_str());
+        auto totalChunks = atoi(body.substr(slashIndex + 1, colonIndex - slashIndex - 1).c_str());
+        auto chunk = body.substr(colonIndex + 1);
+        responseBody_.append(chunk);
+        log_d("Got chunk %d/%d: %s", chunkNumber, totalChunks, chunk.c_str());
     } else if (key == "E") {
         // End of request
         responseFetched_ = true;
+        log_d("Got end of request");
         return true;
     }
 
