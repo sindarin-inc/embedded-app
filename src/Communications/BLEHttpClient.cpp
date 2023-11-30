@@ -3,6 +3,7 @@
 #include "Communications/BLEHttpClient.hpp"
 
 #include <cstddef>
+#include <cstdlib>
 #include <esp_timer.h>
 #include <utility>
 
@@ -109,19 +110,20 @@ auto BLEHttpClient::handleWebRequest(const SpiramString &key, const SpiramString
         // Re-send the body chunk requested: B123=. chunkNumber is after the first character and
         // before the =.
         auto bleProxy = BLEProxy::getInstance();
-        int chunkNumber = atoi(key.substr(1, key.length() - 2).c_str());
+        int chunkNumber = strtol(key.substr(1, key.length() - 2).c_str(), nullptr, 10);
         bleProxy->writeBody(requestBody_, chunkNumber);
     } else if (key == "S") {
         // Status code
         log_d("Got status code: %s", body.c_str());
-        statusCode_ = atoi(body.c_str());
+        statusCode_ = strtol(body.c_str(), nullptr, 10);
     } else if (key == "B") {
         // Body
         // Extract chunk (e.g. "B1/2:chunk")
         auto slashIndex = body.find('/');
         auto colonIndex = body.find(':');
-        auto chunkNumber = atoi(body.substr(1, slashIndex - 1).c_str());
-        auto totalChunks = atoi(body.substr(slashIndex + 1, colonIndex - slashIndex - 1).c_str());
+        auto chunkNumber = strtol(body.substr(1, slashIndex - 1).c_str(), nullptr, 10);
+        auto totalChunks =
+            strtol(body.substr(slashIndex + 1, colonIndex - slashIndex - 1).c_str(), nullptr, 10);
         auto chunk = body.substr(colonIndex + 1);
         responseBody_.append(chunk);
         log_d("Got chunk %d/%d: %s", chunkNumber, totalChunks, chunk.c_str());
