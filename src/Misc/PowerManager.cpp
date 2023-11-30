@@ -193,6 +193,9 @@ auto PowerManager::inactivityTimeoutMs() -> int {
     } else if (state_ == PowerState::ActiveOverTemp) {
         // Shutdown relatively quickly if we're too hot
         return 10 * 1000;
+    } else if (state_ == PowerState::ActiveBatteryDepleted) {
+        // Shutdown quickly if we're out of battery
+        return 5 * 1000;
     } else {
         // Normal inactivity timeout is 10 minutes
         return 10 * 60 * 1000;
@@ -237,11 +240,9 @@ auto PowerManager::begin() -> esp_err_t {
                     log_i("USB connected, switching to ActiveUSBCharging");
                     state_ = PowerState::ActiveUSBCharging;
                     inactivityTimer_.setTimeoutMs(inactivityTimeoutMs());
-                    DispatchGetUiQueue()->dispatch([this]() {
-                        if (stateChangeCallback_ != nullptr) {
-                            stateChangeCallback_(state_);
-                        }
-                    });
+                    if (stateChangeCallback_ != nullptr) {
+                        stateChangeCallback_(state_);
+                    }
                 }
                 if (pmConfig_.light_sleep_enable == true) {
                     // USB is connected so disable light sleep
@@ -302,13 +303,10 @@ void PowerManager::loop() {
     if (battery.getDepleted()) {
         if (state_ == PowerState::Active || state_ == PowerState::ActiveForcedOn) {
             state_ = PowerState::ActiveBatteryDepleted;
-            DispatchGetUiQueue()->dispatch([this]() {
-                if (stateChangeCallback_ != nullptr) {
-                    stateChangeCallback_(state_);
-                }
-                Delay(5000);
-                powerOff();
-            });
+            inactivityTimer_.setTimeoutMs(inactivityTimeoutMs());
+            if (stateChangeCallback_ != nullptr) {
+                stateChangeCallback_(state_);
+            }
         } else {
             powerOff();
         }
@@ -357,11 +355,9 @@ void PowerManager::loop() {
         log_e("Temperature is too high (%d)! Going to sleep.", temperature);
         state_ = PowerState::ActiveOverTemp;
         inactivityTimer_.setTimeoutMs(inactivityTimeoutMs());
-        DispatchGetUiQueue()->dispatch([this]() {
-            if (stateChangeCallback_ != nullptr) {
-                stateChangeCallback_(state_);
-            }
-        });
+        if (stateChangeCallback_ != nullptr) {
+            stateChangeCallback_(state_);
+        }
     }
 
 #endif
@@ -449,6 +445,9 @@ void PowerManager::releaseLED() {
 void PowerManager::beginShutdown() {
     auto previousState = state_;
     state_ = PowerState::ShuttingDown;
+    if (stateChangeCallback_ != nullptr) {
+        stateChangeCallback_(state_);
+    }
 
     auto taskName = pcTaskGetName(nullptr);
     log_d("beginShutdown from task %s", taskName);

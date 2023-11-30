@@ -446,17 +446,19 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     };
 
     powerManager.setStateChangeCallback([&showChargingScreen](PowerState state) {
-        if (state == PowerState::ActiveUSBCharging) {
-            showChargingScreen();
-        } else if (state == PowerState::ActiveOverTemp) {
-            auto overTempScreen = new OverTempScreen();
-            rootUi.setCurrentScreen(*overTempScreen);
-            UIInnerLoop(RemoteCommand::NONE);
-        } else if (state == PowerState::ActiveBatteryDepleted) {
-            auto powerDepletedScreen = new PowerDepletedScreen();
-            rootUi.setCurrentScreen(*powerDepletedScreen);
-            UIInnerLoop(RemoteCommand::NONE);
-        }
+        DispatchGetUiQueue()->dispatch([&showChargingScreen, state]() {
+            if (state == PowerState::ActiveUSBCharging) {
+                showChargingScreen();
+            } else if (state == PowerState::ActiveOverTemp) {
+                auto overTempScreen = new OverTempScreen();
+                rootUi.setCurrentScreen(*overTempScreen);
+                UIInnerLoop(RemoteCommand::NONE);
+            } else if (state == PowerState::ActiveBatteryDepleted) {
+                auto powerDepletedScreen = new PowerDepletedScreen();
+                rootUi.setCurrentScreen(*powerDepletedScreen);
+                UIInnerLoop(RemoteCommand::NONE);
+            }
+        });
     });
 
     BlinkBootErrors(bootErrors);
