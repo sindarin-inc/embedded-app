@@ -13,6 +13,7 @@ public:
     BLESyncService() = default;
     BLESyncService(BLESyncService const &) = delete;
     auto configureService(BLEServer *server) -> BLEService * override;
+    auto disableService(BLEServer *server) -> BLEService *;
     auto start() -> bool override;
 };
 

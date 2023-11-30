@@ -6,9 +6,11 @@
 
 auto BLESyncService::configureService(BLEServer *server) -> BLEService * {
     service_ = server->createService(BLEUUID(SYNC_SERVICE_UUID));
-    server->getAdvertising()->addServiceUUID(service_->getUUID());
+    // server->getAdvertising()->addServiceUUID(service_->getUUID()); // Deferred
     return service_;
 };
+
+auto BLESyncService::disableService(BLEServer *server) -> BLEService * { return service_; };
 
 auto BLESyncService::start() -> bool { return service_->start(); }
 

@@ -7,7 +7,9 @@
 #include <memory>
 
 #if USE_BLE_SERVER_PROXY
+#include "Communications/BLEManager.hpp"
 #include "Communications/BLEProxy.hpp"
+#include "Communications/BLESyncService.hpp"
 #endif
 
 #include "Communications/HttpClient.hpp"
@@ -49,11 +51,12 @@ public:
 
     auto handleWebRequest(const SpiramString &key, const SpiramString &body) -> bool;
 
-    bool connected;
+    bool connected_;
 
 private:
     char *url_;
     int statusCode_;
+
     esp_http_client_method_t requestMethod_;
     std::vector<std::pair<SpiramString, SpiramString>> requestHeaders_;
     SpiramString requestBody_;

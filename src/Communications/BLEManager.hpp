@@ -14,6 +14,9 @@ public:
     BLEManager(BLEManager const &) = delete;
     static auto getInstance() -> std::shared_ptr<BLEManager>;
     auto startAdvertisingIfNecessary() -> bool;
+    auto stopAdvertising() -> bool;
+    void enableService(BLEService *service);
+    void disableService(BLEService *service);
     auto server() -> BLEServer *;
 
     // Extra field to advertise in the advertising packet. Mobile apps use this to identify devices

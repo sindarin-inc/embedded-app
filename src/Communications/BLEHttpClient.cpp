@@ -13,14 +13,14 @@ BLEHttpClient::BLEHttpClient(const char *url, const char *contentType,
                              esp_http_client_method_t method)
     : HttpClient(url, contentType, method) {
     url_ = strdup(url);
-    connected = false;
+    connected_ = false;
     requestBody_ = "";
     requestHeaders_.clear();
     requestMethod_ = method;
 
     auto bleProxy = BLEProxy::getInstance();
     bleProxy->registerSubscriptionStatusCallback(
-        [this](bool connected) { this->connected = connected; });
+        [this](bool connected) { this->connected_ = connected; });
 }
 
 auto BLEHttpClient::setHeader(const char *key, const char *value) -> esp_err_t {
@@ -36,21 +36,25 @@ auto BLEHttpClient::write(const char *body, int length) -> int {
 }
 
 auto BLEHttpClient::fetchHeaders() -> int {
-    auto bleProxy = BLEProxy::getInstance();
     statusCode_ = 0;
     responseFetched_ = false;
     responseBody_ = "";
     responseHeaders_.clear();
 
-    // Dispatch queue to advertise sync service
-    // TODO: Right now the service is being advertised at boot
+    // Configure BLE sync service and advertise it
+    auto bleManager = BLEManager::getInstance();
+    auto bleProxy = BLEProxy::getInstance();
+    bleManager->enableService(bleProxy->getService());
+    defer { bleManager->disableService(bleProxy->getService()); };
+    bleManager->startAdvertisingIfNecessary();
+
     // If not connected, wait up to 30s to ensure BLE is connected. If not, bail.
-    if (!connected) {
+    if (!connected_) {
         // Wait for BLE to connect
         SemaphoreHandle_t requestCompleteSemaphore = xSemaphoreCreateBinary();
         defer { vSemaphoreDelete(requestCompleteSemaphore); };
         auto waitForBLEConnect = [this]() {
-            while (!connected) {
+            while (!connected_) {
                 log_d("Waiting for BLE to connect...");
                 vTaskDelay(1000 / portTICK_PERIOD_MS);
             }
@@ -59,7 +63,10 @@ auto BLEHttpClient::fetchHeaders() -> int {
         DispatchQueue::dispatchOneOff(
             [waitForBLEConnect, requestCompleteSemaphore]() {
             waitForBLEConnect();
-            xSemaphoreGive(requestCompleteSemaphore);
+            // Double check that semaphore is still valid
+            if (requestCompleteSemaphore != nullptr) {
+                xSemaphoreGive(requestCompleteSemaphore);
+            }
             // UBaseType_t watermark = uxTaskGetStackHighWaterMark(nullptr);
             // log_d("BLE sync task stack high watermark: %d", watermark);
             },

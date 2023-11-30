@@ -20,6 +20,7 @@ public:
     static auto getInstance() -> std::shared_ptr<BLEProxy>;
 
     void configureCharacteristics(BLEService *service) override;
+    auto getService() -> BLEService * { return proxyService_; };
 
     auto countChunks(const SpiramString &body) -> int;
 
@@ -36,6 +37,7 @@ public:
 protected:
     static std::shared_ptr<BLEProxy> instance;
     BLECharacteristic *proxyCharacteristic_;
+    BLEService *proxyService_;
     WebRequestHandler webRequestHandler_;
     SubscriptionStatusCallback subscriptionStatusCallback_;
 

@@ -32,6 +32,7 @@ void BLEProxy::configureCharacteristics(BLEService *service) {
 
     characteristic->setCallbacks(new CharacteristicCallbacks(this));
     this->proxyCharacteristic_ = characteristic;
+    this->proxyService_ = service;
 };
 
 void BLEProxy::registerSubscriptionStatusCallback(const SubscriptionStatusCallback &callback) {
