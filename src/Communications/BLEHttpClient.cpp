@@ -13,14 +13,14 @@ BLEHttpClient::BLEHttpClient(const char *url, const char *contentType,
                              esp_http_client_method_t method)
     : HttpClient(url, contentType, method) {
     url_ = strdup(url);
-    connected_ = false;
+    connected = false;
     requestBody_ = "";
     requestHeaders_.clear();
     requestMethod_ = method;
 
     auto bleProxy = BLEProxy::getInstance();
     bleProxy->registerSubscriptionStatusCallback(
-        [this](bool connected) { this->connected_ = connected; });
+        [this](bool connected) { this->connected = connected; });
 }
 
 auto BLEHttpClient::setHeader(const char *key, const char *value) -> esp_err_t {
@@ -49,12 +49,12 @@ auto BLEHttpClient::fetchHeaders() -> int {
     bleManager->startAdvertisingIfNecessary();
 
     // If not connected, wait up to 30s to ensure BLE is connected. If not, bail.
-    if (!connected_) {
+    if (!connected) {
         // Wait for BLE to connect
         SemaphoreHandle_t requestCompleteSemaphore = xSemaphoreCreateBinary();
         defer { vSemaphoreDelete(requestCompleteSemaphore); };
         auto waitForBLEConnect = [this]() {
-            while (!connected_) {
+            while (!connected) {
                 log_d("Waiting for BLE to connect...");
                 vTaskDelay(1000 / portTICK_PERIOD_MS);
             }

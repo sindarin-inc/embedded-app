@@ -51,7 +51,7 @@ public:
 
     auto handleWebRequest(const SpiramString &key, const SpiramString &body) -> bool;
 
-    bool connected_;
+    bool connected;
 
 private:
     char *url_;
