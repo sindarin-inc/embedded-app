@@ -54,7 +54,7 @@ public:
 
     auto downloadReadable(const std::shared_ptr<Readable> &readable, FileSystem &fileSystem,
                           Telemetry &telemetry, const std::string &path,
-                          std::shared_ptr<bool> cancel,
+                          const std::shared_ptr<bool> &cancel,
                           const std::function<void(int percentage)> &progressCallback) -> int;
 
     auto uploadTelemetryFile(SFile &telemetryFile, const std::string &localPath,

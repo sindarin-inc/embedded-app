@@ -13,7 +13,7 @@
 auto DownloadFile(
     const char *url, const std::function<bool(int httpCode, int contentLength)> &openedConnection,
     const std::function<size_t(HttpClient &client, int index, int contentLength)> &readWrite,
-    const std::shared_ptr<bool>& cancel,
+    const std::shared_ptr<bool> &cancel,
     const std::function<void(int bytesWritten, float percentage)> &progressCallback, bool gzip)
     -> int {
     if (cancel != nullptr && *cancel) {
@@ -150,7 +150,7 @@ auto DownloadFile(
 auto DownloadFile(const char *url,
                   const std::function<bool(int httpCode, int contentLength)> &openedConnection,
                   const std::function<size_t(const uint8_t *buf, size_t size)> &writeBytes,
-                  std::shared_ptr<bool> cancel,
+                  const std::shared_ptr<bool> &cancel,
                   const std::function<void(int bytesWritten, float percentage)> &progressCallback,
                   bool gzip) -> int {
 
@@ -170,11 +170,11 @@ auto DownloadFile(const char *url,
 
         return readLen;
         },
-        std::move(cancel), progressCallback, gzip);
+        cancel, progressCallback, gzip);
 }
 
 auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry, const char *path,
-                  int length, const std::shared_ptr<bool>& cancel,
+                  int length, const std::shared_ptr<bool> &cancel,
                   const std::function<void(float percentage)> &progressCallback, bool gzip) -> int {
 
     std::string fullPath(path);

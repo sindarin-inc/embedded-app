@@ -502,7 +502,7 @@ void LocalStore::resetReadablesBookmarksChanged(const ReadablesVector &readables
 }
 
 void LocalStore::syncFromRemote(
-    SyncReason syncReason, const std::shared_ptr<bool>& cancel,
+    SyncReason syncReason, const std::shared_ptr<bool> &cancel,
     const std::function<void(ContentSyncState state)> &progressCallback) {
     if (!WiFi::getInstance().hasWiFiCredentials()) {
         this->telemetry_.logMetric(TelemetryField::METRIC_WIFI, "sync-wifi-no-credentials");
@@ -949,7 +949,7 @@ void LocalStore::processReadableDeletion(const UserReadablesVector &readablesToD
 
 auto LocalStore::processReadableDownload(
     const UserReadablesVector &readablesToDownload, ReadablesVector &readables,
-    const std::shared_ptr<bool>& cancel, int &downloadIndex, int &successfullyDownloaded,
+    const std::shared_ptr<bool> &cancel, int &downloadIndex, int &successfullyDownloaded,
     const std::function<void(ContentSyncState)> &progressCallback, ReadablesModelType modelType,
     int totalCount) -> bool {
     bool failedDownload = false;
