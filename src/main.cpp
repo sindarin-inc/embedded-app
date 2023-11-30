@@ -51,7 +51,6 @@ BLESindarinService bleSindarinService;
 
 #if USE_BLE_SERVER_REMOTE
 #include "Inputs/BLERemoteInput.hpp"
-BLERemoteInput bleRemoteInput;
 #endif
 
 #if USE_BLE_SERVER_SETTINGS
@@ -393,8 +392,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     auto sindarinService = bleSindarinService.configureService(bleManager->server());
 
 #if USE_BLE_SERVER_REMOTE
-    bleRemoteInput.configureCharacteristics(sindarinService);
-    bleRemoteInput.setCallback(remoteCallback);
+    BLERemoteInput::getInstance()->configureCharacteristics(sindarinService);
 #endif
 
 #if USE_BLE_SERVER_SETTINGS

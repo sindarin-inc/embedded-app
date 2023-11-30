@@ -7,6 +7,7 @@
 #include <esp_timer.h>
 #include <utility>
 
+#include "Inputs/BLERemoteInput.hpp"
 #include "Misc/Defer.hpp"
 
 BLEHttpClient::BLEHttpClient(const char *url, const char *contentType,
@@ -44,8 +45,16 @@ auto BLEHttpClient::fetchHeaders() -> int {
     // Configure BLE sync service and advertise it
     auto bleManager = BLEManager::getInstance();
     auto bleProxy = BLEProxy::getInstance();
+    auto remoteInput = BLERemoteInput::getInstance();
+    bleManager->stopAdvertising();
+    bleManager->disableService(remoteInput->getService());
     bleManager->enableService(bleProxy->getService());
-    defer { bleManager->disableService(bleProxy->getService()); };
+    defer {
+        bleManager->stopAdvertising();
+        bleManager->disableService(bleProxy->getService());
+        bleManager->enableService(remoteInput->getService());
+        bleManager->startAdvertisingIfNecessary();
+    };
     bleManager->startAdvertisingIfNecessary();
 
     // If not connected, wait up to 30s to ensure BLE is connected. If not, bail.
