@@ -112,14 +112,14 @@ public:
     void resetReadablesArchivedChanged(const ReadablesVector &readables);
     void resetReadablesBookmarksChanged(const ReadablesVector &readables);
 
-    void syncFromRemote(SyncReason syncReason, std::shared_ptr<bool> cancel,
+    void syncFromRemote(SyncReason syncReason, const std::shared_ptr<bool>& cancel,
                         const std::function<void(ContentSyncState state)> &progressCallback);
     auto processReadables(const ReadablesVector &readables, UserReadablesVector &serverReadables)
         -> std::pair<UserReadablesVector, UserReadablesVector>;
     void processReadableDeletion(const UserReadablesVector &readablesToDelete,
                                  ReadablesVector &readables);
     auto processReadableDownload(const UserReadablesVector &readablesToDownload,
-                                 ReadablesVector &readables, std::shared_ptr<bool> cancel,
+                                 ReadablesVector &readables, const std::shared_ptr<bool>& cancel,
                                  int &downloadIndex, int &successfullyDownloaded,
                                  const std::function<void(ContentSyncState)> &progressCallback,
                                  ReadablesModelType modelType, int totalCount) -> bool;

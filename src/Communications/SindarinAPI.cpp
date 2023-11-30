@@ -206,7 +206,7 @@ auto SindarinAPI::downloadReadable(const std::shared_ptr<Readable> &readable,
 
     bool gzip = HasSuffix(path, ".gz");
     auto httpCode = DownloadFile(
-        remoteUrl.c_str(), fileSystem, telemetry, path.c_str(), fileSize, cancel,
+        remoteUrl.c_str(), fileSystem, telemetry, path.c_str(), fileSize, std::move(cancel),
         [progressCallback](float percentage) { progressCallback(percentage); }, gzip);
 
     return httpCode;
