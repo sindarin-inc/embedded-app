@@ -126,7 +126,7 @@ auto BLEHttpClient::handleWebRequest(const SpiramString &key, const SpiramString
             strtol(body.substr(slashIndex + 1, colonIndex - slashIndex - 1).c_str(), nullptr, 10);
         auto chunk = body.substr(colonIndex + 1);
         responseBody_.append(chunk);
-        log_d("Got chunk %d/%d: %s", chunkNumber, totalChunks, chunk.c_str());
+        log_d("Got chunk %ld/%ld: %s", chunkNumber, totalChunks, chunk.c_str());
     } else if (key == "E") {
         // End of request
         responseFetched_ = true;
