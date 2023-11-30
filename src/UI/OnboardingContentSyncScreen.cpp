@@ -11,9 +11,6 @@ extern TTRemoteInput ttRemoteInput;
 #endif
 
 void OnboardingContentSyncScreen::render(DisplaySystem &display) {
-    uint16_t x = 0;
-    uint16_t y = 0;
-
     if (!shownOnboardingSyncMessage_) {
         // We need to make sure this goes onto the second page because of a bug in the renderer.
         std::string message;

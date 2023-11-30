@@ -118,7 +118,7 @@ public:
                 lineXOffsets_.push_back(offset);
             }
         } else {
-            for (auto &line : splitLines_) {
+            for (int i = 0; i < splitLines_.size(); i++) {
                 lineXOffsets_.push_back(0);
             }
         }
