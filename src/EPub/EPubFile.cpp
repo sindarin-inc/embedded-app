@@ -297,6 +297,10 @@ auto EPubFile::getSummaryContent(
 
     // Load the summary xhtml content
     auto chapterIdx = opf_->getChapterIdx(chapterHref);
+    if (chapterIdx == -1) {
+        log_e("Unable to find chapter index for %s", chapterHref.c_str());
+        return "This chapter does not have a summary.";
+    }
     log_w("Chapter href: %s, chapter idx: %d, toc href: %s", chapterHref.c_str(), chapterIdx,
           std::string(getToc()[chapterIdx].href).c_str());
     if (std::string(getToc()[chapterIdx].href) != chapterHref) {
@@ -316,8 +320,13 @@ auto EPubFile::getSummaryContent(
 
     for (const auto &chapter : getToc()) {
         auto sameChapter = chapter.href == chapterHref;
-        auto futureChapter = opf_->getChapterIdx(std::string(chapter.href)) > chapterIdx;
-        auto pastOrSameChapter = opf_->getChapterIdx(std::string(chapter.href)) <= chapterIdx;
+        auto tocChapterIdx = opf_->getChapterIdx(std::string(chapter.href));
+        if (tocChapterIdx == -1) {
+            log_e("Unable to find chapter index for %s", chapter.href.c_str());
+            continue;
+        }
+        auto futureChapter = tocChapterIdx > chapterIdx;
+        auto pastOrSameChapter = tocChapterIdx <= chapterIdx;
 
         if (pastOrSameChapter) {
             placeInSummary->setOffset(summaryText.length());
@@ -403,6 +412,12 @@ auto EPubFile::getDictionaryContent(std::string &chapterId,
     auto chapterHref = opf_->getHrefByManifestId(chapterId);
     auto chapterIdx = opf_->getChapterIdx(chapterHref);
     auto spineIdx = opf_->getSpineIdx(chapterHref);
+
+    if (chapterIdx == -1 || spineIdx == -1) {
+        log_e("Unable to find chapter index for %s", chapterHref.c_str());
+        return "This chapter does not have any dictionary definitions.";
+    }
+
     auto previousSpineOffset = 0;
     if (std::string(getToc()[chapterIdx].href) != chapterHref) {
         chapterHref = std::string(getToc()[chapterIdx].href);
