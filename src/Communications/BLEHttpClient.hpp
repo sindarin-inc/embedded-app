@@ -52,7 +52,7 @@ public:
 
     auto handleWebRequest(const SpiramString &key, const SpiramString &body) -> bool;
 
-    bool connected;
+    bool connected_;
 
 private:
     char *url_;
