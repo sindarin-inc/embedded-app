@@ -60,7 +60,6 @@ BLESettings bleSettings(&prefs);
 
 #if USE_BLE_SERVER_IMPROV
 #include "Communications/BLEImprov.hpp"
-BLEImprov bleWifi;
 #endif
 
 #if USE_TURN_TOUCH_REMOTE
@@ -133,7 +132,7 @@ void PollingLoopTask(void *parameter) {
 #endif
 
 #if USE_BLE_SERVER_REMOTE
-        bleWifi.loop();
+        BLEImprov::getInstance()->loop();
 #endif
 
         vTaskDelay(1000 / portTICK_PERIOD_MS);
@@ -424,8 +423,8 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     // also use the Sindarin mobile app as-is after provisioning is done. If we
     // want to merge these in the future, it will be as simple as using
     // ble_wifi->configureCharacteristics(sindarinService)
-    bleWifi.configureService(bleManager->server());
-    if (!bleWifi.start()) {
+    BLEImprov::getInstance()->configureService(bleManager->server());
+    if (!BLEImprov::getInstance()->start()) {
         bootErrors.push_back({.type = BootError::Type::BLEWifi});
     }
 #endif

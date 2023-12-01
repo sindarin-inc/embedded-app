@@ -45,49 +45,52 @@ auto BLEHttpClient::fetchHeaders() -> int {
     // Configure BLE sync service and advertise it
     auto bleManager = BLEManager::getInstance();
     auto bleProxy = BLEProxy::getInstance();
+    auto bleImprov = BLEImprov::getInstance();
     auto remoteInput = BLERemoteInput::getInstance();
     bleManager->stopAdvertising();
     bleManager->disableService(remoteInput->getService());
+    bleManager->disableService(bleImprov->getService());
     bleManager->enableService(bleProxy->getService());
     defer {
         bleManager->stopAdvertising();
         bleManager->disableService(bleProxy->getService());
         bleManager->enableService(remoteInput->getService());
+        bleManager->enableService(bleImprov->getService());
         bleManager->startAdvertisingIfNecessary();
     };
     bleManager->startAdvertisingIfNecessary();
 
+    SemaphoreHandle_t requestCompleteSemaphore = xSemaphoreCreateBinary();
+    if (requestCompleteSemaphore == nullptr) {
+        log_e("Failed to create semaphore");
+        return -1;
+    }
+
     // If not connected, wait up to 30s to ensure BLE is connected. If not, bail.
     if (!connected) {
         // Wait for BLE to connect
-        SemaphoreHandle_t requestCompleteSemaphore = xSemaphoreCreateBinary();
-        defer { vSemaphoreDelete(requestCompleteSemaphore); };
-        auto waitForBLEConnect = [this]() {
-            while (!connected) {
+        auto waitForBLEConnect = [this, requestCompleteSemaphore]() {
+            while (!connected_) {
                 log_d("Waiting for BLE to connect...");
                 vTaskDelay(1000 / portTICK_PERIOD_MS);
             }
+            log_w("Giving requestCompleteSemaphore");
+            xSemaphoreGive(requestCompleteSemaphore);
         };
-
-        DispatchQueue::dispatchOneOff(
-            [waitForBLEConnect, requestCompleteSemaphore]() {
-            waitForBLEConnect();
-            // Double check that semaphore is still valid
-            if (requestCompleteSemaphore != nullptr) {
-                xSemaphoreGive(requestCompleteSemaphore);
-            }
-            // UBaseType_t watermark = uxTaskGetStackHighWaterMark(nullptr);
-            // log_d("BLE sync task stack high watermark: %d", watermark);
-            },
-            4000, 2, 1);
+        DispatchQueue::dispatchOneOff(waitForBLEConnect, 4000, 2, 1);
 
         // Wait for disk write to complete
         auto timeout = 30000;
+        log_w("Taking requestCompleteSemaphore");
         if (xSemaphoreTake(requestCompleteSemaphore, timeout / portTICK_PERIOD_MS) != pdTRUE) {
             log_e("Timed out waiting for BLE to connect");
+            vSemaphoreDelete(requestCompleteSemaphore);
             return -1;
         }
     }
+
+    log_w("Deleting requestCompleteSemaphore");
+    vSemaphoreDelete(requestCompleteSemaphore);
 
     bleProxy->registerWebRequestHandler([this](const SpiramString &key, const SpiramString &body) {
         return this->handleWebRequest(key, body);

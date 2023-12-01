@@ -31,7 +31,9 @@ public:
     BLEImprov()
         : BLECharacteristicProvider(), BLEServiceProvider(), characteristicCallbacks_(this){};
     BLEImprov(BLEImprov const &) = delete;
+    static auto getInstance() -> std::shared_ptr<BLEImprov>;
     void loop();
+    auto getService() -> BLEService * { return service_; };
 
     void configureCharacteristics(BLEService *service) override;
     auto configureService(BLEServer *server) -> BLEService * override;
@@ -40,6 +42,7 @@ public:
     void setState(BLEImprovState state);
 
 protected:
+    static std::shared_ptr<BLEImprov> instance;
     uint32_t lastStateChangeMillis_;
     BLECharacteristic *currentStateCharacteristic_;
     BLECharacteristic *errorStateCharacteristic_;

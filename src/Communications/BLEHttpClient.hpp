@@ -7,6 +7,7 @@
 #include <memory>
 
 #if USE_BLE_SERVER_PROXY
+#include "Communications/BLEImprov.hpp"
 #include "Communications/BLEManager.hpp"
 #include "Communications/BLEProxy.hpp"
 #include "Communications/BLESyncService.hpp"

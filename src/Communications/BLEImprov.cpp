@@ -15,6 +15,14 @@
 // Max number of WiFi APs to scan for.
 #define WIFI_SCANNING_MAX_AP_RECORDS 20
 
+std::shared_ptr<BLEImprov> BLEImprov::instance = nullptr;
+
+auto BLEImprov::getInstance() -> std::shared_ptr<BLEImprov> {
+    if (instance == nullptr) {
+        instance = std::make_shared<BLEImprov>();
+    }
+    return instance;
+}
 void BLEImprov::configureCharacteristics(BLEService *service) {
     BLECharacteristic *capabilitiesCharacteristic =
         service->createCharacteristic(BLEUUID(improv::CAPABILITIES_UUID), NIMBLE_PROPERTY::READ);
