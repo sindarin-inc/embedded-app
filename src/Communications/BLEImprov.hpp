@@ -31,7 +31,7 @@ public:
     BLEImprov()
         : BLECharacteristicProvider(), BLEServiceProvider(), characteristicCallbacks_(this){};
     BLEImprov(BLEImprov const &) = delete;
-    virtual ~BLERemoteInput() = default;
+    virtual ~BLEImprov() = default;
 
     static auto getInstance() -> std::shared_ptr<BLEImprov>;
     void loop();
