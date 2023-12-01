@@ -553,7 +553,7 @@ void Pager::show() const {
                  tokens_.nextTokenIdx(tokenIdx)) {
                 if (((uint16_t)tokens_[tokenIdx].tokenId &
                      ((uint16_t)TokenId::NEWLINE | (uint16_t)TokenId::ENDPARAGRAPH)) == 0) {
-                    std::cout << tokens_[tokenIdx].c32Str;
+                    std::cout << toString(tokens_[tokenIdx].c32Str);
                     if (tokens_[tokenIdx].spacesAfter) {
                         std::cout << " ";
                     }

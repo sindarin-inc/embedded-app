@@ -1999,10 +1999,6 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint32_t len) -> bool 
                 int lastWidth = 0;
                 char32_t lastChar;
 
-                if (streamOffset >= 11027) {
-                    log_w("Started...");
-                }
-
                 while (curChar != 0) {
                     // log_d("Current Character: %c (%02" PRIX8 "H)",
                     //       (((curChar >= ' ') && (curChar < 127)) ? curChar : ' '),

@@ -1,7 +1,5 @@
 #include "Tokens.hpp"
 
-#include <cuchar>
-
 #include "Pager.hpp"
 
 // Add a token to the tokens list. The null terminated string is *not* copied to the pool and is
@@ -111,16 +109,49 @@ void Tokens::addStr(Token &token, const std::string &str) {
     // REND_WLOG("Adding byte %02" PRIX8 "H to last token at %" PRIu16 ".", b, cStrPoolCount_);
 
     uint16_t len = str.length();
+
+    auto toC32 = [&len](const char **str) -> char32_t {
+        char32_t ch32 = 0;
+        uint8_t c = (*str)[0];
+        auto size = (c & 0x80) == 0
+                        ? 1
+                        : (((c & 0xE0) == 0xC0)
+                               ? 2
+                               : (((c & 0xF0) == 0xE0) ? 3 : (((c & 0xF8) == 0xF0) ? 4 : 0)));
+        if ((size != 0) && (len >= size)) {
+            switch (size) {
+            case 1:
+                ch32 = c;
+                break;
+            case 2:
+                ch32 = ((c & 0x1F) << 6) + ((*str)[1] & 0x3F);
+                break;
+            case 3:
+                ch32 = ((c & 0x0F) << 12) + (((*str)[1] & 0x3F) << 6) + ((*str)[2] & 0x3F);
+                break;
+            case 4:
+                ch32 = ((c & 0x07) << 18) + (((*str)[1] & 0x3F) << 12) + (((*str)[2] & 0x3F) << 6) +
+                       ((*str)[3] & 0x3F);
+                break;
+            }
+            *str += size;
+            len -= size;
+        }
+
+        return ch32;
+    };
+
     if ((getCStrPoolCount() + len) < (CSTR_POOL_SIZE - 2)) {
         const char *s = str.c_str();
         if (token.c32Str == nullptr) {
             token.c32Str = &cStrPool_[cStrPoolTailIdx_];
         }
-        while (len--) {
-            std::mbstate_t state{}; // zero-initialized to initial state
-            char32_t c32;
-            std::mbrtoc32(&c32, s++, 1, &state);
-            cStrPool_[cStrPoolTailIdx_] = c32;
+        while (len > 0) {
+            char32_t c = toC32(&s);
+            if (c == 0) {
+                break;
+            }
+            cStrPool_[cStrPoolTailIdx_] = c;
             token.length++; // must be done BEFORE the call to incrCStrPoolTailIdx(). DO NOT
                             // OPTIMIZE!
             incrCStrPoolTailIdx(token);

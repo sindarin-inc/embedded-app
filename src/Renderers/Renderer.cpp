@@ -19,13 +19,11 @@ auto Renderer::renderPage(std::shared_ptr<Place> fromPlace, int16_t numSkipLines
     // buffer.
 
     Font *theFont = display_.style.getFontFamily().readableFont;
-    bool tailoredFont = false;
     if (tokenizer_->isFor(DocType::EPUB)) {
         auto stream = std::dynamic_pointer_cast<EPubFile>(getStream());
         if (stream->hasFont()) {
             theFont = stream->getFont();
             stream->getFont()->setOpticalKerning(false);
-            tailoredFont = true;
         }
     }
 
