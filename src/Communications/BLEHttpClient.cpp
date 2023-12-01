@@ -51,6 +51,8 @@ auto BLEHttpClient::fetchHeaders() -> int {
     bleManager->disableService(remoteInput->getService());
     bleManager->disableService(bleImprov->getService());
     bleManager->enableService(bleProxy->getService());
+    bleManager->startAdvertisingIfNecessary();
+    // Re-enable existing services after we're done
     defer {
         bleManager->stopAdvertising();
         bleManager->disableService(bleProxy->getService());
@@ -58,8 +60,8 @@ auto BLEHttpClient::fetchHeaders() -> int {
         bleManager->enableService(bleImprov->getService());
         bleManager->startAdvertisingIfNecessary();
     };
-    bleManager->startAdvertisingIfNecessary();
 
+    // Create semaphore to wait for BLE to connect
     SemaphoreHandle_t requestCompleteSemaphore = xSemaphoreCreateBinary();
     if (requestCompleteSemaphore == nullptr) {
         log_e("Failed to create semaphore");
@@ -74,14 +76,12 @@ auto BLEHttpClient::fetchHeaders() -> int {
                 log_d("Waiting for BLE to connect...");
                 vTaskDelay(1000 / portTICK_PERIOD_MS);
             }
-            log_w("Giving requestCompleteSemaphore");
             xSemaphoreGive(requestCompleteSemaphore);
         };
         DispatchQueue::dispatchOneOff(waitForBLEConnect, 4000, 2, 1);
 
         // Wait for disk write to complete
         auto timeout = 30000;
-        log_w("Taking requestCompleteSemaphore");
         if (xSemaphoreTake(requestCompleteSemaphore, timeout / portTICK_PERIOD_MS) != pdTRUE) {
             log_e("Timed out waiting for BLE to connect");
             vSemaphoreDelete(requestCompleteSemaphore);
@@ -89,9 +89,9 @@ auto BLEHttpClient::fetchHeaders() -> int {
         }
     }
 
-    log_w("Deleting requestCompleteSemaphore");
+    // Now that we're connected to a mobile app, we can send the request
     vSemaphoreDelete(requestCompleteSemaphore);
-
+    // Register web request handler which receives the response from the mobile app
     bleProxy->registerWebRequestHandler([this](const SpiramString &key, const SpiramString &body) {
         return this->handleWebRequest(key, body);
     });

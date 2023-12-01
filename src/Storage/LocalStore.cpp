@@ -564,8 +564,9 @@ void LocalStore::syncFromRemote(
     // a queue.
     auto queue = DispatchGetCore0BackgroundQueue();
     queue->dispatch([this, wifiConnected] {
-        auto httpCode = this->telemetry_.uploadAndResetTelemetry(this->fileSystem, this->telemetry_,
-                                                                 !wifiConnected);
+        auto useBle = !wifiConnected;
+        auto httpCode =
+            this->telemetry_.uploadAndResetTelemetry(this->fileSystem, this->telemetry_, useBle);
         if (httpCode != 201) {
             this->telemetry_.logMetric(TelemetryField::METRIC_SYNC_STATUS, "sync-telemetry-failed",
                                        {{"http-code", httpCode}});

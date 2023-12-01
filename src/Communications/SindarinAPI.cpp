@@ -219,7 +219,7 @@ auto SindarinAPI::downloadReadable(const std::shared_ptr<Readable> &readable,
 auto SindarinAPI::createClient(const std::string &url, const std::string &contentType,
                                esp_http_client_method_t method, bool useBle)
     -> std::shared_ptr<HttpClient> {
-    if (useBle || true) {
+    if (useBle) {
 #if USE_BLE_SERVER_PROXY
         return std::make_shared<BLEHttpClient>(url.c_str(), contentType.c_str(), method);
 #else
@@ -249,7 +249,7 @@ auto SindarinAPI::uploadTelemetryFile(SFile &telemetryFile, const std::string &l
         return ERR_CLIENT_OPEN;
     }
 
-    auto err = setAuth(*(client.get()));
+    auto err = setAuth(*client);
     if (err != ESP_OK) {
         return ERR_SET_AUTH;
     }

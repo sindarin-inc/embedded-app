@@ -407,7 +407,6 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 #endif
 
 #if USE_BLE_SERVER_PROXY
-    // TODO: The BLE Sync Service should only be advertised when needed (during BLE sync)
     auto syncService = bleSyncService.configureService(bleManager->server());
     BLEProxy::getInstance()->configureCharacteristics(syncService);
 
