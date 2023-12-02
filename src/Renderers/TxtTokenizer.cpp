@@ -22,8 +22,6 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, St
     uint32_t lastIncrement = 0;
 
     lastToken_ = nullptr;
-    tokens_.clear();
-    pager_.clear();
 
     fromPlace = getFileLocation(fromPlace);
 

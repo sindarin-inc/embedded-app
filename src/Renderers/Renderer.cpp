@@ -29,6 +29,9 @@ auto Renderer::renderPage(std::shared_ptr<Place> fromPlace, int16_t numSkipLines
 
     display_.setFont(theFont);
 
+    tokens_.clear();
+    pager_.clear();
+
     tokenizer_->computeMaxTextTokenCharSize(display_.getTextWidth("G"));
 
     // std::cout << "Pager Line Count: " << pager_.getLineCount() << std::endl;
@@ -67,19 +70,20 @@ auto Renderer::renderPage(std::shared_ptr<Place> fromPlace, int16_t numSkipLines
 auto Renderer::goBackwardsOnePage(StreamPlace endPlace) -> StreamPlace {
 
     Font *theFont = display_.style.getFontFamily().readableFont;
-    bool tailoredFont = false;
     if (tokenizer_->isFor(DocType::EPUB)) {
         auto stream = std::dynamic_pointer_cast<EPubFile>(getStream());
         if (stream->hasFont()) {
             theFont = stream->getFont();
             stream->getFont()->setOpticalKerning(false);
-            tailoredFont = true;
         }
     }
 
     display_.setFont(theFont);
 
-    tokenizer_->computeMaxTextTokenCharSize(tailoredFont ? 17 : display_.getTextWidth("G"));
+    tokens_.clear();
+    pager_.clear();
+    
+    tokenizer_->computeMaxTextTokenCharSize(display_.getTextWidth("G"));
 
     // The following is done to compute the maximum number of characters a display
     // screen can get. The character "G" is a good compromize between smaller
