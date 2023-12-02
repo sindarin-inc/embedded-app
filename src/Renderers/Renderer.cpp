@@ -19,6 +19,9 @@ auto Renderer::renderPage(std::shared_ptr<Place> fromPlace, int16_t numSkipLines
     // buffer.
     display_.setFont(display_.style.getFontFamily().readableFont);
 
+    tokens_.clear();
+    pager_.clear();
+
     tokenizer_->computeMaxTextTokenCharSize();
 
     // std::cout << "Pager Line Count: " << pager_.getLineCount() << std::endl;
@@ -57,6 +60,10 @@ auto Renderer::renderPage(std::shared_ptr<Place> fromPlace, int16_t numSkipLines
 auto Renderer::goBackwardsOnePage(StreamPlace endPlace) -> StreamPlace {
 
     display_.setFont(display_.style.getFontFamily().readableFont);
+
+    tokens_.clear();
+    pager_.clear();
+
     tokenizer_->computeMaxTextTokenCharSize();
 
     // The following is done to compute the maximum number of characters a display

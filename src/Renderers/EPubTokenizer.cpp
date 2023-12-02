@@ -686,9 +686,6 @@ auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, S
 
     // ---
 
-    tokens_.clear();
-    pager_.clear();
-
     if (stream_->isAnArticle()) {
 
         REND_WLOG("Reading an article...");
