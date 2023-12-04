@@ -60,6 +60,7 @@ auto BLEImprov::configureService(BLEServer *server) -> BLEService * {
 auto BLEImprov::start() -> bool { return service_->start(); }
 
 void BLEImprov::setState(BLEImprovState state) {
+    log_d("Switching BLEImprov state from %d to %d", this->state_, state);
     if (this->state_ == state) {
         return;
     }
