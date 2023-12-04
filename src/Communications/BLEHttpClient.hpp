@@ -1,8 +1,5 @@
 #pragma once
 
-// Technically we're not using anything Arduino here, but there's a bug in Arduino where it has to
-// come first or it breaks compilation
-// See: https://github.com/espressif/arduino-esp32/issues/6247
 #include <map>
 #include <memory>
 
@@ -11,6 +8,7 @@
 #include "Communications/BLEManager.hpp"
 #include "Communications/BLEProxy.hpp"
 #include "Communications/BLESyncService.hpp"
+#include "Inputs/BLERemoteInput.hpp"
 #endif
 
 #include "Communications/HttpClient.hpp"
@@ -19,10 +17,12 @@
 
 class BLEHttpClient : public HttpClient {
 public:
-    BLEHttpClient(const char *url, const char *contentType = "",
-                  esp_http_client_method_t method = HTTP_METHOD_GET);
+    BLEHttpClient(const std::shared_ptr<BLEManager> &bleManager,
+                  const std::shared_ptr<BLEProxy> &bleProxy,
+                  const std::shared_ptr<BLEImprov> &bleImprov,
+                  std::shared_ptr<BLERemoteInput> remoteInput, const char *url,
+                  const char *contentType = "", esp_http_client_method_t method = HTTP_METHOD_GET);
     BLEHttpClient(const BLEHttpClient &) = delete;
-
     ~BLEHttpClient() override = default;
 
     auto setHeader(const char *key, const char *value) -> esp_err_t override;
@@ -55,6 +55,11 @@ public:
     bool connected;
 
 private:
+    std::shared_ptr<BLEManager> bleManager_;
+    std::shared_ptr<BLEProxy> bleProxy_;
+    std::shared_ptr<BLEImprov> bleImprov_;
+    std::shared_ptr<BLERemoteInput> remoteInput_;
+
     char *url_;
     int statusCode_;
 
@@ -63,5 +68,4 @@ private:
     SpiramString requestBody_;
     SpiramString responseBody_;
     bool responseFetched_;
-    std::multimap<std::string, std::string, CaseInsensitive> responseHeaders_;
 };

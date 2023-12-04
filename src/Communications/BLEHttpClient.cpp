@@ -7,20 +7,23 @@
 #include <esp_timer.h>
 #include <utility>
 
-#include "Inputs/BLERemoteInput.hpp"
 #include "Misc/Defer.hpp"
 
-BLEHttpClient::BLEHttpClient(const char *url, const char *contentType,
-                             esp_http_client_method_t method)
-    : HttpClient(url, contentType, method) {
+BLEHttpClient::BLEHttpClient(const std::shared_ptr<BLEManager> &bleManager,
+                             const std::shared_ptr<BLEProxy> &bleProxy,
+                             const std::shared_ptr<BLEImprov> &bleImprov,
+                             std::shared_ptr<BLERemoteInput> remoteInput, const char *url,
+                             const char *contentType, esp_http_client_method_t method)
+    : HttpClient(url, contentType, method), bleManager_(bleManager),
+      bleProxy_(bleProxy), bleImprov_(bleImprov),
+      remoteInput_(std::move(remoteInput)) {
     url_ = strdup(url);
     connected = false;
     requestBody_ = "";
     requestHeaders_.clear();
     requestMethod_ = method;
 
-    auto bleProxy = BLEProxy::getInstance();
-    bleProxy->registerSubscriptionStatusCallback(
+    bleProxy_->registerSubscriptionStatusCallback(
         [this](bool connected) { this->connected = connected; });
 }
 
@@ -40,25 +43,20 @@ auto BLEHttpClient::fetchHeaders() -> int {
     statusCode_ = 0;
     responseFetched_ = false;
     responseBody_ = "";
-    responseHeaders_.clear();
 
     // Configure BLE sync service and advertise it
-    auto bleManager = BLEManager::getInstance();
-    auto bleProxy = BLEProxy::getInstance();
-    auto bleImprov = BLEImprov::getInstance();
-    auto remoteInput = BLERemoteInput::getInstance();
-    bleManager->stopAdvertising();
-    bleManager->disableService(remoteInput->getService());
-    bleManager->disableService(bleImprov->getService());
-    bleManager->enableService(bleProxy->getService());
-    bleManager->startAdvertisingIfNecessary();
+    bleManager_->stopAdvertising();
+    bleManager_->disableService(remoteInput_->getService());
+    bleManager_->disableService(bleImprov_->getService());
+    bleManager_->enableService(bleProxy_->getService());
+    bleManager_->startAdvertisingIfNecessary();
     // Re-enable existing services after we're done
     defer {
-        bleManager->stopAdvertising();
-        bleManager->disableService(bleProxy->getService());
-        bleManager->enableService(remoteInput->getService());
-        bleManager->enableService(bleImprov->getService());
-        bleManager->startAdvertisingIfNecessary();
+        bleManager_->stopAdvertising();
+        bleManager_->disableService(bleProxy_->getService());
+        bleManager_->enableService(remoteInput_->getService());
+        bleManager_->enableService(bleImprov_->getService());
+        bleManager_->startAdvertisingIfNecessary();
     };
 
     // Create semaphore to wait for BLE to connect
@@ -92,21 +90,21 @@ auto BLEHttpClient::fetchHeaders() -> int {
     // Now that we're connected to a mobile app, we can send the request
     vSemaphoreDelete(requestCompleteSemaphore);
     // Register web request handler which receives the response from the mobile app
-    bleProxy->registerWebRequestHandler([this](const SpiramString &key, const SpiramString &body) {
+    bleProxy_->registerWebRequestHandler([this](const SpiramString &key, const SpiramString &body) {
         return this->handleWebRequest(key, body);
     });
 
     // Write URL
     SpiramString method = SpiramString(requestMethod_ == HTTP_METHOD_GET ? "GET" : "POST");
-    bleProxy->writeUrl(url_, method);
+    bleProxy_->writeUrl(url_, method);
 
     // Write headers
     for (auto &header : requestHeaders_) {
-        bleProxy->writeHeader(header.first, header.second);
+        bleProxy_->writeHeader(header.first, header.second);
     }
 
     // Write body
-    bleProxy->writeBody(requestBody_);
+    bleProxy_->writeBody(requestBody_);
 
     // Wait for response up to 30s
     auto timeout = 30000;
@@ -128,9 +126,8 @@ auto BLEHttpClient::handleWebRequest(const SpiramString &key, const SpiramString
     if (key.length() > 1) {
         // Re-send the body chunk requested: B123=. chunkNumber is after the first character and
         // before the =.
-        auto bleProxy = BLEProxy::getInstance();
         int chunkNumber = strtol(key.substr(1, key.length() - 2).c_str(), nullptr, 10);
-        bleProxy->writeBody(requestBody_, chunkNumber);
+        bleProxy_->writeBody(requestBody_, chunkNumber);
     } else if (key == "S") {
         // Status code
         log_d("Got status code: %s", body.c_str());
