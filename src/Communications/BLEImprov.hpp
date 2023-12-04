@@ -27,8 +27,7 @@ enum BLEImprovState : uint8_t {
 
 class BLEImprov : public BLECharacteristicProvider, public BLEServiceProvider {
 public:
-    BLEImprov()
-        : BLECharacteristicProvider(), BLEServiceProvider(), characteristicCallbacks_(this){};
+    BLEImprov() : BLECharacteristicProvider(), BLEServiceProvider(), characteristicCallbacks_(){};
     BLEImprov(BLEImprov const &) = delete;
     ~BLEImprov() = default;
 
@@ -56,9 +55,7 @@ protected:
 
     class CharacteristicCallbacks : public BLECharacteristicCallbacks {
     public:
-        BLEImprov *enclosed;
-
-        CharacteristicCallbacks(BLEImprov *enclosure) { enclosed = enclosure; }
+        CharacteristicCallbacks() {}
 
         void onWrite(BLECharacteristic *characteristic, ble_gap_conn_desc *desc) override {
             if (!BLEManager::getInstance()->checkAuthed(desc)) {
@@ -85,13 +82,13 @@ protected:
                     break;
                 }
                 case improv::WIFI_SETTINGS: {
-                    this->enclosed->lastCommand_ = command;
-                    this->enclosed->setState(STATE_READY_TO_CONNECT);
+                    BLEImprov::getInstance()->lastCommand_ = command;
+                    BLEImprov::getInstance()->setState(STATE_READY_TO_CONNECT);
                     break;
                 }
                 case improv::GET_WIFI_NETWORKS: {
-                    this->enclosed->lastCommand_ = command;
-                    this->enclosed->setState(STATE_READY_TO_SCAN);
+                    BLEImprov::getInstance()->lastCommand_ = command;
+                    BLEImprov::getInstance()->setState(STATE_READY_TO_SCAN);
                     break;
                 }
                 default: {
