@@ -1,8 +1,5 @@
 #pragma once
 
-#ifndef BLESyncService_H
-#define BLESyncService_H
-
 #include <NimBLEDevice.h>
 
 #include "Communications/BLEAbstractions.hpp"
@@ -16,5 +13,3 @@ public:
     auto disableService(BLEServer *server) -> BLEService *;
     auto start() -> bool override;
 };
-
-#endif

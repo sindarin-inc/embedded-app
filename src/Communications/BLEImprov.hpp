@@ -1,5 +1,4 @@
-#ifndef BLEImprov_H
-#define BLEImprov_H
+#pragma once
 
 #include <NimBLEDevice.h>
 #include <esp_event_base.h>
@@ -107,5 +106,3 @@ protected:
 
     CharacteristicCallbacks characteristicCallbacks_;
 };
-
-#endif

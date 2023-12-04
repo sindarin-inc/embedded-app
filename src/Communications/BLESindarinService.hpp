@@ -1,5 +1,4 @@
-#ifndef BLESindarinService_H
-#define BLESindarinService_H
+#pragma once
 
 #include <NimBLEDevice.h>
 
@@ -14,5 +13,3 @@ public:
     auto configureService(BLEServer *server) -> BLEService * override;
     auto start() -> bool override;
 };
-
-#endif

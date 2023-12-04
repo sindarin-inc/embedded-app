@@ -1,6 +1,4 @@
 #pragma once
-#ifndef BLEManager_H
-#define BLEManager_H
 
 #include <NimBLEDevice.h>
 #include <memory>
@@ -69,5 +67,3 @@ protected:
         }
     };
 };
-
-#endif
