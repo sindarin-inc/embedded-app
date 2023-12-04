@@ -13,7 +13,7 @@ class BLERemoteInput : public RemoteInput, public BLECharacteristicProvider {
 public:
     BLERemoteInput() = default;
     BLERemoteInput(BLERemoteInput const &) = delete;
-    virtual ~BLERemoteInput() = default;
+    ~BLERemoteInput() = default;
 
     void configureCharacteristics(BLEService *service) override;
 
