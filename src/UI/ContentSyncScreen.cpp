@@ -184,10 +184,8 @@ void ContentSyncScreen::render(DisplaySystem &display) {
 }
 
 void ContentSyncScreen::cancel() {
-    if (cancel_ != nullptr) {
-        *cancel_ = true;
-        telemetry_.logMetric(TelemetryField::METRIC_SYNC_STATUS, "sync-cancelled");
-    }
+    CancelFlag::cancel(cancel_);
+    telemetry_.logMetric(TelemetryField::METRIC_SYNC_STATUS, "sync-cancelled");
     WiFi::getInstance().disconnectWiFi();
     showPopup("Sync cancelled!\n\nRebooting system...");
     render(display_);
@@ -229,11 +227,11 @@ void ContentSyncScreen::begin() {
 
     // Rate limit to not update more than every 1s, and only if the percentage has changed
     auto rl = std::make_shared<RateLimiter>(1, 20, 1);
-    cancel_ = std::make_shared<bool>(false);
+    cancel_ = std::make_shared<CancelFlag>();
     DispatchGetCore0BackgroundQueue()->dispatch([this, rl]() {
         localStore_.syncFromRemote(SyncReason::Manual, cancel_,
                                    [this, rl](const ContentSyncState &state) {
-            if (cancel_ != nullptr && *cancel_) {
+            if (CancelFlag::isCancelled(cancel_)) {
                 return;
             }
 

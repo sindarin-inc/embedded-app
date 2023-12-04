@@ -502,7 +502,7 @@ void LocalStore::resetReadablesBookmarksChanged(const ReadablesVector &readables
 }
 
 void LocalStore::syncFromRemote(
-    SyncReason syncReason, const std::shared_ptr<bool> &cancel,
+    SyncReason syncReason, const std::shared_ptr<CancelFlag> &cancel,
     const std::function<void(ContentSyncState state)> &progressCallback) {
     if (!WiFi::getInstance().hasWiFiCredentials()) {
         this->telemetry_.logMetric(TelemetryField::METRIC_WIFI, "sync-wifi-no-credentials");
@@ -521,7 +521,7 @@ void LocalStore::syncFromRemote(
         return;
     }
 
-    if (cancel != nullptr && *cancel) {
+    if (CancelFlag::isCancelled(cancel)) {
         return;
     }
 
@@ -541,7 +541,7 @@ void LocalStore::syncFromRemote(
         }
     }
 
-    if (cancel != nullptr && *cancel) {
+    if (CancelFlag::isCancelled(cancel)) {
         return;
     }
 
@@ -572,7 +572,7 @@ void LocalStore::syncFromRemote(
     // a queue.
     auto queue = DispatchGetCore0BackgroundQueue();
     queue->dispatch([this, cancel] {
-        if (cancel != nullptr && *cancel) {
+        if (CancelFlag::isCancelled(cancel)) {
             return;
         }
 
@@ -589,7 +589,7 @@ void LocalStore::syncFromRemote(
 
     // Run this work on a separate thread, since it's long running
     queue->dispatch([this, syncReason, progressCallback, cancel] {
-        if (cancel != nullptr && *cancel) {
+        if (CancelFlag::isCancelled(cancel)) {
             return;
         }
 
@@ -607,7 +607,7 @@ void LocalStore::syncFromRemote(
 
         std::vector<ReadablesVector *> readablesList = {&books_, &articles_};
         for (auto &readables : readablesList) {
-            if (cancel != nullptr && *cancel) {
+            if (CancelFlag::isCancelled(cancel)) {
                 return;
             }
 
@@ -675,7 +675,7 @@ void LocalStore::syncFromRemote(
                     break;
                 }
 
-                if (cancel != nullptr && *cancel) {
+                if (CancelFlag::isCancelled(cancel)) {
                     return;
                 }
                 int httpCode = 0;
@@ -690,7 +690,7 @@ void LocalStore::syncFromRemote(
                         SindarinAPI::getInstance()->checkSync(nextPageUrl.c_str(), checkSyncRequest,
                                                               &checkSyncResponse, this->telemetry_);
                 }
-                if (cancel != nullptr && *cancel) {
+                if (CancelFlag::isCancelled(cancel)) {
                     return;
                 }
                 log_d("Server has %d %ss, next page: %s", checkSyncResponse.totalCount,
@@ -732,7 +732,7 @@ void LocalStore::syncFromRemote(
                 auto [readablesToDownload, readablesToDelete] =
                     this->processReadables(*readables, userReadables);
 
-                if (cancel != nullptr && *cancel) {
+                if (CancelFlag::isCancelled(cancel)) {
                     return;
                 }
                 SHOW_HEAP();
@@ -820,7 +820,7 @@ void LocalStore::syncFromRemote(
                 continue;
             }
 
-            if (cancel != nullptr && *cancel) {
+            if (CancelFlag::isCancelled(cancel)) {
                 return;
             }
 
@@ -861,7 +861,7 @@ void LocalStore::syncFromRemote(
             }
         }
 
-        if (cancel != nullptr && *cancel) {
+        if (CancelFlag::isCancelled(cancel)) {
             return;
         }
 
@@ -949,7 +949,7 @@ void LocalStore::processReadableDeletion(const UserReadablesVector &readablesToD
 
 auto LocalStore::processReadableDownload(
     const UserReadablesVector &readablesToDownload, ReadablesVector &readables,
-    const std::shared_ptr<bool> &cancel, int &downloadIndex, int &successfullyDownloaded,
+    const std::shared_ptr<CancelFlag> &cancel, int &downloadIndex, int &successfullyDownloaded,
     const std::function<void(ContentSyncState)> &progressCallback, ReadablesModelType modelType,
     int totalCount) -> bool {
     bool failedDownload = false;
@@ -960,7 +960,7 @@ auto LocalStore::processReadableDownload(
 
     float pctPerReadable = 100.0 / totalCount;
     for (const auto &userReadable : readablesToDownload) {
-        if (cancel != nullptr && *cancel) {
+        if (CancelFlag::isCancelled(cancel)) {
             return true;
         }
 
@@ -972,7 +972,7 @@ auto LocalStore::processReadableDownload(
         SHOW_HEAP();
 
         for (int t = 0; t < NUMBER_OF_READABLE_DOWNLOAD_TRIES; t++) {
-            if (cancel != nullptr && *cancel) {
+            if (CancelFlag::isCancelled(cancel)) {
                 return true;
             }
 

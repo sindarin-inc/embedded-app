@@ -6,17 +6,14 @@
 #include "Communications/FirmwareDownload.hpp"
 #include "Communications/SindarinAPI.hpp"
 #include "Communications/WiFi.hpp"
+#include "Misc/CancelFlag.hpp"
 #include "Misc/Platform.hpp"
 #include "Misc/Telemetry.hpp"
 #include "config.h"
 
-std::shared_ptr<bool> cancel;
+std::shared_ptr<CancelFlag> cancel;
 
-void BackgroundSyncCancel() {
-    if (cancel != nullptr) {
-        *cancel = true;
-    }
-}
+void BackgroundSyncCancel() { CancelFlag::cancel(cancel); }
 
 void BackgroundSyncInternal(PowerManager &powerManager, PreferencesStore &prefs,
                             LocalStore &localStore, Telemetry &telemetry) {
@@ -28,7 +25,7 @@ void BackgroundSyncInternal(PowerManager &powerManager, PreferencesStore &prefs,
     };
     auto &fileSystem = localStore.fileSystem;
 
-    cancel = std::make_shared<bool>(false);
+    cancel = std::make_shared<CancelFlag>();
     localStore.syncFromRemote(
         PreferencesStore::syncReason, cancel,
         [&powerManager, &backgroundGroup, &telemetry](const ContentSyncState &state) {
@@ -59,12 +56,12 @@ void BackgroundSyncInternal(PowerManager &powerManager, PreferencesStore &prefs,
     auto bits =
         xEventGroupWaitBits(backgroundGroup, 1, pdTRUE, pdTRUE, pdMS_TO_TICKS(10 * 60 * 1000));
     if (!(bits & 1)) {
-        *cancel = true;
+        CancelFlag::cancel(cancel);
         log_w("Content sync timed out");
     }
     xEventGroupClearBits(backgroundGroup, 1);
 
-    if (*cancel) {
+    if (CancelFlag::isCancelled(cancel)) {
         return;
     }
 
@@ -84,7 +81,7 @@ void BackgroundSyncInternal(PowerManager &powerManager, PreferencesStore &prefs,
                             {{"run-time", GetRunTimeMs()}});
     }
 
-    if (*cancel) {
+    if (CancelFlag::isCancelled(cancel)) {
         return;
     }
 
@@ -112,7 +109,7 @@ void BackgroundSyncInternal(PowerManager &powerManager, PreferencesStore &prefs,
         }
     });
 
-    if (*cancel) {
+    if (CancelFlag::isCancelled(cancel)) {
         return;
     }
 
@@ -124,7 +121,7 @@ void BackgroundSyncInternal(PowerManager &powerManager, PreferencesStore &prefs,
     }
     xEventGroupClearBits(backgroundGroup, 1);
 
-    if (*cancel) {
+    if (CancelFlag::isCancelled(cancel)) {
         return;
     }
 

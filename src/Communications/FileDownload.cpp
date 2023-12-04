@@ -13,10 +13,10 @@
 auto DownloadFile(
     const char *url, const std::function<bool(int httpCode, int contentLength)> &openedConnection,
     const std::function<size_t(HttpClient &client, int index, int contentLength)> &readWrite,
-    const std::shared_ptr<bool> &cancel,
+    const std::shared_ptr<CancelFlag> &cancel,
     const std::function<void(int bytesWritten, float percentage)> &progressCallback, bool gzip)
     -> int {
-    if (cancel != nullptr && *cancel) {
+    if (CancelFlag::isCancelled(cancel)) {
         return ERR_CANCELLED;
     }
 
@@ -98,7 +98,7 @@ auto DownloadFile(
     RateLimiter rl(5, 20, 10);
 
     while (totalReadLen < contentLength) {
-        if (cancel != nullptr && *cancel) {
+        if (CancelFlag::isCancelled(cancel)) {
             return ERR_CANCELLED;
         }
 
@@ -150,7 +150,7 @@ auto DownloadFile(
 auto DownloadFile(const char *url,
                   const std::function<bool(int httpCode, int contentLength)> &openedConnection,
                   const std::function<size_t(const uint8_t *buf, size_t size)> &writeBytes,
-                  const std::shared_ptr<bool> &cancel,
+                  const std::shared_ptr<CancelFlag> &cancel,
                   const std::function<void(int bytesWritten, float percentage)> &progressCallback,
                   bool gzip) -> int {
 
@@ -174,7 +174,7 @@ auto DownloadFile(const char *url,
 }
 
 auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry, const char *path,
-                  int length, const std::shared_ptr<bool> &cancel,
+                  int length, const std::shared_ptr<CancelFlag> &cancel,
                   const std::function<void(float percentage)> &progressCallback, bool gzip) -> int {
 
     std::string fullPath(path);
@@ -327,7 +327,7 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry,
     log_i("Downloaded+wrote %d bytes in %.2fs (%.1f KB/s)", fileLength,
           diskWriteDuration / 1000000.0f, diskWriteBps / 1000);
 
-    if (cancel != nullptr && *cancel) {
+    if (CancelFlag::isCancelled(cancel)) {
         return ERR_CANCELLED;
     }
 

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Misc/CancelFlag.hpp"
 #include "Misc/Telemetry.hpp"
 #include "Renderers/Renderer.hpp"
 #include "Storage/LocalStore.hpp"
@@ -31,7 +32,7 @@ protected:
     Telemetry &telemetry_;
     ContentSyncState state_;
     DisplaySystem::UpdateType nextUpdate_ = DisplaySystem::UpdateType::FULL;
-    std::shared_ptr<bool> cancel_;
+    std::shared_ptr<CancelFlag> cancel_;
 
     // UI
     std::array<std::shared_ptr<SingleLineTextView>, 4> textViews_;

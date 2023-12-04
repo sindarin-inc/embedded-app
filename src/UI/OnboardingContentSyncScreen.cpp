@@ -91,8 +91,7 @@ void OnboardingContentSyncScreen::begin() {
     state_.state = ContentSyncState::ConnectingWifi;
     render(display_);
 
-    auto cancel = std::make_shared<bool>(false);
-    localStore_.syncFromRemote(SyncReason::Manual, cancel, [this](const ContentSyncState &state) {
+    localStore_.syncFromRemote(SyncReason::Manual, nullptr, [this](const ContentSyncState &state) {
         PowerManager::getInstance().feedInactivityTimer();
 
         if (state.state == ContentSyncState::Failure || state.state == ContentSyncState::Synced ||

@@ -185,7 +185,8 @@ auto SindarinAPI::checkFirmware(FirmwareResponse *resp) -> int {
 
 auto SindarinAPI::downloadReadable(const std::shared_ptr<Readable> &readable,
                                    FileSystem &fileSystem, Telemetry &telemetry,
-                                   const std::string &path, const std::shared_ptr<bool> &cancel,
+                                   const std::string &path,
+                                   const std::shared_ptr<CancelFlag> &cancel,
                                    const std::function<void(int percentage)> &progressCallback)
     -> int {
     // auto remoteUrl = readable.remoteUrl();
