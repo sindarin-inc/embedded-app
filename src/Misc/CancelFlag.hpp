@@ -6,16 +6,16 @@ class CancelFlag {
 public:
     CancelFlag() = default;
     CancelFlag(const CancelFlag &) = delete;
-    CancelFlag &operator=(const CancelFlag &) = delete;
+    auto operator=(const CancelFlag &) -> CancelFlag & = delete;
 
-    static void cancel(const std::shared_ptr<CancelFlag> flag) {
+    static void cancel(const std::shared_ptr<CancelFlag> &flag) {
         if (flag == nullptr) {
             return;
         }
         flag->cancelInternal();
     }
 
-    static bool isCancelled(const std::shared_ptr<CancelFlag> flag) {
+    static auto isCancelled(const std::shared_ptr<CancelFlag> &flag) -> bool {
         if (flag == nullptr) {
             return false;
         }
@@ -26,5 +26,5 @@ private:
     bool cancelled_ = false;
 
     void cancelInternal() { cancelled_ = true; }
-    bool isCancelledInternal() const { return cancelled_; }
+    [[nodiscard]] auto isCancelledInternal() const -> bool { return cancelled_; }
 };
