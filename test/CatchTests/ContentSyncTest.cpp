@@ -91,7 +91,8 @@ TEST_CASE("Run a basic content sync", "[.][content-sync]") {
     ContentSyncState lastState;
     DispatchQueue::dispatchOneOff([&lastState, &localStore]() {
         // This needs to run in a task to have things like Delay work
-        localStore.syncFromRemote(SyncReason::Manual, [&lastState](ContentSyncState state) {
+        localStore.syncFromRemote(SyncReason::Manual, nullptr,
+                                  [&lastState](ContentSyncState state) {
             log_i("Test sync state: %d", state.state);
             lastState = state;
         });
@@ -119,7 +120,6 @@ TEST_CASE("Run a basic content sync", "[.][content-sync]") {
         case ContentSyncState::CheckingSync:
         case ContentSyncState::SyncingBooks:
         case ContentSyncState::SyncingArticles:
-        case ContentSyncState::Syncing:
             break;
         case ContentSyncState::Synced:
         case ContentSyncState::AlreadySynced:

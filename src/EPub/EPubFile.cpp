@@ -75,8 +75,6 @@ auto EPubFile::findCharOffsetAtFileOffset(const std::string &path, uint32_t file
 auto EPubFile::getFile(const std::string &completeFilePath)
     -> std::pair<std::shared_ptr<uint8_t[]>, uint32_t> {
 
-    std::shared_ptr<uint8_t[]> buffer = nullptr;
-
     EPUB_PROFILE_START(UnzipperOpenFile);
     auto res = epubUnzipper_.openFile(completeFilePath);
     EPUB_PROFILE_END(UnzipperOpenFile);
@@ -90,7 +88,7 @@ auto EPubFile::getFile(const std::string &completeFilePath)
 
         if (size > 0) {
             uint32_t bufferSize = size + 1;
-            buffer = SpiRamArrayPtr<uint8_t>(bufferSize);
+            auto buffer = SpiRamArrayPtr<uint8_t>(bufferSize);
             buffer[size] = 0; // Pugixml requires null termination
 
             if (buffer != nullptr) {
@@ -274,6 +272,9 @@ auto EPubFile::hasSummary(const std::string &chapterId) -> bool {
 
     // Walk the chapters backwards in the spine to see if the chapter id matches
     auto summaryChapterHref = opf_->getHrefByManifestId(summaryId);
+    if (summaryChapterHref == "") {
+        return false;
+    }
     auto summaryChapterIdx = opf_->getChapterIdx(summaryChapterHref);
 
     return summaryChapterIdx != -1 && hasToc;
@@ -294,6 +295,10 @@ auto EPubFile::getSummaryContent(
 
     // Load the summary xhtml content
     auto chapterIdx = opf_->getChapterIdx(chapterHref);
+    if (chapterIdx == -1) {
+        log_e("Unable to find chapter index for %s", chapterHref.c_str());
+        return "This chapter does not have a summary.";
+    }
     log_w("Chapter href: %s, chapter idx: %d, toc href: %s", chapterHref.c_str(), chapterIdx,
           std::string(getToc()[chapterIdx].href).c_str());
     if (std::string(getToc()[chapterIdx].href) != chapterHref) {
@@ -313,8 +318,13 @@ auto EPubFile::getSummaryContent(
 
     for (const auto &chapter : getToc()) {
         auto sameChapter = chapter.href == chapterHref;
-        auto futureChapter = opf_->getChapterIdx(std::string(chapter.href)) > chapterIdx;
-        auto pastOrSameChapter = opf_->getChapterIdx(std::string(chapter.href)) <= chapterIdx;
+        auto tocChapterIdx = opf_->getChapterIdx(std::string(chapter.href));
+        if (tocChapterIdx == -1) {
+            log_e("Unable to find chapter index for %s", chapter.href.c_str());
+            continue;
+        }
+        auto futureChapter = tocChapterIdx > chapterIdx;
+        auto pastOrSameChapter = tocChapterIdx <= chapterIdx;
 
         if (pastOrSameChapter) {
             placeInSummary->setOffset(summaryText.length());
@@ -378,6 +388,9 @@ auto EPubFile::hasDictionary(const std::string &chapterId) -> bool {
 
     // Walk the chapters backwards in the spine to see if the chapter id matches
     auto dictionaryChapterHref = opf_->getHrefByManifestId(dictionaryId);
+    if (dictionaryChapterHref == "") {
+        return false;
+    }
     auto dictionaryChapterIdx = opf_->getChapterIdx(dictionaryChapterHref);
 
     return dictionaryChapterIdx != -1 && hasToc;
@@ -397,6 +410,12 @@ auto EPubFile::getDictionaryContent(std::string &chapterId,
     auto chapterHref = opf_->getHrefByManifestId(chapterId);
     auto chapterIdx = opf_->getChapterIdx(chapterHref);
     auto spineIdx = opf_->getSpineIdx(chapterHref);
+
+    if (chapterIdx == -1 || spineIdx == -1) {
+        log_e("Unable to find chapter index for %s", chapterHref.c_str());
+        return "This chapter does not have any dictionary definitions.";
+    }
+
     auto previousSpineOffset = 0;
     if (std::string(getToc()[chapterIdx].href) != chapterHref) {
         chapterHref = std::string(getToc()[chapterIdx].href);

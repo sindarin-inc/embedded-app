@@ -205,7 +205,7 @@ void Tokens::freeTokens(Idx fromTokenIdx, uint16_t count) {
 void Tokens::showToken(Idx tokenIdx) const {
     if constexpr (REND_DEBUG) {
         const Token &token = tokens_[tokenIdx];
-        log_d("TokenIdx: %" PRIu16 ", TokenId: %" PRIu8 ", streamPlace: %s, width: %" PRIu16
+        log_d("TokenIdx: %d, TokenId: %" PRIu8 ", streamPlace: %s, width: %" PRIu16
               //", height: %" PRIu16
               ", Length: %" PRIu16,
               tokenIdx, (uint8_t)token.tokenId, token.streamPlace.str().c_str(), token.pixWidth,

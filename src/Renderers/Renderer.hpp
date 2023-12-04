@@ -21,8 +21,6 @@ public:
 
     auto setStream(const std::shared_ptr<RendererStream> &stream) -> void {
         // log_w("setStream...");
-        tokens_.clear();
-        pager_.clear();
         tokenizer_ = Tokenizer::factory(stream, display_, tokens_, pager_);
     }
 

@@ -1,39 +1,51 @@
 #pragma once
 
+#include "Misc/CancelFlag.hpp"
 #include "Misc/Telemetry.hpp"
 #include "Renderers/Renderer.hpp"
 #include "Storage/LocalStore.hpp"
 #include "Storage/PreferencesStore.hpp"
+#include "UI/Bitmaps/CheckMark.xbm"
+#include "UI/Components/BoxView.hpp"
+#include "UI/Components/IconView.hpp"
+#include "UI/Components/MultiLineTextView.hpp"
+#include "UI/Components/ProgressBarView.hpp"
+#include "UI/Components/SingleLineTextView.hpp"
 #include "UI/Screen.hpp"
 
-class ContentSyncScreen : public Screen {
+class ContentSyncScreen : public Screen, public EinkView {
 public:
     ContentSyncScreen(DisplaySystem &display, LocalStore &localStore, PreferencesStore &prefs,
-                      Telemetry &telemetry, bool onboardingSync = false)
-        : display_(display), localStore_(localStore), prefs_(prefs), telemetry_(telemetry),
-          onboardingSync_(onboardingSync), onboardingSyncRenderer_(display){};
+                      Telemetry &telemetry);
+
+    void begin();
+
+    auto layout(LayoutContext &context, Size size) -> Size override;
+    void drawInRect(Rect rect) override;
 
     void render(DisplaySystem &display) override;
     void processCommand(RemoteCommand command) override;
-    void begin();
 
 protected:
-    DisplaySystem &display_;
     LocalStore &localStore_;
     PreferencesStore &prefs_;
     Telemetry &telemetry_;
-    ContentSyncState lastState_;
     ContentSyncState state_;
+    DisplaySystem::UpdateType nextUpdate_ = DisplaySystem::UpdateType::FULL;
+    std::shared_ptr<CancelFlag> cancel_;
 
-    bool onboardingSync_ = false;
+    // UI
+    std::array<std::shared_ptr<SingleLineTextView>, 4> textViews_;
+    std::array<std::shared_ptr<IconView>, 4> checkmarkViews_;
+    std::array<std::shared_ptr<ProgressBarView>, 4> progressBarsViews_;
+    std::shared_ptr<BoxView> popupView_;
+    std::shared_ptr<MultiLineTextView> popupTextView_;
+    SingleLineTextView cancelView_;
 
-    Renderer onboardingSyncRenderer_;
-
-    bool shownOnboardingSyncMessage_ = false;
-
+    void cancel();
+    void showPopup(const std::string &message);
     void fail(const std::string &message);
     void updateState(const ContentSyncState &state) {
-        lastState_ = state_;
         state_ = state;
         setNeedsRerender();
     }

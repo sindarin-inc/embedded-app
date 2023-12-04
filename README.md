@@ -263,3 +263,19 @@ open IBMFFontEditor.app
 
     - src/UI/Fonts/IBMFFonts/SolSans_75.h
     - src/UI/Fonts/IBMFFonts/SolSans_75.ibmf
+
+## Generating Bitmaps
+
+A script is included to convert PNG images to XBM format. To use it, you'll need to install the Python requirements (Pillow). I recommend using a Python Virtual Environment to keep your system Python clean.
+
+```bash
+python3 -m venv venv
+source venv/bin/activate
+pip install Pillow
+```
+
+Now you can convert all `.png` images in `src/UI/Bitmaps` into `.xbm` files:
+
+```bash
+for f in src/UI/Bitmaps/*.png; do venv/bin/python scripts/image_to_xbm.py "$f" "${f%.png}.xbm"; done
+```

@@ -95,6 +95,7 @@ void FirmwareDownloader::downloadFirmware(
                 return true;
             },
             [](const uint8_t *buf, size_t size) { return Update.write((uint8_t *)buf, size); },
+            nullptr,
             [setState](int bytesWritten, float percentage) {
             setState(FirmwareDownloadState{.state = FirmwareDownloadState::State::Downloading,
                                            .downloadPercentage = static_cast<int>(percentage)});

@@ -43,6 +43,7 @@
 #include "UI/MainMenuScreen.hpp"
 #include "UI/MsgPopup.hpp"
 #include "UI/OffsetAdjustScreen.hpp"
+#include "UI/OnboardingContentSyncScreen.hpp"
 #include "UI/ReadableScreen.hpp"
 #include "UI/ReleaseNotesScreen.hpp"
 #include "UI/ResizeBoxScreen.hpp"
@@ -877,8 +878,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     /*
         settingsMenu->addMenuItem(
             MenuItem("Sync Content", [this, display, &localStore, mainMenu, &lightingController]() {
-                auto contentSyncScreen = new ContentSyncScreen(*display, localStore, this->prefs_,
-       this->telemetry_); this->setCurrentScreen(*contentSyncScreen);
+                auto contentSyncScreen = new ContentSyncScreen(*display, localStore,
+       this->prefs_, this->telemetry_); this->setCurrentScreen(*contentSyncScreen);
                 lightingController.setOverrideValuePercent(lightingController.getCurrentPercent());
                 contentSyncScreen->setBackCallback([this, contentSyncScreen, mainMenu, display]() {
                     this->display_->clearDisplay();
@@ -1575,7 +1576,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     if (inDemo) {
         auto demoScreen = new DemoScreen(*display, prefs_, lightingController);
         auto contentSyncScreen =
-            new ContentSyncScreen(*display, localStore, this->prefs_, this->telemetry_, true);
+            new OnboardingContentSyncScreen(*display, localStore, this->prefs_, this->telemetry_);
         contentSyncScreen->setBackCallback([this, contentSyncScreen, mainMenu, display]() {
             if (!WiFi::getInstance().hasWiFiCredentials()) {
                 display->clearDisplay();

@@ -65,9 +65,15 @@ public:
                 if (display.getTextWidth(line + word) > width) {
                     splitLines_.push_back(line);
                     line = "";
+                } else if (c == '\n') {
+                    splitLines_.push_back(line + word);
+                    line = "";
+                    word = "";
                 }
                 line.append(word);
-                line.append(currentChar);
+                if (c != '\n') {
+                    line.append(currentChar);
+                }
                 word = "";
             } else {
                 word.append(currentChar);
@@ -93,11 +99,35 @@ public:
 
         splitMultiLine(display_, size.width, text_);
 
+        lineWidths_.clear();
+        if (alignCenter || dynamicWidth) {
+            for (auto &line : splitLines_) {
+                int lineWidth = display_.getTextWidth(line);
+                lineWidths_.push_back(lineWidth);
+            }
+        }
+        lineXOffsets_.clear();
+
+        int width = size.width;
+        if (dynamicWidth) {
+            width = *std::max_element(lineWidths_.begin(), lineWidths_.end());
+        }
+        if (alignCenter) {
+            for (auto lineWidth : lineWidths_) {
+                int offset = (width - lineWidth) / 2;
+                lineXOffsets_.push_back(offset);
+            }
+        } else {
+            for (int i = 0; i < splitLines_.size(); i++) {
+                lineXOffsets_.push_back(0);
+            }
+        }
+
         int lineCount = std::min((size_t)maxLines_, splitLines_.size());
         int height = lineCount * font_->lineHeight() + (lineCount - 1) * spacingOffset_;
 
         display_.setFont(oldFont);
-        return {size.width, height};
+        return {width, height};
     }
 
     void drawInRect(Rect rect) override {
@@ -123,18 +153,23 @@ public:
         for (int i = 0; i < maxLines_ && i < splitLines_.size(); i++) {
             // The plus 1 in the y is because we know what drawSingleLineOfText will do. It's
             // not ideal, but it works.
-            display_.drawSingleLineOfText(splitLines_[i], rect.origin.x,
+            display_.drawSingleLineOfText(splitLines_[i], rect.origin.x + lineXOffsets_[i],
                                           rect.origin.y +
                                               i * (font_->lineHeight() + spacingOffset_) - 1);
         }
         display_.setFont(oldFont);
     }
 
+    bool dynamicWidth = false;
+    bool alignCenter = false;
+
 protected:
     std::string text_;
     int maxLines_;
     int spacingOffset_;
     std::vector<std::string> splitLines_;
+    std::vector<int> lineXOffsets_;
+    std::vector<int> lineWidths_;
     Font *font_;
     bool allCaps_;
     int cachedWidth_ = 0;

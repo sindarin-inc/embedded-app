@@ -9,6 +9,7 @@
 #include "Renderers/RendererStream.hpp"
 #include "Storage/PosixFileSystem.hpp"
 #include "UI/BitmapScreen.hpp"
+#include "UI/ContentSyncScreen.hpp"
 #include "UI/DemoScreen.hpp"
 #include "UI/LayoutTestScreen.hpp"
 #include "UI/LineSpacingScreen.hpp"
@@ -438,6 +439,30 @@ TEST_CASE("Test some views independently") {
             screen.processCommand(UP);
             screen.render(*display);
             ASSERT_VIEW_UNCHANGED("DemoScreenSerial");
+        }
+
+        SECTION("Test ContentSyncScreen") {
+            PosixFileSystem fs("./test/CatchTests/TestData/ReleaseNotesScreen/");
+            Telemetry telemetry(fs, prefs);
+            Battery battery(fs, prefs, telemetry);
+            LightingController lightingController;
+            PowerManager power(fs, prefs, lightingController, *display, telemetry);
+            LocalStore localStore(fs, prefs, battery, telemetry);
+
+            ContentSyncScreen screen(*display, localStore, prefs, telemetry);
+            screen.render(*display);
+            ASSERT_VIEW_UNCHANGED("ContentSyncScreen1");
+
+            screen.state_ = ContentSyncState{.state = ContentSyncState::State::SyncingArticles,
+                                             .percentage = 63};
+            screen.render(*display);
+            ASSERT_VIEW_UNCHANGED("ContentSyncScreen2");
+
+            screen.state_ = ContentSyncState{.state = ContentSyncState::State::Synced,
+                                             .booksDownloaded = 3,
+                                             .articlesDownloaded = 10};
+            screen.render(*display);
+            ASSERT_VIEW_UNCHANGED("ContentSyncScreen3");
         }
     }
 }

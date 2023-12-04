@@ -247,6 +247,13 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     if (powerManager.state() == PowerState::Background) {
         log_i("Booting into PowerState::Background, running a content sync");
         // Spin up a task just to check the temple and battery
+        powerManager.setStateChangeCallback([](PowerState state) {
+            if (state == PowerState::ShuttingDown) {
+                log_d("Signaling background sync to cancel");
+                BackgroundSyncCancel();
+            }
+        });
+
         xTaskCreatePinnedToCore(
             [](void *) {
             while (powerManager.state() != PowerState::ShuttingDown) {
@@ -454,17 +461,19 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     };
 
     powerManager.setStateChangeCallback([&showChargingScreen](PowerState state) {
-        if (state == PowerState::ActiveUSBCharging) {
-            showChargingScreen();
-        } else if (state == PowerState::ActiveOverTemp) {
-            auto overTempScreen = new OverTempScreen();
-            rootUi.setCurrentScreen(*overTempScreen);
-            UIInnerLoop(RemoteCommand::NONE);
-        } else if (state == PowerState::ActiveBatteryDepleted) {
-            auto powerDepletedScreen = new PowerDepletedScreen();
-            rootUi.setCurrentScreen(*powerDepletedScreen);
-            UIInnerLoop(RemoteCommand::NONE);
-        }
+        DispatchGetUiQueue()->dispatch([&showChargingScreen, state]() {
+            if (state == PowerState::ActiveUSBCharging) {
+                showChargingScreen();
+            } else if (state == PowerState::ActiveOverTemp) {
+                auto overTempScreen = new OverTempScreen();
+                rootUi.setCurrentScreen(*overTempScreen);
+                UIInnerLoop(RemoteCommand::NONE);
+            } else if (state == PowerState::ActiveBatteryDepleted) {
+                auto powerDepletedScreen = new PowerDepletedScreen();
+                rootUi.setCurrentScreen(*powerDepletedScreen);
+                UIInnerLoop(RemoteCommand::NONE);
+            }
+        });
     });
 
     BlinkBootErrors(bootErrors);

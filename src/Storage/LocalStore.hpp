@@ -59,18 +59,15 @@ struct ContentSyncState {
         CheckingSync,
         SyncingBooks,
         SyncingArticles,
-        Syncing,
         Synced,
         AlreadySynced,
         Failure,
     } state = Idle;
 
-    struct Task {
-        std::string message;
-        int percentage;
-    };
+    int percentage;
+    int booksDownloaded;
+    int articlesDownloaded;
 
-    std::vector<Task> tasks;
     std::string message;
 };
 
@@ -115,19 +112,18 @@ public:
     void resetReadablesArchivedChanged(const ReadablesVector &readables);
     void resetReadablesBookmarksChanged(const ReadablesVector &readables);
 
-    void syncFromRemote(SyncReason syncReason,
+    void syncFromRemote(SyncReason syncReason, const std::shared_ptr<CancelFlag> &cancel,
                         const std::function<void(ContentSyncState state)> &progressCallback);
     auto processReadables(const ReadablesVector &readables, UserReadablesVector &serverReadables)
         -> std::pair<UserReadablesVector, UserReadablesVector>;
     void processReadableDeletion(const UserReadablesVector &readablesToDelete,
-                                 ReadablesVector &readables, int &tasksIndex,
-                                 ContentSyncState &syncState,
-                                 const std::function<void(ContentSyncState)> &progressCallback);
+                                 ReadablesVector &readables);
     auto processReadableDownload(const UserReadablesVector &readablesToDownload,
-                                 ReadablesVector &readables, int &tasksIndex,
-                                 ContentSyncState &syncState,
+                                 ReadablesVector &readables,
+                                 const std::shared_ptr<CancelFlag> &cancel, int &downloadIndex,
+                                 int &successfullyDownloaded,
                                  const std::function<void(ContentSyncState)> &progressCallback,
-                                 ReadablesModelType modelType) -> bool;
+                                 ReadablesModelType modelType, int totalCount) -> bool;
     void deleteReadables(bool restart = true);
     void deleteArticles(bool restart = true);
     void deleteReadableFiles(const ReadablesVector &readables, bool restart);
