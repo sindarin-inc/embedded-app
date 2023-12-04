@@ -9,13 +9,13 @@
 
 #include "Misc/Defer.hpp"
 
-BLEHttpClient::BLEHttpClient(const std::shared_ptr<BLEManager> &bleManager,
-                             const std::shared_ptr<BLEProxy> &bleProxy,
-                             const std::shared_ptr<BLEImprov> &bleImprov,
+BLEHttpClient::BLEHttpClient(std::shared_ptr<BLEManager> bleManager,
+                             std::shared_ptr<BLEProxy> bleProxy,
+                             std::shared_ptr<BLEImprov> bleImprov,
                              std::shared_ptr<BLERemoteInput> remoteInput, const char *url,
                              const char *contentType, esp_http_client_method_t method)
-    : HttpClient(url, contentType, method), bleManager_(bleManager),
-      bleProxy_(bleProxy), bleImprov_(bleImprov),
+    : HttpClient(url, contentType, method), bleManager_(std::move(bleManager)),
+      bleProxy_(std::move(bleProxy)), bleImprov_(std::move(bleImprov)),
       remoteInput_(std::move(remoteInput)) {
     url_ = strdup(url);
     connected = false;

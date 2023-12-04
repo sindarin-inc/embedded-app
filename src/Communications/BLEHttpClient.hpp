@@ -17,11 +17,10 @@
 
 class BLEHttpClient : public HttpClient {
 public:
-    BLEHttpClient(const std::shared_ptr<BLEManager> &bleManager,
-                  const std::shared_ptr<BLEProxy> &bleProxy,
-                  const std::shared_ptr<BLEImprov> &bleImprov,
-                  std::shared_ptr<BLERemoteInput> remoteInput, const char *url,
-                  const char *contentType = "", esp_http_client_method_t method = HTTP_METHOD_GET);
+    BLEHttpClient(std::shared_ptr<BLEManager> bleManager, std::shared_ptr<BLEProxy> bleProxy,
+                  std::shared_ptr<BLEImprov> bleImprov, std::shared_ptr<BLERemoteInput> remoteInput,
+                  const char *url, const char *contentType = "",
+                  esp_http_client_method_t method = HTTP_METHOD_GET);
     BLEHttpClient(const BLEHttpClient &) = delete;
     ~BLEHttpClient() override = default;
 

@@ -55,7 +55,7 @@ protected:
 
     class CharacteristicCallbacks : public BLECharacteristicCallbacks {
     public:
-        CharacteristicCallbacks() {}
+        CharacteristicCallbacks() = default;
 
         void onWrite(BLECharacteristic *characteristic, ble_gap_conn_desc *desc) override {
             if (!BLEManager::getInstance()->checkAuthed(desc)) {
