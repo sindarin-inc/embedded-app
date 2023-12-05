@@ -1,8 +1,6 @@
 ---
 # See also: https://releases.llvm.org/13.0.0/tools/clang/tools/extra/docs/clang-tidy
 
-# Disable everything by default
-#   -*,
 # Cert checks
 #   cert-*,
 # Except
@@ -21,6 +19,16 @@
 #   readability-identifier-naming*,
 # And make sure statements have brackets
 #   readability-braces-around-statements,
+# Don't use cstr() when a string will do
+#   readability-redundant-string-cstr,
+# Don't use shared_ptr get() unnecessarily
+#   readability-redundant-smartptr-get,
+# Don't unnecessarily initialize strings
+#   readability-redundant-string-init,
+# Don't use redundant preprocessor directives
+#   readability-redundant-preprocessor,
+# Don't initialize members in constructors if they're already initialized
+#   readability-redundant-member-init,
 # This check is kinda dumb IMO -- it means you can't have two arguments of the
 # same type in a function call
 #   -bugprone-easily-swappable-parameters,
@@ -30,9 +38,10 @@
 # This is also a good check, but we also have a lot of narrowing conversions
 # especially related to display stuff since Adafruit GFX uses uint16_t a lot.
 #   -bugprone-narrowing-conversions,
+# Make sure class instance variables are initialized in the constructor
+#   cppcoreguidelines-pro-type-member-init,
 
 Checks: >-
-  -*,
   cert-*,
   -cert-dcl03-c,
   clang-analyzer-*,
@@ -42,10 +51,16 @@ Checks: >-
   -modernize-use-using,
   readability-identifier-naming*,
   readability-braces-around-statements,
+  readability-redundant-string-cstr,
+  readability-redundant-smartptr-get,
+  readability-redundant-string-init,
+  readability-redundant-preprocessor,
+  readability-redundant-member-init,
   -bugprone-easily-swappable-parameters,
   -modernize-avoid-c-arrays,
   -bugprone-narrowing-conversions,
   -modernize-macro-to-enum,
+  cppcoreguidelines-pro-type-member-init,
 AnalyzeTemporaryDtors: false
 FormatStyle: file
 UseColor: true
