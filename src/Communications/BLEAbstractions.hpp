@@ -2,6 +2,8 @@
 
 #include <NimBLEDevice.h>
 
+#define MTU_CHUNK_SIZE 512
+
 //! Abstract class that can add one or more BLECharacteristics to a BLEService
 class BLECharacteristicProvider {
 public:
@@ -16,6 +18,7 @@ protected:
 
 public:
     virtual ~BLEServiceProvider() = default;
+    auto getService() -> BLEService * { return service_; };
     virtual auto configureService(BLEServer *server) -> BLEService * = 0;
     virtual auto start() -> bool = 0;
 };

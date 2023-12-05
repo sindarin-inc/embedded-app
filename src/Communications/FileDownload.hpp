@@ -3,13 +3,14 @@
 #include <functional>
 
 #include "Communications/HttpClient.hpp"
+#include "Communications/WiFiHttpClient.hpp"
 #include "Misc/CancelFlag.hpp"
 #include "Misc/Telemetry.hpp"
 #include "Storage/FileSystem.hpp"
 
 auto DownloadFile(
     const char *url, const std::function<bool(int httpCode, int contentLength)> &openedConnection,
-    const std::function<size_t(HttpClient &client, int index, int contentLength)> &readWrite,
+    const std::function<size_t(WiFiHttpClient &client, int index, int contentLength)> &readWrite,
     const std::shared_ptr<CancelFlag> &cancel,
     const std::function<void(int bytesWritten, float percentage)> &progressCallback, bool gzip)
     -> int;

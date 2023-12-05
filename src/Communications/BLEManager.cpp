@@ -55,4 +55,22 @@ auto BLEManager::startAdvertisingIfNecessary() -> bool {
     return false;
 }
 
+void BLEManager::enableService(BLEService *service) {
+    server_->getAdvertising()->addServiceUUID(service->getUUID());
+}
+
+void BLEManager::disableService(BLEService *service) {
+    server_->getAdvertising()->removeServiceUUID(service->getUUID());
+}
+
+auto BLEManager::stopAdvertising() -> bool {
+    if (server_ != nullptr) {
+        log_i("Stopping BLE advertising");
+        auto advertising = server_->getAdvertising();
+        return advertising->stop();
+    }
+    log_i("No BLE server to stop advertising");
+    return false;
+}
+
 #endif

@@ -51,7 +51,7 @@ public:
 
     static auto metricLogPath() -> std::string { return "/metrics/telemetry.jsonl"; }
 
-    auto uploadAndResetTelemetry(FileSystem &fileSystem) -> int;
+    auto uploadAndResetTelemetry(FileSystem &fileSystem, bool useBle = false) -> int;
 
 protected:
     FileSystem &fileSystem_;

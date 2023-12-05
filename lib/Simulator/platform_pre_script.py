@@ -13,6 +13,8 @@ def remove_non_simulator_files(node):
         "CryptoMbedTls.cpp",
         "PlatformESP32.cpp",
         "SindarinWiFi.cpp",
+        "BLEProxy.cpp",
+        "BLEHttpClient.cpp",
         "Updater.cpp",
         "interrupt-hal.cpp",
         "ExternalSPIFlash.cpp",

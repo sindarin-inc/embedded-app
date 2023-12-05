@@ -503,6 +503,7 @@ void LocalStore::resetReadablesBookmarksChanged(const ReadablesVector &readables
 void LocalStore::syncFromRemote(
     SyncReason syncReason, const std::shared_ptr<CancelFlag> &cancel,
     const std::function<void(ContentSyncState state)> &progressCallback) {
+    auto wifiConnected = false;
     if (!WiFi::getInstance().hasWiFiCredentials()) {
         this->telemetry_.logMetric(TelemetryField::METRIC_WIFI, "sync-wifi-no-credentials");
         progressCallback(
@@ -515,9 +516,11 @@ void LocalStore::syncFromRemote(
 
     if (!WiFi::getInstance().connectWiFiFromSettings()) {
         this->telemetry_.logMetric(TelemetryField::METRIC_WIFI, "sync-wifi-failed");
-        progressCallback(ContentSyncState{.state = ContentSyncState::State::Failure,
-                                          .message = "Failed to connect to WiFi."});
-        return;
+        // progressCallback(ContentSyncState{.state = ContentSyncState::State::Failure,
+        //                                   .message = "Failed to connect to WiFi."});
+        // return;
+    } else {
+        wifiConnected = true;
     }
 
     if (CancelFlag::isCancelled(cancel)) {
@@ -525,7 +528,7 @@ void LocalStore::syncFromRemote(
     }
 
     // If we don't have a clock that's accurate, sync it
-    if (SolClock::getInstance().getEpochTime() < 1000000000) {
+    if (wifiConnected && SolClock::getInstance().getEpochTime() < 1000000000) {
         log_i("Clock not set, syncing from internet");
         // Sync the clock
         this->telemetry_.logMetric(TelemetryField::METRIC_CLOCK_SET, "pre-sync",
@@ -570,12 +573,13 @@ void LocalStore::syncFromRemote(
     // call from whatever queue is most fitting based on the context. In tests, this might not be in
     // a queue.
     auto queue = DispatchGetCore0BackgroundQueue();
-    queue->dispatch([this, cancel] {
+    queue->dispatch([this, cancel, wifiConnected] {
         if (CancelFlag::isCancelled(cancel)) {
             return;
         }
 
-        auto httpCode = this->telemetry_.uploadAndResetTelemetry(this->fileSystem);
+        auto useBle = !wifiConnected;
+        auto httpCode = this->telemetry_.uploadAndResetTelemetry(this->fileSystem, useBle);
         if (httpCode != 201) {
             this->telemetry_.logMetric(TelemetryField::METRIC_SYNC_STATUS, "sync-telemetry-failed",
                                        {{"http-code", httpCode}});

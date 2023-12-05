@@ -2,6 +2,8 @@
 #include <vector>
 
 struct BootError {
+    // These values are used to determine how many times to blink the LED, so only add to the end of
+    // the list
     enum Type {
         // Skip 1 since 1 blink might be hard to see
         PowerManagement = 2,
@@ -18,6 +20,7 @@ struct BootError {
         AmbientLight = 13,
         Magnetometer = 14,
         LocalStore = 15,
+        BLESync = 16,
     };
     Type type;
 
@@ -39,6 +42,8 @@ struct BootError {
             return "BLE/Wifi";
         case BLESindarin:
             return "BLE/Sindarin";
+        case BLESync:
+            return "BLE/Sync";
         case BLEManagerAdvertising:
             return "BLE/ManagerAdvertising";
         case WiFi:

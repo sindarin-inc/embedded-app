@@ -5,6 +5,7 @@
 #include <utility>
 
 #include "Communications/HttpClient.hpp"
+#include "Communications/WiFiHttpClient.hpp"
 #include "Misc/CancelFlag.hpp"
 #include "Misc/Telemetry.hpp"
 #include "Models/CheckSync.hpp"
@@ -57,9 +58,10 @@ public:
                           Telemetry &telemetry, const std::string &path,
                           const std::shared_ptr<CancelFlag> &cancel,
                           const std::function<void(int percentage)> &progressCallback) -> int;
-
+    auto createClient(const std::string &url, const std::string &contentType,
+                      esp_http_client_method_t method, bool useBle) -> std::shared_ptr<HttpClient>;
     auto uploadTelemetryFile(SFile &telemetryFile, const std::string &localPath,
-                             FileSystem &fileSystem) -> int;
+                             FileSystem &fileSystem, bool useBle = false) -> int;
     auto uploadCrashReport(SFile &crashFile, const std::string &contentType) -> int;
 
     auto setAuth(HttpClient &client) -> esp_err_t;

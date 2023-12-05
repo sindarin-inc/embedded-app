@@ -1,10 +1,9 @@
 #pragma once
-#ifndef BLEManager_H
-#define BLEManager_H
 
 #include <NimBLEDevice.h>
 #include <memory>
 
+#include "Communications/BLEAbstractions.hpp"
 #include "sindarin-debug.h"
 
 class BLEManager {
@@ -13,11 +12,14 @@ public:
     BLEManager(BLEManager const &) = delete;
     static auto getInstance() -> std::shared_ptr<BLEManager>;
     auto startAdvertisingIfNecessary() -> bool;
+    auto stopAdvertising() -> bool;
+    void enableService(BLEService *service);
+    void disableService(BLEService *service);
     auto server() -> BLEServer *;
 
     // Extra field to advertise in the advertising packet. Mobile apps use this to identify devices
     // that belong to the logged in account.
-    void setManfacturerData(const std::string &manufacturerData) {
+    void setManufacturerData(const std::string &manufacturerData) {
         server()->getAdvertising()->setManufacturerData(manufacturerData);
     }
 
@@ -56,6 +58,7 @@ protected:
             // We should experiment some more with these values after shipping -- there might be a
             // sweet spot that's faster than the defaults but still low power.
             // server->updateConnParams(desc->conn_handle, 36, 90, 2, 600);
+            NimBLEDevice::setMTU(MTU_CHUNK_SIZE);
         }
         void onDisconnect(BLEServer *server) override {
             SHOW_HEAP();
@@ -64,5 +67,3 @@ protected:
         }
     };
 };
-
-#endif

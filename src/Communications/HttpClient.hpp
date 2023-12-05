@@ -1,8 +1,5 @@
 #pragma once
 
-// Technically we're not using anything Arduino here, but there's a bug in Arduino where it has to
-// come first or it breaks compilation
-// See: https://github.com/espressif/arduino-esp32/issues/6247
 #include <esp_http_client.h>
 #include <map>
 #include <memory>
@@ -26,37 +23,37 @@ public:
                esp_http_client_method_t method = HTTP_METHOD_GET, bool gzip = false);
     HttpClient(const HttpClient &) = delete;
 
-    ~HttpClient();
+    virtual ~HttpClient();
 
-    auto setHeader(const char *key, const char *value) -> esp_err_t;
+    virtual auto setHeader(const char *key, const char *value) -> esp_err_t = 0;
 
-    auto getResponseHeader(const char *key, char **value) -> esp_err_t;
+    virtual auto getResponseHeader(const char *key, char **value) -> esp_err_t = 0;
 
-    auto open(int contentLength = 0) -> esp_err_t;
+    virtual auto open(int contentLength = 0) -> esp_err_t = 0;
 
     // auto perform() -> esp_err_t;
 
-    auto write(const char *body, int length) -> int;
+    virtual auto write(const char *body, int length) -> int = 0;
 
-    auto makeWriteStream() -> std::shared_ptr<HttpOstream<4096>>;
+    virtual auto makeWriteStream() -> std::shared_ptr<HttpOstream<4096>> = 0;
 
-    auto fetchHeaders() -> int;
+    virtual auto fetchHeaders() -> int = 0;
 
     // auto getContentLength() -> int;
 
-    auto getStatusCode() -> int;
+    virtual auto getStatusCode() -> int = 0;
 
-    auto read(char *buffer, int length) -> int;
+    virtual auto read(char *buffer, int length) -> int = 0;
 
-    auto close() -> esp_err_t;
+    virtual auto close() -> esp_err_t = 0;
 
-    auto makeReadStream() -> std::shared_ptr<HttpIstream<4096>>;
+    virtual auto makeReadStream() -> std::shared_ptr<HttpIstream<4096>> = 0;
 
-    auto isChunkedResponse() -> bool;
+    virtual auto isChunkedResponse() -> bool = 0;
 
-    auto writeChunkedData(const char *data, int length) -> bool;
+    virtual auto writeChunkedData(const char *data, int length) -> bool = 0;
 
-    auto endChunkedData() -> bool;
+    virtual auto endChunkedData() -> bool = 0;
 
     bool connected;
 

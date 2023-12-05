@@ -51,7 +51,6 @@ BLESindarinService bleSindarinService;
 
 #if USE_BLE_SERVER_REMOTE
 #include "Inputs/BLERemoteInput.hpp"
-BLERemoteInput bleRemoteInput;
 #endif
 
 #if USE_BLE_SERVER_SETTINGS
@@ -61,12 +60,20 @@ BLESettings bleSettings(&prefs);
 
 #if USE_BLE_SERVER_IMPROV
 #include "Communications/BLEImprov.hpp"
-BLEImprov bleWifi;
 #endif
 
 #if USE_TURN_TOUCH_REMOTE
 #include "Inputs/TTRemoteInput.hpp"
 TTRemoteInput ttRemoteInput(prefs);
+#endif
+
+#if USE_BLE_SERVER_PROXY
+#include "Communications/BLESyncService.hpp"
+BLESyncService bleSyncService;
+#endif
+
+#if USE_BLE_SERVER_PROXY
+#include "Communications/BLEProxy.hpp"
 #endif
 
 #include "Sensors/LightingController.hpp"
@@ -125,7 +132,7 @@ void PollingLoopTask(void *parameter) {
 #endif
 
 #if USE_BLE_SERVER_REMOTE
-        bleWifi.loop();
+        BLEImprov::getInstance()->loop();
 #endif
 
         vTaskDelay(1000 / portTICK_PERIOD_MS);
@@ -383,7 +390,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 #if USE_BLE_SERVER_REMOTE || USE_BLE_SERVER_SETTINGS || USE_BLE_SERVER_IMPROV
     auto bleManager = BLEManager::getInstance();
     if (prefs.bleAdvertisingKey.get().has_value()) {
-        bleManager->setManfacturerData(prefs.bleAdvertisingKey.get().value_or(""));
+        bleManager->setManufacturerData(prefs.bleAdvertisingKey.get().value_or(""));
     }
 #endif
 
@@ -391,8 +398,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     auto sindarinService = bleSindarinService.configureService(bleManager->server());
 
 #if USE_BLE_SERVER_REMOTE
-    bleRemoteInput.configureCharacteristics(sindarinService);
-    bleRemoteInput.setCallback(remoteCallback);
+    BLERemoteInput::getInstance()->configureCharacteristics(sindarinService);
 #endif
 
 #if USE_BLE_SERVER_SETTINGS
@@ -407,6 +413,15 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     }
 #endif
 
+#if USE_BLE_SERVER_PROXY
+    auto syncService = bleSyncService.configureService(bleManager->server());
+    BLEProxy::getInstance()->configureCharacteristics(syncService);
+
+    if (!bleSyncService.start()) {
+        bootErrors.push_back({.type = BootError::Type::BLESync});
+    }
+#endif
+
 #if USE_BLE_SERVER_IMPROV
     // NOTE(john): It might make sense at some point to consolidate everything
     // as one service. However keeping these services separate for now allows us
@@ -414,8 +429,8 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     // also use the Sindarin mobile app as-is after provisioning is done. If we
     // want to merge these in the future, it will be as simple as using
     // ble_wifi->configureCharacteristics(sindarinService)
-    bleWifi.configureService(bleManager->server());
-    if (!bleWifi.start()) {
+    BLEImprov::getInstance()->configureService(bleManager->server());
+    if (!BLEImprov::getInstance()->start()) {
         bootErrors.push_back({.type = BootError::Type::BLEWifi});
     }
 #endif

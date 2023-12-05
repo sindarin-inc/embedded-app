@@ -140,6 +140,7 @@
     "search.exclude": {
         "**/build/**": true,
         "build": true,
+        "build-clang": true,
     },
     "cSpell.words": [
         "Eink",
