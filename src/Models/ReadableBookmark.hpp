@@ -21,12 +21,12 @@ public:
     ~ReadableBookmark() override = default;
 
     SpiramString uuid;
-    uint32_t startingPosition;
+    uint32_t startingPosition{};
     std::string chapter;
-    uint32_t chapterOffset;
-    uint32_t endingPosition;
+    uint32_t chapterOffset{};
+    uint32_t endingPosition{};
     SpiramString readable;
-    bool willDelete;
+    bool willDelete{};
 
     auto fromJson(const JsonObject &j) -> bool override {
         if (!j.containsKey("uuid") || !j.containsKey("name") || !j.containsKey("description")) {

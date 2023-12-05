@@ -38,11 +38,11 @@ public:
 
     auto getFontFamily() -> FontFamily { return currentFont; }
 
-    FontFamily solSansSmall;
-    FontFamily solSansMedium;
-    FontFamily solSansLarge;
+    FontFamily solSansSmall{};
+    FontFamily solSansMedium{};
+    FontFamily solSansLarge{};
 
-    FontFamily currentFont;
+    FontFamily currentFont{};
 
 protected:
 };

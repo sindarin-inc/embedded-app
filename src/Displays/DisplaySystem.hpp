@@ -231,9 +231,9 @@ protected:
     // Must be set in the constructor of subclasses
     Adafruit_GFX *gfxClass_ = nullptr;
     Font *font_ = nullptr;
-    uint8_t *canvasBuffer_;
-    uint16_t canvasWidth_;
-    uint16_t canvasHeight_;
+    uint8_t *canvasBuffer_{};
+    uint16_t canvasWidth_{};
+    uint16_t canvasHeight_{};
 
     inline auto xOffset(int16_t value) -> int16_t { return value + boundingBox_.x; }
     inline auto yOffset(int16_t value) -> int16_t { return value + boundingBox_.y; }

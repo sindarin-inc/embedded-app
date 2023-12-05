@@ -45,7 +45,7 @@ protected:
     Renderer &renderer_;
     DisplaySystem &display_;
 
-    std::string loadedChapterId_ = "";
+    std::string loadedChapterId_;
     std::shared_ptr<EPubPlace> placeInReadable_ = nullptr;
     std::shared_ptr<TxtPlace> newPlace_ = nullptr;
     std::shared_ptr<TxtPlace> prevPlace_ = nullptr;

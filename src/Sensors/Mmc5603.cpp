@@ -141,7 +141,7 @@ void Mmc5603::configureIfNeeded() {
         return;
     }
     log_d("Configuring MMC5603");
-    Mmc5603Ctrl1Value ctrl1Value;
+    Mmc5603Ctrl1Value ctrl1Value{};
     ctrl1Value.bw0 = 1;
     ctrl1Value.bw1 = 1;
     esp_err_t err = registerWriteByte(MMC5603_REG_CTRL_1, ctrl1Value.raw);
@@ -166,7 +166,7 @@ auto Mmc5603::waitForMeasurement() -> bool {
     vTaskDelay(3000 / (1000000 / configTICK_RATE_HZ));
 
     // Wait for valid data
-    Mmc5603StatusValue statusValue;
+    Mmc5603StatusValue statusValue{};
     statusValue.raw = 0;
     while ((Millis() - start) < timeoutMs) {
         esp_err_t err = registerReadByte(MMC5603_REG_STATUS_1, (uint8_t *)&statusValue.raw);
@@ -187,7 +187,7 @@ auto Mmc5603::waitForMeasurement() -> bool {
 auto Mmc5603::readX20Bit() -> float {
     configureIfNeeded();
 
-    Mmc5603Ctrl0Value ctrl0Value;
+    Mmc5603Ctrl0Value ctrl0Value{};
     ctrl0Value.autoSrEn = 1;
     ctrl0Value.takeMeasM = 1;
     ESP_ERROR_CHECK(registerWriteByte(MMC5603_REG_CTRL_0, ctrl0Value.raw));
@@ -212,7 +212,7 @@ auto Mmc5603::readX20Bit() -> float {
 auto Mmc5603::readX() -> float {
     configureIfNeeded();
 
-    Mmc5603Ctrl0Value ctrl0Value;
+    Mmc5603Ctrl0Value ctrl0Value{};
     ctrl0Value.autoSrEn = 1;
     ctrl0Value.takeMeasM = 1;
     ESP_ERROR_CHECK(registerWriteByte(MMC5603_REG_CTRL_0, ctrl0Value.raw));
@@ -236,7 +236,7 @@ auto Mmc5603::readX() -> float {
 auto Mmc5603::readXYZ8Bit(Xyz8bit &out) -> esp_err_t {
     configureIfNeeded();
 
-    Mmc5603Ctrl0Value ctrl0Value;
+    Mmc5603Ctrl0Value ctrl0Value{};
     ctrl0Value.autoSrEn = 1;
     ctrl0Value.takeMeasM = 1;
     esp_err_t err;
@@ -272,7 +272,7 @@ auto Mmc5603::readXYZ8Bit(Xyz8bit &out) -> esp_err_t {
 auto Mmc5603::readXZ8Bit(Xyz8bit &out) -> esp_err_t {
     configureIfNeeded();
 
-    Mmc5603Ctrl0Value ctrl0Value;
+    Mmc5603Ctrl0Value ctrl0Value{};
     ctrl0Value.autoSrEn = 1;
     ctrl0Value.takeMeasM = 1;
     esp_err_t err = ESP_OK;
@@ -303,7 +303,7 @@ auto Mmc5603::readXZ8Bit(Xyz8bit &out) -> esp_err_t {
 auto Mmc5603::readTemperature(int &temp) -> esp_err_t {
     configureIfNeeded();
 
-    Mmc5603Ctrl0Value ctrl0Value;
+    Mmc5603Ctrl0Value ctrl0Value{};
     ctrl0Value.autoSrEn = 1;
     ctrl0Value.takeMeasT = 1;
     esp_err_t err = ESP_OK;

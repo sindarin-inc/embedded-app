@@ -167,7 +167,7 @@ void DisplaySystem::drawSingleLineOfText(const std::string &line, int x, int y, 
             gfxClass_->printf("%s", line.c_str());
         } else {
             gfxClass_->startWrite();
-            ibmf_defs::Bitmap canvas;
+            ibmf_defs::Bitmap canvas{};
             canvas.pixels = canvasBuffer_;
             canvas.dim = ibmf_defs::Dim(canvasWidth_, canvasHeight_);
             static_cast<IBMFFont *>(font_)->drawSingleLineOfText(
@@ -180,7 +180,7 @@ void DisplaySystem::drawSingleLineOfText(const std::string &line, int x, int y, 
 
 void DisplaySystem::drawSingleLineOfCenteredText(const std::string &line) {
     this->drawSingleLineOfText(
-        line, this->xAbsolute(this->xAbsoluteCenter() - this->getTextWidth(line.c_str()) / 2),
+        line, this->xAbsolute(this->xAbsoluteCenter() - this->getTextWidth(line) / 2),
         this->yAbsolute(this->yAbsoluteCenter() - this->getTextHeight() / 2));
 }
 

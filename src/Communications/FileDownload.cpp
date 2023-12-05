@@ -181,7 +181,7 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry,
 
     SHOW_HEAP();
     // TODO: Support resuming?
-    if (fileSystem.exists(fullPath.c_str())) {
+    if (fileSystem.exists(fullPath)) {
         log_w("File %s already exists, deleting", path);
         fileSystem.remove(path);
         log_d("Deleted %s", path);
@@ -210,7 +210,7 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry,
     defer { vSemaphoreDelete(writeCompleteSemaphore); };
 
     // Open the file for writing
-    auto file = fileSystem.open(fullPath.c_str(), FILE_WRITE, true);
+    auto file = fileSystem.open(fullPath, FILE_WRITE, true);
     if (!file) {
         log_e("Failed to open file %s for writing", fullPath.c_str());
         return ERR_FILE_OPEN;
@@ -252,7 +252,7 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry,
         int written = 0;
 
         while (true) {
-            DataBlock block;
+            DataBlock block{};
             if (xQueueReceive(bufferQueue, &block, portMAX_DELAY) != pdPASS) {
                 log_e("xQueueReceive failed");
             }

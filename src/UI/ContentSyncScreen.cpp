@@ -98,7 +98,7 @@ void ContentSyncScreen::drawInRect(Rect rect) {
 }
 
 void ContentSyncScreen::showPopup(const std::string &message) {
-    popupTextView_->setText(message.c_str());
+    popupTextView_->setText(message);
     popupView_->setHidden(false);
     popupTextView_->setHidden(false);
     setNeedsLayout();

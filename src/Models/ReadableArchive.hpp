@@ -11,7 +11,7 @@ public:
     ~ReadableArchive() override = default;
 
     SpiramString uuid;
-    bool isArchived;
+    bool isArchived{};
 
     auto fromJson(const JsonObject &j) -> bool override {
         if (!j.containsKey("uuid") || !j.containsKey("is_archived")) {

@@ -211,7 +211,7 @@ public:
     protected:
         bool loaded_ = false;
         std::optional<T> value_;
-        char key_[MAX_KEY_LENGTH + 1];
+        char key_[MAX_KEY_LENGTH + 1]{};
     };
 
     template <typename T>
@@ -629,8 +629,8 @@ public:
 
 protected:
     const uint32_t latestMigrationVersion_ = 4;
-    uint32_t nvsHandle_;
-    bool started_;
+    uint32_t nvsHandle_{};
+    bool started_{};
 
     PrefsItem<uint32_t> preferencesStoreMigrationVersion_;
 

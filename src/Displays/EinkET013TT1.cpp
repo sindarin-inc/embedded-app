@@ -298,8 +298,8 @@ void EinkET013TT1::updateInternal(const EinkET013TT1Waveform &waveform, const ui
 
         // Generate a look up table to quickly look up old bits -> new bits and the resulting
         // transitions
-        std::array<uint8_t, 256> lut;
-        std::array<uint8_t, 256> altLut;
+        std::array<uint8_t, 256> lut{};
+        std::array<uint8_t, 256> altLut{};
 
         // These each take ~210us at 160MHz
         frame.makeLUT(&lut);

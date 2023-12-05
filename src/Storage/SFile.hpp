@@ -54,7 +54,7 @@ public:
         return ret;
     }
     auto readStringUntil(char terminator) -> std::string {
-        std::string res = "";
+        std::string res;
         int value;
         while (true) {
             value = read();
@@ -98,7 +98,7 @@ class VFSFile : public SFileImpl {
 public:
     VFSFile(const char *fname, const char *mode, const bool create) {
         std::string modeStr(mode);
-        std::string openMode = "";
+        std::string openMode;
         bool read = false;
         if (modeStr.find('r') != std::string::npos) {
             openMode = "rb";

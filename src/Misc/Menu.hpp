@@ -83,7 +83,7 @@ protected:
     int currSelection_ = 0;
     int currMenuPage_ = 0;
 
-    MenuStyleFamily myStyle_;
+    MenuStyleFamily myStyle_{};
     std::string menuName_;
 };
 

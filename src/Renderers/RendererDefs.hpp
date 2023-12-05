@@ -186,14 +186,14 @@ struct Token {
     // This basically gives each token knowledge of where the paragraph
     // start is for where it's located. It's useful for looking backwards
     // while rendering a back page command.
-    const char *cStr;
+    const char *cStr{};
     std::shared_ptr<BMPImage> picture;
     StreamPlace streamPlace;
-    uint16_t pixWidth;  // Width in pixels. Used with pictures and text tokens
-    uint16_t pixHeight; // Height in pixels. Used with pictures tokens
-    uint16_t length;    // Length in bytes
+    uint16_t pixWidth{};  // Width in pixels. Used with pictures and text tokens
+    uint16_t pixHeight{}; // Height in pixels. Used with pictures tokens
+    uint16_t length{};    // Length in bytes
     TokenId tokenId;
-    uint8_t spacesAfter;
+    uint8_t spacesAfter{};
 };
 
 struct LineInfo {

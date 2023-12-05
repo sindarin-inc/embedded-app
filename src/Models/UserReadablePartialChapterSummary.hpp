@@ -16,7 +16,7 @@ public:
     static auto loadForReadable(FileSystem &fileSystem, const std::shared_ptr<Readable> &readable)
         -> std::shared_ptr<UserReadablePartialChapterSummary> {
         auto partialSummaryPath = readable->partialSummaryFilePath();
-        auto file = fileSystem.open(partialSummaryPath.c_str(), FILE_READ, false);
+        auto file = fileSystem.open(partialSummaryPath, FILE_READ, false);
         // Check if partial summary already exists
         if (!file) {
             return nullptr;
@@ -41,7 +41,7 @@ public:
 
     SpiramString text;
     std::shared_ptr<EPubPlace> ePubPlace;
-    uint8_t readPct;
+    uint8_t readPct{};
 
     auto fromJson(const JsonObject &j) -> bool override {
         if (!j.containsKey("text") || !j.containsKey("chapter") ||

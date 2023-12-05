@@ -64,7 +64,7 @@ protected:
     // enabled_ refers to the ambient light sensor being turned on, not the lights themselves
     bool enabled_ = false;
     // lightsOut refers to the lights being turned off
-    bool lightsOut_;
+    bool lightsOut_{};
     bool onlyIncreaseMode_ = false;
 
     void setCurrentDutyCycle(int dutyCycle, int fadeMs);

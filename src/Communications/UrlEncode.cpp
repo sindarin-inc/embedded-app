@@ -18,7 +18,7 @@ auto H2int(char c) -> unsigned char {
 
 auto Urldecode(const std::string &str) -> std::string {
 
-    std::string encodedString = "";
+    std::string encodedString;
     char c;
     char code0;
     char code1;
@@ -43,7 +43,7 @@ auto Urldecode(const std::string &str) -> std::string {
 }
 
 auto Urlencode(const std::string &str) -> std::string {
-    std::string encodedString("");
+    std::string encodedString;
     char code0;
     char code1;
     for (char c : str) {

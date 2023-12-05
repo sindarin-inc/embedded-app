@@ -11,7 +11,7 @@ public:
 //! Abstract class that provides a BLEService
 class BLEServiceProvider {
 protected:
-    BLEService *service_;
+    BLEService *service_{};
 
 public:
     virtual auto configureService(BLEServer *server) -> BLEService * = 0;

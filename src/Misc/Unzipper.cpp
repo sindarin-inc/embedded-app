@@ -116,7 +116,7 @@ auto Unzipper::open() -> bool {
 
             if (!file_.seek(startOffset, SSeekSet)) ERR(9);
             auto entries = SpiRamArrayPtr<uint8_t>(length);
-            if ((entries == nullptr) || (entries.get() == nullptr)) ERR(10);
+            if ((entries == nullptr) || (entries == nullptr)) ERR(10);
             if (file_.read(entries.get(), length) != length) ERR(11);
 
             // fileEntries_.resize(count);

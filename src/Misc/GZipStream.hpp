@@ -37,7 +37,7 @@ protected:
 
     int outputAvailable_{0};
     std::shared_ptr<uint8_t[]> outputBuffer_;
-    mz_stream zs_;
+    mz_stream zs_{};
     mz_ulong crc_{MZ_CRC32_INIT};
     bool init_{false};
     uint32_t uncompressedSize_{0};

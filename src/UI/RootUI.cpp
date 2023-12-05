@@ -173,7 +173,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             log_d("Changing readable title to %s", title.c_str());
             // Iterate through the menu items and change the title of the item that matches by title
             auto updateMenuTitle = [displayedTitle, title](auto &menu) {
-                auto readableMenuItem = menu->getMenuItemByTitle(displayedTitle.c_str());
+                auto readableMenuItem = menu->getMenuItemByTitle(displayedTitle);
                 if (readableMenuItem != -1) {
                     menu->changeItemTitleAt(readableMenuItem, title);
                 }
@@ -1217,7 +1217,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         fileSystem.listDir("/coredumps", coreDumpFiles);
         for (auto &file : coreDumpFiles) {
             log_i("Removing %s", file.c_str());
-            fileSystem.remove(StringFormat("%s%s", "/coredumps/", file.c_str()).c_str());
+            fileSystem.remove(StringFormat("%s%s", "/coredumps/", file.c_str()));
         }
         debugSettingsMenu->showTemporaryMessage(*display, "Crash Reports cleared.");
         Delay(1500);
@@ -1760,7 +1760,7 @@ void RootUI::handleBrowse(FileSystem &fileSystem, MenuScreen *fsMenu, const std:
 
     for (const std::string &dir : localDirs) {
         log_d("Next Dir is %s", dir.c_str());
-        fsMenu->addMenuItem(MenuItem(StringFormat("%s/", dir.c_str()).c_str(),
+        fsMenu->addMenuItem(MenuItem(StringFormat("%s/", dir.c_str()),
                                      [this, fsMenu, &fileSystem, path, dir]() {
             this->display_->clearDisplay();
             handleBrowse(fileSystem, fsMenu, path + dir + "/");
@@ -1771,7 +1771,7 @@ void RootUI::handleBrowse(FileSystem &fileSystem, MenuScreen *fsMenu, const std:
 
     for (const std::string &file : localFiles) {
         log_d("Next File is %s", file.c_str());
-        fsMenu->addMenuItem(MenuItem(file.c_str(), [this, fsMenu, &fileSystem, path, file]() {
+        fsMenu->addMenuItem(MenuItem(file, [this, fsMenu, &fileSystem, path, file]() {
             SFile toSerialOutput = fileSystem.open(path + file);
             while (toSerialOutput.available()) {
                 printf("%c", toSerialOutput.read());

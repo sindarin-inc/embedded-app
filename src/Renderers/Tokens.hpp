@@ -18,8 +18,8 @@ private:
     Idx cStrPoolTailIdx_{0};
     Idx cStrPoolHeadIdx_{0};
 
-    uint16_t maxCStrPoolCount_;
-    uint16_t maxTokensCount_;
+    uint16_t maxCStrPoolCount_{};
+    uint16_t maxTokensCount_{};
 
     // Increment the cStrPoolTail_ to the next location in the pool. As a null terminated string
     // must remain contiguous, it cannot be split between the end and the start of the pool. If so,

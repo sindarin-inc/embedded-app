@@ -64,9 +64,9 @@ struct ContentSyncState {
         Failure,
     } state = Idle;
 
-    int percentage;
-    int booksDownloaded;
-    int articlesDownloaded;
+    int percentage{};
+    int booksDownloaded{};
+    int articlesDownloaded{};
 
     std::string message;
 };

@@ -58,7 +58,7 @@ protected:
 
     std::string upperLeftText_ = "Main Menu";
 
-    std::string extraTextBelowMenu_ = "";
+    std::string extraTextBelowMenu_;
 
     ClockBatteryView clockBatteryView_;
 

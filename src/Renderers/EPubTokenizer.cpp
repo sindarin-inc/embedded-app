@@ -391,7 +391,7 @@ auto EPubTokenizer::isEmpty(pugi::xml_node node) -> bool {
             return true;
         }
 
-        bool empty;
+        bool empty{};
     } walker;
 
     walker.empty = true;

@@ -21,7 +21,7 @@ void VcomAdjustScreen::render(DisplaySystem &display) {
 
     auto vcomStr = StringFormat("%dmV", vCom);
 
-    int vcomStrWidth = display.getTextWidth(vcomStr.c_str());
+    int vcomStrWidth = display.getTextWidth(vcomStr);
     int vcomStrHeight = display.getTextHeight();
 
     // This doesn't seem like the right interface.

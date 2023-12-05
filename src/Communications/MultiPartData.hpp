@@ -28,7 +28,7 @@ private:
     std::string fileName_;
     bool keyWritten_{false};
     SFile tempFile_;
-    char tmp_[1024];
+    char tmp_[1024]{};
 
     auto startKeyWrite() -> bool;
     auto writeHeader(const std::string &key, bool isFile) -> bool;

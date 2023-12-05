@@ -78,7 +78,7 @@ auto Ltr329Als::readManufacturerId() -> uint8_t {
 auto Ltr329Als::enable() -> bool {
     log_d("Starting Ltr329Als");
     // Turn on
-    Ltr329als01AlsContrValue control;
+    Ltr329als01AlsContrValue control{};
     control.alsMode = 1;
     control.alsGain = Ltr329als01AlsContrValue::ALSGain48;
     esp_err_t err;
@@ -91,7 +91,7 @@ auto Ltr329Als::enable() -> bool {
 }
 
 auto Ltr329Als::disable() -> bool {
-    Ltr329als01AlsContrValue control;
+    Ltr329als01AlsContrValue control{};
     control.alsMode = 0;
     esp_err_t err;
     err = registerWriteByte(LTR329ALS01_REG_ALS_CONTR, control.raw);
@@ -117,7 +117,7 @@ auto Ltr329Als::readData(uint16_t &channel1, uint16_t &channel0) -> bool {
     esp_err_t err;
     channel1 = 0;
     channel0 = 0;
-    Ltr329als01AlsDataValue out;
+    Ltr329als01AlsDataValue out{};
     err = registerReadByte(LTR329ALS01_REG_ALS_DATA_CH1_0, out.raw);
     if (err != ESP_OK) {
         ESP_LOGE("LTR329ALS", "Failed to read channel 1 register 0 (%s)", esp_err_to_name(err));

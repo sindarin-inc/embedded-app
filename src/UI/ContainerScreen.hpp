@@ -16,5 +16,5 @@ public:
     auto getCurrentScreen() -> Screen * { return currentScreen_; }
 
 protected:
-    Screen *currentScreen_;
+    Screen *currentScreen_{};
 };

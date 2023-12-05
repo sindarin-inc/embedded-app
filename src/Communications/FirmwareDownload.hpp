@@ -24,7 +24,7 @@ struct FirmwareDownloadState {
         AlreadyUpToDate,
     } state = Idle;
 
-    int downloadPercentage;
+    int downloadPercentage{};
     std::string message;
 
     auto operator==(const FirmwareDownloadState &other) const -> bool {

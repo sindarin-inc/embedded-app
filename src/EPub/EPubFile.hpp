@@ -16,7 +16,7 @@ class EPubFile : public RendererStream {
 public:
     EPubFile(FileSystem &fs, const char *filename, std::shared_ptr<Readable> readable)
         : RendererStream(DocType::EPUB), epubUnzipper_(fs, filename),
-          readable_(std::move(readable)), currentFileBuffer_(nullptr), currentFilePath_("") {
+          readable_(std::move(readable)), currentFileBuffer_(nullptr) {
         open();
     }
     ~EPubFile() override { close(); };

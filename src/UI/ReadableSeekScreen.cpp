@@ -53,8 +53,8 @@ void ReadableSeekScreen::render(DisplaySystem &display) {
     y += display.getTextHeight() + 10;
     std::string message4 = "Seek granularity: ";
     message4 += StringFormat("%.1f%%", (float)(100 / (float)seekGranularity_));
-    display.getTextSize(message4.c_str(), &textWidth, &textHeight);
-    display.drawSingleLineOfText(message4.c_str(), (display.width() - textWidth) / 2, y);
+    display.getTextSize(message4, &textWidth, &textHeight);
+    display.drawSingleLineOfText(message4, (display.width() - textWidth) / 2, y);
 
     // up arrow
     uint16_t arrowWidth = 10, arrowHeight = 5;

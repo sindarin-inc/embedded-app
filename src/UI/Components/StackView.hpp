@@ -15,7 +15,7 @@ public:
         int viewCount = views_.size();
         int dimension = vertical_ ? size.height : size.width;
 
-        Size boxSize;
+        Size boxSize{};
         if (vertical_) {
             int boxHeight = (dimension - (viewCount - 1) * spacing_) / viewCount;
             boxSize = {size.width, boxHeight};

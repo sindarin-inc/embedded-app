@@ -25,9 +25,9 @@ public:
 
 protected:
     PreferencesStore *prefs_;
-    BLECharacteristic *settingsCharacteristic_;
+    BLECharacteristic *settingsCharacteristic_{};
 #if USE_TURN_TOUCH_REMOTE
-    TTRemoteInput *ttRemoteInput_;
+    TTRemoteInput *ttRemoteInput_{};
 #endif
     void writeDeviceSerialToCharacteristic(BLECharacteristic *characteristic,
                                            const std::string &key);

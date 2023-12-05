@@ -249,7 +249,7 @@ protected:
     Xyz8bit lastMagReading_ = {};
     float lastMagAngle_ = 0;
 #if !DISABLE_POWER_MANAGEMENT
-    esp_pm_config_t pmConfig_;
+    esp_pm_config_t pmConfig_{};
 #endif
     void updateState();
 

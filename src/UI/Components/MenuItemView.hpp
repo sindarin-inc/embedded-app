@@ -84,7 +84,7 @@ public:
         int indicatorRightPadding = 15;
         int indicatorWidth = 5;
         auto indicatorWidthPlus = indicatorWidth + 8;
-        Rect textRect, subtextRect;
+        Rect textRect{}, subtextRect{};
 
         // Layout the right text view if necessary
         if (rightTextView_ != nullptr && !rightTextView_->isHidden()) {

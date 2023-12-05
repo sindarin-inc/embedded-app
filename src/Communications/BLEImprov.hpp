@@ -40,10 +40,10 @@ public:
     void setState(BLEImprovState state);
 
 protected:
-    uint32_t lastStateChangeMillis_;
-    BLECharacteristic *currentStateCharacteristic_;
-    BLECharacteristic *errorStateCharacteristic_;
-    BLECharacteristic *rpcResultCharacteristic_;
+    uint32_t lastStateChangeMillis_{};
+    BLECharacteristic *currentStateCharacteristic_{};
+    BLECharacteristic *errorStateCharacteristic_{};
+    BLECharacteristic *rpcResultCharacteristic_{};
     BLEImprovState state_;
     improv::ImprovCommand lastCommand_;
 

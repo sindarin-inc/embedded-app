@@ -134,7 +134,7 @@ auto IBMFFaceLow::ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2, FIX
     FIX32 kerning = 0;
 
     // if (length > 0) { // Length <= 0 means that there is no alignment between the characters
-    Glyph glyph1;
+    Glyph glyph1{};
     bool result = getGlyph(glyphCode1, glyph1, true, true, Pos(0, i1.verticalOffset));
     if (!result) {
         if (glyph1.bitmap.pixels != nullptr) {
@@ -144,7 +144,7 @@ auto IBMFFaceLow::ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2, FIX
         return false;
     }
 
-    Glyph glyph2;
+    Glyph glyph2{};
     result = getGlyph(*glyphCode2, glyph2, true, true, Pos(0, i2.verticalOffset));
     if (!result) {
         if (glyph1.bitmap.pixels != nullptr) {

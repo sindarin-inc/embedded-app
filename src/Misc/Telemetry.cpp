@@ -89,7 +89,7 @@ auto Telemetry::uploadAndResetTelemetry(FileSystem &fileSystem, Telemetry &telem
     if (httpCode == 201) {
         log_d("Deleting %s", localPath.c_str());
         Telemetry::dispatchQueue()->dispatch(
-            [&fileSystem, localPath]() { fileSystem.remove(localPath.c_str()); });
+            [&fileSystem, localPath]() { fileSystem.remove(localPath); });
     } else {
         log_e("Failed to upload telemetry log: %s http code: %d", localPath.c_str(), httpCode);
     }

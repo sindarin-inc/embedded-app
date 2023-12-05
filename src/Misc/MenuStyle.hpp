@@ -56,9 +56,9 @@ public:
     auto getMenuStyleFamily() -> MenuStyleFamily { return currentMenu; }
 
     // Not sure if we'll need the currentMenu, but we have it here if needed.
-    MenuStyleFamily currentMenu;
-    MenuStyleFamily mainMenu;
-    MenuStyleFamily settingsMenu;
+    MenuStyleFamily currentMenu{};
+    MenuStyleFamily mainMenu{};
+    MenuStyleFamily settingsMenu{};
 
 protected:
 };

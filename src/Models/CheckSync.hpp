@@ -31,12 +31,12 @@ public:
 
     std::string since;
     ReadablesModelType modelType;
-    bool skipToc;
-    bool skipContent;
-    bool skipSummary;
+    bool skipToc{};
+    bool skipContent{};
+    bool skipSummary{};
     SyncReason syncReason;
-    uint8_t ptBattery;
-    uint8_t battery;
+    uint8_t ptBattery{};
+    uint8_t battery{};
     std::string ptBuild;
     std::string build;
     std::string gitHash;
@@ -53,14 +53,14 @@ public:
     CheckSyncResponse(const CheckSyncResponse &) = delete;
     ~CheckSyncResponse() override = default;
 
-    bool synced;
+    bool synced{};
     SpiramString message;
     SpiramVector<UserReadable> userBooks;
     SpiramVector<UserReadable> userArticles;
     SpiramString booksSince;
     SpiramString articlesSince;
     SpiramString nextPageUrl;
-    int totalCount;
+    int totalCount{};
     std::string timezone;
 
     auto fromJson(const JsonObject &j) -> bool override {

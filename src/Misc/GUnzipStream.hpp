@@ -35,10 +35,10 @@ private:
     uint32_t uncompressedSize_{0};
     SFile gzFile_;
     GUnzip gunzip_;
-    uint8_t inBuf_[GZ_BUFFER_SIZE];
+    uint8_t inBuf_[GZ_BUFFER_SIZE]{};
     int inSize_{0};
     int inIndex_{0};
-    uint8_t outBuf_[GZ_BUFFER_SIZE];
+    uint8_t outBuf_[GZ_BUFFER_SIZE]{};
     int outSize_{0};
     int outIndex_{0};
     bool lastInput_{false};

@@ -101,7 +101,7 @@ public:
     }
 
     [[nodiscard]] auto streamSize() const -> size_t override {
-        return stream_.get() != nullptr ? stream_->size() : 0;
+        return stream_ != nullptr ? stream_->size() : 0;
     }
 
     [[nodiscard]] auto isFor(DocType docType) const -> bool override {
@@ -126,7 +126,7 @@ public:
     }
 
     [[nodiscard]] inline auto isReady() const -> bool override {
-        return (stream_.get() != nullptr) && stream_->isOpen();
+        return (stream_ != nullptr) && stream_->isOpen();
     }
 
     [[nodiscard]] inline auto getTxtOffset() const -> uint32_t override {
@@ -167,33 +167,33 @@ private:
     StreamPlace fromPlace_;
 
     // Where it will end in case of backward movements
-    StreamPlace *toPlace_;
-    bool backwards_;
+    StreamPlace *toPlace_{};
+    bool backwards_{};
 
     // true when a <SUP></SUP> if being processed
-    bool superscript_;
+    bool superscript_{};
 
     // true when a <SUB></SUB> if being processed
-    bool subscript_;
+    bool subscript_{};
 
     // Used to add space qty that follow a token
-    Token *lastToken_;
+    Token *lastToken_{};
 
     // true if we are tokenizing/paging the content
-    bool tokenizingStarted_;
+    bool tokenizingStarted_{};
 
     // true if at beginning of page and no tokens / lines where kept.
-    bool beginningOfPage_;
+    bool beginningOfPage_{};
 
     // true if the page is complete
-    bool pageCompleted_;
+    bool pageCompleted_{};
 
     // used for <h1>..<h6>
-    bool startOfHeader_;
+    bool startOfHeader_{};
 
     // The offset where we are tokenizing
-    uint32_t currentStreamOffset_;
-    uint16_t currentSpineIdx_;
+    uint32_t currentStreamOffset_{};
+    uint16_t currentSpineIdx_{};
 
     // The byte offset ignoring all tag bytes.
     uint32_t currentTxtOffset_ = 0;
@@ -204,36 +204,36 @@ private:
     // Not null if there is a text token to be closed. This is required to take into account
     // words that could be containing tags like <b/> <i/> etc. These will be processed
     // recursively, the content potentially part of a word.
-    Token *textToken_;
-    uint16_t textCharCount_;
+    Token *textToken_{};
+    uint16_t textCharCount_{};
 
     static constexpr const uint8_t MAX_LEVEL_COUNT = 5;
 
     enum ListType { ORDERED, UNORDERED };
-    uint16_t listSeqNbr_[MAX_LEVEL_COUNT];
-    ListType listType_[MAX_LEVEL_COUNT];
-    int8_t listLevel_;
+    uint16_t listSeqNbr_[MAX_LEVEL_COUNT]{};
+    ListType listType_[MAX_LEVEL_COUNT]{};
+    int8_t listLevel_{};
 
-    uint16_t listIndent_[MAX_LEVEL_COUNT];
-    uint16_t listUndent_[MAX_LEVEL_COUNT];
+    uint16_t listIndent_[MAX_LEVEL_COUNT]{};
+    uint16_t listUndent_[MAX_LEVEL_COUNT]{};
 
     uint16_t savedBlockquoteLeftIndent_{};
     uint16_t savedBlockquoteRightIndent_{};
-    int8_t blockquoteLevel_;
+    int8_t blockquoteLevel_{};
 
     uint16_t savedRowIndent_{}; // table rows;
 
-    bool inTableRow_;
+    bool inTableRow_{};
 
     static const constexpr char *LEVEL_CHAR = "-o-o-";
 
     // Could eventually be made smaller.
     // For now, used only for bracketing <a> tags pcdata
-    char preText_[21];
-    char postText_[21];
+    char preText_[21]{};
+    char postText_[21]{};
 
     // used to transform HTML character entities to their UTF8 char.
-    char utf8Ch_[6];
+    char utf8Ch_[6]{};
     auto toUtf8(uint32_t val) -> char *;
 
     [[nodiscard]] auto getCharEntity(const char *str) -> std::pair<const char *, const char *>;

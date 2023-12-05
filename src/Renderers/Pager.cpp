@@ -334,7 +334,7 @@ auto Pager::displayPage(int16_t numSkipLines) -> uint8_t {
         case TokenId::PICTURE:
             REND_WLOG("[%" PRIu16 "] %s: <PICTURE> %s", lineIdx, token.streamPlace.str().c_str(),
                       token.cStr);
-            if ((token.picture == nullptr) || (token.picture.get() == nullptr)) {
+            if ((token.picture == nullptr) || (token.picture == nullptr)) {
                 REND_PROFILE_START(ReadPictureFromEPub);
                 auto [buffer, len] = stream_->getFile(token.cStr);
                 REND_PROFILE_END(ReadPictureFromEPub);
@@ -349,7 +349,7 @@ auto Pager::displayPage(int16_t numSkipLines) -> uint8_t {
                     REND_ELOG("buffer is empty!");
                 }
             }
-            if ((token.picture != nullptr) && (token.picture.get() != nullptr)) {
+            if ((token.picture != nullptr) && (token.picture != nullptr)) {
                 auto bitmap = token.picture->getBuffer();
                 uint16_t width = token.pixWidth;
                 uint16_t height = token.pixHeight;
@@ -372,7 +372,7 @@ auto Pager::displayPage(int16_t numSkipLines) -> uint8_t {
         case TokenId::EPICTURE:
             REND_WLOG("[%" PRIu16 "] %s: <EPICTURE> %s", lineIdx, token.streamPlace.str().c_str(),
                       token.cStr);
-            if ((token.picture == nullptr) || (token.picture.get() == nullptr)) {
+            if ((token.picture == nullptr) || (token.picture == nullptr)) {
                 REND_PROFILE_START(ReadPictureFromEPub);
                 auto [buffer, len] = stream_->getFile(token.cStr);
                 REND_PROFILE_END(ReadPictureFromEPub);
@@ -387,7 +387,7 @@ auto Pager::displayPage(int16_t numSkipLines) -> uint8_t {
                     REND_ELOG("buffer is empty!");
                 }
             }
-            if ((token.picture != nullptr) && (token.picture.get() != nullptr)) {
+            if ((token.picture != nullptr) && (token.picture != nullptr)) {
                 auto bitmap = token.picture->getBuffer();
                 uint16_t width = token.pixWidth;
                 uint16_t height = token.pixHeight;

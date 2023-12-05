@@ -116,29 +116,29 @@ protected:
     // sticker on the back of the display).
     // The 8-bit register value is calculated when it is set in the
     // register: ((5600 + vcomInMV_) * 255) / 5600.
-    uint32_t vcomInMV_;
+    uint32_t vcomInMV_{};
 
-    uint16_t timerOverruns_;
-    uint16_t busyWaits_;
-    uint32_t maxFrameCycles_;
-    bool error_;
+    uint16_t timerOverruns_{};
+    uint16_t busyWaits_{};
+    uint32_t maxFrameCycles_{};
+    bool error_{};
 
     BorderSetting previousBorder_ = BORDER_SETTING_NONE;
     BorderSetting border_ = BORDER_SETTING_NONE;
 
-    uint8_t previousBuffer_[EinkET013TT1_PIXEL_WIDTH * EinkET013TT1_PIXEL_HEIGHT / 8];
+    uint8_t previousBuffer_[EinkET013TT1_PIXEL_WIDTH * EinkET013TT1_PIXEL_HEIGHT / 8]{};
 
     float timerDelayNs_ = 0;
     uint32_t timerDurationCycles_ = 0;
     volatile uint32_t cycleCountStart_ = 0;
 
-    spi_device_handle_t spiHigh_;
-    spi_device_handle_t spiLow_;
+    spi_device_handle_t spiHigh_{};
+    spi_device_handle_t spiLow_{};
 
     bool poweredOn_ = false;
-    DispatchQueue *einkQueue_;
+    DispatchQueue *einkQueue_{};
 
 #if !DISABLE_POWER_MANAGEMENT
-    esp_pm_lock_handle_t freqLock_;
+    esp_pm_lock_handle_t freqLock_{};
 #endif
 };

@@ -12,7 +12,7 @@ public:
 
     std::string version;
     std::string url;
-    int fileSize;
+    int fileSize{};
     std::string md5;
     SpiramString releaseNotes;
 

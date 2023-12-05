@@ -152,7 +152,7 @@ void LocalStore::addReadable(ReadablesVector &readables,
     // Check if we already have a readable with the same uuid, and if so, replace it in readables,
     // otherwise, add it to the end
     for (auto &it : readables) {
-        if (it.get()->uuid == readable->uuid) {
+        if (it->uuid == readable->uuid) {
             log_i("Replacing readable %s", readable->uuid.c_str());
             it = readable;
             return;
@@ -289,7 +289,7 @@ void LocalStore::changedReadablesBookmarksJson(ReadableBookmarksVector &bookmark
                                            .c_str(),
                                        {{"uuid", readable->shortenedUuid.c_str()}});
             std::string bookmarkPath = readable->bookmarkFilePath();
-            SFile bookmarkFile = fileSystem.open(bookmarkPath.c_str(), FILE_READ, false);
+            SFile bookmarkFile = fileSystem.open(bookmarkPath, FILE_READ, false);
             if (!bookmarkFile) {
                 log_i("Failed to open bookmark file: %s", bookmarkPath.c_str());
                 continue;
@@ -429,8 +429,8 @@ auto LocalStore::processReadablePartialChapterSummary(
     }
 
     auto partialSummaryPath = readable->partialSummaryFilePath();
-    fileSystem.remove(partialSummaryPath.c_str());
-    auto file = fileSystem.open(partialSummaryPath.c_str(), FILE_WRITE, false);
+    fileSystem.remove(partialSummaryPath);
+    auto file = fileSystem.open(partialSummaryPath, FILE_WRITE, false);
     if (!file) {
         log_e("Failed to open partial summary file for writing");
         return false;
@@ -687,7 +687,7 @@ void LocalStore::syncFromRemote(
                     SHOW_HEAP();
                 } else {
                     httpCode =
-                        SindarinAPI::getInstance()->checkSync(nextPageUrl.c_str(), checkSyncRequest,
+                        SindarinAPI::getInstance()->checkSync(nextPageUrl, checkSyncRequest,
                                                               &checkSyncResponse, this->telemetry_);
                 }
                 if (CancelFlag::isCancelled(cancel)) {
@@ -1162,7 +1162,7 @@ void LocalStore::purgeReadableToc(const std::shared_ptr<Readable> &readable) {
     auto tocPath = readable->tocFilePath();
     if (tocPath.size()) {
         log_i("Removing TOC for %s: %s", readable->title.c_str(), tocPath.c_str());
-        fileSystem.remove(tocPath.c_str());
+        fileSystem.remove(tocPath);
     }
 }
 
@@ -1355,7 +1355,7 @@ void LocalStore::readableFilePurge(const std::shared_ptr<Readable> &readable) {
     fileSystem.remove(StringFormat("/articles/%s.txt", uuid.c_str()));
     fileSystem.remove(StringFormat("/articles/%s.epub", uuid.c_str()));
 
-    fileSystem.remove(readable->bookmarkFilePath().c_str());
+    fileSystem.remove(readable->bookmarkFilePath());
 
     // Also purge placemarks in NVS
     prefs_.readablePlace.remove(readable->shortenedUuid.c_str());
@@ -1414,7 +1414,7 @@ void LocalStore::migrateTxtPlacemarksToEpubPlacemarks() {
                 log_d("Found old place for %s = %" PRIu32 ", migrating to new place format",
                       readable->shortenedUuid.c_str(), oldPlace);
                 auto newPlace = Place::factory(oldPlace);
-                prefs_.readablePlace.set(readable->shortenedUuid.c_str(), newPlace->str().c_str());
+                prefs_.readablePlace.set(readable->shortenedUuid.c_str(), newPlace->str());
                 prefs_.oldReadablePlace.remove(readable->shortenedUuid.c_str());
             }
         }
