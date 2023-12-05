@@ -39,12 +39,7 @@ void BLEProxy::registerWebRequestHandler(const WebRequestHandler &handler) {
 }
 
 auto BLEProxy::countChunks(const SpiramString &body) -> int {
-    int numChunks = body.length() / MTU_CHUNK_SIZE;
-    if (body.length() % MTU_CHUNK_SIZE != 0) {
-        numChunks++;
-    }
-
-    return numChunks;
+    return (body.length() + MTU_CHUNK_SIZE - 1) / MTU_CHUNK_SIZE;
 }
 
 void BLEProxy::writeUrl(const SpiramString &url, const SpiramString &method) {
