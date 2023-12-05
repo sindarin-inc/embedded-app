@@ -43,11 +43,11 @@ public:
 
 protected:
     static std::shared_ptr<BLEImprov> instance;
-    uint32_t lastStateChangeMillis_;
-    BLECharacteristic *currentStateCharacteristic_;
-    BLECharacteristic *errorStateCharacteristic_;
-    BLECharacteristic *rpcResultCharacteristic_;
-    BLEImprovState state_;
+    uint32_t lastStateChangeMillis_ = 0;
+    BLECharacteristic *currentStateCharacteristic_ = nullptr;
+    BLECharacteristic *errorStateCharacteristic_ = nullptr;
+    BLECharacteristic *rpcResultCharacteristic_ = nullptr;
+    BLEImprovState state_ = STATE_WAITING;
     improv::ImprovCommand lastCommand_;
 
     void setError(improv::Error error, bool notify = true);
