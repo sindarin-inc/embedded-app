@@ -13,7 +13,12 @@ using SubscriptionStatusCallback = std::function<void(bool)>;
 
 class BLEProxy : BLECharacteristicProvider {
 public:
-    BLEProxy();
+    BLEProxy() : characteristicCallbacks_() {
+        proxyCharacteristic_ = nullptr;
+        proxyService_ = nullptr;
+        webRequestHandler_ = nullptr;
+        subscriptionStatusCallback_ = nullptr;
+    }
     BLEProxy(BLEProxy const &) = delete;
     virtual ~BLEProxy() = default;
 
@@ -43,17 +48,15 @@ protected:
 
     class CharacteristicCallbacks : public BLECharacteristicCallbacks {
     public:
-        BLEProxy *enclosed;
-
-        CharacteristicCallbacks(BLEProxy *enclosure) { enclosed = enclosure; }
+        CharacteristicCallbacks() {}
 
         void onSubscribe(NimBLECharacteristic *characteristic, ble_gap_conn_desc *desc,
                          uint16_t subValue) override {
             log_d("BLEProxy::CharacteristicCallbacks::onSubscribe: %d", subValue);
 
-            if (enclosed->subscriptionStatusCallback_) {
+            if (BLEProxy::getInstance()->subscriptionStatusCallback_) {
                 bool isConnected = (subValue != 0);
-                enclosed->subscriptionStatusCallback_(isConnected);
+                BLEProxy::getInstance()->subscriptionStatusCallback_(isConnected);
             }
         }
 
@@ -69,10 +72,12 @@ protected:
             if (equalsIndex != std::string::npos) {
                 SpiramString key = SpiramString(value.substr(0, equalsIndex));
                 SpiramString body = SpiramString(value.substr(equalsIndex + 1));
-                if (enclosed->webRequestHandler_) {
-                    enclosed->webRequestHandler_(key, body);
+                if (BLEProxy::getInstance()->webRequestHandler_) {
+                    BLEProxy::getInstance()->webRequestHandler_(key, body);
                 }
             }
         }
     };
+
+    CharacteristicCallbacks characteristicCallbacks_;
 };

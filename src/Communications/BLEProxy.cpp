@@ -13,11 +13,6 @@
 
 std::shared_ptr<BLEProxy> BLEProxy::instance = nullptr;
 
-BLEProxy::BLEProxy() {
-    proxyCharacteristic_ = nullptr;
-    webRequestHandler_ = nullptr;
-}
-
 auto BLEProxy::getInstance() -> std::shared_ptr<BLEProxy> {
     if (instance == nullptr) {
         instance = std::make_shared<BLEProxy>();
@@ -30,7 +25,7 @@ void BLEProxy::configureCharacteristics(BLEService *service) {
         BLEUUID(BLEPROXY_CHARACTERISTIC_UUID),
         NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::WRITE | NIMBLE_PROPERTY::NOTIFY);
 
-    characteristic->setCallbacks(new CharacteristicCallbacks(this));
+    characteristic->setCallbacks(&characteristicCallbacks_);
     this->proxyCharacteristic_ = characteristic;
     this->proxyService_ = service;
 };

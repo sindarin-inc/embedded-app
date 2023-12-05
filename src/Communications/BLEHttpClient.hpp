@@ -22,7 +22,7 @@ public:
                   const char *url, const char *contentType = "",
                   esp_http_client_method_t method = HTTP_METHOD_GET);
     BLEHttpClient(const BLEHttpClient &) = delete;
-    ~BLEHttpClient() override = default;
+    ~BLEHttpClient() override;
 
     auto setHeader(const char *key, const char *value) -> esp_err_t override;
 

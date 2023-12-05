@@ -27,6 +27,11 @@ BLEHttpClient::BLEHttpClient(std::shared_ptr<BLEManager> bleManager,
         [this](bool connected) { this->connected = connected; });
 }
 
+BLEHttpClient::~BLEHttpClient() {
+    bleProxy_->registerSubscriptionStatusCallback(nullptr);
+    bleProxy_->registerWebRequestHandler(nullptr);
+}
+
 auto BLEHttpClient::setHeader(const char *key, const char *value) -> esp_err_t {
     requestHeaders_.emplace_back(SpiramString(key), SpiramString(value));
 
