@@ -69,6 +69,7 @@
 
 #define LAST_READABLE_ID "rui-readable"
 
+// NOLINTNEXTLINE(readability-function-size): It's big, I know
 void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &fileSystem,
                    LightingController &lightingController) {
 

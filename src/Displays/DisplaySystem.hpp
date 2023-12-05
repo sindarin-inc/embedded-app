@@ -188,10 +188,10 @@ public:
     // Basically Adafruit_GFX::drawRect with the necessary partial refresh stuff
     // TODO: We might be able to instead just subclass `drawRect` here instead to be more consistent
     // with Adafruit_GFX
-    void drawBox(int xStart, int yStart, int xEnd, int yEnd);
+    void drawBox(int startX, int startY, int endX, int endY);
 
     // Draw a dotted box
-    void drawDottedBox(int xStart, int yStart, int xEnd, int yEnd, int dotSize = 1,
+    void drawDottedBox(int startX, int startY, int endX, int endY, int dotSize = 1,
                        int gapSize = 1);
 
     // Draw a bitmap
