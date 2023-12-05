@@ -105,8 +105,6 @@ void BootLoopCheck(FileSystem &fs, PowerManager &pm) {
         // Unset the current readable
         EraseCurrentReadable();
     }
-
-    return;
 }
 
 // timed function which resets panic-count back to 0

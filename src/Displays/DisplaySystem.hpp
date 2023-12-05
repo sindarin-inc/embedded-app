@@ -32,7 +32,7 @@ struct DisplayRect {
     uint32_t width;
     uint32_t height;
 
-    auto toString() -> std::string {
+    [[nodiscard]] auto toString() const -> std::string {
         return StringFormat("x:%d, y:%d, w:%d, h:%d", x, y, width, height);
     }
 };
@@ -148,15 +148,15 @@ public:
 
     virtual void setPartialRefresh();
     void unsetPartialRefresh();
-    auto getPartialRefresh() -> int;
+    [[nodiscard]] auto getPartialRefresh() const -> int;
     virtual void setPartialWindow(uint16_t x, uint16_t y, uint16_t w, uint16_t h);
     void setFullWindow();
 
     virtual void invertDisplay(bool newInvert);
     void flipInversion();
-    auto getInversion() -> bool { return invertedDisplay_; }
+    [[nodiscard]] auto getInversion() const -> bool { return invertedDisplay_; }
 
-    auto getLineSpacing() -> int { return lineSpacing_; }
+    [[nodiscard]] auto getLineSpacing() const -> int { return lineSpacing_; }
     void setLineSpacing(int newSpacing) { lineSpacing_ = newSpacing; }
 
     virtual void clearDisplay(){};
@@ -212,8 +212,8 @@ public:
     uint16_t bg = 0, fg = 0;
 
     // When we want to ignore the configured offsets
-    inline auto xAbsolute(int x) -> int { return x - boundingBox_.x; }
-    inline auto yAbsolute(int y) -> int { return y - boundingBox_.y; }
+    [[nodiscard]] inline auto xAbsolute(int x) const -> int { return x - boundingBox_.x; }
+    [[nodiscard]] inline auto yAbsolute(int y) const -> int { return y - boundingBox_.y; }
 
     // Should these be in the subclasses instead?
     auto xAbsoluteCenter() -> int { return 128; }
@@ -237,8 +237,12 @@ protected:
     uint16_t canvasWidth_{};
     uint16_t canvasHeight_{};
 
-    inline auto xOffset(int16_t value) -> int16_t { return value + boundingBox_.x; }
-    inline auto yOffset(int16_t value) -> int16_t { return value + boundingBox_.y; }
+    [[nodiscard]] inline auto xOffset(int16_t value) const -> int16_t {
+        return value + boundingBox_.x;
+    }
+    [[nodiscard]] inline auto yOffset(int16_t value) const -> int16_t {
+        return value + boundingBox_.y;
+    }
 
     void rotate(uint16_t &x, uint16_t &y, uint16_t &w, uint16_t &h);
     void computeMinMax();

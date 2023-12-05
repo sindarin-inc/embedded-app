@@ -62,7 +62,7 @@ struct Ltr329als01StatusValue {
         };
     };
 
-    auto isValid() -> bool { return alsDataStatus == 1 && alsDataValid == 0; }
+    [[nodiscard]] auto isValid() const -> bool { return alsDataStatus == 1 && alsDataValid == 0; }
 };
 
 struct Ltr329als01AlsDataValue {
@@ -102,7 +102,8 @@ public:
 private:
     int i2cNum_;
 
-    auto registerReadByte(ltr329als01_reg_t regAddr, uint8_t *data) -> esp_err_t;
+    auto registerReadByte(ltr329als01_reg_t regAddr, uint8_t *data) const -> esp_err_t;
 
-    auto registerWriteByte(ltr329als01_reg_t regAddr, uint8_t data) -> esp_err_t;
+    [[nodiscard]] auto registerWriteByte(ltr329als01_reg_t regAddr, uint8_t data) const
+        -> esp_err_t;
 };

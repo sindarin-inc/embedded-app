@@ -123,7 +123,7 @@ public:
     ~VFSFile() override = default;
 
     auto write(const uint8_t *buf, size_t size) -> size_t override;
-    auto available() -> int;
+    [[nodiscard]] auto available() const -> int;
     auto flush() -> int override;
     auto read(uint8_t *buf, size_t size) -> size_t override;
 

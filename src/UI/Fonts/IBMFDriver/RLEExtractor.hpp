@@ -39,8 +39,8 @@ private:
         memcpy(toLine + fromCol, fromLine + fromCol, size);
     }
 
-    auto copyOneRowOneBit(MemoryPtr fromLine, MemoryPtr toLine, int16_t fromCol, int16_t endCol,
-                          bool inverted) const -> void;
+    auto copyOneRowOneBit(const MemoryPtr fromLine, MemoryPtr toLine, int16_t fromCol,
+                          int16_t endCol, bool inverted) const -> void;
 
 public:
     RLEExtractor(PixelResolution resolution) : resolution_(resolution) {}

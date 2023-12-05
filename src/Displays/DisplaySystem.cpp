@@ -70,7 +70,7 @@ void DisplaySystem::setPartialRefresh() { partialRefresh_ = 1; }
 
 void DisplaySystem::unsetPartialRefresh() { partialRefresh_ = 0; }
 
-auto DisplaySystem::getPartialRefresh() -> int { return partialRefresh_; }
+auto DisplaySystem::getPartialRefresh() const -> int { return partialRefresh_; }
 
 void DisplaySystem::rotate(uint16_t &x, uint16_t &y, uint16_t &w, uint16_t &h) {
 

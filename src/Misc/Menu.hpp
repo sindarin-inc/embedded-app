@@ -42,13 +42,13 @@ public:
 
     virtual void resetMenuItems();
 
-    auto getNumItems() -> int;
+    [[nodiscard]] auto getNumItems() const -> int;
 
     auto getMenuItemByTitle(const std::string &title) -> int;
 
     void setCurrSelection(int newSelection);
 
-    auto getCurrSelection() -> int;
+    [[nodiscard]] auto getCurrSelection() const -> int;
 
     auto getCurrItem() -> MenuItem;
 

@@ -102,7 +102,7 @@ auto VFSFile::write(const uint8_t *buf, size_t size) -> size_t {
     return fwrite(buf, 1, size, fp_);
 }
 
-auto VFSFile::available() -> int {
+auto VFSFile::available() const -> int {
     if (!*this) {
         return false;
     }

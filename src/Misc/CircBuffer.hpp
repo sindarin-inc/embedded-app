@@ -11,8 +11,8 @@ public:
     void copyFrom(int pos, uint8_t *output, int size);
     void clear();
 
-    auto size() -> int { return size_; }
-    auto capacity() -> int { return capacity_; }
+    [[nodiscard]] auto size() const -> int { return size_; }
+    [[nodiscard]] auto capacity() const -> int { return capacity_; }
 
 private:
     std::unique_ptr<uint8_t[]> buf_;

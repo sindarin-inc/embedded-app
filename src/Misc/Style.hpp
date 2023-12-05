@@ -34,7 +34,7 @@ public:
 
     void setFontFamily(FontFamily newFont) { currentFont = newFont; }
 
-    auto getFontFamily() -> FontFamily { return currentFont; }
+    [[nodiscard]] auto getFontFamily() const -> FontFamily { return currentFont; }
 
     FontFamily solSansSmall{};
     FontFamily solSansMedium{};

@@ -5,7 +5,7 @@
 #include "Misc/LookBackStream.hpp"
 #include "sindarin-debug.h"
 
-auto FileSystem::newRendererStream(const char *path) -> std::shared_ptr<RendererStream> {
+auto FileSystem::newRendererStream(const char *path) const -> std::shared_ptr<RendererStream> {
     log_d("Attempting to open: %s", path);
     auto file = open(path);
     if (!file) {
@@ -27,7 +27,7 @@ auto FileSystem::newEPubRendererStream(const char *path, const std::shared_ptr<R
     return stream;
 }
 
-auto FileSystem::newGzipRendererStream(const char *path) -> std::shared_ptr<RendererStream> {
+auto FileSystem::newGzipRendererStream(const char *path) const -> std::shared_ptr<RendererStream> {
     log_d("Attempting to open: %s", path);
     auto file = open(path);
     if (!file) {

@@ -41,7 +41,6 @@ void OnboardingContentSyncScreen::render(DisplaySystem &display) {
         display.updateDisplay(DisplaySystem::UpdateType::FULL);
         shownOnboardingSyncMessage_ = true;
     }
-    return;
 }
 
 void OnboardingContentSyncScreen::processCommand(RemoteCommand command) {

@@ -30,7 +30,7 @@ public:
     auto getRightBatteryVoltage() -> float;
     auto getBatteryPercentage() -> float;
 
-    auto getDepleted() -> bool;
+    [[nodiscard]] auto getDepleted() const -> bool;
 
     void saveLastBatteryReport();
 

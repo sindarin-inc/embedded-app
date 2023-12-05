@@ -26,7 +26,7 @@ void Menu::populateMenuItems(std::vector<MenuItem> &menuItems) {
     }
 }
 
-auto Menu::getNumItems() -> int { return numMenuItems_; }
+auto Menu::getNumItems() const -> int { return numMenuItems_; }
 
 auto Menu::getMenuItemByTitle(const std::string &title) -> int {
     for (int i = 0; i < numMenuItems_; i++) {
@@ -46,7 +46,7 @@ void Menu::setCurrSelection(int newSelection) {
     }
 }
 
-auto Menu::getCurrSelection() -> int { return currSelection_; }
+auto Menu::getCurrSelection() const -> int { return currSelection_; }
 
 auto Menu::getCurrItem() -> MenuItem { return menuItems_[currSelection_]; }
 

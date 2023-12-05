@@ -51,7 +51,7 @@ public:
     void showTemporaryMessage(DisplaySystem &display, const std::string &message,
                               int duration = 2000, bool rerenderAfter = true);
 
-    auto getFirstLoad() -> bool { return firstLoad_; }
+    auto getFirstLoad() const -> bool { return firstLoad_; }
 
 protected:
     bool firstLoad_ = true;

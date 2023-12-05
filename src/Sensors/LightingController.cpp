@@ -97,7 +97,7 @@ void LightingController::setOverrideValuePercent(int percent, bool maintainLight
     setCurrentDutyCycle(currentDutyCycle_, 100);
 }
 
-auto LightingController::getCurrentPercent() -> int {
+auto LightingController::getCurrentPercent() const -> int {
     if (currentDutyCycle_ == 1) {
         return 0;
     } else if (currentDutyCycle_ == 2) {

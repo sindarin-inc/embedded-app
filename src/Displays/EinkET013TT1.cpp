@@ -200,7 +200,7 @@ void EinkET013TT1::clear(const EinkET013TT1Waveform &waveform) {
     update(waveform, previousBuffer_);
 }
 
-inline void EinkET013TT1::setCS(bool value, ScreenSide screen) {
+inline void EinkET013TT1::setCS(bool value, ScreenSide screen) const {
     if (screen == ScreenSide::Left) {
         DigitalWrite(csLeft_, value);
     } else if (screen == ScreenSide::Right) {
@@ -646,9 +646,9 @@ inline void EinkET013TT1::startTimer(uint32_t ns) {
     timerDurationCycles_ = (esp_clk_cpu_freq() / 1000000000.0) * ns;
 }
 
-inline auto EinkET013TT1::timerActivated() -> bool { return timerDurationCycles_ != 0; }
+inline auto EinkET013TT1::timerActivated() const -> bool { return timerDurationCycles_ != 0; }
 
-inline auto EinkET013TT1::timerRunning() -> bool {
+inline auto EinkET013TT1::timerRunning() const -> bool {
     volatile uint32_t cycleCount = 0;
     RSR(CCOUNT, cycleCount);
     if (timerDurationCycles_ != 0 && cycleCount - cycleCountStart_ < timerDurationCycles_) {

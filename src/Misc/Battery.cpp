@@ -130,7 +130,7 @@ auto Battery::getBatteryPercentage() -> float {
     return batteryAverage;
 }
 
-auto Battery::getDepleted() -> bool {
+auto Battery::getDepleted() const -> bool {
 #if SIMULATOR
     return false;
 #else

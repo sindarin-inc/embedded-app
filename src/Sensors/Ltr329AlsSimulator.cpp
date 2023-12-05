@@ -5,11 +5,11 @@
 #include "Ltr329Als.hpp"
 #include "sindarin-debug.h"
 
-auto Ltr329Als::registerReadByte(ltr329als01_reg_t regAddr, uint8_t *data) -> esp_err_t {
+auto Ltr329Als::registerReadByte(ltr329als01_reg_t regAddr, uint8_t *data) const -> esp_err_t {
     return ESP_OK;
 }
 
-auto Ltr329Als::registerWriteByte(ltr329als01_reg_t regAddr, uint8_t data) -> esp_err_t {
+auto Ltr329Als::registerWriteByte(ltr329als01_reg_t regAddr, uint8_t data) const -> esp_err_t {
     return ESP_OK;
 }
 

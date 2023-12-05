@@ -103,7 +103,7 @@ auto LocalStore::readablesModelType(const ReadablesVector &readables) -> Readabl
 
 auto LocalStore::isReadableUnchanged(const ReadablesVector &readables,
                                      const std::shared_ptr<Readable> &readable,
-                                     bool ignoreFileSizeCheck) -> bool {
+                                     bool ignoreFileSizeCheck) const -> bool {
     for (const auto &r : readables) {
         auto [path, size] = readableFilePathForReading(r);
         if (r->uuid == readable->uuid && !path.empty()) {
@@ -162,7 +162,6 @@ void LocalStore::addReadable(ReadablesVector &readables,
     // If not found, add to the end
     log_i("Adding readable %s", readable->uuid.c_str());
     readables.emplace_back(readable);
-    return;
 }
 
 void LocalStore::removeReadable(ReadablesVector &readables,
@@ -187,7 +186,7 @@ auto LocalStore::readablesSince(const ReadablesModelType modelType) -> std::stri
 }
 
 void LocalStore::storedReadableUuids(const ReadablesVector &readables,
-                                     StoredUuidsVector &storedUuids) {
+                                     StoredUuidsVector &storedUuids) const {
     for (const auto &readable : readables) {
         if (readable->localOnly) {
             continue;
@@ -1378,7 +1377,7 @@ void LocalStore::saveFirmware(const Firmware &firmware) {
     prefs_.firmwareLoaded.set(firmware.version);
 }
 
-auto LocalStore::getPendingFirmwareUpdate(Firmware &firmware) -> bool {
+auto LocalStore::getPendingFirmwareUpdate(Firmware &firmware) const -> bool {
     auto firmwareFile = fileSystem.open(firmwarePath, "r");
     if (!firmwareFile) {
         return false;

@@ -97,7 +97,7 @@ auto RLEExtractor::getPackedNumber(uint32_t &val, const RLEMetrics &rleMetrics) 
     return true;
 }
 
-auto RLEExtractor::copyOneRowOneBit(MemoryPtr fromLine, MemoryPtr toLine, int16_t fromCol,
+auto RLEExtractor::copyOneRowOneBit(const MemoryPtr fromLine, MemoryPtr toLine, int16_t fromCol,
                                     int16_t endCol, bool inverted) const -> void {
     uint8_t mask = 0x80 >> (fromCol & 7);
     int idx = fromCol >> 3;

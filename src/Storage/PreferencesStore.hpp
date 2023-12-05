@@ -483,7 +483,7 @@ public:
         return true;
     }
 
-    auto started() -> bool { return started_; }
+    [[nodiscard]] auto started() const -> bool { return started_; }
 
     auto end() -> esp_err_t {
         if (!started_) {
@@ -515,7 +515,7 @@ public:
         commit();
     }
 
-    void logStats() {
+    void logStats() const {
 #if !SIMULATOR
         nvs_stats_t nvsStats;
         esp_err_t err = nvs_get_stats(nullptr, &nvsStats);
@@ -635,7 +635,7 @@ protected:
 
     PrefsItem<uint32_t> preferencesStoreMigrationVersion_;
 
-    void commit() {
+    void commit() const {
         esp_err_t err = nvs_commit(nvsHandle_);
         if (err) {
             log_e("nvs_commit fail: %s", esp_err_to_name(err));
