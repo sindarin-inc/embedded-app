@@ -2,6 +2,7 @@
 
 #include <unordered_map>
 
+#include "Misc/CancelFlag.hpp"
 #include "Misc/Dispatch.hpp"
 #include "Misc/Platform.hpp"
 #include "Misc/SolClock.hpp"
@@ -51,8 +52,8 @@ public:
 
     static auto metricLogPath() -> std::string { return "/metrics/telemetry.jsonl"; }
 
-    auto uploadAndResetTelemetry(FileSystem &fileSystem, Telemetry &telemetry, bool useBle = false)
-        -> int;
+    auto uploadAndResetTelemetry(FileSystem &fileSystem, Telemetry &telemetry, bool useBle = false,
+                                 const std::shared_ptr<CancelFlag> &cancel = nullptr) -> int;
 
 protected:
     FileSystem &fileSystem_;

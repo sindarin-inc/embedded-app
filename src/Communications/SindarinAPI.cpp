@@ -222,7 +222,8 @@ auto SindarinAPI::downloadReadable(const std::shared_ptr<Readable> &readable,
 }
 
 auto SindarinAPI::createClient(const std::string &url, const std::string &contentType,
-                               esp_http_client_method_t method, bool useBle)
+                               esp_http_client_method_t method, bool useBle,
+                               const std::shared_ptr<CancelFlag> &cancel)
     -> std::shared_ptr<HttpClient> {
     if (useBle) {
 #if USE_BLE_SERVER_PROXY
@@ -232,7 +233,7 @@ auto SindarinAPI::createClient(const std::string &url, const std::string &conten
         auto remoteInput = BLERemoteInput::getInstance();
 
         return std::make_shared<BLEHttpClient>(bleManager, bleProxy, bleImprov, remoteInput,
-                                               url.c_str(), contentType.c_str(), method);
+                                               url.c_str(), contentType.c_str(), method, cancel);
 #else
         return nullptr;
 #endif
@@ -243,7 +244,8 @@ auto SindarinAPI::createClient(const std::string &url, const std::string &conten
 }
 
 auto SindarinAPI::uploadTelemetryFile(SFile &telemetryFile, const std::string &localPath,
-                                      FileSystem &fileSystem, bool useBle) -> int {
+                                      FileSystem &fileSystem, bool useBle,
+                                      const std::shared_ptr<CancelFlag> &cancel) -> int {
     // Construct the headers and footers for multipart file upload
     auto url = StringFormat("%s/telemetry/", baseUrl_.c_str());
     static std::string boundary = "SIND12345";
@@ -255,7 +257,7 @@ auto SindarinAPI::uploadTelemetryFile(SFile &telemetryFile, const std::string &l
     // Create client with multipart headers and write the header
     int totalSize = header.size() + telemetryFile.size() + footer.size();
     auto contentType = "multipart/form-data; boundary=" + boundary;
-    auto client = createClient(url, contentType, HTTP_METHOD_POST, useBle);
+    auto client = createClient(url, contentType, HTTP_METHOD_POST, useBle, cancel);
     if (client == nullptr) {
         return ERR_CLIENT_OPEN;
     }

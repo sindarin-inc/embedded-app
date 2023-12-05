@@ -7,16 +7,18 @@
 #include <esp_timer.h>
 #include <utility>
 
+#include "Misc/CancelFlag.hpp"
 #include "Misc/Defer.hpp"
 
 BLEHttpClient::BLEHttpClient(std::shared_ptr<BLEManager> bleManager,
                              std::shared_ptr<BLEProxy> bleProxy,
                              std::shared_ptr<BLEImprov> bleImprov,
                              std::shared_ptr<BLERemoteInput> remoteInput, const char *url,
-                             const char *contentType, esp_http_client_method_t method)
+                             const char *contentType, esp_http_client_method_t method,
+                             const std::shared_ptr<CancelFlag> cancel)
     : HttpClient(url, contentType, method), bleManager_(std::move(bleManager)),
       bleProxy_(std::move(bleProxy)), bleImprov_(std::move(bleImprov)),
-      remoteInput_(std::move(remoteInput)) {
+      remoteInput_(std::move(remoteInput)), cancel_(cancel) {
     url_ = strdup(url);
     connected = false;
     requestBody_ = "";
@@ -75,6 +77,10 @@ auto BLEHttpClient::fetchHeaders() -> int {
             }
             log_d("Waiting for BLE to connect...");
             vTaskDelay(1000 / portTICK_PERIOD_MS);
+            if (CancelFlag::isCancelled(cancel_)) {
+                log_d("Cancelled BLE connection");
+                return -1;
+            }
         }
     }
 
@@ -99,12 +105,13 @@ auto BLEHttpClient::fetchHeaders() -> int {
     // Wait for response up to 30s
     auto startTime = esp_timer_get_time();
     while (!responseFetched_) {
-        vTaskDelay(100 / portTICK_PERIOD_MS);
         auto currentTime = esp_timer_get_time();
         if (currentTime - startTime > static_cast<long long>(timeoutMs) * 1000) {
             log_e("Timed out waiting for response");
             return -1;
         }
+        log_d("Waiting for BLE to respond...");
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
 
     return statusCode_;

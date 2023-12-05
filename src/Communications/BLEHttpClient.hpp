@@ -12,6 +12,7 @@
 #endif
 
 #include "Communications/HttpClient.hpp"
+#include "Misc/CancelFlag.hpp"
 #include "Misc/Dispatch.hpp"
 #include "Misc/StringUtil.hpp"
 
@@ -20,7 +21,8 @@ public:
     BLEHttpClient(std::shared_ptr<BLEManager> bleManager, std::shared_ptr<BLEProxy> bleProxy,
                   std::shared_ptr<BLEImprov> bleImprov, std::shared_ptr<BLERemoteInput> remoteInput,
                   const char *url, const char *contentType = "",
-                  esp_http_client_method_t method = HTTP_METHOD_GET);
+                  esp_http_client_method_t method = HTTP_METHOD_GET,
+                  const std::shared_ptr<CancelFlag> cancel = nullptr);
     BLEHttpClient(const BLEHttpClient &) = delete;
     ~BLEHttpClient() override;
 
@@ -58,7 +60,7 @@ private:
     std::shared_ptr<BLEProxy> bleProxy_;
     std::shared_ptr<BLEImprov> bleImprov_;
     std::shared_ptr<BLERemoteInput> remoteInput_;
-
+    std::shared_ptr<CancelFlag> cancel_;
     char *url_;
     int statusCode_;
 

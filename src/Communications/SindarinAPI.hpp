@@ -59,9 +59,11 @@ public:
                           const std::shared_ptr<CancelFlag> &cancel,
                           const std::function<void(int percentage)> &progressCallback) -> int;
     auto createClient(const std::string &url, const std::string &contentType,
-                      esp_http_client_method_t method, bool useBle) -> std::shared_ptr<HttpClient>;
+                      esp_http_client_method_t method, bool useBle,
+                      const std::shared_ptr<CancelFlag> &cancel) -> std::shared_ptr<HttpClient>;
     auto uploadTelemetryFile(SFile &telemetryFile, const std::string &localPath,
-                             FileSystem &fileSystem, bool useBle = false) -> int;
+                             FileSystem &fileSystem, bool useBle = false,
+                             const std::shared_ptr<CancelFlag> &cancel = nullptr) -> int;
     auto uploadCrashReport(SFile &crashFile, const std::string &contentType) -> int;
 
     auto setAuth(HttpClient &client) -> esp_err_t;
