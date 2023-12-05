@@ -29,7 +29,7 @@ class BLEImprov : public BLECharacteristicProvider, public BLEServiceProvider {
 public:
     BLEImprov() : BLECharacteristicProvider(), BLEServiceProvider(), characteristicCallbacks_(){};
     BLEImprov(BLEImprov const &) = delete;
-    ~BLEImprov() = default;
+    virtual ~BLEImprov() = default;
 
     static auto getInstance() -> std::shared_ptr<BLEImprov>;
     void loop();
