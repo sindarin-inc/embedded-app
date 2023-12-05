@@ -232,7 +232,6 @@ auto PowerManager::begin() -> esp_err_t {
     attachInterrupt(
         digitalPinToInterrupt(USB_CONNECTED_PIN),
         [this]() {
-#if !DISABLE_POWER_MANAGEMENT
         DispatchGetCore1BackgroundQueue()->dispatch([this]() {
             if (USBConnected()) {
                 // If USB is connected, disable operation unless we've disabled this behavior
@@ -269,7 +268,6 @@ auto PowerManager::begin() -> esp_err_t {
                 }
             }
         });
-#endif
         },
         CHANGE);
 #endif

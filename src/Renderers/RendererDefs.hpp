@@ -192,7 +192,7 @@ struct Token {
     uint16_t pixWidth{};  // Width in pixels. Used with pictures and text tokens
     uint16_t pixHeight{}; // Height in pixels. Used with pictures tokens
     uint16_t length{};    // Length in bytes
-    TokenId tokenId;
+    TokenId tokenId{TokenId::TEXT};
     uint8_t spacesAfter{};
 };
 

@@ -301,6 +301,7 @@ auto WiFi::connectWiFi(const std::string &ssid, const std::string &password) -> 
         // We do not need to null terminate `wifi_config_t`'s `ssid` and `password` fields so we can
         // ignore warnings about potential null termination missing.
 #pragma GCC diagnostic push
+// NOLINTNEXTLINE(clang-diagnostic-unknown-warning-option)
 #pragma GCC diagnostic ignored "-Wstringop-truncation"
         strncpy((char *)wifiConfig.sta.ssid, ssid.c_str(), sizeof(wifiConfig.sta.ssid));
         strncpy((char *)wifiConfig.sta.password, password.c_str(), sizeof(wifiConfig.sta.password));

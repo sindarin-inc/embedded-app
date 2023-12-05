@@ -30,11 +30,11 @@ public:
     ReadablePlacemarksVector placemarks;
 
     std::string since;
-    ReadablesModelType modelType;
+    ReadablesModelType modelType = ReadablesModelType::Book;
     bool skipToc{};
     bool skipContent{};
     bool skipSummary{};
-    SyncReason syncReason;
+    SyncReason syncReason = SyncReason::Manual;
     uint8_t ptBattery{};
     uint8_t battery{};
     std::string ptBuild;

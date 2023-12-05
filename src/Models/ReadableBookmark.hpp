@@ -12,7 +12,7 @@ enum BookmarkStatus { BOOKMARK_OFF = 0, BOOKMARK_ON = 1 };
 struct LocalBookmark {
     std::shared_ptr<Place> firstPlace;
     std::shared_ptr<Place> lastPlace;
-    BookmarkStatus status;
+    BookmarkStatus status = BOOKMARK_OFF;
 };
 
 class ReadableBookmark : public JsonSerializable {

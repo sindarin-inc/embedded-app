@@ -44,7 +44,7 @@ protected:
     BLECharacteristic *currentStateCharacteristic_{};
     BLECharacteristic *errorStateCharacteristic_{};
     BLECharacteristic *rpcResultCharacteristic_{};
-    BLEImprovState state_;
+    BLEImprovState state_ = STATE_WAITING;
     improv::ImprovCommand lastCommand_;
 
     void setError(improv::Error error, bool notify = true);
