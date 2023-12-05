@@ -48,7 +48,7 @@ protected:
 
     class CharacteristicCallbacks : public BLECharacteristicCallbacks {
     public:
-        CharacteristicCallbacks() {}
+        CharacteristicCallbacks() = default;
 
         void onSubscribe(NimBLECharacteristic *characteristic, ble_gap_conn_desc *desc,
                          uint16_t subValue) override {
