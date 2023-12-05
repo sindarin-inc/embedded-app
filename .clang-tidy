@@ -114,6 +114,13 @@ Checks: >-
   -cppcoreguidelines-pro-type-vararg,
   -cppcoreguidelines-special-member-functions,
   google-readability-casting,
+  misc-*,
+  -misc-non-private-member-variables-in-classes,
+  -misc-unused-parameters,
+  -misc-static-assert,
+  -misc-no-recursion,
+  -misc-const-correctness,
+  -misc-misplaced-const,
 
 AnalyzeTemporaryDtors: false
 FormatStyle: file
