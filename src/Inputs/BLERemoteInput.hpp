@@ -21,8 +21,8 @@ public:
     auto getService() -> BLEService * { return service_; };
 
 protected:
-    BLECharacteristic *characteristic_;
-    BLEService *service_;
+    BLECharacteristic *characteristic_{};
+    BLEService *service_{};
     static std::shared_ptr<BLERemoteInput> instance;
 
     class CharacteristicCallbacks : public BLECharacteristicCallbacks {

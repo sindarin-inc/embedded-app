@@ -59,7 +59,7 @@ private:
     std::multimap<std::string, std::string, CaseInsensitive> responseHeaders_;
     bool gzip_;
     GZipStream gz_;
-    int gzUncompressedBytesRemaining_;
+    int gzUncompressedBytesRemaining_{};
 
     auto writeAvailableCompressedData() -> bool;
 };
