@@ -80,12 +80,13 @@ auto BLEHttpClient::fetchHeaders() -> int {
                 vTaskDelay(1000 / portTICK_PERIOD_MS);
             }
             xSemaphoreGive(requestCompleteSemaphore);
+            vTaskDelete(nullptr);
         };
         DispatchQueue::dispatchOneOff(waitForBLEConnect, 4000, 2, 1);
 
         // Wait for disk write to complete
-        auto timeout = 30000;
-        if (xSemaphoreTake(requestCompleteSemaphore, pdMS_TO_TICKS(timeout)) != pdTRUE) {
+        auto timeoutMs = 30000;
+        if (xSemaphoreTake(requestCompleteSemaphore, pdMS_TO_TICKS(timeoutMs)) != pdTRUE) {
             log_e("Timed out waiting for BLE to connect");
             vSemaphoreDelete(requestCompleteSemaphore);
             return -1;
