@@ -16,8 +16,8 @@
 
 class GUnzipStream : public RendererStream {
 public:
-    GUnzipStream(SFile gzFile, DocType docType = DocType::TXT)
-        : RendererStream(docType), gzFile_(std::move(gzFile)) {
+    GUnzipStream(const SFile &gzFile, DocType docType = DocType::TXT)
+        : RendererStream(docType), gzFile_(gzFile) {
         readSize();
         gunzip_.setCompressedSize(gzFile_.size());
     }

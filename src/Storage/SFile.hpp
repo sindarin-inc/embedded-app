@@ -31,7 +31,7 @@ public:
 class SStream {
 public:
     SStream() = default;
-    ~SStream() = default;
+    virtual ~SStream() = default;
 
     virtual auto write(uint8_t c) -> size_t = 0;
     auto write(const char *str) -> size_t {
@@ -71,6 +71,7 @@ class SFile : public SStream {
 public:
     SFile() : p_(nullptr) {}
     SFile(std::shared_ptr<SFileImpl> p) : p_(std::move(p)) {}
+    ~SFile() override = default;
 
     auto write(uint8_t c) -> size_t override;
     auto write(const uint8_t *buf, size_t size) -> size_t override;

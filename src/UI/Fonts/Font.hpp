@@ -11,6 +11,7 @@ private:
     FontType type_;
 
 public:
+    virtual ~Font() = default;
     [[nodiscard]] auto isA(FontType fontType) const -> bool { return fontType == type_; }
     [[nodiscard]] virtual auto lineHeight() const -> int = 0;
 
@@ -20,6 +21,7 @@ protected:
 
 class GFont : public Font {
 public:
+    ~GFont() override = default;
     const GFXfont *font;
 
     GFont(const GFXfont &gfxFont) : Font(FontType::GFX), font(&gfxFont) {}

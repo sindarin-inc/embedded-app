@@ -40,7 +40,7 @@ protected:
     class ServerCallbacks : public BLEServerCallbacks {
     public:
         BLEManager *enclosed;
-        ServerCallbacks(BLEManager *enclosure) { enclosed = enclosure; }
+        ServerCallbacks(BLEManager *enclosure) : enclosed(enclosure) {}
         void onConnect(BLEServer *server, ble_gap_conn_desc *desc) override {
             SHOW_HEAP();
             log_i("BLE client connected to our server!");

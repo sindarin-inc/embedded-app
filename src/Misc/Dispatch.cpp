@@ -28,10 +28,8 @@ static auto bounce(void *priv, PARAMS... params)
 
 DispatchQueue::DispatchQueue(std::string name, size_t threadCnt, size_t threadStackSize,
                              UBaseType_t priority, BaseType_t core)
-    : name_{std::move(name)}, threads_(threadCnt) {
+    : name_{std::move(name)}, threads_(threadCnt), notifyFlags_(xEventGroupCreate()) {
 
-    // Create the event flags
-    notifyFlags_ = xEventGroupCreate();
     assert(notifyFlags_ != nullptr && "Failed to create event group!");
 
     // Create the Queue

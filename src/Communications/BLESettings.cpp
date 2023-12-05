@@ -14,7 +14,7 @@
 
 #define SETTINGS_CHARACTERISTIC_UUID "611f68af-5ffe-4944-9b8f-ef6773326268"
 
-BLESettings::BLESettings(PreferencesStore *prefs) { this->prefs_ = prefs; }
+BLESettings::BLESettings(PreferencesStore *prefs) : prefs_(prefs) {}
 
 #if USE_TURN_TOUCH_REMOTE
 void BLESettings::attachTTRemoteInput(TTRemoteInput *ttRemoteInput) {

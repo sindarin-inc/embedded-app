@@ -10,8 +10,9 @@
 #include "sindarin-debug.h"
 
 HttpClient::HttpClient(const char *url, const char *contentType, esp_http_client_method_t method,
-                       bool gzip) {
-    url_ = strdup(url);
+                       bool gzip)
+    : url_(strdup(url)) {
+
     userAgent_ = StringFormat("SolReader/%s (%s)", SemanticVersionString(), GitVersionString());
 
     esp_http_client_config_t config{

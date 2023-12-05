@@ -31,6 +31,7 @@ public:
     BLEImprov()
         : BLECharacteristicProvider(), BLEServiceProvider(), characteristicCallbacks_(this){};
     BLEImprov(BLEImprov const &) = delete;
+    ~BLEImprov() override = default;
     void loop();
 
     void configureCharacteristics(BLEService *service) override;
@@ -54,7 +55,7 @@ protected:
     public:
         BLEImprov *enclosed;
 
-        CharacteristicCallbacks(BLEImprov *enclosure) { enclosed = enclosure; }
+        CharacteristicCallbacks(BLEImprov *enclosure) : enclosed(enclosure) {}
 
         void onWrite(BLECharacteristic *characteristic, ble_gap_conn_desc *desc) override {
             if (!BLEManager::getInstance()->checkAuthed(desc)) {

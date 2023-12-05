@@ -34,11 +34,8 @@ class Menu {
 
 public:
     Menu(MenuStyleFamily myStyle, std::string menuName = "Default")
-        : myStyle_(myStyle), menuName_(std::move(menuName)) {
-        numMenuItems_ = 0;
-    };
-
-    Menu() { numMenuItems_ = 0; };
+        : myStyle_(myStyle), menuName_(std::move(menuName)){};
+    Menu() = default;
     virtual ~Menu() = default;
 
     virtual void addMenuItem(const MenuItem &newItem);

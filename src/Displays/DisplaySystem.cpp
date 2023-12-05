@@ -170,7 +170,7 @@ void DisplaySystem::drawSingleLineOfText(const std::string &line, int x, int y, 
             ibmf_defs::Bitmap canvas{};
             canvas.pixels = canvasBuffer_;
             canvas.dim = ibmf_defs::Dim(canvasWidth_, canvasHeight_);
-            static_cast<IBMFFont *>(font_)->drawSingleLineOfText(
+            dynamic_cast<IBMFFont *>(font_)->drawSingleLineOfText(
                 canvas, Pos(xOffset(x), yOffset(y + getTextHeight() - lineSpacing_ - 3)), line,
                 inverted ? !invertedDisplay_ : invertedDisplay_);
             gfxClass_->endWrite();
@@ -190,7 +190,7 @@ void DisplaySystem::getTextSize(const std::string &buffer, uint16_t *w, uint16_t
             int16_t x, y;
             gfxClass_->getTextBounds(buffer.c_str(), 0, 0, &x, &y, w, h);
         } else {
-            Dim dim = static_cast<IBMFFont *>(font_)->getTextSize(buffer);
+            Dim dim = dynamic_cast<IBMFFont *>(font_)->getTextSize(buffer);
             *w = dim.width;
             *h = dim.height;
         }
@@ -207,7 +207,7 @@ auto DisplaySystem::getTextHeight(const std::string &buffer) -> int {
             uint16_t w;
             gfxClass_->getTextBounds(buffer.c_str(), 0, 0, &x, &y, &w, &h);
         } else {
-            h = static_cast<IBMFFont *>(font_)->getTextHeight(buffer);
+            h = dynamic_cast<IBMFFont *>(font_)->getTextHeight(buffer);
         }
     }
     return h;
@@ -221,7 +221,7 @@ auto DisplaySystem::getTextWidth(const std::string &buffer) -> int {
             uint16_t h;
             gfxClass_->getTextBounds(buffer.c_str(), 0, 0, &x, &y, &w, &h);
         } else {
-            w = static_cast<IBMFFont *>(font_)->getTextWidth(buffer);
+            w = dynamic_cast<IBMFFont *>(font_)->getTextWidth(buffer);
         }
     }
     return w;

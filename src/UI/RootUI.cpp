@@ -1321,7 +1321,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     debugSettingsMenu->addMenuItem(MenuItem("Set Vcom", [this, display, debugSettingsMenu]() {
         auto vcomMenu = new MenuScreen(power_.battery, *display, debugSettingsMenu->getMyStyle(),
                                        "Vcom Settings", "Debug Settings");
-        auto *driver = (static_cast<DisplayEinkET013TT1 *>(display))->getDriver();
+        auto *driver = (dynamic_cast<DisplayEinkET013TT1 *>(display))->getDriver();
         vcomMenu->addMenuItem(MenuItem("0V", [this, vcomMenu, driver]() {
             driver->setVcom(0);
             prefs_.vcom.set(0);

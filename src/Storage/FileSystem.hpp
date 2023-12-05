@@ -16,6 +16,7 @@ using FileList = SpiramVector<std::string>;
 class FileSystem {
 public:
     FileSystem(FileSystem const &) = delete;
+    virtual ~FileSystem() = default;
 
     // Note: Allocates the ContainerStream on the heap, make sure to `delete` it somewhere.
     auto newRendererStream(const char *path) -> std::shared_ptr<RendererStream>;

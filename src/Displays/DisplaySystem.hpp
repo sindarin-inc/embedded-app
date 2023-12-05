@@ -41,7 +41,7 @@ class DisplaySystem {
 public:
     DisplaySystem();
     DisplaySystem(DisplaySystem const &) = delete;
-    ~DisplaySystem() = default;
+    virtual ~DisplaySystem() = default;
 
     static constexpr DisplayRect MAX_BOUNDING_BOX = {5, 5, 246, 246};
     static constexpr DisplayRect MIN_BOUNDING_BOX = {0, 0, 125, 45};
@@ -100,8 +100,9 @@ public:
     void setFont(Font *f) {
         if (f != nullptr) {
             font_ = f;
-            if (font_->isA(FontType::GFX)) {
-                gfxClass_->setFont(static_cast<GFont *>(font_)->get());
+            auto gFont = dynamic_cast<GFont *>(font_);
+            if (gFont != nullptr) {
+                gfxClass_->setFont(gFont->get());
             }
         } else {
             log_e("Received a bad (null) font pointer!");
@@ -178,7 +179,7 @@ public:
     auto getTextWidth(const std::string &buffer) -> int;
 
     inline auto getTextWidthQuick(const char *buffer) -> int {
-        return static_cast<IBMFFont *>(font_)->getTextWidthQuick(buffer);
+        return dynamic_cast<IBMFFont *>(font_)->getTextWidthQuick(buffer);
     }
 
     // MARK: - Graphic drawing code

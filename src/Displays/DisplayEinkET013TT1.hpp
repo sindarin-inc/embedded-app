@@ -23,7 +23,7 @@ public:
     };
     DisplayEinkET013TT1(DisplayEinkET013TT1 const &) = delete;
 
-    ~DisplayEinkET013TT1() = default;
+    ~DisplayEinkET013TT1() override = default;
 
     auto setup() -> bool override;
 

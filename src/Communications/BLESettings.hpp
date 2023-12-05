@@ -18,6 +18,7 @@ class BLESettings : BLECharacteristicProvider {
 public:
     BLESettings(PreferencesStore *prefs);
     BLESettings(BLESettings const &) = delete;
+    ~BLESettings() override = default;
     void configureCharacteristics(BLEService *service) override;
 #if USE_TURN_TOUCH_REMOTE
     void attachTTRemoteInput(TTRemoteInput *ttRemoteInput);
@@ -46,7 +47,7 @@ protected:
     public:
         BLESettings *enclosed;
 
-        CharacteristicCallbacks(BLESettings *enclosure) { enclosed = enclosure; }
+        CharacteristicCallbacks(BLESettings *enclosure) : enclosed(enclosure) {}
 
         void onWrite(NimBLECharacteristic *characteristic, ble_gap_conn_desc *desc) override {
             std::string value = characteristic->getValue();

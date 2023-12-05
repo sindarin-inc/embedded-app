@@ -13,6 +13,7 @@ class BLERemoteInput : public RemoteInput, public BLECharacteristicProvider {
 public:
     BLERemoteInput() = default;
     BLERemoteInput(BLERemoteInput const &) = delete;
+    ~BLERemoteInput() override = default;
     void configureCharacteristics(BLEService *service) override;
 
 protected:
@@ -20,7 +21,7 @@ protected:
     public:
         BLERemoteInput *enclosed;
 
-        CharacteristicCallbacks(BLERemoteInput *enclosure) { enclosed = enclosure; }
+        CharacteristicCallbacks(BLERemoteInput *enclosure) : enclosed(enclosure) {}
 
         void onWrite(NimBLECharacteristic *characteristic, ble_gap_conn_desc *desc) override {
             if (!BLEManager::getInstance()->checkAuthed(desc)) {

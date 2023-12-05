@@ -10,7 +10,7 @@ BatteryScreen::BatteryScreen(DisplaySystem &display, PreferencesStore &prefs, Ba
     : display_(display), prefs_(prefs), battery_(battery) {
 
 #if EINKET013TT1
-    auto *driver = (static_cast<DisplayEinkET013TT1 *>(&display))->getDriver();
+    auto *driver = (dynamic_cast<DisplayEinkET013TT1 *>(&display))->getDriver();
     leftTemp_ = driver->readTemperature(ScreenSide::Left);
     rightTemp_ = driver->readTemperature(ScreenSide::Right);
 #else

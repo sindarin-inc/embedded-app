@@ -181,6 +181,7 @@ public:
         PrefsItem(PreferencesStore &prefs, const char *key) : PrefsItemBase<T>(prefs) {
             strncpy(this->key_, key, sizeof(this->key_));
         }
+        virtual ~PrefsItem() = default;
 
         virtual void loadValue() {
             T value;
