@@ -128,7 +128,7 @@ auto PosixFileSystem::removeDir(const std::string &path) -> bool {
     }
 
     // now remove this directory
-    if (path.size() == 0) {
+    if (path.empty()) {
         return true;
     }
 

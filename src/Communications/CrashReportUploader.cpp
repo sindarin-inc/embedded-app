@@ -34,7 +34,7 @@ void CrashUploader::uploadCrash(
         FileList coreDumpFiles;
         fileSystem_.listDir("/coredumps", coreDumpFiles);
 
-        if (coreDumpFiles.size() == 0) {
+        if (coreDumpFiles.empty()) {
             log_i("no core dump found");
             progressCallback(CrashUploadState{.state = CrashUploadState::State::NoCrashReport});
             return;

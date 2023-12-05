@@ -132,7 +132,7 @@ void MainMenuScreen::render(DisplaySystem &display) {
     if (firstLoad_) {
         setNeedsLayout();
 
-        if (topBarViews_.size() == 0) {
+        if (topBarViews_.empty()) {
             for (auto &subMenu : subMenus_) {
                 auto topBarView =
                     std::make_shared<SingleLineTextView>(display, subMenu->getMenuName());

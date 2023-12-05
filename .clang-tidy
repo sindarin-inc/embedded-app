@@ -121,6 +121,16 @@ Checks: >-
   -misc-no-recursion,
   -misc-const-correctness,
   -misc-misplaced-const,
+  readability-misleading-indentation,
+  -readability-avoid-const-params-in-decls,
+  readability-const-return-type,
+  readability-container-contains,
+  readability-container-data-pointer,
+  readability-container-size-empty,
+  -readability-convert-member-functions-to-static,
+  readability-delete-null-pointer,
+  readability-duplicate-include,
+
 
 AnalyzeTemporaryDtors: false
 FormatStyle: file

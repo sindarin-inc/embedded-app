@@ -33,7 +33,7 @@ void LineMenuScreen::drawInRect(Rect rect) {
 }
 
 void LineMenuScreen::render(DisplaySystem &display) {
-    if (menuItemViews_.size() <= 0) {
+    if (menuItemViews_.empty()) {
         log_w("No views to draw in LineMenuScreen");
     }
 

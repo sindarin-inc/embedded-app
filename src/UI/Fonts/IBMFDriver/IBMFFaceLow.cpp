@@ -138,9 +138,9 @@ auto IBMFFaceLow::ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2, FIX
     Glyph glyph1{};
     bool result = getGlyph(glyphCode1, glyph1, true, true, Pos(0, i1.verticalOffset));
     if (!result) {
-        if (glyph1.bitmap.pixels != nullptr) {
-            delete[] glyph1.bitmap.pixels;
-        }
+
+        delete[] glyph1.bitmap.pixels;
+
         LOGE("Unable to load glyphCode %d related glyph bitmap.", glyphCode1);
         return false;
     }
@@ -148,12 +148,11 @@ auto IBMFFaceLow::ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2, FIX
     Glyph glyph2{};
     result = getGlyph(*glyphCode2, glyph2, true, true, Pos(0, i2.verticalOffset));
     if (!result) {
-        if (glyph1.bitmap.pixels != nullptr) {
-            delete[] glyph1.bitmap.pixels;
-        }
-        if (glyph2.bitmap.pixels != nullptr) {
-            delete[] glyph2.bitmap.pixels;
-        }
+
+        delete[] glyph1.bitmap.pixels;
+
+        delete[] glyph2.bitmap.pixels;
+
         LOGE("Unable to load glyphCode %d related glyph bitmap.", *glyphCode2);
         return false;
     }
@@ -406,12 +405,10 @@ auto IBMFFaceLow::ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2, FIX
                          MAKE_INT_FIXED(i2.bitmapWidth))) -
               MAKE_INT_FIXED(normalDistance);
 
-    if (glyph1.bitmap.pixels != nullptr) {
-        delete[] glyph1.bitmap.pixels;
-    }
-    if (glyph2.bitmap.pixels != nullptr) {
-        delete[] glyph2.bitmap.pixels;
-    }
+    delete[] glyph1.bitmap.pixels;
+
+    delete[] glyph2.bitmap.pixels;
+
     // }
 
     *kern = static_cast<FIX16>(kerning >> 4); // Convert to FIX16

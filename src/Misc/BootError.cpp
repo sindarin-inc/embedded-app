@@ -16,7 +16,7 @@ void BlinkBootErrors(const std::vector<BootError> &bootErrors) {
 
     // Blink out error codes:
     // TODO: How to cross-platfomr this?
-    if (bootErrors.size() == 0) {
+    if (bootErrors.empty()) {
         DigitalWrite(GREEN_LED, LED_ON);
         Delay(100);
         DigitalWrite(GREEN_LED, LED_OFF);

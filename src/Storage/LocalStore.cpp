@@ -85,7 +85,7 @@ auto LocalStore::loadReadablesFromFile(ReadablesVector &readables, const std::st
         }
         int fileSize = readableGetUncompressedSize(readable, path, size);
 
-        if (fileSize >= 0 && readable->files.size() && fileSize != readable->file(path).size) {
+        if (fileSize >= 0 && !readable->files.empty() && fileSize != readable->file(path).size) {
             log_w("File size mismatch for %s (%d on disk vs %d in local store), ignoring",
                   path.c_str(), fileSize, readable->file(path).size);
             continue;
@@ -126,7 +126,7 @@ auto LocalStore::isReadableUnchanged(const ReadablesVector &readables,
             }
 
             // If we have a file object, check that the size matches
-            if (r->files.size() > 0 && !ignoreFileSizeCheck) {
+            if (!r->files.empty() && !ignoreFileSizeCheck) {
                 if (fileSize >= 0 && fileSize != readable->file().size) {
                     log_w("File size mismatch for %s (%d on disk vs %d in local store), ignoring",
                           path.c_str(), fileSize, readable->file().size);
@@ -741,7 +741,7 @@ void LocalStore::syncFromRemote(
                       readablesToDelete.size());
                 nextPageUrl = checkSyncResponse.nextPageUrl;
 
-                if (checkSyncResponse.timezone.size()) {
+                if (!checkSyncResponse.timezone.empty()) {
                     SolClock::getInstance().setTimezone(checkSyncResponse.timezone);
                 }
 
@@ -763,7 +763,7 @@ void LocalStore::syncFromRemote(
                 }
 
                 // Check if we have any readables to download/delete, and if not, continue paging
-                if (readablesToDelete.size() == 0 && readablesToDownload.size() == 0) {
+                if (readablesToDelete.empty() && readablesToDownload.empty()) {
                     log_i("No %ss to download or delete, continuing to next page",
                           ReadableModelTypeToString(modelType).c_str());
                     continue;
@@ -804,11 +804,11 @@ void LocalStore::syncFromRemote(
                                                         : checkSyncResponse.articlesSince.c_str());
             std::string serverSince;
             if (!failedDownload) {
-                if (checkSyncResponse.booksSince != "") {
+                if (!checkSyncResponse.booksSince.empty()) {
                     this->prefs_.lastBooksSince.set(checkSyncResponse.booksSince.c_str());
                     serverSince = checkSyncResponse.booksSince;
                 }
-                if (checkSyncResponse.articlesSince != "") {
+                if (!checkSyncResponse.articlesSince.empty()) {
                     this->prefs_.lastArticlesSince.set(checkSyncResponse.articlesSince.c_str());
                     serverSince = checkSyncResponse.articlesSince;
                 }
@@ -953,7 +953,7 @@ auto LocalStore::processReadableDownload(
     int totalCount) -> bool {
     bool failedDownload = false;
 
-    if (readablesToDownload.size() == 0) {
+    if (readablesToDownload.empty()) {
         return failedDownload;
     }
 
@@ -1159,7 +1159,7 @@ void LocalStore::sortReadables(ReadablesVector &readables) {
 void LocalStore::purgeReadableToc(const std::shared_ptr<Readable> &readable) {
     // Delete the TOC files so they can be re-saved with updated copies
     auto tocPath = readable->tocFilePath();
-    if (tocPath.size()) {
+    if (!tocPath.empty()) {
         log_i("Removing TOC for %s: %s", readable->title.c_str(), tocPath.c_str());
         fileSystem.remove(tocPath);
     }
@@ -1258,7 +1258,7 @@ auto LocalStore::readableFilePathForReading(FileSystem &fileSystem,
 
     if (type == "book") {
         // Previously we also stored books in the root directory
-        if (readable->files.size() > 0) {
+        if (!readable->files.empty()) {
             path = StringFormat("/%s.epub", readable->file().name.c_str());
             size = fileSystem.size(path);
             if (size != 0) {
@@ -1345,7 +1345,7 @@ void LocalStore::readableFilePurge(const std::shared_ptr<Readable> &readable) {
     fileSystem.remove(StringFormat("/toc/%s-toc.json", uuid.c_str()));
     fileSystem.remove(StringFormat("/summary/%s-summary.json", uuid.c_str()));
 
-    if (readable->files.size() > 0) {
+    if (!readable->files.empty()) {
         fileSystem.remove(StringFormat("/%s.epub", readable->file().name.c_str()));
         fileSystem.remove(StringFormat("/%s.gz", readable->file().name.c_str()));
         fileSystem.remove(StringFormat("/%s", readable->file().name.c_str()));

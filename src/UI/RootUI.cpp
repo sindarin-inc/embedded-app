@@ -270,7 +270,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     }
 
     // If there are no books, show the Sync Content item in the books tab.
-    if (readables.size() == 0) {
+    if (readables.empty()) {
         booksMenu->addMenuItem(
             MenuItem("Sync Content", [this, display, &localStore, mainMenu, &lightingController]() {
                 auto contentSyncScreen =
@@ -348,7 +348,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     }
 
     // If there are no articles, show the Sync Content item in the articles tab.
-    if (articles.size() == 0) {
+    if (articles.empty()) {
         articlesMenu->addMenuItem(
             MenuItem("Sync Content", [this, display, &localStore, mainMenu, &lightingController]() {
                 auto contentSyncScreen =

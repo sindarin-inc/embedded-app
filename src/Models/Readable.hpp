@@ -105,7 +105,7 @@ public:
         -> std::unordered_map<std::string, TelemetryVariant>;
 
     [[nodiscard]] auto authorString() const -> SpiramString {
-        if (authors.size() == 0) {
+        if (authors.empty()) {
             log_w("Blank author for %s", title.c_str());
             return "";
         }

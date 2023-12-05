@@ -200,7 +200,7 @@ void TTRemoteInput::scanForNewDevice() {
         log_i("Scan complete. Found %zu PageTurner devices (%d total BLE devices)",
               filteredDevices.size(), results.getCount());
 
-        if (filteredDevices.size() == 0) {
+        if (filteredDevices.empty()) {
             return;
         }
         for (auto advertisedDevice : filteredDevices) {

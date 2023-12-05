@@ -272,7 +272,7 @@ auto EPubFile::hasSummary(const std::string &chapterId) -> bool {
 
     // Walk the chapters backwards in the spine to see if the chapter id matches
     auto summaryChapterHref = opf_->getHrefByManifestId(summaryId);
-    if (summaryChapterHref == "") {
+    if (summaryChapterHref.empty()) {
         return false;
     }
     auto summaryChapterIdx = opf_->getChapterIdx(summaryChapterHref);
@@ -344,7 +344,7 @@ auto EPubFile::getSummaryContent(
                 opf_->getManifestIdByHref(static_cast<std::string>(chapter.href));
             std::string currentSummaryPath =
                 opf_->getHrefByManifestId("summary-" + currentChapterId);
-            if (currentSummaryPath == "") {
+            if (currentSummaryPath.empty()) {
                 log_w("No summary for %s", chapter.href.c_str());
                 continue;
             }
@@ -388,7 +388,7 @@ auto EPubFile::hasDictionary(const std::string &chapterId) -> bool {
 
     // Walk the chapters backwards in the spine to see if the chapter id matches
     auto dictionaryChapterHref = opf_->getHrefByManifestId(dictionaryId);
-    if (dictionaryChapterHref == "") {
+    if (dictionaryChapterHref.empty()) {
         return false;
     }
     auto dictionaryChapterIdx = opf_->getChapterIdx(dictionaryChapterHref);
@@ -537,7 +537,7 @@ auto EPubFile::open() -> bool {
     //     log_i("Rootfile path: %s", path.c_str());
     // }
 
-    if (manifest.rootfilePaths.size() == 0) {
+    if (manifest.rootfilePaths.empty()) {
         log_e("No rootfile paths found");
         return false;
     } else if (manifest.rootfilePaths.size() > 1) {

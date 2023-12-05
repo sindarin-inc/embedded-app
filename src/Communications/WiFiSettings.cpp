@@ -33,7 +33,7 @@ void WiFiSettings::load() {
     }
     loaded_ = true;
     std::string settingsString = prefs.wifiSettingsJson.get().value_or("");
-    if (settingsString.size() == 0) {
+    if (settingsString.empty()) {
         // no json, no settings to load
         return;
     }
