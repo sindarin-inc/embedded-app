@@ -45,6 +45,7 @@ auto BLEHttpClient::write(const char *body, int length) -> int {
 }
 
 auto BLEHttpClient::fetchHeaders() -> int {
+    auto timeoutMs = 30000;
     statusCode_ = 0;
     responseFetched_ = false;
     responseBody_ = "";
@@ -64,37 +65,20 @@ auto BLEHttpClient::fetchHeaders() -> int {
         bleManager_->startAdvertisingIfNecessary();
     };
 
-    // Create semaphore to wait for BLE to connect
-    SemaphoreHandle_t requestCompleteSemaphore = xSemaphoreCreateBinary();
-    if (requestCompleteSemaphore == nullptr) {
-        log_e("Failed to create semaphore");
-        return -1;
-    }
-
     // If not connected, wait up to 30s to ensure BLE is connected. If not, bail.
     if (!connected) {
-        // Wait for BLE to connect
-        auto waitForBLEConnect = [this, requestCompleteSemaphore]() {
-            while (!connected) {
-                log_d("Waiting for BLE to connect...");
-                vTaskDelay(1000 / portTICK_PERIOD_MS);
+        auto start = esp_timer_get_time();
+        while (!connected) {
+            if (esp_timer_get_time() - start > static_cast<long long>(timeoutMs) * 1000) {
+                log_e("Timed out waiting for BLE proxy to connect");
+                return -1;
             }
-            xSemaphoreGive(requestCompleteSemaphore);
-            vTaskDelete(nullptr);
-        };
-        DispatchQueue::dispatchOneOff(waitForBLEConnect, 4000, 2, 1);
-
-        // Wait for disk write to complete
-        auto timeoutMs = 30000;
-        if (xSemaphoreTake(requestCompleteSemaphore, pdMS_TO_TICKS(timeoutMs)) != pdTRUE) {
-            log_e("Timed out waiting for BLE to connect");
-            vSemaphoreDelete(requestCompleteSemaphore);
-            return -1;
+            log_d("Waiting for BLE to connect...");
+            vTaskDelay(1000 / portTICK_PERIOD_MS);
         }
     }
 
     // Now that we're connected to a mobile app, we can send the request
-    vSemaphoreDelete(requestCompleteSemaphore);
     // Register web request handler which receives the response from the mobile app
     bleProxy_->registerWebRequestHandler([this](const SpiramString &key, const SpiramString &body) {
         return this->handleWebRequest(key, body);
@@ -113,12 +97,11 @@ auto BLEHttpClient::fetchHeaders() -> int {
     bleProxy_->writeBody(requestBody_);
 
     // Wait for response up to 30s
-    auto timeout = 30000;
     auto startTime = esp_timer_get_time();
     while (!responseFetched_) {
         vTaskDelay(100 / portTICK_PERIOD_MS);
         auto currentTime = esp_timer_get_time();
-        if (currentTime - startTime > static_cast<long long>(timeout) * 1000) {
+        if (currentTime - startTime > static_cast<long long>(timeoutMs) * 1000) {
             log_e("Timed out waiting for response");
             return -1;
         }
