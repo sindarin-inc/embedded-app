@@ -27,7 +27,7 @@ enum BLEImprovState : uint8_t {
 
 class BLEImprov : public BLECharacteristicProvider, public BLEServiceProvider {
 public:
-    BLEImprov() : BLECharacteristicProvider(), BLEServiceProvider(), characteristicCallbacks_(){};
+    BLEImprov() : BLECharacteristicProvider(), BLEServiceProvider(){};
     BLEImprov(BLEImprov const &) = delete;
     ~BLEImprov() override = default;
 

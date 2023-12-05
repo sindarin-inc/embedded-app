@@ -13,7 +13,7 @@ using SubscriptionStatusCallback = std::function<void(bool)>;
 
 class BLEProxy : BLECharacteristicProvider {
 public:
-    BLEProxy() : characteristicCallbacks_() {}
+    BLEProxy() = default;
     BLEProxy(BLEProxy const &) = delete;
     ~BLEProxy() override = default;
 
