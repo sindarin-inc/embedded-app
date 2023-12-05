@@ -138,7 +138,7 @@ void LightingController::checkAmbientLight(int fadeMs, int timeoutMs) {
     }
 
     // Clamp to a max value of 1000 to avoid the moving average getting too large
-    movingAverage_.add(std::min(channel1, uint16_t(1000)));
+    movingAverage_.add(std::min(channel1, static_cast<uint16_t>(1000)));
     auto average = movingAverage_.average();
 
     int newDutyCycle = MapRange(average, 0, 1000, static_cast<int>(GetMinLightingDutyCycle()),

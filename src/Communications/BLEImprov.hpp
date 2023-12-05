@@ -68,11 +68,11 @@ protected:
                 std::byte bytes[value.length()];
                 memcpy(bytes, value.data(), value.length());
 
-                improv::ImprovCommand command =
-                    improv::parse_improv_data((uint8_t *)value.c_str(), value.length());
+                improv::ImprovCommand command = improv::parse_improv_data(
+                    reinterpret_cast<const uint8_t *>(value.c_str()), value.length());
                 std::string commandStr;
                 for (int i = 0; i < value.length(); i++) {
-                    commandStr += std::to_string((int)bytes[i]);
+                    commandStr += std::to_string(static_cast<int>(bytes[i]));
                     commandStr += " ";
                 }
                 log_d("onWrite for Improv Characteristic %s", commandStr.c_str());

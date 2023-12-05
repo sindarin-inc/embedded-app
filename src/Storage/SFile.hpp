@@ -38,7 +38,7 @@ public:
         if (str == nullptr) {
             return 0;
         }
-        return write((const uint8_t *)str, strlen(str));
+        return write(reinterpret_cast<const uint8_t *>(str), strlen(str));
     }
 
     virtual auto write(const uint8_t *buf, size_t size) -> size_t = 0;
@@ -48,7 +48,7 @@ public:
         std::string ret;
         int c = read();
         while (c >= 0) {
-            ret += (char)c;
+            ret += static_cast<char>(c);
             c = read();
         }
         return ret;
@@ -61,7 +61,7 @@ public:
             if (value <= 0 || value == terminator) {
                 return res;
             }
-            res += (char)value;
+            res += static_cast<char>(value);
         }
         return res;
     }

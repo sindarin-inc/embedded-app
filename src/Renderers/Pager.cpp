@@ -72,8 +72,9 @@ auto Pager::addLastTokenToPage(bool dontStop) -> bool {
             lines_[linesTailIdx_].length += token.length;
         }
 
-        if ((uint16_t)token.tokenId & ((uint16_t)TokenId::TEXT | (uint16_t)TokenId::ITEXT |
-                                       (uint16_t)TokenId::HTEXT | (uint16_t)TokenId::NTEXT)) {
+        if (static_cast<uint16_t>(token.tokenId) &
+            (static_cast<uint16_t>(TokenId::TEXT) | static_cast<uint16_t>(TokenId::ITEXT) |
+             static_cast<uint16_t>(TokenId::HTEXT) | static_cast<uint16_t>(TokenId::NTEXT))) {
             wordCount_ += 1;
         }
     } break;
@@ -247,9 +248,9 @@ auto Pager::computeWordCount() const -> uint16_t {
             tokens_.addToTokenIdx(lines_[lastLineIdx].tokenIdx, lines_[lastLineIdx].tokenCount);
         for (Idx tokenIdx = firstTokenIdx; tokenIdx != lastTokenIdx;
              tokens_.nextTokenIdx(tokenIdx)) {
-            if ((uint16_t)tokens_[tokenIdx].tokenId &
-                ((uint16_t)TokenId::TEXT | (uint16_t)TokenId::ITEXT | (uint16_t)TokenId::HTEXT |
-                 (uint16_t)TokenId::NTEXT)) {
+            if (static_cast<uint16_t>(tokens_[tokenIdx].tokenId) &
+                (static_cast<uint16_t>(TokenId::TEXT) | static_cast<uint16_t>(TokenId::ITEXT) |
+                 static_cast<uint16_t>(TokenId::HTEXT) | static_cast<uint16_t>(TokenId::NTEXT))) {
                 wordCount += 1;
             }
         }
@@ -274,7 +275,8 @@ void Pager::getLine(LineInfo &lineStruct, Line &line) const {
          tokens_.nextTokenIdx(tokenIdx)) {
 
         auto tokenId = tokens_[tokenIdx].tokenId;
-        if (((uint16_t)tokenId & ((uint16_t)TokenId::NEWLINE | (uint16_t)TokenId::ENDPARAGRAPH)) ==
+        if ((static_cast<uint16_t>(tokenId) & (static_cast<uint16_t>(TokenId::NEWLINE) |
+                                               static_cast<uint16_t>(TokenId::ENDPARAGRAPH))) ==
             0) {
             if (tokens_[tokenIdx].cStr != nullptr) {
                 // strcat(line.data(), tokens_[tokenIdx].cStr);
@@ -505,8 +507,9 @@ void Pager::show() const {
                 tokens_.addToTokenIdx(lines_[lineIdx].tokenIdx, lines_[lineIdx].tokenCount);
             for (Idx tokenIdx = lines_[lineIdx].tokenIdx; tokenIdx != lastTokenIdx;
                  tokens_.nextTokenIdx(tokenIdx)) {
-                if (((uint16_t)tokens_[tokenIdx].tokenId &
-                     ((uint16_t)TokenId::NEWLINE | (uint16_t)TokenId::ENDPARAGRAPH)) == 0) {
+                if ((static_cast<uint16_t>(tokens_[tokenIdx].tokenId) &
+                     (static_cast<uint16_t>(TokenId::NEWLINE) |
+                      static_cast<uint16_t>(TokenId::ENDPARAGRAPH))) == 0) {
                     std::cout << tokens_[tokenIdx].cStr;
                     if (tokens_[tokenIdx].spacesAfter) {
                         std::cout << " ";

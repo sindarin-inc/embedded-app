@@ -212,7 +212,7 @@ void DumpNVS() {
                 log_e("NVS error: %s", esp_err_to_name(result));
                 continue;
             }
-            auto *blob = (uint8_t *)malloc(blobSize);
+            auto *blob = static_cast<uint8_t *>(malloc(blobSize));
             result = nvs_get_blob(nvsHandle, info.key, blob, &blobSize);
             if (result != ESP_OK) {
                 log_e("NVS error: %s", esp_err_to_name(result));

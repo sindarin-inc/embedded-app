@@ -111,7 +111,8 @@ private:
             std::string path = Telemetry::metricLogPath();
             SFile file = fileSystem_.open(path, FILE_APPEND);
             if (file.size() < MAX_TELEMETRY_LOG_SIZE) {
-                file.write((const uint8_t *)logString.c_str(), logString.length());
+                file.write(reinterpret_cast<const uint8_t *>(logString.c_str()),
+                           logString.length());
                 file.write('\n');
                 file.flush();
                 file.close();

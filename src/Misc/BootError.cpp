@@ -9,8 +9,8 @@
 
 void BlinkBootErrors(const std::vector<BootError> &bootErrors) {
     // Un-hold the GPIOs (may have been held because the USB was connected)
-    gpio_hold_dis((gpio_num_t)GREEN_LED);
-    gpio_hold_dis((gpio_num_t)RED_LED);
+    gpio_hold_dis(static_cast<gpio_num_t>(GREEN_LED));
+    gpio_hold_dis(static_cast<gpio_num_t>(RED_LED));
     DigitalWrite(RED_LED, LED_OFF);
     DigitalWrite(GREEN_LED, LED_OFF);
 

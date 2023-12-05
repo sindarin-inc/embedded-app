@@ -30,7 +30,7 @@ inline auto GateSelectL(uint8_t i) -> uint16_t {
     if (i >= 8) {
         return 0;
     } else {
-        return ((uint16_t)0xC0 >> ((i % 4) * 2)) << ((i / 4) * 8);
+        return (static_cast<uint16_t>(0xC0) >> ((i % 4) * 2)) << ((i / 4) * 8);
     }
 }
 
@@ -44,7 +44,7 @@ inline auto GateSelectH(uint8_t i) -> uint16_t {
         return 0;
     } else {
         i -= 8;
-        return ((uint16_t)0xC0 >> ((i % 4) * 2)) << ((i / 4) * 8);
+        return (static_cast<uint16_t>(0xC0) >> ((i % 4) * 2)) << ((i / 4) * 8);
     }
 }
 
@@ -60,7 +60,7 @@ inline auto GateBlockL(uint8_t i) -> uint32_t {
     if (i >= 16) {
         return 0;
     } else {
-        return ((uint32_t)0x03000000 << ((i % 4) * 2)) >> ((i / 4) * 8);
+        return (static_cast<uint32_t>(0x03000000) << ((i % 4) * 2)) >> ((i / 4) * 8);
     }
 }
 
@@ -77,7 +77,7 @@ inline auto GateBlockH(uint8_t i) -> uint32_t {
         return 0;
     } else {
         i -= 16;
-        return ((uint32_t)0xC0 >> ((i % 4) * 2)) << ((i / 4) * 8);
+        return (static_cast<uint32_t>(0xC0) >> ((i % 4) * 2)) << ((i / 4) * 8);
     }
 }
 
@@ -236,11 +236,11 @@ void EinkET013TT1::updateInternal(const EinkET013TT1Waveform &waveform, const ui
     } else {
         memcpy(borderSettings, BORDER_TEMPLATE, 4);
     }
-    auto *gateBlockLow = (uint32_t *)&(scanLine[4]);
-    auto *gateSelectLow = (uint16_t *)&(scanLine[8]);
+    auto *gateBlockLow = reinterpret_cast<uint32_t *>(&(scanLine[4]));
+    auto *gateSelectLow = reinterpret_cast<uint16_t *>(&(scanLine[8]));
     uint8_t *sourceData = &(scanLine[10]);
-    auto *gateSelectHigh = (uint16_t *)&(scanLine[42]);
-    auto *gateBlockHigh = (uint32_t *)&(scanLine[44]);
+    auto *gateSelectHigh = reinterpret_cast<uint16_t *>(&(scanLine[42]));
+    auto *gateBlockHigh = reinterpret_cast<uint32_t *>(&(scanLine[44]));
 
     log_d("Updating display with waveform \"%s\"", waveform.name);
 
@@ -452,7 +452,7 @@ void EinkET013TT1::writeRegister(Register index, const uint8_t *data, size_t len
         log_w("writeRegister called from outside of einkQueue_");
     }
     spi_transaction_t t = {
-        .cmd = (uint16_t)((0x70 << 8) | (index & 0x0F)), // 0x70 is the command prefix
+        .cmd = static_cast<uint16_t>((0x70 << 8) | (index & 0x0F)), // 0x70 is the command prefix
         .length = len * 8,
         .tx_buffer = data};
 
@@ -470,7 +470,7 @@ auto EinkET013TT1::readRegister(uint8_t index, ScreenSide screen) -> uint8_t {
         log_w("readRegister called from outside of einkQueue_");
     }
     ESP_ERROR_CHECK(spi_device_acquire_bus(spiHigh_, portMAX_DELAY));
-    spi_transaction_t t = {.cmd = (uint16_t)((0x70 << 8) | (index & 0x0F))};
+    spi_transaction_t t = {.cmd = static_cast<uint16_t>((0x70 << 8) | (index & 0x0F))};
     // TODO: Hardcoding reading to the left one for now
     setCS(LOW, screen);
     ESP_ERROR_CHECK(spi_device_polling_transmit(spiHigh_, &t));
@@ -502,7 +502,7 @@ auto EinkET013TT1::readTemperature(ScreenSide screen) -> int16_t {
 
     if (value >= 0x76) {
         value |= 0x80;
-        return (int16_t)((int8_t)value * 2);
+        return static_cast<int16_t>(static_cast<int8_t>(value) * 2);
     } else if (value <= 0x22) {
         return value * 2;
     }

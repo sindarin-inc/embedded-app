@@ -13,7 +13,7 @@ public:
     ~MultiPartData() { tempFile_.close(); }
 
     auto addKeyValue(const std::string &key, const std::string &value) -> bool;
-    auto addKeyValue(const std::string &key, uint8_t *value, int len, bool isFile) -> bool;
+    auto addKeyValue(const std::string &key, const uint8_t *value, int len, bool isFile) -> bool;
     auto startFile(const std::string &key) -> bool;
     auto writeFileChunk(uint8_t *chunk, int len) -> bool;
     auto endFile() -> bool;

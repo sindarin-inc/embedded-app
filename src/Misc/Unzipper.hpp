@@ -111,10 +111,10 @@ private:
 
     // As long as we are operating as little endian, the following is ok
     [[nodiscard]] inline auto getuint32(const uint8_t *b) const -> uint32_t {
-        return *(uint32_t *)b;
+        return *reinterpret_cast<uint32_t *>(const_cast<uint8_t *>(b));
     }
     [[nodiscard]] inline auto getuint16(const uint8_t *b) const -> uint16_t {
-        return *(uint16_t *)b;
+        return *reinterpret_cast<uint16_t *>(const_cast<uint8_t *>(b));
     }
 
     auto cleanFilePath(const char *filePath) -> std::string;

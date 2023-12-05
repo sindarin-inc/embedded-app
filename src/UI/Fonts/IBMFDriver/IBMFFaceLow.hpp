@@ -35,9 +35,11 @@ public:
 
     ~IBMFFaceLow() = default;
 
-    inline static auto fromFIX16(FIX16 val) -> float { return (float)val / 64.0; }
-    inline static auto toFIX16(float val) -> FIX16 { return (FIX16)(val * 64.0); }
-    inline static auto fromFIX14(FIX14 val) -> float { return (float)toFIX16(val) / 64.0; }
+    inline static auto fromFIX16(FIX16 val) -> float { return static_cast<float>(val) / 64.0; }
+    inline static auto toFIX16(float val) -> FIX16 { return static_cast<FIX16>(val * 64.0); }
+    inline static auto fromFIX14(FIX14 val) -> float {
+        return static_cast<float>(toFIX16(val)) / 64.0;
+    }
 
     // ---
 
@@ -48,7 +50,7 @@ public:
     [[nodiscard]] inline auto getLineHeight() const -> uint16_t { return faceHeader_->lineHeight; }
     [[nodiscard]] inline auto getEmHeight() const -> uint16_t { return faceHeader_->emHeight >> 6; }
     [[nodiscard]] inline auto getDescenderHeight() const -> int16_t {
-        return -(int16_t)faceHeader_->descenderHeight;
+        return -static_cast<int16_t>(faceHeader_->descenderHeight);
     }
     [[nodiscard]] inline auto getLigKernStep(uint16_t idx) const -> LigKernStep * {
         return &(*ligKernSteps_)[idx];

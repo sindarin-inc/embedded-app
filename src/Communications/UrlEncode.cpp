@@ -5,13 +5,13 @@
 
 auto H2int(char c) -> unsigned char {
     if (c >= '0' && c <= '9') {
-        return ((unsigned char)c - '0');
+        return (static_cast<unsigned char>(c) - '0');
     }
     if (c >= 'a' && c <= 'f') {
-        return ((unsigned char)c - 'a' + 10);
+        return (static_cast<unsigned char>(c) - 'a' + 10);
     }
     if (c >= 'A' && c <= 'F') {
-        return ((unsigned char)c - 'A' + 10);
+        return (static_cast<unsigned char>(c) - 'A' + 10);
     }
     return (0);
 }

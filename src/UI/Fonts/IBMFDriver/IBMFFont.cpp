@@ -14,7 +14,7 @@ auto IBMFFont::ligKernUTF8Map(const std::string &line, LigKernMappingHandler han
                 wasEndOfWord = false;
                 firstWordChar = true;
             }
-            kern = (FIX16)0;
+            kern = static_cast<FIX16>(0);
 
             // Ligature loop for glyphCode1
             while (font_->getFace(faceIndex_)->ligKern(glyphCode1, &glyphCode2, &kern)) {

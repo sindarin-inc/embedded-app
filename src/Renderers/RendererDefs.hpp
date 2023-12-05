@@ -130,9 +130,10 @@ static const char *TokenIdStr[] = {"TEXT",    "ITEXT",        "HTEXT",    "NTEXT
 #endif
 
 // BitMask of all token ids that are using the pool space
-static const uint16_t POOL_TOKENS = (uint16_t)TokenId::TEXT | (uint16_t)TokenId::ITEXT |
-                                    (uint16_t)TokenId::HTEXT | (uint16_t)TokenId::PICTURE |
-                                    (uint16_t)TokenId::EPICTURE;
+static const uint16_t POOL_TOKENS =
+    static_cast<uint16_t>(TokenId::TEXT) | static_cast<uint16_t>(TokenId::ITEXT) |
+    static_cast<uint16_t>(TokenId::HTEXT) | static_cast<uint16_t>(TokenId::PICTURE) |
+    static_cast<uint16_t>(TokenId::EPICTURE);
 #pragma pack(push, 1)
 
 class StreamPlace {

@@ -65,8 +65,6 @@
 #   -cppcoreguidelines-pro-bounds-pointer-arithmetic,
 # Yeah yeah we shouldn't const_cast, but sometimes it's practical
 #   -cppcoreguidelines-pro-type-const-cast,
-# This would be a great one to bring back, but will take some work to change the c-style casts
-#   -cppcoreguidelines-pro-type-cstyle-cast,
 # reinterpret-cast is fine IMO
 #   -cppcoreguidelines-pro-type-reinterpret-cast,
 # I don't understand why unions are bad
@@ -75,6 +73,8 @@
 #   -cppcoreguidelines-pro-type-vararg,
 # I don't want to have to always define all special member functions
 #   -cppcoreguidelines-special-member-functions,
+# This does a decent job of replacing c-style casts and is the only google check that made sense as of clang-tidy 15
+#   google-readability-casting,
 
 Checks: >-
   cert-*,
@@ -109,11 +109,11 @@ Checks: >-
   -cppcoreguidelines-pro-bounds-constant-array-index,
   -cppcoreguidelines-pro-bounds-pointer-arithmetic,
   -cppcoreguidelines-pro-type-const-cast,
-  -cppcoreguidelines-pro-type-cstyle-cast,
   -cppcoreguidelines-pro-type-reinterpret-cast,
   -cppcoreguidelines-pro-type-union-access,
   -cppcoreguidelines-pro-type-vararg,
   -cppcoreguidelines-special-member-functions,
+  google-readability-casting,
 
 AnalyzeTemporaryDtors: false
 FormatStyle: file

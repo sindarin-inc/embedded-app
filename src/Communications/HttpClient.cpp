@@ -21,7 +21,7 @@ HttpClient::HttpClient(const char *url, const char *contentType, esp_http_client
         .method = method,
         .timeout_ms = 30000,
         .event_handler = [](esp_http_client_event_t *event) -> esp_err_t {
-            auto thisPtr = (HttpClient *)event->user_data;
+            auto thisPtr = static_cast<HttpClient *>(event->user_data);
             switch (event->event_id) {
             case HTTP_EVENT_ERROR:
                 log_e("HTTP_EVENT_ERROR");
@@ -56,7 +56,7 @@ HttpClient::HttpClient(const char *url, const char *contentType, esp_http_client
             }
             return ESP_OK;
         },
-        .user_data = (void *)this,
+        .user_data = reinterpret_cast<void *>(this),
         .crt_bundle_attach = esp_crt_bundle_attach,
     };
     client_ = esp_http_client_init(&config);
@@ -134,7 +134,7 @@ auto HttpClient::write(const char *body, int length) -> int {
         }
 
         // write current block of bytes to gzip stream
-        if (!gz_.write((uint8_t *)body, length)) {
+        if (!gz_.write(const_cast<uint8_t *>(reinterpret_cast<const uint8_t *>(body)), length)) {
             log_e("failed to gzip %d bytes", length);
             return -1;
         }
@@ -170,7 +170,7 @@ auto HttpClient::write(const char *body, int length) -> int {
 auto HttpClient::writeAvailableCompressedData() -> bool {
     int avail = gz_.available();
     if (avail > 0) {
-        if (!writeChunkedData((const char *)gz_.getDataPtr(), avail)) {
+        if (!writeChunkedData(reinterpret_cast<const char *>(gz_.getDataPtr()), avail)) {
             return false;
         }
         gz_.advance(avail);

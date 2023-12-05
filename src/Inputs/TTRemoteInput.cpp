@@ -246,7 +246,7 @@ void TTRemoteInput::scanForPairedDevice() {
     scan->setInterval(40);
     scan->setWindow(30);
     scan->setActiveScan(useActiveScan);
-    auto started = scan->start((int)(RESCAN_INTERVAL_MS / 1000), nullptr, false);
+    auto started = scan->start((RESCAN_INTERVAL_MS / 1000), nullptr, false);
     if (!started) {
         log_e("Failed to start scan");
         return;

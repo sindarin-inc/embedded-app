@@ -94,10 +94,10 @@ void DisplaySystem::rotate(uint16_t &x, uint16_t &y, uint16_t &w, uint16_t &h) {
 
 void DisplaySystem::setPartialWindow(uint16_t x, uint16_t y, uint16_t w, uint16_t h) {
     setPartialRefresh();
-    partialX_ = std::min(x, (uint16_t)width());
-    partialY_ = std::min(y, (uint16_t)height());
-    partialW_ = std::min(w, (uint16_t)(width() - partialX_));
-    partialH_ = std::min(h, (uint16_t)(height() - partialY_));
+    partialX_ = std::min(x, static_cast<uint16_t>(width()));
+    partialY_ = std::min(y, static_cast<uint16_t>(height()));
+    partialW_ = std::min(w, static_cast<uint16_t>(width() - partialX_));
+    partialH_ = std::min(h, static_cast<uint16_t>(height() - partialY_));
     rotate(partialX_, partialY_, partialW_, partialH_);
     // force partialX, partialW multiple of 8?
     partialW_ += partialX_ % 8;
@@ -119,12 +119,14 @@ void DisplaySystem::ensureBoundaries() {
     // log_d("Bounding Box before is %s", boundingBox_.toString().c_str());
 
     // First constrain position
-    boundingBox_.x = std::clamp(boundingBox_.x, MAX_BOUNDING_BOX.x,
-                                (int32_t)(MAX_BOUNDING_BOX.x + MAX_BOUNDING_BOX.width -
-                                          std::max(MIN_BOUNDING_BOX.width, boundingBox_.width)));
-    boundingBox_.y = std::clamp(boundingBox_.y, MAX_BOUNDING_BOX.y,
-                                (int32_t)(MAX_BOUNDING_BOX.y + MAX_BOUNDING_BOX.height -
-                                          std::max(MIN_BOUNDING_BOX.height, boundingBox_.height)));
+    boundingBox_.x =
+        std::clamp(boundingBox_.x, MAX_BOUNDING_BOX.x,
+                   static_cast<int32_t>(MAX_BOUNDING_BOX.x + MAX_BOUNDING_BOX.width -
+                                        std::max(MIN_BOUNDING_BOX.width, boundingBox_.width)));
+    boundingBox_.y =
+        std::clamp(boundingBox_.y, MAX_BOUNDING_BOX.y,
+                   static_cast<int32_t>(MAX_BOUNDING_BOX.y + MAX_BOUNDING_BOX.height -
+                                        std::max(MIN_BOUNDING_BOX.height, boundingBox_.height)));
 
     // Then constrain dimensions
     boundingBox_.width =

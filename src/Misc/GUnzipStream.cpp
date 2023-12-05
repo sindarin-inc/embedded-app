@@ -10,7 +10,7 @@ auto GUnzipStream::readBytes(uint8_t *buf, int size) -> int {
         // next check if we have any uncompressed bytes available
         if (outSize_ > 0) {
             // copy as many bytes as possible
-            int bytesToCopy = std::min((int)size - bytesCopied, outSize_);
+            int bytesToCopy = std::min(size - bytesCopied, outSize_);
             if (buf) {
                 memcpy(&buf[bytesCopied], &outBuf_[outIndex_], bytesToCopy);
             }
@@ -60,7 +60,7 @@ auto GUnzipStream::readBytes(uint8_t *buf, int size) -> int {
             }
 
             // try to read more input data
-            int bytesRead = gzFile_.readBytes((char *)inBuf_, GZ_BUFFER_SIZE);
+            int bytesRead = gzFile_.readBytes(reinterpret_cast<char *>(inBuf_), GZ_BUFFER_SIZE);
 
             if (bytesRead < GZ_BUFFER_SIZE) {
                 // done reading
@@ -144,7 +144,7 @@ void GUnzipStream::readSize() {
 
     // read uncompressed file length
     uint8_t sizeBytes[4];
-    gzFile_.readBytes((char *)sizeBytes, 4);
+    gzFile_.readBytes(reinterpret_cast<char *>(sizeBytes), 4);
 
     // rewind file
     gzFile_.seek(0, SSeekSet);

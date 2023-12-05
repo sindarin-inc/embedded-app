@@ -63,7 +63,7 @@ public:
     [[nodiscard]] auto getXHTMLFile(const std::string &path) -> pugi::xml_document &;
 
     [[nodiscard]] inline auto getOffset(const pugi::char_t *item) const -> uint32_t {
-        return item - (pugi::char_t *)currentFileBuffer_.get();
+        return item - reinterpret_cast<pugi::char_t *>(currentFileBuffer_.get());
     }
 
     [[nodiscard]] inline auto getFullPath(const std::string &filename) const -> std::string {

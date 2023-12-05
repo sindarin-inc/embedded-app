@@ -150,7 +150,7 @@ void Tokens::freeTokens(Idx fromTokenIdx, uint16_t count) {
                 tokens_[idx].picture.reset();
             }
             // Not all tokens that are using the pool
-            if (((uint16_t)id & POOL_TOKENS) != 0) {
+            if ((static_cast<uint16_t>(id) & POOL_TOKENS) != 0) {
                 lastTokenPoolIdx = idx;
                 id = tokens_[idx].tokenId;
             }
@@ -166,7 +166,7 @@ void Tokens::freeTokens(Idx fromTokenIdx, uint16_t count) {
         //     id = tokens_[tokenIdx].tokenId;
         // }
         // Not all tokens are using the pool
-        if (((uint16_t)id & POOL_TOKENS) != 0) {
+        if ((static_cast<uint16_t>(id) & POOL_TOKENS) != 0) {
             // Free space in string pool
             Idx poolIdx = tokens_[lastTokenPoolIdx].cStr - cStrPool_.data();
 
@@ -211,8 +211,9 @@ void Tokens::showToken(Idx tokenIdx) const {
               tokenIdx, (uint8_t)token.tokenId, token.streamPlace.str().c_str(), token.pixWidth,
               // token.height,
               token.length);
-        if ((uint16_t)token.tokenId & ((uint16_t)TokenId::TEXT | (uint16_t)TokenId::ITEXT |
-                                       (uint16_t)TokenId::HTEXT | (uint16_t)TokenId::NTEXT)) {
+        if (static_cast<uint16_t>(token.tokenId) &
+            (static_cast<uint16_t>(TokenId::TEXT) | static_cast<uint16_t>(TokenId::ITEXT) |
+             static_cast<uint16_t>(TokenId::HTEXT) | static_cast<uint16_t>(TokenId::NTEXT))) {
             if (token.cStr != nullptr) {
                 log_d("Text Content: \"%s\"", token.cStr);
             } else {

@@ -31,19 +31,20 @@ auto CrashReportWriter::writeCrashReportIfExists() -> bool {
 
     log_i("core dump found for boot %d", bootNum_);
     uint8_t tmp[1024];
-    if (!SafeSnprintf((char *)tmp, sizeof(tmp), "/coredumps/%d.coredump", bootNum_)) {
+    if (!SafeSnprintf(reinterpret_cast<char *>(tmp), sizeof(tmp), "/coredumps/%d.coredump",
+                      bootNum_)) {
         return false;
     }
 
     log_i("saving core dump to file %s", tmp);
-    MultiPartData mpData(fileSystem_, (char *)tmp);
+    MultiPartData mpData(fileSystem_, reinterpret_cast<char *>(tmp));
     if (!mpData.startFile("file")) {
         log_e("failed to open core dump file %s", tmp);
         return false;
     }
 
     int bytesRemaining = outSize;
-    auto currAddr = (uint32_t)outAddr;
+    auto currAddr = static_cast<uint32_t>(outAddr);
     while (bytesRemaining > 0) {
         // read chunk
         int bytesToRead = bytesRemaining >= sizeof(tmp) ? sizeof(tmp) : bytesRemaining;

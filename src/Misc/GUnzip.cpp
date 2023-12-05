@@ -80,7 +80,7 @@ auto GUnzip::decompress(uint8_t *input, int inputSize, uint8_t *output, int outp
     }
 
     if (!readHeader_) {
-        auto *hdr = (uint8_t *)&gzhdr;
+        auto *hdr = reinterpret_cast<uint8_t *>(&gzhdr);
         while (gzHeaderBytes_ < 10) {
             if (inputSize == 0) {
                 // still reading header, but no more data
@@ -174,7 +174,7 @@ auto GUnzip::decompressFile(FileSystem &fileSystem, const std::string &inputFile
                 continue;
             }
 
-            int readBytes = in.readBytes((char *)inBuf, BSIZE);
+            int readBytes = in.readBytes(reinterpret_cast<char *>(inBuf), BSIZE);
             if (readBytes == 0) {
                 log_i("done reading!");
                 done = true;

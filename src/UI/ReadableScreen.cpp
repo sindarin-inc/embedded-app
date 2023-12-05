@@ -146,7 +146,8 @@ void ReadableScreen::writeOutBookmarkUpdate() {
 
     std::string plusOrMinus = inBookmark_ ? "+ " : "- ";
     plusOrMinus += readable_->place->str() + " " + newPlace_->str() + "\n";
-    bookmarkFile.write((const uint8_t *)plusOrMinus.c_str(), plusOrMinus.length());
+    bookmarkFile.write(reinterpret_cast<const uint8_t *>(plusOrMinus.c_str()),
+                       plusOrMinus.length());
     bookmarkFile.flush();
     bookmarkFile.close();
 

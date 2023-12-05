@@ -47,14 +47,14 @@ auto LocalStore::loadReadablesFromFile(ReadablesVector &readables, const std::st
     log_d("Loading %ss from %s", ReadableModelTypeToString(readablesModelType(readables)).c_str(),
           path.c_str());
     SFile readablesFile = fileSystem.open(path);
-    if (!readablesFile || (int)readablesFile.size() == 0) {
+    if (!readablesFile || static_cast<int>(readablesFile.size()) == 0) {
         log_w("Failed to open %s", path.c_str());
         // Fail positively since it's ok to not have any when you first use the glasses
         return true;
     }
 
     // Grab a minimum amount of ram, even if the readables file is empty
-    auto docSize = (int)readablesFile.size() * 2;
+    auto docSize = static_cast<int>(readablesFile.size()) * 2;
     auto doc = std::make_unique<SpiRamJsonDocument>(docSize);
     auto error = deserializeJson(*doc, readablesFile);
     readablesFile.close();
@@ -416,7 +416,7 @@ auto LocalStore::processReadablePartialChapterSummary(
 
     // Otherwise write the updated partial summary to the json file
     auto doc = std::make_unique<SpiRamJsonDocument>(
-        std::min(2048, (int)partialChapterSummary->text.length() * 2));
+        std::min(2048, static_cast<int>(partialChapterSummary->text.length()) * 2));
     bool serialized = convertToJson(*partialChapterSummary, *doc);
     if (!serialized) {
         log_e("Failed to serialize partial summary");
@@ -635,7 +635,7 @@ void LocalStore::syncFromRemote(
             checkSyncRequest.skipSummary = true;
             checkSyncRequest.skipToc = true;
             checkSyncRequest.ptBattery = PreferencesStore::lastPageTurnerBattery;
-            checkSyncRequest.battery = (uint8_t)battery_.getBatteryPercentage();
+            checkSyncRequest.battery = static_cast<uint8_t>(battery_.getBatteryPercentage());
             checkSyncRequest.ptBuild = this->prefs_.lastPageTurnerBuild.get().value_or("");
             checkSyncRequest.build = SemanticVersionString();
             checkSyncRequest.gitHash = GitVersionString();
@@ -963,7 +963,7 @@ auto LocalStore::processReadableDownload(
             return true;
         }
 
-        float currPercentage = (float)downloadIndex * pctPerReadable;
+        float currPercentage = static_cast<float>(downloadIndex) * pctPerReadable;
         const auto &readable = userReadable.readable;
         auto path = readableFilePathForWriting(readable);
         log_i("Downloading %s (file=%s, url=%s)", readable->title.c_str(), path.c_str(),
@@ -979,11 +979,11 @@ auto LocalStore::processReadableDownload(
                 readable, this->fileSystem, this->telemetry_, path, cancel,
                 [progressCallback, currPercentage, pctPerReadable, modelType](int percentage) {
                 int pctThisReadable = percentage * pctPerReadable / 100;
-                progressCallback(
-                    ContentSyncState{.state = modelType == ReadablesModelType::Book
-                                                  ? ContentSyncState::State::SyncingBooks
-                                                  : ContentSyncState::State::SyncingArticles,
-                                     .percentage = int(currPercentage + pctThisReadable)});
+                progressCallback(ContentSyncState{
+                    .state = modelType == ReadablesModelType::Book
+                                 ? ContentSyncState::State::SyncingBooks
+                                 : ContentSyncState::State::SyncingArticles,
+                    .percentage = static_cast<int>(currPercentage + pctThisReadable)});
                 });
             if (httpCode == 200) {
                 successfullyDownloaded += 1;
@@ -1172,7 +1172,8 @@ auto LocalStore::saveReadables(ReadablesVector &readables) -> bool {
 
     // Readables take up to 20KB of RAM each since the JSON can be large (includes cover
     // images, file metadata, etc.)
-    auto doc = std::make_unique<SpiRamJsonDocument>(20000 * std::max(1, (int)readables.size()));
+    auto doc = std::make_unique<SpiRamJsonDocument>(
+        20000 * std::max(1, static_cast<int>(readables.size())));
     auto modelType = readablesModelType(const_cast<ReadablesVector &>(readables));
     std::string path = modelType == ReadablesModelType::Book ? BOOKS_PATH : ARTICLES_PATH;
     SHOW_HEAP();
@@ -1367,7 +1368,7 @@ const char *firmwarePath = "/firmware.json";
 
 void LocalStore::saveFirmware(const Firmware &firmware) {
     auto doc = std::make_unique<SpiRamJsonDocument>(
-        std::max((size_t)firmware.releaseNotes.size() * 2, (size_t)2048));
+        std::max(static_cast<size_t>(firmware.releaseNotes.size()) * 2, static_cast<size_t>(2048)));
     convertToJson(firmware, *doc);
     // Delete any existing firmware file if it exists
     fileSystem.remove(firmwarePath);

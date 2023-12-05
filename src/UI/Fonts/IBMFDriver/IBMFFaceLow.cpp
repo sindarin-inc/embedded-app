@@ -127,8 +127,9 @@ auto IBMFFaceLow::ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2, FIX
     // idx and length in each bitmaps to compare
     uint8_t firstIdxLeft = origin - i2.verticalOffset;
     uint8_t firstIdxRight = origin - i1.verticalOffset;
-    int8_t length = std::min((int8_t(i1.bitmapHeight) - int8_t(firstIdxLeft)),
-                             (int8_t(i2.bitmapHeight) - int8_t(firstIdxRight)));
+    int8_t length =
+        std::min((static_cast<int8_t>(i1.bitmapHeight) - static_cast<int8_t>(firstIdxLeft)),
+                 (static_cast<int8_t>(i2.bitmapHeight) - static_cast<int8_t>(firstIdxRight)));
     uint8_t firstIdx = std::max(firstIdxLeft, firstIdxRight);
 
     FIX32 kerning = 0;
@@ -158,8 +159,8 @@ auto IBMFFaceLow::ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2, FIX
     }
 
     // hight of significant parts of dist arrays
-    int8_t hight = origin + std::max((int8_t(i1.bitmapHeight) - i1.verticalOffset),
-                                     (int8_t(i2.bitmapHeight) - i2.verticalOffset));
+    int8_t hight = origin + std::max((static_cast<int8_t>(i1.bitmapHeight) - i1.verticalOffset),
+                                     (static_cast<int8_t>(i2.bitmapHeight) - i2.verticalOffset));
 
     // distance computation for left and right characters
     auto distLeft = std::shared_ptr<FIX32[]>(new FIX32[hight]);
@@ -671,7 +672,8 @@ auto IBMFFaceLow::showGlyphInfo(GlyphCode i, const GlyphInfo &g) const -> void {
     if constexpr (DEBUG) {
         std::cout << "  [" << i << "]: w: " << +g.bitmapWidth << ", h: " << +g.bitmapHeight
                   << ", hoff: " << +g.horizontalOffset << ", voff: " << +g.verticalOffset
-                  << ", pktLen: " << +g.packetLength << ", adv: " << +((float)g.advance / 64.0)
+                  << ", pktLen: " << +g.packetLength
+                  << ", adv: " << +(static_cast<float>(g.advance) / 64.0)
                   << ", dynF: " << +g.rleMetrics.dynF
                   << ", 1stBlack: " << +g.rleMetrics.firstIsBlack
                   << ", lKPgmIdx: " << +g.ligKernPgmIndex
@@ -699,7 +701,7 @@ auto IBMFFaceLow::showLigKerns() const -> void {
                           << "IsKern: " << (entry->b.kern.isAKern ? "Yes" : "No") << ", "
                           << (entry->b.kern.isAKern ? "Kern Value: " : "Lig char: ");
                 if (entry->b.kern.isAKern) {
-                    std::cout << (float)(entry->b.kern.kerningValue / 64.0);
+                    std::cout << static_cast<float>(entry->b.kern.kerningValue / 64.0);
                 } else {
                     std::cout << entry->b.repl.replGlyphCode;
                 }
@@ -717,13 +719,13 @@ auto IBMFFaceLow::showFace() const -> void {
 
         std::cout << "DPI: " << faceHeader_->dpi << ", point siz: " << +faceHeader_->pointSize
                   << ", linHght: " << +faceHeader_->lineHeight
-                  << ", xHght: " << +((float)faceHeader_->xHeight / 64.0)
-                  << ", emSiz: " << +((float)faceHeader_->emHeight / 64.0)
+                  << ", xHght: " << +(static_cast<float>(faceHeader_->xHeight) / 64.0)
+                  << ", emSiz: " << +(static_cast<float>(faceHeader_->emHeight) / 64.0)
                   << ", spcSiz: " << +faceHeader_->spaceSize
                   << ", glyphCnt: " << +faceHeader_->glyphCount
                   << ", LKCnt: " << +faceHeader_->ligKernStepCount
                   << ", PixPoolSiz: " << +faceHeader_->pixelsPoolSize
-                  << ", slantCorr: " << +((float)faceHeader_->slantCorrection / 64.0)
+                  << ", slantCorr: " << +(static_cast<float>(faceHeader_->slantCorrection) / 64.0)
                   << ", descHght: " << +faceHeader_->descenderHeight << std::endl;
 
         std::cout << std::endl << "----------- Glyphs: ----------" << std::endl;
