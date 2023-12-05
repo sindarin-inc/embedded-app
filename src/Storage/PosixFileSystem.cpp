@@ -21,13 +21,13 @@ auto PosixFileSystem::open(const std::string &path, const char *mode, const bool
 
 auto PosixFileSystem::exists(const std::string &path) const -> bool {
     auto prefixedPath = createPath(path);
-    struct stat buffer{};
+    struct stat buffer {};
     return (stat(prefixedPath.c_str(), &buffer) == 0);
 }
 
 auto PosixFileSystem::size(const std::string &path) const -> size_t {
     auto prefixedPath = createPath(path);
-    struct stat buffer{};
+    struct stat buffer {};
     auto err = stat(prefixedPath.c_str(), &buffer);
     if (err != 0) {
         return 0;

@@ -15,8 +15,7 @@
 class DisplayEinkET013TT1 : public DisplaySystem {
 public:
     DisplayEinkET013TT1(uint8_t csLeft, uint8_t csRight, uint8_t rst) noexcept
-        :  gfxCanvas_(EinkET013TT1_X_PIXELS, EinkET013TT1_Y_PIXELS),
-          driver_(csLeft, csRight, rst) {
+        : gfxCanvas_(EinkET013TT1_X_PIXELS, EinkET013TT1_Y_PIXELS), driver_(csLeft, csRight, rst) {
         gfxClass_ = &gfxCanvas_;
         canvasBuffer_ = gfxCanvas_.getBuffer();
         canvasWidth_ = EinkET013TT1_X_PIXELS;

@@ -6,8 +6,7 @@
 
 class PosixFileSystem : public FileSystem {
 public:
-    PosixFileSystem(std::string prefix = "./data") noexcept
-        :  prefix_(std::move(prefix)){};
+    PosixFileSystem(std::string prefix = "./data") noexcept : prefix_(std::move(prefix)){};
     PosixFileSystem(PosixFileSystem const &) = delete;
 
     auto open(const std::string &path, const char *mode = FILE_READ,

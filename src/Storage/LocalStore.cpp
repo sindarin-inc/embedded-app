@@ -686,9 +686,8 @@ void LocalStore::syncFromRemote(
                     totalCount = checkSyncResponse.totalCount;
                     SHOW_HEAP();
                 } else {
-                    httpCode =
-                        SindarinAPI::getInstance()->checkSync(nextPageUrl, checkSyncRequest,
-                                                              &checkSyncResponse, this->telemetry_);
+                    httpCode = SindarinAPI::getInstance()->checkSync(
+                        nextPageUrl, checkSyncRequest, &checkSyncResponse, this->telemetry_);
                 }
                 if (CancelFlag::isCancelled(cancel)) {
                     return;

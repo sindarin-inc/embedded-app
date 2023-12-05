@@ -11,9 +11,9 @@
 class PopupMenuView : public View, public Menu {
 public:
     PopupMenuView(DisplaySystem &display)
-        :  display_(display), popupMenuBackground_(display, 5),
-          popupMenuForeground_(display, 5), footer1TextView_(display, ""),
-          footer2TextView_(display, ""), footer3TextView_(display, "") {}
+        : display_(display), popupMenuBackground_(display, 5), popupMenuForeground_(display, 5),
+          footer1TextView_(display, ""), footer2TextView_(display, ""),
+          footer3TextView_(display, "") {}
 
     ~PopupMenuView() override = default;
 
