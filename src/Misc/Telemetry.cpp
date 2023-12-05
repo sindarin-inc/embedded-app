@@ -71,8 +71,8 @@ auto Telemetry::mapToJson(const std::unordered_map<std::string, TelemetryVariant
     return json;
 }
 
-auto Telemetry::uploadAndResetTelemetry(FileSystem &fileSystem, Telemetry &telemetry) -> int {
-    auto localPath = telemetry.metricLogPath();
+auto Telemetry::uploadAndResetTelemetry(FileSystem &fileSystem) -> int {
+    auto localPath = Telemetry::metricLogPath();
 
     auto file = fileSystem.open(localPath, FILE_READ);
     if (!file) {
