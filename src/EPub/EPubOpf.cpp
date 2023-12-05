@@ -96,7 +96,8 @@ void EPubOpf::extractPath(const char *fname, std::string &path) {
 
 auto EPubOpf::getSpineIdx(const std::string &href) const -> SpineIdx {
     for (SpineIdx spineIdx = 0;
-         spineIdx < std::min(spine_.size(), (size_t)std::numeric_limits<SpineIdx>::max());
+         spineIdx <
+         std::min(spine_.size(), static_cast<size_t>(std::numeric_limits<SpineIdx>::max()));
          spineIdx++) {
         if (spine_[spineIdx].item->href == href) {
             return spineIdx;

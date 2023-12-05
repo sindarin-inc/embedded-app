@@ -10,7 +10,7 @@ BatteryScreen::BatteryScreen(DisplaySystem &display, PreferencesStore &prefs, Ba
     : display_(display), prefs_(prefs), battery_(battery) {
 
 #if EINKET013TT1
-    auto *driver = (static_cast<DisplayEinkET013TT1 *>(&display))->getDriver();
+    auto *driver = (dynamic_cast<DisplayEinkET013TT1 *>(&display))->getDriver();
     leftTemp_ = driver->readTemperature(ScreenSide::Left);
     rightTemp_ = driver->readTemperature(ScreenSide::Right);
 #else
@@ -27,18 +27,18 @@ void BatteryScreen::render(DisplaySystem &display) {
     auto ptBatteryPct = PreferencesStore::lastPageTurnerBattery;
     auto ptBuild = prefs_.lastPageTurnerBuild.get().value_or("Unknown build");
     auto ptBatteryStatus = StringFormat("Page Turner: %d%% (%s)", ptBatteryPct, ptBuild.c_str());
-    width = display.getTextWidth(ptBatteryStatus.c_str());
-    height = display.getTextHeight(ptBatteryStatus.c_str());
-    display.drawSingleLineOfText(ptBatteryStatus.c_str(),
+    width = display.getTextWidth(ptBatteryStatus);
+    height = display.getTextHeight(ptBatteryStatus);
+    display.drawSingleLineOfText(ptBatteryStatus,
                                  display.xAbsolute(display.xAbsoluteCenter() - width / 2),
                                  display.yAbsolute(display.yAbsoluteCenter() + height / 2 + 2));
 
     batteryStatus += StringFormat("  L: %dC  R: %dC", leftTemp_, rightTemp_);
 
-    width = display.getTextWidth(batteryStatus.c_str());
-    height = display.getTextHeight(batteryStatus.c_str());
+    width = display.getTextWidth(batteryStatus);
+    height = display.getTextHeight(batteryStatus);
 
-    display.drawSingleLineOfText(batteryStatus.c_str(),
+    display.drawSingleLineOfText(batteryStatus,
                                  display.xAbsolute(display.xAbsoluteCenter() - width / 2),
                                  display.yAbsolute(display.yAbsoluteCenter() - height / 2 - 2));
 

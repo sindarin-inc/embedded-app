@@ -189,7 +189,7 @@ public:
     }
 
     [[nodiscard]] inline auto pixToDeci(uint16_t pixValue) const -> uint16_t {
-        return ((int)(NEWLINE_DECI_LINE_HEIGHT * pixValue)) / display_.getTextHeight();
+        return ((NEWLINE_DECI_LINE_HEIGHT * pixValue)) / display_.getTextHeight();
     }
 
     void show() const;

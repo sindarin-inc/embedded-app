@@ -25,7 +25,7 @@ public:
         numMenuItems_ = 0;
     }
     LineMenuScreen(PreferencesStore &prefs, DisplaySystem &display)
-        : Menu(), EinkView(display), display_(display) {
+        : EinkView(display), display_(display) {
         numMenuItems_ = 0;
         MenuStyle styleFamilies;
         myStyle_ = styleFamilies.mainMenu;

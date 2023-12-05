@@ -53,7 +53,7 @@ public:
 
     auto handleWebRequest(const SpiramString &key, const SpiramString &body) -> bool;
 
-    bool connected;
+    bool connected{false};
 
 private:
     std::shared_ptr<BLEManager> bleManager_;
@@ -62,11 +62,11 @@ private:
     std::shared_ptr<BLERemoteInput> remoteInput_;
     std::shared_ptr<CancelFlag> cancel_;
     char *url_;
-    int statusCode_;
+    int statusCode_{};
 
     esp_http_client_method_t requestMethod_;
     std::vector<std::pair<SpiramString, SpiramString>> requestHeaders_;
     SpiramString requestBody_;
     SpiramString responseBody_;
-    bool responseFetched_;
+    bool responseFetched_{};
 };

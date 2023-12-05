@@ -18,8 +18,8 @@ private:
     Idx cStrPoolTailIdx_{0};
     Idx cStrPoolHeadIdx_{0};
 
-    uint16_t maxCStrPoolCount_;
-    uint16_t maxTokensCount_;
+    uint16_t maxCStrPoolCount_{};
+    uint16_t maxTokensCount_{};
 
     // Increment the cStrPoolTail_ to the next location in the pool. As a null terminated string
     // must remain contiguous, it cannot be split between the end and the start of the pool. If so,
@@ -29,8 +29,8 @@ private:
 
         if (cStrPoolTailIdx_ == 0) {
             if ((getCStrPoolCount() + token.length) < (CSTR_POOL_SIZE - 2)) {
-                memcpy(&cStrPool_[0], token.cStr, token.length);
-                token.cStr = &cStrPool_[0];
+                memcpy(cStrPool_.data(), token.cStr, token.length);
+                token.cStr = cStrPool_.data();
                 cStrPoolTailIdx_ = token.length;
             } else {
                 log_e("cStrPool_[] is too small!");

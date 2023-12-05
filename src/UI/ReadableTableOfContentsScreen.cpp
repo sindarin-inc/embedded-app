@@ -104,7 +104,7 @@ void ReadableTableOfContentsScreen::render(DisplaySystem &display) {
         display.updateDisplay(DisplaySystem::UpdateType::FULL);
     }
 
-    if (menuItemViews_.size() <= 0) {
+    if (menuItemViews_.empty()) {
         log_w("No views to draw in ReadableTableOfContentsScreen");
     }
 

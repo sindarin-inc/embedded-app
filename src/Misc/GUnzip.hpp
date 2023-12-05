@@ -23,7 +23,7 @@ public:
     void setCompressedSize(int s) { compressedSize_ = s; }
 
 protected:
-    mz_stream zstr_;
+    mz_stream zstr_{};
     bool init_{false};
     int compressedSize_{0};
     int compressedPos_{0};

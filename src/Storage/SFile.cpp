@@ -57,7 +57,7 @@ auto SFile::read(uint8_t *buf, size_t size) -> size_t {
     return p_->read(buf, size);
 }
 auto SFile::readBytes(char *buffer, size_t length) -> size_t {
-    return read((uint8_t *)buffer, length);
+    return read(reinterpret_cast<uint8_t *>(buffer), length);
 }
 
 auto SFile::seek(uint32_t pos, SSeekMode mode) -> bool {
@@ -102,7 +102,7 @@ auto VFSFile::write(const uint8_t *buf, size_t size) -> size_t {
     return fwrite(buf, 1, size, fp_);
 }
 
-auto VFSFile::available() -> int {
+auto VFSFile::available() const -> int {
     if (!*this) {
         return false;
     }
@@ -151,7 +151,7 @@ auto VFSFile::position() const -> size_t {
 
 void VFSFile::getFileSize() {
     size_t curPos = position();
-    seek((uint32_t)0, SSeekEnd);
+    seek(static_cast<uint32_t>(0), SSeekEnd);
     fSize_ = position();
     seek(curPos, SSeekSet);
 }

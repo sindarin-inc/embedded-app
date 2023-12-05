@@ -12,7 +12,7 @@ class SolClock {
 public:
     static auto getInstance() -> SolClock &;
 
-    SolClock(PreferencesStore &prefs) : prefs_(prefs) { timeSyncEventGroup_ = xEventGroupCreate(); }
+    SolClock(PreferencesStore &prefs) : timeSyncEventGroup_(xEventGroupCreate()), prefs_(prefs) {}
     SolClock(SolClock const &) = delete;
     ~SolClock() { vEventGroupDelete(timeSyncEventGroup_); }
 

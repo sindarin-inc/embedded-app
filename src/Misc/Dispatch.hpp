@@ -13,7 +13,7 @@
 // https://embeddedartistry.com/blog/2018/01/29/implementing-an-asynchronous-dispatch-queue-with-freertos/
 
 struct FreertosThreadT {
-    TaskHandle_t thread;
+    TaskHandle_t thread{};
     std::string name;
 };
 

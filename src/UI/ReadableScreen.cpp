@@ -86,7 +86,7 @@ void ReadableScreen::drawInRect(Rect rect) { drawArrows(); }
 //
 void ReadableScreen::updateBookmarkStatus() {
     inBookmark_ = false;
-    SFile bookmarkFile = fileSystem_.open(readable_->bookmarkFilePath().c_str(), FILE_READ, false);
+    SFile bookmarkFile = fileSystem_.open(readable_->bookmarkFilePath(), FILE_READ, false);
     if (!bookmarkFile) {
         log_i("Failed to open bookmark file: %s", readable_->bookmarkFilePath().c_str());
         return;
@@ -137,7 +137,7 @@ void ReadableScreen::writeOutBookmarkUpdate() {
         return;
     }
 
-    SFile bookmarkFile = fileSystem_.open(readable_->bookmarkFilePath().c_str(), FILE_APPEND, true);
+    SFile bookmarkFile = fileSystem_.open(readable_->bookmarkFilePath(), FILE_APPEND, true);
 
     if (!bookmarkFile) {
         log_i("Failed to open bookmark file: %s", readable_->bookmarkFilePath().c_str());
@@ -146,7 +146,8 @@ void ReadableScreen::writeOutBookmarkUpdate() {
 
     std::string plusOrMinus = inBookmark_ ? "+ " : "- ";
     plusOrMinus += readable_->place->str() + " " + newPlace_->str() + "\n";
-    bookmarkFile.write((const uint8_t *)plusOrMinus.c_str(), plusOrMinus.length());
+    bookmarkFile.write(reinterpret_cast<const uint8_t *>(plusOrMinus.c_str()),
+                       plusOrMinus.length());
     bookmarkFile.flush();
     bookmarkFile.close();
 

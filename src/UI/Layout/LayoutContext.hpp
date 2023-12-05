@@ -119,7 +119,7 @@ protected:
 
     // Whether this layout is currently sizing (doesn't change frames) or whether it's running for
     // real
-    bool sizing_;
+    bool sizing_{};
 
     // Whether this layout needs to be run again to position its views.
     bool needsLayout_{true};

@@ -9,7 +9,7 @@ auto LookBackStream::readBytes(uint8_t *buf, int size) -> int {
     while (bytesCopied < size) {
         // first check if we are reading from the lookback buffer
         if (lookBackBytes_ > 0) {
-            int bytesToCopy = std::min((int)size - bytesCopied, lookBackBytes_);
+            int bytesToCopy = std::min(size - bytesCopied, lookBackBytes_);
 
             if (buf) {
                 lookBackBuffer_.copyFrom(lookBackBuffer_.size() - lookBackBytes_, &buf[bytesCopied],
@@ -25,7 +25,7 @@ auto LookBackStream::readBytes(uint8_t *buf, int size) -> int {
 
         // no bytes in the lookback buffer, but still reading
         // now read directly from the input stream
-        int bytesToCopy = (int)size - bytesCopied;
+        int bytesToCopy = size - bytesCopied;
         int bytesRead = stream_->readBytes(&buf[bytesCopied], bytesToCopy);
 
         // push result into lookback buffer
@@ -107,7 +107,7 @@ auto LookBackStream::seek(uint32_t pos) -> bool {
 
             // try to seek the full capacity of the buffer before the target position,
             // so the lookback buffer can fill up again.
-            int seekPos = std::max((int)pos - lookBackBuffer_.capacity(), 0);
+            int seekPos = std::max(static_cast<int>(pos) - lookBackBuffer_.capacity(), 0);
             stream_->seek(seekPos);
             position_ = stream_->position();
 
@@ -121,7 +121,8 @@ auto LookBackStream::seek(uint32_t pos) -> bool {
         uint8_t buf[1024];
         int bytesCopied = 0;
         while (bytesCopied < bytesToReadForward) {
-            int bytesToCopy = std::min(bytesToReadForward - bytesCopied, (int)sizeof(buf));
+            int bytesToCopy =
+                std::min(bytesToReadForward - bytesCopied, static_cast<int>(sizeof(buf)));
             int bytesRead = readBytes(buf, bytesToCopy);
             bytesCopied += bytesRead;
 

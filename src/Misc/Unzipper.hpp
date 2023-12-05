@@ -87,7 +87,7 @@ private:
         uint32_t uncompressedSize;
         uint16_t filePathLength;
         uint16_t extraFieldLength;
-    } fileHeader_;
+    } fileHeader_{};
 #pragma pack(pop)
 
     static constexpr const uint32_t DIR_FILE_HEADER_SIGNATURE = 0x02014b50;
@@ -95,7 +95,7 @@ private:
     static constexpr const uint32_t DIR_END_SIGNATURE = 0x06054b50;
 
     static const int BUFFER_SIZE = 1024 * 16;
-    uint8_t buffer_[BUFFER_SIZE];
+    uint8_t buffer_[BUFFER_SIZE]{};
 
     struct FileEntry {
         uint32_t startPos;       // in zip file
@@ -111,24 +111,24 @@ private:
 
     // As long as we are operating as little endian, the following is ok
     [[nodiscard]] inline auto getuint32(const uint8_t *b) const -> uint32_t {
-        return *(uint32_t *)b;
+        return *reinterpret_cast<uint32_t *>(const_cast<uint8_t *>(b));
     }
     [[nodiscard]] inline auto getuint16(const uint8_t *b) const -> uint16_t {
-        return *(uint16_t *)b;
+        return *reinterpret_cast<uint16_t *>(const_cast<uint8_t *>(b));
     }
 
     auto cleanFilePath(const char *filePath) -> std::string;
 
-    uint16_t repeat_;
-    uint16_t remains_;
-    uint16_t current_;
+    uint16_t repeat_{};
+    uint16_t remains_{};
+    uint16_t current_{};
 
     SFile file_; // Current File Descriptor
     bool isOpen_{false};
     FileSystem &fileSystem_;
     std::string filePath_;
 
-    mz_stream zstr_;
+    mz_stream zstr_{};
 
 public:
     Unzipper(FileSystem &fs, const char *filePath) : fileSystem_(fs), filePath_(filePath) {}

@@ -54,7 +54,7 @@ auto CalculateStringHash(const std::string &input) -> std::string {
         log_e("Failed to mbedtls_md_starts");
     }
 
-    mbedtls_md_update(&ctx, (const unsigned char *)input.c_str(), input.size());
+    mbedtls_md_update(&ctx, reinterpret_cast<const unsigned char *>(input.c_str()), input.size());
 
     unsigned char output[32];
     if (mbedtls_md_finish(&ctx, output)) {

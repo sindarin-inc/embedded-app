@@ -50,7 +50,7 @@ protected:
     public:
         TTRemoteInput *enclosed;
 
-        AdvertisedDeviceCallbacks(TTRemoteInput *enclosure) { enclosed = enclosure; }
+        AdvertisedDeviceCallbacks(TTRemoteInput *enclosure) : enclosed(enclosure) {}
 
         void onResult(BLEAdvertisedDevice *advertisedDevice) override {
             if (advertisedDevice->haveServiceUUID()) {
@@ -80,7 +80,7 @@ protected:
     public:
         TTRemoteInput *enclosed;
 
-        ClientCallbacks(TTRemoteInput *enclosure) { enclosed = enclosure; }
+        ClientCallbacks(TTRemoteInput *enclosure) : enclosed(enclosure) {}
 
         void onConnect(BLEClient *client) override {
             log_d("BLE PageTurner connected!");

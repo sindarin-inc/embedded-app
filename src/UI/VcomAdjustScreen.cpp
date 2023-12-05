@@ -12,7 +12,7 @@
 VcomAdjustScreen::VcomAdjustScreen(DisplaySystem &display, PreferencesStore &prefs)
     : display_(display), renderer_(display), prefs_(prefs) {
 
-    auto *driver = (static_cast<DisplayEinkET013TT1 *>(&display))->getDriver();
+    auto *driver = (dynamic_cast<DisplayEinkET013TT1 *>(&display))->getDriver();
     vCom = driver->getVcom();
 }
 
@@ -21,7 +21,7 @@ void VcomAdjustScreen::render(DisplaySystem &display) {
 
     auto vcomStr = StringFormat("%dmV", vCom);
 
-    int vcomStrWidth = display.getTextWidth(vcomStr.c_str());
+    int vcomStrWidth = display.getTextWidth(vcomStr);
     int vcomStrHeight = display.getTextHeight();
 
     // This doesn't seem like the right interface.
@@ -36,7 +36,7 @@ void VcomAdjustScreen::render(DisplaySystem &display) {
 }
 
 void VcomAdjustScreen::processCommand(RemoteCommand command) {
-    auto *driver = (static_cast<DisplayEinkET013TT1 *>(&display_))->getDriver();
+    auto *driver = (dynamic_cast<DisplayEinkET013TT1 *>(&display_))->getDriver();
     switch (command) {
     case RemoteCommand::LEFT:
     case RemoteCommand::ENTER:

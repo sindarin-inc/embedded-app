@@ -7,7 +7,8 @@
 std::string MultiPartData::boundary = "SIND12345";
 
 auto MultiPartData::addKeyValue(const std::string &key, const std::string &value) -> bool {
-    return addKeyValue(key, (uint8_t *)value.c_str(), value.length(), false);
+    return addKeyValue(key, reinterpret_cast<const uint8_t *>(value.c_str()), value.length(),
+                       false);
 }
 
 auto MultiPartData::startKeyWrite() -> bool {
@@ -19,7 +20,7 @@ auto MultiPartData::startKeyWrite() -> bool {
             return false;
         }
 
-        if (tempFile_.write((uint8_t *)tmp_, strlen(tmp_)) != strlen(tmp_)) {
+        if (tempFile_.write(reinterpret_cast<uint8_t *>(tmp_), strlen(tmp_)) != strlen(tmp_)) {
             return false;
         }
     }
@@ -33,7 +34,7 @@ auto MultiPartData::writeHeader(const std::string &key, bool isFile) -> bool {
                       key.c_str())) {
         return false;
     }
-    if (tempFile_.write((uint8_t *)tmp_, strlen(tmp_)) != strlen(tmp_)) {
+    if (tempFile_.write(reinterpret_cast<uint8_t *>(tmp_), strlen(tmp_)) != strlen(tmp_)) {
         return false;
     }
     if (isFile) {
@@ -46,7 +47,7 @@ auto MultiPartData::writeHeader(const std::string &key, bool isFile) -> bool {
         }
     }
 
-    if (tempFile_.write((uint8_t *)tmp_, strlen(tmp_)) != strlen(tmp_)) {
+    if (tempFile_.write(reinterpret_cast<uint8_t *>(tmp_), strlen(tmp_)) != strlen(tmp_)) {
         return false;
     }
 
@@ -57,14 +58,14 @@ auto MultiPartData::writeFooter() -> bool {
     if (!SafeSnprintf(tmp_, sizeof(tmp_), "\r\n--%s", boundary.c_str())) {
         return false;
     }
-    if (tempFile_.write((uint8_t *)tmp_, strlen(tmp_)) != strlen(tmp_)) {
+    if (tempFile_.write(reinterpret_cast<uint8_t *>(tmp_), strlen(tmp_)) != strlen(tmp_)) {
         return false;
     }
 
     return true;
 }
 
-auto MultiPartData::addKeyValue(const std::string &key, uint8_t *value, int len, bool isFile)
+auto MultiPartData::addKeyValue(const std::string &key, const uint8_t *value, int len, bool isFile)
     -> bool {
     if (!startKeyWrite()) {
         return false;
@@ -97,7 +98,7 @@ auto MultiPartData::startFile(const std::string &key) -> bool {
     if (!SafeSnprintf(tmp_, sizeof(tmp_), "Content-Type: application/octet-stream\r\n\r\n")) {
         return false;
     }
-    if (tempFile_.write((uint8_t *)tmp_, strlen(tmp_)) != strlen(tmp_)) {
+    if (tempFile_.write(reinterpret_cast<uint8_t *>(tmp_), strlen(tmp_)) != strlen(tmp_)) {
         return false;
     }
 
@@ -135,7 +136,7 @@ auto MultiPartData::endMultiPartData() -> bool {
     if (!SafeSnprintf(tmp_, sizeof(tmp_), "--\r\n")) {
         return false;
     }
-    if (tempFile_.write((uint8_t *)tmp_, strlen(tmp_)) != strlen(tmp_)) {
+    if (tempFile_.write(reinterpret_cast<uint8_t *>(tmp_), strlen(tmp_)) != strlen(tmp_)) {
         return false;
     }
     tempFile_.close();

@@ -16,8 +16,8 @@
 
 class GUnzipStream : public RendererStream {
 public:
-    GUnzipStream(SFile gzFile, DocType docType = DocType::TXT)
-        : RendererStream(docType), gzFile_(std::move(gzFile)) {
+    GUnzipStream(const SFile &gzFile, DocType docType = DocType::TXT)
+        : RendererStream(docType), gzFile_(gzFile) {
         readSize();
         gunzip_.setCompressedSize(gzFile_.size());
     }
@@ -35,10 +35,10 @@ private:
     uint32_t uncompressedSize_{0};
     SFile gzFile_;
     GUnzip gunzip_;
-    uint8_t inBuf_[GZ_BUFFER_SIZE];
+    uint8_t inBuf_[GZ_BUFFER_SIZE]{};
     int inSize_{0};
     int inIndex_{0};
-    uint8_t outBuf_[GZ_BUFFER_SIZE];
+    uint8_t outBuf_[GZ_BUFFER_SIZE]{};
     int outSize_{0};
     int outIndex_{0};
     bool lastInput_{false};

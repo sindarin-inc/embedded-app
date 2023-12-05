@@ -33,7 +33,7 @@ struct SpiramAllocator {
         return std::shared_ptr<T>(p, &heap_caps_free);
     }
 
-    void deallocate(T *p, std::size_t n) { heap_caps_free((void *)p); }
+    void deallocate(T *p, std::size_t n) { heap_caps_free(reinterpret_cast<void *>(p)); }
 };
 
 template <typename T, typename... ARGS>
@@ -118,7 +118,8 @@ void SpiRamFree(void *ptr);
 template <typename T>
 auto CustomArrayPtr(size_t len, void *(*mallocFunc)(size_t), void (*freeFunc)(void *))
     -> std::shared_ptr<T[]> {
-    return std::shared_ptr<T[]>((T *)mallocFunc(len * sizeof(T)), CustomDeleter<T>(freeFunc));
+    return std::shared_ptr<T[]>(static_cast<T *>(mallocFunc(len * sizeof(T))),
+                                CustomDeleter<T>(freeFunc));
 }
 
 template <typename T>

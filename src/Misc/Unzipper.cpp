@@ -83,7 +83,7 @@ auto Unzipper::open() -> bool {
             while (!found && (ecdOffset > endOffset)) {
                 if (!file_.seek(ecdOffset, SSeekSet)) ERR(4);
                 if (file_.read(buffer_, fileCentralSize + 5) != (fileCentralSize + 5)) ERR(5);
-                auto p = (uint8_t *)memmem(buffer_, fileCentralSize + 5, "PK\5\6", 4);
+                auto p = static_cast<uint8_t *>(memmem(buffer_, fileCentralSize + 5, "PK\5\6", 4));
                 if (p != nullptr) {
                     ecdOffset += (p - buffer_);
                     if (!file_.seek(ecdOffset, SSeekSet)) ERR(6);
@@ -116,20 +116,21 @@ auto Unzipper::open() -> bool {
 
             if (!file_.seek(startOffset, SSeekSet)) ERR(9);
             auto entries = SpiRamArrayPtr<uint8_t>(length);
-            if ((entries == nullptr) || (entries.get() == nullptr)) ERR(10);
+            if ((entries == nullptr) || (entries == nullptr)) ERR(10);
             if (file_.read(entries.get(), length) != length) ERR(11);
 
             // fileEntries_.resize(count);
             // uint32_t fileEntryOffset = startOffset;
             uint32_t fileEntryOffset = 0;
             while (count > 0) {
-                auto *dirFileHeader = (DirFileHeader *)&entries[fileEntryOffset];
+                auto *dirFileHeader = reinterpret_cast<DirFileHeader *>(&entries[fileEntryOffset]);
 
                 if (dirFileHeader->signature != DIR_FILE_HEADER_SIGNATURE) {
                     if (fileEntryOffset != length) ERR(11);
                 }
 
-                const char *fName = (char *)&entries[fileEntryOffset + sizeof(DirFileHeader)];
+                const char *fName =
+                    reinterpret_cast<char *>(&entries[fileEntryOffset + sizeof(DirFileHeader)]);
                 auto filePath = SpiramString(fName, dirFileHeader->filePathLength);
 
                 std::shared_ptr<FileEntry> fe = std::make_shared<FileEntry>(
@@ -414,7 +415,8 @@ auto Unzipper::openFile(const std::string &filePath) -> bool {
 
         while (true) {
             if (!file_.seek(currentFileEntry_->startPos, SSeekSet)) ERR(13);
-            if (file_.read((uint8_t *)&fileHeader_, sizeof(FileHeader)) != sizeof(FileHeader))
+            if (file_.read(reinterpret_cast<uint8_t *>(&fileHeader_), sizeof(FileHeader)) !=
+                sizeof(FileHeader))
                 ERR(14);
 
             if (fileHeader_.signature != FILE_HEADER_SIGNATURE) ERR(15);
@@ -461,8 +463,7 @@ auto Unzipper::readFile(uint8_t *fileData, uint32_t fileDataSize) -> uint32_t {
         if (fileData == nullptr) ERR(18);
 
         if (currentFileEntry_->method == 0) { // No Compression
-            if (file_.read((uint8_t *)fileData, currentFileEntry_->size) != currentFileEntry_->size)
-                ERR(19);
+            if (file_.read(fileData, currentFileEntry_->size) != currentFileEntry_->size) ERR(19);
         } else if (currentFileEntry_->method == 8) { // Deflate compression
 
             repeat_ = currentFileEntry_->compressedSize / BUFFER_SIZE;
@@ -477,7 +478,7 @@ auto Unzipper::readFile(uint8_t *fileData, uint32_t fileDataSize) -> uint32_t {
             zstr_.next_in = nullptr;
             zstr_.avail_in = 0;
             zstr_.avail_out = currentFileEntry_->size;
-            zstr_.next_out = (unsigned char *)fileData;
+            zstr_.next_out = static_cast<unsigned char *>(fileData);
 
             int zret = mz_inflateInit2(&zstr_, -15);
 
@@ -496,7 +497,7 @@ auto Unzipper::readFile(uint8_t *fileData, uint32_t fileDataSize) -> uint32_t {
                     log_w("File size to read: %" PRIu16, size);
                 }
 
-                if (file_.read((uint8_t *)buffer_, size) != size) {
+                if (file_.read(static_cast<uint8_t *>(buffer_), size) != size) {
                     mz_inflateEnd(&zstr_);
                     err = 24;
                     goto error;
@@ -505,7 +506,7 @@ auto Unzipper::readFile(uint8_t *fileData, uint32_t fileDataSize) -> uint32_t {
                 current_++;
 
                 zstr_.avail_in = size;
-                zstr_.next_in = (unsigned char *)buffer_;
+                zstr_.next_in = static_cast<unsigned char *>(buffer_);
 
                 zret = mz_inflate(&zstr_, MZ_NO_FLUSH);
 

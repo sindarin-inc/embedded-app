@@ -80,7 +80,7 @@ public:
     auto available() -> int override { return contained_.available(); }
     auto read() -> int override { return contained_.read(); };
     auto readBytes(uint8_t *buf, int size) -> int override {
-        return contained_.readBytes((char *)buf, size);
+        return contained_.readBytes(reinterpret_cast<char *>(buf), size);
     }
     auto seek(uint32_t pos) -> bool override { return contained_.seek(pos); };
     auto position() -> size_t override { return contained_.position(); }

@@ -65,8 +65,8 @@ auto SindarinAPI::checkSync(const std::string &url, CheckSyncRequest &req, Check
     }
 
     auto doc = std::make_shared<SpiRamJsonDocument>(
-        2048 * std::max(1, (int)(req.placemarks.size() + req.archives.size() +
-                                 req.bookmarks.size() + req.storedUuids.size())));
+        2048 * std::max(1, static_cast<int>(req.placemarks.size() + req.archives.size() +
+                                            req.bookmarks.size() + req.storedUuids.size())));
     JsonObject body = doc->to<JsonObject>();
     ConvertToJson(req, body);
 

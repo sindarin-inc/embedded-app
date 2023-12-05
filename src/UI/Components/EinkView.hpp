@@ -5,7 +5,7 @@
 
 class EinkView : public View {
 public:
-    EinkView(DisplaySystem &display) : View(), display_(display) {}
+    EinkView(DisplaySystem &display) : display_(display) {}
 
     void draw() override {
         View::draw();

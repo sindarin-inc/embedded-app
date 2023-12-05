@@ -17,31 +17,31 @@ auto BmpMalloc(size_t size) -> void * { return SpiRamMalloc(size); }
 auto BmpRead(RendererStream &stream) -> bmp_image * {
     bmp_image *img = nullptr;
 
-    img = (bmp_image *)BmpMalloc(sizeof(bmp_image));
+    img = static_cast<bmp_image *>(BmpMalloc(sizeof(bmp_image)));
     if (img == nullptr) {
         return BmpCleanup(nullptr, img);
     }
 
-    if (stream.readBytes((uint8_t *)&img->fileheader, sizeof(bmp_fileheader)) !=
+    if (stream.readBytes(reinterpret_cast<uint8_t *>(&img->fileheader), sizeof(bmp_fileheader)) !=
         sizeof(bmp_fileheader)) {
         return BmpCleanup(nullptr, img);
     }
 
-    if (stream.readBytes((uint8_t *)&img->dib.bmiHeader, sizeof(bmp_infoheader)) !=
-        sizeof(bmp_infoheader)) {
+    if (stream.readBytes(reinterpret_cast<uint8_t *>(&img->dib.bmiHeader),
+                         sizeof(bmp_infoheader)) != sizeof(bmp_infoheader)) {
         return BmpCleanup(nullptr, img);
     }
 
     if (img->dib.bmiHeader.biSize >= BMP_V4HEADER) {
-        if (stream.readBytes((uint8_t *)&img->dib.bmiv4Header, sizeof(bmp_v4header)) !=
-            sizeof(bmp_v4header)) {
+        if (stream.readBytes(reinterpret_cast<uint8_t *>(&img->dib.bmiv4Header),
+                             sizeof(bmp_v4header)) != sizeof(bmp_v4header)) {
             return BmpCleanup(nullptr, img);
         }
     }
 
     if (img->dib.bmiHeader.biSize >= BMP_V5HEADER) {
-        if (stream.readBytes((uint8_t *)&img->dib.bmiv5Header, sizeof(bmp_v5header)) !=
-            sizeof(bmp_v5header)) {
+        if (stream.readBytes(reinterpret_cast<uint8_t *>(&img->dib.bmiv5Header),
+                             sizeof(bmp_v5header)) != sizeof(bmp_v5header)) {
             return BmpCleanup(nullptr, img);
         }
     }
@@ -56,16 +56,18 @@ auto BmpRead(RendererStream &stream) -> bmp_image * {
     case BMP_1_BIT:
     case BMP_4_BITS:
     case BMP_8_BITS:
-        img->dib.bmiColors = (bmp_rgbquad *)BmpMalloc(palettesize);
-        if (stream.readBytes((uint8_t *)img->dib.bmiColors, palettesize) != palettesize) {
+        img->dib.bmiColors = static_cast<bmp_rgbquad *>(BmpMalloc(palettesize));
+        if (stream.readBytes(reinterpret_cast<uint8_t *>(img->dib.bmiColors), palettesize) !=
+            palettesize) {
             return BmpCleanup(nullptr, img);
         }
         break;
     case BMP_16_BITS:
     case BMP_32_BITS:
         if (img->dib.bmiHeader.biCompression == BMP_BI_BITFIELDS) {
-            img->dib.bmiColors = (bmp_rgbquad *)BmpMalloc(palettesize);
-            if (stream.readBytes((uint8_t *)img->dib.bmiColors, palettesize) != palettesize) {
+            img->dib.bmiColors = static_cast<bmp_rgbquad *>(BmpMalloc(palettesize));
+            if (stream.readBytes(reinterpret_cast<uint8_t *>(img->dib.bmiColors), palettesize) !=
+                palettesize) {
                 return BmpCleanup(nullptr, img);
             }
         }
@@ -78,7 +80,7 @@ auto BmpRead(RendererStream &stream) -> bmp_image * {
 
     uint32_t datasize = BmpGetdatasize(img);
 
-    img->ciPixelArray = (uint8_t *)BmpMalloc(sizeof(uint8_t) * datasize);
+    img->ciPixelArray = static_cast<uint8_t *>(BmpMalloc(sizeof(uint8_t) * datasize));
 
     if (img->ciPixelArray == nullptr) {
         return BmpCleanup(nullptr, img);
@@ -123,7 +125,7 @@ auto BmpGetpixelcolor(bmp_image *img, int x, int y, bmp_color color) -> uint8_t 
 
 auto BmpFindgray(uint8_t red, uint8_t green, uint8_t blue) -> uint8_t {
     double gray = 0.2989 * red + 0.5870 * green + 0.1140 * blue;
-    return (uint8_t)gray;
+    return static_cast<uint8_t>(gray);
 }
 
 void BmpFiltercolor(bmp_image *img, bmp_color color) {

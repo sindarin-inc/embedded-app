@@ -38,7 +38,7 @@ void PagedMenuScreen::render(DisplaySystem &display) {
     auto itemTitle = getCurrItem().title;
     uint16_t width, height;
 
-    display.getTextSize(itemTitle.c_str(), &width, &height);
+    display.getTextSize(itemTitle, &width, &height);
     uint16_t screenWidth = display.width();
     uint16_t screenHeight = display.height();
 
@@ -51,9 +51,9 @@ void PagedMenuScreen::render(DisplaySystem &display) {
                          .title;
     auto nextTitle = getItemAt((currSelection_ + 1) % numMenuItems_).title;
 
-    display.getTextSize(prevTitle.c_str(), &width, &height);
+    display.getTextSize(prevTitle, &width, &height);
 
-    display.getTextSize(nextTitle.c_str(), &width, &height);
+    display.getTextSize(nextTitle, &width, &height);
 
     display.setFont(display.style.getFontFamily().readableFont);
 

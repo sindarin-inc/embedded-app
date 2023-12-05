@@ -122,7 +122,7 @@ auto Battery::getBatteryPercentage() -> float {
     // log_d("Battery: %.0f%% (left: %fV, right %fV)", batteryAverage, voltageLevelLeft,
     // voltageLevelRight);
 
-    if ((int)batteryAverage == 0) {
+    if (static_cast<int>(batteryAverage) == 0) {
         batteryAverage =
             PreferencesStore::lastBatteryReport == 0 ? 90 : PreferencesStore::lastBatteryReport;
     }
@@ -130,7 +130,7 @@ auto Battery::getBatteryPercentage() -> float {
     return batteryAverage;
 }
 
-auto Battery::getDepleted() -> bool {
+auto Battery::getDepleted() const -> bool {
 #if SIMULATOR
     return false;
 #else
@@ -141,6 +141,6 @@ auto Battery::getDepleted() -> bool {
 void Battery::saveLastBatteryReport() {
     float batteryAverage = getBatteryPercentage();
     if (batteryAverage > 0) {
-        PreferencesStore::lastBatteryReport = uint8_t(batteryAverage);
+        PreferencesStore::lastBatteryReport = static_cast<uint8_t>(batteryAverage);
     }
 }

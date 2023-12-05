@@ -32,7 +32,7 @@ struct DisplayRect {
     uint32_t width;
     uint32_t height;
 
-    auto toString() -> std::string {
+    [[nodiscard]] auto toString() const -> std::string {
         return StringFormat("x:%d, y:%d, w:%d, h:%d", x, y, width, height);
     }
 };
@@ -41,7 +41,7 @@ class DisplaySystem {
 public:
     DisplaySystem();
     DisplaySystem(DisplaySystem const &) = delete;
-    ~DisplaySystem() = default;
+    virtual ~DisplaySystem() = default;
 
     static constexpr DisplayRect MAX_BOUNDING_BOX = {5, 5, 246, 246};
     static constexpr DisplayRect MIN_BOUNDING_BOX = {0, 0, 125, 45};
@@ -57,9 +57,10 @@ public:
     int32_t defaultScreenWidth = 256;
     int32_t defaultScreenHeight = 256;
 
-    DisplayRect defaultBoundingBox = {defaultXPadding, defaultYPadding,
-                                      defaultScreenWidth - (uint32_t)defaultXPadding * 2,
-                                      defaultScreenHeight - (uint32_t)defaultYPadding * 2};
+    DisplayRect defaultBoundingBox = {
+        defaultXPadding, defaultYPadding,
+        defaultScreenWidth - static_cast<uint32_t>(defaultXPadding) * 2,
+        defaultScreenHeight - static_cast<uint32_t>(defaultYPadding) * 2};
 
     Style style;
 
@@ -100,8 +101,9 @@ public:
     void setFont(Font *f) {
         if (f != nullptr) {
             font_ = f;
-            if (font_->isA(FontType::GFX)) {
-                gfxClass_->setFont(static_cast<GFont *>(font_)->get());
+            auto gFont = dynamic_cast<GFont *>(font_);
+            if (gFont != nullptr) {
+                gfxClass_->setFont(gFont->get());
             }
         } else {
             log_e("Received a bad (null) font pointer!");
@@ -146,15 +148,15 @@ public:
 
     virtual void setPartialRefresh();
     void unsetPartialRefresh();
-    auto getPartialRefresh() -> int;
+    [[nodiscard]] auto getPartialRefresh() const -> int;
     virtual void setPartialWindow(uint16_t x, uint16_t y, uint16_t w, uint16_t h);
     void setFullWindow();
 
     virtual void invertDisplay(bool newInvert);
     void flipInversion();
-    auto getInversion() -> bool { return invertedDisplay_; }
+    [[nodiscard]] auto getInversion() const -> bool { return invertedDisplay_; }
 
-    auto getLineSpacing() -> int { return lineSpacing_; }
+    [[nodiscard]] auto getLineSpacing() const -> int { return lineSpacing_; }
     void setLineSpacing(int newSpacing) { lineSpacing_ = newSpacing; }
 
     virtual void clearDisplay(){};
@@ -178,7 +180,7 @@ public:
     auto getTextWidth(const std::string &buffer) -> int;
 
     inline auto getTextWidthQuick(const char *buffer) -> int {
-        return static_cast<IBMFFont *>(font_)->getTextWidthQuick(buffer);
+        return dynamic_cast<IBMFFont *>(font_)->getTextWidthQuick(buffer);
     }
 
     // MARK: - Graphic drawing code
@@ -186,10 +188,10 @@ public:
     // Basically Adafruit_GFX::drawRect with the necessary partial refresh stuff
     // TODO: We might be able to instead just subclass `drawRect` here instead to be more consistent
     // with Adafruit_GFX
-    void drawBox(int xStart, int yStart, int xEnd, int yEnd);
+    void drawBox(int startX, int startY, int endX, int endY);
 
     // Draw a dotted box
-    void drawDottedBox(int xStart, int yStart, int xEnd, int yEnd, int dotSize = 1,
+    void drawDottedBox(int startX, int startY, int endX, int endY, int dotSize = 1,
                        int gapSize = 1);
 
     // Draw a bitmap
@@ -210,8 +212,8 @@ public:
     uint16_t bg = 0, fg = 0;
 
     // When we want to ignore the configured offsets
-    inline auto xAbsolute(int x) -> int { return x - boundingBox_.x; }
-    inline auto yAbsolute(int y) -> int { return y - boundingBox_.y; }
+    [[nodiscard]] inline auto xAbsolute(int x) const -> int { return x - boundingBox_.x; }
+    [[nodiscard]] inline auto yAbsolute(int y) const -> int { return y - boundingBox_.y; }
 
     // Should these be in the subclasses instead?
     auto xAbsoluteCenter() -> int { return 128; }
@@ -231,12 +233,16 @@ protected:
     // Must be set in the constructor of subclasses
     Adafruit_GFX *gfxClass_ = nullptr;
     Font *font_ = nullptr;
-    uint8_t *canvasBuffer_;
-    uint16_t canvasWidth_;
-    uint16_t canvasHeight_;
+    uint8_t *canvasBuffer_{};
+    uint16_t canvasWidth_{};
+    uint16_t canvasHeight_{};
 
-    inline auto xOffset(int16_t value) -> int16_t { return value + boundingBox_.x; }
-    inline auto yOffset(int16_t value) -> int16_t { return value + boundingBox_.y; }
+    [[nodiscard]] inline auto xOffset(int16_t value) const -> int16_t {
+        return value + boundingBox_.x;
+    }
+    [[nodiscard]] inline auto yOffset(int16_t value) const -> int16_t {
+        return value + boundingBox_.y;
+    }
 
     void rotate(uint16_t &x, uint16_t &y, uint16_t &w, uint16_t &h);
     void computeMinMax();

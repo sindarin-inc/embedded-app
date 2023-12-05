@@ -165,7 +165,7 @@ protected:
 private:
     void incrementReadingTime();
     void turnPage();
-    uint32_t readingStartTime_;
+    uint32_t readingStartTime_{};
     LastArrowPress lastArrowPress_ = REMOTE_NONE;
 
     int numUps_ = 0;

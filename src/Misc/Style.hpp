@@ -15,7 +15,7 @@ struct FontFamily {
 
 class Style {
 public:
-    Style() {
+    Style() : currentFont(solSansSmall) {
         solSansSmall.mainMenuFont = static_cast<Font *>(&ibmf75Face1);
         solSansSmall.popupFont = static_cast<Font *>(&ibmf75Face0);
         solSansSmall.settingsFont = static_cast<Font *>(&ibmf75Face0);
@@ -30,19 +30,17 @@ public:
         solSansLarge.popupFont = static_cast<Font *>(&ibmf75Face0);
         solSansLarge.settingsFont = static_cast<Font *>(&ibmf75Face0);
         solSansLarge.readableFont = static_cast<Font *>(&ibmf75Face2);
-
-        currentFont = solSansSmall;
     }
 
     void setFontFamily(FontFamily newFont) { currentFont = newFont; }
 
-    auto getFontFamily() -> FontFamily { return currentFont; }
+    [[nodiscard]] auto getFontFamily() const -> FontFamily { return currentFont; }
 
-    FontFamily solSansSmall;
-    FontFamily solSansMedium;
-    FontFamily solSansLarge;
+    FontFamily solSansSmall{};
+    FontFamily solSansMedium{};
+    FontFamily solSansLarge{};
 
-    FontFamily currentFont;
+    FontFamily currentFont{};
 
 protected:
 };

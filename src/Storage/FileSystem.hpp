@@ -16,12 +16,13 @@ using FileList = SpiramVector<std::string>;
 class FileSystem {
 public:
     FileSystem(FileSystem const &) = delete;
+    virtual ~FileSystem() = default;
 
     // Note: Allocates the ContainerStream on the heap, make sure to `delete` it somewhere.
-    auto newRendererStream(const char *path) -> std::shared_ptr<RendererStream>;
+    auto newRendererStream(const char *path) const -> std::shared_ptr<RendererStream>;
     auto newEPubRendererStream(const char *path, const std::shared_ptr<Readable> &readable)
         -> std::shared_ptr<RendererStream>;
-    auto newGzipRendererStream(const char *path) -> std::shared_ptr<RendererStream>;
+    auto newGzipRendererStream(const char *path) const -> std::shared_ptr<RendererStream>;
 
     // Underlying methods to init and read data
     virtual auto begin() -> bool { return true; };

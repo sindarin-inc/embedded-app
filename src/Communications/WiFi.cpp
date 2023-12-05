@@ -149,10 +149,10 @@ auto WiFi::getWifiConfig(wifi_config_t *conf) -> esp_err_t {
 }
 
 auto WiFi::hasWiFiCredentials(wifi_config_t *conf) -> bool {
-    if (strlen((const char *)conf->sta.ssid) == 0) {
+    if (strlen(reinterpret_cast<const char *>(conf->sta.ssid)) == 0) {
         return false;
     }
-    if (strlen((const char *)conf->sta.password) == 0) {
+    if (strlen(reinterpret_cast<const char *>(conf->sta.password)) == 0) {
         log_w("Zero length WiFi password (possibly ok for open networks)");
     }
     return true;
@@ -167,8 +167,8 @@ void WiFi::migrateWiFiCredentials() {
     }
 
     if (hasWiFiCredentials(&conf)) {
-        std::string ssid = (char *)conf.sta.ssid;
-        std::string password = (char *)conf.sta.password;
+        std::string ssid = reinterpret_cast<char *>(conf.sta.ssid);
+        std::string password = reinterpret_cast<char *>(conf.sta.password);
         settings_.setActiveSetting(ssid, password);
     }
     settings_.save();
@@ -301,9 +301,12 @@ auto WiFi::connectWiFi(const std::string &ssid, const std::string &password) -> 
         // We do not need to null terminate `wifi_config_t`'s `ssid` and `password` fields so we can
         // ignore warnings about potential null termination missing.
 #pragma GCC diagnostic push
+// NOLINTNEXTLINE(clang-diagnostic-unknown-warning-option)
 #pragma GCC diagnostic ignored "-Wstringop-truncation"
-        strncpy((char *)wifiConfig.sta.ssid, ssid.c_str(), sizeof(wifiConfig.sta.ssid));
-        strncpy((char *)wifiConfig.sta.password, password.c_str(), sizeof(wifiConfig.sta.password));
+        strncpy(reinterpret_cast<char *>(wifiConfig.sta.ssid), ssid.c_str(),
+                sizeof(wifiConfig.sta.ssid));
+        strncpy(reinterpret_cast<char *>(wifiConfig.sta.password), password.c_str(),
+                sizeof(wifiConfig.sta.password));
 #pragma GCC diagnostic pop
     }
 
@@ -438,12 +441,13 @@ auto WiFi::getLocalIp() -> esp_ip4_addr_t {
         log_e("esp_netif_get_ip_info failed with error %s", esp_err_to_name(err));
         return esp_ip4_addr{.addr = 0};
     }
-    return (esp_ip4_addr_t)ip.ip;
+    return {ip.ip};
 }
 
 auto WiFi::getLocalIpStr() -> std::string {
     esp_ip4_addr_t ip = getLocalIp();
     char ipstr[16];
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-cstyle-cast): There's a cast in IP2STR
     auto size = snprintf(ipstr, sizeof(ipstr), IPSTR, IP2STR(&ip));
     if (size < 0) {
         log_e("snprintf failed");
@@ -454,13 +458,13 @@ auto WiFi::getLocalIpStr() -> std::string {
 
 void WiFi::wiFiEventHandler(void *arg, esp_event_base_t eventBase, int32_t eventId,
                             void *eventData) {
-    WiFi *tthis = (WiFi *)arg;
+    WiFi *tthis = static_cast<WiFi *>(arg);
     switch (eventId) {
     case WIFI_EVENT_STA_START:
         log_d("WIFI_EVENT_STA_START");
         break;
     case WIFI_EVENT_STA_DISCONNECTED: {
-        auto *disconnected = (wifi_event_sta_disconnected_t *)eventData;
+        auto *disconnected = static_cast<wifi_event_sta_disconnected_t *>(eventData);
         // These reasons are used in Espressif's WiFi provisioning component to
         // signify un-retryable auth problem. See:
         // https://github.com/espressif/esp-idf/blob/cbce221e88d52665523093b2b6dd0ebe3f1243f1/components/wifi_provisioning/src/manager.c#L953
@@ -496,10 +500,11 @@ void WiFi::wiFiEventHandler(void *arg, esp_event_base_t eventBase, int32_t event
 }
 
 void WiFi::ipEventHandler(void *arg, esp_event_base_t eventBase, int32_t eventId, void *eventData) {
-    auto *tthis = (WiFi *)arg;
+    auto *tthis = static_cast<WiFi *>(arg);
     switch (eventId) {
     case IP_EVENT_STA_GOT_IP: {
-        auto *event = (ip_event_got_ip_t *)eventData;
+        auto *event = static_cast<ip_event_got_ip_t *>(eventData);
+        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-cstyle-cast): There's a cast in IP2STR
         log_i("IP_EVENT_STA_GOT_IP: " IPSTR, IP2STR(&event->ip_info.ip));
 
         // successful connection
@@ -512,8 +517,8 @@ void WiFi::ipEventHandler(void *arg, esp_event_base_t eventBase, int32_t eventId
             break;
         }
 
-        std::string ssid = (char *)conf.sta.ssid;
-        std::string password = (char *)conf.sta.password;
+        std::string ssid = reinterpret_cast<char *>(conf.sta.ssid);
+        std::string password = reinterpret_cast<char *>(conf.sta.password);
 
         log_d("Saving most-recent WiFi: %s", ssid.c_str());
 

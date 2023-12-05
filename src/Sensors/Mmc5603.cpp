@@ -117,17 +117,18 @@ struct Mmc5603Ctrl1Value {
     };
 };
 
-auto Mmc5603::registerReadByte(mmc5603_reg_t regAddr, uint8_t *data) -> esp_err_t {
-    return i2c_master_write_read_device((i2c_port_t)i2cNum_, MMC5603_SENSOR_ADDR,
-                                        (uint8_t *)&regAddr, 1, data, 1,
+auto Mmc5603::registerReadByte(mmc5603_reg_t regAddr, uint8_t *data) const -> esp_err_t {
+    return i2c_master_write_read_device(static_cast<i2c_port_t>(i2cNum_), MMC5603_SENSOR_ADDR,
+                                        reinterpret_cast<uint8_t *>(&regAddr), 1, data, 1,
                                         I2C_MASTER_TIMEOUT_MS / portTICK_RATE_MS);
 }
 
-auto Mmc5603::registerWriteByte(mmc5603_reg_t regAddr, uint8_t data) -> esp_err_t {
+auto Mmc5603::registerWriteByte(mmc5603_reg_t regAddr, uint8_t data) const -> esp_err_t {
     int ret;
     uint8_t writeBuf[2] = {static_cast<uint8_t>(regAddr), data};
-    ret = i2c_master_write_to_device((i2c_port_t)i2cNum_, MMC5603_SENSOR_ADDR, writeBuf,
-                                     sizeof(writeBuf), I2C_MASTER_TIMEOUT_MS / portTICK_RATE_MS);
+    ret =
+        i2c_master_write_to_device(static_cast<i2c_port_t>(i2cNum_), MMC5603_SENSOR_ADDR, writeBuf,
+                                   sizeof(writeBuf), I2C_MASTER_TIMEOUT_MS / portTICK_RATE_MS);
 
     return ret;
 }
@@ -141,7 +142,7 @@ void Mmc5603::configureIfNeeded() {
         return;
     }
     log_d("Configuring MMC5603");
-    Mmc5603Ctrl1Value ctrl1Value;
+    Mmc5603Ctrl1Value ctrl1Value{};
     ctrl1Value.bw0 = 1;
     ctrl1Value.bw1 = 1;
     esp_err_t err = registerWriteByte(MMC5603_REG_CTRL_1, ctrl1Value.raw);
@@ -166,10 +167,10 @@ auto Mmc5603::waitForMeasurement() -> bool {
     vTaskDelay(3000 / (1000000 / configTICK_RATE_HZ));
 
     // Wait for valid data
-    Mmc5603StatusValue statusValue;
+    Mmc5603StatusValue statusValue{};
     statusValue.raw = 0;
     while ((Millis() - start) < timeoutMs) {
-        esp_err_t err = registerReadByte(MMC5603_REG_STATUS_1, (uint8_t *)&statusValue.raw);
+        esp_err_t err = registerReadByte(MMC5603_REG_STATUS_1, &statusValue.raw);
         if (err != ESP_OK) {
             log_e("Failed to read from MMC5603_REG_STATUS_1 (error: %s)", esp_err_to_name(err));
             return err;
@@ -187,7 +188,7 @@ auto Mmc5603::waitForMeasurement() -> bool {
 auto Mmc5603::readX20Bit() -> float {
     configureIfNeeded();
 
-    Mmc5603Ctrl0Value ctrl0Value;
+    Mmc5603Ctrl0Value ctrl0Value{};
     ctrl0Value.autoSrEn = 1;
     ctrl0Value.takeMeasM = 1;
     ESP_ERROR_CHECK(registerWriteByte(MMC5603_REG_CTRL_0, ctrl0Value.raw));
@@ -205,14 +206,14 @@ auto Mmc5603::readX20Bit() -> float {
     xInt |= (data >> 4);
     // Offset by half the range of a 20-bit unsigned number (2^19 = 524288)
     // and divide by the range -30G - +30G (524288 / 30) to get the float value.
-    xValue = ((float)xInt - 524288.0) / 17476.267f;
+    xValue = (static_cast<float>(xInt) - 524288.0) / 17476.267f;
     return xValue;
 }
 
 auto Mmc5603::readX() -> float {
     configureIfNeeded();
 
-    Mmc5603Ctrl0Value ctrl0Value;
+    Mmc5603Ctrl0Value ctrl0Value{};
     ctrl0Value.autoSrEn = 1;
     ctrl0Value.takeMeasM = 1;
     ESP_ERROR_CHECK(registerWriteByte(MMC5603_REG_CTRL_0, ctrl0Value.raw));
@@ -229,14 +230,14 @@ auto Mmc5603::readX() -> float {
     xInt |= data;
     // Offset by half the range of a 16-bit unsigned number (2^15 = 32768)
     // and divide by the range -30G - +30G (32768 / 30) to get the float value.
-    xValue = ((float)xInt - 32768.0) / 1092.267f;
+    xValue = (static_cast<float>(xInt) - 32768.0) / 1092.267f;
     return xValue;
 }
 
 auto Mmc5603::readXYZ8Bit(Xyz8bit &out) -> esp_err_t {
     configureIfNeeded();
 
-    Mmc5603Ctrl0Value ctrl0Value;
+    Mmc5603Ctrl0Value ctrl0Value{};
     ctrl0Value.autoSrEn = 1;
     ctrl0Value.takeMeasM = 1;
     esp_err_t err;
@@ -248,19 +249,19 @@ auto Mmc5603::readXYZ8Bit(Xyz8bit &out) -> esp_err_t {
 
     waitForMeasurement();
 
-    err = registerReadByte(MMC5603_REG_XOUT_0, (uint8_t *)&(out.x));
+    err = registerReadByte(MMC5603_REG_XOUT_0, reinterpret_cast<uint8_t *>(&(out.x)));
     if (err != ESP_OK) {
         log_e("Failed to read from MMC5603_REG_XOUT_0 (error: %s)", esp_err_to_name(err));
         return err;
     }
     out.x -= 128;
-    err = registerReadByte(MMC5603_REG_YOUT_0, (uint8_t *)&(out.y));
+    err = registerReadByte(MMC5603_REG_YOUT_0, reinterpret_cast<uint8_t *>(&(out.y)));
     if (err != ESP_OK) {
         log_e("Failed to read from MMC5603_REG_YOUT_0 (error: %s)", esp_err_to_name(err));
         return err;
     }
     out.y -= 128;
-    err = registerReadByte(MMC5603_REG_ZOUT_0, (uint8_t *)&(out.z));
+    err = registerReadByte(MMC5603_REG_ZOUT_0, reinterpret_cast<uint8_t *>(&(out.z)));
     if (err != ESP_OK) {
         log_e("Failed to read from MMC5603_REG_ZOUT_0 (error: %s)", esp_err_to_name(err));
         return err;
@@ -272,7 +273,7 @@ auto Mmc5603::readXYZ8Bit(Xyz8bit &out) -> esp_err_t {
 auto Mmc5603::readXZ8Bit(Xyz8bit &out) -> esp_err_t {
     configureIfNeeded();
 
-    Mmc5603Ctrl0Value ctrl0Value;
+    Mmc5603Ctrl0Value ctrl0Value{};
     ctrl0Value.autoSrEn = 1;
     ctrl0Value.takeMeasM = 1;
     esp_err_t err = ESP_OK;
@@ -284,13 +285,13 @@ auto Mmc5603::readXZ8Bit(Xyz8bit &out) -> esp_err_t {
 
     waitForMeasurement();
 
-    err = registerReadByte(MMC5603_REG_XOUT_0, (uint8_t *)&(out.x));
+    err = registerReadByte(MMC5603_REG_XOUT_0, reinterpret_cast<uint8_t *>(&(out.x)));
     if (err != ESP_OK) {
         log_e("Failed to read from MMC5603_REG_XOUT_0 (error: %s)", esp_err_to_name(err));
         return err;
     }
     out.x -= 128;
-    err = registerReadByte(MMC5603_REG_ZOUT_0, (uint8_t *)&(out.z));
+    err = registerReadByte(MMC5603_REG_ZOUT_0, reinterpret_cast<uint8_t *>(&(out.z)));
     if (err != ESP_OK) {
         log_e("Failed to read from MMC5603_REG_ZOUT_0 (error: %s)", esp_err_to_name(err));
         return err;
@@ -303,7 +304,7 @@ auto Mmc5603::readXZ8Bit(Xyz8bit &out) -> esp_err_t {
 auto Mmc5603::readTemperature(int &temp) -> esp_err_t {
     configureIfNeeded();
 
-    Mmc5603Ctrl0Value ctrl0Value;
+    Mmc5603Ctrl0Value ctrl0Value{};
     ctrl0Value.autoSrEn = 1;
     ctrl0Value.takeMeasT = 1;
     esp_err_t err = ESP_OK;

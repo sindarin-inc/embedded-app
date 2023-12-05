@@ -320,7 +320,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         bootErrors.push_back({.type = BootError::Type::Display});
     }
 
-    DisplayRect initialRect;
+    DisplayRect initialRect{};
     initialRect.x = prefs.rectX.get().value_or(myDisplay.defaultBoundingBox.x);
     initialRect.y = prefs.rectY.get().value_or(myDisplay.defaultBoundingBox.y);
     initialRect.width = prefs.rectW.get().value_or(myDisplay.defaultBoundingBox.width);

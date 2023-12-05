@@ -20,14 +20,14 @@ void Ditherer::convertToFloat(uint8_t *image, int width, int height, int bytesPe
         for (int h = height - 1; h >= 0; h--) {
             inpixel = &image[h * bytesPerLine];
             for (int w = 0; w < width; w++) {
-                *(outpixel++) = (float)(*(inpixel++)) * div;
+                *(outpixel++) = static_cast<float>(*(inpixel++)) * div;
             }
         }
     } else {
         for (int h = 0; h < height; h++) {
             inpixel = &image[h * bytesPerLine];
             for (int w = 0; w < width; w++) {
-                *(outpixel++) = (float)(*(inpixel++)) * div;
+                *(outpixel++) = static_cast<float>(*(inpixel++)) * div;
             }
         }
     }

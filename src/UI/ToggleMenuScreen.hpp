@@ -27,7 +27,7 @@ public:
 
     void requireRestart();
 
-    auto getRequireRestart() -> bool { return restartOnBack_; }
+    auto getRequireRestart() const -> bool { return restartOnBack_; }
 
     void render(DisplaySystem &display) override;
 

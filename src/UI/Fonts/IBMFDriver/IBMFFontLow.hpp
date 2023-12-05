@@ -36,7 +36,7 @@ private:
 public:
     IBMFFontLow(const uint8_t *fontData, uint32_t length) noexcept {
 
-        load((MemoryPtr)fontData, length);
+        load(const_cast<MemoryPtr>(fontData), length);
         if (!initialized_) {
             LOGE("Font data not recognized!");
         }

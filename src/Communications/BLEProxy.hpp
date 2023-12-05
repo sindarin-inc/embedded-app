@@ -13,14 +13,9 @@ using SubscriptionStatusCallback = std::function<void(bool)>;
 
 class BLEProxy : BLECharacteristicProvider {
 public:
-    BLEProxy() : characteristicCallbacks_() {
-        proxyCharacteristic_ = nullptr;
-        proxyService_ = nullptr;
-        webRequestHandler_ = nullptr;
-        subscriptionStatusCallback_ = nullptr;
-    }
+    BLEProxy() = default;
     BLEProxy(BLEProxy const &) = delete;
-    virtual ~BLEProxy() = default;
+    ~BLEProxy() override = default;
 
     static auto getInstance() -> std::shared_ptr<BLEProxy>;
 
@@ -41,10 +36,10 @@ public:
 
 protected:
     static std::shared_ptr<BLEProxy> instance;
-    BLECharacteristic *proxyCharacteristic_;
-    BLEService *proxyService_;
-    WebRequestHandler webRequestHandler_;
-    SubscriptionStatusCallback subscriptionStatusCallback_;
+    BLECharacteristic *proxyCharacteristic_{nullptr};
+    BLEService *proxyService_{nullptr};
+    WebRequestHandler webRequestHandler_{nullptr};
+    SubscriptionStatusCallback subscriptionStatusCallback_{nullptr};
 
     class CharacteristicCallbacks : public BLECharacteristicCallbacks {
     public:

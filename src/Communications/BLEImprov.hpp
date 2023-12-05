@@ -27,9 +27,9 @@ enum BLEImprovState : uint8_t {
 
 class BLEImprov : public BLECharacteristicProvider, public BLEServiceProvider {
 public:
-    BLEImprov() : BLECharacteristicProvider(), BLEServiceProvider(), characteristicCallbacks_(){};
+    BLEImprov() : BLECharacteristicProvider(), BLEServiceProvider(){};
     BLEImprov(BLEImprov const &) = delete;
-    virtual ~BLEImprov() = default;
+    ~BLEImprov() override = default;
 
     static auto getInstance() -> std::shared_ptr<BLEImprov>;
     void loop();
@@ -43,10 +43,10 @@ public:
 
 protected:
     static std::shared_ptr<BLEImprov> instance;
-    uint32_t lastStateChangeMillis_ = 0;
-    BLECharacteristic *currentStateCharacteristic_ = nullptr;
-    BLECharacteristic *errorStateCharacteristic_ = nullptr;
-    BLECharacteristic *rpcResultCharacteristic_ = nullptr;
+    uint32_t lastStateChangeMillis_{};
+    BLECharacteristic *currentStateCharacteristic_{};
+    BLECharacteristic *errorStateCharacteristic_{};
+    BLECharacteristic *rpcResultCharacteristic_{};
     BLEImprovState state_ = STATE_WAITING;
     improv::ImprovCommand lastCommand_;
 
@@ -68,11 +68,11 @@ protected:
                 std::byte bytes[value.length()];
                 memcpy(bytes, value.data(), value.length());
 
-                improv::ImprovCommand command =
-                    improv::parse_improv_data((uint8_t *)value.c_str(), value.length());
+                improv::ImprovCommand command = improv::parse_improv_data(
+                    reinterpret_cast<const uint8_t *>(value.c_str()), value.length());
                 std::string commandStr;
                 for (int i = 0; i < value.length(); i++) {
-                    commandStr += std::to_string((int)bytes[i]);
+                    commandStr += std::to_string(static_cast<int>(bytes[i]));
                     commandStr += " ";
                 }
                 log_d("onWrite for Improv Characteristic %s", commandStr.c_str());

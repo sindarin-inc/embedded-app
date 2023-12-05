@@ -200,7 +200,7 @@ void TTRemoteInput::scanForNewDevice() {
         log_i("Scan complete. Found %zu PageTurner devices (%d total BLE devices)",
               filteredDevices.size(), results.getCount());
 
-        if (filteredDevices.size() == 0) {
+        if (filteredDevices.empty()) {
             return;
         }
         for (auto advertisedDevice : filteredDevices) {
@@ -226,7 +226,7 @@ void TTRemoteInput::scanForPairedDevice() {
         if (build.find("DFU-") == 0) {
             build = build.substr(4);
         }
-        if (SemVerCompareVersions(build.c_str(), "0.2.99") == SemVerComparison::LessThan) {
+        if (SemVerCompareVersions(build, "0.2.99") == SemVerComparison::LessThan) {
             log_i("Using active scan for PT build %s", build.c_str());
             useActiveScan = true;
         }
@@ -246,7 +246,7 @@ void TTRemoteInput::scanForPairedDevice() {
     scan->setInterval(40);
     scan->setWindow(30);
     scan->setActiveScan(useActiveScan);
-    auto started = scan->start((int)(RESCAN_INTERVAL_MS / 1000), nullptr, false);
+    auto started = scan->start((RESCAN_INTERVAL_MS / 1000), nullptr, false);
     if (!started) {
         log_e("Failed to start scan");
         return;

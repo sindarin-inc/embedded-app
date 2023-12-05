@@ -10,9 +10,9 @@ public:
 
     auto readFromBytes(uint8_t *bmpbytes, int size) -> bool;
     auto readFromStream(RendererStream &stream) -> bool;
-    auto getWidth() -> int;
-    auto getHeight() -> int;
-    auto getBitsPerPixel() -> int;
+    [[nodiscard]] auto getWidth() const -> int;
+    [[nodiscard]] auto getHeight() const -> int;
+    [[nodiscard]] auto getBitsPerPixel() const -> int;
     auto getBuffer() -> uint8_t *;
 
 private:

@@ -34,24 +34,21 @@ class Menu {
 
 public:
     Menu(MenuStyleFamily myStyle, std::string menuName = "Default")
-        : myStyle_(myStyle), menuName_(std::move(menuName)) {
-        numMenuItems_ = 0;
-    };
-
-    Menu() { numMenuItems_ = 0; };
+        : myStyle_(myStyle), menuName_(std::move(menuName)){};
+    Menu() = default;
     virtual ~Menu() = default;
 
     virtual void addMenuItem(const MenuItem &newItem);
 
     virtual void resetMenuItems();
 
-    auto getNumItems() -> int;
+    [[nodiscard]] auto getNumItems() const -> int;
 
     auto getMenuItemByTitle(const std::string &title) -> int;
 
     void setCurrSelection(int newSelection);
 
-    auto getCurrSelection() -> int;
+    [[nodiscard]] auto getCurrSelection() const -> int;
 
     auto getCurrItem() -> MenuItem;
 
@@ -83,7 +80,7 @@ protected:
     int currSelection_ = 0;
     int currMenuPage_ = 0;
 
-    MenuStyleFamily myStyle_;
+    MenuStyleFamily myStyle_{};
     std::string menuName_;
 };
 

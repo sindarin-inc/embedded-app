@@ -35,11 +35,15 @@ bool platformInitialized;
 static uint8_t minLightingDutyCycle;
 static uint8_t maxLightingDutyCycle;
 
-void PinMode(int pin, int mode) { gpio_set_direction((gpio_num_t)pin, (gpio_mode_t)mode); }
+void PinMode(int pin, int mode) {
+    gpio_set_direction(static_cast<gpio_num_t>(pin), static_cast<gpio_mode_t>(mode));
+}
 
-void DigitalWrite(int pin, int level) { gpio_set_level((gpio_num_t)pin, (uint32_t)level); }
+void DigitalWrite(int pin, int level) {
+    gpio_set_level(static_cast<gpio_num_t>(pin), static_cast<uint32_t>(level));
+}
 
-auto DigitalRead(uint8_t pin) -> int { return gpio_get_level((gpio_num_t)pin); }
+auto DigitalRead(uint8_t pin) -> int { return gpio_get_level(static_cast<gpio_num_t>(pin)); }
 
 void Delay(int ms) { vTaskDelay(pdMS_TO_TICKS(ms)); }
 
@@ -51,11 +55,11 @@ void HardwareInit() {
     // release rtc i2c lines
     ulp_timer_stop();
     ulp_riscv_halt();
-    err = rtc_gpio_deinit((gpio_num_t)I2C_MASTER_SDA_IO);
+    err = rtc_gpio_deinit(static_cast<gpio_num_t>(I2C_MASTER_SDA_IO));
     if (err != ESP_OK) {
         log_e("rtc_gpio_deinit failed for SDA: %d", err);
     }
-    err = rtc_gpio_deinit((gpio_num_t)I2C_MASTER_SCL_IO);
+    err = rtc_gpio_deinit(static_cast<gpio_num_t>(I2C_MASTER_SCL_IO));
     if (err != ESP_OK) {
         log_e("rtc_gpio_deinit failed for SCL: %d", err);
     }
@@ -71,11 +75,11 @@ void HardwareInit() {
         .scl_pullup_en = GPIO_PULLUP_ENABLE,
     };
     conf.master.clk_speed = I2C_MASTER_FREQ_HZ;
-    err = i2c_param_config((i2c_port_t)i2cPort, &conf);
+    err = i2c_param_config(static_cast<i2c_port_t>(i2cPort), &conf);
     if (err != ESP_OK) {
         log_e("i2c_param_config failed: %d", err);
     }
-    err = i2c_driver_install((i2c_port_t)i2cPort, conf.mode, 0, 0, 0);
+    err = i2c_driver_install(static_cast<i2c_port_t>(i2cPort), conf.mode, 0, 0, 0);
     if (err != ESP_OK) {
         log_e("i2c_driver_install failed: %d", err);
     }
@@ -119,7 +123,7 @@ void HardwareInit() {
     ESP_ERROR_CHECK(adc_oneshot_config_channel(adcOneshotHandle, BATT_CHANNEL_LEFT, &adcChanCfg));
     ESP_ERROR_CHECK(adc_oneshot_config_channel(adcOneshotHandle, BATT_CHANNEL_RIGHT, &adcChanCfg));
 
-    esp_log_level_set("*", (esp_log_level_t)CONFIG_LOG_DEFAULT_LEVEL);
+    esp_log_level_set("*", static_cast<esp_log_level_t>(CONFIG_LOG_DEFAULT_LEVEL));
     err = nvs_flash_init();
     if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         const esp_partition_t *partition = esp_partition_find_first(
@@ -317,8 +321,8 @@ auto GetBatteryVoltageLeft() -> float {
         log_e("error reading left battery voltage");
         return 0.0;
     }
-    auto mv = (float)(UPPER_DIVIDER + LOWER_DIVIDER) / LOWER_DIVIDER * millivolts;
-    return (float)mv / 1000.0;
+    auto mv = static_cast<float>(UPPER_DIVIDER + LOWER_DIVIDER) / LOWER_DIVIDER * millivolts;
+    return static_cast<float>(mv) / 1000.0;
 }
 
 auto GetBatteryVoltageRight() -> float {
@@ -333,8 +337,8 @@ auto GetBatteryVoltageRight() -> float {
         log_e("error reading left battery voltage");
         return 0.0;
     }
-    auto mv = (float)(UPPER_DIVIDER + LOWER_DIVIDER) / LOWER_DIVIDER * millivolts;
-    return (float)mv / 1000.0;
+    auto mv = static_cast<float>(UPPER_DIVIDER + LOWER_DIVIDER) / LOWER_DIVIDER * millivolts;
+    return static_cast<float>(mv) / 1000.0;
 }
 
 void SetLeftScreenLight(int dutyCycle) {
@@ -423,7 +427,9 @@ auto GetMinLightingDutyCycleOverride() -> uint8_t { return 1; }
 
 auto GetMaxLightingDutyCycle() -> uint8_t { return maxLightingDutyCycle; }
 
-auto GetRunTimeMs() -> uint32_t { return (uint32_t)(xTaskGetTickCount() * portTICK_PERIOD_MS); }
+auto GetRunTimeMs() -> uint32_t {
+    return static_cast<uint32_t>(xTaskGetTickCount() * portTICK_PERIOD_MS);
+}
 
 auto USBConnected() -> bool {
 #ifdef USB_CONNECTED_PIN
@@ -446,7 +452,7 @@ auto GetSerialNumber() -> std::string {
         }
     }
 
-    return {(const char *)serialNumber, sizeof(serialNumber)};
+    return {reinterpret_cast<const char *>(serialNumber), sizeof(serialNumber)};
 }
 
 auto GetMacAddress() -> std::string {
@@ -498,17 +504,17 @@ auto GetHardwareRevision() -> uint8_t {
 }
 
 void ForcePowerOn() {
-    gpio_reset_pin(gpio_num_t(sysOnPin));
-    gpio_set_pull_mode(gpio_num_t(sysOnPin), GPIO_FLOATING);
-    gpio_set_direction(gpio_num_t(sysOnPin), GPIO_MODE_OUTPUT);
-    gpio_set_level(gpio_num_t(sysOnPin), 1);
-    gpio_hold_en(gpio_num_t(sysOnPin));
+    gpio_reset_pin(static_cast<gpio_num_t>(sysOnPin));
+    gpio_set_pull_mode(static_cast<gpio_num_t>(sysOnPin), GPIO_FLOATING);
+    gpio_set_direction(static_cast<gpio_num_t>(sysOnPin), GPIO_MODE_OUTPUT);
+    gpio_set_level(static_cast<gpio_num_t>(sysOnPin), 1);
+    gpio_hold_en(static_cast<gpio_num_t>(sysOnPin));
     gpio_deep_sleep_hold_en();
 }
 
 void AllowPowerOff() {
     gpio_deep_sleep_hold_dis();
-    gpio_hold_dis((gpio_num_t)sysOnPin);
+    gpio_hold_dis(static_cast<gpio_num_t>(sysOnPin));
 
     // We haven't been particuarly scientific, but experimentally using INPUT_PULLDOWN seems to work
     // the best. I don't understand why. You'd think either an open drain or driving to 0 would be

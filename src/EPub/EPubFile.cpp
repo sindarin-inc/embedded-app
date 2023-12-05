@@ -21,10 +21,10 @@ auto EPubFile::findFileOffsetAtCharOffset(const std::string &path, uint32_t char
             return true;
         }
 
-        uint32_t offset;
-        uint32_t chOffset;
-        uint32_t charOffset;
-        EPubFile *epub;
+        uint32_t offset{};
+        uint32_t chOffset{};
+        uint32_t charOffset{};
+        EPubFile *epub{};
     } walker;
 
     walker.offset = walker.chOffset = 0;
@@ -57,8 +57,8 @@ auto EPubFile::findCharOffsetAtFileOffset(const std::string &path, uint32_t file
             return true;
         }
 
-        uint32_t charOffset;
-        uint32_t fileOffset;
+        uint32_t charOffset{};
+        uint32_t fileOffset{};
     } walker;
 
     walker.charOffset = 0;
@@ -158,7 +158,7 @@ auto EPubFile::getXHTMLFile(const std::string &path) -> pugi::xml_document & {
 auto EPubFile::getUncompressedSize(const std::string &href) -> uint32_t {
     std::string filePath = opf_->getFullPath(href);
     // log_w("Loading file %s", filePath.c_str());
-    if (epubUnzipper_.openFile(filePath.c_str())) {
+    if (epubUnzipper_.openFile(filePath)) {
         uint32_t size = epubUnzipper_.getFileSize();
         epubUnzipper_.closeFile();
         return size;
@@ -272,7 +272,7 @@ auto EPubFile::hasSummary(const std::string &chapterId) -> bool {
 
     // Walk the chapters backwards in the spine to see if the chapter id matches
     auto summaryChapterHref = opf_->getHrefByManifestId(summaryId);
-    if (summaryChapterHref == "") {
+    if (summaryChapterHref.empty()) {
         return false;
     }
     auto summaryChapterIdx = opf_->getChapterIdx(summaryChapterHref);
@@ -306,7 +306,7 @@ auto EPubFile::getSummaryContent(
         chapterId = opf_->getManifestIdByHref(chapterHref);
     }
 
-    std::string partialSummaryChapterHRef = "";
+    std::string partialSummaryChapterHRef;
     if (partialChapterSummary != nullptr && !partialChapterSummary->text.empty()) {
         auto summarySpineHref = partialChapterSummary->ePubPlace->getHRef();
         partialSummaryChapterHRef = opf_->getChapterFirstHref(summarySpineHref);
@@ -344,7 +344,7 @@ auto EPubFile::getSummaryContent(
                 opf_->getManifestIdByHref(static_cast<std::string>(chapter.href));
             std::string currentSummaryPath =
                 opf_->getHrefByManifestId("summary-" + currentChapterId);
-            if (currentSummaryPath == "") {
+            if (currentSummaryPath.empty()) {
                 log_w("No summary for %s", chapter.href.c_str());
                 continue;
             }
@@ -388,7 +388,7 @@ auto EPubFile::hasDictionary(const std::string &chapterId) -> bool {
 
     // Walk the chapters backwards in the spine to see if the chapter id matches
     auto dictionaryChapterHref = opf_->getHrefByManifestId(dictionaryId);
-    if (dictionaryChapterHref == "") {
+    if (dictionaryChapterHref.empty()) {
         return false;
     }
     auto dictionaryChapterIdx = opf_->getChapterIdx(dictionaryChapterHref);
@@ -537,7 +537,7 @@ auto EPubFile::open() -> bool {
     //     log_i("Rootfile path: %s", path.c_str());
     // }
 
-    if (manifest.rootfilePaths.size() == 0) {
+    if (manifest.rootfilePaths.empty()) {
         log_e("No rootfile paths found");
         return false;
     } else if (manifest.rootfilePaths.size() > 1) {
@@ -545,7 +545,7 @@ auto EPubFile::open() -> bool {
     }
 
     EPUB_PROFILE_START(EPubOpf)
-    auto [opfBuffer, length] = getFile(manifest.rootfilePaths[0].c_str());
+    auto [opfBuffer, length] = getFile(manifest.rootfilePaths[0]);
     if (opfBuffer == nullptr) {
         log_e("Failed to open ePub's opf %s", manifest.rootfilePaths[0].c_str());
         return false;

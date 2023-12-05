@@ -113,7 +113,7 @@ auto DownloadFile(
 
         totalReadLen += readLen;
 
-        float percentage = (float)totalReadLen / contentLength * 100.0f;
+        float percentage = static_cast<float>(totalReadLen) / contentLength * 100.0f;
         rl.checkAndExecute(percentage, [totalReadLen, downloadStart,
                                         progressCallback](int64_t time, float percentage) {
             log_d("Downloaded %.1f%% (%.1f KB/s)", percentage,
@@ -131,7 +131,7 @@ auto DownloadFile(
     log_i("Downloaded %d bytes in %.2fs (%.1f KB/s)", totalReadLen, duration / 1000000.0f,
           bps / 1000);
 
-    float percentProgress = (float)totalReadLen / contentLength * 100.0f;
+    float percentProgress = static_cast<float>(totalReadLen) / contentLength * 100.0f;
     if (progressCallback != nullptr) {
         progressCallback(totalReadLen, percentProgress);
     }
@@ -160,10 +160,10 @@ auto DownloadFile(const char *url,
     return DownloadFile(
         url, openedConnection,
         [buffer, bufferSize, writeBytes](WiFiHttpClient &client, int index, int contentLength) {
-        int readLen =
-            client.read((char *)buffer.get(), std::min(bufferSize, contentLength - index));
+        int readLen = client.read(reinterpret_cast<char *>(buffer.get()),
+                                  std::min(bufferSize, contentLength - index));
 
-        auto written = writeBytes(buffer.get(), (size_t)readLen);
+        auto written = writeBytes(buffer.get(), static_cast<size_t>(readLen));
         if (written != readLen) {
             log_w("Failed to write to file, wrote %zu but expected %d", written, readLen);
         }
@@ -181,7 +181,7 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry,
 
     SHOW_HEAP();
     // TODO: Support resuming?
-    if (fileSystem.exists(fullPath.c_str())) {
+    if (fileSystem.exists(fullPath)) {
         log_w("File %s already exists, deleting", path);
         fileSystem.remove(path);
         log_d("Deleted %s", path);
@@ -210,7 +210,7 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry,
     defer { vSemaphoreDelete(writeCompleteSemaphore); };
 
     // Open the file for writing
-    auto file = fileSystem.open(fullPath.c_str(), FILE_WRITE, true);
+    auto file = fileSystem.open(fullPath, FILE_WRITE, true);
     if (!file) {
         log_e("Failed to open file %s for writing", fullPath.c_str());
         return ERR_FILE_OPEN;
@@ -224,12 +224,12 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry,
     };
 
     auto reader = [bufferQueue](WiFiHttpClient &client, int index, int contentLength) -> size_t {
-        auto *data = (uint8_t *)heap_caps_malloc(bufferSize, MALLOC_CAP_SPIRAM);
+        auto *data = static_cast<uint8_t *>(heap_caps_malloc(bufferSize, MALLOC_CAP_SPIRAM));
         if (data == nullptr) {
             log_e("heap_caps_malloc(%d) failed", bufferSize);
             return 0;
         }
-        int bytesRead = client.read((char *)data, bufferSize);
+        int bytesRead = client.read(reinterpret_cast<char *>(data), bufferSize);
         if (bytesRead <= 0) {
             log_w("client.read returned %d bytes", bytesRead);
             heap_caps_free(data);
@@ -252,7 +252,7 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry,
         int written = 0;
 
         while (true) {
-            DataBlock block;
+            DataBlock block{};
             if (xQueueReceive(bufferQueue, &block, portMAX_DELAY) != pdPASS) {
                 log_e("xQueueReceive failed");
             }
@@ -275,7 +275,7 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry,
 
             written += bytesWritten;
 
-            float percentage = (float)written / fileLength * 100.0f;
+            float percentage = static_cast<float>(written) / fileLength * 100.0f;
             rl.checkAndExecute(percentage, [written, downloadStart,
                                             progressCallback](int64_t time, float percentage) {
                 log_d("Wrote %.1f%% (%.1f KB/s)", percentage,

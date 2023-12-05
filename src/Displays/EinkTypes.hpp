@@ -47,7 +47,7 @@ struct Frame {
     PixelSetting wb : 2; // PixelSetting for pixels changing from white to black (1 -> 0)
     PixelSetting ww : 2; // PixelSetting for pixels that stay white (1 -> 1)
 
-    inline auto getSetting(uint8_t oldPixel, uint8_t newPixel) -> uint8_t {
+    [[nodiscard]] inline auto getSetting(uint8_t oldPixel, uint8_t newPixel) const -> uint8_t {
         if (oldPixel == 0x0 && newPixel == 0x0) {
             return bb;
         } else if (oldPixel == 0x0 && newPixel == 0x1) {
@@ -63,7 +63,7 @@ struct Frame {
 
     // Populates a look up table that takes a 4 pixel byte where the most significant 4
     // bits are the old pixels and the least significant 4 bits are the new pixels
-    inline void makeLUT(std::array<uint8_t, 256> *lut) {
+    inline void makeLUT(std::array<uint8_t, 256> *lut) const {
         LUTPixels pixel;
         for (int i = 0; i < 256; ++i) {
             pixel.value = i;

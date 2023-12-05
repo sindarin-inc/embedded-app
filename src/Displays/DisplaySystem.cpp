@@ -70,7 +70,7 @@ void DisplaySystem::setPartialRefresh() { partialRefresh_ = 1; }
 
 void DisplaySystem::unsetPartialRefresh() { partialRefresh_ = 0; }
 
-auto DisplaySystem::getPartialRefresh() -> int { return partialRefresh_; }
+auto DisplaySystem::getPartialRefresh() const -> int { return partialRefresh_; }
 
 void DisplaySystem::rotate(uint16_t &x, uint16_t &y, uint16_t &w, uint16_t &h) {
 
@@ -94,10 +94,10 @@ void DisplaySystem::rotate(uint16_t &x, uint16_t &y, uint16_t &w, uint16_t &h) {
 
 void DisplaySystem::setPartialWindow(uint16_t x, uint16_t y, uint16_t w, uint16_t h) {
     setPartialRefresh();
-    partialX_ = std::min(x, (uint16_t)width());
-    partialY_ = std::min(y, (uint16_t)height());
-    partialW_ = std::min(w, (uint16_t)(width() - partialX_));
-    partialH_ = std::min(h, (uint16_t)(height() - partialY_));
+    partialX_ = std::min(x, static_cast<uint16_t>(width()));
+    partialY_ = std::min(y, static_cast<uint16_t>(height()));
+    partialW_ = std::min(w, static_cast<uint16_t>(width() - partialX_));
+    partialH_ = std::min(h, static_cast<uint16_t>(height() - partialY_));
     rotate(partialX_, partialY_, partialW_, partialH_);
     // force partialX, partialW multiple of 8?
     partialW_ += partialX_ % 8;
@@ -119,12 +119,14 @@ void DisplaySystem::ensureBoundaries() {
     // log_d("Bounding Box before is %s", boundingBox_.toString().c_str());
 
     // First constrain position
-    boundingBox_.x = std::clamp(boundingBox_.x, MAX_BOUNDING_BOX.x,
-                                (int32_t)(MAX_BOUNDING_BOX.x + MAX_BOUNDING_BOX.width -
-                                          std::max(MIN_BOUNDING_BOX.width, boundingBox_.width)));
-    boundingBox_.y = std::clamp(boundingBox_.y, MAX_BOUNDING_BOX.y,
-                                (int32_t)(MAX_BOUNDING_BOX.y + MAX_BOUNDING_BOX.height -
-                                          std::max(MIN_BOUNDING_BOX.height, boundingBox_.height)));
+    boundingBox_.x =
+        std::clamp(boundingBox_.x, MAX_BOUNDING_BOX.x,
+                   static_cast<int32_t>(MAX_BOUNDING_BOX.x + MAX_BOUNDING_BOX.width -
+                                        std::max(MIN_BOUNDING_BOX.width, boundingBox_.width)));
+    boundingBox_.y =
+        std::clamp(boundingBox_.y, MAX_BOUNDING_BOX.y,
+                   static_cast<int32_t>(MAX_BOUNDING_BOX.y + MAX_BOUNDING_BOX.height -
+                                        std::max(MIN_BOUNDING_BOX.height, boundingBox_.height)));
 
     // Then constrain dimensions
     boundingBox_.width =
@@ -167,10 +169,10 @@ void DisplaySystem::drawSingleLineOfText(const std::string &line, int x, int y, 
             gfxClass_->printf("%s", line.c_str());
         } else {
             gfxClass_->startWrite();
-            ibmf_defs::Bitmap canvas;
+            ibmf_defs::Bitmap canvas{};
             canvas.pixels = canvasBuffer_;
             canvas.dim = ibmf_defs::Dim(canvasWidth_, canvasHeight_);
-            static_cast<IBMFFont *>(font_)->drawSingleLineOfText(
+            dynamic_cast<IBMFFont *>(font_)->drawSingleLineOfText(
                 canvas, Pos(xOffset(x), yOffset(y + getTextHeight() - lineSpacing_ - 3)), line,
                 inverted ? !invertedDisplay_ : invertedDisplay_);
             gfxClass_->endWrite();
@@ -180,7 +182,7 @@ void DisplaySystem::drawSingleLineOfText(const std::string &line, int x, int y, 
 
 void DisplaySystem::drawSingleLineOfCenteredText(const std::string &line) {
     this->drawSingleLineOfText(
-        line, this->xAbsolute(this->xAbsoluteCenter() - this->getTextWidth(line.c_str()) / 2),
+        line, this->xAbsolute(this->xAbsoluteCenter() - this->getTextWidth(line) / 2),
         this->yAbsolute(this->yAbsoluteCenter() - this->getTextHeight() / 2));
 }
 
@@ -190,7 +192,7 @@ void DisplaySystem::getTextSize(const std::string &buffer, uint16_t *w, uint16_t
             int16_t x, y;
             gfxClass_->getTextBounds(buffer.c_str(), 0, 0, &x, &y, w, h);
         } else {
-            Dim dim = static_cast<IBMFFont *>(font_)->getTextSize(buffer);
+            Dim dim = dynamic_cast<IBMFFont *>(font_)->getTextSize(buffer);
             *w = dim.width;
             *h = dim.height;
         }
@@ -207,7 +209,7 @@ auto DisplaySystem::getTextHeight(const std::string &buffer) -> int {
             uint16_t w;
             gfxClass_->getTextBounds(buffer.c_str(), 0, 0, &x, &y, &w, &h);
         } else {
-            h = static_cast<IBMFFont *>(font_)->getTextHeight(buffer);
+            h = dynamic_cast<IBMFFont *>(font_)->getTextHeight(buffer);
         }
     }
     return h;
@@ -221,7 +223,7 @@ auto DisplaySystem::getTextWidth(const std::string &buffer) -> int {
             uint16_t h;
             gfxClass_->getTextBounds(buffer.c_str(), 0, 0, &x, &y, &w, &h);
         } else {
-            w = static_cast<IBMFFont *>(font_)->getTextWidth(buffer);
+            w = dynamic_cast<IBMFFont *>(font_)->getTextWidth(buffer);
         }
     }
     return w;

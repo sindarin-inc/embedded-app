@@ -14,7 +14,7 @@
 
 #define SETTINGS_CHARACTERISTIC_UUID "611f68af-5ffe-4944-9b8f-ef6773326268"
 
-BLESettings::BLESettings(PreferencesStore *prefs) { this->prefs_ = prefs; }
+BLESettings::BLESettings(PreferencesStore *prefs) : prefs_(prefs) {}
 
 #if USE_TURN_TOUCH_REMOTE
 void BLESettings::attachTTRemoteInput(TTRemoteInput *ttRemoteInput) {
@@ -74,9 +74,9 @@ void BLESettings::disconnectPageTurnerForSeconds(const int seconds) {
 
 void BLESettings::blinkLedAfterConnect(BLECharacteristic *characteristic, const std::string &key) {
     // TODO: Fully take over the LED for a while
-    gpio_hold_dis((gpio_num_t)RED_LED);
-    gpio_hold_dis((gpio_num_t)GREEN_LED);
-    gpio_hold_dis((gpio_num_t)BLUE_LED);
+    gpio_hold_dis(static_cast<gpio_num_t>(RED_LED));
+    gpio_hold_dis(static_cast<gpio_num_t>(GREEN_LED));
+    gpio_hold_dis(static_cast<gpio_num_t>(BLUE_LED));
     for (int i = 0; i < 10; i++) {
         // Flash all the LEDs
         DigitalWrite(RED_LED, LED_ON);

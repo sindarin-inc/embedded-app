@@ -30,7 +30,7 @@ public:
     auto getRightBatteryVoltage() -> float;
     auto getBatteryPercentage() -> float;
 
-    auto getDepleted() -> bool;
+    [[nodiscard]] auto getDepleted() const -> bool;
 
     void saveLastBatteryReport();
 
@@ -42,13 +42,13 @@ protected:
     Telemetry &telemetry_;
     unsigned long lastMeasurementTime_ = 0;
     unsigned long lastLoggingTime_ = 0;
-    bool depleted_;
-    int leftIndex_;
-    int rightIndex_;
-    int leftMeasurementCount_;
-    int rightMeasurementCount_;
-    bool leftConnected_;
-    bool rightConnected_;
-    std::array<float, BATTERY_MEASUREMENTS_COUNT> leftMeasurements_;
-    std::array<float, BATTERY_MEASUREMENTS_COUNT> rightMeasurements_;
+    bool depleted_{};
+    int leftIndex_{};
+    int rightIndex_{};
+    int leftMeasurementCount_{};
+    int rightMeasurementCount_{};
+    bool leftConnected_{};
+    bool rightConnected_{};
+    std::array<float, BATTERY_MEASUREMENTS_COUNT> leftMeasurements_{};
+    std::array<float, BATTERY_MEASUREMENTS_COUNT> rightMeasurements_{};
 };

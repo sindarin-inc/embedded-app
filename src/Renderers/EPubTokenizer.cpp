@@ -391,7 +391,7 @@ auto EPubTokenizer::isEmpty(pugi::xml_node node) -> bool {
             return true;
         }
 
-        bool empty;
+        bool empty{};
     } walker;
 
     walker.empty = true;
@@ -425,31 +425,31 @@ auto EPubTokenizer::toUtf8(uint32_t val) -> char * {
     char *s = utf8Ch_;
     if (val <= 0x7F) {
         // Plain ASCII
-        *s++ = (char)val;
+        *s++ = static_cast<char>(val);
         *s = 0;
     } else if (val <= 0x07FF) {
         // 2-byte unicode
-        *s++ = (char)(((val >> 6) & 0x1F) | 0xC0);
-        *s++ = (char)(((val >> 0) & 0x3F) | 0x80);
+        *s++ = static_cast<char>(((val >> 6) & 0x1F) | 0xC0);
+        *s++ = static_cast<char>(((val >> 0) & 0x3F) | 0x80);
         *s = 0;
     } else if (val <= 0xFFFF) {
         // 3-byte unicode
-        *s++ = (char)(((val >> 12) & 0x0F) | 0xE0);
-        *s++ = (char)(((val >> 6) & 0x3F) | 0x80);
-        *s++ = (char)(((val >> 0) & 0x3F) | 0x80);
+        *s++ = static_cast<char>(((val >> 12) & 0x0F) | 0xE0);
+        *s++ = static_cast<char>(((val >> 6) & 0x3F) | 0x80);
+        *s++ = static_cast<char>(((val >> 0) & 0x3F) | 0x80);
         *s = 0;
     } else if (val <= 0x10FFFF) {
         // 4-byte unicode
-        *s++ = (char)(((val >> 18) & 0x07) | 0xF0);
-        *s++ = (char)(((val >> 12) & 0x3F) | 0x80);
-        *s++ = (char)(((val >> 6) & 0x3F) | 0x80);
-        *s++ = (char)(((val >> 0) & 0x3F) | 0x80);
+        *s++ = static_cast<char>(((val >> 18) & 0x07) | 0xF0);
+        *s++ = static_cast<char>(((val >> 12) & 0x3F) | 0x80);
+        *s++ = static_cast<char>(((val >> 6) & 0x3F) | 0x80);
+        *s++ = static_cast<char>(((val >> 0) & 0x3F) | 0x80);
         *s = 0;
     } else {
         // error - use replacement character
-        *s++ = (char)0xEF;
-        *s++ = (char)0xBF;
-        *s++ = (char)0xBD;
+        *s++ = static_cast<char>(0xEF);
+        *s++ = static_cast<char>(0xBF);
+        *s++ = static_cast<char>(0xBD);
         *s = 0;
     }
     return utf8Ch_;
@@ -1055,8 +1055,9 @@ auto EPubTokenizer::addTokenToPage(Token &token, const char *str, uint8_t strSiz
         }
 
         if (!pager_.addLastTokenToPage(false)) {
-            if (((uint16_t)token.tokenId &
-                 ((uint16_t)TokenId::NEWLINE | (uint16_t)TokenId::ENDPARAGRAPH)) == 0) {
+            if ((static_cast<uint16_t>(token.tokenId) &
+                 (static_cast<uint16_t>(TokenId::NEWLINE) |
+                  static_cast<uint16_t>(TokenId::ENDPARAGRAPH))) == 0) {
                 if (backwards_) {
                     if (token.streamPlace >= *toPlace_) {
                         // So we are at the location corresponding to the end of the requested
@@ -1773,7 +1774,8 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint32_t len) -> bool 
                         .tokenId = TokenId::TEXT,
                         .spacesAfter = 0};
             do {
-                auto chIt = superscriptCharacters.find(SpiramString((char *)&curChar, 1));
+                auto chIt =
+                    superscriptCharacters.find(SpiramString(reinterpret_cast<char *>(&curChar), 1));
                 if (chIt != superscriptCharacters.end()) {
                     const char *script = chIt->second;
                     while (*script) {
@@ -1807,7 +1809,8 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint32_t len) -> bool 
                         .tokenId = TokenId::TEXT,
                         .spacesAfter = 0};
             do {
-                auto chIt = subscriptCharacters.find(SpiramString((char *)&curChar, 1));
+                auto chIt =
+                    subscriptCharacters.find(SpiramString(reinterpret_cast<char *>(&curChar), 1));
                 if (chIt != subscriptCharacters.end()) {
                     const char *script = chIt->second;
                     while (*script) {

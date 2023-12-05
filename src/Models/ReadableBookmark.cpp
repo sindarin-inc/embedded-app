@@ -33,7 +33,7 @@ auto ReadOneBookmark(SFile &file, LocalBookmark &bookmark) -> bool {
     // translated to an TxtPlace through the factory() method.
     const char *s;
     s = bookmarkStr.c_str();
-    while (*s && (*s == ' ')) {
+    while (*s == ' ') {
         s++;
     }
     if (*s) {
@@ -48,7 +48,7 @@ auto ReadOneBookmark(SFile &file, LocalBookmark &bookmark) -> bool {
             while (*s && (*s != ' ')) {
                 s++;
             }
-            while (*s && (*s == ' ')) {
+            while (*s == ' ') {
                 s++;
             }
         }

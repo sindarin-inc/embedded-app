@@ -13,7 +13,7 @@ class BLERemoteInput : public RemoteInput, public BLECharacteristicProvider {
 public:
     BLERemoteInput() = default;
     BLERemoteInput(BLERemoteInput const &) = delete;
-    virtual ~BLERemoteInput() = default;
+    ~BLERemoteInput() override = default;
 
     void configureCharacteristics(BLEService *service) override;
 
@@ -21,15 +21,15 @@ public:
     auto getService() -> BLEService * { return service_; };
 
 protected:
-    BLECharacteristic *characteristic_;
-    BLEService *service_;
+    BLECharacteristic *characteristic_{};
+    BLEService *service_{};
     static std::shared_ptr<BLERemoteInput> instance;
 
     class CharacteristicCallbacks : public BLECharacteristicCallbacks {
     public:
         BLERemoteInput *enclosed;
 
-        CharacteristicCallbacks(BLERemoteInput *enclosure) { enclosed = enclosure; }
+        CharacteristicCallbacks(BLERemoteInput *enclosure) : enclosed(enclosure) {}
 
         void onWrite(NimBLECharacteristic *characteristic, ble_gap_conn_desc *desc) override {
             if (!BLEManager::getInstance()->checkAuthed(desc)) {

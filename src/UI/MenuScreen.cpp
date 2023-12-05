@@ -48,7 +48,7 @@ void MenuScreen::drawMenuItems(DisplaySystem &display, bool withBullet, bool wit
          i++) {
         std::string itemTitle = getItemTitleAt(i);
         // If we still don't fit, shrink the string until we do.
-        while (display.getTextWidth(itemTitle.c_str()) > MAX_WIDTH) {
+        while (display.getTextWidth(itemTitle) > MAX_WIDTH) {
             if (itemTitle.length() > 4) {
                 itemTitle = Utf8Substr(itemTitle, 0, itemTitle.length() - 4) + "...";
             } else {
@@ -77,8 +77,8 @@ void MenuScreen::drawMenuItems(DisplaySystem &display, bool withBullet, bool wit
     }
 
     display.setFont(display.style.getFontFamily().readableFont);
-    int extraTextWidth = display.getTextWidth(extraTextBelowMenu_.c_str());
-    display.drawSingleLineOfText(extraTextBelowMenu_.c_str(),
+    int extraTextWidth = display.getTextWidth(extraTextBelowMenu_);
+    display.drawSingleLineOfText(extraTextBelowMenu_,
                                  display.xAbsolute(display.xAbsoluteCenter() - extraTextWidth / 2),
                                  display.yAbsolute(display.yAbsoluteMax() - 60));
 }

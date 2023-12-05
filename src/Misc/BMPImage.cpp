@@ -89,10 +89,10 @@ auto BMPImage::readFromStream(RendererStream &stream) -> bool {
     return true;
 }
 
-auto BMPImage::getBitsPerPixel() -> int { return bitsPerPixel_; }
+auto BMPImage::getBitsPerPixel() const -> int { return bitsPerPixel_; }
 
 auto BMPImage::getBuffer() -> uint8_t * { return outputBuffer_.get(); }
 
-auto BMPImage::getWidth() -> int { return width_; }
+auto BMPImage::getWidth() const -> int { return width_; }
 
-auto BMPImage::getHeight() -> int { return height_; }
+auto BMPImage::getHeight() const -> int { return height_; }

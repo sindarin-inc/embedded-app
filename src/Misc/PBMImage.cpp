@@ -47,7 +47,7 @@ auto ReadInt(RendererStream &stream, int &val) -> bool {
     }
     // terminate string
     *str = 0;
-    val = strtol((const char *)tmp, nullptr, sizeof(tmp));
+    val = strtol(reinterpret_cast<const char *>(tmp), nullptr, sizeof(tmp));
     return true;
 }
 

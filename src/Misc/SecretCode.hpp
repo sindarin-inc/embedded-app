@@ -40,6 +40,6 @@ public:
 protected:
     // std::function to store the action when code is entered
     std::function<void()> callback_;
-    std::array<RemoteCommand, 8> commands_;
+    std::array<RemoteCommand, 8> commands_{};
     uint8_t index_ = 0;
 };

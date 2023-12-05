@@ -21,13 +21,13 @@ auto PosixFileSystem::open(const std::string &path, const char *mode, const bool
 
 auto PosixFileSystem::exists(const std::string &path) const -> bool {
     auto prefixedPath = createPath(path);
-    struct stat buffer;
+    struct stat buffer {};
     return (stat(prefixedPath.c_str(), &buffer) == 0);
 }
 
 auto PosixFileSystem::size(const std::string &path) const -> size_t {
     auto prefixedPath = createPath(path);
-    struct stat buffer;
+    struct stat buffer {};
     auto err = stat(prefixedPath.c_str(), &buffer);
     if (err != 0) {
         return 0;
@@ -110,7 +110,7 @@ auto PosixFileSystem::removeDir(const std::string &path) -> bool {
     for (auto &file : files) {
         auto fullPath = StringFormat("%s/%s", path.c_str(), file.c_str());
         log_i("deleting %s", file.c_str());
-        bool removed = remove(fullPath.c_str());
+        bool removed = remove(fullPath);
         if (!removed) {
             log_e("failed to remove: %s", fullPath.c_str());
             return false;
@@ -121,14 +121,14 @@ auto PosixFileSystem::removeDir(const std::string &path) -> bool {
         log_i("deleting dir: %s", dir.c_str());
         // delete this directory
         auto fullPath = StringFormat("%s/%s", path.c_str(), dir.c_str());
-        if (!removeDir(fullPath.c_str())) {
+        if (!removeDir(fullPath)) {
             log_e("failed to remove: %s", fullPath.c_str());
             return false;
         }
     }
 
     // now remove this directory
-    if (path.size() == 0) {
+    if (path.empty()) {
         return true;
     }
 

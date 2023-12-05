@@ -46,10 +46,10 @@ public:
         // average glyph + space width is at least 3px wide)
         // TODO: It would be nice if the font told us its minimum glyph size
         if (text_.size() > size.width / 3) {
-            text_ = Utf8Substr(text_, 0, std::min(size.width / 3, (int)text_.size()));
+            text_ = Utf8Substr(text_, 0, std::min(size.width / 3, static_cast<int>(text_.size())));
         }
 
-        display_.getTextSize(text_.c_str(), &w, &h);
+        display_.getTextSize(text_, &w, &h);
 
         // If we don't have the option to grow horizontally as much as we want,
         // (which, honestly, we should probably never give a text view, right?)
@@ -72,5 +72,5 @@ public:
 
 protected:
     std::string text_;
-    Font *font_;
+    Font *font_{};
 };

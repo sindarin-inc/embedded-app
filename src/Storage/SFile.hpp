@@ -31,14 +31,14 @@ public:
 class SStream {
 public:
     SStream() = default;
-    ~SStream() = default;
+    virtual ~SStream() = default;
 
     virtual auto write(uint8_t c) -> size_t = 0;
     auto write(const char *str) -> size_t {
         if (str == nullptr) {
             return 0;
         }
-        return write((const uint8_t *)str, strlen(str));
+        return write(reinterpret_cast<const uint8_t *>(str), strlen(str));
     }
 
     virtual auto write(const uint8_t *buf, size_t size) -> size_t = 0;
@@ -48,20 +48,20 @@ public:
         std::string ret;
         int c = read();
         while (c >= 0) {
-            ret += (char)c;
+            ret += static_cast<char>(c);
             c = read();
         }
         return ret;
     }
     auto readStringUntil(char terminator) -> std::string {
-        std::string res = "";
+        std::string res;
         int value;
         while (true) {
             value = read();
             if (value <= 0 || value == terminator) {
                 return res;
             }
-            res += (char)value;
+            res += static_cast<char>(value);
         }
         return res;
     }
@@ -71,6 +71,7 @@ class SFile : public SStream {
 public:
     SFile() : p_(nullptr) {}
     SFile(std::shared_ptr<SFileImpl> p) : p_(std::move(p)) {}
+    ~SFile() override = default;
 
     auto write(uint8_t c) -> size_t override;
     auto write(const uint8_t *buf, size_t size) -> size_t override;
@@ -98,7 +99,7 @@ class VFSFile : public SFileImpl {
 public:
     VFSFile(const char *fname, const char *mode, const bool create) {
         std::string modeStr(mode);
-        std::string openMode = "";
+        std::string openMode;
         bool read = false;
         if (modeStr.find('r') != std::string::npos) {
             openMode = "rb";
@@ -122,7 +123,7 @@ public:
     ~VFSFile() override = default;
 
     auto write(const uint8_t *buf, size_t size) -> size_t override;
-    auto available() -> int;
+    [[nodiscard]] auto available() const -> int;
     auto flush() -> int override;
     auto read(uint8_t *buf, size_t size) -> size_t override;
 

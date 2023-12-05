@@ -99,7 +99,7 @@ void SolClock::getClockTime(uint8_t &hours, uint8_t &minutes) {
         return;
     }
 #endif
-    struct tm timeinfo;
+    struct tm timeinfo {};
     getLocaltime(&timeinfo);
     hours = timeinfo.tm_hour;
     minutes = timeinfo.tm_min;
@@ -152,7 +152,7 @@ auto SolClock::setClockTimeFromInternet() -> bool {
 
 auto SolClock::calculateNextSyncTime(time_t now) -> time_t {
     // Current local time as a tm struct
-    struct tm timeinfo;
+    struct tm timeinfo {};
     localtime_r(&now, &timeinfo);
 
     // Set morning delivery to 6am and evening delivery to 8pm

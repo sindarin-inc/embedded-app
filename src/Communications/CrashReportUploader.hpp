@@ -18,7 +18,7 @@ struct CrashUploadState {
         NoCrashReport,
     } state = Idle;
 
-    int uploadPercentage;
+    int uploadPercentage{};
     std::string message;
 };
 

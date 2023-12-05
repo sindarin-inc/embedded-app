@@ -88,9 +88,9 @@ protected:
     Telemetry &telemetry_;
     WiFiState wiFiState_ = WiFiState::UNINITIALIZED;
     wifi_power_t wiFiPower_ = WIFI_POWER_19_5dBm;
-    esp_netif_t *staNetif_;
-    esp_event_handler_instance_t wifiEventHandlerInstance_;
-    esp_event_handler_instance_t ipEventHandlerInstance_;
+    esp_netif_t *staNetif_{};
+    esp_event_handler_instance_t wifiEventHandlerInstance_{};
+    esp_event_handler_instance_t ipEventHandlerInstance_{};
     WiFiSettings settings_;
     EventGroupHandle_t wifiEventGroup_ = nullptr;
 

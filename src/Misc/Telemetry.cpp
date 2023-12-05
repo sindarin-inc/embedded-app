@@ -71,9 +71,9 @@ auto Telemetry::mapToJson(const std::unordered_map<std::string, TelemetryVariant
     return json;
 }
 
-auto Telemetry::uploadAndResetTelemetry(FileSystem &fileSystem, Telemetry &telemetry, bool useBle,
+auto Telemetry::uploadAndResetTelemetry(FileSystem &fileSystem, bool useBle,
                                         const std::shared_ptr<CancelFlag> &cancel) -> int {
-    auto localPath = telemetry.metricLogPath();
+    auto localPath = Telemetry::metricLogPath();
 
     auto file = fileSystem.open(localPath, FILE_READ);
     if (!file) {
@@ -91,7 +91,7 @@ auto Telemetry::uploadAndResetTelemetry(FileSystem &fileSystem, Telemetry &telem
     if (httpCode == 201) {
         log_d("Deleting %s", localPath.c_str());
         Telemetry::dispatchQueue()->dispatch(
-            [&fileSystem, localPath]() { fileSystem.remove(localPath.c_str()); });
+            [&fileSystem, localPath]() { fileSystem.remove(localPath); });
     } else {
         log_e("Failed to upload telemetry log: %s http code: %d", localPath.c_str(), httpCode);
     }

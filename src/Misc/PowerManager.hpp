@@ -92,7 +92,7 @@ struct BootInfo {
     RESET_REASON rtcResetReason = NO_MEAN;
     esp_sleep_wakeup_cause_t sleepWakeupCause = ESP_SLEEP_WAKEUP_UNDEFINED;
 
-    auto humanStr() -> std::string {
+    [[nodiscard]] auto humanStr() const -> std::string {
         switch (reason) {
         case Reason::UartChipReset:
             return "USB Uart Reset";
@@ -125,7 +125,7 @@ struct BootInfo {
         }
     }
 
-    auto telemetryStr() -> std::string {
+    [[nodiscard]] auto telemetryStr() const -> std::string {
         switch (reason) {
         case Reason::UartChipReset:
             return "UartChipReset";
@@ -249,7 +249,7 @@ protected:
     Xyz8bit lastMagReading_ = {};
     float lastMagAngle_ = 0;
 #if !DISABLE_POWER_MANAGEMENT
-    esp_pm_config_t pmConfig_;
+    esp_pm_config_t pmConfig_{};
 #endif
     void updateState();
 

@@ -34,6 +34,7 @@ private:
 public:
     IBMFFont(IBMFFontLow &ibmFont, int index) noexcept
         : Font(FontType::IBMF), font_(&ibmFont), faceIndex_(index) {}
+    ~IBMFFont() override = default;
 
     [[nodiscard]] inline auto isInitialized() const -> bool {
         if ((font_ != nullptr) && font_->isInitialized() &&

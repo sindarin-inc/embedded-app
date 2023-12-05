@@ -6,7 +6,8 @@
 
 void ReadableSeekScreen::render(DisplaySystem &display) {
     auto place = Place::factory(prefs_.readablePlace.get(readable_->shortenedUuid.c_str()));
-    auto progress = 100 * (float)place->getOffset() / (float)renderer_.size();
+    auto progress =
+        100 * static_cast<float>(place->getOffset()) / static_cast<float>(renderer_.size());
 
     auto percentStr = StringFormat("%.1f%%", progress);
 
@@ -52,9 +53,9 @@ void ReadableSeekScreen::render(DisplaySystem &display) {
 
     y += display.getTextHeight() + 10;
     std::string message4 = "Seek granularity: ";
-    message4 += StringFormat("%.1f%%", (float)(100 / (float)seekGranularity_));
-    display.getTextSize(message4.c_str(), &textWidth, &textHeight);
-    display.drawSingleLineOfText(message4.c_str(), (display.width() - textWidth) / 2, y);
+    message4 += StringFormat("%.1f%%", (100 / static_cast<float>(seekGranularity_)));
+    display.getTextSize(message4, &textWidth, &textHeight);
+    display.drawSingleLineOfText(message4, (display.width() - textWidth) / 2, y);
 
     // up arrow
     uint16_t arrowWidth = 10, arrowHeight = 5;

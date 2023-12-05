@@ -34,7 +34,7 @@ void CrashUploader::uploadCrash(
         FileList coreDumpFiles;
         fileSystem_.listDir("/coredumps", coreDumpFiles);
 
-        if (coreDumpFiles.size() == 0) {
+        if (coreDumpFiles.empty()) {
             log_i("no core dump found");
             progressCallback(CrashUploadState{.state = CrashUploadState::State::NoCrashReport});
             return;
@@ -54,9 +54,9 @@ void CrashUploader::uploadCrash(
                 // remove this core dump file
                 log_i("deleting %s", coreDumpFile.c_str());
                 fileSystem_.remove("/coredumps/" + coreDumpFile);
-                progressCallback(
-                    CrashUploadState{.state = CrashUploadState::State::Uploading,
-                                     .uploadPercentage = i * 100 / (int)coreDumpFiles.size()});
+                progressCallback(CrashUploadState{
+                    .state = CrashUploadState::State::Uploading,
+                    .uploadPercentage = i * 100 / static_cast<int>(coreDumpFiles.size())});
             } else {
                 log_e("could not send crash report %s, http code %d", coreDumpFile.c_str(),
                       httpCode);

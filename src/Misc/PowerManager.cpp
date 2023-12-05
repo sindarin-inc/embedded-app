@@ -232,7 +232,6 @@ auto PowerManager::begin() -> esp_err_t {
     attachInterrupt(
         digitalPinToInterrupt(USB_CONNECTED_PIN),
         [this]() {
-#if !DISABLE_POWER_MANAGEMENT
         DispatchGetCore1BackgroundQueue()->dispatch([this]() {
             if (USBConnected()) {
                 // If USB is connected, disable operation unless we've disabled this behavior
@@ -269,7 +268,6 @@ auto PowerManager::begin() -> esp_err_t {
                 }
             }
         });
-#endif
         },
         CHANGE);
 #endif
@@ -382,8 +380,8 @@ void PowerManager::checkUsb() {
         // TODO: Should we take multiple measurements?
         battery.loop();
         auto percentage = battery.getBatteryPercentage();
-        gpio_hold_dis((gpio_num_t)GREEN_LED);
-        gpio_hold_dis((gpio_num_t)RED_LED);
+        gpio_hold_dis(static_cast<gpio_num_t>(GREEN_LED));
+        gpio_hold_dis(static_cast<gpio_num_t>(RED_LED));
 
         if (percentage > 95) {
             PreferencesStore::isCharged = true;
@@ -421,8 +419,8 @@ void PowerManager::checkUsb() {
             // log_d("Battery not fully charged, turning on red LED. Percentage: %d%%",
             //       int(percentage));
         }
-        gpio_hold_en((gpio_num_t)GREEN_LED);
-        gpio_hold_en((gpio_num_t)RED_LED);
+        gpio_hold_en(static_cast<gpio_num_t>(GREEN_LED));
+        gpio_hold_en(static_cast<gpio_num_t>(RED_LED));
         gpio_deep_sleep_hold_en();
     } else {
         // log_d("USB disconnected, resetting charged LED");
@@ -430,16 +428,16 @@ void PowerManager::checkUsb() {
         PreferencesStore::isCharged = false; // reset the isCharged flag as the USB is disconnected
         DigitalWrite(GREEN_LED, LED_OFF);
         DigitalWrite(RED_LED, LED_OFF);
-        gpio_hold_dis((gpio_num_t)GREEN_LED);
-        gpio_hold_dis((gpio_num_t)RED_LED);
+        gpio_hold_dis(static_cast<gpio_num_t>(GREEN_LED));
+        gpio_hold_dis(static_cast<gpio_num_t>(RED_LED));
     }
 }
 
 void PowerManager::releaseLED() {
     DigitalWrite(GREEN_LED, LED_OFF);
     DigitalWrite(RED_LED, LED_OFF);
-    gpio_hold_dis((gpio_num_t)GREEN_LED);
-    gpio_hold_dis((gpio_num_t)RED_LED);
+    gpio_hold_dis(static_cast<gpio_num_t>(GREEN_LED));
+    gpio_hold_dis(static_cast<gpio_num_t>(RED_LED));
 }
 
 void PowerManager::beginShutdown() {
@@ -602,13 +600,13 @@ auto ToString(SleepReason reason) -> const char * {
 auto PowerManager::enableUsbWakeup() -> esp_err_t {
     esp_err_t err;
     if (USBConnected()) {
-        err = esp_sleep_enable_ext0_wakeup((gpio_num_t)USB_CONNECTED_PIN, 0);
+        err = esp_sleep_enable_ext0_wakeup(static_cast<gpio_num_t>(USB_CONNECTED_PIN), 0);
         if (err != ESP_OK) {
             log_e("error enabling USB_CONNECTED_PIN low wakeup from deep sleep %d", err);
             return err;
         }
     } else {
-        err = esp_sleep_enable_ext0_wakeup((gpio_num_t)USB_CONNECTED_PIN, 1);
+        err = esp_sleep_enable_ext0_wakeup(static_cast<gpio_num_t>(USB_CONNECTED_PIN), 1);
         if (err != ESP_OK) {
             log_e("error enabling USB_CONNECTED_PIN high wakeup from deep sleep %d", err);
             return err;
@@ -634,11 +632,11 @@ void PowerManager::deepSleepInternal(SleepReason reason) {
 
     esp_err_t err;
 
-    err = rtc_gpio_init((gpio_num_t)I2C_MASTER_SDA_IO);
+    err = rtc_gpio_init(static_cast<gpio_num_t>(I2C_MASTER_SDA_IO));
     if (err != ESP_OK) {
         log_e("Failed to init SDA with err %s", esp_err_to_name(err));
     }
-    err = rtc_gpio_init((gpio_num_t)I2C_MASTER_SCL_IO);
+    err = rtc_gpio_init(static_cast<gpio_num_t>(I2C_MASTER_SCL_IO));
     if (err != ESP_OK) {
         log_e("Failed to init SCL with err %s", esp_err_to_name(err));
     }
@@ -716,14 +714,15 @@ void PowerManager::deepSleepInternal(SleepReason reason) {
     // When USB is connected, we want to wake up minutely and check the battery level (to know
     // when to turn the LED to green), otherwise we cant wait until the next content sync.
     if (USBConnected()) {
-        sleepTime = 60 * uint64_t(1000000);
+        sleepTime = 60 * static_cast<uint64_t>(1000000);
     }
 
     // Otherwise we want to wait until we want to run our next content sync if that's sooner
     // than what we've already set
     auto now = SolClock::getInstance().getEpochTime();
     if (now < PreferencesStore::nextSyncTime) {
-        sleepTime = std::min(sleepTime, (PreferencesStore::nextSyncTime - now) * uint64_t(1000000));
+        sleepTime = std::min(sleepTime, (PreferencesStore::nextSyncTime - now) *
+                                            static_cast<uint64_t>(1000000));
     }
 
     if (sleepTime != UINT64_MAX) {

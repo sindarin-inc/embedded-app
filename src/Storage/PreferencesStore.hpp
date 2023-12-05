@@ -55,13 +55,13 @@ auto GetFromStorage(uint32_t nvsHandle, const char *key, T &value) -> esp_err_t 
         "Unsupported type for NVS storage");
     esp_err_t err;
     if constexpr (std::is_same_v<T, bool>) {
-        err = nvs_get_u8(nvsHandle, key, (uint8_t *)&value);
+        err = nvs_get_u8(nvsHandle, key, reinterpret_cast<uint8_t *>(&value));
     } else if constexpr (std::is_same_v<T, int> || std::is_same_v<T, int32_t>) {
-        err = nvs_get_i32(nvsHandle, key, (int32_t *)&value);
+        err = nvs_get_i32(nvsHandle, key, reinterpret_cast<int32_t *>(&value));
     } else if constexpr (std::is_same_v<T, uint32_t>) {
         err = nvs_get_u32(nvsHandle, key, &value);
     } else if constexpr (std::is_same_v<T, uint64_t> || std::is_same_v<T, BLEAddress>) {
-        err = nvs_get_u64(nvsHandle, key, (uint64_t *)&value);
+        err = nvs_get_u64(nvsHandle, key, reinterpret_cast<uint64_t *>(&value));
     } else if constexpr (std::is_same_v<T, std::string>) {
         size_t len = 0;
         // NVS strings can be up to 4000 bytes long, so we need to get the length first
@@ -181,6 +181,7 @@ public:
         PrefsItem(PreferencesStore &prefs, const char *key) : PrefsItemBase<T>(prefs) {
             strncpy(this->key_, key, sizeof(this->key_));
         }
+        virtual ~PrefsItem() = default;
 
         virtual void loadValue() {
             T value;
@@ -211,7 +212,7 @@ public:
     protected:
         bool loaded_ = false;
         std::optional<T> value_;
-        char key_[MAX_KEY_LENGTH + 1];
+        char key_[MAX_KEY_LENGTH + 1]{};
     };
 
     template <typename T>
@@ -425,7 +426,7 @@ public:
                 }
 
                 bool demoMode = false;
-                err = nvs_get_u8(nvsHandle_, "demo", (uint8_t *)&demoMode);
+                err = nvs_get_u8(nvsHandle_, "demo", reinterpret_cast<uint8_t *>(&demoMode));
                 // If it's not set or it's set to 0, set the noSetup flag to true.
                 if (!firstEverBoot && (err == ESP_ERR_NVS_NOT_FOUND || !demoMode)) {
                     noSetupMode.set(true);
@@ -482,7 +483,7 @@ public:
         return true;
     }
 
-    auto started() -> bool { return started_; }
+    [[nodiscard]] auto started() const -> bool { return started_; }
 
     auto end() -> esp_err_t {
         if (!started_) {
@@ -514,7 +515,7 @@ public:
         commit();
     }
 
-    void logStats() {
+    void logStats() const {
 #if !SIMULATOR
         nvs_stats_t nvsStats;
         esp_err_t err = nvs_get_stats(nullptr, &nvsStats);
@@ -629,12 +630,12 @@ public:
 
 protected:
     const uint32_t latestMigrationVersion_ = 4;
-    uint32_t nvsHandle_;
-    bool started_;
+    uint32_t nvsHandle_{};
+    bool started_{};
 
     PrefsItem<uint32_t> preferencesStoreMigrationVersion_;
 
-    void commit() {
+    void commit() const {
         esp_err_t err = nvs_commit(nvsHandle_);
         if (err) {
             log_e("nvs_commit fail: %s", esp_err_to_name(err));

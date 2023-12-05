@@ -21,61 +21,63 @@ static const DRAM_ATTR uint8_t CLEAR_PACKET[48] = {
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
 // These should go in RAM since they're used per-gate and the gate timing is sensitive
-static const DRAM_ATTR uint16_t GATE_SELECT_TABLE_L[] = {
-    0x00C0, 0x0030, 0x000C, 0x0003, 0xC000, 0x3000, 0x0C00, 0x0300,
-    0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
-};
+// static const DRAM_ATTR uint16_t GATE_SELECT_TABLE_L[] = {
+//     0x00C0, 0x0030, 0x000C, 0x0003, 0xC000, 0x3000, 0x0C00, 0x0300,
+//     0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
+// };
 
 inline auto GateSelectL(uint8_t i) -> uint16_t {
     if (i >= 8) {
         return 0;
     } else {
-        return ((uint16_t)0xC0 >> ((i % 4) * 2)) << ((i / 4) * 8);
+        return (static_cast<uint16_t>(0xC0) >> ((i % 4) * 2)) << ((i / 4) * 8);
     }
 }
 
-static const DRAM_ATTR uint16_t GATE_SELECT_TABLE_H[] = {
-    0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
-    0x00C0, 0x0030, 0x000C, 0x0003, 0xC000, 0x3000, 0x0C00, 0x0300,
-};
+// static const DRAM_ATTR uint16_t GATE_SELECT_TABLE_H[] = {
+//     0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
+//     0x00C0, 0x0030, 0x000C, 0x0003, 0xC000, 0x3000, 0x0C00, 0x0300,
+// };
 
 inline auto GateSelectH(uint8_t i) -> uint16_t {
     if (i < 8) {
         return 0;
     } else {
         i -= 8;
-        return ((uint16_t)0xC0 >> ((i % 4) * 2)) << ((i / 4) * 8);
+        return (static_cast<uint16_t>(0xC0) >> ((i % 4) * 2)) << ((i / 4) * 8);
     }
 }
 
-static const DRAM_ATTR uint32_t GATE_BLOCK_TABLE_L[] = {
-    0x03000000, 0x0C000000, 0x30000000, 0xC0000000, 0x00030000, 0x000C0000, 0x00300000, 0x00C00000,
-    0x00000300, 0x00000C00, 0x00003000, 0x0000C000, 0x00000003, 0x0000000C, 0x00000030, 0x000000C0,
-    0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
-    0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
-};
+// static const DRAM_ATTR uint32_t GATE_BLOCK_TABLE_L[] = {
+//     0x03000000, 0x0C000000, 0x30000000, 0xC0000000, 0x00030000, 0x000C0000, 0x00300000,
+//     0x00C00000, 0x00000300, 0x00000C00, 0x00003000, 0x0000C000, 0x00000003, 0x0000000C,
+//     0x00000030, 0x000000C0, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
+//     0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
+//     0x00000000, 0x00000000, 0x00000000, 0x00000000,
+// };
 
 inline auto GateBlockL(uint8_t i) -> uint32_t {
     if (i >= 16) {
         return 0;
     } else {
-        return ((uint32_t)0x03000000 << ((i % 4) * 2)) >> ((i / 4) * 8);
+        return (static_cast<uint32_t>(0x03000000) << ((i % 4) * 2)) >> ((i / 4) * 8);
     }
 }
 
-static const DRAM_ATTR uint32_t GATE_BLOCK_TABLE_H[] = {
-    0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
-    0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
-    0x000000C0, 0x00000030, 0x0000000C, 0x00000003, 0x0000C000, 0x00003000, 0x00000C00, 0x00000300,
-    0x00C00000, 0x00300000, 0x000C0000, 0x00030000, 0xC0000000, 0x30000000, 0x0C000000, 0x03000000,
-};
+// static const DRAM_ATTR uint32_t GATE_BLOCK_TABLE_H[] = {
+//     0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
+//     0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
+//     0x00000000, 0x00000000, 0x000000C0, 0x00000030, 0x0000000C, 0x00000003, 0x0000C000,
+//     0x00003000, 0x00000C00, 0x00000300, 0x00C00000, 0x00300000, 0x000C0000, 0x00030000,
+//     0xC0000000, 0x30000000, 0x0C000000, 0x03000000,
+// };
 
 inline auto GateBlockH(uint8_t i) -> uint32_t {
     if (i < 16) {
         return 0;
     } else {
         i -= 16;
-        return ((uint32_t)0xC0 >> ((i % 4) * 2)) << ((i / 4) * 8);
+        return (static_cast<uint32_t>(0xC0) >> ((i % 4) * 2)) << ((i / 4) * 8);
     }
 }
 
@@ -198,7 +200,7 @@ void EinkET013TT1::clear(const EinkET013TT1Waveform &waveform) {
     update(waveform, previousBuffer_);
 }
 
-inline void EinkET013TT1::setCS(bool value, ScreenSide screen) {
+inline void EinkET013TT1::setCS(bool value, ScreenSide screen) const {
     if (screen == ScreenSide::Left) {
         DigitalWrite(csLeft_, value);
     } else if (screen == ScreenSide::Right) {
@@ -234,11 +236,11 @@ void EinkET013TT1::updateInternal(const EinkET013TT1Waveform &waveform, const ui
     } else {
         memcpy(borderSettings, BORDER_TEMPLATE, 4);
     }
-    auto *gateBlockLow = (uint32_t *)&(scanLine[4]);
-    auto *gateSelectLow = (uint16_t *)&(scanLine[8]);
+    auto *gateBlockLow = reinterpret_cast<uint32_t *>(&(scanLine[4]));
+    auto *gateSelectLow = reinterpret_cast<uint16_t *>(&(scanLine[8]));
     uint8_t *sourceData = &(scanLine[10]);
-    auto *gateSelectHigh = (uint16_t *)&(scanLine[42]);
-    auto *gateBlockHigh = (uint32_t *)&(scanLine[44]);
+    auto *gateSelectHigh = reinterpret_cast<uint16_t *>(&(scanLine[42]));
+    auto *gateBlockHigh = reinterpret_cast<uint32_t *>(&(scanLine[44]));
 
     log_d("Updating display with waveform \"%s\"", waveform.name);
 
@@ -298,8 +300,8 @@ void EinkET013TT1::updateInternal(const EinkET013TT1Waveform &waveform, const ui
 
         // Generate a look up table to quickly look up old bits -> new bits and the resulting
         // transitions
-        std::array<uint8_t, 256> lut;
-        std::array<uint8_t, 256> altLut;
+        std::array<uint8_t, 256> lut{};
+        std::array<uint8_t, 256> altLut{};
 
         // These each take ~210us at 160MHz
         frame.makeLUT(&lut);
@@ -450,7 +452,7 @@ void EinkET013TT1::writeRegister(Register index, const uint8_t *data, size_t len
         log_w("writeRegister called from outside of einkQueue_");
     }
     spi_transaction_t t = {
-        .cmd = (uint16_t)((0x70 << 8) | (index & 0x0F)), // 0x70 is the command prefix
+        .cmd = static_cast<uint16_t>((0x70 << 8) | (index & 0x0F)), // 0x70 is the command prefix
         .length = len * 8,
         .tx_buffer = data};
 
@@ -468,7 +470,7 @@ auto EinkET013TT1::readRegister(uint8_t index, ScreenSide screen) -> uint8_t {
         log_w("readRegister called from outside of einkQueue_");
     }
     ESP_ERROR_CHECK(spi_device_acquire_bus(spiHigh_, portMAX_DELAY));
-    spi_transaction_t t = {.cmd = (uint16_t)((0x70 << 8) | (index & 0x0F))};
+    spi_transaction_t t = {.cmd = static_cast<uint16_t>((0x70 << 8) | (index & 0x0F))};
     // TODO: Hardcoding reading to the left one for now
     setCS(LOW, screen);
     ESP_ERROR_CHECK(spi_device_polling_transmit(spiHigh_, &t));
@@ -500,7 +502,7 @@ auto EinkET013TT1::readTemperature(ScreenSide screen) -> int16_t {
 
     if (value >= 0x76) {
         value |= 0x80;
-        return (int16_t)((int8_t)value * 2);
+        return static_cast<int16_t>(static_cast<int8_t>(value) * 2);
     } else if (value <= 0x22) {
         return value * 2;
     }
@@ -644,9 +646,9 @@ inline void EinkET013TT1::startTimer(uint32_t ns) {
     timerDurationCycles_ = (esp_clk_cpu_freq() / 1000000000.0) * ns;
 }
 
-inline auto EinkET013TT1::timerActivated() -> bool { return timerDurationCycles_ != 0; }
+inline auto EinkET013TT1::timerActivated() const -> bool { return timerDurationCycles_ != 0; }
 
-inline auto EinkET013TT1::timerRunning() -> bool {
+inline auto EinkET013TT1::timerRunning() const -> bool {
     volatile uint32_t cycleCount = 0;
     RSR(CCOUNT, cycleCount);
     if (timerDurationCycles_ != 0 && cycleCount - cycleCountStart_ < timerDurationCycles_) {

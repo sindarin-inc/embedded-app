@@ -59,7 +59,7 @@ private:
 
     void configureIfNeeded();
 
-    auto registerReadByte(mmc5603_reg_t regAddr, uint8_t *data) -> esp_err_t;
+    auto registerReadByte(mmc5603_reg_t regAddr, uint8_t *data) const -> esp_err_t;
 
-    auto registerWriteByte(mmc5603_reg_t regAddr, uint8_t data) -> esp_err_t;
+    [[nodiscard]] auto registerWriteByte(mmc5603_reg_t regAddr, uint8_t data) const -> esp_err_t;
 };

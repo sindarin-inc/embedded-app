@@ -33,15 +33,13 @@ void StatsScreen::render(DisplaySystem &display) {
     display.setFont(static_cast<Font *>(&ibmf75Face0));
     display.drawSingleLineOfText(
         wordsMessage,
-        display.xAbsolute(display.xAbsoluteCenter() -
-                          display.getTextWidth(wordsMessage.c_str()) / 2),
+        display.xAbsolute(display.xAbsoluteCenter() - display.getTextWidth(wordsMessage) / 2),
         display.yAbsolute(display.yAbsoluteCenter() - (display.getTextHeight() * 2 + 1) / 2));
-    display.drawSingleLineOfText(timeMessage,
-                                 display.xAbsolute(display.xAbsoluteCenter() -
-                                                   display.getTextWidth(timeMessage.c_str()) / 2),
-                                 display.yAbsolute(display.yAbsoluteCenter() -
-                                                   (display.getTextHeight() * 2 + 1) / 2 +
-                                                   display.getTextHeight() + 1));
+    display.drawSingleLineOfText(
+        timeMessage,
+        display.xAbsolute(display.xAbsoluteCenter() - display.getTextWidth(timeMessage) / 2),
+        display.yAbsolute(display.yAbsoluteCenter() - (display.getTextHeight() * 2 + 1) / 2 +
+                          display.getTextHeight() + 1));
     display.updateDisplay();
 }
 

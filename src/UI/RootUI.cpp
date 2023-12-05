@@ -69,6 +69,7 @@
 
 #define LAST_READABLE_ID "rui-readable"
 
+// NOLINTNEXTLINE(readability-function-size): It's big, I know
 void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &fileSystem,
                    LightingController &lightingController) {
 
@@ -116,7 +117,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     }
 
     // Load the SolSans font only.
-    ibmf75.load((ibmf_defs::MemoryPtr)fontsList[0].content, fontsList[0].length);
+    ibmf75.load(const_cast<ibmf_defs::MemoryPtr>(fontsList[0].content), fontsList[0].length);
 
     auto booksMenu = new Menu(mainMenu->getMyStyle(), "Books");
     auto articlesMenu = new Menu(mainMenu->getMyStyle(), "Articles");
@@ -173,7 +174,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             log_d("Changing readable title to %s", title.c_str());
             // Iterate through the menu items and change the title of the item that matches by title
             auto updateMenuTitle = [displayedTitle, title](auto &menu) {
-                auto readableMenuItem = menu->getMenuItemByTitle(displayedTitle.c_str());
+                auto readableMenuItem = menu->getMenuItemByTitle(displayedTitle);
                 if (readableMenuItem != -1) {
                     menu->changeItemTitleAt(readableMenuItem, title);
                 }
@@ -270,7 +271,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     }
 
     // If there are no books, show the Sync Content item in the books tab.
-    if (readables.size() == 0) {
+    if (readables.empty()) {
         booksMenu->addMenuItem(
             MenuItem("Sync Content", [this, display, &localStore, mainMenu, &lightingController]() {
                 auto contentSyncScreen =
@@ -348,7 +349,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     }
 
     // If there are no articles, show the Sync Content item in the articles tab.
-    if (articles.size() == 0) {
+    if (articles.empty()) {
         articlesMenu->addMenuItem(
             MenuItem("Sync Content", [this, display, &localStore, mainMenu, &lightingController]() {
                 auto contentSyncScreen =
@@ -1217,7 +1218,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         fileSystem.listDir("/coredumps", coreDumpFiles);
         for (auto &file : coreDumpFiles) {
             log_i("Removing %s", file.c_str());
-            fileSystem.remove(StringFormat("%s%s", "/coredumps/", file.c_str()).c_str());
+            fileSystem.remove(StringFormat("%s%s", "/coredumps/", file.c_str()));
         }
         debugSettingsMenu->showTemporaryMessage(*display, "Crash Reports cleared.");
         Delay(1500);
@@ -1321,7 +1322,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     debugSettingsMenu->addMenuItem(MenuItem("Set Vcom", [this, display, debugSettingsMenu]() {
         auto vcomMenu = new MenuScreen(power_.battery, *display, debugSettingsMenu->getMyStyle(),
                                        "Vcom Settings", "Debug Settings");
-        auto *driver = (static_cast<DisplayEinkET013TT1 *>(display))->getDriver();
+        auto *driver = (dynamic_cast<DisplayEinkET013TT1 *>(display))->getDriver();
         vcomMenu->addMenuItem(MenuItem("0V", [this, vcomMenu, driver]() {
             driver->setVcom(0);
             prefs_.vcom.set(0);
@@ -1760,7 +1761,7 @@ void RootUI::handleBrowse(FileSystem &fileSystem, MenuScreen *fsMenu, const std:
 
     for (const std::string &dir : localDirs) {
         log_d("Next Dir is %s", dir.c_str());
-        fsMenu->addMenuItem(MenuItem(StringFormat("%s/", dir.c_str()).c_str(),
+        fsMenu->addMenuItem(MenuItem(StringFormat("%s/", dir.c_str()),
                                      [this, fsMenu, &fileSystem, path, dir]() {
             this->display_->clearDisplay();
             handleBrowse(fileSystem, fsMenu, path + dir + "/");
@@ -1771,7 +1772,7 @@ void RootUI::handleBrowse(FileSystem &fileSystem, MenuScreen *fsMenu, const std:
 
     for (const std::string &file : localFiles) {
         log_d("Next File is %s", file.c_str());
-        fsMenu->addMenuItem(MenuItem(file.c_str(), [this, fsMenu, &fileSystem, path, file]() {
+        fsMenu->addMenuItem(MenuItem(file, [this, fsMenu, &fileSystem, path, file]() {
             SFile toSerialOutput = fileSystem.open(path + file);
             while (toSerialOutput.available()) {
                 printf("%c", toSerialOutput.read());

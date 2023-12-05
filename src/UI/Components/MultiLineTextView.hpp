@@ -123,7 +123,7 @@ public:
             }
         }
 
-        int lineCount = std::min((size_t)maxLines_, splitLines_.size());
+        int lineCount = std::min(static_cast<size_t>(maxLines_), splitLines_.size());
         int height = lineCount * font_->lineHeight() + (lineCount - 1) * spacingOffset_;
 
         display_.setFont(oldFont);

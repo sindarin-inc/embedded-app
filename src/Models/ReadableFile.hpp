@@ -12,7 +12,7 @@ public:
 
     SpiramString uuid;
     SpiramString name;
-    int size;
+    int size{};
     SpiramString filetype;
     SpiramString shaHash;
     //! URL to download the file

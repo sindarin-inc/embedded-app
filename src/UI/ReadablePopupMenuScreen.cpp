@@ -64,10 +64,10 @@ void ReadablePopupMenuScreen::setUpPopupMenu() {
                                             SOL_PAGE_NUMBER(lengthOfFile));
     }
 
-    if (chapterPagesRemainingString != "") {
+    if (!chapterPagesRemainingString.empty()) {
         popupMenuView_.setFooter1Text(chapterPagesRemainingString);
     }
-    if (placeStringForBottom != "") {
+    if (!placeStringForBottom.empty()) {
         popupMenuView_.setFooter2Text(placeStringForBottom);
     }
 

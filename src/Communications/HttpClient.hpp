@@ -55,16 +55,16 @@ public:
 
     virtual auto endChunkedData() -> bool = 0;
 
-    bool connected;
+    bool connected{};
 
 private:
     char *url_;
     std::string userAgent_;
-    esp_http_client_handle_t client_;
+    esp_http_client_handle_t client_{};
     std::multimap<std::string, std::string, CaseInsensitive> responseHeaders_;
-    bool gzip_;
+    bool gzip_{};
     GZipStream gz_;
-    int gzUncompressedBytesRemaining_;
+    int gzUncompressedBytesRemaining_{};
 
     auto writeAvailableCompressedData() -> bool;
 };

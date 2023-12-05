@@ -14,7 +14,7 @@ auto IBMFFont::ligKernUTF8Map(const std::string &line, LigKernMappingHandler han
                 wasEndOfWord = false;
                 firstWordChar = true;
             }
-            kern = (FIX16)0;
+            kern = static_cast<FIX16>(0);
 
             // Ligature loop for glyphCode1
             while (font_->getFace(faceIndex_)->ligKern(glyphCode1, &glyphCode2, &kern)) {
@@ -56,7 +56,7 @@ void IBMFFont::drawSingleLineOfText(ibmf_defs::Bitmap &canvas, ibmf_defs::Pos po
     }
     if (isInitialized()) {
         ibmf_defs::Pos atPos = pos;
-        Glyph glyph;
+        Glyph glyph{};
         glyph.bitmap = canvas;
 
         ligKernUTF8Map(line, [this, &glyph, &atPos, inverted](GlyphCode glyphCode, FIX16 kern,
@@ -96,7 +96,7 @@ auto IBMFFont::getTextSize(const std::string &buffer) -> ibmf_defs::Dim {
             // int8_t hOffset = first ? font_->getFace(faceIndex_)->getGlyphHOffset(glyphCode) :
             // 0;
 
-            ibmf_defs::Glyph glyph;
+            ibmf_defs::Glyph glyph{};
             if (font_->getFace(faceIndex_)
                     ->getGlyph(glyphCode, glyph, false)) { // retrieves only the metrics
                 // LOGD("Advance: %f, xoff: %d, yoff: %d, descent: %d, kern: %d",
@@ -132,7 +132,7 @@ auto IBMFFont::getTextWidth(const std::string &buffer) -> int {
     if (isInitialized()) {
         ligKernUTF8Map(buffer,
                        [this, &width](GlyphCode glyphCode, FIX16 kern, bool first, bool last) {
-            ibmf_defs::Glyph glyph;
+            ibmf_defs::Glyph glyph{};
             if (font_->getFace(faceIndex_)
                     ->getGlyph(glyphCode, glyph, false)) { // retrieves only the metrics
 

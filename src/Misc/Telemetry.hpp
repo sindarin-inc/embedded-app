@@ -52,7 +52,7 @@ public:
 
     static auto metricLogPath() -> std::string { return "/metrics/telemetry.jsonl"; }
 
-    auto uploadAndResetTelemetry(FileSystem &fileSystem, Telemetry &telemetry, bool useBle = false,
+    auto uploadAndResetTelemetry(FileSystem &fileSystem, bool useBle = false,
                                  const std::shared_ptr<CancelFlag> &cancel = nullptr) -> int;
 
 protected:
@@ -82,7 +82,7 @@ private:
         auto timestamp = SolClock::getInstance().getEpochTime();
 
         std::string dataJsonFormat = mapToJson(data);
-        std::string valueFormat = "";
+        std::string valueFormat;
         if constexpr (std::is_same<T, float>::value) {
             valueFormat = StringFormat(R"(,"v":%.2f)", value);
         } else if constexpr (std::is_same<T, uint32_t>::value || std::is_same<T, uint16_t>::value) {
@@ -111,9 +111,10 @@ private:
 
         Telemetry::dispatchQueue()->dispatch([this, logString, field]() {
             std::string path = Telemetry::metricLogPath();
-            SFile file = fileSystem_.open(path.c_str(), FILE_APPEND);
+            SFile file = fileSystem_.open(path, FILE_APPEND);
             if (file.size() < MAX_TELEMETRY_LOG_SIZE) {
-                file.write((const uint8_t *)logString.c_str(), logString.length());
+                file.write(reinterpret_cast<const uint8_t *>(logString.c_str()),
+                           logString.length());
                 file.write('\n');
                 file.flush();
                 file.close();

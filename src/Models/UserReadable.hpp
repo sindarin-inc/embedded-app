@@ -17,7 +17,7 @@ public:
     std::shared_ptr<EPubPlace> ePubPlace;
     std::shared_ptr<UserReadablePartialChapterSummary> partialChapterSummary = nullptr;
 
-    bool isArchived;
+    bool isArchived{};
     std::shared_ptr<Readable> readable = nullptr;
 
     auto fromJson(const JsonObject &j) -> bool override {

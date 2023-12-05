@@ -36,7 +36,7 @@ public:
     // Disable updates and keeps a specific lighting setting (for when the user adjusts the setting
     // manually)
     void setOverrideValuePercent(int percent, bool maintainLightSensor = false);
-    auto getCurrentPercent() -> int;
+    [[nodiscard]] auto getCurrentPercent() const -> int;
 
     // Allow lighting only one of the screens, or both
     enum Screens {
@@ -64,11 +64,11 @@ protected:
     // enabled_ refers to the ambient light sensor being turned on, not the lights themselves
     bool enabled_ = false;
     // lightsOut refers to the lights being turned off
-    bool lightsOut_;
+    bool lightsOut_{};
     bool onlyIncreaseMode_ = false;
 
     void setCurrentDutyCycle(int dutyCycle, int fadeMs);
-    auto getCurrentDutyCycle() -> int { return currentDutyCycle_; }
+    [[nodiscard]] auto getCurrentDutyCycle() const -> int { return currentDutyCycle_; }
 
     Screens screens_ = BOTH;
 };

@@ -32,7 +32,7 @@ public:
     }
 
     [[nodiscard]] auto streamSize() const -> size_t override {
-        return stream_.get() != nullptr ? stream_->size() : 0;
+        return stream_ != nullptr ? stream_->size() : 0;
     }
 
     [[nodiscard]] auto isFor(DocType docType) const -> bool override {
@@ -43,7 +43,7 @@ public:
 
     [[nodiscard]] auto getStream() -> std::shared_ptr<RendererStream> override { return stream_; }
 
-    [[nodiscard]] inline auto isReady() const -> bool override { return stream_.get() != nullptr; }
+    [[nodiscard]] inline auto isReady() const -> bool override { return stream_ != nullptr; }
 
     [[nodiscard]] inline auto getTxtOffset() const -> uint32_t override {
         return stream_->position();
@@ -53,7 +53,7 @@ private:
     std::shared_ptr<RendererStream> stream_;
 
     // Used to add space qty that follow a token
-    Token *lastToken_;
+    Token *lastToken_{};
 
     [[nodiscard]] auto getFileLocation(StreamPlace fromPlace) -> StreamPlace;
 

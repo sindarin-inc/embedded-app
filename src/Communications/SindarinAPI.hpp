@@ -40,7 +40,7 @@ enum SindarinError {
 
 class SindarinAPI {
 public:
-    SindarinAPI(std::string baseUrl) { baseUrl_ = std::move(baseUrl); }
+    SindarinAPI(std::string baseUrl) : baseUrl_(std::move(baseUrl)) {}
     SindarinAPI(SindarinAPI const &) = delete;
 
     static auto getInstance() -> std::shared_ptr<SindarinAPI>;

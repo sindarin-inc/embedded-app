@@ -11,9 +11,9 @@
 class PopupMenuView : public View, public Menu {
 public:
     PopupMenuView(DisplaySystem &display)
-        : View(), display_(display), popupMenuBackground_(display, 5),
-          popupMenuForeground_(display, 5), footer1TextView_(display, ""),
-          footer2TextView_(display, ""), footer3TextView_(display, "") {}
+        : display_(display), popupMenuBackground_(display, 5), popupMenuForeground_(display, 5),
+          footer1TextView_(display, ""), footer2TextView_(display, ""),
+          footer3TextView_(display, "") {}
 
     ~PopupMenuView() override = default;
 
@@ -51,26 +51,26 @@ public:
         }
 
         // Nudge down the footers
-        if (footer1TextView_.getText().size() > 0 || footer2TextView_.getText().size() > 0) {
+        if (!footer1TextView_.getText().empty() || !footer2TextView_.getText().empty()) {
             y += 5;
         }
 
         auto footerRect = Rect({{contentFrame.origin.x, y}, {contentFrame.size.width, 0}});
-        if (footer1TextView_.getText().size() > 0) {
+        if (!footer1TextView_.getText().empty()) {
             auto footerTopRect =
                 context.setViewFrame(footer1TextView_, footerRect,
                                      LayoutOptionsSizeToFit | LayoutOptionsAlignCenterHorizontal);
             y += footerTopRect.size.height;
             footerRect.origin.y = y;
         }
-        if (footer2TextView_.getText().size() > 0) {
+        if (!footer2TextView_.getText().empty()) {
             auto footerBottomRect =
                 context.setViewFrame(footer2TextView_, footerRect,
                                      LayoutOptionsSizeToFit | LayoutOptionsAlignCenterHorizontal);
             y += footerBottomRect.size.height;
             footerRect.origin.y = y;
         }
-        if (footer3TextView_.getText().size() > 0) {
+        if (!footer3TextView_.getText().empty()) {
             auto footerBottomBottomRect =
                 context.setViewFrame(footer3TextView_, footerRect,
                                      LayoutOptionsSizeToFit | LayoutOptionsAlignCenterHorizontal);

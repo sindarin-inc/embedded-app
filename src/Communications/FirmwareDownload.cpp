@@ -67,7 +67,7 @@ void FirmwareDownloader::downloadFirmware(
                                        .downloadPercentage = 0});
 
         log_d("Downloading firmware from %s", response.latestGlassesFirmware.url.c_str());
-        std::string failMessage = "";
+        std::string failMessage;
         auto success = DownloadFile(
             response.latestGlassesFirmware.url.c_str(),
             [this, &failMessage](int httpCode, int contentLength) -> bool {
@@ -94,13 +94,15 @@ void FirmwareDownloader::downloadFirmware(
 
                 return true;
             },
-            [](const uint8_t *buf, size_t size) { return Update.write((uint8_t *)buf, size); },
+            [](const uint8_t *buf, size_t size) {
+            return Update.write(const_cast<uint8_t *>(buf), size);
+            },
             nullptr,
             [setState](int bytesWritten, float percentage) {
             setState(FirmwareDownloadState{.state = FirmwareDownloadState::State::Downloading,
                                            .downloadPercentage = static_cast<int>(percentage)});
-            },
-            false);
+        },
+             false);
 
         if (!success) {
             log_e("Failed to download firmware");

@@ -35,7 +35,7 @@ auto ConvertToJson(const CheckSyncRequest &src, JsonVariant dst) -> bool {
         storedUuidsJson.add(uuid);
     }
 
-    dst["sync_reason"] = (int)src.syncReason;
+    dst["sync_reason"] = static_cast<int>(src.syncReason);
     dst["battery"] = src.battery;
     dst["pt_battery"] = src.ptBattery;
     dst["pt_build"] = src.ptBuild;

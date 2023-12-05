@@ -47,14 +47,14 @@ auto LocalStore::loadReadablesFromFile(ReadablesVector &readables, const std::st
     log_d("Loading %ss from %s", ReadableModelTypeToString(readablesModelType(readables)).c_str(),
           path.c_str());
     SFile readablesFile = fileSystem.open(path);
-    if (!readablesFile || (int)readablesFile.size() == 0) {
+    if (!readablesFile || static_cast<int>(readablesFile.size()) == 0) {
         log_w("Failed to open %s", path.c_str());
         // Fail positively since it's ok to not have any when you first use the glasses
         return true;
     }
 
     // Grab a minimum amount of ram, even if the readables file is empty
-    auto docSize = (int)readablesFile.size() * 2;
+    auto docSize = static_cast<int>(readablesFile.size()) * 2;
     auto doc = std::make_unique<SpiRamJsonDocument>(docSize);
     auto error = deserializeJson(*doc, readablesFile);
     readablesFile.close();
@@ -85,7 +85,7 @@ auto LocalStore::loadReadablesFromFile(ReadablesVector &readables, const std::st
         }
         int fileSize = readableGetUncompressedSize(readable, path, size);
 
-        if (fileSize >= 0 && readable->files.size() && fileSize != readable->file(path).size) {
+        if (fileSize >= 0 && !readable->files.empty() && fileSize != readable->file(path).size) {
             log_w("File size mismatch for %s (%d on disk vs %d in local store), ignoring",
                   path.c_str(), fileSize, readable->file(path).size);
             continue;
@@ -103,7 +103,7 @@ auto LocalStore::readablesModelType(const ReadablesVector &readables) -> Readabl
 
 auto LocalStore::isReadableUnchanged(const ReadablesVector &readables,
                                      const std::shared_ptr<Readable> &readable,
-                                     bool ignoreFileSizeCheck) -> bool {
+                                     bool ignoreFileSizeCheck) const -> bool {
     for (const auto &r : readables) {
         auto [path, size] = readableFilePathForReading(r);
         if (r->uuid == readable->uuid && !path.empty()) {
@@ -126,7 +126,7 @@ auto LocalStore::isReadableUnchanged(const ReadablesVector &readables,
             }
 
             // If we have a file object, check that the size matches
-            if (r->files.size() > 0 && !ignoreFileSizeCheck) {
+            if (!r->files.empty() && !ignoreFileSizeCheck) {
                 if (fileSize >= 0 && fileSize != readable->file().size) {
                     log_w("File size mismatch for %s (%d on disk vs %d in local store), ignoring",
                           path.c_str(), fileSize, readable->file().size);
@@ -152,7 +152,7 @@ void LocalStore::addReadable(ReadablesVector &readables,
     // Check if we already have a readable with the same uuid, and if so, replace it in readables,
     // otherwise, add it to the end
     for (auto &it : readables) {
-        if (it.get()->uuid == readable->uuid) {
+        if (it->uuid == readable->uuid) {
             log_i("Replacing readable %s", readable->uuid.c_str());
             it = readable;
             return;
@@ -162,7 +162,6 @@ void LocalStore::addReadable(ReadablesVector &readables,
     // If not found, add to the end
     log_i("Adding readable %s", readable->uuid.c_str());
     readables.emplace_back(readable);
-    return;
 }
 
 void LocalStore::removeReadable(ReadablesVector &readables,
@@ -187,7 +186,7 @@ auto LocalStore::readablesSince(const ReadablesModelType modelType) -> std::stri
 }
 
 void LocalStore::storedReadableUuids(const ReadablesVector &readables,
-                                     StoredUuidsVector &storedUuids) {
+                                     StoredUuidsVector &storedUuids) const {
     for (const auto &readable : readables) {
         if (readable->localOnly) {
             continue;
@@ -289,7 +288,7 @@ void LocalStore::changedReadablesBookmarksJson(ReadableBookmarksVector &bookmark
                                            .c_str(),
                                        {{"uuid", readable->shortenedUuid.c_str()}});
             std::string bookmarkPath = readable->bookmarkFilePath();
-            SFile bookmarkFile = fileSystem.open(bookmarkPath.c_str(), FILE_READ, false);
+            SFile bookmarkFile = fileSystem.open(bookmarkPath, FILE_READ, false);
             if (!bookmarkFile) {
                 log_i("Failed to open bookmark file: %s", bookmarkPath.c_str());
                 continue;
@@ -416,7 +415,7 @@ auto LocalStore::processReadablePartialChapterSummary(
 
     // Otherwise write the updated partial summary to the json file
     auto doc = std::make_unique<SpiRamJsonDocument>(
-        std::min(2048, (int)partialChapterSummary->text.length() * 2));
+        std::min(2048, static_cast<int>(partialChapterSummary->text.length()) * 2));
     bool serialized = convertToJson(*partialChapterSummary, *doc);
     if (!serialized) {
         log_e("Failed to serialize partial summary");
@@ -429,8 +428,8 @@ auto LocalStore::processReadablePartialChapterSummary(
     }
 
     auto partialSummaryPath = readable->partialSummaryFilePath();
-    fileSystem.remove(partialSummaryPath.c_str());
-    auto file = fileSystem.open(partialSummaryPath.c_str(), FILE_WRITE, false);
+    fileSystem.remove(partialSummaryPath);
+    auto file = fileSystem.open(partialSummaryPath, FILE_WRITE, false);
     if (!file) {
         log_e("Failed to open partial summary file for writing");
         return false;
@@ -579,9 +578,8 @@ void LocalStore::syncFromRemote(
             return;
         }
 
-        auto useBle = !wifiConnected || true;
-        auto httpCode = this->telemetry_.uploadAndResetTelemetry(this->fileSystem, this->telemetry_,
-                                                                 useBle, cancel);
+        auto useBle = !wifiConnected;
+        auto httpCode = this->telemetry_.uploadAndResetTelemetry(this->fileSystem, useBle);
         if (httpCode != 201) {
             this->telemetry_.logMetric(TelemetryField::METRIC_SYNC_STATUS, "sync-telemetry-failed",
                                        {{"http-code", httpCode}});
@@ -639,7 +637,7 @@ void LocalStore::syncFromRemote(
             checkSyncRequest.skipSummary = true;
             checkSyncRequest.skipToc = true;
             checkSyncRequest.ptBattery = PreferencesStore::lastPageTurnerBattery;
-            checkSyncRequest.battery = (uint8_t)battery_.getBatteryPercentage();
+            checkSyncRequest.battery = static_cast<uint8_t>(battery_.getBatteryPercentage());
             checkSyncRequest.ptBuild = this->prefs_.lastPageTurnerBuild.get().value_or("");
             checkSyncRequest.build = SemanticVersionString();
             checkSyncRequest.gitHash = GitVersionString();
@@ -690,9 +688,8 @@ void LocalStore::syncFromRemote(
                     totalCount = checkSyncResponse.totalCount;
                     SHOW_HEAP();
                 } else {
-                    httpCode =
-                        SindarinAPI::getInstance()->checkSync(nextPageUrl.c_str(), checkSyncRequest,
-                                                              &checkSyncResponse, this->telemetry_);
+                    httpCode = SindarinAPI::getInstance()->checkSync(
+                        nextPageUrl, checkSyncRequest, &checkSyncResponse, this->telemetry_);
                 }
                 if (CancelFlag::isCancelled(cancel)) {
                     return;
@@ -746,7 +743,7 @@ void LocalStore::syncFromRemote(
                       readablesToDelete.size());
                 nextPageUrl = checkSyncResponse.nextPageUrl;
 
-                if (checkSyncResponse.timezone.size()) {
+                if (!checkSyncResponse.timezone.empty()) {
                     SolClock::getInstance().setTimezone(checkSyncResponse.timezone);
                 }
 
@@ -768,7 +765,7 @@ void LocalStore::syncFromRemote(
                 }
 
                 // Check if we have any readables to download/delete, and if not, continue paging
-                if (readablesToDelete.size() == 0 && readablesToDownload.size() == 0) {
+                if (readablesToDelete.empty() && readablesToDownload.empty()) {
                     log_i("No %ss to download or delete, continuing to next page",
                           ReadableModelTypeToString(modelType).c_str());
                     continue;
@@ -809,11 +806,11 @@ void LocalStore::syncFromRemote(
                                                         : checkSyncResponse.articlesSince.c_str());
             std::string serverSince;
             if (!failedDownload) {
-                if (checkSyncResponse.booksSince != "") {
+                if (!checkSyncResponse.booksSince.empty()) {
                     this->prefs_.lastBooksSince.set(checkSyncResponse.booksSince.c_str());
                     serverSince = checkSyncResponse.booksSince;
                 }
-                if (checkSyncResponse.articlesSince != "") {
+                if (!checkSyncResponse.articlesSince.empty()) {
                     this->prefs_.lastArticlesSince.set(checkSyncResponse.articlesSince.c_str());
                     serverSince = checkSyncResponse.articlesSince;
                 }
@@ -958,7 +955,7 @@ auto LocalStore::processReadableDownload(
     int totalCount) -> bool {
     bool failedDownload = false;
 
-    if (readablesToDownload.size() == 0) {
+    if (readablesToDownload.empty()) {
         return failedDownload;
     }
 
@@ -968,7 +965,7 @@ auto LocalStore::processReadableDownload(
             return true;
         }
 
-        float currPercentage = (float)downloadIndex * pctPerReadable;
+        float currPercentage = static_cast<float>(downloadIndex) * pctPerReadable;
         const auto &readable = userReadable.readable;
         auto path = readableFilePathForWriting(readable);
         log_i("Downloading %s (file=%s, url=%s)", readable->title.c_str(), path.c_str(),
@@ -984,11 +981,11 @@ auto LocalStore::processReadableDownload(
                 readable, this->fileSystem, this->telemetry_, path, cancel,
                 [progressCallback, currPercentage, pctPerReadable, modelType](int percentage) {
                 int pctThisReadable = percentage * pctPerReadable / 100;
-                progressCallback(
-                    ContentSyncState{.state = modelType == ReadablesModelType::Book
-                                                  ? ContentSyncState::State::SyncingBooks
-                                                  : ContentSyncState::State::SyncingArticles,
-                                     .percentage = int(currPercentage + pctThisReadable)});
+                progressCallback(ContentSyncState{
+                    .state = modelType == ReadablesModelType::Book
+                                 ? ContentSyncState::State::SyncingBooks
+                                 : ContentSyncState::State::SyncingArticles,
+                    .percentage = static_cast<int>(currPercentage + pctThisReadable)});
                 });
             if (httpCode == 200) {
                 successfullyDownloaded += 1;
@@ -1164,9 +1161,9 @@ void LocalStore::sortReadables(ReadablesVector &readables) {
 void LocalStore::purgeReadableToc(const std::shared_ptr<Readable> &readable) {
     // Delete the TOC files so they can be re-saved with updated copies
     auto tocPath = readable->tocFilePath();
-    if (tocPath.size()) {
+    if (!tocPath.empty()) {
         log_i("Removing TOC for %s: %s", readable->title.c_str(), tocPath.c_str());
-        fileSystem.remove(tocPath.c_str());
+        fileSystem.remove(tocPath);
     }
 }
 
@@ -1177,7 +1174,8 @@ auto LocalStore::saveReadables(ReadablesVector &readables) -> bool {
 
     // Readables take up to 20KB of RAM each since the JSON can be large (includes cover
     // images, file metadata, etc.)
-    auto doc = std::make_unique<SpiRamJsonDocument>(20000 * std::max(1, (int)readables.size()));
+    auto doc = std::make_unique<SpiRamJsonDocument>(
+        20000 * std::max(1, static_cast<int>(readables.size())));
     auto modelType = readablesModelType(const_cast<ReadablesVector &>(readables));
     std::string path = modelType == ReadablesModelType::Book ? BOOKS_PATH : ARTICLES_PATH;
     SHOW_HEAP();
@@ -1262,7 +1260,7 @@ auto LocalStore::readableFilePathForReading(FileSystem &fileSystem,
 
     if (type == "book") {
         // Previously we also stored books in the root directory
-        if (readable->files.size() > 0) {
+        if (!readable->files.empty()) {
             path = StringFormat("/%s.epub", readable->file().name.c_str());
             size = fileSystem.size(path);
             if (size != 0) {
@@ -1349,7 +1347,7 @@ void LocalStore::readableFilePurge(const std::shared_ptr<Readable> &readable) {
     fileSystem.remove(StringFormat("/toc/%s-toc.json", uuid.c_str()));
     fileSystem.remove(StringFormat("/summary/%s-summary.json", uuid.c_str()));
 
-    if (readable->files.size() > 0) {
+    if (!readable->files.empty()) {
         fileSystem.remove(StringFormat("/%s.epub", readable->file().name.c_str()));
         fileSystem.remove(StringFormat("/%s.gz", readable->file().name.c_str()));
         fileSystem.remove(StringFormat("/%s", readable->file().name.c_str()));
@@ -1359,7 +1357,7 @@ void LocalStore::readableFilePurge(const std::shared_ptr<Readable> &readable) {
     fileSystem.remove(StringFormat("/articles/%s.txt", uuid.c_str()));
     fileSystem.remove(StringFormat("/articles/%s.epub", uuid.c_str()));
 
-    fileSystem.remove(readable->bookmarkFilePath().c_str());
+    fileSystem.remove(readable->bookmarkFilePath());
 
     // Also purge placemarks in NVS
     prefs_.readablePlace.remove(readable->shortenedUuid.c_str());
@@ -1372,7 +1370,7 @@ const char *firmwarePath = "/firmware.json";
 
 void LocalStore::saveFirmware(const Firmware &firmware) {
     auto doc = std::make_unique<SpiRamJsonDocument>(
-        std::max((size_t)firmware.releaseNotes.size() * 2, (size_t)2048));
+        std::max(static_cast<size_t>(firmware.releaseNotes.size()) * 2, static_cast<size_t>(2048)));
     convertToJson(firmware, *doc);
     // Delete any existing firmware file if it exists
     fileSystem.remove(firmwarePath);
@@ -1382,7 +1380,7 @@ void LocalStore::saveFirmware(const Firmware &firmware) {
     prefs_.firmwareLoaded.set(firmware.version);
 }
 
-auto LocalStore::getPendingFirmwareUpdate(Firmware &firmware) -> bool {
+auto LocalStore::getPendingFirmwareUpdate(Firmware &firmware) const -> bool {
     auto firmwareFile = fileSystem.open(firmwarePath, "r");
     if (!firmwareFile) {
         return false;
@@ -1418,7 +1416,7 @@ void LocalStore::migrateTxtPlacemarksToEpubPlacemarks() {
                 log_d("Found old place for %s = %" PRIu32 ", migrating to new place format",
                       readable->shortenedUuid.c_str(), oldPlace);
                 auto newPlace = Place::factory(oldPlace);
-                prefs_.readablePlace.set(readable->shortenedUuid.c_str(), newPlace->str().c_str());
+                prefs_.readablePlace.set(readable->shortenedUuid.c_str(), newPlace->str());
                 prefs_.oldReadablePlace.remove(readable->shortenedUuid.c_str());
             }
         }

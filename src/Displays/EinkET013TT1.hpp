@@ -68,7 +68,7 @@ public:
     void setVcom(int mV);
 
     // For the settings menu to display current value.
-    auto getVcom() -> int { return vcomInMV_; }
+    [[nodiscard]] auto getVcom() const -> int { return vcomInMV_; }
 
     void setFramerate(int frameRate);
 
@@ -84,14 +84,14 @@ public:
 
     auto readTemperature(ScreenSide screen) -> int16_t;
 
-    auto errored() -> bool { return error_; }
+    [[nodiscard]] auto errored() const -> bool { return error_; }
 
     // When we know we will need to render UI but haven't calculated the UI yet, we can begin the
     // power on sequence in parallel to drawing the UI.
     void beginPowerOn();
 
 protected:
-    inline void setCS(bool value, ScreenSide screen);
+    inline void setCS(bool value, ScreenSide screen) const;
     void powerOnInternal();
     void powerOffInternal();
     inline void writeRegister(Register index, uint8_t data);
@@ -102,8 +102,8 @@ protected:
     // when the screen is not connected. So I don't think `readDeviceIdReg` is useful.
     auto readDeviceIdReg(ScreenSide screen) -> uint8_t;
     inline void startTimer(uint32_t ns);
-    inline auto timerActivated() -> bool;
-    inline auto timerRunning() -> bool;
+    [[nodiscard]] inline auto timerActivated() const -> bool;
+    [[nodiscard]] inline auto timerRunning() const -> bool;
     inline void waitForTimer();
     inline void waitForNotBusy();
     void updateInternal(const EinkET013TT1Waveform &waveform, const uint8_t *buffer,
@@ -116,29 +116,29 @@ protected:
     // sticker on the back of the display).
     // The 8-bit register value is calculated when it is set in the
     // register: ((5600 + vcomInMV_) * 255) / 5600.
-    uint32_t vcomInMV_;
+    uint32_t vcomInMV_{};
 
-    uint16_t timerOverruns_;
-    uint16_t busyWaits_;
-    uint32_t maxFrameCycles_;
-    bool error_;
+    uint16_t timerOverruns_{};
+    uint16_t busyWaits_{};
+    uint32_t maxFrameCycles_{};
+    bool error_{};
 
     BorderSetting previousBorder_ = BORDER_SETTING_NONE;
     BorderSetting border_ = BORDER_SETTING_NONE;
 
-    uint8_t previousBuffer_[EinkET013TT1_PIXEL_WIDTH * EinkET013TT1_PIXEL_HEIGHT / 8];
+    uint8_t previousBuffer_[EinkET013TT1_PIXEL_WIDTH * EinkET013TT1_PIXEL_HEIGHT / 8]{};
 
     float timerDelayNs_ = 0;
     uint32_t timerDurationCycles_ = 0;
     volatile uint32_t cycleCountStart_ = 0;
 
-    spi_device_handle_t spiHigh_;
-    spi_device_handle_t spiLow_;
+    spi_device_handle_t spiHigh_{};
+    spi_device_handle_t spiLow_{};
 
     bool poweredOn_ = false;
-    DispatchQueue *einkQueue_;
+    DispatchQueue *einkQueue_{};
 
 #if !DISABLE_POWER_MANAGEMENT
-    esp_pm_lock_handle_t freqLock_;
+    esp_pm_lock_handle_t freqLock_{};
 #endif
 };

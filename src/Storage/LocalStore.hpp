@@ -64,9 +64,9 @@ struct ContentSyncState {
         Failure,
     } state = Idle;
 
-    int percentage;
-    int booksDownloaded;
-    int articlesDownloaded;
+    int percentage{};
+    int booksDownloaded{};
+    int articlesDownloaded{};
 
     std::string message;
 };
@@ -89,14 +89,15 @@ public:
     auto books() -> ReadablesVector & { return books_; };
     auto articles() -> ReadablesVector & { return articles_; };
     auto readablesModelType(const ReadablesVector &readables) -> ReadablesModelType;
-    auto isReadableUnchanged(const ReadablesVector &readables,
-                             const std::shared_ptr<Readable> &readable,
-                             bool ignoreFileSizeCheck = false) -> bool;
+    [[nodiscard]] auto isReadableUnchanged(const ReadablesVector &readables,
+                                           const std::shared_ptr<Readable> &readable,
+                                           bool ignoreFileSizeCheck = false) const -> bool;
     void addReadable(ReadablesVector &readables, const std::shared_ptr<Readable> &readable);
     void removeReadable(ReadablesVector &readables, const std::shared_ptr<Readable> &readable);
     auto readablesSince(const ReadablesModelType modelType) -> std::string;
 
-    void storedReadableUuids(const ReadablesVector &readables, StoredUuidsVector &storedUuids);
+    void storedReadableUuids(const ReadablesVector &readables,
+                             StoredUuidsVector &storedUuids) const;
     void changedReadablePlacemarkJson(const ReadablesVector &readables,
                                       ReadablePlacemarksVector &placemarks);
     void changedReadablesArchivedJson(const ReadablesVector &readables,
@@ -150,7 +151,7 @@ public:
     // downloaded into the alternate firmware slot.
     void saveFirmware(const Firmware &firmware);
     // Returns true if a newer firmware has been loaded.
-    auto getPendingFirmwareUpdate(Firmware &firmware) -> bool;
+    auto getPendingFirmwareUpdate(Firmware &firmware) const -> bool;
     // Delete any existing firmware.json file.
     void resetFirmware();
 

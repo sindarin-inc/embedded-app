@@ -23,9 +23,9 @@ class ReadableTableOfContentsScreen : public Screen, public Menu, public EinkVie
 public:
     ReadableTableOfContentsScreen(PreferencesStore &prefs, std::shared_ptr<Readable> readable,
                                   Renderer &renderer, DisplaySystem &display, Telemetry &telemetry)
-        : Menu(), EinkView(display), prefs_(prefs), readable_(std::move(readable)),
-          renderer_(renderer), display_(display), telemetry_(telemetry),
-          upperLeftTextView_(display, upperLeftText_), leftArrowView_(display) {
+        : EinkView(display), prefs_(prefs), readable_(std::move(readable)), renderer_(renderer),
+          display_(display), telemetry_(telemetry), upperLeftTextView_(display, upperLeftText_),
+          leftArrowView_(display) {
         numMenuItems_ = 0;
         MenuStyle styleFamilies;
         myStyle_ = styleFamilies.mainMenu;

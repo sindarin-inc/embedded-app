@@ -24,7 +24,7 @@ struct BootError {
     };
     Type type;
 
-    auto string() -> std::string {
+    [[nodiscard]] auto string() const -> std::string {
         switch (type) {
         case PowerManagement:
             return "Power Management";
@@ -60,7 +60,7 @@ struct BootError {
         return "Unhandled";
     }
 
-    auto blinks() -> int { return type; }
+    [[nodiscard]] auto blinks() const -> int { return type; }
 };
 
 void BlinkBootErrors(const std::vector<BootError> &bootErrors);

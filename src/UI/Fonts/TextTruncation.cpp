@@ -16,7 +16,7 @@ auto Utf8Substr(const std::string &str, unsigned int start, size_t leng) -> std:
             max = i;
         }
 
-        c = (unsigned char)str[i];
+        c = static_cast<unsigned char>(str[i]);
         if (
             // c>=0   &&
             c <= 127) {
@@ -89,7 +89,7 @@ auto TruncateStringToFitEstimateImpl(DisplaySystem &display, Font *font, const s
     display.getTextSize(ellipsis, &ellipsisWidth, &ellipsisHeight);
 
     // Make an educated guess about how many characters we can fit in the space
-    int estimatedEnd = (int)str.size() * maxWidth / initialWidth - 2;
+    int estimatedEnd = static_cast<int>(str.size()) * maxWidth / initialWidth - 2;
     display.getTextSize(Utf8Substr(str, 0, estimatedEnd), &w, &h);
     // Search up or down until we find the right size
     bool up = w + ellipsisWidth < maxWidth;

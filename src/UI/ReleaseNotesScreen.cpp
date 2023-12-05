@@ -82,7 +82,6 @@ void ReleaseNotesScreen::updateError(const std::string &logMessage) {
     prefs_.firmwareLoaded.remove();
     localStore_.resetFirmware();
     back();
-    return;
 }
 
 void ReleaseNotesScreen::runUpdate() {

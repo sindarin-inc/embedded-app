@@ -72,23 +72,20 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
             message = "Twist lens in front of LEFT eye";
             // This Y coordinate is just a guess
             display.drawSingleLineOfText(
-                message.c_str(),
-                display.xAbsolute(display.xAbsoluteCenter() -
-                                  display.getTextWidth(message.c_str()) / 2),
+                message,
+                display.xAbsolute(display.xAbsoluteCenter() - display.getTextWidth(message) / 2),
                 display.yAbsolute(display.yAbsoluteCenter() - display.getTextHeight() / 2 +
                                   textYOffset));
             message = "like a binocular. When text is";
             display.drawSingleLineOfText(
-                message.c_str(),
-                display.xAbsolute(display.xAbsoluteCenter() -
-                                  display.getTextWidth(message.c_str()) / 2),
+                message,
+                display.xAbsolute(display.xAbsoluteCenter() - display.getTextWidth(message) / 2),
                 display.yAbsolute(display.yAbsoluteCenter() - display.getTextHeight() / 2 +
                                   textYOffset + 17));
             message = "crisp, press \ue000 on your remote.";
             display.drawSingleLineOfText(
-                message.c_str(),
-                display.xAbsolute(display.xAbsoluteCenter() -
-                                  display.getTextWidth(message.c_str()) / 2),
+                message,
+                display.xAbsolute(display.xAbsoluteCenter() - display.getTextWidth(message) / 2),
                 display.yAbsolute(display.yAbsoluteCenter() - display.getTextHeight() / 2 +
                                   textYOffset + 34));
             display.drawXBitmap(
@@ -197,23 +194,20 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
             message = "Twist lens in front of RIGHT eye";
             // This Y coordinate is just a guess
             display.drawSingleLineOfText(
-                message.c_str(),
-                display.xAbsolute(display.xAbsoluteCenter() -
-                                  display.getTextWidth(message.c_str()) / 2),
+                message,
+                display.xAbsolute(display.xAbsoluteCenter() - display.getTextWidth(message) / 2),
                 display.yAbsolute(display.yAbsoluteCenter() - display.getTextHeight() / 2 +
                                   textYOffset));
             message = "like a binocular. When text is";
             display.drawSingleLineOfText(
-                message.c_str(),
-                display.xAbsolute(display.xAbsoluteCenter() -
-                                  display.getTextWidth(message.c_str()) / 2),
+                message,
+                display.xAbsolute(display.xAbsoluteCenter() - display.getTextWidth(message) / 2),
                 display.yAbsolute(display.yAbsoluteCenter() - display.getTextHeight() / 2 +
                                   textYOffset + 17));
             message = "crisp, press \ue000 on your remote.";
             display.drawSingleLineOfText(
-                message.c_str(),
-                display.xAbsolute(display.xAbsoluteCenter() -
-                                  display.getTextWidth(message.c_str()) / 2),
+                message,
+                display.xAbsolute(display.xAbsoluteCenter() - display.getTextWidth(message) / 2),
                 display.yAbsolute(display.yAbsoluteCenter() - display.getTextHeight() / 2 +
                                   textYOffset + 34));
             display.drawXBitmap(
@@ -322,23 +316,20 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
             message = "Optionally, turn the knob on TOP ";
             // This Y coordinate is just a guess
             display.drawSingleLineOfText(
-                message.c_str(),
-                display.xAbsolute(display.xAbsoluteCenter() -
-                                  display.getTextWidth(message.c_str()) / 2),
+                message,
+                display.xAbsolute(display.xAbsoluteCenter() - display.getTextWidth(message) / 2),
                 display.yAbsolute(display.yAbsoluteCenter() - display.getTextHeight() / 2 +
                                   textYOffset));
             message = "to adjust lens spacing. When ";
             display.drawSingleLineOfText(
-                message.c_str(),
-                display.xAbsolute(display.xAbsoluteCenter() -
-                                  display.getTextWidth(message.c_str()) / 2),
+                message,
+                display.xAbsolute(display.xAbsoluteCenter() - display.getTextWidth(message) / 2),
                 display.yAbsolute(display.yAbsoluteCenter() - display.getTextHeight() / 2 +
                                   textYOffset + 17));
             message = "text is comfortable, press \ue000";
             display.drawSingleLineOfText(
-                message.c_str(),
-                display.xAbsolute(display.xAbsoluteCenter() -
-                                  display.getTextWidth(message.c_str()) / 2),
+                message,
+                display.xAbsolute(display.xAbsoluteCenter() - display.getTextWidth(message) / 2),
                 display.yAbsolute(display.yAbsoluteCenter() - display.getTextHeight() / 2 +
                                   textYOffset + 34));
             display.drawXBitmap(
@@ -419,10 +410,9 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
         display.clearFrameBuffer();
         display.setFont(static_cast<Font *>(&ibmf75Face0));
         display.drawSingleLineOfText(
-            message.c_str(),
-            display.xAbsolute(display.xAbsoluteCenter() -
-                              display.getTextWidth(message.c_str()) / 2),
-            display.yAbsolute(display.yAbsoluteCenter() - display.getTextHeight(message.c_str())));
+            message,
+            display.xAbsolute(display.xAbsoluteCenter() - display.getTextWidth(message) / 2),
+            display.yAbsolute(display.yAbsoluteCenter() - display.getTextHeight(message)));
         nextUpdateType_ = DisplaySystem::UpdateType::PARTIAL;
         nextInterval_ = 3000;
     });
@@ -743,10 +733,10 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
         std::string message = "Press \ue000 after app setup";
         prefs_.noSetupMode.set(true);
         display.setFont(static_cast<Font *>(&ibmf75Face0));
-        display.drawSingleLineOfText(message.c_str(),
-                                     display.xAbsolute(display.xAbsoluteCenter() -
-                                                       display.getTextWidth(message.c_str()) / 2),
-                                     display.yAbsolute(235));
+        display.drawSingleLineOfText(
+            message,
+            display.xAbsolute(display.xAbsoluteCenter() - display.getTextWidth(message) / 2),
+            display.yAbsolute(235));
         nextUpdateType_ = DisplaySystem::UpdateType::FULL;
     });
 }
@@ -756,17 +746,15 @@ void DemoScreen::drawSerial(DisplaySystem &display) {
     display.setFont(static_cast<Font *>(&ibmf75Face1));
     std::string message = "SN: " + GetSerialNumber();
     display.drawSingleLineOfText(
-        message.c_str(),
-        display.xAbsolute(display.xAbsoluteCenter() - display.getTextWidth(message.c_str()) / 2),
-        display.yAbsolute(display.yAbsoluteMax() - 2 * display.getTextHeight(message.c_str())));
+        message, display.xAbsolute(display.xAbsoluteCenter() - display.getTextWidth(message) / 2),
+        display.yAbsolute(display.yAbsoluteMax() - 2 * display.getTextHeight(message)));
 }
 
 void DemoScreen::drawSkipMessage(DisplaySystem &display, bool inverted) {
     std::string message = "Press \ue000 to skip";
     display.setFont(static_cast<Font *>(&ibmf75Face0));
     display.drawSingleLineOfText(
-        message.c_str(),
-        display.xAbsolute(display.xAbsoluteCenter() - display.getTextWidth(message.c_str()) / 2),
+        message, display.xAbsolute(display.xAbsoluteCenter() - display.getTextWidth(message) / 2),
         display.yAbsolute(235), inverted);
 }
 
@@ -775,16 +763,12 @@ void DemoScreen::drawDoubleLine(DisplaySystem &display, std::string one, std::st
     display.setFont(static_cast<Font *>(&ibmf75Face1));
     message = std::move(one);
     display.drawSingleLineOfText(
-        message.c_str(),
-        display.xAbsolute(display.xAbsoluteCenter() - display.getTextWidth(message.c_str()) / 2),
-        display.yAbsolute(display.yAbsoluteCenter() - display.getTextHeight(message.c_str()) / 2) -
-            12);
+        message, display.xAbsolute(display.xAbsoluteCenter() - display.getTextWidth(message) / 2),
+        display.yAbsolute(display.yAbsoluteCenter() - display.getTextHeight(message) / 2) - 12);
     message = std::move(two);
     display.drawSingleLineOfText(
-        message.c_str(),
-        display.xAbsolute(display.xAbsoluteCenter() - display.getTextWidth(message.c_str()) / 2),
-        display.yAbsolute(display.yAbsoluteCenter() + display.getTextHeight(message.c_str()) / 2 -
-                          4));
+        message, display.xAbsolute(display.xAbsoluteCenter() - display.getTextWidth(message) / 2),
+        display.yAbsolute(display.yAbsoluteCenter() + display.getTextHeight(message) / 2 - 4));
 }
 
 void DemoScreen::drawTripleLine(DisplaySystem &display, std::string one, std::string two,
@@ -797,18 +781,15 @@ void DemoScreen::drawTripleLine(DisplaySystem &display, std::string one, std::st
     yAdjust = (yAdjust + 1) / 2;
 
     display.drawSingleLineOfText(
-        message.c_str(),
-        display.xAbsolute(display.xAbsoluteCenter() - display.getTextWidth(message.c_str()) / 2),
+        message, display.xAbsolute(display.xAbsoluteCenter() - display.getTextWidth(message) / 2),
         display.yAbsolute(display.yAbsoluteCenter() - yAdjust - yAdjust * 2 - 4), invert);
     message = std::move(two);
     display.drawSingleLineOfText(
-        message.c_str(),
-        display.xAbsolute(display.xAbsoluteCenter() - display.getTextWidth(message.c_str()) / 2),
+        message, display.xAbsolute(display.xAbsoluteCenter() - display.getTextWidth(message) / 2),
         display.yAbsolute(display.yAbsoluteCenter() - yAdjust), invert);
     message = std::move(three);
     display.drawSingleLineOfText(
-        message.c_str(),
-        display.xAbsolute(display.xAbsoluteCenter() - display.getTextWidth(message.c_str()) / 2),
+        message, display.xAbsolute(display.xAbsoluteCenter() - display.getTextWidth(message) / 2),
         display.yAbsolute(display.yAbsoluteCenter() + yAdjust + 4), invert);
 }
 
