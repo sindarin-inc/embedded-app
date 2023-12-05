@@ -1,43 +1,25 @@
 ---
 # See also: https://releases.llvm.org/13.0.0/tools/clang/tools/extra/docs/clang-tidy
 
-# Cert checks
-#   cert-*,
-# static_assert(0) instead of assert(0) doesn't seem to compile
-#   -cert-dcl03-c,
-# Enable Clang static analysis
-#   clang-analyzer-*,
 # Enable Bugprone checks
 #   bugprone-*,
-# Enable performance checks
-#   performance-*,
-# Enable modernize checks
-#   modernize-*,
-# Except for replacing `typedef` with `using`. It doesn't compile.
-#   -modernize-use-using,
-# Rename stuff
-#   readability-identifier-naming*,
-# And make sure statements have brackets
-#   readability-braces-around-statements,
-# Don't use cstr() when a string will do
-#   readability-redundant-string-cstr,
-# Don't use shared_ptr get() unnecessarily
-#   readability-redundant-smartptr-get,
-# Don't unnecessarily initialize strings
-#   readability-redundant-string-init,
-# Don't use redundant preprocessor directives
-#   readability-redundant-preprocessor,
-# Don't initialize members in constructors if they're already initialized
-#   readability-redundant-member-init,
 # This check is kinda dumb IMO -- it means you can't have two arguments of the
-# same type in a function call
+# same type in a function call, which happens a lot
 #   -bugprone-easily-swappable-parameters,
-# This is probably a good check, but we have a _lot_ of c arrays and it's
-# non-trivial to replace them.
-#   -modernize-avoid-c-arrays,
 # This is also a good check, but we also have a lot of narrowing conversions
 # especially related to display stuff since Adafruit GFX uses uint16_t a lot.
 #   -bugprone-narrowing-conversions,
+
+# Enable Cert checks
+#   cert-*,
+# static_assert(0) instead of assert(0) doesn't seem to compile
+#   -cert-dcl03-c,
+
+# Enable Clang static analysis
+#   clang-analyzer-*,
+
+# Enable CPP Core Guidelines checks
+#   cppcoreguidelines-*,
 # But we like c arrays
 #   -cppcoreguidelines-avoid-c-arrays,
 # Sure, magic number are bad
@@ -73,28 +55,55 @@
 #   -cppcoreguidelines-pro-type-vararg,
 # I don't want to have to always define all special member functions
 #   -cppcoreguidelines-special-member-functions,
+
 # This does a decent job of replacing c-style casts and is the only google check that made sense as of clang-tidy 15
 #   google-readability-casting,
 
+# Enable Misc checks
+#   misc-*,
+#   -misc-const-correctness,
+# Probably a good one but I couldn't figure it out
+#   -misc-misplaced-const,
+#   -misc-no-recursion,
+#   -misc-non-private-member-variables-in-classes,
+#   -misc-static-assert,
+#   -misc-unused-parameters,
+
+# Enable modernize checks
+#   modernize-*,
+# This is probably a good check, but we have a _lot_ of c arrays and it's
+# non-trivial to replace them.
+#   -modernize-avoid-c-arrays,
+#   -modernize-macro-to-enum,
+# Except for replacing `typedef` with `using`. It doesn't compile.
+#   -modernize-use-using,
+
+# Enable performance checks
+#   performance-*,
+
+# Enable Readability checks
+#   -readability-avoid-const-params-in-decls,
+#   -readability-convert-member-functions-to-static,
+#   -readability-else-after-return,
+#   -readability-function-cognitive-complexity,
+#   -readability-identifier-length,
+#   -readability-implicit-bool-conversion,
+#   -readability-isolate-declaration,
+#   -readability-named-parameter,
+#   -readability-non-const-parameter,
+#   -readability-qualified-auto,
+#   -readability-simplify-boolean-expr,
+#   -readability-string-compare,
+#   -readability-uppercase-literal-suffix,
+#   -readability-use-anyofallof,
+
 Checks: >-
+  bugprone-*,
+  -bugprone-easily-swappable-parameters,
+  -bugprone-narrowing-conversions,
   cert-*,
   -cert-dcl03-c,
   clang-analyzer-*,
-  bugprone-*,
-  performance-*,
-  modernize-*,
-  -modernize-use-using,
-  readability-identifier-naming*,
-  readability-braces-around-statements,
-  readability-redundant-string-cstr,
-  readability-redundant-smartptr-get,
-  readability-redundant-string-init,
-  readability-redundant-preprocessor,
-  readability-redundant-member-init,
-  -bugprone-easily-swappable-parameters,
-  -modernize-avoid-c-arrays,
-  -bugprone-narrowing-conversions,
-  -modernize-macro-to-enum,
   cppcoreguidelines-*,
   -cppcoreguidelines-avoid-c-arrays,
   -cppcoreguidelines-avoid-magic-numbers,
@@ -115,45 +124,30 @@ Checks: >-
   -cppcoreguidelines-special-member-functions,
   google-readability-casting,
   misc-*,
-  -misc-non-private-member-variables-in-classes,
-  -misc-unused-parameters,
-  -misc-static-assert,
-  -misc-no-recursion,
   -misc-const-correctness,
   -misc-misplaced-const,
-  readability-misleading-indentation,
+  -misc-no-recursion,
+  -misc-non-private-member-variables-in-classes,
+  -misc-static-assert,
+  -misc-unused-parameters,
+  modernize-*,
+  -modernize-avoid-c-arrays,
+  -modernize-macro-to-enum,
+  -modernize-use-using,
+  performance-*,
+  readability-*
   -readability-avoid-const-params-in-decls,
-  readability-const-return-type,
-  readability-container-contains,
-  readability-container-data-pointer,
-  readability-container-size-empty,
   -readability-convert-member-functions-to-static,
-  readability-delete-null-pointer,
-  readability-duplicate-include,
   -readability-else-after-return,
   -readability-function-cognitive-complexity,
-  readability-function-size,
   -readability-identifier-length,
   -readability-implicit-bool-conversion,
-  readability-inconsistent-declaration-parameter-name,
   -readability-isolate-declaration,
-  readability-make-member-function-const,
-  readability-misleading-indentation,
-  readability-misplaced-array-index,
   -readability-named-parameter,
   -readability-non-const-parameter,
   -readability-qualified-auto,
-  readability-redundant-access-specifiers,
-  readability-redundant-control-flow,
-  readability-redundant-declaration,
-  readability-redundant-function-ptr-dereference,
   -readability-simplify-boolean-expr,
-  readability-simplify-subscript-expr,
-  readability-static-accessed-through-instance,
-  readability-static-definition-in-anonymous-namespace,
   -readability-string-compare,
-  readability-suspicious-call-argument,
-  readability-uniqueptr-delete-release,
   -readability-uppercase-literal-suffix,
   -readability-use-anyofallof,
 
@@ -180,4 +174,7 @@ CheckOptions:
       value: UPPER_CASE,
     }
   # Fix spurious `invalid case style for template parameter 'expr-type'` errors
-  - {key: readability-identifier-naming.TypeTemplateParameterIgnoredRegexp, value: expr-type}
+  - {
+      key: readability-identifier-naming.TypeTemplateParameterIgnoredRegexp,
+      value: expr-type,
+    }
