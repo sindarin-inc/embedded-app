@@ -22,7 +22,8 @@ public:
         -> std::shared_ptr<Tokenizer>;
 
     virtual auto loadAndTokenizePage(StreamPlace fromPlace, bool backwards = false,
-                                     StreamPlace *toPlace = nullptr)
+                                     StreamPlace *toPlace = nullptr,
+                                     bool retrieveMenuParameters = false)
         -> std::pair<StreamPlace, StreamPlace> = 0;
 
     [[nodiscard]] virtual auto isFor(DocType docType) const -> bool = 0;

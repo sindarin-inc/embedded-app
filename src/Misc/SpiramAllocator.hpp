@@ -4,6 +4,7 @@
 #include <cstdlib>
 #include <esp_heap_caps.h>
 #include <functional>
+#include <map>
 #include <memory>
 #include <sstream>
 #include <string>
@@ -133,6 +134,9 @@ using SpiramVector = std::vector<T, SpiramAllocator<T>>;
 template <typename K, typename V>
 using SpiramMap = std::unordered_map<K, V, std::hash<K>, std::equal_to<K>,
                                      SpiramAllocator<std::pair<const K, V>>>;
+
+template <typename K, typename V>
+using SpiramOrderedMap = std::map<K, V, std::less<K>, SpiramAllocator<std::pair<const K, V>>>;
 
 class SpiramStringBuf : public std::streambuf {
 public:

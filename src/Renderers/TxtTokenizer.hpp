@@ -10,7 +10,8 @@ public:
     ~TxtTokenizer() override = default;
 
     [[nodiscard]] auto loadAndTokenizePage(StreamPlace fromPlace, bool backwards = false,
-                                           StreamPlace *toPlace = nullptr)
+                                           StreamPlace *toPlace = nullptr,
+                                           bool retrieveMenuParameters = false)
         -> std::pair<StreamPlace, StreamPlace> override;
 
     // ToDo: May have to be adjusted related to the upcoming Place definition

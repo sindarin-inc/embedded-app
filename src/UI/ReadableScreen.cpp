@@ -279,7 +279,25 @@ void ReadableScreen::render(DisplaySystem &display) {
 
     if (pageSpeed_ == 0) {
         // Regular Reading
-        std::tie(newPlace_, darkPicturePercent) = renderer_.renderPage(readable_->place);
+        bool retrieveMenuParameters = true;
+        do {
+            std::tie(newPlace_, darkPicturePercent) =
+                renderer_.renderPage(readable_->place, 0, false, retrieveMenuParameters);
+            if (retrieveMenuParameters) {
+                const MenuParameters &menuParameters = renderer_.getMenuParameters();
+                if (!menuParameters.empty()) {
+                    log_d("Menu Parameters:");
+                    for (auto &param : menuParameters) {
+                        log_d("    %s: %s", param.first.c_str(), param.second.c_str());
+                    }
+                    retrieveMenuParameters = false;
+                    continue;
+                }
+            }
+
+            break;
+        } while (true);
+
         // log_w("Char Offset: %" PRIu32, getScreenCurrentCharOffset());
         atEnd_ = checkAtEnd();
     } else {

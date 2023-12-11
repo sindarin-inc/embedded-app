@@ -15,7 +15,8 @@
 // Returns the computed streamPlace where the page start really.
 //
 // IMPORTANT: The getFileLocation() method must be called only through this method.
-auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, StreamPlace *toPlace)
+auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, StreamPlace *toPlace,
+                                       bool retrieveMenuParameters)
     -> std::pair<StreamPlace, StreamPlace> {
 
     uint32_t streamRelativeOffset = 0;

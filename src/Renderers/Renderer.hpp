@@ -59,7 +59,8 @@ public:
 
     // NOLINTNEXTLINE(modernize-use-nodiscard)
     auto renderPage(std::shared_ptr<Place> fromPlace, int16_t numSkipLines = 0,
-                    bool forceRefresh = false) -> std::pair<std::shared_ptr<Place>, uint8_t>;
+                    bool forceRefresh = false, bool retrieveMenuParameters = false)
+        -> std::pair<std::shared_ptr<Place>, uint8_t>;
 
     void showStats() {
         log_w("Circular buffer max lenghts: Tokens: %" PRIu16 ", CStrPool: %" PRIu16,
@@ -90,6 +91,10 @@ public:
     }
 
     [[nodiscard]] inline auto atEndOfFile() const -> bool { return pager_.atEndOfFile(); }
+
+    [[nodiscard]] inline auto getMenuParameters() const -> const MenuParameters & {
+        return pager_.getMenuParameters();
+    }
 
 private:
     DisplaySystem &display_;
