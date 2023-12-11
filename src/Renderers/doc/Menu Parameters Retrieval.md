@@ -2,7 +2,7 @@
 
 The Renderer now supplies the capability of inserting menu parameters' lists in an EPub document. This feature permits the main sol application to interrupt the presentation of pages to the user, display a menu to him, and continue to present the pages where the sequence of pages was interrupted.
 
-To do so, a menu parameters' list definition must be inserted at least once anywhere inside the <body> .. </body> of one of the spine's XHTML file that is part of the EPub document. The definition takes the following form:
+To do so, a menu parameters' list definition must be inserted at least once anywhere inside the `<body> .. </body>` of one of the spine's XHTML file that is part of the EPub document. The definition takes the following form:
 
 ```xml
 <div id="sol-menu"><ul><li id="Key 1">Value 1</li> ... </ul></div>
