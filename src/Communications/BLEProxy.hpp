@@ -25,7 +25,8 @@ public:
     auto countChunks(const SpiramString &body) -> int;
 
     void writeUrl(const SpiramString &url, const SpiramString &method);
-    void writeHeader(const SpiramString &header, const SpiramString &value);
+    void writeHeaders(std::vector<std::pair<SpiramString, SpiramString>> &headers);
+    void writeHeader(std::vector<std::pair<SpiramString, SpiramString>> &headers, int chunkNumber);
     void writeBody(const SpiramString &body);
     void writeBody(const SpiramString &body, int chunkNumber);
 

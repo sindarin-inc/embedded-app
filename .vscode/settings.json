@@ -127,7 +127,7 @@
         "editor.defaultFormatter": "ms-python.black-formatter",
         "editor.formatOnSave": true,
         "editor.codeActionsOnSave": {
-            "source.sortImports": true
+            "source.sortImports": "explicit"
         },
     },
     "isort.args": [

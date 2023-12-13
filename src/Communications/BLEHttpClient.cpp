@@ -45,7 +45,7 @@ auto BLEHttpClient::write(const char *body, int length) -> int {
 }
 
 auto BLEHttpClient::fetchHeaders() -> int {
-    auto timeoutMs = 30000;
+    auto timeoutMs = 600000;
     statusCode_ = 0;
     responseFetched_ = false;
     responseBody_ = "";
@@ -65,6 +65,9 @@ auto BLEHttpClient::fetchHeaders() -> int {
         bleManager_->startAdvertisingIfNecessary();
     };
 
+    // Check if bleManager is already connected
+    // connected = bleManager_->isConnected();
+
     // If not connected, wait up to 30s to ensure BLE is connected. If not, bail.
     if (!connected) {
         auto start = esp_timer_get_time();
@@ -74,7 +77,7 @@ auto BLEHttpClient::fetchHeaders() -> int {
                 return -1;
             }
             log_d("Waiting for BLE to connect...");
-            vTaskDelay(1000 / portTICK_PERIOD_MS);
+            vTaskDelay(10000 / portTICK_PERIOD_MS);
             if (CancelFlag::isCancelled(cancel_)) {
                 log_d("Cancelled BLE connection");
                 return -1;
@@ -93,9 +96,7 @@ auto BLEHttpClient::fetchHeaders() -> int {
     bleProxy_->writeUrl(url_, method);
 
     // Write headers
-    for (auto &header : requestHeaders_) {
-        bleProxy_->writeHeader(header.first, header.second);
-    }
+    bleProxy_->writeHeaders(requestHeaders_);
 
     // Write body
     bleProxy_->writeBody(requestBody_);
@@ -121,7 +122,14 @@ auto BLEHttpClient::handleWebRequest(const SpiramString &key, const SpiramString
         // Re-send the body chunk requested: B123=. chunkNumber is after the first character and
         // before the =.
         int chunkNumber = strtol(key.substr(1, key.length() - 2).c_str(), nullptr, 10);
-        bleProxy_->writeBody(requestBody_, chunkNumber);
+        auto type = key.substr(0, 1);
+        if (type == "H") {
+            // Header
+            bleProxy_->writeHeader(requestHeaders_, chunkNumber);
+        } else if (type == "B") {
+            // Body
+            bleProxy_->writeBody(requestBody_, chunkNumber);
+        }
     } else if (key == "S") {
         // Status code
         log_d("Got status code: %s", body.c_str());

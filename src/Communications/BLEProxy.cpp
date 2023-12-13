@@ -57,18 +57,40 @@ void BLEProxy::writeUrl(const SpiramString &url, const SpiramString &method) {
     }
 }
 
-void BLEProxy::writeHeader(const SpiramString &header, const SpiramString &value) {
-    auto headerValue = SpiRamStringFormat("%s=%s", header.c_str(), value.c_str());
-
+void BLEProxy::writeHeaders(std::vector<std::pair<SpiramString, SpiramString>> &headers) {
     // Chunk the headerValue into smaller chunks
-    auto numChunks = countChunks(headerValue);
+    auto numChunks = headers.size();
+    auto i = 0;
 
-    for (int i = 0; i < numChunks; i++) {
-        SpiramString chunk = headerValue.substr(i * MTU_CHUNK_SIZE, MTU_CHUNK_SIZE);
-        SpiramString value = SpiRamStringFormat("H=%d/%d:%s", i + 1, numChunks, chunk.c_str());
-        log_i("GATT client writing header chunk %d/%d: %s", i + 1, numChunks, value.c_str());
-        proxyCharacteristic_->setValue(value);
+    for (auto &[header, value] : headers) {
+        auto headerValue = SpiRamStringFormat("%s=%s", header.c_str(), value.c_str());
+
+        SpiramString body = SpiRamStringFormat("H=%d/%d:%s", i + 1, numChunks, headerValue.c_str());
+        log_i("GATT client writing header chunk %d/%d: %s", i + 1, numChunks, body.c_str());
+        proxyCharacteristic_->setValue(body);
         proxyCharacteristic_->notify();
+        i++;
+    }
+}
+
+// Re-sending specific chunk
+void BLEProxy::writeHeader(std::vector<std::pair<SpiramString, SpiramString>> &headers,
+                           int chunkNumber) {
+    auto numChunks = headers.size();
+    auto i = 0;
+
+    for (auto &[header, value] : headers) {
+        if ((i + 1) != chunkNumber) {
+            i++;
+            continue;
+        }
+        auto headerValue = SpiRamStringFormat("%s=%s", header.c_str(), value.c_str());
+
+        SpiramString body = SpiRamStringFormat("H=%d/%d:%s", i + 1, numChunks, headerValue.c_str());
+        log_i("GATT client writing header chunk %d/%d: %s", i + 1, numChunks, body.c_str());
+        proxyCharacteristic_->setValue(body);
+        proxyCharacteristic_->notify();
+        i++;
     }
 }
 
@@ -80,8 +102,13 @@ void BLEProxy::writeBody(const SpiramString &body) {
         SpiramString chunk = body.substr(i * MTU_CHUNK_SIZE, MTU_CHUNK_SIZE);
         SpiramString value = SpiRamStringFormat("B=%d/%d:%s", i + 1, numChunks, chunk.c_str());
         log_i("GATT client writing body chunk %d/%d: %s", i + 1, numChunks, value.c_str());
-        proxyCharacteristic_->setValue(value);
+        std::vector<uint8_t> bytes;
+        for (char c : value) {
+            bytes.push_back(static_cast<uint8_t>(c));
+        }
+        proxyCharacteristic_->setValue(bytes);
         proxyCharacteristic_->notify();
+        vTaskDelay(500 / portTICK_PERIOD_MS);
     }
 
     log_i("GATT client writing end of request");
