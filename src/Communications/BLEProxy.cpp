@@ -39,7 +39,7 @@ void BLEProxy::registerWebRequestHandler(const WebRequestHandler &handler) {
 }
 
 auto BLEProxy::countChunks(const SpiramString &body) -> int {
-    return (body.length() + MTU_CHUNK_SIZE - 1) / MTU_CHUNK_SIZE;
+    return (body.length() + MTU_REDUCED_CHUNK_SIZE - 1) / MTU_REDUCED_CHUNK_SIZE;
 }
 
 void BLEProxy::writeUrl(const SpiramString &url, const SpiramString &method) {
@@ -47,7 +47,7 @@ void BLEProxy::writeUrl(const SpiramString &url, const SpiramString &method) {
     auto numChunks = countChunks(url);
 
     for (int i = 0; i < numChunks; i++) {
-        SpiramString chunk = url.substr(i * MTU_CHUNK_SIZE, MTU_CHUNK_SIZE);
+        SpiramString chunk = url.substr(i * MTU_REDUCED_CHUNK_SIZE, MTU_REDUCED_CHUNK_SIZE);
         SpiramString chunkedValue =
             SpiRamStringFormat("U=%d/%d:%s:%s", i + 1, numChunks, method.c_str(), url.c_str());
         log_i("GATT client writing URL chunk %d/%d: %s %s", i + 1, numChunks, method.c_str(),
@@ -99,16 +99,12 @@ void BLEProxy::writeBody(const SpiramString &body) {
 
     // Send each chunk
     for (int i = 0; i < numChunks; i++) {
-        SpiramString chunk = body.substr(i * MTU_CHUNK_SIZE, MTU_CHUNK_SIZE);
+        SpiramString chunk = body.substr(i * MTU_REDUCED_CHUNK_SIZE, MTU_REDUCED_CHUNK_SIZE);
         SpiramString value = SpiRamStringFormat("B=%d/%d:%s", i + 1, numChunks, chunk.c_str());
         log_i("GATT client writing body chunk %d/%d: %s", i + 1, numChunks, value.c_str());
-        std::vector<uint8_t> bytes;
-        for (char c : value) {
-            bytes.push_back(static_cast<uint8_t>(c));
-        }
-        proxyCharacteristic_->setValue(bytes);
+        proxyCharacteristic_->setValue(value);
         proxyCharacteristic_->notify();
-        vTaskDelay(500 / portTICK_PERIOD_MS);
+        vTaskDelay(10 / portTICK_PERIOD_MS);
     }
 
     log_i("GATT client writing end of request");
@@ -119,7 +115,7 @@ void BLEProxy::writeBody(const SpiramString &body) {
 // Re-sending specific chunk
 void BLEProxy::writeBody(const SpiramString &body, int chunkNumber) {
     int numChunks = this->countChunks(body);
-    SpiramString chunk = body.substr(chunkNumber * MTU_CHUNK_SIZE, MTU_CHUNK_SIZE);
+    SpiramString chunk = body.substr(chunkNumber * MTU_REDUCED_CHUNK_SIZE, MTU_REDUCED_CHUNK_SIZE);
     SpiramString value =
         SpiRamStringFormat("B=%d/%d:%s", chunkNumber + 1, numChunks, chunk.c_str());
     log_i("GATT client writing body chunk %d/%d: %s", chunkNumber + 1, numChunks, value.c_str());

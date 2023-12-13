@@ -3,6 +3,7 @@
 #include <NimBLEDevice.h>
 
 #define MTU_CHUNK_SIZE 512
+#define MTU_REDUCED_CHUNK_SIZE 500
 
 //! Abstract class that can add one or more BLECharacteristics to a BLEService
 class BLECharacteristicProvider {
