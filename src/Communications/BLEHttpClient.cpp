@@ -25,6 +25,10 @@ BLEHttpClient::BLEHttpClient(std::shared_ptr<BLEManager> bleManager,
 
     bleProxy_->registerSubscriptionStatusCallback(
         [this](bool connected) { this->connected = connected; });
+
+    if (method != HTTP_METHOD_GET) {
+        requestHeaders_.emplace_back(SpiramString("Content-Type"), SpiramString(contentType));
+    }
 }
 
 BLEHttpClient::~BLEHttpClient() {
