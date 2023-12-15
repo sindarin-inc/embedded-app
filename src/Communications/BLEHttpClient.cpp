@@ -79,7 +79,7 @@ auto BLEHttpClient::fetchHeaders() -> int {
                 return -1;
             }
 
-            if (esp_timer_get_time() - lastLogTime > (10000 * 1000)) {
+            if (esp_timer_get_time() - lastLogTime > (static_cast<long long>(10000 *) 1000)) {
                 log_d("Waiting for BLE proxy to connect...");
                 lastLogTime = esp_timer_get_time();
             }
@@ -123,7 +123,7 @@ auto BLEHttpClient::fetchHeaders() -> int {
             return -1;
         }
 
-        if (esp_timer_get_time() - lastLogTime > (10000 * 1000)) {
+        if (esp_timer_get_time() - lastLogTime > (static_cast<long long>(10000 *) 1000)) {
             log_d("Waiting for BLE proxy to respond...");
             lastLogTime = esp_timer_get_time();
         }

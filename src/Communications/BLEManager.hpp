@@ -17,7 +17,7 @@ public:
     void disableService(BLEService *service);
     auto server() -> BLEServer *;
     inline void setConnId(uint16_t connId) { connId_ = connId; }
-    inline auto getConnId() -> uint16_t { return connId_; }
+    inline auto getConnId() const -> uint16_t { return connId_; }
 
     // Extra field to advertise in the advertising packet. Mobile apps use this to identify devices
     // that belong to the logged in account.
