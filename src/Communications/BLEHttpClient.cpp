@@ -49,7 +49,8 @@ auto BLEHttpClient::write(const char *body, int length) -> int {
 }
 
 auto BLEHttpClient::fetchHeaders() -> int {
-    auto timeoutMs = 60000; // 1 minute of advertising to connect to BLE proxy on mobile app
+    auto timeoutMs = 60000;  // 1 minute of advertising to connect to BLE proxy on mobile app
+    auto logDelayMs = 10000; // 10 seconds between BLE wait logs
     statusCode_ = 0;
     responseFetched_ = false;
     responseBody_ = "";
@@ -79,7 +80,7 @@ auto BLEHttpClient::fetchHeaders() -> int {
                 return -1;
             }
 
-            if (esp_timer_get_time() - lastLogTime > (static_cast<long long>(10000 *) 1000)) {
+            if (esp_timer_get_time() - lastLogTime > (static_cast<long long>(logDelayMs) * 1000)) {
                 log_d("Waiting for BLE proxy to connect...");
                 lastLogTime = esp_timer_get_time();
             }
@@ -123,7 +124,7 @@ auto BLEHttpClient::fetchHeaders() -> int {
             return -1;
         }
 
-        if (esp_timer_get_time() - lastLogTime > (static_cast<long long>(10000 *) 1000)) {
+        if (esp_timer_get_time() - lastLogTime > (static_cast<long long>(logDelayMs) * 1000)) {
             log_d("Waiting for BLE proxy to respond...");
             lastLogTime = esp_timer_get_time();
         }
