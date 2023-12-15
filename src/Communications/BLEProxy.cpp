@@ -104,7 +104,7 @@ void BLEProxy::writeBody(const SpiramString &body) {
         log_i("GATT client writing body chunk %d/%d: %s", i + 1, numChunks, value.c_str());
         proxyCharacteristic_->setValue(value);
         proxyCharacteristic_->notify();
-        vTaskDelay(10 / portTICK_PERIOD_MS);
+        // vTaskDelay(50 / portTICK_PERIOD_MS);
     }
 
     log_i("GATT client writing end of request");
