@@ -49,7 +49,7 @@ auto BLEHttpClient::write(const char *body, int length) -> int {
 }
 
 auto BLEHttpClient::fetchHeaders() -> int {
-    auto timeoutMs = 600000;
+    auto timeoutMs = 60000; // 1 minute of advertising to connect to BLE proxy on mobile app
     statusCode_ = 0;
     responseFetched_ = false;
     responseBody_ = "";
@@ -69,19 +69,23 @@ auto BLEHttpClient::fetchHeaders() -> int {
         bleManager_->startAdvertisingIfNecessary();
     };
 
-    // Check if bleManager is already connected
-    // connected = bleManager_->isConnected();
-
     // If not connected, wait up to 30s to ensure BLE is connected. If not, bail.
     if (!connected) {
         auto start = esp_timer_get_time();
+        auto lastLogTime = esp_timer_get_time();
         while (!connected) {
             if (esp_timer_get_time() - start > static_cast<long long>(timeoutMs) * 1000) {
                 log_e("Timed out waiting for BLE proxy to connect");
                 return -1;
             }
-            log_d("Waiting for BLE to connect...");
-            vTaskDelay(10000 / portTICK_PERIOD_MS);
+
+            if (esp_timer_get_time() - lastLogTime > (10000 * 1000)) {
+                log_d("Waiting for BLE proxy to connect...");
+                lastLogTime = esp_timer_get_time();
+            }
+
+            vTaskDelay(1000 / portTICK_PERIOD_MS);
+
             if (CancelFlag::isCancelled(cancel_)) {
                 log_d("Cancelled BLE connection");
                 return -1;
@@ -92,7 +96,11 @@ auto BLEHttpClient::fetchHeaders() -> int {
     // Now that we're connected to a mobile app, we can send the request
     // Register web request handler which receives the response from the mobile app
     bleProxy_->registerWebRequestHandler([this](const SpiramString &key, const SpiramString &body) {
-        return this->handleWebRequest(key, body);
+        bool completed = this->handleWebRequest(key, body);
+        if (completed) {
+            // Once telemetry is complete, disconnect from the mobile app
+            bleProxy_->disconnect(bleManager_->getConnId());
+        }
     });
 
     // Write URL
@@ -107,13 +115,19 @@ auto BLEHttpClient::fetchHeaders() -> int {
 
     // Wait for response up to 30s
     auto startTime = esp_timer_get_time();
+    auto lastLogTime = esp_timer_get_time();
     while (!responseFetched_) {
         auto currentTime = esp_timer_get_time();
         if (currentTime - startTime > static_cast<long long>(timeoutMs) * 1000) {
             log_e("Timed out waiting for response");
             return -1;
         }
-        log_d("Waiting for BLE to respond...");
+
+        if (esp_timer_get_time() - lastLogTime > (10000 * 1000)) {
+            log_d("Waiting for BLE proxy to respond...");
+            lastLogTime = esp_timer_get_time();
+        }
+
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
 

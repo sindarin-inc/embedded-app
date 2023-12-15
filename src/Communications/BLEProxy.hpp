@@ -21,6 +21,7 @@ public:
 
     void configureCharacteristics(BLEService *service) override;
     auto getService() -> BLEService * { return proxyService_; };
+    void disconnect(uint16_t connId);
 
     auto countChunks(const SpiramString &body) -> int;
 

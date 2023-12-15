@@ -16,6 +16,8 @@ public:
     void enableService(BLEService *service);
     void disableService(BLEService *service);
     auto server() -> BLEServer *;
+    inline void setConnId(uint16_t connId) { connId_ = connId; }
+    inline auto getConnId() -> uint16_t { return connId_; }
 
     // Extra field to advertise in the advertising packet. Mobile apps use this to identify devices
     // that belong to the logged in account.
@@ -38,6 +40,7 @@ protected:
     static std::shared_ptr<BLEManager> instance;
     BLEServer *server_ = nullptr;
     bool authed_ = false;
+    uint16_t connId_ = BLE_HS_CONN_HANDLE_NONE;
 
     class ServerCallbacks : public BLEServerCallbacks {
     public:
@@ -46,6 +49,10 @@ protected:
         void onConnect(BLEServer *server, ble_gap_conn_desc *desc) override {
             SHOW_HEAP();
             log_i("BLE client connected to our server!");
+
+            uint16_t connId = desc->conn_handle;
+            enclosed->setConnId(connId);
+
             // Apple has _very_ specific requirements for these values and will reject these if
             // you don't give them something they want
             // https://developer.apple.com/library/archive/qa/qa1931/_index.html

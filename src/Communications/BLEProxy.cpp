@@ -38,6 +38,14 @@ void BLEProxy::registerWebRequestHandler(const WebRequestHandler &handler) {
     webRequestHandler_ = handler;
 }
 
+void BLEProxy::disconnect(uint16_t connId) {
+    if (this->proxyService_ != nullptr) {
+        if (connId != BLE_HS_CONN_HANDLE_NONE) {
+            this->proxyService_->getServer()->disconnect(connId);
+        }
+    }
+}
+
 auto BLEProxy::countChunks(const SpiramString &body) -> int {
     return (body.length() + MTU_REDUCED_CHUNK_SIZE - 1) / MTU_REDUCED_CHUNK_SIZE;
 }
@@ -104,7 +112,11 @@ void BLEProxy::writeBody(const SpiramString &body) {
         log_i("GATT client writing body chunk %d/%d: %s", i + 1, numChunks, value.c_str());
         proxyCharacteristic_->setValue(value);
         proxyCharacteristic_->notify();
-        // vTaskDelay(50 / portTICK_PERIOD_MS);
+
+        // Delay every 10 chunks to avoid overloading the BLE stack and causing a crash
+        if (i % 10 == 0) {
+            vTaskDelay(250 / portTICK_PERIOD_MS);
+        }
     }
 
     log_i("GATT client writing end of request");
