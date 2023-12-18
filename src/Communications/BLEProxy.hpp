@@ -28,8 +28,9 @@ public:
     void writeUrl(const SpiramString &url, const SpiramString &method);
     void writeHeaders(std::vector<std::pair<SpiramString, SpiramString>> &headers);
     void writeHeader(std::vector<std::pair<SpiramString, SpiramString>> &headers, int chunkNumber);
-    void writeBody(const SpiramString &body);
-    void writeBody(const SpiramString &body, int chunkNumber);
+    void writeBody(const SpiramString &body, int specificChunkNumber = -1);
+    void sendChunk(const SpiramString &body, int chunkNumber, int numChunks);
+    auto calculateChecksum(const SpiramString &body) -> SpiramString;
 
     void writeResponseBody(const SpiramString &key, const SpiramString &body);
 

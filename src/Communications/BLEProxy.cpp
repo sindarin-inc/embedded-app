@@ -102,37 +102,45 @@ void BLEProxy::writeHeader(std::vector<std::pair<SpiramString, SpiramString>> &h
     }
 }
 
-void BLEProxy::writeBody(const SpiramString &body) {
-    int numChunks = this->countChunks(body);
-
-    // Send each chunk
-    for (int i = 0; i < numChunks; i++) {
-        SpiramString chunk = body.substr(i * MTU_REDUCED_CHUNK_SIZE, MTU_REDUCED_CHUNK_SIZE);
-        SpiramString value = SpiRamStringFormat("B=%d/%d:%s", i + 1, numChunks, chunk.c_str());
-        log_i("GATT client writing body chunk %d/%d: %s", i + 1, numChunks, value.c_str());
-        proxyCharacteristic_->setValue(value);
-        proxyCharacteristic_->notify();
-
-        // Delay every 10 chunks to avoid overloading the BLE stack and causing a crash
-        if (i % 10 == 0) {
-            vTaskDelay(250 / portTICK_PERIOD_MS);
-        }
-    }
-
-    log_i("GATT client writing end of request");
-    proxyCharacteristic_->setValue(SpiramString("E="));
+void BLEProxy::sendChunk(const SpiramString &body, int chunkNumber, int numChunks) {
+    SpiramString chunk = body.substr(chunkNumber * MTU_REDUCED_CHUNK_SIZE, MTU_REDUCED_CHUNK_SIZE);
+    SpiramString checksum = calculateChecksum(chunk);
+    SpiramString value = SpiRamStringFormat("B=%d/%d-%s:%s", chunkNumber + 1, numChunks,
+                                            checksum.c_str(), chunk.c_str());
+    // log_i("GATT client writing body chunk %d/%d: %s", chunkNumber + 1, numChunks, value.c_str());
+    log_i("GATT client writing body chunk %d/%d-%s", chunkNumber + 1, numChunks, checksum.c_str());
+    proxyCharacteristic_->setValue(value);
     proxyCharacteristic_->notify();
 }
 
-// Re-sending specific chunk
-void BLEProxy::writeBody(const SpiramString &body, int chunkNumber) {
+void BLEProxy::writeBody(const SpiramString &body, int specificChunkNumber) {
     int numChunks = this->countChunks(body);
-    SpiramString chunk = body.substr(chunkNumber * MTU_REDUCED_CHUNK_SIZE, MTU_REDUCED_CHUNK_SIZE);
-    SpiramString value =
-        SpiRamStringFormat("B=%d/%d:%s", chunkNumber + 1, numChunks, chunk.c_str());
-    log_i("GATT client writing body chunk %d/%d: %s", chunkNumber + 1, numChunks, value.c_str());
-    proxyCharacteristic_->setValue(value);
-    proxyCharacteristic_->notify();
+
+    if (specificChunkNumber < 0) {
+        // Send all chunks
+        for (int i = 0; i < numChunks; i++) {
+            sendChunk(body, i, numChunks);
+
+            if (i % 10 == 0) {
+                vTaskDelay(250 / portTICK_PERIOD_MS);
+            }
+        }
+        log_i("GATT client writing end of request");
+        proxyCharacteristic_->setValue(SpiramString("E="));
+        proxyCharacteristic_->notify();
+    } else {
+        // Send specific chunk
+        sendChunk(body, specificChunkNumber, numChunks);
+    }
+}
+
+auto BLEProxy::calculateChecksum(const SpiramString &body) -> SpiramString {
+    uint8_t checksum = 0;
+    for (auto c : body) {
+        checksum += c;
+        // log_i("Checksumming %c (%d) = %d", c, c, checksum);
+    }
+    return SpiRamStringFormat("%02x", checksum);
 }
 
 #endif // USE_BLE_SERVER_PROXY
