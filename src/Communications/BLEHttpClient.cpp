@@ -71,30 +71,49 @@ auto BLEHttpClient::fetchHeaders() -> int {
     };
 
     // If not connected, wait up to 30s to ensure BLE is connected. If not, bail.
-    if (!connected) {
-        auto start = esp_timer_get_time();
-        auto lastLogTime = esp_timer_get_time();
-        while (!connected) {
-            if (esp_timer_get_time() - start > static_cast<long long>(timeoutMs) * 1000) {
-                log_e("Timed out waiting for BLE proxy to connect");
-                return -1;
-            }
+    auto startTime = esp_timer_get_time();
+    auto lastLogTime = esp_timer_get_time();
+    while (!connected) {
+        if (esp_timer_get_time() - startTime > static_cast<long long>(timeoutMs) * 1000) {
+            log_e("Timed out waiting for BLE proxy to connect");
+            return -1;
+        }
 
-            if (esp_timer_get_time() - lastLogTime > (static_cast<long long>(logDelayMs) * 1000)) {
-                log_d("Waiting for BLE proxy to connect...");
-                lastLogTime = esp_timer_get_time();
-            }
+        if (esp_timer_get_time() - lastLogTime > (static_cast<long long>(logDelayMs) * 1000)) {
+            log_d("Waiting for BLE proxy to connect...");
+            lastLogTime = esp_timer_get_time();
+        }
 
-            vTaskDelay(1000 / portTICK_PERIOD_MS);
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
 
-            if (CancelFlag::isCancelled(cancel_)) {
-                log_d("Cancelled BLE connection");
-                return -1;
-            }
+        if (CancelFlag::isCancelled(cancel_)) {
+            log_d("Cancelled BLE connection");
+            return -1;
         }
     }
 
-    // Now that we're connected to a mobile app, we can send the request
+    startTime = esp_timer_get_time();
+    lastLogTime = esp_timer_get_time();
+    while (!BLEManager::getInstance()->isAuthed()) {
+        if (esp_timer_get_time() - startTime > static_cast<long long>(timeoutMs) * 1000) {
+            log_e("Timed out waiting for BLE proxy to auth");
+            return -1;
+        }
+
+        if (esp_timer_get_time() - lastLogTime > (static_cast<long long>(logDelayMs) * 1000)) {
+            log_d("Waiting for BLE proxy to auth...");
+            lastLogTime = esp_timer_get_time();
+        }
+
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
+
+        if (CancelFlag::isCancelled(cancel_)) {
+            log_d("Cancelled BLE connection while waiting for auth");
+            return -1;
+        }
+    }
+
+    // Now that we're connected and authed to a mobile app, we can send the request
     // Register web request handler which receives the response from the mobile app
     bleProxy_->registerWebRequestHandler([this](const SpiramString &key, const SpiramString &body) {
         bool completed = this->handleWebRequest(key, body);
@@ -115,8 +134,8 @@ auto BLEHttpClient::fetchHeaders() -> int {
     bleProxy_->writeBody(requestBody_);
 
     // Wait for response up to 30s
-    auto startTime = esp_timer_get_time();
-    auto lastLogTime = esp_timer_get_time();
+    startTime = esp_timer_get_time();
+    lastLogTime = esp_timer_get_time();
     while (!responseFetched_) {
         auto currentTime = esp_timer_get_time();
         if (currentTime - startTime > static_cast<long long>(timeoutMs) * 1000) {

@@ -5,7 +5,9 @@
 #include <esp_wifi.h>
 
 #include "Communications/BLEAbstractions.hpp"
+#include "Communications/BLEManager.hpp"
 #include "Misc/StringUtil.hpp"
+#include "Storage/PreferencesStore.hpp"
 #include "sindarin-debug.h"
 
 using WebRequestHandler = std::function<void(const SpiramString &, const SpiramString &)>;
@@ -19,6 +21,7 @@ public:
 
     static auto getInstance() -> std::shared_ptr<BLEProxy>;
 
+    void setPrefs(PreferencesStore *prefs) { prefs_ = prefs; };
     void configureCharacteristics(BLEService *service) override;
     auto getService() -> BLEService * { return proxyService_; };
     void disconnect(uint16_t connId);
@@ -43,6 +46,7 @@ protected:
     BLEService *proxyService_{nullptr};
     WebRequestHandler webRequestHandler_{nullptr};
     SubscriptionStatusCallback subscriptionStatusCallback_{nullptr};
+    PreferencesStore *prefs_{nullptr};
 
     class CharacteristicCallbacks : public BLECharacteristicCallbacks {
     public:
@@ -70,7 +74,18 @@ protected:
             if (equalsIndex != std::string::npos) {
                 SpiramString key = SpiramString(value.substr(0, equalsIndex));
                 SpiramString body = SpiramString(value.substr(equalsIndex + 1));
-                if (BLEProxy::getInstance()->webRequestHandler_) {
+                if (key == "auth") {
+                    if (body == BLEProxy::getInstance()->prefs_->bleAuthKey.get()) {
+                        log_i("BLEProxy::CharacteristicCallbacks::onWrite: Authed");
+                        BLEManager::getInstance()->markAsAuthed();
+                    } else {
+                        log_w(
+                            "BLEProxy::CharacteristicCallbacks::onWrite: Auth failed (%s, "
+                            "expected %s)",
+                            body.c_str(),
+                            BLEProxy::getInstance()->prefs_->bleAuthKey.get().value_or("").c_str());
+                    }
+                } else if (BLEProxy::getInstance()->webRequestHandler_) {
                     BLEProxy::getInstance()->webRequestHandler_(key, body);
                 }
             }

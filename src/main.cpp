@@ -415,6 +415,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 
 #if USE_BLE_SERVER_PROXY
     auto syncService = bleSyncService.configureService(bleManager->server());
+    BLEProxy::getInstance()->setPrefs(&prefs);
     BLEProxy::getInstance()->configureCharacteristics(syncService);
 
     if (!bleSyncService.start()) {

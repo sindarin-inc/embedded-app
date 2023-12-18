@@ -121,7 +121,7 @@ void BLEProxy::writeBody(const SpiramString &body, int specificChunkNumber) {
         for (int i = 0; i < numChunks; i++) {
             sendChunk(body, i, numChunks);
 
-            if (i % 10 == 0) {
+            if (i % 3 == 0) {
                 vTaskDelay(250 / portTICK_PERIOD_MS);
             }
         }

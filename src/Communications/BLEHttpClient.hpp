@@ -63,6 +63,7 @@ private:
     std::shared_ptr<CancelFlag> cancel_;
     char *url_;
     int statusCode_{};
+    bool authed_{false};
 
     esp_http_client_method_t requestMethod_;
     std::vector<std::pair<SpiramString, SpiramString>> requestHeaders_;
