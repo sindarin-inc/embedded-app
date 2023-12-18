@@ -50,6 +50,7 @@ protected:
             SHOW_HEAP();
             log_i("BLE client connected to our server!");
 
+            // Store the connection ID so we can disconnect later
             uint16_t connId = desc->conn_handle;
             enclosed->setConnId(connId);
 

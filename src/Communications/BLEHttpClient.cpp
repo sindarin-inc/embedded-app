@@ -163,7 +163,7 @@ auto BLEHttpClient::handleWebRequest(const SpiramString &key, const SpiramString
         auto type = key.substr(0, 1);
         if (type == "H") {
             // Header
-            bleProxy_->writeHeader(requestHeaders_, chunkNumber);
+            bleProxy_->writeHeaders(requestHeaders_, chunkNumber);
         } else if (type == "B") {
             // Body
             bleProxy_->writeBody(requestBody_, chunkNumber);

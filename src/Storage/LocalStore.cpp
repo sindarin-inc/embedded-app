@@ -578,7 +578,7 @@ void LocalStore::syncFromRemote(
             return;
         }
 
-        auto useBle = !wifiConnected || true;
+        auto useBle = !wifiConnected;
         auto httpCode = this->telemetry_.uploadAndResetTelemetry(this->fileSystem, useBle);
         if (httpCode != 201) {
             this->telemetry_.logMetric(TelemetryField::METRIC_SYNC_STATUS, "sync-telemetry-failed",

@@ -29,8 +29,10 @@ public:
     auto countChunks(const SpiramString &body) -> int;
 
     void writeUrl(const SpiramString &url, const SpiramString &method);
-    void writeHeaders(std::vector<std::pair<SpiramString, SpiramString>> &headers);
-    void writeHeader(std::vector<std::pair<SpiramString, SpiramString>> &headers, int chunkNumber);
+    void writeHeaders(std::vector<std::pair<SpiramString, SpiramString>> &headers,
+                      int specificChunkNumber = -1);
+    void sendHeaderChunk(const std::pair<SpiramString, SpiramString> &headerPair, int chunkNumber,
+                         int numChunks);
     void writeBody(const SpiramString &body, int specificChunkNumber = -1);
     void sendChunk(const SpiramString &body, int chunkNumber, int numChunks);
     auto calculateChecksum(const SpiramString &body) -> SpiramString;

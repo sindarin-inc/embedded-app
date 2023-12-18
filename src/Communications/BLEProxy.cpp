@@ -65,51 +65,27 @@ void BLEProxy::writeUrl(const SpiramString &url, const SpiramString &method) {
     }
 }
 
-void BLEProxy::writeHeaders(std::vector<std::pair<SpiramString, SpiramString>> &headers) {
-    // Chunk the headerValue into smaller chunks
-    auto numChunks = headers.size();
-    auto i = 0;
+void BLEProxy::writeHeaders(std::vector<std::pair<SpiramString, SpiramString>> &headers,
+                            int specificChunkNumber = -1) {
+    int numChunks = headers.size();
+    int i = 0;
 
-    for (auto &[header, value] : headers) {
-        auto headerValue = SpiRamStringFormat("%s=%s", header.c_str(), value.c_str());
-
-        SpiramString body = SpiRamStringFormat("H=%d/%d:%s", i + 1, numChunks, headerValue.c_str());
-        log_i("GATT client writing header chunk %d/%d: %s", i + 1, numChunks, body.c_str());
-        proxyCharacteristic_->setValue(body);
-        proxyCharacteristic_->notify();
-        i++;
-    }
-}
-
-// Re-sending specific chunk
-void BLEProxy::writeHeader(std::vector<std::pair<SpiramString, SpiramString>> &headers,
-                           int chunkNumber) {
-    auto numChunks = headers.size();
-    auto i = 0;
-
-    for (auto &[header, value] : headers) {
-        if ((i + 1) != chunkNumber) {
-            i++;
-            continue;
+    for (auto &headerPair : headers) {
+        if (specificChunkNumber < 0 || (i + 1) == specificChunkNumber) {
+            sendHeaderChunk(headerPair, i, numChunks);
         }
-        auto headerValue = SpiRamStringFormat("%s=%s", header.c_str(), value.c_str());
-
-        SpiramString body = SpiRamStringFormat("H=%d/%d:%s", i + 1, numChunks, headerValue.c_str());
-        log_i("GATT client writing header chunk %d/%d: %s", i + 1, numChunks, body.c_str());
-        proxyCharacteristic_->setValue(body);
-        proxyCharacteristic_->notify();
         i++;
     }
 }
 
-void BLEProxy::sendChunk(const SpiramString &body, int chunkNumber, int numChunks) {
-    SpiramString chunk = body.substr(chunkNumber * MTU_REDUCED_CHUNK_SIZE, MTU_REDUCED_CHUNK_SIZE);
-    SpiramString checksum = calculateChecksum(chunk);
-    SpiramString value = SpiRamStringFormat("B=%d/%d-%s:%s", chunkNumber + 1, numChunks,
-                                            checksum.c_str(), chunk.c_str());
-    // log_i("GATT client writing body chunk %d/%d: %s", chunkNumber + 1, numChunks, value.c_str());
-    log_i("GATT client writing body chunk %d/%d-%s", chunkNumber + 1, numChunks, checksum.c_str());
-    proxyCharacteristic_->setValue(value);
+void BLEProxy::sendHeaderChunk(const std::pair<SpiramString, SpiramString> &headerPair,
+                               int chunkNumber, int numChunks) {
+    auto [header, value] = headerPair;
+    SpiramString headerValue = SpiRamStringFormat("%s=%s", header.c_str(), value.c_str());
+    SpiramString body =
+        SpiRamStringFormat("H=%d/%d:%s", chunkNumber + 1, numChunks, headerValue.c_str());
+    log_i("GATT client writing header chunk %d/%d: %s", chunkNumber + 1, numChunks, body.c_str());
+    proxyCharacteristic_->setValue(body);
     proxyCharacteristic_->notify();
 }
 
@@ -132,6 +108,17 @@ void BLEProxy::writeBody(const SpiramString &body, int specificChunkNumber) {
         // Send specific chunk
         sendChunk(body, specificChunkNumber, numChunks);
     }
+}
+
+void BLEProxy::sendChunk(const SpiramString &body, int chunkNumber, int numChunks) {
+    SpiramString chunk = body.substr(chunkNumber * MTU_REDUCED_CHUNK_SIZE, MTU_REDUCED_CHUNK_SIZE);
+    SpiramString checksum = calculateChecksum(chunk);
+    SpiramString value = SpiRamStringFormat("B=%d/%d-%s:%s", chunkNumber + 1, numChunks,
+                                            checksum.c_str(), chunk.c_str());
+    // log_i("GATT client writing body chunk %d/%d: %s", chunkNumber + 1, numChunks, value.c_str());
+    log_i("GATT client writing body chunk %d/%d-%s", chunkNumber + 1, numChunks, checksum.c_str());
+    proxyCharacteristic_->setValue(value);
+    proxyCharacteristic_->notify();
 }
 
 auto BLEProxy::calculateChecksum(const SpiramString &body) -> SpiramString {
