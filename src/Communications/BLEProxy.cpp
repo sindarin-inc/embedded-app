@@ -66,7 +66,7 @@ void BLEProxy::writeUrl(const SpiramString &url, const SpiramString &method) {
 }
 
 void BLEProxy::writeHeaders(std::vector<std::pair<SpiramString, SpiramString>> &headers,
-                            int specificChunkNumber = -1) {
+                            int specificChunkNumber) {
     int numChunks = headers.size();
     int i = 0;
 
