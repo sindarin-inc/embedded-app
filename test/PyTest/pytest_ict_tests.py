@@ -335,9 +335,7 @@ def ict_client():
     # Set everything up to be discoverable over USB
     client = MFICTClient()
     client.clear_input()
-    if client.get_ict_mode() == MODE_FINAL_TESTER:
-        logger.info("ict client opening dut temple")
-        client.open_right_temple()
+    client.open_right_temple()
 
     client.set_gpio0(0)
     client.set_power(True)
@@ -353,8 +351,8 @@ def ict_client():
     ict_mode = client.get_ict_mode()
 
     # Reset everything back to a default state
-    client.open_right_temple()
-    client.open_left_temple()
+    client.close_right_temple()
+    client.close_left_temple()
     client.set_power(False)
 
 
