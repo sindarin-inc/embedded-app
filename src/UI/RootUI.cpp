@@ -1169,8 +1169,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     systemSettingsMenu->addMenuItem(MenuItem("Clear WiFi Settings",
                                              [this, systemSettingsMenu, display]() {
         WiFi::getInstance().clearWiFiCredentials();
-        // Also clear Bluetooth manufacturer data
-        prefs_.bleAdvertisingKey.remove();
         log_w("WiFi settings cleared.");
         systemSettingsMenu->showTemporaryMessage(*display, "WiFi settings cleared.", 2000, true);
     }));
