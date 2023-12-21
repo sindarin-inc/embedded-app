@@ -491,4 +491,14 @@ const constexpr GlyphCode NO_GLYPH_CODE = 0x7FFF;
 const constexpr char32_t ZERO_WIDTH_CODEPOINT = 0xFEFF; // U+0FEFF
 const constexpr char32_t UNKNOWN_CODEPOINT = 0xE05E;    // U+E05E This is part of the Sol Font.
 
+// Used to identify glyph codes that are CJK characters, for which no optical kerning computation is
+// done.
+
+struct CJKGlyhpCodesStruct {
+    GlyphCode low;
+    GlyphCode high;
+};
+
+typedef CJKGlyhpCodesStruct CJKGlyphCodes[3];
+
 } // namespace ibmf_defs

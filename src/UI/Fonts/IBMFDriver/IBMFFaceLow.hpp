@@ -31,6 +31,18 @@ private:
     LigKernStepsPtr ligKernSteps_{nullptr};
     bool opticalKerning{true};
 
+    static CJKGlyphCodes cjkGlyphCodes;
+
+    static inline auto isACJKGlyphCode(GlyphCode glyphCode) -> bool {
+        bool res = false;
+        if (cjkGlyphCodes[0].low != 0) {
+            res = ((glyphCode >= cjkGlyphCodes[0].low) && (glyphCode <= cjkGlyphCodes[0].high)) ||
+                  ((glyphCode >= cjkGlyphCodes[1].low) && (glyphCode <= cjkGlyphCodes[1].high)) ||
+                  ((glyphCode >= cjkGlyphCodes[2].low) && (glyphCode <= cjkGlyphCodes[2].high));
+        }
+        return res;
+    }
+
 public:
     IBMFFaceLow() = default;
 
@@ -130,5 +142,17 @@ public:
         *advance = glyphInfo->advance + adj;
 
         return true;
+    }
+
+    static inline void setCJKGlyphCodeRange(int index, GlyphCode low, GlyphCode high) {
+        // LOGD("CJK GlyphCode Range Received: %" PRIu16 " - %" PRIu16, low, high);
+
+        if ((low >= DONT_CARE_CODE) || (high >= DONT_CARE_CODE)) {
+            low = high = 0;
+        }
+        cjkGlyphCodes[index].low = low;
+        cjkGlyphCodes[index].high = high;
+
+        // LOGD("CJK GlyphCode Range Computed: %" PRIu16 " - %" PRIu16, low, high);
     }
 };

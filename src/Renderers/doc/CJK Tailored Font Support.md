@@ -56,7 +56,7 @@ The algorithm do its best to not leave a punctuation character alone at the begi
 ---
 **The issue**: CJK glyphs must be presented as monospaced, not proportional.
 
-**The solution**: When a font is loaded from the EPub, the optical kerning algorithm is disabled. The font generator fixes the advance parameter value of all CJK related glyphs to 16 pixels. For non-cjk characters, the optical kerning remains silent, but the advance parameter of the corresponding glyphs are adjusted agains the bitmaps with of the characters (done in the font-generator application).
+**The solution**: When a font is loaded from the EPub, the optical kerning algorithm is disabled for CJK characters. The font generator fixes the advance parameter value of all CJK related glyphs to 16 pixels. For non-cjk characters, the optical kerning will be applied when two or more non-cjk characters are found in a row.
 
 ---
 **The issue**: Some punctuation code points are tailored for vertical writing. They must be transformed for horizontal writing. This is the case when a book has been typesetted for vertical, bottom up reading.
@@ -76,12 +76,24 @@ As the following have been tailored for the Sol Font, they are not available in 
 
 Numbered lists, if present, are shown with ASCII digits.
 
-The **Content** menu entry doesn't show CJK characters for now. THis is also the case for the dictionary or summary if they contain CJK characters.
-
 The EPub Tokenizer is able to cope with both EPubs with or without a tailored embedded font. 
 
 Txt documents rendering still need to be updated and verified. 
 
+The **Content** menu entry doesn't show CJK characters for now. This is also the case for books title in the books list, the dictionary or summary if they contain CJK characters.
+
+The font generator doesn't integrate the font in the EPub document. This must be done by hand. The font must be declared in the manifest of the content.opf file with id = "ibmf_font".
+
 A lot of testing is still required if ever that code is expected to be migrated to the main branch.
 
-The font generator doesn't integrate the font in the EPub document. This must be done by hand.
+### CJK Book preparation
+
+An original CJK ebook must be prepared to be able to be shown in the demonstrator. The steps required are as follow:
+
+1. A taylored font must be prepared using the IBMF-font-generator as explaned above. The font must then be integrated in the `.epub` file. A manifest entry in the `content.opf` must point to the font through the `href=` attribute and must be using `id="ibmf_font"`, `media-type="application/font"` attributes. The application is located here: `https://github.com/turgu1/IBMF-font-generator`.
+
+2. The title, author and table of content chapters' title must be translated in English or any European language, as supported in the normal embedded Sol Font. This include information located in the `toc.ncx` and `content.opf`.
+
+3. The ebook can then be uploaded on the Sol Server for preparation and inclusion in the ebooks server's database.
+
+[The End]

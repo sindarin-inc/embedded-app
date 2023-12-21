@@ -66,6 +66,9 @@ public:
 
     [[nodiscard]] auto translate(char32_t codePoint) const -> GlyphCode;
 
+    auto translateLowest(char32_t codePointLow, char32_t codePointHigh) const -> GlyphCode;
+    auto translateHighest(char32_t codePointLow, char32_t codePointHigh) const -> GlyphCode;
+
     void showCodePointBundles(int firstIdx, int count) const;
     void showPlanes() const;
     void showFont() const;

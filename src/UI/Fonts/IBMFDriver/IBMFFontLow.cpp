@@ -80,6 +80,13 @@ auto IBMFFontLow::load(MemoryPtr fontData, uint32_t length) -> bool {
     currentFontData_ = fontData;
     unknownGlyphCode_ = translate(UNKNOWN_CODEPOINT);
 
+    IBMFFaceLow::setCJKGlyphCodeRange(0, translateLowest(U'\U00002E80', U'\U00009FFF'),
+                                      translateHighest(U'\U00002E80', U'\U00009FFF'));
+    IBMFFaceLow::setCJKGlyphCodeRange(1, translateLowest(U'\U0000FE10', U'\U0000FE6F'),
+                                      translateHighest(U'\U0000FE10', U'\U0000FE6F'));
+    IBMFFaceLow::setCJKGlyphCodeRange(2, translateLowest(U'\U0000FF00', U'\U0000FFEF'),
+                                      translateHighest(U'\U0000FF00', U'\U0000FFEF'));
+
     // showFont();
     return true;
 }
@@ -236,6 +243,87 @@ auto IBMFFontLow::load(MemoryPtr fontData, uint32_t length) -> bool {
     // unknown code points received to be translated. Could be removed or disabled if required.
     if ((codePoint != UNKNOWN_CODEPOINT) && (glyphCode == unknownGlyphCode_)) {
         log_w("Unknown Code Point received: U+%05" PRIx32, uint32_t(codePoint));
+    }
+
+    return glyphCode;
+}
+
+[[nodiscard]] auto IBMFFontLow::translateLowest(char32_t codePointLow, char32_t codePointHigh) const
+    -> GlyphCode {
+    GlyphCode glyphCode = NO_GLYPH_CODE;
+
+    auto planeIdxLow = static_cast<uint16_t>(codePointLow >> 16);
+    auto planeIdxHigh = static_cast<uint16_t>(codePointHigh >> 16);
+
+    if ((planeIdxLow <= 3) && (planeIdxLow == planeIdxHigh)) {
+        auto u16Low = static_cast<uint16_t>(codePointLow);
+        auto u16High = static_cast<uint16_t>(codePointHigh);
+
+        // NOLINTBEGIN(clang-analyzer-core.NullDereference)
+        uint16_t codePointBundleIdx = (*planes_)[planeIdxLow].codePointBundlesIdx;
+        uint16_t entriesCount = (*planes_)[planeIdxLow].entriesCount;
+        int gCode = (*planes_)[planeIdxLow].firstGlyphCode;
+        // NOLINTEND(clang-analyzer-core.NullDereference)
+        int i = 0;
+        while (i < entriesCount) {
+            if ((u16Low <= (*codePointBundles_)[codePointBundleIdx].lastCodePoint) &&
+                (u16High >= (*codePointBundles_)[codePointBundleIdx].firstCodePoint)) {
+                break;
+            }
+            gCode += ((*codePointBundles_)[codePointBundleIdx].lastCodePoint -
+                      (*codePointBundles_)[codePointBundleIdx].firstCodePoint + 1);
+            i++;
+            codePointBundleIdx++;
+        }
+        if (i < entriesCount) {
+            if (u16Low < (*codePointBundles_)[codePointBundleIdx].firstCodePoint) {
+                u16Low = (*codePointBundles_)[codePointBundleIdx].firstCodePoint;
+            }
+            glyphCode = gCode + (u16Low - (*codePointBundles_)[codePointBundleIdx].firstCodePoint);
+        }
+    }
+
+    return glyphCode;
+}
+
+[[nodiscard]] auto IBMFFontLow::translateHighest(char32_t codePointLow,
+                                                 char32_t codePointHigh) const -> GlyphCode {
+    GlyphCode glyphCode = NO_GLYPH_CODE;
+
+    auto planeIdxLow = static_cast<uint16_t>(codePointLow >> 16);
+    auto planeIdxHigh = static_cast<uint16_t>(codePointHigh >> 16);
+
+    if ((planeIdxLow <= 3) && (planeIdxLow == planeIdxHigh)) {
+        auto u16Low = static_cast<uint16_t>(codePointLow);
+        auto u16High = static_cast<uint16_t>(codePointHigh);
+
+        // NOLINTBEGIN(clang-analyzer-core.NullDereference)
+        uint16_t codePointBundleIdx = (*planes_)[planeIdxLow].codePointBundlesIdx;
+        uint16_t entriesCount = (*planes_)[planeIdxLow].entriesCount;
+        int gCode = (*planes_)[planeIdxLow].firstGlyphCode;
+        // NOLINTEND(clang-analyzer-core.NullDereference)
+        int i = 0;
+        GlyphCode lastGlyphCode = 0;
+        while (i < entriesCount) {
+            if (u16High < (*codePointBundles_)[codePointBundleIdx].firstCodePoint) {
+                break;
+            }
+            lastGlyphCode = gCode;
+            gCode += ((*codePointBundles_)[codePointBundleIdx].lastCodePoint -
+                      (*codePointBundles_)[codePointBundleIdx].firstCodePoint + 1);
+            i++;
+            codePointBundleIdx++;
+        }
+        if ((i - 1) >= 0) {
+            codePointBundleIdx--;
+            if (u16High >= (*codePointBundles_)[codePointBundleIdx].firstCodePoint) {
+                if (u16High > (*codePointBundles_)[codePointBundleIdx].lastCodePoint) {
+                    u16High = (*codePointBundles_)[codePointBundleIdx].lastCodePoint;
+                }
+                glyphCode = lastGlyphCode +
+                            (u16High - (*codePointBundles_)[codePointBundleIdx].firstCodePoint);
+            }
+        }
     }
 
     return glyphCode;

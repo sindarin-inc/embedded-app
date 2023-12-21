@@ -1,5 +1,7 @@
 #include "IBMFFaceLow.hpp"
 
+CJKGlyphCodes IBMFFaceLow::cjkGlyphCodes;
+
 auto IBMFFaceLow::load(const MemoryPtr dataStart, const int dataLength, FontFormat fontFmt)
     -> bool {
 
@@ -98,7 +100,7 @@ auto IBMFFaceLow::ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2, FIX
 
 #if OPTICAL_KERNING
 
-    if (opticalKerning) {
+    if (opticalKerning || !((isACJKGlyphCode(glyphCode1) || isACJKGlyphCode(*glyphCode2)))) {
         typedef int32_t FIX32;
 
 #define FRACT_BITS 10
