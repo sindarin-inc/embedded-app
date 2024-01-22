@@ -198,6 +198,18 @@ void ReadableScreen::render(DisplaySystem &display) {
 
     bool renderTransitionArrows = prefs_.pageTransitionArrows.get().value_or(false);
 
+    if (renderHook_) {
+        testHookScreen_.setNeedsRerender();
+        setCurrentScreen(testHookScreen_);
+        testHookScreen_.setBackCallback([this]() {
+            this->setNeedsRerender();
+            setCurrentScreen(*this);
+        });
+        testHookScreen_.render(display);
+        renderHook_ = false;
+        return;
+    }
+
     if (currentScreen_ != this && !renderPopupBackground) {
         currentScreen_->render(display);
         return;
@@ -290,6 +302,7 @@ void ReadableScreen::render(DisplaySystem &display) {
                     for (auto &param : menuParameters) {
                         log_d("    %s: %s", param.first.c_str(), param.second.c_str());
                     }
+                    renderHook_ = true;
                     retrieveMenuParameters = false;
                     continue;
                 }

@@ -8,6 +8,7 @@
 #include "Storage/PreferencesStore.hpp"
 #include "UI/Components/ArrowView.hpp"
 #include "UI/ContainerScreen.hpp"
+#include "UI/FirstHookTestScreen.hpp"
 #include "UI/MsgPopup.hpp"
 #include "UI/ReadablePopupMenuScreen.hpp"
 #include "UI/Screen.hpp"
@@ -34,8 +35,9 @@ public:
           prefs_(prefs), telemetry_(telemetry), fileSystem_(fileSystem), display_(display),
           popupMenuScreen_(display, prefs, fileSystem, readable, lightingController, renderer_,
                            telemetry_),
-          leftArrowView_(display, ArrowLeft), rightArrowView_(display, ArrowRight),
-          upArrowView_(display, ArrowUp), downArrowView_(display, ArrowDown) {
+          testHookScreen_(display, prefs, telemetry), leftArrowView_(display, ArrowLeft),
+          rightArrowView_(display, ArrowRight), upArrowView_(display, ArrowUp),
+          downArrowView_(display, ArrowDown) {
 
         currentScreen_ = this;
         renderer_.setStream(stream);
@@ -145,10 +147,13 @@ protected:
     bool shownIcons_ = false;
     bool renderPopup_ = false;
     bool autoPilotForceFull_ = false;
+    bool renderHook_ = false;
 
     DisplaySystem &display_;
 
     ReadablePopupMenuScreen popupMenuScreen_;
+
+    FirstHookTestScreen testHookScreen_;
 
     // Must reset this to 0 on each page turn.
     unsigned int speedLinesToSkip_ = 0;
