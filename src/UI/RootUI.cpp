@@ -33,7 +33,6 @@
 #include "UI/DebugAboutScreen.hpp"
 #include "UI/DemoScreen.hpp"
 #include "UI/FirmwareUpdateScreen.hpp"
-#include "UI/FirstHookTestScreen.hpp"
 #include "UI/Fonts/Fonts.hpp"
 #include "UI/LayoutTestScreen.hpp"
 #include "UI/LegalScreen.hpp"
