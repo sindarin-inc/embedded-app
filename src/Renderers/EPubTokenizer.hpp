@@ -212,7 +212,7 @@ private:
     // They will have the following format:
     //
     // <div id="sol-menu"><ul><li id="key">value</li>...</ul></div>
-    bool retrieveMenuParameters_;
+    bool retrieveMenuParameters_{};
 
     static constexpr const uint8_t MAX_LEVEL_COUNT = 5;
 

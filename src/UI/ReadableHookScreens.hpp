@@ -49,8 +49,9 @@ public:
     // This method is called by the ReadableScreen when it finds a tag
     // in the epub that matches one of the names in the vector.
     //
-    static std::shared_ptr<Screen> getNewHookScreen(const std::string &name, DisplaySystem &display,
-                                                    PreferencesStore &prefs, Telemetry &telemetry) {
+    static auto getNewHookScreen(const std::string &name, DisplaySystem &display,
+                                 PreferencesStore &prefs, Telemetry &telemetry)
+        -> std::shared_ptr<Screen> {
         auto it = std::find(names.begin(), names.end(), name);
         if (it != names.end()) {
             // Name found, create a new Screen

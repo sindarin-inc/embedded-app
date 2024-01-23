@@ -196,7 +196,7 @@ public:
     }
 
     void addMenuParameter(const std::string &key, const std::string &value);
-    auto getMenuParameters() const -> const MenuParameters &;
+    [[nodiscard]] auto getMenuParameters() const -> const MenuParameters &;
 
     void show() const;
 
