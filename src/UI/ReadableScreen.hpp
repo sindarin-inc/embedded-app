@@ -35,9 +35,8 @@ public:
           prefs_(prefs), telemetry_(telemetry), fileSystem_(fileSystem), display_(display),
           popupMenuScreen_(display, prefs, fileSystem, readable, lightingController, renderer_,
                            telemetry_),
-          testHookScreen_(display, prefs, telemetry), leftArrowView_(display, ArrowLeft),
-          rightArrowView_(display, ArrowRight), upArrowView_(display, ArrowUp),
-          downArrowView_(display, ArrowDown) {
+          leftArrowView_(display, ArrowLeft), rightArrowView_(display, ArrowRight),
+          upArrowView_(display, ArrowUp), downArrowView_(display, ArrowDown) {
 
         currentScreen_ = this;
         renderer_.setStream(stream);
@@ -147,13 +146,12 @@ protected:
     bool shownIcons_ = false;
     bool renderPopup_ = false;
     bool autoPilotForceFull_ = false;
-    bool renderHook_ = false;
 
     DisplaySystem &display_;
 
     ReadablePopupMenuScreen popupMenuScreen_;
 
-    FirstHookTestScreen testHookScreen_;
+    std::vector<std::shared_ptr<Screen>> hookScreens_;
 
     // Must reset this to 0 on each page turn.
     unsigned int speedLinesToSkip_ = 0;

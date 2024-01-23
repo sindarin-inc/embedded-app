@@ -3,6 +3,7 @@
 #include "Misc/SolClock.hpp"
 #include "Misc/StringUtil.hpp"
 #include "UI/Bitmaps/SeekBook.hpp"
+#include "UI/ReadableHookScreens.hpp"
 
 void ReadableSeekScreen::render(DisplaySystem &display) {
     auto place = Place::factory(prefs_.readablePlace.get(readable_->shortenedUuid.c_str()));

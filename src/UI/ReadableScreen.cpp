@@ -7,6 +7,7 @@
 
 #include "Misc/Platform.hpp"
 #include "UI/Bitmaps/Auto_Pilot_Icons.hpp"
+#include "UI/ReadableHookScreens.hpp"
 #include "sindarin-debug.h"
 
 // Two minutes per page currently
@@ -198,20 +199,21 @@ void ReadableScreen::render(DisplaySystem &display) {
 
     bool renderTransitionArrows = prefs_.pageTransitionArrows.get().value_or(false);
 
-    if (renderHook_) {
-        testHookScreen_.setNeedsRerender();
-        setCurrentScreen(testHookScreen_);
-        testHookScreen_.setBackCallback([this]() {
-            this->setNeedsRerender();
-            setCurrentScreen(*this);
-        });
-        testHookScreen_.render(display);
-        renderHook_ = false;
+    if (currentScreen_ != this && !renderPopupBackground) {
+        currentScreen_->render(display);
         return;
     }
 
-    if (currentScreen_ != this && !renderPopupBackground) {
-        currentScreen_->render(display);
+    if (!hookScreens_.empty()) {
+        auto &hookScreen = hookScreens_[0];
+        hookScreen->setNeedsRerender();
+        setCurrentScreen(*hookScreen);
+        hookScreen->setBackCallback([this, hookScreen]() {
+            this->setNeedsRerender();
+            setCurrentScreen(*this);
+            this->hookScreens_.erase(this->hookScreens_.begin());
+        });
+        hookScreen->render(display);
         return;
     }
 
@@ -298,11 +300,16 @@ void ReadableScreen::render(DisplaySystem &display) {
             if (retrieveMenuParameters) {
                 const MenuParameters &menuParameters = renderer_.getMenuParameters();
                 if (!menuParameters.empty()) {
+                    // Note that we can't guarantee the order in which the hooks
+                    // will be parsed out and executed. So if you have multiple
+                    // hooks in one place, just keep that in mind.
                     log_d("Menu Parameters:");
                     for (auto &param : menuParameters) {
-                        log_d("    %s: %s", param.first.c_str(), param.second.c_str());
+                        log_d("    Creating hook screen %s: %s", param.first.c_str(),
+                              param.second.c_str());
+                        hookScreens_.push_back(ReadableHookScreens::getNewHookScreen(
+                            param.first, display_, prefs_, telemetry_));
                     }
-                    renderHook_ = true;
                     retrieveMenuParameters = false;
                     continue;
                 }

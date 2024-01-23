@@ -33,6 +33,7 @@
 #include "UI/DebugAboutScreen.hpp"
 #include "UI/DemoScreen.hpp"
 #include "UI/FirmwareUpdateScreen.hpp"
+#include "UI/FirstHookTestScreen.hpp"
 #include "UI/Fonts/Fonts.hpp"
 #include "UI/LayoutTestScreen.hpp"
 #include "UI/LegalScreen.hpp"
@@ -44,6 +45,7 @@
 #include "UI/MsgPopup.hpp"
 #include "UI/OffsetAdjustScreen.hpp"
 #include "UI/OnboardingContentSyncScreen.hpp"
+#include "UI/ReadableHookScreens.hpp"
 #include "UI/ReadableScreen.hpp"
 #include "UI/ReleaseNotesScreen.hpp"
 #include "UI/ResizeBoxScreen.hpp"
@@ -91,6 +93,12 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     }
 
     this->telemetry_.logMetricData(TelemetryField::METRIC_BOOT, bootData);
+
+    // It's possible that we want to have this initaliziation happen somewhere
+    // else but since RootUI does a lot of set up things, it's ok for now!
+    ReadableHookScreens::addHookScreenName(FIRST_HOOK_TEST_SCREEN_TAG);
+    ReadableHookScreens::addHookScreenName(OFFSET_ADJUST_SCREEN_TAG);
+    ReadableHookScreens::addHookScreenName(RESIZE_BOX_SCREEN_TAG);
 
     MenuStyle styleFamilies;
 
