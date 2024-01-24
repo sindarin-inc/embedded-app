@@ -4,7 +4,10 @@
 
 class LittleFSFileSystem : public PosixFileSystem {
 public:
-    LittleFSFileSystem() { setPrefix("/littlefs"); }
+    LittleFSFileSystem() {
+        setPrefix("/littlefs");
+        setPrefixPreload("/preload");
+    }
     LittleFSFileSystem(LittleFSFileSystem const &) = delete;
     ~LittleFSFileSystem() override = default;
 
