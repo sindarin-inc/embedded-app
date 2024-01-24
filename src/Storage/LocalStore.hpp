@@ -83,11 +83,13 @@ public:
     LocalStore(LocalStore const &) = delete;
 
     auto begin() -> bool;
-    auto loadReadablesFromFile(ReadablesVector &readables, const std::string &path) -> bool;
+    auto loadReadablesFromFile(ReadablesVector &readables, const std::string &path,
+                               bool preloadPartition = false) -> bool;
 
     // Convenience methods
     auto books() -> ReadablesVector & { return books_; };
     auto articles() -> ReadablesVector & { return articles_; };
+    auto preloadBooks() -> ReadablesVector & { return preloadBooks_; }
     auto readablesModelType(const ReadablesVector &readables) -> ReadablesModelType;
     [[nodiscard]] auto isReadableUnchanged(const ReadablesVector &readables,
                                            const std::shared_ptr<Readable> &readable,
@@ -134,17 +136,20 @@ public:
     auto saveReadables(ReadablesVector &readables) -> bool;
 
     // Methods for interacting with readable files on disk
-    [[nodiscard]] auto readableFilePathForWriting(const std::shared_ptr<Readable> &readable) const
+    [[nodiscard]] auto readableFilePathForWriting(const std::shared_ptr<Readable> &readable,
+                                                  bool preloadPartition = false) const
         -> std::string;
     // When reading, we will take whatever readable file type that's available
     [[nodiscard]] static auto readableFilePathForReading(FileSystem &fileSystem,
-                                                         const std::shared_ptr<Readable> &readable)
+                                                         const std::shared_ptr<Readable> &readable,
+                                                         bool preloadPartition = false)
         -> std::pair<std::string, size_t>;
-    [[nodiscard]] auto readableFilePathForReading(const std::shared_ptr<Readable> &readable) const
+    [[nodiscard]] auto readableFilePathForReading(const std::shared_ptr<Readable> &readable,
+                                                  bool preloadPartition = false) const
         -> std::pair<std::string, size_t>;
     [[nodiscard]] auto readableGetUncompressedSize(const std::shared_ptr<Readable> &readable,
-                                                   const std::string &path, size_t size) const
-        -> int;
+                                                   const std::string &path, size_t size,
+                                                   bool preloadPartition = false) const -> int;
     void readableFilePurge(const std::shared_ptr<Readable> &readable);
 
     // Save a firmware JSON for future use. Indicates that firmware has already been successfully
@@ -171,4 +176,5 @@ private:
 
     ReadablesVector books_;
     ReadablesVector articles_;
+    ReadablesVector preloadBooks_;
 };

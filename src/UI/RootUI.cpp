@@ -107,6 +107,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     auto &readables = localStore.books();
     auto &articles = localStore.articles();
+    auto &preloadReadables = localStore.preloadBooks();
 
     // If prefs_.sortCriteria isn't select, sort the readables by last update and store them
     if (!prefs_.sortCriteria.get().has_value()) {
@@ -278,7 +279,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     }
 
     // If there are no books, show the Sync Content item in the books tab.
-    if (readables.empty()) {
+    if (readables.empty() && preloadReadables.empty()) {
         booksMenu->addMenuItem(
             MenuItem("Sync Content", [this, display, &localStore, mainMenu, &lightingController]() {
                 auto contentSyncScreen =
@@ -299,7 +300,10 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     SHOW_HEAP();
 
-    for (const auto &r : readables) {
+    auto allReadables = preloadReadables;
+    allReadables.insert(allReadables.end(), readables.begin(), readables.end());
+
+    for (const auto &r : allReadables) {
         bool archived = prefs_.readableArchivedChanged.get(r->shortenedUuid.c_str());
         auto title = StringFormat("%s%s", archived ? "Archived: " : "", r->title.c_str());
         // Bible books go in their own menu / app

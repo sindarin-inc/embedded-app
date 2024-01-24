@@ -1,0 +1,58 @@
+{
+  "readables": [
+    {
+      "uuid": "d96a827e-326f-4f6c-8010-0dd9f950e45c",
+      "title": "The Hobbit",
+      "date_created": "2023-12-12T09:08:14.171507-08:00",
+      "date_modified": "2023-12-12T09:12:44.320829-08:00",
+      "date_published": "null",
+      "readable_type": "book",
+      "authors": [
+        {
+          "uuid": "4950ff62-f3b8-4ece-9126-598160e88ec9",
+          "name": "J.R.R. Tolkien",
+          "description": "null"
+        }
+      ],
+      "files": [
+        {
+          "uuid": "a1f8ea64-296d-4644-85ec-09401c4687c5",
+          "name": "d96a827e-326f-4f6c-8010-0dd9f950e45c.epub.txt",
+          "size": 514739,
+          "filetype": "txt",
+          "sha_hash": "8b16a2d7edac15ef022836ad8f5ac332f1edf91d25678a9a390cfa358b7fd573",
+          "file": "https://api.sindarin.com/user/books/d96a827e-326f-4f6c-8010-0dd9f950e45c/the-hobbit.txt",
+          "readable_type": "book"
+        },
+        {
+          "uuid": "16c0b794-ba1c-441e-a29c-7437e6a06a06",
+          "name": "d96a827e-326f-4f6c-8010-0dd9f950e45c.epub",
+          "size": 766769,
+          "filetype": "epub",
+          "sha_hash": "a56f225fe6b4905144afb28b0128f6bcb40e98dc5a5bfc822bfb9b2cc431ac93",
+          "file": "https://api.sindarin.com/user/books/d96a827e-326f-4f6c-8010-0dd9f950e45c/the-hobbit.epub",
+          "readable_type": "book"
+        },
+        {
+          "uuid": "0a8d98aa-c4b6-4779-92d4-a93ffc0318dd",
+          "name": "d96a827e-326f-4f6c-8010-0dd9f950e45c.epub-original",
+          "size": 3847328,
+          "filetype": "epub-original",
+          "sha_hash": "043c3c17710eae512da4b1be247088fae84b42120f59990e9af5f4316e4e9e7e",
+          "file": "https://api.sindarin.com/user/books/d96a827e-326f-4f6c-8010-0dd9f950e45c/the-hobbit.original.epub",
+          "readable_type": "book"
+        },
+        {
+          "uuid": "78b06906-5470-42c7-a052-0e022a2d4dfb",
+          "name": "d96a827e-326f-4f6c-8010-0dd9f950e45c.epub.utf8_txt",
+          "size": 522310,
+          "filetype": "utf8_txt",
+          "sha_hash": "245375e2dc208729ce501a2c6e5f1c7b0d83f58e5612f3baebd352b7ea6bce00",
+          "file": "https://api.sindarin.com/user/books/d96a827e-326f-4f6c-8010-0dd9f950e45c/the-hobbit.utf8_txt",
+          "readable_type": "book"
+        }
+      ],
+      "toc": []
+    }
+  ]
+}
