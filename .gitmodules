@@ -19,3 +19,6 @@
 [submodule "components/mklittlefs"]
 	path = components/mklittlefs
 	url = https://github.com/earlephilhower/mklittlefs.git
+[submodule "components/sol-mklittlefs"]
+	path = components/sol-mklittlefs
+	url = https://github.com/bchelf/sol-mklittlefs.git
