@@ -8,7 +8,8 @@
 #include "Misc/PowerManager.hpp"
 #include "sindarin-debug.h"
 
-const char *partitionLabel = "predata";
+const char *partitionLabelPreload = "predata";
+const char *partitionLabelUser = "userdata";
 
 auto LittleFSFileSystem::format() -> bool {
     log_i("Formatting LittleFS...");
@@ -16,7 +17,7 @@ auto LittleFSFileSystem::format() -> bool {
     PowerManager::getInstance().disableInactivityTimer();
 
     // TODO: Fix noisy 'task_wdt: esp_task_wdt_reset(783): task not found' log`
-    esp_err_t err = esp_littlefs_format(partitionLabel);
+    esp_err_t err = esp_littlefs_format(partitionLabelUser);
 
     PowerManager::getInstance().enableInactivityTimer();
     EnableCore0Wdt();
@@ -28,8 +29,7 @@ auto LittleFSFileSystem::format() -> bool {
     return true;
 }
 
-auto LittleFSFileSystem::begin() -> bool {
-    auto prefix = getPrefix();
+auto LittleFSFileSystem::attemptMount(std::string prefix, const char *partitionLabel) -> esp_err_t {
     // register littlefs filesystem
     esp_vfs_littlefs_conf_t config = {.base_path = prefix.c_str(),
                                       .partition_label = partitionLabel,
@@ -42,10 +42,24 @@ auto LittleFSFileSystem::begin() -> bool {
     }
 
     if (err != ESP_OK) {
-        log_e("Mounting LittleFS failed! Error: %d", err);
+        log_e("Mounting LittleFS on partition '%s' with prefix '%s' failed! Error: %d",
+              partitionLabel, prefix.c_str(), err);
+        return err;
+    }
+    return ESP_OK;
+}
+
+auto LittleFSFileSystem::begin() -> bool {
+    if (attemptMount(getPrefixPreload(), partitionLabelPreload) != ESP_OK) {
+        return false;
+    }
+    if (attemptMount(getPrefix(), partitionLabelUser) != ESP_OK) {
         return false;
     }
     return true;
 }
 
-void LittleFSFileSystem::close() { esp_vfs_littlefs_unregister(partitionLabel); }
+void LittleFSFileSystem::close() {
+    esp_vfs_littlefs_unregister(partitionLabelPreload);
+    esp_vfs_littlefs_unregister(partitionLabelUser);
+}

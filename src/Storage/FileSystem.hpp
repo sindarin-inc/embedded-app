@@ -28,13 +28,13 @@ public:
     virtual auto begin() -> bool { return true; };
 
     virtual auto open(const std::string &path, const char *mode = FILE_READ,
-                      const bool create = false) const -> SFile {
+                      const bool create = false, bool usePreload = false) const -> SFile {
         log_e("Abstract");
         assert(0);
         return {};
     };
 
-    virtual auto removeDir(const std::string &path) -> bool {
+    virtual auto removeDir(const std::string &path, bool usePreload = false) -> bool {
         log_e("Abstract");
         assert(0);
         return false;
@@ -42,33 +42,37 @@ public:
 
     auto deleteAll() -> bool;
 
-    [[nodiscard]] virtual auto exists(const std::string &path) const -> bool {
+    [[nodiscard]] virtual auto exists(const std::string &path, bool usePreload = false) const
+        -> bool {
         log_e("Abstract");
         assert(0);
         return false;
     };
-    [[nodiscard]] virtual auto size(const std::string &path) const -> size_t {
+    [[nodiscard]] virtual auto size(const std::string &path, bool usePreload = false) const
+        -> size_t {
         log_e("Abstract");
         assert(0);
         return 0;
     }
-    virtual auto listDir(const std::string &path, FileList &files, int limit = 0) const -> int {
+    virtual auto listDir(const std::string &path, FileList &files, int limit = 0,
+                         bool usePreload = false) const -> int {
         log_e("Abstract");
         assert(0);
         return 0;
     };
-    virtual auto listDirWithSubdirectories(const std::string &path, FileList &files,
-                                           FileList &dirs) const -> int {
+    virtual auto listDirWithSubdirectories(const std::string &path, FileList &files, FileList &dirs,
+                                           bool usePreload = false) const -> int {
         log_e("Abstract");
         assert(0);
         return 0;
     };
-    virtual auto createDir(const std::string &path, bool allowExists = true) -> bool {
+    virtual auto createDir(const std::string &path, bool allowExists = true,
+                           bool usePreload = false) -> bool {
         log_e("Abstract");
         assert(0);
         return false;
     }
-    virtual auto remove(const std::string &path) -> bool {
+    virtual auto remove(const std::string &path, bool usePreload = false) -> bool {
         log_e("Abstract");
         assert(0);
         return false;
