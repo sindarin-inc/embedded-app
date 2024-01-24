@@ -8,7 +8,7 @@
 #include "Misc/PowerManager.hpp"
 #include "sindarin-debug.h"
 
-const char *partitionLabel = "data";
+const char *partitionLabel = "predata";
 
 auto LittleFSFileSystem::format() -> bool {
     log_i("Formatting LittleFS...");
