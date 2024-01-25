@@ -142,16 +142,17 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     auto hasBible = it != readables.end();
 
     auto createReadableScreen = [this, display, mainMenu, booksMenu, bibleMenu, articlesMenu,
-                                 hasBible, &fileSystem, &lightingController, &localStore](
-                                    const std::shared_ptr<Readable> &readable) -> ReadableScreen * {
+                                 hasBible, &fileSystem, &lightingController,
+                                 &localStore](const std::shared_ptr<Readable> &readable,
+                                              bool preloadPartition = false) -> ReadableScreen * {
         // TODO: Would be better to not allocate / delete these all the time
 
         std::shared_ptr<RendererStream> stream;
-        auto [path, size] = localStore.readableFilePathForReading(readable);
-
+        auto [path, size] = localStore.readableFilePathForReading(readable, preloadPartition);
+        log_e("Creating readable screen for %s", path.c_str());
         if (HasSuffix(path, ".epub")) {
             log_i("Opening %s as epub", path.c_str());
-            stream = fileSystem.newEPubRendererStream(path.c_str(), readable);
+            stream = fileSystem.newEPubRendererStream(path.c_str(), readable, preloadPartition);
         } else if (HasSuffix(path, ".txt.gz")) {
             log_i("Opening %s as gzip", path.c_str());
             stream = fileSystem.newGzipRendererStream(path.c_str());
@@ -300,10 +301,37 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     SHOW_HEAP();
 
-    auto allReadables = preloadReadables;
-    allReadables.insert(allReadables.end(), readables.begin(), readables.end());
+    // auto allReadables = preloadReadables;
+    //    allReadables.insert(allReadables.end(), readables.begin(), readables.end());
 
-    for (const auto &r : allReadables) {
+    for (const auto &r : preloadReadables) {
+        bool archived = prefs_.readableArchivedChanged.get(r->shortenedUuid.c_str());
+        auto title = StringFormat("%s%s", archived ? "Archived: " : "", r->title.c_str());
+        // Bible books go in their own menu / app
+        if (!prefs_.noBible.get().value_or(false) && isBible(r)) {
+            continue;
+        }
+
+        booksMenu->addMenuItem(MenuItem(StringFormat("%s", title.c_str()),
+                                        StringFormat("%s", r->authorString().c_str()),
+                                        [this, r, display, mainMenu, createReadableScreen]() {
+            auto readableScreen = createReadableScreen(r, true);
+            if (readableScreen != nullptr) {
+                this->setCurrentScreen(*readableScreen);
+            } else {
+                auto *errorPopup = new MsgPopup(*display, itemErrorMsg_);
+                this->setCurrentScreen(*errorPopup);
+                errorPopup->setBackCallback([this, errorPopup, mainMenu]() {
+                    mainMenu->setFirstLoad();
+                    display_->clearDisplay();
+                    setCurrentScreen(*mainMenu);
+                    delete errorPopup;
+                });
+            }
+        }));
+    }
+
+    for (const auto &r : readables) {
         bool archived = prefs_.readableArchivedChanged.get(r->shortenedUuid.c_str());
         auto title = StringFormat("%s%s", archived ? "Archived: " : "", r->title.c_str());
         // Bible books go in their own menu / app
