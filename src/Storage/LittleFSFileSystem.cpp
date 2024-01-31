@@ -29,7 +29,8 @@ auto LittleFSFileSystem::format() -> bool {
     return true;
 }
 
-auto LittleFSFileSystem::attemptMount(std::string prefix, const char *partitionLabel) -> esp_err_t {
+auto LittleFSFileSystem::attemptMount(const std::string &prefix, const char *partitionLabel)
+    -> esp_err_t {
     // register littlefs filesystem
     esp_vfs_littlefs_conf_t config = {.base_path = prefix.c_str(),
                                       .partition_label = partitionLabel,
