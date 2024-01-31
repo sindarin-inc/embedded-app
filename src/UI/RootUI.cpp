@@ -142,17 +142,16 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     auto hasBible = it != readables.end();
 
     auto createReadableScreen = [this, display, mainMenu, booksMenu, bibleMenu, articlesMenu,
-                                 hasBible, &fileSystem, &lightingController,
-                                 &localStore](const std::shared_ptr<Readable> &readable,
-                                              bool preloadPartition = false) -> ReadableScreen * {
+                                 hasBible, &fileSystem, &lightingController, &localStore](
+                                    const std::shared_ptr<Readable> &readable) -> ReadableScreen * {
         // TODO: Would be better to not allocate / delete these all the time
 
         std::shared_ptr<RendererStream> stream;
-        auto [path, size] = localStore.readableFilePathForReading(readable, preloadPartition);
+        auto [path, size] = localStore.readableFilePathForReading(readable);
         log_e("Creating readable screen for %s", path.c_str());
         if (HasSuffix(path, ".epub")) {
             log_i("Opening %s as epub", path.c_str());
-            stream = fileSystem.newEPubRendererStream(path.c_str(), readable, preloadPartition);
+            stream = fileSystem.newEPubRendererStream(path.c_str(), readable);
         } else if (HasSuffix(path, ".txt.gz")) {
             log_i("Opening %s as gzip", path.c_str());
             stream = fileSystem.newGzipRendererStream(path.c_str());
@@ -315,7 +314,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         booksMenu->addMenuItem(MenuItem(StringFormat("%s", title.c_str()),
                                         StringFormat("%s", r->authorString().c_str()),
                                         [this, r, display, mainMenu, createReadableScreen]() {
-            auto readableScreen = createReadableScreen(r, true);
+            auto readableScreen = createReadableScreen(r);
             if (readableScreen != nullptr) {
                 this->setCurrentScreen(*readableScreen);
             } else {

@@ -37,18 +37,18 @@ enum { MAX_NUMBER_OF_PAGES_TO_BACKFILL = 10 };
 auto LocalStore::begin() -> bool {
     auto loadedBooks = loadReadablesFromFile(books_, BOOKS_PATH);
     auto loadedArticles = loadReadablesFromFile(articles_, ARTICLES_PATH);
-    auto loadedPreloadBooks = loadReadablesFromFile(preloadBooks_, PRELOAD_BOOKS_PATH, true);
+    auto loadedPreloadBooks = loadReadablesFromFile(preloadBooks_, PRELOAD_BOOKS_PATH);
 
     migrateIfNeeded();
 
     return loadedBooks && loadedArticles;
 }
 
-auto LocalStore::loadReadablesFromFile(ReadablesVector &readables, const std::string &path,
-                                       bool preloadPartition) -> bool {
+auto LocalStore::loadReadablesFromFile(ReadablesVector &readables, const std::string &path)
+    -> bool {
     log_d("Loading %ss from %s", ReadableModelTypeToString(readablesModelType(readables)).c_str(),
           path.c_str());
-    SFile readablesFile = fileSystem.open(path, FILE_READ, false, preloadPartition);
+    SFile readablesFile = fileSystem.open(path, FILE_READ, false);
     if (!readablesFile || static_cast<int>(readablesFile.size()) == 0) {
         log_w("Failed to open %s", path.c_str());
         // Fail positively since it's ok to not have any when you first use the glasses
@@ -80,12 +80,12 @@ auto LocalStore::loadReadablesFromFile(ReadablesVector &readables, const std::st
             log_e("Failed to parse Readable");
             continue;
         }
-        auto [path, size] = readableFilePathForReading(readable, preloadPartition);
+        auto [path, size] = readableFilePathForReading(readable);
         if (path.empty()) {
             log_w("Couldn't find readable with path %s", path.c_str());
             continue;
         }
-        int fileSize = readableGetUncompressedSize(readable, path, size, preloadPartition);
+        int fileSize = readableGetUncompressedSize(readable, path, size);
 
         if (fileSize >= 0 && !readable->files.empty() && fileSize != readable->file(path).size) {
             log_w("File size mismatch for %s (%d on disk vs %d in local store), ignoring",
@@ -1212,8 +1212,8 @@ auto LocalStore::saveReadables(ReadablesVector &readables) -> bool {
     return true;
 };
 
-auto LocalStore::readableFilePathForWriting(const std::shared_ptr<Readable> &readable,
-                                            bool preloadPartition) const -> std::string {
+auto LocalStore::readableFilePathForWriting(const std::shared_ptr<Readable> &readable) const
+    -> std::string {
     if (readable->remoteUrl().substr(readable->remoteUrl().find_last_of('.') + 1) == "epub") {
         return StringFormat("/%s/%s.epub", readable->readableType.c_str(), readable->uuid.c_str());
     }
@@ -1221,8 +1221,7 @@ auto LocalStore::readableFilePathForWriting(const std::shared_ptr<Readable> &rea
 }
 
 auto LocalStore::readableFilePathForReading(FileSystem &fileSystem,
-                                            const std::shared_ptr<Readable> &readable,
-                                            bool preloadPartition)
+                                            const std::shared_ptr<Readable> &readable)
     -> std::pair<std::string, size_t> {
     // We look for the readable file in the following order:
     // We first try the most modern path style:
@@ -1246,17 +1245,17 @@ auto LocalStore::readableFilePathForReading(FileSystem &fileSystem,
     std::string path;
 
     path = StringFormat("/%s/%s.epub", type.c_str(), uuid.c_str());
-    auto size = fileSystem.size(path, preloadPartition);
+    auto size = fileSystem.size(path);
     if (size != 0) {
         return {path, size};
     }
     path = StringFormat("/%s/%s.txt.gz", type.c_str(), uuid.c_str());
-    size = fileSystem.size(path, preloadPartition);
+    size = fileSystem.size(path);
     if (size != 0) {
         return {path, size};
     }
     path = StringFormat("/%s/%s.txt", type.c_str(), uuid.c_str());
-    size = fileSystem.size(path, preloadPartition);
+    size = fileSystem.size(path);
     if (size != 0) {
         return {path, size};
     }
@@ -1265,34 +1264,34 @@ auto LocalStore::readableFilePathForReading(FileSystem &fileSystem,
         // Previously we also stored books in the root directory
         if (!readable->files.empty()) {
             path = StringFormat("/%s.epub", readable->file().name.c_str());
-            size = fileSystem.size(path, preloadPartition);
+            size = fileSystem.size(path);
             if (size != 0) {
                 return {path, size};
             }
             path = StringFormat("/%s.gz", readable->file().name.c_str());
-            size = fileSystem.size(path, preloadPartition);
+            size = fileSystem.size(path);
             if (size != 0) {
                 return {path, size};
             }
             path = StringFormat("/%s", readable->file().name.c_str());
-            size = fileSystem.size(path, preloadPartition);
+            size = fileSystem.size(path);
             if (size != 0) {
                 return {path, size};
             }
         }
     } else {
         path = StringFormat("/articles/%s.epub", uuid.c_str());
-        size = fileSystem.size(path, preloadPartition);
+        size = fileSystem.size(path);
         if (size != 0) {
             return {path, size};
         }
         path = StringFormat("/articles/%s.txt.gz", uuid.c_str());
-        size = fileSystem.size(path, preloadPartition);
+        size = fileSystem.size(path);
         if (size != 0) {
             return {path, size};
         }
         path = StringFormat("/articles/%s.txt", uuid.c_str());
-        size = fileSystem.size(path, preloadPartition);
+        size = fileSystem.size(path);
         if (size != 0) {
             return {path, size};
         }
@@ -1301,20 +1300,18 @@ auto LocalStore::readableFilePathForReading(FileSystem &fileSystem,
     return {"", 0};
 }
 
-auto LocalStore::readableFilePathForReading(const std::shared_ptr<Readable> &readable,
-                                            bool preloadParition) const
+auto LocalStore::readableFilePathForReading(const std::shared_ptr<Readable> &readable) const
     -> std::pair<std::string, size_t> {
-    return LocalStore::readableFilePathForReading(fileSystem, readable, preloadParition);
+    return LocalStore::readableFilePathForReading(fileSystem, readable);
 }
 
 auto LocalStore::readableGetUncompressedSize(const std::shared_ptr<Readable> &readable,
-                                             const std::string &path, size_t size,
-                                             bool preloadPartition) const -> int {
+                                             const std::string &path, size_t size) const -> int {
     if (path.empty()) {
         return -1;
     }
     if (HasSuffix(path, ".gz")) {
-        auto file = fileSystem.open(path, FILE_READ, false, preloadPartition);
+        auto file = fileSystem.open(path, FILE_READ, false);
         if (!file) {
             log_w("Failed to open readable file to check size %s", path.c_str());
             return -1;

@@ -13,33 +13,50 @@ auto PosixFileSystem::createPath(const std::string &path, bool usePreload) const
                         path.c_str());
 }
 
-auto PosixFileSystem::open(const std::string &path, const char *mode, const bool create,
-                           bool usePreload) const -> SFile {
-    auto prefixedPath = createPath(path, usePreload);
+auto PosixFileSystem::open(const std::string &path, const char *mode, const bool create) const
+    -> SFile {
+    auto prefixedPath = createPath(path, false);
     auto file = SFile(std::make_shared<VFSFile>(prefixedPath.c_str(), mode, create));
+    // If we didn't find the file in the regular path, look in the preload partition.
+    if (file.getFilePtr() == nullptr) {
+        auto prefixedPathPreload = createPath(path, true);
+        file = SFile(std::make_shared<VFSFile>(prefixedPathPreload.c_str(), mode, create));
+    }
     return file;
 }
 
-auto PosixFileSystem::exists(const std::string &path, bool usePreload) const -> bool {
-    auto prefixedPath = createPath(path, usePreload);
+auto PosixFileSystem::exists(const std::string &path) const -> bool {
+    auto prefixedPathPreload = createPath(path, true);
+    auto prefixedPath = createPath(path, false);
     struct stat buffer {};
-    return (stat(prefixedPath.c_str(), &buffer) == 0);
+    // Check both preload and user partitions
+    return ((stat(prefixedPath.c_str(), &buffer) == 0) ||
+            (stat(prefixedPathPreload.c_str(), &buffer) == 0));
 }
 
-auto PosixFileSystem::size(const std::string &path, bool usePreload) const -> size_t {
-    auto prefixedPath = createPath(path, usePreload);
+auto PosixFileSystem::size(const std::string &path) const -> size_t {
+
+    auto prefixedPath = createPath(path, false);
     struct stat buffer {};
     auto err = stat(prefixedPath.c_str(), &buffer);
     if (err != 0) {
-        return 0;
+        // Check both preload and user partitions
+        auto prefixedPathPreload = createPath(path, true);
+        err = stat(prefixedPathPreload.c_str(), &buffer);
+        if (err != 0) {
+            return 0;
+        }
     }
     return buffer.st_size;
 }
 
-auto PosixFileSystem::listDir(const std::string &path, FileList &files, int limit,
-                              bool usePreload) const -> int {
-    auto prefixedPath = createPath(path, usePreload);
+auto PosixFileSystem::listDir(const std::string &path, FileList &files, int limit) const -> int {
+    auto prefixedPath = createPath(path, false);
     DIR *dp = opendir(prefixedPath.c_str());
+    if (dp == nullptr) {
+        auto prefixedPathPreload = createPath(path, true);
+        dp = opendir(prefixedPathPreload.c_str());
+    }
     if (dp != nullptr) {
         struct dirent *ep;
         int counted = 0;
@@ -60,9 +77,14 @@ auto PosixFileSystem::listDir(const std::string &path, FileList &files, int limi
 }
 
 auto PosixFileSystem::listDirWithSubdirectories(const std::string &path, FileList &files,
-                                                FileList &dirs, bool usePreload) const -> int {
-    auto prefixedPath = createPath(path, usePreload);
+                                                FileList &dirs) const -> int {
+
+    auto prefixedPath = createPath(path, false);
     DIR *dp = opendir(prefixedPath.c_str());
+    if (dp == nullptr) {
+        auto prefixedPathPreload = createPath(path, true);
+        dp = opendir(prefixedPathPreload.c_str());
+    }
     if (dp != nullptr) {
         struct dirent *ep;
         while ((ep = readdir(dp))) {
@@ -79,33 +101,42 @@ auto PosixFileSystem::listDirWithSubdirectories(const std::string &path, FileLis
     }
 }
 
-auto PosixFileSystem::createDir(const std::string &path, bool allowExists, bool usePreload)
-    -> bool {
-    auto prefixedPath = createPath(path, usePreload);
+auto PosixFileSystem::createDir(const std::string &path, bool allowExists) -> bool {
+
+    auto prefixedPath = createPath(path, false);
     if (mkdir(prefixedPath.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1) {
         if (errno == EEXIST && allowExists) {
             // Silently pass
         } else {
-            log_e("Failed to create dir %s", path.c_str());
-            return false;
+            // Try the preload partition
+            auto prefixedPathPreload = createPath(path, true);
+            if (mkdir(prefixedPathPreload.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1) {
+                if (errno == EEXIST && allowExists) {
+                    // Silently pass
+                } else {
+                    log_e("Failed to create dir %s", path.c_str());
+                    return false;
+                }
+            }
         }
     }
     return true;
 }
 
-auto PosixFileSystem::remove(const std::string &path, bool usePreload) -> bool {
-    auto prefixedPath = createPath(path, usePreload);
-    return (::remove(prefixedPath.c_str()) == 0);
+auto PosixFileSystem::remove(const std::string &path) -> bool {
+    auto prefixedPathPreload = createPath(path, true);
+    auto prefixedPath = createPath(path, false);
+    return (::remove(prefixedPath.c_str()) == 0 || ::remove(prefixedPathPreload.c_str()) == 0);
 }
 
 void PosixFileSystem::close() {}
 
-auto PosixFileSystem::removeDir(const std::string &path, bool usePreload) -> bool {
+auto PosixFileSystem::removeDir(const std::string &path) -> bool {
     FileList files;
     FileList dirs;
     log_i("removeDir: %s", path.c_str());
 
-    if (listDirWithSubdirectories(path, files, dirs, usePreload) != 0) {
+    if (listDirWithSubdirectories(path, files, dirs) != 0) {
         log_e("failed to remove directory: %s", path.c_str());
         return false;
     }
@@ -113,7 +144,7 @@ auto PosixFileSystem::removeDir(const std::string &path, bool usePreload) -> boo
     for (auto &file : files) {
         auto fullPath = StringFormat("%s/%s", path.c_str(), file.c_str());
         log_i("deleting %s", file.c_str());
-        bool removed = remove(fullPath, usePreload);
+        bool removed = remove(fullPath);
         if (!removed) {
             log_e("failed to remove: %s", fullPath.c_str());
             return false;
@@ -124,7 +155,7 @@ auto PosixFileSystem::removeDir(const std::string &path, bool usePreload) -> boo
         log_i("deleting dir: %s", dir.c_str());
         // delete this directory
         auto fullPath = StringFormat("%s/%s", path.c_str(), dir.c_str());
-        if (!removeDir(fullPath, usePreload)) {
+        if (!removeDir(fullPath)) {
             log_e("failed to remove: %s", fullPath.c_str());
             return false;
         }
@@ -135,6 +166,7 @@ auto PosixFileSystem::removeDir(const std::string &path, bool usePreload) -> boo
         return true;
     }
 
-    auto fullPath = createPath(path, usePreload);
-    return (rmdir(fullPath.c_str()) == 0);
+    auto fullPathPreload = createPath(path, true);
+    auto fullPath = createPath(path, false);
+    return (rmdir(fullPath.c_str()) == 0 || rmdir(fullPathPreload.c_str()) == 0);
 }
