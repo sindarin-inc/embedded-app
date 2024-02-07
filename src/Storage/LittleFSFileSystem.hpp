@@ -16,5 +16,5 @@ public:
     auto format() -> bool override;
 
 protected:
-    auto attemptMount(std::string prefix, const char *partitionLabel) -> esp_err_t;
+    auto attemptMount(const std::string &prefix, const char *partitionLabel) -> esp_err_t;
 };
