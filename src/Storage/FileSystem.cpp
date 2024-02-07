@@ -15,8 +15,8 @@ auto FileSystem::newRendererStream(const char *path) const -> std::shared_ptr<Re
     return std::make_shared<ContainerStream<SFile>>(file, RendererStream::parseDocType(path));
 }
 
-auto FileSystem::newEPubRendererStream(const char *path, const std::shared_ptr<Readable> &readable,
-                                       bool preloadPartition) -> std::shared_ptr<RendererStream> {
+auto FileSystem::newEPubRendererStream(const char *path, const std::shared_ptr<Readable> &readable)
+    -> std::shared_ptr<RendererStream> {
     log_d("Attempting to open: %s", path);
     auto stream = std::make_shared<EPubFile>(*this, path, readable);
     if (!stream->isOpen()) {
