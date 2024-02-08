@@ -132,6 +132,7 @@ private:
 
 public:
     Unzipper(FileSystem &fs, const char *filePath) : fileSystem_(fs), filePath_(filePath) {}
+
     ~Unzipper() {
         if (isOpen_) {
             close();

@@ -134,21 +134,27 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     auto hasBible = it != readables.end();
 
     auto createReadableScreen = [this, display, mainMenu, booksMenu, bibleMenu, articlesMenu,
-                                 hasBible, &fileSystem, &lightingController, &localStore](
-                                    const std::shared_ptr<Readable> &readable) -> ReadableScreen * {
+                                 hasBible, &fileSystem, &lightingController,
+                                 &localStore](const std::shared_ptr<Readable> &readable,
+                                              bool onboarding = false) -> ReadableScreen * {
         // TODO: Would be better to not allocate / delete these all the time
 
         std::shared_ptr<RendererStream> stream;
-        auto [path, size] = localStore.readableFilePathForReading(readable);
 
-        if (HasSuffix(path, ".epub")) {
-            log_i("Opening %s as epub", path.c_str());
-            stream = fileSystem.newEPubRendererStream(path.c_str(), readable);
-        } else if (HasSuffix(path, ".txt.gz")) {
-            log_i("Opening %s as gzip", path.c_str());
-            stream = fileSystem.newGzipRendererStream(path.c_str());
+        if (!onboarding) {
+            auto [path, size] = localStore.readableFilePathForReading(readable);
+
+            if (HasSuffix(path, ".epub")) {
+                log_i("Opening %s as epub", path.c_str());
+                stream = fileSystem.newEPubRendererStream(path.c_str(), readable);
+            } else if (HasSuffix(path, ".txt.gz")) {
+                log_i("Opening %s as gzip", path.c_str());
+                stream = fileSystem.newGzipRendererStream(path.c_str());
+            } else {
+                stream = fileSystem.newRendererStream(path.c_str());
+            }
         } else {
-            stream = fileSystem.newRendererStream(path.c_str());
+            stream = std::make_shared<EPubFile>(fileSystem, "onboarding", readable);
         }
 
         if (stream == nullptr) {
@@ -318,6 +324,26 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             }
         }));
     }
+
+    std::shared_ptr<Readable> onboardingReadable = std::make_shared<Readable>();
+
+    booksMenu->addMenuItem(
+        MenuItem("Onboarding", "The Sol Team",
+                 [this, onboardingReadable, display, mainMenu, createReadableScreen]() {
+        auto readableScreen = createReadableScreen(onboardingReadable, true);
+        if (readableScreen != nullptr) {
+            this->setCurrentScreen(*readableScreen);
+        } else {
+            auto *errorPopup = new MsgPopup(*display, itemErrorMsg_);
+            this->setCurrentScreen(*errorPopup);
+            errorPopup->setBackCallback([this, errorPopup, mainMenu]() {
+                mainMenu->setFirstLoad();
+                display_->clearDisplay();
+                setCurrentScreen(*mainMenu);
+                delete errorPopup;
+            });
+        }
+        }));
 
     SHOW_HEAP();
 

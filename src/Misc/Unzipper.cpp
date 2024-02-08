@@ -4,6 +4,7 @@
 #include <iostream>
 
 #include "Misc/SpiramAllocator.hpp"
+#include "UI/Epubs/OnboardingEpub1.hpp"
 
 static auto spiZAlloc(void *opaque, size_t items, size_t size) -> void * {
     // log_d("spiZAlloc: %d %d", (int)items, (int)size);
@@ -17,12 +18,17 @@ static void spiZFree(void *opaque, void *address) {
 }
 
 auto Unzipper::open() -> bool {
-    // Open zip file
-    file_ = fileSystem_.open(filePath_, "r");
-    if (!file_) {
-        log_e("Unable to open file: %s", filePath_.c_str());
-        return false;
+    if (filePath_ == "onboarding") {
+        file_ = SFile(std::make_shared<RamFile>(onboardingEpub1, onboardingEpub1Size));
+    } else {
+        // Open zip file
+        file_ = fileSystem_.open(filePath_, "r");
+        if (!file_) {
+            log_e("Unable to open file: %s", filePath_.c_str());
+            return false;
+        }
     }
+
     isOpen_ = true;
 
     int err = 99;
