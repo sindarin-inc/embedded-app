@@ -1,5 +1,4 @@
-#ifndef FIRST_HOOK_TEST_SCREEN_HPP
-#define FIRST_HOOK_TEST_SCREEN_HPP
+#pragma once
 
 #include "Misc/Battery.hpp"
 #include "Misc/Telemetry.hpp"
@@ -20,5 +19,3 @@ protected:
     PreferencesStore &prefs_;
     Telemetry &telemetry_;
 };
-
-#endif

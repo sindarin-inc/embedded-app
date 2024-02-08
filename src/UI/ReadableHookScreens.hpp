@@ -29,21 +29,6 @@
 //
 class ReadableHookScreens {
 public:
-    // Add a string name (static method)
-    static void addHookScreenName(const std::string &name) { names.push_back(name); }
-
-    // Delete a name based on the string (static method)
-    // It's possible that this method isn't necessary at all
-    // but since GPT spit it out, here it is!
-    static void deleteHookScreenName(const std::string &name) {
-        auto it = std::find(names.begin(), names.end(), name);
-        if (it != names.end()) {
-            names.erase(it);
-        } else {
-            log_e("Name not found: %s", name.c_str());
-        }
-    }
-
     //
     // Create a new Screen object and return a shared_ptr to it (static method)
     // This method is called by the ReadableScreen when it finds a tag
@@ -52,27 +37,17 @@ public:
     static auto getNewHookScreen(const std::string &name, DisplaySystem &display,
                                  PreferencesStore &prefs, Telemetry &telemetry)
         -> std::shared_ptr<Screen> {
-        auto it = std::find(names.begin(), names.end(), name);
-        if (it != names.end()) {
-            // Name found, create a new Screen
-            if (name == FIRST_HOOK_TEST_SCREEN_TAG) {
-                return std::make_shared<FirstHookTestScreen>(display, prefs, telemetry);
-            } else if (name == OFFSET_ADJUST_SCREEN_TAG) {
-                return std::make_shared<OffsetAdjustScreen>(display, prefs, telemetry);
-            } else if (name == RESIZE_BOX_SCREEN_TAG) {
-                return std::make_shared<ResizeBoxScreen>(display, prefs, telemetry);
-            } else {
-                log_e("No screen object known for name: %s", name.c_str());
-                return nullptr; // Return nullptr if the name is not found
-            }
+        if (name == FIRST_HOOK_TEST_SCREEN_TAG) {
+            return std::make_shared<FirstHookTestScreen>(display, prefs, telemetry);
+        } else if (name == OFFSET_ADJUST_SCREEN_TAG) {
+            return std::make_shared<OffsetAdjustScreen>(display, prefs, telemetry);
+        } else if (name == RESIZE_BOX_SCREEN_TAG) {
+            return std::make_shared<ResizeBoxScreen>(display, prefs, telemetry);
         } else {
-            log_e("Name not found: %s", name.c_str());
+            log_e("No screen object known for name: %s", name.c_str());
             return nullptr; // Return nullptr if the name is not found
         }
     }
-
-private:
-    static std::vector<std::string> names; // static member
 };
 
 #endif

@@ -305,7 +305,7 @@ void ReadableScreen::render(DisplaySystem &display) {
                     // hooks in one place, just keep that in mind.
                     log_d("Menu Parameters:");
                     for (auto &param : menuParameters) {
-                        log_d("    Creating hook screen %s: %s", param.first.c_str(),
+                        log_d("Creating hook screen %s: %s", param.first.c_str(),
                               param.second.c_str());
                         hookScreens_.push_back(ReadableHookScreens::getNewHookScreen(
                             param.first, display_, prefs_, telemetry_));
