@@ -32,6 +32,7 @@
 #include "UI/CrashReportScreen.hpp"
 #include "UI/DebugAboutScreen.hpp"
 #include "UI/DemoScreen.hpp"
+#include "UI/Epubs/OnboardingEpubManager.hpp"
 #include "UI/FirmwareUpdateScreen.hpp"
 #include "UI/Fonts/Fonts.hpp"
 #include "UI/LayoutTestScreen.hpp"
@@ -68,6 +69,8 @@
 #endif
 
 #define LAST_READABLE_ID "rui-readable"
+
+extern OnboardingEpubManager onboardingEpubs;
 
 // NOLINTNEXTLINE(readability-function-size): It's big, I know
 void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &fileSystem,
@@ -154,7 +157,12 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 stream = fileSystem.newRendererStream(path.c_str());
             }
         } else {
-            stream = std::make_shared<EPubFile>(fileSystem, "onboarding", readable);
+            // We use the special filename prefix "sol_onboarding" to indicate to the
+            // system that it should look in the EpubManager for the file, not the
+            // filesystem. The readable has the name itself.
+            stream = std::make_shared<EPubFile>(
+                fileSystem,
+                StringFormat("%s%s", "sol_onboarding ", readable->title.c_str()).c_str(), readable);
         }
 
         if (stream == nullptr) {
@@ -325,25 +333,27 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         }));
     }
 
-    std::shared_ptr<Readable> onboardingReadable = std::make_shared<Readable>();
-
-    booksMenu->addMenuItem(
-        MenuItem("Onboarding", "The Sol Team",
-                 [this, onboardingReadable, display, mainMenu, createReadableScreen]() {
-        auto readableScreen = createReadableScreen(onboardingReadable, true);
-        if (readableScreen != nullptr) {
-            this->setCurrentScreen(*readableScreen);
-        } else {
-            auto *errorPopup = new MsgPopup(*display, itemErrorMsg_);
-            this->setCurrentScreen(*errorPopup);
-            errorPopup->setBackCallback([this, errorPopup, mainMenu]() {
-                mainMenu->setFirstLoad();
-                display_->clearDisplay();
-                setCurrentScreen(*mainMenu);
-                delete errorPopup;
-            });
-        }
-        }));
+    for (const auto &onboardingEpub : onboardingEpubs.onboardingEpubsVector) {
+        std::shared_ptr<Readable> onboardingReadable = std::make_shared<Readable>();
+        onboardingReadable->title = onboardingEpub.name_;
+        booksMenu->addMenuItem(
+            MenuItem(onboardingReadable->title.c_str(), "The Sol Team",
+                     [this, onboardingReadable, display, mainMenu, createReadableScreen]() {
+            auto readableScreen = createReadableScreen(onboardingReadable, true);
+            if (readableScreen != nullptr) {
+                this->setCurrentScreen(*readableScreen);
+            } else {
+                auto *errorPopup = new MsgPopup(*display, itemErrorMsg_);
+                this->setCurrentScreen(*errorPopup);
+                errorPopup->setBackCallback([this, errorPopup, mainMenu]() {
+                    mainMenu->setFirstLoad();
+                    display_->clearDisplay();
+                    setCurrentScreen(*mainMenu);
+                    delete errorPopup;
+                });
+            }
+            }));
+    }
 
     SHOW_HEAP();
 
