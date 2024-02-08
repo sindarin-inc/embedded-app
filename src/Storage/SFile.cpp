@@ -213,7 +213,7 @@ auto RamFile::read(uint8_t *buf, size_t size) -> size_t {
         return -1;
     }
 
-    memcpy(buf, (char *)(onboardingEpub1 + position()), size);
+    memcpy(buf, (char *)(ONBOARDING_EPUB1 + position()), size);
     fPos_ += size;
     return size;
 }
@@ -228,7 +228,7 @@ auto RamFile::seek(uint32_t pos, SSeekMode mode) -> bool {
     } else if (mode == SSeekCur) {
         // intentionally blank;
     } else if (mode == SSeekEnd) {
-        fPos_ = onboardingEpub1Size;
+        fPos_ = ONBOARDING_EPUB1_SIZE;
     }
 
     return true;
@@ -248,7 +248,7 @@ auto RamFile::size() const -> size_t {
     if (!*this) {
         return 0;
     }
-    return onboardingEpub1Size;
+    return ONBOARDING_EPUB1_SIZE;
 }
 auto RamFile::close() -> int {
     log_d("No need to close a RAM file.");

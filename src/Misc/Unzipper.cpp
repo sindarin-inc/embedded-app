@@ -23,8 +23,8 @@ auto Unzipper::open() -> bool {
     if (filePath_.substr(0, 14) == "sol_onboarding") {
         std::string onboardingEpubName = filePath_.substr(15);
         OnboardingEpub epub = onboardingEpubs.find(onboardingEpubName);
-        if (epub.name_ != "not found") {
-            file_ = SFile(std::make_shared<RamFile>(epub.bytes_, epub.size_));
+        if (epub.name != "not found") {
+            file_ = SFile(std::make_shared<RamFile>(epub.bytes, epub.size));
         } else {
             log_e("Unable to find internal sol onboarding epub with name %s",
                   onboardingEpubName.c_str());

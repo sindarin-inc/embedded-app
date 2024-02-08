@@ -335,7 +335,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     for (const auto &onboardingEpub : onboardingEpubs.onboardingEpubsVector) {
         std::shared_ptr<Readable> onboardingReadable = std::make_shared<Readable>();
-        onboardingReadable->title = onboardingEpub.name_;
+        onboardingReadable->title = onboardingEpub.name;
         booksMenu->addMenuItem(
             MenuItem(onboardingReadable->title.c_str(), "The Sol Team",
                      [this, onboardingReadable, display, mainMenu, createReadableScreen]() {

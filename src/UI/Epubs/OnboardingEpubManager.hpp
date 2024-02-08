@@ -2,6 +2,7 @@
 #define ONBOARDING_EPUB_MANAGER_HPP
 
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "OnboardingEpub1.hpp"
@@ -9,29 +10,31 @@
 class OnboardingEpub {
 public:
     OnboardingEpub(std::string name, const unsigned char *bytes, const size_t size)
-        : name_(name), bytes_(bytes), size_(size){};
-    ~OnboardingEpub(){};
+        : name(std::move(std::move(name))), bytes(bytes), size(size){};
+    ~OnboardingEpub() = default;
+    ;
 
-    std::string name_;
-    const unsigned char *bytes_;
-    size_t size_;
+    std::string name;
+    const unsigned char *bytes;
+    size_t size;
 };
 
 class OnboardingEpubManager {
 public:
     OnboardingEpubManager() {
-        OnboardingEpub first("Onboarding One", onboardingEpub1, onboardingEpub1Size);
+        OnboardingEpub first("Onboarding One", ONBOARDING_EPUB1, ONBOARDING_EPUB1_SIZE);
         onboardingEpubsVector.push_back(first);
         // duplicated on purpose for demonstration
-        OnboardingEpub second("Onboarding Two", onboardingEpub1, onboardingEpub1Size);
+        OnboardingEpub second("Onboarding Two", ONBOARDING_EPUB1, ONBOARDING_EPUB1_SIZE);
         onboardingEpubsVector.push_back(second);
-        onboardingEpubsVector.push_back({"Onboarding Three", onboardingEpub1, onboardingEpub1Size});
+        onboardingEpubsVector.emplace_back("Onboarding Three", ONBOARDING_EPUB1,
+                                           ONBOARDING_EPUB1_SIZE);
     }
-    ~OnboardingEpubManager() {}
+    ~OnboardingEpubManager() = default;
 
-    auto find(std::string name) -> OnboardingEpub {
+    auto find(const std::string &name) -> OnboardingEpub {
         for (const auto &epub : onboardingEpubsVector) {
-            if (epub.name_ == name) {
+            if (epub.name == name) {
                 return epub;
             }
         }
