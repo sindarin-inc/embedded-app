@@ -35,11 +35,14 @@
 #include "config.h"
 #include "sindarin-debug.h"
 
+#define DISABLE_POWER_MANAGEMENT 1
+#define DISABLE_DEEP_SLEEP 1
+
 #define ENABLE_CONTENT_SYNC_ON_CLOSE 1
 
 #if EINKET013TT1
-#include "Displays/DisplayEinkET013TT1.hpp"
-DisplayEinkET013TT1 myDisplay(DISPLAY_CS_LEFT, DISPLAY_CS_RIGHT, DISPLAY_RST);
+#include "Displays/DisplayLilygo.hpp"
+DisplayLilygo myDisplay(TDECK_TFT_DC, TDECK_TFT_CS, TDECK_SPI_SCK, TDECK_SPI_MOSI, TDECK_SPI_MISO);
 #endif
 
 PreferencesStore prefs;
@@ -300,7 +303,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     // If the saved prefs indicated a vcom, set it here.
     auto vcomSetting = prefs.vcom.get();
     if (vcomSetting.has_value()) {
-        myDisplay.getDriver()->setVcom(vcomSetting.value());
+        // myDisplay.getDriver()->setVcom(vcomSetting.value());
     }
 #endif
 
