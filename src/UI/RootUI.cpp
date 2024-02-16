@@ -930,8 +930,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     readingSettingsMenu->addMenuItem(MenuItem("Text Size", [this, display, readingSettingsMenu]() {
         auto fontMenu =
-            new TextSizeScreen(power_.battery, *display, readingSettingsMenu->getMyStyle(), prefs_,
-                               telemetry_, "Font Settings", "Reading Settings");
+            new TextSizeScreen(*display, prefs_, telemetry_, "Font Settings", "Reading Settings");
         setCurrentScreen(*fontMenu);
         fontMenu->setBackCallback([this, fontMenu, readingSettingsMenu]() {
             readingSettingsMenu->setFirstLoad();

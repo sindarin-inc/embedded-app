@@ -6,6 +6,7 @@
 #include <unordered_map>
 
 #include "Displays/DisplaySystem.hpp"
+#include "Misc/Battery.hpp"
 #include "Misc/Telemetry.hpp"
 #include "Storage/PreferencesStore.hpp"
 #include "UI/FirstHookTestScreen.hpp"
@@ -48,7 +49,8 @@ public:
         } else if (name == RESIZE_BOX_SCREEN_TAG) {
             return std::make_shared<ResizeBoxScreen>(display, prefs, telemetry);
         } else if (name == FONT_CHANGE_SCREEN_TAG) {
-            return std::make_shared<TextSizeScreen>(display, prefs, telemetry);
+            return std::make_shared<TextSizeScreen>(display, prefs, telemetry, "Change Text Size",
+                                                    "Return to Text");
         } else if (name == LINE_SPACING_SCREEN_TAG) {
             return std::make_shared<LineSpacingScreen>(display, prefs, telemetry);
         } else {

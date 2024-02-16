@@ -12,10 +12,12 @@
 // This is just to test that this concept works ok.
 class TextSizeScreen : public MenuScreen {
 public:
-    TextSizeScreen(Battery &battery, DisplaySystem &display, MenuStyleFamily myStyle,
-                   PreferencesStore &prefs, Telemetry &telemetry, std::string menuName = "Default",
-                   std::string upperLeftText = "Main Menu")
-        : MenuScreen(battery, display, myStyle, std::move(menuName), std::move(upperLeftText)),
+    TextSizeScreen(DisplaySystem &display, PreferencesStore &prefs, Telemetry &telemetry,
+                   std::string menuName = "Default", std::string upperLeftText = "Main Menu")
+        : MenuScreen(PowerManager::getInstance().battery, display,
+                     {static_cast<Font *>(&ibmf75Face0), static_cast<Font *>(&ibmf75Face0), 25, 15,
+                      5, 10, 5, 30, 25, 12},
+                     std::move(menuName), std::move(upperLeftText)),
           display_(display), prefs_(prefs), telemetry_(telemetry) {
         setExtraText("Example text size");
         addMenuItem(MenuItem("Small", [this]() {
