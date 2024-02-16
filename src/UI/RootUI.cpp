@@ -48,6 +48,7 @@
 #include "UI/ReleaseNotesScreen.hpp"
 #include "UI/ResizeBoxScreen.hpp"
 #include "UI/StatsScreen.hpp"
+#include "UI/TextSizeScreen.hpp"
 #include "UI/ToggleMenuScreen.hpp"
 #include "UI/TutorialScreen.hpp"
 #include "Version.hpp"
@@ -928,39 +929,9 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     }
 
     readingSettingsMenu->addMenuItem(MenuItem("Text Size", [this, display, readingSettingsMenu]() {
-        auto fontMenu = new MenuScreen(power_.battery, *display, readingSettingsMenu->getMyStyle(),
-                                       "Font Settings", "Reading Settings");
-        fontMenu->setExtraText("Example text size");
-        fontMenu->addMenuItem(MenuItem("Small", [this, fontMenu]() {
-            this->display_->style.setFontFamily(this->display_->style.solSansSmall);
-            this->display_->clearDisplay();
-            prefs_.font.set(PREFS_SOL_SMALL);
-            this->telemetry_.logMetricData(TelemetryField::METRIC_STYLE, {{"text_size", "small"}});
-            fontMenu->setNeedsRerender();
-        }));
-        fontMenu->addMenuItem(MenuItem("Medium", [this, fontMenu]() {
-            this->display_->style.setFontFamily(this->display_->style.solSansMedium);
-            this->display_->clearDisplay();
-            prefs_.font.set(PREFS_SOL_MEDIUM);
-            this->telemetry_.logMetricData(TelemetryField::METRIC_STYLE, {{"text_size", "medium"}});
-            fontMenu->setNeedsRerender();
-        }));
-        fontMenu->addMenuItem(MenuItem("Large", [this, fontMenu]() {
-            this->display_->style.setFontFamily(this->display_->style.solSansLarge);
-            this->display_->clearDisplay();
-            prefs_.font.set(PREFS_SOL_LARGE);
-            this->telemetry_.logMetricData(TelemetryField::METRIC_STYLE, {{"text_size", "large"}});
-            fontMenu->setNeedsRerender();
-        }));
-        int menuIndex = 0;
-        if (prefs_.font.get().value_or(PREFS_SOL_SMALL) == PREFS_SOL_SMALL) {
-            menuIndex = 0;
-        } else if (prefs_.font.get().value_or(PREFS_SOL_SMALL) == PREFS_SOL_MEDIUM) {
-            menuIndex = 1;
-        } else if (prefs_.font.get().value_or(PREFS_SOL_SMALL) == PREFS_SOL_LARGE) {
-            menuIndex = 2;
-        }
-        fontMenu->setCurrSelection(menuIndex);
+        auto fontMenu =
+            new TextSizeScreen(power_.battery, *display, readingSettingsMenu->getMyStyle(), prefs_,
+                               telemetry_, "Font Settings", "Reading Settings");
         setCurrentScreen(*fontMenu);
         fontMenu->setBackCallback([this, fontMenu, readingSettingsMenu]() {
             readingSettingsMenu->setFirstLoad();

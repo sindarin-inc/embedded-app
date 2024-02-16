@@ -9,13 +9,17 @@
 #include "Misc/Telemetry.hpp"
 #include "Storage/PreferencesStore.hpp"
 #include "UI/FirstHookTestScreen.hpp"
+#include "UI/LineSpacingScreen.hpp"
 #include "UI/OffsetAdjustScreen.hpp"
 #include "UI/ResizeBoxScreen.hpp"
 #include "UI/Screen.hpp"
+#include "UI/TextSizeScreen.hpp"
 
 #define FIRST_HOOK_TEST_SCREEN_TAG "first-hook-test"
 #define OFFSET_ADJUST_SCREEN_TAG "offset-adjust"
 #define RESIZE_BOX_SCREEN_TAG "resize-box"
+#define FONT_CHANGE_SCREEN_TAG "font-size"
+#define LINE_SPACING_SCREEN_TAG "line-spacing"
 
 // This is a singleton class that holds a map of string names that are
 // the tags that will be embedded in epubs as hooks that allow us
@@ -43,6 +47,10 @@ public:
             return std::make_shared<OffsetAdjustScreen>(display, prefs, telemetry);
         } else if (name == RESIZE_BOX_SCREEN_TAG) {
             return std::make_shared<ResizeBoxScreen>(display, prefs, telemetry);
+        } else if (name == FONT_CHANGE_SCREEN_TAG) {
+            return std::make_shared<LineSpacingScreen>(display, prefs, telemetry);
+        } else if (name == LINE_SPACING_SCREEN_TAG) {
+            return std::make_shared<LineSpacingScreen>(display, prefs, telemetry);
         } else {
             log_e("No screen object known for name: %s", name.c_str());
             return nullptr; // Return nullptr if the name is not found
