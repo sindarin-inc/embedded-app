@@ -23,4 +23,4 @@ auto GitVersionString() -> const char *;
 // 0.6.9999
 auto SemanticVersionString() -> const char *;
 
-auto ExtractVersion(const std::string& input) -> std::string;
+auto ExtractVersion(const std::string &input) -> std::string;

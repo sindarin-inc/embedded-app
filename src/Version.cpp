@@ -9,9 +9,9 @@ char versionString[16] = "\0";
 
 auto GitVersionString() -> const char * { return esp_app_get_description()->version; }
 
-auto ExtractVersion(const std::string& input) -> std::string {
+auto ExtractVersion(const std::string &input) -> std::string {
     std::size_t start = input.find("release/v") + 9; // 9 is length of "release/v"
-    std::size_t end = input.find("-", start);
+    std::size_t end = input.find('-', start);
 
     // If no dash is found, use the end of the string
     if (end == std::string::npos) {
