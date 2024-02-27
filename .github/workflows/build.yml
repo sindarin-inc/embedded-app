@@ -96,7 +96,6 @@ jobs:
 
       - name: Upload binaries
         uses: actions/upload-artifact@v3
-        if: github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/release/v')
         with:
           name: embedded-app-${{ github.sha }}-IDF${{ matrix.idf_version }}
           path: |
