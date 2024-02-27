@@ -508,11 +508,4 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     GoodBootTimer();
 
     bootCompleted = true;
-
-    // Log the battery voltages. This gives us a quick-and-dirty way to check if batteries are
-    // hooked up from the logs
-    powerManager.battery.loop();
-    auto left = powerManager.battery.getLeftBatteryVoltage();
-    auto right = powerManager.battery.getRightBatteryVoltage();
-    log_i("Battery: L: %.2fV, R: %.2fV", left, right);
 }

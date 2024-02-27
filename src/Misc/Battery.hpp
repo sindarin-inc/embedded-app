@@ -22,6 +22,8 @@ public:
         : fileSystem_(fs), prefs_(prefs), telemetry_(telemetry) {}
     Battery(const Battery &) = delete;
 
+    // Force a measurement now
+    auto takeMeasurement() -> std::pair<float, float>;
     void loop();
 
     auto getBatteryLifeString() -> std::string;

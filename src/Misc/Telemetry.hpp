@@ -75,7 +75,7 @@ private:
 
         // create log directory in filesystem if it doesn't exist
         if (!fileSystem_.createDir("/metrics")) {
-            log_e("could not create /metrics directory");
+            log_e("could not create /metrics directory (%s)", TelemetryFieldToString(field));
             return;
         }
 
