@@ -95,7 +95,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create the flasher script
-        run: echo "esptool.py -b 460800 --before default_reset --after hard_reset --chip esp32s3  write_flash --flash_mode dio --flash_size 64MB --flash_freq 80m 0x0 bootloader/bootloader.bin 0x8000 partition_table/partition-table.bin 0xe000 ota_data_initial.bin 0x10000 embedded-app.bin" > flash.sh
+        run: echo "esptool.py -b 460800 --before default_reset --after hard_reset --chip esp32s3  write_flash --flash_mode dio --flash_size 64MB --flash_freq 80m 0x0 bootloader/bootloader.bin 0x8000 partition_table/partition-table.bin 0xe000 ota_data_initial.bin 0x10000 embedded-app.bin" > build/flash.sh
 
       - name: Upload binaries
         uses: actions/upload-artifact@v3
@@ -107,7 +107,7 @@ jobs:
             build/bootloader/bootloader.bin
             build/partition_table/partition-table.bin
             build/ota_data_initial.bin
-            flash.sh
+            build/flash.sh
 
   release:
     if: contains(github.ref, 'refs/tags/release/v')
