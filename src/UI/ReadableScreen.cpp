@@ -6,6 +6,7 @@
 #include <utility>
 
 #include "Misc/Platform.hpp"
+#include "Models/UserReadablePartialChapterSummary.hpp"
 #include "UI/Bitmaps/Auto_Pilot_Icons.hpp"
 #include "UI/ReadableHookScreens.hpp"
 #include "sindarin-debug.h"
@@ -234,6 +235,19 @@ void ReadableScreen::render(DisplaySystem &display) {
                          readable_->telemetryPlacemarkMetrics());
 
     display.setFont(display.style.getFontFamily().readableFont);
+
+    // If there is a partial chapter summary, open that instead
+    if (!renderedPartialSummary_) {
+        auto partialChapterSummary =
+            UserReadablePartialChapterSummary::loadForReadable(fileSystem_, readable_);
+        if (partialChapterSummary) {
+            auto epubPlace = std::dynamic_pointer_cast<EPubPlace>(renderer_.getCurrentPlace());
+            readableSummaryScreen_.setPlaceInReadable(epubPlace);
+            readableSummaryScreen_.setFirstLoad();
+            setCurrentScreen(readableSummaryScreen_);
+            return;
+        }
+    }
 
     bool emcMode = prefs_.emcMode.get().value_or(false);
 
