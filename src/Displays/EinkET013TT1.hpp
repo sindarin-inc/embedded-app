@@ -80,7 +80,7 @@ public:
     void update(const EinkET013TT1Waveform &waveform, const uint8_t *buffer,
                 int32_t overrideVcom = INT32_MAX,
                 const EinkET013TT1Waveform &altWaveform = BC_WAVEFORM_NONE,
-                EinkBox box = EinkBox::zero());
+                ScreenSide screen = ScreenSide::Both, EinkBox box = EinkBox::zero());
 
     auto readTemperature(ScreenSide screen) -> int16_t;
 
@@ -94,8 +94,8 @@ protected:
     inline void setCS(bool value, ScreenSide screen) const;
     void powerOnInternal();
     void powerOffInternal();
-    inline void writeRegister(Register index, uint8_t data);
-    void writeRegister(Register index, const uint8_t *data, size_t len);
+    inline void writeRegister(Register index, uint8_t data, ScreenSide screen);
+    void writeRegister(Register index, const uint8_t *data, size_t len, ScreenSide screen);
     auto readRegister(uint8_t index, ScreenSide screen) -> uint8_t;
     auto readPumpStatus(ScreenSide screen) -> PumpStatus;
     // According to the data sheet the device ID is 0 by default, but that's the same
@@ -107,7 +107,8 @@ protected:
     inline void waitForTimer();
     inline void waitForNotBusy();
     void updateInternal(const EinkET013TT1Waveform &waveform, const uint8_t *buffer,
-                        int32_t overrideVcom, const EinkET013TT1Waveform &altWaveform, EinkBox box);
+                        int32_t overrideVcom, const EinkET013TT1Waveform &altWaveform,
+                        ScreenSide screen, EinkBox box);
 
     uint8_t csLeft_;
     uint8_t csRight_;

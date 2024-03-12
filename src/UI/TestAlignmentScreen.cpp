@@ -2,6 +2,7 @@
 
 #include <cmath>
 
+#include "Displays/EinkTypes.hpp"
 #include "Misc/Style.hpp"
 
 void DrawEvenCircle(Adafruit_GFX *gfx, int16_t centerX, int16_t centerY, int16_t radius,
@@ -86,7 +87,20 @@ void TestAlignmentScreen::render(DisplaySystem &display) {
     display.gfxClass()->fillRoundRect(w / 2 - radius + 1, h / 2 - radius + 1, 2 * radius,
                                       2 * radius, radius, color);
 
-    display.updateDisplay();
+    display.updateDisplay(DisplaySystem::UpdateType::UNSPECIFIED, false);
+
+    // Draw a little extra line on the right screen
+    int16_t y = padding + 4 * (lineSpacing + 1);
+    display.gfxClass()->drawLine(w - padding, y, w - padding + 10, y, color);
+    display.updateDisplay(DisplaySystem::UpdateType::PARTIAL, false, 0,
+                          DisplaySystem::UpdateType::UNSPECIFIED, ScreenSide::Right);
+
+    // Erase the little line on the right screen
+    display.gfxClass()->drawLine(w - padding + 1, y, w - padding + 10, y, display.bg);
+    // Draw a little line on the left screen
+    display.gfxClass()->drawLine(padding - 10, y, padding, y, color);
+    display.updateDisplay(DisplaySystem::UpdateType::PARTIAL, true, 0,
+                          DisplaySystem::UpdateType::UNSPECIFIED, ScreenSide::Left);
 }
 
 void TestAlignmentScreen::processCommand(RemoteCommand command) {

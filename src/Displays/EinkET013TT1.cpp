@@ -213,12 +213,12 @@ inline void EinkET013TT1::setCS(bool value, ScreenSide screen) const {
 
 void EinkET013TT1::updateInternal(const EinkET013TT1Waveform &waveform, const uint8_t *buffer,
                                   int32_t overrideVcom, const EinkET013TT1Waveform &altWaveform,
-                                  EinkBox box) {
+                                  ScreenSide screen, EinkBox box) {
     if (overrideVcom != INT32_MAX && overrideVcom != vcomInMV_) {
         uint8_t newVcomRegisterValue = VcomMVToRegisterValue(overrideVcom);
         log_d("Overriding VCOM from %" PRIi32 " (0x%02X) to %" PRIi32 " (0x%02X)", vcomInMV_,
               VcomMVToRegisterValue(vcomInMV_), overrideVcom, newVcomRegisterValue);
-        writeRegister(PWM_WIDTH_SELECT, newVcomRegisterValue);
+        writeRegister(PWM_WIDTH_SELECT, newVcomRegisterValue, screen);
         Delay(30);
     }
 
@@ -364,19 +364,19 @@ void EinkET013TT1::updateInternal(const EinkET013TT1Waveform &waveform, const ui
             // Send the scan line!
             // `writeRegister` takes 24.7us at 160MHz (5994 cycles) which is about right since
             // we're sending 50bytes at 20MHz so 50*8*(1/20000000)=20us
-            writeRegister(WRITE_GATE_SOURCE_DATA, scanLine, sizeof(scanLine));
+            writeRegister(WRITE_GATE_SOURCE_DATA, scanLine, sizeof(scanLine), screen);
             // Wait for frame timer and busy signal
             waitForTimer();
             startTimer(timerDelayNs_);
             waitForNotBusy();
-            writeRegister(DRIVER_LATCH_RESET_PULSE_GENERATE, 0x10);
+            writeRegister(DRIVER_LATCH_RESET_PULSE_GENERATE, 0x10, screen);
         }
 
         // Send clear packet
-        writeRegister(WRITE_GATE_SOURCE_DATA, CLEAR_PACKET, sizeof(CLEAR_PACKET));
+        writeRegister(WRITE_GATE_SOURCE_DATA, CLEAR_PACKET, sizeof(CLEAR_PACKET), screen);
         waitForTimer();
         waitForNotBusy();
-        writeRegister(DRIVER_LATCH_RESET_PULSE_GENERATE, 0x10);
+        writeRegister(DRIVER_LATCH_RESET_PULSE_GENERATE, 0x10, screen);
 
         portYIELD();
     }
@@ -391,7 +391,7 @@ void EinkET013TT1::updateInternal(const EinkET013TT1Waveform &waveform, const ui
     if (overrideVcom != INT32_MAX) {
         auto oldVcomRegisterValue = VcomMVToRegisterValue(vcomInMV_);
         log_d("Restoring VCOM to %" PRIi32 " (0x%" PRIu8 ")", vcomInMV_, oldVcomRegisterValue);
-        writeRegister(PWM_WIDTH_SELECT, oldVcomRegisterValue);
+        writeRegister(PWM_WIDTH_SELECT, oldVcomRegisterValue, screen);
     }
 
     float timeNs = PROFILE_CALCULATE_NS(sendFrames);
@@ -412,18 +412,18 @@ void EinkET013TT1::updateInternal(const EinkET013TT1Waveform &waveform, const ui
 
 void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *buffer,
                           int32_t overrideVcom, const EinkET013TT1Waveform &altWaveform,
-                          EinkBox box) {
+                          ScreenSide screen, EinkBox box) {
     // Create a notification group to wait for the update to finish
     auto group = xEventGroupCreate();
 
-    einkQueue_->dispatch([this, waveform, buffer, overrideVcom, group, altWaveform, box]() {
+    einkQueue_->dispatch([this, waveform, buffer, overrideVcom, group, altWaveform, screen, box]() {
         if (!poweredOn_) {
             // This shouldn't happen, we should have been powering on the screen early in the render
             // pipeline before update is called
             log_w("Screen not powered on at update time. Powering on.");
             powerOnInternal();
         }
-        updateInternal(waveform, buffer, overrideVcom, altWaveform, box);
+        updateInternal(waveform, buffer, overrideVcom, altWaveform, screen, box);
 
         // Release the lock
         xEventGroupSetBits(group, 1);
@@ -447,7 +447,8 @@ void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *b
     vEventGroupDelete(group);
 }
 
-void EinkET013TT1::writeRegister(Register index, const uint8_t *data, size_t len) {
+void EinkET013TT1::writeRegister(Register index, const uint8_t *data, size_t len,
+                                 ScreenSide screen) {
     if (!einkQueue_->isInQueue()) {
         log_w("writeRegister called from outside of einkQueue_");
     }
@@ -456,13 +457,13 @@ void EinkET013TT1::writeRegister(Register index, const uint8_t *data, size_t len
         .length = len * 8,
         .tx_buffer = data};
 
-    setCS(LOW, ScreenSide::Both);
+    setCS(LOW, screen);
     ESP_ERROR_CHECK(spi_device_polling_transmit(spiHigh_, &t));
-    setCS(HIGH, ScreenSide::Both);
+    setCS(HIGH, screen);
 }
 
-inline void EinkET013TT1::writeRegister(Register index, uint8_t data) {
-    writeRegister(index, &data, 1);
+inline void EinkET013TT1::writeRegister(Register index, uint8_t data, ScreenSide screen) {
+    writeRegister(index, &data, 1, screen);
 }
 
 auto EinkET013TT1::readRegister(uint8_t index, ScreenSide screen) -> uint8_t {
@@ -558,45 +559,47 @@ void EinkET013TT1::powerOnInternal() {
 
     ESP_ERROR_CHECK(spi_device_acquire_bus(spiHigh_, portMAX_DELAY));
 
+    auto screen = ScreenSide::Both;
+
     // Set the system clock speed
     // It's unclear what the 0x10 does. It's not in the datasheet.
-    writeRegister(OSC_POWER_SETTING, OSC_SELECT | 0x10);
+    writeRegister(OSC_POWER_SETTING, OSC_SELECT | 0x10, screen);
 
     // LVDS OFF, Band-gap circuit ON, Temperature sensor ON
-    writeRegister(THERMAL_SENSOR_SETTING, 0x03);
+    writeRegister(THERMAL_SENSOR_SETTING, 0x03, screen);
 
     // Configure which channels use gate voltages and which channels use source voltages.
     // I think this is a function of how the shift registers are physically wired to the
     // screen and isn't worth changing, but I'm not 100% sure on that.
-    writeRegister(CHANNEL_SETTING, CHANNEL_SETTINGS, sizeof(CHANNEL_SETTINGS));
+    writeRegister(CHANNEL_SETTING, CHANNEL_SETTINGS, sizeof(CHANNEL_SETTINGS), screen);
 
     // CPS=0b11 Charge pump strength to max
     // CPM=0b11 Charge pump soft start mode to max
-    writeRegister(PUMP_SETTING_1, 0x0F);
+    writeRegister(PUMP_SETTING_1, 0x0F, screen);
     // Select PWM width for vcom. Specified value is divided into 256 levels between the
     // voltages of GND and VCL (-5.6V)
     // 0 for -5600mV, 255 for 0V
-    writeRegister(PWM_WIDTH_SELECT, VcomMVToRegisterValue(vcomInMV_));
+    writeRegister(PWM_WIDTH_SELECT, VcomMVToRegisterValue(vcomInMV_), screen);
 
     // Fire up the charge pumps
     // Disable everything (probably a no-op)
-    writeRegister(PUMP_SETTING_2, 0x00);
+    writeRegister(PUMP_SETTING_2, 0x00, screen);
     Delay(30);
     // Enable positive charge pump VH (VDH +14V & VGH +19V)
-    writeRegister(PUMP_SETTING_2, 0x01);
+    writeRegister(PUMP_SETTING_2, 0x01, screen);
     Delay(30);
     // Also enable negative charge pump VN (VDL -14V & VGL -19V)
-    writeRegister(PUMP_SETTING_2, 0x03);
+    writeRegister(PUMP_SETTING_2, 0x03, screen);
     Delay(30);
     // Also enable negative charge pump VCL (-5.6V)
-    writeRegister(PUMP_SETTING_2, 0x07);
+    writeRegister(PUMP_SETTING_2, 0x07, screen);
     Delay(60);
     // Also enable (connect) VCOM
-    writeRegister(PUMP_SETTING_2, 0x0F);
+    writeRegister(PUMP_SETTING_2, 0x0F, screen);
     Delay(30);
 
     // This is not in the datasheet and its function is a mystery
-    writeRegister(DRIVER_LATCH_RESET_PULSE_GENERATE, 0x10);
+    writeRegister(DRIVER_LATCH_RESET_PULSE_GENERATE, 0x10, screen);
 
     spi_device_release_bus(spiHigh_);
 
@@ -611,31 +614,33 @@ void EinkET013TT1::powerOffInternal() {
         return;
     }
 
+    auto screen = ScreenSide::Both;
+
     // Disable (disconnect) VCOM
-    writeRegister(PUMP_SETTING_2, 0x07);
+    writeRegister(PUMP_SETTING_2, 0x07, screen);
     Delay(30);
     // Also disable negative charge pump VCL (-5.6V)
-    writeRegister(PUMP_SETTING_2, 0x03);
+    writeRegister(PUMP_SETTING_2, 0x03, screen);
     Delay(30);
     // Also disable negative charge pump VN (VDL -14V & VGL -19V)
-    writeRegister(PUMP_SETTING_2, 0x01);
+    writeRegister(PUMP_SETTING_2, 0x01, screen);
     Delay(30);
     // This is not in the datasheet and its function is a mystery
-    writeRegister(MYSTERY_SETTING_2, 0x00);
+    writeRegister(MYSTERY_SETTING_2, 0x00, screen);
     // Disable internal charge pump for oscillator power
-    writeRegister(OSC_POWER_SETTING, 0x40);
+    writeRegister(OSC_POWER_SETTING, 0x40, screen);
     // CPS=0b10 Charge pump strength to half
     // CPM=0b00 Charge pump soft start mode to min
-    writeRegister(PUMP_SETTING_1, 0x80);
+    writeRegister(PUMP_SETTING_1, 0x80, screen);
     // Also disable positive charge pump VH (VDH +14V & VGH +19V)
     // All charge pumps are off at this point
-    writeRegister(PUMP_SETTING_2, 0x00);
+    writeRegister(PUMP_SETTING_2, 0x00, screen);
     Delay(30);
     // LVDS OFF, Band-gap circuit OFF, Temperature sensor OFF
-    writeRegister(THERMAL_SENSOR_SETTING, 0x00);
+    writeRegister(THERMAL_SENSOR_SETTING, 0x00, screen);
     Delay(30);
     // This is not in the datasheet and its function is a mystery
-    writeRegister(MYSTERY_SETTING_2, 0x02);
+    writeRegister(MYSTERY_SETTING_2, 0x02, screen);
 
     poweredOn_ = false;
     log_d("EinkET013TT1 powered off");
