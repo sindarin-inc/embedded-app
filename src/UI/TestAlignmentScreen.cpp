@@ -62,14 +62,18 @@ void TestAlignmentScreen::render(DisplaySystem &display) {
     display.gfxClass()->drawCircle(padding, padding, outerCircleRadius, color); // Outer circle
     display.gfxClass()->fillCircle(w - padding, padding, radius, color);        // Top-right corner
     display.gfxClass()->drawCircle(w - padding, padding, outerCircleRadius,
-                                   color);                               // Outer circle
-    display.gfxClass()->fillCircle(padding, h - padding, radius, color); // Bottom-left corner
-    display.gfxClass()->drawCircle(padding, h - padding, outerCircleRadius,
                                    color); // Outer circle
-    display.gfxClass()->fillCircle(w - padding, h - padding, radius,
-                                   color); // Bottom-right corner
-    display.gfxClass()->drawCircle(w - padding, h - padding, outerCircleRadius,
+    display.gfxClass()->fillCircle(lineSpacing + padding, h - padding, radius,
+                                   color); // Bottom-leftish corner
+    display.gfxClass()->drawCircle(lineSpacing + padding, h - padding, outerCircleRadius,
                                    color); // Outer circle
+    display.gfxClass()->fillCircle(w - padding - lineSpacing, h - padding, radius,
+                                   color); // Bottom-rightish corner
+    display.gfxClass()->drawCircle(w - padding - lineSpacing, h - padding, outerCircleRadius,
+                                   color); // Outer circle
+    // Bottom center circle
+    display.gfxClass()->fillCircle(w / 2, h - padding, radius, color);
+    display.gfxClass()->drawCircle(w / 2, h - padding, outerCircleRadius, color);
 
     // Adafruit_GFX doesn't have a method to draw a filled circle with an even width, so their docs
     // recommend drawing a rounded rect instead
