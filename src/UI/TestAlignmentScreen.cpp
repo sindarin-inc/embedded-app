@@ -4,21 +4,21 @@
 
 #include "Misc/Style.hpp"
 
-void drawEvenCircle(Adafruit_GFX *gfx, int16_t centerX, int16_t centerY, int16_t radius,
+void DrawEvenCircle(Adafruit_GFX *gfx, int16_t centerX, int16_t centerY, int16_t radius,
                     uint16_t color) {
     // Draw the left semi-circle
     for (int16_t y = -radius; y <= radius; y++) {
-        int16_t x = (int16_t)sqrt(radius * radius - y * y);
+        auto x = static_cast<int16_t>(sqrt(radius * radius - y * y));
         gfx->drawPixel(centerX - x, centerY + y, color);
     }
 
     // Draw the right semi-circle (1 pixel over to create an even width)
     for (int16_t y = -radius; y <= radius; y++) {
-        int16_t x = (int16_t)sqrt(radius * radius - y * y);
+        auto x = static_cast<int16_t>(sqrt(radius * radius - y * y));
         gfx->drawPixel(centerX + x - 1, centerY + y, color);
     }
 }
-void drawCenteredCircle(Adafruit_GFX *gfx, int16_t centerX, int16_t centerY, uint16_t radius,
+void DrawCenteredCircle(Adafruit_GFX *gfx, int16_t centerX, int16_t centerY, uint16_t radius,
                         uint16_t color) {
     // Draw the upper semicircle
     for (int16_t y = -radius; y <= 0; y++) {
