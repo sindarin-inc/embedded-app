@@ -165,6 +165,9 @@ void PollingLoopTask(void *parameter) {
         BLEImprov::getInstance()->loop();
 #endif
 
+#if SIMULATOR
+        vTaskDelay(pdMS_TO_TICKS(1000));
+#else
         // Spend the rest of the time waiting for debug commands (that will probably never come)
         uart_event_t event;
         if (xQueueReceive(GetUartCommandQueue(), (void *)&event, pdMS_TO_TICKS(1000))) {
@@ -182,6 +185,7 @@ void PollingLoopTask(void *parameter) {
                 break;
             }
         }
+#endif
 
         // This happens after the delay, so that the first check can run with a faster fade.
         lightingController.checkAmbientLight();
