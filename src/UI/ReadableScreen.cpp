@@ -237,7 +237,7 @@ void ReadableScreen::render(DisplaySystem &display) {
     display.setFont(display.style.getFontFamily().readableFont);
 
     // If there is a partial chapter summary, open that instead
-    if (!renderedPartialSummary_) {
+    if (!renderedPartialSummary_ && false) {
         auto partialChapterSummary =
             UserReadablePartialChapterSummary::loadForReadable(fileSystem_, readable_);
         if (partialChapterSummary) {

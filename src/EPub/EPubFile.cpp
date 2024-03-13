@@ -270,14 +270,25 @@ auto EPubFile::hasSummary(const std::string &chapterId) -> bool {
         return true;
     }
 
-    // Walk the chapters backwards in the spine to see if the chapter id matches
     auto summaryChapterHref = opf_->getHrefByManifestId(summaryId);
-    if (summaryChapterHref.empty()) {
-        return false;
+    if (!summaryChapterHref.empty()) {
+        auto summaryChapterIdx = opf_->getChapterIdx(summaryChapterHref);
+        return summaryChapterIdx != -1 && hasToc;
     }
-    auto summaryChapterIdx = opf_->getChapterIdx(summaryChapterHref);
 
-    return summaryChapterIdx != -1 && hasToc;
+    // Walk the chapters backwards in the spine to see if the chapter id matches
+    auto spineHref = opf_->getHrefByManifestId(chapterId);
+    auto firstChapterHref = opf_->getChapterFirstHref(spineHref);
+    summaryId = "summary-" + opf_->getManifestIdByHref(firstChapterHref);
+    summaryChapterHref = opf_->getHrefByManifestId(summaryId);
+    log_d("First chapter href: %s, spine href: %s, summaryChapterHref: %s",
+          firstChapterHref.c_str(), spineHref.c_str(), summaryChapterHref.c_str());
+    if (!summaryChapterHref.empty()) {
+        auto summaryChapterIdx = opf_->getChapterIdx(summaryChapterHref);
+        return summaryChapterIdx != -1 && hasToc;
+    }
+
+    return false;
 }
 
 auto EPubFile::getSummaryContent(

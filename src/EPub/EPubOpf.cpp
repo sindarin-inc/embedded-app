@@ -99,6 +99,7 @@ auto EPubOpf::getSpineIdx(const std::string &href) const -> SpineIdx {
          spineIdx <
          std::min(spine_.size(), static_cast<size_t>(std::numeric_limits<SpineIdx>::max()));
          spineIdx++) {
+        log_d("Spine: %s == %s", spine_[spineIdx].item->href.c_str(), href.c_str());
         if (spine_[spineIdx].item->href == href) {
             return spineIdx;
         }
