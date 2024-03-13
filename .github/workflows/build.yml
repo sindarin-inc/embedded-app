@@ -94,17 +94,21 @@ jobs:
           PR_GITHUB_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Create the flasher script and bundle everything
+        run: |
+          mkdir -p artifact
+          echo "esptool.py -b 460800 --before default_reset --after hard_reset --chip esp32s3  write_flash --flash_mode dio --flash_size 64MB --flash_freq 80m 0x0 bootloader.bin 0x8000 partition-table.bin 0xe000 ota_data_initial.bin 0x10000 embedded-app.bin" > artifact/flash.sh
+          cp build/embedded-app.bin artifact
+          cp build/embedded-app.elf artifact
+          cp build/bootloader/bootloader.bin artifact
+          cp build/partition_table/partition-table.bin artifact
+          cp build/ota_data_initial.bin artifact
+
       - name: Upload binaries
         uses: actions/upload-artifact@v3
-        if: github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/release/v')
         with:
           name: embedded-app-${{ github.sha }}-IDF${{ matrix.idf_version }}
-          path: |
-            build/embedded-app.bin
-            build/embedded-app.elf
-            build/bootloader/bootloader.bin
-            build/partition_table/partition-table.bin
-            build/ota_data_initial.bin
+          path: artifact
 
   release:
     if: contains(github.ref, 'refs/tags/release/v')

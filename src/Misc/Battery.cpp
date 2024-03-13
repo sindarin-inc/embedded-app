@@ -7,60 +7,63 @@
 #include "Misc/StringUtil.hpp"
 #include "sindarin-debug.h"
 
-// Currently 1MB
-#define MAX_VOLTAGE_LOG_SIZE 1000000
+auto Battery::takeMeasurement() -> std::pair<float, float> {
+    auto left = GetBatteryVoltageLeft();
+    auto right = GetBatteryVoltageRight();
+    leftConnected_ = left > BATTERY_DISCONNECT_THRESHOLD;
+    rightConnected_ = right > BATTERY_DISCONNECT_THRESHOLD;
+
+    // Save into the array as a circular buffer of up to BATTERY_MEASUREMENTS_COUNT most recent
+    // values, but only if the battery is connected. We don't want to mess up the averages if
+    // the battery is disconnected temporarily.
+    if (leftConnected_) {
+        leftMeasurements_[leftIndex_] = left;
+        leftIndex_ = (leftIndex_ + 1) % BATTERY_MEASUREMENTS_COUNT;
+        leftMeasurementCount_ = std::min(leftMeasurementCount_ + 1, BATTERY_MEASUREMENTS_COUNT);
+    } else {
+        leftMeasurementCount_ = 0;
+        leftIndex_ = 0;
+    }
+    if (rightConnected_) {
+        rightMeasurements_[rightIndex_] = right;
+        rightIndex_ = (rightIndex_ + 1) % BATTERY_MEASUREMENTS_COUNT;
+        rightMeasurementCount_ = std::min(rightMeasurementCount_ + 1, BATTERY_MEASUREMENTS_COUNT);
+    } else {
+        rightMeasurementCount_ = 0;
+        rightIndex_ = 0;
+    }
+
+    return {left, right};
+}
 
 void Battery::loop() {
     auto now = Millis();
 
-    if (this->lastMeasurementTime_ == 0 ||
-        now > this->lastMeasurementTime_ + BATTERY_MEASUREMENT_PERIOD_SECONDS * 1000) {
-        auto left = GetBatteryVoltageLeft();
-        auto right = GetBatteryVoltageRight();
-        this->leftConnected_ = left > BATTERY_DISCONNECT_THRESHOLD;
-        this->rightConnected_ = right > BATTERY_DISCONNECT_THRESHOLD;
+    if (lastMeasurementTime_ == 0 ||
+        now > lastMeasurementTime_ + BATTERY_MEASUREMENT_PERIOD_SECONDS * 1000) {
 
-        if (now > lastLoggingTime_ + BATTERY_LOGGING_PERIOD_SECONDS * 1000) {
+        auto [left, right] = takeMeasurement();
+
+        if (lastLoggingTime_ == 0 ||
+            now > lastLoggingTime_ + BATTERY_LOGGING_PERIOD_SECONDS * 1000) {
             telemetry_.logMetricData(TelemetryField::METRIC_BATTERY_VOLTAGE,
                                      {{"l", left}, {"r", right}});
             lastLoggingTime_ = now;
         }
 
-        // Save into the array as a circular buffer of up to BATTERY_MEASUREMENTS_COUNT most recent
-        // values, but only if the battery is connected. We don't want to mess up the averages if
-        // the battery is disconnected temporarily.
-        if (this->leftConnected_) {
-            this->leftMeasurements_[this->leftIndex_] = left;
-            this->leftIndex_ = (this->leftIndex_ + 1) % BATTERY_MEASUREMENTS_COUNT;
-            this->leftMeasurementCount_ =
-                std::min(this->leftMeasurementCount_ + 1, BATTERY_MEASUREMENTS_COUNT);
-        } else {
-            this->leftMeasurementCount_ = 0;
-            this->leftIndex_ = 0;
-        }
-        if (this->rightConnected_) {
-            this->rightMeasurements_[this->rightIndex_] = right;
-            this->rightIndex_ = (this->rightIndex_ + 1) % BATTERY_MEASUREMENTS_COUNT;
-            this->rightMeasurementCount_ =
-                std::min(this->rightMeasurementCount_ + 1, BATTERY_MEASUREMENTS_COUNT);
-        } else {
-            this->rightMeasurementCount_ = 0;
-            this->rightIndex_ = 0;
-        }
-
         // Check if both batteries are below the threshold. If so, show the battery screen and halt
         // everything
 #if !DISABLE_LOW_VOLTAGE_HALT
-        auto leftBatteryVoltage = this->getLeftBatteryVoltage();
-        auto rightBatteryVoltage = this->getRightBatteryVoltage();
+        auto leftBatteryVoltage = getLeftBatteryVoltage();
+        auto rightBatteryVoltage = getRightBatteryVoltage();
         if (leftBatteryVoltage < BATTERY_MIN_VOLTAGE && rightBatteryVoltage < BATTERY_MIN_VOLTAGE &&
-            (this->leftConnected_ || this->rightConnected_)) {
+            (leftConnected_ || rightConnected_)) {
             log_i("Voltage is below threshold. Halting. (L: %.2fV, R: %.2fV, < %.2fV)",
                   leftBatteryVoltage, rightBatteryVoltage, BATTERY_MIN_VOLTAGE);
-            this->depleted_ = true;
+            depleted_ = true;
         }
 #endif
-        this->lastMeasurementTime_ = now;
+        lastMeasurementTime_ = now;
     }
 }
 

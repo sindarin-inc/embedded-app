@@ -151,4 +151,5 @@
     "[json]": {
         "editor.defaultFormatter": "vscode.json-language-features"
     },
+    "idf.adapterTargetName": "esp32s3",
 }
