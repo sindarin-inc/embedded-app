@@ -284,8 +284,8 @@ auto EPubFile::hasSummary(const std::string &chapterId) -> bool {
     log_d("First chapter href: %s, spine href: %s, summaryChapterHref: %s",
           firstChapterHref.c_str(), spineHref.c_str(), summaryChapterHref.c_str());
     if (!summaryChapterHref.empty()) {
-        auto summaryChapterIdx = opf_->getChapterIdx(summaryChapterHref);
-        return summaryChapterIdx != -1 && hasToc;
+        auto summaryChapterIdx = opf_->exists(summaryId);
+        return summaryChapterIdx && hasToc;
     }
 
     return false;
@@ -399,12 +399,24 @@ auto EPubFile::hasDictionary(const std::string &chapterId) -> bool {
 
     // Walk the chapters backwards in the spine to see if the chapter id matches
     auto dictionaryChapterHref = opf_->getHrefByManifestId(dictionaryId);
-    if (dictionaryChapterHref.empty()) {
-        return false;
+    if (!dictionaryChapterHref.empty()) {
+        auto dictionaryChapterIdx = opf_->getChapterIdx(dictionaryChapterHref);
+        return dictionaryChapterIdx != -1 && hasToc;
     }
-    auto dictionaryChapterIdx = opf_->getChapterIdx(dictionaryChapterHref);
 
-    return dictionaryChapterIdx != -1 && hasToc;
+    // Walk the chapters backwards in the spine to see if the chapter id matches
+    auto spineHref = opf_->getHrefByManifestId(chapterId);
+    auto firstChapterHref = opf_->getChapterFirstHref(spineHref);
+    dictionaryId = "dictionary-" + opf_->getManifestIdByHref(firstChapterHref);
+    dictionaryChapterHref = opf_->getHrefByManifestId(dictionaryId);
+    log_d("First chapter href: %s, spine href: %s, dictionaryChapterHref: %s",
+          firstChapterHref.c_str(), spineHref.c_str(), dictionaryChapterHref.c_str());
+    if (!dictionaryChapterHref.empty()) {
+        auto dictionaryChapterIdx = opf_->exists(dictionaryId);
+        return dictionaryChapterIdx && hasToc;
+    }
+
+    return false;
 }
 
 auto EPubFile::getDictionaryContent(std::string &chapterId,
