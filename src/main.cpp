@@ -110,6 +110,8 @@ void PollingLoopTask(void *parameter) {
         log_i("Received debug command: %s", command.c_str());
         if (command == "GRID") {
             DispatchGetUiQueue()->dispatch([]() {
+                // Override brightness to max
+                lightingController.setOverrideValuePercent(100);
                 auto testScreen = new TestAlignmentScreen();
                 rootUi.setCurrentScreen(*testScreen);
                 UIInnerLoop(RemoteCommand::NONE);
