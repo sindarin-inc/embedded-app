@@ -34,6 +34,7 @@ auto ReadableSummaryScreen::checkAtEnd() -> bool {
 }
 
 void ReadableSummaryScreen::render(DisplaySystem &display) {
+    log_d("Rendering ReadableSummaryScreen");
     setNeedsLayout();
 
     setFrame(

@@ -237,14 +237,17 @@ void ReadableScreen::render(DisplaySystem &display) {
     display.setFont(display.style.getFontFamily().readableFont);
 
     // If there is a partial chapter summary, open that instead
-    if (!renderedPartialSummary_ && false) {
+    if (!renderedPartialSummary_ && !prefs_.noShowPartialChapterSummary.get().value_or(false)) {
         auto partialChapterSummary =
             UserReadablePartialChapterSummary::loadForReadable(fileSystem_, readable_);
         if (partialChapterSummary) {
-            auto epubPlace = std::dynamic_pointer_cast<EPubPlace>(renderer_.getCurrentPlace());
+            log_d("Rendering partial chapter summary for %s, place %s",
+                  readable_->shortenedUuid.c_str(), readable_->place->str().c_str());
+            auto epubPlace = std::dynamic_pointer_cast<EPubPlace>(readable_->place);
             readableSummaryScreen_.setPlaceInReadable(epubPlace);
             readableSummaryScreen_.setFirstLoad();
             setCurrentScreen(readableSummaryScreen_);
+            readableSummaryScreen_.render(display);
             return;
         }
     }
