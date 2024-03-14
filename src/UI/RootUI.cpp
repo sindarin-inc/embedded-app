@@ -781,8 +781,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         experimentalSettingsMenu->setToggleLastItem(false);
     }
 
-    experimentalSettingsMenu->addMenuItem(MenuItem("Show summary",
-                                                   [this, experimentalSettingsMenu]() {
+    experimentalSettingsMenu->addMenuItem(MenuItem("Show summary", [this]() {
         this->prefs_.noShowPartialChapterSummary.set(
             !this->prefs_.noShowPartialChapterSummary.get().value_or(false));
     }));
