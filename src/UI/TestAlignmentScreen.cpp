@@ -101,6 +101,8 @@ void TestAlignmentScreen::render(DisplaySystem &display) {
     display.gfxClass()->drawLine(padding - 10, y, padding, y, color);
     display.updateDisplay(DisplaySystem::UpdateType::PARTIAL, true, 0,
                           DisplaySystem::UpdateType::UNSPECIFIED, ScreenSide::Left);
+
+    log_i("Grid rendered");
 }
 
 void TestAlignmentScreen::processCommand(RemoteCommand command) {
