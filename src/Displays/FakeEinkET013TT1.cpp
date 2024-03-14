@@ -11,7 +11,7 @@
 
 uint8_t FakeEinkET013TT1ParticlePositions[EinkET013TT1_PIXEL_WIDTH * EinkET013TT1_PIXEL_HEIGHT];
 // Skip waveform processing and just set things as black and white
-bool FakeEinkET013TT1SkipWaveform = false;
+bool FakeEinkET013TT1SkipWaveform = true;
 bool FakeEinkET013TT1SkipSignalling = false;
 QueueHandle_t FakeEinkET013TT1RenderQueue = nullptr;
 QueueHandle_t FakeEinkET013TT1DoneWaveformQueue = nullptr;

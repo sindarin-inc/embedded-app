@@ -1,3 +1,4 @@
+#if USE_LILYGO_KEYBOARD
 #include "DisplayLilygo.hpp"
 
 #include <driver/gpio.h>
@@ -12,6 +13,8 @@
 
 #define TAG "ST7789"
 #define _DEBUG_ 0
+
+#define CONFIG_FRAME_BUFFER 1
 
 #if 0
 #ifdef CONFIG_IDF_TARGET_ESP32
@@ -245,7 +248,8 @@ void lcdInit(TFT_t *dev, int width, int height, int offsetx, int offsety) {
 
     dev->_use_frame_buffer = false;
 #if CONFIG_FRAME_BUFFER
-    dev->_frame_buffer = heap_caps_malloc(sizeof(uint16_t) * width * height, MALLOC_CAP_DMA);
+    dev->_frame_buffer =
+        (uint16_t *)heap_caps_malloc(sizeof(uint16_t) * width * height, MALLOC_CAP_SPIRAM);
     if (dev->_frame_buffer == NULL) {
         ESP_LOGE(TAG, "heap_caps_malloc fail");
     } else {
@@ -834,6 +838,17 @@ auto DisplayLilygo::setup() -> bool {
 void DisplayLilygo::updateDisplay(DisplaySystem::UpdateType updateType, bool clearFrameBuffer,
                                   int vcomNudge, DisplaySystem::UpdateType altUpdateType,
                                   Rect altRect) {
-    // dev._frame_buffer = gfxCanvas_.getBuffer();
+
+    for (int x = 0; x < 320; x++) {
+        for (int y = 0; y < 240; y++) {
+            bool color = gfxCanvas_.getPixel(x, y);
+            uint16_t pixelX = 240 - y;
+            uint16_t pixelY = x;
+            lcdDrawPixel(&dev, pixelX, pixelY, color ? BLACK : WHITE);
+        }
+    }
+
     lcdDrawFinish(&dev);
+    fillScreen(bg);
 }
+#endif

@@ -10,6 +10,11 @@
 #include "Displays/DisplayEinkET013TT1.hpp"
 #endif
 
+char readKeyboardBuffer();
+void clearKeyboardBuffer();
+void setKeyboardReadIndex(int index);
+int getKeyboardReadIndex();
+
 void MainMenuScreen::addSubMenu(Menu *newSubMenu) { subMenus_.push_back(newSubMenu); }
 
 auto MainMenuScreen::layout(LayoutContext &context, Size size) -> Size {
@@ -83,6 +88,17 @@ auto MainMenuScreen::layout(LayoutContext &context, Size size) -> Size {
                                                       LayoutOptionsSizeToFitVertical);
                 y += viewFrame.size.height + mainSpacing;
             }
+
+            // Add extra spacing for the user input.
+            y += 10;
+            userInput_.setText("    ");
+            context.setViewFrame(rightArrowView_, {{0, y + 4}, {3, 6}},
+                                 LayoutOptionsSizeToFit | LayoutOptionsAlignTop |
+                                     LayoutOptionsAlignLeft);
+            // layout the userInput view
+            auto viewFrame = context.setViewFrame(userInput_, {{8, y}, {size.width, 0}},
+                                                  LayoutOptionsSizeToFitVertical);
+            y += viewFrame.size.height + mainSpacing;
             y -= mainSpacing;
 
             return {size.width, y};
@@ -99,6 +115,22 @@ void MainMenuScreen::drawInRect(Rect rect) {
     for (auto &view : menuItemViews_) {
         (*view).draw();
     }
+
+    rightArrowView_.draw();
+    signed char buffer[100];
+    int bufsize = 0;
+    int oldIndex = getKeyboardReadIndex();
+    while (bufsize < 256 && ((buffer[bufsize] = readKeyboardBuffer()) != -1)) {
+        bufsize++;
+    }
+    buffer[bufsize] = '\0';
+    log_d("Buffer stuff: %d, %s", bufsize, buffer);
+    setKeyboardReadIndex(oldIndex);
+    // Only update the text if we have something to update
+    if (bufsize != 0) {
+        userInput_.setText(StringFormat("%s", buffer));
+    }
+    userInput_.draw();
 
     if (menuPageViews_.size() > 1) {
         for (auto &view : menuPageViews_) {
@@ -189,11 +221,11 @@ void MainMenuScreen::render(DisplaySystem &display) {
             menuPageViews_.push_back(menuPageView);
         }
 
-        draw();
-        display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
-        // display.updateDisplay(DisplaySystem::UpdateType::PARTIAL, true,
-        //                       DisplaySystem::UpdateType::FAST_WITH_VCOM_NUDGE, {24, 50, 32,
-        //                       205});
+        // draw();
+        //  display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
+        //   display.updateDisplay(DisplaySystem::UpdateType::PARTIAL, true,
+        //                         DisplaySystem::UpdateType::FAST_WITH_VCOM_NUDGE, {24, 50, 32,
+        //                         205});
     }
 
     // If we want to try using the alt update mechanism here, we should move this code above the
@@ -211,7 +243,8 @@ void MainMenuScreen::render(DisplaySystem &display) {
 
     draw();
 
-    display.updateDisplay(DisplaySystem::UpdateType::FAST_WITH_VCOM_NUDGE);
+    // display.updateDisplay(DisplaySystem::UpdateType::FAST_WITH_VCOM_NUDGE);
+    display.updateDisplay(DisplaySystem::UpdateType::FULL);
     //}
 
     // This handles the case where we are in the main menu right after the
@@ -220,10 +253,16 @@ void MainMenuScreen::render(DisplaySystem &display) {
     firstLoad_ = false;
 }
 
+void callChatGPT(char *prompt) {}
+
 void MainMenuScreen::processCommand(RemoteCommand command) {
+    signed char buffer[100];
+    int bufsize;
+    int oldIndex;
     switch (command) {
     case RemoteCommand::UP:
         if (subMenus_[currentSelection_]->prevSelection()) {
+            clearKeyboardBuffer();
             firstLoad_ = true;
         } else {
             firstLoad_ = false;
@@ -232,6 +271,7 @@ void MainMenuScreen::processCommand(RemoteCommand command) {
         break;
     case RemoteCommand::DOWN:
         if (subMenus_[currentSelection_]->nextSelection()) {
+            clearKeyboardBuffer();
             firstLoad_ = true;
         } else {
             firstLoad_ = false;
@@ -241,15 +281,31 @@ void MainMenuScreen::processCommand(RemoteCommand command) {
     // Long press down on the TT should count as enter since we don't have the
     // 5th button
     case RemoteCommand::ENTER:
-        if (subMenus_[currentSelection_]->getCurrItem().callback != nullptr) {
-            subMenus_[currentSelection_]->getCurrItem().callback();
+        // Turn off the enter button for now while we figure out how to grab the keyboard buffer and
+        // call ChatGPT
+        // if (subMenus_[currentSelection_]->getCurrItem().callback != nullptr) {
+        //    subMenus_[currentSelection_]->getCurrItem().callback();
+        // }
+        bufsize = 0;
+        oldIndex = getKeyboardReadIndex();
+        while (bufsize < 256 && ((buffer[bufsize] = readKeyboardBuffer()) != -1)) {
+            bufsize++;
         }
+        buffer[bufsize] = '\0';
+        log_d("Got a buffer and now I'm clearing it - tada: %d, %s", bufsize, buffer);
+        setKeyboardReadIndex(oldIndex);
+        callChatGPT(buffer);
+        // Only update the text if we have something to update
+        clearKeyboardBuffer();
+        firstLoad_ = true;
+        setNeedsRerender();
         break;
     case RemoteCommand::RIGHT:
         // This will switch between the menus
         currentSelection_++;
         currentSelection_ = currentSelection_ % topBarViews_.size();
         firstLoad_ = true;
+        clearKeyboardBuffer();
         setNeedsRerender();
         break;
     case RemoteCommand::BACK:
@@ -258,9 +314,14 @@ void MainMenuScreen::processCommand(RemoteCommand command) {
         currentSelection_ = currentSelection_ + topBarViews_.size() - 1;
         currentSelection_ = currentSelection_ % topBarViews_.size();
         firstLoad_ = true;
+        clearKeyboardBuffer();
         setNeedsRerender();
         break;
     case RemoteCommand::ANIMATION:
+        break;
+    case RemoteCommand::KEYPRESS:
+        setNeedsRerender();
+        break;
     default:
         break;
     }

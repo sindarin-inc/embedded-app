@@ -32,6 +32,8 @@ enum RemoteCommand : int {
 
     ANIMATION = 0xF,
 
+    KEYPRESS = 0x10,
+
     NONE = -1,
 };
 

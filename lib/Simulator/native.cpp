@@ -347,6 +347,9 @@ void goForwardNumPages(SDL_Window *window, SDL_Renderer *renderer, int numPages)
     FakeEinkET013TT1SkipWaveform = false;
 }
 
+extern char keyboardBuffer[256];
+extern int keyboardBufferIndex;
+
 // Returns false if the program should quit
 auto mainLoop() -> bool {
     SDL_Event e;
@@ -375,41 +378,95 @@ auto mainLoop() -> bool {
             case SDLK_RETURN:
                 remoteCode = RemoteCommand::ENTER;
                 break;
-            case 'p':
-                saveScreenshotPng("./screenshot.png", window, renderer);
-                break;
-            case 'm':
-                movieOn_ = !movieOn_;
-                break;
-            case 'u':
-                runBackwardsUnitTest(window, renderer);
-                break;
-            case 'b':
-                goBackNumPages(window, renderer, 50);
-                break;
             case 'a':
-                previousPageFast(window, renderer);
-                break;
-            case 's':
-                nextPageFast(window, renderer);
-                break;
-            case 'q':
-                // Ignore cmd-q (quit on macOS)
-                if (!(modState & KMOD_GUI)) {
-                    goBackwardNumPages(window, renderer, 200);
-                }
-                break;
-            case 'w':
-                // Ignore cmd-w (close on macOS)
-                if (!(modState & KMOD_GUI)) {
-                    goForwardNumPages(window, renderer, 200);
-                }
-                break;
+            case 'b':
+            case 'c':
+            case 'd':
+            case 'e':
+            case 'f':
+            case 'g':
+            case 'h':
             case 'i':
-                saveBookImages(window, renderer);
-                break;
-            }
+            case 'j':
+            case 'k':
+            case 'l':
+            case 'm':
+            case 'n':
+            case 'o':
+            case 'p':
+            case 'q':
+            case 'r':
+            case 's':
+            case 't':
+            case 'u':
+            case 'v':
+            case 'w':
+            case 'x':
+            case 'y':
+            case 'z':
+            case '1':
+            case '2':
+            case '3':
+            case '4':
+            case '5':
+            case '6':
+            case '7':
+            case '8':
+            case '9':
+            case '0':
+            case ' ':
+                if (e.key.keysym.sym != 8) {
+                    keyboardBuffer[keyboardBufferIndex++] = (char)e.key.keysym.sym;
+                } else {
+                    // Backspace if there's anything to remove!
+                    if (keyboardBufferIndex > 0) {
+                        keyboardBufferIndex--;
+                    }
+                }
+                if (keyboardBufferIndex >= 256) {
+                    keyboardBufferIndex = 0;
+                }
 
+                remoteCode = RemoteCommand::KEYPRESS;
+
+                break;
+                /*
+                            case 'p':
+                                saveScreenshotPng("./screenshot.png", window, renderer);
+                                break;
+                            case 'm':
+                                movieOn_ = !movieOn_;
+                                break;
+                            case 'u':
+                                runBackwardsUnitTest(window, renderer);
+                                break;
+                            case 'b':
+                                goBackNumPages(window, renderer, 50);
+                                break;
+                            case 'a':
+                                previousPageFast(window, renderer);
+                                break;
+                            case 's':
+                                nextPageFast(window, renderer);
+                                break;
+                            case 'q':
+                                // Ignore cmd-q (quit on macOS)
+                                if (!(modState & KMOD_GUI)) {
+                                    goBackwardNumPages(window, renderer, 200);
+                                }
+                                break;
+                            case 'w':
+                                // Ignore cmd-w (close on macOS)
+                                if (!(modState & KMOD_GUI)) {
+                                    goForwardNumPages(window, renderer, 200);
+                                }
+                                break;
+                            case 'i':
+                                saveBookImages(window, renderer);
+                                break;
+                            }
+                */
+            }
             if (remoteCode != RemoteCommand::NONE) {
                 DispatchGetUiQueue()->dispatchFromISR([remoteCode]() { UIInnerLoop(remoteCode); });
             }
@@ -476,8 +533,9 @@ auto main(int argc, char *argv[]) -> int {
     prefs.begin("simprefs.ini");
 
     // The FreeRTOS tick handler happens via SIGALRM, and it also kicks off preemptive task
-    // switching, which is not what we want on the main thread, since it's not a real FreeRTOS task.
-    // Just disable SIGALRM on this thread so that it only happens on FreeRTOS tasks.
+    // switching, which is not what we want on the main thread, since it's not a real
+    // FreeRTOS task. Just disable SIGALRM on this thread so that it only happens on
+    // FreeRTOS tasks.
     sigset_t mask;
     sigemptyset(&mask);
     sigaddset(&mask, SIGALRM);

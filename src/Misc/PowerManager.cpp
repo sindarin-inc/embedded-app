@@ -632,6 +632,7 @@ void PowerManager::deepSleepInternal(SleepReason reason) {
 
     esp_err_t err;
 
+#if USE_I2C
     err = rtc_gpio_init(static_cast<gpio_num_t>(I2C_MASTER_SDA_IO));
     if (err != ESP_OK) {
         log_e("Failed to init SDA with err %s", esp_err_to_name(err));
@@ -659,7 +660,7 @@ void PowerManager::deepSleepInternal(SleepReason reason) {
         powerOffInternal();
         return;
     }
-
+#endif
     // `ulp_riscv_load_binary` seems to reset all the ulp variables including `ulp_waitForClose`
     // which we only want to unset if the temples are closed.
     if (!ulpLoaded) {

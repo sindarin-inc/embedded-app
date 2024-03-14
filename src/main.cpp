@@ -1,4 +1,5 @@
 #if !SIMULATOR
+#include <driver/i2c.h>
 #include <driver/uart.h>
 #include <soc/rtc.h>
 #endif
@@ -40,9 +41,110 @@
 
 #define ENABLE_CONTENT_SYNC_ON_CLOSE 1
 
+#if USE_LILYGO_KEYBOARD
+
+#define I2C_MASTER_FREQ_HZ 100000UL
+
+#define LILYGO_KB_SLAVE_ADDRESS 0x55
+
+#define BOARD_POWERON (gpio_num_t)10
+#define BOARD_I2C_SDA (gpio_num_t)18
+#define BOARD_I2C_SCL (gpio_num_t)8
+#define I2C_MASTER_NUM I2C_NUM_0     // I2C port number
+#define WRITE_BIT I2C_MASTER_WRITE   // I2C master write
+#define READ_BIT I2C_MASTER_READ     // I2C master read
+#define ACK_CHECK_EN 0x1             // I2C master will check ack from slave
+#define ACK_CHECK_DIS 0x0            // I2C master will not check ack from slave
+#define ACK_VAL (i2c_ack_type_t)0x0  // I2C ack value
+#define NACK_VAL (i2c_ack_type_t)0x1 // I2C nack value
+
+static const char *TAG = "T-Deck Keyboard Master";
+
+/**
+ * @brief i2c master initialization
+ */
+static esp_err_t i2c_master_init(void) {
+    int i2c_master_port = I2C_MASTER_NUM;
+    i2c_config_t conf;
+
+    conf.mode = I2C_MODE_MASTER;
+    conf.sda_io_num = BOARD_I2C_SDA;
+    conf.scl_io_num = BOARD_I2C_SCL;
+    conf.sda_pullup_en = GPIO_PULLUP_ENABLE;
+    conf.scl_pullup_en = GPIO_PULLUP_ENABLE;
+    conf.master.clk_speed = I2C_MASTER_FREQ_HZ;
+    conf.clk_flags =
+        I2C_SCLK_SRC_FLAG_FOR_NOMAL; // Optional for some configurations, uncomment if needed
+
+    i2c_param_config((i2c_port_t)i2c_master_port, &conf);
+    esp_err_t ret = i2c_driver_install((i2c_port_t)i2c_master_port, conf.mode, 0, 0, 0);
+    i2c_set_timeout((i2c_port_t)i2c_master_port, 0x0000001FU);
+    return ret;
+}
+
+#define READ_SIZE 1 // Number of bytes to read
+
+esp_err_t custom_i2c_master_read_from_device(i2c_port_t i2c_num, uint8_t device_address,
+                                             uint8_t *data, size_t size, TickType_t ticks_to_wait) {
+    if (size == 0) {
+        return ESP_OK; // Nothing to read
+    }
+    i2c_cmd_handle_t cmd = i2c_cmd_link_create();
+
+    esp_err_t err = i2c_master_start(cmd);
+
+    if (err != ESP_OK) {
+        log_e("Error starting I2C command: %d", err);
+    }
+
+    err = i2c_master_write_byte(cmd, (device_address << 1) | I2C_MASTER_READ, ACK_CHECK_EN);
+
+    if (err != ESP_OK) {
+        log_e("Error writing byte to I2C command: %d", err);
+    }
+
+    if (size > 1) {
+        err = i2c_master_read(cmd, data, size - 1, I2C_MASTER_ACK);
+        if (err != ESP_OK) {
+            log_e("Error reading I2C command: %d", err);
+        }
+    }
+
+    err = i2c_master_read_byte(cmd, data + size - 1, I2C_MASTER_NACK); // NACK on last byte
+    if (err != ESP_OK) {
+        log_e("Error reading byte from I2C command: %d", err);
+    }
+    err = i2c_master_stop(cmd);
+    if (err != ESP_OK) {
+        log_e("Error stopping I2C command: %d", err);
+    }
+
+    esp_err_t ret = i2c_master_cmd_begin(i2c_num, cmd, ticks_to_wait);
+    i2c_cmd_link_delete(cmd);
+
+    return ret;
+}
+
+/**
+ * @brief Test function to check existence of the keyboard device
+ */
+static esp_err_t keyboard_check(void) {
+    uint8_t data;
+    esp_err_t ret = i2c_master_read_from_device(I2C_MASTER_NUM, LILYGO_KB_SLAVE_ADDRESS, &data, 1,
+                                                1000 / portTICK_RATE_MS);
+
+    return ret;
+}
+#endif
+
 #if EINKET013TT1
+#if SIMULATOR
+#include "Displays/DisplayEinkET013TT1.hpp"
+DisplayEinkET013TT1 myDisplay(DISPLAY_CS_LEFT, DISPLAY_CS_RIGHT, DISPLAY_RST);
+#else
 #include "Displays/DisplayLilygo.hpp"
 DisplayLilygo myDisplay(TDECK_TFT_DC, TDECK_TFT_CS, TDECK_SPI_SCK, TDECK_SPI_MOSI, TDECK_SPI_MISO);
+#endif
 #endif
 
 PreferencesStore prefs;
@@ -141,7 +243,7 @@ void PollingLoopTask(void *parameter) {
         vTaskDelay(1000 / portTICK_PERIOD_MS);
 
         // This happens after the delay, so that the first check can run with a faster fade.
-        lightingController.checkAmbientLight();
+        // lightingController.checkAmbientLight();
     }
     log_d("PollingLoopTask exited");
     vTaskDelete(nullptr);
@@ -167,11 +269,135 @@ void UIInnerLoop(RemoteCommand command) {
     rootUi.loop(myDisplay, command);
 }
 
+char keyboardBuffer[256];
+int keyboardBufferIndex = 0;
+int nextKeyboardBufferToRead = 0;
+
+void clearKeyboardBuffer() {
+    keyboardBufferIndex = 0;
+    nextKeyboardBufferToRead = 0;
+}
+
+void setKeyboardReadIndex(int index) { nextKeyboardBufferToRead = index; }
+int getKeyboardReadIndex() { return nextKeyboardBufferToRead; }
+
+// -1 means there was nothing
+// probably need some race condition stuff between this and KeyboardInputTask
+signed char readKeyboardBuffer() {
+    char ret = -1;
+    if (nextKeyboardBufferToRead != keyboardBufferIndex) {
+        ret = keyboardBuffer[nextKeyboardBufferToRead];
+        nextKeyboardBufferToRead++;
+        if (nextKeyboardBufferToRead >= 256) {
+            nextKeyboardBufferToRead = 0;
+        }
+    }
+    return ret;
+}
+
+#if USE_LILYGO_KEYBOARD
+// Thread to monitor keyboard input and store it until the UI Loop can process it
+void KeyboardInputTask(void *parameter) {
+    uint8_t data;
+    while (1) {
+        esp_err_t ret = i2c_master_read_from_device(I2C_MASTER_NUM, LILYGO_KB_SLAVE_ADDRESS, &data,
+                                                    1, 1000 / portTICK_RATE_MS);
+        if (ret == ESP_OK && data != 0x00) {
+            log_d("keyValue : %c", (char)data);
+            if (data != 8) {
+                keyboardBuffer[keyboardBufferIndex++] = (char)data;
+            } else {
+                // Backspace if there's anything to remove!
+                if (keyboardBufferIndex > 0) {
+                    keyboardBufferIndex--;
+                }
+            }
+            if (keyboardBufferIndex >= 256) {
+                keyboardBufferIndex = 0;
+            }
+            if (bootCompleted) {
+                UIInnerLoop(RemoteCommand::KEYPRESS);
+            } else {
+                log_w("From Keyboard input task: Ignoring user input until boot completes");
+            }
+        }
+        vTaskDelay(5 / portTICK_PERIOD_MS);
+    }
+    log_d("KeyboardInputTask exited");
+    vTaskDelete(nullptr);
+}
+#endif
+
+#if 0
+extern "C" void app_main(void) {
+    HardwareInit();
+
+    ESP_LOGI(TAG, "T-Deck Keyboard Master");
+
+    // Peripheral power control
+    gpio_set_direction(BOARD_POWERON, GPIO_MODE_OUTPUT);
+    gpio_set_level(BOARD_POWERON, 1);
+
+    // Wait some time to let the keyboard power up
+    vTaskDelay(500 / portTICK_PERIOD_MS);
+
+    // Initialize I2C
+    ESP_ERROR_CHECK(i2c_master_init());
+
+    // Check if keyboard is online
+    if (keyboard_check() != ESP_OK) {
+        while (1) {
+            ESP_LOGI(TAG, "LILYGO Keyboard not online.");
+            vTaskDelay(1000 / portTICK_PERIOD_MS);
+        }
+    }
+
+    uint8_t data;
+    while (1) {
+        i2c_cmd_handle_t cmd = i2c_cmd_link_create();
+        i2c_master_start(cmd);
+        i2c_master_write_byte(cmd, (LILYGO_KB_SLAVE_ADDRESS << 1) | READ_BIT, ACK_CHECK_EN);
+        i2c_master_read_byte(cmd, &data, NACK_VAL);
+        i2c_master_stop(cmd);
+        esp_err_t ret = i2c_master_cmd_begin(I2C_MASTER_NUM, cmd, 1000 / portTICK_RATE_MS);
+        i2c_cmd_link_delete(cmd);
+
+        if (ret == ESP_OK && data != 0x00) {
+            ESP_LOGI(TAG, "keyValue : %c", (char)data);
+        }
+        vTaskDelay(5 / portTICK_PERIOD_MS);
+    }
+}
+#endif
+
 #if CONFIG_AUTOSTART_ARDUINO
 void loop() { vTaskDelay(portMAX_DELAY); };
 void setup() {
 #else
 extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
+#if USE_LILYGO_KEYBOARD
+    // Peripheral power control
+    PinMode(BOARD_POWERON, OUTPUT);
+    DigitalWrite(BOARD_POWERON, HIGH);
+
+    // Wait some time to let the keyboard power up
+    vTaskDelay(500 / portTICK_PERIOD_MS);
+
+    // Initialize I2C
+    err_t init_err = i2c_master_init();
+    if (init_err != ESP_OK) {
+        log_e("ERROR initializing I2C via i2c_master_init: %d", init_err);
+    }
+
+    init_err = keyboard_check();
+    // Check if keyboard is online
+    if (init_err != ESP_OK) {
+        log_e("Couldn't get an ACK from the keyboard, continuing anyway, error code %d", init_err);
+    } else {
+        log_d("SUCCESSFUL Connection to keyboard.");
+    }
+#endif
+
     HardwareInit();
 #endif
 
@@ -197,7 +423,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     }
 
     solClock.begin();
-
+#if 0
     log_i("SN: %s", GetSerialNumber().c_str());
 
     if (esp_reset_reason() == ESP_RST_POWERON) {
@@ -214,7 +440,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         DigitalWrite(BLUE_LED, LED_OFF);
 #endif
     }
-
+#endif
     if (powerManager.begin() != ESP_OK) {
         bootErrors.push_back({.type = BootError::Type::PowerManagement});
     }
@@ -274,16 +500,19 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     }
 
     // Below code should only execute on an Active boot
-
+#if USE_LTR329
     if (!lightingController.checkSensorAvailable()) {
         bootErrors.push_back({.type = BootError::Type::AmbientLight});
     } else {
         lightingController.begin();
     }
+#endif
 
+#if USE_MMC5603
     if (!powerManager.checkMagnetometerProductId()) {
         bootErrors.push_back({.type = BootError::Type::Magnetometer});
     }
+#endif
 
     SHOW_HEAP();
 
@@ -378,6 +607,18 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         DispatchGetUiQueue()->dispatch([command]() {
             if (bootCompleted) {
                 UIInnerLoop(command);
+            } else {
+                log_w("Ignoring user input until boot completes");
+            }
+        });
+    };
+#endif
+
+#if USE_LILYGO_KEYBOARD
+    auto keyboardCallback = [](char key) {
+        DispatchGetUiQueue()->dispatch([key]() {
+            if (bootCompleted) {
+                UIInnerLoop(RemoteCommand::KEYPRESS);
             } else {
                 log_w("Ignoring user input until boot completes");
             }
@@ -492,7 +733,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     // xTaskCreatePinnedToCore(StatsTask, "Stats", 5000, nullptr, 0, nullptr, 1);
 
     // Begin fade-in on the lighting before rendering the UI
-    DispatchGetUiQueue()->dispatch([]() { lightingController.checkAmbientLight(300, 100); });
+    DispatchGetUiQueue()->dispatch([]() { /*lightingController.checkAmbientLight(300, 100); */ });
 
     // Render the first thing
     DispatchGetUiQueue()->dispatch([showChargingScreen]() {
@@ -508,6 +749,9 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         SHOW_HEAP();
     });
 
+#if USE_LILYGO_KEYBOARD
+    xTaskCreatePinnedToCore(KeyboardInputTask, "KeyboardInput", 4096, nullptr, 1, nullptr, 1);
+#endif
     GoodBootTimer();
 
     bootCompleted = true;

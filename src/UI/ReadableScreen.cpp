@@ -18,8 +18,8 @@
 auto ReadableScreen::layout(LayoutContext &context, Size size) -> Size {
     int arrowWidth = 24;
     int arrowHeight = 8;
-    int sidePadding = -15;
-    int topBottomPadding = -10;
+    int sidePadding = 15;
+    int topBottomPadding = 10;
     auto arrowContainer = Rect::fromSize(size).inset(sidePadding, topBottomPadding);
     context.setViewSizeInRect(leftArrowView_, {arrowHeight, arrowWidth}, arrowContainer,
                               LayoutOptionsAlignLeft | LayoutOptionsAlignCenterVertical);

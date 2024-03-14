@@ -1,5 +1,5 @@
 #pragma once
-
+#if USE_LILYGO_KEYBOARD
 #include "DisplaySystem.hpp"
 #include "sindarin-debug.h"
 
@@ -159,8 +159,8 @@ public:
         initSPI();
         // More initialization commands for the ST7789 go here
         initST7789();
-        lcdFillScreen(&dev, RED);
-        lcdDrawFinish(&dev);
+        // lcdFillScreen(&dev, RED);
+        // lcdDrawFinish(&dev);
     }
 
     auto setup() -> bool override;
@@ -184,8 +184,10 @@ private:
 
     gpio_num_t pinDC, pinCS, pinSCK, pinMOSI, pinMISO;
     GFXcanvas1 gfxCanvas_;
+    int color_ = 0;
 };
 
 // Usage example:
 // DisplayLilygo display(TDECK_TFT_DC, TDECK_TFT_CS, TDECK_SPI_SCK, TDECK_SPI_MOSI,
 // TDECK_SPI_MISO); display.init();
+#endif

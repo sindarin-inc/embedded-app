@@ -86,18 +86,19 @@ void HardwareInit() {
 #endif
 
 #ifdef USB_CONNECTED_PIN
-    PinMode(USB_CONNECTED_PIN, INPUT);
+    // PinMode(USB_CONNECTED_PIN, INPUT);
 #endif
 
-    DigitalWrite(RED_LED, LED_OFF);
-    DigitalWrite(GREEN_LED, LED_OFF);
-    PinMode(RED_LED, OUTPUT);
-    PinMode(GREEN_LED, OUTPUT);
+    // DigitalWrite(RED_LED, LED_OFF);
+    // DigitalWrite(GREEN_LED, LED_OFF);
+    // PinMode(RED_LED, OUTPUT);
+    // PinMode(GREEN_LED, OUTPUT);
 #ifdef BLUE_LED
-    DigitalWrite(BLUE_LED, LED_OFF);
-    PinMode(BLUE_LED, OUTPUT);
+    // DigitalWrite(BLUE_LED, LED_OFF);
+    // PinMode(BLUE_LED, OUTPUT);
 #endif
 
+#if 0 
     // Attenuation of 2.5db gets us up to a max of 1250mV
     // Using our 442k/160k divider, that's 4.7V max
     adc_cali_curve_fitting_config_t adcConfig;
@@ -122,7 +123,7 @@ void HardwareInit() {
 
     ESP_ERROR_CHECK(adc_oneshot_config_channel(adcOneshotHandle, BATT_CHANNEL_LEFT, &adcChanCfg));
     ESP_ERROR_CHECK(adc_oneshot_config_channel(adcOneshotHandle, BATT_CHANNEL_RIGHT, &adcChanCfg));
-
+#endif
     esp_log_level_set("*", static_cast<esp_log_level_t>(CONFIG_LOG_DEFAULT_LEVEL));
     err = nvs_flash_init();
     if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
@@ -192,6 +193,7 @@ void DisableCore0Wdt() {
 }
 
 void InitializePlatform() {
+#if 0
 #if USE_SYS_ON
     auto hardwareRevision = GetHardwareRevision();
     if (hardwareRevision == 1) {
@@ -276,6 +278,7 @@ void InitializePlatform() {
     }
 #endif
 #endif // EINKET013TT1
+#endif
     platformInitialized = true;
 }
 

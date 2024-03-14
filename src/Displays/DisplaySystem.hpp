@@ -43,7 +43,7 @@ public:
     DisplaySystem(DisplaySystem const &) = delete;
     virtual ~DisplaySystem() = default;
 
-    static constexpr DisplayRect MAX_BOUNDING_BOX = {5, 5, 246, 246};
+    static constexpr DisplayRect MAX_BOUNDING_BOX = {5, 5, 314, 234};
     static constexpr DisplayRect MIN_BOUNDING_BOX = {0, 0, 125, 45};
 
     virtual auto setup() -> bool;
@@ -54,8 +54,8 @@ public:
 
     int32_t defaultXPadding = 30;
     int32_t defaultYPadding = 20;
-    int32_t defaultScreenWidth = 256;
-    int32_t defaultScreenHeight = 256;
+    int32_t defaultScreenWidth = 320;
+    int32_t defaultScreenHeight = 240;
 
     DisplayRect defaultBoundingBox = {
         defaultXPadding, defaultYPadding,
@@ -216,14 +216,14 @@ public:
     [[nodiscard]] inline auto yAbsolute(int y) const -> int { return y - boundingBox_.y; }
 
     // Should these be in the subclasses instead?
-    auto xAbsoluteCenter() -> int { return 128; }
-    auto yAbsoluteCenter() -> int { return 128; }
+    auto xAbsoluteCenter() -> int { return 160; }
+    auto yAbsoluteCenter() -> int { return 120; }
 
-    auto xAbsoluteMax() -> int { return 255; }
-    auto yAbsoluteMax() -> int { return 255; }
+    auto xAbsoluteMax() -> int { return 320; }
+    auto yAbsoluteMax() -> int { return 240; }
 
-    auto absoluteWidth() -> int { return 256; }
-    auto absoluteHeight() -> int { return 256; }
+    auto absoluteWidth() -> int { return 320; }
+    auto absoluteHeight() -> int { return 240; }
 
     [[nodiscard]] virtual auto darkPictureVComAdj(uint8_t darkPixelsPercent) const -> int {
         return 0;

@@ -48,7 +48,7 @@
 
 #define RED_LED 7
 #define GREEN_LED 6
-#define BLUE_LED 18
+#define BLUE_LED 19
 
 #ifdef LED_INVERT
 #define LED_ON LOW
@@ -58,7 +58,7 @@
 #define LED_OFF LOW
 #endif
 
-#define BAT_VOLTAGE_RIGHT 10
+#define BAT_VOLTAGE_RIGHT 11
 #define BAT_VOLTAGE_LEFT 4
 #define BATT_CHANNEL_RIGHT ADC_CHANNEL_9
 #define BATT_CHANNEL_LEFT ADC_CHANNEL_3
@@ -107,4 +107,4 @@
 #define I2C_MASTER_FREQ_HZ 400000
 #endif
 
-#define USB_CONNECTED_PIN 8
+#define USB_CONNECTED_PIN 9
