@@ -16,6 +16,7 @@
 #include <freertos/timers.h>
 #include <string>
 
+#include "Displays/EinkTypes.hpp"
 #include "Misc/StringUtil.hpp"
 #include "Misc/Style.hpp"
 #include "Storage/FileSystem.hpp"
@@ -78,6 +79,7 @@ public:
     virtual void updateDisplay(DisplaySystem::UpdateType updateType = UNSPECIFIED,
                                bool clearFrameBuffer = true, int vcomNudge = 0,
                                DisplaySystem::UpdateType altUpdateType = UNSPECIFIED,
+                               ScreenSide screen = ScreenSide::Both,
                                Rect altRect = {{0, 0}, {0, 0}}) = 0;
 
     virtual void beginPowerOn() {}

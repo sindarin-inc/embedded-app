@@ -48,6 +48,7 @@
 #include "UI/ReleaseNotesScreen.hpp"
 #include "UI/ResizeBoxScreen.hpp"
 #include "UI/StatsScreen.hpp"
+#include "UI/TestAlignmentScreen.hpp"
 #include "UI/ToggleMenuScreen.hpp"
 #include "UI/TutorialScreen.hpp"
 #include "Version.hpp"
@@ -1275,6 +1276,17 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     debugSettingsMenu->addMenuItem(MenuItem("Optics Test", [this, debugSettingsMenu]() {
         auto opticsTestScreen = new CalibrationScreen();
         opticsTestScreen->setOpticsTest();
+        this->display_->clearDisplay();
+        this->setCurrentScreen(*opticsTestScreen);
+        opticsTestScreen->setBackCallback([this, opticsTestScreen, debugSettingsMenu]() {
+            debugSettingsMenu->setFirstLoad();
+            setCurrentScreen(*debugSettingsMenu);
+            delete opticsTestScreen;
+        });
+    }));
+
+    debugSettingsMenu->addMenuItem(MenuItem("Binocular Optics Test", [this, debugSettingsMenu]() {
+        auto opticsTestScreen = new TestAlignmentScreen();
         this->display_->clearDisplay();
         this->setCurrentScreen(*opticsTestScreen);
         opticsTestScreen->setBackCallback([this, opticsTestScreen, debugSettingsMenu]() {

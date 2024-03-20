@@ -65,7 +65,7 @@ clang-tidy: check_idf
 		echo "clang-tidy not found. Installing it now:" ; \
 		idf_tools.py install esp-clang ; \
 		pip install --upgrade pyclang ; \
-		echo "Clang-tidy should now be installed. Please reload your IDF environment with:" \
+		echo "Clang-tidy should now be installed. Please reload your IDF environment with:" ; \
 		echo ". $$IDF_PATH/export.sh" ; \
 		exit 1 ; \
 	fi

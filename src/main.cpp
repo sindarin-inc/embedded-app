@@ -17,6 +17,7 @@
 #include "Misc/Battery.hpp"
 #include "Misc/BootError.hpp"
 #include "Misc/BootLoopDetection.hpp"
+#include "Misc/DebugCommand.hpp"
 #include "Misc/FactoryReset.hpp"
 #include "Misc/Platform.hpp"
 #include "Misc/PowerManager.hpp"
@@ -32,6 +33,7 @@
 #include "UI/OverTempScreen.hpp"
 #include "UI/PowerDepletedScreen.hpp"
 #include "UI/RootUI.hpp"
+#include "UI/TestAlignmentScreen.hpp"
 #include "config.h"
 #include "sindarin-debug.h"
 
@@ -96,9 +98,39 @@ WiFi wiFi(telemetry);
 
 bool bootCompleted = false;
 
+void UIInnerLoop(RemoteCommand command) {
+    powerManager.feedInactivityTimer();
+    rootUi.loop(myDisplay, command);
+}
+
 // Task for all periodic things that need to run ~1Hz. Polling tasks should be grouped here so that
 // they all complete in a tight loop, thus maximizing sleep time.
 void PollingLoopTask(void *parameter) {
+    DebugCommand debugCommand([](const std::string &command) {
+        log_i("Received debug command: %s", command.c_str());
+        if (command == "GRID") {
+            DispatchGetUiQueue()->dispatch([]() {
+                // Override brightness to max
+                lightingController.setOverrideValuePercent(100);
+                auto testScreen = new TestAlignmentScreen();
+                rootUi.setCurrentScreen(*testScreen);
+                UIInnerLoop(RemoteCommand::NONE);
+            });
+        } else if (command == "UP") {
+            DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::UP); });
+        } else if (command == "LEFT") {
+            DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::LEFT); });
+        } else if (command == "RIGHT") {
+            DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::RIGHT); });
+        } else if (command == "DOWN") {
+            DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::DOWN); });
+        } else if (command == "ENTER") {
+            DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::ENTER); });
+        } else if (command == "BACK") {
+            DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::BACK); });
+        }
+    });
+
     int factoryResetStartTimeMs = 0;
     while (powerManager.state() != PowerState::ShuttingDown) {
         // check if factory reset button is held down
@@ -135,7 +167,27 @@ void PollingLoopTask(void *parameter) {
         BLEImprov::getInstance()->loop();
 #endif
 
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
+#if SIMULATOR
+        vTaskDelay(pdMS_TO_TICKS(1000));
+#else
+        // Spend the rest of the time waiting for debug commands (that will probably never come)
+        uart_event_t event;
+        if (xQueueReceive(GetUartCommandQueue(), &event, pdMS_TO_TICKS(1000))) {
+            switch (event.type) {
+            case UART_DATA: {
+                uint8_t buf[256];
+                auto rxSize = uart_read_bytes(UART_NUM_0, buf, event.size, 0);
+                if (rxSize > 0) {
+                    debugCommand.addData(buf, rxSize);
+                }
+                break;
+            }
+            default:
+                log_w("Unhandled UART event: %d", event.type);
+                break;
+            }
+        }
+#endif
 
         // This happens after the delay, so that the first check can run with a faster fade.
         lightingController.checkAmbientLight();
@@ -158,11 +210,6 @@ void StatsTask(void *parameter) {
 }
 
 auto UIGetCurrentScreen() { return rootUi.getCurrentScreen(); }
-
-void UIInnerLoop(RemoteCommand command) {
-    powerManager.feedInactivityTimer();
-    rootUi.loop(myDisplay, command);
-}
 
 #if CONFIG_AUTOSTART_ARDUINO
 void loop() { vTaskDelay(portMAX_DELAY); };

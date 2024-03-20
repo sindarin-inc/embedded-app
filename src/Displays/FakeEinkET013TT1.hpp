@@ -48,7 +48,7 @@ public:
     void update(const EinkET013TT1Waveform &waveform, const uint8_t *buffer,
                 int32_t overrideVcom = INT32_MAX,
                 const EinkET013TT1Waveform &altWaveform = BC_WAVEFORM_NONE,
-                EinkBox box = EinkBox::zero());
+                ScreenSide screen = ScreenSide::Both, EinkBox box = EinkBox::zero());
 
     auto readTemperature(ScreenSide screen) -> int16_t;
 
