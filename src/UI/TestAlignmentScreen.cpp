@@ -28,7 +28,7 @@ void DrawCenteredCircle(Adafruit_GFX *gfx, int16_t centerX, int16_t centerY, uin
     }
 
     // Draw the lower semicircle
-    for (int16_t y = 0; y <= radius; y++) {
+    for (int y = 0; y <= radius; y++) {
         int16_t x = sqrt(radius * radius - y * y);
         gfx->drawLine(centerX - x, centerY + y, centerX + x, centerY + y, color);
     }

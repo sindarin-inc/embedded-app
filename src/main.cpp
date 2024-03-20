@@ -172,7 +172,7 @@ void PollingLoopTask(void *parameter) {
 #else
         // Spend the rest of the time waiting for debug commands (that will probably never come)
         uart_event_t event;
-        if (xQueueReceive(GetUartCommandQueue(), (void *)&event, pdMS_TO_TICKS(1000))) {
+        if (xQueueReceive(GetUartCommandQueue(), &event, pdMS_TO_TICKS(1000))) {
             switch (event.type) {
             case UART_DATA: {
                 uint8_t buf[256];
