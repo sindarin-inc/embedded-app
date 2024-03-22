@@ -1,5 +1,6 @@
 #include "OnboardingContentSyncScreen.hpp"
 
+#include "Communications/BLEManager.hpp"
 #include "Communications/WiFi.hpp"
 #include "Misc/Platform.hpp"
 #include "Misc/PowerManager.hpp"
@@ -60,6 +61,7 @@ void OnboardingContentSyncScreen::fail(const std::string &message) {
     render(display_);
     vTaskDelay(3000 / portTICK_PERIOD_MS);
     WiFi::getInstance().disconnectWiFi();
+    BLEManager::getInstance()->disconnectProxy();
 #if !SIMULATOR
     PowerManager::getInstance().reboot();
 #endif
@@ -96,6 +98,7 @@ void OnboardingContentSyncScreen::begin() {
         if (state.state == ContentSyncState::Failure || state.state == ContentSyncState::Synced ||
             state.state == ContentSyncState::AlreadySynced) {
             WiFi::getInstance().disconnectWiFi();
+            BLEManager::getInstance()->disconnectProxy();
         }
         // Do UI stuff back on core 1
         DispatchGetUiQueue()->dispatch([this, state]() {

@@ -11,6 +11,7 @@
 #include <unordered_map>
 #include <utility>
 
+#include "Communications/BLEManager.hpp"
 #include "Communications/HtmlCleaner.hpp"
 #include "Communications/WiFi.hpp"
 #include "Misc/Crypto.hpp"
@@ -504,6 +505,7 @@ void LocalStore::syncFromRemote(
     SyncReason syncReason, const std::shared_ptr<CancelFlag> &cancel,
     const std::function<void(ContentSyncState state)> &progressCallback) {
     auto wifiConnected = false;
+    auto bleConnected = false;
     if (!WiFi::getInstance().hasWiFiCredentials()) {
         this->telemetry_.logMetric(TelemetryField::METRIC_WIFI, "sync-wifi-no-credentials");
         progressCallback(
@@ -514,13 +516,22 @@ void LocalStore::syncFromRemote(
 
     progressCallback(ContentSyncState{.state = ContentSyncState::State::ConnectingWifi});
 
-    if (!WiFi::getInstance().connectWiFiFromSettings()) {
+    if (true || !WiFi::getInstance().connectWiFiFromSettings()) {
         this->telemetry_.logMetric(TelemetryField::METRIC_WIFI, "sync-wifi-failed");
         // progressCallback(ContentSyncState{.state = ContentSyncState::State::Failure,
         //                                   .message = "Failed to connect to WiFi."});
         // return;
     } else {
         wifiConnected = true;
+    }
+
+    if (!wifiConnected && !BLEManager::getInstance()->connectProxy(cancel)) {
+        this->telemetry_.logMetric(TelemetryField::METRIC_WIFI, "sync-ble-failed");
+        progressCallback(ContentSyncState{.state = ContentSyncState::State::Failure,
+                                          .message = "Failed to connect to WiFi."});
+        return;
+    } else {
+        bleConnected = true;
     }
 
     if (CancelFlag::isCancelled(cancel)) {
@@ -573,32 +584,32 @@ void LocalStore::syncFromRemote(
     // call from whatever queue is most fitting based on the context. In tests, this might not be in
     // a queue.
     auto queue = DispatchGetCore0BackgroundQueue();
-    queue->dispatch([this, cancel, wifiConnected] {
-        auto useBle = !wifiConnected;
+    queue->dispatch([this, cancel, wifiConnected, bleConnected] {
         auto retries = 2;
         while (retries > 0) {
-            log_d("Uploading telemetry, useBle: %d", useBle);
+            log_d("Uploading telemetry, wifiConnected: %d, bleConnected: %d", wifiConnected,
+                  bleConnected);
             if (CancelFlag::isCancelled(cancel)) {
                 return;
             }
 
-            auto httpCode = this->telemetry_.uploadAndResetTelemetry(this->fileSystem, useBle);
+            auto httpCode =
+                this->telemetry_.uploadAndResetTelemetry(this->fileSystem, bleConnected);
             if (httpCode != 201) {
                 this->telemetry_.logMetric(TelemetryField::METRIC_SYNC_STATUS,
                                            "sync-telemetry-failed",
-                                           {{"http-code", httpCode}, {"use-ble", useBle}});
-                useBle = true;
+                                           {{"http-code", httpCode}, {"use-ble", bleConnected}});
                 retries -= 1;
             } else {
                 this->telemetry_.logMetric(TelemetryField::METRIC_SYNC_STATUS,
-                                           "sync-telemetry-success", {{"use-ble", useBle}});
+                                           "sync-telemetry-success", {{"use-ble", bleConnected}});
                 break;
             }
         }
     });
 
     // Run this work on a separate thread, since it's long running
-    queue->dispatch([this, syncReason, progressCallback, cancel] {
+    queue->dispatch([this, syncReason, progressCallback, cancel, wifiConnected, bleConnected] {
         if (CancelFlag::isCancelled(cancel)) {
             return;
         }
@@ -692,12 +703,14 @@ void LocalStore::syncFromRemote(
                 if (nextPageCounter == 1) {
                     SHOW_HEAP();
                     httpCode = SindarinAPI::getInstance()->checkSync(
-                        checkSyncRequest, &checkSyncResponse, this->telemetry_);
+                        checkSyncRequest, &checkSyncResponse, this->telemetry_, bleConnected,
+                        cancel);
                     totalCount = checkSyncResponse.totalCount;
                     SHOW_HEAP();
                 } else {
                     httpCode = SindarinAPI::getInstance()->checkSync(
-                        nextPageUrl, checkSyncRequest, &checkSyncResponse, this->telemetry_);
+                        nextPageUrl, checkSyncRequest, &checkSyncResponse, this->telemetry_,
+                        bleConnected, cancel);
                 }
                 if (CancelFlag::isCancelled(cancel)) {
                     return;
@@ -844,7 +857,7 @@ void LocalStore::syncFromRemote(
 
             SHOW_HEAP();
             SindarinAPI::getInstance()->checkSync(checkSyncRequest, &checkSyncResponse,
-                                                  this->telemetry_);
+                                                  this->telemetry_, bleConnected, cancel);
 
             // TODO: Force reload of rootUI instead of rebooting
             if (checkSyncResponse.synced) {

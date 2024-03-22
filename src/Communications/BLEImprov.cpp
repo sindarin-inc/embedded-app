@@ -4,6 +4,7 @@
 
 #include <esp_wifi.h>
 
+#include "Communications/BLEManager.hpp"
 #include "Communications/WiFi.hpp"
 #include "config.h"
 #include "sindarin-debug.h"
@@ -151,6 +152,7 @@ void BLEImprov::loop() {
                 this->setState(STATE_WAITING);
                 this->setError(improv::ERROR_UNABLE_TO_CONNECT);
                 WiFi::getInstance().disconnectWiFi();
+                BLEManager::getInstance()->disconnectProxy();
             }
         }
     } else if (this->state_ == STATE_READY_TO_SCAN) {

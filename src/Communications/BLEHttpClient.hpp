@@ -4,11 +4,9 @@
 #include <memory>
 
 #if USE_BLE_SERVER_PROXY
-#include "Communications/BLEImprov.hpp"
 #include "Communications/BLEManager.hpp"
 #include "Communications/BLEProxy.hpp"
 #include "Communications/BLESyncService.hpp"
-#include "Inputs/BLERemoteInput.hpp"
 #endif
 
 #include "Communications/HttpClient.hpp"
@@ -18,13 +16,14 @@
 
 class BLEHttpClient : public HttpClient {
 public:
-    BLEHttpClient(std::shared_ptr<BLEManager> bleManager, std::shared_ptr<BLEProxy> bleProxy,
-                  std::shared_ptr<BLEImprov> bleImprov, std::shared_ptr<BLERemoteInput> remoteInput,
-                  const char *url, const char *contentType = "",
+    BLEHttpClient(const char *url, const char *contentType = "",
                   esp_http_client_method_t method = HTTP_METHOD_GET,
                   std::shared_ptr<CancelFlag> cancel = nullptr);
     BLEHttpClient(const BLEHttpClient &) = delete;
     ~BLEHttpClient() override;
+
+    auto connectBle(std::shared_ptr<CancelFlag> cancel) -> bool;
+    auto disconnectBle();
 
     auto setHeader(const char *key, const char *value) -> esp_err_t override;
 
@@ -53,13 +52,9 @@ public:
 
     auto handleWebRequest(const SpiramString &key, const SpiramString &body) -> bool;
 
-    bool connected{false};
-
 private:
     std::shared_ptr<BLEManager> bleManager_;
     std::shared_ptr<BLEProxy> bleProxy_;
-    std::shared_ptr<BLEImprov> bleImprov_;
-    std::shared_ptr<BLERemoteInput> remoteInput_;
     std::shared_ptr<CancelFlag> cancel_;
     char *url_;
     int statusCode_{};

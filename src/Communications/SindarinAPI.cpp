@@ -47,19 +47,24 @@ auto SindarinAPI::setAuth(HttpClient &client) -> esp_err_t {
 
 void SindarinAPI::setAccessToken(const std::string &token) { accessToken_ = token; }
 
-auto SindarinAPI::checkSync(CheckSyncRequest &req, CheckSyncResponse *resp, Telemetry &telemetry)
-    -> int {
+auto SindarinAPI::checkSync(CheckSyncRequest &req, CheckSyncResponse *resp, Telemetry &telemetry,
+                            bool useBle, const std::shared_ptr<CancelFlag> &cancel) -> int {
     auto url = StringFormat("%s/sync/%ss/", baseUrl_.c_str(),
                             ReadableModelTypeToString(req.modelType).c_str());
     log_d("Checking sync for %s: %s", ReadableModelTypeToString(req.modelType).c_str(),
           url.c_str());
-    return checkSync(url, req, resp, telemetry);
+    return checkSync(url, req, resp, telemetry, useBle, cancel);
 }
 
 auto SindarinAPI::checkSync(const std::string &url, CheckSyncRequest &req, CheckSyncResponse *resp,
-                            Telemetry &telemetry) -> int {
-    WiFiHttpClient client(url.c_str(), "application/json", HTTP_METHOD_POST);
-    auto err = setAuth(client);
+                            Telemetry &telemetry, bool useBle,
+                            const std::shared_ptr<CancelFlag> &cancel) -> int {
+    auto client = createClient(url, "application/json", HTTP_METHOD_POST, useBle, cancel);
+    if (client == nullptr) {
+        return ERR_CLIENT_OPEN;
+    }
+
+    auto err = setAuth(*client);
     if (err != ESP_OK) {
         return ERR_SET_AUTH;
     }
@@ -74,13 +79,13 @@ auto SindarinAPI::checkSync(const std::string &url, CheckSyncRequest &req, Check
     auto reqBody = SpiRamArrayPtr<char>(serializedMaxSize);
     size_t bodyLength = serializeJson(*doc, reqBody.get(), serializedMaxSize);
 
-    err = client.open(bodyLength);
+    err = client->open(bodyLength);
     if (err != ESP_OK) {
         return ERR_CLIENT_OPEN;
     }
-    defer { client.close(); };
+    defer { client->close(); };
 
-    int writeLength = client.write(reqBody.get(), bodyLength);
+    int writeLength = client->write(reqBody.get(), bodyLength);
     if (writeLength != bodyLength) {
         auto message =
             StringFormat("WiFiHttpClient failed to write (writeLength=%d, bodyLength=%zu)",
@@ -91,7 +96,7 @@ auto SindarinAPI::checkSync(const std::string &url, CheckSyncRequest &req, Check
         return ERR_CLIENT_WRITE;
     }
 
-    int contentLength = client.fetchHeaders();
+    int contentLength = client->fetchHeaders();
     if (contentLength <= 0) {
         auto message = "Failed to fetch headers";
         log_e("%s", message);
@@ -99,7 +104,7 @@ auto SindarinAPI::checkSync(const std::string &url, CheckSyncRequest &req, Check
                             {{"message", message}});
         return ERR_CONTENT_LENGTH;
     }
-    int httpCode = client.getStatusCode();
+    int httpCode = client->getStatusCode();
     if (httpCode != 200) {
         auto message = StringFormat("Failed to check sync: %d", httpCode);
         log_e("%s", message.c_str());
@@ -107,7 +112,7 @@ auto SindarinAPI::checkSync(const std::string &url, CheckSyncRequest &req, Check
                             {{"message", message.c_str()}});
         return httpCode;
     }
-    auto stream = client.makeReadStream();
+    auto stream = client->makeReadStream();
 
     SHOW_HEAP();
 
@@ -227,13 +232,7 @@ auto SindarinAPI::createClient(const std::string &url, const std::string &conten
     -> std::shared_ptr<HttpClient> {
     if (useBle) {
 #if USE_BLE_SERVER_PROXY
-        auto bleManager = BLEManager::getInstance();
-        auto bleProxy = BLEProxy::getInstance();
-        auto bleImprov = BLEImprov::getInstance();
-        auto remoteInput = BLERemoteInput::getInstance();
-
-        return std::make_shared<BLEHttpClient>(bleManager, bleProxy, bleImprov, remoteInput,
-                                               url.c_str(), contentType.c_str(), method, cancel);
+        return std::make_shared<BLEHttpClient>(url.c_str(), contentType.c_str(), method, cancel);
 #else
         return nullptr;
 #endif

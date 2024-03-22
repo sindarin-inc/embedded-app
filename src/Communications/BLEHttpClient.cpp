@@ -10,21 +10,15 @@
 #include "Misc/CancelFlag.hpp"
 #include "Misc/Defer.hpp"
 
-BLEHttpClient::BLEHttpClient(std::shared_ptr<BLEManager> bleManager,
-                             std::shared_ptr<BLEProxy> bleProxy,
-                             std::shared_ptr<BLEImprov> bleImprov,
-                             std::shared_ptr<BLERemoteInput> remoteInput, const char *url,
-                             const char *contentType, esp_http_client_method_t method,
-                             std::shared_ptr<CancelFlag> cancel)
-    : HttpClient(url, contentType, method), bleManager_(std::move(bleManager)),
-      bleProxy_(std::move(bleProxy)), bleImprov_(std::move(bleImprov)),
-      remoteInput_(std::move(remoteInput)), cancel_(std::move(cancel)), url_(strdup(url)),
+BLEHttpClient::BLEHttpClient(const char *url, const char *contentType,
+                             esp_http_client_method_t method, std::shared_ptr<CancelFlag> cancel)
+    : HttpClient(url, contentType, method), cancel_(std::move(cancel)), url_(strdup(url)),
       requestMethod_(method), requestBody_("") {
 
     requestHeaders_.clear();
 
-    bleProxy_->registerSubscriptionStatusCallback(
-        [this](bool connected) { this->connected = connected; });
+    bleManager_ = BLEManager::getInstance();
+    bleProxy_ = BLEProxy::getInstance();
 
     if (method != HTTP_METHOD_GET) {
         requestHeaders_.emplace_back(SpiramString("Content-Type"), SpiramString(contentType));
@@ -55,64 +49,6 @@ auto BLEHttpClient::fetchHeaders() -> int {
     responseFetched_ = false;
     responseBody_ = "";
 
-    // Configure BLE sync service and advertise it
-    bleManager_->stopAdvertising();
-    bleManager_->disableService(remoteInput_->getService());
-    bleManager_->disableService(bleImprov_->getService());
-    bleManager_->enableService(bleProxy_->getService());
-    bleManager_->startAdvertisingIfNecessary();
-    // Re-enable existing services after we're done
-    defer {
-        bleManager_->stopAdvertising();
-        bleManager_->disableService(bleProxy_->getService());
-        bleManager_->enableService(remoteInput_->getService());
-        bleManager_->enableService(bleImprov_->getService());
-        bleManager_->startAdvertisingIfNecessary();
-    };
-
-    // If not connected, wait up to 30s to ensure BLE is connected. If not, bail.
-    auto startTime = esp_timer_get_time();
-    auto lastLogTime = esp_timer_get_time();
-    while (!connected) {
-        if (esp_timer_get_time() - startTime > static_cast<long long>(timeoutMs) * 1000) {
-            log_e("Timed out waiting for BLE proxy to connect");
-            return -1;
-        }
-
-        if (esp_timer_get_time() - lastLogTime > (static_cast<long long>(logDelayMs) * 1000)) {
-            log_d("Waiting for BLE proxy to connect...");
-            lastLogTime = esp_timer_get_time();
-        }
-
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
-
-        if (CancelFlag::isCancelled(cancel_)) {
-            log_d("Cancelled BLE connection");
-            return -1;
-        }
-    }
-
-    startTime = esp_timer_get_time();
-    lastLogTime = esp_timer_get_time();
-    while (!BLEManager::getInstance()->isAuthed()) {
-        if (esp_timer_get_time() - startTime > static_cast<long long>(timeoutMs) * 1000) {
-            log_e("Timed out waiting for BLE proxy to auth");
-            return -1;
-        }
-
-        if (esp_timer_get_time() - lastLogTime > (static_cast<long long>(logDelayMs) * 1000)) {
-            log_d("Waiting for BLE proxy to auth...");
-            lastLogTime = esp_timer_get_time();
-        }
-
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
-
-        if (CancelFlag::isCancelled(cancel_)) {
-            log_d("Cancelled BLE connection while waiting for auth");
-            return -1;
-        }
-    }
-
     // Now that we're connected and authed to a mobile app, we can send the request
     // Register web request handler which receives the response from the mobile app
     bleProxy_->registerWebRequestHandler([this](const SpiramString &key, const SpiramString &body) {
@@ -134,8 +70,8 @@ auto BLEHttpClient::fetchHeaders() -> int {
     bleProxy_->writeBody(requestBody_);
 
     // Wait for response up to 30s
-    startTime = esp_timer_get_time();
-    lastLogTime = esp_timer_get_time();
+    auto startTime = esp_timer_get_time();
+    auto lastLogTime = esp_timer_get_time();
     while (!responseFetched_) {
         auto currentTime = esp_timer_get_time();
         if (currentTime - startTime > static_cast<long long>(timeoutMs) * 1000) {

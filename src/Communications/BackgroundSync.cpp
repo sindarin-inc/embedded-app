@@ -2,6 +2,7 @@
 
 #include <freertos/FreeRTOS.h>
 
+#include "Communications/BLEManager.hpp"
 #include "Communications/CrashReportUploader.hpp"
 #include "Communications/FirmwareDownload.hpp"
 #include "Communications/SindarinAPI.hpp"
@@ -183,6 +184,7 @@ void BackgroundSyncAndSleep(PowerManager &powerManager, PreferencesStore &prefs,
 
     // TODO: Perhaps try dispatching this (maybe needs to happen outside of app_main)
     WiFi::getInstance().disconnectWiFi();
+    BLEManager::getInstance()->disconnectProxy();
 
     PowerManager::getInstance().deepSleep(SleepReason::SyncDone);
 }

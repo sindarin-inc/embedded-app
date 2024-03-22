@@ -8,6 +8,7 @@
 #include <ulp_riscv.h>
 #include <ulp_riscv_i2c.h>
 
+#include "Communications/BLEManager.hpp"
 #include "Communications/WiFi.hpp"
 #include "Misc/Dispatch.hpp"
 #include "Platform.hpp"
@@ -454,6 +455,7 @@ void PowerManager::beginShutdown() {
 
     // Disconnect WiFi as a quick-and-dirty way to cancel long running syncs
     WiFi::getInstance().disconnectWiFi();
+    BLEManager::getInstance()->disconnectProxy();
 
     if (beginShutdownCallback_ != nullptr) {
         beginShutdownCallback_();

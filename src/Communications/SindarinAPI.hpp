@@ -49,9 +49,11 @@ public:
     auto isSindarinUrl(const char *url) -> bool;
     void setAccessToken(const std::string &accessToken);
 
-    auto checkSync(CheckSyncRequest &req, CheckSyncResponse *resp, Telemetry &telemetry) -> int;
+    auto checkSync(CheckSyncRequest &req, CheckSyncResponse *resp, Telemetry &telemetry,
+                   bool useBle, const std::shared_ptr<CancelFlag> &cancel) -> int;
     auto checkSync(const std::string &url, CheckSyncRequest &req, CheckSyncResponse *resp,
-                   Telemetry &telemetry) -> int;
+                   Telemetry &telemetry, bool useBle, const std::shared_ptr<CancelFlag> &cancel)
+        -> int;
     auto checkFirmware(FirmwareResponse *resp) -> int;
 
     auto downloadReadable(const std::shared_ptr<Readable> &readable, FileSystem &fileSystem,

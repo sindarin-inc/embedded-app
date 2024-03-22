@@ -4,6 +4,7 @@
 #include <memory>
 
 #include "Communications/BLEAbstractions.hpp"
+#include "Misc/CancelFlag.hpp"
 #include "sindarin-debug.h"
 
 class BLEManager {
@@ -11,11 +12,15 @@ public:
     BLEManager();
     BLEManager(BLEManager const &) = delete;
     static auto getInstance() -> std::shared_ptr<BLEManager>;
+    auto connectProxy(std::shared_ptr<CancelFlag> cancel = nullptr) -> bool;
+    void disconnectProxy();
     auto startAdvertisingIfNecessary() -> bool;
     auto stopAdvertising() -> bool;
     void enableService(BLEService *service);
     void disableService(BLEService *service);
     auto server() -> BLEServer *;
+
+    bool connectedProxy{false};
     inline void setConnId(uint16_t connId) { connId_ = connId; }
     [[nodiscard]] inline auto getConnId() const -> uint16_t { return connId_; }
 
@@ -38,6 +43,7 @@ public:
 
 protected:
     static std::shared_ptr<BLEManager> instance;
+
     BLEServer *server_ = nullptr;
     bool authed_ = false;
     uint16_t connId_ = BLE_HS_CONN_HANDLE_NONE;
