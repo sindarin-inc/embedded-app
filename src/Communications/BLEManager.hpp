@@ -12,7 +12,7 @@ public:
     BLEManager();
     BLEManager(BLEManager const &) = delete;
     static auto getInstance() -> std::shared_ptr<BLEManager>;
-    auto connectProxy(std::shared_ptr<CancelFlag> cancel = nullptr) -> bool;
+    auto connectProxy(const std::shared_ptr<CancelFlag> &cancel = nullptr) -> bool;
     void disconnectProxy();
     auto startAdvertisingIfNecessary() -> bool;
     auto stopAdvertising() -> bool;

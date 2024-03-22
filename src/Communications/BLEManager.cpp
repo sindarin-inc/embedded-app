@@ -28,7 +28,7 @@ auto BLEManager::server() -> BLEServer * {
     return server_;
 }
 
-auto BLEManager::connectProxy(std::shared_ptr<CancelFlag> cancel) -> bool {
+auto BLEManager::connectProxy(const std::shared_ptr<CancelFlag> &cancel) -> bool {
     auto timeoutMs = 60000;  // 1 minute of advertising to connect to BLE proxy on mobile app
     auto logDelayMs = 10000; // 10 seconds between BLE wait logs
 

@@ -609,7 +609,7 @@ void LocalStore::syncFromRemote(
     });
 
     // Run this work on a separate thread, since it's long running
-    queue->dispatch([this, syncReason, progressCallback, cancel, wifiConnected, bleConnected] {
+    queue->dispatch([this, syncReason, progressCallback, cancel, bleConnected] {
         if (CancelFlag::isCancelled(cancel)) {
             return;
         }
