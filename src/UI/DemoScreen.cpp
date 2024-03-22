@@ -734,7 +734,6 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
         display.invertDisplay(false);
         drawTripleLine(display, "Download the Sol App", "to get started:", "solreader.com/app");
         std::string message = "Press \ue000 after app setup";
-        prefs_.noSetupMode.set(true);
         display.setFont(static_cast<Font *>(&ibmf75Face0));
         display.drawSingleLineOfText(
             message,
@@ -800,7 +799,6 @@ void DemoScreen::finishDemo() {
     // When we're done with the onboarding screens, turn this mode off.
     dropVcom_ = false;
     display_.invertDisplay(false);
-    prefs_.noSetupMode.set(true);
 
     lightingController_.disableOnlyIncreaseMode();
 

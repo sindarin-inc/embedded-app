@@ -95,7 +95,6 @@ void StartAppMain(FONT_CHOICES font, int x, int y, int lineSpacing) {
     prefs.pageTransitionArrows.set(false);
     prefs.lastReadableId.remove();
     prefs.readablePlace.remove("93d56842");
-    prefs.noSetupMode.set(true);
 
     StartFreeRtos(true);
 

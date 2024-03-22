@@ -1096,7 +1096,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     systemSettingsMenu->addMenuItem(MenuItem("First Time Setup",
                                              [this, systemSettingsMenu, display]() {
-        prefs_.noSetupMode.remove();
         systemSettingsMenu->showTemporaryMessage(*display,
                                                  "Turning on first time setup and restarting.");
         power_.reboot();
@@ -1584,31 +1583,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     mainMenu->addSubMenu(settingsMenu);
 
-    bool inDemo = !prefs_.noSetupMode.get().value_or(false);
-
-    if (inDemo) {
-        auto demoScreen = new DemoScreen(*display, prefs_, lightingController);
-        auto contentSyncScreen =
-            new OnboardingContentSyncScreen(*display, localStore, this->prefs_, this->telemetry_);
-        contentSyncScreen->setBackCallback([this, contentSyncScreen, mainMenu, display]() {
-            if (!WiFi::getInstance().hasWiFiCredentials()) {
-                display->clearDisplay();
-                mainMenu->setFirstLoad();
-                this->setCurrentScreen(*mainMenu);
-                mainMenu->render(*display);
-                delete contentSyncScreen;
-            } else {
-                power_.reboot();
-            }
-        });
-
-        demoScreen->setBackCallback([this, demoScreen, contentSyncScreen]() {
-            this->setCurrentScreen(*contentSyncScreen);
-            contentSyncScreen->begin();
-            delete demoScreen;
-        });
-        this->setCurrentScreen(*demoScreen);
-    } else if (prefs_.cesMode.get().value_or(false)) {
+    if (prefs_.cesMode.get().value_or(false)) {
         auto cesScreen = new DemoScreen(*display, prefs_, lightingController);
         cesScreen->bailAfterLensAdjust();
 
