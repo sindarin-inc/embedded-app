@@ -1,7 +1,8 @@
 #include "ContentSyncScreen.hpp"
 
+#if !SIMULATOR
 #include "Communications/BLEManager.hpp"
-#include "Communications/BLESindarinService.hpp"
+#endif
 #include "Communications/WiFi.hpp"
 #include "Misc/Platform.hpp"
 #include "Misc/PowerManager.hpp"
@@ -227,13 +228,16 @@ void ContentSyncScreen::begin() {
         return;
     }
 
+#if !SIMULATOR
     // Disable the BLE Peripheral. This seems to almost always crash the device with a
     // btdm_controller_task crash
     BLEManager::getInstance()->stopAdvertising();
     auto bleManager = BLEManager::getInstance();
     bleManager->disconnectAll();
-
     auto resumeBLE = [bleManager] { bleManager->startAdvertisingIfNecessary(); };
+#else
+    auto resumeBLE = [] {};
+#endif
 
     // Rate limit to not update more than every 1s, and only if the percentage has changed
     auto rl = std::make_shared<RateLimiter>(1, 20, 1);
