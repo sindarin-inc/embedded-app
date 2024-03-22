@@ -225,8 +225,9 @@ void ContentSyncScreen::begin() {
         return;
     }
 
-    // Rate limit to not update more than every 1s, and only if the percentage has changed
-    auto rl = std::make_shared<RateLimiter>(1, 20, 1);
+    // Rate limit to not update more than every 3s, and only if the percentage has changed by more
+    // than 5%
+    auto rl = std::make_shared<RateLimiter>(3, 20, 5);
     cancel_ = std::make_shared<CancelFlag>();
     DispatchGetCore0BackgroundQueue()->dispatch([this, rl]() {
         localStore_.syncFromRemote(SyncReason::Manual, cancel_,
