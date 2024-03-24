@@ -180,3 +180,80 @@ VFSFile::operator bool() const {
 }
 
 auto VFSFile::getFilePtr() -> FILE * { return fp_; }
+
+// RamFile
+auto RamFile::write(const uint8_t *buf, size_t size) -> size_t {
+    if (!*this) {
+        return 0;
+    }
+
+    log_e("Write not supported for RAM files because they are static!");
+    return 0;
+}
+
+auto RamFile::available() const -> int {
+    if (!*this) {
+        return false;
+    }
+    return size() - position();
+}
+
+auto RamFile::flush() -> int {
+    if (!*this) {
+        return 0;
+    }
+
+    log_d("No need to flush a RAM file.");
+    return 0;
+}
+
+auto RamFile::read(uint8_t *buf, size_t size) -> size_t {
+    if (!*this) {
+        return -1;
+    }
+
+    memcpy(buf, (char *)(fData_ + position()), size);
+    fPos_ += size;
+    return size;
+}
+
+auto RamFile::seek(uint32_t pos, SSeekMode mode) -> bool {
+    if (!*this) {
+        return false;
+    }
+
+    if (mode == SSeekSet) {
+        fPos_ = pos;
+    } else if (mode == SSeekCur) {
+        // intentionally blank;
+    } else if (mode == SSeekEnd) {
+        fPos_ = fSize_;
+    }
+
+    return true;
+}
+
+auto RamFile::position() const -> size_t {
+    if (!*this) {
+        return 0;
+    }
+
+    return fPos_;
+}
+
+void RamFile::getFileSize() {}
+
+auto RamFile::size() const -> size_t {
+    if (!*this) {
+        return 0;
+    }
+    return fSize_;
+}
+auto RamFile::close() -> int {
+    log_d("No need to close a RAM file.");
+    return 0;
+}
+
+RamFile::operator bool() const { return true; }
+
+auto RamFile::getFilePtr() -> FILE * { return fp_; }

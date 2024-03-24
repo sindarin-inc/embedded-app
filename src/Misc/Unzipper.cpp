@@ -17,12 +17,11 @@ static void spiZFree(void *opaque, void *address) {
 }
 
 auto Unzipper::open() -> bool {
-    // Open zip file
-    file_ = fileSystem_.open(filePath_, "r");
     if (!file_) {
-        log_e("Unable to open file: %s", filePath_.c_str());
+        log_e("Unzipper has no file");
         return false;
     }
+
     isOpen_ = true;
 
     int err = 99;
