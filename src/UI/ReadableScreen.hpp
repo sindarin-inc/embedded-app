@@ -8,6 +8,7 @@
 #include "Storage/PreferencesStore.hpp"
 #include "UI/Components/ArrowView.hpp"
 #include "UI/ContainerScreen.hpp"
+#include "UI/FirstHookTestScreen.hpp"
 #include "UI/MsgPopup.hpp"
 #include "UI/ReadablePopupMenuScreen.hpp"
 #include "UI/Screen.hpp"
@@ -149,6 +150,8 @@ protected:
     DisplaySystem &display_;
 
     ReadablePopupMenuScreen popupMenuScreen_;
+
+    std::vector<std::shared_ptr<Screen>> hookScreens_;
 
     // Must reset this to 0 on each page turn.
     unsigned int speedLinesToSkip_ = 0;

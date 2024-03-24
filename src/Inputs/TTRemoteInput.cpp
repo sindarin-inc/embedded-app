@@ -284,6 +284,8 @@ void TTRemoteInput::buttonNotificationCallback(BLERemoteCharacteristic *remoteCh
         return;
     }
     RemoteCommand command = DecodeTurntouch(processed);
+    // Used by the final tester to check button presses
+    log_i("PT: %s", CodeToString(command));
     if (command != RemoteCommand::NONE) {
         this->callback_(command);
     } else {

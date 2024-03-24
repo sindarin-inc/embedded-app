@@ -87,7 +87,8 @@ public:
     ~EPubTokenizer() override = default;
 
     [[nodiscard]] auto loadAndTokenizePage(StreamPlace fromPlace, bool backwards = false,
-                                           StreamPlace *toPlace = nullptr)
+                                           StreamPlace *toPlace = nullptr,
+                                           bool retrieveMenuParameters = false)
         -> std::pair<StreamPlace, StreamPlace> override;
 
     [[nodiscard]] auto toStreamPlace(const std::shared_ptr<Place> place) const
@@ -207,6 +208,12 @@ private:
     Token *textToken_{};
     uint16_t textCharCount_{};
 
+    // If true, menu parameters will be retrieved if present in the page
+    // They will have the following format:
+    //
+    // <div id="sol-menu"><ul><li id="key">value</li>...</ul></div>
+    bool retrieveMenuParameters_{};
+
     static constexpr const uint8_t MAX_LEVEL_COUNT = 5;
 
     enum ListType { ORDERED, UNORDERED };
@@ -246,6 +253,8 @@ private:
 
     void processPictureTag(pugi::xml_node node);
     void updatePagerIndent(bool iText);
+
+    auto processMenuParameters(pugi::xml_node node) -> bool;
 
     [[nodiscard]] static inline auto isSpaces(const char *cstr) -> bool {
         while (*cstr) {

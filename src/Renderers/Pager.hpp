@@ -36,6 +36,8 @@ private:
 
     uint16_t spaceWidth_{0};
 
+    MenuParameters menuParameters_;
+
     [[nodiscard]] inline auto lastLineTokenIdx(Idx lineIdx) const -> Idx {
         return lines_[lineIdx].tokenIdx + lines_[lineIdx].tokenCount - 1;
     }
@@ -94,6 +96,7 @@ public:
         lines_[0] = {0, 0, 0, 0, 0};
         uint16_t notUsed;
         display_.getTextSize(" ", &spaceWidth_, &notUsed);
+        menuParameters_.clear();
     }
 
     inline void setLineIndent(uint16_t leftIndent = 0, uint16_t rightIndent = 0) {
@@ -191,6 +194,9 @@ public:
     [[nodiscard]] inline auto pixToDeci(uint16_t pixValue) const -> uint16_t {
         return ((NEWLINE_DECI_LINE_HEIGHT * pixValue)) / display_.getTextHeight();
     }
+
+    void addMenuParameter(const std::string &key, const std::string &value);
+    [[nodiscard]] auto getMenuParameters() const -> const MenuParameters &;
 
     void show() const;
 

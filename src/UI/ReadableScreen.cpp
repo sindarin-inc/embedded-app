@@ -7,6 +7,7 @@
 
 #include "Misc/Platform.hpp"
 #include "UI/Bitmaps/Auto_Pilot_Icons.hpp"
+#include "UI/ReadableHookScreens.hpp"
 #include "sindarin-debug.h"
 
 // Two minutes per page currently
@@ -203,6 +204,19 @@ void ReadableScreen::render(DisplaySystem &display) {
         return;
     }
 
+    if (!hookScreens_.empty()) {
+        auto &hookScreen = hookScreens_[0];
+        hookScreen->setNeedsRerender();
+        setCurrentScreen(*hookScreen);
+        hookScreen->setBackCallback([this, hookScreen]() {
+            this->setNeedsRerender();
+            setCurrentScreen(*this);
+            this->hookScreens_.erase(this->hookScreens_.begin());
+        });
+        hookScreen->render(display);
+        return;
+    }
+
     setFrame(
         {{display.xAbsolute(display.defaultXPadding), display.yAbsolute(display.defaultYPadding)},
          {display.defaultScreenWidth - 2 * display.defaultXPadding,
@@ -279,7 +293,31 @@ void ReadableScreen::render(DisplaySystem &display) {
 
     if (pageSpeed_ == 0) {
         // Regular Reading
-        std::tie(newPlace_, darkPicturePercent) = renderer_.renderPage(readable_->place);
+        bool retrieveMenuParameters = true;
+        do {
+            std::tie(newPlace_, darkPicturePercent) =
+                renderer_.renderPage(readable_->place, 0, false, retrieveMenuParameters);
+            if (retrieveMenuParameters) {
+                const MenuParameters &menuParameters = renderer_.getMenuParameters();
+                if (!menuParameters.empty()) {
+                    // Note that we can't guarantee the order in which the hooks
+                    // will be parsed out and executed. So if you have multiple
+                    // hooks in one place, just keep that in mind.
+                    log_d("Menu Parameters:");
+                    for (auto &param : menuParameters) {
+                        log_d("Creating hook screen %s: %s", param.first.c_str(),
+                              param.second.c_str());
+                        hookScreens_.push_back(ReadableHookScreens::getNewHookScreen(
+                            param.first, display_, prefs_, telemetry_));
+                    }
+                    retrieveMenuParameters = false;
+                    continue;
+                }
+            }
+
+            break;
+        } while (true);
+
         // log_w("Char Offset: %" PRIu32, getScreenCurrentCharOffset());
         atEnd_ = checkAtEnd();
     } else {

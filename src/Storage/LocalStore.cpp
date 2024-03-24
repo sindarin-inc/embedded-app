@@ -574,18 +574,26 @@ void LocalStore::syncFromRemote(
     // a queue.
     auto queue = DispatchGetCore0BackgroundQueue();
     queue->dispatch([this, cancel, wifiConnected] {
-        if (CancelFlag::isCancelled(cancel)) {
-            return;
-        }
-
         auto useBle = !wifiConnected;
-        auto httpCode = this->telemetry_.uploadAndResetTelemetry(this->fileSystem, useBle);
-        if (httpCode != 201) {
-            this->telemetry_.logMetric(TelemetryField::METRIC_SYNC_STATUS, "sync-telemetry-failed",
-                                       {{"http-code", httpCode}});
-        } else {
-            this->telemetry_.logMetric(TelemetryField::METRIC_SYNC_STATUS,
-                                       "sync-telemetry-success");
+        auto retries = 2;
+        while (retries > 0) {
+            log_d("Uploading telemetry, useBle: %d", useBle);
+            if (CancelFlag::isCancelled(cancel)) {
+                return;
+            }
+
+            auto httpCode = this->telemetry_.uploadAndResetTelemetry(this->fileSystem, useBle);
+            if (httpCode != 201) {
+                this->telemetry_.logMetric(TelemetryField::METRIC_SYNC_STATUS,
+                                           "sync-telemetry-failed",
+                                           {{"http-code", httpCode}, {"use-ble", useBle}});
+                useBle = true;
+                retries -= 1;
+            } else {
+                this->telemetry_.logMetric(TelemetryField::METRIC_SYNC_STATUS,
+                                           "sync-telemetry-success", {{"use-ble", useBle}});
+                break;
+            }
         }
     });
 

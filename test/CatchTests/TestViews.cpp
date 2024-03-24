@@ -337,7 +337,6 @@ TEST_CASE("Test some views independently") {
         prefs.rectY.remove();
         prefs.rectW.remove();
         prefs.rectH.remove();
-        prefs.noSetupMode.set(true);
         PosixFileSystem fileSystem("./test/CatchTests/TestData");
         Telemetry telemetry = Telemetry(fileSystem, prefs);
 

@@ -496,6 +496,12 @@ void Pager::setFirstLineIdxBackward() {
     firstPageLineIdx_ = lineIdx;
 }
 
+void Pager::addMenuParameter(const std::string &key, const std::string &value) {
+    menuParameters_[key] = value;
+}
+
+auto Pager::getMenuParameters() const -> const MenuParameters & { return menuParameters_; }
+
 // Debugging stuff
 void Pager::show() const {
     if constexpr (REND_DEBUG) {

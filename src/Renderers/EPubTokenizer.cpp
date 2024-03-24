@@ -614,9 +614,12 @@ auto EPubTokenizer::forwardToNextPageOffset(pugi::xml_node node) const -> uint32
 //
 // 12) When the page to be displayed is ready
 //
+// 13) If menu parameters must be retrieved or not
+//
 // ----
 
-auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, StreamPlace *toPlace)
+auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, StreamPlace *toPlace,
+                                        bool retrieveMenuParameters)
     -> std::pair<StreamPlace, StreamPlace> {
 
     // if (stream_->isAnArticle()) log_w("article");
@@ -650,39 +653,45 @@ auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, S
 
     beginningOfPage_ = backwards;
 
-    // ----> 4) To have header paragraphs (<h1> .. <h6>) not being orphaned
+    // ----> 4) To reconduct the last token not part of the preceding page
+
+    // ----> 5) To have header paragraphs (<h1> .. <h6>) not being orphaned
 
     startOfHeader_ = false;
 
-    // ----> 5) To have spaces properly added between text tokens (words)
+    // ----> 6) To have spaces properly added between text tokens (words)
 
     lastToken_ = nullptr; // To which token spaces will be attached to (as a count)
 
-    // ----> 6) To have supercript/subscript properly processed
+    // ----> 7) To have supercript/subscript properly processed
 
     superscript_ = false;
     subscript_ = false;
 
-    // ----> 7) To add brackets around hyperlinks
+    // ----> 8) To add brackets around hyperlinks
 
     preText_[0] = postText_[0] = '\0';
 
-    // ----> 8) To maintain the current bytes offset in the current chapter
+    // ----> 9) To maintain the current bytes offset in the current chapter
 
     currentTxtOffset_ = 0;
     currentPageTxtOffset_ = 0;
 
-    // ----> 9) To remove paragraph indentation in tables' rows
+    // ----> 10) To remove paragraph indentation in tables' rows
 
     inTableRow_ = false;
 
-    // ----> 10) To complete last word token in pcdata
+    // ----> 11) To complete last word token in pcdata
 
     textToken_ = nullptr;
 
-    // ----> 11) When the page to be displayed is ready
+    // ----> 12) When the page to be displayed is ready
 
     pageCompleted_ = false;
+
+    // ----> 13) If menu parameters must be retrieved or not
+
+    retrieveMenuParameters_ = retrieveMenuParameters;
 
     // ---
 
@@ -818,94 +827,6 @@ auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, S
         } while (!completed);
 
         REND_PROFILE_END(tokenizeProcess);
-
-        // This is the old code that was used when a new page was used for the beginning of each
-        // spine. Do not remove for now.
-
-        // currentSpineIdx_ = fromPlace.getSpineIdx();
-
-        // REND_PROFILE_START(tokenizeProcess)
-
-        // do {
-        //     currentStreamOffset_ = 0;
-
-        //     uint32_t startOffset = 0;
-
-        //     pugi::xml_document *doc;
-
-        //     // Bypass empty chapters, if any
-        //     do {
-        //         doc = &loadXHTMLAt(currentSpineIdx_);
-        //         body_ = doc->child("html").child("body");
-        //         for (auto node : body_.children()) {
-        //             startOffset = searchStart(node);
-        //             if (startOffset != 0) {
-        //                 break;
-        //             }
-        //         }
-        //         if (startOffset == 0) {
-        //             if ((currentSpineIdx_ + 1) < stream_->getSpineCount()) {
-        //                 currentSpineIdx_ += 1;
-        //                 fromPlace = {fromPlace.getOffset(), currentSpineIdx_};
-        //             } else {
-        //                 pager_.setEndOfFile();
-        //                 break;
-        //             }
-        //         }
-        //     } while (startOffset == 0);
-
-        //     if (startOffset != 0) {
-
-        //         pugi::xml_node node = body_.first_child();
-
-        //         if (node) {
-        //             do {
-        //                 REND_WLOG("Node name: %s", node.name());
-        //                 if (!interpret(node)) {
-        //                     break;
-        //                 }
-        //                 node = node.next_sibling();
-        //             } while (node);
-
-        //             REND_WLOG("currentStreamOffset_: %" PRIu32, currentStreamOffset_);
-
-        //             if (!node || (currentStreamOffset_ == END_OFFSET)) {
-        //                 REND_WLOG("-------------- End of spine detected --------------");
-        //                 if (currentPageTxtOffset_ <= currentTxtOffset_) {
-        //                     currentTxtOffset_ -= currentPageTxtOffset_;
-        //                 } else {
-        //                     currentTxtOffset_ = 0;
-        //                 }
-        //                 REND_WLOG("End of Spine, end of page: currentTxtOffset: %" PRIu32
-        //                           ", currentPageTxtOffset: %" PRIu32,
-        //                           currentTxtOffset_, currentPageTxtOffset_);
-        //                 currentPageTxtOffset_ = 0;
-        //                 Idx maxIdx = stream_->getSpineCount();
-        //                 currentSpineIdx_ = fromPlace.getSpineIdx() + 1;
-        //                 if (currentSpineIdx_ < maxIdx) {
-        //                     if ((stream_->spineIdxIsChapterStart(currentSpineIdx_)) &&
-        //                         !pageCompleted_) {
-        //                         pager_.completeLastLine();
-        //                         continue;
-        //                     }
-        //                     pager_.setNextPagePlace({0,
-        //                     static_cast<uint16_t>(currentSpineIdx_)});
-        //                 } else {
-        //                     REND_WLOG("-------------- End of book detected --------------");
-        //                     pager_.setEndOfFile();
-        //                 }
-        //             }
-
-        //             pager_.completeLastLine();
-        //             break;
-        //         } else {
-        //             log_e("File is of the wrong format");
-        //             REND_EXIT_SIM;
-        //             break;
-        //         }
-        //     }
-        // } while (!pageCompleted_);
-        // REND_PROFILE_END(tokenizeProcess);
     }
 
     REND_WLOG("End of job: Page start: %s, next page at: %s",
@@ -1135,6 +1056,36 @@ void EPubTokenizer::updatePagerIndent(bool iText) {
     }
 }
 
+// Retrieve menu parameters of the following form:
+//
+//    <ul><li id="key">value</li> ... </ul>
+//
+// Returns false if no valid menu parameter present.
+auto EPubTokenizer::processMenuParameters(pugi::xml_node node) -> bool {
+    if (node.type() != pugi::node_element) {
+        return false;
+    }
+
+    auto tagIt = tags.find(node.name());
+
+    if (tagIt->second != Tag::UL) {
+        return false;
+    }
+
+    bool atLeastOnce = false;
+
+    for (pugi::xml_node liNode : node.children("li")) {
+        const pugi::char_t *key = liNode.attribute("id").value();
+        const pugi::xml_text text = liNode.text();
+        if ((key != nullptr) && !text.empty()) {
+            atLeastOnce = true;
+            pager_.addMenuParameter(key, text.as_string());
+        }
+    }
+
+    return atLeastOnce;
+}
+
 // Process node content, going recursively for all its parts. Returns true if parsing must
 // continue, false if its time to stop (We are at the end of a page (going forward) or the
 // toPlace_ has been reached (going backward))
@@ -1168,6 +1119,16 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
         // Start of a node element processing
 
         if (tagIt != tags.end()) {
+
+            if ((tagIt->second == Tag::DIV) &&
+                (strcmp(node.attribute("id").value(), "sol-menu") == 0)) {
+                if ((!backwards_) && tokenizingStarted_ && retrieveMenuParameters_ &&
+                    processMenuParameters(node.first_child())) {
+                    return false;
+                }
+                return interpret(node.next_sibling());
+            }
+
             switch (tagIt->second) {
             case Tag::H1:
             case Tag::H2:

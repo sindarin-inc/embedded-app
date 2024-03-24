@@ -36,6 +36,15 @@ using ReadableTableOfContentsChapterVector = SpiramVector<ReadableTableOfContent
 class Readable : JsonSerializable {
 public:
     Readable() = default;
+
+    //! Constructor for local-only in-firmware readables
+    Readable(const std::string &uuid, const std::string &title, const unsigned char *localBytes,
+             size_t localBytesSize)
+        : uuid(uuid), shortenedUuid(uuid), title(title), localOnly(true), localBytes(localBytes),
+          localBytesSize(localBytesSize) {
+        shortenedUuid.resize(TRUNCATE_READABLE_UUID_FOR_PLACEMARK_BYTES);
+    }
+
     ~Readable() override = default;
 
     SpiramString uuid;
@@ -61,6 +70,9 @@ public:
     //! Set to true if this is a readable side-loaded onto the device (that doesn't come from the
     //! server)
     bool localOnly = false;
+    // For embedded-in-firmware epubs, this is the pointer to the epub's info
+    const unsigned char *localBytes = nullptr;
+    size_t localBytesSize = 0;
 
     [[nodiscard]] auto file(const std::string &path = "") const -> const ReadableFile & {
         for (const auto &file : files) {

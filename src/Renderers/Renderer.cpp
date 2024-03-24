@@ -4,7 +4,8 @@
 #include <utility>
 
 // Retrieve and show the page at fromPlace location.
-auto Renderer::renderPage(std::shared_ptr<Place> fromPlace, int16_t numSkipLines, bool forceRefresh)
+auto Renderer::renderPage(std::shared_ptr<Place> fromPlace, int16_t numSkipLines, bool forceRefresh,
+                          bool retrieveMenuParameters)
     -> std::pair<std::shared_ptr<Place>, uint8_t> {
 
     // if no fromPlace is received (null) or the place's DocType is wrong, get the first page
@@ -38,7 +39,12 @@ auto Renderer::renderPage(std::shared_ptr<Place> fromPlace, int16_t numSkipLines
 
     if (pager_.linesIsEmpty() || (!(startPlace == pager_.getStreamPlaceOfFirstLine())) ||
         forceRefresh) {
-        std::tie(currentPlace_, nextPlace_) = tokenizer_->loadAndTokenizePage(startPlace);
+        std::tie(currentPlace_, nextPlace_) =
+            tokenizer_->loadAndTokenizePage(startPlace, false, nullptr, retrieveMenuParameters);
+
+        if (retrieveMenuParameters && !pager_.getMenuParameters().empty()) {
+            return {fromPlace, 0};
+        }
     }
 
     PROFILE_END_LOG_MS(loadAndTokenizePage);

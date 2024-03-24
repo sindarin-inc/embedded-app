@@ -214,4 +214,6 @@ using Lines = std::array<LineInfo, LINES_SIZE>;
 
 using PageIndex = std::array<uint32_t, PAGE_INDEX_SIZE>;
 
+using MenuParameters = SpiramOrderedMap<std::string, std::string>;
+
 } // namespace renderer_defs

@@ -34,6 +34,7 @@ bool platformInitialized;
 
 static uint8_t minLightingDutyCycle;
 static uint8_t maxLightingDutyCycle;
+static QueueHandle_t uartCommandQueue;
 
 void PinMode(int pin, int mode) {
     gpio_set_direction(static_cast<gpio_num_t>(pin), static_cast<gpio_mode_t>(mode));
@@ -276,6 +277,22 @@ void InitializePlatform() {
     }
 #endif
 #endif // EINKET013TT1
+
+    // Configure the UART for reading (used for testing)
+    const uart_config_t uartConfig = {
+        .baud_rate = 115200,
+        .data_bits = UART_DATA_8_BITS,
+        .parity = UART_PARITY_DISABLE,
+        .stop_bits = UART_STOP_BITS_1,
+        .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
+        .rx_flow_ctrl_thresh = 0,
+        .source_clk = UART_SCLK_RTC,
+    };
+    // We won't use a buffer for sending data.
+    constexpr auto kRxBufSize = 256;
+    uart_driver_install(UART_NUM_0, kRxBufSize, 0, 3, &uartCommandQueue, 0);
+    uart_param_config(UART_NUM_0, &uartConfig);
+
     platformInitialized = true;
 }
 
@@ -306,6 +323,8 @@ auto DeinitializePlatform() -> esp_err_t {
 #endif
     return err;
 }
+
+auto GetUartCommandQueue() -> QueueHandle_t { return uartCommandQueue; }
 
 // Forked from TinyPico's GetBatteryVoltage() method:
 // https://github.com/tinypico/tinypico-arduino/blob/master/TinyPICO-Helper/src/TinyPICO.cpp#L207
