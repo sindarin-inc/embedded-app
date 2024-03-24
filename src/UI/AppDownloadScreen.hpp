@@ -14,7 +14,7 @@
 class AppDownloadScreen : public Screen, public EinkView {
 public:
     AppDownloadScreen(DisplaySystem &display)
-        : Screen(), EinkView(display), topLineView_(display, "Download the app"),
+        : Screen(), EinkView(display), topLineView_(display, "Set up WiFi with the Sol Reader app"),
           iconView_(display, DOWNLOAD_APP_QR_BITS, DownloadAppQr_width, DownloadAppQr_height, 3),
           bottomLine_(display, "solreader.com/app"){};
 
