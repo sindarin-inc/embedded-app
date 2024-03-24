@@ -24,6 +24,7 @@
 #include "Models/Readable.hpp"
 #include "Renderers/Renderer.hpp"
 #include "Storage/EPubs/LastQuestion.epub.hpp"
+#include "Storage/EPubs/PsalmsAndProverbs.epub.hpp"
 #include "Storage/LocalStore.hpp"
 #include "UI/AboutScreen.hpp"
 #include "UI/AlignmentScreen.hpp"
@@ -348,29 +349,23 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         }));
     }
 
-    std::shared_ptr<Readable> onboardingReadable = std::make_shared<Readable>();
-    // TODO: There's probably other metadata we want here
-    onboardingReadable->title = "Last Question";
-    onboardingReadable->localOnly = true;
-    onboardingReadable->localBytes = LASTQUESTION_EPUB;
-    onboardingReadable->localBytesSize = LASTQUESTION_EPUB_SIZE;
-    booksMenu->addMenuItem(
-        MenuItem(onboardingReadable->title.c_str(), "The Sol Team",
-                 [this, onboardingReadable, display, mainMenu, createReadableScreen]() {
-        auto readableScreen = createReadableScreen(onboardingReadable);
-        if (readableScreen != nullptr) {
-            this->setCurrentScreen(*readableScreen);
-        } else {
-            auto *errorPopup = new MsgPopup(*display, itemErrorMsg_);
-            this->setCurrentScreen(*errorPopup);
-            errorPopup->setBackCallback([this, errorPopup, mainMenu]() {
-                mainMenu->setFirstLoad();
-                display_->clearDisplay();
-                setCurrentScreen(*mainMenu);
-                delete errorPopup;
-            });
-        }
-        }));
+    // If the local store has no readables, show at least The Last Question
+    if (readables.empty()) {
+        std::shared_ptr<Readable> lastQuestion = std::make_shared<Readable>();
+        lastQuestion->uuid = "local-last-question";
+        lastQuestion->title = "The Last Question";
+        lastQuestion->localOnly = true;
+        lastQuestion->localBytes = LASTQUESTION_EPUB;
+        lastQuestion->localBytesSize = LASTQUESTION_EPUB_SIZE;
+        booksMenu->addMenuItem(
+            MenuItem(lastQuestion->title.c_str(), "Isaac Asimov",
+                     [this, lastQuestion, display, mainMenu, createReadableScreen]() {
+            auto readableScreen = createReadableScreen(lastQuestion);
+            if (readableScreen != nullptr) {
+                this->setCurrentScreen(*readableScreen);
+            }
+            }));
+    }
 
     SHOW_HEAP();
 
@@ -460,35 +455,54 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         mainMenu->addSubMenu(articlesMenu);
     }
 
-    if (!prefs_.noBible.get().value_or(false) && hasBible) {
-        for (const auto &r : readables) {
-            if (isBible(r)) {
-                bool archived = prefs_.readableArchivedChanged.get(r->shortenedUuid.c_str());
-                auto title = StringFormat("%s%s", archived ? "Archived: " : "", r->title.c_str());
-                bibleMenu->addMenuItem(
-                    MenuItem(title, [this, r, createReadableScreen, display, mainMenu]() {
-                        auto readableScreen = createReadableScreen(r);
-                        if (readableScreen != nullptr) {
-                            this->setCurrentScreen(*readableScreen);
-                            readableScreen->setBackCallback(
-                                [this, r, display, readableScreen, mainMenu]() {
-                            display->clearDisplay();
-                            mainMenu->setFirstLoad();
-                            setCurrentScreen(*mainMenu);
-                            delete readableScreen;
-                            });
-                        } else {
-                            auto *errorPopup = new MsgPopup(*display, itemErrorMsg_);
-                            this->setCurrentScreen(*errorPopup);
-                            errorPopup->setBackCallback([this, errorPopup, mainMenu]() {
+    if (!prefs_.noBible.get().value_or(false)) {
+        if (hasBible) {
+            for (const auto &r : readables) {
+                if (isBible(r)) {
+                    bool archived = prefs_.readableArchivedChanged.get(r->shortenedUuid.c_str());
+                    auto title =
+                        StringFormat("%s%s", archived ? "Archived: " : "", r->title.c_str());
+                    bibleMenu->addMenuItem(
+                        MenuItem(title, [this, r, createReadableScreen, display, mainMenu]() {
+                            auto readableScreen = createReadableScreen(r);
+                            if (readableScreen != nullptr) {
+                                this->setCurrentScreen(*readableScreen);
+                                readableScreen->setBackCallback(
+                                    [this, r, display, readableScreen, mainMenu]() {
+                                display->clearDisplay();
                                 mainMenu->setFirstLoad();
-                                display_->clearDisplay();
                                 setCurrentScreen(*mainMenu);
-                                delete errorPopup;
-                            });
-                        }
-                    }));
+                                delete readableScreen;
+                                });
+                            } else {
+                                auto *errorPopup = new MsgPopup(*display, itemErrorMsg_);
+                                this->setCurrentScreen(*errorPopup);
+                                errorPopup->setBackCallback([this, errorPopup, mainMenu]() {
+                                    mainMenu->setFirstLoad();
+                                    display_->clearDisplay();
+                                    setCurrentScreen(*mainMenu);
+                                    delete errorPopup;
+                                });
+                            }
+                        }));
+                }
             }
+        } else if (readables.empty()) {
+            // If there is no content, and we haven't diabled the Bible, add Psalms and Proverbs
+            std::shared_ptr<Readable> psalmsAndProverbs = std::make_shared<Readable>();
+            psalmsAndProverbs->uuid = "local-psalms-and-proverbs";
+            psalmsAndProverbs->title = "Psalms and Proverbs";
+            psalmsAndProverbs->localOnly = true;
+            psalmsAndProverbs->localBytes = PSALMSANDPROVERBS_EPUB;
+            psalmsAndProverbs->localBytesSize = PSALMSANDPROVERBS_EPUB_SIZE;
+            bibleMenu->addMenuItem(
+                MenuItem(psalmsAndProverbs->title.c_str(),
+                         [this, psalmsAndProverbs, display, mainMenu, createReadableScreen]() {
+                auto readableScreen = createReadableScreen(psalmsAndProverbs);
+                if (readableScreen != nullptr) {
+                    this->setCurrentScreen(*readableScreen);
+                }
+                }));
         }
 
         if (!(prefs_.tutorialsDeleted.get().value_or(0) & TUTORIAL_SCREEN_BIBLE)) {
