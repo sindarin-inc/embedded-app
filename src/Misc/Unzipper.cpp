@@ -4,9 +4,6 @@
 #include <iostream>
 
 #include "Misc/SpiramAllocator.hpp"
-#include "UI/Epubs/OnboardingEpubManager.hpp"
-
-extern OnboardingEpubManager onboardingEpubs;
 
 static auto spiZAlloc(void *opaque, size_t items, size_t size) -> void * {
     // log_d("spiZAlloc: %d %d", (int)items, (int)size);
@@ -20,23 +17,9 @@ static void spiZFree(void *opaque, void *address) {
 }
 
 auto Unzipper::open() -> bool {
-    if (filePath_.substr(0, 14) == "sol_onboarding") {
-        std::string onboardingEpubName = filePath_.substr(15);
-        OnboardingEpub epub = onboardingEpubs.find(onboardingEpubName);
-        if (epub.name != "not found") {
-            file_ = SFile(std::make_shared<RamFile>(epub.bytes, epub.size));
-        } else {
-            log_e("Unable to find internal sol onboarding epub with name %s",
-                  onboardingEpubName.c_str());
-            return false;
-        }
-    } else {
-        // Open zip file
-        file_ = fileSystem_.open(filePath_, "r");
-        if (!file_) {
-            log_e("Unable to open file: %s", filePath_.c_str());
-            return false;
-        }
+    if (!file_) {
+        log_e("Unzipper has no file");
+        return false;
     }
 
     isOpen_ = true;

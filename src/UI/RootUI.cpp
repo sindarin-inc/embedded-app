@@ -139,16 +139,20 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     auto hasBible = it != readables.end();
 
     auto createReadableScreen = [this, display, mainMenu, booksMenu, bibleMenu, articlesMenu,
-                                 hasBible, &fileSystem, &lightingController,
-                                 &localStore](const std::shared_ptr<Readable> &readable,
-                                              bool onboarding = false) -> ReadableScreen * {
+                                 hasBible, &fileSystem, &lightingController, &localStore](
+                                    const std::shared_ptr<Readable> &readable) -> ReadableScreen * {
         // TODO: Would be better to not allocate / delete these all the time
 
         std::shared_ptr<RendererStream> stream;
 
-        if (!onboarding) {
+        if (readable->localOnly && readable->localBytes != nullptr &&
+            readable->localBytesSize > 0) {
+            // Handle this is an in-memory epub
+            auto file =
+                SFile(std::make_shared<RamFile>(readable->localBytes, readable->localBytesSize));
+            stream = std::make_shared<EPubFile>(file, readable);
+        } else {
             auto [path, size] = localStore.readableFilePathForReading(readable);
-
             if (HasSuffix(path, ".epub")) {
                 log_i("Opening %s as epub", path.c_str());
                 stream = fileSystem.newEPubRendererStream(path.c_str(), readable);
@@ -158,13 +162,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             } else {
                 stream = fileSystem.newRendererStream(path.c_str());
             }
-        } else {
-            // We use the special filename prefix "sol_onboarding" to indicate to the
-            // system that it should look in the EpubManager for the file, not the
-            // filesystem. The readable has the name itself.
-            stream = std::make_shared<EPubFile>(
-                fileSystem,
-                StringFormat("%s%s", "sol_onboarding ", readable->title.c_str()).c_str(), readable);
         }
 
         if (stream == nullptr) {
@@ -355,11 +352,15 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     for (const auto &onboardingEpub : onboardingEpubs.onboardingEpubsVector) {
         std::shared_ptr<Readable> onboardingReadable = std::make_shared<Readable>();
+        // TODO: There's probably other metadata we want here
         onboardingReadable->title = onboardingEpub.name;
+        onboardingReadable->localOnly = true;
+        onboardingReadable->localBytes = onboardingEpub.bytes;
+        onboardingReadable->localBytesSize = onboardingEpub.size;
         booksMenu->addMenuItem(
             MenuItem(onboardingReadable->title.c_str(), "The Sol Team",
                      [this, onboardingReadable, display, mainMenu, createReadableScreen]() {
-            auto readableScreen = createReadableScreen(onboardingReadable, true);
+            auto readableScreen = createReadableScreen(onboardingReadable);
             if (readableScreen != nullptr) {
                 this->setCurrentScreen(*readableScreen);
             } else {

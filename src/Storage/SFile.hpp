@@ -143,7 +143,7 @@ protected:
 
 class RamFile : public SFileImpl {
 public:
-    RamFile(const unsigned char *mem, size_t size) { log_d("Creating Object RamFile"); }
+    RamFile(const unsigned char *mem, size_t size) : fData_(mem), fSize_(size) {}
     ~RamFile() override = default;
 
     auto write(const uint8_t *buf, size_t size) -> size_t override;
@@ -160,6 +160,7 @@ public:
 
 protected:
     FILE *fp_{nullptr};
+    const unsigned char *fData_{nullptr};
     size_t fSize_{0};
     uint32_t fPos_{0};
 
