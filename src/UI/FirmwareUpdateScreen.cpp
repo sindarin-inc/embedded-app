@@ -1,8 +1,10 @@
 #include "UI/FirmwareUpdateScreen.hpp"
 
-#include <Communications/BLEManager.hpp>
 #include <esp_system.h>
 
+#if !SIMULATOR
+#include "Communications/BLEManager.hpp"
+#endif
 #include "Communications/FirmwareDownload.hpp"
 #include "Communications/WiFi.hpp"
 #include "Misc/Dispatch.hpp"
