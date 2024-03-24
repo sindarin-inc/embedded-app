@@ -3,28 +3,21 @@
 #include "sindarin-debug.h"
 
 auto AppDownloadScreen::layout(LayoutContext &context, Size size) -> Size {
-    context.setSublayoutFrame(
-        Rect::fromSize(size), LayoutOptionsSizeToFitVertical | LayoutOptionsAlignCenterVertical,
-        [this](LayoutContext &context, Size size) -> Size {
-            int y = 0;
 
-            // Text with a box around it
-            auto topLineViewRect =
-                context.setViewFrame(topLineView_, {{0, y}, {size.width, 100}},
-                                     LayoutOptionsSizeToFit | LayoutOptionsAlignCenterHorizontal);
-            y += topLineViewRect.size.height + 7;
+    // Center the QR code as the layout anchor
+    auto iconViewRect = context.setViewFrame(iconView_, {{0, 0}, {size.width, size.height}},
+                                             LayoutOptionsSizeToFit | LayoutOptionsAlignCenter);
 
-            auto iconViewRect =
-                context.setViewFrame(iconView_, {{0, y}, {size.width, 200}},
-                                     LayoutOptionsSizeToFit | LayoutOptionsAlignCenterHorizontal);
-            y += iconViewRect.size.height + 5;
+    // Now put the top text on top of the QR code
+    auto topLineViewRect = context.setViewSizeInRect(
+        topLineView_, {100, 100}, {{0, 0}, {size.width, iconViewRect.origin.y - 7}},
+        LayoutOptionsSizeToFitVertical | LayoutOptionsAlignBottom |
+            LayoutOptionsAlignCenterHorizontal);
 
-            auto bottomLineRect =
-                context.setViewFrame(bottomLine_, {{0, y}, {size.width, 100}},
-                                     LayoutOptionsSizeToFit | LayoutOptionsAlignCenterHorizontal);
-            y += bottomLineRect.size.height;
-            return {size.width, y};
-        });
+    // And put the bottom text below the QR code
+    auto y = iconViewRect.bottom() + 5;
+    context.setViewFrame(bottomLine_, {{0, y}, {size.width, size.height - y}},
+                         LayoutOptionsSizeToFit | LayoutOptionsAlignCenterHorizontal);
 
     return size;
 }
