@@ -48,7 +48,6 @@ PreferencesStore prefs;
 
 #if USE_BLE_SERVER_REMOTE || USE_BLE_SERVER_SETTINGS
 #include "Communications/BLESindarinService.hpp"
-BLESindarinService bleSindarinService;
 #endif
 
 #if USE_BLE_SERVER_REMOTE
@@ -442,10 +441,12 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 #endif
 
 #if USE_BLE_SERVER_REMOTE || USE_BLE_SERVER_SETTINGS
-    auto sindarinService = bleSindarinService.configureService(bleManager->server());
+    auto sindarinService =
+        BLESindarinService::getInstance()->configureService(bleManager->server());
 
 #if USE_BLE_SERVER_REMOTE
     BLERemoteInput::getInstance()->configureCharacteristics(sindarinService);
+    BLERemoteInput::getInstance()->setCallback(remoteCallback);
 #endif
 
 #if USE_BLE_SERVER_SETTINGS
@@ -455,7 +456,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 #endif
 #endif
 
-    if (!bleSindarinService.start()) {
+    if (!BLESindarinService::getInstance()->start()) {
         bootErrors.push_back({.type = BootError::Type::BLESindarin});
     }
 #endif
