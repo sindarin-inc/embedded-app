@@ -630,7 +630,7 @@ public:
     static PairedStatus paired;
 
 protected:
-    const uint32_t latestMigrationVersion_ = 4;
+    const uint32_t latestMigrationVersion_ = 5;
     uint32_t nvsHandle_{};
     bool started_{};
 
