@@ -277,5 +277,11 @@ pip install Pillow
 Now you can convert all `.png` images in `src/UI/Bitmaps` into `.xbm` files:
 
 ```bash
-for f in src/UI/Bitmaps/*.png; do venv/bin/python scripts/image_to_xbm.py "$f" "${f%.png}.xbm"; done
+for f in src/UI/Bitmaps/*.png; do echo "Converting $f"; venv/bin/python scripts/image_to_xbm.py "$f" "${f%.png}.xbm"; done
+```
+
+If you need to regenerate the app download qr code image, do it like this
+
+```sh
+qrencode -s 1 -l Q -m 0 -t PNG32 -o src/UI/Bitmaps/DownloadAppQr.png https://solreader.com/app
 ```

@@ -26,6 +26,7 @@
 #include "Storage/LocalStore.hpp"
 #include "UI/AboutScreen.hpp"
 #include "UI/AlignmentScreen.hpp"
+#include "UI/AppDownloadScreen.hpp"
 #include "UI/BatteryScreen.hpp"
 #include "UI/CalibrationScreen.hpp"
 #include "UI/ContentSyncScreen.hpp"
@@ -271,24 +272,42 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         }
     }
 
-    // If there are no books, show the Sync Content item in the books tab.
-    if (readables.empty()) {
-        booksMenu->addMenuItem(
-            MenuItem("Sync Content", [this, display, &localStore, mainMenu, &lightingController]() {
-                auto contentSyncScreen =
-                    new ContentSyncScreen(*display, localStore, this->prefs_, this->telemetry_);
-                lightingController.setOverrideValuePercent(lightingController.getCurrentPercent());
-                display->setFont(mainMenu->getMyStyle().navigationFont);
-                this->setCurrentScreen(*contentSyncScreen);
-                contentSyncScreen->setBackCallback([this, contentSyncScreen, mainMenu, display]() {
+    auto makeContentSyncMenuItem = [this, display, &localStore, mainMenu,
+                                    &lightingController](const char *title) -> MenuItem {
+        return {title,
+                [this, display, &localStore, mainMenu, &lightingController]() {
+            // If we're not yet paired, show the app screen instead
+            if (PreferencesStore::paired == PairedStatus::Unpaired) {
+                auto appDownloadScreen = new AppDownloadScreen(*display);
+                this->setCurrentScreen(*appDownloadScreen);
+                appDownloadScreen->setBackCallback([this, appDownloadScreen, mainMenu, display]() {
                     display->clearDisplay();
                     mainMenu->setFirstLoad();
                     setCurrentScreen(*mainMenu);
-                    mainMenu->render(*display);
-                    delete contentSyncScreen;
+                    delete appDownloadScreen;
                 });
-                contentSyncScreen->begin();
-            }));
+                return;
+            }
+
+            auto contentSyncScreen =
+                new ContentSyncScreen(*display, localStore, this->prefs_, this->telemetry_);
+            lightingController.setOverrideValuePercent(lightingController.getCurrentPercent());
+            display->setFont(mainMenu->getMyStyle().navigationFont);
+            this->setCurrentScreen(*contentSyncScreen);
+            contentSyncScreen->setBackCallback([this, contentSyncScreen, mainMenu, display]() {
+                display->clearDisplay();
+                mainMenu->setFirstLoad();
+                setCurrentScreen(*mainMenu);
+                mainMenu->render(*display);
+                delete contentSyncScreen;
+            });
+            contentSyncScreen->begin();
+                }};
+    };
+
+    // If there are no books, show the Sync Content item in the books tab.
+    if (readables.empty()) {
+        booksMenu->addMenuItem(makeContentSyncMenuItem("Sync Content"));
     }
 
     SHOW_HEAP();
@@ -351,22 +370,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     // If there are no articles, show the Sync Content item in the articles tab.
     if (articles.empty()) {
-        articlesMenu->addMenuItem(
-            MenuItem("Sync Content", [this, display, &localStore, mainMenu, &lightingController]() {
-                auto contentSyncScreen =
-                    new ContentSyncScreen(*display, localStore, this->prefs_, this->telemetry_);
-                lightingController.setOverrideValuePercent(lightingController.getCurrentPercent());
-                display->setFont(mainMenu->getMyStyle().navigationFont);
-                this->setCurrentScreen(*contentSyncScreen);
-                contentSyncScreen->setBackCallback([this, contentSyncScreen, mainMenu, display]() {
-                    display->clearDisplay();
-                    mainMenu->setFirstLoad();
-                    setCurrentScreen(*mainMenu);
-                    mainMenu->render(*display);
-                    delete contentSyncScreen;
-                });
-                contentSyncScreen->begin();
-            }));
+        articlesMenu->addMenuItem(makeContentSyncMenuItem("Sync Content"));
     }
 
     for (const auto &r : articles) {
@@ -687,22 +691,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     // Hide the toggle for the sort order menu
     contentSettingsMenu->setToggleLastItem(false, false);
 
-    contentSettingsMenu->addMenuItem(
-        MenuItem("Sync content now", [this, display, &localStore, mainMenu, &lightingController]() {
-            auto contentSyncScreen =
-                new ContentSyncScreen(*display, localStore, this->prefs_, this->telemetry_);
-            lightingController.setOverrideValuePercent(lightingController.getCurrentPercent());
-            display->setFont(mainMenu->getMyStyle().navigationFont);
-            this->setCurrentScreen(*contentSyncScreen);
-            contentSyncScreen->setBackCallback([this, contentSyncScreen, mainMenu, display]() {
-                display->clearDisplay();
-                mainMenu->setFirstLoad();
-                setCurrentScreen(*mainMenu);
-                mainMenu->render(*display);
-                delete contentSyncScreen;
-            });
-            contentSyncScreen->begin();
-        }));
+    contentSettingsMenu->addMenuItem(makeContentSyncMenuItem("Sync content now"));
 
     // Hide the bubble for the last item, Sync content now
     contentSettingsMenu->setToggleLastItem(false, false);
@@ -876,23 +865,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     //        delete layoutTestScreen;
     //    });
     // }));
-
-    /*
-        settingsMenu->addMenuItem(
-            MenuItem("Sync Content", [this, display, &localStore, mainMenu, &lightingController]() {
-                auto contentSyncScreen = new ContentSyncScreen(*display, localStore,
-       this->prefs_, this->telemetry_); this->setCurrentScreen(*contentSyncScreen);
-                lightingController.setOverrideValuePercent(lightingController.getCurrentPercent());
-                contentSyncScreen->setBackCallback([this, contentSyncScreen, mainMenu, display]() {
-                    this->display_->clearDisplay();
-                    mainMenu->setFirstLoad();
-                    setCurrentScreen(*mainMenu);
-                    mainMenu->render(*display);
-                    delete contentSyncScreen;
-                });
-                contentSyncScreen->begin();
-            }));
-    */
 
     settingsMenu->addMenuItem(MenuItem("Reading", [this, readingSettingsMenu]() {
         log_d("Loading Reading Settings Menu");
@@ -1096,7 +1068,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     systemSettingsMenu->addMenuItem(MenuItem("First Time Setup",
                                              [this, systemSettingsMenu, display]() {
-        prefs_.noSetupMode.remove();
         systemSettingsMenu->showTemporaryMessage(*display,
                                                  "Turning on first time setup and restarting.");
         power_.reboot();
@@ -1125,21 +1096,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             delete debugAboutScreen;
         });
     }));
-
-    debugSettingsMenu->addMenuItem(
-        MenuItem("Sync Content", [this, display, &localStore, mainMenu, &lightingController]() {
-            auto contentSyncScreen =
-                new ContentSyncScreen(*display, localStore, this->prefs_, this->telemetry_);
-            this->setCurrentScreen(*contentSyncScreen);
-            lightingController.setOverrideValuePercent(lightingController.getCurrentPercent());
-            contentSyncScreen->setBackCallback([this, contentSyncScreen, mainMenu, display]() {
-                mainMenu->setFirstLoad();
-                setCurrentScreen(*mainMenu);
-                mainMenu->render(*display);
-                delete contentSyncScreen;
-            });
-            contentSyncScreen->begin();
-        }));
 
     if (hasLastQuestion) {
         debugSettingsMenu->addMenuItem(MenuItem("Turn on Demo Mode",
@@ -1584,31 +1540,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     mainMenu->addSubMenu(settingsMenu);
 
-    bool inDemo = !prefs_.noSetupMode.get().value_or(false);
-
-    if (inDemo) {
-        auto demoScreen = new DemoScreen(*display, prefs_, lightingController);
-        auto contentSyncScreen =
-            new OnboardingContentSyncScreen(*display, localStore, this->prefs_, this->telemetry_);
-        contentSyncScreen->setBackCallback([this, contentSyncScreen, mainMenu, display]() {
-            if (!WiFi::getInstance().hasWiFiCredentials()) {
-                display->clearDisplay();
-                mainMenu->setFirstLoad();
-                this->setCurrentScreen(*mainMenu);
-                mainMenu->render(*display);
-                delete contentSyncScreen;
-            } else {
-                power_.reboot();
-            }
-        });
-
-        demoScreen->setBackCallback([this, demoScreen, contentSyncScreen]() {
-            this->setCurrentScreen(*contentSyncScreen);
-            contentSyncScreen->begin();
-            delete demoScreen;
-        });
-        this->setCurrentScreen(*demoScreen);
-    } else if (prefs_.cesMode.get().value_or(false)) {
+    if (prefs_.cesMode.get().value_or(false)) {
         auto cesScreen = new DemoScreen(*display, prefs_, lightingController);
         cesScreen->bailAfterLensAdjust();
 
