@@ -16,6 +16,7 @@
 #include <freertos/timers.h>
 #include <string>
 
+#include "Displays/EinkTypes.hpp"
 #include "Misc/StringUtil.hpp"
 #include "Misc/Style.hpp"
 #include "Storage/FileSystem.hpp"
@@ -78,6 +79,7 @@ public:
     virtual void updateDisplay(DisplaySystem::UpdateType updateType = UNSPECIFIED,
                                bool clearFrameBuffer = true, int vcomNudge = 0,
                                DisplaySystem::UpdateType altUpdateType = UNSPECIFIED,
+                               ScreenSide screen = ScreenSide::Both,
                                Rect altRect = {{0, 0}, {0, 0}}) = 0;
 
     virtual void beginPowerOn() {}
@@ -197,6 +199,10 @@ public:
     // Draw a bitmap
     void drawXBitmap(int16_t x, int16_t y, const uint8_t bitmap[], int16_t w, int16_t h,
                      uint16_t color);
+
+    // Draw a bitmap scaled by a multiplier
+    void drawScaledXBitmap(int16_t x, int16_t y, const uint8_t bitmap[], int16_t w, int16_t h,
+                           uint16_t color, int scale);
 
     void drawPBM(int16_t x, int16_t y, const std::string &fname, FileSystem &fs);
     void drawPBM(int16_t x, int16_t y, const uint8_t *pbmBytes, int size);

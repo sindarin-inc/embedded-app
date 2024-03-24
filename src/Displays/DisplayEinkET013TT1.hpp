@@ -27,9 +27,12 @@ public:
 
     auto setup() -> bool override;
 
+    // TODO: Probably this is a good candidate for a struct for params since there are a lot of
+    // values that can be passed and some may be unset defaults.
     void updateDisplay(DisplaySystem::UpdateType updateType = UNSPECIFIED,
                        bool clearFrameBuffer = true, int vcomNudge = 0,
                        DisplaySystem::UpdateType altUpdateType = UNSPECIFIED,
+                       ScreenSide screen = ScreenSide::Both,
                        Rect altRect = {{0, 0}, {0, 0}}) override;
 
     void beginPowerOn() override { driver_.beginPowerOn(); };

@@ -2,6 +2,8 @@
 
 #include <cstdint>
 #include <esp_err.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/queue.h>
 #include <string>
 
 // Note: This abstraction exists as an abstraction layer between the specific hardware and the rest
@@ -51,6 +53,8 @@ auto HardwareDeinit() -> esp_err_t;
 void InitializePlatform();
 
 auto DeinitializePlatform() -> esp_err_t;
+
+auto GetUartCommandQueue() -> QueueHandle_t;
 
 auto GetBatteryVoltageLeft() -> float;
 

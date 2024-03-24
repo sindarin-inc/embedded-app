@@ -1,5 +1,4 @@
-#ifndef BLERemoteInput_H
-#define BLERemoteInput_H
+#pragma once
 
 #include <NimBLEDevice.h>
 
@@ -57,5 +56,3 @@ protected:
         }
     };
 };
-
-#endif

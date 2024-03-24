@@ -378,7 +378,7 @@ auto PowerManager::isTempleOpen(bool &open) -> esp_err_t {
 void PowerManager::checkUsb() {
     if (USBConnected()) {
         // TODO: Should we take multiple measurements?
-        battery.loop();
+        battery.takeMeasurement();
         auto percentage = battery.getBatteryPercentage();
         gpio_hold_dis(static_cast<gpio_num_t>(GREEN_LED));
         gpio_hold_dis(static_cast<gpio_num_t>(RED_LED));

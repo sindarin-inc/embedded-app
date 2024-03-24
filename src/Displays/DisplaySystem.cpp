@@ -276,6 +276,32 @@ void DisplaySystem::drawXBitmap(int16_t x, int16_t y, const uint8_t bitmap[], in
     gfxClass_->drawXBitmap(xOffset(x), yOffset(y), bitmap, w, h, color);
 }
 
+void DisplaySystem::drawScaledXBitmap(int16_t x, int16_t y, const uint8_t bitmap[], int16_t w,
+                                      int16_t h, uint16_t color, int scale) {
+    if (getPartialRefresh()) {
+        setPartialWindow(x, y, w, h);
+    }
+    int16_t byteWidth = (w + 7) / 8; // Bitmap scanline pad = whole byte
+    uint8_t bit = 0;
+
+    gfxClass_->startWrite();
+    for (int16_t j = 0; j < h; j++) {
+        for (int16_t i = 0; i < w; i++) {
+            if (i & 7) {
+                bit >>= 1;
+            } else {
+                bit = bitmap[j * byteWidth + i / 8];
+            }
+            if (bit & 0x01) {
+                // Instead of drawing a pixel, draw a scaled rectangle
+                gfxClass_->writeFillRect(xOffset(x + i * scale), yOffset(y + j * scale), scale,
+                                         scale, color);
+            }
+        }
+    }
+    gfxClass_->endWrite();
+}
+
 void DisplaySystem::drawPBM(int16_t x, int16_t y, const uint8_t *pbmbytes, int size) {
     BufferStream stream(pbmbytes, size);
     drawPBM(x, y, stream);
