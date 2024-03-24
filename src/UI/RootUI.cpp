@@ -355,13 +355,18 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         std::shared_ptr<Readable> lastQuestion =
             std::make_shared<Readable>("d7570c42-18a9-4795-a44e-9cee09b9fe3e", "The Last Question",
                                        LASTQUESTION_EPUB, LASTQUESTION_EPUB_SIZE);
-        booksMenu->addMenuItem(MenuItem(lastQuestion->title.c_str(), "Isaac Asimov",
-                                        [this, lastQuestion, createReadableScreen]() {
-            auto readableScreen = createReadableScreen(lastQuestion);
-            if (readableScreen != nullptr) {
-                this->setCurrentScreen(*readableScreen);
-            }
-        }));
+
+        // Don't show if it's archived
+        bool archived = prefs_.readableArchivedChanged.get(lastQuestion->shortenedUuid.c_str());
+        if (!archived) {
+            booksMenu->addMenuItem(MenuItem(lastQuestion->title.c_str(), "Isaac Asimov",
+                                            [this, lastQuestion, createReadableScreen]() {
+                auto readableScreen = createReadableScreen(lastQuestion);
+                if (readableScreen != nullptr) {
+                    this->setCurrentScreen(*readableScreen);
+                }
+            }));
+        }
     }
 
     SHOW_HEAP();
@@ -496,13 +501,18 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             std::shared_ptr<Readable> psalmsAndProverbs = std::make_shared<Readable>(
                 "6863fd3c-77a9-468e-93fa-f70d8b79029f", "Psalms and Proverbs",
                 PSALMSANDPROVERBS_EPUB, PSALMSANDPROVERBS_EPUB_SIZE);
-            bibleMenu->addMenuItem(MenuItem(psalmsAndProverbs->title.c_str(),
-                                            [this, psalmsAndProverbs, createReadableScreen]() {
-                auto readableScreen = createReadableScreen(psalmsAndProverbs);
-                if (readableScreen != nullptr) {
-                    this->setCurrentScreen(*readableScreen);
-                }
-            }));
+            // Don't show if it's archived
+            bool archived =
+                prefs_.readableArchivedChanged.get(psalmsAndProverbs->shortenedUuid.c_str());
+            if (!archived) {
+                bibleMenu->addMenuItem(MenuItem(psalmsAndProverbs->title.c_str(),
+                                                [this, psalmsAndProverbs, createReadableScreen]() {
+                    auto readableScreen = createReadableScreen(psalmsAndProverbs);
+                    if (readableScreen != nullptr) {
+                        this->setCurrentScreen(*readableScreen);
+                    }
+                }));
+            }
         }
 
         if (!(prefs_.tutorialsDeleted.get().value_or(0) & TUTORIAL_SCREEN_BIBLE)) {
