@@ -34,7 +34,6 @@
 #include "UI/ContentSyncScreen.hpp"
 #include "UI/CrashReportScreen.hpp"
 #include "UI/DebugAboutScreen.hpp"
-#include "UI/DemoScreen.hpp"
 #include "UI/FirmwareUpdateScreen.hpp"
 #include "UI/Fonts/Fonts.hpp"
 #include "UI/LayoutTestScreen.hpp"
@@ -46,7 +45,6 @@
 #include "UI/MainMenuScreen.hpp"
 #include "UI/MsgPopup.hpp"
 #include "UI/OffsetAdjustScreen.hpp"
-#include "UI/OnboardingContentSyncScreen.hpp"
 #include "UI/ReadableScreen.hpp"
 #include "UI/ReleaseNotesScreen.hpp"
 #include "UI/ResizeBoxScreen.hpp"
@@ -1212,19 +1210,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         power_.reboot();
     }));
 
-    debugSettingsMenu->addMenuItem(MenuItem(
-        "Old Onboarding Screens", [this, debugSettingsMenu, display, &lightingController]() {
-            auto demoScreen = new DemoScreen(*display, prefs_, lightingController);
-            this->setCurrentScreen(*demoScreen);
-            demoScreen->setBackCallback([this, demoScreen, debugSettingsMenu, display]() {
-                debugSettingsMenu->setFirstLoad();
-                display->clearDisplay();
-                setCurrentScreen(*debugSettingsMenu);
-                debugSettingsMenu->render(*this->display_);
-                delete demoScreen;
-            });
-        }));
-
     debugSettingsMenu->addMenuItem(MenuItem("File System Browser",
                                             [this, display, debugSettingsMenu, &fileSystem]() {
         auto fsMenu = new MenuScreen(power_.battery, *display, debugSettingsMenu->getMyStyle(),
@@ -1563,9 +1548,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     mainMenu->addSubMenu(settingsMenu);
 
     if (prefs_.cesMode.get().value_or(false)) {
-        auto cesScreen = new DemoScreen(*display, prefs_, lightingController);
-        cesScreen->bailAfterLensAdjust();
-
         // reset prefs for of The Last Question readable
         log_d("Starting CES mode readable load");
         auto it = std::find_if(readables.begin(), readables.end(),
@@ -1579,24 +1561,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         }
         auto readableScreen = createReadableScreen(*it);
         if (readableScreen != nullptr) {
-            cesScreen->setBackCallback([this, cesScreen, display, readableScreen]() {
-                display->clearDisplay();
-                this->display_->setFont(this->display_->style.getFontFamily().readableFont);
-                log_i("Setting Readable Screen after focus in CES mode");
-                this->setCurrentScreen(*readableScreen);
-                readableScreen->render(*this->display_);
-                delete cesScreen;
-            });
-            this->setCurrentScreen(*cesScreen);
-        } else {
-            auto *errorPopup = new MsgPopup(*display, itemErrorMsg_);
-            this->setCurrentScreen(*errorPopup);
-            errorPopup->setBackCallback([this, errorPopup, mainMenu]() {
-                mainMenu->setFirstLoad();
-                display_->clearDisplay();
-                setCurrentScreen(*mainMenu);
-                delete errorPopup;
-            });
+            this->setCurrentScreen(*readableScreen);
         }
     } else if (prefs_.emcMode.get().value_or(false)) {
         log_d("Starting EMC mode readable reading turn page every 30s and content sync every 60s");
