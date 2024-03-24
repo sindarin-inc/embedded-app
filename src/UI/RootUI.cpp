@@ -410,23 +410,23 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         bool archived = prefs_.readableArchivedChanged.get(r->shortenedUuid.c_str());
         auto title = StringFormat("%s%s", archived ? "Archived: " : "", r->title.c_str());
 
-        articlesMenu->addMenuItem(
-            MenuItem(title, [this, display, articlesMenu, mainMenu, r, createReadableScreen]() {
-                display->clearDisplay();
-                auto readableScreen = createReadableScreen(r);
-                if (readableScreen != nullptr) {
-                    setCurrentScreen(*readableScreen);
-                } else {
-                    auto *errorPopup = new MsgPopup(*display, itemErrorMsg_);
-                    this->setCurrentScreen(*errorPopup);
-                    errorPopup->setBackCallback([this, errorPopup, mainMenu]() {
-                        mainMenu->setFirstLoad();
-                        display_->clearDisplay();
-                        setCurrentScreen(*mainMenu);
-                        delete errorPopup;
-                    });
-                }
-            }));
+        articlesMenu->addMenuItem(MenuItem(title,
+                                           [this, display, mainMenu, r, createReadableScreen]() {
+            display->clearDisplay();
+            auto readableScreen = createReadableScreen(r);
+            if (readableScreen != nullptr) {
+                setCurrentScreen(*readableScreen);
+            } else {
+                auto *errorPopup = new MsgPopup(*display, itemErrorMsg_);
+                this->setCurrentScreen(*errorPopup);
+                errorPopup->setBackCallback([this, errorPopup, mainMenu]() {
+                    mainMenu->setFirstLoad();
+                    display_->clearDisplay();
+                    setCurrentScreen(*mainMenu);
+                    delete errorPopup;
+                });
+            }
+        }));
     }
 
     SHOW_HEAP();
