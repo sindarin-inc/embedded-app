@@ -104,8 +104,9 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     auto &readables = localStore.books();
     auto &articles = localStore.articles();
+    auto noContent = readables.empty() && articles.empty();
     // If there is no content, add some default content
-    if (readables.empty() && articles.empty()) {
+    if (noContent) {
         log_i("No content found, adding default readables to menu");
 
         std::shared_ptr<Readable> lastQuestion =
@@ -333,7 +334,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     };
 
     // If there are no books, show the Sync Content item in the books tab.
-    if (readables.empty()) {
+    if (noContent) {
         booksMenu->addMenuItem(makeContentSyncMenuItem("Sync Content"));
     }
 
