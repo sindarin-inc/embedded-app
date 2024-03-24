@@ -43,11 +43,12 @@ void AppDownloadScreen::render(DisplaySystem &display) {
 
 void AppDownloadScreen::processCommand(RemoteCommand command) { back(); }
 
+extern void UIInnerLoop(RemoteCommand command);
+
 void AppDownloadScreen::timerCallback(TimerHandle_t timer) {
     // If paired status goes to paired, go back
     if (PreferencesStore::paired == PairedStatus::Paired) {
-        auto *screen = static_cast<AppDownloadScreen *>(pvTimerGetTimerID(timer));
-        DispatchGetUiQueue()->dispatch([screen]() { screen->back(); });
+        DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::BACK); });
         xTimerStop(timer, 0);
     }
 }
