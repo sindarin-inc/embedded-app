@@ -1,5 +1,7 @@
 #include "UI/AppDownloadScreen.hpp"
 
+#include "Misc/Dispatch.hpp"
+#include "Storage/PreferencesStore.hpp"
 #include "sindarin-debug.h"
 
 auto AppDownloadScreen::layout(LayoutContext &context, Size size) -> Size {
@@ -40,3 +42,12 @@ void AppDownloadScreen::render(DisplaySystem &display) {
 }
 
 void AppDownloadScreen::processCommand(RemoteCommand command) { back(); }
+
+void AppDownloadScreen::timerCallback(TimerHandle_t timer) {
+    // If paired status goes to paired, go back
+    if (PreferencesStore::paired == PairedStatus::Paired) {
+        AppDownloadScreen *screen = static_cast<AppDownloadScreen *>(pvTimerGetTimerID(timer));
+        DispatchGetUiQueue()->dispatch([screen]() { screen->back(); });
+        xTimerStop(timer, 0);
+    }
+}
