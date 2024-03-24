@@ -104,7 +104,23 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     auto &readables = localStore.books();
     auto &articles = localStore.articles();
-    bool noContent = readables.empty() && articles.empty();
+    // If there is no content, add some default content
+    if (readables.empty() && articles.empty()) {
+        log_i("No content found, adding default readables to menu");
+
+        std::shared_ptr<Readable> lastQuestion =
+            std::make_shared<Readable>("d7570c42-18a9-4795-a44e-9cee09b9fe3e", "The Last Question",
+                                       LASTQUESTION_EPUB, LASTQUESTION_EPUB_SIZE);
+        readables.push_back(lastQuestion);
+
+        // If there is no content, and we haven't diabled the Bible, add Psalms and Proverbs
+        if (!prefs_.noBible.get().value_or(false)) {
+            std::shared_ptr<Readable> psalmsAndProverbs = std::make_shared<Readable>(
+                "6863fd3c-77a9-468e-93fa-f70d8b79029f", "Psalms and Proverbs",
+                PSALMSANDPROVERBS_EPUB, PSALMSANDPROVERBS_EPUB_SIZE);
+            readables.push_back(psalmsAndProverbs);
+        }
+    }
 
     // If prefs_.sortCriteria isn't select, sort the readables by last update and store them
     if (!prefs_.sortCriteria.get().has_value()) {
@@ -136,7 +152,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     auto bibleMenu = new Menu(mainMenu->getMyStyle(), "Bible");
     auto it = std::find_if(readables.begin(), readables.end(),
                            [isBible](const std::shared_ptr<Readable> &x) { return isBible(x); });
-    auto hasBible = it != readables.end() || noContent;
+    auto hasBible = it != readables.end();
 
     auto createReadableScreen = [this, display, mainMenu, booksMenu, bibleMenu, articlesMenu,
                                  hasBible, &fileSystem, &lightingController, &localStore](
@@ -350,25 +366,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         }));
     }
 
-    // If the local store has no readables, show at least The Last Question
-    if (noContent) {
-        std::shared_ptr<Readable> lastQuestion =
-            std::make_shared<Readable>("d7570c42-18a9-4795-a44e-9cee09b9fe3e", "The Last Question",
-                                       LASTQUESTION_EPUB, LASTQUESTION_EPUB_SIZE);
-
-        // Don't show if it's archived
-        bool archived = prefs_.readableArchivedChanged.get(lastQuestion->shortenedUuid.c_str());
-        if (!archived) {
-            booksMenu->addMenuItem(MenuItem(lastQuestion->title.c_str(), "Isaac Asimov",
-                                            [this, lastQuestion, createReadableScreen]() {
-                auto readableScreen = createReadableScreen(lastQuestion);
-                if (readableScreen != nullptr) {
-                    this->setCurrentScreen(*readableScreen);
-                }
-            }));
-        }
-    }
-
     SHOW_HEAP();
 
     if (!(prefs_.tutorialsDeleted.get().value_or(0) & TUTORIAL_SCREEN_BOOKS)) {
@@ -418,17 +415,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 auto readableScreen = createReadableScreen(r);
                 if (readableScreen != nullptr) {
                     setCurrentScreen(*readableScreen);
-                    readableScreen->setBackCallback(
-                        [this, r, display, readableScreen, mainMenu, articlesMenu]() {
-                    bool archived = prefs_.readableArchivedChanged.get(r->shortenedUuid.c_str());
-                    auto title =
-                        StringFormat("%s%s", archived ? "Archived: " : "", r->title.c_str());
-                    articlesMenu->changeItemTitleAt(articlesMenu->getCurrSelection(), title);
-                    display->clearDisplay();
-                    mainMenu->setFirstLoad();
-                    setCurrentScreen(*mainMenu);
-                    delete readableScreen;
-                    });
                 } else {
                     auto *errorPopup = new MsgPopup(*display, itemErrorMsg_);
                     this->setCurrentScreen(*errorPopup);
@@ -476,13 +462,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                         auto readableScreen = createReadableScreen(r);
                         if (readableScreen != nullptr) {
                             this->setCurrentScreen(*readableScreen);
-                            readableScreen->setBackCallback(
-                                [this, r, display, readableScreen, mainMenu]() {
-                            display->clearDisplay();
-                            mainMenu->setFirstLoad();
-                            setCurrentScreen(*mainMenu);
-                            delete readableScreen;
-                            });
                         } else {
                             auto *errorPopup = new MsgPopup(*display, itemErrorMsg_);
                             this->setCurrentScreen(*errorPopup);
@@ -494,24 +473,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                             });
                         }
                     }));
-            }
-        }
-        if (noContent) {
-            // If there is no content, and we haven't diabled the Bible, add Psalms and Proverbs
-            std::shared_ptr<Readable> psalmsAndProverbs = std::make_shared<Readable>(
-                "6863fd3c-77a9-468e-93fa-f70d8b79029f", "Psalms and Proverbs",
-                PSALMSANDPROVERBS_EPUB, PSALMSANDPROVERBS_EPUB_SIZE);
-            // Don't show if it's archived
-            bool archived =
-                prefs_.readableArchivedChanged.get(psalmsAndProverbs->shortenedUuid.c_str());
-            if (!archived) {
-                bibleMenu->addMenuItem(MenuItem(psalmsAndProverbs->title.c_str(),
-                                                [this, psalmsAndProverbs, createReadableScreen]() {
-                    auto readableScreen = createReadableScreen(psalmsAndProverbs);
-                    if (readableScreen != nullptr) {
-                        this->setCurrentScreen(*readableScreen);
-                    }
-                }));
             }
         }
 
