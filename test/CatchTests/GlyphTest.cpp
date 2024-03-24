@@ -82,7 +82,6 @@ TEST_CASE("Test glyph rendering") {
             glyph += static_cast<char>(code);
         } else if (code < 0x800) {
             // 2-byte sequence
-            log_i("2-byte sequence");
             glyph += static_cast<char>(0xC0 | (code >> 6));
             glyph += static_cast<char>(0x80 | (code & 0x3F));
         } else {
