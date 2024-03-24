@@ -110,6 +110,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         std::shared_ptr<Readable> lastQuestion =
             std::make_shared<Readable>("d7570c42-18a9-4795-a44e-9cee09b9fe3e", "The Last Question",
                                        LASTQUESTION_EPUB, LASTQUESTION_EPUB_SIZE);
+        lastQuestion->authors.push_back(
+            Author("91ae1429-c6d4-4b8b-88fa-81041d838f92", "Isaac Asimov", ""));
         if (!prefs_.readableArchivedChanged.get(lastQuestion->shortenedUuid.c_str())) {
             readables.push_back(lastQuestion);
         }
@@ -118,6 +120,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             std::shared_ptr<Readable> psalmsAndProverbs = std::make_shared<Readable>(
                 "6863fd3c-77a9-468e-93fa-f70d8b79029f", "Psalms and Proverbs",
                 PSALMSANDPROVERBS_EPUB, PSALMSANDPROVERBS_EPUB_SIZE);
+            psalmsAndProverbs->authors.push_back(
+                Author("7632d6ec-7339-4752-8672-a966503e1003", "Crossway ESV", ""));
             if (!prefs_.readableArchivedChanged.get(lastQuestion->shortenedUuid.c_str())) {
                 readables.push_back(psalmsAndProverbs);
             }
