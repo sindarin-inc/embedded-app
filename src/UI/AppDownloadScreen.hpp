@@ -17,13 +17,15 @@
 class AppDownloadScreen : public Screen, public EinkView {
 public:
     AppDownloadScreen(DisplaySystem &display)
-        : Screen(), EinkView(display), topLineView_(display, 2),
+        : Screen(), EinkView(display),
+          syncPollingTimer_(xTimerCreate("syncPollingTimer", pdMS_TO_TICKS(5000), pdTRUE, this,
+                                         AppDownloadScreen::timerCallback)),
+          topLineView_(display, 2),
           iconView_(display, DOWNLOAD_APP_QR_BITS, DownloadAppQr_width, DownloadAppQr_height, 3),
           bottomLine_(display, "solreader.com/app") {
         topLineView_.setText("Set up WiFi with the\nSol Reader app");
         topLineView_.alignCenter = true;
-        syncPollingTimer_ = xTimerCreate("syncPollingTimer", pdMS_TO_TICKS(5000), pdTRUE, this,
-                                         AppDownloadScreen::timerCallback);
+
         xTimerStart(syncPollingTimer_, 0);
     };
     ~AppDownloadScreen() override {
