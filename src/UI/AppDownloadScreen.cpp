@@ -6,14 +6,13 @@ auto AppDownloadScreen::layout(LayoutContext &context, Size size) -> Size {
     context.setSublayoutFrame(
         Rect::fromSize(size), LayoutOptionsSizeToFitVertical | LayoutOptionsAlignCenterVertical,
         [this](LayoutContext &context, Size size) -> Size {
-            int x = 0;
             int y = 0;
 
             // Text with a box around it
             auto topLineViewRect =
                 context.setViewFrame(topLineView_, {{0, y}, {size.width, 100}},
                                      LayoutOptionsSizeToFit | LayoutOptionsAlignCenterHorizontal);
-            y += topLineViewRect.size.height + 5;
+            y += topLineViewRect.size.height + 7;
 
             auto iconViewRect =
                 context.setViewFrame(iconView_, {{0, y}, {size.width, 200}},
@@ -47,8 +46,4 @@ void AppDownloadScreen::render(DisplaySystem &display) {
     display.updateDisplay();
 }
 
-void AppDownloadScreen::processCommand(RemoteCommand command) {
-    if (command == RemoteCommand::ENTER) {
-        back();
-    }
-}
+void AppDownloadScreen::processCommand(RemoteCommand command) { back(); }
