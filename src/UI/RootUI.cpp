@@ -455,7 +455,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 "Did you know "
                 "you can change the sort order of your books and articles? "
                 "Simply go to Settings -> Content -> Sort Order."
-                "\n\n\nPress \ue000 (center)to "
+                "\n\n\nPress \ue000 (center) to "
                 "continue.\n");
             auto tutorialScreen = createTutorialScreen(message, TUTORIAL_SCREEN_ARTICLES);
             this->setCurrentScreen(*tutorialScreen);
