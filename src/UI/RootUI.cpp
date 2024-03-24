@@ -375,7 +375,12 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             SpiramString message = SpiramString(
                 "Welcome to the Books menu. This tab "
                 "shows you the books currently synced to your Sol Reader. To add more books or "
-                "manage the books on your device, use the Sol mobile app.\n\n\nPress "
+                "manage the books on your device, use the Sol mobile app.\n\n"
+                "Did you know "
+                "you can change the position, width, and height of the page in the Sol Reader "
+                "display? "
+                "Simply go to Settings -> Reading -> Resize Page."
+                "\n\n\nPress "
                 "\ue000 (center) to continue.");
             auto tutorialScreen = createTutorialScreen(message, TUTORIAL_SCREEN_BOOKS);
             this->setCurrentScreen(*tutorialScreen);
@@ -444,7 +449,11 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 "Welcome to the Articles menu. This tab "
                 "shows you the articles currently synced to your Sol Reader. To add more articles, "
                 "simply connect your Pocket account in the Sol mobile app or forward newsletters "
-                "from your inbox to add@solreader.com.\n\n\nPress \ue000 (center) to "
+                "from your inbox to add@solreader.com.\n\n"
+                "Did you know "
+                "you can change the sort order of your books and articles? "
+                "Simply go to Settings -> Content -> Sort Order."
+                "\n\n\nPress \ue000 (center)to "
                 "continue.\n");
             auto tutorialScreen = createTutorialScreen(message, TUTORIAL_SCREEN_ARTICLES);
             this->setCurrentScreen(*tutorialScreen);
