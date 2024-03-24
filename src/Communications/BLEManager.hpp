@@ -26,7 +26,6 @@ public:
         }
     }
 
-    bool connectedProxy{false};
     inline void setConnId(uint16_t connId) { connId_ = connId; }
     [[nodiscard]] inline auto getConnId() const -> uint16_t { return connId_; }
 
@@ -46,6 +45,8 @@ public:
         }
         return true;
     }
+
+    bool connectedProxy{false};
 
 protected:
     static std::shared_ptr<BLEManager> instance;
