@@ -112,14 +112,17 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         std::shared_ptr<Readable> lastQuestion =
             std::make_shared<Readable>("d7570c42-18a9-4795-a44e-9cee09b9fe3e", "The Last Question",
                                        LASTQUESTION_EPUB, LASTQUESTION_EPUB_SIZE);
-        readables.push_back(lastQuestion);
-
+        if (!prefs_.readableArchivedChanged.get(lastQuestion->shortenedUuid.c_str())) {
+            readables.push_back(lastQuestion);
+        }
         // If there is no content, and we haven't diabled the Bible, add Psalms and Proverbs
         if (!prefs_.noBible.get().value_or(false)) {
             std::shared_ptr<Readable> psalmsAndProverbs = std::make_shared<Readable>(
                 "6863fd3c-77a9-468e-93fa-f70d8b79029f", "Psalms and Proverbs",
                 PSALMSANDPROVERBS_EPUB, PSALMSANDPROVERBS_EPUB_SIZE);
-            readables.push_back(psalmsAndProverbs);
+            if (!prefs_.readableArchivedChanged.get(lastQuestion->shortenedUuid.c_str())) {
+                readables.push_back(psalmsAndProverbs);
+            }
         }
     }
 
