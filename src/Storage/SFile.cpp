@@ -2,7 +2,6 @@
 
 #include <cstring>
 
-#include "UI/Epubs/OnboardingEpub1.hpp"
 #include "sindarin-debug.h"
 
 // SFile

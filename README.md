@@ -285,3 +285,9 @@ If you need to regenerate the app download qr code image, do it like this
 ```sh
 qrencode -s 1 -l Q -m 0 -t PNG32 -o src/UI/Bitmaps/DownloadAppQr.png https://solreader.com/app
 ```
+
+## Generating static epubs
+
+```bash
+for f in src/Storage/EPubs/*.epub; do echo "Converting $f"; venv/bin/python scripts/file_to_header.py "$f" -o "${f}.hpp"; done
+```

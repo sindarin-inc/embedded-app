@@ -23,6 +23,7 @@
 #include "Misc/Telemetry.hpp"
 #include "Models/Readable.hpp"
 #include "Renderers/Renderer.hpp"
+#include "Storage/EPubs/LastQuestion.epub.hpp"
 #include "Storage/LocalStore.hpp"
 #include "UI/AboutScreen.hpp"
 #include "UI/AlignmentScreen.hpp"
@@ -33,7 +34,6 @@
 #include "UI/CrashReportScreen.hpp"
 #include "UI/DebugAboutScreen.hpp"
 #include "UI/DemoScreen.hpp"
-#include "UI/Epubs/OnboardingEpubManager.hpp"
 #include "UI/FirmwareUpdateScreen.hpp"
 #include "UI/Fonts/Fonts.hpp"
 #include "UI/LayoutTestScreen.hpp"
@@ -71,8 +71,6 @@
 #endif
 
 #define LAST_READABLE_ID "rui-readable"
-
-extern OnboardingEpubManager onboardingEpubs;
 
 // NOLINTNEXTLINE(readability-function-size): It's big, I know
 void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &fileSystem,
@@ -350,31 +348,29 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         }));
     }
 
-    for (const auto &onboardingEpub : onboardingEpubs.onboardingEpubsVector) {
-        std::shared_ptr<Readable> onboardingReadable = std::make_shared<Readable>();
-        // TODO: There's probably other metadata we want here
-        onboardingReadable->title = onboardingEpub.name;
-        onboardingReadable->localOnly = true;
-        onboardingReadable->localBytes = onboardingEpub.bytes;
-        onboardingReadable->localBytesSize = onboardingEpub.size;
-        booksMenu->addMenuItem(
-            MenuItem(onboardingReadable->title.c_str(), "The Sol Team",
-                     [this, onboardingReadable, display, mainMenu, createReadableScreen]() {
-            auto readableScreen = createReadableScreen(onboardingReadable);
-            if (readableScreen != nullptr) {
-                this->setCurrentScreen(*readableScreen);
-            } else {
-                auto *errorPopup = new MsgPopup(*display, itemErrorMsg_);
-                this->setCurrentScreen(*errorPopup);
-                errorPopup->setBackCallback([this, errorPopup, mainMenu]() {
-                    mainMenu->setFirstLoad();
-                    display_->clearDisplay();
-                    setCurrentScreen(*mainMenu);
-                    delete errorPopup;
-                });
-            }
-            }));
-    }
+    std::shared_ptr<Readable> onboardingReadable = std::make_shared<Readable>();
+    // TODO: There's probably other metadata we want here
+    onboardingReadable->title = "Last Question";
+    onboardingReadable->localOnly = true;
+    onboardingReadable->localBytes = LASTQUESTION_EPUB;
+    onboardingReadable->localBytesSize = LASTQUESTION_EPUB_SIZE;
+    booksMenu->addMenuItem(
+        MenuItem(onboardingReadable->title.c_str(), "The Sol Team",
+                 [this, onboardingReadable, display, mainMenu, createReadableScreen]() {
+        auto readableScreen = createReadableScreen(onboardingReadable);
+        if (readableScreen != nullptr) {
+            this->setCurrentScreen(*readableScreen);
+        } else {
+            auto *errorPopup = new MsgPopup(*display, itemErrorMsg_);
+            this->setCurrentScreen(*errorPopup);
+            errorPopup->setBackCallback([this, errorPopup, mainMenu]() {
+                mainMenu->setFirstLoad();
+                display_->clearDisplay();
+                setCurrentScreen(*mainMenu);
+                delete errorPopup;
+            });
+        }
+        }));
 
     SHOW_HEAP();
 
@@ -1227,8 +1223,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         power_.reboot();
     }));
 
-    debugSettingsMenu->addMenuItem(
-        MenuItem("Onboarding Screens", [this, debugSettingsMenu, display, &lightingController]() {
+    debugSettingsMenu->addMenuItem(MenuItem(
+        "Old Onboarding Screens", [this, debugSettingsMenu, display, &lightingController]() {
             auto demoScreen = new DemoScreen(*display, prefs_, lightingController);
             this->setCurrentScreen(*demoScreen);
             demoScreen->setBackCallback([this, demoScreen, debugSettingsMenu, display]() {
