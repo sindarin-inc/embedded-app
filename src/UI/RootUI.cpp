@@ -352,12 +352,9 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     // If the local store has no readables, show at least The Last Question
     if (noContent) {
-        std::shared_ptr<Readable> lastQuestion = std::make_shared<Readable>();
-        lastQuestion->uuid = "local-last-question";
-        lastQuestion->title = "The Last Question";
-        lastQuestion->localOnly = true;
-        lastQuestion->localBytes = LASTQUESTION_EPUB;
-        lastQuestion->localBytesSize = LASTQUESTION_EPUB_SIZE;
+        std::shared_ptr<Readable> lastQuestion =
+            std::make_shared<Readable>("d7570c42-18a9-4795-a44e-9cee09b9fe3e", "The Last Question",
+                                       LASTQUESTION_EPUB, LASTQUESTION_EPUB_SIZE);
         booksMenu->addMenuItem(MenuItem(lastQuestion->title.c_str(), "Isaac Asimov",
                                         [this, lastQuestion, createReadableScreen]() {
             auto readableScreen = createReadableScreen(lastQuestion);
@@ -496,12 +493,9 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         }
         if (noContent) {
             // If there is no content, and we haven't diabled the Bible, add Psalms and Proverbs
-            std::shared_ptr<Readable> psalmsAndProverbs = std::make_shared<Readable>();
-            psalmsAndProverbs->uuid = "local-psalms-and-proverbs";
-            psalmsAndProverbs->title = "Psalms and Proverbs";
-            psalmsAndProverbs->localOnly = true;
-            psalmsAndProverbs->localBytes = PSALMSANDPROVERBS_EPUB;
-            psalmsAndProverbs->localBytesSize = PSALMSANDPROVERBS_EPUB_SIZE;
+            std::shared_ptr<Readable> psalmsAndProverbs = std::make_shared<Readable>(
+                "6863fd3c-77a9-468e-93fa-f70d8b79029f", "Psalms and Proverbs",
+                PSALMSANDPROVERBS_EPUB, PSALMSANDPROVERBS_EPUB_SIZE);
             bibleMenu->addMenuItem(MenuItem(psalmsAndProverbs->title.c_str(),
                                             [this, psalmsAndProverbs, createReadableScreen]() {
                 auto readableScreen = createReadableScreen(psalmsAndProverbs);
