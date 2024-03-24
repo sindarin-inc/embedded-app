@@ -357,14 +357,13 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         lastQuestion->localOnly = true;
         lastQuestion->localBytes = LASTQUESTION_EPUB;
         lastQuestion->localBytesSize = LASTQUESTION_EPUB_SIZE;
-        booksMenu->addMenuItem(
-            MenuItem(lastQuestion->title.c_str(), "Isaac Asimov",
-                     [this, lastQuestion, display, mainMenu, createReadableScreen]() {
+        booksMenu->addMenuItem(MenuItem(lastQuestion->title.c_str(), "Isaac Asimov",
+                                        [this, lastQuestion, createReadableScreen]() {
             auto readableScreen = createReadableScreen(lastQuestion);
             if (readableScreen != nullptr) {
                 this->setCurrentScreen(*readableScreen);
             }
-            }));
+        }));
     }
 
     SHOW_HEAP();
@@ -495,14 +494,13 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             psalmsAndProverbs->localOnly = true;
             psalmsAndProverbs->localBytes = PSALMSANDPROVERBS_EPUB;
             psalmsAndProverbs->localBytesSize = PSALMSANDPROVERBS_EPUB_SIZE;
-            bibleMenu->addMenuItem(
-                MenuItem(psalmsAndProverbs->title.c_str(),
-                         [this, psalmsAndProverbs, display, mainMenu, createReadableScreen]() {
+            bibleMenu->addMenuItem(MenuItem(psalmsAndProverbs->title.c_str(),
+                                            [this, psalmsAndProverbs, createReadableScreen]() {
                 auto readableScreen = createReadableScreen(psalmsAndProverbs);
                 if (readableScreen != nullptr) {
                     this->setCurrentScreen(*readableScreen);
                 }
-                }));
+            }));
         }
 
         if (!(prefs_.tutorialsDeleted.get().value_or(0) & TUTORIAL_SCREEN_BIBLE)) {
