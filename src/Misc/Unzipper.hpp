@@ -129,7 +129,7 @@ private:
     mz_stream zstr_{};
 
 public:
-    Unzipper(SFile file) : file_(file) {}
+    Unzipper(const SFile &file) : file_(file) {}
 
     ~Unzipper() {
         if (isOpen_) {

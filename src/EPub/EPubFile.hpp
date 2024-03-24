@@ -14,7 +14,7 @@
 
 class EPubFile : public RendererStream {
 public:
-    EPubFile(SFile file, std::shared_ptr<Readable> readable)
+    EPubFile(const SFile &file, std::shared_ptr<Readable> readable)
         : RendererStream(DocType::EPUB), epubUnzipper_(file), readable_(std::move(readable)),
           currentFileBuffer_(nullptr) {
         open();
