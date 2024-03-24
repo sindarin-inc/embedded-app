@@ -2,6 +2,9 @@
 
 #include <esp_system.h>
 
+#if !SIMULATOR
+#include "Communications/BLEManager.hpp"
+#endif
 #include "Communications/FirmwareDownload.hpp"
 #include "Communications/WiFi.hpp"
 #include "Misc/Dispatch.hpp"
@@ -125,16 +128,28 @@ void FirmwareUpdateScreen::begin() {
         return;
     }
 
+#if !SIMULATOR
+    // Disable the BLE Peripheral. This seems to almost always crash the device with a
+    // btdm_controller_task crash
+    BLEManager::getInstance()->stopAdvertising();
+    auto bleManager = BLEManager::getInstance();
+    bleManager->disconnectAll();
+    auto resumeBLE = [bleManager] { bleManager->startAdvertisingIfNecessary(); };
+#else
+    auto resumeBLE = [] {};
+#endif
+
     state_.state = FirmwareDownloadState::ConnectingWifi;
     render(display_);
 
     if (!WiFi::getInstance().connectWiFiFromSettings()) {
         fail("Failed to connect to WiFi.");
+        resumeBLE();
         return;
     }
 
-    firmwareDownloader_.downloadFirmware([this](const FirmwareDownloadState &state) {
-        DispatchGetUiQueue()->dispatch([this, state]() {
+    firmwareDownloader_.downloadFirmware([this, resumeBLE](const FirmwareDownloadState &state) {
+        DispatchGetUiQueue()->dispatch([this, state, resumeBLE]() {
             if (state_ == state) {
                 log_d("State unchanged, skipping update");
                 return;
@@ -154,12 +169,14 @@ void FirmwareUpdateScreen::begin() {
             if (state.state == FirmwareDownloadState::Failure ||
                 state.state == FirmwareDownloadState::AlreadyUpToDate) {
                 vTaskDelay(3000 / portTICK_PERIOD_MS);
+                resumeBLE();
                 back();
             } else if (state.state == FirmwareDownloadState::Installed) {
                 vTaskDelay(3000 / portTICK_PERIOD_MS);
                 log_i("Rebooting after successful firmware update");
                 PowerManager::getInstance().reboot();
                 // Only for the sim
+                resumeBLE();
                 back();
             }
         });
