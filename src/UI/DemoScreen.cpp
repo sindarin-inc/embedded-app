@@ -449,7 +449,7 @@ void DemoScreen::render(DisplaySystem &display) {
         nextVcomNudge_ = 0;
     }
 
-    if ((currentScreen_ != lambdas_.size() - 1)) {
+    if (currentScreen_ < lambdas_.size()) {
         // Must stop the timer because ChangePeriod starts it.
         xTimerStop(DisplaySystem::animationTimer, 0);
         // Move to the next animation
