@@ -19,6 +19,12 @@ public:
     void enableService(BLEService *service);
     void disableService(BLEService *service);
     auto server() -> BLEServer *;
+    void disconnectAll() {
+        auto peerDevices = server()->getPeerDevices();
+        for (auto &device : peerDevices) {
+            server()->disconnect(device, BLE_ERR_REM_USER_CONN_TERM);
+        }
+    }
 
     bool connectedProxy{false};
     inline void setConnId(uint16_t connId) { connId_ = connId; }
