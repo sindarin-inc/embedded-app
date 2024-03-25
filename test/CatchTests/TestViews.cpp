@@ -432,12 +432,9 @@ TEST_CASE("Test some views independently") {
 
         SECTION("Test DemoScreen") {
             LightingController lightingController;
-            DemoScreen screen(*display, prefs, lightingController);
+            DemoScreen screen(*display, prefs);
             screen.render(*display);
             ASSERT_VIEW_UNCHANGED("DemoScreen");
-            screen.processCommand(UP);
-            screen.render(*display);
-            ASSERT_VIEW_UNCHANGED("DemoScreenSerial");
         }
 
         SECTION("Test ContentSyncScreen") {
