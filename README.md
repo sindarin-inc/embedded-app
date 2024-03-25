@@ -286,6 +286,18 @@ If you need to regenerate the app download qr code image, do it like this
 qrencode -s 1 -l Q -m 0 -t PNG32 -o src/UI/Bitmaps/DownloadAppQr.png https://solreader.com/app
 ```
 
+You might after a while want to clean up unused header bitmap files. You can do that with:
+
+```sh
+for f in src/UI/Bitmaps/*.hpp; do b=$(basename $f); git grep -q "Bitmaps/$b" || echo "$b is unused"; done
+```
+
+You might also want to trace where the bitmaps are used:
+
+```sh
+for f in src/UI/Bitmaps/*.hpp; do b=$(basename $f); echo $f is used in; git grep -l "Bitmaps/$b"; done
+```
+
 ## Generating static epubs
 
 ```bash

@@ -6,7 +6,6 @@
 #include <filesystem>
 #include <nvs_flash.h>
 
-#include "Bitmaps/Logo.hpp"
 #include "Communications/HtmlCleaner.hpp"
 #include "Communications/SindarinAPI.hpp"
 #include "Communications/WiFi.hpp"
@@ -42,7 +41,6 @@
 #include "UI/LightingAdjustScreen.hpp"
 #include "UI/LineMenuScreen.hpp"
 #include "UI/LineSpacingScreen.hpp"
-#include "UI/LogoScreen.hpp"
 #include "UI/MainMenuScreen.hpp"
 #include "UI/MsgPopup.hpp"
 #include "UI/OffsetAdjustScreen.hpp"
@@ -1535,15 +1533,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         esp_deep_sleep_start();
     }));
 
-    oldMenu->addMenuItem(MenuItem("Test Bitmap Screen", [this, oldMenu]() {
-        auto bitmapScreen = new BitmapScreen(LOGO_BITS, LOGO_WIDTH, LOGO_HEIGHT);
-        setCurrentScreen(*bitmapScreen);
-        bitmapScreen->setBackCallback([this, bitmapScreen, oldMenu]() {
-            setCurrentScreen(*oldMenu);
-            delete bitmapScreen;
-        });
-    }));
-
     if (!(prefs_.tutorialsDeleted.get().value_or(0) & TUTORIAL_SCREEN_SETTINGS)) {
         settingsMenu->addMenuItem(MenuItem("\ue000 Settings Tutorial",
                                            [this, createTutorialScreen]() {
@@ -1685,18 +1674,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         // screen
 
         setCurrentScreen(*mainMenu);
-
-        /*
-        auto calibrationScreen = new LogoScreen();
-        calibrationScreen->setBackCallback([this, calibrationScreen, display, mainMenu]() {
-            display->clearScreen();
-            Delay(100);
-
-            setCurrentScreen(*mainMenu);
-            delete calibrationScreen;
-        });
-        setCurrentScreen(*calibrationScreen);
-        */
     }
 
     // If we are in demo mode, overright whatever the current screen would have been
