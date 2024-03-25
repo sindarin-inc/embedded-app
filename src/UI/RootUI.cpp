@@ -6,7 +6,6 @@
 #include <filesystem>
 #include <nvs_flash.h>
 
-#include "Bitmaps/Logo.hpp"
 #include "Communications/HtmlCleaner.hpp"
 #include "Communications/SindarinAPI.hpp"
 #include "Communications/WiFi.hpp"
@@ -34,6 +33,7 @@
 #include "UI/ContentSyncScreen.hpp"
 #include "UI/CrashReportScreen.hpp"
 #include "UI/DebugAboutScreen.hpp"
+#include "UI/DemoScreen.hpp"
 #include "UI/FirmwareUpdateScreen.hpp"
 #include "UI/Fonts/Fonts.hpp"
 #include "UI/LayoutTestScreen.hpp"
@@ -41,10 +41,10 @@
 #include "UI/LightingAdjustScreen.hpp"
 #include "UI/LineMenuScreen.hpp"
 #include "UI/LineSpacingScreen.hpp"
-#include "UI/LogoScreen.hpp"
 #include "UI/MainMenuScreen.hpp"
 #include "UI/MsgPopup.hpp"
 #include "UI/OffsetAdjustScreen.hpp"
+#include "UI/OnboardingContentSyncScreen.hpp"
 #include "UI/ReadableScreen.hpp"
 #include "UI/ReleaseNotesScreen.hpp"
 #include "UI/ResizeBoxScreen.hpp"
@@ -1125,6 +1125,18 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         }));
     }
 
+    systemSettingsMenu->addMenuItem(MenuItem("Manifesto", [this, systemSettingsMenu, display]() {
+        auto demoScreen = new DemoScreen(*display, prefs_);
+        this->setCurrentScreen(*demoScreen);
+        demoScreen->setBackCallback([this, demoScreen, systemSettingsMenu, display]() {
+            systemSettingsMenu->setFirstLoad();
+            display->clearDisplay();
+            setCurrentScreen(*systemSettingsMenu);
+            systemSettingsMenu->render(*this->display_);
+            delete demoScreen;
+        });
+    }));
+
     systemSettingsMenu->addMenuItem(MenuItem("Reset Statistics",
                                              [this, systemSettingsMenu, display]() {
         prefs_.wordCount.remove();
@@ -1520,15 +1532,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         esp_deep_sleep_start();
     }));
 
-    oldMenu->addMenuItem(MenuItem("Test Bitmap Screen", [this, oldMenu]() {
-        auto bitmapScreen = new BitmapScreen(LOGO_BITS, LOGO_WIDTH, LOGO_HEIGHT);
-        setCurrentScreen(*bitmapScreen);
-        bitmapScreen->setBackCallback([this, bitmapScreen, oldMenu]() {
-            setCurrentScreen(*oldMenu);
-            delete bitmapScreen;
-        });
-    }));
-
     if (!(prefs_.tutorialsDeleted.get().value_or(0) & TUTORIAL_SCREEN_SETTINGS)) {
         settingsMenu->addMenuItem(MenuItem("\ue000 Settings Tutorial",
                                            [this, createTutorialScreen]() {
@@ -1545,6 +1548,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     mainMenu->addSubMenu(settingsMenu);
 
     if (prefs_.cesMode.get().value_or(false)) {
+        auto cesScreen = new DemoScreen(*display, prefs_);
+
         // reset prefs for of The Last Question readable
         log_d("Starting CES mode readable load");
         auto it = std::find_if(readables.begin(), readables.end(),
@@ -1558,7 +1563,24 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         }
         auto readableScreen = createReadableScreen(*it);
         if (readableScreen != nullptr) {
-            this->setCurrentScreen(*readableScreen);
+            cesScreen->setBackCallback([this, cesScreen, display, readableScreen]() {
+                display->clearDisplay();
+                this->display_->setFont(this->display_->style.getFontFamily().readableFont);
+                log_i("Setting Readable Screen after focus in CES mode");
+                this->setCurrentScreen(*readableScreen);
+                readableScreen->render(*this->display_);
+                delete cesScreen;
+            });
+            this->setCurrentScreen(*cesScreen);
+        } else {
+            auto *errorPopup = new MsgPopup(*display, itemErrorMsg_);
+            this->setCurrentScreen(*errorPopup);
+            errorPopup->setBackCallback([this, errorPopup, mainMenu]() {
+                mainMenu->setFirstLoad();
+                display_->clearDisplay();
+                setCurrentScreen(*mainMenu);
+                delete errorPopup;
+            });
         }
     } else if (prefs_.emcMode.get().value_or(false)) {
         log_d("Starting EMC mode readable reading turn page every 30s and content sync every 60s");
@@ -1650,18 +1672,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         // screen
 
         setCurrentScreen(*mainMenu);
-
-        /*
-        auto calibrationScreen = new LogoScreen();
-        calibrationScreen->setBackCallback([this, calibrationScreen, display, mainMenu]() {
-            display->clearScreen();
-            Delay(100);
-
-            setCurrentScreen(*mainMenu);
-            delete calibrationScreen;
-        });
-        setCurrentScreen(*calibrationScreen);
-        */
     }
 
     // If we are in demo mode, overright whatever the current screen would have been
