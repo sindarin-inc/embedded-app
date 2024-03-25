@@ -1127,6 +1127,19 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         }));
     }
 
+    systemSettingsMenu->addMenuItem(
+        MenuItem("Manifesto", [this, debugSettingsMenu, display, &lightingController]() {
+            auto demoScreen = new DemoScreen(*display, prefs_, lightingController);
+            this->setCurrentScreen(*demoScreen);
+            demoScreen->setBackCallback([this, demoScreen, debugSettingsMenu, display]() {
+                debugSettingsMenu->setFirstLoad();
+                display->clearDisplay();
+                setCurrentScreen(*debugSettingsMenu);
+                debugSettingsMenu->render(*this->display_);
+                delete demoScreen;
+            });
+        }));
+
     systemSettingsMenu->addMenuItem(MenuItem("Reset Statistics",
                                              [this, systemSettingsMenu, display]() {
         prefs_.wordCount.remove();
@@ -1208,19 +1221,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         systemSettingsMenu->showTemporaryMessage(*display, "Resetting Device! Rebooting...");
         power_.reboot();
     }));
-
-    debugSettingsMenu->addMenuItem(MenuItem(
-        "Old Onboarding Screens", [this, debugSettingsMenu, display, &lightingController]() {
-            auto demoScreen = new DemoScreen(*display, prefs_, lightingController);
-            this->setCurrentScreen(*demoScreen);
-            demoScreen->setBackCallback([this, demoScreen, debugSettingsMenu, display]() {
-                debugSettingsMenu->setFirstLoad();
-                display->clearDisplay();
-                setCurrentScreen(*debugSettingsMenu);
-                debugSettingsMenu->render(*this->display_);
-                delete demoScreen;
-            });
-        }));
 
     debugSettingsMenu->addMenuItem(MenuItem("File System Browser",
                                             [this, display, debugSettingsMenu, &fileSystem]() {
