@@ -11,7 +11,9 @@
 #include <unordered_map>
 #include <utility>
 
+#if !SIMULATOR
 #include "Communications/BLEManager.hpp"
+#endif
 #include "Communications/HtmlCleaner.hpp"
 #include "Communications/WiFi.hpp"
 #include "Misc/Crypto.hpp"
@@ -525,6 +527,7 @@ void LocalStore::syncFromRemote(
         wifiConnected = true;
     }
 
+#if !SIMULATOR
     if (!wifiConnected && !BLEManager::getInstance()->connectProxy(cancel)) {
         this->telemetry_.logMetric(TelemetryField::METRIC_WIFI, "sync-ble-failed");
         progressCallback(ContentSyncState{.state = ContentSyncState::State::Failure,
@@ -533,6 +536,7 @@ void LocalStore::syncFromRemote(
     } else {
         bleConnected = true;
     }
+#endif
 
     if (CancelFlag::isCancelled(cancel)) {
         return;
