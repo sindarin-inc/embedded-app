@@ -212,7 +212,7 @@ auto RamFile::read(uint8_t *buf, size_t size) -> size_t {
         return -1;
     }
 
-    memcpy(buf, (char *)(fData_ + position()), size);
+    memcpy(buf, reinterpret_cast<const char *>(fData_ + position()), size);
     fPos_ += size;
     return size;
 }
