@@ -140,7 +140,13 @@ void FirmwareUpdateScreen::render(DisplaySystem &display) {
         progressBarViews_[1]->setProgress(50);
         checkmarkViews_[0]->setHidden(false);
         break;
-    case FirmwareDownloadState::Downloading:
+    case FirmwareDownloadState::Downloading: {
+        std::string newText =
+            StringFormat("Downloading Update %s", firmwareDownloader_.versionString.c_str());
+        if (textViews_[2]->getText() != newText) {
+            textViews_[2]->setText(newText);
+            nextUpdate_ = DisplaySystem::UpdateType::PARTIAL;
+        }
         textViews_[2]->setText(
             StringFormat("Downloading Update %s", firmwareDownloader_.versionString.c_str()));
         progressBarViews_[0]->setProgress(100);
@@ -149,6 +155,7 @@ void FirmwareUpdateScreen::render(DisplaySystem &display) {
         checkmarkViews_[1]->setHidden(false);
         progressBarViews_[2]->setProgress(state_.percentage);
         break;
+    }
     case FirmwareDownloadState::AlreadyDownloaded:
     case FirmwareDownloadState::Downloaded:
         progressBarViews_[0]->setProgress(100);
@@ -159,9 +166,13 @@ void FirmwareUpdateScreen::render(DisplaySystem &display) {
         checkmarkViews_[2]->setHidden(false);
         progressBarViews_[3]->setProgress(state_.percentage);
         break;
-    case FirmwareDownloadState::Installing:
-        textViews_[2]->setText(
-            StringFormat("Installing Update %s", firmwareDownloader_.versionString.c_str()));
+    case FirmwareDownloadState::Installing: {
+        std::string newText =
+            StringFormat("Installing Update %s", firmwareDownloader_.versionString.c_str());
+        if (textViews_[3]->getText() != newText) {
+            textViews_[3]->setText(newText);
+            nextUpdate_ = DisplaySystem::UpdateType::PARTIAL;
+        }
         progressBarViews_[0]->setProgress(100);
         progressBarViews_[1]->setProgress(100);
         progressBarViews_[2]->setProgress(100);
@@ -171,6 +182,7 @@ void FirmwareUpdateScreen::render(DisplaySystem &display) {
         checkmarkViews_[2]->setHidden(false);
         checkmarkViews_[3]->setHidden(false);
         break;
+    }
     case FirmwareDownloadState::Installed:
     case FirmwareDownloadState::AlreadyUpToDate: {
         progressBarViews_[0]->setProgress(100);
