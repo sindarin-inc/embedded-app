@@ -72,6 +72,27 @@ TEST_CASE("Test glyph rendering") {
         }
     }
 
+    // Add all Greek characters from U+0370 to U+03FF (but dont add to pairs)
+    for (int code = 0x0370; code <= 0x03FF; ++code) {
+        std::string glyph;
+
+        // Convert code point to UTF-8
+        if (code < 0x80) {
+            // 1-byte sequence
+            glyph += static_cast<char>(code);
+        } else if (code < 0x800) {
+            // 2-byte sequence
+            glyph += static_cast<char>(0xC0 | (code >> 6));
+            glyph += static_cast<char>(0x80 | (code & 0x3F));
+        } else {
+            // 3-byte sequence
+            glyph += static_cast<char>(0xE0 | (code >> 12));
+            glyph += static_cast<char>(0x80 | ((code >> 6) & 0x3F));
+            glyph += static_cast<char>(0x80 | (code & 0x3F));
+        }
+        glyphPairs.push_back(glyph);
+    }
+
     auto renderGlyphs =
         [&glyphPairs, &display](const std::string &key, int gridWidth, int gridHeight, Font *font) {
         GlyphTestScreen screen(glyphPairs, gridWidth, gridHeight);
