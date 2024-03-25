@@ -1090,13 +1090,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         firmwareUpdateScreen->begin();
     }));
 
-    systemSettingsMenu->addMenuItem(MenuItem("First Time Setup",
-                                             [this, systemSettingsMenu, display]() {
-        systemSettingsMenu->showTemporaryMessage(*display,
-                                                 "Turning on first time setup and restarting.");
-        power_.reboot();
-    }));
-
 #if USE_TURN_TOUCH_REMOTE
     debugSettingsMenu->addMenuItem(MenuItem("Unpair PageTurner",
                                             [this, debugSettingsMenu, display]() {
