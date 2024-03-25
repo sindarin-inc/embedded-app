@@ -108,6 +108,16 @@ void ContentSyncScreen::showPopup(const std::string &message) {
     nextUpdate_ = DisplaySystem::UpdateType::PARTIAL;
 }
 
+void ContentSyncScreen::cancel() {
+    CancelFlag::cancel(cancel_);
+    telemetry_.logMetric(TelemetryField::METRIC_SYNC_STATUS, "sync-cancelled");
+    WiFi::getInstance().disconnectWiFi();
+    showPopup("Sync cancelled!\n\nRebooting system...");
+    render(display_);
+    vTaskDelay(3000 / portTICK_PERIOD_MS);
+    PowerManager::getInstance().reboot();
+}
+
 void ContentSyncScreen::render(DisplaySystem &display) {
     int adjustedXPadding = 42;
     int adjustedYPadding = 10;
@@ -186,21 +196,11 @@ void ContentSyncScreen::render(DisplaySystem &display) {
     nextUpdate_ = DisplaySystem::UpdateType::FAST_WITH_VCOM_NUDGE;
 }
 
-void ContentSyncScreen::cancel() {
-    CancelFlag::cancel(cancel_);
-    telemetry_.logMetric(TelemetryField::METRIC_SYNC_STATUS, "sync-cancelled");
-    WiFi::getInstance().disconnectWiFi();
-    showPopup("Sync cancelled!\n\nRebooting system...");
-    render(display_);
-    vTaskDelay(3000 / portTICK_PERIOD_MS);
-    PowerManager::getInstance().reboot();
-}
-
 void ContentSyncScreen::processCommand(RemoteCommand command) {
     if (command == RemoteCommand::ENTER) {
         cancel();
     }
-};
+}
 
 void ContentSyncScreen::fail(const std::string &message) {
     log_w("Content sync failed: %s", message.c_str());

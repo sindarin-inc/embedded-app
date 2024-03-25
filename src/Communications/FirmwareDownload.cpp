@@ -64,7 +64,7 @@ void FirmwareDownloader::downloadFirmware(
         versionString = response.latestGlassesFirmware.version;
 
         setState(FirmwareDownloadState{.state = FirmwareDownloadState::State::Downloading,
-                                       .downloadPercentage = 0});
+                                       .percentage = 0});
 
         log_d("Downloading firmware from %s", response.latestGlassesFirmware.url.c_str());
         std::string failMessage;
@@ -100,7 +100,7 @@ void FirmwareDownloader::downloadFirmware(
             nullptr,
             [setState](int bytesWritten, float percentage) {
             setState(FirmwareDownloadState{.state = FirmwareDownloadState::State::Downloading,
-                                           .downloadPercentage = static_cast<int>(percentage)});
+                                           .percentage = static_cast<int>(percentage)});
         },
              false);
 

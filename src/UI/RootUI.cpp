@@ -1078,7 +1078,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     systemSettingsMenu->addMenuItem(MenuItem("Firmware Update",
                                              [this, systemSettingsMenu, display]() {
-        auto firmwareUpdateScreen = new FirmwareUpdateScreen(*display, this->prefs_);
+        auto firmwareUpdateScreen = new FirmwareUpdateScreen(*display, telemetry_, prefs_);
         this->setCurrentScreen(*firmwareUpdateScreen);
         firmwareUpdateScreen->setBackCallback(
             [this, firmwareUpdateScreen, systemSettingsMenu, display]() {
