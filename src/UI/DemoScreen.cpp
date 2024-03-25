@@ -422,43 +422,24 @@ void DemoScreen::finishDemo() {
 }
 
 void DemoScreen::render(DisplaySystem &display) {
-    if ((currentScreen_ > lambdas_.size() - 1)) {
+    if (currentScreen_ >= lambdas_.size()) {
         finishDemo();
         return;
     }
+    lambdas_[currentScreen_](display);
 
-    // @john -- tada :)
-    if (currentScreen_ == lambdas_.size() - 1) {
-#if !SIMULATOR
-        if (!WiFi::getInstance().hasWiFiCredentials()) {
-#else
-        if (1) {
-#endif
-            lambdas_[currentScreen_](display);
-        } else {
-            finishDemo();
-            return;
-        }
-    } else {
-        lambdas_[currentScreen_](display);
-    }
-
+    // Must stop the timer because ChangePeriod starts it.
+    xTimerStop(DisplaySystem::animationTimer, 0);
+    // Move to the next animation
+    xTimerChangePeriod(DisplaySystem::animationTimer, pdMS_TO_TICKS(nextInterval_), 0);
+    int nextVcomNudge = 0;
     if (dropVcom_) {
-        nextVcomNudge_ = -2500;
+        nextVcomNudge = -2500;
     } else {
-        nextVcomNudge_ = 0;
+        nextVcomNudge = 0;
     }
-
-    if (currentScreen_ < lambdas_.size()) {
-        // Must stop the timer because ChangePeriod starts it.
-        xTimerStop(DisplaySystem::animationTimer, 0);
-        // Move to the next animation
-        xTimerChangePeriod(DisplaySystem::animationTimer, pdMS_TO_TICKS(nextInterval_), 0);
-        display.updateDisplay(nextUpdateType_, true, nextVcomNudge_);
-        currentScreen_++;
-    } else {
-        finishDemo();
-    }
+    display.updateDisplay(nextUpdateType_, true, nextVcomNudge);
+    currentScreen_++;
 }
 
 void DemoScreen::processCommand(RemoteCommand command) {

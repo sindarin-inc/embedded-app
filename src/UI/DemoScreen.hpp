@@ -37,7 +37,6 @@ protected:
     unsigned int currentScreen_ = 0;
 
     unsigned int nextInterval_ = 0;
-    int nextVcomNudge_ = 0;
 
     DisplaySystem::UpdateType nextUpdateType_ = DisplaySystem::UpdateType::FULL;
 
