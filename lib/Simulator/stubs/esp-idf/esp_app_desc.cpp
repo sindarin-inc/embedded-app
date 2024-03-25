@@ -9,7 +9,7 @@ esp_app_desc_t app_desc = {.magic_word = 0xABCD1234,
 #ifdef GIT_VERSION
                            .version = GIT_VERSION,
 #else
-                           .version = "1.0.0",
+                           .version = "release/v0.9.0-9-g1348e563",
 #endif
                            .project_name = "MyProject",
                            .time = "12:34:56",
