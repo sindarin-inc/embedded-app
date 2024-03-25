@@ -47,6 +47,7 @@ auto BLEHttpClient::fetchHeaders() -> int {
     auto logDelayMs = 10000; // 10 seconds between BLE wait logs
     statusCode_ = 0;
     responseFetched_ = false;
+    responseFetching_ = false;
     responseBody_ = SpiramString("");
 
     // Now that we're connected and authed to a mobile app, we can send the request
@@ -73,7 +74,13 @@ auto BLEHttpClient::fetchHeaders() -> int {
     auto lastLogTime = esp_timer_get_time();
     while (!responseFetched_) {
         auto currentTime = esp_timer_get_time();
-        if (currentTime - startTime > static_cast<long long>(timeoutMs) * 1000) {
+        if (!responseFetching_ &&
+            currentTime - startTime > static_cast<long long>(timeoutMs) * 1000) {
+            log_e("Timed out waiting for response");
+            return -1;
+        } else if (responseFetching_ &&
+                   currentTime - startTime > 3 * static_cast<long long>(timeoutMs) * 1000) {
+            // Reset the timer if we're still fetching
             log_e("Timed out waiting for response");
             return -1;
         }
@@ -124,7 +131,9 @@ auto BLEHttpClient::handleWebRequest(const SpiramString &key, const SpiramString
         auto chunk = body.substr(colonIndex + 1);
         responseBody_.append(chunk);
         log_d("Got chunk %ld/%ld: %s", chunkNumber, totalChunks, chunk.c_str());
+        log_d("Response body size: %zu", responseBody_.length());
         SHOW_HEAP();
+        responseFetching_ = true;
     } else if (key == "E") {
         // End of request
         responseFetched_ = true;

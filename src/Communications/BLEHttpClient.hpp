@@ -64,4 +64,5 @@ private:
     SpiramString requestBody_;
     SpiramString responseBody_;
     bool responseFetched_{};
+    bool responseFetching_{};
 };
