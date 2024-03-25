@@ -118,7 +118,7 @@ void FirmwareUpdateScreen::cancel() {
     showPopup("Update cancelled!\n\nRebooting system...");
     render(display_);
     vTaskDelay(3000 / portTICK_PERIOD_MS);
-    PowerManager::getInstance().reboot();
+    back();
 }
 
 void FirmwareUpdateScreen::render(DisplaySystem &display) {
@@ -220,6 +220,7 @@ void FirmwareUpdateScreen::processCommand(RemoteCommand command) {
 
 void FirmwareUpdateScreen::fail(const std::string &message) {
     log_w("Firmware update failed: %s", message.c_str());
+    WiFi::getInstance().disconnectWiFi();
 
     this->telemetry_.logMetric(TelemetryField::METRIC_FIRMWARE_UPDATE, "update-failed",
                                {{"message", message}});
@@ -227,8 +228,7 @@ void FirmwareUpdateScreen::fail(const std::string &message) {
     state_.message = message;
     render(display_);
     vTaskDelay(pdMS_TO_TICKS(3000));
-    WiFi::getInstance().disconnectWiFi();
-    PowerManager::getInstance().reboot();
+    back();
 }
 
 void FirmwareUpdateScreen::begin() {
