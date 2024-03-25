@@ -47,15 +47,14 @@ auto BLEHttpClient::fetchHeaders() -> int {
     auto logDelayMs = 10000; // 10 seconds between BLE wait logs
     statusCode_ = 0;
     responseFetched_ = false;
-    responseBody_ = "";
+    responseBody_ = SpiramString("");
 
     // Now that we're connected and authed to a mobile app, we can send the request
     // Register web request handler which receives the response from the mobile app
     bleProxy_->registerWebRequestHandler([this](const SpiramString &key, const SpiramString &body) {
         bool completed = this->handleWebRequest(key, body);
         if (completed) {
-            // Once telemetry is complete, disconnect from the mobile app
-            bleProxy_->disconnect(bleManager_->getConnId());
+            log_d("BLE HTTP request completed");
         }
     });
 
@@ -111,14 +110,21 @@ auto BLEHttpClient::handleWebRequest(const SpiramString &key, const SpiramString
     } else if (key == "B") {
         // Body
         // Extract chunk (e.g. "B1/2:chunk")
+        // Find the positions of '=', '/' and ':'
+        auto equalIndex = body.find('=');
         auto slashIndex = body.find('/');
         auto colonIndex = body.find(':');
-        auto chunkNumber = strtol(body.substr(1, slashIndex - 1).c_str(), nullptr, 10);
+
+        // Parse the chunk number and total chunks from the correct positions
+        auto chunkNumber =
+            strtol(body.substr(equalIndex + 1, slashIndex - equalIndex - 1).c_str(), nullptr, 10);
         auto totalChunks =
             strtol(body.substr(slashIndex + 1, colonIndex - slashIndex - 1).c_str(), nullptr, 10);
+
         auto chunk = body.substr(colonIndex + 1);
         responseBody_.append(chunk);
         log_d("Got chunk %ld/%ld: %s", chunkNumber, totalChunks, chunk.c_str());
+        SHOW_HEAP();
     } else if (key == "E") {
         // End of request
         responseFetched_ = true;

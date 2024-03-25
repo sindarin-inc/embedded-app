@@ -15,5 +15,5 @@ auto operator*(DeferDummy, F f) -> Deferrer<F> {
 #define DEFER_(LINE) zz_defer##LINE
 #define DEFER(LINE) DEFER_(LINE)
 // NOLINTNEXTLINE(bugprone-macro-parentheses)
-#define defer auto DEFER(__LINE__) = defer_dummy{} *[&]()
+#define defer auto DEFER(__LINE__) = DeferDummy{} *[&]()
 #endif // defer

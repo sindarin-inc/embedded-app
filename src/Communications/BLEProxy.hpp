@@ -67,6 +67,7 @@ protected:
         void onWrite(NimBLECharacteristic *characteristic, ble_gap_conn_desc *desc) override {
             std::string value = characteristic->getValue();
             if (value.length() == 0) {
+                log_d("BLEProxy::CharacteristicCallbacks::onWrite: Empty value");
                 return;
             }
 

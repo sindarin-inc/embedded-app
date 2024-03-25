@@ -115,8 +115,9 @@ void BLEProxy::sendChunk(const SpiramString &body, int chunkNumber, int numChunk
     SpiramString checksum = calculateChecksum(chunk);
     SpiramString value = SpiRamStringFormat("B=%d/%d-%s:%s", chunkNumber + 1, numChunks,
                                             checksum.c_str(), chunk.c_str());
-    // log_i("GATT client writing body chunk %d/%d: %s", chunkNumber + 1, numChunks, value.c_str());
-    log_i("GATT client writing body chunk %d/%d-%s", chunkNumber + 1, numChunks, checksum.c_str());
+    log_i("GATT client writing body chunk %d/%d: %s", chunkNumber + 1, numChunks, value.c_str());
+    // log_i("GATT client writing body chunk %d/%d (checksum: %s)", chunkNumber + 1, numChunks,
+    // checksum.c_str());
     proxyCharacteristic_->setValue(value);
     proxyCharacteristic_->notify();
 }

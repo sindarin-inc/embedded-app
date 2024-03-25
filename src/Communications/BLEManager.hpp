@@ -21,6 +21,7 @@ public:
     auto server() -> BLEServer *;
     void disconnectAll() {
         auto peerDevices = server()->getPeerDevices();
+        log_d("Disconnecting %d BLE devices", peerDevices.size());
         for (auto &device : peerDevices) {
             server()->disconnect(device, BLE_ERR_REM_USER_CONN_TERM);
         }
@@ -60,7 +61,7 @@ protected:
         ServerCallbacks(BLEManager *enclosure) : enclosed(enclosure) {}
         void onConnect(BLEServer *server, ble_gap_conn_desc *desc) override {
             SHOW_HEAP();
-            log_i("BLE client connected to our server!");
+            log_i("BLE client connected to our server");
 
             // Store the connection ID so we can disconnect later
             uint16_t connId = desc->conn_handle;
@@ -82,7 +83,7 @@ protected:
         }
         void onDisconnect(BLEServer *server) override {
             SHOW_HEAP();
-            log_i("BLE client disconnected from our server!");
+            log_i("BLE client disconnected from our server");
             enclosed->authed_ = false;
         }
     };

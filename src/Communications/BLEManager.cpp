@@ -22,6 +22,7 @@ BLEManager::BLEManager() = default;
 
 auto BLEManager::server() -> BLEServer * {
     if (server_ == nullptr) {
+        log_d("Creating BLE server");
         server_ = BLEDevice::createServer();
         server_->setCallbacks(new ServerCallbacks(this));
     }
@@ -93,6 +94,8 @@ void BLEManager::disconnectProxy() {
     enableService(BLERemoteInput::getInstance()->getService());
     enableService(BLEImprov::getInstance()->getService());
     startAdvertisingIfNecessary();
+
+    connectedProxy = false;
 }
 
 auto BLEManager::startAdvertisingIfNecessary() -> bool {
@@ -121,8 +124,12 @@ auto BLEManager::startAdvertisingIfNecessary() -> bool {
             // Apple.
             advertising->setMinInterval(874);
         }
+
+        log_i("Starting BLE advertising");
         return advertising->start();
     }
+
+    log_i("No BLE server to start advertising");
     return false;
 }
 

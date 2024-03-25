@@ -600,9 +600,11 @@ void LocalStore::syncFromRemote(
                                            "sync-telemetry-failed",
                                            {{"http-code", httpCode}, {"use-ble", bleConnected}});
                 retries -= 1;
+                log_d("Telemetry upload failed, retrying (%d retries left)", retries);
             } else {
                 this->telemetry_.logMetric(TelemetryField::METRIC_SYNC_STATUS,
                                            "sync-telemetry-success", {{"use-ble", bleConnected}});
+                log_d("Telemetry uploaded successfully");
                 break;
             }
         }
@@ -624,6 +626,7 @@ void LocalStore::syncFromRemote(
         int booksDownloaded = 0;
         int articlesDownloaded = 0;
 
+        log_d("Syncing books and articles");
         progressCallback(ContentSyncState{.state = ContentSyncState::State::CheckingSync});
 
         std::vector<ReadablesVector *> readablesList = {&books_, &articles_};
