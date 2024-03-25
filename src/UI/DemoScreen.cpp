@@ -6,12 +6,6 @@
 #include "Communications/WiFi.hpp"
 #include "Misc/Dispatch.hpp"
 #include "Misc/Platform.hpp"
-#include "UI/Bitmaps/arrow-up-down.hpp"
-#include "UI/Bitmaps/bottom-arrow.hpp"
-#include "UI/Bitmaps/glass-small-above.hpp"
-#include "UI/Bitmaps/glass-small-left.hpp"
-#include "UI/Bitmaps/glass-small-right.hpp"
-#include "UI/Bitmaps/left-arrow.hpp"
 #include "UI/Bitmaps/mani-astronaut.hpp"
 #include "UI/Bitmaps/mani-book1.hpp"
 #include "UI/Bitmaps/mani-book2.hpp"
@@ -41,371 +35,16 @@
 #include "UI/Bitmaps/mani-turnpage-small.hpp"
 #include "UI/Bitmaps/mani-volcano.hpp"
 #include "UI/Bitmaps/mani-warrior.hpp"
-#include "UI/Bitmaps/right-arrow.hpp"
 #include "UI/Bitmaps/sol-logo.hpp"
 #include "UI/Layout/Types.hpp"
 #include "sindarin-debug.h"
 
-DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
-                       LightingController &lightingController)
-    : display_(display), renderer_(display), prefs_(prefs),
-      lightingController_(lightingController) {
+DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs)
+    : display_(display), renderer_(display), prefs_(prefs) {
     // We want to control exactly when full and partial will happen.
     // This allows us to cross ownership boundaries and to force a partial update
     // even when we switch to the main menu the first time.
     display.forceDontChangeRefreshType();
-    lightingController_.enableOnlyIncreaseMode();
-
-    lambdas_.emplace_back([this](DisplaySystem &display) {
-        // Don't need to set it after that as they are on.
-        int xOffset = -33;
-        int yOffset = 53;
-
-        int yOffsetOverall = -55;
-        int textYOffset = 30;
-
-        std::string message;
-
-        switch (currentSubScreen_) {
-        case 0:
-            display.setFont(static_cast<Font *>(&ibmf75Face1));
-            message = "Twist lens in front of LEFT eye";
-            // This Y coordinate is just a guess
-            display.drawSingleLineOfText(
-                message,
-                display.xAbsolute(display.xAbsoluteCenter() - display.getTextWidth(message) / 2),
-                display.yAbsolute(display.yAbsoluteCenter() - display.getTextHeight() / 2 +
-                                  textYOffset));
-            message = "like a binocular. When text is";
-            display.drawSingleLineOfText(
-                message,
-                display.xAbsolute(display.xAbsoluteCenter() - display.getTextWidth(message) / 2),
-                display.yAbsolute(display.yAbsoluteCenter() - display.getTextHeight() / 2 +
-                                  textYOffset + 17));
-            message = "crisp, press \ue000 on your remote.";
-            display.drawSingleLineOfText(
-                message,
-                display.xAbsolute(display.xAbsoluteCenter() - display.getTextWidth(message) / 2),
-                display.yAbsolute(display.yAbsoluteCenter() - display.getTextHeight() / 2 +
-                                  textYOffset + 34));
-            display.drawXBitmap(
-                display.xAbsolute(128 - bottom_arrow_width / 2 + xOffset),
-                display.yAbsolute(128 - bottom_arrow_height / 2 + yOffset + yOffsetOverall),
-                BOTTOM_ARROW_BITS, bottom_arrow_width, bottom_arrow_height, display.fg);
-            display.drawXBitmap(
-                display.xAbsolute(128 - glass_small_left_width / 2),
-                display.yAbsolute(128 - glass_small_left_height / 2 + yOffsetOverall),
-                GLASS_SMALL_LEFT_BITS, glass_small_left_width, glass_small_left_height, display.fg);
-            display.updateDisplay(DisplaySystem::UpdateType::PARTIAL, false, 0,
-                                  DisplaySystem::UpdateType::FAST, ScreenSide::Both,
-                                  {{0, 0}, {255, 140}});
-            nextInterval_ = 500;
-            break;
-        case 1:
-            display.drawXBitmap(
-                display.xAbsolute(128 - bottom_arrow_width / 2 + xOffset),
-                display.yAbsolute(128 - bottom_arrow_height / 2 + yOffset + yOffsetOverall),
-                BOTTOM_ARROW_BITS, bottom_arrow_width, bottom_arrow_height, display.bg);
-            display.drawXBitmap(
-                display.xAbsolute(128 - bottom_arrow_width / 2 - 14 + xOffset),
-                display.yAbsolute(128 - bottom_arrow_height / 2 - 22 + yOffset + yOffsetOverall),
-                LEFT_ARROW_BITS, left_arrow_width, left_arrow_height, display.fg);
-            display.updateDisplay(DisplaySystem::UpdateType::ERASE, false);
-            nextInterval_ = 500;
-            break;
-        case 2:
-            display.drawXBitmap(
-                display.xAbsolute(128 - bottom_arrow_width / 2 - 14 + xOffset),
-                display.yAbsolute(128 - bottom_arrow_height / 2 - 22 + yOffset + yOffsetOverall),
-                LEFT_ARROW_BITS, left_arrow_width, left_arrow_height, display.bg);
-            display.drawXBitmap(
-                display.xAbsolute(128 - bottom_arrow_width / 2 + xOffset),
-                display.yAbsolute(128 - bottom_arrow_height / 2 + yOffset + yOffsetOverall),
-                BOTTOM_ARROW_BITS, bottom_arrow_width, bottom_arrow_height, display.fg);
-            display.updateDisplay(DisplaySystem::UpdateType::ERASE, false);
-            nextInterval_ = 500;
-            break;
-        case 3:
-            display.drawXBitmap(
-                display.xAbsolute(128 - bottom_arrow_width / 2 + xOffset),
-                display.yAbsolute(128 - bottom_arrow_height / 2 + yOffset + yOffsetOverall),
-                BOTTOM_ARROW_BITS, bottom_arrow_width, bottom_arrow_height, display.bg);
-            display.drawXBitmap(
-                display.xAbsolute(128 - bottom_arrow_width / 2 + 14 + xOffset),
-                display.yAbsolute(128 - bottom_arrow_height / 2 - 22 + yOffset + yOffsetOverall),
-                RIGHT_ARROW_BITS, right_arrow_width, right_arrow_height, display.fg);
-            display.updateDisplay(DisplaySystem::UpdateType::ERASE, false);
-            nextInterval_ = 500;
-            break;
-        case 4:
-            display.drawXBitmap(
-                display.xAbsolute(128 - bottom_arrow_width / 2 + 14 + xOffset),
-                display.yAbsolute(128 - bottom_arrow_height / 2 - 22 + yOffset + yOffsetOverall),
-                RIGHT_ARROW_BITS, right_arrow_width, right_arrow_height, display.bg);
-            display.drawXBitmap(
-                display.xAbsolute(128 - bottom_arrow_width / 2 + xOffset),
-                display.yAbsolute(128 - bottom_arrow_height / 2 + yOffset + yOffsetOverall),
-                BOTTOM_ARROW_BITS, bottom_arrow_width, bottom_arrow_height, display.fg);
-            display.updateDisplay(DisplaySystem::UpdateType::ERASE, false);
-            // wait 3 seconds before starting the animatiion over again.
-            nextInterval_ = 2500;
-            break;
-        case 5:
-            currentSubScreen_ = 0;
-            nextInterval_ = 500;
-            break;
-        }
-    });
-
-    lambdas_.emplace_back([this](DisplaySystem &display) {
-        // Don't need to set it after that as they are on.
-        int xOffset = 33;
-        int yOffset = 53;
-
-        int yOffsetOverall = -55;
-        int textYOffset = 30;
-
-        std::string message;
-        switch (currentSubScreen_) {
-        case 0:
-            if (!shownOne_) {
-                display.drawXBitmap(
-                    display.xAbsolute(128 - bottom_arrow_width / 2 - xOffset),
-                    display.yAbsolute(128 - bottom_arrow_height / 2 + yOffset + yOffsetOverall),
-                    BOTTOM_ARROW_BITS, bottom_arrow_width, bottom_arrow_height, display.bg);
-                display.drawXBitmap(display.xAbsolute(128 - bottom_arrow_width / 2 + 14 - xOffset),
-                                    display.yAbsolute(128 - bottom_arrow_height / 2 - 22 + yOffset +
-                                                      yOffsetOverall),
-                                    RIGHT_ARROW_BITS, right_arrow_width, right_arrow_height,
-                                    display.bg);
-                display.drawXBitmap(display.xAbsolute(128 - bottom_arrow_width / 2 - 14 - xOffset),
-                                    display.yAbsolute(128 - bottom_arrow_height / 2 - 22 + yOffset +
-                                                      yOffsetOverall),
-                                    LEFT_ARROW_BITS, left_arrow_width, left_arrow_height,
-                                    display.bg);
-                display.drawXBitmap(
-                    display.xAbsolute(128 - glass_small_left_width / 2),
-                    display.yAbsolute(128 - glass_small_left_height / 2 + yOffsetOverall),
-                    GLASS_SMALL_LEFT_BITS, glass_small_left_width, glass_small_left_height,
-                    display.bg);
-                display.updateDisplay(DisplaySystem::UpdateType::ERASE);
-                shownOne_ = true;
-            }
-            display.setFont(static_cast<Font *>(&ibmf75Face1));
-            message = "Twist lens in front of RIGHT eye";
-            // This Y coordinate is just a guess
-            display.drawSingleLineOfText(
-                message,
-                display.xAbsolute(display.xAbsoluteCenter() - display.getTextWidth(message) / 2),
-                display.yAbsolute(display.yAbsoluteCenter() - display.getTextHeight() / 2 +
-                                  textYOffset));
-            message = "like a binocular. When text is";
-            display.drawSingleLineOfText(
-                message,
-                display.xAbsolute(display.xAbsoluteCenter() - display.getTextWidth(message) / 2),
-                display.yAbsolute(display.yAbsoluteCenter() - display.getTextHeight() / 2 +
-                                  textYOffset + 17));
-            message = "crisp, press \ue000 on your remote.";
-            display.drawSingleLineOfText(
-                message,
-                display.xAbsolute(display.xAbsoluteCenter() - display.getTextWidth(message) / 2),
-                display.yAbsolute(display.yAbsoluteCenter() - display.getTextHeight() / 2 +
-                                  textYOffset + 34));
-            display.drawXBitmap(
-                display.xAbsolute(128 - bottom_arrow_width / 2 + xOffset),
-                display.yAbsolute(128 - bottom_arrow_height / 2 + yOffset + yOffsetOverall),
-                BOTTOM_ARROW_BITS, bottom_arrow_width, bottom_arrow_height, display.fg);
-            display.drawXBitmap(
-                display.xAbsolute(128 - glass_small_right_width / 2),
-                display.yAbsolute(128 - glass_small_right_height / 2 + yOffsetOverall),
-                GLASS_SMALL_RIGHT_BITS, glass_small_right_width, glass_small_right_height,
-                display.fg);
-            display.updateDisplay(DisplaySystem::UpdateType::PARTIAL, false, 0,
-                                  DisplaySystem::UpdateType::FAST, ScreenSide::Both,
-                                  {{0, 0}, {255, 140}});
-            nextInterval_ = 500;
-            break;
-        case 1:
-            display.drawXBitmap(
-                display.xAbsolute(128 - bottom_arrow_width / 2 + xOffset),
-                display.yAbsolute(128 - bottom_arrow_height / 2 + yOffset + yOffsetOverall),
-                BOTTOM_ARROW_BITS, bottom_arrow_width, bottom_arrow_height, display.bg);
-            display.drawXBitmap(
-                display.xAbsolute(128 - bottom_arrow_width / 2 - 14 + xOffset),
-                display.yAbsolute(128 - bottom_arrow_height / 2 - 22 + yOffset + yOffsetOverall),
-                LEFT_ARROW_BITS, left_arrow_width, left_arrow_height, display.fg);
-            display.updateDisplay(DisplaySystem::UpdateType::ERASE, false);
-            nextInterval_ = 500;
-            break;
-        case 2:
-            display.drawXBitmap(
-                display.xAbsolute(128 - bottom_arrow_width / 2 - 14 + xOffset),
-                display.yAbsolute(128 - bottom_arrow_height / 2 - 22 + yOffset + yOffsetOverall),
-                LEFT_ARROW_BITS, left_arrow_width, left_arrow_height, display.bg);
-            display.drawXBitmap(
-                display.xAbsolute(128 - bottom_arrow_width / 2 + xOffset),
-                display.yAbsolute(128 - bottom_arrow_height / 2 + yOffset + yOffsetOverall),
-                BOTTOM_ARROW_BITS, bottom_arrow_width, bottom_arrow_height, display.fg);
-            display.updateDisplay(DisplaySystem::UpdateType::ERASE, false);
-            nextInterval_ = 500;
-            break;
-        case 3:
-            display.drawXBitmap(
-                display.xAbsolute(128 - bottom_arrow_width / 2 + xOffset),
-                display.yAbsolute(128 - bottom_arrow_height / 2 + yOffset + yOffsetOverall),
-                BOTTOM_ARROW_BITS, bottom_arrow_width, bottom_arrow_height, display.bg);
-            display.drawXBitmap(
-                display.xAbsolute(128 - bottom_arrow_width / 2 + 14 + xOffset),
-                display.yAbsolute(128 - bottom_arrow_height / 2 - 22 + yOffset + yOffsetOverall),
-                RIGHT_ARROW_BITS, right_arrow_width, right_arrow_height, display.fg);
-            display.updateDisplay(DisplaySystem::UpdateType::ERASE, false);
-            nextInterval_ = 500;
-            break;
-        case 4:
-            display.drawXBitmap(
-                display.xAbsolute(128 - bottom_arrow_width / 2 + 14 + xOffset),
-                display.yAbsolute(128 - bottom_arrow_height / 2 - 22 + yOffset + yOffsetOverall),
-                RIGHT_ARROW_BITS, right_arrow_width, right_arrow_height, display.bg);
-            display.drawXBitmap(
-                display.xAbsolute(128 - bottom_arrow_width / 2 + xOffset),
-                display.yAbsolute(128 - bottom_arrow_height / 2 + yOffset + yOffsetOverall),
-                BOTTOM_ARROW_BITS, bottom_arrow_width, bottom_arrow_height, display.fg);
-            display.updateDisplay(DisplaySystem::UpdateType::ERASE, false);
-            display.setFont(static_cast<Font *>(&ibmf75Face1));
-            nextInterval_ = 2500;
-            break;
-        case 5:
-            currentSubScreen_ = 0;
-            nextInterval_ = 500;
-            break;
-        }
-    });
-
-    lambdas_.emplace_back([this](DisplaySystem &display) {
-        int xOffset = -2;
-        int yOffset = -40;
-
-        int yOffsetOverall = -55;
-        int textYOffset = 30;
-
-        std::string message;
-
-        switch (currentSubScreen_) {
-        case 0:
-            display.setFont(static_cast<Font *>(&ibmf75Face1));
-            if (!shownTwo_) {
-                // fragile with the original xOffset above. Figure out a better way.
-                display.drawXBitmap(
-                    display.xAbsolute(128 - bottom_arrow_width / 2 + 33),
-                    display.yAbsolute(128 - bottom_arrow_height / 2 + 53 + yOffsetOverall),
-                    BOTTOM_ARROW_BITS, bottom_arrow_width, bottom_arrow_height, display.bg);
-                display.drawXBitmap(
-                    display.xAbsolute(128 - bottom_arrow_width / 2 + 14 + 33),
-                    display.yAbsolute(128 - bottom_arrow_height / 2 - 22 + 53 + yOffsetOverall),
-                    RIGHT_ARROW_BITS, right_arrow_width, right_arrow_height, display.bg);
-                display.drawXBitmap(
-                    display.xAbsolute(128 - bottom_arrow_width / 2 - 14 + 33),
-                    display.yAbsolute(128 - bottom_arrow_height / 2 - 22 + 53 + yOffsetOverall),
-                    LEFT_ARROW_BITS, left_arrow_width, left_arrow_height, display.bg);
-                display.drawXBitmap(
-                    display.xAbsolute(128 - glass_small_right_width / 2),
-                    display.yAbsolute(128 - glass_small_right_height / 2 + yOffsetOverall),
-                    GLASS_SMALL_RIGHT_BITS, glass_small_right_width, glass_small_right_height,
-                    display.bg);
-                display.updateDisplay(DisplaySystem::UpdateType::ERASE);
-                shownTwo_ = true;
-            }
-            message = "Optionally, turn the knob on TOP ";
-            // This Y coordinate is just a guess
-            display.drawSingleLineOfText(
-                message,
-                display.xAbsolute(display.xAbsoluteCenter() - display.getTextWidth(message) / 2),
-                display.yAbsolute(display.yAbsoluteCenter() - display.getTextHeight() / 2 +
-                                  textYOffset));
-            message = "to adjust lens spacing. When ";
-            display.drawSingleLineOfText(
-                message,
-                display.xAbsolute(display.xAbsoluteCenter() - display.getTextWidth(message) / 2),
-                display.yAbsolute(display.yAbsoluteCenter() - display.getTextHeight() / 2 +
-                                  textYOffset + 17));
-            message = "text is comfortable, press \ue000";
-            display.drawSingleLineOfText(
-                message,
-                display.xAbsolute(display.xAbsoluteCenter() - display.getTextWidth(message) / 2),
-                display.yAbsolute(display.yAbsoluteCenter() - display.getTextHeight() / 2 +
-                                  textYOffset + 34));
-            display.drawXBitmap(
-                display.xAbsolute(128 - glass_small_above_width / 2),
-                display.yAbsolute(128 - glass_small_above_height / 2 + yOffsetOverall),
-                GLASS_SMALL_ABOVE_BITS, glass_small_above_width, glass_small_above_height,
-                display.fg);
-
-            display.drawXBitmap(
-                display.xAbsolute(128 - arrow_up_down_width / 2 + xOffset),
-                display.yAbsolute(128 - arrow_up_down_height / 2 + yOffset + yOffsetOverall),
-                ARROW_UP_DOWN_BITS, arrow_up_down_width, arrow_up_down_height, display.fg);
-            display.updateDisplay(DisplaySystem::UpdateType::PARTIAL, false, 0,
-                                  DisplaySystem::UpdateType::FAST, ScreenSide::Both,
-                                  {{0, 0}, {255, 140}});
-            nextInterval_ = 500;
-            break;
-        case 1:
-            display.drawXBitmap(
-                display.xAbsolute(128 - arrow_up_down_width / 2 + xOffset),
-                display.yAbsolute(128 - arrow_up_down_height / 2 + yOffset + yOffsetOverall),
-                ARROW_UP_DOWN_BITS, arrow_up_down_width, arrow_up_down_height, display.bg);
-
-            display.drawXBitmap(
-                display.xAbsolute(128 - arrow_up_down_width / 2 + xOffset),
-                display.yAbsolute(128 - arrow_up_down_height / 2 + yOffset + yOffsetOverall - 12),
-                ARROW_UP_DOWN_BITS, arrow_up_down_width, arrow_up_down_height, display.fg);
-            display.updateDisplay(DisplaySystem::UpdateType::ERASE, false);
-            nextInterval_ = 500;
-            break;
-        case 2:
-            display.drawXBitmap(
-                display.xAbsolute(128 - arrow_up_down_width / 2 + xOffset),
-                display.yAbsolute(128 - arrow_up_down_height / 2 + yOffset + yOffsetOverall - 12),
-                ARROW_UP_DOWN_BITS, arrow_up_down_width, arrow_up_down_height, display.bg);
-
-            display.drawXBitmap(
-                display.xAbsolute(128 - arrow_up_down_width / 2 + xOffset),
-                display.yAbsolute(128 - arrow_up_down_height / 2 + yOffset + yOffsetOverall),
-                ARROW_UP_DOWN_BITS, arrow_up_down_width, arrow_up_down_height, display.fg);
-            display.updateDisplay(DisplaySystem::UpdateType::ERASE, false);
-            nextInterval_ = 500;
-            break;
-        case 3:
-            display.drawXBitmap(
-                display.xAbsolute(128 - arrow_up_down_width / 2 + xOffset),
-                display.yAbsolute(128 - arrow_up_down_height / 2 + yOffset + yOffsetOverall),
-                ARROW_UP_DOWN_BITS, arrow_up_down_width, arrow_up_down_height, display.bg);
-
-            display.drawXBitmap(
-                display.xAbsolute(128 - arrow_up_down_width / 2 + xOffset),
-                display.yAbsolute(128 - arrow_up_down_height / 2 + yOffset + yOffsetOverall - 12),
-                ARROW_UP_DOWN_BITS, arrow_up_down_width, arrow_up_down_height, display.fg);
-            display.updateDisplay(DisplaySystem::UpdateType::ERASE, false);
-            nextInterval_ = 500;
-            break;
-        case 4:
-            display.drawXBitmap(
-                display.xAbsolute(128 - arrow_up_down_width / 2 + xOffset),
-                display.yAbsolute(128 - arrow_up_down_height / 2 + yOffset + yOffsetOverall - 12),
-                ARROW_UP_DOWN_BITS, arrow_up_down_width, arrow_up_down_height, display.bg);
-            display.drawXBitmap(
-                display.xAbsolute(128 - arrow_up_down_width / 2 + xOffset),
-                display.yAbsolute(128 - arrow_up_down_height / 2 + yOffset + yOffsetOverall),
-                ARROW_UP_DOWN_BITS, arrow_up_down_width, arrow_up_down_height, display.fg);
-            display.updateDisplay(DisplaySystem::UpdateType::ERASE, false);
-            nextInterval_ = 2500;
-            break;
-        case 5:
-            currentSubScreen_ = 0;
-            nextInterval_ = 500;
-            break;
-        }
-    });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
         std::string message = "Welcome to the Sol Reader! Let's begin...";
@@ -416,7 +55,8 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
             message,
             display.xAbsolute(display.xAbsoluteCenter() - display.getTextWidth(message) / 2),
             display.yAbsolute(display.yAbsoluteCenter() - display.getTextHeight(message)));
-        nextUpdateType_ = DisplaySystem::UpdateType::PARTIAL;
+        drawSkipMessage(display);
+        nextUpdateType_ = DisplaySystem::UpdateType::FULL;
         nextInterval_ = 3000;
     });
 
@@ -728,28 +368,6 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
         nextUpdateType_ = DisplaySystem::UpdateType::FULL;
         nextInterval_ = 2500;
     });
-
-    lambdas_.emplace_back([this](DisplaySystem &display) {
-        dropVcom_ = false;
-        display.invertDisplay(false);
-        drawTripleLine(display, "Download the Sol App", "to get started:", "solreader.com/app");
-        std::string message = "Press \ue000 after app setup";
-        display.setFont(static_cast<Font *>(&ibmf75Face0));
-        display.drawSingleLineOfText(
-            message,
-            display.xAbsolute(display.xAbsoluteCenter() - display.getTextWidth(message) / 2),
-            display.yAbsolute(235));
-        nextUpdateType_ = DisplaySystem::UpdateType::FULL;
-    });
-}
-
-void DemoScreen::drawSerial(DisplaySystem &display) {
-    // Show serial number in tiny text in the bottom
-    display.setFont(static_cast<Font *>(&ibmf75Face1));
-    std::string message = "SN: " + GetSerialNumber();
-    display.drawSingleLineOfText(
-        message, display.xAbsolute(display.xAbsoluteCenter() - display.getTextWidth(message) / 2),
-        display.yAbsolute(display.yAbsoluteMax() - 2 * display.getTextHeight(message)));
 }
 
 void DemoScreen::drawSkipMessage(DisplaySystem &display, bool inverted) {
@@ -800,34 +418,13 @@ void DemoScreen::finishDemo() {
     dropVcom_ = false;
     display_.invertDisplay(false);
 
-    lightingController_.disableOnlyIncreaseMode();
-
     back();
 }
 
 void DemoScreen::render(DisplaySystem &display) {
-    if ((currentScreen_ > lambdas_.size() - 1) || (bailAfterLens_ && currentScreen_ > 1)) {
-        if (bailAfterLens_) {
-            display_.clearDontChangeRefreshType();
-            display_.clearDisplay();
-            display_.clearFrameBuffer();
-            lightingController_.setScreenMask(LightingController::Screens::BOTH);
-        }
+    if ((currentScreen_ > lambdas_.size() - 1)) {
         finishDemo();
         return;
-    }
-
-    // Alternate left and right on for setup. Note: This seems backwards
-    // but it looks right in-glass. Are LEFT and RIGHT backwards in the LightingController?
-    if (currentScreen_ == 1) {
-        lightingController_.setScreenMask(LightingController::Screens::LEFT);
-    } else if (currentScreen_ == 0) {
-        lightingController_.setScreenMask(LightingController::Screens::RIGHT);
-    }
-
-    // Turn on both screen lights for last case
-    if (currentScreen_ == 2) {
-        lightingController_.setScreenMask(LightingController::Screens::BOTH);
     }
 
     // @john -- tada :)
@@ -852,69 +449,29 @@ void DemoScreen::render(DisplaySystem &display) {
         nextVcomNudge_ = 0;
     }
 
-    if ((currentScreen_ >= 3) && (currentScreen_ != lambdas_.size() - 1)) {
+    if ((currentScreen_ != lambdas_.size() - 1)) {
         // Must stop the timer because ChangePeriod starts it.
         xTimerStop(DisplaySystem::animationTimer, 0);
         // Move to the next animation
         xTimerChangePeriod(DisplaySystem::animationTimer, pdMS_TO_TICKS(nextInterval_), 0);
         display.updateDisplay(nextUpdateType_, true, nextVcomNudge_);
         currentScreen_++;
-    } else if (currentScreen_ < 3) {
-        // Must stop the timer because ChangePeriod starts it.
-        xTimerStop(DisplaySystem::animationTimer, 0);
-        // Move to the next animation
-        xTimerChangePeriod(DisplaySystem::animationTimer, pdMS_TO_TICKS(nextInterval_), 0);
-        currentSubScreen_++;
     } else {
-        // App setup, last screen. Don't advance. Just wait for the button press.
-        display.updateDisplay(nextUpdateType_, true, nextVcomNudge_);
+        finishDemo();
     }
 }
 
 void DemoScreen::processCommand(RemoteCommand command) {
     switch (command) {
-    case RemoteCommand::LEFT:
-        if ((currentScreen_ > 0) && (currentScreen_ < 3)) {
-            display_.clearFrameBuffer();
-            shownOne_ = false;
-            shownTwo_ = false;
-            currentScreen_--;
-        }
-        currentSubScreen_ = 0;
-        setNeedsRerender();
-        break;
     case RemoteCommand::ENTER:
-        if (currentScreen_ >= 9) {
-            xTimerStop(DisplaySystem::animationTimer, 0);
-#if !SIMULATOR
-            if (!WiFi::getInstance().hasWiFiCredentials() && !shownAppDownload_) {
-#else
-            if (!shownAppDownload_) {
-#endif
-
-                xTimerStop(DisplaySystem::animationTimer, 0);
-                // Restart the timer if they stopped it.
-                xTimerChangePeriod(DisplaySystem::animationTimer, pdMS_TO_TICKS(5), 0);
-                currentScreen_ = lambdas_.size() - 1;
-                shownAppDownload_ = true;
-            } else {
-                // Gives us the full refresh
-                display_.clearDontChangeRefreshType();
-                display_.clearDisplay();
-                display_.clearFrameBuffer();
-                finishDemo();
-            }
-        } else if (currentScreen_ < 3) {
-            currentScreen_++;
-            currentSubScreen_ = 0;
-            setNeedsRerender();
-        }
+        xTimerStop(DisplaySystem::animationTimer, 0);
+        // Gives us the full refresh
+        display_.clearDontChangeRefreshType();
+        display_.clearDisplay();
+        display_.clearFrameBuffer();
+        finishDemo();
         break;
     case RemoteCommand::UP:
-        // If we're on page 0 or 1 and the user hits up, show the serial number.
-        if (currentScreen_ <= 1) {
-            drawSerial(display_);
-        }
         break;
     case RemoteCommand::RIGHT:
     case RemoteCommand::DOWN:

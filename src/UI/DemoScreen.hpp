@@ -14,38 +14,27 @@
 
 class DemoScreen : public Screen {
 public:
-    DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
-               LightingController &lightingController);
+    DemoScreen(DisplaySystem &display, PreferencesStore &prefs);
 
     void render(DisplaySystem &display) override;
     void processCommand(RemoteCommand command) override;
-
-    void bailAfterLensAdjust() { bailAfterLens_ = true; }
 
 protected:
     void drawSkipMessage(DisplaySystem &display, bool inverted = false);
     void drawDoubleLine(DisplaySystem &display, std::string one, std::string two);
     void drawTripleLine(DisplaySystem &display, std::string one, std::string two, std::string three,
                         bool invert = false);
-    void drawSerial(DisplaySystem &display);
+    // void drawSerial(DisplaySystem &display);
 
     void finishDemo();
 
     DisplaySystem &display_;
     Renderer renderer_;
     PreferencesStore &prefs_;
-    LightingController &lightingController_;
-
-    bool shownOne_ = false;
-    bool shownTwo_ = false;
-    bool bailAfterLens_ = false;
 
     bool dropVcom_ = false;
 
-    bool shownAppDownload_ = false;
-
     unsigned int currentScreen_ = 0;
-    unsigned int currentSubScreen_ = 0;
 
     unsigned int nextInterval_ = 0;
     int nextVcomNudge_ = 0;
