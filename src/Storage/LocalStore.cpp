@@ -804,7 +804,7 @@ void LocalStore::syncFromRemote(
                                      readablesToDownload, *readables, cancel, downloadIndex,
                                      modelType == ReadablesModelType::Book ? booksDownloaded
                                                                            : articlesDownloaded,
-                                     progressCallback, modelType, totalCount) ||
+                                     progressCallback, modelType, totalCount, bleConnected) ||
                                  failedDownload;
                 if (failedDownload) {
                     log_d("Failed to process %ss, have %zu %ss",
@@ -980,7 +980,7 @@ auto LocalStore::processReadableDownload(
     const UserReadablesVector &readablesToDownload, ReadablesVector &readables,
     const std::shared_ptr<CancelFlag> &cancel, int &downloadIndex, int &successfullyDownloaded,
     const std::function<void(ContentSyncState)> &progressCallback, ReadablesModelType modelType,
-    int totalCount) -> bool {
+    int totalCount, bool useBle) -> bool {
     bool failedDownload = false;
 
     if (readablesToDownload.empty()) {
@@ -1006,7 +1006,7 @@ auto LocalStore::processReadableDownload(
             }
 
             auto httpCode = SindarinAPI::getInstance()->downloadReadable(
-                readable, this->fileSystem, this->telemetry_, path, cancel,
+                readable, this->fileSystem, this->telemetry_, path, cancel, useBle,
                 [progressCallback, currPercentage, pctPerReadable, modelType](int percentage) {
                 int pctThisReadable = percentage * pctPerReadable / 100;
                 progressCallback(ContentSyncState{

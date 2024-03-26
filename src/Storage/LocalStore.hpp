@@ -124,7 +124,7 @@ public:
                                  const std::shared_ptr<CancelFlag> &cancel, int &downloadIndex,
                                  int &successfullyDownloaded,
                                  const std::function<void(ContentSyncState)> &progressCallback,
-                                 ReadablesModelType modelType, int totalCount) -> bool;
+                                 ReadablesModelType modelType, int totalCount, bool useBle) -> bool;
     void deleteReadables(bool restart = true);
     void deleteArticles(bool restart = true);
     void deleteReadableFiles(const ReadablesVector &readables, bool restart);
