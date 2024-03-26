@@ -71,7 +71,7 @@ protected:
                 return;
             }
 
-            log_d("BLEProxy::CharacteristicCallbacks::onWrite: %s", value.c_str());
+            log_d("BLEProxy::CharacteristicCallbacks::onWrite: %zu bytes", value.length());
             // Send the body to the web request handler.
             size_t equalsIndex = value.find('=');
             if (equalsIndex != std::string::npos) {

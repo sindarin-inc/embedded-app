@@ -93,7 +93,7 @@ auto BLEHttpClient::fetchHeaders() -> int {
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
 
-    return statusCode_;
+    return responseBody_.length();
 }
 
 auto BLEHttpClient::handleWebRequest(const SpiramString &key, const SpiramString &body) -> bool {
@@ -130,14 +130,14 @@ auto BLEHttpClient::handleWebRequest(const SpiramString &key, const SpiramString
 
         auto chunk = body.substr(colonIndex + 1);
         responseBody_.append(chunk);
-        log_d("Got chunk %ld/%ld: %s", chunkNumber, totalChunks, chunk.c_str());
-        log_d("Response body size: %zu", responseBody_.length());
-        SHOW_HEAP();
+        log_d("Got chunk %ld/%ld: %zu bytes, response body size: %zu bytes", chunkNumber,
+              totalChunks, chunk.length(), responseBody_.length());
         responseFetching_ = true;
     } else if (key == "E") {
         // End of request
         responseFetched_ = true;
-        log_d("Got end of request");
+        log_d("Got end of request, response body size: %zu bytes", responseBody_.length());
+        // log_d("Response body: %s", responseBody_.c_str());
         return true;
     }
 
@@ -156,7 +156,13 @@ auto BLEHttpClient::makeWriteStream() -> std::shared_ptr<HttpOstream<4096>> { re
 
 auto BLEHttpClient::close() -> esp_err_t { return ESP_OK; }
 
-auto BLEHttpClient::makeReadStream() -> std::shared_ptr<HttpIstream<4096>> { return nullptr; }
+auto BLEHttpClient::makeReadStream() -> std::shared_ptr<HttpIstream<4096>> {
+    // Create an istream using the custom streambuf
+    auto stream = std::make_shared<std::istream>(new SpiramStringBuf(responseBody_));
+
+    // Return the istream as an HttpIstream<4096>
+    return std::static_pointer_cast<HttpIstream<4096>>(stream);
+}
 
 auto BLEHttpClient::isChunkedResponse() -> bool { return false; }
 

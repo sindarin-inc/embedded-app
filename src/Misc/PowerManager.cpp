@@ -135,8 +135,6 @@ void PowerManager::wakeupCheck(SolClock &clock) {
         break;
     case ESP_RST_SDIO:
     case ESP_RST_EXT:
-    case ESP_RST_USB:
-    case ESP_RST_JTAG:
         bootInfo_.reason = BootInfo::Reason::Unknown;
         break;
     }
