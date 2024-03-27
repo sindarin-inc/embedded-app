@@ -3,7 +3,9 @@
 #include <esp_timer.h>
 #include <utility>
 
+#if USE_BLE_SERVER_PROXY
 #include "Communications/BLEHttpClient.hpp"
+#endif
 #include "Communications/SindarinAPI.hpp"
 #include "Communications/WiFiHttpClient.hpp"
 #include "Misc/Defer.hpp"

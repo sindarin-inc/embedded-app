@@ -10,7 +10,7 @@
 #include "Storage/PreferencesStore.hpp"
 #include "sindarin-debug.h"
 
-using WebRequestHandler = std::function<void(const SpiramString &, const SpiramString &)>;
+using WebRequestHandler = std::function<void(const SpiramString &, const std::vector<uint8_t> &)>;
 using SubscriptionStatusCallback = std::function<void(bool)>;
 
 class BLEProxy : BLECharacteristicProvider {
@@ -65,27 +65,33 @@ protected:
         }
 
         void onWrite(NimBLECharacteristic *characteristic, ble_gap_conn_desc *desc) override {
-            std::string value = characteristic->getValue();
-            if (value.length() == 0) {
+            std::vector<uint8_t> value = characteristic->getValue();
+            if (value.empty()) {
                 log_d("BLEProxy::CharacteristicCallbacks::onWrite: Empty value");
                 return;
             }
 
-            log_d("BLEProxy::CharacteristicCallbacks::onWrite: %zu bytes", value.length());
+            log_d("BLEProxy::CharacteristicCallbacks::onWrite: %zu bytes", value.size());
+            // log_d("BLEProxy::CharacteristicCallbacks::onWrite: %s", value.data());
+
+            // Convert the value to a string for parsing
+            std::string valueStr(value.begin(), value.end());
+
             // Send the body to the web request handler.
-            size_t equalsIndex = value.find('=');
+            size_t equalsIndex = valueStr.find('=');
             if (equalsIndex != std::string::npos) {
-                SpiramString key = SpiramString(value.substr(0, equalsIndex));
-                SpiramString body = SpiramString(value.substr(equalsIndex + 1));
+                SpiramString key = SpiramString(valueStr.substr(0, equalsIndex));
+                std::vector<uint8_t> body(value.begin() + equalsIndex + 1, value.end());
                 if (key == "auth") {
-                    if (body == BLEProxy::getInstance()->prefs_->bleAuthKey.get()) {
+                    SpiramString bodyStr(body.begin(), body.end());
+                    if (bodyStr == BLEProxy::getInstance()->prefs_->bleAuthKey.get()) {
                         log_i("BLEProxy::CharacteristicCallbacks::onWrite: Authed");
                         BLEManager::getInstance()->markAsAuthed();
                     } else {
                         log_w(
-                            "BLEProxy::CharacteristicCallbacks::onWrite: Auth failed (%s, "
-                            "expected %s)",
-                            body.c_str(),
+                            "BLEProxy::CharacteristicCallbacks::onWrite: Auth failed (%s, expected "
+                            "%s)",
+                            bodyStr.c_str(),
                             BLEProxy::getInstance()->prefs_->bleAuthKey.get().value_or("").c_str());
                     }
                 } else if (BLEProxy::getInstance()->webRequestHandler_) {

@@ -52,7 +52,8 @@ auto BLEHttpClient::fetchHeaders() -> int {
 
     // Now that we're connected and authed to a mobile app, we can send the request
     // Register web request handler which receives the response from the mobile app
-    bleProxy_->registerWebRequestHandler([this](const SpiramString &key, const SpiramString &body) {
+    bleProxy_->registerWebRequestHandler(
+        [this](const SpiramString &key, const std::vector<uint8_t> &body) {
         bool completed = this->handleWebRequest(key, body);
         if (completed) {
             log_d("BLE HTTP request completed");
@@ -95,8 +96,8 @@ auto BLEHttpClient::fetchHeaders() -> int {
 
     return responseBody_.length();
 }
-
-auto BLEHttpClient::handleWebRequest(const SpiramString &key, const SpiramString &body) -> bool {
+auto BLEHttpClient::handleWebRequest(const SpiramString &key, const std::vector<uint8_t> &body)
+    -> bool {
     // If the key contains more than a single character, it's re-requesting a chunk of the body
     if (key.length() > 1) {
         // Re-send the body chunk requested: B123=. chunkNumber is after the first character and
@@ -112,23 +113,22 @@ auto BLEHttpClient::handleWebRequest(const SpiramString &key, const SpiramString
         }
     } else if (key == "S") {
         // Status code
-        log_d("Got status code: %s", body.c_str());
-        statusCode_ = strtol(body.c_str(), nullptr, 10);
+        log_d("Got status code: %.*s", body.size(), body.data());
+        statusCode_ = strtol(reinterpret_cast<const char *>(body.data()), nullptr, 10);
     } else if (key == "B") {
         // Body
         // Extract chunk (e.g. "B1/2:chunk")
         // Find the positions of '=', '/' and ':'
-        auto equalIndex = body.find('=');
-        auto slashIndex = body.find('/');
-        auto colonIndex = body.find(':');
+        auto bodyStr = SpiramString(reinterpret_cast<const char *>(body.data()), body.size());
+        auto slashIndex = bodyStr.find('/');
+        auto colonIndex = bodyStr.find(':');
 
         // Parse the chunk number and total chunks from the correct positions
-        auto chunkNumber =
-            strtol(body.substr(equalIndex + 1, slashIndex - equalIndex - 1).c_str(), nullptr, 10);
-        auto totalChunks =
-            strtol(body.substr(slashIndex + 1, colonIndex - slashIndex - 1).c_str(), nullptr, 10);
+        auto chunkNumber = strtol(bodyStr.substr(0, slashIndex).c_str(), nullptr, 10);
+        auto totalChunks = strtol(
+            bodyStr.substr(slashIndex + 1, colonIndex - slashIndex - 1).c_str(), nullptr, 10);
 
-        auto chunk = body.substr(colonIndex + 1);
+        auto chunk = bodyStr.substr(colonIndex + 1);
         responseBody_.append(chunk);
         log_d("Got chunk %ld/%ld: %zu bytes, response body size: %zu bytes", chunkNumber,
               totalChunks, chunk.length(), responseBody_.length());

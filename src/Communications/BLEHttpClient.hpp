@@ -50,7 +50,7 @@ public:
 
     auto endChunkedData() -> bool override;
 
-    auto handleWebRequest(const SpiramString &key, const SpiramString &body) -> bool;
+    auto handleWebRequest(const SpiramString &key, const std::vector<uint8_t> &body) -> bool;
 
 private:
     std::shared_ptr<BLEManager> bleManager_;
