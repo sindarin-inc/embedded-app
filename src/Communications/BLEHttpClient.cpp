@@ -146,7 +146,16 @@ auto BLEHttpClient::handleWebRequest(const SpiramString &key, const std::vector<
 
 auto BLEHttpClient::getStatusCode() -> int { return statusCode_; }
 
-auto BLEHttpClient::read(char *buffer, int length) -> int { return 0; }
+auto BLEHttpClient::read(char *buffer, int length) -> int {
+    // Copy the response body to the buffer
+    auto bytesRead = std::min(length, static_cast<int>(responseBody_.length()));
+    memcpy(buffer, responseBody_.c_str(), bytesRead);
+
+    // Remove the bytes read from the response body
+    responseBody_ = responseBody_.substr(bytesRead);
+
+    return bytesRead;
+}
 
 auto BLEHttpClient::open(int contentLength) -> esp_err_t { return ESP_OK; }
 
