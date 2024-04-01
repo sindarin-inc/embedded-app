@@ -290,6 +290,26 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     WiFi::getInstance().setWiFiPower(
         (wifi_power_t)prefs.wifiPower.get().value_or(WIFI_POWER_16dBm));
 
+#if USE_BLE
+    log_i("Initializing BLE");
+    BLEDevice::init("Sol Reader");
+
+    if (prefs.blePower.get().has_value()) {
+        auto power = prefs.blePower.get().value_or(ESP_PWR_LVL_P3);
+        log_d("Setting default BLE power to %" PRIu32, power);
+        esp_err_t err =
+            esp_ble_tx_power_set(ESP_BLE_PWR_TYPE_DEFAULT, static_cast<esp_power_level_t>(power));
+        if (err != ESP_OK) {
+            log_e("esp_ble_tx_power_set err: %s", esp_err_to_name(err));
+        }
+    }
+
+    auto bleStatus = esp_bt_controller_get_status();
+    if (bleStatus != ESP_BT_CONTROLLER_STATUS_ENABLED) {
+        bootErrors.push_back({.type = BootError::Type::BLE});
+    }
+#endif
+    // powerManager.forceBackground();
     if (powerManager.state() == PowerState::Background) {
         log_i("Booting into PowerState::Background, running a content sync");
         // Spin up a task just to check the temple and battery
@@ -396,25 +416,6 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
             },
             "BackgroundSync", 4096, nullptr, 1, nullptr, 1);
     }
-
-#if USE_BLE
-    BLEDevice::init("Sol Reader");
-
-    if (prefs.blePower.get().has_value()) {
-        auto power = prefs.blePower.get().value_or(ESP_PWR_LVL_P3);
-        log_d("Setting default BLE power to %" PRIu32, power);
-        esp_err_t err =
-            esp_ble_tx_power_set(ESP_BLE_PWR_TYPE_DEFAULT, static_cast<esp_power_level_t>(power));
-        if (err != ESP_OK) {
-            log_e("esp_ble_tx_power_set err: %s", esp_err_to_name(err));
-        }
-    }
-
-    auto bleStatus = esp_bt_controller_get_status();
-    if (bleStatus != ESP_BT_CONTROLLER_STATUS_ENABLED) {
-        bootErrors.push_back({.type = BootError::Type::BLE});
-    }
-#endif
 
 #if USE_TURN_TOUCH_REMOTE || USE_BLE_SERVER_REMOTE
     auto remoteCallback = [](RemoteCommand command) {

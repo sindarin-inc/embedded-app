@@ -33,7 +33,7 @@ public:
 
     auto write(const char *body, int length) -> int override;
 
-    auto fetchHeaders() -> int override;
+    auto fetchHeaders(int expectedSize = 0) -> int override;
 
     auto getStatusCode() -> int override;
 

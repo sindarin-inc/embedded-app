@@ -65,23 +65,28 @@ protected:
         }
 
         void onWrite(NimBLECharacteristic *characteristic, ble_gap_conn_desc *desc) override {
-            std::vector<uint8_t> value = characteristic->getValue();
-            if (value.empty()) {
+            std::string valueStr = characteristic->getValue();
+            if (valueStr.empty()) {
                 log_d("BLEProxy::CharacteristicCallbacks::onWrite: Empty value");
                 return;
             }
 
-            log_d("BLEProxy::CharacteristicCallbacks::onWrite: %zu bytes", value.size());
-            // log_d("BLEProxy::CharacteristicCallbacks::onWrite: %s", value.data());
-
-            // Convert the value to a string for parsing
-            std::string valueStr(value.begin(), value.end());
-
+            log_d("BLEProxy::CharacteristicCallbacks::onWrite: %zu bytes", valueStr.size());
+            // Parse B=#/#:value out of valueStr
+            auto slashIndex = valueStr.find('/');
+            auto chunkNumber =
+                static_cast<int32_t>(strtol(valueStr.substr(2, slashIndex).c_str(), nullptr, 10));
+            if (chunkNumber >= 4096 || chunkNumber < 2) {
+                // Dump valueStr as hex
+                log_d("BLEProxy::CharacteristicCallbacks::onWrite: %" PRIi32 " %s", chunkNumber,
+                      BytesToHex(reinterpret_cast<uint8_t *>(valueStr.data()), valueStr.size())
+                          .c_str());
+            }
             // Send the body to the web request handler.
             size_t equalsIndex = valueStr.find('=');
             if (equalsIndex != std::string::npos) {
                 SpiramString key = SpiramString(valueStr.substr(0, equalsIndex));
-                std::vector<uint8_t> body(value.begin() + equalsIndex + 1, value.end());
+                std::vector<uint8_t> body(valueStr.begin() + equalsIndex + 1, valueStr.end());
                 if (key == "auth") {
                     SpiramString bodyStr(body.begin(), body.end());
                     if (bodyStr == BLEProxy::getInstance()->prefs_->bleAuthKey.get()) {

@@ -32,7 +32,7 @@ public:
 
     auto makeWriteStream() -> std::shared_ptr<HttpOstream<4096>> override;
 
-    auto fetchHeaders() -> int override;
+    auto fetchHeaders(int expectedSize = 0) -> int override;
 
     // auto getContentLength() -> int;
 

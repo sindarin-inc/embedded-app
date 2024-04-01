@@ -134,11 +134,15 @@ auto BLEManager::startAdvertisingIfNecessary() -> bool {
 }
 
 void BLEManager::enableService(BLEService *service) {
-    server_->getAdvertising()->addServiceUUID(service->getUUID());
+    if (service != nullptr) {
+        server_->getAdvertising()->addServiceUUID(service->getUUID());
+    }
 }
 
 void BLEManager::disableService(BLEService *service) {
-    server_->getAdvertising()->removeServiceUUID(service->getUUID());
+    if (service != nullptr) {
+        server_->getAdvertising()->removeServiceUUID(service->getUUID());
+    }
 }
 
 auto BLEManager::stopAdvertising() -> bool {

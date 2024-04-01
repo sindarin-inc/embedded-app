@@ -42,13 +42,17 @@ auto BLEHttpClient::write(const char *body, int length) -> int {
     return length;
 }
 
-auto BLEHttpClient::fetchHeaders() -> int {
-    auto timeoutMs = 60000;  // 1 minute of advertising to connect to BLE proxy on mobile app
-    auto logDelayMs = 10000; // 10 seconds between BLE wait logs
+auto BLEHttpClient::fetchHeaders(int expectedSize) -> int {
+    auto timeoutMs = 60000; // 1 minute of advertising to connect to BLE proxy on mobile app
+    auto fetchingTimeoutMs = 10 * 60000; // 10 minutes of downloading per book
+    auto logDelayMs = 10000;             // 10 seconds between BLE wait logs
     statusCode_ = 0;
     responseFetched_ = false;
     responseFetching_ = false;
     responseBody_ = SpiramString("");
+    if (expectedSize) {
+        responseBody_.reserve(expectedSize); // Reserve 4MB for the response body
+    }
 
     // Now that we're connected and authed to a mobile app, we can send the request
     // Register web request handler which receives the response from the mobile app
@@ -59,6 +63,12 @@ auto BLEHttpClient::fetchHeaders() -> int {
             log_d("BLE HTTP request completed");
         }
     });
+
+    // Ensure connected to BLE proxy
+    if (!bleManager_->connectedProxy) {
+        log_e("Not connected to BLE proxy");
+        return -1;
+    }
 
     // Write URL
     SpiramString method = SpiramString(requestMethod_ == HTTP_METHOD_GET ? "GET" : "POST");
@@ -80,7 +90,7 @@ auto BLEHttpClient::fetchHeaders() -> int {
             log_e("Timed out waiting for response");
             return -1;
         } else if (responseFetching_ &&
-                   currentTime - startTime > 3 * static_cast<long long>(timeoutMs) * 1000) {
+                   currentTime - startTime > static_cast<long long>(fetchingTimeoutMs) * 1000) {
             // Reset the timer if we're still fetching
             log_e("Timed out waiting for response");
             return -1;
@@ -124,14 +134,17 @@ auto BLEHttpClient::handleWebRequest(const SpiramString &key, const std::vector<
         auto colonIndex = bodyStr.find(':');
 
         // Parse the chunk number and total chunks from the correct positions
-        auto chunkNumber = strtol(bodyStr.substr(0, slashIndex).c_str(), nullptr, 10);
-        auto totalChunks = strtol(
-            bodyStr.substr(slashIndex + 1, colonIndex - slashIndex - 1).c_str(), nullptr, 10);
+        auto chunkNumber =
+            static_cast<int32_t>(strtol(bodyStr.substr(0, slashIndex).c_str(), nullptr, 10));
+        auto totalChunks = static_cast<int32_t>(strtol(
+            bodyStr.substr(slashIndex + 1, colonIndex - slashIndex - 1).c_str(), nullptr, 10));
 
         auto chunk = bodyStr.substr(colonIndex + 1);
         responseBody_.append(chunk);
-        log_d("Got chunk %ld/%ld: %zu bytes, response body size: %zu bytes", chunkNumber,
-              totalChunks, chunk.length(), responseBody_.length());
+        if (chunkNumber == 1 || chunkNumber == totalChunks || chunkNumber % 100 == 0) {
+            log_d("Got chunk %" PRIi32 "/%" PRIi32 ": %zu bytes, response body size: %zu bytes",
+                  chunkNumber, totalChunks, chunk.length(), responseBody_.length());
+        }
         responseFetching_ = true;
     } else if (key == "E") {
         // End of request

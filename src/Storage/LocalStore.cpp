@@ -996,8 +996,9 @@ auto LocalStore::processReadableDownload(
         float currPercentage = static_cast<float>(downloadIndex) * pctPerReadable;
         const auto &readable = userReadable.readable;
         auto path = readableFilePathForWriting(readable);
-        log_i("Downloading %s (file=%s, url=%s)", readable->title.c_str(), path.c_str(),
-              readable->remoteUrl().c_str());
+        auto expectedSize = readable->file(path).size;
+        log_i("Downloading %s (file=%s, url=%s, size=%zu)", readable->title.c_str(), path.c_str(),
+              readable->remoteUrl().c_str(), expectedSize);
         SHOW_HEAP();
 
         for (int t = 0; t < NUMBER_OF_READABLE_DOWNLOAD_TRIES; t++) {
@@ -1006,7 +1007,7 @@ auto LocalStore::processReadableDownload(
             }
 
             auto httpCode = SindarinAPI::getInstance()->downloadReadable(
-                readable, this->fileSystem, this->telemetry_, path, cancel, useBle,
+                readable, this->fileSystem, this->telemetry_, path, cancel, useBle, expectedSize,
                 [progressCallback, currPercentage, pctPerReadable, modelType](int percentage) {
                 int pctThisReadable = percentage * pctPerReadable / 100;
                 progressCallback(ContentSyncState{

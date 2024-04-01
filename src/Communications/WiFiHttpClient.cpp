@@ -220,7 +220,9 @@ auto WiFiHttpClient::makeWriteStream() -> std::shared_ptr<HttpOstream<4096>> {
     return std::make_shared<HttpOstream<4096>>(client_);
 }
 
-auto WiFiHttpClient::fetchHeaders() -> int { return esp_http_client_fetch_headers(client_); }
+auto WiFiHttpClient::fetchHeaders(int expectedSize) -> int {
+    return esp_http_client_fetch_headers(client_);
+}
 
 // auto WiFiHttpClient::getContentLength() -> int { return
 // esp_http_client_get_content_length(client_);

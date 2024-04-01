@@ -37,7 +37,7 @@ public:
 
     virtual auto makeWriteStream() -> std::shared_ptr<HttpOstream<4096>> = 0;
 
-    virtual auto fetchHeaders() -> int = 0;
+    virtual auto fetchHeaders(int expectedSize = 0) -> int = 0;
 
     // auto getContentLength() -> int;
 
