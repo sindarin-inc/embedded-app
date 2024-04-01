@@ -23,5 +23,4 @@ auto DownloadFile(const char *url,
 
 auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry, const char *path,
                   int length, const std::shared_ptr<CancelFlag> &cancel, bool useBle,
-                  int expectedSize, const std::function<void(float percentage)> &progressCallback,
-                  bool gzip) -> int;
+                  const std::function<void(float percentage)> &progressCallback, bool gzip) -> int;

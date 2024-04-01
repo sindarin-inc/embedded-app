@@ -191,8 +191,7 @@ auto DownloadFile(const char *url,
 
 auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry, const char *path,
                   int length, const std::shared_ptr<CancelFlag> &cancel, bool useBle,
-                  int expectedSize, const std::function<void(float percentage)> &progressCallback,
-                  bool gzip) -> int {
+                  const std::function<void(float percentage)> &progressCallback, bool gzip) -> int {
 
     std::string fullPath(path);
 
@@ -315,10 +314,9 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry,
     // Spin up the downloader task
     int httpCode;
     DispatchQueue::dispatchOneOff(
-        [url, openedConnection, reader, gzip, &httpCode, bufferQueue, cancel, useBle,
-         expectedSize]() {
-        httpCode = DownloadFile(url, openedConnection, reader, cancel, useBle, expectedSize,
-                                nullptr, gzip);
+        [url, openedConnection, reader, gzip, &httpCode, bufferQueue, cancel, useBle, length]() {
+        httpCode =
+            DownloadFile(url, openedConnection, reader, cancel, useBle, length, nullptr, gzip);
         // Once we get here the download is done, so we can signal the writer task to exit
         DataBlock block = {nullptr, 0};
         if (xQueueSend(bufferQueue, &block, portMAX_DELAY) != pdPASS) {

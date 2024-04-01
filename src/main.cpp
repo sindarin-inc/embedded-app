@@ -309,7 +309,25 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         bootErrors.push_back({.type = BootError::Type::BLE});
     }
 #endif
-    // powerManager.forceBackground();
+
+#if USE_BLE_SERVER_REMOTE || USE_BLE_SERVER_SETTINGS || USE_BLE_SERVER_IMPROV
+    auto bleManager = BLEManager::getInstance();
+    if (prefs.bleAdvertisingKey.get().has_value()) {
+        bleManager->setManufacturerData(prefs.bleAdvertisingKey.get().value_or(""));
+    }
+#endif
+
+#if USE_BLE_SERVER_PROXY
+    auto syncService = bleSyncService.configureService(bleManager->server());
+    BLEProxy::getInstance()->setPrefs(&prefs);
+    BLEProxy::getInstance()->configureCharacteristics(syncService);
+
+    if (!bleSyncService.start()) {
+        bootErrors.push_back({.type = BootError::Type::BLESync});
+    }
+#endif
+
+    powerManager.forceBackground();
     if (powerManager.state() == PowerState::Background) {
         log_i("Booting into PowerState::Background, running a content sync");
         // Spin up a task just to check the temple and battery
@@ -434,13 +452,6 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     powerManager.setBeginShutdownCallback([]() { ttRemoteInput.disconnectTemporarily(60); });
 #endif
 
-#if USE_BLE_SERVER_REMOTE || USE_BLE_SERVER_SETTINGS || USE_BLE_SERVER_IMPROV
-    auto bleManager = BLEManager::getInstance();
-    if (prefs.bleAdvertisingKey.get().has_value()) {
-        bleManager->setManufacturerData(prefs.bleAdvertisingKey.get().value_or(""));
-    }
-#endif
-
 #if USE_BLE_SERVER_REMOTE || USE_BLE_SERVER_SETTINGS
     auto sindarinService =
         BLESindarinService::getInstance()->configureService(bleManager->server());
@@ -459,16 +470,6 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 
     if (!BLESindarinService::getInstance()->start()) {
         bootErrors.push_back({.type = BootError::Type::BLESindarin});
-    }
-#endif
-
-#if USE_BLE_SERVER_PROXY
-    auto syncService = bleSyncService.configureService(bleManager->server());
-    BLEProxy::getInstance()->setPrefs(&prefs);
-    BLEProxy::getInstance()->configureCharacteristics(syncService);
-
-    if (!bleSyncService.start()) {
-        bootErrors.push_back({.type = BootError::Type::BLESync});
     }
 #endif
 

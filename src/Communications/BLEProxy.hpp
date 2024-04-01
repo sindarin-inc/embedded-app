@@ -71,7 +71,7 @@ protected:
                 return;
             }
 
-            log_d("BLEProxy::CharacteristicCallbacks::onWrite: %zu bytes", valueStr.size());
+            // log_d("BLEProxy::CharacteristicCallbacks::onWrite: %zu bytes", valueStr.size());
             // Parse B=#/#:value out of valueStr
             auto slashIndex = valueStr.find('/');
             auto chunkNumber =

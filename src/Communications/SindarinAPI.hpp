@@ -58,7 +58,7 @@ public:
 
     auto downloadReadable(const std::shared_ptr<Readable> &readable, FileSystem &fileSystem,
                           Telemetry &telemetry, const std::string &path,
-                          const std::shared_ptr<CancelFlag> &cancel, bool useBle, int expectedSize,
+                          const std::shared_ptr<CancelFlag> &cancel, bool useBle,
                           const std::function<void(int percentage)> &progressCallback) -> int;
     auto createClient(const std::string &url, const std::string &contentType,
                       esp_http_client_method_t method, bool useBle,
