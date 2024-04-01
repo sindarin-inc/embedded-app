@@ -112,6 +112,9 @@ void ContentSyncScreen::cancel() {
     CancelFlag::cancel(cancel_);
     telemetry_.logMetric(TelemetryField::METRIC_SYNC_STATUS, "sync-cancelled");
     WiFi::getInstance().disconnectWiFi();
+#if !SIMULATOR
+    BLEManager::getInstance()->disconnectProxy();
+#endif
     showPopup("Sync cancelled!\n\nRebooting system...");
     render(display_);
     vTaskDelay(3000 / portTICK_PERIOD_MS);
