@@ -286,8 +286,45 @@ If you need to regenerate the app download qr code image, do it like this
 qrencode -s 1 -l Q -m 0 -t PNG32 -o src/UI/Bitmaps/DownloadAppQr.png https://solreader.com/app
 ```
 
+You might after a while want to clean up unused header bitmap files. You can do that with:
+
+```sh
+for f in src/UI/Bitmaps/*.hpp; do b=$(basename $f); git grep -q "Bitmaps/$b" || echo "$b is unused"; done
+```
+
+You might also want to trace where the bitmaps are used:
+
+```sh
+for f in src/UI/Bitmaps/*.hpp; do b=$(basename $f); echo $f is used in; git grep -l "Bitmaps/$b"; done
+```
+
 ## Generating static epubs
 
-```bash
+Strip out non-dithered images (at least until we support grayscale)
+
+```sh
+for f in src/Storage/EPubs/*.epub; do \
+    echo "Stripping images from $f"; \
+    unzip "$f" -d "${f%.epub}"; \
+    find "${f%.epub}" -iname "*-greyscale.bmp" | xargs rm; \
+    rm "$f"; \
+    pushd "${f%.epub}"; \
+    zip -r "../$(basename $f)" *; \
+    popd; \
+    rm -r "${f%.epub}"; \
+done
+```
+
+```sh
 for f in src/Storage/EPubs/*.epub; do echo "Converting $f"; venv/bin/python scripts/file_to_header.py "$f" -o "${f}.hpp"; done
+```
+
+## Creating a Release
+
+Simply tag the current commit with a version number like `release/v1.2.3` and push tags. Github Actions will build the firmware and create a release with the firmware binaries attached.
+
+Note: Don't use multiple tags on the same commit or git describe will get confused. Use this command to preview what IDF will use to generate the version string:
+
+```sh
+git describe --always --tags --dirty | cut -c 1-31
 ```

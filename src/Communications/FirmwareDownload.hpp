@@ -24,11 +24,11 @@ struct FirmwareDownloadState {
         AlreadyUpToDate,
     } state = Idle;
 
-    int downloadPercentage{};
+    int percentage{};
     std::string message;
 
     auto operator==(const FirmwareDownloadState &other) const -> bool {
-        return state == other.state && downloadPercentage == other.downloadPercentage;
+        return state == other.state && percentage == other.percentage;
     }
 };
 

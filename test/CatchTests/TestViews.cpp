@@ -10,6 +10,7 @@
 #include "Storage/PosixFileSystem.hpp"
 #include "UI/BitmapScreen.hpp"
 #include "UI/ContentSyncScreen.hpp"
+#include "UI/DemoScreen.hpp"
 #include "UI/LayoutTestScreen.hpp"
 #include "UI/LineSpacingScreen.hpp"
 #include "UI/OffsetAdjustScreen.hpp"
@@ -427,6 +428,13 @@ TEST_CASE("Test some views independently") {
             ReleaseNotesScreen screen(*display, prefs, power, localStore, firmware);
             screen.render(*display);
             ASSERT_VIEW_UNCHANGED("ReleaseNotesScreen");
+        }
+
+        SECTION("Test DemoScreen") {
+            LightingController lightingController;
+            DemoScreen screen(*display, prefs);
+            screen.render(*display);
+            ASSERT_VIEW_UNCHANGED("DemoScreen");
         }
 
         SECTION("Test ContentSyncScreen") {
