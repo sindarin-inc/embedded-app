@@ -120,7 +120,8 @@ auto DownloadFile(
 
         int readLen = readWrite(*client, totalReadLen, contentLength);
         if (readLen <= 0) {
-            log_w("readWrite failed (readLen == %d)", readLen);
+            log_w("readWrite failed (readLen == %d, totalReadLen: %d, contentLength: %d)", readLen,
+                  totalReadLen, contentLength);
             if (!client->connected) {
                 log_w("Connection closed, bailing out");
                 return ERR_CLIENT_DISCONNECTED;

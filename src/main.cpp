@@ -327,7 +327,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     }
 #endif
 
-    powerManager.forceBackground();
+    // powerManager.forceBackground();
     if (powerManager.state() == PowerState::Background) {
         log_i("Booting into PowerState::Background, running a content sync");
         // Spin up a task just to check the temple and battery

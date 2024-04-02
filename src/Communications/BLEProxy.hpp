@@ -72,16 +72,12 @@ protected:
             }
 
             // log_d("BLEProxy::CharacteristicCallbacks::onWrite: %zu bytes", valueStr.size());
+            // log_d("BLEProxy::CharacteristicCallbacks::onWrite: %s", valueStr.c_str());
             // Parse B=#/#:value out of valueStr
             auto slashIndex = valueStr.find('/');
             auto chunkNumber =
                 static_cast<int32_t>(strtol(valueStr.substr(2, slashIndex).c_str(), nullptr, 10));
-            if (chunkNumber >= 4096 || chunkNumber < 2) {
-                // Dump valueStr as hex
-                log_d("BLEProxy::CharacteristicCallbacks::onWrite: %" PRIi32 " %s", chunkNumber,
-                      BytesToHex(reinterpret_cast<uint8_t *>(valueStr.data()), valueStr.size())
-                          .c_str());
-            }
+
             // Send the body to the web request handler.
             size_t equalsIndex = valueStr.find('=');
             if (equalsIndex != std::string::npos) {
@@ -100,6 +96,14 @@ protected:
                             BLEProxy::getInstance()->prefs_->bleAuthKey.get().value_or("").c_str());
                     }
                 } else if (BLEProxy::getInstance()->webRequestHandler_) {
+                    if (key == "B" && (chunkNumber >= 4096 || chunkNumber < 2)) {
+                        // Dump valueStr as hex
+                        log_d("BLEProxy::CharacteristicCallbacks::onWrite: %" PRIi32 " %s",
+                              chunkNumber,
+                              BytesToHex(reinterpret_cast<uint8_t *>(valueStr.data()),
+                                         valueStr.size())
+                                  .c_str());
+                    }
                     BLEProxy::getInstance()->webRequestHandler_(key, body);
                 }
             }

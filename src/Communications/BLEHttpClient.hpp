@@ -62,7 +62,12 @@ private:
     esp_http_client_method_t requestMethod_;
     std::vector<std::pair<SpiramString, SpiramString>> requestHeaders_;
     SpiramString requestBody_;
+    std::vector<std::pair<SpiramString, SpiramString>> responseHeaders_;
     SpiramString responseBody_;
-    bool responseFetched_{};
-    bool responseFetching_{};
+    bool responseBodyFetched_{};
+    bool responseBodyFetching_{};
+    bool responseHeadersFetching_{};
+    bool responseHeadersFetched_{};
+
+    SemaphoreHandle_t dataSemaphore_{};
 };
