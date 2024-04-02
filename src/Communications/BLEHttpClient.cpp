@@ -145,7 +145,7 @@ auto BLEHttpClient::handleWebRequest(const SpiramString &key, const std::vector<
         // Header
         // Extract header (e.g. "H=Content-Length:12345")
         // Find the positions of '=' and ':'
-        if (body.size() == 0) {
+        if (body.empty()) {
             log_d("Received end of headers");
             responseHeadersFetched_ = true;
             return false;
