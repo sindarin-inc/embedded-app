@@ -65,7 +65,7 @@ protected:
         }
 
         void onWrite(NimBLECharacteristic *characteristic, ble_gap_conn_desc *desc) override {
-            NimBLEAttValue value = std::move(characteristic->getValue());
+            NimBLEAttValue value = characteristic->getValue();
             const char *valuePtr = value.c_str();
             size_t valueSize = value.size();
 
