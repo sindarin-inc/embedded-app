@@ -243,5 +243,7 @@ auto WiFiHttpClient::close() -> esp_err_t {
 }
 
 auto WiFiHttpClient::makeReadStream() -> std::shared_ptr<HttpIstream<4096>> {
-    return std::make_shared<HttpIstream<4096>>(client_);
+    return std::make_shared<HttpIstream<4096>>([this](char *buffer, size_t size) -> size_t {
+        return esp_http_client_read(client_, buffer, size);
+    });
 }

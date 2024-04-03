@@ -11,8 +11,11 @@
 
 #include "Communications/HttpClient.hpp"
 #include "Misc/CancelFlag.hpp"
+#include "Misc/CircBuffer.hpp"
 #include "Misc/Dispatch.hpp"
 #include "Misc/StringUtil.hpp"
+
+#define MAX_BUFFER_SIZE 1 * 1024 * 1024 // 1MB
 
 class BLEHttpClient : public HttpClient {
 public:
@@ -62,8 +65,9 @@ private:
     esp_http_client_method_t requestMethod_;
     std::vector<std::pair<SpiramString, SpiramString>> requestHeaders_;
     SpiramString requestBody_;
+
     std::vector<std::pair<SpiramString, SpiramString>> responseHeaders_;
-    SpiramString responseBody_;
+    CircBuffer responseBody_;
     bool responseBodyFetched_{};
     bool responseBodyFetching_{};
     bool responseHeadersFetching_{};

@@ -7,18 +7,20 @@
 #include <esp_timer.h>
 #include <utility>
 
+#include "Communications/HttpIstream.hpp"
 #include "Misc/CancelFlag.hpp"
 #include "Misc/Defer.hpp"
 
 BLEHttpClient::BLEHttpClient(const char *url, const char *contentType,
                              esp_http_client_method_t method, std::shared_ptr<CancelFlag> cancel)
     : HttpClient(url, contentType, method), cancel_(std::move(cancel)), url_(strdup(url)),
-      requestMethod_(method), requestBody_("") {
+      requestMethod_(method), responseBody_(MAX_BUFFER_SIZE) {
 
     requestHeaders_.clear();
 
     bleManager_ = BLEManager::getInstance();
     bleProxy_ = BLEProxy::getInstance();
+    dataSemaphore_ = xSemaphoreCreateBinary();
 
     if (method != HTTP_METHOD_GET) {
         requestHeaders_.emplace_back(SpiramString("Content-Type"), SpiramString(contentType));
@@ -49,7 +51,6 @@ auto BLEHttpClient::fetchHeaders(int expectedSize) -> int {
     statusCode_ = 0;
     responseBodyFetched_ = false;
     responseBodyFetching_ = false;
-    responseBody_ = SpiramString("");
 
     // Now that we're connected and authed to a mobile app, we can send the request
 
@@ -103,7 +104,6 @@ auto BLEHttpClient::fetchHeaders(int expectedSize) -> int {
     if (contentLengthHeader != responseHeaders_.end()) {
         auto contentLength = strtol(contentLengthHeader->second.c_str(), nullptr, 10);
         log_d("Content-Length: %ld", contentLength);
-        responseBody_.reserve(contentLength); // Reserve the expected size for the response body
         return contentLength;
     }
 
@@ -161,7 +161,7 @@ auto BLEHttpClient::handleWebRequest(const SpiramString &key, const char *body, 
         // Extract chunk (e.g. "B1/2:chunk")
         // Find the positions of '=', '/' and ':'
         const char *slashPos = strchr(body, '/');
-        const char *colonPos = strchr(body, ':');
+        char *colonPos = strchr(body, ':');
 
         if (!slashPos || !colonPos || slashPos >= colonPos) {
             log_w("Invalid body format: %s", body);
@@ -172,25 +172,23 @@ auto BLEHttpClient::handleWebRequest(const SpiramString &key, const char *body, 
         int32_t chunkNumber = strtol(body, nullptr, 10);
         int32_t totalChunks = strtol(slashPos + 1, nullptr, 10);
 
-        const char *chunkData = colonPos + 1;
+        char *chunkData = colonPos + 1;
         size_t chunkDataSize = bodySize - (chunkData - body);
+        responseBody_.push(reinterpret_cast<uint8_t *>(chunkData), chunkDataSize);
 
-        responseBody_.append(chunkData, chunkDataSize);
-        if (!dataSemaphore_) {
-            dataSemaphore_ = xSemaphoreCreateBinary();
-        }
         xSemaphoreGive(dataSemaphore_);
+
         if (chunkNumber == 1 || chunkNumber == totalChunks || chunkNumber % 100 == 0) {
             log_d("Received BLE chunk %" PRIi32 "/%" PRIi32
                   ": %zu bytes, response body size: %zu bytes",
-                  chunkNumber, totalChunks, chunkDataSize, responseBody_.length());
+                  chunkNumber, totalChunks, chunkDataSize, responseBody_.size());
         }
+
         responseBodyFetching_ = true;
     } else if (key == "E") {
         // End of request
         responseBodyFetched_ = true;
-        log_d("Got end of request, response body size: %zu bytes", responseBody_.length());
-        // log_d("Response body: %s", responseBody_.c_str());
+
         return true;
     }
 
@@ -201,34 +199,28 @@ auto BLEHttpClient::getStatusCode() -> int { return statusCode_; }
 
 auto BLEHttpClient::read(char *buffer, int length) -> int {
     if (!buffer || length <= 0) {
+        log_w("Invalid arguments %p %d", buffer, length);
         return 0; // Invalid arguments
     }
 
-    if (responseBody_.length() >= length || responseBodyFetched_) {
-        // Enough data is available, or all data has been fetched
-        int bytesToCopy = std::min(static_cast<int>(responseBody_.length()), length);
-        memcpy(buffer, responseBody_.data(), bytesToCopy);
-        responseBody_.erase(0, bytesToCopy); // Remove the copied data
-        return bytesToCopy;
+    // Wait for data to be available if buffer is empty
+    if (responseBody_.size() == 0) {
+        log_w("Waiting for data to be available");
+        if (xSemaphoreTake(dataSemaphore_, pdMS_TO_TICKS(10000)) != pdTRUE) {
+            // Timeout occurred, no data available
+            log_w("TIMEOUT %p %d", buffer, length);
+            return 0;
+        }
     }
 
-    // Wait for more data to be available
-    // Assuming there is a mechanism to notify or signal when new data arrives, such as a semaphore
-    // or event group
-    if (!dataSemaphore_) {
-        dataSemaphore_ = xSemaphoreCreateBinary();
-    }
-    if (xSemaphoreTake(dataSemaphore_, pdMS_TO_TICKS(10000)) == pdTRUE) {
-        // Data is available after waiting
-        int bytesToCopy = std::min(static_cast<int>(responseBody_.length()), length);
-        memcpy(buffer, responseBody_.data(), bytesToCopy);
-        responseBody_.erase(0, bytesToCopy); // Remove the copied data
-        return bytesToCopy;
-    } else {
-        // Timeout occurred, no data available
-        return 0;
-    }
+    // Ensure we only copy as much as available and requested
+    int bytesToCopy = std::min(responseBody_.size(), length);
+    responseBody_.copyFrom(0, reinterpret_cast<uint8_t *>(buffer), bytesToCopy);
+
+    log_d("Read %d bytes from response body", bytesToCopy);
+    return bytesToCopy;
 }
+
 auto BLEHttpClient::open(int contentLength) -> esp_err_t {
     // Register web request handler which receives the response from the mobile app
     bleProxy_->registerWebRequestHandler(
@@ -261,38 +253,8 @@ auto BLEHttpClient::makeWriteStream() -> std::shared_ptr<HttpOstream<4096>> { re
 auto BLEHttpClient::close() -> esp_err_t { return ESP_OK; }
 
 auto BLEHttpClient::makeReadStream() -> std::shared_ptr<HttpIstream<4096>> {
-    auto timeoutMs = 60000; // 1 minute of advertising to connect to BLE proxy on mobile app
-    auto fetchingTimeoutMs = 10 * 60000; // 10 minutes of downloading per book
-    auto logDelayMs = 10000;             // 10 seconds between BLE wait logs
-    auto startTime = esp_timer_get_time();
-    auto lastLogTime = esp_timer_get_time();
-
-    while (!responseBodyFetched_) {
-        auto currentTime = esp_timer_get_time();
-        if (!responseBodyFetching_ &&
-            currentTime - startTime > static_cast<long long>(timeoutMs) * 1000) {
-            log_e("Timed out waiting for body response");
-            return nullptr;
-        } else if (responseBodyFetching_ &&
-                   currentTime - startTime > static_cast<long long>(fetchingTimeoutMs) * 1000) {
-            // Reset the timer if we're still fetching
-            log_e("Timed out waiting for body response");
-            return nullptr;
-        }
-
-        if (esp_timer_get_time() - lastLogTime > (static_cast<long long>(logDelayMs) * 1000)) {
-            log_d("Waiting for BLE proxy to respond...");
-            lastLogTime = esp_timer_get_time();
-        }
-
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
-    }
-
-    // Create an istream using the custom streambuf
-    auto stream = std::make_shared<std::istream>(new SpiramStringBuf(responseBody_));
-
-    // Return the istream as an HttpIstream<4096>
-    return std::static_pointer_cast<HttpIstream<4096>>(stream);
+    return std::make_shared<HttpIstream<4096>>(
+        [this](char *buffer, size_t size) -> size_t { return read(buffer, size); });
 }
 
 auto BLEHttpClient::isChunkedResponse() -> bool { return false; }

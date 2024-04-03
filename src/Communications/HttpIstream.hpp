@@ -3,15 +3,17 @@
 #include <algorithm>
 #include <esp_heap_caps.h>
 #include <esp_http_client.h>
+#include <functional>
 #include <istream>
 #include <streambuf>
+#include <vector>
 
 #include "sindarin-debug.h"
 
 template <std::size_t BUFFER_SIZE = BUFSIZ>
 class HttpStreambuf : public std::streambuf {
 public:
-    HttpStreambuf(esp_http_client_handle_t client) : client_(client) {
+    HttpStreambuf(std::function<size_t(char *, size_t)> readFunc) : readFunc_(readFunc) {
         buffer_ = static_cast<char *>(
             heap_caps_malloc(std::max(static_cast<int>(BUFFER_SIZE), BUFSIZ), MALLOC_CAP_SPIRAM));
         setg(buffer_, buffer_, buffer_);
@@ -21,7 +23,7 @@ public:
 
 private:
     char *buffer_;
-    esp_http_client_handle_t client_;
+    std::function<size_t(char *, size_t)> readFunc_;
 
     auto underflow() -> int_type override {
         if (gptr() < egptr()) {
@@ -29,8 +31,9 @@ private:
         }
 
         char *buffer = eback();
-        int readLength = esp_http_client_read(client_, buffer, BUFSIZ);
+        auto readLength = readFunc_(buffer, BUFSIZ);
 
+        log_w("readLength = %zu", readLength);
         if (readLength <= 0) {
             return traits_type::eof();
         }
@@ -43,7 +46,8 @@ private:
 template <std::size_t BUFFER_SIZE = BUFSIZ>
 class HttpIstream : public std::istream {
 public:
-    HttpIstream(esp_http_client_handle_t client) : std::istream(&buf_), buf_(client) {}
+    HttpIstream(std::function<size_t(char *, size_t)> readFunc)
+        : std::istream(&buf_), buf_(readFunc) {}
 
 private:
     HttpStreambuf<BUFFER_SIZE> buf_;
