@@ -52,14 +52,6 @@ auto BLEHttpClient::fetchHeaders(int expectedSize) -> int {
     responseBody_ = SpiramString("");
 
     // Now that we're connected and authed to a mobile app, we can send the request
-    // Register web request handler which receives the response from the mobile app
-    bleProxy_->registerWebRequestHandler(
-        [this](const SpiramString &key, const std::vector<uint8_t> &body) {
-        bool completed = this->handleWebRequest(key, body);
-        if (completed) {
-            log_d("BLE HTTP request completed");
-        }
-    });
 
     // Ensure connected to BLE proxy
     if (!bleManager_->connectedProxy) {
@@ -122,7 +114,8 @@ auto BLEHttpClient::fetchHeaders(int expectedSize) -> int {
 
     return 0;
 }
-auto BLEHttpClient::handleWebRequest(const SpiramString &key, const std::vector<uint8_t> &body)
+
+auto BLEHttpClient::handleWebRequest(const SpiramString &key, const char *body, size_t bodySize)
     -> bool {
     // If the key contains more than a single character, it's re-requesting a chunk of the body
     if (key.length() > 1) {
@@ -139,47 +132,58 @@ auto BLEHttpClient::handleWebRequest(const SpiramString &key, const std::vector<
         }
     } else if (key == "S") {
         // Status code
-        log_d("Got status code: %.*s", body.size(), body.data());
-        statusCode_ = strtol(reinterpret_cast<const char *>(body.data()), nullptr, 10);
+        log_d("Got status code: %.*s", bodySize, body);
+        statusCode_ = strtol(reinterpret_cast<const char *>(body), nullptr, 10);
     } else if (key == "H") {
         // Header
         // Extract header (e.g. "H=Content-Length:12345")
         // Find the positions of '=' and ':'
-        if (body.empty()) {
+        if (bodySize == 0) {
             log_d("Received end of headers");
             responseHeadersFetched_ = true;
             return false;
         }
         responseHeadersFetching_ = true;
-        auto headerStr = SpiramString(reinterpret_cast<const char *>(body.data()), body.size());
-        auto colonIndex = headerStr.find(':');
-        auto headerKey = headerStr.substr(0, colonIndex);
-        auto headerValue = headerStr.substr(colonIndex + 1);
-        responseHeaders_.emplace_back(headerKey, headerValue);
+        // Find colon and extract key and value
+        const char *colonPtr = strchr(body, ':');
+        if (colonPtr != nullptr) {
+            size_t keyLength = colonPtr - body;
+            SpiramString headerKey(body, keyLength);
+            // Only save Content-Length
+            if (headerKey == "Content-Length") {
+                SpiramString headerValue(colonPtr + 1, bodySize - keyLength - 1);
+                responseHeaders_.emplace_back(headerKey, headerValue);
+            }
+        }
         // log_d("Received header: %s=%s", headerKey.c_str(), headerValue.c_str());
     } else if (key == "B") {
         // Body
         // Extract chunk (e.g. "B1/2:chunk")
         // Find the positions of '=', '/' and ':'
-        auto bodyStr = SpiramString(reinterpret_cast<const char *>(body.data()), body.size());
-        auto slashIndex = bodyStr.find('/');
-        auto colonIndex = bodyStr.find(':');
+        const char *slashPos = strchr(body, '/');
+        const char *colonPos = strchr(body, ':');
+
+        if (!slashPos || !colonPos || slashPos >= colonPos) {
+            log_w("Invalid body format: %s", body);
+            return false;
+        }
 
         // Parse the chunk number and total chunks from the correct positions
-        auto chunkNumber =
-            static_cast<int32_t>(strtol(bodyStr.substr(0, slashIndex).c_str(), nullptr, 10));
-        auto totalChunks = static_cast<int32_t>(strtol(
-            bodyStr.substr(slashIndex + 1, colonIndex - slashIndex - 1).c_str(), nullptr, 10));
+        int32_t chunkNumber = strtol(body, nullptr, 10);
+        int32_t totalChunks = strtol(slashPos + 1, nullptr, 10);
 
-        auto chunk = bodyStr.substr(colonIndex + 1);
-        responseBody_.append(chunk);
+        const char *chunkData = colonPos + 1;
+        size_t chunkDataSize = bodySize - (chunkData - body);
+
+        responseBody_.append(chunkData, chunkDataSize);
         if (!dataSemaphore_) {
             dataSemaphore_ = xSemaphoreCreateBinary();
         }
         xSemaphoreGive(dataSemaphore_);
         if (chunkNumber == 1 || chunkNumber == totalChunks || chunkNumber % 100 == 0) {
-            log_d("Got chunk %" PRIi32 "/%" PRIi32 ": %zu bytes, response body size: %zu bytes",
-                  chunkNumber, totalChunks, chunk.length(), responseBody_.length());
+            log_d("Received BLE chunk %" PRIi32 "/%" PRIi32
+                  ": %zu bytes, response body size: %zu bytes",
+                  chunkNumber, totalChunks, chunkDataSize, responseBody_.length());
         }
         responseBodyFetching_ = true;
     } else if (key == "E") {
@@ -225,7 +229,18 @@ auto BLEHttpClient::read(char *buffer, int length) -> int {
         return 0;
     }
 }
-auto BLEHttpClient::open(int contentLength) -> esp_err_t { return ESP_OK; }
+auto BLEHttpClient::open(int contentLength) -> esp_err_t {
+    // Register web request handler which receives the response from the mobile app
+    bleProxy_->registerWebRequestHandler(
+        [this](const SpiramString &key, const char *body, size_t bodySize) -> void {
+            bool completed = this->handleWebRequest(key, body, bodySize);
+            if (completed) {
+                log_d("BLE HTTP request completed");
+            }
+        });
+
+    return ESP_OK;
+}
 
 auto BLEHttpClient::getResponseHeader(const char *key, char **value) -> esp_err_t {
     auto header = std::find_if(responseHeaders_.begin(), responseHeaders_.end(),
