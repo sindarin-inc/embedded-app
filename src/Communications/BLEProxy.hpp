@@ -117,7 +117,7 @@ protected:
             } else {
                 log_w("BLEProxy::CharacteristicCallbacks::onWrite: No web request handler or auth, "
                       "unhandled: %s",
-                      valuePtr);
+                      key.c_str());
             }
         }
     };

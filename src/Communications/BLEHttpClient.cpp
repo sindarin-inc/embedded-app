@@ -99,7 +99,7 @@ auto BLEHttpClient::fetchHeaders(int expectedSize) -> int {
         std::find_if(responseHeaders_.begin(), responseHeaders_.end(),
                      [](const std::pair<SpiramString, SpiramString> &header) {
         return header.first == "Content-Length";
-        });
+    });
 
     if (contentLengthHeader != responseHeaders_.end()) {
         auto contentLength = strtol(contentLengthHeader->second.c_str(), nullptr, 10);
@@ -115,8 +115,8 @@ auto BLEHttpClient::fetchHeaders(int expectedSize) -> int {
     return 0;
 }
 
-auto BLEHttpClient::handleWebRequest(const SpiramString &key, const char *body, size_t bodySize)
-    -> bool {
+auto BLEHttpClient::handleWebRequest(const SpiramString &key, const char *body,
+                                     size_t bodySize) -> bool {
     // If the key contains more than a single character, it's re-requesting a chunk of the body
     if (key.length() > 1) {
         // Re-send the body chunk requested: B123=. chunkNumber is after the first character and
@@ -176,8 +176,6 @@ auto BLEHttpClient::handleWebRequest(const SpiramString &key, const char *body, 
         size_t chunkDataSize = bodySize - (chunkData - body);
         responseBody_.push(reinterpret_cast<uint8_t *>(chunkData), chunkDataSize);
 
-        xSemaphoreGive(dataSemaphore_);
-
         if (chunkNumber == 1 || chunkNumber == totalChunks || chunkNumber % 100 == 0) {
             log_d("Received BLE chunk %" PRIi32 "/%" PRIi32
                   ": %zu bytes, response body size: %zu bytes",
@@ -185,6 +183,8 @@ auto BLEHttpClient::handleWebRequest(const SpiramString &key, const char *body, 
         }
 
         responseBodyFetching_ = true;
+
+        xSemaphoreGive(dataSemaphore_);
     } else if (key == "E") {
         // End of request
         responseBodyFetched_ = true;
@@ -204,20 +204,22 @@ auto BLEHttpClient::read(char *buffer, int length) -> int {
     }
 
     // Wait for data to be available if buffer is empty
-    if (responseBody_.size() == 0) {
-        log_w("Waiting for data to be available");
-        if (xSemaphoreTake(dataSemaphore_, pdMS_TO_TICKS(10000)) != pdTRUE) {
-            // Timeout occurred, no data available
-            log_w("TIMEOUT %p %d", buffer, length);
-            return 0;
-        }
+    if (xSemaphoreTake(dataSemaphore_, pdMS_TO_TICKS(10000)) != pdTRUE) {
+        // Timeout occurred, no data available
+        log_w("TIMEOUT %p %d", buffer, length);
+        return 0;
     }
 
     // Ensure we only copy as much as available and requested
     int bytesToCopy = std::min(responseBody_.size(), length);
-    responseBody_.copyFrom(0, reinterpret_cast<uint8_t *>(buffer), bytesToCopy);
+    responseBody_.moveFrom(0, reinterpret_cast<uint8_t *>(buffer), bytesToCopy);
+    log_d("Read %d bytes, %d remaining", bytesToCopy, responseBody_.size());
 
-    log_d("Read %d bytes from response body", bytesToCopy);
+    // If there is still data remaining in the buffer, give the semaphore back
+    if (responseBody_.size() > 0) {
+        xSemaphoreGive(dataSemaphore_);
+    }
+
     return bytesToCopy;
 }
 
@@ -225,20 +227,19 @@ auto BLEHttpClient::open(int contentLength) -> esp_err_t {
     // Register web request handler which receives the response from the mobile app
     bleProxy_->registerWebRequestHandler(
         [this](const SpiramString &key, const char *body, size_t bodySize) -> void {
-            bool completed = this->handleWebRequest(key, body, bodySize);
-            if (completed) {
-                log_d("BLE HTTP request completed");
-            }
-        });
+        bool completed = this->handleWebRequest(key, body, bodySize);
+        if (completed) {
+            log_d("BLE HTTP request completed");
+        }
+    });
 
     return ESP_OK;
 }
 
 auto BLEHttpClient::getResponseHeader(const char *key, char **value) -> esp_err_t {
-    auto header = std::find_if(responseHeaders_.begin(), responseHeaders_.end(),
-                               [key](const std::pair<SpiramString, SpiramString> &header) {
-        return header.first == key;
-    });
+    auto header = std::find_if(
+        responseHeaders_.begin(), responseHeaders_.end(),
+        [key](const std::pair<SpiramString, SpiramString> &header) { return header.first == key; });
 
     if (header != responseHeaders_.end()) {
         *value = strdup(header->second.c_str());

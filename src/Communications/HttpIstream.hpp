@@ -35,7 +35,6 @@ private:
         char *buffer = eback();
         auto readLength = readFunc_(buffer, BUFSIZ);
 
-        log_w("readLength = %zu", readLength);
         if (readLength <= 0) {
             return traits_type::eof();
         }
