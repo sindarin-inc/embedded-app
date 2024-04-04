@@ -51,6 +51,8 @@ void PowerManager::wakeupCheck(SolClock &clock) {
 
     switch (bootInfo_.resetReason) {
     case ESP_RST_UNKNOWN: {
+        // This switch is probably no longer necessary with IDF 5.2 since we have ESP_RST_USB and
+        // ESP_RST_JTAG now
         switch (bootInfo_.rtcResetReason) {
         case USB_UART_CHIP_RESET:
             bootInfo_.reason = BootInfo::Reason::UartChipReset;
@@ -61,6 +63,10 @@ void PowerManager::wakeupCheck(SolClock &clock) {
         };
         break;
     }
+    case ESP_RST_USB:
+    case ESP_RST_JTAG:
+        bootInfo_.reason = BootInfo::Reason::UartChipReset;
+        break;
     case ESP_RST_POWERON:
         bootInfo_.reason = BootInfo::Reason::PowerOn;
         break;
