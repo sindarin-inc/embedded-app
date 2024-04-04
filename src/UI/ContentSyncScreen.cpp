@@ -112,7 +112,7 @@ void ContentSyncScreen::cancel() {
     CancelFlag::cancel(cancel_);
     telemetry_.logMetric(TelemetryField::METRIC_SYNC_STATUS, "sync-cancelled");
     WiFi::getInstance().disconnectWiFi();
-#if !SIMULATOR
+#if USE_BLE_SERVER_PROXY
     BLEManager::getInstance()->disconnectProxy();
 #endif
     showPopup("Sync cancelled!\n\nRebooting system...");
@@ -215,7 +215,7 @@ void ContentSyncScreen::fail(const std::string &message) {
     render(display_);
     vTaskDelay(3000 / portTICK_PERIOD_MS);
     WiFi::getInstance().disconnectWiFi();
-#if !SIMULATOR
+#if USE_BLE_SERVER_PROXY
     BLEManager::getInstance()->disconnectProxy();
 #endif
     PowerManager::getInstance().reboot();
@@ -260,7 +260,7 @@ void ContentSyncScreen::begin() {
                 state.state == ContentSyncState::Synced ||
                 state.state == ContentSyncState::AlreadySynced) {
                 WiFi::getInstance().disconnectWiFi();
-#if !SIMULATOR
+#if USE_BLE_SERVER_PROXY
                 BLEManager::getInstance()->disconnectProxy();
 #endif
             }

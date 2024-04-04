@@ -527,7 +527,7 @@ void LocalStore::syncFromRemote(
         wifiConnected = true;
     }
 
-#if !SIMULATOR
+#if USE_BLE_SERVER_PROXY
     if (!wifiConnected && !BLEManager::getInstance()->connectProxy(cancel)) {
         this->telemetry_.logMetric(TelemetryField::METRIC_WIFI, "sync-ble-failed");
         progressCallback(ContentSyncState{.state = ContentSyncState::State::Failure,

@@ -186,7 +186,7 @@ void BackgroundSyncAndSleep(PowerManager &powerManager, PreferencesStore &prefs,
 
     // TODO: Perhaps try dispatching this (maybe needs to happen outside of app_main)
     WiFi::getInstance().disconnectWiFi();
-#if !SIMULATOR
+#if USE_BLE_SERVER_PROXY
     BLEManager::getInstance()->disconnectProxy();
 #endif
 
