@@ -12,7 +12,7 @@
 	url = https://github.com/joltwallet/esp_littlefs.git
 [submodule "components/esp-nimble-cpp"]
 	path = components/esp-nimble-cpp
-	url = git@github.com:sindarin-inc/esp-nimble-cpp.git
+	url = git@github.com:h2zero/esp-nimble-cpp.git
 [submodule "components/astubs"]
 	path = components/astubs
 	url = git@github.com:sindarin-inc/astubs.git

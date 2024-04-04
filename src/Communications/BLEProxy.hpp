@@ -54,7 +54,7 @@ protected:
     public:
         CharacteristicCallbacks() = default;
 
-        void onSubscribe(NimBLECharacteristic *characteristic, ble_gap_conn_desc *desc,
+        void onSubscribe(NimBLECharacteristic *characteristic, NimBLEConnInfo &connInfo,
                          uint16_t subValue) override {
             log_d("BLEProxy::CharacteristicCallbacks::onSubscribe: %d", subValue);
 
@@ -64,18 +64,23 @@ protected:
             }
         }
 
-        void onWrite(NimBLECharacteristic *characteristic, ble_gap_conn_desc *desc) override {
-            std::string value = characteristic->getValue();
-            if (value.length() == 0) {
+        void onWrite(NimBLECharacteristic *characteristic, NimBLEConnInfo &connInfo) override {
+            NimBLEAttValue value = characteristic->getValue();
+            std::string_view valueStr(reinterpret_cast<const char *>(value.c_str()),
+                                      value.length());
+            size_t valueSize = value.size();
+
+            if (valueSize == 0) {
+                log_d("BLEProxy::CharacteristicCallbacks::onWrite: Empty value");
                 return;
             }
 
             log_d("BLEProxy::CharacteristicCallbacks::onWrite: %s", value.c_str());
             // Send the body to the web request handler.
-            size_t equalsIndex = value.find('=');
+            size_t equalsIndex = valueStr.find('=');
             if (equalsIndex != std::string::npos) {
-                SpiramString key = SpiramString(value.substr(0, equalsIndex));
-                SpiramString body = SpiramString(value.substr(equalsIndex + 1));
+                SpiramString key = SpiramString(valueStr.substr(0, equalsIndex));
+                SpiramString body = SpiramString(valueStr.substr(equalsIndex + 1));
                 if (key == "auth") {
                     if (body == BLEProxy::getInstance()->prefs_->bleAuthKey.get()) {
                         log_i("BLEProxy::CharacteristicCallbacks::onWrite: Authed");
