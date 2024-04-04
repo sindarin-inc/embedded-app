@@ -6,6 +6,7 @@
 #include <functional>
 #include <istream>
 #include <streambuf>
+#include <utility>
 #include <vector>
 
 #include "sindarin-debug.h"
@@ -13,7 +14,8 @@
 template <std::size_t BUFFER_SIZE = BUFSIZ>
 class HttpStreambuf : public std::streambuf {
 public:
-    HttpStreambuf(std::function<size_t(char *, size_t)> readFunc) : readFunc_(readFunc) {
+    HttpStreambuf(std::function<size_t(char *, size_t)> readFunc)
+        : readFunc_(std::move(std::move(readFunc))) {
         buffer_ = static_cast<char *>(
             heap_caps_malloc(std::max(static_cast<int>(BUFFER_SIZE), BUFSIZ), MALLOC_CAP_SPIRAM));
         setg(buffer_, buffer_, buffer_);

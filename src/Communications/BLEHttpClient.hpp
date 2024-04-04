@@ -15,7 +15,7 @@
 #include "Misc/Dispatch.hpp"
 #include "Misc/StringUtil.hpp"
 
-#define MAX_BUFFER_SIZE 1 * 1024 * 1024 // 1MB
+#define MAX_BUFFER_SIZE (1 * 1024 * 1024) // 1MB
 
 class BLEHttpClient : public HttpClient {
 public:

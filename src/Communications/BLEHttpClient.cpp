@@ -14,13 +14,13 @@
 BLEHttpClient::BLEHttpClient(const char *url, const char *contentType,
                              esp_http_client_method_t method, std::shared_ptr<CancelFlag> cancel)
     : HttpClient(url, contentType, method), cancel_(std::move(cancel)), url_(strdup(url)),
-      requestMethod_(method), responseBody_(MAX_BUFFER_SIZE) {
+      requestMethod_(method), responseBody_(MAX_BUFFER_SIZE),
+      dataSemaphore_(xSemaphoreCreateBinary()) {
 
     requestHeaders_.clear();
 
     bleManager_ = BLEManager::getInstance();
     bleProxy_ = BLEProxy::getInstance();
-    dataSemaphore_ = xSemaphoreCreateBinary();
 
     if (method != HTTP_METHOD_GET) {
         requestHeaders_.emplace_back(SpiramString("Content-Type"), SpiramString(contentType));
