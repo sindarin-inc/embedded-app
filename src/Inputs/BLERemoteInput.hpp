@@ -30,8 +30,8 @@ protected:
 
         CharacteristicCallbacks(BLERemoteInput *enclosure) : enclosed(enclosure) {}
 
-        void onWrite(NimBLECharacteristic *characteristic, ble_gap_conn_desc *desc) override {
-            if (!BLEManager::getInstance()->checkAuthed(desc)) {
+        void onWrite(NimBLECharacteristic *characteristic, NimBLEConnInfo &connInfo) override {
+            if (!BLEManager::getInstance()->checkAuthed(connInfo)) {
                 return;
             }
 

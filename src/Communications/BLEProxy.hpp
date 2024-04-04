@@ -54,7 +54,7 @@ protected:
     public:
         CharacteristicCallbacks() = default;
 
-        void onSubscribe(NimBLECharacteristic *characteristic, ble_gap_conn_desc *desc,
+        void onSubscribe(NimBLECharacteristic *characteristic, NimBLEConnInfo &connInfo,
                          uint16_t subValue) override {
             log_d("BLEProxy::CharacteristicCallbacks::onSubscribe: %d", subValue);
 
@@ -64,7 +64,7 @@ protected:
             }
         }
 
-        void onWrite(NimBLECharacteristic *characteristic, ble_gap_conn_desc *desc) override {
+        void onWrite(NimBLECharacteristic *characteristic, NimBLEConnInfo &connInfo) override {
             NimBLEAttValue value = characteristic->getValue();
             const char *valuePtr = value.c_str();
             size_t valueSize = value.size();

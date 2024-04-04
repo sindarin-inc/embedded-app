@@ -15,7 +15,8 @@
 class TTRemoteInput : public RemoteInput {
 public:
     TTRemoteInput(PreferencesStore &prefs) noexcept
-        : prefs_(prefs), advertisedDeviceCallbacks_(this), clientCallbacks_(this){};
+        : prefs_(prefs), pairedDeviceScanCallbacks_(this), newDeviceScanCallbacks_(this),
+          clientCallbacks_(this){};
     TTRemoteInput(TTRemoteInput const &) = delete;
 
     // Scan for a PageTurner. Can be safely called even if one is already connected.
@@ -46,14 +47,15 @@ protected:
     void scanForPairedDevice();
     void scanForDevice();
 
-    class AdvertisedDeviceCallbacks : public BLEAdvertisedDeviceCallbacks {
+    class PairedDeviceScanCallbacks : public NimBLEScanCallbacks {
     public:
         TTRemoteInput *enclosed;
 
-        AdvertisedDeviceCallbacks(TTRemoteInput *enclosure) : enclosed(enclosure) {}
+        PairedDeviceScanCallbacks(TTRemoteInput *enclosure) : enclosed(enclosure) {}
 
         void onResult(BLEAdvertisedDevice *advertisedDevice) override {
             if (advertisedDevice->haveServiceUUID()) {
+
                 // log_v("BLEAdvertisedDevice w/ services found: %s",
                 //       advertisedDevice->getName().c_str());
                 // for (int i = 0; i < advertisedDevice->getServiceUUIDCount(); ++i) {
@@ -74,7 +76,50 @@ protected:
         }
     };
 
-    AdvertisedDeviceCallbacks advertisedDeviceCallbacks_;
+    PairedDeviceScanCallbacks pairedDeviceScanCallbacks_;
+
+    class NewDeviceScanCallbacks : public NimBLEScanCallbacks {
+    public:
+        TTRemoteInput *enclosed;
+
+        NewDeviceScanCallbacks(TTRemoteInput *enclosure) : enclosed(enclosure) {}
+
+        void onScanEnd(NimBLEScanResults results) override {
+            if (results.getCount() == 0) {
+                log_w("Absolutely 0 BLE devices found.");
+                return;
+            }
+
+            std::vector<NimBLEAdvertisedDevice *> filteredDevices;
+
+            for (auto advertisedDevice : results) {
+                if (advertisedDevice->isAdvertisingService(BLEUUID(TURNTOUCH_BUTTON_SVC_ID))) {
+                    filteredDevices.push_back(advertisedDevice);
+                }
+            }
+
+            // Sort devices by RSSI (descending order)
+            std::sort(filteredDevices.begin(), filteredDevices.end(),
+                      [](NimBLEAdvertisedDevice *a, NimBLEAdvertisedDevice *b) {
+                return a->getRSSI() > b->getRSSI();
+            });
+
+            log_i("Scan complete. Found %zu PageTurner devices (%d total BLE devices)",
+                  filteredDevices.size(), results.getCount());
+
+            if (filteredDevices.empty()) {
+                return;
+            }
+            for (auto advertisedDevice : filteredDevices) {
+                log_d("PageTurner: %s, RSSI: %d", advertisedDevice->getAddress().toString().c_str(),
+                      advertisedDevice->getRSSI());
+            }
+
+            enclosed->dispatchConnection(*(filteredDevices[0]));
+        }
+    };
+
+    NewDeviceScanCallbacks newDeviceScanCallbacks_;
 
     class ClientCallbacks : public BLEClientCallbacks {
     public:
@@ -87,7 +132,7 @@ protected:
             enclosed->state_ = CONNECTED;
         }
 
-        void onDisconnect(BLEClient *client) override {
+        void onDisconnect(NimBLEClient *client, int reason) override {
             log_w("BLE PageTurner disconnected!");
             enclosed->state_ = SCANNING;
         }
