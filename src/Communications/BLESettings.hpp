@@ -49,7 +49,7 @@ protected:
 
         CharacteristicCallbacks(BLESettings *enclosure) : enclosed(enclosure) {}
 
-        void onWrite(NimBLECharacteristic *characteristic, ble_gap_conn_desc *desc) override {
+        void onWrite(NimBLECharacteristic *characteristic, NimBLEConnInfo &connInfo) override {
             std::string value = characteristic->getValue();
             if (value.length() == 0) {
                 return;
@@ -74,7 +74,7 @@ protected:
                     characteristic->setValue(StringFormat(
                         "pair=%s", enclosed->prefs_->bleAdvertisingKey.get().value_or("").c_str()));
                     characteristic->notify();
-                } else if (!BLEManager::getInstance()->checkAuthed(desc)) {
+                } else if (!BLEManager::getInstance()->checkAuthed(connInfo)) {
                     log_w("GATT client asking to read setting while unauthed: %s", value.c_str());
                 }
                 // Authenticated-only settings
@@ -112,11 +112,12 @@ protected:
                     } else {
                         log_i("GATT client bad auth received '%s', disconnecting",
                               settingValue.c_str());
-                        characteristic->getService()->getServer()->disconnect(desc->conn_handle);
+                        characteristic->getService()->getServer()->disconnect(
+                            connInfo.getConnHandle());
                     }
                     // Unset the characteristic so it can't be read by unauthed users
                     characteristic->setValue("");
-                } else if (!BLEManager::getInstance()->checkAuthed(desc)) {
+                } else if (!BLEManager::getInstance()->checkAuthed(connInfo)) {
                     log_w("GATT client trying to write setting while unauthed: %s=%s",
                           settingKey.c_str(), settingValue.c_str());
                 }
