@@ -99,7 +99,7 @@ auto BLEHttpClient::fetchHeaders(int expectedSize) -> int {
         std::find_if(responseHeaders_.begin(), responseHeaders_.end(),
                      [](const std::pair<SpiramString, SpiramString> &header) {
         return header.first == "Content-Length";
-    });
+        });
 
     if (contentLengthHeader != responseHeaders_.end()) {
         auto contentLength = strtol(contentLengthHeader->second.c_str(), nullptr, 10);
@@ -115,8 +115,8 @@ auto BLEHttpClient::fetchHeaders(int expectedSize) -> int {
     return 0;
 }
 
-auto BLEHttpClient::handleWebRequest(const SpiramString &key, const char *body,
-                                     size_t bodySize) -> bool {
+auto BLEHttpClient::handleWebRequest(const SpiramString &key, const char *body, size_t bodySize)
+    -> bool {
     // If the key contains more than a single character, it's re-requesting a chunk of the body
     if (key.length() > 1) {
         // Re-send the body chunk requested: B123=. chunkNumber is after the first character and
@@ -227,19 +227,20 @@ auto BLEHttpClient::open(int contentLength) -> esp_err_t {
     // Register web request handler which receives the response from the mobile app
     bleProxy_->registerWebRequestHandler(
         [this](const SpiramString &key, const char *body, size_t bodySize) -> void {
-        bool completed = this->handleWebRequest(key, body, bodySize);
-        if (completed) {
-            log_d("BLE HTTP request completed");
-        }
-    });
+            bool completed = this->handleWebRequest(key, body, bodySize);
+            if (completed) {
+                log_d("BLE HTTP request completed");
+            }
+        });
 
     return ESP_OK;
 }
 
 auto BLEHttpClient::getResponseHeader(const char *key, char **value) -> esp_err_t {
-    auto header = std::find_if(
-        responseHeaders_.begin(), responseHeaders_.end(),
-        [key](const std::pair<SpiramString, SpiramString> &header) { return header.first == key; });
+    auto header = std::find_if(responseHeaders_.begin(), responseHeaders_.end(),
+                               [key](const std::pair<SpiramString, SpiramString> &header) {
+        return header.first == key;
+    });
 
     if (header != responseHeaders_.end()) {
         *value = strdup(header->second.c_str());
