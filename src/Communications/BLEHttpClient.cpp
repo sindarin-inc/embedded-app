@@ -32,6 +32,11 @@ BLEHttpClient::~BLEHttpClient() {
 }
 
 auto BLEHttpClient::setHeader(const char *key, const char *value) -> esp_err_t {
+    // Ignore Accept-Encoding header
+    if (strcmp(key, "Accept-Encoding") == 0) {
+        return ESP_OK;
+    }
+
     requestHeaders_.emplace_back(SpiramString(key), SpiramString(value));
 
     return ESP_OK;
@@ -48,6 +53,8 @@ auto BLEHttpClient::fetchHeaders(int expectedSize) -> int {
     auto fetchingTimeoutMs = 10 * 60000; // 10 minutes of downloading per book
     auto logDelayMs = 10000;             // 10 seconds between BLE wait logs
     statusCode_ = 0;
+    contentLength_ = 0;
+    readLength_ = 0;
     responseBodyFetched_ = false;
     responseBodyFetching_ = false;
 
@@ -103,6 +110,7 @@ auto BLEHttpClient::fetchHeaders(int expectedSize) -> int {
     if (contentLengthHeader != responseHeaders_.end()) {
         auto contentLength = strtol(contentLengthHeader->second.c_str(), nullptr, 10);
         log_d("Content-Length: %ld", contentLength);
+        contentLength_ = contentLength;
         return contentLength;
     }
 
@@ -179,6 +187,8 @@ auto BLEHttpClient::handleWebRequest(const SpiramString &key, const char *body, 
             log_d("Received BLE chunk %" PRIi32 "/%" PRIi32
                   ": %zu bytes, response body size: %zu bytes",
                   chunkNumber, totalChunks, chunkDataSize, responseBody_.size());
+            log_d("Bytes remaining to download: %d/%d bytes, %d bytes left", readLength_,
+                  contentLength_, contentLength_ - readLength_);
         }
 
         responseBodyFetching_ = true;
@@ -211,8 +221,15 @@ auto BLEHttpClient::read(char *buffer, int length) -> int {
 
     // Ensure we only copy as much as available and requested
     int bytesToCopy = std::min(responseBody_.size(), length);
+    readLength_ += bytesToCopy;
+    if (bytesToCopy != length && bytesToCopy != responseBody_.size()) {
+        log_d("Read %d bytes, %d remaining in buffer (%d buffer length). Bytes remaining to "
+              "download: %d/%d, "
+              "%d left",
+              bytesToCopy, responseBody_.size(), length, readLength_, contentLength_,
+              contentLength_ - readLength_);
+    }
     responseBody_.moveFrom(0, reinterpret_cast<uint8_t *>(buffer), bytesToCopy);
-    log_d("Read %d bytes, %d remaining", bytesToCopy, responseBody_.size());
 
     // If there is still data remaining in the buffer, give the semaphore back
     if (responseBody_.size() > 0) {

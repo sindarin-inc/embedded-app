@@ -518,7 +518,7 @@ void LocalStore::syncFromRemote(
 
     progressCallback(ContentSyncState{.state = ContentSyncState::State::ConnectingWifi});
 
-    if (!WiFi::getInstance().connectWiFiFromSettings()) {
+    if (true || !WiFi::getInstance().connectWiFiFromSettings()) {
         this->telemetry_.logMetric(TelemetryField::METRIC_WIFI, "sync-wifi-failed");
         // progressCallback(ContentSyncState{.state = ContentSyncState::State::Failure,
         //                                   .message = "Failed to connect to WiFi."});

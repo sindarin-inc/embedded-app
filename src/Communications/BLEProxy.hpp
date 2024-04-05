@@ -74,7 +74,7 @@ protected:
                 return;
             }
 
-            // log_d("BLEProxy::CharacteristicCallbacks::onWrite: %zu bytes / %s", valueSize,
+            // log_d("BLEProxy::CharacteristicCallbacks::onWrite: %zu bytes / %.*s", valueSize, 8,
             //       valuePtr);
 
             // Find the = character
