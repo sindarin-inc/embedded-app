@@ -457,8 +457,10 @@ void PowerManager::beginShutdown() {
 
     // Disconnect WiFi as a quick-and-dirty way to cancel long running syncs
     WiFi::getInstance().disconnectWiFi();
+#if !SIMULATOR
     BLEManager::getInstance()->stopAdvertising();
     BLEManager::getInstance()->disconnectAllClients();
+#endif
 
     if (beginShutdownCallback_ != nullptr) {
         beginShutdownCallback_();
