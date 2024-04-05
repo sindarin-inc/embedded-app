@@ -94,7 +94,6 @@ void BLEManager::disconnectProxy() {
     disableService(BLEProxy::getInstance()->getService());
     enableService(BLERemoteInput::getInstance()->getService());
     enableService(BLEImprov::getInstance()->getService());
-    startAdvertisingIfNecessary();
 
     connectedProxy = false;
 }

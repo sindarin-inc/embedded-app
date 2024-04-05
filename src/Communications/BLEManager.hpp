@@ -21,7 +21,7 @@ public:
     void enableService(BLEService *service);
     void disableService(BLEService *service);
     auto server() -> BLEServer *;
-    void disconnectAll() {
+    void disconnectAllClients() {
         auto peerDevices = server()->getPeerDevices();
         log_d("Disconnecting %d BLE devices", peerDevices.size());
         for (auto &device : peerDevices) {

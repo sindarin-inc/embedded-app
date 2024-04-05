@@ -239,7 +239,7 @@ void ContentSyncScreen::begin() {
     // btdm_controller_task crash
     BLEManager::getInstance()->stopAdvertising();
     auto bleManager = BLEManager::getInstance();
-    bleManager->disconnectAll();
+    bleManager->disconnectAllClients();
     auto resumeBLE = [bleManager] { bleManager->startAdvertisingIfNecessary(); };
 #else
     auto resumeBLE = [] {};
