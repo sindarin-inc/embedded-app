@@ -518,7 +518,7 @@ void LocalStore::syncFromRemote(
 
     progressCallback(ContentSyncState{.state = ContentSyncState::State::ConnectingWifi});
 
-    if (true || !WiFi::getInstance().connectWiFiFromSettings()) {
+    if (!WiFi::getInstance().connectWiFiFromSettings()) {
         this->telemetry_.logMetric(TelemetryField::METRIC_WIFI, "sync-wifi-failed");
         // progressCallback(ContentSyncState{.state = ContentSyncState::State::Failure,
         //                                   .message = "Failed to connect to WiFi."});
@@ -528,13 +528,15 @@ void LocalStore::syncFromRemote(
     }
 
 #if USE_BLE_SERVER_PROXY
-    if (!wifiConnected && !BLEManager::getInstance()->connectProxy(cancel)) {
-        this->telemetry_.logMetric(TelemetryField::METRIC_WIFI, "sync-ble-failed");
-        progressCallback(ContentSyncState{.state = ContentSyncState::State::Failure,
-                                          .message = "Failed to connect to WiFi."});
-        return;
-    } else {
-        bleConnected = true;
+    if (!wifiConnected) {
+        if (!BLEManager::getInstance()->connectProxy(cancel)) {
+            this->telemetry_.logMetric(TelemetryField::METRIC_WIFI, "sync-ble-failed");
+            progressCallback(ContentSyncState{.state = ContentSyncState::State::Failure,
+                                              .message = "Failed to connect to WiFi."});
+            return;
+        } else {
+            bleConnected = true;
+        }
     }
 #endif
 
