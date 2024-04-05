@@ -185,7 +185,7 @@ auto BLEHttpClient::handleWebRequest(const SpiramString &key, const char *body, 
 
         if (chunkNumber == 1 || chunkNumber == totalChunks || chunkNumber % 100 == 0) {
             log_d("Received BLE chunk %" PRIi32 "/%" PRIi32
-                  ": %zu bytes, response body size: %zu bytes",
+                  ": %zu bytes, response body buffer size: %zu bytes",
                   chunkNumber, totalChunks, chunkDataSize, responseBody_.size());
             log_d("Bytes remaining to download: %d/%d bytes, %d bytes left", readLength_,
                   contentLength_, contentLength_ - readLength_);

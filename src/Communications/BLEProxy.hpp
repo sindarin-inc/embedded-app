@@ -107,7 +107,7 @@ protected:
                 int32_t chunkNumber =
                     strtol(valuePtr + 2, nullptr, 10); // Parses the number after 'B='
 
-                if (key == "B" && (chunkNumber >= 4096 || chunkNumber < 2)) {
+                if (key == "B" && chunkNumber <= 1) {
                     // Dump valuePtr as hex
                     log_d(
                         "BLEProxy::CharacteristicCallbacks::onWrite: %" PRIi32 " %s", chunkNumber,
