@@ -122,6 +122,7 @@ void EinkET013TT1::init() {
         .quadwp_io_num = -1,
         .quadhd_io_num = -1,
         .flags = SPICOMMON_BUSFLAG_MASTER,
+        // .isr_cpu_id = INTR_CPU_ID_1,
     };
     // TODO: Why don't we have any available DMA channels? Maybe they are used by Flash and RAM?
     ESP_ERROR_CHECK(spi_bus_initialize(DISPLAY_SPI, &buscfg, SPI_DMA_DISABLED));
