@@ -177,7 +177,7 @@ void TTRemoteInput::scanForNewDevice() {
     scan->setWindow(30);
     scan->setActiveScan(true);
     scan->setScanCallbacks(&newDeviceScanCallbacks_);
-    auto started = scan->start(10, false);
+    auto started = scan->start(NEW_SCAN_INTERVAL_MS, false);
     if (!started) {
         log_e("Failed to start scan");
         return;
@@ -214,7 +214,7 @@ void TTRemoteInput::scanForPairedDevice() {
     scan->setInterval(40);
     scan->setWindow(30);
     scan->setActiveScan(useActiveScan);
-    auto started = scan->start((RESCAN_INTERVAL_MS / 1000), false);
+    auto started = scan->start(RESCAN_INTERVAL_MS, false);
     if (!started) {
         log_e("Failed to start scan");
         return;

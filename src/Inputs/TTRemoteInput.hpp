@@ -9,8 +9,9 @@
 #include "TurnTouch.hpp"
 #include "sindarin-debug.h"
 
-#define RESCAN_INTERVAL_MS 3000
-#define RESCAN_GAP_MS 100
+constexpr uint32_t RESCAN_INTERVAL_MS = 3000;
+constexpr uint32_t NEW_SCAN_INTERVAL_MS = 10000;
+constexpr uint32_t RESCAN_GAP_MS = 100;
 
 class TTRemoteInput : public RemoteInput {
 public:
