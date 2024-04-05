@@ -34,7 +34,10 @@ auto DownloadFile(
     if (CancelFlag::isCancelled(cancel)) {
         return ERR_CANCELLED;
     }
-
+    if (useBle) {
+        // TODO: Support gzip over BLE
+        gzip = false;
+    }
     auto client = CreateClient(url, useBle);
 
     auto sindarinApi = SindarinAPI::getInstance();
