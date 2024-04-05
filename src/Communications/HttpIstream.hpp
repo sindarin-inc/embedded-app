@@ -16,30 +16,21 @@ class HttpIStreambuf : public std::streambuf {
 public:
     HttpIStreambuf(std::function<size_t(char *, size_t)> readFunc)
         : readFunc_(std::move(readFunc)) {
-        buffer_ = static_cast<char *>(
-            heap_caps_malloc(std::max(static_cast<int>(BUFFER_SIZE), BUFSIZ), MALLOC_CAP_SPIRAM));
         setg(buffer_, buffer_, buffer_);
     }
 
-    ~HttpIStreambuf() override { heap_caps_free(buffer_); }
-
 private:
-    char *buffer_;
+    char buffer_[BUFFER_SIZE];
     std::function<size_t(char *, size_t)> readFunc_;
 
     auto underflow() -> int_type override {
-        if (gptr() < egptr()) {
-            return *gptr();
-        }
-
-        char *buffer = eback();
-        auto readLength = readFunc_(buffer, BUFSIZ);
-
+        auto readLength = readFunc_(buffer_, BUFFER_SIZE);
         if (readLength <= 0) {
             return traits_type::eof();
         }
 
-        setg(buffer, buffer, buffer + readLength);
+        setg(buffer_, buffer_, buffer_ + readLength);
+
         return *gptr();
     }
 };
