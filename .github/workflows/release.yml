@@ -16,8 +16,8 @@ jobs:
         id: download
         uses: actions/download-artifact@v3
         with:
-          name: embedded-app-${{ github.sha }}-IDFv5.1
-          path: embedded-app-${{ github.sha }}-IDFv5.1
+          name: embedded-app-${{ github.sha }}-IDFv5.1.1
+          path: embedded-app-${{ github.sha }}-IDFv5.1.1
 
       - name: Create release
         run: |
@@ -34,13 +34,13 @@ jobs:
           -F "release_notes=TODO"
 
       - name: Zip back up the build
-        run: zip -r embedded-app-${{ github.sha }}-IDFv5.1.zip embedded-app-${{ github.sha }}-IDFv5.1
+        run: zip -r embedded-app-${{ github.sha }}-IDFv5.1.1.zip embedded-app-${{ github.sha }}-IDFv5.1.1
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
         with:
-          files: embedded-app-${{ github.sha }}-IDFv5.1.zip
+          files: embedded-app-${{ github.sha }}-IDFv5.1.1.zip
 
       - name: Notify Slack
         run: |
