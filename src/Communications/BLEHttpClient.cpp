@@ -7,7 +7,6 @@
 #include <esp_timer.h>
 #include <utility>
 
-#include "Communications/HttpIstream.hpp"
 #include "Misc/CancelFlag.hpp"
 #include "Misc/Defer.hpp"
 
@@ -250,14 +249,7 @@ auto BLEHttpClient::getResponseHeader(const char *key, char **value) -> esp_err_
     return ESP_FAIL;
 }
 
-auto BLEHttpClient::makeWriteStream() -> std::shared_ptr<HttpOstream<4096>> { return nullptr; }
-
 auto BLEHttpClient::close() -> esp_err_t { return ESP_OK; }
-
-auto BLEHttpClient::makeReadStream() -> std::shared_ptr<HttpIstream<4096>> {
-    return std::make_shared<HttpIstream<4096>>(
-        [this](char *buffer, size_t size) -> size_t { return read(buffer, size); });
-}
 
 auto BLEHttpClient::isChunkedResponse() -> bool { return false; }
 

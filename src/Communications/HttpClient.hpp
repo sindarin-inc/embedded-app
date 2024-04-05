@@ -35,7 +35,10 @@ public:
 
     virtual auto write(const char *body, int length) -> int = 0;
 
-    virtual auto makeWriteStream() -> std::shared_ptr<HttpOstream<4096>> = 0;
+    virtual auto makeWriteStream() -> std::shared_ptr<HttpOstream<4096>> {
+        return std::make_shared<HttpOstream<4096>>(
+            [this](char *buffer, size_t size) -> size_t { return write(buffer, size); });
+    }
 
     virtual auto fetchHeaders(int expectedSize = 0) -> int = 0;
 
@@ -47,7 +50,10 @@ public:
 
     virtual auto close() -> esp_err_t = 0;
 
-    virtual auto makeReadStream() -> std::shared_ptr<HttpIstream<4096>> = 0;
+    virtual auto makeReadStream() -> std::shared_ptr<HttpIstream<4096>> {
+        return std::make_shared<HttpIstream<4096>>(
+            [this](char *buffer, size_t size) -> size_t { return read(buffer, size); });
+    }
 
     virtual auto isChunkedResponse() -> bool = 0;
 

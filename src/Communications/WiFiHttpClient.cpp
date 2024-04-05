@@ -216,10 +216,6 @@ auto WiFiHttpClient::writeChunkedData(const char *data, int length) -> bool {
 
 auto WiFiHttpClient::endChunkedData() -> bool { return writeChunkedData(nullptr, 0); }
 
-auto WiFiHttpClient::makeWriteStream() -> std::shared_ptr<HttpOstream<4096>> {
-    return std::make_shared<HttpOstream<4096>>(client_);
-}
-
 auto WiFiHttpClient::fetchHeaders(int expectedSize) -> int {
     return esp_http_client_fetch_headers(client_);
 }
@@ -240,10 +236,4 @@ auto WiFiHttpClient::close() -> esp_err_t {
         log_e("esp_http_client_close err=%s", esp_err_to_name(err));
     }
     return err;
-}
-
-auto WiFiHttpClient::makeReadStream() -> std::shared_ptr<HttpIstream<4096>> {
-    return std::make_shared<HttpIstream<4096>>([this](char *buffer, size_t size) -> size_t {
-        return esp_http_client_read(client_, buffer, size);
-    });
 }

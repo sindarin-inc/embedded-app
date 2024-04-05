@@ -44,9 +44,6 @@ public:
 
     auto close() -> esp_err_t override;
 
-    auto makeReadStream() -> std::shared_ptr<HttpIstream<4096>> override;
-    auto makeWriteStream() -> std::shared_ptr<HttpOstream<4096>> override;
-
     auto isChunkedResponse() -> bool override;
 
     auto writeChunkedData(const char *data, int length) -> bool override;

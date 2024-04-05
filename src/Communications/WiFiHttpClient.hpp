@@ -8,8 +8,6 @@
 #include <memory>
 
 #include "Communications/HttpClient.hpp"
-#include "Communications/HttpIstream.hpp"
-#include "Communications/HttpOstream.hpp"
 #include "Misc/GZipStream.hpp"
 
 class WiFiHttpClient : public HttpClient {
@@ -30,8 +28,6 @@ public:
 
     auto write(const char *body, int length) -> int override;
 
-    auto makeWriteStream() -> std::shared_ptr<HttpOstream<4096>> override;
-
     auto fetchHeaders(int expectedSize = 0) -> int override;
 
     // auto getContentLength() -> int;
@@ -41,8 +37,6 @@ public:
     auto read(char *buffer, int length) -> int override;
 
     auto close() -> esp_err_t override;
-
-    auto makeReadStream() -> std::shared_ptr<HttpIstream<4096>> override;
 
     auto isChunkedResponse() -> bool override;
 
