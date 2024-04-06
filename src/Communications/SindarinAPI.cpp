@@ -196,12 +196,10 @@ auto SindarinAPI::checkFirmware(FirmwareResponse *resp) -> int {
     return httpCode;
 }
 
-auto SindarinAPI::downloadReadable(const std::shared_ptr<Readable> &readable,
-                                   FileSystem &fileSystem, Telemetry &telemetry,
-                                   const std::string &path,
-                                   const std::shared_ptr<CancelFlag> &cancel, bool useBle,
-                                   const std::function<void(int percentage)> &progressCallback)
-    -> int {
+auto SindarinAPI::downloadReadable(
+    const std::shared_ptr<Readable> &readable, FileSystem &fileSystem, Telemetry &telemetry,
+    const std::string &path, const std::shared_ptr<CancelFlag> &cancel, bool useBle,
+    const std::function<void(int percentage)> &progressCallback) -> int {
     // auto remoteUrl = readable.remoteUrl();
     auto file = readable->file(path);
     auto remoteUrl = file.fileProxied;
@@ -226,13 +224,12 @@ auto SindarinAPI::downloadReadable(const std::shared_ptr<Readable> &readable,
     return httpCode;
 }
 
-auto SindarinAPI::createClient(const std::string &url, const std::string &contentType,
-                               esp_http_client_method_t method, bool useBle,
-                               const std::shared_ptr<CancelFlag> &cancel)
-    -> std::shared_ptr<HttpClient> {
+auto SindarinAPI::createClient(
+    const std::string &url, const std::string &contentType, esp_http_client_method_t method,
+    bool useBle, const std::shared_ptr<CancelFlag> &cancel) -> std::shared_ptr<HttpClient> {
     if (useBle) {
 #if USE_BLE_SERVER_PROXY
-        return std::make_shared<BLEHttpClient>(url.c_str(), contentType.c_str(), method, cancel);
+        return std::make_shared<BLEHttpClient>(url.c_str(), contentType.c_str(), method);
 #else
         return nullptr;
 #endif

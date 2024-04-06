@@ -10,7 +10,6 @@
 #endif
 
 #include "Communications/HttpClient.hpp"
-#include "Misc/CancelFlag.hpp"
 #include "Misc/CircBuffer.hpp"
 #include "Misc/Dispatch.hpp"
 #include "Misc/StringUtil.hpp"
@@ -20,8 +19,7 @@
 class BLEHttpClient : public HttpClient {
 public:
     BLEHttpClient(const char *url, const char *contentType = "",
-                  esp_http_client_method_t method = HTTP_METHOD_GET,
-                  std::shared_ptr<CancelFlag> cancel = nullptr);
+                  esp_http_client_method_t method = HTTP_METHOD_GET);
     BLEHttpClient(const BLEHttpClient &) = delete;
     ~BLEHttpClient() override;
 
@@ -29,8 +27,6 @@ public:
     auto disconnectBle();
 
     auto setHeader(const char *key, const char *value) -> esp_err_t override;
-
-    auto getResponseHeader(const char *key, char **value) -> esp_err_t override;
 
     auto open(int contentLength = 0) -> esp_err_t override;
 
@@ -55,8 +51,6 @@ public:
 private:
     std::shared_ptr<BLEManager> bleManager_;
     std::shared_ptr<BLEProxy> bleProxy_;
-    std::shared_ptr<CancelFlag> cancel_;
-    char *url_;
     int statusCode_{};
     int contentLength_{};
     int readLength_{};
@@ -65,7 +59,6 @@ private:
     std::vector<std::pair<SpiramString, SpiramString>> requestHeaders_;
     SpiramString requestBody_;
 
-    std::vector<std::pair<SpiramString, SpiramString>> responseHeaders_;
     CircBuffer responseBody_;
     bool responseBodyFetched_{};
     bool responseBodyFetching_{};

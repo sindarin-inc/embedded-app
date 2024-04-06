@@ -20,8 +20,6 @@ public:
 
     auto setHeader(const char *key, const char *value) -> esp_err_t override;
 
-    auto getResponseHeader(const char *key, char **value) -> esp_err_t override;
-
     auto open(int contentLength = 0) -> esp_err_t override;
 
     // auto perform() -> esp_err_t;
@@ -47,7 +45,6 @@ public:
     bool connected;
 
 private:
-    char *url_;
     std::string userAgent_;
     esp_http_client_handle_t client_;
     std::multimap<std::string, std::string, CaseInsensitive> responseHeaders_;

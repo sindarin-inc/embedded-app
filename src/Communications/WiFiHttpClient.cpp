@@ -13,7 +13,7 @@
 
 WiFiHttpClient::WiFiHttpClient(const char *url, const char *contentType,
                                esp_http_client_method_t method, bool gzip)
-    : HttpClient(url, contentType, method, gzip), url_(strdup(url)) {
+    : HttpClient(url, contentType, method, gzip) {
 
     userAgent_ = StringFormat("SolReader/%s (%s)", SemanticVersionString(), GitVersionString());
 
@@ -96,15 +96,6 @@ auto WiFiHttpClient::setHeader(const char *key, const char *value) -> esp_err_t 
         log_e("esp_http_client_set_header err=%s", esp_err_to_name(err));
     }
     return err;
-}
-
-auto WiFiHttpClient::getResponseHeader(const char *key, char **value) -> esp_err_t {
-    auto it = responseHeaders_.find(key);
-    if (it == responseHeaders_.end()) {
-        return ESP_ERR_NOT_FOUND;
-    }
-    *value = const_cast<char *>(it->second.c_str());
-    return ESP_OK;
 }
 
 auto WiFiHttpClient::open(int contentLength) -> esp_err_t {

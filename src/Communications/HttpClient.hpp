@@ -10,10 +10,9 @@
 
 struct CaseInsensitive {
     auto operator()(const std::string &s1, const std::string &s2) const -> bool {
-        return std::lexicographical_compare(s1.begin(), s1.end(), s2.begin(), s2.end(),
-                                            [](unsigned char c1, unsigned char c2) {
-            return ::tolower(c1) < ::tolower(c2);
-        });
+        return std::lexicographical_compare(
+            s1.begin(), s1.end(), s2.begin(), s2.end(),
+            [](unsigned char c1, unsigned char c2) { return ::tolower(c1) < ::tolower(c2); });
     }
 };
 
@@ -27,7 +26,14 @@ public:
 
     virtual auto setHeader(const char *key, const char *value) -> esp_err_t = 0;
 
-    virtual auto getResponseHeader(const char *key, char **value) -> esp_err_t = 0;
+    virtual auto getResponseHeader(const char *key, char **value) -> esp_err_t {
+        auto it = responseHeaders_.find(key);
+        if (it == responseHeaders_.end()) {
+            return ESP_ERR_NOT_FOUND;
+        }
+        *value = const_cast<char *>(it->second.c_str());
+        return ESP_OK;
+    }
 
     virtual auto open(int contentLength = 0) -> esp_err_t = 0;
 
@@ -63,14 +69,7 @@ public:
 
     bool connected{};
 
-private:
+protected:
     char *url_;
-    std::string userAgent_;
-    esp_http_client_handle_t client_{};
     std::multimap<std::string, std::string, CaseInsensitive> responseHeaders_;
-    bool gzip_{};
-    GZipStream gz_;
-    int gzUncompressedBytesRemaining_{};
-
-    auto writeAvailableCompressedData() -> bool;
 };

@@ -7,13 +7,11 @@
 #include <esp_timer.h>
 #include <utility>
 
-#include "Misc/CancelFlag.hpp"
 #include "Misc/Defer.hpp"
 
 BLEHttpClient::BLEHttpClient(const char *url, const char *contentType,
-                             esp_http_client_method_t method, std::shared_ptr<CancelFlag> cancel)
-    : HttpClient(url, contentType, method), cancel_(std::move(cancel)), url_(strdup(url)),
-      requestMethod_(method), responseBody_(MAX_BUFFER_SIZE),
+                             esp_http_client_method_t method)
+    : HttpClient(url, contentType, method), requestMethod_(method), responseBody_(MAX_BUFFER_SIZE),
       dataSemaphore_(xSemaphoreCreateBinary()) {
 
     requestHeaders_.clear();
@@ -101,29 +99,22 @@ auto BLEHttpClient::fetchHeaders(int expectedSize) -> int {
     }
 
     // Extract the Content-Length header
-    auto contentLengthHeader =
-        std::find_if(responseHeaders_.begin(), responseHeaders_.end(),
-                     [](const std::pair<SpiramString, SpiramString> &header) {
-        return header.first == "Content-Length";
-        });
-
-    if (contentLengthHeader != responseHeaders_.end()) {
-        auto contentLength = strtol(contentLengthHeader->second.c_str(), nullptr, 10);
+    char *contentLengthHeader = nullptr;
+    auto err = getResponseHeader("Content-Length", &contentLengthHeader);
+    if (err == ESP_OK) {
+        auto contentLength = strtol(contentLengthHeader, nullptr, 10);
         log_d("Content-Length: %ld", contentLength);
         contentLength_ = contentLength;
         return contentLength;
     }
 
-    log_d("No Content-Length header found: %zu headers", responseHeaders_.size());
-    for (auto &header : responseHeaders_) {
-        log_d("Header: %s=%s", header.first.c_str(), header.second.c_str());
-    }
+    log_d("No Content-Length header found");
 
     return 0;
 }
 
-auto BLEHttpClient::handleWebRequest(const SpiramString &key, const char *body, size_t bodySize)
-    -> bool {
+auto BLEHttpClient::handleWebRequest(const SpiramString &key, const char *body,
+                                     size_t bodySize) -> bool {
     // If the key contains more than a single character, it's re-requesting a chunk of the body
     if (key.length() > 1) {
         // Re-send the body chunk requested: B123=. chunkNumber is after the first character and
@@ -158,8 +149,10 @@ auto BLEHttpClient::handleWebRequest(const SpiramString &key, const char *body, 
             SpiramString headerKey(body, keyLength);
             // Only save Content-Length
             if (headerKey == "Content-Length") {
-                SpiramString headerValue(colonPtr + 1, bodySize - keyLength - 1);
-                responseHeaders_.emplace_back(headerKey, headerValue);
+                std::string headerValue(colonPtr + 1, bodySize - keyLength - 1);
+                // responseHeaders_.emplace_back(headerKey, headerValue);
+                responseHeaders_.insert(
+                    std::pair<std::string, std::string>(headerKey, headerValue));
             }
         }
         // log_d("Received header: %s=%s", headerKey.c_str(), headerValue.c_str());
@@ -243,27 +236,13 @@ auto BLEHttpClient::open(int contentLength) -> esp_err_t {
     // Register web request handler which receives the response from the mobile app
     bleProxy_->registerWebRequestHandler(
         [this](const SpiramString &key, const char *body, size_t bodySize) -> void {
-            bool completed = this->handleWebRequest(key, body, bodySize);
-            if (completed) {
-                log_d("BLE HTTP request completed");
-            }
-        });
-
-    return ESP_OK;
-}
-
-auto BLEHttpClient::getResponseHeader(const char *key, char **value) -> esp_err_t {
-    auto header = std::find_if(responseHeaders_.begin(), responseHeaders_.end(),
-                               [key](const std::pair<SpiramString, SpiramString> &header) {
-        return header.first == key;
+        bool completed = this->handleWebRequest(key, body, bodySize);
+        if (completed) {
+            log_d("BLE HTTP request completed");
+        }
     });
 
-    if (header != responseHeaders_.end()) {
-        *value = strdup(header->second.c_str());
-        return ESP_OK;
-    }
-
-    return ESP_FAIL;
+    return ESP_OK;
 }
 
 auto BLEHttpClient::close() -> esp_err_t { return ESP_OK; }
