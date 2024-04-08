@@ -1052,6 +1052,35 @@ auto LocalStore::processReadableDownload(
                         {{"uuid", readable->uuid},
                          {"title", readable->title.c_str()},
                          {"http-code", httpCode}});
+                } else if (httpCode == ERR_CLIENT_DISCONNECTED) {
+                    // Reconnect to wifi/ble if disconnected
+                    auto wifiConnected = false;
+                    if (!WiFi::getInstance().connectWiFiFromSettings()) {
+                        this->telemetry_.logMetric(TelemetryField::METRIC_WIFI,
+                                                   "sync-wifi-retry-failed");
+#if !USE_BLE_SERVER_PROXY
+                        progressCallback(ContentSyncState{.state = ContentSyncState::State::Failure,
+                                                          .message = "Failed to connect to WiFi."});
+                        failedDownload = true;
+                        break;
+#endif
+                    } else {
+                        wifiConnected = true;
+                    }
+
+#if USE_BLE_SERVER_PROXY
+                    if (!wifiConnected) {
+                        if (!BLEManager::getInstance()->connectProxy(cancel)) {
+                            this->telemetry_.logMetric(TelemetryField::METRIC_WIFI,
+                                                       "sync-ble-retry-failed");
+                            progressCallback(
+                                ContentSyncState{.state = ContentSyncState::State::Failure,
+                                                 .message = "Failed to connect to WiFi."});
+                            failedDownload = true;
+                            break;
+                        }
+                    }
+#endif
                 }
             }
         }
