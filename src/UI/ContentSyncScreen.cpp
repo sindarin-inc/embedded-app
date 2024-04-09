@@ -8,6 +8,7 @@
 #include "Misc/PowerManager.hpp"
 #include "Misc/RateLimiter.hpp"
 #include "Renderers/RendererStream.hpp"
+#include "esp_debug_helpers.h"
 
 ContentSyncScreen::ContentSyncScreen(DisplaySystem &display, LocalStore &localStore,
                                      PreferencesStore &prefs, Telemetry &telemetry)
@@ -122,6 +123,8 @@ void ContentSyncScreen::cancel() {
 }
 
 void ContentSyncScreen::render(DisplaySystem &display) {
+    log_d("Rendering content sync screen");
+
     int adjustedXPadding = 42;
     int adjustedYPadding = 10;
     setFrame({{display.xAbsolute(adjustedXPadding), display.yAbsolute(adjustedYPadding)},
@@ -251,6 +254,8 @@ void ContentSyncScreen::begin() {
     DispatchGetCore0BackgroundQueue()->dispatch([this, rl, resumeBLE]() {
         localStore_.syncFromRemote(SyncReason::Manual, cancel_,
                                    [this, rl, resumeBLE](const ContentSyncState &state) {
+            log_d("Progress callback: %d%%", state.percentage);
+
             if (CancelFlag::isCancelled(cancel_)) {
                 return;
             }
@@ -259,6 +264,7 @@ void ContentSyncScreen::begin() {
             if (state.state == ContentSyncState::Failure ||
                 state.state == ContentSyncState::Synced ||
                 state.state == ContentSyncState::AlreadySynced) {
+                log_d("Content sync failed, disconnecting WiFi and BLE");
                 WiFi::getInstance().disconnectWiFi();
 #if USE_BLE_SERVER_PROXY
                 BLEManager::getInstance()->disconnectProxy();
@@ -275,6 +281,7 @@ void ContentSyncScreen::begin() {
             }
 
             // Do UI stuff back on core 1
+            log_d("Dispatching Content Sync UI update for state %d", state.state);
             DispatchGetUiQueue()->dispatch([this, state, resumeBLE]() {
                 this->updateState(state);
                 this->render(this->display_);

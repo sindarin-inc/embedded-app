@@ -8,6 +8,7 @@
 #include "Inputs/BLERemoteInput.hpp"
 #include "Storage/PreferencesStore.hpp"
 #include "config.h"
+#include "esp_debug_helpers.h"
 
 std::shared_ptr<BLEManager> BLEManager::instance = nullptr;
 
@@ -24,6 +25,7 @@ auto BLEManager::server() -> BLEServer * {
     if (server_ == nullptr) {
         log_d("Creating BLE server");
         server_ = BLEDevice::createServer();
+        log_d("Setting BLE callbacks");
         server_->setCallbacks(new ServerCallbacks(this));
     }
     return server_;
@@ -31,7 +33,9 @@ auto BLEManager::server() -> BLEServer * {
 
 #if USE_BLE_SERVER_PROXY
 auto BLEManager::connectProxy(const std::shared_ptr<CancelFlag> &cancel) -> bool {
-    auto timeoutMs = 60000;  // 1 minute of advertising to connect to BLE proxy on mobile app
+    log_i("Connecting to BLE proxy");
+
+    auto timeoutMs = 30000;  // 30 seconds of advertising to connect to BLE proxy on mobile app
     auto logDelayMs = 10000; // 10 seconds between BLE wait logs
 
     stopAdvertising();
@@ -40,8 +44,10 @@ auto BLEManager::connectProxy(const std::shared_ptr<CancelFlag> &cancel) -> bool
     enableService(BLEProxy::getInstance()->getService());
     startAdvertisingIfNecessary();
 
-    BLEProxy::getInstance()->registerSubscriptionStatusCallback(
-        [this](bool connected) { this->connectedProxy = connected; });
+    BLEProxy::getInstance()->registerSubscriptionStatusCallback([this](bool connected) {
+        log_i("BLE proxy subscription status now: %d", connected);
+        this->connectedProxy = connected;
+    });
 
     // If not connected, wait up to 30s to ensure BLE is connected. If not, bail.
     auto startTime = esp_timer_get_time();

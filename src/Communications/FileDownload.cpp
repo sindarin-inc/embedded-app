@@ -65,8 +65,13 @@ auto DownloadFile(
 
     auto httpCode = client->getStatusCode();
     if (httpCode != 200) {
-        log_w("Status code was %d", httpCode);
-        return httpCode;
+        if (httpCode != 0) {
+            log_w("Status code was %d", httpCode);
+            return httpCode;
+        } else {
+            log_w("Status code was 0, assuming connection error");
+            return ERR_CLIENT_DISCONNECTED;
+        }
     }
 
     if (gzip) {
@@ -123,8 +128,9 @@ auto DownloadFile(
 
         int readLen = readWrite(*client, totalReadLen, contentLength);
         if (readLen <= 0) {
-            log_w("readWrite failed (readLen == %d, totalReadLen: %d, contentLength: %d)", readLen,
-                  totalReadLen, contentLength);
+            log_w("readWrite failed (readLen == %d, totalReadLen: %d, contentLength: %d, connected "
+                  "%d)",
+                  readLen, totalReadLen, contentLength, client->connected);
             if (!client->connected) {
                 log_w("Connection closed, bailing out");
                 return ERR_CLIENT_DISCONNECTED;

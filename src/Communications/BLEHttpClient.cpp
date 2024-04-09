@@ -47,7 +47,7 @@ auto BLEHttpClient::write(const char *body, int length) -> int {
 }
 
 auto BLEHttpClient::fetchHeaders(int expectedSize) -> int {
-    auto timeoutMs = 60000; // 1 minute of advertising to connect to BLE proxy on mobile app
+    auto timeoutMs = 30000; // 30 seconds of advertising to connect to BLE proxy on mobile app
     auto fetchingTimeoutMs = 10 * 60000; // 10 minutes of downloading per book
     auto logDelayMs = 10000;             // 10 seconds between BLE wait logs
     statusCode_ = 0;
@@ -59,7 +59,8 @@ auto BLEHttpClient::fetchHeaders(int expectedSize) -> int {
     // Now that we're connected and authed to a mobile app, we can send the request
 
     // Ensure connected to BLE proxy
-    if (!bleManager_->connectedProxy) {
+    this->connected = bleManager_->connectedProxy;
+    if (!this->connected) {
         log_e("Not connected to BLE proxy");
         return -1;
     }
@@ -113,8 +114,8 @@ auto BLEHttpClient::fetchHeaders(int expectedSize) -> int {
     return 0;
 }
 
-auto BLEHttpClient::handleWebRequest(const SpiramString &key, const char *body,
-                                     size_t bodySize) -> bool {
+auto BLEHttpClient::handleWebRequest(const SpiramString &key, const char *body, size_t bodySize)
+    -> bool {
     // If the key contains more than a single character, it's re-requesting a chunk of the body
     if (key.length() > 1) {
         // Re-send the body chunk requested: B123=. chunkNumber is after the first character and
@@ -236,10 +237,15 @@ auto BLEHttpClient::open(int contentLength) -> esp_err_t {
     // Register web request handler which receives the response from the mobile app
     bleProxy_->registerWebRequestHandler(
         [this](const SpiramString &key, const char *body, size_t bodySize) -> void {
-        bool completed = this->handleWebRequest(key, body, bodySize);
-        if (completed) {
-            log_d("BLE HTTP request completed");
-        }
+            bool completed = this->handleWebRequest(key, body, bodySize);
+            if (completed) {
+                log_d("BLE HTTP request completed");
+            }
+        });
+
+    bleProxy_->registerSubscriptionStatusCallback([this](bool connected) -> void {
+        log_d("BLE HTTP subscription status: %d", connected);
+        this->connected = connected;
     });
 
     return ESP_OK;
