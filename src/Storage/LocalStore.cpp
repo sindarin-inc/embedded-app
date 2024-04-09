@@ -999,7 +999,7 @@ auto LocalStore::processReadableDownload(
         const auto &readable = userReadable.readable;
         auto path = readableFilePathForWriting(readable);
         auto expectedSize = readable->file(path).size;
-        log_i("Downloading %s (file=%s, url=%s, size=%zu)", readable->title.c_str(), path.c_str(),
+        log_i("Downloading %s (file=%s, url=%s, size=%d)", readable->title.c_str(), path.c_str(),
               readable->remoteUrl().c_str(), expectedSize);
         SHOW_HEAP();
 

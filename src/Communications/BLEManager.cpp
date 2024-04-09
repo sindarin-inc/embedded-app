@@ -8,7 +8,6 @@
 #include "Inputs/BLERemoteInput.hpp"
 #include "Storage/PreferencesStore.hpp"
 #include "config.h"
-#include "esp_debug_helpers.h"
 
 std::shared_ptr<BLEManager> BLEManager::instance = nullptr;
 

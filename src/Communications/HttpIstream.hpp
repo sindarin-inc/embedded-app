@@ -14,13 +14,13 @@
 template <std::size_t BUFFER_SIZE = BUFSIZ>
 class HttpIStreambuf : public std::streambuf {
 public:
-    HttpIStreambuf(std::function<size_t(char *, size_t)> readFunc)
+    explicit HttpIStreambuf(std::function<size_t(char *, size_t)> readFunc)
         : readFunc_(std::move(readFunc)) {
         setg(buffer_, buffer_, buffer_);
     }
 
 private:
-    char buffer_[BUFFER_SIZE];
+    char buffer_[BUFFER_SIZE] = {};
     std::function<size_t(char *, size_t)> readFunc_;
 
     auto underflow() -> int_type override {

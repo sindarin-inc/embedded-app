@@ -453,7 +453,6 @@ void DemoScreen::processCommand(RemoteCommand command) {
         finishDemo();
         break;
     case RemoteCommand::UP:
-        break;
     case RemoteCommand::RIGHT:
     case RemoteCommand::DOWN:
     case RemoteCommand::BACK:

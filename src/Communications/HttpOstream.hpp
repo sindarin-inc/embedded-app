@@ -19,7 +19,7 @@ public:
     }
 
 private:
-    char buffer_[BUFFER_SIZE];
+    char buffer_[BUFFER_SIZE] = {};
     std::function<size_t(char *, size_t)> writeFunc_;
 
     auto sync() -> int override {

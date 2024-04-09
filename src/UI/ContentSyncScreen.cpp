@@ -8,7 +8,6 @@
 #include "Misc/PowerManager.hpp"
 #include "Misc/RateLimiter.hpp"
 #include "Renderers/RendererStream.hpp"
-#include "esp_debug_helpers.h"
 
 ContentSyncScreen::ContentSyncScreen(DisplaySystem &display, LocalStore &localStore,
                                      PreferencesStore &prefs, Telemetry &telemetry)

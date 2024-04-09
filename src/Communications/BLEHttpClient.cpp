@@ -80,12 +80,13 @@ auto BLEHttpClient::fetchHeaders(int expectedSize) -> int {
     auto lastLogTime = esp_timer_get_time();
     while (!responseHeadersFetched_) {
         auto currentTime = esp_timer_get_time();
-        if (!responseHeadersFetching_ &&
-            currentTime - startTime > static_cast<long long>(timeoutMs) * 1000) {
+        auto timedOut = currentTime - startTime > static_cast<long long>(timeoutMs) * 1000;
+        auto fetchingTimedOut =
+            currentTime - startTime > static_cast<long long>(fetchingTimeoutMs) * 1000;
+        if (!responseHeadersFetching_ && timedOut) {
             log_e("Timed out waiting for headers response");
             return -1;
-        } else if (responseHeadersFetching_ &&
-                   currentTime - startTime > static_cast<long long>(fetchingTimeoutMs) * 1000) {
+        } else if (responseHeadersFetching_ && fetchingTimedOut) {
             // Reset the timer if we're still fetching
             log_e("Timed out waiting for headers response");
             return -1;
