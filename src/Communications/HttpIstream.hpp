@@ -14,7 +14,7 @@
 template <std::size_t BUFFER_SIZE = BUFSIZ>
 class HttpIStreambuf : public std::streambuf {
 public:
-    explicit HttpIStreambuf(std::function<size_t(char *, size_t)> readFunc)
+    HttpIStreambuf(std::function<size_t(char *, size_t)> readFunc)
         : readFunc_(std::move(readFunc)) {
         setg(buffer_, buffer_, buffer_);
     }
