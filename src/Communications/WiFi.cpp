@@ -345,6 +345,9 @@ auto WiFi::connectWiFi(const std::string &ssid, const std::string &password) -> 
 }
 
 auto WiFi::connectWiFiFromSettings() -> bool {
+#if DISABLE_WIFI_SYNC
+    return false;
+#endif
 
     if (connected()) {
         return true;
