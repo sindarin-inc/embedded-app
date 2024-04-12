@@ -155,7 +155,7 @@ auto BLEHttpClient::handleWebRequest(const SpiramString &key, const char *body, 
                 std::string headerValue(colonPtr + 1, bodySize - keyLength - 1);
                 // responseHeaders_.emplace_back(headerKey, headerValue);
                 responseHeaders_.insert(
-                    std::pair<std::string, std::string>(headerKey, headerValue));
+                    std::pair<std::string, std::string>(std::move(headerKey), std::move(headerValue)));
             }
         }
         // log_d("Received header: %s=%s", headerKey.c_str(), headerValue.c_str());
