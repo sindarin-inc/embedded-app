@@ -19,6 +19,7 @@ BLEHttpClient::BLEHttpClient(const char *url, const char *contentType,
 
     bleManager_ = BLEManager::getInstance();
     bleProxy_ = BLEProxy::getInstance();
+    this->connected = bleManager_->connectedProxy;
 
     if (method != HTTP_METHOD_GET) {
         requestHeaders_.emplace_back(SpiramString("Content-Type"), SpiramString(contentType));
@@ -55,8 +56,7 @@ auto BLEHttpClient::fetchHeaders(int expectedSize) -> int {
     statusCode_ = 0;
     contentLength_ = 0;
     readLength_ = 0;
-    responseBodyFetched_ = false;
-    responseBodyFetching_ = false;
+    state_ = BLE_HTTP_CLIENT_FETCHING_RESPONSE_HEADERS;
 
     // Now that we're connected and authed to a mobile app, we can send the request
 
@@ -80,7 +80,7 @@ auto BLEHttpClient::fetchHeaders(int expectedSize) -> int {
     // Wait for response up to 30s
     RateLimiter rl(10, 10);
     auto startTime = esp_timer_get_time();
-    while (!responseHeadersFetched_) {
+    while (state_ == BLE_HTTP_CLIENT_FETCHING_RESPONSE_HEADERS) {
         auto currentTime = esp_timer_get_time();
         auto timedOut =
             (currentTime - startTime) > (static_cast<long long>(advertisingTimeoutMs) * 1000);
@@ -89,7 +89,7 @@ auto BLEHttpClient::fetchHeaders(int expectedSize) -> int {
         if (timedOut) {
             log_e("Timed out waiting for beginning of headers response");
             return -1;
-        } else if (responseHeadersFetching_ && fetchingTimedOut) {
+        } else if (fetchingTimedOut) {
             // Reset the timer if we're still fetching
             log_e("Timed out waiting for end of headers response");
             return -1;
@@ -116,7 +116,7 @@ auto BLEHttpClient::fetchHeaders(int expectedSize) -> int {
     return 0;
 }
 
-auto BLEHttpClient::handleWebRequest(const SpiramString &key, const char *body, size_t bodySize)
+auto BLEHttpClient::handleWebRequest(const std::string &key, const char *body, size_t bodySize)
     -> bool {
     // If the key contains more than a single character, it's re-requesting a chunk of the body
     if (key.length() > 1) {
@@ -141,10 +141,10 @@ auto BLEHttpClient::handleWebRequest(const SpiramString &key, const char *body, 
         // Find the positions of '=' and ':'
         if (bodySize == 0) {
             log_d("Received end of headers");
-            responseHeadersFetched_ = true;
+            state_ = BLE_HTTP_CLIENT_FETCHING_RESPONSE_BODY;
             return false;
         }
-        responseHeadersFetching_ = true;
+        state_ = BLE_HTTP_CLIENT_FETCHING_RESPONSE_HEADERS;
         // Find colon and extract key and value
         const char *colonPtr = strchr(body, ':');
         if (colonPtr != nullptr) {
@@ -187,12 +187,12 @@ auto BLEHttpClient::handleWebRequest(const SpiramString &key, const char *body, 
                   contentLength_, contentLength_ - readLength_);
         }
 
-        responseBodyFetching_ = true;
+        state_ = BLE_HTTP_CLIENT_FETCHING_RESPONSE_BODY;
 
         xSemaphoreGive(dataSemaphore_);
     } else if (key == "E") {
         // End of request
-        responseBodyFetched_ = true;
+        state_ = BLE_HTTP_CLIENT_IDLE;
 
         return true;
     }
@@ -205,14 +205,14 @@ auto BLEHttpClient::getStatusCode() -> int { return statusCode_; }
 auto BLEHttpClient::read(char *buffer, int length) -> int {
     if (!buffer || length <= 0) {
         log_w("Invalid arguments %p %d", buffer, length);
-        return 0; // Invalid arguments
+        return -1; // Invalid arguments
     }
 
     // Wait for data to be available if buffer is empty
     if (xSemaphoreTake(dataSemaphore_, pdMS_TO_TICKS(10000)) != pdTRUE) {
         // Timeout occurred, no data available
-        log_w("TIMEOUT %p %d", buffer, length);
-        return 0;
+        log_w("Timed out waiting for BLE response body: %p %d", buffer, length);
+        return -1;
     }
 
     // Ensure we only copy as much as available and requested
@@ -238,7 +238,7 @@ auto BLEHttpClient::read(char *buffer, int length) -> int {
 auto BLEHttpClient::open(int contentLength) -> esp_err_t {
     // Register web request handler which receives the response from the mobile app
     bleProxy_->registerWebRequestHandler(
-        [this](const SpiramString &key, const char *body, size_t bodySize) -> void {
+        [this](const std::string &key, const char *body, size_t bodySize) -> void {
             bool completed = this->handleWebRequest(key, body, bodySize);
             if (completed) {
                 log_d("BLE HTTP request completed");

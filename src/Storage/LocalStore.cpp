@@ -1040,7 +1040,7 @@ auto LocalStore::processReadableDownload(
 
                 break;
             } else {
-                log_w("Failed to download file. Retrying...");
+                log_w("Failed to download file. Retrying... (httpCode: %d)", httpCode);
                 if (t == NUMBER_OF_READABLE_DOWNLOAD_TRIES - 1) {
                     log_e("Failed to download file.");
                     failedDownload = true;

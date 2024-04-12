@@ -36,6 +36,7 @@ enum SindarinError {
     ERR_FILE_OPEN = -11,
     ERR_ALLOCATION = -12,
     ERR_CANCELLED = -13,
+    ERR_READ_EMPTY = -14,
 };
 
 class SindarinAPI {

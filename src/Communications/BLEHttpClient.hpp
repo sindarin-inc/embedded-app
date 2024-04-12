@@ -16,6 +16,12 @@
 
 #define MAX_BUFFER_SIZE (1 * 1024 * 1024) // 1MB
 
+typedef enum {
+    BLE_HTTP_CLIENT_IDLE,
+    BLE_HTTP_CLIENT_FETCHING_RESPONSE_HEADERS,
+    BLE_HTTP_CLIENT_FETCHING_RESPONSE_BODY,
+} BLEHttpClientState;
+
 class BLEHttpClient : public HttpClient {
 public:
     BLEHttpClient(const char *url, const char *contentType = "",
@@ -46,7 +52,7 @@ public:
 
     auto endChunkedData() -> bool override;
 
-    auto handleWebRequest(const SpiramString &key, const char *body, size_t bodySize) -> bool;
+    auto handleWebRequest(const std::string &key, const char *body, size_t bodySize) -> bool;
 
 private:
     std::shared_ptr<BLEManager> bleManager_;
@@ -60,10 +66,7 @@ private:
     SpiramString requestBody_;
 
     CircBuffer responseBody_;
-    bool responseBodyFetched_{};
-    bool responseBodyFetching_{};
-    bool responseHeadersFetching_{};
-    bool responseHeadersFetched_{};
+    BLEHttpClientState state_{BLE_HTTP_CLIENT_IDLE};
 
     SemaphoreHandle_t dataSemaphore_{};
 };

@@ -40,6 +40,12 @@ auto DownloadFile(
     }
     auto client = CreateClient(url, useBle);
 
+    // Ensure connected to WiFi
+    if (!client->connected) {
+        log_e("Not connected to WiFi/BLE, bailing out of file download");
+        return ERR_CLIENT_DISCONNECTED;
+    }
+
     auto sindarinApi = SindarinAPI::getInstance();
     if (sindarinApi->isSindarinUrl(url)) {
         sindarinApi->setAuth(*client);
@@ -134,6 +140,9 @@ auto DownloadFile(
             if (!client->connected) {
                 log_w("Connection closed, bailing out");
                 return ERR_CLIENT_DISCONNECTED;
+            } else {
+                log_w("readWrite failed, bailing out");
+                return ERR_READ_EMPTY;
             }
         }
 

@@ -10,7 +10,7 @@
 #include "Storage/PreferencesStore.hpp"
 #include "sindarin-debug.h"
 
-using WebRequestHandler = std::function<void(const SpiramString &, const char *, size_t)>;
+using WebRequestHandler = std::function<void(const std::string &, const char *, size_t)>;
 using SubscriptionStatusCallback = std::function<void(bool)>;
 
 class BLEProxy : BLECharacteristicProvider {
@@ -87,7 +87,7 @@ protected:
 
             // Extract the key and body
             size_t equalsIndex = equalsPos - valuePtr;
-            SpiramString key = SpiramString(valuePtr, equalsIndex);
+            std::string key = std::string(valuePtr, equalsIndex);
             const char *body = valuePtr + equalsIndex + 1;
             size_t bodyLength = valueSize - (body - valuePtr);
 
@@ -104,15 +104,15 @@ protected:
                 }
             } else if (BLEProxy::getInstance()->webRequestHandler_) {
                 // Parse B=#/#:value out of valuePtr using valueSize for bounds
-                int32_t chunkNumber =
-                    strtol(valuePtr + 2, nullptr, 10); // Parses the number after 'B='
-
-                if (key == "B" && chunkNumber <= 1) {
-                    // Dump valuePtr as hex
-                    log_d(
-                        "BLEProxy::CharacteristicCallbacks::onWrite: %" PRIi32 " %s", chunkNumber,
-                        BytesToHex(reinterpret_cast<const uint8_t *>(valuePtr), valueSize).c_str());
-                }
+                // if (key == "B" && chunkNumber <= 1) {
+                //     // Dump valuePtr as hex
+                //     int32_t chunkNumber =
+                //         strtol(valuePtr + 2, nullptr, 10); // Parses the number after 'B='
+                //     log_d(
+                //         "BLEProxy::CharacteristicCallbacks::onWrite: %" PRIi32 " %s",
+                //         chunkNumber, BytesToHex(reinterpret_cast<const uint8_t *>(valuePtr),
+                //         valueSize).c_str());
+                // }
                 BLEProxy::getInstance()->webRequestHandler_(key, body, bodyLength);
             } else {
                 if (key == "E") {
