@@ -8,6 +8,7 @@
 #include <utility>
 
 #include "Misc/Defer.hpp"
+#include "Misc/RateLimiter.hpp"
 
 BLEHttpClient::BLEHttpClient(const char *url, const char *contentType,
                              esp_http_client_method_t method)
@@ -51,7 +52,6 @@ auto BLEHttpClient::fetchHeaders(int expectedSize) -> int {
     // 30 seconds of advertising to connect to BLE proxy on mobile app
     constexpr auto advertisingTimeoutMs = 30000;
     constexpr auto fetchingTimeoutMs = 10 * 60000; // 10 minutes of downloading per book
-    constexpr auto logDelayMs = 10000;             // 10 seconds between BLE wait logs
     statusCode_ = 0;
     contentLength_ = 0;
     readLength_ = 0;
@@ -78,8 +78,8 @@ auto BLEHttpClient::fetchHeaders(int expectedSize) -> int {
     bleProxy_->writeBody(requestBody_);
 
     // Wait for response up to 30s
+    RateLimiter rl(10, 10);
     auto startTime = esp_timer_get_time();
-    auto lastLogTime = esp_timer_get_time();
     while (!responseHeadersFetched_) {
         auto currentTime = esp_timer_get_time();
         auto timedOut =
@@ -94,11 +94,9 @@ auto BLEHttpClient::fetchHeaders(int expectedSize) -> int {
             log_e("Timed out waiting for end of headers response");
             return -1;
         }
-
-        if (esp_timer_get_time() - lastLogTime > (static_cast<long long>(logDelayMs) * 1000)) {
+        rl.checkAndExecute(0, [](int64_t time, float percentage) {
             log_d("Waiting for BLE proxy to respond...");
-            lastLogTime = esp_timer_get_time();
-        }
+        });
 
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
