@@ -149,7 +149,7 @@ auto BLEHttpClient::handleWebRequest(const SpiramString &key, const char *body, 
         const char *colonPtr = strchr(body, ':');
         if (colonPtr != nullptr) {
             size_t keyLength = colonPtr - body;
-            SpiramString headerKey(body, keyLength);
+            std::string headerKey(body, keyLength);
             // Only save Content-Length
             if (headerKey == "Content-Length") {
                 std::string headerValue(colonPtr + 1, bodySize - keyLength - 1);
