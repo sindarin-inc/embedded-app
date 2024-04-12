@@ -48,7 +48,7 @@ auto BLEHttpClient::write(const char *body, int length) -> int {
 }
 
 auto BLEHttpClient::fetchHeaders(int expectedSize) -> int {
-    auto timeoutMs = 30000; // 30 seconds of advertising to connect to BLE proxy on mobile app
+    constexpr auto timeoutMs = 30000; // 30 seconds of advertising to connect to BLE proxy on mobile app
     auto fetchingTimeoutMs = 10 * 60000; // 10 minutes of downloading per book
     auto logDelayMs = 10000;             // 10 seconds between BLE wait logs
     statusCode_ = 0;
