@@ -142,8 +142,8 @@ auto DownloadFile(
         float percentage = static_cast<float>(totalReadLen) / contentLength * 100.0f;
         rl.checkAndExecute(percentage, [totalReadLen, downloadStart,
                                         progressCallback](int64_t time, float percentage) {
-            log_d("Downloaded %.1f%% (%.1f KB/s)", percentage,
-                  totalReadLen / 1024.0f / ((time - downloadStart) / 1000000.0f));
+            log_d("Downloaded %.1f%% (%.1f KB/s, %d bytes)", percentage,
+                  totalReadLen / 1024.0f / ((time - downloadStart) / 1000000.0f), totalReadLen);
             if (progressCallback != nullptr) {
                 progressCallback(totalReadLen, percentage);
             }
@@ -204,6 +204,11 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry,
                   const std::function<void(float percentage)> &progressCallback, bool gzip) -> int {
 
     std::string fullPath(path);
+
+    if (useBle) {
+        // TODO: Support gzip over BLE
+        gzip = false;
+    }
 
     SHOW_HEAP();
     // TODO: Support resuming?
@@ -371,8 +376,8 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry,
 
     if (length != fileSize) {
         // TODO: What's the best API to get errors from the stream?
-        log_e("Downloaded file is shorter than expected, expected %d bytes but got %zu bytes",
-              length, fileSize);
+        log_e("Downloaded file is shorter than expected, expected %d bytes but got %zu bytes (%s)",
+              length, fileSize, gzip ? "uncompressed" : "compressed");
         telemetry.logMetric(TelemetryField::METRIC_SYNC_STATUS, "wrong-size",
                             {{"expected", length}, {"actual", static_cast<int>(fileSize)}});
         return ERR_SIZE_MISMATCH;

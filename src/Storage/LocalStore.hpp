@@ -134,8 +134,8 @@ public:
     auto saveReadables(ReadablesVector &readables) -> bool;
 
     // Methods for interacting with readable files on disk
-    [[nodiscard]] auto readableFilePathForWriting(const std::shared_ptr<Readable> &readable) const
-        -> std::string;
+    [[nodiscard]] auto readableFilePathForWriting(const std::shared_ptr<Readable> &readable,
+                                                  bool gzip = true) const -> std::string;
     // When reading, we will take whatever readable file type that's available
     [[nodiscard]] static auto readableFilePathForReading(FileSystem &fileSystem,
                                                          const std::shared_ptr<Readable> &readable)

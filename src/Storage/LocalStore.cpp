@@ -997,7 +997,7 @@ auto LocalStore::processReadableDownload(
 
         float currPercentage = static_cast<float>(downloadIndex) * pctPerReadable;
         const auto &readable = userReadable.readable;
-        auto path = readableFilePathForWriting(readable);
+        auto path = readableFilePathForWriting(readable, !useBle);
         auto expectedSize = readable->file(path).size;
         log_i("Downloading %s (file=%s, url=%s, size=%d)", readable->title.c_str(), path.c_str(),
               readable->remoteUrl().c_str(), expectedSize);
@@ -1257,12 +1257,16 @@ auto LocalStore::saveReadables(ReadablesVector &readables) -> bool {
     return true;
 };
 
-auto LocalStore::readableFilePathForWriting(const std::shared_ptr<Readable> &readable) const
-    -> std::string {
+auto LocalStore::readableFilePathForWriting(const std::shared_ptr<Readable> &readable,
+                                            bool gzip) const -> std::string {
     if (readable->remoteUrl().substr(readable->remoteUrl().find_last_of('.') + 1) == "epub") {
         return StringFormat("/%s/%s.epub", readable->readableType.c_str(), readable->uuid.c_str());
     }
-    return StringFormat("/%s/%s.txt.gz", readable->readableType.c_str(), readable->uuid.c_str());
+    if (gzip) {
+        return StringFormat("/%s/%s.txt.gz", readable->readableType.c_str(),
+                            readable->uuid.c_str());
+    }
+    return StringFormat("/%s/%s.txt", readable->readableType.c_str(), readable->uuid.c_str());
 }
 
 auto LocalStore::readableFilePathForReading(FileSystem &fileSystem,

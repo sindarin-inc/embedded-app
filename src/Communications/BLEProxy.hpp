@@ -115,9 +115,14 @@ protected:
                 }
                 BLEProxy::getInstance()->webRequestHandler_(key, body, bodyLength);
             } else {
-                log_w("BLEProxy::CharacteristicCallbacks::onWrite: No web request handler or auth, "
-                      "unhandled: %s",
-                      key.c_str());
+                if (key == "E") {
+                    log_i("BLEProxy::CharacteristicCallbacks::onWrite: End of request, already "
+                          "handled");
+                } else {
+                    log_w("BLEProxy::CharacteristicCallbacks::onWrite: No web request handler or "
+                          "auth, unhandled: %s",
+                          key.c_str());
+                }
             }
         }
     };
