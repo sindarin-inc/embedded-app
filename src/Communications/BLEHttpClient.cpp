@@ -27,6 +27,7 @@ BLEHttpClient::BLEHttpClient(const char *url, const char *contentType,
 BLEHttpClient::~BLEHttpClient() {
     bleProxy_->registerSubscriptionStatusCallback(nullptr);
     bleProxy_->registerWebRequestHandler(nullptr);
+    vSemaphoreDelete(dataSemaphore_);
 }
 
 auto BLEHttpClient::setHeader(const char *key, const char *value) -> esp_err_t {
