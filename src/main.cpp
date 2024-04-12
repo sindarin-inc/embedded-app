@@ -310,7 +310,8 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     }
 #endif
 
-#if USE_BLE_SERVER_REMOTE || USE_BLE_SERVER_SETTINGS || USE_BLE_SERVER_IMPROV || USE_BLE_SERVER_PROXY
+#if USE_BLE_SERVER_REMOTE || USE_BLE_SERVER_SETTINGS || USE_BLE_SERVER_IMPROV ||                   \
+    USE_BLE_SERVER_PROXY
     auto bleManager = BLEManager::getInstance();
     if (prefs.bleAdvertisingKey.get().has_value()) {
         bleManager->setManufacturerData(prefs.bleAdvertisingKey.get().value_or(""));

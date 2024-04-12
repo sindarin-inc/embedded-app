@@ -96,7 +96,7 @@ auto SindarinAPI::checkSync(const std::string &url, CheckSyncRequest &req, Check
         return ERR_CLIENT_WRITE;
     }
 
-    int contentLength = client->fetchHeaders();
+    int contentLength = client->fetchHeaders(0, cancel);
     if (contentLength <= 0) {
         auto message = "Failed to fetch headers";
         log_e("%s", message);

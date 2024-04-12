@@ -207,7 +207,8 @@ auto WiFiHttpClient::writeChunkedData(const char *data, int length) -> bool {
 
 auto WiFiHttpClient::endChunkedData() -> bool { return writeChunkedData(nullptr, 0); }
 
-auto WiFiHttpClient::fetchHeaders(int expectedSize) -> int {
+auto WiFiHttpClient::fetchHeaders(int expectedSize, const std::shared_ptr<CancelFlag> &cancel)
+    -> int {
     return esp_http_client_fetch_headers(client_);
 }
 

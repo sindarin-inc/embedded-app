@@ -7,6 +7,7 @@
 #include <esp_timer.h>
 #include <utility>
 
+#include "Communications/SindarinAPI.hpp"
 #include "Misc/Defer.hpp"
 #include "Misc/RateLimiter.hpp"
 
@@ -49,7 +50,8 @@ auto BLEHttpClient::write(const char *body, int length) -> int {
     return length;
 }
 
-auto BLEHttpClient::fetchHeaders(int expectedSize) -> int {
+auto BLEHttpClient::fetchHeaders(int expectedSize, const std::shared_ptr<CancelFlag> &cancel)
+    -> int {
     // 30 seconds of advertising to connect to BLE proxy on mobile app
     constexpr auto advertisingTimeoutMs = 30000;
     constexpr auto fetchingTimeoutMs = 10 * 60000; // 10 minutes of downloading per book
@@ -81,6 +83,11 @@ auto BLEHttpClient::fetchHeaders(int expectedSize) -> int {
     RateLimiter rl(10, 10);
     auto startTime = esp_timer_get_time();
     while (state_ == BLE_HTTP_CLIENT_FETCHING_RESPONSE_HEADERS) {
+        if (CancelFlag::isCancelled(cancel)) {
+            log_d("Cancelled BLE connection");
+            return ERR_CANCELLED;
+        }
+
         auto currentTime = esp_timer_get_time();
         auto timedOut =
             (currentTime - startTime) > (static_cast<long long>(advertisingTimeoutMs) * 1000);
@@ -154,8 +161,8 @@ auto BLEHttpClient::handleWebRequest(const std::string &key, const char *body, s
             if (headerKey == "Content-Length") {
                 std::string headerValue(colonPtr + 1, bodySize - keyLength - 1);
                 // responseHeaders_.emplace_back(headerKey, headerValue);
-                responseHeaders_.insert(
-                    std::pair<std::string, std::string>(std::move(headerKey), std::move(headerValue)));
+                responseHeaders_.insert(std::pair<std::string, std::string>(
+                    std::move(headerKey), std::move(headerValue)));
             }
         }
         // log_d("Received header: %s=%s", headerKey.c_str(), headerValue.c_str());

@@ -67,7 +67,7 @@ auto DownloadFile(
     }
     defer { client->close(); };
 
-    auto contentLength = client->fetchHeaders(expectedSize);
+    auto contentLength = client->fetchHeaders(expectedSize, cancel);
 
     auto httpCode = client->getStatusCode();
     if (httpCode != 200) {

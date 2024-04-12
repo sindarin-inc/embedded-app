@@ -11,8 +11,8 @@
 
 std::shared_ptr<BLEManager> BLEManager::instance = nullptr;
 
-auto BLEManager::getInstance() -> std::shared_ptr<BLEManager> {
-    if (instance == nullptr) {
+auto BLEManager::getInstance(bool create) -> std::shared_ptr<BLEManager> {
+    if (instance == nullptr && create) {
         instance = std::make_shared<BLEManager>();
     }
     return instance;
@@ -115,6 +115,7 @@ auto BLEManager::startAdvertisingIfNecessary() -> bool {
         // https://developer.apple.com/library/archive/qa/qa1931/_index.html
         // https://developer.apple.com/accessories/Accessory-Design-Guidelines.pdf
         if (PreferencesStore::paired == PairedStatus::Unpaired) {
+            log_d("Unpaired glasses advertising");
             // Unpaired glasses advertise more frequently to aide in discovery during onboarding.
             // Max interval: 318.75ms. 318.75/0.625=510.
             // This still allows for ~90% (vs 80% with defaults) light sleep time when advertising.
@@ -122,6 +123,7 @@ auto BLEManager::startAdvertisingIfNecessary() -> bool {
             // Min interval: 20ms. 20/0.625=32.
             advertising->setMinInterval(32);
         } else {
+            log_d("Paired glasses advertising");
             // Paired glasses default, we're using pretty wide intervals since we are typically not
             // connected to the app and we want to maximize battery life.
             // Max interval: 1285ms. 1285/0.625=2056. This is the maximum interval allowed by Apple.

@@ -6,6 +6,7 @@
 
 #include "Communications/HttpIstream.hpp"
 #include "Communications/HttpOstream.hpp"
+#include "Misc/CancelFlag.hpp"
 #include "Misc/GZipStream.hpp"
 
 struct CaseInsensitive {
@@ -47,7 +48,8 @@ public:
             [this](char *buffer, size_t size) -> size_t { return write(buffer, size); });
     }
 
-    virtual auto fetchHeaders(int expectedSize = 0) -> int = 0;
+    virtual auto fetchHeaders(int expectedSize = 0,
+                              const std::shared_ptr<CancelFlag> &cancel = nullptr) -> int = 0;
 
     // auto getContentLength() -> int;
 

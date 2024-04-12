@@ -38,7 +38,8 @@ public:
 
     auto write(const char *body, int length) -> int override;
 
-    auto fetchHeaders(int expectedSize = 0) -> int override;
+    auto fetchHeaders(int expectedSize = 0, const std::shared_ptr<CancelFlag> &cancel = nullptr)
+        -> int override;
 
     auto getStatusCode() -> int override;
 
