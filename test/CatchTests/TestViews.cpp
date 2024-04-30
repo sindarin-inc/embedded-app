@@ -32,11 +32,13 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
     StartAppMain();
     defer { StopFreeRtos(); };
 
-    // First screen renders twice once with a full refresh and once with a AU4
-    WAIT_FOR_DRAW();
-    WAIT_FOR_DRAW();
+    auto &display = GetRootDisplay();
 
-    ASSERT_VIEW_UNCHANGED("FirstScreen");
+    // First screen renders twice once with a full refresh and once with a AU4
+    WAIT_FOR_DRAW(display);
+    WAIT_FOR_DRAW(display);
+
+    ASSERT_VIEW_UNCHANGED(display, "FirstScreen");
 
     // TODO: Currently there's a problem with starting and stopping the scheduler that makes the
     // tests lock up with multiple SECTIONs, otherwise we should split up individual test flows into
@@ -44,262 +46,263 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
     SECTION("Render a bunch of views") {
         // Send a remote command for left (for Settings)
         SendRemoteCommand(LEFT);
-        WAIT_FOR_DRAW();
-        WAIT_FOR_DRAW();
+        WAIT_FOR_DRAW(display);
+        WAIT_FOR_DRAW(display);
 
         SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW();
-        WAIT_FOR_DRAW();
+        WAIT_FOR_DRAW(display);
+        WAIT_FOR_DRAW(display);
 
-        ASSERT_VIEW_UNCHANGED("ContentSettings");
+        ASSERT_VIEW_UNCHANGED(display, "ContentSettings");
 
         SendRemoteCommand(LEFT);
-        WAIT_FOR_DRAW();
-        WAIT_FOR_DRAW();
+        WAIT_FOR_DRAW(display);
+        WAIT_FOR_DRAW(display);
 
         // Go back to the main screen
         SendRemoteCommand(RIGHT);
-        WAIT_FOR_DRAW();
-        WAIT_FOR_DRAW();
+        WAIT_FOR_DRAW(display);
+        WAIT_FOR_DRAW(display);
 
         // Render a bunch of readable pages
         SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW();
+        WAIT_FOR_DRAW(display);
 
-        ASSERT_VIEW_UNCHANGED("ReadableIntro");
+        ASSERT_VIEW_UNCHANGED(display, "ReadableIntro");
 
         SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW();
-        ASSERT_VIEW_UNCHANGED("LastQuestion1");
+        WAIT_FOR_DRAW(display);
+        ASSERT_VIEW_UNCHANGED(display, "LastQuestion1");
 
         // Check to make sure going forward from page 1 and then back
         // results in the same page.
         SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW();
+        WAIT_FOR_DRAW(display);
         SendRemoteCommand(LEFT);
-        WAIT_FOR_DRAW();
-        ASSERT_VIEW_UNCHANGED("LastQuestion1");
+        WAIT_FOR_DRAW(display);
+        ASSERT_VIEW_UNCHANGED(display, "LastQuestion1");
 
         // This is the new default way to get a bookmark on a page
         SendRemoteCommand(UP);
-        WAIT_FOR_DRAW();
-        WAIT_FOR_DRAW();
+        WAIT_FOR_DRAW(display);
+        WAIT_FOR_DRAW(display);
         SendRemoteCommand(DOWN);
-        WAIT_FOR_DRAW();
+        WAIT_FOR_DRAW(display);
         SendRemoteCommand(DOWN);
-        WAIT_FOR_DRAW();
+        WAIT_FOR_DRAW(display);
         SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW();
-        ASSERT_VIEW_UNCHANGED("LastQuestion1Bookmarked");
+        WAIT_FOR_DRAW(display);
+        ASSERT_VIEW_UNCHANGED(display, "LastQuestion1Bookmarked");
 
         // Render the popup menu to confirm page 1
         SendRemoteCommand(DOWN);
-        WAIT_FOR_DRAW();
-        WAIT_FOR_DRAW();
-        ASSERT_VIEW_UNCHANGED("PopupMenu1");
+        WAIT_FOR_DRAW(display);
+        WAIT_FOR_DRAW(display);
+        ASSERT_VIEW_UNCHANGED(display, "PopupMenu1");
 
         // Return to book on page 1, then start paging through the book
         SendRemoteCommand(LEFT);
-        WAIT_FOR_DRAW();
+        WAIT_FOR_DRAW(display);
         SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW();
-        ASSERT_VIEW_UNCHANGED("LastQuestion2");
+        WAIT_FOR_DRAW(display);
+        ASSERT_VIEW_UNCHANGED(display, "LastQuestion2");
 
         SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW();
-        ASSERT_VIEW_UNCHANGED("LastQuestion3");
+        WAIT_FOR_DRAW(display);
+        ASSERT_VIEW_UNCHANGED(display, "LastQuestion3");
 
         SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW();
-        ASSERT_VIEW_UNCHANGED("LastQuestion4");
+        WAIT_FOR_DRAW(display);
+        ASSERT_VIEW_UNCHANGED(display, "LastQuestion4");
 
         SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW();
-        ASSERT_VIEW_UNCHANGED("LastQuestion5");
+        WAIT_FOR_DRAW(display);
+        ASSERT_VIEW_UNCHANGED(display, "LastQuestion5");
 
         SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW();
-        ASSERT_VIEW_UNCHANGED("LastQuestion6");
+        WAIT_FOR_DRAW(display);
+        ASSERT_VIEW_UNCHANGED(display, "LastQuestion6");
 
         SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW();
-        ASSERT_VIEW_UNCHANGED("LastQuestion7");
+        WAIT_FOR_DRAW(display);
+        ASSERT_VIEW_UNCHANGED(display, "LastQuestion7");
 
         // Render the popup menu
         SendRemoteCommand(DOWN);
-        WAIT_FOR_DRAW();
-        WAIT_FOR_DRAW();
-        ASSERT_VIEW_UNCHANGED("PopupMenu2");
+        WAIT_FOR_DRAW(display);
+        WAIT_FOR_DRAW(display);
+        ASSERT_VIEW_UNCHANGED(display, "PopupMenu2");
 
         // Seek to the end of the book, then confirm page number
         SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW();
+        WAIT_FOR_DRAW(display);
         SendRemoteCommand(DOWN); // 1% granularity
-        WAIT_FOR_DRAW();
+        WAIT_FOR_DRAW(display);
         SendRemoteCommand(DOWN); // 0.1% granularity
-        WAIT_FOR_DRAW();
+        WAIT_FOR_DRAW(display);
         SendRemoteCommand(DOWN); // 10% granularity
-        WAIT_FOR_DRAW();
+        WAIT_FOR_DRAW(display);
         for (int i = 0; i < 10; i++) {
             SendRemoteCommand(RIGHT);
-            WAIT_FOR_DRAW();
+            WAIT_FOR_DRAW(display);
         }
         SendRemoteCommand(UP);
-        WAIT_FOR_DRAW();
+        WAIT_FOR_DRAW(display);
         SendRemoteCommand(UP); // Show popup menu
-        WAIT_FOR_DRAW();
-        WAIT_FOR_DRAW();
-        ASSERT_VIEW_UNCHANGED("PopupMenu3");
+        WAIT_FOR_DRAW(display);
+        WAIT_FOR_DRAW(display);
+        ASSERT_VIEW_UNCHANGED(display, "PopupMenu3");
 
         // Go back to the main menu
         SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW();
-        WAIT_FOR_DRAW();
+        WAIT_FOR_DRAW(display);
+        WAIT_FOR_DRAW(display);
 
         // Go to the second readable (which has a TOC)
         SendRemoteCommand(DOWN);
-        WAIT_FOR_DRAW();
+        WAIT_FOR_DRAW(display);
 
         SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW();
+        WAIT_FOR_DRAW(display);
 
         // Render the popup menu
         SendRemoteCommand(DOWN);
-        WAIT_FOR_DRAW();
-        WAIT_FOR_DRAW();
+        WAIT_FOR_DRAW(display);
+        WAIT_FOR_DRAW(display);
 
         SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW();
-        WAIT_FOR_DRAW();
+        WAIT_FOR_DRAW(display);
+        WAIT_FOR_DRAW(display);
 
         for (int i = 0; i < 6; i++) {
             SendRemoteCommand(DOWN);
-            WAIT_FOR_DRAW();
+            WAIT_FOR_DRAW(display);
         }
 
-        ASSERT_VIEW_UNCHANGED("PopupTOC");
+        ASSERT_VIEW_UNCHANGED(display, "PopupTOC");
 
         SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW();
+        WAIT_FOR_DRAW(display);
 
-        ASSERT_VIEW_UNCHANGED("Dawn");
+        ASSERT_VIEW_UNCHANGED(display, "Dawn");
 
         // Render the popup menu
         SendRemoteCommand(DOWN);
-        WAIT_FOR_DRAW();
-        WAIT_FOR_DRAW();
-        ASSERT_VIEW_UNCHANGED("PopupMenu4"); // Should show the updated seeked spot from the TOC
+        WAIT_FOR_DRAW(display);
+        WAIT_FOR_DRAW(display);
+        ASSERT_VIEW_UNCHANGED(display,
+                              "PopupMenu4"); // Should show the updated seeked spot from the TOC
 
         // Open the dictionary
         SendRemoteCommand(UP);
-        WAIT_FOR_DRAW();
+        WAIT_FOR_DRAW(display);
         SendRemoteCommand(UP);
-        WAIT_FOR_DRAW();
+        WAIT_FOR_DRAW(display);
         SendRemoteCommand(UP);
-        WAIT_FOR_DRAW();
+        WAIT_FOR_DRAW(display);
         SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW();
-        ASSERT_VIEW_UNCHANGED("Dictionary1");
+        WAIT_FOR_DRAW(display);
+        ASSERT_VIEW_UNCHANGED(display, "Dictionary1");
         SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW();
-        ASSERT_VIEW_UNCHANGED("Dictionary2");
+        WAIT_FOR_DRAW(display);
+        ASSERT_VIEW_UNCHANGED(display, "Dictionary2");
         SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW();
-        ASSERT_VIEW_UNCHANGED("Dictionary3");
+        WAIT_FOR_DRAW(display);
+        ASSERT_VIEW_UNCHANGED(display, "Dictionary3");
         SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW();
-        ASSERT_VIEW_UNCHANGED("Dawn");
+        WAIT_FOR_DRAW(display);
+        ASSERT_VIEW_UNCHANGED(display, "Dawn");
 
         // Render the popup menu
         SendRemoteCommand(DOWN);
-        WAIT_FOR_DRAW();
-        WAIT_FOR_DRAW();
-        ASSERT_VIEW_UNCHANGED("PopupMenu4");
+        WAIT_FOR_DRAW(display);
+        WAIT_FOR_DRAW(display);
+        ASSERT_VIEW_UNCHANGED(display, "PopupMenu4");
 
         // Open the next chapter to ensure the dictionary shows something different
         SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW();
-        WAIT_FOR_DRAW();
-        ASSERT_VIEW_UNCHANGED("DawnToC");
+        WAIT_FOR_DRAW(display);
+        WAIT_FOR_DRAW(display);
+        ASSERT_VIEW_UNCHANGED(display, "DawnToC");
         SendRemoteCommand(DOWN);
-        WAIT_FOR_DRAW();
-        ASSERT_VIEW_UNCHANGED("DawnToC2");
+        WAIT_FOR_DRAW(display);
+        ASSERT_VIEW_UNCHANGED(display, "DawnToC2");
         SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW();
+        WAIT_FOR_DRAW(display);
 
-        ASSERT_VIEW_UNCHANGED("Dawn2");
+        ASSERT_VIEW_UNCHANGED(display, "Dawn2");
 
         // Render the popup menu
         SendRemoteCommand(DOWN);
-        WAIT_FOR_DRAW();
-        WAIT_FOR_DRAW();
-        ASSERT_VIEW_UNCHANGED("PopupMenu5");
+        WAIT_FOR_DRAW(display);
+        WAIT_FOR_DRAW(display);
+        ASSERT_VIEW_UNCHANGED(display, "PopupMenu5");
 
         // Open the dictionary
         SendRemoteCommand(UP);
-        WAIT_FOR_DRAW();
+        WAIT_FOR_DRAW(display);
         SendRemoteCommand(UP);
-        WAIT_FOR_DRAW();
+        WAIT_FOR_DRAW(display);
         SendRemoteCommand(UP);
-        WAIT_FOR_DRAW();
+        WAIT_FOR_DRAW(display);
         SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW();
-        ASSERT_VIEW_UNCHANGED("Dictionary4");
+        WAIT_FOR_DRAW(display);
+        ASSERT_VIEW_UNCHANGED(display, "Dictionary4");
         SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW();
-        ASSERT_VIEW_UNCHANGED("Dictionary5");
+        WAIT_FOR_DRAW(display);
+        ASSERT_VIEW_UNCHANGED(display, "Dictionary5");
         SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW();
-        ASSERT_VIEW_UNCHANGED("Dictionary6");
+        WAIT_FOR_DRAW(display);
+        ASSERT_VIEW_UNCHANGED(display, "Dictionary6");
         SendRemoteCommand(UP);
-        WAIT_FOR_DRAW();
-        ASSERT_VIEW_UNCHANGED("Dawn3");
+        WAIT_FOR_DRAW(display);
+        ASSERT_VIEW_UNCHANGED(display, "Dawn3");
 
         // Render the popup menu
         SendRemoteCommand(DOWN);
-        WAIT_FOR_DRAW();
-        WAIT_FOR_DRAW();
-        ASSERT_VIEW_UNCHANGED("PopupMenu5");
+        WAIT_FOR_DRAW(display);
+        WAIT_FOR_DRAW(display);
+        ASSERT_VIEW_UNCHANGED(display, "PopupMenu5");
 
         // Open the summary
         SendRemoteCommand(UP);
-        WAIT_FOR_DRAW();
+        WAIT_FOR_DRAW(display);
         SendRemoteCommand(UP);
-        WAIT_FOR_DRAW();
+        WAIT_FOR_DRAW(display);
         SendRemoteCommand(UP);
-        WAIT_FOR_DRAW();
+        WAIT_FOR_DRAW(display);
         SendRemoteCommand(UP);
-        WAIT_FOR_DRAW();
+        WAIT_FOR_DRAW(display);
         SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW();
-        ASSERT_VIEW_UNCHANGED("Summary1");
+        WAIT_FOR_DRAW(display);
+        ASSERT_VIEW_UNCHANGED(display, "Summary1");
         SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW();
-        ASSERT_VIEW_UNCHANGED("Summary2");
+        WAIT_FOR_DRAW(display);
+        ASSERT_VIEW_UNCHANGED(display, "Summary2");
         SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW();
-        ASSERT_VIEW_UNCHANGED("Summary3");
+        WAIT_FOR_DRAW(display);
+        ASSERT_VIEW_UNCHANGED(display, "Summary3");
         SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW();
-        ASSERT_VIEW_UNCHANGED("Summary4");
+        WAIT_FOR_DRAW(display);
+        ASSERT_VIEW_UNCHANGED(display, "Summary4");
         SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW();
-        ASSERT_VIEW_UNCHANGED("Summary5");
+        WAIT_FOR_DRAW(display);
+        ASSERT_VIEW_UNCHANGED(display, "Summary5");
         SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW();
-        ASSERT_VIEW_UNCHANGED("Summary6");
+        WAIT_FOR_DRAW(display);
+        ASSERT_VIEW_UNCHANGED(display, "Summary6");
         SendRemoteCommand(DOWN);
-        WAIT_FOR_DRAW();
-        ASSERT_VIEW_UNCHANGED("Summary7");
+        WAIT_FOR_DRAW(display);
+        ASSERT_VIEW_UNCHANGED(display, "Summary7");
         SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW();
-        ASSERT_VIEW_UNCHANGED("Summary8");
+        WAIT_FOR_DRAW(display);
+        ASSERT_VIEW_UNCHANGED(display, "Summary8");
         SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW();
-        ASSERT_VIEW_UNCHANGED("Summary9");
+        WAIT_FOR_DRAW(display);
+        ASSERT_VIEW_UNCHANGED(display, "Summary9");
         SendRemoteCommand(UP);
-        WAIT_FOR_DRAW();
-        ASSERT_VIEW_UNCHANGED("Dawn4");
+        WAIT_FOR_DRAW(display);
+        ASSERT_VIEW_UNCHANGED(display, "Dawn4");
     }
 }
 
@@ -310,14 +313,14 @@ TEST_CASE("Test some views independently") {
     SECTION("Test PowerDepletedScreen") {
         PowerDepletedScreen screen;
         screen.render(*display);
-        ASSERT_VIEW_UNCHANGED("PowerDepletedScreen");
+        ASSERT_VIEW_UNCHANGED(display, "PowerDepletedScreen");
     }
 
     /* With the main menu refactor, this test hangs and does not complete. */
     SECTION("Test LayoutTestScreen") {
         LayoutTestScreen screen(*display);
         screen.render(*display);
-        ASSERT_VIEW_UNCHANGED("LayoutTestScreen");
+        ASSERT_VIEW_UNCHANGED(display, "LayoutTestScreen");
     }
 
     SECTION("Test things that need prefs") {
@@ -336,19 +339,19 @@ TEST_CASE("Test some views independently") {
         SECTION("Test OffsetAdjustScreen") {
             OffsetAdjustScreen screen(*display, prefs, telemetry);
             screen.render(*display);
-            ASSERT_VIEW_UNCHANGED("OffsetAdjustScreen");
+            ASSERT_VIEW_UNCHANGED(display, "OffsetAdjustScreen");
         }
 
         SECTION("Test ResizeBoxScreen") {
             ResizeBoxScreen screen(*display, prefs, telemetry);
             screen.render(*display);
-            ASSERT_VIEW_UNCHANGED("ResizeBoxScreen");
+            ASSERT_VIEW_UNCHANGED(display, "ResizeBoxScreen");
         }
 
         SECTION("Test LineSpacingScreen") {
             LineSpacingScreen screen(*display, prefs, telemetry);
             screen.render(*display);
-            ASSERT_VIEW_UNCHANGED("LineSpacingScreen");
+            ASSERT_VIEW_UNCHANGED(display, "LineSpacingScreen");
         }
 
         SECTION("Test ReadableTableOfContentsScreen") {
@@ -364,7 +367,7 @@ TEST_CASE("Test some views independently") {
             screen.loadMenuItems();
 
             screen.render(*display);
-            ASSERT_VIEW_UNCHANGED("ReadableTableOfContentsScreen");
+            ASSERT_VIEW_UNCHANGED(display, "ReadableTableOfContentsScreen");
         }
 
         LightingController lightingController;
@@ -384,7 +387,7 @@ TEST_CASE("Test some views independently") {
             ReadableScreen readableScreen(stream, *display, readable, prefs, telemetry, fileSystem,
                                           lightingController);
             readableScreen.render(*display);
-            ASSERT_VIEW_UNCHANGED("CesMode");
+            ASSERT_VIEW_UNCHANGED(display, "CesMode");
         }
 
         SECTION("Test EPUB image rendering with alternate bounding box") {
@@ -402,7 +405,7 @@ TEST_CASE("Test some views independently") {
             ReadableScreen readableScreen(stream, *display, readable, prefs, telemetry, fileSystem,
                                           lightingController);
             readableScreen.render(*display);
-            ASSERT_VIEW_UNCHANGED("EpubImage");
+            ASSERT_VIEW_UNCHANGED(display, "EpubImage");
         }
 
         SECTION("Test ReleaseNotesScreen") {
@@ -420,14 +423,14 @@ TEST_CASE("Test some views independently") {
             REQUIRE(upgradeAvailable);
             ReleaseNotesScreen screen(*display, prefs, power, localStore, firmware);
             screen.render(*display);
-            ASSERT_VIEW_UNCHANGED("ReleaseNotesScreen");
+            ASSERT_VIEW_UNCHANGED(display, "ReleaseNotesScreen");
         }
 
         SECTION("Test DemoScreen") {
             LightingController lightingController;
             DemoScreen screen(*display, prefs);
             screen.render(*display);
-            ASSERT_VIEW_UNCHANGED("DemoScreen");
+            ASSERT_VIEW_UNCHANGED(display, "DemoScreen");
         }
 
         SECTION("Test ContentSyncScreen") {
@@ -440,18 +443,18 @@ TEST_CASE("Test some views independently") {
 
             ContentSyncScreen screen(*display, localStore, prefs, telemetry);
             screen.render(*display);
-            ASSERT_VIEW_UNCHANGED("ContentSyncScreen1");
+            ASSERT_VIEW_UNCHANGED(display, "ContentSyncScreen1");
 
             screen.state_ = ContentSyncState{.state = ContentSyncState::State::SyncingArticles,
                                              .percentage = 63};
             screen.render(*display);
-            ASSERT_VIEW_UNCHANGED("ContentSyncScreen2");
+            ASSERT_VIEW_UNCHANGED(display, "ContentSyncScreen2");
 
             screen.state_ = ContentSyncState{.state = ContentSyncState::State::Synced,
                                              .booksDownloaded = 3,
                                              .articlesDownloaded = 10};
             screen.render(*display);
-            ASSERT_VIEW_UNCHANGED("ContentSyncScreen3");
+            ASSERT_VIEW_UNCHANGED(display, "ContentSyncScreen3");
         }
     }
 }
@@ -470,7 +473,7 @@ TEST_CASE("Test bmp file rendering") {
 
         BitmapScreen screen(image.getBuffer(), image.getWidth(), image.getHeight());
         screen.render(*display);
-        ASSERT_VIEW_UNCHANGED("BitmapViewBooks");
+        ASSERT_VIEW_UNCHANGED(display, "BitmapViewBooks");
     }
 
     SECTION("Test bitmap view Books (pre-dithered)") {
@@ -481,6 +484,6 @@ TEST_CASE("Test bmp file rendering") {
 
         BitmapScreen screen(image.getBuffer(), image.getWidth(), image.getHeight());
         screen.render(*display);
-        ASSERT_VIEW_UNCHANGED("BitmapViewBooks");
+        ASSERT_VIEW_UNCHANGED(display, "BitmapViewBooks");
     }
 }

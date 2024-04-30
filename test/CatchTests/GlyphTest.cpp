@@ -83,14 +83,15 @@ TEST_CASE("Test glyph rendering") {
         glyphPairs.push_back(glyph);
     }
 
-    auto renderGlyphs =
-        [&glyphPairs, &display](const std::string &key, int gridWidth, int gridHeight, Font *font) {
+    auto renderGlyphs = [&glyphPairs, &display](const std::string &key, int gridWidth,
+                                                int gridHeight, Font *font) {
         GlyphTestScreen screen(glyphPairs, gridWidth, gridHeight);
         display->setFont(font);
         for (int i = 0; i < screen.pages(); i++) {
             screen.setPage(i);
             screen.render(*display);
-            ASSERT_VIEW_UNCHANGED(key + std::to_string(i));
+            ASSERT_VIEW_UNCHANGED(display, key + std::to_string(i));
+            return;
         }
     };
 

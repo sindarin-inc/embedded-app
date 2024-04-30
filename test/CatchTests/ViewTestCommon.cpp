@@ -75,7 +75,7 @@ void StartFreeRtos(bool runAppMain) {
 void StartAppMain(FONT_CHOICES font, int x, int y, int lineSpacing) {
     // Skip waveform processing. Technically not a FreeRTOS thing but this is a convenient spot to
     // do it
-    myDisplay.setSkipWaveform(true);
+    GetRootDisplay().setSkipWaveform(true);
 
     auto prefsFile = "test/CatchTests/TestData/simprefs.ini";
     // Delete the prefs file and start fresh
@@ -98,7 +98,7 @@ void StartAppMain(FONT_CHOICES font, int x, int y, int lineSpacing) {
     StartFreeRtos(true);
 
     // Wait for screen refresh at boot (from screenClearedAtShutdown)
-    WAIT_FOR_DRAW();
+    WAIT_FOR_DRAW(GetRootDisplay());
 }
 
 void StopFreeRtos() {
@@ -109,17 +109,17 @@ void StopFreeRtos() {
     log_i("Stopped FreeRTOS scheduler");
 }
 
-auto WaitForDraw(long timeoutSeconds) -> bool {
+auto WaitForDraw(DisplayEinkET013TT1 &display, long timeoutSeconds) -> bool {
     struct timespec startTime;
     clock_gettime(CLOCK_MONOTONIC, &startTime);
 
     long elapsedTime = 0;
     uint8_t out;
     useconds_t sleep = 1000;
-    while (myDisplay.renderQueue() == nullptr ||
-           xQueueReceiveFromISR(myDisplay.renderQueue(), &out, nullptr) == pdFALSE) {
+    while (display.renderQueue() == nullptr ||
+           xQueueReceiveFromISR(display.renderQueue(), &out, nullptr) == pdFALSE) {
         if (elapsedTime > timeoutSeconds) {
-            UNSCOPED_INFO("Timed out waiting for draw " << myDisplay.renderQueue());
+            UNSCOPED_INFO("Timed out waiting for draw " << display.renderQueue());
             return false;
         }
         usleep(sleep);
@@ -158,7 +158,7 @@ auto GetDirectory(std::string filename = "") -> std::string {
 }
 
 // TODO: How do we use the test name also for the key
-auto CheckViewUnchanged(std::string key) -> ViewTestResult {
+auto CheckViewUnchanged(DisplayEinkET013TT1 &display, std::string key) -> ViewTestResult {
     auto directory = GetDirectory();
     ViewTestResult result = {
         .passed = false,
@@ -171,7 +171,7 @@ auto CheckViewUnchanged(std::string key) -> ViewTestResult {
     std::filesystem::create_directory(GetDirectory(directory + testRunPrefix + key));
 
     if (!stbi_write_png(result.renderedImagePath.c_str(), EinkET013TT1_PIXEL_WIDTH,
-                        EinkET013TT1_PIXEL_HEIGHT, 1, myDisplay.buffer().get(), 0)) {
+                        EinkET013TT1_PIXEL_HEIGHT, 1, display.buffer().get(), 0)) {
         log_e("Unable to save rendered image to %s", result.renderedImagePath.c_str());
     }
 
@@ -204,8 +204,8 @@ auto CheckViewUnchanged(std::string key) -> ViewTestResult {
     for (int x = 0; x < width; x++) {
         for (int y = 0; y < height; y++) {
             int index = (y * width) + x;
-            diffData[index] = abs(data[index] - myDisplay.buffer()[index]);
-            if (data[index] != myDisplay.buffer()[index]) {
+            diffData[index] = abs(data[index] - display.buffer()[index]);
+            if (data[index] != display.buffer()[index]) {
                 result.passed = false;
             }
         }
@@ -244,6 +244,13 @@ auto CheckViewUnchanged(std::string key) -> ViewTestResult {
     stbi_image_free(data);
     return result;
 }
+
+auto CheckViewUnchanged(std::shared_ptr<DisplayEinkET013TT1> display,
+                        std::string key) -> ViewTestResult {
+    return CheckViewUnchanged(*display, key);
+}
+
+auto GetRootDisplay() -> DisplayEinkET013TT1 & { return myDisplay; }
 
 std::shared_ptr<DisplayEinkET013TT1> createDisplay() {
     auto display = std::make_shared<DisplayEinkET013TT1>(0, 0, 0);
