@@ -307,13 +307,6 @@ TEST_CASE("Test some views independently") {
     // Just create and render a PowerDepletedScreen
     auto display = createDisplay();
 
-    FakeEinkET013TT1SkipSignalling = true;
-    FakeEinkET013TT1SkipWaveform = true;
-    defer {
-        FakeEinkET013TT1SkipWaveform = false;
-        FakeEinkET013TT1SkipSignalling = false;
-    };
-
     SECTION("Test PowerDepletedScreen") {
         PowerDepletedScreen screen;
         screen.render(*display);
@@ -468,12 +461,6 @@ TEST_CASE("Test bmp file rendering") {
     fs.begin();
     // create and render a full screen bitmap view
     auto display = createDisplay();
-    FakeEinkET013TT1SkipSignalling = true;
-    FakeEinkET013TT1SkipWaveform = true;
-    defer {
-        FakeEinkET013TT1SkipWaveform = false;
-        FakeEinkET013TT1SkipSignalling = false;
-    };
 
     SECTION("Test bitmap view Books (grayscale)") {
         SFile file = fs.open("/books.bmp");

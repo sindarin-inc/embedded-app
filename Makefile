@@ -4,6 +4,10 @@ all: build
 sim:
 	pio run -e simulator -t upload
 
+.PHONY: sim8
+sim8:
+	pio run -e simulator-8bit -t upload
+
 .PHONY: lldb
 lldb:
 	pio run -e simulator && lldb .pio/build/simulator/program

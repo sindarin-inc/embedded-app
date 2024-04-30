@@ -51,6 +51,22 @@ public:
         return darkPixelsPercent > 40 ? -2500 : 0;
     }
 
+#if SIMULATOR
+    auto renderQueue() -> QueueHandle_t override { return driver_.renderQueue(); }
+
+    auto buffer() -> std::unique_ptr<uint8_t[]> & override { return driver_.buffer(); }
+
+    // For the simulator to know if it should skip the waveform processing
+    auto getSkipWaveform() -> bool override { return driver_.getSkipWaveform(); }
+
+    void setSkipWaveform(bool skip) override { driver_.setSkipWaveform(skip); }
+
+    // For the simulator to know if it should skip the signalling queue
+    auto getSkipSignalling() -> bool override { return driver_.getSkipSignalling(); }
+
+    void setSkipSignalling(bool skip) override { driver_.setSkipSignalling(skip); }
+#endif
+
 protected:
     GFXcanvas1 gfxCanvas_;
 

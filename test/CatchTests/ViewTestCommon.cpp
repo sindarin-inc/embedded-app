@@ -29,11 +29,13 @@ extern bool useSimulatorTestTime;
 extern int simulatorTestHours;
 extern int simulatorTestMinutes;
 
+// Created in main.cpp
 extern PreferencesStore prefs;
 extern void UIInnerLoop(RemoteCommand command);
 extern "C" void app_main(void); // NOLINT(readability-identifier-naming)
 std::shared_ptr<std::thread> SchedulerThread;
 extern PosixFileSystem fileSystem;
+extern DisplayEinkET013TT1 myDisplay;
 
 std::string directory;
 std::string testRunPrefix = "Images/TestRun/";
@@ -48,9 +50,6 @@ void appMainTask(void *parameters) {
 }
 
 void StartFreeRtos(bool runAppMain) {
-    // If we're not running the full app, we can just call render directly and don't need to signal
-    FakeEinkET013TT1SkipSignalling = !runAppMain;
-
     // The FreeRTOS tick handler happens via SIGALRM, and it also kicks off preemptive task
     // switching, which is not what we want on the main thread, since it's not a real FreeRTOS task.
     // Just disable SIGALRM on this thread so that it only happens on FreeRTOS tasks.
@@ -76,7 +75,7 @@ void StartFreeRtos(bool runAppMain) {
 void StartAppMain(FONT_CHOICES font, int x, int y, int lineSpacing) {
     // Skip waveform processing. Technically not a FreeRTOS thing but this is a convenient spot to
     // do it
-    FakeEinkET013TT1SkipWaveform = true;
+    myDisplay.setSkipWaveform(true);
 
     auto prefsFile = "test/CatchTests/TestData/simprefs.ini";
     // Delete the prefs file and start fresh
@@ -117,10 +116,10 @@ auto WaitForDraw(long timeoutSeconds) -> bool {
     long elapsedTime = 0;
     uint8_t out;
     useconds_t sleep = 1000;
-    while (FakeEinkET013TT1RenderQueue == nullptr ||
-           xQueueReceiveFromISR(FakeEinkET013TT1RenderQueue, &out, nullptr) == pdFALSE) {
+    while (myDisplay.renderQueue() == nullptr ||
+           xQueueReceiveFromISR(myDisplay.renderQueue(), &out, nullptr) == pdFALSE) {
         if (elapsedTime > timeoutSeconds) {
-            UNSCOPED_INFO("Timed out waiting for draw " << FakeEinkET013TT1RenderQueue);
+            UNSCOPED_INFO("Timed out waiting for draw " << myDisplay.renderQueue());
             return false;
         }
         usleep(sleep);
@@ -171,9 +170,8 @@ auto CheckViewUnchanged(std::string key) -> ViewTestResult {
     std::filesystem::create_directory(GetDirectory(directory + testRunPrefix));
     std::filesystem::create_directory(GetDirectory(directory + testRunPrefix + key));
 
-    // Render out the FakeEinkET013TT1ParticlePositions to a png
     if (!stbi_write_png(result.renderedImagePath.c_str(), EinkET013TT1_PIXEL_WIDTH,
-                        EinkET013TT1_PIXEL_HEIGHT, 1, FakeEinkET013TT1ParticlePositions, 0)) {
+                        EinkET013TT1_PIXEL_HEIGHT, 1, myDisplay.buffer().get(), 0)) {
         log_e("Unable to save rendered image to %s", result.renderedImagePath.c_str());
     }
 
@@ -206,8 +204,8 @@ auto CheckViewUnchanged(std::string key) -> ViewTestResult {
     for (int x = 0; x < width; x++) {
         for (int y = 0; y < height; y++) {
             int index = (y * width) + x;
-            diffData[index] = abs(data[index] - FakeEinkET013TT1ParticlePositions[index]);
-            if (data[index] != FakeEinkET013TT1ParticlePositions[index]) {
+            diffData[index] = abs(data[index] - myDisplay.buffer()[index]);
+            if (data[index] != myDisplay.buffer()[index]) {
                 result.passed = false;
             }
         }
@@ -249,6 +247,8 @@ auto CheckViewUnchanged(std::string key) -> ViewTestResult {
 
 std::shared_ptr<DisplayEinkET013TT1> createDisplay() {
     auto display = std::make_shared<DisplayEinkET013TT1>(0, 0, 0);
+    (*display).setSkipWaveform(true);
+    (*display).setSkipSignalling(true);
     (*display).style.setFontFamily((*display).style.solSansMedium);
     (*display).setBoundingBox((*display).defaultBoundingBox);
     (*display).setLineSpacing(0);
@@ -269,8 +269,8 @@ void SetupFileSystemMock(const std::string &directory) {
     std::filesystem::remove_all(logs);
 }
 
-auto LoadJsonDoc(FileSystem &fileSystem, const std::string &path)
-    -> std::unique_ptr<SpiRamJsonDocument> {
+auto LoadJsonDoc(FileSystem &fileSystem,
+                 const std::string &path) -> std::unique_ptr<SpiRamJsonDocument> {
     SFile readablesFile = fileSystem.open(path);
     if (!readablesFile || (int)readablesFile.size() == 0) {
         log_w("Failed to open %s", path.c_str());

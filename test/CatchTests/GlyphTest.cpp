@@ -5,9 +5,6 @@
 #include "ViewTestCommon.hpp"
 #include "sindarin-debug.h"
 
-extern bool FakeEinkET013TT1SkipWaveform;
-extern bool FakeEinkET013TT1SkipSignalling;
-
 class GlyphTestScreen : public Screen {
 public:
     GlyphTestScreen(const std::vector<std::string> &glyphs, int gridWidth, int gridHeight)
@@ -32,7 +29,7 @@ public:
         display.updateDisplay();
     }
 
-    void processCommand(RemoteCommand command) override{};
+    void processCommand(RemoteCommand command) override {};
 
     auto pages() -> int { return (glyphs.size() / (gridWidth * gridHeight)) + 1; }
     void setPage(int page) { this->page = page; }
@@ -48,13 +45,6 @@ TEST_CASE("Test glyph rendering") {
     auto display = createDisplay();
     display->setBoundingBox({0, 0, static_cast<uint32_t>(display->defaultScreenWidth),
                              static_cast<uint32_t>(display->defaultScreenHeight)});
-
-    FakeEinkET013TT1SkipSignalling = true;
-    FakeEinkET013TT1SkipWaveform = true;
-    defer {
-        FakeEinkET013TT1SkipWaveform = false;
-        FakeEinkET013TT1SkipSignalling = false;
-    };
 
     std::vector<std::string> glyphs = {
         "0",  "1", "2", "3", "4", "5", "6",  "7", "8", "9", "a", "b", "c", "d", "e", "f",
@@ -115,6 +105,4 @@ TEST_CASE("Test glyph rendering") {
     SECTION("Test large font Glyphs") {
         renderGlyphs("GlyphTests/GlyphTestL", 8, 12, display->style.solSansLarge.readableFont);
     }
-
-    FakeEinkET013TT1SkipSignalling = false;
 }
