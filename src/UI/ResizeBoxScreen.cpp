@@ -50,8 +50,8 @@ void ResizeBoxScreen::processCommand(RemoteCommand command) {
     case RemoteCommand::RIGHT: {
         // We apply the rect's bounding box in DisplaySystem, but we need to make sure to not adjust
         // the X if we're already at the minimum
-        auto targetWidth = std::max(DisplaySystem::MIN_BOUNDING_BOX.width,
-                                    oldRect.width - BOX_OFFSET_ADJUST_AMOUNT);
+        auto targetWidth =
+            std::max(display_.minBoundingBox.width, oldRect.width - BOX_OFFSET_ADJUST_AMOUNT);
         auto subtractWidth = oldRect.width - targetWidth;
         oldRect.width -= subtractWidth;
         oldRect.x += subtractWidth / 2;
@@ -66,8 +66,8 @@ void ResizeBoxScreen::processCommand(RemoteCommand command) {
     case RemoteCommand::DOWN: {
         // We apply the rect's bounding box in DisplaySystem, but we need to make sure to not adjust
         // the Y if we're already at the minimum
-        auto targetHeight = std::max(DisplaySystem::MIN_BOUNDING_BOX.height,
-                                     oldRect.height - BOX_OFFSET_ADJUST_AMOUNT);
+        auto targetHeight =
+            std::max(display_.minBoundingBox.height, oldRect.height - BOX_OFFSET_ADJUST_AMOUNT);
         auto subtractHeight = oldRect.height - targetHeight;
         oldRect.height -= subtractHeight;
         oldRect.y += subtractHeight / 2;

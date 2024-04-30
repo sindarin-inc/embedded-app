@@ -44,8 +44,8 @@ public:
     DisplaySystem(DisplaySystem const &) = delete;
     virtual ~DisplaySystem() = default;
 
-    static constexpr DisplayRect MAX_BOUNDING_BOX = {5, 5, 246, 246};
-    static constexpr DisplayRect MIN_BOUNDING_BOX = {0, 0, 125, 45};
+    DisplayRect maxBoundingBox = {5, 5, 246, 246};
+    DisplayRect minBoundingBox = {0, 0, 125, 45};
 
     virtual auto setup() -> bool;
 
@@ -162,7 +162,7 @@ public:
     void setLineSpacing(int newSpacing) { lineSpacing_ = newSpacing; }
 
     virtual void clearDisplay(){};
-    virtual void clearFrameBuffer(){};
+    virtual void clearFrameBuffer() { fillScreen(bg); };
 
     void forceDontChangeRefreshType() { forceRefreshType_ = true; }
     void clearDontChangeRefreshType() { forceRefreshType_ = false; }
@@ -222,14 +222,14 @@ public:
     [[nodiscard]] inline auto yAbsolute(int y) const -> int { return y - boundingBox_.y; }
 
     // Should these be in the subclasses instead?
-    auto xAbsoluteCenter() -> int { return 128; }
-    auto yAbsoluteCenter() -> int { return 128; }
+    auto xAbsoluteCenter() -> int { return defaultScreenWidth / 2; }
+    auto yAbsoluteCenter() -> int { return defaultScreenHeight / 2; }
 
-    auto xAbsoluteMax() -> int { return 255; }
-    auto yAbsoluteMax() -> int { return 255; }
+    auto xAbsoluteMax() -> int { return defaultScreenWidth - 1; }
+    auto yAbsoluteMax() -> int { return defaultScreenHeight - 1; }
 
-    auto absoluteWidth() -> int { return 256; }
-    auto absoluteHeight() -> int { return 256; }
+    auto absoluteWidth() -> int { return defaultScreenWidth; }
+    auto absoluteHeight() -> int { return defaultScreenHeight; }
 
     [[nodiscard]] virtual auto darkPictureVComAdj(uint8_t darkPixelsPercent) const -> int {
         return 0;
