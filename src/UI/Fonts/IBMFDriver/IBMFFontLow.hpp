@@ -12,7 +12,7 @@ using namespace ibmf_defs;
 /**
  * @brief Access to an IBMF font.
  *
- * This is a low-level class to allow acces to an IBMF font generated through METAFONT
+ * This is a low-level class to allow acces to an IBMF font
  *
  */
 class IBMFFontLow {

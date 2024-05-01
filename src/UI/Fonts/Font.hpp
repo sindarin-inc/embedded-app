@@ -4,7 +4,7 @@
 
 #include "sindarin-debug.h"
 
-enum FontType { GFX, IBMF };
+enum FontType { GFX, IBMF, TTF };
 
 class Font {
 private:
