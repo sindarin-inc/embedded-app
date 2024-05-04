@@ -223,14 +223,14 @@ public:
     [[nodiscard]] inline auto yAbsolute(int y) const -> int { return y - boundingBox_.y; }
 
     // Should these be in the subclasses instead?
-    auto xAbsoluteCenter() const -> int { return defaultScreenWidth / 2; }
-    auto yAbsoluteCenter() const -> int { return defaultScreenHeight / 2; }
+    [[nodiscard]] auto xAbsoluteCenter() const -> int { return defaultScreenWidth / 2; }
+    [[nodiscard]] auto yAbsoluteCenter() const -> int { return defaultScreenHeight / 2; }
 
-    auto xAbsoluteMax() const -> int { return defaultScreenWidth - 1; }
-    auto yAbsoluteMax() const -> int { return defaultScreenHeight - 1; }
+    [[nodiscard]] auto xAbsoluteMax() const -> int { return defaultScreenWidth - 1; }
+    [[nodiscard]] auto yAbsoluteMax() const -> int { return defaultScreenHeight - 1; }
 
-    auto absoluteWidth() const -> int { return defaultScreenWidth; }
-    auto absoluteHeight() const -> int { return defaultScreenHeight; }
+    [[nodiscard]] auto absoluteWidth() const -> int { return defaultScreenWidth; }
+    [[nodiscard]] auto absoluteHeight() const -> int { return defaultScreenHeight; }
 
     [[nodiscard]] virtual auto darkPictureVComAdj(uint8_t darkPixelsPercent) const -> int {
         return 0;
