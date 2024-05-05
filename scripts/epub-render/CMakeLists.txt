@@ -50,7 +50,10 @@ add_subdirectory(${PROJECT_SOURCE_DIR}/../../components/Adafruit-GFX-Library ${C
 
 add_executable(${PROJECT_NAME} ${SOURCES})
 
+# Prioritize static libraries for OpenSSL
+set(CMAKE_FIND_LIBRARY_SUFFIXES ".a" ".lib")
 find_package(OpenSSL REQUIRED)
+
 target_link_libraries(${PROJECT_NAME} OpenSSL::SSL pugixml ArduinoJson miniz astubs esp-idf-stubs nvs_flash Adafruit-GFX-Library)
 
 add_compile_definitions(
