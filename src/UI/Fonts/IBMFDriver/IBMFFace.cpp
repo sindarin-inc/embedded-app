@@ -99,6 +99,12 @@ auto IBMFFace::ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2, FIX16 
         } while (!lk->a.stop);
     }
 
+    // TODO: Implement optical kerning for 8-bits resolution (GT)
+    if (resolution_ == PixelResolution::EIGHT_BITS) {
+        *kern = 1;
+        return false;
+    }
+
 #if OPTICAL_KERNING
 
     typedef int32_t FIX32;

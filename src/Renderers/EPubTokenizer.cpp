@@ -1895,7 +1895,7 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint32_t len) -> bool 
                     // pageCompleted_ = addTokenToPage(newToken);
                 }
             }
-        } else if ((curChar == ' ') || (curChar == '\t')) {
+        } else if ((curChar == ' ') || (curChar == '\t') || (curChar == '\n')) {
             closeTextToken();
             if (lastToken_ != nullptr) {
                 lastToken_->spacesAfter++;

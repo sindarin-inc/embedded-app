@@ -22,6 +22,11 @@ parser.add_argument(
     action="store_true",
     help="set flags to include OpenSSL",
 )
+parser.add_argument(
+    "--eightbit",
+    action="store_true",
+    help="use 8-bit display simulation",
+)
 args = parser.parse_args()
 
 # Get directory this script is in
@@ -57,11 +62,20 @@ flags = [
     "-DUSE_BLE_SERVER_IMPROV=0",
     "-DRTC_SLOW_ATTR=",
     "-DENABLE_OTA=0",
-    "-DEINKET013TT1=1",
     "-lpthread",
     "-Isrc",
     lib_includes,
 ]
+
+if args.eightbit:
+    flags += [
+        "-DDISPLAY_SIM_8BIT=1",
+        "-DEINKET013TT1=0",
+    ]
+else:
+    flags += [
+        "-DEINKET013TT1=1",
+    ]
 
 if args.wasm:
     flags += [

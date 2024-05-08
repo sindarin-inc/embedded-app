@@ -130,9 +130,11 @@ enum FontFormat : uint8_t { LATIN = 0, UTF32 = 1, UNKNOWN = 7 };
 
 const constexpr uint16_t UTF32_MAX_GLYPH_COUNT = 32765; // Index Value 0xFE and 0xFF are reserved
 
+#if DISPLAY_SIM_8BIT
+const constexpr PixelResolution DEFAULT_RESOLUTION = PixelResolution::EIGHT_BITS;
+#else
 const constexpr PixelResolution DEFAULT_RESOLUTION = PixelResolution::ONE_BIT;
-
-typedef uint8_t *MemoryPtr;
+#endif
 
 // RLE (Run Length Encoded) Bitmap. To get something to show, they have
 // to be processed through the RLEExtractor class.

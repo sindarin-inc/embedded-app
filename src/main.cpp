@@ -42,6 +42,10 @@
 #if EINKET013TT1
 #include "Displays/DisplayEinkET013TT1.hpp"
 DisplayEinkET013TT1 myDisplay(DISPLAY_CS_LEFT, DISPLAY_CS_RIGHT, DISPLAY_RST);
+#elif DISPLAY_SIM_8BIT
+// Declared in native.cpp
+#include "Displays/DisplaySim8Bit.hpp"
+extern DisplaySim8Bit myDisplay;
 #endif
 
 PreferencesStore prefs;

@@ -120,19 +120,18 @@ void DisplaySystem::ensureBoundaries() {
 
     // First constrain position
     boundingBox_.x =
-        std::clamp(boundingBox_.x, MAX_BOUNDING_BOX.x,
-                   static_cast<int32_t>(MAX_BOUNDING_BOX.x + MAX_BOUNDING_BOX.width -
-                                        std::max(MIN_BOUNDING_BOX.width, boundingBox_.width)));
+        std::clamp(boundingBox_.x, maxBoundingBox.x,
+                   static_cast<int32_t>(maxBoundingBox.x + maxBoundingBox.width -
+                                        std::max(minBoundingBox.width, boundingBox_.width)));
     boundingBox_.y =
-        std::clamp(boundingBox_.y, MAX_BOUNDING_BOX.y,
-                   static_cast<int32_t>(MAX_BOUNDING_BOX.y + MAX_BOUNDING_BOX.height -
-                                        std::max(MIN_BOUNDING_BOX.height, boundingBox_.height)));
+        std::clamp(boundingBox_.y, maxBoundingBox.y,
+                   static_cast<int32_t>(maxBoundingBox.y + maxBoundingBox.height -
+                                        std::max(minBoundingBox.height, boundingBox_.height)));
 
     // Then constrain dimensions
-    boundingBox_.width =
-        std::clamp(boundingBox_.width, MIN_BOUNDING_BOX.width, MAX_BOUNDING_BOX.width);
+    boundingBox_.width = std::clamp(boundingBox_.width, minBoundingBox.width, maxBoundingBox.width);
     boundingBox_.height =
-        std::clamp(boundingBox_.height, MIN_BOUNDING_BOX.height, MAX_BOUNDING_BOX.height);
+        std::clamp(boundingBox_.height, minBoundingBox.height, maxBoundingBox.height);
 
     // log_d("Bounding Box after is %s", boundingBox_.toString().c_str());
 }
