@@ -22,6 +22,7 @@
 #endif
 
 static constexpr int MAX_OPERATIONAL_TEMPERATURE_C = 50;
+static constexpr int DEFAULT_INACTIVITY_MINUTES = 10;
 
 enum class PowerState {
     Booting,

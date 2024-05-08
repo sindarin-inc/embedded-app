@@ -198,7 +198,7 @@ auto PowerManager::inactivityTimeoutMs() -> int {
         return 5 * 1000;
     } else {
         // Normal inactivity timeout is 10 minutes
-        return 10 * 60 * 1000;
+        return prefs_.inactivityMinutes.get().value_or(DEFAULT_INACTIVITY_MINUTES) * 60 * 1000;
     }
 }
 

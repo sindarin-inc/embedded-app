@@ -16,6 +16,7 @@
 #include "Misc/LookBackStream.hpp"
 #include "Misc/MenuStyle.hpp"
 #include "Misc/Platform.hpp"
+#include "Misc/PowerManager.hpp"
 #include "Misc/SolClock.hpp"
 #include "Misc/StringUtil.hpp"
 #include "Misc/Style.hpp"
@@ -1040,6 +1041,90 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             readingSettingsMenu->setFirstLoad();
             setCurrentScreen(*readingSettingsMenu);
             delete lineSpacingScreen;
+        });
+    }));
+
+    readingSettingsMenu->addMenuItem(MenuItem("Inactivity Timer",
+                                              [this, readingSettingsMenu, display]() {
+        auto inactivityMenu =
+            new MenuScreen(power_.battery, *display, readingSettingsMenu->getMyStyle(),
+                           "Inactivity Timer", "Reading Settings");
+        auto updateExtraText = [this, inactivityMenu]() {
+            this->display_->style.setFontFamily(this->display_->style.solSansSmall);
+            std::string message = std::string(SpiRamStringFormat(
+                "Screen will sleep after %d minutes of inactivity.",
+                prefs_.inactivityMinutes.get().value_or(DEFAULT_INACTIVITY_MINUTES)));
+            inactivityMenu->setExtraText(message);
+        };
+        inactivityMenu->addMenuItem(MenuItem("5 minutes",
+                                             [this, inactivityMenu, updateExtraText]() {
+            this->display_->style.setFontFamily(this->display_->style.solSansSmall);
+            this->display_->clearDisplay();
+            prefs_.inactivityMinutes.set(5);
+            updateExtraText();
+            this->telemetry_.logMetricData(TelemetryField::METRIC_STYLE,
+                                           {{"inactivity_minutes", 5}});
+            inactivityMenu->setNeedsRerender();
+        }));
+        inactivityMenu->addMenuItem(MenuItem("10 minutes",
+                                             [this, inactivityMenu, updateExtraText]() {
+            this->display_->style.setFontFamily(this->display_->style.solSansMedium);
+            this->display_->clearDisplay();
+            prefs_.inactivityMinutes.set(10);
+            updateExtraText();
+            this->telemetry_.logMetricData(TelemetryField::METRIC_STYLE,
+                                           {{"inactivity_minutes", 10}});
+            inactivityMenu->setNeedsRerender();
+        }));
+        inactivityMenu->addMenuItem(MenuItem("15 minutes",
+                                             [this, inactivityMenu, updateExtraText]() {
+            this->display_->style.setFontFamily(this->display_->style.solSansLarge);
+            this->display_->clearDisplay();
+            prefs_.inactivityMinutes.set(15);
+            updateExtraText();
+            this->telemetry_.logMetricData(TelemetryField::METRIC_STYLE,
+                                           {{"inactivity_minutes", 15}});
+            inactivityMenu->setNeedsRerender();
+        }));
+        inactivityMenu->addMenuItem(MenuItem("20 minutes",
+                                             [this, inactivityMenu, updateExtraText]() {
+            this->display_->style.setFontFamily(this->display_->style.solSansLarge);
+            this->display_->clearDisplay();
+            prefs_.inactivityMinutes.set(20);
+            updateExtraText();
+            this->telemetry_.logMetricData(TelemetryField::METRIC_STYLE,
+                                           {{"inactivity_minutes", 20}});
+            inactivityMenu->setNeedsRerender();
+        }));
+        inactivityMenu->addMenuItem(MenuItem("30 minutes",
+                                             [this, inactivityMenu, updateExtraText]() {
+            this->display_->style.setFontFamily(this->display_->style.solSansLarge);
+            this->display_->clearDisplay();
+            prefs_.inactivityMinutes.set(30);
+            updateExtraText();
+            this->telemetry_.logMetricData(TelemetryField::METRIC_STYLE,
+                                           {{"inactivity_minutes", 30}});
+            inactivityMenu->setNeedsRerender();
+        }));
+        int menuIndex = 0;
+        if (prefs_.inactivityMinutes.get().value_or(DEFAULT_INACTIVITY_MINUTES) == 5) {
+            menuIndex = 0;
+        } else if (prefs_.inactivityMinutes.get().value_or(DEFAULT_INACTIVITY_MINUTES) == 10) {
+            menuIndex = 1;
+        } else if (prefs_.inactivityMinutes.get().value_or(DEFAULT_INACTIVITY_MINUTES) == 15) {
+            menuIndex = 2;
+        } else if (prefs_.inactivityMinutes.get().value_or(DEFAULT_INACTIVITY_MINUTES) == 20) {
+            menuIndex = 3;
+        } else if (prefs_.inactivityMinutes.get().value_or(DEFAULT_INACTIVITY_MINUTES) == 30) {
+            menuIndex = 4;
+        }
+        updateExtraText();
+        inactivityMenu->setCurrSelection(menuIndex);
+        setCurrentScreen(*inactivityMenu);
+        inactivityMenu->setBackCallback([this, inactivityMenu, readingSettingsMenu]() {
+            readingSettingsMenu->setFirstLoad();
+            setCurrentScreen(*readingSettingsMenu);
+            delete inactivityMenu;
         });
     }));
 
