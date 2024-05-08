@@ -1,7 +1,10 @@
-#include "IBMFFaceLow.hpp"
+#include "config.h"
 
-auto IBMFFaceLow::load(const MemoryPtr dataStart, const int dataLength, FontFormat fontFmt)
-    -> bool {
+#if IBMF_SUPPORT
+
+#include "IBMFFace.hpp"
+
+auto IBMFFace::load(const MemoryPtr dataStart, const int dataLength, FontFormat fontFmt) -> bool {
 
     MemoryPtr memoryPtr = dataStart;
     MemoryPtr memoryEnd = dataStart + dataLength;
@@ -57,7 +60,7 @@ auto IBMFFaceLow::load(const MemoryPtr dataStart, const int dataLength, FontForm
 /// @param kern Out. When a kerning entry is found in the program, kern will receive the value.
 /// @return True if a ligature was found, false otherwise.
 ///
-auto IBMFFaceLow::ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2, FIX16 *kern) -> bool {
+auto IBMFFace::ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2, FIX16 *kern) -> bool {
 
     if ((glyphCode1 >= faceHeader_->glyphCount) || (*glyphCode2 >= faceHeader_->glyphCount)) {
         *kern = 0;
@@ -417,8 +420,8 @@ auto IBMFFaceLow::ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2, FIX
     return false;
 }
 
-auto IBMFFaceLow::getGlyph(GlyphCode glyphCode, Glyph &appGlyph, bool loadBitmap, bool caching,
-                           Pos atPos, bool inverted) -> bool {
+auto IBMFFace::getGlyph(GlyphCode glyphCode, Glyph &appGlyph, bool loadBitmap, bool caching,
+                        Pos atPos, bool inverted) -> bool {
 
     // LOGD("glyphCode: %04x, loadBitmap: %s, caching: %s, pos: [%d, %d]", glyphCode,
     //      loadBitmap ? "YES" : "NO", caching ? "YES" : "NO", atPos.x, atPos.y);
@@ -526,7 +529,7 @@ auto IBMFFaceLow::getGlyph(GlyphCode glyphCode, Glyph &appGlyph, bool loadBitmap
     return true;
 }
 
-auto IBMFFaceLow::getGlyphMetrics(GlyphCode glyphCode, Glyph &appGlyph) -> bool {
+auto IBMFFace::getGlyphMetrics(GlyphCode glyphCode, Glyph &appGlyph) -> bool {
 
     appGlyph.clear();
 
@@ -568,7 +571,7 @@ auto IBMFFaceLow::getGlyphMetrics(GlyphCode glyphCode, Glyph &appGlyph) -> bool 
     return true;
 }
 
-// auto IBMFFaceLow::getGlyphApproxWidth(GlyphCode glyphCode, int16_t *approxWidth) -> bool {
+// auto IBMFFace::getGlyphApproxWidth(GlyphCode glyphCode, int16_t *approxWidth) -> bool {
 
 //     if ((glyphCode == SPACE_CODE) || ((glyphCode < faceHeader_->glyphCount)
 //         ((*glyphsInfo_)[glyphCode].bitmapWidth == 0))) { // send as a space character
@@ -591,7 +594,7 @@ auto IBMFFaceLow::getGlyphMetrics(GlyphCode glyphCode, Glyph &appGlyph) -> bool 
 //     return true;
 // }
 
-auto IBMFFaceLow::showBitmap(const Bitmap &bitmap) const -> void {
+auto IBMFFace::showBitmap(const Bitmap &bitmap) const -> void {
     if constexpr (DEBUG) {
         uint32_t row, col;
         MemoryPtr rowPtr;
@@ -647,7 +650,7 @@ auto IBMFFaceLow::showBitmap(const Bitmap &bitmap) const -> void {
     }
 }
 
-auto IBMFFaceLow::showGlyph(const Glyph &glyph, GlyphCode glyphCode, char32_t codePoint) const
+auto IBMFFace::showGlyph(const Glyph &glyph, GlyphCode glyphCode, char32_t codePoint) const
     -> void {
     if constexpr (DEBUG) {
         std::cout << "Glyph Base Code: 0x" << std::hex << glyphCode << std::dec << "(" << +codePoint
@@ -665,7 +668,7 @@ auto IBMFFaceLow::showGlyph(const Glyph &glyph, GlyphCode glyphCode, char32_t co
     }
 }
 
-auto IBMFFaceLow::showGlyphInfo(GlyphCode i, const GlyphInfo &g) const -> void {
+auto IBMFFace::showGlyphInfo(GlyphCode i, const GlyphInfo &g) const -> void {
     if constexpr (DEBUG) {
         std::cout << "  [" << i << "]: w: " << +g.bitmapWidth << ", h: " << +g.bitmapHeight
                   << ", hoff: " << +g.horizontalOffset << ", voff: " << +g.verticalOffset
@@ -682,7 +685,7 @@ auto IBMFFaceLow::showGlyphInfo(GlyphCode i, const GlyphInfo &g) const -> void {
     }
 }
 
-auto IBMFFaceLow::showLigKerns() const -> void {
+auto IBMFFace::showLigKerns() const -> void {
     if constexpr (DEBUG) {
         std::cout << std::endl << "----------- Ligature / Kern programs: ----------" << std::endl;
         uint16_t i;
@@ -709,7 +712,7 @@ auto IBMFFaceLow::showLigKerns() const -> void {
     }
 }
 
-auto IBMFFaceLow::showFace() const -> void {
+auto IBMFFace::showFace() const -> void {
     if constexpr (DEBUG) {
 
         std::cout << std::endl << "----------- Face Header: ----------" << std::endl;
@@ -734,3 +737,5 @@ auto IBMFFaceLow::showFace() const -> void {
         showLigKerns();
     }
 }
+
+#endif

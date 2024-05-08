@@ -1,3 +1,7 @@
+#include "config.h"
+
+#if IBMF_SUPPORT
+
 #include "RLEExtractor.hpp"
 
 auto RLEExtractor::getNybble(uint8_t &nyb) -> bool {
@@ -336,3 +340,5 @@ auto RLEExtractor::retrieveBitmap(const RLEBitmap &fromBitmap, Bitmap &toBitmap,
     }
     return true;
 }
+
+#endif

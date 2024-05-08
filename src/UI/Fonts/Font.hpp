@@ -1,31 +1,13 @@
 #pragma once
 
-#include <Adafruit_GFX.h>
+#include "config.h"
 
-#include "sindarin-debug.h"
+#if IBMF_SUPPORT
+#include "IBMFDriver/IBMFFont.hpp"
+#endif
 
-enum FontType { GFX, IBMF, TTF };
+#if TTF_SUPPORT
+#include "TTFDriver/TTFFont.hpp"
+#endif
 
-class Font {
-private:
-    FontType type_;
-
-public:
-    virtual ~Font() = default;
-    [[nodiscard]] auto isA(FontType fontType) const -> bool { return fontType == type_; }
-    [[nodiscard]] virtual auto lineHeight() const -> int = 0;
-
-protected:
-    Font(FontType fontType) : type_(fontType) {}
-};
-
-class GFont : public Font {
-public:
-    ~GFont() override = default;
-    const GFXfont *font;
-
-    GFont(const GFXfont &gfxFont) : Font(FontType::GFX), font(&gfxFont) {}
-
-    [[nodiscard]] inline auto get() const -> GFXfont const * { return font; }
-    [[nodiscard]] auto lineHeight() const -> int override { return font->yAdvance; }
-};
+#include "FontDefs.hpp"

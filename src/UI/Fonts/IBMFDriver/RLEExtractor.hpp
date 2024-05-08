@@ -1,5 +1,9 @@
 #pragma once
 
+#include "config.h"
+
+#if IBMF_SUPPORT
+
 #include <cinttypes>
 #include <cstring>
 #include <iostream>
@@ -48,3 +52,5 @@ public:
     auto retrieveBitmap(const RLEBitmap &fromBitmap, Bitmap &toBitmap, const Pos atOffset,
                         const RLEMetrics rleMetrics, bool inverted) -> bool;
 };
+
+#endif

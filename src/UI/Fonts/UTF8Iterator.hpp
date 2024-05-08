@@ -1,7 +1,9 @@
+#pragma once
+
+#include "config.h"
+
 #include <cinttypes>
 #include <string>
-
-#include "IBMFDefs.hpp"
 
 // A very simple UTF8 iterator.
 //

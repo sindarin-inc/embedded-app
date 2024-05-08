@@ -1,20 +1,21 @@
 #pragma once
 
-#include "TTFDefs.hpp"
+#include "config.h"
 
-#if TTF_SUPPORT
+#if 0 // TTF_SUPPORT
 
 #include <cstdio>
 #include <functional>
 
+#include "TTFDefs.hpp"
 #include "UI/Fonts/Font.hpp"
 #include "UTF8Iterator.hpp"
 
-class TTFFont : public Font {
+class Font {
 private:
     static constexpr char const *TAG = "TTFFont";
 
-    TTFFontLow *font_;
+    FontData *font_;
     int faceIndex_;
 
     // Maximum size of an allocated buffer to do vsnprintf formatting
@@ -34,9 +35,9 @@ private:
     auto ligKernUTF8Map(const std::string &line, LigKernMappingHandler handler) const -> void;
 
 public:
-    TTFFont(TTFFontLow &ttfFont, int index) noexcept
-        : Font(FontType::TTF), font_(&ttfFont), faceIndex_(index) {}
-    ~TTFFont() override = default;
+    Font(TTFFontData &ttfFont, int index) noexcept
+        : font_(&ttfFont), faceIndex_(index) {}
+    ~Font() override = default;
 
     [[nodiscard]] inline auto isInitialized() const -> bool {
         if ((font_ != nullptr) && font_->isInitialized() &&
@@ -46,10 +47,6 @@ public:
 
         LOGE("!!!! FONT NOT INITIALIZED !!!!");
         return false;
-    }
-
-    [[nodiscard]] inline auto getFace() -> const TTFFaceLow * {
-        return isInitialized() ? font_->getFace(faceIndex_) : nullptr;
     }
 
     inline void setResolution(PixelResolution res) {
@@ -78,9 +75,9 @@ public:
         return isInitialized() ? static_cast<int>(font_->getFace(faceIndex_)->getLineHeight()) : 0;
     }
 
-    void drawSingleLineOfText(ibmf_defs::Bitmap &canvas, ibmf_defs::Pos pos,
+    void drawSingleLineOfText(TTF_defs::Bitmap &canvas, TTF_defs::Pos pos,
                               const std::string &line, bool inverted) const;
-    auto getTextSize(const std::string &buffer) -> ibmf_defs::Dim;
+    auto getTextSize(const std::string &buffer) -> TTF_defs::Dim;
     auto getTextWidth(const std::string &buffer) -> int;
 
     auto getTextHeight(const std::string &buffer) -> int;

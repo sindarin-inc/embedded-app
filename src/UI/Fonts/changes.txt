@@ -1,0 +1,32 @@
+The following changes have been made to the application in support of the added TTF fonts:
+
+Principles:
+
+- Only one type of font, TTF or IBMF is possible in the application
+- Only one font is being use by the application in three font sizes
+- GFX fonts no longer in use
+- Three fonts are defined for each type: fontFace0 (small), fontFace1 (medium) and fontFace2 (large). 
+  Those are the names to be used everywhere in the application source code.
+- class names for IBMFFont and TTFFont changed to Font, removing the need for IBMF/TTF related naming 
+  conditionals in the rest of the application source code
+
+Changes:
+
+- config.h
+    - Added IBMF_SUPPORT and TTF_SUPPORT defines. Some error checks have also been added
+    - Added a "#pragma once" line at the beginning
+
+- all source file that were using ibmf75FaceX (X = 0, 1 or 2) have been updated to use fontFaceX instead
+
+- class IBMFFontLow renamed to FontData as it relates to the binary .h font information present in 
+  the IBMFFonts folder. Source files renamed from IBMFFontLow.(hpp,cpp) to IBMFFontData.(hpp, cpp)
+
+- class IBMFFont renamed to Font. Source files remains to be IBMFFont.(hpp, cpp)
+
+- the UTF8Iterator (file UI/Fonts/IBMFDriver/UTF8Iterator.hpp) class has been moved from the IBMFDriver 
+  folder to the Fonts folder, as it is going to be used by both the IBMF and TTF Drivers
+
+- all GFX Fonts removed (folder src/UI/Fonts/GFXFonts deleted)
+
+- all use of GFX fonts removed (mainly in the DisplaySystem class)
+

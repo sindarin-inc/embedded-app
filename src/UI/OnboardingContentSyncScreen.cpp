@@ -36,7 +36,7 @@ void OnboardingContentSyncScreen::render(DisplaySystem &display) {
 
         auto streamFirstTime = std::make_shared<StdStringStream>(message);
         onboardingSyncRenderer_.setStream(streamFirstTime);
-        display.setFont(static_cast<Font *>(&ibmf75Face0));
+        display.setFont(static_cast<Font *>(&fontFace0));
         onboardingSyncRenderer_.renderFirstPage();
         display.updateDisplay(DisplaySystem::UpdateType::FULL);
         shownOnboardingSyncMessage_ = true;

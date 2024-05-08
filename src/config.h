@@ -4,6 +4,8 @@
 // picked up you need to clean and build everything. Or make sure any files that
 // need stuff from here explicitly #include "config.h"
 
+#pragma once
+
 #ifndef REVISION
 #define REVISION 7
 #endif
@@ -108,3 +110,26 @@
 #endif
 
 #define USB_CONNECTED_PIN 8
+
+// IBMF / TTF Font support selection
+
+#if !defined(IBMF_SUPPORT) && !defined(TTF_SUPPORT)
+#define TTF_SUPPORT 1
+#define IBMF_SUPPORT 0
+#endif
+
+#if !defined(IBMF_SUPPORT)
+#if TTF_SUPPORT
+#define IBMF_SUPPORT 1
+#else
+#define IBMF_SUPPORT 0
+#endif
+#endif
+
+#if !(IBMF_SUPPORT || TTF_SUPPORT)
+#error "One of IBMF_SUPPORT or TTF_SUPPORT must be set to 1"
+#endif
+
+#if (IBMF_SUPPORT && TTF_SUPPORT)
+#error "Only one of IBMF_SUPPORT and TTF_SUPPORT must be set to 1"
+#endif

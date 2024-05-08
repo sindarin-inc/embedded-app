@@ -1,5 +1,9 @@
 #pragma once
 
+#include "config.h"
+
+#if IBMF_SUPPORT
+
 #include <cstring>
 #include <memory>
 #include <new>
@@ -15,10 +19,10 @@ using namespace ibmf_defs;
  * This is a low-level class to allow acces to a IBMF faces generated through METAFONT
  *
  */
-class IBMFFaceLow {
+class IBMFFace {
 
 private:
-    static constexpr char const *TAG = "IBMFFaceLow";
+    static constexpr char const *TAG = "IBMFFace";
 
     bool initialized_{false};
     FontFormat fontFormat_{FontFormat::UNKNOWN};
@@ -31,9 +35,9 @@ private:
     LigKernStepsPtr ligKernSteps_{nullptr};
 
 public:
-    IBMFFaceLow() = default;
+    IBMFFace() = default;
 
-    ~IBMFFaceLow() = default;
+    ~IBMFFace() = default;
 
     inline static auto fromFIX16(FIX16 val) -> float { return static_cast<float>(val) / 64.0; }
     inline static auto toFIX16(float val) -> FIX16 { return static_cast<FIX16>(val * 64.0); }
@@ -129,3 +133,5 @@ public:
         return true;
     }
 };
+
+#endif

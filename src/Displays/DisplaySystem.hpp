@@ -103,10 +103,6 @@ public:
     void setFont(Font *f) {
         if (f != nullptr) {
             font_ = f;
-            auto gFont = dynamic_cast<GFont *>(font_);
-            if (gFont != nullptr) {
-                gfxClass_->setFont(gFont->get());
-            }
         } else {
             log_e("Received a bad (null) font pointer!");
         }
@@ -182,7 +178,7 @@ public:
     auto getTextWidth(const std::string &buffer) -> int;
 
     inline auto getTextWidthQuick(const char *buffer) -> int {
-        return dynamic_cast<IBMFFont *>(font_)->getTextWidthQuick(buffer);
+        return font_->getTextWidthQuick(buffer);
     }
 
     // MARK: - Graphic drawing code

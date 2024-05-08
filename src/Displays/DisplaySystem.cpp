@@ -151,32 +151,14 @@ auto DisplaySystem::getFont() -> Font * { return font_; }
 // But that's for another day.
 void DisplaySystem::drawSingleLineOfText(const std::string &line, int x, int y, bool inverted) {
     if (font_ != nullptr) {
-        if (font_->isA(FontType::GFX)) {
-            if (!inverted) {
-                gfxClass_->setTextColor(fg);
-            } else {
-                gfxClass_->setTextColor(bg);
-            }
-            // We are allowing the this method to take an the upper left corner of the text
-            // as an argument. But the setCursor method takes the lower left corner of text
-            // to be drawn (or rather, that's how printf does it). So we need to adjust the
-            // y value by the height of the font. getTextHeight includes lineSpacing_ so
-            // we subtract that out.
-            // The magic number (3) is a hack for now to handle the bottom of the display.
-            // Need to investigate why the text is getting cut off when the y dimension is
-            // all the way at the bottom. This hasn't impacted the top.
-            gfxClass_->setCursor(xOffset(x), yOffset(y + getTextHeight() - lineSpacing_ - 3));
-            gfxClass_->printf("%s", line.c_str());
-        } else {
-            gfxClass_->startWrite();
-            ibmf_defs::Bitmap canvas{};
-            canvas.pixels = canvasBuffer_;
-            canvas.dim = ibmf_defs::Dim(canvasWidth_, canvasHeight_);
-            dynamic_cast<IBMFFont *>(font_)->drawSingleLineOfText(
-                canvas, Pos(xOffset(x), yOffset(y + getTextHeight() - lineSpacing_ - 3)), line,
-                inverted ? !invertedDisplay_ : invertedDisplay_);
-            gfxClass_->endWrite();
-        }
+        gfxClass_->startWrite();
+        ibmf_defs::Bitmap canvas{};
+        canvas.pixels = canvasBuffer_;
+        canvas.dim = ibmf_defs::Dim(canvasWidth_, canvasHeight_);
+        font_->drawSingleLineOfText(
+            canvas, Pos(xOffset(x), yOffset(y + getTextHeight() - lineSpacing_ - 3)), line,
+            inverted ? !invertedDisplay_ : invertedDisplay_);
+        gfxClass_->endWrite();
     }
 }
 
@@ -188,45 +170,25 @@ void DisplaySystem::drawSingleLineOfCenteredText(const std::string &line) {
 
 void DisplaySystem::getTextSize(const std::string &buffer, uint16_t *w, uint16_t *h) {
     if (font_ != nullptr) {
-        if (font_->isA(FontType::GFX)) {
-            int16_t x, y;
-            gfxClass_->getTextBounds(buffer.c_str(), 0, 0, &x, &y, w, h);
-        } else {
-            Dim dim = dynamic_cast<IBMFFont *>(font_)->getTextSize(buffer);
-            *w = dim.width;
-            *h = dim.height;
-        }
+        Dim dim = font_->getTextSize(buffer);
+        *w = dim.width;
+        *h = dim.height;
+    } else {
+        *w = 0;
+        *h = 0;
     }
 }
 
-auto DisplaySystem::getTextHeight() -> int { return font_->lineHeight() + lineSpacing_; }
+auto DisplaySystem::getTextHeight() -> int {
+    return (font_ != nullptr) ? font_->lineHeight() + lineSpacing_ : 0;
+}
 
 auto DisplaySystem::getTextHeight(const std::string &buffer) -> int {
-    uint16_t h = 0;
-    if (font_ != nullptr) {
-        if (font_->isA(FontType::GFX)) {
-            int16_t x, y;
-            uint16_t w;
-            gfxClass_->getTextBounds(buffer.c_str(), 0, 0, &x, &y, &w, &h);
-        } else {
-            h = dynamic_cast<IBMFFont *>(font_)->getTextHeight(buffer);
-        }
-    }
-    return h;
+    return (font_ != nullptr) ? font_->getTextHeight(buffer) : 0;
 }
 
 auto DisplaySystem::getTextWidth(const std::string &buffer) -> int {
-    uint16_t w = 0;
-    if (font_ != nullptr) {
-        if (font_->isA(FontType::GFX)) {
-            int16_t x, y;
-            uint16_t h;
-            gfxClass_->getTextBounds(buffer.c_str(), 0, 0, &x, &y, &w, &h);
-        } else {
-            w = dynamic_cast<IBMFFont *>(font_)->getTextWidth(buffer);
-        }
-    }
-    return w;
+    return (font_ != nullptr) ? font_->getTextWidth(buffer) : 0;
 }
 
 void DisplaySystem::drawBox(int startX, int startY, int endX, int endY) {

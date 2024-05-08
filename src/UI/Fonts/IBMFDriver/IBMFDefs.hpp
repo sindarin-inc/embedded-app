@@ -1,5 +1,9 @@
 #pragma once
 
+#include "config.h"
+
+#if IBMF_SUPPORT
+
 #include <cinttypes>
 #include <vector>
 
@@ -113,6 +117,8 @@ const constexpr int DEBUG = 0;
 
 //----
 
+#include "UI/Fonts/FontDefs.hpp"
+
 const constexpr uint8_t IBMF_VERSION = 4; // Font format version
 const constexpr uint8_t MAX_FACE_COUNT = 10;
 
@@ -124,23 +130,7 @@ enum FontFormat : uint8_t { LATIN = 0, UTF32 = 1, UNKNOWN = 7 };
 
 const constexpr uint16_t UTF32_MAX_GLYPH_COUNT = 32765; // Index Value 0xFE and 0xFF are reserved
 
-enum class PixelResolution : uint8_t { ONE_BIT, EIGHT_BITS };
-
 const constexpr PixelResolution DEFAULT_RESOLUTION = PixelResolution::ONE_BIT;
-
-struct Dim {
-    int16_t width;
-    int16_t height;
-    Dim(uint16_t w, uint16_t h) : width(w), height(h) {}
-    Dim() = default;
-};
-
-struct Pos {
-    int16_t x;
-    int16_t y;
-    Pos(int16_t xpos, int16_t ypos) : x(xpos), y(ypos) {}
-    Pos() = default;
-};
 
 typedef uint8_t *MemoryPtr;
 
@@ -182,16 +172,6 @@ const constexpr uint8_t WHITE_EIGHT_BITS = 0xFF;
 // const constexpr uint8_t WHITE_ONE_BIT = 0;
 // const constexpr uint8_t BLACK_EIGHT_BITS = 0xFF;
 // const constexpr uint8_t WHITE_EIGHT_BITS = 0x00;
-
-struct Bitmap {
-    MemoryPtr pixels;
-    Dim dim;
-    void clear() {
-        pixels = nullptr;
-        dim = Dim(0, 0);
-    }
-};
-typedef Bitmap *BitmapPtr;
 
 #pragma pack(push, 1)
 
@@ -492,3 +472,5 @@ const constexpr char32_t ZERO_WIDTH_CODEPOINT = 0xFEFF; // U+0FEFF
 const constexpr char32_t UNKNOWN_CODEPOINT = 0xE05E;    // U+E05E This is part of the Sol Font.
 
 } // namespace ibmf_defs
+
+#endif

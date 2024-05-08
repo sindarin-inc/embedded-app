@@ -1,13 +1,11 @@
-#ifndef TTF_SUPPORT
-  #define TTF_SUPPORT 1
-#endif
+#include "config.h"
 
 #if TTF_SUPPORT
 
 const constexpr bool TTF_TRACING = false;
 
 #ifndef TTF_TESTING
-  #define TTF_TESTING 0
+#define TTF_TESTING 0
 #endif
 
 // The following is used when testing the driver outside of this application
@@ -27,5 +25,14 @@ extern char *formatStr(const std::string &format, ...);
 #else
 #include "sindarin-debug.h"
 #endif
+
+namespace ttf_defs {
+
+#include "UI/Fonts/FontDefs.hpp"
+
+typedef uint16_t GlyphCode;
+typedef uint8_t *MemoryPtr;
+
+} // namespace ttf_defs
 
 #endif

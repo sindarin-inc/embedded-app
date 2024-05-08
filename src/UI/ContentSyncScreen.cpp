@@ -12,9 +12,9 @@
 ContentSyncScreen::ContentSyncScreen(DisplaySystem &display, LocalStore &localStore,
                                      PreferencesStore &prefs, Telemetry &telemetry)
     : EinkView(display), localStore_(localStore), prefs_(prefs), telemetry_(telemetry),
-      cancelView_(display, "Press \ue000 to cancel", &ibmf75Face0) {
+      cancelView_(display, "Press \ue000 to cancel", &fontFace0) {
     for (auto &textView : textViews_) {
-        textView = std::make_shared<SingleLineTextView>(display, "", &ibmf75Face0);
+        textView = std::make_shared<SingleLineTextView>(display, "", &fontFace0);
     }
     for (auto &progressBarView : progressBarsViews_) {
         progressBarView = std::make_shared<ProgressBarView>(display);

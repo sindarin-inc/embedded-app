@@ -1,6 +1,10 @@
-#include "IBMFFontLow.hpp"
+#include "config.h"
 
-auto IBMFFontLow::load(MemoryPtr fontData, uint32_t length) -> bool {
+#if IBMF_SUPPORT
+
+#include "IBMFFontData.hpp"
+
+auto FontData::load(MemoryPtr fontData, uint32_t length) -> bool {
 
     if (currentFontData_ == fontData) {
         return true;
@@ -137,7 +141,7 @@ auto IBMFFontLow::load(MemoryPtr fontData, uint32_t length) -> bool {
  * @param codePoint The UTF32 character code
  * @return The internal representation of CodePoint
  */
-[[nodiscard]] auto IBMFFontLow::translate(char32_t codePoint) const -> GlyphCode {
+[[nodiscard]] auto FontData::translate(char32_t codePoint) const -> GlyphCode {
     GlyphCode glyphCode = unknownGlyphCode_;
 
 #if LATIN_SUPPORT
@@ -241,7 +245,7 @@ auto IBMFFontLow::load(MemoryPtr fontData, uint32_t length) -> bool {
     return glyphCode;
 }
 
-void IBMFFontLow::showCodePointBundles(int firstIdx, int count) const {
+void FontData::showCodePointBundles(int firstIdx, int count) const {
     if constexpr (DEBUG) {
         for (int idx = firstIdx; count > 0; idx++, count--) {
             std::cout << "[" << idx << "] "
@@ -252,7 +256,7 @@ void IBMFFontLow::showCodePointBundles(int firstIdx, int count) const {
     }
 }
 
-void IBMFFontLow::showPlanes() const {
+void FontData::showPlanes() const {
     if constexpr (DEBUG) {
         std::cout << "----------- Planes -----------" << std::endl;
         for (int i = 0; i < 4; i++) {
@@ -266,7 +270,7 @@ void IBMFFontLow::showPlanes() const {
     }
 }
 
-void IBMFFontLow::showFont() const {
+void FontData::showFont() const {
     if constexpr (DEBUG) {
         char marker[5];
         memcpy(marker, preamble_->marker, 4);
@@ -284,3 +288,5 @@ void IBMFFontLow::showFont() const {
         faces_[i].showFace();
     }
 }
+
+#endif
