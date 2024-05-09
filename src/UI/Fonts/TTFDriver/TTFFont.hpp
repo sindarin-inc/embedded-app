@@ -2,21 +2,27 @@
 
 #include "config.h"
 
-#if 0 // TTF_SUPPORT
+#if TTF_SUPPORT
 
 #include <cstdio>
 #include <functional>
 
 #include "TTFDefs.hpp"
+#include "TTFFontData.hpp"
 #include "UI/Fonts/Font.hpp"
-#include "UTF8Iterator.hpp"
+#include "UI/Fonts/UTF8Iterator.hpp"
 
 class Font {
 private:
     static constexpr char const *TAG = "TTFFont";
 
-    FontData *font_;
+    FT_Face face_;
+
+    bool initialized_{false};
+    FontData *fontData_;
     int faceIndex_;
+
+    GlyphCode unknownGlyphCode_{0};
 
     // Maximum size of an allocated buffer to do vsnprintf formatting
     static constexpr int MAX_SIZE = 100;
@@ -34,14 +40,121 @@ private:
     ///
     auto ligKernUTF8Map(const std::string &line, LigKernMappingHandler handler) const -> void;
 
+    inline auto getGlyphHorizontalMetrics(GlyphCode glyphCode, int16_t &xoff, int16_t &advance,
+                                          int16_t &glyphWidth) -> bool {
+
+        int error = FT_Load_Glyph(face_,              /* handle to face object */
+                                  glyphCode,          /* glyph index           */
+                                  FT_LOAD_NO_BITMAP); /* get only metrics      */
+
+        if (error) {
+            return false;
+        }
+
+        xoff = face_->glyph->bitmap_left;
+        advance = face_->glyph->advance.x >> 6;
+        glyphWidth = face_->glyph->bitmap.width;
+
+        // if ((glyphCode == SPACE_CODE) ||
+        //     ((*glyphsInfo_)[glyphCode].bitmapWidth == 0)) { // send as a space character
+        //     *xoff = 0;
+        //     *advance = static_cast<FIX16>(static_cast<uint16_t>(faceHeader_->spaceSize) << 6);
+        //     return true;
+        // }
+
+        // if (glyphCode >= faceHeader_->glyphCount) {
+        //     return false;
+        // }
+
+        // GlyphInfo *glyphInfo = &(*glyphsInfo_)[glyphCode];
+
+        // if (glyphInfo == nullptr) {
+        //     return false;
+        // }
+
+        // FIX16 adj = glyphInfo->advance < ((glyphInfo->bitmapWidth + 1) << 6) ? (1 << 6) : 0;
+
+        // // NOLINTNEXTLINE(bugprone-signed-char-misuse, cert-str34-c)
+        // *xoff = static_cast<int16_t>(glyphInfo->horizontalOffset);
+        // *advance = glyphInfo->advance + adj;
+
+        return true;
+    }
+
+    [[nodiscard]] inline auto getGlyphHOffset(GlyphCode glyphCode) const -> int8_t {
+        // ToDo
+
+        // if (glyphCode >= faceHeader_->glyphCount) {
+        //     return 0;
+        // }
+        // return (*glyphsInfo_)[glyphCode].horizontalOffset;
+
+        return 0;
+    }
+
+    auto ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2, FIX16 *kern) const -> bool;
+    auto getGlyph(GlyphCode glyphCode, Glyph &appGlyph, bool loadBitmap, bool caching = true,
+                  Pos atPos = Pos(0, 0), bool inverted = false) -> bool;
+    auto getGlyphMetrics(GlyphCode glyphCode, Glyph &appGlyph) -> bool;
+
+    [[nodiscard]] inline auto getGlyphWidth(GlyphCode glyphCode) -> uint8_t {
+        // ToDo
+
+        return 0;
+
+        // if (glyphCode < faceHeader_->glyphCount) {
+        //     return (*glyphsInfo_)[glyphCode].bitmapWidth;
+        // } else if (glyphCode == SPACE_CODE) {
+        //     return static_cast<FIX16>(static_cast<uint16_t>(faceHeader_->spaceSize));
+        // } else {
+        //     return 0;
+        // }
+    }
+
 public:
-    Font(TTFFontData &ttfFont, int index) noexcept
-        : font_(&ttfFont), faceIndex_(index) {}
-    ~Font() override = default;
+    Font(FontData &fontData, int index) noexcept : fontData_(&fontData), faceIndex_(index) {
+        initialized_ = false;
+
+        if (fontData_->isInitialized()) {
+            int error =
+                FT_New_Memory_Face(fontData_->getLibrary(), (const FT_Byte *)fontData_->getData(),
+                                   fontData_->getDataLength(), 0, &face_);
+            if (error) {
+                LOGE("The memory font format is unsupported or is broken (%d).", error);
+            } else {
+                int16_t size;
+                switch (index) {
+                case 0:
+                    size = 8;
+                    break;
+                case 1:
+                    size = 10;
+                    break;
+                case 2:
+                    size = 12;
+                    break;
+                default:
+                    size = 10;
+                    break;
+                }
+                int error = FT_Set_Char_Size(face_,     // handle to face object
+                                             0,         // char_width in 1/64th of points
+                                             size * 64, // char_height in 1/64th of points
+                                             72,        // horizontal device resolution
+                                             72);       // vertical device resolution
+                if (error) {
+                    LOGE("Unable to set font size.");
+                } else {
+                    unknownGlyphCode_ = translate(UNKNOWN_CODEPOINT);
+                    initialized_ = true;
+                }
+            }
+        }
+    }
+    ~Font() = default;
 
     [[nodiscard]] inline auto isInitialized() const -> bool {
-        if ((font_ != nullptr) && font_->isInitialized() &&
-            font_->getFace(faceIndex_)->isInitialized()) {
+        if (initialized_) {
             return true;
         }
 
@@ -49,35 +162,18 @@ public:
         return false;
     }
 
-    inline void setResolution(PixelResolution res) {
-        if constexpr (TTF_TRACING) {
-            LOGD("setResolution()");
-        }
-        if (isInitialized()) {
-            font_->getFace(faceIndex_)->setResolution(res);
-        }
-    }
-
-    [[nodiscard]] inline auto getResolution() const -> PixelResolution {
-        if constexpr (TTF_TRACING) {
-            LOGD("getResolution()");
-        }
-        return (isInitialized()) ? font_->getFace(faceIndex_)->getResolution() : DEFAULT_RESOLUTION;
-    }
-
-    [[nodiscard]] inline auto lineHeight() const -> int override {
+    [[nodiscard]] inline auto lineHeight() const -> int {
         if constexpr (TTF_TRACING) {
             LOGD("lineHeight()");
-            if (!isInitialized()) {
-                LOGE("Not initialized!!!");
-            }
         }
-        return isInitialized() ? static_cast<int>(font_->getFace(faceIndex_)->getLineHeight()) : 0;
+        return isInitialized() ? face_->size->metrics.height >> 6 : 0;
     }
 
-    void drawSingleLineOfText(TTF_defs::Bitmap &canvas, TTF_defs::Pos pos,
-                              const std::string &line, bool inverted) const;
-    auto getTextSize(const std::string &buffer) -> TTF_defs::Dim;
+    auto translate(char32_t codePoint) const -> GlyphCode;
+
+    void drawSingleLineOfText(font_defs::Bitmap &canvas, font_defs::Pos pos,
+                              const std::string &line, bool inverted);
+    auto getTextSize(const std::string &buffer) -> font_defs::Dim;
     auto getTextWidth(const std::string &buffer) -> int;
 
     auto getTextHeight(const std::string &buffer) -> int;
@@ -92,18 +188,17 @@ public:
         }
 
         int16_t width = 0;
-        auto face = font_->getFace(faceIndex_);
 
         // log_w("word: %s", buffer);
 
         while (*buffer) {
             int16_t xoff;
-            FIX16 advance;
-            GlyphCode glyphCode = font_->translate(toChar32(&buffer));
+            int16_t advance;
+            int16_t glyphWidth;
+            GlyphCode glyphCode = translate(toChar32(&buffer));
 
-            if (face->getGlyphHorizontalMetrics(glyphCode, &xoff, &advance)) {
-                width +=
-                    (*buffer == '\0') ? (face->getGlyphWidth(glyphCode) - xoff) : (advance >> 6);
+            if (getGlyphHorizontalMetrics(glyphCode, xoff, advance, glyphWidth)) {
+                width += (*buffer == '\0') ? (glyphWidth - xoff) : advance;
             }
         }
         // log_w(" width: %" PRIi16, width);

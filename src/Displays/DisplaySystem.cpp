@@ -10,7 +10,7 @@
 #include "Misc/PBMImage.hpp"
 #include "Misc/StringUtil.hpp"
 #include "UI/Fonts/Font.hpp"
-#include "UI/Fonts/IBMFDriver/IBMFFont.hpp"
+//#include "UI/Fonts/IBMFDriver/IBMFFont.hpp"
 #include "sindarin-debug.h"
 
 DisplaySystem::DisplaySystem() = default;
@@ -151,9 +151,9 @@ auto DisplaySystem::getFont() -> Font * { return font_; }
 void DisplaySystem::drawSingleLineOfText(const std::string &line, int x, int y, bool inverted) {
     if (font_ != nullptr) {
         gfxClass_->startWrite();
-        ibmf_defs::Bitmap canvas{};
+        font_defs::Bitmap canvas{};
         canvas.pixels = canvasBuffer_;
-        canvas.dim = ibmf_defs::Dim(canvasWidth_, canvasHeight_);
+        canvas.dim = font_defs::Dim(canvasWidth_, canvasHeight_);
         font_->drawSingleLineOfText(
             canvas, Pos(xOffset(x), yOffset(y + getTextHeight() - lineSpacing_ - 3)), line,
             inverted ? !invertedDisplay_ : invertedDisplay_);

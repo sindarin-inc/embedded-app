@@ -118,11 +118,19 @@
 #define IBMF_SUPPORT 0
 #endif
 
-#if !defined(IBMF_SUPPORT)
+#if !defined(IBMF_SUPPORT) && defined(TTF_SUPPORT)
 #if TTF_SUPPORT
-#define IBMF_SUPPORT 1
-#else
 #define IBMF_SUPPORT 0
+#else
+#define IBMF_SUPPORT 1
+#endif
+#endif
+
+#if defined(IBMF_SUPPORT) && !defined(TTF_SUPPORT)
+#if IBMF_SUPPORT
+#define TTF_SUPPORT 0
+#else
+#define TTF_SUPPORT 1
 #endif
 #endif
 

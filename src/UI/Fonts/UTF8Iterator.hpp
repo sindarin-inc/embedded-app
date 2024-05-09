@@ -1,9 +1,10 @@
 #pragma once
 
-#include "config.h"
-
 #include <cinttypes>
 #include <string>
+
+#include "FontDefs.hpp"
+#include "config.h"
 
 // A very simple UTF8 iterator.
 //
@@ -135,7 +136,7 @@ public:
     }
 
     auto operator*() const -> char32_t {
-        char32_t chr = ibmf_defs::UNKNOWN_CODEPOINT;
+        char32_t chr = font_defs::UNKNOWN_CODEPOINT;
 
         if (stringIterator_ != string_.end()) {
             char byte1 = *stringIterator_;

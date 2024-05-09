@@ -1,6 +1,10 @@
+#pragma once
+
 #include "config.h"
 
 #if TTF_SUPPORT
+
+#include "UI/Fonts/FontDefs.hpp"
 
 const constexpr bool TTF_TRACING = false;
 
@@ -26,12 +30,16 @@ extern char *formatStr(const std::string &format, ...);
 #include "sindarin-debug.h"
 #endif
 
-namespace ttf_defs {
-
 #include "UI/Fonts/FontDefs.hpp"
 
-typedef uint16_t GlyphCode;
-typedef uint8_t *MemoryPtr;
+namespace ttf_defs {
+
+#define LOGI(format, ...) log_i(format, ##__VA_ARGS__)
+#define LOGW(format, ...) log_w(format, ##__VA_ARGS__)
+#define LOGE(format, ...) log_e(format, ##__VA_ARGS__)
+#define LOGD(format, ...) log_d(format, ##__VA_ARGS__)
+
+using namespace font_defs;
 
 } // namespace ttf_defs
 

@@ -7,6 +7,8 @@
 #include <cinttypes>
 #include <vector>
 
+#include "UI/Fonts/FontDefs.hpp"
+
 //---  ESP_IDF
 // #include <esp_log.h>
 
@@ -96,6 +98,8 @@ extern char *formatStr(const std::string &format, ...);
 
 namespace ibmf_defs {
 
+using namespace font_defs;
+
 #define LOGI(format, ...) log_i(format, ##__VA_ARGS__)
 #define LOGW(format, ...) log_w(format, ##__VA_ARGS__)
 #define LOGE(format, ...) log_e(format, ##__VA_ARGS__)
@@ -129,12 +133,6 @@ const constexpr uint8_t NO_LIG_KERN_PGM = 0xFF;
 enum FontFormat : uint8_t { LATIN = 0, UTF32 = 1, UNKNOWN = 7 };
 
 const constexpr uint16_t UTF32_MAX_GLYPH_COUNT = 32765; // Index Value 0xFE and 0xFF are reserved
-
-#if DISPLAY_SIM_8BIT
-const constexpr PixelResolution DEFAULT_RESOLUTION = PixelResolution::EIGHT_BITS;
-#else
-const constexpr PixelResolution DEFAULT_RESOLUTION = PixelResolution::ONE_BIT;
-#endif
 
 // RLE (Run Length Encoded) Bitmap. To get something to show, they have
 // to be processed through the RLEExtractor class.
@@ -177,12 +175,9 @@ const constexpr uint8_t WHITE_EIGHT_BITS = 0xFF;
 
 #pragma pack(push, 1)
 
-// FIX16 is a floating point value in 16 bits fixed point notation, 6 bits of fraction
-// Idem for FIX14, but for 14 bits fixed point notation notation
+// FIX14 is a floating point value in 14 bits fixed point notation
 
-typedef int16_t FIX16;
 typedef int16_t FIX14;
-typedef uint16_t GlyphCode;
 
 struct Preamble {
     char marker[4]; // Must be "IBMF"
@@ -438,40 +433,6 @@ typedef CodePointBundle (*CodePointBundlesPtr)[];
 typedef Plane (*PlanesPtr)[];
 
 #pragma pack(pop)
-
-struct GlyphMetrics {
-    int16_t xoff, yoff; // Used when the glyph is retrieved for caching
-    int16_t descent;
-    FIX16 advance;                   // Normal advance to the next glyph position in line
-    int16_t lineHeight;              // This is the normal line height for all glyphs in the face
-    int16_t ligatureAndKernPgmIndex; // Index of the ligature/kerning pgm for the glyph
-    void clear() {
-        xoff = yoff = 0;
-        advance = lineHeight = 0;
-        ligatureAndKernPgmIndex = 255;
-    }
-};
-
-struct Glyph {
-    GlyphMetrics metrics;
-    Bitmap bitmap;
-    uint8_t pointSize;
-    void clear() {
-        metrics.clear();
-        bitmap.clear();
-        pointSize = 0;
-    }
-};
-
-// Used in context of both supported Font Formats.
-
-const constexpr GlyphCode DONT_CARE_CODE = 0x7FFC;
-const constexpr GlyphCode ZERO_WIDTH_CODE = 0x7FFD;
-const constexpr GlyphCode SPACE_CODE = 0x7FFE;
-const constexpr GlyphCode NO_GLYPH_CODE = 0x7FFF;
-
-const constexpr char32_t ZERO_WIDTH_CODEPOINT = 0xFEFF; // U+0FEFF
-const constexpr char32_t UNKNOWN_CODEPOINT = 0xE05E;    // U+E05E This is part of the Sol Font.
 
 } // namespace ibmf_defs
 

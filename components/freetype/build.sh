@@ -13,9 +13,11 @@
 # $ . ~/esp/esp-idf/export.sh
 #
 
-rm -rf include lib share
+rm -rf esp32s3
+mkdir esp32s3
+make clean
 cd freetype-2.13.2
-./configure --host=xtensa-esp32s3-elf --prefix=$PWD/.. --disable-shared --enable-static \
+./configure --host=xtensa-esp32s3-elf --prefix=$PWD/../esp32s3 --disable-shared --enable-static \
   --with-png=no \
   --with-zlib=no \
   --with-bzip2=no \
