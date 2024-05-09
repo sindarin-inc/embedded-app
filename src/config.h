@@ -114,8 +114,8 @@
 // IBMF / TTF Font support selection
 
 #if !defined(IBMF_SUPPORT) && !defined(TTF_SUPPORT)
-#define TTF_SUPPORT 1
-#define IBMF_SUPPORT 0
+#define TTF_SUPPORT 0
+#define IBMF_SUPPORT 1
 #endif
 
 #if !defined(IBMF_SUPPORT) && defined(TTF_SUPPORT)
