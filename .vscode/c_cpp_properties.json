@@ -1,125 +1,18 @@
-//
-// !!! WARNING !!! AUTO-GENERATED FILE!
-// PLEASE DO NOT MODIFY IT AND USE "platformio.ini":
-// https://docs.platformio.org/page/projectconf/section_env_build.html#build-flags
-//
 {
     "configurations": [
         {
-            "name": "PlatformIO",
+            "name": "ESP32-S3",
             "includePath": [
-                "/home/turgu1/Dev/embedded-app/include",
-                "/home/turgu1/Dev/embedded-app/lib/Simulator",
-                "/home/turgu1/Dev/embedded-app/lib/stb_image",
-                "/home/turgu1/Dev/embedded-app/components/miniz",
-                "/home/turgu1/Dev/embedded-app/lib/Simulator/stubs/astubs",
-                "/home/turgu1/Dev/embedded-app/.pio/libdeps/simulator/zlib-PIO",
-                "/home/turgu1/Dev/embedded-app/lib/Simulator/stubs/freertos-posix/freertos",
-                "/home/turgu1/Dev/embedded-app/lib/Simulator/stubs/freertos-posix/src",
-                "/home/turgu1/Dev/embedded-app/lib/Simulator/stubs/freertos-posix/src/Source/portable/ThirdParty/GCC/Posix",
-                "/home/turgu1/Dev/embedded-app/lib/Simulator/stubs/freertos-posix/src/Source/portable/ThirdParty/GCC/Posix/utils",
-                "/home/turgu1/Dev/embedded-app/lib/Simulator/stubs/freertos-posix/src/Demo/Common/include",
-                "/home/turgu1/Dev/embedded-app/components/ArduinoJson/src",
-                "/home/turgu1/Dev/embedded-app/.pio/libdeps/simulator/Adafruit GFX Library",
-                "/home/turgu1/Dev/embedded-app/components/pugixml/src",
-                "/home/turgu1/Dev/embedded-app/lib/inifile",
-                "/home/turgu1/Dev/embedded-app/lib/Simulator/stubs/libb64",
-                "/home/turgu1/Dev/embedded-app/lib/httplib",
-                "/home/turgu1/Dev/embedded-app/src",
-                "/home/turgu1/Dev/embedded-app/lib/Simulator/stubs/Arduino",
-                "/home/turgu1/Dev/embedded-app/lib/Simulator/stubs/esp-idf",
-                "/home/turgu1/Dev/embedded-app/lib/Simulator/stubs/freertos-posix",
-                "/home/turgu1/Dev/embedded-app/lib/Simulator/stubs/nvs_flash",
-                "/home/turgu1/Dev/embedded-app/components/Adafruit-GFX-Library",
-                "/home/turgu1/Dev/embedded-app/components/ArduinoJson",
-                "/usr/include/SDL2",
-                "/usr/include",
-                "/usr/include/openssl",
-                "/home/turgu1/Dev/embedded-app/lib/Catch2",
-                "/home/turgu1/Dev/embedded-app/lib/simpleble",
-                "/home/turgu1/Dev/embedded-app/components/astubs/src",
-                "/home/turgu1/Dev/embedded-app/components/esp-nimble-cpp/src",
-                "/home/turgu1/Dev/embedded-app/components/esp_littlefs/include",
-                "/home/turgu1/Dev/embedded-app/components/esp_littlefs/src",
-                "/home/turgu1/Dev/embedded-app/components/freetype",
-                "/home/turgu1/Dev/embedded-app/components/improv/src",
-                "/home/turgu1/Dev/embedded-app/.pio/libdeps/simulator/Adafruit BusIO",
-                ""
+                "${default}"
             ],
-            "browse": {
-                "limitSymbolsToIncludedHeaders": true,
-                "path": [
-                    "/home/turgu1/Dev/embedded-app/include",
-                    "/home/turgu1/Dev/embedded-app/lib/Simulator",
-                    "/home/turgu1/Dev/embedded-app/lib/stb_image",
-                    "/home/turgu1/Dev/embedded-app/components/miniz",
-                    "/home/turgu1/Dev/embedded-app/lib/Simulator/stubs/astubs",
-                    "/home/turgu1/Dev/embedded-app/.pio/libdeps/simulator/zlib-PIO",
-                    "/home/turgu1/Dev/embedded-app/lib/Simulator/stubs/freertos-posix/freertos",
-                    "/home/turgu1/Dev/embedded-app/lib/Simulator/stubs/freertos-posix/src",
-                    "/home/turgu1/Dev/embedded-app/lib/Simulator/stubs/freertos-posix/src/Source/portable/ThirdParty/GCC/Posix",
-                    "/home/turgu1/Dev/embedded-app/lib/Simulator/stubs/freertos-posix/src/Source/portable/ThirdParty/GCC/Posix/utils",
-                    "/home/turgu1/Dev/embedded-app/lib/Simulator/stubs/freertos-posix/src/Demo/Common/include",
-                    "/home/turgu1/Dev/embedded-app/components/ArduinoJson/src",
-                    "/home/turgu1/Dev/embedded-app/.pio/libdeps/simulator/Adafruit GFX Library",
-                    "/home/turgu1/Dev/embedded-app/components/pugixml/src",
-                    "/home/turgu1/Dev/embedded-app/lib/inifile",
-                    "/home/turgu1/Dev/embedded-app/lib/Simulator/stubs/libb64",
-                    "/home/turgu1/Dev/embedded-app/lib/httplib",
-                    "/home/turgu1/Dev/embedded-app/src",
-                    "/home/turgu1/Dev/embedded-app/lib/Simulator/stubs/Arduino",
-                    "/home/turgu1/Dev/embedded-app/lib/Simulator/stubs/esp-idf",
-                    "/home/turgu1/Dev/embedded-app/lib/Simulator/stubs/freertos-posix",
-                    "/home/turgu1/Dev/embedded-app/lib/Simulator/stubs/nvs_flash",
-                    "/home/turgu1/Dev/embedded-app/components/Adafruit-GFX-Library",
-                    "/home/turgu1/Dev/embedded-app/components/ArduinoJson",
-                    "/usr/include/SDL2",
-                    "/usr/include",
-                    "/usr/include/openssl",
-                    "/home/turgu1/Dev/embedded-app/lib/Catch2",
-                    "/home/turgu1/Dev/embedded-app/lib/simpleble",
-                    "/home/turgu1/Dev/embedded-app/components/astubs/src",
-                    "/home/turgu1/Dev/embedded-app/components/esp-nimble-cpp/src",
-                    "/home/turgu1/Dev/embedded-app/components/esp_littlefs/include",
-                    "/home/turgu1/Dev/embedded-app/components/esp_littlefs/src",
-                    "/home/turgu1/Dev/embedded-app/components/freetype",
-                    "/home/turgu1/Dev/embedded-app/components/improv/src",
-                    "/home/turgu1/Dev/embedded-app/.pio/libdeps/simulator/Adafruit BusIO",
-                    ""
-                ]
-            },
             "defines": [
-                "PLATFORMIO=60115",
-                "TTF_SUPPORT=0",
-                "IBMF_SUPPORT=1",
-                "TTRemoteInput_H",
-                "typeof(a)=auto",
-                "SIMULATOR=1",
-                "USE_TURN_TOUCH_REMOTE=0",
-                "USE_BLE_SERVER_REMOTE=0",
-                "USE_BLE_SERVER_SETTINGS=0",
-                "USE_BLE_SERVER_IMPROV=0",
-                "RTC_SLOW_ATTR=",
-                "ENABLE_OTA=0",
-                "EINKET013TT1=1",
-                "_REENTRANT",
-                "CPPHTTPLIB_OPENSSL_SUPPORT",
-                "GIT_VERSION=\"release/v1.0.1-3-g96e99008-dirt\"",
-                "CORE_DEBUG_LEVEL=ARDUHAL_LOG_LEVEL_DEBUG",
-                "CONFIG_ARDUHAL_LOG_COLORS",
-                "DISABLE_LOW_VOLTAGE_HALT=1",
-                "DISABLE_POWER_MANAGEMENT=1",
-                ""
+                "_DEBUG",
+                "UNICODE",
+                "_UNICODE"
             ],
+            "cStandard": "c17",
             "cppStandard": "c++17",
-            "forcedInclude": [
-                "src/config.h",
-                ""
-            ],
-            "compilerPath": "/usr/bin/gcc",
-            "compilerArgs": [
-                ""
-            ]
+            "compileCommands": "${workspaceFolder}/build/compile_commands.json"
         }
     ],
     "version": 4
