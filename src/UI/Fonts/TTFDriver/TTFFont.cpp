@@ -254,6 +254,8 @@ auto Font::getGlyphMetrics(GlyphCode glyphCode, Glyph &appGlyph) -> bool {
 
     FT_GlyphSlot slot = face_->glyph;
 
+    appGlyph.bitmap.dim = Dim(slot->bitmap.width, slot->bitmap.rows);
+
     appGlyph.metrics = {.xoff = static_cast<int16_t>(slot->bitmap_left),
                         .yoff = static_cast<int16_t>(-slot->bitmap_top),
                         .descent = static_cast<int16_t>((slot->bitmap.rows + slot->bitmap_top) > 0
@@ -335,7 +337,7 @@ void Font::drawSingleLineOfText(font_defs::Bitmap &canvas, font_defs::Pos pos,
                 if (glyphCode == SPACE_CODE) {
                     atPos.x += glyph.metrics.advance >> 6;
                 } else {
-                    atPos.x += last ? getGlyphWidth(glyphCode) - (kern / 64) - glyph.metrics.xoff
+                    atPos.x += last ? glyph.bitmap.dim.width - (kern / 64) - glyph.metrics.xoff
                                     : ((glyph.metrics.advance + kern) >> 6);
                 }
             }
@@ -358,14 +360,14 @@ auto Font::getTextSize(const std::string &buffer) -> font_defs::Dim {
             // 0;
 
             font_defs::Glyph glyph{};
-            if (getGlyph(glyphCode, glyph, false)) { // retrieves only the metrics
+            if (getGlyphMetrics(glyphCode, glyph)) { // retrieves only the metrics
                 // LOGD("Advance: %f, xoff: %d, yoff: %d, descent: %d, kern: %d",
                 //      IBMFFaceLow::fromFIX16(glyph.metrics.advance), glyph.metrics.xoff,
                 //      glyph.metrics.yoff, glyph.metrics.descent, kern);
                 if (glyphCode == SPACE_CODE) {
                     dim.width += glyph.metrics.advance >> 6;
                 } else {
-                    dim.width += last ? getGlyphWidth(glyphCode) - (kern / 64) - glyph.metrics.xoff
+                    dim.width += last ? glyph.bitmap.dim.width - (kern / 64) - glyph.metrics.xoff
                                       : ((glyph.metrics.advance + kern) >> 6);
                 }
                 up = (up < glyph.metrics.yoff) ? glyph.metrics.yoff : up;
@@ -392,7 +394,7 @@ auto Font::getTextWidth(const std::string &buffer) -> int {
         ligKernUTF8Map(buffer,
                        [this, &width](GlyphCode glyphCode, FIX16 kern, bool first, bool last) {
             font_defs::Glyph glyph{};
-            if (getGlyph(glyphCode, glyph, false)) { // retrieves only the metrics
+            if (getGlyphMetrics(glyphCode, glyph)) { // retrieves only the metrics
 
                 // LOGD("Advance: %f, xoff: %d, yoff: %d, descent: %d, kern: %d",
                 //      IBMFFaceLow::fromFIX16(glyph.metrics.advance), glyph.metrics.xoff,
@@ -401,7 +403,7 @@ auto Font::getTextWidth(const std::string &buffer) -> int {
                 if (glyphCode == SPACE_CODE) {
                     width += glyph.metrics.advance >> 6;
                 } else {
-                    width += last ? getGlyphWidth(glyphCode) - (kern / 64) - glyph.metrics.xoff
+                    width += last ? glyph.bitmap.dim.width - (kern / 64) - glyph.metrics.xoff
                                   : ((glyph.metrics.advance + kern) >> 6); // + glyph.metrics.xoff;
                 }
 

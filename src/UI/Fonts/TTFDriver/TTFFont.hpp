@@ -81,13 +81,12 @@ private:
         return true;
     }
 
-    [[nodiscard]] inline auto getGlyphHOffset(GlyphCode glyphCode) const -> int8_t {
-        // ToDo
+    [[nodiscard]] inline auto getGlyphHOffset(GlyphCode glyphCode) -> int8_t {
+        Glyph glyph;
 
-        // if (glyphCode >= faceHeader_->glyphCount) {
-        //     return 0;
-        // }
-        // return (*glyphsInfo_)[glyphCode].horizontalOffset;
+        if (getGlyphMetrics(glyphCode, glyph)) {
+            return glyph.metrics.yoff;
+        }
 
         return 0;
     }
@@ -98,20 +97,6 @@ private:
     auto getGlyphMetrics(GlyphCode glyphCode, Glyph &appGlyph) -> bool;
 
     void copyBitmap(Bitmap &to, Bitmap &from, Pos atPos, bool inverted);
-
-    [[nodiscard]] inline auto getGlyphWidth(GlyphCode glyphCode) -> uint8_t {
-        // ToDo
-
-        return 0;
-
-        // if (glyphCode < faceHeader_->glyphCount) {
-        //     return (*glyphsInfo_)[glyphCode].bitmapWidth;
-        // } else if (glyphCode == SPACE_CODE) {
-        //     return static_cast<FIX16>(static_cast<uint16_t>(faceHeader_->spaceSize));
-        // } else {
-        //     return 0;
-        // }
-    }
 
 public:
     Font(FontData &fontData, int index) noexcept : fontData_(&fontData), faceIndex_(index) {
@@ -142,8 +127,8 @@ public:
                 int error = FT_Set_Char_Size(face_,     // handle to face object
                                              0,         // char_width in 1/64th of points
                                              size * 64, // char_height in 1/64th of points
-                                             72,        // horizontal device resolution
-                                             72);       // vertical device resolution
+                                             150,       // horizontal device resolution
+                                             150);      // vertical device resolution
                 if (error) {
                     LOGE("Unable to set font size.");
                 } else {
