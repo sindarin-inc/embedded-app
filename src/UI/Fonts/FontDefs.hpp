@@ -45,13 +45,11 @@ typedef Bitmap *BitmapPtr;
 struct GlyphMetrics {
     int16_t xoff, yoff; // Used when the glyph is retrieved for caching
     int16_t descent;
-    FIX16 advance;                   // Normal advance to the next glyph position in line
-    int16_t lineHeight;              // This is the normal line height for all glyphs in the face
-    int16_t ligatureAndKernPgmIndex; // Index of the ligature/kerning pgm for the glyph
+    FIX16 advance;      // Normal advance to the next glyph position in line
+    int16_t lineHeight; // This is the normal line height for all glyphs in the face
     void clear() {
         xoff = yoff = 0;
         advance = lineHeight = 0;
-        ligatureAndKernPgmIndex = 255;
     }
 };
 
@@ -65,7 +63,6 @@ struct Glyph {
         pointSize = 0;
     }
 };
-
 
 typedef uint16_t GlyphCode;
 

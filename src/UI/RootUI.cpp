@@ -144,6 +144,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     }
 
     // Load the main font only.
+    // This doesn't seems to be required
     // mainFont.load(const_cast<MemoryPtr>(fontsList[0].content), fontsList[0].length);
 
     auto booksMenu = new Menu(mainMenu->getMyStyle(), "Books");

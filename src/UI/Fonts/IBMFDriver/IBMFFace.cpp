@@ -426,6 +426,21 @@ auto IBMFFace::ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2, FIX16 
     return false;
 }
 
+// Get a Glyph from the font.
+//
+// Parameters:
+//
+//   glyphCode  : The index in the font to retrieve the glyph from
+//   appGlyph   : The Glyph structure to put the information in
+//   loadBitmap : If true, the glyph bitmap needs to be retrieved and put in the appGlyph.
+//                If false, no bitmap is retrieved and THE OTHER PARAMETERS ARE IGNORED
+//   caching    : If true (default), a bitmap needs to be allocated and the Glyph bitmap must be put
+//                                   there.
+//                If false, the appGlyph.bitmap already point at the screen bitmap
+//   atPos      : This is the location in the screen bitmap where the
+//                glyph's bitmap must be located, default: [0, 0]
+//   inverted   : If true, the pixels must be put in "reversed video", default:false
+
 auto IBMFFace::getGlyph(GlyphCode glyphCode, Glyph &appGlyph, bool loadBitmap, bool caching,
                         Pos atPos, bool inverted) -> bool {
 
@@ -450,8 +465,7 @@ auto IBMFFace::getGlyph(GlyphCode glyphCode, Glyph &appGlyph, bool loadBitmap, b
             .yoff = 0,
             .descent = 0,
             .advance = static_cast<FIX16>(static_cast<uint16_t>(faceHeader_->spaceSize) << 6),
-            .lineHeight = faceHeader_->lineHeight,
-            .ligatureAndKernPgmIndex = 255};
+            .lineHeight = faceHeader_->lineHeight};
         // For some reason, casting this above triggers a narrowing conversion error but it
         // doesn't here.
         // appGlyph.metrics.advance =
@@ -521,15 +535,13 @@ auto IBMFFace::getGlyph(GlyphCode glyphCode, Glyph &appGlyph, bool loadBitmap, b
                                             ? glyphInfo->bitmapHeight - glyphInfo->verticalOffset
                                             : 0),
         .advance = glyphInfo->advance,
-        .lineHeight = faceHeader_->lineHeight,
-        .ligatureAndKernPgmIndex = glyphInfo->ligKernPgmIndex};
+        .lineHeight = faceHeader_->lineHeight};
 
     // appGlyph.metrics = {
     //     .xoff = (int16_t) - (glyphOffsets.x + ((caching) ? glyphInfo->horizontalOffset : 0)),
     //     .yoff = (int16_t) - (glyphOffsets.y + ((caching) ? glyphInfo->verticalOffset : 0)),
     //     .advance = glyphInfo->advance,
-    //     .lineHeight = faceHeader_->lineHeight,
-    //     .ligatureAndKernPgmIndex = glyphInfo->ligKernPgmIndex};
+    //     .lineHeight = faceHeader_->lineHeight};
 
     // showGlyph(appGlyph, glyphCode & 0xFF);
     return true;
@@ -548,8 +560,7 @@ auto IBMFFace::getGlyphMetrics(GlyphCode glyphCode, Glyph &appGlyph) -> bool {
             .yoff = 0,
             .descent = 0,
             .advance = static_cast<FIX16>(static_cast<uint16_t>(faceHeader_->spaceSize) << 6),
-            .lineHeight = faceHeader_->lineHeight,
-            .ligatureAndKernPgmIndex = 255};
+            .lineHeight = faceHeader_->lineHeight};
 
         return true;
     }
@@ -571,8 +582,7 @@ auto IBMFFace::getGlyphMetrics(GlyphCode glyphCode, Glyph &appGlyph) -> bool {
                                             ? glyphInfo->bitmapHeight - glyphInfo->verticalOffset
                                             : 0),
         .advance = glyphInfo->advance,
-        .lineHeight = faceHeader_->lineHeight,
-        .ligatureAndKernPgmIndex = glyphInfo->ligKernPgmIndex};
+        .lineHeight = faceHeader_->lineHeight};
 
     return true;
 }

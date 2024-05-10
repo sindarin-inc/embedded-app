@@ -97,6 +97,8 @@ private:
                   Pos atPos = Pos(0, 0), bool inverted = false) -> bool;
     auto getGlyphMetrics(GlyphCode glyphCode, Glyph &appGlyph) -> bool;
 
+    void copyBitmap(Bitmap &to, Bitmap &from, Pos atPos, bool inverted);
+
     [[nodiscard]] inline auto getGlyphWidth(GlyphCode glyphCode) -> uint8_t {
         // ToDo
 
