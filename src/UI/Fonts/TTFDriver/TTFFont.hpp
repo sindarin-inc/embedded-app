@@ -85,7 +85,7 @@ private:
         Glyph glyph;
 
         if (getGlyphMetrics(glyphCode, glyph)) {
-            return glyph.metrics.yoff;
+            return glyph.metrics.xoff;
         }
 
         return 0;
