@@ -53,6 +53,7 @@
 #include "UI/TestAlignmentScreen.hpp"
 #include "UI/ToggleMenuScreen.hpp"
 #include "UI/TutorialScreen.hpp"
+#include "UI/WiFiScanScreen.hpp"
 #include "Version.hpp"
 #include "config.h"
 #include "sindarin-debug.h"
@@ -1201,6 +1202,19 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         WiFi::getInstance().clearWiFiCredentials();
         log_w("WiFi settings cleared.");
         systemSettingsMenu->showTemporaryMessage(*display, "WiFi settings cleared.", 2000, true);
+    }));
+
+    systemSettingsMenu->addMenuItem(MenuItem("WiFi Scan", [this, systemSettingsMenu, display]() {
+        auto wiFiScanScreen = new WiFiScanScreen(*display, WiFi::getInstance());
+        wiFiScanScreen->begin();
+        this->setCurrentScreen(*wiFiScanScreen);
+        wiFiScanScreen->setBackCallback([this, wiFiScanScreen, systemSettingsMenu, display]() {
+            systemSettingsMenu->setFirstLoad();
+            display->clearDisplay();
+            setCurrentScreen(*systemSettingsMenu);
+            systemSettingsMenu->render(*this->display_);
+            delete wiFiScanScreen;
+        });
     }));
 
     debugSettingsMenu->addMenuItem(MenuItem("Reset Preferences",
