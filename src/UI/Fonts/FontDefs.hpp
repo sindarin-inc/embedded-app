@@ -26,7 +26,8 @@ enum class PixelResolution : uint8_t { ONE_BIT, EIGHT_BITS };
 // For 8-bit screen:
 //   - the Screen Resolution can be EIGHT_BITS or ONE_BIT, depending on their availability with the
 //     device
-//   - if TTF_SUPPORT: the Font Resolution can be EIGHT_BITS (grayscale antialiasing) or ONE_BIT (Monochome)
+//   - if TTF_SUPPORT: the Font Resolution can be EIGHT_BITS (grayscale antialiasing) or ONE_BIT
+//   (Monochome)
 //   - if IMBF_SUPPORT: only ONE_BIT is available for Font Resolution
 //
 // For the first version of the Sol Reader, only ONE_BIT is available for both Screen and Font
@@ -40,18 +41,17 @@ const constexpr PixelResolution DEFAULT_SCREEN_RESOLUTION = PixelResolution::ONE
 const constexpr PixelResolution DEFAULT_FONT_RESOLUTION = PixelResolution::ONE_BIT;
 #endif
 
-// #if IBMF_SUPPORT && (DEFAULT_FONT_RESOLUTION == PixelResolution::EIGHT_BITS)
-// #error "For IBMF_SUPPORT, the DEFAULT_FONT_RESOLUTION cannot be equal to EIGHT_BITS!"
-// #endif
+#if IBMF_SUPPORT
+static_assert(DEFAULT_FONT_RESOLUTION == PixelResolution::ONE_BIT,
+              "For IBMF_SUPPORT, the DEFAULT_FONT_RESOLUTION must be equal to ONE_BIT!");
+#endif
 
-// #if !DISPLAY_SIM_8BIT
-// #if DEFAULT_SCREEN_RESOLUTION == PixelResolution::EIGHT_BITS
-// #error "The first version of Sol Reader does not support an EIGHT_BITS screen!"
-// #endif
-// #if DEFAULT_FONT_RESOLUTION == PixelResolution::EIGHT_BITS
-// #error "The first version of Sol Reader does not support an EIGHT_BITS font!"
-// #endif
-// #endif
+#if !DISPLAY_SIM_8BIT
+static_assert(DEFAULT_SCREEN_RESOLUTION == PixelResolution::ONE_BIT,
+              "The first version of Sol Reader only supports an ONE_BIT screen!");
+static_assert(DEFAULT_FONT_RESOLUTION == PixelResolution::ONE_BIT,
+              "The first version of Sol Reader only supports ONE_BIT font!");
+#endif
 
 // FIX16 is a floating point value in 16 bits fixed point notation, 6 bits of fraction
 typedef int16_t FIX16;
