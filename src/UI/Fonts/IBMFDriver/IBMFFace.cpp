@@ -100,7 +100,7 @@ auto IBMFFace::ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2, FIX16 
     }
 
     // TODO: Implement optical kerning for 8-bits resolution (GT)
-    if (resolution_ == PixelResolution::EIGHT_BITS) {
+    if (screenResolution_ == PixelResolution::EIGHT_BITS) {
         *kern = 1;
         return false;
     }
@@ -484,6 +484,8 @@ auto IBMFFace::getGlyph(GlyphCode glyphCode, Glyph &appGlyph, bool loadBitmap, b
     }
 
     Dim dim = Dim(glyphInfo->bitmapWidth, glyphInfo->bitmapHeight);
+    uint8_t pitch =
+        (screenResolution_ == PixelResolution::ONE_BIT) ? ((dim.width + 7) >> 3) : dim.width;
     Pos glyphOffsets = Pos(0, 0);
 
     glyphOffsets.y = -glyphInfo->verticalOffset;
@@ -493,12 +495,10 @@ auto IBMFFace::getGlyph(GlyphCode glyphCode, Glyph &appGlyph, bool loadBitmap, b
 
     if (loadBitmap) {
         if (caching) {
-            uint16_t size = (resolution_ == PixelResolution::ONE_BIT)
-                                ? dim.height * ((dim.width + 7) >> 3)
-                                : dim.height * dim.width;
+            uint16_t size = dim.height * pitch;
 
             uint8_t white;
-            if (resolution_ == PixelResolution::ONE_BIT) {
+            if (screenResolution_ == PixelResolution::ONE_BIT) {
                 white = WHITE_ONE_BIT ? 0xFF : 0;
             } else {
                 white = WHITE_EIGHT_BITS;
@@ -508,16 +508,21 @@ auto IBMFFace::getGlyph(GlyphCode glyphCode, Glyph &appGlyph, bool loadBitmap, b
             if (appGlyph.bitmap.pixels == nullptr) {
                 LOGE("Unable to allocate glyph pixel memory of size %d!", size);
                 appGlyph.bitmap.dim = Dim(0, 0);
+                appGlyph.bitmap.pitch = 0;
                 return false;
             }
             memset(appGlyph.bitmap.pixels, white, size);
             appGlyph.bitmap.dim = dim;
+            appGlyph.bitmap.pitch = pitch;
         }
 
-        RLEBitmap glyphBitmap = {.pixels = &(*pixelsPool_)[(*glyphsPixelPoolIndexes_)[glyphCode]],
-                                 .dim = Dim(glyphInfo->bitmapWidth, glyphInfo->bitmapHeight),
-                                 .length = glyphInfo->packetLength};
-        RLEExtractor rle(resolution_);
+        RLEBitmap glyphBitmap = {
+            .pixels = &(*pixelsPool_)[(*glyphsPixelPoolIndexes_)[glyphCode]],
+            .dim = dim,
+            .length = glyphInfo->packetLength,
+            .pitch = pitch,
+        };
+        RLEExtractor rle(screenResolution_);
 
         Pos outPos = Pos(atPos.x + glyphOffsets.x, atPos.y + glyphOffsets.y);
         // std::cout << "inPos: [" << atPos.x << ", " << atPos.y << "], outPos: [" << outPos.x
@@ -626,7 +631,7 @@ auto IBMFFace::showBitmap(const Bitmap &bitmap) const -> void {
         }
         std::cout << '+' << std::endl << std::flush;
 
-        if (resolution_ == PixelResolution::ONE_BIT) {
+        if (screenResolution_ == PixelResolution::ONE_BIT) {
             uint32_t rowSize = (bitmap.dim.width + 7) >> 3;
             for (row = 0, rowPtr = bitmap.pixels; row < bitmap.dim.height;
                  row++, rowPtr += rowSize) {

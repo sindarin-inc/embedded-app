@@ -21,6 +21,8 @@ private:
     bool initialized_{false};
     FontData *fontData_;
     int faceIndex_;
+    PixelResolution screenResolution_{DEFAULT_SCREEN_RESOLUTION};
+    PixelResolution fontResolution_{DEFAULT_FONT_RESOLUTION};
 
     GlyphCode unknownGlyphCode_{0};
 
@@ -96,7 +98,7 @@ private:
                   Pos atPos = Pos(0, 0), bool inverted = false) -> bool;
     auto getGlyphMetrics(GlyphCode glyphCode, Glyph &appGlyph) -> bool;
 
-    void copyBitmap(Bitmap &to, Bitmap &from, Pos atPos, bool inverted);
+    void copyBitmap(Bitmap &to, bool toHeightBit, Bitmap &from, Pos atPos, bool inverted);
 
 public:
     Font(FontData &fontData, int index) noexcept : fontData_(&fontData), faceIndex_(index) {
@@ -154,6 +156,18 @@ public:
             LOGD("lineHeight()");
         }
         return isInitialized() ? face_->size->metrics.height >> 6 : 0;
+    }
+
+    inline void setScreenResolution(PixelResolution res) { screenResolution_ = res; }
+
+    [[nodiscard]] inline auto getScreenResolution() const -> PixelResolution {
+        return (initialized_) ? screenResolution_ : DEFAULT_SCREEN_RESOLUTION;
+    }
+
+    inline void setFontResolution(PixelResolution res) { fontResolution_ = res; }
+
+    [[nodiscard]] inline auto getFontResolution() const -> PixelResolution {
+        return (initialized_) ? fontResolution_ : DEFAULT_FONT_RESOLUTION;
     }
 
     auto translate(char32_t codePoint) const -> GlyphCode;

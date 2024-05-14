@@ -16,17 +16,6 @@
 [[nodiscard]] auto Font::translate(char32_t codePoint) const -> GlyphCode {
     GlyphCode glyphCode = unknownGlyphCode_;
 
-    // if ((codePoint == ' ') || (codePoint == 0xA0) || (codePoint == 0x202F) ||
-    //     ((codePoint >= 0x2000) && (codePoint <= 0x200F))) {
-    //     glyphCode = SPACE_CODE;
-    // } else if (codePoint == ZERO_WIDTH_CODEPOINT) {
-    //     glyphCode = ZERO_WIDTH_CODE;
-    // } else if ((codePoint >= 0xFFF0) && (codePoint <= 0xFFFF)) {
-    //     glyphCode = DONT_CARE_CODE;
-    // } else {
-    //     glyphCode = FT_Get_Char_Index(face_, codePoint);
-    // }
-
     glyphCode = FT_Get_Char_Index(face_, codePoint);
 
     // The following test could generates many entries in the log, depending on the quantity of
@@ -43,99 +32,99 @@ auto Font::ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2, FIX16 *ker
     // ToDo
     *kern = 0;
     return false;
-
-    // if ((glyphCode1 == NO_GLYPH_CODE) || (*glyphCode2 == NO_GLYPH_CODE)) {
-    //     *kern = 0;
-    //     return false;
-    // }
-
-    // // Check for ligatures
-    // uint16_t lkIdx = getLigKernPgmIndex(glyphCode1);
-    // if (lkIdx != NO_LIG_KERN_PGM) {
-    //     LigKernStep *lk = getLigKernStep(lkIdx);
-    //     if (lk->b.goTo.isAKern && lk->b.goTo.isAGoTo) {
-    //         lkIdx = lk->b.goTo.displacement;
-    //         lk = getLigKernStep(lkIdx);
-    //     }
-
-    //     GlyphCode code = (*glyphsInfo_)[*glyphCode2].mainCode;
-
-    //     bool first = true;
-
-    //     do {
-    //         if (!first) {
-    //             lk++;
-    //         } else {
-    //             first = false;
-    //         }
-
-    //         if (lk->a.nextGlyphCode == code) {
-    //             if (lk->b.kern.isAKern) {
-    //                 *kern = lk->b.kern.kerningValue;
-    //                 return false; // No other iteration to be done
-    //             } else {
-    //                 *glyphCode2 = lk->b.repl.replGlyphCode;
-    //                 return true;
-    //             }
-    //         }
-    //     } while (!lk->a.stop);
-    // }
-
-    // if (resolution_ == PixelResolution::EIGHT_BITS) {
-    //     *kern = 1;
-    //     return false;
-    // }
-
-    // // LOGD("Optical Kerning End");
-    // return false;
 }
 
-void Font::copyBitmap(Bitmap &to, Bitmap &from, Pos atPos, bool inverted) {
-    auto rowCount = from.dim.height;
-    auto fromPtr = from.pixels;
-    if (DEFAULT_RESOLUTION == font_defs::PixelResolution::ONE_BIT) {
-        uint8_t data;
-        uint8_t fromMask = 0;
+void Font::copyBitmap(Bitmap &to, bool toHeightBit, Bitmap &from, Pos atPos, bool inverted) {
+    if (fontResolution_ == font_defs::PixelResolution::ONE_BIT) {
 
-        auto toPtr = to.pixels + static_cast<size_t>(atPos.y * to.dim.width);
-        for (uint16_t fromRow = 0; fromRow < from.dim.height; fromRow++, toPtr += to.dim.width) {
-            uint8_t toMask = 0x80 >> (atPos.x & 7);
-            int idx = (atPos.x >> 3);
-            if (inverted) {
-                for (uint16_t i = 0; i < from.dim.width; i++) {
-                    if (fromMask == 0) {
-                        fromMask = 0x80;
-                        data = *fromPtr++;
+        if (toHeightBit) {
+            uint8_t data;
+            auto rowCount = from.dim.height;
+            auto fromPtr = from.pixels;
+            auto toPtr = to.pixels + static_cast<size_t>(atPos.y * to.pitch);
+
+            for (uint16_t fromRow = 0; fromRow < from.dim.height;
+                 fromRow++, toPtr += to.pitch, fromPtr += from.pitch) {
+                int toIdx = atPos.x;
+                int fromIdx = 0;
+                uint8_t fromMask = 0;
+                if (inverted) {
+                    for (uint16_t i = 0; i < from.dim.width; i++) {
+                        if (fromMask == 0) {
+                            fromMask = 0x80;
+                            data = fromPtr[fromIdx++];
+                        }
+                        if (data & fromMask) {
+                            toPtr[toIdx] = 0xFF;
+                        }
+                        fromMask >>= 1;
+                        toIdx += 1;
                     }
-                    if (data & fromMask) {
-                        toPtr[idx] |= toMask;
-                    }
-                    fromMask >>= 1;
-                    toMask >>= 1;
-                    if (toMask == 0) {
-                        idx += 1;
-                        toMask = 0x80;
+                } else {
+                    for (uint16_t i = 0; i < from.dim.width; i++) {
+                        if (fromMask == 0) {
+                            fromMask = 0x80;
+                            data = fromPtr[fromIdx++];
+                        }
+                        if (data & fromMask) {
+                            toPtr[toIdx] = 0;
+                        }
+                        fromMask >>= 1;
+                        toIdx += 1;
                     }
                 }
-            } else {
-                for (uint16_t i = 0; i < from.dim.width; i++) {
-                    if (fromMask == 0) {
-                        fromMask = 0x80;
-                        data = *fromPtr++;
+            }
+        } else {
+            uint8_t data;
+            uint8_t fromMask = 0;
+            auto rowCount = from.dim.height;
+            auto fromPtr = from.pixels;
+            auto toPtr = to.pixels + static_cast<size_t>(atPos.y * to.pitch);
+
+            for (uint16_t fromRow = 0; fromRow < from.dim.height;
+                 fromRow++, toPtr += to.pitch, fromPtr += from.pitch) {
+                uint8_t toMask = 0x80 >> (atPos.x & 7);
+                int toIdx = (atPos.x >> 3);
+                int fromIdx = 0;
+                uint8_t fromMask = 0;
+                if (inverted) {
+                    for (uint16_t i = 0; i < from.dim.width; i++) {
+                        if (fromMask == 0) {
+                            fromMask = 0x80;
+                            data = fromPtr[fromIdx++];
+                        }
+                        if (data & fromMask) {
+                            toPtr[toIdx] |= toMask;
+                        }
+                        fromMask >>= 1;
+                        toMask >>= 1;
+                        if (toMask == 0) {
+                            toIdx += 1;
+                            toMask = 0x80;
+                        }
                     }
-                    if (data & fromMask) {
-                        toPtr[idx] &= ~toMask;
-                    }
-                    fromMask >>= 1;
-                    toMask >>= 1;
-                    if (toMask == 0) {
-                        idx += 1;
-                        toMask = 0x80;
+                } else {
+                    for (uint16_t i = 0; i < from.dim.width; i++) {
+                        if (fromMask == 0) {
+                            fromMask = 0x80;
+                            data = fromPtr[fromIdx++];
+                        }
+                        if (data & fromMask) {
+                            toPtr[toIdx] &= ~toMask;
+                        }
+                        fromMask >>= 1;
+                        toMask >>= 1;
+                        if (toMask == 0) {
+                            toIdx += 1;
+                            toMask = 0x80;
+                        }
                     }
                 }
             }
         }
-    } else { // HEIGHT_BITS
+    } else { // Font Resolution HEIGHT_BITS
+        auto rowCount = from.dim.height;
+        auto fromPtr = from.pixels;
         auto toPtr = &to.pixels[to.dim.width * atPos.y + atPos.x];
         while (rowCount-- > 0) {
             if (inverted) {
@@ -145,7 +134,7 @@ void Font::copyBitmap(Bitmap &to, Bitmap &from, Pos atPos, bool inverted) {
                     toPtr[i] = 255 - fromPtr[i];
                 }
             }
-            fromPtr += from.dim.width;
+            fromPtr += from.pitch;
             toPtr += to.dim.width;
         }
     }
@@ -187,9 +176,11 @@ auto Font::getGlyph(GlyphCode glyphCode, Glyph &appGlyph, bool loadBitmap, bool 
 
     FT_GlyphSlot slot = face_->glyph;
 
+    bool toHeightBit = screenResolution_ == font_defs::PixelResolution::EIGHT_BITS;
+
     if (loadBitmap) {
         if (face_->glyph->format != FT_GLYPH_FORMAT_BITMAP) {
-            if (DEFAULT_RESOLUTION == font_defs::PixelResolution::ONE_BIT) {
+            if (fontResolution_ == font_defs::PixelResolution::ONE_BIT) {
                 error = FT_Render_Glyph(face_->glyph,         // glyph slot
                                         FT_RENDER_MODE_MONO); // render mode
             } else {
@@ -209,9 +200,12 @@ auto Font::getGlyph(GlyphCode glyphCode, Glyph &appGlyph, bool loadBitmap, bool 
             appGlyph.bitmap.dim = dim;
             // glyph->pitch = slot->bitmap.pitch;
 
-            uint16_t size = (DEFAULT_RESOLUTION == PixelResolution::ONE_BIT)
+            uint16_t size = (fontResolution_ == PixelResolution::ONE_BIT)
                                 ? dim.height * ((dim.width + 7) >> 3)
                                 : dim.height * dim.width;
+
+            toHeightBit = fontResolution_ != PixelResolution::ONE_BIT;
+
             if (size > 0) {
                 appGlyph.bitmap.pixels = new (std::nothrow) uint8_t[size];
                 if (appGlyph.bitmap.pixels == nullptr) {
@@ -224,10 +218,11 @@ auto Font::getGlyph(GlyphCode glyphCode, Glyph &appGlyph, bool loadBitmap, bool 
         }
 
         Bitmap glyphBitmap = {.pixels = slot->bitmap.buffer,
-                              .dim = Dim(slot->bitmap.width, slot->bitmap.rows)};
+                              .dim = Dim(slot->bitmap.width, slot->bitmap.rows),
+                              .pitch = static_cast<uint16_t>(slot->bitmap.pitch)};
 
         Pos outPos = Pos(atPos.x + slot->bitmap_left, atPos.y - slot->bitmap_top);
-        copyBitmap(appGlyph.bitmap, glyphBitmap, outPos, inverted);
+        copyBitmap(appGlyph.bitmap, toHeightBit, glyphBitmap, outPos, inverted);
     }
 
     appGlyph.metrics = {.xoff = static_cast<int16_t>(slot->bitmap_left),
@@ -244,9 +239,9 @@ auto Font::getGlyphMetrics(GlyphCode glyphCode, Glyph &appGlyph) -> bool {
 
     appGlyph.clear();
 
-    auto error = FT_Load_Glyph(face_,     /* handle to face object */
-                          glyphCode, /* glyph index           */
-                          FT_LOAD_NO_BITMAP); /* load flags */
+    auto error = FT_Load_Glyph(face_,              /* handle to face object */
+                               glyphCode,          /* glyph index           */
+                               FT_LOAD_NO_BITMAP); /* load flags */
     if (error) {
         LOGE("Unable to load glyph for charcode: %d", glyphCode);
         return false;
@@ -322,6 +317,16 @@ void Font::drawSingleLineOfText(font_defs::Bitmap &canvas, font_defs::Pos pos,
     if (isInitialized()) {
         font_defs::Pos atPos = pos;
         Glyph glyph{};
+
+        // We set here the canvas pitch value, as there is still some definitions required at the
+        // application-level in regard of the upcoming Sol Glasse augmented resolution.
+        //
+        // The following may require some modification as the next Sol Glasses version
+        // may be using a different pitch than the one computed here.
+
+        canvas.pitch = (getScreenResolution() == PixelResolution::ONE_BIT)
+                           ? (canvas.dim.width + 7) >> 3
+                           : canvas.dim.width;
         glyph.bitmap = canvas;
 
         ligKernUTF8Map(line, [this, &glyph, &atPos, inverted](GlyphCode glyphCode, FIX16 kern,
@@ -451,30 +456,6 @@ auto Font::toChar32(const char **str) -> char32_t {
     *str = reinterpret_cast<const char *>(s);
     return res;
 }
-
-// auto IBMFFont::getTextWidthQuick(const char *buffer) -> int {
-//     if constexpr (IBMF_TRACING) {
-//         LOGD("getTextWidthQuick()");
-//     }
-
-//     int16_t width = 0;
-//     auto face = fontData_->getFace(faceIndex_);
-
-//     log_w("Buffer: %s", buffer);
-
-//     while (*buffer) {
-//         int16_t xoff;
-//         int16_t approxWidth;
-//         GlyphCode glyphCode;
-
-//         if (face->getGlyphApproxWidth(glyphCode = fontData_->translate(toChar32(&buffer)),
-//                                       &approxWidth)) {
-//             width += (*buffer == '\0') ? approxWidth - 1 : approxWidth;
-//         }
-//     }
-//     log_w("Width: %" PRIi16 " + %" PRIi16, width, (width >> 3) + 1);
-//     return width + (width >> 3) + 1;
-// }
 
 auto Font::getTextHeight(const std::string &buffer) -> int {
     if constexpr (TTF_TRACING) {

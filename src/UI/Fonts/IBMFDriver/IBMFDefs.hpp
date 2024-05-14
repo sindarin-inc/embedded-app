@@ -143,9 +143,11 @@ struct RLEBitmap {
     MemoryPtr pixels;
     Dim dim;
     uint16_t length;
+    uint8_t pitch;
     void clear() {
         pixels = nullptr;
         dim = Dim(0, 0);
+        pitch = 0;
         length = 0;
     }
 };

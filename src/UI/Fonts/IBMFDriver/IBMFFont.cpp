@@ -61,6 +61,17 @@ void Font::drawSingleLineOfText(ibmf_defs::Bitmap &canvas, ibmf_defs::Pos pos,
     if (isInitialized()) {
         ibmf_defs::Pos atPos = pos;
         Glyph glyph{};
+
+        // We set here the canvas pitch value, as there is still some definitions required at the
+        // application-level in regard of the upcoming Sol Glasse augmented resolution.
+        //
+        // The following may require some modification as the next Sol Glasses version
+        // may be using a different pitch than the one computed here.
+
+        canvas.pitch = (getScreenResolution() == PixelResolution::ONE_BIT)
+                           ? (canvas.dim.width + 7) >> 3
+                           : canvas.dim.width;
+
         glyph.bitmap = canvas;
 
         ligKernUTF8Map(line, [this, &glyph, &atPos, inverted](GlyphCode glyphCode, FIX16 kern,
@@ -196,30 +207,6 @@ auto Font::toChar32(const char **str) -> char32_t {
     *str = reinterpret_cast<const char *>(s);
     return res;
 }
-
-// auto IBMFFont::getTextWidthQuick(const char *buffer) -> int {
-//     if constexpr (IBMF_TRACING) {
-//         LOGD("getTextWidthQuick()");
-//     }
-
-//     int16_t width = 0;
-//     auto face = fontData_->getFace(faceIndex_);
-
-//     log_w("Buffer: %s", buffer);
-
-//     while (*buffer) {
-//         int16_t xoff;
-//         int16_t approxWidth;
-//         GlyphCode glyphCode;
-
-//         if (face->getGlyphApproxWidth(glyphCode = fontData_->translate(toChar32(&buffer)),
-//                                       &approxWidth)) {
-//             width += (*buffer == '\0') ? approxWidth - 1 : approxWidth;
-//         }
-//     }
-//     log_w("Width: %" PRIi16 " + %" PRIi16, width, (width >> 3) + 1);
-//     return width + (width >> 3) + 1;
-// }
 
 auto Font::getTextHeight(const std::string &buffer) -> int {
     if constexpr (IBMF_TRACING) {

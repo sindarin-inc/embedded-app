@@ -54,21 +54,21 @@ public:
         return isInitialized() ? fontData_->getFace(faceIndex_) : nullptr;
     }
 
-    inline void setResolution(PixelResolution res) {
+    inline void setScreenResolution(PixelResolution res) {
         if constexpr (IBMF_TRACING) {
-            LOGD("setResolution()");
+            LOGD("setScreenResolution()");
         }
         if (isInitialized()) {
-            fontData_->getFace(faceIndex_)->setResolution(res);
+            fontData_->getFace(faceIndex_)->setScreenResolution(res);
         }
     }
 
-    [[nodiscard]] inline auto getResolution() const -> PixelResolution {
+    [[nodiscard]] inline auto getScreenResolution() const -> PixelResolution {
         if constexpr (IBMF_TRACING) {
-            LOGD("getResolution()");
+            LOGD("getScreenResolution()");
         }
-        return (isInitialized()) ? fontData_->getFace(faceIndex_)->getResolution()
-                                 : DEFAULT_RESOLUTION;
+        return (isInitialized()) ? fontData_->getFace(faceIndex_)->getScreenResolution()
+                                 : DEFAULT_SCREEN_RESOLUTION;
     }
 
     [[nodiscard]] inline auto lineHeight() const -> int {

@@ -26,7 +26,7 @@ private:
 
     bool initialized_{false};
     FontFormat fontFormat_{FontFormat::UNKNOWN};
-    PixelResolution resolution_{DEFAULT_RESOLUTION};
+    PixelResolution screenResolution_{DEFAULT_SCREEN_RESOLUTION};
 
     FaceHeaderPtr faceHeader_{nullptr};
     GlyphsPixelPoolIndexes glyphsPixelPoolIndexes_{nullptr};
@@ -59,7 +59,7 @@ public:
     [[nodiscard]] inline auto getLigKernStep(uint16_t idx) const -> LigKernStep * {
         return &(*ligKernSteps_)[idx];
     }
-    [[nodiscard]] inline auto getResolution() const -> PixelResolution { return resolution_; }
+    [[nodiscard]] inline auto getScreenResolution() const -> PixelResolution { return screenResolution_; }
 
     [[nodiscard]] inline auto getGlyphHOffset(GlyphCode glyphCode) const -> int8_t {
         if (glyphCode >= faceHeader_->glyphCount) {
@@ -84,7 +84,7 @@ public:
                                                      : NO_LIG_KERN_PGM;
     }
 
-    inline auto setResolution(PixelResolution res) -> void { resolution_ = res; }
+    inline auto setScreenResolution(PixelResolution res) -> void { screenResolution_ = res; }
 
     auto ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2, FIX16 *kern) -> bool;
 

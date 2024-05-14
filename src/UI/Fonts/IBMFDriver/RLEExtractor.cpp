@@ -141,7 +141,7 @@ auto RLEExtractor::retrieveBitmap(const RLEBitmap &fromBitmap, Bitmap &toBitmap,
     }
 
     if (resolution_ == PixelResolution::ONE_BIT) {
-        uint32_t toRowSize = (toBitmap.dim.width + 7) >> 3;
+        uint32_t toRowSize = toBitmap.pitch;
         toRowPtr = toBitmap.pixels + static_cast<size_t>(atOffset.y * toRowSize);
 
         if (rleMetrics.dynF == 14) { // is a non-compressed RLE?

@@ -23,11 +23,35 @@ struct Pos {
 typedef uint8_t *MemoryPtr;
 enum class PixelResolution : uint8_t { ONE_BIT, EIGHT_BITS };
 
+// For 8-bit screen:
+//   - the Screen Resolution can be EIGHT_BITS or ONE_BIT, depending on their availability with the
+//     device
+//   - if TTF_SUPPORT: the Font Resolution can be EIGHT_BITS (grayscale antialiasing) or ONE_BIT (Monochome)
+//   - if IMBF_SUPPORT: only ONE_BIT is available for Font Resolution
+//
+// For the first version of the Sol Reader, only ONE_BIT is available for both Screen and Font
+// resolution, for both IBMF_SUPPORT and TTF_SUPPORT
+
 #if DISPLAY_SIM_8BIT
-const constexpr PixelResolution DEFAULT_RESOLUTION = PixelResolution::EIGHT_BITS;
+const constexpr PixelResolution DEFAULT_SCREEN_RESOLUTION = PixelResolution::EIGHT_BITS;
+const constexpr PixelResolution DEFAULT_FONT_RESOLUTION = PixelResolution::EIGHT_BITS;
 #else
-const constexpr PixelResolution DEFAULT_RESOLUTION = PixelResolution::ONE_BIT;
+const constexpr PixelResolution DEFAULT_SCREEN_RESOLUTION = PixelResolution::ONE_BIT;
+const constexpr PixelResolution DEFAULT_FONT_RESOLUTION = PixelResolution::ONE_BIT;
 #endif
+
+// #if IBMF_SUPPORT && (DEFAULT_FONT_RESOLUTION == PixelResolution::EIGHT_BITS)
+// #error "For IBMF_SUPPORT, the DEFAULT_FONT_RESOLUTION cannot be equal to EIGHT_BITS!"
+// #endif
+
+// #if !DISPLAY_SIM_8BIT
+// #if DEFAULT_SCREEN_RESOLUTION == PixelResolution::EIGHT_BITS
+// #error "The first version of Sol Reader does not support an EIGHT_BITS screen!"
+// #endif
+// #if DEFAULT_FONT_RESOLUTION == PixelResolution::EIGHT_BITS
+// #error "The first version of Sol Reader does not support an EIGHT_BITS font!"
+// #endif
+// #endif
 
 // FIX16 is a floating point value in 16 bits fixed point notation, 6 bits of fraction
 typedef int16_t FIX16;
@@ -35,15 +59,17 @@ typedef int16_t FIX16;
 struct Bitmap {
     MemoryPtr pixels;
     Dim dim;
+    uint16_t pitch;
     void clear() {
         pixels = nullptr;
         dim = Dim(0, 0);
+        pitch = 0;
     }
 };
 typedef Bitmap *BitmapPtr;
 
 struct GlyphMetrics {
-    int16_t xoff, yoff; // Used when the glyph is retrieved for caching
+    int16_t xoff, yoff;
     int16_t descent;
     FIX16 advance;      // Normal advance to the next glyph position in line
     int16_t lineHeight; // This is the normal line height for all glyphs in the face
