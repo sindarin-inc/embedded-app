@@ -388,12 +388,24 @@ auto EPubFile::hasDictionary(const std::string &chapterId) -> bool {
 
     // Walk the chapters backwards in the spine to see if the chapter id matches
     auto dictionaryChapterHref = opf_->getHrefByManifestId(dictionaryId);
-    if (dictionaryChapterHref.empty()) {
-        return false;
-    }
-    auto dictionaryChapterIdx = opf_->getChapterIdx(dictionaryChapterHref);
+    if (!dictionaryChapterHref.empty()) {
+        auto dictionaryChapterIdx = opf_->getChapterIdx(dictionaryChapterHref);
 
-    return dictionaryChapterIdx != -1 && hasToc;
+        if (dictionaryChapterIdx != -1 && hasToc) {
+            return true;
+        }
+    }
+
+    // Walk the spine backwards to the nearest chapter, check if that chapter has a dictionary
+    auto spineHref = getHrefByManifestId(chapterId);
+    auto spineIdx = getSpineIdx(spineHref);
+    auto chapterSpineIdx = getChapterFirstSpineIdx(spineIdx);
+    if (spineIdx != -1 && spineIdx != chapterSpineIdx) {
+        auto chapter = opf_->getSpine(chapterSpineIdx);
+        return hasDictionary(static_cast<std::string>(chapter.item->id));
+    }
+
+    return false;
 }
 
 auto EPubFile::getDictionaryContent(std::string &chapterId,
