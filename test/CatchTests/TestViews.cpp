@@ -307,6 +307,7 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
 }
 
 TEST_CASE("Test some views independently") {
+    // Just create and render a PowerDepletedScreen
     auto display = createDisplay();
 
     SECTION("Test PowerDepletedScreen") {
@@ -315,6 +316,7 @@ TEST_CASE("Test some views independently") {
         ASSERT_VIEW_UNCHANGED(display, "PowerDepletedScreen");
     }
 
+    /* With the main menu refactor, this test hangs and does not complete. */
     SECTION("Test LayoutTestScreen") {
         LayoutTestScreen screen(*display);
         screen.render(*display);
