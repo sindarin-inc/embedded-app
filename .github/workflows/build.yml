@@ -42,7 +42,7 @@ jobs:
       - name: build
         run: |
           set -o pipefail
-          make ${{ matrix.target }} | tee ${{ matrix.target }}-build-log.txt
+          make ${{ matrix.target }}-build | tee ${{ matrix.target }}-build-log.txt
 
       - name: Post errors and warnings as annotations
         if: github.event_name == 'pull_request' && (success() || failure())
