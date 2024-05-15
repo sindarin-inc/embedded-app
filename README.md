@@ -211,39 +211,6 @@ Note that when you run the above command, the resulting `include/EFusesCustomTab
 
 This is [fixed](https://github.com/espressif/esp-idf/blob/master/components/efuse/efuse_table_gen.py#L277) in the pre-release version of ESP-IDF 5.0.
 
-## Run PyTest On-Device Tests
-
-You'll need to make sure you set up IDF with the pytest bits. You'll also need the `ppk2-api` python package.
-
-```sh
-$IDF_PATH/install.sh esp32s3 --enable-pytest
-. $IDF_PATH/export.sh
-pip install ppk2-api
-```
-
-You'll need to make sure you have some binaries available
-
-```sh
-idf.py build
-```
-
-There are two different versions of the ICT which can run the pytest on-device tests - the mainframe tester (board only) and the final tester (partially assembled glasses).
-These are distinguished by the 'GETMODE' command on the ICT. Currently mode 0 is the mainframe tester, mode 1 is the final tester. ICTs running older firmware that do not support this command default to mode 0, until auto-updating during a test.
-The correct test to run on a given ICT is decided by its reported mode number.
-
-And then you can run the tests
-
-```sh
-pytest --target esp32s3
-```
-
-A full content sync can be performed on the ICT with the following command, replacing 'myssid' and 'mypassword' with the correct information.
-
-```sh
-pytest --ssid myssid --password mypassword --fullsync 1
-```
-
-
 ## Editing Sol Sans font in the IBMF Font Editor
 
 To change the glyphs in the Sol Sans character map:
