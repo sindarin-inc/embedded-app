@@ -32,6 +32,8 @@ protected:
     Renderer renderer_;
     PreferencesStore &prefs_;
 
+    bool originalInversion_ = false;
+
     bool dropVcom_ = false;
 
     unsigned int currentScreen_ = 0;

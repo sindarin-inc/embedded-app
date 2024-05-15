@@ -46,6 +46,10 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs)
     // even when we switch to the main menu the first time.
     display.forceDontChangeRefreshType();
 
+    // Always run the manifesto in light mode.
+    originalInversion_ = display_.getInversion();
+    display_.invertDisplay(false);
+    
     lambdas_.emplace_back([this](DisplaySystem &display) {
         std::string message = "Welcome to the Sol Reader! Let's begin...";
         display.clearDisplay();
@@ -416,7 +420,7 @@ void DemoScreen::drawTripleLine(DisplaySystem &display, std::string one, std::st
 void DemoScreen::finishDemo() {
     // When we're done with the onboarding screens, turn this mode off.
     dropVcom_ = false;
-    display_.invertDisplay(false);
+    display_.invertDisplay(originalInversion_);
 
     back();
 }
