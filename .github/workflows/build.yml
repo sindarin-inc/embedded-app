@@ -13,7 +13,7 @@ jobs:
     name: "Build Simulator"
     runs-on:
       # For some reason, just running on normal ubuntu-latest gets stuck during linking, probably an OOM thing
-      group: Beefy
+      group: Medium
     strategy:
       matrix:
         target:
