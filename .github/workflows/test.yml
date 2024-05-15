@@ -9,8 +9,8 @@ on:
 jobs:
   catch2:
     name: "Build and Run Catch2"
-    runs-on: ubuntu-latest
-
+    runs-on:
+      group: Medium
     steps:
       - name: Check out code
         uses: actions/checkout@v3
