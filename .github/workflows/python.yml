@@ -29,13 +29,13 @@ jobs:
       - name: Sort imports
         run: |
           # stop the build if there are Python syntax errors or undefined names
-          isort --skip=components --skip=.pio --profile black .
-          isort --skip=components --skip=.pio --profile black --check --diff .
+          isort --skip=components --profile black .
+          isort --skip=components --profile black --check --diff .
 
       - name: Format with black
         run: |
           # format the files with black
-          black --line-length 110 --exclude='components|.pio' .
+          black --line-length 110 --exclude='components' .
 
       - uses: EndBug/add-and-commit@v9
         with:

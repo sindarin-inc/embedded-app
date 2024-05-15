@@ -6,9 +6,11 @@ add_library(nvs_flash STATIC ${SOURCES})
 
 target_include_directories(nvs_flash
     PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}
+    "${CMAKE_CURRENT_SOURCE_DIR}"
     PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/../esp-idf
+    "${CMAKE_CURRENT_SOURCE_DIR}/../esp-idf"
+    "${PROJECT_SOURCE_DIR}/../../../../lib/inifile"
+    "${PROJECT_SOURCE_DIR}/../../../../src"
 )
 
 target_compile_definitions(nvs_flash PRIVATE SIMULATOR=1)

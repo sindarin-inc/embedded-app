@@ -43,7 +43,7 @@ idf.py monitor --no-reset -p $(ls /dev/cu.usbmodem* 2> /dev/null | head -n 1)
 ## Install recommended tools
 
 * Visual Studio Code (`brew install visual-studio-code`)
-* PlatformIO (`brew install platformio`, or on Ubuntu `sudo apt install python3-pip && pip3 install platformio` or the [installer script](https://docs.platformio.org/en/latest/core/installation/methods/installer-script.html)) - we don't typically build the firmware with this but it's needed for the simulator, tests, and clang-tidy.
+* CMake (`brew install cmake`, or on Ubuntu `sudo apt install cmake`)
 * clang-format (`brew install clang-format`)
 
 ## Reformat code with `clang-format`
@@ -66,9 +66,9 @@ Issues that will be fixed automatically will be fixed by clang-tidy, warnings wi
 
 ## Test code locally with the Simulator
 
-The simulator compiles in <3s from a clean build, and even less on an incremental build. This makes it super fast for us to iterate on anything that doesn't need the physical hardware.
+The simulator compiles in <20s from a clean build, and even less on an incremental build. This makes it fast for us to iterate on anything that doesn't need the physical hardware.
 
-You'll need SDL2 & openssl for it to work: `brew install sdl2 openssl` (on Ubuntu `sudo apt install libsdl2-dev libssl-dev`). Then you can run `pio run -e simulator -t upload` to run it. You can alternately hit the upload button in VSCode+PlatformIO and it should build and run! You can also debug with lldb at the command line: `pio run -e simulator && lldb .pio/build/simulator/program`.
+You'll need SDL2 & openssl for it to work: `brew install sdl2 openssl` (on Ubuntu `sudo apt install libsdl2-dev libssl-dev`). Then you can run `make sim` to run it. After building once, you can also debug with lldb at the command line: `lldb lib/Simulator/build/simulator`.
 
 ### Extract your Sol cloud access token to download content onto the Simulator
 
@@ -85,7 +85,7 @@ You can get your access token by monitoring logs on the dev board or glasses whe
 This repo has unit tests using [Catch2](https://github.com/catchorg/Catch2). Run them with
 
 ```sh
-pio run -e tests -t upload
+make test
 ```
 
 The test suite has some simple unit tests as well as view tests. View tests run the app, and record the rendered screens and compare them with known good versions to indicate if anything has changed unexpectedly. If views change the failure messages will tell you how to update the known-good images if necessary.

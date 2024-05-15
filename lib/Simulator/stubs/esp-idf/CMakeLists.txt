@@ -12,8 +12,12 @@ endif()
 
 target_link_libraries(${PROJECT_NAME} PUBLIC freertos-posix)
 
-target_include_directories(${PROJECT_NAME} PUBLIC
+target_include_directories(${PROJECT_NAME}
+    PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
+    PRIVATE
+    "${PROJECT_SOURCE_DIR}/../../../../src"
+    "${PROJECT_SOURCE_DIR}/../../../../lib/httplib"
 )
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE SIMULATOR=1)
