@@ -88,8 +88,6 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
         WAIT_FOR_DRAW(display);
         SendRemoteCommand(DOWN);
         WAIT_FOR_DRAW(display);
-        SendRemoteCommand(DOWN);
-        WAIT_FOR_DRAW(display);
         SendRemoteCommand(ENTER);
         WAIT_FOR_DRAW(display);
         ASSERT_VIEW_UNCHANGED(display, "LastQuestion1Bookmarked");
@@ -196,10 +194,6 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
         // Open the dictionary
         SendRemoteCommand(UP);
         WAIT_FOR_DRAW(display);
-        SendRemoteCommand(UP);
-        WAIT_FOR_DRAW(display);
-        SendRemoteCommand(UP);
-        WAIT_FOR_DRAW(display);
         SendRemoteCommand(ENTER);
         WAIT_FOR_DRAW(display);
         ASSERT_VIEW_UNCHANGED(display, "Dictionary1");
@@ -241,10 +235,6 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
         // Open the dictionary
         SendRemoteCommand(UP);
         WAIT_FOR_DRAW(display);
-        SendRemoteCommand(UP);
-        WAIT_FOR_DRAW(display);
-        SendRemoteCommand(UP);
-        WAIT_FOR_DRAW(display);
         SendRemoteCommand(ENTER);
         WAIT_FOR_DRAW(display);
         ASSERT_VIEW_UNCHANGED(display, "Dictionary4");
@@ -265,10 +255,6 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
         ASSERT_VIEW_UNCHANGED(display, "PopupMenu5");
 
         // Open the summary
-        SendRemoteCommand(UP);
-        WAIT_FOR_DRAW(display);
-        SendRemoteCommand(UP);
-        WAIT_FOR_DRAW(display);
         SendRemoteCommand(UP);
         WAIT_FOR_DRAW(display);
         SendRemoteCommand(UP);
