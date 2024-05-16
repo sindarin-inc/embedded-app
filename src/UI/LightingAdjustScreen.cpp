@@ -90,14 +90,10 @@ void LightingAdjustScreen::render(DisplaySystem &display) {
     display.updateDisplay(firstLoad_ ? DisplaySystem::UpdateType::FULL
                                      : DisplaySystem::UpdateType::FAST);
     firstLoad_ = false;
-
-    // Enable the ambient light sensor when this screen is shown
-    lightingController_.begin();
 }
 
 void LightingAdjustScreen::logTelemetry(int setting, const char *direction) {
     DispatchGetCore0BackgroundQueue()->dispatch([this, setting, direction]() {
-        lightingController_.begin();
         uint16_t channel1, channel0;
         lightingController_.readAmbientLightData(channel1, channel0);
         int darkMode = this->prefs_.darkMode.get().value_or(false) ? 1 : 0;
@@ -113,7 +109,6 @@ void LightingAdjustScreen::processCommand(RemoteCommand command) {
     case RemoteCommand::RIGHT:
     case RemoteCommand::ENTER:
     case RemoteCommand::BACK:
-        lightingController_.returnToDisabledState();
         back();
         break;
     case RemoteCommand::UP: {
