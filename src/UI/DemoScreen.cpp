@@ -452,15 +452,13 @@ void DemoScreen::processCommand(RemoteCommand command) {
         display_.clearFrameBuffer();
         finishDemo();
         break;
-    case RemoteCommand::UP:
-        break;
-    case RemoteCommand::RIGHT:
-    case RemoteCommand::DOWN:
-    case RemoteCommand::BACK:
-        break;
     case RemoteCommand::ANIMATION:
         setNeedsRerender();
         break;
+    case RemoteCommand::UP:
+    case RemoteCommand::RIGHT:
+    case RemoteCommand::DOWN:
+    case RemoteCommand::BACK:
     default:
         break;
     }
