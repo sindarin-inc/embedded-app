@@ -41,9 +41,9 @@ jobs:
         run: |
           ./test/CatchTests/build/tests '[epub]' --reporter console --reporter junit::out=catch-results-epub.xml
 
-      - name: Run epub tests
+      - name: Run content-sync tests
         run: |
-          ./test/CatchTests/build/tests '[epub]' --reporter console --reporter junit::out=catch-results-sync.xml
+          ./test/CatchTests/build/tests '[content-sync]' --reporter console --reporter junit::out=catch-results-sync.xml
 
       - name: Test Report
         uses: dorny/test-reporter@v1
