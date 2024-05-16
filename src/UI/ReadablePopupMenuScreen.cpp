@@ -105,7 +105,15 @@ void ReadablePopupMenuScreen::populatePopupMenu() {
     resetMenuItems();
 
     addMenuItem(MenuItem("Main Menu", [this]() { onMainMenu(); }));
-
+    addMenuItem(MenuItem("Bookmark", [this]() {
+        onBookmarkToggle();
+        back();
+    }));
+    addMenuItem(MenuItem("Brightness", [this]() {
+        log_d("Setting current screen to brightness screen");
+        lightingAdjustScreen_.setFirstLoad();
+        setCurrentScreen(lightingAdjustScreen_);
+    }));
     addMenuItem(MenuItem("Archive", [this]() {
         prefs_.readableArchivedChanged.set(readable_->shortenedUuid.c_str(), true);
         onMainMenu();
@@ -118,9 +126,9 @@ void ReadablePopupMenuScreen::populatePopupMenu() {
     }));
     unarchiveMenuItemView_ = popupMenuView_.menuItemViews.back();
 
-    addMenuItem(MenuItem("Bookmark", [this]() {
-        onBookmarkToggle();
-        back();
+    addMenuItem(MenuItem("Report page", [this]() {
+        log_d("Reporting a problem with the page");
+        onReport();
     }));
 
     if (renderer_.getCurrentPlace()->isFor(DocType::EPUB)) {
@@ -152,17 +160,6 @@ void ReadablePopupMenuScreen::populatePopupMenu() {
     } else {
         log_d("Not an EPub, so no summary or dictionary");
     }
-
-    addMenuItem(MenuItem("Brightness", [this]() {
-        log_d("Setting current screen to brightness screen");
-        lightingAdjustScreen_.setFirstLoad();
-        setCurrentScreen(lightingAdjustScreen_);
-    }));
-
-    addMenuItem(MenuItem("Report page", [this]() {
-        log_d("Reporting a problem with the page");
-        onReport();
-    }));
 
     auto stream = renderer_.getStream();
     if (stream->isFor(DocType::EPUB) && std::dynamic_pointer_cast<EPubFile>(stream)->hasToc()) {
