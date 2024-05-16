@@ -261,8 +261,8 @@ auto EPubFile::getToc() -> ReadableTableOfContentsChapterVector {
     return toc;
 }
 
-auto EPubFile::hasSummary(const std::string &spineId) -> bool {
-    return hasEpubAddition(spineId, "summary");
+auto EPubFile::hasSummary(const std::string &spineHref) -> bool {
+    return hasEpubAddition(spineHref, "summary");
 }
 
 auto EPubFile::getSummaryContent(
@@ -270,15 +270,14 @@ auto EPubFile::getSummaryContent(
     const std::shared_ptr<UserReadablePartialChapterSummary> &partialChapterSummary,
     bool includeUnread) -> SpiramString {
 
-    auto chapterHref = opf_->getChapterFirstHref(placeInReadable->getHRef());
-    auto chapterId = opf_->getManifestIdByHref(chapterHref);
-
-    if (!hasSummary(chapterId)) {
+    auto placeHref = placeInReadable->getHRef();
+    if (!hasSummary(placeHref)) {
         log_e("This chapter does not have a summary.");
         return "This chapter does not have a summary.";
     }
 
     // Load the summary xhtml content
+    auto chapterHref = opf_->getChapterFirstHref(placeHref);
     auto chapterIdx = opf_->getChapterIdx(chapterHref);
     if (chapterIdx == -1) {
         log_e("Unable to find chapter index for %s", chapterHref.c_str());
@@ -288,7 +287,6 @@ auto EPubFile::getSummaryContent(
           std::string(getToc()[chapterIdx].href).c_str());
     if (std::string(getToc()[chapterIdx].href) != chapterHref) {
         chapterHref = std::string(getToc()[chapterIdx].href);
-        chapterId = opf_->getManifestIdByHref(chapterHref);
     }
 
     std::string partialSummaryChapterHRef;
@@ -297,8 +295,7 @@ auto EPubFile::getSummaryContent(
         partialSummaryChapterHRef = opf_->getChapterFirstHref(summarySpineHref);
     }
 
-    log_d("Loading summary for chapter: %s (href: %s, chapter idx: %d)", chapterId.c_str(),
-          chapterHref.c_str(), chapterIdx);
+    log_d("Loading summary for chapter href: %s, chapter idx: %d", chapterHref.c_str(), chapterIdx);
     SpiramString summaryText;
 
     for (const auto &chapter : getToc()) {
@@ -362,9 +359,13 @@ auto EPubFile::getSummaryContent(
     return summaryText;
 }
 
-auto EPubFile::hasEpubAddition(const std::string &spineId, const std::string &additionType)
+auto EPubFile::hasEpubAddition(const std::string &spineHref, const std::string &additionType)
     -> bool {
-    std::string additionId = additionType + "-" + spineId;
+    // Find the chapterId corresponding to this spineHref
+    auto chapterSpineHref = opf_->getChapterFirstHref(spineHref);
+    auto chapterId = opf_->getManifestIdByHref(chapterSpineHref);
+
+    std::string additionId = additionType + "-" + chapterId;
 
     auto hasDirectChapterAddition = opf_->exists(additionId);
     auto hasToc = opf_->exists("nav");
@@ -372,45 +373,25 @@ auto EPubFile::hasEpubAddition(const std::string &spineId, const std::string &ad
         return true;
     }
 
-    // Walk the chapters backwards in the spine to see if the chapter id matches
-    auto additionSpineHref = opf_->getHrefByManifestId(additionId);
-    if (!additionSpineHref.empty()) {
-        auto additionChapterIdx = opf_->getChapterIdx(additionSpineHref);
-
-        if (additionChapterIdx != -1 && hasToc) {
-            return true;
-        }
-    }
-
-    // Walk the spine backwards to the nearest chapter, check if that chapter has an addition
-    // (dictionary/summary)
-    auto spineHref = getHrefByManifestId(spineId);
-    auto spineIdx = getSpineIdx(spineHref);
-    auto chapterSpineIdx = getChapterFirstSpineIdx(spineIdx);
-    if (spineIdx != -1 && spineIdx != chapterSpineIdx) {
-        auto chapter = opf_->getSpine(chapterSpineIdx);
-        return hasEpubAddition(static_cast<std::string>(chapter.item->id), additionType);
-    }
-
     return false;
 }
 
-auto EPubFile::hasDictionary(const std::string &spineId) -> bool {
-    return hasEpubAddition(spineId, "dictionary");
+auto EPubFile::hasDictionary(const std::string &spineHref) -> bool {
+    return hasEpubAddition(spineHref, "dictionary");
 }
 
 auto EPubFile::getDictionaryContent(std::string &spineId,
                                     const std::shared_ptr<EPubPlace> &placeInReadable,
                                     std::shared_ptr<TxtPlace> &placeInDictionary) -> SpiramString {
 
-    if (!hasDictionary(spineId)) {
+    auto spineHref = opf_->getHrefByManifestId(spineId);
+    if (!hasDictionary(spineHref)) {
         log_e("This chapter does not have any dictionary definitions.");
         return "This chapter does not have any dictionary definitions.";
     }
 
     // Load the dictionary xhtml content
     int fileOffset = placeInReadable->getOffset();
-    auto spineHref = opf_->getHrefByManifestId(spineId);
     auto chapterIdx = opf_->getChapterIdx(spineHref);
     auto spineIdx = opf_->getSpineIdx(spineHref);
 
