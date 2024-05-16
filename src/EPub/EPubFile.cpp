@@ -380,11 +380,10 @@ auto EPubFile::hasDictionary(const std::string &spineHref) -> bool {
     return hasEpubAddition(spineHref, "dictionary");
 }
 
-auto EPubFile::getDictionaryContent(std::string &spineId,
-                                    const std::shared_ptr<EPubPlace> &placeInReadable,
+auto EPubFile::getDictionaryContent(const std::shared_ptr<EPubPlace> &placeInReadable,
                                     std::shared_ptr<TxtPlace> &placeInDictionary) -> SpiramString {
 
-    auto spineHref = opf_->getHrefByManifestId(spineId);
+    auto spineHref = placeInReadable->getHRef();
     if (!hasDictionary(spineHref)) {
         log_e("This chapter does not have any dictionary definitions.");
         return "This chapter does not have any dictionary definitions.";
@@ -394,6 +393,7 @@ auto EPubFile::getDictionaryContent(std::string &spineId,
     int fileOffset = placeInReadable->getOffset();
     auto chapterIdx = opf_->getChapterIdx(spineHref);
     auto spineIdx = opf_->getSpineIdx(spineHref);
+    auto spineId = opf_->getManifestIdByHref(spineHref);
 
     if (chapterIdx == -1 || spineIdx == -1) {
         log_e("Unable to find chapter index for %s", spineHref.c_str());
