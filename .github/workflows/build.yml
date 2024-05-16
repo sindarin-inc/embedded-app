@@ -11,9 +11,7 @@ on:
 jobs:
   build:
     name: "Build Simulator"
-    runs-on:
-      # For some reason, just running on normal ubuntu-latest gets stuck during linking, probably an OOM thing
-      group: Medium
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         target:

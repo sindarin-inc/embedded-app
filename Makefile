@@ -1,6 +1,11 @@
 all: build
 
-MAKE = nice make -j
+# Use all but 1 core for building
+NUM_CORES := $(shell nproc)
+NUM_CORES := $(shell echo $$(( $(NUM_CORES) - 1 )))
+NUM_CORES := $(shell [ $(NUM_CORES) -lt 1 ] && echo 1 || echo $(NUM_CORES))
+
+MAKE := nice make -j$(NUM_CORES)
 CMAKE_FLAGS = -DCMAKE_BUILD_TYPE=Debug
 
 .PHONY: sim-build

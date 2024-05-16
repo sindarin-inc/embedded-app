@@ -11,9 +11,7 @@ on:
 jobs:
   build:
     name: "Build epub-render tool"
-    runs-on:
-      # For some reason, just running on normal ubuntu-latest gets stuck during linking
-      group: Medium
+    runs-on: ubuntu-latest
 
     steps:
       - name: Check out code
