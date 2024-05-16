@@ -4,6 +4,9 @@ project(simulator)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# Path to the root of the repo
+set(REPO_ROOT_DIR "${PROJECT_SOURCE_DIR}/../..")
+
 file(GLOB_RECURSE SOURCES
     "${PROJECT_SOURCE_DIR}/native.cpp"
     "${PROJECT_SOURCE_DIR}/SimAutomation.cpp"
@@ -19,7 +22,9 @@ find_package(SDL2 REQUIRED)
 target_include_directories(${PROJECT_NAME} PRIVATE ${SDL2_INCLUDE_DIRS})
 target_link_libraries(${PROJECT_NAME} ${SDL2_LIBRARIES} simulator-common)
 
-target_compile_options(${PROJECT_NAME} PRIVATE
+target_compile_options(${PROJECT_NAME}
+    PRIVATE
+    -include ${REPO_ROOT_DIR}/src/config.h
+    PUBLIC
     -g
-    -include ${PROJECT_SOURCE_DIR}/../../src/config.h
 )

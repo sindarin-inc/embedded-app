@@ -4,17 +4,20 @@ project(epub-render)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# Path to the root of the repo
+set(REPO_ROOT_DIR "${PROJECT_SOURCE_DIR}/../..")
+
 include_directories(
-    ${PROJECT_SOURCE_DIR}/../../src
-    ${PROJECT_SOURCE_DIR}/../../test/CatchTests
+    ${REPO_ROOT_DIR}/src
+    ${REPO_ROOT_DIR}/test/CatchTests
 )
 
 file(GLOB_RECURSE SOURCES
     "${PROJECT_SOURCE_DIR}/main.cpp"
-    "${PROJECT_SOURCE_DIR}/../../test/CatchTests/DisplayUtil.cpp"
+    "${REPO_ROOT_DIR}/test/CatchTests/DisplayUtil.cpp"
 )
 
-add_subdirectory(${PROJECT_SOURCE_DIR}/../../lib/Simulator/Common ${CMAKE_CURRENT_BINARY_DIR}/Common)
+add_subdirectory(${REPO_ROOT_DIR}/lib/Simulator/Common ${CMAKE_CURRENT_BINARY_DIR}/Common)
 
 add_executable(${PROJECT_NAME} ${SOURCES})
 
@@ -22,5 +25,5 @@ target_link_libraries(${PROJECT_NAME} simulator-common)
 
 target_compile_options(${PROJECT_NAME} PRIVATE
     -g
-    -include ${PROJECT_SOURCE_DIR}/../../src/config.h
+    -include ${REPO_ROOT_DIR}/src/config.h
 )
