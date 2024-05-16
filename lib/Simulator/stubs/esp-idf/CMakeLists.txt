@@ -17,16 +17,18 @@ find_package(OpenSSL REQUIRED)
 
 target_link_libraries(${PROJECT_NAME} PUBLIC freertos-posix OpenSSL::SSL)
 
+# Note: We expose httplib since tests uses it
 target_include_directories(${PROJECT_NAME}
     PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
+    "${REPO_ROOT_DIR}/lib/httplib"
     PRIVATE
     "${REPO_ROOT_DIR}/src"
-    "${REPO_ROOT_DIR}/lib/httplib"
 )
 
 target_compile_definitions(${PROJECT_NAME}
     PRIVATE
     SIMULATOR=1
+    PUBLIC
     CPPHTTPLIB_OPENSSL_SUPPORT
 )

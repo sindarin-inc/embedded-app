@@ -11,9 +11,6 @@ set(REPO_ROOT_DIR "${PROJECT_SOURCE_DIR}/../..")
 include_directories(
     "${REPO_ROOT_DIR}/src"
     "${REPO_ROOT_DIR}/test/CatchTests"
-
-    # Header-only libraries used directly by tests
-    "${REPO_ROOT_DIR}/lib/httplib"
 )
 
 file(GLOB_RECURSE SOURCES
