@@ -290,7 +290,8 @@ auto EPubFile::getSummaryContent(
     }
 
     std::string partialSummaryChapterHRef;
-    if (partialChapterSummary != nullptr && !partialChapterSummary->text.empty()) {
+    if (partialChapterSummary != nullptr && !partialChapterSummary->text.empty() &&
+        partialChapterSummary->text != "null") {
         auto summarySpineHref = partialChapterSummary->ePubPlace->getHRef();
         partialSummaryChapterHRef = opf_->getChapterFirstHref(summarySpineHref);
     }
