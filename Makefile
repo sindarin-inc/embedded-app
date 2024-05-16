@@ -1,11 +1,12 @@
 all: build
 
 MAKE = nice make -j
+CMAKE_FLAGS = -DCMAKE_BUILD_TYPE=Debug
 
 .PHONY: sim-build
 sim-build:
 	mkdir -p lib/Simulator/build
-	cd lib/Simulator/build && cmake .. && $(MAKE)
+	cd lib/Simulator/build && cmake $(CMAKE_FLAGS) .. && $(MAKE)
 
 .PHONY: sim-run
 sim: sim-build
@@ -14,7 +15,7 @@ sim: sim-build
 .PHONY: sim8-build
 sim8-build:
 	mkdir -p lib/Simulator/build8
-	cd lib/Simulator/build8 && cmake -DENABLE_8BIT_DISPLAY=ON .. && $(MAKE)
+	cd lib/Simulator/build8 && cmake $(CMAKE_FLAGS) -DENABLE_8BIT_DISPLAY=ON .. && $(MAKE)
 
 .PHONY: sim-run8
 sim8: sim8-build
@@ -31,7 +32,7 @@ lldb8: sim8
 .PHONY: test-build
 test-build:
 	mkdir -p test/CatchTests/build
-	cd test/CatchTests/build && cmake .. && $(MAKE)
+	cd test/CatchTests/build && cmake $(CMAKE_FLAGS) .. && $(MAKE)
 
 .PHONY: test
 test: test-build
@@ -42,7 +43,7 @@ test: test-build
 .PHONY: epub-render-build
 epub-render-build:
 	mkdir -p scripts/epub-render/build
-	cd scripts/epub-render/build && cmake .. && $(MAKE)
+	cd scripts/epub-render/build && cmake $(CMAKE_FLAGS) .. && $(MAKE)
 
 .PHONY: epub-render
 epub-render: epub-render-build

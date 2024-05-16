@@ -1,9 +1,6 @@
 cmake_minimum_required(VERSION 3.15)
 project(simulator-common)
 
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
 # Path to the root of the repo
 set(REPO_ROOT_DIR "${PROJECT_SOURCE_DIR}/../../..")
 
@@ -85,6 +82,4 @@ target_compile_definitions(${PROJECT_NAME} PUBLIC
 target_compile_options(${PROJECT_NAME}
     PRIVATE
     -include ${REPO_ROOT_DIR}/src/config.h
-    PUBLIC
-    -g
 )

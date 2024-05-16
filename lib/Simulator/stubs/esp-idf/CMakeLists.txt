@@ -30,8 +30,3 @@ target_compile_definitions(${PROJECT_NAME}
     SIMULATOR=1
     CPPHTTPLIB_OPENSSL_SUPPORT
 )
-
-target_compile_options(${PROJECT_NAME}
-    PUBLIC
-    -g
-)
