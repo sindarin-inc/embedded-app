@@ -12,6 +12,8 @@ auto PosixFileSystem::createPath(const std::string &path) const -> std::string {
     return StringFormat("%s%s", prefix_.c_str(), path.c_str());
 }
 
+
+
 auto PosixFileSystem::open(const std::string &path, const char *mode, const bool create) const
     -> SFile {
     auto prefixedPath = createPath(path);
