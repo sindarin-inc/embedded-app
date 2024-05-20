@@ -37,11 +37,16 @@ jobs:
           # format the files with black
           black --line-length 110 --exclude='components' .
 
-      - uses: EndBug/add-and-commit@v9
-        with:
-          add: "*.py"
-          author_name: Python Formatting Robot
-          author_email: robot@sindarin.com
-          message: "Committing black python code formatter and isort changes"
+      - name: "Commit changes if necessary"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if git diff --exit-code '*.py' > /dev/null; then
+            echo "No changes to commit"
+          else
+            git config --global user.name "Python Formatting Robot"
+            git config --global user.email "robot@sindarin.com"
+            git add '*.py'
+            git commit -m "Committing black python code formatter and isort changes"
+            git push origin HEAD:${{ github.head_ref }}
+          fi

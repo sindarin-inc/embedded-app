@@ -49,15 +49,19 @@ jobs:
         with:
           source: "./src"
           extensions: "hpp,h,cpp,c"
-          clangFormatVersion: 15
+          clangFormatVersion: 18
           inplace: True
 
-      - uses: EndBug/add-and-commit@v9
-        with:
-          add: "src"
-          author_name: Clang Robot
-          author_email: robot@example.com
-          message: "Committing clang-format/clang-tidy changes"
+      - name: "Commit changes if necessary"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        if: github.event_name == 'pull_request'
+        run: |
+          if git diff --exit-code 'src/*/*.hpp' 'src/*/*.h' 'src/*/*.cpp' 'src/*/*.c' > /dev/null; then
+            echo "No changes to commit"
+          else
+            git config --global user.name "Clang Robot"
+            git config --global user.email "robot@example.com"
+            git add 'src/*/*.hpp' 'src/*/*.h' 'src/*/*.cpp' 'src/*/*.c'
+            git commit -m "Committing clang-format/clang-tidy changes"
+            git push origin HEAD:${{ github.head_ref }}
+          fi
