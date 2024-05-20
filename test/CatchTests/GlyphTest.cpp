@@ -94,8 +94,8 @@ TEST_CASE("Test glyph rendering") {
         glyphPairs.push_back(glyph);
     }
 
-    auto renderGlyphs = [&glyphPairs, &display](const std::string &key, int gridWidth,
-                                                int gridHeight, Font *font) {
+    auto renderGlyphs =
+        [&glyphPairs, &display](const std::string &key, int gridWidth, int gridHeight, Font *font) {
         GlyphTestScreen screen(glyphPairs, gridWidth, gridHeight);
         display->setFont(font);
         for (int i = 0; i < screen.pages(); i++) {
