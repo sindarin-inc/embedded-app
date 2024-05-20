@@ -43,7 +43,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          git fetch origin
+          git fetch origin ${{ github.head_ref }}
           if [ "$(git rev-parse HEAD)" != "$(git rev-parse @{u})" ]; then
             echo "Newer changes detected on branch. Skipping commit."
             exit 0
