@@ -53,6 +53,7 @@ jobs:
           inplace: True
 
       - name: "Commit changes if necessary"
+        if: github.event_name == 'pull_request'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |

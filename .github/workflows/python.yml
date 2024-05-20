@@ -38,6 +38,7 @@ jobs:
           black --line-length 110 --exclude='components' .
 
       - name: "Commit changes if necessary"
+        if: github.event_name == 'pull_request'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
