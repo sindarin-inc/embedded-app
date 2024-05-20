@@ -40,16 +40,17 @@
 #include "sindarin-debug.h"
 
 DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs)
-    : display_(display), renderer_(display), prefs_(prefs) {
+    : display_(display), renderer_(display), prefs_(prefs),
+      originalInversion_(display_.getInversion()) {
     // We want to control exactly when full and partial will happen.
     // This allows us to cross ownership boundaries and to force a partial update
     // even when we switch to the main menu the first time.
     display.forceDontChangeRefreshType();
 
     // Always run the manifesto in light mode.
-    originalInversion_ = display_.getInversion();
+
     display_.invertDisplay(false);
-    
+
     lambdas_.emplace_back([this](DisplaySystem &display) {
         std::string message = "Welcome to the Sol Reader! Let's begin...";
         display.clearDisplay();
