@@ -15,7 +15,6 @@ print(f"GITHUB_SHA: {GITHUB_SHA}")
 print(f"GITHUB_REPOSITORY: {GITHUB_REPOSITORY}")
 
 
-
 def parse_warnings(file_path: str, title_prefix: str, path_prefix: str):
     severity_map = {"warning": "warning", "error": "failure", "note": "notice"}
 
