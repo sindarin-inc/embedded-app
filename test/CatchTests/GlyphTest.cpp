@@ -62,8 +62,7 @@ TEST_CASE("Test glyph rendering") {
         }
     }
 
-    // Add all Greek characters from U+0370 to U+03FF (but dont add to pairs)
-    for (int code = 0x0370; code <= 0x03FF; ++code) {
+    auto codePointToUtf8 = [](int code) -> std::string {
         std::string glyph;
 
         // Convert code point to UTF-8
@@ -80,6 +79,18 @@ TEST_CASE("Test glyph rendering") {
             glyph += static_cast<char>(0x80 | ((code >> 6) & 0x3F));
             glyph += static_cast<char>(0x80 | (code & 0x3F));
         }
+        return glyph;
+    };
+
+    // Add all Greek characters from U+0370 to U+03FF (but dont add to pairs)
+    for (int code = 0x0370; code <= 0x03FF; ++code) {
+        std::string glyph = codePointToUtf8(code);
+        glyphPairs.push_back(glyph);
+    }
+
+    // Test Cyrillic characters
+    for (int code = 0x0400; code <= 0x04FF; ++code) {
+        std::string glyph = codePointToUtf8(code);
         glyphPairs.push_back(glyph);
     }
 
