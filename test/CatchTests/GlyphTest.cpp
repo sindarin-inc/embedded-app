@@ -29,7 +29,7 @@ public:
         display.updateDisplay();
     }
 
-    void processCommand(RemoteCommand command) override {};
+    void processCommand(RemoteCommand command) override{};
 
     auto pages() -> int { return (glyphs.size() / (gridWidth * gridHeight)) + 1; }
     void setPage(int page) { this->page = page; }
@@ -91,7 +91,6 @@ TEST_CASE("Test glyph rendering") {
             screen.setPage(i);
             screen.render(*display);
             ASSERT_VIEW_UNCHANGED(display, key + std::to_string(i));
-            return;
         }
     };
 
