@@ -24,7 +24,7 @@ public:
 
     // Disable updates and keeps a specific lighting setting (for when the user adjusts the setting
     // manually)
-    void setOverrideValuePercent(int percent, bool maintainLightSensor = false);
+    void setOverrideValuePercent(int percent);
 
     [[nodiscard]] auto getCurrentDutyCycle() const -> int;
     [[nodiscard]] auto getCurrentPercent() const -> int;
@@ -39,6 +39,8 @@ public:
 
     auto readAmbientLightData(uint16_t &channel1, uint16_t &channel0) -> bool;
 
+    auto readPredictedDutyCycle() -> int;
+
     // This should happen periodically to check the ambient light and adjust the screen lighting
     // accordingly
     void checkAmbientLight(int fadeMs = 1000, int timeoutMs = 100);
@@ -49,6 +51,7 @@ protected:
     // Adjusting the number of samples here will change the responsiveness of the ambient light
     // adjustments
     MovingAverage<int, 5> movingAverage_;
+    bool enabled_ = false;
 
     // Duty cycle as predicted by the ambient light sensor
     int predictedDutyCycle_ = 0;

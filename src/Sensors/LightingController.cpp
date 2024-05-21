@@ -33,7 +33,7 @@ auto LightingController::checkSensorAvailable() -> bool {
 
 void LightingController::begin() {
     if (enabled_) {
-        return
+        return;
     }
     // Not pictured here: all the LEDC configuration that happens in PlatformESP32.cpp. We keep that
     // code over there because the LEDC driver is configured globally and we'll probably also want
@@ -71,7 +71,7 @@ void LightingController::setOverrideValuePercent(int percent) {
     setCurrentDutyCycle(overrideDutyCycle_, 100);
 }
 
-[[nodiscard]] auto getCurrentDutyCycle() const -> int {
+auto LightingController::getCurrentDutyCycle() const -> int {
     if (overrideDutyCycle_ != -1) {
         return overrideDutyCycle_;
     } else {

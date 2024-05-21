@@ -82,7 +82,7 @@ BLESyncService bleSyncService;
 #endif
 
 #include "Sensors/LightingController.hpp"
-LightingController lightingController;
+LightingController lightingController(prefs);
 
 #if SIMULATOR
 #include "Storage/PosixFileSystem.hpp"
@@ -304,16 +304,14 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
             }
         });
 
-        xTaskCreatePinnedToCore(
-            [](void *) {
+        xTaskCreatePinnedToCore([](void *) {
             while (powerManager.state() != PowerState::ShuttingDown) {
                 powerManager.loop();
                 vTaskDelay(1000 / portTICK_PERIOD_MS);
             }
             log_d("Background loop task exited");
             vTaskDelete(nullptr);
-            },
-            "BackgroundPowerLoop", 4096, nullptr, 1, nullptr, 1);
+        }, "BackgroundPowerLoop", 4096, nullptr, 1, nullptr, 1);
         BackgroundSyncAndSleep(powerManager, prefs, localStore, telemetry);
 
         // Should never get here, the system should be asleep
@@ -388,8 +386,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         lightingController.setOverrideValuePercent(100);
 
         // Also kick off a task to try to content sync every minute or so
-        xTaskCreatePinnedToCore(
-            [](void *) {
+        xTaskCreatePinnedToCore([](void *) {
             while (powerManager.state() != PowerState::ShuttingDown) {
                 PreferencesStore::syncReason = SyncReason::Periodic;
                 BackgroundSync(powerManager, prefs, localStore, telemetry);
@@ -397,8 +394,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
             }
             log_d("Sync loop task exited");
             vTaskDelete(nullptr);
-            },
-            "BackgroundSync", 4096, nullptr, 1, nullptr, 1);
+        }, "BackgroundSync", 4096, nullptr, 1, nullptr, 1);
     }
 
 #if USE_BLE
