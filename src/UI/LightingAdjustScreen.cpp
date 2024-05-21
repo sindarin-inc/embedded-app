@@ -20,48 +20,48 @@ auto LightingAdjustScreen::layout(LayoutContext &context, Size size) -> Size {
     int spacing = 8;
 
     // Sublayout for centering all the main content in the view
-    context.setSublayoutFrame({{0, 0}, {size.width, size.height}},
-                              LayoutOptionsSizeToFit | LayoutOptionsAlignCenter,
-                              [this, spacing](LayoutContext &context, Size size) -> Size {
-        // Sublayout for horizontally centering the lightbulb and bar
-        auto bulbAndBarRect =
-            context.setSublayoutFrame({{0, 0}, {size.width, size.height}},
-                                      LayoutOptionsSizeToFit | LayoutOptionsAlignCenterHorizontal,
-                                      [this, spacing](LayoutContext &context, Size size) -> Size {
-            int x = 0, y = 0;
-            auto lightbulbRect =
-                context.setViewFrame(lightbulbView_, {{x, y}, {0, 0}}, LayoutOptionsSizeToFit);
-            x += lightbulbRect.size.width + spacing;
+    context.setSublayoutFrame(
+        {{0, 0}, {size.width, size.height}}, LayoutOptionsSizeToFit | LayoutOptionsAlignCenter,
+        [this, spacing](LayoutContext &context, Size size) -> Size {
+            // Sublayout for horizontally centering the lightbulb and bar
+            auto bulbAndBarRect = context.setSublayoutFrame(
+                {{0, 0}, {size.width, size.height}},
+                LayoutOptionsSizeToFit | LayoutOptionsAlignCenterHorizontal,
+                [this, spacing](LayoutContext &context, Size size) -> Size {
+                    int x = 0, y = 0;
+                    auto lightbulbRect = context.setViewFrame(lightbulbView_, {{x, y}, {0, 0}},
+                                                              LayoutOptionsSizeToFit);
+                    x += lightbulbRect.size.width + spacing;
 
-            Rect barRectFrame = {{x, y}, {10, lightbulbRect.size.height}};
+                    Rect barRectFrame = {{x, y}, {10, lightbulbRect.size.height}};
 
-            auto barRect = context.setViewFrame(barView_, barRectFrame);
+                    auto barRect = context.setViewFrame(barView_, barRectFrame);
 
-            auto lightingPercent = lightingController_.getCurrentPercent();
-            int fillHeight = (lightingPercent * barRect.size.height) / 100;
-            int fillTop = barRect.origin.y + barRect.size.height - fillHeight;
+                    auto lightingPercent = lightingController_.getCurrentPercent();
+                    int fillHeight = (lightingPercent * barRect.size.height) / 100;
+                    int fillTop = barRect.origin.y + barRect.size.height - fillHeight;
 
-            context.setViewFrame(fillView_, {{x, fillTop}, {10, fillHeight}});
+                    context.setViewFrame(fillView_, {{x, fillTop}, {10, fillHeight}});
 
-            y += lightbulbRect.size.height;
-            return {barRect.right(), y};
+                    y += lightbulbRect.size.height;
+                    return {barRect.right(), y};
+                });
+
+            int y = 0;
+            y += bulbAndBarRect.size.height + spacing;
+
+            auto firstLineRect =
+                context.setViewFrame(firstLine_, {{0, y}, {size.width, 0}},
+                                     LayoutOptionsSizeToFit | LayoutOptionsAlignCenter);
+            y += firstLineRect.size.height;
+
+            auto secondLineRect =
+                context.setViewFrame(secondLine_, {{0, y}, {size.width, 0}},
+                                     LayoutOptionsSizeToFit | LayoutOptionsAlignCenter);
+            y += secondLineRect.size.height;
+
+            return {size.width, y};
         });
-
-        int y = 0;
-        y += bulbAndBarRect.size.height + spacing;
-
-        auto firstLineRect =
-            context.setViewFrame(firstLine_, {{0, y}, {size.width, 0}},
-                                 LayoutOptionsSizeToFit | LayoutOptionsAlignCenter);
-        y += firstLineRect.size.height;
-
-        auto secondLineRect =
-            context.setViewFrame(secondLine_, {{0, y}, {size.width, 0}},
-                                 LayoutOptionsSizeToFit | LayoutOptionsAlignCenter);
-        y += secondLineRect.size.height;
-
-        return {size.width, y};
-    });
 
     // Put the arrow on the right and left -- either is fine to exit the screen
     context.setViewFrame(leftArrowView_, {{0, size.height / 2 - 5}, {5, 10}});
