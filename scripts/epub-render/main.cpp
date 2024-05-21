@@ -126,8 +126,22 @@ int main(int argc, char **argv) {
 
     display->updateDisplay(DisplaySystem::UpdateType::FULL, true);
 
+    unsigned char *image_data;
+
+    image_data = (unsigned char *)display->buffer().get();
+
+    // If the pixel is white, change it to the offwhite to make it look nicer.
+    for (int y = 0; y < EinkET013TT1_PIXEL_HEIGHT; ++y) {
+        for (int x = 0; x < EinkET013TT1_PIXEL_WIDTH; ++x) {
+            int index = (y * EinkET013TT1_PIXEL_WIDTH + x);
+            if (image_data[index] == 255) {
+                image_data[index] = 225;
+            }
+        }
+    }
+
     if (!stbi_write_png(outputPath.c_str(), EinkET013TT1_PIXEL_WIDTH, EinkET013TT1_PIXEL_HEIGHT, 1,
-                        display->buffer().get(), 0)) {
+                        image_data, 0)) {
         std::cerr << "Unable to save rendered image to " << outputPath << std::endl;
         return 1;
     }
