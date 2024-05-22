@@ -99,7 +99,8 @@ void ReadableScreen::updateBookmarkStatus() {
         // the current page range, then turn the bookmark on for this page.
 
         // Ensure that the current chapter matches the place in the bookmark
-        if (bookmark.firstPlace->isFor(DocType::EPUB)) {
+        auto isEpub = bookmark.firstPlace->isFor(DocType::EPUB);
+        if (isEpub) {
             if (std::dynamic_pointer_cast<EPubPlace>(bookmark.firstPlace)->getHRef() !=
                 std::dynamic_pointer_cast<EPubPlace>(readable_->place)->getHRef()) {
                 continue;
@@ -107,24 +108,19 @@ void ReadableScreen::updateBookmarkStatus() {
         }
 
         uint32_t currentPlace = readable_->place->getOffset();
-        uint32_t nextPagePlace = newPlace_->getOffset();
-        uint32_t averagePlace =
-            (bookmark.lastPlace->getOffset() - bookmark.firstPlace->getOffset()) / 2 +
-            bookmark.firstPlace->getOffset();
-        auto bookmarkSingleChapter =
-            (bookmark.firstPlace->isFor(DocType::EPUB) &&
-             std::dynamic_pointer_cast<EPubPlace>(bookmark.firstPlace)->getHRef() ==
-                 std::dynamic_pointer_cast<EPubPlace>(bookmark.lastPlace)->getHRef()) ||
-            bookmark.firstPlace->isFor(DocType::TXT);
-        auto bookmarkMatchesChapter =
-            (bookmark.firstPlace->isFor(DocType::EPUB) &&
-             std::dynamic_pointer_cast<EPubPlace>(bookmark.firstPlace)->getHRef() ==
-                 std::dynamic_pointer_cast<EPubPlace>(readable_->place)->getHRef()) ||
-            bookmark.firstPlace->isFor(DocType::TXT);
-        if ((bookmarkSingleChapter && (averagePlace >= currentPlace) &&
-             (averagePlace <= nextPagePlace)) ||
-            (!bookmarkSingleChapter && bookmark.firstPlace->getOffset() >= currentPlace &&
-             bookmarkMatchesChapter)) {
+        uint32_t bookmarkAveragePlace;
+        uint16_t pageLength = renderer_.getTotalLengthOfLines();
+        if (isEpub && (std::dynamic_pointer_cast<EPubPlace>(bookmark.firstPlace)->getHRef() ==
+                       std::dynamic_pointer_cast<EPubPlace>(bookmark.lastPlace)->getHRef())) {
+            bookmarkAveragePlace =
+                bookmark.firstPlace->getOffset() +
+                (bookmark.lastPlace->getOffset() - bookmark.firstPlace->getOffset()) / 2;
+        } else {
+            bookmarkAveragePlace = bookmark.firstPlace->getOffset() + (pageLength / 2);
+        }
+
+        if (bookmarkAveragePlace >= currentPlace &&
+            bookmarkAveragePlace <= (currentPlace + pageLength)) {
             if (bookmark.status == BOOKMARK_ON) {
                 inBookmark_ = true;
             } else {
