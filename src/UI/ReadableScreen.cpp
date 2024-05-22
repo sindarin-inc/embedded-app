@@ -106,11 +106,21 @@ void ReadableScreen::updateBookmarkStatus() {
             }
         }
 
+        uint32_t currentPlace = readable_->place->getOffset();
+        uint32_t nextPagePlace = newPlace_->getOffset();
         uint32_t averagePlace =
             (bookmark.lastPlace->getOffset() - bookmark.firstPlace->getOffset()) / 2 +
             bookmark.firstPlace->getOffset();
-        if ((averagePlace >= readable_->place->getOffset()) &&
-            (averagePlace <= newPlace_->getOffset())) {
+        auto bookmarkSingleChapter =
+            (std::dynamic_pointer_cast<EPubPlace>(bookmark.firstPlace)->getHRef() ==
+             std::dynamic_pointer_cast<EPubPlace>(bookmark.lastPlace)->getHRef());
+        auto bookmarkMatchesChapter =
+            (std::dynamic_pointer_cast<EPubPlace>(bookmark.firstPlace)->getHRef() ==
+             std::dynamic_pointer_cast<EPubPlace>(readable_->place)->getHRef());
+        if ((bookmarkSingleChapter && (averagePlace >= currentPlace) &&
+             (averagePlace <= nextPagePlace)) ||
+            (!bookmarkSingleChapter && bookmark.firstPlace->getOffset() >= currentPlace &&
+             bookmarkMatchesChapter)) {
             if (bookmark.status == BOOKMARK_ON) {
                 inBookmark_ = true;
             } else {
