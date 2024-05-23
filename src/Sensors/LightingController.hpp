@@ -24,7 +24,7 @@ public:
 
     // Disable updates and keeps a specific lighting setting (for when the user adjusts the setting
     // manually)
-    void setOverrideValuePercent(int percent);
+    void setOverrideValuePercent(int percent, bool userInitiated = false);
 
     [[nodiscard]] auto getCurrentDutyCycle() const -> int;
     [[nodiscard]] auto getCurrentPercent() const -> int;

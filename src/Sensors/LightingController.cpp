@@ -51,7 +51,7 @@ void LightingController::shutdown(int fadeMs) {
     setCurrentDutyCycle(0, fadeMs);
 }
 
-void LightingController::setOverrideValuePercent(int percent) {
+void LightingController::setOverrideValuePercent(int percent, bool userInitiated) {
     auto dutyCycle = percent / 7;
     if (dutyCycle == 0) {
         dutyCycle = 1;
@@ -61,9 +61,11 @@ void LightingController::setOverrideValuePercent(int percent) {
         dutyCycle *= dutyCycle;
     }
 
-    // Note the difference in the predicted value and the override value
-    int diff = dutyCycle - readPredictedDutyCycle();
-    prefs_.brightnessOffset.set(diff);
+    if (userInitiated) {
+        // Note the difference in the predicted value and the override value
+        int diff = dutyCycle - readPredictedDutyCycle();
+        prefs_.brightnessOffset.set(diff);
+    }
 
     log_d("Override duty cycle: %d (%d%%)", dutyCycle, percent);
     overrideDutyCycle_ = dutyCycle;

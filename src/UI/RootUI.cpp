@@ -324,7 +324,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
             auto contentSyncScreen =
                 new ContentSyncScreen(*display, localStore, this->prefs_, this->telemetry_);
-            lightingController.setOverrideValuePercent(lightingController.getCurrentPercent());
             display->setFont(mainMenu->getMyStyle().navigationFont);
             this->setCurrentScreen(*contentSyncScreen);
             contentSyncScreen->setBackCallback([this, contentSyncScreen, mainMenu, display]() {
