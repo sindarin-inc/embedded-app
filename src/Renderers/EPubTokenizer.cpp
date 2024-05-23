@@ -1827,7 +1827,7 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint32_t len) -> bool 
 
                 // Count the number of nbsp in a row, to limit the number of them that
                 // could be present in a word. The current limit is 4
-                const uint8_t NBSP_COUNT_LIMIT = 4;
+                const uint8_t nbspCountLimit = 4;
                 uint8_t nbspCount = 0;
 
                 do {
@@ -1842,7 +1842,7 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint32_t len) -> bool 
                             streamOffset += (newStrLocation - str);
                             if ((trans[0] == 0xC2U) && (trans[1] == 0xA0U)) {
                                 // That is a nbsp character, limit to 4 in a row
-                                if (nbspCount < NBSP_COUNT_LIMIT) {
+                                if (nbspCount < nbspCountLimit) {
                                     nbspCount += 1;
                                     if (!tokens_.cStrIsFull()) {
                                         tokens_.addByte(*textToken_, ' ');
@@ -1881,7 +1881,7 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint32_t len) -> bool 
                                 nextByte();
                                 if (curChar == 0xA0U) {
                                     // This is a nbsp character, limit to 4 in a row
-                                    if (nbspCount < NBSP_COUNT_LIMIT) {
+                                    if (nbspCount < nbspCountLimit) {
                                         nbspCount += 1;
                                         tokens_.addByte(*textToken_, ' ');
                                     } else {
