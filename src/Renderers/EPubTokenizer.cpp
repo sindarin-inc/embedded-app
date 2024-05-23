@@ -1840,7 +1840,8 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint32_t len) -> bool 
                         if (*trans != '\0') {
                             len -= (newStrLocation - str);
                             streamOffset += (newStrLocation - str);
-                            if ((trans[0] == 0xC2U) && (trans[1] == 0xA0U)) {
+                            if ((static_cast<uint8_t>(trans[0]) == 0xC2U) &&
+                                (static_cast<uint8_t>(trans[1]) == 0xA0U)) {
                                 // That is a nbsp character, limit to 4 in a row
                                 if (nbspCount < nbspCountLimit) {
                                     nbspCount += 1;
