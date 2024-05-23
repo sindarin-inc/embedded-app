@@ -836,8 +836,12 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     }
 
     experimentalSettingsMenu->addMenuItem(MenuItem("Apply lighting offset", [this]() {
-        this->prefs_.brightnessOffsetEnabled.set(
-            !this->prefs_.brightnessOffsetEnabled.get().value_or(false));
+        auto newValue = !this->prefs_.brightnessOffsetEnabled.get().value_or(false);
+        if (newValue) {
+            this->prefs_.brightnessOffsetEnabled.set(newValue);
+        } else {
+            this->prefs_.brightnessOffsetEnabled.remove();
+        }
     }));
 
     if (prefs_.brightnessOffsetEnabled.get().value_or(false)) {
