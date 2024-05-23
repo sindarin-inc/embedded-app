@@ -836,9 +836,16 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         experimentalSettingsMenu->setToggleLastItem(false);
     }
 
-    experimentalSettingsMenu->addMenuItem(MenuItem("Upload Crashes on Sync", [this]() {
-        this->prefs_.noUploadCrashes.set(!this->prefs_.noUploadCrashes.get().value_or(false));
+    experimentalSettingsMenu->addMenuItem(MenuItem("Apply lighting offset", [this]() {
+        this->prefs_.brightnessOffsetEnabled.set(
+            !this->prefs_.brightnessOffsetEnabled.get().value_or(false));
     }));
+
+    if (prefs_.brightnessOffsetEnabled.get().value_or(false)) {
+        experimentalSettingsMenu->setToggleLastItem(true);
+    } else {
+        experimentalSettingsMenu->setToggleLastItem(false);
+    }
 
     // This one is opposite because we want to default it to true and make them
     // turn it off if they don't want it. At least for beta.

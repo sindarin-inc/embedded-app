@@ -128,10 +128,12 @@ void LightingController::checkAmbientLight(int fadeMs, int timeoutMs) {
     movingAverage_.add(std::min(channel1, static_cast<uint16_t>(1000)));
 
     predictedDutyCycle_ = readPredictedDutyCycle();
-    // Adjust based on the offset
-    predictedDutyCycle_ =
-        std::clamp(predictedDutyCycle_ + prefs_.brightnessOffset.get().value_or(0), 1,
-                   static_cast<int>(GetMaxLightingDutyCycle()));
+    if (prefs_.brightnessOffsetEnabled.get().value_or(false)) {
+        // Adjust based on the offset
+        predictedDutyCycle_ =
+            std::clamp(predictedDutyCycle_ + prefs_.brightnessOffset.get().value_or(0), 1,
+                       static_cast<int>(GetMaxLightingDutyCycle()));
+    }
 
     // Bail out early if we have overridden the value here
     if (overrideDutyCycle_ != -1) {

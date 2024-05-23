@@ -363,6 +363,7 @@ public:
           bleAuthKey(*this, "ble-auth-key"),
           blePower(*this, "ble-power"),
           brightnessOffset(*this, "brightness-off"),
+          brightnessOffsetEnabled(*this, "bright-off-en"),
           preferencesStoreMigrationVersion_(*this, "ps-version"){};
     // clang-format on
 
@@ -617,6 +618,7 @@ public:
     // battery power. But there might be some tweaking we could do to improve BLE reliability.
     PrefsItem<uint32_t> blePower;
     PrefsItem<int> brightnessOffset;
+    PrefsItem<bool> brightnessOffsetEnabled;
 
     // These are RTC_SLOW_MEM variables that persist across deep sleep / wake cycles but will be
     // reset on power cycles
