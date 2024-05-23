@@ -43,10 +43,25 @@ TEST_CASE("Test some individual EPub formatting edge cases", "[epub-format]") {
 
         Renderer renderer(*display);
         renderer.setStream(epubFile);
-        renderer.renderPage(nullptr);
+        renderer.renderPage(std::make_shared<EPubPlace>(0, "newlines_without_spaces.xhtml"));
         display->updateDisplay(DisplaySystem::UpdateType::FULL, true);
 
         ASSERT_VIEW_UNCHANGED(display, "NewLineWithoutSpace");
+    }
+
+    SECTION("Test that >4 non-breaking space characters get collapsed") {
+        auto readable = std::make_shared<Readable>();
+        readable->readableType = "book";
+
+        auto file = fs.open("/Fixtures/epub/formatting.epub");
+        auto epubFile = std::make_shared<EPubFile>(file, readable);
+
+        Renderer renderer(*display);
+        renderer.setStream(epubFile);
+        renderer.renderPage(std::make_shared<EPubPlace>(0, "multiple_nbsp.xhtml"));
+        display->updateDisplay(DisplaySystem::UpdateType::FULL, true);
+
+        ASSERT_VIEW_UNCHANGED(display, "CollapsedNBPS");
     }
 }
 
