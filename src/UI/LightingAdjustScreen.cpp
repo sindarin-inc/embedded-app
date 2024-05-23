@@ -97,9 +97,16 @@ void LightingAdjustScreen::logTelemetry(int setting, const char *direction) {
         uint16_t channel1, channel0;
         lightingController_.readAmbientLightData(channel1, channel0);
         int darkMode = this->prefs_.darkMode.get().value_or(false) ? 1 : 0;
-        telemetry_.logMetric(
-            TelemetryField::METRIC_LIGHTING, setting,
-            {{"dir", direction}, {"ch1", channel1}, {"ch0", channel0}, {"dark", darkMode}});
+        // Grab the current offset
+        auto offset = prefs_.brightnessOffset.get().value_or(0);
+        telemetry_.logMetric(TelemetryField::METRIC_LIGHTING, setting,
+                             {{"dir", direction},
+                              {"ch1", channel1},
+                              {"ch0", channel0},
+                              {"dark", darkMode},
+                              {"duty", lightingController_.getCurrentDutyCycle()},
+                              {"pred", lightingController_.readPredictedDutyCycle()},
+                              {"off", offset}});
     });
 }
 
