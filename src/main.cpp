@@ -67,11 +67,6 @@ BLESettings bleSettings(&prefs);
 #include "Communications/BLEImprov.hpp"
 #endif
 
-#if USE_TURN_TOUCH_REMOTE
-#include "Inputs/TTRemoteInput.hpp"
-TTRemoteInput ttRemoteInput(prefs);
-#endif
-
 #if USE_BLE_SERVER_PROXY
 #include "Communications/BLESyncService.hpp"
 BLESyncService bleSyncService;
@@ -93,6 +88,12 @@ LittleFSFileSystem fileSystem;
 #endif
 
 Telemetry telemetry(fileSystem, prefs);
+
+#if USE_TURN_TOUCH_REMOTE
+#include "Inputs/TTRemoteInput.hpp"
+TTRemoteInput ttRemoteInput(prefs, telemetry);
+#endif
+
 PowerManager powerManager(fileSystem, prefs, lightingController, myDisplay, telemetry);
 LocalStore localStore(fileSystem, prefs, powerManager.battery, telemetry);
 RootUI rootUi(prefs, powerManager, telemetry);
