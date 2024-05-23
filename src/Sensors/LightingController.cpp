@@ -64,6 +64,8 @@ void LightingController::setOverrideValuePercent(int percent, bool userInitiated
     if (userInitiated) {
         // Note the difference in the predicted value and the override value
         int diff = dutyCycle - readPredictedDutyCycle();
+        // Limit diff to +/- 60
+        diff = std::clamp(diff, -60, 60);
         prefs_.brightnessOffset.set(diff);
     }
 
