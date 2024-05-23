@@ -1,23 +1,58 @@
 all: build
 
-.PHONY: sim
-sim:
-	pio run -e simulator -t upload
+# Use all but 1 core for building
+NUM_CORES := $(shell nproc)
+NUM_CORES := $(shell echo $$(( $(NUM_CORES) - 1 )))
+NUM_CORES := $(shell [ $(NUM_CORES) -lt 1 ] && echo 1 || echo $(NUM_CORES))
 
-.PHONY: sim8
-sim8:
-	pio run -e simulator-8bit -t upload
+MAKE := nice make -j$(NUM_CORES)
+CMAKE_FLAGS = -DCMAKE_BUILD_TYPE=Debug
+
+.PHONY: sim-build
+sim-build:
+	mkdir -p lib/Simulator/build
+	cd lib/Simulator/build && cmake $(CMAKE_FLAGS) .. && $(MAKE)
+
+.PHONY: sim-run
+sim: sim-build
+	./lib/Simulator/build/simulator
+
+.PHONY: sim8-build
+sim8-build:
+	mkdir -p lib/Simulator/build8
+	cd lib/Simulator/build8 && cmake $(CMAKE_FLAGS) -DENABLE_8BIT_DISPLAY=ON .. && $(MAKE)
+
+.PHONY: sim-run8
+sim8: sim8-build
+	./lib/Simulator/build8/simulator
 
 .PHONY: lldb
-lldb:
-	pio run -e simulator && lldb .pio/build/simulator/program
+lldb: sim
+	lldb lib/Simulator/build/simulator
+
+.PHONY: lldb8
+lldb8: sim8
+	lldb lib/Simulator/build8/simulator
+
+.PHONY: test-build
+test-build:
+	mkdir -p test/CatchTests/build
+	cd test/CatchTests/build && cmake $(CMAKE_FLAGS) .. && $(MAKE)
 
 .PHONY: test
-test:
-	pio run -e tests
-	.pio/build/tests/program
-	.pio/build/tests/program '[epub]'
-	.pio/build/tests/program '[content-sync]'
+test: test-build
+	./test/CatchTests/build/tests
+	./test/CatchTests/build/tests '[epub]'
+	./test/CatchTests/build/tests '[content-sync]'
+
+.PHONY: epub-render-build
+epub-render-build:
+	mkdir -p scripts/epub-render/build
+	cd scripts/epub-render/build && cmake $(CMAKE_FLAGS) .. && $(MAKE)
+
+.PHONY: epub-render
+epub-render: epub-render-build
+	./scripts/epub-render/build/epub-render
 
 .PHONY: check_idf
 check_idf:
@@ -62,6 +97,10 @@ monitor: check_idf
 .PHONY: clean
 clean:
 	rm -fr build
+	rm -fr lib/Simulator/build
+	rm -fr lib/Simulator/build8
+	rm -fr scripts/epub-render/build
+	rm -fr test/CatchTests/build
 
 .PHONY: clang-tidy
 clang-tidy: check_idf

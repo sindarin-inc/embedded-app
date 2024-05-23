@@ -14,10 +14,9 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        pioenv:
-          # Seems like RISCV ULP compilation is busted in PlatformIO at least for IDF 5.0.1
-          - simulator
-          # - simulator-wasm
+        target:
+          - sim
+          - sim8
 
     steps:
       - name: Check out code
@@ -30,29 +29,19 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install PlatformIO
-        run: |
-          python -m pip install --upgrade pip
-          pip install platformio
-
       - name: Install SDL
-        if: matrix.pioenv == 'simulator'
         run: sudo apt update && sudo apt install -y libsdl2-dev libsdl2-image-dev
 
-      - name: Install Emscripten
-        if: matrix.pioenv == 'simulator-wasm'
-        uses: mymindstorm/setup-emsdk@v11
-
-      - name: PlatformIO run
+      - name: build
         run: |
           set -o pipefail
-          pio run -e ${{ matrix.pioenv }} 2>&1 | tee ${{ matrix.pioenv }}-build-log.txt
+          make ${{ matrix.target }}-build | tee ${{ matrix.target }}-build-log.txt
 
       - name: Post errors and warnings as annotations
         if: github.event_name == 'pull_request' && (success() || failure())
         run: |
           pip install requests curlify
-          python scripts/parse_warnings.py --filename ${{ matrix.pioenv }}-build-log.txt --title ${{ matrix.pioenv }}-build
+          python scripts/parse_warnings.py --filename ${{ matrix.target }}-build-log.txt --title ${{ matrix.target }}-build
         env:
           PR_GITHUB_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

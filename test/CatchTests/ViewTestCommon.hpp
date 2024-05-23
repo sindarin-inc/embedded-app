@@ -1,6 +1,7 @@
 #include <memory>
 #include <string>
 
+#include "DisplayUtil.hpp"
 #include "Displays/DisplayEinkET013TT1.hpp"
 #include "Inputs/RemoteInput.hpp"
 #include "Storage/PreferencesStore.hpp"
@@ -38,8 +39,6 @@ auto CheckViewUnchanged(std::shared_ptr<DisplayEinkET013TT1> display,
 #define ASSERT_VIEW_UNCHANGED(display, key) CHECK(CheckViewUnchanged(display, key).passed)
 
 auto GetRootDisplay() -> DisplayEinkET013TT1 &;
-
-std::shared_ptr<DisplayEinkET013TT1> createDisplay();
 
 void SetupFileSystemMock(const std::string &directory);
 

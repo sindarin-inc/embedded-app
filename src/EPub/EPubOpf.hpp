@@ -13,6 +13,7 @@ public:
     EPubOpf(const char *path) : path_(path) {}
 
     struct ManifestItem {
+        SpiramString id;
         SpiramString href;
         SpiramString mediaType;
     };

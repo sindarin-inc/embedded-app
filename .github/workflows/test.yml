@@ -10,7 +10,6 @@ jobs:
   catch2:
     name: "Build and Run Catch2"
     runs-on: ubuntu-latest
-
     steps:
       - name: Check out code
         uses: actions/checkout@v3
@@ -18,32 +17,22 @@ jobs:
           fetch-depth: 0
           submodules: "recursive"
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.11"
-
-      - name: Install pip dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install platformio
-
       - name: Build unit tests binary
         run: |
-          pio run -e tests
+          make test-build
 
       - name: Run unit tests
         run: |
-          ./.pio/build/tests/program --reporter console --reporter junit::out=catch-results-main.xml
+          ./test/CatchTests/build/tests --reporter console --reporter junit::out=catch-results-main.xml
 
       # Because of a FreeRTOS startup/shutdown issue, these must be run separately
       - name: Run epub tests
         run: |
-          ./.pio/build/tests/program '[epub]' --reporter console --reporter junit::out=catch-results-epub.xml
+          ./test/CatchTests/build/tests '[epub]' --reporter console --reporter junit::out=catch-results-epub.xml
 
-      - name: Run epub tests
+      - name: Run content-sync tests
         run: |
-          ./.pio/build/tests/program '[epub]' --reporter console --reporter junit::out=catch-results-sync.xml
+          ./test/CatchTests/build/tests '[content-sync]' --reporter console --reporter junit::out=catch-results-sync.xml
 
       - name: Test Report
         uses: dorny/test-reporter@v1

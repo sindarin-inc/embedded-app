@@ -28,7 +28,8 @@ void EPubOpf::parse(const std::shared_ptr<uint8_t[]> &buffer, uint32_t length,
 
         for (auto item : manifest.children("item")) {
             manifest_[item.attribute("id").value()] =
-                ManifestItem{.href = item.attribute("href").value(),
+                ManifestItem{.id = item.attribute("id").value(),
+                             .href = item.attribute("href").value(),
                              .mediaType = item.attribute("media-type").value()};
         }
 
