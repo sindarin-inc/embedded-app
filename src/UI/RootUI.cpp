@@ -308,7 +308,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     auto makeContentSyncMenuItem = [this, display, &localStore, mainMenu,
                                     &lightingController](const char *title) -> MenuItem {
         return {title,
-                [this, display, &localStore, mainMenu, &lightingController]() {
+                [this, display, &localStore, mainMenu]() {
             // If we're not yet paired, show the app screen instead
             if (PreferencesStore::paired == PairedStatus::Unpaired) {
                 auto appDownloadScreen = new AppDownloadScreen(*display);
