@@ -305,8 +305,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         }
     }
 
-    auto makeContentSyncMenuItem = [this, display, &localStore, mainMenu,
-                                    &lightingController](const char *title) -> MenuItem {
+    auto makeContentSyncMenuItem = [this, display, &localStore,
+                                    mainMenu](const char *title) -> MenuItem {
         return {title,
                 [this, display, &localStore, mainMenu]() {
             // If we're not yet paired, show the app screen instead
