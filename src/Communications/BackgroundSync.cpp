@@ -99,7 +99,7 @@ void BackgroundSyncInternal(PowerManager &powerManager, PreferencesStore &prefs,
                 xEventGroupSetBits(backgroundGroup, 1);
             }
         }
-    });
+        });
 
     // Wait for content sync to finish
     bits = xEventGroupWaitBits(backgroundGroup, 1, pdTRUE, pdTRUE, pdMS_TO_TICKS(10 * 60 * 1000));
