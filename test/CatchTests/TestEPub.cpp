@@ -63,6 +63,30 @@ TEST_CASE("Test some individual EPub formatting edge cases", "[epub-format]") {
 
         ASSERT_VIEW_UNCHANGED(display, "CollapsedNBPS");
     }
+
+    SECTION("Test that all glyphs render inside the EPUB") {
+        auto readable = std::make_shared<Readable>();
+        readable->readableType = "book";
+
+        auto file = fs.open("/Fixtures/epub/glyphs.epub");
+        auto epubFile = std::make_shared<EPubFile>(file, readable);
+
+        Renderer renderer(*display);
+        renderer.setStream(epubFile);
+        auto place = std::make_shared<EPubPlace>(0, "Basic Latin.xhtml");
+
+        // Render all pages
+        int i = 0;
+        while (!renderer.atEndOfFile()) {
+            auto chapter = epubFile->getToc()[epubFile->getChapterIdx(place)];
+            auto [newPlace, _] = renderer.renderPage(place);
+            place = std::dynamic_pointer_cast<EPubPlace>(newPlace);
+            display->updateDisplay(DisplaySystem::UpdateType::FULL, true);
+            ASSERT_VIEW_UNCHANGED(display, "EPubGlyphTest/" + std::to_string(i) + "-" +
+                                               std::string(chapter.title));
+            i++;
+        }
+    }
 }
 
 TEST_CASE("Test EPub Books Rendering", "[.][epub]") {
