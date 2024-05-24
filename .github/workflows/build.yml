@@ -9,7 +9,7 @@ on:
       - "release/v*"
 
 jobs:
-  build:
+  build-sim:
     name: "Build Simulator"
     runs-on: ubuntu-latest
     strategy:
@@ -47,7 +47,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   build-idf:
-    name: "idf.py build"
+    name: "Build Firmware"
     runs-on:
       group: Medium
     strategy:
@@ -99,10 +99,32 @@ jobs:
           name: embedded-app-${{ github.sha }}-IDF${{ matrix.idf_version }}
           path: artifact
 
-  release:
-    if: contains(github.ref, 'refs/tags/release/v')
-    needs: build-idf
-    uses: ./.github/workflows/release.yml
-    secrets:
-      slack-webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
-      sol-auth-tolkien: ${{ secrets.SOL_AUTH_TOLKIEN }}
+  build-epub-render:
+    name: "Build epub-render"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+        with:
+          submodules: "recursive"
+
+      # Build scripts/epub-render with cmake
+      - name: Build epub-render
+        run: |
+          cd scripts/epub-render
+          mkdir -p build
+          cd build
+          cmake ..
+          make -j
+
+      - name: Rename binary with Git SHA
+        run: |
+          cd scripts/epub-render/build
+          mv epub-render epub-render-${{ github.sha }}
+
+      - name: Upload binaries
+        uses: actions/upload-artifact@v3
+        with:
+          name: epub-render-${{ github.sha }}
+          path: scripts/epub-render/build/epub-render-${{ github.sha }}
