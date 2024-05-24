@@ -187,7 +187,7 @@ jobs:
           mv epub-render-${{ github.sha }}/epub-render-${{ github.sha }} epub-render-${{ github.sha }}/epub-render-linux-${{ steps.set-version.outputs.version }}
 
       - name: Zip back up the epub-render build
-        run: zip -r epub-render-${{ steps.set-version.outputs.version }}-${{ github.sha }}.zip epub-render-${{ steps.set-version.outputs.version }}
+        run: zip -r epub-render-${{ steps.set-version.outputs.version }}-${{ github.sha }}.zip epub-render-${{ github.sha }}
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
