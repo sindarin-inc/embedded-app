@@ -1889,7 +1889,8 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint32_t len) -> bool 
                                         textCharCount_ -= 1;
                                     }
                                 } else {
-                                    tokens_.addByte(*(textToken_ - 1), 0xC2U);
+                                    tokens_.addByte(*textToken_, 0xC2U);
+                                    tokens_.addByte(*textToken_, curChar);
                                     nbspCount = 0; // not a nbsp, reset counter
                                 }
                             } else {
