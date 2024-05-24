@@ -270,15 +270,11 @@ void ContentSyncScreen::begin() {
                 this->updateState(state);
                 this->render(this->display_);
 
-                if (state.state == ContentSyncState::Synced) {
+                if (state.state == ContentSyncState::Synced ||
+                    state.state == ContentSyncState::AlreadySynced) {
                     log_d("Content sync done, rebooting");
                     Delay(2000);
                     PowerManager::getInstance().reboot();
-                } else if (state.state == ContentSyncState::AlreadySynced) {
-                    log_d("Content sync already synced");
-                    Delay(2000);
-                    resumeBLE();
-                    back();
                 } else if (state.state == ContentSyncState::Failure) {
                     // If we got any new content force a restart, otherwise just go back
                     if (state.booksDownloaded > 0 || state.articlesDownloaded > 0) {
