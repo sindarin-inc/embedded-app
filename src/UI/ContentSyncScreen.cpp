@@ -158,7 +158,20 @@ void ContentSyncScreen::render(DisplaySystem &display) {
         checkmarkViews_[2]->setHidden(false);
         progressBarsViews_[3]->setProgress(state_.percentage);
         break;
-    case ContentSyncState::AlreadySynced:
+    case ContentSyncState::AlreadySynced: {
+        progressBarsViews_[0]->setProgress(100);
+        progressBarsViews_[1]->setProgress(100);
+        progressBarsViews_[2]->setProgress(100);
+        progressBarsViews_[3]->setProgress(100);
+        checkmarkViews_[0]->setHidden(false);
+        checkmarkViews_[1]->setHidden(false);
+        checkmarkViews_[2]->setHidden(false);
+        checkmarkViews_[3]->setHidden(false);
+
+        std::string message = "Already in sync!";
+        showPopup(message);
+        break;
+    }
     case ContentSyncState::Synced: {
         progressBarsViews_[0]->setProgress(100);
         progressBarsViews_[1]->setProgress(100);
@@ -270,11 +283,15 @@ void ContentSyncScreen::begin() {
                 this->updateState(state);
                 this->render(this->display_);
 
-                if (state.state == ContentSyncState::Synced ||
-                    state.state == ContentSyncState::AlreadySynced) {
+                if (state.state == ContentSyncState::Synced) {
                     log_d("Content sync done, rebooting");
                     Delay(2000);
                     PowerManager::getInstance().reboot();
+                } else if (state.state == ContentSyncState::AlreadySynced) {
+                    log_d("Content sync already synced");
+                    Delay(2000);
+                    resumeBLE();
+                    back();
                 } else if (state.state == ContentSyncState::Failure) {
                     // If we got any new content force a restart, otherwise just go back
                     if (state.booksDownloaded > 0 || state.articlesDownloaded > 0) {
