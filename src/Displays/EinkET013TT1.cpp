@@ -6,6 +6,7 @@
 #include <cstring>
 #include <esp_err.h>
 
+#include "Misc/Defer.hpp"
 #include "Misc/Platform.hpp"
 #include "sindarin-debug.h"
 
@@ -414,9 +415,14 @@ void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *b
                           int32_t overrideVcom, const EinkET013TT1Waveform &altWaveform,
                           ScreenSide screen, EinkBox box) {
     // Create a notification group to wait for the update to finish
-    auto group = xEventGroupCreate();
+    static EventGroupHandle_t group = nullptr;
+    group = xEventGroupCreate();
+    defer {
+        vEventGroupDelete(group);
+        group = nullptr;
+    };
 
-    einkQueue_->dispatch([this, waveform, buffer, overrideVcom, group, altWaveform, screen, box]() {
+    einkQueue_->dispatch([this, waveform, buffer, overrideVcom, altWaveform, screen, box]() {
         if (!poweredOn_) {
             // This shouldn't happen, we should have been powering on the screen early in the render
             // pipeline before update is called
@@ -425,8 +431,10 @@ void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *b
         }
         updateInternal(waveform, buffer, overrideVcom, altWaveform, screen, box);
 
-        // Release the lock
-        xEventGroupSetBits(group, 1);
+        // Release the lock if it's still valid
+        if (group != nullptr) {
+            xEventGroupSetBits(group, 1);
+        }
 
         // Wait for something else to get queued, otherwise power off
         if (!einkQueue_->waitNotEmpty(100)) {
@@ -443,8 +451,6 @@ void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *b
     if (bits != 1) {
         log_e("Timed out waiting for update to finish!");
     }
-
-    vEventGroupDelete(group);
 }
 
 void EinkET013TT1::writeRegister(Register index, const uint8_t *data, size_t len,
