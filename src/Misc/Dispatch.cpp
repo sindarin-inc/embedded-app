@@ -176,7 +176,7 @@ auto DispatchGetCore0BackgroundQueue(bool create) -> DispatchQueue * {
 
 auto DispatchGetCore1BackgroundQueue(bool create) -> DispatchQueue * {
     if (core1BackgroundQueue == nullptr && create) {
-        core1BackgroundQueue = new DispatchQueue("Core1BG", 1, 10000, 0, 1);
+        core1BackgroundQueue = new DispatchQueue("Core1BG", 1, 10000, 0, 0);
     }
     return core1BackgroundQueue;
 }
