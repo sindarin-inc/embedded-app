@@ -20,12 +20,12 @@ jobs:
 
     steps:
       - name: Check out code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           submodules: "recursive"
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
@@ -59,7 +59,7 @@ jobs:
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
           submodules: "recursive"
@@ -94,7 +94,7 @@ jobs:
           cp build/ota_data_initial.bin artifact
 
       - name: Upload binaries
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: embedded-app-${{ github.sha }}-IDF${{ matrix.idf_version }}
           path: artifact
@@ -105,7 +105,7 @@ jobs:
 
     steps:
       - name: Check out code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           submodules: "recursive"
 
@@ -124,7 +124,7 @@ jobs:
           mv epub-render epub-render-${{ github.sha }}
 
       - name: Upload binaries
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: epub-render-${{ github.sha }}
           path: scripts/epub-render/build/epub-render-${{ github.sha }}
