@@ -128,3 +128,77 @@ jobs:
         with:
           name: epub-render-${{ github.sha }}
           path: scripts/epub-render/build/epub-render-${{ github.sha }}
+
+  release:
+    if: contains(github.ref, 'refs/tags/release/v')
+    name: "Create Release"
+    needs: [build-idf, build-epub-render]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set version
+        id: set-version
+        run: |
+          TAG_NAME="${GITHUB_REF}"
+          VERSION=${TAG_NAME#refs/tags/release/v}
+          echo "::set-output name=version::$VERSION"
+
+      - name: Download firmware binaries
+        id: download-firmware
+        uses: actions/download-artifact@v3
+        with:
+          name: embedded-app-${{ github.sha }}-IDFv5.1
+          path: embedded-app-${{ github.sha }}-IDFv5.1
+
+      - name: Download epub-render binaries
+        id: download-epub-render
+        uses: actions/download-artifact@v3
+        with:
+          name: epub-render-${{ github.sha }}
+          path: epub-render-${{ github.sha }}
+
+      - name: Create firmware release
+        run: |
+          curl -X POST 'https://api.sindarin.com/firmware/' \
+          -H "Authorization: Tolkien ${{ secrets.SOL_AUTH_TOLKIEN }}  " \
+          -F "version=${{ steps.set-version.outputs.version }}" \
+          -F "file=@${{ steps.download-firmware.outputs.download-path }}/embedded-app.bin;type=application/octet-stream" \
+          -F "elf=@${{ steps.download-firmware.outputs.download-path }}/embedded-app.elf;type=application/octet-stream" \
+          -F "role=DEBUG" \
+          -F "device=GLASSES" \
+          -F "git_sha=${{ github.sha }}" \
+          -F "release_notes=TODO"
+
+      - name: Create epub-render release
+        run: |
+          curl -X POST 'https://api.sindarin.com/firmware/' \
+          -H "Authorization: Tolkien ${{ secrets.SOL_AUTH_TOLKIEN }}  " \
+          -F "version=${{ steps.set-version.outputs.version }}" \
+          -F "file=@${{ steps.download-epub-render.outputs.download-path }}/epub-render-${{ github.sha }};type=application/octet-stream" \
+          -F "role=DEBUG" \
+          -F "device=EPUB_RENDER" \
+          -F "git_sha=${{ github.sha }}" \
+          -F "release_notes=TODO"
+
+      - name: Zip back up the firmware build
+        run: zip -r embedded-app-${{ steps.set-version.outputs.version }}-${{ github.sha }}-IDFv5.1.zip embedded-app-${{ github.sha }}-IDFv5.1
+
+      - name: Rename epub-render binary
+        run: |
+          mv epub-render-${{ github.sha }}/epub-render-${{ github.sha }} epub-render-${{ github.sha }}/epub-render-linux-${{ steps.set-version.outputs.version }}
+
+      - name: Zip back up the epub-render build
+        run: zip -r epub-render-${{ steps.set-version.outputs.version }}-${{ github.sha }}.zip epub-render-${{ steps.set-version.outputs.version }}
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: |
+            embedded-app-${{ steps.set-version.outputs.version }}-${{ github.sha }}-IDFv5.1.zip
+            epub-render-${{ steps.set-version.outputs.version }}-${{ github.sha }}.zip
+
+      - name: Notify Slack
+        run: |
+          curl -X POST -H 'Content-type: application/json' \
+          --data "{\"text\":\"New release ${{ steps.set-version.outputs.version }} has been uploaded. See it at https://api.sindarin.com/admin/devices/firmwaredownload/\"}" \
+          ${{ secrets.SLACK_WEBHOOK_URL }}
