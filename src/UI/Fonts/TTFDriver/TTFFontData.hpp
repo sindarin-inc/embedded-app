@@ -7,6 +7,7 @@
 #include <cstring>
 #include <fstream>
 #include <iostream>
+#include <unordered_map>
 
 #include "TTFDefs.hpp"
 
@@ -33,12 +34,18 @@ private:
 
     MemoryPtr data_{nullptr};
     uint32_t dataLength_{0};
+    const std::unordered_map<uint32_t, int16_t> *kerns_;
+    const std::unordered_map<uint32_t, uint16_t> *ligatures_;
 
 public:
-    FontData(const uint8_t *data, uint32_t length) noexcept
-        : data_(const_cast<MemoryPtr>(data)), dataLength_(length) {
+    FontData(const uint8_t *data, uint32_t length,
+             const std::unordered_map<uint32_t, int16_t> *kerns,
+             const std::unordered_map<uint32_t, uint16_t> *ligatures) noexcept
+        : data_(const_cast<MemoryPtr>(data)), dataLength_(length), kerns_(kerns),
+          ligatures_(ligatures) {
 
         load();
+
         if (!initialized_) {
             log_e("Font data not recognized!");
         }
@@ -51,9 +58,10 @@ public:
     [[nodiscard]] inline auto getLibrary() const -> FT_Library { return library_; }
     [[nodiscard]] inline auto getData() const -> MemoryPtr { return data_; }
     [[nodiscard]] inline auto getDataLength() const -> uint32_t { return dataLength_; }
+    [[nodiscard]] inline auto getKernsData() const { return kerns_; }
+    [[nodiscard]] inline auto getLigaturesData() const { return ligatures_; }
 
     auto load() -> bool;
-
 };
 
 #endif

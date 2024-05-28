@@ -20,7 +20,7 @@ private:
 
     bool initialized_{false};
     FontData *fontData_;
-    int faceIndex_;
+    int size_;
     PixelResolution screenResolution_{DEFAULT_SCREEN_RESOLUTION};
     PixelResolution fontResolution_{DEFAULT_FONT_RESOLUTION};
 
@@ -101,7 +101,7 @@ private:
     void copyBitmap(Bitmap &to, bool toHeightBit, Bitmap &from, Pos atPos, bool inverted);
 
 public:
-    Font(FontData &fontData, int index) noexcept : fontData_(&fontData), faceIndex_(index) {
+    Font(FontData &fontData, int size) noexcept : fontData_(&fontData), size_(size) {
         initialized_ = false;
 
         if (fontData_->isInitialized()) {
@@ -111,26 +111,11 @@ public:
             if (error) {
                 LOGE("The memory font format is unsupported or is broken (%d).", error);
             } else {
-                int16_t size;
-                switch (index) {
-                case 0:
-                    size = 8;
-                    break;
-                case 1:
-                    size = 10;
-                    break;
-                case 2:
-                    size = 12;
-                    break;
-                default:
-                    size = 10;
-                    break;
-                }
-                int error = FT_Set_Char_Size(face_,     // handle to face object
-                                             0,         // char_width in 1/64th of points
-                                             size * 64, // char_height in 1/64th of points
-                                             150,       // horizontal device resolution
-                                             150);      // vertical device resolution
+                int error = FT_Set_Char_Size(face_,      // handle to face object
+                                             0,          // char_width in 1/64th of points
+                                             size_ * 64, // char_height in 1/64th of points
+                                             150,        // horizontal device resolution
+                                             150);       // vertical device resolution
                 if (error) {
                     LOGE("Unable to set font size.");
                 } else {

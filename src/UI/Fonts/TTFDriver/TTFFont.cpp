@@ -29,8 +29,31 @@
 
 auto Font::ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2, FIX16 *kern) const -> bool {
 
-    // ToDo
     *kern = 0;
+
+    if ((glyphCode1 >= fontData_->getDataLength()) || (*glyphCode2 >= fontData_->getDataLength())) {
+        return false;
+    }
+
+    auto ligatures = fontData_->getLigaturesData();
+
+    uint32_t key = (glyphCode1 << 16) + *glyphCode2;
+
+    auto ligIt = ligatures->find(key);
+    if (ligIt != ligatures->end()) {
+        LOGW("====> Ligature found: (%d, %d) -> %d.", glyphCode1, *glyphCode2, ligIt->second);
+        *glyphCode2 = ligIt->second;
+        return true;
+    }
+
+    auto kerns = fontData_->getKernsData();
+
+    auto kernIt = kerns->find(key);
+    if (kernIt != kerns->end()) {
+        *kern = FT_MulFix(kernIt->second, face_->size->metrics.x_scale);
+        // LOGW("Kern value: %d -> %d", kernIt->second, *kern);
+    }
+
     return false;
 }
 
@@ -148,7 +171,8 @@ void Font::copyBitmap(Bitmap &to, bool toHeightBit, Bitmap &from, Pos atPos, boo
 //   appGlyph   : The Glyph structure to put the information in
 //   loadBitmap : If true, the glyph bitmap needs to be retrieved and put in the appGlyph.
 //                If false, no bitmap is retrieved and THE OTHER PARAMETERS ARE IGNORED
-//   caching    : If true (default), a bitmap needs to be allocated and the Glyph bitmap must be put
+//   caching    : If true (default), a bitmap needs to be allocated and the Glyph bitmap must be
+//   put
 //                                   there.
 //                If false, the appGlyph.bitmap already point at the screen bitmap
 //   atPos      : This is the location in the screen bitmap where the
@@ -318,8 +342,8 @@ void Font::drawSingleLineOfText(font_defs::Bitmap &canvas, font_defs::Pos pos,
         font_defs::Pos atPos = pos;
         Glyph glyph{};
 
-        // We set here the canvas pitch value, as there is still some definitions required at the
-        // application-level in regard of the upcoming Sol Glasse augmented resolution.
+        // We set here the canvas pitch value, as there is still some definitions required at
+        // the application-level in regard of the upcoming Sol Glasse augmented resolution.
         //
         // The following may require some modification as the next Sol Glasses version
         // may be using a different pitch than the one computed here.
@@ -361,8 +385,8 @@ auto Font::getTextSize(const std::string &buffer) -> font_defs::Dim {
     if (isInitialized()) {
         ligKernUTF8Map(buffer, [this, &dim, &up, &down](GlyphCode glyphCode, FIX16 kern, bool first,
                                                         bool last) {
-            // int8_t hOffset = first ? fontData_->getFace(faceIndex_)->getGlyphHOffset(glyphCode) :
-            // 0;
+            // int8_t hOffset = first ?
+            // fontData_->getFace(faceIndex_)->getGlyphHOffset(glyphCode) : 0;
 
             font_defs::Glyph glyph{};
             if (getGlyphMetrics(glyphCode, glyph)) { // retrieves only the metrics
