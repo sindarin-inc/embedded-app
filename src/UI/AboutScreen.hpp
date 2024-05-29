@@ -18,8 +18,8 @@ public:
         : EinkView(display), display_(display), prefs_(prefs), power_(power),
           solLogoView_(display, SOL_LOGO_BITS, sol_logo_width, sol_logo_height),
           productNameView_(display, "Product Name: Sol Reader", &fontFace0),
-          serialNumberView_(display, "", &fontFace0),
-          firmwareVersionView_(display, "", &fontFace0), wifiMacView_(display, "", &fontFace0),
+          serialNumberView_(display, "", &fontFace0), firmwareVersionView_(display, "", &fontFace0),
+          wifiMacView_(display, "", &fontFace0),
           remoteFirmwareVersionView_(display, "", &fontFace0),
           remoteBatteryView_(display, "", &fontFace0),
           returnToMenuView_(display, "Press  \ue000  to return to System Settings", &fontFace0) {

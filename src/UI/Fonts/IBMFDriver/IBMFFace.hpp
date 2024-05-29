@@ -59,7 +59,9 @@ public:
     [[nodiscard]] inline auto getLigKernStep(uint16_t idx) const -> LigKernStep * {
         return &(*ligKernSteps_)[idx];
     }
-    [[nodiscard]] inline auto getScreenResolution() const -> PixelResolution { return screenResolution_; }
+    [[nodiscard]] inline auto getScreenResolution() const -> PixelResolution {
+        return screenResolution_;
+    }
 
     [[nodiscard]] inline auto getGlyphHOffset(GlyphCode glyphCode) const -> int8_t {
         if (glyphCode >= faceHeader_->glyphCount) {
