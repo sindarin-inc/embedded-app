@@ -40,7 +40,9 @@ add_subdirectory(${REPO_ROOT_DIR}/components/Adafruit-GFX-Library ${CMAKE_CURREN
 
 add_library(${PROJECT_NAME} STATIC ${SOURCES})
 
-target_link_libraries(${PROJECT_NAME} PUBLIC pugixml ArduinoJson miniz astubs esp-idf-stubs nvs_flash Adafruit-GFX-Library)
+find_package(Freetype REQUIRED)
+
+target_link_libraries(${PROJECT_NAME} PUBLIC pugixml ArduinoJson miniz astubs esp-idf-stubs nvs_flash Adafruit-GFX-Library Freetype::Freetype)
 
 target_include_directories(${PROJECT_NAME} PUBLIC
     "${REPO_ROOT_DIR}/src"
@@ -57,10 +59,14 @@ if(ENABLE_8BIT_DISPLAY)
     target_compile_definitions(${PROJECT_NAME} PUBLIC
         DISPLAY_SIM_8BIT=1
         EINKET013TT1=0
+        TTF_SUPPORT=1
+        IBMF_SUPPORT=0
     )
 else()
     target_compile_definitions(${PROJECT_NAME} PUBLIC
         EINKET013TT1=1
+        TTF_SUPPORT=0
+        IBMF_SUPPORT=1
     )
 endif()
 
