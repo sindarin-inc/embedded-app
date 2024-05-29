@@ -26,65 +26,14 @@ void BackgroundSyncInternal(PowerManager &powerManager, PreferencesStore &prefs,
     auto &fileSystem = localStore.fileSystem;
 
     cancel = std::make_shared<CancelFlag>();
-    localStore.syncFromRemote(
-        PreferencesStore::syncReason, cancel,
-        [&powerManager, &backgroundGroup, &telemetry](const ContentSyncState &state) {
-        powerManager.feedInactivityTimer();
 
-        if (state.state == ContentSyncState::Failure || state.state == ContentSyncState::Synced ||
-            state.state == ContentSyncState::AlreadySynced) {
-            if (state.state == ContentSyncState::Failure) {
-                telemetry.logMetric(TelemetryField::METRIC_SYNC_STATUS, "sync-failed",
-                                    {{"message", state.message.c_str()}});
-                log_i("Content sync failed with error: %s", state.message.c_str());
-            } else if (state.state == ContentSyncState::Synced) {
-                telemetry.logMetric(TelemetryField::METRIC_SYNC_STATUS, "sync-success");
-                log_i("Content sync successful");
-            } else if (state.state == ContentSyncState::AlreadySynced) {
-                telemetry.logMetric(TelemetryField::METRIC_SYNC_STATUS, "sync-already-synced");
-                log_i("Content sync already synced");
-            } else {
-                return;
-            }
-            if (backgroundGroup != nullptr) {
-                xEventGroupSetBits(backgroundGroup, 1);
-            }
-        }
-        });
-
-    // Wait for content sync to finish
-    auto bits =
-        xEventGroupWaitBits(backgroundGroup, 1, pdTRUE, pdTRUE, pdMS_TO_TICKS(10 * 60 * 1000));
-    if (!(bits & 1)) {
-        CancelFlag::cancel(cancel);
-        log_w("Content sync timed out");
-    }
-    xEventGroupClearBits(backgroundGroup, 1);
-
-    if (CancelFlag::isCancelled(cancel)) {
+    // Connect to WiFi
+    if (!WiFi::getInstance().connectWiFiFromSettings()) {
+        telemetry.logMetric(TelemetryField::METRIC_WIFI, "sync-wifi-failed");
         return;
     }
 
-    if (!WiFi::getInstance().connected()) {
-        log_w("WiFi not connected, ending background sync");
-        return;
-    }
-
-    telemetry.logMetric(TelemetryField::METRIC_CLOCK_SET, "pre-sync",
-                        {{"run-time", GetRunTimeMs()}});
-    auto success = SolClock::getInstance().setClockTimeFromInternet();
-    if (success) {
-        telemetry.logMetric(TelemetryField::METRIC_CLOCK_SET, "success",
-                            {{"run-time", GetRunTimeMs()}});
-    } else {
-        telemetry.logMetric(TelemetryField::METRIC_CLOCK_SET, "failure",
-                            {{"run-time", GetRunTimeMs()}});
-    }
-
-    if (CancelFlag::isCancelled(cancel)) {
-        return;
-    }
-
+    // Check for firmware first (in case there's some super busted issue that needs fixing)
     auto firmwareDownloader = std::make_shared<FirmwareDownloader>(prefs, true);
     firmwareDownloader->downloadFirmware(
         [firmwareDownloader, &localStore, &backgroundGroup](const FirmwareDownloadState &state) {
@@ -114,12 +63,71 @@ void BackgroundSyncInternal(PowerManager &powerManager, PreferencesStore &prefs,
     }
 
     // Wait for firmware download to finish
-    bits = xEventGroupWaitBits(backgroundGroup, 1, pdTRUE, pdTRUE, pdMS_TO_TICKS(5 * 60 * 1000));
+    auto bits =
+        xEventGroupWaitBits(backgroundGroup, 1, pdTRUE, pdTRUE, pdMS_TO_TICKS(5 * 60 * 1000));
     if (!(bits & 1)) {
         firmwareDownloader->cancel();
         log_w("Firmware download timed out");
     }
     xEventGroupClearBits(backgroundGroup, 1);
+
+    if (CancelFlag::isCancelled(cancel)) {
+        return;
+    }
+
+    localStore.syncFromRemote(
+        PreferencesStore::syncReason, cancel,
+        [&powerManager, &backgroundGroup, &telemetry](const ContentSyncState &state) {
+        powerManager.feedInactivityTimer();
+
+        if (state.state == ContentSyncState::Failure || state.state == ContentSyncState::Synced ||
+            state.state == ContentSyncState::AlreadySynced) {
+            if (state.state == ContentSyncState::Failure) {
+                telemetry.logMetric(TelemetryField::METRIC_SYNC_STATUS, "sync-failed",
+                                    {{"message", state.message.c_str()}});
+                log_i("Content sync failed with error: %s", state.message.c_str());
+            } else if (state.state == ContentSyncState::Synced) {
+                telemetry.logMetric(TelemetryField::METRIC_SYNC_STATUS, "sync-success");
+                log_i("Content sync successful");
+            } else if (state.state == ContentSyncState::AlreadySynced) {
+                telemetry.logMetric(TelemetryField::METRIC_SYNC_STATUS, "sync-already-synced");
+                log_i("Content sync already synced");
+            } else {
+                return;
+            }
+            if (backgroundGroup != nullptr) {
+                xEventGroupSetBits(backgroundGroup, 1);
+            }
+        }
+        });
+
+    // Wait for content sync to finish
+    bits = xEventGroupWaitBits(backgroundGroup, 1, pdTRUE, pdTRUE, pdMS_TO_TICKS(10 * 60 * 1000));
+    if (!(bits & 1)) {
+        CancelFlag::cancel(cancel);
+        log_w("Content sync timed out");
+    }
+    xEventGroupClearBits(backgroundGroup, 1);
+
+    if (CancelFlag::isCancelled(cancel)) {
+        return;
+    }
+
+    if (!WiFi::getInstance().connected()) {
+        log_w("WiFi not connected, ending background sync");
+        return;
+    }
+
+    telemetry.logMetric(TelemetryField::METRIC_CLOCK_SET, "pre-sync",
+                        {{"run-time", GetRunTimeMs()}});
+    auto success = SolClock::getInstance().setClockTimeFromInternet();
+    if (success) {
+        telemetry.logMetric(TelemetryField::METRIC_CLOCK_SET, "success",
+                            {{"run-time", GetRunTimeMs()}});
+    } else {
+        telemetry.logMetric(TelemetryField::METRIC_CLOCK_SET, "failure",
+                            {{"run-time", GetRunTimeMs()}});
+    }
 
     if (CancelFlag::isCancelled(cancel)) {
         return;

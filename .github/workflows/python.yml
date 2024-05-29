@@ -11,16 +11,16 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           ref: ${{ github.event.pull_request.head.ref }}
+          submodules: "recursive"
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: 3.11
-          cache: pip
 
       - name: Install dependencies
         run: |
@@ -30,19 +30,32 @@ jobs:
       - name: Sort imports
         run: |
           # stop the build if there are Python syntax errors or undefined names
-          isort --skip=components --skip=.pio --profile black .
-          isort --skip=components --skip=.pio --profile black --check --diff .
+          isort --skip=components --profile black .
+          isort --skip=components --profile black --check --diff .
 
       - name: Format with black
         run: |
           # format the files with black
-          black --line-length 110 --exclude='components|.pio' .
+          black --line-length 110 --exclude='components' .
 
-      - uses: EndBug/add-and-commit@v9
-        with:
-          add: "*.py"
-          author_name: Python Formatting Robot
-          author_email: robot@sindarin.com
-          message: "Committing black python code formatter and isort changes"
+      - name: "Commit changes if necessary"
+        if: github.event_name == 'pull_request'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git fetch origin ${{ github.head_ref }}
+          echo "HEAD: $(git rev-parse HEAD)"
+          echo "UPSTREAM: $(git rev-parse @{u})"
+          if [ "$(git rev-parse HEAD)" != "$(git rev-parse @{u})" ]; then
+            echo "Newer changes detected on branch. Skipping commit."
+            exit 0
+          fi
+          if git diff --exit-code '*.py' > /dev/null; then
+            echo "No changes to commit"
+          else
+            git config --global user.name "Python Formatting Robot"
+            git config --global user.email "robot@sindarin.com"
+            git add '*.py'
+            git commit -m "Committing black python code formatter and isort changes"
+            git push origin HEAD:${{ github.head_ref }}
+          fi

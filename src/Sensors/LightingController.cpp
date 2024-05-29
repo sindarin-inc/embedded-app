@@ -32,52 +32,26 @@ auto LightingController::checkSensorAvailable() -> bool {
 }
 
 void LightingController::begin() {
+    if (enabled_) {
+        return;
+    }
     // Not pictured here: all the LEDC configuration that happens in PlatformESP32.cpp. We keep that
     // code over there because the LEDC driver is configured globally and we'll probably also want
     // to configure the RGB LEDs with LEDC eventually
-    if (!enabled_) {
-        lightSensor_.enable();
-        enabled_ = true;
-    }
+    lightSensor_.enable();
+    enabled_ = true;
 }
 
-void LightingController::returnToDisabledState() {
-    if (enabled_ && overrideDutyCycle_ != -1) {
-        lightSensor_.disable();
-        enabled_ = false;
-    }
-}
-
-void LightingController::disableLighting(int fadeMs) {
+void LightingController::shutdown(int fadeMs) {
     if (!enabled_) {
         return;
     }
-    lightsOut_ = true;
-    lightSensor_.disable();
-    currentDutyCycle_ = 0;
-    setCurrentDutyCycle(currentDutyCycle_, fadeMs);
     enabled_ = false;
+    lightSensor_.disable();
+    setCurrentDutyCycle(0, fadeMs);
 }
 
-void LightingController::enableLighting(int fadeMs) {
-    if (!lightsOut_) {
-        return;
-    }
-    lightsOut_ = false;
-    if (overrideDutyCycle_ != -1) {
-        currentDutyCycle_ = overrideDutyCycle_;
-        setCurrentDutyCycle(currentDutyCycle_, fadeMs);
-        return;
-    } else {
-        lightSensor_.enable();
-        enabled_ = true;
-    }
-}
-
-void LightingController::enableOnlyIncreaseMode() { onlyIncreaseMode_ = true; }
-void LightingController::disableOnlyIncreaseMode() { onlyIncreaseMode_ = false; }
-
-void LightingController::setOverrideValuePercent(int percent, bool maintainLightSensor) {
+void LightingController::setOverrideValuePercent(int percent, bool userInitiated) {
     auto dutyCycle = percent / 7;
     if (dutyCycle == 0) {
         dutyCycle = 1;
@@ -87,30 +61,43 @@ void LightingController::setOverrideValuePercent(int percent, bool maintainLight
         dutyCycle *= dutyCycle;
     }
 
-    overrideDutyCycle_ = dutyCycle;
-    log_d("Override duty cycle: %d (%d%%)", dutyCycle, percent);
-    if (!maintainLightSensor) {
-        lightSensor_.disable();
-        enabled_ = false;
+    if (userInitiated) {
+        // Note the difference in the predicted value and the override value
+        int diff = dutyCycle - readPredictedDutyCycle();
+        // Limit diff to +/- 60
+        diff = std::clamp(diff, -60, 60);
+        prefs_.brightnessOffset.set(diff);
     }
-    currentDutyCycle_ = dutyCycle;
-    setCurrentDutyCycle(currentDutyCycle_, 100);
+
+    log_d("Override duty cycle: %d (%d%%)", dutyCycle, percent);
+    overrideDutyCycle_ = dutyCycle;
+
+    setCurrentDutyCycle(overrideDutyCycle_, 100);
+}
+
+auto LightingController::getCurrentDutyCycle() const -> int {
+    if (overrideDutyCycle_ != -1) {
+        return overrideDutyCycle_;
+    } else {
+        return predictedDutyCycle_;
+    }
 }
 
 auto LightingController::getCurrentPercent() const -> int {
-    if (currentDutyCycle_ == 1) {
+    auto dutyCycle = getCurrentDutyCycle();
+    if (dutyCycle == 1) {
         return 0;
-    } else if (currentDutyCycle_ == 2) {
+    } else if (dutyCycle == 2) {
         return 7;
     } else {
-        return static_cast<int>(std::sqrt(currentDutyCycle_)) * 7;
+        return static_cast<int>(std::sqrt(dutyCycle)) * 7;
     }
 }
 
 void LightingController::setScreenMask(Screens screens, int fadeMs) {
     log_d("Setting screens mask to %x", screens);
     screens_ = screens;
-    setCurrentDutyCycle(currentDutyCycle_, fadeMs);
+    setCurrentDutyCycle(predictedDutyCycle_, fadeMs);
 };
 
 auto LightingController::readAmbientLightData(uint16_t &channel1, uint16_t &channel0) -> bool {
@@ -120,12 +107,16 @@ auto LightingController::readAmbientLightData(uint16_t &channel1, uint16_t &chan
     }
     return true;
 }
+
+auto LightingController::readPredictedDutyCycle() -> int {
+    auto average = movingAverage_.average();
+    return MapRange(average, 0, 1000, static_cast<int>(GetMinLightingDutyCycle()),
+                    static_cast<int>(GetMaxLightingDutyCycle()));
+}
+
 void LightingController::checkAmbientLight(int fadeMs, int timeoutMs) {
-    if (lightsOut_) {
+    if (!enabled_) {
         log_i("Ambient light check requested but lights are out, ignoring");
-        return;
-    }
-    if (overrideDutyCycle_ != -1) {
         return;
     }
 
@@ -139,23 +130,21 @@ void LightingController::checkAmbientLight(int fadeMs, int timeoutMs) {
 
     // Clamp to a max value of 1000 to avoid the moving average getting too large
     movingAverage_.add(std::min(channel1, static_cast<uint16_t>(1000)));
-    auto average = movingAverage_.average();
 
-    int newDutyCycle = MapRange(average, 0, 1000, static_cast<int>(GetMinLightingDutyCycle()),
-                                static_cast<int>(GetMaxLightingDutyCycle()));
+    predictedDutyCycle_ = readPredictedDutyCycle();
+    if (prefs_.brightnessOffsetEnabled.get().value_or(false)) {
+        // Adjust based on the offset
+        predictedDutyCycle_ =
+            std::clamp(predictedDutyCycle_ + prefs_.brightnessOffset.get().value_or(0), 1,
+                       static_cast<int>(GetMaxLightingDutyCycle()));
+    }
 
-    // If onlyIncreaseMode_ is enabled, only increase the duty cycle if the new value is greater
-    // than current
-    if (onlyIncreaseMode_ && newDutyCycle < currentDutyCycle_) {
-        log_w("Only increase mode enabled, not decreasing duty cycle (new=%d, current=%d)",
-              newDutyCycle, currentDutyCycle_);
+    // Bail out early if we have overridden the value here
+    if (overrideDutyCycle_ != -1) {
         return;
     }
 
-    currentDutyCycle_ = newDutyCycle;
-    setCurrentDutyCycle(currentDutyCycle_, fadeMs);
-    // log_w("Ambient light check: channel1=%d, channel0=%d, average=%d, dutyCycle=%d", channel1,
-    //       channel0, average, currentDutyCycle_);
+    setCurrentDutyCycle(predictedDutyCycle_, fadeMs);
 }
 
 void LightingController::setCurrentDutyCycle(int dutyCycle, int fadeMs) {

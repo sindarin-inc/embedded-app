@@ -1,5 +1,6 @@
 {
     "files.associations": {
+        "*.h": "c",
         "*.tcc": "cpp",
         "iosfwd": "cpp",
         "array": "cpp",
@@ -154,5 +155,7 @@
         "editor.defaultFormatter": "vscode.json-language-features"
     },
     "idf.adapterTargetName": "esp32s3",
-    "cmake.configureOnOpen": false,
+    "[cmake]": {
+        "editor.defaultFormatter": "josetr.cmake-language-support-vscode"
+    },
 }

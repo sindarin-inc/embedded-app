@@ -4,6 +4,7 @@
 #include <memory>
 
 #include "Communications/BLEManager.hpp"
+#include "Misc/Telemetry.hpp"
 #include "RemoteInput.hpp"
 #include "Storage/PreferencesStore.hpp"
 #include "TurnTouch.hpp"
@@ -14,8 +15,9 @@
 
 class TTRemoteInput : public RemoteInput {
 public:
-    TTRemoteInput(PreferencesStore &prefs) noexcept
-        : prefs_(prefs), advertisedDeviceCallbacks_(this), clientCallbacks_(this){};
+    TTRemoteInput(PreferencesStore &prefs, Telemetry &telemetry) noexcept
+        : prefs_(prefs), telemetry_(telemetry), advertisedDeviceCallbacks_(this),
+          clientCallbacks_(this){};
     TTRemoteInput(TTRemoteInput const &) = delete;
 
     // Scan for a PageTurner. Can be safely called even if one is already connected.
@@ -35,6 +37,7 @@ protected:
                                     size_t length, bool isNotify);
 
     PreferencesStore &prefs_;
+    Telemetry &telemetry_;
     State state_ = SCANNING;
     long lastScanMs_ = 0;
     long keepDisconnectedUntilMs_ = 0;
@@ -88,8 +91,14 @@ protected:
         }
 
         void onDisconnect(BLEClient *client) override {
-            log_w("BLE PageTurner disconnected!");
             enclosed->state_ = SCANNING;
+            if (enclosed->keepDisconnectedUntilMs_ != 0 &&
+                enclosed->keepDisconnectedUntilMs_ > Millis()) {
+                log_i("BLE PageTurner disconnected!");
+            } else {
+                log_w("Unexpected BLE PageTurner disconnect!");
+                enclosed->telemetry_.logMetric(TelemetryField::METRIC_BLE, "remote_disconnect");
+            }
         }
     };
 

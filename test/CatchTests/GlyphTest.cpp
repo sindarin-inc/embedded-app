@@ -62,8 +62,7 @@ TEST_CASE("Test glyph rendering") {
         }
     }
 
-    // Add all Greek characters from U+0370 to U+03FF (but dont add to pairs)
-    for (int code = 0x0370; code <= 0x03FF; ++code) {
+    auto codePointToUtf8 = [](int code) -> std::string {
         std::string glyph;
 
         // Convert code point to UTF-8
@@ -80,30 +79,76 @@ TEST_CASE("Test glyph rendering") {
             glyph += static_cast<char>(0x80 | ((code >> 6) & 0x3F));
             glyph += static_cast<char>(0x80 | (code & 0x3F));
         }
-        glyphPairs.push_back(glyph);
-    }
+        return glyph;
+    };
 
-    auto renderGlyphs = [&glyphPairs, &display](const std::string &key, int gridWidth,
-                                                int gridHeight, Font *font) {
-        GlyphTestScreen screen(glyphPairs, gridWidth, gridHeight);
+    auto generateGlyphsInRange = [&codePointToUtf8](int start,
+                                                    int end) -> std::vector<std::string> {
+        std::vector<std::string> glyphs;
+        for (int code = start; code <= end; ++code) {
+            std::string glyph = codePointToUtf8(code);
+            glyphs.push_back(glyph);
+        }
+        return glyphs;
+    };
+
+    std::vector<std::string> latinGlyphs = generateGlyphsInRange(0x0020, 0x007F);
+    std::vector<std::string> latin1SupplementGlyphs = generateGlyphsInRange(0x0080, 0x00FF);
+    std::vector<std::string> latinExtendedAGlyphs = generateGlyphsInRange(0x0100, 0x017F);
+    std::vector<std::string> latinExtendedBGlyphs = generateGlyphsInRange(0x0180, 0x024F);
+    std::vector<std::string> spacingModifierLetters = generateGlyphsInRange(0x02B0, 0x02FF);
+    std::vector<std::string> greekGlyphs = generateGlyphsInRange(0x0370, 0x03FF);
+    std::vector<std::string> cyrillicGlyphs = generateGlyphsInRange(0x0400, 0x04FF);
+    std::vector<std::string> generalPunctuationGlyphs = generateGlyphsInRange(0x2000, 0x206F);
+    std::vector<std::string> superscriptsAndSubscriptsGlyphs =
+        generateGlyphsInRange(0x2070, 0x209F);
+    std::vector<std::string> currencySymbolsGlyphs = generateGlyphsInRange(0x20A0, 0x20CF);
+    std::vector<std::string> userDefinedGlyphs = generateGlyphsInRange(0xE000, 0xE07C);
+    std::vector<std::string> alphabeticPresentationFormsGlyphs =
+        generateGlyphsInRange(0xFB00, 0xFB4F);
+
+    auto renderGlyphs = [&display](std::vector<std::string> &glyphs, const std::string &key,
+                                   int gridWidth, int gridHeight, Font *font) {
+        GlyphTestScreen screen(glyphs, gridWidth, gridHeight);
         display->setFont(font);
         for (int i = 0; i < screen.pages(); i++) {
             screen.setPage(i);
             screen.render(*display);
             ASSERT_VIEW_UNCHANGED(display, key + std::to_string(i));
-            return;
         }
     };
 
+    auto renderAllGlyphs = [&](const std::string &key, int gridWidth, int gridHeight, Font *font) {
+        renderGlyphs(glyphPairs, key + "-pairs", gridWidth, gridHeight, font);
+        renderGlyphs(latinGlyphs, key + "-latin", gridWidth, gridHeight, font);
+        renderGlyphs(latin1SupplementGlyphs, key + "-latin1Supplement", gridWidth, gridHeight,
+                     font);
+        renderGlyphs(latinExtendedAGlyphs, key + "-latinExtendedA", gridWidth, gridHeight, font);
+        renderGlyphs(latinExtendedBGlyphs, key + "-latinExtendedB", gridWidth, gridHeight, font);
+        renderGlyphs(spacingModifierLetters, key + "-spacingModifierLetters", gridWidth, gridHeight,
+                     font);
+        renderGlyphs(greekGlyphs, key + "-greek", gridWidth, gridHeight, font);
+
+        renderGlyphs(cyrillicGlyphs, key + "-cyrillic", gridWidth, gridHeight, font);
+        renderGlyphs(generalPunctuationGlyphs, key + "-generalPunctuation", gridWidth, gridHeight,
+                     font);
+        renderGlyphs(superscriptsAndSubscriptsGlyphs, key + "-superscriptsAndSubscripts", gridWidth,
+                     gridHeight, font);
+        renderGlyphs(currencySymbolsGlyphs, key + "-currencySymbols", gridWidth, gridHeight, font);
+        renderGlyphs(userDefinedGlyphs, key + "-userDefined", gridWidth, gridHeight, font);
+        renderGlyphs(alphabeticPresentationFormsGlyphs, key + "-alphabeticPresentationForms",
+                     gridWidth, gridHeight, font);
+    };
+
     SECTION("Test small font Glyphs") {
-        renderGlyphs("GlyphTests/GlyphTestS", 12, 16, display->style.solSansSmall.readableFont);
+        renderAllGlyphs("GlyphTests/GlyphTestS", 12, 16, display->style.solSansSmall.readableFont);
     }
 
     SECTION("Test medium font Glyphs") {
-        renderGlyphs("GlyphTests/GlyphTestM", 10, 14, display->style.solSansMedium.readableFont);
+        renderAllGlyphs("GlyphTests/GlyphTestM", 10, 14, display->style.solSansMedium.readableFont);
     }
 
     SECTION("Test large font Glyphs") {
-        renderGlyphs("GlyphTests/GlyphTestL", 8, 12, display->style.solSansLarge.readableFont);
+        renderAllGlyphs("GlyphTests/GlyphTestL", 8, 12, display->style.solSansLarge.readableFont);
     }
 }

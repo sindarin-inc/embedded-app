@@ -11,6 +11,8 @@ Using the **IBMFFontEditor**, parts of the NotoSans font are extracted to create
 | Latin Extended-A | (U+0100 .. U+017F)
 | Latin Extended-B | (U+0180 .. U+024F)
 | Spacing Modifier Letters | (U+02B0 .. U+02FF)
+| Greek and Coptic | (U+0370 .. U+03FF)
+| Cyrillic | (U+0400 .. U+04FF)
 | General Punctuation | (U+2000 .. U+206F)
 | Superscripts and Subscripts | (U+2070 .. U+209F)
 | Currency Symbols | (U+20A0 .. U+20CF)

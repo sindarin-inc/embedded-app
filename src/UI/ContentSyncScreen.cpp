@@ -158,7 +158,20 @@ void ContentSyncScreen::render(DisplaySystem &display) {
         checkmarkViews_[2]->setHidden(false);
         progressBarsViews_[3]->setProgress(state_.percentage);
         break;
-    case ContentSyncState::AlreadySynced:
+    case ContentSyncState::AlreadySynced: {
+        progressBarsViews_[0]->setProgress(100);
+        progressBarsViews_[1]->setProgress(100);
+        progressBarsViews_[2]->setProgress(100);
+        progressBarsViews_[3]->setProgress(100);
+        checkmarkViews_[0]->setHidden(false);
+        checkmarkViews_[1]->setHidden(false);
+        checkmarkViews_[2]->setHidden(false);
+        checkmarkViews_[3]->setHidden(false);
+
+        std::string message = "Already in sync!";
+        showPopup(message);
+        break;
+    }
     case ContentSyncState::Synced: {
         progressBarsViews_[0]->setProgress(100);
         progressBarsViews_[1]->setProgress(100);
