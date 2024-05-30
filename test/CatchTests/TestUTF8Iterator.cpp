@@ -2,8 +2,8 @@
 #include <string>
 #include <vector>
 
-#include "UI/Fonts/IBMFDriver/IBMFDefs.hpp"
-#include "UI/Fonts/IBMFDriver/UTF8Iterator.hpp"
+#include "UI/Fonts/FontDefs.hpp"
+#include "UI/Fonts/UTF8Iterator.hpp"
 
 #define GOOD_1 "\x24"
 #define GOOD_2 "\xD0\x98"
