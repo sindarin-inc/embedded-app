@@ -21,6 +21,8 @@ private:
     bool initialized_{false};
     FontData *fontData_;
     int size_;
+    FIX16 spaceSize_{0};
+    uint8_t lastGlyphWidth_;
     PixelResolution screenResolution_{DEFAULT_SCREEN_RESOLUTION};
     PixelResolution fontResolution_{DEFAULT_FONT_RESOLUTION};
 
@@ -120,7 +122,18 @@ public:
                     LOGE("Unable to set font size.");
                 } else {
                     unknownGlyphCode_ = translate(UNKNOWN_CODEPOINT);
-                    initialized_ = true;
+
+                    GlyphCode glyphCode = FT_Get_Char_Index(face_, ' ');
+
+                    error = FT_Load_Glyph(face_,              /* handle to face object */
+                                          glyphCode,          /* glyph index           */
+                                          FT_LOAD_NO_BITMAP); /* load flags */
+                    if (error) {
+                        LOGE("Unable to load glyph for space char.");
+                    } else {
+                        spaceSize_ = static_cast<FIX16>(face_->glyph->advance.x);
+                        initialized_ = true;
+                    }
                 }
             }
         }
@@ -177,6 +190,8 @@ public:
 
         // log_w("word: %s", buffer);
 
+        const char *b = buffer;
+
         while (*buffer) {
             int16_t xoff;
             int16_t advance;
@@ -187,7 +202,8 @@ public:
                 width += (*buffer == '\0') ? (glyphWidth - xoff) : advance;
             }
         }
-        // log_w(" width: %" PRIi16, width);
+
+        // log_w(" width quick: %" PRIi16 ": %s", width, b);
         return width;
     }
 };

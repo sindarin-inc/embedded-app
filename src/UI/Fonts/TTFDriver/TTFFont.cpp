@@ -16,7 +16,12 @@
 [[nodiscard]] auto Font::translate(char32_t codePoint) const -> GlyphCode {
     GlyphCode glyphCode = unknownGlyphCode_;
 
-    glyphCode = FT_Get_Char_Index(face_, codePoint);
+    if ((codePoint == ' ') || (codePoint == 0xA0) || (codePoint == 0x202F) ||
+        ((codePoint >= 0x2000) && (codePoint <= 0x200F))) {
+        glyphCode = SPACE_CODE;
+    } else {
+        glyphCode = FT_Get_Char_Index(face_, codePoint);
+    }
 
     // The following test could generates many entries in the log, depending on the quantity of
     // unknown code points received to be translated. Could be removed or disabled if required.
@@ -182,12 +187,21 @@ void Font::copyBitmap(Bitmap &to, bool toHeightBit, Bitmap &from, Pos atPos, boo
 auto Font::getGlyph(GlyphCode glyphCode, Glyph &appGlyph, bool loadBitmap, bool caching, Pos atPos,
                     bool inverted) -> bool {
 
-    // ToDo
-
     int error;
 
     if (caching) {
         appGlyph.clear();
+    }
+
+    if (glyphCode == SPACE_CODE) { // send as a space character
+        lastGlyphWidth_ = 0;
+        appGlyph.pointSize = size_;
+        appGlyph.metrics = {.xoff = 0,
+                            .yoff = 0,
+                            .descent = 0,
+                            .advance = spaceSize_,
+                            .lineHeight = static_cast<int16_t>(face_->size->metrics.height >> 6)};
+        return true;
     }
 
     error = FT_Load_Glyph(face_,     /* handle to face object */
@@ -219,6 +233,7 @@ auto Font::getGlyph(GlyphCode glyphCode, Glyph &appGlyph, bool loadBitmap, bool 
         }
 
         auto dim = Dim(slot->bitmap.width, slot->bitmap.rows);
+        lastGlyphWidth_ = slot->bitmap.width;
 
         if (caching) {
             appGlyph.bitmap.dim = dim;
@@ -249,7 +264,7 @@ auto Font::getGlyph(GlyphCode glyphCode, Glyph &appGlyph, bool loadBitmap, bool 
         copyBitmap(appGlyph.bitmap, toHeightBit, glyphBitmap, outPos, inverted);
     }
 
-    appGlyph.metrics = {.xoff = static_cast<int16_t>(slot->bitmap_left),
+    appGlyph.metrics = {.xoff = static_cast<int16_t>(-slot->bitmap_left),
                         .yoff = static_cast<int16_t>(-slot->bitmap_top),
                         .descent = static_cast<int16_t>((slot->bitmap.rows + slot->bitmap_top) > 0
                                                             ? slot->bitmap.rows + slot->bitmap_top
@@ -263,6 +278,16 @@ auto Font::getGlyphMetrics(GlyphCode glyphCode, Glyph &appGlyph) -> bool {
 
     appGlyph.clear();
 
+    if (glyphCode == SPACE_CODE) { // send as a space character
+        appGlyph.pointSize = size_;
+        appGlyph.metrics = {.xoff = 0,
+                            .yoff = 0,
+                            .descent = 0,
+                            .advance = spaceSize_,
+                            .lineHeight = static_cast<int16_t>(face_->size->metrics.height >> 6)};
+        return true;
+    }
+
     auto error = FT_Load_Glyph(face_,              /* handle to face object */
                                glyphCode,          /* glyph index           */
                                FT_LOAD_NO_BITMAP); /* load flags */
@@ -275,7 +300,7 @@ auto Font::getGlyphMetrics(GlyphCode glyphCode, Glyph &appGlyph) -> bool {
 
     appGlyph.bitmap.dim = Dim(slot->bitmap.width, slot->bitmap.rows);
 
-    appGlyph.metrics = {.xoff = static_cast<int16_t>(slot->bitmap_left),
+    appGlyph.metrics = {.xoff = static_cast<int16_t>(-slot->bitmap_left),
                         .yoff = static_cast<int16_t>(-slot->bitmap_top),
                         .descent = static_cast<int16_t>((slot->bitmap.rows + slot->bitmap_top) > 0
                                                             ? slot->bitmap.rows + slot->bitmap_top
@@ -360,15 +385,16 @@ void Font::drawSingleLineOfText(font_defs::Bitmap &canvas, font_defs::Pos pos,
 
             // LOGD("Word Markers: %d %d", first, last);
 
-            if (getGlyph(glyphCode, glyph, true, false, atPos, inverted)) {
+            // log_w("At pos (%d, %d)", atPos.x, atPos.y);
+
+            if (glyphCode == SPACE_CODE) {
+                atPos.x += (spaceSize_ >> 6);
+            } else if (getGlyph(glyphCode, glyph, true, false, atPos, inverted)) {
                 // As advance is positive and greather than kern, we can shift right
                 // to get rid of the fix point decimals
-                if (glyphCode == SPACE_CODE) {
-                    atPos.x += glyph.metrics.advance >> 6;
-                } else {
-                    atPos.x += last ? glyph.bitmap.dim.width - (kern / 64) - glyph.metrics.xoff
-                                    : ((glyph.metrics.advance + kern) >> 6);
-                }
+
+                atPos.x += last ? lastGlyphWidth_ - (kern / 64) - glyph.metrics.xoff
+                                : ((glyph.metrics.advance + kern) >> 6);
             }
         });
     }
@@ -379,9 +405,11 @@ auto Font::getTextSize(const std::string &buffer) -> font_defs::Dim {
     if constexpr (TTF_TRACING) {
         LOGD("getTextSize()");
     }
+
     font_defs::Dim dim = font_defs::Dim(0, 0);
     int16_t up = 0;
     int16_t down = 0;
+
     if (isInitialized()) {
         ligKernUTF8Map(buffer, [this, &dim, &up, &down](GlyphCode glyphCode, FIX16 kern, bool first,
                                                         bool last) {
@@ -394,7 +422,7 @@ auto Font::getTextSize(const std::string &buffer) -> font_defs::Dim {
                 //      IBMFFaceLow::fromFIX16(glyph.metrics.advance), glyph.metrics.xoff,
                 //      glyph.metrics.yoff, glyph.metrics.descent, kern);
                 if (glyphCode == SPACE_CODE) {
-                    dim.width += glyph.metrics.advance >> 6;
+                    dim.width += spaceSize_ >> 6;
                 } else {
                     dim.width += last ? glyph.bitmap.dim.width - (kern / 64) - glyph.metrics.xoff
                                       : ((glyph.metrics.advance + kern) >> 6);
