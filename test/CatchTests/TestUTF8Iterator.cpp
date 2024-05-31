@@ -22,7 +22,7 @@
 #define BAD_5 "\xF0\x90\x8D"
 #define BAD_6 "\xF0\x90"
 
-#define BAD_CODE ibmf_defs::UNKNOWN_CODEPOINT
+#define BAD_CODE font_defs::UNKNOWN_CODEPOINT
 
 const std::string Line1{GOOD_1 GOOD_2 GOOD_3 GOOD_4};
 const std::vector Line1Result{CODE_1, CODE_2, CODE_3, CODE_4};
