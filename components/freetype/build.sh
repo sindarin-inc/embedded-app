@@ -15,7 +15,14 @@
 
 rm -rf esp32s3
 mkdir esp32s3
-cd freetype-2.13.2
+cd freetype
+
+if [ ! -f builds/unix/configure ]; then
+    ./autogen.sh
+fi
+
+cp ../modules.cfg .
+
 ./configure --host=xtensa-esp32s3-elf --prefix=$PWD/../esp32s3 --disable-shared --enable-static \
   --with-png=no \
   --with-zlib=no \
@@ -30,6 +37,7 @@ cd freetype-2.13.2
   --with-quickdraw-carbon=no \
   --with-ats=no \
   CFLAGS="-mlongcalls"
+
 make
 make install
 make clean
