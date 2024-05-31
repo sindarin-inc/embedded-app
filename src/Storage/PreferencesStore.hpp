@@ -364,6 +364,7 @@ public:
           blePower(*this, "ble-power"),
           brightnessOffset(*this, "brightness-off"),
           brightnessOffsetEnabled(*this, "bright-off-en"),
+          directEPUBTransfer(*this, "direct-epub"),
           preferencesStoreMigrationVersion_(*this, "ps-version"){};
     // clang-format on
 
@@ -619,6 +620,7 @@ public:
     PrefsItem<uint32_t> blePower;
     PrefsItem<int> brightnessOffset;
     PrefsItem<bool> brightnessOffsetEnabled;
+    PrefsItem<bool> directEPUBTransfer;
 
     // These are RTC_SLOW_MEM variables that persist across deep sleep / wake cycles but will be
     // reset on power cycles

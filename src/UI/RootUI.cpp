@@ -862,6 +862,21 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         experimentalSettingsMenu->setToggleLastItem(false);
     }
 
+    experimentalSettingsMenu->addMenuItem(MenuItem("Direct EPUB transfer", [this]() {
+        auto newValue = !this->prefs_.directEPUBTransfer.get().value_or(false);
+        if (newValue) {
+            this->prefs_.directEPUBTransfer.set(newValue);
+        } else {
+            this->prefs_.directEPUBTransfer.remove();
+        }
+    }));
+
+    if (prefs_.directEPUBTransfer.get().value_or(false)) {
+        experimentalSettingsMenu->setToggleLastItem(true);
+    } else {
+        experimentalSettingsMenu->setToggleLastItem(false);
+    }
+
     // Unpair PageTurner
     // Sync Content
     // Turn on Onboarding Mode

@@ -10,6 +10,7 @@
 
 #include "Communications/WiFi.hpp"
 #include "Misc/Dispatch.hpp"
+#include "Misc/FileTransfer.hpp"
 #include "Platform.hpp"
 #include "Sensors/TempleAngle.hpp"
 
@@ -323,10 +324,25 @@ void PowerManager::loop() {
               prevMagReading.x, prevMagReading.z, prevMagAngle);
         switch (state_) {
         case PowerState::Active:
-        case PowerState::ActiveUSBCharging:
         case PowerState::ActiveOverTemp:
             if (!templeOpen) {
                 deepSleep(SleepReason::TempleClosed);
+            }
+            break;
+        case PowerState::ActiveUSBCharging:
+            sleep(2);
+            log_d("Active charging and about to kick off file transfer listening");
+            if (prefs_.directEPUBTransfer.get().value_or(false)) {
+                if (!fileTransferStarted_) {
+                    log_d("Starting file transfer listening");
+                    xTaskCreate(FileTransfer::taskFunction, "file_transfer_task", 4096, NULL, 10,
+                                NULL);
+                    fileTransferStarted_ = true;
+                }
+            } else {
+                if (!templeOpen) {
+                    deepSleep(SleepReason::TempleClosed);
+                }
             }
             break;
         case PowerState::Background:

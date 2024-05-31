@@ -16,6 +16,7 @@
 #if EINKET013TT1
 #include "Displays/DisplayEinkET013TT1.hpp"
 #endif
+#include "Misc/FileTransfer.hpp"
 
 #if !DISABLE_POWER_MANAGEMENT
 #include <esp_pm.h>
@@ -169,7 +170,9 @@ public:
                  Telemetry &telemetry)
         : battery(fileSystem, prefs, telemetry), prefs_(prefs),
           lightingController_(lightingController), display_(display), telemetry_(telemetry),
-          magSensor_(0) {}
+          magSensor_(0), fileTransfer_(fileSystem) {
+        fileTransfer_.init(UART_NUM_1, UART_TX_PIN, UART_RX_PIN);
+    }
 
     PowerManager(const PowerManager &) = delete;
 
@@ -245,6 +248,8 @@ protected:
     InactivityTimer inactivityTimer_;
     Telemetry &telemetry_;
     Mmc5603 magSensor_;
+    FileTransfer fileTransfer_;
+    bool fileTransferStarted_ = false;
     bool templeOpen_ = false;
     BootInfo bootInfo_;
     Xyz8bit lastMagReading_ = {};
