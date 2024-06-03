@@ -52,8 +52,8 @@ public:
     virtual auto getData() const -> MemoryPtr = 0;
     virtual auto getDataSize() const -> int = 0;
 
-    virtual auto ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2,
-                         FIX16 *kern) const -> bool = 0;
+    virtual auto ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2, FIX16 *kern) const
+        -> bool = 0;
 
     auto load() -> bool;
 };
