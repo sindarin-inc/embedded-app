@@ -31,6 +31,7 @@
 #include "UI/BatteryScreen.hpp"
 #include "UI/CalibrationScreen.hpp"
 #include "UI/ContentSyncScreen.hpp"
+#include "UI/ContrastAdjustScreen.hpp"
 #include "UI/CrashReportScreen.hpp"
 #include "UI/DebugAboutScreen.hpp"
 #include "UI/DemoScreen.hpp"
@@ -1017,6 +1018,21 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             delete lightingAdjustScreen;
         });
     }));
+
+#if EINKET013TT1
+    readingSettingsMenu->addMenuItem(MenuItem("Contrast", [this, display, readingSettingsMenu,
+                                                           &lightingController]() {
+        auto contrastAdjustScreen =
+            new ContrastAdjustScreen(*display, this->prefs_, lightingController, this->telemetry_);
+        this->display_->clearDisplay();
+        setCurrentScreen(*contrastAdjustScreen);
+        contrastAdjustScreen->setBackCallback([this, contrastAdjustScreen, readingSettingsMenu]() {
+            readingSettingsMenu->setFirstLoad();
+            setCurrentScreen(*readingSettingsMenu);
+            delete contrastAdjustScreen;
+        });
+    }));
+#endif
 
     readingSettingsMenu->addMenuItem(MenuItem("Move Page in Display",
                                               [this, readingSettingsMenu, display]() {
