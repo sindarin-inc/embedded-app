@@ -113,7 +113,8 @@
         "charconv": "cpp",
         "*.xbm": "cpp",
         "format": "cpp",
-        "span": "cpp"
+        "span": "cpp",
+        "any": "cpp"
     },
     "editor.formatOnSave": true,
     "editor.defaultFormatter": "xaver.clang-format",

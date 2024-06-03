@@ -2,6 +2,10 @@
 
 #if TTF_SUPPORT
 
+#include <algorithm>
+#include <execution>
+#include <optional>
+
 #include "TTFFont.hpp"
 
 /**
@@ -33,33 +37,13 @@
 }
 
 auto Font::ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2, FIX16 *kern) const -> bool {
+    bool res = fontData_.ligKern(glyphCode1, glyphCode2, kern);
 
-    *kern = 0;
-
-    if ((glyphCode1 >= fontData_->getDataLength()) || (*glyphCode2 >= fontData_->getDataLength())) {
-        return false;
+    if (*kern != 0) {
+        *kern = FT_MulFix(*kern, face_->size->metrics.x_scale);
     }
 
-    auto ligatures = fontData_->getLigaturesData();
-
-    uint32_t key = (glyphCode1 << 16) + *glyphCode2;
-
-    auto ligIt = ligatures->find(key);
-    if (ligIt != ligatures->end()) {
-        LOGW("====> Ligature found: (%d, %d) -> %d.", glyphCode1, *glyphCode2, ligIt->second);
-        *glyphCode2 = ligIt->second;
-        return true;
-    }
-
-    auto kerns = fontData_->getKernsData();
-
-    auto kernIt = kerns->find(key);
-    if (kernIt != kerns->end()) {
-        *kern = FT_MulFix(kernIt->second, face_->size->metrics.x_scale);
-        // LOGW("Kern value: %d -> %d", kernIt->second, *kern);
-    }
-
-    return false;
+    return res;
 }
 
 void Font::copyBitmap(Bitmap &to, bool toHeightBit, Bitmap &from, Pos atPos, bool inverted) {
@@ -414,7 +398,7 @@ auto Font::getTextSize(const std::string &buffer) -> font_defs::Dim {
         ligKernUTF8Map(buffer, [this, &dim, &up, &down](GlyphCode glyphCode, FIX16 kern, bool first,
                                                         bool last) {
             // int8_t hOffset = first ?
-            // fontData_->getFace(faceIndex_)->getGlyphHOffset(glyphCode) : 0;
+            // fontData->getFace(faceIndex_)->getGlyphHOffset(glyphCode) : 0;
 
             font_defs::Glyph glyph{};
             if (getGlyphMetrics(glyphCode, glyph)) { // retrieves only the metrics
@@ -517,7 +501,7 @@ auto Font::getTextHeight(const std::string &buffer) -> int {
     if (isInitialized()) {
         // for (UTF8Iterator chrIter = buffer.begin(); chrIter != buffer.end(); chrIter++) {
         //     ibmf_defs::Glyph glyph;
-        //     if (fontData_->getFace(faceIndex_)->getGlyph(*chrIter, glyph, false)) {
+        //     if (fontData->getFace(faceIndex_)->getGlyph(*chrIter, glyph, false)) {
         //         // LOGD("yoff value: %d", glyph.metrics.yoff);
         //         if (height > glyph.metrics.yoff) {
         //             height = glyph.metrics.yoff; // yoff is negative
@@ -526,7 +510,7 @@ auto Font::getTextHeight(const std::string &buffer) -> int {
         //         LOGW("Unable to retrieve glyph for char %d(%c)", *chrIter, *chrIter);
         //     }
         // }
-        // height = fontData_->getFace(faceIndex_)->getEmHeight();
+        // height = fontData->getFace(faceIndex_)->getEmHeight();
         Dim dim = getTextSize(buffer);
         height = dim.height;
     }

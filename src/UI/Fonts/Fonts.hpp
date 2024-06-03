@@ -25,7 +25,8 @@ extern Font fontFace2;
 
 #if TTF_SUPPORT
 #include "TTFDriver/TTFFont.hpp"
-#include "TTFDriver/TTFFontData.hpp"
+#include "TTFDriver/TTFNotoSansLight.hpp"
+#include "TTFFonts/NotoSans-Light.h"
 
 // For the IBMF Fonts, a single file contains multiple "face" sizes. A single
 // object is created using the IBMFFontData class that manage the whole .h file
@@ -33,7 +34,7 @@ extern Font fontFace2;
 
 // All the fonts are instanciated in Fonts.cpp
 
-extern FontData notoSans;
+extern TTFNotoSansLight mainFont;
 
 extern Font fontFace0;
 extern Font fontFace1;

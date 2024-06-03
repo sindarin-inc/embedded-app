@@ -64,8 +64,7 @@ Font fontFace2 = Font(mainFont, 2);
 // ----- TTF Fonts -----
 
 #include "TTFDriver/TTFFont.hpp"
-#include "TTFDriver/TTFFontData.hpp"
-#include "TTFFonts/NotoSans-Light.h"
+#include "TTFDriver/TTFNotoSansLight.hpp"
 
 // clang-format on
 
@@ -84,23 +83,15 @@ Font fontFace2 = Font(mainFont, 2);
 //
 // The same approach can be used to change the current font through a selection menu
 
-#define FONT_ENTRY(caption, name)                                                                  \
-    {caption, name##_TTF, name##_TTF_LEN, &name##_TTF_KERNS, &name##_TTF_LIGATURES},
-
-// clang-format off
-std::array<FontEntry, 1> fontsList{{
-    FONT_ENTRY("NotoSans", NOTOSANS_LIGHT)
-}};
-
 // The following defines the instance of a font that is containing all faces related to that font.
 // The parameters are used to initialize the font at boot time to one of the fonts that is part of
 // the list above. This is to insure that at any time, the font is loaded with one of the available
 // entries. It can be changed using a call to font.load() method as shown in the comment of the
 // fontsList array above.
 
-FontData mainFont = FontData(fontsList[0].content, fontsList[0].length, fontsList[0].kerns, fontsList[0].ligatures);
+TTFNotoSansLight mainFont;
 
-// The following definitions identifie three pre-defined empty font face sizes initialized at 
+// The following definitions identifie three pre-defined empty font face sizes initialized at
 // application startup. The second parameter is the face point size.
 
 Font fontFace0 = Font(mainFont, 8);
@@ -108,4 +99,3 @@ Font fontFace1 = Font(mainFont, 10);
 Font fontFace2 = Font(mainFont, 12);
 
 #endif
-

@@ -19,7 +19,7 @@ private:
     FT_Face face_;
 
     bool initialized_{false};
-    FontData *fontData_;
+    FontData &fontData_;
     int size_;
     FIX16 spaceSize_{0};
     uint8_t lastGlyphWidth_;
@@ -59,29 +59,6 @@ private:
         advance = face_->glyph->advance.x >> 6;
         glyphWidth = face_->glyph->bitmap.width;
 
-        // if ((glyphCode == SPACE_CODE) ||
-        //     ((*glyphsInfo_)[glyphCode].bitmapWidth == 0)) { // send as a space character
-        //     *xoff = 0;
-        //     *advance = static_cast<FIX16>(static_cast<uint16_t>(faceHeader_->spaceSize) << 6);
-        //     return true;
-        // }
-
-        // if (glyphCode >= faceHeader_->glyphCount) {
-        //     return false;
-        // }
-
-        // GlyphInfo *glyphInfo = &(*glyphsInfo_)[glyphCode];
-
-        // if (glyphInfo == nullptr) {
-        //     return false;
-        // }
-
-        // FIX16 adj = glyphInfo->advance < ((glyphInfo->bitmapWidth + 1) << 6) ? (1 << 6) : 0;
-
-        // // NOLINTNEXTLINE(bugprone-signed-char-misuse, cert-str34-c)
-        // *xoff = static_cast<int16_t>(glyphInfo->horizontalOffset);
-        // *advance = glyphInfo->advance + adj;
-
         return true;
     }
 
@@ -103,13 +80,13 @@ private:
     void copyBitmap(Bitmap &to, bool toHeightBit, Bitmap &from, Pos atPos, bool inverted);
 
 public:
-    Font(FontData &fontData, int size) noexcept : fontData_(&fontData), size_(size) {
+    Font(FontData &fontData, int size) noexcept : fontData_(fontData), size_(size) {
         initialized_ = false;
 
-        if (fontData_->isInitialized()) {
+        if (fontData_.isInitialized()) {
             int error =
-                FT_New_Memory_Face(fontData_->getLibrary(), (const FT_Byte *)fontData_->getData(),
-                                   fontData_->getDataLength(), 0, &face_);
+                FT_New_Memory_Face(fontData_.getLibrary(), (const FT_Byte *)(fontData_.getData()),
+                                   fontData_.getDataSize(), 0, &face_);
             if (error) {
                 LOGE("The memory font format is unsupported or is broken (%d).", error);
             } else {

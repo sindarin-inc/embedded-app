@@ -8,7 +8,9 @@
 #include <fstream>
 #include <iostream>
 #include <unordered_map>
+#include <vector>
 
+#include "../TTFFonts/NotoSans-Light.h"
 #include "TTFDefs.hpp"
 
 using namespace ttf_defs;
@@ -32,17 +34,8 @@ private:
 
     bool initialized_{false};
 
-    MemoryPtr data_{nullptr};
-    uint32_t dataLength_{0};
-    const std::unordered_map<uint32_t, int16_t> *kerns_;
-    const std::unordered_map<uint32_t, uint16_t> *ligatures_;
-
 public:
-    FontData(const uint8_t *data, uint32_t length,
-             const std::unordered_map<uint32_t, int16_t> *kerns,
-             const std::unordered_map<uint32_t, uint16_t> *ligatures) noexcept
-        : data_(const_cast<MemoryPtr>(data)), dataLength_(length), kerns_(kerns),
-          ligatures_(ligatures) {
+    FontData() {
 
         load();
 
@@ -51,15 +44,16 @@ public:
         }
     }
 
-    FontData() = default;
     ~FontData() = default;
 
     [[nodiscard]] inline auto isInitialized() const -> bool { return initialized_; }
     [[nodiscard]] inline auto getLibrary() const -> FT_Library { return library_; }
-    [[nodiscard]] inline auto getData() const -> MemoryPtr { return data_; }
-    [[nodiscard]] inline auto getDataLength() const -> uint32_t { return dataLength_; }
-    [[nodiscard]] inline auto getKernsData() const { return kerns_; }
-    [[nodiscard]] inline auto getLigaturesData() const { return ligatures_; }
+
+    virtual auto getData() const -> MemoryPtr = 0;
+    virtual auto getDataSize() const -> int = 0;
+
+    virtual auto ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2,
+                         FIX16 *kern) const -> bool = 0;
 
     auto load() -> bool;
 };
