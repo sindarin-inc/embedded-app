@@ -1076,6 +1076,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             this->display_->clearDisplay();
             prefs_.inactivityMinutes.set(5);
             updateExtraText();
+            inactivityMenu->requireRestart();
             this->telemetry_.logMetricData(TelemetryField::METRIC_STYLE,
                                            {{"inactivity_minutes", 5}});
             inactivityMenu->setNeedsRerender();
@@ -1086,6 +1087,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             this->display_->clearDisplay();
             prefs_.inactivityMinutes.set(10);
             updateExtraText();
+            inactivityMenu->requireRestart();
             this->telemetry_.logMetricData(TelemetryField::METRIC_STYLE,
                                            {{"inactivity_minutes", 10}});
             inactivityMenu->setNeedsRerender();
@@ -1096,6 +1098,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             this->display_->clearDisplay();
             prefs_.inactivityMinutes.set(15);
             updateExtraText();
+            inactivityMenu->requireRestart();
             this->telemetry_.logMetricData(TelemetryField::METRIC_STYLE,
                                            {{"inactivity_minutes", 15}});
             inactivityMenu->setNeedsRerender();
@@ -1106,6 +1109,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             this->display_->clearDisplay();
             prefs_.inactivityMinutes.set(20);
             updateExtraText();
+            inactivityMenu->requireRestart();
             this->telemetry_.logMetricData(TelemetryField::METRIC_STYLE,
                                            {{"inactivity_minutes", 20}});
             inactivityMenu->setNeedsRerender();
@@ -1116,6 +1120,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             this->display_->clearDisplay();
             prefs_.inactivityMinutes.set(30);
             updateExtraText();
+            inactivityMenu->requireRestart();
             this->telemetry_.logMetricData(TelemetryField::METRIC_STYLE,
                                            {{"inactivity_minutes", 30}});
             inactivityMenu->setNeedsRerender();
@@ -1135,10 +1140,17 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         updateExtraText();
         inactivityMenu->setCurrSelection(menuIndex);
         setCurrentScreen(*inactivityMenu);
-        inactivityMenu->setBackCallback([this, inactivityMenu, readingSettingsMenu]() {
-            readingSettingsMenu->setFirstLoad();
-            setCurrentScreen(*readingSettingsMenu);
-            delete inactivityMenu;
+        inactivityMenu->setBackCallback([this, inactivityMenu, readingSettingsMenu, display]() {
+            if (inactivityMenu->getRequireRestart()) {
+                PreferencesStore::settingsOnRestart = true;
+                inactivityMenu->showTemporaryMessage(
+                    *display, "Settings change required restart! Restarting...", 1500, false);
+                this->power_.reboot();
+            } else {
+                readingSettingsMenu->setFirstLoad();
+                setCurrentScreen(*readingSettingsMenu);
+                delete inactivityMenu;
+            }
         });
     }));
 
