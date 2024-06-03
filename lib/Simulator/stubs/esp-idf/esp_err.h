@@ -121,6 +121,17 @@ const char *esp_err_to_name(esp_err_t code);
 //     } while(0)
 // #endif
 
+#define ESP_ERROR_CHECK(x)                                                                         \
+    do {                                                                                           \
+        esp_err_t err_rc_ = (x);                                                                   \
+        if (err_rc_ != ESP_OK) {                                                         \
+            printf("Error code: %d\n", err_rc_);                                                   \
+            printf("Error location: %s:%d\n", __FILE__, __LINE__);                                 \
+            printf("Failed statement: %s\n", #x);                                                  \
+            abort();                                                                               \
+        }                                                                                          \
+    } while(0);
+
 // /**
 //  * Macro which can be used to check the error code. Prints the error code, error location, and the failed statement to
 //  * serial output.

@@ -5,10 +5,11 @@
 
 #include "Ltr329Als.hpp"
 #include "Misc/MovingAverage.hpp"
+#include "Storage/PreferencesStore.hpp"
 
 class LightingController {
 public:
-    LightingController() : lightSensor_(0) {}
+    LightingController(PreferencesStore &prefs) : prefs_(prefs), lightSensor_(0) {}
     LightingController(LightingController const &) = delete;
 
     // Simple diagnostic test to check if the ambient light sensor is reporting the correct part id
@@ -18,24 +19,14 @@ public:
     // Enable updates and use the ambient light sensor to adjust the lighting
     void begin();
 
-    // If lighting is overridden, turn ambient light sensor off, since it was turned on for
-    // telemetry
-    void returnToDisabledState();
-
     // Disable lights altogether
-    void disableLighting(int fadeMs = 200);
-
-    // Enable lights altogether
-    void enableLighting(int fadeMs = 200);
-
-    // Enable only-increase mode, used to only allow ambient light sensor to increase the lighting
-    // during setup
-    void enableOnlyIncreaseMode();
-    void disableOnlyIncreaseMode();
+    void shutdown(int fadeMs = 200);
 
     // Disable updates and keeps a specific lighting setting (for when the user adjusts the setting
     // manually)
-    void setOverrideValuePercent(int percent, bool maintainLightSensor = false);
+    void setOverrideValuePercent(int percent, bool userInitiated = false);
+
+    [[nodiscard]] auto getCurrentDutyCycle() const -> int;
     [[nodiscard]] auto getCurrentPercent() const -> int;
 
     // Allow lighting only one of the screens, or both
@@ -48,27 +39,26 @@ public:
 
     auto readAmbientLightData(uint16_t &channel1, uint16_t &channel0) -> bool;
 
+    auto readPredictedDutyCycle() -> int;
+
     // This should happen periodically to check the ambient light and adjust the screen lighting
     // accordingly
     void checkAmbientLight(int fadeMs = 1000, int timeoutMs = 100);
 
 protected:
+    PreferencesStore &prefs_;
     Ltr329Als lightSensor_;
     // Adjusting the number of samples here will change the responsiveness of the ambient light
     // adjustments
     MovingAverage<int, 5> movingAverage_;
-
-    int currentDutyCycle_ = 0;
-    int overrideDutyCycle_{-1};
-
-    // enabled_ refers to the ambient light sensor being turned on, not the lights themselves
     bool enabled_ = false;
-    // lightsOut refers to the lights being turned off
-    bool lightsOut_{};
-    bool onlyIncreaseMode_ = false;
+
+    // Duty cycle as predicted by the ambient light sensor
+    int predictedDutyCycle_ = 0;
+    // Duty cycle as overridden by the user
+    int overrideDutyCycle_ = -1;
 
     void setCurrentDutyCycle(int dutyCycle, int fadeMs);
-    [[nodiscard]] auto getCurrentDutyCycle() const -> int { return currentDutyCycle_; }
 
     Screens screens_ = BOTH;
 };

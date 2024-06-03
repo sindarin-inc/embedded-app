@@ -463,7 +463,7 @@ void PowerManager::beginShutdown() {
         previousState == PowerState::ActiveUSBCharging ||
         previousState == PowerState::ActiveForcedOn ||
         previousState == PowerState::ActiveBatteryDepleted) {
-        lightingController_.disableLighting(200);
+        lightingController_.shutdown(200);
         // Delay to see the fade.
         // TODO: Use a callback instead
         Delay(200);
@@ -483,7 +483,7 @@ void PowerManager::beginShutdown() {
     DispatchShutdown();
 
     // Make sure the ambient light sensor is off so it's not using power while in deep sleep
-    lightingController_.disableLighting(0);
+    lightingController_.shutdown(0);
 
     prefs_.end();
 

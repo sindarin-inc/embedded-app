@@ -95,15 +95,15 @@ public:
     auto hasToc() -> bool;
     auto getToc() -> ReadableTableOfContentsChapterVector;
 
-    auto hasSummary(const std::string &chapterId) -> bool;
+    auto hasEpubAddition(const std::string &spineHref, const std::string &additionType) -> bool;
+    auto hasSummary(const std::string &spineHref) -> bool;
     auto getSummaryContent(
         const std::shared_ptr<EPubPlace> &placeInReadable,
         std::shared_ptr<TxtPlace> &placeInSummary,
         const std::shared_ptr<UserReadablePartialChapterSummary> &partialChapterSummary,
         bool includeUnread) -> SpiramString;
-    auto hasDictionary(const std::string &chapterId) -> bool;
-    auto getDictionaryContent(std::string &chapterId,
-                              const std::shared_ptr<EPubPlace> &placeInReadable,
+    auto hasDictionary(const std::string &spineHref) -> bool;
+    auto getDictionaryContent(const std::shared_ptr<EPubPlace> &placeInReadable,
                               std::shared_ptr<TxtPlace> &placeInDictionary) -> SpiramString;
 
 private:

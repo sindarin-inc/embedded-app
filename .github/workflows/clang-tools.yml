@@ -14,7 +14,7 @@ jobs:
       image: espressif/idf:v5.1
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           ref: ${{ github.event.pull_request.head.ref }}
@@ -45,19 +45,31 @@ jobs:
           PR_GITHUB_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: DoozyX/clang-format-lint-action@v0.16.2
+      - uses: DoozyX/clang-format-lint-action@v0.17
         with:
           source: "./src"
           extensions: "hpp,h,cpp,c"
           clangFormatVersion: 15
           inplace: True
 
-      - uses: EndBug/add-and-commit@v9
-        with:
-          add: "src"
-          author_name: Clang Robot
-          author_email: robot@example.com
-          message: "Committing clang-format/clang-tidy changes"
+      - name: "Commit changes if necessary"
+        if: github.event_name == 'pull_request'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        if: github.event_name == 'pull_request'
+        run: |
+          git fetch origin ${{ github.head_ref }}
+          echo "HEAD: $(git rev-parse HEAD)"
+          echo "UPSTREAM: $(git rev-parse @{u})"
+          if [ "$(git rev-parse HEAD)" != "$(git rev-parse @{u})" ]; then
+            echo "Newer changes detected on branch. Skipping commit."
+            exit 0
+          fi
+          if git diff --exit-code 'src/*/*.hpp' 'src/*/*.h' 'src/*/*.cpp' 'src/*/*.c' > /dev/null; then
+            echo "No changes to commit"
+          else
+            git config --global user.name "Clang Robot"
+            git config --global user.email "robot@sindarin.com"
+            git add 'src/*/*.hpp' 'src/*/*.h' 'src/*/*.cpp' 'src/*/*.c'
+            git commit -m "Committing clang-format/clang-tidy changes"
+            git push origin HEAD:${{ github.head_ref }}
+          fi
