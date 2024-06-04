@@ -1070,61 +1070,27 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 prefs_.inactivityMinutes.get().value_or(DEFAULT_INACTIVITY_MINUTES)));
             inactivityMenu->setExtraText(message);
         };
-        inactivityMenu->addMenuItem(MenuItem("5 minutes",
-                                             [this, inactivityMenu, updateExtraText]() {
-            this->display_->style.setFontFamily(this->display_->style.solSansSmall);
-            this->display_->clearDisplay();
-            prefs_.inactivityMinutes.set(5);
-            updateExtraText();
-            inactivityMenu->requireRestart();
-            this->telemetry_.logMetricData(TelemetryField::METRIC_STYLE,
-                                           {{"inactivity_minutes", 5}});
-            inactivityMenu->setNeedsRerender();
-        }));
-        inactivityMenu->addMenuItem(MenuItem("10 minutes",
-                                             [this, inactivityMenu, updateExtraText]() {
-            this->display_->style.setFontFamily(this->display_->style.solSansMedium);
-            this->display_->clearDisplay();
-            prefs_.inactivityMinutes.set(10);
-            updateExtraText();
-            inactivityMenu->requireRestart();
-            this->telemetry_.logMetricData(TelemetryField::METRIC_STYLE,
-                                           {{"inactivity_minutes", 10}});
-            inactivityMenu->setNeedsRerender();
-        }));
-        inactivityMenu->addMenuItem(MenuItem("15 minutes",
-                                             [this, inactivityMenu, updateExtraText]() {
-            this->display_->style.setFontFamily(this->display_->style.solSansLarge);
-            this->display_->clearDisplay();
-            prefs_.inactivityMinutes.set(15);
-            updateExtraText();
-            inactivityMenu->requireRestart();
-            this->telemetry_.logMetricData(TelemetryField::METRIC_STYLE,
-                                           {{"inactivity_minutes", 15}});
-            inactivityMenu->setNeedsRerender();
-        }));
-        inactivityMenu->addMenuItem(MenuItem("20 minutes",
-                                             [this, inactivityMenu, updateExtraText]() {
-            this->display_->style.setFontFamily(this->display_->style.solSansLarge);
-            this->display_->clearDisplay();
-            prefs_.inactivityMinutes.set(20);
-            updateExtraText();
-            inactivityMenu->requireRestart();
-            this->telemetry_.logMetricData(TelemetryField::METRIC_STYLE,
-                                           {{"inactivity_minutes", 20}});
-            inactivityMenu->setNeedsRerender();
-        }));
-        inactivityMenu->addMenuItem(MenuItem("30 minutes",
-                                             [this, inactivityMenu, updateExtraText]() {
-            this->display_->style.setFontFamily(this->display_->style.solSansLarge);
-            this->display_->clearDisplay();
-            prefs_.inactivityMinutes.set(30);
-            updateExtraText();
-            inactivityMenu->requireRestart();
-            this->telemetry_.logMetricData(TelemetryField::METRIC_STYLE,
-                                           {{"inactivity_minutes", 30}});
-            inactivityMenu->setNeedsRerender();
-        }));
+        auto addInactivityMenuItem =
+            [this, inactivityMenu, updateExtraText](const std::string &label, int minutes,
+                                                    const FontFamily fontFamily) {
+            inactivityMenu->addMenuItem(
+                MenuItem(label, [this, inactivityMenu, updateExtraText, minutes, fontFamily]() {
+                    this->display_->style.setFontFamily(fontFamily);
+                    this->display_->clearDisplay();
+                    prefs_.inactivityMinutes.set(minutes);
+                    updateExtraText();
+                    inactivityMenu->requireRestart();
+                    this->telemetry_.logMetricData(TelemetryField::METRIC_STYLE,
+                                                   {{"inactivity_minutes", minutes}});
+                    inactivityMenu->setNeedsRerender();
+                }));
+        };
+
+        addInactivityMenuItem("5 minutes", 5, this->display_->style.solSansSmall);
+        addInactivityMenuItem("10 minutes", 10, this->display_->style.solSansMedium);
+        addInactivityMenuItem("15 minutes", 15, this->display_->style.solSansLarge);
+        addInactivityMenuItem("20 minutes", 20, this->display_->style.solSansLarge);
+        addInactivityMenuItem("30 minutes", 30, this->display_->style.solSansLarge);
         int menuIndex = 0;
         if (prefs_.inactivityMinutes.get().value_or(DEFAULT_INACTIVITY_MINUTES) == 5) {
             menuIndex = 0;
