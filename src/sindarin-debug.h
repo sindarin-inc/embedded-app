@@ -14,6 +14,18 @@
 #define PROFILE_END(identifier)                                                                    \
     auto profileEnd##identifier = std::chrono::high_resolution_clock::now();
 
+#define CYCLES_TO_MS(cycles) 0.0f
+
+#define CYCLES_TO_US(cycles) 0.0f
+
+#define CYCLES_TO_NS(cycles) 0.0f
+
+#define PROFILE_CALCULATE_MS(identifier) 0
+
+#define PROFILE_CALCULATE_US(identifier) 0
+
+#define PROFILE_CALCULATE_NS(identifier) 0
+
 #define PROFILE_LOG_MS(identifier)                                                                 \
     log_d("PROFILE_LOG_MS(" #identifier ") %" PRIu64 "ms",                                         \
           std::chrono::duration_cast<std::chrono::milliseconds>(profileEnd##identifier -           \

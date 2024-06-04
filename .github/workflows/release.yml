@@ -49,3 +49,4 @@ jobs:
           curl -X POST -H 'Content-type: application/json' \
           --data "{\"text\":\"New release $VERSION has been uploaded. See it at https://api.sindarin.com/admin/devices/firmwaredownload/\"}" \
           ${{ secrets.slack-webhook-url }}
+

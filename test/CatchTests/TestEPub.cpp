@@ -27,6 +27,68 @@
 
 extern auto UIGetCurrentScreen() -> Screen *;
 
+TEST_CASE("Test some individual EPub formatting edge cases", "[epub-format]") {
+    auto display = createDisplay();
+    (*display).style.setFontFamily((*display).style.solSansSmall);
+
+    PosixFileSystem fs("./test/CatchTests");
+    fs.begin();
+
+    SECTION("Test that newlines without spaces are rendered as spaces") {
+        auto readable = std::make_shared<Readable>();
+        readable->readableType = "book";
+
+        auto file = fs.open("/Fixtures/epub/formatting.epub");
+        auto epubFile = std::make_shared<EPubFile>(file, readable);
+
+        Renderer renderer(*display);
+        renderer.setStream(epubFile);
+        renderer.renderPage(std::make_shared<EPubPlace>(0, "newlines_without_spaces.xhtml"));
+        display->updateDisplay(DisplaySystem::UpdateType::FULL, true);
+
+        ASSERT_VIEW_UNCHANGED(display, "NewLineWithoutSpace");
+    }
+
+    SECTION("Test that >4 non-breaking space characters get collapsed") {
+        auto readable = std::make_shared<Readable>();
+        readable->readableType = "book";
+
+        auto file = fs.open("/Fixtures/epub/formatting.epub");
+        auto epubFile = std::make_shared<EPubFile>(file, readable);
+
+        Renderer renderer(*display);
+        renderer.setStream(epubFile);
+        renderer.renderPage(std::make_shared<EPubPlace>(0, "multiple_nbsp.xhtml"));
+        display->updateDisplay(DisplaySystem::UpdateType::FULL, true);
+
+        ASSERT_VIEW_UNCHANGED(display, "CollapsedNBPS");
+    }
+
+    SECTION("Test that all glyphs render inside the EPUB") {
+        auto readable = std::make_shared<Readable>();
+        readable->readableType = "book";
+
+        auto file = fs.open("/Fixtures/epub/glyphs.epub");
+        auto epubFile = std::make_shared<EPubFile>(file, readable);
+
+        Renderer renderer(*display);
+        renderer.setStream(epubFile);
+        auto place = std::make_shared<EPubPlace>(0, "Basic Latin.xhtml");
+
+        // Render all pages
+        int i = 0;
+        while (!renderer.atEndOfFile()) {
+            auto chapter = epubFile->getToc()[epubFile->getChapterIdx(place)];
+            auto [newPlace, _] = renderer.renderPage(place);
+            place = std::dynamic_pointer_cast<EPubPlace>(newPlace);
+            display->updateDisplay(DisplaySystem::UpdateType::FULL, true);
+            ASSERT_VIEW_UNCHANGED(display, "EPubGlyphTest/" + std::to_string(i) + "-" +
+                                               std::string(chapter.title));
+            i++;
+        }
+    }
+}
+
 TEST_CASE("Test EPub Books Rendering", "[.][epub]") {
 
     SetupFileSystemMock("EPubTestData");
@@ -35,25 +97,27 @@ TEST_CASE("Test EPub Books Rendering", "[.][epub]") {
     StartAppMain(FONT_CHOICES::PREFS_SOL_SMALL, 10, 10, -2);
     defer { StopFreeRtos(); };
 
-    // First screen renders twice once with a full refresh and once with a AU4
-    WAIT_FOR_DRAW();
-    WAIT_FOR_DRAW();
+    auto &display = GetRootDisplay();
 
-    ASSERT_VIEW_UNCHANGED("FirstScreen");
+    // First screen renders twice once with a full refresh and once with a AU4
+    WAIT_FOR_DRAW(display);
+    WAIT_FOR_DRAW(display);
+
+    ASSERT_VIEW_UNCHANGED(display, "FirstScreen");
 
     SECTION("Books") {
         SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW();
-        // WAIT_FOR_DRAW();
+        WAIT_FOR_DRAW(display);
+        // WAIT_FOR_DRAW(display);
 
         auto screen = UIGetCurrentScreen();
         auto readableScreen = dynamic_cast<ReadableScreen *>(screen);
 
         if (readableScreen != nullptr) {
 
-            ASSERT_VIEW_UNCHANGED("OnePageTutorial");
+            ASSERT_VIEW_UNCHANGED(display, "OnePageTutorial");
             SendRemoteCommand(ENTER);
-            WAIT_FOR_DRAW();
+            WAIT_FOR_DRAW(display);
 
             int pageNbr = 1;
             ChapterIdx chapterIdx = 0;
@@ -71,12 +135,12 @@ TEST_CASE("Test EPub Books Rendering", "[.][epub]") {
                     std::stringstream fname;
                     fname << chapterIdx + 1 << "-" << pageNbr++;
 
-                    ASSERT_VIEW_UNCHANGED(fname.str());
+                    ASSERT_VIEW_UNCHANGED(display, fname.str());
 
                     if (readableScreen->checkAtEnd()) break;
 
                     SendRemoteCommand(ENTER);
-                    WAIT_FOR_DRAW();
+                    WAIT_FOR_DRAW(display);
                 }
             }
 
@@ -86,16 +150,16 @@ TEST_CASE("Test EPub Books Rendering", "[.][epub]") {
         }
 
         SendRemoteCommand(UP);
-        WAIT_FOR_DRAW();
-        WAIT_FOR_DRAW();
+        WAIT_FOR_DRAW(display);
+        WAIT_FOR_DRAW(display);
 
-        ASSERT_VIEW_UNCHANGED("LastPagePopupMenu");
+        ASSERT_VIEW_UNCHANGED(display, "LastPagePopupMenu");
 
         SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW();
-        WAIT_FOR_DRAW();
+        WAIT_FOR_DRAW(display);
+        WAIT_FOR_DRAW(display);
 
-        ASSERT_VIEW_UNCHANGED("MainMenu");
+        ASSERT_VIEW_UNCHANGED(display, "MainMenu");
 
 #if 0
         // The following is kept as it would be useful if other books are integrated to the test.
@@ -104,19 +168,19 @@ TEST_CASE("Test EPub Books Rendering", "[.][epub]") {
         // SECTION("Book 2") {
 
         SendRemoteCommand(DOWN);
-        WAIT_FOR_DRAW();
+        WAIT_FOR_DRAW(display);
 
         SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW();
+        WAIT_FOR_DRAW(display);
 
         screen = UIGetCurrentScreen();
         readableScreen = dynamic_cast<ReadableScreen *>(screen);
 
         if (readableScreen != nullptr) {
 
-            // ASSERT_VIEW_UNCHANGED("OnePageTutorial");
+            // ASSERT_VIEW_UNCHANGED(display, "OnePageTutorial");
             // SendRemoteCommand(ENTER);
-            // WAIT_FOR_DRAW();
+            // WAIT_FOR_DRAW(display);
 
             int pageNbr = 1;
             int spineIdx = 0;
@@ -132,12 +196,12 @@ TEST_CASE("Test EPub Books Rendering", "[.][epub]") {
                 std::stringstream fname;
                 fname << "Book2/" << spineIdx + 1 << "-" << pageNbr++;
 
-                ASSERT_VIEW_UNCHANGED(fname.str());
+                ASSERT_VIEW_UNCHANGED(display, fname.str());
 
                 if (readableScreen->checkAtEnd()) break;
 
                 SendRemoteCommand(ENTER);
-                WAIT_FOR_DRAW();
+                WAIT_FOR_DRAW(display);
             }
 
         } else {
@@ -146,35 +210,35 @@ TEST_CASE("Test EPub Books Rendering", "[.][epub]") {
         }
 
         SendRemoteCommand(UP);
-        WAIT_FOR_DRAW();
-        WAIT_FOR_DRAW();
+        WAIT_FOR_DRAW(display);
+        WAIT_FOR_DRAW(display);
 
-        ASSERT_VIEW_UNCHANGED("MainMenu");
+        ASSERT_VIEW_UNCHANGED(display, "MainMenu");
 
         SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW();
-        WAIT_FOR_DRAW();
+        WAIT_FOR_DRAW(display);
+        WAIT_FOR_DRAW(display);
 
-        ASSERT_VIEW_UNCHANGED("ThirdScreen");
+        ASSERT_VIEW_UNCHANGED(display, "ThirdScreen");
 
         // }
 
         // SECTION("Book 3") {
 
         SendRemoteCommand(DOWN);
-        WAIT_FOR_DRAW();
+        WAIT_FOR_DRAW(display);
 
         SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW();
+        WAIT_FOR_DRAW(display);
 
         screen = UIGetCurrentScreen();
         readableScreen = dynamic_cast<ReadableScreen *>(screen);
 
         if (readableScreen != nullptr) {
 
-            // ASSERT_VIEW_UNCHANGED("OnePageTutorial");
+            // ASSERT_VIEW_UNCHANGED(display, "OnePageTutorial");
             // SendRemoteCommand(ENTER);
-            // WAIT_FOR_DRAW();
+            // WAIT_FOR_DRAW(display);
 
             int pageNbr = 1;
             int spineIdx = 0;
@@ -190,12 +254,12 @@ TEST_CASE("Test EPub Books Rendering", "[.][epub]") {
                 std::stringstream fname;
                 fname << "Book3/" << spineIdx + 1 << "-" << pageNbr++;
 
-                ASSERT_VIEW_UNCHANGED(fname.str());
+                ASSERT_VIEW_UNCHANGED(display, fname.str());
 
                 if (readableScreen->checkAtEnd()) break;
 
                 SendRemoteCommand(ENTER);
-                WAIT_FOR_DRAW();
+                WAIT_FOR_DRAW(display);
             }
         } else {
             UNSCOPED_INFO("Unable to get ReadableScreen instance for Book3.");

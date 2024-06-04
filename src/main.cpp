@@ -42,6 +42,10 @@
 #if EINKET013TT1
 #include "Displays/DisplayEinkET013TT1.hpp"
 DisplayEinkET013TT1 myDisplay(DISPLAY_CS_LEFT, DISPLAY_CS_RIGHT, DISPLAY_RST);
+#elif DISPLAY_SIM_8BIT
+// Declared in native.cpp
+#include "Displays/DisplaySim8Bit.hpp"
+extern DisplaySim8Bit myDisplay;
 #endif
 
 PreferencesStore prefs;
@@ -63,11 +67,6 @@ BLESettings bleSettings(&prefs);
 #include "Communications/BLEImprov.hpp"
 #endif
 
-#if USE_TURN_TOUCH_REMOTE
-#include "Inputs/TTRemoteInput.hpp"
-TTRemoteInput ttRemoteInput(prefs);
-#endif
-
 #if USE_BLE_SERVER_PROXY
 #include "Communications/BLESyncService.hpp"
 BLESyncService bleSyncService;
@@ -78,7 +77,7 @@ BLESyncService bleSyncService;
 #endif
 
 #include "Sensors/LightingController.hpp"
-LightingController lightingController;
+LightingController lightingController(prefs);
 
 #if SIMULATOR
 #include "Storage/PosixFileSystem.hpp"
@@ -89,6 +88,12 @@ LittleFSFileSystem fileSystem;
 #endif
 
 Telemetry telemetry(fileSystem, prefs);
+
+#if USE_TURN_TOUCH_REMOTE
+#include "Inputs/TTRemoteInput.hpp"
+TTRemoteInput ttRemoteInput(prefs, telemetry);
+#endif
+
 PowerManager powerManager(fileSystem, prefs, lightingController, myDisplay, telemetry);
 LocalStore localStore(fileSystem, prefs, powerManager.battery, telemetry);
 RootUI rootUi(prefs, powerManager, telemetry);
@@ -339,16 +344,14 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
             }
         });
 
-        xTaskCreatePinnedToCore(
-            [](void *) {
+        xTaskCreatePinnedToCore([](void *) {
             while (powerManager.state() != PowerState::ShuttingDown) {
                 powerManager.loop();
                 vTaskDelay(1000 / portTICK_PERIOD_MS);
             }
             log_d("Background loop task exited");
             vTaskDelete(nullptr);
-            },
-            "BackgroundPowerLoop", 4096, nullptr, 1, nullptr, 1);
+        }, "BackgroundPowerLoop", 4096, nullptr, 1, nullptr, 1);
         BackgroundSyncAndSleep(powerManager, prefs, localStore, telemetry);
 
         // Should never get here, the system should be asleep
@@ -423,8 +426,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         lightingController.setOverrideValuePercent(100);
 
         // Also kick off a task to try to content sync every minute or so
-        xTaskCreatePinnedToCore(
-            [](void *) {
+        xTaskCreatePinnedToCore([](void *) {
             while (powerManager.state() != PowerState::ShuttingDown) {
                 PreferencesStore::syncReason = SyncReason::Periodic;
                 BackgroundSync(powerManager, prefs, localStore, telemetry);
@@ -432,8 +434,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
             }
             log_d("Sync loop task exited");
             vTaskDelete(nullptr);
-            },
-            "BackgroundSync", 4096, nullptr, 1, nullptr, 1);
+        }, "BackgroundSync", 4096, nullptr, 1, nullptr, 1);
     }
 
 #if USE_TURN_TOUCH_REMOTE || USE_BLE_SERVER_REMOTE

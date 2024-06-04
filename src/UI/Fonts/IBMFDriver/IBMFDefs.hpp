@@ -126,7 +126,11 @@ const constexpr uint16_t UTF32_MAX_GLYPH_COUNT = 32765; // Index Value 0xFE and 
 
 enum class PixelResolution : uint8_t { ONE_BIT, EIGHT_BITS };
 
+#if DISPLAY_SIM_8BIT
+const constexpr PixelResolution DEFAULT_RESOLUTION = PixelResolution::EIGHT_BITS;
+#else
 const constexpr PixelResolution DEFAULT_RESOLUTION = PixelResolution::ONE_BIT;
+#endif
 
 struct Dim {
     int16_t width;

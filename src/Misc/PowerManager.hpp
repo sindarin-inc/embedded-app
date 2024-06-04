@@ -5,6 +5,7 @@
 #include <rom/rtc.h>
 #include <utility>
 
+#include "Displays/DisplaySystem.hpp"
 #include "Misc/Battery.hpp"
 #include "Misc/InactivityTimer.hpp"
 #include "Misc/SolClock.hpp"

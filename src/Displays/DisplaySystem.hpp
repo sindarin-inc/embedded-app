@@ -13,6 +13,7 @@
 #include <Adafruit_GFX.h>
 #include <array>
 #include <freertos/FreeRTOS.h>
+#include <freertos/queue.h>
 #include <freertos/timers.h>
 #include <string>
 
@@ -44,8 +45,8 @@ public:
     DisplaySystem(DisplaySystem const &) = delete;
     virtual ~DisplaySystem() = default;
 
-    static constexpr DisplayRect MAX_BOUNDING_BOX = {5, 5, 246, 246};
-    static constexpr DisplayRect MIN_BOUNDING_BOX = {0, 0, 125, 45};
+    DisplayRect maxBoundingBox = {5, 5, 246, 246};
+    DisplayRect minBoundingBox = {0, 0, 125, 45};
 
     virtual auto setup() -> bool;
 
@@ -162,7 +163,7 @@ public:
     void setLineSpacing(int newSpacing) { lineSpacing_ = newSpacing; }
 
     virtual void clearDisplay(){};
-    virtual void clearFrameBuffer(){};
+    virtual void clearFrameBuffer() { fillScreen(bg); };
 
     void forceDontChangeRefreshType() { forceRefreshType_ = true; }
     void clearDontChangeRefreshType() { forceRefreshType_ = false; }
@@ -222,18 +223,35 @@ public:
     [[nodiscard]] inline auto yAbsolute(int y) const -> int { return y - boundingBox_.y; }
 
     // Should these be in the subclasses instead?
-    auto xAbsoluteCenter() -> int { return 128; }
-    auto yAbsoluteCenter() -> int { return 128; }
+    [[nodiscard]] auto xAbsoluteCenter() const -> int { return defaultScreenWidth / 2; }
+    [[nodiscard]] auto yAbsoluteCenter() const -> int { return defaultScreenHeight / 2; }
 
-    auto xAbsoluteMax() -> int { return 255; }
-    auto yAbsoluteMax() -> int { return 255; }
+    [[nodiscard]] auto xAbsoluteMax() const -> int { return defaultScreenWidth - 1; }
+    [[nodiscard]] auto yAbsoluteMax() const -> int { return defaultScreenHeight - 1; }
 
-    auto absoluteWidth() -> int { return 256; }
-    auto absoluteHeight() -> int { return 256; }
+    [[nodiscard]] auto absoluteWidth() const -> int { return defaultScreenWidth; }
+    [[nodiscard]] auto absoluteHeight() const -> int { return defaultScreenHeight; }
 
     [[nodiscard]] virtual auto darkPictureVComAdj(uint8_t darkPixelsPercent) const -> int {
         return 0;
     }
+
+#if SIMULATOR
+    // Signal to the simulator to draw the screen
+    virtual auto renderQueue() -> QueueHandle_t = 0;
+
+    // The buffer that the simulator will use to draw the screen
+    // For EInk simulation, this indicates the position of the pigment particles in the screen
+    virtual auto buffer() -> std::unique_ptr<uint8_t[]> & = 0;
+
+    // For the simulator to know if it should skip the waveform processing
+    virtual auto getSkipWaveform() -> bool { return false; }
+    virtual void setSkipWaveform(bool skip) {}
+
+    // For the simulator to know if it should skip the signalling queue
+    virtual auto getSkipSignalling() -> bool { return false; }
+    virtual void setSkipSignalling(bool skip) {}
+#endif
 
 protected:
     // Must be set in the constructor of subclasses

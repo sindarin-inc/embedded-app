@@ -9,56 +9,45 @@ on:
       - "release/v*"
 
 jobs:
-  build:
+  build-sim:
     name: "Build Simulator"
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        pioenv:
-          # Seems like RISCV ULP compilation is busted in PlatformIO at least for IDF 5.0.1
-          - simulator
-          # - simulator-wasm
+        target:
+          - sim
+          - sim8
 
     steps:
       - name: Check out code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           submodules: "recursive"
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
-      - name: Install PlatformIO
-        run: |
-          python -m pip install --upgrade pip
-          pip install platformio
-
       - name: Install SDL
-        if: matrix.pioenv == 'simulator'
         run: sudo apt update && sudo apt install -y libsdl2-dev libsdl2-image-dev
 
-      - name: Install Emscripten
-        if: matrix.pioenv == 'simulator-wasm'
-        uses: mymindstorm/setup-emsdk@v11
-
-      - name: PlatformIO run
+      - name: build
         run: |
           set -o pipefail
-          pio run -e ${{ matrix.pioenv }} 2>&1 | tee ${{ matrix.pioenv }}-build-log.txt
+          make ${{ matrix.target }}-build | tee ${{ matrix.target }}-build-log.txt
 
       - name: Post errors and warnings as annotations
         if: github.event_name == 'pull_request' && (success() || failure())
         run: |
           pip install requests curlify
-          python scripts/parse_warnings.py --filename ${{ matrix.pioenv }}-build-log.txt --title ${{ matrix.pioenv }}-build
+          python scripts/parse_warnings.py --filename ${{ matrix.target }}-build-log.txt --title ${{ matrix.target }}-build
         env:
           PR_GITHUB_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   build-idf:
-    name: "idf.py build"
+    name: "Build Firmware"
     runs-on:
       group: Medium
     strategy:
@@ -70,7 +59,7 @@ jobs:
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
           submodules: "recursive"
@@ -105,15 +94,111 @@ jobs:
           cp build/ota_data_initial.bin artifact
 
       - name: Upload binaries
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: embedded-app-${{ github.sha }}-IDF${{ matrix.idf_version }}
           path: artifact
 
+  build-epub-render:
+    name: "Build epub-render"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+        with:
+          submodules: "recursive"
+
+      # Build scripts/epub-render with cmake
+      - name: Build epub-render
+        run: |
+          cd scripts/epub-render
+          mkdir -p build
+          cd build
+          cmake ..
+          make -j
+
+      - name: Rename binary with Git SHA
+        run: |
+          cd scripts/epub-render/build
+          mv epub-render epub-render-${{ github.sha }}
+
+      - name: Upload binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: epub-render-${{ github.sha }}
+          path: scripts/epub-render/build/epub-render-${{ github.sha }}
+
   release:
     if: contains(github.ref, 'refs/tags/release/v')
-    needs: build-idf
-    uses: ./.github/workflows/release.yml
-    secrets:
-      slack-webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
-      sol-auth-tolkien: ${{ secrets.SOL_AUTH_TOLKIEN }}
+    name: "Create Release"
+    needs: [build-idf, build-epub-render]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set version
+        id: set-version
+        run: |
+          TAG_NAME="${GITHUB_REF}"
+          VERSION=${TAG_NAME#refs/tags/release/v}
+          echo "::set-output name=version::$VERSION"
+
+      - name: Download firmware binaries
+        id: download-firmware
+        uses: actions/download-artifact@v4
+        with:
+          name: embedded-app-${{ github.sha }}-IDFv5.1
+          path: embedded-app-${{ github.sha }}-IDFv5.1
+
+      - name: Download epub-render binaries
+        id: download-epub-render
+        uses: actions/download-artifact@v4
+        with:
+          name: epub-render-${{ github.sha }}
+          path: epub-render-${{ github.sha }}
+
+      - name: Create firmware release
+        run: |
+          curl -X POST 'https://api.sindarin.com/firmware/' \
+          -H "Authorization: Tolkien ${{ secrets.SOL_AUTH_TOLKIEN }}  " \
+          -F "version=${{ steps.set-version.outputs.version }}" \
+          -F "file=@${{ steps.download-firmware.outputs.download-path }}/embedded-app.bin;type=application/octet-stream" \
+          -F "elf=@${{ steps.download-firmware.outputs.download-path }}/embedded-app.elf;type=application/octet-stream" \
+          -F "role=DEBUG" \
+          -F "device=GLASSES" \
+          -F "git_sha=${{ github.sha }}" \
+          -F "release_notes=TODO"
+
+      - name: Create epub-render release
+        run: |
+          curl -X POST 'https://api.sindarin.com/firmware/' \
+          -H "Authorization: Tolkien ${{ secrets.SOL_AUTH_TOLKIEN }}  " \
+          -F "version=${{ steps.set-version.outputs.version }}" \
+          -F "file=@${{ steps.download-epub-render.outputs.download-path }}/epub-render-${{ github.sha }};type=application/octet-stream" \
+          -F "role=DEBUG" \
+          -F "device=EPUB_RENDER" \
+          -F "git_sha=${{ github.sha }}" \
+          -F "release_notes=TODO"
+
+      - name: Zip back up the firmware build
+        run: zip -r embedded-app-${{ steps.set-version.outputs.version }}-${{ github.sha }}-IDFv5.1.zip embedded-app-${{ github.sha }}-IDFv5.1
+
+      - name: Rename epub-render binary
+        run: |
+          mv epub-render-${{ github.sha }}/epub-render-${{ github.sha }} epub-render-${{ github.sha }}/epub-render-linux-${{ steps.set-version.outputs.version }}
+
+      - name: Zip back up the epub-render build
+        run: zip -r epub-render-${{ steps.set-version.outputs.version }}-${{ github.sha }}.zip epub-render-${{ github.sha }}
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: |
+            embedded-app-${{ steps.set-version.outputs.version }}-${{ github.sha }}-IDFv5.1.zip
+            epub-render-${{ steps.set-version.outputs.version }}-${{ github.sha }}.zip
+
+      - name: Notify Slack
+        run: |
+          curl -X POST -H 'Content-type: application/json' \
+          --data "{\"text\":\"New release ${{ steps.set-version.outputs.version }} has been uploaded. See it at https://api.sindarin.com/admin/devices/firmwaredownload/\"}" \
+          ${{ secrets.SLACK_WEBHOOK_URL }}

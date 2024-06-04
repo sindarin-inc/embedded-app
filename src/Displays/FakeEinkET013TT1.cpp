@@ -9,25 +9,14 @@
 #include "Misc/Platform.hpp"
 #include "sindarin-debug.h"
 
-uint8_t FakeEinkET013TT1ParticlePositions[EinkET013TT1_PIXEL_WIDTH * EinkET013TT1_PIXEL_HEIGHT];
-// Skip waveform processing and just set things as black and white
-bool FakeEinkET013TT1SkipWaveform = false;
-bool FakeEinkET013TT1SkipSignalling = false;
-QueueHandle_t FakeEinkET013TT1RenderQueue = nullptr;
-QueueHandle_t FakeEinkET013TT1DoneWaveformQueue = nullptr;
-
 // How much each e-ink particle will move each frame it is charged
 int FakeEinkET013TT1ParticleMovement = PARTICLE_MOVEMENT_DEFAULT;
 
 void EinkET013TT1::init() {
-    if (FakeEinkET013TT1RenderQueue == nullptr) {
-        FakeEinkET013TT1RenderQueue = xQueueCreate(1, sizeof(uint8_t));
+    if (renderQueue_ == nullptr) {
+        renderQueue_ = xQueueCreate(1, sizeof(uint8_t));
     }
-    xQueueReset(FakeEinkET013TT1RenderQueue);
-    if (FakeEinkET013TT1DoneWaveformQueue == nullptr) {
-        FakeEinkET013TT1DoneWaveformQueue = xQueueCreate(1, sizeof(uint8_t));
-    }
-    xQueueReset(FakeEinkET013TT1DoneWaveformQueue);
+    xQueueReset(renderQueue_);
 }
 
 void EinkET013TT1::setVcom(int mV) {}
@@ -49,19 +38,19 @@ auto EinkET013TT1::getPixel(const uint8_t *buffer, int x, int y) -> uint8_t {
 void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *buffer,
                           int32_t overrideVcom, const EinkET013TT1Waveform &altWaveform,
                           ScreenSide screen, EinkBox box) {
-    if (FakeEinkET013TT1SkipWaveform) {
+    if (skipWaveform_) {
         // Skip waveform processing and just move the pixel all the way one way or another
         log_d("Skipping waveform processing (would have used \"%s\")", waveform.name);
         for (int x = 0; x < EinkET013TT1_PIXEL_WIDTH; x++) {
             for (int y = 0; y < EinkET013TT1_PIXEL_HEIGHT; y++) {
                 auto pixel = getPixel(buffer, x, y);
-                FakeEinkET013TT1ParticlePositions[y * EinkET013TT1_PIXEL_WIDTH + x] = pixel * 255;
+                particlePositions_[y * EinkET013TT1_PIXEL_WIDTH + x] = pixel * 255;
             }
         }
         // Signal that we've drawn something
         uint8_t in = 1;
-        if (!FakeEinkET013TT1SkipSignalling) {
-            xQueueSend(FakeEinkET013TT1RenderQueue, &in, portMAX_DELAY);
+        if (!skipSignalling_) {
+            xQueueSend(renderQueue_, &in, portMAX_DELAY);
         }
     } else {
         log_d("Updating display with waveform \"%s\"", waveform.name);
@@ -81,8 +70,7 @@ void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *b
                     auto previousPixel = getPixel(previousBuffer_, x, y);
                     uint8_t setting = box.contains(x, y) ? altFrame.getSetting(previousPixel, pixel)
                                                          : frame.getSetting(previousPixel, pixel);
-                    auto position =
-                        FakeEinkET013TT1ParticlePositions[y * EinkET013TT1_PIXEL_WIDTH + x];
+                    auto position = particlePositions_[y * EinkET013TT1_PIXEL_WIDTH + x];
                     // TODO: We could probably get math-y here and simulate the movement of the
                     // particles with physics. For now we're just estimating.
                     switch (setting) {
@@ -95,12 +83,12 @@ void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *b
                     case NOCHG:
                         break;
                     }
-                    FakeEinkET013TT1ParticlePositions[y * EinkET013TT1_PIXEL_WIDTH + x] = position;
+                    particlePositions_[y * EinkET013TT1_PIXEL_WIDTH + x] = position;
                 }
             }
             uint8_t in = 1;
-            if (!FakeEinkET013TT1SkipSignalling) {
-                xQueueSend(FakeEinkET013TT1RenderQueue, &in, portMAX_DELAY);
+            if (!skipSignalling_) {
+                xQueueSend(renderQueue_, &in, portMAX_DELAY);
             }
 
             // This doesn't account for processing time above, but probably real CPUs are fast
@@ -110,11 +98,6 @@ void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *b
 
         // Move new buffer to be previous buffer
         memcpy(previousBuffer_, buffer, sizeof(previousBuffer_));
-    }
-
-    uint8_t in = 1;
-    if (!FakeEinkET013TT1SkipSignalling) {
-        xQueueSend(FakeEinkET013TT1DoneWaveformQueue, &in, 0);
     }
 }
 

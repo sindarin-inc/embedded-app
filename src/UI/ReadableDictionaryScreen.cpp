@@ -47,11 +47,11 @@ void ReadableDictionaryScreen::render(DisplaySystem &display) {
             rendererStream_ = renderer_.getStream();
         }
         auto epubStream = std::dynamic_pointer_cast<EPubFile>(rendererStream_);
-        auto chapterId = epubStream->getManifestIdByHref(placeInReadable_->getHRef());
         int currentOffset = placeInReadable_->getOffset();
-        log_d("Loading dictionary for spine item: %s : %d", chapterId.c_str(), currentOffset);
+        log_d("Loading dictionary for place: %s : %d", placeInReadable_->str().c_str(),
+              currentOffset);
         auto dictionaryString =
-            epubStream->getDictionaryContent(chapterId, placeInReadable_, placeInDictionary);
+            epubStream->getDictionaryContent(placeInReadable_, placeInDictionary);
 
         if (preservePlace_) {
             placeInDictionary = preservePlace_;

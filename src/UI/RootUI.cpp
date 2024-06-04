@@ -305,10 +305,10 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         }
     }
 
-    auto makeContentSyncMenuItem = [this, display, &localStore, mainMenu,
-                                    &lightingController](const char *title) -> MenuItem {
+    auto makeContentSyncMenuItem = [this, display, &localStore,
+                                    mainMenu](const char *title) -> MenuItem {
         return {title,
-                [this, display, &localStore, mainMenu, &lightingController]() {
+                [this, display, &localStore, mainMenu]() {
             // If we're not yet paired, show the app screen instead
             if (PreferencesStore::paired == PairedStatus::Unpaired) {
                 auto appDownloadScreen = new AppDownloadScreen(*display);
@@ -324,7 +324,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
             auto contentSyncScreen =
                 new ContentSyncScreen(*display, localStore, this->prefs_, this->telemetry_);
-            lightingController.setOverrideValuePercent(lightingController.getCurrentPercent());
             display->setFont(mainMenu->getMyStyle().navigationFont);
             this->setCurrentScreen(*contentSyncScreen);
             contentSyncScreen->setBackCallback([this, contentSyncScreen, mainMenu, display]() {
@@ -483,7 +482,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         }
 
         if (!(prefs_.tutorialsDeleted.get().value_or(0) & TUTORIAL_SCREEN_BIBLE)) {
-            bibleMenu->addMenuItem(MenuItem("\ue000 Bible Tutorial",
+            bibleMenu->addMenuItem(MenuItem("\ue000 Why have a Bible app?",
                                             [this, createTutorialScreen]() {
                 SpiramString message = SpiRamStringFormat(
                     "The Gutenberg Bible "
@@ -846,6 +845,21 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         experimentalSettingsMenu->setToggleLastItem(false);
     } else {
         experimentalSettingsMenu->setToggleLastItem(true);
+    }
+
+    experimentalSettingsMenu->addMenuItem(MenuItem("Apply lighting offset", [this]() {
+        auto newValue = !this->prefs_.brightnessOffsetEnabled.get().value_or(false);
+        if (newValue) {
+            this->prefs_.brightnessOffsetEnabled.set(newValue);
+        } else {
+            this->prefs_.brightnessOffsetEnabled.remove();
+        }
+    }));
+
+    if (prefs_.brightnessOffsetEnabled.get().value_or(false)) {
+        experimentalSettingsMenu->setToggleLastItem(true);
+    } else {
+        experimentalSettingsMenu->setToggleLastItem(false);
     }
 
     // Unpair PageTurner

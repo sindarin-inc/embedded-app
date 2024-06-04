@@ -1825,6 +1825,11 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint32_t len) -> bool 
                     startOfHeader_ = false;
                 }
 
+                // Count the number of nbsp in a row, to limit the number of them that
+                // could be present in a word. The current limit is 4
+                const uint8_t nbspCountLimit = 4;
+                uint8_t nbspCount = 0;
+
                 do {
                     // log_d("Current Character: %c (%02" PRIX8 "H)",
                     //       (((curChar >= ' ') && (curChar < 127)) ? curChar : ' '),
@@ -1835,14 +1840,27 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint32_t len) -> bool 
                         if (*trans != '\0') {
                             len -= (newStrLocation - str);
                             streamOffset += (newStrLocation - str);
-                            while (*trans && !tokens_.cStrIsFull()) {
-                                if (*trans > ' ') {
-                                    tokens_.addByte(*textToken_, *trans);
+                            if ((static_cast<uint8_t>(trans[0]) == 0xC2U) &&
+                                (static_cast<uint8_t>(trans[1]) == 0xA0U)) {
+                                // That is a nbsp character, limit to 4 in a row
+                                if (nbspCount < nbspCountLimit) {
+                                    nbspCount += 1;
+                                    if (!tokens_.cStrIsFull()) {
+                                        tokens_.addByte(*textToken_, ' ');
+                                        textCharCount_ += 1;
+                                    }
                                 }
-                                trans++;
+                            } else {
+                                while (*trans && !tokens_.cStrIsFull()) {
+                                    if (*trans > ' ') {
+                                        tokens_.addByte(*textToken_, *trans);
+                                    }
+                                    trans++;
+                                }
+                                textCharCount_ += 1;
+                                nbspCount = 0; // not a nbsp, reset counter
                             }
 
-                            textCharCount_ += 1;
                             str = newStrLocation;
                             nextByte();
                         } else {
@@ -1852,6 +1870,7 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint32_t len) -> bool 
                             } else {
                                 break;
                             }
+                            nbspCount = 0; // not a nbsp, reset counter
                             nextByte();
                         }
                     } else {
@@ -1859,15 +1878,25 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint32_t len) -> bool 
                             textCharCount_ += 1;
                         }
                         if (!tokens_.cStrIsFull()) {
-                            // if (curChar == 0xC2U) {
-                            //     nextByte();
-                            //     if (curChar == 0xA0U) {
-                            //         curChar = ' ';
-                            //     } else {
-                            //         tokens_.addByte(newToken, 0xC2U);
-                            //     }
-                            // }
-                            tokens_.addByte(*textToken_, curChar);
+                            if (curChar == 0xC2U) {
+                                nextByte();
+                                if (curChar == 0xA0U) {
+                                    // This is a nbsp character, limit to 4 in a row
+                                    if (nbspCount < nbspCountLimit) {
+                                        nbspCount += 1;
+                                        tokens_.addByte(*textToken_, ' ');
+                                    } else {
+                                        textCharCount_ -= 1;
+                                    }
+                                } else {
+                                    tokens_.addByte(*textToken_, 0xC2U);
+                                    tokens_.addByte(*textToken_, curChar);
+                                    nbspCount = 0; // not a nbsp, reset counter
+                                }
+                            } else {
+                                tokens_.addByte(*textToken_, curChar);
+                                nbspCount = 0; // not a nbsp, reset counter
+                            }
                         } else {
                             break;
                         }
@@ -1895,7 +1924,7 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint32_t len) -> bool 
                     // pageCompleted_ = addTokenToPage(newToken);
                 }
             }
-        } else if ((curChar == ' ') || (curChar == '\t')) {
+        } else if ((curChar == ' ') || (curChar == '\t') || (curChar == '\n')) {
             closeTextToken();
             if (lastToken_ != nullptr) {
                 lastToken_->spacesAfter++;

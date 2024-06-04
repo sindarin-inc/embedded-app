@@ -40,11 +40,16 @@
 #include "sindarin-debug.h"
 
 DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs)
-    : display_(display), renderer_(display), prefs_(prefs) {
+    : display_(display), renderer_(display), prefs_(prefs),
+      originalInversion_(display_.getInversion()) {
     // We want to control exactly when full and partial will happen.
     // This allows us to cross ownership boundaries and to force a partial update
     // even when we switch to the main menu the first time.
     display.forceDontChangeRefreshType();
+
+    // Always run the manifesto in light mode.
+
+    display_.invertDisplay(false);
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
         std::string message = "Welcome to the Sol Reader! Let's begin...";
@@ -416,7 +421,7 @@ void DemoScreen::drawTripleLine(DisplaySystem &display, std::string one, std::st
 void DemoScreen::finishDemo() {
     // When we're done with the onboarding screens, turn this mode off.
     dropVcom_ = false;
-    display_.invertDisplay(false);
+    display_.invertDisplay(originalInversion_);
 
     back();
 }
@@ -452,14 +457,13 @@ void DemoScreen::processCommand(RemoteCommand command) {
         display_.clearFrameBuffer();
         finishDemo();
         break;
+    case RemoteCommand::ANIMATION:
+        setNeedsRerender();
+        break;
     case RemoteCommand::UP:
     case RemoteCommand::RIGHT:
     case RemoteCommand::DOWN:
     case RemoteCommand::BACK:
-        break;
-    case RemoteCommand::ANIMATION:
-        setNeedsRerender();
-        break;
     default:
         break;
     }
