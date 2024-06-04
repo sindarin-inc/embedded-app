@@ -35,9 +35,11 @@ public:
     // Vcom value is the drain voltage for the TFT FET.
     // It is written on back of each individual display
     void setVcom(int mV);
+    void setVcomNudge(int mV) {}
 
     // For the settings menu to display current value.
     auto getVcom() -> int { return -4000; }
+    auto getVcomNudge() -> int { return 0; }
 
     void setFramerate(int frameRate);
 
