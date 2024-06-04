@@ -93,8 +93,13 @@ void ReadableSummaryScreen::render(DisplaySystem &display) {
     atEnd_ = checkAtEnd();
     log_d("Rendering summary with newPlace: %s %s", newPlace_->str().c_str(),
           atEnd_ ? "(at EOF)" : "(not at EOF)");
-    display.updateDisplay(DisplaySystem::UpdateType::FULL, true,
-                          display.darkPictureVComAdj(darkPicturePercent));
+    if (prefs_.fastTransitions.get().value_or(false)) {
+        display.updateDisplay(DisplaySystem::UpdateType::PARTIAL, true,
+                              display.darkPictureVComAdj(darkPicturePercent));
+    } else {
+        display.updateDisplay(DisplaySystem::UpdateType::FULL, true,
+                              display.darkPictureVComAdj(darkPicturePercent));
+    }
     firstLoad_ = false;
 
     resetBoundingBox(oldDisplayBoundingBox);
