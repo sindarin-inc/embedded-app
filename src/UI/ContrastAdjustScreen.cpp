@@ -44,7 +44,9 @@ auto ContrastAdjustScreen::layout(LayoutContext &context, Size size) -> Size {
                     auto barRect = context.setViewFrame(barView_, barRectFrame);
 
                     auto *driver = (dynamic_cast<DisplayEinkET013TT1 *>(&display_))->getDriver();
-                    auto vcom = -1 * driver->getVcom();
+                    log_i("Vcom: %d, Nudge: %d: %d", driver->getVcom(), driver->getVcomNudge(),
+                          -1 * (driver->getVcom() - driver->getVcomNudge()));
+                    auto vcom = -1 * (driver->getVcom() - driver->getVcomNudge());
                     float vcomPct = (vcom - VCOM_MIN) / static_cast<float>(VCOM_MAX - VCOM_MIN);
                     auto fillHeight = vcomPct * barRect.size.height;
                     int fillTop = barRect.origin.y + barRect.size.height - fillHeight;
@@ -126,14 +128,18 @@ void ContrastAdjustScreen::processCommand(RemoteCommand command) {
         back();
         break;
     case RemoteCommand::UP: {
-        auto setting = -1 * std::min(-1 * driver->getVcom() + CONTRAST_STEP_INCREMENT, VCOM_MAX);
+        auto setting = -1 * std::min(-1 * (driver->getVcom() - driver->getVcomNudge()) +
+                                         CONTRAST_STEP_INCREMENT,
+                                     VCOM_MAX);
         driver->setVcom(setting);
         logTelemetry(setting, "up");
         setNeedsRerender();
         break;
     }
     case RemoteCommand::DOWN: {
-        auto setting = -1 * std::max(-1 * driver->getVcom() - CONTRAST_STEP_INCREMENT, VCOM_MIN);
+        auto setting = -1 * std::max(-1 * (driver->getVcom() - driver->getVcomNudge()) -
+                                         CONTRAST_STEP_INCREMENT,
+                                     VCOM_MIN);
         driver->setVcom(setting);
         logTelemetry(setting, "down");
         setNeedsRerender();

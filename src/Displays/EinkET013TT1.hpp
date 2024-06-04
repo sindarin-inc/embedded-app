@@ -66,9 +66,11 @@ public:
     // Vcom value is the drain voltage for the TFT FET.
     // It is written on back of each individual display
     void setVcom(int mV);
+    void setVcomNudge(int mV) { vcomNudge_ = mV; }
 
     // For the settings menu to display current value.
-    [[nodiscard]] auto getVcom() const -> int { return vcomInMV_; }
+    [[nodiscard]] auto getVcom() const -> int { return vcomInMV_ + vcomNudge_; }
+    [[nodiscard]] auto getVcomNudge() const -> int { return vcomNudge_; }
 
     void setFramerate(int frameRate);
 
@@ -118,6 +120,7 @@ protected:
     // The 8-bit register value is calculated when it is set in the
     // register: ((5600 + vcomInMV_) * 255) / 5600.
     uint32_t vcomInMV_{};
+    uint32_t vcomNudge_ = 0;
 
     uint16_t timerOverruns_{};
     uint16_t busyWaits_{};
