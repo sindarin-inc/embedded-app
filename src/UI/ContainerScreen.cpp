@@ -39,11 +39,10 @@ void ContainerScreen::clearNeedsRerender() {
 void ContainerScreen::showTemporaryMessage(DisplaySystem &display, const std::string &message,
                                            int duration, bool rerenderAfter) {
     auto *popup = new MsgPopup(display, message);
-    setCurrentScreen(*popup);
-    render(display);
+    popup->render(display);
     delete popup;
-    Delay(duration);
     if (rerenderAfter) {
+        Delay(duration);
         setNeedsRerender();
         this->render(display);
     }
