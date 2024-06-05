@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <utility>
 #include <vector>
 
 #include "Components/BoxView.hpp"
@@ -18,9 +19,9 @@ private:
     static constexpr const char *ASK = "Press\u00a0\u00a0\ue000\u00a0\u00a0to return";
 
 public:
-    MsgPopup(DisplaySystem &display, const std::vector<std::string> &msg, bool showButton = true)
-        : boxView_(display, 8), backgroundView_(display, 8), display_(display), msg_(msg),
-          showButton_(showButton) {}
+    MsgPopup(DisplaySystem &display, std::vector<std::string> msg, bool showButton = true)
+        : boxView_(display, 8), backgroundView_(display, 8), display_(display),
+          msg_(std::move(msg)), showButton_(showButton) {}
     ~MsgPopup() override = default;
 
     void render(DisplaySystem &display) override {
