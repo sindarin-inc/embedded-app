@@ -527,8 +527,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             // Start on the settings menu when we boot so it feels like we just
             // went back to it!
             PreferencesStore::settingsOnRestart = true;
-            contentSettingsMenu->showTemporaryMessage(
-                *display, "Settings change required restart! Restarting...", 1500, false);
+            contentSettingsMenu->showTemporaryMessage(*display, settingsRestartMsg_, 1500, false);
             this->power_.reboot();
         } else {
             this->display_->clearDisplay();
@@ -622,8 +621,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                                        [this, &localStore, display, contentSettingsMenu]() {
             this->prefs_.sortCriteria.set(static_cast<int>(SortCriteria::Alphabetical));
             this->prefs_.sortDirection.set(static_cast<int>(SortDirection::Ascending));
-            contentSettingsMenu->showTemporaryMessage(
-                *display, "Settings change required restart! Restarting...", 500, false);
+            contentSettingsMenu->showTemporaryMessage(*display, settingsRestartMsg_, 500, false);
             localStore.saveReadables(localStore.books());
             localStore.saveReadables(localStore.articles());
             this->power_.reboot();
@@ -632,8 +630,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                                        [this, &localStore, display, contentSettingsMenu]() {
             this->prefs_.sortCriteria.set(static_cast<int>(SortCriteria::DateModified));
             this->prefs_.sortDirection.set(static_cast<int>(SortDirection::Descending));
-            contentSettingsMenu->showTemporaryMessage(
-                *display, "Settings change required restart! Restarting...", 500, false);
+            contentSettingsMenu->showTemporaryMessage(*display, settingsRestartMsg_, 500, false);
             localStore.saveReadables(localStore.books());
             localStore.saveReadables(localStore.articles());
             this->power_.reboot();
@@ -642,8 +639,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                                        [this, &localStore, display, contentSettingsMenu]() {
             this->prefs_.sortCriteria.set(static_cast<int>(SortCriteria::DateModified));
             this->prefs_.sortDirection.set(static_cast<int>(SortDirection::Ascending));
-            contentSettingsMenu->showTemporaryMessage(
-                *display, "Settings change required restart! Restarting...", 500, false);
+            contentSettingsMenu->showTemporaryMessage(*display, settingsRestartMsg_, 500, false);
             localStore.saveReadables(localStore.books());
             localStore.saveReadables(localStore.articles());
             this->power_.reboot();
@@ -652,8 +648,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                                        [this, &localStore, display, contentSettingsMenu]() {
             this->prefs_.sortCriteria.set(static_cast<int>(SortCriteria::LastRead));
             this->prefs_.sortDirection.set(static_cast<int>(SortDirection::Descending));
-            contentSettingsMenu->showTemporaryMessage(
-                *display, "Settings change required restart! Restarting...", 500, false);
+            contentSettingsMenu->showTemporaryMessage(*display, settingsRestartMsg_, 500, false);
             localStore.saveReadables(localStore.books());
             localStore.saveReadables(localStore.articles());
             this->power_.reboot();
@@ -662,8 +657,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                                        [this, &localStore, display, contentSettingsMenu]() {
             this->prefs_.sortCriteria.set(static_cast<int>(SortCriteria::LastRead));
             this->prefs_.sortDirection.set(static_cast<int>(SortDirection::Ascending));
-            contentSettingsMenu->showTemporaryMessage(
-                *display, "Settings change required restart! Restarting...", 500, false);
+            contentSettingsMenu->showTemporaryMessage(*display, settingsRestartMsg_, 500, false);
             localStore.saveReadables(localStore.books());
             localStore.saveReadables(localStore.articles());
             this->power_.reboot();
@@ -672,8 +666,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                                        [this, &localStore, display, contentSettingsMenu]() {
             this->prefs_.sortCriteria.set(static_cast<int>(SortCriteria::Random));
             this->prefs_.sortDirection.set(static_cast<int>(SortDirection::Ascending));
-            contentSettingsMenu->showTemporaryMessage(
-                *display, "Settings change required restart! Restarting...", 500, false);
+            contentSettingsMenu->showTemporaryMessage(*display, settingsRestartMsg_, 500, false);
             localStore.saveReadables(localStore.books());
             localStore.saveReadables(localStore.articles());
             this->power_.reboot();
@@ -738,8 +731,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             // Start on the settings menu when we boot so it feels like we just
             // went back to it!
             PreferencesStore::settingsOnRestart = true;
-            experimentalSettingsMenu->showTemporaryMessage(
-                *display, "Settings change required restart! Restarting...", 1500, false);
+            experimentalSettingsMenu->showTemporaryMessage(*display, settingsRestartMsg_, 1500,
+                                                           false);
             this->power_.reboot();
         } else {
             this->display_->clearDisplay();
@@ -1109,8 +1102,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         inactivityMenu->setBackCallback([this, inactivityMenu, readingSettingsMenu, display]() {
             if (inactivityMenu->getRequireRestart()) {
                 PreferencesStore::settingsOnRestart = true;
-                showTemporaryMessage(*display, "Settings change required restart! Restarting...",
-                                     1500, false);
+                showTemporaryMessage(*display, settingsRestartMsg_, 1500, false);
                 this->power_.reboot();
             } else {
                 readingSettingsMenu->setFirstLoad();
