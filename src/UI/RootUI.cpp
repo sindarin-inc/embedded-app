@@ -1109,8 +1109,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         inactivityMenu->setBackCallback([this, inactivityMenu, readingSettingsMenu, display]() {
             if (inactivityMenu->getRequireRestart()) {
                 PreferencesStore::settingsOnRestart = true;
-                inactivityMenu->showTemporaryMessage(
-                    *display, "Settings change required restart! Restarting...", 1500, false);
+                showTemporaryMessage(*display, "Settings change required restart! Restarting...",
+                                     1500, false);
                 this->power_.reboot();
             } else {
                 readingSettingsMenu->setFirstLoad();

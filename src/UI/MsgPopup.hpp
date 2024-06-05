@@ -12,17 +12,19 @@ private:
     BoxView boxView_;
     BoxView backgroundView_;
     DisplaySystem &display_;
-    const std::vector<std::string> &msg_;
+    std::vector<std::string> msg_;
+    bool showButton_;
 
     static constexpr const char *ASK = "Press\u00a0\u00a0\ue000\u00a0\u00a0to return";
 
 public:
-    MsgPopup(DisplaySystem &display, const std::vector<std::string> &msg)
-        : boxView_(display, 8), backgroundView_(display, 8), display_(display), msg_(msg) {}
+    MsgPopup(DisplaySystem &display, const std::vector<std::string> &msg, bool showButton = true)
+        : boxView_(display, 8), backgroundView_(display, 8), display_(display), msg_(msg),
+          showButton_(showButton) {}
     ~MsgPopup() override = default;
 
     void render(DisplaySystem &display) override {
-
+        log_d("MsgPopup::render: display: %p", &display);
         display_.setFont(display_.style.getFontFamily().popupFont);
 
         uint16_t width = display_.getTextWidth(ASK);
@@ -59,8 +61,10 @@ public:
         }
         y += display_.getTextHeight() >> 1;
 
-        display_.drawSingleLineOfText(
-            ASK, (display_.width() >> 1) - (display_.getTextWidth(ASK) >> 1), y);
+        if (showButton_) {
+            display_.drawSingleLineOfText(
+                ASK, (display_.width() >> 1) - (display_.getTextWidth(ASK) >> 1), y);
+        }
 
         display_.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
     }
