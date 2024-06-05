@@ -4,7 +4,7 @@
 
 #include "Displays/DisplayEinkET013TT1.hpp"
 #include "Misc/Math.hpp"
-#include "UI/Bitmaps/ContrastIcon.hpp"
+#include "UI/Bitmaps/ContrastIcon.xbm"
 
 #define CONTRAST_STEP_INCREMENT 125
 #define VCOM_MIN 3250
