@@ -72,7 +72,7 @@ void DisplayEinkET013TT1::invertDisplay(bool newInvert) {
         if (prevInvert != invertedDisplay_) {
             log_d("Inverted to regular %d, new %d", driver_.getVcom(),
                   driver_.getVcom() + VCOM_INVERTED_MODE_DELTA);
-            driver_.setVcom(driver_.getVcom() + VCOM_INVERTED_MODE_DELTA);
+            driver_.setVcomNudge(VCOM_INVERTED_MODE_DELTA);
         }
     } else {
         bg = 0xFFFF;
@@ -81,7 +81,7 @@ void DisplayEinkET013TT1::invertDisplay(bool newInvert) {
         if (prevInvert != invertedDisplay_) {
             log_d("Regular to inverted old %d, new %d", driver_.getVcom(),
                   driver_.getVcom() - VCOM_INVERTED_MODE_DELTA);
-            driver_.setVcom(driver_.getVcom() - VCOM_INVERTED_MODE_DELTA);
+            driver_.setVcomNudge(0);
         }
     }
     fillScreen(bg);
