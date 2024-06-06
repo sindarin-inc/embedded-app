@@ -23,6 +23,7 @@ auto BLEImprov::getInstance() -> std::shared_ptr<BLEImprov> {
     }
     return instance;
 }
+
 void BLEImprov::configureCharacteristics(BLEService *service) {
     BLECharacteristic *capabilitiesCharacteristic =
         service->createCharacteristic(BLEUUID(improv::CAPABILITIES_UUID), NIMBLE_PROPERTY::READ);

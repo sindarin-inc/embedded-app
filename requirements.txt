@@ -1,3 +1,0 @@
-platformio
-colorama
-click

@@ -27,9 +27,12 @@ public:
 
     auto setup() -> bool override;
 
+    // TODO: Probably this is a good candidate for a struct for params since there are a lot of
+    // values that can be passed and some may be unset defaults.
     void updateDisplay(DisplaySystem::UpdateType updateType = UNSPECIFIED,
                        bool clearFrameBuffer = true, int vcomNudge = 0,
                        DisplaySystem::UpdateType altUpdateType = UNSPECIFIED,
+                       ScreenSide screen = ScreenSide::Both,
                        Rect altRect = {{0, 0}, {0, 0}}) override;
 
     void beginPowerOn() override { driver_.beginPowerOn(); };
@@ -47,6 +50,22 @@ public:
     [[nodiscard]] auto darkPictureVComAdj(uint8_t darkPixelsPercent) const -> int override {
         return darkPixelsPercent > 40 ? -2500 : 0;
     }
+
+#if SIMULATOR
+    auto renderQueue() -> QueueHandle_t override { return driver_.renderQueue(); }
+
+    auto buffer() -> std::unique_ptr<uint8_t[]> & override { return driver_.buffer(); }
+
+    // For the simulator to know if it should skip the waveform processing
+    auto getSkipWaveform() -> bool override { return driver_.getSkipWaveform(); }
+
+    void setSkipWaveform(bool skip) override { driver_.setSkipWaveform(skip); }
+
+    // For the simulator to know if it should skip the signalling queue
+    auto getSkipSignalling() -> bool override { return driver_.getSkipSignalling(); }
+
+    void setSkipSignalling(bool skip) override { driver_.setSkipSignalling(skip); }
+#endif
 
 protected:
     GFXcanvas1 gfxCanvas_;

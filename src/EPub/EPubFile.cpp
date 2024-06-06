@@ -261,34 +261,8 @@ auto EPubFile::getToc() -> ReadableTableOfContentsChapterVector {
     return toc;
 }
 
-auto EPubFile::hasSummary(const std::string &chapterId) -> bool {
-    std::string summaryId = "summary-" + chapterId;
-
-    auto hasDirectChapterSummary = opf_->exists(summaryId);
-    auto hasToc = opf_->exists("nav");
-    if (hasDirectChapterSummary && hasToc) {
-        return true;
-    }
-
-    auto summaryChapterHref = opf_->getHrefByManifestId(summaryId);
-    if (!summaryChapterHref.empty()) {
-        auto summaryChapterIdx = opf_->getChapterIdx(summaryChapterHref);
-        return summaryChapterIdx != -1 && hasToc;
-    }
-
-    // Walk the chapters backwards in the spine to see if the chapter id matches
-    auto spineHref = opf_->getHrefByManifestId(chapterId);
-    auto firstChapterHref = opf_->getChapterFirstHref(spineHref);
-    summaryId = "summary-" + opf_->getManifestIdByHref(firstChapterHref);
-    summaryChapterHref = opf_->getHrefByManifestId(summaryId);
-    log_d("First chapter href: %s, spine href: %s, summaryChapterHref: %s",
-          firstChapterHref.c_str(), spineHref.c_str(), summaryChapterHref.c_str());
-    if (!summaryChapterHref.empty()) {
-        auto summaryChapterIdx = opf_->exists(summaryId);
-        return summaryChapterIdx && hasToc;
-    }
-
-    return false;
+auto EPubFile::hasSummary(const std::string &spineHref) -> bool {
+    return hasEpubAddition(spineHref, "summary");
 }
 
 auto EPubFile::getSummaryContent(
@@ -296,15 +270,14 @@ auto EPubFile::getSummaryContent(
     const std::shared_ptr<UserReadablePartialChapterSummary> &partialChapterSummary,
     bool includeUnread) -> SpiramString {
 
-    auto chapterHref = opf_->getChapterFirstHref(placeInReadable->getHRef());
-    auto chapterId = opf_->getManifestIdByHref(chapterHref);
-
-    if (!hasSummary(chapterId)) {
+    auto placeHref = placeInReadable->getHRef();
+    if (!hasSummary(placeHref)) {
         log_e("This chapter does not have a summary.");
         return "This chapter does not have a summary.";
     }
 
     // Load the summary xhtml content
+    auto chapterHref = opf_->getChapterFirstHref(placeHref);
     auto chapterIdx = opf_->getChapterIdx(chapterHref);
     if (chapterIdx == -1) {
         log_e("Unable to find chapter index for %s", chapterHref.c_str());
@@ -314,17 +287,16 @@ auto EPubFile::getSummaryContent(
           std::string(getToc()[chapterIdx].href).c_str());
     if (std::string(getToc()[chapterIdx].href) != chapterHref) {
         chapterHref = std::string(getToc()[chapterIdx].href);
-        chapterId = opf_->getManifestIdByHref(chapterHref);
     }
 
     std::string partialSummaryChapterHRef;
-    if (partialChapterSummary != nullptr && !partialChapterSummary->text.empty()) {
+    if (partialChapterSummary != nullptr && !partialChapterSummary->text.empty() &&
+        partialChapterSummary->text != "null") {
         auto summarySpineHref = partialChapterSummary->ePubPlace->getHRef();
         partialSummaryChapterHRef = opf_->getChapterFirstHref(summarySpineHref);
     }
 
-    log_d("Loading summary for chapter: %s (href: %s, chapter idx: %d)", chapterId.c_str(),
-          chapterHref.c_str(), chapterIdx);
+    log_d("Loading summary for chapter href: %s, chapter idx: %d", chapterHref.c_str(), chapterIdx);
     SpiramString summaryText;
 
     for (const auto &chapter : getToc()) {
@@ -388,61 +360,51 @@ auto EPubFile::getSummaryContent(
     return summaryText;
 }
 
-auto EPubFile::hasDictionary(const std::string &chapterId) -> bool {
-    std::string dictionaryId = "dictionary-" + chapterId;
+auto EPubFile::hasEpubAddition(const std::string &spineHref, const std::string &additionType)
+    -> bool {
+    // Find the chapterId corresponding to this spineHref
+    auto chapterSpineHref = opf_->getChapterFirstHref(spineHref);
+    auto chapterId = opf_->getManifestIdByHref(chapterSpineHref);
 
-    auto hasDirectChapterDictionary = opf_->exists(dictionaryId);
+    std::string additionId = additionType + "-" + chapterId;
+
+    auto hasDirectChapterAddition = opf_->exists(additionId);
     auto hasToc = opf_->exists("nav");
-    if (hasDirectChapterDictionary && hasToc) {
+    if (hasDirectChapterAddition && hasToc) {
         return true;
-    }
-
-    // Walk the chapters backwards in the spine to see if the chapter id matches
-    auto dictionaryChapterHref = opf_->getHrefByManifestId(dictionaryId);
-    if (!dictionaryChapterHref.empty()) {
-        auto dictionaryChapterIdx = opf_->getChapterIdx(dictionaryChapterHref);
-        return dictionaryChapterIdx != -1 && hasToc;
-    }
-
-    // Walk the chapters backwards in the spine to see if the chapter id matches
-    auto spineHref = opf_->getHrefByManifestId(chapterId);
-    auto firstChapterHref = opf_->getChapterFirstHref(spineHref);
-    dictionaryId = "dictionary-" + opf_->getManifestIdByHref(firstChapterHref);
-    dictionaryChapterHref = opf_->getHrefByManifestId(dictionaryId);
-    log_d("First chapter href: %s, spine href: %s, dictionaryChapterHref: %s",
-          firstChapterHref.c_str(), spineHref.c_str(), dictionaryChapterHref.c_str());
-    if (!dictionaryChapterHref.empty()) {
-        auto dictionaryChapterIdx = opf_->exists(dictionaryId);
-        return dictionaryChapterIdx && hasToc;
     }
 
     return false;
 }
 
-auto EPubFile::getDictionaryContent(std::string &chapterId,
-                                    const std::shared_ptr<EPubPlace> &placeInReadable,
+auto EPubFile::hasDictionary(const std::string &spineHref) -> bool {
+    return hasEpubAddition(spineHref, "dictionary");
+}
+
+auto EPubFile::getDictionaryContent(const std::shared_ptr<EPubPlace> &placeInReadable,
                                     std::shared_ptr<TxtPlace> &placeInDictionary) -> SpiramString {
 
-    if (!hasDictionary(chapterId)) {
+    auto spineHref = placeInReadable->getHRef();
+    if (!hasDictionary(spineHref)) {
         log_e("This chapter does not have any dictionary definitions.");
         return "This chapter does not have any dictionary definitions.";
     }
 
     // Load the dictionary xhtml content
     int fileOffset = placeInReadable->getOffset();
-    auto chapterHref = opf_->getHrefByManifestId(chapterId);
-    auto chapterIdx = opf_->getChapterIdx(chapterHref);
-    auto spineIdx = opf_->getSpineIdx(chapterHref);
+    auto chapterIdx = opf_->getChapterIdx(spineHref);
+    auto spineIdx = opf_->getSpineIdx(spineHref);
+    auto spineId = opf_->getManifestIdByHref(spineHref);
 
     if (chapterIdx == -1 || spineIdx == -1) {
-        log_e("Unable to find chapter index for %s", chapterHref.c_str());
+        log_e("Unable to find chapter index for %s", spineHref.c_str());
         return "This chapter does not have any dictionary definitions.";
     }
 
     auto previousSpineOffset = 0;
-    if (std::string(getToc()[chapterIdx].href) != chapterHref) {
-        chapterHref = std::string(getToc()[chapterIdx].href);
-        chapterId = opf_->getManifestIdByHref(chapterHref);
+    if (std::string(getToc()[chapterIdx].href) != spineHref) {
+        spineHref = std::string(getToc()[chapterIdx].href);
+        spineId = opf_->getManifestIdByHref(spineHref);
         // If we're looking at a spine item that doesn't match the chapter, we need to calculate the
         // offset to match how the server is calculating word locations, which is cumulatively
         // adding the size of each spine item
@@ -451,9 +413,9 @@ auto EPubFile::getDictionaryContent(std::string &chapterId,
     }
 
     // Convert chapterId to dictionary file path
-    std::string dictionaryId = "dictionary-" + chapterId;
+    std::string dictionaryId = "dictionary-" + spineId;
     std::string dictionaryPath = opf_->getHrefByManifestId(dictionaryId);
-    // int currentOffset = findCharOffsetAtFileOffset(chapterHref, fileOffset);
+    // int currentOffset = findCharOffsetAtFileOffset(spineHref, fileOffset);
     int currentOffset = fileOffset + previousSpineOffset;
     pugi::xml_document &doc = getXHTMLFile(dictionaryPath);
     pugi::xml_node closestNode;
@@ -462,7 +424,7 @@ auto EPubFile::getDictionaryContent(std::string &chapterId,
 
     log_d("Loading dictionary for chapter: %s. (href: %s, chapter idx: %d) Current offset: %d "
           "(file:%d+prev:%d)",
-          chapterId.c_str(), chapterHref.c_str(), chapterIdx, currentOffset, fileOffset,
+          spineId.c_str(), spineHref.c_str(), chapterIdx, currentOffset, fileOffset,
           previousSpineOffset);
     // Search for the closest data-locations attribute closest to currentOffset without going over
     for (auto p : doc.child("html").child("body").children("p")) {
@@ -527,7 +489,7 @@ auto EPubFile::getDictionaryContent(std::string &chapterId,
         log_i("Found closest node at char offset: %" PRIu32 " for location: %d/%d", charOffset,
               closestLocation, currentOffset);
     } else {
-        log_e("Location not found in dictionaryString chapter: %s : %d", chapterId.c_str(),
+        log_e("Location not found in dictionaryString chapter: %s : %d", spineId.c_str(),
               currentOffset);
     }
 

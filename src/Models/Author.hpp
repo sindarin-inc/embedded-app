@@ -8,6 +8,8 @@
 class Author : public JsonSerializable {
 public:
     Author() = default;
+    Author(const std::string &uuid, const std::string &name, const std::string &description)
+        : uuid(uuid), name(name), description(description) {}
     ~Author() override = default;
 
     SpiramString uuid;

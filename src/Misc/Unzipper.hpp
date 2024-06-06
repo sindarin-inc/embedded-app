@@ -125,13 +125,12 @@ private:
 
     SFile file_; // Current File Descriptor
     bool isOpen_{false};
-    FileSystem &fileSystem_;
-    std::string filePath_;
 
     mz_stream zstr_{};
 
 public:
-    Unzipper(FileSystem &fs, const char *filePath) : fileSystem_(fs), filePath_(filePath) {}
+    Unzipper(const SFile &file) : file_(file) {}
+
     ~Unzipper() {
         if (isOpen_) {
             close();

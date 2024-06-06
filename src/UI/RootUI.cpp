@@ -6,7 +6,6 @@
 #include <filesystem>
 #include <nvs_flash.h>
 
-#include "Bitmaps/Logo.hpp"
 #include "Communications/HtmlCleaner.hpp"
 #include "Communications/SindarinAPI.hpp"
 #include "Communications/WiFi.hpp"
@@ -23,12 +22,16 @@
 #include "Misc/Telemetry.hpp"
 #include "Models/Readable.hpp"
 #include "Renderers/Renderer.hpp"
+#include "Storage/EPubs/LastQuestion.epub.hpp"
+#include "Storage/EPubs/PsalmsAndProverbs.epub.hpp"
 #include "Storage/LocalStore.hpp"
 #include "UI/AboutScreen.hpp"
 #include "UI/AlignmentScreen.hpp"
+#include "UI/AppDownloadScreen.hpp"
 #include "UI/BatteryScreen.hpp"
 #include "UI/CalibrationScreen.hpp"
 #include "UI/ContentSyncScreen.hpp"
+#include "UI/ContrastAdjustScreen.hpp"
 #include "UI/CrashReportScreen.hpp"
 #include "UI/DebugAboutScreen.hpp"
 #include "UI/DemoScreen.hpp"
@@ -39,7 +42,6 @@
 #include "UI/LightingAdjustScreen.hpp"
 #include "UI/LineMenuScreen.hpp"
 #include "UI/LineSpacingScreen.hpp"
-#include "UI/LogoScreen.hpp"
 #include "UI/MainMenuScreen.hpp"
 #include "UI/MsgPopup.hpp"
 #include "UI/OffsetAdjustScreen.hpp"
@@ -48,6 +50,7 @@
 #include "UI/ReleaseNotesScreen.hpp"
 #include "UI/ResizeBoxScreen.hpp"
 #include "UI/StatsScreen.hpp"
+#include "UI/TestAlignmentScreen.hpp"
 #include "UI/ToggleMenuScreen.hpp"
 #include "UI/TutorialScreen.hpp"
 #include "Version.hpp"
@@ -100,6 +103,31 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     auto &readables = localStore.books();
     auto &articles = localStore.articles();
+    auto noContent = readables.empty() && articles.empty();
+    // If there is no content, add some default content
+    if (noContent) {
+        log_i("No content found, adding default readables to menu");
+
+        std::shared_ptr<Readable> lastQuestion =
+            std::make_shared<Readable>("d7570c42-18a9-4795-a44e-9cee09b9fe3e", "The Last Question",
+                                       LASTQUESTION_EPUB, LASTQUESTION_EPUB_SIZE);
+        lastQuestion->authors.push_back(
+            Author("91ae1429-c6d4-4b8b-88fa-81041d838f92", "Isaac Asimov", ""));
+        if (!prefs_.readableArchivedChanged.get(lastQuestion->shortenedUuid.c_str())) {
+            readables.push_back(lastQuestion);
+        }
+        // If there is no content, and we haven't diabled the Bible, add Psalms and Proverbs
+        if (!prefs_.noBible.get().value_or(false)) {
+            std::shared_ptr<Readable> psalmsAndProverbs = std::make_shared<Readable>(
+                "6863fd3c-77a9-468e-93fa-f70d8b79029f", "Psalms and Proverbs",
+                PSALMSANDPROVERBS_EPUB, PSALMSANDPROVERBS_EPUB_SIZE);
+            psalmsAndProverbs->authors.push_back(
+                Author("7632d6ec-7339-4752-8672-a966503e1003", "Crossway ESV", ""));
+            if (!prefs_.readableArchivedChanged.get(lastQuestion->shortenedUuid.c_str())) {
+                readables.push_back(psalmsAndProverbs);
+            }
+        }
+    }
 
     // If prefs_.sortCriteria isn't select, sort the readables by last update and store them
     if (!prefs_.sortCriteria.get().has_value()) {
@@ -139,16 +167,24 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         // TODO: Would be better to not allocate / delete these all the time
 
         std::shared_ptr<RendererStream> stream;
-        auto [path, size] = localStore.readableFilePathForReading(readable);
 
-        if (HasSuffix(path, ".epub")) {
-            log_i("Opening %s as epub", path.c_str());
-            stream = fileSystem.newEPubRendererStream(path.c_str(), readable);
-        } else if (HasSuffix(path, ".txt.gz")) {
-            log_i("Opening %s as gzip", path.c_str());
-            stream = fileSystem.newGzipRendererStream(path.c_str());
+        if (readable->localOnly && readable->localBytes != nullptr &&
+            readable->localBytesSize > 0) {
+            // Handle this is an in-memory epub
+            auto file =
+                SFile(std::make_shared<RamFile>(readable->localBytes, readable->localBytesSize));
+            stream = std::make_shared<EPubFile>(file, readable);
         } else {
-            stream = fileSystem.newRendererStream(path.c_str());
+            auto [path, size] = localStore.readableFilePathForReading(readable);
+            if (HasSuffix(path, ".epub")) {
+                log_i("Opening %s as epub", path.c_str());
+                stream = fileSystem.newEPubRendererStream(path.c_str(), readable);
+            } else if (HasSuffix(path, ".txt.gz")) {
+                log_i("Opening %s as gzip", path.c_str());
+                stream = fileSystem.newGzipRendererStream(path.c_str());
+            } else {
+                stream = fileSystem.newRendererStream(path.c_str());
+            }
         }
 
         if (stream == nullptr) {
@@ -270,24 +306,41 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         }
     }
 
-    // If there are no books, show the Sync Content item in the books tab.
-    if (readables.empty()) {
-        booksMenu->addMenuItem(
-            MenuItem("Sync Content", [this, display, &localStore, mainMenu, &lightingController]() {
-                auto contentSyncScreen =
-                    new ContentSyncScreen(*display, localStore, this->prefs_, this->telemetry_);
-                lightingController.setOverrideValuePercent(lightingController.getCurrentPercent());
-                display->setFont(mainMenu->getMyStyle().navigationFont);
-                this->setCurrentScreen(*contentSyncScreen);
-                contentSyncScreen->setBackCallback([this, contentSyncScreen, mainMenu, display]() {
+    auto makeContentSyncMenuItem = [this, display, &localStore,
+                                    mainMenu](const char *title) -> MenuItem {
+        return {title,
+                [this, display, &localStore, mainMenu]() {
+            // If we're not yet paired, show the app screen instead
+            if (PreferencesStore::paired == PairedStatus::Unpaired) {
+                auto appDownloadScreen = new AppDownloadScreen(*display);
+                this->setCurrentScreen(*appDownloadScreen);
+                appDownloadScreen->setBackCallback([this, appDownloadScreen, mainMenu, display]() {
                     display->clearDisplay();
                     mainMenu->setFirstLoad();
                     setCurrentScreen(*mainMenu);
-                    mainMenu->render(*display);
-                    delete contentSyncScreen;
+                    delete appDownloadScreen;
                 });
-                contentSyncScreen->begin();
-            }));
+                return;
+            }
+
+            auto contentSyncScreen =
+                new ContentSyncScreen(*display, localStore, this->prefs_, this->telemetry_);
+            display->setFont(mainMenu->getMyStyle().navigationFont);
+            this->setCurrentScreen(*contentSyncScreen);
+            contentSyncScreen->setBackCallback([this, contentSyncScreen, mainMenu, display]() {
+                display->clearDisplay();
+                mainMenu->setFirstLoad();
+                setCurrentScreen(*mainMenu);
+                mainMenu->render(*display);
+                delete contentSyncScreen;
+            });
+            contentSyncScreen->begin();
+                }};
+    };
+
+    // If there are no books, show the Sync Content item in the books tab.
+    if (noContent) {
+        booksMenu->addMenuItem(makeContentSyncMenuItem("Sync Content"));
     }
 
     SHOW_HEAP();
@@ -327,7 +380,12 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             SpiramString message = SpiramString(
                 "Welcome to the Books menu. This tab "
                 "shows you the books currently synced to your Sol Reader. To add more books or "
-                "manage the books on your device, use the Sol mobile app.\n\n\nPress "
+                "manage the books on your device, use the Sol mobile app.\n\n"
+                "Did you know "
+                "you can change the position, width, and height of the page in the Sol Reader "
+                "display? "
+                "Simply go to Settings -> Reading -> Resize Page."
+                "\n\n\nPress "
                 "\ue000 (center) to continue.");
             auto tutorialScreen = createTutorialScreen(message, TUTORIAL_SCREEN_BOOKS);
             this->setCurrentScreen(*tutorialScreen);
@@ -350,56 +408,30 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     // If there are no articles, show the Sync Content item in the articles tab.
     if (articles.empty()) {
-        articlesMenu->addMenuItem(
-            MenuItem("Sync Content", [this, display, &localStore, mainMenu, &lightingController]() {
-                auto contentSyncScreen =
-                    new ContentSyncScreen(*display, localStore, this->prefs_, this->telemetry_);
-                lightingController.setOverrideValuePercent(lightingController.getCurrentPercent());
-                display->setFont(mainMenu->getMyStyle().navigationFont);
-                this->setCurrentScreen(*contentSyncScreen);
-                contentSyncScreen->setBackCallback([this, contentSyncScreen, mainMenu, display]() {
-                    display->clearDisplay();
-                    mainMenu->setFirstLoad();
-                    setCurrentScreen(*mainMenu);
-                    mainMenu->render(*display);
-                    delete contentSyncScreen;
-                });
-                contentSyncScreen->begin();
-            }));
+        articlesMenu->addMenuItem(makeContentSyncMenuItem("Sync Content"));
     }
 
     for (const auto &r : articles) {
         bool archived = prefs_.readableArchivedChanged.get(r->shortenedUuid.c_str());
         auto title = StringFormat("%s%s", archived ? "Archived: " : "", r->title.c_str());
 
-        articlesMenu->addMenuItem(
-            MenuItem(title, [this, display, articlesMenu, mainMenu, r, createReadableScreen]() {
-                display->clearDisplay();
-                auto readableScreen = createReadableScreen(r);
-                if (readableScreen != nullptr) {
-                    setCurrentScreen(*readableScreen);
-                    readableScreen->setBackCallback(
-                        [this, r, display, readableScreen, mainMenu, articlesMenu]() {
-                    bool archived = prefs_.readableArchivedChanged.get(r->shortenedUuid.c_str());
-                    auto title =
-                        StringFormat("%s%s", archived ? "Archived: " : "", r->title.c_str());
-                    articlesMenu->changeItemTitleAt(articlesMenu->getCurrSelection(), title);
-                    display->clearDisplay();
+        articlesMenu->addMenuItem(MenuItem(title,
+                                           [this, display, mainMenu, r, createReadableScreen]() {
+            display->clearDisplay();
+            auto readableScreen = createReadableScreen(r);
+            if (readableScreen != nullptr) {
+                setCurrentScreen(*readableScreen);
+            } else {
+                auto *errorPopup = new MsgPopup(*display, itemErrorMsg_);
+                this->setCurrentScreen(*errorPopup);
+                errorPopup->setBackCallback([this, errorPopup, mainMenu]() {
                     mainMenu->setFirstLoad();
+                    display_->clearDisplay();
                     setCurrentScreen(*mainMenu);
-                    delete readableScreen;
-                    });
-                } else {
-                    auto *errorPopup = new MsgPopup(*display, itemErrorMsg_);
-                    this->setCurrentScreen(*errorPopup);
-                    errorPopup->setBackCallback([this, errorPopup, mainMenu]() {
-                        mainMenu->setFirstLoad();
-                        display_->clearDisplay();
-                        setCurrentScreen(*mainMenu);
-                        delete errorPopup;
-                    });
-                }
-            }));
+                    delete errorPopup;
+                });
+            }
+        }));
     }
 
     SHOW_HEAP();
@@ -411,7 +443,11 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 "Welcome to the Articles menu. This tab "
                 "shows you the articles currently synced to your Sol Reader. To add more articles, "
                 "simply connect your Pocket account in the Sol mobile app or forward newsletters "
-                "from your inbox to add@solreader.com.\n\n\nPress \ue000 (center) to "
+                "from your inbox to add@solreader.com.\n\n"
+                "Did you know "
+                "you can change the sort order of your books and articles? "
+                "Simply go to Settings -> Content -> Sort Order."
+                "\n\n\nPress \ue000 (center) to "
                 "continue.\n");
             auto tutorialScreen = createTutorialScreen(message, TUTORIAL_SCREEN_ARTICLES);
             this->setCurrentScreen(*tutorialScreen);
@@ -432,13 +468,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                         auto readableScreen = createReadableScreen(r);
                         if (readableScreen != nullptr) {
                             this->setCurrentScreen(*readableScreen);
-                            readableScreen->setBackCallback(
-                                [this, r, display, readableScreen, mainMenu]() {
-                            display->clearDisplay();
-                            mainMenu->setFirstLoad();
-                            setCurrentScreen(*mainMenu);
-                            delete readableScreen;
-                            });
                         } else {
                             auto *errorPopup = new MsgPopup(*display, itemErrorMsg_);
                             this->setCurrentScreen(*errorPopup);
@@ -454,7 +483,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         }
 
         if (!(prefs_.tutorialsDeleted.get().value_or(0) & TUTORIAL_SCREEN_BIBLE)) {
-            bibleMenu->addMenuItem(MenuItem("\ue000 Bible Tutorial",
+            bibleMenu->addMenuItem(MenuItem("\ue000 Why have a Bible app?",
                                             [this, createTutorialScreen]() {
                 SpiramString message = SpiRamStringFormat(
                     "The Gutenberg Bible "
@@ -686,22 +715,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     // Hide the toggle for the sort order menu
     contentSettingsMenu->setToggleLastItem(false, false);
 
-    contentSettingsMenu->addMenuItem(
-        MenuItem("Sync content now", [this, display, &localStore, mainMenu, &lightingController]() {
-            auto contentSyncScreen =
-                new ContentSyncScreen(*display, localStore, this->prefs_, this->telemetry_);
-            lightingController.setOverrideValuePercent(lightingController.getCurrentPercent());
-            display->setFont(mainMenu->getMyStyle().navigationFont);
-            this->setCurrentScreen(*contentSyncScreen);
-            contentSyncScreen->setBackCallback([this, contentSyncScreen, mainMenu, display]() {
-                display->clearDisplay();
-                mainMenu->setFirstLoad();
-                setCurrentScreen(*mainMenu);
-                mainMenu->render(*display);
-                delete contentSyncScreen;
-            });
-            contentSyncScreen->begin();
-        }));
+    contentSettingsMenu->addMenuItem(makeContentSyncMenuItem("Sync content now"));
 
     // Hide the bubble for the last item, Sync content now
     contentSettingsMenu->setToggleLastItem(false, false);
@@ -845,6 +859,21 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         experimentalSettingsMenu->setToggleLastItem(true);
     }
 
+    experimentalSettingsMenu->addMenuItem(MenuItem("Apply lighting offset", [this]() {
+        auto newValue = !this->prefs_.brightnessOffsetEnabled.get().value_or(false);
+        if (newValue) {
+            this->prefs_.brightnessOffsetEnabled.set(newValue);
+        } else {
+            this->prefs_.brightnessOffsetEnabled.remove();
+        }
+    }));
+
+    if (prefs_.brightnessOffsetEnabled.get().value_or(false)) {
+        experimentalSettingsMenu->setToggleLastItem(true);
+    } else {
+        experimentalSettingsMenu->setToggleLastItem(false);
+    }
+
     // Unpair PageTurner
     // Sync Content
     // Turn on Onboarding Mode
@@ -886,23 +915,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     //        delete layoutTestScreen;
     //    });
     // }));
-
-    /*
-        settingsMenu->addMenuItem(
-            MenuItem("Sync Content", [this, display, &localStore, mainMenu, &lightingController]() {
-                auto contentSyncScreen = new ContentSyncScreen(*display, localStore,
-       this->prefs_, this->telemetry_); this->setCurrentScreen(*contentSyncScreen);
-                lightingController.setOverrideValuePercent(lightingController.getCurrentPercent());
-                contentSyncScreen->setBackCallback([this, contentSyncScreen, mainMenu, display]() {
-                    this->display_->clearDisplay();
-                    mainMenu->setFirstLoad();
-                    setCurrentScreen(*mainMenu);
-                    mainMenu->render(*display);
-                    delete contentSyncScreen;
-                });
-                contentSyncScreen->begin();
-            }));
-    */
 
     settingsMenu->addMenuItem(MenuItem("Reading", [this, readingSettingsMenu]() {
         log_d("Loading Reading Settings Menu");
@@ -1018,6 +1030,21 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         });
     }));
 
+#if EINKET013TT1
+    readingSettingsMenu->addMenuItem(MenuItem("Contrast", [this, display, readingSettingsMenu,
+                                                           &lightingController]() {
+        auto contrastAdjustScreen =
+            new ContrastAdjustScreen(*display, this->prefs_, lightingController, this->telemetry_);
+        this->display_->clearDisplay();
+        setCurrentScreen(*contrastAdjustScreen);
+        contrastAdjustScreen->setBackCallback([this, contrastAdjustScreen, readingSettingsMenu]() {
+            readingSettingsMenu->setFirstLoad();
+            setCurrentScreen(*readingSettingsMenu);
+            delete contrastAdjustScreen;
+        });
+    }));
+#endif
+
     readingSettingsMenu->addMenuItem(MenuItem("Move Page in Display",
                                               [this, readingSettingsMenu, display]() {
         log_d("Loading adjust offset");
@@ -1092,7 +1119,21 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     systemSettingsMenu->addMenuItem(MenuItem("Firmware Update",
                                              [this, systemSettingsMenu, display]() {
-        auto firmwareUpdateScreen = new FirmwareUpdateScreen(*display, this->prefs_);
+        // If we don't have WiFi configured, show the QR code instead
+        if (!WiFi::getInstance().hasWiFiCredentials()) {
+            auto appDownloadScreen = new AppDownloadScreen(*display);
+            this->setCurrentScreen(*appDownloadScreen);
+            appDownloadScreen->setBackCallback(
+                [this, appDownloadScreen, systemSettingsMenu, display]() {
+                display->clearDisplay();
+                systemSettingsMenu->setFirstLoad();
+                setCurrentScreen(*systemSettingsMenu);
+                delete appDownloadScreen;
+            });
+            return;
+        }
+
+        auto firmwareUpdateScreen = new FirmwareUpdateScreen(*display, telemetry_, prefs_);
         this->setCurrentScreen(*firmwareUpdateScreen);
         firmwareUpdateScreen->setBackCallback(
             [this, firmwareUpdateScreen, systemSettingsMenu, display]() {
@@ -1102,14 +1143,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             delete firmwareUpdateScreen;
         });
         firmwareUpdateScreen->begin();
-    }));
-
-    systemSettingsMenu->addMenuItem(MenuItem("First Time Setup",
-                                             [this, systemSettingsMenu, display]() {
-        prefs_.noSetupMode.remove();
-        systemSettingsMenu->showTemporaryMessage(*display,
-                                                 "Turning on first time setup and restarting.");
-        power_.reboot();
     }));
 
 #if USE_TURN_TOUCH_REMOTE
@@ -1136,21 +1169,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         });
     }));
 
-    debugSettingsMenu->addMenuItem(
-        MenuItem("Sync Content", [this, display, &localStore, mainMenu, &lightingController]() {
-            auto contentSyncScreen =
-                new ContentSyncScreen(*display, localStore, this->prefs_, this->telemetry_);
-            this->setCurrentScreen(*contentSyncScreen);
-            lightingController.setOverrideValuePercent(lightingController.getCurrentPercent());
-            contentSyncScreen->setBackCallback([this, contentSyncScreen, mainMenu, display]() {
-                mainMenu->setFirstLoad();
-                setCurrentScreen(*mainMenu);
-                mainMenu->render(*display);
-                delete contentSyncScreen;
-            });
-            contentSyncScreen->begin();
-        }));
-
     if (hasLastQuestion) {
         debugSettingsMenu->addMenuItem(MenuItem("Turn on Demo Mode",
                                                 [this, debugSettingsMenu, display]() {
@@ -1161,6 +1179,18 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             power_.reboot();
         }));
     }
+
+    systemSettingsMenu->addMenuItem(MenuItem("Manifesto", [this, systemSettingsMenu, display]() {
+        auto demoScreen = new DemoScreen(*display, prefs_);
+        this->setCurrentScreen(*demoScreen);
+        demoScreen->setBackCallback([this, demoScreen, systemSettingsMenu, display]() {
+            systemSettingsMenu->setFirstLoad();
+            display->clearDisplay();
+            setCurrentScreen(*systemSettingsMenu);
+            systemSettingsMenu->render(*this->display_);
+            delete demoScreen;
+        });
+    }));
 
     systemSettingsMenu->addMenuItem(MenuItem("Reset Statistics",
                                              [this, systemSettingsMenu, display]() {
@@ -1244,19 +1274,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         power_.reboot();
     }));
 
-    debugSettingsMenu->addMenuItem(
-        MenuItem("Onboarding Screens", [this, debugSettingsMenu, display, &lightingController]() {
-            auto demoScreen = new DemoScreen(*display, prefs_, lightingController);
-            this->setCurrentScreen(*demoScreen);
-            demoScreen->setBackCallback([this, demoScreen, debugSettingsMenu, display]() {
-                debugSettingsMenu->setFirstLoad();
-                display->clearDisplay();
-                setCurrentScreen(*debugSettingsMenu);
-                debugSettingsMenu->render(*this->display_);
-                delete demoScreen;
-            });
-        }));
-
     debugSettingsMenu->addMenuItem(MenuItem("File System Browser",
                                             [this, display, debugSettingsMenu, &fileSystem]() {
         auto fsMenu = new MenuScreen(power_.battery, *display, debugSettingsMenu->getMyStyle(),
@@ -1286,6 +1303,17 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     debugSettingsMenu->addMenuItem(MenuItem("Optics Test", [this, debugSettingsMenu]() {
         auto opticsTestScreen = new CalibrationScreen();
         opticsTestScreen->setOpticsTest();
+        this->display_->clearDisplay();
+        this->setCurrentScreen(*opticsTestScreen);
+        opticsTestScreen->setBackCallback([this, opticsTestScreen, debugSettingsMenu]() {
+            debugSettingsMenu->setFirstLoad();
+            setCurrentScreen(*debugSettingsMenu);
+            delete opticsTestScreen;
+        });
+    }));
+
+    debugSettingsMenu->addMenuItem(MenuItem("Binocular Optics Test", [this, debugSettingsMenu]() {
+        auto opticsTestScreen = new TestAlignmentScreen();
         this->display_->clearDisplay();
         this->setCurrentScreen(*opticsTestScreen);
         opticsTestScreen->setBackCallback([this, opticsTestScreen, debugSettingsMenu]() {
@@ -1559,15 +1587,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         esp_deep_sleep_start();
     }));
 
-    oldMenu->addMenuItem(MenuItem("Test Bitmap Screen", [this, oldMenu]() {
-        auto bitmapScreen = new BitmapScreen(LOGO_BITS, LOGO_WIDTH, LOGO_HEIGHT);
-        setCurrentScreen(*bitmapScreen);
-        bitmapScreen->setBackCallback([this, bitmapScreen, oldMenu]() {
-            setCurrentScreen(*oldMenu);
-            delete bitmapScreen;
-        });
-    }));
-
     if (!(prefs_.tutorialsDeleted.get().value_or(0) & TUTORIAL_SCREEN_SETTINGS)) {
         settingsMenu->addMenuItem(MenuItem("\ue000 Settings Tutorial",
                                            [this, createTutorialScreen]() {
@@ -1583,33 +1602,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     mainMenu->addSubMenu(settingsMenu);
 
-    bool inDemo = !prefs_.noSetupMode.get().value_or(false);
-
-    if (inDemo) {
-        auto demoScreen = new DemoScreen(*display, prefs_, lightingController);
-        auto contentSyncScreen =
-            new OnboardingContentSyncScreen(*display, localStore, this->prefs_, this->telemetry_);
-        contentSyncScreen->setBackCallback([this, contentSyncScreen, mainMenu, display]() {
-            if (!WiFi::getInstance().hasWiFiCredentials()) {
-                display->clearDisplay();
-                mainMenu->setFirstLoad();
-                this->setCurrentScreen(*mainMenu);
-                mainMenu->render(*display);
-                delete contentSyncScreen;
-            } else {
-                power_.reboot();
-            }
-        });
-
-        demoScreen->setBackCallback([this, demoScreen, contentSyncScreen]() {
-            this->setCurrentScreen(*contentSyncScreen);
-            contentSyncScreen->begin();
-            delete demoScreen;
-        });
-        this->setCurrentScreen(*demoScreen);
-    } else if (prefs_.cesMode.get().value_or(false)) {
-        auto cesScreen = new DemoScreen(*display, prefs_, lightingController);
-        cesScreen->bailAfterLensAdjust();
+    if (prefs_.cesMode.get().value_or(false)) {
+        auto cesScreen = new DemoScreen(*display, prefs_);
 
         // reset prefs for of The Last Question readable
         log_d("Starting CES mode readable load");
@@ -1733,18 +1727,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         // screen
 
         setCurrentScreen(*mainMenu);
-
-        /*
-        auto calibrationScreen = new LogoScreen();
-        calibrationScreen->setBackCallback([this, calibrationScreen, display, mainMenu]() {
-            display->clearScreen();
-            Delay(100);
-
-            setCurrentScreen(*mainMenu);
-            delete calibrationScreen;
-        });
-        setCurrentScreen(*calibrationScreen);
-        */
     }
 
     // If we are in demo mode, overright whatever the current screen would have been

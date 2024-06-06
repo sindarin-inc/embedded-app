@@ -26,9 +26,7 @@ test/CatchTests/Images/TestRun
 test/CatchTests/EPubImages/TestRun
 reports
 managed_components
-sol-pytest-*
 venv
-test/PyTest/requirements.txt
 current_samples_*
 warnings.txt
 test/CatchTests/TestData/metrics/

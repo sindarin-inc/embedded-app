@@ -66,13 +66,13 @@ auto setupTestServer()
 TEST_CASE("Run a basic content sync", "[.][content-sync]") {
     // Create a temporary directory for the content
     std::filesystem::path tmpPath = std::filesystem::temp_directory_path();
-    auto tmpTemplate = StringFormat("%sXXXXXX", tmpPath.string().c_str());
-    auto tmpDir = mkdtemp(tmpTemplate.data());
-    std::filesystem::create_directories(tmpDir);
-    defer {
-        log_i("Cleaning up tmpdir: %s", tmpDir);
-        std::filesystem::remove_all(tmpDir);
-    };
+    std::string tmpTemplate = tmpPath.string() + "/tempdirXXXXXX";
+    // Ensure the string is modifiable
+    std::vector<char> tmpTemplateCStr(tmpTemplate.begin(), tmpTemplate.end());
+    tmpTemplateCStr.push_back('\0');
+    char *tmpDir = mkdtemp(tmpTemplateCStr.data());
+    REQUIRE(tmpDir != nullptr);
+    log_d("Created tmpdir: %s", tmpDir);
 
     PreferencesStore prefs;
     prefs.begin(StringFormat("%s/prefs.ini", tmpDir).c_str());

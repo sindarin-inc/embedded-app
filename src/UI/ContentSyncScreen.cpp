@@ -1,5 +1,8 @@
 #include "ContentSyncScreen.hpp"
 
+#if !SIMULATOR
+#include "Communications/BLEManager.hpp"
+#endif
 #include "Communications/WiFi.hpp"
 #include "Misc/Platform.hpp"
 #include "Misc/PowerManager.hpp"
@@ -105,6 +108,16 @@ void ContentSyncScreen::showPopup(const std::string &message) {
     nextUpdate_ = DisplaySystem::UpdateType::PARTIAL;
 }
 
+void ContentSyncScreen::cancel() {
+    CancelFlag::cancel(cancel_);
+    telemetry_.logMetric(TelemetryField::METRIC_SYNC_STATUS, "sync-cancelled");
+    WiFi::getInstance().disconnectWiFi();
+    showPopup("Sync cancelled!\n\nRebooting system...");
+    render(display_);
+    vTaskDelay(3000 / portTICK_PERIOD_MS);
+    PowerManager::getInstance().reboot();
+}
+
 void ContentSyncScreen::render(DisplaySystem &display) {
     int adjustedXPadding = 42;
     int adjustedYPadding = 10;
@@ -145,7 +158,20 @@ void ContentSyncScreen::render(DisplaySystem &display) {
         checkmarkViews_[2]->setHidden(false);
         progressBarsViews_[3]->setProgress(state_.percentage);
         break;
-    case ContentSyncState::AlreadySynced:
+    case ContentSyncState::AlreadySynced: {
+        progressBarsViews_[0]->setProgress(100);
+        progressBarsViews_[1]->setProgress(100);
+        progressBarsViews_[2]->setProgress(100);
+        progressBarsViews_[3]->setProgress(100);
+        checkmarkViews_[0]->setHidden(false);
+        checkmarkViews_[1]->setHidden(false);
+        checkmarkViews_[2]->setHidden(false);
+        checkmarkViews_[3]->setHidden(false);
+
+        std::string message = "Already in sync!";
+        showPopup(message);
+        break;
+    }
     case ContentSyncState::Synced: {
         progressBarsViews_[0]->setProgress(100);
         progressBarsViews_[1]->setProgress(100);
@@ -183,21 +209,11 @@ void ContentSyncScreen::render(DisplaySystem &display) {
     nextUpdate_ = DisplaySystem::UpdateType::FAST_WITH_VCOM_NUDGE;
 }
 
-void ContentSyncScreen::cancel() {
-    CancelFlag::cancel(cancel_);
-    telemetry_.logMetric(TelemetryField::METRIC_SYNC_STATUS, "sync-cancelled");
-    WiFi::getInstance().disconnectWiFi();
-    showPopup("Sync cancelled!\n\nRebooting system...");
-    render(display_);
-    vTaskDelay(3000 / portTICK_PERIOD_MS);
-    PowerManager::getInstance().reboot();
-}
-
 void ContentSyncScreen::processCommand(RemoteCommand command) {
     if (command == RemoteCommand::ENTER) {
         cancel();
     }
-};
+}
 
 void ContentSyncScreen::fail(const std::string &message) {
     log_w("Content sync failed: %s", message.c_str());
@@ -225,12 +241,23 @@ void ContentSyncScreen::begin() {
         return;
     }
 
+#if !SIMULATOR
+    // Disable the BLE Peripheral. This seems to almost always crash the device with a
+    // btdm_controller_task crash
+    BLEManager::getInstance()->stopAdvertising();
+    auto bleManager = BLEManager::getInstance();
+    bleManager->disconnectAll();
+    auto resumeBLE = [bleManager] { bleManager->startAdvertisingIfNecessary(); };
+#else
+    auto resumeBLE = [] {};
+#endif
+
     // Rate limit to not update more than every 1s, and only if the percentage has changed
     auto rl = std::make_shared<RateLimiter>(1, 20, 1);
     cancel_ = std::make_shared<CancelFlag>();
-    DispatchGetCore0BackgroundQueue()->dispatch([this, rl]() {
+    DispatchGetCore0BackgroundQueue()->dispatch([this, rl, resumeBLE]() {
         localStore_.syncFromRemote(SyncReason::Manual, cancel_,
-                                   [this, rl](const ContentSyncState &state) {
+                                   [this, rl, resumeBLE](const ContentSyncState &state) {
             if (CancelFlag::isCancelled(cancel_)) {
                 return;
             }
@@ -252,7 +279,7 @@ void ContentSyncScreen::begin() {
             }
 
             // Do UI stuff back on core 1
-            DispatchGetUiQueue()->dispatch([this, state]() {
+            DispatchGetUiQueue()->dispatch([this, state, resumeBLE]() {
                 this->updateState(state);
                 this->render(this->display_);
 
@@ -263,6 +290,7 @@ void ContentSyncScreen::begin() {
                 } else if (state.state == ContentSyncState::AlreadySynced) {
                     log_d("Content sync already synced");
                     Delay(2000);
+                    resumeBLE();
                     back();
                 } else if (state.state == ContentSyncState::Failure) {
                     // If we got any new content force a restart, otherwise just go back
@@ -273,6 +301,7 @@ void ContentSyncScreen::begin() {
                     } else {
                         log_d("Content sync failed, going back");
                         Delay(2000);
+                        resumeBLE();
                         back();
                     }
                 }

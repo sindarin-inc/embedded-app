@@ -573,8 +573,9 @@ void LocalStore::syncFromRemote(
     // call from whatever queue is most fitting based on the context. In tests, this might not be in
     // a queue.
     auto queue = DispatchGetCore0BackgroundQueue();
-    queue->dispatch([this, cancel, wifiConnected] {
-        auto useBle = !wifiConnected;
+    queue->dispatch([this, cancel] {
+        // auto useBle = !wifiConnected;
+        auto useBle = false;
         auto retries = 2;
         while (retries > 0) {
             log_d("Uploading telemetry, useBle: %d", useBle);
@@ -587,7 +588,7 @@ void LocalStore::syncFromRemote(
                 this->telemetry_.logMetric(TelemetryField::METRIC_SYNC_STATUS,
                                            "sync-telemetry-failed",
                                            {{"http-code", httpCode}, {"use-ble", useBle}});
-                useBle = true;
+                // useBle = true;
                 retries -= 1;
             } else {
                 this->telemetry_.logMetric(TelemetryField::METRIC_SYNC_STATUS,

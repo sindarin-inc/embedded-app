@@ -36,6 +36,10 @@ auto TelemetryFieldToString(TelemetryField field) -> const char * {
         return "rt";
     case METRIC_STYLE:
         return "st";
+    case METRIC_FIRMWARE_UPDATE:
+        return "fu";
+    case METRIC_BLE:
+        return "bl";
     }
     // Explicitly don't have a `default` case so the compiler can warn us when we have unhandled
     // enum values

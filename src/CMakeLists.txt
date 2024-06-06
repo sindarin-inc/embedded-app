@@ -1,4 +1,5 @@
 FILE(GLOB_RECURSE app_sources ${CMAKE_SOURCE_DIR}/src/*.*)
+
 # Remove the /src/Ulp directory since it's only for ULP things
 list(FILTER app_sources EXCLUDE REGEX "${CMAKE_SOURCE_DIR}/src/Ulp/*.*")
 
@@ -26,11 +27,13 @@ set(compile_options
     -DUSE_MMC5603=1
     -DINTERNAL_SPIFFS_FLASH=1
     -DLED_INVERT=1
+    -DEINKET013TT1=1
 )
 
 # Check if the BUILD_FOR_TEST environment variable is set and add the extra option if it is
 if($ENV{BUILD_FOR_TEST})
     message(WARNING "TEST BUILD ENABLED!")
+
     # list(APPEND compile_options -DDISABLE_POWER_MANAGEMENT=1)
 endif()
 

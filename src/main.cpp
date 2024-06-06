@@ -17,6 +17,7 @@
 #include "Misc/Battery.hpp"
 #include "Misc/BootError.hpp"
 #include "Misc/BootLoopDetection.hpp"
+#include "Misc/DebugCommand.hpp"
 #include "Misc/FactoryReset.hpp"
 #include "Misc/Platform.hpp"
 #include "Misc/PowerManager.hpp"
@@ -32,6 +33,7 @@
 #include "UI/OverTempScreen.hpp"
 #include "UI/PowerDepletedScreen.hpp"
 #include "UI/RootUI.hpp"
+#include "UI/TestAlignmentScreen.hpp"
 #include "config.h"
 #include "sindarin-debug.h"
 
@@ -40,13 +42,16 @@
 #if EINKET013TT1
 #include "Displays/DisplayEinkET013TT1.hpp"
 DisplayEinkET013TT1 myDisplay(DISPLAY_CS_LEFT, DISPLAY_CS_RIGHT, DISPLAY_RST);
+#elif DISPLAY_SIM_8BIT
+// Declared in native.cpp
+#include "Displays/DisplaySim8Bit.hpp"
+extern DisplaySim8Bit myDisplay;
 #endif
 
 PreferencesStore prefs;
 
 #if USE_BLE_SERVER_REMOTE || USE_BLE_SERVER_SETTINGS
 #include "Communications/BLESindarinService.hpp"
-BLESindarinService bleSindarinService;
 #endif
 
 #if USE_BLE_SERVER_REMOTE
@@ -62,11 +67,6 @@ BLESettings bleSettings(&prefs);
 #include "Communications/BLEImprov.hpp"
 #endif
 
-#if USE_TURN_TOUCH_REMOTE
-#include "Inputs/TTRemoteInput.hpp"
-TTRemoteInput ttRemoteInput(prefs);
-#endif
-
 #if USE_BLE_SERVER_PROXY
 #include "Communications/BLESyncService.hpp"
 BLESyncService bleSyncService;
@@ -77,7 +77,7 @@ BLESyncService bleSyncService;
 #endif
 
 #include "Sensors/LightingController.hpp"
-LightingController lightingController;
+LightingController lightingController(prefs);
 
 #if SIMULATOR
 #include "Storage/PosixFileSystem.hpp"
@@ -88,6 +88,12 @@ LittleFSFileSystem fileSystem;
 #endif
 
 Telemetry telemetry(fileSystem, prefs);
+
+#if USE_TURN_TOUCH_REMOTE
+#include "Inputs/TTRemoteInput.hpp"
+TTRemoteInput ttRemoteInput(prefs, telemetry);
+#endif
+
 PowerManager powerManager(fileSystem, prefs, lightingController, myDisplay, telemetry);
 LocalStore localStore(fileSystem, prefs, powerManager.battery, telemetry);
 RootUI rootUi(prefs, powerManager, telemetry);
@@ -96,9 +102,39 @@ WiFi wiFi(telemetry);
 
 bool bootCompleted = false;
 
+void UIInnerLoop(RemoteCommand command) {
+    powerManager.feedInactivityTimer();
+    rootUi.loop(myDisplay, command);
+}
+
 // Task for all periodic things that need to run ~1Hz. Polling tasks should be grouped here so that
 // they all complete in a tight loop, thus maximizing sleep time.
 void PollingLoopTask(void *parameter) {
+    DebugCommand debugCommand([](const std::string &command) {
+        log_i("Received debug command: %s", command.c_str());
+        if (command == "GRID") {
+            DispatchGetUiQueue()->dispatch([]() {
+                // Override brightness to max
+                lightingController.setOverrideValuePercent(100);
+                auto testScreen = new TestAlignmentScreen();
+                rootUi.setCurrentScreen(*testScreen);
+                UIInnerLoop(RemoteCommand::NONE);
+            });
+        } else if (command == "UP") {
+            DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::UP); });
+        } else if (command == "LEFT") {
+            DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::LEFT); });
+        } else if (command == "RIGHT") {
+            DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::RIGHT); });
+        } else if (command == "DOWN") {
+            DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::DOWN); });
+        } else if (command == "ENTER") {
+            DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::ENTER); });
+        } else if (command == "BACK") {
+            DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::BACK); });
+        }
+    });
+
     int factoryResetStartTimeMs = 0;
     while (powerManager.state() != PowerState::ShuttingDown) {
         // check if factory reset button is held down
@@ -135,7 +171,27 @@ void PollingLoopTask(void *parameter) {
         BLEImprov::getInstance()->loop();
 #endif
 
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
+#if SIMULATOR
+        vTaskDelay(pdMS_TO_TICKS(1000));
+#else
+        // Spend the rest of the time waiting for debug commands (that will probably never come)
+        uart_event_t event;
+        if (xQueueReceive(GetUartCommandQueue(), &event, pdMS_TO_TICKS(1000))) {
+            switch (event.type) {
+            case UART_DATA: {
+                uint8_t buf[256];
+                auto rxSize = uart_read_bytes(UART_NUM_0, buf, event.size, 0);
+                if (rxSize > 0) {
+                    debugCommand.addData(buf, rxSize);
+                }
+                break;
+            }
+            default:
+                log_w("Unhandled UART event: %d", event.type);
+                break;
+            }
+        }
+#endif
 
         // This happens after the delay, so that the first check can run with a faster fade.
         lightingController.checkAmbientLight();
@@ -158,11 +214,6 @@ void StatsTask(void *parameter) {
 }
 
 auto UIGetCurrentScreen() { return rootUi.getCurrentScreen(); }
-
-void UIInnerLoop(RemoteCommand command) {
-    powerManager.feedInactivityTimer();
-    rootUi.loop(myDisplay, command);
-}
 
 #if CONFIG_AUTOSTART_ARDUINO
 void loop() { vTaskDelay(portMAX_DELAY); };
@@ -254,16 +305,14 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
             }
         });
 
-        xTaskCreatePinnedToCore(
-            [](void *) {
+        xTaskCreatePinnedToCore([](void *) {
             while (powerManager.state() != PowerState::ShuttingDown) {
                 powerManager.loop();
                 vTaskDelay(1000 / portTICK_PERIOD_MS);
             }
             log_d("Background loop task exited");
             vTaskDelete(nullptr);
-            },
-            "BackgroundPowerLoop", 4096, nullptr, 1, nullptr, 1);
+        }, "BackgroundPowerLoop", 4096, nullptr, 1, nullptr, 1);
         BackgroundSyncAndSleep(powerManager, prefs, localStore, telemetry);
 
         // Should never get here, the system should be asleep
@@ -338,8 +387,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         lightingController.setOverrideValuePercent(100);
 
         // Also kick off a task to try to content sync every minute or so
-        xTaskCreatePinnedToCore(
-            [](void *) {
+        xTaskCreatePinnedToCore([](void *) {
             while (powerManager.state() != PowerState::ShuttingDown) {
                 PreferencesStore::syncReason = SyncReason::Periodic;
                 BackgroundSync(powerManager, prefs, localStore, telemetry);
@@ -347,8 +395,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
             }
             log_d("Sync loop task exited");
             vTaskDelete(nullptr);
-            },
-            "BackgroundSync", 4096, nullptr, 1, nullptr, 1);
+        }, "BackgroundSync", 4096, nullptr, 1, nullptr, 1);
     }
 
 #if USE_BLE
@@ -395,10 +442,12 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 #endif
 
 #if USE_BLE_SERVER_REMOTE || USE_BLE_SERVER_SETTINGS
-    auto sindarinService = bleSindarinService.configureService(bleManager->server());
+    auto sindarinService =
+        BLESindarinService::getInstance()->configureService(bleManager->server());
 
 #if USE_BLE_SERVER_REMOTE
     BLERemoteInput::getInstance()->configureCharacteristics(sindarinService);
+    BLERemoteInput::getInstance()->setCallback(remoteCallback);
 #endif
 
 #if USE_BLE_SERVER_SETTINGS
@@ -408,7 +457,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 #endif
 #endif
 
-    if (!bleSindarinService.start()) {
+    if (!BLESindarinService::getInstance()->start()) {
         bootErrors.push_back({.type = BootError::Type::BLESindarin});
     }
 #endif

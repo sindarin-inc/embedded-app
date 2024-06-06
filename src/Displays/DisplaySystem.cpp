@@ -120,19 +120,18 @@ void DisplaySystem::ensureBoundaries() {
 
     // First constrain position
     boundingBox_.x =
-        std::clamp(boundingBox_.x, MAX_BOUNDING_BOX.x,
-                   static_cast<int32_t>(MAX_BOUNDING_BOX.x + MAX_BOUNDING_BOX.width -
-                                        std::max(MIN_BOUNDING_BOX.width, boundingBox_.width)));
+        std::clamp(boundingBox_.x, maxBoundingBox.x,
+                   static_cast<int32_t>(maxBoundingBox.x + maxBoundingBox.width -
+                                        std::max(minBoundingBox.width, boundingBox_.width)));
     boundingBox_.y =
-        std::clamp(boundingBox_.y, MAX_BOUNDING_BOX.y,
-                   static_cast<int32_t>(MAX_BOUNDING_BOX.y + MAX_BOUNDING_BOX.height -
-                                        std::max(MIN_BOUNDING_BOX.height, boundingBox_.height)));
+        std::clamp(boundingBox_.y, maxBoundingBox.y,
+                   static_cast<int32_t>(maxBoundingBox.y + maxBoundingBox.height -
+                                        std::max(minBoundingBox.height, boundingBox_.height)));
 
     // Then constrain dimensions
-    boundingBox_.width =
-        std::clamp(boundingBox_.width, MIN_BOUNDING_BOX.width, MAX_BOUNDING_BOX.width);
+    boundingBox_.width = std::clamp(boundingBox_.width, minBoundingBox.width, maxBoundingBox.width);
     boundingBox_.height =
-        std::clamp(boundingBox_.height, MIN_BOUNDING_BOX.height, MAX_BOUNDING_BOX.height);
+        std::clamp(boundingBox_.height, minBoundingBox.height, maxBoundingBox.height);
 
     // log_d("Bounding Box after is %s", boundingBox_.toString().c_str());
 }
@@ -274,6 +273,32 @@ void DisplaySystem::drawXBitmap(int16_t x, int16_t y, const uint8_t bitmap[], in
         setPartialWindow(x, y, w, h);
     }
     gfxClass_->drawXBitmap(xOffset(x), yOffset(y), bitmap, w, h, color);
+}
+
+void DisplaySystem::drawScaledXBitmap(int16_t x, int16_t y, const uint8_t bitmap[], int16_t w,
+                                      int16_t h, uint16_t color, int scale) {
+    if (getPartialRefresh()) {
+        setPartialWindow(x, y, w, h);
+    }
+    int16_t byteWidth = (w + 7) / 8; // Bitmap scanline pad = whole byte
+    uint8_t bit = 0;
+
+    gfxClass_->startWrite();
+    for (int16_t j = 0; j < h; j++) {
+        for (int16_t i = 0; i < w; i++) {
+            if (i & 7) {
+                bit >>= 1;
+            } else {
+                bit = bitmap[j * byteWidth + i / 8];
+            }
+            if (bit & 0x01) {
+                // Instead of drawing a pixel, draw a scaled rectangle
+                gfxClass_->writeFillRect(xOffset(x + i * scale), yOffset(y + j * scale), scale,
+                                         scale, color);
+            }
+        }
+    }
+    gfxClass_->endWrite();
 }
 
 void DisplaySystem::drawPBM(int16_t x, int16_t y, const uint8_t *pbmbytes, int size) {

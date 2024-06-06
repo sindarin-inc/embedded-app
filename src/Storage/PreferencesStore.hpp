@@ -326,7 +326,6 @@ public:
           rectW(*this, "rectW"),
           rectH(*this, "rectH"),
           lineSpacing(*this, "line-space"),
-          noSetupMode(*this, "no-setup"),
           wordCount(*this, "word-count"),
           totalReadingTimeSeconds(*this, "tot-rd-time"),
           bootCount(*this, "boot-count"),
@@ -364,6 +363,8 @@ public:
           bleAdvertisingKey(*this, "ble-adv-key"),
           bleAuthKey(*this, "ble-auth-key"),
           blePower(*this, "ble-power"),
+          brightnessOffset(*this, "brightness-off"),
+          brightnessOffsetEnabled(*this, "bright-off-en"),
           preferencesStoreMigrationVersion_(*this, "ps-version"){};
     // clang-format on
 
@@ -372,8 +373,6 @@ public:
     void migrateIfNeeded() {
         bool ranMigration = false;
         auto migrationVersion = preferencesStoreMigrationVersion_.get().value_or(0);
-        // Some migrations need to know if this is the first time the device has been booted
-        bool firstEverBoot = (migrationVersion == 0);
         while (migrationVersion < latestMigrationVersion_) {
             log_i("Migrating PreferencesStore from version %" PRIu32 " to %" PRIu32,
                   migrationVersion, migrationVersion + 1);
@@ -426,13 +425,6 @@ public:
                     log_e("nvs_erase_key failed: %s", esp_err_to_name(err));
                 }
 
-                bool demoMode = false;
-                err = nvs_get_u8(nvsHandle_, "demo", reinterpret_cast<uint8_t *>(&demoMode));
-                // If it's not set or it's set to 0, set the noSetup flag to true.
-                if (!firstEverBoot && (err == ESP_ERR_NVS_NOT_FOUND || !demoMode)) {
-                    noSetupMode.set(true);
-                }
-
                 err = nvs_erase_key(nvsHandle_, "demo");
                 if (err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND) {
                     log_e("nvs_erase_key failed: %s", esp_err_to_name(err));
@@ -444,6 +436,18 @@ public:
                     "morn-deliver",
                     "no-page-arrows",
                     "sleep-reason",
+                };
+                for (auto &key : keys) {
+                    esp_err_t err = nvs_erase_key(nvsHandle_, key.c_str());
+                    if (err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND) {
+                        log_e("nvs_erase_key failed: %s", esp_err_to_name(err));
+                    }
+                }
+                break;
+            }
+            case 4: { // After 0.7.4
+                std::vector<std::string> keys = {
+                    "no-setup",
                 };
                 for (auto &key : keys) {
                     esp_err_t err = nvs_erase_key(nvsHandle_, key.c_str());
@@ -571,7 +575,6 @@ public:
     PrefsItem<int> rectW;
     PrefsItem<int> rectH;
     PrefsItem<int> lineSpacing;
-    PrefsItem<bool> noSetupMode;
     PrefsItem<uint32_t> wordCount;
     PrefsItem<uint32_t> totalReadingTimeSeconds;
     PrefsItem<uint32_t> bootCount;
@@ -616,6 +619,8 @@ public:
     // This is here for debugging and investigation but in John's experiments, this didn't save much
     // battery power. But there might be some tweaking we could do to improve BLE reliability.
     PrefsItem<uint32_t> blePower;
+    PrefsItem<int> brightnessOffset;
+    PrefsItem<bool> brightnessOffsetEnabled;
 
     // These are RTC_SLOW_MEM variables that persist across deep sleep / wake cycles but will be
     // reset on power cycles
@@ -631,7 +636,7 @@ public:
     static PairedStatus paired;
 
 protected:
-    const uint32_t latestMigrationVersion_ = 4;
+    const uint32_t latestMigrationVersion_ = 5;
     uint32_t nvsHandle_{};
     bool started_{};
 

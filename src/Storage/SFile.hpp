@@ -140,3 +140,29 @@ protected:
 
     void getFileSize();
 };
+
+class RamFile : public SFileImpl {
+public:
+    RamFile(const unsigned char *mem, size_t size) : fData_(mem), fSize_(size) {}
+    ~RamFile() override = default;
+
+    auto write(const uint8_t *buf, size_t size) -> size_t override;
+    [[nodiscard]] auto available() const -> int;
+    auto flush() -> int override;
+    auto read(uint8_t *buf, size_t size) -> size_t override;
+
+    auto seek(uint32_t pos, SSeekMode mode) -> bool override;
+    [[nodiscard]] auto position() const -> size_t override;
+    [[nodiscard]] auto size() const -> size_t override;
+    auto close() -> int override;
+    operator bool() const override;
+    auto getFilePtr() -> FILE * override;
+
+protected:
+    FILE *fp_{nullptr};
+    const unsigned char *fData_{nullptr};
+    size_t fSize_{0};
+    uint32_t fPos_{0};
+
+    void getFileSize();
+};
