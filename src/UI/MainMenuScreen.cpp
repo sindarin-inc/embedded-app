@@ -16,8 +16,8 @@ auto MainMenuScreen::layout(LayoutContext &context, Size size) -> Size {
     const auto inset = 3;
     const auto spacing = 5;
 
-    // Layout the top bar -- note the calculation 20 - 2 * inset is to make the top bar 20 pixels but
-    // this is hardcoded and should look at the size of the text for the words there instead.
+    // Layout the top bar -- note the calculation 20 - 2 * inset is to make the top bar 20 pixels
+    // but this is hardcoded and should look at the size of the text for the words there instead.
     auto topBarRect = context.setSublayoutFrame(
         {{inset, inset}, {size.width, 20 - 2 * inset}}, LayoutOptionsNone,
         [this](LayoutContext &context, Size size) -> Size {
