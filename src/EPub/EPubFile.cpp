@@ -3,8 +3,8 @@
 #include "EPubDefs.hpp"
 #include "EPubMetaFile.hpp"
 
-auto EPubFile::findFileOffsetAtCharOffset(const std::string &path, uint32_t charOffset)
-    -> uint32_t {
+auto EPubFile::findFileOffsetAtCharOffset(const std::string &path,
+                                          uint32_t charOffset) -> uint32_t {
 
     pugi::xml_document &doc = getXHTMLFile(path);
 
@@ -37,8 +37,8 @@ auto EPubFile::findFileOffsetAtCharOffset(const std::string &path, uint32_t char
     return walker.offset;
 }
 
-auto EPubFile::findCharOffsetAtFileOffset(const std::string &path, uint32_t fileOffset)
-    -> uint32_t {
+auto EPubFile::findCharOffsetAtFileOffset(const std::string &path,
+                                          uint32_t fileOffset) -> uint32_t {
 
     pugi::xml_document &doc = getXHTMLFile(path);
 
@@ -124,7 +124,8 @@ auto EPubFile::getXHTMLFile(const std::string &path) -> pugi::xml_document & {
 
     if (currentFilePath_ != filePath) {
 
-        // log_w("currentFilePath_: %s, filePath : %s", currentFilePath_.c_str(), filePath.c_str());
+        log_w("currentFilePath_: %s, new filePath : %s", currentFilePath_.c_str(),
+              filePath.c_str());
 
         std::tie(currentFileBuffer_, length) = getFile(filePath);
 
@@ -360,8 +361,8 @@ auto EPubFile::getSummaryContent(
     return summaryText;
 }
 
-auto EPubFile::hasEpubAddition(const std::string &spineHref, const std::string &additionType)
-    -> bool {
+auto EPubFile::hasEpubAddition(const std::string &spineHref,
+                               const std::string &additionType) -> bool {
     // Find the chapterId corresponding to this spineHref
     auto chapterSpineHref = opf_->getChapterFirstHref(spineHref);
     auto chapterId = opf_->getManifestIdByHref(chapterSpineHref);
@@ -541,6 +542,8 @@ auto EPubFile::open() -> bool {
         opf_->loadSpine(toc);
     }
     EPUB_PROFILE_END(EPubOpf)
+
+    ePubPositionCache_ = std::make_shared<EPubPositionCache>(*this);
 
     PROFILE_END_LOG_MS(openEPub);
 
