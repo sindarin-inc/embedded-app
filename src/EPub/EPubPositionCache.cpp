@@ -26,7 +26,8 @@ void EPubPositionCache::doAddChapterFile(const renderer_defs::Idx spineIdx) {
             ChapterFiles{.chapterOffset = chapterFiles_[chapterFilesTopIdx_ - 1].chapterOffset +
                                           ePubFile_.getUncompressedSize(spineIdx - 1),
                          .spineIdx = spineIdx};
-        log_w("Add Spine %" PRIi32 " at chapter offset %" PRIu32 ", at chapterFiles index %" PRIi16,
+        log_w("Add Spine #%" PRIi32 " at chapter offset %" PRIu32
+              ", at chapterFiles index %" PRIi16,
               spineIdx, chapterFiles_[chapterFilesTopIdx_].chapterOffset, chapterFilesTopIdx_);
     } else {
         log_e("Too many chapterFiles in a chapter!");
@@ -49,8 +50,13 @@ void EPubPositionCache::checkChapterFilesCompleteness(const renderer_defs::Idx s
     // If the current chapter is not the one in the cache, we reinitialize the cache
     // and update the chapterFiles_ array with all the chapter files that are part of the chapter,
     // up to the one received in &place
-    renderer_defs::Idx chapterSpineIdx = ePubFile_.getChapterIdx(spineIdx);
+    renderer_defs::Idx chapterSpineIdx = ePubFile_.getChapterFirstSpineIdx(spineIdx);
+
+    if (ePubFile_.spineIdxIsChapterStart(spineIdx) && (chapterSpineIdx != spineIdx)) {
+        log_e("OPF discripancies!!! #%" PRIi16 " vs #%" PRIi16, chapterSpineIdx, spineIdx);
+    }
     if (chapterSpineIdx != chapterFiles_[0].spineIdx) {
+        log_w("Resetting cache, change of chapter start spine to %" PRIi16, chapterSpineIdx);
         // There was a change of chapter. Initialize everything
         init(chapterSpineIdx);
         // The following is required in case when the first spine in a chapter is not
@@ -139,7 +145,7 @@ auto EPubPositionCache::getPosition(const renderer_defs::StreamPlace &fromPlace,
                     return renderer_defs::StreamPlace(0, 0);
                 } else {
                     renderer_defs::Idx chapterSpineIdx =
-                        ePubFile_.getChapterIdx(chapterFiles_[0].spineIdx - 1);
+                        ePubFile_.getChapterFirstSpineIdx(chapterFiles_[0].spineIdx - 1);
                     if (chapterSpineIdx < 0) {
                         return renderer_defs::StreamPlace(0, 0);
                     } else {
@@ -155,7 +161,7 @@ auto EPubPositionCache::getPosition(const renderer_defs::StreamPlace &fromPlace,
         }
     }
 
-    log_d("Returned cached position: offset: %" PRIu32 ", spine %" PRIi16, streamPlace.getOffset(),
+    log_d("Returned cached position: offset: %" PRIu32 ", spine #%" PRIi16, streamPlace.getOffset(),
           streamPlace.getSpineIdx());
 
     return streamPlace;

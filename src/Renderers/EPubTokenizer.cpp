@@ -405,6 +405,11 @@ auto EPubTokenizer::isEmpty(pugi::xml_node node) -> bool {
 // of an XHTML file, we have to move to the preceding file, at the beginning of it.
 auto EPubTokenizer::goBackward(StreamPlace streamPlace, uint32_t offsetToSubtract) -> StreamPlace {
 
+    StreamPlace targetPlace = stream_->getCachedPosition(streamPlace, true);
+
+    return targetPlace;
+
+#if 0 // Old code
     uint32_t fileStartingOffset = computeStartingOffset(streamPlace);
 
     REND_WLOG("StreamPlace Offset: %" PRIu32 " vs fileStartingOffset: %" PRIu32,
@@ -419,6 +424,7 @@ auto EPubTokenizer::goBackward(StreamPlace streamPlace, uint32_t offsetToSubtrac
     } else {
         return {0, streamPlace.getSpineIdx()};
     }
+#endif
 }
 
 auto EPubTokenizer::toUtf8(uint32_t val) -> char * {
@@ -697,12 +703,13 @@ auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, S
 
     // ---
 
+    StreamPlace targetPlace =
+        backwards_ ? fromPlace_ : stream_->getCachedPosition(fromPlace_, false);
+
     if (stream_->isAnArticle()) {
 
         REND_WLOG("Reading an article...");
 
-        StreamPlace targetPlace =
-            stream_->getCachedPosition(backwards ? *toPlace : fromPlace, backwards);
         currentSpineIdx_ = targetPlace.getSpineIdx();
 
         REND_PROFILE_START(tokenizeProcess);
@@ -789,8 +796,6 @@ auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, S
 
         REND_WLOG("Reading a book...");
 
-        StreamPlace targetPlace = stream_->getCachedPosition(fromPlace, backwards);
-
         currentSpineIdx_ = targetPlace.getSpineIdx();
 
         // currentSpineIdx_ = stream_->getChapterFirstSpineIdx(fromPlace.getSpineIdx());
@@ -808,7 +813,6 @@ auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, S
 
             body_ = doc.child("html").child("body");
 
-#if 1
             pugi::xml_node node;
             if (firstLoop) {
                 struct TargetWalker : pugi::xml_tree_walker {
@@ -835,10 +839,7 @@ auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, S
 
                 node = body_.first_child();
             }
-#else
-            currentStreamOffset_ = 0;
-            pugi::xml_node node = body_.first_child();
-#endif
+
             if (node) {
                 logicalDepth_ = 0;
                 do {
