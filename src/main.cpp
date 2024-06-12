@@ -10,6 +10,7 @@
 #include <esp_timer.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/queue.h>
+#include <tusb.h>
 
 #include "Communications/BackgroundSync.hpp"
 #include "Communications/WiFi.hpp"
@@ -220,6 +221,7 @@ void loop() { vTaskDelay(portMAX_DELAY); };
 void setup() {
 #else
 extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
+    USBDeviceInit();
     HardwareInit();
 #endif
 
@@ -542,6 +544,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     PreferencesStore::screenClearedAtShutdown = false;
 
     xTaskCreatePinnedToCore(PollingLoopTask, "Polling", 10000, nullptr, 1, nullptr, 0);
+
     // xTaskCreatePinnedToCore(StatsTask, "Stats", 5000, nullptr, 0, nullptr, 1);
 
     // Begin fade-in on the lighting before rendering the UI

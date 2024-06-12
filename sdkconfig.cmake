@@ -2007,6 +2007,59 @@ CONFIG_LITTLEFS_MTIME_USE_SECONDS=y
 # CONFIG_LITTLEFS_FCNTL_GET_PATH is not set
 # CONFIG_LITTLEFS_MULTIVERSION is not set
 # end of LittleFS
+
+#
+# TinyUSB Stack
+#
+CONFIG_TINYUSB_DEBUG_LEVEL=0
+
+#
+# TinyUSB task configuration
+#
+# CONFIG_TINYUSB_NO_DEFAULT_TASK is not set
+CONFIG_TINYUSB_TASK_PRIORITY=5
+CONFIG_TINYUSB_TASK_STACK_SIZE=4096
+# end of TinyUSB task configuration
+
+#
+# Descriptor configuration
+#
+CONFIG_TINYUSB_DESC_USE_ESPRESSIF_VID=y
+CONFIG_TINYUSB_DESC_USE_DEFAULT_PID=y
+CONFIG_TINYUSB_DESC_BCD_DEVICE=0x0100
+CONFIG_TINYUSB_DESC_MANUFACTURER_STRING="Sindarin Inc"
+CONFIG_TINYUSB_DESC_PRODUCT_STRING="Sol Reader"
+CONFIG_TINYUSB_DESC_SERIAL_STRING="4096"
+CONFIG_TINYUSB_DESC_CDC_STRING="Sol CDC"
+# end of Descriptor configuration
+
+#
+# Massive Storage Class (MSC)
+#
+# CONFIG_TINYUSB_MSC_ENABLED is not set
+# end of Massive Storage Class (MSC)
+
+#
+# Communication Device Class (CDC)
+#
+CONFIG_TINYUSB_CDC_ENABLED=y
+CONFIG_TINYUSB_CDC_COUNT=2
+CONFIG_TINYUSB_CDC_RX_BUFSIZE=64
+CONFIG_TINYUSB_CDC_TX_BUFSIZE=64
+# end of Communication Device Class (CDC)
+
+#
+# Musical Instrument Digital Interface (MIDI)
+#
+CONFIG_TINYUSB_MIDI_COUNT=0
+# end of Musical Instrument Digital Interface (MIDI)
+
+#
+# Human Interface Device Class (HID)
+#
+CONFIG_TINYUSB_HID_COUNT=0
+# end of Human Interface Device Class (HID)
+# end of TinyUSB Stack
 # end of Component config
 
 # CONFIG_IDF_EXPERIMENTAL_FEATURES is not set

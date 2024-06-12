@@ -15,6 +15,10 @@
 #include <nvs_flash.h>
 #include <optional>
 #include <soc/rtc.h>
+#include <tinyusb.h>
+#include <tusb.h>
+#include <tusb_cdc_acm.h>
+#include <tusb_console.h>
 #include <ulp_riscv.h>
 
 #include "Misc/StringUtil.hpp"
@@ -22,6 +26,14 @@
 #include "Storage/include/EFusesCustomTable.h"
 #include "config.h"
 #include "sindarin-debug.h"
+
+#if SIMULATOR
+#include "Storage/PosixFileSystem.hpp"
+extern PosixFileSystem fileSystem;
+#else
+#include "Storage/LittleFSFileSystem.hpp"
+extern LittleFSFileSystem fileSystem;
+#endif
 
 #define BACKLIGHT_PWM_CHANNEL 0
 #define HARDWARE_REVISION_LATEST 3
@@ -294,6 +306,215 @@ void InitializePlatform() {
     uart_param_config(UART_NUM_0, &uartConfig);
 
     platformInitialized = true;
+}
+
+// Define custom device descriptor
+// Define custom device descriptor
+tusb_desc_device_t my_descriptor = {.bLength = sizeof(my_descriptor),
+                                    .bDescriptorType = TUSB_DESC_DEVICE,
+                                    .bcdUSB = 0x0200, // USB version. 0x0200 means version 2.0
+                                    .bDeviceClass = TUSB_CLASS_UNSPECIFIED,
+                                    .bMaxPacketSize0 = 64,
+
+                                    .idVendor = 0x303A,
+                                    .idProduct = 0x3000,
+                                    .bcdDevice = 0x0101, // Device FW version
+
+                                    .iManufacturer = 0x01, // see string_descriptor[1] below
+                                    .iProduct = 0x02,      // see string_descriptor[2] below
+                                    .iSerialNumber = 0x03, // see string_descriptor[3] below
+
+                                    .bNumConfigurations = 0x01};
+
+// Define custom configuration descriptor
+/*
+const uint8_t my_configuration_descriptor[] = {
+    // Configuration Descriptor
+    0x09, TUSB_DESC_CONFIGURATION, 0x43, 0x00, 0x02, 0x01, 0x00, 0xC0, 0x32,
+
+    // Interface Association Descriptor
+    0x08, TUSB_DESC_INTERFACE_ASSOCIATION, 0x00, 0x02, TUSB_CLASS_CDC,
+    CDC_COMM_SUBCLASS_ABSTRACT_CONTROL_MODEL, CDC_COMM_PROTOCOL_ATCOMMAND, 0x00,
+
+    // CDC Control Interface
+    0x09, TUSB_DESC_INTERFACE, 0x00, 0x00, 0x01, TUSB_CLASS_CDC,
+    CDC_COMM_SUBCLASS_ABSTRACT_CONTROL_MODEL, CDC_COMM_PROTOCOL_ATCOMMAND, 0x00, 0x05, 0x24,
+    CDC_FUNC_DESC_HEADER, U16_TO_U8S_LE(0x0110), 0x05, 0x24, CDC_FUNC_DESC_CALL_MANAGEMENT, 0x00,
+    0x01, 0x04, 0x24, CDC_FUNC_DESC_ABSTRACT_CONTROL_MANAGEMENT, 0x02, 0x05, 0x24,
+    CDC_FUNC_DESC_UNION, 0x00, 0x01, 0x07, TUSB_DESC_ENDPOINT, 0x83, TUSB_XFER_INTERRUPT, 0x08,
+    0x00, 0x10,
+
+    // CDC Data Interface
+    0x09, TUSB_DESC_INTERFACE, 0x01, 0x00, 0x02, TUSB_CLASS_CDC_DATA, 0x00, 0x00, 0x00, 0x07,
+    TUSB_DESC_ENDPOINT, 0x01, TUSB_XFER_BULK, 0x40, 0x00, 0x00, 0x07, TUSB_DESC_ENDPOINT, 0x82,
+    TUSB_XFER_BULK, 0x40, 0x00, 0x00};
+*/
+/* Did this in menuconfig
+tusb_desc_strarray_device_t my_string_descriptor = {
+    (char[]){0x09, 0x04},
+    "Sindarin, Inc.",
+    "Sol Reader",
+    "4096",
+};
+*/
+
+// CDC line state change callback
+void tinyusb_cdc_line_state_changed_callback(int itf, cdcacm_event_t *event) {
+    int dtr = event->line_state_changed_data.dtr;
+    int rst = event->line_state_changed_data.rts;
+    log_i("Line state changed! dtr:%d, rst:%d", dtr, rst);
+}
+
+#define CONFIG_USB_CDC_RX_BUFSIZE 64
+static uint8_t buf[CONFIG_USB_CDC_RX_BUFSIZE + 1];
+
+// CDC RX callback
+void tinyusb_cdc_rx_callback(int itf, cdcacm_event_t *event) {
+    /* initialization */
+    size_t rx_size = 0;
+
+    /* read */
+    esp_err_t ret =
+        tinyusb_cdcacm_read((tinyusb_cdcacm_itf_t)itf, buf, CONFIG_USB_CDC_RX_BUFSIZE, &rx_size);
+    if (ret == ESP_OK) {
+        buf[rx_size] = '\0';
+        log_i("Got data (%d bytes): %s", rx_size, buf);
+    } else {
+        log_i("Read error");
+    }
+
+    /* write back */
+    tinyusb_cdcacm_write_queue((tinyusb_cdcacm_itf_t)itf, buf, rx_size);
+    tinyusb_cdcacm_write_flush((tinyusb_cdcacm_itf_t)itf, 0);
+}
+
+#define FILENAME_BUFSIZE 62
+int fileReceiveState = 0;
+char secretCode[9] = "uuddlrlr";
+char file_name[FILENAME_BUFSIZE];
+u_int file_size = 0;
+u_int bytes_received = 0;
+u_int checksum = 0;
+SFile file;
+
+uint8_t calculate_checksum(const uint8_t *data, size_t length) {
+    uint8_t checksum = 0;
+    for (size_t i = 0; i < length; ++i) {
+        checksum ^= data[i];
+    }
+    return checksum;
+}
+
+// CDC RX callback
+void tinyusb_cdc_rx_callback_for_files(int itf, cdcacm_event_t *event) {
+    /* initialization */
+    size_t rx_size = 0;
+
+    /* read */
+    esp_err_t ret =
+        tinyusb_cdcacm_read((tinyusb_cdcacm_itf_t)itf, buf, CONFIG_USB_CDC_RX_BUFSIZE, &rx_size);
+    if (ret == ESP_OK) {
+        buf[rx_size] = '\0';
+        log_i("Got data in fileReceiveState %d (%d bytes): %s", fileReceiveState, rx_size, buf);
+    } else {
+        log_i("Read error");
+    }
+
+    if (fileReceiveState == 0) {
+        log_i("Doing a string n compare of %s and %s", buf, secretCode);
+        if (strncmp((char *)buf, secretCode, 8) == 0) {
+            log_i("File transfer start detected");
+            fileReceiveState = 1;
+        }
+    } else if (fileReceiveState == 1) {
+        strncpy(file_name, (char *)buf, FILENAME_BUFSIZE);
+        file_name[FILENAME_BUFSIZE - 1] = '\0'; // Ensure null-terminated string
+        log_i("File Name: %s", file_name);
+        fileReceiveState = 2;
+    } else if (fileReceiveState == 2) {
+        file_size = atoi((char *)buf);
+        log_i("File Size: %d bytes", file_size);
+        /* Open the file for writing here */
+        file = fileSystem.open(StringFormat("%s%s", "/", file_name).c_str(), FILE_WRITE, true);
+        if (file.getFilePtr() == nullptr) {
+            log_e("Failed to open file for writing");
+            fileReceiveState = 3;
+        } else {
+            checksum = 0;
+            fileReceiveState = 3;
+        }
+    } else if (fileReceiveState == 3) {
+        /* Write the file */
+        file.write(buf, rx_size);
+        bytes_received += rx_size;
+        if (bytes_received >= file_size) {
+            /* Close the file and finish the write*/
+            file.close();
+            fileReceiveState = 4;
+        }
+    } else if (fileReceiveState == 4) {
+        if (1) /* error check later (rx_size == 1 && buf[0] == checksum) */ {
+            log_i("File received and saved successfully: %s", file_name);
+        } else {
+            log_i("Checksum verification failed");
+            // unlink(file_name); // Remove the corrupted file
+        }
+        fileReceiveState = 0;
+    }
+}
+/* write back */
+// tinyusb_cdcacm_write_queue((tinyusb_cdcacm_itf_t)itf, buf, rx_size);
+// tinyusb_cdcacm_write_flush((tinyusb_cdcacm_itf_t)itf, 0);
+
+void USBDeviceInit() {
+    // init usb device driver
+    log_i("USB initialization");
+
+    const tinyusb_config_t tusbCfg = {.device_descriptor = &my_descriptor,
+                                      .string_descriptor = nullptr,
+                                      .external_phy = false,
+                                      .configuration_descriptor = nullptr};
+
+    ESP_ERROR_CHECK(tinyusb_driver_install(&tusbCfg));
+
+    // Define custom configuration for CDC ACM in C++
+    tinyusb_config_cdcacm_t acmCfg;
+    acmCfg.usb_dev = TINYUSB_USBDEV_0;             // USB device to set up
+    acmCfg.cdc_port = TINYUSB_CDC_ACM_0;           // Use first CDC ACM interface
+    acmCfg.rx_unread_buf_sz = 64;                  // Size of the receive buffer
+    acmCfg.callback_rx = &tinyusb_cdc_rx_callback; // RX callback
+    acmCfg.callback_rx_wanted_char = NULL;         // RX wanted char callback
+    acmCfg.callback_line_state_changed = NULL;     // Line state change callback
+    acmCfg.callback_line_coding_changed = NULL;    // Line coding change callback
+
+    // tinyusb_config_cdcacm_t acmCfg = {(tinyusb_usbdev_t)0}; // the configuration uses default
+    // values
+    ESP_ERROR_CHECK(tusb_cdc_acm_init(&acmCfg));
+
+    ESP_ERROR_CHECK(tinyusb_cdcacm_register_callback(
+        TINYUSB_CDC_ACM_0, CDC_EVENT_LINE_STATE_CHANGED, &tinyusb_cdc_line_state_changed_callback));
+
+    esp_tusb_init_console(TINYUSB_CDC_ACM_0); // log to usb
+
+    Delay(2000); // wait for USB to enumerate
+
+    log_i("Completed port CDC_ACM_0 initialization");
+    log_i("Attempting port CDC_ACM_1 initialization");
+    // Define custom configuration for CDC ACM in C++
+    tinyusb_config_cdcacm_t acmCfg1;
+    acmCfg1.usb_dev = TINYUSB_USBDEV_0;                       // USB device to set up
+    acmCfg1.cdc_port = TINYUSB_CDC_ACM_1;                     // Use second CDC ACM interface
+    acmCfg1.rx_unread_buf_sz = 64;                            // Size of the receive buffer
+    acmCfg1.callback_rx = &tinyusb_cdc_rx_callback_for_files; // RX callback
+    acmCfg1.callback_rx_wanted_char = NULL;                   // RX wanted char callback
+    acmCfg1.callback_line_state_changed = NULL;               // Line state change callback
+    acmCfg1.callback_line_coding_changed = NULL;              // Line coding change callback
+    log_i("Before init call");
+    ESP_ERROR_CHECK(tusb_cdc_acm_init(&acmCfg1));
+    log_i("After init call");
+    ESP_ERROR_CHECK(tinyusb_cdcacm_register_callback(
+        TINYUSB_CDC_ACM_1, CDC_EVENT_LINE_STATE_CHANGED, &tinyusb_cdc_line_state_changed_callback));
+    log_i("Finished port CDC_ACm_1 initialization attempt");
 }
 
 auto DeinitializePlatform() -> esp_err_t {

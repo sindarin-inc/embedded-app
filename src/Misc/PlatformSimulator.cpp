@@ -131,6 +131,8 @@ const char *pathToFileName(const char *path) {
     return path + pos;
 }
 
+void USBDeviceInit() {}
+
 uint32_t esp_random(void) { return (uint32_t)rand(); }
 
 #endif
