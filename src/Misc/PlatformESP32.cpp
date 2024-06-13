@@ -22,7 +22,9 @@
 #include <ulp_riscv.h>
 
 #include "Misc/StringUtil.hpp"
+#include "Models/Readable.hpp"
 #include "Platform.hpp"
+#include "Storage/LocalStore.hpp"
 #include "Storage/include/EFusesCustomTable.h"
 #include "config.h"
 #include "sindarin-debug.h"
@@ -34,6 +36,8 @@ extern PosixFileSystem fileSystem;
 #include "Storage/LittleFSFileSystem.hpp"
 extern LittleFSFileSystem fileSystem;
 #endif
+
+extern LocalStore localStore;
 
 #define BACKLIGHT_PWM_CHANNEL 0
 #define HARDWARE_REVISION_LATEST 3
@@ -437,10 +441,10 @@ void tinyusb_cdc_rx_callback_for_files(int itf, cdcacm_event_t *event) {
     } else if (fileReceiveState == 2) {
         file_size = atoi((char *)buf);
         log_i("File Size: %d bytes", file_size);
-        fileSystem.createDir("/reader", true);
+        fileSystem.createDir("/book", true);
         /* Open the file for writing here */
-        file =
-            fileSystem.open(StringFormat("%s%s", "/reader/", file_name).c_str(), FILE_WRITE, true);
+        file = fileSystem.open(StringFormat("%s%s", "/book/", "12345678.epub").c_str(), FILE_WRITE,
+                               true);
         if (file.getFilePtr() == nullptr) {
             log_e("Failed to open file for writing");
             fileReceiveState = 3;
@@ -450,9 +454,9 @@ void tinyusb_cdc_rx_callback_for_files(int itf, cdcacm_event_t *event) {
         }
     } else if (fileReceiveState == 3) {
         /* Write the file */
-        file.write(buf, rx_size);
+        size_t written = file.write(buf, rx_size);
         bytes_received += rx_size;
-        log_i("Wrote a chunk to file: %s", buf);
+        log_i("Wrote a chunk to file with size %d and confirmed write bytes %d", rx_size, written);
         if (bytes_received >= file_size) {
             /* Close the file and finish the write*/
             file.close();
@@ -460,12 +464,31 @@ void tinyusb_cdc_rx_callback_for_files(int itf, cdcacm_event_t *event) {
         }
     } else if (fileReceiveState == 4) {
         if (1) /* error check later (rx_size == 1 && buf[0] == checksum) */ {
+            auto existingReadables = localStore.books();
+            std::shared_ptr<Readable> newReadable = std::make_shared<Readable>();
+            newReadable->localOnly = true;
+            newReadable->title = "The Hidden Life of Trees";
+            newReadable->uuid = "12345678";
+            newReadable->readableType = "book";
+            ReadableFile fileReadable;
+            fileReadable.uuid = "1234567890";
+            fileReadable.filetype = "epub";
+            fileReadable.name = file_name;
+            fileReadable.size = file_size;
+            fileReadable.readableType = "book";
+            newReadable->files.push_back(fileReadable);
+            localStore.addReadable(existingReadables, newReadable);
+            localStore.saveReadables(existingReadables);
+
             log_i("File received and saved successfully: %s", file_name);
         } else {
             log_i("Checksum verification failed");
             // unlink(file_name); // Remove the corrupted file
         }
         fileReceiveState = 0;
+        bytes_received = 0;
+        file_size = 0;
+        checksum = 0;
     }
 
     esp_tusb_init_console(TINYUSB_CDC_ACM_0); // log to usb
