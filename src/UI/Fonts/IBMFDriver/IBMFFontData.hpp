@@ -22,8 +22,6 @@ using namespace ibmf_defs;
 class FontData {
 
 private:
-    static constexpr char const *TAG = "IBMFFontData";
-
     typedef IBMFFace *IBMFFacePtr;
 
     bool initialized_{false};

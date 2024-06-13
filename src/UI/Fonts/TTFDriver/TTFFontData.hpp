@@ -1,9 +1,5 @@
 #pragma once
 
-#include "config.h"
-
-#if TTF_SUPPORT
-
 #include <cstring>
 #include <fstream>
 #include <iostream>
@@ -12,6 +8,7 @@
 
 #include "../TTFFonts/NotoSans-Light.h"
 #include "TTFDefs.hpp"
+#include "config.h"
 
 using namespace ttf_defs;
 using namespace font_defs;
@@ -28,8 +25,6 @@ using namespace font_defs;
 class FontData {
 
 private:
-    static constexpr char const *TAG = "TTFFontData";
-
     static FT_Library library_;
 
     bool initialized_{false};
@@ -57,5 +52,3 @@ public:
 
     auto load() -> bool;
 };
-
-#endif

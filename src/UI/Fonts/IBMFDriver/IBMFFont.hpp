@@ -13,8 +13,6 @@
 
 class Font {
 private:
-    static constexpr char const *TAG = "IBMFFont";
-
     FontData *fontData_;
     int faceIndex_;
     // IBMFFace *face_;

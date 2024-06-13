@@ -14,7 +14,6 @@ using namespace ibmf_defs;
 
 class RLEExtractor {
 private:
-    static constexpr char const *TAG = "RLEExtractor";
     MemoryPtr fromPixelsPtr_{nullptr}, fromPixelsEnd_{nullptr};
 
     uint32_t repeatCount_{0};

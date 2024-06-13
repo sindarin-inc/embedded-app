@@ -14,8 +14,6 @@
 
 class Font {
 private:
-    static constexpr char const *TAG = "TTFFont";
-
     FT_Face face_;
 
     bool initialized_{false};

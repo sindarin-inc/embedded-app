@@ -22,8 +22,6 @@ using namespace ibmf_defs;
 class IBMFFace {
 
 private:
-    static constexpr char const *TAG = "IBMFFace";
-
     bool initialized_{false};
     FontFormat fontFormat_{FontFormat::UNKNOWN};
     PixelResolution screenResolution_{DEFAULT_SCREEN_RESOLUTION};
