@@ -76,10 +76,9 @@ void EPubPositionCache::checkChapterFilesCompleteness(const renderer_defs::Idx s
 
 auto EPubPositionCache::computeStreamPlace(renderer_defs::Idx cacheIdx)
     -> renderer_defs::StreamPlace {
-    return renderer_defs::StreamPlace(
-        cache_[cacheIdx].chapterOffset -
-            chapterFiles_[cache_[cacheIdx].chapterFilesIdx].chapterOffset,
-        chapterFiles_[cache_[cacheIdx].chapterFilesIdx].spineIdx);
+    return {cache_[cacheIdx].chapterOffset -
+                chapterFiles_[cache_[cacheIdx].chapterFilesIdx].chapterOffset,
+            chapterFiles_[cache_[cacheIdx].chapterFilesIdx].spineIdx};
 }
 
 // Reset the caching content to be empty
@@ -112,8 +111,8 @@ void EPubPositionCache::addPosition(const renderer_defs::StreamPlace &streamPlac
 }
 
 // Get a position from the cache for page processing.
-auto EPubPositionCache::getPosition(const renderer_defs::StreamPlace &fromPlace,
-                                    bool backwards) -> renderer_defs::StreamPlace {
+auto EPubPositionCache::getPosition(const renderer_defs::StreamPlace &fromPlace, bool backwards)
+    -> renderer_defs::StreamPlace {
 
     log_d("Search for offset %" PRIu32 " and spineIdx %" PRIi16 " %s", fromPlace.getOffset(),
           fromPlace.getSpineIdx(), backwards ? "BACKWARDS" : "FORWARD");
@@ -142,14 +141,14 @@ auto EPubPositionCache::getPosition(const renderer_defs::StreamPlace &fromPlace,
 
             if (cacheIdx == 0) {
                 if (chapterFiles_[0].spineIdx == 0) {
-                    return renderer_defs::StreamPlace(0, 0);
+                    return {0, 0};
                 } else {
                     renderer_defs::Idx chapterSpineIdx =
                         ePubFile_.getChapterFirstSpineIdx(chapterFiles_[0].spineIdx - 1);
                     if (chapterSpineIdx < 0) {
-                        return renderer_defs::StreamPlace(0, 0);
+                        return {0, 0};
                     } else {
-                        return renderer_defs::StreamPlace(0, chapterSpineIdx);
+                        return {0, chapterSpineIdx};
                     }
                 }
             } else {

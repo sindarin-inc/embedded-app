@@ -3,8 +3,8 @@
 #include "EPubDefs.hpp"
 #include "EPubMetaFile.hpp"
 
-auto EPubFile::findFileOffsetAtCharOffset(const std::string &path,
-                                          uint32_t charOffset) -> uint32_t {
+auto EPubFile::findFileOffsetAtCharOffset(const std::string &path, uint32_t charOffset)
+    -> uint32_t {
 
     pugi::xml_document &doc = getXHTMLFile(path);
 
@@ -37,8 +37,8 @@ auto EPubFile::findFileOffsetAtCharOffset(const std::string &path,
     return walker.offset;
 }
 
-auto EPubFile::findCharOffsetAtFileOffset(const std::string &path,
-                                          uint32_t fileOffset) -> uint32_t {
+auto EPubFile::findCharOffsetAtFileOffset(const std::string &path, uint32_t fileOffset)
+    -> uint32_t {
 
     pugi::xml_document &doc = getXHTMLFile(path);
 
@@ -361,8 +361,8 @@ auto EPubFile::getSummaryContent(
     return summaryText;
 }
 
-auto EPubFile::hasEpubAddition(const std::string &spineHref,
-                               const std::string &additionType) -> bool {
+auto EPubFile::hasEpubAddition(const std::string &spineHref, const std::string &additionType)
+    -> bool {
     // Find the chapterId corresponding to this spineHref
     auto chapterSpineHref = opf_->getChapterFirstHref(spineHref);
     auto chapterId = opf_->getManifestIdByHref(chapterSpineHref);

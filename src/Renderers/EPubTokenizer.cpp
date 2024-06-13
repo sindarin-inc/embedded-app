@@ -728,15 +728,15 @@ auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, S
             pugi::xml_node node;
             if (firstLoop) {
                 struct TargetWalker : pugi::xml_tree_walker {
-                    virtual bool for_each(pugi::xml_node &node) {
+                    auto for_each(pugi::xml_node &node) -> bool override {
                         if (node.offset_debug() >= targetOffset) {
                             theNode = &node;
                             return false;
                         }
                         return true; // continue traversal
                     }
-                    uint32_t targetOffset;
-                    pugi::xml_node *theNode;
+                    uint32_t targetOffset{};
+                    pugi::xml_node *theNode{};
                 } targetting;
 
                 targetting.targetOffset = targetPlace.getOffset();
@@ -816,15 +816,15 @@ auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, S
             pugi::xml_node node;
             if (firstLoop) {
                 struct TargetWalker : pugi::xml_tree_walker {
-                    virtual bool for_each(pugi::xml_node &node) {
+                    auto for_each(pugi::xml_node &node) -> bool override {
                         if (node.offset_debug() >= targetOffset) {
                             theNode = &node;
                             return false;
                         }
                         return true; // continue traversal
                     }
-                    uint32_t targetOffset;
-                    pugi::xml_node *theNode;
+                    uint32_t targetOffset{};
+                    pugi::xml_node *theNode{};
                 } targetting;
 
                 targetting.targetOffset = targetPlace.getOffset();
