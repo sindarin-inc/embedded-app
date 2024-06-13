@@ -388,7 +388,7 @@ void tinyusb_cdc_rx_callback(int itf, cdcacm_event_t *event) {
     tinyusb_cdcacm_write_flush((tinyusb_cdcacm_itf_t)itf, 0);
 }
 
-#define FILENAME_BUFSIZE 62
+#define FILENAME_BUFSIZE 65
 int fileReceiveState = 0;
 char secretCode[9] = "uuddlrlr";
 char file_name[FILENAME_BUFSIZE];
@@ -410,12 +410,15 @@ void tinyusb_cdc_rx_callback_for_files(int itf, cdcacm_event_t *event) {
     /* initialization */
     size_t rx_size = 0;
 
+    // Turn off logging to not mess with stuff
+    esp_tusb_deinit_console(TINYUSB_CDC_ACM_0); // log to usb
+
     /* read */
     esp_err_t ret =
         tinyusb_cdcacm_read((tinyusb_cdcacm_itf_t)itf, buf, CONFIG_USB_CDC_RX_BUFSIZE, &rx_size);
     if (ret == ESP_OK) {
         buf[rx_size] = '\0';
-        log_i("Got data in fileReceiveState %d (%d bytes): %s", fileReceiveState, rx_size, buf);
+        log_i("Got data in fileReceiveState %d (%d bytes)", fileReceiveState, rx_size);
     } else {
         log_i("Read error");
     }
@@ -427,15 +430,17 @@ void tinyusb_cdc_rx_callback_for_files(int itf, cdcacm_event_t *event) {
             fileReceiveState = 1;
         }
     } else if (fileReceiveState == 1) {
-        strncpy(file_name, (char *)buf, FILENAME_BUFSIZE);
-        file_name[FILENAME_BUFSIZE - 1] = '\0'; // Ensure null-terminated string
+        strncpy(file_name, (char *)buf, rx_size);
+        file_name[rx_size] = '\0'; // Ensure null-terminated string
         log_i("File Name: %s", file_name);
         fileReceiveState = 2;
     } else if (fileReceiveState == 2) {
         file_size = atoi((char *)buf);
         log_i("File Size: %d bytes", file_size);
+        fileSystem.createDir("/reader", true);
         /* Open the file for writing here */
-        file = fileSystem.open(StringFormat("%s%s", "/", file_name).c_str(), FILE_WRITE, true);
+        file =
+            fileSystem.open(StringFormat("%s%s", "/reader/", file_name).c_str(), FILE_WRITE, true);
         if (file.getFilePtr() == nullptr) {
             log_e("Failed to open file for writing");
             fileReceiveState = 3;
@@ -447,6 +452,7 @@ void tinyusb_cdc_rx_callback_for_files(int itf, cdcacm_event_t *event) {
         /* Write the file */
         file.write(buf, rx_size);
         bytes_received += rx_size;
+        log_i("Wrote a chunk to file: %s", buf);
         if (bytes_received >= file_size) {
             /* Close the file and finish the write*/
             file.close();
@@ -461,6 +467,8 @@ void tinyusb_cdc_rx_callback_for_files(int itf, cdcacm_event_t *event) {
         }
         fileReceiveState = 0;
     }
+
+    esp_tusb_init_console(TINYUSB_CDC_ACM_0); // log to usb
 }
 /* write back */
 // tinyusb_cdcacm_write_queue((tinyusb_cdcacm_itf_t)itf, buf, rx_size);
