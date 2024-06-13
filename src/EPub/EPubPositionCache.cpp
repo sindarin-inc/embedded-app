@@ -8,13 +8,13 @@ void EPubPositionCache::doAddPosition(uint32_t chapterOffset, const renderer_def
         if (chapterFiles_[chapterFilesIdx].spineIdx == spineIdx) {
             cache_[++cacheTopIdx_] = {.chapterOffset = chapterOffset,
                                       .chapterFilesIdx = chapterFilesIdx};
-            log_w("Adding New position, chapter files index: %" PRIi32 ", chapter offset: %" PRIu32
-                  ", cache index %" PRIi16,
+            log_w("Adding New position, chapter files index: %d, chapter offset: %" PRIu32
+                  ", cache index %" PRIu16,
                   chapterFilesIdx, chapterOffset, cacheTopIdx_);
             return;
         }
     }
-    log_e("Spine not found in chapterFiles_ array! Spine Idx: %" PRIi32, spineIdx);
+    log_e("Spine not found in chapterFiles_ array! Spine Idx: %d", spineIdx);
 }
 
 // Add a spine into chapterFiles_. The check on the space availability and the absence of the
@@ -26,8 +26,7 @@ void EPubPositionCache::doAddChapterFile(const renderer_defs::Idx spineIdx) {
             ChapterFiles{.chapterOffset = chapterFiles_[chapterFilesTopIdx_ - 1].chapterOffset +
                                           ePubFile_.getUncompressedSize(spineIdx - 1),
                          .spineIdx = spineIdx};
-        log_w("Add Spine #%" PRIi32 " at chapter offset %" PRIu32
-              ", at chapterFiles index %" PRIi16,
+        log_w("Add Spine #%d at chapter offset %" PRIu32 ", at chapterFiles index %" PRIi16,
               spineIdx, chapterFiles_[chapterFilesTopIdx_].chapterOffset, chapterFilesTopIdx_);
     } else {
         log_e("Too many chapterFiles in a chapter!");
@@ -41,7 +40,7 @@ auto EPubPositionCache::computeChapterOffset(const renderer_defs::StreamPlace &s
             return chapterFiles_[idx].chapterOffset + streamPlace.getOffset();
         }
     }
-    log_e("Spine not found in chapterFiles_ array! Spine Idx: %" PRIi32, streamPlace.getSpineIdx());
+    log_e("Spine not found in chapterFiles_ array! Spine Idx: %d", streamPlace.getSpineIdx());
 
     return 0;
 }
@@ -56,7 +55,7 @@ void EPubPositionCache::checkChapterFilesCompleteness(const renderer_defs::Idx s
         log_e("OPF discripancies!!! #%" PRIi16 " vs #%" PRIi16, chapterSpineIdx, spineIdx);
     }
     if (chapterSpineIdx != chapterFiles_[0].spineIdx) {
-        log_w("Resetting cache, change of chapter start spine to %" PRIi16, chapterSpineIdx);
+        log_w("Resetting cache, change of chapter start spine to %d", chapterSpineIdx);
         // There was a change of chapter. Initialize everything
         init(chapterSpineIdx);
         // The following is required in case when the first spine in a chapter is not
@@ -86,7 +85,7 @@ void EPubPositionCache::init(renderer_defs::Idx chapterSpineIdx) {
     cacheTopIdx_ = chapterFilesTopIdx_ = 0;
     cache_[0] = {.chapterOffset = 0, .chapterFilesIdx = 0};
     chapterFiles_[0] = {.chapterOffset = 0, .spineIdx = chapterSpineIdx};
-    log_w("Cache initialized with chapter spine %" PRIi16, chapterSpineIdx);
+    log_w("Cache initialized with chapter spine %d", chapterSpineIdx);
 }
 
 // This method must be called by the tokenizer, specifying a location in the current
@@ -114,7 +113,7 @@ void EPubPositionCache::addPosition(const renderer_defs::StreamPlace &streamPlac
 auto EPubPositionCache::getPosition(const renderer_defs::StreamPlace &fromPlace, bool backwards)
     -> renderer_defs::StreamPlace {
 
-    log_d("Search for offset %" PRIu32 " and spineIdx %" PRIi16 " %s", fromPlace.getOffset(),
+    log_d("Search for offset %" PRIu32 " and spineIdx %d %s", fromPlace.getOffset(),
           fromPlace.getSpineIdx(), backwards ? "BACKWARDS" : "FORWARD");
 
     if (fromPlace.getSpineIdx() != chapterFiles_[0].spineIdx) {
@@ -160,7 +159,7 @@ auto EPubPositionCache::getPosition(const renderer_defs::StreamPlace &fromPlace,
         }
     }
 
-    log_d("Returned cached position: offset: %" PRIu32 ", spine #%" PRIi16, streamPlace.getOffset(),
+    log_d("Returned cached position: offset: %" PRIu32 ", spine #%d", streamPlace.getOffset(),
           streamPlace.getSpineIdx());
 
     return streamPlace;
