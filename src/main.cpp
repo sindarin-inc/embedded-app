@@ -305,14 +305,16 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
             }
         });
 
-        xTaskCreatePinnedToCore([](void *) {
+        xTaskCreatePinnedToCore(
+            [](void *) {
             while (powerManager.state() != PowerState::ShuttingDown) {
                 powerManager.loop();
                 vTaskDelay(1000 / portTICK_PERIOD_MS);
             }
             log_d("Background loop task exited");
             vTaskDelete(nullptr);
-        }, "BackgroundPowerLoop", 4096, nullptr, 1, nullptr, 1);
+            },
+            "BackgroundPowerLoop", 4096, nullptr, 1, nullptr, 1);
         BackgroundSyncAndSleep(powerManager, prefs, localStore, telemetry);
 
         // Should never get here, the system should be asleep
@@ -333,24 +335,11 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 
     SHOW_HEAP();
 
-    // This setting must happen *before* the below vcom set from
-    // preferences. Otherwise, when in dark mode, the vcom
-    // will have the wrong value due to the calculation that
-    // happens in this method. Clunky, for sure. But when
-    // we better understand vcom and don't need to have such fine-tuned
-    // settings for dark mode and vcom, we can probably clean it up then.
-    myDisplay.invertDisplay(prefs.invertSetting.get().value_or(false));
-
 #if EINKET013TT1
 #ifdef DISPLAY_POWER
     // Turn on power to the screen
     DigitalWrite(DISPLAY_POWER, HIGH);
 #endif
-    // If the saved prefs indicated a vcom, set it here.
-    auto vcomSetting = prefs.vcom.get();
-    if (vcomSetting.has_value()) {
-        myDisplay.getDriver()->setVcom(vcomSetting.value());
-    }
 #endif
 
     switch (prefs.font.get().value_or(PREFS_SOL_SMALL)) {
@@ -368,6 +357,22 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     if (!myDisplay.setup()) {
         bootErrors.push_back({.type = BootError::Type::Display});
     }
+
+    // This setting must happen *before* the below vcom set from
+    // preferences. Otherwise, when in dark mode, the vcom
+    // will have the wrong value due to the calculation that
+    // happens in this method. Clunky, for sure. But when
+    // we better understand vcom and don't need to have such fine-tuned
+    // settings for dark mode and vcom, we can probably clean it up then.
+    myDisplay.invertDisplay(prefs.invertSetting.get().value_or(false));
+
+#if EINKET013TT1
+    // If the saved prefs indicated a vcom, set it here.
+    auto vcomSetting = prefs.vcom.get();
+    if (vcomSetting.has_value()) {
+        myDisplay.getDriver()->setVcom(vcomSetting.value());
+    }
+#endif
 
     DisplayRect initialRect{};
     initialRect.x = prefs.rectX.get().value_or(myDisplay.defaultBoundingBox.x);
@@ -387,7 +392,8 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         lightingController.setOverrideValuePercent(100);
 
         // Also kick off a task to try to content sync every minute or so
-        xTaskCreatePinnedToCore([](void *) {
+        xTaskCreatePinnedToCore(
+            [](void *) {
             while (powerManager.state() != PowerState::ShuttingDown) {
                 PreferencesStore::syncReason = SyncReason::Periodic;
                 BackgroundSync(powerManager, prefs, localStore, telemetry);
@@ -395,7 +401,8 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
             }
             log_d("Sync loop task exited");
             vTaskDelete(nullptr);
-        }, "BackgroundSync", 4096, nullptr, 1, nullptr, 1);
+            },
+            "BackgroundSync", 4096, nullptr, 1, nullptr, 1);
     }
 
 #if USE_BLE

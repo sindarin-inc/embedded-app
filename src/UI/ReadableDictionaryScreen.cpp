@@ -77,8 +77,13 @@ void ReadableDictionaryScreen::render(DisplaySystem &display) {
     }
 
     atEnd_ = checkAtEnd();
-    display.updateDisplay(DisplaySystem::UpdateType::FULL, true,
-                          display.darkPictureVComAdj(darkPicturePercent));
+    if (prefs_.fastTransitions.get().value_or(false)) {
+        display.updateDisplay(DisplaySystem::UpdateType::PARTIAL, true,
+                              display.darkPictureVComAdj(darkPicturePercent));
+    } else {
+        display.updateDisplay(DisplaySystem::UpdateType::FULL, true,
+                              display.darkPictureVComAdj(darkPicturePercent));
+    }
     loadedChapterId_ = placeInReadable_->getHRef();
 
     resetBoundingBox(oldDisplayBoundingBox);

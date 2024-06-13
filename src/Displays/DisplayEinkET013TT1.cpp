@@ -70,18 +70,18 @@ void DisplayEinkET013TT1::invertDisplay(bool newInvert) {
         fg = 0xFFFF;
         // Only change the Vcom if the display inversion actually changes.
         if (prevInvert != invertedDisplay_) {
-            log_d("Inverted to regular %d, new %d", driver_.getVcom(),
+            log_d("Regular to dark mode, old %d, new %d", driver_.getVcom(),
                   driver_.getVcom() + VCOM_INVERTED_MODE_DELTA);
-            driver_.setVcom(driver_.getVcom() + VCOM_INVERTED_MODE_DELTA);
+            driver_.setVcomNudge(VCOM_INVERTED_MODE_DELTA);
         }
     } else {
         bg = 0xFFFF;
         fg = 0x0000;
         // Only change the Vcom if the display inversion actually changes.
         if (prevInvert != invertedDisplay_) {
-            log_d("Regular to inverted old %d, new %d", driver_.getVcom(),
+            log_d("Dark mode to regular, old %d, new %d", driver_.getVcom(),
                   driver_.getVcom() - VCOM_INVERTED_MODE_DELTA);
-            driver_.setVcom(driver_.getVcom() - VCOM_INVERTED_MODE_DELTA);
+            driver_.setVcomNudge(0);
         }
     }
     fillScreen(bg);
