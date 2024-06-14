@@ -7,7 +7,7 @@ void WiFiScanScreen::begin() {
         std::vector<wifi_ap_record_t> networks;
 
         wifi_.scanNetworks(
-            [&networks](std::shared_ptr<wifi_ap_record_t[]> apRecords, int recordCount) {
+            [&networks](const std::shared_ptr<wifi_ap_record_t[]> &apRecords, int recordCount) {
             networks.insert(networks.end(), apRecords.get(), apRecords.get() + recordCount);
         });
         // Shut down and deinit everything WiFi
@@ -28,6 +28,7 @@ void WiFiScanScreen::begin() {
 
         // Sort uniqueNetworks by signal strength
         std::vector<wifi_ap_record_t> sortedNetworks;
+        sortedNetworks.reserve(uniqueNetworks.size());
         for (auto &pair : uniqueNetworks) {
             sortedNetworks.push_back(pair.second);
         }
