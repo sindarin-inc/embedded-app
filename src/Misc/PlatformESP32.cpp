@@ -330,29 +330,6 @@ tusb_desc_device_t my_descriptor = {.bLength = sizeof(my_descriptor),
 
                                     .bNumConfigurations = 0x01};
 
-// Define custom configuration descriptor
-/*
-const uint8_t my_configuration_descriptor[] = {
-    // Configuration Descriptor
-    0x09, TUSB_DESC_CONFIGURATION, 0x43, 0x00, 0x02, 0x01, 0x00, 0xC0, 0x32,
-
-    // Interface Association Descriptor
-    0x08, TUSB_DESC_INTERFACE_ASSOCIATION, 0x00, 0x02, TUSB_CLASS_CDC,
-    CDC_COMM_SUBCLASS_ABSTRACT_CONTROL_MODEL, CDC_COMM_PROTOCOL_ATCOMMAND, 0x00,
-
-    // CDC Control Interface
-    0x09, TUSB_DESC_INTERFACE, 0x00, 0x00, 0x01, TUSB_CLASS_CDC,
-    CDC_COMM_SUBCLASS_ABSTRACT_CONTROL_MODEL, CDC_COMM_PROTOCOL_ATCOMMAND, 0x00, 0x05, 0x24,
-    CDC_FUNC_DESC_HEADER, U16_TO_U8S_LE(0x0110), 0x05, 0x24, CDC_FUNC_DESC_CALL_MANAGEMENT, 0x00,
-    0x01, 0x04, 0x24, CDC_FUNC_DESC_ABSTRACT_CONTROL_MANAGEMENT, 0x02, 0x05, 0x24,
-    CDC_FUNC_DESC_UNION, 0x00, 0x01, 0x07, TUSB_DESC_ENDPOINT, 0x83, TUSB_XFER_INTERRUPT, 0x08,
-    0x00, 0x10,
-
-    // CDC Data Interface
-    0x09, TUSB_DESC_INTERFACE, 0x01, 0x00, 0x02, TUSB_CLASS_CDC_DATA, 0x00, 0x00, 0x00, 0x07,
-    TUSB_DESC_ENDPOINT, 0x01, TUSB_XFER_BULK, 0x40, 0x00, 0x00, 0x07, TUSB_DESC_ENDPOINT, 0x82,
-    TUSB_XFER_BULK, 0x40, 0x00, 0x00};
-*/
 /* Did this in menuconfig
 tusb_desc_strarray_device_t my_string_descriptor = {
     (char[]){0x09, 0x04},
@@ -361,15 +338,38 @@ tusb_desc_strarray_device_t my_string_descriptor = {
     "4096",
 };
 */
+// restores JTAG interface for programming
+void InitJtag() {
+    /*
+        tusb_cdc_acm_deinit(TINYUSB_CDC_ACM_1);
+        tusb_cdc_acm_deinit(TINYUSB_CDC_ACM_0);
+        tinyusb_driver_uninstall();
+
+        // add delay, workaround for jtag reconnection issue
+        vTaskDelay(2000 / portTICK_PERIOD_MS);
+
+        usb_phy_config_t phyConf;
+        memset(&phyConf, 0, sizeof(usb_phy_config_t));
+        phyConf.controller = USB_PHY_CTRL_SERIAL_JTAG;
+
+        usb_phy_handle_t jtagPhy;
+        usb_new_phy(&phyConf, &jtagPhy);
+        */
+}
 
 // CDC line state change callback
 void tinyusb_cdc_line_state_changed_callback(int itf, cdcacm_event_t *event) {
     int dtr = event->line_state_changed_data.dtr;
-    int rst = event->line_state_changed_data.rts;
-    log_i("Line state changed! dtr:%d, rst:%d", dtr, rst);
+    int rts = event->line_state_changed_data.rts;
+    log_i("Line state changed! dtr:%d, rst:%d", dtr, rts);
+
+    if (!dtr && !rts) {
+        // Reset and prepare bootloader mode
+        InitJtag();
+    }
 }
 
-#define CONFIG_USB_CDC_RX_BUFSIZE 64
+#define CONFIG_USB_CDC_RX_BUFSIZE 8192
 static uint8_t buf[CONFIG_USB_CDC_RX_BUFSIZE + 1];
 
 // CDC RX callback
@@ -510,9 +510,10 @@ void USBDeviceInit() {
 
     // Define custom configuration for CDC ACM in C++
     tinyusb_config_cdcacm_t acmCfg;
-    acmCfg.usb_dev = TINYUSB_USBDEV_0;             // USB device to set up
-    acmCfg.cdc_port = TINYUSB_CDC_ACM_0;           // Use first CDC ACM interface
-    acmCfg.rx_unread_buf_sz = 64;                  // Size of the receive buffer
+    acmCfg.usb_dev = TINYUSB_USBDEV_0;   // USB device to set up
+    acmCfg.cdc_port = TINYUSB_CDC_ACM_0; // Use first CDC ACM interface
+    //    acmCfg.rx_unread_buf_sz = 64; // Size of the receive buffer: deprecated - set in
+    //    menuconfig
     acmCfg.callback_rx = &tinyusb_cdc_rx_callback; // RX callback
     acmCfg.callback_rx_wanted_char = NULL;         // RX wanted char callback
     acmCfg.callback_line_state_changed = NULL;     // Line state change callback
@@ -533,9 +534,10 @@ void USBDeviceInit() {
     log_i("Attempting port CDC_ACM_1 initialization");
     // Define custom configuration for CDC ACM in C++
     tinyusb_config_cdcacm_t acmCfg1;
-    acmCfg1.usb_dev = TINYUSB_USBDEV_0;                       // USB device to set up
-    acmCfg1.cdc_port = TINYUSB_CDC_ACM_1;                     // Use second CDC ACM interface
-    acmCfg1.rx_unread_buf_sz = 64;                            // Size of the receive buffer
+    acmCfg1.usb_dev = TINYUSB_USBDEV_0;   // USB device to set up
+    acmCfg1.cdc_port = TINYUSB_CDC_ACM_1; // Use second CDC ACM interface
+    // acmCfg1.rx_unread_buf_sz = 64;                            // Size of the receive buffer:
+    // depreciated - set in menuconfig
     acmCfg1.callback_rx = &tinyusb_cdc_rx_callback_for_files; // RX callback
     acmCfg1.callback_rx_wanted_char = NULL;                   // RX wanted char callback
     acmCfg1.callback_line_state_changed = NULL;               // Line state change callback
