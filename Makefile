@@ -75,6 +75,10 @@ build: check_idf configure
 
 .PHONY: flash
 flash: build
+	if [ -e /dev/cu.usbmodem40963 ]; then \
+		echo "PROGRAM" | tee /dev/cu.usbmodem40963; \
+		sleep 2; \
+	fi
 	idf.py flash
 
 .PHONY: monitor
