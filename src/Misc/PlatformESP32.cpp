@@ -7,6 +7,7 @@
 #include <esp_adc/adc_oneshot.h>
 #include <esp_err.h>
 #include <esp_mac.h>
+#include <esp_private/usb_phy.h>
 #include <esp_sleep.h>
 #include <esp_system.h>
 #include <esp_task_wdt.h>
@@ -337,35 +338,94 @@ tusb_desc_strarray_device_t my_string_descriptor = {
     "Sol Reader",
     "4096",
 };
+
+
 */
+
+typedef enum {
+    STATE_IDLE,
+    STATE_1,
+    STATE_2,
+    STATE_3,
+    STATE_4,
+    STATE_5,
+    STATE_6,
+    STATE_7
+} bootloader_state_t;
+
+static bootloader_state_t current_state = STATE_IDLE;
+
 // restores JTAG interface for programming
 void InitJtag() {
-    /*
-        tusb_cdc_acm_deinit(TINYUSB_CDC_ACM_1);
-        tusb_cdc_acm_deinit(TINYUSB_CDC_ACM_0);
-        tinyusb_driver_uninstall();
+    tusb_cdc_acm_deinit(TINYUSB_CDC_ACM_1);
+    tusb_cdc_acm_deinit(TINYUSB_CDC_ACM_0);
+    tinyusb_driver_uninstall();
 
-        // add delay, workaround for jtag reconnection issue
-        vTaskDelay(2000 / portTICK_PERIOD_MS);
+    // add delay, workaround for jtag reconnection issue
+    vTaskDelay(2000 / portTICK_PERIOD_MS);
 
-        usb_phy_config_t phyConf;
-        memset(&phyConf, 0, sizeof(usb_phy_config_t));
-        phyConf.controller = USB_PHY_CTRL_SERIAL_JTAG;
+    usb_phy_config_t phyConf;
+    memset(&phyConf, 0, sizeof(usb_phy_config_t));
+    phyConf.controller = USB_PHY_CTRL_SERIAL_JTAG;
 
-        usb_phy_handle_t jtagPhy;
-        usb_new_phy(&phyConf, &jtagPhy);
-        */
+    usb_phy_handle_t jtagPhy;
+    usb_new_phy(&phyConf, &jtagPhy);
 }
 
 // CDC line state change callback
 void tinyusb_cdc_line_state_changed_callback(int itf, cdcacm_event_t *event) {
     int dtr = event->line_state_changed_data.dtr;
     int rts = event->line_state_changed_data.rts;
-    log_i("Line state changed! dtr:%d, rst:%d", dtr, rts);
+    log_i("Line state changed! dtr:%d, rts:%d", dtr, rts);
 
-    if (!dtr && !rts) {
-        // Reset and prepare bootloader mode
-        InitJtag();
+    // Detect the toggling esptool does and switch to bootloader mode
+    switch (current_state) {
+    case STATE_IDLE:
+        if (dtr && rts) {
+            current_state = STATE_1;
+        }
+        break;
+
+    case STATE_1:
+        if (!dtr && !rts) {
+            current_state = STATE_2;
+        }
+        break;
+
+    case STATE_2:
+        if (dtr && rts) {
+            current_state = STATE_3;
+        }
+        break;
+    case STATE_3:
+        if (!dtr && rts) {
+            current_state = STATE_4;
+        }
+        break;
+    case STATE_4:
+        if (dtr && !rts) {
+            current_state = STATE_5;
+        }
+        break;
+    case STATE_5:
+        if (!dtr && !rts) {
+            current_state = STATE_6;
+        }
+        break;
+    case STATE_6:
+        if (dtr && rts) {
+            current_state = STATE_7;
+        }
+        break;
+    case STATE_7:
+        if (!dtr && rts) {
+            current_state = STATE_IDLE;
+            InitJtag();
+        }
+        break;
+    default:
+        current_state = STATE_IDLE;
+        break;
     }
 }
 
@@ -395,6 +455,7 @@ void tinyusb_cdc_rx_callback(int itf, cdcacm_event_t *event) {
 #define FILENAME_BUFSIZE 65
 int fileReceiveState = 0;
 char secretCode[9] = "uuddlrlr";
+char secretCode2[10] = "PROGRAM";
 char file_name[FILENAME_BUFSIZE];
 u_int file_size = 0;
 u_int bytes_received = 0;
@@ -432,6 +493,9 @@ void tinyusb_cdc_rx_callback_for_files(int itf, cdcacm_event_t *event) {
         if (strncmp((char *)buf, secretCode, 8) == 0) {
             log_i("File transfer start detected");
             fileReceiveState = 1;
+        }
+        if (strncmp((char *)buf, secretCode2, 7) == 0) {
+            InitJtag();
         }
     } else if (fileReceiveState == 1) {
         strncpy(file_name, (char *)buf, rx_size);
@@ -500,7 +564,6 @@ void tinyusb_cdc_rx_callback_for_files(int itf, cdcacm_event_t *event) {
 void USBDeviceInit() {
     // init usb device driver
     log_i("USB initialization");
-
     const tinyusb_config_t tusbCfg = {.device_descriptor = &my_descriptor,
                                       .string_descriptor = nullptr,
                                       .external_phy = false,
