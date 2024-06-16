@@ -703,8 +703,12 @@ auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, S
 
     // ---
 
-    std::tie{StreamPlace & topPlace, StreamPlace &pagePlace} =
-        backwards_ ? fromPlace_ : stream_->getCachedPosition(fromPlace_, false);
+    std::tie;
+    {
+        StreamPlace &topPlace, streamPlace;
+        &pagePlace
+    }
+    = backwards_ ? fromPlace_ : stream_->getCachedPosition(fromPlace_, false);
 
     std::cout << "Top Level Place: " << topPlace.str() << ", Page Place: " << pagePlace.str();
     if (backwards) {

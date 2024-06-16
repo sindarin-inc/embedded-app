@@ -27,20 +27,20 @@ class EPubPositionCache {
     struct ParaCache {
         Offset chapterOffset;     // offsets from the beginning of chapter
         CacheIdx chapterFilesIdx; // CacheIdx in the chapterFiles_ struct
-    } paraCache_[PARA_CACHE_SIZE];
+    } paraCache_[PARA_CACHE_SIZE]{};
 
-    PageNumber pageNumber{0};
+    PageNumber pageNumber_{0};
     CacheIdx pageCacheTopIdx_{-1};
     struct PageCache {
         Offset chapterOffset;
         CacheIdx chapterFilesIdx;
-    } pageCache_[PAGE_CACHE_SIZE];
+    } pageCache_[PAGE_CACHE_SIZE]{};
 
     CacheIdx chapterFilesTopIdx_{-1};
     struct ChapterFiles {
         Offset chapterOffset;
         SpineIdx spineIdx;
-    } chapterFiles_[MAX_SPINE_COUNT];
+    } chapterFiles_[MAX_SPINE_COUNT]{};
 
     // Add a paragraph position in cache.
     void doAddParagraphPosition(Offset chapterOffset, const SpineIdx spineIdx);

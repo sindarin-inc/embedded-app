@@ -36,8 +36,9 @@ void EPubPositionCache::doAddChapterFile(const SpineIdx spineIdx) {
     if (chapterFilesTopIdx_ < MAX_SPINE_COUNT) {
         chapterFilesTopIdx_++;
         chapterFiles_[chapterFilesTopIdx_] =
-            ChapterFiles{.chapterOffset = chapterFiles_[chapterFilesTopIdx_ - 1].chapterOffset +
-                                          ePubFile_.getUncompressedSize(spineIdx - 1),
+            ChapterFiles{.chapterOffset = static_cast<Offset>(
+                             chapterFiles_[chapterFilesTopIdx_ - 1].chapterOffset +
+                             ePubFile_.getUncompressedSize(spineIdx - 1)),
                          .spineIdx = spineIdx};
         log_w("Add Spine #%d at chapter offset %d, at chapterFiles index %d", spineIdx,
               chapterFiles_[chapterFilesTopIdx_].chapterOffset, chapterFilesTopIdx_);
@@ -87,10 +88,9 @@ void EPubPositionCache::checkChapterFilesCompleteness(const SpineIdx spineIdx) {
 }
 
 auto EPubPositionCache::computeStreamPlace(CacheIdx cacheIdx) -> renderer_defs::StreamPlace {
-    return renderer_defs::StreamPlace(
-        paraCache_[cacheIdx].chapterOffset -
-            chapterFiles_[paraCache_[cacheIdx].chapterFilesIdx].chapterOffset,
-        chapterFiles_[paraCache_[cacheIdx].chapterFilesIdx].spineIdx);
+    return {paraCache_[cacheIdx].chapterOffset -
+                chapterFiles_[paraCache_[cacheIdx].chapterFilesIdx].chapterOffset,
+            chapterFiles_[paraCache_[cacheIdx].chapterFilesIdx].spineIdx};
 }
 
 // Reset the caching content to be empty
@@ -98,7 +98,7 @@ void EPubPositionCache::init(SpineIdx chapterSpineIdx) {
     paraCacheTopIdx_ = pageCacheTopIdx_ = chapterFilesTopIdx_ = 0;
     paraCache_[0] = {.chapterOffset = 0, .chapterFilesIdx = 0};
     pageCache_[0] = {.chapterOffset = 0, .chapterFilesIdx = 0};
-    pageNumber = 1;
+    pageNumber_ = 1;
     chapterFiles_[0] = {.chapterOffset = 0, .spineIdx = chapterSpineIdx};
 
     log_w("Cache initialized with chapter spine #%" PRIi16, chapterSpineIdx);
@@ -131,7 +131,7 @@ void EPubPositionCache::addParagraphPosition(const renderer_defs::StreamPlace &s
 // the  position into the cache.
 void EPubPositionCache::addPagePosition(const renderer_defs::StreamPlace &streamPlace) {
 
-    if ((pageNumber++ % PAGE_DISTANCE) == 0) {
+    if ((pageNumber_++ % PAGE_DISTANCE) == 0) {
         // The usual case is when the place is in the first spine of a chapter. No need to do the
         // call to checkChapterFilesCompleteness() if it's the case.
         if (streamPlace.getSpineIdx() != chapterFiles_[0].spineIdx) {
