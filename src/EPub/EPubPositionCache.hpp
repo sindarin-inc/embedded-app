@@ -61,7 +61,8 @@ class EPubPositionCache {
 
 public:
     EPubPositionCache(EPubFile &ePubFile) : ePubFile_(ePubFile) { init(0); };
-    ~EPubPositionCache(){};
+    ~EPubPositionCache() = default;
+    ;
 
     // This method must be called by the tokenizer through the EPubFile, specifying a location in
     // the current chapter being processed, where a paragraph position could be added to the cache.

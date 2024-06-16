@@ -27,7 +27,7 @@ void EPubPositionCache::doAddPagePosition(Offset chapterOffset, const SpineIdx s
             return;
         }
     }
-    log_e("Spine not found in chapterFiles_ array! Spine Idx: %" PRIi32, spineIdx);
+    log_e("Spine not found in chapterFiles_ array! Spine Idx: %d", spineIdx);
 }
 
 // Add a spine into chapterFiles_. The check on the space availability and the absence of the
