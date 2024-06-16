@@ -703,8 +703,14 @@ auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, S
 
     // ---
 
-    StreamPlace targetPlace =
+    std::tie{StreamPlace & topPlace, StreamPlace &pagePlace} =
         backwards_ ? fromPlace_ : stream_->getCachedPosition(fromPlace_, false);
+
+    std::cout << "Top Level Place: " << topPlace.str() << ", Page Place: " << pagePlace.str();
+    if (backwards) {
+        std::cout << ", toPlace: " << toPlace->str();
+    }
+    std::cout << std::endl;
 
     if (stream_->isAnArticle()) {
 
@@ -743,12 +749,9 @@ auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, S
                 targetting.theNode = nullptr;
                 body_.traverse(targetting);
                 node = (targetting.theNode != nullptr) ? *targetting.theNode : body_.first_child();
-
-                std::cout << "After targetting, node name: " << node.name() << std::endl;
                 currentStreamOffset_ = node.offset_debug();
             } else {
                 currentStreamOffset_ = 0;
-
                 node = body_.first_child();
             }
 
@@ -831,9 +834,9 @@ auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, S
                 targetting.theNode = nullptr;
                 body_.traverse(targetting);
                 node = (targetting.theNode != nullptr) ? *targetting.theNode : body_.first_child();
-
-                std::cout << "After targetting, node name: " << node.name() << std::endl;
                 currentStreamOffset_ = node.offset_debug();
+
+                std::cout << "Current Stream Offset: " << currentStreamOffset_ << std::endl;
             } else {
                 currentStreamOffset_ = 0;
 
@@ -1050,6 +1053,8 @@ auto EPubTokenizer::addTokenToPage(Token &token, const char *str, uint8_t strSiz
                  (static_cast<uint16_t>(TokenId::NEWLINE) |
                   static_cast<uint16_t>(TokenId::ENDPARAGRAPH))) == 0) {
                 if (backwards_) {
+                    std::cout << "Current: " << token.streamPlace.str()
+                              << ", toPlace: " << toPlace_->str() << std::endl;
                     if (token.streamPlace >= *toPlace_) {
                         // So we are at the location corresponding to the end of the requested
                         // page.
@@ -1085,6 +1090,7 @@ auto EPubTokenizer::addTokenToPage(Token &token, const char *str, uint8_t strSiz
 
         pageCompleted_ = true;
     }
+
     return pageCompleted_;
 }
 
@@ -1200,18 +1206,12 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
             }
 
             switch (tagIt->second) {
-            case Tag::H1:
-            case Tag::H2:
-            case Tag::H3:
-            case Tag::H4:
-            case Tag::H5:
-            case Tag::H6:
-                startOfHeader_ = true;
-                [[fallthrough]];
+
             case Tag::P:
             case Tag::DIV:
                 if (logicalDepth_ == 0) {
-                    stream_->addCachedPosition(StreamPlace(currentStreamOffset_, currentSpineIdx_));
+                    stream_->addParagraphPosition(
+                        StreamPlace(currentStreamOffset_, currentSpineIdx_));
                 }
 
                 if (tokenizingStarted_ && closeTextToken()) {
@@ -1227,6 +1227,14 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                 logicalDepth_++;
                 break;
 
+            case Tag::H1:
+            case Tag::H2:
+            case Tag::H3:
+            case Tag::H4:
+            case Tag::H5:
+            case Tag::H6:
+                startOfHeader_ = true;
+                [[fallthrough]];
             case Tag::TD:
             case Tag::TH:
                 logicalDepth_++;
@@ -1492,14 +1500,6 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
         if (!pageCompleted_) {
             if (tagIt != tags.end()) {
                 switch (tagIt->second) {
-                case Tag::H1:
-                case Tag::H2:
-                case Tag::H3:
-                case Tag::H4:
-                case Tag::H5:
-                case Tag::H6:
-                    startOfHeader_ = false; // Needed if going forward
-                    [[fallthrough]];
                 case Tag::P:
                 case Tag::DIV:
                     if (tokenizingStarted_) {
@@ -1524,6 +1524,14 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                     }
                     break;
 
+                case Tag::H1:
+                case Tag::H2:
+                case Tag::H3:
+                case Tag::H4:
+                case Tag::H5:
+                case Tag::H6:
+                    startOfHeader_ = false; // Needed if going forward
+                    [[fallthrough]];
                 case Tag::HEADER:
                 case Tag::TD:
                 case Tag::TH:

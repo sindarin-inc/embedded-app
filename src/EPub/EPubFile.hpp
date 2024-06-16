@@ -107,13 +107,18 @@ public:
     auto getDictionaryContent(const std::shared_ptr<EPubPlace> &placeInReadable,
                               std::shared_ptr<TxtPlace> &placeInDictionary) -> SpiramString;
 
-    inline void addCachedPosition(const renderer_defs::StreamPlace &streamPlace) {
-        ePubPositionCache_->addPosition(streamPlace);
+    inline void addParagraphPosition(const renderer_defs::StreamPlace &streamPlace) {
+        ePubPositionCache_->addParagraphPosition(streamPlace);
     }
 
-    [[nodiscard]] inline auto getCachedPosition(const renderer_defs::StreamPlace &fromPlace,
-                                                bool backwards) -> renderer_defs::StreamPlace {
-        return ePubPositionCache_->getPosition(fromPlace, backwards);
+    inline void addPagePosition(const renderer_defs::StreamPlace &streamPlace) {
+        ePubPositionCache_->addPagePosition(streamPlace);
+    }
+
+    [[nodiscard]] inline auto getCachedPositions(const renderer_defs::StreamPlace &fromPlace,
+                                                 bool backwards)
+        -> std::pair<renderer_defs::StreamPlace, renderer_defs::StreamPlace> {
+        return ePubPositionCache_->getPositions(fromPlace, backwards);
     }
 
 private:
