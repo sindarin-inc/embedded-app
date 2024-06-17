@@ -187,18 +187,17 @@ auto EPubPositionCache::getParagraphPosition(const renderer_defs::StreamPlace &f
             if (paraCacheIdx == 0) {
                 if (chapterFiles_[0].spineIdx == 0) {
                     std::cout << "---- A ----" << std::endl;
-                    return renderer_defs::StreamPlace(0, 0);
+                    return {0, 0};
                 } else {
                     SpineIdx chapterSpineIdx =
                         ePubFile_.getChapterFirstSpineIdx(chapterFiles_[0].spineIdx - 1);
                     if (chapterSpineIdx < 0) {
                         std::cout << "---- B ----" << std::endl;
-                        return renderer_defs::StreamPlace(0, 0);
+                        return {0, 0};
                     } else {
                         std::cout << "---- C ----" << std::endl;
-                        return renderer_defs::StreamPlace(
-                            0, chapterFiles_[paraCache_[paraCacheIdx].chapterFilesIdx]
-                                   .spineIdx /* chapterSpineIdx */);
+                        return {0, chapterFiles_[paraCache_[paraCacheIdx].chapterFilesIdx]
+                                       .spineIdx /* chapterSpineIdx */};
                     }
                 }
             }
@@ -238,7 +237,7 @@ auto EPubPositionCache::getPositions(const renderer_defs::StreamPlace &fromPlace
     renderer_defs::StreamPlace paraStreamPlace = getParagraphPosition(fromPlace, backwards);
 
     log_w("Returned PARAGRAPH position: %s, PAGE position: %s", paraStreamPlace.str().c_str(),
-          savedPagePosition.str().c_str());
+          savedPagePosition_.str().c_str());
 
-    return {paraStreamPlace, savedPagePosition};
+    return {paraStreamPlace, savedPagePosition_};
 }

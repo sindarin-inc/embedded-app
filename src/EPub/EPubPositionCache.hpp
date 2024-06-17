@@ -23,7 +23,7 @@ class EPubPositionCache {
 
     EPubFile &ePubFile_;
 
-    renderer_defs::StreamPlace savedPagePosition;
+    renderer_defs::StreamPlace savedPagePosition_;
 
     CacheIdx paraCacheTopIdx_{-1};
     struct ParaCache {
@@ -78,8 +78,8 @@ public:
     // Get a paragraph position from the cache suitable to permit the EPub Tokenizer to set it's
     // internal state in line with the XHTML tags. The return location is pointing at a top-level
     // <p> or <div> tag. The computed page position is saved in the savedPagePosition variable.
-    auto getParagraphPosition(const renderer_defs::StreamPlace &fromPlace,
-                              bool backwards) -> renderer_defs::StreamPlace;
+    auto getParagraphPosition(const renderer_defs::StreamPlace &fromPlace, bool backwards)
+        -> renderer_defs::StreamPlace;
 
     // Get a page position from the cache suitable to permit the EPub Tokenizer to start building at
     // a page boundary. The return location is pointing at a position that is the start of a page
@@ -87,7 +87,7 @@ public:
     // been used as a previous call to retrieve a suitable top-level paragraph to permit this call
     // to work properly.
     [[nodiscard]] inline auto getPagePosition() -> renderer_defs::StreamPlace {
-        return savedPagePosition;
+        return savedPagePosition_;
     }
 
     // Get positions (paragraph and page) from the cache for page processing.
