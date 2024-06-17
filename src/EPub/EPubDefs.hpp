@@ -5,8 +5,8 @@
 
 #include "sindarin-debug.h"
 
-using SpineIdx = int;
-using ChapterIdx = int;
+using SpineIdx = int32_t;
+using ChapterIdx = int32_t;
 
 #define EPUB_PROFILING 0
 

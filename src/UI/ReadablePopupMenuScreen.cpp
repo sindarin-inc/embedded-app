@@ -55,7 +55,7 @@ void ReadablePopupMenuScreen::setUpPopupMenu() {
             //       renderer_.getTxtOffset(), renderer_.getCurrentPlace()->getOffset(),
             //       lastChapterEndOffset);
         } else {
-            log_w("Couldn't find chapter index (%d) for href %s", currentChapterIdx_,
+            log_w("Couldn't find chapter index (%" PRIi32 ") for href %s", currentChapterIdx_,
                   chapterHref.c_str());
         }
     } else {

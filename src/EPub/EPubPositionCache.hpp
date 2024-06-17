@@ -14,7 +14,7 @@ const int PAGE_CACHE_SIZE = 500;
 const int PAGE_DISTANCE = 5;
 const int MAX_SPINE_COUNT = 30;
 
-using CacheIdx = int;
+using CacheIdx = int32_t;
 using Offset = uint32_t;
 using PageNumber = int;
 class EPubFile;
@@ -25,20 +25,20 @@ class EPubPositionCache {
 
     renderer_defs::StreamPlace savedPagePosition_;
 
-    CacheIdx paraCacheTopIdx_{-1};
+    CacheIdx paraCacheTopIdx_{0};
     struct ParaCache {
         Offset offset;            // offsets from the beginning of chapter
         CacheIdx chapterFilesIdx; // CacheIdx in the chapterFiles_ structure
     } paraCache_[PARA_CACHE_SIZE]{};
 
     PageNumber pageNumber_{0};
-    CacheIdx pageCacheTopIdx_{-1};
+    CacheIdx pageCacheTopIdx_{0};
     struct PageCache {
         Offset offset;            // offsets from the beginning of chapter
         CacheIdx chapterFilesIdx; // CacheIdx in the chapterFiles_ structure
     } pageCache_[PAGE_CACHE_SIZE]{};
 
-    CacheIdx chapterFilesTopIdx_{-1};
+    CacheIdx chapterFilesTopIdx_{0};
     struct ChapterFiles {
         Offset offset;     // offsets from the beginning of chapter
         SpineIdx spineIdx; // SpineIdx in the OPF structure
@@ -78,8 +78,8 @@ public:
     // Get a paragraph position from the cache suitable to permit the EPub Tokenizer to set it's
     // internal state in line with the XHTML tags. The return location is pointing at a top-level
     // <p> or <div> tag. The computed page position is saved in the savedPagePosition variable.
-    auto getParagraphPosition(const renderer_defs::StreamPlace &fromPlace, bool backwards)
-        -> renderer_defs::StreamPlace;
+    auto getParagraphPosition(const renderer_defs::StreamPlace &fromPlace,
+                              bool backwards) -> renderer_defs::StreamPlace;
 
     // Get a page position from the cache suitable to permit the EPub Tokenizer to start building at
     // a page boundary. The return location is pointing at a position that is the start of a page

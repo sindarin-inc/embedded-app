@@ -3,8 +3,8 @@
 #include "EPubDefs.hpp"
 #include "EPubMetaFile.hpp"
 
-auto EPubFile::findFileOffsetAtCharOffset(const std::string &path, uint32_t charOffset)
-    -> uint32_t {
+auto EPubFile::findFileOffsetAtCharOffset(const std::string &path,
+                                          uint32_t charOffset) -> uint32_t {
 
     pugi::xml_document &doc = getXHTMLFile(path);
 
@@ -37,8 +37,8 @@ auto EPubFile::findFileOffsetAtCharOffset(const std::string &path, uint32_t char
     return walker.offset;
 }
 
-auto EPubFile::findCharOffsetAtFileOffset(const std::string &path, uint32_t fileOffset)
-    -> uint32_t {
+auto EPubFile::findCharOffsetAtFileOffset(const std::string &path,
+                                          uint32_t fileOffset) -> uint32_t {
 
     pugi::xml_document &doc = getXHTMLFile(path);
 
@@ -284,8 +284,8 @@ auto EPubFile::getSummaryContent(
         log_e("Unable to find chapter index for %s", chapterHref.c_str());
         return "This chapter does not have a summary.";
     }
-    log_w("Chapter href: %s, chapter idx: %d, toc href: %s", chapterHref.c_str(), chapterIdx,
-          std::string(getToc()[chapterIdx].href).c_str());
+    log_w("Chapter href: %s, chapter idx: %" PRIi32 ", toc href: %s", chapterHref.c_str(),
+          chapterIdx, std::string(getToc()[chapterIdx].href).c_str());
     if (std::string(getToc()[chapterIdx].href) != chapterHref) {
         chapterHref = std::string(getToc()[chapterIdx].href);
     }
@@ -297,7 +297,8 @@ auto EPubFile::getSummaryContent(
         partialSummaryChapterHRef = opf_->getChapterFirstHref(summarySpineHref);
     }
 
-    log_d("Loading summary for chapter href: %s, chapter idx: %d", chapterHref.c_str(), chapterIdx);
+    log_d("Loading summary for chapter href: %s, chapter idx: %" PRIi32, chapterHref.c_str(),
+          chapterIdx);
     SpiramString summaryText;
 
     for (const auto &chapter : getToc()) {
@@ -361,8 +362,8 @@ auto EPubFile::getSummaryContent(
     return summaryText;
 }
 
-auto EPubFile::hasEpubAddition(const std::string &spineHref, const std::string &additionType)
-    -> bool {
+auto EPubFile::hasEpubAddition(const std::string &spineHref,
+                               const std::string &additionType) -> bool {
     // Find the chapterId corresponding to this spineHref
     auto chapterSpineHref = opf_->getChapterFirstHref(spineHref);
     auto chapterId = opf_->getManifestIdByHref(chapterSpineHref);
@@ -423,7 +424,8 @@ auto EPubFile::getDictionaryContent(const std::shared_ptr<EPubPlace> &placeInRea
     pugi::xml_node prevNode;
     int closestLocation = -1;
 
-    log_d("Loading dictionary for chapter: %s. (href: %s, chapter idx: %d) Current offset: %d "
+    log_d("Loading dictionary for chapter: %s. (href: %s, chapter idx: %" PRIi32
+          ") Current offset: %d "
           "(file:%d+prev:%d)",
           spineId.c_str(), spineHref.c_str(), chapterIdx, currentOffset, fileOffset,
           previousSpineOffset);

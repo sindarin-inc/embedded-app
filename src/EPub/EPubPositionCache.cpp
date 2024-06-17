@@ -6,9 +6,9 @@ void EPubPositionCache::doAddParagraphPosition(Offset offset, const SpineIdx spi
     for (CacheIdx chapterFilesIdx = chapterFilesTopIdx_; chapterFilesIdx >= 0; chapterFilesIdx--) {
         if (chapterFiles_[chapterFilesIdx].spineIdx == spineIdx) {
             paraCache_[++paraCacheTopIdx_] = {.offset = offset, .chapterFilesIdx = chapterFilesIdx};
-            log_w("Adding new paragraph position, chapter files index: %d, chapter offset: %" PRIu32
-                  ", "
-                  "paragraph cache index %d",
+            log_w("Adding new paragraph position, chapter files index: %" PRIi32
+                  ", chapter offset: %" PRIi32 ", "
+                  "paragraph cache index %" PRIi32,
                   chapterFilesIdx, offset, paraCacheTopIdx_);
             return;
         }
@@ -20,14 +20,14 @@ void EPubPositionCache::doAddPagePosition(Offset offset, const SpineIdx spineIdx
     for (CacheIdx chapterFilesIdx = chapterFilesTopIdx_; chapterFilesIdx >= 0; chapterFilesIdx--) {
         if (chapterFiles_[chapterFilesIdx].spineIdx == spineIdx) {
             pageCache_[++pageCacheTopIdx_] = {.offset = offset, .chapterFilesIdx = chapterFilesIdx};
-            log_w("Adding new page position, chapter files index: %d, chapter offset: %" PRIu32
-                  ", page "
-                  "cache index %d",
+            log_w("Adding new page position, chapter files index: %" PRIi32
+                  ", chapter offset: %" PRIi32 ", page "
+                  "cache index %" PRIi32,
                   chapterFilesIdx, offset, pageCacheTopIdx_);
             return;
         }
     }
-    log_e("Spine not found in chapterFiles_ array! Spine Idx: %d", spineIdx);
+    log_e("Spine not found in chapterFiles_ array! Spine Idx: %" PRIu32, spineIdx);
 }
 
 // Add a spine into chapterFiles_. The check on the space availability and the absence of the
@@ -39,8 +39,9 @@ void EPubPositionCache::doAddChapterFile(const SpineIdx spineIdx) {
             .offset = static_cast<Offset>(chapterFiles_[chapterFilesTopIdx_ - 1].offset +
                                           ePubFile_.getUncompressedSize(spineIdx - 1)),
             .spineIdx = spineIdx};
-        log_w("Add Spine #%d at chapter offset %" PRIu32 ", at chapterFiles index %d", spineIdx,
-              chapterFiles_[chapterFilesTopIdx_].offset, chapterFilesTopIdx_);
+        log_w("Add Spine #%" PRIi32 " at chapter offset %" PRIi32
+              ", at chapterFiles index %" PRIi32,
+              spineIdx, chapterFiles_[chapterFilesTopIdx_].offset, chapterFilesTopIdx_);
     } else {
         log_e("Too many chapterFiles in a chapter!");
     }
@@ -53,7 +54,7 @@ auto EPubPositionCache::computeChapterOffset(const renderer_defs::StreamPlace &s
             return chapterFiles_[idx].offset + streamPlace.getOffset();
         }
     }
-    log_e("Spine not found in chapterFiles_ array! Spine Idx: %d", streamPlace.getSpineIdx());
+    log_e("Spine not found in chapterFiles_ array! Spine Idx: %" PRIi32, streamPlace.getSpineIdx());
 
     return 0;
 }
@@ -65,10 +66,10 @@ void EPubPositionCache::checkChapterFilesCompleteness(const SpineIdx spineIdx) {
     SpineIdx chapterSpineIdx = ePubFile_.getChapterFirstSpineIdx(spineIdx);
 
     if (ePubFile_.spineIdxIsChapterStart(spineIdx) && (chapterSpineIdx != spineIdx)) {
-        log_e("OPF discripancies!!! #%d vs #%d", chapterSpineIdx, spineIdx);
+        log_e("OPF discripancies!!! #%" PRIi32 " vs #%" PRIi32, chapterSpineIdx, spineIdx);
     }
     if (chapterSpineIdx != chapterFiles_[0].spineIdx) {
-        log_w("Resetting cache, change of chapter start spine to %d", chapterSpineIdx);
+        log_w("Resetting cache, change of chapter start spine to %" PRIi32, chapterSpineIdx);
         // There was a change of chapter. Initialize everything
         init(chapterSpineIdx);
         // The following is required in case when the first spine in a chapter is not
@@ -108,7 +109,7 @@ void EPubPositionCache::init(SpineIdx chapterSpineIdx) {
     pageNumber_ = 1;
     chapterFiles_[0] = {.offset = 0, .spineIdx = chapterSpineIdx};
 
-    log_w("Cache initialized with chapter spine #%" PRIi16, chapterSpineIdx);
+    log_w("Cache initialized with chapter spine #%" PRIi32, chapterSpineIdx);
 }
 
 // This method must be called by the tokenizer, specifying a location in the current
@@ -124,7 +125,7 @@ void EPubPositionCache::addParagraphPosition(const renderer_defs::StreamPlace &s
     if (paraCacheTopIdx_ < (PARA_CACHE_SIZE - 1)) { // enough place available in the cache?
         Offset offset = computeChapterOffset(streamPlace);
         Offset diff = (offset - paraCache_[paraCacheTopIdx_].offset);
-        // log_w("offset (%" PRIi32 ") - last cache offset (%" PRIu32 ") = %" PRIi32, offset,
+        // log_w("offset (%" PRIi32 ") - last cache offset (%" PRIi32 ") = %" PRIi32, offset,
         //       paraCache_[paraCacheTopIdx_].offset, diff);
         if (diff >= DISTANCE_BETWEEN_POSITIONS) {
             doAddParagraphPosition(offset, streamPlace.getSpineIdx());
@@ -148,7 +149,7 @@ void EPubPositionCache::addPagePosition(const renderer_defs::StreamPlace &stream
         if (pageCacheTopIdx_ < (PAGE_CACHE_SIZE - 1)) { // enough place available in the cache?
             Offset offset = computeChapterOffset(streamPlace);
             Offset diff = (offset - pageCache_[pageCacheTopIdx_].offset);
-            // log_w("offset (%" PRIi32 ") - last cache offset (%" PRIu32 ") = %" PRIi32, offset,
+            // log_w("offset (%" PRIi32 ") - last cache offset (%" PRIi32 ") = %" PRIi32, offset,
             //       pageCache_[pageCacheTopIdx_].offset, diff);
             if (diff >= 0) {
                 doAddPagePosition(offset, streamPlace.getSpineIdx());
@@ -182,7 +183,7 @@ auto EPubPositionCache::getParagraphPosition(const renderer_defs::StreamPlace &f
         }
 
         if (backwards) {
-            log_w("Going backward. paraCacheIdx : %d", paraCacheIdx);
+            log_w("Going backward. paraCacheIdx : %" PRIi32, paraCacheIdx);
 
             if (paraCacheIdx == 0) {
                 if (chapterFiles_[0].spineIdx == 0) {
