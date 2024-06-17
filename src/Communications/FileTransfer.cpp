@@ -3,7 +3,6 @@
 #include "FileTransfer.hpp"
 
 #include "Models/Readable.hpp"
-#include "Storage/LocalStore.hpp"
 
 #if SIMULATOR
 #include "Storage/PosixFileSystem.hpp"
@@ -71,14 +70,17 @@ void FileTransfer::FileTransferCallback(const uint8_t *data, size_t length) {
             newReadable->files.push_back(fileReadable);
             localStore.addReadable(existingReadables, newReadable);
             localStore.saveReadables(existingReadables);
-
+            USBSerial::getInstance().TxSendData((const uint8_t *)"SUCCESS", 8);
             log_i("File received and saved successfully: %s", fileName_);
         } else {
+            USBSerial::getInstance().TxSendData((const uint8_t *)"FAILURE", 8);
             log_i("checksum_ verification failed");
         }
         fileReceiveState_ = 0;
         bytesReceived_ = 0;
         fileSize_ = 0;
         checksum_ = 0;
+
+        DirectCommand::getInstance().unsetPassthroughData();
     }
 }

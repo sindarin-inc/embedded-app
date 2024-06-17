@@ -6,6 +6,7 @@
 #include <esp_adc/adc_cali_scheme.h>
 #include <esp_adc/adc_oneshot.h>
 #include <esp_err.h>
+#include <esp_littlefs.h>
 #include <esp_mac.h>
 #include <esp_sleep.h>
 #include <esp_system.h>
@@ -21,6 +22,8 @@
 #include "Storage/include/EFusesCustomTable.h"
 #include "config.h"
 #include "sindarin-debug.h"
+
+extern const char *partitionLabel;
 
 #define BACKLIGHT_PWM_CHANNEL 0
 #define HARDWARE_REVISION_LATEST 3
@@ -471,6 +474,21 @@ auto GetSerialNumber() -> std::string {
     }
 
     return {reinterpret_cast<const char *>(serialNumber), sizeof(serialNumber)};
+}
+
+auto GetFreeSpace() -> std::string {
+    size_t freeSpace = 0;
+    size_t totalBytes = 0;
+    size_t usedBytes = 0;
+
+    esp_err_t err = esp_littlefs_info(partitionLabel, &totalBytes, &usedBytes);
+    if (err != ESP_OK) {
+        log_e("Failed to get LittleFS info: %d", err);
+        return "ERROR";
+    }
+    freeSpace = totalBytes - usedBytes;
+    log_i("Got free space: %d", freeSpace);
+    return std::to_string(freeSpace);
 }
 
 auto GetMacAddress() -> std::string {

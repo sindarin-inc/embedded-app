@@ -2,6 +2,7 @@
 #include "DirectCommand.hpp"
 
 #include "Communications/USBSerial.hpp"
+#include "Platform.hpp"
 
 extern DirectCommand directCommand;
 
@@ -26,13 +27,29 @@ auto ResolveBackspace(const std::string &input) -> std::string {
 void DirectCommand::begin() {
     // The only comamnds this class implements are the PROGRAM command which
     // allows the device to enter programming mode and the RESTART command
-    // which reboots the device.
+    // which reboots the device. Also the DEVICE_INFO command.
     addCommandHandler([this](const std::string &command) {
         if (command == "PROGRAM") {
             USBSerial::getInstance().DisableLogging();
             USBSerial::getInstance().InitJtag();
         } else if (command == "RESTART") {
+            USBSerial::getInstance().TxSendData((const uint8_t *)"SUCCESS", 8);
+            // Wait 1 second before restarting so the receiver can get the success message
+            vTaskDelay(1000 / portTICK_PERIOD_MS);
             esp_restart();
+        } else if (command == "DEVICE_INFO") {
+            USBSerial::getInstance().TxSendData((const uint8_t *)"SUCCESS", 8);
+            USBSerial::getInstance().TxSendData((const uint8_t *)"SERIAL_NUMBER,", 14);
+            USBSerial::getInstance().TxSendData((const uint8_t *)GetSerialNumber().c_str(),
+                                                strlen(GetSerialNumber().c_str()));
+            USBSerial::getInstance().TxSendData((const uint8_t *)";", 1);
+            USBSerial::getInstance().TxSendData((const uint8_t *)"MAC_ADDRESS,", 12);
+            USBSerial::getInstance().TxSendData((const uint8_t *)GetMacAddress().c_str(),
+                                                strlen(GetMacAddress().c_str()));
+            USBSerial::getInstance().TxSendData((const uint8_t *)";", 1);
+            USBSerial::getInstance().TxSendData((const uint8_t *)"FREE_SPACE,", 11);
+            USBSerial::getInstance().TxSendData((const uint8_t *)GetFreeSpace().c_str(),
+                                                strlen(GetFreeSpace().c_str()));
         }
     });
 

@@ -83,6 +83,8 @@ auto GetSerialNumber() -> std::string;
 
 auto GetMacAddress() -> std::string;
 
+auto GetFreeSpace() -> std::string;
+
 auto GetHardwareRevision() -> uint8_t;
 
 void ForcePowerOn();

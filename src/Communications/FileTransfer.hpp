@@ -22,9 +22,6 @@ public:
                     [this](const uint8_t *data, uint8_t length) {
                     FileTransferCallback(data, length);
                 });
-            } else if (command == "END_FILE_TRANSFER") {
-                log_i("Got a END_FILE_TRANSFER and handled in FileTransfer.hpp");
-                DirectCommand::getInstance().unsetPassthroughData();
             }
         });
     }
