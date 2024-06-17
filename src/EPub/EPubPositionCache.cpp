@@ -6,7 +6,8 @@ void EPubPositionCache::doAddParagraphPosition(Offset offset, const SpineIdx spi
     for (CacheIdx chapterFilesIdx = chapterFilesTopIdx_; chapterFilesIdx >= 0; chapterFilesIdx--) {
         if (chapterFiles_[chapterFilesIdx].spineIdx == spineIdx) {
             paraCache_[++paraCacheTopIdx_] = {.offset = offset, .chapterFilesIdx = chapterFilesIdx};
-            log_w("Adding new paragraph position, chapter files index: %d, chapter offset: %d, "
+            log_w("Adding new paragraph position, chapter files index: %d, chapter offset: %" PRIu32
+                  ", "
                   "paragraph cache index %d",
                   chapterFilesIdx, offset, paraCacheTopIdx_);
             return;
@@ -19,7 +20,8 @@ void EPubPositionCache::doAddPagePosition(Offset offset, const SpineIdx spineIdx
     for (CacheIdx chapterFilesIdx = chapterFilesTopIdx_; chapterFilesIdx >= 0; chapterFilesIdx--) {
         if (chapterFiles_[chapterFilesIdx].spineIdx == spineIdx) {
             pageCache_[++pageCacheTopIdx_] = {.offset = offset, .chapterFilesIdx = chapterFilesIdx};
-            log_w("Adding new page position, chapter files index: %d, chapter offset: %d, page "
+            log_w("Adding new page position, chapter files index: %d, chapter offset: %" PRIu32
+                  ", page "
                   "cache index %d",
                   chapterFilesIdx, offset, pageCacheTopIdx_);
             return;
@@ -37,7 +39,7 @@ void EPubPositionCache::doAddChapterFile(const SpineIdx spineIdx) {
             .offset = static_cast<Offset>(chapterFiles_[chapterFilesTopIdx_ - 1].offset +
                                           ePubFile_.getUncompressedSize(spineIdx - 1)),
             .spineIdx = spineIdx};
-        log_w("Add Spine #%d at chapter offset %d, at chapterFiles index %d", spineIdx,
+        log_w("Add Spine #%d at chapter offset %" PRIu32 ", at chapterFiles index %d", spineIdx,
               chapterFiles_[chapterFilesTopIdx_].offset, chapterFilesTopIdx_);
     } else {
         log_e("Too many chapterFiles in a chapter!");
