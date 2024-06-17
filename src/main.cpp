@@ -13,12 +13,14 @@
 #include <tusb.h>
 
 #include "Communications/BackgroundSync.hpp"
+#include "Communications/FileTransfer.hpp"
 #include "Communications/WiFi.hpp"
 #include "Inputs/RemoteInput.hpp"
 #include "Misc/Battery.hpp"
 #include "Misc/BootError.hpp"
 #include "Misc/BootLoopDetection.hpp"
 #include "Misc/DebugCommand.hpp"
+#include "Misc/DirectCommand.hpp"
 #include "Misc/FactoryReset.hpp"
 #include "Misc/Platform.hpp"
 #include "Misc/PowerManager.hpp"
@@ -100,6 +102,17 @@ LocalStore localStore(fileSystem, prefs, powerManager.battery, telemetry);
 RootUI rootUi(prefs, powerManager, telemetry);
 SolClock solClock(prefs);
 WiFi wiFi(telemetry);
+
+#if SIMULATOR
+#else
+#include "Communications/USBSerial.hpp"
+// Initialize the static member variable to nullptr
+USBSerial *USBSerial::instance = nullptr;
+USBSerial usbSerial;
+#endif
+
+DirectCommand directCommand;
+FileTransfer fileTransferListener;
 
 bool bootCompleted = false;
 
@@ -221,7 +234,8 @@ void loop() { vTaskDelay(portMAX_DELAY); };
 void setup() {
 #else
 extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
-    USBDeviceInit();
+    usbSerial.begin();
+    directCommand.begin();
     HardwareInit();
 #endif
 

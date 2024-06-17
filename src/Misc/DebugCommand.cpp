@@ -2,7 +2,7 @@
 #include "DebugCommand.hpp"
 
 // Remove backspace characters from the input string
-auto ResolveBackspace(const std::string &input) -> std::string {
+auto ResolveBackspaceDebug(const std::string &input) -> std::string {
     std::string result;
     for (char c : input) {
         if (c == '\b') {
@@ -21,7 +21,7 @@ void DebugCommand::addData(uint8_t *data, uint8_t length) {
         if (data[i] == '\n') {
             // found newline, process this command
             if (commandHandler_ && !commandBuffer_.empty()) {
-                commandBuffer_ = ResolveBackspace(commandBuffer_);
+                commandBuffer_ = ResolveBackspaceDebug(commandBuffer_);
                 commandHandler_(commandBuffer_);
             }
             commandBuffer_.clear();
