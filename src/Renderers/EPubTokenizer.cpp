@@ -405,7 +405,7 @@ auto EPubTokenizer::isEmpty(pugi::xml_node node) -> bool {
 // of an XHTML file, we have to move to the preceding file, at the beginning of it.
 auto EPubTokenizer::goBackward(StreamPlace streamPlace, uint32_t offsetToSubtract) -> StreamPlace {
 
-    StreamPlace targetPlace = stream_->getCachedPosition(streamPlace, true);
+    StreamPlace targetPlace = stream_->getCachedParagraphPosition(streamPlace, true);
 
     return targetPlace;
 
@@ -703,12 +703,15 @@ auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, S
 
     // ---
 
-    std::tie;
-    {
-        StreamPlace &topPlace, streamPlace;
-        &pagePlace
+    StreamPlace topPlace;
+    StreamPlace pagePlace;
+
+    if (backwards_) {
+        topPlace = fromPlace_;
+        pagePlace = stream_->getCachedPagePosition();
+    } else {
+        std::tie(topPlace, pagePlace) = stream_->getCachedPositions(fromPlace_, false);
     }
-    = backwards_ ? fromPlace_ : stream_->getCachedPosition(fromPlace_, false);
 
     std::cout << "Top Level Place: " << topPlace.str() << ", Page Place: " << pagePlace.str();
     if (backwards) {
@@ -720,7 +723,7 @@ auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, S
 
         REND_WLOG("Reading an article...");
 
-        currentSpineIdx_ = targetPlace.getSpineIdx();
+        currentSpineIdx_ = topPlace.getSpineIdx();
 
         REND_PROFILE_START(tokenizeProcess);
 
@@ -749,7 +752,7 @@ auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, S
                     pugi::xml_node *theNode{};
                 } targetting;
 
-                targetting.targetOffset = targetPlace.getOffset();
+                targetting.targetOffset = topPlace.getOffset();
                 targetting.theNode = nullptr;
                 body_.traverse(targetting);
                 node = (targetting.theNode != nullptr) ? *targetting.theNode : body_.first_child();
@@ -803,7 +806,7 @@ auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, S
 
         REND_WLOG("Reading a book...");
 
-        currentSpineIdx_ = targetPlace.getSpineIdx();
+        currentSpineIdx_ = topPlace.getSpineIdx();
 
         // currentSpineIdx_ = stream_->getChapterFirstSpineIdx(fromPlace.getSpineIdx());
 
@@ -834,7 +837,7 @@ auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, S
                     pugi::xml_node *theNode{};
                 } targetting;
 
-                targetting.targetOffset = targetPlace.getOffset();
+                targetting.targetOffset = topPlace.getOffset();
                 targetting.theNode = nullptr;
                 body_.traverse(targetting);
                 node = (targetting.theNode != nullptr) ? *targetting.theNode : body_.first_child();

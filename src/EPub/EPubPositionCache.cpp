@@ -2,28 +2,26 @@
 
 #include "EPubFile.hpp"
 
-void EPubPositionCache::doAddParagraphPosition(Offset chapterOffset, const SpineIdx spineIdx) {
+void EPubPositionCache::doAddParagraphPosition(Offset offset, const SpineIdx spineIdx) {
     for (CacheIdx chapterFilesIdx = chapterFilesTopIdx_; chapterFilesIdx >= 0; chapterFilesIdx--) {
         if (chapterFiles_[chapterFilesIdx].spineIdx == spineIdx) {
-            paraCache_[++paraCacheTopIdx_] = {.chapterOffset = chapterOffset,
-                                              .chapterFilesIdx = chapterFilesIdx};
+            paraCache_[++paraCacheTopIdx_] = {.offset = offset, .chapterFilesIdx = chapterFilesIdx};
             log_w("Adding new paragraph position, chapter files index: %d, chapter offset: %d, "
                   "paragraph cache index %d",
-                  chapterFilesIdx, chapterOffset, paraCacheTopIdx_);
+                  chapterFilesIdx, offset, paraCacheTopIdx_);
             return;
         }
     }
     log_e("Spine not found in chapterFiles_ array! Spine Idx: %" PRIi32, spineIdx);
 }
 
-void EPubPositionCache::doAddPagePosition(Offset chapterOffset, const SpineIdx spineIdx) {
+void EPubPositionCache::doAddPagePosition(Offset offset, const SpineIdx spineIdx) {
     for (CacheIdx chapterFilesIdx = chapterFilesTopIdx_; chapterFilesIdx >= 0; chapterFilesIdx--) {
         if (chapterFiles_[chapterFilesIdx].spineIdx == spineIdx) {
-            pageCache_[++pageCacheTopIdx_] = {.chapterOffset = chapterOffset,
-                                              .chapterFilesIdx = chapterFilesIdx};
+            pageCache_[++pageCacheTopIdx_] = {.offset = offset, .chapterFilesIdx = chapterFilesIdx};
             log_w("Adding new page position, chapter files index: %d, chapter offset: %d, page "
                   "cache index %d",
-                  chapterFilesIdx, chapterOffset, pageCacheTopIdx_);
+                  chapterFilesIdx, offset, pageCacheTopIdx_);
             return;
         }
     }
@@ -35,13 +33,12 @@ void EPubPositionCache::doAddPagePosition(Offset chapterOffset, const SpineIdx s
 void EPubPositionCache::doAddChapterFile(const SpineIdx spineIdx) {
     if (chapterFilesTopIdx_ < MAX_SPINE_COUNT) {
         chapterFilesTopIdx_++;
-        chapterFiles_[chapterFilesTopIdx_] =
-            ChapterFiles{.chapterOffset = static_cast<Offset>(
-                             chapterFiles_[chapterFilesTopIdx_ - 1].chapterOffset +
-                             ePubFile_.getUncompressedSize(spineIdx - 1)),
-                         .spineIdx = spineIdx};
+        chapterFiles_[chapterFilesTopIdx_] = ChapterFiles{
+            .offset = static_cast<Offset>(chapterFiles_[chapterFilesTopIdx_ - 1].offset +
+                                          ePubFile_.getUncompressedSize(spineIdx - 1)),
+            .spineIdx = spineIdx};
         log_w("Add Spine #%d at chapter offset %d, at chapterFiles index %d", spineIdx,
-              chapterFiles_[chapterFilesTopIdx_].chapterOffset, chapterFilesTopIdx_);
+              chapterFiles_[chapterFilesTopIdx_].offset, chapterFilesTopIdx_);
     } else {
         log_e("Too many chapterFiles in a chapter!");
     }
@@ -51,7 +48,7 @@ auto EPubPositionCache::computeChapterOffset(const renderer_defs::StreamPlace &s
     -> Offset {
     for (CacheIdx idx = chapterFilesTopIdx_; idx >= 0; idx--) {
         if (chapterFiles_[idx].spineIdx == streamPlace.getSpineIdx()) {
-            return chapterFiles_[idx].chapterOffset + streamPlace.getOffset();
+            return chapterFiles_[idx].offset + streamPlace.getOffset();
         }
     }
     log_e("Spine not found in chapterFiles_ array! Spine Idx: %d", streamPlace.getSpineIdx());
@@ -87,19 +84,27 @@ void EPubPositionCache::checkChapterFilesCompleteness(const SpineIdx spineIdx) {
     }
 }
 
-auto EPubPositionCache::computeStreamPlace(CacheIdx cacheIdx) -> renderer_defs::StreamPlace {
-    return {paraCache_[cacheIdx].chapterOffset -
-                chapterFiles_[paraCache_[cacheIdx].chapterFilesIdx].chapterOffset,
-            chapterFiles_[paraCache_[cacheIdx].chapterFilesIdx].spineIdx};
+auto EPubPositionCache::computeParaStreamPlace(CacheIdx paraCacheIdx)
+    -> renderer_defs::StreamPlace {
+    return {paraCache_[paraCacheIdx].offset -
+                chapterFiles_[paraCache_[paraCacheIdx].chapterFilesIdx].offset,
+            chapterFiles_[paraCache_[paraCacheIdx].chapterFilesIdx].spineIdx};
+}
+
+auto EPubPositionCache::computePageStreamPlace(CacheIdx pageCacheIdx)
+    -> renderer_defs::StreamPlace {
+    return {pageCache_[pageCacheIdx].offset -
+                chapterFiles_[pageCache_[pageCacheIdx].chapterFilesIdx].offset,
+            chapterFiles_[pageCache_[pageCacheIdx].chapterFilesIdx].spineIdx};
 }
 
 // Reset the caching content to be empty
 void EPubPositionCache::init(SpineIdx chapterSpineIdx) {
     paraCacheTopIdx_ = pageCacheTopIdx_ = chapterFilesTopIdx_ = 0;
-    paraCache_[0] = {.chapterOffset = 0, .chapterFilesIdx = 0};
-    pageCache_[0] = {.chapterOffset = 0, .chapterFilesIdx = 0};
+    paraCache_[0] = {.offset = 0, .chapterFilesIdx = 0};
+    pageCache_[0] = {.offset = 0, .chapterFilesIdx = 0};
     pageNumber_ = 1;
-    chapterFiles_[0] = {.chapterOffset = 0, .spineIdx = chapterSpineIdx};
+    chapterFiles_[0] = {.offset = 0, .spineIdx = chapterSpineIdx};
 
     log_w("Cache initialized with chapter spine #%" PRIi16, chapterSpineIdx);
 }
@@ -116,9 +121,9 @@ void EPubPositionCache::addParagraphPosition(const renderer_defs::StreamPlace &s
 
     if (paraCacheTopIdx_ < (PARA_CACHE_SIZE - 1)) { // enough place available in the cache?
         Offset offset = computeChapterOffset(streamPlace);
-        Offset diff = (offset - paraCache_[paraCacheTopIdx_].chapterOffset);
-        // log_d("offset (%" PRIi32 ") - last cache offset (%" PRIu32 ") = %" PRIi32, offset,
-        //       paraCache_[paraCacheTopIdx_].chapterOffset, diff);
+        Offset diff = (offset - paraCache_[paraCacheTopIdx_].offset);
+        // log_w("offset (%" PRIi32 ") - last cache offset (%" PRIu32 ") = %" PRIi32, offset,
+        //       paraCache_[paraCacheTopIdx_].offset, diff);
         if (diff >= DISTANCE_BETWEEN_POSITIONS) {
             doAddParagraphPosition(offset, streamPlace.getSpineIdx());
         }
@@ -140,9 +145,9 @@ void EPubPositionCache::addPagePosition(const renderer_defs::StreamPlace &stream
 
         if (pageCacheTopIdx_ < (PAGE_CACHE_SIZE - 1)) { // enough place available in the cache?
             Offset offset = computeChapterOffset(streamPlace);
-            Offset diff = (offset - pageCache_[pageCacheTopIdx_].chapterOffset);
-            // log_d("offset (%" PRIi32 ") - last cache offset (%" PRIu32 ") = %" PRIi32, offset,
-            //       pageCache_[pageCacheTopIdx_].chapterOffset, diff);
+            Offset diff = (offset - pageCache_[pageCacheTopIdx_].offset);
+            // log_w("offset (%" PRIi32 ") - last cache offset (%" PRIu32 ") = %" PRIi32, offset,
+            //       pageCache_[pageCacheTopIdx_].offset, diff);
             if (diff >= 0) {
                 doAddPagePosition(offset, streamPlace.getSpineIdx());
             }
@@ -150,37 +155,34 @@ void EPubPositionCache::addPagePosition(const renderer_defs::StreamPlace &stream
     }
 }
 
-// Get a position from the cache for page processing.
-auto EPubPositionCache::getPositions(const renderer_defs::StreamPlace &fromPlace, bool backwards)
-    -> std::pair<renderer_defs::StreamPlace, renderer_defs::StreamPlace> {
+auto EPubPositionCache::getParagraphPosition(const renderer_defs::StreamPlace &fromPlace,
+                                             bool backwards) -> renderer_defs::StreamPlace {
 
-    log_d("Search for location %s, %s", fromPlace.str(), backwards ? "BACKWARD" : "FORWARD");
+    log_w("Search for location %s, %s", fromPlace.str().c_str(),
+          backwards ? "BACKWARD" : "FORWARD");
 
     if (fromPlace.getSpineIdx() != chapterFiles_[0].spineIdx) {
         checkChapterFilesCompleteness(fromPlace.getSpineIdx());
     }
 
-    renderer_defs::StreamPlace paraStreamPlace;
-    renderer_defs::StreamPlace pageStreamPlace;
+    CacheIdx paraCacheIdx;
 
-    if ((paraCacheTopIdx_ == 0) && (pageCacheTopIdx_ == 0)) {
-        paraStreamPlace = pageStreamPlace =
-            renderer_defs::StreamPlace(0, chapterFiles_[0].spineIdx);
+    if (paraCacheTopIdx_ == 0) { // Only one entry in the paragraphs' cache
+        paraCacheIdx = 0;
     } else {
         // Find the location in the cache that is just before the fromPlace location
 
         Offset offset = computeChapterOffset(fromPlace);
-        CacheIdx cacheIdx;
-        for (cacheIdx = paraCacheTopIdx_; cacheIdx > 0; cacheIdx--) {
-            if (paraCache_[cacheIdx].chapterOffset < offset) {
+        for (paraCacheIdx = paraCacheTopIdx_; paraCacheIdx > 0; paraCacheIdx--) {
+            if (paraCache_[paraCacheIdx].offset < offset) {
                 break;
             }
         }
 
         if (backwards) {
-            log_w("Going backward. cacheIdx : %d", cacheIdx);
+            log_w("Going backward. paraCacheIdx : %d", paraCacheIdx);
 
-            if (cacheIdx == 0) {
+            if (paraCacheIdx == 0) {
                 if (chapterFiles_[0].spineIdx == 0) {
                     std::cout << "---- A ----" << std::endl;
                     return renderer_defs::StreamPlace(0, 0);
@@ -193,23 +195,48 @@ auto EPubPositionCache::getPositions(const renderer_defs::StreamPlace &fromPlace
                     } else {
                         std::cout << "---- C ----" << std::endl;
                         return renderer_defs::StreamPlace(
-                            0, chapterFiles_[paraCache_[cacheIdx].chapterFilesIdx]
+                            0, chapterFiles_[paraCache_[paraCacheIdx].chapterFilesIdx]
                                    .spineIdx /* chapterSpineIdx */);
                     }
                 }
-            } else {
-                std::cout << "---- D ----" << std::endl;
-                return computeStreamPlace(cacheIdx - 1);
             }
-        } else {
-            paraStreamPlace = (cacheIdx == 0)
-                                  ? renderer_defs::StreamPlace(0, chapterFiles_[0].spineIdx)
-                                  : computeStreamPlace(cacheIdx - 1);
         }
     }
 
-    log_d("Returned paragraph position: %s, page position: %s", paraStreamPlace.str(),
-          pageStreamPlace.str());
+    // Now, as there is no garanty that the beginning of a page in the cache would be at least at a
+    // DISTANCE_BETWEEN_POSITIONS from fromPlace, we go back until a page start was found.
 
-    return {paraStreamPlace, pageStreamPlace};
+    paraCacheIdx = (paraCacheIdx > 0) ? paraCacheIdx - 1 : 0;
+
+    CacheIdx pageCacheIdx;
+    for (pageCacheIdx = pageCacheTopIdx_; pageCacheIdx > 0; pageCacheIdx--) {
+        if (pageCache_[pageCacheIdx].offset <= paraCache_[paraCacheIdx].offset) {
+            break;
+        }
+    }
+
+    for (paraCacheIdx = paraCacheIdx; paraCacheIdx > 0; paraCacheIdx--) {
+        if (paraCache_[paraCacheIdx].offset <= pageCache_[pageCacheIdx].offset) {
+            break;
+        }
+    }
+
+    renderer_defs::StreamPlace paraStreamPlace =
+        (paraCacheIdx == 0) ? renderer_defs::StreamPlace(0, chapterFiles_[0].spineIdx)
+                            : computeParaStreamPlace(paraCacheIdx - 1);
+
+    log_w("Returned paragraph position: %s", paraStreamPlace.str().c_str());
+
+    return paraStreamPlace;
+}
+
+auto EPubPositionCache::getPositions(const renderer_defs::StreamPlace &fromPlace, bool backwards)
+    -> std::pair<renderer_defs::StreamPlace, renderer_defs::StreamPlace> {
+
+    renderer_defs::StreamPlace paraStreamPlace = getParagraphPosition(fromPlace, backwards);
+
+    log_w("Returned PARAGRAPH position: %s, PAGE position: %s", paraStreamPlace.str().c_str(),
+          savedPagePosition.str().c_str());
+
+    return {paraStreamPlace, savedPagePosition};
 }
