@@ -1,9 +1,9 @@
 #if !SIMULATOR
 #include <driver/uart.h>
+#include <driver/usb_serial_jtag.h>
 #include <soc/rtc.h>
 #endif
 
-#include <driver/usb_serial_jtag.h>
 #include <esp_err.h>
 #include <esp_log.h>
 #include <esp_sleep.h>

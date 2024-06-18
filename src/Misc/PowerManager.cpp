@@ -284,6 +284,7 @@ void PowerManager::powerOffInternal() {
 }
 
 auto PowerManager::disableLightSleep() -> void {
+#if !DISABLE_POWER_MANAGEMENT
     if (pmConfig_.light_sleep_enable == true) {
         pmConfig_.light_sleep_enable = false;
         auto err = esp_pm_configure(&pmConfig_);
@@ -293,9 +294,11 @@ auto PowerManager::disableLightSleep() -> void {
             log_d("Disabled light sleep");
         }
     }
+#endif
 }
 
 auto PowerManager::enableLightSleep() -> void {
+#if !DISABLE_POWER_MANAGEMENT
     if (pmConfig_.light_sleep_enable == false) {
         pmConfig_.light_sleep_enable = true;
         auto err = esp_pm_configure(&pmConfig_);
@@ -305,6 +308,7 @@ auto PowerManager::enableLightSleep() -> void {
             log_d("Enabled light sleep");
         }
     }
+#endif
 }
 
 void PowerManager::loop() {
