@@ -243,28 +243,15 @@ auto PowerManager::begin() -> esp_err_t {
                         stateChangeCallback_(state_);
                     }
                 }
-                if (pmConfig_.light_sleep_enable == true) {
-                    // USB is connected so disable light sleep
-                    pmConfig_.light_sleep_enable = false;
-                    auto err = esp_pm_configure(&pmConfig_);
-                    if (err != ESP_OK) {
-                        log_e("Failed to disable light sleep with err %s", esp_err_to_name(err));
-                    } else {
-                        log_d("Disabled light sleep");
-                    }
-                }
+                // USB is connected so disable light sleep
+                disableLightSleep();
             } else { // !USBConnected()
                 if (state_ == PowerState::ActiveUSBCharging) {
                     log_i("USB disconnected, rebooting to Active");
                     reboot();
-                } else if (pmConfig_.light_sleep_enable == false) {
-                    pmConfig_.light_sleep_enable = true;
-                    auto err = esp_pm_configure(&pmConfig_);
-                    if (err != ESP_OK) {
-                        log_e("Failed to enable light sleep with err %s", esp_err_to_name(err));
-                    } else {
-                        log_d("Enabled light sleep");
-                    }
+                } else {
+                    // USB is disconnected so enable light sleep (if we didn't already reboot)
+                    enableLightSleep();
                 }
             }
         });
@@ -294,6 +281,30 @@ void PowerManager::powerOffInternal() {
     enableUsbWakeup();
 
     esp_deep_sleep_start();
+}
+
+auto PowerManager::disableLightSleep() -> void {
+    if (pmConfig_.light_sleep_enable == true) {
+        pmConfig_.light_sleep_enable = false;
+        auto err = esp_pm_configure(&pmConfig_);
+        if (err != ESP_OK) {
+            log_e("Failed to disable light sleep with err %s", esp_err_to_name(err));
+        } else {
+            log_d("Disabled light sleep");
+        }
+    }
+}
+
+auto PowerManager::enableLightSleep() -> void {
+    if (pmConfig_.light_sleep_enable == false) {
+        pmConfig_.light_sleep_enable = true;
+        auto err = esp_pm_configure(&pmConfig_);
+        if (err != ESP_OK) {
+            log_e("Failed to enable light sleep with err %s", esp_err_to_name(err));
+        } else {
+            log_d("Enabled light sleep");
+        }
+    }
 }
 
 void PowerManager::loop() {

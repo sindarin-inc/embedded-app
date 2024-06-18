@@ -3,6 +3,7 @@
 #include <soc/rtc.h>
 #endif
 
+#include <driver/usb_serial_jtag.h>
 #include <esp_err.h>
 #include <esp_log.h>
 #include <esp_sleep.h>
@@ -132,6 +133,12 @@ void PollingLoopTask(void *parameter) {
             DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::ENTER); });
         } else if (command == "BACK") {
             DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::BACK); });
+        } else if (command == "SLEEPOFF") {
+            powerManager.disableLightSleep();
+        } else if (command == "ALLOWOFF") {
+            AllowPowerOff();
+        } else {
+            log_w("Unknown debug command: %s", command.c_str());
         }
     });
 
@@ -175,11 +182,11 @@ void PollingLoopTask(void *parameter) {
         vTaskDelay(pdMS_TO_TICKS(1000));
 #else
         // Spend the rest of the time waiting for debug commands (that will probably never come)
+        uint8_t buf[256];
         uart_event_t event;
         if (xQueueReceive(GetUartCommandQueue(), &event, pdMS_TO_TICKS(1000))) {
             switch (event.type) {
             case UART_DATA: {
-                uint8_t buf[256];
                 auto rxSize = uart_read_bytes(UART_NUM_0, buf, event.size, 0);
                 if (rxSize > 0) {
                     debugCommand.addData(buf, rxSize);
@@ -190,6 +197,14 @@ void PollingLoopTask(void *parameter) {
                 log_w("Unhandled UART event: %d", event.type);
                 break;
             }
+        }
+
+        // There's not a queue-driven way to watch for things from the usb/jtag interface so we
+        // simply poll
+        auto rxSize = usb_serial_jtag_read_bytes(buf, sizeof(buf), 0);
+        if (rxSize > 0) {
+            log_d("Received %d bytes (USB/JTAG)", rxSize);
+            debugCommand.addData(buf, rxSize);
         }
 #endif
 

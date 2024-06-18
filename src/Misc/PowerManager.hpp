@@ -182,6 +182,9 @@ public:
     auto forceOn() -> void { state_ = PowerState::ActiveForcedOn; }
     auto disableForceOn() -> void { state_ = PowerState::Active; }
 
+    auto disableLightSleep() -> void;
+    auto enableLightSleep() -> void;
+
     auto state() -> PowerState { return state_; }
 
     void setStateChangeCallback(std::function<void(PowerState)> callback) {
