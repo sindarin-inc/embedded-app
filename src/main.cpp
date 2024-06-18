@@ -147,6 +147,8 @@ void PollingLoopTask(void *parameter) {
         } else if (command == "BATT") {
             log_i("Left: %f Right: %f", powerManager.battery.getLeftBatteryVoltage(),
                   powerManager.battery.getRightBatteryVoltage());
+        } else if (command == "SERIAL") {
+            log_i("SN: %s", GetSerialNumber().c_str());
         } else {
             log_w("Unknown debug command: %s", command.c_str());
         }
