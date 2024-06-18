@@ -143,12 +143,10 @@ void TTRemoteInput::dispatchConnection(BLEAdvertisedDevice &device) {
 void TTRemoteInput::unpairAndDisconnect() {
     prefs_.lastPageTurnerBuild.remove();
     prefs_.pairedTurnTouchAddress.remove();
-
-    if (client_ != nullptr) {
-        client_->disconnect();
-    }
-
-    state_ = SCANNING;
+    // Setting a nonzero keepDisconnectedUntilMs_ helps with two things:
+    // 1) It is the signal that the disconnect was intentional
+    // 2) Gives the remote a moment to go back to advertising
+    disconnectTemporarily(1);
 }
 
 void TTRemoteInput::disconnectTemporarily(int seconds) {
@@ -157,18 +155,6 @@ void TTRemoteInput::disconnectTemporarily(int seconds) {
     }
     state_ = SCANNING;
     keepDisconnectedUntilMs_ = Millis() + seconds * 1000;
-
-    std::string dfuString = "DFU-";
-    auto ptBuild = prefs_.lastPageTurnerBuild.get();
-    if (ptBuild.has_value()) {
-        std::string build = ptBuild.value();
-        if (build.find("DFU-") == std::string::npos) {
-            dfuString += build;
-        } else {
-            dfuString = build;
-        }
-    }
-    prefs_.lastPageTurnerBuild.set(dfuString);
 }
 
 void TTRemoteInput::scanForNewDevice() {

@@ -35,6 +35,7 @@
 #include "UI/PowerDepletedScreen.hpp"
 #include "UI/RootUI.hpp"
 #include "UI/TestAlignmentScreen.hpp"
+#include "Version.hpp"
 #include "config.h"
 #include "sindarin-debug.h"
 
@@ -137,6 +138,15 @@ void PollingLoopTask(void *parameter) {
             powerManager.disableLightSleep();
         } else if (command == "ALLOWOFF") {
             AllowPowerOff();
+        } else if (command == "UNPAIRPT") {
+#if USE_TURN_TOUCH_REMOTE
+            ttRemoteInput.unpairAndDisconnect();
+#endif
+        } else if (command == "VERSION") {
+            log_i("Version: %s Git: %s", SemanticVersionString(), GitVersionString());
+        } else if (command == "BATT") {
+            log_i("Left: %f Right: %f", powerManager.battery.getLeftBatteryVoltage(),
+                  powerManager.battery.getRightBatteryVoltage());
         } else {
             log_w("Unknown debug command: %s", command.c_str());
         }
@@ -203,7 +213,6 @@ void PollingLoopTask(void *parameter) {
         // simply poll
         auto rxSize = usb_serial_jtag_read_bytes(buf, sizeof(buf), 0);
         if (rxSize > 0) {
-            log_d("Received %d bytes (USB/JTAG)", rxSize);
             debugCommand.addData(buf, rxSize);
         }
 #endif
