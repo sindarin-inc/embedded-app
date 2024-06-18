@@ -22,8 +22,8 @@ void EPubPositionCache::doAddPagePosition(Offset offset, const SpineIdx spineIdx
             pageCache_[++pageCacheTopIdx_] = {.offset = offset, .chapterFilesIdx = chapterFilesIdx};
             log_w("Adding new page position, chapter files index: %" PRIi32
                   ", chapter offset: %" PRIi32 ", page "
-                  "cache index %" PRIi32,
-                  chapterFilesIdx, offset, pageCacheTopIdx_);
+                  "cache index %" PRIi32 ", spineIdx %" PRIi32,
+                  chapterFilesIdx, offset, pageCacheTopIdx_, spineIdx);
             return;
         }
     }
@@ -124,11 +124,13 @@ void EPubPositionCache::addParagraphPosition(const renderer_defs::StreamPlace &s
 
     if (paraCacheTopIdx_ < (PARA_CACHE_SIZE - 1)) { // enough place available in the cache?
         Offset offset = computeChapterOffset(streamPlace);
-        Offset diff = (offset - paraCache_[paraCacheTopIdx_].offset);
-        // log_w("offset (%" PRIi32 ") - last cache offset (%" PRIi32 ") = %" PRIi32, offset,
-        //       paraCache_[paraCacheTopIdx_].offset, diff);
-        if (diff >= DISTANCE_BETWEEN_POSITIONS) {
-            doAddParagraphPosition(offset, streamPlace.getSpineIdx());
+        if (offset > paraCache_[paraCacheTopIdx_].offset) {
+            Offset diff = (offset - paraCache_[paraCacheTopIdx_].offset);
+            // log_w("offset (%" PRIi32 ") - last cache offset (%" PRIi32 ") = %" PRIi32, offset,
+            //       paraCache_[paraCacheTopIdx_].offset, diff);
+            if (diff >= DISTANCE_BETWEEN_POSITIONS) {
+                doAddParagraphPosition(offset, streamPlace.getSpineIdx());
+            }
         }
     }
 }
@@ -148,11 +150,14 @@ void EPubPositionCache::addPagePosition(const renderer_defs::StreamPlace &stream
 
         if (pageCacheTopIdx_ < (PAGE_CACHE_SIZE - 1)) { // enough place available in the cache?
             Offset offset = computeChapterOffset(streamPlace);
-            Offset diff = (offset - pageCache_[pageCacheTopIdx_].offset);
-            // log_w("offset (%" PRIi32 ") - last cache offset (%" PRIi32 ") = %" PRIi32, offset,
-            //       pageCache_[pageCacheTopIdx_].offset, diff);
-            if (diff >= 0) {
-                doAddPagePosition(offset, streamPlace.getSpineIdx());
+            if (offset > pageCache_[pageCacheTopIdx_].offset) {
+                Offset diff = (offset - pageCache_[pageCacheTopIdx_].offset);
+                // log_w("offset (%" PRIi32 ") - last cache offset (%" PRIi32 ") = %" PRIi32,
+                // offset,
+                //       pageCache_[pageCacheTopIdx_].offset, diff);
+                if (diff >= 0) {
+                    doAddPagePosition(offset, streamPlace.getSpineIdx());
+                }
             }
         }
     }
@@ -210,12 +215,16 @@ auto EPubPositionCache::getParagraphPosition(const renderer_defs::StreamPlace &f
 
     paraCacheIdx = (paraCacheIdx > 0) ? paraCacheIdx - 1 : 0;
 
+    log_w("First found paragraph position: %s", computeParaStreamPlace(paraCacheIdx).str().c_str());
+
     CacheIdx pageCacheIdx;
     for (pageCacheIdx = pageCacheTopIdx_; pageCacheIdx > 0; pageCacheIdx--) {
         if (pageCache_[pageCacheIdx].offset <= paraCache_[paraCacheIdx].offset) {
             break;
         }
     }
+
+    savedPagePosition_ = computePageStreamPlace(pageCacheIdx);
 
     for (paraCacheIdx = paraCacheIdx; paraCacheIdx > 0; paraCacheIdx--) {
         if (paraCache_[paraCacheIdx].offset <= pageCache_[pageCacheIdx].offset) {
@@ -225,7 +234,7 @@ auto EPubPositionCache::getParagraphPosition(const renderer_defs::StreamPlace &f
 
     renderer_defs::StreamPlace paraStreamPlace =
         (paraCacheIdx == 0) ? renderer_defs::StreamPlace(0, chapterFiles_[0].spineIdx)
-                            : computeParaStreamPlace(paraCacheIdx - 1);
+                            : computeParaStreamPlace(paraCacheIdx);
 
     log_w("Returned paragraph position: %s", paraStreamPlace.str().c_str());
 
@@ -237,7 +246,7 @@ auto EPubPositionCache::getPositions(const renderer_defs::StreamPlace &fromPlace
 
     renderer_defs::StreamPlace paraStreamPlace = getParagraphPosition(fromPlace, backwards);
 
-    log_w("Returned PARAGRAPH position: %s, PAGE position: %s", paraStreamPlace.str().c_str(),
+    log_e("Returned PARAGRAPH position: %s, PAGE position: %s", paraStreamPlace.str().c_str(),
           savedPagePosition_.str().c_str());
 
     return {paraStreamPlace, savedPagePosition_};

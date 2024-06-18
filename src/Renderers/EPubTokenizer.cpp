@@ -825,6 +825,10 @@ auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, S
 
             pugi::xml_node node;
             if (firstLoop) {
+                // We first displace the xml reader to the location where it is safe to start the
+                // gatering of formatting elements. The toPlace is pointing at a top level <p> or
+                // <div>. Next loops will be related to other spines that are part of the current
+                // chapter if required.
                 struct TargetWalker : pugi::xml_tree_walker {
                     auto for_each(pugi::xml_node &node) -> bool override {
                         if (node.offset_debug() >= targetOffset) {
@@ -912,6 +916,9 @@ auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, S
     REND_WLOG("End of job: Page start: %s, next page at: %s",
               pager_.getStreamPlaceOfFirstLine().str().c_str(),
               pager_.getNextPageStreamPlace().str().c_str());
+
+    // Potentially add page to the cache
+    stream_->addPagePosition(pager_.getStreamPlaceOfFirstLine());
 
     return {pager_.getStreamPlaceOfFirstLine(), pager_.getNextPageStreamPlace()};
 }
