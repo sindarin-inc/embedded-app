@@ -127,18 +127,11 @@ void USBSerial::RxCommandCallback(int itf, cdcacm_event_t *event) {
         tinyusb_cdcacm_read((tinyusb_cdcacm_itf_t)itf, buffer_, sizeof(buffer_) - 1, &rx_size);
     if (ret == ESP_OK) {
         buffer_[rx_size] = '\0';
-        // log_i("Got data (%d bytes): %s", rx_size, buffer_);
-    } else {
-        // log_i("Read error");
-    }
-
-    // Iterate through all the listeners registered with the USBSerial device and send them the
-    // data.
-    for (auto &listener : listeners_) {
-        // log_i("Sending data to listener");
-        // vTaskDelay(1000 / portTICK_PERIOD_MS);
-        listener(buffer_, rx_size);
-        // log_i("Finished sending data to lisenter");
+        // Iterate through all the listeners registered with the USBSerial device and send them the
+        // data.
+        for (auto &listener : listeners_) {
+            listener(buffer_, rx_size);
+        }
     }
 }
 

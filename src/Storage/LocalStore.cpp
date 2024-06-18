@@ -1252,12 +1252,10 @@ auto LocalStore::readableFilePathForReading(FileSystem &fileSystem,
     std::string path;
 
     path = StringFormat("/%s/%s.epub", type.c_str(), uuid.c_str());
-    log_i("Trying: %s", path.c_str());
     auto size = fileSystem.size(path);
     if (size != 0) {
         return {path, size};
     }
-    log_i("Failed on that now trying .gz and .txt");
     path = StringFormat("/%s/%s.txt.gz", type.c_str(), uuid.c_str());
     size = fileSystem.size(path);
     if (size != 0) {
@@ -1305,7 +1303,7 @@ auto LocalStore::readableFilePathForReading(FileSystem &fileSystem,
             return {path, size};
         }
     }
-    log_w("Unable to find readable file for %s (%s)", readable->title.c_str(), uuid.c_str());
+    // log_w("Unable to find readable file for %s (%s)", readable->title.c_str(), uuid.c_str());
     return {"", 0};
 }
 

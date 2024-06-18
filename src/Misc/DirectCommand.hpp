@@ -18,32 +18,15 @@ public:
     // A command implementor (like FileCommand) can register a handler with DirectCommand
     // and then when a command is received, the handler will be called with the command string.
     //
-    //
-    // Commands to simulate the remote control
-    // REMOTE_UP
-    // REMOTE_DOWN
-    // REMOTE_ENTER
-    // REMOTE_RIGHT
-    // REMOTE_LEFT
-    // REMOTE_BACK -- note this is the same as LEFT or escape in the Simulator
-    //
     // Go into programming mode for flashing firmware
-    // PROGRAM
+    // PROGRAM (enter programming mode)
+    // RESTART (restart the device)
+    // DEVICE_INFO (return basic device info like serial number, MAC address, and free space)
     //
     // Transfer a file over the USB serial connection
     // START_FILE_TRANSFER
-    // END_FILE_TRANSFER
     //
-    // Put the grid on the page
-    // GRID
-    //
-    // Get information about the available storage
-    // REQUEST_STORAGE_INFO
-    //
-    // Get information about the device (to be implemented later)
-    // REQUEST_DEVICE_INFO
-    //
-    // Constructor that takes a callback std::string
+
     DirectCommand() {}
     void begin();
     void receiveData(const uint8_t *data, uint8_t length);
