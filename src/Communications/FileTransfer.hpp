@@ -24,12 +24,12 @@ public:
                 log_i("Got a START_FILE_TRANSFER and handled in FileTransfer.hpp");
                 DirectCommand::getInstance().setPassthroughData(
                     [this](const uint8_t *data, uint8_t length) {
-                    FileTransferCallback(data, length);
+                    fileTransferCallback(data, length);
                 });
             }
         });
     }
-    void FileTransferCallback(const uint8_t *data, size_t length);
+    void fileTransferCallback(const uint8_t *data, size_t length);
 
 private:
     enum class FileReceiveState {
@@ -42,9 +42,9 @@ private:
     };
 
     FileReceiveState fileReceiveState_ = FileReceiveState::FileName;
-    char fileName_[MAX_FILE_NAME_LENGTH];
-    char fileTitle_[MAX_FILE_TITLE_LENGTH];
-    char fileAuthor_[MAX_FILE_AUTHOR_LENGTH];
+    char fileName_[MAX_FILE_NAME_LENGTH]{};
+    char fileTitle_[MAX_FILE_TITLE_LENGTH]{};
+    char fileAuthor_[MAX_FILE_AUTHOR_LENGTH]{};
     std::string fileUUID_;
     u_int fileSize_ = 0;
     u_int bytesReceived_ = 0;

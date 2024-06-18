@@ -28,32 +28,38 @@ void DirectCommand::begin() {
     // The only comamnds this class implements are the PROGRAM command which
     // allows the device to enter programming mode and the RESTART command
     // which reboots the device. Also the DEVICE_INFO command.
-    addCommandHandler([this](const std::string &command) {
+    addCommandHandler([](const std::string &command) {
         if (command == "PROGRAM") {
-            USBSerial::getInstance().DisableLogging();
-            USBSerial::getInstance().InitJtag();
+            USBSerial::getInstance().disableLogging();
+            USBSerial::getInstance().initJtag();
         } else if (command == "RESTART") {
-            USBSerial::getInstance().TxSendData((const uint8_t *)"SUCCESS", 8);
+            USBSerial::getInstance().txSendData(reinterpret_cast<const uint8_t *>("SUCCESS"), 8);
             // Wait 1 second before restarting so the receiver can get the success message
             vTaskDelay(1000 / portTICK_PERIOD_MS);
             esp_restart();
         } else if (command == "DEVICE_INFO") {
-            USBSerial::getInstance().TxSendData((const uint8_t *)"SUCCESS", 8);
-            USBSerial::getInstance().TxSendData((const uint8_t *)"SERIAL_NUMBER,", 14);
-            USBSerial::getInstance().TxSendData((const uint8_t *)GetSerialNumber().c_str(),
-                                                strlen(GetSerialNumber().c_str()));
-            USBSerial::getInstance().TxSendData((const uint8_t *)";", 1);
-            USBSerial::getInstance().TxSendData((const uint8_t *)"MAC_ADDRESS,", 12);
-            USBSerial::getInstance().TxSendData((const uint8_t *)GetMacAddress().c_str(),
-                                                strlen(GetMacAddress().c_str()));
-            USBSerial::getInstance().TxSendData((const uint8_t *)";", 1);
-            USBSerial::getInstance().TxSendData((const uint8_t *)"FREE_SPACE,", 11);
-            USBSerial::getInstance().TxSendData((const uint8_t *)GetFreeSpace().c_str(),
-                                                strlen(GetFreeSpace().c_str()));
+            USBSerial::getInstance().txSendData(reinterpret_cast<const uint8_t *>("SUCCESS"), 8);
+            USBSerial::getInstance().txSendData(reinterpret_cast<const uint8_t *>("SERIAL_NUMBER,"),
+                                                14);
+            USBSerial::getInstance().txSendData(
+                reinterpret_cast<const uint8_t *>(GetSerialNumber().c_str()),
+                strlen(GetSerialNumber().c_str()));
+            USBSerial::getInstance().txSendData(reinterpret_cast<const uint8_t *>(";"), 1);
+            USBSerial::getInstance().txSendData(reinterpret_cast<const uint8_t *>("MAC_ADDRESS,"),
+                                                12);
+            USBSerial::getInstance().txSendData(
+                reinterpret_cast<const uint8_t *>(GetMacAddress().c_str()),
+                strlen(GetMacAddress().c_str()));
+            USBSerial::getInstance().txSendData(reinterpret_cast<const uint8_t *>(";"), 1);
+            USBSerial::getInstance().txSendData(reinterpret_cast<const uint8_t *>("FREE_SPACE,"),
+                                                11);
+            USBSerial::getInstance().txSendData(
+                reinterpret_cast<const uint8_t *>(GetFreeSpace().c_str()),
+                strlen(GetFreeSpace().c_str()));
         }
     });
 
-    USBSerial::getInstance().RegisterListener(
+    USBSerial::getInstance().registerListener(
         [this](const uint8_t *data, size_t length) { receiveData(data, length); });
 }
 
@@ -63,10 +69,10 @@ void DirectCommand::processCommand(const uint8_t *data, uint8_t length) {
             // found newline, process this command
             if (!commandHandlers_.empty() && !commandBuffer_.empty()) {
                 commandBuffer_ = ResolveBackspace(commandBuffer_);
-                for (auto &commandHandler_ : commandHandlers_) {
+                for (auto &commandHandler : commandHandlers_) {
                     log_i("Command being sent: %s with size %d", commandBuffer_.c_str(),
                           commandBuffer_.size());
-                    commandHandler_(commandBuffer_);
+                    commandHandler(commandBuffer_);
                 }
             }
             commandBuffer_.clear();
