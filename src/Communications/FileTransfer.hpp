@@ -12,6 +12,10 @@
 #include "Storage/LocalStore.hpp"
 #include "sindarin-debug.h"
 
+#define MAX_FILE_NAME_LENGTH 65
+#define MAX_FILE_TITLE_LENGTH 129
+#define MAX_FILE_AUTHOR_LENGTH 129
+#define MAX_UUID_LENGTH 33
 class FileTransfer {
 public:
     FileTransfer() {
@@ -28,10 +32,22 @@ public:
     void FileTransferCallback(const uint8_t *data, size_t length);
 
 private:
-    int fileReceiveState_ = 1;
-    char fileName_[65];
+    enum class FileReceiveState {
+        FileName,
+        FileTitle,
+        FileAuthor,
+        FileSize,
+        FileChecksum,
+        FileData
+    };
+    FileReceiveState fileReceiveState_ = FileReceiveState::FileName;
+    char fileName_[MAX_FILE_NAME_LENGTH];
+    char fileTitle_[MAX_FILE_TITLE_LENGTH];
+    char fileAuthor_[MAX_FILE_AUTHOR_LENGTH];
+    std::string fileUUID_;
     u_int fileSize_ = 0;
     u_int bytesReceived_ = 0;
     u_int checksum_ = 0;
+    u_int runningChecksum_ = 0;
     SFile file_;
 };
