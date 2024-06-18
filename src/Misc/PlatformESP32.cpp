@@ -294,10 +294,9 @@ void InitializePlatform() {
     uart_driver_install(UART_NUM_0, kRxBufSize, 0, 3, &uartCommandQueue, 0);
     uart_param_config(UART_NUM_0, &uartConfig);
 
-    usb_serial_jtag_driver_config_t usb_serial_jtag_config =
-        USB_SERIAL_JTAG_DRIVER_CONFIG_DEFAULT();
+    usb_serial_jtag_driver_config_t usbSerialJtagConfig = USB_SERIAL_JTAG_DRIVER_CONFIG_DEFAULT();
 
-    err = usb_serial_jtag_driver_install(&usb_serial_jtag_config);
+    err = usb_serial_jtag_driver_install(&usbSerialJtagConfig);
     if (err != ESP_OK) {
         log_e("usb_serial_jtag_driver_install failed: %s", esp_err_to_name(err));
     }
