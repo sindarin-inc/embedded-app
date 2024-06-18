@@ -770,7 +770,7 @@ CONFIG_TWAI_ERRATA_FIX_LISTEN_ONLY_DOM=y
 #
 # USB Serial/JTAG Configuration
 #
-# CONFIG_USJ_NO_AUTO_LS_ON_CONNECTION is not set
+CONFIG_USJ_NO_AUTO_LS_ON_CONNECTION=y
 # end of USB Serial/JTAG Configuration
 # end of Driver Configurations
 
