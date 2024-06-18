@@ -14,8 +14,6 @@ extern LittleFSFileSystem fileSystem;
 
 extern LocalStore localStore;
 
-#define CONFIG_USB_CDC_RX_BUFSIZE 8192
-
 uint8_t calculate_checksum(const uint8_t *data, size_t length, uint8_t checksum = 0) {
     uint8_t checksum_ = checksum;
     for (size_t i = 0; i < length; ++i) {

@@ -15,7 +15,7 @@
 #define MAX_FILE_NAME_LENGTH 65
 #define MAX_FILE_TITLE_LENGTH 129
 #define MAX_FILE_AUTHOR_LENGTH 129
-#define MAX_UUID_LENGTH 33
+
 class FileTransfer {
 public:
     FileTransfer() {
@@ -40,6 +40,7 @@ private:
         FileChecksum,
         FileData
     };
+
     FileReceiveState fileReceiveState_ = FileReceiveState::FileName;
     char fileName_[MAX_FILE_NAME_LENGTH];
     char fileTitle_[MAX_FILE_TITLE_LENGTH];
