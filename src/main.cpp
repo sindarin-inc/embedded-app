@@ -149,6 +149,10 @@ void PollingLoopTask(void *parameter) {
                   powerManager.battery.getRightBatteryVoltage());
         } else if (command == "SERIAL") {
             log_i("SN: %s", GetSerialNumber().c_str());
+        } else if (command == "USBPWR") {
+            log_i("USB Power: %d", USBConnected());
+        } else if (command == "BOOTREASON") {
+            log_i("Boot reason: %s", powerManager.getBootInfo().humanStr().c_str());
         } else {
             log_w("Unknown debug command: %s", command.c_str());
         }
