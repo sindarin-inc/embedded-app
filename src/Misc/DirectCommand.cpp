@@ -6,6 +6,8 @@
 
 extern DirectCommand directCommand;
 
+bool mirrorToSerial = false;
+
 auto DirectCommand::getInstance() -> DirectCommand & { return directCommand; }
 
 // Remove backspace characters from the input string
@@ -56,6 +58,9 @@ void DirectCommand::begin() {
             USBSerial::getInstance().txSendData(
                 reinterpret_cast<const uint8_t *>(GetFreeSpace().c_str()),
                 strlen(GetFreeSpace().c_str()));
+        } else if (command == "MIRROR") {
+            mirrorToSerial = !mirrorToSerial;
+            USBSerial::getInstance().txSendData(reinterpret_cast<const uint8_t *>("SUCCESS"), 8);
         }
     });
 

@@ -15,11 +15,11 @@ extern LittleFSFileSystem fileSystem;
 extern LocalStore localStore;
 
 auto CalculateChecksum(const uint8_t *data, size_t length, uint8_t checksum = 0) -> uint8_t {
-    uint8_t checksum = checksum;
+    uint8_t runningChecksum = checksum;
     for (size_t i = 0; i < length; ++i) {
-        checksum ^= data[i];
+        runningChecksum ^= data[i];
     }
-    return checksum;
+    return runningChecksum;
 }
 
 // Used to shorten the title for the UUID
