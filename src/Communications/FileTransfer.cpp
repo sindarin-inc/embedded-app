@@ -103,11 +103,6 @@ void FileTransfer::fileTransferCallback(const uint8_t *data, size_t length) {
         bytesReceived_ += rxSize;
         if (bytesReceived_ >= fileSize_) {
             // All done, reset the state for next time.
-            fileReceiveState_ = FileReceiveState::FileName;
-            bytesReceived_ = 0;
-            fileSize_ = 0;
-            checksum_ = 0;
-            directCommand_.unsetPassthroughData();
 
             file_.close();
             log_i("Closing file and checksum final value is %d", runningChecksum_);
@@ -115,27 +110,33 @@ void FileTransfer::fileTransferCallback(const uint8_t *data, size_t length) {
             if (checksum_ != runningChecksum_) {
                 log_e("Checksum verification failed");
                 usbSerial_.txSendData(reinterpret_cast<const uint8_t *>("FAILURE"), 8);
-                break;
+            } else {
+                // Update the readable db on the glasses if the checksum checked out.
+                auto existingReadables = localStore_.books();
+                std::shared_ptr<Readable> newReadable = std::make_shared<Readable>();
+                newReadable->localOnly = true;
+                newReadable->title = fileTitle_;
+                newReadable->uuid = fileUUID_;
+                newReadable->authors = {{fileUUID_, fileAuthor_, "No description"}};
+                newReadable->readableType = "book";
+                ReadableFile fileReadable;
+                fileReadable.uuid = fileUUID_;
+                fileReadable.filetype = "epub";
+                fileReadable.name = fileName_;
+                fileReadable.size = fileSize_;
+                fileReadable.readableType = "book";
+                newReadable->files.push_back(fileReadable);
+                localStore_.addReadable(existingReadables, newReadable);
+                localStore_.saveReadables(existingReadables);
+                usbSerial_.txSendData(reinterpret_cast<const uint8_t *>("SUCCESS"), 8);
             }
 
-            // Update the readable db on the glasses if the checksum checked out.
-            auto existingReadables = localStore_.books();
-            std::shared_ptr<Readable> newReadable = std::make_shared<Readable>();
-            newReadable->localOnly = true;
-            newReadable->title = fileTitle_;
-            newReadable->uuid = fileUUID_;
-            newReadable->authors = {{fileUUID_, fileAuthor_, "No description"}};
-            newReadable->readableType = "book";
-            ReadableFile fileReadable;
-            fileReadable.uuid = fileUUID_;
-            fileReadable.filetype = "epub";
-            fileReadable.name = fileName_;
-            fileReadable.size = fileSize_;
-            fileReadable.readableType = "book";
-            newReadable->files.push_back(fileReadable);
-            localStore_.addReadable(existingReadables, newReadable);
-            localStore_.saveReadables(existingReadables);
-            usbSerial_.txSendData(reinterpret_cast<const uint8_t *>("SUCCESS"), 8);
+            // ResetState
+            fileReceiveState_ = FileReceiveState::FileName;
+            bytesReceived_ = 0;
+            fileSize_ = 0;
+            directCommand_.unsetPassthroughData();
+            checksum_ = 0;
         }
         break;
     }

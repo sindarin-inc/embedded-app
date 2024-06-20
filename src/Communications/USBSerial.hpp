@@ -22,7 +22,7 @@ typedef struct cdcacm_event_t {
 
 #include "sindarin-debug.h"
 
-#define CONFIG_USB_CDC_RX_BUFSIZE 8192
+#define CONFIG_USB_CDC_RX_BUFSIZE 1024
 
 class USBSerial {
 public:
