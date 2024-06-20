@@ -75,9 +75,14 @@ build: check_idf configure
 
 .PHONY: flash
 flash: build
-	if [ -e /dev/cu.usbmodem40963 ]; then \
-		echo "PROGRAM" | tee /dev/cu.usbmodem40963; \
+	if [ -e /dev/cu.usbmodemsolreader3 ]; then \
+		echo "PROGRAM" | tee /dev/cu.usbmodemsolreader3; \
 		sleep 2; \
+	fi
+	@if [[ "$$(uname)" == "Linux" ]]; then \
+		PORT=$$(udevadm info --query=all --name=/dev/ttyUSB* | grep 'ID_MODEL_FROM_DATABASE=Sol Reader' -B4 | grep 'DEVNAME' | cut -d'=' -f2) ; \
+		echo "PROGRAM" | tee $$PORT ; \
+		sleep 2;\
 	fi
 	idf.py flash
 
@@ -85,9 +90,9 @@ flash: build
 monitor: check_idf
 	# Try to find the right serial port and use --no-reset by default
 	@if [[ "$$(uname)" == "Linux" ]]; then \
-		PORT=$$(udevadm info --query=all --name=/dev/ttyUSB* | grep 'ID_MODEL_FROM_DATABASE=USB JTAG/serial debug unit' -B4 | grep 'DEVNAME' | cut -d'=' -f2) ; \
+		PORT=$$(udevadm info --query=all --name=/dev/ttyUSB* | grep 'ID_MODEL_FROM_DATABASE=Sol Reader' -B4 | grep 'DEVNAME' | cut -d'=' -f2) ; \
 	elif [[ "$$(uname)" == "Darwin" ]]; then \
-		PORT=$$(ls /dev/cu.usb* | head -n1) ; \
+		PORT=$$(ls /dev/cu.usbmodemsolreader1 | head -n1) ; \
 	else \
 		echo "Unsupported operating system." ; \
 		exit 1 ; \
