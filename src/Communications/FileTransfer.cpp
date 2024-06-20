@@ -1,5 +1,3 @@
-// FileTransfer.cpp
-
 #include "FileTransfer.hpp"
 
 #include "Models/Readable.hpp"

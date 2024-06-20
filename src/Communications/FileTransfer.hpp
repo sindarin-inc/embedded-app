@@ -1,5 +1,3 @@
-// FileTransfer.hpp
-
 #pragma once
 
 #include <cstdint>
