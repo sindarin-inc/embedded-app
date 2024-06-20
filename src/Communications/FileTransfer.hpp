@@ -7,6 +7,7 @@
 
 #include "Communications/USBSerial.hpp"
 #include "Misc/DirectCommand.hpp"
+#include "Storage/FileSystem.hpp"
 #include "Storage/LocalStore.hpp"
 #include "sindarin-debug.h"
 
@@ -16,12 +17,14 @@
 
 class FileTransfer {
 public:
-    FileTransfer() {
-        DirectCommand::getInstance().addCommandHandler([this](const std::string &command) {
+    FileTransfer(FileSystem &fileSystem, LocalStore &localStore, USBSerial &usbSerial,
+                 DirectCommand &directCommand)
+        : fileSystem_(fileSystem), localStore_(localStore), usbSerial_(usbSerial),
+          directCommand_(directCommand) {
+        directCommand_.addCommandHandler([this](const std::string &command) {
             if (command == "START_FILE_TRANSFER") {
                 log_i("Got a START_FILE_TRANSFER and handled in FileTransfer.hpp");
-                DirectCommand::getInstance().setPassthroughData(
-                    [this](const uint8_t *data, uint8_t length) {
+                directCommand_.setPassthroughData([this](const uint8_t *data, uint8_t length) {
                     fileTransferCallback(data, length);
                 });
             }
@@ -38,6 +41,11 @@ private:
         FileChecksum,
         FileData
     };
+
+    FileSystem &fileSystem_;
+    LocalStore &localStore_;
+    USBSerial &usbSerial_;
+    DirectCommand &directCommand_;
 
     FileReceiveState fileReceiveState_ = FileReceiveState::FileName;
     char fileName_[MAX_FILE_NAME_LENGTH]{};

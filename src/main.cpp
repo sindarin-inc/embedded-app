@@ -108,7 +108,7 @@ USBSerial *USBSerial::instance = nullptr;
 USBSerial usbSerial;
 
 DirectCommand directCommand;
-FileTransfer fileTransferListener;
+FileTransfer fileTransferListener(fileSystem, localStore, usbSerial, directCommand);
 
 bool bootCompleted = false;
 

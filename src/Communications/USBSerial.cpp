@@ -28,71 +28,6 @@ void USBSerial::initJtag() {
 #endif
 }
 
-//
-// This tracks line state changes and if the correct sequence is detected, it will initialize JTAG
-// thus disabling our custom USB serial port and enabling the JTAG port.
-//
-// This isn't strictly necessary since we should be using our PROGRAM command to switch to JTAG mode
-// but in case that code is broken, this is a backup.
-//
-void USBSerial::lineStateChangedCallback(int itf, cdcacm_event_t *event) {
-#if SIMULATOR
-    int dtr = 0;
-    int rts = 0;
-#else
-    int dtr = event->line_state_changed_data.dtr;
-    int rts = event->line_state_changed_data.rts;
-#endif
-    log_i("Line state changed! dtr:%d, rts:%d", dtr, rts);
-
-    switch (currentState_) {
-    case BootloaderState::Idle:
-        if (dtr && rts) {
-            currentState_ = BootloaderState::State1;
-        }
-        break;
-    case BootloaderState::State1:
-        if (!dtr && !rts) {
-            currentState_ = BootloaderState::State2;
-        }
-        break;
-    case BootloaderState::State2:
-        if (dtr && rts) {
-            currentState_ = BootloaderState::State3;
-        }
-        break;
-    case BootloaderState::State3:
-        if (!dtr && rts) {
-            currentState_ = BootloaderState::State4;
-        }
-        break;
-    case BootloaderState::State4:
-        if (dtr && !rts) {
-            currentState_ = BootloaderState::State5;
-        }
-        break;
-    case BootloaderState::State5:
-        if (!dtr && !rts) {
-            currentState_ = BootloaderState::State6;
-        }
-        break;
-    case BootloaderState::State6:
-        if (dtr && rts) {
-            currentState_ = BootloaderState::State7;
-        }
-        break;
-    case BootloaderState::State7:
-        if (!dtr && rts) {
-            currentState_ = BootloaderState::Idle;
-            initJtag();
-        }
-        break;
-    default:
-        currentState_ = BootloaderState::Idle;
-        break;
-    }
-}
-
 // This is the main callback for the USB serial port that is used for logging.
 // It simply reads from the port and the writes back that data so serial monitors
 // can see the data.
@@ -206,14 +141,12 @@ void USBSerial::begin() {
 
     tinyusb_config_cdcacm_t acmCfg = {.usb_dev = TINYUSB_USBDEV_0,
                                       .cdc_port = TINYUSB_CDC_ACM_0,
-                                      .callback_rx = USBSerial::cdcacmLoggingCallback,
+                                      .callback_rx = nullptr, // USBSerial::cdcacmLoggingCallback,
                                       .callback_rx_wanted_char = nullptr,
                                       .callback_line_state_changed = nullptr,
                                       .callback_line_coding_changed = nullptr};
 
     ESP_ERROR_CHECK(tusb_cdc_acm_init(&acmCfg));
-    ESP_ERROR_CHECK(tinyusb_cdcacm_register_callback(
-        TINYUSB_CDC_ACM_0, CDC_EVENT_LINE_STATE_CHANGED, cdcacmLineStateChangedCallback));
 
     enableLogging();
 
@@ -229,9 +162,6 @@ void USBSerial::begin() {
                                        .callback_line_coding_changed = nullptr};
 
     ESP_ERROR_CHECK(tusb_cdc_acm_init(&acmCfg1));
-    ESP_ERROR_CHECK(tinyusb_cdcacm_register_callback(
-        TINYUSB_CDC_ACM_1, CDC_EVENT_LINE_STATE_CHANGED, cdcacmLineStateChangedCallback));
-
     log_i("Finished port CDC_ACM_1 initialization attempt");
 #endif
 }

@@ -2,16 +2,6 @@
 
 #include "Models/Readable.hpp"
 
-#if SIMULATOR
-#include "Storage/PosixFileSystem.hpp"
-extern PosixFileSystem fileSystem;
-#else
-#include "Storage/LittleFSFileSystem.hpp"
-extern LittleFSFileSystem fileSystem;
-#endif
-
-extern LocalStore localStore;
-
 auto CalculateChecksum(const uint8_t *data, size_t length, uint8_t checksum = 0) -> uint8_t {
     uint8_t runningChecksum = checksum;
     for (size_t i = 0; i < length; ++i) {
@@ -21,7 +11,8 @@ auto CalculateChecksum(const uint8_t *data, size_t length, uint8_t checksum = 0)
 }
 
 // Used to shorten the title for the UUID
-void PrepTitleForUuid(char *str, size_t length) {
+// This assumes the str passed in is longer than the maxOutputLength passed in
+void PrepTitleForUuid(char *str, size_t maxOutputLength) {
     char *readPtr = str;
     char *writePtr = str;
     size_t i = 0;
@@ -36,8 +27,8 @@ void PrepTitleForUuid(char *str, size_t length) {
 
     *writePtr = '\0'; // Null-terminate the modified string
     // Be sure to truncate if needed.
-    if (i > length) {
-        str[length] = '\0';
+    if (i > maxOutputLength) {
+        str[maxOutputLength] = '\0';
     }
 }
 
@@ -46,7 +37,7 @@ void FileTransfer::fileTransferCallback(const uint8_t *data, size_t length) {
     size_t written = 0;
     switch (fileReceiveState_) {
     case FileReceiveState::FileName:
-        if (rxSize < MAX_FILE_NAME_LENGTH) {
+        if (rxSize < MAX_FILE_NAME_LENGTH - 1) {
             strncpy(fileName_, reinterpret_cast<const char *>(data), rxSize);
             fileName_[rxSize] = '\0';
             log_i("File Name: %s", fileName_);
@@ -58,8 +49,7 @@ void FileTransfer::fileTransferCallback(const uint8_t *data, size_t length) {
         }
         break;
     case FileReceiveState::FileTitle:
-        if (rxSize < MAX_FILE_TITLE_LENGTH) {
-
+        if (rxSize < MAX_FILE_TITLE_LENGTH - 1) {
             strncpy(fileTitle_, reinterpret_cast<const char *>(data), rxSize);
             fileTitle_[rxSize] = '\0';
             log_i("File Title: %s", fileTitle_);
@@ -71,7 +61,7 @@ void FileTransfer::fileTransferCallback(const uint8_t *data, size_t length) {
 
         break;
     case FileReceiveState::FileAuthor:
-        if (rxSize < MAX_FILE_AUTHOR_LENGTH) {
+        if (rxSize < MAX_FILE_AUTHOR_LENGTH - 1) {
             strncpy(fileAuthor_, reinterpret_cast<const char *>(data), rxSize);
             fileAuthor_[rxSize] = '\0';
             log_i("File Author: %s", fileAuthor_);
@@ -94,11 +84,11 @@ void FileTransfer::fileTransferCallback(const uint8_t *data, size_t length) {
         PrepTitleForUuid(fileTitleForUUID, 10);
         fileUUID_ = StringFormat("local%d%s", checksum_, fileTitleForUUID);
         log_i("File UUID: %s", fileUUID_.c_str());
-        fileSystem.createDir("/book", true);
-        file_ = fileSystem.open(StringFormat("%s%s%s", "/book/", fileUUID_.c_str(), ".epub"),
-                                FILE_WRITE, true);
+        fileSystem_.createDir("/book", true);
+        file_ =
+            fileSystem_.open(StringFormat("/book/%s.epub", fileUUID_.c_str()), FILE_WRITE, true);
         log_i("File opened for writing: %s",
-              StringFormat("%s%s%s", "/book/", fileUUID_.c_str(), ".epub").c_str());
+              StringFormat("/book/%s.epub", fileUUID_.c_str()).c_str());
         if (file_.getFilePtr() == nullptr) {
             log_e("Failed to open file for writing");
         }
@@ -118,7 +108,7 @@ void FileTransfer::fileTransferCallback(const uint8_t *data, size_t length) {
                 log_i("Closing file and checksum final value is %d", runningChecksum_);
                 // check checksum
                 if (checksum_ == runningChecksum_) {
-                    auto existingReadables = localStore.books();
+                    auto existingReadables = localStore_.books();
                     std::shared_ptr<Readable> newReadable = std::make_shared<Readable>();
                     newReadable->localOnly = true;
                     newReadable->title = fileTitle_;
@@ -132,20 +122,18 @@ void FileTransfer::fileTransferCallback(const uint8_t *data, size_t length) {
                     fileReadable.size = fileSize_;
                     fileReadable.readableType = "book";
                     newReadable->files.push_back(fileReadable);
-                    localStore.addReadable(existingReadables, newReadable);
-                    localStore.saveReadables(existingReadables);
-                    USBSerial::getInstance().txSendData(
-                        reinterpret_cast<const uint8_t *>("SUCCESS"), 8);
+                    localStore_.addReadable(existingReadables, newReadable);
+                    localStore_.saveReadables(existingReadables);
+                    usbSerial_.txSendData(reinterpret_cast<const uint8_t *>("SUCCESS"), 8);
                 } else {
                     log_e("Checksum verification failed");
-                    USBSerial::getInstance().txSendData(
-                        reinterpret_cast<const uint8_t *>("FAILURE"), 8);
+                    usbSerial_.txSendData(reinterpret_cast<const uint8_t *>("FAILURE"), 8);
                 }
                 fileReceiveState_ = FileReceiveState::FileName;
                 bytesReceived_ = 0;
                 fileSize_ = 0;
                 checksum_ = 0;
-                DirectCommand::getInstance().unsetPassthroughData();
+                directCommand_.unsetPassthroughData();
             }
         }
         break;
