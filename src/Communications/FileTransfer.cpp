@@ -49,7 +49,7 @@ void FileTransfer::fileTransferCallback(const uint8_t *data, size_t length) {
     switch (fileReceiveState_) {
     case FileReceiveState::FileName:
         if (rxSize < MAX_FILE_NAME_LENGTH) {
-            strncpy(fileName_, (char *)data, rxSize);
+            strncpy(fileName_, reinterpret_cast<const char *>(data), rxSize);
             fileName_[rxSize] = '\0';
             log_i("File Name: %s", fileName_);
             fileReceiveState_ = FileReceiveState::FileTitle;
@@ -62,7 +62,7 @@ void FileTransfer::fileTransferCallback(const uint8_t *data, size_t length) {
     case FileReceiveState::FileTitle:
         if (rxSize < MAX_FILE_TITLE_LENGTH) {
 
-            strncpy(fileTitle_, (char *)data, rxSize);
+            strncpy(fileTitle_, reinterpret_cast<const char *>(data), rxSize);
             fileTitle_[rxSize] = '\0';
             log_i("File Title: %s", fileTitle_);
             fileReceiveState_ = FileReceiveState::FileAuthor;
@@ -74,7 +74,7 @@ void FileTransfer::fileTransferCallback(const uint8_t *data, size_t length) {
         break;
     case FileReceiveState::FileAuthor:
         if (rxSize < MAX_FILE_AUTHOR_LENGTH) {
-            strncpy(fileAuthor_, (char *)data, rxSize);
+            strncpy(fileAuthor_, reinterpret_cast<const char *>(data), rxSize);
             fileAuthor_[rxSize] = '\0';
             log_i("File Author: %s", fileAuthor_);
             fileReceiveState_ = FileReceiveState::FileSize;
@@ -84,15 +84,15 @@ void FileTransfer::fileTransferCallback(const uint8_t *data, size_t length) {
         }
         break;
     case FileReceiveState::FileSize:
-        fileSize_ = atoi((char *)data);
+        fileSize_ = strtol(reinterpret_cast<const char *>(data), nullptr, 10);
         log_i("File Size: %d bytes", fileSize_);
         fileReceiveState_ = FileReceiveState::FileChecksum;
         break;
     case FileReceiveState::FileChecksum:
         char fileTitleForUUID[MAX_FILE_TITLE_LENGTH];
-        checksum_ = atoi((char *)data);
+        checksum_ = strtol(reinterpret_cast<const char *>(data), nullptr, 10);
         log_i("Checksum: %d", checksum_);
-        strcpy(fileTitleForUUID, fileTitle_);
+        strncpy(fileTitleForUUID, fileTitle_, MAX_FILE_TITLE_LENGTH);
         PrepTitleForUuid(fileTitleForUUID, 10);
         fileUUID_ = StringFormat("local%d%s", checksum_, fileTitleForUUID);
         log_i("File UUID: %s", fileUUID_.c_str());

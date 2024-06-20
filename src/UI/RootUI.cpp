@@ -1134,22 +1134,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         firmwareUpdateScreen->begin();
     }));
 
-    // Temporarily here to make it easier to access during USB direct testing
-    debugSettingsMenu->addMenuItem(MenuItem("File System Browser",
-                                            [this, display, debugSettingsMenu, &fileSystem]() {
-        auto fsMenu = new MenuScreen(power_.battery, *display, debugSettingsMenu->getMyStyle(),
-                                     "FS Browser", "Debug Settings");
-
-        handleBrowse(fileSystem, fsMenu);
-
-        setCurrentScreen(*fsMenu);
-        fsMenu->setBackCallback([this, fsMenu, debugSettingsMenu]() {
-            debugSettingsMenu->setFirstLoad();
-            setCurrentScreen(*debugSettingsMenu);
-            delete fsMenu;
-        });
-    }));
-
 #if USE_TURN_TOUCH_REMOTE
     debugSettingsMenu->addMenuItem(MenuItem("Unpair PageTurner",
                                             [this, debugSettingsMenu, display]() {
@@ -1277,6 +1261,21 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         log_w("NVS and FS cleared. Rebooting...");
         systemSettingsMenu->showTemporaryMessage(*display, "Resetting Device! Rebooting...");
         power_.reboot();
+    }));
+
+    debugSettingsMenu->addMenuItem(MenuItem("File System Browser",
+                                            [this, display, debugSettingsMenu, &fileSystem]() {
+        auto fsMenu = new MenuScreen(power_.battery, *display, debugSettingsMenu->getMyStyle(),
+                                     "FS Browser", "Debug Settings");
+
+        handleBrowse(fileSystem, fsMenu);
+
+        setCurrentScreen(*fsMenu);
+        fsMenu->setBackCallback([this, fsMenu, debugSettingsMenu]() {
+            debugSettingsMenu->setFirstLoad();
+            setCurrentScreen(*debugSettingsMenu);
+            delete fsMenu;
+        });
     }));
 
     debugSettingsMenu->addMenuItem(MenuItem("Batteries and Temperature",

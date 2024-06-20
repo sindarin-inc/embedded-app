@@ -105,8 +105,9 @@ void USBSerial::rxLoggingCallback(int itf, cdcacm_event_t *event) {
     if (ret == ESP_OK) {
         buffer_[rxSize] = '\0';
         log_i("Got data (%d bytes): %s", rxSize, buffer_);
-    } else
+    } else {
         log_i("Read error");
+    }
 
     tinyusb_cdcacm_write_queue(static_cast<tinyusb_cdcacm_itf_t>(itf), buffer_, rxSize);
     tinyusb_cdcacm_write_flush(static_cast<tinyusb_cdcacm_itf_t>(itf), 0);

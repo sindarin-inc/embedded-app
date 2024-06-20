@@ -95,7 +95,8 @@ void DisplayEinkET013TT1::updateDisplay(DisplaySystem::UpdateType updateType, bo
                                         ScreenSide screen, Rect altRect) {
     auto queue = DispatchGetUiQueue(false);
     if (mirrorToSerial) {
-        USBSerial::getInstance().txSendData((const uint8_t *)gfxCanvas_.getBuffer(), 8192);
+        USBSerial::getInstance().txSendData(
+            reinterpret_cast<const uint8_t *>(gfxCanvas_.getBuffer()), 8192);
     }
     if (queue == nullptr || !queue->isInQueue()) {
         log_w("updateDisplay called from outside the UI queue.");
