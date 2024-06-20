@@ -10,6 +10,9 @@ USBSerial::USBSerial() {
 }
 
 void USBSerial::initJtag() {
+#if SIMULATOR
+
+#else
     tusb_cdc_acm_deinit(TINYUSB_CDC_ACM_1);
     tusb_cdc_acm_deinit(TINYUSB_CDC_ACM_0);
     tinyusb_driver_uninstall();
@@ -22,6 +25,7 @@ void USBSerial::initJtag() {
 
     usb_phy_handle_t jtagPhy;
     usb_new_phy(&phyConf, &jtagPhy);
+#endif
 }
 
 //
@@ -32,8 +36,13 @@ void USBSerial::initJtag() {
 // but in case that code is broken, this is a backup.
 //
 void USBSerial::lineStateChangedCallback(int itf, cdcacm_event_t *event) {
+#if SIMULATOR
+    int dtr = 0;
+    int rts = 0;
+#else
     int dtr = event->line_state_changed_data.dtr;
     int rts = event->line_state_changed_data.rts;
+#endif
     log_i("Line state changed! dtr:%d, rts:%d", dtr, rts);
 
     switch (currentState_) {
@@ -89,6 +98,8 @@ void USBSerial::lineStateChangedCallback(int itf, cdcacm_event_t *event) {
 // can see the data.
 void USBSerial::rxLoggingCallback(int itf, cdcacm_event_t *event) {
     size_t rxSize = 0;
+#if SIMULATOR
+#else
     esp_err_t ret = tinyusb_cdcacm_read(static_cast<tinyusb_cdcacm_itf_t>(itf), buffer_,
                                         sizeof(buffer_) - 1, &rxSize);
     if (ret == ESP_OK) {
@@ -99,12 +110,15 @@ void USBSerial::rxLoggingCallback(int itf, cdcacm_event_t *event) {
 
     tinyusb_cdcacm_write_queue(static_cast<tinyusb_cdcacm_itf_t>(itf), buffer_, rxSize);
     tinyusb_cdcacm_write_flush(static_cast<tinyusb_cdcacm_itf_t>(itf), 0);
+#endif
 }
 
 void USBSerial::disableLogging() {
     if (loggingEnabled_) {
         log_i("Disabling logging");
+#if !SIMULATOR
         esp_tusb_deinit_console(TINYUSB_CDC_ACM_0); // log to usb
+#endif
         loggingEnabled_ = false;
     }
 }
@@ -112,7 +126,9 @@ void USBSerial::disableLogging() {
 void USBSerial::enableLogging() {
     if (!loggingEnabled_) {
         log_i("Enabling logging");
+#if !SIMULATOR
         esp_tusb_init_console(TINYUSB_CDC_ACM_0);
+#endif
         loggingEnabled_ = true;
     }
 }
@@ -121,8 +137,10 @@ void USBSerial::enableLogging() {
 // It reads from the port and then processes the data and sends the command to the
 // DirectCommand class for processing.
 void USBSerial::rxCommandCallback(int itf, cdcacm_event_t *event) {
-
     size_t rxSize = 0;
+#if SIMULATOR
+
+#else
     esp_err_t ret = tinyusb_cdcacm_read(static_cast<tinyusb_cdcacm_itf_t>(itf), buffer_,
                                         sizeof(buffer_) - 1, &rxSize);
     if (ret == ESP_OK) {
@@ -133,6 +151,7 @@ void USBSerial::rxCommandCallback(int itf, cdcacm_event_t *event) {
             listener(buffer_, rxSize);
         }
     }
+#endif
 }
 
 void USBSerial::registerListener(const SerialDataListener &listener) {
@@ -149,11 +168,17 @@ void USBSerial::popLastListener() {
 // For sending data back to the USB serial port. To be called by things like FileTransfer
 // or DirectCommand if needed.
 void USBSerial::txSendData(const uint8_t *data, size_t length) {
+#if SIMULATOR
+
+#else
     tinyusb_cdcacm_write_queue(TINYUSB_CDC_ACM_1, data, length);
     tinyusb_cdcacm_write_flush(TINYUSB_CDC_ACM_1, 0);
+#endif
 }
 
 void USBSerial::begin() {
+#if SIMULATOR
+#else
     // Of course, for devices already set up with USB, this logging won't be shown on the port
     // that is the one you'd expect to see it on (after the connection).
     log_i("USB initialization");
@@ -207,4 +232,5 @@ void USBSerial::begin() {
         TINYUSB_CDC_ACM_1, CDC_EVENT_LINE_STATE_CHANGED, cdcacmLineStateChangedCallback));
 
     log_i("Finished port CDC_ACM_1 initialization attempt");
+#endif
 }

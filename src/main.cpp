@@ -1,16 +1,16 @@
 #if !SIMULATOR
 #include <driver/uart.h>
-#include <soc/rtc.h>
-#endif
-
 #include <esp_err.h>
 #include <esp_log.h>
 #include <esp_sleep.h>
 #include <esp_system.h>
 #include <esp_timer.h>
+#include <soc/rtc.h>
+#include <tusb.h>
+#endif
+
 #include <freertos/FreeRTOS.h>
 #include <freertos/queue.h>
-#include <tusb.h>
 
 #include "Communications/BackgroundSync.hpp"
 #include "Communications/FileTransfer.hpp"
@@ -103,13 +103,9 @@ RootUI rootUi(prefs, powerManager, telemetry);
 SolClock solClock(prefs);
 WiFi wiFi(telemetry);
 
-#if SIMULATOR
-#else
-#include "Communications/USBSerial.hpp"
 // Initialize the static member variable to nullptr
 USBSerial *USBSerial::instance = nullptr;
 USBSerial usbSerial;
-#endif
 
 DirectCommand directCommand;
 FileTransfer fileTransferListener;
@@ -239,8 +235,10 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     HardwareInit();
 #endif
 
+#if !SIMULATOR
     // Configure log level for all Sindarin logs
     esp_log_level_set("Sol", ESP_LOG_DEBUG);
+#endif
     powerManager.wakeupCheck(solClock);
 
     BootLoopCheck(fileSystem, powerManager);
@@ -572,8 +570,10 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         } else {
             rootUi.setup(&myDisplay, localStore, fileSystem, lightingController);
             UIInnerLoop(RemoteCommand::NONE);
+#if !SIMULATOR
             log_i("First screen rendered after boot in %" PRIu64 " ms",
                   esp_timer_get_time() / 1000);
+#endif
         }
         SHOW_HEAP();
     });

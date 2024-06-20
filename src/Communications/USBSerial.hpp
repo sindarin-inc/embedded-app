@@ -2,14 +2,22 @@
 
 #include <cstdint>
 #include <cstring>
+#if SIMULATOR
+typedef struct cdcacm_event_t {
+    int type;
+    int dtr;
+    int rts;
+} cdcacm_event_t;
+#else
 #include <esp_err.h>
 #include <esp_private/usb_phy.h>
-#include <functional>
-#include <string>
 #include <tinyusb.h>
 #include <tusb.h>
 #include <tusb_cdc_acm.h>
 #include <tusb_console.h>
+#endif
+#include <functional>
+#include <string>
 #include <utility>
 
 #include "sindarin-debug.h"

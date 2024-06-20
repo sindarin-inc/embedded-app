@@ -38,7 +38,11 @@ void DirectCommand::begin() {
             USBSerial::getInstance().txSendData(reinterpret_cast<const uint8_t *>("SUCCESS"), 8);
             // Wait 1 second before restarting so the receiver can get the success message
             vTaskDelay(1000 / portTICK_PERIOD_MS);
+#if SIMULATOR
+            // Todo
+#else
             esp_restart();
+#endif
         } else if (command == "DEVICE_INFO") {
             USBSerial::getInstance().txSendData(reinterpret_cast<const uint8_t *>("SUCCESS"), 8);
             USBSerial::getInstance().txSendData(reinterpret_cast<const uint8_t *>("SERIAL_NUMBER,"),
