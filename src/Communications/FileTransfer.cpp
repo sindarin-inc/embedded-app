@@ -2,6 +2,10 @@
 
 #include "Models/Readable.hpp"
 
+// the max amount of characters we want to turn the title into for use
+// in a UUID
+#define TITLE_UUID_LENGTH 10
+
 auto CalculateChecksum(const uint8_t *data, size_t length, uint8_t checksum = 0) -> uint8_t {
     uint8_t runningChecksum = checksum;
     for (size_t i = 0; i < length; ++i) {
@@ -12,24 +16,21 @@ auto CalculateChecksum(const uint8_t *data, size_t length, uint8_t checksum = 0)
 
 // Used to shorten the title for the UUID
 // This assumes the str passed in is longer than the maxOutputLength passed in
-void PrepTitleForUuid(char *str, size_t maxOutputLength) {
-    char *readPtr = str;
-    char *writePtr = str;
+void PrepTitleForUuid(char *srcTitle, char *destUUIDTitle, size_t maxOutputLength) {
+    char *readPtr = srcTitle;
+    char *writePtr = destUUIDTitle;
     size_t i = 0;
-    while (*readPtr != '\0') {
+
+    while (i < maxOutputLength && *readPtr != '\0') {
         if (!isspace(*readPtr)) {
             *writePtr = tolower(*readPtr);
             writePtr++;
+            i++;
         }
         readPtr++;
-        i++;
     }
 
     *writePtr = '\0'; // Null-terminate the modified string
-    // Be sure to truncate if needed.
-    if (i > maxOutputLength) {
-        str[maxOutputLength] = '\0';
-    }
 }
 
 void FileTransfer::fileTransferCallback(const uint8_t *data, size_t length) {
@@ -77,11 +78,10 @@ void FileTransfer::fileTransferCallback(const uint8_t *data, size_t length) {
         fileReceiveState_ = FileReceiveState::FileChecksum;
         break;
     case FileReceiveState::FileChecksum:
-        char fileTitleForUUID[MAX_FILE_TITLE_LENGTH];
+        char fileTitleForUUID[TITLE_UUID_LENGTH + 1];
         checksum_ = strtol(reinterpret_cast<const char *>(data), nullptr, 10);
         log_i("Checksum: %d", checksum_);
-        strncpy(fileTitleForUUID, fileTitle_, MAX_FILE_TITLE_LENGTH);
-        PrepTitleForUuid(fileTitleForUUID, 10);
+        PrepTitleForUuid(fileTitle_, fileTitleForUUID, TITLE_UUID_LENGTH);
         fileUUID_ = StringFormat("local%d%s", checksum_, fileTitleForUUID);
         log_i("File UUID: %s", fileUUID_.c_str());
         fileSystem_.createDir("/book", true);
