@@ -115,24 +115,7 @@ void USBSerial::txSendData(const uint8_t *data, size_t length) {
 void USBSerial::begin() {
 #if SIMULATOR
 #else
-    // Of course, for devices already set up with USB, this logging won't be shown on the port
-    // that is the one you'd expect to see it on (after the connection).
-    log_i("USB initialization");
-    tusb_desc_device_t myDescriptor = {.bLength = sizeof(myDescriptor),
-                                       .bDescriptorType = TUSB_DESC_DEVICE,
-                                       .bcdUSB = 0x0200,
-                                       .bDeviceClass = TUSB_CLASS_UNSPECIFIED,
-                                       .bMaxPacketSize0 = 64,
-                                       .idVendor = 0x303A,
-                                       .idProduct = 0x3000,
-                                       .bcdDevice = 0x0101,
-                                       // These are set in the sdkconfig
-                                       .iManufacturer = 0x01,
-                                       .iProduct = 0x02,
-                                       .iSerialNumber = 0x03,
-                                       .bNumConfigurations = 0x01};
-
-    const tinyusb_config_t tusbCfg = {.device_descriptor = &myDescriptor,
+    const tinyusb_config_t tusbCfg = {.device_descriptor = nullptr,
                                       .string_descriptor = nullptr,
                                       .external_phy = false,
                                       .configuration_descriptor = nullptr};
@@ -141,7 +124,7 @@ void USBSerial::begin() {
 
     tinyusb_config_cdcacm_t acmCfg = {.usb_dev = TINYUSB_USBDEV_0,
                                       .cdc_port = TINYUSB_CDC_ACM_0,
-                                      .callback_rx = nullptr, // USBSerial::cdcacmLoggingCallback,
+                                      .callback_rx = nullptr,
                                       .callback_rx_wanted_char = nullptr,
                                       .callback_line_state_changed = nullptr,
                                       .callback_line_coding_changed = nullptr};
