@@ -88,7 +88,6 @@ public:
     // Convenience methods
     auto books() -> ReadablesVector & { return books_; };
     auto articles() -> ReadablesVector & { return articles_; };
-
     auto readablesModelType(const ReadablesVector &readables) -> ReadablesModelType;
     [[nodiscard]] auto isReadableUnchanged(const ReadablesVector &readables,
                                            const std::shared_ptr<Readable> &readable,
