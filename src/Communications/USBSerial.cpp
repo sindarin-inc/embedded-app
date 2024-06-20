@@ -4,12 +4,12 @@ extern USBSerial usbSerial;
 
 auto USBSerial::getInstance() -> USBSerial & { return usbSerial; }
 
-USBSerial::USBSerial() : currentState_(BootloaderState::Idle) {
+USBSerial::USBSerial() {
     std::memset(buffer_, 0, sizeof(buffer_));
     instance = this;
 }
 
-void USBSerial::InitJtag() {
+void USBSerial::initJtag() {
     tusb_cdc_acm_deinit(TINYUSB_CDC_ACM_1);
     tusb_cdc_acm_deinit(TINYUSB_CDC_ACM_0);
     tinyusb_driver_uninstall();
@@ -31,7 +31,7 @@ void USBSerial::InitJtag() {
 // This isn't strictly necessary since we should be using our PROGRAM command to switch to JTAG mode
 // but in case that code is broken, this is a backup.
 //
-void USBSerial::LineStateChangedCallback(int itf, cdcacm_event_t *event) {
+void USBSerial::lineStateChangedCallback(int itf, cdcacm_event_t *event) {
     int dtr = event->line_state_changed_data.dtr;
     int rts = event->line_state_changed_data.rts;
     log_i("Line state changed! dtr:%d, rts:%d", dtr, rts);
@@ -75,7 +75,7 @@ void USBSerial::LineStateChangedCallback(int itf, cdcacm_event_t *event) {
     case BootloaderState::State7:
         if (!dtr && rts) {
             currentState_ = BootloaderState::Idle;
-            InitJtag();
+            initJtag();
         }
         break;
     default:
@@ -87,21 +87,21 @@ void USBSerial::LineStateChangedCallback(int itf, cdcacm_event_t *event) {
 // This is the main callback for the USB serial port that is used for logging.
 // It simply reads from the port and the writes back that data so serial monitors
 // can see the data.
-void USBSerial::RxLoggingCallback(int itf, cdcacm_event_t *event) {
-    size_t rx_size = 0;
-    esp_err_t ret =
-        tinyusb_cdcacm_read((tinyusb_cdcacm_itf_t)itf, buffer_, sizeof(buffer_) - 1, &rx_size);
+void USBSerial::rxLoggingCallback(int itf, cdcacm_event_t *event) {
+    size_t rxSize = 0;
+    esp_err_t ret = tinyusb_cdcacm_read(static_cast<tinyusb_cdcacm_itf_t>(itf), buffer_,
+                                        sizeof(buffer_) - 1, &rxSize);
     if (ret == ESP_OK) {
-        buffer_[rx_size] = '\0';
-        log_i("Got data (%d bytes): %s", rx_size, buffer_);
+        buffer_[rxSize] = '\0';
+        log_i("Got data (%d bytes): %s", rxSize, buffer_);
     } else
         log_i("Read error");
 
-    tinyusb_cdcacm_write_queue((tinyusb_cdcacm_itf_t)itf, buffer_, rx_size);
-    tinyusb_cdcacm_write_flush((tinyusb_cdcacm_itf_t)itf, 0);
+    tinyusb_cdcacm_write_queue(static_cast<tinyusb_cdcacm_itf_t>(itf), buffer_, rxSize);
+    tinyusb_cdcacm_write_flush(static_cast<tinyusb_cdcacm_itf_t>(itf), 0);
 }
 
-void USBSerial::DisableLogging() {
+void USBSerial::disableLogging() {
     if (loggingEnabled_) {
         log_i("Disabling logging");
         esp_tusb_deinit_console(TINYUSB_CDC_ACM_0); // log to usb
@@ -109,7 +109,7 @@ void USBSerial::DisableLogging() {
     }
 }
 
-void USBSerial::EnableLogging() {
+void USBSerial::enableLogging() {
     if (!loggingEnabled_) {
         log_i("Enabling logging");
         esp_tusb_init_console(TINYUSB_CDC_ACM_0);
@@ -120,27 +120,27 @@ void USBSerial::EnableLogging() {
 // This is the main callback for the USB serial port that is used for commands.
 // It reads from the port and then processes the data and sends the command to the
 // DirectCommand class for processing.
-void USBSerial::RxCommandCallback(int itf, cdcacm_event_t *event) {
+void USBSerial::rxCommandCallback(int itf, cdcacm_event_t *event) {
 
-    size_t rx_size = 0;
-    esp_err_t ret =
-        tinyusb_cdcacm_read((tinyusb_cdcacm_itf_t)itf, buffer_, sizeof(buffer_) - 1, &rx_size);
+    size_t rxSize = 0;
+    esp_err_t ret = tinyusb_cdcacm_read(static_cast<tinyusb_cdcacm_itf_t>(itf), buffer_,
+                                        sizeof(buffer_) - 1, &rxSize);
     if (ret == ESP_OK) {
-        buffer_[rx_size] = '\0';
+        buffer_[rxSize] = '\0';
         // Iterate through all the listeners registered with the USBSerial device and send them the
         // data.
         for (auto &listener : listeners_) {
-            listener(buffer_, rx_size);
+            listener(buffer_, rxSize);
         }
     }
 }
 
-void USBSerial::RegisterListener(SerialDataListener listener) {
+void USBSerial::registerListener(const SerialDataListener &listener) {
     log_i("Registered a listener");
     listeners_.push_back(listener);
 }
 
-void USBSerial::PopLastListener() {
+void USBSerial::popLastListener() {
     if (!listeners_.empty()) {
         listeners_.pop_back();
     }
@@ -148,7 +148,7 @@ void USBSerial::PopLastListener() {
 
 // For sending data back to the USB serial port. To be called by things like FileTransfer
 // or DirectCommand if needed.
-void USBSerial::TxSendData(const uint8_t *data, size_t length) {
+void USBSerial::txSendData(const uint8_t *data, size_t length) {
     tinyusb_cdcacm_write_queue(TINYUSB_CDC_ACM_1, data, length);
     tinyusb_cdcacm_write_flush(TINYUSB_CDC_ACM_1, 0);
 }
@@ -157,21 +157,21 @@ void USBSerial::begin() {
     // Of course, for devices already set up with USB, this logging won't be shown on the port
     // that is the one you'd expect to see it on (after the connection).
     log_i("USB initialization");
-    tusb_desc_device_t my_descriptor = {.bLength = sizeof(my_descriptor),
-                                        .bDescriptorType = TUSB_DESC_DEVICE,
-                                        .bcdUSB = 0x0200,
-                                        .bDeviceClass = TUSB_CLASS_UNSPECIFIED,
-                                        .bMaxPacketSize0 = 64,
-                                        .idVendor = 0x303A,
-                                        .idProduct = 0x3000,
-                                        .bcdDevice = 0x0101,
-                                        // These are set in the sdkconfig
-                                        .iManufacturer = 0x01,
-                                        .iProduct = 0x02,
-                                        .iSerialNumber = 0x03,
-                                        .bNumConfigurations = 0x01};
+    tusb_desc_device_t myDescriptor = {.bLength = sizeof(myDescriptor),
+                                       .bDescriptorType = TUSB_DESC_DEVICE,
+                                       .bcdUSB = 0x0200,
+                                       .bDeviceClass = TUSB_CLASS_UNSPECIFIED,
+                                       .bMaxPacketSize0 = 64,
+                                       .idVendor = 0x303A,
+                                       .idProduct = 0x3000,
+                                       .bcdDevice = 0x0101,
+                                       // These are set in the sdkconfig
+                                       .iManufacturer = 0x01,
+                                       .iProduct = 0x02,
+                                       .iSerialNumber = 0x03,
+                                       .bNumConfigurations = 0x01};
 
-    const tinyusb_config_t tusbCfg = {.device_descriptor = &my_descriptor,
+    const tinyusb_config_t tusbCfg = {.device_descriptor = &myDescriptor,
                                       .string_descriptor = nullptr,
                                       .external_phy = false,
                                       .configuration_descriptor = nullptr};
@@ -189,7 +189,7 @@ void USBSerial::begin() {
     ESP_ERROR_CHECK(tinyusb_cdcacm_register_callback(
         TINYUSB_CDC_ACM_0, CDC_EVENT_LINE_STATE_CHANGED, cdcacmLineStateChangedCallback));
 
-    EnableLogging();
+    enableLogging();
 
     vTaskDelay(2000 / portTICK_PERIOD_MS);
 

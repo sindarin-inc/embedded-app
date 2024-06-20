@@ -21,22 +21,22 @@ public:
     static auto getInstance() -> USBSerial &;
     USBSerial();
     void begin();
-    void InitJtag();
-    void LineStateChangedCallback(int itf, cdcacm_event_t *event);
-    void RxLoggingCallback(int itf, cdcacm_event_t *event);
-    void RxCommandCallback(int itf, cdcacm_event_t *event);
-    void TxSendData(const uint8_t *data, size_t length);
-    void DisableLogging();
-    void EnableLogging();
+    void initJtag();
+    void lineStateChangedCallback(int itf, cdcacm_event_t *event);
+    void rxLoggingCallback(int itf, cdcacm_event_t *event);
+    void rxCommandCallback(int itf, cdcacm_event_t *event);
+    void txSendData(const uint8_t *data, size_t length);
+    void disableLogging();
+    void enableLogging();
 
     using SerialDataListener = std::function<void(const uint8_t *data, size_t length)>;
-    void RegisterListener(SerialDataListener listener);
-    void PopLastListener();
+    void registerListener(const SerialDataListener &listener);
+    void popLastListener();
 
 private:
-    uint8_t buffer_[CONFIG_USB_CDC_RX_BUFSIZE + 1];
+    uint8_t buffer_[CONFIG_USB_CDC_RX_BUFSIZE + 1]{};
     enum class BootloaderState { Idle, State1, State2, State3, State4, State5, State6, State7 };
-    BootloaderState currentState_;
+    BootloaderState currentState_{BootloaderState::Idle};
     std::vector<SerialDataListener> listeners_;
     bool loggingEnabled_ = false;
 
@@ -44,19 +44,19 @@ private:
 
     static void cdcacmLoggingCallback(int itf, cdcacm_event_t *event) {
         if (instance) {
-            instance->RxLoggingCallback(itf, event);
+            instance->rxLoggingCallback(itf, event);
         }
     }
 
     static void cdcacmCommandCallback(int itf, cdcacm_event_t *event) {
         if (instance) {
-            instance->RxCommandCallback(itf, event);
+            instance->rxCommandCallback(itf, event);
         }
     }
 
     static void cdcacmLineStateChangedCallback(int itf, cdcacm_event_t *event) {
         if (instance) {
-            instance->LineStateChangedCallback(itf, event);
+            instance->lineStateChangedCallback(itf, event);
         }
     }
 };
