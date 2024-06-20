@@ -96,7 +96,7 @@ void DisplayEinkET013TT1::updateDisplay(DisplaySystem::UpdateType updateType, bo
     auto queue = DispatchGetUiQueue(false);
     if (mirrorToSerial) {
         log_i("Sending a bunch of bytes to serial!");
-        const uint8_t *buffer = (const uint8_t *)gfxCanvas_.getBuffer();
+        const auto *buffer = (const uint8_t *)gfxCanvas_.getBuffer();
         const size_t bufferSize = 8192;
         const size_t chunkSize = 64;
 
