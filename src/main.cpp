@@ -19,7 +19,6 @@
 #include "Misc/Battery.hpp"
 #include "Misc/BootError.hpp"
 #include "Misc/BootLoopDetection.hpp"
-#include "Misc/DebugCommand.hpp"
 #include "Misc/DirectCommand.hpp"
 #include "Misc/FactoryReset.hpp"
 #include "Misc/Platform.hpp"
@@ -120,7 +119,7 @@ void UIInnerLoop(RemoteCommand command) {
 // Task for all periodic things that need to run ~1Hz. Polling tasks should be grouped here so that
 // they all complete in a tight loop, thus maximizing sleep time.
 void PollingLoopTask(void *parameter) {
-    DebugCommand debugCommand([](const std::string &command) {
+    directCommand.addCommandHandler([](const std::string &command) {
         log_i("Received debug command: %s", command.c_str());
         if (command == "GRID") {
             DispatchGetUiQueue()->dispatch([]() {
@@ -184,23 +183,7 @@ void PollingLoopTask(void *parameter) {
 #if SIMULATOR
         vTaskDelay(pdMS_TO_TICKS(1000));
 #else
-        // Spend the rest of the time waiting for debug commands (that will probably never come)
-        uart_event_t event;
-        if (xQueueReceive(GetUartCommandQueue(), &event, pdMS_TO_TICKS(1000))) {
-            switch (event.type) {
-            case UART_DATA: {
-                uint8_t buf[256];
-                auto rxSize = uart_read_bytes(UART_NUM_0, buf, event.size, 0);
-                if (rxSize > 0) {
-                    debugCommand.addData(buf, rxSize);
-                }
-                break;
-            }
-            default:
-                log_w("Unhandled UART event: %d", event.type);
-                break;
-            }
-        }
+        vTaskDelay(pdMS_TO_TICKS(100));
 #endif
 
         // This happens after the delay, so that the first check can run with a faster fade.
