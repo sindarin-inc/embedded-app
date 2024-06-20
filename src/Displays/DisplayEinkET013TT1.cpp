@@ -95,15 +95,7 @@ void DisplayEinkET013TT1::updateDisplay(DisplaySystem::UpdateType updateType, bo
                                         ScreenSide screen, Rect altRect) {
     auto queue = DispatchGetUiQueue(false);
     if (mirrorToSerial) {
-        log_i("Sending a bunch of bytes to serial!");
-        const uint8_t *buffer = (const uint8_t *)gfxCanvas_.getBuffer();
-        const size_t bufferSize = 8192;
-        const size_t chunkSize = 64;
-
-        for (size_t i = 0; i < bufferSize; i += chunkSize) {
-            size_t bytesToSend = (i + chunkSize <= bufferSize) ? chunkSize : (bufferSize - i);
-            USBSerial::getInstance().txSendData(buffer + i, bytesToSend);
-        }
+        USBSerial::getInstance().txSendData((const uint8_t *)gfxCanvas_.getBuffer(), 8192);
     }
     if (queue == nullptr || !queue->isInQueue()) {
         log_w("updateDisplay called from outside the UI queue.");
