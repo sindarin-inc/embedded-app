@@ -182,8 +182,8 @@ public:
     auto forceOn() -> void { state_ = PowerState::ActiveForcedOn; }
     auto disableForceOn() -> void { state_ = PowerState::Active; }
 
-    auto disableLightSleep() -> void;
-    auto enableLightSleep() -> void;
+    auto debugDisableLightSleep() -> void;
+    auto debugEnableLightSleep() -> void;
 
     auto state() -> PowerState { return state_; }
 
@@ -255,6 +255,8 @@ protected:
     float lastMagAngle_ = 0;
 #if !DISABLE_POWER_MANAGEMENT
     esp_pm_config_t pmConfig_{};
+    esp_pm_lock_handle_t usbPowerLightSleepLock = nullptr;
+    esp_pm_lock_handle_t debugCommandLightSleepLock = nullptr;
 #endif
     void updateState();
 

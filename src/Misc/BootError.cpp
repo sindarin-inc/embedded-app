@@ -3,6 +3,7 @@
 #include <driver/gpio.h>
 #include <vector>
 
+#include "Misc/Dispatch.hpp"
 #include "Misc/Platform.hpp"
 #include "config.h"
 #include "sindarin-debug.h"
@@ -17,14 +18,16 @@ void BlinkBootErrors(const std::vector<BootError> &bootErrors) {
     // Blink out error codes:
     // TODO: How to cross-platfomr this?
     if (bootErrors.empty()) {
-        DigitalWrite(GREEN_LED, LED_ON);
-        Delay(100);
-        DigitalWrite(GREEN_LED, LED_OFF);
         log_i("Error-free boot!");
+        DispatchGetCore0BackgroundQueue()->dispatch([]() {
+            DigitalWrite(GREEN_LED, LED_ON);
+            Delay(100);
+            DigitalWrite(GREEN_LED, LED_OFF);
+        });
     } else {
         for (BootError error : bootErrors) {
-            Delay(1000);
             log_e("Blinking error code %d for %s", error.type, error.string().c_str());
+            Delay(1000);
             for (int i = 0; i < error.blinks(); i++) {
                 DigitalWrite(RED_LED, LED_ON);
                 Delay(200);

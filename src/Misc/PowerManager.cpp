@@ -202,6 +202,39 @@ auto PowerManager::inactivityTimeoutMs() -> int {
     }
 }
 
+auto pmLock(const char *name, esp_pm_lock_handle_t *lock) -> void {
+#if !DISABLE_POWER_MANAGEMENT
+    if (*lock == nullptr) {
+        auto err = esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, name, lock);
+        if (err != ESP_OK) {
+            log_e("Failed to create %s lock err: %s", name, esp_err_to_name(err));
+            return;
+        }
+        err = esp_pm_lock_acquire(*lock);
+        if (err != ESP_OK) {
+            log_e("Failed to acquire pm lock err: %s", esp_err_to_name(err));
+            return;
+        }
+    }
+#endif
+}
+
+auto pmUnlock(esp_pm_lock_handle_t *lock) -> void {
+#if !DISABLE_POWER_MANAGEMENT
+    if (*lock != nullptr) {
+        auto err = esp_pm_lock_release(*lock);
+        if (err != ESP_OK) {
+            log_e("Failed to release pm lock err: %s", esp_err_to_name(err));
+        }
+        err = esp_pm_lock_delete(*lock);
+        if (err != ESP_OK) {
+            log_e("Failed to delete pm lock err: %s", esp_err_to_name(err));
+        }
+        lock = nullptr;
+    }
+#endif
+}
+
 auto PowerManager::begin() -> esp_err_t {
 #if !SIMULATOR
     // If USB is connected, disable operation unless we've disabled this behavior
@@ -225,7 +258,11 @@ auto PowerManager::begin() -> esp_err_t {
 #if !DISABLE_POWER_MANAGEMENT
     pmConfig_.max_freq_mhz = CPU_FREQ_MHZ_HIGH;
     pmConfig_.min_freq_mhz = CPU_FREQ_MHZ_LOW;
-    pmConfig_.light_sleep_enable = !USBConnected();
+    pmConfig_.light_sleep_enable = true;
+
+    if (USBConnected()) {
+        pmLock("pm_usb", &usbPowerLightSleepLock);
+    }
     err = esp_pm_configure(&pmConfig_);
 
 #ifdef USB_CONNECTED_PIN
@@ -244,14 +281,14 @@ auto PowerManager::begin() -> esp_err_t {
                     }
                 }
                 // USB is connected so disable light sleep
-                disableLightSleep();
+                pmLock("pm_usb", &usbPowerLightSleepLock);
             } else { // !USBConnected()
                 if (state_ == PowerState::ActiveUSBCharging) {
                     log_i("USB disconnected, rebooting to Active");
                     reboot();
                 } else {
-                    // USB is disconnected so enable light sleep (if we didn't already reboot)
-                    enableLightSleep();
+                    // USB is disconnected so enable light sleep
+                    pmUnlock(&usbPowerLightSleepLock);
                 }
             }
         });
@@ -283,31 +320,15 @@ void PowerManager::powerOffInternal() {
     esp_deep_sleep_start();
 }
 
-auto PowerManager::disableLightSleep() -> void {
+auto PowerManager::debugDisableLightSleep() -> void {
 #if !DISABLE_POWER_MANAGEMENT
-    if (pmConfig_.light_sleep_enable == true) {
-        pmConfig_.light_sleep_enable = false;
-        auto err = esp_pm_configure(&pmConfig_);
-        if (err != ESP_OK) {
-            log_e("Failed to disable light sleep with err %s", esp_err_to_name(err));
-        } else {
-            log_d("Disabled light sleep");
-        }
-    }
+    pmLock("pm_debug", &debugCommandLightSleepLock);
 #endif
 }
 
-auto PowerManager::enableLightSleep() -> void {
+auto PowerManager::debugEnableLightSleep() -> void {
 #if !DISABLE_POWER_MANAGEMENT
-    if (pmConfig_.light_sleep_enable == false) {
-        pmConfig_.light_sleep_enable = true;
-        auto err = esp_pm_configure(&pmConfig_);
-        if (err != ESP_OK) {
-            log_e("Failed to enable light sleep with err %s", esp_err_to_name(err));
-        } else {
-            log_d("Enabled light sleep");
-        }
-    }
+    pmUnlock(&debugCommandLightSleepLock);
 #endif
 }
 

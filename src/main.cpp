@@ -135,7 +135,14 @@ void PollingLoopTask(void *parameter) {
         } else if (command == "BACK") {
             DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::BACK); });
         } else if (command == "SLEEPOFF") {
-            powerManager.disableLightSleep();
+            powerManager.debugDisableLightSleep();
+        } else if (command == "SLEEPON") {
+            powerManager.debugEnableLightSleep();
+        } else if (command == "LOCKS") {
+            auto err = esp_pm_dump_locks(stdout);
+            if (err != ESP_OK) {
+                log_e("esp_pm_dump_locks error: %s", esp_err_to_name(err));
+            }
         } else if (command == "ALLOWOFF") {
             AllowPowerOff();
         } else if (command == "UNPAIRPT") {
@@ -181,6 +188,25 @@ void PollingLoopTask(void *parameter) {
         // Run the power loop first so that we don't show a 0% battery reading
         powerManager.loop();
 
+#if !SIMULATOR
+        // Handle debug commands early so that we can avoid sleep if necessary
+        // Spend the rest of the time waiting for debug commands (that will probably never come)
+        uint8_t buf[256];
+
+        // There's not a queue-driven way to watch for things from the usb/jtag interface so we
+        // simply poll
+        auto rxSize = usb_serial_jtag_read_bytes(buf, sizeof(buf), 0);
+        if (rxSize > 0) {
+            log_i("Received %d bytes from USB", rxSize);
+            debugCommand.addData(buf, rxSize);
+        }
+        rxSize = uart_read_bytes(UART_NUM_0, buf, sizeof(buf), 0);
+        if (rxSize > 0) {
+            log_i("Received %d bytes from USB", rxSize);
+            debugCommand.addData(buf, rxSize);
+        }
+#endif
+
 #if USE_TURN_TOUCH_REMOTE
         // Skip scanning while WiFi is connected to avoid kicking off the WiFi connection
         if (!WiFi::getInstance().connected()) {
@@ -194,34 +220,7 @@ void PollingLoopTask(void *parameter) {
         BLEImprov::getInstance()->loop();
 #endif
 
-#if SIMULATOR
         vTaskDelay(pdMS_TO_TICKS(1000));
-#else
-        // Spend the rest of the time waiting for debug commands (that will probably never come)
-        uint8_t buf[256];
-        uart_event_t event;
-        if (xQueueReceive(GetUartCommandQueue(), &event, pdMS_TO_TICKS(1000))) {
-            switch (event.type) {
-            case UART_DATA: {
-                auto rxSize = uart_read_bytes(UART_NUM_0, buf, event.size, 0);
-                if (rxSize > 0) {
-                    debugCommand.addData(buf, rxSize);
-                }
-                break;
-            }
-            default:
-                log_w("Unhandled UART event: %d", event.type);
-                break;
-            }
-        }
-
-        // There's not a queue-driven way to watch for things from the usb/jtag interface so we
-        // simply poll
-        auto rxSize = usb_serial_jtag_read_bytes(buf, sizeof(buf), 0);
-        if (rxSize > 0) {
-            debugCommand.addData(buf, rxSize);
-        }
-#endif
 
         // This happens after the delay, so that the first check can run with a faster fade.
         lightingController.checkAmbientLight();
