@@ -15,6 +15,7 @@
 class Font {
 private:
     FT_Face face_;
+    FT_Face privateFace_;
 
     bool initialized_{false};
     FontData &fontData_;
@@ -45,17 +46,20 @@ private:
     inline auto getGlyphHorizontalMetrics(GlyphCode glyphCode, int16_t &xoff, int16_t &advance,
                                           int16_t &glyphWidth) -> bool {
 
-        int error = FT_Load_Glyph(face_,              /* handle to face object */
-                                  glyphCode,          /* glyph index           */
+        FT_Face theFace = (glyphCode >= 0x8000) ? privateFace_ : face_;
+        GlyphCode theGlyphCode = (glyphCode >= 0x8000) ? glyphCode - 0x8000 : glyphCode;
+
+        int error = FT_Load_Glyph(theFace,            /* handle to face object */
+                                  theGlyphCode,       /* glyph index           */
                                   FT_LOAD_NO_BITMAP); /* get only metrics      */
 
         if (error) {
             return false;
         }
 
-        xoff = face_->glyph->bitmap_left;
-        advance = face_->glyph->advance.x >> 6;
-        glyphWidth = face_->glyph->bitmap.width;
+        xoff = theFace->glyph->bitmap_left;
+        advance = theFace->glyph->advance.x >> 6;
+        glyphWidth = theFace->glyph->bitmap.width;
 
         return true;
     }
@@ -86,7 +90,7 @@ public:
                 FT_New_Memory_Face(fontData_.getLibrary(), (const FT_Byte *)(fontData_.getData()),
                                    fontData_.getDataSize(), 0, &face_);
             if (error) {
-                LOGE("The memory font format is unsupported or is broken (%d).", error);
+                LOGE("The memory of the main font format is unsupported or is broken (%d).", error);
             } else {
                 int error = FT_Set_Char_Size(face_,      // handle to face object
                                              0,          // char_width in 1/64th of points
@@ -96,7 +100,6 @@ public:
                 if (error) {
                     LOGE("Unable to set font size.");
                 } else {
-                    unknownGlyphCode_ = translate(UNKNOWN_CODEPOINT);
 
                     GlyphCode glyphCode = FT_Get_Char_Index(face_, ' ');
 
@@ -107,7 +110,26 @@ public:
                         LOGE("Unable to load glyph for space char.");
                     } else {
                         spaceSize_ = static_cast<FIX16>(face_->glyph->advance.x);
-                        initialized_ = true;
+                        error = FT_New_Memory_Face(
+                            fontData_.getLibrary(), (const FT_Byte *)(fontData_.getPrivateData()),
+                            fontData_.getPrivateDataSize(), 0, &privateFace_);
+                        if (error) {
+                            LOGE("The memory of the private font format is unsupported or is "
+                                 "broken (%d).",
+                                 error);
+                        } else {
+                            error = FT_Set_Char_Size(privateFace_, // handle to face object
+                                                     0,            // char_width in 1/64th of points
+                                                     size_ * 64, // char_height in 1/64th of points
+                                                     150,        // horizontal device resolution
+                                                     150);       // vertical device resolution
+                            if (error) {
+                                LOGE("Unable to set private font size.");
+                            }
+
+                            unknownGlyphCode_ = translate(UNKNOWN_CODEPOINT);
+                            initialized_ = true;
+                        }
                     }
                 }
             }

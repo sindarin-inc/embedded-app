@@ -27,14 +27,10 @@ std::optional<U> binarySearch(const std::array<std::pair<T, U>, N> &arr, const T
     return std::nullopt; // Value not found
 }
 
-auto TTFNotoSansLight::ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2, FIX16 *kern) const
-    -> bool {
+auto TTFNotoSansLight::ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2,
+                               FIX16 *kern) const -> bool {
 
     *kern = 0;
-
-    if ((glyphCode1 >= notoSansLight.data_.size()) || (*glyphCode2 >= notoSansLight.data_.size())) {
-        return false;
-    }
 
     // If there is a ligature defined, set it in glyphCode2 and return true such that
     // this method will be called again. If no ligature continue below for kening checks.
@@ -44,7 +40,7 @@ auto TTFNotoSansLight::ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2
     auto resLigs = binarySearch(notoSansLight.ligatures_, key);
 
     if (resLigs.has_value()) {
-        LOGW("====> Ligature found: (%d, %d) -> %d.", glyphCode1, *glyphCode2, resLigs.value());
+        // LOGW("====> Ligature found: (%d, %d) -> %d.", glyphCode1, *glyphCode2, resLigs.value());
         *glyphCode2 = resLigs.value();
         return true;
     }
@@ -61,8 +57,9 @@ auto TTFNotoSansLight::ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2
         auto value = notoSansLight.mKerns_[resDef1.value().first][resDef2.value().second];
         if (value != 0) {
             *kern = value;
-            LOGW("Class kern for %d (%d) and %d (%d): %d (%d)", glyphCode1, resDef1.value().first,
-                 *glyphCode2, resDef2.value().second, value, *kern);
+            // LOGW("Class kern for %d (%d) and %d (%d): %d (%d)", glyphCode1,
+            // resDef1.value().first,
+            //      *glyphCode2, resDef2.value().second, value, *kern);
         }
         return false;
     }
@@ -73,7 +70,7 @@ auto TTFNotoSansLight::ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2
 
     if (res2.has_value()) {
         *kern = res2.value();
-        LOGW("Kern value: %d -> %d", res2.value(), *kern);
+        // LOGW("Kern value: %d -> %d", res2.value(), *kern);
     }
 
     return false;

@@ -23,8 +23,16 @@
     if ((codePoint == ' ') || (codePoint == 0xA0) || (codePoint == 0x202F) ||
         ((codePoint >= 0x2000) && (codePoint <= 0x200F))) {
         glyphCode = SPACE_CODE;
+    } else if ((codePoint >= 0xE000) && (codePoint <= 0xF8FF)) {
+        // Those are codepoints in the private space. Their index starts at 0x8000.
+        glyphCode = FT_Get_Char_Index(privateFace_, codePoint) + 0x8000;
+        // LOGW("glyphCode for CodePoint U+%05" PRIx32 ": %" PRIu16, codePoint, glyphCode);
     } else {
         glyphCode = FT_Get_Char_Index(face_, codePoint);
+    }
+
+    if (glyphCode == 0) {
+        glyphCode = unknownGlyphCode_;
     }
 
     // The following test could generates many entries in the log, depending on the quantity of
@@ -37,6 +45,13 @@
 }
 
 auto Font::ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2, FIX16 *kern) const -> bool {
+
+    // Is not checking for private font
+
+    if ((glyphCode1 >= face_->num_glyphs) || (*glyphCode2 >= face_->num_glyphs)) {
+        return false;
+    }
+
     bool res = fontData_.ligKern(glyphCode1, glyphCode2, kern);
 
     if (*kern != 0) {
@@ -173,45 +188,48 @@ auto Font::getGlyph(GlyphCode glyphCode, Glyph &appGlyph, bool loadBitmap, bool 
 
     int error;
 
+    FT_Face theFace = (glyphCode >= 0x8000) ? privateFace_ : face_;
+    GlyphCode theGlyphCode = (glyphCode >= 0x8000) ? glyphCode - 0x8000 : glyphCode;
+
     if (caching) {
         appGlyph.clear();
     }
 
-    if (glyphCode == SPACE_CODE) { // send as a space character
+    if (theGlyphCode == SPACE_CODE) { // send as a space character
         lastGlyphWidth_ = 0;
         appGlyph.pointSize = size_;
         appGlyph.metrics = {.xoff = 0,
                             .yoff = 0,
                             .descent = 0,
                             .advance = spaceSize_,
-                            .lineHeight = static_cast<int16_t>(face_->size->metrics.height >> 6)};
+                            .lineHeight = static_cast<int16_t>(theFace->size->metrics.height >> 6)};
         return true;
     }
 
-    error = FT_Load_Glyph(face_,     /* handle to face object */
-                          glyphCode, /* glyph index           */
+    error = FT_Load_Glyph(theFace,      /* handle to face object */
+                          theGlyphCode, /* glyph index           */
                           loadBitmap ? FT_LOAD_DEFAULT : FT_LOAD_NO_BITMAP); /* load flags */
     if (error) {
-        LOGE("Unable to load glyph for charcode: %d", glyphCode);
+        LOGE("Unable to load glyph for charcode: %d", theGlyphCode);
         return false;
     }
 
-    FT_GlyphSlot slot = face_->glyph;
+    FT_GlyphSlot slot = theFace->glyph;
 
     bool toHeightBit = screenResolution_ == font_defs::PixelResolution::EIGHT_BITS;
 
     if (loadBitmap) {
-        if (face_->glyph->format != FT_GLYPH_FORMAT_BITMAP) {
+        if (theFace->glyph->format != FT_GLYPH_FORMAT_BITMAP) {
             if (fontResolution_ == font_defs::PixelResolution::ONE_BIT) {
-                error = FT_Render_Glyph(face_->glyph,         // glyph slot
+                error = FT_Render_Glyph(theFace->glyph,       // glyph slot
                                         FT_RENDER_MODE_MONO); // render mode
             } else {
-                error = FT_Render_Glyph(face_->glyph,           // glyph slot
+                error = FT_Render_Glyph(theFace->glyph,         // glyph slot
                                         FT_RENDER_MODE_NORMAL); // render mode
             }
 
             if (error) {
-                LOGE("Unable to render glyph for charcode: %d error: %d", glyphCode, error);
+                LOGE("Unable to render glyph for charcode: %d error: %d", theGlyphCode, error);
                 return false;
             }
         }
@@ -254,7 +272,7 @@ auto Font::getGlyph(GlyphCode glyphCode, Glyph &appGlyph, bool loadBitmap, bool 
                                                             ? slot->bitmap.rows + slot->bitmap_top
                                                             : 0),
                         .advance = static_cast<FIX16>(slot->advance.x),
-                        .lineHeight = static_cast<int16_t>(face_->size->metrics.height >> 6)};
+                        .lineHeight = static_cast<int16_t>(theFace->size->metrics.height >> 6)};
     return true;
 }
 
@@ -262,25 +280,28 @@ auto Font::getGlyphMetrics(GlyphCode glyphCode, Glyph &appGlyph) -> bool {
 
     appGlyph.clear();
 
-    if (glyphCode == SPACE_CODE) { // send as a space character
+    FT_Face theFace = (glyphCode >= 0x8000) ? privateFace_ : face_;
+    GlyphCode theGlyphCode = (glyphCode >= 0x8000) ? glyphCode - 0x8000 : glyphCode;
+
+    if (theGlyphCode == SPACE_CODE) { // send as a space character
         appGlyph.pointSize = size_;
         appGlyph.metrics = {.xoff = 0,
                             .yoff = 0,
                             .descent = 0,
                             .advance = spaceSize_,
-                            .lineHeight = static_cast<int16_t>(face_->size->metrics.height >> 6)};
+                            .lineHeight = static_cast<int16_t>(theFace->size->metrics.height >> 6)};
         return true;
     }
 
-    auto error = FT_Load_Glyph(face_,              /* handle to face object */
-                               glyphCode,          /* glyph index           */
+    auto error = FT_Load_Glyph(theFace,            /* handle to face object */
+                               theGlyphCode,       /* glyph index           */
                                FT_LOAD_NO_BITMAP); /* load flags */
     if (error) {
-        LOGE("Unable to load glyph for charcode: %d", glyphCode);
+        LOGE("Unable to load glyph for charcode: %d", theGlyphCode);
         return false;
     }
 
-    FT_GlyphSlot slot = face_->glyph;
+    FT_GlyphSlot slot = theFace->glyph;
 
     appGlyph.bitmap.dim = Dim(slot->bitmap.width, slot->bitmap.rows);
 
@@ -290,7 +311,7 @@ auto Font::getGlyphMetrics(GlyphCode glyphCode, Glyph &appGlyph) -> bool {
                                                             ? slot->bitmap.rows + slot->bitmap_top
                                                             : 0),
                         .advance = static_cast<FIX16>(slot->advance.x),
-                        .lineHeight = static_cast<int16_t>(face_->size->metrics.height >> 6)};
+                        .lineHeight = static_cast<int16_t>(theFace->size->metrics.height >> 6)};
     return true;
 }
 
