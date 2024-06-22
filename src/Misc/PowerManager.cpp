@@ -33,7 +33,7 @@ extern const uint8_t ULP_MAIN_BIN_END[] asm("_binary_ulp_src_bin_end");
 extern PowerManager powerManager;
 
 #if !DISABLE_POWER_MANAGEMENT
-auto pmLock(const char *name, esp_pm_lock_handle_t *lock) -> void {
+auto PmLock(const char *name, esp_pm_lock_handle_t *lock) -> void {
     if (*lock == nullptr) {
         auto err = esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, name, lock);
         if (err != ESP_OK) {
@@ -48,7 +48,7 @@ auto pmLock(const char *name, esp_pm_lock_handle_t *lock) -> void {
     }
 }
 
-auto pmUnlock(esp_pm_lock_handle_t *lock) -> void {
+auto PmUnlock(esp_pm_lock_handle_t *lock) -> void {
     if (*lock != nullptr) {
         auto err = esp_pm_lock_release(*lock);
         if (err != ESP_OK) {
@@ -259,7 +259,7 @@ auto PowerManager::begin() -> esp_err_t {
     pmConfig_.light_sleep_enable = true;
 
     if (USBConnected()) {
-        pmLock("pm_usb", &usbPowerLightSleepLock);
+        PmLock("pm_usb", &usbPowerLightSleepLock_);
     }
     err = esp_pm_configure(&pmConfig_);
 
@@ -280,7 +280,7 @@ auto PowerManager::begin() -> esp_err_t {
                 }
                 // USB is connected so disable light sleep
 #if !DISABLE_POWER_MANAGEMENT
-                pmLock("pm_usb", &usbPowerLightSleepLock);
+                PmLock("pm_usb", &usbPowerLightSleepLock_);
 #endif
             } else { // !USBConnected()
                 if (state_ == PowerState::ActiveUSBCharging) {
@@ -289,7 +289,7 @@ auto PowerManager::begin() -> esp_err_t {
                 } else {
                     // USB is disconnected so enable light sleep
 #if !DISABLE_POWER_MANAGEMENT
-                    pmUnlock(&usbPowerLightSleepLock);
+                    PmUnlock(&usbPowerLightSleepLock_);
 #endif
                 }
             }
@@ -324,13 +324,13 @@ void PowerManager::powerOffInternal() {
 
 auto PowerManager::debugDisableLightSleep() -> void {
 #if !DISABLE_POWER_MANAGEMENT
-    pmLock("pm_debug", &debugCommandLightSleepLock);
+    PmLock("pm_debug", &debugCommandLightSleepLock_);
 #endif
 }
 
 auto PowerManager::debugEnableLightSleep() -> void {
 #if !DISABLE_POWER_MANAGEMENT
-    pmUnlock(&debugCommandLightSleepLock);
+    PmUnlock(&debugCommandLightSleepLock_);
 #endif
 }
 

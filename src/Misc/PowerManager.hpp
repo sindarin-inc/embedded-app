@@ -255,8 +255,8 @@ protected:
     float lastMagAngle_ = 0;
 #if !DISABLE_POWER_MANAGEMENT
     esp_pm_config_t pmConfig_{};
-    esp_pm_lock_handle_t usbPowerLightSleepLock = nullptr;
-    esp_pm_lock_handle_t debugCommandLightSleepLock = nullptr;
+    esp_pm_lock_handle_t usbPowerLightSleepLock_ = nullptr;
+    esp_pm_lock_handle_t debugCommandLightSleepLock_ = nullptr;
 #endif
     void updateState();
 
