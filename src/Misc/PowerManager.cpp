@@ -32,6 +32,37 @@ extern const uint8_t ULP_MAIN_BIN_END[] asm("_binary_ulp_src_bin_end");
 
 extern PowerManager powerManager;
 
+#if !DISABLE_POWER_MANAGEMENT
+auto pmLock(const char *name, esp_pm_lock_handle_t *lock) -> void {
+    if (*lock == nullptr) {
+        auto err = esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, name, lock);
+        if (err != ESP_OK) {
+            log_e("Failed to create %s lock err: %s", name, esp_err_to_name(err));
+            return;
+        }
+        err = esp_pm_lock_acquire(*lock);
+        if (err != ESP_OK) {
+            log_e("Failed to acquire pm lock err: %s", esp_err_to_name(err));
+            return;
+        }
+    }
+}
+
+auto pmUnlock(esp_pm_lock_handle_t *lock) -> void {
+    if (*lock != nullptr) {
+        auto err = esp_pm_lock_release(*lock);
+        if (err != ESP_OK) {
+            log_e("Failed to release pm lock err: %s", esp_err_to_name(err));
+        }
+        err = esp_pm_lock_delete(*lock);
+        if (err != ESP_OK) {
+            log_e("Failed to delete pm lock err: %s", esp_err_to_name(err));
+        }
+        lock = nullptr;
+    }
+}
+#endif
+
 auto PowerManager::getInstance() -> PowerManager & { return powerManager; }
 
 void PowerManager::wakeupCheck(SolClock &clock) {
@@ -202,39 +233,6 @@ auto PowerManager::inactivityTimeoutMs() -> int {
     }
 }
 
-auto pmLock(const char *name, esp_pm_lock_handle_t *lock) -> void {
-#if !DISABLE_POWER_MANAGEMENT
-    if (*lock == nullptr) {
-        auto err = esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, name, lock);
-        if (err != ESP_OK) {
-            log_e("Failed to create %s lock err: %s", name, esp_err_to_name(err));
-            return;
-        }
-        err = esp_pm_lock_acquire(*lock);
-        if (err != ESP_OK) {
-            log_e("Failed to acquire pm lock err: %s", esp_err_to_name(err));
-            return;
-        }
-    }
-#endif
-}
-
-auto pmUnlock(esp_pm_lock_handle_t *lock) -> void {
-#if !DISABLE_POWER_MANAGEMENT
-    if (*lock != nullptr) {
-        auto err = esp_pm_lock_release(*lock);
-        if (err != ESP_OK) {
-            log_e("Failed to release pm lock err: %s", esp_err_to_name(err));
-        }
-        err = esp_pm_lock_delete(*lock);
-        if (err != ESP_OK) {
-            log_e("Failed to delete pm lock err: %s", esp_err_to_name(err));
-        }
-        lock = nullptr;
-    }
-#endif
-}
-
 auto PowerManager::begin() -> esp_err_t {
 #if !SIMULATOR
     // If USB is connected, disable operation unless we've disabled this behavior
@@ -281,14 +279,18 @@ auto PowerManager::begin() -> esp_err_t {
                     }
                 }
                 // USB is connected so disable light sleep
+#if !DISABLE_POWER_MANAGEMENT
                 pmLock("pm_usb", &usbPowerLightSleepLock);
+#endif
             } else { // !USBConnected()
                 if (state_ == PowerState::ActiveUSBCharging) {
                     log_i("USB disconnected, rebooting to Active");
                     reboot();
                 } else {
                     // USB is disconnected so enable light sleep
+#if !DISABLE_POWER_MANAGEMENT
                     pmUnlock(&usbPowerLightSleepLock);
+#endif
                 }
             }
         });

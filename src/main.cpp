@@ -139,10 +139,12 @@ void PollingLoopTask(void *parameter) {
         } else if (command == "SLEEPON") {
             powerManager.debugEnableLightSleep();
         } else if (command == "LOCKS") {
+#if !DISABLE_POWER_MANAGEMENT
             auto err = esp_pm_dump_locks(stdout);
             if (err != ESP_OK) {
                 log_e("esp_pm_dump_locks error: %s", esp_err_to_name(err));
             }
+#endif
         } else if (command == "ALLOWOFF") {
             AllowPowerOff();
         } else if (command == "UNPAIRPT") {
