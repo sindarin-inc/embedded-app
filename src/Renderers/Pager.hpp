@@ -65,8 +65,8 @@ private:
     auto getLineSegment(LineInfo &lineInfo, Idx tokenIdx, Idx endTokenIdx, Line &line) const -> Idx;
     void drawSingleLine(LineInfo &lineInfo, int yPos) const;
 
-    auto computeDarkPercent(const uint8_t *bitmap, uint16_t width,
-                            uint16_t height) const -> uint8_t;
+    auto computeDarkPercent(const uint8_t *bitmap, uint16_t width, uint16_t height) const
+        -> uint8_t;
     void newLine(uint16_t height);
 
 public:

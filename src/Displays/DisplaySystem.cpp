@@ -148,8 +148,8 @@ auto DisplaySystem::getFont() -> Font * { return font_; }
 // Eventually, we could add an optional argument at the end to wrap the text
 // and return whether the text was wrapped or not.
 // But that's for another day.
-auto DisplaySystem::drawSingleLineOfText(const std::string &line, int x, int y,
-                                         bool inverted) -> int {
+auto DisplaySystem::drawSingleLineOfText(const std::string &line, int x, int y, bool inverted)
+    -> int {
     int newXPos = 0;
     if (font_ != nullptr) {
         gfxClass_->startWrite();

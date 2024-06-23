@@ -350,8 +350,8 @@ void Pager::drawSingleLine(LineInfo &lineInfo, int yPos) const {
     }
 }
 
-auto Pager::computeDarkPercent(const uint8_t *bitmap, uint16_t width,
-                               uint16_t height) const -> uint8_t {
+auto Pager::computeDarkPercent(const uint8_t *bitmap, uint16_t width, uint16_t height) const
+    -> uint8_t {
     static uint8_t pixelsDensity[256] = {
         0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4, 1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3,
         4, 4, 5, 1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5, 2, 3, 3, 4, 3, 4, 4, 5, 3, 4,

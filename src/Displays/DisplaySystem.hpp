@@ -158,7 +158,7 @@ public:
     [[nodiscard]] auto getLineSpacing() const -> int { return lineSpacing_; }
     void setLineSpacing(int newSpacing) { lineSpacing_ = newSpacing; }
 
-    virtual void clearDisplay() {};
+    virtual void clearDisplay(){};
     virtual void clearFrameBuffer() { fillScreen(bg); };
 
     void forceDontChangeRefreshType() { forceRefreshType_ = true; }
