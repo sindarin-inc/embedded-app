@@ -280,9 +280,17 @@ auto Pager::getLineSegment(LineInfo &lineInfo, Idx nextTokenIdx, Idx endTokenIdx
     int segmentLength = 0;
 
     Idx tokenIdx = nextTokenIdx;
+    bool first = true;
     while (tokenIdx != endTokenIdx) {
 
         auto tokenId = tokens_[tokenIdx].tokenId;
+
+        if (!first &&
+            (static_cast<uint16_t>(tokenId) & (static_cast<uint16_t>(TokenId::SUBTEXT) |
+                                               static_cast<uint16_t>(TokenId::SUPTEXT))) != 0) {
+            break;
+        }
+
         if ((static_cast<uint16_t>(tokenId) & (static_cast<uint16_t>(TokenId::NEWLINE) |
                                                static_cast<uint16_t>(TokenId::ENDPARAGRAPH))) ==
             0) {
@@ -302,10 +310,13 @@ auto Pager::getLineSegment(LineInfo &lineInfo, Idx nextTokenIdx, Idx endTokenIdx
 
         tokens_.nextTokenIdx(tokenIdx);
 
-        if ((static_cast<uint16_t>(tokenId) & (static_cast<uint16_t>(TokenId::SUBTEXT) |
+        if (first &&
+            (static_cast<uint16_t>(tokenId) & (static_cast<uint16_t>(TokenId::SUBTEXT) |
                                                static_cast<uint16_t>(TokenId::SUPTEXT))) != 0) {
             break;
         }
+
+        first = false;
     }
 
     lineSegment[lineIdx] = 0;
@@ -331,11 +342,9 @@ void Pager::drawSingleLine(LineInfo &lineInfo, int yPos) const {
         int theYPos = yPos;
 
         if (tokenId == TokenId::SUBTEXT) {
-            theYPos -= 3;
-            LOGW("SUBTEXT!!!");
-        } else if (tokenId == TokenId::SUPTEXT) {
             theYPos += 3;
-            LOGW("SUPTEXT!!!");
+        } else if (tokenId == TokenId::SUPTEXT) {
+            theYPos -= 3;
         }
 
         display_.drawSingleLineOfText(lineSegment.data(), xPos, theYPos);
