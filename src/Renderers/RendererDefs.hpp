@@ -94,6 +94,7 @@ static constexpr uint16_t LINES_SIZE = 36;
 static constexpr uint16_t PAGE_INDEX_SIZE = 500;
 
 static constexpr uint32_t END_OFFSET = 999999999U;
+
 // NOTE:
 //
 // In the renderer class definitions:
@@ -110,29 +111,32 @@ enum class TokenId : uint16_t {
     ITEXT = 1 << 1,   // Indent *next* lines using this token width
     HTEXT = 1 << 2,   // Start of a <H1>..<h6> header tag
     NTEXT = 1 << 3,   // Text that is *NOT* in the pool
-    NEWLINE = 1 << 4, // Full line vertical space. Break lines
-    ENDPARAGRAPH = 1 << 5, // After paragraph vertical space
-    HYPHEN = 1 << 6,       // ASCII hyphen "-"
-    ENDASH = 1 << 7,       // Unicode En Dash (U+2013) "–"
-    EMDASH = 1 << 8,       // Unicode Em Dash (U+2014) "—"
-    PICTURE = 1 << 9,      // Whole screen picture
+    SUPTEXT = 1 << 4, // <sup>...</sup> support
+    SUBTEXT = 1 << 5, // <sub>..</sub> support
+    NEWLINE = 1 << 6, // Full line vertical space. Break lines
+    ENDPARAGRAPH = 1 << 7, // After paragraph vertical space
+    HYPHEN = 1 << 8,       // ASCII hyphen "-"
+    ENDASH = 1 << 9,       // Unicode En Dash (U+2013) "–"
+    EMDASH = 1 << 10,      // Unicode Em Dash (U+2014) "—"
+    PICTURE = 1 << 11,     // Whole screen picture
     EPICTURE =
-        1 << 10,      // Embedded in page picture (between paragraphs) More than one can be present
-    HRULE = 1 << 11,  // Horizontal line
-    BTABLE = 1 << 12, // Beginning of a table
-    ETABLE = 1 << 13  // End of table
+        1 << 12,      // Embedded in page picture (between paragraphs) More than one can be present
+    HRULE = 1 << 13,  // Horizontal line
+    BTABLE = 1 << 14, // Beginning of a table
+    ETABLE = 1 << 15  // End of table
 };
 
 #if REND_DEBUGGING
-static const char *TokenIdStr[] = {"TEXT",    "ITEXT",        "HTEXT",    "NTEXT",
-                                   "NEWLINE", "ENDPARAGRAPH", "HYPHEN",   "ENDASH",
-                                   "EMDASH",  "PICTURE",      "EPICTURE", "HRULE"};
+static const char *TokenIdStr[] = {
+    "TEXT",   "ITEXT",  "HTEXT",  "NTEXT",   "SUPTEXT",  "SUBTEXT", "NEWLINE", "ENDPARAGRAPH",
+    "HYPHEN", "ENDASH", "EMDASH", "PICTURE", "EPICTURE", "HRULE",   "BTABLE",  "ËTABLE"};
 #endif
 
 // BitMask of all token ids that are using the pool space
 static const uint16_t POOL_TOKENS =
     static_cast<uint16_t>(TokenId::TEXT) | static_cast<uint16_t>(TokenId::ITEXT) |
-    static_cast<uint16_t>(TokenId::HTEXT) | static_cast<uint16_t>(TokenId::PICTURE) |
+    static_cast<uint16_t>(TokenId::HTEXT) | static_cast<uint16_t>(TokenId::SUBTEXT) |
+    static_cast<uint16_t>(TokenId::SUPTEXT) | static_cast<uint16_t>(TokenId::PICTURE) |
     static_cast<uint16_t>(TokenId::EPICTURE);
 #pragma pack(push, 1)
 

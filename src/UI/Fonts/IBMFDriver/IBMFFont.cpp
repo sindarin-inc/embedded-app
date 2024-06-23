@@ -53,13 +53,16 @@ auto Font::ligKernUTF8Map(const std::string &line, LigKernMappingHandler handler
     }
 }
 
-void Font::drawSingleLineOfText(ibmf_defs::Bitmap &canvas, ibmf_defs::Pos pos,
-                                const std::string &line, bool inverted) const {
+auto Font::drawSingleLineOfText(ibmf_defs::Bitmap &canvas, ibmf_defs::Pos pos,
+                                const std::string &line, bool inverted) const -> int {
+
+    ibmf_defs::Pos atPos = pos;
+
     if constexpr (IBMF_TRACING) {
         LOGD("drawSingleLineOfText()");
     }
+
     if (isInitialized()) {
-        ibmf_defs::Pos atPos = pos;
         Glyph glyph{};
 
         // We set here the canvas pitch value, as there is still some definitions required at the
@@ -95,6 +98,8 @@ void Font::drawSingleLineOfText(ibmf_defs::Bitmap &canvas, ibmf_defs::Pos pos,
             }
         });
     }
+
+    return atPos.x;
 }
 
 auto Font::getTextSize(const std::string &buffer) -> ibmf_defs::Dim {

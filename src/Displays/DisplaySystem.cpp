@@ -148,17 +148,21 @@ auto DisplaySystem::getFont() -> Font * { return font_; }
 // Eventually, we could add an optional argument at the end to wrap the text
 // and return whether the text was wrapped or not.
 // But that's for another day.
-void DisplaySystem::drawSingleLineOfText(const std::string &line, int x, int y, bool inverted) {
+auto DisplaySystem::drawSingleLineOfText(const std::string &line, int x, int y,
+                                         bool inverted) -> int {
+    int newXPos = 0;
     if (font_ != nullptr) {
         gfxClass_->startWrite();
         font_defs::Bitmap canvas{};
         canvas.pixels = canvasBuffer_;
         canvas.dim = font_defs::Dim(canvasWidth_, canvasHeight_);
-        font_->drawSingleLineOfText(
+        newXPos = font_->drawSingleLineOfText(
             canvas, Pos(xOffset(x), yOffset(y + getTextHeight() - lineSpacing_ - 3)), line,
             inverted ? !invertedDisplay_ : invertedDisplay_);
         gfxClass_->endWrite();
     }
+
+    return newXPos - boundingBox_.x;
 }
 
 void DisplaySystem::drawSingleLineOfCenteredText(const std::string &line) {

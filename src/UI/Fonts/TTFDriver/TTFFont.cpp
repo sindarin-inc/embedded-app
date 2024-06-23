@@ -363,13 +363,13 @@ auto Font::ligKernUTF8Map(const std::string &line, LigKernMappingHandler handler
     }
 }
 
-void Font::drawSingleLineOfText(font_defs::Bitmap &canvas, font_defs::Pos pos,
-                                const std::string &line, bool inverted) {
+auto Font::drawSingleLineOfText(font_defs::Bitmap &canvas, font_defs::Pos pos,
+                                const std::string &line, bool inverted) -> int {
+    font_defs::Pos atPos = pos;
     if constexpr (TTF_TRACING) {
         LOGD("drawSingleLineOfText()");
     }
     if (isInitialized()) {
-        font_defs::Pos atPos = pos;
         Glyph glyph{};
 
         // We set here the canvas pitch value, as there is still some definitions required at
@@ -403,6 +403,8 @@ void Font::drawSingleLineOfText(font_defs::Bitmap &canvas, font_defs::Pos pos,
             }
         });
     }
+
+    return atPos.x;
 }
 
 auto Font::getTextSize(const std::string &buffer) -> font_defs::Dim {

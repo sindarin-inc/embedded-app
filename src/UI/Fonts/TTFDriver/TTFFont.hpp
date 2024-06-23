@@ -167,8 +167,8 @@ public:
 
     auto translate(char32_t codePoint) const -> GlyphCode;
 
-    void drawSingleLineOfText(font_defs::Bitmap &canvas, font_defs::Pos pos,
-                              const std::string &line, bool inverted);
+    auto drawSingleLineOfText(font_defs::Bitmap &canvas, font_defs::Pos pos,
+                              const std::string &line, bool inverted) -> int;
     auto getTextSize(const std::string &buffer) -> font_defs::Dim;
     auto getTextWidth(const std::string &buffer) -> int;
 

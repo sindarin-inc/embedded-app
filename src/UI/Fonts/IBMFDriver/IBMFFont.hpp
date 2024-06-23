@@ -80,8 +80,8 @@ public:
                                : 0;
     }
 
-    void drawSingleLineOfText(ibmf_defs::Bitmap &canvas, ibmf_defs::Pos pos,
-                              const std::string &line, bool inverted) const;
+    auto drawSingleLineOfText(ibmf_defs::Bitmap &canvas, ibmf_defs::Pos pos,
+                              const std::string &line, bool inverted) const -> int;
     auto getTextSize(const std::string &buffer) -> ibmf_defs::Dim;
     auto getTextWidth(const std::string &buffer) -> int;
 

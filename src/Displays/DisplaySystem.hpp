@@ -158,7 +158,7 @@ public:
     [[nodiscard]] auto getLineSpacing() const -> int { return lineSpacing_; }
     void setLineSpacing(int newSpacing) { lineSpacing_ = newSpacing; }
 
-    virtual void clearDisplay(){};
+    virtual void clearDisplay() {};
     virtual void clearFrameBuffer() { fillScreen(bg); };
 
     void forceDontChangeRefreshType() { forceRefreshType_ = true; }
@@ -171,7 +171,7 @@ public:
 
     // MARK: - Text rendering code
     auto getFont() -> Font *;
-    void drawSingleLineOfText(const std::string &line, int x, int y, bool inverted = false);
+    auto drawSingleLineOfText(const std::string &line, int x, int y, bool inverted = false) -> int;
     void drawSingleLineOfCenteredText(const std::string &line);
     void getTextSize(const std::string &buffer, uint16_t *w, uint16_t *h);
     auto getTextHeight() -> int;
