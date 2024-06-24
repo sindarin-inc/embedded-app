@@ -148,9 +148,11 @@ auto DisplaySystem::getFont() -> Font * { return font_; }
 // Eventually, we could add an optional argument at the end to wrap the text
 // and return whether the text was wrapped or not.
 // But that's for another day.
-auto DisplaySystem::drawSingleLineOfText(const std::string &line, int x, int y, bool inverted)
-    -> int {
-    int newXPos = 0;
+//
+// Returns the x position at the end of string, without the bounding box offset.
+auto DisplaySystem::drawSingleLineOfText(const std::string &line, int x, int y,
+                                         bool inverted) -> int {
+    int newXPos = boundingBox_.x;
     if (font_ != nullptr) {
         gfxClass_->startWrite();
         font_defs::Bitmap canvas{};

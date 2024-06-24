@@ -363,6 +363,7 @@ auto Font::ligKernUTF8Map(const std::string &line, LigKernMappingHandler handler
     }
 }
 
+// Returns the x position at the end of string
 auto Font::drawSingleLineOfText(font_defs::Bitmap &canvas, font_defs::Pos pos,
                                 const std::string &line, bool inverted) -> int {
     font_defs::Pos atPos = pos;

@@ -53,6 +53,7 @@ auto Font::ligKernUTF8Map(const std::string &line, LigKernMappingHandler handler
     }
 }
 
+// Returns the x position at the end of string
 auto Font::drawSingleLineOfText(ibmf_defs::Bitmap &canvas, ibmf_defs::Pos pos,
                                 const std::string &line, bool inverted) const -> int {
 
