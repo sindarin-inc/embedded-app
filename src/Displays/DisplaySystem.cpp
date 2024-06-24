@@ -150,8 +150,8 @@ auto DisplaySystem::getFont() -> Font * { return font_; }
 // But that's for another day.
 //
 // Returns the x position at the end of string, without the bounding box offset.
-auto DisplaySystem::drawSingleLineOfText(const std::string &line, int x, int y,
-                                         bool inverted) -> int {
+auto DisplaySystem::drawSingleLineOfText(const std::string &line, int x, int y, bool inverted)
+    -> int {
     int newXPos = boundingBox_.x;
     if (font_ != nullptr) {
         gfxClass_->startWrite();
