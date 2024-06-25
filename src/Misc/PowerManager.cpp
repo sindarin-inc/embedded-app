@@ -35,6 +35,37 @@ extern const uint8_t ULP_MAIN_BIN_END[] asm("_binary_ulp_src_bin_end");
 
 extern PowerManager powerManager;
 
+#if !DISABLE_POWER_MANAGEMENT
+auto PmLock(const char *name, esp_pm_lock_handle_t *lock) -> void {
+    if (*lock == nullptr) {
+        auto err = esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, name, lock);
+        if (err != ESP_OK) {
+            log_e("Failed to create %s lock err: %s", name, esp_err_to_name(err));
+            return;
+        }
+        err = esp_pm_lock_acquire(*lock);
+        if (err != ESP_OK) {
+            log_e("Failed to acquire pm lock err: %s", esp_err_to_name(err));
+            return;
+        }
+    }
+}
+
+auto PmUnlock(esp_pm_lock_handle_t *lock) -> void {
+    if (*lock != nullptr) {
+        auto err = esp_pm_lock_release(*lock);
+        if (err != ESP_OK) {
+            log_e("Failed to release pm lock err: %s", esp_err_to_name(err));
+        }
+        err = esp_pm_lock_delete(*lock);
+        if (err != ESP_OK) {
+            log_e("Failed to delete pm lock err: %s", esp_err_to_name(err));
+        }
+        lock = nullptr;
+    }
+}
+#endif
+
 auto PowerManager::getInstance() -> PowerManager & { return powerManager; }
 
 void PowerManager::wakeupCheck(SolClock &clock) {
@@ -201,7 +232,7 @@ auto PowerManager::inactivityTimeoutMs() -> int {
         return 5 * 1000;
     } else {
         // Normal inactivity timeout is 10 minutes
-        return 10 * 60 * 1000;
+        return prefs_.inactivityMinutes.get().value_or(DEFAULT_INACTIVITY_MINUTES) * 60 * 1000;
     }
 }
 
@@ -228,7 +259,11 @@ auto PowerManager::begin() -> esp_err_t {
 #if !DISABLE_POWER_MANAGEMENT
     pmConfig_.max_freq_mhz = CPU_FREQ_MHZ_HIGH;
     pmConfig_.min_freq_mhz = CPU_FREQ_MHZ_LOW;
-    pmConfig_.light_sleep_enable = !USBConnected();
+    pmConfig_.light_sleep_enable = true;
+
+    if (USBConnected()) {
+        PmLock("pm_usb", &usbPowerLightSleepLock_);
+    }
     err = esp_pm_configure(&pmConfig_);
 
 #ifdef USB_CONNECTED_PIN
@@ -246,28 +281,19 @@ auto PowerManager::begin() -> esp_err_t {
                         stateChangeCallback_(state_);
                     }
                 }
-                if (pmConfig_.light_sleep_enable == true) {
-                    // USB is connected so disable light sleep
-                    pmConfig_.light_sleep_enable = false;
-                    auto err = esp_pm_configure(&pmConfig_);
-                    if (err != ESP_OK) {
-                        log_e("Failed to disable light sleep with err %s", esp_err_to_name(err));
-                    } else {
-                        log_d("Disabled light sleep");
-                    }
-                }
+                // USB is connected so disable light sleep
+#if !DISABLE_POWER_MANAGEMENT
+                PmLock("pm_usb", &usbPowerLightSleepLock_);
+#endif
             } else { // !USBConnected()
                 if (state_ == PowerState::ActiveUSBCharging) {
                     log_i("USB disconnected, rebooting to Active");
                     reboot();
-                } else if (pmConfig_.light_sleep_enable == false) {
-                    pmConfig_.light_sleep_enable = true;
-                    auto err = esp_pm_configure(&pmConfig_);
-                    if (err != ESP_OK) {
-                        log_e("Failed to enable light sleep with err %s", esp_err_to_name(err));
-                    } else {
-                        log_d("Enabled light sleep");
-                    }
+                } else {
+                    // USB is disconnected so enable light sleep
+#if !DISABLE_POWER_MANAGEMENT
+                    PmUnlock(&usbPowerLightSleepLock_);
+#endif
                 }
             }
         });
@@ -297,6 +323,18 @@ void PowerManager::powerOffInternal() {
     enableUsbWakeup();
 
     esp_deep_sleep_start();
+}
+
+auto PowerManager::debugDisableLightSleep() -> void {
+#if !DISABLE_POWER_MANAGEMENT
+    PmLock("pm_debug", &debugCommandLightSleepLock_);
+#endif
+}
+
+auto PowerManager::debugEnableLightSleep() -> void {
+#if !DISABLE_POWER_MANAGEMENT
+    PmUnlock(&debugCommandLightSleepLock_);
+#endif
 }
 
 void PowerManager::loop() {

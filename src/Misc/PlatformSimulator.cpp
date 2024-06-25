@@ -23,8 +23,6 @@ void InitializePlatform() {
 
 auto DeinitializePlatform() -> esp_err_t { return ESP_OK; }
 
-auto GetUartCommandQueue() -> QueueHandle_t { return nullptr; }
-
 auto GetBatteryVoltageLeft() -> float { return 0; }
 
 auto GetBatteryVoltageRight() -> float { return 0; }

@@ -54,8 +54,6 @@ void InitializePlatform();
 
 auto DeinitializePlatform() -> esp_err_t;
 
-auto GetUartCommandQueue() -> QueueHandle_t;
-
 auto GetBatteryVoltageLeft() -> float;
 
 auto GetBatteryVoltageRight() -> float;

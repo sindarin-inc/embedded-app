@@ -335,6 +335,7 @@ public:
           cesMode(*this, "ces"),
           emcMode(*this, "emc"),
           wifiPower(*this, "wifi-power"),
+          inactivityMinutes(*this, "inact-min"),
           tzIana(*this, "tz-iana"),
           tzPosix(*this, "tz-posix"),
           firmwareLoaded(*this, "fw-loaded"),
@@ -583,6 +584,7 @@ public:
     PrefsItem<bool> cesMode;
     PrefsItem<bool> emcMode;
     PrefsItem<int> wifiPower;
+    PrefsItem<int> inactivityMinutes;
     PrefsItem<std::string> tzIana;
     PrefsItem<std::string> tzPosix;
     // Firmware that's been loaded to the other flash slot but not yet installed

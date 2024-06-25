@@ -25,10 +25,6 @@ public:
     auto layout(LayoutContext &context, Size size) -> Size override;
     void drawInRect(Rect rect) override;
 
-    void requireRestart();
-
-    auto getRequireRestart() const -> bool { return restartOnBack_; }
-
     void render(DisplaySystem &display) override;
 
     void processCommand(RemoteCommand command) override;
@@ -53,6 +49,4 @@ protected:
     std::vector<bool> showToggleBubble_;
     std::vector<std::shared_ptr<BoxView>> menuToggleSelectionViews_;
     bool drawBubbles_ = false;
-
-    bool restartOnBack_ = false;
 };
