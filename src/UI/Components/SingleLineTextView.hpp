@@ -1,7 +1,7 @@
 #pragma once
 
-#include <utility>
 #include <algorithm>
+#include <utility>
 
 #include "EinkView.hpp"
 #include "Misc/Style.hpp"

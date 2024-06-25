@@ -1,8 +1,8 @@
 #include "StringUtil.hpp"
 
+#include <algorithm>
 #include <cstdarg>
 #include <cstring>
-#include <algorithm>
 
 auto WordCount(const char *str) -> int {
     int wordCount = 0;
