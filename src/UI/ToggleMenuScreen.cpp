@@ -7,8 +7,6 @@
 
 #define MAX_WIDTH 150
 
-void ToggleMenuScreen::requireRestart() { restartOnBack_ = true; }
-
 auto ToggleMenuScreen::layout(LayoutContext &context, Size size) -> Size {
     const auto inset = 3;
 

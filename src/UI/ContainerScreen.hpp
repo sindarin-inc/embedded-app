@@ -14,6 +14,8 @@ public:
     void render(DisplaySystem &display) override;
     void processCommand(RemoteCommand command) override;
     auto getCurrentScreen() -> Screen * { return currentScreen_; }
+    void showTemporaryMessage(DisplaySystem &display, const std::string &message,
+                              int duration = 2000, bool rerenderAfter = true);
 
 protected:
     Screen *currentScreen_{};

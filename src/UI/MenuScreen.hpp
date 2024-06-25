@@ -38,6 +38,10 @@ public:
     auto layout(LayoutContext &context, Size size) -> Size override;
     void drawInRect(Rect rect) override;
 
+    void requireRestart();
+
+    auto getRequireRestart() const -> bool { return restartOnBack_; }
+
     void render(DisplaySystem &display) override;
 
     void processCommand(RemoteCommand command) override;
@@ -65,4 +69,6 @@ protected:
     SingleLineTextView upperLeftTextView_;
 
     ArrowView leftArrowView_;
+
+    bool restartOnBack_ = false;
 };
