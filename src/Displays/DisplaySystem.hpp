@@ -37,6 +37,14 @@ struct DisplayRect {
     [[nodiscard]] auto toString() const -> std::string {
         return StringFormat("x:%d, y:%d, w:%d, h:%d", x, y, width, height);
     }
+
+    [[nodiscard]] auto operator==(const DisplayRect &other) const -> bool {
+        return x == other.x && y == other.y && width == other.width && height == other.height;
+    }
+
+    [[nodiscard]] auto operator!=(const DisplayRect &other) const -> bool {
+        return !(*this == other);
+    }
 };
 
 class DisplaySystem {

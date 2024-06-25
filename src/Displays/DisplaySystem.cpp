@@ -118,7 +118,14 @@ void DisplaySystem::setFullWindow() {
 void DisplaySystem::ensureBoundaries() {
     // log_d("Bounding Box before is %s", boundingBox_.toString().c_str());
 
-    // First constrain position
+    auto boundingBoxBefore = boundingBox_;
+
+    // First constrain size (must come first since these are used to constrain x and y)
+    boundingBox_.width = std::clamp(boundingBox_.width, minBoundingBox.width, maxBoundingBox.width);
+    boundingBox_.height =
+        std::clamp(boundingBox_.height, minBoundingBox.height, maxBoundingBox.height);
+
+    // Then constrain position
     boundingBox_.x =
         std::clamp(boundingBox_.x, maxBoundingBox.x,
                    static_cast<int32_t>(maxBoundingBox.x + maxBoundingBox.width -
@@ -128,12 +135,10 @@ void DisplaySystem::ensureBoundaries() {
                    static_cast<int32_t>(maxBoundingBox.y + maxBoundingBox.height -
                                         std::max(minBoundingBox.height, boundingBox_.height)));
 
-    // Then constrain dimensions
-    boundingBox_.width = std::clamp(boundingBox_.width, minBoundingBox.width, maxBoundingBox.width);
-    boundingBox_.height =
-        std::clamp(boundingBox_.height, minBoundingBox.height, maxBoundingBox.height);
-
-    // log_d("Bounding Box after is %s", boundingBox_.toString().c_str());
+    if (boundingBox_ != boundingBoxBefore) {
+        log_w("Constrained bounding box from %s to %s", boundingBoxBefore.toString().c_str(),
+              boundingBox_.toString().c_str());
+    }
 }
 
 auto DisplaySystem::setBoundingBox(DisplayRect newBox) -> DisplayRect {

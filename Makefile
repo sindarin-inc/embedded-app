@@ -7,6 +7,8 @@ NUM_CORES := $(shell [ $(NUM_CORES) -lt 1 ] && echo 1 || echo $(NUM_CORES))
 
 MAKE := nice make -j$(NUM_CORES)
 CMAKE_FLAGS = -DCMAKE_BUILD_TYPE=Debug
+# This can be useful for testing the GCC build (used by CI)
+# CMAKE_FLAGS = -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=/opt/homebrew/opt/gcc/bin/gcc-14 -DCMAKE_CXX_COMPILER=/opt/homebrew/opt/gcc/bin/g++-14
 
 .PHONY: sim-build
 sim-build:

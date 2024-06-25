@@ -29,7 +29,7 @@ public:
         display.updateDisplay();
     }
 
-    void processCommand(RemoteCommand command) override {};
+    void processCommand(RemoteCommand command) override{};
 
     auto pages() -> int { return (glyphs.size() / (gridWidth * gridHeight)) + 1; }
     void setPage(int page) { this->page = page; }
@@ -43,8 +43,7 @@ private:
 
 TEST_CASE("Test glyph rendering") {
     auto display = createDisplay();
-    display->setBoundingBox({0, 0, static_cast<uint32_t>(display->defaultScreenWidth),
-                             static_cast<uint32_t>(display->defaultScreenHeight)});
+    display->setBoundingBox(display->maxBoundingBox);
 
     std::vector<std::string> glyphs = {
         "0",  "1", "2", "3", "4", "5", "6",  "7", "8", "9", "a", "b", "c", "d", "e", "f",
