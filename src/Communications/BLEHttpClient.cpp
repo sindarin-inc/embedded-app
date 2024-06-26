@@ -4,6 +4,7 @@
 
 #include <cstddef>
 #include <cstdlib>
+#include <esp_debug_helpers.h>
 #include <esp_timer.h>
 #include <utility>
 
@@ -53,8 +54,8 @@ auto BLEHttpClient::write(const char *body, int length) -> int {
 auto BLEHttpClient::fetchHeaders(int expectedSize, const std::shared_ptr<CancelFlag> &cancel)
     -> int {
     // 30 seconds of advertising to connect to BLE proxy on mobile app
-    constexpr auto advertisingTimeoutMs = 30000;
-    constexpr auto fetchingTimeoutMs = 10 * 60000; // 10 minutes of downloading per book
+    constexpr auto advertisingTimeoutMs = 30 * 1000;
+    constexpr auto fetchingTimeoutMs = 1 * 60 * 1000; // 1 minute of downloading headers per book
     statusCode_ = 0;
     contentLength_ = 0;
     readLength_ = 0;
@@ -107,13 +108,14 @@ auto BLEHttpClient::fetchHeaders(int expectedSize, const std::shared_ptr<CancelF
 
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
+    log_d("BLE Sync state, fetching headers: %d", state_);
 
     // Extract the Content-Length header
     char *contentLengthHeader = nullptr;
     auto err = getResponseHeader("Content-Length", &contentLengthHeader);
     if (err == ESP_OK) {
         auto contentLength = strtol(contentLengthHeader, nullptr, 10);
-        log_d("Content-Length: %ld", contentLength);
+        log_d("BLE Sync Content-Length: %ld", contentLength);
         contentLength_ = contentLength;
         return contentLength;
     }
@@ -156,6 +158,7 @@ auto BLEHttpClient::handleWebRequest(const std::string &key, const char *body, s
         const char *colonPtr = strchr(body, ':');
         if (colonPtr != nullptr) {
             size_t keyLength = colonPtr - body;
+            log_d("Key Length: %d", keyLength);
             std::string headerKey(body, keyLength);
             // Only save Content-Length
             if (headerKey == "Content-Length") {
@@ -163,9 +166,10 @@ auto BLEHttpClient::handleWebRequest(const std::string &key, const char *body, s
                 // responseHeaders_.emplace_back(headerKey, headerValue);
                 responseHeaders_.insert(std::pair<std::string, std::string>(
                     std::move(headerKey), std::move(headerValue)));
+                log_d("Received header: %s=%s (%s - %s = %d)", headerKey.c_str(),
+                      headerValue.c_str(), colonPtr, body, bodySize);
             }
         }
-        // log_d("Received header: %s=%s", headerKey.c_str(), headerValue.c_str());
     } else if (key == "B") {
         // Body
         // Extract chunk (e.g. "B1/2:chunk")
@@ -219,6 +223,9 @@ auto BLEHttpClient::read(char *buffer, int length) -> int {
     if (xSemaphoreTake(dataSemaphore_, pdMS_TO_TICKS(10000)) != pdTRUE) {
         // Timeout occurred, no data available
         log_w("Timed out waiting for BLE response body: %p %d", buffer, length);
+        // Show esp execution backtrace
+        // esp_backtrace_print(100);
+
         return -1;
     }
 

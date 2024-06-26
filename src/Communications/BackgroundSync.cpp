@@ -21,6 +21,8 @@ void BackgroundSyncCancel() { CancelFlag::cancel(cancel); }
 void BackgroundSyncInternal(PowerManager &powerManager, PreferencesStore &prefs,
                             LocalStore &localStore, Telemetry &telemetry) {
     // Create a notification group to wait for background tasks
+    auto wifiConnected = false;
+    auto bleConnected = false;
     auto backgroundGroup = xEventGroupCreate();
     defer {
         vEventGroupDelete(backgroundGroup);
@@ -33,46 +35,62 @@ void BackgroundSyncInternal(PowerManager &powerManager, PreferencesStore &prefs,
     // Connect to WiFi
     if (!WiFi::getInstance().connectWiFiFromSettings()) {
         telemetry.logMetric(TelemetryField::METRIC_WIFI, "sync-wifi-failed");
-        return;
+        // Try BLE sync before returning
+        // return;
+    } else {
+        wifiConnected = true;
     }
+
+#if USE_BLE_SERVER_PROXY
+    if (!wifiConnected) {
+        if (!BLEManager::getInstance()->connectProxy(cancel)) {
+            telemetry.logMetric(TelemetryField::METRIC_WIFI, "sync-ble-failed");
+            return;
+        } else {
+            bleConnected = true;
+        }
+    }
+#endif
 
     // Check for firmware first (in case there's some super busted issue that needs fixing)
-    auto firmwareDownloader = std::make_shared<FirmwareDownloader>(prefs, true);
-    firmwareDownloader->downloadFirmware(
-        [firmwareDownloader, &localStore, &backgroundGroup](const FirmwareDownloadState &state) {
-        if (state.state == FirmwareDownloadState::Failure) {
-            log_i("Firmware download for %s failed with error: %s",
-                  firmwareDownloader->response.latestGlassesFirmware.version.c_str(),
-                  state.message.c_str());
-        } else if (state.state == FirmwareDownloadState::AlreadyDownloaded) {
-            log_i("Firmware download for %s already queued.",
-                  firmwareDownloader->response.latestGlassesFirmware.version.c_str());
-        } else if (state.state == FirmwareDownloadState::Downloaded) {
-            log_i("Firmware download for %s successful. Mark for install.",
-                  firmwareDownloader->response.latestGlassesFirmware.version.c_str());
-            localStore.saveFirmware(firmwareDownloader->response.latestGlassesFirmware);
-        } else if (state.state == FirmwareDownloadState::AlreadyUpToDate) {
-            log_i("Firmware up to date.");
-        } else {
+    if (wifiConnected) {
+        auto firmwareDownloader = std::make_shared<FirmwareDownloader>(prefs, true);
+        firmwareDownloader->downloadFirmware([firmwareDownloader, &localStore, &backgroundGroup](
+                                                 const FirmwareDownloadState &state) {
+            if (state.state == FirmwareDownloadState::Failure) {
+                log_i("Firmware download for %s failed with error: %s",
+                      firmwareDownloader->response.latestGlassesFirmware.version.c_str(),
+                      state.message.c_str());
+            } else if (state.state == FirmwareDownloadState::AlreadyDownloaded) {
+                log_i("Firmware download for %s already queued.",
+                      firmwareDownloader->response.latestGlassesFirmware.version.c_str());
+            } else if (state.state == FirmwareDownloadState::Downloaded) {
+                log_i("Firmware download for %s successful. Mark for install.",
+                      firmwareDownloader->response.latestGlassesFirmware.version.c_str());
+                localStore.saveFirmware(firmwareDownloader->response.latestGlassesFirmware);
+            } else if (state.state == FirmwareDownloadState::AlreadyUpToDate) {
+                log_i("Firmware up to date.");
+            } else {
+                return;
+            }
+            if (backgroundGroup != nullptr) {
+                xEventGroupSetBits(backgroundGroup, 1);
+            }
+        });
+
+        if (CancelFlag::isCancelled(cancel)) {
             return;
         }
-        if (backgroundGroup != nullptr) {
-            xEventGroupSetBits(backgroundGroup, 1);
+
+        // Wait for firmware download to finish
+        auto bits =
+            xEventGroupWaitBits(backgroundGroup, 1, pdTRUE, pdTRUE, pdMS_TO_TICKS(5 * 60 * 1000));
+        if (!(bits & 1)) {
+            firmwareDownloader->cancel();
+            log_w("Firmware download timed out");
         }
-    });
-
-    if (CancelFlag::isCancelled(cancel)) {
-        return;
+        xEventGroupClearBits(backgroundGroup, 1);
     }
-
-    // Wait for firmware download to finish
-    auto bits =
-        xEventGroupWaitBits(backgroundGroup, 1, pdTRUE, pdTRUE, pdMS_TO_TICKS(5 * 60 * 1000));
-    if (!(bits & 1)) {
-        firmwareDownloader->cancel();
-        log_w("Firmware download timed out");
-    }
-    xEventGroupClearBits(backgroundGroup, 1);
 
     if (CancelFlag::isCancelled(cancel)) {
         return;
@@ -105,7 +123,8 @@ void BackgroundSyncInternal(PowerManager &powerManager, PreferencesStore &prefs,
         });
 
     // Wait for content sync to finish
-    bits = xEventGroupWaitBits(backgroundGroup, 1, pdTRUE, pdTRUE, pdMS_TO_TICKS(10 * 60 * 1000));
+    auto bits =
+        xEventGroupWaitBits(backgroundGroup, 1, pdTRUE, pdTRUE, pdMS_TO_TICKS(10 * 60 * 1000));
     if (!(bits & 1)) {
         CancelFlag::cancel(cancel);
         log_w("Content sync timed out");
@@ -116,8 +135,11 @@ void BackgroundSyncInternal(PowerManager &powerManager, PreferencesStore &prefs,
         return;
     }
 
-    if (!WiFi::getInstance().connected()) {
+    if (wifiConnected && !WiFi::getInstance().connected()) {
         log_w("WiFi not connected, ending background sync");
+        return;
+    } else if (bleConnected && !BLEManager::getInstance()->connected()) {
+        log_w("BLE proxy not connected, ending background sync");
         return;
     }
 
@@ -137,35 +159,37 @@ void BackgroundSyncInternal(PowerManager &powerManager, PreferencesStore &prefs,
     }
 
     // Upload core dumps
-    FileList coreDumpFiles;
-    const int maxCoredumps = 10;
-    fileSystem.listDir("/coredumps", coreDumpFiles, maxCoredumps);
-    int coreDumpCount = coreDumpFiles.size();
+    if (wifiConnected) {
+        FileList coreDumpFiles;
+        const int maxCoredumps = 10;
+        fileSystem.listDir("/coredumps", coreDumpFiles, maxCoredumps);
+        int coreDumpCount = coreDumpFiles.size();
 
-    if (!(prefs.noUploadCrashes.get().value_or(false)) && (coreDumpCount > 0)) {
-        log_i("Uploading %d core dumps", coreDumpCount);
-        CrashUploader crashUploader(fileSystem, prefs);
-        crashUploader.uploadCrash([&backgroundGroup](const CrashUploadState &state) {
-            if (state.state == CrashUploadState::Failure) {
-                log_e("Failed to upload crash reports");
-            } else if (state.state == CrashUploadState::NoCrashReport) {
-                log_w("No crash reports (shouldn't get here)");
-            } else if (state.state == CrashUploadState::Done) {
-                log_i("Crash reports uploaded");
-            } else {
-                return;
-            }
-            if (backgroundGroup != nullptr) {
-                xEventGroupSetBits(backgroundGroup, 1);
-            }
-        });
+        if (!(prefs.noUploadCrashes.get().value_or(false)) && (coreDumpCount > 0)) {
+            log_i("Uploading %d core dumps", coreDumpCount);
+            CrashUploader crashUploader(fileSystem, prefs);
+            crashUploader.uploadCrash([&backgroundGroup](const CrashUploadState &state) {
+                if (state.state == CrashUploadState::Failure) {
+                    log_e("Failed to upload crash reports");
+                } else if (state.state == CrashUploadState::NoCrashReport) {
+                    log_w("No crash reports (shouldn't get here)");
+                } else if (state.state == CrashUploadState::Done) {
+                    log_i("Crash reports uploaded");
+                } else {
+                    return;
+                }
+                if (backgroundGroup != nullptr) {
+                    xEventGroupSetBits(backgroundGroup, 1);
+                }
+            });
 
-        bits =
-            xEventGroupWaitBits(backgroundGroup, 1, pdTRUE, pdTRUE, pdMS_TO_TICKS(2 * 60 * 1000));
-        if (!(bits & 1)) {
-            log_w("Coredump upload timed out");
+            bits = xEventGroupWaitBits(backgroundGroup, 1, pdTRUE, pdTRUE,
+                                       pdMS_TO_TICKS(2 * 60 * 1000));
+            if (!(bits & 1)) {
+                log_w("Coredump upload timed out");
+            }
+            xEventGroupClearBits(backgroundGroup, 1);
         }
-        xEventGroupClearBits(backgroundGroup, 1);
     }
 }
 

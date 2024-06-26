@@ -11,7 +11,7 @@ set(components miniz ulp astubs pugixml improv ArduinoJson Adafruit-GFX-Library 
 set(compile_options
     -includeconfig.h
     -Wno-unknown-pragmas
-    -DDISABLE_WIFI_SYNC=0
+    -DDISABLE_WIFI_SYNC=1
     -DIDF_LOG
     -DUSE_BLE_SERVER_REMOTE=1
     -DUSE_BLE_SERVER_SETTINGS=1

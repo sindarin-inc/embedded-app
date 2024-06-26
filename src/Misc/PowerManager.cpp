@@ -500,6 +500,7 @@ void PowerManager::beginShutdown() {
     if (bleManager != nullptr) {
         bleManager->stopAdvertising();
         bleManager->disconnectAllClients();
+        bleManager->disconnectProxy();
     }
 #endif
 

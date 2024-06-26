@@ -120,6 +120,8 @@ auto DownloadFile(
         auto read = client->read(buffer, sizeof(buffer));
         if (read > 0) {
             log_w("Error body: %s", buffer);
+        } else {
+            log_d("No error body: %s", buffer);
         }
         return ERR_OPEN_BLOCK;
     }

@@ -50,7 +50,7 @@ public:
         }
         return true;
     }
-
+    bool connected() { return connectedProxy; }
     bool connectedProxy{false};
 
 protected:
@@ -90,6 +90,8 @@ protected:
             SHOW_HEAP();
             log_i("BLE client disconnected from our server");
             enclosed->authed_ = false;
+            enclosed->connectedProxy = false;
+            enclosed->setConnId(BLE_HS_CONN_HANDLE_NONE);
         }
     };
 };
