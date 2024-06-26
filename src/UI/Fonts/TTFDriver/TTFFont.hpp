@@ -22,8 +22,8 @@ private:
     int size_;
     FIX16 spaceSize_{0};
     uint8_t lastGlyphWidth_;
-    PixelResolution screenResolution_{DEFAULT_SCREEN_RESOLUTION};
-    PixelResolution fontResolution_{DEFAULT_FONT_RESOLUTION};
+    PixelResolution pixelResolution_{DEFAULT_PIXEL_RESOLUTION};
+    PixelResolution fontPixelResolution_{DEFAULT_FONT_PIXEL_RESOLUTION};
 
     GlyphCode unknownGlyphCode_{0};
 
@@ -118,11 +118,12 @@ public:
                                  "broken (%d).",
                                  error);
                         } else {
-                            error = FT_Set_Char_Size(privateFace_, // handle to face object
-                                                     0,            // char_width in 1/64th of points
-                                                     size_ * 64, // char_height in 1/64th of points
-                                                     150,        // horizontal device resolution
-                                                     150);       // vertical device resolution
+                            error = FT_Set_Char_Size(
+                                privateFace_,         // handle to face object
+                                0,                    // char_width in 1/64th of points
+                                size_ * 64,           // char_height in 1/64th of points
+                                SCREEN_RES_PER_INCH,  // horizontal device resolution
+                                SCREEN_RES_PER_INCH); // vertical device resolution
                             if (error) {
                                 LOGE("Unable to set private font size.");
                             }
@@ -153,16 +154,16 @@ public:
         return isInitialized() ? face_->size->metrics.height >> 6 : 0;
     }
 
-    inline void setScreenResolution(PixelResolution res) { screenResolution_ = res; }
+    inline void setPixelResolution(PixelResolution res) { pixelResolution_ = res; }
 
-    [[nodiscard]] inline auto getScreenResolution() const -> PixelResolution {
-        return (initialized_) ? screenResolution_ : DEFAULT_SCREEN_RESOLUTION;
+    [[nodiscard]] inline auto getPixelResolution() const -> PixelResolution {
+        return (initialized_) ? pixelResolution_ : DEFAULT_PIXEL_RESOLUTION;
     }
 
-    inline void setFontResolution(PixelResolution res) { fontResolution_ = res; }
+    inline void setFontPixelResolution(PixelResolution res) { fontPixelResolution_ = res; }
 
-    [[nodiscard]] inline auto getFontResolution() const -> PixelResolution {
-        return (initialized_) ? fontResolution_ : DEFAULT_FONT_RESOLUTION;
+    [[nodiscard]] inline auto getFontPixelResolution() const -> PixelResolution {
+        return (initialized_) ? fontPixelResolution_ : DEFAULT_FONT_PIXEL_RESOLUTION;
     }
 
     auto translate(char32_t codePoint) const -> GlyphCode;
@@ -202,6 +203,29 @@ public:
 
         // log_w(" width quick: %" PRIi16 ": %s", width, b);
         return width;
+    }
+
+    inline void setSupSubFontSize() {
+        int newSize = (size_ - SUP_SUB_FONT_DOWNSIZING) * 64;
+        int error = FT_Set_Char_Size(face_,                // handle to face object
+                                     0,                    // char_width in 1/64th of points
+                                     newSize,              // char_height in 1/64th of points
+                                     SCREEN_RES_PER_INCH,  // horizontal device resolution
+                                     SCREEN_RES_PER_INCH); // vertical device resolution
+        if (error) {
+            LOGE("Unable to set font size.");
+        }
+    }
+
+    inline void setNormalFontSize() {
+        int error = FT_Set_Char_Size(face_,                // handle to face object
+                                     0,                    // char_width in 1/64th of points
+                                     size_ * 64,           // char_height in 1/64th of points
+                                     SCREEN_RES_PER_INCH,  // horizontal device resolution
+                                     SCREEN_RES_PER_INCH); // vertical device resolution
+        if (error) {
+            LOGE("Unable to set font size.");
+        }
     }
 };
 

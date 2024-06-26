@@ -62,7 +62,7 @@ auto Font::ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2, FIX16 *ker
 }
 
 void Font::copyBitmap(Bitmap &to, bool toHeightBit, Bitmap &from, Pos atPos, bool inverted) {
-    if (fontResolution_ == font_defs::PixelResolution::ONE_BIT) {
+    if (fontPixelResolution_ == font_defs::PixelResolution::ONE_BIT) {
 
         if (toHeightBit) {
             uint8_t data;
@@ -216,11 +216,11 @@ auto Font::getGlyph(GlyphCode glyphCode, Glyph &appGlyph, bool loadBitmap, bool 
 
     FT_GlyphSlot slot = theFace->glyph;
 
-    bool toHeightBit = screenResolution_ == font_defs::PixelResolution::EIGHT_BITS;
+    bool toHeightBit = pixelResolution_ == font_defs::PixelResolution::EIGHT_BITS;
 
     if (loadBitmap) {
         if (theFace->glyph->format != FT_GLYPH_FORMAT_BITMAP) {
-            if (fontResolution_ == font_defs::PixelResolution::ONE_BIT) {
+            if (fontPixelResolution_ == font_defs::PixelResolution::ONE_BIT) {
                 error = FT_Render_Glyph(theFace->glyph,       // glyph slot
                                         FT_RENDER_MODE_MONO); // render mode
             } else {
@@ -241,11 +241,11 @@ auto Font::getGlyph(GlyphCode glyphCode, Glyph &appGlyph, bool loadBitmap, bool 
             appGlyph.bitmap.dim = dim;
             // glyph->pitch = slot->bitmap.pitch;
 
-            uint16_t size = (fontResolution_ == PixelResolution::ONE_BIT)
+            uint16_t size = (fontPixelResolution_ == PixelResolution::ONE_BIT)
                                 ? dim.height * ((dim.width + 7) >> 3)
                                 : dim.height * dim.width;
 
-            toHeightBit = fontResolution_ != PixelResolution::ONE_BIT;
+            toHeightBit = fontPixelResolution_ != PixelResolution::ONE_BIT;
 
             if (size > 0) {
                 appGlyph.bitmap.pixels = new (std::nothrow) uint8_t[size];
@@ -379,7 +379,7 @@ auto Font::drawSingleLineOfText(font_defs::Bitmap &canvas, font_defs::Pos pos,
         // The following may require some modification as the next Sol Glasses version
         // may be using a different pitch than the one computed here.
 
-        canvas.pitch = (getScreenResolution() == PixelResolution::ONE_BIT)
+        canvas.pitch = (getPixelResolution() == PixelResolution::ONE_BIT)
                            ? (canvas.dim.width + 7) >> 3
                            : canvas.dim.width;
         glyph.bitmap = canvas;

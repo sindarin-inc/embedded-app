@@ -24,8 +24,12 @@ auto Pager::addLastTokenToPage(bool dontStop) -> bool {
     case TokenId::ITEXT:
     case TokenId::HTEXT:
     case TokenId::NTEXT:
+
+#if TTF_SUPPORT
     case TokenId::SUPTEXT:
     case TokenId::SUBTEXT:
+#endif
+
     case TokenId::HYPHEN:
     case TokenId::ENDASH: // Not used for EPub, used for TXT
     case TokenId::EMDASH: // Not used for EPub, used for TXT
@@ -76,8 +80,11 @@ auto Pager::addLastTokenToPage(bool dontStop) -> bool {
 
         if (static_cast<uint16_t>(token.tokenId) &
             (static_cast<uint16_t>(TokenId::TEXT) | static_cast<uint16_t>(TokenId::ITEXT) |
-             static_cast<uint16_t>(TokenId::HTEXT) | static_cast<uint16_t>(TokenId::NTEXT) |
-             static_cast<uint16_t>(TokenId::SUBTEXT) | static_cast<uint16_t>(TokenId::SUPTEXT))) {
+             static_cast<uint16_t>(TokenId::HTEXT) | static_cast<uint16_t>(TokenId::NTEXT)
+#if TTF_SUPPORT
+             | static_cast<uint16_t>(TokenId::SUBTEXT) | static_cast<uint16_t>(TokenId::SUPTEXT)
+#endif
+                 )) {
             wordCount_ += 1;
         }
     } break;
@@ -253,9 +260,11 @@ auto Pager::computeWordCount() const -> uint16_t {
              tokens_.nextTokenIdx(tokenIdx)) {
             if (static_cast<uint16_t>(tokens_[tokenIdx].tokenId) &
                 (static_cast<uint16_t>(TokenId::TEXT) | static_cast<uint16_t>(TokenId::ITEXT) |
-                 static_cast<uint16_t>(TokenId::HTEXT) | static_cast<uint16_t>(TokenId::NTEXT) |
-                 static_cast<uint16_t>(TokenId::SUBTEXT) |
-                 static_cast<uint16_t>(TokenId::SUPTEXT))) {
+                 static_cast<uint16_t>(TokenId::HTEXT) | static_cast<uint16_t>(TokenId::NTEXT)
+#if TTF_SUPPORT
+                 | static_cast<uint16_t>(TokenId::SUBTEXT) | static_cast<uint16_t>(TokenId::SUPTEXT)
+#endif
+                     )) {
                 wordCount += 1;
             }
         }
@@ -270,6 +279,8 @@ auto Pager::getPageLength() const -> uint16_t {
     }
     return length;
 }
+
+#if TTF_SUPPORT
 
 // Retrieve a single segment from the linsinfo. superscript and subscripts are cutting lines in
 // multiple segments.
@@ -330,8 +341,6 @@ void Pager::drawSingleLine(LineInfo &lineInfo, int yPos) const {
     Idx nextTokenIdx = lineInfo.tokenIdx;
     Idx endTokenIdx = tokens_.addToTokenIdx(lineInfo.tokenIdx, lineInfo.tokenCount);
 
-    int yOffset = (display_.getTextHeight() + 3) / 4;
-
     while (nextTokenIdx != endTokenIdx) {
 
         auto tokenId = tokens_[nextTokenIdx].tokenId;
@@ -340,18 +349,60 @@ void Pager::drawSingleLine(LineInfo &lineInfo, int yPos) const {
 
         int theYPos = yPos;
 
-        if (tokenId == TokenId::SUBTEXT) {
-            theYPos += yOffset;
-        } else if (tokenId == TokenId::SUPTEXT) {
-            theYPos -= yOffset;
-        }
+        if ((static_cast<uint16_t>(tokenId) & (static_cast<uint16_t>(TokenId::SUBTEXT) |
+                                               static_cast<uint16_t>(TokenId::SUPTEXT))) != 0) {
 
-        xPos = display_.drawSingleLineOfText(lineSegment.data(), xPos, theYPos);
+            int32_t yOffset = display_.getTextHeight() / 5;
+            auto normalHeight = display_.getTextHeight();
+
+            display_.getFont()->setSupSubFontSize();
+
+            if (tokenId == TokenId::SUBTEXT) {
+                theYPos += normalHeight - display_.getTextHeight() + yOffset;
+            } else { // TokenId::SUPTEXT
+                theYPos += normalHeight - display_.getTextHeight() - yOffset;
+            }
+            xPos = display_.drawSingleLineOfText(lineSegment.data(), xPos, theYPos);
+            display_.getFont()->setNormalFontSize();
+        } else {
+            xPos = display_.drawSingleLineOfText(lineSegment.data(), xPos, yPos);
+        }
     }
 }
 
-auto Pager::computeDarkPercent(const uint8_t *bitmap, uint16_t width, uint16_t height) const
-    -> uint8_t {
+#else
+
+// Prepare a line to be displayed on screen
+void Pager::getLine(LineInfo &lineStruct, Line &line) const {
+    line[0] = 0;
+    Idx endTokenIdx = tokens_.addToTokenIdx(lineStruct.tokenIdx, lineStruct.tokenCount);
+    Idx lineIdx = 0;
+    for (Idx tokenIdx = lineStruct.tokenIdx; tokenIdx != endTokenIdx;
+         tokens_.nextTokenIdx(tokenIdx)) {
+
+        auto tokenId = tokens_[tokenIdx].tokenId;
+        if ((static_cast<uint16_t>(tokenId) & (static_cast<uint16_t>(TokenId::NEWLINE) |
+                                               static_cast<uint16_t>(TokenId::ENDPARAGRAPH))) ==
+            0) {
+            if (tokens_[tokenIdx].cStr != nullptr) {
+                // strcat(line.data(), tokens_[tokenIdx].cStr);
+                memcpy(line.data() + lineIdx, tokens_[tokenIdx].cStr, tokens_[tokenIdx].length);
+                lineIdx += tokens_[tokenIdx].length;
+            }
+            if (tokens_[tokenIdx].spacesAfter) {
+                line[lineIdx++] = ' ';
+            }
+            // for (int i = 0; i < tokens_[tokenIdx].spacesAfter; i++) {
+            //     line[lineIdx++] = ' ';
+            // }
+        }
+    }
+    line[lineIdx] = 0;
+}
+#endif
+
+auto Pager::computeDarkPercent(const uint8_t *bitmap, uint16_t width,
+                               uint16_t height) const -> uint8_t {
     static uint8_t pixelsDensity[256] = {
         0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4, 1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3,
         4, 4, 5, 1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5, 2, 3, 3, 4, 3, 4, 4, 5, 3, 4,
@@ -486,7 +537,14 @@ auto Pager::displayPage(int16_t numSkipLines) -> uint8_t {
                 deciY += ENDPARAGRAPH_DECI_LINE_HEIGHT;
             }
 
+#if TTF_SUPPORT
             drawSingleLine(lines_[lineIdx], deciToPix(deciY));
+#else
+            Line line;
+            getLine(lines_[lineIdx], line);
+            display_.drawSingleLineOfText(line.data(), lines_[lineIdx].leftIndent,
+                                          deciToPix(deciY));
+#endif
 
             deciY += NEWLINE_DECI_LINE_HEIGHT;
             break;
@@ -497,7 +555,14 @@ auto Pager::displayPage(int16_t numSkipLines) -> uint8_t {
             display_.drawLine(0, y, display_.width(), y, display_.fg);
             deciY += HRULE_DECI_LINE_HEIGHT;
 
+#if TTF_SUPPORT
             drawSingleLine(lines_[lineIdx], deciToPix(deciY));
+#else
+            Line line;
+            getLine(lines_[lineIdx], line);
+            display_.drawSingleLineOfText(line.data(), lines_[lineIdx].leftIndent,
+                                          deciToPix(deciY));
+#endif
 
             deciY += NEWLINE_DECI_LINE_HEIGHT + ENDPARAGRAPH_DECI_LINE_HEIGHT;
         } break;
@@ -505,7 +570,19 @@ auto Pager::displayPage(int16_t numSkipLines) -> uint8_t {
         default:
             // Only draw the lines if it's not skipped from the caller.
             if (lineNbr >= numSkipLines) {
+#if TTF_SUPPORT
                 drawSingleLine(lines_[lineIdx], deciToPix(deciY));
+#else
+                Line line;
+                getLine(lines_[lineIdx], line);
+                // log_w("Real line width: %" PRIu16 " indent: %" PRIu16,
+                //       display_.getTextWidth(line.data()) + lines_[lineIdx].leftIndent,
+                //       lines_[lineIdx].leftIndent);
+                REND_WLOG("[%" PRIu16 "] %s: <%s>", lineIdx, token.streamPlace.str().c_str(),
+                          line.data());
+                display_.drawSingleLineOfText(line.data(), lines_[lineIdx].leftIndent,
+                                              deciToPix(deciY));
+#endif
             } else {
                 REND_WLOG("[%" PRIu16 "] %s: <SKIPPED>", lineIdx, token.streamPlace.str().c_str());
             }

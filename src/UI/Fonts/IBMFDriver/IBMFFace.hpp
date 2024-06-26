@@ -24,7 +24,7 @@ class IBMFFace {
 private:
     bool initialized_{false};
     FontFormat fontFormat_{FontFormat::UNKNOWN};
-    PixelResolution screenResolution_{DEFAULT_SCREEN_RESOLUTION};
+    PixelResolution pixelResolution_{DEFAULT_PIXEL_RESOLUTION};
 
     FaceHeaderPtr faceHeader_{nullptr};
     GlyphsPixelPoolIndexes glyphsPixelPoolIndexes_{nullptr};
@@ -57,8 +57,8 @@ public:
     [[nodiscard]] inline auto getLigKernStep(uint16_t idx) const -> LigKernStep * {
         return &(*ligKernSteps_)[idx];
     }
-    [[nodiscard]] inline auto getScreenResolution() const -> PixelResolution {
-        return screenResolution_;
+    [[nodiscard]] inline auto getPixelResolution() const -> PixelResolution {
+        return pixelResolution_;
     }
 
     [[nodiscard]] inline auto getGlyphHOffset(GlyphCode glyphCode) const -> int8_t {
@@ -84,7 +84,7 @@ public:
                                                      : NO_LIG_KERN_PGM;
     }
 
-    inline auto setScreenResolution(PixelResolution res) -> void { screenResolution_ = res; }
+    inline auto setPixelResolution(PixelResolution res) -> void { pixelResolution_ = res; }
 
     auto ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2, FIX16 *kern) -> bool;
 
@@ -104,8 +104,8 @@ public:
     auto showLigKerns() const -> void;
     auto showFace() const -> void;
 
-    inline auto getGlyphHorizontalMetrics(GlyphCode glyphCode, int16_t *xoff, FIX16 *advance)
-        -> bool {
+    inline auto getGlyphHorizontalMetrics(GlyphCode glyphCode, int16_t *xoff,
+                                          FIX16 *advance) -> bool {
 
         if ((glyphCode == SPACE_CODE) ||
             ((*glyphsInfo_)[glyphCode].bitmapWidth == 0)) { // send as a space character
