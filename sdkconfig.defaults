@@ -1,5 +1,9 @@
 # This file was generated using idf.py save-defconfig. It can be edited manually.
+<<<<<<< HEAD
 # Espressif IoT Development Framework (ESP-IDF) 5.1.1 Project Minimal Configuration
+=======
+# Espressif IoT Development Framework (ESP-IDF)  Project Minimal Configuration
+>>>>>>> a246210b (Update sdkconfig)
 #
 CONFIG_IDF_TARGET="esp32s3"
 CONFIG_BOOTLOADER_LOG_LEVEL_WARN=y
@@ -27,8 +31,8 @@ CONFIG_EFUSE_CUSTOM_TABLE=y
 CONFIG_EFUSE_CUSTOM_TABLE_FILENAME="src/Storage/EFusesCustomTable.csv"
 CONFIG_ESP_TLS_PSK_VERIFICATION=y
 CONFIG_ESP_HTTP_CLIENT_ENABLE_DIGEST_AUTH=y
-CONFIG_ESP_SLEEP_GPIO_RESET_WORKAROUND=n
 CONFIG_ESP_SLEEP_PSRAM_LEAKAGE_WORKAROUND=n
+CONFIG_ESP_SLEEP_GPIO_RESET_WORKAROUND=n
 CONFIG_RTC_CLK_SRC_EXT_CRYS=y
 CONFIG_RTC_CLK_CAL_CYCLES=1024
 CONFIG_PM_ENABLE=y
