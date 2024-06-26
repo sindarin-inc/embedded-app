@@ -165,6 +165,21 @@ void PowerManager::wakeupCheck(SolClock &clock) {
     case ESP_RST_EXT:
         bootInfo_.reason = BootInfo::Reason::Unknown;
         break;
+    case ESP_RST_USB:
+        bootInfo_.reason = BootInfo::Reason::UsbReset;
+        break;
+    case ESP_RST_JTAG:
+        bootInfo_.reason = BootInfo::Reason::JtagReset;
+        break;
+    case ESP_RST_EFUSE:
+        bootInfo_.reason = BootInfo::Reason::EfuseReset;
+        break;
+    case ESP_RST_PWR_GLITCH:
+        bootInfo_.reason = BootInfo::Reason::PwrGlitch;
+        break;
+    case ESP_RST_CPU_LOCKUP:
+        bootInfo_.reason = BootInfo::Reason::CpuLockup;
+        break;
     }
 
     if (bootInfo_.reason == BootInfo::Reason::Unknown) {
