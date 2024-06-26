@@ -275,8 +275,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     }
 
     // If there is firmware available, show the Update Firmware item in the books tab.
-    auto makeReleaseNotesMenuItem = [this, &localStore, display,
-                                     mainMenu](const Firmware &firmware) {
+    auto makeReleaseNotesMenuItem =
+        [this, &localStore, display, mainMenu](const Firmware &firmware) {
         log_i("Found pending firmware update %s", firmware.version.c_str());
         return MenuItem(
             "Upgrade Software",
@@ -294,7 +294,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 setCurrentScreen(*mainMenu);
                 delete releaseNotesScreen;
             });
-        });
+            });
     };
 
     if (prefs_.firmwareLoaded.get().has_value()) {
@@ -307,7 +307,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     auto makeContentSyncMenuItem = [this, display, &localStore,
                                     mainMenu](const char *title) -> MenuItem {
-        return {title, [this, display, &localStore, mainMenu]() {
+        return {title,
+                [this, display, &localStore, mainMenu]() {
             // If we're not yet paired, show the app screen instead
             if (PreferencesStore::paired == PairedStatus::Unpaired) {
                 auto appDownloadScreen = new AppDownloadScreen(*display);
@@ -333,7 +334,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 delete contentSyncScreen;
             });
             contentSyncScreen->begin();
-        }};
+                }};
     };
 
     // If there are no books, show the Sync Content item in the books tab.
@@ -373,8 +374,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     SHOW_HEAP();
 
     if (!(prefs_.tutorialsDeleted.get().value_or(0) & TUTORIAL_SCREEN_BOOKS)) {
-        booksMenu->addMenuItem(
-            MenuItem("\ue000 Books Tutorial", "", [this, createTutorialScreen]() {
+        booksMenu->addMenuItem(MenuItem("\ue000 Books Tutorial", "",
+                                        [this, createTutorialScreen]() {
             SpiramString message = SpiramString(
                 "Welcome to the Books menu. This tab "
                 "shows you the books currently synced to your Sol Reader. To add more books or "
@@ -413,8 +414,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         bool archived = prefs_.readableArchivedChanged.get(r->shortenedUuid.c_str());
         auto title = StringFormat("%s%s", archived ? "Archived: " : "", r->title.c_str());
 
-        articlesMenu->addMenuItem(
-            MenuItem(title, [this, display, mainMenu, r, createReadableScreen]() {
+        articlesMenu->addMenuItem(MenuItem(title,
+                                           [this, display, mainMenu, r, createReadableScreen]() {
             display->clearDisplay();
             auto readableScreen = createReadableScreen(r);
             if (readableScreen != nullptr) {
@@ -435,8 +436,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     SHOW_HEAP();
 
     if (!(prefs_.tutorialsDeleted.get().value_or(0) & TUTORIAL_SCREEN_ARTICLES)) {
-        articlesMenu->addMenuItem(
-            MenuItem("\ue000 Articles Tutorial", [this, createTutorialScreen]() {
+        articlesMenu->addMenuItem(MenuItem("\ue000 Articles Tutorial",
+                                           [this, createTutorialScreen]() {
             SpiramString message = SpiRamStringFormat(
                 "Welcome to the Articles menu. This tab "
                 "shows you the articles currently synced to your Sol Reader. To add more articles, "
@@ -463,26 +464,26 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 auto title = StringFormat("%s%s", archived ? "Archived: " : "", r->title.c_str());
                 bibleMenu->addMenuItem(
                     MenuItem(title, [this, r, createReadableScreen, display, mainMenu]() {
-                    auto readableScreen = createReadableScreen(r);
-                    if (readableScreen != nullptr) {
-                        this->setCurrentScreen(*readableScreen);
-                    } else {
-                        auto *errorPopup = new MsgPopup(*display, itemErrorMsg_);
-                        this->setCurrentScreen(*errorPopup);
-                        errorPopup->setBackCallback([this, errorPopup, mainMenu]() {
-                            mainMenu->setFirstLoad();
-                            display_->clearDisplay();
-                            setCurrentScreen(*mainMenu);
-                            delete errorPopup;
-                        });
-                    }
-                }));
+                        auto readableScreen = createReadableScreen(r);
+                        if (readableScreen != nullptr) {
+                            this->setCurrentScreen(*readableScreen);
+                        } else {
+                            auto *errorPopup = new MsgPopup(*display, itemErrorMsg_);
+                            this->setCurrentScreen(*errorPopup);
+                            errorPopup->setBackCallback([this, errorPopup, mainMenu]() {
+                                mainMenu->setFirstLoad();
+                                display_->clearDisplay();
+                                setCurrentScreen(*mainMenu);
+                                delete errorPopup;
+                            });
+                        }
+                    }));
             }
         }
 
         if (!(prefs_.tutorialsDeleted.get().value_or(0) & TUTORIAL_SCREEN_BIBLE)) {
-            bibleMenu->addMenuItem(
-                MenuItem("\ue000 Why have a Bible app?", [this, createTutorialScreen]() {
+            bibleMenu->addMenuItem(MenuItem("\ue000 Why have a Bible app?",
+                                            [this, createTutorialScreen]() {
                 SpiramString message = SpiRamStringFormat(
                     "The Gutenberg Bible "
                     "was the earliest major book printed using mass-produced movable "
@@ -611,12 +612,12 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         contentSettingsMenu->setToggleLastItem(false);
     }
 
-    contentSettingsMenu->addMenuItem(
-        MenuItem("Sort order", [this, &localStore, display, contentSettingsMenu]() {
+    contentSettingsMenu->addMenuItem(MenuItem("Sort order",
+                                              [this, &localStore, display, contentSettingsMenu]() {
         auto sortMenu = new MenuScreen(power_.battery, *display, contentSettingsMenu->getMyStyle(),
                                        "Sort Order", "Content Settings");
-        sortMenu->addMenuItem(
-            MenuItem("Alphabetical", [this, &localStore, display, contentSettingsMenu]() {
+        sortMenu->addMenuItem(MenuItem("Alphabetical",
+                                       [this, &localStore, display, contentSettingsMenu]() {
             this->prefs_.sortCriteria.set(static_cast<int>(SortCriteria::Alphabetical));
             this->prefs_.sortDirection.set(static_cast<int>(SortDirection::Ascending));
             contentSettingsMenu->showTemporaryMessage(*display, settingsRestartMsg_, 500, false);
@@ -642,8 +643,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             localStore.saveReadables(localStore.articles());
             this->power_.reboot();
         }));
-        sortMenu->addMenuItem(
-            MenuItem("Last read, most recent", [this, &localStore, display, contentSettingsMenu]() {
+        sortMenu->addMenuItem(MenuItem("Last read, most recent",
+                                       [this, &localStore, display, contentSettingsMenu]() {
             this->prefs_.sortCriteria.set(static_cast<int>(SortCriteria::LastRead));
             this->prefs_.sortDirection.set(static_cast<int>(SortDirection::Descending));
             contentSettingsMenu->showTemporaryMessage(*display, settingsRestartMsg_, 500, false);
@@ -660,8 +661,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             localStore.saveReadables(localStore.articles());
             this->power_.reboot();
         }));
-        sortMenu->addMenuItem(
-            MenuItem("Random", [this, &localStore, display, contentSettingsMenu]() {
+        sortMenu->addMenuItem(MenuItem("Random",
+                                       [this, &localStore, display, contentSettingsMenu]() {
             this->prefs_.sortCriteria.set(static_cast<int>(SortCriteria::Random));
             this->prefs_.sortDirection.set(static_cast<int>(SortDirection::Ascending));
             contentSettingsMenu->showTemporaryMessage(*display, settingsRestartMsg_, 500, false);
@@ -997,8 +998,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     }
 #endif
 
-    readingSettingsMenu->addMenuItem(
-        MenuItem("Brightness", [this, display, readingSettingsMenu, &lightingController]() {
+    readingSettingsMenu->addMenuItem(MenuItem("Brightness", [this, display, readingSettingsMenu,
+                                                             &lightingController]() {
         auto lightingAdjustScreen =
             new LightingAdjustScreen(*display, this->prefs_, lightingController, this->telemetry_);
         this->display_->clearDisplay();
@@ -1011,8 +1012,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     }));
 
 #if EINKET013TT1
-    readingSettingsMenu->addMenuItem(
-        MenuItem("Contrast", [this, display, readingSettingsMenu, &lightingController]() {
+    readingSettingsMenu->addMenuItem(MenuItem("Contrast", [this, display, readingSettingsMenu,
+                                                           &lightingController]() {
         auto contrastAdjustScreen =
             new ContrastAdjustScreen(*display, this->prefs_, lightingController, this->telemetry_);
         this->display_->clearDisplay();
@@ -1025,8 +1026,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     }));
 #endif
 
-    readingSettingsMenu->addMenuItem(
-        MenuItem("Move Page in Display", [this, readingSettingsMenu, display]() {
+    readingSettingsMenu->addMenuItem(MenuItem("Move Page in Display",
+                                              [this, readingSettingsMenu, display]() {
         log_d("Loading adjust offset");
         auto offsetAdjust = new OffsetAdjustScreen(*display, prefs_, this->telemetry_);
         this->setCurrentScreen(*offsetAdjust);
@@ -1039,8 +1040,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         log_d("set up callback");
     }));
 
-    readingSettingsMenu->addMenuItem(
-        MenuItem("Resize Page", [this, readingSettingsMenu, display]() {
+    readingSettingsMenu->addMenuItem(MenuItem("Resize Page",
+                                              [this, readingSettingsMenu, display]() {
         log_d("Loading resize box");
         auto resizeBox = new ResizeBoxScreen(*display, prefs_, this->telemetry_);
         this->setCurrentScreen(*resizeBox);
@@ -1053,8 +1054,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         log_d("set up callback");
     }));
 
-    readingSettingsMenu->addMenuItem(
-        MenuItem("Line Spacing", [this, readingSettingsMenu, display]() {
+    readingSettingsMenu->addMenuItem(MenuItem("Line Spacing",
+                                              [this, readingSettingsMenu, display]() {
         auto lineSpacingScreen = new LineSpacingScreen(*display, prefs_, this->telemetry_);
         this->setCurrentScreen(*lineSpacingScreen);
         lineSpacingScreen->setBackCallback([this, lineSpacingScreen, readingSettingsMenu]() {
@@ -1064,8 +1065,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         });
     }));
 
-    readingSettingsMenu->addMenuItem(
-        MenuItem("Inactivity Timer", [this, readingSettingsMenu, display]() {
+    readingSettingsMenu->addMenuItem(MenuItem("Inactivity Timer",
+                                              [this, readingSettingsMenu, display]() {
         auto inactivityMenu =
             new MenuScreen(power_.battery, *display, readingSettingsMenu->getMyStyle(),
                            "Inactivity Timer", "Reading Settings");
@@ -1076,20 +1077,20 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 prefs_.inactivityMinutes.get().value_or(DEFAULT_INACTIVITY_MINUTES)));
             inactivityMenu->setExtraText(message);
         };
-        auto addInactivityMenuItem = [this, inactivityMenu,
-                                      updateExtraText](const std::string &label, int minutes,
-                                                       const FontFamily fontFamily) {
+        auto addInactivityMenuItem =
+            [this, inactivityMenu, updateExtraText](const std::string &label, int minutes,
+                                                    const FontFamily fontFamily) {
             inactivityMenu->addMenuItem(
                 MenuItem(label, [this, inactivityMenu, updateExtraText, minutes, fontFamily]() {
-                this->display_->style.setFontFamily(fontFamily);
-                this->display_->clearDisplay();
-                prefs_.inactivityMinutes.set(minutes);
-                updateExtraText();
-                inactivityMenu->requireRestart();
-                this->telemetry_.logMetricData(TelemetryField::METRIC_STYLE,
-                                               {{"inactivity_minutes", minutes}});
-                inactivityMenu->setNeedsRerender();
-            }));
+                    this->display_->style.setFontFamily(fontFamily);
+                    this->display_->clearDisplay();
+                    prefs_.inactivityMinutes.set(minutes);
+                    updateExtraText();
+                    inactivityMenu->requireRestart();
+                    this->telemetry_.logMetricData(TelemetryField::METRIC_STYLE,
+                                                   {{"inactivity_minutes", minutes}});
+                    inactivityMenu->setNeedsRerender();
+                }));
         };
 
         addInactivityMenuItem("5 minutes", 5, this->display_->style.solSansSmall);
@@ -1146,8 +1147,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         });
     }));
 
-    systemSettingsMenu->addMenuItem(
-        MenuItem("Legal & Regulatory", [this, systemSettingsMenu, display]() {
+    systemSettingsMenu->addMenuItem(MenuItem("Legal & Regulatory",
+                                             [this, systemSettingsMenu, display]() {
         auto legalScreen = new LegalScreen(*display, prefs_, power_);
         this->setCurrentScreen(*legalScreen);
         legalScreen->setBackCallback([this, legalScreen, systemSettingsMenu]() {
@@ -1158,8 +1159,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         });
     }));
 
-    systemSettingsMenu->addMenuItem(
-        MenuItem("Firmware Update", [this, systemSettingsMenu, display]() {
+    systemSettingsMenu->addMenuItem(MenuItem("Firmware Update",
+                                             [this, systemSettingsMenu, display]() {
         // If we don't have WiFi configured, show the QR code instead
         if (!WiFi::getInstance().hasWiFiCredentials()) {
             auto appDownloadScreen = new AppDownloadScreen(*display);
@@ -1187,8 +1188,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     }));
 
 #if USE_TURN_TOUCH_REMOTE
-    debugSettingsMenu->addMenuItem(
-        MenuItem("Unpair PageTurner", [this, debugSettingsMenu, display]() {
+    debugSettingsMenu->addMenuItem(MenuItem("Unpair PageTurner",
+                                            [this, debugSettingsMenu, display]() {
         prefs_.pairedTurnTouchAddress.remove();
         prefs_.lastPageTurnerBuild.remove();
         PreferencesStore::lastPageTurnerBattery = 0;
@@ -1211,8 +1212,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     }));
 
     if (hasLastQuestion) {
-        debugSettingsMenu->addMenuItem(
-            MenuItem("Turn on Demo Mode", [this, debugSettingsMenu, display]() {
+        debugSettingsMenu->addMenuItem(MenuItem("Turn on Demo Mode",
+                                                [this, debugSettingsMenu, display]() {
             log_d("Demo On!");
             prefs_.cesMode.set(true);
             debugSettingsMenu->showTemporaryMessage(*display, "Demo mode on! Resetting...", 2000,
@@ -1233,8 +1234,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         });
     }));
 
-    systemSettingsMenu->addMenuItem(
-        MenuItem("Reset Statistics", [this, systemSettingsMenu, display]() {
+    systemSettingsMenu->addMenuItem(MenuItem("Reset Statistics",
+                                             [this, systemSettingsMenu, display]() {
         prefs_.wordCount.remove();
         prefs_.totalReadingTimeSeconds.remove();
         systemSettingsMenu->showTemporaryMessage(*display, "Statistics reset.");
@@ -1248,8 +1249,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         power_.reboot();
     }));
 
-    systemSettingsMenu->addMenuItem(
-        MenuItem("Clear WiFi Settings", [systemSettingsMenu, display]() {
+    systemSettingsMenu->addMenuItem(MenuItem("Clear WiFi Settings",
+                                             [systemSettingsMenu, display]() {
         WiFi::getInstance().clearWiFiCredentials();
         log_w("WiFi settings cleared.");
         systemSettingsMenu->showTemporaryMessage(*display, "WiFi settings cleared.", 2000, true);
@@ -1268,8 +1269,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         });
     }));
 
-    debugSettingsMenu->addMenuItem(
-        MenuItem("Reset Preferences", [this, debugSettingsMenu, display]() {
+    debugSettingsMenu->addMenuItem(MenuItem("Reset Preferences",
+                                            [this, debugSettingsMenu, display]() {
         prefs_.clear();
         log_w("Preferences cleared. Rebooting...");
         debugSettingsMenu->showTemporaryMessage(*display, "Preferences cleared. Rebooting...", 2000,
@@ -1278,16 +1279,16 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     }));
 
     if (prefs_.allowUsageWhileCharging.get().value_or(false)) {
-        debugSettingsMenu->addMenuItem(
-            MenuItem("Disable use while charging", [this, debugSettingsMenu, display]() {
+        debugSettingsMenu->addMenuItem(MenuItem("Disable use while charging",
+                                                [this, debugSettingsMenu, display]() {
             prefs_.allowUsageWhileCharging.remove();
             debugSettingsMenu->showTemporaryMessage(*display, "Disabling use while charging...",
                                                     500, false);
             power_.reboot();
         }));
     } else {
-        debugSettingsMenu->addMenuItem(
-            MenuItem("Enable use while charging", [this, debugSettingsMenu, display]() {
+        debugSettingsMenu->addMenuItem(MenuItem("Enable use while charging",
+                                                [this, debugSettingsMenu, display]() {
             prefs_.allowUsageWhileCharging.set(true);
             debugSettingsMenu->showTemporaryMessage(*display, "Enabling use while charging...", 500,
                                                     false);
@@ -1295,14 +1296,14 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         }));
     }
 
-    debugSettingsMenu->addMenuItem(
-        MenuItem("Clear Books and Restart", [debugSettingsMenu, display, &localStore]() {
+    debugSettingsMenu->addMenuItem(MenuItem("Clear Books and Restart",
+                                            [debugSettingsMenu, display, &localStore]() {
         localStore.deleteReadables();
         debugSettingsMenu->showTemporaryMessage(*display, "Books reset.");
     }));
 
-    debugSettingsMenu->addMenuItem(
-        MenuItem("Clear Articles and Restart", [debugSettingsMenu, display, &localStore]() {
+    debugSettingsMenu->addMenuItem(MenuItem("Clear Articles and Restart",
+                                            [debugSettingsMenu, display, &localStore]() {
         localStore.deleteArticles();
         debugSettingsMenu->showTemporaryMessage(*display, "Articles reset.");
     }));
@@ -1320,16 +1321,16 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         power_.reboot();
     }));
 
-    systemSettingsMenu->addMenuItem(
-        MenuItem("Factory Defaults", [this, systemSettingsMenu, display, &fileSystem]() {
+    systemSettingsMenu->addMenuItem(MenuItem("Factory Defaults",
+                                             [this, systemSettingsMenu, display, &fileSystem]() {
         SoftFactoryReset(fileSystem);
         log_w("NVS and FS cleared. Rebooting...");
         systemSettingsMenu->showTemporaryMessage(*display, "Resetting Device! Rebooting...");
         power_.reboot();
     }));
 
-    debugSettingsMenu->addMenuItem(
-        MenuItem("File System Browser", [this, display, debugSettingsMenu, &fileSystem]() {
+    debugSettingsMenu->addMenuItem(MenuItem("File System Browser",
+                                            [this, display, debugSettingsMenu, &fileSystem]() {
         auto fsMenu = new MenuScreen(power_.battery, *display, debugSettingsMenu->getMyStyle(),
                                      "FS Browser", "Debug Settings");
 
@@ -1343,8 +1344,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         });
     }));
 
-    debugSettingsMenu->addMenuItem(
-        MenuItem("Batteries and Temperature", [this, display, debugSettingsMenu]() {
+    debugSettingsMenu->addMenuItem(MenuItem("Batteries and Temperature",
+                                            [this, display, debugSettingsMenu]() {
         auto batteryScreen = new BatteryScreen(*display, prefs_, power_.battery);
         this->setCurrentScreen(*batteryScreen);
         batteryScreen->setBackCallback([this, batteryScreen, debugSettingsMenu]() {
@@ -1380,8 +1381,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     SHOW_HEAP();
 
     if (hasLastQuestion) {
-        debugSettingsMenu->addMenuItem(
-            MenuItem("Turn on EMC Mode", [this, debugSettingsMenu, display]() {
+        debugSettingsMenu->addMenuItem(MenuItem("Turn on EMC Mode",
+                                                [this, debugSettingsMenu, display]() {
             log_d("EMC On!");
             prefs_.emcMode.set(true);
             debugSettingsMenu->showTemporaryMessage(*display, "EMC mode on! Resetting...", 2000,
@@ -1389,8 +1390,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             power_.reboot();
         }));
 
-        debugSettingsMenu->addMenuItem(
-            MenuItem("Turn off EMC Mode", [this, debugSettingsMenu, display]() {
+        debugSettingsMenu->addMenuItem(MenuItem("Turn off EMC Mode",
+                                                [this, debugSettingsMenu, display]() {
             log_d("EMC Off!");
             prefs_.emcMode.remove();
             debugSettingsMenu->showTemporaryMessage(*display, "EMC mode off! Resetting...", 2000,
@@ -1559,8 +1560,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         esp_power_level_t currentPower = esp_ble_tx_power_get(ESP_BLE_PWR_TYPE_DEFAULT);
         blePowerMenu->setExtraText(powerToString(currentPower));
 
-        auto confirmMessage = [this, blePowerMenu, display,
-                               powerToString](esp_power_level_t power) {
+        auto confirmMessage =
+            [this, blePowerMenu, display, powerToString](esp_power_level_t power) {
             esp_err_t err = esp_ble_tx_power_set(ESP_BLE_PWR_TYPE_DEFAULT, power);
             if (err != ESP_OK) {
                 log_e("esp_ble_tx_power_set ESP_BLE_PWR_TYPE_DEFAULT err:%s", esp_err_to_name(err));
@@ -1597,8 +1598,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 #endif
 
 #if EINKET013TT1
-    debugSettingsMenu->addMenuItem(
-        MenuItem("Set Vcom Precise", [this, display, debugSettingsMenu]() {
+    debugSettingsMenu->addMenuItem(MenuItem("Set Vcom Precise",
+                                            [this, display, debugSettingsMenu]() {
         auto vcomPreciseScreen = new VcomAdjustScreen(*display, this->prefs_);
         this->display_->clearDisplay();
         setCurrentScreen(*vcomPreciseScreen);
@@ -1610,8 +1611,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     }));
 #endif
 
-    debugSettingsMenu->addMenuItem(
-        MenuItem("Format FS", [this, display, &fileSystem, debugSettingsMenu]() {
+    debugSettingsMenu->addMenuItem(MenuItem("Format FS",
+                                            [this, display, &fileSystem, debugSettingsMenu]() {
         log_w("Formatting...");
         debugSettingsMenu->showTemporaryMessage(
             *display, "Formatting, this will take several minutes.", 2000, false);
@@ -1642,8 +1643,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     }));
 
     if (!(prefs_.tutorialsDeleted.get().value_or(0) & TUTORIAL_SCREEN_SETTINGS)) {
-        settingsMenu->addMenuItem(
-            MenuItem("\ue000 Settings Tutorial", [this, createTutorialScreen]() {
+        settingsMenu->addMenuItem(MenuItem("\ue000 Settings Tutorial",
+                                           [this, createTutorialScreen]() {
             SpiramString message = SpiRamStringFormat(
                 "Welcome to the settings menu. Here you can "
                 "change the settings of your Sol Reader. Check out the "
@@ -1661,9 +1662,10 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
         // reset prefs for of The Last Question readable
         log_d("Starting CES mode readable load");
-        auto it = std::find_if(
-            readables.begin(), readables.end(),
-            [](const std::shared_ptr<Readable> &x) { return (x->title == "The Last Question"); });
+        auto it = std::find_if(readables.begin(), readables.end(),
+                               [](const std::shared_ptr<Readable> &x) {
+            return (x->title == "The Last Question");
+        });
         if (it == readables.end()) {
             log_e("Could not find readable: %s", "The Last Question");
         } else {
@@ -1692,9 +1694,10 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         }
     } else if (prefs_.emcMode.get().value_or(false)) {
         log_d("Starting EMC mode readable reading turn page every 30s and content sync every 60s");
-        auto it = std::find_if(
-            readables.begin(), readables.end(),
-            [](const std::shared_ptr<Readable> &x) { return (x->title == "The Last Question"); });
+        auto it = std::find_if(readables.begin(), readables.end(),
+                               [](const std::shared_ptr<Readable> &x) {
+            return (x->title == "The Last Question");
+        });
         if (it == readables.end()) {
             log_e("Could not find readable: %s", "The Last Question");
         } else {
@@ -1727,7 +1730,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             std::find_if(articles.begin(), articles.end(),
                          [&currentReadable](const std::shared_ptr<Readable> &x) {
             return currentReadable == x->uuid;
-        });
+            });
         if (booksIterator != readables.end() || articlesIterator != articles.end()) {
             auto it = (booksIterator != readables.end()) ? booksIterator : articlesIterator;
             auto readableScreen = createReadableScreen(*it);
@@ -1806,8 +1809,8 @@ void RootUI::handleBrowse(FileSystem &fileSystem, MenuScreen *fsMenu, const std:
 
     for (const std::string &dir : localDirs) {
         log_d("Next Dir is %s", dir.c_str());
-        fsMenu->addMenuItem(
-            MenuItem(StringFormat("%s/", dir.c_str()), [this, fsMenu, &fileSystem, path, dir]() {
+        fsMenu->addMenuItem(MenuItem(StringFormat("%s/", dir.c_str()),
+                                     [this, fsMenu, &fileSystem, path, dir]() {
             this->display_->clearDisplay();
             handleBrowse(fileSystem, fsMenu, path + dir + "/");
             fsMenu->setExtraText(StringFormat("Browsing %s", (path + dir + "/").c_str()));
