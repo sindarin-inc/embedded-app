@@ -24,7 +24,7 @@ typedef enum {
 
 class BLEHttpClient : public HttpClient {
 public:
-    BLEHttpClient(const char *url, const std::shared_ptr<CancelFlag> &cancelFlag,
+    BLEHttpClient(const char *url, std::shared_ptr<CancelFlag> cancelFlag,
                   const char *contentType = "", esp_http_client_method_t method = HTTP_METHOD_GET);
     BLEHttpClient(const BLEHttpClient &) = delete;
     ~BLEHttpClient() override;

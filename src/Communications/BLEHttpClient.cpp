@@ -12,10 +12,10 @@
 #include "Misc/Defer.hpp"
 #include "Misc/RateLimiter.hpp"
 
-BLEHttpClient::BLEHttpClient(const char *url, const std::shared_ptr<CancelFlag> &cancelFlag,
+BLEHttpClient::BLEHttpClient(const char *url, std::shared_ptr<CancelFlag> cancelFlag,
                              const char *contentType, esp_http_client_method_t method)
     : HttpClient(url, contentType, method), requestMethod_(method), responseBody_(MAX_BUFFER_SIZE),
-      dataSemaphore_(xSemaphoreCreateBinary()), cancel_(cancelFlag) {
+      dataSemaphore_(xSemaphoreCreateBinary()), cancel_(std::move(cancelFlag)) {
 
     requestHeaders_.clear();
 

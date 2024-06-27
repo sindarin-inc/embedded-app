@@ -11,8 +11,8 @@
 
 class CancelFlag {
 public:
-    CancelFlag() {
-        mutex_ = xSemaphoreCreateMutex();
+    CancelFlag() : mutex_(xSemaphoreCreateMutex()) {
+
         if (mutex_ == nullptr) {
             log_e("Failed to create cancel mutex");
         }
@@ -25,7 +25,7 @@ public:
     }
 
     CancelFlag(const CancelFlag &) = delete;
-    CancelFlag &operator=(const CancelFlag &) = delete;
+    auto operator=(const CancelFlag &) -> CancelFlag & = delete;
 
     void addObserver(void *key, std::function<void()> observer) {
         if (xSemaphoreTake(mutex_, portMAX_DELAY)) {
@@ -49,7 +49,7 @@ public:
         flag->cancelInternal();
     }
 
-    static bool isCancelled(const std::shared_ptr<CancelFlag> &flag) {
+    static auto isCancelled(const std::shared_ptr<CancelFlag> &flag) -> bool {
         if (flag == nullptr) {
             return false;
         }
@@ -71,7 +71,7 @@ private:
         }
     }
 
-    bool isCancelledInternal() const {
+    [[nodiscard]] auto isCancelledInternal() const -> bool {
         if (xSemaphoreTake(mutex_, portMAX_DELAY)) {
             bool cancelled = cancelled_;
             xSemaphoreGive(mutex_);
