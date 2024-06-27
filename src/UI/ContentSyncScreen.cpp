@@ -5,14 +5,14 @@
 #endif
 #include "Communications/WiFi.hpp"
 #include "Misc/Platform.hpp"
-#include "Misc/PowerManager.hpp"
 #include "Misc/RateLimiter.hpp"
 #include "Renderers/RendererStream.hpp"
 
 ContentSyncScreen::ContentSyncScreen(DisplaySystem &display, LocalStore &localStore,
-                                     PreferencesStore &prefs, Telemetry &telemetry)
+                                     PreferencesStore &prefs, Telemetry &telemetry,
+                                     PowerManager &power)
     : EinkView(display), localStore_(localStore), prefs_(prefs), telemetry_(telemetry),
-      cancelView_(display, "Press \ue000 to cancel", &ibmf75Face0) {
+      power_(power), cancelView_(display, "Press \ue000 to cancel", &ibmf75Face0) {
     for (auto &textView : textViews_) {
         textView = std::make_shared<SingleLineTextView>(display, "", &ibmf75Face0);
     }
@@ -36,6 +36,13 @@ ContentSyncScreen::ContentSyncScreen(DisplaySystem &display, LocalStore &localSt
     popupTextView_->alignCenter = true;
     popupTextView_->dynamicWidth = true;
     popupTextView_->setHidden(true);
+
+    power_.addStateChangeCallback([this](PowerState state) {
+        if (state == PowerState::ShuttingDown) {
+            log_d("Signaling content sync to cancel");
+            this->cancel();
+        }
+    });
 };
 
 auto ContentSyncScreen::layout(LayoutContext &context, Size size) -> Size {
@@ -118,7 +125,7 @@ void ContentSyncScreen::cancel() {
     showPopup("Sync cancelled!\n\nRebooting system...");
     render(display_);
     vTaskDelay(3000 / portTICK_PERIOD_MS);
-    PowerManager::getInstance().reboot();
+    power_.reboot();
 }
 
 void ContentSyncScreen::render(DisplaySystem &display) {
@@ -233,7 +240,7 @@ void ContentSyncScreen::fail(const std::string &message) {
 #if USE_BLE_SERVER_PROXY
     BLEManager::getInstance()->disconnectProxy();
 #endif
-    PowerManager::getInstance().reboot();
+    power_.reboot();
 }
 
 void ContentSyncScreen::begin() {
@@ -272,7 +279,7 @@ void ContentSyncScreen::begin() {
                 return;
             }
 
-            PowerManager::getInstance().feedInactivityTimer();
+            power_.feedInactivityTimer();
             if (state.state == ContentSyncState::Failure ||
                 state.state == ContentSyncState::Synced ||
                 state.state == ContentSyncState::AlreadySynced) {
@@ -282,8 +289,8 @@ void ContentSyncScreen::begin() {
                 BLEManager::getInstance()->disconnectProxy();
 #endif
             }
-            // Skip updates if the state is the same and the percentage isn't different (or if not
-            // enough time has elapsed)
+            // Skip updates if the state is the same and the percentage isn't different (or if
+            // not enough time has elapsed)
             if (state.state == state_.state) {
                 if (!rl->shouldExecute(state.percentage)) {
                     return;
@@ -301,7 +308,7 @@ void ContentSyncScreen::begin() {
                 if (state.state == ContentSyncState::Synced) {
                     log_d("Content sync done, rebooting");
                     Delay(2000);
-                    PowerManager::getInstance().reboot();
+                    power_.reboot();
                 } else if (state.state == ContentSyncState::AlreadySynced) {
                     log_d("Content sync already synced");
                     Delay(2000);
@@ -312,7 +319,7 @@ void ContentSyncScreen::begin() {
                     if (state.booksDownloaded > 0 || state.articlesDownloaded > 0) {
                         log_d("Content sync failed, but we got new content, rebooting");
                         Delay(2000);
-                        PowerManager::getInstance().reboot();
+                        power_.reboot();
                     } else {
                         log_d("Content sync failed, going back");
                         Delay(2000);

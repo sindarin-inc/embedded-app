@@ -600,7 +600,7 @@ void LocalStore::syncFromRemote(
             }
 
             auto httpCode =
-                this->telemetry_.uploadAndResetTelemetry(this->fileSystem, bleConnected);
+                this->telemetry_.uploadAndResetTelemetry(this->fileSystem, bleConnected, cancel);
             if (httpCode != 201) {
                 this->telemetry_.logMetric(TelemetryField::METRIC_SYNC_STATUS,
                                            "sync-telemetry-failed",
@@ -682,6 +682,10 @@ void LocalStore::syncFromRemote(
                                               : ContentSyncState::State::SyncingArticles});
 
             while (nextPageUrl.length() || nextPageCounter == 0) {
+                if (CancelFlag::isCancelled(cancel)) {
+                    return;
+                }
+
                 if (nextPageCounter == 0) {
                     log_d("Fetching first page of %ss",
                           ReadableModelTypeToString(modelType).c_str());
@@ -705,9 +709,6 @@ void LocalStore::syncFromRemote(
                     break;
                 }
 
-                if (CancelFlag::isCancelled(cancel)) {
-                    return;
-                }
                 int httpCode = 0;
                 if (nextPageCounter == 1) {
                     SHOW_HEAP();

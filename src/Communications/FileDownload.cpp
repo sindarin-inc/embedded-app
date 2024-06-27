@@ -13,10 +13,11 @@
 #include "Misc/RateLimiter.hpp"
 #include "sindarin-debug.h"
 
-auto CreateClient(const std::string &url, bool useBle) -> std::shared_ptr<HttpClient> {
+auto CreateClient(const std::string &url, bool useBle, const std::shared_ptr<CancelFlag> &cancel)
+    -> std::shared_ptr<HttpClient> {
     if (useBle) {
 #if USE_BLE_SERVER_PROXY
-        return std::make_shared<BLEHttpClient>(url.c_str());
+        return std::make_shared<BLEHttpClient>(url.c_str(), cancel);
 #else
         return nullptr;
 #endif
@@ -38,7 +39,7 @@ auto DownloadFile(
         // TODO: Support gzip over BLE
         gzip = false;
     }
-    auto client = CreateClient(url, useBle);
+    auto client = CreateClient(url, useBle, cancel);
 
     // Ensure connected to WiFi
     if (!client->connected) {

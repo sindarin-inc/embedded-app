@@ -325,8 +325,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 return;
             }
 
-            auto contentSyncScreen =
-                new ContentSyncScreen(*display, localStore, this->prefs_, this->telemetry_);
+            auto contentSyncScreen = new ContentSyncScreen(*display, localStore, this->prefs_,
+                                                           this->telemetry_, this->power_);
             display->setFont(mainMenu->getMyStyle().navigationFont);
             this->setCurrentScreen(*contentSyncScreen);
             contentSyncScreen->setBackCallback([this, contentSyncScreen, mainMenu, display]() {

@@ -24,13 +24,10 @@ typedef enum {
 
 class BLEHttpClient : public HttpClient {
 public:
-    BLEHttpClient(const char *url, const char *contentType = "",
-                  esp_http_client_method_t method = HTTP_METHOD_GET);
+    BLEHttpClient(const char *url, const std::shared_ptr<CancelFlag> &cancelFlag,
+                  const char *contentType = "", esp_http_client_method_t method = HTTP_METHOD_GET);
     BLEHttpClient(const BLEHttpClient &) = delete;
     ~BLEHttpClient() override;
-
-    auto connectBle(std::shared_ptr<CancelFlag> cancel) -> bool;
-    auto disconnectBle();
 
     auto setHeader(const char *key, const char *value) -> esp_err_t override;
 
@@ -55,6 +52,8 @@ public:
 
     auto handleWebRequest(const std::string &key, const char *body, size_t bodySize) -> bool;
 
+    void cancel();
+
 private:
     std::shared_ptr<BLEManager> bleManager_;
     std::shared_ptr<BLEProxy> bleProxy_;
@@ -70,4 +69,5 @@ private:
     BLEHttpClientState state_{BLE_HTTP_CLIENT_IDLE};
 
     SemaphoreHandle_t dataSemaphore_{};
+    std::shared_ptr<CancelFlag> cancel_;
 };

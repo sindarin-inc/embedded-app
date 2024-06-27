@@ -233,7 +233,7 @@ auto SindarinAPI::createClient(const std::string &url, const std::string &conten
     -> std::shared_ptr<HttpClient> {
     if (useBle) {
 #if USE_BLE_SERVER_PROXY
-        return std::make_shared<BLEHttpClient>(url.c_str(), contentType.c_str(), method);
+        return std::make_shared<BLEHttpClient>(url.c_str(), cancel, contentType.c_str(), method);
 #else
         return nullptr;
 #endif

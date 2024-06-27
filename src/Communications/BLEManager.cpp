@@ -104,6 +104,10 @@ void BLEManager::disconnectProxy() {
     disableService(BLEProxy::getInstance()->getService());
     enableService(BLERemoteInput::getInstance()->getService());
     enableService(BLEImprov::getInstance()->getService());
+    if (connectedProxy) {
+        // Disconnect from proxy
+        BLEProxy::getInstance()->disconnect(connId_);
+    }
 
     connectedProxy = false;
 }

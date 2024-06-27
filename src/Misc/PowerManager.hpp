@@ -188,8 +188,8 @@ public:
 
     auto state() -> PowerState { return state_; }
 
-    void setStateChangeCallback(std::function<void(PowerState)> callback) {
-        stateChangeCallback_ = std::move(callback);
+    void addStateChangeCallback(std::function<void(PowerState)> callback) {
+        stateChangeCallbacks_.push_back(std::move(callback));
     }
 
     void setBeginShutdownCallback(const std::function<void()> &callback) {
@@ -243,7 +243,7 @@ public:
 protected:
     PreferencesStore &prefs_;
     PowerState state_ = PowerState::Booting;
-    std::function<void(PowerState)> stateChangeCallback_;
+    std::vector<std::function<void(PowerState)>> stateChangeCallbacks_;
     std::function<void()> beginShutdownCallback_;
     LightingController &lightingController_;
     DisplaySystem &display_;

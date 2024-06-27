@@ -277,8 +277,8 @@ auto PowerManager::begin() -> esp_err_t {
                     log_i("USB connected, switching to ActiveUSBCharging");
                     state_ = PowerState::ActiveUSBCharging;
                     inactivityTimer_.setTimeoutMs(inactivityTimeoutMs());
-                    if (stateChangeCallback_ != nullptr) {
-                        stateChangeCallback_(state_);
+                    for (auto &callback : stateChangeCallbacks_) {
+                        callback(state_);
                     }
                 }
                 // USB is connected so disable light sleep
@@ -343,8 +343,8 @@ void PowerManager::loop() {
         if (state_ == PowerState::Active || state_ == PowerState::ActiveForcedOn) {
             state_ = PowerState::ActiveBatteryDepleted;
             inactivityTimer_.setTimeoutMs(inactivityTimeoutMs());
-            if (stateChangeCallback_ != nullptr) {
-                stateChangeCallback_(state_);
+            for (auto &callback : stateChangeCallbacks_) {
+                callback(state_);
             }
         } else {
             powerOff();
@@ -394,8 +394,8 @@ void PowerManager::loop() {
         log_e("Temperature is too high (%d)! Going to sleep.", temperature);
         state_ = PowerState::ActiveOverTemp;
         inactivityTimer_.setTimeoutMs(inactivityTimeoutMs());
-        if (stateChangeCallback_ != nullptr) {
-            stateChangeCallback_(state_);
+        for (auto &callback : stateChangeCallbacks_) {
+            callback(state_);
         }
     }
 
@@ -484,8 +484,8 @@ void PowerManager::releaseLED() {
 void PowerManager::beginShutdown() {
     auto previousState = state_;
     state_ = PowerState::ShuttingDown;
-    if (stateChangeCallback_ != nullptr) {
-        stateChangeCallback_(state_);
+    for (auto &callback : stateChangeCallbacks_) {
+        callback(state_);
     }
 
     auto taskName = pcTaskGetName(nullptr);
@@ -548,8 +548,10 @@ void PowerManager::beginShutdown() {
 }
 
 void PowerManager::reboot() {
-    beginShutdown();
-    esp_restart();
+    if (state_ != PowerState::ShuttingDown) {
+        beginShutdown();
+        esp_restart();
+    }
 }
 
 void PowerManager::scheduleSync(SyncReason reason, time_t time) {

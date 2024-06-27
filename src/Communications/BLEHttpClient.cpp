@@ -12,16 +12,17 @@
 #include "Misc/Defer.hpp"
 #include "Misc/RateLimiter.hpp"
 
-BLEHttpClient::BLEHttpClient(const char *url, const char *contentType,
-                             esp_http_client_method_t method)
+BLEHttpClient::BLEHttpClient(const char *url, const std::shared_ptr<CancelFlag> &cancelFlag,
+                             const char *contentType, esp_http_client_method_t method)
     : HttpClient(url, contentType, method), requestMethod_(method), responseBody_(MAX_BUFFER_SIZE),
-      dataSemaphore_(xSemaphoreCreateBinary()) {
+      dataSemaphore_(xSemaphoreCreateBinary()), cancel_(cancelFlag) {
 
     requestHeaders_.clear();
 
     bleManager_ = BLEManager::getInstance();
     bleProxy_ = BLEProxy::getInstance();
     this->connected = bleManager_->connectedProxy;
+    cancel_->addObserver(this, [this]() { this->cancel(); });
 
     if (method != HTTP_METHOD_GET) {
         requestHeaders_.emplace_back(SpiramString("Content-Type"), SpiramString(contentType));
@@ -31,7 +32,12 @@ BLEHttpClient::BLEHttpClient(const char *url, const char *contentType,
 BLEHttpClient::~BLEHttpClient() {
     bleProxy_->registerSubscriptionStatusCallback(nullptr);
     bleProxy_->registerWebRequestHandler(nullptr);
-    vSemaphoreDelete(dataSemaphore_);
+    if (dataSemaphore_ != nullptr) {
+        log_d("BLEHttpClient destructor, giving semaphore to clear: %p", dataSemaphore_);
+        xSemaphoreGive(dataSemaphore_);
+    }
+
+    cancel_->removeObserver(this);
 }
 
 auto BLEHttpClient::setHeader(const char *key, const char *value) -> esp_err_t {
@@ -267,11 +273,21 @@ auto BLEHttpClient::open(int contentLength) -> esp_err_t {
     return ESP_OK;
 }
 
-auto BLEHttpClient::close() -> esp_err_t { return ESP_OK; }
+auto BLEHttpClient::close() -> esp_err_t {
+    cancel();
+    return ESP_OK;
+}
 
 auto BLEHttpClient::isChunkedResponse() -> bool { return false; }
 
 auto BLEHttpClient::writeChunkedData(const char *data, int length) -> bool { return true; }
 
 auto BLEHttpClient::endChunkedData() -> bool { return true; }
+
+void BLEHttpClient::cancel() {
+    // Free the semaphore if it exists so it doesn't block shutdown/cancellation
+    if (dataSemaphore_ != nullptr) {
+        xSemaphoreGive(dataSemaphore_);
+    }
+}
 #endif

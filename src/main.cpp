@@ -368,7 +368,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     if (powerManager.state() == PowerState::Background) {
         log_i("Booting into PowerState::Background, running a content sync");
         // Spin up a task just to check the temple and battery
-        powerManager.setStateChangeCallback([](PowerState state) {
+        powerManager.addStateChangeCallback([](PowerState state) {
             if (state == PowerState::ShuttingDown) {
                 log_d("Signaling background sync to cancel");
                 BackgroundSyncCancel();
@@ -551,7 +551,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         UIInnerLoop(RemoteCommand::NONE);
     };
 
-    powerManager.setStateChangeCallback([&showChargingScreen](PowerState state) {
+    powerManager.addStateChangeCallback([&showChargingScreen](PowerState state) {
         DispatchGetUiQueue()->dispatch([&showChargingScreen, state]() {
             if (state == PowerState::ActiveUSBCharging) {
                 showChargingScreen();
