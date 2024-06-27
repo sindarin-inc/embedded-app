@@ -138,10 +138,13 @@ void BackgroundSyncInternal(PowerManager &powerManager, PreferencesStore &prefs,
     if (wifiConnected && !WiFi::getInstance().connected()) {
         log_w("WiFi not connected, ending background sync");
         return;
-    } else if (bleConnected && !BLEManager::getInstance()->connected()) {
+    }
+#if USE_BLE_SERVER_PROXY
+    if (bleConnected && !BLEManager::getInstance()->connected()) {
         log_w("BLE proxy not connected, ending background sync");
         return;
     }
+#endif
 
     telemetry.logMetric(TelemetryField::METRIC_CLOCK_SET, "pre-sync",
                         {{"run-time", GetRunTimeMs()}});
