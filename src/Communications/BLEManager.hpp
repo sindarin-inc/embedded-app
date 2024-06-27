@@ -50,7 +50,7 @@ public:
         }
         return true;
     }
-    auto connected() const -> bool { return connectedProxy; }
+    [[nodiscard]] auto connected() const -> bool { return connectedProxy; }
     bool connectedProxy{false};
 
 protected:
