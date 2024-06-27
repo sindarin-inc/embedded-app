@@ -123,8 +123,8 @@ auto RLEExtractor::copyOneRowOneBit(const MemoryPtr fromLine, MemoryPtr toLine, 
     }
 }
 
-auto RLEExtractor::retrieveBitmap(const RLEBitmap &fromBitmap, Bitmap &toBitmap, const Pos atOffset,
-                                  const RLEMetrics rleMetrics, bool inverted) -> bool {
+auto RLEExtractor::retrieveBitmap(const RLEBitmap &fromBitmap, Bitmap &toBitmap, Pos atOffset,
+                                  RLEMetrics rleMetrics, bool inverted) -> bool {
     // point on the glyphs' bitmap definition
     fromPixelsPtr_ = fromBitmap.pixels;
     fromPixelsEnd_ = fromPixelsPtr_ + fromBitmap.length;

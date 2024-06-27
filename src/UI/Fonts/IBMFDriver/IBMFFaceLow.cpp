@@ -57,7 +57,7 @@ auto IBMFFaceLow::load(const MemoryPtr dataStart, const int dataLength, FontForm
 /// @param kern Out. When a kerning entry is found in the program, kern will receive the value.
 /// @return True if a ligature was found, false otherwise.
 ///
-auto IBMFFaceLow::ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2, FIX16 *kern) -> bool {
+auto IBMFFaceLow::ligKern(GlyphCode glyphCode1, GlyphCode *glyphCode2, FIX16 *kern) -> bool {
 
     if ((glyphCode1 >= faceHeader_->glyphCount) || (*glyphCode2 >= faceHeader_->glyphCount)) {
         *kern = 0;

@@ -63,10 +63,10 @@ auto Place::factory(const std::string &placeStr, DocType docType) -> std::shared
     }
 }
 
-auto Place::factory(const uint32_t offset, const std::string &href) -> std::shared_ptr<Place> {
+auto Place::factory(uint32_t offset, const std::string &href) -> std::shared_ptr<Place> {
     return std::make_shared<EPubPlace>(offset, href);
 }
 
-auto Place::factory(const uint32_t offset) -> std::shared_ptr<Place> {
+auto Place::factory(uint32_t offset) -> std::shared_ptr<Place> {
     return std::make_shared<TxtPlace>(offset);
 }

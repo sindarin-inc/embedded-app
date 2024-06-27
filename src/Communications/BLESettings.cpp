@@ -65,7 +65,7 @@ void BLESettings::writePageTurnerBatteryToCharacteristic(BLECharacteristic *char
     characteristic->notify();
 }
 
-void BLESettings::disconnectPageTurnerForSeconds(const int seconds) {
+void BLESettings::disconnectPageTurnerForSeconds(int seconds) {
     log_i("GATT client disconnecting page turner for %d seconds", seconds);
 #if USE_TURN_TOUCH_REMOTE
     ttRemoteInput_->disconnectTemporarily(seconds);
