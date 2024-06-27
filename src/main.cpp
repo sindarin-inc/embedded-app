@@ -1,5 +1,6 @@
 #if !SIMULATOR
 #include <driver/uart.h>
+#include <driver/usb_serial_jtag.h>
 #include <soc/rtc.h>
 #endif
 
@@ -34,6 +35,7 @@
 #include "UI/PowerDepletedScreen.hpp"
 #include "UI/RootUI.hpp"
 #include "UI/TestAlignmentScreen.hpp"
+#include "Version.hpp"
 #include "config.h"
 #include "sindarin-debug.h"
 
@@ -132,6 +134,36 @@ void PollingLoopTask(void *parameter) {
             DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::ENTER); });
         } else if (command == "BACK") {
             DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::BACK); });
+        } else if (command == "SLEEPOFF") {
+            powerManager.debugDisableLightSleep();
+        } else if (command == "SLEEPON") {
+            powerManager.debugEnableLightSleep();
+        } else if (command == "LOCKS") {
+#if !DISABLE_POWER_MANAGEMENT
+            auto err = esp_pm_dump_locks(stdout);
+            if (err != ESP_OK) {
+                log_e("esp_pm_dump_locks error: %s", esp_err_to_name(err));
+            }
+#endif
+        } else if (command == "ALLOWOFF") {
+            AllowPowerOff();
+        } else if (command == "UNPAIRPT") {
+#if USE_TURN_TOUCH_REMOTE
+            ttRemoteInput.unpairAndDisconnect();
+#endif
+        } else if (command == "VERSION") {
+            log_i("Version: %s Git: %s", SemanticVersionString(), GitVersionString());
+        } else if (command == "BATT") {
+            log_i("Left: %f Right: %f", powerManager.battery.getLeftBatteryVoltage(),
+                  powerManager.battery.getRightBatteryVoltage());
+        } else if (command == "SERIAL") {
+            log_i("SN: %s", GetSerialNumber().c_str());
+        } else if (command == "USBPWR") {
+            log_i("USB Power: %d", USBConnected());
+        } else if (command == "BOOTREASON") {
+            log_i("Boot reason: %s", powerManager.getBootInfo().humanStr().c_str());
+        } else {
+            log_w("Unknown debug command: %s", command.c_str());
         }
     });
 
@@ -158,6 +190,25 @@ void PollingLoopTask(void *parameter) {
         // Run the power loop first so that we don't show a 0% battery reading
         powerManager.loop();
 
+#if !SIMULATOR
+        // Handle debug commands early so that we can avoid sleep if necessary
+        // Spend the rest of the time waiting for debug commands (that will probably never come)
+        uint8_t buf[256];
+
+        // There's not a queue-driven way to watch for things from the usb/jtag interface so we
+        // simply poll
+        auto rxSize = usb_serial_jtag_read_bytes(buf, sizeof(buf), 0);
+        if (rxSize > 0) {
+            log_i("Received %d bytes from USB", rxSize);
+            debugCommand.addData(buf, rxSize);
+        }
+        rxSize = uart_read_bytes(UART_NUM_0, buf, sizeof(buf), 0);
+        if (rxSize > 0) {
+            log_i("Received %d bytes from USB", rxSize);
+            debugCommand.addData(buf, rxSize);
+        }
+#endif
+
 #if USE_TURN_TOUCH_REMOTE
         // Skip scanning while WiFi is connected to avoid kicking off the WiFi connection
         if (!WiFi::getInstance().connected()) {
@@ -171,27 +222,7 @@ void PollingLoopTask(void *parameter) {
         BLEImprov::getInstance()->loop();
 #endif
 
-#if SIMULATOR
         vTaskDelay(pdMS_TO_TICKS(1000));
-#else
-        // Spend the rest of the time waiting for debug commands (that will probably never come)
-        uart_event_t event;
-        if (xQueueReceive(GetUartCommandQueue(), &event, pdMS_TO_TICKS(1000))) {
-            switch (event.type) {
-            case UART_DATA: {
-                uint8_t buf[256];
-                auto rxSize = uart_read_bytes(UART_NUM_0, buf, event.size, 0);
-                if (rxSize > 0) {
-                    debugCommand.addData(buf, rxSize);
-                }
-                break;
-            }
-            default:
-                log_w("Unhandled UART event: %d", event.type);
-                break;
-            }
-        }
-#endif
 
         // This happens after the delay, so that the first check can run with a faster fade.
         lightingController.checkAmbientLight();
@@ -305,14 +336,16 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
             }
         });
 
-        xTaskCreatePinnedToCore([](void *) {
+        xTaskCreatePinnedToCore(
+            [](void *) {
             while (powerManager.state() != PowerState::ShuttingDown) {
                 powerManager.loop();
                 vTaskDelay(1000 / portTICK_PERIOD_MS);
             }
             log_d("Background loop task exited");
             vTaskDelete(nullptr);
-        }, "BackgroundPowerLoop", 4096, nullptr, 1, nullptr, 1);
+            },
+            "BackgroundPowerLoop", 4096, nullptr, 1, nullptr, 1);
         BackgroundSyncAndSleep(powerManager, prefs, localStore, telemetry);
 
         // Should never get here, the system should be asleep
@@ -333,24 +366,11 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 
     SHOW_HEAP();
 
-    // This setting must happen *before* the below vcom set from
-    // preferences. Otherwise, when in dark mode, the vcom
-    // will have the wrong value due to the calculation that
-    // happens in this method. Clunky, for sure. But when
-    // we better understand vcom and don't need to have such fine-tuned
-    // settings for dark mode and vcom, we can probably clean it up then.
-    myDisplay.invertDisplay(prefs.invertSetting.get().value_or(false));
-
 #if EINKET013TT1
 #ifdef DISPLAY_POWER
     // Turn on power to the screen
     DigitalWrite(DISPLAY_POWER, HIGH);
 #endif
-    // If the saved prefs indicated a vcom, set it here.
-    auto vcomSetting = prefs.vcom.get();
-    if (vcomSetting.has_value()) {
-        myDisplay.getDriver()->setVcom(vcomSetting.value());
-    }
 #endif
 
     switch (prefs.font.get().value_or(PREFS_SOL_SMALL)) {
@@ -368,6 +388,22 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     if (!myDisplay.setup()) {
         bootErrors.push_back({.type = BootError::Type::Display});
     }
+
+    // This setting must happen *before* the below vcom set from
+    // preferences. Otherwise, when in dark mode, the vcom
+    // will have the wrong value due to the calculation that
+    // happens in this method. Clunky, for sure. But when
+    // we better understand vcom and don't need to have such fine-tuned
+    // settings for dark mode and vcom, we can probably clean it up then.
+    myDisplay.invertDisplay(prefs.invertSetting.get().value_or(false));
+
+#if EINKET013TT1
+    // If the saved prefs indicated a vcom, set it here.
+    auto vcomSetting = prefs.vcom.get();
+    if (vcomSetting.has_value()) {
+        myDisplay.getDriver()->setVcom(vcomSetting.value());
+    }
+#endif
 
     DisplayRect initialRect{};
     initialRect.x = prefs.rectX.get().value_or(myDisplay.defaultBoundingBox.x);
@@ -387,7 +423,8 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         lightingController.setOverrideValuePercent(100);
 
         // Also kick off a task to try to content sync every minute or so
-        xTaskCreatePinnedToCore([](void *) {
+        xTaskCreatePinnedToCore(
+            [](void *) {
             while (powerManager.state() != PowerState::ShuttingDown) {
                 PreferencesStore::syncReason = SyncReason::Periodic;
                 BackgroundSync(powerManager, prefs, localStore, telemetry);
@@ -395,7 +432,8 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
             }
             log_d("Sync loop task exited");
             vTaskDelete(nullptr);
-        }, "BackgroundSync", 4096, nullptr, 1, nullptr, 1);
+            },
+            "BackgroundSync", 4096, nullptr, 1, nullptr, 1);
     }
 
 #if USE_BLE

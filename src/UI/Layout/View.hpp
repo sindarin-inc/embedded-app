@@ -10,6 +10,11 @@ public:
     View() : layoutContext_(*this) {}
     virtual ~View() = default;
 
+    // Copy constructor needs to recreate layoutContext_ since it captures `this` in a lambda
+    // TODO: This isn't awesome. We should consider either removing the copy constructor or making
+    // it so we always pass the view into the layout
+    View(const View &other) : layoutContext_(*this), hidden_(other.hidden_) {}
+
     // Getter and setter for the frame
     void setFrame(const Rect &frame) { layoutContext_.setFrame(frame); }
 

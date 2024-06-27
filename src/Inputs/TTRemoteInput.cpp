@@ -143,12 +143,10 @@ void TTRemoteInput::dispatchConnection(BLEAdvertisedDevice &device) {
 void TTRemoteInput::unpairAndDisconnect() {
     prefs_.lastPageTurnerBuild.remove();
     prefs_.pairedTurnTouchAddress.remove();
-
-    if (client_ != nullptr) {
-        client_->disconnect();
-    }
-
-    state_ = SCANNING;
+    // Setting a nonzero keepDisconnectedUntilMs_ helps with two things:
+    // 1) It is the signal that the disconnect was intentional
+    // 2) Gives the remote a moment to go back to advertising
+    disconnectTemporarily(1);
 }
 
 void TTRemoteInput::disconnectTemporarily(int seconds) {
@@ -157,18 +155,6 @@ void TTRemoteInput::disconnectTemporarily(int seconds) {
     }
     state_ = SCANNING;
     keepDisconnectedUntilMs_ = Millis() + seconds * 1000;
-
-    std::string dfuString = "DFU-";
-    auto ptBuild = prefs_.lastPageTurnerBuild.get();
-    if (ptBuild.has_value()) {
-        std::string build = ptBuild.value();
-        if (build.find("DFU-") == std::string::npos) {
-            dfuString += build;
-        } else {
-            dfuString = build;
-        }
-    }
-    prefs_.lastPageTurnerBuild.set(dfuString);
 }
 
 void TTRemoteInput::scanForNewDevice() {
@@ -176,40 +162,8 @@ void TTRemoteInput::scanForNewDevice() {
     scan->setInterval(40);
     scan->setWindow(30);
     scan->setActiveScan(true);
-    static TTRemoteInput *sInstance = this;
-    auto started = scan->start(10, [](NimBLEScanResults results) {
-        if (results.getCount() == 0) {
-            log_w("Absolutely 0 BLE devices found.");
-            return;
-        }
-
-        std::vector<NimBLEAdvertisedDevice *> filteredDevices;
-
-        for (auto advertisedDevice : results) {
-            if (advertisedDevice->isAdvertisingService(BLEUUID(TURNTOUCH_BUTTON_SVC_ID))) {
-                filteredDevices.push_back(advertisedDevice);
-            }
-        }
-
-        // Sort devices by RSSI (descending order)
-        std::sort(filteredDevices.begin(), filteredDevices.end(),
-                  [](NimBLEAdvertisedDevice *a, NimBLEAdvertisedDevice *b) {
-            return a->getRSSI() > b->getRSSI();
-        });
-
-        log_i("Scan complete. Found %zu PageTurner devices (%d total BLE devices)",
-              filteredDevices.size(), results.getCount());
-
-        if (filteredDevices.empty()) {
-            return;
-        }
-        for (auto advertisedDevice : filteredDevices) {
-            log_d("PageTurner: %s, RSSI: %d", advertisedDevice->getAddress().toString().c_str(),
-                  advertisedDevice->getRSSI());
-        }
-
-        sInstance->dispatchConnection(*(filteredDevices[0]));
-    });
+    scan->setScanCallbacks(&newDeviceScanCallbacks_);
+    auto started = scan->start(10000, false);
     if (!started) {
         log_e("Failed to start scan");
         return;
@@ -237,7 +191,7 @@ void TTRemoteInput::scanForPairedDevice() {
     }
 
     BLEScan *scan = BLEDevice::getScan();
-    scan->setAdvertisedDeviceCallbacks(&advertisedDeviceCallbacks_);
+    scan->setScanCallbacks(&pairedDeviceScanCallbacks_);
     // See: https://electronics.stackexchange.com/a/359158/16459
     // Only one advertising channel is being looked at during each
     // scanInterval and is rotated to the next of 3 channels with each interval. So if there is
@@ -246,7 +200,7 @@ void TTRemoteInput::scanForPairedDevice() {
     scan->setInterval(40);
     scan->setWindow(30);
     scan->setActiveScan(useActiveScan);
-    auto started = scan->start((RESCAN_INTERVAL_MS / 1000), nullptr, false);
+    auto started = scan->start(RESCAN_INTERVAL_MS, false);
     if (!started) {
         log_e("Failed to start scan");
         return;

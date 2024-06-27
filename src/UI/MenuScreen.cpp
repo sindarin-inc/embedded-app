@@ -21,6 +21,8 @@ auto MenuScreen::layout(LayoutContext &context, Size size) -> Size {
     return size;
 }
 
+void MenuScreen::requireRestart() { restartOnBack_ = true; }
+
 void MenuScreen::drawInRect(Rect rect) {
     leftArrowView_.draw();
     upperLeftTextView_.draw();

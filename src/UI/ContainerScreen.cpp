@@ -1,5 +1,8 @@
 #include "UI/ContainerScreen.hpp"
 
+#include "Misc/Platform.hpp"
+#include "UI/MsgPopup.hpp"
+
 void ContainerScreen::setCurrentScreen(Screen &screen) {
     screen.setNeedsRerender();
     currentScreen_ = &screen;
@@ -30,5 +33,17 @@ void ContainerScreen::clearNeedsRerender() {
         currentScreen_->clearNeedsRerender();
     } else {
         Screen::clearNeedsRerender();
+    }
+}
+
+void ContainerScreen::showTemporaryMessage(DisplaySystem &display, const std::string &message,
+                                           int duration, bool rerenderAfter) {
+    auto *popup = new MsgPopup(display, message);
+    popup->render(display);
+    delete popup;
+    if (rerenderAfter) {
+        Delay(duration);
+        setNeedsRerender();
+        this->render(display);
     }
 }
