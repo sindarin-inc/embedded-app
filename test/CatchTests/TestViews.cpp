@@ -425,7 +425,7 @@ TEST_CASE("Test some views independently") {
             PowerManager power(fs, prefs, lightingController, *display, telemetry);
             LocalStore localStore(fs, prefs, battery, telemetry);
 
-            ContentSyncScreen screen(*display, localStore, prefs, telemetry);
+            ContentSyncScreen screen(*display, localStore, prefs, telemetry, power);
             screen.render(*display);
             ASSERT_VIEW_UNCHANGED(display, "ContentSyncScreen1");
 
