@@ -64,7 +64,7 @@ protected:
     public:
         BLEManager *enclosed;
         ServerCallbacks(BLEManager *enclosure) : enclosed(enclosure) {}
-        void onConnect(NimBLEServer *pServer, NimBLEConnInfo &connInfo) override {
+        void onConnect(NimBLEServer *pServer, NimBLEConnInfo &connInfo) const override {
             SHOW_HEAP();
             log_i("BLE client connected to our server");
 
@@ -86,7 +86,8 @@ protected:
             // server->updateConnParams(desc->conn_handle, 36, 90, 2, 600);
             NimBLEDevice::setMTU(MTU_CHUNK_SIZE);
         }
-        void onDisconnect(NimBLEServer *pServer, NimBLEConnInfo &connInfo, int reason) override {
+        void onDisconnect(NimBLEServer *pServer, NimBLEConnInfo &connInfo,
+                          int reason) const override {
             SHOW_HEAP();
             log_i("BLE client disconnected from our server");
             enclosed->authed_ = false;
