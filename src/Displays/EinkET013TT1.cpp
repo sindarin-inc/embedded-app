@@ -434,12 +434,13 @@ void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *b
             powerOffInternal();
         } else {
             log_d("Eink queue has work to do! Not powering off");
-            sequentialUpdateCount_ += 1;
-            if (sequentialUpdateCount_ >= 5) {
+            if (updateStartTime_ + 5000 < Millis()) {
                 // Note: I wasn't able to get esp_task_wdt_reset to work here, but probably not a
-                // bad thing to rest for a moment.
-                log_w("%d sequential updates. Taking a break.", sequentialUpdateCount_);
-                Delay(200);
+                // bad thing to rest for a moment when we're running solid updates nonstop.
+                log_w("Sequential updates for %" PRIu32 "ms. Taking a 300ms break.",
+                      Millis() - updateStartTime_);
+                updateStartTime_ = Millis();
+                Delay(300);
             }
         }
     });
@@ -563,7 +564,6 @@ void EinkET013TT1::powerOnInternal() {
     }
 
     log_d("Powering on EinkET013TT1");
-    sequentialUpdateCount_ = 0;
 
     DigitalWrite(rst_, HIGH);
 
@@ -612,6 +612,8 @@ void EinkET013TT1::powerOnInternal() {
     writeRegister(DRIVER_LATCH_RESET_PULSE_GENERATE, 0x10, screen);
 
     spi_device_release_bus(spiHigh_);
+
+    updateStartTime_ = Millis();
 
     poweredOn_ = true;
     log_d("EinkET013TT1 powered on");
