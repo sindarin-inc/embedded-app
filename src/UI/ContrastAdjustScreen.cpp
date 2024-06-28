@@ -130,6 +130,7 @@ void ContrastAdjustScreen::processCommand(RemoteCommand command) {
                                          CONTRAST_STEP_INCREMENT,
                                      VCOM_MAX);
         driver->setVcom(setting);
+        prefs_.vcom.set(setting);
         log_i("Vcom: %d, Nudge: %d: %d", driver->getVcom(), driver->getVcomNudge(),
               -1 * (driver->getVcom() - driver->getVcomNudge()));
         logTelemetry(setting, "up");
@@ -141,6 +142,7 @@ void ContrastAdjustScreen::processCommand(RemoteCommand command) {
                                          CONTRAST_STEP_INCREMENT,
                                      VCOM_MIN);
         driver->setVcom(setting);
+        prefs_.vcom.set(setting);
         log_i("Vcom: %d, Nudge: %d: %d", driver->getVcom(), driver->getVcomNudge(),
               -1 * (driver->getVcom() - driver->getVcomNudge()));
         logTelemetry(setting, "down");
