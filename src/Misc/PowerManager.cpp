@@ -294,18 +294,14 @@ auto PowerManager::begin() -> esp_err_t {
                     }
                 }
                 // USB is connected so disable light sleep
-#if !DISABLE_POWER_MANAGEMENT
                 PmLock("pm_usb", &usbPowerLightSleepLock_);
-#endif
             } else { // !USBConnected()
                 if (state_ == PowerState::ActiveUSBCharging) {
                     log_i("USB disconnected, rebooting to Active");
                     reboot();
                 } else {
                     // USB is disconnected so enable light sleep
-#if !DISABLE_POWER_MANAGEMENT
                     PmUnlock(&usbPowerLightSleepLock_);
-#endif
                 }
             }
         });
