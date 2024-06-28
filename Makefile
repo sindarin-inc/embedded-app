@@ -72,6 +72,8 @@ configure: check_idf
 .PHONY: build
 build: check_idf configure
 	idf.py build
+	python scripts/compare_bin_files.py build/embedded-app.bin build/embedded-app-previous.bin || true
+	cp build/embedded-app.bin build/embedded-app-previous.bin || true
 
 .PHONY: flash
 flash: build
