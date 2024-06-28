@@ -293,7 +293,7 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry,
         // UBaseType_t watermark = uxTaskGetStackHighWaterMark(NULL);
         // log_d("Disk writer task stack high watermark: %d", watermark);
         },
-        4000, 2, 1);
+        4000, 2, 1, "FWrite");
 
     // Spin up the downloader task
     int httpCode;
@@ -308,7 +308,7 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry,
         // UBaseType_t watermark = uxTaskGetStackHighWaterMark(NULL);
         // log_d("Downloader task stack high watermark: %d", watermark);
         },
-        4000, 3, 1);
+        5000, 3, 1, "FDownload");
 
     // Wait for disk write to complete
     xSemaphoreTake(writeCompleteSemaphore, portMAX_DELAY);
