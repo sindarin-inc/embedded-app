@@ -44,8 +44,6 @@ auto ContrastAdjustScreen::layout(LayoutContext &context, Size size) -> Size {
                     auto barRect = context.setViewFrame(barView_, barRectFrame);
 
                     auto *driver = (dynamic_cast<DisplayEinkET013TT1 *>(&display_))->getDriver();
-                    log_i("Vcom: %d, Nudge: %d: %d", driver->getVcom(), driver->getVcomNudge(),
-                          -1 * (driver->getVcom() - driver->getVcomNudge()));
                     auto vcom = -1 * (driver->getVcom() - driver->getVcomNudge());
                     float vcomPct = (vcom - VCOM_MIN) / static_cast<float>(VCOM_MAX - VCOM_MIN);
                     auto fillHeight = vcomPct * barRect.size.height;
@@ -132,6 +130,8 @@ void ContrastAdjustScreen::processCommand(RemoteCommand command) {
                                          CONTRAST_STEP_INCREMENT,
                                      VCOM_MAX);
         driver->setVcom(setting);
+        log_i("Vcom: %d, Nudge: %d: %d", driver->getVcom(), driver->getVcomNudge(),
+              -1 * (driver->getVcom() - driver->getVcomNudge()));
         logTelemetry(setting, "up");
         setNeedsRerender();
         break;
@@ -141,6 +141,8 @@ void ContrastAdjustScreen::processCommand(RemoteCommand command) {
                                          CONTRAST_STEP_INCREMENT,
                                      VCOM_MIN);
         driver->setVcom(setting);
+        log_i("Vcom: %d, Nudge: %d: %d", driver->getVcom(), driver->getVcomNudge(),
+              -1 * (driver->getVcom() - driver->getVcomNudge()));
         logTelemetry(setting, "down");
         setNeedsRerender();
         break;

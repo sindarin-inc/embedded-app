@@ -434,6 +434,13 @@ void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *b
             powerOffInternal();
         } else {
             log_d("Eink queue has work to do! Not powering off");
+            sequentialUpdateCount_ += 1;
+            if (sequentialUpdateCount_ >= 5) {
+                // Note: I wasn't able to get esp_task_wdt_reset to work here, but probably not a
+                // bad thing to rest for a moment.
+                log_w("%d sequential updates. Taking a break.", sequentialUpdateCount_);
+                Delay(200);
+            }
         }
     });
 
@@ -556,6 +563,8 @@ void EinkET013TT1::powerOnInternal() {
     }
 
     log_d("Powering on EinkET013TT1");
+    sequentialUpdateCount_ = 0;
+
     DigitalWrite(rst_, HIGH);
 
     ESP_ERROR_CHECK(spi_device_acquire_bus(spiHigh_, portMAX_DELAY));

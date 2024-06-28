@@ -122,6 +122,7 @@ protected:
     uint32_t vcomInMV_{};
     uint32_t vcomNudge_ = 0;
 
+    uint8_t sequentialUpdateCount_ = 0;
     uint16_t timerOverruns_{};
     uint16_t busyWaits_{};
     uint32_t maxFrameCycles_{};
