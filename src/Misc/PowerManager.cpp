@@ -282,7 +282,7 @@ auto PowerManager::begin() -> esp_err_t {
     attachInterrupt(
         digitalPinToInterrupt(USB_CONNECTED_PIN),
         [this]() {
-        DispatchGetCore1BackgroundQueue()->dispatch([this]() {
+        DispatchGetCore1BackgroundQueue()->dispatchFromISR([this]() {
             if (USBConnected()) {
                 // If USB is connected, disable operation unless we've disabled this behavior
                 if (!prefs_.allowUsageWhileCharging.get().value_or(false)) {
