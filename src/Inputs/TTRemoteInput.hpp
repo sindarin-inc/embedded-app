@@ -112,6 +112,12 @@ protected:
             if (filteredDevices.empty()) {
                 return;
             }
+
+            // Pre-emptively set the state so that we don't start scanning again while we're logging
+            // the discovered devices. This is probably only a problem in our office where we have
+            // literally hundreds of page turners.
+            enclosed->state_ = CONNECTING;
+
             for (auto advertisedDevice : filteredDevices) {
                 log_d("PageTurner: %s, RSSI: %d", advertisedDevice->getAddress().toString().c_str(),
                       advertisedDevice->getRSSI());
@@ -135,7 +141,6 @@ protected:
         }
 
         void onDisconnect(NimBLEClient *client, int reason) override {
-            log_w("BLE PageTurner disconnected!");
             enclosed->state_ = SCANNING;
             if (enclosed->keepDisconnectedUntilMs_ != 0 &&
                 enclosed->keepDisconnectedUntilMs_ > Millis()) {
