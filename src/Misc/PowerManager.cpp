@@ -58,7 +58,7 @@ auto PmUnlock(esp_pm_lock_handle_t *lock) -> void {
         if (err != ESP_OK) {
             log_e("Failed to delete pm lock err: %s", esp_err_to_name(err));
         }
-        lock = nullptr;
+        *lock = nullptr;
     }
 }
 #endif
