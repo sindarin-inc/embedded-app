@@ -52,6 +52,7 @@ auto TTRemoteInput::connectToDevice(BLEAdvertisedDevice &device) -> bool {
         log_e("Failed to find PageTurner button characteristic UUID.");
         return false;
     }
+    log_d("PageTurner button characteristic found.");
 
     if (buttonCharacteristic->canNotify()) {
         auto callback = [this](auto &&pH1, auto &&pH2, auto &&pH3, auto &&pH4) {
@@ -60,7 +61,10 @@ auto TTRemoteInput::connectToDevice(BLEAdvertisedDevice &device) -> bool {
                 std::forward<decltype(pH3)>(pH3), std::forward<decltype(pH4)>(pH4));
         };
         buttonCharacteristic->subscribe(true, callback);
+        log_d("PageTurner buttonCharacteristic subscribed.");
     }
+
+    log_d("queueing discovery stuff.");
 
     // Discover non-immediate services and characteristics asynchronously
     auto queue = DispatchGetCore0BackgroundQueue();
@@ -113,6 +117,7 @@ auto TTRemoteInput::connectToDevice(BLEAdvertisedDevice &device) -> bool {
             prefs_.pairedTurnTouchAddress.set(address);
         }
     });
+    log_d("done queueing discovery stuff.");
 
     SHOW_HEAP();
 
