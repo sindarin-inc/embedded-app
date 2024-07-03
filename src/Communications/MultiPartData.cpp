@@ -106,13 +106,13 @@ auto MultiPartData::startFile(const std::string &key) -> bool {
 }
 
 auto MultiPartData::writeFileChunk(uint8_t *chunk, int len) -> bool {
-    log_i("trying to write %d bytes", len);
+    // log_i("trying to write %d bytes", len);
     if (tempFile_.write(chunk, len) != len) {
         log_i("write failed!");
         return false;
     }
 
-    log_i("success %d bytes", len);
+    // log_i("success %d bytes", len);
     return true;
 }
 

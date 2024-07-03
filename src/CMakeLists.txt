@@ -28,7 +28,8 @@ set(compile_options
     -DDISABLE_POWER_MANAGEMENT=1
     -DINTERNAL_SPIFFS_FLASH=1
     -DLED_INVERT=1
-    -DEINKET013TT1=1
+    -DEINKET013TT1=0
+    -DDISPLAY_WAVESHARE_UART_43=1
 )
 
 # Check if the BUILD_FOR_TEST environment variable is set and add the extra option if it is

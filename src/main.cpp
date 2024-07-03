@@ -45,6 +45,9 @@
 #if EINKET013TT1
 #include "Displays/DisplayEinkET013TT1.hpp"
 DisplayEinkET013TT1 myDisplay(DISPLAY_CS_LEFT, DISPLAY_CS_RIGHT, DISPLAY_RST);
+#elif DISPLAY_WAVESHARE_UART_43
+#include "Displays/DisplayWaveshareUART43.hpp"
+DisplayWaveshareUART43 myDisplay;
 #elif DISPLAY_SIM_8BIT
 // Declared in native.cpp
 #include "Displays/DisplaySim8Bit.hpp"
@@ -383,10 +386,12 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         break;
     }
 
+    log_i("Setting up display");
     if (!myDisplay.setup()) {
         bootErrors.push_back({.type = BootError::Type::Display});
     }
 
+    log_i("finished display setup");
     // This setting must happen *before* the below vcom set from
     // preferences. Otherwise, when in dark mode, the vcom
     // will have the wrong value due to the calculation that
