@@ -46,8 +46,8 @@
 // Disable Improve BLE WiFi provisioning service
 // #define DISABLE_IMPROV
 
-#define RED_LED 7
-#define GREEN_LED 6
+#define RED_LED 18
+#define GREEN_LED 18
 #define BLUE_LED 18
 
 #ifdef LED_INVERT
@@ -107,4 +107,4 @@
 #define I2C_MASTER_FREQ_HZ 400000
 #endif
 
-#define USB_CONNECTED_PIN 8
+// #define USB_CONNECTED_PIN 8
