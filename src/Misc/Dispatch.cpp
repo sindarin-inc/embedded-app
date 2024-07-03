@@ -150,8 +150,10 @@ void DispatchQueue::dispatchThreadHandler() {
 }
 
 void DispatchQueue::dispatchOneOff(const fp_t &op, size_t threadStack, UBaseType_t priority,
-                                   BaseType_t core) {
+                                   BaseType_t core, const char *name) {
     auto work = new WorkItem{.op = op, .quit = false};
+    char nameBuf[16];
+    SafeSnprintf(nameBuf, sizeof(nameBuf), "D:%s", name);
     xTaskCreatePinnedToCore(
         [](void *param) {
         auto work = reinterpret_cast<WorkItem *>(param);
@@ -159,7 +161,7 @@ void DispatchQueue::dispatchOneOff(const fp_t &op, size_t threadStack, UBaseType
         delete work;
         vTaskDelete(nullptr);
         },
-        "D:OneOff", threadStack, work, priority, nullptr, core);
+        nameBuf, threadStack, work, priority, nullptr, core);
 }
 
 static DispatchQueue *core0BackgroundQueue = nullptr;

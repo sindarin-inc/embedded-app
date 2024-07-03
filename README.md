@@ -13,7 +13,7 @@ git submodule update --init --recursive
 The primary way to build the firmware itself is with Espressif's official [esp-idf toolchain](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/linux-macos-setup.html). In some other directory (not in this repo), run:
 
 ```sh
-git clone -b v5.1 --recursive https://github.com/espressif/esp-idf.git
+git clone -b v5.1.4 --recursive https://github.com/espressif/esp-idf.git
 cd esp-idf
 ./install.sh esp32s3
 ```

@@ -36,6 +36,7 @@
 #include "UI/PowerDepletedScreen.hpp"
 #include "UI/RootUI.hpp"
 #include "UI/TestAlignmentScreen.hpp"
+#include "Version.hpp"
 #include "config.h"
 #include "sindarin-debug.h"
 
@@ -141,6 +142,36 @@ void PollingLoopTask(void *parameter) {
             DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::ENTER); });
         } else if (command == "BACK") {
             DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::BACK); });
+        } else if (command == "SLEEPOFF") {
+            powerManager.debugDisableLightSleep();
+        } else if (command == "SLEEPON") {
+            powerManager.debugEnableLightSleep();
+        } else if (command == "LOCKS") {
+#if !DISABLE_POWER_MANAGEMENT
+            auto err = esp_pm_dump_locks(stdout);
+            if (err != ESP_OK) {
+                log_e("esp_pm_dump_locks error: %s", esp_err_to_name(err));
+            }
+#endif
+        } else if (command == "ALLOWOFF") {
+            AllowPowerOff();
+        } else if (command == "UNPAIRPT") {
+#if USE_TURN_TOUCH_REMOTE
+            ttRemoteInput.unpairAndDisconnect();
+#endif
+        } else if (command == "VERSION") {
+            log_i("Version: %s Git: %s", SemanticVersionString(), GitVersionString());
+        } else if (command == "BATT") {
+            log_i("Left: %f Right: %f", powerManager.battery.getLeftBatteryVoltage(),
+                  powerManager.battery.getRightBatteryVoltage());
+        } else if (command == "SERIAL") {
+            log_i("SN: %s", GetSerialNumber().c_str());
+        } else if (command == "USBPWR") {
+            log_i("USB Power: %d", USBConnected());
+        } else if (command == "BOOTREASON") {
+            log_i("Boot reason: %s", powerManager.getBootInfo().humanStr().c_str());
+        } else {
+            log_w("Unknown debug command: %s", command.c_str());
         }
     });
 
@@ -180,12 +211,7 @@ void PollingLoopTask(void *parameter) {
         BLEImprov::getInstance()->loop();
 #endif
 
-#if SIMULATOR
         vTaskDelay(pdMS_TO_TICKS(1000));
-#else
-        vTaskDelay(pdMS_TO_TICKS(100));
-#endif
-
         // This happens after the delay, so that the first check can run with a faster fade.
         lightingController.checkAmbientLight();
     }

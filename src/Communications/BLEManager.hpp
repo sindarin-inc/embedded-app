@@ -33,10 +33,10 @@ public:
 
     void markAsAuthed() { authed_ = true; }
     [[nodiscard]] auto isAuthed() const -> bool { return authed_; }
-    auto checkAuthed(ble_gap_conn_desc *desc) -> bool {
+    auto checkAuthed(NimBLEConnInfo &connInfo) -> bool {
         if (!authed_) {
             log_w("Client not authenticated, disconnecting");
-            server()->disconnect(desc->conn_handle);
+            server()->disconnect(connInfo.getConnHandle());
             return false;
         }
         return true;
@@ -52,12 +52,12 @@ protected:
     public:
         BLEManager *enclosed;
         ServerCallbacks(BLEManager *enclosure) : enclosed(enclosure) {}
-        void onConnect(BLEServer *server, ble_gap_conn_desc *desc) override {
+        void onConnect(NimBLEServer *pServer, NimBLEConnInfo &connInfo) override {
             SHOW_HEAP();
             log_i("BLE client connected to our server!");
 
             // Store the connection ID so we can disconnect later
-            uint16_t connId = desc->conn_handle;
+            uint16_t connId = connInfo.getConnHandle();
             enclosed->setConnId(connId);
 
             // Apple has _very_ specific requirements for these values and will reject these if
@@ -74,7 +74,7 @@ protected:
             // server->updateConnParams(desc->conn_handle, 36, 90, 2, 600);
             NimBLEDevice::setMTU(MTU_CHUNK_SIZE);
         }
-        void onDisconnect(BLEServer *server) override {
+        void onDisconnect(NimBLEServer *pServer, NimBLEConnInfo &connInfo, int reason) override {
             SHOW_HEAP();
             log_i("BLE client disconnected from our server!");
             enclosed->authed_ = false;

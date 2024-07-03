@@ -94,9 +94,8 @@ public:
             metrics["text_size"] = prefs_.font.get().value_or(PREFS_SOL_SMALL);
             metrics["line_spacing"] = prefs_.lineSpacing.get().value_or(0);
             telemetry_.logMetric(TelemetryField::METRIC_REPORT, readable_->uuid.c_str(), metrics);
-            static std::vector<std::string> reportMsg = {
-                "Thank you, our team will", "review this page for", "formatting issues."};
-            auto *reportPopup = new MsgPopup(display, reportMsg);
+            auto *reportPopup = new MsgPopup(
+                display, "Thank you, our team will\nreview this page for\nformatting issues.");
             display.clearDisplay();
             this->setCurrentScreen(*reportPopup);
             reportPopup->setBackCallback([this, reportPopup, &display]() {

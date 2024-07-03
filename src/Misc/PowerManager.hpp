@@ -22,6 +22,7 @@
 #endif
 
 static constexpr int MAX_OPERATIONAL_TEMPERATURE_C = 50;
+static constexpr int DEFAULT_INACTIVITY_MINUTES = 10;
 
 enum class PowerState {
     Booting,
@@ -75,6 +76,11 @@ struct BootInfo {
         TaskWdt,
         Wdt,
         Brownout,
+        UsbReset,
+        JtagReset,
+        EfuseReset,
+        PwrGlitch,
+        CpuLockup,
 
         // Lower level from RESET_REASON (from rtc_get_reset_reason)
         UartChipReset,
@@ -119,11 +125,21 @@ struct BootInfo {
             return "Brownout";
         case Reason::Wdt:
             return "General Watchdog";
-        default:
-            return StringFormat(
-                "Unknown (resetReason: %d, rtcResetReason: %d, sleepWakeupCause: %d)", resetReason,
-                rtcResetReason, sleepWakeupCause);
+        case Reason::UsbReset:
+            return "USB Reset";
+        case Reason::JtagReset:
+            return "JTAG Reset";
+        case Reason::EfuseReset:
+            return "EfuseReset";
+        case Reason::PwrGlitch:
+            return "Power Glitch";
+        case Reason::CpuLockup:
+            return "CPU Lockup";
+        case Reason::Unknown:
+            break;
         }
+        return StringFormat("Unknown (resetReason: %d, rtcResetReason: %d, sleepWakeupCause: %d)",
+                            resetReason, rtcResetReason, sleepWakeupCause);
     }
 
     [[nodiscard]] auto telemetryStr() const -> std::string {
@@ -152,10 +168,20 @@ struct BootInfo {
             return "Brownout";
         case Reason::Wdt:
             return "Wdt";
-        default:
-            return StringFormat("Unknown (%d,%d,%d)", resetReason, rtcResetReason,
-                                sleepWakeupCause);
+        case Reason::UsbReset:
+            return "UsbReset";
+        case Reason::JtagReset:
+            return "JtagReset";
+        case Reason::EfuseReset:
+            return "EfuseReset";
+        case Reason::PwrGlitch:
+            return "PwrGlitch";
+        case Reason::CpuLockup:
+            return "CpuLockup";
+        case Reason::Unknown:
+            break;
         }
+        return StringFormat("Unknown (%d,%d,%d)", resetReason, rtcResetReason, sleepWakeupCause);
     }
 };
 
@@ -180,6 +206,9 @@ public:
 
     auto forceOn() -> void { state_ = PowerState::ActiveForcedOn; }
     auto disableForceOn() -> void { state_ = PowerState::Active; }
+
+    auto debugDisableLightSleep() -> void;
+    auto debugEnableLightSleep() -> void;
 
     auto state() -> PowerState { return state_; }
 
@@ -251,6 +280,8 @@ protected:
     float lastMagAngle_ = 0;
 #if !DISABLE_POWER_MANAGEMENT
     esp_pm_config_t pmConfig_{};
+    esp_pm_lock_handle_t usbPowerLightSleepLock_ = nullptr;
+    esp_pm_lock_handle_t debugCommandLightSleepLock_ = nullptr;
 #endif
     void updateState();
 

@@ -65,10 +65,23 @@ void BLESettings::writePageTurnerBatteryToCharacteristic(BLECharacteristic *char
     characteristic->notify();
 }
 
-void BLESettings::disconnectPageTurnerForSeconds(const int seconds) {
+void BLESettings::disconnectPageTurnerForSeconds(int seconds) {
     log_i("GATT client disconnecting page turner for %d seconds", seconds);
 #if USE_TURN_TOUCH_REMOTE
     ttRemoteInput_->disconnectTemporarily(seconds);
+
+    // We set this to let the app know the remote is ready to be connected to
+    std::string dfuString = "DFU-";
+    auto ptBuild = prefs_->lastPageTurnerBuild.get();
+    if (ptBuild.has_value()) {
+        std::string build = ptBuild.value();
+        if (build.find("DFU-") == std::string::npos) {
+            dfuString += build;
+        } else {
+            dfuString = build;
+        }
+    }
+    prefs_->lastPageTurnerBuild.set(dfuString);
 #endif
 }
 
