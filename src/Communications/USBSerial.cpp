@@ -107,8 +107,20 @@ void USBSerial::txSendData(const uint8_t *data, size_t length) {
 #if SIMULATOR
 
 #else
-    tinyusb_cdcacm_write_queue(TINYUSB_CDC_ACM_1, data, length);
-    tinyusb_cdcacm_write_flush(TINYUSB_CDC_ACM_1, 0);
+    size_t chunk_size = CONFIG_USB_CDC_RX_BUFSIZE;
+
+    if (length > chunk_size) {
+        for (size_t offset = 0; offset < length; offset += chunk_size) {
+            size_t bytes_to_send = std::min(chunk_size, length - offset);
+            tinyusb_cdcacm_write_queue(TINYUSB_CDC_ACM_1, data + offset, bytes_to_send);
+            tinyusb_cdcacm_write_flush(TINYUSB_CDC_ACM_1, 0);
+            // From experimentation, 2 MS wasn't enough and the output was getting garbled
+            vTaskDelay(5 / portTICK_PERIOD_MS);
+        }
+    } else {
+        tinyusb_cdcacm_write_queue(TINYUSB_CDC_ACM_1, data, length);
+        tinyusb_cdcacm_write_flush(TINYUSB_CDC_ACM_1, 0);
+    }
 #endif
 }
 

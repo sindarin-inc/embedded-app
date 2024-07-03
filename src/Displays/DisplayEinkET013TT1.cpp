@@ -95,6 +95,7 @@ void DisplayEinkET013TT1::updateDisplay(DisplaySystem::UpdateType updateType, bo
                                         ScreenSide screen, Rect altRect) {
     auto queue = DispatchGetUiQueue(false);
     if (mirrorToSerial) {
+        // MAGIC NUMBER FIX ME!
         USBSerial::getInstance().txSendData(
             reinterpret_cast<const uint8_t *>(gfxCanvas_.getBuffer()), 8192);
     }
