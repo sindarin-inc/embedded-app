@@ -2,7 +2,6 @@
 #include <driver/ledc.h>
 #include <driver/rtc_io.h>
 #include <driver/uart.h>
-#include <driver/usb_serial_jtag.h>
 #include <esp_adc/adc_cali.h>
 #include <esp_adc/adc_cali_scheme.h>
 #include <esp_adc/adc_oneshot.h>
@@ -295,12 +294,6 @@ void InitializePlatform() {
     uart_driver_install(UART_NUM_0, kRxBufSize, 0, 3, nullptr, 0);
     uart_param_config(UART_NUM_0, &uartConfig);
 
-    usb_serial_jtag_driver_config_t usbSerialJtagConfig = USB_SERIAL_JTAG_DRIVER_CONFIG_DEFAULT();
-    err = usb_serial_jtag_driver_install(&usbSerialJtagConfig);
-    if (err != ESP_OK) {
-        log_e("usb_serial_jtag_driver_install failed: %s", esp_err_to_name(err));
-    }
-
     platformInitialized = true;
 }
 
@@ -370,8 +363,8 @@ void SetLeftScreenLight(int dutyCycle) {
     if (ledcFailed) {
         return;
     }
-    esp_err_t err;
 #if LEDC_BACKLIGHT
+    esp_err_t err;
     err = ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, dutyCycle);
     if (err != ESP_OK) {
         log_e("Error setting duty ch0: %s", esp_err_to_name(err));
@@ -389,8 +382,8 @@ void SetLeftScreenLightFade(int dutyCycle, int fadeMs) {
     if (ledcFailed) {
         return;
     }
-    esp_err_t err;
 #if LEDC_BACKLIGHT
+    esp_err_t err;
     // Set the LED to the target brightness
     err = ledc_set_fade_with_time(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, dutyCycle, fadeMs);
     if (err != ESP_OK) {
@@ -410,8 +403,8 @@ void SetRightScreenLight(int dutyCycle) {
     if (ledcFailed) {
         return;
     }
-    esp_err_t err;
 #if LEDC_BACKLIGHT
+    esp_err_t err;
     err = ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1, dutyCycle);
     if (err != ESP_OK) {
         log_e("Error setting duty ch1: %s", esp_err_to_name(err));
@@ -429,8 +422,8 @@ void SetRightScreenLightFade(int dutyCycle, int fadeMs) {
     if (ledcFailed) {
         return;
     }
-    esp_err_t err;
 #if LEDC_BACKLIGHT
+    esp_err_t err;
     // Set the LED to the target brightness
     err = ledc_set_fade_with_time(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1, dutyCycle, fadeMs);
     if (err != ESP_OK) {

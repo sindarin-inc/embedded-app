@@ -647,6 +647,7 @@ auto ToString(SleepReason reason) -> const char * {
 }
 
 auto PowerManager::enableUsbWakeup() -> esp_err_t {
+#if USB_CONNECTED_PIN
     esp_err_t err;
     if (USBConnected()) {
         err = esp_sleep_enable_ext0_wakeup(static_cast<gpio_num_t>(USB_CONNECTED_PIN), 0);
@@ -661,6 +662,7 @@ auto PowerManager::enableUsbWakeup() -> esp_err_t {
             return err;
         }
     }
+#endif
     return ESP_OK;
 }
 
@@ -680,7 +682,8 @@ void PowerManager::deepSleepInternal(SleepReason reason) {
 #else
 
     esp_err_t err;
-
+// If we have the magnetometer, make sure the ULP is loaded and the I2C pins are initialized
+#if USE_I2C
     err = rtc_gpio_init(static_cast<gpio_num_t>(I2C_MASTER_SDA_IO));
     if (err != ESP_OK) {
         log_e("Failed to init SDA with err %s", esp_err_to_name(err));
@@ -708,6 +711,10 @@ void PowerManager::deepSleepInternal(SleepReason reason) {
         powerOffInternal();
         return;
     }
+#else
+    // With no magnetometer, just always power off for now
+    powerOffInternal();
+#endif
 
     // `ulp_riscv_load_binary` seems to reset all the ulp variables including `ulp_waitForClose`
     // which we only want to unset if the temples are closed.

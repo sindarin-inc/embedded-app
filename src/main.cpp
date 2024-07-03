@@ -212,8 +212,10 @@ void PollingLoopTask(void *parameter) {
 #endif
 
         vTaskDelay(pdMS_TO_TICKS(1000));
+#if USE_LTR329
         // This happens after the delay, so that the first check can run with a faster fade.
         lightingController.checkAmbientLight();
+#endif
     }
     log_d("PollingLoopTask exited");
     vTaskDelete(nullptr);
@@ -346,15 +348,19 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 
     // Below code should only execute on an Active boot
 
+#if USE_LTR329
     if (!lightingController.checkSensorAvailable()) {
         bootErrors.push_back({.type = BootError::Type::AmbientLight});
     } else {
         lightingController.begin();
     }
+#endif
 
+#if USE_MMC5603
     if (!powerManager.checkMagnetometerProductId()) {
         bootErrors.push_back({.type = BootError::Type::Magnetometer});
     }
+#endif
 
     SHOW_HEAP();
 
@@ -568,8 +574,10 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 
     // xTaskCreatePinnedToCore(StatsTask, "Stats", 5000, nullptr, 0, nullptr, 1);
 
+#if USE_LTR329
     // Begin fade-in on the lighting before rendering the UI
     DispatchGetUiQueue()->dispatch([]() { lightingController.checkAmbientLight(300, 100); });
+#endif
 
     // Render the first thing
     DispatchGetUiQueue()->dispatch([showChargingScreen]() {
