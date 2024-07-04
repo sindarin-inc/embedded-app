@@ -56,6 +56,7 @@ public:
 
     int32_t defaultXPadding = 30;
     int32_t defaultYPadding = 20;
+    // MAGIC NUMBERS BROKEN FIX ME
     int32_t defaultScreenWidth = 256;
     int32_t defaultScreenHeight = 256;
 
