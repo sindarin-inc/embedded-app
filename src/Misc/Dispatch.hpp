@@ -63,7 +63,7 @@ public:
     // Fires up a task for only the purpose of running a single function.
     // Handy since you can use lambda captures with it.
     static void dispatchOneOff(const fp_t &op, size_t threadStack = 1024, UBaseType_t priority = 5,
-                               BaseType_t core = 1);
+                               BaseType_t core = 1, const char *name = "OneOff");
 
 private:
     std::string name_;

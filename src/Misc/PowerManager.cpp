@@ -61,7 +61,7 @@ auto PmUnlock(esp_pm_lock_handle_t *lock) -> void {
         if (err != ESP_OK) {
             log_e("Failed to delete pm lock err: %s", esp_err_to_name(err));
         }
-        lock = nullptr;
+        *lock = nullptr;
     }
 }
 #endif
@@ -285,7 +285,7 @@ auto PowerManager::begin() -> esp_err_t {
     attachInterrupt(
         digitalPinToInterrupt(USB_CONNECTED_PIN),
         [this]() {
-        DispatchGetCore1BackgroundQueue()->dispatch([this]() {
+        DispatchGetCore1BackgroundQueue()->dispatchFromISR([this]() {
             if (USBConnected()) {
                 // If USB is connected, disable operation unless we've disabled this behavior
                 if (!prefs_.allowUsageWhileCharging.get().value_or(false)) {
@@ -297,18 +297,14 @@ auto PowerManager::begin() -> esp_err_t {
                     }
                 }
                 // USB is connected so disable light sleep
-#if !DISABLE_POWER_MANAGEMENT
                 PmLock("pm_usb", &usbPowerLightSleepLock_);
-#endif
             } else { // !USBConnected()
                 if (state_ == PowerState::ActiveUSBCharging) {
                     log_i("USB disconnected, rebooting to Active");
                     reboot();
                 } else {
                     // USB is disconnected so enable light sleep
-#if !DISABLE_POWER_MANAGEMENT
                     PmUnlock(&usbPowerLightSleepLock_);
-#endif
                 }
             }
         });

@@ -94,7 +94,7 @@ public:
                                            bool ignoreFileSizeCheck = false) const -> bool;
     void addReadable(ReadablesVector &readables, const std::shared_ptr<Readable> &readable);
     void removeReadable(ReadablesVector &readables, const std::shared_ptr<Readable> &readable);
-    auto readablesSince(const ReadablesModelType modelType) -> std::string;
+    auto readablesSince(ReadablesModelType modelType) -> std::string;
 
     void storedReadableUuids(const ReadablesVector &readables,
                              StoredUuidsVector &storedUuids) const;

@@ -60,7 +60,7 @@ auto UTF8ElementFromString(std::string &str) -> std::string {
     }
 }
 
-void AddChar(StripHtmlState &state, std::string &element, const char x,
+void AddChar(StripHtmlState &state, std::string &element, char x,
              const std::function<void(std::string)> &writeString) {
     if (state == HTML_TAG) {
         if (x == '>') {

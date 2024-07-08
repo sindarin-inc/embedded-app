@@ -45,6 +45,6 @@ private:
 public:
     RLEExtractor(PixelResolution resolution) : resolution_(resolution) {}
 
-    auto retrieveBitmap(const RLEBitmap &fromBitmap, Bitmap &toBitmap, const Pos atOffset,
-                        const RLEMetrics rleMetrics, bool inverted) -> bool;
+    auto retrieveBitmap(const RLEBitmap &fromBitmap, Bitmap &toBitmap, Pos atOffset,
+                        RLEMetrics rleMetrics, bool inverted) -> bool;
 };
