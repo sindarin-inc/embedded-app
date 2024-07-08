@@ -78,8 +78,8 @@ void WaveshareUART43::epd_init(void) {
     // Configure UART parameters
     uart_param_config(UART_NUM, &uart_config);
     // Set UART pins (using UART0 default pins ie no changes.)
-    uart_set_pin(UART_NUM, WAVESHARE_DISPLAY_TX, WAVESHARE_DISPLAY_RX, UART_PIN_NO_CHANGE,
-                 UART_PIN_NO_CHANGE);
+    uart_set_pin(UART_NUM, WAVESHARE_UART43_DISPLAY_TX, WAVESHARE_UART43_DISPLAY_RX,
+                 UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
 
     // Install UART driver, and get the queue.
     uart_driver_install(UART_NUM, 1024 * 2, 0, 0, NULL, 0);

@@ -162,7 +162,7 @@ auto DisplayWaveshareUART43::setup() -> bool {
     driver_.epd_clear();
     log_d("Drawing a bunch of stuff in setup");
 
-    int i, j;
+    int i;
 
     /*
     draw pixel

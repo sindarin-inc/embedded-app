@@ -48,6 +48,9 @@ DisplayEinkET013TT1 myDisplay(DISPLAY_CS_LEFT, DISPLAY_CS_RIGHT, DISPLAY_RST);
 #elif DISPLAY_WAVESHARE_UART_43
 #include "Displays/DisplayWaveshareUART43.hpp"
 DisplayWaveshareUART43 myDisplay;
+#elif DISPLAY_WAVESHARE_42
+#include "Displays/DisplayWaveshare42.hpp"
+DisplayWaveshare42 myDisplay;
 #elif DISPLAY_SIM_8BIT
 // Declared in native.cpp
 #include "Displays/DisplaySim8Bit.hpp"

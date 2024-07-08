@@ -45,7 +45,7 @@ public:
     DisplaySystem(DisplaySystem const &) = delete;
     virtual ~DisplaySystem() = default;
 
-    DisplayRect maxBoundingBox = {5, 5, 800 - 10, 600 - 10};
+    DisplayRect maxBoundingBox = {5, 5, 400 - 10, 300 - 10};
     DisplayRect minBoundingBox = {0, 0, 125, 45};
 
     virtual auto setup() -> bool;
@@ -57,8 +57,8 @@ public:
     int32_t defaultXPadding = 30;
     int32_t defaultYPadding = 20;
     // MAGIC NUMBERS BROKEN FIX ME
-    int32_t defaultScreenWidth = 800;
-    int32_t defaultScreenHeight = 600;
+    int32_t defaultScreenWidth = 400;
+    int32_t defaultScreenHeight = 300;
 
     DisplayRect defaultBoundingBox = {
         defaultXPadding, defaultYPadding,
