@@ -111,7 +111,7 @@ public:
     [[nodiscard]] auto placemarkHistoryFilePath() const -> std::string {
         return StringFormat("/placemark_history/%s-placemark-history.json", uuid.c_str());
     }
-    auto hasPlacemarkHistory() const -> bool;
+    [[nodiscard]] auto hasPlacemarkHistory() const -> bool;
     [[nodiscard]] auto remoteUrl() const -> SpiramString { return file().fileProxied; }
     [[nodiscard]] auto isArticle() const -> bool {
         return readableType == "pocket_article" || readableType == "email_article";

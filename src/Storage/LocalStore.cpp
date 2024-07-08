@@ -449,7 +449,7 @@ auto LocalStore::processReadablePartialChapterSummary(
 auto LocalStore::processReadablePlacemarkHistory(
     const std::shared_ptr<Readable> &readable,
     const SpiramVector<UserReadablePlacemarkHistory> &placemarkHistory) -> bool {
-    if (placemarkHistory.size() == 0) {
+    if (placemarkHistory.empty()) {
         fileSystem.remove(readable->placemarkHistoryFilePath());
         return false;
     }

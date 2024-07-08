@@ -17,8 +17,8 @@ public:
                             const std::shared_ptr<Readable> &readable,
                             LightingController &lightingController, Renderer &renderer,
                             Telemetry &telemetry)
-        : display_(display), prefs_(prefs), fileSystem_(fileSystem), readable_(readable),
-          renderer_(renderer), popupMenuView_(display), telemetry_(telemetry),
+        : display_(display), prefs_(prefs), readable_(readable), renderer_(renderer),
+          popupMenuView_(display), telemetry_(telemetry), fileSystem_(fileSystem),
           lightingAdjustScreen_(display, prefs, lightingController, telemetry),
           readableSeekScreen_(prefs, readable, renderer),
           readableTableOfContentsScreen_(prefs, readable, renderer, display, telemetry),

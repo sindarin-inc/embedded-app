@@ -25,8 +25,8 @@ public:
     ReadablePlacemarkHistoryScreen(PreferencesStore &prefs, FileSystem &fileSystem,
                                    std::shared_ptr<Readable> readable, Renderer &renderer,
                                    DisplaySystem &display, Telemetry &telemetry)
-        : EinkView(display), prefs_(prefs), fileSystem_(fileSystem), readable_(std::move(readable)),
-          renderer_(renderer), display_(display), telemetry_(telemetry),
+        : EinkView(display), prefs_(prefs), readable_(std::move(readable)), renderer_(renderer),
+          display_(display), telemetry_(telemetry), fileSystem_(fileSystem),
           upperLeftTextView_(display, upperLeftText_), leftArrowView_(display) {
         numMenuItems_ = 0;
         MenuStyle styleFamilies;
