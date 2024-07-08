@@ -30,7 +30,7 @@ public:
             }
         });
     }
-    void fileTransferCallback(const uint8_t *data, size_t length);
+    void fileTransferCallback(const uint8_t *data, size_t rxSize);
 
 private:
     enum class FileReceiveState {
@@ -52,9 +52,9 @@ private:
     char fileTitle_[MAX_FILE_TITLE_LENGTH]{};
     char fileAuthor_[MAX_FILE_AUTHOR_LENGTH]{};
     std::string fileUUID_;
-    u_int fileSize_ = 0;
-    u_int bytesReceived_ = 0;
-    u_int checksum_ = 0;
-    u_int runningChecksum_ = 0;
+    int fileSize_ = 0;
+    int bytesReceived_ = 0;
+    int checksum_ = 0;
+    int runningChecksum_ = 0;
     SFile file_;
 };

@@ -17,25 +17,23 @@ auto CalculateChecksum(const uint8_t *data, size_t length, uint8_t checksum = 0)
 // Used to shorten the title for the UUID
 // This assumes the str passed in is longer than the maxOutputLength passed in
 void PrepTitleForUuid(char *srcTitle, char *destUUIDTitle, size_t maxOutputLength) {
-    char *readPtr = srcTitle;
-    char *writePtr = destUUIDTitle;
     size_t i = 0;
 
-    while (i < maxOutputLength && *readPtr != '\0') {
-        if (!isspace(*readPtr)) {
-            *writePtr = tolower(*readPtr);
-            writePtr++;
+    while (i < maxOutputLength && *srcTitle != '\0') {
+        if (!isspace(*srcTitle)) {
+            *destUUIDTitle = tolower(*srcTitle);
+            destUUIDTitle++;
             i++;
         }
-        readPtr++;
+        srcTitle++;
     }
 
-    *writePtr = '\0'; // Null-terminate the modified string
+    *destUUIDTitle = '\0'; // Null-terminate the modified string
 }
 
-void FileTransfer::fileTransferCallback(const uint8_t *data, size_t length) {
-    size_t rxSize = length;
+void FileTransfer::fileTransferCallback(const uint8_t *data, size_t rxSize) {
     size_t written = 0;
+    char fileTitleForUUID[TITLE_UUID_LENGTH + 1];
     switch (fileReceiveState_) {
     case FileReceiveState::FileName:
         if (rxSize >= MAX_FILE_NAME_LENGTH - 1) {
@@ -77,7 +75,6 @@ void FileTransfer::fileTransferCallback(const uint8_t *data, size_t length) {
         fileReceiveState_ = FileReceiveState::FileChecksum;
         break;
     case FileReceiveState::FileChecksum:
-        char fileTitleForUUID[TITLE_UUID_LENGTH + 1];
         checksum_ = strtol(reinterpret_cast<const char *>(data), nullptr, 10);
         log_i("Checksum: %d", checksum_);
         PrepTitleForUuid(fileTitle_, fileTitleForUUID, TITLE_UUID_LENGTH);
@@ -92,6 +89,10 @@ void FileTransfer::fileTransferCallback(const uint8_t *data, size_t length) {
             log_e("Failed to open file for writing");
         }
         fileReceiveState_ = FileReceiveState::FileData;
+        // Need to add some sort of timer here that will time out the transfer
+        // and send FAILURE over the serial to the client.
+        //
+        // Generally we probably need a more robust handshake
         break;
     case FileReceiveState::FileData:
         written = file_.write(data, rxSize);
@@ -103,7 +104,6 @@ void FileTransfer::fileTransferCallback(const uint8_t *data, size_t length) {
         bytesReceived_ += rxSize;
         if (bytesReceived_ >= fileSize_) {
             // All done, reset the state for next time.
-
             file_.close();
             log_i("Closing file and checksum final value is %d", runningChecksum_);
 
