@@ -157,6 +157,14 @@ void ReadablePopupMenuScreen::populatePopupMenu() {
         } else {
             log_d("No dictionary for spine %s", placeHref.c_str());
         }
+
+        if (fileSystem_.exists(readable_->placemarkHistoryFilePath())) {
+            addMenuItem(MenuItem("History", [this]() {
+                readablePlacemarkHistoryScreen_.loadMenuItems();
+                readablePlacemarkHistoryScreen_.setFirstLoad();
+                setCurrentScreen(readablePlacemarkHistoryScreen_);
+            }));
+        }
     } else {
         log_d("Not an EPub, so no summary or dictionary");
     }

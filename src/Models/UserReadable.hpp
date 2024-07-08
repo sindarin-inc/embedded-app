@@ -8,8 +8,6 @@
 #include "Models/UserReadablePartialChapterSummary.hpp"
 #include "Models/UserReadablePlacemarkHistory.hpp"
 
-using ReadablePlacemarkHistoryVector = SpiramVector<UserReadablePlacemarkHistory>;
-
 class UserReadable : JsonSerializable {
 public:
     UserReadable() = default;
@@ -19,7 +17,7 @@ public:
     std::shared_ptr<TxtPlace> txtPlace;
     std::shared_ptr<EPubPlace> ePubPlace;
     std::shared_ptr<UserReadablePartialChapterSummary> partialChapterSummary = nullptr;
-    ReadablePlacemarkHistoryVector placemarkHistory;
+    SpiramVector<UserReadablePlacemarkHistory> placemarkHistory;
 
     bool isArchived{};
     std::shared_ptr<Readable> readable = nullptr;

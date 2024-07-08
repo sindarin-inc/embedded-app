@@ -1,4 +1,4 @@
-#include "UserReadablePlacemarkHistory.hpp"
+#include "Models/UserReadablePlacemarkHistory.hpp"
 
 // NOLINTNEXTLINE(readability-identifier-naming) - ArduinoJson requires this name
 auto convertToJson(const UserReadablePlacemarkHistory &src, JsonVariant dst) -> bool {

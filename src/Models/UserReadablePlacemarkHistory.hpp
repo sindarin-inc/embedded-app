@@ -14,28 +14,33 @@ public:
     ~UserReadablePlacemarkHistory() override = default;
 
     static auto loadForReadable(FileSystem &fileSystem, const std::shared_ptr<Readable> &readable)
-        -> std::shared_ptr<UserReadablePlacemarkHistory> {
+        -> SpiramVector<UserReadablePlacemarkHistory> {
+
         auto placemarkHistoryPath = readable->placemarkHistoryFilePath();
-        auto file = fileSystem.open(placemarkHistoryPath, FILE_READ, false);
-        // Check if placemark history already exists
-        if (!file) {
-            return nullptr;
+        auto placemarkHistoryFile = fileSystem.open(placemarkHistoryPath, FILE_READ, false);
+        if (!placemarkHistoryFile) {
+            log_w("Failed to open placemark history file for reading");
+            return {};
         }
-        defer { file.close(); };
+        defer { placemarkHistoryFile.close(); };
 
-        auto doc = std::make_unique<SpiRamJsonDocument>(file.size() * 2);
-        auto error = deserializeJson(*doc, file);
-        if (error.code() != DeserializationError::Ok) {
-            log_e("Failed to deserialize placemark history file: %s", error.c_str());
-            return nullptr;
-        }
-
-        auto placemarkHistory = std::make_shared<UserReadablePlacemarkHistory>();
-        if (!placemarkHistory->fromJson(doc->as<JsonObject>())) {
-            log_e("Failed to parse placemark history file: %s", placemarkHistoryPath.c_str());
-            return nullptr;
+        auto placemarkHistoryDoc = std::make_unique<SpiRamJsonDocument>(
+            std::max(static_cast<size_t>(50000), 2 * placemarkHistoryFile.size()));
+        auto error = deserializeJson(*placemarkHistoryDoc, placemarkHistoryFile);
+        if (error) {
+            log_e("Failed to parse placemark history JSON: %s", error.c_str());
+            return {};
         }
 
+        auto placemarkHistory = SpiramVector<UserReadablePlacemarkHistory>();
+        auto placemarkHistoryJson = (*placemarkHistoryDoc)["placemark_history"].as<JsonArray>();
+        for (const auto &placemark : placemarkHistoryJson) {
+            placemarkHistory.emplace_back();
+            placemarkHistory.back().fromJson(placemark);
+        }
+        log_d("Loaded %zu placemark histories from %s", placemarkHistory.size(),
+              placemarkHistoryPath.c_str());
+        placemarkHistoryFile.close();
         return placemarkHistory;
     }
 
