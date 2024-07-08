@@ -230,14 +230,14 @@ void WaveshareUART43::epd_enter_stopmode(void) {
     _putchars(_cmd_buff, 9);
 }
 /*******************************************************************************
- * Function Name  : void epd_udpate(void)
+ * Function Name  : void epd_update(void)
  * Description    :
  * Input          :
  * Output         : None
  * Return         :
  * Attention		   : None
  *******************************************************************************/
-void WaveshareUART43::epd_udpate(void) {
+void WaveshareUART43::epd_update(void) {
     memcpy(_cmd_buff, _cmd_update, 8);
     _cmd_buff[8] = _verify(_cmd_buff, 8);
 

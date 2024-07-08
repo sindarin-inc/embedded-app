@@ -35,6 +35,7 @@ void DisplayWaveshareUART43::drawRect(int16_t x, int16_t y, int16_t w, int16_t h
     driver_.epd_draw_line(x + w, y, x + w, y + h);
     driver_.epd_draw_line(x + w, y + h, x, y + h);
     driver_.epd_draw_line(x, y + h, x, y);
+    Delay(1);
 }
 
 void DisplayWaveshareUART43::drawCircle(int16_t x0, int16_t y0, int16_t r, uint16_t color) {
@@ -65,11 +66,6 @@ void DisplayWaveshareUART43::drawRoundRect(int16_t x0, int16_t y0, int16_t w, in
 void DisplayWaveshareUART43::setRotation(uint8_t r) { DisplaySystem::setRotation(r); }
 
 void DisplayWaveshareUART43::setCursor(int16_t x, int16_t y) { DisplaySystem::setCursor(x, y); }
-
-template <typename T>
-auto DisplayWaveshareUART43::println(T in) -> size_t {
-    return DisplaySystem::println(in);
-}
 
 void DisplayWaveshareUART43::drawBox(int startX, int startY, int endX, int endY) {
     DisplaySystem::drawBox(startX, startY, endX, endY);
@@ -117,13 +113,11 @@ void DisplayWaveshareUART43::drawPBM(int16_t x, int16_t y, RendererStream &strea
     // unimplemented in this driver
 }
 
-void DisplayWaveshareUART43::clearScreen() { DisplaySystem::clearScreen(); }
+// void DisplayWaveshareUART43::clearScreen() { DisplaySystem::clearScreen(); }
 
 void DisplayWaveshareUART43::drawSingleLineOfText(const std::string &line, int x, int y,
                                                   bool inverted) {
     DisplaySystem::drawSingleLineOfText(line, x, y, inverted);
-    driver_.epd_set_ch_font(GBK32);
-    driver_.epd_set_en_font(ASCII32);
     driver_.epd_disp_string(line.c_str(), xOffset(x),
                             yOffset(y + getTextHeight() - lineSpacing_ - 3));
 }
@@ -152,7 +146,7 @@ void DisplayWaveshareUART43::draw_text_demo(void) {
     driver_.epd_disp_string(buff, 0, 160);
     driver_.epd_disp_string("ASCII64: Hello, World!", 0, 450);
 
-    driver_.epd_udpate();
+    driver_.epd_update();
     Delay(2000);
 }
 
@@ -161,16 +155,125 @@ auto DisplayWaveshareUART43::setup() -> bool {
     DisplaySystem::setup();
     driver_.epd_init();
     driver_.epd_wakeup();
+    driver_.epd_set_memory(MEM_NAND);
+    driver_.epd_set_color(BLACK, WHITE);
+    driver_.epd_set_ch_font(GBK32);
+    driver_.epd_set_en_font(ASCII32);
+    driver_.epd_clear();
+    log_d("Drawing a bunch of stuff in setup");
+
+    int i, j;
+
+    /*
+    draw pixel
+    */
+    /*
+     for (j = 0; j < 600; j += 50) {
+         for (i = 0; i < 800; i += 50) {
+             driver_.epd_draw_pixel(i, j);
+             driver_.epd_draw_pixel(i, j + 1);
+             driver_.epd_draw_pixel(i + 1, j);
+             driver_.epd_draw_pixel(i + 1, j + 1);
+         }
+     }
+     driver_.epd_update();
+     Delay(3000);
+ */
+    /*
+    draw line
+    */
+    /*
+     driver_.epd_clear();
+     for (i = 0; i < 800; i += 100) {
+         driver_.epd_draw_line(0, 0, i, 599);
+         driver_.epd_draw_line(799, 0, i, 599);
+     }
+     driver_.epd_update();
+     Delay(3000);
+ */
+    /*
+    fill rect
+    */
+    /*
+     driver_.epd_clear();
+     driver_.epd_set_color(BLACK, WHITE);
+     driver_.epd_fill_rect(10, 10, 100, 100);
+
+     driver_.epd_set_color(DARK_GRAY, WHITE);
+     driver_.epd_fill_rect(110, 10, 200, 100);
+
+     driver_.epd_set_color(GRAY, WHITE);
+     driver_.epd_fill_rect(210, 10, 300, 100);
+
+     driver_.epd_update();
+     Delay(3000);
+ */
+    /*
+    draw circle
+    */
+    driver_.epd_set_color(BLACK, WHITE);
+    driver_.epd_clear();
+    for (i = 0; i < 300; i += 40) {
+        driver_.epd_draw_circle(399, 299, i);
+    }
+    driver_.epd_update();
+    Delay(3000);
+
+    /*
+    fill circle
+    */
+    /*
+     driver_.epd_clear();
+     for (j = 0; j < 6; j++) {
+         for (i = 0; i < 8; i++) {
+             driver_.epd_fill_circle(50 + i * 100, 50 + j * 100, 50);
+         }
+     }
+     driver_.epd_update();
+     Delay(3000);
+ */
+    /*
+    draw triangle
+    */
+    /*
+     driver_.epd_clear();
+     for (i = 1; i < 5; i++) {
+         driver_.epd_draw_triangle(399, 249 - i * 50, 349 - i * 50, 349 + i * 50, 449 + i * 50,
+                                   349 + i * 50);
+     }
+     driver_.epd_update();
+     Delay(3000);
+     */
+    /*
+    driver_.epd_set_ch_font(GBK32);
+    driver_.epd_set_en_font(ASCII32);
+    driver_.epd_disp_string("Sol Reader", 350, 275);
+    log_d("Displaying Sol Reader");
+    driver_.epd_update();
+    Delay(2000);*/
+    /*
     driver_.epd_set_color(BLACK, WHITE);
     driver_.epd_clear();
     driver_.epd_set_ch_font(GBK32);
     driver_.epd_set_en_font(ASCII32);
-    driver_.epd_disp_string("Sol Reader", 350, 275);
-    driver_.epd_udpate();
-    Delay(1000);
-    driver_.epd_reset();
-    driver_.epd_wakeup();
+    log_d("Displaying Another intro text");
+    driver_.epd_disp_string("Another intro text", 350, 275);
+    driver_.epd_update();
+    Delay(2000);
     driver_.epd_clear();
+    driver_.epd_set_ch_font(GBK32);
+    driver_.epd_set_en_font(ASCII32);
+    log_d("Displaying Another second text");
+    driver_.epd_disp_string("Another second text", 350, 275);
+    driver_.epd_update();
+    log_d("Displaying Another third text without clear");
+    drawRect(50, 50, 100, 100, BLACK);
+    driver_.epd_disp_string("Another third text", 350, 375);
+    driver_.epd_update();
+    Delay(2000);
+    driver_.epd_clear();
+    driver_.epd_update();
+    Delay(2000);*/
     return true;
 }
 
@@ -181,17 +284,22 @@ void DisplayWaveshareUART43::updateDisplay(DisplaySystem::UpdateType updateType,
     if (mirrorToSerial) {
         // MAGIC NUMBER FIX ME !
         USBSerial::getInstance().txSendData(
-            reinterpret_cast<const uint8_t *>(gfxCanvas_.getBuffer()), 8192);
+            reinterpret_cast<const uint8_t *>(gfxCanvas_.getBuffer()),
+            WAVESHAREUART43_X_PIXELS * WAVESHAREUART43_Y_PIXELS / 8);
     }
 
     // Ignore all the non full updates now.
 
-    if (updateType == DisplaySystem::UpdateType::FULL) {
+    if (updateType == DisplaySystem::UpdateType::FULL ||
+        updateType == DisplaySystem::UpdateType::PARTIAL) {
         // base_draw();
-        log_i("updating the display") driver_.epd_udpate();
+        log_i("updating the display");
+        driver_.epd_update();
     }
 
-    driver_.epd_reset();
-    driver_.epd_wakeup();
-    driver_.epd_clear();
+    // Clear buffer afterwards if argument not set to false.
+    if (clearFrameBuffer) {
+        driver_.epd_clear();
+        fillScreen(bg);
+    }
 }

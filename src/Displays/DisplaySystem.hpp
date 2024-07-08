@@ -45,7 +45,7 @@ public:
     DisplaySystem(DisplaySystem const &) = delete;
     virtual ~DisplaySystem() = default;
 
-    DisplayRect maxBoundingBox = {5, 5, 246, 246};
+    DisplayRect maxBoundingBox = {5, 5, 800 - 10, 600 - 10};
     DisplayRect minBoundingBox = {0, 0, 125, 45};
 
     virtual auto setup() -> bool;
@@ -57,8 +57,8 @@ public:
     int32_t defaultXPadding = 30;
     int32_t defaultYPadding = 20;
     // MAGIC NUMBERS BROKEN FIX ME
-    int32_t defaultScreenWidth = 256;
-    int32_t defaultScreenHeight = 256;
+    int32_t defaultScreenWidth = 800;
+    int32_t defaultScreenHeight = 600;
 
     DisplayRect defaultBoundingBox = {
         defaultXPadding, defaultYPadding,
@@ -96,13 +96,13 @@ public:
     // should be copied in here.
     [[nodiscard]] auto width() const -> int16_t { return boundingBox_.width; };
     [[nodiscard]] auto height() const -> int16_t { return boundingBox_.height; };
-    void fillScreen(uint16_t color) { gfxClass_->fillScreen(color); }
-    void fillTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2,
-                      uint16_t color) {
+    virtual void fillScreen(uint16_t color) { gfxClass_->fillScreen(color); }
+    virtual void fillTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2,
+                              int16_t y2, uint16_t color) {
         gfxClass_->fillTriangle(xOffset(x0), yOffset(y0), xOffset(x1), yOffset(y1), xOffset(x2),
                                 yOffset(y2), color);
     }
-    void setFont(Font *f) {
+    virtual void setFont(Font *f) {
         if (f != nullptr) {
             font_ = f;
             auto gFont = dynamic_cast<GFont *>(font_);
@@ -113,36 +113,36 @@ public:
             log_e("Received a bad (null) font pointer!");
         }
     }
-    void fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color) {
+    virtual void fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color) {
         gfxClass_->fillRect(xOffset(x), yOffset(y), w, h, color);
     }
-    void drawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint16_t color) {
+    virtual void drawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint16_t color) {
         gfxClass_->drawLine(xOffset(x0), yOffset(y0), xOffset(x1), yOffset(y1), color);
     }
-    void drawRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color) {
+    virtual void drawRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color) {
         gfxClass_->drawRect(xOffset(x), yOffset(y), w, h, color);
     }
-    void drawCircle(int16_t x0, int16_t y0, int16_t r, uint16_t color) {
+    virtual void drawCircle(int16_t x0, int16_t y0, int16_t r, uint16_t color) {
         gfxClass_->drawCircle(xOffset(x0), yOffset(y0), r, color);
     }
 
-    void fillCircle(int16_t x0, int16_t y0, int16_t r, uint16_t color) {
+    virtual void fillCircle(int16_t x0, int16_t y0, int16_t r, uint16_t color) {
         gfxClass_->fillCircle(xOffset(x0), yOffset(y0), r, color);
     }
 
-    void fillRoundRect(int16_t x0, int16_t y0, int16_t w, int16_t h, int16_t radius,
-                       uint16_t color) {
+    virtual void fillRoundRect(int16_t x0, int16_t y0, int16_t w, int16_t h, int16_t radius,
+                               uint16_t color) {
         gfxClass_->fillRoundRect(xOffset(x0), yOffset(y0), w, h, radius, color);
     }
 
-    void drawRoundRect(int16_t x0, int16_t y0, int16_t w, int16_t h, int16_t radius,
-                       uint16_t color) {
+    virtual void drawRoundRect(int16_t x0, int16_t y0, int16_t w, int16_t h, int16_t radius,
+                               uint16_t color) {
         gfxClass_->drawRoundRect(xOffset(x0), yOffset(y0), w, h, radius, color);
     }
 
-    void setRotation(uint8_t r) { gfxClass_->setRotation(r); }
+    virtual void setRotation(uint8_t r) { gfxClass_->setRotation(r); }
 
-    void setCursor(int16_t x, int16_t y) { gfxClass_->setCursor(xOffset(x), yOffset(y)); }
+    virtual void setCursor(int16_t x, int16_t y) { gfxClass_->setCursor(xOffset(x), yOffset(y)); }
     template <typename T>
     auto println(T in) -> size_t {
         return gfxClass_->println(in);
@@ -176,7 +176,7 @@ public:
 
     // MARK: - Text rendering code
     auto getFont() -> Font *;
-    void drawSingleLineOfText(const std::string &line, int x, int y, bool inverted = false);
+    virtual void drawSingleLineOfText(const std::string &line, int x, int y, bool inverted = false);
     void drawSingleLineOfCenteredText(const std::string &line);
     void getTextSize(const std::string &buffer, uint16_t *w, uint16_t *h);
     auto getTextHeight() -> int;
@@ -192,23 +192,23 @@ public:
     // Basically Adafruit_GFX::drawRect with the necessary partial refresh stuff
     // TODO: We might be able to instead just subclass `drawRect` here instead to be more consistent
     // with Adafruit_GFX
-    void drawBox(int startX, int startY, int endX, int endY);
+    virtual void drawBox(int startX, int startY, int endX, int endY);
 
     // Draw a dotted box
-    void drawDottedBox(int startX, int startY, int endX, int endY, int dotSize = 1,
-                       int gapSize = 1);
+    virtual void drawDottedBox(int startX, int startY, int endX, int endY, int dotSize = 1,
+                               int gapSize = 1);
 
     // Draw a bitmap
-    void drawXBitmap(int16_t x, int16_t y, const uint8_t bitmap[], int16_t w, int16_t h,
-                     uint16_t color);
+    virtual void drawXBitmap(int16_t x, int16_t y, const uint8_t bitmap[], int16_t w, int16_t h,
+                             uint16_t color);
 
     // Draw a bitmap scaled by a multiplier
-    void drawScaledXBitmap(int16_t x, int16_t y, const uint8_t bitmap[], int16_t w, int16_t h,
-                           uint16_t color, int scale);
+    virtual void drawScaledXBitmap(int16_t x, int16_t y, const uint8_t bitmap[], int16_t w,
+                                   int16_t h, uint16_t color, int scale);
 
-    void drawPBM(int16_t x, int16_t y, const std::string &fname, FileSystem &fs);
-    void drawPBM(int16_t x, int16_t y, const uint8_t *pbmBytes, int size);
-    void drawPBM(int16_t x, int16_t y, RendererStream &stream);
+    virtual void drawPBM(int16_t x, int16_t y, const std::string &fname, FileSystem &fs);
+    virtual void drawPBM(int16_t x, int16_t y, const uint8_t *pbmBytes, int size);
+    virtual void drawPBM(int16_t x, int16_t y, RendererStream &stream);
 
     // override for subclass, need access to raw drawing buffer
     virtual void drawFullscreenBitmapFromFile(RendererStream &stream) { log_i("not supported"); }

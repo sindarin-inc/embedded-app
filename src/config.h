@@ -94,8 +94,9 @@
 
 #define WAVESHARE_DISPLAY_RESET 34
 #define WAVESHARE_DISPLAY_WAKEUP 38
-#define WAVESHARE_DISPLAY_RX 44
-#define WAVESHARE_DISPLAY_TX 43
+// Not setting to board's RX & TX to avoid potential conflicts with other peripherals
+#define WAVESHARE_DISPLAY_RX 6 // 44
+#define WAVESHARE_DISPLAY_TX 7 // 43
 
 #define CPU_FREQ_MHZ_HIGH 240
 #define CPU_FREQ_MHZ_LOW 40

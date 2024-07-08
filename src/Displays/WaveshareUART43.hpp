@@ -97,7 +97,7 @@ public:
     void epd_handshake(void);
     void epd_set_memory(unsigned char mode);
     void epd_enter_stopmode(void);
-    void epd_udpate(void);
+    void epd_update(void);
     void epd_screen_rotation(unsigned char mode);
     void epd_load_font(void);
     void epd_load_pic(void);
