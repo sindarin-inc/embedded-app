@@ -77,7 +77,7 @@ void DirectCommand::processCommand(const uint8_t *data, uint8_t length) {
             if (!commandHandlers_.empty() && !commandBuffer_.empty()) {
                 commandBuffer_ = ResolveBackspace(commandBuffer_);
                 for (auto &commandHandler : commandHandlers_) {
-                    log_i("Command being sent: %s with size %d", commandBuffer_.c_str(),
+                    log_i("Command being sent: %s with size %zu", commandBuffer_.c_str(),
                           commandBuffer_.size());
                     commandHandler(commandBuffer_);
                 }
