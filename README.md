@@ -252,7 +252,7 @@ The debug commands control the user interface for testing purposes. These comman
 ```ENTER```: Sends an ENTER command to the user interface.
 ```BACK```: Sends a BACK command to the user interface.
 ```LOGGING_ON```: Turns on serial logging (on macs, this will be /dev/cu.usbmodemsolreader3)
-``LOGGING_OFF``: Turns off serial logging 
+```LOGGING_OFF```: Turns off serial logging 
 
 
 ## Editing Sol Sans font in the IBMF Font Editor
