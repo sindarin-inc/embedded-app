@@ -69,7 +69,7 @@ public:
     }
 
     auto operator==(const UserReadablePlacemarkHistory &other) const -> bool {
-        return ePubPlace == other.ePubPlace || placemark == other.placemark ||
+        return ePubPlace == other.ePubPlace && placemark == other.placemark &&
                dateCreated == other.dateCreated;
     }
 };

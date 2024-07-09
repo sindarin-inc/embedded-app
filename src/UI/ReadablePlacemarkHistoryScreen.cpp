@@ -142,7 +142,6 @@ void ReadablePlacemarkHistoryScreen::processCommand(RemoteCommand command) {
         break;
     case RemoteCommand::ENTER:
     case RemoteCommand::RIGHT:
-        setPlacemark();
         if (getCurrItem().callback != nullptr) {
             getCurrItem().callback();
         }
@@ -173,25 +172,48 @@ void ReadablePlacemarkHistoryScreen::loadMenuItems() {
     std::map<SpiramString, int> chapterHrefToOffset;
     for (const ReadableTableOfContentsChapter &chapter : stream->getToc()) {
         SpiramString href = chapter.href;
-        chapterHrefToTitle[href] = chapter.title;
+        if (chapter.title.size() == 0) {
+            // Use book title if chapter title is empty
+            chapterHrefToTitle[href] = readable_->title;
+        } else {
+            chapterHrefToTitle[href] = chapter.title;
+        }
         chapterHrefToOffset[href] = chapter.epubOffset;
     }
 
+    const UserReadablePlacemarkHistory *recentPlacemark = nullptr;
     for (const auto &placemark : placemarkHistory) {
-        addMenuItem(MenuItem(chapterHrefToTitle[SpiramString(placemark.ePubPlace->getHRef())],
+        // log_d("Placemark: %s", placemark.ePubPlace->getHRef().c_str());
+        auto chapterTitle = chapterHrefToTitle[SpiramString(placemark.ePubPlace->getHRef())];
+        if (chapterTitle.empty()) {
+            log_d("Placemark not found in TOC, using readable title: %s",
+                  placemark.ePubPlace->getHRef().c_str());
+            chapterTitle = readable_->title;
+        }
+        // Compare individual offset+href, since the operator== overload also uses the date, which
+        // we don't care about here
+        if (recentPlacemark != nullptr &&
+            placemark.ePubPlace->getOffset() == recentPlacemark->ePubPlace->getOffset() &&
+            placemark.ePubPlace->getHRef() == recentPlacemark->ePubPlace->getHRef()) {
+            // Don't repeat the same placemark
+            continue;
+        }
+        addMenuItem(MenuItem(chapterTitle,
                              Commify(SOL_PAGE_NUMBER(
                                  chapterHrefToOffset[SpiramString(placemark.ePubPlace->getHRef())] +
                                  placemark.ePubPlace->getOffset())),
-                             [this]() { back(); }));
+                             [this, placemark]() {
+            // Set placemark
+            setPlacemark(placemark.ePubPlace);
+            back();
+        }));
+        recentPlacemark = &placemark;
     }
 }
 
-void ReadablePlacemarkHistoryScreen::setPlacemark() {
+void ReadablePlacemarkHistoryScreen::setPlacemark(const std::shared_ptr<Place> &place) {
     auto stream = std::dynamic_pointer_cast<EPubFile>(renderer_.getStream());
-    auto chapter = stream->getToc()[getCurrSelection()];
-    if (renderer_.getStream()->isFor(DocType::EPUB)) {
-        readable_->place = std::make_shared<EPubPlace>(0, std::string(chapter.href));
-    }
+    readable_->place = place;
     renderer_.setCurrentPlace(readable_->place);
     prefs_.readablePlace.set(readable_->shortenedUuid.c_str(), readable_->place->str());
     prefs_.readablePlaceChanged.set(readable_->shortenedUuid.c_str(), true);
