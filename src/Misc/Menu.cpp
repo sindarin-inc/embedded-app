@@ -35,9 +35,9 @@ auto Menu::getNumItems() const -> int { return numMenuItems_; }
 
 auto Menu::getMenuItemByTitle(const std::string &title) -> int {
     int normalItemCount = 0;
-    for (int i = 0; i < menuItems_.size(); i++) {
-        if (menuItems_[i].menuItemType == MenuItem::MenuItemType::NORMAL) {
-            if (menuItems_[i].title == title) {
+    for (auto &menuItem : menuItems_) {
+        if (menuItem.menuItemType == MenuItem::MenuItemType::NORMAL) {
+            if (menuItem.title == title) {
                 return normalItemCount;
             }
             normalItemCount++;
@@ -77,7 +77,7 @@ auto Menu::getCurrItem() -> MenuItem {
         }
     }
     // This should never happen if the menu is properly set up
-    return MenuItem();
+    return {};
 }
 
 auto Menu::updateCurrItemTitle(std::string newTitle) -> bool {
@@ -203,5 +203,5 @@ auto Menu::getItemAt(int index) -> MenuItem {
         }
     }
     // This should never happen if the menu is properly set up
-    return MenuItem();
+    return {};
 }

@@ -15,18 +15,15 @@ public:
     enum class MenuItemType { NORMAL, SPACER };
 
     MenuItem() = default;
-    MenuItem(std::string title) : title(std::move(title)), menuItemType(MenuItemType::NORMAL){};
+    MenuItem(std::string title) : title(std::move(title)){};
     MenuItem(std::string title, std::string subtitle)
-        : title(std::move(title)), subtitle(std::move(subtitle)),
-          menuItemType(MenuItemType::NORMAL){};
+        : title(std::move(title)), subtitle(std::move(subtitle)){};
     MenuItem(std::string title, std::function<void()> callback)
-        : title(std::move(title)), callback(std::move(callback)),
-          menuItemType(MenuItemType::NORMAL){};
+        : title(std::move(title)), callback(std::move(callback)){};
     MenuItem(std::string title, std::string subtitle, std::function<void()> callback)
-        : title(std::move(title)), subtitle(std::move(subtitle)), callback(std::move(callback)),
-          menuItemType(MenuItemType::NORMAL) {}
+        : title(std::move(title)), subtitle(std::move(subtitle)), callback(std::move(callback)) {}
 
-    static MenuItem createSpacer(int height) {
+    static auto createSpacer(int height) -> MenuItem {
         MenuItem spacer;
         spacer.menuItemType = MenuItemType::SPACER;
         spacer.spacerHeight = height;
