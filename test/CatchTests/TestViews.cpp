@@ -194,8 +194,6 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
         // Open the dictionary
         SendRemoteCommand(UP);
         WAIT_FOR_DRAW(display);
-        SendRemoteCommand(UP);
-        WAIT_FOR_DRAW(display);
         SendRemoteCommand(ENTER);
         WAIT_FOR_DRAW(display);
         ASSERT_VIEW_UNCHANGED(display, "Dictionary1");
@@ -234,8 +232,6 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
         WAIT_FOR_DRAW(display);
         SendRemoteCommand(UP);
         WAIT_FOR_DRAW(display);
-        SendRemoteCommand(UP);
-        WAIT_FOR_DRAW(display);
         ASSERT_VIEW_UNCHANGED(display, "PopupMenu5");
 
         // Open the dictionary
@@ -255,8 +251,6 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
         // Render the popup menu
         SendRemoteCommand(DOWN);
         WAIT_FOR_DRAW(display);
-        WAIT_FOR_DRAW(display);
-        SendRemoteCommand(UP);
         WAIT_FOR_DRAW(display);
         SendRemoteCommand(UP);
         WAIT_FOR_DRAW(display);
@@ -299,6 +293,10 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
         // Render the popup menu
         SendRemoteCommand(DOWN);
         WAIT_FOR_DRAW(display);
+        WAIT_FOR_DRAW(display);
+        SendRemoteCommand(UP);
+        WAIT_FOR_DRAW(display);
+        SendRemoteCommand(UP);
         WAIT_FOR_DRAW(display);
         SendRemoteCommand(UP);
         WAIT_FOR_DRAW(display);

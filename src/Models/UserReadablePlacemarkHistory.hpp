@@ -44,11 +44,6 @@ public:
         return placemarkHistory;
     }
 
-    SpiramString deviceSn;
-    std::shared_ptr<EPubPlace> ePubPlace;
-    uint8_t placemark{};
-    SpiramString dateCreated;
-
     auto fromJson(const JsonObject &j) -> bool override {
         if (!j.containsKey("device_sn") || !j.containsKey("placemark") ||
             !j.containsKey("date_created") || !j.containsKey("chapter") ||
@@ -72,6 +67,11 @@ public:
         return ePubPlace == other.ePubPlace && placemark == other.placemark &&
                dateCreated == other.dateCreated;
     }
+
+    SpiramString deviceSn;
+    std::shared_ptr<EPubPlace> ePubPlace;
+    uint8_t placemark{};
+    SpiramString dateCreated;
 };
 
 // NOLINTNEXTLINE(readability-identifier-naming) - ArduinoJson requires this name
