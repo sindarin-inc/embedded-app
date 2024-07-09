@@ -351,6 +351,7 @@ public:
           fastTransitions(*this, "fast-tran"),
           noUploadCrashes(*this, "no-upload-crash"),
           showDebugMenu(*this, "show-debug"),
+          noShowPartialChapterSummary(*this, "no-partial-summary"),
           fastBookmarkRight(*this, "fst-mark-right"),
           fastBookmarkCenter(*this, "fst-mark-cent"),
           pageTransitionArrows(*this, "page-arrows"),
@@ -601,6 +602,7 @@ public:
     PrefsItem<bool> fastTransitions;
     PrefsItem<bool> noUploadCrashes;
     PrefsItem<bool> showDebugMenu;
+    PrefsItem<bool> noShowPartialChapterSummary;
     PrefsItem<bool> fastBookmarkRight;
     PrefsItem<bool> fastBookmarkCenter;
     PrefsItem<bool> pageTransitionArrows;
