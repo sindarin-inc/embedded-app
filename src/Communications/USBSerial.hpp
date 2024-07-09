@@ -44,11 +44,7 @@ private:
     bool loggingEnabled_ = false;
     bool loggingPortInitialized_ = false;
 
-    static USBSerial *instance; // To store the instance
-
     static void cdcacmCommandCallback(int itf, cdcacm_event_t *event) {
-        if (instance) {
-            instance->rxCommandCallback(itf, event);
-        }
+        USBSerial::getInstance().rxCommandCallback(itf, event);
     }
 };
