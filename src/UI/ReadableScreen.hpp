@@ -35,6 +35,7 @@ public:
           prefs_(prefs), telemetry_(telemetry), fileSystem_(fileSystem), display_(display),
           popupMenuScreen_(display, prefs, fileSystem, readable, lightingController, renderer_,
                            telemetry_),
+          readableSummaryScreen_(prefs, fileSystem, readable, display, renderer_),
           leftArrowView_(display, ArrowLeft), rightArrowView_(display, ArrowRight),
           upArrowView_(display, ArrowUp), downArrowView_(display, ArrowDown) {
 
@@ -106,6 +107,12 @@ public:
         };
 
         popupMenuScreen_.onRerender = [this]() { renderPopup_ = true; };
+
+        readableSummaryScreen_.setBackCallback([this, &display]() {
+            renderedPartialSummary_ = true;
+            display.clearDisplay();
+            this->setCurrentScreen(*this);
+        });
     }
 
     ~ReadableScreen() override = default;
@@ -151,11 +158,13 @@ protected:
     bool atEnd_ = false;
     bool shownIcons_ = false;
     bool renderPopup_ = false;
+    bool renderedPartialSummary_ = false;
     bool autoPilotForceFull_ = false;
 
     DisplaySystem &display_;
 
     ReadablePopupMenuScreen popupMenuScreen_;
+    ReadableSummaryScreen readableSummaryScreen_;
 
     std::vector<std::shared_ptr<Screen>> hookScreens_;
 

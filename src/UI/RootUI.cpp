@@ -790,6 +790,17 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         experimentalSettingsMenu->setToggleLastItem(false);
     }
 
+    experimentalSettingsMenu->addMenuItem(MenuItem("Show summary", [this]() {
+        this->prefs_.noShowPartialChapterSummary.set(
+            !this->prefs_.noShowPartialChapterSummary.get().value_or(false));
+    }));
+
+    if (prefs_.noShowPartialChapterSummary.get().value_or(false)) {
+        experimentalSettingsMenu->setToggleLastItem(false);
+    } else {
+        experimentalSettingsMenu->setToggleLastItem(true);
+    }
+
     experimentalSettingsMenu->addMenuItem(MenuItem("Bookmark Right Select", [this]() {
         this->prefs_.fastBookmarkRight.set(!this->prefs_.fastBookmarkRight.get().value_or(false));
     }));
