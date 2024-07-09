@@ -109,6 +109,9 @@ public:
     auto processReadablePartialChapterSummary(
         const std::shared_ptr<Readable> &readable,
         const std::shared_ptr<UserReadablePartialChapterSummary> &partialChapterSummary) -> bool;
+    auto processReadablePlacemarkHistory(
+        const std::shared_ptr<Readable> &readable,
+        const SpiramVector<UserReadablePlacemarkHistory> &placemarkHistory) -> bool;
     void resetReadablesPlacemarkChanged(const ReadablesVector &readables);
     void resetReadablesArchivedChanged(const ReadablesVector &readables);
     void resetReadablesBookmarksChanged(const ReadablesVector &readables);

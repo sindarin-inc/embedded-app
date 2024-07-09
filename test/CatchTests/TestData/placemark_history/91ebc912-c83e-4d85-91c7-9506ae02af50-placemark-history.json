@@ -1,0 +1,25 @@
+{
+  "placemark_history": [
+    {
+      "device_sn": "SOL03233000002",
+      "chapter": "OEBPS/xhtml/chapter3.xhtml",
+      "chapter_offset": 59206,
+      "placemark": 0,
+      "date_created": "2024-03-08T08:42:28.129348Z"
+    },
+    {
+      "device_sn": "SOL03233000002",
+      "chapter": "OEBPS/xhtml/chapter3.xhtml",
+      "chapter_offset": 32428,
+      "placemark": 0,
+      "date_created": "2024-03-04T10:02:39.975017Z"
+    },
+    {
+      "device_sn": "SIMULATOR",
+      "chapter": "OEBPS/xhtml/chapter3.xhtml",
+      "chapter_offset": 22,
+      "placemark": 0,
+      "date_created": "2023-11-03T15:27:41.828490Z"
+    }
+  ]
+}

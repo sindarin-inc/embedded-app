@@ -136,6 +136,14 @@ void ReadablePopupMenuScreen::populatePopupMenu() {
         auto placeHref =
             std::dynamic_pointer_cast<EPubPlace>(renderer_.getCurrentPlace())->getHRef();
 
+        if (fileSystem_.exists(readable_->placemarkHistoryFilePath())) {
+            addMenuItem(MenuItem("History", [this]() {
+                readablePlacemarkHistoryScreen_.loadMenuItems();
+                readablePlacemarkHistoryScreen_.setFirstLoad();
+                setCurrentScreen(readablePlacemarkHistoryScreen_);
+            }));
+        }
+
         if (stream->hasSummary(placeHref)) {
             addMenuItem(MenuItem("Summary", [this]() {
                 auto epubPlace = std::dynamic_pointer_cast<EPubPlace>(renderer_.getCurrentPlace());
