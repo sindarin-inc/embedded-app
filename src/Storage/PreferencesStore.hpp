@@ -310,8 +310,10 @@ public:
           lastPageTurnerBuild(*this, "pt-build"),
           lastArticlesSince(*this, "articles-since"),
           lastBooksSince(*this, "readables-since"),
-          sortCriteria(*this, "sort-c"),
-          sortDirection(*this, "sort-d"),
+          bookSortCriteria(*this, "sort-c"),
+          bookSortDirection(*this, "sort-d"),
+          articleSortCriteria(*this, "sort-a-c"),
+          articleSortDirection(*this, "sort-a-d"),
           lastReadTime(*this, "-lr"),
           oldReadablePlace(*this, "-p"),
           readablePlace(*this, "-po"),
@@ -560,8 +562,10 @@ public:
     PrefsItem<std::string> lastPageTurnerBuild;
     PrefsItem<std::string> lastArticlesSince;
     PrefsItem<std::string> lastBooksSince;
-    PrefsItem<int> sortCriteria;  // Stored as int, used as LocalStore::SortCriteria
-    PrefsItem<int> sortDirection; // Stored as int, used as LocalStore::SortDirection
+    PrefsItem<int> bookSortCriteria;  // Stored as int, used as LocalStore::SortCriteria
+    PrefsItem<int> bookSortDirection; // Stored as int, used as LocalStore::SortDirection
+    PrefsItem<int> articleSortCriteria;
+    PrefsItem<int> articleSortDirection;
     KeyedPrefsItem<uint64_t> lastReadTime;
     KeyedPrefsItem<uint32_t> oldReadablePlace;
     KeyedPrefsItem<std::string> readablePlace;

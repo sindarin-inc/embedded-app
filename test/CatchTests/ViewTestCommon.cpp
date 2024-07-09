@@ -88,8 +88,8 @@ void StartAppMain(FONT_CHOICES font, int x, int y, int lineSpacing) {
     prefs.rectY.set(y);
     prefs.rectW.set(256 - x * 2);
     prefs.rectH.set(256 - y * 2);
-    prefs.sortCriteria.set(0);
-    prefs.sortDirection.set(0);
+    prefs.bookSortCriteria.set(0);
+    prefs.bookSortDirection.set(0);
     prefs.firstRead.set(0);
     prefs.pageTransitionArrows.set(false);
     prefs.lastReadableId.remove();
@@ -245,8 +245,8 @@ auto CheckViewUnchanged(DisplayEinkET013TT1 &display, std::string key) -> ViewTe
     return result;
 }
 
-auto CheckViewUnchanged(std::shared_ptr<DisplayEinkET013TT1> display,
-                        std::string key) -> ViewTestResult {
+auto CheckViewUnchanged(std::shared_ptr<DisplayEinkET013TT1> display, std::string key)
+    -> ViewTestResult {
     return CheckViewUnchanged(*display, key);
 }
 
@@ -264,8 +264,8 @@ void SetupFileSystemMock(const std::string &directory) {
     std::filesystem::remove_all(logs);
 }
 
-auto LoadJsonDoc(FileSystem &fileSystem,
-                 const std::string &path) -> std::unique_ptr<SpiRamJsonDocument> {
+auto LoadJsonDoc(FileSystem &fileSystem, const std::string &path)
+    -> std::unique_ptr<SpiRamJsonDocument> {
     SFile readablesFile = fileSystem.open(path);
     if (!readablesFile || (int)readablesFile.size() == 0) {
         log_w("Failed to open %s", path.c_str());
