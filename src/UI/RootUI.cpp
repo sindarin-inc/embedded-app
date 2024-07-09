@@ -655,16 +655,16 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 if (modelType == ReadablesModelType::Book) {
                     this->prefs_.bookSortCriteria.set(static_cast<int>(SortCriteria::DateModified));
                     this->prefs_.bookSortDirection.set(static_cast<int>(SortDirection::Descending));
+                    localStore.saveReadables(localStore.books());
                 } else if (modelType == ReadablesModelType::Article) {
                     this->prefs_.articleSortCriteria.set(
                         static_cast<int>(SortCriteria::DateModified));
                     this->prefs_.articleSortDirection.set(
                         static_cast<int>(SortDirection::Descending));
+                    localStore.saveReadables(localStore.articles());
                 }
                 contentSettingsMenu->showTemporaryMessage(*display, settingsRestartMsg_, 500,
                                                           false);
-                localStore.saveReadables(localStore.books());
-                localStore.saveReadables(localStore.articles());
                 this->power_.reboot();
                 }));
             sortMenu->addMenuItem(
@@ -673,16 +673,16 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 if (modelType == ReadablesModelType::Book) {
                     this->prefs_.bookSortCriteria.set(static_cast<int>(SortCriteria::DateModified));
                     this->prefs_.bookSortDirection.set(static_cast<int>(SortDirection::Ascending));
+                    localStore.saveReadables(localStore.books());
                 } else if (modelType == ReadablesModelType::Article) {
                     this->prefs_.articleSortCriteria.set(
                         static_cast<int>(SortCriteria::DateModified));
                     this->prefs_.articleSortDirection.set(
                         static_cast<int>(SortDirection::Ascending));
+                    localStore.saveReadables(localStore.articles());
                 }
                 contentSettingsMenu->showTemporaryMessage(*display, settingsRestartMsg_, 500,
                                                           false);
-                localStore.saveReadables(localStore.books());
-                localStore.saveReadables(localStore.articles());
                 this->power_.reboot();
                 }));
             sortMenu->addMenuItem(
@@ -691,15 +691,15 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 if (modelType == ReadablesModelType::Book) {
                     this->prefs_.bookSortCriteria.set(static_cast<int>(SortCriteria::LastRead));
                     this->prefs_.bookSortDirection.set(static_cast<int>(SortDirection::Descending));
+                    localStore.saveReadables(localStore.books());
                 } else if (modelType == ReadablesModelType::Article) {
                     this->prefs_.articleSortCriteria.set(static_cast<int>(SortCriteria::LastRead));
                     this->prefs_.articleSortDirection.set(
                         static_cast<int>(SortDirection::Descending));
+                    localStore.saveReadables(localStore.articles());
                 }
                 contentSettingsMenu->showTemporaryMessage(*display, settingsRestartMsg_, 500,
                                                           false);
-                localStore.saveReadables(localStore.books());
-                localStore.saveReadables(localStore.articles());
                 this->power_.reboot();
                 }));
             sortMenu->addMenuItem(
@@ -708,15 +708,15 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 if (modelType == ReadablesModelType::Book) {
                     this->prefs_.bookSortCriteria.set(static_cast<int>(SortCriteria::LastRead));
                     this->prefs_.bookSortDirection.set(static_cast<int>(SortDirection::Ascending));
+                    localStore.saveReadables(localStore.books());
                 } else if (modelType == ReadablesModelType::Article) {
                     this->prefs_.articleSortCriteria.set(static_cast<int>(SortCriteria::LastRead));
                     this->prefs_.articleSortDirection.set(
                         static_cast<int>(SortDirection::Ascending));
+                    localStore.saveReadables(localStore.articles());
                 }
                 contentSettingsMenu->showTemporaryMessage(*display, settingsRestartMsg_, 500,
                                                           false);
-                localStore.saveReadables(localStore.books());
-                localStore.saveReadables(localStore.articles());
                 this->power_.reboot();
                 }));
             sortMenu->addMenuItem(MenuItem("Random", [this, &localStore, display,
@@ -724,15 +724,15 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 if (modelType == ReadablesModelType::Book) {
                     this->prefs_.bookSortCriteria.set(static_cast<int>(SortCriteria::Random));
                     this->prefs_.bookSortDirection.set(static_cast<int>(SortDirection::Ascending));
+                    localStore.saveReadables(localStore.books());
                 } else if (modelType == ReadablesModelType::Article) {
                     this->prefs_.articleSortCriteria.set(static_cast<int>(SortCriteria::Random));
                     this->prefs_.articleSortDirection.set(
                         static_cast<int>(SortDirection::Ascending));
+                    localStore.saveReadables(localStore.articles());
                 }
                 contentSettingsMenu->showTemporaryMessage(*display, settingsRestartMsg_, 500,
                                                           false);
-                localStore.saveReadables(localStore.books());
-                localStore.saveReadables(localStore.articles());
                 this->power_.reboot();
             }));
             int menuIndex = 0;
