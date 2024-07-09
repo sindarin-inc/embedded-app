@@ -28,6 +28,7 @@ public:
 
     bool isToggle = false;
     bool toggleValue = false;
+    uint8_t topPadding = 0;
 };
 
 class Menu {

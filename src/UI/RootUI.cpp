@@ -615,8 +615,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         contentSettingsMenu->setToggleLastItem(false);
     }
 
-    contentSettingsMenu->addMenuItem(MenuItem("Sort order",
-                                              [this, &localStore, display, contentSettingsMenu]() {
+    auto sortOrderMenuItem = MenuItem("Sort order",
+                                      [this, &localStore, display, contentSettingsMenu]() {
         auto sortMenu = new MenuScreen(power_.battery, *display, contentSettingsMenu->getMyStyle(),
                                        "Sort Order", "Content Settings");
         sortMenu->addMenuItem(MenuItem("Alphabetical",
@@ -705,7 +705,9 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             setCurrentScreen(*contentSettingsMenu);
             delete sortMenu;
         });
-    }));
+    });
+    sortOrderMenuItem.topPadding = 10;
+    contentSettingsMenu->addMenuItem(sortOrderMenuItem);
 
     // Hide the toggle for the sort order menu
     contentSettingsMenu->setToggleLastItem(false, false);
