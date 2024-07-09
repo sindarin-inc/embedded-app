@@ -4,7 +4,7 @@ extern USBSerial usbSerial;
 
 auto USBSerial::getInstance() -> USBSerial & { return usbSerial; }
 
-USBSerial::USBSerial() {}
+USBSerial::USBSerial() noexcept = default;
 
 void USBSerial::initJtag() {
 #if USE_TINYUSB_SERIAL
