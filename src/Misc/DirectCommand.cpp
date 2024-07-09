@@ -32,7 +32,7 @@ void DirectCommand::begin() {
     // The only comamnds this class implements are the PROGRAM command which
     // allows the device to enter programming mode and the RESTART command
     // which reboots the device. Also the DEVICE_INFO command.
-    addCommandHandler([this](const std::string &command) {
+    addCommandHandler([](const std::string &command) {
         if (command == "PROGRAM") {
             USBSerial::getInstance().disableLogging();
             USBSerial::getInstance().initJtag();
