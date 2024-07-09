@@ -23,6 +23,7 @@ class USBSerial {
 public:
     static auto getInstance() -> USBSerial &;
     USBSerial() = default;
+    USBSerial(const USBSerial &) = delete;
     void begin();
     void initJtag();
     void lineStateChangedCallback(int itf, cdcacm_event_t *event);
