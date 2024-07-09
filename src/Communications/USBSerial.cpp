@@ -4,7 +4,7 @@ extern USBSerial usbSerial;
 
 auto USBSerial::getInstance() -> USBSerial & { return usbSerial; }
 
-USBSerial::USBSerial() { std::memset(buffer_, 0, sizeof(buffer_)); }
+USBSerial::USBSerial() {}
 
 void USBSerial::initJtag() {
 #if USE_TINYUSB_SERIAL
