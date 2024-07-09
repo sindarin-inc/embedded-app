@@ -108,6 +108,9 @@ public:
     [[nodiscard]] auto partialSummaryFilePath() const -> std::string {
         return StringFormat("/summary/%s-summary.json", uuid.c_str());
     }
+    [[nodiscard]] auto placemarkHistoryFilePath() const -> std::string {
+        return StringFormat("/placemark_history/%s-placemark-history.json", uuid.c_str());
+    }
     [[nodiscard]] auto remoteUrl() const -> SpiramString { return file().fileProxied; }
     [[nodiscard]] auto isArticle() const -> bool {
         return readableType == "pocket_article" || readableType == "email_article";

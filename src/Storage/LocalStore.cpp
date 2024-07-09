@@ -446,6 +446,50 @@ auto LocalStore::processReadablePartialChapterSummary(
     return true;
 }
 
+auto LocalStore::processReadablePlacemarkHistory(
+    const std::shared_ptr<Readable> &readable,
+    const SpiramVector<UserReadablePlacemarkHistory> &placemarkHistory) -> bool {
+    if (placemarkHistory.empty()) {
+        fileSystem.remove(readable->placemarkHistoryFilePath());
+        return false;
+    }
+
+    if (!fileSystem.createDir("/placemark_history")) {
+        log_e("could not create /placemark_history directory");
+        return false;
+    }
+
+    // 1024 captures a placemark with a loooong chapter href, length, device sn, and date
+    auto doc = std::make_unique<SpiRamJsonDocument>(
+        std::max(1024, static_cast<int>(placemarkHistory.size() * 1024)));
+    JsonArray placemarkHistoryJson = doc->createNestedArray("placemark_history");
+
+    // Save each placemark history
+    for (const auto &placemark : placemarkHistory) {
+        placemarkHistoryJson.add(placemark);
+    }
+
+    if (doc->overflowed()) {
+        log_e("Out of space in SpiRamJsonDocument for %s, %zu placemark histories",
+              readable->placemarkHistoryFilePath().c_str(), placemarkHistory.size());
+        return false;
+    }
+
+    SFile placemarkHistoryFile =
+        fileSystem.open(readable->placemarkHistoryFilePath(), FILE_WRITE, true);
+    if (!placemarkHistoryFile) {
+        log_i("Failed to open placemark history file: %s",
+              readable->placemarkHistoryFilePath().c_str());
+        return false;
+    }
+
+    // Write doc to disk
+    serializeJsonPretty(*doc, placemarkHistoryFile);
+    placemarkHistoryFile.close();
+
+    return true;
+}
+
 void LocalStore::resetReadablesPlacemarkChanged(const ReadablesVector &readables) {
     auto modelType = this->readablesModelType(const_cast<ReadablesVector &>(readables));
 
@@ -923,6 +967,11 @@ auto LocalStore::processReadables(const ReadablesVector &readables,
                   userReadable.partialChapterSummary->ePubPlace->str().c_str());
         }
 
+        if (processReadablePlacemarkHistory(userReadable.readable, userReadable.placemarkHistory)) {
+            log_i("Placemark history for %s updated to %zu histories",
+                  userReadable.readable->title.c_str(), userReadable.placemarkHistory.size());
+        }
+
         auto unchanged = isReadableUnchanged(readables, userReadable.readable, true);
         if (userReadable.isArchived) {
             log_i("Readable \"%s\" is archived, will delete", userReadable.readable->title.c_str());
@@ -1365,6 +1414,7 @@ void LocalStore::readableFilePurge(const std::shared_ptr<Readable> &readable) {
     fileSystem.remove(StringFormat("/articles/%s.epub", uuid.c_str()));
 
     fileSystem.remove(readable->bookmarkFilePath());
+    fileSystem.remove(readable->placemarkHistoryFilePath());
 
     // Also purge placemarks in NVS
     prefs_.readablePlace.remove(readable->shortenedUuid.c_str());
