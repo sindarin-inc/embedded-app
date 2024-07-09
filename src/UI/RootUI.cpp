@@ -131,7 +131,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         }
     }
 
-    // If prefs_.bookSortCriteria isn't select, sort the readables by last update and store them
+    // If prefs_.bookSortCriteria isn't selected, sort the readables by last update and store them
     if (!prefs_.bookSortCriteria.get().has_value()) {
         log_i("No book sort order chosen, sorting by last update and saving readables");
         prefs_.bookSortCriteria.set(SortCriteria::DateModified);

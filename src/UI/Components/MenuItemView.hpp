@@ -26,9 +26,6 @@ public:
 
     void setMenuItem(const MenuItem &menuItem, Font *font = static_cast<Font *>(&ibmf75Face0),
                      bool multiLine = false, bool subtitle = true) {
-        if (menuItem.topPadding) {
-            topPadding_ = menuItem.topPadding;
-        }
         if (textView_ != nullptr) {
             textView_->setHidden(true);
         }
@@ -88,8 +85,6 @@ public:
         int indicatorWidth = 5;
         auto indicatorWidthPlus = indicatorWidth + 8;
         Rect textRect{}, subtextRect{};
-
-        y += topPadding_;
 
         // Layout the right text view if necessary
         if (rightTextView_ != nullptr && !rightTextView_->isHidden()) {
@@ -190,5 +185,4 @@ protected:
     int indicatorExtraVerticalHeight_ = 3;
     bool circleIndicator_ = false;
     bool selected_ = false;
-    uint8_t topPadding_ = 0;
 };
