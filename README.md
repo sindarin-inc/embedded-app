@@ -213,7 +213,11 @@ This is [fixed](https://github.com/espressif/esp-idf/blob/master/components/efus
 
 ## Serial communication protocal for sending commands
 
-The USB serial connection protocol supports file transfers, device control commands, and debugging commands. The key commands include starting file transfers, device programming, restarting the device, retrieving device information, and controlling the device's user interface.
+The USB serial connection protocol supports file transfers, device control commands, and debugging commands. The key commands include starting file transfers, device programming, restarting the device, retrieving device information, and controlling the device's user interface. On macs, /dev/cu.usbmodemsolreader1 will always be available for accepting commands and file transfers. /dev/cu.usbmodemsolreader3 will be available for logging.
+
+Note that now logging to serial is OFF by default. To easily toggle that once you are connected via usb, issue this command:
+
+```echo "LOGGING_ON" | tee /dev/cu.usbmodemsolreader1```
 
 Command Handling
 The protocol is implemented using a command handler that processes incoming commands and performs corresponding actions. The following sections detail each command's functionality.
@@ -247,6 +251,8 @@ The debug commands control the user interface for testing purposes. These comman
 ```DOWN```: Sends a DOWN command to the user interface.
 ```ENTER```: Sends an ENTER command to the user interface.
 ```BACK```: Sends a BACK command to the user interface.
+``LOGGING_ON``: Turns on serial logging (on macs, this will be /dev/cu.usbmodemsolreader3)
+``LOGGING_OFF``: Turns off serial logging 
 
 
 ## Editing Sol Sans font in the IBMF Font Editor

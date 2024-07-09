@@ -42,24 +42,13 @@ private:
     BootloaderState currentState_{BootloaderState::Idle};
     std::vector<SerialDataListener> listeners_;
     bool loggingEnabled_ = false;
+    bool loggingPortInitialized_ = false;
 
     static USBSerial *instance; // To store the instance
-
-    static void cdcacmLoggingCallback(int itf, cdcacm_event_t *event) {
-        if (instance) {
-            instance->rxLoggingCallback(itf, event);
-        }
-    }
 
     static void cdcacmCommandCallback(int itf, cdcacm_event_t *event) {
         if (instance) {
             instance->rxCommandCallback(itf, event);
-        }
-    }
-
-    static void cdcacmLineStateChangedCallback(int itf, cdcacm_event_t *event) {
-        if (instance) {
-            instance->lineStateChangedCallback(itf, event);
         }
     }
 };

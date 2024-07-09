@@ -170,6 +170,12 @@ void PollingLoopTask(void *parameter) {
             log_i("USB Power: %d", USBConnected());
         } else if (command == "BOOTREASON") {
             log_i("Boot reason: %s", powerManager.getBootInfo().humanStr().c_str());
+        } else if (command == "LOGGING_ON") {
+            USBSerial::getInstance().enableLogging();
+            prefs.loggingOn.set(true);
+        } else if (command == "LOGGING_OFF") {
+            USBSerial::getInstance().disableLogging();
+            prefs.loggingOn.set(false);
         } else {
             log_w("Unknown debug command: %s", command.c_str());
         }
@@ -241,7 +247,13 @@ void loop() { vTaskDelay(portMAX_DELAY); };
 void setup() {
 #else
 extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
+    // Note that with the new logging interface, we won't get any logs until later
+    // after prefs have begun. Hence the below #if 0 in case you need to turn on logging
+    // earlier for debugging.
     usbSerial.begin();
+#if 0
+    usbSerial.enableLogging();
+#endif
     directCommand.begin();
     HardwareInit();
 #endif
@@ -267,6 +279,11 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 
     if (!prefs.begin()) {
         bootErrors.push_back({.type = BootError::Type::Preferences});
+    }
+
+    // Note with this change we won't get any logs until after here.
+    if (prefs.loggingOn.get().value_or(false)) {
+        usbSerial.enableLogging();
     }
 
     solClock.begin();

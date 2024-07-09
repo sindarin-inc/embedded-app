@@ -75,8 +75,8 @@ build: check_idf configure
 
 .PHONY: flash
 flash: build
-	if [ -e /dev/cu.usbmodemsolreader3 ]; then \
-		echo "PROGRAM" | tee /dev/cu.usbmodemsolreader3; \
+	if [ -e /dev/cu.usbmodemsolreader1 ]; then \
+		echo "PROGRAM" | tee /dev/cu.usbmodemsolreader1; \
 		sleep 2; \
 	fi
 	@if [[ "$$(uname)" == "Linux" ]]; then \
@@ -92,7 +92,7 @@ monitor: check_idf
 	@if [[ "$$(uname)" == "Linux" ]]; then \
 		PORT=$$(udevadm info --query=all --name=/dev/ttyUSB* | grep 'ID_MODEL_FROM_DATABASE=Sol Reader' -B4 | grep 'DEVNAME' | cut -d'=' -f2) ; \
 	elif [[ "$$(uname)" == "Darwin" ]]; then \
-		PORT=$$(ls /dev/cu.usbmodemsolreader1 | head -n1) ; \
+		PORT=$$(ls /dev/cu.usbmodemsolreader3 | head -n1) ; \
 	else \
 		echo "Unsupported operating system." ; \
 		exit 1 ; \

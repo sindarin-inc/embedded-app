@@ -11,8 +11,8 @@ USBSerial::USBSerial() {
 
 void USBSerial::initJtag() {
 #if USE_TINYUSB_SERIAL
-    tusb_cdc_acm_deinit(TINYUSB_CDC_ACM_1);
     tusb_cdc_acm_deinit(TINYUSB_CDC_ACM_0);
+    tusb_cdc_acm_deinit(TINYUSB_CDC_ACM_1);
     tinyusb_driver_uninstall();
 
     usb_phy_config_t phyConf;
@@ -28,18 +28,33 @@ void USBSerial::disableLogging() {
     if (loggingEnabled_) {
         log_i("Disabling logging");
 #if USE_TINYUSB_SERIAL
-        esp_tusb_deinit_console(TINYUSB_CDC_ACM_0); // log to usb
+        esp_tusb_deinit_console(TINYUSB_CDC_ACM_1); // turn off log to usb
 #endif
         loggingEnabled_ = false;
     }
 }
 
 void USBSerial::enableLogging() {
-    if (!loggingEnabled_) {
-        log_i("Enabling logging");
+    if (!loggingPortInitialized_) {
+        loggingPortInitialized_ = true;
 #if USE_TINYUSB_SERIAL
-        esp_tusb_init_console(TINYUSB_CDC_ACM_0);
+        tinyusb_config_cdcacm_t acmCfg = {.usb_dev = TINYUSB_USBDEV_0,
+                                          .cdc_port = TINYUSB_CDC_ACM_1,
+                                          .callback_rx = nullptr,
+                                          .callback_rx_wanted_char = nullptr,
+                                          .callback_line_state_changed = nullptr,
+                                          .callback_line_coding_changed = nullptr};
+
+        ESP_ERROR_CHECK(tusb_cdc_acm_init(&acmCfg));
 #endif
+    }
+    if (!loggingEnabled_) {
+
+#if USE_TINYUSB_SERIAL
+        esp_tusb_init_console(TINYUSB_CDC_ACM_1);
+#endif
+        // This log message will go nowhere probably
+        log_i("Logging enabled");
         loggingEnabled_ = true;
     }
 }
@@ -82,8 +97,8 @@ void USBSerial::txSendData(const uint8_t *data, size_t length) {
 
     for (size_t offset = 0; offset < length; offset += chunkSize) {
         size_t bytesToSend = std::min(chunkSize, length - offset);
-        tinyusb_cdcacm_write_queue(TINYUSB_CDC_ACM_1, data + offset, bytesToSend);
-        tinyusb_cdcacm_write_flush(TINYUSB_CDC_ACM_1, 0);
+        tinyusb_cdcacm_write_queue(TINYUSB_CDC_ACM_0, data + offset, bytesToSend);
+        tinyusb_cdcacm_write_flush(TINYUSB_CDC_ACM_0, 0);
         // From experimentation, 2 MS wasn't enough and the output was getting garbled
         vTaskDelay(5 / portTICK_PERIOD_MS);
     }
@@ -101,24 +116,11 @@ void USBSerial::begin() {
 
     tinyusb_config_cdcacm_t acmCfg = {.usb_dev = TINYUSB_USBDEV_0,
                                       .cdc_port = TINYUSB_CDC_ACM_0,
-                                      .callback_rx = nullptr,
+                                      .callback_rx = USBSerial::cdcacmCommandCallback,
                                       .callback_rx_wanted_char = nullptr,
                                       .callback_line_state_changed = nullptr,
                                       .callback_line_coding_changed = nullptr};
 
     ESP_ERROR_CHECK(tusb_cdc_acm_init(&acmCfg));
-
-    enableLogging();
-
-    vTaskDelay(2000 / portTICK_PERIOD_MS);
-
-    tinyusb_config_cdcacm_t acmCfg1 = {.usb_dev = TINYUSB_USBDEV_0,
-                                       .cdc_port = TINYUSB_CDC_ACM_1,
-                                       .callback_rx = USBSerial::cdcacmCommandCallback,
-                                       .callback_rx_wanted_char = nullptr,
-                                       .callback_line_state_changed = nullptr,
-                                       .callback_line_coding_changed = nullptr};
-
-    ESP_ERROR_CHECK(tusb_cdc_acm_init(&acmCfg1));
 #endif
 }

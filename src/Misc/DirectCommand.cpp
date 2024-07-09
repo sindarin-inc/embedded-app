@@ -1,6 +1,8 @@
 
 #include "DirectCommand.hpp"
 
+#include <esp_system.h>
+
 #include "Communications/USBSerial.hpp"
 #include "Platform.hpp"
 
@@ -30,7 +32,7 @@ void DirectCommand::begin() {
     // The only comamnds this class implements are the PROGRAM command which
     // allows the device to enter programming mode and the RESTART command
     // which reboots the device. Also the DEVICE_INFO command.
-    addCommandHandler([](const std::string &command) {
+    addCommandHandler([this](const std::string &command) {
         if (command == "PROGRAM") {
             USBSerial::getInstance().disableLogging();
             USBSerial::getInstance().initJtag();
@@ -38,9 +40,7 @@ void DirectCommand::begin() {
             USBSerial::getInstance().txSendData(reinterpret_cast<const uint8_t *>("SUCCESS"), 8);
             // Wait 1 second before restarting so the receiver can get the success message
             vTaskDelay(1000 / portTICK_PERIOD_MS);
-#if !SIMULATOR
             esp_restart();
-#endif
         } else if (command == "DEVICE_INFO") {
             USBSerial::getInstance().txSendData(reinterpret_cast<const uint8_t *>("SUCCESS"), 8);
             USBSerial::getInstance().txSendData(reinterpret_cast<const uint8_t *>("SERIAL_NUMBER,"),
