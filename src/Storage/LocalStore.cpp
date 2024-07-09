@@ -174,7 +174,7 @@ void LocalStore::removeReadable(ReadablesVector &readables,
     }
 }
 
-auto LocalStore::readablesSince(const ReadablesModelType modelType) -> std::string {
+auto LocalStore::readablesSince(ReadablesModelType modelType) -> std::string {
     switch (modelType) {
     case ReadablesModelType::Article:
         return prefs_.lastArticlesSince.get().value_or("");
@@ -1093,9 +1093,7 @@ auto LocalStore::removeStopWords(const SpiramString &title) -> std::string {
     std::set<std::string> stopWords = {"a ", "and ", "the "};
 
     // Case-insensitive comparison function
-    auto compareIgnoreCase = [](const char c1, const char c2) {
-        return std::tolower(c1) == std::tolower(c2);
-    };
+    auto compareIgnoreCase = [](char c1, char c2) { return std::tolower(c1) == std::tolower(c2); };
 
     // Remove stop words from the beginning of the title (case-insensitive)
     for (const auto &stopWord : stopWords) {

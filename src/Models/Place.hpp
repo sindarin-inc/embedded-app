@@ -22,8 +22,8 @@ public:
 
     static auto factory(const std::string &placeStr, DocType docType = DocType::NONE)
         -> std::shared_ptr<Place>;
-    static auto factory(const uint32_t offset) -> std::shared_ptr<Place>;
-    static auto factory(const uint32_t offset, const std::string &href) -> std::shared_ptr<Place>;
+    static auto factory(uint32_t offset) -> std::shared_ptr<Place>;
+    static auto factory(uint32_t offset, const std::string &href) -> std::shared_ptr<Place>;
 
     // The following are good for All subclasses BUT the EPubPlace class...
 
