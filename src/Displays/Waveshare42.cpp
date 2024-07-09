@@ -107,6 +107,9 @@ int Waveshare42::Init(void) {
     SendCommand(0x12);
     ReadBusy();
 
+    // Datasheet says we need 10ms break here
+    Delay(10);
+
     SendCommand(0x21);
     SendData(0x40);
     SendData(0x00);
@@ -121,6 +124,7 @@ int Waveshare42::Init(void) {
     SendData(0x00);
     SendData(0x31);
 
+    // Check byte order!
     SendCommand(0x45);
     SendData(0x00);
     SendData(0x00);
