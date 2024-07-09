@@ -4,8 +4,6 @@ extern USBSerial usbSerial;
 
 auto USBSerial::getInstance() -> USBSerial & { return usbSerial; }
 
-USBSerial::USBSerial() noexcept = default;
-
 void USBSerial::initJtag() {
 #if USE_TINYUSB_SERIAL
     tusb_cdc_acm_deinit(TINYUSB_CDC_ACM_0);
