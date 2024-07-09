@@ -106,7 +106,9 @@ void ToggleMenuScreen::drawInRect(Rect rect) {
 
     if (drawBubbles_) {
         for (auto &view : menuToggleSelectionViews_) {
-            (*view).draw();
+            if (view) { // Check if the view is not null before drawing
+                (*view).draw();
+            }
         }
     }
 
