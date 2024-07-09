@@ -12,23 +12,35 @@
 
 class MenuItem {
 public:
+    enum class MenuItemType { NORMAL, SPACER };
+
     MenuItem() = default;
-    MenuItem(std::string title) : title(std::move(title)){};
+    MenuItem(std::string title) : title(std::move(title)), menuItemType(MenuItemType::NORMAL){};
     MenuItem(std::string title, std::string subtitle)
-        : title(std::move(title)), subtitle(std::move(subtitle)){};
+        : title(std::move(title)), subtitle(std::move(subtitle)),
+          menuItemType(MenuItemType::NORMAL){};
     MenuItem(std::string title, std::function<void()> callback)
-        : title(std::move(title)), callback(std::move(callback)){};
+        : title(std::move(title)), callback(std::move(callback)),
+          menuItemType(MenuItemType::NORMAL){};
     MenuItem(std::string title, std::string subtitle, std::function<void()> callback)
-        : title(std::move(title)), subtitle(std::move(subtitle)), callback(std::move(callback)) {}
+        : title(std::move(title)), subtitle(std::move(subtitle)), callback(std::move(callback)),
+          menuItemType(MenuItemType::NORMAL) {}
+
+    static MenuItem createSpacer(int height) {
+        MenuItem spacer;
+        spacer.menuItemType = MenuItemType::SPACER;
+        spacer.spacerHeight = height;
+        return spacer;
+    }
 
     std::string title;
     std::string subtitle;
-    // Called when this menu item is selected
     std::function<void()> callback;
 
     bool isToggle = false;
     bool toggleValue = false;
-    uint8_t topPadding = 0;
+    MenuItemType menuItemType = MenuItemType::NORMAL;
+    int spacerHeight = 0;
 };
 
 class Menu {

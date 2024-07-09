@@ -7,7 +7,9 @@
 
 void Menu::addMenuItem(const MenuItem &newItem) {
     menuItems_.push_back(newItem);
-    numMenuItems_++;
+    if (newItem.menuItemType == MenuItem::MenuItemType::NORMAL) {
+        numMenuItems_++;
+    }
 }
 
 void Menu::resetMenuItems() {
@@ -18,20 +20,27 @@ void Menu::resetMenuItems() {
 }
 
 void Menu::populateMenuItems(std::vector<MenuItem> &menuItems) {
-    for (int i = currMenuPage_ * myStyle_.numberOfItemsPerPage;
-         (i < (currMenuPage_ * myStyle_.numberOfItemsPerPage + myStyle_.numberOfItemsPerPage)) &&
-         (i < numMenuItems_);
-         i++) {
-        menuItems.push_back(menuItems_[i]);
+    int itemCount = 0;
+    for (int i = 0; i < menuItems_.size() && itemCount < myStyle_.numberOfItemsPerPage; i++) {
+        if (i >= currMenuPage_ * myStyle_.numberOfItemsPerPage) {
+            menuItems.push_back(menuItems_[i]);
+            if (menuItems_[i].menuItemType == MenuItem::MenuItemType::NORMAL) {
+                itemCount++;
+            }
+        }
     }
 }
 
 auto Menu::getNumItems() const -> int { return numMenuItems_; }
 
 auto Menu::getMenuItemByTitle(const std::string &title) -> int {
-    for (int i = 0; i < numMenuItems_; i++) {
-        if (menuItems_[i].title == title) {
-            return i;
+    int normalItemCount = 0;
+    for (int i = 0; i < menuItems_.size(); i++) {
+        if (menuItems_[i].menuItemType == MenuItem::MenuItemType::NORMAL) {
+            if (menuItems_[i].title == title) {
+                return normalItemCount;
+            }
+            normalItemCount++;
         }
     }
     return -1;
@@ -42,36 +51,79 @@ void Menu::setCurrSelection(int newSelection) {
     if (myStyle_.numberOfItemsPerPage == 0) {
         currMenuPage_ = 0;
     } else {
-        currMenuPage_ = currSelection_ / myStyle_.numberOfItemsPerPage;
+        int normalItemCount = 0;
+        for (int i = 0; i < menuItems_.size(); i++) {
+            if (menuItems_[i].menuItemType == MenuItem::MenuItemType::NORMAL) {
+                if (normalItemCount == currSelection_) {
+                    currMenuPage_ = i / myStyle_.numberOfItemsPerPage;
+                    break;
+                }
+                normalItemCount++;
+            }
+        }
     }
 }
 
 auto Menu::getCurrSelection() const -> int { return currSelection_; }
 
-auto Menu::getCurrItem() -> MenuItem { return menuItems_[currSelection_]; }
+auto Menu::getCurrItem() -> MenuItem {
+    int normalItemCount = 0;
+    for (auto &item : menuItems_) {
+        if (item.menuItemType == MenuItem::MenuItemType::NORMAL) {
+            if (normalItemCount == currSelection_) {
+                return item;
+            }
+            normalItemCount++;
+        }
+    }
+    // This should never happen if the menu is properly set up
+    return MenuItem();
+}
 
 auto Menu::updateCurrItemTitle(std::string newTitle) -> bool {
-    if (menuItems_[currSelection_].title != newTitle) {
-        menuItems_[currSelection_].title = std::move(newTitle);
-        return true;
+    int normalItemCount = 0;
+    for (auto &item : menuItems_) {
+        if (item.menuItemType == MenuItem::MenuItemType::NORMAL) {
+            if (normalItemCount == currSelection_) {
+                if (item.title != newTitle) {
+                    item.title = std::move(newTitle);
+                    return true;
+                }
+                return false;
+            }
+            normalItemCount++;
+        }
     }
     return false;
 }
 
 auto Menu::nextSelection(bool skipLast) -> bool {
     bool needsRefresh = false;
-
     int oldCurMenuPage = currMenuPage_;
-    currSelection_ = (currSelection_ + 1) % numMenuItems_;
+
+    do {
+        currSelection_ = (currSelection_ + 1) % numMenuItems_;
+    } while (menuItems_[currSelection_].menuItemType != MenuItem::MenuItemType::NORMAL);
+
     if (skipLast && (currSelection_ == numMenuItems_ - 1)) {
         currSelection_ = 0;
     }
+
     if (myStyle_.numberOfItemsPerPage == 0) {
         currMenuPage_ = 0;
     } else {
-        currMenuPage_ = currSelection_ / myStyle_.numberOfItemsPerPage;
+        int normalItemCount = 0;
+        for (int i = 0; i < menuItems_.size(); i++) {
+            if (menuItems_[i].menuItemType == MenuItem::MenuItemType::NORMAL) {
+                if (normalItemCount == currSelection_) {
+                    currMenuPage_ = i / myStyle_.numberOfItemsPerPage;
+                    break;
+                }
+                normalItemCount++;
+            }
+        }
     }
-    // This makes sure we do a full refresh when the page changes
+
     if (oldCurMenuPage != currMenuPage_) {
         log_d("Page changed, refreshing");
         needsRefresh = true;
@@ -82,19 +134,31 @@ auto Menu::nextSelection(bool skipLast) -> bool {
 
 auto Menu::prevSelection(bool skipLast) -> bool {
     bool needsRefresh = false;
-
     int oldCurMenuPage = currMenuPage_;
-    // Wrap back around to the last item
-    currSelection_ = (currSelection_ + numMenuItems_ - 1) % numMenuItems_;
+
+    do {
+        currSelection_ = (currSelection_ + numMenuItems_ - 1) % numMenuItems_;
+    } while (menuItems_[currSelection_].menuItemType != MenuItem::MenuItemType::NORMAL);
+
     if (skipLast && (currSelection_ == numMenuItems_ - 1)) {
         currSelection_--;
     }
+
     if (myStyle_.numberOfItemsPerPage == 0) {
         currMenuPage_ = 0;
     } else {
-        currMenuPage_ = currSelection_ / myStyle_.numberOfItemsPerPage;
+        int normalItemCount = 0;
+        for (int i = 0; i < menuItems_.size(); i++) {
+            if (menuItems_[i].menuItemType == MenuItem::MenuItemType::NORMAL) {
+                if (normalItemCount == currSelection_) {
+                    currMenuPage_ = i / myStyle_.numberOfItemsPerPage;
+                    break;
+                }
+                normalItemCount++;
+            }
+        }
     }
-    // This makes sure we do a full refresh when the page changes
+
     if (oldCurMenuPage != currMenuPage_) {
         needsRefresh = true;
     }
@@ -102,20 +166,42 @@ auto Menu::prevSelection(bool skipLast) -> bool {
     return needsRefresh;
 }
 
-// Includes the name of the item and it's number preceding it for easy display
-// Offset by two spaces
 auto Menu::getItemTitleAt(int index) -> std::string {
-    std::string all;
-    assert(index < numMenuItems_);
-    all = menuItems_[index].title;
-    return all;
+    int normalItemCount = 0;
+    for (auto &item : menuItems_) {
+        if (item.menuItemType == MenuItem::MenuItemType::NORMAL) {
+            if (normalItemCount == index) {
+                return item.title;
+            }
+            normalItemCount++;
+        }
+    }
+    return "";
 }
+
 void Menu::changeItemTitleAt(int index, std::string title) {
-    assert(index < numMenuItems_);
-    menuItems_[index].title = std::move(title);
+    int normalItemCount = 0;
+    for (auto &item : menuItems_) {
+        if (item.menuItemType == MenuItem::MenuItemType::NORMAL) {
+            if (normalItemCount == index) {
+                item.title = std::move(title);
+                return;
+            }
+            normalItemCount++;
+        }
+    }
 }
 
 auto Menu::getItemAt(int index) -> MenuItem {
-    assert(index < numMenuItems_);
-    return menuItems_[index];
+    int normalItemCount = 0;
+    for (auto &item : menuItems_) {
+        if (item.menuItemType == MenuItem::MenuItemType::NORMAL) {
+            if (normalItemCount == index) {
+                return item;
+            }
+            normalItemCount++;
+        }
+    }
+    // This should never happen if the menu is properly set up
+    return MenuItem();
 }

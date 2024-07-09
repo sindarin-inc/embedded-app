@@ -42,7 +42,7 @@ protected:
     SingleLineTextView headerTextView_;
     SingleLineTextView onTextView_;
     SingleLineTextView offTextView_;
-    std::vector<std::shared_ptr<SingleLineTextView>> menuItemViews_;
+    std::vector<std::shared_ptr<EinkView>> menuItemViews_;
     std::vector<std::shared_ptr<BoxView>> menuPageViews_;
     std::shared_ptr<BoxView> selectedSelectionView_;
     std::vector<bool> menuToggleValues_;
