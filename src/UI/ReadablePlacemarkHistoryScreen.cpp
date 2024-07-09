@@ -172,7 +172,7 @@ void ReadablePlacemarkHistoryScreen::loadMenuItems() {
     std::map<SpiramString, int> chapterHrefToOffset;
     for (const ReadableTableOfContentsChapter &chapter : stream->getToc()) {
         SpiramString href = chapter.href;
-        if (chapter.title.size() == 0) {
+        if (chapter.title.empty()) {
             // Use book title if chapter title is empty
             chapterHrefToTitle[href] = readable_->title;
         } else {
