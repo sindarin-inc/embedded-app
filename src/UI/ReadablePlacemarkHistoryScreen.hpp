@@ -50,7 +50,6 @@ public:
     void loadMenuItems();
     void setPlacemark(const std::shared_ptr<Place> &place);
     void setFirstLoad() { firstLoad_ = true; }
-    void setNearestChapterSelection(const std::shared_ptr<Place> &placeInFile);
 
 protected:
     PreferencesStore &prefs_;

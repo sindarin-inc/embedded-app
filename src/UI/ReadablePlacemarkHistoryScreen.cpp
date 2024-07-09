@@ -168,8 +168,8 @@ void ReadablePlacemarkHistoryScreen::loadMenuItems() {
 
     // Load a map of chapter href to title and accumulated offset
     auto stream = std::dynamic_pointer_cast<EPubFile>(renderer_.getStream());
-    std::map<SpiramString, std::string> chapterHrefToTitle;
-    std::map<SpiramString, int> chapterHrefToOffset;
+    std::unordered_map<SpiramString, std::string> chapterHrefToTitle;
+    std::unordered_map<SpiramString, int> chapterHrefToOffset;
     for (const ReadableTableOfContentsChapter &chapter : stream->getToc()) {
         SpiramString href = chapter.href;
         if (chapter.title.empty()) {
@@ -203,7 +203,7 @@ void ReadablePlacemarkHistoryScreen::loadMenuItems() {
                                  chapterHrefToOffset[SpiramString(placemark.ePubPlace->getHRef())] +
                                  placemark.ePubPlace->getOffset())),
                              [this, placemark]() {
-            // Set placemark
+            // Set readable's placemark to selected placemark history
             setPlacemark(placemark.ePubPlace);
             back();
         }));
@@ -221,22 +221,4 @@ void ReadablePlacemarkHistoryScreen::setPlacemark(const std::shared_ptr<Place> &
                             SolClock::getInstance().getEpochTime());
     telemetry_.logMetric(TelemetryField::METRIC_SET_PLACEMARK, readable_->shortenedUuid.c_str(),
                          readable_->telemetryPlacemarkMetrics());
-}
-
-void ReadablePlacemarkHistoryScreen::setNearestChapterSelection(
-    const std::shared_ptr<Place> &placeInFile) {
-    auto stream = std::dynamic_pointer_cast<EPubFile>(renderer_.getStream());
-    int nearestChapter = 0;
-    if (placeInFile->isFor(DocType::EPUB)) {
-        auto stream = std::dynamic_pointer_cast<EPubFile>(renderer_.getStream());
-        auto ePubPlace = std::dynamic_pointer_cast<EPubPlace>(placeInFile);
-
-        nearestChapter = stream->getChapterIdx(ePubPlace);
-
-        if (nearestChapter == -1) {
-            log_w("Unable to find nearest chapter for %s", ePubPlace->getHRef().c_str());
-            nearestChapter = 0;
-        }
-    }
-    setCurrSelection(nearestChapter);
 }

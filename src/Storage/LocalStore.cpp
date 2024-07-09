@@ -459,13 +459,13 @@ auto LocalStore::processReadablePlacemarkHistory(
         return false;
     }
 
+    // 1024 captures a placemark with a loooong chapter href, length, device sn, and date
     auto doc = std::make_unique<SpiRamJsonDocument>(
-        std::max(1024, static_cast<int>(placemarkHistory.size() * 2048)));
-    // Create a key named placemark_history of type array
+        std::max(1024, static_cast<int>(placemarkHistory.size() * 1024)));
     JsonArray placemarkHistoryJson = doc->createNestedArray("placemark_history");
 
+    // Save each placemark history
     for (const auto &placemark : placemarkHistory) {
-        // Save the placemark history
         placemarkHistoryJson.add(placemark);
     }
 
@@ -477,12 +477,12 @@ auto LocalStore::processReadablePlacemarkHistory(
 
     SFile placemarkHistoryFile =
         fileSystem.open(readable->placemarkHistoryFilePath(), FILE_WRITE, true);
-
     if (!placemarkHistoryFile) {
         log_i("Failed to open placemark history file: %s",
               readable->placemarkHistoryFilePath().c_str());
         return false;
     }
+
     // Write doc to disk
     serializeJsonPretty(*doc, placemarkHistoryFile);
     placemarkHistoryFile.close();
