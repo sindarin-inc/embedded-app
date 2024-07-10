@@ -24,7 +24,9 @@ void USBSerial::disableLogging() {
         log_i("Disabling logging");
 #if USE_TINYUSB_SERIAL
         esp_tusb_deinit_console(TINYUSB_CDC_ACM_1); // turn off log to usb
+        tusb_cdc_acm_deinit(TINYUSB_CDC_ACM_1);
 #endif
+        loggingPortInitialized_ = false;
         loggingEnabled_ = false;
     }
 }
