@@ -69,6 +69,36 @@
                 "chapter_offset": 433,
                 "chapter": "OEBPS/xhtml/Scot_9780375843174_epub3_adc_r1.xhtml",
                 "bookmarks": [],
+                "placemark_history": [
+                    {
+                        "placemark": 58788,
+                        "chapter": "xhtml/chapter4.xhtml",
+                        "chapter_offset": 3454,
+                        "date_created": "2024-06-17T14:49:22.880520Z",
+                        "device_sn": "DEV02230100003"
+                    },
+                    {
+                        "placemark": 58141,
+                        "chapter": "xhtml/chapter4.xhtml",
+                        "chapter_offset": 2807,
+                        "date_created": "2024-06-12T22:10:36.759084Z",
+                        "device_sn": "DEV02230100003"
+                    },
+                    {
+                        "placemark": 58068,
+                        "chapter": "xhtml/chapter4.xhtml",
+                        "chapter_offset": 2734,
+                        "date_created": "2024-06-12T17:36:37.229845Z",
+                        "device_sn": "DEV02230100003"
+                    },
+                    {
+                        "placemark": 49783,
+                        "chapter": "xhtml/chapter3.xhtml",
+                        "chapter_offset": 9469,
+                        "date_created": "2024-06-11T19:47:19.292626Z",
+                        "device_sn": "DEV02230100003"
+                    }
+                ],
                 "is_archived": false,
                 "is_downloaded": true,
                 "date_archived": null,

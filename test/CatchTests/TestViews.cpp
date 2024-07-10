@@ -230,11 +230,11 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
         SendRemoteCommand(DOWN);
         WAIT_FOR_DRAW(display);
         WAIT_FOR_DRAW(display);
+        SendRemoteCommand(UP);
+        WAIT_FOR_DRAW(display);
         ASSERT_VIEW_UNCHANGED(display, "PopupMenu5");
 
         // Open the dictionary
-        SendRemoteCommand(UP);
-        WAIT_FOR_DRAW(display);
         SendRemoteCommand(ENTER);
         WAIT_FOR_DRAW(display);
         ASSERT_VIEW_UNCHANGED(display, "Dictionary4");
@@ -252,13 +252,13 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
         SendRemoteCommand(DOWN);
         WAIT_FOR_DRAW(display);
         WAIT_FOR_DRAW(display);
-        ASSERT_VIEW_UNCHANGED(display, "PopupMenu5");
+        SendRemoteCommand(UP);
+        WAIT_FOR_DRAW(display);
+        SendRemoteCommand(UP);
+        WAIT_FOR_DRAW(display);
+        ASSERT_VIEW_UNCHANGED(display, "PopupMenu6");
 
         // Open the summary
-        SendRemoteCommand(UP);
-        WAIT_FOR_DRAW(display);
-        SendRemoteCommand(UP);
-        WAIT_FOR_DRAW(display);
         SendRemoteCommand(ENTER);
         WAIT_FOR_DRAW(display);
         ASSERT_VIEW_UNCHANGED(display, "Summary1");
@@ -289,6 +289,29 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
         SendRemoteCommand(UP);
         WAIT_FOR_DRAW(display);
         ASSERT_VIEW_UNCHANGED(display, "Dawn4");
+
+        // Render the popup menu
+        SendRemoteCommand(DOWN);
+        WAIT_FOR_DRAW(display);
+        WAIT_FOR_DRAW(display);
+        SendRemoteCommand(UP);
+        WAIT_FOR_DRAW(display);
+        SendRemoteCommand(UP);
+        WAIT_FOR_DRAW(display);
+        SendRemoteCommand(UP);
+        WAIT_FOR_DRAW(display);
+        ASSERT_VIEW_UNCHANGED(display, "PopupMenu7");
+
+        // Open the placemark history
+        SendRemoteCommand(ENTER);
+        WAIT_FOR_DRAW(display);
+        WAIT_FOR_DRAW(display);
+        ASSERT_VIEW_UNCHANGED(display, "PlacemarkHistory1");
+        SendRemoteCommand(DOWN);
+        WAIT_FOR_DRAW(display);
+        SendRemoteCommand(ENTER);
+        WAIT_FOR_DRAW(display);
+        ASSERT_VIEW_UNCHANGED(display, "Dawn5");
     }
 }
 
