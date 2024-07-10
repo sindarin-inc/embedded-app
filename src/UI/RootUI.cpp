@@ -624,11 +624,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         contentSettingsMenu->setToggleLastItem(false);
     }
 
-    // Add spacer
-    contentSettingsMenu->addMenuItem(MenuItem::createSpacer(10));
-
     for (auto modelType : {ReadablesModelType::Book, ReadablesModelType::Article}) {
-        contentSettingsMenu->addMenuItem(MenuItem(
+        auto sortOrderMenuItem = MenuItem(
             modelType == ReadablesModelType::Book ? "Book sort order" : "Article sort order",
             [this, &localStore, display, contentSettingsMenu, modelType]() {
             auto sortMenu = new MenuScreen(
@@ -777,7 +774,11 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 setCurrentScreen(*contentSettingsMenu);
                 delete sortMenu;
             });
-            }));
+            });
+        if (modelType == ReadablesModelType::Book) {
+            sortOrderMenuItem.topPadding = 10;
+        }
+        contentSettingsMenu->addMenuItem(sortOrderMenuItem);
     }
 
     // Hide the toggle for the sort order menu

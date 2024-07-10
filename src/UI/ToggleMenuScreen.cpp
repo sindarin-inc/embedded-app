@@ -4,7 +4,6 @@
 
 #include "Misc/MenuStyle.hpp"
 #include "Misc/Style.hpp"
-#include "UI/Components/SpacerView.hpp"
 
 #define MAX_WIDTH 150
 
@@ -37,34 +36,27 @@ auto ToggleMenuScreen::layout(LayoutContext &context, Size size) -> Size {
             y += offRect.size.height;
 
             for (auto &view : menuItemViews_) {
-                // If view is instance of SpacerView, skip it and add some padding
-                if (auto spacerView = std::dynamic_pointer_cast<SpacerView>(view)) {
-                    // For spacer views, just increase y by the spacer height
-                    y += spacerView->getHeight();
-                } else {
-                    auto viewFrame = context.setViewFrame(*view, {{x + 7, y}, {size.width - 70, 0}},
-                                                          LayoutOptionsSizeToFitVertical);
-                    if (place == currSelection_) {
-                        context.setViewFrame(
-                            *selectedSelectionView_,
-                            {{x, y}, {size.width - 70, viewFrame.size.height + 1}});
-                    }
-
-                    // Only layout the bubble if it's visible (doing this here instead of draw since
-                    // we already have the place in the vector here)
-                    if (showToggleBubble_[place]) {
-                        Rect alignWithRect = menuToggleValues_[place] ? onRect : offRect;
-                        // Align the bubble horizontally with the on/off text and vertically witht
-                        // the menu item text (with a little nudge)
-                        context.setViewSizeInRect(
-                            *menuToggleSelectionViews_[place], {7, 7},
-                            {{alignWithRect.origin.x, y + 1},
-                             {alignWithRect.size.width, viewFrame.size.height}},
-                            LayoutOptionsAlignCenter);
-                    }
-
-                    y += viewFrame.size.height + 1;
+                y += view->topPadding;
+                auto viewFrame = context.setViewFrame(*view, {{x + 7, y}, {size.width - 70, 0}},
+                                                      LayoutOptionsSizeToFitVertical);
+                if (place == currSelection_) {
+                    context.setViewFrame(*selectedSelectionView_,
+                                         {{x, y}, {size.width - 70, viewFrame.size.height + 1}});
                 }
+
+                // Only layout the bubble if it's visible (doing this here instead of draw since we
+                // already have the place in the vector here)
+                if (showToggleBubble_[place]) {
+                    Rect alignWithRect = menuToggleValues_[place] ? onRect : offRect;
+                    // Align the bubble horizontally with the on/off text and vertically witht
+                    // the menu item text (with a little nudge)
+                    context.setViewSizeInRect(*menuToggleSelectionViews_[place], {7, 7},
+                                              {{alignWithRect.origin.x, y + 1},
+                                               {alignWithRect.size.width, viewFrame.size.height}},
+                                              LayoutOptionsAlignCenter);
+                }
+
+                y += viewFrame.size.height + 1;
                 place++;
             }
 
@@ -152,21 +144,14 @@ void ToggleMenuScreen::render(DisplaySystem &display) {
         selectedSelectionView_ = std::make_shared<BoxView>(display, 3);
 
         for (auto &menuItem : menuItems_) {
-            if (menuItem.menuItemType == MenuItem::MenuItemType::NORMAL) {
-                log_d("Adding menu item %s", menuItem.title.c_str());
-                auto menuItemView = std::make_shared<SingleLineTextView>(display, menuItem.title,
-                                                                         myStyle_.navigationFont);
-                menuItemViews_.push_back(menuItemView);
-                menuToggleSelectionViews_.push_back(std::make_shared<BoxView>(display, 3));
-                menuToggleSelectionViews_[menuToggleSelectionViews_.size() - 1]->fillColor =
-                    display_.fg;
-            } else if (menuItem.menuItemType == MenuItem::MenuItemType::SPACER) {
-                // Add a spacer view
-                auto spacerView = std::make_shared<SpacerView>(display, menuItem.spacerHeight);
-                menuItemViews_.push_back(spacerView);
-                // Add a null pointer for toggle selection view to maintain alignment
-                menuToggleSelectionViews_.push_back(nullptr);
-            }
+            log_d("Adding menu item %s", menuItem.title.c_str());
+            auto menuItemView = std::make_shared<SingleLineTextView>(display, menuItem.title,
+                                                                     myStyle_.navigationFont);
+            menuItemView->setTopPadding(menuItem.topPadding);
+            menuItemViews_.push_back(menuItemView);
+            menuToggleSelectionViews_.push_back(std::make_shared<BoxView>(display, 3));
+            menuToggleSelectionViews_[menuToggleSelectionViews_.size() - 1]->fillColor =
+                display_.fg;
         }
 
         draw();
