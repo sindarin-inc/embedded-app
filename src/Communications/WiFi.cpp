@@ -3,6 +3,7 @@
 #include <cstring>
 #include <string>
 
+#include "Misc/Defer.hpp"
 #include "Misc/SpiramAllocator.hpp"
 #include "config.h"
 #include "sindarin-debug.h"
@@ -405,6 +406,11 @@ auto WiFi::connectWiFiSettingWithTimeout(int timeoutMs, const std::string &ssid,
 }
 
 void WiFi::disconnectWiFi() {
+    if (xSemaphoreTake(mutex_, portMAX_DELAY) != pdTRUE) {
+        log_e("WiFi Mutex Failure");
+    }
+    defer { xSemaphoreGive(mutex_); };
+
     if (wiFiState_ == UNINITIALIZED) {
         return;
     }
