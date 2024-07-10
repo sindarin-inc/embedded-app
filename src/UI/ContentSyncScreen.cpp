@@ -124,7 +124,7 @@ void ContentSyncScreen::cancel() {
     if (bleManager != nullptr) {
         bleManager->disconnectProxy();
     }
-#endif showPopup("Sync cancelled!\n\nRebooting system...");
+#endif // showPopup("Sync cancelled!\n\nRebooting system...");
     render(display_);
     vTaskDelay(3000 / portTICK_PERIOD_MS);
     power_.reboot();
