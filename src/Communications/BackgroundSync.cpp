@@ -222,7 +222,10 @@ void BackgroundSyncAndSleep(PowerManager &powerManager, PreferencesStore &prefs,
     // TODO: Perhaps try dispatching this (maybe needs to happen outside of app_main)
     WiFi::getInstance().disconnectWiFi();
 #if USE_BLE_SERVER_PROXY
-    BLEManager::getInstance()->disconnectProxy();
+    auto bleManager = BLEManager::getInstance(false);
+    if (bleManager != nullptr) {
+        bleManager->disconnectProxy();
+    }
 #endif
 
     PowerManager::getInstance().deepSleep(SleepReason::SyncDone);

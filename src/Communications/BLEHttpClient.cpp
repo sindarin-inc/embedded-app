@@ -152,7 +152,7 @@ auto BLEHttpClient::handleWebRequest(const std::string &key, const char *body, s
     } else if (key == "H") {
         // Header
         // Extract header (e.g. "H=Content-Length:12345")
-        // Find the positions of '=' and ':'
+        // Find the positions of ':'
         if (bodySize == 0) {
             log_d("Received end of headers");
             state_ = BLE_HTTP_CLIENT_FETCHING_RESPONSE_BODY;
@@ -178,7 +178,7 @@ auto BLEHttpClient::handleWebRequest(const std::string &key, const char *body, s
     } else if (key == "B") {
         // Body
         // Extract chunk (e.g. "B1/2:chunk")
-        // Find the positions of '=', '/' and ':'
+        // Find the positions of '/' and ':'
         const char *slashPos = strchr(body, '/');
         char *colonPos = strchr(body, ':');
 
@@ -239,8 +239,7 @@ auto BLEHttpClient::read(char *buffer, int length) -> int {
     readLength_ += bytesToCopy;
     if (bytesToCopy != length && bytesToCopy != responseBody_.size()) {
         log_d("Read %d bytes, %d remaining in buffer (%d buffer length). Bytes remaining to "
-              "download: %d/%d, "
-              "%d left",
+              "download: %d/%d, %d left",
               bytesToCopy, responseBody_.size(), length, readLength_, contentLength_,
               contentLength_ - readLength_);
     }

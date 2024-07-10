@@ -70,7 +70,7 @@ public:
 
 private:
     bool cancelled_ = false;
-    std::map<void *, std::function<void()>> observers_;
+    std::unordered_map<void *, std::function<void()>> observers_;
     SemaphoreHandle_t mutex_;
 
     void cancelInternal() {

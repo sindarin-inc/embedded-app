@@ -11,7 +11,7 @@
 #include <unordered_map>
 #include <utility>
 
-#if !SIMULATOR
+#if USE_BLE
 #include "Communications/BLEManager.hpp"
 #endif
 #include "Communications/HtmlCleaner.hpp"

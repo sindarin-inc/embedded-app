@@ -13,8 +13,8 @@
 
 std::shared_ptr<BLEProxy> BLEProxy::instance = nullptr;
 
-auto BLEProxy::getInstance() -> std::shared_ptr<BLEProxy> {
-    if (instance == nullptr) {
+auto BLEProxy::getInstance(bool create) -> std::shared_ptr<BLEProxy> {
+    if (instance == nullptr && create) {
         instance = std::make_shared<BLEProxy>();
     }
     return instance;

@@ -37,7 +37,7 @@
 #endif
 #define USE_BLE                                                                                    \
     (USE_TURN_TOUCH_REMOTE || USE_BLE_SERVER_REMOTE || USE_BLE_SERVER_SETTINGS ||                  \
-     USE_BLE_SERVER_IMPROV)
+     USE_BLE_SERVER_IMPROV || USE_BLE_SERVER_PROXY)
 
 // #define DISABLE_SPIRAM
 

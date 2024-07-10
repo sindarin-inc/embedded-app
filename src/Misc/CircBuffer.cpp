@@ -29,6 +29,10 @@ void CircBuffer::push(uint8_t *input, int size) {
     }
 
     // Update the size of the buffer, but ensure it does not exceed the capacity
+    if (size_ + size > capacity_) {
+        log_e("CircBuffer error: tried to push %d bytes into buffer of capacity %d", size,
+              capacity_);
+    }
     size_ = std::min(size_ + size, capacity_);
 }
 

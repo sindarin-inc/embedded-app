@@ -19,7 +19,7 @@ public:
     BLEProxy(BLEProxy const &) = delete;
     ~BLEProxy() override = default;
 
-    static auto getInstance() -> std::shared_ptr<BLEProxy>;
+    static auto getInstance(bool create = true) -> std::shared_ptr<BLEProxy>;
 
     void setPrefs(PreferencesStore *prefs) { prefs_ = prefs; };
     void configureCharacteristics(BLEService *service) override;
