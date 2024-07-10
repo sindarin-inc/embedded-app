@@ -1192,15 +1192,15 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         addInactivityMenuItem("30 minutes", 30, this->display_->style.solSansLarge);
         int menuIndex = 0;
         if (prefs_.inactivityMinutes.get().value_or(DEFAULT_INACTIVITY_MINUTES) == 5) {
-            menuIndex = (0 + showDebug) ? 1 : 0;
+            menuIndex = 0 + (showDebug ? 1 : 0);
         } else if (prefs_.inactivityMinutes.get().value_or(DEFAULT_INACTIVITY_MINUTES) == 10) {
-            menuIndex = (1 + showDebug) ? 1 : 0;
+            menuIndex = 1 + (showDebug ? 1 : 0);
         } else if (prefs_.inactivityMinutes.get().value_or(DEFAULT_INACTIVITY_MINUTES) == 15) {
-            menuIndex = (2 + showDebug) ? 1 : 0;
+            menuIndex = 2 + (showDebug ? 1 : 0);
         } else if (prefs_.inactivityMinutes.get().value_or(DEFAULT_INACTIVITY_MINUTES) == 20) {
-            menuIndex = (3 + showDebug) ? 1 : 0;
+            menuIndex = 3 + (showDebug ? 1 : 0);
         } else if (prefs_.inactivityMinutes.get().value_or(DEFAULT_INACTIVITY_MINUTES) == 30) {
-            menuIndex = (4 + showDebug) ? 1 : 0;
+            menuIndex = 4 + (showDebug ? 1 : 0);
         }
         updateExtraText();
         inactivityMenu->setCurrSelection(menuIndex);
