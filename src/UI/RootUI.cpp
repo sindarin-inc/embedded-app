@@ -779,10 +779,10 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             sortOrderMenuItem.topPadding = 10;
         }
         contentSettingsMenu->addMenuItem(sortOrderMenuItem);
-    }
 
-    // Hide the toggle for the sort order menu
-    contentSettingsMenu->setToggleLastItem(false, false);
+        // Hide the toggle for the sort order menu
+        contentSettingsMenu->setToggleLastItem(false, false);
+    }
 
     contentSettingsMenu->addMenuItem(makeContentSyncMenuItem("Sync content now"));
 
