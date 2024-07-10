@@ -32,12 +32,11 @@ BLEHttpClient::BLEHttpClient(const char *url, std::shared_ptr<CancelFlag> cancel
 BLEHttpClient::~BLEHttpClient() {
     bleProxy_->registerSubscriptionStatusCallback(nullptr);
     bleProxy_->registerWebRequestHandler(nullptr);
-    if (dataSemaphore_ != nullptr) {
-        log_d("BLEHttpClient destructor, giving semaphore to clear: %p", dataSemaphore_);
-        xSemaphoreGive(dataSemaphore_);
-    }
+    cancel();
 
     cancel_->removeObserver(this);
+
+    vSemaphoreDelete(dataSemaphore_);
 }
 
 auto BLEHttpClient::setHeader(const char *key, const char *value) -> esp_err_t {
@@ -73,7 +72,7 @@ auto BLEHttpClient::fetchHeaders(int expectedSize, const std::shared_ptr<CancelF
     this->connected = bleManager_->connectedProxy;
     if (!this->connected) {
         log_e("Not connected to BLE proxy");
-        return -1;
+        return ERR_BLE_NOT_CONNECTED;
     }
 
     // Write URL
@@ -102,11 +101,11 @@ auto BLEHttpClient::fetchHeaders(int expectedSize, const std::shared_ptr<CancelF
             (currentTime - startTime) > (static_cast<long long>(fetchingTimeoutMs) * 1000);
         if (timedOut) {
             log_e("Timed out waiting for beginning of headers response");
-            return -1;
+            return ERR_BLE_TIMED_OUT;
         } else if (fetchingTimedOut) {
             // Reset the timer if we're still fetching
             log_e("Timed out waiting for end of headers response");
-            return -1;
+            return ERR_BLE_TIMED_OUT;
         }
         rl.checkAndExecute(0, [](int64_t time, float percentage) {
             log_d("Waiting for BLE proxy to respond...");
@@ -164,16 +163,16 @@ auto BLEHttpClient::handleWebRequest(const std::string &key, const char *body, s
         const char *colonPtr = strchr(body, ':');
         if (colonPtr != nullptr) {
             size_t keyLength = colonPtr - body;
-            log_d("Key Length: %d", keyLength);
+            // log_d("Key Length: %d", keyLength);
             std::string headerKey(body, keyLength);
             // Only save Content-Length
             if (headerKey == "Content-Length") {
                 std::string headerValue(colonPtr + 1, bodySize - keyLength - 1);
                 // responseHeaders_.emplace_back(headerKey, headerValue);
-                responseHeaders_.insert(std::pair<std::string, std::string>(
-                    std::move(headerKey), std::move(headerValue)));
                 log_d("Received header: %s=%s (%s - %s = %d)", headerKey.c_str(),
                       headerValue.c_str(), colonPtr, body, bodySize);
+                responseHeaders_.insert(std::pair<std::string, std::string>(
+                    std::move(headerKey), std::move(headerValue)));
             }
         }
     } else if (key == "B") {

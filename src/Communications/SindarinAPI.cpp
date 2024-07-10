@@ -310,7 +310,7 @@ auto SindarinAPI::uploadTelemetryFile(SFile &telemetryFile, const std::string &l
     }
 
     // Send request and fetch response
-    client->fetchHeaders();
+    client->fetchHeaders(0, cancel);
     return client->getStatusCode();
 }
 

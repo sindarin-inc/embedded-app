@@ -37,6 +37,8 @@ enum SindarinError {
     ERR_ALLOCATION = -12,
     ERR_CANCELLED = -13,
     ERR_READ_EMPTY = -14,
+    ERR_BLE_NOT_CONNECTED = -15,
+    ERR_BLE_TIMED_OUT = -16,
 };
 
 class SindarinAPI {

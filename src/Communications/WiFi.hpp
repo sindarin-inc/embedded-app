@@ -43,7 +43,7 @@ class WiFi {
 public:
     static auto getInstance() -> WiFi &;
 
-    WiFi(Telemetry &telemetry) : telemetry_(telemetry){};
+    WiFi(Telemetry &telemetry, PreferencesStore &prefs) : telemetry_(telemetry), prefs_(prefs){};
     WiFi(WiFi const &) = delete;
 
     // Credentials
@@ -93,6 +93,7 @@ protected:
     esp_event_handler_instance_t ipEventHandlerInstance_{};
     WiFiSettings settings_;
     EventGroupHandle_t wifiEventGroup_ = nullptr;
+    PreferencesStore &prefs_;
 
     void setState(WiFiState state) {
         log_d("WiFi::wiFiState_ set to %d", state);

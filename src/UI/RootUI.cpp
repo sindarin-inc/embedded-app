@@ -779,10 +779,10 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             sortOrderMenuItem.topPadding = 10;
         }
         contentSettingsMenu->addMenuItem(sortOrderMenuItem);
-    }
 
-    // Hide the toggle for the sort order menu
-    contentSettingsMenu->setToggleLastItem(false, false);
+        // Hide the toggle for the sort order menu
+        contentSettingsMenu->setToggleLastItem(false, false);
+    }
 
     contentSettingsMenu->addMenuItem(makeContentSyncMenuItem("Sync content now"));
 
@@ -1181,6 +1181,10 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 }));
         };
 
+        auto showDebug = prefs_.showDebugMenu.get().value_or(false);
+        if (showDebug) {
+            addInactivityMenuItem("1 minute (debug)", 1, this->display_->style.solSansSmall);
+        }
         addInactivityMenuItem("5 minutes", 5, this->display_->style.solSansSmall);
         addInactivityMenuItem("10 minutes", 10, this->display_->style.solSansMedium);
         addInactivityMenuItem("15 minutes", 15, this->display_->style.solSansLarge);
@@ -1188,15 +1192,15 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         addInactivityMenuItem("30 minutes", 30, this->display_->style.solSansLarge);
         int menuIndex = 0;
         if (prefs_.inactivityMinutes.get().value_or(DEFAULT_INACTIVITY_MINUTES) == 5) {
-            menuIndex = 0;
+            menuIndex = 0 + showDebug ? 1 : 0;
         } else if (prefs_.inactivityMinutes.get().value_or(DEFAULT_INACTIVITY_MINUTES) == 10) {
-            menuIndex = 1;
+            menuIndex = 1 + showDebug ? 1 : 0;
         } else if (prefs_.inactivityMinutes.get().value_or(DEFAULT_INACTIVITY_MINUTES) == 15) {
-            menuIndex = 2;
+            menuIndex = 2 + showDebug ? 1 : 0;
         } else if (prefs_.inactivityMinutes.get().value_or(DEFAULT_INACTIVITY_MINUTES) == 20) {
-            menuIndex = 3;
+            menuIndex = 3 + showDebug ? 1 : 0;
         } else if (prefs_.inactivityMinutes.get().value_or(DEFAULT_INACTIVITY_MINUTES) == 30) {
-            menuIndex = 4;
+            menuIndex = 4 + showDebug ? 1 : 0;
         }
         updateExtraText();
         inactivityMenu->setCurrSelection(menuIndex);
@@ -1355,6 +1359,15 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             systemSettingsMenu->render(*this->display_);
             delete wiFiScanScreen;
         });
+    }));
+
+    auto wifiSyncMessage =
+        std::string(prefs_.wifiSyncEnabled.get().value_or(true) ? "Turn off WiFi sync (BLE only)"
+                                                                : "Turn on WiFi sync");
+    debugSettingsMenu->addMenuItem(MenuItem(wifiSyncMessage, [this, debugSettingsMenu, display]() {
+        prefs_.wifiSyncEnabled.set(!prefs_.wifiSyncEnabled.get().value_or(true));
+        debugSettingsMenu->showTemporaryMessage(*display, "Wifi Sync turned off.", 2000, false);
+        power_.reboot();
     }));
 
     debugSettingsMenu->addMenuItem(MenuItem("Reset Preferences",

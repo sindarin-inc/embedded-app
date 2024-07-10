@@ -2,7 +2,7 @@
 
 #include <freertos/FreeRTOS.h>
 
-#if !SIMULATOR
+#if USE_BLE_SERVER_PROXY || USE_BLE_SERVER_REMOTE
 #include "Communications/BLEManager.hpp"
 #endif
 #include "Communications/CrashReportUploader.hpp"
