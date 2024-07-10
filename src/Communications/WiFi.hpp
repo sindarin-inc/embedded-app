@@ -52,7 +52,7 @@ public:
     WiFi(WiFi const &) = delete;
     ~WiFi() {
         if (mutex_ != NULL) {
-            vSemaphoreDelete(wifiMutex);
+            vSemaphoreDelete(mutex_);
         }
     }
 
