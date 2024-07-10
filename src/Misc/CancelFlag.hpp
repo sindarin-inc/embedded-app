@@ -1,6 +1,6 @@
 #pragma once
 
-#include <esp_debug_helpers.h>
+// #include <esp_debug_helpers.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/semphr.h>
 #include <functional>
@@ -61,7 +61,7 @@ public:
     static auto isCancelled(const std::shared_ptr<CancelFlag> &flag) -> bool {
         if (flag == nullptr) {
             // Print stack trace for esp
-            esp_backtrace_print(100);
+            // esp_backtrace_print(100);
             log_e("CancelFlag is null in isCancelled");
             return false;
         }
