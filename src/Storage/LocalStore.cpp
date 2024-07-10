@@ -1195,12 +1195,24 @@ auto LocalStore::removeStopWords(const SpiramString &title) -> std::string {
 }
 
 void LocalStore::sortReadables(ReadablesVector &readables) {
-    SortCriteria criteria;
-    criteria.type = static_cast<SortCriteria::Type>(prefs_.sortCriteria.get().value_or(0));
-    SortDirection direction;
-    direction.type = static_cast<SortDirection::Type>(prefs_.sortDirection.get().value_or(0));
-
     auto modelType = readablesModelType(const_cast<ReadablesVector &>(readables));
+
+    SortCriteria criteria;
+    if (modelType == ReadablesModelType::Book) {
+        criteria.type = static_cast<SortCriteria::Type>(prefs_.bookSortCriteria.get().value_or(0));
+    } else {
+        criteria.type =
+            static_cast<SortCriteria::Type>(prefs_.articleSortCriteria.get().value_or(0));
+    }
+    SortDirection direction;
+    if (modelType == ReadablesModelType::Book) {
+        direction.type =
+            static_cast<SortDirection::Type>(prefs_.bookSortDirection.get().value_or(0));
+    } else {
+        direction.type =
+            static_cast<SortDirection::Type>(prefs_.articleSortDirection.get().value_or(0));
+    }
+
     log_d("Sorting %zu %ss by %s/%s", readables.size(),
           ReadableModelTypeToString(modelType).c_str(), criteria.toString().c_str(),
           direction.toString().c_str());

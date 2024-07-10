@@ -131,19 +131,28 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         }
     }
 
-    // If prefs_.sortCriteria isn't select, sort the readables by last update and store them
-    if (!prefs_.sortCriteria.get().has_value()) {
-        log_i("No sort order chosen, sorting by last update and saving readables");
-        prefs_.sortCriteria.set(SortCriteria::DateModified);
-        prefs_.sortDirection.set(SortDirection::Descending);
+    // If prefs_.bookSortCriteria isn't selected, sort the readables by last update and store them
+    if (!prefs_.bookSortCriteria.get().has_value()) {
+        log_i("No book sort order chosen, sorting by last update and saving readables");
+        prefs_.bookSortCriteria.set(SortCriteria::DateModified);
+        prefs_.bookSortDirection.set(SortDirection::Descending);
+        prefs_.articleSortCriteria.set(SortCriteria::DateModified);
+        prefs_.articleSortDirection.set(SortDirection::Descending);
         localStore.saveReadables(readables);
         localStore.saveReadables(articles);
-    } else if (static_cast<SortCriteria::Type>(this->prefs_.sortCriteria.get().value_or(0)) ==
-               SortCriteria::LastRead) {
-        // Dynamically sort readables by last read time
-        log_i("Dynamically sorting readables by last read time");
-        localStore.sortReadables(readables);
-        localStore.sortReadables(articles);
+    } else {
+        if (static_cast<SortCriteria::Type>(this->prefs_.bookSortCriteria.get().value_or(0)) ==
+            SortCriteria::LastRead) {
+            // Dynamically sort readables by last read time
+            log_i("Dynamically sorting readables by last read time");
+            localStore.sortReadables(readables);
+        }
+        if (static_cast<SortCriteria::Type>(this->prefs_.articleSortCriteria.get().value_or(0)) ==
+            SortCriteria::LastRead) {
+            // Dynamically sort articles by last read time
+            log_i("Dynamically sorting articles by last read time");
+            localStore.sortReadables(articles);
+        }
     }
 
     // Load the SolSans font only.
@@ -615,97 +624,162 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         contentSettingsMenu->setToggleLastItem(false);
     }
 
-    contentSettingsMenu->addMenuItem(MenuItem("Sort order",
-                                              [this, &localStore, display, contentSettingsMenu]() {
-        auto sortMenu = new MenuScreen(power_.battery, *display, contentSettingsMenu->getMyStyle(),
-                                       "Sort Order", "Content Settings");
-        sortMenu->addMenuItem(MenuItem("Alphabetical",
-                                       [this, &localStore, display, contentSettingsMenu]() {
-            this->prefs_.sortCriteria.set(static_cast<int>(SortCriteria::Alphabetical));
-            this->prefs_.sortDirection.set(static_cast<int>(SortDirection::Ascending));
-            contentSettingsMenu->showTemporaryMessage(*display, settingsRestartMsg_, 500, false);
-            localStore.saveReadables(localStore.books());
-            localStore.saveReadables(localStore.articles());
-            this->power_.reboot();
-        }));
-        sortMenu->addMenuItem(MenuItem("Date added, most recent",
-                                       [this, &localStore, display, contentSettingsMenu]() {
-            this->prefs_.sortCriteria.set(static_cast<int>(SortCriteria::DateModified));
-            this->prefs_.sortDirection.set(static_cast<int>(SortDirection::Descending));
-            contentSettingsMenu->showTemporaryMessage(*display, settingsRestartMsg_, 500, false);
-            localStore.saveReadables(localStore.books());
-            localStore.saveReadables(localStore.articles());
-            this->power_.reboot();
-        }));
-        sortMenu->addMenuItem(MenuItem("Date added, least recent",
-                                       [this, &localStore, display, contentSettingsMenu]() {
-            this->prefs_.sortCriteria.set(static_cast<int>(SortCriteria::DateModified));
-            this->prefs_.sortDirection.set(static_cast<int>(SortDirection::Ascending));
-            contentSettingsMenu->showTemporaryMessage(*display, settingsRestartMsg_, 500, false);
-            localStore.saveReadables(localStore.books());
-            localStore.saveReadables(localStore.articles());
-            this->power_.reboot();
-        }));
-        sortMenu->addMenuItem(MenuItem("Last read, most recent",
-                                       [this, &localStore, display, contentSettingsMenu]() {
-            this->prefs_.sortCriteria.set(static_cast<int>(SortCriteria::LastRead));
-            this->prefs_.sortDirection.set(static_cast<int>(SortDirection::Descending));
-            contentSettingsMenu->showTemporaryMessage(*display, settingsRestartMsg_, 500, false);
-            localStore.saveReadables(localStore.books());
-            localStore.saveReadables(localStore.articles());
-            this->power_.reboot();
-        }));
-        sortMenu->addMenuItem(MenuItem("Last read, least recent",
-                                       [this, &localStore, display, contentSettingsMenu]() {
-            this->prefs_.sortCriteria.set(static_cast<int>(SortCriteria::LastRead));
-            this->prefs_.sortDirection.set(static_cast<int>(SortDirection::Ascending));
-            contentSettingsMenu->showTemporaryMessage(*display, settingsRestartMsg_, 500, false);
-            localStore.saveReadables(localStore.books());
-            localStore.saveReadables(localStore.articles());
-            this->power_.reboot();
-        }));
-        sortMenu->addMenuItem(MenuItem("Random",
-                                       [this, &localStore, display, contentSettingsMenu]() {
-            this->prefs_.sortCriteria.set(static_cast<int>(SortCriteria::Random));
-            this->prefs_.sortDirection.set(static_cast<int>(SortDirection::Ascending));
-            contentSettingsMenu->showTemporaryMessage(*display, settingsRestartMsg_, 500, false);
-            localStore.saveReadables(localStore.books());
-            localStore.saveReadables(localStore.articles());
-            this->power_.reboot();
-        }));
-        int menuIndex = 0;
-        switch (static_cast<SortCriteria::Type>(this->prefs_.sortCriteria.get().value_or(0))) {
-        case SortCriteria::Alphabetical:
-            menuIndex = 0;
-            break;
-        case SortCriteria::DateModified:
-            if (static_cast<SortDirection::Type>(this->prefs_.sortDirection.get().value_or(0)) ==
-                SortDirection::Descending) {
-                menuIndex = 1;
-            } else {
-                menuIndex = 2;
+    for (auto modelType : {ReadablesModelType::Book, ReadablesModelType::Article}) {
+        auto sortOrderMenuItem = MenuItem(
+            modelType == ReadablesModelType::Book ? "Book sort order" : "Article sort order",
+            [this, &localStore, display, contentSettingsMenu, modelType]() {
+            auto sortMenu = new MenuScreen(
+                power_.battery, *display, contentSettingsMenu->getMyStyle(),
+                modelType == ReadablesModelType::Book ? "Book Sort Order" : "Article Sort Order",
+                "Content Settings");
+            sortMenu->addMenuItem(MenuItem("Alphabetical", [this, &localStore, display,
+                                                            contentSettingsMenu, modelType]() {
+                if (modelType == ReadablesModelType::Book) {
+                    this->prefs_.bookSortCriteria.set(static_cast<int>(SortCriteria::Alphabetical));
+                    this->prefs_.bookSortDirection.set(static_cast<int>(SortDirection::Ascending));
+                    localStore.saveReadables(localStore.books());
+                } else if (modelType == ReadablesModelType::Article) {
+                    this->prefs_.articleSortCriteria.set(
+                        static_cast<int>(SortCriteria::Alphabetical));
+                    this->prefs_.articleSortDirection.set(
+                        static_cast<int>(SortDirection::Ascending));
+                    localStore.saveReadables(localStore.articles());
+                }
+                contentSettingsMenu->showTemporaryMessage(*display, settingsRestartMsg_, 500,
+                                                          false);
+                this->power_.reboot();
+            }));
+            sortMenu->addMenuItem(
+                MenuItem("Date added, most recent",
+                         [this, &localStore, display, contentSettingsMenu, modelType]() {
+                if (modelType == ReadablesModelType::Book) {
+                    this->prefs_.bookSortCriteria.set(static_cast<int>(SortCriteria::DateModified));
+                    this->prefs_.bookSortDirection.set(static_cast<int>(SortDirection::Descending));
+                    localStore.saveReadables(localStore.books());
+                } else if (modelType == ReadablesModelType::Article) {
+                    this->prefs_.articleSortCriteria.set(
+                        static_cast<int>(SortCriteria::DateModified));
+                    this->prefs_.articleSortDirection.set(
+                        static_cast<int>(SortDirection::Descending));
+                    localStore.saveReadables(localStore.articles());
+                }
+                contentSettingsMenu->showTemporaryMessage(*display, settingsRestartMsg_, 500,
+                                                          false);
+                this->power_.reboot();
+                }));
+            sortMenu->addMenuItem(
+                MenuItem("Date added, least recent",
+                         [this, &localStore, display, contentSettingsMenu, modelType]() {
+                if (modelType == ReadablesModelType::Book) {
+                    this->prefs_.bookSortCriteria.set(static_cast<int>(SortCriteria::DateModified));
+                    this->prefs_.bookSortDirection.set(static_cast<int>(SortDirection::Ascending));
+                    localStore.saveReadables(localStore.books());
+                } else if (modelType == ReadablesModelType::Article) {
+                    this->prefs_.articleSortCriteria.set(
+                        static_cast<int>(SortCriteria::DateModified));
+                    this->prefs_.articleSortDirection.set(
+                        static_cast<int>(SortDirection::Ascending));
+                    localStore.saveReadables(localStore.articles());
+                }
+                contentSettingsMenu->showTemporaryMessage(*display, settingsRestartMsg_, 500,
+                                                          false);
+                this->power_.reboot();
+                }));
+            sortMenu->addMenuItem(
+                MenuItem("Last read, most recent",
+                         [this, &localStore, display, contentSettingsMenu, modelType]() {
+                if (modelType == ReadablesModelType::Book) {
+                    this->prefs_.bookSortCriteria.set(static_cast<int>(SortCriteria::LastRead));
+                    this->prefs_.bookSortDirection.set(static_cast<int>(SortDirection::Descending));
+                    localStore.saveReadables(localStore.books());
+                } else if (modelType == ReadablesModelType::Article) {
+                    this->prefs_.articleSortCriteria.set(static_cast<int>(SortCriteria::LastRead));
+                    this->prefs_.articleSortDirection.set(
+                        static_cast<int>(SortDirection::Descending));
+                    localStore.saveReadables(localStore.articles());
+                }
+                contentSettingsMenu->showTemporaryMessage(*display, settingsRestartMsg_, 500,
+                                                          false);
+                this->power_.reboot();
+                }));
+            sortMenu->addMenuItem(
+                MenuItem("Last read, least recent",
+                         [this, &localStore, display, contentSettingsMenu, modelType]() {
+                if (modelType == ReadablesModelType::Book) {
+                    this->prefs_.bookSortCriteria.set(static_cast<int>(SortCriteria::LastRead));
+                    this->prefs_.bookSortDirection.set(static_cast<int>(SortDirection::Ascending));
+                    localStore.saveReadables(localStore.books());
+                } else if (modelType == ReadablesModelType::Article) {
+                    this->prefs_.articleSortCriteria.set(static_cast<int>(SortCriteria::LastRead));
+                    this->prefs_.articleSortDirection.set(
+                        static_cast<int>(SortDirection::Ascending));
+                    localStore.saveReadables(localStore.articles());
+                }
+                contentSettingsMenu->showTemporaryMessage(*display, settingsRestartMsg_, 500,
+                                                          false);
+                this->power_.reboot();
+                }));
+            sortMenu->addMenuItem(MenuItem("Random", [this, &localStore, display,
+                                                      contentSettingsMenu, modelType]() {
+                if (modelType == ReadablesModelType::Book) {
+                    this->prefs_.bookSortCriteria.set(static_cast<int>(SortCriteria::Random));
+                    this->prefs_.bookSortDirection.set(static_cast<int>(SortDirection::Ascending));
+                    localStore.saveReadables(localStore.books());
+                } else if (modelType == ReadablesModelType::Article) {
+                    this->prefs_.articleSortCriteria.set(static_cast<int>(SortCriteria::Random));
+                    this->prefs_.articleSortDirection.set(
+                        static_cast<int>(SortDirection::Ascending));
+                    localStore.saveReadables(localStore.articles());
+                }
+                contentSettingsMenu->showTemporaryMessage(*display, settingsRestartMsg_, 500,
+                                                          false);
+                this->power_.reboot();
+            }));
+            int menuIndex = 0;
+            auto sortCriteria = modelType == ReadablesModelType::Book
+                                    ? this->prefs_.bookSortCriteria
+                                    : this->prefs_.articleSortCriteria;
+            auto sortDirection = modelType == ReadablesModelType::Book
+                                     ? this->prefs_.bookSortDirection
+                                     : this->prefs_.articleSortDirection;
+
+            switch (static_cast<SortCriteria::Type>(sortCriteria.get().value_or(0))) {
+            case SortCriteria::Alphabetical:
+                menuIndex = 0;
+                break;
+            case SortCriteria::DateModified:
+                if (static_cast<SortDirection::Type>(sortDirection.get().value_or(0)) ==
+                    SortDirection::Descending) {
+                    menuIndex = 1;
+                } else {
+                    menuIndex = 2;
+                }
+                break;
+            case SortCriteria::LastRead:
+                if (static_cast<SortDirection::Type>(sortDirection.get().value_or(0)) ==
+                    SortDirection::Descending) {
+                    menuIndex = 3;
+                } else {
+                    menuIndex = 4;
+                }
+                break;
+            case SortCriteria::Random:
+                menuIndex = 5;
+                break;
             }
-            break;
-        case SortCriteria::LastRead:
-            if (static_cast<SortDirection::Type>(this->prefs_.sortDirection.get().value_or(0)) ==
-                SortDirection::Descending) {
-                menuIndex = 3;
-            } else {
-                menuIndex = 4;
-            }
-            break;
-        case SortCriteria::Random:
-            menuIndex = 5;
-            break;
+            sortMenu->setCurrSelection(menuIndex);
+            setCurrentScreen(*sortMenu);
+            sortMenu->setBackCallback([this, sortMenu, contentSettingsMenu]() {
+                contentSettingsMenu->setFirstLoad();
+                setCurrentScreen(*contentSettingsMenu);
+                delete sortMenu;
+            });
+            });
+        if (modelType == ReadablesModelType::Book) {
+            sortOrderMenuItem.topPadding = 10;
         }
-        sortMenu->setCurrSelection(menuIndex);
-        setCurrentScreen(*sortMenu);
-        sortMenu->setBackCallback([this, sortMenu, contentSettingsMenu]() {
-            contentSettingsMenu->setFirstLoad();
-            setCurrentScreen(*contentSettingsMenu);
-            delete sortMenu;
-        });
-    }));
+        contentSettingsMenu->addMenuItem(sortOrderMenuItem);
+    }
 
     // Hide the toggle for the sort order menu
     contentSettingsMenu->setToggleLastItem(false, false);
