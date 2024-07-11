@@ -6,6 +6,7 @@
 #include <utility>
 
 #include "Communications/USBSerial.hpp"
+#include "Storage/FileSystem.hpp"
 #include "sindarin-debug.h"
 
 class DirectCommand {
@@ -27,7 +28,7 @@ public:
     // START_FILE_TRANSFER
     //
 
-    DirectCommand() = default;
+    DirectCommand(FileSystem &fileSystem) : fileSystem_(fileSystem){};
     void begin();
     void receiveData(const uint8_t *data, uint8_t length);
     void processCommand(const uint8_t *data, uint8_t length);
@@ -41,6 +42,7 @@ public:
     void unsetPassthroughData() { passthroughDataFn_ = nullptr; }
 
 private:
+    FileSystem &fileSystem_;
     std::string commandBuffer_;
     std::vector<std::function<void(std::string)>> commandHandlers_;
     std::function<void(const uint8_t *, uint8_t)> passthroughDataFn_ = nullptr;

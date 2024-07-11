@@ -43,7 +43,6 @@ private:
     BootloaderState currentState_{BootloaderState::Idle};
     std::vector<SerialDataListener> listeners_;
     bool loggingEnabled_ = false;
-    bool loggingPortInitialized_ = false;
 
     static void cdcacmCommandCallback(int itf, cdcacm_event_t *event) {
         USBSerial::getInstance().rxCommandCallback(itf, event);

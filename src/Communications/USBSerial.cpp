@@ -26,14 +26,12 @@ void USBSerial::disableLogging() {
         esp_tusb_deinit_console(TINYUSB_CDC_ACM_1); // turn off log to usb
         tusb_cdc_acm_deinit(TINYUSB_CDC_ACM_1);
 #endif
-        loggingPortInitialized_ = false;
         loggingEnabled_ = false;
     }
 }
 
 void USBSerial::enableLogging() {
-    if (!loggingPortInitialized_) {
-        loggingPortInitialized_ = true;
+    if (!loggingEnabled_) {
 #if USE_TINYUSB_SERIAL
         tinyusb_config_cdcacm_t acmCfg = {.usb_dev = TINYUSB_USBDEV_0,
                                           .cdc_port = TINYUSB_CDC_ACM_1,
@@ -43,11 +41,6 @@ void USBSerial::enableLogging() {
                                           .callback_line_coding_changed = nullptr};
 
         ESP_ERROR_CHECK(tusb_cdc_acm_init(&acmCfg));
-#endif
-    }
-    if (!loggingEnabled_) {
-
-#if USE_TINYUSB_SERIAL
         esp_tusb_init_console(TINYUSB_CDC_ACM_1);
 #endif
         // This log message will go nowhere probably
@@ -95,9 +88,8 @@ void USBSerial::txSendData(const uint8_t *data, size_t length) {
     for (size_t offset = 0; offset < length; offset += chunkSize) {
         size_t bytesToSend = std::min(chunkSize, length - offset);
         tinyusb_cdcacm_write_queue(TINYUSB_CDC_ACM_0, data + offset, bytesToSend);
-        // Ticks are roughly MS for us, so this will timeout after 5 milliseconds
-        // This avoids the writes getting garbled
-        tinyusb_cdcacm_write_flush(TINYUSB_CDC_ACM_0, 5);
+        // Block on flushing for up to 5ms to avoid losing data when flushing too quickly.
+        tinyusb_cdcacm_write_flush(TINYUSB_CDC_ACM_0, pdMS_TO_TICKS(5));
     }
 #endif
 }

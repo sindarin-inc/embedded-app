@@ -105,7 +105,7 @@ WiFi wiFi(telemetry);
 
 USBSerial usbSerial;
 
-DirectCommand directCommand;
+DirectCommand directCommand(fileSystem);
 
 bool bootCompleted = false;
 
