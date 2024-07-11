@@ -72,11 +72,11 @@ public:
     virtual void beginPowerOn() {}
 
     // the insets must be set in the constructor of the subclass
-    inline virtual DisplayInset getDisplayInsets() { return insets_; };
+    inline virtual auto getDisplayInsets() -> DisplayInset { return insets_; };
     virtual auto getDefaultInsets() -> DisplayInset = 0;
-    virtual uint16_t getDisplayWidth() = 0;
-    virtual uint16_t getDisplayHeight() = 0;
-    virtual DisplayInset getMinInsets() = 0;
+    virtual auto getDisplayWidth() -> uint16_t = 0;
+    virtual auto getDisplayHeight() -> uint16_t = 0;
+    virtual auto getMinInsets() -> DisplayInset = 0;
     virtual void storeInsets() = 0;
     virtual void setTemporaryInsets(DisplayInset newInsets) = 0;
 

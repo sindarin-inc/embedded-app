@@ -36,18 +36,18 @@ public:
 
     auto setup() -> bool override;
 
-    virtual auto getDisplayWidth() -> uint16_t override { return EinkET013TT1_X_PIXELS; }
-    virtual auto getDisplayHeight() -> uint16_t override { return EinkET013TT1_Y_PIXELS; }
-    virtual auto getMinInsets() -> DisplayInset override {
+    auto getDisplayWidth() -> uint16_t override { return EinkET013TT1_X_PIXELS; }
+    auto getDisplayHeight() -> uint16_t override { return EinkET013TT1_Y_PIXELS; }
+    auto getMinInsets() -> DisplayInset override {
         return {EinkET013TT1_MIN_X_MARGIN, EinkET013TT1_MIN_X_MARGIN, EinkET013TT1_MIN_Y_MARGIN,
                 EinkET013TT1_MIN_Y_MARGIN};
     }
-    virtual auto getDefaultInsets() -> DisplayInset override {
+    auto getDefaultInsets() -> DisplayInset override {
         return {EinkET013TT1_DEFAULT_X_MARGIN, EinkET013TT1_DEFAULT_X_MARGIN,
                 EinkET013TT1_DEFAULT_Y_MARGIN, EinkET013TT1_DEFAULT_Y_MARGIN};
     }
-    virtual auto setTemporaryInsets(DisplayInset newInsets) -> void override;
-    virtual auto storeInsets() -> void override;
+    auto setTemporaryInsets(DisplayInset newInsets) -> void override;
+    auto storeInsets() -> void override;
 
     // TODO: Probably this is a good candidate for a struct for params since there are a lot of
     // values that can be passed and some may be unset defaults.
