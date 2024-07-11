@@ -6,18 +6,36 @@
 #include "Models/UserReadablePartialChapterSummary.hpp"
 
 auto ReadableSummaryScreen::layout(LayoutContext &context, Size size) -> Size {
-    context.setViewFrame(leftArrowView_, {{0, -5}, {10, 5}});
-    context.setViewFrame(upperLeftTextView_, {{15, -8}, size});
-    context.setViewSizeInRect(rightArrowView_, {10, 5}, {{0, 6}, size},
-                              LayoutOptionsAlignBottom | LayoutOptionsAlignRight);
-    context.setViewFrame(bottomRightTextView_, {{0, size.height - 1}, {size.width - 12, 10}},
-                         LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical |
-                             LayoutOptionsAlignRight);
+    auto fullFrame = Rect::fromSize(size);
+    auto backgroundFrame = fullFrame.inset(0);
 
-    return {size.width, size.height};
-};
+    context.setViewFrame(backgroundView_, backgroundFrame);
+
+    auto contentFrame = backgroundFrame.inset(10);
+    context.setViewFrame(leftArrowView_,
+                         {{contentFrame.origin.x, contentFrame.origin.y - 5}, {10, 5}});
+    context.setViewFrame(upperLeftTextView_,
+                         {{contentFrame.origin.x + 15, contentFrame.origin.y - 8},
+                          {contentFrame.size.width, contentFrame.size.height}});
+    context.setViewSizeInRect(rightArrowView_, {10, 5},
+                              {{contentFrame.origin.x, 7}, contentFrame.size},
+                              LayoutOptionsAlignBottom | LayoutOptionsAlignRight);
+    context.setViewFrame(
+        bottomRightTextView_,
+        {{contentFrame.origin.x, contentFrame.origin.y + contentFrame.size.height - 11},
+         {contentFrame.size.width - 12, 10}},
+        LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical | LayoutOptionsAlignRight);
+
+    contentFrame_ = contentFrame;
+
+    return size;
+}
 
 void ReadableSummaryScreen::drawInRect(Rect rect) {
+    backgroundView_.fillColor = display_.bg;
+    backgroundView_.strokeColor = display_.fg;
+    backgroundView_.draw();
+
     leftArrowView_.draw();
     upperLeftTextView_.draw();
     rightArrowView_.draw();
@@ -107,9 +125,14 @@ void ReadableSummaryScreen::render(DisplaySystem &display) {
 
 auto ReadableSummaryScreen::insetBoundingBox() -> DisplayRect {
     auto oldDisplayBoundingBox = display_.getBoundingBox();
-    auto newDisplayBoundingBox = display_.getBoundingBox();
-    newDisplayBoundingBox.y += display_.defaultYPadding;
-    newDisplayBoundingBox.height -= 2 * display_.defaultYPadding;
+    auto newDisplayBoundingBox = DisplayRect{static_cast<int>(contentFrame_.origin.x),
+                                             static_cast<int>(contentFrame_.origin.y),
+                                             static_cast<uint32_t>(contentFrame_.size.width),
+                                             static_cast<uint32_t>(contentFrame_.size.height)};
+    // newDisplayBoundingBox.y += 2 * contentFrame_.origin.y;
+    // newDisplayBoundingBox.height -= 2 * contentFrame_.origin.y;
+    // newDisplayBoundingBox.x += 2 * contentFrame_.origin.x;
+    // newDisplayBoundingBox.width -= contentFrame_.origin.x;
     display_.setBoundingBox(newDisplayBoundingBox);
     return oldDisplayBoundingBox;
 }
