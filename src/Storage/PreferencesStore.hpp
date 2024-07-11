@@ -369,6 +369,10 @@ public:
           brightnessOffset(*this, "brightness-off"),
           brightnessOffsetEnabled(*this, "bright-off-en"),
           loggingOn(*this, "logging"),
+          topMargin(*this, "top-margin"),
+          bottomMargin(*this, "bottom-margin"),
+          leftMargin(*this, "left-margin"),
+          rightMargin(*this, "right-margin"),
           preferencesStoreMigrationVersion_(*this, "ps-version") {}
     // clang-format on
 
@@ -629,6 +633,10 @@ public:
     PrefsItem<int> brightnessOffset;
     PrefsItem<bool> brightnessOffsetEnabled;
     PrefsItem<bool> loggingOn;
+    PrefsItem<int> topMargin;
+    PrefsItem<int> bottomMargin;
+    PrefsItem<int> leftMargin;
+    PrefsItem<int> rightMargin;
 
     // These are RTC_SLOW_MEM variables that persist across deep sleep / wake cycles but will be
     // reset on power cycles

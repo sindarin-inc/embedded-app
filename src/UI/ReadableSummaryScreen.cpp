@@ -36,10 +36,10 @@ auto ReadableSummaryScreen::checkAtEnd() -> bool {
 void ReadableSummaryScreen::render(DisplaySystem &display) {
     setNeedsLayout();
 
-    setFrame(
-        {{display.xAbsolute(display.defaultXPadding), display.yAbsolute(display.defaultYPadding)},
-         {display.defaultScreenWidth - 2 * display.defaultXPadding,
-          display.defaultScreenHeight - 2 * display.defaultYPadding}});
+    setFrame({{display.xAbsolute(display.getDefaultInsets().left),
+               display.yAbsolute(display.getDefaultInsets().top)},
+              {display.getDisplayWidth() - 2 * display.getDefaultInsets().left,
+               display.getDisplayHeight() - 2 * display.getDefaultInsets().top}});
 
     if (showUnread_) {
         bottomRightText_ = "Hide Unread Chapters";
@@ -105,18 +105,18 @@ void ReadableSummaryScreen::render(DisplaySystem &display) {
     resetBoundingBox(oldDisplayBoundingBox);
 }
 
-auto ReadableSummaryScreen::insetBoundingBox() -> DisplayRect {
-    auto oldDisplayBoundingBox = display_.getBoundingBox();
-    auto newDisplayBoundingBox = display_.getBoundingBox();
-    newDisplayBoundingBox.y += display_.defaultYPadding;
-    newDisplayBoundingBox.height -= 2 * display_.defaultYPadding;
-    display_.setBoundingBox(newDisplayBoundingBox);
-    return oldDisplayBoundingBox;
+auto ReadableSummaryScreen::insetBoundingBox() -> DisplayInset {
+    auto oldDisplayInsets = display_.getDisplayInsets();
+    auto newDisplayInsets = display_.getDisplayInsets();
+    newDisplayInsets.top += display_.getDefaultInsets().top;
+    newDisplayInsets.bottom += display_.getDefaultInsets().bottom;
+    display_.setTemporaryInsets(newDisplayInsets);
+    return oldDisplayInsets;
 }
 
-void ReadableSummaryScreen::resetBoundingBox(DisplayRect oldDisplayBoundingBox) {
+void ReadableSummaryScreen::resetBoundingBox(DisplayInset oldDisplayInsets) {
     // Reset to the original bounding box for when we return to another screen
-    display_.setBoundingBox(oldDisplayBoundingBox);
+    display_.setTemporaryInsets(oldDisplayInsets);
 }
 
 void ReadableSummaryScreen::restoreRendererStream() {

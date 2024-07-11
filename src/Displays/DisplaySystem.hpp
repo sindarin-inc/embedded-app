@@ -26,16 +26,15 @@
 
 #define INVERTED_DISPLAY true
 // #define INVERTED_DISPLAY false
-// We allow x & y to be negative so the bounds checking code is more
-// legible
-struct DisplayRect {
-    int32_t x;
-    int32_t y;
-    uint32_t width;
-    uint32_t height;
+
+struct DisplayInset {
+    uint16_t top;
+    uint16_t bottom;
+    uint16_t left;
+    uint16_t right;
 
     [[nodiscard]] auto toString() const -> std::string {
-        return StringFormat("x:%d, y:%d, w:%d, h:%d", x, y, width, height);
+        return StringFormat("t:%d, b:%d, l:%d, r:%d", top, bottom, left, right);
     }
 };
 
@@ -45,24 +44,11 @@ public:
     DisplaySystem(DisplaySystem const &) = delete;
     virtual ~DisplaySystem() = default;
 
-    DisplayRect maxBoundingBox = {5, 5, 246, 246};
-    DisplayRect minBoundingBox = {0, 0, 125, 45};
-
     virtual auto setup() -> bool;
 
     static void animationTimerCallback(TimerHandle_t timer);
 
     static TimerHandle_t animationTimer;
-
-    int32_t defaultXPadding = 30;
-    int32_t defaultYPadding = 20;
-    int32_t defaultScreenWidth = 256;
-    int32_t defaultScreenHeight = 256;
-
-    DisplayRect defaultBoundingBox = {
-        defaultXPadding, defaultYPadding,
-        defaultScreenWidth - static_cast<uint32_t>(defaultXPadding) * 2,
-        defaultScreenHeight - static_cast<uint32_t>(defaultYPadding) * 2};
 
     Style style;
 
@@ -85,16 +71,31 @@ public:
 
     virtual void beginPowerOn() {}
 
-    // Use `gfxClass` when you need to get direct access to draw to the whole screen (potentially
-    // outside of focus areas)
+    // the insets must be set in the constructor of the subclass
+    inline virtual DisplayInset getDisplayInsets() { return insets_; };
+    virtual auto getDefaultInsets() -> DisplayInset = 0;
+    virtual uint16_t getDisplayWidth() = 0;
+    virtual uint16_t getDisplayHeight() = 0;
+    virtual DisplayInset getMinInsets() = 0;
+    virtual void storeInsets() = 0;
+    virtual void setTemporaryInsets(DisplayInset newInsets) = 0;
+
+    // Use `gfxClass` when you need to get direct access to draw to
+    // the whole screen (potentially outside of focus areas)
     [[nodiscard]] auto gfxClass() const -> Adafruit_GFX * { return gfxClass_; }
 
     // MARK: - Brought in from Adafruit_GFX
     // Use these methods for normal drawing as they'll take into account the offsets and focus area
     // automatically. Any methods we need from Adafruit_GFX that need to respect the focus area
     // should be copied in here.
-    [[nodiscard]] auto width() const -> int16_t { return boundingBox_.width; };
-    [[nodiscard]] auto height() const -> int16_t { return boundingBox_.height; };
+    [[nodiscard]] auto width() -> int16_t {
+        return (getDisplayWidth() - getDisplayInsets().left - getDisplayInsets().right);
+    };
+
+    [[nodiscard]] auto height() -> int16_t {
+        return (getDisplayHeight() - getDisplayInsets().top - getDisplayInsets().bottom);
+    };
+
     void fillScreen(uint16_t color) { gfxClass_->fillScreen(color); }
     void fillTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2,
                       uint16_t color) {
@@ -168,11 +169,6 @@ public:
     void forceDontChangeRefreshType() { forceRefreshType_ = true; }
     void clearDontChangeRefreshType() { forceRefreshType_ = false; }
 
-    auto setBoundingBox(DisplayRect newBox) -> DisplayRect;
-    auto getBoundingBox() -> DisplayRect { return boundingBox_; }
-
-    void ensureBoundaries();
-
     // MARK: - Text rendering code
     auto getFont() -> Font *;
     void drawSingleLineOfText(const std::string &line, int x, int y, bool inverted = false);
@@ -219,18 +215,18 @@ public:
     uint16_t bg = 0, fg = 0;
 
     // When we want to ignore the configured offsets
-    [[nodiscard]] inline auto xAbsolute(int x) const -> int { return x - boundingBox_.x; }
-    [[nodiscard]] inline auto yAbsolute(int y) const -> int { return y - boundingBox_.y; }
+    [[nodiscard]] inline auto xAbsolute(int x) -> int { return x - getDisplayInsets().left; }
+    [[nodiscard]] inline auto yAbsolute(int y) -> int { return y - getDisplayInsets().top; }
 
     // Should these be in the subclasses instead?
-    [[nodiscard]] auto xAbsoluteCenter() const -> int { return defaultScreenWidth / 2; }
-    [[nodiscard]] auto yAbsoluteCenter() const -> int { return defaultScreenHeight / 2; }
+    [[nodiscard]] auto xAbsoluteCenter() -> int { return getDisplayWidth() / 2; }
+    [[nodiscard]] auto yAbsoluteCenter() -> int { return getDisplayHeight() / 2; }
 
-    [[nodiscard]] auto xAbsoluteMax() const -> int { return defaultScreenWidth - 1; }
-    [[nodiscard]] auto yAbsoluteMax() const -> int { return defaultScreenHeight - 1; }
+    [[nodiscard]] auto xAbsoluteMax() -> int { return getDisplayWidth() - 1; }
+    [[nodiscard]] auto yAbsoluteMax() -> int { return getDisplayHeight() - 1; }
 
-    [[nodiscard]] auto absoluteWidth() const -> int { return defaultScreenWidth; }
-    [[nodiscard]] auto absoluteHeight() const -> int { return defaultScreenHeight; }
+    [[nodiscard]] auto absoluteWidth() -> int { return getDisplayWidth(); }
+    [[nodiscard]] auto absoluteHeight() -> int { return getDisplayHeight(); }
 
     [[nodiscard]] virtual auto darkPictureVComAdj(uint8_t darkPixelsPercent) const -> int {
         return 0;
@@ -261,11 +257,11 @@ protected:
     uint16_t canvasWidth_{};
     uint16_t canvasHeight_{};
 
-    [[nodiscard]] inline auto xOffset(int16_t value) const -> int16_t {
-        return value + boundingBox_.x;
+    [[nodiscard]] inline auto xOffset(int16_t value) -> int16_t {
+        return value + getDisplayInsets().left;
     }
-    [[nodiscard]] inline auto yOffset(int16_t value) const -> int16_t {
-        return value + boundingBox_.y;
+    [[nodiscard]] inline auto yOffset(int16_t value) -> int16_t {
+        return value + getDisplayInsets().top;
     }
 
     void rotate(uint16_t &x, uint16_t &y, uint16_t &w, uint16_t &h);
@@ -278,9 +274,9 @@ protected:
 
     bool forceRefreshType_ = false;
 
-    // This is the default value from before of 15mmx15mm
-    DisplayRect boundingBox_ = defaultBoundingBox;
     int lineSpacing_ = 0;
+
+    DisplayInset insets_ = {0, 0, 0, 0};
 };
 
 #endif

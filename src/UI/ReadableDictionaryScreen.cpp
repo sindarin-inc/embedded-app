@@ -28,10 +28,10 @@ auto ReadableDictionaryScreen::checkAtEnd() -> bool {
 void ReadableDictionaryScreen::render(DisplaySystem &display) {
     setNeedsLayout();
 
-    setFrame(
-        {{display.xAbsolute(display.defaultXPadding), display.yAbsolute(display.defaultYPadding)},
-         {display.defaultScreenWidth - 2 * display.defaultXPadding,
-          display.defaultScreenHeight - 2 * display.defaultYPadding}});
+    setFrame({{display.xAbsolute(display.getDefaultInsets().left),
+               display.yAbsolute(display.getDefaultInsets().top)},
+              {display.getDisplayWidth() - 2 * display.getDefaultInsets().left,
+               display.getDisplayHeight() - 2 * display.getDefaultInsets().top}});
 
     draw();
 
@@ -94,18 +94,18 @@ void ReadableDictionaryScreen::restoreRendererStream() {
     rendererStream_ = nullptr;
 }
 
-auto ReadableDictionaryScreen::insetBoundingBox() -> DisplayRect {
-    auto oldDisplayBoundingBox = display_.getBoundingBox();
-    auto newDisplayBoundingBox = display_.getBoundingBox();
-    newDisplayBoundingBox.y += display_.defaultYPadding;
-    newDisplayBoundingBox.height -= 2 * display_.defaultYPadding;
-    display_.setBoundingBox(newDisplayBoundingBox);
-    return oldDisplayBoundingBox;
+auto ReadableDictionaryScreen::insetBoundingBox() -> DisplayInset {
+    auto oldDisplayInsets = display_.getDisplayInsets();
+    auto newDisplayInsets = display_.getDisplayInsets();
+    newDisplayInsets.top += display_.getDefaultInsets().top;
+    newDisplayInsets.bottom += display_.getDefaultInsets().bottom;
+    display_.setTemporaryInsets(newDisplayInsets);
+    return oldDisplayInsets;
 }
 
-void ReadableDictionaryScreen::resetBoundingBox(DisplayRect oldDisplayBoundingBox) {
+void ReadableDictionaryScreen::resetBoundingBox(DisplayInset oldDisplayInsets) {
     // Reset to the original bounding box for when we return to another screen
-    display_.setBoundingBox(oldDisplayBoundingBox);
+    display_.setTemporaryInsets(oldDisplayInsets);
 }
 
 void ReadableDictionaryScreen::processCommand(RemoteCommand command) {

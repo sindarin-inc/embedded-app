@@ -122,8 +122,8 @@ void ContentSyncScreen::render(DisplaySystem &display) {
     int adjustedXPadding = 42;
     int adjustedYPadding = 10;
     setFrame({{display.xAbsolute(adjustedXPadding), display.yAbsolute(adjustedYPadding)},
-              {display.defaultScreenWidth - 2 * adjustedXPadding,
-               display.defaultScreenHeight - 2 * adjustedYPadding}});
+              {display.getDisplayWidth() - 2 * adjustedXPadding,
+               display.getDisplayHeight() - 2 * adjustedYPadding}});
 
     // Re-render based on state
     switch (state_.state) {

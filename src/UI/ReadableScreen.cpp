@@ -228,10 +228,10 @@ void ReadableScreen::render(DisplaySystem &display) {
         return;
     }
 
-    setFrame(
-        {{display.xAbsolute(display.defaultXPadding), display.yAbsolute(display.defaultYPadding)},
-         {display.defaultScreenWidth - 2 * display.defaultXPadding,
-          display.defaultScreenHeight - 2 * display.defaultYPadding}});
+    setFrame({{display.xAbsolute(display.getDefaultInsets().left),
+               display.yAbsolute(display.getDefaultInsets().top)},
+              {display.getDisplayWidth() - 2 * display.getDefaultInsets().left,
+               display.getDisplayHeight() - 2 * display.getDefaultInsets().top}});
 
     if (renderTransitionArrows) {
         if (lastArrowPress_ != REMOTE_NONE) {

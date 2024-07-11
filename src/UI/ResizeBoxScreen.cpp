@@ -30,50 +30,49 @@ ResizeBoxScreen::ResizeBoxScreen(DisplaySystem &display, PreferencesStore &prefs
 }
 
 void ResizeBoxScreen::render(DisplaySystem &display) {
-    DisplayRect currRect = display_.getBoundingBox();
     // The natural line spacing handles the vertical padding
     // The horizontal padding adds one blank pixel column on either side of the rect
-    display.drawDottedBox(-2, 0, currRect.width + 1, currRect.height - 1, 1, 2);
+    display.drawDottedBox(-2, 0, display_.width() + 1, display_.height() - 1, 1, 2);
     this->renderer_.renderFirstPage(0, true);
     display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
 }
 
 void ResizeBoxScreen::processCommand(RemoteCommand command) {
-    DisplayRect oldRect = display_.getBoundingBox();
+    DisplayInset oldInsets = display_.getDisplayInsets();
     switch (command) {
     case RemoteCommand::LEFT:
-        oldRect.width += BOX_OFFSET_ADJUST_AMOUNT;
-        // Don't move the y if we're at the minimum height
-        oldRect.x -= BOX_OFFSET_ADJUST_AMOUNT / 2;
+        if (oldInsets.left > display_.getMinInsets().left - BOX_OFFSET_ADJUST_AMOUNT) {
+            oldInsets.left -= BOX_OFFSET_ADJUST_AMOUNT / 2;
+        } else {
+            oldInsets.left = display_.getMinInsets().left;
+        }
+        if (oldInsets.right < display_.getMinInsets().right + BOX_OFFSET_ADJUST_AMOUNT) {
+            oldInsets.right -= BOX_OFFSET_ADJUST_AMOUNT / 2;
+        }
         setNeedsRerender();
         break;
-    case RemoteCommand::RIGHT: {
-        // We apply the rect's bounding box in DisplaySystem, but we need to make sure to not adjust
-        // the X if we're already at the minimum
-        auto targetWidth =
-            std::max(display_.minBoundingBox.width, oldRect.width - BOX_OFFSET_ADJUST_AMOUNT);
-        auto subtractWidth = oldRect.width - targetWidth;
-        oldRect.width -= subtractWidth;
-        oldRect.x += subtractWidth / 2;
+    case RemoteCommand::RIGHT:
+        oldInsets.right += BOX_OFFSET_ADJUST_AMOUNT / 2;
+        oldInsets.left += BOX_OFFSET_ADJUST_AMOUNT / 2;
         setNeedsRerender();
         break;
-    }
     case RemoteCommand::UP:
-        oldRect.height += BOX_OFFSET_ADJUST_AMOUNT;
-        oldRect.y -= BOX_OFFSET_ADJUST_AMOUNT / 2;
+        if (oldInsets.top > display_.getMinInsets().top - BOX_OFFSET_ADJUST_AMOUNT) {
+            oldInsets.top -= BOX_OFFSET_ADJUST_AMOUNT / 2;
+        } else {
+            oldInsets.top = display_.getMinInsets().top;
+        }
+        if (oldInsets.bottom < display_.getMinInsets().bottom + BOX_OFFSET_ADJUST_AMOUNT) {
+            oldInsets.bottom -= BOX_OFFSET_ADJUST_AMOUNT / 2;
+        } else {
+            oldInsets.bottom = display_.getMinInsets().bottom;
+        }
         setNeedsRerender();
         break;
-    case RemoteCommand::DOWN: {
-        // We apply the rect's bounding box in DisplaySystem, but we need to make sure to not adjust
-        // the Y if we're already at the minimum
-        auto targetHeight =
-            std::max(display_.minBoundingBox.height, oldRect.height - BOX_OFFSET_ADJUST_AMOUNT);
-        auto subtractHeight = oldRect.height - targetHeight;
-        oldRect.height -= subtractHeight;
-        oldRect.y += subtractHeight / 2;
-        setNeedsRerender();
-        break;
-    }
+    case RemoteCommand::DOWN:
+        oldInsets.top += BOX_OFFSET_ADJUST_AMOUNT / 2;
+        oldInsets.bottom += BOX_OFFSET_ADJUST_AMOUNT / 2;
+        [[fallthrough]];
     case RemoteCommand::BACK:
         // The Turn Touch also sends a left keypress when long-pressing back so let's undo that
         // keystroke before saving.
@@ -81,23 +80,17 @@ void ResizeBoxScreen::processCommand(RemoteCommand command) {
         // app but since we're using TurnTouch for demos, I think it's ok for now. In the future, it
         // might be good to pass more data to `process_command` including which remote is being used
         // so that we can have remote-specific workarounds if needed.
-        oldRect.width -= BOX_OFFSET_ADJUST_AMOUNT;
-        oldRect.x += BOX_OFFSET_ADJUST_AMOUNT / 2;
-        display_.setBoundingBox(oldRect);
+        oldInsets.right += BOX_OFFSET_ADJUST_AMOUNT / 2;
+        oldInsets.left += BOX_OFFSET_ADJUST_AMOUNT / 2;
+        display_.setTemporaryInsets(oldInsets);
         [[fallthrough]];
     case RemoteCommand::ENTER:
-        prefs_.rectX.set(display_.getBoundingBox().x);
-        prefs_.rectY.set(display_.getBoundingBox().y);
-        prefs_.rectW.set(display_.getBoundingBox().width);
-        prefs_.rectH.set(display_.getBoundingBox().height);
-        log_d("Saving bounding box to preferences: (%s)",
-              display_.getBoundingBox().toString().c_str());
-
+        display_.storeInsets();
         telemetry_.logMetricData(TelemetryField::METRIC_STYLE,
-                                 {{"bb_x", display_.getBoundingBox().x},
-                                  {"bb_y", display_.getBoundingBox().y},
-                                  {"bb_w", display_.getBoundingBox().width},
-                                  {"bb_h", display_.getBoundingBox().height}});
+                                 {{"in_t", display_.getDisplayInsets().top},
+                                  {"in_b", display_.getDisplayInsets().bottom},
+                                  {"in_l", display_.getDisplayInsets().left},
+                                  {"in_r", display_.getDisplayInsets().right}});
 
         back();
         break;
@@ -105,7 +98,5 @@ void ResizeBoxScreen::processCommand(RemoteCommand command) {
         break;
     }
 
-    log_d("New bounding box is: (%s)", display_.getBoundingBox().toString().c_str());
-
-    display_.setBoundingBox(oldRect);
+    display_.setTemporaryInsets(oldInsets);
 }

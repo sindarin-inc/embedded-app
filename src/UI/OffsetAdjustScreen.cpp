@@ -31,31 +31,54 @@ OffsetAdjustScreen::OffsetAdjustScreen(DisplaySystem &display, PreferencesStore 
 }
 
 void OffsetAdjustScreen::render(DisplaySystem &display) {
-    DisplayRect currRect = display_.getBoundingBox();
     // The natural line spacing handles the vertical padding
     // The horizontal padding adds one blank pixel column on either side of the rect
-    display.drawDottedBox(-2, 0, currRect.width + 1, currRect.height - 1, 1, 2);
+    display.drawDottedBox(-2, 0, display_.width() + 1, display_.height() - 1, 1, 2);
     this->renderer_.renderFirstPage(0, true);
     display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
 }
 
 void OffsetAdjustScreen::processCommand(RemoteCommand command) {
-    DisplayRect oldRect = display_.getBoundingBox();
+    DisplayInset oldInsets = display_.getDisplayInsets();
     switch (command) {
     case RemoteCommand::LEFT:
-        oldRect.x -= OFFSET_ADJUST_AMOUNT;
+        if (oldInsets.left > display_.getMinInsets().left - OFFSET_ADJUST_AMOUNT) {
+            oldInsets.left -= OFFSET_ADJUST_AMOUNT;
+            oldInsets.right += OFFSET_ADJUST_AMOUNT;
+        } else {
+            oldInsets.right += (oldInsets.left - display_.getMinInsets().left);
+            oldInsets.left = display_.getMinInsets().left;
+        }
         setNeedsRerender();
         break;
     case RemoteCommand::RIGHT:
-        oldRect.x += OFFSET_ADJUST_AMOUNT;
+        if (oldInsets.right > display_.getMinInsets().right - OFFSET_ADJUST_AMOUNT) {
+            oldInsets.right -= OFFSET_ADJUST_AMOUNT;
+            oldInsets.left += OFFSET_ADJUST_AMOUNT;
+        } else {
+            oldInsets.left += (oldInsets.right - display_.getMinInsets().right);
+            oldInsets.right = display_.getMinInsets().right;
+        }
         setNeedsRerender();
         break;
     case RemoteCommand::UP:
-        oldRect.y -= OFFSET_ADJUST_AMOUNT;
+        if (oldInsets.top > display_.getMinInsets().top - OFFSET_ADJUST_AMOUNT) {
+            oldInsets.top -= OFFSET_ADJUST_AMOUNT;
+            oldInsets.bottom += OFFSET_ADJUST_AMOUNT;
+        } else {
+            oldInsets.bottom += (oldInsets.top - display_.getMinInsets().top);
+            oldInsets.top = display_.getMinInsets().top;
+        }
         setNeedsRerender();
         break;
     case RemoteCommand::DOWN:
-        oldRect.y += OFFSET_ADJUST_AMOUNT;
+        if (oldInsets.bottom > display_.getMinInsets().bottom - OFFSET_ADJUST_AMOUNT) {
+            oldInsets.bottom -= OFFSET_ADJUST_AMOUNT;
+            oldInsets.top += OFFSET_ADJUST_AMOUNT;
+        } else {
+            oldInsets.top += (oldInsets.bottom - display_.getMinInsets().bottom);
+            oldInsets.bottom = display_.getMinInsets().bottom;
+        }
         setNeedsRerender();
         break;
     case RemoteCommand::BACK:
@@ -65,22 +88,17 @@ void OffsetAdjustScreen::processCommand(RemoteCommand command) {
         // app but since we're using TurnTouch for demos, I think it's ok for now. In the future, it
         // might be good to pass more data to `process_command` including which remote is being used
         // so that we can have remote-specific workarounds if needed.
-        oldRect.x += OFFSET_ADJUST_AMOUNT;
-        display_.setBoundingBox(oldRect);
+        oldInsets.left += OFFSET_ADJUST_AMOUNT;
+        oldInsets.right -= OFFSET_ADJUST_AMOUNT;
+        display_.setTemporaryInsets(oldInsets);
         [[fallthrough]];
     case RemoteCommand::ENTER:
-        prefs_.rectX.set(display_.getBoundingBox().x);
-        prefs_.rectY.set(display_.getBoundingBox().y);
-        prefs_.rectW.set(display_.getBoundingBox().width);
-        prefs_.rectH.set(display_.getBoundingBox().height);
-        log_d("Saving bounding box to preferences: (%s)",
-              display_.getBoundingBox().toString().c_str());
-
+        display_.storeInsets();
         telemetry_.logMetricData(TelemetryField::METRIC_STYLE,
-                                 {{"bb_x", display_.getBoundingBox().x},
-                                  {"bb_y", display_.getBoundingBox().y},
-                                  {"bb_w", display_.getBoundingBox().width},
-                                  {"bb_h", display_.getBoundingBox().height}});
+                                 {{"in_t", display_.getDisplayInsets().top},
+                                  {"in_b", display_.getDisplayInsets().bottom},
+                                  {"in_l", display_.getDisplayInsets().left},
+                                  {"in_r", display_.getDisplayInsets().right}});
 
         back();
         break;
@@ -88,5 +106,5 @@ void OffsetAdjustScreen::processCommand(RemoteCommand command) {
         break;
     }
 
-    display_.setBoundingBox(oldRect);
+    display_.setTemporaryInsets(oldInsets);
 }

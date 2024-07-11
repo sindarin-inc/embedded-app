@@ -87,11 +87,11 @@ public:
             setNeedsRerender();
             auto metrics = readable_->telemetryPlacemarkMetrics();
             metrics["fw"] = SemanticVersionString();
-            auto bb = display.getBoundingBox();
-            metrics["bb_x"] = bb.x;
-            metrics["bb_y"] = bb.y;
-            metrics["bb_w"] = bb.width;
-            metrics["bb_h"] = bb.height;
+            auto insets = display.getDisplayInsets();
+            metrics["in_t"] = insets.top;
+            metrics["in_b"] = insets.bottom;
+            metrics["in_l"] = insets.left;
+            metrics["in_r"] = insets.right;
             metrics["text_size"] = prefs_.font.get().value_or(PREFS_SOL_SMALL);
             metrics["line_spacing"] = prefs_.lineSpacing.get().value_or(0);
             telemetry_.logMetric(TelemetryField::METRIC_REPORT, readable_->uuid.c_str(), metrics);
