@@ -75,7 +75,6 @@ int Waveshare42::IfInit(void) {
         // These must be unset or the SPI driver will try to use them
         .quadwp_io_num = -1,
         .quadhd_io_num = -1,
-        .flags = SPICOMMON_BUSFLAG_MASTER,
         // .isr_cpu_id = INTR_CPU_ID_1,
     };
     // TODO: Why don't we have any available DMA channels? Maybe they are used by Flash and RAM?
@@ -89,15 +88,12 @@ int Waveshare42::IfInit(void) {
     }
 
     spi_device_interface_config_t devcfg = {
-        .command_bits = 0,
-        .address_bits = 0,
         .mode = 0,
-        .clock_source = SPI_CLK_SRC_DEFAULT,
         .clock_speed_hz =
             20 * 1000 *
             1000, // Clock out at 20 MHz -- tested on arduino code and this speed worked fine
         .spics_io_num = -1,
-        .queue_size = 10,
+        .queue_size = 7,
     };
 
     err = spi_bus_add_device(DISPLAY_SPI, &devcfg, &spiHigh_);
