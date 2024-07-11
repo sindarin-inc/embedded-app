@@ -9,6 +9,7 @@ extern bool mirrorToSerial;
 auto DisplayWaveshare42::setup() -> bool {
 
     DisplaySystem::setup();
+    log_d("Setting up the display");
     driver_.Init();
     driver_.Clear();
     return true;
@@ -29,12 +30,12 @@ void DisplayWaveshare42::updateDisplay(DisplaySystem::UpdateType updateType, boo
         updateType == DisplaySystem::UpdateType::PARTIAL) {
         // base_draw();
         log_i("updating the display");
-        driver_.Display(gfxCanvas_.getBuffer());
+        // driver_.Display(gfxCanvas_.getBuffer());
     }
 
     // Clear buffer afterwards if argument not set to false.
     if (clearFrameBuffer) {
-        driver_.Clear();
+        // driver_.Clear();
         fillScreen(bg);
     }
 }

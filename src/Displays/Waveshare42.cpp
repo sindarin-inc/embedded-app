@@ -48,16 +48,14 @@ Waveshare42::Waveshare42() {
 void Waveshare42::DelayMs(unsigned int delaytime) { Delay(delaytime); }
 
 void Waveshare42::SpiTransfer(unsigned char data) {
-    // ESP_ERROR_CHECK(spi_device_acquire_bus(spiHigh_, portMAX_DELAY));
     DigitalWrite(cs_pin, LOW);
     // SPI.transfer(data);
-    spi_transaction_t t = {.length = 8, .tx_buffer = &data, .rx_buffer = NULL};
+    spi_transaction_t t = {.length = 8, .tx_buffer = &data};
     esp_err_t err = spi_device_transmit(spiHigh_, &t);
     if (err != ESP_OK) {
         log_e("Error sending data: %d", err);
     }
     DigitalWrite(cs_pin, HIGH);
-    // spi_device_release_bus(spiHigh_);
 }
 
 int Waveshare42::IfInit(void) {
@@ -65,8 +63,6 @@ int Waveshare42::IfInit(void) {
     PinMode(reset_pin, OUTPUT);
     PinMode(dc_pin, OUTPUT);
     PinMode(busy_pin, INPUT);
-
-    DigitalWrite(cs_pin, HIGH);
 
     // Initialize the SPI bus
     // TODO(john): It's maybe a little weird that some pins come in via config.h and some come in
@@ -101,7 +97,7 @@ int Waveshare42::IfInit(void) {
             20 * 1000 *
             1000, // Clock out at 20 MHz -- tested on arduino code and this speed worked fine
         .spics_io_num = -1,
-        .queue_size = 1,
+        .queue_size = 10,
     };
 
     err = spi_bus_add_device(DISPLAY_SPI, &devcfg, &spiHigh_);
