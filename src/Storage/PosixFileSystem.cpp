@@ -134,3 +134,5 @@ auto PosixFileSystem::removeDir(const std::string &path) -> bool {
     auto fullPath = createPath(path);
     return (rmdir(fullPath.c_str()) == 0);
 }
+
+auto PosixFileSystem::getFreeSpace() -> std::string { return "SIMULATOR"; }

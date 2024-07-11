@@ -369,7 +369,8 @@ public:
           blePower(*this, "ble-power"),
           brightnessOffset(*this, "brightness-off"),
           brightnessOffsetEnabled(*this, "bright-off-en"),
-          preferencesStoreMigrationVersion_(*this, "ps-version"){};
+          loggingOn(*this, "logging"),
+          preferencesStoreMigrationVersion_(*this, "ps-version") {}
     // clang-format on
 
     PreferencesStore(PreferencesStore &) = delete;
@@ -629,6 +630,7 @@ public:
     PrefsItem<uint32_t> blePower;
     PrefsItem<int> brightnessOffset;
     PrefsItem<bool> brightnessOffsetEnabled;
+    PrefsItem<bool> loggingOn;
 
     // These are RTC_SLOW_MEM variables that persist across deep sleep / wake cycles but will be
     // reset on power cycles

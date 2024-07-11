@@ -79,6 +79,12 @@ public:
         return false;
     }
 
+    virtual auto getFreeSpace() -> std::string {
+        log_e("Abstract");
+        assert(0);
+        return "";
+    }
+
 protected:
     FileSystem() noexcept = default;
 };

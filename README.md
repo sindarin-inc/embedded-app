@@ -211,6 +211,50 @@ Note that when you run the above command, the resulting `include/EFusesCustomTab
 
 This is [fixed](https://github.com/espressif/esp-idf/blob/master/components/efuse/efuse_table_gen.py#L277) in the pre-release version of ESP-IDF 5.0.
 
+## Serial communication protocal for sending commands
+
+The USB serial connection protocol supports file transfers, device control commands, and debugging commands. The key commands include starting file transfers, device programming, restarting the device, retrieving device information, and controlling the device's user interface. On macs, /dev/cu.usbmodemsolreader1 will always be available for accepting commands and file transfers. /dev/cu.usbmodemsolreader3 will be available for logging.
+
+Note that now logging to serial is OFF by default. To easily toggle that once you are connected via usb, issue this command:
+
+```echo "LOGGING_ON" | tee /dev/cu.usbmodemsolreader1```
+
+Command Handling
+The protocol is implemented using a command handler that processes incoming commands and performs corresponding actions. The following sections detail each command's functionality.
+
+File Transfer Commands
+```START_FILE_TRANSFER```
+Initiates a file transfer process.
+
+Action: Sets a passthrough data handler to handle file transfer data chunks.
+
+Device Control Commands
+```PROGRAM```
+Disables logging and initializes JTAG for programming.
+
+```RESTART```
+Sends a success message and restarts the device.
+
+```DEVICE_INFO```
+Sends the device's serial number, MAC address, and free space.
+
+```MIRROR```
+Toggles the mirroring to the serial. This will send the framebuffer over serial on each display update.
+
+Debug Commands
+The debug commands control the user interface for testing purposes. These commands include:
+
+```GRID```: Displays a test alignment screen with maximum brightness.
+```UP```: Sends an UP command to the user interface.
+```LEFT```: Sends a LEFT command to the user interface.
+```RIGHT```: Sends a RIGHT command to the user interface.
+```DOWN```: Sends a DOWN command to the user interface.
+```ENTER```: Sends an ENTER command to the user interface.
+```BACK```: Sends a BACK command to the user interface.
+```LOGGING_ON```: Turns on serial logging (on macs, this will be /dev/cu.usbmodemsolreader3)
+```LOGGING_OFF```: Turns off serial logging 
+
+
 ## Editing Sol Sans font in the IBMF Font Editor
 
 To change the glyphs in the Sol Sans character map:

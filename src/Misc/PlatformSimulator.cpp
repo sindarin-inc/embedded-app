@@ -59,6 +59,8 @@ auto GetSerialNumber() -> std::string { return "SIMULATOR"; }
 
 auto GetMacAddress() -> std::string { return "SIMULATOR"; }
 
+auto GetFreeSpace() -> std::string { return "SIMULATOR"; }
+
 auto GetHardwareRevision() -> uint8_t { return 0; }
 
 void ForcePowerOn() {}
@@ -128,6 +130,8 @@ const char *pathToFileName(const char *path) {
     }
     return path + pos;
 }
+
+void USBDeviceInit() {}
 
 uint32_t esp_random(void) { return (uint32_t)rand(); }
 

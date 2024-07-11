@@ -4,6 +4,7 @@
 
 #include <algorithm>
 
+#include "Communications/USBSerial.hpp"
 #include "Displays/CustomWaveforms.hpp"
 #include "Displays/EinkWaveforms.hpp"
 #include "Misc/Dispatch.hpp"
@@ -11,6 +12,8 @@
 #include "config.h"
 
 #define VCOM_INVERTED_MODE_DELTA 2500
+
+extern bool mirrorToSerial;
 
 // Not currently used waveforms
 // const EinkET013TT1Waveform FULL_REFRESH_WAVEFORM = BC_EINK_31_35C_WAVEFORM_FULL;
@@ -91,6 +94,11 @@ void DisplayEinkET013TT1::updateDisplay(DisplaySystem::UpdateType updateType, bo
                                         int vcomNudge, DisplaySystem::UpdateType altUpdateType,
                                         ScreenSide screen, Rect altRect) {
     auto queue = DispatchGetUiQueue(false);
+    if (mirrorToSerial) {
+        USBSerial::getInstance().txSendData(
+            reinterpret_cast<const uint8_t *>(gfxCanvas_.getBuffer()),
+            gfxCanvas_.width() * gfxCanvas_.height() / 8);
+    }
     if (queue == nullptr || !queue->isInQueue()) {
         log_w("updateDisplay called from outside the UI queue.");
     }

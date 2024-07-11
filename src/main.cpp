@@ -1,14 +1,15 @@
-#if !SIMULATOR
-#include <driver/uart.h>
-#include <driver/usb_serial_jtag.h>
-#include <soc/rtc.h>
-#endif
-
 #include <esp_err.h>
 #include <esp_log.h>
 #include <esp_sleep.h>
 #include <esp_system.h>
 #include <esp_timer.h>
+#if !SIMULATOR
+#include <soc/rtc.h>
+#endif
+#if USE_TINYUSB_SERIAL
+#include <tusb.h>
+#endif
+
 #include <freertos/FreeRTOS.h>
 #include <freertos/queue.h>
 
@@ -18,7 +19,7 @@
 #include "Misc/Battery.hpp"
 #include "Misc/BootError.hpp"
 #include "Misc/BootLoopDetection.hpp"
-#include "Misc/DebugCommand.hpp"
+#include "Misc/DirectCommand.hpp"
 #include "Misc/FactoryReset.hpp"
 #include "Misc/Platform.hpp"
 #include "Misc/PowerManager.hpp"
@@ -102,6 +103,10 @@ RootUI rootUi(prefs, powerManager, telemetry);
 SolClock solClock(prefs);
 WiFi wiFi(telemetry, prefs);
 
+USBSerial usbSerial;
+
+DirectCommand directCommand(fileSystem);
+
 bool bootCompleted = false;
 
 void UIInnerLoop(RemoteCommand command) {
@@ -112,7 +117,7 @@ void UIInnerLoop(RemoteCommand command) {
 // Task for all periodic things that need to run ~1Hz. Polling tasks should be grouped here so that
 // they all complete in a tight loop, thus maximizing sleep time.
 void PollingLoopTask(void *parameter) {
-    DebugCommand debugCommand([](const std::string &command) {
+    directCommand.addCommandHandler([](const std::string &command) {
         log_i("Received debug command: %s", command.c_str());
         if (command == "GRID") {
             DispatchGetUiQueue()->dispatch([]() {
@@ -162,6 +167,12 @@ void PollingLoopTask(void *parameter) {
             log_i("USB Power: %d", USBConnected());
         } else if (command == "BOOTREASON") {
             log_i("Boot reason: %s", powerManager.getBootInfo().humanStr().c_str());
+        } else if (command == "LOGGING_ON") {
+            USBSerial::getInstance().enableLogging();
+            prefs.loggingOn.set(true);
+        } else if (command == "LOGGING_OFF") {
+            USBSerial::getInstance().disableLogging();
+            prefs.loggingOn.set(false);
         } else {
             log_w("Unknown debug command: %s", command.c_str());
         }
@@ -190,25 +201,6 @@ void PollingLoopTask(void *parameter) {
         // Run the power loop first so that we don't show a 0% battery reading
         powerManager.loop();
 
-#if !SIMULATOR
-        // Handle debug commands early so that we can avoid sleep if necessary
-        // Spend the rest of the time waiting for debug commands (that will probably never come)
-        uint8_t buf[256];
-
-        // There's not a queue-driven way to watch for things from the usb/jtag interface so we
-        // simply poll
-        auto rxSize = usb_serial_jtag_read_bytes(buf, sizeof(buf), 0);
-        if (rxSize > 0) {
-            log_i("Received %d bytes from USB", rxSize);
-            debugCommand.addData(buf, rxSize);
-        }
-        rxSize = uart_read_bytes(UART_NUM_0, buf, sizeof(buf), 0);
-        if (rxSize > 0) {
-            log_i("Received %d bytes from USB", rxSize);
-            debugCommand.addData(buf, rxSize);
-        }
-#endif
-
 #if USE_TURN_TOUCH_REMOTE
         // Skip scanning while WiFi is connected to avoid kicking off the WiFi connection
         if (!WiFi::getInstance().connected()) {
@@ -223,9 +215,10 @@ void PollingLoopTask(void *parameter) {
 #endif
 
         vTaskDelay(pdMS_TO_TICKS(1000));
-
+#if USE_LTR329
         // This happens after the delay, so that the first check can run with a faster fade.
         lightingController.checkAmbientLight();
+#endif
     }
     log_d("PollingLoopTask exited");
     vTaskDelete(nullptr);
@@ -251,11 +244,21 @@ void loop() { vTaskDelay(portMAX_DELAY); };
 void setup() {
 #else
 extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
+    // Note that with the new logging interface, we won't get any logs until later
+    // after prefs have begun. Hence the below #if 0 in case you need to turn on logging
+    // earlier for debugging.
+    usbSerial.begin();
+#if 0
+    usbSerial.enableLogging();
+#endif
+    directCommand.begin();
     HardwareInit();
 #endif
 
+#if !SIMULATOR
     // Configure log level for all Sindarin logs
     esp_log_level_set("Sol", ESP_LOG_DEBUG);
+#endif
     powerManager.wakeupCheck(solClock);
 
     BootLoopCheck(fileSystem, powerManager);
@@ -273,6 +276,11 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 
     if (!prefs.begin()) {
         bootErrors.push_back({.type = BootError::Type::Preferences});
+    }
+
+    // Note with this change we won't get any logs until after here.
+    if (prefs.loggingOn.get().value_or(false)) {
+        usbSerial.enableLogging();
     }
 
     solClock.begin();
@@ -393,15 +401,19 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 
     // Below code should only execute on an Active boot
 
+#if USE_LTR329
     if (!lightingController.checkSensorAvailable()) {
         bootErrors.push_back({.type = BootError::Type::AmbientLight});
     } else {
         lightingController.begin();
     }
+#endif
 
+#if USE_MMC5603
     if (!powerManager.checkMagnetometerProductId()) {
         bootErrors.push_back({.type = BootError::Type::Magnetometer});
     }
+#endif
 
     SHOW_HEAP();
 
@@ -576,10 +588,13 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     PreferencesStore::screenClearedAtShutdown = false;
 
     xTaskCreatePinnedToCore(PollingLoopTask, "Polling", 10000, nullptr, 1, nullptr, 0);
+
     // xTaskCreatePinnedToCore(StatsTask, "Stats", 5000, nullptr, 0, nullptr, 1);
 
+#if USE_LTR329
     // Begin fade-in on the lighting before rendering the UI
     DispatchGetUiQueue()->dispatch([]() { lightingController.checkAmbientLight(300, 100); });
+#endif
 
     // Render the first thing
     DispatchGetUiQueue()->dispatch([showChargingScreen]() {

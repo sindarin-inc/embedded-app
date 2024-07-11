@@ -95,6 +95,8 @@ void DigitalWrite(int pin, int level);
 
 auto DigitalRead(uint8_t pin) -> int;
 
+void USBDeviceInit();
+
 #if !SIMULATOR
 void PinMode(int pin, int mode);
 auto GetHeapSize() -> size_t;
