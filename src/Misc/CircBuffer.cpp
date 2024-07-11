@@ -7,15 +7,11 @@
 
 void CircBuffer::push(uint8_t *input, int size) {
     if ((size_ + size) > capacity_) {
-        // Calculate how much the buffer will overflow
-        int overflowAmount = (size_ + size) - capacity_;
+        int diff = size_ + size - capacity_;
 
-        // Move the start position forward to make room for the new data, effectively
-        // discarding the oldest data
-        startPos_ = (startPos_ + overflowAmount) % capacity_;
-
-        // Adjust the size of the buffer if necessary
-        size_ = capacity_ - overflowAmount;
+        // remove data from beginning of buffer
+        size_ -= diff;
+        startPos_ = (startPos_ + diff) % capacity_;
     }
 
     int insertPoint = (startPos_ + size_) % capacity_;
@@ -23,17 +19,13 @@ void CircBuffer::push(uint8_t *input, int size) {
     int bytesCopied = 0;
     while (bytesCopied < size) {
         int bytesToCopy = std::min(size - bytesCopied, capacity_ - insertPoint);
+
+        // copy data
         memcpy(&buf_[insertPoint], &input[bytesCopied], bytesToCopy);
+        size_ += bytesToCopy;
         bytesCopied += bytesToCopy;
         insertPoint = (insertPoint + bytesToCopy) % capacity_;
     }
-
-    // Update the size of the buffer, but ensure it does not exceed the capacity
-    if (size_ + size > capacity_) {
-        log_e("CircBuffer error: tried to push %d bytes into buffer of capacity %d", size,
-              capacity_);
-    }
-    size_ = std::min(size_ + size, capacity_);
 }
 
 void CircBuffer::copyFrom(int pos, uint8_t *output, int size) {
