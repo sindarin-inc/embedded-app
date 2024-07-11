@@ -88,7 +88,11 @@ flash: build
 
 .PHONY: monitor
 monitor: check_idf
-	# Try to find the right serial port and use --no-reset by default
+	# Turn logging on on the new USB port if it exists.
+	if [ -e /dev/cu.usbmodemsolreader1 ]; then \
+		echo "LOGGING_ON" | tee /dev/cu.usbmodemsolreader1; \
+		sleep 2; \
+	fi
 	@if [[ "$$(uname)" == "Linux" ]]; then \
 		PORT=$$(udevadm info --query=all --name=/dev/ttyUSB* | grep 'ID_MODEL_FROM_DATABASE=Sol Reader' -B4 | grep 'DEVNAME' | cut -d'=' -f2) ; \
 	elif [[ "$$(uname)" == "Darwin" ]]; then \
@@ -98,7 +102,7 @@ monitor: check_idf
 		exit 1 ; \
 	fi ; \
 	if [[ -z "$$PORT" ]]; then \
-		echo "Error: Could not find a serial port with description 'USB JTAG/serial debug unit'." ; \
+		echo "Error: Could not find a serial port with description 'Sol Reader'." ; \
 		exit 1 ; \
 	fi ; \
 	idf.py monitor --no-reset --port $$PORT
