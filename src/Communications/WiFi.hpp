@@ -103,8 +103,8 @@ protected:
     esp_event_handler_instance_t ipEventHandlerInstance_{};
     WiFiSettings settings_;
     EventGroupHandle_t wifiEventGroup_ = nullptr;
-    SemaphoreHandle_t mutex_;
     PreferencesStore &prefs_;
+    SemaphoreHandle_t mutex_;
 
     void setState(WiFiState state) {
         log_d("WiFi::wiFiState_ set to %d", state);
