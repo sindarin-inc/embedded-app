@@ -71,13 +71,15 @@ auto DisplayEinkET013TT1::setup() -> bool {
 void DisplayEinkET013TT1::ensureBoundaries() {
     // This logic is a bit harder than the old way.
     // We need to make sure that the bounding box is within the screen bounds.
-    if (EinkET013TT1_Y_PIXELS - (insets_.top + insets_.bottom) < EinkET013TT1_MIN_Y_VIEWABLE_BOX) {
+    if (EinkET013TT1_Y_PIXELS - (insets_.top + insets_.bottom) <
+        EinkET013TT1_MIN_VIEWABLE_BOX_HEIGHT) {
         // Arbitrarily shrink the bottom margin to make the box fit.
-        insets_.bottom = EinkET013TT1_Y_PIXELS - EinkET013TT1_MIN_Y_VIEWABLE_BOX - insets_.top;
+        insets_.bottom = EinkET013TT1_Y_PIXELS - EinkET013TT1_MIN_VIEWABLE_BOX_HEIGHT - insets_.top;
     }
-    if (EinkET013TT1_X_PIXELS - (insets_.left + insets_.right) < EinkET013TT1_MIN_X_VIEWABLE_BOX) {
+    if (EinkET013TT1_X_PIXELS - (insets_.left + insets_.right) <
+        EinkET013TT1_MIN_VIEWABLE_BOX_WIDTH) {
         // Arbitrarily shrink the right margin to make the box fit.
-        insets_.right = EinkET013TT1_X_PIXELS - EinkET013TT1_MIN_X_VIEWABLE_BOX - insets_.left;
+        insets_.right = EinkET013TT1_X_PIXELS - EinkET013TT1_MIN_VIEWABLE_BOX_WIDTH - insets_.left;
     }
 }
 
