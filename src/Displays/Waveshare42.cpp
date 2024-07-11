@@ -30,6 +30,7 @@ Waveshare August 10 2017 * *Permission is hereby granted, free of charge,
 
 #include "Misc/Platform.hpp"
 #include "esp_log.h"
+#include "sindarin-debug.h"
 
 #define pgm_read_byte(x) (*x)
 
@@ -48,28 +49,33 @@ void Waveshare42::DelayMs(unsigned int delaytime) { Delay(delaytime); }
 
 void Waveshare42::SpiTransfer(unsigned char data) {
     // ESP_ERROR_CHECK(spi_device_acquire_bus(spiHigh_, portMAX_DELAY));
-    DigitalWrite(WAVESHARE_42_DISPLAY_CS, LOW);
-    //  SPI.transfer(data);
-    spi_transaction_t t = {.length = 1, .tx_buffer = &data};
-
-    ESP_ERROR_CHECK(spi_device_transmit(spiHigh_, &t));
-    DigitalWrite(WAVESHARE_42_DISPLAY_CS, HIGH);
+    DigitalWrite(cs_pin, LOW);
+    // SPI.transfer(data);
+    spi_transaction_t t = {.length = 8, .tx_buffer = &data, .rx_buffer = NULL};
+    esp_err_t err = spi_device_transmit(spiHigh_, &t);
+    if (err != ESP_OK) {
+        log_e("Error sending data: %d", err);
+    }
+    DigitalWrite(cs_pin, HIGH);
     // spi_device_release_bus(spiHigh_);
 }
 
 int Waveshare42::IfInit(void) {
-    PinMode(WAVESHARE_42_DISPLAY_CS, OUTPUT);
-    PinMode(WAVESHARE_42_DISPLAY_RESET, OUTPUT);
-    PinMode(WAVESHARE_42_DISPLAY_DC, OUTPUT);
-    PinMode(WAVESHARE_42_DISPLAY_BUSY, INPUT);
+    PinMode(cs_pin, OUTPUT);
+    PinMode(reset_pin, OUTPUT);
+    PinMode(dc_pin, OUTPUT);
+    PinMode(busy_pin, INPUT);
+
+    DigitalWrite(cs_pin, HIGH);
 
     // Initialize the SPI bus
     // TODO(john): It's maybe a little weird that some pins come in via config.h and some come in
     // via the constructor
     spi_bus_config_t buscfg = {
         .mosi_io_num = DISPLAY_MOSI,
-        .miso_io_num = DISPLAY_MISO,
+        .miso_io_num = -1,
         .sclk_io_num = DISPLAY_CLK,
+
         // These must be unset or the SPI driver will try to use them
         .quadwp_io_num = -1,
         .quadhd_io_num = -1,
@@ -77,18 +83,35 @@ int Waveshare42::IfInit(void) {
         // .isr_cpu_id = INTR_CPU_ID_1,
     };
     // TODO: Why don't we have any available DMA channels? Maybe they are used by Flash and RAM?
-    ESP_ERROR_CHECK(spi_bus_initialize(DISPLAY_SPI, &buscfg, SPI_DMA_DISABLED));
+    esp_err_t err = spi_bus_initialize(DISPLAY_SPI, &buscfg, SPI_DMA_DISABLED);
+
+    if (err != ESP_OK) {
+        log_e("Failed to initialize SPI bus: %d", err);
+        return -1;
+    } else {
+        log_d("SPI bus initialized!!!");
+    }
 
     spi_device_interface_config_t devcfg = {
-        .command_bits = 16,
+        .command_bits = 0,
+        .address_bits = 0,
         .mode = 0,
-        .clock_speed_hz = 2 * 1000 * 1000, // Clock out at 2 MHz
+        .clock_source = SPI_CLK_SRC_DEFAULT,
+        .clock_speed_hz =
+            20 * 1000 *
+            1000, // Clock out at 20 MHz -- tested on arduino code and this speed worked fine
         .spics_io_num = -1,
-        .queue_size = 5,
+        .queue_size = 1,
     };
 
-    ESP_ERROR_CHECK(spi_bus_add_device(DISPLAY_SPI, &devcfg, &spiHigh_));
+    err = spi_bus_add_device(DISPLAY_SPI, &devcfg, &spiHigh_);
 
+    if (err != ESP_OK) {
+        log_e("Failed to add device to SPI bus: %d", err);
+        return -1;
+    } else {
+        log_d("Device added to SPI bus!!!");
+    }
     // ESP_ERROR_CHECK(spi_device_acquire_bus(spiHigh_, portMAX_DELAY));
     // SPI.begin();
     // SPI.beginTransaction(SPISettings(2000000, MSBFIRST, SPI_MODE0));
@@ -96,19 +119,25 @@ int Waveshare42::IfInit(void) {
 }
 
 int Waveshare42::Init(void) {
+
     /* this calls the peripheral hardware interface, see epdif */
     if (IfInit() != 0) {
         return -1;
     }
+
+    log_d("about to acquire bus Init with device %p", spiHigh_);
+    esp_err_t err = spi_device_acquire_bus(spiHigh_, portMAX_DELAY);
+
+    if (err != ESP_OK) {
+        log_d("failed to acquire bus to Init %d", err);
+    }
+
     /* EPD hardware init start */
     Reset();
     ReadBusy();
 
     SendCommand(0x12);
     ReadBusy();
-
-    // Datasheet says we need 10ms break here
-    Delay(10);
 
     SendCommand(0x21);
     SendData(0x40);
@@ -124,7 +153,6 @@ int Waveshare42::Init(void) {
     SendData(0x00);
     SendData(0x31);
 
-    // Check byte order!
     SendCommand(0x45);
     SendData(0x00);
     SendData(0x00);
@@ -138,6 +166,7 @@ int Waveshare42::Init(void) {
     SendData(0x00);
     SendData(0x00);
     ReadBusy();
+    spi_device_release_bus(spiHigh_);
 
     /* EPD hardware init end */
     return 0;
@@ -291,7 +320,6 @@ void Waveshare42::SendData(unsigned char data) {
  */
 void Waveshare42::ReadBusy(void) {
     while (DigitalRead(busy_pin) == 1) { // 1: busy, 0: idle
-        DelayMs(1);
         // Wait
     }
 }
@@ -347,6 +375,13 @@ parameter:
 ******************************************************************************/
 void Waveshare42::Clear(void) {
     unsigned int Width, Height;
+    log_d("about to acquire bus Clear");
+    esp_err_t err = spi_device_acquire_bus(spiHigh_, portMAX_DELAY);
+
+    if (err != ESP_OK) {
+        log_d("failed to acquire bus to Clear %d", err);
+    }
+
     Width = (width % 8 == 0) ? (width / 8) : (width / 8 + 1);
     Height = height;
 
@@ -363,6 +398,8 @@ void Waveshare42::Clear(void) {
         }
     }
     TurnOnDisplay();
+    spi_device_release_bus(spiHigh_);
+    log_d("Device should have cleared by now!!");
 }
 
 void Waveshare42::Display(const unsigned char *Image) {
