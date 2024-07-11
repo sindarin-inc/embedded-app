@@ -271,7 +271,7 @@ auto EPubFile::getSummaryContent(
     bool includeUnread) -> SpiramString {
 
     auto placeHref = placeInReadable->getHRef();
-    if (!hasSummary(placeHref)) {
+    if (!hasSummary(placeHref) && partialChapterSummary == nullptr) {
         log_e("This chapter does not have a summary.");
         return "This chapter does not have a summary.";
     }
@@ -298,7 +298,7 @@ auto EPubFile::getSummaryContent(
 
     log_d("Loading summary for chapter href: %s, chapter idx: %d", chapterHref.c_str(), chapterIdx);
     SpiramString summaryText;
-
+    bool foundAnySummaries = false;
     for (const auto &chapter : getToc()) {
         auto sameChapter = chapter.href == chapterHref;
         auto tocChapterIdx = opf_->getChapterIdx(std::string(chapter.href));
@@ -322,6 +322,7 @@ auto EPubFile::getSummaryContent(
             summaryText += StringFormat(" (%d%% read)\n\n", partialChapterSummary->readPct);
             summaryText += partialChapterSummary->text;
             summaryText += "\n\n";
+            foundAnySummaries = true;
         } else {
             std::string currentChapterId =
                 opf_->getManifestIdByHref(static_cast<std::string>(chapter.href));
@@ -331,6 +332,7 @@ auto EPubFile::getSummaryContent(
                 log_w("No summary for %s", chapter.href.c_str());
                 continue;
             }
+            foundAnySummaries = true;
             pugi::xml_document &currentDoc = getXHTMLFile(currentSummaryPath);
 
             for (auto node : currentDoc.child("html").child("body").children()) {
@@ -355,6 +357,10 @@ auto EPubFile::getSummaryContent(
                 }
             }
         }
+    }
+
+    if (!foundAnySummaries) {
+        return "This chapter does not have a summary.";
     }
 
     return summaryText;

@@ -43,8 +43,18 @@ class WiFi {
 public:
     static auto getInstance() -> WiFi &;
 
-    WiFi(Telemetry &telemetry, PreferencesStore &prefs) : telemetry_(telemetry), prefs_(prefs){};
+    WiFi(Telemetry &telemetry, PreferencesStore &prefs)
+        : telemetry_(telemetry), prefs_(prefs), mutex_(xSemaphoreCreateMutex()) {
+        if (mutex_ == nullptr) {
+            log_e("Failed to create WiFi mutex");
+        }
+    };
     WiFi(WiFi const &) = delete;
+    ~WiFi() {
+        if (mutex_ != nullptr) {
+            vSemaphoreDelete(mutex_);
+        }
+    }
 
     // Credentials
     auto getWifiConfig(wifi_config_t *conf) -> esp_err_t;
@@ -93,6 +103,7 @@ protected:
     esp_event_handler_instance_t ipEventHandlerInstance_{};
     WiFiSettings settings_;
     EventGroupHandle_t wifiEventGroup_ = nullptr;
+    SemaphoreHandle_t mutex_;
     PreferencesStore &prefs_;
 
     void setState(WiFiState state) {
