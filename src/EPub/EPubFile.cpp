@@ -322,6 +322,7 @@ auto EPubFile::getSummaryContent(
             summaryText += StringFormat(" (%d%% read)\n\n", partialChapterSummary->readPct);
             summaryText += partialChapterSummary->text;
             summaryText += "\n\n";
+            foundAnySummaries = true;
         } else {
             std::string currentChapterId =
                 opf_->getManifestIdByHref(static_cast<std::string>(chapter.href));
@@ -356,10 +357,10 @@ auto EPubFile::getSummaryContent(
                 }
             }
         }
+    }
 
-        if (!foundAnySummaries) {
-            return "This chapter does not have a summary.";
-        }
+    if (!foundAnySummaries) {
+        return "This chapter does not have a summary.";
     }
 
     return summaryText;
