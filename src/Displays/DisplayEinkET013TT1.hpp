@@ -23,13 +23,15 @@ public:
 
     ~DisplayEinkET013TT1() override = default;
 
-    auto nativeWidth() const -> uint16_t override { return EinkET013TT1_X_PIXELS; }
-    auto nativeHeight() const -> uint16_t override { return EinkET013TT1_Y_PIXELS; }
+    [[nodiscard]] auto nativeWidth() const -> uint16_t override { return EinkET013TT1_X_PIXELS; }
+    [[nodiscard]] auto nativeHeight() const -> uint16_t override { return EinkET013TT1_Y_PIXELS; }
 
-    auto defaultTextInsets() const -> DisplayInset override { return {30, 30, 20, 20}; };
-    auto minTextInsets() const -> DisplayInset override { return {5, 5, 5, 5}; };
-    auto minTextBoxWidth() const -> int16_t override { return 125; };
-    auto minTextBoxHeight() const -> int16_t override { return 45; };
+    [[nodiscard]] auto defaultTextInsets() const -> DisplayInset override {
+        return {30, 30, 20, 20};
+    };
+    [[nodiscard]] auto minTextInsets() const -> DisplayInset override { return {5, 5, 5, 5}; };
+    [[nodiscard]] auto minTextBoxWidth() const -> int16_t override { return 125; };
+    [[nodiscard]] auto minTextBoxHeight() const -> int16_t override { return 45; };
 
     auto setup() -> bool override;
 
@@ -74,7 +76,7 @@ public:
 #endif
 
 protected:
-    [[nodiscard]] auto getBuffer(void) -> uint8_t * override { return gfxCanvas_.getBuffer(); }
+    [[nodiscard]] auto getBuffer() -> uint8_t * override { return gfxCanvas_.getBuffer(); }
 
     GFXcanvas1 gfxCanvas_;
     EinkET013TT1 driver_;

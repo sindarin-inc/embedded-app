@@ -71,21 +71,23 @@ public:
     DisplaySystem(DisplaySystem const &) = delete;
     virtual ~DisplaySystem() = default;
 
-    virtual auto nativeWidth() const -> uint16_t = 0;
-    virtual auto nativeHeight() const -> uint16_t = 0;
+    [[nodiscard]] virtual auto nativeWidth() const -> uint16_t = 0;
+    [[nodiscard]] virtual auto nativeHeight() const -> uint16_t = 0;
 
     // Constant text-box inset defaults during reading. These should be overridden to sane values in
     // subclasses.
-    virtual auto defaultTextInsets() const -> DisplayInset = 0;
-    virtual auto minTextInsets() const -> DisplayInset = 0;
-    virtual auto minTextBoxWidth() const -> int16_t = 0;
-    virtual auto minTextBoxHeight() const -> int16_t = 0;
-    auto defaultTextRect() const -> DisplayRect {
+    [[nodiscard]] virtual auto defaultTextInsets() const -> DisplayInset = 0;
+    [[nodiscard]] virtual auto minTextInsets() const -> DisplayInset = 0;
+    [[nodiscard]] virtual auto minTextBoxWidth() const -> int16_t = 0;
+    [[nodiscard]] virtual auto minTextBoxHeight() const -> int16_t = 0;
+    [[nodiscard]] auto defaultTextRect() const -> DisplayRect {
         return DisplayRect::fromSizeAndInsets(width(), height(), defaultTextInsets());
     }
 
     // Constant suggested insets for UI (overridable if desired)
-    virtual auto defaultUIInsets() const -> DisplayInset { return defaultTextInsets(); }
+    [[nodiscard]] virtual auto defaultUIInsets() const -> DisplayInset {
+        return defaultTextInsets();
+    }
 
     virtual auto setup() -> bool;
 
@@ -121,10 +123,10 @@ public:
     // Use these methods for normal drawing as they'll take into account the offsets and focus area
     // automatically. Any methods we need from Adafruit_GFX that need to respect the focus area
     // should be copied in here.
-    auto width() const -> int16_t {
+    [[nodiscard]] auto width() const -> int16_t {
         return nativeWidth() - displayInsets().left - displayInsets().right;
     };
-    auto height() const -> int16_t {
+    [[nodiscard]] auto height() const -> int16_t {
         return nativeHeight() - displayInsets().top - displayInsets().bottom;
     };
 
@@ -269,7 +271,9 @@ public:
 
 protected:
     // Constant screen inset. These can be overridden to permanently ignore part of the screen area.
-    virtual auto displayInsets() const -> DisplayInset { return DisplayInset::zero(); }
+    [[nodiscard]] virtual auto displayInsets() const -> DisplayInset {
+        return DisplayInset::zero();
+    }
 
     [[nodiscard]] inline auto xOffset(int16_t value) const -> int16_t {
         return value + displayInsets().left;
@@ -282,7 +286,7 @@ protected:
 
     void computeMinMax();
 
-    [[nodiscard]] virtual auto getBuffer(void) -> uint8_t * = 0;
+    [[nodiscard]] virtual auto getBuffer() -> uint8_t * = 0;
 
     // Must be set in the constructor of subclasses
     Adafruit_GFX *gfxClass_ = nullptr;
