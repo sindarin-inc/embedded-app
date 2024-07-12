@@ -71,9 +71,6 @@ public:
     DisplaySystem(DisplaySystem const &) = delete;
     virtual ~DisplaySystem() = default;
 
-    [[nodiscard]] virtual auto nativeWidth() const -> uint16_t = 0;
-    [[nodiscard]] virtual auto nativeHeight() const -> uint16_t = 0;
-
     // Constant text-box inset defaults during reading. These should be overridden to sane values in
     // subclasses.
     [[nodiscard]] virtual auto defaultTextInsets() const -> DisplayInset = 0;
@@ -270,6 +267,9 @@ public:
 #endif
 
 protected:
+    [[nodiscard]] virtual auto nativeWidth() const -> uint16_t = 0;
+    [[nodiscard]] virtual auto nativeHeight() const -> uint16_t = 0;
+
     // Constant screen inset. These can be overridden to permanently ignore part of the screen area.
     [[nodiscard]] virtual auto displayInsets() const -> DisplayInset {
         return DisplayInset::zero();
@@ -279,7 +279,7 @@ protected:
         return value + displayInsets().left;
     }
     [[nodiscard]] inline auto yOffset(int16_t value) const -> int16_t {
-        return value + displayInsets().right;
+        return value + displayInsets().top;
     }
 
     void rotate(uint16_t &x, uint16_t &y, uint16_t &w, uint16_t &h);

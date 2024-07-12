@@ -63,9 +63,9 @@ SDL_Texture *deviceScreen;
 float lerp(float a, float b, float t) { return a + t * (b - a); }
 
 void SimDrawScreen() {
-    for (int x = 0; x < myDisplay.nativeWidth(); x++) {
-        for (int y = 0; y < myDisplay.nativeHeight(); y++) {
-            uint8_t color = myDisplay.buffer()[x + y * myDisplay.nativeWidth()];
+    for (int x = 0; x < myDisplay.gfxClass()->width(); x++) {
+        for (int y = 0; y < myDisplay.gfxClass()->height(); y++) {
+            uint8_t color = myDisplay.buffer()[x + y * myDisplay.gfxClass()->width()];
             float colorF = color / 255.0;
             uint16_t brightnessOffset =
                 MapRange(LightingSetting, static_cast<int>(GetMinLightingDutyCycle()),
@@ -124,8 +124,8 @@ void SimDrawLeds() {
 #if SIM_LED_ON
     // draw simulated leds
     int ledDim = SIM_LED_DIM;
-    int ledStartY = myDisplay.nativeHeight();
-    int ledStartX = (myDisplay.nativeWidth() / 2) - (ledDim / 2);
+    int ledStartY = myDisplay.gfxClass()->height();
+    int ledStartX = (myDisplay.gfxClass()->width() / 2) - (ledDim / 2);
 
     // clear area
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0xFF);
@@ -133,7 +133,7 @@ void SimDrawLeds() {
     rect.x = 0;
     rect.y = ledStartY;
     rect.h = ledDim;
-    rect.w = myDisplay.nativeWidth();
+    rect.w = myDisplay.gfxClass()->width();
 
     SDL_RenderFillRect(renderer, &rect);
 
@@ -270,16 +270,16 @@ auto main(int argc, char *argv[]) -> int {
         return 1;
     }
 
-    SDL_CreateWindowAndRenderer(myDisplay.nativeWidth() * SCALE,
-                                ((myDisplay.nativeHeight() + SIM_LED_DIM) * SCALE), 0, &window,
-                                &renderer);
+    SDL_CreateWindowAndRenderer(myDisplay.gfxClass()->width() * SCALE,
+                                ((myDisplay.gfxClass()->height() + SIM_LED_DIM) * SCALE), 0,
+                                &window, &renderer);
     if (renderer == NULL) {
         fprintf(stderr, "Could not create renderer: %s\n", SDL_GetError());
         return 1;
     }
 
     deviceScreen = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET,
-                                     myDisplay.nativeWidth(), myDisplay.nativeHeight());
+                                     myDisplay.gfxClass()->width(), myDisplay.gfxClass()->height());
     SDL_RenderSetScale(renderer, SCALE, SCALE);
 
 #if defined(EMSCRIPTEN)

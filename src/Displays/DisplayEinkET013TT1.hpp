@@ -7,7 +7,6 @@
 #else
 #include "Displays/EinkET013TT1.hpp"
 #endif
-#include "Storage/PreferencesStore.hpp"
 #include "sindarin-debug.h"
 
 #define EinkET013TT1_X_PIXELS 256
@@ -22,9 +21,6 @@ public:
     DisplayEinkET013TT1(DisplayEinkET013TT1 const &) = delete;
 
     ~DisplayEinkET013TT1() override = default;
-
-    [[nodiscard]] auto nativeWidth() const -> uint16_t override { return EinkET013TT1_X_PIXELS; }
-    [[nodiscard]] auto nativeHeight() const -> uint16_t override { return EinkET013TT1_Y_PIXELS; }
 
     [[nodiscard]] auto defaultTextInsets() const -> DisplayInset override {
         return {30, 30, 20, 20};
@@ -76,6 +72,9 @@ public:
 #endif
 
 protected:
+    [[nodiscard]] auto nativeWidth() const -> uint16_t override { return EinkET013TT1_X_PIXELS; }
+    [[nodiscard]] auto nativeHeight() const -> uint16_t override { return EinkET013TT1_Y_PIXELS; }
+
     [[nodiscard]] auto getBuffer() -> uint8_t * override { return gfxCanvas_.getBuffer(); }
 
     GFXcanvas1 gfxCanvas_;

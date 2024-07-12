@@ -21,13 +21,12 @@ public:
         }
     };
 
-    auto nativeWidth() const -> uint16_t override { return width_; }
-    auto nativeHeight() const -> uint16_t override { return height_; }
-
-    auto defaultTextInsets() const -> DisplayInset override { return {100, 100, 20, 20}; };
-    auto minTextInsets() const -> DisplayInset override { return {5, 5, 5, 5}; };
-    auto minTextBoxWidth() const -> int16_t override { return 125; };
-    auto minTextBoxHeight() const -> int16_t override { return 45; };
+    [[nodiscard]] auto defaultTextInsets() const -> DisplayInset override {
+        return {100, 100, 20, 20};
+    };
+    [[nodiscard]] auto minTextInsets() const -> DisplayInset override { return {5, 5, 5, 5}; };
+    [[nodiscard]] auto minTextBoxWidth() const -> int16_t override { return 125; };
+    [[nodiscard]] auto minTextBoxHeight() const -> int16_t override { return 45; };
 
     auto setup() -> bool override;
 
@@ -47,6 +46,9 @@ public:
     void setSkipSignalling(bool skip) override { skipSignalling_ = skip; };
 
 protected:
+    [[nodiscard]] auto nativeWidth() const -> uint16_t override { return width_; }
+    [[nodiscard]] auto nativeHeight() const -> uint16_t override { return height_; }
+
     [[nodiscard]] auto getBuffer(void) -> uint8_t * override { return gfxCanvas_.getBuffer(); }
 
     uint16_t width_;
