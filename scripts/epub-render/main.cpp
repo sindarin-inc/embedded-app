@@ -29,7 +29,7 @@ int main(int argc, char **argv) {
         .action([](const std::string &value) { return std::filesystem::path(value); });
 
     auto display = createDisplay();
-    auto bb = (*display).defaultBoundingBox;
+    auto bb = (*display).defaultTextRect();
     auto defaultBoundingBoxString =
         StringFormat("{\"x\":%d,\"y\":%d,\"w\":%d,\"h\":%d}", bb.x, bb.y, bb.width, bb.height);
     program.add_argument("-b", "--boundingBox")
@@ -82,10 +82,10 @@ int main(int argc, char **argv) {
                   << std::endl;
         return 1;
     }
-    auto x = boundingBoxJson["x"].as<int32_t>();
-    auto y = boundingBoxJson["y"].as<int32_t>();
-    auto w = boundingBoxJson["w"].as<uint32_t>();
-    auto h = boundingBoxJson["h"].as<uint32_t>();
+    auto x = boundingBoxJson["x"].as<uint16_t>();
+    auto y = boundingBoxJson["y"].as<uint16_t>();
+    auto w = boundingBoxJson["w"].as<uint16_t>();
+    auto h = boundingBoxJson["h"].as<uint16_t>();
     DisplayRect boundingBoxRect = {x, y, w, h};
     std::cout << "Bounding box: " << x << "," << y << "," << w << "," << h << std::endl;
 
