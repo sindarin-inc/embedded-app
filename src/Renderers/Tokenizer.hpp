@@ -12,14 +12,14 @@ using namespace renderer_defs;
 
 class Tokenizer {
 public:
-    Tokenizer(DisplaySystem &display, Tokens &tokens, Pager &pager)
-        : display_(display), tokens_(tokens), pager_(pager) {}
+    Tokenizer(DisplaySystem &display, DisplayRect &rect, Tokens &tokens, Pager &pager)
+        : display_(display), rect_(rect), tokens_(tokens), pager_(pager) {}
     virtual ~Tokenizer() = default;
     Tokenizer(const Tokenizer &) = delete;
 
     [[nodiscard]] static auto factory(const std::shared_ptr<RendererStream> &stream,
-                                      DisplaySystem &display, Tokens &tokens, Pager &pager)
-        -> std::shared_ptr<Tokenizer>;
+                                      DisplaySystem &display, DisplayRect &rect, Tokens &tokens,
+                                      Pager &pager) -> std::shared_ptr<Tokenizer>;
 
     virtual auto loadAndTokenizePage(StreamPlace fromPlace, bool backwards = false,
                                      StreamPlace *toPlace = nullptr,
@@ -32,7 +32,7 @@ public:
     // "G" character is a compromise between a very small width character (like the lowercase "l")
     // and a very large one (like the uppercase "W").
     void computeMaxTextTokenCharSize() {
-        maxTextTokenCharSize_ = display_.width() / display_.getTextWidth("G");
+        maxTextTokenCharSize_ = rect_.width / display_.getTextWidth("G");
     }
 
     [[nodiscard]] auto getPlaceAtBeginningOfFile(StreamPlace streamPlace) const -> StreamPlace {
@@ -72,8 +72,11 @@ public:
 
     [[nodiscard]] virtual inline auto getTxtOffset() const -> uint32_t { return 0; };
 
+    void setRect(DisplayRect rect) { rect_ = rect; }
+
 protected:
     DisplaySystem &display_;
+    DisplayRect rect_;
     Tokens &tokens_;
     Pager &pager_;
 

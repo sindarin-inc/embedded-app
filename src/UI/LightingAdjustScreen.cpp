@@ -84,7 +84,7 @@ void LightingAdjustScreen::drawInRect(Rect rect) {
 
 void LightingAdjustScreen::render(DisplaySystem &display) {
     setNeedsLayout();
-    setFrame({{0, 0}, {display.width(), display.height()}});
+    setFrame(defaultFrameRect());
     draw();
 
     display.updateDisplay(firstLoad_ ? DisplaySystem::UpdateType::FULL

@@ -252,7 +252,7 @@ void ReadablePopupMenuScreen::render(DisplaySystem &display) {
         return;
     }
 
-    setFrame({{0, 0}, {display.width(), display.height()}});
+    setFrame(defaultFrameRect());
     layoutIfNeeded();
 
     if (firstLoad_) {

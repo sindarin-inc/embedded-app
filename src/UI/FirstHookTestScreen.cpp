@@ -8,7 +8,8 @@
 
 FirstHookTestScreen::FirstHookTestScreen(DisplaySystem &display, PreferencesStore &prefs,
                                          Telemetry &telemetry)
-    : display_(display), renderer_(display), prefs_(prefs), telemetry_(telemetry) {
+    : display_(display), renderer_(display, GetTextRectFromPrefs(display, prefs)), prefs_(prefs),
+      telemetry_(telemetry) {
 
     std::string message;
     // This needs to be pretty big for smaller fonts
@@ -21,10 +22,9 @@ FirstHookTestScreen::FirstHookTestScreen(DisplaySystem &display, PreferencesStor
 }
 
 void FirstHookTestScreen::render(DisplaySystem &display) {
-    DisplayRect currRect = display_.getBoundingBox();
     // The natural line spacing handles the vertical padding
     // The horizontal padding adds one blank pixel column on either side of the rect
-    display.drawDottedBox(-2, 0, currRect.width + 1, currRect.height - 1, 1, 2);
+    display.drawDottedBox(-2, 0, display_.width() + 1, display_.height() - 1, 1, 2);
     this->renderer_.renderFirstPage(0, true);
     display.updateDisplay(DisplaySystem::UpdateType::FULL);
 }

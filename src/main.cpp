@@ -110,6 +110,7 @@ DirectCommand directCommand(fileSystem);
 bool bootCompleted = false;
 
 void UIInnerLoop(RemoteCommand command) {
+    log_i("Handling remote command %s", CodeToString(command));
     powerManager.feedInactivityTimer();
     rootUi.loop(myDisplay, command);
 }
@@ -417,15 +418,6 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     }
 #endif
 
-    DisplayRect initialRect{};
-    initialRect.x = prefs.rectX.get().value_or(myDisplay.defaultBoundingBox.x);
-    initialRect.y = prefs.rectY.get().value_or(myDisplay.defaultBoundingBox.y);
-    initialRect.width = prefs.rectW.get().value_or(myDisplay.defaultBoundingBox.width);
-    initialRect.height = prefs.rectH.get().value_or(myDisplay.defaultBoundingBox.height);
-
-    log_d("Initial bounding box is %" PRIu32 " %" PRIu32 " %" PRIu32 " %" PRIu32 "", initialRect.x,
-          initialRect.y, initialRect.width, initialRect.height);
-    myDisplay.setBoundingBox(initialRect);
     myDisplay.setLineSpacing(prefs.lineSpacing.get().value_or(0));
 
     SIZE_OF(myDisplay);

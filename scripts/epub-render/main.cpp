@@ -120,7 +120,7 @@ int main(int argc, char **argv) {
 
     auto epubFile = std::make_shared<EPubFile>(file, readable);
 
-    Renderer renderer(*display);
+    Renderer renderer(*display, display->defaultTextRect());
     renderer.setStream(epubFile);
     renderer.renderPage(place);
 

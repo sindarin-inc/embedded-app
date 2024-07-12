@@ -78,10 +78,7 @@ void WiFiScanScreen::drawInRect(Rect rect) {
 
 void WiFiScanScreen::render(DisplaySystem &display) {
     setNeedsLayout();
-    setFrame(
-        {{display.xAbsolute(display.defaultXPadding), display.yAbsolute(display.defaultYPadding)},
-         {display.defaultScreenWidth - 2 * display.defaultXPadding,
-          display.defaultScreenHeight - 2 * display.defaultYPadding}});
+    setFrame(defaultFrameRect());
     draw();
     display.updateDisplay();
 }

@@ -122,11 +122,9 @@ void FirmwareUpdateScreen::cancel() {
 }
 
 void FirmwareUpdateScreen::render(DisplaySystem &display) {
-    int adjustedXPadding = 42;
-    int adjustedYPadding = 10;
-    setFrame({{display.xAbsolute(adjustedXPadding), display.yAbsolute(adjustedYPadding)},
-              {display.defaultScreenWidth - 2 * adjustedXPadding,
-               display.defaultScreenHeight - 2 * adjustedYPadding}});
+    int xPadding = 42;
+    int yPadding = 10;
+    setFrame(Rect::fromSize({display.width(), display.height()}).inset(xPadding, yPadding));
 
     // Re-render based on state
     switch (state_.state) {

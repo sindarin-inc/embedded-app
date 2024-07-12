@@ -7,6 +7,7 @@
 #else
 #include "Displays/EinkET013TT1.hpp"
 #endif
+#include "Storage/PreferencesStore.hpp"
 #include "sindarin-debug.h"
 
 #define EinkET013TT1_X_PIXELS 256
@@ -17,6 +18,8 @@ public:
     DisplayEinkET013TT1(uint8_t csLeft, uint8_t csRight, uint8_t rst) noexcept
         : gfxCanvas_(EinkET013TT1_X_PIXELS, EinkET013TT1_Y_PIXELS), driver_(csLeft, csRight, rst) {
         gfxClass_ = &gfxCanvas_;
+        // TODO: These could probably just come from gfxCanvas_ directly instead of being duplicated
+        // as variables
         canvasBuffer_ = gfxCanvas_.getBuffer();
         canvasWidth_ = EinkET013TT1_X_PIXELS;
         canvasHeight_ = EinkET013TT1_Y_PIXELS;
@@ -24,6 +27,14 @@ public:
     DisplayEinkET013TT1(DisplayEinkET013TT1 const &) = delete;
 
     ~DisplayEinkET013TT1() override = default;
+
+    auto nativeWidth() const -> uint16_t override { return EinkET013TT1_X_PIXELS; }
+    auto nativeHeight() const -> uint16_t override { return EinkET013TT1_Y_PIXELS; }
+
+    auto defaultTextInsets() const -> DisplayInset override { return {30, 30, 20, 20}; };
+    auto minTextInsets() const -> DisplayInset override { return {5, 5, 5, 5}; };
+    auto minTextBoxWidth() const -> int16_t override { return 125; };
+    auto minTextBoxHeight() const -> int16_t override { return 45; };
 
     auto setup() -> bool override;
 
@@ -68,8 +79,8 @@ public:
 #endif
 
 protected:
+    void ensureBoundaries();
     GFXcanvas1 gfxCanvas_;
-
     EinkET013TT1 driver_;
     bool fullRefreshNext_ = false;
     uint16_t au4Count_ = 0;

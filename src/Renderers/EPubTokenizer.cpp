@@ -902,7 +902,7 @@ void EPubTokenizer::processPictureTag(pugi::xml_node node) {
 
         if (((pictureToken.pixHeight +
               pager_.deciToPix(NEWLINE_DECI_LINE_HEIGHT + ENDPARAGRAPH_DECI_LINE_HEIGHT))) <
-            display_.height()) {
+            rect_.height) {
             pictureToken.tokenId = TokenId::EPICTURE;
         }
 

@@ -81,8 +81,7 @@ auto Renderer::goBackwardsOnePage(StreamPlace endPlace) -> StreamPlace {
     uint16_t charWidth, charHeight;
     display_.getTextSize("G", &charWidth, &charHeight);
 
-    uint16_t maxPageCount =
-        ((display_.width() / charWidth) + 1) * ((display_.height() / charHeight) + 1);
+    uint16_t maxPageCount = ((rect_.width / charWidth) + 1) * ((rect_.height / charHeight) + 1);
     if (maxPageCount > MAX_BYTES_PER_DISPLAY_PAGE) {
         maxPageCount = MAX_BYTES_PER_DISPLAY_PAGE;
     }

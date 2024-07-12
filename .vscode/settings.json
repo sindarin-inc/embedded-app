@@ -111,7 +111,10 @@
         "stop_token": "cpp",
         "__verbose_abort": "cpp",
         "charconv": "cpp",
-        "*.xbm": "cpp"
+        "*.xbm": "cpp",
+        "format": "cpp",
+        "span": "cpp",
+        "any": "cpp"
     },
     "editor.formatOnSave": true,
     "editor.defaultFormatter": "xaver.clang-format",

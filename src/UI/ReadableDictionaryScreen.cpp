@@ -27,17 +27,15 @@ auto ReadableDictionaryScreen::checkAtEnd() -> bool {
 
 void ReadableDictionaryScreen::render(DisplaySystem &display) {
     setNeedsLayout();
+    setFrame(defaultFrameRect());
 
-    setFrame(
-        {{display.xAbsolute(display.defaultXPadding), display.yAbsolute(display.defaultYPadding)},
-         {display.defaultScreenWidth - 2 * display.defaultXPadding,
-          display.defaultScreenHeight - 2 * display.defaultYPadding}});
+    // Double up on the insets
+    auto rect = display.defaultTextRect();
+    rect = rect.inset(0, display.defaultTextInsets().top, 0, display.defaultTextInsets().bottom);
+    renderer_.setRect(rect);
 
     draw();
 
-    // This is a slight hack to get around the fact that the bounding box of the display is not
-    // context specific
-    auto oldDisplayBoundingBox = insetBoundingBox();
     uint8_t darkPicturePercent = 0;
 
     if (loadedChapterId_ != placeInReadable_->getHRef()) {
@@ -86,26 +84,13 @@ void ReadableDictionaryScreen::render(DisplaySystem &display) {
     }
     loadedChapterId_ = placeInReadable_->getHRef();
 
-    resetBoundingBox(oldDisplayBoundingBox);
+    // Restore the renderer's rect
+    renderer_.setRect(GetTextRectFromPrefs(display, prefs_));
 }
 
 void ReadableDictionaryScreen::restoreRendererStream() {
     renderer_.setStream(rendererStream_);
     rendererStream_ = nullptr;
-}
-
-auto ReadableDictionaryScreen::insetBoundingBox() -> DisplayRect {
-    auto oldDisplayBoundingBox = display_.getBoundingBox();
-    auto newDisplayBoundingBox = display_.getBoundingBox();
-    newDisplayBoundingBox.y += display_.defaultYPadding;
-    newDisplayBoundingBox.height -= 2 * display_.defaultYPadding;
-    display_.setBoundingBox(newDisplayBoundingBox);
-    return oldDisplayBoundingBox;
-}
-
-void ReadableDictionaryScreen::resetBoundingBox(DisplayRect oldDisplayBoundingBox) {
-    // Reset to the original bounding box for when we return to another screen
-    display_.setBoundingBox(oldDisplayBoundingBox);
 }
 
 void ReadableDictionaryScreen::processCommand(RemoteCommand command) {
@@ -126,10 +111,8 @@ void ReadableDictionaryScreen::processCommand(RemoteCommand command) {
         break;
     case RemoteCommand::BACK:
     case RemoteCommand::LEFT: {
-        auto oldDisplayBoundingBox = insetBoundingBox();
         newPlace_ = std::dynamic_pointer_cast<TxtPlace>(renderer_.getPreviousPlace());
         setNeedsRerender();
-        resetBoundingBox(oldDisplayBoundingBox);
         break;
     }
     default:

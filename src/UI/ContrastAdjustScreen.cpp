@@ -93,7 +93,7 @@ void ContrastAdjustScreen::drawInRect(Rect rect) {
 
 void ContrastAdjustScreen::render(DisplaySystem &display) {
     setNeedsLayout();
-    setFrame({{0, 0}, {display.width(), display.height()}});
+    setFrame(defaultFrameRect());
     draw();
 
     display.updateDisplay(DisplaySystem::UpdateType::FULL);

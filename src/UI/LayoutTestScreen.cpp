@@ -93,7 +93,7 @@ void LayoutTestScreen::drawInRect(Rect rect) {
 }
 
 void LayoutTestScreen::render(DisplaySystem &display) {
-    setFrame({{0, 0}, {display.width(), display.height()}});
+    setFrame(defaultFrameRect());
     PROFILE_START(LayoutTestScreenLayoutAndDraw);
     draw();
     PROFILE_END_LOG_US(LayoutTestScreenLayoutAndDraw);

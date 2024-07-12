@@ -16,7 +16,6 @@
 #include "UI/PowerDepletedScreen.hpp"
 #include "UI/ReadableScreen.hpp"
 #include "UI/ReadableTableOfContentsScreen.hpp"
-#include "UI/ReleaseNotesScreen.hpp"
 #include "UI/ResizeBoxScreen.hpp"
 #include "UI/Screen.hpp"
 #include "ViewTestCommon.hpp"
@@ -41,7 +40,7 @@ TEST_CASE("Test some individual EPub formatting edge cases", "[epub-format]") {
         auto file = fs.open("/Fixtures/epub/formatting.epub");
         auto epubFile = std::make_shared<EPubFile>(file, readable);
 
-        Renderer renderer(*display);
+        Renderer renderer(*display, display->defaultTextRect());
         renderer.setStream(epubFile);
         renderer.renderPage(std::make_shared<EPubPlace>(0, "newlines_without_spaces.xhtml"));
         display->updateDisplay(DisplaySystem::UpdateType::FULL, true);
@@ -56,7 +55,7 @@ TEST_CASE("Test some individual EPub formatting edge cases", "[epub-format]") {
         auto file = fs.open("/Fixtures/epub/formatting.epub");
         auto epubFile = std::make_shared<EPubFile>(file, readable);
 
-        Renderer renderer(*display);
+        Renderer renderer(*display, display->defaultTextRect());
         renderer.setStream(epubFile);
         renderer.renderPage(std::make_shared<EPubPlace>(0, "multiple_nbsp.xhtml"));
         display->updateDisplay(DisplaySystem::UpdateType::FULL, true);
@@ -71,7 +70,7 @@ TEST_CASE("Test some individual EPub formatting edge cases", "[epub-format]") {
         auto file = fs.open("/Fixtures/epub/glyphs.epub");
         auto epubFile = std::make_shared<EPubFile>(file, readable);
 
-        Renderer renderer(*display);
+        Renderer renderer(*display, display->defaultTextRect());
         renderer.setStream(epubFile);
         auto place = std::make_shared<EPubPlace>(0, "Basic Latin.xhtml");
 
