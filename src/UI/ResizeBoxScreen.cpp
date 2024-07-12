@@ -9,7 +9,8 @@
 // I didn't want to over-engineer it here.
 ResizeBoxScreen::ResizeBoxScreen(DisplaySystem &display, PreferencesStore &prefs,
                                  Telemetry &telemetry)
-    : display_(display), renderer_(display), prefs_(prefs), telemetry_(telemetry) {
+    : display_(display), renderer_(display, GetTextRectFromPrefs(display, prefs)), prefs_(prefs),
+      telemetry_(telemetry) {
 
     std::string message;
     message += "Press up to increase vertical dimension, down to decrease vertical "
@@ -30,49 +31,51 @@ ResizeBoxScreen::ResizeBoxScreen(DisplaySystem &display, PreferencesStore &prefs
 }
 
 void ResizeBoxScreen::render(DisplaySystem &display) {
+    // Get the bounding box
+    auto textBox = GetTextRectFromPrefs(display, prefs_);
     // The natural line spacing handles the vertical padding
     // The horizontal padding adds one blank pixel column on either side of the rect
-    display.drawDottedBox(-2, 0, display_.width() + 1, display_.height() - 1, 1, 2);
+    display.drawDottedBox(textBox.x - 2, textBox.y, textBox.x + textBox.width + 1,
+                          textBox.y + textBox.height - 1, 1, 2);
+    this->renderer_.setRect(textBox);
     this->renderer_.renderFirstPage(0, true);
     display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
 }
 
 void ResizeBoxScreen::processCommand(RemoteCommand command) {
-    DisplayInset oldInsets = display_.getDisplayInsets();
+    DisplayInset insets = GetTextInsetFromPrefs(display_, prefs_);
+    DisplayRect rect = GetTextRectFromPrefs(display_, prefs_);
     switch (command) {
     case RemoteCommand::LEFT:
-        if (oldInsets.left > display_.getMinInsets().left - BOX_OFFSET_ADJUST_AMOUNT) {
-            oldInsets.left -= BOX_OFFSET_ADJUST_AMOUNT / 2;
-        } else {
-            oldInsets.left = display_.getMinInsets().left;
+        if (insets.left - BOX_OFFSET_ADJUST_AMOUNT >= display_.minTextInsets().left &&
+            insets.right - BOX_OFFSET_ADJUST_AMOUNT >= display_.minTextInsets().right) {
+            insets.left -= BOX_OFFSET_ADJUST_AMOUNT / 2;
+            insets.right -= BOX_OFFSET_ADJUST_AMOUNT / 2;
+            setNeedsRerender();
         }
-        if (oldInsets.right < display_.getMinInsets().right + BOX_OFFSET_ADJUST_AMOUNT) {
-            oldInsets.right -= BOX_OFFSET_ADJUST_AMOUNT / 2;
-        }
-        setNeedsRerender();
         break;
     case RemoteCommand::RIGHT:
-        oldInsets.right += BOX_OFFSET_ADJUST_AMOUNT / 2;
-        oldInsets.left += BOX_OFFSET_ADJUST_AMOUNT / 2;
-        setNeedsRerender();
+        if (rect.width - BOX_OFFSET_ADJUST_AMOUNT >= display_.minTextBoxWidth()) {
+            insets.right += BOX_OFFSET_ADJUST_AMOUNT / 2;
+            insets.left += BOX_OFFSET_ADJUST_AMOUNT / 2;
+            setNeedsRerender();
+        }
         break;
     case RemoteCommand::UP:
-        if (oldInsets.top > display_.getMinInsets().top - BOX_OFFSET_ADJUST_AMOUNT) {
-            oldInsets.top -= BOX_OFFSET_ADJUST_AMOUNT / 2;
-        } else {
-            oldInsets.top = display_.getMinInsets().top;
+        if (insets.top - BOX_OFFSET_ADJUST_AMOUNT >= display_.minTextInsets().top &&
+            insets.bottom - BOX_OFFSET_ADJUST_AMOUNT >= display_.minTextInsets().bottom) {
+            insets.top -= BOX_OFFSET_ADJUST_AMOUNT / 2;
+            insets.bottom -= BOX_OFFSET_ADJUST_AMOUNT / 2;
+            setNeedsRerender();
         }
-        if (oldInsets.bottom < display_.getMinInsets().bottom + BOX_OFFSET_ADJUST_AMOUNT) {
-            oldInsets.bottom -= BOX_OFFSET_ADJUST_AMOUNT / 2;
-        } else {
-            oldInsets.bottom = display_.getMinInsets().bottom;
-        }
-        setNeedsRerender();
         break;
     case RemoteCommand::DOWN:
-        oldInsets.top += BOX_OFFSET_ADJUST_AMOUNT / 2;
-        oldInsets.bottom += BOX_OFFSET_ADJUST_AMOUNT / 2;
-        [[fallthrough]];
+        if (rect.height - BOX_OFFSET_ADJUST_AMOUNT >= display_.minTextBoxHeight()) {
+            insets.top += BOX_OFFSET_ADJUST_AMOUNT / 2;
+            insets.bottom += BOX_OFFSET_ADJUST_AMOUNT / 2;
+            setNeedsRerender();
+        }
+        break;
     case RemoteCommand::BACK:
         // The Turn Touch also sends a left keypress when long-pressing back so let's undo that
         // keystroke before saving.
@@ -80,23 +83,19 @@ void ResizeBoxScreen::processCommand(RemoteCommand command) {
         // app but since we're using TurnTouch for demos, I think it's ok for now. In the future, it
         // might be good to pass more data to `process_command` including which remote is being used
         // so that we can have remote-specific workarounds if needed.
-        oldInsets.right += BOX_OFFSET_ADJUST_AMOUNT / 2;
-        oldInsets.left += BOX_OFFSET_ADJUST_AMOUNT / 2;
-        display_.setTemporaryInsets(oldInsets);
+        insets.right += BOX_OFFSET_ADJUST_AMOUNT / 2;
+        insets.left += BOX_OFFSET_ADJUST_AMOUNT / 2;
         [[fallthrough]];
     case RemoteCommand::ENTER:
-        display_.storeInsets();
-        telemetry_.logMetricData(TelemetryField::METRIC_STYLE,
-                                 {{"in_t", display_.getDisplayInsets().top},
-                                  {"in_b", display_.getDisplayInsets().bottom},
-                                  {"in_l", display_.getDisplayInsets().left},
-                                  {"in_r", display_.getDisplayInsets().right}});
-
+        telemetry_.logMetricData(TelemetryField::METRIC_STYLE, {{"in_l", insets.left},
+                                                                {"in_r", insets.right},
+                                                                {"in_t", insets.top},
+                                                                {"in_b", insets.bottom}});
         back();
         break;
     default:
         break;
     }
 
-    display_.setTemporaryInsets(oldInsets);
+    SetTextInset(prefs_, insets);
 }

@@ -86,7 +86,7 @@ int main(int argc, char **argv) {
     auto y = boundingBoxJson["y"].as<int32_t>();
     auto w = boundingBoxJson["w"].as<uint32_t>();
     auto h = boundingBoxJson["h"].as<uint32_t>();
-    (*display).setBoundingBox({x, y, w, h});
+    DisplayRect boundingBoxRect = {x, y, w, h};
     std::cout << "Bounding box: " << x << "," << y << "," << w << "," << h << std::endl;
 
     auto font = program.get<std::string>("--font");
@@ -120,7 +120,7 @@ int main(int argc, char **argv) {
 
     auto epubFile = std::make_shared<EPubFile>(file, readable);
 
-    Renderer renderer(*display);
+    Renderer renderer(*display, boundingBoxRect);
     renderer.setStream(epubFile);
     renderer.renderPage(place);
 

@@ -8,7 +8,8 @@
 
 OffsetAdjustScreen::OffsetAdjustScreen(DisplaySystem &display, PreferencesStore &prefs,
                                        Telemetry &telemetry)
-    : display_(display), renderer_(display), prefs_(prefs), telemetry_(telemetry) {
+    : display_(display), renderer_(display, GetTextRectFromPrefs(display, prefs)), prefs_(prefs),
+      telemetry_(telemetry) {
 
     std::string message;
     // This needs to be pretty big for smaller fonts
@@ -31,55 +32,47 @@ OffsetAdjustScreen::OffsetAdjustScreen(DisplaySystem &display, PreferencesStore 
 }
 
 void OffsetAdjustScreen::render(DisplaySystem &display) {
+    // Get the bounding box
+    auto textBox = GetTextRectFromPrefs(display, prefs_);
     // The natural line spacing handles the vertical padding
     // The horizontal padding adds one blank pixel column on either side of the rect
-    display.drawDottedBox(-2, 0, display_.width() + 1, display_.height() - 1, 1, 2);
+    display.drawDottedBox(textBox.x - 2, textBox.y, textBox.x + textBox.width + 1,
+                          textBox.y + textBox.height - 1, 1, 2);
+    this->renderer_.setRect(textBox);
     this->renderer_.renderFirstPage(0, true);
     display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
 }
 
 void OffsetAdjustScreen::processCommand(RemoteCommand command) {
-    DisplayInset oldInsets = display_.getDisplayInsets();
+    DisplayInset insets = GetTextInsetFromPrefs(display_, prefs_);
     switch (command) {
     case RemoteCommand::LEFT:
-        if (oldInsets.left > display_.getMinInsets().left - OFFSET_ADJUST_AMOUNT) {
-            oldInsets.left -= OFFSET_ADJUST_AMOUNT;
-            oldInsets.right += OFFSET_ADJUST_AMOUNT;
-        } else {
-            oldInsets.right += (oldInsets.left - display_.getMinInsets().left);
-            oldInsets.left = display_.getMinInsets().left;
+        if (insets.left - OFFSET_ADJUST_AMOUNT >= display_.minTextInsets().left) {
+            insets.left -= OFFSET_ADJUST_AMOUNT;
+            insets.right += OFFSET_ADJUST_AMOUNT;
+            setNeedsRerender();
         }
-        setNeedsRerender();
         break;
     case RemoteCommand::RIGHT:
-        if (oldInsets.right > display_.getMinInsets().right - OFFSET_ADJUST_AMOUNT) {
-            oldInsets.right -= OFFSET_ADJUST_AMOUNT;
-            oldInsets.left += OFFSET_ADJUST_AMOUNT;
-        } else {
-            oldInsets.left += (oldInsets.right - display_.getMinInsets().right);
-            oldInsets.right = display_.getMinInsets().right;
+        if (insets.right - OFFSET_ADJUST_AMOUNT >= display_.minTextInsets().right) {
+            insets.right -= OFFSET_ADJUST_AMOUNT;
+            insets.left += OFFSET_ADJUST_AMOUNT;
+            setNeedsRerender();
         }
-        setNeedsRerender();
         break;
     case RemoteCommand::UP:
-        if (oldInsets.top > display_.getMinInsets().top - OFFSET_ADJUST_AMOUNT) {
-            oldInsets.top -= OFFSET_ADJUST_AMOUNT;
-            oldInsets.bottom += OFFSET_ADJUST_AMOUNT;
-        } else {
-            oldInsets.bottom += (oldInsets.top - display_.getMinInsets().top);
-            oldInsets.top = display_.getMinInsets().top;
+        if (insets.top - OFFSET_ADJUST_AMOUNT >= display_.minTextInsets().top) {
+            insets.top -= OFFSET_ADJUST_AMOUNT;
+            insets.bottom += OFFSET_ADJUST_AMOUNT;
+            setNeedsRerender();
         }
-        setNeedsRerender();
         break;
     case RemoteCommand::DOWN:
-        if (oldInsets.bottom > display_.getMinInsets().bottom - OFFSET_ADJUST_AMOUNT) {
-            oldInsets.bottom -= OFFSET_ADJUST_AMOUNT;
-            oldInsets.top += OFFSET_ADJUST_AMOUNT;
-        } else {
-            oldInsets.top += (oldInsets.bottom - display_.getMinInsets().bottom);
-            oldInsets.bottom = display_.getMinInsets().bottom;
+        if (insets.bottom - OFFSET_ADJUST_AMOUNT >= display_.minTextInsets().bottom) {
+            insets.bottom -= OFFSET_ADJUST_AMOUNT;
+            insets.top += OFFSET_ADJUST_AMOUNT;
+            setNeedsRerender();
         }
-        setNeedsRerender();
         break;
     case RemoteCommand::BACK:
         // The Turn Touch also sends a left keypress when long-pressing back so let's undo that
@@ -88,23 +81,19 @@ void OffsetAdjustScreen::processCommand(RemoteCommand command) {
         // app but since we're using TurnTouch for demos, I think it's ok for now. In the future, it
         // might be good to pass more data to `process_command` including which remote is being used
         // so that we can have remote-specific workarounds if needed.
-        oldInsets.left += OFFSET_ADJUST_AMOUNT;
-        oldInsets.right -= OFFSET_ADJUST_AMOUNT;
-        display_.setTemporaryInsets(oldInsets);
+        insets.left += OFFSET_ADJUST_AMOUNT;
+        insets.right -= OFFSET_ADJUST_AMOUNT;
         [[fallthrough]];
     case RemoteCommand::ENTER:
-        display_.storeInsets();
-        telemetry_.logMetricData(TelemetryField::METRIC_STYLE,
-                                 {{"in_t", display_.getDisplayInsets().top},
-                                  {"in_b", display_.getDisplayInsets().bottom},
-                                  {"in_l", display_.getDisplayInsets().left},
-                                  {"in_r", display_.getDisplayInsets().right}});
-
+        telemetry_.logMetricData(TelemetryField::METRIC_STYLE, {{"in_l", insets.left},
+                                                                {"in_r", insets.right},
+                                                                {"in_t", insets.top},
+                                                                {"in_b", insets.bottom}});
         back();
         break;
     default:
         break;
     }
 
-    display_.setTemporaryInsets(oldInsets);
+    SetTextInset(prefs_, insets);
 }

@@ -124,10 +124,7 @@ void ToggleMenuScreen::render(DisplaySystem &display) {
     headerTextView_.setText(menuName_);
 
     // Take up the whole screen
-    setFrame({{display.xAbsolute(display.getDefaultInsets().left),
-               display.yAbsolute(display.getDefaultInsets().top)},
-              {display.getDisplayWidth() - 2 * display.getDefaultInsets().left,
-               display.getDisplayHeight() - 2 * display.getDefaultInsets().top}});
+    setFrame(defaultFrameRect());
 
     // On the first load, we want to only render the items in the menu because we are going
     // to do a partial refresh with the selector button at a lower/higher vcom to reduce

@@ -33,8 +33,6 @@ public:
 
     void processCommand(RemoteCommand command) override;
 
-    auto insetBoundingBox() -> DisplayInset;
-    void resetBoundingBox(DisplayInset oldDisplayInsets);
     void setPlacemark();
     void setFirstLoad() { firstLoad_ = true; }
     void setPlaceInReadable(std::shared_ptr<EPubPlace> placeInReadable);

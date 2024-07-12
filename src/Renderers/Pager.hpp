@@ -15,6 +15,7 @@ class Pager {
 private:
     Tokens &tokens_;
     DisplaySystem &display_;
+    DisplayRect rect_;
     std::shared_ptr<EPubFile> stream_;
 
     uint16_t wordCount_{0};
@@ -68,7 +69,8 @@ private:
     void newLine(uint16_t height);
 
 public:
-    Pager(Tokens &tokens, DisplaySystem &display) : tokens_(tokens), display_(display) {}
+    Pager(Tokens &tokens, DisplaySystem &display, DisplayRect &rect)
+        : tokens_(tokens), display_(display), rect_(rect) {}
     Pager(const Pager &) = delete;
 
     void setStream(const std::shared_ptr<RendererStream> &stream) {
@@ -78,7 +80,7 @@ public:
     // Switch to 1/10 of a line as this gives us more flexibilty in rendering
     // precision between lines.
     [[nodiscard]] auto getMaxDeciLines() -> int16_t {
-        return (display_.height() * NEWLINE_DECI_LINE_HEIGHT) / (this->display_.getTextHeight());
+        return (rect_.height * NEWLINE_DECI_LINE_HEIGHT) / (this->display_.getTextHeight());
     }
 
     inline void clear() {
@@ -92,7 +94,7 @@ public:
         currentLineWidth_ = 0;
         currentPageDecilineHeight_ = 0;
         maxDeciLines_ = getMaxDeciLines();
-        maxLineWidth_ = display_.width();
+        maxLineWidth_ = rect_.width;
         lines_[0] = {0, 0, 0, 0, 0};
         uint16_t notUsed;
         display_.getTextSize(" ", &spaceWidth_, &notUsed);
@@ -105,7 +107,7 @@ public:
         currentLineWidth_ = leftIndent_;
 
         rightIndent_ = rightIndent;
-        maxLineWidth_ = display_.width() - rightIndent;
+        maxLineWidth_ = rect_.width - rightIndent;
 
         // log_w("Set Line Indent: %" PRIu16 " - %" PRIu16, leftIndent_, rightIndent_);
     }
@@ -199,6 +201,8 @@ public:
     [[nodiscard]] auto getMenuParameters() const -> const MenuParameters &;
 
     void show() const;
+
+    void setRect(DisplayRect rect) { rect_ = rect; }
 
 #if REND_DEBUGGING
     auto getTokenIdStr(TokenId id) const -> const char * {

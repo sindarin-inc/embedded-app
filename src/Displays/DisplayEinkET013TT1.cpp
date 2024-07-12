@@ -59,41 +59,7 @@ auto DisplayEinkET013TT1::setup() -> bool {
         log_d("Caught a Waveform Error %d", retVal);
     }
 
-    // Get the insets from the prefences store
-    insets_.top = prefs_.topMargin.get().value_or(EinkET013TT1_DEFAULT_X_MARGIN);
-    insets_.bottom = prefs_.bottomMargin.get().value_or(EinkET013TT1_DEFAULT_X_MARGIN);
-    insets_.left = prefs_.leftMargin.get().value_or(EinkET013TT1_DEFAULT_Y_MARGIN);
-    insets_.right = prefs_.rightMargin.get().value_or(EinkET013TT1_DEFAULT_Y_MARGIN);
-
     return !driver_.errored();
-}
-
-void DisplayEinkET013TT1::ensureBoundaries() {
-    // This logic is a bit harder than the old way.
-    // We need to make sure that the bounding box is within the screen bounds.
-    if (EinkET013TT1_Y_PIXELS - (insets_.top + insets_.bottom) <
-        EinkET013TT1_MIN_VIEWABLE_BOX_HEIGHT) {
-        // Arbitrarily shrink the bottom margin to make the box fit.
-        insets_.bottom = EinkET013TT1_Y_PIXELS - EinkET013TT1_MIN_VIEWABLE_BOX_HEIGHT - insets_.top;
-    }
-    if (EinkET013TT1_X_PIXELS - (insets_.left + insets_.right) <
-        EinkET013TT1_MIN_VIEWABLE_BOX_WIDTH) {
-        // Arbitrarily shrink the right margin to make the box fit.
-        insets_.right = EinkET013TT1_X_PIXELS - EinkET013TT1_MIN_VIEWABLE_BOX_WIDTH - insets_.left;
-    }
-}
-
-void DisplayEinkET013TT1::setTemporaryInsets(DisplayInset newInsets) {
-    insets_ = newInsets;
-    ensureBoundaries();
-}
-
-void DisplayEinkET013TT1::storeInsets() {
-    log_d("Saving insets to preferences: (%s)", getDisplayInsets().toString().c_str());
-    prefs_.topMargin.set(insets_.top);
-    prefs_.bottomMargin.set(insets_.bottom);
-    prefs_.leftMargin.set(insets_.left);
-    prefs_.rightMargin.set(insets_.right);
 }
 
 // We not only need to set the bg and fg for the display,

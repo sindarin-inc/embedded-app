@@ -141,8 +141,8 @@ void DisplaySystem::drawSingleLineOfText(const std::string &line, int x, int y, 
         } else {
             gfxClass_->startWrite();
             ibmf_defs::Bitmap canvas{};
-            canvas.pixels = canvasBuffer_;
-            canvas.dim = ibmf_defs::Dim(canvasWidth_, canvasHeight_);
+            canvas.pixels = getBuffer();
+            canvas.dim = ibmf_defs::Dim(gfxClass()->width(), gfxClass()->height());
             dynamic_cast<IBMFFont *>(font_)->drawSingleLineOfText(
                 canvas, Pos(xOffset(x), yOffset(y + getTextHeight() - lineSpacing_ - 3)), line,
                 inverted ? !invertedDisplay_ : invertedDisplay_);
@@ -152,9 +152,8 @@ void DisplaySystem::drawSingleLineOfText(const std::string &line, int x, int y, 
 }
 
 void DisplaySystem::drawSingleLineOfCenteredText(const std::string &line) {
-    this->drawSingleLineOfText(
-        line, this->xAbsolute(this->xAbsoluteCenter() - this->getTextWidth(line) / 2),
-        this->yAbsolute(this->yAbsoluteCenter() - this->getTextHeight() / 2));
+    this->drawSingleLineOfText(line, (width() - getTextWidth(line)) / 2,
+                               (height() - this->getTextHeight()) / 2);
 }
 
 void DisplaySystem::getTextSize(const std::string &buffer, uint16_t *w, uint16_t *h) {

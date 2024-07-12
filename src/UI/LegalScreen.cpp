@@ -132,11 +132,7 @@ void LegalScreen::drawInRect(Rect rect) {
 
 void LegalScreen::render(DisplaySystem &display) {
     setNeedsLayout();
-    int adjustedXPadding = display.getDefaultInsets().left - 5;
-    int adjustedYPadding = display.getDefaultInsets().top - 10;
-    setFrame({{display.xAbsolute(adjustedXPadding), display.yAbsolute(adjustedYPadding)},
-              {display.getDisplayWidth() - 2 * adjustedXPadding,
-               display.getDisplayHeight() - 2 * adjustedYPadding}});
+    setFrame(defaultFrameRect().inset(-5, -10));
     draw();
     display.updateDisplay();
 }

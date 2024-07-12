@@ -24,17 +24,44 @@
 #include "UI/Fonts/Font.hpp"
 #include "UI/Layout/Types.hpp"
 
-#define INVERTED_DISPLAY true
-// #define INVERTED_DISPLAY false
-
 struct DisplayInset {
-    uint16_t top;
-    uint16_t bottom;
     uint16_t left;
     uint16_t right;
+    uint16_t top;
+    uint16_t bottom;
 
     [[nodiscard]] auto toString() const -> std::string {
         return StringFormat("t:%d, b:%d, l:%d, r:%d", top, bottom, left, right);
+    }
+
+    static constexpr auto zero() -> DisplayInset { return {0, 0, 0, 0}; }
+};
+
+struct DisplayRect {
+    uint16_t x;
+    uint16_t y;
+    uint16_t width;
+    uint16_t height;
+
+    [[nodiscard]] auto toString() const -> std::string {
+        return StringFormat("x:%d, y:%d, w:%d, h:%d", x, y, width, height);
+    }
+
+    static auto fromSizeAndInsets(uint16_t width, uint16_t height, DisplayInset inset)
+        -> DisplayRect {
+        return {inset.left, inset.top, static_cast<uint16_t>(width - inset.left - inset.right),
+                static_cast<uint16_t>(height - inset.top - inset.bottom)};
+    }
+
+    [[nodiscard]] auto inset(uint16_t left, uint16_t right, uint16_t top, uint16_t bottom) const
+        -> DisplayRect {
+        return {static_cast<uint16_t>(x + left), static_cast<uint16_t>(y + top),
+                static_cast<uint16_t>(width - left - right),
+                static_cast<uint16_t>(height - top - bottom)};
+    }
+
+    [[nodiscard]] auto inset(uint16_t xAmount, uint16_t yAmount) const -> DisplayRect {
+        return inset(xAmount, xAmount, yAmount, yAmount);
     }
 };
 
@@ -43,6 +70,22 @@ public:
     DisplaySystem();
     DisplaySystem(DisplaySystem const &) = delete;
     virtual ~DisplaySystem() = default;
+
+    virtual auto nativeWidth() const -> uint16_t = 0;
+    virtual auto nativeHeight() const -> uint16_t = 0;
+
+    // Constant text-box inset defaults during reading. These should be overridden to sane values in
+    // subclasses.
+    virtual auto defaultTextInsets() const -> DisplayInset = 0;
+    virtual auto minTextInsets() const -> DisplayInset = 0;
+    virtual auto minTextBoxWidth() const -> int16_t = 0;
+    virtual auto minTextBoxHeight() const -> int16_t = 0;
+    auto defaultTextRect() const -> DisplayRect {
+        return DisplayRect::fromSizeAndInsets(width(), height(), defaultTextInsets());
+    }
+
+    // Constant suggested insets for UI (overridable if desired)
+    virtual auto defaultUIInsets() const -> DisplayInset { return defaultTextInsets(); }
 
     virtual auto setup() -> bool;
 
@@ -71,29 +114,18 @@ public:
 
     virtual void beginPowerOn() {}
 
-    // the insets must be set in the constructor of the subclass
-    inline virtual auto getDisplayInsets() -> DisplayInset { return insets_; };
-    virtual auto getDefaultInsets() -> DisplayInset = 0;
-    virtual auto getDisplayWidth() -> uint16_t = 0;
-    virtual auto getDisplayHeight() -> uint16_t = 0;
-    virtual auto getMinInsets() -> DisplayInset = 0;
-    virtual void storeInsets() = 0;
-    virtual void setTemporaryInsets(DisplayInset newInsets) = 0;
-
-    // Use `gfxClass` when you need to get direct access to draw to
-    // the whole screen (potentially outside of focus areas)
+    // Use `gfxClass` when you need to get direct access to the underlying buffer
     [[nodiscard]] auto gfxClass() const -> Adafruit_GFX * { return gfxClass_; }
 
     // MARK: - Brought in from Adafruit_GFX
     // Use these methods for normal drawing as they'll take into account the offsets and focus area
     // automatically. Any methods we need from Adafruit_GFX that need to respect the focus area
     // should be copied in here.
-    [[nodiscard]] auto width() -> int16_t {
-        return (getDisplayWidth() - getDisplayInsets().left - getDisplayInsets().right);
+    auto width() const -> int16_t {
+        return nativeWidth() - displayInsets().left - displayInsets().right;
     };
-
-    [[nodiscard]] auto height() -> int16_t {
-        return (getDisplayHeight() - getDisplayInsets().top - getDisplayInsets().bottom);
+    auto height() const -> int16_t {
+        return nativeHeight() - displayInsets().top - displayInsets().bottom;
     };
 
     void fillScreen(uint16_t color) { gfxClass_->fillScreen(color); }
@@ -214,20 +246,6 @@ public:
     // TODO: Just use `textcolor` and `textbgcolor` for these?
     uint16_t bg = 0, fg = 0;
 
-    // When we want to ignore the configured offsets
-    [[nodiscard]] inline auto xAbsolute(int x) -> int { return x - getDisplayInsets().left; }
-    [[nodiscard]] inline auto yAbsolute(int y) -> int { return y - getDisplayInsets().top; }
-
-    // Should these be in the subclasses instead?
-    [[nodiscard]] auto xAbsoluteCenter() -> int { return getDisplayWidth() / 2; }
-    [[nodiscard]] auto yAbsoluteCenter() -> int { return getDisplayHeight() / 2; }
-
-    [[nodiscard]] auto xAbsoluteMax() -> int { return getDisplayWidth() - 1; }
-    [[nodiscard]] auto yAbsoluteMax() -> int { return getDisplayHeight() - 1; }
-
-    [[nodiscard]] auto absoluteWidth() -> int { return getDisplayWidth(); }
-    [[nodiscard]] auto absoluteHeight() -> int { return getDisplayHeight(); }
-
     [[nodiscard]] virtual auto darkPictureVComAdj(uint8_t darkPixelsPercent) const -> int {
         return 0;
     }
@@ -250,22 +268,25 @@ public:
 #endif
 
 protected:
-    // Must be set in the constructor of subclasses
-    Adafruit_GFX *gfxClass_ = nullptr;
-    Font *font_ = nullptr;
-    uint8_t *canvasBuffer_{};
-    uint16_t canvasWidth_{};
-    uint16_t canvasHeight_{};
+    // Constant screen inset. These can be overridden to permanently ignore part of the screen area.
+    virtual auto displayInsets() const -> DisplayInset { return DisplayInset::zero(); }
 
-    [[nodiscard]] inline auto xOffset(int16_t value) -> int16_t {
-        return value + getDisplayInsets().left;
+    [[nodiscard]] inline auto xOffset(int16_t value) const -> int16_t {
+        return value + displayInsets().left;
     }
-    [[nodiscard]] inline auto yOffset(int16_t value) -> int16_t {
-        return value + getDisplayInsets().top;
+    [[nodiscard]] inline auto yOffset(int16_t value) const -> int16_t {
+        return value + displayInsets().right;
     }
 
     void rotate(uint16_t &x, uint16_t &y, uint16_t &w, uint16_t &h);
+
     void computeMinMax();
+
+    [[nodiscard]] virtual auto getBuffer(void) -> uint8_t * = 0;
+
+    // Must be set in the constructor of subclasses
+    Adafruit_GFX *gfxClass_ = nullptr;
+    Font *font_ = nullptr;
 
     int partialRefresh_ = 0;
     uint16_t partialX_ = 0, partialY_ = 0, partialW_ = 0, partialH_ = 0;
@@ -275,8 +296,6 @@ protected:
     bool forceRefreshType_ = false;
 
     int lineSpacing_ = 0;
-
-    DisplayInset insets_ = {0, 0, 0, 0};
 };
 
 #endif

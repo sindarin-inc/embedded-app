@@ -42,16 +42,16 @@
 
 #define ENABLE_CONTENT_SYNC_ON_CLOSE 1
 
-PreferencesStore prefs;
-
 #if EINKET013TT1
 #include "Displays/DisplayEinkET013TT1.hpp"
-DisplayEinkET013TT1 myDisplay(DISPLAY_CS_LEFT, DISPLAY_CS_RIGHT, DISPLAY_RST, prefs);
+DisplayEinkET013TT1 myDisplay(DISPLAY_CS_LEFT, DISPLAY_CS_RIGHT, DISPLAY_RST);
 #elif DISPLAY_SIM_8BIT
 // Declared in native.cpp
 #include "Displays/DisplaySim8Bit.hpp"
 extern DisplaySim8Bit myDisplay;
 #endif
+
+PreferencesStore prefs;
 
 #if USE_BLE_SERVER_REMOTE || USE_BLE_SERVER_SETTINGS
 #include "Communications/BLESindarinService.hpp"
@@ -416,29 +416,6 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         myDisplay.getDriver()->setVcom(vcomSetting.value());
     }
 #endif
-
-    // Migrate from the old system of rectX, rectY, rectW, rectH to a margin based system
-    // of topMargin, bottomMargin, leftMargin, rightMargin
-    if (prefs.rectX.get().has_value() || prefs.rectY.get().has_value() ||
-        prefs.rectW.get().has_value() || prefs.rectH.get().has_value()) {
-        log_d("Migrating from rectX, rectY, rectW, rectH to margin based system");
-        auto rectX = prefs.rectX.get().value_or(myDisplay.getDefaultInsets().left);
-        auto rectY = prefs.rectY.get().value_or(myDisplay.getDefaultInsets().top);
-        auto rectW = prefs.rectW.get().value_or(myDisplay.getDisplayWidth() -
-                                                myDisplay.getDefaultInsets().left -
-                                                myDisplay.getDefaultInsets().right);
-        auto rectH = prefs.rectH.get().value_or(myDisplay.getDisplayHeight() -
-                                                myDisplay.getDefaultInsets().top -
-                                                myDisplay.getDefaultInsets().bottom);
-        prefs.topMargin.set(rectY);
-        prefs.leftMargin.set(rectX);
-        prefs.bottomMargin.set(myDisplay.height() - rectY - rectH);
-        prefs.rightMargin.set(myDisplay.width() - rectX - rectW);
-        prefs.rectX.remove();
-        prefs.rectY.remove();
-        prefs.rectW.remove();
-        prefs.rectH.remove();
-    }
 
     myDisplay.setLineSpacing(prefs.lineSpacing.get().value_or(0));
 

@@ -64,10 +64,7 @@ void ReadableTableOfContentsScreen::drawInRect(Rect rect) {
 void ReadableTableOfContentsScreen::render(DisplaySystem &display) {
     setNeedsLayout();
 
-    setFrame({{display.xAbsolute(display.getDefaultInsets().left),
-               display.yAbsolute(display.getDefaultInsets().top)},
-              {display.getDisplayWidth() - 2 * display.getDefaultInsets().left,
-               display.getDisplayHeight() - 2 * display.getDefaultInsets().top}});
+    setFrame(defaultFrameRect());
 
     if (firstLoad_) {
         PROFILE_START(ReadableTableOfContentsScreenLayoutAndDraw);

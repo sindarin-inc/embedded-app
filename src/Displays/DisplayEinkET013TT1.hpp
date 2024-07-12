@@ -12,42 +12,26 @@
 
 #define EinkET013TT1_X_PIXELS 256
 #define EinkET013TT1_Y_PIXELS 256
-#define EinkET013TT1_DEFAULT_X_MARGIN 30
-#define EinkET013TT1_DEFAULT_Y_MARGIN 20
-#define EinkET013TT1_MIN_X_MARGIN 5
-#define EinkET013TT1_MIN_Y_MARGIN 5
-#define EinkET013TT1_MIN_VIEWABLE_BOX_WIDTH 125
-#define EinkET013TT1_MIN_VIEWABLE_BOX_HEIGHT 45
 
 class DisplayEinkET013TT1 : public DisplaySystem {
 public:
-    DisplayEinkET013TT1(uint8_t csLeft, uint8_t csRight, uint8_t rst,
-                        PreferencesStore &prefs) noexcept
-        : gfxCanvas_(EinkET013TT1_X_PIXELS, EinkET013TT1_Y_PIXELS), driver_(csLeft, csRight, rst),
-          prefs_(prefs) {
+    DisplayEinkET013TT1(uint8_t csLeft, uint8_t csRight, uint8_t rst) noexcept
+        : gfxCanvas_(EinkET013TT1_X_PIXELS, EinkET013TT1_Y_PIXELS), driver_(csLeft, csRight, rst) {
         gfxClass_ = &gfxCanvas_;
-        canvasBuffer_ = gfxCanvas_.getBuffer();
-        canvasWidth_ = EinkET013TT1_X_PIXELS;
-        canvasHeight_ = EinkET013TT1_Y_PIXELS;
     };
     DisplayEinkET013TT1(DisplayEinkET013TT1 const &) = delete;
 
     ~DisplayEinkET013TT1() override = default;
 
-    auto setup() -> bool override;
+    auto nativeWidth() const -> uint16_t override { return EinkET013TT1_X_PIXELS; }
+    auto nativeHeight() const -> uint16_t override { return EinkET013TT1_Y_PIXELS; }
 
-    auto getDisplayWidth() -> uint16_t override { return EinkET013TT1_X_PIXELS; }
-    auto getDisplayHeight() -> uint16_t override { return EinkET013TT1_Y_PIXELS; }
-    auto getMinInsets() -> DisplayInset override {
-        return {EinkET013TT1_MIN_X_MARGIN, EinkET013TT1_MIN_X_MARGIN, EinkET013TT1_MIN_Y_MARGIN,
-                EinkET013TT1_MIN_Y_MARGIN};
-    }
-    auto getDefaultInsets() -> DisplayInset override {
-        return {EinkET013TT1_DEFAULT_X_MARGIN, EinkET013TT1_DEFAULT_X_MARGIN,
-                EinkET013TT1_DEFAULT_Y_MARGIN, EinkET013TT1_DEFAULT_Y_MARGIN};
-    }
-    auto setTemporaryInsets(DisplayInset newInsets) -> void override;
-    auto storeInsets() -> void override;
+    auto defaultTextInsets() const -> DisplayInset override { return {30, 30, 20, 20}; };
+    auto minTextInsets() const -> DisplayInset override { return {5, 5, 5, 5}; };
+    auto minTextBoxWidth() const -> int16_t override { return 125; };
+    auto minTextBoxHeight() const -> int16_t override { return 45; };
+
+    auto setup() -> bool override;
 
     // TODO: Probably this is a good candidate for a struct for params since there are a lot of
     // values that can be passed and some may be unset defaults.
@@ -90,10 +74,10 @@ public:
 #endif
 
 protected:
-    void ensureBoundaries();
+    [[nodiscard]] auto getBuffer(void) -> uint8_t * override { return gfxCanvas_.getBuffer(); }
+
     GFXcanvas1 gfxCanvas_;
     EinkET013TT1 driver_;
-    PreferencesStore &prefs_;
     bool fullRefreshNext_ = false;
     uint16_t au4Count_ = 0;
     uint16_t numPartials_ = 0;

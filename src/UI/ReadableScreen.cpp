@@ -228,10 +228,7 @@ void ReadableScreen::render(DisplaySystem &display) {
         return;
     }
 
-    setFrame({{display.xAbsolute(display.getDefaultInsets().left),
-               display.yAbsolute(display.getDefaultInsets().top)},
-              {display.getDisplayWidth() - 2 * display.getDefaultInsets().left,
-               display.getDisplayHeight() - 2 * display.getDefaultInsets().top}});
+    setFrame(defaultFrameRect());
 
     if (renderTransitionArrows) {
         if (lastArrowPress_ != REMOTE_NONE) {
@@ -387,12 +384,10 @@ void ReadableScreen::render(DisplaySystem &display) {
     updateBookmarkStatus();
 
     if (inBookmark_) {
-        int leftSide = display.xAbsolute(display.xAbsoluteMax() - 25);
+        int leftSide = display.width() - 26;
         log_d("Drawing bookmark!");
-        display.fillRect(leftSide + 1, display.yAbsolute(0), 13, 55, display.fg);
-        display.fillTriangle(leftSide + 1, display.yAbsolute(55), leftSide + 13,
-                             display.yAbsolute(55), leftSide + 7, display.yAbsolute(50),
-                             display.bg);
+        display.fillRect(leftSide + 1, 0, 13, 55, display.fg);
+        display.fillTriangle(leftSide + 1, 55, leftSide + 13, 55, leftSide + 7, 50, display.bg);
     }
 
     // Only show the autopilot icon on page turns or if speed was changed -- let it fade out

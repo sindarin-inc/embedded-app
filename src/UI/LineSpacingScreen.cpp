@@ -7,8 +7,8 @@
 
 LineSpacingScreen::LineSpacingScreen(DisplaySystem &display, PreferencesStore &prefs,
                                      Telemetry &telemetry)
-    : display_(display), renderer_(display), prefs_(prefs), telemetry_(telemetry),
-      lineSpacing_(prefs.lineSpacing.get().value_or(0)) {
+    : display_(display), renderer_(display, GetTextRectFromPrefs(display, prefs)), prefs_(prefs),
+      telemetry_(telemetry), lineSpacing_(prefs.lineSpacing.get().value_or(0)) {
 
     std::string message;
     for (int i = 0; i < 200; i++) {
