@@ -52,5 +52,7 @@ private:
     unsigned int cs_pin;
     unsigned int busy_pin;
 
+    bool inited = false;
+
     spi_device_handle_t spiHigh_{};
 };

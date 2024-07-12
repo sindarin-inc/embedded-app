@@ -51,7 +51,7 @@ void Waveshare42::SpiTransfer(unsigned char data) {
     DigitalWrite(cs_pin, LOW);
     // SPI.transfer(data);
     spi_transaction_t t = {.length = 8, .tx_buffer = &data};
-    esp_err_t err = spi_device_transmit(spiHigh_, &t);
+    esp_err_t err = spi_device_polling_transmit(spiHigh_, &t);
     if (err != ESP_OK) {
         log_e("Error sending data: %d", err);
     }
@@ -59,50 +59,56 @@ void Waveshare42::SpiTransfer(unsigned char data) {
 }
 
 int Waveshare42::IfInit(void) {
-    PinMode(cs_pin, OUTPUT);
-    PinMode(reset_pin, OUTPUT);
-    PinMode(dc_pin, OUTPUT);
-    PinMode(busy_pin, INPUT);
+    if (!inited) {
+        PinMode(cs_pin, OUTPUT);
+        PinMode(reset_pin, OUTPUT);
+        PinMode(dc_pin, OUTPUT);
+        PinMode(busy_pin, INPUT);
 
-    // Initialize the SPI bus
-    // TODO(john): It's maybe a little weird that some pins come in via config.h and some come in
-    // via the constructor
-    spi_bus_config_t buscfg = {
-        .mosi_io_num = DISPLAY_MOSI,
-        .miso_io_num = -1,
-        .sclk_io_num = DISPLAY_CLK,
+        // Initialize the SPI bus
+        // TODO(john): It's maybe a little weird that some pins come in via config.h and some come
+        // in via the constructor
+        spi_bus_config_t buscfg = {
+            .mosi_io_num = DISPLAY_MOSI,
+            .miso_io_num = -1,
+            .sclk_io_num = DISPLAY_CLK,
 
-        // These must be unset or the SPI driver will try to use them
-        .quadwp_io_num = -1,
-        .quadhd_io_num = -1,
-        // .isr_cpu_id = INTR_CPU_ID_1,
-    };
-    // TODO: Why don't we have any available DMA channels? Maybe they are used by Flash and RAM?
-    esp_err_t err = spi_bus_initialize(DISPLAY_SPI, &buscfg, SPI_DMA_DISABLED);
+            // These must be unset or the SPI driver will try to use them
+            .quadwp_io_num = -1,
+            .quadhd_io_num = -1,
+            .flags = SPICOMMON_BUSFLAG_MASTER,
+            // .isr_cpu_id = INTR_CPU_ID_1,
+        };
+        // TODO: Why don't we have any available DMA channels? Maybe they are used by Flash and RAM?
+        esp_err_t err = spi_bus_initialize(DISPLAY_SPI, &buscfg, SPI_DMA_DISABLED);
 
-    if (err != ESP_OK) {
-        log_e("Failed to initialize SPI bus: %d", err);
-        return -1;
-    } else {
-        log_d("SPI bus initialized!!!");
-    }
+        if (err != ESP_OK) {
+            log_e("Failed to initialize SPI bus: %d", err);
+            return -1;
+        } else {
+            log_d("SPI bus initialized!!!");
+        }
 
-    spi_device_interface_config_t devcfg = {
-        .mode = 0,
-        .clock_speed_hz =
-            20 * 1000 *
-            1000, // Clock out at 20 MHz -- tested on arduino code and this speed worked fine
-        .spics_io_num = -1,
-        .queue_size = 7,
-    };
+        spi_device_interface_config_t devcfg = {
+            .mode = 0,
+            .clock_source = SPI_CLK_SRC_DEFAULT,
+            .clock_speed_hz =
+                20 * 1000 * 1000, // Clock out at 20 MHz -- tested on arduino code and this
+                                  // speed worked fine set the clock sourec to default
 
-    err = spi_bus_add_device(DISPLAY_SPI, &devcfg, &spiHigh_);
+            .spics_io_num = -1,
+            .queue_size = 10,
+        };
 
-    if (err != ESP_OK) {
-        log_e("Failed to add device to SPI bus: %d", err);
-        return -1;
-    } else {
-        log_d("Device added to SPI bus!!!");
+        err = spi_bus_add_device(DISPLAY_SPI, &devcfg, &spiHigh_);
+
+        if (err != ESP_OK) {
+            log_e("Failed to add device to SPI bus: %d", err);
+            return -1;
+        } else {
+            log_d("Device added to SPI bus!!!");
+        }
+        inited = true;
     }
     // ESP_ERROR_CHECK(spi_device_acquire_bus(spiHigh_, portMAX_DELAY));
     // SPI.begin();
