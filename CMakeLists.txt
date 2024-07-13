@@ -11,7 +11,7 @@ else()
     set(target ${IDF_TARGET})
 endif()
 
-set(SDKCONFIG "sdkconfig.cmake")
+set(SDKCONFIG "${CMAKE_BINARY_DIR}/sdkconfig")
 message("Using ${SDKCONFIG}")
 
 set(REQUIRES src)

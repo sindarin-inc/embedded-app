@@ -56,6 +56,9 @@ jobs:
         idf_version:
           - v5.1.4
           # - latest
+        target:
+          - glasses-debug
+          - glasses-release
 
     steps:
       - name: Checkout repo
@@ -72,7 +75,7 @@ jobs:
           path: .
           command: |
             set -o pipefail
-            idf.py build | tee build-log.txt
+            TARGET=${{ matrix.target }} make build | tee build-log.txt
 
       - name: Post errors and warnings as annotations
         if: github.event_name == 'pull_request' && (success() || failure())
@@ -84,16 +87,18 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create the flasher script and bundle everything
+        if: matrix.target == 'glasses-release'
         run: |
           mkdir -p artifact
           echo "esptool.py -b 460800 --before default_reset --after hard_reset --chip esp32s3  write_flash --flash_mode dio --flash_size 64MB --flash_freq 80m 0x0 bootloader.bin 0x8000 partition-table.bin 0xe000 ota_data_initial.bin 0x10000 embedded-app.bin" > artifact/flash.sh
-          cp build/embedded-app.bin artifact
-          cp build/embedded-app.elf artifact
-          cp build/bootloader/bootloader.bin artifact
-          cp build/partition_table/partition-table.bin artifact
-          cp build/ota_data_initial.bin artifact
+          cp build-${{ matrix.target }}/embedded-app.bin artifact
+          cp build-${{ matrix.target }}/embedded-app.elf artifact
+          cp build-${{ matrix.target }}/bootloader/bootloader.bin artifact
+          cp build-${{ matrix.target }}/partition_table/partition-table.bin artifact
+          cp build-${{ matrix.target }}/ota_data_initial.bin artifact
 
       - name: Upload binaries
+        if: matrix.target == 'glasses-release'
         uses: actions/upload-artifact@v4
         with:
           name: embedded-app-${{ github.sha }}-IDF${{ matrix.idf_version }}

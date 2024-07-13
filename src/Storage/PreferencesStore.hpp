@@ -364,7 +364,7 @@ public:
           fastTransitions(*this, "fast-tran"),
           noUploadCrashes(*this, "no-upload-crash"),
           showDebugMenu(*this, "show-debug"),
-          noShowPartialChapterSummary(*this, "no-partial-summary"),
+          noShowPartialChapterSummary(*this, "no-part-summary"),
           fastBookmarkRight(*this, "fst-mark-right"),
           fastBookmarkCenter(*this, "fst-mark-cent"),
           pageTransitionArrows(*this, "page-arrows"),
