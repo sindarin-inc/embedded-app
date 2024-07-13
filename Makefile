@@ -8,6 +8,13 @@ NUM_CORES := $(shell [ $(NUM_CORES) -lt 1 ] && echo 1 || echo $(NUM_CORES))
 MAKE := nice make -j$(NUM_CORES)
 CMAKE_FLAGS = -DCMAKE_BUILD_TYPE=Debug
 
+# Check for TARGET environment variable or profile make command line argument
+ifeq ($(TARGET),glasses-release)
+	IDF_PROFILE = -B build-glasses-release -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.glasses-release"
+else # Default target glasses-debug
+	IDF_PROFILE = -B build-glasses-debug -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.glasses-debug"
+endif
+
 .PHONY: sim-build
 sim-build:
 	mkdir -p lib/Simulator/build
@@ -66,12 +73,12 @@ check_idf:
 .PHONY: configure
 configure: check_idf
 	@if [[ ! -f build/compile_commands.json ]]; then \
-		idf.py set-target esp32s3 ; \
+		idf.py $(IDF_PROFILE) set-target esp32s3 ; \
 	fi
 
 .PHONY: build
-build: check_idf configure
-	idf.py build
+build: check_idf
+	idf.py $(IDF_PROFILE) build
 
 .PHONY: flash
 flash: build
@@ -84,7 +91,7 @@ flash: build
 		echo "PROGRAM" | tee $$PORT ; \
 		sleep 2;\
 	fi
-	idf.py flash
+	idf.py $(IDF_PROFILE) flash
 
 .PHONY: monitor
 monitor: check_idf
@@ -105,7 +112,7 @@ monitor: check_idf
 		echo "Error: Could not find a serial port with description 'Sol Reader'." ; \
 		exit 1 ; \
 	fi ; \
-	idf.py monitor --no-reset --port $$PORT
+	idf.py $(IDF_PROFILE) monitor --no-reset --port $$PORT
 
 .PHONY: clean
 clean:
