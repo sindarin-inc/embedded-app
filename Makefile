@@ -66,7 +66,7 @@ epub-render: epub-render-build
 
 .PHONY: check_idf
 check_idf:
-	@if ! command -v idf.py &> /dev/null ; then \
+	@if ! idf.py --version >/dev/null 2>&1; then \
 		echo "idf.py not found. Searching your history for a possible command:" ; \
 		cat ~/.zsh_history | awk -F';' '{print $$2}' | grep '^source .*idf.*export.sh' | tail -n 1 ; \
 		exit 1 ; \
@@ -127,7 +127,7 @@ clean:
 
 .PHONY: clang-tidy
 clang-tidy: check_idf
-	@if ! command -v clang-tidy &> /dev/null || [[ $$(which clang-tidy) != *"esp-clang"* ]]; then \
+	@if ! clang-tidy --version >/dev/null 2>&1 || [[ $$(which clang-tidy) != *"esp-clang"* ]]; then \
 		echo "clang-tidy not found. Installing it now:" ; \
 		idf_tools.py install esp-clang ; \
 		pip install --upgrade pyclang ; \
