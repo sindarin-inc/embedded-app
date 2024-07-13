@@ -8,10 +8,12 @@
 #include "Misc/Telemetry.hpp"
 #include "Renderers/RendererStream.hpp"
 #include "Storage/PosixFileSystem.hpp"
+#include "UI/AboutScreen.hpp"
 #include "UI/BitmapScreen.hpp"
 #include "UI/ContentSyncScreen.hpp"
 #include "UI/DemoScreen.hpp"
 #include "UI/LayoutTestScreen.hpp"
+#include "UI/LegalScreen.hpp"
 #include "UI/LineSpacingScreen.hpp"
 #include "UI/OffsetAdjustScreen.hpp"
 #include "UI/PowerDepletedScreen.hpp"
@@ -312,182 +314,6 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
         SendRemoteCommand(ENTER);
         WAIT_FOR_DRAW(display);
         ASSERT_VIEW_UNCHANGED(display, "Dawn5");
-
-        SendRemoteCommand(UP);
-        WAIT_FOR_DRAW(display);
-        WAIT_FOR_DRAW(display);
-
-        // Main menu on Books
-        SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW(display);
-        WAIT_FOR_DRAW(display);
-
-        // Left to settings
-        SendRemoteCommand(LEFT);
-        WAIT_FOR_DRAW(display);
-        // Selector bullet
-        WAIT_FOR_DRAW(display);
-        SendRemoteCommand(DOWN);
-        WAIT_FOR_DRAW(display);
-        SendRemoteCommand(DOWN);
-        WAIT_FOR_DRAW(display);
-        SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW(display);
-        // Wait for bullet in system settings
-        WAIT_FOR_DRAW(display);
-        SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW(display);
-        ASSERT_VIEW_UNCHANGED(display, "About");
-
-        SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW(display);
-        // bullet in system settings
-        WAIT_FOR_DRAW(display);
-        SendRemoteCommand(DOWN);
-        WAIT_FOR_DRAW(display);
-        SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW(display);
-        ASSERT_VIEW_UNCHANGED(display, "Legal1");
-        SendRemoteCommand(LEFT);
-        WAIT_FOR_DRAW(display);
-        ASSERT_VIEW_UNCHANGED(display, "Legal2");
-        SendRemoteCommand(LEFT);
-        WAIT_FOR_DRAW(display);
-        ASSERT_VIEW_UNCHANGED(display, "Legal1Back");
-        SendRemoteCommand(RIGHT);
-        WAIT_FOR_DRAW(display);
-        ASSERT_VIEW_UNCHANGED(display, "Legal2Back");
-
-        // Test the bug in resize that we introduced in the refactor
-        // this changes the simprefs for above tests so they must
-        // be reset before running the top tests again.
-        SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW(display);
-        // bullet in system settings
-        WAIT_FOR_DRAW(display);
-        SendRemoteCommand(LEFT);
-        // bullet in Settings
-        WAIT_FOR_DRAW(display);
-        WAIT_FOR_DRAW(display);
-        SendRemoteCommand(UP);
-        WAIT_FOR_DRAW(display);
-        SendRemoteCommand(UP);
-        WAIT_FOR_DRAW(display);
-        SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW(display);
-        // bullet in Reading settings
-        WAIT_FOR_DRAW(display);
-        SendRemoteCommand(DOWN);
-        WAIT_FOR_DRAW(display);
-        SendRemoteCommand(DOWN);
-        WAIT_FOR_DRAW(display);
-        SendRemoteCommand(DOWN);
-        WAIT_FOR_DRAW(display);
-        SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW(display);
-        SendRemoteCommand(LEFT);
-        WAIT_FOR_DRAW(display);
-        SendRemoteCommand(LEFT);
-        WAIT_FOR_DRAW(display);
-        SendRemoteCommand(LEFT);
-        WAIT_FOR_DRAW(display);
-        SendRemoteCommand(LEFT);
-        WAIT_FOR_DRAW(display);
-        SendRemoteCommand(LEFT);
-        WAIT_FOR_DRAW(display);
-        SendRemoteCommand(LEFT);
-        WAIT_FOR_DRAW(display);
-        SendRemoteCommand(LEFT);
-        WAIT_FOR_DRAW(display);
-        // These are the extra lefts to make sure nothing changes on display
-        SendRemoteCommand(LEFT);
-        SendRemoteCommand(LEFT);
-        SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW(display);
-        // Bullet in reading settings menu
-        WAIT_FOR_DRAW(display);
-        SendRemoteCommand(DOWN);
-        WAIT_FOR_DRAW(display);
-        SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW(display);
-        SendRemoteCommand(LEFT);
-        WAIT_FOR_DRAW(display);
-        SendRemoteCommand(LEFT);
-        WAIT_FOR_DRAW(display);
-        ASSERT_VIEW_UNCHANGED(display, "ResizeLeftPinned");
-
-        // Someday when we can reset the prefs each time, we can do the following:
-
-        // Left
-        // Enter
-        // Down
-        // Down
-        // Down
-        // Enter
-        // Up
-        // Up
-        // Up
-        // Up (don't wait for display)
-        // Up (don't wait for display)
-        // OffsetAdjustTop (png already in repo)
-
-        // Left
-        // Enter
-        // Down
-        // Down
-        // Down
-        // Down
-        // Enter
-        // Up
-        // Up
-        // Up (don't wait for display - shouldn't change - double check)
-        // Up (don't wait for display - shouldn't change - double check)
-        // Left
-        // Left
-        // Left
-        // Left
-        // Left (don't wait for display - shouldn't change)
-        // Left (don't wait for display -- shouldn't change)
-        // ResizeMax (png already in repo)
-
-        // Don't wait for display on the last couple -- double check
-        // the number of clicks when implementing this
-        // Left
-        // Enter
-        // Down
-        // Down
-        // Down
-        // Down
-        // Enter
-        // Right
-        // Right
-        // Right
-        // Right
-        // Right
-        // Right
-        // Right
-        // Right
-        // Right
-        // Down
-        // Down
-        // Down
-        // Down
-        // Down
-        // Down
-        // Down
-        // Down
-        // Down
-        // Down
-        // Down
-        // Down
-        // Down
-        // Down
-        // Down
-        // Down
-        // Down
-        // Down
-        // Down
-        // ResizeMin (png already in repo)
     }
 }
 
@@ -519,6 +345,37 @@ TEST_CASE("Test some views independently") {
         PosixFileSystem fileSystem("./test/CatchTests/TestData");
         Telemetry telemetry = Telemetry(fileSystem, prefs);
 
+        SECTION("Test AboutScreen") {
+            PosixFileSystem fs("./test/CatchTests/TestData/AboutScreen/");
+            Telemetry telemetry(fs, prefs);
+            Battery battery(fs, prefs, telemetry);
+            LightingController lightingController(prefs);
+            PowerManager power(fs, prefs, lightingController, *display, telemetry);
+            AboutScreen screen(*display, prefs, power);
+            screen.render(*display);
+            ASSERT_VIEW_UNCHANGED(display, "About");
+        }
+
+        SECTION("Test LegalScreen") {
+            PosixFileSystem fs("./test/CatchTests/TestData/AboutScreen/");
+            Telemetry telemetry(fs, prefs);
+            Battery battery(fs, prefs, telemetry);
+            LightingController lightingController(prefs);
+            PowerManager power(fs, prefs, lightingController, *display, telemetry);
+            LegalScreen screen(*display, prefs, power);
+            screen.render(*display);
+            ASSERT_VIEW_UNCHANGED(display, "Legal1");
+            SendRemoteCommand(LEFT);
+            screen.render(*display);
+            ASSERT_VIEW_UNCHANGED(display, "Legal2");
+            SendRemoteCommand(LEFT);
+            screen.render(*display);
+            ASSERT_VIEW_UNCHANGED(display, "Legal1Back");
+            SendRemoteCommand(RIGHT);
+            screen.render(*display);
+            ASSERT_VIEW_UNCHANGED(display, "Legal2Back");
+        }
+
         SECTION("Test OffsetAdjustScreen") {
             OffsetAdjustScreen screen(*display, prefs, telemetry);
             screen.render(*display);
@@ -529,6 +386,29 @@ TEST_CASE("Test some views independently") {
             ResizeBoxScreen screen(*display, prefs, telemetry);
             screen.render(*display);
             ASSERT_VIEW_UNCHANGED(display, "ResizeBoxScreen");
+        }
+
+        SECTION("Test ResizeBoxScreen with pinned left") {
+            OffsetAdjustScreen offsetScreen(*display, prefs, telemetry);
+            offsetScreen.render(*display);
+            SendRemoteCommand(LEFT);
+            SendRemoteCommand(LEFT);
+            SendRemoteCommand(LEFT);
+            SendRemoteCommand(LEFT);
+            SendRemoteCommand(LEFT);
+            SendRemoteCommand(LEFT);
+            SendRemoteCommand(LEFT);
+            // These are the extra lefts to make sure nothing changes on display
+            SendRemoteCommand(LEFT);
+            SendRemoteCommand(LEFT);
+            // Save setting
+            SendRemoteCommand(ENTER);
+            ResizeBoxScreen resizeScreen(*display, prefs, telemetry);
+            resizeScreen.render(*display);
+            SendRemoteCommand(LEFT);
+            SendRemoteCommand(LEFT);
+            resizeScreen.render(*display);
+            ASSERT_VIEW_UNCHANGED(display, "ResizeLeftPinned");
         }
 
         SECTION("Test LineSpacingScreen") {
