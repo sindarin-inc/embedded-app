@@ -1,8 +1,8 @@
 
 #include <cmath>
 #include <cstring>
-#include <esp_heap_caps.h>
 
+#include "Misc/SpiramAllocator.hpp"
 #include "sindarin-debug.h"
 
 #define SPIRAM_SIZE (4 * 1024 * 1024) // 4 MB
@@ -16,7 +16,7 @@ void RunSpiRamBenchmark() {
     DisableCore0Wdt();
 
     // Allocate a buffer in SPIRAM
-    uint8_t *spiRamBuffer = (uint8_t *)heap_caps_malloc(SPIRAM_SIZE, MALLOC_CAP_SPIRAM);
+    uint8_t *spiRamBuffer = (uint8_t *)SpiRamMalloc(SPIRAM_SIZE);
     if (!spiRamBuffer) {
         log_e("Failed to allocate SPIRAM buffer.");
         return;
@@ -53,7 +53,7 @@ void RunSpiRamBenchmark() {
         (double(TEST_ITERATIONS) * BUFFER_SIZE * 1000) / (double(readElapsedTime) * 1024 * 1024);
     log_i("SPIRAM read benchmark completed. Throughput: %.2f MB/s", readThroughput);
 
-    heap_caps_free(spiRamBuffer);
+    SpiRamFree(spiRamBuffer);
 
     EnableCore0Wdt();
 }
