@@ -8,11 +8,14 @@ NUM_CORES := $(shell [ $(NUM_CORES) -lt 1 ] && echo 1 || echo $(NUM_CORES))
 MAKE := nice make -j$(NUM_CORES)
 CMAKE_FLAGS = -DCMAKE_BUILD_TYPE=Debug
 
+# Set the TARGET to glasses-debug if unset
+TARGET ?= glasses-debug
+
 # Check for TARGET environment variable or profile make command line argument
 ifeq ($(TARGET),glasses-release)
-	IDF_PROFILE = -B build-glasses-release -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.glasses-release"
-else # Default target glasses-debug
-	IDF_PROFILE = -B build-glasses-debug -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.glasses-debug"
+	IDF_PROFILE = -B build-$(TARGET) -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.$(TARGET)"
+else ifeq ($(TARGET),glasses-debug)
+	IDF_PROFILE = -B build-$(TARGET) -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.$(TARGET)"
 endif
 
 .PHONY: sim-build
