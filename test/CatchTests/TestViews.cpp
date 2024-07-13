@@ -312,6 +312,182 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
         SendRemoteCommand(ENTER);
         WAIT_FOR_DRAW(display);
         ASSERT_VIEW_UNCHANGED(display, "Dawn5");
+
+        SendRemoteCommand(UP);
+        WAIT_FOR_DRAW(display);
+        WAIT_FOR_DRAW(display);
+
+        // Main menu on Books
+        SendRemoteCommand(ENTER);
+        WAIT_FOR_DRAW(display);
+        WAIT_FOR_DRAW(display);
+
+        // Left to settings
+        SendRemoteCommand(LEFT);
+        WAIT_FOR_DRAW(display);
+        // Selector bullet
+        WAIT_FOR_DRAW(display);
+        SendRemoteCommand(DOWN);
+        WAIT_FOR_DRAW(display);
+        SendRemoteCommand(DOWN);
+        WAIT_FOR_DRAW(display);
+        SendRemoteCommand(ENTER);
+        WAIT_FOR_DRAW(display);
+        // Wait for bullet in system settings
+        WAIT_FOR_DRAW(display);
+        SendRemoteCommand(ENTER);
+        WAIT_FOR_DRAW(display);
+        ASSERT_VIEW_UNCHANGED(display, "About");
+
+        SendRemoteCommand(ENTER);
+        WAIT_FOR_DRAW(display);
+        // bullet in system settings
+        WAIT_FOR_DRAW(display);
+        SendRemoteCommand(DOWN);
+        WAIT_FOR_DRAW(display);
+        SendRemoteCommand(ENTER);
+        WAIT_FOR_DRAW(display);
+        ASSERT_VIEW_UNCHANGED(display, "Legal1");
+        SendRemoteCommand(LEFT);
+        WAIT_FOR_DRAW(display);
+        ASSERT_VIEW_UNCHANGED(display, "Legal2");
+        SendRemoteCommand(LEFT);
+        WAIT_FOR_DRAW(display);
+        ASSERT_VIEW_UNCHANGED(display, "Legal1Back");
+        SendRemoteCommand(RIGHT);
+        WAIT_FOR_DRAW(display);
+        ASSERT_VIEW_UNCHANGED(display, "Legal2Back");
+
+        // Test the bug in resize that we introduced in the refactor
+        // this changes the simprefs for above tests so they must
+        // be reset before running the top tests again.
+        SendRemoteCommand(ENTER);
+        WAIT_FOR_DRAW(display);
+        // bullet in system settings
+        WAIT_FOR_DRAW(display);
+        SendRemoteCommand(LEFT);
+        // bullet in Settings
+        WAIT_FOR_DRAW(display);
+        WAIT_FOR_DRAW(display);
+        SendRemoteCommand(UP);
+        WAIT_FOR_DRAW(display);
+        SendRemoteCommand(UP);
+        WAIT_FOR_DRAW(display);
+        SendRemoteCommand(ENTER);
+        WAIT_FOR_DRAW(display);
+        // bullet in Reading settings
+        WAIT_FOR_DRAW(display);
+        SendRemoteCommand(DOWN);
+        WAIT_FOR_DRAW(display);
+        SendRemoteCommand(DOWN);
+        WAIT_FOR_DRAW(display);
+        SendRemoteCommand(DOWN);
+        WAIT_FOR_DRAW(display);
+        SendRemoteCommand(ENTER);
+        WAIT_FOR_DRAW(display);
+        SendRemoteCommand(LEFT);
+        WAIT_FOR_DRAW(display);
+        SendRemoteCommand(LEFT);
+        WAIT_FOR_DRAW(display);
+        SendRemoteCommand(LEFT);
+        WAIT_FOR_DRAW(display);
+        SendRemoteCommand(LEFT);
+        WAIT_FOR_DRAW(display);
+        SendRemoteCommand(LEFT);
+        WAIT_FOR_DRAW(display);
+        SendRemoteCommand(LEFT);
+        WAIT_FOR_DRAW(display);
+        SendRemoteCommand(LEFT);
+        WAIT_FOR_DRAW(display);
+        // These are the extra lefts to make sure nothing changes on display
+        SendRemoteCommand(LEFT);
+        SendRemoteCommand(LEFT);
+        SendRemoteCommand(ENTER);
+        WAIT_FOR_DRAW(display);
+        // Bullet in reading settings menu
+        WAIT_FOR_DRAW(display);
+        SendRemoteCommand(DOWN);
+        WAIT_FOR_DRAW(display);
+        SendRemoteCommand(ENTER);
+        WAIT_FOR_DRAW(display);
+        SendRemoteCommand(LEFT);
+        WAIT_FOR_DRAW(display);
+        SendRemoteCommand(LEFT);
+        WAIT_FOR_DRAW(display);
+        ASSERT_VIEW_UNCHANGED(display, "ResizeLeftPinned");
+
+        // Someday when we can reset the prefs each time, we can do the following:
+
+        // Left
+        // Enter
+        // Down
+        // Down
+        // Down
+        // Enter
+        // Up
+        // Up
+        // Up
+        // Up (don't wait for display)
+        // Up (don't wait for display)
+        // OffsetAdjustTop (png already in repo)
+
+        // Left
+        // Enter
+        // Down
+        // Down
+        // Down
+        // Down
+        // Enter
+        // Up
+        // Up
+        // Up (don't wait for display - shouldn't change - double check)
+        // Up (don't wait for display - shouldn't change - double check)
+        // Left
+        // Left
+        // Left
+        // Left
+        // Left (don't wait for display - shouldn't change)
+        // Left (don't wait for display -- shouldn't change)
+        // ResizeMax (png already in repo)
+
+        // Don't wait for display on the last couple -- double check
+        // the number of clicks when implementing this
+        // Left
+        // Enter
+        // Down
+        // Down
+        // Down
+        // Down
+        // Enter
+        // Right
+        // Right
+        // Right
+        // Right
+        // Right
+        // Right
+        // Right
+        // Right
+        // Right
+        // Down
+        // Down
+        // Down
+        // Down
+        // Down
+        // Down
+        // Down
+        // Down
+        // Down
+        // Down
+        // Down
+        // Down
+        // Down
+        // Down
+        // Down
+        // Down
+        // Down
+        // Down
+        // Down
+        // ResizeMin (png already in repo)
     }
 }
 
