@@ -87,6 +87,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create the flasher script and bundle everything
+        if: matrix.target == 'glasses-release'
         run: |
           mkdir -p artifact
           echo "esptool.py -b 460800 --before default_reset --after hard_reset --chip esp32s3  write_flash --flash_mode dio --flash_size 64MB --flash_freq 80m 0x0 bootloader.bin 0x8000 partition-table.bin 0xe000 ota_data_initial.bin 0x10000 embedded-app.bin" > artifact/flash.sh
@@ -97,6 +98,7 @@ jobs:
           cp build-${{ matrix.target }}/ota_data_initial.bin artifact
 
       - name: Upload binaries
+        if: matrix.target == 'glasses-release'
         uses: actions/upload-artifact@v4
         with:
           name: embedded-app-${{ github.sha }}-IDF${{ matrix.idf_version }}
