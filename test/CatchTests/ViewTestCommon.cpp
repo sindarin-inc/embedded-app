@@ -23,6 +23,8 @@
 #include "Storage/PosixFileSystem.hpp"
 #include "sindarin-debug.h"
 
+#define ACCEPT_CHANGES 1
+
 extern bool useSimulatorTestTime;
 extern int simulatorTestHours;
 extern int simulatorTestMinutes;
