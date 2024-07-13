@@ -22,15 +22,22 @@ If you get errors about `cmake` you might need to install `cmake` first (`brew i
 
 Now from the root of this repo, you can run (replace `/YOUR/PATH/TO` with the path where you put `esp-idf`):
 
-```bash
+```sh
 . /YOUR/PATH/TO/esp-idf/export.sh
-idf.py set-target esp32s3
-idf.py build flash monitor
+make build flash monitor
 ```
 
 This will build the latest firmware, flash it to the device, and open a serial monitor. You can also use `idf.py menuconfig` to configure the build if you need to change build options.
 
-See also the official [esp-idf installation instructions](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/get-started/index.html) for more details
+See also the official [esp-idf installation instructions](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/get-started/index.html) for more details.
+
+## Building alternate targets
+
+By default we build a debug build for the glasses. But we support other build targets. To specific a different target, you can use the `TARGET` environment variable. For example, to build a release build, you can use:
+
+```sh
+TARGET=glasses-release build flash monitor
+```
 
 ## `idf.py monitor` but without resetting
 
