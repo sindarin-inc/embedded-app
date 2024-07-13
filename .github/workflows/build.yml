@@ -75,7 +75,7 @@ jobs:
           path: .
           command: |
             set -o pipefail
-            TARGET=${{ matrix.target }} | tee build-log.txt
+            TARGET=${{ matrix.target }} make build | tee build-log.txt
 
       - name: Post errors and warnings as annotations
         if: github.event_name == 'pull_request' && (success() || failure())
