@@ -1,4 +1,4 @@
-#if USE_BLE_SERVER_REMOTE
+#if CONFIG_USE_BLE_SERVER_REMOTE
 
 #include "BLESettings.hpp"
 
@@ -16,7 +16,7 @@
 
 BLESettings::BLESettings(PreferencesStore *prefs) : prefs_(prefs) {}
 
-#if USE_TURN_TOUCH_REMOTE
+#if CONFIG_USE_TURN_TOUCH_REMOTE
 void BLESettings::attachTTRemoteInput(TTRemoteInput *ttRemoteInput) {
     this->ttRemoteInput_ = ttRemoteInput;
 }
@@ -67,7 +67,7 @@ void BLESettings::writePageTurnerBatteryToCharacteristic(BLECharacteristic *char
 
 void BLESettings::disconnectPageTurnerForSeconds(int seconds) {
     log_i("GATT client disconnecting page turner for %d seconds", seconds);
-#if USE_TURN_TOUCH_REMOTE
+#if CONFIG_USE_TURN_TOUCH_REMOTE
     ttRemoteInput_->disconnectTemporarily(seconds);
 
     // We set this to let the app know the remote is ready to be connected to
@@ -113,7 +113,7 @@ void BLESettings::blinkLedAfterConnect(BLECharacteristic *characteristic, const 
 void BLESettings::unpairPageTurner(BLECharacteristic *characteristic, const std::string &key) {
     log_i("GATT client unpairing page turner");
 
-#if USE_TURN_TOUCH_REMOTE
+#if CONFIG_USE_TURN_TOUCH_REMOTE
     ttRemoteInput_->unpairAndDisconnect();
 #endif
 

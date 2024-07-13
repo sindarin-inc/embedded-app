@@ -1,4 +1,4 @@
-#if EINKET013TT1
+#if CONFIG_EINKET013TT1
 
 #include "UI/ContrastAdjustScreen.hpp"
 

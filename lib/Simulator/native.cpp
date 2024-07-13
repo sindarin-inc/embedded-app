@@ -35,7 +35,7 @@
 extern PreferencesStore prefs;
 extern void UIInnerLoop(RemoteCommand command);
 
-#if EINKET013TT1
+#if CONFIG_EINKET013TT1
 #include "Displays/DisplayEinkET013TT1.hpp"
 #define SCALE 2
 extern DisplayEinkET013TT1 myDisplay;

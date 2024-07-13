@@ -239,7 +239,7 @@ void ContentSyncScreen::begin() {
         return;
     }
 
-#if !SIMULATOR
+#if USE_BLE
     // Disable the BLE Peripheral. This seems to almost always crash the device with a
     // btdm_controller_task crash
     BLEManager::getInstance()->stopAdvertising();

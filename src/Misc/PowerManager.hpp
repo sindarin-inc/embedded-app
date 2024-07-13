@@ -13,7 +13,7 @@
 #include "Sensors/LightingController.hpp"
 #include "Sensors/Mmc5603.hpp"
 #include "Storage/PreferencesStore.hpp"
-#if EINKET013TT1
+#if CONFIG_EINKET013TT1
 #include "Displays/DisplayEinkET013TT1.hpp"
 #endif
 
@@ -239,7 +239,7 @@ public:
 
     // Exposed so we can check this peripheral as a part of the power-on self-test
     auto checkMagnetometerProductId() -> bool {
-#if USE_MMC5603
+#if CONFIG_USE_MMC5603
         uint8_t mmcProductId;
         auto err = magSensor_.readProductId(&mmcProductId);
         if (err != ESP_OK) {

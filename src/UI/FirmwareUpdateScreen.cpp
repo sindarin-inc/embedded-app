@@ -235,7 +235,7 @@ void FirmwareUpdateScreen::begin() {
         return;
     }
 
-#if !SIMULATOR
+#if USE_BLE
     // Stop BLE advertising and disconnect all connections to avoid interference.
     BLEManager::getInstance()->stopAdvertising();
     auto bleManager = BLEManager::getInstance();

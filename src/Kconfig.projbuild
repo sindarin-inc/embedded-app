@@ -1,0 +1,65 @@
+menu "Sol Options"
+
+    menu "Display Type"
+        choice
+            prompt "Select Display Type"
+            default DISPLAY_EINKET013TT1
+
+            config DISPLAY_EINKET013TT1
+                bool "E-Ink ET013TT1 Display"
+        endchoice
+    endmenu
+
+    menu "BLE Settings"
+        config USE_BLE_SERVER_REMOTE
+            bool "Enable BLE Server Remote"
+            default y
+
+        config USE_BLE_SERVER_SETTINGS
+            bool "Enable BLE Server Settings"
+            default y
+
+        config USE_BLE_SERVER_PROXY
+            bool "Enable BLE Server Proxy"
+            default y
+
+        config USE_BLE_SERVER_IMPROV
+            bool "Enable BLE Server Improv"
+            default y
+
+        config USE_TURN_TOUCH_REMOTE
+            bool "Enable Turn Touch Remote"
+            default y
+    endmenu
+
+    menu "Peripheral Settings"
+        config BOARD_HAS_PSRAM
+            bool "Board has PSRAM"
+            default y
+
+        config INTERNAL_SPIFFS_FLASH
+            bool "Internal SPIFFS Flash"
+            default y
+
+        config LEDC_BACKLIGHT
+            bool "LEDC Backlight"
+            default y
+
+        config USE_LTR329
+            bool "Use LTR329 Ambient Light Sensor"
+            default y
+
+        config USE_MMC5603
+            bool "Use MMC5603 Magnetometer"
+            default y
+
+        config LED_INVERT
+            bool "LED Invert"
+            default y
+
+        config USE_TINYUSB_SERIAL
+            bool "Use TinyUSB for Serial Communication"
+            default y
+    endmenu
+
+endmenu

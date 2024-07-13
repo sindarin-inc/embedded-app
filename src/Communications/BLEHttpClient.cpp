@@ -1,4 +1,4 @@
-#if USE_BLE_SERVER_PROXY
+#if CONFIG_USE_BLE_SERVER_PROXY
 
 #include "Communications/BLEHttpClient.hpp"
 

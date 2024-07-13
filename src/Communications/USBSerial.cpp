@@ -5,7 +5,7 @@ extern USBSerial usbSerial;
 auto USBSerial::getInstance() -> USBSerial & { return usbSerial; }
 
 void USBSerial::initJtag() {
-#if USE_TINYUSB_SERIAL
+#if CONFIG_USE_TINYUSB_SERIAL
     tusb_cdc_acm_deinit(TINYUSB_CDC_ACM_0);
     tusb_cdc_acm_deinit(TINYUSB_CDC_ACM_1);
     tinyusb_driver_uninstall();
@@ -22,7 +22,7 @@ void USBSerial::initJtag() {
 void USBSerial::disableLogging() {
     if (loggingEnabled_) {
         log_i("Disabling logging");
-#if USE_TINYUSB_SERIAL
+#if CONFIG_USE_TINYUSB_SERIAL
         esp_tusb_deinit_console(TINYUSB_CDC_ACM_1); // turn off log to usb
         tusb_cdc_acm_deinit(TINYUSB_CDC_ACM_1);
 #endif
@@ -32,7 +32,7 @@ void USBSerial::disableLogging() {
 
 void USBSerial::enableLogging() {
     if (!loggingEnabled_) {
-#if USE_TINYUSB_SERIAL
+#if CONFIG_USE_TINYUSB_SERIAL
         tinyusb_config_cdcacm_t acmCfg = {.usb_dev = TINYUSB_USBDEV_0,
                                           .cdc_port = TINYUSB_CDC_ACM_1,
                                           .callback_rx = nullptr,
@@ -53,8 +53,8 @@ void USBSerial::enableLogging() {
 // It reads from the port and then processes the data and sends the command to the
 // DirectCommand class for processing.
 void USBSerial::rxCommandCallback(int itf, cdcacm_event_t *event) {
+#if CONFIG_USE_TINYUSB_SERIAL
     size_t rxSize = 0;
-#if USE_TINYUSB_SERIAL
     esp_err_t ret = tinyusb_cdcacm_read(static_cast<tinyusb_cdcacm_itf_t>(itf), buffer_,
                                         sizeof(buffer_) - 1, &rxSize);
     if (ret == ESP_OK) {
@@ -82,7 +82,7 @@ void USBSerial::popLastListener() {
 // For sending data back to the USB serial port. To be called by things like FileTransfer
 // or DirectCommand if needed.
 void USBSerial::txSendData(const uint8_t *data, size_t length) {
-#if USE_TINYUSB_SERIAL
+#if CONFIG_USE_TINYUSB_SERIAL
     size_t chunkSize = CONFIG_USB_CDC_RX_BUFSIZE;
 
     for (size_t offset = 0; offset < length; offset += chunkSize) {
@@ -95,7 +95,7 @@ void USBSerial::txSendData(const uint8_t *data, size_t length) {
 }
 
 void USBSerial::begin() {
-#if USE_TINYUSB_SERIAL
+#if CONFIG_USE_TINYUSB_SERIAL
     const tinyusb_config_t tusbCfg = {.device_descriptor = nullptr,
                                       .string_descriptor = nullptr,
                                       .external_phy = false,

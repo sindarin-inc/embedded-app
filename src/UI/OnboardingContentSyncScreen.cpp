@@ -5,7 +5,7 @@
 #include "Misc/PowerManager.hpp"
 #include "Renderers/RendererStream.hpp"
 
-#if USE_TURN_TOUCH_REMOTE
+#if CONFIG_USE_TURN_TOUCH_REMOTE
 #include "Inputs/TTRemoteInput.hpp"
 extern TTRemoteInput ttRemoteInput;
 #endif

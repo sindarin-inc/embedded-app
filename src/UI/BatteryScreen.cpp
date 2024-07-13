@@ -1,6 +1,6 @@
 #include "UI/BatteryScreen.hpp"
 
-#if EINKET013TT1
+#if CONFIG_EINKET013TT1
 #include "Displays/DisplayEinkET013TT1.hpp"
 #endif
 
@@ -9,7 +9,7 @@
 BatteryScreen::BatteryScreen(DisplaySystem &display, PreferencesStore &prefs, Battery &battery)
     : display_(display), prefs_(prefs), battery_(battery) {
 
-#if EINKET013TT1
+#if CONFIG_EINKET013TT1
     auto *driver = (dynamic_cast<DisplayEinkET013TT1 *>(&display))->getDriver();
     leftTemp_ = driver->readTemperature(ScreenSide::Left);
     rightTemp_ = driver->readTemperature(ScreenSide::Right);

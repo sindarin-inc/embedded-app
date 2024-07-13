@@ -16,7 +16,9 @@
 #include <nvs_flash.h>
 #include <optional>
 #include <soc/rtc.h>
+#ifdef CONFIG_ULP_COPROC_ENABLED
 #include <ulp_riscv.h>
+#endif
 
 #include "Platform.hpp"
 #include "Storage/include/EFusesCustomTable.h"
@@ -53,8 +55,10 @@ void HardwareInit() {
     esp_err_t err;
 #if USE_I2C
     // release rtc i2c lines
+#ifdef CONFIG_ULP_COPROC_ENABLED
     ulp_timer_stop();
     ulp_riscv_halt();
+#endif
     err = rtc_gpio_deinit(static_cast<gpio_num_t>(I2C_MASTER_SDA_IO));
     if (err != ESP_OK) {
         log_e("rtc_gpio_deinit failed for SDA: %d", err);
@@ -98,6 +102,7 @@ void HardwareInit() {
     PinMode(BLUE_LED, OUTPUT);
 #endif
 
+#if CONFIG_IDF_TARGET_ESP32S3
     // Attenuation of 2.5db gets us up to a max of 1250mV
     // Using our 442k/160k divider, that's 4.7V max
     adc_cali_curve_fitting_config_t adcConfig;
@@ -122,6 +127,8 @@ void HardwareInit() {
 
     ESP_ERROR_CHECK(adc_oneshot_config_channel(adcOneshotHandle, BATT_CHANNEL_LEFT, &adcChanCfg));
     ESP_ERROR_CHECK(adc_oneshot_config_channel(adcOneshotHandle, BATT_CHANNEL_RIGHT, &adcChanCfg));
+
+#endif
 
     esp_log_level_set("*", static_cast<esp_log_level_t>(CONFIG_LOG_DEFAULT_LEVEL));
     err = nvs_flash_init();
@@ -158,10 +165,12 @@ auto HardwareDeinit() -> esp_err_t {
         log_e("Failed to delete oneshot unit: %d", err);
     }
 
+#if CONFIG_IDF_TARGET_ESP32S3
     err = adc_cali_delete_scheme_curve_fitting(adcCalHandle);
     if (err != ESP_OK) {
         log_e("Failed to delete adc calibration scheme: %d", err);
     }
+#endif
 
     err = i2c_driver_delete(I2C_NUM_0);
     if (err != ESP_OK) {
@@ -212,11 +221,11 @@ void InitializePlatform() {
     ForcePowerOn();
 #endif
 
-#if EINKET013TT1
+#if CONFIG_EINKET013TT1
 #ifdef DISPLAY_POWER
     PinMode(DISPLAY_POWER, OUTPUT);
 #endif
-#if LEDC_BACKLIGHT
+#if CONFIG_LEDC_BACKLIGHT
     // This allows LEDC to work in light sleep on ESP32-S3
     esp_err_t err = esp_sleep_pd_config(ESP_PD_DOMAIN_RC_FAST, ESP_PD_OPTION_ON);
 
@@ -275,7 +284,7 @@ void InitializePlatform() {
         return;
     }
 #endif
-#endif // EINKET013TT1
+#endif // CONFIG_EINKET013TT1
 
     // Configure the UART for reading (used for testing)
     const uart_config_t uartConfig = {
@@ -285,7 +294,11 @@ void InitializePlatform() {
         .stop_bits = UART_STOP_BITS_1,
         .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
         .rx_flow_ctrl_thresh = 0,
+#if CONFIG_IDF_TARGET_ESP32
+        .source_clk = UART_SCLK_APB,
+#else
         .source_clk = UART_SCLK_RTC,
+#endif
     };
     // We won't use a buffer for sending data.
     constexpr auto kRxBufSize = 256;
@@ -307,7 +320,7 @@ auto DeinitializePlatform() -> esp_err_t {
         log_e("Failed to disable fast RC oscillator: %d", err);
     }
 
-#if LEDC_BACKLIGHT
+#if CONFIG_LEDC_BACKLIGHT
     ledc_fade_func_uninstall();
 
     err = ledc_stop(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, 0);
@@ -361,7 +374,7 @@ void SetLeftScreenLight(int dutyCycle) {
     if (ledcFailed) {
         return;
     }
-#if LEDC_BACKLIGHT
+#if CONFIG_LEDC_BACKLIGHT
     esp_err_t err;
     err = ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, dutyCycle);
     if (err != ESP_OK) {
@@ -380,7 +393,7 @@ void SetLeftScreenLightFade(int dutyCycle, int fadeMs) {
     if (ledcFailed) {
         return;
     }
-#if LEDC_BACKLIGHT
+#if CONFIG_LEDC_BACKLIGHT
     esp_err_t err;
     // Set the LED to the target brightness
     err = ledc_set_fade_with_time(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, dutyCycle, fadeMs);
@@ -401,7 +414,7 @@ void SetRightScreenLight(int dutyCycle) {
     if (ledcFailed) {
         return;
     }
-#if LEDC_BACKLIGHT
+#if CONFIG_LEDC_BACKLIGHT
     esp_err_t err;
     err = ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1, dutyCycle);
     if (err != ESP_OK) {
@@ -420,7 +433,7 @@ void SetRightScreenLightFade(int dutyCycle, int fadeMs) {
     if (ledcFailed) {
         return;
     }
-#if LEDC_BACKLIGHT
+#if CONFIG_LEDC_BACKLIGHT
     esp_err_t err;
     // Set the LED to the target brightness
     err = ledc_set_fade_with_time(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1, dutyCycle, fadeMs);
