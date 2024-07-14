@@ -1,6 +1,7 @@
 #if CONFIG_DISPLAY_M5STACK_MODULE_DISPLAY
 
 #include "DisplayM5StackModuleDisplay.hpp"
+
 #include "Misc/Dispatch.hpp"
 #include "Misc/Platform.hpp"
 #include "config.h"

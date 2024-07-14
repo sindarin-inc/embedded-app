@@ -1,7 +1,7 @@
 #include "IBMFFaceLow.hpp"
 
-auto IBMFFaceLow::load(const MemoryPtr dataStart, const int dataLength,
-                       FontFormat fontFmt) -> bool {
+auto IBMFFaceLow::load(const MemoryPtr dataStart, const int dataLength, FontFormat fontFmt)
+    -> bool {
 
     MemoryPtr memoryPtr = dataStart;
     MemoryPtr memoryEnd = dataStart + dataLength;
@@ -109,7 +109,7 @@ auto IBMFFaceLow::ligKern(GlyphCode glyphCode1, GlyphCode *glyphCode2, FIX16 *ke
 #define FRACT_BITS 10
 #define FIXED_POINT_ONE (1 << FRACT_BITS)
 #define MAKE_INT_FIXED(x) (static_cast<FIX32>((x) << FRACT_BITS))
-#define MAKE_FLOAT_FIXED(x) (static_cast<FIX32>((x) * FIXED_POINT_ONE))
+#define MAKE_FLOAT_FIXED(x) (static_cast<FIX32>((x)*FIXED_POINT_ONE))
 #define MAKE_FIXED_INT(x) ((x) >> FRACT_BITS)
 #define MAKE_FIXED_FLOAT(x) ((static_cast<float>(x)) / FIXED_POINT_ONE)
 
@@ -653,8 +653,8 @@ auto IBMFFaceLow::showBitmap(const Bitmap &bitmap) const -> void {
     }
 }
 
-auto IBMFFaceLow::showGlyph(const Glyph &glyph, GlyphCode glyphCode,
-                            char32_t codePoint) const -> void {
+auto IBMFFaceLow::showGlyph(const Glyph &glyph, GlyphCode glyphCode, char32_t codePoint) const
+    -> void {
     if constexpr (DEBUG) {
         std::cout << "Glyph Base Code: 0x" << std::hex << glyphCode << std::dec << "(" << +codePoint
                   << ")" << std::endl
@@ -695,10 +695,12 @@ auto IBMFFaceLow::showLigKerns() const -> void {
         for (i = 0; i < faceHeader_->ligKernStepCount; i++) {
             LigKernStep *entry = &(*ligKernSteps_)[i];
             if (entry->b.goTo.isAKern && entry->b.goTo.isAGoTo) {
-                std::cout << "  [" << i << "]:  " << "Goto: " << entry->b.goTo.displacement;
+                std::cout << "  [" << i << "]:  "
+                          << "Goto: " << entry->b.goTo.displacement;
             } else {
-                std::cout << "  [" << i << "]:  " << "Stop: " << (entry->a.stop ? "Yes" : "No")
-                          << ", " << "NxtGlyphCode: " << +entry->a.nextGlyphCode << ", "
+                std::cout << "  [" << i << "]:  "
+                          << "Stop: " << (entry->a.stop ? "Yes" : "No") << ", "
+                          << "NxtGlyphCode: " << +entry->a.nextGlyphCode << ", "
                           << "IsKern: " << (entry->b.kern.isAKern ? "Yes" : "No") << ", "
                           << (entry->b.kern.isAKern ? "Kern Value: " : "Lig char: ");
                 if (entry->b.kern.isAKern) {
