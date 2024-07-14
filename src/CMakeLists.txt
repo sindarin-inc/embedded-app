@@ -41,7 +41,9 @@ set(components
     espcoredump
     app_update
     usb
-    M5GFX
+
+    # Uncomment for M5Stack displays
+    # M5GFX
 )
 
 # It would be nice if we could add components conditionally based on the configuration, but

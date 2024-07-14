@@ -16,6 +16,3 @@
 [submodule "components/astubs"]
 	path = components/astubs
 	url = git@github.com:sindarin-inc/astubs.git
-[submodule "components/M5GFX"]
-	path = components/M5GFX
-	url = git@github.com:sindarin-inc/M5GFX.git

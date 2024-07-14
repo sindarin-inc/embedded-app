@@ -11,6 +11,11 @@ CMAKE_FLAGS = -DCMAKE_BUILD_TYPE=Debug
 # Set the TARGET to glasses-debug if unset
 TARGET ?= glasses-debug
 
+# For the M5Stack targets:
+# You'll also need to uncomment the M5GFX component in src/CMakeLists.txt and also clone M5GFX:
+#   clone -b john/atom-display git@github.com:sindarin-inc/M5GFX.git components/M5GFX
+# If we end up wanting to use these targets more, we could add M5GFX as a submodule.
+
 # Check for TARGET environment variable or profile make command line argument
 ifeq ($(TARGET),glasses-release)
 	IDF_PROFILE = -B build-$(TARGET) -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.$(TARGET)"
