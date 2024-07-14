@@ -87,4 +87,26 @@ menu "Sol Options"
             default 8
     endmenu
 
+    menu "Renderer Settings"
+        config MAX_BYTES_PER_PARAGRAPH
+            int "Max Bytes Per Paragraph"
+            default 5003
+        config MAX_BYTES_PER_DISPLAY_PAGE
+            int "Max Bytes Per Display Page"
+            default 2400
+        config CSTR_POOL_SIZE
+            int "CStr Pool Size"
+            default 2000
+        config TOKENS_SIZE
+            int "Tokens Size"
+            default 500
+        config MAX_BYTES_PER_LINE
+            int "Max Bytes Per Line"
+            default 200
+        config LINES_SIZE
+            int "Lines Size"
+            default 36
+
+        endmenu
+
 endmenu
