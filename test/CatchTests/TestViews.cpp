@@ -365,13 +365,13 @@ TEST_CASE("Test some views independently") {
             LegalScreen screen(*display, prefs, power);
             screen.render(*display);
             ASSERT_VIEW_UNCHANGED(display, "Legal1");
-            SendRemoteCommand(LEFT);
+            screen.processCommand(LEFT);
             screen.render(*display);
             ASSERT_VIEW_UNCHANGED(display, "Legal2");
-            SendRemoteCommand(LEFT);
+            screen.processCommand(LEFT);
             screen.render(*display);
             ASSERT_VIEW_UNCHANGED(display, "Legal1Back");
-            SendRemoteCommand(RIGHT);
+            screen.processCommand(RIGHT);
             screen.render(*display);
             ASSERT_VIEW_UNCHANGED(display, "Legal2Back");
         }
@@ -391,22 +391,22 @@ TEST_CASE("Test some views independently") {
         SECTION("Test ResizeBoxScreen with pinned left") {
             OffsetAdjustScreen offsetScreen(*display, prefs, telemetry);
             offsetScreen.render(*display);
-            SendRemoteCommand(LEFT);
-            SendRemoteCommand(LEFT);
-            SendRemoteCommand(LEFT);
-            SendRemoteCommand(LEFT);
-            SendRemoteCommand(LEFT);
-            SendRemoteCommand(LEFT);
-            SendRemoteCommand(LEFT);
+            offsetScreen.processCommand(LEFT);
+            offsetScreen.processCommand(LEFT);
+            offsetScreen.processCommand(LEFT);
+            offsetScreen.processCommand(LEFT);
+            offsetScreen.processCommand(LEFT);
+            offsetScreen.processCommand(LEFT);
+            offsetScreen.processCommand(LEFT);
             // These are the extra lefts to make sure nothing changes on display
-            SendRemoteCommand(LEFT);
-            SendRemoteCommand(LEFT);
+            offsetScreen.processCommand(LEFT);
+            offsetScreen.processCommand(LEFT);
             // Save setting
-            SendRemoteCommand(ENTER);
+            offsetScreen.processCommand(ENTER);
             ResizeBoxScreen resizeScreen(*display, prefs, telemetry);
             resizeScreen.render(*display);
-            SendRemoteCommand(LEFT);
-            SendRemoteCommand(LEFT);
+            resizeScreen.processCommand(LEFT);
+            resizeScreen.processCommand(LEFT);
             resizeScreen.render(*display);
             ASSERT_VIEW_UNCHANGED(display, "ResizeLeftPinned");
         }
