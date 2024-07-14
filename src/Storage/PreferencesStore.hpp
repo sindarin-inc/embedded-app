@@ -10,7 +10,7 @@
 #include "config.h"
 #include "sindarin-debug.h"
 
-#if USE_TURN_TOUCH_REMOTE
+#if CONFIG_USE_TURN_TOUCH_REMOTE
 #include <NimBLEDevice.h>
 #elif !defined(BLEAddress)
 typedef uint64_t BLEAddress;
@@ -317,7 +317,7 @@ public:
     // Ignoring clang-tidy and keeping these on their own lines otherwise diffs become very
     // difficult to read
     // clang-format off
-#if USE_TURN_TOUCH_REMOTE
+#if CONFIG_USE_TURN_TOUCH_REMOTE
           pairedTurnTouchAddress(*this, "paired-tt"),
 #endif
           cloudToken(*this, "cloud-token"),
@@ -547,14 +547,14 @@ public:
 
     void clear() {
         // Save and re-set the Turn Touch
-#if USE_TURN_TOUCH_REMOTE
+#if CONFIG_USE_TURN_TOUCH_REMOTE
         auto turnTouchAddress = this->pairedTurnTouchAddress.get();
 #endif
         esp_err_t err = nvs_erase_all(nvsHandle_);
         if (err) {
             log_e("nvs_erase_all fail: %s", esp_err_to_name(err));
         }
-#if USE_TURN_TOUCH_REMOTE
+#if CONFIG_USE_TURN_TOUCH_REMOTE
         if (turnTouchAddress.has_value()) {
             this->pairedTurnTouchAddress.set(turnTouchAddress.value());
         }
@@ -593,7 +593,7 @@ public:
         paired = PairedStatus::Unknown;
     }
 
-#if USE_TURN_TOUCH_REMOTE
+#if CONFIG_USE_TURN_TOUCH_REMOTE
     PrefsItem<BLEAddress> pairedTurnTouchAddress;
 #endif
     PrefsItem<std::string> cloudToken;

@@ -59,6 +59,8 @@ jobs:
         target:
           - glasses-debug
           - glasses-release
+          # - m5stack-atom-display
+          # - m5stack-module-display
 
     steps:
       - name: Checkout repo

@@ -83,14 +83,14 @@ static constexpr uint16_t HRULE_DECI_LINE_HEIGHT = 4;
 // command is issued by the user. By design a paragraph cannot have more than 1500 bytes,
 // followed by a NEWLINE, an ENDOFPARAGRAPH, and a null.
 
-static constexpr uint16_t MAX_BYTES_PER_PARAGRAPH = 5003; // 1503;
-static constexpr uint16_t MAX_BYTES_PER_DISPLAY_PAGE = 2400;
+static constexpr uint16_t MAX_BYTES_PER_PARAGRAPH = CONFIG_MAX_BYTES_PER_PARAGRAPH;
+static constexpr uint16_t MAX_BYTES_PER_DISPLAY_PAGE = CONFIG_MAX_BYTES_PER_DISPLAY_PAGE;
 static constexpr uint16_t MAX_BYTES_TO_RETRIEVE =
     (MAX_BYTES_PER_PARAGRAPH + MAX_BYTES_PER_DISPLAY_PAGE);
-static constexpr uint16_t CSTR_POOL_SIZE = 2000;
-static constexpr uint16_t TOKENS_SIZE = 500;
-static constexpr uint16_t MAX_BYTES_PER_LINE = 200;
-static constexpr uint16_t LINES_SIZE = 36;
+static constexpr uint16_t CSTR_POOL_SIZE = CONFIG_CSTR_POOL_SIZE;
+static constexpr uint16_t TOKENS_SIZE = CONFIG_TOKENS_SIZE;
+static constexpr uint16_t MAX_BYTES_PER_LINE = CONFIG_MAX_BYTES_PER_LINE;
+static constexpr uint16_t LINES_SIZE = CONFIG_LINES_SIZE;
 static constexpr uint16_t PAGE_INDEX_SIZE = 500;
 
 static constexpr uint32_t END_OFFSET = 999999999U;

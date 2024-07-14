@@ -85,19 +85,19 @@ void DigitalWrite(int pin, int level) {
     bool oldSimLeds[3];
     memcpy(oldSimLeds, simLeds, sizeof(oldSimLeds));
 
-    if (pin == RED_LED) {
+    if (pin == CONFIG_RED_LED) {
         if (level == LED_OFF) {
             simLeds[0] = false;
         } else {
             simLeds[0] = true;
         }
-    } else if (pin == GREEN_LED) {
+    } else if (pin == CONFIG_GREEN_LED) {
         if (level == LED_OFF) {
             simLeds[1] = false;
         } else {
             simLeds[1] = true;
         }
-    } else if (pin == BLUE_LED) {
+    } else if (pin == CONFIG_BLUE_LED) {
         if (level == LED_OFF) {
             simLeds[2] = false;
         } else {

@@ -113,8 +113,14 @@ private:
 
 // It's heap_caps_malloc but with always uses MALLOC_CAP_SPIRAM to have a malloc-compatible
 // interface.
-auto SpiRamMalloc(size_t size) -> void *;
-void SpiRamFree(void *ptr);
+auto inline SpiRamMalloc(size_t size) -> void * {
+    return heap_caps_malloc(size, MALLOC_CAP_SPIRAM);
+}
+void inline SpiRamFree(void *ptr) { heap_caps_free(ptr); }
+
+auto inline SpiRamRealloc(void *ptr, size_t size) -> void * {
+    return heap_caps_realloc(ptr, size, MALLOC_CAP_SPIRAM);
+}
 
 template <typename T>
 auto CustomArrayPtr(size_t len, void *(*mallocFunc)(size_t), void (*freeFunc)(void *))
@@ -125,7 +131,7 @@ auto CustomArrayPtr(size_t len, void *(*mallocFunc)(size_t), void (*freeFunc)(vo
 
 template <typename T>
 auto SpiRamArrayPtr(size_t len) -> std::shared_ptr<T[]> {
-    return CustomArrayPtr<T>(len, &SpiRamMalloc, &heap_caps_free);
+    return CustomArrayPtr<T>(len, &SpiRamMalloc, &SpiRamFree);
 }
 
 template <typename T>

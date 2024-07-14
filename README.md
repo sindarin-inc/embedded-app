@@ -346,3 +346,11 @@ Note: Don't use multiple tags on the same commit or git describe will get confus
 ```sh
 git describe --always --tags --dirty | cut -c 1-31
 ```
+
+## Adding new build targets
+
+To add a new esp-idf build target you need to do a few things:
+
+* Add a new `TARGET` if statement to the top of the `Makefile` (let's call it `my-new-target` for this example).
+* Create a new `sdkconfig.defaults.my-new-target` file.
+* Add any new build options as needed to the `src/Kconfig.projbuild` file.
