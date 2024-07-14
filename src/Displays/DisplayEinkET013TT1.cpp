@@ -1,4 +1,4 @@
-#if CONFIG_EINKET013TT1
+#if CONFIG_DISPLAY_EINKET013TT1
 
 #include "DisplayEinkET013TT1.hpp"
 

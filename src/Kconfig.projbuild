@@ -7,6 +7,13 @@ menu "Sol Options"
 
             config DISPLAY_EINKET013TT1
                 bool "E-Ink ET013TT1 Display"
+
+            config DISPLAY_M5STACK_ATOM_DISPLAY
+                bool "M5Stack Atom Display (HDMI)"
+
+            config DISPLAY_M5STACK_MODULE_DISPLAY
+                bool "M5Stack Module Display (HDMI)"
+
         endchoice
     endmenu
 
@@ -60,6 +67,24 @@ menu "Sol Options"
         config USE_TINYUSB_SERIAL
             bool "Use TinyUSB for Serial Communication"
             default y
+    endmenu
+
+    menu "Pin Selection"
+        config RED_LED
+            int "Red LED Pin"
+            default 7
+
+        config GREEN_LED
+            int "Green LED Pin"
+            default 6
+
+        config BLUE_LED
+            int "Blue LED Pin"
+            default 18
+
+        config USB_CONNECTED_PIN
+            int "USB Connected Pin"
+            default 8
     endmenu
 
 endmenu

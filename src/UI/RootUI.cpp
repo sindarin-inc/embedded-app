@@ -63,7 +63,7 @@
 #include "Inputs/TTRemoteInput.hpp"
 #endif
 
-#if CONFIG_EINKET013TT1
+#if CONFIG_DISPLAY_EINKET013TT1
 #include "Displays/DisplayEinkET013TT1.hpp"
 #include "UI/VcomAdjustScreen.hpp"
 #endif
@@ -1099,7 +1099,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         });
     }));
 
-#if CONFIG_EINKET013TT1
+#if CONFIG_DISPLAY_EINKET013TT1
     readingSettingsMenu->addMenuItem(MenuItem("Contrast", [this, display, readingSettingsMenu,
                                                            &lightingController]() {
         auto contrastAdjustScreen =
@@ -1500,7 +1500,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             });
         }));
 */
-#if CONFIG_EINKET013TT1
+#if CONFIG_DISPLAY_EINKET013TT1
     debugSettingsMenu->addMenuItem(MenuItem("Set Vcom", [this, display, debugSettingsMenu]() {
         auto vcomMenu = new MenuScreen(power_.battery, *display, debugSettingsMenu->getMyStyle(),
                                        "Vcom Settings", "Debug Settings");
@@ -1691,7 +1691,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     }));
 #endif
 
-#if CONFIG_EINKET013TT1
+#if CONFIG_DISPLAY_EINKET013TT1
     debugSettingsMenu->addMenuItem(MenuItem("Set Vcom Precise",
                                             [this, display, debugSettingsMenu]() {
         auto vcomPreciseScreen = new VcomAdjustScreen(*display, this->prefs_);

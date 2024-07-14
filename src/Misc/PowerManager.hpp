@@ -13,7 +13,7 @@
 #include "Sensors/LightingController.hpp"
 #include "Sensors/Mmc5603.hpp"
 #include "Storage/PreferencesStore.hpp"
-#if CONFIG_EINKET013TT1
+#if CONFIG_DISPLAY_EINKET013TT1
 #include "Displays/DisplayEinkET013TT1.hpp"
 #endif
 

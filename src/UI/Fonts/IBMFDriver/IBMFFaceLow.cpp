@@ -1,7 +1,7 @@
 #include "IBMFFaceLow.hpp"
 
-auto IBMFFaceLow::load(const MemoryPtr dataStart, const int dataLength, FontFormat fontFmt)
-    -> bool {
+auto IBMFFaceLow::load(const MemoryPtr dataStart, const int dataLength,
+                       FontFormat fontFmt) -> bool {
 
     MemoryPtr memoryPtr = dataStart;
     MemoryPtr memoryEnd = dataStart + dataLength;
@@ -109,7 +109,7 @@ auto IBMFFaceLow::ligKern(GlyphCode glyphCode1, GlyphCode *glyphCode2, FIX16 *ke
 #define FRACT_BITS 10
 #define FIXED_POINT_ONE (1 << FRACT_BITS)
 #define MAKE_INT_FIXED(x) (static_cast<FIX32>((x) << FRACT_BITS))
-#define MAKE_FLOAT_FIXED(x) (static_cast<FIX32>((x)*FIXED_POINT_ONE))
+#define MAKE_FLOAT_FIXED(x) (static_cast<FIX32>((x) * FIXED_POINT_ONE))
 #define MAKE_FIXED_INT(x) ((x) >> FRACT_BITS)
 #define MAKE_FIXED_FLOAT(x) ((static_cast<float>(x)) / FIXED_POINT_ONE)
 
@@ -163,15 +163,15 @@ auto IBMFFaceLow::ligKern(GlyphCode glyphCode1, GlyphCode *glyphCode2, FIX16 *ke
         return false;
     }
 
-    // hight of significant parts of dist arrays
-    int8_t hight = origin + std::max((static_cast<int8_t>(i1.bitmapHeight) - i1.verticalOffset),
-                                     (static_cast<int8_t>(i2.bitmapHeight) - i2.verticalOffset));
+    // height of significant parts of dist arrays
+    int8_t height = origin + std::max((static_cast<int8_t>(i1.bitmapHeight) - i1.verticalOffset),
+                                      (static_cast<int8_t>(i2.bitmapHeight) - i2.verticalOffset));
 
     // distance computation for left and right characters
-    auto distLeft = std::shared_ptr<FIX32[]>(new FIX32[hight]);
-    auto distRight = std::shared_ptr<FIX32[]>(new FIX32[hight]);
+    auto distLeft = std::shared_ptr<FIX32[]>(new FIX32[height]);
+    auto distRight = std::shared_ptr<FIX32[]>(new FIX32[height]);
 
-    for (int i = 0; i < hight; i++) {
+    for (int i = 0; i < height; i++) {
         distLeft[i] = MAKE_FLOAT_FIXED(-1.0);
         distRight[i] = MAKE_FLOAT_FIXED(-1.0);
     }
@@ -372,7 +372,7 @@ auto IBMFFaceLow::ligKern(GlyphCode glyphCode1, GlyphCode *glyphCode2, FIX16 *ke
                 kerning = dist;
             }
         }
-        if ((i < (hight - 1)) && (distLeft[i + 1] >= 0)) {
+        if ((i < (height - 1)) && (distLeft[i + 1] >= 0)) {
             dist = distLeft[i + 1] + distRight[i];
             if (dist < kerning) {
                 kerning = dist;
@@ -386,7 +386,7 @@ auto IBMFFaceLow::ligKern(GlyphCode glyphCode1, GlyphCode *glyphCode2, FIX16 *ke
         }
     }
     uint8_t lastIdx = firstIdx + length - 1;
-    if ((lastIdx < (hight - 1)) && (distRight[lastIdx + 1] >= 0)) {
+    if ((lastIdx < (height - 1)) && (distRight[lastIdx + 1] >= 0)) {
         dist = distLeft[lastIdx] + distRight[lastIdx + 1];
         if (dist < kerning) {
             kerning = dist;
@@ -486,7 +486,7 @@ auto IBMFFaceLow::getGlyph(GlyphCode glyphCode, Glyph &appGlyph, bool loadBitmap
             } else {
                 white = WHITE_EIGHT_BITS;
             }
-
+            // SHOW_HEAP();
             appGlyph.bitmap.pixels = new (std::nothrow) uint8_t[size];
             if (appGlyph.bitmap.pixels == nullptr) {
                 LOGE("Unable to allocate glyph pixel memory of size %d!", size);
@@ -653,8 +653,8 @@ auto IBMFFaceLow::showBitmap(const Bitmap &bitmap) const -> void {
     }
 }
 
-auto IBMFFaceLow::showGlyph(const Glyph &glyph, GlyphCode glyphCode, char32_t codePoint) const
-    -> void {
+auto IBMFFaceLow::showGlyph(const Glyph &glyph, GlyphCode glyphCode,
+                            char32_t codePoint) const -> void {
     if constexpr (DEBUG) {
         std::cout << "Glyph Base Code: 0x" << std::hex << glyphCode << std::dec << "(" << +codePoint
                   << ")" << std::endl
@@ -695,12 +695,10 @@ auto IBMFFaceLow::showLigKerns() const -> void {
         for (i = 0; i < faceHeader_->ligKernStepCount; i++) {
             LigKernStep *entry = &(*ligKernSteps_)[i];
             if (entry->b.goTo.isAKern && entry->b.goTo.isAGoTo) {
-                std::cout << "  [" << i << "]:  "
-                          << "Goto: " << entry->b.goTo.displacement;
+                std::cout << "  [" << i << "]:  " << "Goto: " << entry->b.goTo.displacement;
             } else {
-                std::cout << "  [" << i << "]:  "
-                          << "Stop: " << (entry->a.stop ? "Yes" : "No") << ", "
-                          << "NxtGlyphCode: " << +entry->a.nextGlyphCode << ", "
+                std::cout << "  [" << i << "]:  " << "Stop: " << (entry->a.stop ? "Yes" : "No")
+                          << ", " << "NxtGlyphCode: " << +entry->a.nextGlyphCode << ", "
                           << "IsKern: " << (entry->b.kern.isAKern ? "Yes" : "No") << ", "
                           << (entry->b.kern.isAKern ? "Kern Value: " : "Lig char: ");
                 if (entry->b.kern.isAKern) {

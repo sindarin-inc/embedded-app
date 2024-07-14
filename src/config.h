@@ -8,10 +8,6 @@
 #define REVISION 7
 #endif
 
-#ifndef CONFIG_EINKET013TT1
-#define CONFIG_EINKET013TT1 1
-#endif
-
 // Uncomment to disable deep sleep
 // #define DISABLE_DEEP_SLEEP 1
 
@@ -45,10 +41,6 @@
 
 // Disable Improve BLE WiFi provisioning service
 // #define DISABLE_IMPROV
-
-#define RED_LED 7
-#define GREEN_LED 6
-#define BLUE_LED 18
 
 #ifdef CONFIG_LED_INVERT
 #define LED_ON LOW
@@ -106,5 +98,3 @@
 #define I2C_MASTER_SDA_IO 1
 #define I2C_MASTER_FREQ_HZ 400000
 #endif
-
-#define USB_CONNECTED_PIN 8

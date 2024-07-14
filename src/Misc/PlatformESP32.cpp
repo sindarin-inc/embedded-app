@@ -89,17 +89,17 @@ void HardwareInit() {
     }
 #endif
 
-#ifdef USB_CONNECTED_PIN
-    PinMode(USB_CONNECTED_PIN, INPUT);
+#if CONFIG_USB_CONNECTED_PIN != GPIO_NUM_NC
+    PinMode(CONFIG_USB_CONNECTED_PIN, INPUT);
 #endif
 
-    DigitalWrite(RED_LED, LED_OFF);
-    DigitalWrite(GREEN_LED, LED_OFF);
-    PinMode(RED_LED, OUTPUT);
-    PinMode(GREEN_LED, OUTPUT);
-#ifdef BLUE_LED
-    DigitalWrite(BLUE_LED, LED_OFF);
-    PinMode(BLUE_LED, OUTPUT);
+    DigitalWrite(CONFIG_RED_LED, LED_OFF);
+    DigitalWrite(CONFIG_GREEN_LED, LED_OFF);
+    PinMode(CONFIG_RED_LED, OUTPUT);
+    PinMode(CONFIG_GREEN_LED, OUTPUT);
+#ifdef CONFIG_BLUE_LED
+    DigitalWrite(CONFIG_BLUE_LED, LED_OFF);
+    PinMode(CONFIG_BLUE_LED, OUTPUT);
 #endif
 
 #if CONFIG_IDF_TARGET_ESP32S3
@@ -221,7 +221,7 @@ void InitializePlatform() {
     ForcePowerOn();
 #endif
 
-#if CONFIG_EINKET013TT1
+#if CONFIG_DISPLAY_EINKET013TT1
 #ifdef DISPLAY_POWER
     PinMode(DISPLAY_POWER, OUTPUT);
 #endif
@@ -284,7 +284,7 @@ void InitializePlatform() {
         return;
     }
 #endif
-#endif // CONFIG_EINKET013TT1
+#endif // CONFIG_DISPLAY_EINKET013TT1
 
     // Configure the UART for reading (used for testing)
     const uart_config_t uartConfig = {
@@ -461,8 +461,8 @@ auto GetRunTimeMs() -> uint32_t {
 }
 
 auto USBConnected() -> bool {
-#ifdef USB_CONNECTED_PIN
-    return DigitalRead(USB_CONNECTED_PIN);
+#if CONFIG_USB_CONNECTED_PIN != GPIO_NUM_NC
+    return DigitalRead(CONFIG_USB_CONNECTED_PIN);
 #else
     // No way to know if USB is connected on old boards. But it's probably not.
     return false;

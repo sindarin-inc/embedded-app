@@ -16,6 +16,10 @@ ifeq ($(TARGET),glasses-release)
 	IDF_PROFILE = -B build-$(TARGET) -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.$(TARGET)"
 else ifeq ($(TARGET),glasses-debug)
 	IDF_PROFILE = -B build-$(TARGET) -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.$(TARGET)"
+else ifeq ($(TARGET),m5stack-atom-display)
+	IDF_PROFILE = -B build-$(TARGET) -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.$(TARGET)"
+else ifeq ($(TARGET),m5stack-module-display)
+	IDF_PROFILE = -B build-$(TARGET) -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.$(TARGET)"
 endif
 
 .PHONY: sim-build
@@ -78,6 +82,22 @@ configure: check_idf
 	@if [[ ! -f build/compile_commands.json ]]; then \
 		idf.py $(IDF_PROFILE) set-target esp32s3 ; \
 	fi
+
+.PHONY: menuconfig
+menuconfig: check_idf
+	idf.py $(IDF_PROFILE) menuconfig
+
+.PHONY: save-defconfig
+save-defconfig: check_idf
+	idf.py $(IDF_PROFILE) save-defconfig
+
+.PHONY: size-components
+size-components: check_idf
+	idf.py $(IDF_PROFILE) size-components
+
+.PHONY: size-files
+size-files: check_idf
+	idf.py $(IDF_PROFILE) size-files
 
 .PHONY: build
 build: check_idf

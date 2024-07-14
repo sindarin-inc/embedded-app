@@ -56,11 +56,11 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 if(ENABLE_8BIT_DISPLAY)
     target_compile_definitions(${PROJECT_NAME} PUBLIC
         DISPLAY_SIM_8BIT=1
-        EINKET013TT1=0
+        CONFIG_DISPLAY_EINKET013TT1=0
     )
 else()
     target_compile_definitions(${PROJECT_NAME} PUBLIC
-        EINKET013TT1=1
+        CONFIG_DISPLAY_EINKET013TT1=1
     )
 endif()
 

@@ -87,21 +87,21 @@ void BLESettings::disconnectPageTurnerForSeconds(int seconds) {
 
 void BLESettings::blinkLedAfterConnect(BLECharacteristic *characteristic, const std::string &key) {
     // TODO: Fully take over the LED for a while
-    gpio_hold_dis(static_cast<gpio_num_t>(RED_LED));
-    gpio_hold_dis(static_cast<gpio_num_t>(GREEN_LED));
-    gpio_hold_dis(static_cast<gpio_num_t>(BLUE_LED));
+    gpio_hold_dis(static_cast<gpio_num_t>(CONFIG_RED_LED));
+    gpio_hold_dis(static_cast<gpio_num_t>(CONFIG_GREEN_LED));
+    gpio_hold_dis(static_cast<gpio_num_t>(CONFIG_BLUE_LED));
     for (int i = 0; i < 10; i++) {
         // Flash all the LEDs
-        DigitalWrite(RED_LED, LED_ON);
+        DigitalWrite(CONFIG_RED_LED, LED_ON);
         vTaskDelay(200 / portTICK_PERIOD_MS);
-        DigitalWrite(RED_LED, LED_OFF);
-        DigitalWrite(GREEN_LED, LED_ON);
+        DigitalWrite(CONFIG_RED_LED, LED_OFF);
+        DigitalWrite(CONFIG_GREEN_LED, LED_ON);
         vTaskDelay(200 / portTICK_PERIOD_MS);
-        DigitalWrite(GREEN_LED, LED_OFF);
-#ifdef BLUE_LED
-        DigitalWrite(BLUE_LED, LED_ON);
+        DigitalWrite(CONFIG_GREEN_LED, LED_OFF);
+#ifdef CONFIG_BLUE_LED
+        DigitalWrite(CONFIG_BLUE_LED, LED_ON);
         vTaskDelay(200 / portTICK_PERIOD_MS);
-        DigitalWrite(BLUE_LED, LED_OFF);
+        DigitalWrite(CONFIG_BLUE_LED, LED_OFF);
 #endif
     }
 

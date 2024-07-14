@@ -284,9 +284,9 @@ auto PowerManager::begin() -> esp_err_t {
     }
     err = esp_pm_configure(&pmConfig_);
 
-#ifdef USB_CONNECTED_PIN
+#if CONFIG_USB_CONNECTED_PIN != GPIO_NUM_NC
     attachInterrupt(
-        digitalPinToInterrupt(USB_CONNECTED_PIN),
+        digitalPinToInterrupt(CONFIG_USB_CONNECTED_PIN),
         [this]() {
         DispatchGetCore1BackgroundQueue()->dispatchFromISR([this]() {
             if (USBConnected()) {
@@ -435,8 +435,8 @@ void PowerManager::checkUsb() {
         // TODO: Should we take multiple measurements?
         battery.takeMeasurement();
         auto percentage = battery.getBatteryPercentage();
-        gpio_hold_dis(static_cast<gpio_num_t>(GREEN_LED));
-        gpio_hold_dis(static_cast<gpio_num_t>(RED_LED));
+        gpio_hold_dis(static_cast<gpio_num_t>(CONFIG_GREEN_LED));
+        gpio_hold_dis(static_cast<gpio_num_t>(CONFIG_RED_LED));
 
         if (percentage > 95) {
             PreferencesStore::isCharged = true;
@@ -452,47 +452,47 @@ void PowerManager::checkUsb() {
             if (PreferencesStore::ledChargeTime == 0 ||
                 currentTime >= PreferencesStore::ledChargeTime) {
                 // If the battery is fully charged and a half hour has passed, turn on the LED
-                DigitalWrite(GREEN_LED, LED_ON);
-                DigitalWrite(RED_LED, LED_OFF);
+                DigitalWrite(CONFIG_GREEN_LED, LED_ON);
+                DigitalWrite(CONFIG_RED_LED, LED_OFF);
                 // log_i("Battery fully charged, turning on green LED");
             } else {
-                DigitalWrite(GREEN_LED, LED_OFF);
-                DigitalWrite(RED_LED, LED_ON);
+                DigitalWrite(CONFIG_GREEN_LED, LED_OFF);
+                DigitalWrite(CONFIG_RED_LED, LED_ON);
                 // log_i("Battery fully charged, waiting for %" PRId64 " seconds",
                 //       PreferencesStore::ledChargeTime - currentTime);
             }
         } else if (percentage > 85 && PreferencesStore::isCharged) {
             // Keep the LED green if it's charged and between 85-95%
-            DigitalWrite(GREEN_LED, LED_ON);
-            DigitalWrite(RED_LED, LED_OFF);
+            DigitalWrite(CONFIG_GREEN_LED, LED_ON);
+            DigitalWrite(CONFIG_RED_LED, LED_OFF);
             // log_i("Battery level is above 85%%, keeping green LED on.");
         } else {
             PreferencesStore::isCharged = false;
             PreferencesStore::ledChargeTime = -1;
-            DigitalWrite(GREEN_LED, LED_OFF);
-            DigitalWrite(RED_LED, LED_ON);
+            DigitalWrite(CONFIG_GREEN_LED, LED_OFF);
+            DigitalWrite(CONFIG_RED_LED, LED_ON);
             // log_d("Battery not fully charged, turning on red LED. Percentage: %d%%",
             //       int(percentage));
         }
-        gpio_hold_en(static_cast<gpio_num_t>(GREEN_LED));
-        gpio_hold_en(static_cast<gpio_num_t>(RED_LED));
+        gpio_hold_en(static_cast<gpio_num_t>(CONFIG_GREEN_LED));
+        gpio_hold_en(static_cast<gpio_num_t>(CONFIG_RED_LED));
         gpio_deep_sleep_hold_en();
     } else {
         // log_d("USB disconnected, resetting charged LED");
         PreferencesStore::ledChargeTime = 0; // reset the timer as the USB is disconnected
         PreferencesStore::isCharged = false; // reset the isCharged flag as the USB is disconnected
-        DigitalWrite(GREEN_LED, LED_OFF);
-        DigitalWrite(RED_LED, LED_OFF);
-        gpio_hold_dis(static_cast<gpio_num_t>(GREEN_LED));
-        gpio_hold_dis(static_cast<gpio_num_t>(RED_LED));
+        DigitalWrite(CONFIG_GREEN_LED, LED_OFF);
+        DigitalWrite(CONFIG_RED_LED, LED_OFF);
+        gpio_hold_dis(static_cast<gpio_num_t>(CONFIG_GREEN_LED));
+        gpio_hold_dis(static_cast<gpio_num_t>(CONFIG_RED_LED));
     }
 }
 
 void PowerManager::releaseLED() {
-    DigitalWrite(GREEN_LED, LED_OFF);
-    DigitalWrite(RED_LED, LED_OFF);
-    gpio_hold_dis(static_cast<gpio_num_t>(GREEN_LED));
-    gpio_hold_dis(static_cast<gpio_num_t>(RED_LED));
+    DigitalWrite(CONFIG_GREEN_LED, LED_OFF);
+    DigitalWrite(CONFIG_RED_LED, LED_OFF);
+    gpio_hold_dis(static_cast<gpio_num_t>(CONFIG_GREEN_LED));
+    gpio_hold_dis(static_cast<gpio_num_t>(CONFIG_RED_LED));
 }
 
 void PowerManager::beginShutdown() {
@@ -653,18 +653,18 @@ auto ToString(SleepReason reason) -> const char * {
 }
 
 auto PowerManager::enableUsbWakeup() -> esp_err_t {
-#ifdef USB_CONNECTED_PIN
+#if CONFIG_USB_CONNECTED_PIN != GPIO_NUM_NC
     esp_err_t err;
     if (USBConnected()) {
-        err = esp_sleep_enable_ext0_wakeup(static_cast<gpio_num_t>(USB_CONNECTED_PIN), 0);
+        err = esp_sleep_enable_ext0_wakeup(static_cast<gpio_num_t>(CONFIG_USB_CONNECTED_PIN), 0);
         if (err != ESP_OK) {
-            log_e("error enabling USB_CONNECTED_PIN low wakeup from deep sleep %d", err);
+            log_e("error enabling CONFIG_USB_CONNECTED_PIN low wakeup from deep sleep %d", err);
             return err;
         }
     } else {
-        err = esp_sleep_enable_ext0_wakeup(static_cast<gpio_num_t>(USB_CONNECTED_PIN), 1);
+        err = esp_sleep_enable_ext0_wakeup(static_cast<gpio_num_t>(CONFIG_USB_CONNECTED_PIN), 1);
         if (err != ESP_OK) {
-            log_e("error enabling USB_CONNECTED_PIN high wakeup from deep sleep %d", err);
+            log_e("error enabling CONFIG_USB_CONNECTED_PIN high wakeup from deep sleep %d", err);
             return err;
         }
     }
@@ -768,7 +768,7 @@ void PowerManager::deepSleepInternal(SleepReason reason) {
         return;
     }
 
-    // Enable a wakeup on the USB_CONNECTED_PIN
+    // Enable a wakeup on the CONFIG_USB_CONNECTED_PIN
     err = enableUsbWakeup();
     if (err != ESP_OK) {
         powerOffInternal();

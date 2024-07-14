@@ -42,13 +42,19 @@
 
 #define ENABLE_CONTENT_SYNC_ON_CLOSE 1
 
-#if CONFIG_EINKET013TT1
+#if CONFIG_DISPLAY_EINKET013TT1
 #include "Displays/DisplayEinkET013TT1.hpp"
 DisplayEinkET013TT1 myDisplay(DISPLAY_CS_LEFT, DISPLAY_CS_RIGHT, DISPLAY_RST);
 #elif DISPLAY_SIM_8BIT
 // Declared in native.cpp
 #include "Displays/DisplaySim8Bit.hpp"
 extern DisplaySim8Bit myDisplay;
+#elif CONFIG_DISPLAY_M5STACK_ATOM_DISPLAY
+#include "Displays/DisplayM5StackAtomDisplay.hpp"
+DisplayM5StackAtomDisplay myDisplay;
+#elif CONFIG_DISPLAY_M5STACK_MODULE_DISPLAY
+#include "Displays/DisplayM5StackModuleDisplay.hpp"
+DisplayM5StackModuleDisplay myDisplay;
 #endif
 
 PreferencesStore prefs;
@@ -289,16 +295,16 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 
     if (esp_reset_reason() == ESP_RST_POWERON) {
         // Flash all the LEDs
-        DigitalWrite(RED_LED, LED_ON);
+        DigitalWrite(CONFIG_RED_LED, LED_ON);
         vTaskDelay(200 / portTICK_PERIOD_MS);
-        DigitalWrite(RED_LED, LED_OFF);
-        DigitalWrite(GREEN_LED, LED_ON);
+        DigitalWrite(CONFIG_RED_LED, LED_OFF);
+        DigitalWrite(CONFIG_GREEN_LED, LED_ON);
         vTaskDelay(200 / portTICK_PERIOD_MS);
-        DigitalWrite(GREEN_LED, LED_OFF);
-#ifdef BLUE_LED
-        DigitalWrite(BLUE_LED, LED_ON);
+        DigitalWrite(CONFIG_GREEN_LED, LED_OFF);
+#ifdef CONFIG_BLUE_LED
+        DigitalWrite(CONFIG_BLUE_LED, LED_ON);
         vTaskDelay(200 / portTICK_PERIOD_MS);
-        DigitalWrite(BLUE_LED, LED_OFF);
+        DigitalWrite(CONFIG_BLUE_LED, LED_OFF);
 #endif
     }
 
@@ -378,7 +384,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 
     SHOW_HEAP();
 
-#if CONFIG_EINKET013TT1
+#if CONFIG_DISPLAY_EINKET013TT1
 #ifdef DISPLAY_POWER
     // Turn on power to the screen
     DigitalWrite(DISPLAY_POWER, HIGH);
@@ -409,7 +415,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     // settings for dark mode and vcom, we can probably clean it up then.
     myDisplay.invertDisplay(prefs.invertSetting.get().value_or(false));
 
-#if CONFIG_EINKET013TT1
+#if CONFIG_DISPLAY_EINKET013TT1
     // If the saved prefs indicated a vcom, set it here.
     auto vcomSetting = prefs.vcom.get();
     if (vcomSetting.has_value()) {

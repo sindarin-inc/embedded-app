@@ -85,7 +85,7 @@ void OnboardingContentSyncScreen::begin() {
     }
 
     PowerManager::getInstance().forceOn();
-    DigitalWrite(BLUE_LED, LED_ON);
+    DigitalWrite(CONFIG_BLUE_LED, LED_ON);
 
     state_.state = ContentSyncState::ConnectingWifi;
     render(display_);
