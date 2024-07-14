@@ -353,7 +353,7 @@ TEST_CASE("Test some views independently") {
             PowerManager power(fs, prefs, lightingController, *display, telemetry);
             AboutScreen screen(*display, prefs, power);
             screen.render(*display);
-            ASSERT_VIEW_UNCHANGED(display, "About");
+            ASSERT_VIEW_UNCHANGED(display, "AboutScreen");
         }
 
         SECTION("Test LegalScreen") {
@@ -364,16 +364,16 @@ TEST_CASE("Test some views independently") {
             PowerManager power(fs, prefs, lightingController, *display, telemetry);
             LegalScreen screen(*display, prefs, power);
             screen.render(*display);
-            ASSERT_VIEW_UNCHANGED(display, "Legal1");
+            ASSERT_VIEW_UNCHANGED(display, "LegalScreen1Before");
             screen.processCommand(LEFT);
             screen.render(*display);
-            ASSERT_VIEW_UNCHANGED(display, "Legal2");
+            ASSERT_VIEW_UNCHANGED(display, "LegalScreen2Before");
             screen.processCommand(LEFT);
             screen.render(*display);
-            ASSERT_VIEW_UNCHANGED(display, "Legal1Back");
+            ASSERT_VIEW_UNCHANGED(display, "LegalScreen1After");
             screen.processCommand(RIGHT);
             screen.render(*display);
-            ASSERT_VIEW_UNCHANGED(display, "Legal2Back");
+            ASSERT_VIEW_UNCHANGED(display, "LegalScreen2After");
         }
 
         SECTION("Test OffsetAdjustScreen") {
@@ -408,7 +408,7 @@ TEST_CASE("Test some views independently") {
             resizeScreen.processCommand(LEFT);
             resizeScreen.processCommand(LEFT);
             resizeScreen.render(*display);
-            ASSERT_VIEW_UNCHANGED(display, "ResizeLeftPinned");
+            ASSERT_VIEW_UNCHANGED(display, "ResizeBoxScreenLeftPinned");
         }
 
         SECTION("Test LineSpacingScreen") {
