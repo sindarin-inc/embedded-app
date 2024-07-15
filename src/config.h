@@ -100,34 +100,3 @@
 #define I2C_MASTER_SDA_IO 1
 #define I2C_MASTER_FREQ_HZ 400000
 #endif
-
-// IBMF / TTF Font support selection
-
-#if !defined(IBMF_SUPPORT) && !defined(TTF_SUPPORT)
-#define TTF_SUPPORT 0
-#define IBMF_SUPPORT 1
-#endif
-
-#if !defined(IBMF_SUPPORT) && defined(TTF_SUPPORT)
-#if TTF_SUPPORT
-#define IBMF_SUPPORT 0
-#else
-#define IBMF_SUPPORT 1
-#endif
-#endif
-
-#if defined(IBMF_SUPPORT) && !defined(TTF_SUPPORT)
-#if IBMF_SUPPORT
-#define TTF_SUPPORT 0
-#else
-#define TTF_SUPPORT 1
-#endif
-#endif
-
-#if !(IBMF_SUPPORT || TTF_SUPPORT)
-#error "One of IBMF_SUPPORT or TTF_SUPPORT must be set to 1"
-#endif
-
-#if (IBMF_SUPPORT && TTF_SUPPORT)
-#error "Only one of IBMF_SUPPORT and TTF_SUPPORT must be set to 1"
-#endif

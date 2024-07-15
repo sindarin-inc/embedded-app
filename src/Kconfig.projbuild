@@ -107,6 +107,17 @@ menu "Sol Options"
             int "Lines Size"
             default 36
 
-        endmenu
+        choice
+            prompt "Font System"
+            default FONT_IBMF
+    
+            config FONT_IBMF
+                bool "IBMF 1bpp Sol Sans Font"
+
+            config FONT_TTF
+                bool "TTF Font via FreeType"
+        endchoice
+        
+    endmenu
 
 endmenu

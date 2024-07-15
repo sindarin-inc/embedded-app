@@ -1,6 +1,6 @@
 #include "config.h"
 
-#if IBMF_SUPPORT
+#if CONFIG_FONT_IBMF
 
 #include "RLEExtractor.hpp"
 

@@ -6,7 +6,7 @@
 #include "FontEntry.hpp"
 #include "config.h"
 
-#if IBMF_SUPPORT
+#if CONFIG_FONT_IBMF
 
 // ----- IBMF Fonts -----
 
@@ -59,7 +59,7 @@ Font fontFace2 = Font(mainFont, 2);
 
 #endif
 
-#if TTF_SUPPORT
+#if CONFIG_FONT_TTF
 
 // ----- TTF Fonts -----
 

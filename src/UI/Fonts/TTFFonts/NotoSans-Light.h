@@ -15,7 +15,7 @@
 
 #include "config.h"
 
-#if TTF_SUPPORT
+#if CONFIG_FONT_TTF
 
 const struct {
     const std::array<uint8_t, 376060> data_ = {

@@ -59,14 +59,14 @@ if(ENABLE_8BIT_DISPLAY)
     target_compile_definitions(${PROJECT_NAME} PUBLIC
         DISPLAY_SIM_8BIT=1
         CONFIG_DISPLAY_EINKET013TT1=0
-        TTF_SUPPORT=1
-        IBMF_SUPPORT=0
+        CONFIG_FONT_TTF=1
+        CONFIG_FONT_IBMF=0
     )
 else()
     target_compile_definitions(${PROJECT_NAME} PUBLIC
         CONFIG_DISPLAY_EINKET013TT1=1
-        TTF_SUPPORT=0
-        IBMF_SUPPORT=1
+        CONFIG_FONT_TTF=0
+        CONFIG_FONT_IBMF=1
     )
 endif()
 

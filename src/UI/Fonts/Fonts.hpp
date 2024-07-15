@@ -5,7 +5,7 @@
 
 extern std::array<FontEntry, 1> fontsList;
 
-#if IBMF_SUPPORT
+#if CONFIG_FONT_IBMF
 #include "IBMFDriver/IBMFFont.hpp"
 #include "IBMFDriver/IBMFFontData.hpp"
 
@@ -23,7 +23,7 @@ extern Font fontFace2;
 
 #endif
 
-#if TTF_SUPPORT
+#if CONFIG_FONT_TTF
 #include "TTFDriver/TTFFont.hpp"
 #include "TTFDriver/TTFNotoSansLight.hpp"
 #include "TTFFonts/NotoSans-Light.h"

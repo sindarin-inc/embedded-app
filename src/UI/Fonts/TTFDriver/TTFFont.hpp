@@ -2,7 +2,7 @@
 
 #include "config.h"
 
-#if TTF_SUPPORT
+#if CONFIG_FONT_TTF
 
 #include <cstdio>
 #include <functional>

@@ -14,7 +14,7 @@ Principles:
 Changes:
 
 - config.h
-    - Added IBMF_SUPPORT and TTF_SUPPORT defines. Some error checks have also been added
+    - Added CONFIG_FONT_IBMF and CONFIG_FONT_TTF defines. Some error checks have also been added
     - Added a "#pragma once" line at the beginning
 
 - all source file that were using ibmf75FaceX (X = 0, 1 or 2) have been updated to use fontFaceX instead
@@ -25,7 +25,7 @@ Changes:
 - A new UI/Fonts/Font.hpp that is usable by the application to retrived proper definitions to use the Drivers
 - platformio.ini modified to 
   - add the linux's freetype library for the 8-bits simulator. There coud be issues related to the test automations on GitHub that could require some adjustments.
-  - add IBMF_SUPPORT and TTF_SUPPORT -D definitions for both simulators (current Sol and 8-bits)
+  - add CONFIG_FONT_IBMF and CONFIG_FONT_TTF -D definitions for both simulators (current Sol and 8-bits)
 
 - all GFX Fonts removed (folder src/UI/Fonts/GFXFonts deleted)
 - all use of GFX fonts removed (mainly in the DisplaySystem class)

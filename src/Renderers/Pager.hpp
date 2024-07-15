@@ -64,7 +64,7 @@ private:
         linesTailIdx_ = (linesTailIdx_ + 1) % LINES_SIZE;
     }
 
-#if TTF_SUPPORT
+#if CONFIG_FONT_TTF
     auto getLineSegment(LineInfo &lineInfo, Idx tokenIdx, Idx endTokenIdx, Line &line) const -> Idx;
     void drawSingleLine(LineInfo &lineInfo, int yPos) const;
 #else
