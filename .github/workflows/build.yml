@@ -59,6 +59,7 @@ jobs:
         target:
           - glasses-debug
           - glasses-release
+          - waveshare-6inhd
           # - m5stack-atom-display
           # - m5stack-module-display
 

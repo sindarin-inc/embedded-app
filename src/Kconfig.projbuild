@@ -14,6 +14,9 @@ menu "Sol Options"
             config DISPLAY_M5STACK_MODULE_DISPLAY
                 bool "M5Stack Module Display (HDMI)"
 
+            config DISPLAY_WAVESHARE_6INHD
+                bool "Waveshare 6in HD Display"
+
         endchoice
     endmenu
 

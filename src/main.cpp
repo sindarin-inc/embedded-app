@@ -55,6 +55,9 @@ DisplayM5StackAtomDisplay myDisplay;
 #elif CONFIG_DISPLAY_M5STACK_MODULE_DISPLAY
 #include "Displays/DisplayM5StackModuleDisplay.hpp"
 DisplayM5StackModuleDisplay myDisplay;
+#elif CONFIG_DISPLAY_WAVESHARE_6INHD
+#include "Displays/DisplayWaveshare6inHD.hpp"
+DisplayWaveshare6inHD myDisplay;
 #endif
 
 PreferencesStore prefs;
