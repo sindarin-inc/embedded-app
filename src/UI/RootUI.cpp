@@ -925,21 +925,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         experimentalSettingsMenu->setToggleLastItem(true);
     }
 
-    experimentalSettingsMenu->addMenuItem(MenuItem("Apply lighting offset", [this]() {
-        auto newValue = !this->prefs_.brightnessOffsetEnabled.get().value_or(false);
-        if (newValue) {
-            this->prefs_.brightnessOffsetEnabled.set(newValue);
-        } else {
-            this->prefs_.brightnessOffsetEnabled.remove();
-        }
-    }));
-
-    if (prefs_.brightnessOffsetEnabled.get().value_or(false)) {
-        experimentalSettingsMenu->setToggleLastItem(true);
-    } else {
-        experimentalSettingsMenu->setToggleLastItem(false);
-    }
-
     // Unpair PageTurner
     // Sync Content
     // Turn on Onboarding Mode
