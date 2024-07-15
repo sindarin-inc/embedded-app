@@ -5,6 +5,7 @@
 
 #include "EPubDefs.hpp"
 #include "EPubOpf.hpp"
+#include "EPubPositionCache.hpp"
 #include "Misc/SpiramAllocator.hpp"
 #include "Misc/Unzipper.hpp"
 #include "Models/DocType.hpp"
@@ -106,6 +107,30 @@ public:
     auto getDictionaryContent(const std::shared_ptr<EPubPlace> &placeInReadable,
                               std::shared_ptr<TxtPlace> &placeInDictionary) -> SpiramString;
 
+    inline void addParagraphPosition(const renderer_defs::StreamPlace &streamPlace) {
+        ePubPositionCache_->addParagraphPosition(streamPlace);
+    }
+
+    inline void addPagePosition(const renderer_defs::StreamPlace &streamPlace) {
+        ePubPositionCache_->addPagePosition(streamPlace);
+    }
+
+    [[nodiscard]] inline auto
+    getCachedParagraphPosition(const renderer_defs::StreamPlace &fromPlace, bool backwards)
+        -> renderer_defs::StreamPlace {
+        return ePubPositionCache_->getParagraphPosition(fromPlace, backwards);
+    }
+
+    [[nodiscard]] inline auto getCachedPagePosition() -> renderer_defs::StreamPlace {
+        return ePubPositionCache_->getPagePosition();
+    }
+
+    [[nodiscard]] inline auto getCachedPositions(const renderer_defs::StreamPlace &fromPlace,
+                                                 bool backwards)
+        -> std::pair<renderer_defs::StreamPlace, renderer_defs::StreamPlace> {
+        return ePubPositionCache_->getPositions(fromPlace, backwards);
+    }
+
 private:
     Unzipper epubUnzipper_;
     const std::shared_ptr<Readable> readable_;
@@ -120,6 +145,8 @@ private:
     // std::unique_ptr<pugi::char_t[]> currentFileBuffer_;
     std::shared_ptr<uint8_t[]> currentFileBuffer_;
     std::string currentFilePath_;
+
+    std::shared_ptr<EPubPositionCache> ePubPositionCache_;
 
     auto open() -> bool;
     void close();

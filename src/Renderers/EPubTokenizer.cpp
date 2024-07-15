@@ -405,6 +405,11 @@ auto EPubTokenizer::isEmpty(pugi::xml_node node) -> bool {
 // of an XHTML file, we have to move to the preceding file, at the beginning of it.
 auto EPubTokenizer::goBackward(StreamPlace streamPlace, uint32_t offsetToSubtract) -> StreamPlace {
 
+    StreamPlace targetPlace = stream_->getCachedParagraphPosition(streamPlace, true);
+
+    return targetPlace;
+
+#if 0 // Old code
     uint32_t fileStartingOffset = computeStartingOffset(streamPlace);
 
     REND_WLOG("StreamPlace Offset: %" PRIu32 " vs fileStartingOffset: %" PRIu32,
@@ -419,6 +424,7 @@ auto EPubTokenizer::goBackward(StreamPlace streamPlace, uint32_t offsetToSubtrac
     } else {
         return {0, streamPlace.getSpineIdx()};
     }
+#endif
 }
 
 auto EPubTokenizer::toUtf8(uint32_t val) -> char * {
@@ -616,13 +622,15 @@ auto EPubTokenizer::forwardToNextPageOffset(pugi::xml_node node) const -> uint32
 //
 // 13) If menu parameters must be retrieved or not
 //
+// 14) The logical depth of tags. This is used to manage the position cache that serve to optimize
+// the backtracking to find the beginning of the next page to show. (See the EPubPositionCache
+// class)
+//
 // ----
 
 auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, StreamPlace *toPlace,
                                         bool retrieveMenuParameters)
     -> std::pair<StreamPlace, StreamPlace> {
-
-    // if (stream_->isAnArticle()) log_w("article");
 
     // Not pretty, but limits the number of parameters to pass to the interpret() method as it is
     // recursively called
@@ -695,27 +703,67 @@ auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, S
 
     // ---
 
+    StreamPlace topPlace;
+    StreamPlace pagePlace;
+
+    if (backwards_) {
+        topPlace = fromPlace_;
+        pagePlace = stream_->getCachedPagePosition();
+    } else {
+        std::tie(topPlace, pagePlace) = stream_->getCachedPositions(fromPlace_, false);
+    }
+
+    std::cout << "Top Level Place: " << topPlace.str() << ", Page Place: " << pagePlace.str();
+    if (backwards) {
+        std::cout << ", toPlace: " << toPlace->str();
+    }
+    std::cout << std::endl;
+
     if (stream_->isAnArticle()) {
 
         REND_WLOG("Reading an article...");
 
-        currentSpineIdx_ = 0;
+        currentSpineIdx_ = topPlace.getSpineIdx();
 
         REND_PROFILE_START(tokenizeProcess);
 
         bool completed = false;
+        bool firstLoop = true;
 
         do {
-            currentStreamOffset_ = 0;
 
             REND_PROFILE_START(loadXHTMLFile)
             pugi::xml_document &doc = loadXHTMLAt(currentSpineIdx_);
             REND_PROFILE_END(loadXHTMLFile)
 
             body_ = doc.child("html").child("body");
-            pugi::xml_node node = body_.first_child();
+
+            pugi::xml_node node;
+            if (firstLoop) {
+                struct TargetWalker : pugi::xml_tree_walker {
+                    auto for_each(pugi::xml_node &node) -> bool override {
+                        if (node.offset_debug() >= targetOffset) {
+                            theNode = &node;
+                            return false;
+                        }
+                        return true; // continue traversal
+                    }
+                    uint32_t targetOffset{};
+                    pugi::xml_node *theNode{};
+                } targetting;
+
+                targetting.targetOffset = topPlace.getOffset();
+                targetting.theNode = nullptr;
+                body_.traverse(targetting);
+                node = (targetting.theNode != nullptr) ? *targetting.theNode : body_.first_child();
+                currentStreamOffset_ = node.offset_debug();
+            } else {
+                currentStreamOffset_ = 0;
+                node = body_.first_child();
+            }
 
             if (node) {
+                logicalDepth_ = 0;
                 do {
                     if (!interpret(node)) {
                         completed = true;
@@ -748,6 +796,8 @@ auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, S
                 }
             }
 
+            firstLoop = false;
+
         } while (!completed);
 
         REND_PROFILE_END(tokenizeProcess);
@@ -756,23 +806,56 @@ auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, S
 
         REND_WLOG("Reading a book...");
 
-        currentSpineIdx_ = stream_->getChapterFirstSpineIdx(fromPlace.getSpineIdx());
+        currentSpineIdx_ = topPlace.getSpineIdx();
+
+        // currentSpineIdx_ = stream_->getChapterFirstSpineIdx(fromPlace.getSpineIdx());
 
         REND_PROFILE_START(tokenizeProcess);
 
         bool completed = false;
 
-        do {
-            currentStreamOffset_ = 0;
+        bool firstLoop = true;
 
+        do {
             REND_PROFILE_START(loadXHTMLFile)
             pugi::xml_document &doc = loadXHTMLAt(currentSpineIdx_);
             REND_PROFILE_END(loadXHTMLFile)
 
             body_ = doc.child("html").child("body");
-            pugi::xml_node node = body_.first_child();
+
+            pugi::xml_node node;
+            if (firstLoop) {
+                // We first displace the xml reader to the location where it is safe to start the
+                // gatering of formatting elements. The toPlace is pointing at a top level <p> or
+                // <div>. Next loops will be related to other spines that are part of the current
+                // chapter if required.
+                struct TargetWalker : pugi::xml_tree_walker {
+                    auto for_each(pugi::xml_node &node) -> bool override {
+                        if (node.offset_debug() >= targetOffset) {
+                            theNode = &node;
+                            return false;
+                        }
+                        return true; // continue traversal
+                    }
+                    uint32_t targetOffset{};
+                    pugi::xml_node *theNode{};
+                } targetting;
+
+                targetting.targetOffset = topPlace.getOffset();
+                targetting.theNode = nullptr;
+                body_.traverse(targetting);
+                node = (targetting.theNode != nullptr) ? *targetting.theNode : body_.first_child();
+                currentStreamOffset_ = node.offset_debug();
+
+                std::cout << "Current Stream Offset: " << currentStreamOffset_ << std::endl;
+            } else {
+                currentStreamOffset_ = 0;
+
+                node = body_.first_child();
+            }
 
             if (node) {
+                logicalDepth_ = 0;
                 do {
                     if (!interpret(node)) {
                         completed = true; // The page is complete
@@ -824,6 +907,7 @@ auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, S
                 }
             }
 
+            firstLoop = false;
         } while (!completed);
 
         REND_PROFILE_END(tokenizeProcess);
@@ -832,6 +916,9 @@ auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, S
     REND_WLOG("End of job: Page start: %s, next page at: %s",
               pager_.getStreamPlaceOfFirstLine().str().c_str(),
               pager_.getNextPageStreamPlace().str().c_str());
+
+    // Potentially add page to the cache
+    stream_->addPagePosition(pager_.getStreamPlaceOfFirstLine());
 
     return {pager_.getStreamPlaceOfFirstLine(), pager_.getNextPageStreamPlace()};
 }
@@ -980,6 +1067,8 @@ auto EPubTokenizer::addTokenToPage(Token &token, const char *str, uint8_t strSiz
                  (static_cast<uint16_t>(TokenId::NEWLINE) |
                   static_cast<uint16_t>(TokenId::ENDPARAGRAPH))) == 0) {
                 if (backwards_) {
+                    std::cout << "Current: " << token.streamPlace.str()
+                              << ", toPlace: " << toPlace_->str() << std::endl;
                     if (token.streamPlace >= *toPlace_) {
                         // So we are at the location corresponding to the end of the requested
                         // page.
@@ -1015,6 +1104,7 @@ auto EPubTokenizer::addTokenToPage(Token &token, const char *str, uint8_t strSiz
 
         pageCompleted_ = true;
     }
+
     return pageCompleted_;
 }
 
@@ -1130,6 +1220,27 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
             }
 
             switch (tagIt->second) {
+
+            case Tag::P:
+            case Tag::DIV:
+                if (logicalDepth_ == 0) {
+                    stream_->addParagraphPosition(
+                        StreamPlace(currentStreamOffset_, currentSpineIdx_));
+                }
+
+                if (tokenizingStarted_ && closeTextToken()) {
+                    return false;
+                }
+                if (isEmpty(node)) {
+                    startOfHeader_ = false;
+                    return true;
+                }
+                break;
+
+            case Tag::HEADER:
+                logicalDepth_++;
+                break;
+
             case Tag::H1:
             case Tag::H2:
             case Tag::H3:
@@ -1138,10 +1249,9 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
             case Tag::H6:
                 startOfHeader_ = true;
                 [[fallthrough]];
-            case Tag::P:
-            case Tag::DIV:
             case Tag::TD:
             case Tag::TH:
+                logicalDepth_++;
                 if (tokenizingStarted_ && closeTextToken()) {
                     return false;
                 }
@@ -1152,6 +1262,7 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                 break;
 
             case Tag::BLOCKQUOTE:
+                logicalDepth_++;
                 if (tokenizingStarted_ && closeTextToken()) {
                     return false;
                 }
@@ -1177,6 +1288,7 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                 return true; // skip children
 
             case Tag::SUP:
+                logicalDepth_++;
                 if (tokenizingStarted_ && closeTextToken()) {
                     return false;
                 }
@@ -1184,13 +1296,23 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                 break;
 
             case Tag::SUB:
+                logicalDepth_++;
                 if (tokenizingStarted_ && closeTextToken()) {
                     return false;
                 }
                 subscript_ = true;
                 break;
 
+            case Tag::BREAK:
+                logicalDepth_++;
+                break;
+
+            case Tag::HR:
+                logicalDepth_++;
+                break;
+
             case Tag::OL:
+                logicalDepth_++;
                 if (tokenizingStarted_) {
                     if (closeTextToken()) {
                         return false;
@@ -1224,6 +1346,7 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                 break;
 
             case Tag::UL:
+                logicalDepth_++;
                 if (tokenizingStarted_) {
                     if (closeTextToken()) {
                         return false;
@@ -1255,6 +1378,7 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                 break;
 
             case Tag::LI: {
+                logicalDepth_++;
                 if (tokenizingStarted_ && closeTextToken()) {
                     return false;
                 }
@@ -1297,6 +1421,7 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
             } break;
 
             case Tag::A: {
+                logicalDepth_++;
                 const pugi::char_t *v = node.child_value();
                 if ((v[0] != '\0') && tokenizingStarted_ && closeTextToken()) {
                     return false;
@@ -1310,6 +1435,7 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
             } break;
 
             case Tag::TABLE:
+                logicalDepth_++;
                 if (tokenizingStarted_) {
                     if (closeTextToken()) {
                         return false;
@@ -1332,6 +1458,7 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                 break;
 
             case Tag::TR:
+                logicalDepth_++;
                 if (tokenizingStarted_) {
                     if (closeTextToken()) {
                         return false;
@@ -1387,6 +1514,30 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
         if (!pageCompleted_) {
             if (tagIt != tags.end()) {
                 switch (tagIt->second) {
+                case Tag::P:
+                case Tag::DIV:
+                    if (tokenizingStarted_) {
+                        if (closeTextToken()) {
+                            return false;
+                        }
+                        if (!beginningOfPage_) {
+                            Token &newToken = tokens_.getNextAvailable();
+                            newToken = {.cStr = nullptr,
+                                        .picture = nullptr,
+                                        .streamPlace = {currentStreamOffset_, currentSpineIdx_},
+                                        .pixWidth = 0,
+                                        .pixHeight = 0,
+                                        .length = 0,
+                                        .tokenId =
+                                            inTableRow_ ? TokenId::NEWLINE : TokenId::ENDPARAGRAPH,
+                                        .spacesAfter = 0};
+                            lastToken_ = nullptr;
+
+                            addTokenToPage(newToken, "\n", 1);
+                        }
+                    }
+                    break;
+
                 case Tag::H1:
                 case Tag::H2:
                 case Tag::H3:
@@ -1395,11 +1546,12 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                 case Tag::H6:
                     startOfHeader_ = false; // Needed if going forward
                     [[fallthrough]];
-                case Tag::P:
-                case Tag::DIV:
                 case Tag::HEADER:
                 case Tag::TD:
                 case Tag::TH:
+                    if (logicalDepth_ > 0) {
+                        logicalDepth_--;
+                    }
                     if (tokenizingStarted_) {
                         if (closeTextToken()) {
                             return false;
@@ -1423,6 +1575,9 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                     break;
 
                 case Tag::BLOCKQUOTE:
+                    if (logicalDepth_ > 0) {
+                        logicalDepth_--;
+                    }
                     savedBlockquoteLeftIndent_ =
                         (savedBlockquoteLeftIndent_ > 0)
                             ? savedBlockquoteLeftIndent_ - ((blockquoteLevel_ == 0) ? 12 : 8)
@@ -1458,6 +1613,9 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                     break;
 
                 case Tag::SUP:
+                    if (logicalDepth_ > 0) {
+                        logicalDepth_--;
+                    }
                     superscript_ = false;
                     if (tokenizingStarted_ && closeTextToken()) {
                         return false;
@@ -1465,6 +1623,9 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                     break;
 
                 case Tag::SUB:
+                    if (logicalDepth_ > 0) {
+                        logicalDepth_--;
+                    }
                     subscript_ = false;
                     if (tokenizingStarted_ && closeTextToken()) {
                         return false;
@@ -1472,6 +1633,9 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                     break;
 
                 case Tag::BREAK:
+                    if (logicalDepth_ > 0) {
+                        logicalDepth_--;
+                    }
                     if (tokenizingStarted_) {
                         if (closeTextToken()) {
                             return false;
@@ -1487,6 +1651,9 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                     break;
 
                 case Tag::HR:
+                    if (logicalDepth_ > 0) {
+                        logicalDepth_--;
+                    }
                     if (tokenizingStarted_) {
                         if (closeTextToken()) {
                             return false;
@@ -1508,6 +1675,9 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                     break;
 
                 case Tag::OL:
+                    if (logicalDepth_ > 0) {
+                        logicalDepth_--;
+                    }
                     if (listLevel_ >= 0) {
                         listLevel_ -= 1;
                     }
@@ -1534,6 +1704,9 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                     break;
 
                 case Tag::UL:
+                    if (logicalDepth_ > 0) {
+                        logicalDepth_--;
+                    }
                     if (listLevel_ >= 0) {
                         listLevel_ -= 1;
                     }
@@ -1561,6 +1734,9 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
 
                 case Tag::LI:
                     // log_w("</LI>");
+                    if (logicalDepth_ > 0) {
+                        logicalDepth_--;
+                    }
                     if (tokenizingStarted_) {
                         if (closeTextToken()) {
                             return false;
@@ -1583,6 +1759,9 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                     break;
 
                 case Tag::A:
+                    if (logicalDepth_ > 0) {
+                        logicalDepth_--;
+                    }
                     if (tokenizingStarted_) {
                         if ((postText_[0] != '\0') && closeTextToken(true)) {
                             return false;
@@ -1596,6 +1775,9 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                     break;
 
                 case Tag::TABLE:
+                    if (logicalDepth_ > 0) {
+                        logicalDepth_--;
+                    }
                     if (tokenizingStarted_) {
                         if (closeTextToken()) {
                             return false;
@@ -1618,6 +1800,9 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                     break;
 
                 case Tag::TR:
+                    if (logicalDepth_ > 0) {
+                        logicalDepth_--;
+                    }
                     if (tokenizingStarted_) {
                         if (closeTextToken()) {
                             return false;

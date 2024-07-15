@@ -124,7 +124,8 @@ auto EPubFile::getXHTMLFile(const std::string &path) -> pugi::xml_document & {
 
     if (currentFilePath_ != filePath) {
 
-        // log_w("currentFilePath_: %s, filePath : %s", currentFilePath_.c_str(), filePath.c_str());
+        log_w("currentFilePath_: %s, new filePath : %s", currentFilePath_.c_str(),
+              filePath.c_str());
 
         std::tie(currentFileBuffer_, length) = getFile(filePath);
 
@@ -283,8 +284,8 @@ auto EPubFile::getSummaryContent(
         log_e("Unable to find chapter index for %s", chapterHref.c_str());
         return "This chapter does not have a summary.";
     }
-    log_w("Chapter href: %s, chapter idx: %d, toc href: %s", chapterHref.c_str(), chapterIdx,
-          std::string(getToc()[chapterIdx].href).c_str());
+    log_w("Chapter href: %s, chapter idx: %" PRIi32 ", toc href: %s", chapterHref.c_str(),
+          chapterIdx, std::string(getToc()[chapterIdx].href).c_str());
     if (std::string(getToc()[chapterIdx].href) != chapterHref) {
         chapterHref = std::string(getToc()[chapterIdx].href);
     }
@@ -296,7 +297,8 @@ auto EPubFile::getSummaryContent(
         partialSummaryChapterHRef = opf_->getChapterFirstHref(summarySpineHref);
     }
 
-    log_d("Loading summary for chapter href: %s, chapter idx: %d", chapterHref.c_str(), chapterIdx);
+    log_d("Loading summary for chapter href: %s, chapter idx: %" PRIi32, chapterHref.c_str(),
+          chapterIdx);
     SpiramString summaryText;
     bool foundAnySummaries = false;
     for (const auto &chapter : getToc()) {
@@ -428,7 +430,8 @@ auto EPubFile::getDictionaryContent(const std::shared_ptr<EPubPlace> &placeInRea
     pugi::xml_node prevNode;
     int closestLocation = -1;
 
-    log_d("Loading dictionary for chapter: %s. (href: %s, chapter idx: %d) Current offset: %d "
+    log_d("Loading dictionary for chapter: %s. (href: %s, chapter idx: %" PRIi32
+          ") Current offset: %d "
           "(file:%d+prev:%d)",
           spineId.c_str(), spineHref.c_str(), chapterIdx, currentOffset, fileOffset,
           previousSpineOffset);
@@ -547,6 +550,8 @@ auto EPubFile::open() -> bool {
         opf_->loadSpine(toc);
     }
     EPUB_PROFILE_END(EPubOpf)
+
+    ePubPositionCache_ = std::make_shared<EPubPositionCache>(*this);
 
     PROFILE_END_LOG_MS(openEPub);
 

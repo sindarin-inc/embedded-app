@@ -202,6 +202,10 @@ private:
     // Only used when going backwards
     uint32_t currentPageTxtOffset_ = 0;
 
+    // The logical depth of a tag in the XHtml file. Serves, when = 0, to potentially add an entry
+    // to the EPubPositionCache for optimization.
+    uint16_t logicalDepth_ = 0;
+
     // Not null if there is a text token to be closed. This is required to take into account
     // words that could be containing tags like <b/> <i/> etc. These will be processed
     // recursively, the content potentially part of a word.
