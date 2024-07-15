@@ -13,16 +13,16 @@ auto ReadableSummaryScreen::layout(LayoutContext &context, Size size) -> Size {
 
     auto contentFrame = backgroundFrame.inset(10);
     context.setViewFrame(leftArrowView_,
-                         {{contentFrame.origin.x, contentFrame.origin.y - 5}, {10, 5}});
+                         {{contentFrame.origin.x, contentFrame.origin.y - 4}, {10, 5}});
     context.setViewFrame(upperLeftTextView_,
                          {{contentFrame.origin.x + 15, contentFrame.origin.y - 8},
                           {contentFrame.size.width, contentFrame.size.height}});
     context.setViewSizeInRect(rightArrowView_, {10, 5},
-                              {{contentFrame.origin.x, 7}, contentFrame.size},
+                              {{contentFrame.origin.x, 12}, contentFrame.size},
                               LayoutOptionsAlignBottom | LayoutOptionsAlignRight);
     context.setViewFrame(
         bottomRightTextView_,
-        {{contentFrame.origin.x, contentFrame.origin.y + contentFrame.size.height - 11},
+        {{contentFrame.origin.x, contentFrame.origin.y + contentFrame.size.height - 6},
          {contentFrame.size.width - 12, 10}},
         LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical | LayoutOptionsAlignRight);
 
@@ -69,8 +69,9 @@ void ReadableSummaryScreen::render(DisplaySystem &display) {
     // Double up on the vertical insets
     // TODO(john): I'm not sure we want to use the bounding box setting here, but it's what we were
     // doing previously so I'm keeping it for now.
-    auto rect = GetTextRectFromPrefs(display, prefs_);
-    rect = rect.inset(0, 0, display.defaultTextInsets().top, display.defaultTextInsets().bottom);
+    auto rect =
+        DisplayRect::fromSizeAndInsets(display_.width(), display_.height(), {30, 30, 30, 30});
+    rect = rect.inset(10, 10, 15, 15);
     renderer_.setRect(rect);
 
     uint8_t darkPicturePercent = 0;
