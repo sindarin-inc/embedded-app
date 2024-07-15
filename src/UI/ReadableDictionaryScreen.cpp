@@ -45,8 +45,6 @@ void ReadableDictionaryScreen::render(DisplaySystem &display) {
     setFrame(defaultFrameRect());
 
     // Double up on the vertical insets
-    // TODO(john): I'm not sure we want to use the bounding box setting here, but it's what we were
-    // doing previously so I'm keeping it for now.
     auto rect =
         DisplayRect::fromSizeAndInsets(display_.width(), display_.height(), {30, 30, 30, 30});
     rect = rect.inset(10, 10, 15, 15);
