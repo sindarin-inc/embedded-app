@@ -346,9 +346,6 @@ TEST_CASE("Test some views independently") {
         Telemetry telemetry = Telemetry(fileSystem, prefs);
 
         SECTION("Test AboutScreen") {
-            PosixFileSystem fs("./test/CatchTests/TestData/AboutScreen/");
-            Telemetry telemetry(fs, prefs);
-            Battery battery(fs, prefs, telemetry);
             LightingController lightingController(prefs);
             PowerManager power(fs, prefs, lightingController, *display, telemetry);
             AboutScreen screen(*display, prefs, power);
@@ -357,9 +354,6 @@ TEST_CASE("Test some views independently") {
         }
 
         SECTION("Test LegalScreen") {
-            PosixFileSystem fs("./test/CatchTests/TestData/AboutScreen/");
-            Telemetry telemetry(fs, prefs);
-            Battery battery(fs, prefs, telemetry);
             LightingController lightingController(prefs);
             PowerManager power(fs, prefs, lightingController, *display, telemetry);
             LegalScreen screen(*display, prefs, power);
