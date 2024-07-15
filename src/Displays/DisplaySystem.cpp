@@ -10,7 +10,6 @@
 #include "Misc/PBMImage.hpp"
 #include "Misc/StringUtil.hpp"
 #include "UI/Fonts/Font.hpp"
-// #include "UI/Fonts/IBMFDriver/IBMFFont.hpp"
 #include "sindarin-debug.h"
 
 DisplaySystem::DisplaySystem() = default;
