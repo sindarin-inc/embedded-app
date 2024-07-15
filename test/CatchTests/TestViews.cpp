@@ -205,7 +205,7 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
         ASSERT_VIEW_UNCHANGED(display, "Dictionary3");
         SendRemoteCommand(ENTER);
         WAIT_FOR_DRAW(display);
-        ASSERT_VIEW_UNCHANGED(display, "Dawn");
+        ASSERT_VIEW_UNCHANGED(display, "Dawn1");
 
         // Render the popup menu
         SendRemoteCommand(DOWN);
@@ -336,10 +336,10 @@ TEST_CASE("Test some views independently") {
         prefs.invertSetting.remove();
         prefs.font.remove();
         prefs.lineSpacing.remove();
-        prefs.rectX.remove();
-        prefs.rectY.remove();
-        prefs.rectW.remove();
-        prefs.rectH.remove();
+        prefs.textInsetLeft.remove();
+        prefs.textInsetRight.remove();
+        prefs.textInsetTop.remove();
+        prefs.textInsetBottom.remove();
         PosixFileSystem fileSystem("./test/CatchTests/TestData");
         Telemetry telemetry = Telemetry(fileSystem, prefs);
 
@@ -366,7 +366,7 @@ TEST_CASE("Test some views independently") {
             auto readablesJsonDoc = LoadJsonDoc(fileSystem, "/readables.json");
             readable->fromJson((*readablesJsonDoc)["readables"][1]);
 
-            Renderer renderer(*display);
+            Renderer renderer(*display, display->defaultTextRect());
             auto [path, size] = LocalStore::readableFilePathForReading(fileSystem, readable);
             auto stream = fileSystem.newEPubRendererStream(path.c_str(), readable);
             renderer.setStream(stream);
@@ -386,7 +386,7 @@ TEST_CASE("Test some views independently") {
             auto readablesJsonDoc = LoadJsonDoc(fileSystem, "/readables.json");
             readable->fromJson((*readablesJsonDoc)["readables"][0]);
 
-            Renderer renderer(*display);
+            Renderer renderer(*display, display->defaultTextRect());
             auto [path, size] = LocalStore::readableFilePathForReading(fileSystem, readable);
             auto stream = fileSystem.newGzipRendererStream(path.c_str());
             renderer.setStream(stream);
@@ -398,13 +398,11 @@ TEST_CASE("Test some views independently") {
         }
 
         SECTION("Test EPUB image rendering with alternate bounding box") {
-            display->setBoundingBox(DisplayRect{10, 20, 236, 236});
-
             auto readable = std::make_shared<Readable>();
             auto readablesJsonDoc = LoadJsonDoc(fileSystem, "/readables-lq-epub.json");
             readable->fromJson((*readablesJsonDoc)["readables"][0]);
 
-            Renderer renderer(*display);
+            Renderer renderer(*display, {10, 20, 236, 236});
             auto [path, size] = LocalStore::readableFilePathForReading(fileSystem, readable);
             auto stream = fileSystem.newEPubRendererStream(path.c_str(), readable);
             renderer.setStream(stream);

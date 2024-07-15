@@ -2,7 +2,7 @@
 
 #include <utility>
 
-#if USE_BLE_SERVER_PROXY
+#if CONFIG_USE_BLE_SERVER_PROXY
 #include "Communications/BLEHttpClient.hpp"
 #include "Communications/BLEImprov.hpp"
 #include "Communications/BLEManager.hpp"
@@ -226,7 +226,7 @@ auto SindarinAPI::createClient(const std::string &url, const std::string &conten
                                const std::shared_ptr<CancelFlag> &cancel)
     -> std::shared_ptr<HttpClient> {
     if (useBle) {
-#if USE_BLE_SERVER_PROXY
+#if CONFIG_USE_BLE_SERVER_PROXY
         auto bleManager = BLEManager::getInstance();
         auto bleProxy = BLEProxy::getInstance();
         auto bleImprov = BLEImprov::getInstance();

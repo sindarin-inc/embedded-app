@@ -3,16 +3,16 @@
 #include "Platform.hpp"
 
 void BlinkDot() {
-    DigitalWrite(RED_LED, LED_ON);
+    DigitalWrite(CONFIG_RED_LED, LED_ON);
     Delay(100);
-    DigitalWrite(RED_LED, LED_OFF);
+    DigitalWrite(CONFIG_RED_LED, LED_OFF);
     Delay(100);
 }
 
 void BlinkDash() {
-    DigitalWrite(RED_LED, LED_ON);
+    DigitalWrite(CONFIG_RED_LED, LED_ON);
     Delay(300);
-    DigitalWrite(RED_LED, LED_OFF);
+    DigitalWrite(CONFIG_RED_LED, LED_OFF);
     Delay(100);
 }
 

@@ -17,13 +17,17 @@ public:
     DisplayEinkET013TT1(uint8_t csLeft, uint8_t csRight, uint8_t rst) noexcept
         : gfxCanvas_(EinkET013TT1_X_PIXELS, EinkET013TT1_Y_PIXELS), driver_(csLeft, csRight, rst) {
         gfxClass_ = &gfxCanvas_;
-        canvasBuffer_ = gfxCanvas_.getBuffer();
-        canvasWidth_ = EinkET013TT1_X_PIXELS;
-        canvasHeight_ = EinkET013TT1_Y_PIXELS;
     };
     DisplayEinkET013TT1(DisplayEinkET013TT1 const &) = delete;
 
     ~DisplayEinkET013TT1() override = default;
+
+    [[nodiscard]] auto defaultTextInsets() const -> DisplayInset override {
+        return {30, 30, 20, 20};
+    };
+    [[nodiscard]] auto minTextInsets() const -> DisplayInset override { return {5, 5, 5, 5}; };
+    [[nodiscard]] auto minTextBoxWidth() const -> int16_t override { return 125; };
+    [[nodiscard]] auto minTextBoxHeight() const -> int16_t override { return 45; };
 
     auto setup() -> bool override;
 
@@ -68,8 +72,12 @@ public:
 #endif
 
 protected:
-    GFXcanvas1 gfxCanvas_;
+    [[nodiscard]] auto nativeWidth() const -> uint16_t override { return EinkET013TT1_X_PIXELS; }
+    [[nodiscard]] auto nativeHeight() const -> uint16_t override { return EinkET013TT1_Y_PIXELS; }
 
+    [[nodiscard]] auto getBuffer() -> uint8_t * override { return gfxCanvas_.getBuffer(); }
+
+    GFXcanvas1 gfxCanvas_;
     EinkET013TT1 driver_;
     bool fullRefreshNext_ = false;
     uint16_t au4Count_ = 0;

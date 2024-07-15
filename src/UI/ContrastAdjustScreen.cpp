@@ -1,4 +1,4 @@
-#if EINKET013TT1
+#if CONFIG_DISPLAY_EINKET013TT1
 
 #include "UI/ContrastAdjustScreen.hpp"
 
@@ -93,7 +93,7 @@ void ContrastAdjustScreen::drawInRect(Rect rect) {
 
 void ContrastAdjustScreen::render(DisplaySystem &display) {
     setNeedsLayout();
-    setFrame({{0, 0}, {display.width(), display.height()}});
+    setFrame(defaultFrameRect());
     draw();
 
     display.updateDisplay(DisplaySystem::UpdateType::FULL);

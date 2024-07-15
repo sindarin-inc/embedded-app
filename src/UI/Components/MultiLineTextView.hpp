@@ -15,7 +15,7 @@ public:
     MultiLineTextView(DisplaySystem &display, int maxLines, int spacingOffset = 0,
                       bool allCaps = false)
         : EinkView(display), maxLines_(maxLines), spacingOffset_(spacingOffset),
-          font_(static_cast<Font *>(&ibmf75Face0)), allCaps_(allCaps){};
+          font_(static_cast<Font *>(&fontFace0)), allCaps_(allCaps){};
 
     ~MultiLineTextView() override = default;
 

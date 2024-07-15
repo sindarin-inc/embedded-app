@@ -82,8 +82,8 @@
 class EPubTokenizer : public Tokenizer {
 
 public:
-    EPubTokenizer(DisplaySystem &display, Tokens &tokens, Pager &pager)
-        : Tokenizer(display, tokens, pager) {}
+    EPubTokenizer(DisplaySystem &display, DisplayRect &rect, Tokens &tokens, Pager &pager)
+        : Tokenizer(display, rect, tokens, pager) {}
     ~EPubTokenizer() override = default;
 
     [[nodiscard]] auto loadAndTokenizePage(StreamPlace fromPlace, bool backwards = false,

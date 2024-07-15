@@ -7,7 +7,8 @@
 
 TutorialScreen::TutorialScreen(DisplaySystem &display, PreferencesStore &prefs, SpiramString text,
                                int bit)
-    : display_(display), renderer_(display), prefs_(prefs), menu_(prefs, display) {
+    : display_(display), renderer_(display, GetTextRectFromPrefs(display, prefs)), prefs_(prefs),
+      menu_(prefs, display) {
 
     auto stream = std::make_shared<StdStringStream>(text);
     renderer_.setStream(stream);

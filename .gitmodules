@@ -16,3 +16,6 @@
 [submodule "components/astubs"]
 	path = components/astubs
 	url = git@github.com:sindarin-inc/astubs.git
+[submodule "components/freetype/freetype"]
+	path = components/freetype/freetype
+	url = git@github.com:freetype/freetype.git

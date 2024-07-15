@@ -10,7 +10,7 @@
 #include "config.h"
 #include "sindarin-debug.h"
 
-#if USE_TURN_TOUCH_REMOTE
+#if CONFIG_USE_TURN_TOUCH_REMOTE
 #include <NimBLEDevice.h>
 #elif !defined(BLEAddress)
 typedef uint64_t BLEAddress;
@@ -49,13 +49,18 @@ enum class PairedStatus {
 template <typename T>
 auto GetFromStorage(uint32_t nvsHandle, const char *key, T &value) -> esp_err_t {
     static_assert(
-        std::disjunction_v<std::is_same<T, bool>, std::is_same<T, int>, std::is_same<T, int32_t>,
+        std::disjunction_v<std::is_same<T, bool>, std::is_same<T, int>, std::is_same<T, int16_t>,
+                           std::is_same<T, uint16_t>, std::is_same<T, int32_t>,
                            std::is_same<T, uint32_t>, std::is_same<T, uint64_t>,
                            std::is_same<T, std::string>, std::is_same<T, BLEAddress>>,
         "Unsupported type for NVS storage");
     esp_err_t err;
     if constexpr (std::is_same_v<T, bool>) {
         err = nvs_get_u8(nvsHandle, key, reinterpret_cast<uint8_t *>(&value));
+    } else if constexpr (std::is_same_v<T, int16_t>) {
+        err = nvs_get_i16(nvsHandle, key, reinterpret_cast<int16_t *>(&value));
+    } else if constexpr (std::is_same_v<T, uint16_t>) {
+        err = nvs_get_u16(nvsHandle, key, reinterpret_cast<uint16_t *>(&value));
     } else if constexpr (std::is_same_v<T, int> || std::is_same_v<T, int32_t>) {
         err = nvs_get_i32(nvsHandle, key, reinterpret_cast<int32_t *>(&value));
     } else if constexpr (std::is_same_v<T, uint32_t>) {
@@ -93,12 +98,17 @@ auto GetFromStorage(uint32_t nvsHandle, const char *key, T &value) -> esp_err_t 
 template <typename T>
 auto GetNVSType() -> nvs_type_t {
     static_assert(
-        std::disjunction_v<std::is_same<T, bool>, std::is_same<T, int>, std::is_same<T, int32_t>,
+        std::disjunction_v<std::is_same<T, bool>, std::is_same<T, int>, std::is_same<T, int16_t>,
+                           std::is_same<T, uint16_t>, std::is_same<T, int32_t>,
                            std::is_same<T, uint32_t>, std::is_same<T, uint64_t>,
                            std::is_same<T, std::string>, std::is_same<T, BLEAddress>>,
         "Unsupported type for NVS storage");
     if constexpr (std::is_same_v<T, bool>) {
         return NVS_TYPE_U8;
+    } else if constexpr (std::is_same_v<T, int16_t>) {
+        return NVS_TYPE_I16;
+    } else if constexpr (std::is_same_v<T, uint16_t>) {
+        return NVS_TYPE_U16;
     } else if constexpr (std::is_same_v<T, int> || std::is_same_v<T, int32_t>) {
         return NVS_TYPE_I32;
     } else if constexpr (std::is_same_v<T, uint32_t>) {
@@ -117,13 +127,18 @@ auto GetNVSType() -> nvs_type_t {
 template <typename T>
 auto WriteToStorage(uint32_t nvsHandle, const char *key, T &value) -> esp_err_t {
     static_assert(
-        std::disjunction_v<std::is_same<T, bool>, std::is_same<T, int>, std::is_same<T, int32_t>,
+        std::disjunction_v<std::is_same<T, bool>, std::is_same<T, int>, std::is_same<T, int16_t>,
+                           std::is_same<T, uint16_t>, std::is_same<T, int32_t>,
                            std::is_same<T, uint32_t>, std::is_same<T, uint64_t>,
                            std::is_same<T, std::string>, std::is_same<T, BLEAddress>>,
         "Unsupported type for NVS storage");
     esp_err_t err;
     if constexpr (std::is_same_v<T, bool>) {
         err = nvs_set_u8(nvsHandle, key, value);
+    } else if constexpr (std::is_same_v<T, int16_t>) {
+        err = nvs_set_i16(nvsHandle, key, value);
+    } else if constexpr (std::is_same_v<T, uint16_t>) {
+        err = nvs_set_u16(nvsHandle, key, value);
     } else if constexpr (std::is_same_v<T, int> || std::is_same_v<T, int32_t>) {
         err = nvs_set_i32(nvsHandle, key, value);
     } else if constexpr (std::is_same_v<T, uint32_t>) {
@@ -302,7 +317,7 @@ public:
     // Ignoring clang-tidy and keeping these on their own lines otherwise diffs become very
     // difficult to read
     // clang-format off
-#if USE_TURN_TOUCH_REMOTE
+#if CONFIG_USE_TURN_TOUCH_REMOTE
           pairedTurnTouchAddress(*this, "paired-tt"),
 #endif
           cloudToken(*this, "cloud-token"),
@@ -323,10 +338,6 @@ public:
           invertSetting(*this, "invert"),
           vcom(*this, "vcom"),
           font(*this, "font"),
-          rectX(*this, "rectX"),
-          rectY(*this, "rectY"),
-          rectW(*this, "rectW"),
-          rectH(*this, "rectH"),
           lineSpacing(*this, "line-space"),
           wordCount(*this, "word-count"),
           totalReadingTimeSeconds(*this, "tot-rd-time"),
@@ -353,7 +364,7 @@ public:
           fastTransitions(*this, "fast-tran"),
           noUploadCrashes(*this, "no-upload-crash"),
           showDebugMenu(*this, "show-debug"),
-          noShowPartialChapterSummary(*this, "no-partial-summary"),
+          noShowPartialChapterSummary(*this, "no-part-summary"),
           fastBookmarkRight(*this, "fst-mark-right"),
           fastBookmarkCenter(*this, "fst-mark-cent"),
           pageTransitionArrows(*this, "page-arrows"),
@@ -367,8 +378,11 @@ public:
           bleAuthKey(*this, "ble-auth-key"),
           blePower(*this, "ble-power"),
           brightnessOffset(*this, "brightness-off"),
-          brightnessOffsetEnabled(*this, "bright-off-en"),
           loggingOn(*this, "logging"),
+          textInsetLeft(*this, "text-inset-l"),
+          textInsetRight(*this, "text-inset-r"),
+          textInsetTop(*this, "text-inset-t"),
+          textInsetBottom(*this, "text-inset-b"),
           preferencesStoreMigrationVersion_(*this, "ps-version") {}
     // clang-format on
 
@@ -461,6 +475,32 @@ public:
                 }
                 break;
             }
+            case 5: { // Versions >= 1.0.6
+                int32_t rectX = 0;
+                auto errX = nvs_get_i32(nvsHandle_, "rectX", &rectX);
+                int32_t rectY = 0;
+                auto errY = nvs_get_i32(nvsHandle_, "rectY", &rectY);
+                int32_t rectW = 0;
+                auto errW = nvs_get_i32(nvsHandle_, "rectW", &rectW);
+                int32_t rectH = 0;
+                auto errH = nvs_get_i32(nvsHandle_, "rectH", &rectH);
+                // Only migrate if all values exist
+                if (errX == ESP_OK || errY == ESP_OK || errW == ESP_OK || errH == ESP_OK) {
+                    log_d("Migrating from rectX, rectY, rectW, rectH to margin based system");
+                    textInsetLeft.set(rectX);
+                    textInsetRight.set(256 - rectX - rectW);
+                    textInsetTop.set(rectY);
+                    textInsetBottom.set(256 - rectY - rectH);
+                }
+                nvs_erase_key(nvsHandle_, "rectX");
+                nvs_erase_key(nvsHandle_, "rectY");
+                nvs_erase_key(nvsHandle_, "rectW");
+                nvs_erase_key(nvsHandle_, "rectH");
+                break;
+            }
+            case 6: // Versions >= 1.0.6
+                nvs_erase_key(nvsHandle_, "bright-off-en");
+                break;
             default:
                 log_e("Unknown migration version: %" PRIu32, migrationVersion);
                 return;
@@ -509,14 +549,14 @@ public:
 
     void clear() {
         // Save and re-set the Turn Touch
-#if USE_TURN_TOUCH_REMOTE
+#if CONFIG_USE_TURN_TOUCH_REMOTE
         auto turnTouchAddress = this->pairedTurnTouchAddress.get();
 #endif
         esp_err_t err = nvs_erase_all(nvsHandle_);
         if (err) {
             log_e("nvs_erase_all fail: %s", esp_err_to_name(err));
         }
-#if USE_TURN_TOUCH_REMOTE
+#if CONFIG_USE_TURN_TOUCH_REMOTE
         if (turnTouchAddress.has_value()) {
             this->pairedTurnTouchAddress.set(turnTouchAddress.value());
         }
@@ -555,7 +595,7 @@ public:
         paired = PairedStatus::Unknown;
     }
 
-#if USE_TURN_TOUCH_REMOTE
+#if CONFIG_USE_TURN_TOUCH_REMOTE
     PrefsItem<BLEAddress> pairedTurnTouchAddress;
 #endif
     PrefsItem<std::string> cloudToken;
@@ -576,10 +616,6 @@ public:
     PrefsItem<bool> invertSetting;
     PrefsItem<int> vcom;
     PrefsItem<int> font;
-    PrefsItem<int> rectX;
-    PrefsItem<int> rectY;
-    PrefsItem<int> rectW;
-    PrefsItem<int> rectH;
     PrefsItem<int> lineSpacing;
     PrefsItem<uint32_t> wordCount;
     PrefsItem<uint32_t> totalReadingTimeSeconds;
@@ -627,8 +663,11 @@ public:
     // battery power. But there might be some tweaking we could do to improve BLE reliability.
     PrefsItem<uint32_t> blePower;
     PrefsItem<int> brightnessOffset;
-    PrefsItem<bool> brightnessOffsetEnabled;
     PrefsItem<bool> loggingOn;
+    PrefsItem<uint16_t> textInsetLeft;
+    PrefsItem<uint16_t> textInsetRight;
+    PrefsItem<uint16_t> textInsetTop;
+    PrefsItem<uint16_t> textInsetBottom;
 
     // These are RTC_SLOW_MEM variables that persist across deep sleep / wake cycles but will be
     // reset on power cycles
@@ -644,7 +683,7 @@ public:
     static PairedStatus paired;
 
 protected:
-    const uint32_t latestMigrationVersion_ = 5;
+    const uint32_t latestMigrationVersion_ = 7;
     uint32_t nvsHandle_{};
     bool started_{};
 

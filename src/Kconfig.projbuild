@@ -1,0 +1,123 @@
+menu "Sol Options"
+
+    menu "Display Type"
+        choice
+            prompt "Select Display Type"
+            default DISPLAY_EINKET013TT1
+
+            config DISPLAY_EINKET013TT1
+                bool "E-Ink ET013TT1 Display"
+
+            config DISPLAY_M5STACK_ATOM_DISPLAY
+                bool "M5Stack Atom Display (HDMI)"
+
+            config DISPLAY_M5STACK_MODULE_DISPLAY
+                bool "M5Stack Module Display (HDMI)"
+
+        endchoice
+    endmenu
+
+    menu "BLE Settings"
+        config USE_BLE_SERVER_REMOTE
+            bool "Enable BLE Server Remote"
+            default y
+
+        config USE_BLE_SERVER_SETTINGS
+            bool "Enable BLE Server Settings"
+            default y
+
+        config USE_BLE_SERVER_PROXY
+            bool "Enable BLE Server Proxy"
+            default y
+
+        config USE_BLE_SERVER_IMPROV
+            bool "Enable BLE Server Improv"
+            default y
+
+        config USE_TURN_TOUCH_REMOTE
+            bool "Enable Turn Touch Remote"
+            default y
+    endmenu
+
+    menu "Peripheral Settings"
+        config BOARD_HAS_PSRAM
+            bool "Board has PSRAM"
+            default y
+
+        config INTERNAL_SPIFFS_FLASH
+            bool "Internal SPIFFS Flash"
+            default y
+
+        config LEDC_BACKLIGHT
+            bool "LEDC Backlight"
+            default y
+
+        config USE_LTR329
+            bool "Use LTR329 Ambient Light Sensor"
+            default y
+
+        config USE_MMC5603
+            bool "Use MMC5603 Magnetometer"
+            default y
+
+        config LED_INVERT
+            bool "LED Invert"
+            default y
+
+        config USE_TINYUSB_SERIAL
+            bool "Use TinyUSB for Serial Communication"
+            default y
+    endmenu
+
+    menu "Pin Selection"
+        config RED_LED
+            int "Red LED Pin"
+            default 7
+
+        config GREEN_LED
+            int "Green LED Pin"
+            default 6
+
+        config BLUE_LED
+            int "Blue LED Pin"
+            default 18
+
+        config USB_CONNECTED_PIN
+            int "USB Connected Pin"
+            default 8
+    endmenu
+
+    menu "Renderer Settings"
+        config MAX_BYTES_PER_PARAGRAPH
+            int "Max Bytes Per Paragraph"
+            default 5003
+        config MAX_BYTES_PER_DISPLAY_PAGE
+            int "Max Bytes Per Display Page"
+            default 2400
+        config CSTR_POOL_SIZE
+            int "CStr Pool Size"
+            default 2000
+        config TOKENS_SIZE
+            int "Tokens Size"
+            default 500
+        config MAX_BYTES_PER_LINE
+            int "Max Bytes Per Line"
+            default 200
+        config LINES_SIZE
+            int "Lines Size"
+            default 36
+
+        choice
+            prompt "Font System"
+            default FONT_IBMF
+    
+            config FONT_IBMF
+                bool "IBMF 1bpp Sol Sans Font"
+
+            config FONT_TTF
+                bool "TTF Font via FreeType"
+        endchoice
+        
+    endmenu
+
+endmenu

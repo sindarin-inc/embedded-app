@@ -12,8 +12,7 @@ static auto spiZAlloc(void *opaque, size_t items, size_t size) -> void * {
 
 static void spiZFree(void *opaque, void *address) {
     // log_d("spiZFree");
-    // SpiRamFree(address);
-    heap_caps_free(address);
+    SpiRamFree(address);
 }
 
 auto Unzipper::open() -> bool {

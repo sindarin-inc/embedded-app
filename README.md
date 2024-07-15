@@ -22,15 +22,22 @@ If you get errors about `cmake` you might need to install `cmake` first (`brew i
 
 Now from the root of this repo, you can run (replace `/YOUR/PATH/TO` with the path where you put `esp-idf`):
 
-```bash
+```sh
 . /YOUR/PATH/TO/esp-idf/export.sh
-idf.py set-target esp32s3
-idf.py build flash monitor
+make build flash monitor
 ```
 
 This will build the latest firmware, flash it to the device, and open a serial monitor. You can also use `idf.py menuconfig` to configure the build if you need to change build options.
 
-See also the official [esp-idf installation instructions](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/get-started/index.html) for more details
+See also the official [esp-idf installation instructions](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/get-started/index.html) for more details.
+
+## Building alternate targets
+
+By default we build a debug build for the glasses. But we support other build targets. To specific a different target, you can use the `TARGET` environment variable. For example, to build a release build, you can use:
+
+```sh
+TARGET=glasses-release build flash monitor
+```
 
 ## `idf.py monitor` but without resetting
 
@@ -68,7 +75,7 @@ Issues that will be fixed automatically will be fixed by clang-tidy, warnings wi
 
 The simulator compiles in <20s from a clean build, and even less on an incremental build. This makes it fast for us to iterate on anything that doesn't need the physical hardware.
 
-You'll need SDL2 & openssl for it to work: `brew install sdl2 openssl` (on Ubuntu `sudo apt install libsdl2-dev libssl-dev`). Then you can run `make sim` to run it. After building once, you can also debug with lldb at the command line: `lldb lib/Simulator/build/simulator`.
+You'll need SDL2, openssl & freetype for it to work: `brew install sdl2 openssl freetype` (on Ubuntu `sudo apt install libsdl2-dev libssl-dev libfreetype-dev`). Then you can run `make sim` to run it (or `make sim8` for the high-res version). After building once, you can also debug with lldb at the command line: `lldb lib/Simulator/build/simulator`.
 
 ### Extract your Sol cloud access token to download content onto the Simulator
 
@@ -339,3 +346,11 @@ Note: Don't use multiple tags on the same commit or git describe will get confus
 ```sh
 git describe --always --tags --dirty | cut -c 1-31
 ```
+
+## Adding new build targets
+
+To add a new esp-idf build target you need to do a few things:
+
+* Add a new `TARGET` if statement to the top of the `Makefile` (let's call it `my-new-target` for this example).
+* Create a new `sdkconfig.defaults.my-new-target` file.
+* Add any new build options as needed to the `src/Kconfig.projbuild` file.

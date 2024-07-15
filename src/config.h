@@ -4,12 +4,10 @@
 // picked up you need to clean and build everything. Or make sure any files that
 // need stuff from here explicitly #include "config.h"
 
+#pragma once
+
 #ifndef REVISION
 #define REVISION 7
-#endif
-
-#ifndef EINKET013TT1
-#define EINKET013TT1 1
 #endif
 
 // Uncomment to disable deep sleep
@@ -23,21 +21,21 @@
 // Currently using the App (BLE Server in firmware) is incompatible with
 // Turn Touch (BLE client in firmware). Enable one of these options or the
 // other.
-#ifndef USE_TURN_TOUCH_REMOTE
-#define USE_TURN_TOUCH_REMOTE 1
+#ifndef CONFIG_USE_TURN_TOUCH_REMOTE
+#define CONFIG_USE_TURN_TOUCH_REMOTE 1
 #endif
-#ifndef USE_BLE_SERVER_REMOTE
-#define USE_BLE_SERVER_REMOTE 1
+#ifndef CONFIG_USE_BLE_SERVER_REMOTE
+#define CONFIG_USE_BLE_SERVER_REMOTE 1
 #endif
-#ifndef USE_BLE_SERVER_SETTINGS
-#define USE_BLE_SERVER_SETTINGS 1
+#ifndef CONFIG_USE_BLE_SERVER_SETTINGS
+#define CONFIG_USE_BLE_SERVER_SETTINGS 1
 #endif
-#ifndef USE_BLE_SERVER_IMPROV
-#define USE_BLE_SERVER_IMPROV 1
+#ifndef CONFIG_USE_BLE_SERVER_IMPROV
+#define CONFIG_USE_BLE_SERVER_IMPROV 1
 #endif
 #define USE_BLE                                                                                    \
-    (USE_TURN_TOUCH_REMOTE || USE_BLE_SERVER_REMOTE || USE_BLE_SERVER_SETTINGS ||                  \
-     USE_BLE_SERVER_IMPROV)
+    (CONFIG_USE_TURN_TOUCH_REMOTE || CONFIG_USE_BLE_SERVER_REMOTE ||                               \
+     CONFIG_USE_BLE_SERVER_SETTINGS || CONFIG_USE_BLE_SERVER_IMPROV)
 
 // #define DISABLE_SPIRAM
 
@@ -46,11 +44,7 @@
 // Disable Improve BLE WiFi provisioning service
 // #define DISABLE_IMPROV
 
-#define RED_LED 7
-#define GREEN_LED 6
-#define BLUE_LED 18
-
-#ifdef LED_INVERT
+#ifdef CONFIG_LED_INVERT
 #define LED_ON LOW
 #define LED_OFF HIGH
 #else
@@ -72,8 +66,8 @@
 // define the power pin to turn on display and keep it on.
 #define DISPLAY_POWER 26
 #else // Revision 7 and above defaults
-#ifndef LEDC_BACKLIGHT
-#define LEDC_BACKLIGHT 1
+#ifndef CONFIG_LEDC_BACKLIGHT
+#define CONFIG_LEDC_BACKLIGHT 1
 #endif
 #define BACKLIGHT_RIGHT 2
 #define BACKLIGHT_LEFT 17
@@ -95,7 +89,7 @@
 #define CPU_FREQ_MHZ_HIGH 240
 #define CPU_FREQ_MHZ_LOW 40
 
-#if (USE_LTR329 || USE_MMC5603)
+#if (CONFIG_USE_LTR329 || CONFIG_USE_MMC5603)
 #define USE_I2C 1
 #else
 #define USE_I2C 0
@@ -106,5 +100,3 @@
 #define I2C_MASTER_SDA_IO 1
 #define I2C_MASTER_FREQ_HZ 400000
 #endif
-
-#define USB_CONNECTED_PIN 8

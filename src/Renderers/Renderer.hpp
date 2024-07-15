@@ -2,6 +2,7 @@
 
 #include <utility>
 
+#include "Displays/TextInsets.hpp"
 #include "NullTokenizer.hpp"
 #include "Pager.hpp"
 #include "RendererDefs.hpp"
@@ -13,15 +14,21 @@ using namespace renderer_defs;
 class Renderer {
 
 public:
-    Renderer(DisplaySystem &display)
-        : display_(display), tokens_(display), pager_(tokens_, display) {
+    Renderer(DisplaySystem &display, DisplayRect rect)
+        : display_(display), rect_(rect), tokens_(display), pager_(tokens_, display, rect) {
         // log_w("constructor...");
-        tokenizer_ = std::make_shared<NullTokenizer>(display, tokens_, pager_);
+        tokenizer_ = std::make_shared<NullTokenizer>(display, rect_, tokens_, pager_);
+    }
+
+    auto setRect(DisplayRect rect) -> void {
+        rect_ = rect;
+        pager_.setRect(rect);
+        tokenizer_->setRect(rect);
     }
 
     auto setStream(const std::shared_ptr<RendererStream> &stream) -> void {
         // log_w("setStream...");
-        tokenizer_ = Tokenizer::factory(stream, display_, tokens_, pager_);
+        tokenizer_ = Tokenizer::factory(stream, display_, rect_, tokens_, pager_);
     }
 
     [[nodiscard]] inline auto getStream() -> std::shared_ptr<RendererStream> {
@@ -98,6 +105,7 @@ public:
 
 private:
     DisplaySystem &display_;
+    DisplayRect rect_;
     Tokens tokens_;
     Pager pager_;
 

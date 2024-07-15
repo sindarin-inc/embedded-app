@@ -33,8 +33,8 @@ void MenuScreen::drawMenuItems(DisplaySystem &display, bool withBullet, bool wit
     display.setFont(myStyle_.itemFont);
     int additionalYOffset = 0;
     int iteratorEnd = (withLastItem) ? numMenuItems_ : numMenuItems_ - 1;
-    int xOffsetForMenu = display.xAbsolute(display.defaultXPadding) + myStyle_.xOffsetForList;
-    int yOffsetForMenu = display.yAbsolute(display.defaultYPadding) + myStyle_.yOffsetForList;
+    int xOffsetForMenu = display.defaultUIInsets().left + myStyle_.xOffsetForList;
+    int yOffsetForMenu = display.defaultUIInsets().top + myStyle_.yOffsetForList;
 
     // If we have less than a page worth, we need to add some extra padding at the top to center
     // the items. For each item less than the numnber of items, we add half the height of the
@@ -80,9 +80,8 @@ void MenuScreen::drawMenuItems(DisplaySystem &display, bool withBullet, bool wit
 
     display.setFont(display.style.getFontFamily().readableFont);
     int extraTextWidth = display.getTextWidth(extraTextBelowMenu_);
-    display.drawSingleLineOfText(extraTextBelowMenu_,
-                                 display.xAbsolute(display.xAbsoluteCenter() - extraTextWidth / 2),
-                                 display.yAbsolute(display.yAbsoluteMax() - 60));
+    display.drawSingleLineOfText(extraTextBelowMenu_, (display.width() - extraTextWidth) / 2,
+                                 display.height() - 61);
 }
 
 void MenuScreen::showTemporaryMessage(DisplaySystem &display, const std::string &message,
@@ -103,12 +102,7 @@ void MenuScreen::render(DisplaySystem &display) {
 
     setNeedsLayout();
 
-    // For the main menu, we want to use the entire screen and ignore the user settings for reading
-    // box.
-    setFrame(
-        {{display.xAbsolute(display.defaultXPadding), display.yAbsolute(display.defaultYPadding)},
-         {display.defaultScreenWidth - 2 * display.defaultXPadding,
-          display.defaultScreenHeight - 2 * display.defaultYPadding}});
+    setFrame(defaultFrameRect());
 
     // On the first load, we want to only render the items in the menu because we are going
     // to do a partial refresh with the selector button at a lower/higher vcom to reduce

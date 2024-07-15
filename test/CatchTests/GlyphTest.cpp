@@ -11,8 +11,12 @@ public:
         : glyphs(glyphs), gridWidth(gridWidth), gridHeight(gridHeight) {}
 
     void render(DisplaySystem &display) override {
-        int xSpacing = display.width() / gridWidth;
-        int ySpacing = display.height() / gridHeight;
+        // In the past the display box defaulted to 5px insets
+        auto width = display.width() - 10;
+        auto height = display.height() - 10;
+
+        int xSpacing = width / gridWidth;
+        int ySpacing = height / gridHeight;
 
         int glyphsPerPage = gridWidth * gridHeight;
         int pageStartIndex = page * glyphsPerPage;
@@ -21,15 +25,15 @@ public:
             if (index >= glyphs.size()) {
                 break;
             }
-            int x = (i % gridWidth) * xSpacing;
-            int y = (i / gridWidth) * ySpacing;
+            int x = (i % gridWidth) * xSpacing + 5;
+            int y = (i / gridWidth) * ySpacing + 5;
             display.drawSingleLineOfText(glyphs[pageStartIndex + i], x, y);
         }
 
         display.updateDisplay();
     }
 
-    void processCommand(RemoteCommand command) override {};
+    void processCommand(RemoteCommand command) override{};
 
     auto pages() -> int { return (glyphs.size() / (gridWidth * gridHeight)) + 1; }
     void setPage(int page) { this->page = page; }
@@ -43,8 +47,6 @@ private:
 
 TEST_CASE("Test glyph rendering") {
     auto display = createDisplay();
-    display->setBoundingBox({0, 0, static_cast<uint32_t>(display->defaultScreenWidth),
-                             static_cast<uint32_t>(display->defaultScreenHeight)});
 
     std::vector<std::string> glyphs = {
         "0",  "1", "2", "3", "4", "5", "6",  "7", "8", "9", "a", "b", "c", "d", "e", "f",

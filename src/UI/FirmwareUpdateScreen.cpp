@@ -13,9 +13,9 @@
 FirmwareUpdateScreen::FirmwareUpdateScreen(DisplaySystem &display, Telemetry &telemetry,
                                            PreferencesStore &prefs)
     : EinkView(display), telemetry_(telemetry), firmwareDownloader_(prefs),
-      cancelView_(display, "Press \ue000 to cancel", &ibmf75Face0) {
+      cancelView_(display, "Press \ue000 to cancel", &fontFace0) {
     for (auto &textView : textViews_) {
-        textView = std::make_shared<SingleLineTextView>(display, "", &ibmf75Face0);
+        textView = std::make_shared<SingleLineTextView>(display, "", &fontFace0);
     }
     for (auto &progressBarView : progressBarViews_) {
         progressBarView = std::make_shared<ProgressBarView>(display);
@@ -122,11 +122,9 @@ void FirmwareUpdateScreen::cancel() {
 }
 
 void FirmwareUpdateScreen::render(DisplaySystem &display) {
-    int adjustedXPadding = 42;
-    int adjustedYPadding = 10;
-    setFrame({{display.xAbsolute(adjustedXPadding), display.yAbsolute(adjustedYPadding)},
-              {display.defaultScreenWidth - 2 * adjustedXPadding,
-               display.defaultScreenHeight - 2 * adjustedYPadding}});
+    int xPadding = 42;
+    int yPadding = 10;
+    setFrame(Rect::fromSize({display.width(), display.height()}).inset(xPadding, yPadding));
 
     // Re-render based on state
     switch (state_.state) {
@@ -237,7 +235,7 @@ void FirmwareUpdateScreen::begin() {
         return;
     }
 
-#if !SIMULATOR
+#if USE_BLE
     // Stop BLE advertising and disconnect all connections to avoid interference.
     BLEManager::getInstance()->stopAdvertising();
     auto bleManager = BLEManager::getInstance();

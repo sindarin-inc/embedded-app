@@ -28,9 +28,12 @@ struct Rect {
     static auto zero() -> Rect { return {{0, 0}, {0, 0}}; }
     static auto fromSize(Size size) -> Rect { return {{0, 0}, size}; }
 
+    [[nodiscard]] auto inset(int left, int right, int top, int bottom) const -> Rect {
+        return {{origin.x + left, origin.y + top},
+                {size.width - left - right, size.height - top - bottom}};
+    }
     [[nodiscard]] auto inset(int xAmount, int yAmount) const -> Rect {
-        return {{origin.x + xAmount, origin.y + yAmount},
-                {size.width - xAmount * 2, size.height - yAmount * 2}};
+        return inset(xAmount, xAmount, yAmount, yAmount);
     }
     [[nodiscard]] auto inset(int amount) const -> Rect { return inset(amount, amount); }
     [[nodiscard]] auto offset(const Point &offset) const -> Rect {

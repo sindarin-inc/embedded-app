@@ -53,11 +53,7 @@ auto ReadableSummaryScreen::checkAtEnd() -> bool {
 
 void ReadableSummaryScreen::render(DisplaySystem &display) {
     setNeedsLayout();
-
-    setFrame(
-        {{display.xAbsolute(display.defaultXPadding), display.yAbsolute(display.defaultYPadding)},
-         {display.defaultScreenWidth - 2 * display.defaultXPadding,
-          display.defaultScreenHeight - 2 * display.defaultYPadding}});
+    setFrame(defaultFrameRect());
 
     if (showUnread_) {
         bottomRightText_ = "Hide Unread Chapters";
@@ -70,9 +66,13 @@ void ReadableSummaryScreen::render(DisplaySystem &display) {
 
     draw();
 
-    // This is a slight hack to get around the fact that the bounding box of the display is not
-    // context specific
-    auto oldDisplayBoundingBox = insetBoundingBox();
+    // Double up on the vertical insets
+    // TODO(john): I'm not sure we want to use the bounding box setting here, but it's what we were
+    // doing previously so I'm keeping it for now.
+    auto rect = GetTextRectFromPrefs(display, prefs_);
+    rect = rect.inset(0, 0, display.defaultTextInsets().top, display.defaultTextInsets().bottom);
+    renderer_.setRect(rect);
+
     uint8_t darkPicturePercent = 0;
 
     if (firstLoad_) {
@@ -120,26 +120,8 @@ void ReadableSummaryScreen::render(DisplaySystem &display) {
     }
     firstLoad_ = false;
 
-    resetBoundingBox(oldDisplayBoundingBox);
-}
-
-auto ReadableSummaryScreen::insetBoundingBox() -> DisplayRect {
-    auto oldDisplayBoundingBox = display_.getBoundingBox();
-    auto newDisplayBoundingBox = DisplayRect{static_cast<int>(contentFrame_.origin.x),
-                                             static_cast<int>(contentFrame_.origin.y),
-                                             static_cast<uint32_t>(contentFrame_.size.width),
-                                             static_cast<uint32_t>(contentFrame_.size.height)};
-    // newDisplayBoundingBox.y += 2 * contentFrame_.origin.y;
-    // newDisplayBoundingBox.height -= 2 * contentFrame_.origin.y;
-    // newDisplayBoundingBox.x += 2 * contentFrame_.origin.x;
-    // newDisplayBoundingBox.width -= contentFrame_.origin.x;
-    display_.setBoundingBox(newDisplayBoundingBox);
-    return oldDisplayBoundingBox;
-}
-
-void ReadableSummaryScreen::resetBoundingBox(DisplayRect oldDisplayBoundingBox) {
-    // Reset to the original bounding box for when we return to another screen
-    display_.setBoundingBox(oldDisplayBoundingBox);
+    // Restore the renderer's rect
+    renderer_.setRect(GetTextRectFromPrefs(display, prefs_));
 }
 
 void ReadableSummaryScreen::restoreRendererStream() {
@@ -171,10 +153,8 @@ void ReadableSummaryScreen::processCommand(RemoteCommand command) {
         break;
     case RemoteCommand::BACK:
     case RemoteCommand::LEFT: {
-        auto oldDisplayBoundingBox = insetBoundingBox();
         newPlace_ = std::dynamic_pointer_cast<TxtPlace>(renderer_.getPreviousPlace());
         setNeedsRerender();
-        resetBoundingBox(oldDisplayBoundingBox);
         break;
     }
     default:

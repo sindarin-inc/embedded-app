@@ -9,7 +9,8 @@
 // I didn't want to over-engineer it here.
 ResizeBoxScreen::ResizeBoxScreen(DisplaySystem &display, PreferencesStore &prefs,
                                  Telemetry &telemetry)
-    : display_(display), renderer_(display), prefs_(prefs), telemetry_(telemetry) {
+    : display_(display), renderer_(display, GetTextRectFromPrefs(display, prefs)), prefs_(prefs),
+      telemetry_(telemetry) {
 
     std::string message;
     message += "Press up to increase vertical dimension, down to decrease vertical "
@@ -30,50 +31,51 @@ ResizeBoxScreen::ResizeBoxScreen(DisplaySystem &display, PreferencesStore &prefs
 }
 
 void ResizeBoxScreen::render(DisplaySystem &display) {
-    DisplayRect currRect = display_.getBoundingBox();
+    // Get the bounding box
+    auto textBox = GetTextRectFromPrefs(display, prefs_);
     // The natural line spacing handles the vertical padding
     // The horizontal padding adds one blank pixel column on either side of the rect
-    display.drawDottedBox(-2, 0, currRect.width + 1, currRect.height - 1, 1, 2);
+    display.drawDottedBox(textBox.x - 2, textBox.y, textBox.x + textBox.width + 1,
+                          textBox.y + textBox.height - 1, 1, 2);
+    this->renderer_.setRect(textBox);
     this->renderer_.renderFirstPage(0, true);
     display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
 }
 
 void ResizeBoxScreen::processCommand(RemoteCommand command) {
-    DisplayRect oldRect = display_.getBoundingBox();
+    DisplayInset insets = GetTextInsetFromPrefs(display_, prefs_);
+    DisplayRect rect = GetTextRectFromPrefs(display_, prefs_);
     switch (command) {
     case RemoteCommand::LEFT:
-        oldRect.width += BOX_OFFSET_ADJUST_AMOUNT;
-        // Don't move the y if we're at the minimum height
-        oldRect.x -= BOX_OFFSET_ADJUST_AMOUNT / 2;
-        setNeedsRerender();
+        if (insets.left - BOX_OFFSET_ADJUST_AMOUNT >= display_.minTextInsets().left &&
+            insets.right - BOX_OFFSET_ADJUST_AMOUNT >= display_.minTextInsets().right) {
+            insets.left -= BOX_OFFSET_ADJUST_AMOUNT / 2;
+            insets.right -= BOX_OFFSET_ADJUST_AMOUNT / 2;
+            setNeedsRerender();
+        }
         break;
-    case RemoteCommand::RIGHT: {
-        // We apply the rect's bounding box in DisplaySystem, but we need to make sure to not adjust
-        // the X if we're already at the minimum
-        auto targetWidth =
-            std::max(display_.minBoundingBox.width, oldRect.width - BOX_OFFSET_ADJUST_AMOUNT);
-        auto subtractWidth = oldRect.width - targetWidth;
-        oldRect.width -= subtractWidth;
-        oldRect.x += subtractWidth / 2;
-        setNeedsRerender();
+    case RemoteCommand::RIGHT:
+        if (rect.width - BOX_OFFSET_ADJUST_AMOUNT >= display_.minTextBoxWidth()) {
+            insets.right += BOX_OFFSET_ADJUST_AMOUNT / 2;
+            insets.left += BOX_OFFSET_ADJUST_AMOUNT / 2;
+            setNeedsRerender();
+        }
         break;
-    }
     case RemoteCommand::UP:
-        oldRect.height += BOX_OFFSET_ADJUST_AMOUNT;
-        oldRect.y -= BOX_OFFSET_ADJUST_AMOUNT / 2;
-        setNeedsRerender();
+        if (insets.top - BOX_OFFSET_ADJUST_AMOUNT >= display_.minTextInsets().top &&
+            insets.bottom - BOX_OFFSET_ADJUST_AMOUNT >= display_.minTextInsets().bottom) {
+            insets.top -= BOX_OFFSET_ADJUST_AMOUNT / 2;
+            insets.bottom -= BOX_OFFSET_ADJUST_AMOUNT / 2;
+            setNeedsRerender();
+        }
         break;
-    case RemoteCommand::DOWN: {
-        // We apply the rect's bounding box in DisplaySystem, but we need to make sure to not adjust
-        // the Y if we're already at the minimum
-        auto targetHeight =
-            std::max(display_.minBoundingBox.height, oldRect.height - BOX_OFFSET_ADJUST_AMOUNT);
-        auto subtractHeight = oldRect.height - targetHeight;
-        oldRect.height -= subtractHeight;
-        oldRect.y += subtractHeight / 2;
-        setNeedsRerender();
+    case RemoteCommand::DOWN:
+        if (rect.height - BOX_OFFSET_ADJUST_AMOUNT >= display_.minTextBoxHeight()) {
+            insets.top += BOX_OFFSET_ADJUST_AMOUNT / 2;
+            insets.bottom += BOX_OFFSET_ADJUST_AMOUNT / 2;
+            setNeedsRerender();
+        }
         break;
-    }
     case RemoteCommand::BACK:
         // The Turn Touch also sends a left keypress when long-pressing back so let's undo that
         // keystroke before saving.
@@ -81,31 +83,19 @@ void ResizeBoxScreen::processCommand(RemoteCommand command) {
         // app but since we're using TurnTouch for demos, I think it's ok for now. In the future, it
         // might be good to pass more data to `process_command` including which remote is being used
         // so that we can have remote-specific workarounds if needed.
-        oldRect.width -= BOX_OFFSET_ADJUST_AMOUNT;
-        oldRect.x += BOX_OFFSET_ADJUST_AMOUNT / 2;
-        display_.setBoundingBox(oldRect);
+        insets.right += BOX_OFFSET_ADJUST_AMOUNT / 2;
+        insets.left += BOX_OFFSET_ADJUST_AMOUNT / 2;
         [[fallthrough]];
     case RemoteCommand::ENTER:
-        prefs_.rectX.set(display_.getBoundingBox().x);
-        prefs_.rectY.set(display_.getBoundingBox().y);
-        prefs_.rectW.set(display_.getBoundingBox().width);
-        prefs_.rectH.set(display_.getBoundingBox().height);
-        log_d("Saving bounding box to preferences: (%s)",
-              display_.getBoundingBox().toString().c_str());
-
-        telemetry_.logMetricData(TelemetryField::METRIC_STYLE,
-                                 {{"bb_x", display_.getBoundingBox().x},
-                                  {"bb_y", display_.getBoundingBox().y},
-                                  {"bb_w", display_.getBoundingBox().width},
-                                  {"bb_h", display_.getBoundingBox().height}});
-
+        telemetry_.logMetricData(TelemetryField::METRIC_STYLE, {{"in_l", insets.left},
+                                                                {"in_r", insets.right},
+                                                                {"in_t", insets.top},
+                                                                {"in_b", insets.bottom}});
         back();
         break;
     default:
         break;
     }
 
-    log_d("New bounding box is: (%s)", display_.getBoundingBox().toString().c_str());
-
-    display_.setBoundingBox(oldRect);
+    SetTextInset(prefs_, insets);
 }
