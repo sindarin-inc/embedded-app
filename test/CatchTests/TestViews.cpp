@@ -347,7 +347,7 @@ TEST_CASE("Test some views independently") {
 
         SECTION("Test AboutScreen") {
             LightingController lightingController(prefs);
-            PowerManager power(fs, prefs, lightingController, *display, telemetry);
+            PowerManager power(fileSystem, prefs, lightingController, *display, telemetry);
             AboutScreen screen(*display, prefs, power);
             screen.render(*display);
             ASSERT_VIEW_UNCHANGED(display, "AboutScreen");
@@ -355,7 +355,7 @@ TEST_CASE("Test some views independently") {
 
         SECTION("Test LegalScreen") {
             LightingController lightingController(prefs);
-            PowerManager power(fs, prefs, lightingController, *display, telemetry);
+            PowerManager power(fileSystem, prefs, lightingController, *display, telemetry);
             LegalScreen screen(*display, prefs, power);
             screen.render(*display);
             ASSERT_VIEW_UNCHANGED(display, "LegalScreen1Before");
