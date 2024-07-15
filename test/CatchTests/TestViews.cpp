@@ -202,9 +202,6 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
         ASSERT_VIEW_UNCHANGED(display, "Dictionary2");
         SendRemoteCommand(ENTER);
         WAIT_FOR_DRAW(display);
-        ASSERT_VIEW_UNCHANGED(display, "Dictionary3");
-        SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW(display);
         ASSERT_VIEW_UNCHANGED(display, "Dawn1");
 
         // Render the popup menu
@@ -237,13 +234,13 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
         // Open the dictionary
         SendRemoteCommand(ENTER);
         WAIT_FOR_DRAW(display);
+        ASSERT_VIEW_UNCHANGED(display, "Dictionary3");
+        SendRemoteCommand(ENTER);
+        WAIT_FOR_DRAW(display);
         ASSERT_VIEW_UNCHANGED(display, "Dictionary4");
         SendRemoteCommand(ENTER);
         WAIT_FOR_DRAW(display);
         ASSERT_VIEW_UNCHANGED(display, "Dictionary5");
-        SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW(display);
-        ASSERT_VIEW_UNCHANGED(display, "Dictionary6");
         SendRemoteCommand(UP);
         WAIT_FOR_DRAW(display);
         ASSERT_VIEW_UNCHANGED(display, "Dawn3");
@@ -274,18 +271,15 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
         SendRemoteCommand(ENTER);
         WAIT_FOR_DRAW(display);
         ASSERT_VIEW_UNCHANGED(display, "Summary5");
-        SendRemoteCommand(ENTER);
+        SendRemoteCommand(DOWN);
         WAIT_FOR_DRAW(display);
         ASSERT_VIEW_UNCHANGED(display, "Summary6");
-        SendRemoteCommand(DOWN);
+        SendRemoteCommand(ENTER);
         WAIT_FOR_DRAW(display);
         ASSERT_VIEW_UNCHANGED(display, "Summary7");
         SendRemoteCommand(ENTER);
         WAIT_FOR_DRAW(display);
         ASSERT_VIEW_UNCHANGED(display, "Summary8");
-        SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW(display);
-        ASSERT_VIEW_UNCHANGED(display, "Summary9");
         SendRemoteCommand(UP);
         WAIT_FOR_DRAW(display);
         ASSERT_VIEW_UNCHANGED(display, "Dawn4");
