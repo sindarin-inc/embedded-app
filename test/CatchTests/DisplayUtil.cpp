@@ -5,7 +5,6 @@ std::shared_ptr<DisplayEinkET013TT1> createDisplay() {
     (*display).setSkipWaveform(true);
     (*display).setSkipSignalling(true);
     (*display).style.setFontFamily((*display).style.solSansMedium);
-    (*display).setBoundingBox((*display).defaultBoundingBox);
     (*display).setLineSpacing(0);
     (*display).setup();
     (*display).invertDisplay(false);

@@ -13,7 +13,7 @@
 #include "Sensors/LightingController.hpp"
 #include "Sensors/Mmc5603.hpp"
 #include "Storage/PreferencesStore.hpp"
-#if EINKET013TT1
+#if CONFIG_DISPLAY_EINKET013TT1
 #include "Displays/DisplayEinkET013TT1.hpp"
 #endif
 
@@ -76,6 +76,11 @@ struct BootInfo {
         TaskWdt,
         Wdt,
         Brownout,
+        UsbReset,
+        JtagReset,
+        EfuseReset,
+        PwrGlitch,
+        CpuLockup,
 
         // Lower level from RESET_REASON (from rtc_get_reset_reason)
         UartChipReset,
@@ -120,11 +125,21 @@ struct BootInfo {
             return "Brownout";
         case Reason::Wdt:
             return "General Watchdog";
-        default:
-            return StringFormat(
-                "Unknown (resetReason: %d, rtcResetReason: %d, sleepWakeupCause: %d)", resetReason,
-                rtcResetReason, sleepWakeupCause);
+        case Reason::UsbReset:
+            return "USB Reset";
+        case Reason::JtagReset:
+            return "JTAG Reset";
+        case Reason::EfuseReset:
+            return "EfuseReset";
+        case Reason::PwrGlitch:
+            return "Power Glitch";
+        case Reason::CpuLockup:
+            return "CPU Lockup";
+        case Reason::Unknown:
+            break;
         }
+        return StringFormat("Unknown (resetReason: %d, rtcResetReason: %d, sleepWakeupCause: %d)",
+                            resetReason, rtcResetReason, sleepWakeupCause);
     }
 
     [[nodiscard]] auto telemetryStr() const -> std::string {
@@ -153,10 +168,20 @@ struct BootInfo {
             return "Brownout";
         case Reason::Wdt:
             return "Wdt";
-        default:
-            return StringFormat("Unknown (%d,%d,%d)", resetReason, rtcResetReason,
-                                sleepWakeupCause);
+        case Reason::UsbReset:
+            return "UsbReset";
+        case Reason::JtagReset:
+            return "JtagReset";
+        case Reason::EfuseReset:
+            return "EfuseReset";
+        case Reason::PwrGlitch:
+            return "PwrGlitch";
+        case Reason::CpuLockup:
+            return "CpuLockup";
+        case Reason::Unknown:
+            break;
         }
+        return StringFormat("Unknown (%d,%d,%d)", resetReason, rtcResetReason, sleepWakeupCause);
     }
 };
 
@@ -214,7 +239,7 @@ public:
 
     // Exposed so we can check this peripheral as a part of the power-on self-test
     auto checkMagnetometerProductId() -> bool {
-#if USE_MMC5603
+#if CONFIG_USE_MMC5603
         uint8_t mmcProductId;
         auto err = magSensor_.readProductId(&mmcProductId);
         if (err != ESP_OK) {

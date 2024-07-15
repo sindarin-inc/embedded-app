@@ -21,8 +21,7 @@ void AlignmentScreen::render(DisplaySystem &display) {
     }
     // Don't need to set it after that as they are on.
 
-    display.fillCircle(display.xAbsolute(display.xAbsoluteCenter()),
-                       display.yAbsolute(display.yAbsoluteCenter()), 5, display.fg);
+    display.fillCircle(display.width() / 2, display.height() / 2, 5, display.fg);
     display.updateDisplay(DisplaySystem::UpdateType::FULL);
 }
 

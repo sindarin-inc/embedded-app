@@ -8,7 +8,8 @@
 
 OffsetAdjustScreen::OffsetAdjustScreen(DisplaySystem &display, PreferencesStore &prefs,
                                        Telemetry &telemetry)
-    : display_(display), renderer_(display), prefs_(prefs), telemetry_(telemetry) {
+    : display_(display), renderer_(display, GetTextRectFromPrefs(display, prefs)), prefs_(prefs),
+      telemetry_(telemetry) {
 
     std::string message;
     // This needs to be pretty big for smaller fonts
@@ -31,32 +32,47 @@ OffsetAdjustScreen::OffsetAdjustScreen(DisplaySystem &display, PreferencesStore 
 }
 
 void OffsetAdjustScreen::render(DisplaySystem &display) {
-    DisplayRect currRect = display_.getBoundingBox();
+    // Get the bounding box
+    auto textBox = GetTextRectFromPrefs(display, prefs_);
     // The natural line spacing handles the vertical padding
     // The horizontal padding adds one blank pixel column on either side of the rect
-    display.drawDottedBox(-2, 0, currRect.width + 1, currRect.height - 1, 1, 2);
+    display.drawDottedBox(textBox.x - 2, textBox.y, textBox.x + textBox.width + 1,
+                          textBox.y + textBox.height - 1, 1, 2);
+    this->renderer_.setRect(textBox);
     this->renderer_.renderFirstPage(0, true);
     display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
 }
 
 void OffsetAdjustScreen::processCommand(RemoteCommand command) {
-    DisplayRect oldRect = display_.getBoundingBox();
+    DisplayInset insets = GetTextInsetFromPrefs(display_, prefs_);
     switch (command) {
     case RemoteCommand::LEFT:
-        oldRect.x -= OFFSET_ADJUST_AMOUNT;
-        setNeedsRerender();
+        if (insets.left - OFFSET_ADJUST_AMOUNT >= display_.minTextInsets().left) {
+            insets.left -= OFFSET_ADJUST_AMOUNT;
+            insets.right += OFFSET_ADJUST_AMOUNT;
+            setNeedsRerender();
+        }
         break;
     case RemoteCommand::RIGHT:
-        oldRect.x += OFFSET_ADJUST_AMOUNT;
-        setNeedsRerender();
+        if (insets.right - OFFSET_ADJUST_AMOUNT >= display_.minTextInsets().right) {
+            insets.right -= OFFSET_ADJUST_AMOUNT;
+            insets.left += OFFSET_ADJUST_AMOUNT;
+            setNeedsRerender();
+        }
         break;
     case RemoteCommand::UP:
-        oldRect.y -= OFFSET_ADJUST_AMOUNT;
-        setNeedsRerender();
+        if (insets.top - OFFSET_ADJUST_AMOUNT >= display_.minTextInsets().top) {
+            insets.top -= OFFSET_ADJUST_AMOUNT;
+            insets.bottom += OFFSET_ADJUST_AMOUNT;
+            setNeedsRerender();
+        }
         break;
     case RemoteCommand::DOWN:
-        oldRect.y += OFFSET_ADJUST_AMOUNT;
-        setNeedsRerender();
+        if (insets.bottom - OFFSET_ADJUST_AMOUNT >= display_.minTextInsets().bottom) {
+            insets.bottom -= OFFSET_ADJUST_AMOUNT;
+            insets.top += OFFSET_ADJUST_AMOUNT;
+            setNeedsRerender();
+        }
         break;
     case RemoteCommand::BACK:
         // The Turn Touch also sends a left keypress when long-pressing back so let's undo that
@@ -65,28 +81,19 @@ void OffsetAdjustScreen::processCommand(RemoteCommand command) {
         // app but since we're using TurnTouch for demos, I think it's ok for now. In the future, it
         // might be good to pass more data to `process_command` including which remote is being used
         // so that we can have remote-specific workarounds if needed.
-        oldRect.x += OFFSET_ADJUST_AMOUNT;
-        display_.setBoundingBox(oldRect);
+        insets.left += OFFSET_ADJUST_AMOUNT;
+        insets.right -= OFFSET_ADJUST_AMOUNT;
         [[fallthrough]];
     case RemoteCommand::ENTER:
-        prefs_.rectX.set(display_.getBoundingBox().x);
-        prefs_.rectY.set(display_.getBoundingBox().y);
-        prefs_.rectW.set(display_.getBoundingBox().width);
-        prefs_.rectH.set(display_.getBoundingBox().height);
-        log_d("Saving bounding box to preferences: (%s)",
-              display_.getBoundingBox().toString().c_str());
-
-        telemetry_.logMetricData(TelemetryField::METRIC_STYLE,
-                                 {{"bb_x", display_.getBoundingBox().x},
-                                  {"bb_y", display_.getBoundingBox().y},
-                                  {"bb_w", display_.getBoundingBox().width},
-                                  {"bb_h", display_.getBoundingBox().height}});
-
+        telemetry_.logMetricData(TelemetryField::METRIC_STYLE, {{"in_l", insets.left},
+                                                                {"in_r", insets.right},
+                                                                {"in_t", insets.top},
+                                                                {"in_b", insets.bottom}});
         back();
         break;
     default:
         break;
     }
 
-    display_.setBoundingBox(oldRect);
+    SetTextInset(prefs_, insets);
 }

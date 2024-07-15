@@ -3,7 +3,7 @@
 #include <map>
 #include <memory>
 
-#if USE_BLE_SERVER_PROXY
+#if CONFIG_USE_BLE_SERVER_PROXY
 #include "Communications/BLEImprov.hpp"
 #include "Communications/BLEManager.hpp"
 #include "Communications/BLEProxy.hpp"

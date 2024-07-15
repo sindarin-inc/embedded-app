@@ -19,7 +19,6 @@ public:
                  bool subtitle = true)
         : MenuItemView(display) {
         setMenuItem(menuItem, font, multiLine, subtitle);
-        log_i("initializing menu item view with title: %s", menuItem.title.c_str());
     }
 
     ~MenuItemView() override = default;

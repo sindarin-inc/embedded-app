@@ -132,6 +132,7 @@ protected:
 
     uint8_t previousBuffer_[EinkET013TT1_PIXEL_WIDTH * EinkET013TT1_PIXEL_HEIGHT / 8]{};
 
+    uint32_t updateStartTime_ = 0;
     float timerDelayNs_ = 0;
     uint32_t timerDurationCycles_ = 0;
     volatile uint32_t cycleCountStart_ = 0;

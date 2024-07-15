@@ -31,10 +31,12 @@ public:
                    const std::shared_ptr<Readable> &readable, PreferencesStore &prefs,
                    Telemetry &telemetry, FileSystem &fileSystem,
                    LightingController &lightingController)
-        : EinkView(display), stream_(stream), renderer_(display), readable_(readable),
+        : EinkView(display), stream_(stream),
+          renderer_(display, GetTextRectFromPrefs(display, prefs)), readable_(readable),
           prefs_(prefs), telemetry_(telemetry), fileSystem_(fileSystem), display_(display),
           popupMenuScreen_(display, prefs, fileSystem, readable, lightingController, renderer_,
                            telemetry_),
+          readableSummaryScreen_(prefs, fileSystem, readable, display, renderer_),
           leftArrowView_(display, ArrowLeft), rightArrowView_(display, ArrowRight),
           upArrowView_(display, ArrowUp), downArrowView_(display, ArrowDown) {
 
@@ -86,11 +88,11 @@ public:
             setNeedsRerender();
             auto metrics = readable_->telemetryPlacemarkMetrics();
             metrics["fw"] = SemanticVersionString();
-            auto bb = display.getBoundingBox();
-            metrics["bb_x"] = bb.x;
-            metrics["bb_y"] = bb.y;
-            metrics["bb_w"] = bb.width;
-            metrics["bb_h"] = bb.height;
+            auto insets = GetTextInsetFromPrefs(display, prefs_);
+            metrics["in_l"] = insets.left;
+            metrics["in_r"] = insets.right;
+            metrics["in_t"] = insets.top;
+            metrics["in_b"] = insets.bottom;
             metrics["text_size"] = prefs_.font.get().value_or(PREFS_SOL_SMALL);
             metrics["line_spacing"] = prefs_.lineSpacing.get().value_or(0);
             telemetry_.logMetric(TelemetryField::METRIC_REPORT, readable_->uuid.c_str(), metrics);
@@ -106,6 +108,12 @@ public:
         };
 
         popupMenuScreen_.onRerender = [this]() { renderPopup_ = true; };
+
+        readableSummaryScreen_.setBackCallback([this, &display]() {
+            renderedPartialSummary_ = true;
+            display.clearDisplay();
+            this->setCurrentScreen(*this);
+        });
     }
 
     ~ReadableScreen() override = default;
@@ -151,11 +159,13 @@ protected:
     bool atEnd_ = false;
     bool shownIcons_ = false;
     bool renderPopup_ = false;
+    bool renderedPartialSummary_ = false;
     bool autoPilotForceFull_ = false;
 
     DisplaySystem &display_;
 
     ReadablePopupMenuScreen popupMenuScreen_;
+    ReadableSummaryScreen readableSummaryScreen_;
 
     std::vector<std::shared_ptr<Screen>> hookScreens_;
 

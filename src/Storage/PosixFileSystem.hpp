@@ -27,6 +27,8 @@ public:
 
     auto removeDir(const std::string &path) -> bool override;
 
+    auto getFreeSpace() -> std::string override;
+
 protected:
     std::string prefix_;
     [[nodiscard]] auto createPath(const std::string &path) const -> std::string;

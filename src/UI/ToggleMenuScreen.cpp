@@ -36,6 +36,7 @@ auto ToggleMenuScreen::layout(LayoutContext &context, Size size) -> Size {
             y += offRect.size.height;
 
             for (auto &view : menuItemViews_) {
+                y += view->topPadding;
                 auto viewFrame = context.setViewFrame(*view, {{x + 7, y}, {size.width - 70, 0}},
                                                       LayoutOptionsSizeToFitVertical);
                 if (place == currSelection_) {
@@ -123,10 +124,7 @@ void ToggleMenuScreen::render(DisplaySystem &display) {
     headerTextView_.setText(menuName_);
 
     // Take up the whole screen
-    setFrame(
-        {{display.xAbsolute(display.defaultXPadding), display.yAbsolute(display.defaultYPadding)},
-         {display.defaultScreenWidth - 2 * display.defaultXPadding,
-          display.defaultScreenHeight - 2 * display.defaultYPadding}});
+    setFrame(defaultFrameRect());
 
     // On the first load, we want to only render the items in the menu because we are going
     // to do a partial refresh with the selector button at a lower/higher vcom to reduce
@@ -146,6 +144,7 @@ void ToggleMenuScreen::render(DisplaySystem &display) {
             log_d("Adding menu item %s", menuItem.title.c_str());
             auto menuItemView = std::make_shared<SingleLineTextView>(display, menuItem.title,
                                                                      myStyle_.navigationFont);
+            menuItemView->setTopPadding(menuItem.topPadding);
             menuItemViews_.push_back(menuItemView);
             menuToggleSelectionViews_.push_back(std::make_shared<BoxView>(display, 3));
             menuToggleSelectionViews_[menuToggleSelectionViews_.size() - 1]->fillColor =

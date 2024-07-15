@@ -1,4 +1,4 @@
-#if USE_BLE_SERVER_REMOTE
+#if CONFIG_USE_BLE_SERVER_REMOTE
 
 #include "BLESettings.hpp"
 
@@ -16,7 +16,7 @@
 
 BLESettings::BLESettings(PreferencesStore *prefs) : prefs_(prefs) {}
 
-#if USE_TURN_TOUCH_REMOTE
+#if CONFIG_USE_TURN_TOUCH_REMOTE
 void BLESettings::attachTTRemoteInput(TTRemoteInput *ttRemoteInput) {
     this->ttRemoteInput_ = ttRemoteInput;
 }
@@ -65,9 +65,9 @@ void BLESettings::writePageTurnerBatteryToCharacteristic(BLECharacteristic *char
     characteristic->notify();
 }
 
-void BLESettings::disconnectPageTurnerForSeconds(const int seconds) {
+void BLESettings::disconnectPageTurnerForSeconds(int seconds) {
     log_i("GATT client disconnecting page turner for %d seconds", seconds);
-#if USE_TURN_TOUCH_REMOTE
+#if CONFIG_USE_TURN_TOUCH_REMOTE
     ttRemoteInput_->disconnectTemporarily(seconds);
 
     // We set this to let the app know the remote is ready to be connected to
@@ -87,21 +87,21 @@ void BLESettings::disconnectPageTurnerForSeconds(const int seconds) {
 
 void BLESettings::blinkLedAfterConnect(BLECharacteristic *characteristic, const std::string &key) {
     // TODO: Fully take over the LED for a while
-    gpio_hold_dis(static_cast<gpio_num_t>(RED_LED));
-    gpio_hold_dis(static_cast<gpio_num_t>(GREEN_LED));
-    gpio_hold_dis(static_cast<gpio_num_t>(BLUE_LED));
+    gpio_hold_dis(static_cast<gpio_num_t>(CONFIG_RED_LED));
+    gpio_hold_dis(static_cast<gpio_num_t>(CONFIG_GREEN_LED));
+    gpio_hold_dis(static_cast<gpio_num_t>(CONFIG_BLUE_LED));
     for (int i = 0; i < 10; i++) {
         // Flash all the LEDs
-        DigitalWrite(RED_LED, LED_ON);
+        DigitalWrite(CONFIG_RED_LED, LED_ON);
         vTaskDelay(200 / portTICK_PERIOD_MS);
-        DigitalWrite(RED_LED, LED_OFF);
-        DigitalWrite(GREEN_LED, LED_ON);
+        DigitalWrite(CONFIG_RED_LED, LED_OFF);
+        DigitalWrite(CONFIG_GREEN_LED, LED_ON);
         vTaskDelay(200 / portTICK_PERIOD_MS);
-        DigitalWrite(GREEN_LED, LED_OFF);
-#ifdef BLUE_LED
-        DigitalWrite(BLUE_LED, LED_ON);
+        DigitalWrite(CONFIG_GREEN_LED, LED_OFF);
+#ifdef CONFIG_BLUE_LED
+        DigitalWrite(CONFIG_BLUE_LED, LED_ON);
         vTaskDelay(200 / portTICK_PERIOD_MS);
-        DigitalWrite(BLUE_LED, LED_OFF);
+        DigitalWrite(CONFIG_BLUE_LED, LED_OFF);
 #endif
     }
 
@@ -113,7 +113,7 @@ void BLESettings::blinkLedAfterConnect(BLECharacteristic *characteristic, const 
 void BLESettings::unpairPageTurner(BLECharacteristic *characteristic, const std::string &key) {
     log_i("GATT client unpairing page turner");
 
-#if USE_TURN_TOUCH_REMOTE
+#if CONFIG_USE_TURN_TOUCH_REMOTE
     ttRemoteInput_->unpairAndDisconnect();
 #endif
 

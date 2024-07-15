@@ -32,6 +32,8 @@ public:
         }
     }
 
+    void setTopPadding(uint8_t topPaddingValue) { topPadding = topPaddingValue; }
+
     auto getText() -> const std::string & { return text_; }
 
     void setFont(Font *font) { font_ = font; }
@@ -59,6 +61,7 @@ public:
             text_ = TruncateStringToFit(display_, font_, text_, size.width, w);
         }
         display_.setFont(oldFont);
+
         return {w, font_->lineHeight()};
     }
 
@@ -70,6 +73,8 @@ public:
         display_.drawSingleLineOfText(text_, rect.origin.x, rect.origin.y);
         display_.setFont(oldFont);
     }
+
+    uint8_t topPadding = 0;
 
 protected:
     std::string text_;

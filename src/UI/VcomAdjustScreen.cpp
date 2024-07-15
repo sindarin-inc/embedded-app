@@ -1,4 +1,4 @@
-#if EINKET013TT1
+#if CONFIG_DISPLAY_EINKET013TT1
 #include "UI/VcomAdjustScreen.hpp"
 
 #include "Displays/DisplayEinkET013TT1.hpp"
@@ -10,7 +10,7 @@
 #define MAX_VCOM_IN_MV (-3500)
 
 VcomAdjustScreen::VcomAdjustScreen(DisplaySystem &display, PreferencesStore &prefs)
-    : display_(display), renderer_(display), prefs_(prefs) {
+    : display_(display), renderer_(display, GetTextRectFromPrefs(display, prefs)), prefs_(prefs) {
 
     auto *driver = (dynamic_cast<DisplayEinkET013TT1 *>(&display))->getDriver();
     vCom = driver->getVcom();

@@ -6,8 +6,8 @@
 class NullTokenizer : public Tokenizer {
 
 public:
-    NullTokenizer(DisplaySystem &display, Tokens &tokens, Pager &pager)
-        : Tokenizer(display, tokens, pager) {}
+    NullTokenizer(DisplaySystem &display, DisplayRect &rect, Tokens &tokens, Pager &pager)
+        : Tokenizer(display, rect, tokens, pager) {}
     ~NullTokenizer() override = default;
 
     [[nodiscard]] auto loadAndTokenizePage(StreamPlace fromPlace, bool backwards = false,

@@ -337,7 +337,8 @@ auto Pager::getLineSegment(LineInfo &lineInfo, Idx nextTokenIdx, Idx endTokenIdx
 void Pager::drawSingleLine(LineInfo &lineInfo, int yPos) const {
 
     Line lineSegment;
-    int xPos = lineInfo.leftIndent;
+    int xPos = lineInfo.leftIndent + rect_.x;
+    yPos += rect_.y;
     Idx nextTokenIdx = lineInfo.tokenIdx;
     Idx endTokenIdx = tokens_.addToTokenIdx(lineInfo.tokenIdx, lineInfo.tokenCount);
 
@@ -467,9 +468,9 @@ auto Pager::displayPage(int16_t numSkipLines) -> uint8_t {
                 REND_WLOG("Dark Picture Percentage: %" PRIu8, darkPicturePercent);
 
                 display_.fillScreen(display_.bg);
-                display_.drawXBitmap(display_.xAbsolute((display_.absoluteWidth() - width) / 2),
-                                     display_.yAbsolute((display_.absoluteHeight() - height) / 2),
-                                     bitmap, width, height, display_.fg);
+                display_.drawXBitmap((display_.width() - width) / 2,
+                                     (display_.height() - height) / 2, bitmap, width, height,
+                                     display_.fg);
 
                 break;
             } else {
@@ -505,8 +506,9 @@ auto Pager::displayPage(int16_t numSkipLines) -> uint8_t {
                 // if (darkPercent > darkPicturePercent) {
                 //     darkPicturePercent = darkPercent;
                 // }
-                display_.drawXBitmap((display_.width() - width) / 2, deciToPix(deciY), bitmap,
-                                     width, height, display_.fg);
+                display_.drawXBitmap(rect_.x + (rect_.width - width) / 2,
+                                     rect_.y + deciToPix(deciY), bitmap, width, height,
+                                     display_.fg);
                 deciY += pixToDeci(height + 4);
             } else {
                 log_e("Picture not there!!");
@@ -527,7 +529,8 @@ auto Pager::displayPage(int16_t numSkipLines) -> uint8_t {
         case TokenId::HRULE: {
             REND_WLOG("[%" PRIu16 "] %s: <HRULE>", lineIdx, token.streamPlace.str().c_str());
             uint16_t y = deciToPix(deciY + (lines_[lineIdx].deciHeight / 2));
-            display_.drawLine(0, y, display_.width(), y, display_.fg);
+            display_.drawLine(rect_.x, rect_.y + y, rect_.x + rect_.width, rect_.y + y,
+                              display_.fg);
             deciY += lines_[lineIdx].deciHeight;
         } break;
 
@@ -542,17 +545,17 @@ auto Pager::displayPage(int16_t numSkipLines) -> uint8_t {
 #else
             Line line;
             getLine(lines_[lineIdx], line);
-            display_.drawSingleLineOfText(line.data(), lines_[lineIdx].leftIndent,
-                                          deciToPix(deciY));
+            display_.drawSingleLineOfText(line.data(), rect_.x + lines_[lineIdx].leftIndent,
+                                          rect_.y + deciToPix(deciY));
 #endif
-
             deciY += NEWLINE_DECI_LINE_HEIGHT;
             break;
 
         case TokenId::ETABLE: {
             REND_WLOG("[%" PRIu16 "] %s: <ETABLE>", lineIdx, token.streamPlace.str().c_str());
             uint16_t y = deciToPix(deciY + (HRULE_DECI_LINE_HEIGHT / 2));
-            display_.drawLine(0, y, display_.width(), y, display_.fg);
+            display_.drawLine(rect_.x, rect_.y + y, rect_.x + rect_.width, rect_.y + y,
+                              display_.fg);
             deciY += HRULE_DECI_LINE_HEIGHT;
 
 #if TTF_SUPPORT
@@ -560,10 +563,9 @@ auto Pager::displayPage(int16_t numSkipLines) -> uint8_t {
 #else
             Line line;
             getLine(lines_[lineIdx], line);
-            display_.drawSingleLineOfText(line.data(), lines_[lineIdx].leftIndent,
-                                          deciToPix(deciY));
+            display_.drawSingleLineOfText(line.data(), rect_.x + lines_[lineIdx].leftIndent,
+                                          rect_.y + deciToPix(deciY));
 #endif
-
             deciY += NEWLINE_DECI_LINE_HEIGHT + ENDPARAGRAPH_DECI_LINE_HEIGHT;
         } break;
 
@@ -580,8 +582,8 @@ auto Pager::displayPage(int16_t numSkipLines) -> uint8_t {
                 //       lines_[lineIdx].leftIndent);
                 REND_WLOG("[%" PRIu16 "] %s: <%s>", lineIdx, token.streamPlace.str().c_str(),
                           line.data());
-                display_.drawSingleLineOfText(line.data(), lines_[lineIdx].leftIndent,
-                                              deciToPix(deciY));
+                display_.drawSingleLineOfText(line.data(), rect_.x + lines_[lineIdx].leftIndent,
+                                              rect_.y + deciToPix(deciY));
 #endif
             } else {
                 REND_WLOG("[%" PRIu16 "] %s: <SKIPPED>", lineIdx, token.streamPlace.str().c_str());

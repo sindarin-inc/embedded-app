@@ -115,39 +115,6 @@ void DisplaySystem::setFullWindow() {
     partialH_ = gfxClass_->height();
 }
 
-void DisplaySystem::ensureBoundaries() {
-    // log_d("Bounding Box before is %s", boundingBox_.toString().c_str());
-
-    auto boundingBoxBefore = boundingBox_;
-
-    // First constrain size (must come first since these are used to constrain x and y)
-    boundingBox_.width = std::clamp(boundingBox_.width, minBoundingBox.width, maxBoundingBox.width);
-    boundingBox_.height =
-        std::clamp(boundingBox_.height, minBoundingBox.height, maxBoundingBox.height);
-
-    // Then constrain position
-    boundingBox_.x =
-        std::clamp(boundingBox_.x, maxBoundingBox.x,
-                   static_cast<int32_t>(maxBoundingBox.x + maxBoundingBox.width -
-                                        std::max(minBoundingBox.width, boundingBox_.width)));
-    boundingBox_.y =
-        std::clamp(boundingBox_.y, maxBoundingBox.y,
-                   static_cast<int32_t>(maxBoundingBox.y + maxBoundingBox.height -
-                                        std::max(minBoundingBox.height, boundingBox_.height)));
-
-    if (boundingBox_ != boundingBoxBefore) {
-        log_w("Constrained bounding box from %s to %s", boundingBoxBefore.toString().c_str(),
-              boundingBox_.toString().c_str());
-    }
-}
-
-auto DisplaySystem::setBoundingBox(DisplayRect newBox) -> DisplayRect {
-    // Do the bounds checking
-    boundingBox_ = newBox;
-    ensureBoundaries();
-    return boundingBox_;
-}
-
 auto DisplaySystem::getFont() -> Font * { return font_; }
 
 // Eventually, we could add an optional argument at the end to wrap the text
@@ -157,25 +124,25 @@ auto DisplaySystem::getFont() -> Font * { return font_; }
 // Returns the x position at the end of string, without the bounding box offset.
 auto DisplaySystem::drawSingleLineOfText(const std::string &line, int x, int y, bool inverted)
     -> int {
-    int newXPos = boundingBox_.x;
+    int newXPos = x;
     if (font_ != nullptr) {
         gfxClass_->startWrite();
         font_defs::Bitmap canvas{};
-        canvas.pixels = canvasBuffer_;
-        canvas.dim = font_defs::Dim(canvasWidth_, canvasHeight_);
+        canvas.pixels = getBuffer();
+        canvas.dim = font_defs::Dim(nativeWidth(), nativeHeight());
         newXPos = font_->drawSingleLineOfText(
             canvas, Pos(xOffset(x), yOffset(y + getTextHeight() - lineSpacing_ - 3)), line,
             inverted ? !invertedDisplay_ : invertedDisplay_);
+        newXPos -= displayInsets().left;
         gfxClass_->endWrite();
     }
 
-    return xAbsolute(newXPos);
+    return newXPos;
 }
 
 void DisplaySystem::drawSingleLineOfCenteredText(const std::string &line) {
-    this->drawSingleLineOfText(
-        line, this->xAbsolute(this->xAbsoluteCenter() - this->getTextWidth(line) / 2),
-        this->yAbsolute(this->yAbsoluteCenter() - this->getTextHeight() / 2));
+    this->drawSingleLineOfText(line, (width() - getTextWidth(line)) / 2,
+                               (height() - this->getTextHeight()) / 2);
 }
 
 void DisplaySystem::getTextSize(const std::string &buffer, uint16_t *w, uint16_t *h) {

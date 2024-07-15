@@ -10,6 +10,25 @@ CMAKE_FLAGS = -DCMAKE_BUILD_TYPE=Debug
 # This can be useful for testing the GCC build (used by CI)
 # CMAKE_FLAGS = -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=/opt/homebrew/opt/gcc/bin/gcc-14 -DCMAKE_CXX_COMPILER=/opt/homebrew/opt/gcc/bin/g++-14
 
+# Set the TARGET to glasses-debug if unset
+TARGET ?= glasses-debug
+
+# For the M5Stack targets:
+# You'll also need to uncomment the M5GFX component in src/CMakeLists.txt and also clone M5GFX:
+#   clone -b john/atom-display git@github.com:sindarin-inc/M5GFX.git components/M5GFX
+# If we end up wanting to use these targets more, we could add M5GFX as a submodule.
+
+# Check for TARGET environment variable or profile make command line argument
+ifeq ($(TARGET),glasses-release)
+	IDF_PROFILE = -B build-$(TARGET) -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.$(TARGET)"
+else ifeq ($(TARGET),glasses-debug)
+	IDF_PROFILE = -B build-$(TARGET) -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.$(TARGET)"
+else ifeq ($(TARGET),m5stack-atom-display)
+	IDF_PROFILE = -B build-$(TARGET) -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.$(TARGET)"
+else ifeq ($(TARGET),m5stack-module-display)
+	IDF_PROFILE = -B build-$(TARGET) -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.$(TARGET)"
+endif
+
 .PHONY: sim-build
 sim-build:
 	mkdir -p lib/Simulator/build
@@ -58,7 +77,7 @@ epub-render: epub-render-build
 
 .PHONY: check_idf
 check_idf:
-	@if ! command -v idf.py &> /dev/null ; then \
+	@if ! idf.py --version >/dev/null 2>&1; then \
 		echo "idf.py not found. Searching your history for a possible command:" ; \
 		cat ~/.zsh_history | awk -F';' '{print $$2}' | grep '^source .*idf.*export.sh' | tail -n 1 ; \
 		exit 1 ; \
@@ -68,33 +87,62 @@ check_idf:
 .PHONY: configure
 configure: check_idf
 	@if [[ ! -f build/compile_commands.json ]]; then \
-		idf.py set-target esp32s3 ; \
+		idf.py $(IDF_PROFILE) set-target esp32s3 ; \
 	fi
 
+.PHONY: menuconfig
+menuconfig: check_idf
+	idf.py $(IDF_PROFILE) menuconfig
+
+.PHONY: save-defconfig
+save-defconfig: check_idf
+	idf.py $(IDF_PROFILE) save-defconfig
+
+.PHONY: size-components
+size-components: check_idf
+	idf.py $(IDF_PROFILE) size-components
+
+.PHONY: size-files
+size-files: check_idf
+	idf.py $(IDF_PROFILE) size-files
+
 .PHONY: build
-build: check_idf configure
-	idf.py build
+build: check_idf
+	idf.py $(IDF_PROFILE) build
 
 .PHONY: flash
 flash: build
-	idf.py flash
+	if [ -e /dev/cu.usbmodemsolreader1 ]; then \
+		echo "PROGRAM" | tee /dev/cu.usbmodemsolreader1; \
+		sleep 2; \
+	fi
+	@if [[ "$$(uname)" == "Linux" ]]; then \
+		PORT=$$(udevadm info --query=all --name=/dev/ttyUSB* | grep 'ID_MODEL_FROM_DATABASE=Sol Reader' -B4 | grep 'DEVNAME' | cut -d'=' -f2) ; \
+		echo "PROGRAM" | tee $$PORT ; \
+		sleep 2;\
+	fi
+	idf.py $(IDF_PROFILE) flash
 
 .PHONY: monitor
 monitor: check_idf
-	# Try to find the right serial port and use --no-reset by default
+	# Turn logging on on the new USB port if it exists.
+	if [ -e /dev/cu.usbmodemsolreader1 ]; then \
+		echo "LOGGING_ON" | tee /dev/cu.usbmodemsolreader1; \
+		sleep 2; \
+	fi
 	@if [[ "$$(uname)" == "Linux" ]]; then \
-		PORT=$$(udevadm info --query=all --name=/dev/ttyUSB* | grep 'ID_MODEL_FROM_DATABASE=USB JTAG/serial debug unit' -B4 | grep 'DEVNAME' | cut -d'=' -f2) ; \
+		PORT=$$(udevadm info --query=all --name=/dev/ttyUSB* | grep 'ID_MODEL_FROM_DATABASE=Sol Reader' -B4 | grep 'DEVNAME' | cut -d'=' -f2) ; \
 	elif [[ "$$(uname)" == "Darwin" ]]; then \
-		PORT=$$(ls /dev/cu.usb* | head -n1) ; \
+		PORT=$$(ls /dev/cu.usbmodemsolreader3 | head -n1) ; \
 	else \
 		echo "Unsupported operating system." ; \
 		exit 1 ; \
 	fi ; \
 	if [[ -z "$$PORT" ]]; then \
-		echo "Error: Could not find a serial port with description 'USB JTAG/serial debug unit'." ; \
+		echo "Error: Could not find a serial port with description 'Sol Reader'." ; \
 		exit 1 ; \
 	fi ; \
-	idf.py monitor --no-reset --port $$PORT
+	idf.py $(IDF_PROFILE) monitor --no-reset --port $$PORT
 
 .PHONY: clean
 clean:
@@ -106,7 +154,7 @@ clean:
 
 .PHONY: clang-tidy
 clang-tidy: check_idf
-	@if ! command -v clang-tidy &> /dev/null || [[ $$(which clang-tidy) != *"esp-clang"* ]]; then \
+	@if ! clang-tidy --version >/dev/null 2>&1 || [[ $$(which clang-tidy) != *"esp-clang"* ]]; then \
 		echo "clang-tidy not found. Installing it now:" ; \
 		idf_tools.py install esp-clang ; \
 		pip install --upgrade pyclang ; \

@@ -1,4 +1,4 @@
-#if EINKET013TT1
+#if CONFIG_DISPLAY_EINKET013TT1
 
 #include "UI/ContrastAdjustScreen.hpp"
 
@@ -44,8 +44,6 @@ auto ContrastAdjustScreen::layout(LayoutContext &context, Size size) -> Size {
                     auto barRect = context.setViewFrame(barView_, barRectFrame);
 
                     auto *driver = (dynamic_cast<DisplayEinkET013TT1 *>(&display_))->getDriver();
-                    log_i("Vcom: %d, Nudge: %d: %d", driver->getVcom(), driver->getVcomNudge(),
-                          -1 * (driver->getVcom() - driver->getVcomNudge()));
                     auto vcom = -1 * (driver->getVcom() - driver->getVcomNudge());
                     float vcomPct = (vcom - VCOM_MIN) / static_cast<float>(VCOM_MAX - VCOM_MIN);
                     auto fillHeight = vcomPct * barRect.size.height;
@@ -95,7 +93,7 @@ void ContrastAdjustScreen::drawInRect(Rect rect) {
 
 void ContrastAdjustScreen::render(DisplaySystem &display) {
     setNeedsLayout();
-    setFrame({{0, 0}, {display.width(), display.height()}});
+    setFrame(defaultFrameRect());
     draw();
 
     display.updateDisplay(DisplaySystem::UpdateType::FULL);
@@ -132,6 +130,9 @@ void ContrastAdjustScreen::processCommand(RemoteCommand command) {
                                          CONTRAST_STEP_INCREMENT,
                                      VCOM_MAX);
         driver->setVcom(setting);
+        prefs_.vcom.set(setting);
+        log_i("Vcom: %d, Nudge: %d: %d", driver->getVcom(), driver->getVcomNudge(),
+              -1 * (driver->getVcom() - driver->getVcomNudge()));
         logTelemetry(setting, "up");
         setNeedsRerender();
         break;
@@ -141,6 +142,9 @@ void ContrastAdjustScreen::processCommand(RemoteCommand command) {
                                          CONTRAST_STEP_INCREMENT,
                                      VCOM_MIN);
         driver->setVcom(setting);
+        prefs_.vcom.set(setting);
+        log_i("Vcom: %d, Nudge: %d: %d", driver->getVcom(), driver->getVcomNudge(),
+              -1 * (driver->getVcom() - driver->getVcomNudge()));
         logTelemetry(setting, "down");
         setNeedsRerender();
         break;

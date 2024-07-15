@@ -15,6 +15,7 @@ enum WaveformInternalCheckErrors {
     WAVEFORM_WW_FAIL = 1 << 2,
 };
 
+#if CONFIG_DISPLAY_EINKET013TT1
 // The possible per-column TFT FET source settings.
 enum PixelSetting {
     // NOCHG sets no voltage (possibly VCOM) (As per datasheet, same as 0b01)
@@ -49,13 +50,13 @@ struct Frame {
 
     [[nodiscard]] inline auto getSetting(uint8_t oldPixel, uint8_t newPixel) const -> uint8_t {
         if (oldPixel == 0x0 && newPixel == 0x0) {
-            return bb;
+            return static_cast<uint8_t>(bb);
         } else if (oldPixel == 0x0 && newPixel == 0x1) {
-            return bw;
+            return static_cast<uint8_t>(bw);
         } else if (oldPixel == 0x1 && newPixel == 0x0) {
-            return wb;
+            return static_cast<uint8_t>(wb);
         } else if (oldPixel == 0x1 && newPixel == 0x1) {
-            return ww;
+            return static_cast<uint8_t>(ww);
         }
         assert(0);
         return 0; // Should never get here
@@ -99,7 +100,7 @@ struct Frame {
         string->append(pixelSettingString(ww));
     }
 
-    constexpr static auto nochg() -> Frame { return {NOCHG, NOCHG, NOCHG, NOCHG}; }
+    constexpr static auto nochg() -> Frame { return Frame{NOCHG, NOCHG, NOCHG, NOCHG}; }
 };
 
 struct EinkET013TT1Waveform {
@@ -117,7 +118,7 @@ struct EinkET013TT1Waveform {
 
         for (int frameIndex = 0; frameIndex < this->frameCount; frameIndex++) {
             auto frame = this->frames[frameIndex];
-            switch (frame.bb) {
+            switch (static_cast<PixelSetting>(frame.bb)) {
             case BLACK:
                 numBlacks[0]++;
                 break;
@@ -128,7 +129,7 @@ struct EinkET013TT1Waveform {
                 break;
             }
 
-            switch (frame.bw) {
+            switch (static_cast<PixelSetting>(frame.bw)) {
             case BLACK:
                 numBlacks[1]++;
                 break;
@@ -139,7 +140,7 @@ struct EinkET013TT1Waveform {
                 break;
             }
 
-            switch (frame.wb) {
+            switch (static_cast<PixelSetting>(frame.wb)) {
             case BLACK:
                 numBlacks[1]++;
                 break;
@@ -150,7 +151,7 @@ struct EinkET013TT1Waveform {
                 break;
             }
 
-            switch (frame.ww) {
+            switch (static_cast<PixelSetting>(frame.ww)) {
             case BLACK:
                 numBlacks[2]++;
                 break;
@@ -204,6 +205,8 @@ enum BorderSetting {
     BORDER_SETTING_WHITE = 1,
     BORDER_SETTING_NONE = 2,
 };
+
+#endif
 
 enum class ScreenSide {
     Left = 1 << 0,

@@ -166,15 +166,15 @@ auto IBMFFace::ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2, FIX16 
         return false;
     }
 
-    // hight of significant parts of dist arrays
-    int8_t hight = origin + std::max((static_cast<int8_t>(i1.bitmapHeight) - i1.verticalOffset),
-                                     (static_cast<int8_t>(i2.bitmapHeight) - i2.verticalOffset));
+    // height of significant parts of dist arrays
+    int8_t height = origin + std::max((static_cast<int8_t>(i1.bitmapHeight) - i1.verticalOffset),
+                                      (static_cast<int8_t>(i2.bitmapHeight) - i2.verticalOffset));
 
     // distance computation for left and right characters
-    auto distLeft = std::shared_ptr<FIX32[]>(new FIX32[hight]);
-    auto distRight = std::shared_ptr<FIX32[]>(new FIX32[hight]);
+    auto distLeft = std::shared_ptr<FIX32[]>(new FIX32[height]);
+    auto distRight = std::shared_ptr<FIX32[]>(new FIX32[height]);
 
-    for (int i = 0; i < hight; i++) {
+    for (int i = 0; i < height; i++) {
         distLeft[i] = MAKE_FLOAT_FIXED(-1.0);
         distRight[i] = MAKE_FLOAT_FIXED(-1.0);
     }
@@ -375,7 +375,7 @@ auto IBMFFace::ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2, FIX16 
                 kerning = dist;
             }
         }
-        if ((i < (hight - 1)) && (distLeft[i + 1] >= 0)) {
+        if ((i < (height - 1)) && (distLeft[i + 1] >= 0)) {
             dist = distLeft[i + 1] + distRight[i];
             if (dist < kerning) {
                 kerning = dist;
@@ -389,7 +389,7 @@ auto IBMFFace::ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2, FIX16 
         }
     }
     uint8_t lastIdx = firstIdx + length - 1;
-    if ((lastIdx < (hight - 1)) && (distRight[lastIdx + 1] >= 0)) {
+    if ((lastIdx < (height - 1)) && (distRight[lastIdx + 1] >= 0)) {
         dist = distLeft[lastIdx] + distRight[lastIdx + 1];
         if (dist < kerning) {
             kerning = dist;
@@ -503,7 +503,7 @@ auto IBMFFace::getGlyph(GlyphCode glyphCode, Glyph &appGlyph, bool loadBitmap, b
             } else {
                 white = WHITE_EIGHT_BITS;
             }
-
+            // SHOW_HEAP();
             appGlyph.bitmap.pixels = new (std::nothrow) uint8_t[size];
             if (appGlyph.bitmap.pixels == nullptr) {
                 LOGE("Unable to allocate glyph pixel memory of size %d!", size);

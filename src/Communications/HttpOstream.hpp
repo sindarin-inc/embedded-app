@@ -9,15 +9,13 @@ template <std::size_t BUFFER_SIZE = BUFSIZ>
 class HttpOstreambuf : public std::streambuf {
 public:
     HttpOstreambuf(esp_http_client_handle_t client)
-        : client_(client),
-          buffer_(static_cast<char *>(heap_caps_malloc(BUFFER_SIZE, MALLOC_CAP_SPIRAM))) {
-
+        : client_(client), buffer_(static_cast<char *>(SpiRamMalloc(BUFFER_SIZE))) {
         setp(buffer_, buffer_ + BUFFER_SIZE - 1);
     }
 
     ~HttpOstreambuf() override {
         sync();
-        heap_caps_free(buffer_);
+        SpiRamFree(buffer_);
     }
 
 private:

@@ -86,7 +86,7 @@ public:
 
     inline auto setPixelResolution(PixelResolution res) -> void { pixelResolution_ = res; }
 
-    auto ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2, FIX16 *kern) -> bool;
+    auto ligKern(GlyphCode glyphCode1, GlyphCode *glyphCode2, FIX16 *kern) -> bool;
 
     auto getGlyph(GlyphCode glyphCode, Glyph &appGlyph, bool loadBitmap, bool caching = true,
                   Pos atPos = Pos(0, 0), bool inverted = false) -> bool;

@@ -11,4 +11,6 @@ public:
     auto begin() -> bool override;
     void close() override;
     auto format() -> bool override;
+
+    auto getFreeSpace() -> std::string override;
 };

@@ -1,4 +1,4 @@
-#if USE_BLE_SERVER_PROXY
+#if CONFIG_USE_BLE_SERVER_PROXY
 
 #include "BLEProxy.hpp"
 
@@ -130,4 +130,4 @@ auto BLEProxy::calculateChecksum(const SpiramString &body) -> SpiramString {
     return SpiRamStringFormat("%02x", checksum);
 }
 
-#endif // USE_BLE_SERVER_PROXY
+#endif // CONFIG_USE_BLE_SERVER_PROXY

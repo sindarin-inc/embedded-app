@@ -171,13 +171,13 @@ void BackgroundSync(PowerManager &powerManager, PreferencesStore &prefs, LocalSt
     // Debug LED so we know what's happening (will be turned off when deep sleep happens)
     // Only turn on if debug menu is enabled
     if (prefs.showDebugMenu.get().value_or(false)) {
-        DigitalWrite(BLUE_LED, LED_ON);
+        DigitalWrite(CONFIG_BLUE_LED, LED_ON);
     }
 
     BackgroundSyncInternal(powerManager, prefs, localStore, telemetry);
 
     if (prefs.showDebugMenu.get().value_or(false)) {
-        DigitalWrite(BLUE_LED, LED_OFF);
+        DigitalWrite(CONFIG_BLUE_LED, LED_OFF);
     }
 }
 

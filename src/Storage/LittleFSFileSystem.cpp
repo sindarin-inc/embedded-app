@@ -49,3 +49,18 @@ auto LittleFSFileSystem::begin() -> bool {
 }
 
 void LittleFSFileSystem::close() { esp_vfs_littlefs_unregister(partitionLabel); }
+
+auto LittleFSFileSystem::getFreeSpace() -> std::string {
+    size_t freeSpace = 0;
+    size_t totalBytes = 0;
+    size_t usedBytes = 0;
+
+    esp_err_t err = esp_littlefs_info(partitionLabel, &totalBytes, &usedBytes);
+    if (err != ESP_OK) {
+        log_e("Failed to get LittleFS info: %d", err);
+        return "ERROR";
+    }
+    freeSpace = totalBytes - usedBytes;
+    log_i("Got free space: %d", freeSpace);
+    return std::to_string(freeSpace);
+}

@@ -6,6 +6,7 @@
 #include <utility>
 
 #include "Misc/Platform.hpp"
+#include "Models/UserReadablePartialChapterSummary.hpp"
 #include "UI/Bitmaps/Auto_Pilot_Icons.hpp"
 #include "UI/ReadableHookScreens.hpp"
 #include "sindarin-debug.h"
@@ -227,10 +228,7 @@ void ReadableScreen::render(DisplaySystem &display) {
         return;
     }
 
-    setFrame(
-        {{display.xAbsolute(display.defaultXPadding), display.yAbsolute(display.defaultYPadding)},
-         {display.defaultScreenWidth - 2 * display.defaultXPadding,
-          display.defaultScreenHeight - 2 * display.defaultYPadding}});
+    setFrame(defaultFrameRect());
 
     if (renderTransitionArrows) {
         if (lastArrowPress_ != REMOTE_NONE) {
@@ -244,6 +242,22 @@ void ReadableScreen::render(DisplaySystem &display) {
                          readable_->telemetryPlacemarkMetrics());
 
     display.setFont(display.style.getFontFamily().readableFont);
+
+    // If there is a partial chapter summary, open that instead
+    if (!renderedPartialSummary_ && !prefs_.noShowPartialChapterSummary.get().value_or(false)) {
+        auto partialChapterSummary =
+            UserReadablePartialChapterSummary::loadForReadable(fileSystem_, readable_);
+        if (partialChapterSummary) {
+            log_d("Rendering partial chapter summary for %s, place %s",
+                  readable_->shortenedUuid.c_str(), readable_->place->str().c_str());
+            auto epubPlace = std::dynamic_pointer_cast<EPubPlace>(readable_->place);
+            readableSummaryScreen_.setPlaceInReadable(epubPlace);
+            readableSummaryScreen_.setFirstLoad();
+            setCurrentScreen(readableSummaryScreen_);
+            readableSummaryScreen_.render(display);
+            return;
+        }
+    }
 
     bool emcMode = prefs_.emcMode.get().value_or(false);
 
@@ -370,12 +384,10 @@ void ReadableScreen::render(DisplaySystem &display) {
     updateBookmarkStatus();
 
     if (inBookmark_) {
-        int leftSide = display.xAbsolute(display.xAbsoluteMax() - 25);
+        int leftSide = display.width() - 26;
         log_d("Drawing bookmark!");
-        display.fillRect(leftSide + 1, display.yAbsolute(0), 13, 55, display.fg);
-        display.fillTriangle(leftSide + 1, display.yAbsolute(55), leftSide + 13,
-                             display.yAbsolute(55), leftSide + 7, display.yAbsolute(50),
-                             display.bg);
+        display.fillRect(leftSide + 1, 0, 13, 55, display.fg);
+        display.fillTriangle(leftSide + 1, 55, leftSide + 13, 55, leftSide + 7, 50, display.bg);
     }
 
     // Only show the autopilot icon on page turns or if speed was changed -- let it fade out

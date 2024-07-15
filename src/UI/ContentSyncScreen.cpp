@@ -119,11 +119,9 @@ void ContentSyncScreen::cancel() {
 }
 
 void ContentSyncScreen::render(DisplaySystem &display) {
-    int adjustedXPadding = 42;
-    int adjustedYPadding = 10;
-    setFrame({{display.xAbsolute(adjustedXPadding), display.yAbsolute(adjustedYPadding)},
-              {display.defaultScreenWidth - 2 * adjustedXPadding,
-               display.defaultScreenHeight - 2 * adjustedYPadding}});
+    int xPadding = 42;
+    int yPadding = 10;
+    setFrame(Rect::fromSize({display.width(), display.height()}).inset(xPadding, yPadding));
 
     // Re-render based on state
     switch (state_.state) {
@@ -241,7 +239,7 @@ void ContentSyncScreen::begin() {
         return;
     }
 
-#if !SIMULATOR
+#if USE_BLE
     // Disable the BLE Peripheral. This seems to almost always crash the device with a
     // btdm_controller_task crash
     BLEManager::getInstance()->stopAdvertising();
