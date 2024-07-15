@@ -146,7 +146,7 @@ monitor: check_idf
 
 .PHONY: clean
 clean:
-	rm -fr build
+	rm -fr build*
 	rm -fr lib/Simulator/build
 	rm -fr lib/Simulator/build8
 	rm -fr scripts/epub-render/build

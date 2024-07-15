@@ -354,3 +354,5 @@ To add a new esp-idf build target you need to do a few things:
 * Add a new `TARGET` if statement to the top of the `Makefile` (let's call it `my-new-target` for this example).
 * Create a new `sdkconfig.defaults.my-new-target` file.
 * Add any new build options as needed to the `src/Kconfig.projbuild` file.
+
+See also the [ESP-IDF docs on multi-target builds](https://github.com/espressif/esp-idf/blob/master/examples/build_system/cmake/multi_config/README.md).

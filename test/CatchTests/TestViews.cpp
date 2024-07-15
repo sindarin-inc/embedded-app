@@ -8,10 +8,12 @@
 #include "Misc/Telemetry.hpp"
 #include "Renderers/RendererStream.hpp"
 #include "Storage/PosixFileSystem.hpp"
+#include "UI/AboutScreen.hpp"
 #include "UI/BitmapScreen.hpp"
 #include "UI/ContentSyncScreen.hpp"
 #include "UI/DemoScreen.hpp"
 #include "UI/LayoutTestScreen.hpp"
+#include "UI/LegalScreen.hpp"
 #include "UI/LineSpacingScreen.hpp"
 #include "UI/OffsetAdjustScreen.hpp"
 #include "UI/PowerDepletedScreen.hpp"
@@ -337,6 +339,68 @@ TEST_CASE("Test some views independently") {
         PosixFileSystem fileSystem("./test/CatchTests/TestData");
         Telemetry telemetry = Telemetry(fileSystem, prefs);
 
+        SECTION("Test things that need power") {
+            LightingController lightingController(prefs);
+            PowerManager power(fileSystem, prefs, lightingController, *display, telemetry);
+
+            SECTION("Test AboutScreen") {
+                AboutScreen screen(*display, prefs, power);
+                screen.render(*display);
+                ASSERT_VIEW_UNCHANGED(display, "AboutScreen");
+            }
+
+            SECTION("Test LegalScreen") {
+                LegalScreen screen(*display, prefs, power);
+                screen.render(*display);
+                ASSERT_VIEW_UNCHANGED(display, "LegalScreen1Before");
+                screen.processCommand(LEFT);
+                screen.render(*display);
+                ASSERT_VIEW_UNCHANGED(display, "LegalScreen2Before");
+                screen.processCommand(LEFT);
+                screen.render(*display);
+                ASSERT_VIEW_UNCHANGED(display, "LegalScreen1After");
+                screen.processCommand(RIGHT);
+                screen.render(*display);
+                ASSERT_VIEW_UNCHANGED(display, "LegalScreen2After");
+            }
+
+            SECTION("Test ReleaseNotesScreen") {
+                PosixFileSystem fs("./test/CatchTests/TestData/ReleaseNotesScreen/");
+                Telemetry telemetry(fs, prefs);
+                Battery battery(fs, prefs, telemetry);
+                LocalStore localStore(fs, prefs, battery, telemetry);
+
+                (*display).style.setFontFamily((*display).style.solSansSmall);
+
+                Firmware firmware;
+                auto upgradeAvailable = localStore.getPendingFirmwareUpdate(firmware);
+                REQUIRE(upgradeAvailable);
+                ReleaseNotesScreen screen(*display, prefs, power, localStore, firmware);
+                screen.render(*display);
+                ASSERT_VIEW_UNCHANGED(display, "ReleaseNotesScreen");
+            }
+
+            SECTION("Test ContentSyncScreen") {
+                Telemetry telemetry(fileSystem, prefs);
+                Battery battery(fileSystem, prefs, telemetry);
+                LocalStore localStore(fileSystem, prefs, battery, telemetry);
+                ContentSyncScreen screen(*display, localStore, prefs, telemetry);
+                screen.render(*display);
+                ASSERT_VIEW_UNCHANGED(display, "ContentSyncScreen1");
+
+                screen.state_ = ContentSyncState{.state = ContentSyncState::State::SyncingArticles,
+                                                 .percentage = 63};
+                screen.render(*display);
+                ASSERT_VIEW_UNCHANGED(display, "ContentSyncScreen2");
+
+                screen.state_ = ContentSyncState{.state = ContentSyncState::State::Synced,
+                                                 .booksDownloaded = 3,
+                                                 .articlesDownloaded = 10};
+                screen.render(*display);
+                ASSERT_VIEW_UNCHANGED(display, "ContentSyncScreen3");
+            }
+        }
+
         SECTION("Test OffsetAdjustScreen") {
             OffsetAdjustScreen screen(*display, prefs, telemetry);
             screen.render(*display);
@@ -347,6 +411,29 @@ TEST_CASE("Test some views independently") {
             ResizeBoxScreen screen(*display, prefs, telemetry);
             screen.render(*display);
             ASSERT_VIEW_UNCHANGED(display, "ResizeBoxScreen");
+        }
+
+        SECTION("Test ResizeBoxScreen with pinned left") {
+            OffsetAdjustScreen offsetScreen(*display, prefs, telemetry);
+            offsetScreen.render(*display);
+            offsetScreen.processCommand(LEFT);
+            offsetScreen.processCommand(LEFT);
+            offsetScreen.processCommand(LEFT);
+            offsetScreen.processCommand(LEFT);
+            offsetScreen.processCommand(LEFT);
+            offsetScreen.processCommand(LEFT);
+            offsetScreen.processCommand(LEFT);
+            // These are the extra lefts to make sure nothing changes on display
+            offsetScreen.processCommand(LEFT);
+            offsetScreen.processCommand(LEFT);
+            // Save setting
+            offsetScreen.processCommand(ENTER);
+            ResizeBoxScreen resizeScreen(*display, prefs, telemetry);
+            resizeScreen.render(*display);
+            resizeScreen.processCommand(LEFT);
+            resizeScreen.processCommand(LEFT);
+            resizeScreen.render(*display);
+            ASSERT_VIEW_UNCHANGED(display, "ResizeBoxScreenLeftPinned");
         }
 
         SECTION("Test LineSpacingScreen") {
@@ -407,53 +494,10 @@ TEST_CASE("Test some views independently") {
             ASSERT_VIEW_UNCHANGED(display, "EpubImage");
         }
 
-        SECTION("Test ReleaseNotesScreen") {
-            PosixFileSystem fs("./test/CatchTests/TestData/ReleaseNotesScreen/");
-            Telemetry telemetry(fs, prefs);
-            Battery battery(fs, prefs, telemetry);
-            LightingController lightingController(prefs);
-            PowerManager power(fs, prefs, lightingController, *display, telemetry);
-            LocalStore localStore(fs, prefs, battery, telemetry);
-
-            (*display).style.setFontFamily((*display).style.solSansSmall);
-
-            Firmware firmware;
-            auto upgradeAvailable = localStore.getPendingFirmwareUpdate(firmware);
-            REQUIRE(upgradeAvailable);
-            ReleaseNotesScreen screen(*display, prefs, power, localStore, firmware);
-            screen.render(*display);
-            ASSERT_VIEW_UNCHANGED(display, "ReleaseNotesScreen");
-        }
-
         SECTION("Test DemoScreen") {
-            LightingController lightingController(prefs);
             DemoScreen screen(*display, prefs);
             screen.render(*display);
             ASSERT_VIEW_UNCHANGED(display, "DemoScreen");
-        }
-
-        SECTION("Test ContentSyncScreen") {
-            PosixFileSystem fs("./test/CatchTests/TestData/ReleaseNotesScreen/");
-            Telemetry telemetry(fs, prefs);
-            Battery battery(fs, prefs, telemetry);
-            LightingController lightingController(prefs);
-            PowerManager power(fs, prefs, lightingController, *display, telemetry);
-            LocalStore localStore(fs, prefs, battery, telemetry);
-
-            ContentSyncScreen screen(*display, localStore, prefs, telemetry);
-            screen.render(*display);
-            ASSERT_VIEW_UNCHANGED(display, "ContentSyncScreen1");
-
-            screen.state_ = ContentSyncState{.state = ContentSyncState::State::SyncingArticles,
-                                             .percentage = 63};
-            screen.render(*display);
-            ASSERT_VIEW_UNCHANGED(display, "ContentSyncScreen2");
-
-            screen.state_ = ContentSyncState{.state = ContentSyncState::State::Synced,
-                                             .booksDownloaded = 3,
-                                             .articlesDownloaded = 10};
-            screen.render(*display);
-            ASSERT_VIEW_UNCHANGED(display, "ContentSyncScreen3");
         }
     }
 }
