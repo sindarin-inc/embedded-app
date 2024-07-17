@@ -9,7 +9,7 @@
 #include "EinkTypes.hpp"
 #include "Misc/Dispatch.hpp"
 
-#define WAVESHARE_6INHD_X_PIXELS 1448
+#define WAVESHARE_6INHD_X_PIXELS 1440
 #define WAVESHARE_6INHD_Y_PIXELS 1072
 
 #define HIGH 1
@@ -213,7 +213,7 @@ protected:
 
     UWORD convertByte(UBYTE input);
     void WriteCommand(UWORD cmd);
-    void WriteData(UWORD data, bool forDisplay = false);
+    void WriteData(UWORD data);
     UWORD ReadData();
     void WriteMultiData(UWORD *data, UDOUBLE length);
     void ReadMultiData(UWORD *data, UDOUBLE length);

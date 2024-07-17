@@ -26,7 +26,7 @@ else ifeq ($(TARGET),m5stack-atom-display)
 else ifeq ($(TARGET),m5stack-module-display)
 	IDF_PROFILE = -B build-$(TARGET) -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.$(TARGET)"
 else ifeq ($(TARGET),waveshare-6inhd)
-	IDF_PROFILE = -B build-$(TARGET) -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.$(TARGET)"
+	IDF_PROFILE = -B build-$(TARGET) -DSDKCONFIG_DEFAULTS="sdkconfig.defaults.$(TARGET)"
 endif
 
 .PHONY: sim-build
@@ -146,7 +146,7 @@ monitor: check_idf
 
 .PHONY: clean
 clean:
-	rm -fr build
+	rm -fr build*
 	rm -fr lib/Simulator/build
 	rm -fr lib/Simulator/build8
 	rm -fr scripts/epub-render/build

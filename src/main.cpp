@@ -257,7 +257,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     // after prefs have begun. Hence the below #if 0 in case you need to turn on logging
     // earlier for debugging.
     usbSerial.begin();
-#if 0
+#if 1
     usbSerial.enableLogging();
 #endif
     directCommand.begin();

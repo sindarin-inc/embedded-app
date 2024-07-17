@@ -2,9 +2,12 @@
 
 #include "DisplayWaveshare6inHD.hpp"
 
+#include "Communications/USBSerial.hpp"
 #include "Misc/Dispatch.hpp"
 #include "Misc/Platform.hpp"
 #include "config.h"
+
+extern bool mirrorToSerial;
 
 auto DisplayWaveshare6inHD::setup() -> bool {
     DisplaySystem::setup();
@@ -50,7 +53,31 @@ void DisplayWaveshare6inHD::updateDisplay(DisplaySystem::UpdateType updateType,
         log_w("updateDisplay called from outside the UI queue.");
     }
 
+    // for (int x = 0; x < gfxCanvas_.width(); x += 8) {
+    //     drawBox(x, 0, x + 1, gfxCanvas_.height());
+    //     drawBox(x + 2, 0, x + 3, gfxCanvas_.height());
+    // }
+    // for (int y = 0; y < gfxCanvas_.height(); y += 8) {
+    //     drawBox(0, y, gfxCanvas_.width(), y + 1);
+    //     drawBox(0, y + 2, gfxCanvas_.width(), y + 3);
+    // }
+    if (mirrorToSerial) {
+        USBSerial::getInstance().txSendData(
+            reinterpret_cast<const uint8_t *>(gfxCanvas_.getBuffer()),
+            gfxCanvas_.width() * gfxCanvas_.height() / 8);
+    }
+
+    // The subtraction of the %32 is because of a 4 byte align thing in the
+    // driver example code!
     PROFILE_START(updateDisplay);
+    if (updateType == UpdateType::PARTIAL || altUpdateType == UpdateType::FULL) {
+        driver_.One_bp_Refresh(gfxCanvas_.getBuffer(), (UWORD)0, (UWORD)0,
+                               (UWORD)gfxCanvas_.width(), (UWORD)gfxCanvas_.height(),
+                               (uint8_t)A2_Mode, (UDOUBLE)0, false);
+        // EPD_IT8951_Standby();
+        //        driver_.Sleep();
+        ;
+    }
     // driver_.startWrite();
     // driver_.beginTransaction();
 
