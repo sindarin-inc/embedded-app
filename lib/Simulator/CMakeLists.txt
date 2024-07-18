@@ -27,3 +27,14 @@ target_compile_options(${PROJECT_NAME}
     PRIVATE
     -include ${REPO_ROOT_DIR}/src/config.h
 )
+
+# Check if SIM_WIDTH and SIM_HEIGHT are set
+# WARNING: Duplicated in Simulator/Common/CMakeLists.txt
+if (DEFINED SIM_WIDTH)
+    add_compile_definitions(SIM_WIDTH=${SIM_WIDTH})
+endif()
+
+if (DEFINED SIM_HEIGHT)
+    add_compile_definitions(SIM_HEIGHT=${SIM_HEIGHT})
+endif()
+
