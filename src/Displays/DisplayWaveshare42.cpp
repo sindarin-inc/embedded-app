@@ -505,7 +505,7 @@ void DisplayWaveshare42::updateDisplay(DisplaySystem::UpdateType updateType, boo
         updateType == DisplaySystem::UpdateType::PARTIAL) {
         // base_draw();
         log_i("updating the display");
-        // driver_.Display(gfxCanvas_.getBuffer());
+        driver_.Display(gfxCanvas_.getBuffer());
     }
 
     // Clear buffer afterwards if argument not set to false.
