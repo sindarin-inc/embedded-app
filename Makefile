@@ -29,15 +29,16 @@ else ifeq ($(TARGET),m5stack-module-display)
 	IDF_PROFILE = -B build-$(TARGET) -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.$(TARGET)"
 endif
 
-# Optional variables for SIM_WIDTH and SIM_HEIGHT
+# Optional variables for SIM_WIDTH and SIM_HEIGHT and SIM_SCALE
 CMAKE_SIM_WIDTH := $(if $(SIM_WIDTH),-DSIM_WIDTH=$(SIM_WIDTH))
 CMAKE_SIM_HEIGHT := $(if $(SIM_HEIGHT),-DSIM_HEIGHT=$(SIM_HEIGHT))
+CMAKE_SIM_SCALE := $(if $(SIM_SCALE),-DSIM_SCALE=$(SIM_SCALE))
 
 
 .PHONY: sim-build
 sim-build:
 	mkdir -p lib/Simulator/build
-	cd lib/Simulator/build && cmake $(CMAKE_FLAGS) $(CMAKE_SIM_WIDTH) $(CMAKE_SIM_HEIGHT) .. && $(MAKE)
+	cd lib/Simulator/build && cmake $(CMAKE_FLAGS) $(CMAKE_SIM_WIDTH) $(CMAKE_SIM_HEIGHT) $(CMAKE_SIM_SCALE) .. && $(MAKE)
 
 .PHONY: sim-run
 sim: sim-build
@@ -46,7 +47,7 @@ sim: sim-build
 .PHONY: sim8-build
 sim8-build:
 	mkdir -p lib/Simulator/build8
-	cd lib/Simulator/build8 && cmake $(CMAKE_FLAGS) -DENABLE_8BIT_DISPLAY=ON $(CMAKE_SIM_WIDTH) $(CMAKE_SIM_HEIGHT) .. && $(MAKE)
+	cd lib/Simulator/build8 && cmake $(CMAKE_FLAGS) -DENABLE_8BIT_DISPLAY=ON $(CMAKE_SIM_WIDTH) $(CMAKE_SIM_HEIGHT) $(CMAKE_SIM_SCALE) .. && $(MAKE)
 
 .PHONY: sim-run8
 sim8: sim8-build
