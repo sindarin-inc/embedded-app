@@ -108,3 +108,8 @@ if (DEFINED SIM_HEIGHT)
     add_compile_definitions(SIM_HEIGHT=${SIM_HEIGHT})
 endif()
 
+if (DEFINED SIM_LAYOUT_DEBUG)
+    add_compile_definitions(SIM_LAYOUT_DEBUG=${SIM_LAYOUT_DEBUG})
+endif()
+
+

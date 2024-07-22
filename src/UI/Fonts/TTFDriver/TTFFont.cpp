@@ -367,6 +367,20 @@ auto Font::ligKernUTF8Map(const std::string &line, LigKernMappingHandler handler
 auto Font::drawSingleLineOfText(font_defs::Bitmap &canvas, font_defs::Pos pos,
                                 const std::string &line, bool inverted) -> int {
     font_defs::Pos atPos = pos;
+
+    font_defs::Dim maxDim = getTextSize("TQgj");
+    font_defs::Dim dim = getTextSize("T");
+
+    // Half of the difference between the line height (less subscripts) and the height
+    // of the font is how much we need to move up the text to ensure the subscript part
+    // of letters that go below the baseline still fit within the bounding box.
+    int16_t up = (maxDim.height - dim.height + 2);
+    // log_d("up: %d and the rest are %d %d", up, lineHeight(), dim.height);
+
+    // We get passed in the upper left coordinate, so we need to shift that down by the
+    // height of this font less the above calculated value.
+    atPos.y += lineHeight() - up;
+
     if constexpr (TTF_TRACING) {
         LOGD("drawSingleLineOfText()");
     }

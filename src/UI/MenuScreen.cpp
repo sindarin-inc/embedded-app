@@ -8,12 +8,31 @@
 
 #define MAX_WIDTH 150
 
+#define HEIGHT_ROUNDUP(x) (((x % 2 == 0) ? x : (x + 1)))
+
+// All of this needs to get fixed up for the ttf fonts to look right
 auto MenuScreen::layout(LayoutContext &context, Size size) -> Size {
 
-    context.setViewFrame(leftArrowView_, {{0, 1}, {5, 10}},
-                         LayoutOptionsSizeToFit | LayoutOptionsAlignTop | LayoutOptionsAlignLeft);
-    context.setViewFrame(upperLeftTextView_, {{10, 0}, size},
-                         LayoutOptionsSizeToFit | LayoutOptionsAlignTop | LayoutOptionsAlignLeft);
+    context.setSublayoutFrame(
+        {{0, 0}, {size.width, HEIGHT_ROUNDUP(upperLeftTextView_.getTextHeight())}},
+        LayoutOptionsAlignTop | LayoutOptionsAlignLeft,
+        [this](LayoutContext &context, Size size) -> Size {
+            // To render correctly, arrows should always have a height of (2x width - 1)
+            auto arrowRect = context.setViewFrame(
+                leftArrowView_,
+                {{0, 0},
+                 {std::max(5, HEIGHT_ROUNDUP(upperLeftTextView_.getTextHeight() / 2)),
+                  std::max(9, HEIGHT_ROUNDUP(upperLeftTextView_.getTextHeight()) - 1)}},
+                LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical);
+            auto backTextRect = context.setViewFrame(
+                upperLeftTextView_,
+                {{std::max(5, HEIGHT_ROUNDUP(upperLeftTextView_.getTextHeight() / 2)) * 3 / 2, 0},
+                 size},
+                LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical);
+
+            return {arrowRect.size.width + backTextRect.size.width,
+                    std::max(arrowRect.size.height, backTextRect.size.height)};
+        });
 
     context.setViewFrame(clockBatteryView_, {{0, 0}, size},
                          LayoutOptionsSizeToFit | LayoutOptionsAlignBottom |
@@ -68,6 +87,12 @@ void MenuScreen::drawMenuItems(DisplaySystem &display, bool withBullet, bool wit
         // xoffset for main menu is 12, for settings menu is 23
         // yoffset for main menu is some crazy thing
         // for settings menu some other crazy thing
+        // Switch to Resolution-based here. 5x5 is a good size for the paging bubbles
+        // on a 256 x 256 screen, but higher resolution screens will need larger bubbles
+        // XXX
+        // This probably should change to a layout item that is Vertically Center Aligned
+        // with the menu item. That's the only way to get it to look right on small screens
+        // and large screens.
         if ((i == currSelection_) && (withBullet)) {
             display.fillRoundRect(xOffsetForMenu - display.getTextHeight() / 4 - 2,
                                   yOffsetForMenu + additionalYOffset +

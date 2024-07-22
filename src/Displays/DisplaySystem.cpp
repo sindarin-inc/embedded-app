@@ -129,9 +129,12 @@ auto DisplaySystem::drawSingleLineOfText(const std::string &line, int x, int y, 
         font_defs::Bitmap canvas{};
         canvas.pixels = getBuffer();
         canvas.dim = font_defs::Dim(nativeWidth(), nativeHeight());
-        newXPos = font_->drawSingleLineOfText(
-            canvas, Pos(xOffset(x), yOffset(y + getTextHeight() - lineSpacing_ - 3)), line,
-            inverted ? !invertedDisplay_ : invertedDisplay_);
+        // This -lineSpacing_ - 3 is a hack to try to get the text to be in the right
+        // place since our coordinates passed in here are upper left, but the
+        // font rendering is at the baseline of the text. This really only works
+        // for our smallest Sol Sans.
+        newXPos = font_->drawSingleLineOfText(canvas, Pos(xOffset(x), yOffset(y)), line,
+                                              inverted ? !invertedDisplay_ : invertedDisplay_);
         newXPos -= displayInsets().left;
         gfxClass_->endWrite();
     }

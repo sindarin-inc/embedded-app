@@ -82,7 +82,7 @@ public:
 
     auto drawSingleLineOfText(ibmf_defs::Bitmap &canvas, ibmf_defs::Pos pos,
                               const std::string &line, bool inverted) const -> int;
-    auto getTextSize(const std::string &buffer) -> ibmf_defs::Dim;
+    auto getTextSize(const std::string &buffer) const -> ibmf_defs::Dim;
     auto getTextWidth(const std::string &buffer) -> int;
 
     auto getTextHeight(const std::string &buffer) -> int;

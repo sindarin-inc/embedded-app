@@ -43,4 +43,3 @@ endif()
 if (DEFINED SIM_HEIGHT)
     add_compile_definitions(SIM_HEIGHT=${SIM_HEIGHT})
 endif()
-

@@ -16,11 +16,10 @@ auto MainMenuScreen::layout(LayoutContext &context, Size size) -> Size {
     const auto inset = 3;
     const auto spacing = 5;
 
-    // Layout the top bar -- note the calculation 20 - 2 * inset is to make the top bar 20 pixels
-    // but this is hardcoded and should look at the size of the text for the words there instead.
+    // Grab the first top bar view and use its height to layout the top bar
     auto topBarRect = context.setSublayoutFrame(
-        {{inset, inset}, {size.width, 20 - 2 * inset}}, LayoutOptionsNone,
-        [this](LayoutContext &context, Size size) -> Size {
+        {{inset, inset}, {size.width, topBarViews_[0]->getTextHeight() + spacing + 1}},
+        LayoutOptionsSizeToFitVertical, [this](LayoutContext &context, Size size) -> Size {
             int x = 0;
             int y = 0;
             int viewCount = topBarViews_.size();
@@ -32,7 +31,8 @@ auto MainMenuScreen::layout(LayoutContext &context, Size size) -> Size {
                 context.setViewFrame(*view, {{x, y}, boxSize},
                                      LayoutOptionsSizeToFit | LayoutOptionsAlignCenter);
                 if (place == currentSelection_) {
-                    context.setViewFrame(topBarSelectionView_, {{x, y}, boxSize});
+                    context.setViewFrame(topBarSelectionView_, {{x, y}, boxSize},
+                                         LayoutOptionsSizeToFit | LayoutOptionsAlignCenter);
                 }
                 x += boxWidth + spacing;
                 place++;
@@ -58,13 +58,24 @@ auto MainMenuScreen::layout(LayoutContext &context, Size size) -> Size {
         [this](LayoutContext &context, Size size) -> Size {
             int x = 0;
             int y = 0;
-            Size boxSize = {5, 5};
+            // Switch to Resolution-based here. 5x5 is a good size for the paging bubbles
+            // on a 256 x 256 screen, but higher resolution screens will need larger bubbles
+            // XXX
+            uint16_t bubbleSize = 0;
+            if (display_.width() < 300) {
+                bubbleSize = 5;
+            } else if (display_.width() < 720) {
+                bubbleSize = 10;
+            } else if (display_.width() < 1100) {
+                bubbleSize = 15;
+            }
+            Size boxSize = {bubbleSize, bubbleSize};
             for (auto &view : menuPageViews_) {
                 auto viewFrame = context.setViewFrame(
                     *view, {{x, y}, boxSize}, LayoutOptionsSizeToFit | LayoutOptionsAlignRight);
-                y += viewFrame.size.height + 5;
+                y += viewFrame.size.height + bubbleSize;
             }
-            y -= 5;
+            y -= bubbleSize;
 
             return {boxSize.width, y};
         });

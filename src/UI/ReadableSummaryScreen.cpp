@@ -7,17 +7,22 @@
 
 auto ReadableSummaryScreen::layout(LayoutContext &context, Size size) -> Size {
     auto fullFrame = Rect::fromSize(size);
+    log_d("ReadableSummaryScreen layout: %d x %d", size.width, size.height);
+    log_d("full frame is %d %d %d %d", fullFrame.origin.x, fullFrame.origin.y, fullFrame.size.width,
+          fullFrame.size.height);
     auto backgroundFrame = fullFrame.inset(0);
 
     context.setViewFrame(backgroundView_, backgroundFrame);
 
     auto contentFrame = backgroundFrame.inset(10);
+
+    // XXX Needs to remove magic numbers -- see MenuScreen for example
     context.setViewFrame(leftArrowView_,
-                         {{contentFrame.origin.x, contentFrame.origin.y - 4}, {10, 5}});
+                         {{contentFrame.origin.x, contentFrame.origin.y - 4}, {9, 5}});
     context.setViewFrame(upperLeftTextView_,
                          {{contentFrame.origin.x + 15, contentFrame.origin.y - 8},
                           {contentFrame.size.width, contentFrame.size.height}});
-    context.setViewSizeInRect(rightArrowView_, {10, 5},
+    context.setViewSizeInRect(rightArrowView_, {9, 5},
                               {{contentFrame.origin.x, 12}, contentFrame.size},
                               LayoutOptionsAlignBottom | LayoutOptionsAlignRight);
     context.setViewFrame(

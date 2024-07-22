@@ -32,6 +32,24 @@ public:
         }
     }
 
+    auto getTextWidth() -> uint16_t {
+        Font *oldFont = display_.getFont();
+        display_.setFont(font_);
+        uint16_t w, h;
+        display_.getTextSize(text_, &w, &h);
+        display_.setFont(oldFont);
+        return w;
+    }
+
+    auto getTextHeight() -> uint16_t {
+        Font *oldFont = display_.getFont();
+        display_.setFont(font_);
+        uint16_t w, h;
+        display_.getTextSize(text_, &w, &h);
+        display_.setFont(oldFont);
+        return h;
+    }
+
     void setTopPadding(uint8_t topPaddingValue) { topPadding = topPaddingValue; }
 
     auto getText() -> const std::string & { return text_; }
@@ -71,6 +89,11 @@ public:
         Font *oldFont = display_.getFont();
         display_.setFont(font_);
         display_.drawSingleLineOfText(text_, rect.origin.x, rect.origin.y);
+#ifdef SIM_LAYOUT_DEBUG
+        // For debugging
+        display_.drawRect(rect.origin.x, rect.origin.y, rect.size.width, rect.size.height,
+                          display_.fg);
+#endif
         display_.setFont(oldFont);
     }
 
