@@ -55,7 +55,7 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs)
         std::string message = "Welcome to the Sol Reader! Let's begin...";
         display.clearDisplay();
         display.clearFrameBuffer();
-        display.setFont(static_cast<Font *>(&ibmf75Face0));
+        display.setFont(static_cast<Font *>(&fontFace0));
         display.drawSingleLineOfText(message,
                                      display.width() / 2 - display.getTextWidth(message) / 2,
                                      display.height() / 2 - display.getTextHeight(message));
@@ -360,14 +360,14 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs)
 
 void DemoScreen::drawSkipMessage(DisplaySystem &display, bool inverted) {
     std::string message = "Press \ue000 to skip";
-    display.setFont(static_cast<Font *>(&ibmf75Face0));
+    display.setFont(static_cast<Font *>(&fontFace0));
     display.drawSingleLineOfText(message, (display.width() - display.getTextWidth(message)) / 2,
                                  235, inverted);
 }
 
 void DemoScreen::drawDoubleLine(DisplaySystem &display, std::string one, std::string two) {
     std::string message;
-    display.setFont(static_cast<Font *>(&ibmf75Face1));
+    display.setFont(static_cast<Font *>(&fontFace1));
     message = std::move(one);
     display.drawSingleLineOfText(message, (display.width() - display.getTextWidth(message)) / 2,
                                  (display.height() - display.getTextHeight(message)) / 2 - 12);
@@ -379,7 +379,7 @@ void DemoScreen::drawDoubleLine(DisplaySystem &display, std::string one, std::st
 void DemoScreen::drawTripleLine(DisplaySystem &display, std::string one, std::string two,
                                 std::string three, bool invert) {
     std::string message;
-    display.setFont(static_cast<Font *>(&ibmf75Face1));
+    display.setFont(static_cast<Font *>(&fontFace1));
     message = std::move(one);
     int yAdjust = display.getTextHeight() - display.getLineSpacing();
 

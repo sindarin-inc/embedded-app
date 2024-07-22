@@ -11,8 +11,16 @@
 #include "CustomWaveforms.hpp"
 #include "EinkTypes.hpp"
 
+#ifndef SIM_WIDTH
 #define EinkET013TT1_PIXEL_WIDTH 256
+#else
+#define EinkET013TT1_PIXEL_WIDTH SIM_WIDTH
+#endif
+#ifndef SIM_HEIGHT
 #define EinkET013TT1_PIXEL_HEIGHT 256
+#else
+#define EinkET013TT1_PIXEL_HEIGHT SIM_HEIGHT
+#endif
 #define FRAMERATE_DEFAULT 24
 #define PARTICLE_MOVEMENT_DEFAULT 40
 

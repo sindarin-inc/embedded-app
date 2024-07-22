@@ -378,7 +378,6 @@ public:
           bleAuthKey(*this, "ble-auth-key"),
           blePower(*this, "ble-power"),
           brightnessOffset(*this, "brightness-off"),
-          brightnessOffsetEnabled(*this, "bright-off-en"),
           loggingOn(*this, "logging"),
           textInsetLeft(*this, "text-inset-l"),
           textInsetRight(*this, "text-inset-r"),
@@ -499,6 +498,9 @@ public:
                 nvs_erase_key(nvsHandle_, "rectH");
                 break;
             }
+            case 6: // Versions >= 1.0.6
+                nvs_erase_key(nvsHandle_, "bright-off-en");
+                break;
             default:
                 log_e("Unknown migration version: %" PRIu32, migrationVersion);
                 return;
@@ -661,7 +663,6 @@ public:
     // battery power. But there might be some tweaking we could do to improve BLE reliability.
     PrefsItem<uint32_t> blePower;
     PrefsItem<int> brightnessOffset;
-    PrefsItem<bool> brightnessOffsetEnabled;
     PrefsItem<bool> loggingOn;
     PrefsItem<uint16_t> textInsetLeft;
     PrefsItem<uint16_t> textInsetRight;
@@ -682,7 +683,7 @@ public:
     static PairedStatus paired;
 
 protected:
-    const uint32_t latestMigrationVersion_ = 6;
+    const uint32_t latestMigrationVersion_ = 7;
     uint32_t nvsHandle_{};
     bool started_{};
 

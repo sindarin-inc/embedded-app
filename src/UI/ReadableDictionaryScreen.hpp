@@ -23,7 +23,7 @@ public:
                              DisplaySystem &display, Renderer &renderer)
         : EinkView(display), prefs_(prefs), readable_(std::move(readable)), renderer_(renderer),
           display_(display), upperLeftTextView_(display, upperLeftText_),
-          leftArrowView_(display, ArrowUp) {}
+          leftArrowView_(display, ArrowUp), backgroundView_(display, 5) {}
 
     auto layout(LayoutContext &context, Size size) -> Size override;
     void drawInRect(Rect rect) override;
@@ -54,4 +54,6 @@ protected:
     std::string upperLeftText_ = "Dismiss";
     SingleLineTextView upperLeftTextView_;
     ArrowView leftArrowView_;
+    BoxView backgroundView_;
+    Rect contentFrame_{};
 };

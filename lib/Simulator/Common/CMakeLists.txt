@@ -40,7 +40,9 @@ add_subdirectory(${REPO_ROOT_DIR}/components/Adafruit-GFX-Library ${CMAKE_CURREN
 
 add_library(${PROJECT_NAME} STATIC ${SOURCES})
 
-target_link_libraries(${PROJECT_NAME} PUBLIC pugixml ArduinoJson miniz astubs esp-idf-stubs nvs_flash Adafruit-GFX-Library)
+find_package(Freetype REQUIRED)
+
+target_link_libraries(${PROJECT_NAME} PUBLIC pugixml ArduinoJson miniz astubs esp-idf-stubs nvs_flash Adafruit-GFX-Library Freetype::Freetype)
 
 target_include_directories(${PROJECT_NAME} PUBLIC
     "${REPO_ROOT_DIR}/src"
@@ -57,10 +59,14 @@ if(ENABLE_8BIT_DISPLAY)
     target_compile_definitions(${PROJECT_NAME} PUBLIC
         DISPLAY_SIM_8BIT=1
         CONFIG_DISPLAY_EINKET013TT1=0
+        CONFIG_FONT_TTF=1
+        CONFIG_FONT_IBMF=0
     )
 else()
     target_compile_definitions(${PROJECT_NAME} PUBLIC
         CONFIG_DISPLAY_EINKET013TT1=1
+        CONFIG_FONT_TTF=0
+        CONFIG_FONT_IBMF=1
     )
 endif()
 
@@ -91,3 +97,19 @@ target_compile_options(${PROJECT_NAME}
     PRIVATE
     -include ${REPO_ROOT_DIR}/src/config.h
 )
+
+# Check if SIM_WIDTH and SIM_HEIGHT are set
+# WARNING: Duplicated in Simulator/CMakeLists.txt
+if (DEFINED SIM_WIDTH)
+    add_compile_definitions(SIM_WIDTH=${SIM_WIDTH})
+endif()
+
+if (DEFINED SIM_HEIGHT)
+    add_compile_definitions(SIM_HEIGHT=${SIM_HEIGHT})
+endif()
+
+if (DEFINED SIM_LAYOUT_DEBUG)
+    add_compile_definitions(SIM_LAYOUT_DEBUG=${SIM_LAYOUT_DEBUG})
+endif()
+
+

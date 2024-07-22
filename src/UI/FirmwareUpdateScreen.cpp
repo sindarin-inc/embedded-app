@@ -13,9 +13,9 @@
 FirmwareUpdateScreen::FirmwareUpdateScreen(DisplaySystem &display, Telemetry &telemetry,
                                            PreferencesStore &prefs)
     : EinkView(display), telemetry_(telemetry), firmwareDownloader_(prefs),
-      cancelView_(display, "Press \ue000 to cancel", &ibmf75Face0) {
+      cancelView_(display, "Press \ue000 to cancel", &fontFace0) {
     for (auto &textView : textViews_) {
-        textView = std::make_shared<SingleLineTextView>(display, "", &ibmf75Face0);
+        textView = std::make_shared<SingleLineTextView>(display, "", &fontFace0);
     }
     for (auto &progressBarView : progressBarViews_) {
         progressBarView = std::make_shared<ProgressBarView>(display);

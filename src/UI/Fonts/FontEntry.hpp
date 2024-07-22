@@ -1,4 +1,8 @@
+#pragma once
+
 #include <cinttypes>
+
+#include "config.h"
 
 struct FontEntry {
     const char *caption;

@@ -9,8 +9,11 @@
 #endif
 #include "sindarin-debug.h"
 
-#define EinkET013TT1_X_PIXELS 256
-#define EinkET013TT1_Y_PIXELS 256
+// Why we have these defined in both the driver and here doesn't
+// make a lot of sense to me, but before I rip it out, I'll just
+// note it here.
+#define EinkET013TT1_X_PIXELS EinkET013TT1_PIXEL_WIDTH
+#define EinkET013TT1_Y_PIXELS EinkET013TT1_PIXEL_HEIGHT
 
 class DisplayEinkET013TT1 : public DisplaySystem {
 public:

@@ -8,6 +8,7 @@
 #include "Misc/BMPImage.hpp"
 #include "RendererDefs.hpp"
 #include "Tokens.hpp"
+#include "config.h"
 
 // From the token stream, generate pages content, separating tokens into lines and pages that fit
 // the current display region. The last page retrieved is found in the lines_[] circular array.
@@ -63,7 +64,13 @@ private:
         linesTailIdx_ = (linesTailIdx_ + 1) % LINES_SIZE;
     }
 
+#if CONFIG_FONT_TTF
+    auto getLineSegment(LineInfo &lineInfo, Idx tokenIdx, Idx endTokenIdx, Line &line) const -> Idx;
+    void drawSingleLine(LineInfo &lineInfo, int yPos) const;
+#else
     void getLine(LineInfo &lineStruct, Line &line) const;
+#endif
+
     auto computeDarkPercent(const uint8_t *bitmap, uint16_t width, uint16_t height) const
         -> uint8_t;
     void newLine(uint16_t height);

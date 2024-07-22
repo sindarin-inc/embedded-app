@@ -5,13 +5,28 @@
 #include "Misc/SpiramAllocator.hpp"
 
 auto ReadableDictionaryScreen::layout(LayoutContext &context, Size size) -> Size {
-    context.setViewFrame(leftArrowView_, {{0, -5}, {10, 5}});
-    context.setViewFrame(upperLeftTextView_, {{15, -8}, size});
+    auto fullFrame = Rect::fromSize(size);
+    auto backgroundFrame = fullFrame.inset(0);
+
+    context.setViewFrame(backgroundView_, backgroundFrame);
+
+    auto contentFrame = backgroundFrame.inset(10);
+    context.setViewFrame(leftArrowView_,
+                         {{contentFrame.origin.x, contentFrame.origin.y - 4}, {10, 5}});
+    context.setViewFrame(upperLeftTextView_,
+                         {{contentFrame.origin.x + 15, contentFrame.origin.y - 8},
+                          {contentFrame.size.width, contentFrame.size.height}});
+
+    contentFrame_ = contentFrame;
 
     return {size.width, size.height};
 };
 
 void ReadableDictionaryScreen::drawInRect(Rect rect) {
+    backgroundView_.fillColor = display_.bg;
+    backgroundView_.strokeColor = display_.fg;
+    backgroundView_.draw();
+
     leftArrowView_.draw();
     upperLeftTextView_.draw();
 }
@@ -30,10 +45,9 @@ void ReadableDictionaryScreen::render(DisplaySystem &display) {
     setFrame(defaultFrameRect());
 
     // Double up on the vertical insets
-    // TODO(john): I'm not sure we want to use the bounding box setting here, but it's what we were
-    // doing previously so I'm keeping it for now.
-    auto rect = GetTextRectFromPrefs(display, prefs_);
-    rect = rect.inset(0, 0, display.defaultTextInsets().top, display.defaultTextInsets().bottom);
+    auto rect =
+        DisplayRect::fromSizeAndInsets(display_.width(), display_.height(), {30, 30, 30, 30});
+    rect = rect.inset(10, 10, 15, 15);
     renderer_.setRect(rect);
 
     draw();

@@ -47,9 +47,11 @@ void ResizeBoxScreen::processCommand(RemoteCommand command) {
     DisplayRect rect = GetTextRectFromPrefs(display_, prefs_);
     switch (command) {
     case RemoteCommand::LEFT:
-        if (insets.left - BOX_OFFSET_ADJUST_AMOUNT >= display_.minTextInsets().left &&
-            insets.right - BOX_OFFSET_ADJUST_AMOUNT >= display_.minTextInsets().right) {
+        if (insets.left - BOX_OFFSET_ADJUST_AMOUNT >= display_.minTextInsets().left) {
             insets.left -= BOX_OFFSET_ADJUST_AMOUNT / 2;
+            setNeedsRerender();
+        }
+        if (insets.right - BOX_OFFSET_ADJUST_AMOUNT >= display_.minTextInsets().right) {
             insets.right -= BOX_OFFSET_ADJUST_AMOUNT / 2;
             setNeedsRerender();
         }
@@ -62,9 +64,11 @@ void ResizeBoxScreen::processCommand(RemoteCommand command) {
         }
         break;
     case RemoteCommand::UP:
-        if (insets.top - BOX_OFFSET_ADJUST_AMOUNT >= display_.minTextInsets().top &&
-            insets.bottom - BOX_OFFSET_ADJUST_AMOUNT >= display_.minTextInsets().bottom) {
+        if (insets.top - BOX_OFFSET_ADJUST_AMOUNT >= display_.minTextInsets().top) {
             insets.top -= BOX_OFFSET_ADJUST_AMOUNT / 2;
+            setNeedsRerender();
+        }
+        if (insets.bottom - BOX_OFFSET_ADJUST_AMOUNT >= display_.minTextInsets().bottom) {
             insets.bottom -= BOX_OFFSET_ADJUST_AMOUNT / 2;
             setNeedsRerender();
         }

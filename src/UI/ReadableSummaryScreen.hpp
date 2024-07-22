@@ -23,7 +23,7 @@ public:
         : EinkView(display), prefs_(prefs), fileSystem_(fileSystem), readable_(std::move(readable)),
           renderer_(renderer), display_(display), upperLeftTextView_(display, upperLeftText_),
           bottomRightTextView_(display, bottomRightText_), leftArrowView_(display, ArrowUp),
-          rightArrowView_(display, ArrowDown) {}
+          rightArrowView_(display, ArrowDown), backgroundView_(display, 5) {}
 
     auto layout(LayoutContext &context, Size size) -> Size override;
     void drawInRect(Rect rect) override;
@@ -59,4 +59,6 @@ protected:
     SingleLineTextView bottomRightTextView_;
     ArrowView leftArrowView_;
     ArrowView rightArrowView_;
+    BoxView backgroundView_;
+    Rect contentFrame_{};
 };

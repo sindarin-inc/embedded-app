@@ -24,8 +24,8 @@ class MenuStyle {
 public:
     MenuStyle() {
 
-        mainMenu.itemFont = static_cast<Font *>(&ibmf75Face1);
-        mainMenu.navigationFont = static_cast<Font *>(&ibmf75Face0);
+        mainMenu.itemFont = static_cast<Font *>(&fontFace1);
+        mainMenu.navigationFont = static_cast<Font *>(&fontFace0);
 
         mainMenu.xOffsetForArrows = 45;
         mainMenu.yOffsetForArrows = 45;
@@ -36,8 +36,8 @@ public:
         mainMenu.yOffsetForList = 60;
         mainMenu.numberOfItemsPerPage = 4;
 
-        settingsMenu.itemFont = static_cast<Font *>(&ibmf75Face0);
-        settingsMenu.navigationFont = static_cast<Font *>(&ibmf75Face0);
+        settingsMenu.itemFont = static_cast<Font *>(&fontFace0);
+        settingsMenu.navigationFont = static_cast<Font *>(&fontFace0);
 
         settingsMenu.xOffsetForArrows = 25;
         settingsMenu.yOffsetForArrows = 15;

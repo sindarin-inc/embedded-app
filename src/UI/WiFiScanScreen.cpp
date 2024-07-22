@@ -46,7 +46,7 @@ void WiFiScanScreen::begin() {
                 for (auto &network : sortedNetworks) {
                     std::string displayText = StringFormat(
                         "%s (%d dBm)", reinterpret_cast<const char *>(network.ssid), network.rssi);
-                    networkViews_.emplace_back(display_, displayText, &ibmf75Face0);
+                    networkViews_.emplace_back(display_, displayText, &fontFace0);
                 }
             }
             render(display_);

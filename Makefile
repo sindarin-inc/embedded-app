@@ -7,6 +7,8 @@ NUM_CORES := $(shell [ $(NUM_CORES) -lt 1 ] && echo 1 || echo $(NUM_CORES))
 
 MAKE := nice make -j$(NUM_CORES)
 CMAKE_FLAGS = -DCMAKE_BUILD_TYPE=Debug
+# This can be useful for testing the GCC build (used by CI)
+# CMAKE_FLAGS = -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=/opt/homebrew/opt/gcc/bin/gcc-14 -DCMAKE_CXX_COMPILER=/opt/homebrew/opt/gcc/bin/g++-14
 
 # Set the TARGET to glasses-debug if unset
 TARGET ?= glasses-debug
@@ -29,10 +31,17 @@ else ifeq ($(TARGET),waveshare-6inhd)
 	IDF_PROFILE = -B build-$(TARGET) -DSDKCONFIG_DEFAULTS="sdkconfig.defaults.$(TARGET)"
 endif
 
+# Optional variables for SIM_WIDTH and SIM_HEIGHT and SIM_SCALE and SIM_LAYOUT_DEBUG
+CMAKE_SIM_WIDTH := $(if $(SIM_WIDTH),-DSIM_WIDTH=$(SIM_WIDTH))
+CMAKE_SIM_HEIGHT := $(if $(SIM_HEIGHT),-DSIM_HEIGHT=$(SIM_HEIGHT))
+CMAKE_SIM_SCALE := $(if $(SIM_SCALE),-DSIM_SCALE=$(SIM_SCALE))
+CMAKE_SIM_LAYOUT_DEBUG := $(if $(SIM_LAYOUT_DEBUG),-DSIM_LAYOUT_DEBUG=$(SIM_LAYOUT_DEBUG))
+
+
 .PHONY: sim-build
 sim-build:
 	mkdir -p lib/Simulator/build
-	cd lib/Simulator/build && cmake $(CMAKE_FLAGS) .. && $(MAKE)
+	cd lib/Simulator/build && cmake $(CMAKE_FLAGS) $(CMAKE_SIM_WIDTH) $(CMAKE_SIM_HEIGHT) $(CMAKE_SIM_SCALE) $(CMAKE_SIM_LAYOUT_DEBUG) .. && $(MAKE)
 
 .PHONY: sim-run
 sim: sim-build
@@ -41,7 +50,7 @@ sim: sim-build
 .PHONY: sim8-build
 sim8-build:
 	mkdir -p lib/Simulator/build8
-	cd lib/Simulator/build8 && cmake $(CMAKE_FLAGS) -DENABLE_8BIT_DISPLAY=ON .. && $(MAKE)
+	cd lib/Simulator/build8 && cmake $(CMAKE_FLAGS) -DENABLE_8BIT_DISPLAY=ON $(CMAKE_SIM_WIDTH) $(CMAKE_SIM_HEIGHT) $(CMAKE_SIM_SCALE) $(CMAKE_SIM_LAYOUT_DEBUG) .. && $(MAKE)
 
 .PHONY: sim-run8
 sim8: sim8-build

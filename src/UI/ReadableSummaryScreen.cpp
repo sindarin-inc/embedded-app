@@ -6,18 +6,41 @@
 #include "Models/UserReadablePartialChapterSummary.hpp"
 
 auto ReadableSummaryScreen::layout(LayoutContext &context, Size size) -> Size {
-    context.setViewFrame(leftArrowView_, {{0, -5}, {10, 5}});
-    context.setViewFrame(upperLeftTextView_, {{15, -8}, size});
-    context.setViewSizeInRect(rightArrowView_, {10, 5}, {{0, 6}, size},
-                              LayoutOptionsAlignBottom | LayoutOptionsAlignRight);
-    context.setViewFrame(bottomRightTextView_, {{0, size.height - 1}, {size.width - 12, 10}},
-                         LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical |
-                             LayoutOptionsAlignRight);
+    auto fullFrame = Rect::fromSize(size);
+    log_d("ReadableSummaryScreen layout: %d x %d", size.width, size.height);
+    log_d("full frame is %d %d %d %d", fullFrame.origin.x, fullFrame.origin.y, fullFrame.size.width,
+          fullFrame.size.height);
+    auto backgroundFrame = fullFrame.inset(0);
 
-    return {size.width, size.height};
-};
+    context.setViewFrame(backgroundView_, backgroundFrame);
+
+    auto contentFrame = backgroundFrame.inset(10);
+
+    // XXX Needs to remove magic numbers -- see MenuScreen for example
+    context.setViewFrame(leftArrowView_,
+                         {{contentFrame.origin.x, contentFrame.origin.y - 4}, {9, 5}});
+    context.setViewFrame(upperLeftTextView_,
+                         {{contentFrame.origin.x + 15, contentFrame.origin.y - 8},
+                          {contentFrame.size.width, contentFrame.size.height}});
+    context.setViewSizeInRect(rightArrowView_, {9, 5},
+                              {{contentFrame.origin.x, 12}, contentFrame.size},
+                              LayoutOptionsAlignBottom | LayoutOptionsAlignRight);
+    context.setViewFrame(
+        bottomRightTextView_,
+        {{contentFrame.origin.x, contentFrame.origin.y + contentFrame.size.height - 6},
+         {contentFrame.size.width - 12, 10}},
+        LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical | LayoutOptionsAlignRight);
+
+    contentFrame_ = contentFrame;
+
+    return size;
+}
 
 void ReadableSummaryScreen::drawInRect(Rect rect) {
+    backgroundView_.fillColor = display_.bg;
+    backgroundView_.strokeColor = display_.fg;
+    backgroundView_.draw();
+
     leftArrowView_.draw();
     upperLeftTextView_.draw();
     rightArrowView_.draw();
@@ -49,10 +72,9 @@ void ReadableSummaryScreen::render(DisplaySystem &display) {
     draw();
 
     // Double up on the vertical insets
-    // TODO(john): I'm not sure we want to use the bounding box setting here, but it's what we were
-    // doing previously so I'm keeping it for now.
-    auto rect = GetTextRectFromPrefs(display, prefs_);
-    rect = rect.inset(0, 0, display.defaultTextInsets().top, display.defaultTextInsets().bottom);
+    auto rect =
+        DisplayRect::fromSizeAndInsets(display_.width(), display_.height(), {30, 30, 30, 30});
+    rect = rect.inset(10, 10, 15, 15);
     renderer_.setRect(rect);
 
     uint8_t darkPicturePercent = 0;

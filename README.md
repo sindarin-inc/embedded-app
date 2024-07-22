@@ -75,7 +75,7 @@ Issues that will be fixed automatically will be fixed by clang-tidy, warnings wi
 
 The simulator compiles in <20s from a clean build, and even less on an incremental build. This makes it fast for us to iterate on anything that doesn't need the physical hardware.
 
-You'll need SDL2 & openssl for it to work: `brew install sdl2 openssl` (on Ubuntu `sudo apt install libsdl2-dev libssl-dev`). Then you can run `make sim` to run it. After building once, you can also debug with lldb at the command line: `lldb lib/Simulator/build/simulator`.
+You'll need SDL2, openssl & freetype for it to work: `brew install sdl2 openssl freetype` (on Ubuntu `sudo apt install libsdl2-dev libssl-dev libfreetype-dev`). Then you can run `make sim` to run it (or `make sim8` for the high-res version). After building once, you can also debug with lldb at the command line: `lldb lib/Simulator/build/simulator`.
 
 ### Extract your Sol cloud access token to download content onto the Simulator
 
@@ -354,3 +354,5 @@ To add a new esp-idf build target you need to do a few things:
 * Add a new `TARGET` if statement to the top of the `Makefile` (let's call it `my-new-target` for this example).
 * Create a new `sdkconfig.defaults.my-new-target` file.
 * Add any new build options as needed to the `src/Kconfig.projbuild` file.
+
+See also the [ESP-IDF docs on multi-target builds](https://github.com/espressif/esp-idf/blob/master/examples/build_system/cmake/multi_config/README.md).

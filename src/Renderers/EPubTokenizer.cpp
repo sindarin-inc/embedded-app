@@ -156,6 +156,7 @@ EPubTokenizer::Entities EPubTokenizer::entities
     {"euro",   "\xE2\x80\xAC"}, // euro sign, U+20AC NEW
 };
 
+#if CONFIG_FONT_IBMF
 EPubTokenizer::Characters EPubTokenizer::superscriptCharacters
 {
     {"0", "\xE2\x81\xB0"},
@@ -315,6 +316,7 @@ EPubTokenizer::Characters EPubTokenizer::subscriptCharacters
     {".", "\xEE\x80\xA0"},
     {"/", "\xEE\x80\xA1"},
 };
+#endif
 
 // clang-format on
 
@@ -1723,6 +1725,7 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint32_t len) -> bool 
         // REND_WLOG("Current Character: %c (%02" PRIX8 "H)",
         //       (((curChar >= ' ') && (curChar < 127)) ? curChar : ' '), curChar);
 
+#if CONFIG_FONT_IBMF
         if (superscript_) {
             superscript_ = false;
             Token &newToken = tokens_.getNextAvailable();
@@ -1793,8 +1796,40 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint32_t len) -> bool 
                 addTokenToPage(newToken);
             }
 
-        } else if (curChar > ' ') {
-            if (textToken_ == nullptr) {
+        } else
+#endif
+            if (curChar > ' ') {
+#if CONFIG_FONT_TTF
+            if (superscript_) {
+                superscript_ = false;
+                closeTextToken();
+                textToken_ = &tokens_.getNextAvailable();
+                *textToken_ = {.cStr = nullptr,
+                               .picture = nullptr,
+                               .streamPlace = {streamOffset, currentSpineIdx_},
+                               .pixWidth = 0,
+                               .pixHeight = 0,
+                               .length = 0,
+                               .tokenId = TokenId::SUPTEXT,
+                               .spacesAfter = 0};
+
+            } else if (subscript_) {
+                subscript_ = false;
+                closeTextToken();
+                textToken_ = &tokens_.getNextAvailable();
+                *textToken_ = {.cStr = nullptr,
+                               .picture = nullptr,
+                               .streamPlace = {streamOffset, currentSpineIdx_},
+                               .pixWidth = 0,
+                               .pixHeight = 0,
+                               .length = 0,
+                               .tokenId = TokenId::SUBTEXT,
+                               .spacesAfter = 0};
+
+            } else
+#endif
+
+                if (textToken_ == nullptr) {
                 textToken_ = &tokens_.getNextAvailable();
 
                 *textToken_ = {.cStr = nullptr,

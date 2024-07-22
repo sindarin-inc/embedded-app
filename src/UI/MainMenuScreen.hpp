@@ -14,6 +14,7 @@
 #include "UI/Layout/View.hpp"
 #include "UI/MenuScreen.hpp"
 #include "sindarin-debug.h"
+
 class MainMenuScreen : public MenuScreen {
 public:
     MainMenuScreen(Battery &battery, DisplaySystem &display, MenuStyleFamily myStyle)

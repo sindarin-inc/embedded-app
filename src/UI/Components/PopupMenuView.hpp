@@ -83,7 +83,11 @@ public:
         // Make room for foregroundFrame box
         y += 5;
 
-        return {106, y};
+        // To be visually pleasing, the popup menu should take about 110% of the width
+        // of the widest text -- this allows for the buttons as well
+        // XXX figure this out
+        // return {maxWidthOfText * 110 / 100, y};
+        return {size.width, y};
     }
 
     void drawInRect(Rect rect) override {

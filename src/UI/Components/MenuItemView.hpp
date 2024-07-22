@@ -15,7 +15,7 @@ public:
 
     //! Convenience method to initialize and then set the menuItem
     MenuItemView(DisplaySystem &display, const MenuItem &menuItem,
-                 Font *font = static_cast<Font *>(&ibmf75Face0), bool multiLine = false,
+                 Font *font = static_cast<Font *>(&fontFace0), bool multiLine = false,
                  bool subtitle = true)
         : MenuItemView(display) {
         setMenuItem(menuItem, font, multiLine, subtitle);
@@ -23,7 +23,7 @@ public:
 
     ~MenuItemView() override = default;
 
-    void setMenuItem(const MenuItem &menuItem, Font *font = static_cast<Font *>(&ibmf75Face0),
+    void setMenuItem(const MenuItem &menuItem, Font *font = static_cast<Font *>(&fontFace0),
                      bool multiLine = false, bool subtitle = true) {
         if (textView_ != nullptr) {
             textView_->setHidden(true);
@@ -52,7 +52,7 @@ public:
         if (!menuItem.subtitle.empty() && subtitle) {
             if (subtextView_ == nullptr) {
                 subtextView_ = std::make_unique<SingleLineTextView>(
-                    display_, menuItem.subtitle, static_cast<Font *>(&ibmf75Face0), true);
+                    display_, menuItem.subtitle, static_cast<Font *>(&fontFace0), true);
             } else {
                 subtextView_->setText(menuItem.subtitle, true);
                 subtextView_->setHidden(false);
@@ -69,7 +69,7 @@ public:
     void setRightText(const std::string &rightText) {
         if (rightTextView_ == nullptr) {
             rightTextView_ = std::make_unique<SingleLineTextView>(
-                display_, rightText, static_cast<Font *>(&ibmf75Face0), true);
+                display_, rightText, static_cast<Font *>(&fontFace0), true);
         } else {
             rightTextView_->setText(rightText);
         }

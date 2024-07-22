@@ -22,6 +22,11 @@ public:
     }
 
     void drawInRect(Rect rect) override {
+#ifdef SIM_LAYOUT_DEBUG
+        // For debugging
+        display_.drawRect(rect.origin.x, rect.origin.y, rect.size.width, rect.size.height,
+                          display_.fg);
+#endif
         if (scale_ == 1) {
             display_.drawXBitmap(rect.origin.x, rect.origin.y, iconBits_, width_, height_,
                                  display_.fg);

@@ -7,13 +7,30 @@
 
 #define MAX_WIDTH 150
 
+#define HEIGHT_ROUNDUP(x) (((x % 2 == 0) ? x : (x + 1)))
+
 auto ToggleMenuScreen::layout(LayoutContext &context, Size size) -> Size {
     const auto inset = 3;
+    context.setSublayoutFrame(
+        {{0, 0}, {size.width, HEIGHT_ROUNDUP(upperLeftTextView_.getTextHeight())}},
+        LayoutOptionsAlignTop | LayoutOptionsAlignLeft,
+        [this](LayoutContext &context, Size size) -> Size {
+            // To render correctly, arrows should always have a height of (2x width - 1)
+            auto arrowRect = context.setViewFrame(
+                leftArrowView_,
+                {{0, 0},
+                 {std::max(5, HEIGHT_ROUNDUP(upperLeftTextView_.getTextHeight() / 2)),
+                  std::max(9, HEIGHT_ROUNDUP(upperLeftTextView_.getTextHeight()) - 1)}},
+                LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical);
+            auto backTextRect = context.setViewFrame(
+                upperLeftTextView_,
+                {{std::max(5, HEIGHT_ROUNDUP(upperLeftTextView_.getTextHeight() / 2)) * 3 / 2, 0},
+                 size},
+                LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical);
 
-    context.setViewFrame(leftArrowView_, {{0, 1}, {5, 10}},
-                         LayoutOptionsSizeToFit | LayoutOptionsAlignTop | LayoutOptionsAlignLeft);
-    context.setViewFrame(upperLeftTextView_, {{10, 0}, size},
-                         LayoutOptionsSizeToFit | LayoutOptionsAlignTop | LayoutOptionsAlignLeft);
+            return {arrowRect.size.width + backTextRect.size.width,
+                    std::max(arrowRect.size.height, backTextRect.size.height)};
+        });
 
     const auto mainInset = 2;
 
@@ -44,8 +61,8 @@ auto ToggleMenuScreen::layout(LayoutContext &context, Size size) -> Size {
                                          {{x, y}, {size.width - 70, viewFrame.size.height + 1}});
                 }
 
-                // Only layout the bubble if it's visible (doing this here instead of draw since we
-                // already have the place in the vector here)
+                // Only layout the bubble if it's visible (doing this here instead of draw since
+                // we already have the place in the vector here)
                 if (showToggleBubble_[place]) {
                     Rect alignWithRect = menuToggleValues_[place] ? onRect : offRect;
                     // Align the bubble horizontally with the on/off text and vertically witht

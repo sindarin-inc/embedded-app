@@ -41,6 +41,7 @@ set(components
     espcoredump
     app_update
     usb
+    freetype
 
     # Uncomment for M5Stack displays
     # M5GFX

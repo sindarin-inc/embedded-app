@@ -47,6 +47,14 @@ struct DisplayRect {
         return StringFormat("x:%d, y:%d, w:%d, h:%d", x, y, width, height);
     }
 
+    [[nodiscard]] auto operator==(const DisplayRect &other) const -> bool {
+        return x == other.x && y == other.y && width == other.width && height == other.height;
+    }
+
+    [[nodiscard]] auto operator!=(const DisplayRect &other) const -> bool {
+        return !(*this == other);
+    }
+
     static auto fromSizeAndInsets(uint16_t width, uint16_t height, DisplayInset inset)
         -> DisplayRect {
         return {inset.left, inset.top, static_cast<uint16_t>(width - inset.left - inset.right),
@@ -136,10 +144,6 @@ public:
     void setFont(Font *f) {
         if (f != nullptr) {
             font_ = f;
-            auto gFont = dynamic_cast<GFont *>(font_);
-            if (gFont != nullptr) {
-                gfxClass_->setFont(gFont->get());
-            }
         } else {
             log_e("Received a bad (null) font pointer!");
         }
@@ -202,7 +206,7 @@ public:
 
     // MARK: - Text rendering code
     auto getFont() -> Font *;
-    void drawSingleLineOfText(const std::string &line, int x, int y, bool inverted = false);
+    auto drawSingleLineOfText(const std::string &line, int x, int y, bool inverted = false) -> int;
     void drawSingleLineOfCenteredText(const std::string &line);
     void getTextSize(const std::string &buffer, uint16_t *w, uint16_t *h);
     auto getTextHeight() -> int;
@@ -210,7 +214,7 @@ public:
     auto getTextWidth(const std::string &buffer) -> int;
 
     inline auto getTextWidthQuick(const char *buffer) -> int {
-        return dynamic_cast<IBMFFont *>(font_)->getTextWidthQuick(buffer);
+        return font_->getTextWidthQuick(buffer);
     }
 
     // MARK: - Graphic drawing code

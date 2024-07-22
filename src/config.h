@@ -4,6 +4,8 @@
 // picked up you need to clean and build everything. Or make sure any files that
 // need stuff from here explicitly #include "config.h"
 
+#pragma once
+
 #ifndef REVISION
 #define REVISION 7
 #endif

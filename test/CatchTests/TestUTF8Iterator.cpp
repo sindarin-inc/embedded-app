@@ -2,8 +2,8 @@
 #include <string>
 #include <vector>
 
-#include "UI/Fonts/IBMFDriver/IBMFDefs.hpp"
-#include "UI/Fonts/IBMFDriver/UTF8Iterator.hpp"
+#include "UI/Fonts/FontDefs.hpp"
+#include "UI/Fonts/UTF8Iterator.hpp"
 
 #define GOOD_1 "\x24"
 #define GOOD_2 "\xD0\x98"
@@ -22,7 +22,7 @@
 #define BAD_5 "\xF0\x90\x8D"
 #define BAD_6 "\xF0\x90"
 
-#define BAD_CODE ibmf_defs::UNKNOWN_CODEPOINT
+#define BAD_CODE font_defs::UNKNOWN_CODEPOINT
 
 const std::string Line1{GOOD_1 GOOD_2 GOOD_3 GOOD_4};
 const std::vector Line1Result{CODE_1, CODE_2, CODE_3, CODE_4};
