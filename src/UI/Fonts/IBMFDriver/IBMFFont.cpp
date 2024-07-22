@@ -225,7 +225,7 @@ auto Font::toChar32(const char **str) -> char32_t {
     return res;
 }
 
-auto Font::getTextHeight(const std::string &buffer) -> int {
+auto Font::getTextHeight(const std::string &buffer) const -> int {
     if constexpr (IBMF_TRACING) {
         LOGD("getTextHeight()");
     }

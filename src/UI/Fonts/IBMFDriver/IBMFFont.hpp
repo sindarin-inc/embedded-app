@@ -82,10 +82,10 @@ public:
 
     auto drawSingleLineOfText(ibmf_defs::Bitmap &canvas, ibmf_defs::Pos pos,
                               const std::string &line, bool inverted) const -> int;
-    auto getTextSize(const std::string &buffer) const -> ibmf_defs::Dim;
+    [[nodiscard]] auto getTextSize(const std::string &buffer) const -> ibmf_defs::Dim;
     auto getTextWidth(const std::string &buffer) -> int;
 
-    auto getTextHeight(const std::string &buffer) -> int;
+    auto getTextHeight(const std::string &buffer) const -> int;
 
     // Non-validating algorithm
     auto toChar32(const char **str) -> char32_t;
