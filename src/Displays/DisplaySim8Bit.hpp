@@ -41,6 +41,8 @@ public:
 
     auto buffer() -> std::unique_ptr<uint8_t[]> & override { return buffer_; };
 
+    auto getPixel(int x, int y) -> uint8_t { return buffer_[x + y * width_]; };
+
     auto getSkipSignalling() -> bool override { return skipSignalling_; };
 
     void setSkipSignalling(bool skip) override { skipSignalling_ = skip; };

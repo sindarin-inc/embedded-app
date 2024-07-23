@@ -72,6 +72,8 @@ public:
 
     auto buffer() -> std::unique_ptr<uint8_t[]> & { return particlePositions_; }
 
+    auto getPixel(const uint8_t *buffer, int x, int y) -> uint8_t;
+
     auto getSkipWaveform() -> bool { return skipWaveform_; }
 
     void setSkipWaveform(bool skip) { skipWaveform_ = skip; }
@@ -89,8 +91,6 @@ protected:
 
     uint8_t previousBuffer_[EinkET013TT1_PIXEL_WIDTH * EinkET013TT1_PIXEL_HEIGHT / 8];
     int framerate_ = FRAMERATE_DEFAULT;
-
-    auto getPixel(const uint8_t *buffer, int x, int y) -> uint8_t;
 };
 
 #endif

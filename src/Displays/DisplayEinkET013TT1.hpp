@@ -63,6 +63,10 @@ public:
 
     auto buffer() -> std::unique_ptr<uint8_t[]> & override { return driver_.buffer(); }
 
+    auto getPixel(int x, int y) -> uint8_t {
+        return driver_.getPixel(gfxCanvas_.getBuffer(), x, y);
+    };
+
     // For the simulator to know if it should skip the waveform processing
     auto getSkipWaveform() -> bool override { return driver_.getSkipWaveform(); }
 
