@@ -188,8 +188,6 @@ public:
 
         // log_w("word: %s", buffer);
 
-        const char *b = buffer;
-
         while (*buffer) {
             int16_t xoff;
             int16_t advance;
