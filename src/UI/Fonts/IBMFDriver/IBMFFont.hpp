@@ -85,7 +85,7 @@ public:
     [[nodiscard]] auto getTextSize(const std::string &buffer) const -> ibmf_defs::Dim;
     auto getTextWidth(const std::string &buffer) -> int;
 
-    auto getTextHeight(const std::string &buffer) const -> int;
+    [[nodiscard]] auto getTextHeight(const std::string &buffer) const -> int;
 
     // Non-validating algorithm
     auto toChar32(const char **str) -> char32_t;
