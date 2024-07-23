@@ -10,8 +10,9 @@
 
 class TTFNotoSansLight : public FontData {
 public:
-    virtual ~TTFNotoSansLight() = default;
-    TTFNotoSansLight(){};
+    ~TTFNotoSansLight() override = default;
+    TTFNotoSansLight() = default;
+    ;
 
     auto ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2, FIX16 *kern) const
         -> bool override;

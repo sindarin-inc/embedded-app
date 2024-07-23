@@ -82,8 +82,7 @@ private:
     void copyBitmap(Bitmap &to, bool toHeightBit, Bitmap &from, Pos atPos, bool inverted);
 
 public:
-    Font(FontData &fontData, int size) noexcept
-        : initialized_(false), fontData_(fontData), size_(size) {
+    Font(FontData &fontData, int size) noexcept : fontData_(fontData), size_(size) {
 
         if (fontData_.isInitialized()) {
             int error =
