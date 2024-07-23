@@ -10,18 +10,23 @@
 
 class TTFNotoSansLight : public FontData {
 public:
-    TTFNotoSansLight() : FontData(){};
+    virtual ~TTFNotoSansLight() = default;
+    TTFNotoSansLight(){};
 
     auto ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2, FIX16 *kern) const
         -> bool override;
 
-    auto getData() const -> MemoryPtr override { return (MemoryPtr)(notoSansLight.data_.data()); }
-    auto getDataSize() const -> int override { return notoSansLight.data_.size(); }
-
-    auto getPrivateData() const -> MemoryPtr override {
-        return (MemoryPtr)(solPrivateLight.data_.data());
+    [[nodiscard]] auto getData() const -> MemoryPtr override {
+        return const_cast<MemoryPtr>(NOTO_SANS_LIGHT.data.data());
     }
-    auto getPrivateDataSize() const -> int override { return solPrivateLight.data_.size(); }
+    [[nodiscard]] auto getDataSize() const -> int override { return NOTO_SANS_LIGHT.data.size(); }
+
+    [[nodiscard]] auto getPrivateData() const -> MemoryPtr override {
+        return const_cast<MemoryPtr>(SOL_PRIVATE_LIGHT.data.data());
+    }
+    [[nodiscard]] auto getPrivateDataSize() const -> int override {
+        return SOL_PRIVATE_LIGHT.data.size();
+    }
 };
 
 #endif

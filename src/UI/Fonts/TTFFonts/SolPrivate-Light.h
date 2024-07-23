@@ -18,7 +18,7 @@
 #if CONFIG_FONT_TTF
 
 const struct {
-    const std::array<uint8_t, 2212> data_ = {
+    const std::array<uint8_t, 2212> data = {
         0x00, 0x01, 0x00, 0x00, 0x00, 0x0e, 0x00, 0x80, 0x00, 0x03, 0x00, 0x60, 0x46, 0x46, 0x54, 0x4d,
         0xa7, 0x62, 0xa2, 0x6a, 0x00, 0x00, 0x08, 0x88, 0x00, 0x00, 0x00, 0x1c, 0x47, 0x44, 0x45, 0x46,
         0x00, 0x15, 0x00, 0x14, 0x00, 0x00, 0x08, 0x6c, 0x00, 0x00, 0x00, 0x1c, 0x4f, 0x53, 0x2f, 0x32,
@@ -160,18 +160,18 @@ const struct {
         0xe2, 0x9d, 0x01, 0x46
     };
 
-    const std::array<std::pair<uint32_t, int16_t>, 0> kerns_ = {{
+    const std::array<std::pair<uint32_t, int16_t>, 0> kerns = {{
     }};
 
-    const std::array<std::pair<uint16_t, std::pair<uint16_t, uint16_t>>, 0> classesDefs_ = {{
+    const std::array<std::pair<uint16_t, std::pair<uint16_t, uint16_t>>, 0> classesDefs = {{
     }};
 
-    const std::array<std::array<int16_t, 0>, 0> mKerns_ = {{
+    const std::array<std::array<int16_t, 0>, 0> mKerns = {{
     }};
 
-    const std::array<std::pair<uint32_t, uint16_t>, 0> ligatures_ = {{
+    const std::array<std::pair<uint32_t, uint16_t>, 0> ligatures = {{
     }};
-} solPrivateLight;
+} SOL_PRIVATE_LIGHT;
 
 #endif
 

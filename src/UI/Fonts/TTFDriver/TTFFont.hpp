@@ -14,14 +14,14 @@
 
 class Font {
 private:
-    FT_Face face_;
-    FT_Face privateFace_;
+    FT_Face face_{};
+    FT_Face privateFace_{};
 
     bool initialized_{false};
     FontData &fontData_;
     int size_;
     FIX16 spaceSize_{0};
-    uint8_t lastGlyphWidth_;
+    uint8_t lastGlyphWidth_{};
     PixelResolution pixelResolution_{DEFAULT_PIXEL_RESOLUTION};
     PixelResolution fontPixelResolution_{DEFAULT_FONT_PIXEL_RESOLUTION};
 
@@ -65,7 +65,7 @@ private:
     }
 
     [[nodiscard]] inline auto getGlyphHOffset(GlyphCode glyphCode) -> int8_t {
-        Glyph glyph;
+        Glyph glyph{};
 
         if (getGlyphMetrics(glyphCode, glyph)) {
             return glyph.metrics.xoff;
@@ -82,8 +82,8 @@ private:
     void copyBitmap(Bitmap &to, bool toHeightBit, Bitmap &from, Pos atPos, bool inverted);
 
 public:
-    Font(FontData &fontData, int size) noexcept : fontData_(fontData), size_(size) {
-        initialized_ = false;
+    Font(FontData &fontData, int size) noexcept
+        : initialized_(false), fontData_(fontData), size_(size) {
 
         if (fontData_.isInitialized()) {
             int error =
@@ -166,7 +166,7 @@ public:
         return (initialized_) ? fontPixelResolution_ : DEFAULT_FONT_PIXEL_RESOLUTION;
     }
 
-    auto translate(char32_t codePoint) const -> GlyphCode;
+    [[nodiscard]] auto translate(char32_t codePoint) const -> GlyphCode;
 
     auto drawSingleLineOfText(font_defs::Bitmap &canvas, font_defs::Pos pos,
                               const std::string &line, bool inverted) -> int;

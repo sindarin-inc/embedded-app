@@ -25,7 +25,7 @@ using namespace font_defs;
 class FontData {
 
 private:
-    static FT_Library library_;
+    static FT_Library library;
 
     bool initialized_{false};
 
@@ -39,16 +39,16 @@ public:
         }
     }
 
-    ~FontData() = default;
+    virtual ~FontData() = default;
 
     [[nodiscard]] inline auto isInitialized() const -> bool { return initialized_; }
-    [[nodiscard]] inline auto getLibrary() const -> FT_Library { return library_; }
+    [[nodiscard]] inline auto getLibrary() const -> FT_Library { return library; }
 
-    virtual auto getData() const -> MemoryPtr = 0;
-    virtual auto getDataSize() const -> int = 0;
+    [[nodiscard]] virtual auto getData() const -> MemoryPtr = 0;
+    [[nodiscard]] virtual auto getDataSize() const -> int = 0;
 
-    virtual auto getPrivateData() const -> MemoryPtr = 0;
-    virtual auto getPrivateDataSize() const -> int = 0;
+    [[nodiscard]] virtual auto getPrivateData() const -> MemoryPtr = 0;
+    [[nodiscard]] virtual auto getPrivateDataSize() const -> int = 0;
 
     virtual auto ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2, FIX16 *kern) const
         -> bool = 0;
