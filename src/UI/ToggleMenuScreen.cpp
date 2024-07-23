@@ -7,7 +7,7 @@
 
 #define MAX_WIDTH 150
 
-#define HEIGHT_ROUNDUP(x) (((x % 2 == 0) ? x : (x + 1)))
+#define HEIGHT_ROUNDUP(x) ((((x) % 2 == 0) ? (x) : ((x) + 1)))
 
 auto ToggleMenuScreen::layout(LayoutContext &context, Size size) -> Size {
     const auto inset = 3;
