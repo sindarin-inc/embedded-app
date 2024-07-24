@@ -169,13 +169,13 @@ void ToggleMenuScreen::render(DisplaySystem &display) {
         }
 
         draw();
-        display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
+        // display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
     }
 
     drawBubbles_ = true;
     draw();
 
-    display.updateDisplay(DisplaySystem::UpdateType::FAST_WITH_VCOM_NUDGE);
+    display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
 
     drawBubbles_ = false;
     firstLoad_ = false;

@@ -44,7 +44,7 @@ void LineMenuScreen::render(DisplaySystem &display) {
         PROFILE_START(LineMenuScreenLayoutAndDraw);
         draw();
         PROFILE_END_LOG_US(LineMenuScreenLayoutAndDraw);
-        display.updateDisplay(DisplaySystem::UpdateType::FULL);
+        // display.updateDisplay(DisplaySystem::UpdateType::FULL);
     }
 
     std::shared_ptr<MenuItemView> selectedMenuItemView = menuItemViews_[getCurrSelection()];
@@ -59,7 +59,7 @@ void LineMenuScreen::render(DisplaySystem &display) {
     // Redraw with a different vcom setting for the menu item bullet
     draw();
 
-    display.updateDisplay(DisplaySystem::UpdateType::FAST_WITH_VCOM_NUDGE);
+    display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
 
     firstLoad_ = false;
 }

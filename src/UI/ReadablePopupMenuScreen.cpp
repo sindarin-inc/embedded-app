@@ -264,7 +264,7 @@ void ReadablePopupMenuScreen::render(DisplaySystem &display) {
 
         popupMenuView_.draw();
 
-        display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
+        // display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
 
         firstLoad_ = false;
     } else {
@@ -284,7 +284,7 @@ void ReadablePopupMenuScreen::render(DisplaySystem &display) {
 
         popupMenuView_.draw();
 
-        display.updateDisplay(DisplaySystem::UpdateType::FAST_WITH_VCOM_NUDGE);
+        display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
     }
 };
 

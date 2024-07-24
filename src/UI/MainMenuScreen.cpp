@@ -197,10 +197,10 @@ void MainMenuScreen::render(DisplaySystem &display) {
         }
 
         draw();
-        display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
-        // display.updateDisplay(DisplaySystem::UpdateType::PARTIAL, true,
-        //                       DisplaySystem::UpdateType::FAST_WITH_VCOM_NUDGE, {24, 50, 32,
-        //                       205});
+        // display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
+        //  display.updateDisplay(DisplaySystem::UpdateType::PARTIAL, true,
+        //                        DisplaySystem::UpdateType::FAST_WITH_VCOM_NUDGE, {24, 50, 32,
+        //                        205});
     }
 
     // If we want to try using the alt update mechanism here, we should move this code above the
@@ -218,7 +218,7 @@ void MainMenuScreen::render(DisplaySystem &display) {
 
     draw();
 
-    display.updateDisplay(DisplaySystem::UpdateType::FAST_WITH_VCOM_NUDGE);
+    display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
     //}
 
     // This handles the case where we are in the main menu right after the

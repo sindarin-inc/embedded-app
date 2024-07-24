@@ -221,9 +221,10 @@ void Waveshare6inHD::WriteMultiData(UWORD *Data_Buf, UDOUBLE Length) {
     for (UDOUBLE i = 0; i < Length; i++) {
         SPIWriteByte(reverse8Bits(Data_Buf[i]));
         SPIWriteByte(reverse8Bits(Data_Buf[i] >> 8));
-        // if (i % 200 == 0) {
+        // Every other line
+        // if (i % 2144 == 0) {
         //     vTaskDelay(1);
-        // }
+        //}
     }
     DigitalWrite(cs_, HIGH);
 }
@@ -305,7 +306,7 @@ void Waveshare6inHD::WriteMultiArg(UWORD Arg_Cmd, UWORD *Arg_Buf, UWORD Arg_Num)
     WriteCommand(Arg_Cmd);
     // Send Data
     for (UWORD i = 0; i < Arg_Num; i++) {
-        log_d("Writing arg into multi arg: %d", Arg_Buf[i]);
+        //  into multi arg: %d", Arg_Buf[i]);
         // logging_ = true;
         WriteData(Arg_Buf[i]);
         // logging_ = false;
@@ -581,15 +582,7 @@ void Waveshare6inHD::HostAreaPackedPixelWrite_1bp(IT8951_Load_Img_Info_cpp *Load
         WriteMultiData(Source_Buffer, Source_Buffer_Length);
     } else {
         for (UDOUBLE i = 0; i < Source_Buffer_Height; i++) {
-            if (i % 2 == 0) {
-                //  log_d("Wrote ten lines in 1bp %lu", i);
-                vTaskDelay(1);
-            }
-            if (i % 100 == 0) {
-                log_d("Wrote 100 lines in 1bp %lu", i);
-            }
             for (UDOUBLE j = 0; j < Source_Buffer_Width; j++) {
-
                 WriteData(reverseBits(*Source_Buffer));
                 Source_Buffer++;
             }
@@ -747,13 +740,11 @@ parameter:
 void Waveshare6inHD::Display_1bp(UWORD X, UWORD Y, UWORD W, UWORD H, UWORD Mode,
                                  UDOUBLE Target_Memory_Addr, UBYTE Back_Gray_Val,
                                  UBYTE Front_Gray_Val) {
-    log_d("Writing to display 1bp");
+    log_d("starting Display_1bp");
     // Set Display mode to 1 bpp mode - Set 0x18001138 Bit[18](0x1800113A Bit[2])to 1
     WriteReg(UP1SR + 2, ReadReg(UP1SR + 2) | (1 << 2));
 
-    log_d("Finished first writereg 1bp");
     WriteReg(BGVR, (Front_Gray_Val << 8) | Back_Gray_Val);
-    log_d("Finished second writereg 1bp");
 
     if (Target_Memory_Addr == 0) {
         Display_Area(X, Y, W, H, Mode);
@@ -761,10 +752,8 @@ void Waveshare6inHD::Display_1bp(UWORD X, UWORD Y, UWORD W, UWORD H, UWORD Mode,
         Display_AreaBuf(X, Y, W, H, Mode, Target_Memory_Addr);
     }
 
-    log_d("Finished DisplayArea, about to start waiting for display ready");
     WaitForDisplayReady();
 
-    log_d("Finished waiting for display ready");
     WriteReg(UP1SR + 2, ReadReg(UP1SR + 2) & ~(1 << 2));
     log_d("finished Display_1bp");
 }
@@ -1107,8 +1096,8 @@ void Waveshare6inHD::init() {
         .command_bits = 0,
         .mode = 0,
 
-        .clock_source = SPI_CLK_SRC_DEFAULT,
-        .clock_speed_hz = 39025 * 100,
+        .clock_source = SPI_CLK_SRC_APB,
+        .clock_speed_hz = 20 * 1000 * 1000,
 
         .spics_io_num = -1,
         .queue_size = 1,

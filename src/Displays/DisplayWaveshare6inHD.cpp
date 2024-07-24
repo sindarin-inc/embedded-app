@@ -70,10 +70,10 @@ void DisplayWaveshare6inHD::updateDisplay(DisplaySystem::UpdateType updateType,
     // The subtraction of the %32 is because of a 4 byte align thing in the
     // driver example code!
     PROFILE_START(updateDisplay);
-    if (updateType == UpdateType::PARTIAL || altUpdateType == UpdateType::FULL) {
+    if (updateType == UpdateType::PARTIAL || updateType == UpdateType::FULL) {
         driver_.One_bp_Refresh(gfxCanvas_.getBuffer(), (UWORD)0, (UWORD)0,
                                (UWORD)gfxCanvas_.width(), (UWORD)gfxCanvas_.height(),
-                               (uint8_t)A2_Mode, (UDOUBLE)0, false);
+                               (uint8_t)A2_Mode, (UDOUBLE)0, true);
         // EPD_IT8951_Standby();
         //        driver_.Sleep();
         ;

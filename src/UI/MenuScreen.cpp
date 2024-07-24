@@ -136,12 +136,12 @@ void MenuScreen::render(DisplaySystem &display) {
         clockBatteryView_.updateTime();
         drawMenuItems(display, false);
         draw();
-        display.updateDisplay(DisplaySystem::UpdateType::FULL);
+        // display.updateDisplay(DisplaySystem::UpdateType::FULL);
     }
 
     drawMenuItems(display, true);
     draw();
-    display.updateDisplay(DisplaySystem::UpdateType::FAST_WITH_VCOM_NUDGE);
+    display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
 
     firstLoad_ = false;
 }
