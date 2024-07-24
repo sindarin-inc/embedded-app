@@ -55,6 +55,11 @@ auto FontData::load() -> bool {
             log_e("An error occurred during FreeType library initialization.");
         }
 #endif
+        FT_Bool cache_enabled;
+        FT_Property_Get(library, "truetype", "cache-sfnt-objects", &cache_enabled);
+
+        log_d("FreeType library initialized. Cache SFNT objects: %s",
+              cache_enabled ? "enabled" : "disabled");
     }
 
     initialized_ = true;
