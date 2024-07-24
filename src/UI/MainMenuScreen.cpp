@@ -235,6 +235,8 @@ void MainMenuScreen::processCommand(RemoteCommand command) {
         } else {
             firstLoad_ = false;
         }
+        log_d("NAVIGATION: Current menu selection: %s",
+              subMenus_[currentSelection_]->getCurrItem().title.c_str());
         setNeedsRerender();
         break;
     case RemoteCommand::DOWN:
@@ -243,6 +245,8 @@ void MainMenuScreen::processCommand(RemoteCommand command) {
         } else {
             firstLoad_ = false;
         }
+        log_d("NAVIGATION: Current menu selection: %s",
+              subMenus_[currentSelection_]->getCurrItem().title.c_str());
         setNeedsRerender();
         break;
     // Long press down on the TT should count as enter since we don't have the
@@ -257,6 +261,8 @@ void MainMenuScreen::processCommand(RemoteCommand command) {
         currentSelection_++;
         currentSelection_ = currentSelection_ % topBarViews_.size();
         firstLoad_ = true;
+        log_d("NAVIGATION: Current MainMenu Tab: %s",
+              topBarViews_[currentSelection_]->getText().c_str());
         setNeedsRerender();
         break;
     case RemoteCommand::BACK:
@@ -265,6 +271,8 @@ void MainMenuScreen::processCommand(RemoteCommand command) {
         currentSelection_ = currentSelection_ + topBarViews_.size() - 1;
         currentSelection_ = currentSelection_ % topBarViews_.size();
         firstLoad_ = true;
+        log_d("NAVIGATION: Current MainMenu Tab: %s",
+              topBarViews_[currentSelection_]->getText().c_str());
         setNeedsRerender();
         break;
     case RemoteCommand::ANIMATION:
