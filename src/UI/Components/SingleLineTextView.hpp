@@ -88,10 +88,10 @@ public:
         // Probably not ideal, but for now it'll have to do.
         Font *oldFont = display_.getFont();
         display_.setFont(font_);
-        log_d("Drawing a single line of text at %d, %d", rect.origin.x, rect.origin.y);
-        log_d("Text: %s", text_.c_str());
+        //- log_d("Drawing a single line of text at %d, %d", rect.origin.x, rect.origin.y);
+        //- log_d("Text: %s", text_.c_str());
         display_.drawSingleLineOfText(text_, rect.origin.x, rect.origin.y);
-        log_d("Finished drawing yay!");
+        //- log_d("Finished drawing yay!");
 //        Delay(1);
 #ifdef SIM_LAYOUT_DEBUG
         // For debugging

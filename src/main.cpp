@@ -256,11 +256,11 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     // Note that with the new logging interface, we won't get any logs until later
     // after prefs have begun. Hence the below #if 0 in case you need to turn on logging
     // earlier for debugging.
-    // usbSerial.begin();
+    usbSerial.begin();
 #if 1
     // usbSerial.enableLogging();
 #endif
-    // directCommand.begin();
+    directCommand.begin();
     HardwareInit();
 #endif
 
