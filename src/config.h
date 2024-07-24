@@ -108,5 +108,5 @@
 #define I2C_MASTER_FREQ_HZ 400000
 #endif
 
-// #undef CONFIG_FONT_IBMF
-// #define CONFIG_FONT_TTF 1
+#undef CONFIG_FONT_IBMF
+#define CONFIG_FONT_TTF 1

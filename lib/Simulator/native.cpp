@@ -44,14 +44,14 @@ extern void UIInnerLoop(RemoteCommand command);
 #endif
 extern DisplayEinkET013TT1 myDisplay;
 #elif DISPLAY_SIM_8BIT
-#include "Displays/DisplaySim8Bit.hpp"
+#include "Displays/DisplaySim1Bit.hpp"
 #ifndef SIM_WIDTH
 #define SIM_WIDTH 600
 #endif
 #ifndef SIM_HEIGHT
 #define SIM_HEIGHT 600
 #endif
-DisplaySim8Bit myDisplay(SIM_WIDTH, SIM_HEIGHT);
+DisplaySim1Bit myDisplay(SIM_WIDTH, SIM_HEIGHT);
 #ifndef SIM_SCALE
 #define SCALE 1
 #else

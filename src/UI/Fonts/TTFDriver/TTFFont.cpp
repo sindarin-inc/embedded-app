@@ -187,7 +187,6 @@ auto Font::getGlyph(GlyphCode glyphCode, Glyph &appGlyph, bool loadBitmap, bool 
 
     FT_Face theFace = (glyphCode >= 0x8000) ? privateFace_ : face_;
     GlyphCode theGlyphCode = (glyphCode >= 0x8000) ? glyphCode - 0x8000 : glyphCode;
-
     if (caching) {
         appGlyph.clear();
     }
@@ -206,6 +205,7 @@ auto Font::getGlyph(GlyphCode glyphCode, Glyph &appGlyph, bool loadBitmap, bool 
     error = FT_Load_Glyph(theFace,      /* handle to face object */
                           theGlyphCode, /* glyph index           */
                           loadBitmap ? FT_LOAD_DEFAULT : FT_LOAD_NO_BITMAP); /* load flags */
+
     if (error) {
         LOGE("Unable to load glyph for charcode: %d", theGlyphCode);
         return false;
@@ -230,7 +230,6 @@ auto Font::getGlyph(GlyphCode glyphCode, Glyph &appGlyph, bool loadBitmap, bool 
                 return false;
             }
         }
-
         auto dim = Dim(slot->bitmap.width, slot->bitmap.rows);
         lastGlyphWidth_ = slot->bitmap.width;
 
@@ -244,7 +243,6 @@ auto Font::getGlyph(GlyphCode glyphCode, Glyph &appGlyph, bool loadBitmap, bool 
                 showBitmap(bm);
             }
         }
-
         if (caching) {
             appGlyph.bitmap.dim = dim;
             // glyph->pitch = slot->bitmap.pitch;

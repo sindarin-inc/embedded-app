@@ -47,8 +47,8 @@
 DisplayEinkET013TT1 myDisplay(DISPLAY_CS_LEFT, DISPLAY_CS_RIGHT, DISPLAY_RST);
 #elif DISPLAY_SIM_8BIT
 // Declared in native.cpp
-#include "Displays/DisplaySim8Bit.hpp"
-extern DisplaySim8Bit myDisplay;
+#include "Displays/DisplaySim1Bit.hpp"
+extern DisplaySim1Bit myDisplay;
 #elif CONFIG_DISPLAY_M5STACK_ATOM_DISPLAY
 #include "Displays/DisplayM5StackAtomDisplay.hpp"
 DisplayM5StackAtomDisplay myDisplay;
