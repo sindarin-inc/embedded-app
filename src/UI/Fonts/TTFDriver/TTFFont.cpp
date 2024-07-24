@@ -247,7 +247,7 @@ auto Font::getGlyph(GlyphCode glyphCode, Glyph &appGlyph, bool loadBitmap, bool 
 
         if constexpr (DEBUG_BITMAP) {
             if (showGlyph && (lastGlyphWidth_ > 0)) {
-                font_defs::Bitmap bm;
+                font_defs::Bitmap bm{};
                 log_d("ia");
                 bm.pixels = slot->bitmap.buffer;
                 bm.dim = dim;
