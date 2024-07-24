@@ -181,7 +181,7 @@ void Font::copyBitmap(Bitmap &to, bool toHeightBit, Bitmap &from, Pos atPos, boo
 //   inverted   : If true, the pixels must be put in "reversed video", default:false
 
 auto Font::getGlyph(GlyphCode glyphCode, Glyph &appGlyph, bool loadBitmap, bool caching, Pos atPos,
-                    bool inverted) -> bool {
+                    bool inverted, bool showGlyph) -> bool {
 
     int error;
 
@@ -233,6 +233,17 @@ auto Font::getGlyph(GlyphCode glyphCode, Glyph &appGlyph, bool loadBitmap, bool 
 
         auto dim = Dim(slot->bitmap.width, slot->bitmap.rows);
         lastGlyphWidth_ = slot->bitmap.width;
+
+        if constexpr (DEBUG_BITMAP) {
+            if (showGlyph && (lastGlyphWidth_ > 0)) {
+                font_defs::Bitmap bm;
+                bm.pixels = slot->bitmap.buffer;
+                bm.dim = dim;
+                bm.pitch = static_cast<uint16_t>(slot->bitmap.pitch);
+
+                showBitmap(bm);
+            }
+        }
 
         if (caching) {
             appGlyph.bitmap.dim = dim;
@@ -414,7 +425,7 @@ auto Font::drawSingleLineOfText(font_defs::Bitmap &canvas, font_defs::Pos pos,
 
             if (glyphCode == SPACE_CODE) {
                 atPos.x += (spaceSize_ >> 6);
-            } else if (getGlyph(glyphCode, glyph, true, false, atPos, inverted)) {
+            } else if (getGlyph(glyphCode, glyph, true, false, atPos, inverted, first)) {
                 // As advance is positive and greather than kern, we can shift right
                 // to get rid of the fix point decimals
 
@@ -560,6 +571,61 @@ auto Font::getTextHeight(const std::string &buffer) -> int {
     }
     // LOGD("TextHeight: %d", height);
     return height;
+}
+
+void Font::showBitmap(const Bitmap &bitmap) const {
+    if constexpr (DEBUG_BITMAP) {
+        uint32_t row, col;
+        MemoryPtr rowPtr;
+
+        uint32_t maxWidth = 50;
+        if (bitmap.dim.width < maxWidth) {
+            maxWidth = bitmap.dim.width;
+        }
+
+        std::cout << "   +";
+        for (col = 0; col < maxWidth; col++) {
+            std::cout << '-';
+        }
+        std::cout << '+' << std::endl << std::flush;
+
+        if (pixelResolution_ == PixelResolution::ONE_BIT) {
+            uint32_t rowSize = bitmap.pitch;
+            for (row = 0, rowPtr = bitmap.pixels; row < bitmap.dim.height;
+                 row++, rowPtr += rowSize) {
+                std::cout << "   |";
+                for (col = 0; col < maxWidth; col++) {
+                    std::cout << ((rowPtr[col >> 3] & (0x80 >> (col & 7))) ? 'X' : ' ');
+                    // } else {
+                    //     std::cout << ((rowPtr[col >> 3] & (0x80 >> (col & 7))) ? ' ' : 'X');
+                    // }
+                }
+                std::cout << '|';
+                std::cout << std::endl << std::flush;
+            }
+        } else {
+            uint32_t rowSize = bitmap.pitch;
+            for (row = 0, rowPtr = bitmap.pixels; row < bitmap.dim.height;
+                 row++, rowPtr += rowSize) {
+                std::cout << "   |";
+                for (col = 0; col < maxWidth; col++) {
+                    // if constexpr (BLACK_EIGHT_BITS) {
+                    //     std::cout << ((rowPtr[col] == BLACK_EIGHT_BITS) ? 'X' : ' ');
+                    // } else {
+                    //     std::cout << ((rowPtr[col] == BLACK_EIGHT_BITS) ? ' ' : 'X');
+                    // }
+                }
+                std::cout << '|';
+                std::cout << std::endl << std::flush;
+            }
+        }
+
+        std::cout << "   +";
+        for (col = 0; col < maxWidth; col++) {
+            std::cout << '-';
+        }
+        std::cout << '+' << std::endl << std::endl << std::flush;
+    }
 }
 
 #endif

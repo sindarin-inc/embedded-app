@@ -29,6 +29,7 @@ private:
 
     // Maximum size of an allocated buffer to do vsnprintf formatting
     static constexpr int MAX_SIZE = 100;
+    static constexpr bool DEBUG_BITMAP = true;
 
     typedef std::function<void(GlyphCode, FIX16, bool, bool)> const &LigKernMappingHandler;
 
@@ -76,10 +77,12 @@ private:
 
     auto ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2, FIX16 *kern) const -> bool;
     auto getGlyph(GlyphCode glyphCode, Glyph &appGlyph, bool loadBitmap, bool caching = true,
-                  Pos atPos = Pos(0, 0), bool inverted = false) -> bool;
+                  Pos atPos = Pos(0, 0), bool inverted = false, bool showGlyph = false) -> bool;
     auto getGlyphMetrics(GlyphCode glyphCode, Glyph &appGlyph) -> bool;
 
     void copyBitmap(Bitmap &to, bool toHeightBit, Bitmap &from, Pos atPos, bool inverted);
+
+    void showBitmap(const Bitmap &bitmap) const;
 
 public:
     Font(FontData &fontData, int size) noexcept : fontData_(fontData), size_(size) {
