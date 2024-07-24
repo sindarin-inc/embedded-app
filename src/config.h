@@ -110,3 +110,7 @@
 
 #undef CONFIG_FONT_IBMF
 #define CONFIG_FONT_TTF 1
+
+#if CONFIG_FONT_TTF
+#define FT_USE_PSRAM 0
+#endif
