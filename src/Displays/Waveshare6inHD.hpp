@@ -9,8 +9,8 @@
 #include "EinkTypes.hpp"
 #include "Misc/Dispatch.hpp"
 
-#define WAVESHARE_6INHD_X_PIXELS 400
-#define WAVESHARE_6INHD_Y_PIXELS 400
+#define WAVESHARE_6INHD_X_PIXELS 1440
+#define WAVESHARE_6INHD_Y_PIXELS 1072
 
 #define HIGH 1
 #define LOW 0

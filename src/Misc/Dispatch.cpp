@@ -185,7 +185,7 @@ auto DispatchGetCore1BackgroundQueue(bool create) -> DispatchQueue * {
 
 auto DispatchGetUiQueue(bool create) -> DispatchQueue * {
     if (uiQueue == nullptr && create) {
-        uiQueue = new DispatchQueue("UI", 1, 10000, 10, 1);
+        uiQueue = new DispatchQueue("UI", 1, 32000, 10, 1);
     }
     return uiQueue;
 }
