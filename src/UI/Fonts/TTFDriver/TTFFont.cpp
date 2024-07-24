@@ -255,7 +255,7 @@ auto Font::getGlyph(GlyphCode glyphCode, Glyph &appGlyph, bool loadBitmap, bool 
                 //- log_d("ii");
                 //- Delay(10);
                 //- SHOW_HEAP();
-                showBitmap(bm);
+                //- showBitmap(bm);
                 //- SHOW_HEAP();
                 //- Delay(10);
                 //- log_d("ij");
@@ -354,7 +354,7 @@ auto Font::ligKernUTF8Map(const std::string &line, LigKernMappingHandler handler
                 firstWordChar = true;
             }
             kern = static_cast<FIX16>(0);
-            log_d("I'm just interating through this -- yay");
+            //- log_d("I'm just interating through this -- yay");
 
             // Ligature loop for glyphCode1
             while (ligKern(glyphCode1, &glyphCode2, &kern)) {
@@ -378,17 +378,17 @@ auto Font::ligKernUTF8Map(const std::string &line, LigKernMappingHandler handler
             }
 
             bool lastWordChar = (glyphCode2 == SPACE_CODE) || (glyphCode2 == NO_GLYPH_CODE);
-            log_d("about to call the handler");
+            //- log_d("about to call the handler");
             (handler)(glyphCode1, kern, firstWordChar, lastWordChar);
-            log_d("Returned from the handler");
+            //- log_d("Returned from the handler");
             firstWordChar = false;
             if (lastWordChar) {
                 wasEndOfWord = true;
             }
             glyphCode1 = glyphCode2;
-            log_d("Updating the iterator");
+            //- log_d("Updating the iterator");
             glyphCode2 = (iter == line.end()) ? NO_GLYPH_CODE : translate(*iter++);
-            log_d("Iteratition increment up");
+            //- log_d("Iteratition increment up");
         }
     }
 }
@@ -411,7 +411,7 @@ auto Font::drawSingleLineOfText(font_defs::Bitmap &canvas, font_defs::Pos pos,
     // height of this font less the above calculated value.
     atPos.y += lineHeight() - up;
 
-    log_d("One");
+    //- log_d("One");
     if constexpr (TTF_TRACING) {
         LOGD("drawSingleLineOfText()");
     }
@@ -424,7 +424,7 @@ auto Font::drawSingleLineOfText(font_defs::Bitmap &canvas, font_defs::Pos pos,
         // The following may require some modification as the next Sol Glasses version
         // may be using a different pitch than the one computed here.
 
-        log_d("Two with canvas dims %d %d", canvas.dim.width, canvas.dim.height);
+        //- log_d("Two with canvas dims %d %d", canvas.dim.width, canvas.dim.height);
         canvas.pitch = (getPixelResolution() == PixelResolution::ONE_BIT)
                            ? (canvas.dim.width + 7) >> 3
                            : canvas.dim.width;
@@ -435,7 +435,7 @@ auto Font::drawSingleLineOfText(font_defs::Bitmap &canvas, font_defs::Pos pos,
             int8_t hOffset = first ? getGlyphHOffset(glyphCode) : 0;
             atPos.x += hOffset;
 
-            log_d("Three");
+            //- log_d("Three");
             // LOGD("Word Markers: %d %d", first, last);
 
             // log_w("At pos (%d, %d)", atPos.x, atPos.y);
@@ -446,7 +446,7 @@ auto Font::drawSingleLineOfText(font_defs::Bitmap &canvas, font_defs::Pos pos,
                 // As advance is positive and greather than kern, we can shift right
                 // to get rid of the fix point decimals
 
-                log_d("Four");
+                //- log_d("Four");
                 atPos.x += last ? lastGlyphWidth_ - (kern / 64) - glyph.metrics.xoff
                                 : ((glyph.metrics.advance + kern) >> 6);
             }
