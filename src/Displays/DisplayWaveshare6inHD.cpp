@@ -38,8 +38,8 @@ auto DisplayWaveshare6inHD::setup() -> bool {
     // See also:
     // https://github.com/m5stack/M5Module-Display-13.2/blob/main/M5Module-Display-13.2-Demo-Core2/M5Module-Display-13.2-Demo-Core2.ino
 
-    driver_.init();
-    // driver_.invertDisplay(true);
+    // driver_.init();
+    //  driver_.invertDisplay(true);
 
     return true;
 }
@@ -71,9 +71,9 @@ void DisplayWaveshare6inHD::updateDisplay(DisplaySystem::UpdateType updateType,
     // driver example code!
     PROFILE_START(updateDisplay);
     if (updateType == UpdateType::PARTIAL || altUpdateType == UpdateType::FULL) {
-        driver_.One_bp_Refresh(gfxCanvas_.getBuffer(), (UWORD)0, (UWORD)0,
-                               (UWORD)gfxCanvas_.width(), (UWORD)gfxCanvas_.height(),
-                               (uint8_t)A2_Mode, (UDOUBLE)0, false);
+        // driver_.One_bp_Refresh(gfxCanvas_.getBuffer(), (UWORD)0, (UWORD)0,
+        //                        (UWORD)gfxCanvas_.width(), (UWORD)gfxCanvas_.height(),
+        //                        (uint8_t)A2_Mode, (UDOUBLE)0, false);
         // EPD_IT8951_Standby();
         //        driver_.Sleep();
         ;

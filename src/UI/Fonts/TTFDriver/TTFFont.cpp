@@ -185,12 +185,15 @@ auto Font::getGlyph(GlyphCode glyphCode, Glyph &appGlyph, bool loadBitmap, bool 
 
     int error;
 
+    log_d("getGlyph: %d", glyphCode);
+    log_d("a");
     FT_Face theFace = (glyphCode >= 0x8000) ? privateFace_ : face_;
     GlyphCode theGlyphCode = (glyphCode >= 0x8000) ? glyphCode - 0x8000 : glyphCode;
+    log_d("b");
     if (caching) {
         appGlyph.clear();
     }
-
+    log_d("c");
     if (theGlyphCode == SPACE_CODE) { // send as a space character
         lastGlyphWidth_ = 0;
         appGlyph.pointSize = size_;
@@ -201,25 +204,33 @@ auto Font::getGlyph(GlyphCode glyphCode, Glyph &appGlyph, bool loadBitmap, bool 
                             .lineHeight = static_cast<int16_t>(theFace->size->metrics.height >> 6)};
         return true;
     }
-
+    log_d("d");
     error = FT_Load_Glyph(theFace,      /* handle to face object */
                           theGlyphCode, /* glyph index           */
                           loadBitmap ? FT_LOAD_DEFAULT : FT_LOAD_NO_BITMAP); /* load flags */
-
+    log_d("e");
     if (error) {
         LOGE("Unable to load glyph for charcode: %d", theGlyphCode);
         return false;
     }
-
+    log_d("f");
     FT_GlyphSlot slot = theFace->glyph;
-
+    log_d("g");
     bool toHeightBit = pixelResolution_ == font_defs::PixelResolution::EIGHT_BITS;
 
     if (loadBitmap) {
+        log_d("h");
         if (theFace->glyph->format != FT_GLYPH_FORMAT_BITMAP) {
             if (fontPixelResolution_ == font_defs::PixelResolution::ONE_BIT) {
+                log_d("hh");
+                SHOW_HEAP();
+                Delay(10);
                 error = FT_Render_Glyph(theFace->glyph,       // glyph slot
                                         FT_RENDER_MODE_MONO); // render mode
+
+                SHOW_HEAP();
+                Delay(10);
+                log_d("hi");
             } else {
                 error = FT_Render_Glyph(theFace->glyph,         // glyph slot
                                         FT_RENDER_MODE_NORMAL); // render mode
@@ -230,19 +241,27 @@ auto Font::getGlyph(GlyphCode glyphCode, Glyph &appGlyph, bool loadBitmap, bool 
                 return false;
             }
         }
+        log_d("i");
         auto dim = Dim(slot->bitmap.width, slot->bitmap.rows);
         lastGlyphWidth_ = slot->bitmap.width;
 
         if constexpr (DEBUG_BITMAP) {
             if (showGlyph && (lastGlyphWidth_ > 0)) {
                 font_defs::Bitmap bm;
+                log_d("ia");
                 bm.pixels = slot->bitmap.buffer;
                 bm.dim = dim;
                 bm.pitch = static_cast<uint16_t>(slot->bitmap.pitch);
-
+                log_d("ii");
+                Delay(10);
+                SHOW_HEAP();
                 showBitmap(bm);
+                SHOW_HEAP();
+                Delay(10);
+                log_d("ij");
             }
         }
+        log_d("j");
         if (caching) {
             appGlyph.bitmap.dim = dim;
             // glyph->pitch = slot->bitmap.pitch;
