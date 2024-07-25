@@ -266,9 +266,10 @@ void ReadablePopupMenuScreen::render(DisplaySystem &display) {
             menuItemView->setSelected(false);
         }
 
+#if CONFIG_DISPLAY_EINKET013TT1
         popupMenuView_.draw();
-
-        // display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
+        display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
+#endif
 
         firstLoad_ = false;
     } else {
@@ -288,7 +289,15 @@ void ReadablePopupMenuScreen::render(DisplaySystem &display) {
 
         popupMenuView_.draw();
 
+#if CONFIG_DISPLAY_EINKET013TT1
+        display.updateDisplay(DisplaySystem::UpdateType::FAST_WITH_VCOM_NUDGE);
+#elif CONFIG_DISPLAY_WAVESHARE_6INHD
+        // Eventually we will do a real PARTIAL update here
         display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
+#else
+        display.updateDisplay(DisplaySystem::UpdateType::FULL);
+        display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
+#endif
     }
 };
 
