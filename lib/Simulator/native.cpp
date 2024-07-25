@@ -45,13 +45,18 @@ extern void UIInnerLoop(RemoteCommand command);
 extern DisplayEinkET013TT1 myDisplay;
 #elif DISPLAY_SIM_8BIT
 #include "Displays/DisplaySim1Bit.hpp"
+#include "Displays/DisplaySim8Bit.hpp"
 #ifndef SIM_WIDTH
 #define SIM_WIDTH 600
 #endif
 #ifndef SIM_HEIGHT
 #define SIM_HEIGHT 600
 #endif
+#ifdef SIM_ONE_BIT
 DisplaySim1Bit myDisplay(SIM_WIDTH, SIM_HEIGHT);
+#else
+DisplaySim8Bit myDisplay(SIM_WIDTH, SIM_HEIGHT);
+#endif
 #ifndef SIM_SCALE
 #define SCALE 1
 #else
@@ -79,7 +84,13 @@ float lerp(float a, float b, float t) { return a + t * (b - a); }
 void SimDrawScreen() {
     for (int x = 0; x < myDisplay.gfxClass()->width(); x++) {
         for (int y = 0; y < myDisplay.gfxClass()->height(); y++) {
-            /*
+#ifdef SIM_ONE_BIT
+            SDL_SetRenderDrawColor(renderer, 240, 240, 240, 0xFF);
+
+            if (myDisplay.getPixel(x, y)) {
+                SDL_RenderDrawPoint(renderer, x, y);
+            }
+#else
             uint8_t color = myDisplay.buffer()[x + y * myDisplay.gfxClass()->width()];
             float colorF = color / 255.0;
             uint16_t brightnessOffset =
@@ -89,12 +100,9 @@ void SimDrawScreen() {
                 renderer, lerp(40 + brightnessOffset, 248 - brightnessOffset, colorF),
                 lerp(40 + brightnessOffset, 240 - brightnessOffset, colorF),
                 lerp(40 + brightnessOffset, 227 - brightnessOffset, colorF), 0xFF);
-                */
 
-            SDL_SetRenderDrawColor(renderer, 240, 240, 240, 0xFF);
-            if (myDisplay.getPixel(x, y)) {
-                SDL_RenderDrawPoint(renderer, x, y);
-            }
+            SDL_RenderDrawPoint(renderer, x, y);
+#endif
         }
     }
     if (movieOn_) {

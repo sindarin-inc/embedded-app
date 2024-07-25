@@ -96,9 +96,11 @@ void ReadableTableOfContentsScreen::render(DisplaySystem &display) {
             menuPageIndicatorViews_.push_back(menuPageView);
         }
 
+#if CONFIG_DISPLAY_EINKET013TT1
         draw();
         PROFILE_END_LOG_US(ReadableTableOfContentsScreenLayoutAndDraw);
         display.updateDisplay(DisplaySystem::UpdateType::FULL);
+#endif
     }
 
     if (menuItemViews_.empty()) {
@@ -118,7 +120,13 @@ void ReadableTableOfContentsScreen::render(DisplaySystem &display) {
     // Redraw with a different vcom setting for the menu item bullet
     draw();
 
+#if CONFIG_DISPLAY_EINKET013TT1
     display.updateDisplay(DisplaySystem::UpdateType::FAST_WITH_VCOM_NUDGE);
+#elif CONFIG_DISPLAY_WAVESHARE_6INHD
+    display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
+#else
+    display.updateDisplay(DisplaySystem::UpdateType::FULL);
+#endif
 
     firstLoad_ = false;
 }

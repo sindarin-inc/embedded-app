@@ -43,3 +43,7 @@ endif()
 if (DEFINED SIM_HEIGHT)
     add_compile_definitions(SIM_HEIGHT=${SIM_HEIGHT})
 endif()
+
+if (DEFINED SIM_ONE_BIT)
+    add_compile_definitions(SIM_ONE_BIT=${SIM_ONE_BIT})
+endif()

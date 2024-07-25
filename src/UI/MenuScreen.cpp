@@ -135,13 +135,21 @@ void MenuScreen::render(DisplaySystem &display) {
     if (firstLoad_) {
         clockBatteryView_.updateTime();
         drawMenuItems(display, false);
+#if CONFIG_DISPLAY_EINKET013TT1
         draw();
-        // display.updateDisplay(DisplaySystem::UpdateType::FULL);
+        display.updateDisplay(DisplaySystem::UpdateType::FULL);
+#endif
     }
 
     drawMenuItems(display, true);
     draw();
+#if CONFIG_DISPLAY_EINKET013TT1
+    display.updateDisplay(DisplaySystem::UpdateType::FAST_WITH_VCOM_NUDGE);
+#elif CONFIG_DISPLAY_WAVESHARE_6INHD
     display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
+#else
+    display.updateDisplay(DisplaySystem::UpdateType::FULL);
+#endif
 
     firstLoad_ = false;
 }

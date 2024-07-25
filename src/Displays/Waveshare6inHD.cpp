@@ -42,7 +42,7 @@ void Waveshare6inHD::Reset(void) {
     Delay(200);
 }
 
-void Waveshare6inHD::writeRegister(const uint8_t *data, size_t len) {
+void inline Waveshare6inHD::writeRegister(const uint8_t *data, size_t len) {
     spi_transaction_t t = {
         //.cmd = 0x70, // 0x70 is the command prefix
         .length = len * 8,
@@ -58,7 +58,7 @@ function:	SPI Write
 parameter:
 Info:
 ******************************************************************************/
-void Waveshare6inHD::SPIWriteByte(UBYTE Value) {
+void inline Waveshare6inHD::SPIWriteByte(UBYTE Value) {
     // DigitalWrite(cs_, LOW);
     // ESP_ERROR_CHECK(spi_device_acquire_bus(spiHigh_, portMAX_DELAY));
     writeRegister(&Value, 1);
@@ -101,15 +101,10 @@ UBYTE Waveshare6inHD::SPIReadByte() {
 function :	Wait until the busy_pin goes HIGH
 parameter:
 ******************************************************************************/
-void Waveshare6inHD::ReadBusy(void) {
+void inline Waveshare6inHD::ReadBusy(void) {
     UBYTE Busy_State = DigitalRead(DISPLAY_WAVESHARE_6INHD_BUSY);
     // 0: busy, 1: idle
     while (Busy_State == 0) {
-        if (logging_) {
-            log_d("Busy state is 0, waiting for it to go high -- extra delays");
-            // vTaskDelay(100);
-        }
-        // vTaskDelay(1);
         Busy_State = DigitalRead(DISPLAY_WAVESHARE_6INHD_BUSY);
     }
 }
@@ -143,29 +138,18 @@ void Waveshare6inHD::WriteCommand(UWORD Command) {
 function :	write data
 parameter:  data
 ******************************************************************************/
-void Waveshare6inHD::WriteData(UWORD Data) {
+void inline Waveshare6inHD::WriteData(UWORD Data) {
     // Set Preamble for Write Command
     UWORD Write_Preamble = 0x0000;
 
-    if (logging_) {
-        log_d("about to ReadBusy before writing data %d", Data);
-    }
     ReadBusy();
 
-    if (logging_) {
-        log_d("ReadBusy done");
-    }
     DigitalWrite(cs_, LOW);
 
     SPIWriteByte(Write_Preamble >> 8);
     SPIWriteByte(Write_Preamble);
-    if (logging_) {
-        log_d("about to start second ReadBusy");
-    }
+
     ReadBusy();
-    if (logging_) {
-        log_d("second ReadBusy done");
-    }
 
     SPIWriteByte(Data >> 8);
     SPIWriteByte(Data);
@@ -191,7 +175,7 @@ void Waveshare6inHD::WritePreamble() {
     DigitalWrite(cs_, HIGH);
 }
 
-uint8_t reverse8Bits(uint8_t value) {
+uint8_t inline reverse8Bits(uint8_t value) {
     uint8_t reversed = 0;
     for (int i = 0; i < 8; ++i) {
         if (value & (1 << i)) {
@@ -205,7 +189,7 @@ uint8_t reverse8Bits(uint8_t value) {
 function :	write multi data
 parameter:  data
 ******************************************************************************/
-void Waveshare6inHD::WriteMultiData(UWORD *Data_Buf, UDOUBLE Length) {
+void inline Waveshare6inHD::WriteMultiData(UWORD *Data_Buf, UDOUBLE Length) {
     // Set Preamble for Write Command
     UWORD Write_Preamble = 0x0000;
 
@@ -218,13 +202,34 @@ void Waveshare6inHD::WriteMultiData(UWORD *Data_Buf, UDOUBLE Length) {
 
     ReadBusy();
 
-    for (UDOUBLE i = 0; i < Length; i++) {
-        SPIWriteByte(reverse8Bits(Data_Buf[i]));
-        SPIWriteByte(reverse8Bits(Data_Buf[i] >> 8));
-        // Every other line
-        // if (i % 2144 == 0) {
-        //     vTaskDelay(1);
-        //}
+    size_t remaining = Length;
+    size_t chunkSize = 32;
+
+    for (UDOUBLE i = 0; i < Length && remaining > 0; i += chunkSize) {
+        size_t len = 0;
+        if (remaining < chunkSize) {
+            len = remaining;
+        } else {
+            len = chunkSize;
+        }
+
+        uint16_t data[chunkSize];
+
+        for (int j = 0; j < len; j++) {
+            // Should change this to be a longer transaction to speed up the process
+            // But each byte still needs to be reversed sadly.
+            data[j] = reverse8Bits(Data_Buf[i + j]) | (reverse8Bits(Data_Buf[i + j] >> 8) << 8);
+        }
+
+        spi_transaction_t t = {
+            //.cmd = 0x70, // 0x70 is the command prefix
+            .length = len * 8 * 2,
+            .tx_buffer = data,
+            .rx_buffer = NULL,
+        };
+
+        spi_device_polling_transmit(spiHigh_, &t);
+        remaining -= len;
     }
     DigitalWrite(cs_, HIGH);
 }
@@ -397,7 +402,7 @@ parameter:
 ******************************************************************************/
 void Waveshare6inHD::GetSystemInfo(void *Buf) {
     IT8951_Dev_Info_cpp *Dev_Info;
-    log_d("In GetSystemInfo");
+    // log_d("In GetSystemInfo");
     WriteCommand(USDEF_I80_CMD_GET_DEV_INFO);
 
     ReadMultiData((UWORD *)Buf, sizeof(IT8951_Dev_Info_cpp) / 2);
@@ -406,11 +411,11 @@ void Waveshare6inHD::GetSystemInfo(void *Buf) {
     Dev_Info->Panel_W = WAVESHARE_6INHD_X_PIXELS;
     Dev_Info->Panel_H = WAVESHARE_6INHD_Y_PIXELS;
     // strcpy(Dev_Info->LUT_Version,  "M641");
-    log_d("Panel(W,H) = (%d,%d)\r\n", Dev_Info->Panel_W, Dev_Info->Panel_H);
-    log_d("Memory Address = %X\r\n", Dev_Info->Memory_Addr_L | (Dev_Info->Memory_Addr_H << 16));
-    log_d("FW Version = %s\r\n", (UBYTE *)Dev_Info->FW_Version);
-    log_d("LUT Version = %s\r\n", (UBYTE *)Dev_Info->LUT_Version);
-    log_d("Mem addr H %d, Mem addr low %d\n", Dev_Info->Memory_Addr_H, Dev_Info->Memory_Addr_L);
+    // log_d("Panel(W,H) = (%d,%d)\r\n", Dev_Info->Panel_W, Dev_Info->Panel_H);
+    // log_d("Memory Address = %X\r\n", Dev_Info->Memory_Addr_L | (Dev_Info->Memory_Addr_H << 16));
+    // log_d("FW Version = %s\r\n", (UBYTE *)Dev_Info->FW_Version);
+    // log_d("LUT Version = %s\r\n", (UBYTE *)Dev_Info->LUT_Version);
+    // log_d("Mem addr H %d, Mem addr low %d\n", Dev_Info->Memory_Addr_H, Dev_Info->Memory_Addr_L);
 }
 
 /******************************************************************************
@@ -455,100 +460,7 @@ UWORD Waveshare6inHD::convertByte(UBYTE input) {
     return word;
 }
 
-#if 0 // Only for the eink 5.2" tinkering
-/******************************************************************************
-function :	HostAreaPackedPixelWrite_1bp
-parameter:
-******************************************************************************/
-void Waveshare6inHD::HostAreaPackedPixelWrite_1bp(IT8951_Load_Img_Info_cpp *Load_Img_Info,
-                                                  IT8951_Area_Img_Info_cpp *Area_Img_Info,
-                                                  bool Packed_Write) {
-    UWORD Source_Buffer_Width, Source_Buffer_Height;
-    UWORD Source_Buffer_Length;
-
-    UWORD *Source_Buffer = (UWORD *)Load_Img_Info->Source_Buffer_Addr;
-    SetTargetMemoryAddr(Load_Img_Info->Target_Memory_Addr);
-    LoadImgAreaStart(Load_Img_Info, Area_Img_Info);
-
-    // from byte to word
-    // use 8bp to display 1bp, so here, divide by 2, because every byte has full bit.
-    Source_Buffer_Width = Area_Img_Info->Area_W / 2; // add /2
-    Source_Buffer_Height = Area_Img_Info->Area_H;
-    Source_Buffer_Length = Source_Buffer_Width * Source_Buffer_Height;
-
-    int order[4] = {0, 1, 2, 3}; // I thought lines were getting mis-ordered, but it was a bug by
-                                 // doing 2x the width each time through the loop
-    UDOUBLE Source_Buffer_Offset = (Source_Buffer_Width / 2) * order[0];
-    if (Packed_Write == true) {
-        WriteMultiData(Source_Buffer, Source_Buffer_Length);
-    } else {
-        log_d("Looping with width %d and height %d\n", Source_Buffer_Width, Source_Buffer_Height);
-        for (UDOUBLE i = 0; i < Source_Buffer_Height; i++) {
-            for (UDOUBLE j = Source_Buffer_Width / 2 - 1;; j--) {
-
-                // dummy 1 white
-                UWORD dataFirst = 0xFFFF;
-                UWORD dataSecond = 0xFFFF;
-
-                // each byte here is 4 pixels on the display
-                // the source buffer for the gfx canvas is... 1 pixel per bit?
-                UBYTE low = *(Source_Buffer + Source_Buffer_Offset + j) &
-                            0x00FF; // 4 pixels on display, 8 pixels in canvas
-                // data = convertByte(low);
-                // WriteData(data);
-                UBYTE high = (*(Source_Buffer + Source_Buffer_Offset + j) & 0xFF00) >>
-                             8; // 4 pixels on display, 8 pixels
-
-                // Only the top 4 bits of each byte matter to the display. The rest seem to be
-                // thrown away.
-                UBYTE lowlow;
-                UBYTE lowhigh;
-                UBYTE highlow;
-                UBYTE highhigh;
-
-                lowlow = low & 0b00001111;
-                lowhigh = (low & 0b11110000) >> 4;
-                highlow = high & 0b00001111;
-                highhigh = (high & 0b11110000) >> 4;
-
-                // These 16 bits need to happen in two write datas.
-                UBYTE highbyte = highhigh << 4;
-                UBYTE lowbyte = highlow << 4;
-                dataFirst = highbyte << 8 | lowbyte;
-                WriteData(dataFirst);
-
-                highbyte = lowhigh << 4;
-                lowbyte = lowlow << 4;
-                dataSecond = highbyte << 8 | lowbyte;
-                WriteData(dataSecond);
-
-                if (j == 0) break;
-            }
-            //
-            switch (i % 4) {
-            case 0:
-                Source_Buffer_Offset = (Source_Buffer_Width / 2) * order[1];
-                break;
-            case 1:
-                Source_Buffer_Offset = (Source_Buffer_Width / 2) * order[2];
-                break;
-            case 2:
-                Source_Buffer_Offset = (Source_Buffer_Width / 2) * order[3];
-                break;
-            case 3:
-                Source_Buffer_Offset = (Source_Buffer_Width / 2) * order[0];
-                Source_Buffer += 4 * Source_Buffer_Width / 2;
-                break;
-            }
-        }
-    }
-
-    LoadImgEnd();
-}
-
-#endif
-
-uint16_t reverseBits(uint16_t value) {
+uint16_t inline reverseBits(uint16_t value) {
     uint16_t reversed = 0;
     for (int i = 0; i < 16; ++i) {
         if (value & (1 << i)) {
@@ -579,7 +491,7 @@ void Waveshare6inHD::HostAreaPackedPixelWrite_1bp(IT8951_Load_Img_Info_cpp *Load
     Source_Buffer_Length = Source_Buffer_Width * Source_Buffer_Height;
 
     if (Packed_Write == true) {
-        WriteMultiData(Source_Buffer, Source_Buffer_Length);
+        WriteMultiData(Source_Buffer, Source_Buffer_Length * 4);
     } else {
         for (UDOUBLE i = 0; i < Source_Buffer_Height; i++) {
             for (UDOUBLE j = 0; j < Source_Buffer_Width; j++) {
@@ -616,8 +528,7 @@ void Waveshare6inHD::HostAreaPackedPixelWrite_2bp(IT8951_Load_Img_Info_cpp *Load
     } else {
         for (UDOUBLE i = 0; i < Source_Buffer_Height; i++) {
             for (UDOUBLE j = 0; j < Source_Buffer_Width; j++) {
-                WriteData(*Source_Buffer);
-                // WriteData(*Source_Buffer); // remove if doesn't work
+                WriteData(reverseBits(*Source_Buffer));
                 Source_Buffer++;
             }
         }
@@ -646,21 +557,11 @@ void Waveshare6inHD::HostAreaPackedPixelWrite_4bp(IT8951_Load_Img_Info_cpp *Load
     Source_Buffer_Length = Source_Buffer_Width * Source_Buffer_Height;
 
     if (Packed_Write == true) {
-        log_d("Write multi data");
         WriteMultiData(Source_Buffer, Source_Buffer_Length);
     } else {
-        log_d("Using write data loop");
         for (UDOUBLE i = 0; i < Source_Buffer_Height; i++) {
-            // if (i % 10 == 0) {
-            // log_d("Wrote ten lines %lu", i);
-            //   vTaskDelay(1);
-            // }
-            if (i % 50 == 0) {
-                log_d("Wrote 50 lines %lu", i);
-            }
             for (UDOUBLE j = 0; j < Source_Buffer_Width; j++) {
-                WriteData(*Source_Buffer);
-                // WriteData(*Source_Buffer); // remove if doesn't work
+                WriteData(reverseBits(*Source_Buffer));
                 Source_Buffer++;
             }
         }
@@ -687,9 +588,15 @@ void Waveshare6inHD::HostAreaPackedPixelWrite_8bp(IT8951_Load_Img_Info_cpp *Load
     Source_Buffer_Height = Area_Img_Info->Area_H;
 
     for (UDOUBLE i = 0; i < Source_Buffer_Height; i++) {
+        // For debugging purposes since this is a little slow
+        // if (i % 100 == 0) {
+        //     log_d("Wrote 100 lines %lu", i);
+        // }
+        // To optimize this, see WriteMultiData -- we could probably
+        // do something like that here. I'm not sure why their driver doesn't
+        // include the Packed option for 8bp like it does above for the rest.
         for (UDOUBLE j = 0; j < Source_Buffer_Width; j++) {
-            WriteData(*Source_Buffer);
-            // WriteData(*Source_Buffer); // remove if doesn't work
+            WriteData(reverseBits(*Source_Buffer));
             Source_Buffer++;
         }
     }
@@ -708,9 +615,7 @@ void Waveshare6inHD::Display_Area(UWORD X, UWORD Y, UWORD W, UWORD H, UWORD Mode
     Args[3] = H;
     Args[4] = Mode;
     // 0x0034
-    log_d("About to send WriteMultiArg from Display_Area");
     WriteMultiArg(USDEF_I80_CMD_DPY_AREA, Args, 5);
-    log_d("Sent WriteMultiArg from Display_Area");
 }
 
 /******************************************************************************
@@ -728,8 +633,6 @@ void Waveshare6inHD::Display_AreaBuf(UWORD X, UWORD Y, UWORD W, UWORD H, UWORD M
     Args[5] = (UWORD)Target_Memory_Addr;
     Args[6] = (UWORD)(Target_Memory_Addr >> 16);
     // 0x0037
-    // log_d("Sending the following args to display: X=%d, Y=%d, W=%d, H=%d, Mode=%d, AddrL =
-    // %d, AddrH = %d\n", X, Y, W, H, Args[4], Target_Memory_Addr, Target_Memory_Addr>>16);
     WriteMultiArg(USDEF_I80_CMD_DPY_BUF_AREA, Args, 7);
 }
 
@@ -740,7 +643,6 @@ parameter:
 void Waveshare6inHD::Display_1bp(UWORD X, UWORD Y, UWORD W, UWORD H, UWORD Mode,
                                  UDOUBLE Target_Memory_Addr, UBYTE Back_Gray_Val,
                                  UBYTE Front_Gray_Val) {
-    log_d("starting Display_1bp");
     // Set Display mode to 1 bpp mode - Set 0x18001138 Bit[18](0x1800113A Bit[2])to 1
     WriteReg(UP1SR + 2, ReadReg(UP1SR + 2) | (1 << 2));
 
@@ -755,7 +657,6 @@ void Waveshare6inHD::Display_1bp(UWORD X, UWORD Y, UWORD W, UWORD H, UWORD Mode,
     WaitForDisplayReady();
 
     WriteReg(UP1SR + 2, ReadReg(UP1SR + 2) & ~(1 << 2));
-    log_d("finished Display_1bp");
 }
 
 /******************************************************************************
@@ -764,12 +665,12 @@ parameter:  Enhanced driving capability for IT8951, in case the blurred display 
 ******************************************************************************/
 void Waveshare6inHD::Enhance_Driving_Capability(void) {
     UWORD RegValue = ReadReg(0x0038);
-    log_d("The reg value before writing is %x\r\n", RegValue);
+    log_d("The reg value before writing is %x", RegValue);
 
     WriteReg(0x0038, 0x0602);
 
     RegValue = ReadReg(0x0038);
-    log_d("The reg value after writing is %x\r\n", RegValue);
+    log_d("The reg value after writing is %x", RegValue);
 }
 
 /******************************************************************************
@@ -796,30 +697,19 @@ parameter:
 ******************************************************************************/
 IT8951_Dev_Info_cpp Waveshare6inHD::InitDisplay(UWORD VCOM) {
     IT8951_Dev_Info_cpp Dev_Info;
-    log_d("Attempting to Reset");
     Reset();
-    log_d("Attempting to SystemRun");
-
     SystemRun();
-
-    log_d("Attempting to get SystemInfo");
-    Delay(300);
     GetSystemInfo(&Dev_Info);
-    Delay(300);
     targetMem_ = Dev_Info.Memory_Addr_L | (Dev_Info.Memory_Addr_H << 16);
 
-    log_d("Got dev info width: %d height: %d", Dev_Info.Panel_W, Dev_Info.Panel_H);
-    log_d("Attempting to WriteReg");
-    // Enable Pack write
+    //  Enable Pack write
     WriteReg(I80CPCR, 0x0001);
 
-    log_d("Attempting to get VCOM");
-    // Set VCOM by handle
+    //  Set VCOM by handle
     if (VCOM != GetVCOM()) {
         SetVCOM(VCOM);
-        log_d("VCOM = -%.02fV\n", (float)GetVCOM() / 1000);
     }
-    log_d("Returning from EPID_IT8951_Init after clearing the screen");
+
     Clear_Refresh(Dev_Info, targetMem_, INIT_Mode);
 
     return Dev_Info;
@@ -831,25 +721,18 @@ parameter:
 ******************************************************************************/
 void Waveshare6inHD::Clear_Refresh(IT8951_Dev_Info_cpp Dev_Info, UDOUBLE Target_Memory_Addr,
                                    UWORD Mode) {
-
-    log_d("Starting Clear Refresh\n");
     UDOUBLE ImageSize = ((Dev_Info.Panel_W * 4 % 8 == 0) ? (Dev_Info.Panel_W * 4 / 8)
                                                          : (Dev_Info.Panel_W * 4 / 8 + 1)) *
                         Dev_Info.Panel_H;
-    log_d("About to malloc %lu bytes\n", ImageSize);
     UBYTE *Frame_Buf = (UBYTE *)heap_caps_malloc(ImageSize, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
-    log_d("Finished mallocing %p\n", Frame_Buf);
     memset(Frame_Buf, 0xFF, ImageSize);
-    log_d("Finished allocating and memsetting\n");
 
     IT8951_Load_Img_Info_cpp Load_Img_Info;
     IT8951_Area_Img_Info_cpp Area_Img_Info;
 
-    log_d(" clear refresh 1\n");
     WaitForDisplayReady();
-    log_d(" clear refresh 2\n");
     Load_Img_Info.Source_Buffer_Addr = Frame_Buf;
-    Load_Img_Info.Endian_Type = IT8951_LDIMG_L_ENDIAN;
+    Load_Img_Info.Endian_Type = IT8951_LDIMG_B_ENDIAN;
     Load_Img_Info.Pixel_Format = IT8951_4BPP;
     Load_Img_Info.Rotate = IT8951_ROTATE_0;
     Load_Img_Info.Target_Memory_Addr = Target_Memory_Addr;
@@ -858,20 +741,12 @@ void Waveshare6inHD::Clear_Refresh(IT8951_Dev_Info_cpp Dev_Info, UDOUBLE Target_
     Area_Img_Info.Area_Y = 0;
     Area_Img_Info.Area_W = Dev_Info.Panel_W;
     Area_Img_Info.Area_H = Dev_Info.Panel_H;
-    log_d(" clear refresh 3\n");
     // Their driver has this as false, but true is way faster. (20 seconds with false, ~1 second
     // with true)
     HostAreaPackedPixelWrite_4bp(&Load_Img_Info, &Area_Img_Info, true);
-    log_d(" clear refresh 4\n");
     Display_Area(0, 0, Dev_Info.Panel_W, Dev_Info.Panel_H, Mode);
-    // log_d("Clearning 4 at offset 936");
-    // Display_Area(936, 0, Dev_Info.Panel_W, Dev_Info.Panel_H, Mode);
-    // log_d("Clearing 4 at offset 1440");
-    //   Display_Area(1152, 0, Dev_Info.Panel_W, Dev_Info.Panel_H, Mode);
-    log_d(" clear refresh 5\n");
     free(Frame_Buf);
     Frame_Buf = NULL;
-    log_d("Exiting clear refresh\n");
 }
 
 /******************************************************************************
@@ -900,24 +775,9 @@ void Waveshare6inHD::One_bp_Refresh(UBYTE *Frame_Buf, UWORD X, UWORD Y, UWORD W,
     Area_Img_Info.Area_W = W / 8;
     Area_Img_Info.Area_H = H;
 
-    // clock_t start, finish;
-    // double duration;
-
-    // start = clock();
-
     HostAreaPackedPixelWrite_1bp(&Load_Img_Info, &Area_Img_Info, Packed_Write);
 
-    // finish = clock();
-    // duration = (double)(finish - start) / CLOCKS_PER_SEC;
-    // log_d( "Write occupy %f second\n", duration );
-
-    // start = clock();
-
     Display_1bp(X, Y, W, H, Mode, Target_Memory_Addr, 0xF0, 0x00);
-
-    // finish = clock();
-    // duration = (double)(finish - start) / CLOCKS_PER_SEC;
-    // log_d( "Show occupy %f second\n", duration );
 }
 
 /******************************************************************************
@@ -932,7 +792,7 @@ void Waveshare6inHD::One_bp_Multi_Frame_Write(UBYTE *Frame_Buf, UWORD X, UWORD Y
     WaitForDisplayReady();
 
     Load_Img_Info.Source_Buffer_Addr = Frame_Buf;
-    Load_Img_Info.Endian_Type = IT8951_LDIMG_L_ENDIAN;
+    Load_Img_Info.Endian_Type = IT8951_LDIMG_B_ENDIAN;
     // Use 8bpp to set 1bpp
     Load_Img_Info.Pixel_Format = IT8951_8BPP;
     Load_Img_Info.Rotate = IT8951_ROTATE_0;
@@ -969,7 +829,7 @@ void Waveshare6inHD::Two_bp_Refresh(UBYTE *Frame_Buf, UWORD X, UWORD Y, UWORD W,
     WaitForDisplayReady();
 
     Load_Img_Info.Source_Buffer_Addr = Frame_Buf;
-    Load_Img_Info.Endian_Type = IT8951_LDIMG_L_ENDIAN;
+    Load_Img_Info.Endian_Type = IT8951_LDIMG_B_ENDIAN;
     Load_Img_Info.Pixel_Format = IT8951_2BPP;
     Load_Img_Info.Rotate = IT8951_ROTATE_0;
     if (Target_Memory_Addr == 0) {
@@ -1003,7 +863,7 @@ void Waveshare6inHD::Four_bp_Refresh(UBYTE *Frame_Buf, UWORD X, UWORD Y, UWORD W
     WaitForDisplayReady();
 
     Load_Img_Info.Source_Buffer_Addr = Frame_Buf;
-    Load_Img_Info.Endian_Type = IT8951_LDIMG_L_ENDIAN;
+    Load_Img_Info.Endian_Type = IT8951_LDIMG_B_ENDIAN;
     Load_Img_Info.Pixel_Format = IT8951_4BPP;
     Load_Img_Info.Rotate = IT8951_ROTATE_0;
 
@@ -1038,7 +898,7 @@ void Waveshare6inHD::Eight_bp_Refresh(UBYTE *Frame_Buf, UWORD X, UWORD Y, UWORD 
     WaitForDisplayReady();
 
     Load_Img_Info.Source_Buffer_Addr = Frame_Buf;
-    Load_Img_Info.Endian_Type = IT8951_LDIMG_L_ENDIAN;
+    Load_Img_Info.Endian_Type = IT8951_LDIMG_B_ENDIAN;
     Load_Img_Info.Pixel_Format = IT8951_8BPP;
     Load_Img_Info.Rotate = IT8951_ROTATE_0;
 
@@ -1070,15 +930,12 @@ void Waveshare6inHD::init() {
     PinMode(cs_, OUTPUT);
 
 #ifdef DISPLAY_WAVESHARE_6INHD_BUSY
-    log_w("Using DISPLAY_WAVESHARE_6INHD_BUSY pin %d", DISPLAY_WAVESHARE_6INHD_BUSY);
+    log_d("Using DISPLAY_WAVESHARE_6INHD_BUSY pin %d", DISPLAY_WAVESHARE_6INHD_BUSY);
     PinMode(DISPLAY_WAVESHARE_6INHD_BUSY, INPUT);
 #endif
 
     DigitalWrite(cs_, HIGH);
 
-    // Initialize the SPI bus
-    // TODO(john): It's maybe a little weird that some pins come in via config.h and some come
-    // in via the constructor
     spi_bus_config_t buscfg = {
         .mosi_io_num = DISPLAY_WAVESHARE_6INHD_MOSI,
         .miso_io_num = DISPLAY_WAVESHARE_6INHD_MISO,
@@ -1088,9 +945,12 @@ void Waveshare6inHD::init() {
         .quadhd_io_num = -1,
         .flags = SPICOMMON_BUSFLAG_MASTER,
     };
-    // TODO: Why don't we have any available DMA channels? Maybe they are used by Flash and RAM?
-    log_d("Return val from bus initialize %d",
-          spi_bus_initialize(DISPLAY_SPI, &buscfg, SPI_DMA_DISABLED));
+
+    esp_err_t err = spi_bus_initialize(DISPLAY_SPI, &buscfg, SPI_DMA_DISABLED);
+    if (err != ESP_OK) {
+        log_e("Error initializing SPI bus %d", err);
+        return;
+    }
 
     spi_device_interface_config_t devcfg = {
         .command_bits = 0,
@@ -1103,11 +963,12 @@ void Waveshare6inHD::init() {
         .queue_size = 1,
     };
 
-    log_d("Return val from add Device %d", spi_bus_add_device(DISPLAY_SPI, &devcfg, &spiHigh_));
+    err = spi_bus_add_device(DISPLAY_SPI, &devcfg, &spiHigh_);
+    if (err != ESP_OK) {
+        log_e("Error adding display device to SPI bus: %d", err);
+    }
 
     DevInfo_ = InitDisplay(2080);
-
-    log_d("Initialized Waveshare6inHD");
 }
 
 #endif

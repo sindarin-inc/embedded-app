@@ -16,6 +16,7 @@
 #define Hastings20x40_3
 
 // Uncomment to disable power management when debugging on the rev1 dev board
+// XXX: Should move this to the build system
 #define DISABLE_POWER_MANAGEMENT 1
 
 // Currently using the App (BLE Server in firmware) is incompatible with
@@ -108,8 +109,12 @@
 #define I2C_MASTER_FREQ_HZ 400000
 #endif
 
+// This is a wart -- need to figure out how to have the right
+// one passed in from the build system.
+#if CONFIG_DISPLAY_WAVESHARE_6INHD
 #undef CONFIG_FONT_IBMF
 #define CONFIG_FONT_TTF 1
+#endif
 
 #if CONFIG_FONT_TTF
 #define FT_USE_PSRAM 0

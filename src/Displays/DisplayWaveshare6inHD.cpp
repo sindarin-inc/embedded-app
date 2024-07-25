@@ -12,36 +12,7 @@ extern bool mirrorToSerial;
 auto DisplayWaveshare6inHD::setup() -> bool {
     DisplaySystem::setup();
     DisplaySystem::invertDisplay(true);
-
-    // NOTE: GPIO11 isn't available on the ProS3 so you have to change i2c_scl to point to an
-    // available pin (like 13) here
-    // https://github.com/m5stack/M5GFX/blob/b490abf5fa9e5b43479bfa2316bdb39c0c1aa46f/src/M5ModuleDisplay.h#L134
-
-    // auto cfg = M5.config();
-
-    // cfg.external_speaker.module_display = true;
-    // cfg.external_display.module_display = true;
-    // If you want to change the resolution, uncomment the following lines and
-    // adjust the values
-    //  cfg.module_display.logical_width = 1280;
-    //  cfg.module_display.logical_height = 720;
-    //  cfg.module_display.refresh_rate = 60;
-
-    // If you want to change the resolution, uncomment the following lines and
-    // adjust the values
-    //  cfg.module_display.logical_width = 1280;
-    //  cfg.module_display.logical_height = 720;
-    //  cfg.module_display.refresh_rate = 60;
-
-    // M5.begin(cfg);
-
-    // See also:
-    // https://github.com/m5stack/M5Module-Display-13.2/blob/main/M5Module-Display-13.2-Demo-Core2/M5Module-Display-13.2-Demo-Core2.ino
-
-    // driver_.init();
-    //  driver_.Standby();
-    //   driver_.invertDisplay(true);
-
+    //- driver_.init();
     return true;
 }
 
@@ -54,40 +25,32 @@ void DisplayWaveshare6inHD::updateDisplay(DisplaySystem::UpdateType updateType,
         log_w("updateDisplay called from outside the UI queue.");
     }
 
-    // for (int x = 0; x < gfxCanvas_.width(); x += 8) {
-    //     drawBox(x, 0, x + 1, gfxCanvas_.height());
-    //     drawBox(x + 2, 0, x + 3, gfxCanvas_.height());
-    // }
-    // for (int y = 0; y < gfxCanvas_.height(); y += 8) {
-    //     drawBox(0, y, gfxCanvas_.width(), y + 1);
-    //     drawBox(0, y + 2, gfxCanvas_.width(), y + 3);
-    // }
     if (mirrorToSerial) {
         USBSerial::getInstance().txSendData(
+            // Note, this only works in 1-bit mode.
+            // If the canvas is 8-bit, we need to convert it to 1-bit or
+            // send some notif to the desktop app to handle that.
             reinterpret_cast<const uint8_t *>(gfxCanvas_.getBuffer()),
             gfxCanvas_.width() * gfxCanvas_.height() / 8);
     }
 
-    // The subtraction of the %32 is because of a 4 byte align thing in the
-    // driver example code!
     PROFILE_START(updateDisplay);
-    if (updateType == UpdateType::PARTIAL || updateType == UpdateType::FULL) {
+    if (updateType == UpdateType::PARTIAL) {
         // driver_.SystemRun();
         // driver_.One_bp_Refresh(gfxCanvas_.getBuffer(), (UWORD)0, (UWORD)0,
-        //                       (UWORD)gfxCanvas_.width(), (UWORD)gfxCanvas_.height(),
-        //                       (uint8_t)A2_Mode, (UDOUBLE)0, false);
-        // driver_.Standby();
-        //        driver_.Sleep();
-        ;
+        //                        (UWORD)gfxCanvas_.width(), (UWORD)gfxCanvas_.height(),
+        //                        (uint8_t)A2_Mode, (UDOUBLE)0, true);
+        // driver_.Eight_bp_Refresh(gfxCanvas_.getBuffer(), (UWORD)0, (UWORD)0,
+        //                          (UWORD)gfxCanvas_.width(), (UWORD)gfxCanvas_.height(), false,
+        //                          (UDOUBLE)0);
+    } else if (updateType == UpdateType::FULL) {
+        // driver_.One_bp_Refresh(gfxCanvas_.getBuffer(), (UWORD)0, (UWORD)0,
+        //                        (UWORD)gfxCanvas_.width(), (UWORD)gfxCanvas_.height(),
+        //                        (uint8_t)GC16_Mode, (UDOUBLE)0, true);
+        // driver_.Eight_bp_Refresh(gfxCanvas_.getBuffer(), (UWORD)0, (UWORD)0,
+        //                          (UWORD)gfxCanvas_.width(), (UWORD)gfxCanvas_.height(), false,
+        //                          (UDOUBLE)0);
     }
-    // driver_.startWrite();
-    // driver_.beginTransaction();
-
-    // // Blast out the full buffer
-    // driver_.pushImage(0, 0, gfxCanvas_.width(), gfxCanvas_.height(), gfxCanvas_.getBuffer());
-
-    // driver_.endTransaction();
-    // driver_.endWrite();
 
     PROFILE_END_LOG_MS(updateDisplay);
 
