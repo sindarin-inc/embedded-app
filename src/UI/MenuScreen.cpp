@@ -93,13 +93,21 @@ void MenuScreen::drawMenuItems(DisplaySystem &display, bool withBullet, bool wit
         // This probably should change to a layout item that is Vertically Center Aligned
         // with the menu item. That's the only way to get it to look right on small screens
         // and large screens.
+        // Copied from MenuItemView -- why arent't these MenuItemViews?
+        auto height = display.getTextHeight();
+        // Good default for 1 bit smallest font
+        auto indicatorWidth_ = (height + 1) / 3;
+        // Mirroring our previous defaults but now at least it's dynamic
+        auto indicatorWidthAdjustment_ = indicatorWidth_ * 8 / 5;
+
         if ((i == currSelection_) && (withBullet)) {
-            display.fillRoundRect(xOffsetForMenu - display.getTextHeight() / 4 - 2,
+            display.fillRoundRect(xOffsetForMenu - indicatorWidthAdjustment_,
                                   yOffsetForMenu + additionalYOffset +
                                       (i % myStyle_.numberOfItemsPerPage) *
                                           (display.getTextHeight() - display.getLineSpacing() + 1) +
-                                      4,
-                                  5, 5, 3, display.fg);
+                                      indicatorWidth_ * 4 / 5,
+                                  indicatorWidth_, indicatorWidth_, indicatorWidth_ * 5 / 3,
+                                  display.fg);
         }
     }
 

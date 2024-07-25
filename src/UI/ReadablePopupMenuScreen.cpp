@@ -296,7 +296,6 @@ void ReadablePopupMenuScreen::render(DisplaySystem &display) {
         display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
 #else
         display.updateDisplay(DisplaySystem::UpdateType::FULL);
-        display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
 #endif
     }
 };

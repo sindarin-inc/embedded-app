@@ -18,10 +18,22 @@ public:
                  Font *font = static_cast<Font *>(&fontFace0), bool multiLine = false,
                  bool subtitle = true)
         : MenuItemView(display) {
+        auto height = std::min(14, display.getTextHeight());
+        // Good default for 1 bit smallest font
+        indicatorWidth_ = (height + 1) / 3;
+        // Mirroring our previous defaults but now at least it's dynamic
+        indicatorWidthAdjustment_ = indicatorWidth_ * 8 / 5;
         setMenuItem(menuItem, font, multiLine, subtitle);
     }
 
     ~MenuItemView() override = default;
+
+    auto getWidth() -> uint16_t {
+        if (textView_ != nullptr && !textView_->isHidden()) {
+            return (textView_->getTextWidth() + indicatorWidth_ + indicatorWidthAdjustment_);
+        }
+        return 0;
+    }
 
     void setMenuItem(const MenuItem &menuItem, Font *font = static_cast<Font *>(&fontFace0),
                      bool multiLine = false, bool subtitle = true) {
@@ -81,8 +93,7 @@ public:
         int y = 0;
         int right = size.width;
         int indicatorRightPadding = 15;
-        int indicatorWidth = 5;
-        auto indicatorWidthPlus = indicatorWidth + 8;
+        auto indicatorWidthPlus = indicatorWidth_ + indicatorWidthAdjustment_;
         Rect textRect{}, subtextRect{};
 
         // Layout the right text view if necessary
@@ -124,7 +135,7 @@ public:
         int indicatorHeight;
         int indicatorYNudge = 0;
         if (circleIndicator_) {
-            indicatorHeight = indicatorWidth;
+            indicatorHeight = indicatorWidth_;
             indicatorYNudge = 1;
         } else {
             // Extends above and below the size by indicatorExtraVerticalHeight_
@@ -134,8 +145,8 @@ public:
                 indicatorYNudge = 2;
             }
         }
-        context.setViewSizeInRect(indicator_, {indicatorWidth, indicatorHeight},
-                                  Rect{{x, indicatorYNudge}, {indicatorWidth, size.height}},
+        context.setViewSizeInRect(indicator_, {indicatorWidth_, indicatorHeight},
+                                  Rect{{x, indicatorYNudge}, {indicatorWidth_, size.height}},
                                   LayoutOptionsAlignCenterVertical);
 
         return {size.width, y};
@@ -181,6 +192,8 @@ protected:
     // Extra height on top and bottom of the indicator relative to the size to fit the text.
     // By default, the tall indicator extends 3px above and below the size that fits
     // Unsused if circleIndicator_ is true
+    int indicatorWidth_ = 5;
+    int indicatorWidthAdjustment_ = 8;
     int indicatorExtraVerticalHeight_ = 3;
     bool circleIndicator_ = false;
     bool selected_ = false;
