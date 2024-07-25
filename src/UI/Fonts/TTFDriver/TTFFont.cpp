@@ -255,7 +255,7 @@ auto Font::getGlyph(GlyphCode glyphCode, Glyph &appGlyph, bool loadBitmap, bool 
                 //- log_d("ii");
                 //- Delay(10);
                 //- SHOW_HEAP();
-                //- showBitmap(bm);
+                //- showBitmap(bm, inverted);
                 //- SHOW_HEAP();
                 //- Delay(10);
                 //- log_d("ij");
@@ -590,7 +590,7 @@ auto Font::getTextHeight(const std::string &buffer) -> int {
     return height;
 }
 
-void Font::showBitmap(const Bitmap &bitmap) const {
+void Font::showBitmap(const Bitmap &bitmap, bool inverted) const {
     if constexpr (DEBUG_BITMAP) {
         uint32_t row, col;
         MemoryPtr rowPtr;
@@ -612,10 +612,11 @@ void Font::showBitmap(const Bitmap &bitmap) const {
                  row++, rowPtr += rowSize) {
                 std::cout << "   |";
                 for (col = 0; col < maxWidth; col++) {
-                    std::cout << ((rowPtr[col >> 3] & (0x80 >> (col & 7))) ? 'X' : ' ');
-                    // } else {
-                    //     std::cout << ((rowPtr[col >> 3] & (0x80 >> (col & 7))) ? ' ' : 'X');
-                    // }
+                    if (inverted) {
+                        std::cout << ((rowPtr[col >> 3] & (0x80 >> (col & 7))) ? ' ' : 'X');
+                    } else {
+                        std::cout << ((rowPtr[col >> 3] & (0x80 >> (col & 7))) ? 'X' : ' ');
+                    }
                 }
                 std::cout << '|';
                 std::cout << std::endl << std::flush;
@@ -626,6 +627,9 @@ void Font::showBitmap(const Bitmap &bitmap) const {
                  row++, rowPtr += rowSize) {
                 std::cout << "   |";
                 for (col = 0; col < maxWidth; col++) {
+                    if (inverted) {
+                    } else {
+                    }
                     // if constexpr (BLACK_EIGHT_BITS) {
                     //     std::cout << ((rowPtr[col] == BLACK_EIGHT_BITS) ? 'X' : ' ');
                     // } else {
