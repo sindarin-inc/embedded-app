@@ -82,7 +82,7 @@ private:
 
     void copyBitmap(Bitmap &to, bool toHeightBit, Bitmap &from, Pos atPos, bool inverted);
 
-    void showBitmap(const Bitmap &bitmap) const;
+    void showBitmap(const Bitmap &bitmap, bool inverted) const;
 
 public:
     Font(FontData &fontData, int size) noexcept : fontData_(fontData), size_(size) {
