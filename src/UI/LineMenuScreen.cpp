@@ -40,12 +40,17 @@ void LineMenuScreen::render(DisplaySystem &display) {
     setNeedsLayout();
     setFrame(defaultFrameRect());
 
+// Only needed for the ET013TT1 because of how we do
+// the partial refreshes with the bullet
+#if CONFIG_DISPLAY_EINKET013TT1
     if (firstLoad_) {
+
         PROFILE_START(LineMenuScreenLayoutAndDraw);
         draw();
         PROFILE_END_LOG_US(LineMenuScreenLayoutAndDraw);
-        // display.updateDisplay(DisplaySystem::UpdateType::FULL);
+        display.updateDisplay(DisplaySystem::UpdateType::FULL);
     }
+#endif
 
     std::shared_ptr<MenuItemView> selectedMenuItemView = menuItemViews_[getCurrSelection()];
     for (auto &menuItemView : menuItemViews_) {
@@ -59,7 +64,13 @@ void LineMenuScreen::render(DisplaySystem &display) {
     // Redraw with a different vcom setting for the menu item bullet
     draw();
 
+#if CONFIG_DISPLAY_EINKET013TT1
+    display.updateDisplay(DisplaySystem::UpdateType::FAST_WITH_VCOM_NUDGE);
+#elif CONFIG_DISPLAY_WAVESHARE6INHD
     display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
+#else
+    display.updateDisplay(DisplaySystem::UpdateType::FULL);
+#endif
 
     firstLoad_ = false;
 }

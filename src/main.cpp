@@ -258,7 +258,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     // earlier for debugging.
     usbSerial.begin();
 #if 1
-    // usbSerial.enableLogging();
+    usbSerial.enableLogging();
 #endif
     directCommand.begin();
     HardwareInit();

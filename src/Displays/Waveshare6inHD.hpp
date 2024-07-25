@@ -9,6 +9,10 @@
 #include "EinkTypes.hpp"
 #include "Misc/Dispatch.hpp"
 
+// This display is technically 1448x1072, but the IT8951 controller
+// seems to want things 4 byte-aligned, so in their driver, they seem
+// to sacrifice those 8 pixels on the right side. If we use this
+// display more, we could probably investigate that further.
 #define WAVESHARE_6INHD_X_PIXELS 1440
 #define WAVESHARE_6INHD_Y_PIXELS 1072
 
@@ -208,14 +212,14 @@ public:
     uint16_t readTemperature(ScreenSide index) { return 0; };
 
 protected:
-    void ReadBusy();
+    void inline ReadBusy();
     void WritePreamble();
 
     UWORD convertByte(UBYTE input);
     void WriteCommand(UWORD cmd);
-    void WriteData(UWORD data);
+    void inline WriteData(UWORD data);
     UWORD ReadData();
-    void WriteMultiData(UWORD *data, UDOUBLE length);
+    void inline WriteMultiData(UWORD *data, UDOUBLE length);
     void ReadMultiData(UWORD *data, UDOUBLE length);
     void WriteMultiArg(UWORD arg, UWORD *buf, UWORD argNum);
     UWORD ReadReg(UWORD index);
@@ -240,9 +244,9 @@ protected:
 
     void powerOnInternal();
     void powerOffInternal();
-    void writeRegister(const uint8_t *data, size_t len);
+    void inline writeRegister(const uint8_t *data, size_t len);
     auto readReg(UWORD index) -> UWORD;
-    void SPIWriteByte(UBYTE Value);
+    void inline SPIWriteByte(UBYTE Value);
     UBYTE SPIReadByte();
 
     inline void waitForNotBusy();

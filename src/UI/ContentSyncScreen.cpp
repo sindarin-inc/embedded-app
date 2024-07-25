@@ -204,7 +204,15 @@ void ContentSyncScreen::render(DisplaySystem &display) {
     draw();
 
     display.updateDisplay(nextUpdate_);
+#if CONFIG_DISPLAY_EINKET013TT1
     nextUpdate_ = DisplaySystem::UpdateType::FAST_WITH_VCOM_NUDGE;
+#elif CONFIG_DISPLAY_WAVESHARE_6INHD
+    // Eventually update this to PARTIAL of some sort
+    nextUpdate_ = DisplaySystem::UpdateType::FULL;
+#else
+    // Other displays can use a partial update perhaps
+    nextUpdate_ = DisplaySystem::UpdateType::FULL;
+#endif
 }
 
 void ContentSyncScreen::processCommand(RemoteCommand command) {

@@ -112,4 +112,8 @@ if (DEFINED SIM_LAYOUT_DEBUG)
     add_compile_definitions(SIM_LAYOUT_DEBUG=${SIM_LAYOUT_DEBUG})
 endif()
 
+if (DEFINED SIM_ONE_BIT)
+    add_compile_definitions(SIM_ONE_BIT=${SIM_ONE_BIT})
+endif()
+
 

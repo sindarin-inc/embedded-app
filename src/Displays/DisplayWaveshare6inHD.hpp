@@ -16,7 +16,7 @@ public:
     ~DisplayWaveshare6inHD() override = default;
 
     [[nodiscard]] auto defaultTextInsets() const -> DisplayInset override {
-        return {300, 300, 20, 20};
+        return {150, 150, 40, 40};
     };
     [[nodiscard]] auto minTextInsets() const -> DisplayInset override { return {5, 5, 5, 5}; };
     [[nodiscard]] auto minTextBoxWidth() const -> int16_t override { return 125; };
