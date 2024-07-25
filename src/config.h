@@ -16,7 +16,7 @@
 #define Hastings20x40_3
 
 // Uncomment to disable power management when debugging on the rev1 dev board
-// XXX: Should move this to the build system
+// XXXBCBC: Should move this to the build system
 #define DISABLE_POWER_MANAGEMENT 1
 
 // Currently using the App (BLE Server in firmware) is incompatible with

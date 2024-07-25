@@ -89,7 +89,7 @@ void MenuScreen::drawMenuItems(DisplaySystem &display, bool withBullet, bool wit
         // for settings menu some other crazy thing
         // Switch to Resolution-based here. 5x5 is a good size for the paging bubbles
         // on a 256 x 256 screen, but higher resolution screens will need larger bubbles
-        // XXX
+        // XXXBCBC
         // This probably should change to a layout item that is Vertically Center Aligned
         // with the menu item. That's the only way to get it to look right on small screens
         // and large screens.

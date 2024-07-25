@@ -161,6 +161,8 @@ clean:
 	rm -fr lib/Simulator/build8
 	rm -fr scripts/epub-render/build
 	rm -fr test/CatchTests/build
+	rm -fr test/CatchTests/Images/TestRun/*diff.png
+	rm -fr test/CatchTests/Images/TestRun/GylphTests/*diff.png
 
 .PHONY: clang-tidy
 clang-tidy: check_idf
