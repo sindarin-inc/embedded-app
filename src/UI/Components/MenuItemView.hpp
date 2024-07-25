@@ -17,12 +17,14 @@ public:
     MenuItemView(DisplaySystem &display, const MenuItem &menuItem,
                  Font *font = static_cast<Font *>(&fontFace0), bool multiLine = false,
                  bool subtitle = true)
-        : MenuItemView(display), indicatorWidthAdjustment_(indicatorWidth_ * 8 / 5) {
+        : MenuItemView(display) {
         auto height = std::min(14, display.getTextHeight());
         // Good default for 1 bit smallest font
         indicatorWidth_ = (height + 1) / 3;
         // Mirroring our previous defaults but now at least it's dynamic
-
+        // I used to have this as indicatorWidth_ but then clang moved this to above
+        // which makes the calculation wrong!
+        indicatorWidthAdjustment_ = ((height + 1) / 3) * 8 / 5;
         setMenuItem(menuItem, font, multiLine, subtitle);
     }
 
