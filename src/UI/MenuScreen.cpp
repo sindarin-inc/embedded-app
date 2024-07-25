@@ -96,17 +96,17 @@ void MenuScreen::drawMenuItems(DisplaySystem &display, bool withBullet, bool wit
         // Copied from MenuItemView -- why arent't these MenuItemViews?
         auto height = display.getTextHeight();
         // Good default for 1 bit smallest font
-        auto indicatorWidth_ = (height + 1) / 3;
+        auto indicatorWidth = (height + 1) / 3;
         // Mirroring our previous defaults but now at least it's dynamic
-        auto indicatorWidthAdjustment_ = indicatorWidth_ * 8 / 5;
+        auto indicatorWidthAdjustment = indicatorWidth * 8 / 5;
 
         if ((i == currSelection_) && (withBullet)) {
-            display.fillRoundRect(xOffsetForMenu - indicatorWidthAdjustment_,
+            display.fillRoundRect(xOffsetForMenu - indicatorWidthAdjustment,
                                   yOffsetForMenu + additionalYOffset +
                                       (i % myStyle_.numberOfItemsPerPage) *
                                           (display.getTextHeight() - display.getLineSpacing() + 1) +
-                                      indicatorWidth_ * 4 / 5,
-                                  indicatorWidth_, indicatorWidth_, indicatorWidth_ * 5 / 3,
+                                      indicatorWidth * 4 / 5,
+                                  indicatorWidth, indicatorWidth, indicatorWidth * 5 / 3,
                                   display.fg);
         }
     }
