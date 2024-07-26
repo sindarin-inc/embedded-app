@@ -29,6 +29,8 @@ else ifeq ($(TARGET),m5stack-module-display)
 	IDF_PROFILE = -B build-$(TARGET) -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.$(TARGET)"
 else ifeq ($(TARGET),waveshare-6inhd)
 	IDF_PROFILE = -B build-$(TARGET) -DSDKCONFIG_DEFAULTS="sdkconfig.defaults.$(TARGET)"
+else ifeq ($(TARGET),sharp-27in)
+	IDF_PROFILE = -B build-$(TARGET) -DSDKCONFIG_DEFAULTS="sdkconfig.defaults.$(TARGET)"
 endif
 
 # Optional variables for the Simulator builds
@@ -161,6 +163,8 @@ clean:
 	rm -fr lib/Simulator/build8
 	rm -fr scripts/epub-render/build
 	rm -fr test/CatchTests/build
+	rm -fr test/CatchTests/Images/TestRun/*diff.png
+	rm -fr test/CatchTests/Images/TestRun/GylphTests/*diff.png
 
 .PHONY: clang-tidy
 clang-tidy: check_idf

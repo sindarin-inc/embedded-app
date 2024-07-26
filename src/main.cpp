@@ -58,6 +58,9 @@ DisplayM5StackModuleDisplay myDisplay;
 #elif CONFIG_DISPLAY_WAVESHARE_6INHD
 #include "Displays/DisplayWaveshare6inHD.hpp"
 DisplayWaveshare6inHD myDisplay;
+#elif CONFIG_DISPLAY_SHARP_27IN
+#include "Displays/DisplaySharp27in.hpp"
+DisplaySharp27in myDisplay;
 #endif
 
 PreferencesStore prefs;

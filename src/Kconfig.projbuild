@@ -17,6 +17,9 @@ menu "Sol Options"
             config DISPLAY_WAVESHARE_6INHD
                 bool "Waveshare 6in HD Display"
 
+            config DISPLAY_SHARP_27IN
+                bool "Sharpmem 2.7in Display"
+
         endchoice
     endmenu
 

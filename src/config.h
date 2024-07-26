@@ -16,7 +16,7 @@
 #define Hastings20x40_3
 
 // Uncomment to disable power management when debugging on the rev1 dev board
-// XXX: Should move this to the build system
+// XXXBCBC: Should move this to the build system
 #define DISABLE_POWER_MANAGEMENT 1
 
 // Currently using the App (BLE Server in firmware) is incompatible with
@@ -90,9 +90,14 @@
 #define DISPLAY_WAVESHARE_6INHD_MOSI 35
 #define DISPLAY_WAVESHARE_6INHD_MISO 37
 #define DISPLAY_WAVESHARE_6INHD_CLK 34
-#define DISPLAY_WAVESHARE_6INHD_BUSY 6  // SET ME
-#define DISPLAY_WAVESHARE_6INHD_CS 3    // SET ME
-#define DISPLAY_WAVESHARE_6INHD_RESET 5 // SET ME
+#define DISPLAY_WAVESHARE_6INHD_BUSY 6
+#define DISPLAY_WAVESHARE_6INHD_CS 3
+#define DISPLAY_WAVESHARE_6INHD_RESET 5
+
+#define DISPLAY_SHARP_27IN_MOSI 35
+#define DISPLAY_SHARP_27IN_CLK 34
+#define DISPLAY_SHARP_27IN_CS 3
+#define DISPLAY_SHARP_27IN_DISP 6
 
 #define CPU_FREQ_MHZ_HIGH 240
 #define CPU_FREQ_MHZ_LOW 40

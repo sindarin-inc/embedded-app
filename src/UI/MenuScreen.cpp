@@ -89,17 +89,25 @@ void MenuScreen::drawMenuItems(DisplaySystem &display, bool withBullet, bool wit
         // for settings menu some other crazy thing
         // Switch to Resolution-based here. 5x5 is a good size for the paging bubbles
         // on a 256 x 256 screen, but higher resolution screens will need larger bubbles
-        // XXX
+        // XXXBCBC
         // This probably should change to a layout item that is Vertically Center Aligned
         // with the menu item. That's the only way to get it to look right on small screens
         // and large screens.
+        // Copied from MenuItemView -- why arent't these MenuItemViews?
+        auto height = display.getTextHeight();
+        // Good default for 1 bit smallest font
+        auto indicatorWidth = (height + 1) / 3;
+        // Mirroring our previous defaults but now at least it's dynamic
+        auto indicatorWidthAdjustment = indicatorWidth * 8 / 5;
+
         if ((i == currSelection_) && (withBullet)) {
-            display.fillRoundRect(xOffsetForMenu - display.getTextHeight() / 4 - 2,
+            display.fillRoundRect(xOffsetForMenu - indicatorWidthAdjustment,
                                   yOffsetForMenu + additionalYOffset +
                                       (i % myStyle_.numberOfItemsPerPage) *
                                           (display.getTextHeight() - display.getLineSpacing() + 1) +
-                                      4,
-                                  5, 5, 3, display.fg);
+                                      indicatorWidth * 4 / 5,
+                                  indicatorWidth, indicatorWidth, indicatorWidth * 5 / 3,
+                                  display.fg);
         }
     }
 

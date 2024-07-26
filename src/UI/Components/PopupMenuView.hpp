@@ -40,6 +40,7 @@ public:
         auto foregroundFrame = context.setViewFrame(popupMenuForeground_, fullFrame.inset(5));
         auto contentFrame = foregroundFrame.inset(10);
         auto y = contentFrame.origin.y;
+        auto x = 0;
 
         for (auto &view : menuItemViews) {
             if (!view->isHidden()) {
@@ -47,6 +48,9 @@ public:
                     context.setViewFrame(*view, {{contentFrame.origin.x, y}, contentFrame.size},
                                          LayoutOptionsSizeToFit | LayoutOptionsAlignTop);
                 y += viewFrame.size.height;
+                if (x < view->getWidth()) {
+                    x = view->getWidth();
+                }
             }
         }
 
@@ -83,11 +87,12 @@ public:
         // Make room for foregroundFrame box
         y += 5;
 
-        // To be visually pleasing, the popup menu should take about 110% of the width
+        // To be visually pleasing, the popup menu should take about 150% of the width
         // of the widest text -- this allows for the buttons as well
-        // XXX figure this out
+        // XXXBCBC figure this out
         // return {maxWidthOfText * 110 / 100, y};
-        return {size.width, y};
+        // 152 / 100 makes it exactly what it was before (106).
+        return {152 * x / 100, y};
     }
 
     void drawInRect(Rect rect) override {
