@@ -29,7 +29,7 @@ private:
 
     // Maximum size of an allocated buffer to do vsnprintf formatting
     static constexpr int MAX_SIZE = 100;
-    static constexpr bool DEBUG_BITMAP = true;
+    static constexpr bool DEBUG_BITMAP = false;
 
     typedef std::function<void(GlyphCode, FIX16, bool, bool)> const &LigKernMappingHandler;
 
@@ -47,22 +47,32 @@ private:
     inline auto getGlyphHorizontalMetrics(GlyphCode glyphCode, int16_t &xoff, int16_t &advance,
                                           int16_t &glyphWidth) -> bool {
 
-        FT_Face theFace = (glyphCode >= 0x8000) ? privateFace_ : face_;
+        // FT_Face theFace = (glyphCode >= 0x8000) ? privateFace_ : face_;
         GlyphCode theGlyphCode = (glyphCode >= 0x8000) ? glyphCode - 0x8000 : glyphCode;
 
-        int error = FT_Load_Glyph(theFace,            /* handle to face object */
-                                  theGlyphCode,       /* glyph index           */
-                                  FT_LOAD_NO_BITMAP); /* get only metrics      */
-
-        if (error) {
-            return false;
+        std::optional<const Glyph *> glyph = fontData_.cache.getGlyph(*this, theGlyphCode, size_);
+        if (glyph.has_value()) {
+            xoff = glyph.value()->metrics.xoff;
+            advance = glyph.value()->metrics.advance >> 6;
+            glyphWidth = glyph.value()->bitmap.dim.width;
+            return true;
         }
 
-        xoff = theFace->glyph->bitmap_left;
-        advance = theFace->glyph->advance.x >> 6;
-        glyphWidth = theFace->glyph->bitmap.width;
+        // int error = FT_Load_Glyph(theFace,            /* handle to face object */
+        //                           theGlyphCode,       /* glyph index           */
+        //                           FT_LOAD_NO_BITMAP); /* get only metrics      */
 
-        return true;
+        // if (error) {
+        //     return false;
+        // }
+
+        // xoff = theFace->glyph->bitmap_left;
+        // advance = theFace->glyph->advance.x >> 6;
+        // glyphWidth = theFace->glyph->bitmap.width;
+        //
+        // return true;
+
+        return false;
     }
 
     [[nodiscard]] inline auto getGlyphHOffset(GlyphCode glyphCode) -> int8_t {
@@ -76,11 +86,9 @@ private:
     }
 
     auto ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2, FIX16 *kern) const -> bool;
-    auto getGlyph(GlyphCode glyphCode, Glyph &appGlyph, bool loadBitmap, bool caching = true,
-                  Pos atPos = Pos(0, 0), bool inverted = false, bool showGlyph = false) -> bool;
     auto getGlyphMetrics(GlyphCode glyphCode, Glyph &appGlyph) -> bool;
 
-    void copyBitmap(Bitmap &to, bool toHeightBit, Bitmap &from, Pos atPos, bool inverted);
+    void copyBitmap(Bitmap &to, bool toHeightBit, const Bitmap &from, Pos atPos, bool inverted);
 
     void showBitmap(const Bitmap &bitmap, bool inverted) const;
 
@@ -105,13 +113,18 @@ public:
 
                     GlyphCode glyphCode = FT_Get_Char_Index(face_, ' ');
 
-                    error = FT_Load_Glyph(face_,              /* handle to face object */
-                                          glyphCode,          /* glyph index           */
-                                          FT_LOAD_NO_BITMAP); /* load flags */
-                    if (error) {
+                    std::optional<const Glyph *> glyph =
+                        fontData_.cache.getGlyph(*this, glyphCode, size_);
+
+                    if (!glyph.has_value()) {
+                        // error = FT_Load_Glyph(face_,              /* handle to face object */
+                        //                       glyphCode,          /* glyph index           */
+                        //                       FT_LOAD_NO_BITMAP); /* load flags */
+                        // if (error) {
                         LOGE("Unable to load glyph for space char.");
                     } else {
-                        spaceSize_ = static_cast<FIX16>(face_->glyph->advance.x);
+                        spaceSize_ = glyph.value()->metrics.advance;
+
                         error = FT_New_Memory_Face(
                             fontData_.getLibrary(), (const FT_Byte *)(fontData_.getPrivateData()),
                             fontData_.getPrivateDataSize(), 0, &privateFace_);
@@ -155,6 +168,9 @@ public:
         }
         return isInitialized() ? face_->size->metrics.height >> 6 : 0;
     }
+
+    auto getGlyph(GlyphCode glyphCode, Glyph &appGlyph, bool loadBitmap, bool caching = true,
+                  Pos atPos = Pos(0, 0), bool inverted = false, bool showGlyph = false) -> bool;
 
     inline void setPixelResolution(PixelResolution res) { pixelResolution_ = res; }
 

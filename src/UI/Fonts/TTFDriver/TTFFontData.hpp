@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "../TTFFonts/NotoSans-Light.h"
+#include "TTFCache.hpp"
 #include "TTFDefs.hpp"
 #include "config.h"
 
@@ -41,6 +42,8 @@ public:
 
     virtual ~FontData() = default;
 
+    TTFCache cache;
+
     [[nodiscard]] inline auto isInitialized() const -> bool { return initialized_; }
     [[nodiscard]] inline auto getLibrary() const -> FT_Library { return library; }
 
@@ -50,8 +53,8 @@ public:
     [[nodiscard]] virtual auto getPrivateData() const -> MemoryPtr = 0;
     [[nodiscard]] virtual auto getPrivateDataSize() const -> int = 0;
 
-    virtual auto ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2, FIX16 *kern) const
-        -> bool = 0;
+    virtual auto ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2,
+                         FIX16 *kern) const -> bool = 0;
 
     auto load() -> bool;
 };

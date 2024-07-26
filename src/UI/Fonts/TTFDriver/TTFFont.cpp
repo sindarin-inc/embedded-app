@@ -3,6 +3,7 @@
 #if CONFIG_FONT_TTF
 
 #include <algorithm>
+#include <esp_heap_caps.h>
 #include <execution>
 #include <optional>
 
@@ -61,7 +62,7 @@ auto Font::ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2, FIX16 *ker
     return res;
 }
 
-void Font::copyBitmap(Bitmap &to, bool toHeightBit, Bitmap &from, Pos atPos, bool inverted) {
+void Font::copyBitmap(Bitmap &to, bool toHeightBit, const Bitmap &from, Pos atPos, bool inverted) {
     if (fontPixelResolution_ == font_defs::PixelResolution::ONE_BIT) {
 
         if (toHeightBit) {
@@ -245,6 +246,8 @@ auto Font::getGlyph(GlyphCode glyphCode, Glyph &appGlyph, bool loadBitmap, bool 
         auto dim = Dim(slot->bitmap.width, slot->bitmap.rows);
         lastGlyphWidth_ = slot->bitmap.width;
 
+        // log_d("Pitch: %d", slot->bitmap.pitch);
+
         if constexpr (DEBUG_BITMAP) {
             if (showGlyph && (lastGlyphWidth_ > 0)) {
                 font_defs::Bitmap bm{};
@@ -255,7 +258,7 @@ auto Font::getGlyph(GlyphCode glyphCode, Glyph &appGlyph, bool loadBitmap, bool 
                 //- log_d("ii");
                 //- Delay(10);
                 //- SHOW_HEAP();
-                //- showBitmap(bm, inverted);
+                showBitmap(bm, inverted);
                 //- SHOW_HEAP();
                 //- Delay(10);
                 //- log_d("ij");
@@ -264,31 +267,36 @@ auto Font::getGlyph(GlyphCode glyphCode, Glyph &appGlyph, bool loadBitmap, bool 
         //- log_d("j");
         if (caching) {
             appGlyph.bitmap.dim = dim;
-            // glyph->pitch = slot->bitmap.pitch;
+            appGlyph.bitmap.pitch = slot->bitmap.pitch;
 
-            uint16_t size = (fontPixelResolution_ == PixelResolution::ONE_BIT)
-                                ? dim.height * ((dim.width + 7) >> 3)
-                                : dim.height * dim.width;
+            // uint16_t size = (fontPixelResolution_ == PixelResolution::ONE_BIT)
+            //                     ? dim.height * ((dim.width + 7) >> 3)
+            //                     : dim.height * dim.width;
 
             toHeightBit = fontPixelResolution_ != PixelResolution::ONE_BIT;
 
+            uint16_t size = dim.height * appGlyph.bitmap.pitch;
+
+            // log_d("Size: %u", size);
+
             if (size > 0) {
-                appGlyph.bitmap.pixels = new (std::nothrow) uint8_t[size];
+                appGlyph.bitmap.pixels = (font_defs::MemoryPtr)heap_caps_malloc(
+                    size, MALLOC_CAP_SPIRAM); // new (std::nothrow) uint8_t[size];
                 if (appGlyph.bitmap.pixels == nullptr) {
                     LOGE("Unable to allocate glyph pixel memory of size %d!", size);
                     appGlyph.bitmap.dim = Dim(0, 0);
                     return false;
                 }
-                memset(appGlyph.bitmap.pixels, inverted ? 0 : 0xFF, size);
+                memcpy(appGlyph.bitmap.pixels, slot->bitmap.buffer, size);
             }
+        } else {
+            Bitmap glyphBitmap = {.pixels = slot->bitmap.buffer,
+                                  .dim = Dim(slot->bitmap.width, slot->bitmap.rows),
+                                  .pitch = static_cast<uint16_t>(slot->bitmap.pitch)};
+
+            Pos outPos = Pos(atPos.x + slot->bitmap_left, atPos.y - slot->bitmap_top);
+            copyBitmap(appGlyph.bitmap, toHeightBit, glyphBitmap, outPos, inverted);
         }
-
-        Bitmap glyphBitmap = {.pixels = slot->bitmap.buffer,
-                              .dim = Dim(slot->bitmap.width, slot->bitmap.rows),
-                              .pitch = static_cast<uint16_t>(slot->bitmap.pitch)};
-
-        Pos outPos = Pos(atPos.x + slot->bitmap_left, atPos.y - slot->bitmap_top);
-        copyBitmap(appGlyph.bitmap, toHeightBit, glyphBitmap, outPos, inverted);
     }
 
     appGlyph.metrics = {.xoff = static_cast<int16_t>(-slot->bitmap_left),
@@ -305,6 +313,8 @@ auto Font::getGlyphMetrics(GlyphCode glyphCode, Glyph &appGlyph) -> bool {
 
     appGlyph.clear();
 
+    // log_d("Glyph metrics for glyphcode: %d", glyphCode);
+
     FT_Face theFace = (glyphCode >= 0x8000) ? privateFace_ : face_;
     GlyphCode theGlyphCode = (glyphCode >= 0x8000) ? glyphCode - 0x8000 : glyphCode;
 
@@ -318,25 +328,35 @@ auto Font::getGlyphMetrics(GlyphCode glyphCode, Glyph &appGlyph) -> bool {
         return true;
     }
 
-    auto error = FT_Load_Glyph(theFace,            /* handle to face object */
-                               theGlyphCode,       /* glyph index           */
-                               FT_LOAD_NO_BITMAP); /* load flags */
-    if (error) {
+    // auto error = FT_Load_Glyph(theFace,            /* handle to face object */
+    //                            theGlyphCode,       /* glyph index           */
+    //                            FT_LOAD_NO_BITMAP); /* load flags */
+    // if (error) {
+
+    std::optional<const Glyph *> glyph = fontData_.cache.getGlyph(*this, glyphCode, size_);
+
+    if (!glyph.has_value()) {
+
         LOGE("Unable to load glyph for charcode: %d", theGlyphCode);
         return false;
     }
 
-    FT_GlyphSlot slot = theFace->glyph;
+    appGlyph.bitmap.dim = glyph.value()->bitmap.dim;
+    appGlyph.metrics = glyph.value()->metrics;
 
-    appGlyph.bitmap.dim = Dim(slot->bitmap.width, slot->bitmap.rows);
+    // FT_GlyphSlot slot = theFace->glyph;
 
-    appGlyph.metrics = {.xoff = static_cast<int16_t>(-slot->bitmap_left),
-                        .yoff = static_cast<int16_t>(-slot->bitmap_top),
-                        .descent = static_cast<int16_t>((slot->bitmap.rows + slot->bitmap_top) > 0
-                                                            ? slot->bitmap.rows + slot->bitmap_top
-                                                            : 0),
-                        .advance = static_cast<FIX16>(slot->advance.x),
-                        .lineHeight = static_cast<int16_t>(theFace->size->metrics.height >> 6)};
+    // appGlyph.bitmap.dim = Dim(slot->bitmap.width, slot->bitmap.rows);
+
+    // appGlyph.metrics = {.xoff = static_cast<int16_t>(-slot->bitmap_left),
+    //                     .yoff = static_cast<int16_t>(-slot->bitmap_top),
+    //                     .descent = static_cast<int16_t>((slot->bitmap.rows + slot->bitmap_top) >
+    //                     0
+    //                                                         ? slot->bitmap.rows +
+    //                                                         slot->bitmap_top : 0),
+    //                     .advance = static_cast<FIX16>(slot->advance.x),
+    //                     .lineHeight = static_cast<int16_t>(theFace->size->metrics.height >> 6)};
+
     return true;
 }
 
@@ -401,6 +421,7 @@ auto Font::drawSingleLineOfText(font_defs::Bitmap &canvas, font_defs::Pos pos,
     font_defs::Dim maxDim = getTextSize("TQgj");
     font_defs::Dim dim = getTextSize("T");
 
+    // The line height of the font is the height of the font plus the height of the
     // Half of the difference between the line height (less subscripts) and the height
     // of the font is how much we need to move up the text to ensure the subscript part
     // of letters that go below the baseline still fit within the bounding box.
@@ -416,7 +437,7 @@ auto Font::drawSingleLineOfText(font_defs::Bitmap &canvas, font_defs::Pos pos,
         LOGD("drawSingleLineOfText()");
     }
     if (isInitialized()) {
-        Glyph glyph{};
+        // Glyph glyph{};
 
         // We set here the canvas pitch value, as there is still some definitions required at
         // the application-level in regard of the upcoming Sol Glasse augmented resolution.
@@ -428,10 +449,10 @@ auto Font::drawSingleLineOfText(font_defs::Bitmap &canvas, font_defs::Pos pos,
         canvas.pitch = (getPixelResolution() == PixelResolution::ONE_BIT)
                            ? (canvas.dim.width + 7) >> 3
                            : canvas.dim.width;
-        glyph.bitmap = canvas;
+        // glyph.bitmap = canvas;
 
-        ligKernUTF8Map(line, [this, &glyph, &atPos, inverted](GlyphCode glyphCode, FIX16 kern,
-                                                              bool first, bool last) {
+        ligKernUTF8Map(line, [this, &canvas, &atPos, inverted](GlyphCode glyphCode, FIX16 kern,
+                                                               bool first, bool last) {
             int8_t hOffset = first ? getGlyphHOffset(glyphCode) : 0;
             atPos.x += hOffset;
 
@@ -442,13 +463,26 @@ auto Font::drawSingleLineOfText(font_defs::Bitmap &canvas, font_defs::Pos pos,
 
             if (glyphCode == SPACE_CODE) {
                 atPos.x += (spaceSize_ >> 6);
-            } else if (getGlyph(glyphCode, glyph, true, false, atPos, inverted, first)) {
-                // As advance is positive and greather than kern, we can shift right
-                // to get rid of the fix point decimals
+            } else {
+                std::optional<const Glyph *> glyph =
+                    fontData_.cache.getGlyph(*this, glyphCode, size_);
 
-                //- log_d("Four");
-                atPos.x += last ? lastGlyphWidth_ - (kern / 64) - glyph.metrics.xoff
-                                : ((glyph.metrics.advance + kern) >> 6);
+                if (glyph.has_value()) {
+                    copyBitmap(canvas, getPixelResolution() == PixelResolution::EIGHT_BITS,
+                               glyph.value()->bitmap, atPos, inverted);
+
+                    atPos.x += last ? lastGlyphWidth_ - (kern / 64) - glyph.value()->metrics.xoff
+                                    : ((glyph.value()->metrics.advance + kern) >> 6);
+
+                    //    if (getGlyph(glyphCode, glyph, true, false, atPos, inverted, first)) {
+                    //         // As advance is positive and greather than kern, we can shift right
+                    //         // to get rid of the fix point decimals
+
+                    //         //- log_d("Four");
+                    //         atPos.x += last ? lastGlyphWidth_ - (kern / 64) - glyph.metrics.xoff
+                    //                         : ((glyph.metrics.advance + kern) >> 6);
+                    //     }
+                }
             }
         });
     }
