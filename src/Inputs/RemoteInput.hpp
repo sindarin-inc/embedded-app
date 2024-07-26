@@ -3,6 +3,8 @@
 
 #include <cstdint>
 #include <functional>
+#include <string>
+#include <unordered_map>
 #include <utility>
 
 enum {
@@ -33,6 +35,9 @@ enum RemoteCommand : int {
     ANIMATION = 0xF,
 
     NONE = -1,
+
+    // Add a placeholder for character input
+    CHARACTER_INPUT = 0x10
 };
 
 auto DecodePageTurner(uint16_t processed) -> RemoteCommand;
@@ -40,14 +45,32 @@ auto DecodePageTurner(uint16_t processed) -> RemoteCommand;
 auto CodeToString(RemoteCommand code) -> const char *;
 
 class RemoteInput {
-
 public:
     auto setCallback(std::function<void(RemoteCommand)> callback) -> void {
         callback_ = std::move(callback);
     }
 
+    auto setCharCallback(std::function<bool(char)> charCallback) -> void {
+        charCallback_ = std::move(charCallback);
+    }
+
+    auto handleInput(uint16_t processed) -> void {
+        RemoteCommand command = DecodePageTurner(processed);
+        if (command != RemoteCommand::NONE && callback_) {
+            callback_(command);
+        }
+    }
+
+    auto handleCharInput(char inputChar) -> bool {
+        if (charCallback_) {
+            return charCallback_(inputChar);
+        }
+        return false;
+    }
+
 protected:
     std::function<void(RemoteCommand)> callback_;
+    std::function<bool(char)> charCallback_;
 };
 
 #endif

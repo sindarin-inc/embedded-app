@@ -48,9 +48,16 @@ protected:
                 log_d("Page turner button: %.2x %.2x", value[0], value[1]);
                 uint16_t processed = (value[0] << 8) | (value[1]);
                 RemoteCommand command = DecodePageTurner(processed);
-
+                bool sendCommand = false;
+                // Send ASCII characters to the character input handler
+                if (value[0] >= 20 && value[0] < 128) {
+                    sendCommand = enclosed->handleCharInput(value[0]);
+                }
                 if (command != RemoteCommand::NONE) {
                     this->enclosed->callback_(command);
+                }
+                if (sendCommand) {
+                    this->enclosed->callback_(RemoteCommand::CHARACTER_INPUT);
                 }
             }
         }

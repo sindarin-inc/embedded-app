@@ -4,7 +4,12 @@
 #include <esp_system.h>
 #include <esp_timer.h>
 #include <filesystem>
+#include <functional>
 #include <nvs_flash.h>
+
+#if CONFIG_USE_BLE_SERVER_REMOTE
+#include "Inputs/BLERemoteInput.hpp"
+#endif
 
 #include "Communications/HtmlCleaner.hpp"
 #include "Communications/SindarinAPI.hpp"
@@ -55,6 +60,7 @@
 #include "UI/ToggleMenuScreen.hpp"
 #include "UI/TutorialScreen.hpp"
 #include "UI/WiFiScanScreen.hpp"
+#include "UI/WordsScreen.hpp"
 #include "Version.hpp"
 #include "config.h"
 #include "sindarin-debug.h"
@@ -403,6 +409,28 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     if (!prefs_.noBooks.get().value_or(false)) {
         mainMenu->addSubMenu(booksMenu);
     }
+
+    auto makeNewWordsItem = [this, display, &fileSystem, mainMenu](const char *title) -> MenuItem {
+        return {title, [this, display, &fileSystem, mainMenu]() {
+                    auto wordsScreen =
+                        new WordsScreen(*display, this->prefs_, this->telemetry_, fileSystem);
+#if CONFIG_USE_BLE_SERVER_REMOTE
+                    BLERemoteInput::getInstance()->setCharCallback(std::bind(
+                        &WordsScreen::processCharacterInput, wordsScreen, std::placeholders::_1));
+#endif
+                    this->setCurrentScreen(*wordsScreen);
+                    wordsScreen->setBackCallback([this, wordsScreen, mainMenu, display]() {
+                        display->clearDisplay();
+                        mainMenu->setFirstLoad();
+                        setCurrentScreen(*mainMenu);
+                        delete wordsScreen;
+                    });
+                }};
+    };
+
+    auto wordsMenu = new Menu(mainMenu->getMyStyle(), "Words");
+    wordsMenu->addMenuItem(makeNewWordsItem("New Words"));
+    mainMenu->addSubMenu(wordsMenu);
 
     log_i("Loading %zu Pocket articles", articles.size());
 

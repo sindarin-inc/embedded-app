@@ -1,3 +1,4 @@
+
 #include "RemoteInput.hpp"
 
 #include "sindarin-debug.h"
@@ -43,8 +44,7 @@ auto CodeToString(RemoteCommand code) -> const char * {
     case BACK:
         return "Back";
     case NONE:
-    default: {
+    default:
+        return "Unknown";
     }
-    }
-    return "Unknown";
 }

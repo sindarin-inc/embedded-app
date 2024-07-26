@@ -45,7 +45,7 @@ public:
 protected:
     static std::shared_ptr<BLEManager> instance;
     BLEServer *server_ = nullptr;
-    bool authed_ = false;
+    bool authed_ = true;
     uint16_t connId_ = BLE_HS_CONN_HANDLE_NONE;
 
     class ServerCallbacks : public BLEServerCallbacks {
@@ -77,7 +77,7 @@ protected:
         void onDisconnect(NimBLEServer *pServer, NimBLEConnInfo &connInfo, int reason) override {
             SHOW_HEAP();
             log_i("BLE client disconnected from our server!");
-            enclosed->authed_ = false;
+            enclosed->authed_ = true;
         }
     };
 };
