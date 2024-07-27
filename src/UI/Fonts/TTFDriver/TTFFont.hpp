@@ -88,7 +88,7 @@ private:
     auto ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2, FIX16 *kern) const -> bool;
     auto getGlyphMetrics(GlyphCode glyphCode, Glyph &appGlyph) -> bool;
 
-    void copyBitmap(Bitmap &to, bool toHeightBit, const Bitmap &from, Pos atPos, bool inverted);
+    void copyBitmap(Bitmap &to, bool toEightBit, const Bitmap &from, Pos atPos, bool inverted);
 
     void showBitmap(const Bitmap &bitmap, bool inverted) const;
 

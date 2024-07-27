@@ -62,10 +62,10 @@ auto Font::ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2, FIX16 *ker
     return res;
 }
 
-void Font::copyBitmap(Bitmap &to, bool toHeightBit, const Bitmap &from, Pos atPos, bool inverted) {
+void Font::copyBitmap(Bitmap &to, bool toEightBit, const Bitmap &from, Pos atPos, bool inverted) {
     if (fontPixelResolution_ == font_defs::PixelResolution::ONE_BIT) {
 
-        if (toHeightBit) {
+        if (toEightBit) {
             uint8_t data;
             auto fromPtr = from.pixels;
             auto toPtr = to.pixels + static_cast<size_t>(atPos.y * to.pitch);
@@ -147,16 +147,22 @@ void Font::copyBitmap(Bitmap &to, bool toHeightBit, const Bitmap &from, Pos atPo
                 }
             }
         }
-    } else { // Font Resolution HEIGHT_BITS
+    } else { // Font Resolution EIGHT_BITS
         auto rowCount = from.dim.height;
         auto fromPtr = from.pixels;
         auto toPtr = &to.pixels[to.dim.width * atPos.y + atPos.x];
         while (rowCount-- > 0) {
             if (inverted) {
-                memcpy(toPtr, fromPtr, from.dim.width);
+                for (uint16_t i = 0; i < from.dim.width; i++) {
+                    if (fromPtr[i] != 0) {
+                        toPtr[i] = fromPtr[i];
+                    }
+                }
             } else {
                 for (uint16_t i = 0; i < from.dim.width; i++) {
-                    toPtr[i] = 255 - fromPtr[i];
+                    if (fromPtr[i] != 0) {
+                        toPtr[i] = 255 - fromPtr[i];
+                    }
                 }
             }
             fromPtr += from.pitch;
@@ -217,7 +223,7 @@ auto Font::getGlyph(GlyphCode glyphCode, Glyph &appGlyph, bool loadBitmap, bool 
     //- log_d("f");
     FT_GlyphSlot slot = theFace->glyph;
     //- log_d("g");
-    bool toHeightBit = pixelResolution_ == font_defs::PixelResolution::EIGHT_BITS;
+    bool toEightBit = getPixelResolution() == font_defs::PixelResolution::EIGHT_BITS;
 
     if (loadBitmap) {
         //- log_d("h");
@@ -269,12 +275,6 @@ auto Font::getGlyph(GlyphCode glyphCode, Glyph &appGlyph, bool loadBitmap, bool 
             appGlyph.bitmap.dim = dim;
             appGlyph.bitmap.pitch = slot->bitmap.pitch;
 
-            // uint16_t size = (fontPixelResolution_ == PixelResolution::ONE_BIT)
-            //                     ? dim.height * ((dim.width + 7) >> 3)
-            //                     : dim.height * dim.width;
-
-            toHeightBit = fontPixelResolution_ != PixelResolution::ONE_BIT;
-
             uint16_t size = dim.height * appGlyph.bitmap.pitch;
 
             // log_d("Size: %u", size);
@@ -295,7 +295,7 @@ auto Font::getGlyph(GlyphCode glyphCode, Glyph &appGlyph, bool loadBitmap, bool 
                                   .pitch = static_cast<uint16_t>(slot->bitmap.pitch)};
 
             Pos outPos = Pos(atPos.x + slot->bitmap_left, atPos.y - slot->bitmap_top);
-            copyBitmap(appGlyph.bitmap, toHeightBit, glyphBitmap, outPos, inverted);
+            copyBitmap(appGlyph.bitmap, toEightBit, glyphBitmap, outPos, inverted);
         }
     }
 
@@ -603,7 +603,7 @@ auto Font::toChar32(const char **str) -> char32_t {
     return res;
 }
 
-auto Font::getTextHeight(const std::string &buffer) const -> int {
+auto Font::getTextHeight(const std::string &buffer) -> int {
     if constexpr (TTF_TRACING) {
         LOGD("getTextHeight()");
     }

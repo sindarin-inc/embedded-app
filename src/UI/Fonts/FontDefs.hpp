@@ -24,10 +24,11 @@ typedef uint8_t *MemoryPtr;
 enum class PixelResolution : uint8_t { ONE_BIT, EIGHT_BITS };
 
 // For 8-bit screen:
+//
 //   - the Screen Resolution can be EIGHT_BITS or ONE_BIT, depending on their availability with the
 //     device
 //   - if CONFIG_FONT_TTF: the Font Resolution can be EIGHT_BITS (grayscale antialiasing) or
-//   ONE_BIT (Monochome)
+//     ONE_BIT (Monochome)
 //   - if IMBF_SUPPORT: only ONE_BIT is available for Font Resolution
 //
 // For the first version of the Sol Reader, only ONE_BIT is available for both Screen and Font
