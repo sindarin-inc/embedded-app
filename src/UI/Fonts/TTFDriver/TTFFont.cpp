@@ -1,6 +1,6 @@
 #include "config.h"
 
-#if CONFIG_FONT_TTF
+#if 1 // CONFIG_FONT_TTF
 
 #include <algorithm>
 #include <esp_heap_caps.h>
@@ -468,8 +468,12 @@ auto Font::drawSingleLineOfText(font_defs::Bitmap &canvas, font_defs::Pos pos,
                     fontData_.cache.getGlyph(*this, glyphCode, size_);
 
                 if (glyph.has_value()) {
-                    copyBitmap(canvas, getPixelResolution() == PixelResolution::EIGHT_BITS,
-                               glyph.value()->bitmap, atPos, inverted);
+                    if (glyph.value()->bitmap.dim.width > 0) {
+                        Pos outPos = Pos(atPos.x - glyph.value()->metrics.xoff,
+                                         atPos.y + glyph.value()->metrics.yoff);
+                        copyBitmap(canvas, getPixelResolution() == PixelResolution::EIGHT_BITS,
+                                   glyph.value()->bitmap, outPos, inverted);
+                    }
 
                     atPos.x += last ? lastGlyphWidth_ - (kern / 64) - glyph.value()->metrics.xoff
                                     : ((glyph.value()->metrics.advance + kern) >> 6);

@@ -53,6 +53,7 @@ auto TTFCache::getGlyph(Font &font, font_defs::GlyphCode glyphCode,
 }
 
 void TTFCache::clear() {
+    showStats();
     for (auto &entry : glyphCache) {
         free(entry.second->bitmap.pixels);
     }
@@ -62,7 +63,7 @@ void TTFCache::clear() {
 }
 
 void TTFCache::showStats() {
-    log_i("Glyphs' cache statistics: hits: %" PRIu32 ", misses: %" PRIu32 ".", hitCount, missCount)
+    log_i("Glyphs' cache statistics: hits: %" PRIu32 ", misses: %" PRIu32 ".", hitCount, missCount);
 }
 
 #endif
