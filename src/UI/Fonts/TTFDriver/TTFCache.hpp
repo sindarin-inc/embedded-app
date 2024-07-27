@@ -27,8 +27,8 @@ public:
 
     ~TTFCache() { clear(); }
 
-    auto getGlyph(Font &font, GlyphCode glyphCode,
-                  int16_t charSize) -> std::optional<const Glyph *>;
+    auto getGlyph(Font &font, GlyphCode glyphCode, int16_t charSize)
+        -> std::optional<const Glyph *>;
 
     void clear();
     void showStats();
