@@ -62,7 +62,7 @@ void TTFCache::clear() {
 }
 
 void TTFCache::showStats() {
-    log_i("Glyphs' cache statistics: hits: %" PRIu32 ", misses: %" PRIu32 ".", hitCount, missCount)
+    log_i("Glyphs' cache statistics: hits: %" PRIu32 ", misses: %" PRIu32 ".", hitCount, missCount);
 }
 
 #endif
