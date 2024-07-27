@@ -27,10 +27,15 @@ public:
 
     ~TTFCache() { clear(); }
 
-    auto getGlyph(Font &font, GlyphCode glyphCode, int16_t charSize) -> std::optional<Glyph *>;
+    auto getGlyph(Font &font, GlyphCode glyphCode,
+                  int16_t charSize) -> std::optional<const Glyph *>;
 
     void clear();
     void showStats();
+
+    void showBitmap(const Bitmap &bitmap, bool inverted, PixelResolution pixelResolution) const;
+
+    void showGlyph(const Glyph &glyph, bool displayBitmap, PixelResolution pixelResolution) const;
 };
 
 #endif

@@ -29,7 +29,6 @@ private:
 
     // Maximum size of an allocated buffer to do vsnprintf formatting
     static constexpr int MAX_SIZE = 100;
-    static constexpr bool DEBUG_BITMAP = false;
 
     typedef std::function<void(GlyphCode, FIX16, bool, bool)> const &LigKernMappingHandler;
 
@@ -58,24 +57,10 @@ private:
             return true;
         }
 
-        // int error = FT_Load_Glyph(theFace,            /* handle to face object */
-        //                           theGlyphCode,       /* glyph index           */
-        //                           FT_LOAD_NO_BITMAP); /* get only metrics      */
-
-        // if (error) {
-        //     return false;
-        // }
-
-        // xoff = theFace->glyph->bitmap_left;
-        // advance = theFace->glyph->advance.x >> 6;
-        // glyphWidth = theFace->glyph->bitmap.width;
-        //
-        // return true;
-
         return false;
     }
 
-    [[nodiscard]] inline auto getGlyphHOffset(GlyphCode glyphCode) -> int8_t {
+    [[nodiscard]] inline auto getGlyphHOffset(GlyphCode glyphCode) -> int16_t {
         Glyph glyph{};
 
         if (getGlyphMetrics(glyphCode, glyph)) {
@@ -88,9 +73,7 @@ private:
     auto ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2, FIX16 *kern) const -> bool;
     auto getGlyphMetrics(GlyphCode glyphCode, Glyph &appGlyph) -> bool;
 
-    void copyBitmap(Bitmap &to, bool toEightBit, const Bitmap &from, Pos atPos, bool inverted);
-
-    void showBitmap(const Bitmap &bitmap, bool inverted) const;
+    void copyBitmap(Bitmap &to, bool toEightBits, const Bitmap &from, Pos atPos, bool inverted);
 
 public:
     Font(FontData &fontData, int size) noexcept : fontData_(fontData), size_(size) {
@@ -117,35 +100,33 @@ public:
                         fontData_.cache.getGlyph(*this, glyphCode, size_);
 
                     if (!glyph.has_value()) {
-                        // error = FT_Load_Glyph(face_,              /* handle to face object */
-                        //                       glyphCode,          /* glyph index           */
-                        //                       FT_LOAD_NO_BITMAP); /* load flags */
-                        // if (error) {
                         LOGE("Unable to load glyph for space char.");
+                        spaceSize_ = 5 * 64; // Use a default size
                     } else {
                         spaceSize_ = glyph.value()->metrics.advance;
+                        log_w("Space size: %" PRIi16, spaceSize_ / 64);
+                    }
 
-                        error = FT_New_Memory_Face(
-                            fontData_.getLibrary(), (const FT_Byte *)(fontData_.getPrivateData()),
-                            fontData_.getPrivateDataSize(), 0, &privateFace_);
+                    error = FT_New_Memory_Face(fontData_.getLibrary(),
+                                               (const FT_Byte *)(fontData_.getPrivateData()),
+                                               fontData_.getPrivateDataSize(), 0, &privateFace_);
+                    if (error) {
+                        LOGE("The memory of the private font format is unsupported or is "
+                             "broken (%d).",
+                             error);
+                    } else {
+                        error =
+                            FT_Set_Char_Size(privateFace_,        // handle to face object
+                                             0,                   // char_width in 1/64th of points
+                                             size_ * 64,          // char_height in 1/64th of points
+                                             SCREEN_RES_PER_INCH, // horizontal device resolution
+                                             SCREEN_RES_PER_INCH); // vertical device resolution
                         if (error) {
-                            LOGE("The memory of the private font format is unsupported or is "
-                                 "broken (%d).",
-                                 error);
-                        } else {
-                            error = FT_Set_Char_Size(
-                                privateFace_,         // handle to face object
-                                0,                    // char_width in 1/64th of points
-                                size_ * 64,           // char_height in 1/64th of points
-                                SCREEN_RES_PER_INCH,  // horizontal device resolution
-                                SCREEN_RES_PER_INCH); // vertical device resolution
-                            if (error) {
-                                LOGE("Unable to set private font size.");
-                            }
-
-                            unknownGlyphCode_ = translate(UNKNOWN_CODEPOINT);
-                            initialized_ = true;
+                            LOGE("Unable to set private font size.");
                         }
+
+                        unknownGlyphCode_ = translate(UNKNOWN_CODEPOINT);
+                        initialized_ = true;
                     }
                 }
             }
@@ -169,8 +150,7 @@ public:
         return isInitialized() ? face_->size->metrics.height >> 6 : 0;
     }
 
-    auto getGlyph(GlyphCode glyphCode, Glyph &appGlyph, bool loadBitmap, bool caching = true,
-                  Pos atPos = Pos(0, 0), bool inverted = false, bool showGlyph = false) -> bool;
+    auto getGlyphForCache(GlyphCode glyphCode, Glyph &glyph) -> bool;
 
     inline void setPixelResolution(PixelResolution res) { pixelResolution_ = res; }
 
@@ -204,8 +184,6 @@ public:
 
         int16_t width = 0;
 
-        // log_w("word: %s", buffer);
-
         while (*buffer) {
             int16_t xoff;
             int16_t advance;
@@ -217,7 +195,6 @@ public:
             }
         }
 
-        // log_w(" width quick: %" PRIi16 ": %s", width, b);
         return width;
     }
 
