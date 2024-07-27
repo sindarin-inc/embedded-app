@@ -280,8 +280,8 @@ auto Font::getGlyph(GlyphCode glyphCode, Glyph &appGlyph, bool loadBitmap, bool 
             // log_d("Size: %u", size);
 
             if (size > 0) {
-                appGlyph.bitmap.pixels = (font_defs::MemoryPtr)heap_caps_malloc(
-                    size, MALLOC_CAP_SPIRAM); // new (std::nothrow) uint8_t[size];
+                appGlyph.bitmap.pixels = static_cast<font_defs::MemoryPtr>(
+                    heap_caps_malloc(size, MALLOC_CAP_SPIRAM)); // new (std::nothrow) uint8_t[size];
                 if (appGlyph.bitmap.pixels == nullptr) {
                     LOGE("Unable to allocate glyph pixel memory of size %d!", size);
                     appGlyph.bitmap.dim = Dim(0, 0);
@@ -603,7 +603,7 @@ auto Font::toChar32(const char **str) -> char32_t {
     return res;
 }
 
-auto Font::getTextHeight(const std::string &buffer) -> int {
+auto Font::getTextHeight(const std::string &buffer) const -> int {
     if constexpr (TTF_TRACING) {
         LOGD("getTextHeight()");
     }
