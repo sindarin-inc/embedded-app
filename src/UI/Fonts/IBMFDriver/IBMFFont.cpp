@@ -83,7 +83,7 @@ auto Font::drawSingleLineOfText(ibmf_defs::Bitmap &canvas, ibmf_defs::Pos pos,
         // The following may require some modification as the next Sol Glasses version
         // may be using a different pitch than the one computed here.
 
-        canvas.pitch = (getDisplayPixelResolution_() == PixelResolution::ONE_BIT)
+        canvas.pitch = (getDisplayPixelResolution() == PixelResolution::ONE_BIT)
                            ? (canvas.dim.width + 7) >> 3
                            : canvas.dim.width;
 

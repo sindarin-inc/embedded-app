@@ -57,7 +57,7 @@ public:
     [[nodiscard]] inline auto getLigKernStep(uint16_t idx) const -> LigKernStep * {
         return &(*ligKernSteps_)[idx];
     }
-    [[nodiscard]] inline auto getDisplayPixelResolution_() const -> PixelResolution {
+    [[nodiscard]] inline auto getDisplayPixelResolution() const -> PixelResolution {
         return displayPixelResolution_;
     }
 
@@ -84,7 +84,7 @@ public:
                                                      : NO_LIG_KERN_PGM;
     }
 
-    inline auto setDisplayPixelResolution_(PixelResolution res) -> void {
+    inline auto setDisplayPixelResolution(PixelResolution res) -> void {
         displayPixelResolution_ = res;
     }
 
@@ -106,8 +106,8 @@ public:
     auto showLigKerns() const -> void;
     auto showFace() const -> void;
 
-    inline auto getGlyphHorizontalMetrics(GlyphCode glyphCode, int16_t *xoff,
-                                          FIX16 *advance) -> bool {
+    inline auto getGlyphHorizontalMetrics(GlyphCode glyphCode, int16_t *xoff, FIX16 *advance)
+        -> bool {
 
         if ((glyphCode == SPACE_CODE) ||
             ((*glyphsInfo_)[glyphCode].bitmapWidth == 0)) { // send as a space character

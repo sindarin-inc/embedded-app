@@ -52,13 +52,13 @@ public:
         return isInitialized() ? fontData_->getFace(faceIndex_) : nullptr;
     }
 
-    inline auto setDisplayPixelResolution_(PixelResolution res) -> bool {
+    inline auto setDisplayPixelResolution(PixelResolution res) -> bool {
         if constexpr (!DISPLAY_PIXEL_RESOLUTION_IS_FIX) {
             if constexpr (IBMF_TRACING) {
                 LOGD("setDisplayPixelResolution_()");
             }
             if (isInitialized()) {
-                fontData_->getFace(faceIndex_)->setDisplayPixelResolution_(res);
+                fontData_->getFace(faceIndex_)->setDisplayPixelResolution(res);
                 return true;
             }
         } else {
@@ -67,11 +67,11 @@ public:
         }
     }
 
-    [[nodiscard]] inline auto getDisplayPixelResolution_() const -> PixelResolution {
+    [[nodiscard]] inline auto getDisplayPixelResolution() const -> PixelResolution {
         if constexpr (IBMF_TRACING) {
             LOGD("getDisplayPixelResolution_()");
         }
-        return (isInitialized()) ? fontData_->getFace(faceIndex_)->getDisplayPixelResolution_()
+        return (isInitialized()) ? fontData_->getFace(faceIndex_)->getDisplayPixelResolution()
                                  : DEFAULT_DISPLAY_PIXEL_RESOLUTION;
     }
 
