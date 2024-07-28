@@ -53,13 +53,15 @@ auto TTFCache::getGlyph(Font &font, font_defs::GlyphCode glyphCode,
 }
 
 void TTFCache::clear() {
-    showStats();
     for (auto &entry : glyphCache) {
-        free(entry.second->bitmap.pixels);
+        if (entry.second->bitmap.pixels != nullptr) {
+            free(entry.second->bitmap.pixels);
+            entry.second->bitmap.pixels = nullptr;
+        }
     }
     glyphCache.clear();
     hitCount = missCount = 0;
-    log_w("Glyphs' cache cleared.");
+    log_i("Glyphs' cache cleared.");
 }
 
 void TTFCache::showStats() {

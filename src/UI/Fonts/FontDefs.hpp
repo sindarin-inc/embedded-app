@@ -31,21 +31,27 @@ enum class PixelResolution : uint8_t { ONE_BIT, EIGHT_BITS };
 //     ONE_BIT (Monochome)
 //   - if IMBF_SUPPORT: only ONE_BIT is available for Font Resolution
 //
-// For the first version of the Sol Reader, only ONE_BIT is available for both Screen and Font
-// resolution, for both CONFIG_FONT_IBMF and CONFIG_FONT_TTF
+// For the first version of the Sol Reader, only ONE_BIT is available for both Display Screen and
+// Font resolution, for both CONFIG_FONT_IBMF and CONFIG_FONT_TTF
 
 #if DISPLAY_SIM_8BIT
 #ifdef SIM_ONE_BIT
-const constexpr PixelResolution DEFAULT_PIXEL_RESOLUTION = PixelResolution::EIGHT_BITS;
+const constexpr PixelResolution DEFAULT_DISPLAY_PIXEL_RESOLUTION = PixelResolution::EIGHT_BITS;
 const constexpr PixelResolution DEFAULT_FONT_PIXEL_RESOLUTION = PixelResolution::ONE_BIT;
+const constexpr bool DISPLAY_PIXEL_RESOLUTION_IS_FIX = true;
 #else
-const constexpr PixelResolution DEFAULT_PIXEL_RESOLUTION = PixelResolution::EIGHT_BITS;
+const constexpr PixelResolution DEFAULT_DISPLAY_PIXEL_RESOLUTION = PixelResolution::EIGHT_BITS;
 const constexpr PixelResolution DEFAULT_FONT_PIXEL_RESOLUTION = PixelResolution::EIGHT_BITS;
+const constexpr bool DISPLAY_PIXEL_RESOLUTION_IS_FIX = true;
 #endif
 #else
-const constexpr PixelResolution DEFAULT_PIXEL_RESOLUTION = PixelResolution::ONE_BIT;
+const constexpr PixelResolution DEFAULT_DISPLAY_PIXEL_RESOLUTION = PixelResolution::ONE_BIT;
 const constexpr PixelResolution DEFAULT_FONT_PIXEL_RESOLUTION = PixelResolution::ONE_BIT;
 #endif
+
+const constexpr bool PIXEL_RESOLUTION_OK =
+    ((DEFAULT_DISPLAY_PIXEL_RESOLUTION == PixelResolution::EIGHT_BITS) ||
+     (DEFAULT_FONT_PIXEL_RESOLUTION == PixelResolution::ONE_BIT));
 
 #if CONFIG_FONT_IBMF
 static_assert(DEFAULT_FONT_PIXEL_RESOLUTION == PixelResolution::ONE_BIT,
@@ -53,11 +59,15 @@ static_assert(DEFAULT_FONT_PIXEL_RESOLUTION == PixelResolution::ONE_BIT,
 #endif
 
 #if !DISPLAY_SIM_8BIT
-static_assert(DEFAULT_PIXEL_RESOLUTION == PixelResolution::ONE_BIT,
-              "The first version of Sol Reader only supports an ONE_BIT screen!");
+static_assert(DEFAULT_DISPLAY_PIXEL_RESOLUTION == PixelResolution::ONE_BIT,
+              "The first version of Sol Reader only supports an ONE_BIT display!");
 static_assert(DEFAULT_FONT_PIXEL_RESOLUTION == PixelResolution::ONE_BIT,
               "The first version of Sol Reader only supports ONE_BIT font!");
 #endif
+
+static_assert(
+    PIXEL_RESOLUTION_OK,
+    "The font pixel resolution cannot be EIGHT_BITS if the display resolution is not EIGHT_BITS!");
 
 // FIX16 is a floating point value in 16 bits fixed point notation, 6 bits of fraction
 typedef int16_t FIX16;

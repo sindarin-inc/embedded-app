@@ -62,10 +62,10 @@ auto Font::ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2, FIX16 *ker
     return res;
 }
 
-void Font::copyBitmap(Bitmap &to, bool toEightBits, const Bitmap &from, Pos atPos, bool inverted) {
+void Font::copyBitmap(Bitmap &to, const Bitmap &from, Pos atPos, bool inverted) {
     if (fontPixelResolution_ == font_defs::PixelResolution::ONE_BIT) {
 
-        if (toEightBits) {
+        if (displayPixelResolution_ == PixelResolution::EIGHT_BITS) {
             uint8_t data;
             auto fromPtr = from.pixels;
             auto toPtr = to.pixels + static_cast<size_t>(atPos.y * to.pitch);
@@ -353,7 +353,7 @@ auto Font::drawSingleLineOfText(font_defs::Bitmap &canvas, font_defs::Pos pos,
         // The following may require some modification as the next Sol Glasses version
         // may be using a different pitch than the one computed here.
 
-        canvas.pitch = (getPixelResolution() == PixelResolution::ONE_BIT)
+        canvas.pitch = (displayPixelResolution_ == PixelResolution::ONE_BIT)
                            ? (canvas.dim.width + 7) >> 3
                            : canvas.dim.width;
 
@@ -373,8 +373,7 @@ auto Font::drawSingleLineOfText(font_defs::Bitmap &canvas, font_defs::Pos pos,
                         lastGlyphWidth_ = glyph.value()->bitmap.dim.width;
                         Pos outPos = Pos(atPos.x - glyph.value()->metrics.xoff,
                                          atPos.y + glyph.value()->metrics.yoff);
-                        copyBitmap(canvas, getPixelResolution() == PixelResolution::EIGHT_BITS,
-                                   glyph.value()->bitmap, outPos, inverted);
+                        copyBitmap(canvas, glyph.value()->bitmap, outPos, inverted);
                     }
 
                     // As advance is positive and greather than kern, we can shift right

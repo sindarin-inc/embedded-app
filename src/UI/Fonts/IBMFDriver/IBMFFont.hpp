@@ -52,21 +52,27 @@ public:
         return isInitialized() ? fontData_->getFace(faceIndex_) : nullptr;
     }
 
-    inline void setPixelResolution(PixelResolution res) {
-        if constexpr (IBMF_TRACING) {
-            LOGD("setPixelResolution()");
-        }
-        if (isInitialized()) {
-            fontData_->getFace(faceIndex_)->setPixelResolution(res);
+    inline auto setDisplayPixelResolution_(PixelResolution res) -> bool {
+        if constexpr (!DISPLAY_PIXEL_RESOLUTION_IS_FIX) {
+            if constexpr (IBMF_TRACING) {
+                LOGD("setDisplayPixelResolution_()");
+            }
+            if (isInitialized()) {
+                fontData_->getFace(faceIndex_)->setDisplayPixelResolution_(res);
+                return true;
+            }
+        } else {
+            log_w("The display does not allow to change it's pixel resolution!");
+            return false;
         }
     }
 
-    [[nodiscard]] inline auto getPixelResolution() const -> PixelResolution {
+    [[nodiscard]] inline auto getDisplayPixelResolution_() const -> PixelResolution {
         if constexpr (IBMF_TRACING) {
-            LOGD("getPixelResolution()");
+            LOGD("getDisplayPixelResolution_()");
         }
-        return (isInitialized()) ? fontData_->getFace(faceIndex_)->getPixelResolution()
-                                 : DEFAULT_PIXEL_RESOLUTION;
+        return (isInitialized()) ? fontData_->getFace(faceIndex_)->getDisplayPixelResolution_()
+                                 : DEFAULT_DISPLAY_PIXEL_RESOLUTION;
     }
 
     [[nodiscard]] inline auto lineHeight() const -> int {

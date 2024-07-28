@@ -100,7 +100,7 @@ auto IBMFFace::ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2, FIX16 
     }
 
     // TODO: Implement optical kerning for 8-bits resolution (GT)
-    if (pixelResolution_ == PixelResolution::EIGHT_BITS) {
+    if (displayPixelResolution_ == PixelResolution::EIGHT_BITS) {
         *kern = 1;
         return false;
     }
@@ -112,7 +112,7 @@ auto IBMFFace::ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2, FIX16 
 #define FRACT_BITS 10
 #define FIXED_POINT_ONE (1 << FRACT_BITS)
 #define MAKE_INT_FIXED(x) (static_cast<FIX32>((x) << FRACT_BITS))
-#define MAKE_FLOAT_FIXED(x) (static_cast<FIX32>((x)*FIXED_POINT_ONE))
+#define MAKE_FLOAT_FIXED(x) (static_cast<FIX32>((x) * FIXED_POINT_ONE))
 #define MAKE_FIXED_INT(x) ((x) >> FRACT_BITS)
 #define MAKE_FIXED_FLOAT(x) ((static_cast<float>(x)) / FIXED_POINT_ONE)
 
@@ -485,7 +485,7 @@ auto IBMFFace::getGlyph(GlyphCode glyphCode, Glyph &appGlyph, bool loadBitmap, b
 
     Dim dim = Dim(glyphInfo->bitmapWidth, glyphInfo->bitmapHeight);
     uint8_t pitch =
-        (pixelResolution_ == PixelResolution::ONE_BIT) ? ((dim.width + 7) >> 3) : dim.width;
+        (displayPixelResolution_ == PixelResolution::ONE_BIT) ? ((dim.width + 7) >> 3) : dim.width;
     Pos glyphOffsets = Pos(0, 0);
 
     glyphOffsets.y = -glyphInfo->verticalOffset;
@@ -498,7 +498,7 @@ auto IBMFFace::getGlyph(GlyphCode glyphCode, Glyph &appGlyph, bool loadBitmap, b
             uint16_t size = dim.height * pitch;
 
             uint8_t white;
-            if (pixelResolution_ == PixelResolution::ONE_BIT) {
+            if (displayPixelResolution_ == PixelResolution::ONE_BIT) {
                 white = WHITE_ONE_BIT ? 0xFF : 0;
             } else {
                 white = WHITE_EIGHT_BITS;
@@ -522,7 +522,7 @@ auto IBMFFace::getGlyph(GlyphCode glyphCode, Glyph &appGlyph, bool loadBitmap, b
             .length = glyphInfo->packetLength,
             .pitch = pitch,
         };
-        RLEExtractor rle(pixelResolution_);
+        RLEExtractor rle(displayPixelResolution_);
 
         Pos outPos = Pos(atPos.x + glyphOffsets.x, atPos.y + glyphOffsets.y);
         // std::cout << "inPos: [" << atPos.x << ", " << atPos.y << "], outPos: [" << outPos.x
@@ -631,7 +631,7 @@ auto IBMFFace::showBitmap(const Bitmap &bitmap) const -> void {
         }
         std::cout << '+' << std::endl << std::flush;
 
-        if (pixelResolution_ == PixelResolution::ONE_BIT) {
+        if (displayPixelResolution_ == PixelResolution::ONE_BIT) {
             uint32_t rowSize = (bitmap.dim.width + 7) >> 3;
             for (row = 0, rowPtr = bitmap.pixels; row < bitmap.dim.height;
                  row++, rowPtr += rowSize) {
@@ -671,8 +671,8 @@ auto IBMFFace::showBitmap(const Bitmap &bitmap) const -> void {
     }
 }
 
-auto IBMFFace::showGlyph(const Glyph &glyph, GlyphCode glyphCode, char32_t codePoint) const
-    -> void {
+auto IBMFFace::showGlyph(const Glyph &glyph, GlyphCode glyphCode,
+                         char32_t codePoint) const -> void {
     if constexpr (DEBUG) {
         std::cout << "Glyph Base Code: 0x" << std::hex << glyphCode << std::dec << "(" << +codePoint
                   << ")" << std::endl
@@ -713,12 +713,10 @@ auto IBMFFace::showLigKerns() const -> void {
         for (i = 0; i < faceHeader_->ligKernStepCount; i++) {
             LigKernStep *entry = &(*ligKernSteps_)[i];
             if (entry->b.goTo.isAKern && entry->b.goTo.isAGoTo) {
-                std::cout << "  [" << i << "]:  "
-                          << "Goto: " << entry->b.goTo.displacement;
+                std::cout << "  [" << i << "]:  " << "Goto: " << entry->b.goTo.displacement;
             } else {
-                std::cout << "  [" << i << "]:  "
-                          << "Stop: " << (entry->a.stop ? "Yes" : "No") << ", "
-                          << "NxtGlyphCode: " << +entry->a.nextGlyphCode << ", "
+                std::cout << "  [" << i << "]:  " << "Stop: " << (entry->a.stop ? "Yes" : "No")
+                          << ", " << "NxtGlyphCode: " << +entry->a.nextGlyphCode << ", "
                           << "IsKern: " << (entry->b.kern.isAKern ? "Yes" : "No") << ", "
                           << (entry->b.kern.isAKern ? "Kern Value: " : "Lig char: ");
                 if (entry->b.kern.isAKern) {

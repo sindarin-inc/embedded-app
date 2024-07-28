@@ -22,7 +22,7 @@ private:
     int size_;
     FIX16 spaceSize_{0};
     uint8_t lastGlyphWidth_{};
-    PixelResolution pixelResolution_{DEFAULT_PIXEL_RESOLUTION};
+    PixelResolution displayPixelResolution_{DEFAULT_DISPLAY_PIXEL_RESOLUTION};
     PixelResolution fontPixelResolution_{DEFAULT_FONT_PIXEL_RESOLUTION};
 
     GlyphCode unknownGlyphCode_{0};
@@ -73,7 +73,7 @@ private:
     auto ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2, FIX16 *kern) const -> bool;
     auto getGlyphMetrics(GlyphCode glyphCode, Glyph &appGlyph) -> bool;
 
-    void copyBitmap(Bitmap &to, bool toEightBits, const Bitmap &from, Pos atPos, bool inverted);
+    void copyBitmap(Bitmap &to, const Bitmap &from, Pos atPos, bool inverted);
 
 public:
     Font(FontData &fontData, int size) noexcept : fontData_(fontData), size_(size) {
@@ -104,7 +104,6 @@ public:
                         spaceSize_ = 5 * 64; // Use a default size
                     } else {
                         spaceSize_ = glyph.value()->metrics.advance;
-                        log_w("Space size: %" PRIi16, spaceSize_ / 64);
                     }
 
                     error = FT_New_Memory_Face(fontData_.getLibrary(),
@@ -152,13 +151,44 @@ public:
 
     auto getGlyphForCache(GlyphCode glyphCode, Glyph &glyph) -> bool;
 
-    inline void setPixelResolution(PixelResolution res) { pixelResolution_ = res; }
-
-    [[nodiscard]] inline auto getPixelResolution() const -> PixelResolution {
-        return (initialized_) ? pixelResolution_ : DEFAULT_PIXEL_RESOLUTION;
+    [[nodiscard]] inline auto setDisplayPixelResolution(PixelResolution res) -> bool {
+        if constexpr (!DISPLAY_PIXEL_RESOLUTION_IS_FIX) {
+            if (initialized_) {
+                if (displayPixelResolution_ != res) {
+                    // check for coherence of fontPixelResolution
+                    if ((res == PixelResolution::ONE_BIT) &&
+                        (fontPixelResolution_ == PixelResolution::EIGHT_BITS)) {
+                        setFontPixelResolution(PixelResolution::ONE_BIT);
+                    }
+                    displayPixelResolution_ = res;
+                }
+            }
+            return true;
+        } else {
+            log_w("The display does not allow to change it's pixel resolution!");
+            return false;
+        }
     }
 
-    inline void setFontPixelResolution(PixelResolution res) { fontPixelResolution_ = res; }
+    [[nodiscard]] inline auto getDisplayPixelResolution() const -> PixelResolution {
+        return (initialized_) ? displayPixelResolution_ : DEFAULT_DISPLAY_PIXEL_RESOLUTION;
+    }
+
+    inline void setFontPixelResolution(PixelResolution res) {
+        if (initialized_) {
+            if (fontPixelResolution_ != res) {
+                if ((res == PixelResolution::EIGHT_BITS) &&
+                    (displayPixelResolution_ != PixelResolution::EIGHT_BITS)) {
+                    log_e(
+                        "Cannot set font resolution to EIGHT_BITS if the display resolution is not "
+                        "EIGHT_BITS!");
+                } else {
+                    fontData_.cache.clear();
+                    fontPixelResolution_ = res;
+                }
+            }
+        }
+    }
 
     [[nodiscard]] inline auto getFontPixelResolution() const -> PixelResolution {
         return (initialized_) ? fontPixelResolution_ : DEFAULT_FONT_PIXEL_RESOLUTION;
