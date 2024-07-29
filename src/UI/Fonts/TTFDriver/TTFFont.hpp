@@ -49,12 +49,20 @@ private:
         // FT_Face theFace = (glyphCode >= 0x8000) ? privateFace_ : face_;
         GlyphCode theGlyphCode = (glyphCode >= 0x8000) ? glyphCode - 0x8000 : glyphCode;
 
-        std::optional<const Glyph *> glyph = fontData_.cache.getGlyph(*this, theGlyphCode, size_);
-        if (glyph.has_value()) {
-            xoff = glyph.value()->metrics.xoff;
-            advance = glyph.value()->metrics.advance >> 6;
-            glyphWidth = glyph.value()->bitmap.dim.width;
+        if (glyphCode == SPACE_CODE) {
+            xoff = 0;
+            advance = spaceSize_ >> 6;
+            glyphWidth = advance;
             return true;
+        } else {
+            std::optional<const Glyph *> glyph =
+                fontData_.cache.getGlyph(*this, theGlyphCode, size_);
+            if (glyph.has_value()) {
+                xoff = glyph.value()->metrics.xoff;
+                advance = glyph.value()->metrics.advance >> 6;
+                glyphWidth = glyph.value()->bitmap.dim.width;
+                return true;
+            }
         }
 
         return false;

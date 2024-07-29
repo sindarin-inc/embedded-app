@@ -184,17 +184,6 @@ auto Font::getGlyphForCache(GlyphCode glyphCode, Glyph &glyph) -> bool {
 
     FT_Face theFace = (glyphCode >= 0x8000) ? privateFace_ : face_;
 
-    if (glyphCode == SPACE_CODE) { // send as a space character
-        appGlyph.pointSize = theFace->pointSize;
-        appGlyph.metrics = {.xoff = 0,
-                            .yoff = 0,
-                            .descent = 0,
-                            .advance =
-                                static_cast<FIX16>(static_cast<uint16_t>(theFace->spaceSize) << 6),
-                            .lineHeight = theFace->lineHeight};
-        return true;
-    }
-
     GlyphCode theGlyphCode = (glyphCode >= 0x8000) ? glyphCode - 0x8000 : glyphCode;
 
     glyph.clear();
