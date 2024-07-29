@@ -137,12 +137,14 @@ void ReadableTableOfContentsScreen::processCommand(RemoteCommand command) {
         if (prevSelection()) {
             firstLoad_ = true;
         }
+        log_d("NAVIGATION: Popup menu selection: %s", getCurrItem().title.c_str());
         setNeedsRerender();
         break;
     case RemoteCommand::DOWN:
         if (nextSelection()) {
             firstLoad_ = true;
         }
+        log_d("NAVIGATION: Popup menu selection: %s", getCurrItem().title.c_str());
         setNeedsRerender();
         break;
     case RemoteCommand::ENTER:

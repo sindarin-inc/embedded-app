@@ -122,7 +122,7 @@
 #endif
 
 #if CONFIG_FONT_TTF
-#define FT_USE_PSRAM 0
+#define FT_USE_PSRAM 1
 #endif
 
 // Set DISPLAY_PIXEL_RESOLUTION_IS_FIX to 0 for displays that allow changing their pixel
