@@ -5,8 +5,8 @@
 #include "TTFCache.hpp"
 #include "TTFFont.hpp"
 
-auto TTFCache::getGlyph(Font &font, font_defs::GlyphCode glyphCode,
-                        int16_t charSize) -> std::optional<const font_defs::Glyph *> {
+auto TTFCache::getGlyph(Font &font, font_defs::GlyphCode glyphCode, int16_t charSize)
+    -> std::optional<const font_defs::Glyph *> {
 
     // log_d("glyph cache request for glyphCode %" PRIu16 " and size %" PRIi16 ".", glyphCode,
     //       charSize);
