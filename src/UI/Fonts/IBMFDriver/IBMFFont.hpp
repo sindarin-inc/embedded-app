@@ -53,18 +53,19 @@ public:
     }
 
     inline auto setDisplayPixelResolution(PixelResolution res) -> bool {
-        if constexpr (!DISPLAY_PIXEL_RESOLUTION_IS_FIX) {
-            if constexpr (IBMF_TRACING) {
-                LOGD("setDisplayPixelResolution_()");
-            }
-            if (isInitialized()) {
-                fontData_->getFace(faceIndex_)->setDisplayPixelResolution(res);
-                return true;
-            }
-        } else {
-            log_w("The display does not allow to change it's pixel resolution!");
-            return false;
+#if DISPLAY_PIXEL_RESOLUTION_IS_FIX
+        log_w("The display does not allow to change it's pixel resolution!");
+        return false;
+#else
+
+        if constexpr (IBMF_TRACING) {
+            LOGD("setDisplayPixelResolution_()");
         }
+        if (isInitialized()) {
+            fontData_->getFace(faceIndex_)->setDisplayPixelResolution(res);
+            return true;
+        }
+#endif
     }
 
     [[nodiscard]] inline auto getDisplayPixelResolution() const -> PixelResolution {

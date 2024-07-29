@@ -125,6 +125,6 @@
 #define FT_USE_PSRAM 0
 #endif
 
-// Set DISPLAY_PIXEL_RESOLUTION_IS_FIX to false for displays that allow changing their pixel
+// Set DISPLAY_PIXEL_RESOLUTION_IS_FIX to 0 for displays that allow changing their pixel
 // resolution dynamically.
-const constexpr bool DISPLAY_PIXEL_RESOLUTION_IS_FIX = true;
+#define DISPLAY_PIXEL_RESOLUTION_IS_FIX 1

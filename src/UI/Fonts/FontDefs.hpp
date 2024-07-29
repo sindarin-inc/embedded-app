@@ -38,11 +38,9 @@ enum class PixelResolution : uint8_t { ONE_BIT, EIGHT_BITS };
 #ifdef SIM_ONE_BIT
 const constexpr PixelResolution DEFAULT_DISPLAY_PIXEL_RESOLUTION = PixelResolution::EIGHT_BITS;
 const constexpr PixelResolution DEFAULT_FONT_PIXEL_RESOLUTION = PixelResolution::ONE_BIT;
-const constexpr bool DISPLAY_PIXEL_RESOLUTION_IS_FIX = true;
 #else
 const constexpr PixelResolution DEFAULT_DISPLAY_PIXEL_RESOLUTION = PixelResolution::EIGHT_BITS;
 const constexpr PixelResolution DEFAULT_FONT_PIXEL_RESOLUTION = PixelResolution::EIGHT_BITS;
-const constexpr bool DISPLAY_PIXEL_RESOLUTION_IS_FIX = true;
 #endif
 #else
 const constexpr PixelResolution DEFAULT_DISPLAY_PIXEL_RESOLUTION = PixelResolution::ONE_BIT;

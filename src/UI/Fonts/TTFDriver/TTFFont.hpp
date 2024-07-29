@@ -152,22 +152,22 @@ public:
     auto getGlyphForCache(GlyphCode glyphCode, Glyph &glyph) -> bool;
 
     [[nodiscard]] inline auto setDisplayPixelResolution(PixelResolution res) -> bool {
-        if constexpr (!DISPLAY_PIXEL_RESOLUTION_IS_FIX) {
-            if (initialized_) {
-                if (displayPixelResolution_ != res) {
-                    // check for coherence of fontPixelResolution
-                    if ((res == PixelResolution::ONE_BIT) &&
-                        (fontPixelResolution_ == PixelResolution::EIGHT_BITS)) {
-                        setFontPixelResolution(PixelResolution::ONE_BIT);
-                    }
-                    displayPixelResolution_ = res;
+#if DISPLAY_PIXEL_RESOLUTION_IS_FIX
+        log_w("The display does not allow to change it's pixel resolution!");
+        return false;
+#else
+        if (initialized_) {
+            if (displayPixelResolution_ != res) {
+                // check for coherence of fontPixelResolution
+                if ((res == PixelResolution::ONE_BIT) &&
+                    (fontPixelResolution_ == PixelResolution::EIGHT_BITS)) {
+                    setFontPixelResolution(PixelResolution::ONE_BIT);
                 }
+                displayPixelResolution_ = res;
             }
-            return true;
-        } else {
-            log_w("The display does not allow to change it's pixel resolution!");
-            return false;
         }
+        return true;
+#endif
     }
 
     [[nodiscard]] inline auto getDisplayPixelResolution() const -> PixelResolution {
