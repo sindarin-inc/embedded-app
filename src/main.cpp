@@ -374,6 +374,9 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     } else {
         lightingController.begin();
     }
+#else
+    log_d("Using simulated lighting controller, setting to full brightness");
+    lightingController.setOverrideValuePercent(100, 100);
 #endif
 
 #if CONFIG_USE_MMC5603
