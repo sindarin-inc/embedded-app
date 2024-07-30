@@ -66,7 +66,6 @@ void Font::copyBitmap(Bitmap &to, bool toHeightBit, Bitmap &from, Pos atPos, boo
 
         if (toHeightBit) {
             uint8_t data;
-            auto rowCount = from.dim.height;
             auto fromPtr = from.pixels;
             auto toPtr = to.pixels + static_cast<size_t>(atPos.y * to.pitch);
 
@@ -104,7 +103,6 @@ void Font::copyBitmap(Bitmap &to, bool toHeightBit, Bitmap &from, Pos atPos, boo
         } else {
             uint8_t data;
             uint8_t fromMask = 0;
-            auto rowCount = from.dim.height;
             auto fromPtr = from.pixels;
             auto toPtr = to.pixels + static_cast<size_t>(atPos.y * to.pitch);
 

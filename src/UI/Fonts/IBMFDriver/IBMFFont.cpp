@@ -23,7 +23,7 @@ void Font::copyBitmap(font_defs::Bitmap &to, const font_defs::Bitmap &from, font
                         fromMask = 0x80;
                         data = fromPtr[fromIdx++];
                     }
-                    if (data & fromMask) {
+                    if ((data & fromMask) == 0) {
                         toPtr[toIdx] = 0xFF;
                     }
                     fromMask >>= 1;
@@ -35,7 +35,7 @@ void Font::copyBitmap(font_defs::Bitmap &to, const font_defs::Bitmap &from, font
                         fromMask = 0x80;
                         data = fromPtr[fromIdx++];
                     }
-                    if (data & fromMask) {
+                    if ((data & fromMask) == 0) {
                         toPtr[toIdx] = 0;
                     }
                     fromMask >>= 1;
@@ -45,6 +45,7 @@ void Font::copyBitmap(font_defs::Bitmap &to, const font_defs::Bitmap &from, font
         }
     } else {
         uint8_t data;
+        uint8_t fromMask = 0;
         auto fromPtr = from.pixels;
         auto toPtr = to.pixels + static_cast<size_t>(atPos.y * to.pitch);
 
@@ -60,7 +61,7 @@ void Font::copyBitmap(font_defs::Bitmap &to, const font_defs::Bitmap &from, font
                         fromMask = 0x80;
                         data = fromPtr[fromIdx++];
                     }
-                    if (data & fromMask) {
+                    if ((data & fromMask) == 0) {
                         toPtr[toIdx] |= toMask;
                     }
                     fromMask >>= 1;
@@ -76,7 +77,7 @@ void Font::copyBitmap(font_defs::Bitmap &to, const font_defs::Bitmap &from, font
                         fromMask = 0x80;
                         data = fromPtr[fromIdx++];
                     }
-                    if (data & fromMask) {
+                    if ((data & fromMask) == 0) {
                         toPtr[toIdx] &= ~toMask;
                     }
                     fromMask >>= 1;
@@ -151,7 +152,6 @@ auto Font::drawSingleLineOfText(ibmf_defs::Bitmap &canvas, ibmf_defs::Pos pos,
     }
 
     if (isInitialized()) {
-        Glyph glyph{};
 
         // We set here the canvas pitch value, as there is still some definitions required at the
         // application-level in regard of the upcoming Sol Glasse augmented resolution.
@@ -162,8 +162,6 @@ auto Font::drawSingleLineOfText(ibmf_defs::Bitmap &canvas, ibmf_defs::Pos pos,
         canvas.pitch = (getDisplayPixelResolution() == PixelResolution::ONE_BIT)
                            ? (canvas.dim.width + 7) >> 3
                            : canvas.dim.width;
-
-        // glyph.bitmap = canvas;
 
         ligKernUTF8Map(line, [this, &canvas, &atPos, inverted](GlyphCode glyphCode, FIX16 kern,
                                                                bool first, bool last) {
@@ -177,10 +175,10 @@ auto Font::drawSingleLineOfText(ibmf_defs::Bitmap &canvas, ibmf_defs::Pos pos,
                     *fontData_->getFace(faceIndex_), glyphCode, faceIndex_);
 
                 if (glyph.has_value()) {
-                    if (glyph.value()->bitmap.dim.width > 0) {
+                    if (glyph.value()->bitmap.pixels != nullptr) {
                         lastGlyphWidth_ = glyph.value()->bitmap.dim.width;
                         Pos outPos = Pos(atPos.x - glyph.value()->metrics.xoff,
-                                         atPos.y + glyph.value()->metrics.yoff);
+                                         atPos.y - glyph.value()->metrics.yoff);
                         copyBitmap(canvas, glyph.value()->bitmap, outPos, inverted);
                     }
 
@@ -190,19 +188,6 @@ auto Font::drawSingleLineOfText(ibmf_defs::Bitmap &canvas, ibmf_defs::Pos pos,
                                     : ((glyph.value()->metrics.advance + kern) >> 6);
                 }
             }
-
-            // if (fontData_->getFace(faceIndex_)
-            //         ->getGlyph(glyphCode, glyph, true, false, atPos, inverted)) {
-            //     // As advance is positive and greather than kern, we can shift right
-            //     // to get rid of the fix point decimals
-            //     if (glyphCode == SPACE_CODE) {
-            //         atPos.x += glyph.metrics.advance >> 6;
-            //     } else {
-            //         atPos.x += last ? fontData_->getFace(faceIndex_)->getGlyphWidth(glyphCode) -
-            //                               (kern / 64) - glyph.metrics.xoff
-            //                         : ((glyph.metrics.advance + kern) >> 6);
-            //     }
-            // }
         });
     }
 
@@ -210,7 +195,7 @@ auto Font::drawSingleLineOfText(ibmf_defs::Bitmap &canvas, ibmf_defs::Pos pos,
 }
 
 auto Font::getTextSize(const std::string &buffer) -> ibmf_defs::Dim {
-    // LOGD("getTextSize(): %s", buffer.c_str());
+
     if constexpr (IBMF_TRACING) {
         LOGD("getTextSize()");
     }
@@ -220,71 +205,50 @@ auto Font::getTextSize(const std::string &buffer) -> ibmf_defs::Dim {
     if (isInitialized()) {
         ligKernUTF8Map(buffer, [this, &dim, &up, &down](GlyphCode glyphCode, FIX16 kern, bool first,
                                                         bool last) {
-            // int8_t hOffset = first ? fontData_->getFace(faceIndex_)->getGlyphHOffset(glyphCode) :
-            // 0;
-
-            ibmf_defs::Glyph glyph{};
-            if (fontData_->getFace(faceIndex_)
-                    ->getGlyph(glyphCode, glyph, false)) { // retrieves only the metrics
-                // LOGD("Advance: %f, xoff: %d, yoff: %d, descent: %d, kern: %d",
-                //      IBMFFace::fromFIX16(glyph.metrics.advance), glyph.metrics.xoff,
-                //      glyph.metrics.yoff, glyph.metrics.descent, kern);
-                if (glyphCode == SPACE_CODE) {
-                    dim.width += glyph.metrics.advance >> 6;
-                } else {
-                    dim.width += last ? fontData_->getFace(faceIndex_)->getGlyphWidth(glyphCode) -
-                                            (kern / 64) - glyph.metrics.xoff
-                                      : ((glyph.metrics.advance + kern) >> 6);
-                }
-                up = (up < glyph.metrics.yoff) ? glyph.metrics.yoff : up;
-                down = (down < glyph.metrics.descent) ? glyph.metrics.descent : down;
-                // dim.height = (dim.height > glyph.metrics.yoff)
-                //                  ? glyph.metrics.yoff
-                //                  : dim.height; // yoff is negative...
+            if (glyphCode == SPACE_CODE) {
+                dim.width += fontData_->getFace(faceIndex_)->getSpaceSize();
             } else {
-                // LOGW("Unable to retrieve glyph for glyphCode %d", glyphCode);
+                std::optional<const Glyph *> glyph = fontData_->cache_.getGlyph(
+                    *fontData_->getFace(faceIndex_), glyphCode, faceIndex_);
+
+                if (glyph.has_value()) {
+                    dim.width += last ? glyph.value()->bitmap.dim.width - (kern / 64) -
+                                            glyph.value()->metrics.xoff
+                                      : ((glyph.value()->metrics.advance + kern) >> 6);
+                    up = (up < glyph.value()->metrics.yoff) ? glyph.value()->metrics.yoff : up;
+                    down = (down < glyph.value()->metrics.descent) ? glyph.value()->metrics.descent
+                                                                   : down;
+                }
             }
         });
     }
+
     dim.height = (up + down);
-    // LOGD("IBMFFont: TextBound: width: %d, height: %d", dim.width, dim.height);
+
     return dim;
 }
 
 auto Font::getTextWidth(const std::string &buffer) -> int {
-    if constexpr (IBMF_TRACING) {
-        LOGD("getTextWidth()");
-    }
+
     int width = 0;
     if (isInitialized()) {
         ligKernUTF8Map(buffer,
                        [this, &width](GlyphCode glyphCode, FIX16 kern, bool first, bool last) {
-            ibmf_defs::Glyph glyph{};
-            if (fontData_->getFace(faceIndex_)
-                    ->getGlyph(glyphCode, glyph, false)) { // retrieves only the metrics
-
-                // LOGD("Advance: %f, xoff: %d, yoff: %d, descent: %d, kern: %d",
-                //      IBMFFace::fromFIX16(glyph.metrics.advance), glyph.metrics.xoff,
-                //      glyph.metrics.yoff, glyph.metrics.descent, kern);
-
-                if (glyphCode == SPACE_CODE) {
-                    width += glyph.metrics.advance >> 6;
-                } else {
-                    width += last ? fontData_->getFace(faceIndex_)->getGlyphWidth(glyphCode) -
-                                        (kern / 64) - glyph.metrics.xoff
-                                  : ((glyph.metrics.advance + kern) >> 6); // + glyph.metrics.xoff;
-                }
-
-                // LOGD("Advance value: %f, kern: %f",
-                //     IBMFFace::fromFIX16(glyph.metrics.advance),
-                //     IBMFFace::fromFIX16(kern));
-                // width += (glyph.metrics.advance + kern + 32) >> 6;
+            if (glyphCode == SPACE_CODE) {
+                width += fontData_->getFace(faceIndex_)->getSpaceSize();
             } else {
-                // LOGW("Unable to retrieve glyph for glyphCode %d", glyphCode);
+                std::optional<const Glyph *> glyph = fontData_->cache_.getGlyph(
+                    *fontData_->getFace(faceIndex_), glyphCode, faceIndex_);
+
+                if (glyph.has_value()) {
+                    width += last ? glyph.value()->bitmap.dim.width - (kern / 64) -
+                                        glyph.value()->metrics.xoff
+                                  : ((glyph.value()->metrics.advance + kern) >> 6);
+                }
             }
         });
     }
-    // LOGD("IBMFFont: TextWidth: %d", width);
+
     return width;
 }
 
@@ -326,22 +290,10 @@ auto Font::getTextHeight(const std::string &buffer) -> int {
     }
     int height = 0;
     if (isInitialized()) {
-        // for (UTF8Iterator chrIter = buffer.begin(); chrIter != buffer.end(); chrIter++) {
-        //     ibmf_defs::Glyph glyph;
-        //     if (fontData_->getFace(faceIndex_)->getGlyph(*chrIter, glyph, false)) {
-        //         // LOGD("yoff value: %d", glyph.metrics.yoff);
-        //         if (height > glyph.metrics.yoff) {
-        //             height = glyph.metrics.yoff; // yoff is negative
-        //         }
-        //     } else {
-        //         LOGW("Unable to retrieve glyph for char %d(%c)", *chrIter, *chrIter);
-        //     }
-        // }
-        // height = fontData_->getFace(faceIndex_)->getEmHeight();
         Dim dim = getTextSize(buffer);
         height = dim.height;
     }
-    // LOGD("TextHeight: %d", height);
+
     return height;
 }
 

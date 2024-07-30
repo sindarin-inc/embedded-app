@@ -13,6 +13,8 @@
 
 using namespace ibmf_defs;
 
+class FontData;
+
 /**
  * @brief Access to a IBMF face.
  *
@@ -31,6 +33,8 @@ private:
     GlyphsInfoPtr glyphsInfo_{nullptr};
     PixelsPoolPtr pixelsPool_{nullptr};
     LigKernStepsPtr ligKernSteps_{nullptr};
+    int faceIndex_{0};
+    FontData *fontData_{nullptr};
 
 public:
     IBMFFace() = default;
@@ -45,7 +49,8 @@ public:
 
     // ---
 
-    auto load(const MemoryPtr dataStart, const int dataLength, FontFormat fontFmt) -> bool;
+    auto load(const MemoryPtr dataStart, const int dataLength, FontFormat fontFmt, int faceIndex,
+              FontData *fontData) -> bool;
 
     [[nodiscard]] inline auto isInitialized() const -> bool { return initialized_; }
     [[nodiscard]] inline auto getFacePtSize() const -> uint8_t { return faceHeader_->pointSize; }
@@ -97,7 +102,7 @@ public:
 
     auto getGlyphMetrics(GlyphCode glyphCode, Glyph &appGlyph) -> bool;
 
-    auto showBitmap(const Bitmap &bitmap) const -> void;
+    auto showBitmap(const Bitmap &bitmap, PixelResolution res) const -> void;
     auto showGlyph(const Glyph &glyph, GlyphCode glyphCode, char32_t codePoint = ' ') const -> void;
 
     inline auto showGlyph2(const Glyph &glyph, char32_t codePoint) const -> void {

@@ -74,7 +74,7 @@ auto FontData::load(MemoryPtr fontData, uint32_t length) -> bool {
                             (*binFaceOffsets)[i];
 
         if (!faces_[i].load(fontData + (*binFaceOffsets)[i], binFaceLengths[i],
-                            preamble_->bits.fontFormat)) {
+                            preamble_->bits.fontFormat, i, this)) {
             LOGE("Unable to load face %d", i);
             return false;
         }
