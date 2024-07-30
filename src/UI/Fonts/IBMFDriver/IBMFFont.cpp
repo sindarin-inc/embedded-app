@@ -45,7 +45,6 @@ void Font::copyBitmap(font_defs::Bitmap &to, const font_defs::Bitmap &from, font
         }
     } else {
         uint8_t data;
-        uint8_t fromMask = 0;
         auto fromPtr = from.pixels;
         auto toPtr = to.pixels + static_cast<size_t>(atPos.y * to.pitch);
 

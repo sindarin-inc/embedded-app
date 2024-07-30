@@ -605,8 +605,6 @@ auto IBMFFace::getGlyphForCache(GlyphCode glyphCode, Glyph &glyph) -> bool {
     uint8_t pitch = (dim.width + 7) >> 3;
     uint16_t size = dim.height * pitch;
 
-    Pos glyphOffsets = Pos(0, -glyphInfo->verticalOffset);
-
     uint8_t white = WHITE_ONE_BIT ? 0xFF : 0;
 
     glyph.bitmap.pixels =
