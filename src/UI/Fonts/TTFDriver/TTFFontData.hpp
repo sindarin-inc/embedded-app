@@ -42,7 +42,7 @@ public:
 
     virtual ~FontData() = default;
 
-    TTFCache cache{};
+    TTFCache cache_{};
 
     [[nodiscard]] inline auto isInitialized() const -> bool { return initialized_; }
     [[nodiscard]] inline auto getLibrary() const -> FT_Library { return library; }
