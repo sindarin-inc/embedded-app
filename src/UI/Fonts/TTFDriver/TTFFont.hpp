@@ -56,7 +56,7 @@ private:
             return true;
         } else {
             std::optional<const Glyph *> glyph =
-                fontData_.cache.getGlyph(*this, theGlyphCode, size_);
+                fontData_.cache_.getGlyph(*this, theGlyphCode, size_);
             if (glyph.has_value()) {
                 xoff = glyph.value()->metrics.xoff;
                 advance = glyph.value()->metrics.advance >> 6;
@@ -105,7 +105,7 @@ public:
                     GlyphCode glyphCode = FT_Get_Char_Index(face_, ' ');
 
                     std::optional<const Glyph *> glyph =
-                        fontData_.cache.getGlyph(*this, glyphCode, size_);
+                        fontData_.cache_.getGlyph(*this, glyphCode, size_);
 
                     if (!glyph.has_value()) {
                         LOGE("Unable to load glyph for space char.");
@@ -191,7 +191,7 @@ public:
                         "Cannot set font resolution to EIGHT_BITS if the display resolution is not "
                         "EIGHT_BITS!");
                 } else {
-                    fontData_.cache.clear();
+                    fontData_.cache_.clear();
                     fontPixelResolution_ = res;
                 }
             }
