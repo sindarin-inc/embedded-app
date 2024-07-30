@@ -375,7 +375,6 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         lightingController.begin();
     }
 #else
-    log_d("Using simulated lighting controller, setting to full brightness");
     lightingController.setOverrideValuePercent(100);
 #endif
 
