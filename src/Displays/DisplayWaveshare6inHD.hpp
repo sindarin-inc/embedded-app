@@ -38,7 +38,10 @@ protected:
     }
 
     [[nodiscard]] auto getBuffer() -> uint8_t * override { return gfxCanvas_.getBuffer(); }
-
+#if CONFIG_WAVESHARE_8BIT
+    GFXcanvas8 gfxCanvas_;
+#else
     GFXcanvas1 gfxCanvas_;
+#endif
     Waveshare6inHD driver_;
 };

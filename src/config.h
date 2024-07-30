@@ -119,6 +119,13 @@
 #if CONFIG_DISPLAY_WAVESHARE_6INHD
 #undef CONFIG_FONT_IBMF
 #define CONFIG_FONT_TTF 1
+
+// By default, we'll just use ONE BIT font rendering and display, but the below
+// will allow us to test out 8Bit should we want to
+//#define CONFIG_WAVESHARE_8BIT 1
+// This allows us to not actually do anything on the display through the driver
+// for testing headless
+#define CONFIG_WAVESHARE_HEADLESS 1
 #endif
 
 #if CONFIG_FONT_TTF

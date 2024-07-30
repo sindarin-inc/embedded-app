@@ -587,6 +587,7 @@ void Waveshare6inHD::HostAreaPackedPixelWrite_8bp(IT8951_Load_Img_Info_cpp *Load
     Source_Buffer_Width = (Area_Img_Info->Area_W * 8 / 8) / 2; // add /2
     Source_Buffer_Height = Area_Img_Info->Area_H;
 
+    UWORD chunksize = 32;
     for (UDOUBLE i = 0; i < Source_Buffer_Height; i++) {
         // For debugging purposes since this is a little slow
         // if (i % 100 == 0) {
@@ -595,11 +596,18 @@ void Waveshare6inHD::HostAreaPackedPixelWrite_8bp(IT8951_Load_Img_Info_cpp *Load
         // To optimize this, see WriteMultiData -- we could probably
         // do something like that here. I'm not sure why their driver doesn't
         // include the Packed option for 8bp like it does above for the rest.
-        for (UDOUBLE j = 0; j < Source_Buffer_Width; j++) {
-            WriteData(reverseBits(*Source_Buffer));
-            Source_Buffer++;
+        for (UDOUBLE j = 0; j < Source_Buffer_Width; j += chunksize) {
+            UWORD len = 0;
+            if (j + chunksize > Source_Buffer_Width) {
+                len = Source_Buffer_Width - j;
+            } else {
+                len = chunksize;
+            }
+            WriteMultiData(Source_Buffer, len);
+            Source_Buffer += len;
         }
     }
+
     LoadImgEnd();
 }
 
@@ -877,7 +885,7 @@ void Waveshare6inHD::Four_bp_Refresh(UBYTE *Frame_Buf, UWORD X, UWORD Y, UWORD W
     Area_Img_Info.Area_W = W;
     Area_Img_Info.Area_H = H;
 
-    HostAreaPackedPixelWrite_4bp(&Load_Img_Info, &Area_Img_Info, true); /*, Packed_Write);*/
+    HostAreaPackedPixelWrite_4bp(&Load_Img_Info, &Area_Img_Info, Packed_Write);
 
     if (Hold == true) {
         Display_Area(X, Y, W, H, GC16_Mode);

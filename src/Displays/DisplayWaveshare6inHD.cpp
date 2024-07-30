@@ -12,7 +12,9 @@ extern bool mirrorToSerial;
 auto DisplayWaveshare6inHD::setup() -> bool {
     DisplaySystem::setup();
     DisplaySystem::invertDisplay(true);
-    //- driver_.init();
+#if !CONFIG_WAVESHARE_HEADLESS
+    driver_.init();
+#endif
     return true;
 }
 
@@ -36,20 +38,30 @@ void DisplayWaveshare6inHD::updateDisplay(DisplaySystem::UpdateType updateType,
 
     PROFILE_START(updateDisplay);
     if (updateType == UpdateType::PARTIAL) {
-        // driver_.SystemRun();
-        // driver_.One_bp_Refresh(gfxCanvas_.getBuffer(), (UWORD)0, (UWORD)0,
-        //                        (UWORD)gfxCanvas_.width(), (UWORD)gfxCanvas_.height(),
-        //                        (uint8_t)A2_Mode, (UDOUBLE)0, true);
-        // driver_.Eight_bp_Refresh(gfxCanvas_.getBuffer(), (UWORD)0, (UWORD)0,
-        //                          (UWORD)gfxCanvas_.width(), (UWORD)gfxCanvas_.height(), false,
-        //                          (UDOUBLE)0);
+#if !CONFIG_WAVESHARE_HEADLESS
+#if CONFIG_WAVESHARE_8BIT
+        driver_.Eight_bp_Refresh(gfxCanvas_.getBuffer(), (UWORD)0, (UWORD)0,
+                                 (UWORD)gfxCanvas_.width(), (UWORD)gfxCanvas_.height(), false,
+                                 (UDOUBLE)0);
+
+#else
+        driver_.One_bp_Refresh(gfxCanvas_.getBuffer(), (UWORD)0, (UWORD)0,
+                               (UWORD)gfxCanvas_.width(), (UWORD)gfxCanvas_.height(),
+                               (uint8_t)A2_Mode, (UDOUBLE)0, true);
+#endif
+#endif
     } else if (updateType == UpdateType::FULL) {
-        // driver_.One_bp_Refresh(gfxCanvas_.getBuffer(), (UWORD)0, (UWORD)0,
-        //                        (UWORD)gfxCanvas_.width(), (UWORD)gfxCanvas_.height(),
-        //                        (uint8_t)GC16_Mode, (UDOUBLE)0, true);
-        // driver_.Eight_bp_Refresh(gfxCanvas_.getBuffer(), (UWORD)0, (UWORD)0,
-        //                          (UWORD)gfxCanvas_.width(), (UWORD)gfxCanvas_.height(), false,
-        //                          (UDOUBLE)0);
+#if !CONFIG_WAVESHARE_HEADLESS
+#if CONFIG_WAVESHARE_8BIT
+        driver_.Eight_bp_Refresh(gfxCanvas_.getBuffer(), (UWORD)0, (UWORD)0,
+                                 (UWORD)gfxCanvas_.width(), (UWORD)gfxCanvas_.height(), false,
+                                 (UDOUBLE)0);
+#else
+        driver_.One_bp_Refresh(gfxCanvas_.getBuffer(), (UWORD)0, (UWORD)0,
+                               (UWORD)gfxCanvas_.width(), (UWORD)gfxCanvas_.height(),
+                               (uint8_t)GC16_Mode, (UDOUBLE)0, true);
+#endif
+#endif
     }
 
     PROFILE_END_LOG_MS(updateDisplay);
