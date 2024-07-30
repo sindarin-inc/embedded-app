@@ -2,6 +2,8 @@
 
 #if CONFIG_FONT_IBMF
 
+#include <esp_heap_caps.h>
+
 #include "IBMFFace.hpp"
 
 auto IBMFFace::load(const MemoryPtr dataStart, const int dataLength, FontFormat fontFmt) -> bool {
@@ -100,7 +102,7 @@ auto IBMFFace::ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2, FIX16 
     }
 
     // TODO: Implement optical kerning for 8-bits resolution (GT)
-    if (pixelResolution_ == PixelResolution::EIGHT_BITS) {
+    if (displayPixelResolution_ == PixelResolution::EIGHT_BITS) {
         *kern = 1;
         return false;
     }
@@ -112,7 +114,7 @@ auto IBMFFace::ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2, FIX16 
 #define FRACT_BITS 10
 #define FIXED_POINT_ONE (1 << FRACT_BITS)
 #define MAKE_INT_FIXED(x) (static_cast<FIX32>((x) << FRACT_BITS))
-#define MAKE_FLOAT_FIXED(x) (static_cast<FIX32>((x)*FIXED_POINT_ONE))
+#define MAKE_FLOAT_FIXED(x) (static_cast<FIX32>((x) * FIXED_POINT_ONE))
 #define MAKE_FIXED_INT(x) ((x) >> FRACT_BITS)
 #define MAKE_FIXED_FLOAT(x) ((static_cast<float>(x)) / FIXED_POINT_ONE)
 
@@ -485,7 +487,7 @@ auto IBMFFace::getGlyph(GlyphCode glyphCode, Glyph &appGlyph, bool loadBitmap, b
 
     Dim dim = Dim(glyphInfo->bitmapWidth, glyphInfo->bitmapHeight);
     uint8_t pitch =
-        (pixelResolution_ == PixelResolution::ONE_BIT) ? ((dim.width + 7) >> 3) : dim.width;
+        (displayPixelResolution_ == PixelResolution::ONE_BIT) ? ((dim.width + 7) >> 3) : dim.width;
     Pos glyphOffsets = Pos(0, 0);
 
     glyphOffsets.y = -glyphInfo->verticalOffset;
@@ -498,7 +500,7 @@ auto IBMFFace::getGlyph(GlyphCode glyphCode, Glyph &appGlyph, bool loadBitmap, b
             uint16_t size = dim.height * pitch;
 
             uint8_t white;
-            if (pixelResolution_ == PixelResolution::ONE_BIT) {
+            if (displayPixelResolution_ == PixelResolution::ONE_BIT) {
                 white = WHITE_ONE_BIT ? 0xFF : 0;
             } else {
                 white = WHITE_EIGHT_BITS;
@@ -522,7 +524,7 @@ auto IBMFFace::getGlyph(GlyphCode glyphCode, Glyph &appGlyph, bool loadBitmap, b
             .length = glyphInfo->packetLength,
             .pitch = pitch,
         };
-        RLEExtractor rle(pixelResolution_);
+        RLEExtractor rle(displayPixelResolution_);
 
         Pos outPos = Pos(atPos.x + glyphOffsets.x, atPos.y + glyphOffsets.y);
         // std::cout << "inPos: [" << atPos.x << ", " << atPos.y << "], outPos: [" << outPos.x
@@ -549,6 +551,97 @@ auto IBMFFace::getGlyph(GlyphCode glyphCode, Glyph &appGlyph, bool loadBitmap, b
     //     .lineHeight = faceHeader_->lineHeight};
 
     // showGlyph(appGlyph, glyphCode & 0xFF);
+    return true;
+}
+
+// Get a Glyph from the font.
+//
+// Parameters:
+//
+//   glyphCode  : The index in the font to retrieve the glyph from
+//   glyph      : The Glyph structure to put the information in
+
+auto IBMFFace::getGlyphForCache(GlyphCode glyphCode, Glyph &glyph) -> bool {
+
+    // LOGD("glyphCode: %04x, loadBitmap: %s, caching: %s, pos: [%d, %d]", glyphCode,
+    //      loadBitmap ? "YES" : "NO", caching ? "YES" : "NO", atPos.x, atPos.y);
+
+    glyph.clear();
+
+    if (fontFormat_ != FontFormat::UTF32) {
+        LOGE("Unknown character set: %d", fontFormat_);
+        return false;
+    }
+
+    if ((glyphCode == SPACE_CODE) ||
+        ((glyphCode < faceHeader_->glyphCount) &&
+         ((*glyphsInfo_)[glyphCode].bitmapWidth == 0))) { // send as a space character
+        glyph.pointSize = faceHeader_->pointSize;
+        glyph.metrics = {.xoff = 0,
+                         .yoff = 0,
+                         .descent = 0,
+                         .advance =
+                             static_cast<FIX16>(static_cast<uint16_t>(faceHeader_->spaceSize) << 6),
+                         .lineHeight = faceHeader_->lineHeight};
+        return true;
+    }
+
+    if (glyphCode >= faceHeader_->glyphCount) {
+        return false;
+    }
+
+    GlyphInfo *glyphInfo = &(*glyphsInfo_)[glyphCode];
+
+    if (glyphInfo == nullptr) {
+        return false;
+    }
+
+    Dim dim = Dim(glyphInfo->bitmapWidth, glyphInfo->bitmapHeight);
+    uint8_t pitch =
+        (displayPixelResolution_ == PixelResolution::ONE_BIT) ? ((dim.width + 7) >> 3) : dim.width;
+
+    uint16_t size = dim.height * pitch;
+
+    uint8_t white;
+    if (displayPixelResolution_ == PixelResolution::ONE_BIT) {
+        white = WHITE_ONE_BIT ? 0xFF : 0;
+    } else {
+        white = WHITE_EIGHT_BITS;
+    }
+
+    glyph.bitmap.pixels =
+        static_cast<font_defs::MemoryPtr>(heap_caps_malloc(size, MALLOC_CAP_SPIRAM));
+
+    if (glyph.bitmap.pixels == nullptr) {
+        LOGE("Unable to allocate glyph pixel memory of size %d!", size);
+        glyph.bitmap.dim = Dim(0, 0);
+        glyph.bitmap.pitch = 0;
+        return false;
+    }
+
+    memset(glyph.bitmap.pixels, white, size);
+    glyph.bitmap.dim = dim;
+    glyph.bitmap.pitch = pitch;
+
+    RLEBitmap glyphBitmap = {
+        .pixels = &(*pixelsPool_)[(*glyphsPixelPoolIndexes_)[glyphCode]],
+        .dim = dim,
+        .length = glyphInfo->packetLength,
+        .pitch = pitch,
+    };
+    RLEExtractor rle(displayPixelResolution_);
+
+    rle.retrieveBitmap(glyphBitmap, glyph.bitmap, Pos(0, 0), glyphInfo->rleMetrics, false);
+
+    glyph.metrics = {
+        .xoff = static_cast<int16_t>(glyphInfo->horizontalOffset),
+        .yoff = static_cast<int16_t>(glyphInfo->verticalOffset),
+        .descent = static_cast<int16_t>((glyphInfo->bitmapHeight - glyphInfo->verticalOffset) > 0
+                                            ? glyphInfo->bitmapHeight - glyphInfo->verticalOffset
+                                            : 0),
+        .advance = glyphInfo->advance,
+        .lineHeight = faceHeader_->lineHeight};
+
     return true;
 }
 
@@ -631,7 +724,7 @@ auto IBMFFace::showBitmap(const Bitmap &bitmap) const -> void {
         }
         std::cout << '+' << std::endl << std::flush;
 
-        if (pixelResolution_ == PixelResolution::ONE_BIT) {
+        if (displayPixelResolution_ == PixelResolution::ONE_BIT) {
             uint32_t rowSize = (bitmap.dim.width + 7) >> 3;
             for (row = 0, rowPtr = bitmap.pixels; row < bitmap.dim.height;
                  row++, rowPtr += rowSize) {
@@ -671,8 +764,8 @@ auto IBMFFace::showBitmap(const Bitmap &bitmap) const -> void {
     }
 }
 
-auto IBMFFace::showGlyph(const Glyph &glyph, GlyphCode glyphCode, char32_t codePoint) const
-    -> void {
+auto IBMFFace::showGlyph(const Glyph &glyph, GlyphCode glyphCode,
+                         char32_t codePoint) const -> void {
     if constexpr (DEBUG) {
         std::cout << "Glyph Base Code: 0x" << std::hex << glyphCode << std::dec << "(" << +codePoint
                   << ")" << std::endl
@@ -713,12 +806,10 @@ auto IBMFFace::showLigKerns() const -> void {
         for (i = 0; i < faceHeader_->ligKernStepCount; i++) {
             LigKernStep *entry = &(*ligKernSteps_)[i];
             if (entry->b.goTo.isAKern && entry->b.goTo.isAGoTo) {
-                std::cout << "  [" << i << "]:  "
-                          << "Goto: " << entry->b.goTo.displacement;
+                std::cout << "  [" << i << "]:  " << "Goto: " << entry->b.goTo.displacement;
             } else {
-                std::cout << "  [" << i << "]:  "
-                          << "Stop: " << (entry->a.stop ? "Yes" : "No") << ", "
-                          << "NxtGlyphCode: " << +entry->a.nextGlyphCode << ", "
+                std::cout << "  [" << i << "]:  " << "Stop: " << (entry->a.stop ? "Yes" : "No")
+                          << ", " << "NxtGlyphCode: " << +entry->a.nextGlyphCode << ", "
                           << "IsKern: " << (entry->b.kern.isAKern ? "Yes" : "No") << ", "
                           << (entry->b.kern.isAKern ? "Kern Value: " : "Lig char: ");
                 if (entry->b.kern.isAKern) {

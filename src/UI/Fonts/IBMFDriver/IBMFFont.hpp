@@ -16,6 +16,7 @@ private:
     FontData *fontData_;
     int faceIndex_;
     // IBMFFace *face_;
+    uint8_t lastGlyphWidth_{};
 
     // Maximum size of an allocated buffer to do vsnprintf formatting
     static constexpr int MAX_SIZE = 100;
@@ -32,6 +33,9 @@ private:
     /// @param handler Call. The callback closure handler.
     ///
     auto ligKernUTF8Map(const std::string &line, LigKernMappingHandler handler) const -> void;
+
+    void copyBitmap(font_defs::Bitmap &to, const font_defs::Bitmap &from, font_defs::Pos atPos,
+                    bool inverted);
 
 public:
     Font(FontData &ibmfFont, int index) noexcept : fontData_(&ibmfFont), faceIndex_(index) {}
@@ -52,21 +56,21 @@ public:
         return isInitialized() ? fontData_->getFace(faceIndex_) : nullptr;
     }
 
-    inline void setPixelResolution(PixelResolution res) {
+    inline void setDisplayPixelResolution(PixelResolution res) {
         if constexpr (IBMF_TRACING) {
-            LOGD("setPixelResolution()");
+            LOGD("setDisplayPixelResolution()");
         }
         if (isInitialized()) {
-            fontData_->getFace(faceIndex_)->setPixelResolution(res);
+            fontData_->getFace(faceIndex_)->setDisplayPixelResolution(res);
         }
     }
 
-    [[nodiscard]] inline auto getPixelResolution() const -> PixelResolution {
+    [[nodiscard]] inline auto getDisplayPixelResolution() const -> PixelResolution {
         if constexpr (IBMF_TRACING) {
-            LOGD("getPixelResolution()");
+            LOGD("getDisplayPixelResolution()");
         }
-        return (isInitialized()) ? fontData_->getFace(faceIndex_)->getPixelResolution()
-                                 : DEFAULT_PIXEL_RESOLUTION;
+        return (isInitialized()) ? fontData_->getFace(faceIndex_)->getDisplayPixelResolution()
+                                 : DEFAULT_DISPLAY_PIXEL_RESOLUTION;
     }
 
     [[nodiscard]] inline auto lineHeight() const -> int {
@@ -81,7 +85,7 @@ public:
     }
 
     auto drawSingleLineOfText(ibmf_defs::Bitmap &canvas, ibmf_defs::Pos pos,
-                              const std::string &line, bool inverted) const -> int;
+                              const std::string &line, bool inverted) -> int;
     auto getTextSize(const std::string &buffer) -> ibmf_defs::Dim;
     auto getTextWidth(const std::string &buffer) -> int;
 

@@ -216,7 +216,7 @@ auto Font::getGlyph(GlyphCode glyphCode, Glyph &appGlyph, bool loadBitmap, bool 
 
     FT_GlyphSlot slot = theFace->glyph;
 
-    bool toHeightBit = pixelResolution_ == font_defs::PixelResolution::EIGHT_BITS;
+    bool toHeightBit = displayPixelResolution_ == font_defs::PixelResolution::EIGHT_BITS;
 
     if (loadBitmap) {
         if (theFace->glyph->format != FT_GLYPH_FORMAT_BITMAP) {
@@ -379,7 +379,7 @@ auto Font::drawSingleLineOfText(font_defs::Bitmap &canvas, font_defs::Pos pos,
         // The following may require some modification as the next Sol Glasses version
         // may be using a different pitch than the one computed here.
 
-        canvas.pitch = (getPixelResolution() == PixelResolution::ONE_BIT)
+        canvas.pitch = (getDisplayPixelResolution() == PixelResolution::ONE_BIT)
                            ? (canvas.dim.width + 7) >> 3
                            : canvas.dim.width;
         glyph.bitmap = canvas;

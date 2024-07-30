@@ -22,7 +22,7 @@ private:
     int size_;
     FIX16 spaceSize_{0};
     uint8_t lastGlyphWidth_;
-    PixelResolution pixelResolution_{DEFAULT_PIXEL_RESOLUTION};
+    PixelResolution displayPixelResolution_{DEFAULT_DISPLAY_PIXEL_RESOLUTION};
     PixelResolution fontPixelResolution_{DEFAULT_FONT_PIXEL_RESOLUTION};
 
     GlyphCode unknownGlyphCode_{0};
@@ -154,10 +154,10 @@ public:
         return isInitialized() ? face_->size->metrics.height >> 6 : 0;
     }
 
-    inline void setPixelResolution(PixelResolution res) { pixelResolution_ = res; }
+    inline void setDisplayPixelResolution(PixelResolution res) { displayPixelResolution_ = res; }
 
-    [[nodiscard]] inline auto getPixelResolution() const -> PixelResolution {
-        return (initialized_) ? pixelResolution_ : DEFAULT_PIXEL_RESOLUTION;
+    [[nodiscard]] inline auto getDisplayPixelResolution() const -> PixelResolution {
+        return (initialized_) ? displayPixelResolution_ : DEFAULT_DISPLAY_PIXEL_RESOLUTION;
     }
 
     inline void setFontPixelResolution(PixelResolution res) { fontPixelResolution_ = res; }

@@ -8,6 +8,7 @@
 #include <fstream>
 #include <iostream>
 
+#include "IBMFCache.hpp"
 #include "IBMFDefs.hpp"
 #include "IBMFFace.hpp"
 
@@ -46,6 +47,8 @@ public:
 
     FontData() = default;
     ~FontData() = default;
+
+    IBMFCache cache_{};
 
     [[nodiscard]] inline auto getFontFormat() const -> FontFormat {
         return (isInitialized()) ? preamble_->bits.fontFormat : FontFormat::UNKNOWN;

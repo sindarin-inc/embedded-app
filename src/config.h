@@ -100,3 +100,11 @@
 #define I2C_MASTER_SDA_IO 1
 #define I2C_MASTER_FREQ_HZ 400000
 #endif
+
+#if CONFIG_FONT_TTF
+#define FT_USE_PSRAM 1
+#endif
+
+// Set DISPLAY_PIXEL_RESOLUTION_IS_FIX to 0 for displays that allow changing their pixel
+// resolution dynamically.
+#define DISPLAY_PIXEL_RESOLUTION_IS_FIX 1

@@ -4,6 +4,93 @@
 
 #include "IBMFFont.hpp"
 
+void Font::copyBitmap(font_defs::Bitmap &to, const font_defs::Bitmap &from, font_defs::Pos atPos,
+                      bool inverted) {
+
+    if (getDisplayPixelResolution() == PixelResolution::EIGHT_BITS) {
+        uint8_t data;
+        auto fromPtr = from.pixels;
+        auto toPtr = to.pixels + static_cast<size_t>(atPos.y * to.pitch);
+
+        for (uint16_t fromRow = 0; fromRow < from.dim.height;
+             fromRow++, toPtr += to.pitch, fromPtr += from.pitch) {
+            int toIdx = atPos.x;
+            int fromIdx = 0;
+            uint8_t fromMask = 0;
+            if (inverted) {
+                for (uint16_t i = 0; i < from.dim.width; i++) {
+                    if (fromMask == 0) {
+                        fromMask = 0x80;
+                        data = fromPtr[fromIdx++];
+                    }
+                    if (data & fromMask) {
+                        toPtr[toIdx] = 0xFF;
+                    }
+                    fromMask >>= 1;
+                    toIdx += 1;
+                }
+            } else {
+                for (uint16_t i = 0; i < from.dim.width; i++) {
+                    if (fromMask == 0) {
+                        fromMask = 0x80;
+                        data = fromPtr[fromIdx++];
+                    }
+                    if (data & fromMask) {
+                        toPtr[toIdx] = 0;
+                    }
+                    fromMask >>= 1;
+                    toIdx += 1;
+                }
+            }
+        }
+    } else {
+        uint8_t data;
+        auto fromPtr = from.pixels;
+        auto toPtr = to.pixels + static_cast<size_t>(atPos.y * to.pitch);
+
+        for (uint16_t fromRow = 0; fromRow < from.dim.height;
+             fromRow++, toPtr += to.pitch, fromPtr += from.pitch) {
+            uint8_t toMask = 0x80 >> (atPos.x & 7);
+            int toIdx = (atPos.x >> 3);
+            int fromIdx = 0;
+            uint8_t fromMask = 0;
+            if (inverted) {
+                for (uint16_t i = 0; i < from.dim.width; i++) {
+                    if (fromMask == 0) {
+                        fromMask = 0x80;
+                        data = fromPtr[fromIdx++];
+                    }
+                    if (data & fromMask) {
+                        toPtr[toIdx] |= toMask;
+                    }
+                    fromMask >>= 1;
+                    toMask >>= 1;
+                    if (toMask == 0) {
+                        toIdx += 1;
+                        toMask = 0x80;
+                    }
+                }
+            } else {
+                for (uint16_t i = 0; i < from.dim.width; i++) {
+                    if (fromMask == 0) {
+                        fromMask = 0x80;
+                        data = fromPtr[fromIdx++];
+                    }
+                    if (data & fromMask) {
+                        toPtr[toIdx] &= ~toMask;
+                    }
+                    fromMask >>= 1;
+                    toMask >>= 1;
+                    if (toMask == 0) {
+                        toIdx += 1;
+                        toMask = 0x80;
+                    }
+                }
+            }
+        }
+    }
+}
+
 auto Font::ligKernUTF8Map(const std::string &line, LigKernMappingHandler handler) const -> void {
     if (line.length() != 0) {
         auto iter = UTF8Iterator(line);
@@ -55,7 +142,7 @@ auto Font::ligKernUTF8Map(const std::string &line, LigKernMappingHandler handler
 
 // Returns the x position at the end of string
 auto Font::drawSingleLineOfText(ibmf_defs::Bitmap &canvas, ibmf_defs::Pos pos,
-                                const std::string &line, bool inverted) const -> int {
+                                const std::string &line, bool inverted) -> int {
 
     ibmf_defs::Pos atPos = pos;
 
@@ -72,31 +159,50 @@ auto Font::drawSingleLineOfText(ibmf_defs::Bitmap &canvas, ibmf_defs::Pos pos,
         // The following may require some modification as the next Sol Glasses version
         // may be using a different pitch than the one computed here.
 
-        canvas.pitch = (getPixelResolution() == PixelResolution::ONE_BIT)
+        canvas.pitch = (getDisplayPixelResolution() == PixelResolution::ONE_BIT)
                            ? (canvas.dim.width + 7) >> 3
                            : canvas.dim.width;
 
-        glyph.bitmap = canvas;
+        // glyph.bitmap = canvas;
 
-        ligKernUTF8Map(line, [this, &glyph, &atPos, inverted](GlyphCode glyphCode, FIX16 kern,
-                                                              bool first, bool last) {
+        ligKernUTF8Map(line, [this, &canvas, &atPos, inverted](GlyphCode glyphCode, FIX16 kern,
+                                                               bool first, bool last) {
             int8_t hOffset = first ? fontData_->getFace(faceIndex_)->getGlyphHOffset(glyphCode) : 0;
             atPos.x += hOffset;
 
-            // LOGD("Word Markers: %d %d", first, last);
+            if (glyphCode == SPACE_CODE) {
+                atPos.x += fontData_->getFace(faceIndex_)->getSpaceSize();
+            } else {
+                std::optional<const Glyph *> glyph = fontData_->cache_.getGlyph(
+                    *fontData_->getFace(faceIndex_), glyphCode, faceIndex_);
 
-            if (fontData_->getFace(faceIndex_)
-                    ->getGlyph(glyphCode, glyph, true, false, atPos, inverted)) {
-                // As advance is positive and greather than kern, we can shift right
-                // to get rid of the fix point decimals
-                if (glyphCode == SPACE_CODE) {
-                    atPos.x += glyph.metrics.advance >> 6;
-                } else {
-                    atPos.x += last ? fontData_->getFace(faceIndex_)->getGlyphWidth(glyphCode) -
-                                          (kern / 64) - glyph.metrics.xoff
-                                    : ((glyph.metrics.advance + kern) >> 6);
+                if (glyph.has_value()) {
+                    if (glyph.value()->bitmap.dim.width > 0) {
+                        lastGlyphWidth_ = glyph.value()->bitmap.dim.width;
+                        Pos outPos = Pos(atPos.x - glyph.value()->metrics.xoff,
+                                         atPos.y + glyph.value()->metrics.yoff);
+                        copyBitmap(canvas, glyph.value()->bitmap, outPos, inverted);
+                    }
+
+                    // As advance is positive and greather than kern, we can shift right
+                    // to get rid of the fix point decimals
+                    atPos.x += last ? lastGlyphWidth_ - (kern / 64) - glyph.value()->metrics.xoff
+                                    : ((glyph.value()->metrics.advance + kern) >> 6);
                 }
             }
+
+            // if (fontData_->getFace(faceIndex_)
+            //         ->getGlyph(glyphCode, glyph, true, false, atPos, inverted)) {
+            //     // As advance is positive and greather than kern, we can shift right
+            //     // to get rid of the fix point decimals
+            //     if (glyphCode == SPACE_CODE) {
+            //         atPos.x += glyph.metrics.advance >> 6;
+            //     } else {
+            //         atPos.x += last ? fontData_->getFace(faceIndex_)->getGlyphWidth(glyphCode) -
+            //                               (kern / 64) - glyph.metrics.xoff
+            //                         : ((glyph.metrics.advance + kern) >> 6);
+            //     }
+            // }
         });
     }
 
