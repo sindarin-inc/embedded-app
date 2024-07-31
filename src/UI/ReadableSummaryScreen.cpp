@@ -16,7 +16,7 @@ auto ReadableSummaryScreen::layout(LayoutContext &context, Size size) -> Size {
 
     auto contentFrame = backgroundFrame.inset(10);
 
-    // XXX Needs to remove magic numbers -- see MenuScreen for example
+    // XXXBCBCNeeds to remove magic numbers -- see MenuScreen for example
     context.setViewFrame(leftArrowView_,
                          {{contentFrame.origin.x, contentFrame.origin.y - 4}, {9, 5}});
     context.setViewFrame(upperLeftTextView_,

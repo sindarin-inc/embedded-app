@@ -185,6 +185,7 @@ auto DispatchGetCore1BackgroundQueue(bool create) -> DispatchQueue * {
 
 auto DispatchGetUiQueue(bool create) -> DispatchQueue * {
     if (uiQueue == nullptr && create) {
+        // 10000 wasn't enough with TTF font rendering
         uiQueue = new DispatchQueue("UI", 1, 32000, 10, 1);
     }
     return uiQueue;
