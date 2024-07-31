@@ -100,7 +100,6 @@ void SimDrawScreen() {
                 renderer, lerp(40 + brightnessOffset, 248 - brightnessOffset, colorF),
                 lerp(40 + brightnessOffset, 240 - brightnessOffset, colorF),
                 lerp(40 + brightnessOffset, 227 - brightnessOffset, colorF), 0xFF);
-
             SDL_RenderDrawPoint(renderer, x, y);
 #endif
         }
