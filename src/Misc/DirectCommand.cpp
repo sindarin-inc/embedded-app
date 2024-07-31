@@ -84,7 +84,9 @@ void DirectCommand::processCommand(const uint8_t *data, uint8_t length) {
             }
             commandBuffer_.clear();
         } else if (data[i] != '\r') {
-            commandBuffer_ += toupper(data[i]);
+            // This used to do toupper but that's no longer needed as we
+            // tighten up the senders and receivers
+            commandBuffer_ += data[i];
         }
     }
 }

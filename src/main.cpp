@@ -14,6 +14,7 @@
 #include <freertos/queue.h>
 
 #include "Communications/BackgroundSync.hpp"
+#include "Communications/FileTransfer.hpp"
 #include "Communications/WiFi.hpp"
 #include "Inputs/RemoteInput.hpp"
 #include "Misc/Battery.hpp"
@@ -112,6 +113,7 @@ WiFi wiFi(telemetry);
 USBSerial usbSerial;
 
 DirectCommand directCommand(fileSystem);
+FileTransfer fileTransferListener(fileSystem, localStore, usbSerial, directCommand);
 
 bool bootCompleted = false;
 

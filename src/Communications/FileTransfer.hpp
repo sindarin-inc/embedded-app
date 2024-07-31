@@ -1,0 +1,78 @@
+#pragma once
+
+#include <cstdint>
+#include <functional>
+#include <string>
+#include <utility>
+
+#include "Communications/USBSerial.hpp"
+#include "Misc/DirectCommand.hpp"
+#include "Storage/FileSystem.hpp"
+#include "Storage/LocalStore.hpp"
+#include "sindarin-debug.h"
+
+#define MAX_FILE_NAME_LENGTH 65
+#define MAX_FILE_TITLE_LENGTH 129
+#define MAX_FILE_AUTHOR_LENGTH 129
+#define CHUNK_SIZE 1024
+#define CHUNK_HANDSHAKE_INTERVAL 25
+
+class FileTransfer {
+public:
+    FileTransfer(FileSystem &fileSystem, LocalStore &localStore, USBSerial &usbSerial,
+                 DirectCommand &directCommand)
+        : fileSystem_(fileSystem), localStore_(localStore), usbSerial_(usbSerial),
+          directCommand_(directCommand) {
+        directCommand_.addCommandHandler([this](const std::string &command) {
+            if (command.rfind("FILE", 0) == 0 || command.rfind("TRANSFER", 0) == 0) {
+                log_i("Got a FILE or TRANSFER command and handled in FileTransfer.hpp");
+                handleCommand(command);
+            } else if (command == "CANCEL") {
+                if (!awaitingCancelContinue_) {
+                    log_e("Received a CANCEL command when not expecting one");
+                }
+                log_i("Transfer canceled by the sender");
+                file_.close();
+                usbSerial_.txSendData(reinterpret_cast<const uint8_t *>("CANCEL"), 7);
+                fileReceiveState_ = FileReceiveState::Idle;
+                awaitingCancelContinue_ = false;
+            } else if (command == "CONTINUE") {
+                if (!awaitingCancelContinue_) {
+                    log_e("Received a CANCEL command when not expecting one");
+                }
+                log_i("Got a CONTINUE command");
+                directCommand_.setPassthroughData([this](const uint8_t *data, uint8_t length) {
+                    fileTransferCallback(data, length);
+                });
+                usbSerial_.txSendData(reinterpret_cast<const uint8_t *>("CONTINUE"), 8);
+                awaitingCancelContinue_ = false;
+            }
+        });
+    }
+    void fileTransferCallback(const uint8_t *data, size_t rxSize);
+
+private:
+    enum class FileReceiveState { FileData, Idle };
+
+    void handleCommand(const std::string &command);
+    void handleFileCommand(const std::string &command);
+    void handleTransferBookCommand(const std::string &command);
+
+    FileSystem &fileSystem_;
+    LocalStore &localStore_;
+    USBSerial &usbSerial_;
+    DirectCommand &directCommand_;
+
+    FileReceiveState fileReceiveState_ = FileReceiveState::Idle;
+    char fileType_[10]{};
+    char fileNameCharStr_[65];
+    std::string fileName_;
+    std::string fileUUID_;
+    int fileSize_ = 0;
+    int bytesReceived_ = 0;
+    int checksum_ = 0;
+    int runningChecksum_ = 0;
+    int chunksReceived_ = 0;
+    bool awaitingCancelContinue_ = false;
+    SFile file_;
+};
