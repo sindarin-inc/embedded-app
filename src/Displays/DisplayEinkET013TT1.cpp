@@ -304,6 +304,10 @@ void DisplayEinkET013TT1::updateDisplay(DisplaySystem::UpdateType updateType, bo
     }
 
     fullRefreshNext_ = false;
+
+#if SHOW_CACHE_STATS
+    font_->getFontData()->cache_.showStats();
+#endif
 }
 
 void DisplayEinkET013TT1::drawFullscreenBitmapFromFile(RendererStream &stream) {

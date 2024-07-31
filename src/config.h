@@ -108,3 +108,5 @@
 // Set DISPLAY_PIXEL_RESOLUTION_IS_FIX to 0 for displays that allow changing their pixel
 // resolution dynamically.
 #define DISPLAY_PIXEL_RESOLUTION_IS_FIX 1
+
+#define SHOW_CACHE_STATS 1

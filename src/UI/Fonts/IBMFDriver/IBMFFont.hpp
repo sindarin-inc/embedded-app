@@ -84,6 +84,8 @@ public:
                                : 0;
     }
 
+    inline auto getFontData() const -> FontData * { return fontData_; }
+
     auto drawSingleLineOfText(ibmf_defs::Bitmap &canvas, ibmf_defs::Pos pos,
                               const std::string &line, bool inverted) -> int;
     auto getTextSize(const std::string &buffer) -> ibmf_defs::Dim;

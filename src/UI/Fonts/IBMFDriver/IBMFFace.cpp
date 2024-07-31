@@ -691,29 +691,6 @@ auto IBMFFace::getGlyphMetrics(GlyphCode glyphCode, Glyph &appGlyph) -> bool {
     return true;
 }
 
-// auto IBMFFace::getGlyphApproxWidth(GlyphCode glyphCode, int16_t *approxWidth) -> bool {
-
-//     if ((glyphCode == SPACE_CODE) || ((glyphCode < faceHeader_->glyphCount)
-//         ((*glyphsInfo_)[glyphCode].bitmapWidth == 0))) { // send as a space character
-//         *approxWidth = static_cast<int16_t>(faceHeader_->spaceSize);
-//         return true;
-//     }
-
-//     if (glyphCode >= faceHeader_->glyphCount) {
-//         return false;
-//     }
-
-//     GlyphInfo *glyphInfo = &(*glyphsInfo_)[glyphCode];
-
-//     if (glyphInfo == nullptr) {
-//         return false;
-//     }
-
-//     *approxWidth = glyphInfo->bitmapWidth + 1;
-
-//     return true;
-// }
-
 auto IBMFFace::showBitmap(const Bitmap &bitmap, PixelResolution res) const -> void {
     // if constexpr (DEBUG)
     {
