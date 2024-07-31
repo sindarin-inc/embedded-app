@@ -96,10 +96,8 @@ public:
 
     // inline auto getTextWidthQuick(const char *buffer) -> int { return getTextWidth(buffer); }
     inline auto getTextWidthQuick(const char *buffer) -> int16_t {
-        if constexpr (IBMF_TRACING) {
-            LOGD("getTextWidthQuick()");
-        }
 
+#if 0
         int16_t width = 0;
         auto face = fontData_->getFace(faceIndex_);
 
@@ -115,7 +113,28 @@ public:
                     (*buffer == '\0') ? (face->getGlyphWidth(glyphCode) - xoff) : (advance >> 6);
             }
         }
-        // log_w(" width: %" PRIi16, width);
+#else
+        int16_t width = 0;
+        auto face = fontData_->getFace(faceIndex_);
+
+        while (*buffer) {
+
+            GlyphCode glyphCode = fontData_->translate(toChar32(&buffer));
+
+            if (glyphCode == SPACE_CODE) {
+                width += face->getSpaceSize();
+            } else {
+                std::optional<const Glyph *> glyph =
+                    fontData_->cache_.getGlyph(*face, glyphCode, faceIndex_);
+                if (glyph.has_value()) {
+                    width += (*buffer == '\0')
+                                 ? (glyph.value()->bitmap.dim.width - glyph.value()->metrics.xoff)
+                                 : (glyph.value()->metrics.advance >> 6);
+                }
+            }
+        }
+
+#endif
         return width;
     }
 };
