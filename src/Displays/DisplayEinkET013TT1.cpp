@@ -10,6 +10,7 @@
 #include "Misc/Dispatch.hpp"
 #include "Misc/Platform.hpp"
 #include "config.h"
+#include "freertos/task.h"
 
 #define VCOM_INVERTED_MODE_DELTA 2500
 
@@ -307,6 +308,9 @@ void DisplayEinkET013TT1::updateDisplay(DisplaySystem::UpdateType updateType, bo
 
 #if SHOW_CACHE_STATS
     font_->getFontData()->cache_.showStats();
+#endif
+#if ShOW_FREE_STACK_SPACE
+    log_d("Free stack space: %" PRIu32, uxTaskGetStackHighWaterMark(nullptr));
 #endif
 }
 

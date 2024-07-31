@@ -6,12 +6,12 @@
 #include "IBMFFace.hpp"
 
 auto IBMFCache::getGlyph(IBMFFace &face, font_defs::GlyphCode glyphCode,
-                         int16_t charSize) -> std::optional<const font_defs::Glyph *> {
+                         int16_t faceIndex) -> std::optional<const font_defs::Glyph *> {
 
     // log_d("glyph cache request for glyphCode %" PRIu16 " and size %" PRIi16 ".", glyphCode,
     //       charSize);
 
-    auto key = (uint32_t)((glyphCode << 16) | charSize);
+    auto key = (uint32_t)((glyphCode << 16) | faceIndex);
     auto it = glyphCache.find(key);
     if (it != glyphCache.end()) {
         // log_d("hit(%" PRIu16 ") -> %p!", glyphCode, (void *)it->second);

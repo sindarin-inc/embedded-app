@@ -31,7 +31,7 @@ public:
     }
 
     auto getGlyph(IBMFFace &face, GlyphCode glyphCode,
-                  int16_t charSize) -> std::optional<const Glyph *>;
+                  int16_t faceIndex) -> std::optional<const Glyph *>;
 
     void clear();
     void showStats();
