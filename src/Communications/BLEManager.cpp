@@ -30,7 +30,7 @@ auto BLEManager::server() -> BLEServer * {
     return server_;
 }
 
-#if USE_BLE_SERVER_PROXY
+#if CONFIG_USE_BLE_SERVER_PROXY
 auto BLEManager::connectProxy(const std::shared_ptr<CancelFlag> &cancel) -> bool {
     log_i("Connecting to BLE proxy");
 

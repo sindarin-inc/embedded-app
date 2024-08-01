@@ -8,8 +8,10 @@
 template <std::size_t BUFFER_SIZE = BUFSIZ>
 class HttpOstreambuf : public std::streambuf {
 public:
-    HttpOstreambuf(esp_http_client_handle_t client)
-        : client_(client), buffer_(static_cast<char *>(SpiRamMalloc(BUFFER_SIZE))) {
+    HttpOstreambuf(std::function<size_t(char *, size_t)> writeFunc)
+        : writeFunc_(std::move(writeFunc)) {
+        buffer_ = static_cast<char *>(
+            heap_caps_malloc(std::max(static_cast<int>(BUFFER_SIZE), BUFSIZ), MALLOC_CAP_SPIRAM));
         setp(buffer_, buffer_ + BUFFER_SIZE - 1);
     }
 
@@ -19,7 +21,7 @@ public:
     }
 
 private:
-    char buffer_[BUFFER_SIZE] = {};
+    char *buffer_;
     std::function<size_t(char *, size_t)> writeFunc_;
 
     auto sync() -> int override {

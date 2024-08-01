@@ -153,7 +153,7 @@ void BLEImprov::loop() {
                 this->setState(STATE_WAITING);
                 this->setError(improv::ERROR_UNABLE_TO_CONNECT);
                 WiFi::getInstance().disconnectWiFi();
-#if USE_BLE_SERVER_PROXY
+#if CONFIG_USE_BLE_SERVER_PROXY
                 auto bleManager = BLEManager::getInstance(false);
                 if (bleManager != nullptr) {
                     bleManager->disconnectProxy();

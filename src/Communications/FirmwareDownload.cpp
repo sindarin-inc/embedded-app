@@ -68,7 +68,7 @@ void FirmwareDownloader::downloadFirmware(
 
         log_d("Downloading firmware from %s", response.latestGlassesFirmware.url.c_str());
         std::string failMessage;
-        auto success = DownloadFile(
+        auto success = DownloadFileWithWriteBytes(
             response.latestGlassesFirmware.url.c_str(),
             [this, &failMessage](int httpCode, int contentLength) -> bool {
                 if (httpCode != 200) {

@@ -3,7 +3,7 @@
 #include <esp_timer.h>
 #include <utility>
 
-#if USE_BLE_SERVER_PROXY
+#if CONFIG_USE_BLE_SERVER_PROXY
 #include "Communications/BLEHttpClient.hpp"
 #endif
 #include "Communications/SindarinAPI.hpp"
@@ -17,7 +17,7 @@
 auto CreateClient(const std::string &url, bool useBle, const std::shared_ptr<CancelFlag> &cancel)
     -> std::shared_ptr<HttpClient> {
     if (useBle) {
-#if USE_BLE_SERVER_PROXY
+#if CONFIG_USE_BLE_SERVER_PROXY
         return std::make_shared<BLEHttpClient>(url.c_str(), cancel);
 #else
         return nullptr;
@@ -27,7 +27,7 @@ auto CreateClient(const std::string &url, bool useBle, const std::shared_ptr<Can
     }
 }
 
-auto DownloadFile(
+auto DownloadFileCommon(
     const char *url, const std::function<bool(int httpCode, int contentLength)> &openedConnection,
     const std::function<size_t(HttpClient &client, int index, int contentLength)> &readWrite,
     const std::shared_ptr<CancelFlag> &cancel, bool useBle, int expectedSize,
@@ -186,17 +186,17 @@ auto DownloadFile(
     return httpCode;
 }
 
-auto DownloadFile(const char *url,
-                  const std::function<bool(int httpCode, int contentLength)> &openedConnection,
-                  const std::function<size_t(const uint8_t *buf, size_t size)> &writeBytes,
-                  const std::shared_ptr<CancelFlag> &cancel, bool useBle, int expectedSize,
-                  const std::function<void(int bytesWritten, float percentage)> &progressCallback,
-                  bool gzip) -> int {
+auto DownloadFileWithWriteBytes(
+    const char *url, const std::function<bool(int httpCode, int contentLength)> &openedConnection,
+    const std::function<size_t(const uint8_t *buf, size_t size)> &writeBytes,
+    const std::shared_ptr<CancelFlag> &cancel, bool useBle, int expectedSize,
+    const std::function<void(int bytesWritten, float percentage)> &progressCallback, bool gzip)
+    -> int {
 
     constexpr int bufferSize = 4096;
     auto buffer = SpiRamArrayPtr<uint8_t>(bufferSize);
 
-    return DownloadFile(
+    return DownloadFileCommon(
         url, openedConnection,
         [buffer, bufferSize, writeBytes](HttpClient &client, int index, int contentLength) {
         int readLen = client.read(reinterpret_cast<char *>(buffer.get()),
@@ -212,9 +212,10 @@ auto DownloadFile(const char *url,
         cancel, useBle, expectedSize, progressCallback, gzip);
 }
 
-auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry, const char *path,
-                  int length, const std::shared_ptr<CancelFlag> &cancel, bool useBle,
-                  const std::function<void(float percentage)> &progressCallback, bool gzip) -> int {
+auto DownloadFileToPath(const char *url, FileSystem &fileSystem, Telemetry &telemetry,
+                        const char *path, int length, const std::shared_ptr<CancelFlag> &cancel,
+                        bool useBle, const std::function<void(float percentage)> &progressCallback,
+                        bool gzip) -> int {
 
     std::string fullPath(path);
 
@@ -267,7 +268,7 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry,
         return true;
     };
 
-    auto reader = [bufferQueue](WiFiHttpClient &client, int index, int contentLength) -> size_t {
+    auto reader = [bufferQueue](HttpClient &client, int index, int contentLength) -> size_t {
         // NOTE: This gets free'd by the queue consumer. It only needs to be free'd here if we fail
         // to write it to the queue
         auto *data = static_cast<uint8_t *>(SpiRamMalloc(bufferSize));
@@ -345,8 +346,8 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry,
     int httpCode;
     DispatchQueue::dispatchOneOff(
         [url, openedConnection, reader, gzip, &httpCode, bufferQueue, cancel, useBle, length]() {
-        httpCode =
-            DownloadFile(url, openedConnection, reader, cancel, useBle, length, nullptr, gzip);
+        httpCode = DownloadFileCommon(url, openedConnection, reader, cancel, useBle, length,
+                                      nullptr, gzip);
         // Once we get here the download is done, so we can signal the writer task to exit
         DataBlock block = {nullptr, 0};
         if (xQueueSend(bufferQueue, &block, portMAX_DELAY) != pdPASS) {

@@ -571,7 +571,7 @@ void LocalStore::syncFromRemote(
         wifiConnected = true;
     }
 
-#if USE_BLE_SERVER_PROXY
+#if CONFIG_USE_BLE_SERVER_PROXY
     if (!wifiConnected) {
         if (!BLEManager::getInstance()->connectProxy(cancel)) {
             this->telemetry_.logMetric(TelemetryField::METRIC_WIFI, "sync-ble-failed");
@@ -1112,7 +1112,7 @@ auto LocalStore::processReadableDownload(
                         wifiConnected = true;
                     }
 
-#if USE_BLE_SERVER_PROXY
+#if CONFIG_USE_BLE_SERVER_PROXY
                     if (!wifiConnected && !BLEManager::getInstance()->connectProxy(cancel)) {
                         this->telemetry_.logMetric(TelemetryField::METRIC_WIFI,
                                                    "sync-ble-retry-failed");

@@ -14,7 +14,8 @@
 template <std::size_t BUFFER_SIZE = BUFSIZ>
 class HttpIStreambuf : public std::streambuf {
 public:
-    HttpIStreambuf(esp_http_client_handle_t client) : client_(client) {
+    HttpIStreambuf(std::function<size_t(char *, size_t)> readFunc)
+        : readFunc_(std::move(readFunc)) {
         buffer_ =
             static_cast<char *>(SpiRamMalloc(std::max(static_cast<int>(BUFFER_SIZE), BUFSIZ)));
         setg(buffer_, buffer_, buffer_);
@@ -23,8 +24,8 @@ public:
     ~HttpIStreambuf() override { SpiRamFree(buffer_); }
 
 private:
-    char buffer_[BUFFER_SIZE] = {};
-    std::function<size_t(char *, size_t)> readFunc;
+    char *buffer_;
+    std::function<size_t(char *, size_t)> readFunc_;
 
     auto underflow() -> int_type override {
         auto readLength = readFunc_(buffer_, BUFFER_SIZE);

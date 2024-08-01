@@ -4,7 +4,6 @@
 
 #if CONFIG_USE_BLE_SERVER_PROXY
 #include "Communications/BLEHttpClient.hpp"
-#include "Communications/BLEImprov.hpp"
 #include "Communications/BLEManager.hpp"
 #include "Communications/BLEProxy.hpp"
 #include "Communications/BLESyncService.hpp"
@@ -220,7 +219,7 @@ auto SindarinAPI::downloadReadable(const std::shared_ptr<Readable> &readable,
     }
 
     bool gzip = HasSuffix(path, ".gz");
-    auto httpCode = DownloadFile(
+    auto httpCode = DownloadFileToPath(
         remoteUrl.c_str(), fileSystem, telemetry, path.c_str(), fileSize, cancel, useBle,
         [progressCallback](float percentage) { progressCallback(percentage); }, gzip);
 
@@ -233,13 +232,7 @@ auto SindarinAPI::createClient(const std::string &url, const std::string &conten
     -> std::shared_ptr<HttpClient> {
     if (useBle) {
 #if CONFIG_USE_BLE_SERVER_PROXY
-        auto bleManager = BLEManager::getInstance();
-        auto bleProxy = BLEProxy::getInstance();
-        auto bleImprov = BLEImprov::getInstance();
-        auto remoteInput = BLERemoteInput::getInstance();
-
-        return std::make_shared<BLEHttpClient>(bleManager, bleProxy, bleImprov, remoteInput,
-                                               url.c_str(), contentType.c_str(), method, cancel);
+        return std::make_shared<BLEHttpClient>(url.c_str(), cancel, contentType.c_str(), method);
 #else
         return nullptr;
 #endif

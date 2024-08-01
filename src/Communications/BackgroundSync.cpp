@@ -2,7 +2,7 @@
 
 #include <freertos/FreeRTOS.h>
 
-#if USE_BLE_SERVER_PROXY || USE_BLE_SERVER_REMOTE
+#if CONFIG_USE_BLE_SERVER_PROXY || USE_BLE_SERVER_REMOTE
 #include "Communications/BLEManager.hpp"
 #endif
 #include "Communications/CrashReportUploader.hpp"
@@ -41,7 +41,7 @@ void BackgroundSyncInternal(PowerManager &powerManager, PreferencesStore &prefs,
         wifiConnected = true;
     }
 
-#if USE_BLE_SERVER_PROXY
+#if CONFIG_USE_BLE_SERVER_PROXY
     if (!wifiConnected) {
         if (!BLEManager::getInstance()->connectProxy(cancel)) {
             telemetry.logMetric(TelemetryField::METRIC_WIFI, "sync-ble-failed");
@@ -139,7 +139,7 @@ void BackgroundSyncInternal(PowerManager &powerManager, PreferencesStore &prefs,
         log_w("WiFi not connected, ending background sync");
         return;
     }
-#if USE_BLE_SERVER_PROXY
+#if CONFIG_USE_BLE_SERVER_PROXY
     if (bleConnected && !BLEManager::getInstance()->connected()) {
         log_w("BLE proxy not connected, ending background sync");
         return;
@@ -221,7 +221,7 @@ void BackgroundSyncAndSleep(PowerManager &powerManager, PreferencesStore &prefs,
 
     // TODO: Perhaps try dispatching this (maybe needs to happen outside of app_main)
     WiFi::getInstance().disconnectWiFi();
-#if USE_BLE_SERVER_PROXY
+#if CONFIG_USE_BLE_SERVER_PROXY
     auto bleManager = BLEManager::getInstance(false);
     if (bleManager != nullptr) {
         bleManager->disconnectProxy();
