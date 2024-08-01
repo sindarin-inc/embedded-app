@@ -43,41 +43,6 @@ private:
     ///
     auto ligKernUTF8Map(const std::string &line, LigKernMappingHandler handler) const -> void;
 
-    inline auto getGlyphHorizontalMetrics(GlyphCode glyphCode, int16_t &xoff, int16_t &advance,
-                                          int16_t &glyphWidth) -> bool {
-
-        // FT_Face theFace = (glyphCode >= 0x8000) ? privateFace_ : face_;
-        GlyphCode theGlyphCode = (glyphCode >= 0x8000) ? glyphCode - 0x8000 : glyphCode;
-
-        if (glyphCode == SPACE_CODE) {
-            xoff = 0;
-            advance = spaceSize_ >> 6;
-            glyphWidth = advance;
-            return true;
-        } else {
-            std::optional<const Glyph *> glyph =
-                fontData_.cache_.getGlyph(*this, theGlyphCode, size_);
-            if (glyph.has_value()) {
-                xoff = glyph.value()->metrics.xoff;
-                advance = glyph.value()->metrics.advance >> 6;
-                glyphWidth = glyph.value()->bitmap.dim.width;
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    [[nodiscard]] inline auto getGlyphHOffset(GlyphCode glyphCode) -> int16_t {
-        Glyph glyph{};
-
-        if (getGlyphMetrics(glyphCode, glyph)) {
-            return glyph.metrics.xoff;
-        }
-
-        return 0;
-    }
-
     auto ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2, FIX16 *kern) const -> bool;
     auto getGlyphMetrics(GlyphCode glyphCode, Glyph &appGlyph) -> bool;
 
@@ -157,6 +122,8 @@ public:
         return isInitialized() ? face_->size->metrics.height >> 6 : 0;
     }
 
+    inline auto getFontData() const -> FontData * { return &fontData_; }
+
     auto getGlyphForCache(GlyphCode glyphCode, Glyph &glyph) -> bool;
 
     [[nodiscard]] inline auto setDisplayPixelResolution(PixelResolution res) -> bool {
@@ -216,20 +183,23 @@ public:
 
     // inline auto getTextWidthQuick(const char *buffer) -> int { return getTextWidth(buffer); }
     inline auto getTextWidthQuick(const char *buffer) -> int16_t {
-        if constexpr (TTF_TRACING) {
-            LOGD("getTextWidthQuick()");
-        }
 
         int16_t width = 0;
 
         while (*buffer) {
-            int16_t xoff;
-            int16_t advance;
-            int16_t glyphWidth;
+
             GlyphCode glyphCode = translate(toChar32(&buffer));
 
-            if (getGlyphHorizontalMetrics(glyphCode, xoff, advance, glyphWidth)) {
-                width += (*buffer == '\0') ? (glyphWidth - xoff) : advance;
+            if (glyphCode == SPACE_CODE) {
+                width += spaceSize_ >> 6;
+            } else {
+                std::optional<const Glyph *> glyph =
+                    fontData_.cache_.getGlyph(*this, glyphCode, size_);
+                if (glyph.has_value()) {
+                    width += (*buffer == '\0')
+                                 ? (glyph.value()->bitmap.dim.width - glyph.value()->metrics.xoff)
+                                 : (glyph.value()->metrics.advance >> 6);
+                }
             }
         }
 

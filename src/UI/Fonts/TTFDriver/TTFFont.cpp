@@ -360,9 +360,6 @@ auto Font::drawSingleLineOfText(font_defs::Bitmap &canvas, font_defs::Pos pos,
 
         ligKernUTF8Map(line, [this, &canvas, &atPos, inverted](GlyphCode glyphCode, FIX16 kern,
                                                                bool first, bool last) {
-            int16_t hOffset = first ? getGlyphHOffset(glyphCode) : 0;
-            atPos.x += hOffset;
-
             if (glyphCode == SPACE_CODE) {
                 atPos.x += (spaceSize_ >> 6);
             } else {
@@ -370,6 +367,10 @@ auto Font::drawSingleLineOfText(font_defs::Bitmap &canvas, font_defs::Pos pos,
                     fontData_.cache_.getGlyph(*this, glyphCode, size_);
 
                 if (glyph.has_value()) {
+                    if (first) {
+                        atPos.x += glyph.value()->metrics.xoff;
+                    }
+
                     if (glyph.value()->bitmap.dim.width > 0) {
                         lastGlyphWidth_ = glyph.value()->bitmap.dim.width;
                         Pos outPos = Pos(atPos.x - glyph.value()->metrics.xoff,

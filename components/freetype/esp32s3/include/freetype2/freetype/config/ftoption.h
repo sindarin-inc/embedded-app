@@ -170,7 +170,7 @@ FT_BEGIN_HEADER
  *
  *   Define this macro if you want to enable this 'feature'.
  */
-#define FT_CONFIG_OPTION_USE_LZW
+// #define FT_CONFIG_OPTION_USE_LZW
 
 /**************************************************************************
  *
@@ -313,7 +313,7 @@ FT_BEGIN_HEADER
  *   You would normally undefine this configuration macro when building a
  *   version of FreeType that doesn't contain a Type~1 or CFF driver.
  */
-#define FT_CONFIG_OPTION_POSTSCRIPT_NAMES
+// #define FT_CONFIG_OPTION_POSTSCRIPT_NAMES
 
 /**************************************************************************
  *
@@ -329,7 +329,7 @@ FT_BEGIN_HEADER
  *   in your 'psnames' module.  The Type~1 driver will not be able to
  *   synthesize a Unicode charmap out of the glyphs found in the fonts.
  */
-#define FT_CONFIG_OPTION_ADOBE_GLYPH_LIST
+// #define FT_CONFIG_OPTION_ADOBE_GLYPH_LIST
 
 /**************************************************************************
  *
@@ -341,7 +341,7 @@ FT_BEGIN_HEADER
  *
  *   Note that the 'FOND' resource isn't checked.
  */
-#define FT_CONFIG_OPTION_MAC_FONTS
+// #define FT_CONFIG_OPTION_MAC_FONTS
 
 /**************************************************************************
  *
@@ -371,7 +371,7 @@ FT_BEGIN_HEADER
  * incrementally as the document is parsed, such as the Ghostscript
  * interpreter for the PostScript language.
  */
-#define FT_CONFIG_OPTION_INCREMENTAL
+// #define FT_CONFIG_OPTION_INCREMENTAL
 
 /**************************************************************************
  *
@@ -508,7 +508,7 @@ FT_BEGIN_HEADER
  *
  *   More details on the hooks can be found in file `otsvg.h`.
  */
-#define FT_CONFIG_OPTION_SVG
+// #define FT_CONFIG_OPTION_SVG
 
 /**************************************************************************
  *
@@ -536,7 +536,7 @@ FT_BEGIN_HEADER
  * embedded bitmaps in all formats using the 'sfnt' module (namely
  * TrueType~& OpenType).
  */
-#define TT_CONFIG_OPTION_EMBEDDED_BITMAPS
+// #define TT_CONFIG_OPTION_EMBEDDED_BITMAPS
 
 /**************************************************************************
  *
@@ -544,7 +544,7 @@ FT_BEGIN_HEADER
  * outlines (from the 'COLR'/'CPAL' tables) in all formats using the 'sfnt'
  * module (namely TrueType~& OpenType).
  */
-#define TT_CONFIG_OPTION_COLOR_LAYERS
+// #define TT_CONFIG_OPTION_COLOR_LAYERS
 
 /**************************************************************************
  *
@@ -558,7 +558,7 @@ FT_BEGIN_HEADER
  *
  * (By default, the module uses 'psnames' to extract glyph names.)
  */
-#define TT_CONFIG_OPTION_POSTSCRIPT_NAMES
+// #define TT_CONFIG_OPTION_POSTSCRIPT_NAMES
 
 /**************************************************************************
  *
@@ -571,7 +571,7 @@ FT_BEGIN_HEADER
  * Accessing SFNT names is done through the functions declared in
  * `ftsnames.h`.
  */
-#define TT_CONFIG_OPTION_SFNT_NAMES
+// #define TT_CONFIG_OPTION_SFNT_NAMES
 
 /**************************************************************************
  *
@@ -932,26 +932,23 @@ FT_BEGIN_HEADER
  * Check CFF darkening parameters.  The checks are the same as in function
  * `cff_property_set` in file `cffdrivr.c`.
  */
-#if CFF_CONFIG_OPTION_DARKENING_PARAMETER_X1 < 0 ||   \
-    CFF_CONFIG_OPTION_DARKENING_PARAMETER_X2 < 0 ||   \
-    CFF_CONFIG_OPTION_DARKENING_PARAMETER_X3 < 0 ||   \
-    CFF_CONFIG_OPTION_DARKENING_PARAMETER_X4 < 0 ||   \
-                                                      \
-    CFF_CONFIG_OPTION_DARKENING_PARAMETER_Y1 < 0 ||   \
-    CFF_CONFIG_OPTION_DARKENING_PARAMETER_Y2 < 0 ||   \
-    CFF_CONFIG_OPTION_DARKENING_PARAMETER_Y3 < 0 ||   \
-    CFF_CONFIG_OPTION_DARKENING_PARAMETER_Y4 < 0 ||   \
-                                                      \
-    CFF_CONFIG_OPTION_DARKENING_PARAMETER_X1 >        \
-        CFF_CONFIG_OPTION_DARKENING_PARAMETER_X2 ||   \
-    CFF_CONFIG_OPTION_DARKENING_PARAMETER_X2 >        \
-        CFF_CONFIG_OPTION_DARKENING_PARAMETER_X3 ||   \
-    CFF_CONFIG_OPTION_DARKENING_PARAMETER_X3 >        \
-        CFF_CONFIG_OPTION_DARKENING_PARAMETER_X4 ||   \
-                                                      \
-    CFF_CONFIG_OPTION_DARKENING_PARAMETER_Y1 > 500 || \
-    CFF_CONFIG_OPTION_DARKENING_PARAMETER_Y2 > 500 || \
-    CFF_CONFIG_OPTION_DARKENING_PARAMETER_Y3 > 500 || \
+#if CFF_CONFIG_OPTION_DARKENING_PARAMETER_X1 < 0 ||                                                \
+    CFF_CONFIG_OPTION_DARKENING_PARAMETER_X2 < 0 ||                                                \
+    CFF_CONFIG_OPTION_DARKENING_PARAMETER_X3 < 0 ||                                                \
+    CFF_CONFIG_OPTION_DARKENING_PARAMETER_X4 < 0 ||                                                \
+                                                                                                   \
+    CFF_CONFIG_OPTION_DARKENING_PARAMETER_Y1 < 0 ||                                                \
+    CFF_CONFIG_OPTION_DARKENING_PARAMETER_Y2 < 0 ||                                                \
+    CFF_CONFIG_OPTION_DARKENING_PARAMETER_Y3 < 0 ||                                                \
+    CFF_CONFIG_OPTION_DARKENING_PARAMETER_Y4 < 0 ||                                                \
+                                                                                                   \
+    CFF_CONFIG_OPTION_DARKENING_PARAMETER_X1 > CFF_CONFIG_OPTION_DARKENING_PARAMETER_X2 ||         \
+    CFF_CONFIG_OPTION_DARKENING_PARAMETER_X2 > CFF_CONFIG_OPTION_DARKENING_PARAMETER_X3 ||         \
+    CFF_CONFIG_OPTION_DARKENING_PARAMETER_X3 > CFF_CONFIG_OPTION_DARKENING_PARAMETER_X4 ||         \
+                                                                                                   \
+    CFF_CONFIG_OPTION_DARKENING_PARAMETER_Y1 > 500 ||                                              \
+    CFF_CONFIG_OPTION_DARKENING_PARAMETER_Y2 > 500 ||                                              \
+    CFF_CONFIG_OPTION_DARKENING_PARAMETER_Y3 > 500 ||                                              \
     CFF_CONFIG_OPTION_DARKENING_PARAMETER_Y4 > 500
 #error "Invalid CFF darkening parameters!"
 #endif

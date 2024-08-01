@@ -5,19 +5,8 @@
 #include "TTFCache.hpp"
 #include "TTFFont.hpp"
 
-auto TTFCache::getGlyph(Font &font, font_defs::GlyphCode glyphCode, int16_t charSize)
-    -> std::optional<const font_defs::Glyph *> {
-
-    // log_d("glyph cache request for glyphCode %" PRIu16 " and size %" PRIi16 ".", glyphCode,
-    //       charSize);
-
-    auto key = (uint32_t)((glyphCode << 16) | charSize);
-    auto it = glyphCache.find(key);
-    if (it != glyphCache.end()) {
-        // log_d("hit(%" PRIu16 ") -> %p!", glyphCode, (void *)it->second);
-        hitCount++;
-        return it->second.get();
-    }
+auto TTFCache::doGetGlyph(Font &font, font_defs::GlyphCode glyphCode,
+                          uint32_t key) -> std::optional<const font_defs::Glyph *> {
 
     // auto glyph = new font_defs::Glyph();
     auto allocator = SpiramAllocator<font_defs::Glyph>();

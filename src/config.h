@@ -122,11 +122,14 @@
 
 // By default, we'll just use ONE BIT font rendering and display, but the below
 // will allow us to test out 8Bit should we want to
-//#define CONFIG_WAVESHARE_8BIT 1
+// #define CONFIG_WAVESHARE_8BIT 1
 // This allows us to not actually do anything on the display through the driver
 // for testing headless
 #define CONFIG_WAVESHARE_HEADLESS 1
 #endif
+
+#undef CONFIG_FONT_IBMF
+#define CONFIG_FONT_TTF 1
 
 #if CONFIG_FONT_TTF
 #define FT_USE_PSRAM 1
@@ -135,3 +138,6 @@
 // Set DISPLAY_PIXEL_RESOLUTION_IS_FIX to 0 for displays that allow changing their pixel
 // resolution dynamically.
 #define DISPLAY_PIXEL_RESOLUTION_IS_FIX 1
+
+#define SHOW_CACHE_STATS 1
+#define ShOW_FREE_STACK_SPACE 1

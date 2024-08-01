@@ -38,4 +38,4 @@ dlopen=''
 dlpreopen=''
 
 # Directory that this library needs to be installed in:
-libdir='/home/turgu1/Dev/ben/embedded-app/components/freetype/freetype/../esp32s3/lib'
+libdir='/home/turgu1/Dev/embedded-app/components/freetype/freetype/../esp32s3/lib'

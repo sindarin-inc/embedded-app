@@ -6,7 +6,6 @@
 
 #include <memory>
 #include <optional>
-#include <unordered_map>
 
 #include "Misc/SpiramAllocator.hpp"
 #include "TTFDefs.hpp"
@@ -22,6 +21,8 @@ private:
     uint32_t hitCount = 0;
     uint32_t missCount = 0;
 
+    auto doGetGlyph(Font &font, GlyphCode glyphCode, uint32_t key) -> std::optional<const Glyph *>;
+
 public:
     TTFCache() {}
 
@@ -30,8 +31,19 @@ public:
         clear();
     }
 
-    auto getGlyph(Font &font, GlyphCode glyphCode, int16_t charSize)
-        -> std::optional<const Glyph *>;
+    inline auto getGlyph(Font &font, GlyphCode glyphCode,
+                         int16_t charSize) -> std::optional<const Glyph *> {
+
+        auto key = (uint32_t)((glyphCode << 16) | charSize);
+        auto it = glyphCache.find(key);
+        if (it != glyphCache.end()) {
+            // log_d("hit(%" PRIu16 ") -> %p!", glyphCode, (void *)it->second);
+            hitCount++;
+            return it->second.get();
+        }
+
+        return doGetGlyph(font, glyphCode, key);
+    }
 
     void clear();
     void showStats();
