@@ -17,28 +17,28 @@ class Font;
 
 class TTFCache {
 private:
-    SpiramMap<uint32_t, std::shared_ptr<Glyph>> glyphCache;
-    uint32_t hitCount = 0;
-    uint32_t missCount = 0;
+    SpiramMap<uint32_t, std::shared_ptr<Glyph>> glyphCache_;
+    uint32_t hitCount_ = 0;
+    uint32_t missCount_ = 0;
 
     auto doGetGlyph(Font &font, GlyphCode glyphCode, uint32_t key) -> std::optional<const Glyph *>;
 
 public:
-    TTFCache() {}
+    TTFCache() = default;
 
     ~TTFCache() {
         showStats();
         clear();
     }
 
-    inline auto getGlyph(Font &font, GlyphCode glyphCode,
-                         int16_t charSize) -> std::optional<const Glyph *> {
+    inline auto getGlyph(Font &font, GlyphCode glyphCode, int16_t charSize)
+        -> std::optional<const Glyph *> {
 
-        auto key = (uint32_t)((glyphCode << 16) | charSize);
-        auto it = glyphCache.find(key);
-        if (it != glyphCache.end()) {
+        auto key = static_cast<uint32_t>((glyphCode << 16) | charSize);
+        auto it = glyphCache_.find(key);
+        if (it != glyphCache_.end()) {
             // log_d("hit(%" PRIu16 ") -> %p!", glyphCode, (void *)it->second);
-            hitCount++;
+            hitCount_++;
             return it->second.get();
         }
 
@@ -46,7 +46,7 @@ public:
     }
 
     void clear();
-    void showStats();
+    void showStats() const;
 
     void showBitmap(const Bitmap &bitmap, bool inverted, PixelResolution pixelResolution) const;
 
