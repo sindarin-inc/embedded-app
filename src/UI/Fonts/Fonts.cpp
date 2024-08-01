@@ -100,19 +100,13 @@ Font fontFace0 = Font(mainFont, 8);
 Font fontFace1 = Font(mainFont, 10);
 Font fontFace2 = Font(mainFont, 12);
 #elif CONFIG_DISPLAY_WAVESHARE_6INHD
-// Font fontFace0 = Font(mainFont, 20);
-// Font fontFace1 = Font(mainFont, 20);
-// Font fontFace2 = Font(mainFont, 20);
-Font fontFace0 = Font(mainFont, 6);
-Font fontFace1 = Font(mainFont, 6);
-Font fontFace2 = Font(mainFont, 6);
+Font fontFace0 = Font(mainFont, 20);
+Font fontFace1 = Font(mainFont, 20);
+Font fontFace2 = Font(mainFont, 20);
 #else
-Font fontFace0 = Font(mainFont, 6);
-Font fontFace1 = Font(mainFont, 6);
-Font fontFace2 = Font(mainFont, 6);
-// Font fontFace0 = Font(mainFont, 12);
-// Font fontFace1 = Font(mainFont, 16);
-// Font fontFace2 = Font(mainFont, 20);
+Font fontFace0 = Font(mainFont, 12);
+Font fontFace1 = Font(mainFont, 16);
+Font fontFace2 = Font(mainFont, 20);
 #endif
 
 #endif
