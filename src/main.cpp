@@ -61,6 +61,9 @@ DisplayWaveshare6inHD myDisplay;
 #elif CONFIG_DISPLAY_SHARP_27IN
 #include "Displays/DisplaySharp27in.hpp"
 DisplaySharp27in myDisplay;
+#elif CONFIG_DISPLAY_WAVESHARE_128ROUND
+#include "Displays/DisplayWaveshare128Round.hpp"
+DisplayWaveshare128Round myDisplay;
 #endif
 
 PreferencesStore prefs;

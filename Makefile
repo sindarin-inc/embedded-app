@@ -31,6 +31,8 @@ else ifeq ($(TARGET),waveshare-6inhd)
 	IDF_PROFILE = -B build-$(TARGET) -DSDKCONFIG_DEFAULTS="sdkconfig.defaults.$(TARGET)"
 else ifeq ($(TARGET),sharp-27in)
 	IDF_PROFILE = -B build-$(TARGET) -DSDKCONFIG_DEFAULTS="sdkconfig.defaults.$(TARGET)"
+else ifeq ($(TARGET),waveshare-128round)
+	IDF_PROFILE = -B build-$(TARGET) -DSDKCONFIG_DEFAULTS="sdkconfig.defaults.$(TARGET)"
 endif
 
 # Optional variables for the Simulator builds
