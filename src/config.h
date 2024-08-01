@@ -128,9 +128,11 @@
 #define CONFIG_WAVESHARE_HEADLESS 1
 #endif
 
-#undef CONFIG_FONT_IBMF
-#define CONFIG_FONT_TTF 1
+// Uncomment the following lines to force the use of TTF
+// #undef CONFIG_FONT_IBMF
+// #define CONFIG_FONT_TTF 1
 
+// Thw following could eventually be romeved as PSRAM seems to be the way to go
 #if CONFIG_FONT_TTF
 #define FT_USE_PSRAM 1
 #endif
