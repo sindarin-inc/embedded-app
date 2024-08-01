@@ -70,7 +70,7 @@ public:
                     GlyphCode glyphCode = FT_Get_Char_Index(face_, ' ');
 
                     std::optional<const Glyph *> glyph =
-                        fontData_.cache_.getGlyph(*this, glyphCode, size_);
+                        fontData_.cache.getGlyph(*this, glyphCode, size_);
 
                     if (!glyph.has_value()) {
                         LOGE("Unable to load glyph for space char.");
@@ -122,7 +122,7 @@ public:
         return isInitialized() ? face_->size->metrics.height >> 6 : 0;
     }
 
-    inline auto getFontData() const -> FontData * { return &fontData_; }
+    [[nodiscard]] inline auto getFontData() const -> FontData * { return &fontData_; }
 
     auto getGlyphForCache(GlyphCode glyphCode, Glyph &glyph) -> bool;
 
@@ -158,7 +158,7 @@ public:
                         "Cannot set font resolution to EIGHT_BITS if the display resolution is not "
                         "EIGHT_BITS!");
                 } else {
-                    fontData_.cache_.clear();
+                    fontData_.cache.clear();
                     fontPixelResolution_ = res;
                 }
             }
@@ -194,7 +194,7 @@ public:
                 width += spaceSize_ >> 6;
             } else {
                 std::optional<const Glyph *> glyph =
-                    fontData_.cache_.getGlyph(*this, glyphCode, size_);
+                    fontData_.cache.getGlyph(*this, glyphCode, size_);
                 if (glyph.has_value()) {
                     width += (*buffer == '\0')
                                  ? (glyph.value()->bitmap.dim.width - glyph.value()->metrics.xoff)

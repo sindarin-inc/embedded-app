@@ -5,8 +5,8 @@
 #include "TTFCache.hpp"
 #include "TTFFont.hpp"
 
-auto TTFCache::doGetGlyph(Font &font, font_defs::GlyphCode glyphCode,
-                          uint32_t key) -> std::optional<const font_defs::Glyph *> {
+auto TTFCache::doGetGlyph(Font &font, font_defs::GlyphCode glyphCode, uint32_t key)
+    -> std::optional<const font_defs::Glyph *> {
 
     // auto glyph = new font_defs::Glyph();
     auto allocator = SpiramAllocator<font_defs::Glyph>();
@@ -21,10 +21,10 @@ auto TTFCache::doGetGlyph(Font &font, font_defs::GlyphCode glyphCode,
         }
     }
 
-    if (font.getGlyphForCache(glyphCode, *glyph.get())) {
-        glyphCache.insert({key, glyph});
+    if (font.getGlyphForCache(glyphCode, *glyph)) {
+        glyphCache_.insert({key, glyph});
         // log_d("miss (%" PRIu16 ") -> %p!", glyphCode, glyph);
-        missCount++;
+        missCount_++;
         return glyph.get();
     }
 
@@ -32,19 +32,20 @@ auto TTFCache::doGetGlyph(Font &font, font_defs::GlyphCode glyphCode,
 }
 
 void TTFCache::clear() {
-    for (auto &entry : glyphCache) {
+    for (auto &entry : glyphCache_) {
         if (entry.second->bitmap.pixels != nullptr) {
             free(entry.second->bitmap.pixels);
             entry.second->bitmap.pixels = nullptr;
         }
     }
-    glyphCache.clear();
-    hitCount = missCount = 0;
+    glyphCache_.clear();
+    hitCount_ = missCount_ = 0;
     log_i("Glyphs' cache cleared.");
 }
 
-void TTFCache::showStats() {
-    log_i("Glyphs' cache statistics: hits: %" PRIu32 ", misses: %" PRIu32 ".", hitCount, missCount);
+void TTFCache::showStats() const {
+    log_i("Glyphs' cache statistics: hits: %" PRIu32 ", misses: %" PRIu32 ".", hitCount_,
+          missCount_);
 }
 
 void TTFCache::showBitmap(const Bitmap &bitmap, bool inverted,

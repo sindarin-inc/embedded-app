@@ -307,7 +307,7 @@ void DisplayEinkET013TT1::updateDisplay(DisplaySystem::UpdateType updateType, bo
     fullRefreshNext_ = false;
 
 #if SHOW_CACHE_STATS
-    font_->getFontData()->cache_.showStats();
+    font_->getFontData()->cache.showStats();
 #endif
 #if ShOW_FREE_STACK_SPACE
     log_d("Free stack space: %" PRIu16, uxTaskGetStackHighWaterMark(nullptr));

@@ -260,7 +260,7 @@ auto Font::getGlyphMetrics(GlyphCode glyphCode, Glyph &appGlyph) -> bool {
         return true;
     }
 
-    std::optional<const Glyph *> glyph = fontData_.cache_.getGlyph(*this, glyphCode, size_);
+    std::optional<const Glyph *> glyph = fontData_.cache.getGlyph(*this, glyphCode, size_);
 
     if (!glyph.has_value()) {
 
@@ -364,7 +364,7 @@ auto Font::drawSingleLineOfText(font_defs::Bitmap &canvas, font_defs::Pos pos,
                 atPos.x += (spaceSize_ >> 6);
             } else {
                 std::optional<const Glyph *> glyph =
-                    fontData_.cache_.getGlyph(*this, glyphCode, size_);
+                    fontData_.cache.getGlyph(*this, glyphCode, size_);
 
                 if (glyph.has_value()) {
                     if (first) {
