@@ -26,8 +26,8 @@ extern SDL_Texture *deviceScreen;
 
 bool saveScreenshotPng(DisplaySystem &display, std::string filepath, SDL_Window *window,
                        SDL_Renderer *renderer) {
-    if (!stbi_write_png(filepath.c_str(), display.absoluteWidth(), display.absoluteHeight(), 1,
-                        display.buffer().get(), 0)) {
+    if (!stbi_write_png(filepath.c_str(), display.gfxClass()->width(), display.gfxClass()->height(),
+                        1, display.buffer().get(), 0)) {
         log_e("Unable to save rendered image to %s", filepath.c_str());
     }
 

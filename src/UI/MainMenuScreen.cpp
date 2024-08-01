@@ -6,7 +6,7 @@
 #include "Misc/StringUtil.hpp"
 #include "Misc/Style.hpp"
 
-#if EINKET013TT1
+#if CONFIG_DISPLAY_EINKET013TT1
 #include "Displays/DisplayEinkET013TT1.hpp"
 #endif
 
@@ -16,7 +16,8 @@ auto MainMenuScreen::layout(LayoutContext &context, Size size) -> Size {
     const auto inset = 3;
     const auto spacing = 5;
 
-    // Layout the top bar
+    // Layout the top bar -- note the calculation 20 - 2 * inset is to make the top bar 20 pixels
+    // but this is hardcoded and should look at the size of the text for the words there instead.
     auto topBarRect = context.setSublayoutFrame(
         {{inset, inset}, {size.width, 20 - 2 * inset}}, LayoutOptionsNone,
         [this](LayoutContext &context, Size size) -> Size {
@@ -116,12 +117,7 @@ void MainMenuScreen::render(DisplaySystem &display) {
     // log_i("Menuscreen render (selected = %s)",
     // subMenus_[currentSelection_]->getMenuName().c_str());
 
-    // For the main menu, we want to use the entire screen and ignore the user settings for
-    // reading box.
-    setFrame(
-        {{display.xAbsolute(display.defaultXPadding), display.yAbsolute(display.defaultYPadding)},
-         {display.defaultScreenWidth - 2 * display.defaultXPadding,
-          display.defaultScreenHeight - 2 * display.defaultYPadding}});
+    setFrame(defaultFrameRect());
 
     // We must explicitly set this in case of toggle between dark mode and not dark mode
     topBarSelectionView_.strokeColor = display.fg;

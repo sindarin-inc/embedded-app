@@ -17,12 +17,12 @@ public:
     AboutScreen(DisplaySystem &display, PreferencesStore &prefs, PowerManager &power)
         : EinkView(display), display_(display), prefs_(prefs), power_(power),
           solLogoView_(display, SOL_LOGO_BITS, sol_logo_width, sol_logo_height),
-          productNameView_(display, "Product Name: Sol Reader", &ibmf75Face0),
-          serialNumberView_(display, "", &ibmf75Face0),
-          firmwareVersionView_(display, "", &ibmf75Face0), wifiMacView_(display, "", &ibmf75Face0),
-          remoteFirmwareVersionView_(display, "", &ibmf75Face0),
-          remoteBatteryView_(display, "", &ibmf75Face0),
-          returnToMenuView_(display, "Press  \ue000  to return to System Settings", &ibmf75Face0) {
+          productNameView_(display, "Product Name: Sol Reader", &fontFace0),
+          serialNumberView_(display, "", &fontFace0), firmwareVersionView_(display, "", &fontFace0),
+          wifiMacView_(display, "", &fontFace0),
+          remoteFirmwareVersionView_(display, "", &fontFace0),
+          remoteBatteryView_(display, "", &fontFace0),
+          returnToMenuView_(display, "Press  \ue000  to return to System Settings", &fontFace0) {
         productNameView_.setText("Product Name: Sol Reader");
 
         auto serialStr = StringFormat("Serial Number: %s", GetSerialNumber().c_str());

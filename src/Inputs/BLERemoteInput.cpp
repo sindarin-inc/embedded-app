@@ -1,4 +1,4 @@
-#if USE_BLE_SERVER_REMOTE
+#if CONFIG_USE_BLE_SERVER_REMOTE
 
 #include "BLERemoteInput.hpp"
 

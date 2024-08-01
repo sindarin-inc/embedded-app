@@ -1,19 +1,21 @@
 #pragma once
 
+#include "config.h"
+
+#if CONFIG_FONT_IBMF
+
 #include <cstdio>
 #include <functional>
 
-#include "IBMFFontLow.hpp"
+#include "IBMFFontData.hpp"
 #include "UI/Fonts/Font.hpp"
-#include "UTF8Iterator.hpp"
+#include "UI/Fonts/UTF8Iterator.hpp"
 
-class IBMFFont : public Font {
+class Font {
 private:
-    static constexpr char const *TAG = "IBMFFont";
-
-    IBMFFontLow *font_;
+    FontData *fontData_;
     int faceIndex_;
-    // IBMFFaceLow *face_;
+    // IBMFFace *face_;
 
     // Maximum size of an allocated buffer to do vsnprintf formatting
     static constexpr int MAX_SIZE = 100;
@@ -32,13 +34,13 @@ private:
     auto ligKernUTF8Map(const std::string &line, LigKernMappingHandler handler) const -> void;
 
 public:
-    IBMFFont(IBMFFontLow &ibmFont, int index) noexcept
-        : Font(FontType::IBMF), font_(&ibmFont), faceIndex_(index) {}
-    ~IBMFFont() override = default;
+    Font(FontData &ibmfFont, int index) noexcept : fontData_(&ibmfFont), faceIndex_(index) {}
+
+    ~Font() = default;
 
     [[nodiscard]] inline auto isInitialized() const -> bool {
-        if ((font_ != nullptr) && font_->isInitialized() &&
-            font_->getFace(faceIndex_)->isInitialized()) {
+        if ((fontData_ != nullptr) && fontData_->isInitialized() &&
+            fontData_->getFace(faceIndex_)->isInitialized()) {
             return true;
         }
 
@@ -46,38 +48,40 @@ public:
         return false;
     }
 
-    [[nodiscard]] inline auto getFace() -> const IBMFFaceLow * {
-        return isInitialized() ? font_->getFace(faceIndex_) : nullptr;
+    [[nodiscard]] inline auto getFace() -> const IBMFFace * {
+        return isInitialized() ? fontData_->getFace(faceIndex_) : nullptr;
     }
 
-    inline void setResolution(PixelResolution res) {
+    inline void setPixelResolution(PixelResolution res) {
         if constexpr (IBMF_TRACING) {
-            LOGD("setResolution()");
+            LOGD("setPixelResolution()");
         }
         if (isInitialized()) {
-            font_->getFace(faceIndex_)->setResolution(res);
+            fontData_->getFace(faceIndex_)->setPixelResolution(res);
         }
     }
 
-    [[nodiscard]] inline auto getResolution() const -> PixelResolution {
+    [[nodiscard]] inline auto getPixelResolution() const -> PixelResolution {
         if constexpr (IBMF_TRACING) {
-            LOGD("getResolution()");
+            LOGD("getPixelResolution()");
         }
-        return (isInitialized()) ? font_->getFace(faceIndex_)->getResolution() : DEFAULT_RESOLUTION;
+        return (isInitialized()) ? fontData_->getFace(faceIndex_)->getPixelResolution()
+                                 : DEFAULT_PIXEL_RESOLUTION;
     }
 
-    [[nodiscard]] inline auto lineHeight() const -> int override {
+    [[nodiscard]] inline auto lineHeight() const -> int {
         if constexpr (IBMF_TRACING) {
             LOGD("lineHeight()");
             if (!isInitialized()) {
                 LOGE("Not initialized!!!");
             }
         }
-        return isInitialized() ? static_cast<int>(font_->getFace(faceIndex_)->getLineHeight()) : 0;
+        return isInitialized() ? static_cast<int>(fontData_->getFace(faceIndex_)->getLineHeight())
+                               : 0;
     }
 
-    void drawSingleLineOfText(ibmf_defs::Bitmap &canvas, ibmf_defs::Pos pos,
-                              const std::string &line, bool inverted) const;
+    auto drawSingleLineOfText(ibmf_defs::Bitmap &canvas, ibmf_defs::Pos pos,
+                              const std::string &line, bool inverted) const -> int;
     auto getTextSize(const std::string &buffer) -> ibmf_defs::Dim;
     auto getTextWidth(const std::string &buffer) -> int;
 
@@ -93,14 +97,14 @@ public:
         }
 
         int16_t width = 0;
-        auto face = font_->getFace(faceIndex_);
+        auto face = fontData_->getFace(faceIndex_);
 
         // log_w("word: %s", buffer);
 
         while (*buffer) {
             int16_t xoff;
             FIX16 advance;
-            GlyphCode glyphCode = font_->translate(toChar32(&buffer));
+            GlyphCode glyphCode = fontData_->translate(toChar32(&buffer));
 
             if (face->getGlyphHorizontalMetrics(glyphCode, &xoff, &advance)) {
                 width +=
@@ -111,3 +115,5 @@ public:
         return width;
     }
 };
+
+#endif

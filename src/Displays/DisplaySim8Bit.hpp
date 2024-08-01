@@ -8,31 +8,25 @@
 
 class DisplaySim8Bit : public DisplaySystem {
 public:
-    DisplaySim8Bit(uint16_t w, uint16_t h) noexcept : gfxCanvas_(w, h) {
+    DisplaySim8Bit(uint16_t w, uint16_t h) noexcept : gfxCanvas_(w, h), width_(w), height_(h) {
         gfxClass_ = &gfxCanvas_;
-        canvasBuffer_ = gfxCanvas_.getBuffer();
-        canvasWidth_ = w;
-        canvasHeight_ = h;
-
-        defaultXPadding = 100;
-        defaultYPadding = 20;
-        defaultScreenWidth = canvasWidth_;
-        defaultScreenHeight = canvasHeight_;
-        maxBoundingBox = {5, 5, static_cast<uint32_t>(defaultScreenWidth) - 10,
-                          static_cast<uint32_t>(defaultScreenHeight) - 10};
-        minBoundingBox = {0, 0, 125, 45};
-        defaultBoundingBox = {defaultXPadding, defaultYPadding,
-                              defaultScreenWidth - static_cast<uint32_t>(defaultXPadding) * 2,
-                              defaultScreenHeight - static_cast<uint32_t>(defaultYPadding) * 2};
-
         buffer_ = std::make_unique<uint8_t[]>(w * h);
     };
+
     DisplaySim8Bit(DisplaySim8Bit const &) = delete;
+
     ~DisplaySim8Bit() override {
         if (renderQueue_ != nullptr) {
             vQueueDelete(renderQueue_);
         }
     };
+
+    [[nodiscard]] auto defaultTextInsets() const -> DisplayInset override {
+        return {100, 100, 20, 20};
+    };
+    [[nodiscard]] auto minTextInsets() const -> DisplayInset override { return {5, 5, 5, 5}; };
+    [[nodiscard]] auto minTextBoxWidth() const -> int16_t override { return 125; };
+    [[nodiscard]] auto minTextBoxHeight() const -> int16_t override { return 45; };
 
     auto setup() -> bool override;
 
@@ -52,6 +46,13 @@ public:
     void setSkipSignalling(bool skip) override { skipSignalling_ = skip; };
 
 protected:
+    [[nodiscard]] auto nativeWidth() const -> uint16_t override { return width_; }
+    [[nodiscard]] auto nativeHeight() const -> uint16_t override { return height_; }
+
+    [[nodiscard]] auto getBuffer(void) -> uint8_t * override { return gfxCanvas_.getBuffer(); }
+
+    uint16_t width_;
+    uint16_t height_;
     std::unique_ptr<uint8_t[]> buffer_;
     bool skipSignalling_ = false;
     GFXcanvas8 gfxCanvas_;

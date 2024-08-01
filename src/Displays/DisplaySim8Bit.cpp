@@ -26,7 +26,7 @@ void DisplaySim8Bit::updateDisplay(DisplaySystem::UpdateType updateType, bool cl
     }
 
     // Double buffer so we can start writing the next frame buffer while this one is getting drawn
-    memcpy(buffer_.get(), gfxCanvas_.getBuffer(), canvasWidth_ * canvasHeight_);
+    memcpy(buffer_.get(), gfxCanvas_.getBuffer(), gfxCanvas_.width() * gfxCanvas_.height());
 
     if (!skipSignalling_) {
         uint8_t in = 1;

@@ -1,7 +1,6 @@
 #pragma once
 
 #include <algorithm>
-#include <esp_heap_caps.h>
 #include <esp_http_client.h>
 #include <functional>
 #include <istream>
@@ -9,15 +8,19 @@
 #include <utility>
 #include <vector>
 
+#include "Misc/SpiramAllocator.hpp"
 #include "sindarin-debug.h"
 
 template <std::size_t BUFFER_SIZE = BUFSIZ>
 class HttpIStreambuf : public std::streambuf {
 public:
-    HttpIStreambuf(std::function<size_t(char *, size_t)> readFunc)
-        : readFunc_(std::move(readFunc)) {
+    HttpStreambuf(esp_http_client_handle_t client) : client_(client) {
+        buffer_ =
+            static_cast<char *>(SpiRamMalloc(std::max(static_cast<int>(BUFFER_SIZE), BUFSIZ)));
         setg(buffer_, buffer_, buffer_);
     }
+
+    ~HttpStreambuf() override { SpiRamFree(buffer_); }
 
 private:
     char buffer_[BUFFER_SIZE] = {};

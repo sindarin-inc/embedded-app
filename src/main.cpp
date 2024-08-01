@@ -6,7 +6,7 @@
 #if !SIMULATOR
 #include <soc/rtc.h>
 #endif
-#if USE_TINYUSB_SERIAL
+#if CONFIG_USE_TINYUSB_SERIAL
 #include <tusb.h>
 #endif
 
@@ -42,40 +42,46 @@
 
 #define ENABLE_CONTENT_SYNC_ON_CLOSE 1
 
-#if EINKET013TT1
+#if CONFIG_DISPLAY_EINKET013TT1
 #include "Displays/DisplayEinkET013TT1.hpp"
 DisplayEinkET013TT1 myDisplay(DISPLAY_CS_LEFT, DISPLAY_CS_RIGHT, DISPLAY_RST);
 #elif DISPLAY_SIM_8BIT
 // Declared in native.cpp
 #include "Displays/DisplaySim8Bit.hpp"
 extern DisplaySim8Bit myDisplay;
+#elif CONFIG_DISPLAY_M5STACK_ATOM_DISPLAY
+#include "Displays/DisplayM5StackAtomDisplay.hpp"
+DisplayM5StackAtomDisplay myDisplay;
+#elif CONFIG_DISPLAY_M5STACK_MODULE_DISPLAY
+#include "Displays/DisplayM5StackModuleDisplay.hpp"
+DisplayM5StackModuleDisplay myDisplay;
 #endif
 
 PreferencesStore prefs;
 
-#if USE_BLE_SERVER_REMOTE || USE_BLE_SERVER_SETTINGS
+#if CONFIG_USE_BLE_SERVER_REMOTE || CONFIG_USE_BLE_SERVER_SETTINGS
 #include "Communications/BLESindarinService.hpp"
 #endif
 
-#if USE_BLE_SERVER_REMOTE
+#if CONFIG_USE_BLE_SERVER_REMOTE
 #include "Inputs/BLERemoteInput.hpp"
 #endif
 
-#if USE_BLE_SERVER_SETTINGS
+#if CONFIG_USE_BLE_SERVER_SETTINGS
 #include "Communications/BLESettings.hpp"
 BLESettings bleSettings(&prefs);
 #endif
 
-#if USE_BLE_SERVER_IMPROV
+#if CONFIG_USE_BLE_SERVER_IMPROV
 #include "Communications/BLEImprov.hpp"
 #endif
 
-#if USE_BLE_SERVER_PROXY
+#if CONFIG_USE_BLE_SERVER_PROXY
 #include "Communications/BLESyncService.hpp"
 BLESyncService bleSyncService;
 #endif
 
-#if USE_BLE_SERVER_PROXY
+#if CONFIG_USE_BLE_SERVER_PROXY
 #include "Communications/BLEProxy.hpp"
 #endif
 
@@ -92,7 +98,7 @@ LittleFSFileSystem fileSystem;
 
 Telemetry telemetry(fileSystem, prefs);
 
-#if USE_TURN_TOUCH_REMOTE
+#if CONFIG_USE_TURN_TOUCH_REMOTE
 #include "Inputs/TTRemoteInput.hpp"
 TTRemoteInput ttRemoteInput(prefs, telemetry);
 #endif
@@ -153,7 +159,7 @@ void PollingLoopTask(void *parameter) {
         } else if (command == "ALLOWOFF") {
             AllowPowerOff();
         } else if (command == "UNPAIRPT") {
-#if USE_TURN_TOUCH_REMOTE
+#if CONFIG_USE_TURN_TOUCH_REMOTE
             ttRemoteInput.unpairAndDisconnect();
 #endif
         } else if (command == "VERSION") {
@@ -201,7 +207,7 @@ void PollingLoopTask(void *parameter) {
         // Run the power loop first so that we don't show a 0% battery reading
         powerManager.loop();
 
-#if USE_TURN_TOUCH_REMOTE
+#if CONFIG_USE_TURN_TOUCH_REMOTE
         // Skip scanning while WiFi is connected to avoid kicking off the WiFi connection
         if (!WiFi::getInstance().connected()) {
             ttRemoteInput.scanIfNecessary();
@@ -210,12 +216,12 @@ void PollingLoopTask(void *parameter) {
         }
 #endif
 
-#if USE_BLE_SERVER_REMOTE
+#if CONFIG_USE_BLE_SERVER_REMOTE
         BLEImprov::getInstance()->loop();
 #endif
 
         vTaskDelay(pdMS_TO_TICKS(1000));
-#if USE_LTR329
+#if CONFIG_USE_LTR329
         // This happens after the delay, so that the first check can run with a faster fade.
         lightingController.checkAmbientLight();
 #endif
@@ -264,7 +270,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     BootLoopCheck(fileSystem, powerManager);
     std::vector<BootError> bootErrors;
 
-#if BOARD_HAS_PSRAM
+#if CONFIG_BOARD_HAS_PSRAM
     multi_heap_info_t info;
     heap_caps_get_info(&info, MALLOC_CAP_SPIRAM);
     if (info.total_free_bytes + info.total_allocated_bytes <= 0) {
@@ -289,16 +295,16 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 
     if (esp_reset_reason() == ESP_RST_POWERON) {
         // Flash all the LEDs
-        DigitalWrite(RED_LED, LED_ON);
+        DigitalWrite(CONFIG_RED_LED, LED_ON);
         vTaskDelay(200 / portTICK_PERIOD_MS);
-        DigitalWrite(RED_LED, LED_OFF);
-        DigitalWrite(GREEN_LED, LED_ON);
+        DigitalWrite(CONFIG_RED_LED, LED_OFF);
+        DigitalWrite(CONFIG_GREEN_LED, LED_ON);
         vTaskDelay(200 / portTICK_PERIOD_MS);
-        DigitalWrite(GREEN_LED, LED_OFF);
-#ifdef BLUE_LED
-        DigitalWrite(BLUE_LED, LED_ON);
+        DigitalWrite(CONFIG_GREEN_LED, LED_OFF);
+#ifdef CONFIG_BLUE_LED
+        DigitalWrite(CONFIG_BLUE_LED, LED_ON);
         vTaskDelay(200 / portTICK_PERIOD_MS);
-        DigitalWrite(BLUE_LED, LED_OFF);
+        DigitalWrite(CONFIG_BLUE_LED, LED_OFF);
 #endif
     }
 
@@ -401,15 +407,17 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 
     // Below code should only execute on an Active boot
 
-#if USE_LTR329
+#if CONFIG_USE_LTR329
     if (!lightingController.checkSensorAvailable()) {
         bootErrors.push_back({.type = BootError::Type::AmbientLight});
     } else {
         lightingController.begin();
     }
+#else
+    lightingController.setOverrideValuePercent(100);
 #endif
 
-#if USE_MMC5603
+#if CONFIG_USE_MMC5603
     if (!powerManager.checkMagnetometerProductId()) {
         bootErrors.push_back({.type = BootError::Type::Magnetometer});
     }
@@ -417,7 +425,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 
     SHOW_HEAP();
 
-#if EINKET013TT1
+#if CONFIG_DISPLAY_EINKET013TT1
 #ifdef DISPLAY_POWER
     // Turn on power to the screen
     DigitalWrite(DISPLAY_POWER, HIGH);
@@ -448,7 +456,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     // settings for dark mode and vcom, we can probably clean it up then.
     myDisplay.invertDisplay(prefs.invertSetting.get().value_or(false));
 
-#if EINKET013TT1
+#if CONFIG_DISPLAY_EINKET013TT1
     // If the saved prefs indicated a vcom, set it here.
     auto vcomSetting = prefs.vcom.get();
     if (vcomSetting.has_value()) {
@@ -456,15 +464,6 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     }
 #endif
 
-    DisplayRect initialRect{};
-    initialRect.x = prefs.rectX.get().value_or(myDisplay.defaultBoundingBox.x);
-    initialRect.y = prefs.rectY.get().value_or(myDisplay.defaultBoundingBox.y);
-    initialRect.width = prefs.rectW.get().value_or(myDisplay.defaultBoundingBox.width);
-    initialRect.height = prefs.rectH.get().value_or(myDisplay.defaultBoundingBox.height);
-
-    log_d("Initial bounding box is %" PRIu32 " %" PRIu32 " %" PRIu32 " %" PRIu32 "", initialRect.x,
-          initialRect.y, initialRect.width, initialRect.height);
-    myDisplay.setBoundingBox(initialRect);
     myDisplay.setLineSpacing(prefs.lineSpacing.get().value_or(0));
 
     SIZE_OF(myDisplay);
@@ -487,7 +486,26 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
             "BackgroundSync", 4096, nullptr, 1, nullptr, 1);
     }
 
-#if USE_TURN_TOUCH_REMOTE || USE_BLE_SERVER_REMOTE
+#if USE_BLE
+    BLEDevice::init("Sol Reader");
+
+    if (prefs.blePower.get().has_value()) {
+        auto power = prefs.blePower.get().value_or(ESP_PWR_LVL_P3);
+        log_d("Setting default BLE power to %" PRIu32, power);
+        esp_err_t err =
+            esp_ble_tx_power_set(ESP_BLE_PWR_TYPE_DEFAULT, static_cast<esp_power_level_t>(power));
+        if (err != ESP_OK) {
+            log_e("esp_ble_tx_power_set err: %s", esp_err_to_name(err));
+        }
+    }
+
+    auto bleStatus = esp_bt_controller_get_status();
+    if (bleStatus != ESP_BT_CONTROLLER_STATUS_ENABLED) {
+        bootErrors.push_back({.type = BootError::Type::BLE});
+    }
+#endif
+
+#if CONFIG_USE_TURN_TOUCH_REMOTE || CONFIG_USE_BLE_SERVER_REMOTE
     auto remoteCallback = [](RemoteCommand command) {
         DispatchGetUiQueue()->dispatch([command]() {
             if (bootCompleted) {
@@ -499,23 +517,30 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     };
 #endif
 
-#if USE_TURN_TOUCH_REMOTE
+#if CONFIG_USE_TURN_TOUCH_REMOTE
     ttRemoteInput.setCallback(remoteCallback);
     powerManager.setBeginShutdownCallback([]() { ttRemoteInput.disconnectTemporarily(60); });
 #endif
 
-#if USE_BLE_SERVER_REMOTE || USE_BLE_SERVER_SETTINGS
+#if CONFIG_USE_BLE_SERVER_REMOTE || CONFIG_USE_BLE_SERVER_SETTINGS || CONFIG_USE_BLE_SERVER_IMPROV
+    auto bleManager = BLEManager::getInstance();
+    if (prefs.bleAdvertisingKey.get().has_value()) {
+        bleManager->setManufacturerData(prefs.bleAdvertisingKey.get().value_or(""));
+    }
+#endif
+
+#if CONFIG_USE_BLE_SERVER_REMOTE || CONFIG_USE_BLE_SERVER_SETTINGS
     auto sindarinService =
         BLESindarinService::getInstance()->configureService(bleManager->server());
 
-#if USE_BLE_SERVER_REMOTE
+#if CONFIG_USE_BLE_SERVER_REMOTE
     BLERemoteInput::getInstance()->configureCharacteristics(sindarinService);
     BLERemoteInput::getInstance()->setCallback(remoteCallback);
 #endif
 
-#if USE_BLE_SERVER_SETTINGS
+#if CONFIG_USE_BLE_SERVER_SETTINGS
     bleSettings.configureCharacteristics(sindarinService);
-#if USE_TURN_TOUCH_REMOTE
+#if CONFIG_USE_TURN_TOUCH_REMOTE
     bleSettings.attachTTRemoteInput(&ttRemoteInput);
 #endif
 #endif
@@ -525,7 +550,17 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     }
 #endif
 
-#if USE_BLE_SERVER_IMPROV
+#if CONFIG_USE_BLE_SERVER_PROXY
+    auto syncService = bleSyncService.configureService(bleManager->server());
+    BLEProxy::getInstance()->setPrefs(&prefs);
+    BLEProxy::getInstance()->configureCharacteristics(syncService);
+
+    if (!bleSyncService.start()) {
+        bootErrors.push_back({.type = BootError::Type::BLESync});
+    }
+#endif
+
+#if CONFIG_USE_BLE_SERVER_IMPROV
     // NOTE(john): It might make sense at some point to consolidate everything
     // as one service. However keeping these services separate for now allows us
     // to use the Improv WebBluetooth implementation for Wifi provisioning and
@@ -538,7 +573,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     }
 #endif
 
-#if USE_BLE_SERVER_REMOTE || USE_BLE_SERVER_SETTINGS || USE_BLE_SERVER_IMPROV
+#if CONFIG_USE_BLE_SERVER_REMOTE || CONFIG_USE_BLE_SERVER_SETTINGS || CONFIG_USE_BLE_SERVER_IMPROV
     if (!bleManager->startAdvertisingIfNecessary()) {
         bootErrors.push_back({.type = BootError::Type::BLEManagerAdvertising});
     }
@@ -591,7 +626,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 
     // xTaskCreatePinnedToCore(StatsTask, "Stats", 5000, nullptr, 0, nullptr, 1);
 
-#if USE_LTR329
+#if CONFIG_USE_LTR329
     // Begin fade-in on the lighting before rendering the UI
     DispatchGetUiQueue()->dispatch([]() { lightingController.checkAmbientLight(300, 100); });
 #endif

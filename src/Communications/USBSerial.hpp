@@ -5,7 +5,7 @@
 #include <esp_err.h>
 #include <tinyusb.h>
 
-#if USE_TINYUSB_SERIAL
+#if CONFIG_USE_TINYUSB_SERIAL
 #include <esp_private/usb_phy.h>
 #include <tusb.h>
 #include <tusb_cdc_acm.h>

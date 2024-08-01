@@ -1,5 +1,6 @@
 #include "StringUtil.hpp"
 
+#include <algorithm>
 #include <cstdarg>
 #include <cstring>
 

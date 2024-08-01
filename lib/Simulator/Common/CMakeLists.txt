@@ -40,7 +40,9 @@ add_subdirectory(${REPO_ROOT_DIR}/components/Adafruit-GFX-Library ${CMAKE_CURREN
 
 add_library(${PROJECT_NAME} STATIC ${SOURCES})
 
-target_link_libraries(${PROJECT_NAME} PUBLIC pugixml ArduinoJson miniz astubs esp-idf-stubs nvs_flash Adafruit-GFX-Library)
+find_package(Freetype REQUIRED)
+
+target_link_libraries(${PROJECT_NAME} PUBLIC pugixml ArduinoJson miniz astubs esp-idf-stubs nvs_flash Adafruit-GFX-Library Freetype::Freetype)
 
 target_include_directories(${PROJECT_NAME} PUBLIC
     "${REPO_ROOT_DIR}/src"
@@ -56,24 +58,36 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 if(ENABLE_8BIT_DISPLAY)
     target_compile_definitions(${PROJECT_NAME} PUBLIC
         DISPLAY_SIM_8BIT=1
-        EINKET013TT1=0
+        CONFIG_DISPLAY_EINKET013TT1=0
+        CONFIG_FONT_TTF=1
+        CONFIG_FONT_IBMF=0
     )
 else()
     target_compile_definitions(${PROJECT_NAME} PUBLIC
-        EINKET013TT1=1
+        CONFIG_DISPLAY_EINKET013TT1=1
+        CONFIG_FONT_TTF=0
+        CONFIG_FONT_IBMF=1
     )
 endif()
 
 target_compile_definitions(${PROJECT_NAME} PUBLIC
     SIMULATOR=1
-    USE_TURN_TOUCH_REMOTE=0
-    USE_BLE_SERVER_REMOTE=0
-    USE_BLE_SERVER_SETTINGS=0
-    USE_BLE_SERVER_IMPROV=0
+    CONFIG_USE_TURN_TOUCH_REMOTE=0
+    CONFIG_USE_BLE_SERVER_REMOTE=0
+    CONFIG_USE_BLE_SERVER_SETTINGS=0
+    CONFIG_USE_BLE_SERVER_IMPROV=0
+    CONFIG_RED_LED=7
+    CONFIG_GREEN_LED=6
+    CONFIG_BLUE_LED=18
+    CONFIG_USB_CONNECTED_PIN=-1
+    CONFIG_MAX_BYTES_PER_PARAGRAPH=5003
+    CONFIG_MAX_BYTES_PER_DISPLAY_PAGE=2400
+    CONFIG_CSTR_POOL_SIZE=2000
+    CONFIG_TOKENS_SIZE=500
+    CONFIG_MAX_BYTES_PER_LINE=200
+    CONFIG_LINES_SIZE=36
     ENABLE_OTA=0
     GIT_VERSION=\"release/v1.0.0-3-geea60cbf-dirt\"
-    CORE_DEBUG_LEVEL=ARDUHAL_LOG_LEVEL_DEBUG
-    CONFIG_ARDUHAL_LOG_COLORS
     DISABLE_LOW_VOLTAGE_HALT=1
     DISABLE_POWER_MANAGEMENT=1
     RTC_SLOW_ATTR=

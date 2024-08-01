@@ -1,7 +1,8 @@
 #pragma once
 
 #include <ArduinoJson.h>
-#include <esp_heap_caps.h>
+
+#include "Misc/SpiramAllocator.hpp"
 
 #if SIMULATOR
 
@@ -12,13 +13,11 @@ using SpiRamJsonDocument = DynamicJsonDocument;
 // Allocator to use the SPI RAM for JSON document
 // See: https://arduinojson.org/v6/api/basicjsondocument/
 struct SpiRamAllocator {
-    auto allocate(size_t size) -> void * { return heap_caps_malloc(size, MALLOC_CAP_SPIRAM); }
+    auto allocate(size_t size) -> void * { return SpiRamMalloc(size); }
 
-    void deallocate(void *pointer) { heap_caps_free(pointer); }
+    void deallocate(void *pointer) { SpiRamFree(pointer); }
 
-    auto reallocate(void *ptr, size_t newSize) -> void * {
-        return heap_caps_realloc(ptr, newSize, MALLOC_CAP_SPIRAM);
-    }
+    auto reallocate(void *ptr, size_t newSize) -> void * { return SpiRamRealloc(ptr, newSize); }
 };
 
 using SpiRamJsonDocument = BasicJsonDocument<SpiRamAllocator>;

@@ -1,5 +1,9 @@
 #pragma once
 
+#include "config.h"
+
+#if CONFIG_FONT_IBMF
+
 #include <cinttypes>
 #include <cstring>
 #include <iostream>
@@ -10,7 +14,6 @@ using namespace ibmf_defs;
 
 class RLEExtractor {
 private:
-    static constexpr char const *TAG = "RLEExtractor";
     MemoryPtr fromPixelsPtr_{nullptr}, fromPixelsEnd_{nullptr};
 
     uint32_t repeatCount_{0};
@@ -48,3 +51,5 @@ public:
     auto retrieveBitmap(const RLEBitmap &fromBitmap, Bitmap &toBitmap, Pos atOffset,
                         RLEMetrics rleMetrics, bool inverted) -> bool;
 };
+
+#endif

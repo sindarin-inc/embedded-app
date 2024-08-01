@@ -46,6 +46,16 @@ esp_err_t nvs_set_u8(nvs_handle_t handle, const char *key, uint8_t value) {
     return ESP_OK;
 }
 
+esp_err_t nvs_set_i16(nvs_handle_t handle, const char *key, int16_t value) {
+    IniFile[PrefsKey][key] = value;
+    return ESP_OK;
+}
+
+esp_err_t nvs_set_u16(nvs_handle_t handle, const char *key, uint16_t value) {
+    IniFile[PrefsKey][key] = value;
+    return ESP_OK;
+}
+
 esp_err_t nvs_set_i32(nvs_handle_t handle, const char *key, int32_t value) {
     IniFile[PrefsKey][key] = value;
     return ESP_OK;
@@ -68,6 +78,26 @@ esp_err_t nvs_set_str(nvs_handle_t handle, const char *key, const char *value) {
 
 esp_err_t nvs_get_u8(nvs_handle_t handle, const char *key, uint8_t *out_value) {
     auto opt = IniFile[PrefsKey][key].as<std::optional<int>>();
+    if (opt.has_value()) {
+        *out_value = opt.value();
+        return ESP_OK;
+    } else {
+        return (esp_err_t)ESP_ERR_NVS_NOT_FOUND;
+    }
+}
+
+esp_err_t nvs_get_i16(nvs_handle_t handle, const char *key, int16_t *out_value) {
+    auto opt = IniFile[PrefsKey][key].as<std::optional<int16_t>>();
+    if (opt.has_value()) {
+        *out_value = opt.value();
+        return ESP_OK;
+    } else {
+        return (esp_err_t)ESP_ERR_NVS_NOT_FOUND;
+    }
+}
+
+esp_err_t nvs_get_u16(nvs_handle_t handle, const char *key, uint16_t *out_value) {
+    auto opt = IniFile[PrefsKey][key].as<std::optional<uint16_t>>();
     if (opt.has_value()) {
         *out_value = opt.value();
         return ESP_OK;

@@ -1,5 +1,6 @@
 #include "Misc/Menu.hpp"
 #include "Misc/Telemetry.hpp"
+#include "UI/Components/EinkView.hpp"
 #include "UI/Components/PopupMenuView.hpp"
 #include "UI/ContainerScreen.hpp"
 #include "UI/LightingAdjustScreen.hpp"
@@ -10,15 +11,16 @@
 #include "UI/ReadableTableOfContentsScreen.hpp"
 #include "UI/Screen.hpp"
 
-class ReadablePopupMenuScreen : public ContainerScreen, public View, public Menu {
+class ReadablePopupMenuScreen : public ContainerScreen, public EinkView, public Menu {
 
 public:
     ReadablePopupMenuScreen(DisplaySystem &display, PreferencesStore &prefs, FileSystem &fileSystem,
                             const std::shared_ptr<Readable> &readable,
                             LightingController &lightingController, Renderer &renderer,
                             Telemetry &telemetry)
-        : display_(display), prefs_(prefs), readable_(readable), renderer_(renderer),
-          popupMenuView_(display), telemetry_(telemetry), fileSystem_(fileSystem),
+        : EinkView(display), display_(display), prefs_(prefs), readable_(readable),
+          renderer_(renderer), popupMenuView_(display), telemetry_(telemetry),
+          fileSystem_(fileSystem),
           lightingAdjustScreen_(display, prefs, lightingController, telemetry),
           readableSeekScreen_(prefs, readable, renderer),
           readableTableOfContentsScreen_(prefs, readable, renderer, display, telemetry),

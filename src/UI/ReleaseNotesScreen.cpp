@@ -8,8 +8,8 @@
 ReleaseNotesScreen::ReleaseNotesScreen(DisplaySystem &display, PreferencesStore &prefs,
                                        PowerManager &power, LocalStore &localStore,
                                        const Firmware &firmware)
-    : display_(display), renderer_(display), prefs_(prefs), power_(power), localStore_(localStore),
-      firmware_(firmware), menu_(prefs, display) {
+    : display_(display), renderer_(display, GetTextRectFromPrefs(display, prefs)), prefs_(prefs),
+      power_(power), localStore_(localStore), firmware_(firmware), menu_(prefs, display) {
 
     SpiramString message = SpiRamStringFormat(
         "New firmware %s is now available! Here's what's new:\n\n", firmware.version.c_str());

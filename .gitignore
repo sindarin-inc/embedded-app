@@ -15,8 +15,7 @@ __pycache__
 simprefs.ini
 simprefs.bak
 *.old
-build
-build-clang
+build*
 screenshot.png
 current.png
 next.png

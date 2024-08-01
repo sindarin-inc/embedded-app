@@ -6,7 +6,7 @@
 
 #include "BLEAbstractions.hpp"
 #include "Communications/BLEManager.hpp"
-#if USE_TURN_TOUCH_REMOTE
+#if CONFIG_USE_TURN_TOUCH_REMOTE
 #include "Inputs/TTRemoteInput.hpp"
 #endif
 #include "Misc/StringUtil.hpp"
@@ -20,14 +20,14 @@ public:
     BLESettings(BLESettings const &) = delete;
     ~BLESettings() override = default;
     void configureCharacteristics(BLEService *service) override;
-#if USE_TURN_TOUCH_REMOTE
+#if CONFIG_USE_TURN_TOUCH_REMOTE
     void attachTTRemoteInput(TTRemoteInput *ttRemoteInput);
 #endif
 
 protected:
     PreferencesStore *prefs_;
     BLECharacteristic *settingsCharacteristic_{};
-#if USE_TURN_TOUCH_REMOTE
+#if CONFIG_USE_TURN_TOUCH_REMOTE
     TTRemoteInput *ttRemoteInput_{};
 #endif
     void writeDeviceSerialToCharacteristic(BLECharacteristic *characteristic,

@@ -8,10 +8,12 @@
 #include "Misc/Telemetry.hpp"
 #include "Renderers/RendererStream.hpp"
 #include "Storage/PosixFileSystem.hpp"
+#include "UI/AboutScreen.hpp"
 #include "UI/BitmapScreen.hpp"
 #include "UI/ContentSyncScreen.hpp"
 #include "UI/DemoScreen.hpp"
 #include "UI/LayoutTestScreen.hpp"
+#include "UI/LegalScreen.hpp"
 #include "UI/LineSpacingScreen.hpp"
 #include "UI/OffsetAdjustScreen.hpp"
 #include "UI/PowerDepletedScreen.hpp"
@@ -202,10 +204,7 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
         ASSERT_VIEW_UNCHANGED(display, "Dictionary2");
         SendRemoteCommand(ENTER);
         WAIT_FOR_DRAW(display);
-        ASSERT_VIEW_UNCHANGED(display, "Dictionary3");
-        SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW(display);
-        ASSERT_VIEW_UNCHANGED(display, "Dawn");
+        ASSERT_VIEW_UNCHANGED(display, "Dawn1");
 
         // Render the popup menu
         SendRemoteCommand(DOWN);
@@ -237,13 +236,13 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
         // Open the dictionary
         SendRemoteCommand(ENTER);
         WAIT_FOR_DRAW(display);
+        ASSERT_VIEW_UNCHANGED(display, "Dictionary3");
+        SendRemoteCommand(ENTER);
+        WAIT_FOR_DRAW(display);
         ASSERT_VIEW_UNCHANGED(display, "Dictionary4");
         SendRemoteCommand(ENTER);
         WAIT_FOR_DRAW(display);
         ASSERT_VIEW_UNCHANGED(display, "Dictionary5");
-        SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW(display);
-        ASSERT_VIEW_UNCHANGED(display, "Dictionary6");
         SendRemoteCommand(UP);
         WAIT_FOR_DRAW(display);
         ASSERT_VIEW_UNCHANGED(display, "Dawn3");
@@ -274,18 +273,15 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
         SendRemoteCommand(ENTER);
         WAIT_FOR_DRAW(display);
         ASSERT_VIEW_UNCHANGED(display, "Summary5");
-        SendRemoteCommand(ENTER);
+        SendRemoteCommand(DOWN);
         WAIT_FOR_DRAW(display);
         ASSERT_VIEW_UNCHANGED(display, "Summary6");
-        SendRemoteCommand(DOWN);
+        SendRemoteCommand(ENTER);
         WAIT_FOR_DRAW(display);
         ASSERT_VIEW_UNCHANGED(display, "Summary7");
         SendRemoteCommand(ENTER);
         WAIT_FOR_DRAW(display);
         ASSERT_VIEW_UNCHANGED(display, "Summary8");
-        SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW(display);
-        ASSERT_VIEW_UNCHANGED(display, "Summary9");
         SendRemoteCommand(UP);
         WAIT_FOR_DRAW(display);
         ASSERT_VIEW_UNCHANGED(display, "Dawn4");
@@ -336,12 +332,74 @@ TEST_CASE("Test some views independently") {
         prefs.invertSetting.remove();
         prefs.font.remove();
         prefs.lineSpacing.remove();
-        prefs.rectX.remove();
-        prefs.rectY.remove();
-        prefs.rectW.remove();
-        prefs.rectH.remove();
+        prefs.textInsetLeft.remove();
+        prefs.textInsetRight.remove();
+        prefs.textInsetTop.remove();
+        prefs.textInsetBottom.remove();
         PosixFileSystem fileSystem("./test/CatchTests/TestData");
         Telemetry telemetry = Telemetry(fileSystem, prefs);
+
+        SECTION("Test things that need power") {
+            LightingController lightingController(prefs);
+            PowerManager power(fileSystem, prefs, lightingController, *display, telemetry);
+
+            SECTION("Test AboutScreen") {
+                AboutScreen screen(*display, prefs, power);
+                screen.render(*display);
+                ASSERT_VIEW_UNCHANGED(display, "AboutScreen");
+            }
+
+            SECTION("Test LegalScreen") {
+                LegalScreen screen(*display, prefs, power);
+                screen.render(*display);
+                ASSERT_VIEW_UNCHANGED(display, "LegalScreen1Before");
+                screen.processCommand(LEFT);
+                screen.render(*display);
+                ASSERT_VIEW_UNCHANGED(display, "LegalScreen2Before");
+                screen.processCommand(LEFT);
+                screen.render(*display);
+                ASSERT_VIEW_UNCHANGED(display, "LegalScreen1After");
+                screen.processCommand(RIGHT);
+                screen.render(*display);
+                ASSERT_VIEW_UNCHANGED(display, "LegalScreen2After");
+            }
+
+            SECTION("Test ReleaseNotesScreen") {
+                PosixFileSystem fs("./test/CatchTests/TestData/ReleaseNotesScreen/");
+                Telemetry telemetry(fs, prefs);
+                Battery battery(fs, prefs, telemetry);
+                LocalStore localStore(fs, prefs, battery, telemetry);
+
+                (*display).style.setFontFamily((*display).style.solSansSmall);
+
+                Firmware firmware;
+                auto upgradeAvailable = localStore.getPendingFirmwareUpdate(firmware);
+                REQUIRE(upgradeAvailable);
+                ReleaseNotesScreen screen(*display, prefs, power, localStore, firmware);
+                screen.render(*display);
+                ASSERT_VIEW_UNCHANGED(display, "ReleaseNotesScreen");
+            }
+
+            SECTION("Test ContentSyncScreen") {
+                Telemetry telemetry(fileSystem, prefs);
+                Battery battery(fileSystem, prefs, telemetry);
+                LocalStore localStore(fileSystem, prefs, battery, telemetry);
+                ContentSyncScreen screen(*display, localStore, prefs, telemetry);
+                screen.render(*display);
+                ASSERT_VIEW_UNCHANGED(display, "ContentSyncScreen1");
+
+                screen.state_ = ContentSyncState{.state = ContentSyncState::State::SyncingArticles,
+                                                 .percentage = 63};
+                screen.render(*display);
+                ASSERT_VIEW_UNCHANGED(display, "ContentSyncScreen2");
+
+                screen.state_ = ContentSyncState{.state = ContentSyncState::State::Synced,
+                                                 .booksDownloaded = 3,
+                                                 .articlesDownloaded = 10};
+                screen.render(*display);
+                ASSERT_VIEW_UNCHANGED(display, "ContentSyncScreen3");
+            }
+        }
 
         SECTION("Test OffsetAdjustScreen") {
             OffsetAdjustScreen screen(*display, prefs, telemetry);
@@ -355,6 +413,29 @@ TEST_CASE("Test some views independently") {
             ASSERT_VIEW_UNCHANGED(display, "ResizeBoxScreen");
         }
 
+        SECTION("Test ResizeBoxScreen with pinned left") {
+            OffsetAdjustScreen offsetScreen(*display, prefs, telemetry);
+            offsetScreen.render(*display);
+            offsetScreen.processCommand(LEFT);
+            offsetScreen.processCommand(LEFT);
+            offsetScreen.processCommand(LEFT);
+            offsetScreen.processCommand(LEFT);
+            offsetScreen.processCommand(LEFT);
+            offsetScreen.processCommand(LEFT);
+            offsetScreen.processCommand(LEFT);
+            // These are the extra lefts to make sure nothing changes on display
+            offsetScreen.processCommand(LEFT);
+            offsetScreen.processCommand(LEFT);
+            // Save setting
+            offsetScreen.processCommand(ENTER);
+            ResizeBoxScreen resizeScreen(*display, prefs, telemetry);
+            resizeScreen.render(*display);
+            resizeScreen.processCommand(LEFT);
+            resizeScreen.processCommand(LEFT);
+            resizeScreen.render(*display);
+            ASSERT_VIEW_UNCHANGED(display, "ResizeBoxScreenLeftPinned");
+        }
+
         SECTION("Test LineSpacingScreen") {
             LineSpacingScreen screen(*display, prefs, telemetry);
             screen.render(*display);
@@ -366,7 +447,7 @@ TEST_CASE("Test some views independently") {
             auto readablesJsonDoc = LoadJsonDoc(fileSystem, "/readables.json");
             readable->fromJson((*readablesJsonDoc)["readables"][1]);
 
-            Renderer renderer(*display);
+            Renderer renderer(*display, display->defaultTextRect());
             auto [path, size] = LocalStore::readableFilePathForReading(fileSystem, readable);
             auto stream = fileSystem.newEPubRendererStream(path.c_str(), readable);
             renderer.setStream(stream);
@@ -386,7 +467,7 @@ TEST_CASE("Test some views independently") {
             auto readablesJsonDoc = LoadJsonDoc(fileSystem, "/readables.json");
             readable->fromJson((*readablesJsonDoc)["readables"][0]);
 
-            Renderer renderer(*display);
+            Renderer renderer(*display, display->defaultTextRect());
             auto [path, size] = LocalStore::readableFilePathForReading(fileSystem, readable);
             auto stream = fileSystem.newGzipRendererStream(path.c_str());
             renderer.setStream(stream);
@@ -398,13 +479,11 @@ TEST_CASE("Test some views independently") {
         }
 
         SECTION("Test EPUB image rendering with alternate bounding box") {
-            display->setBoundingBox(DisplayRect{10, 20, 236, 236});
-
             auto readable = std::make_shared<Readable>();
             auto readablesJsonDoc = LoadJsonDoc(fileSystem, "/readables-lq-epub.json");
             readable->fromJson((*readablesJsonDoc)["readables"][0]);
 
-            Renderer renderer(*display);
+            Renderer renderer(*display, {10, 20, 236, 236});
             auto [path, size] = LocalStore::readableFilePathForReading(fileSystem, readable);
             auto stream = fileSystem.newEPubRendererStream(path.c_str(), readable);
             renderer.setStream(stream);
@@ -415,26 +494,7 @@ TEST_CASE("Test some views independently") {
             ASSERT_VIEW_UNCHANGED(display, "EpubImage");
         }
 
-        SECTION("Test ReleaseNotesScreen") {
-            PosixFileSystem fs("./test/CatchTests/TestData/ReleaseNotesScreen/");
-            Telemetry telemetry(fs, prefs);
-            Battery battery(fs, prefs, telemetry);
-            LightingController lightingController(prefs);
-            PowerManager power(fs, prefs, lightingController, *display, telemetry);
-            LocalStore localStore(fs, prefs, battery, telemetry);
-
-            (*display).style.setFontFamily((*display).style.solSansSmall);
-
-            Firmware firmware;
-            auto upgradeAvailable = localStore.getPendingFirmwareUpdate(firmware);
-            REQUIRE(upgradeAvailable);
-            ReleaseNotesScreen screen(*display, prefs, power, localStore, firmware);
-            screen.render(*display);
-            ASSERT_VIEW_UNCHANGED(display, "ReleaseNotesScreen");
-        }
-
         SECTION("Test DemoScreen") {
-            LightingController lightingController(prefs);
             DemoScreen screen(*display, prefs);
             screen.render(*display);
             ASSERT_VIEW_UNCHANGED(display, "DemoScreen");

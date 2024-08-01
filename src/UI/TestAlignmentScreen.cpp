@@ -36,8 +36,8 @@ void DrawCenteredCircle(Adafruit_GFX *gfx, int16_t centerX, int16_t centerY, uin
 void TestAlignmentScreen::render(DisplaySystem &display) {
     const int16_t padding = 33;
     constexpr int16_t numLines = 10;
-    int16_t w = display.absoluteWidth();
-    int16_t h = display.absoluteHeight();
+    int16_t w = display.width();
+    int16_t h = display.height();
     const int16_t lineSpacing = (w - 2 * padding - numLines) / (numLines - 1); // Line spacing
     w = w - 1;
     h = h - 1;

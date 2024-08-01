@@ -59,11 +59,11 @@
 #include "config.h"
 #include "sindarin-debug.h"
 
-#if USE_TURN_TOUCH_REMOTE
+#if CONFIG_USE_TURN_TOUCH_REMOTE
 #include "Inputs/TTRemoteInput.hpp"
 #endif
 
-#if EINKET013TT1
+#if CONFIG_DISPLAY_EINKET013TT1
 #include "Displays/DisplayEinkET013TT1.hpp"
 #include "UI/VcomAdjustScreen.hpp"
 #endif
@@ -154,9 +154,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             localStore.sortReadables(articles);
         }
     }
-
-    // Load the SolSans font only.
-    ibmf75.load(const_cast<ibmf_defs::MemoryPtr>(fontsList[0].content), fontsList[0].length);
 
     auto booksMenu = new Menu(mainMenu->getMyStyle(), "Books");
     auto articlesMenu = new Menu(mainMenu->getMyStyle(), "Articles");
@@ -928,21 +925,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         experimentalSettingsMenu->setToggleLastItem(true);
     }
 
-    experimentalSettingsMenu->addMenuItem(MenuItem("Apply lighting offset", [this]() {
-        auto newValue = !this->prefs_.brightnessOffsetEnabled.get().value_or(false);
-        if (newValue) {
-            this->prefs_.brightnessOffsetEnabled.set(newValue);
-        } else {
-            this->prefs_.brightnessOffsetEnabled.remove();
-        }
-    }));
-
-    if (prefs_.brightnessOffsetEnabled.get().value_or(false)) {
-        experimentalSettingsMenu->setToggleLastItem(true);
-    } else {
-        experimentalSettingsMenu->setToggleLastItem(false);
-    }
-
     // Unpair PageTurner
     // Sync Content
     // Turn on Onboarding Mode
@@ -1070,7 +1052,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                                "Font Type Settings", "Reading Settings");
             for (int i = 0; i < fontsList.size(); i++) {
                 fontTypeMenu->addMenuItem(MenuItem(fontsList[i].caption, [this, fontTypeMenu, i]() {
-                    ibmf75.load((ibmf_defs::MemoryPtr)fontsList[i].content, fontsList[i].length);
+                    mainFont.load((MemoryPtr)fontsList[i].content, fontsList[i].length);
                     prefs_.fontType.set(i);
                     this->display_->clearDisplay();
                     fontTypeMenu->setNeedsRerender();
@@ -1099,7 +1081,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         });
     }));
 
-#if EINKET013TT1
+#if CONFIG_DISPLAY_EINKET013TT1
     readingSettingsMenu->addMenuItem(MenuItem("Contrast", [this, display, readingSettingsMenu,
                                                            &lightingController]() {
         auto contrastAdjustScreen =
@@ -1279,7 +1261,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         firmwareUpdateScreen->begin();
     }));
 
-#if USE_TURN_TOUCH_REMOTE
+#if CONFIG_USE_TURN_TOUCH_REMOTE
     debugSettingsMenu->addMenuItem(MenuItem("Unpair PageTurner",
                                             [this, debugSettingsMenu, display]() {
         prefs_.pairedTurnTouchAddress.remove();
@@ -1513,7 +1495,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             });
         }));
 */
-#if EINKET013TT1
+#if CONFIG_DISPLAY_EINKET013TT1
     debugSettingsMenu->addMenuItem(MenuItem("Set Vcom", [this, display, debugSettingsMenu]() {
         auto vcomMenu = new MenuScreen(power_.battery, *display, debugSettingsMenu->getMyStyle(),
                                        "Vcom Settings", "Debug Settings");
@@ -1645,8 +1627,14 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 #if USE_BLE
     debugSettingsMenu->addMenuItem(MenuItem("Set BLE Power", [this, display, debugSettingsMenu]() {
         static std::unordered_map<esp_power_level_t, std::string> blePowerOptions = {
-            {ESP_PWR_LVL_P3, "+3dBm"}, {ESP_PWR_LVL_N0, "0dBm"},    {ESP_PWR_LVL_N3, "-3dBm"},
-            {ESP_PWR_LVL_N9, "-9dBm"}, {ESP_PWR_LVL_N18, "-18dBm"}, {ESP_PWR_LVL_N24, "-24dBm"},
+            {ESP_PWR_LVL_P3, "+3dBm"},
+            {ESP_PWR_LVL_N0, "0dBm"},
+            {ESP_PWR_LVL_N3, "-3dBm"},
+            {ESP_PWR_LVL_N9, "-9dBm"},
+#if CONFIG_IDF_TARGET_ESP32S3
+            {ESP_PWR_LVL_N18, "-18dBm"},
+            {ESP_PWR_LVL_N24, "-24dBm"},
+#endif
         };
 
         auto blePowerMenu =
@@ -1698,7 +1686,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     }));
 #endif
 
-#if EINKET013TT1
+#if CONFIG_DISPLAY_EINKET013TT1
     debugSettingsMenu->addMenuItem(MenuItem("Set Vcom Precise",
                                             [this, display, debugSettingsMenu]() {
         auto vcomPreciseScreen = new VcomAdjustScreen(*display, this->prefs_);

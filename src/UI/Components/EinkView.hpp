@@ -16,6 +16,12 @@ public:
         }
     }
 
+    auto defaultFrameRect() -> Rect {
+        auto defaultInset = display_.defaultUIInsets();
+        return Rect::fromSize({display_.width(), display_.height()})
+            .inset(defaultInset.left, defaultInset.right, defaultInset.top, defaultInset.bottom);
+    }
+
     bool drawDebugBox = false;
 
 protected:

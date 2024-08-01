@@ -12,9 +12,9 @@ ContentSyncScreen::ContentSyncScreen(DisplaySystem &display, LocalStore &localSt
                                      PreferencesStore &prefs, Telemetry &telemetry,
                                      PowerManager &power)
     : EinkView(display), localStore_(localStore), prefs_(prefs), telemetry_(telemetry),
-      power_(power), cancelView_(display, "Press \ue000 to cancel", &ibmf75Face0) {
+      power_(power), cancelView_(display, "Press \ue000 to cancel", &fontFace0) {
     for (auto &textView : textViews_) {
-        textView = std::make_shared<SingleLineTextView>(display, "", &ibmf75Face0);
+        textView = std::make_shared<SingleLineTextView>(display, "", &fontFace0);
     }
     for (auto &progressBarView : progressBarsViews_) {
         progressBarView = std::make_shared<ProgressBarView>(display);
@@ -132,13 +132,9 @@ void ContentSyncScreen::cancel() {
 }
 
 void ContentSyncScreen::render(DisplaySystem &display) {
-    log_d("Rendering content sync screen");
-
-    int adjustedXPadding = 42;
-    int adjustedYPadding = 10;
-    setFrame({{display.xAbsolute(adjustedXPadding), display.yAbsolute(adjustedYPadding)},
-              {display.defaultScreenWidth - 2 * adjustedXPadding,
-               display.defaultScreenHeight - 2 * adjustedYPadding}});
+    int xPadding = 42;
+    int yPadding = 10;
+    setFrame(Rect::fromSize({display.width(), display.height()}).inset(xPadding, yPadding));
 
     // Re-render based on state
     switch (state_.state) {
@@ -262,7 +258,7 @@ void ContentSyncScreen::begin() {
         return;
     }
 
-#if !SIMULATOR
+#if USE_BLE
     // Disable the BLE Peripheral. This seems to almost always crash the device with a
     // btdm_controller_task crash
     BLEManager::getInstance()->stopAdvertising();

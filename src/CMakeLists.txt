@@ -6,37 +6,83 @@ list(FILTER app_sources EXCLUDE REGEX "${CMAKE_SOURCE_DIR}/src/Ulp/*.*")
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-set(components miniz ulp astubs pugixml improv ArduinoJson Adafruit-GFX-Library driver mbedtls vfs lwip efuse esp_hw_support soc esp_eth spi_flash bt nvs_flash esp_system esp_event xtensa wpa_supplicant esp_hw_support freertos heap esp_pm esp_adc esp_http_client wifi_provisioning esp_littlefs esp-nimble-cpp espcoredump app_update usb)
+set(components
+    miniz
+    ulp
+    astubs
+    pugixml
+    improv
+    ArduinoJson
+    Adafruit-GFX-Library
+    driver
+    mbedtls
+    vfs
+    lwip
+    efuse
+    esp_hw_support
+    soc
+    esp_eth
+    spi_flash
+    bt
+    nvs_flash
+    esp_system
+    esp_event
+    xtensa
+    wpa_supplicant
+    esp_hw_support
+    freertos
+    heap
+    esp_pm
+    esp_adc
+    esp_http_client
+    wifi_provisioning
+    esp_littlefs
+    esp-nimble-cpp
+    espcoredump
+    app_update
+    usb
+    freetype
 
-set(compile_options
-    -includeconfig.h
-    -Wno-unknown-pragmas
-    -DIDF_LOG
-    -DUSE_BLE_SERVER_REMOTE=1
-    -DUSE_BLE_SERVER_SETTINGS=1
-    -DUSE_BLE_SERVER_PROXY=1
-    -DUSE_BLE_SERVER_IMPROV=1
-    -DUSE_TURN_TOUCH_REMOTE=1
-    -DBOARD_HAS_PSRAM=1
-    -DCONFIG_BT_NIMBLE_MEM_ALLOC_MODE_EXTERNAL
-    -DCORE_DEBUG_LEVEL=ARDUHAL_LOG_LEVEL_DEBUG
-    -DCONFIG_ARDUHAL_LOG_COLORS
-    -Wno-missing-field-initializers
-    -DLEDC_BACKLIGHT=1
-    -DUSE_LTR329=1
-    -DUSE_MMC5603=1
-    -DINTERNAL_SPIFFS_FLASH=1
-    -DLED_INVERT=1
-    -DEINKET013TT1=1
-    -DUSE_TINYUSB_SERIAL=1
+    # Uncomment for M5Stack displays
+    # M5GFX
 )
 
-# Check if the BUILD_FOR_TEST environment variable is set and add the extra option if it is
-if($ENV{BUILD_FOR_TEST})
-    message(WARNING "TEST BUILD ENABLED!")
+# It would be nice if we could add components conditionally based on the configuration, but
+# it seems that the REQUIRES and PRIV_REQUIRES variables can't depend on configuration choices.
+# There might be a workaround by passing in variables straight through CMAKE. Thankfully it seems
+# that unused components are stripped out by the linker so it's not a huge deal.
+# See: https://docs.espressif.com/projects/esp-idf/en/v5.2.2/esp32/api-guides/build-system.html#when-writing-a-component
+# > The values of REQUIRES and PRIV_REQUIRES should not depend on any configuration choices
+# > (CONFIG_xxx macros). This is because requirements are expanded before the configuration
+# > is loaded. Other component variables (like include paths or source files) can depend on
+# > configuration choices.
 
-    # list(APPEND compile_options -DDISABLE_POWER_MANAGEMENT=1)
-endif()
+# if(CONFIG_USE_TINYUSB_SERIAL)
+# message(STATUS "Using TinyUSB serial")
+# list(APPEND components usb)
+# endif()
+
+# if(CONFIG_DISPLAY_M5STACK_ATOM_DISPLAY)
+# message(STATUS "Using M5Stack Atom display")
+# list(APPEND components M5GFX)
+# elseif(CONFIG_DISPLAY_M5STACK_MODULE_DISPLAY)
+# message(STATUS "Using M5Stack Module display")
+# list(APPEND components M5GFX)
+# endif()
+
+# Set compile options
+set(compile_options
+
+    # This _should_ be included by default I think but it's not
+    -includesdkconfig.h
+
+    -includeconfig.h
+    -Wno-unknown-pragmas
+    -Wno-missing-field-initializers
+    -DIDF_LOG
+)
+
+message(STATUS "Compiling with components: ${components}")
 
 idf_component_register(
     SRCS ${app_sources}

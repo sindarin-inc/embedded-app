@@ -46,7 +46,7 @@ void WiFiScanScreen::begin() {
                 for (auto &network : sortedNetworks) {
                     std::string displayText = StringFormat(
                         "%s (%d dBm)", reinterpret_cast<const char *>(network.ssid), network.rssi);
-                    networkViews_.emplace_back(display_, displayText, &ibmf75Face0);
+                    networkViews_.emplace_back(display_, displayText, &fontFace0);
                 }
             }
             render(display_);
@@ -78,10 +78,7 @@ void WiFiScanScreen::drawInRect(Rect rect) {
 
 void WiFiScanScreen::render(DisplaySystem &display) {
     setNeedsLayout();
-    setFrame(
-        {{display.xAbsolute(display.defaultXPadding), display.yAbsolute(display.defaultYPadding)},
-         {display.defaultScreenWidth - 2 * display.defaultXPadding,
-          display.defaultScreenHeight - 2 * display.defaultYPadding}});
+    setFrame(defaultFrameRect());
     draw();
     display.updateDisplay();
 }

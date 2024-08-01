@@ -5,7 +5,7 @@
 #include "Misc/PowerManager.hpp"
 #include "Renderers/RendererStream.hpp"
 
-#if USE_TURN_TOUCH_REMOTE
+#if CONFIG_USE_TURN_TOUCH_REMOTE
 #include "Inputs/TTRemoteInput.hpp"
 extern TTRemoteInput ttRemoteInput;
 #endif
@@ -36,7 +36,7 @@ void OnboardingContentSyncScreen::render(DisplaySystem &display) {
 
         auto streamFirstTime = std::make_shared<StdStringStream>(message);
         onboardingSyncRenderer_.setStream(streamFirstTime);
-        display.setFont(static_cast<Font *>(&ibmf75Face0));
+        display.setFont(static_cast<Font *>(&fontFace0));
         onboardingSyncRenderer_.renderFirstPage();
         display.updateDisplay(DisplaySystem::UpdateType::FULL);
         shownOnboardingSyncMessage_ = true;
@@ -85,7 +85,7 @@ void OnboardingContentSyncScreen::begin() {
     }
 
     PowerManager::getInstance().forceOn();
-    DigitalWrite(BLUE_LED, LED_ON);
+    DigitalWrite(CONFIG_BLUE_LED, LED_ON);
 
     state_.state = ContentSyncState::ConnectingWifi;
     render(display_);

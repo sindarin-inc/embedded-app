@@ -1,4 +1,4 @@
-#if USE_BLE_SERVER_IMPROV
+#if CONFIG_USE_BLE_SERVER_IMPROV
 
 #include "BLEImprov.hpp"
 

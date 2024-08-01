@@ -11,6 +11,7 @@
 #include "Misc/Defer.hpp"
 #include "Misc/GUnzipStream.hpp"
 #include "Misc/RateLimiter.hpp"
+#include "Misc/SpiramAllocator.hpp"
 #include "sindarin-debug.h"
 
 auto CreateClient(const std::string &url, bool useBle, const std::shared_ptr<CancelFlag> &cancel)
@@ -266,22 +267,24 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry,
         return true;
     };
 
-    auto reader = [bufferQueue](HttpClient &client, int index, int contentLength) -> size_t {
-        auto *data = static_cast<uint8_t *>(heap_caps_malloc(bufferSize, MALLOC_CAP_SPIRAM));
+    auto reader = [bufferQueue](WiFiHttpClient &client, int index, int contentLength) -> size_t {
+        // NOTE: This gets free'd by the queue consumer. It only needs to be free'd here if we fail
+        // to write it to the queue
+        auto *data = static_cast<uint8_t *>(SpiRamMalloc(bufferSize));
         if (data == nullptr) {
-            log_e("heap_caps_malloc(%d) failed", bufferSize);
+            log_e("SpiRamMalloc(%d) failed", bufferSize);
             return 0;
         }
         int bytesRead = client.read(reinterpret_cast<char *>(data), bufferSize);
         if (bytesRead <= 0) {
             log_w("client.read returned %d bytes", bytesRead);
-            heap_caps_free(data);
+            SpiRamFree(data);
             return 0;
         }
         DataBlock block = {data, bytesRead};
         if (xQueueSend(bufferQueue, &block, portMAX_DELAY) != pdPASS) {
             log_e("xQueueSend failed");
-            heap_caps_free(data);
+            SpiRamFree(data);
             return 0;
         }
         return bytesRead;
@@ -309,7 +312,7 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry,
             }
 
             auto bytesWritten = file.write(block.data, block.size); // Adjust size as needed
-            heap_caps_free(block.data);
+            SpiRamFree(block.data);
             if (bytesWritten != block.size) {
                 log_e("Failed to write %d bytes, wrote %zu", block.size, bytesWritten);
                 // We'll catch the failure at the filesize check at the end

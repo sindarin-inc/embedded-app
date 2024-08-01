@@ -30,16 +30,14 @@ void StatsScreen::render(DisplaySystem &display) {
         timeMessage += formattedString;
     }
 
-    display.setFont(static_cast<Font *>(&ibmf75Face0));
-    display.drawSingleLineOfText(
-        wordsMessage,
-        display.xAbsolute(display.xAbsoluteCenter() - display.getTextWidth(wordsMessage) / 2),
-        display.yAbsolute(display.yAbsoluteCenter() - (display.getTextHeight() * 2 + 1) / 2));
-    display.drawSingleLineOfText(
-        timeMessage,
-        display.xAbsolute(display.xAbsoluteCenter() - display.getTextWidth(timeMessage) / 2),
-        display.yAbsolute(display.yAbsoluteCenter() - (display.getTextHeight() * 2 + 1) / 2 +
-                          display.getTextHeight() + 1));
+    display.setFont(static_cast<Font *>(&fontFace0));
+    display.drawSingleLineOfText(wordsMessage,
+                                 (display.width() - display.getTextWidth(wordsMessage)) / 2,
+                                 (display.height() / 2 - (display.getTextHeight() * 2 + 1) / 2));
+    display.drawSingleLineOfText(timeMessage,
+                                 (display.width() - display.getTextWidth(timeMessage)) / 2,
+                                 (display.height() / 2 - (display.getTextHeight() * 2 + 1) / 2 +
+                                  display.getTextHeight() + 1));
     display.updateDisplay();
 }
 

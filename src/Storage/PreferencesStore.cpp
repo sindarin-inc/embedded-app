@@ -4,6 +4,8 @@
 #include <memory>
 #include <unordered_map>
 
+#include "Misc/Defer.hpp"
+
 RTC_SLOW_ATTR SyncReason PreferencesStore::syncReason;
 RTC_SLOW_ATTR uint64_t PreferencesStore::nextSyncTime;
 RTC_SLOW_ATTR int64_t PreferencesStore::ledChargeTime;
@@ -214,14 +216,13 @@ void DumpNVS() {
             }
             auto *blob = static_cast<uint8_t *>(malloc(blobSize));
             result = nvs_get_blob(nvsHandle, info.key, blob, &blobSize);
+            defer { free(blob); };
             if (result != ESP_OK) {
                 log_e("NVS error: %s", esp_err_to_name(result));
-                free(blob);
                 continue;
             }
             log_i("%s:%s (%s) (%zu bytes)", info.namespace_name, info.key, typeToStr(info.type),
                   blobSize);
-            free(blob);
             break;
         }
         default:

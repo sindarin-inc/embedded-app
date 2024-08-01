@@ -5,8 +5,10 @@
 #include <driver/rtc_io.h>
 #include <esp_idf_version.h>
 #include <hal/gpio_types.h>
+#ifdef CONFIG_ULP_COPROC_ENABLED
 #include <ulp_riscv.h>
 #include <ulp_riscv_i2c.h>
+#endif
 
 #if USE_BLE
 #include "Communications/BLEManager.hpp"
@@ -18,13 +20,15 @@
 
 #if !SIMULATOR
 #include "FunctionalInterrupt.h"
-#else
-uint32_t ulp_waitForClose;
 #endif
 
 // These are also in build/esp-idf/src/ulp_src/ulp_src.h but including that file throws a lot of
 // unused vairable warnings
+#if CONFIG_IDF_TARGET_ESP32S3
 extern uint32_t ulp_waitForClose; // NOLINT(readability-identifier-naming)
+#else
+uint32_t ulp_waitForClose; // NOLINT(readability-identifier-naming)
+#endif
 
 RTC_SLOW_ATTR bool ulpLoaded = false;
 
@@ -83,9 +87,11 @@ void PowerManager::wakeupCheck(SolClock &clock) {
     switch (bootInfo_.resetReason) {
     case ESP_RST_UNKNOWN: {
         switch (bootInfo_.rtcResetReason) {
+#ifdef CONFIG_IDF_TARGET_ESP32S3
         case USB_UART_CHIP_RESET:
             bootInfo_.reason = BootInfo::Reason::UartChipReset;
             break;
+#endif
         default:
             bootInfo_.reason = BootInfo::Reason::Unknown;
             break;
@@ -281,9 +287,9 @@ auto PowerManager::begin() -> esp_err_t {
     }
     err = esp_pm_configure(&pmConfig_);
 
-#ifdef USB_CONNECTED_PIN
+#if CONFIG_USB_CONNECTED_PIN != GPIO_NUM_NC
     attachInterrupt(
-        digitalPinToInterrupt(USB_CONNECTED_PIN),
+        digitalPinToInterrupt(CONFIG_USB_CONNECTED_PIN),
         [this]() {
         DispatchGetCore1BackgroundQueue()->dispatchFromISR([this]() {
             if (USBConnected()) {
@@ -362,7 +368,7 @@ void PowerManager::loop() {
         }
     }
     checkUsb();
-#if USE_MMC5603
+#if CONFIG_USE_MMC5603
     bool templeOpen;
     Xyz8bit prevMagReading = lastMagReading_;
     float prevMagAngle = lastMagAngle_;
@@ -414,7 +420,7 @@ void PowerManager::loop() {
 }
 
 auto PowerManager::isTempleOpen(bool &open) -> esp_err_t {
-#if USE_MMC5603
+#if CONFIG_USE_MMC5603
     auto err = magSensor_.readXZ8Bit(lastMagReading_);
     if (err != ESP_OK) {
         log_e("Failed to read magnetometer");
@@ -432,8 +438,8 @@ void PowerManager::checkUsb() {
         // TODO: Should we take multiple measurements?
         battery.takeMeasurement();
         auto percentage = battery.getBatteryPercentage();
-        gpio_hold_dis(static_cast<gpio_num_t>(GREEN_LED));
-        gpio_hold_dis(static_cast<gpio_num_t>(RED_LED));
+        gpio_hold_dis(static_cast<gpio_num_t>(CONFIG_GREEN_LED));
+        gpio_hold_dis(static_cast<gpio_num_t>(CONFIG_RED_LED));
 
         if (percentage > 95) {
             PreferencesStore::isCharged = true;
@@ -449,47 +455,47 @@ void PowerManager::checkUsb() {
             if (PreferencesStore::ledChargeTime == 0 ||
                 currentTime >= PreferencesStore::ledChargeTime) {
                 // If the battery is fully charged and a half hour has passed, turn on the LED
-                DigitalWrite(GREEN_LED, LED_ON);
-                DigitalWrite(RED_LED, LED_OFF);
+                DigitalWrite(CONFIG_GREEN_LED, LED_ON);
+                DigitalWrite(CONFIG_RED_LED, LED_OFF);
                 // log_i("Battery fully charged, turning on green LED");
             } else {
-                DigitalWrite(GREEN_LED, LED_OFF);
-                DigitalWrite(RED_LED, LED_ON);
+                DigitalWrite(CONFIG_GREEN_LED, LED_OFF);
+                DigitalWrite(CONFIG_RED_LED, LED_ON);
                 // log_i("Battery fully charged, waiting for %" PRId64 " seconds",
                 //       PreferencesStore::ledChargeTime - currentTime);
             }
         } else if (percentage > 85 && PreferencesStore::isCharged) {
             // Keep the LED green if it's charged and between 85-95%
-            DigitalWrite(GREEN_LED, LED_ON);
-            DigitalWrite(RED_LED, LED_OFF);
+            DigitalWrite(CONFIG_GREEN_LED, LED_ON);
+            DigitalWrite(CONFIG_RED_LED, LED_OFF);
             // log_i("Battery level is above 85%%, keeping green LED on.");
         } else {
             PreferencesStore::isCharged = false;
             PreferencesStore::ledChargeTime = -1;
-            DigitalWrite(GREEN_LED, LED_OFF);
-            DigitalWrite(RED_LED, LED_ON);
+            DigitalWrite(CONFIG_GREEN_LED, LED_OFF);
+            DigitalWrite(CONFIG_RED_LED, LED_ON);
             // log_d("Battery not fully charged, turning on red LED. Percentage: %d%%",
             //       int(percentage));
         }
-        gpio_hold_en(static_cast<gpio_num_t>(GREEN_LED));
-        gpio_hold_en(static_cast<gpio_num_t>(RED_LED));
+        gpio_hold_en(static_cast<gpio_num_t>(CONFIG_GREEN_LED));
+        gpio_hold_en(static_cast<gpio_num_t>(CONFIG_RED_LED));
         gpio_deep_sleep_hold_en();
     } else {
         // log_d("USB disconnected, resetting charged LED");
         PreferencesStore::ledChargeTime = 0; // reset the timer as the USB is disconnected
         PreferencesStore::isCharged = false; // reset the isCharged flag as the USB is disconnected
-        DigitalWrite(GREEN_LED, LED_OFF);
-        DigitalWrite(RED_LED, LED_OFF);
-        gpio_hold_dis(static_cast<gpio_num_t>(GREEN_LED));
-        gpio_hold_dis(static_cast<gpio_num_t>(RED_LED));
+        DigitalWrite(CONFIG_GREEN_LED, LED_OFF);
+        DigitalWrite(CONFIG_RED_LED, LED_OFF);
+        gpio_hold_dis(static_cast<gpio_num_t>(CONFIG_GREEN_LED));
+        gpio_hold_dis(static_cast<gpio_num_t>(CONFIG_RED_LED));
     }
 }
 
 void PowerManager::releaseLED() {
-    DigitalWrite(GREEN_LED, LED_OFF);
-    DigitalWrite(RED_LED, LED_OFF);
-    gpio_hold_dis(static_cast<gpio_num_t>(GREEN_LED));
-    gpio_hold_dis(static_cast<gpio_num_t>(RED_LED));
+    DigitalWrite(CONFIG_GREEN_LED, LED_OFF);
+    DigitalWrite(CONFIG_RED_LED, LED_OFF);
+    gpio_hold_dis(static_cast<gpio_num_t>(CONFIG_GREEN_LED));
+    gpio_hold_dis(static_cast<gpio_num_t>(CONFIG_RED_LED));
 }
 
 void PowerManager::beginShutdown() {
@@ -660,18 +666,18 @@ auto ToString(SleepReason reason) -> const char * {
 }
 
 auto PowerManager::enableUsbWakeup() -> esp_err_t {
-#if USB_CONNECTED_PIN
+#if CONFIG_USB_CONNECTED_PIN != GPIO_NUM_NC
     esp_err_t err;
     if (USBConnected()) {
-        err = esp_sleep_enable_ext0_wakeup(static_cast<gpio_num_t>(USB_CONNECTED_PIN), 0);
+        err = esp_sleep_enable_ext0_wakeup(static_cast<gpio_num_t>(CONFIG_USB_CONNECTED_PIN), 0);
         if (err != ESP_OK) {
-            log_e("error enabling USB_CONNECTED_PIN low wakeup from deep sleep %d", err);
+            log_e("error enabling CONFIG_USB_CONNECTED_PIN low wakeup from deep sleep %d", err);
             return err;
         }
     } else {
-        err = esp_sleep_enable_ext0_wakeup(static_cast<gpio_num_t>(USB_CONNECTED_PIN), 1);
+        err = esp_sleep_enable_ext0_wakeup(static_cast<gpio_num_t>(CONFIG_USB_CONNECTED_PIN), 1);
         if (err != ESP_OK) {
-            log_e("error enabling USB_CONNECTED_PIN high wakeup from deep sleep %d", err);
+            log_e("error enabling CONFIG_USB_CONNECTED_PIN high wakeup from deep sleep %d", err);
             return err;
         }
     }
@@ -706,6 +712,7 @@ void PowerManager::deepSleepInternal(SleepReason reason) {
         log_e("Failed to init SCL with err %s", esp_err_to_name(err));
     }
 
+#ifdef CONFIG_ULP_COPROC_ENABLED
     ulp_riscv_i2c_cfg_t i2cCfg;
     i2cCfg.i2c_pin_cfg.sda_io_num = I2C_MASTER_SDA_IO;
     i2cCfg.i2c_pin_cfg.scl_io_num = I2C_MASTER_SCL_IO;
@@ -739,6 +746,7 @@ void PowerManager::deepSleepInternal(SleepReason reason) {
         }
         ulpLoaded = true;
     }
+#endif
 
     // If we're sleeping and the temples are already open, tell the ULP to wait for them to be
     // closed first before waking up via the magnetometer
@@ -747,6 +755,7 @@ void PowerManager::deepSleepInternal(SleepReason reason) {
         ulp_waitForClose = 1;
     }
 
+#ifdef CONFIG_ULP_COPROC_ENABLED
     ulp_set_wakeup_period(0, ULP_RUN_INTERVAL_MS * 1000);
 
     // Start the ULP program
@@ -756,6 +765,7 @@ void PowerManager::deepSleepInternal(SleepReason reason) {
         powerOffInternal();
         return;
     }
+#endif
 
     err = esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_ON);
     if (err != ESP_OK) {
@@ -771,7 +781,7 @@ void PowerManager::deepSleepInternal(SleepReason reason) {
         return;
     }
 
-    // Enable a wakeup on the USB_CONNECTED_PIN
+    // Enable a wakeup on the CONFIG_USB_CONNECTED_PIN
     err = enableUsbWakeup();
     if (err != ESP_OK) {
         powerOffInternal();
