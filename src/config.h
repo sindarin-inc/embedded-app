@@ -132,7 +132,8 @@
 // #undef CONFIG_FONT_IBMF
 // #define CONFIG_FONT_TTF 1
 
-// Thw following could eventually be romeved as PSRAM seems to be the way to go
+// ToDo: The following macro could eventually be removed as PSRAM seems to be the way to go.
+// Must be removed in combination with the ones in file TTFFontData.cpp
 #if CONFIG_FONT_TTF
 #define FT_USE_PSRAM 1
 #endif

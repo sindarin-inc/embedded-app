@@ -8,6 +8,9 @@
 
 FT_Library FontData::library = nullptr;
 
+// ToDo: The following ifs macros about FT_USE_PSRAM could eventually be removed to keep using PSRAM
+// code as PSRAM seems to be the way to go
+
 #if FT_USE_PSRAM
 
 static auto myFtAlloc(FT_Memory memory, long size) -> void * {
