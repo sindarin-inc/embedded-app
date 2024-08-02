@@ -241,39 +241,6 @@ auto Font::getGlyphForCache(GlyphCode glyphCode, Glyph &glyph) -> bool {
     return true;
 }
 
-auto Font::getGlyphMetrics(GlyphCode glyphCode, Glyph &appGlyph) -> bool {
-
-    appGlyph.clear();
-
-    // log_d("Glyph metrics for glyphcode: %d", glyphCode);
-
-    FT_Face theFace = (glyphCode >= 0x8000) ? privateFace_ : face_;
-    GlyphCode theGlyphCode = (glyphCode >= 0x8000) ? glyphCode - 0x8000 : glyphCode;
-
-    if (theGlyphCode == SPACE_CODE) { // send as a space character
-        appGlyph.pointSize = size_;
-        appGlyph.metrics = {.xoff = 0,
-                            .yoff = 0,
-                            .descent = 0,
-                            .advance = spaceSize_,
-                            .lineHeight = static_cast<int16_t>(theFace->size->metrics.height >> 6)};
-        return true;
-    }
-
-    std::optional<const Glyph *> glyph = fontData_.cache.getGlyph(*this, glyphCode, size_);
-
-    if (!glyph.has_value()) {
-
-        LOGE("Unable to load glyph for charcode: %d", theGlyphCode);
-        return false;
-    }
-
-    appGlyph.bitmap.dim = glyph.value()->bitmap.dim;
-    appGlyph.metrics = glyph.value()->metrics;
-
-    return true;
-}
-
 auto Font::ligKernUTF8Map(const std::string &line, LigKernMappingHandler handler) const -> void {
     if (line.length() != 0) {
         auto iter = UTF8Iterator(line);
@@ -391,11 +358,6 @@ auto Font::drawSingleLineOfText(font_defs::Bitmap &canvas, font_defs::Pos pos,
 }
 
 auto Font::getTextSize(const std::string &buffer) -> font_defs::Dim {
-    // LOGD("getTextSize(): %s", buffer.c_str());
-    if constexpr (TTF_TRACING) {
-        LOGD("getTextSize()");
-    }
-
     font_defs::Dim dim = font_defs::Dim(0, 0);
     int16_t up = 0;
     int16_t down = 0;
@@ -403,60 +365,49 @@ auto Font::getTextSize(const std::string &buffer) -> font_defs::Dim {
     if (isInitialized()) {
         ligKernUTF8Map(buffer, [this, &dim, &up, &down](GlyphCode glyphCode, FIX16 kern, bool first,
                                                         bool last) {
-            font_defs::Glyph glyph{};
-            if (getGlyphMetrics(glyphCode, glyph)) { // retrieves only the metrics
-                // LOGD("Advance: %f, xoff: %d, yoff: %d, descent: %d, kern: %d",
-                //      IBMFFaceLow::fromFIX16(glyph.metrics.advance), glyph.metrics.xoff,
-                //      glyph.metrics.yoff, glyph.metrics.descent, kern);
-                if (glyphCode == SPACE_CODE) {
-                    dim.width += spaceSize_ >> 6;
-                } else {
-                    dim.width += last ? glyph.bitmap.dim.width - (kern / 64) - glyph.metrics.xoff
-                                      : ((glyph.metrics.advance + kern) >> 6);
-                }
-                up = (up < glyph.metrics.yoff) ? glyph.metrics.yoff : up;
-                down = (down < glyph.metrics.descent) ? glyph.metrics.descent : down;
+            if (glyphCode == SPACE_CODE) {
+                dim.width += spaceSize_ >> 6;
             } else {
-                // LOGW("Unable to retrieve glyph for glyphCode %d", glyphCode);
+                std::optional<const Glyph *> glyph =
+                    fontData_.cache.getGlyph(*this, glyphCode, size_);
+                if (glyph.has_value()) {
+                    dim.width += last ? glyph.value()->bitmap.dim.width - (kern / 64) -
+                                            glyph.value()->metrics.xoff
+                                      : ((glyph.value()->metrics.advance + kern) >> 6);
+
+                    up = (up < glyph.value()->metrics.yoff) ? glyph.value()->metrics.yoff : up;
+                    down = (down < glyph.value()->metrics.descent) ? glyph.value()->metrics.descent
+                                                                   : down;
+                }
             }
         });
     }
+
     dim.height = (up + down);
     // LOGD("TTFFont: TextBound: width: %d, height: %d", dim.width, dim.height);
     return dim;
 }
 
 auto Font::getTextWidth(const std::string &buffer) -> int {
-    if constexpr (TTF_TRACING) {
-        LOGD("getTextWidth()");
-    }
     int width = 0;
     if (isInitialized()) {
         ligKernUTF8Map(buffer,
                        [this, &width](GlyphCode glyphCode, FIX16 kern, bool first, bool last) {
-            font_defs::Glyph glyph{};
-            if (getGlyphMetrics(glyphCode, glyph)) { // retrieves only the metrics
-
-                // LOGD("Advance: %f, xoff: %d, yoff: %d, descent: %d, kern: %d",
-                //      IBMFFaceLow::fromFIX16(glyph.metrics.advance), glyph.metrics.xoff,
-                //      glyph.metrics.yoff, glyph.metrics.descent, kern);
-
-                if (glyphCode == SPACE_CODE) {
-                    width += glyph.metrics.advance >> 6;
-                } else {
-                    width += last ? glyph.bitmap.dim.width - (kern / 64) - glyph.metrics.xoff
-                                  : ((glyph.metrics.advance + kern) >> 6); // + glyph.metrics.xoff;
-                }
-
-                // LOGD("Advance value: %f, kern: %f",
-                //     IBMFFaceLow::fromFIX16(glyph.metrics.advance),
-                //     IBMFFaceLow::fromFIX16(kern));
+            if (glyphCode == SPACE_CODE) {
+                width += spaceSize_ >> 6;
             } else {
-                // LOGW("Unable to retrieve glyph for glyphCode %d", glyphCode);
+                std::optional<const Glyph *> glyph =
+                    fontData_.cache.getGlyph(*this, glyphCode, size_);
+
+                if (glyph.has_value()) {
+                    width += last ? glyph.value()->bitmap.dim.width - (kern / 64) -
+                                        glyph.value()->metrics.xoff
+                                  : ((glyph.value()->metrics.advance + kern) >> 6);
+                }
             }
         });
     }
-    // LOGD("TTFFont: TextWidth: %d", width);
+
     return width;
 }
 
@@ -493,9 +444,7 @@ auto Font::toChar32(const char **str) -> char32_t {
 }
 
 auto Font::getTextHeight(const std::string &buffer) -> int {
-    if constexpr (TTF_TRACING) {
-        LOGD("getTextHeight()");
-    }
+
     int height = 0;
     if (isInitialized()) {
         Dim dim = getTextSize(buffer);

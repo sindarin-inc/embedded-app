@@ -130,6 +130,7 @@
 
 // Uncomment the following lines to force the use of TTF
 // #undef CONFIG_FONT_IBMF
+// #undef CONFIG_FONT_TTF
 // #define CONFIG_FONT_TTF 1
 
 #if CONFIG_FONT_TTF

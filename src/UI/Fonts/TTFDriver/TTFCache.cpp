@@ -5,8 +5,8 @@
 #include "TTFCache.hpp"
 #include "TTFFont.hpp"
 
-auto TTFCache::doGetGlyph(Font &font, font_defs::GlyphCode glyphCode, uint32_t key)
-    -> std::optional<const font_defs::Glyph *> {
+auto TTFCache::doGetGlyph(Font &font, font_defs::GlyphCode glyphCode,
+                          uint32_t key) -> std::optional<const font_defs::Glyph *> {
 
     // auto glyph = new font_defs::Glyph();
     auto allocator = SpiramAllocator<font_defs::Glyph>();
@@ -23,8 +23,8 @@ auto TTFCache::doGetGlyph(Font &font, font_defs::GlyphCode glyphCode, uint32_t k
 
     if (font.getGlyphForCache(glyphCode, *glyph)) {
         glyphCache_.insert({key, glyph});
-        // log_d("miss (%" PRIu16 ") -> %p!", glyphCode, glyph);
         missCount_++;
+        // showBitmap(glyph->bitmap, false, font.getFontPixelResolution());
         return glyph.get();
     }
 
@@ -84,7 +84,9 @@ void TTFCache::showBitmap(const Bitmap &bitmap, bool inverted,
             std::cout << "   |";
             for (col = 0; col < maxWidth; col++) {
                 if (inverted) {
+                    std::cout << " .,:ilwW"[(255 - rowPtr[col]) >> 5];
                 } else {
+                    std::cout << " .,:ilwW"[rowPtr[col] >> 5];
                 }
             }
             std::cout << '|';

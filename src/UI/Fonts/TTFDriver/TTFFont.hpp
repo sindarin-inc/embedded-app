@@ -44,7 +44,6 @@ private:
     auto ligKernUTF8Map(const std::string &line, LigKernMappingHandler handler) const -> void;
 
     auto ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2, FIX16 *kern) const -> bool;
-    auto getGlyphMetrics(GlyphCode glyphCode, Glyph &appGlyph) -> bool;
 
     void copyBitmap(Bitmap &to, const Bitmap &from, Pos atPos, bool inverted);
 
