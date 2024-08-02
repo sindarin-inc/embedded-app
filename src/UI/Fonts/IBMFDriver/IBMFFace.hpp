@@ -24,7 +24,7 @@ class IBMFFace {
 private:
     bool initialized_{false};
     FontFormat fontFormat_{FontFormat::UNKNOWN};
-    PixelResolution pixelResolution_{DEFAULT_PIXEL_RESOLUTION};
+    PixelResolution displayPixelResolution_{DEFAULT_DISPLAY_PIXEL_RESOLUTION};
 
     FaceHeaderPtr faceHeader_{nullptr};
     GlyphsPixelPoolIndexes glyphsPixelPoolIndexes_{nullptr};
@@ -57,8 +57,8 @@ public:
     [[nodiscard]] inline auto getLigKernStep(uint16_t idx) const -> LigKernStep * {
         return &(*ligKernSteps_)[idx];
     }
-    [[nodiscard]] inline auto getPixelResolution() const -> PixelResolution {
-        return pixelResolution_;
+    [[nodiscard]] inline auto getDisplayPixelResolution() const -> PixelResolution {
+        return displayPixelResolution_;
     }
 
     [[nodiscard]] inline auto getGlyphHOffset(GlyphCode glyphCode) const -> int8_t {
@@ -84,7 +84,9 @@ public:
                                                      : NO_LIG_KERN_PGM;
     }
 
-    inline auto setPixelResolution(PixelResolution res) -> void { pixelResolution_ = res; }
+    inline auto setDisplayPixelResolution(PixelResolution res) -> void {
+        displayPixelResolution_ = res;
+    }
 
     auto ligKern(GlyphCode glyphCode1, GlyphCode *glyphCode2, FIX16 *kern) -> bool;
 
