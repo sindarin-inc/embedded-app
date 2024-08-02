@@ -46,7 +46,7 @@ CMAKE_SIM_ONE_BIT := $(if $(SIM_ONE_BIT),-DSIM_ONE_BIT=$(SIM_ONE_BIT))
 .PHONY: sim-build
 sim-build:
 	mkdir -p lib/Simulator/build
-	cd lib/Simulator/build && cmake $(CMAKE_FLAGS) $(CMAKE_SIM_WIDTH) $(CMAKE_SIM_HEIGHT) $(CMAKE_SIM_SCALE) $(CMAKE_SIM_LAYOUT_DEBUG) $(CMAKE_SIM_ONE_BIT) .. && $(MAKE)
+	cd lib/Simulator/build && cmake $(CMAKE_FLAGS) .. && $(MAKE)
 
 .PHONY: sim-run
 sim: sim-build
@@ -55,7 +55,7 @@ sim: sim-build
 .PHONY: sim8-build
 sim8-build:
 	mkdir -p lib/Simulator/build8
-	cd lib/Simulator/build8 && cmake $(CMAKE_FLAGS) -DENABLE_8BIT_DISPLAY=ON $(CMAKE_SIM_WIDTH) $(CMAKE_SIM_HEIGHT) $(CMAKE_SIM_SCALE) $(CMAKE_SIM_LAYOUT_DEBUG) $(CMAKE_SIM_ONE_BIT) .. && $(MAKE)
+	cd lib/Simulator/build8 && cmake $(CMAKE_FLAGS) -DENABLE_8BIT_DISPLAY=ON .. && $(MAKE)
 
 .PHONY: sim-run8
 sim8: sim8-build
@@ -203,8 +203,6 @@ clean:
 	rm -fr lib/Simulator/build8
 	rm -fr scripts/epub-render/build
 	rm -fr test/CatchTests/build
-	rm -fr test/CatchTests/Images/TestRun/*diff.png
-	rm -fr test/CatchTests/Images/TestRun/GylphTests/*diff.png
 
 .PHONY: clang-tidy
 clang-tidy: check_idf
