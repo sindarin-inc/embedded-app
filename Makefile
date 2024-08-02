@@ -1,5 +1,7 @@
 all: build
 
+SHELL := bash
+
 # Use all but 1 core for building
 NUM_CORES := $(shell nproc)
 NUM_CORES := $(shell echo $$(( $(NUM_CORES) - 1 )))
@@ -27,12 +29,24 @@ else ifeq ($(TARGET),m5stack-atom-display)
 	IDF_PROFILE = -B build-$(TARGET) -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.$(TARGET)"
 else ifeq ($(TARGET),m5stack-module-display)
 	IDF_PROFILE = -B build-$(TARGET) -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.$(TARGET)"
+else ifeq ($(TARGET),waveshare-6inhd)
+	IDF_PROFILE = -B build-$(TARGET) -DSDKCONFIG_DEFAULTS="sdkconfig.defaults.$(TARGET)"
+else ifeq ($(TARGET),sharp-27in)
+	IDF_PROFILE = -B build-$(TARGET) -DSDKCONFIG_DEFAULTS="sdkconfig.defaults.$(TARGET)"
 endif
+
+# Optional variables for the Simulator builds
+CMAKE_SIM_WIDTH := $(if $(SIM_WIDTH),-DSIM_WIDTH=$(SIM_WIDTH))
+CMAKE_SIM_HEIGHT := $(if $(SIM_HEIGHT),-DSIM_HEIGHT=$(SIM_HEIGHT))
+CMAKE_SIM_SCALE := $(if $(SIM_SCALE),-DSIM_SCALE=$(SIM_SCALE))
+CMAKE_SIM_LAYOUT_DEBUG := $(if $(SIM_LAYOUT_DEBUG),-DSIM_LAYOUT_DEBUG=$(SIM_LAYOUT_DEBUG))
+CMAKE_SIM_ONE_BIT := $(if $(SIM_ONE_BIT),-DSIM_ONE_BIT=$(SIM_ONE_BIT))
+
 
 .PHONY: sim-build
 sim-build:
 	mkdir -p lib/Simulator/build
-	cd lib/Simulator/build && cmake $(CMAKE_FLAGS) .. && $(MAKE)
+	cd lib/Simulator/build && cmake $(CMAKE_FLAGS) $(CMAKE_SIM_WIDTH) $(CMAKE_SIM_HEIGHT) $(CMAKE_SIM_SCALE) $(CMAKE_SIM_LAYOUT_DEBUG) $(CMAKE_SIM_ONE_BIT) .. && $(MAKE)
 
 .PHONY: sim-run
 sim: sim-build
@@ -41,7 +55,7 @@ sim: sim-build
 .PHONY: sim8-build
 sim8-build:
 	mkdir -p lib/Simulator/build8
-	cd lib/Simulator/build8 && cmake $(CMAKE_FLAGS) -DENABLE_8BIT_DISPLAY=ON .. && $(MAKE)
+	cd lib/Simulator/build8 && cmake $(CMAKE_FLAGS) -DENABLE_8BIT_DISPLAY=ON $(CMAKE_SIM_WIDTH) $(CMAKE_SIM_HEIGHT) $(CMAKE_SIM_SCALE) $(CMAKE_SIM_LAYOUT_DEBUG) $(CMAKE_SIM_ONE_BIT) .. && $(MAKE)
 
 .PHONY: sim-run8
 sim8: sim8-build
@@ -112,28 +126,66 @@ build: check_idf
 
 .PHONY: flash
 flash: build
-	if [ -e /dev/cu.usbmodemsolreader1 ]; then \
-		echo "PROGRAM" | tee /dev/cu.usbmodemsolreader1; \
-		sleep 2; \
-	fi
-	@if [[ "$$(uname)" == "Linux" ]]; then \
-		PORT=$$(udevadm info --query=all --name=/dev/ttyUSB* | grep 'ID_MODEL_FROM_DATABASE=Sol Reader' -B4 | grep 'DEVNAME' | cut -d'=' -f2) ; \
-		echo "PROGRAM" | tee $$PORT ; \
-		sleep 2;\
-	fi
-	idf.py $(IDF_PROFILE) flash
+	@if [[ "$$(uname)" == "Darwin" ]]; then \
+		PORT=$$(ls /dev/cu.usbmodemsolreader1 | head -n1) ; \
+	elif [[ "$$(uname)" == "Linux" ]]; then \
+		PORT=$$(udevadm info --query=all --name=/dev/ttyACM0 | grep 'ID_MODEL=Sol_Reader' -B6 | grep 'DEVNAME' | cut -d'=' -f2) ; \
+		if [[ -z "$$PORT" ]]; then \
+			echo "Error: Could not find a Linux serial port with description 'Sol Reader'." ; \
+			exit 1 ; \
+		else \
+			stty -F $$PORT 115200 ; \
+			sleep 1 ; \
+		fi ; \
+	else \
+		echo "Unsupported operating system." ; \
+		exit 1 ; \
+	fi ; \
+	if [[ -z "$$PORT" ]]; then \
+		echo "Error: Could not find a serial port." ; \
+		exit 1 ; \
+	else \
+		echo "Port: $$PORT" ; \
+	fi ; \
+	echo "PROGRAM" | tee $$PORT ; \
+	sleep 2 ; \
+	idf.py $(IDF_PROFILE) flash --port $$PORT
 
 .PHONY: monitor
 monitor: check_idf
 	# Turn logging on on the new USB port if it exists.
-	if [ -e /dev/cu.usbmodemsolreader1 ]; then \
-		echo "LOGGING_ON" | tee /dev/cu.usbmodemsolreader1; \
-		sleep 2; \
-	fi
-	@if [[ "$$(uname)" == "Linux" ]]; then \
-		PORT=$$(udevadm info --query=all --name=/dev/ttyUSB* | grep 'ID_MODEL_FROM_DATABASE=Sol Reader' -B4 | grep 'DEVNAME' | cut -d'=' -f2) ; \
-	elif [[ "$$(uname)" == "Darwin" ]]; then \
+	@if [[ "$$(uname)" == "Darwin" ]]; then \
+		PORT=$$(ls /dev/cu.usbmodemsolreader1 | head -n1) ; \
+	elif [[ "$$(uname)" == "Linux" ]]; then \
+		PORT=$$(udevadm info --query=all --name=/dev/ttyACM0 | grep 'ID_MODEL=Sol_Reader' -B6 | grep 'DEVNAME' | cut -d'=' -f2) ; \
+		if [[ -z "$$PORT" ]]; then \
+			echo "Error: Could not find a Linux serial port with description 'Sol Reader'." ; \
+			exit 1 ; \
+		else \
+			echo "Found port $$PORT" ; \
+			stty -F $$PORT 115200 ; \
+		fi ; \
+	else \
+		echo "Unsupported operating system." ; \
+		exit 1 ; \
+	fi ; \
+	if [[ -z "$$PORT" ]]; then \
+		echo "Error: Could not find a serial port." ; \
+		exit 1 ; \
+	fi ; \
+	echo "LOGGING_ON" | tee $$PORT ; \
+	sleep 2 ;
+
+	@if [[ "$$(uname)" == "Darwin" ]]; then \
 		PORT=$$(ls /dev/cu.usbmodemsolreader3 | head -n1) ; \
+	elif [[ "$$(uname)" == "Linux" ]]; then \
+		PORT=$$(udevadm info --query=all --name=/dev/ttyACM1 | grep 'ID_MODEL=Sol_Reader' -B6 | grep 'DEVNAME' | cut -d'=' -f2) ; \
+		if [[ -z "$$PORT" ]]; then \
+			echo "Error: Could not find a Linux serial port with description 'Sol Reader'." ; \
+			exit 1 ; \
+		else \
+			stty -F $$PORT 115200 ; \
+		fi ; \
 	else \
 		echo "Unsupported operating system." ; \
 		exit 1 ; \
@@ -151,6 +203,8 @@ clean:
 	rm -fr lib/Simulator/build8
 	rm -fr scripts/epub-render/build
 	rm -fr test/CatchTests/build
+	rm -fr test/CatchTests/Images/TestRun/*diff.png
+	rm -fr test/CatchTests/Images/TestRun/GylphTests/*diff.png
 
 .PHONY: clang-tidy
 clang-tidy: check_idf
