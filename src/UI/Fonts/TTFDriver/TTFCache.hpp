@@ -31,8 +31,8 @@ public:
         clear();
     }
 
-    inline auto getGlyph(Font &font, GlyphCode glyphCode,
-                         int16_t charSize) -> std::optional<const Glyph *> {
+    inline auto getGlyph(Font &font, GlyphCode glyphCode, int16_t charSize)
+        -> std::optional<const Glyph *> {
 
         auto key = static_cast<uint32_t>(static_cast<uint32_t>(charSize << 16) | glyphCode);
         auto it = glyphCache_.find(key);
