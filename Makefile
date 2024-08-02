@@ -29,19 +29,7 @@ else ifeq ($(TARGET),m5stack-atom-display)
 	IDF_PROFILE = -B build-$(TARGET) -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.$(TARGET)"
 else ifeq ($(TARGET),m5stack-module-display)
 	IDF_PROFILE = -B build-$(TARGET) -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.$(TARGET)"
-else ifeq ($(TARGET),waveshare-6inhd)
-	IDF_PROFILE = -B build-$(TARGET) -DSDKCONFIG_DEFAULTS="sdkconfig.defaults.$(TARGET)"
-else ifeq ($(TARGET),sharp-27in)
-	IDF_PROFILE = -B build-$(TARGET) -DSDKCONFIG_DEFAULTS="sdkconfig.defaults.$(TARGET)"
 endif
-
-# Optional variables for the Simulator builds
-CMAKE_SIM_WIDTH := $(if $(SIM_WIDTH),-DSIM_WIDTH=$(SIM_WIDTH))
-CMAKE_SIM_HEIGHT := $(if $(SIM_HEIGHT),-DSIM_HEIGHT=$(SIM_HEIGHT))
-CMAKE_SIM_SCALE := $(if $(SIM_SCALE),-DSIM_SCALE=$(SIM_SCALE))
-CMAKE_SIM_LAYOUT_DEBUG := $(if $(SIM_LAYOUT_DEBUG),-DSIM_LAYOUT_DEBUG=$(SIM_LAYOUT_DEBUG))
-CMAKE_SIM_ONE_BIT := $(if $(SIM_ONE_BIT),-DSIM_ONE_BIT=$(SIM_ONE_BIT))
-
 
 .PHONY: sim-build
 sim-build:
