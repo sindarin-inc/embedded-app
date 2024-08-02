@@ -384,7 +384,7 @@ TEST_CASE("Test some views independently") {
                 Telemetry telemetry(fileSystem, prefs);
                 Battery battery(fileSystem, prefs, telemetry);
                 LocalStore localStore(fileSystem, prefs, battery, telemetry);
-                ContentSyncScreen screen(*display, localStore, prefs, telemetry);
+                ContentSyncScreen screen(*display, localStore, prefs, telemetry, power);
                 screen.render(*display);
                 ASSERT_VIEW_UNCHANGED(display, "ContentSyncScreen1");
 
