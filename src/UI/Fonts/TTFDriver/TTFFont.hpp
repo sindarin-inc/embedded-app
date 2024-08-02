@@ -20,6 +20,7 @@ private:
     bool initialized_{false};
     FontData &fontData_;
     int size_;
+    int subSupSize_{-1};
     FIX16 spaceSize_{0};
     uint8_t lastGlyphWidth_{};
     PixelResolution displayPixelResolution_{DEFAULT_DISPLAY_PIXEL_RESOLUTION};
@@ -68,8 +69,8 @@ public:
 
                     GlyphCode glyphCode = FT_Get_Char_Index(face_, ' ');
 
-                    std::optional<const Glyph *> glyph =
-                        fontData_.cache.getGlyph(*this, glyphCode, size_);
+                    std::optional<const Glyph *> glyph = fontData_.cache.getGlyph(
+                        *this, glyphCode, subSupSize_ >= 0 ? subSupSize_ : size_);
 
                     if (!glyph.has_value()) {
                         LOGE("Unable to load glyph for space char.");
@@ -192,8 +193,8 @@ public:
             if (glyphCode == SPACE_CODE) {
                 width += spaceSize_ >> 6;
             } else {
-                std::optional<const Glyph *> glyph =
-                    fontData_.cache.getGlyph(*this, glyphCode, size_);
+                std::optional<const Glyph *> glyph = fontData_.cache.getGlyph(
+                    *this, glyphCode, subSupSize_ >= 0 ? subSupSize_ : size_);
                 if (glyph.has_value()) {
                     width += (*buffer == '\0')
                                  ? (glyph.value()->bitmap.dim.width - glyph.value()->metrics.xoff)
@@ -206,10 +207,10 @@ public:
     }
 
     inline void setSupSubFontSize() {
-        int newSize = (size_ - SUP_SUB_FONT_DOWNSIZING) * 64;
+        subSupSize_ = (size_ - SUP_SUB_FONT_DOWNSIZING) * 64;
         int error = FT_Set_Char_Size(face_,                // handle to face object
                                      0,                    // char_width in 1/64th of points
-                                     newSize,              // char_height in 1/64th of points
+                                     subSupSize_,          // char_height in 1/64th of points
                                      SCREEN_RES_PER_INCH,  // horizontal device resolution
                                      SCREEN_RES_PER_INCH); // vertical device resolution
         if (error) {
@@ -218,6 +219,7 @@ public:
     }
 
     inline void setNormalFontSize() {
+        subSupSize_ = -1;
         int error = FT_Set_Char_Size(face_,                // handle to face object
                                      0,                    // char_width in 1/64th of points
                                      size_ * 64,           // char_height in 1/64th of points

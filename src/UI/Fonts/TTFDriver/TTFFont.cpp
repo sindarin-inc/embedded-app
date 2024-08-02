@@ -330,8 +330,8 @@ auto Font::drawSingleLineOfText(font_defs::Bitmap &canvas, font_defs::Pos pos,
             if (glyphCode == SPACE_CODE) {
                 atPos.x += (spaceSize_ >> 6);
             } else {
-                std::optional<const Glyph *> glyph =
-                    fontData_.cache.getGlyph(*this, glyphCode, size_);
+                std::optional<const Glyph *> glyph = fontData_.cache.getGlyph(
+                    *this, glyphCode, subSupSize_ >= 0 ? subSupSize_ : size_);
 
                 if (glyph.has_value()) {
                     if (first) {
@@ -368,8 +368,8 @@ auto Font::getTextSize(const std::string &buffer) -> font_defs::Dim {
             if (glyphCode == SPACE_CODE) {
                 dim.width += spaceSize_ >> 6;
             } else {
-                std::optional<const Glyph *> glyph =
-                    fontData_.cache.getGlyph(*this, glyphCode, size_);
+                std::optional<const Glyph *> glyph = fontData_.cache.getGlyph(
+                    *this, glyphCode, subSupSize_ >= 0 ? subSupSize_ : size_);
                 if (glyph.has_value()) {
                     dim.width += last ? glyph.value()->bitmap.dim.width - (kern / 64) -
                                             glyph.value()->metrics.xoff
@@ -396,8 +396,8 @@ auto Font::getTextWidth(const std::string &buffer) -> int {
             if (glyphCode == SPACE_CODE) {
                 width += spaceSize_ >> 6;
             } else {
-                std::optional<const Glyph *> glyph =
-                    fontData_.cache.getGlyph(*this, glyphCode, size_);
+                std::optional<const Glyph *> glyph = fontData_.cache.getGlyph(
+                    *this, glyphCode, subSupSize_ >= 0 ? subSupSize_ : size_);
 
                 if (glyph.has_value()) {
                     width += last ? glyph.value()->bitmap.dim.width - (kern / 64) -
