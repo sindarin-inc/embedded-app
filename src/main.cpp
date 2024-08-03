@@ -43,22 +43,29 @@
 #define ENABLE_CONTENT_SYNC_ON_CLOSE 1
 
 #if CONFIG_DISPLAY_EINKET013TT1
+ERROR2
 #include "Displays/DisplayEinkET013TT1.hpp"
 DisplayEinkET013TT1 myDisplay(DISPLAY_CS_LEFT, DISPLAY_CS_RIGHT, DISPLAY_RST);
 #elif DISPLAY_SIM_8BIT
+ERROR 5
 // Declared in native.cpp
 #include "Displays/DisplaySim1Bit.hpp"
+ERROR 6
 extern DisplaySim1Bit myDisplay;
 #elif CONFIG_DISPLAY_M5STACK_ATOM_DISPLAY
+ERROR 7
 #include "Displays/DisplayM5StackAtomDisplay.hpp"
 DisplayM5StackAtomDisplay myDisplay;
 #elif CONFIG_DISPLAY_M5STACK_MODULE_DISPLAY
+ERROR 8
 #include "Displays/DisplayM5StackModuleDisplay.hpp"
 DisplayM5StackModuleDisplay myDisplay;
 #elif CONFIG_DISPLAY_WAVESHARE_6INHD
+ERROR 3
 #include "Displays/DisplayWaveshare6inHD.hpp"
 DisplayWaveshare6inHD myDisplay;
 #elif CONFIG_DISPLAY_SHARP_27IN
+ERROR 4
 #include "Displays/DisplaySharp27in.hpp"
 DisplaySharp27in myDisplay;
 #elif CONFIG_DISPLAY_WAVESHARE_128ROUND
@@ -262,11 +269,13 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     // Note that with the new logging interface, we won't get any logs until later
     // after prefs have begun. Hence the below #if 0 in case you need to turn on logging
     // earlier for debugging.
+#if 0 
     usbSerial.begin();
 #if 1
     usbSerial.enableLogging();
 #endif
     directCommand.begin();
+#endif
     HardwareInit();
 #endif
 

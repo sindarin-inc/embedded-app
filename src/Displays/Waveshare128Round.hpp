@@ -63,7 +63,4 @@ private:
     uint8_t mosi_;
     uint8_t clk_;
     uint8_t rst_;
-
-    uint8_t *sharpmemBuffer_ = NULL;
-    uint8_t sharpmemVcom_;
 };

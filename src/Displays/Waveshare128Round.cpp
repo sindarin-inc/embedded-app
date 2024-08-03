@@ -20,6 +20,8 @@ extern "C" {
 #define LCD_RST_PIN DISPLAY_WAVESHARE_128ROUND_RST
 #define LCD_CS_PIN DISPLAY_WAVESHARE_128ROUND_CS
 
+#define TFT_BL 2
+
 #define HORIZONTAL 0
 #define VERTICAL 1
 
@@ -54,19 +56,25 @@ Waveshare128Round::Waveshare128Round(uint8_t clk, uint8_t mosi, uint8_t cs) {
  */
 bool Waveshare128Round::begin(void) {
     PinMode(cs_, OUTPUT);
+	PinMode(LCD_RST_PIN, OUTPUT);
+	PinMode(LCD_DC_PIN, OUTPUT);
+	    //Turn on the backlight
+	PinMode(TFT_BL, OUTPUT);
+	DigitalWrite(TFT_BL, HIGH);
 
-    // this display is weird in that cs_ is active HIGH not LOW like every other
-    // SPI device
-    DigitalWrite(cs_, LOW);
+	DigitalWrite(cs_, HIGH);
+	DigitalWrite(LCD_DC_PIN, 0);
+	
+  //  DigitalWrite(cs_, LOW);
 
     spi_bus_config_t buscfg = {
         .mosi_io_num = DISPLAY_WAVESHARE_128ROUND_MOSI,
-        .miso_io_num = -1,
+        .miso_io_num = DISPLAY_WAVESHARE_128ROUND_MISO,
         .sclk_io_num = DISPLAY_WAVESHARE_128ROUND_CLK,
         // These must be unset or the SPI driver will try to use them
         .quadwp_io_num = -1,
         .quadhd_io_num = -1,
-        .flags = SPICOMMON_BUSFLAG_MASTER | SPI_DEVICE_TXBIT_LSBFIRST,
+        .flags = SPICOMMON_BUSFLAG_MASTER,
     };
 
     esp_err_t err = spi_bus_initialize(DISPLAY_SPI, &buscfg, SPI_DMA_DISABLED);
@@ -80,7 +88,7 @@ bool Waveshare128Round::begin(void) {
         .mode = 0,
 
         .clock_source = SPI_CLK_SRC_DEFAULT,
-        .clock_speed_hz = 2 * 1000 * 1000,
+        .clock_speed_hz = 80 * 1000 * 1000,
 
         .spics_io_num = -1,
         .queue_size = 1,
@@ -92,10 +100,9 @@ bool Waveshare128Round::begin(void) {
         return false;
     }
 
-
     Init(HORIZONTAL);
-    Clear(0XFFFF);
-    
+	// Clear screen with blue
+    Clear(0x00FF);
     return true;
 }
 
@@ -139,8 +146,10 @@ parameter:
 ******************************************************************************/
 void Waveshare128Round::SendCommand(UBYTE Reg)
 {
+	//UBYTE rev = reverse8Bits(Reg);
     DigitalWrite(LCD_DC_PIN, 0);
     //DigitalWrite(LCD_CS_PIN, 0);
+	//Reg = reverse8Bits(Reg);
     writeSPI(&Reg, 1);
     //DigitalWrite(LCD_CS_PIN, 1);
 }
@@ -152,8 +161,10 @@ parameter:
 ******************************************************************************/
 void Waveshare128Round::SendData_8Bit(UBYTE Data)
 {
+//	UBYTE rev = reverse8Bits(Data);
     DigitalWrite(LCD_DC_PIN, 1);
     //DigitalWrite(LCD_CS_PIN, 0);
+	//Data = reverse8Bits(Data);
     writeSPI(&Data, 1);
     //DigitalWrite(LCD_CS_PIN, 1);
 }
@@ -167,10 +178,7 @@ void Waveshare128Round::SendData_16Bit(UWORD Data)
 {
     DigitalWrite(LCD_DC_PIN, 1);
     //DigitalWrite(LCD_CS_PIN, 0);
-	UBYTE low = Data & 0xFF;
-	UBYTE high = (Data >> 8) & 0xFF;
-    writeSPI(&high, 1);
-    writeSPI(&low, 1);
+    writeSPI((UBYTE*)&Data, 2);
    // DigitalWrite(LCD_CS_PIN, 1);
 	
 }
@@ -451,7 +459,6 @@ parameter:
 ********************************************************************************/
 void Waveshare128Round::Init(UBYTE Scan_dir)
 {
-    //Turn on the backlight
     //DEV_SET_PWM(100);
     //Hardware reset
     Reset();
@@ -497,7 +504,12 @@ parameter:
 void Waveshare128Round::Clear(UWORD Color)
 {
     UWORD j;
-    UWORD Image[LCD_1IN28_HEIGHT*LCD_1IN28_WIDTH];
+    UWORD* Image = (uint16_t*)heap_caps_malloc(LCD_1IN28_HEIGHT*LCD_1IN28_WIDTH*2, MALLOC_CAP_SPIRAM);
+
+	if (!Image) {
+		log_e("heap caps malloc failed! bailing");
+		return;
+	}
 
     Color = ((Color<<8)&0xff00)|(Color>>8);
 
@@ -506,10 +518,18 @@ void Waveshare128Round::Clear(UWORD Color)
     }
     
     SetWindows(0, 0, LCD_1IN28_WIDTH, LCD_1IN28_HEIGHT);
-    DigitalWrite(LCD_DC_PIN, 1);
+	DigitalWrite(LCD_DC_PIN, 1);
     for(j = 0; j < LCD_1IN28_HEIGHT; j++){
-        writeSPI((uint8_t *)&Image[j*LCD_1IN28_WIDTH], LCD_1IN28_WIDTH*2);
+		size_t chunk_size = 64;
+		for (int k = 0; k < LCD_1IN28_WIDTH * 2; k+=chunk_size) {
+          size_t len = chunk_size;
+		  if (LCD_1IN28_WIDTH*2 - k < chunk_size) {
+              len = LCD_1IN28_WIDTH * 2 - k;
+		  }
+		  writeSPI((uint8_t *)&Image[j*LCD_1IN28_WIDTH+k/2], len);
+		}
     }
+	heap_caps_free(Image);
 }
 
 /******************************************************************************
@@ -519,17 +539,46 @@ parameter:
 void Waveshare128Round::Display(UBYTE *Image)
 {
     UWORD j, k;
-    UWORD singleLine[LCD_1IN28_WIDTH];
+    UWORD* singleLine = (UWORD*)heap_caps_malloc(LCD_1IN28_WIDTH*2, MALLOC_CAP_SPIRAM);
+
+	if (!singleLine) {
+		log_e("heap caps malloc failed! bailing");
+		return;
+	}
 
     SetWindows(0, 0, LCD_1IN28_WIDTH, LCD_1IN28_HEIGHT);
-    DigitalWrite(LCD_DC_PIN, 1);;
+	DigitalWrite(LCD_DC_PIN, 1);
+
+	// log_d("Flashing the backlight a couple times");
+	// DigitalWrite(TFT_BL, LOW);
+	// Delay(500);
+	// DigitalWrite(TFT_BL, HIGH);
+	// Delay(500);
+	// DigitalWrite(TFT_BL, LOW);
+	// Delay(500);
+	// DigitalWrite(TFT_BL, HIGH);
+	// Delay(500);
+	// DigitalWrite(TFT_BL, LOW);
+    // Delay(500);
+	// DigitalWrite(TFT_BL, HIGH);
     for (j = 0; j < LCD_1IN28_HEIGHT; j++) {
         for (k = 0; k < LCD_1IN28_WIDTH; k++) {
             // need to turn our 8 bit color into 16 bit color
             singleLine[k] = (UWORD)(Image[k]);
         }
-        writeSPI((UBYTE*)singleLine, LCD_1IN28_WIDTH*2);
-    }
+
+		size_t chunk_size = 64;
+		for (int l = 0; l < LCD_1IN28_WIDTH * 2; l+=chunk_size) {
+          size_t len = chunk_size;
+		  if (LCD_1IN28_WIDTH*2 - l < chunk_size) {
+              len = LCD_1IN28_WIDTH * 2 - l;
+		  }
+		
+		  writeSPI((uint8_t *)&(singleLine[l/2]), len);
+       // writeSPI((UBYTE*)singleLine, LCD_1IN28_WIDTH*2);
+		}
+	}
+	heap_caps_free(singleLine);
 }
 
 void Waveshare128Round::DisplayWindows(UWORD Xstart, UWORD Ystart, UWORD Xend, UWORD Yend, UWORD *Image)
@@ -542,6 +591,7 @@ void Waveshare128Round::DisplayWindows(UWORD Xstart, UWORD Ystart, UWORD Xend, U
     DigitalWrite(LCD_DC_PIN, 1);;
     for (j = Ystart; j < Yend ; j++) {
         Addr = Xstart + j * LCD_1IN28_WIDTH ;
+		// busted - this will send too much data - FIXME
         writeSPI((uint8_t *)&Image[Addr], (Xend-Xstart)*2);
     }
 }

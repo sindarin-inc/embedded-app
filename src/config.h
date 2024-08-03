@@ -10,6 +10,11 @@
 #define REVISION 7
 #endif
 
+#if 1
+#undef CONFIG_DISPLAY_SHARP_27IN
+#define CONFIG_DISPLAY_WAVESHARE_128ROUND 1
+#endif
+
 // Uncomment to disable deep sleep
 // #define DISABLE_DEEP_SLEEP 1
 
