@@ -27,8 +27,8 @@ auto BinarySearch(const std::array<std::pair<T, U>, N> &arr, const T &value) -> 
     return std::nullopt; // Value not found
 }
 
-auto TTFNotoSansLight::ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2, FIX16 *kern) const
-    -> bool {
+auto TTFNotoSansLight::ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2,
+                               FIX16 *kern) const -> bool {
 
     *kern = 0;
 
@@ -37,7 +37,7 @@ auto TTFNotoSansLight::ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2
 
     uint32_t key = (glyphCode1 << 16) + *glyphCode2;
 
-    auto resLigs = BinarySearch(NOTO_SANS_LIGHT.ligatures, key);
+    auto resLigs = BinarySearch(notoSansLight.ligatures_, key);
 
     if (resLigs.has_value()) {
         // LOGW("====> Ligature found: (%d, %d) -> %d.", glyphCode1, *glyphCode2, resLigs.value());
@@ -47,14 +47,14 @@ auto TTFNotoSansLight::ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2
 
     // No ligature, try to find a kerning value in the class-based structs.
 
-    auto resDef1 = BinarySearch(NOTO_SANS_LIGHT.classesDefs, glyphCode1);
-    auto resDef2 = BinarySearch(NOTO_SANS_LIGHT.classesDefs, *glyphCode2);
+    auto resDef1 = BinarySearch(notoSansLight.classesDefs_, glyphCode1);
+    auto resDef2 = BinarySearch(notoSansLight.classesDefs_, *glyphCode2);
 
     // A class Id == 99 means undefined.
 
     if (resDef1.has_value() && resDef2.has_value() && (resDef1.value().first != 99) &&
         (resDef2.value().second != 99)) {
-        auto value = NOTO_SANS_LIGHT.mKerns[resDef1.value().first][resDef2.value().second];
+        auto value = notoSansLight.mKerns_[resDef1.value().first][resDef2.value().second];
         if (value != 0) {
             *kern = value;
             // LOGW("Class kern for %d (%d) and %d (%d): %d (%d)", glyphCode1,
@@ -66,7 +66,7 @@ auto TTFNotoSansLight::ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2
 
     // No kerning in the class-based structs, check for one in the kerning pairs struct.
 
-    auto res2 = BinarySearch(NOTO_SANS_LIGHT.kerns, key);
+    auto res2 = BinarySearch(notoSansLight.kerns_, key);
 
     if (res2.has_value()) {
         *kern = res2.value();

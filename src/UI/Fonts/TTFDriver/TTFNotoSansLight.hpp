@@ -14,19 +14,19 @@ public:
     TTFNotoSansLight() = default;
     ;
 
-    auto ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2, FIX16 *kern) const
-        -> bool override;
+    auto ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2,
+                 FIX16 *kern) const -> bool override;
 
     [[nodiscard]] auto getData() const -> MemoryPtr override {
-        return const_cast<MemoryPtr>(NOTO_SANS_LIGHT.data.data());
+        return const_cast<MemoryPtr>(notoSansLight.data_.data());
     }
-    [[nodiscard]] auto getDataSize() const -> int override { return NOTO_SANS_LIGHT.data.size(); }
+    [[nodiscard]] auto getDataSize() const -> int override { return notoSansLight.data_.size(); }
 
     [[nodiscard]] auto getPrivateData() const -> MemoryPtr override {
-        return const_cast<MemoryPtr>(SOL_PRIVATE_LIGHT.data.data());
+        return const_cast<MemoryPtr>(solPrivateLight.data_.data());
     }
     [[nodiscard]] auto getPrivateDataSize() const -> int override {
-        return SOL_PRIVATE_LIGHT.data.size();
+        return solPrivateLight.data_.size();
     }
 };
 
