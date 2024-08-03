@@ -14,8 +14,8 @@ public:
     TTFNotoSansLight() = default;
     ;
 
-    auto ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2,
-                 FIX16 *kern) const -> bool override;
+    auto ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2, FIX16 *kern) const
+        -> bool override;
 
     [[nodiscard]] auto getData() const -> MemoryPtr override {
         return const_cast<MemoryPtr>(notoSansLight.data_.data());

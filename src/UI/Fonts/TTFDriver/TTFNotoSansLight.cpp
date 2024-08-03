@@ -27,8 +27,8 @@ auto BinarySearch(const std::array<std::pair<T, U>, N> &arr, const T &value) -> 
     return std::nullopt; // Value not found
 }
 
-auto TTFNotoSansLight::ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2,
-                               FIX16 *kern) const -> bool {
+auto TTFNotoSansLight::ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2, FIX16 *kern) const
+    -> bool {
 
     *kern = 0;
 
