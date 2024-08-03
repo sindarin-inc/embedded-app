@@ -138,8 +138,9 @@
 // Must be removed in combination with the ones in file TTFFontData.cpp
 #define FT_USE_PSRAM 1
 #define SHOW_CACHE_STATS 1
-#define ShOW_FREE_STACK_SPACE 1
 #endif
+
+#define ShOW_FREE_STACK_SPACE 1
 
 // Set DISPLAY_PIXEL_RESOLUTION_IS_FIX to 0 for displays that allow changing their pixel
 // resolution dynamically.
