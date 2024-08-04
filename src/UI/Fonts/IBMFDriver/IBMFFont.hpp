@@ -127,7 +127,7 @@ public:
                 width += face->getSpaceSize();
             } else {
                 std::optional<const Glyph *> glyph =
-                    fontData_->cache_.getGlyph(*face, glyphCode, faceIndex_);
+                    fontData_->glyphCache_.getGlyph(*face, glyphCode, faceIndex_);
                 if (glyph.has_value()) {
                     width += (*buffer == '\0')
                                  ? (glyph.value()->bitmap.dim.width - glyph.value()->metrics.xoff)

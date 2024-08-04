@@ -170,7 +170,7 @@ auto Font::drawSingleLineOfText(ibmf_defs::Bitmap &canvas, ibmf_defs::Pos pos,
             if (glyphCode == SPACE_CODE) {
                 atPos.x += fontData_->getFace(faceIndex_)->getSpaceSize();
             } else {
-                std::optional<const Glyph *> glyph = fontData_->cache_.getGlyph(
+                std::optional<const Glyph *> glyph = fontData_->glyphCache_.getGlyph(
                     *fontData_->getFace(faceIndex_), glyphCode, faceIndex_);
 
                 if (glyph.has_value()) {
@@ -207,7 +207,7 @@ auto Font::getTextSize(const std::string &buffer) -> ibmf_defs::Dim {
             if (glyphCode == SPACE_CODE) {
                 dim.width += fontData_->getFace(faceIndex_)->getSpaceSize();
             } else {
-                std::optional<const Glyph *> glyph = fontData_->cache_.getGlyph(
+                std::optional<const Glyph *> glyph = fontData_->glyphCache_.getGlyph(
                     *fontData_->getFace(faceIndex_), glyphCode, faceIndex_);
 
                 if (glyph.has_value()) {
@@ -236,7 +236,7 @@ auto Font::getTextWidth(const std::string &buffer) -> int {
             if (glyphCode == SPACE_CODE) {
                 width += fontData_->getFace(faceIndex_)->getSpaceSize();
             } else {
-                std::optional<const Glyph *> glyph = fontData_->cache_.getGlyph(
+                std::optional<const Glyph *> glyph = fontData_->glyphCache_.getGlyph(
                     *fontData_->getFace(faceIndex_), glyphCode, faceIndex_);
 
                 if (glyph.has_value()) {

@@ -113,6 +113,12 @@ auto IBMFFace::ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2, FIX16 
     }
 
 #if OPTICAL_KERNING
+    *kern = fontData_->kernCache_.getOpticalKern(*this, glyphCode1, *glyphCode2, faceIndex_);
+#endif
+    return false;
+}
+
+auto IBMFFace::opticalKern(GlyphCode glyphCode1, GlyphCode glyphCode2) -> FIX16 {
 
     typedef int32_t FIX32;
 
@@ -127,7 +133,7 @@ auto IBMFFace::ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2, FIX16 
 #define FIXED_DIV(x, y) (((x) << FRACT_BITS) / (y))
 
     auto &i1 = (*glyphsInfo_)[glyphCode1];
-    auto &i2 = (*glyphsInfo_)[*glyphCode2];
+    auto &i2 = (*glyphsInfo_)[glyphCode2];
 
     int normalDistance =
         i1.horizontalOffset + ((i1.advance + 32) >> 6) - i1.bitmapWidth - i2.horizontalOffset;
@@ -150,46 +156,22 @@ auto IBMFFace::ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2, FIX16 
 
     FIX32 kerning = 0;
 
-#if 0
-    // if (length > 0) { // Length <= 0 means that there is no alignment between the characters
-    Glyph glyph1{};
-    bool result = getGlyph(glyphCode1, glyph1, true, true, Pos(0, i1.verticalOffset));
-    if (!result) {
-
-        delete[] glyph1.bitmap.pixels;
-
-        LOGE("Unable to load glyphCode %d related glyph bitmap.", glyphCode1);
-        return false;
-    }
-
-    Glyph glyph2{};
-    result = getGlyph(*glyphCode2, glyph2, true, true, Pos(0, i2.verticalOffset));
-    if (!result) {
-
-        delete[] glyph1.bitmap.pixels;
-
-        delete[] glyph2.bitmap.pixels;
-
-        LOGE("Unable to load glyphCode %d related glyph bitmap.", *glyphCode2);
-        return false;
-    }
-#else
-    std::optional<const Glyph *> glyph = fontData_->cache_.getGlyph(*this, glyphCode1, faceIndex_);
+    std::optional<const Glyph *> glyph =
+        fontData_->glyphCache_.getGlyph(*this, glyphCode1, faceIndex_);
     if (!glyph.has_value()) {
         LOGE("Unable to load glyphCode %d related glyph bitmap.", glyphCode1);
-        return false;
+        return 0;
     }
 
     const Glyph &glyph1 = *(glyph.value());
 
-    glyph = fontData_->cache_.getGlyph(*this, *glyphCode2, faceIndex_);
+    glyph = fontData_->glyphCache_.getGlyph(*this, glyphCode2, faceIndex_);
     if (!glyph.has_value()) {
         LOGE("Unable to load glyphCode %d related glyph bitmap.", glyphCode1);
-        return false;
+        return 0;
     }
 
     const Glyph &glyph2 = *(glyph.value());
-#endif
 
     // height of significant parts of dist arrays
     int8_t height = origin + std::max((static_cast<int8_t>(i1.bitmapHeight) - i1.verticalOffset),
@@ -439,16 +421,7 @@ auto IBMFFace::ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2, FIX16 
                          MAKE_INT_FIXED(i2.bitmapWidth))) -
               MAKE_INT_FIXED(normalDistance);
 
-    // delete[] glyph1.bitmap.pixels;
-
-    // delete[] glyph2.bitmap.pixels;
-
-    // }
-
-    *kern = static_cast<FIX16>(kerning >> 4); // Convert to FIX16
-#endif
-    // LOGD("Optical Kerning End");
-    return false;
+    return static_cast<FIX16>(kerning >> 4); // Convert to FIX16
 }
 
 #if 0

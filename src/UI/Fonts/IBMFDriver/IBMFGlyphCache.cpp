@@ -2,11 +2,11 @@
 
 #if CONFIG_FONT_IBMF
 
-#include "IBMFCache.hpp"
 #include "IBMFFace.hpp"
+#include "IBMFGlyphCache.hpp"
 
-auto IBMFCache::getGlyph(IBMFFace &face, font_defs::GlyphCode glyphCode,
-                         int16_t faceIndex) -> std::optional<const font_defs::Glyph *> {
+auto IBMFGlyphCache::getGlyph(IBMFFace &face, font_defs::GlyphCode glyphCode,
+                              int16_t faceIndex) -> std::optional<const font_defs::Glyph *> {
 
     // log_d("glyph cache request for glyphCode %" PRIu16 " and size %" PRIi16 ".", glyphCode,
     //       charSize);
@@ -42,7 +42,7 @@ auto IBMFCache::getGlyph(IBMFFace &face, font_defs::GlyphCode glyphCode,
     return std::nullopt;
 }
 
-void IBMFCache::clear() {
+void IBMFGlyphCache::clear() {
     for (auto &entry : glyphCache) {
         if (entry.second->bitmap.pixels != nullptr) {
             free(entry.second->bitmap.pixels);
@@ -54,12 +54,12 @@ void IBMFCache::clear() {
     log_i("Glyphs' cache cleared.");
 }
 
-void IBMFCache::showStats() {
+void IBMFGlyphCache::showStats() {
     log_i("Glyphs' cache statistics: hits: %" PRIu32 ", misses: %" PRIu32 ".", hitCount, missCount);
 }
 
-void IBMFCache::showBitmap(const Bitmap &bitmap, bool inverted,
-                           PixelResolution pixelResolution) const {
+void IBMFGlyphCache::showBitmap(const Bitmap &bitmap, bool inverted,
+                                PixelResolution pixelResolution) const {
     uint32_t row, col;
     MemoryPtr rowPtr;
 
@@ -109,8 +109,8 @@ void IBMFCache::showBitmap(const Bitmap &bitmap, bool inverted,
     std::cout << '+' << std::endl << std::endl << std::flush;
 }
 
-void IBMFCache::showGlyph(const Glyph &glyph, bool displayBitmap,
-                          PixelResolution pixelResolution) const {
+void IBMFGlyphCache::showGlyph(const Glyph &glyph, bool displayBitmap,
+                               PixelResolution pixelResolution) const {
     std::cout << "Glyph metrics: xoff:" << glyph.metrics.xoff << " yoff:" << glyph.metrics.yoff
               << " descent:" << glyph.metrics.descent << " lineHeight:¨" << glyph.metrics.lineHeight
               << " advance:" << (glyph.metrics.advance / 64) << std::endl;

@@ -16,16 +16,16 @@ using namespace font_defs;
 
 class IBMFFace;
 
-class IBMFCache {
+class IBMFGlyphCache {
 private:
     SpiramMap<uint32_t, std::shared_ptr<Glyph>> glyphCache;
     uint32_t hitCount = 0;
     uint32_t missCount = 0;
 
 public:
-    IBMFCache() {}
+    IBMFGlyphCache() {}
 
-    ~IBMFCache() {
+    ~IBMFGlyphCache() {
         showStats();
         clear();
     }
