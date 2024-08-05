@@ -110,7 +110,7 @@
 // #define CONFIG_WAVESHARE_8BIT 1
 // This allows us to not actually do anything on the display through the driver
 // for testing headless
-#define CONFIG_WAVESHARE_HEADLESS 1
+// #define CONFIG_WAVESHARE_HEADLESS 1
 #endif
 
 // Uncomment the following lines to force the use of TTF
