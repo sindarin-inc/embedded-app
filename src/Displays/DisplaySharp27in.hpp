@@ -8,7 +8,8 @@ class DisplaySharp27in : public DisplaySystem {
 public:
     DisplaySharp27in() noexcept
         : gfxCanvas_(SHARP_27IN_X_PIXELS, SHARP_27IN_Y_PIXELS),
-          driver_(CONFIG_DISPLAY_SHARP_27IN_CLK, CONFIG_DISPLAY_SHARP_27IN_MOSI, CONFIG_DISPLAY_SHARP_27IN_CS) {
+          driver_(CONFIG_DISPLAY_SHARP_27IN_CLK, CONFIG_DISPLAY_SHARP_27IN_MOSI,
+                  CONFIG_DISPLAY_SHARP_27IN_CS) {
         gfxClass_ = &gfxCanvas_;
     };
 
