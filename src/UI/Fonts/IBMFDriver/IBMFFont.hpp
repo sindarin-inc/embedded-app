@@ -99,23 +99,6 @@ public:
     // inline auto getTextWidthQuick(const char *buffer) -> int { return getTextWidth(buffer); }
     inline auto getTextWidthQuick(const char *buffer) -> int16_t {
 
-#if 0
-        int16_t width = 0;
-        auto face = fontData_->getFace(faceIndex_);
-
-        // log_w("word: %s", buffer);
-
-        while (*buffer) {
-            int16_t xoff;
-            FIX16 advance;
-            GlyphCode glyphCode = fontData_->translate(toChar32(&buffer));
-
-            if (face->getGlyphHorizontalMetrics(glyphCode, &xoff, &advance)) {
-                width +=
-                    (*buffer == '\0') ? (face->getGlyphWidth(glyphCode) - xoff) : (advance >> 6);
-            }
-        }
-#else
         int16_t width = 0;
         auto face = fontData_->getFace(faceIndex_);
 
@@ -136,7 +119,6 @@ public:
             }
         }
 
-#endif
         return width;
     }
 };

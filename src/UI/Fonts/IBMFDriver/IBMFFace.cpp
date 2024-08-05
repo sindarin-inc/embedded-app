@@ -424,122 +424,6 @@ auto IBMFFace::opticalKern(GlyphCode glyphCode1, GlyphCode glyphCode2) -> FIX16 
     return static_cast<FIX16>(kerning >> 4); // Convert to FIX16
 }
 
-#if 0
-// Get a Glyph from the font.
-//
-// Parameters:
-//
-//   glyphCode  : The index in the font to retrieve the glyph from
-//   appGlyph   : The Glyph structure to put the information in
-//   loadBitmap : If true, the glyph bitmap needs to be retrieved and put in the appGlyph.
-//                If false, no bitmap is retrieved and THE OTHER PARAMETERS ARE IGNORED
-//   caching    : If true (default), a bitmap needs to be allocated and the Glyph bitmap must be put
-//                                   there.
-//                If false, the appGlyph.bitmap already point at the screen bitmap
-//   atPos      : This is the location in the screen bitmap where the
-//                glyph's bitmap must be located, default: [0, 0]
-//   inverted   : If true, the pixels must be put in "reversed video", default:false
-
-auto IBMFFace::getGlyph(GlyphCode glyphCode, Glyph &appGlyph, bool loadBitmap, bool caching,
-                        Pos atPos, bool inverted) -> bool {
-
-    // LOGD("glyphCode: %04x, loadBitmap: %s, caching: %s, pos: [%d, %d]", glyphCode,
-    //      loadBitmap ? "YES" : "NO", caching ? "YES" : "NO", atPos.x, atPos.y);
-
-    if (caching) {
-        appGlyph.clear();
-    }
-
-    if ((glyphCode == SPACE_CODE) ||
-        ((glyphCode < faceHeader_->glyphCount) &&
-         ((*glyphsInfo_)[glyphCode].bitmapWidth == 0))) { // send as a space character
-        appGlyph.pointSize = faceHeader_->pointSize;
-        appGlyph.metrics = {
-            .xoff = 0,
-            .yoff = 0,
-            .descent = 0,
-            .advance = static_cast<FIX16>(static_cast<uint16_t>(faceHeader_->spaceSize) << 6),
-            .lineHeight = faceHeader_->lineHeight};
-        // For some reason, casting this above triggers a narrowing conversion error but it
-        // doesn't here.
-        // appGlyph.metrics.advance =
-        // static_cast<FIX16>(static_cast<uint16_t>(faceHeader_->spaceSize) << 6);
-        return true;
-    }
-
-    if (glyphCode >= faceHeader_->glyphCount) {
-        return false;
-    }
-
-    GlyphInfo *glyphInfo = &(*glyphsInfo_)[glyphCode];
-
-    if (glyphInfo == nullptr) {
-        return false;
-    }
-
-    Dim dim = Dim(glyphInfo->bitmapWidth, glyphInfo->bitmapHeight);
-    uint8_t pitch =
-        (displayPixelResolution_ == PixelResolution::ONE_BIT) ? ((dim.width + 7) >> 3) : dim.width;
-    Pos glyphOffsets = Pos(0, 0);
-
-    glyphOffsets.y = -glyphInfo->verticalOffset;
-
-    if (loadBitmap) {
-        if (caching) {
-            uint16_t size = dim.height * pitch;
-
-            uint8_t white;
-            if (displayPixelResolution_ == PixelResolution::ONE_BIT) {
-                white = WHITE_ONE_BIT ? 0xFF : 0;
-            } else {
-                white = WHITE_EIGHT_BITS;
-            }
-            // SHOW_HEAP();
-            appGlyph.bitmap.pixels = new (std::nothrow) uint8_t[size];
-            if (appGlyph.bitmap.pixels == nullptr) {
-                LOGE("Unable to allocate glyph pixel memory of size %d!", size);
-                appGlyph.bitmap.dim = Dim(0, 0);
-                appGlyph.bitmap.pitch = 0;
-                return false;
-            }
-            memset(appGlyph.bitmap.pixels, white, size);
-            appGlyph.bitmap.dim = dim;
-            appGlyph.bitmap.pitch = pitch;
-        } else {
-            glyphOffsets.x = -glyphInfo->horizontalOffset;
-        }
-
-        RLEBitmap glyphBitmap = {
-            .pixels = &(*pixelsPool_)[(*glyphsPixelPoolIndexes_)[glyphCode]],
-            .dim = dim,
-            .length = glyphInfo->packetLength,
-            .pitch = pitch,
-        };
-        RLEExtractor rle(displayPixelResolution_);
-
-        Pos outPos = Pos(atPos.x + glyphOffsets.x, atPos.y + glyphOffsets.y);
-        // std::cout << "inPos: [" << atPos.x << ", " << atPos.y << "], outPos: [" << outPos.x << ",
-        // "
-        //           << outPos.y << "] " << std::endl;
-        rle.retrieveBitmap(glyphBitmap, appGlyph.bitmap, outPos, glyphInfo->rleMetrics, inverted);
-        // if (!caching) {
-        //     showBitmap(appGlyph.bitmap);
-        // }
-    }
-
-    appGlyph.metrics = {
-        .xoff = static_cast<int16_t>(glyphInfo->horizontalOffset),
-        .yoff = static_cast<int16_t>(glyphInfo->verticalOffset),
-        .descent = static_cast<int16_t>((glyphInfo->bitmapHeight - glyphInfo->verticalOffset) > 0
-                                            ? glyphInfo->bitmapHeight - glyphInfo->verticalOffset
-                                            : 0),
-        .advance = glyphInfo->advance,
-        .lineHeight = faceHeader_->lineHeight};
-
-    return true;
-}
-#endif
-
 // Get a Glyph from the font.
 //
 // Parameters:
@@ -604,13 +488,6 @@ auto IBMFFace::getGlyphForCache(GlyphCode glyphCode, Glyph &glyph) -> bool {
 
     rle.retrieveBitmap(glyphBitmap, glyph.bitmap, /*glyphOffsets*/ Pos(0, 0), glyphInfo->rleMetrics,
                        false);
-
-    // for (int i = 0; i < size; i++) {
-    //     std::cout << +glyph.bitmap.pixels[i] << ' ';
-    // }
-    // std::cout << std::endl;
-
-    // showBitmap(glyph.bitmap, PixelResolution::ONE_BIT);
 
     glyph.metrics = {
         .xoff = static_cast<int16_t>(glyphInfo->horizontalOffset),

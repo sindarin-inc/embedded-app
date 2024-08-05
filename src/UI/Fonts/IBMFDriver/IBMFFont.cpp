@@ -287,13 +287,25 @@ auto Font::getTextHeight(const std::string &buffer) -> int {
     if constexpr (IBMF_TRACING) {
         LOGD("getTextHeight()");
     }
-    int height = 0;
-    if (isInitialized()) {
-        Dim dim = getTextSize(buffer);
-        height = dim.height;
-    }
 
-    return height;
+    int16_t up = 0;
+    int16_t down = 0;
+    if (isInitialized()) {
+        ligKernUTF8Map(buffer,
+                       [this, &up, &down](GlyphCode glyphCode, FIX16 kern, bool first, bool last) {
+            if (glyphCode != SPACE_CODE) {
+                std::optional<const Glyph *> glyph = fontData_->glyphCache_.getGlyph(
+                    *fontData_->getFace(faceIndex_), glyphCode, faceIndex_);
+
+                if (glyph.has_value()) {
+                    up = (up < glyph.value()->metrics.yoff) ? glyph.value()->metrics.yoff : up;
+                    down = (down < glyph.value()->metrics.descent) ? glyph.value()->metrics.descent
+                                                                   : down;
+                }
+            }
+        });
+    }
+    return up + down;
 }
 
 #endif
