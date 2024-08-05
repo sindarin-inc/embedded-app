@@ -54,7 +54,7 @@ void IBMFGlyphCache::clear() {
     log_i("Glyphs' cache cleared.");
 }
 
-void IBMFGlyphCache::showStats() {
+void IBMFGlyphCache::showStats() const {
     log_i("Glyphs' cache statistics: hits: %" PRIu32 ", misses: %" PRIu32 ".", hitCount, missCount);
 }
 

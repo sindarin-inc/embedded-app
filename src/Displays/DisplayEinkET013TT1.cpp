@@ -308,7 +308,7 @@ void DisplayEinkET013TT1::updateDisplay(DisplaySystem::UpdateType updateType, bo
 
 #if SHOW_CACHE_STATS
     font_->getFontData()->glyphCache_.showStats();
-    font_->getFontData()->kernCache_.showStats();
+    font_->getFace()->kernCache_.showStats();
 #endif
 #if ShOW_FREE_STACK_SPACE
     log_d("Free stack space: %u", uxTaskGetStackHighWaterMark(nullptr));

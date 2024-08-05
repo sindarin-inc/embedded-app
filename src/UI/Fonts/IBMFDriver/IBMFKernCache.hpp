@@ -30,11 +30,23 @@ public:
         clear();
     }
 
-    auto getOpticalKern(IBMFFace &face, GlyphCode glyphCode1, GlyphCode glyphCode2,
-                        int16_t faceIndex) -> FIX16;
+    auto doGetOpticalKern(IBMFFace &face, GlyphCode glyphCode1, GlyphCode glyphCode2) -> FIX16;
+
+    inline auto getOpticalKern(IBMFFace &face, GlyphCode glyphCode1,
+                               GlyphCode glyphCode2) -> FIX16 {
+
+        auto key = (uint32_t)((glyphCode1 << 16) | glyphCode2);
+        auto it = kernCache.find(key);
+        if (it != kernCache.end()) {
+            hitCount++;
+            return it->second;
+        }
+
+        return doGetOpticalKern(face, glyphCode1, glyphCode2);
+    }
 
     void clear();
-    void showStats();
+    void showStats() const;
 };
 
 #endif

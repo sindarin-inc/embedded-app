@@ -11,7 +11,6 @@
 #include "IBMFDefs.hpp"
 #include "IBMFFace.hpp"
 #include "IBMFGlyphCache.hpp"
-#include "IBMFKernCache.hpp"
 
 using namespace ibmf_defs;
 
@@ -50,7 +49,6 @@ public:
     ~FontData() = default;
 
     IBMFGlyphCache glyphCache_{};
-    IBMFKernCache kernCache_{};
 
     [[nodiscard]] inline auto getFontFormat() const -> FontFormat {
         return (isInitialized()) ? preamble_->bits.fontFormat : FontFormat::UNKNOWN;

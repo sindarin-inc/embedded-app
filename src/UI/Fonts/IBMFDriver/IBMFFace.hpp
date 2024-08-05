@@ -9,6 +9,7 @@
 #include <new>
 
 #include "IBMFDefs.hpp"
+#include "IBMFKernCache.hpp"
 #include "RLEExtractor.hpp"
 
 using namespace ibmf_defs;
@@ -40,6 +41,8 @@ public:
     IBMFFace() = default;
 
     ~IBMFFace() = default;
+
+    IBMFKernCache kernCache_{};
 
     inline static auto fromFIX16(FIX16 val) -> float { return static_cast<float>(val) / 64.0; }
     inline static auto toFIX16(float val) -> FIX16 { return static_cast<FIX16>(val * 64.0); }

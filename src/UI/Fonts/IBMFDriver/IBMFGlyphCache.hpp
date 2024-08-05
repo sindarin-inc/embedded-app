@@ -34,7 +34,7 @@ public:
                   int16_t faceIndex) -> std::optional<const Glyph *>;
 
     void clear();
-    void showStats();
+    void showStats() const;
 
     void showBitmap(const Bitmap &bitmap, bool inverted, PixelResolution pixelResolution) const;
 

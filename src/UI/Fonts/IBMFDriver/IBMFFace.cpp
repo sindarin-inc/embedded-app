@@ -113,7 +113,7 @@ auto IBMFFace::ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2, FIX16 
     }
 
 #if OPTICAL_KERNING
-    *kern = fontData_->kernCache_.getOpticalKern(*this, glyphCode1, *glyphCode2, faceIndex_);
+    *kern = kernCache_.getOpticalKern(*this, glyphCode1, *glyphCode2);
 #endif
     return false;
 }
