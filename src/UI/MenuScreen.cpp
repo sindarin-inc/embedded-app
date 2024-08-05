@@ -26,8 +26,7 @@ auto MenuScreen::layout(LayoutContext &context, Size size) -> Size {
                 LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical);
             auto backTextRect = context.setViewFrame(
                 upperLeftTextView_,
-                {{std::max(5, HEIGHT_EVEN(upperLeftTextView_.getTextHeight() / 2)) * 2, 0},
-                 size},
+                {{std::max(5, HEIGHT_EVEN(upperLeftTextView_.getTextHeight() / 2)) * 2, 0}, size},
                 LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical);
 
             return {arrowRect.size.width + backTextRect.size.width,
