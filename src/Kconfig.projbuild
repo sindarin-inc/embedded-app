@@ -1,7 +1,5 @@
 menu "Sol Options"
 
-    menu "Display"
-
     menu "Display Type"
         choice
             prompt "Select Display Type"
@@ -21,7 +19,6 @@ menu "Sol Options"
 
             config DISPLAY_SHARP_27IN
                 bool "Sharpmem 2.7in Display"
-
         endchoice
     endmenu
 
@@ -56,7 +53,7 @@ menu "Sol Options"
             int "RESET Pin"
             default 5
 
-        config DISPLAY_SHARP_27IN
+        config DISPLAY_SHARP_27IN_MOSI
             depends on DISPLAY_SHARP_27IN
             int "MOSI Pin"
             default 35
