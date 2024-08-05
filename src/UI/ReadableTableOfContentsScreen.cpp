@@ -9,7 +9,7 @@ auto ReadableTableOfContentsScreen::layout(LayoutContext &context, Size size) ->
 
     // This mirrors what happens in MenuScreen right now. We may want to refactor this into a
     // helper so that it is reused and consistent.
-    // I need help from John to figure out how to refactor this into a helper function to 
+    // I need help from John to figure out how to refactor this into a helper function to
     // reduce copy and paste from MenuScreen and ToggleMenuScreen.
     context.setSublayoutFrame(
         {{0, 0}, {size.width, HEIGHT_EVEN(upperLeftTextView_.getTextHeight())}},
@@ -24,8 +24,7 @@ auto ReadableTableOfContentsScreen::layout(LayoutContext &context, Size size) ->
                 LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical);
             auto backTextRect = context.setViewFrame(
                 upperLeftTextView_,
-                {{std::max(5, HEIGHT_EVEN(upperLeftTextView_.getTextHeight() / 2)) * 2, 0},
-                 size},
+                {{std::max(5, HEIGHT_EVEN(upperLeftTextView_.getTextHeight() / 2)) * 2, 0}, size},
                 LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical);
 
             return {arrowRect.size.width + backTextRect.size.width,
