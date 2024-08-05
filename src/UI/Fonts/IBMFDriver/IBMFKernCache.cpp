@@ -22,7 +22,8 @@ void IBMFKernCache::clear() {
 }
 
 void IBMFKernCache::showStats() const {
-    log_i("Kerns' cache statistics: hits: %" PRIu32 ", misses: %" PRIu32 ".", hitCount, missCount);
+    log_i("Kerns' cache statistics (face %d): hits: %" PRIu32 ", misses: %" PRIu32 ".", faceIndex_,
+          hitCount, missCount);
 }
 
 #endif

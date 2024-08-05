@@ -17,6 +17,7 @@ auto IBMFFace::load(const MemoryPtr dataStart, const int dataLength, FontFormat 
     faceHeader_ = reinterpret_cast<FaceHeaderPtr>(memoryPtr);
     fontFormat_ = fontFmt;
     faceIndex_ = faceIndex;
+    kernCache_.setFaceIndex(faceIndex);
     fontData_ = fontData;
 
     if (faceHeader_->glyphCount >= UTF32_MAX_GLYPH_COUNT) {

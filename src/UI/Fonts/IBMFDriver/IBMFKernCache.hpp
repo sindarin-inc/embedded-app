@@ -19,11 +19,12 @@ class IBMFFace;
 class IBMFKernCache {
 private:
     SpiramMap<uint32_t, FIX16> kernCache;
-    uint32_t hitCount = 0;
-    uint32_t missCount = 0;
+    int faceIndex_{-1};
+    uint32_t hitCount{0};
+    uint32_t missCount{0};
 
 public:
-    IBMFKernCache() {}
+    IBMFKernCache() = default;
 
     ~IBMFKernCache() {
         showStats();
@@ -47,6 +48,8 @@ public:
 
     void clear();
     void showStats() const;
+
+    void setFaceIndex(int faceIndex) { faceIndex_ = faceIndex; }
 };
 
 #endif
