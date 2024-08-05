@@ -38,9 +38,7 @@ extern void UIInnerLoop(RemoteCommand command);
 #if CONFIG_DISPLAY_EINKET013TT1
 #include "Displays/DisplayEinkET013TT1.hpp"
 #ifndef SIM_SCALE
-#define SCALE 2
-#else
-#define SCALE SIM_SCALE
+#define SIM_SCALE 2
 #endif
 extern DisplayEinkET013TT1 myDisplay;
 #elif DISPLAY_SIM_8BIT
@@ -58,9 +56,7 @@ DisplaySim1Bit myDisplay(SIM_WIDTH, SIM_HEIGHT);
 DisplaySim8Bit myDisplay(SIM_WIDTH, SIM_HEIGHT);
 #endif
 #ifndef SIM_SCALE
-#define SCALE 1
-#else
-#define SCALE SIM_SCALE
+#define SIM_SCALE 1
 #endif
 #endif
 
@@ -297,8 +293,8 @@ auto main(int argc, char *argv[]) -> int {
         return 1;
     }
 
-    SDL_CreateWindowAndRenderer(myDisplay.gfxClass()->width() * SCALE,
-                                ((myDisplay.gfxClass()->height() + SIM_LED_DIM) * SCALE), 0,
+    SDL_CreateWindowAndRenderer(myDisplay.gfxClass()->width() * SIM_SCALE,
+                                ((myDisplay.gfxClass()->height() + SIM_LED_DIM) * SIM_SCALE), 0,
                                 &window, &renderer);
     if (renderer == NULL) {
         fprintf(stderr, "Could not create renderer: %s\n", SDL_GetError());
@@ -307,7 +303,7 @@ auto main(int argc, char *argv[]) -> int {
 
     deviceScreen = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET,
                                      myDisplay.gfxClass()->width(), myDisplay.gfxClass()->height());
-    SDL_RenderSetScale(renderer, SCALE, SCALE);
+    SDL_RenderSetScale(renderer, SIM_SCALE, SIM_SCALE);
 
 #if defined(EMSCRIPTEN)
     emscripten_set_main_loop(emscriptemLoop, 0, 0);

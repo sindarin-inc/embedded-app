@@ -23,12 +23,6 @@ public:
         // have to set it again here in case the color changed since the the constructor.
         color = display_.fg;
 
-#ifdef SIM_LAYOUT_DEBUG
-        // For debugging
-        display_.drawRect(rect.origin.x, rect.origin.y, rect.size.width, rect.size.height,
-                          display_.fg);
-#endif
-
         switch (arrowDirection) {
         // All the minus ones here are because the width + origin is 1 past the end.
         case ArrowLeft:

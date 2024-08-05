@@ -1,5 +1,7 @@
 menu "Sol Options"
 
+    menu "Display"
+
     menu "Display Type"
         choice
             prompt "Select Display Type"
@@ -21,6 +23,58 @@ menu "Sol Options"
                 bool "Sharpmem 2.7in Display"
 
         endchoice
+    endmenu
+
+    menu "Display Pins"
+        config DISPLAY_WAVESHARE_6INHD_MOSI
+            depends on DISPLAY_WAVESHARE_6INHD
+            int "MOSI Pin"
+            default 35
+        
+        config DISPLAY_WAVESHARE_6INHD_MISO
+            depends on DISPLAY_WAVESHARE_6INHD
+            int "MISO Pin"
+            default 37
+
+        config DISPLAY_WAVESHARE_6INHD_CLK
+            depends on DISPLAY_WAVESHARE_6INHD
+            int "CLK Pin"
+            default 34  
+        
+        config DISPLAY_WAVESHARE_6INHD_BUSY
+            depends on DISPLAY_WAVESHARE_6INHD
+            int "BUSY Pin"
+            default 6
+
+        config DISPLAY_WAVESHARE_6INHD_CS
+            depends on DISPLAY_WAVESHARE_6INHD
+            int "CS Pin"
+            default 3
+
+        config DISPLAY_WAVESHARE_6INHD_RESET
+            depends on DISPLAY_WAVESHARE_6INHD
+            int "RESET Pin"
+            default 5
+
+        config DISPLAY_SHARP_27IN
+            depends on DISPLAY_SHARP_27IN
+            int "MOSI Pin"
+            default 35
+
+        config DISPLAY_SHARP_27IN_CLK
+            depends on DISPLAY_SHARP_27IN
+            int "CLK Pin"
+            default 34
+
+        config DISPLAY_SHARP_27IN_CS
+            depends on DISPLAY_SHARP_27IN
+            int "CS Pin"
+            default 3
+
+        config DISPLAY_SHARP_27IN_DISP
+            depends on DISPLAY_SHARP_27IN
+            int "DISP Pin"
+            default 6
     endmenu
 
     menu "BLE Settings"

@@ -5,6 +5,8 @@
 #include "Misc/SpiramAllocator.hpp"
 #include "Models/UserReadablePartialChapterSummary.hpp"
 
+#define HEIGHT_EVEN(x) ((((x) % 2 == 0) ? (x) : ((x) + 1)))
+
 auto ReadableSummaryScreen::layout(LayoutContext &context, Size size) -> Size {
     auto fullFrame = Rect::fromSize(size);
     log_d("ReadableSummaryScreen layout: %d x %d", size.width, size.height);

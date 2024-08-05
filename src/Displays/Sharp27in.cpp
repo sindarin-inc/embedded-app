@@ -10,12 +10,6 @@
 #include "Misc/Platform.hpp"
 #include "sindarin-debug.h"
 
-// esp_clk methods are deprecated in IDF 5+
-// TODO: replace
-extern "C" {
-#include <esp_private/esp_clk.h>
-}
-
 /**************************************************************************
     Sharp Memory Display Connector
     -----------------------------------------------------------------------

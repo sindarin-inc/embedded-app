@@ -60,7 +60,7 @@ jobs:
           - glasses-debug
           - glasses-release
           - waveshare-6inhd
-	  - sharp-27in
+          - sharp-27in
           # - m5stack-atom-display
           # - m5stack-module-display
 

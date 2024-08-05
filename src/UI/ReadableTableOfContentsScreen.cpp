@@ -7,7 +7,8 @@ auto ReadableTableOfContentsScreen::layout(LayoutContext &context, Size size) ->
 
     // This mirrors what happens in MenuScreen right now. We may want to refactor this into a
     // helper so that it is reused and consistent.
-    context.setViewFrame(leftArrowView_, {{0, 1}, {5, 10}},
+    // XXXBCBCNeeds to remove magic numbers -- see MenuScreen for example
+    context.setViewFrame(leftArrowView_, {{0, 1}, {5, 9}},
                          LayoutOptionsSizeToFit | LayoutOptionsAlignTop | LayoutOptionsAlignLeft);
     context.setViewFrame(upperLeftTextView_, {{10, 0}, size},
                          LayoutOptionsSizeToFit | LayoutOptionsAlignTop | LayoutOptionsAlignLeft);

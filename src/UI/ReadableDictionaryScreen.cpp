@@ -11,8 +11,9 @@ auto ReadableDictionaryScreen::layout(LayoutContext &context, Size size) -> Size
     context.setViewFrame(backgroundView_, backgroundFrame);
 
     auto contentFrame = backgroundFrame.inset(10);
+    // XXXBCBCNeeds to remove magic numbers -- see MenuScreen for example
     context.setViewFrame(leftArrowView_,
-                         {{contentFrame.origin.x, contentFrame.origin.y - 4}, {10, 5}});
+                         {{contentFrame.origin.x, contentFrame.origin.y - 4}, {9, 5}});
     context.setViewFrame(upperLeftTextView_,
                          {{contentFrame.origin.x + 15, contentFrame.origin.y - 8},
                           {contentFrame.size.width, contentFrame.size.height}});

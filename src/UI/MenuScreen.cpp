@@ -8,25 +8,25 @@
 
 #define MAX_WIDTH 150
 
-#define HEIGHT_ROUNDUP(x) ((((x) % 2 == 0) ? (x) : ((x) + 1)))
+#define HEIGHT_EVEN(x) ((((x) % 2 == 0) ? (x) : ((x) + 1)))
 
 // All of this needs to get fixed up for the ttf fonts to look right
 auto MenuScreen::layout(LayoutContext &context, Size size) -> Size {
 
     context.setSublayoutFrame(
-        {{0, 0}, {size.width, HEIGHT_ROUNDUP(upperLeftTextView_.getTextHeight())}},
+        {{0, 0}, {size.width, HEIGHT_EVEN(upperLeftTextView_.getTextHeight())}},
         LayoutOptionsAlignTop | LayoutOptionsAlignLeft,
         [this](LayoutContext &context, Size size) -> Size {
             // To render correctly, arrows should always have a height of (2x width - 1)
             auto arrowRect = context.setViewFrame(
                 leftArrowView_,
                 {{0, 0},
-                 {std::max(5, HEIGHT_ROUNDUP(upperLeftTextView_.getTextHeight() / 2)),
-                  std::max(9, HEIGHT_ROUNDUP(upperLeftTextView_.getTextHeight()) - 1)}},
+                 {std::max(5, HEIGHT_EVEN(upperLeftTextView_.getTextHeight() / 2)),
+                  std::max(9, HEIGHT_EVEN(upperLeftTextView_.getTextHeight()) - 1)}},
                 LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical);
             auto backTextRect = context.setViewFrame(
                 upperLeftTextView_,
-                {{std::max(5, HEIGHT_ROUNDUP(upperLeftTextView_.getTextHeight() / 2)) * 3 / 2, 0},
+                {{std::max(5, HEIGHT_EVEN(upperLeftTextView_.getTextHeight() / 2)) * 2, 0},
                  size},
                 LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical);
 
