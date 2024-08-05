@@ -67,9 +67,6 @@
 // define the power pin to turn on display and keep it on.
 #define DISPLAY_POWER 26
 #else // Revision 7 and above defaults
-#ifndef CONFIG_LEDC_BACKLIGHT
-#define CONFIG_LEDC_BACKLIGHT 1
-#endif
 #define BACKLIGHT_RIGHT 2
 #define BACKLIGHT_LEFT 17
 #endif
