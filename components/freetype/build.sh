@@ -24,7 +24,7 @@ fi
 cp ../modules.cfg .
 
 # Save the original ftoption.h file. See at the end of the buld below for its
-# recover
+# recovery
 
 if [ ! -f ../freetype/include/freetype/config/ftoption.h.orig ]; then
     mv ../freetype/include/freetype/config/ftoption.h ../freetype/include/freetype/config/ftoption.h.orig
@@ -52,7 +52,7 @@ make install
 make clean
 
 # This is to remove the copied ftoption.h from the FreeType component such as
-# git won't see ir as a change to an imported component.
+# git won't see it as a change to an imported component.
 
 if [ -f ../freetype/include/freetype/config/ftoption.h.orig ]; then
     mv ../freetype/include/freetype/config/ftoption.h.orig ../freetype/include/freetype/config/ftoption.h 

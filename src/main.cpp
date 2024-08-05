@@ -380,6 +380,8 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     } else {
         lightingController.begin();
     }
+#else
+    lightingController.setOverrideValuePercent(100);
 #endif
 
 #if CONFIG_USE_MMC5603

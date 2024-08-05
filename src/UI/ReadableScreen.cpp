@@ -248,14 +248,20 @@ void ReadableScreen::render(DisplaySystem &display) {
         auto partialChapterSummary =
             UserReadablePartialChapterSummary::loadForReadable(fileSystem_, readable_);
         if (partialChapterSummary) {
-            log_d("Rendering partial chapter summary for %s, place %s",
-                  readable_->shortenedUuid.c_str(), readable_->place->str().c_str());
             auto epubPlace = std::dynamic_pointer_cast<EPubPlace>(readable_->place);
-            readableSummaryScreen_.setPlaceInReadable(epubPlace);
-            readableSummaryScreen_.setFirstLoad();
-            setCurrentScreen(readableSummaryScreen_);
-            readableSummaryScreen_.render(display);
-            return;
+            if (*partialChapterSummary->ePubPlace == *epubPlace) {
+                log_d("Rendering partial chapter summary for %s, place %s",
+                      readable_->shortenedUuid.c_str(), readable_->place->str().c_str());
+                readableSummaryScreen_.setPlaceInReadable(epubPlace);
+                readableSummaryScreen_.setFirstLoad();
+                setCurrentScreen(readableSummaryScreen_);
+                readableSummaryScreen_.render(display);
+                return;
+            } else {
+                log_i("Partial chapter summary does not match current place, not showing: %s vs %s",
+                      readable_->place->str().c_str(),
+                      partialChapterSummary->ePubPlace->str().c_str());
+            }
         }
     }
 

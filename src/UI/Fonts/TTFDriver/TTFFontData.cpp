@@ -8,11 +8,6 @@
 
 FT_Library FontData::library = nullptr;
 
-// ToDo: The following ifs macros about FT_USE_PSRAM could eventually be removed to keep using PSRAM
-// code as PSRAM seems to be the way to go
-
-#if FT_USE_PSRAM
-
 static auto myFtAlloc(FT_Memory memory, long size) -> void * {
     void *mem = heap_caps_malloc(size, MALLOC_CAP_SPIRAM);
     if (mem == nullptr) {
@@ -38,26 +33,16 @@ static FT_MemoryRec_ ftMemory = {
     myFtRealloc,
 };
 
-#endif
-
 auto FontData::load() -> bool {
 
     initialized_ = false;
 
     if (library == nullptr) {
-// int error = FT_Init_FreeType(&library);
-#if FT_USE_PSRAM
         FT_Error error = FT_New_Library(&ftMemory, &library);
         if (error) {
             log_e("An error occurred during FreeType library initialization.");
         }
         FT_Add_Default_Modules(library);
-#else
-        FT_Error error = FT_Init_FreeType(&library);
-        if (error) {
-            log_e("An error occurred during FreeType library initialization.");
-        }
-#endif
     }
 
     initialized_ = true;

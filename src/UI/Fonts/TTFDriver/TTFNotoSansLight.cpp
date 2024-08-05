@@ -37,7 +37,7 @@ auto TTFNotoSansLight::ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2
 
     uint32_t key = (glyphCode1 << 16) + *glyphCode2;
 
-    auto resLigs = BinarySearch(NOTO_SANS_LIGHT.ligatures, key);
+    auto resLigs = BinarySearch(notoSansLight.ligatures_, key);
 
     if (resLigs.has_value()) {
         // LOGW("====> Ligature found: (%d, %d) -> %d.", glyphCode1, *glyphCode2, resLigs.value());
@@ -47,8 +47,8 @@ auto TTFNotoSansLight::ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2
 
     // No ligature, try to find a kerning value in the class-based structs.
 
-    auto resDef1 = BinarySearch(NOTO_SANS_LIGHT.classesDefs, glyphCode1);
-    auto resDef2 = BinarySearch(NOTO_SANS_LIGHT.classesDefs, *glyphCode2);
+    auto resDef1 = BinarySearch(notoSansLight.classesDefs_, glyphCode1);
+    auto resDef2 = BinarySearch(notoSansLight.classesDefs_, *glyphCode2);
 
     // A class Id == 99 means undefined.
 
@@ -66,7 +66,7 @@ auto TTFNotoSansLight::ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2
 
     // No kerning in the class-based structs, check for one in the kerning pairs struct.
 
-    auto res2 = BinarySearch(NOTO_SANS_LIGHT.kerns, key);
+    auto res2 = BinarySearch(notoSansLight.kerns_, key);
 
     if (res2.has_value()) {
         *kern = res2.value();
