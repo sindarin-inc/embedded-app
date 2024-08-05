@@ -102,10 +102,10 @@ function :	Wait until the busy_pin goes HIGH
 parameter:
 ******************************************************************************/
 void inline Waveshare6inHD::ReadBusy(void) {
-    UBYTE Busy_State = DigitalRead(DISPLAY_WAVESHARE_6INHD_BUSY);
+    UBYTE Busy_State = DigitalRead(CONFIG_DISPLAY_WAVESHARE_6INHD_BUSY);
     // 0: busy, 1: idle
     while (Busy_State == 0) {
-        Busy_State = DigitalRead(DISPLAY_WAVESHARE_6INHD_BUSY);
+        Busy_State = DigitalRead(CONFIG_DISPLAY_WAVESHARE_6INHD_BUSY);
     }
 }
 
@@ -932,22 +932,22 @@ void Waveshare6inHD::Eight_bp_Refresh(UBYTE *Frame_Buf, UWORD X, UWORD Y, UWORD 
 void Waveshare6inHD::init() {
     log_d("Initializing Waveshare6inHD with config cs_=%d rst_=%d mosi=%d miso=%d "
           "clk=%d",
-          cs_, rst_, DISPLAY_WAVESHARE_6INHD_MOSI, DISPLAY_WAVESHARE_6INHD_MISO,
-          DISPLAY_WAVESHARE_6INHD_CLK);
+          cs_, rst_, CONFIG_DISPLAY_WAVESHARE_6INHD_MOSI, CONFIG_DISPLAY_WAVESHARE_6INHD_MISO,
+          CONFIG_DISPLAY_WAVESHARE_6INHD_CLK);
     PinMode(rst_, OUTPUT);
     PinMode(cs_, OUTPUT);
 
-#ifdef DISPLAY_WAVESHARE_6INHD_BUSY
-    log_d("Using DISPLAY_WAVESHARE_6INHD_BUSY pin %d", DISPLAY_WAVESHARE_6INHD_BUSY);
-    PinMode(DISPLAY_WAVESHARE_6INHD_BUSY, INPUT);
+#ifdef CONFIG_DISPLAY_WAVESHARE_6INHD_BUSY
+    log_d("Using CONFIG_DISPLAY_WAVESHARE_6INHD_BUSY pin %d", CONFIG_DISPLAY_WAVESHARE_6INHD_BUSY);
+    PinMode(CONFIG_DISPLAY_WAVESHARE_6INHD_BUSY, INPUT);
 #endif
 
     DigitalWrite(cs_, HIGH);
 
     spi_bus_config_t buscfg = {
-        .mosi_io_num = DISPLAY_WAVESHARE_6INHD_MOSI,
-        .miso_io_num = DISPLAY_WAVESHARE_6INHD_MISO,
-        .sclk_io_num = DISPLAY_WAVESHARE_6INHD_CLK,
+        .mosi_io_num = CONFIG_DISPLAY_WAVESHARE_6INHD_MOSI,
+        .miso_io_num = CONFIG_DISPLAY_WAVESHARE_6INHD_MISO,
+        .sclk_io_num = CONFIG_DISPLAY_WAVESHARE_6INHD_CLK,
         // These must be unset or the SPI driver will try to use them
         .quadwp_io_num = -1,
         .quadhd_io_num = -1,

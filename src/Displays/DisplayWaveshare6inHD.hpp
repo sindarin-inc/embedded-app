@@ -8,7 +8,7 @@ class DisplayWaveshare6inHD : public DisplaySystem {
 public:
     DisplayWaveshare6inHD() noexcept
         : gfxCanvas_(WAVESHARE_6INHD_X_PIXELS, WAVESHARE_6INHD_Y_PIXELS),
-          driver_(DISPLAY_WAVESHARE_6INHD_CS, DISPLAY_WAVESHARE_6INHD_RESET) {
+          driver_(CONFIG_DISPLAY_WAVESHARE_6INHD_CS, CONFIG_DISPLAY_WAVESHARE_6INHD_RESET) {
         gfxClass_ = &gfxCanvas_;
     };
     DisplayWaveshare6inHD(DisplayWaveshare6inHD const &) = delete;

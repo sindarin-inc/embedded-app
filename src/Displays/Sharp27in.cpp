@@ -69,9 +69,9 @@ bool Sharp27in::begin(void) {
     DigitalWrite(cs_, LOW);
 
     spi_bus_config_t buscfg = {
-        .mosi_io_num = DISPLAY_SHARP_27IN_MOSI,
+        .mosi_io_num = CONFIG_DISPLAY_SHARP_27IN_MOSI,
         .miso_io_num = -1,
-        .sclk_io_num = DISPLAY_SHARP_27IN_CLK,
+        .sclk_io_num = CONFIG_DISPLAY_SHARP_27IN_CLK,
         // These must be unset or the SPI driver will try to use them
         .quadwp_io_num = -1,
         .quadhd_io_num = -1,
