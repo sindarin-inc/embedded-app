@@ -102,7 +102,6 @@
 #define I2C_MASTER_FREQ_HZ 400000
 #endif
 
-<<<<<<< HEAD
 // This is a wart -- need to figure out how to have the right
 // one passed in from the build system.
 #if CONFIG_DISPLAY_WAVESHARE_6INHD
@@ -117,27 +116,12 @@
 #define CONFIG_WAVESHARE_HEADLESS 1
 #endif
 
-=======
->>>>>>> guy/TTF-IBMF-Update
 // Uncomment the following lines to force the use of TTF
 // #undef CONFIG_FONT_IBMF
 // #undef CONFIG_FONT_TTF
 // #define CONFIG_FONT_TTF 1
 
 #if CONFIG_FONT_TTF
-<<<<<<< HEAD
-// ToDo: The following macro could eventually be removed as PSRAM seems to be the way to go.
-// Must be removed in combination with the ones in file TTFFontData.cpp
-#define FT_USE_PSRAM 1
-#define SHOW_CACHE_STATS 1
-#endif
-
-#define ShOW_FREE_STACK_SPACE 1
-
-// Set DISPLAY_PIXEL_RESOLUTION_IS_FIX to 0 for displays that allow changing their pixel
-// resolution dynamically.
-#define DISPLAY_PIXEL_RESOLUTION_IS_FIX 1
-=======
 #define SHOW_CACHE_STATS 0
 #endif
 
@@ -146,4 +130,3 @@
 // Set DISPLAY_PIXEL_RESOLUTION_IS_FIX to 0 for displays that allow changing their pixel
 // resolution dynamically.
 #define DISPLAY_PIXEL_RESOLUTION_IS_FIX 1
->>>>>>> guy/TTF-IBMF-Update
