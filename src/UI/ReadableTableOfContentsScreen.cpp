@@ -2,16 +2,35 @@
 
 #include "Misc/StringUtil.hpp"
 
+#define HEIGHT_EVEN(x) ((((x) % 2 == 0) ? (x) : ((x) + 1)))
+
 auto ReadableTableOfContentsScreen::layout(LayoutContext &context, Size size) -> Size {
     const auto inset = 2;
 
     // This mirrors what happens in MenuScreen right now. We may want to refactor this into a
     // helper so that it is reused and consistent.
-    // XXXBCBCNeeds to remove magic numbers -- see MenuScreen for example
-    context.setViewFrame(leftArrowView_, {{0, 1}, {5, 9}},
-                         LayoutOptionsSizeToFit | LayoutOptionsAlignTop | LayoutOptionsAlignLeft);
-    context.setViewFrame(upperLeftTextView_, {{10, 0}, size},
-                         LayoutOptionsSizeToFit | LayoutOptionsAlignTop | LayoutOptionsAlignLeft);
+    // I need help from John to figure out how to refactor this into a helper function to 
+    // reduce copy and paste from MenuScreen and ToggleMenuScreen.
+    context.setSublayoutFrame(
+        {{0, 0}, {size.width, HEIGHT_EVEN(upperLeftTextView_.getTextHeight())}},
+        LayoutOptionsAlignTop | LayoutOptionsAlignLeft,
+        [this](LayoutContext &context, Size size) -> Size {
+            // To render correctly, arrows should always have a height of (2x width - 1)
+            auto arrowRect = context.setViewFrame(
+                leftArrowView_,
+                {{0, 0},
+                 {std::max(5, HEIGHT_EVEN(upperLeftTextView_.getTextHeight() / 2)),
+                  std::max(9, HEIGHT_EVEN(upperLeftTextView_.getTextHeight()) - 1)}},
+                LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical);
+            auto backTextRect = context.setViewFrame(
+                upperLeftTextView_,
+                {{std::max(5, HEIGHT_EVEN(upperLeftTextView_.getTextHeight() / 2)) * 2, 0},
+                 size},
+                LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical);
+
+            return {arrowRect.size.width + backTextRect.size.width,
+                    std::max(arrowRect.size.height, backTextRect.size.height)};
+        });
 
     auto insetRect = context.setSublayoutFrame(
         Rect{{0, 0}, size}.inset(inset),
