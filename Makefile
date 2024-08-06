@@ -112,37 +112,11 @@ build: check_idf
 
 .PHONY: flash
 flash: build
-	if [ -e /dev/cu.usbmodemsolreader1 ]; then \
-		echo "PROGRAM" | tee /dev/cu.usbmodemsolreader1; \
-		sleep 2; \
-	fi
-	@if [[ "$$(uname)" == "Linux" ]]; then \
-		PORT=$$(udevadm info --query=all --name=/dev/ttyUSB* | grep 'ID_MODEL_FROM_DATABASE=Sol Reader' -B4 | grep 'DEVNAME' | cut -d'=' -f2) ; \
-		echo "PROGRAM" | tee $$PORT ; \
-		sleep 2;\
-	fi
-	idf.py $(IDF_PROFILE) flash
+	idf.py $(IDF_PROFILE) flash --port $$(python3 scripts/port_finder.py programming)
 
 .PHONY: monitor
 monitor: check_idf
-	# Turn logging on on the new USB port if it exists.
-	if [ -e /dev/cu.usbmodemsolreader1 ]; then \
-		echo "LOGGING_ON" | tee /dev/cu.usbmodemsolreader1; \
-		sleep 2; \
-	fi
-	@if [[ "$$(uname)" == "Linux" ]]; then \
-		PORT=$$(udevadm info --query=all --name=/dev/ttyUSB* | grep 'ID_MODEL_FROM_DATABASE=Sol Reader' -B4 | grep 'DEVNAME' | cut -d'=' -f2) ; \
-	elif [[ "$$(uname)" == "Darwin" ]]; then \
-		PORT=$$(ls /dev/cu.usbmodemsolreader3 | head -n1) ; \
-	else \
-		echo "Unsupported operating system." ; \
-		exit 1 ; \
-	fi ; \
-	if [[ -z "$$PORT" ]]; then \
-		echo "Error: Could not find a serial port with description 'Sol Reader'." ; \
-		exit 1 ; \
-	fi ; \
-	idf.py $(IDF_PROFILE) monitor --no-reset --port $$PORT
+	idf.py $(IDF_PROFILE) monitor --no-reset --port $$(python3 scripts/port_finder.py logging)
 
 .PHONY: clean
 clean:
