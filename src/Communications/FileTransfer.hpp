@@ -41,11 +41,12 @@ public:
                     log_e("Received a CANCEL command when not expecting one");
                 }
                 log_i("Got a CONTINUE command");
+                // turn back on the processing of file data
                 directCommand_.setPassthroughData([this](const uint8_t *data, uint8_t length) {
                     fileTransferCallback(data, length);
                 });
-                usbSerial_.txSendData(reinterpret_cast<const uint8_t *>("CONTINUE"), 8);
                 awaitingCancelContinue_ = false;
+                usbSerial_.txSendData(reinterpret_cast<const uint8_t *>("CONTINUE"), 9);
             }
         });
     }
@@ -72,7 +73,8 @@ private:
     int bytesReceived_ = 0;
     int checksum_ = 0;
     int runningChecksum_ = 0;
-    int chunksReceived_ = 0;
     bool awaitingCancelContinue_ = false;
+    bool awaitingFinalSuccess_ = false;
     SFile file_;
+    std::unique_ptr<SpiRamJsonDocument> jsonDoc_ = nullptr;
 };

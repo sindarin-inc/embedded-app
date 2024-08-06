@@ -56,6 +56,7 @@ public:
     SpiramString dateCreated;
     SpiramString dateModified;
     SpiramString datePublished;
+    // SpiramString processedBy;
     ReadableAuthorVector authors;
     ReadableFileVector files;
     ReadableBookmarksVector bookmarks;
@@ -116,8 +117,8 @@ public:
         return readableType == "pocket_article" || readableType == "email_article";
     }
 
-    [[nodiscard]] auto telemetryPlacemarkMetrics() const
-        -> std::unordered_map<std::string, TelemetryVariant>;
+    [[nodiscard]] auto
+    telemetryPlacemarkMetrics() const -> std::unordered_map<std::string, TelemetryVariant>;
 
     [[nodiscard]] auto authorString() const -> SpiramString {
         if (authors.empty()) {
@@ -142,6 +143,7 @@ public:
         dateCreated = j["date_created"].as<std::string>();
         dateModified = j["date_modified"].as<std::string>();
         datePublished = j["date_published"].as<std::string>();
+        // processedBy = j["processed_by"].as<std::string>();
         localOnly = j["local_only"].as<bool>();
         authors.clear();
         for (const auto &author : j["authors"].as<JsonArray>()) {
