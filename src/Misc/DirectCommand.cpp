@@ -63,6 +63,9 @@ void DirectCommand::begin() {
         } else if (command == "MIRROR") {
             mirrorToSerial = !mirrorToSerial;
             USBSerial::getInstance().txSendData(reinterpret_cast<const uint8_t *>("SUCCESS"), 8);
+        } else if (command == "CONNECT") {
+            // This is just the connect handshake to indicate we're here and listening
+            USBSerial::getInstance().txSendData(reinterpret_cast<const uint8_t *>("CONNECT"), 8);
         }
     });
 
@@ -90,10 +93,68 @@ void DirectCommand::processCommand(const uint8_t *data, uint8_t length) {
         }
     }
 }
+
+#if 0
+uint8_t bufferForProcessing[1024];
+size_t bufferLength = 0;
+
+void DirectCommand::receiveData(const uint8_t *data, uint8_t length) {
+    if (passthroughDataFn_) {
+        if (length < 64) {
+            // If we're close to the end of what we are going to receive, just send it
+            // This is a hack and assumes that < 64 bytes means the the end of the data
+            // XXXBCBC
+            log_d("Passthrough data of length - going to send whole buffer now: %d %d", length,
+                  bufferLength);
+            if (bufferLength + length < 1024) {
+                memcpy(bufferForProcessing + bufferLength, data, length);
+                bufferLength += length;
+                passthroughDataFn_((uint8_t *)bufferForProcessing, bufferLength);
+                bufferLength = 0;
+            } else {
+                passthroughDataFn_((uint8_t *)bufferForProcessing, bufferLength);
+                bufferLength = 0;
+                memcpy(bufferForProcessing, data, length);
+                bufferLength = length;
+                passthroughDataFn_((uint8_t *)bufferForProcessing, bufferLength);
+                bufferLength = 0;
+            }
+        }
+        // Since we're in passthrough mode, we need to buffer the data until we get enough
+        // to send to the passthrough function
+        else if (bufferLength + length < 1024) {
+            log_d("Only adding to the buffer, not sending %d %d", length, bufferLength);
+            memcpy(bufferForProcessing + bufferLength, data, length);
+            bufferLength += length;
+        } else {
+            log_d("Sending the buffer of length: %d", bufferLength);
+            passthroughDataFn_((uint8_t *)bufferForProcessing, bufferLength);
+            bufferLength = 0;
+            memcpy(bufferForProcessing, data, length);
+            bufferLength = length;
+        }
+        // passthroughDataFn_(data, length);
+    } else {
+        processCommand(data, length);
+    }
+}
+#endif
+
 void DirectCommand::receiveData(const uint8_t *data, uint8_t length) {
     if (passthroughDataFn_) {
         passthroughDataFn_(data, length);
     } else {
         processCommand(data, length);
     }
+}
+
+void DirectCommand::unsetPassthroughData() {
+    // if we still have stuff in the buffer that hasn't been sent, send it!
+#if 0
+    if (bufferLength > 0) {
+        passthroughDataFn_((uint8_t *)bufferForProcessing, bufferLength);
+        bufferLength = 0;
+    }
+#endif
+    passthroughDataFn_ = nullptr;
 }

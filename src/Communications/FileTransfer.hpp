@@ -59,6 +59,18 @@ private:
     void handleFileCommand(const std::string &command);
     void handleTransferBookCommand(const std::string &command);
 
+    // Reset all the member variables to their initial state
+    void resetState() {
+        fileReceiveState_ = FileReceiveState::Idle;
+        fileName_.clear();
+        fileUUID_.clear();
+        fileSize_ = 0;
+        bytesReceived_ = 0;
+        checksum_ = 0;
+        runningChecksum_ = 0;
+        awaitingCancelContinue_ = false;
+        awaitingFinalSuccess_ = false;
+    }
     FileSystem &fileSystem_;
     LocalStore &localStore_;
     USBSerial &usbSerial_;

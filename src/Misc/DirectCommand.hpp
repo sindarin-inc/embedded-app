@@ -28,7 +28,7 @@ public:
     // START_FILE_TRANSFER
     //
 
-    DirectCommand(FileSystem &fileSystem) : fileSystem_(fileSystem){};
+    DirectCommand(FileSystem &fileSystem) : fileSystem_(fileSystem) {};
     void begin();
     void receiveData(const uint8_t *data, uint8_t length);
     void processCommand(const uint8_t *data, uint8_t length);
@@ -39,7 +39,7 @@ public:
         passthroughDataFn_ = std::move(passthroughDataFn);
     }
 
-    void unsetPassthroughData() { passthroughDataFn_ = nullptr; }
+    void unsetPassthroughData();
 
 private:
     FileSystem &fileSystem_;

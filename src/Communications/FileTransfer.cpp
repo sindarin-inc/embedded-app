@@ -4,6 +4,25 @@
 
 #include "Models/Json.hpp"
 #include "Models/Readable.hpp"
+#include "esp_log.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+
+void print_stack_trace() {
+    char *stack_ptr = (char *)__builtin_frame_address(0);
+    ESP_LOGI("STACK", "Current stack pointer: %p", stack_ptr);
+
+    // Print a few words from the stack
+    for (int i = 0; i < 10; i++) {
+        ESP_LOGI("STACK", "Stack[%d]: 0x%08lu", i, *((uint32_t *)(stack_ptr + i * 4)));
+    }
+}
+
+void print_stack_size() {
+    UBaseType_t stack_size = uxTaskGetStackHighWaterMark(NULL);
+    ESP_LOGI("STACK", "Current task stack size (high water mark): %u bytes",
+             stack_size * sizeof(StackType_t));
+}
 
 auto CalculateChecksum(const uint8_t *data, size_t length, uint8_t checksum = 0) -> uint8_t {
     uint8_t runningChecksum = checksum;
@@ -106,33 +125,32 @@ void FileTransfer::fileTransferCallback(const uint8_t *data, size_t rxSize) {
     bool success = true;
     bool sendSuccess = false;
 
+    // print_stack_size();
+    // print_stack_trace();
+
     switch (fileReceiveState_) {
     case FileReceiveState::FileData:
-        log_d("About to write file data with size %d", rxSize);
         written = file_.write(data, rxSize);
-        log_d("Next test");
         runningChecksum_ = CalculateChecksum(data, rxSize, runningChecksum_);
-        log_d("Third test");
         // log_d("Got some data of size %d and wrote %d", rxSize, written);
         if (written != rxSize) {
             log_e("Failed to write to file the right amount of bits");
             break;
         }
-        log_d("Fourth test");
         // The below assumes that CHUNK_SIZE will be divisible by rxSize evenly. If not, all bets
         // are off! Figure out how to make this more robust.
         bytesReceived_ += rxSize;
-        if ((bytesReceived_ < fileSize_) &&
-            (bytesReceived_ % (CHUNK_SIZE * CHUNK_HANDSHAKE_INTERVAL) == 0)) {
-            log_d("About to send CONTINUE");
-            directCommand_.unsetPassthroughData();
-            usbSerial_.txSendData(reinterpret_cast<const uint8_t *>("CONTINUE"), 9);
-            awaitingCancelContinue_ = true;
-            return;
-        }
-
-        log_d("Fifth test %d %d", bytesReceived_, fileSize_);
+        // if ((bytesReceived_ < fileSize_) &&
+        //     (bytesReceived_ % (CHUNK_SIZE * CHUNK_HANDSHAKE_INTERVAL) == 0)) {
+        //     directCommand_.unsetPassthroughData();
+        //     usbSerial_.txSendData(reinterpret_cast<const uint8_t *>("CONTINUE"), 9);
+        //     awaitingCancelContinue_ = true;
+        //     return;
+        // }
         if (bytesReceived_ >= fileSize_) {
+
+            UBaseType_t watermark = uxTaskGetStackHighWaterMark(NULL);
+            log_d("end of single file receive high water mark: %d", watermark);
             // All done, reset the state for next time.
             file_.close();
 
@@ -149,7 +167,6 @@ void FileTransfer::fileTransferCallback(const uint8_t *data, size_t rxSize) {
                     log_i("Processing JSON file");
                     std::string filePath = StringFormat("/book/%s.json", fileUUID_.c_str());
                     log_d("File path: %s", filePath.c_str());
-                    Delay(100);
                     SFile readablesFile = fileSystem_.open(filePath.c_str(), FILE_READ);
                     log_d("File opened for reading: %s", filePath.c_str());
                     if (!readablesFile || static_cast<int>(readablesFile.size()) == 0) {
@@ -158,9 +175,9 @@ void FileTransfer::fileTransferCallback(const uint8_t *data, size_t rxSize) {
                     }
                     auto docSize = static_cast<int>(readablesFile.size()) * 2;
                     log_d("Doc size: %d", docSize);
-                    Delay(100);
                     jsonDoc_ = std::make_unique<SpiRamJsonDocument>(docSize);
                     log_d("Json doc created");
+
                     auto error = deserializeJson(*jsonDoc_, readablesFile);
                     log_d("Deserialized JSON file");
                     readablesFile.close();
@@ -170,20 +187,19 @@ void FileTransfer::fileTransferCallback(const uint8_t *data, size_t rxSize) {
                         success = false;
                     }
                 } else if (strcmp(fileType_, "EPUB") == 0) {
-                    log_i("Processing EPUB file");
+                    log_i("Processing EPUB file %d bytes", bytesReceived_);
                     // Update the readable db on the glasses if the checksum checked out.
                     auto existingReadables = localStore_.books();
                     std::shared_ptr<Readable> newReadable = std::make_shared<Readable>();
                     newReadable->localOnly = true;
                     // Set the title
                     newReadable->title = (*jsonDoc_)["title"].as<std::string>();
-
                     // Set the UUID
                     newReadable->uuid = (*jsonDoc_)["uuid"].as<std::string>();
                     newReadable->readableType = (*jsonDoc_)["readable_type"].as<std::string>();
 
                     newReadable->authors.clear(); // Clear existing authors if any
-
+                                                  // #if 0
                     JsonArray authorsArray = (*jsonDoc_)["authors"].as<JsonArray>();
                     for (JsonVariant authorVar : authorsArray) {
                         Author author;
@@ -204,9 +220,9 @@ void FileTransfer::fileTransferCallback(const uint8_t *data, size_t rxSize) {
                     newReadable->dateCreated = (*jsonDoc_)["date_created"].as<std::string>();
                     newReadable->dateModified = (*jsonDoc_)["date_modified"].as<std::string>();
                     newReadable->datePublished = (*jsonDoc_)["date_published"].as<std::string>();
-                    // newReadable->processedBy = (*jsonDoc_)["processed_by"].as<std::string>();
+                    newReadable->processedBy = (*jsonDoc_)["processed_by"].as<std::string>();
 
-                    // Get the files array
+                    //  Get the files array
                     JsonArray filesArray = (*jsonDoc_)["files"].as<JsonArray>();
 
                     // We'll use the first file in the array (index 0)
@@ -226,19 +242,18 @@ void FileTransfer::fileTransferCallback(const uint8_t *data, size_t rxSize) {
                         fileReadable.readableType = fileObj["readable_type"].as<std::string>();
                         newReadable->files.push_back(fileReadable);
                     }
-
                     localStore_.addReadable(existingReadables, newReadable);
                     localStore_.saveReadables(existingReadables);
+                    jsonDoc_ = nullptr;
+#if 0
+#endif
                 }
                 directCommand_.unsetPassthroughData();
                 sendSuccess = true;
             }
 
             // ResetState
-            fileReceiveState_ = FileReceiveState::Idle;
-            bytesReceived_ = 0;
-            fileSize_ = 0;
-            checksum_ = 0;
+            resetState();
         }
         break;
     case FileReceiveState::Idle:
