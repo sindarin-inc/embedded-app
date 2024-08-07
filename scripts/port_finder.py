@@ -12,7 +12,7 @@ from serial.tools.list_ports_common import ListPortInfo
 logger = logging.getLogger("port_finder")
 
 
-def find_windows_com_ports(vid, pid, serial_number=None):
+def find_windows_com_ports(vid: str, pid: str, serial_number: Optional[str] = None) -> list[str]:
     import win32com.client
 
     # Caution: GPT says `Win32_SerialPort` isn't reliable with USB devices.
@@ -51,7 +51,7 @@ def find_windows_com_ports(vid, pid, serial_number=None):
     return [port[0] for port in serial_ports]
 
 
-def find_ports_matching(match_func: callable, sort: callable = None) -> list[str]:
+def find_ports_matching(match_func: callable, sort: Optional[callable] = None) -> list[str]:
     ports: ListPortInfo = list_ports.comports()
     matching_ports: ListPortInfo = []
     for port in ports:
