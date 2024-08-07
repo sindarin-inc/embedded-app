@@ -11,9 +11,6 @@
 #include "Storage/LocalStore.hpp"
 #include "sindarin-debug.h"
 
-#define MAX_FILE_NAME_LENGTH 65
-#define MAX_FILE_TITLE_LENGTH 129
-#define MAX_FILE_AUTHOR_LENGTH 129
 #define CHUNK_SIZE 1024
 #define CHUNK_HANDSHAKE_INTERVAL 25
 
@@ -35,7 +32,6 @@ public:
                 log_i("Transfer canceled by the sender");
                 file_.close();
                 usbSerial_.txSendData(reinterpret_cast<const uint8_t *>("CANCEL"), 7);
-                fileReceiveState_ = FileReceiveState::Idle;
                 awaitingCancelContinue_ = false;
                 return true;
             } else if (command == "CONTINUE") {
@@ -57,15 +53,15 @@ public:
     void fileTransferCallback(const uint8_t *data, size_t rxSize);
 
 private:
-    enum class FileReceiveState { FileData, Idle };
-
     void handleCommand(const std::string &command);
     void handleFileCommand(const std::string &command);
     void handleTransferBookCommand(const std::string &command);
+    void handleEPUB();
+    void handleJSON();
+    void unsetPassthroughAndSendPutError();
 
     // Reset all the member variables to their initial state
     void resetState() {
-        fileReceiveState_ = FileReceiveState::Idle;
         fileName_.clear();
         fileSize_ = 0;
         bytesReceived_ = 0;
@@ -79,7 +75,6 @@ private:
     USBSerial &usbSerial_;
     DirectCommand &directCommand_;
 
-    FileReceiveState fileReceiveState_ = FileReceiveState::Idle;
     char fileType_[10]{};
     char fileNameCharStr_[65];
     std::string fileName_;
