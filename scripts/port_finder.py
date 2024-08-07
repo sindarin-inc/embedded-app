@@ -63,15 +63,15 @@ def find_ports_matching(match_func: callable, sort: Optional[callable] = None) -
     return [port.device for port in matching_ports]
 
 
-def find_ports_by_device_name(device_name) -> list[str]:
+def find_ports_by_device_name(device_name: str) -> list[str]:
     return find_ports_matching(lambda port: device_name in port.description, lambda p: p.device)
 
 
-def find_ports_by_hwid(hwid) -> list[str]:
+def find_ports_by_hwid(hwid: str) -> list[str]:
     return find_ports_matching(lambda port: hwid in port.hwid, lambda p: p.device)
 
 
-def find_ports_by_serial_number(serial_number) -> list[str]:
+def find_ports_by_serial_number(serial_number: str) -> list[str]:
     # Sort by usb_info which is something like:
     # 'USB VID:PID=303A:4002 SER=SOLTEST' - for the tester control interface
     # 'USB VID:PID=303A:4002 SER=SOLTEST LOCATION=1-2.4.4:x.2' - for the tester logging interface
