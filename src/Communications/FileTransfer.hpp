@@ -63,7 +63,6 @@ private:
     void resetState() {
         fileReceiveState_ = FileReceiveState::Idle;
         fileName_.clear();
-        fileUUID_.clear();
         fileSize_ = 0;
         bytesReceived_ = 0;
         checksum_ = 0;
