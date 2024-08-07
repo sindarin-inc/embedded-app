@@ -32,18 +32,18 @@ public:
     void begin();
     void receiveData(const uint8_t *data, uint8_t length);
     void processCommand(const uint8_t *data, uint8_t length);
-    void addCommandHandler(std::function<void(std::string)> commandHandler) {
+    void addCommandHandler(std::function<bool(std::string)> commandHandler) {
         commandHandlers_.push_back(std::move(commandHandler));
     }
     void setPassthroughData(std::function<void(const uint8_t *, uint8_t)> passthroughDataFn) {
         passthroughDataFn_ = std::move(passthroughDataFn);
     }
 
-    void unsetPassthroughData();
+    void unsetPassthroughData() { passthroughDataFn_ = nullptr; };
 
 private:
     FileSystem &fileSystem_;
     std::string commandBuffer_;
-    std::vector<std::function<void(std::string)>> commandHandlers_;
+    std::vector<std::function<bool(std::string)>> commandHandlers_;
     std::function<void(const uint8_t *, uint8_t)> passthroughDataFn_ = nullptr;
 };

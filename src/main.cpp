@@ -112,6 +112,8 @@ WiFi wiFi(telemetry);
 
 USBSerial usbSerial;
 
+// By initializing these in this order, we ensure the command handlers
+// run in this order as well. DEBUG takes a long time (and is defined later)
 DirectCommand directCommand(fileSystem);
 FileTransfer fileTransferListener(fileSystem, localStore, usbSerial, directCommand);
 
@@ -135,22 +137,31 @@ void PollingLoopTask(void *parameter) {
                 rootUi.setCurrentScreen(*testScreen);
                 UIInnerLoop(RemoteCommand::NONE);
             });
+            return true;
         } else if (command == "UP") {
             DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::UP); });
+            return true;
         } else if (command == "LEFT") {
             DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::LEFT); });
+            return true;
         } else if (command == "RIGHT") {
             DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::RIGHT); });
+            return true;
         } else if (command == "DOWN") {
             DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::DOWN); });
+            return true;
         } else if (command == "ENTER") {
             DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::ENTER); });
+            return true;
         } else if (command == "BACK") {
             DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::BACK); });
+            return true;
         } else if (command == "SLEEPOFF") {
             powerManager.debugDisableLightSleep();
+            return true;
         } else if (command == "SLEEPON") {
             powerManager.debugEnableLightSleep();
+            return true;
         } else if (command == "LOCKS") {
 #if !DISABLE_POWER_MANAGEMENT
             auto err = esp_pm_dump_locks(stdout);
@@ -158,32 +169,43 @@ void PollingLoopTask(void *parameter) {
                 log_e("esp_pm_dump_locks error: %s", esp_err_to_name(err));
             }
 #endif
+            return true;
         } else if (command == "ALLOWOFF") {
             AllowPowerOff();
+            return true;
         } else if (command == "UNPAIRPT") {
 #if CONFIG_USE_TURN_TOUCH_REMOTE
             ttRemoteInput.unpairAndDisconnect();
 #endif
+            return true;
         } else if (command == "VERSION") {
             log_i("Version: %s Git: %s", SemanticVersionString(), GitVersionString());
+            return true;
         } else if (command == "BATT") {
             log_i("Left: %f Right: %f", powerManager.battery.getLeftBatteryVoltage(),
                   powerManager.battery.getRightBatteryVoltage());
+            return true;
         } else if (command == "SERIAL") {
             log_i("SN: %s", GetSerialNumber().c_str());
+            return true;
         } else if (command == "USBPWR") {
             log_i("USB Power: %d", USBConnected());
+            return true;
         } else if (command == "BOOTREASON") {
             log_i("Boot reason: %s", powerManager.getBootInfo().humanStr().c_str());
+            return true;
         } else if (command == "LOGGING_ON") {
             USBSerial::getInstance().enableLogging();
             prefs.loggingOn.set(true);
+            return true;
         } else if (command == "LOGGING_OFF") {
             USBSerial::getInstance().disableLogging();
             prefs.loggingOn.set(false);
+            return true;
         } else {
             log_w("Unknown debug command: %s", command.c_str());
         }
+        return false;
     });
 
     int factoryResetStartTimeMs = 0;

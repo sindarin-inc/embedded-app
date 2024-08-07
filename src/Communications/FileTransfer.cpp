@@ -34,7 +34,7 @@ auto CalculateChecksum(const uint8_t *data, size_t length, uint8_t checksum = 0)
 
 void FileTransfer::handleCommand(const std::string &command) {
     if (awaitingFinalSuccess_) {
-        if (command.find("FILE SEND SUCCESS") != std::string::npos) {
+        if (command.find("FILE PUT SUCCESS") != std::string::npos) {
             // reset all state after successful file transfer
             awaitingFinalSuccess_ = false;
             awaitingCancelContinue_ = false;
@@ -45,7 +45,7 @@ void FileTransfer::handleCommand(const std::string &command) {
             return;
         }
     }
-    if (command.find("FILE SEND") != std::string::npos) {
+    if (command.find("FILE PUT") != std::string::npos) {
         handleFileCommand(command);
     } else if (command.find("TRANSFER BOOK") != std::string::npos) {
         handleTransferBookCommand(command);
@@ -57,9 +57,9 @@ void FileTransfer::handleCommand(const std::string &command) {
 void FileTransfer::handleFileCommand(const std::string &command) {
     char checksum_str[65]; // Large enough to hold the checksum as a string
 
-    if (command.find("FILE SEND") != std::string::npos) {
-        // Example: "FILE SEND EPUB 12345678 abcdef123456"
-        sscanf(command.c_str(), "FILE SEND %s %d %s", fileType_, &fileSize_, checksum_str);
+    if (command.find("FILE PUT") != std::string::npos) {
+        // Example: "FILE PUT EPUB 12345678 abcdef123456"
+        sscanf(command.c_str(), "FILE PUT %s %d %s", fileType_, &fileSize_, checksum_str);
 
         log_i("File Type: %s", fileType_);
         log_i("File Size: %d", fileSize_);
@@ -112,7 +112,7 @@ void FileTransfer::handleTransferBookCommand(const std::string &command) {
         fileUUID_ = book_uuid;
         usbSerial_.txSendData(reinterpret_cast<const uint8_t *>(command.c_str()), command.length());
 
-        // Prepare for the next FILE SEND command
+        // Prepare for the next FILE PUT command
         // directCommand_.setPassthroughData(
         //    [this](const uint8_t *data, uint8_t length) { fileTransferCallback(data, length); });
     } else {
@@ -140,13 +140,13 @@ void FileTransfer::fileTransferCallback(const uint8_t *data, size_t rxSize) {
         // The below assumes that CHUNK_SIZE will be divisible by rxSize evenly. If not, all bets
         // are off! Figure out how to make this more robust.
         bytesReceived_ += rxSize;
-        // if ((bytesReceived_ < fileSize_) &&
-        //     (bytesReceived_ % (CHUNK_SIZE * CHUNK_HANDSHAKE_INTERVAL) == 0)) {
-        //     directCommand_.unsetPassthroughData();
-        //     usbSerial_.txSendData(reinterpret_cast<const uint8_t *>("CONTINUE"), 9);
-        //     awaitingCancelContinue_ = true;
-        //     return;
-        // }
+        if ((bytesReceived_ < fileSize_) &&
+            (bytesReceived_ % (CHUNK_SIZE * CHUNK_HANDSHAKE_INTERVAL) == 0)) {
+            directCommand_.unsetPassthroughData();
+            usbSerial_.txSendData(reinterpret_cast<const uint8_t *>("CONTINUE"), 9);
+            awaitingCancelContinue_ = true;
+            return;
+        }
         if (bytesReceived_ >= fileSize_) {
 
             UBaseType_t watermark = uxTaskGetStackHighWaterMark(NULL);
@@ -272,11 +272,11 @@ void FileTransfer::fileTransferCallback(const uint8_t *data, size_t rxSize) {
 
     if (success == true) {
         if (sendSuccess) {
-            usbSerial_.txSendData(reinterpret_cast<const uint8_t *>("FILE SEND SUCCESS"), 18);
+            usbSerial_.txSendData(reinterpret_cast<const uint8_t *>("FILE PUT SUCCESS"), 17);
             awaitingFinalSuccess_ = true;
         }
     } else {
         directCommand_.unsetPassthroughData();
-        usbSerial_.txSendData(reinterpret_cast<const uint8_t *>("FILE SEND ERROR"), 16);
+        usbSerial_.txSendData(reinterpret_cast<const uint8_t *>("FILE PUT ERROR"), 15);
     }
 }

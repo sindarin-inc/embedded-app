@@ -27,6 +27,7 @@ public:
             if (command.rfind("FILE", 0) == 0 || command.rfind("TRANSFER", 0) == 0) {
                 log_i("Got a FILE or TRANSFER command and handled in FileTransfer.hpp");
                 handleCommand(command);
+                return true;
             } else if (command == "CANCEL") {
                 if (!awaitingCancelContinue_) {
                     log_e("Received a CANCEL command when not expecting one");
@@ -36,6 +37,7 @@ public:
                 usbSerial_.txSendData(reinterpret_cast<const uint8_t *>("CANCEL"), 7);
                 fileReceiveState_ = FileReceiveState::Idle;
                 awaitingCancelContinue_ = false;
+                return true;
             } else if (command == "CONTINUE") {
                 if (!awaitingCancelContinue_) {
                     log_e("Received a CANCEL command when not expecting one");
@@ -47,7 +49,9 @@ public:
                 });
                 awaitingCancelContinue_ = false;
                 usbSerial_.txSendData(reinterpret_cast<const uint8_t *>("CONTINUE"), 9);
+                return true;
             }
+            return false;
         });
     }
     void fileTransferCallback(const uint8_t *data, size_t rxSize);
