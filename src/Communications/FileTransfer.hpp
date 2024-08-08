@@ -104,10 +104,10 @@ private:
     std::string fileUUID_;
     int fileSize_ = 0;
     int bytesReceived_ = 0;
-    char checksum_[65];
+    char checksum_[65]{};
     int runningChecksum_ = 0;
-    mbedtls_md_context_t ctx_;
-    mbedtls_md_type_t md_type_ = MBEDTLS_MD_SHA256;
+    mbedtls_md_context_t ctx_{};
+    mbedtls_md_type_t mdType_ = MBEDTLS_MD_SHA256;
     bool awaitingCancelContinue_ = false;
     bool awaitingFinalSuccess_ = false;
     TimerHandle_t timeoutTimer_ = nullptr;

@@ -76,7 +76,7 @@ void FileTransfer::handleFileCommand(const std::string &command) {
     // Set up the ctx_ hash calculation context
 
     mbedtls_md_init(&ctx_);
-    if (mbedtls_md_setup(&ctx_, mbedtls_md_info_from_type(md_type_), 0) != ESP_OK) {
+    if (mbedtls_md_setup(&ctx_, mbedtls_md_info_from_type(mdType_), 0) != ESP_OK) {
         log_e("Failed to set up hash calculator");
         usbSerial_.txSendData(reinterpret_cast<const uint8_t *>("ERROR"), 6);
         return;
@@ -209,17 +209,17 @@ void FileTransfer::fileTransferCallback(const uint8_t *data, size_t rxSize) {
     if (bytesReceived_ >= fileSize_) {
         file_.close();
         char hash[32];
-        char hash_hex[65];
+        char hashHex[65];
 
-        mbedtls_md_finish(&ctx_, (unsigned char *)hash);
+        mbedtls_md_finish(&ctx_, reinterpret_cast<unsigned char *>(hash));
 
         // Convert hash to hexadecimal string
         for (int i = 0; i < 32; i++) {
-            snprintf(&hash_hex[i * 2], 3, "%02x", (unsigned int)hash[i]);
+            snprintf(&hashHex[i * 2], 3, "%02x", static_cast<unsigned int>(hash[i]));
         }
 
-        if (memcmp(checksum_, hash_hex, 64)) {
-            log_e("Hash verification failed: expected %s and got %s", checksum_, hash_hex);
+        if (memcmp(checksum_, hashHex, 64) != 0) {
+            log_e("Hash verification failed: expected %s and got %s", checksum_, hashHex);
             unsetPassthroughAndSendPutError();
             return;
         }
