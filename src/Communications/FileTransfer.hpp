@@ -11,6 +11,7 @@
 #include "Storage/LocalStore.hpp"
 #include "freertos/FreeRTOS.h"
 #include "freertos/timers.h"
+#include "mbedtls/md.h"
 #include "sindarin-debug.h"
 
 #define CHUNK_SIZE 1024
@@ -61,15 +62,13 @@ private:
     void handleEPUB();
     void handleJSON();
     void unsetPassthroughAndSendPutError();
-    auto calculateChecksum(const uint8_t *data, size_t length, uint8_t checksum = 0) -> uint8_t;
 
     // Reset all the member variables to their initial state
     void resetState() {
         fileName_.clear();
         fileSize_ = 0;
         bytesReceived_ = 0;
-        checksum_ = 0;
-        runningChecksum_ = 0;
+        // runningChecksum_ = 0;
         awaitingCancelContinue_ = false;
         awaitingFinalSuccess_ = false;
         xTimerStop(timeoutTimer_, 0);
@@ -82,10 +81,6 @@ private:
             xTimerStop(xTimer, 0);
         } else {
             timerFed_ = false;
-            // // Reset the timer for next time
-            // if (xTimerStart(xTimer, 0) != pdPASS) {
-            //     log_e("Failed to start timer");
-            // }
         }
     }
 
@@ -109,8 +104,10 @@ private:
     std::string fileUUID_;
     int fileSize_ = 0;
     int bytesReceived_ = 0;
-    int checksum_ = 0;
+    char checksum_[65];
     int runningChecksum_ = 0;
+    mbedtls_md_context_t ctx_;
+    mbedtls_md_type_t md_type_ = MBEDTLS_MD_SHA256;
     bool awaitingCancelContinue_ = false;
     bool awaitingFinalSuccess_ = false;
     TimerHandle_t timeoutTimer_ = nullptr;

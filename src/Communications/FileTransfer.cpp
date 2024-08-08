@@ -5,15 +5,6 @@
 #include "Models/Json.hpp"
 #include "Models/Readable.hpp"
 
-auto FileTransfer::calculateChecksum(const uint8_t *data, size_t length, uint8_t checksum)
-    -> uint8_t {
-    uint8_t runningChecksum = checksum;
-    for (size_t i = 0; i < length; ++i) {
-        runningChecksum ^= data[i];
-    }
-    return runningChecksum;
-}
-
 void FileTransfer::handleCommand(const std::string &command) {
     if (awaitingFinalSuccess_) {
         if (command.find("FILE PUT SUCCESS") != std::string::npos) {
@@ -35,7 +26,7 @@ void FileTransfer::handleFileCommand(const std::string &command) {
     // Example: "FILE PUT EPUB 12345678 abcdef123456"
     sscanf(command.c_str(), "FILE PUT %s %d %s", fileType_, &fileSize_, checksumStr);
     fileName_ = StringFormat("/book/%s.epub", fileUUID_.c_str());
-    checksum_ = strtol(checksumStr, nullptr, 10); // Convert checksum to an integer
+    memcpy(checksum_, checksumStr, 65);
 
     runningChecksum_ = 0;
     bytesReceived_ = 0;
@@ -59,10 +50,8 @@ void FileTransfer::handleFileCommand(const std::string &command) {
     if (file_.getFilePtr() == nullptr) {
         log_e("Failed to open file for writing");
         usbSerial_.txSendData(reinterpret_cast<const uint8_t *>("ERROR"), 6);
-    } else {
-        usbSerial_.txSendData(reinterpret_cast<const uint8_t *>(command.c_str()), command.length());
+        return;
     }
-
     // Create a timer that triggers once after 5 seconds
     timeoutTimer_ = xTimerCreate("FileSendTimer",     // Timer name
                                  pdMS_TO_TICKS(5000), // Timer period in ticks (5000 ms = 5 seconds)
@@ -73,12 +62,30 @@ void FileTransfer::handleFileCommand(const std::string &command) {
 
     if (timeoutTimer_ == nullptr) {
         log_e("Failed to create timer");
+        usbSerial_.txSendData(reinterpret_cast<const uint8_t *>("ERROR"), 6);
+        return;
     } else {
         // Start the timer
         if (xTimerStart(timeoutTimer_, 0) != pdPASS) {
             log_e("Failed to start timer");
+            usbSerial_.txSendData(reinterpret_cast<const uint8_t *>("ERROR"), 6);
+            return;
         }
     }
+
+    // Set up the ctx_ hash calculation context
+
+    mbedtls_md_init(&ctx_);
+    if (mbedtls_md_setup(&ctx_, mbedtls_md_info_from_type(md_type_), 0) != ESP_OK) {
+        log_e("Failed to set up hash calculator");
+        usbSerial_.txSendData(reinterpret_cast<const uint8_t *>("ERROR"), 6);
+        return;
+    }
+
+    mbedtls_md_starts(&ctx_);
+
+    usbSerial_.txSendData(reinterpret_cast<const uint8_t *>(command.c_str()), command.length());
+
     directCommand_.setPassthroughData(
         [this](const uint8_t *data, uint8_t length) { fileTransferCallback(data, length); });
 }
@@ -97,6 +104,7 @@ void FileTransfer::handleTransferBookCommand(const std::string &command) {
 void FileTransfer::unsetPassthroughAndSendPutError() {
     directCommand_.unsetPassthroughData();
     usbSerial_.txSendData(reinterpret_cast<const uint8_t *>("FILE PUT ERROR"), 15);
+    mbedtls_md_free(&ctx_);
     resetState();
 }
 
@@ -180,7 +188,9 @@ void FileTransfer::handleEPUB() {
 void FileTransfer::fileTransferCallback(const uint8_t *data, size_t rxSize) {
     timerFed_ = true;
     size_t written = file_.write(data, rxSize);
-    runningChecksum_ = calculateChecksum(data, rxSize, runningChecksum_);
+    // Update the hash calculation
+    mbedtls_md_update(&ctx_, data, rxSize);
+    // runningChecksum_ = calculateChecksum(data, rxSize, runningChecksum_);
     if (written != rxSize) {
         // Probably need to fail harder here somehow.
         log_e("Failed to write to file the right amount of bits");
@@ -198,9 +208,18 @@ void FileTransfer::fileTransferCallback(const uint8_t *data, size_t rxSize) {
     }
     if (bytesReceived_ >= fileSize_) {
         file_.close();
-        if (checksum_ != runningChecksum_) {
-            log_e("Checksum verification failed: expected %d and got %d", checksum_,
-                  runningChecksum_);
+        char hash[32];
+        char hash_hex[65];
+
+        mbedtls_md_finish(&ctx_, (unsigned char *)hash);
+
+        // Convert hash to hexadecimal string
+        for (int i = 0; i < 32; i++) {
+            snprintf(&hash_hex[i * 2], 3, "%02x", (unsigned int)hash[i]);
+        }
+
+        if (memcmp(checksum_, hash_hex, 64)) {
+            log_e("Hash verification failed: expected %s and got %s", checksum_, hash_hex);
             unsetPassthroughAndSendPutError();
             return;
         }
@@ -209,6 +228,8 @@ void FileTransfer::fileTransferCallback(const uint8_t *data, size_t rxSize) {
         } else if (strcmp(fileType_, "EPUB") == 0) {
             handleEPUB();
         }
+
+        mbedtls_md_free(&ctx_);
         directCommand_.unsetPassthroughData();
         usbSerial_.txSendData(reinterpret_cast<const uint8_t *>("FILE PUT SUCCESS"), 17);
         awaitingFinalSuccess_ = true;
