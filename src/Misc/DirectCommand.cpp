@@ -7,7 +7,7 @@
 #include "Dispatch.hpp"
 #include "Platform.hpp"
 
-#define CIRCULAR_BUFFER_SIZE 1024
+#define CIRCULAR_BUFFER_SIZE 2048
 
 extern DirectCommand directCommand;
 
@@ -79,8 +79,6 @@ void DirectCommand::begin() {
         static_cast<uint8_t *>(heap_caps_malloc(CIRCULAR_BUFFER_SIZE, MALLOC_CAP_SPIRAM));
 
     USBSerial::getInstance().registerListener([this](const uint8_t *data, size_t length) {
-        receiveData(data, length);
-#if 0
         if (length > CIRCULAR_BUFFER_SIZE) {
             // This should never happen because the RX on the USB serial is limited to 1024
             // bytes
@@ -88,18 +86,15 @@ void DirectCommand::begin() {
             return;
         }
         if (length + circularPassthroughBufferPlace_ > CIRCULAR_BUFFER_SIZE) {
-            log_i("Circular buffer wrap");
+            // Note this relies on that the receiveData below will have already processed
+            // the data from the beginning of the buffer before we get around to this.
             circularPassthroughBufferPlace_ = 0;
         }
         memcpy(circularPassthroughBuffer_ + circularPassthroughBufferPlace_, data, length);
         int offset = circularPassthroughBufferPlace_;
-        uint8_t *buffer = static_cast<uint8_t *>(heap_caps_malloc(length, MALLOC_CAP_SPIRAM));
-        memcpy(buffer, data, length);
         DispatchGetCore0BackgroundQueue()->dispatch(
-            [this, length, offset] { receiveData(circularPassthroughBuffer_ + offset, length); });
-
+            [this, length, offset]() { receiveData(circularPassthroughBuffer_ + offset, length); });
         circularPassthroughBufferPlace_ += length;
-#endif
     });
 }
 
