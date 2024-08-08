@@ -92,7 +92,7 @@ private:
     // Static trampoline function
     static void timerCallbackTrampoline(TimerHandle_t xTimer) {
         // Retrieve the instance pointer we stored as the timer ID
-        FileTransfer *instance = static_cast<FileTransfer *>(pvTimerGetTimerID(xTimer));
+        auto *instance = static_cast<FileTransfer *>(pvTimerGetTimerID(xTimer));
         if (instance) {
             instance->timeoutTimerCallback(xTimer);
         }
@@ -104,7 +104,7 @@ private:
     DirectCommand &directCommand_;
 
     char fileType_[10]{};
-    char fileNameCharStr_[65];
+    char fileNameCharStr_[65]{};
     std::string fileName_;
     std::string fileUUID_;
     int fileSize_ = 0;

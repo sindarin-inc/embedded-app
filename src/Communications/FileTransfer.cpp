@@ -31,11 +31,11 @@ void FileTransfer::handleCommand(const std::string &command) {
 }
 
 void FileTransfer::handleFileCommand(const std::string &command) {
-    char checksum_str[65]; // Large enough to hold the checksum as a string
+    char checksumStr[65]; // Large enough to hold the checksum as a string
     // Example: "FILE PUT EPUB 12345678 abcdef123456"
-    sscanf(command.c_str(), "FILE PUT %s %d %s", fileType_, &fileSize_, checksum_str);
+    sscanf(command.c_str(), "FILE PUT %s %d %s", fileType_, &fileSize_, checksumStr);
     fileName_ = StringFormat("/book/%s.epub", fileUUID_.c_str());
-    checksum_ = strtol(checksum_str, nullptr, 10); // Convert checksum to an integer
+    checksum_ = strtol(checksumStr, nullptr, 10); // Convert checksum to an integer
 
     runningChecksum_ = 0;
     bytesReceived_ = 0;
@@ -53,7 +53,7 @@ void FileTransfer::handleFileCommand(const std::string &command) {
         return;
     }
 
-    file_ = fileSystem_.open(filePath.c_str(), FILE_WRITE, true);
+    file_ = fileSystem_.open(filePath, FILE_WRITE, true);
     log_i("File opened for writing: %s", filePath.c_str());
 
     if (file_.getFilePtr() == nullptr) {
@@ -84,10 +84,10 @@ void FileTransfer::handleFileCommand(const std::string &command) {
 }
 
 void FileTransfer::handleTransferBookCommand(const std::string &command) {
-    char book_uuid[65]; // Large enough to hold the book UUID as a string
-    if (sscanf(command.c_str(), "TRANSFER BOOK %s", book_uuid) == 1) {
-        log_i("Transfer Book UUID: %s", book_uuid);
-        fileUUID_ = book_uuid;
+    char bookUuid[65]; // Large enough to hold the book UUID as a string
+    if (sscanf(command.c_str(), "TRANSFER BOOK %s", bookUuid) == 1) {
+        log_i("Transfer Book UUID: %s", bookUuid);
+        fileUUID_ = bookUuid;
         usbSerial_.txSendData(reinterpret_cast<const uint8_t *>(command.c_str()), command.length());
     } else {
         usbSerial_.txSendData(reinterpret_cast<const uint8_t *>("ERROR"), 6);
@@ -102,7 +102,7 @@ void FileTransfer::unsetPassthroughAndSendPutError() {
 
 void FileTransfer::handleJSON() {
     std::string filePath = StringFormat("/book/%s.json", fileUUID_.c_str());
-    SFile readablesFile = fileSystem_.open(filePath.c_str(), FILE_READ);
+    SFile readablesFile = fileSystem_.open(filePath, FILE_READ);
     if (!readablesFile || static_cast<int>(readablesFile.size()) == 0) {
         log_e("Failed to open %s", filePath.c_str());
         unsetPassthroughAndSendPutError();
@@ -112,7 +112,7 @@ void FileTransfer::handleJSON() {
     jsonDoc_ = std::make_unique<SpiRamJsonDocument>(docSize);
     auto error = deserializeJson(*jsonDoc_, readablesFile);
     readablesFile.close();
-    fileSystem_.remove(filePath.c_str());
+    fileSystem_.remove(filePath);
     if (error.code() != DeserializationError::Ok) {
         log_e("Failed to deserialize readables file: %s", error.c_str());
         unsetPassthroughAndSendPutError();
