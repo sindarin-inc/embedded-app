@@ -46,4 +46,6 @@ private:
     std::string commandBuffer_;
     std::vector<std::function<bool(std::string)>> commandHandlers_;
     std::function<void(const uint8_t *, uint8_t)> passthroughDataFn_ = nullptr;
+    uint8_t *circularPassthroughBuffer_ = nullptr;
+    uint16_t circularPassthroughBufferPlace_ = 0;
 };

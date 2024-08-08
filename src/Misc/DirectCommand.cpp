@@ -4,7 +4,10 @@
 #include <esp_system.h>
 
 #include "Communications/USBSerial.hpp"
+#include "Dispatch.hpp"
 #include "Platform.hpp"
+
+#define CIRCULAR_BUFFER_SIZE 1024
 
 extern DirectCommand directCommand;
 
@@ -51,23 +54,18 @@ void DirectCommand::begin() {
             return true;
         } else if (command == "DEVICE_INFO") {
             USBSerial::getInstance().txSendData(reinterpret_cast<const uint8_t *>("SUCCESS"), 8);
-            USBSerial::getInstance().txSendData(reinterpret_cast<const uint8_t *>("SERIAL_NUMBER,"),
-                                                14);
-            USBSerial::getInstance().txSendData(
-                reinterpret_cast<const uint8_t *>(GetSerialNumber().c_str()),
-                strlen(GetSerialNumber().c_str()));
-            USBSerial::getInstance().txSendData(reinterpret_cast<const uint8_t *>(";"), 1);
-            USBSerial::getInstance().txSendData(reinterpret_cast<const uint8_t *>("MAC_ADDRESS,"),
-                                                12);
-            USBSerial::getInstance().txSendData(
-                reinterpret_cast<const uint8_t *>(GetMacAddress().c_str()),
-                strlen(GetMacAddress().c_str()));
-            USBSerial::getInstance().txSendData(reinterpret_cast<const uint8_t *>(";"), 1);
-            USBSerial::getInstance().txSendData(reinterpret_cast<const uint8_t *>("FREE_SPACE,"),
-                                                11);
-            USBSerial::getInstance().txSendData(
-                reinterpret_cast<const uint8_t *>(fileSystem_.getFreeSpace().c_str()),
-                strlen(fileSystem_.getFreeSpace().c_str()));
+
+            // Build the response string of format
+            // SERIAL_NUMBER,123456;MAC_ADDRESS,00:00:00:00:00:00;FREE_SPACE,123456
+            std::string serialNumber = GetSerialNumber();
+            std::string macAddress = GetMacAddress();
+            std::string freeSpace = fileSystem_.getFreeSpace();
+
+            std::string response = "SERIAL_NUMBER," + serialNumber + ";MAC_ADDRESS," + macAddress +
+                                   ";FREE_SPACE," + freeSpace + "\n";
+
+            USBSerial::getInstance().txSendData(reinterpret_cast<const uint8_t *>(response.c_str()),
+                                                response.size());
             return true;
         } else if (command == "MIRROR") {
             mirrorToSerial = !mirrorToSerial;
@@ -77,8 +75,32 @@ void DirectCommand::begin() {
         return false;
     });
 
-    USBSerial::getInstance().registerListener(
-        [this](const uint8_t *data, size_t length) { receiveData(data, length); });
+    circularPassthroughBuffer_ =
+        static_cast<uint8_t *>(heap_caps_malloc(CIRCULAR_BUFFER_SIZE, MALLOC_CAP_SPIRAM));
+
+    USBSerial::getInstance().registerListener([this](const uint8_t *data, size_t length) {
+        receiveData(data, length);
+#if 0
+        if (length > CIRCULAR_BUFFER_SIZE) {
+            // This should never happen because the RX on the USB serial is limited to 1024
+            // bytes
+            log_e("Data too large for circular buffer");
+            return;
+        }
+        if (length + circularPassthroughBufferPlace_ > CIRCULAR_BUFFER_SIZE) {
+            log_i("Circular buffer wrap");
+            circularPassthroughBufferPlace_ = 0;
+        }
+        memcpy(circularPassthroughBuffer_ + circularPassthroughBufferPlace_, data, length);
+        int offset = circularPassthroughBufferPlace_;
+        uint8_t *buffer = static_cast<uint8_t *>(heap_caps_malloc(length, MALLOC_CAP_SPIRAM));
+        memcpy(buffer, data, length);
+        DispatchGetCore0BackgroundQueue()->dispatch(
+            [this, length, offset] { receiveData(circularPassthroughBuffer_ + offset, length); });
+
+        circularPassthroughBufferPlace_ += length;
+#endif
+    });
 }
 
 void DirectCommand::processCommand(const uint8_t *data, uint8_t length) {
