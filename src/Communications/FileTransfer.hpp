@@ -9,6 +9,8 @@
 #include "Misc/DirectCommand.hpp"
 #include "Storage/FileSystem.hpp"
 #include "Storage/LocalStore.hpp"
+#include "freertos/FreeRTOS.h"
+#include "freertos/timers.h"
 #include "sindarin-debug.h"
 
 #define CHUNK_SIZE 1024
@@ -59,6 +61,7 @@ private:
     void handleEPUB();
     void handleJSON();
     void unsetPassthroughAndSendPutError();
+    auto calculateChecksum(const uint8_t *data, size_t length, uint8_t checksum = 0) -> uint8_t;
 
     // Reset all the member variables to their initial state
     void resetState() {
@@ -69,7 +72,32 @@ private:
         runningChecksum_ = 0;
         awaitingCancelContinue_ = false;
         awaitingFinalSuccess_ = false;
+        xTimerStop(timeoutTimer_, 0);
     }
+
+    void timeoutTimerCallback(TimerHandle_t xTimer) {
+        if (timerFed_ == false) {
+            log_e("Timed out! Resetting state to accept other commands");
+            unsetPassthroughAndSendPutError();
+            xTimerStop(xTimer, 0);
+        } else {
+            timerFed_ = false;
+            // // Reset the timer for next time
+            // if (xTimerStart(xTimer, 0) != pdPASS) {
+            //     log_e("Failed to start timer");
+            // }
+        }
+    }
+
+    // Static trampoline function
+    static void timerCallbackTrampoline(TimerHandle_t xTimer) {
+        // Retrieve the instance pointer we stored as the timer ID
+        FileTransfer *instance = static_cast<FileTransfer *>(pvTimerGetTimerID(xTimer));
+        if (instance) {
+            instance->timeoutTimerCallback(xTimer);
+        }
+    }
+
     FileSystem &fileSystem_;
     LocalStore &localStore_;
     USBSerial &usbSerial_;
@@ -85,6 +113,8 @@ private:
     int runningChecksum_ = 0;
     bool awaitingCancelContinue_ = false;
     bool awaitingFinalSuccess_ = false;
+    TimerHandle_t timeoutTimer_ = nullptr;
+    bool timerFed_ = false;
     SFile file_;
     std::unique_ptr<SpiRamJsonDocument> jsonDoc_ = nullptr;
 };

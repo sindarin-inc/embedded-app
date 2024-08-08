@@ -5,7 +5,8 @@
 #include "Models/Json.hpp"
 #include "Models/Readable.hpp"
 
-auto CalculateChecksum(const uint8_t *data, size_t length, uint8_t checksum = 0) -> uint8_t {
+auto FileTransfer::calculateChecksum(const uint8_t *data, size_t length, uint8_t checksum)
+    -> uint8_t {
     uint8_t runningChecksum = checksum;
     for (size_t i = 0; i < length; ++i) {
         runningChecksum ^= data[i];
@@ -60,6 +61,23 @@ void FileTransfer::handleFileCommand(const std::string &command) {
         usbSerial_.txSendData(reinterpret_cast<const uint8_t *>("ERROR"), 6);
     } else {
         usbSerial_.txSendData(reinterpret_cast<const uint8_t *>(command.c_str()), command.length());
+    }
+
+    // Create a timer that triggers once after 5 seconds
+    timeoutTimer_ = xTimerCreate("FileSendTimer",     // Timer name
+                                 pdMS_TO_TICKS(5000), // Timer period in ticks (5000 ms = 5 seconds)
+                                 pdTRUE,              // Auto-reload -- repeating timer
+                                 static_cast<void *>(this), // Timer ID (passing 'this' pointer)
+                                 timerCallbackTrampoline    // Static trampoline function
+    );
+
+    if (timeoutTimer_ == nullptr) {
+        log_e("Failed to create timer");
+    } else {
+        // Start the timer
+        if (xTimerStart(timeoutTimer_, 0) != pdPASS) {
+            log_e("Failed to start timer");
+        }
     }
     directCommand_.setPassthroughData(
         [this](const uint8_t *data, uint8_t length) { fileTransferCallback(data, length); });
@@ -160,8 +178,9 @@ void FileTransfer::handleEPUB() {
 }
 
 void FileTransfer::fileTransferCallback(const uint8_t *data, size_t rxSize) {
+    timerFed_ = true;
     size_t written = file_.write(data, rxSize);
-    runningChecksum_ = CalculateChecksum(data, rxSize, runningChecksum_);
+    runningChecksum_ = calculateChecksum(data, rxSize, runningChecksum_);
     if (written != rxSize) {
         // Probably need to fail harder here somehow.
         log_e("Failed to write to file the right amount of bits");

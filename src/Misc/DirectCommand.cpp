@@ -64,6 +64,7 @@ void DirectCommand::begin() {
             std::string response = "SERIAL_NUMBER," + serialNumber + ";MAC_ADDRESS," + macAddress +
                                    ";FREE_SPACE," + freeSpace + "\n";
 
+            log_d("Sending device info: %s with size %d", response.c_str(), response.size());
             USBSerial::getInstance().txSendData(reinterpret_cast<const uint8_t *>(response.c_str()),
                                                 response.size());
             return true;
@@ -123,6 +124,8 @@ void DirectCommand::processCommand(const uint8_t *data, uint8_t length) {
 }
 
 void DirectCommand::receiveData(const uint8_t *data, uint8_t length) {
+    // Be sure we don't time out while receiving data
+    powerManager_.feedInactivityTimer();
     if (passthroughDataFn_) {
         passthroughDataFn_(data, length);
     } else {
