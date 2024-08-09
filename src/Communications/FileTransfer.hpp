@@ -68,7 +68,6 @@ private:
         fileName_.clear();
         fileSize_ = 0;
         bytesReceived_ = 0;
-        // runningChecksum_ = 0;
         awaitingCancelContinue_ = false;
         awaitingFinalSuccess_ = false;
         xTimerStop(timeoutTimer_, 0);
@@ -105,7 +104,6 @@ private:
     int fileSize_ = 0;
     int bytesReceived_ = 0;
     char checksum_[65]{};
-    int runningChecksum_ = 0;
     mbedtls_md_context_t ctx_{};
     mbedtls_md_type_t mdType_ = MBEDTLS_MD_SHA256;
     bool awaitingCancelContinue_ = false;

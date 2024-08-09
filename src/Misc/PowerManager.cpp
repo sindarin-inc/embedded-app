@@ -234,15 +234,7 @@ void PowerManager::wakeupCheck(SolClock &clock) {
 
 auto PowerManager::inactivityTimeoutMs() -> int {
     if (state_ == PowerState::ActiveUSBCharging) {
-        if (PreferencesStore::paired == PairedStatus::Paired) {
-            // Because the user might be plugged into computer, we wait 5 minutes
-            // to turn off.
-            return 5 * 60 * 1000;
-        } else {
-            // Longer timeout for unpaired glasses in case users try to set-up the glasses while
-            // connected to USB
-            return 5 * 60 * 1000;
-        }
+        return 5 * 60 * 1000;
     } else if (state_ == PowerState::ActiveOverTemp) {
         // Shutdown relatively quickly if we're too hot
         return 10 * 1000;

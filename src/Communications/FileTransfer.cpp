@@ -22,13 +22,15 @@ void FileTransfer::handleCommand(const std::string &command) {
 }
 
 void FileTransfer::handleFileCommand(const std::string &command) {
-    char checksumStr[65]; // Large enough to hold the checksum as a string
     // Example: "FILE PUT EPUB 12345678 abcdef123456"
-    sscanf(command.c_str(), "FILE PUT %s %d %s", fileType_, &fileSize_, checksumStr);
-    fileName_ = StringFormat("/book/%s.epub", fileUUID_.c_str());
-    memcpy(checksum_, checksumStr, 65);
+    int numParsed = sscanf(command.c_str(), "FILE PUT %s %d %s", fileType_, &fileSize_, checksum_);
+    if (numParsed != 3) {
+        usbSerial_.txSendData(reinterpret_cast<const uint8_t *>("ERROR"), 6);
+        return;
+    }
 
-    runningChecksum_ = 0;
+    fileName_ = StringFormat("/book/%s.epub", fileUUID_.c_str());
+
     bytesReceived_ = 0;
 
     fileSystem_.createDir("/book", true);
@@ -64,13 +66,13 @@ void FileTransfer::handleFileCommand(const std::string &command) {
         log_e("Failed to create timer");
         usbSerial_.txSendData(reinterpret_cast<const uint8_t *>("ERROR"), 6);
         return;
-    } else {
-        // Start the timer
-        if (xTimerStart(timeoutTimer_, 0) != pdPASS) {
-            log_e("Failed to start timer");
-            usbSerial_.txSendData(reinterpret_cast<const uint8_t *>("ERROR"), 6);
-            return;
-        }
+    }
+
+    // Start the timer
+    if (xTimerStart(timeoutTimer_, 0) != pdPASS) {
+        log_e("Failed to start timer");
+        usbSerial_.txSendData(reinterpret_cast<const uint8_t *>("ERROR"), 6);
+        return;
     }
 
     // Set up the ctx_ hash calculation context
@@ -190,7 +192,6 @@ void FileTransfer::fileTransferCallback(const uint8_t *data, size_t rxSize) {
     size_t written = file_.write(data, rxSize);
     // Update the hash calculation
     mbedtls_md_update(&ctx_, data, rxSize);
-    // runningChecksum_ = calculateChecksum(data, rxSize, runningChecksum_);
     if (written != rxSize) {
         // Probably need to fail harder here somehow.
         log_e("Failed to write to file the right amount of bits");
