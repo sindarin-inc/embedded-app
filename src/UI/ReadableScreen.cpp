@@ -244,7 +244,8 @@ void ReadableScreen::render(DisplaySystem &display) {
     display.setFont(display.style.getFontFamily().readableFont);
 
     // If there is a partial chapter summary, open that instead
-    if (!renderedPartialSummary_ && !prefs_.noShowPartialChapterSummary.get().value_or(false)) {
+    if (firstLoad_ && !renderedPartialSummary_ &&
+        !prefs_.noShowPartialChapterSummary.get().value_or(false)) {
         auto partialChapterSummary =
             UserReadablePartialChapterSummary::loadForReadable(fileSystem_, readable_);
         if (partialChapterSummary) {
@@ -464,6 +465,8 @@ void ReadableScreen::render(DisplaySystem &display) {
     // Reset the lastArrowPress so we don't show it again until another key is pressed (for
     // autopilot mostly)
     lastArrowPress_ = REMOTE_NONE;
+
+    firstLoad_ = false;
 }
 
 void ReadableScreen::incrementReadingTime() {

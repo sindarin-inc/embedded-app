@@ -91,6 +91,7 @@ target_compile_definitions(${PROJECT_NAME} PUBLIC
     DISABLE_LOW_VOLTAGE_HALT=1
     DISABLE_POWER_MANAGEMENT=1
     RTC_SLOW_ATTR=
+    CONFIG_TTF_SCREEN_RES_PER_INCH=150
 )
 
 target_compile_options(${PROJECT_NAME}

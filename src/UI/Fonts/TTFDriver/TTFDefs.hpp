@@ -39,7 +39,7 @@ namespace ttf_defs {
 #define LOGE(format, ...) log_e(format, ##__VA_ARGS__)
 #define LOGD(format, ...) log_d(format, ##__VA_ARGS__)
 
-const constexpr int SCREEN_RES_PER_INCH = 150;
+const constexpr int SCREEN_RES_PER_INCH = CONFIG_TTF_SCREEN_RES_PER_INCH;
 const constexpr int SUP_SUB_FONT_DOWNSIZING = 2;
 
 using namespace font_defs;

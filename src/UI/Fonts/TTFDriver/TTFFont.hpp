@@ -127,7 +127,7 @@ public:
     auto getGlyphForCache(GlyphCode glyphCode, Glyph &glyph) -> bool;
 
     [[nodiscard]] inline auto setDisplayPixelResolution(PixelResolution res) -> bool {
-#if DISPLAY_PIXEL_RESOLUTION_IS_FIX
+#if CONFIG_DISPLAY_PIXEL_RESOLUTION_IS_FIX
         log_w("The display does not allow to change it's pixel resolution!");
         return false;
 #else

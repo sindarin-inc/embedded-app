@@ -112,18 +112,7 @@
 // for testing headless
 // #define CONFIG_WAVESHARE_HEADLESS 1
 #endif
-
 // Uncomment the following lines to force the use of TTF
 // #undef CONFIG_FONT_IBMF
 // #undef CONFIG_FONT_TTF
 // #define CONFIG_FONT_TTF 1
-
-#if CONFIG_FONT_TTF
-#define SHOW_CACHE_STATS 0
-#endif
-
-#define ShOW_FREE_STACK_SPACE 0
-
-// Set DISPLAY_PIXEL_RESOLUTION_IS_FIX to 0 for displays that allow changing their pixel
-// resolution dynamically.
-#define DISPLAY_PIXEL_RESOLUTION_IS_FIX 1
