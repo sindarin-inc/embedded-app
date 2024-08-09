@@ -79,14 +79,23 @@ void ReadablePopupMenuScreen::setUpPopupMenu() {
     // summary)
     populatePopupMenu();
 
-    // Figure out if you should show the Archive menu item or the Unarchive menu item.
-    bool archived = prefs_.readableArchivedChanged.get(readable_->shortenedUuid.c_str());
-    if (archived) {
-        archiveMenuItemView_->setHidden(true);
-        unarchiveMenuItemView_->setHidden(false);
+    // log_d("the processedBy is %s", readable_->processedBy.c_str());
+    // log_d("the processedBy substr is %s", readable_->processedBy.substr(0, 11).c_str());
+    if (readable_->processedBy.substr(0, 11) == "desktop_app") {
+        // If the readable is from the desktop app, show the delete menu item.
+        deleteMenuItemView_->setHidden(false);
     } else {
-        archiveMenuItemView_->setHidden(false);
-        unarchiveMenuItemView_->setHidden(true);
+        log_d("Getting here!!");
+        // Figure out if you should show the Archive menu item or the Unarchive menu item.
+        bool archived = prefs_.readableArchivedChanged.get(readable_->shortenedUuid.c_str());
+        deleteMenuItemView_->setHidden(true);
+        if (archived) {
+            archiveMenuItemView_->setHidden(true);
+            unarchiveMenuItemView_->setHidden(false);
+        } else {
+            archiveMenuItemView_->setHidden(false);
+            unarchiveMenuItemView_->setHidden(true);
+        }
     }
 
     popupMenuView_.setNeedsLayout();
@@ -114,6 +123,21 @@ void ReadablePopupMenuScreen::populatePopupMenu() {
         lightingAdjustScreen_.setFirstLoad();
         setCurrentScreen(lightingAdjustScreen_);
     }));
+
+    // if (readable_->processedBy.substr(0, 10) == "desktop_app") {
+    addMenuItem(MenuItem("Delete", [this]() {
+        log_d("Deleting the readable");
+        UserReadablesVector readablesToDelete = {};
+        // Create a UserReadable from the readable_ and add it to the readablesToDelete vector
+        readablesToDelete.emplace_back();
+        readablesToDelete.back().uuid = readable_->shortenedUuid;
+        readablesToDelete.back().isArchived = false;
+        readablesToDelete.back().readable = readable_;
+        localStore_.processReadableDeletion(readablesToDelete, localStore_.books());
+        onMainMenu();
+    }));
+    deleteMenuItemView_ = popupMenuView_.menuItemViews.back();
+    // } else {
     addMenuItem(MenuItem("Archive", [this]() {
         prefs_.readableArchivedChanged.set(readable_->shortenedUuid.c_str(), true);
         onMainMenu();
@@ -125,6 +149,7 @@ void ReadablePopupMenuScreen::populatePopupMenu() {
         back();
     }));
     unarchiveMenuItemView_ = popupMenuView_.menuItemViews.back();
+    // }
 
     addMenuItem(MenuItem("Report page", [this]() {
         log_d("Reporting a problem with the page");

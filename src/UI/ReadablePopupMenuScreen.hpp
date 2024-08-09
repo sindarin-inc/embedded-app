@@ -1,5 +1,6 @@
 #include "Misc/Menu.hpp"
 #include "Misc/Telemetry.hpp"
+#include "Storage/LocalStore.hpp"
 #include "UI/Components/EinkView.hpp"
 #include "UI/Components/PopupMenuView.hpp"
 #include "UI/ContainerScreen.hpp"
@@ -17,10 +18,10 @@ public:
     ReadablePopupMenuScreen(DisplaySystem &display, PreferencesStore &prefs, FileSystem &fileSystem,
                             const std::shared_ptr<Readable> &readable,
                             LightingController &lightingController, Renderer &renderer,
-                            Telemetry &telemetry)
+                            Telemetry &telemetry, LocalStore &localStore)
         : EinkView(display), display_(display), prefs_(prefs), readable_(readable),
           renderer_(renderer), popupMenuView_(display), telemetry_(telemetry),
-          fileSystem_(fileSystem),
+          localStore_(localStore), fileSystem_(fileSystem),
           lightingAdjustScreen_(display, prefs, lightingController, telemetry),
           readableSeekScreen_(prefs, readable, renderer),
           readableTableOfContentsScreen_(prefs, readable, renderer, display, telemetry),
@@ -87,6 +88,7 @@ protected:
     Renderer &renderer_;
     PopupMenuView popupMenuView_;
     Telemetry &telemetry_;
+    LocalStore &localStore_;
     FileSystem &fileSystem_;
 
     bool firstLoad_ = true;
@@ -94,6 +96,7 @@ protected:
 
     std::shared_ptr<MenuItemView> archiveMenuItemView_;
     std::shared_ptr<MenuItemView> unarchiveMenuItemView_;
+    std::shared_ptr<MenuItemView> deleteMenuItemView_;
 
     LightingAdjustScreen lightingAdjustScreen_;
     ReadableSeekScreen readableSeekScreen_;
