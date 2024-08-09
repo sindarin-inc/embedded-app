@@ -3,6 +3,7 @@
 #include "DisplayEinkET013TT1.hpp"
 
 #include <algorithm>
+#include <freertos/task.h>
 
 #include "Communications/USBSerial.hpp"
 #include "Displays/CustomWaveforms.hpp"
@@ -10,7 +11,6 @@
 #include "Misc/Dispatch.hpp"
 #include "Misc/Platform.hpp"
 #include "config.h"
-#include "freertos/task.h"
 
 #define VCOM_INVERTED_MODE_DELTA 2500
 

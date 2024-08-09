@@ -156,7 +156,7 @@ void PollingLoopTask(void *parameter) {
         } else if (command == "SLEEPON") {
             powerManager.debugEnableLightSleep();
         } else if (command == "LOCKS") {
-#if !DISABLE_POWER_MANAGEMENT
+#if !CONFIG_DISABLE_POWER_MANAGEMENT
             auto err = esp_pm_dump_locks(stdout);
             if (err != ESP_OK) {
                 log_e("esp_pm_dump_locks error: %s", esp_err_to_name(err));
@@ -240,7 +240,7 @@ void StatsTask(void *parameter) {
     while (powerManager.state() != PowerState::ShuttingDown) {
         // Spit out data on locks every 30s
         vTaskDelay(30000 / portTICK_PERIOD_MS);
-#if !SIMULATOR && !DISABLE_POWER_MANAGEMENT
+#if !SIMULATOR && !CONFIG_DISABLE_POWER_MANAGEMENT
         if (USBConnected()) {
             esp_pm_dump_locks(stdout);
         }
@@ -260,7 +260,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     // after prefs have begun. Hence the below #if 0 in case you need to turn on logging
     // earlier for debugging.
     usbSerial.begin();
-#if 1
+#if 0
     usbSerial.enableLogging();
 #endif
     directCommand.begin();
@@ -546,7 +546,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     }
 #endif
 
-#if !DISABLE_POWER_MANAGEMENT
+#if !CONFIG_DISABLE_POWER_MANAGEMENT
     if (rtc_clk_slow_freq_get() != RTC_SLOW_FREQ_32K_XTAL) {
         bootErrors.push_back({.type = BootError::Type::LowPowerOscillator});
     }
@@ -554,7 +554,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 
     SHOW_HEAP();
 
-#if DISABLE_POWER_MANAGEMENT
+#if CONFIG_DISABLE_POWER_MANAGEMENT
     log_w("Power Management Disabled");
 #endif
 

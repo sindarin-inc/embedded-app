@@ -159,7 +159,7 @@ void EinkET013TT1::init() {
         i = 0xFF;
     }
 
-#if !DISABLE_POWER_MANAGEMENT
+#if !CONFIG_DISABLE_POWER_MANAGEMENT
     ESP_ERROR_CHECK(esp_pm_lock_create(ESP_PM_CPU_FREQ_MAX, 0, "eink", &freqLock_));
 #endif
 
@@ -245,7 +245,7 @@ void EinkET013TT1::updateInternal(const EinkET013TT1Waveform &waveform, const ui
 
     log_d("Updating display with waveform \"%s\"", waveform.name);
 
-#if !DISABLE_POWER_MANAGEMENT
+#if !CONFIG_DISABLE_POWER_MANAGEMENT
     ESP_ERROR_CHECK(esp_pm_lock_acquire(freqLock_));
 #endif
 
@@ -385,7 +385,7 @@ void EinkET013TT1::updateInternal(const EinkET013TT1Waveform &waveform, const ui
     PROFILE_END(sendFrames);
     spi_device_release_bus(spiHigh_);
 
-#if !DISABLE_POWER_MANAGEMENT
+#if !CONFIG_DISABLE_POWER_MANAGEMENT
     esp_pm_lock_release(freqLock_);
 #endif
 

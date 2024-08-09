@@ -65,6 +65,7 @@ public:
             fontData_->getFace(faceIndex_)->setDisplayPixelResolution(res);
             return true;
         }
+        return false;
 #endif
     }
 
