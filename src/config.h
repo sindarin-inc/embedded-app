@@ -100,3 +100,8 @@
 #define I2C_MASTER_SDA_IO 1
 #define I2C_MASTER_FREQ_HZ 400000
 #endif
+
+// Uncomment the following lines to force the use of TTF
+// #undef CONFIG_FONT_IBMF
+// #undef CONFIG_FONT_TTF
+// #define CONFIG_FONT_TTF 1
