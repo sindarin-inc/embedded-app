@@ -110,7 +110,7 @@
 #define SHOW_CACHE_STATS 0
 #endif
 
-#define ShOW_FREE_STACK_SPACE 0
+#define SHOW_FREE_STACK_SPACE 0
 
 // Set DISPLAY_PIXEL_RESOLUTION_IS_FIX to 0 for displays that allow changing their pixel
 // resolution dynamically.
