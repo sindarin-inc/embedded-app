@@ -98,7 +98,6 @@ private:
     DirectCommand &directCommand_;
 
     char fileType_[10]{};
-    char fileNameCharStr_[65]{};
     std::string fileName_;
     std::string fileUUID_;
     int fileSize_ = 0;

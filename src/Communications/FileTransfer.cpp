@@ -22,9 +22,17 @@ void FileTransfer::handleCommand(const std::string &command) {
 }
 
 void FileTransfer::handleFileCommand(const std::string &command) {
+    // Limited to
+    char fileSizeStr[10];
     // Example: "FILE PUT EPUB 12345678 abcdef123456"
-    int numParsed = sscanf(command.c_str(), "FILE PUT %s %d %s", fileType_, &fileSize_, checksum_);
+    int numParsed = sscanf(command.c_str(), "FILE PUT %s %s %s", fileType_, fileSizeStr, checksum_);
     if (numParsed != 3) {
+        usbSerial_.txSendData(reinterpret_cast<const uint8_t *>("ERROR"), 6);
+        return;
+    }
+
+    fileSize_ = strtol(fileSizeStr, nullptr, 10);
+    if (fileSize_ == 0) {
         usbSerial_.txSendData(reinterpret_cast<const uint8_t *>("ERROR"), 6);
         return;
     }
@@ -216,7 +224,9 @@ void FileTransfer::fileTransferCallback(const uint8_t *data, size_t rxSize) {
 
         // Convert hash to hexadecimal string
         for (int i = 0; i < 32; i++) {
-            snprintf(&hashHex[i * 2], 3, "%02x", static_cast<unsigned int>(hash[i]));
+            if (!snprintf(&hashHex[i * 2], 3, "%02x", static_cast<unsigned int>(hash[i]))) {
+                log_e("Failed to convert hash to hex");
+            };
         }
 
         if (memcmp(checksum_, hashHex, 64) != 0) {
