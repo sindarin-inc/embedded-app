@@ -64,7 +64,7 @@ void DirectCommand::begin() {
             std::string response = "SERIAL_NUMBER," + serialNumber + ";MAC_ADDRESS," + macAddress +
                                    ";FREE_SPACE," + freeSpace + "\n";
 
-            log_d("Sending device info: %s with size %d", response.c_str(), response.size());
+            log_d("Sending device info: %s with size %zu", response.c_str(), response.size());
             USBSerial::getInstance().txSendData(reinterpret_cast<const uint8_t *>(response.c_str()),
                                                 response.size());
             return true;
