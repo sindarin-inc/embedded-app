@@ -62,26 +62,13 @@ void FileTransfer::handleFileCommand(const std::string &command) {
         usbSerial_.txSendData(reinterpret_cast<const uint8_t *>("ERROR"), 6);
         return;
     }
-    // Create a timer that triggers once after 5 seconds
-    timeoutTimer_ = xTimerCreate("FileSendTimer",     // Timer name
-                                 pdMS_TO_TICKS(5000), // Timer period in ticks (5000 ms = 5 seconds)
-                                 pdTRUE,              // Auto-reload -- repeating timer
-                                 static_cast<void *>(this), // Timer ID (passing 'this' pointer)
-                                 timerCallbackTrampoline    // Static trampoline function
-    );
 
-    if (timeoutTimer_ == nullptr) {
-        log_e("Failed to create timer");
-        usbSerial_.txSendData(reinterpret_cast<const uint8_t *>("ERROR"), 6);
-        return;
-    }
-
-    // Start the timer
-    if (xTimerStart(timeoutTimer_, 0) != pdPASS) {
-        log_e("Failed to start timer");
-        usbSerial_.txSendData(reinterpret_cast<const uint8_t *>("ERROR"), 6);
-        return;
-    }
+    timeoutTimer_.start(
+        [this]() {
+        log_e("Timed out! Resetting state to accept other commands");
+        unsetPassthroughAndSendPutError();
+        },
+        5000);
 
     // Set up the ctx_ hash calculation context
 
@@ -196,7 +183,7 @@ void FileTransfer::handleEPUB() {
 }
 
 void FileTransfer::fileTransferCallback(const uint8_t *data, size_t rxSize) {
-    timerFed_ = true;
+    timeoutTimer_.feed();
     size_t written = file_.write(data, rxSize);
     // Update the hash calculation
     mbedtls_md_update(&ctx_, data, rxSize);

@@ -7,6 +7,7 @@
 
 #include "Communications/USBSerial.hpp"
 #include "Misc/DirectCommand.hpp"
+#include "Misc/InactivityTimer.hpp"
 #include "Storage/FileSystem.hpp"
 #include "Storage/LocalStore.hpp"
 #include "freertos/FreeRTOS.h"
@@ -70,26 +71,7 @@ private:
         bytesReceived_ = 0;
         awaitingCancelContinue_ = false;
         awaitingFinalSuccess_ = false;
-        xTimerStop(timeoutTimer_, 0);
-    }
-
-    void timeoutTimerCallback(TimerHandle_t xTimer) {
-        if (timerFed_ == false) {
-            log_e("Timed out! Resetting state to accept other commands");
-            unsetPassthroughAndSendPutError();
-            xTimerStop(xTimer, 0);
-        } else {
-            timerFed_ = false;
-        }
-    }
-
-    // Static trampoline function
-    static void timerCallbackTrampoline(TimerHandle_t xTimer) {
-        // Retrieve the instance pointer we stored as the timer ID
-        auto *instance = static_cast<FileTransfer *>(pvTimerGetTimerID(xTimer));
-        if (instance) {
-            instance->timeoutTimerCallback(xTimer);
-        }
+        timeoutTimer_.stop();
     }
 
     FileSystem &fileSystem_;
@@ -107,8 +89,7 @@ private:
     mbedtls_md_type_t mdType_ = MBEDTLS_MD_SHA256;
     bool awaitingCancelContinue_ = false;
     bool awaitingFinalSuccess_ = false;
-    TimerHandle_t timeoutTimer_ = nullptr;
-    bool timerFed_ = false;
+    InactivityTimer timeoutTimer_;
     SFile file_;
     std::unique_ptr<SpiRamJsonDocument> jsonDoc_ = nullptr;
 };
