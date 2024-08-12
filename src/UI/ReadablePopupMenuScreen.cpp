@@ -126,16 +126,28 @@ void ReadablePopupMenuScreen::populatePopupMenu() {
 
     // if (readable_->processedBy.substr(0, 10) == "desktop_app") {
     addMenuItem(MenuItem("Delete", [this]() {
-        log_d("Deleting the readable");
-        UserReadablesVector readablesToDelete = {};
-        // Create a UserReadable from the readable_ and add it to the readablesToDelete vector
-        readablesToDelete.emplace_back();
-        readablesToDelete.back().uuid = readable_->shortenedUuid;
-        readablesToDelete.back().isArchived = false;
-        readablesToDelete.back().readable = readable_;
-        localStore_.processReadableDeletion(readablesToDelete, localStore_.books());
-        onMainMenu();
+        log_d("Showing delete confirmation!");
+        lineMenuScreen_.resetMenuItems();
+        lineMenuScreen_.addMenuItem(MenuItem("Never mind", [this]() {
+            log_d("Aborting delete!");
+            setCurrentScreen(*this);
+            back();
+        }));
+        lineMenuScreen_.addMenuItem(MenuItem("Delete: Are you sure?", [this]() {
+            log_d("Going through with delete");
+            UserReadablesVector readablesToDelete = {};
+            // Create a UserReadable from the readable_ and add it to the readablesToDelete vector
+            readablesToDelete.emplace_back();
+            readablesToDelete.back().uuid = readable_->shortenedUuid;
+            readablesToDelete.back().isArchived = false;
+            readablesToDelete.back().readable = readable_;
+            localStore_.processReadableDeletion(readablesToDelete, localStore_.books());
+            onMainMenu();
+        }));
+        setCurrentScreen(lineMenuScreen_);
+        setNeedsRerender();
     }));
+
     deleteMenuItemView_ = popupMenuView_.menuItemViews.back();
     // } else {
     addMenuItem(MenuItem("Archive", [this]() {

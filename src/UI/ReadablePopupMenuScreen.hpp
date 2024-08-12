@@ -5,6 +5,7 @@
 #include "UI/Components/PopupMenuView.hpp"
 #include "UI/ContainerScreen.hpp"
 #include "UI/LightingAdjustScreen.hpp"
+#include "UI/LineMenuScreen.hpp"
 #include "UI/ReadableDictionaryScreen.hpp"
 #include "UI/ReadablePlacemarkHistoryScreen.hpp"
 #include "UI/ReadableSeekScreen.hpp"
@@ -21,7 +22,7 @@ public:
                             Telemetry &telemetry, LocalStore &localStore)
         : EinkView(display), display_(display), prefs_(prefs), readable_(readable),
           renderer_(renderer), popupMenuView_(display), telemetry_(telemetry),
-          localStore_(localStore), fileSystem_(fileSystem),
+          localStore_(localStore), fileSystem_(fileSystem), lineMenuScreen_(prefs, display),
           lightingAdjustScreen_(display, prefs, lightingController, telemetry),
           readableSeekScreen_(prefs, readable, renderer),
           readableTableOfContentsScreen_(prefs, readable, renderer, display, telemetry),
@@ -90,6 +91,7 @@ protected:
     Telemetry &telemetry_;
     LocalStore &localStore_;
     FileSystem &fileSystem_;
+    LineMenuScreen lineMenuScreen_;
 
     bool firstLoad_ = true;
     ChapterIdx currentChapterIdx_ = -1;
