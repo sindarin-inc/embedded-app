@@ -1,5 +1,6 @@
 #include "Misc/Menu.hpp"
 #include "Misc/Telemetry.hpp"
+#include "Renderers/RendererStream.hpp"
 #include "Storage/LocalStore.hpp"
 #include "UI/Components/EinkView.hpp"
 #include "UI/Components/PopupMenuView.hpp"
@@ -19,10 +20,12 @@ public:
     ReadablePopupMenuScreen(DisplaySystem &display, PreferencesStore &prefs, FileSystem &fileSystem,
                             const std::shared_ptr<Readable> &readable,
                             LightingController &lightingController, Renderer &renderer,
-                            Telemetry &telemetry, LocalStore &localStore)
+                            Telemetry &telemetry, LocalStore &localStore,
+                            const std::shared_ptr<RendererStream> &stream)
         : EinkView(display), display_(display), prefs_(prefs), readable_(readable),
           renderer_(renderer), popupMenuView_(display), telemetry_(telemetry),
-          localStore_(localStore), fileSystem_(fileSystem), lineMenuScreen_(prefs, display),
+          localStore_(localStore), fileSystem_(fileSystem), stream_(stream),
+          lineMenuScreen_(prefs, display),
           lightingAdjustScreen_(display, prefs, lightingController, telemetry),
           readableSeekScreen_(prefs, readable, renderer),
           readableTableOfContentsScreen_(prefs, readable, renderer, display, telemetry),
@@ -91,6 +94,7 @@ protected:
     Telemetry &telemetry_;
     LocalStore &localStore_;
     FileSystem &fileSystem_;
+    const std::shared_ptr<RendererStream> &stream_;
     LineMenuScreen lineMenuScreen_;
 
     bool firstLoad_ = true;

@@ -137,11 +137,18 @@ void ReadablePopupMenuScreen::populatePopupMenu() {
             log_d("Going through with delete");
             UserReadablesVector readablesToDelete = {};
             // Create a UserReadable from the readable_ and add it to the readablesToDelete vector
+            // static cast the stream_ to an EPubFile and close it
+            // It's always an EPubFile if they uploaded it to us!
+            reinterpret_cast<EPubFile *>(stream_.get())->close();
+            log_d("Closed the file descriptor for %s", readable_->shortenedUuid.c_str());
             readablesToDelete.emplace_back();
             readablesToDelete.back().uuid = readable_->shortenedUuid;
             readablesToDelete.back().isArchived = false;
             readablesToDelete.back().readable = readable_;
+            log_d("About to delete the readable");
             localStore_.processReadableDeletion(readablesToDelete, localStore_.books());
+            log_d("Deleted the readable, restarting");
+            esp_restart();
             onMainMenu();
         }));
         setCurrentScreen(lineMenuScreen_);

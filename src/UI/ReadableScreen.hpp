@@ -36,7 +36,7 @@ public:
           renderer_(display, GetTextRectFromPrefs(display, prefs)), readable_(readable),
           prefs_(prefs), telemetry_(telemetry), fileSystem_(fileSystem), display_(display),
           popupMenuScreen_(display, prefs, fileSystem, readable, lightingController, renderer_,
-                           telemetry_, localStore),
+                           telemetry_, localStore, stream),
           readableSummaryScreen_(prefs, fileSystem, readable, display, renderer_),
           leftArrowView_(display, ArrowLeft), rightArrowView_(display, ArrowRight),
           upArrowView_(display, ArrowUp), downArrowView_(display, ArrowDown) {
