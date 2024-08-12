@@ -1,5 +1,7 @@
 #include "ReadablePopupMenuScreen.hpp"
 
+extern std::shared_ptr<EPubFile> theOneFile_;
+
 void ReadablePopupMenuScreen::setUpPopupMenu() {
     std::shared_ptr<Place> place = renderer_.getCurrentPlace();
 
@@ -139,7 +141,11 @@ void ReadablePopupMenuScreen::populatePopupMenu() {
             // Create a UserReadable from the readable_ and add it to the readablesToDelete vector
             // static cast the stream_ to an EPubFile and close it
             // It's always an EPubFile if they uploaded it to us!
-            reinterpret_cast<EPubFile *>(stream_.get())->close();
+            // Print out the dynamic type of stream_ to make sure it's always an EPubFile
+            log_d("Type is %s", typeid(stream_.get()).name());
+            // EPubFile *temp = reinterpret_cast<EPubFile *>(stream_.get());
+            log_d("Got the reinterpret cast pointer, now about to call close");
+            theOneFile_->close();
             log_d("Closed the file descriptor for %s", readable_->shortenedUuid.c_str());
             readablesToDelete.emplace_back();
             readablesToDelete.back().uuid = readable_->shortenedUuid;
@@ -148,8 +154,8 @@ void ReadablePopupMenuScreen::populatePopupMenu() {
             log_d("About to delete the readable");
             localStore_.processReadableDeletion(readablesToDelete, localStore_.books());
             log_d("Deleted the readable, restarting");
-            esp_restart();
             onMainMenu();
+            esp_restart();
         }));
         setCurrentScreen(lineMenuScreen_);
         setNeedsRerender();

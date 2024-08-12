@@ -74,6 +74,8 @@
 
 #define LAST_READABLE_ID "rui-readable"
 
+std::shared_ptr<EPubFile> theOneFile_ = nullptr;
+
 // NOLINTNEXTLINE(readability-function-size): It's big, I know
 void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &fileSystem,
                    LightingController &lightingController) {
@@ -187,6 +189,9 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             if (HasSuffix(path, ".epub")) {
                 log_i("Opening %s as epub", path.c_str());
                 stream = fileSystem.newEPubRendererStream(path.c_str(), readable);
+                // copy this new stream file pointer into the global theOneFile_ so we can
+                // reference it later.
+                theOneFile_ = std::dynamic_pointer_cast<EPubFile>(stream);
             } else if (HasSuffix(path, ".txt.gz")) {
                 log_i("Opening %s as gzip", path.c_str());
                 stream = fileSystem.newGzipRendererStream(path.c_str());
