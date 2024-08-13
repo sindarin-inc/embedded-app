@@ -74,8 +74,9 @@ void DirectCommand::begin() {
         return false;
     });
 
-    USBSerial::getInstance().registerListener([this](auto &&PH1, auto &&PH2) {
-        receiveData(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2));
+    USBSerial::getInstance().registerListener(
+        [this](std::shared_ptr<uint8_t[]> data, uint8_t length) {
+        receiveData(std::move(data), length);
     });
 }
 

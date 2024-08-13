@@ -83,8 +83,8 @@ void FileTransfer::handleFileCommand(const std::string &command, const std::stri
 
     usbSerial_.txSendData(reinterpret_cast<const uint8_t *>(command.c_str()), command.length());
 
-    directCommand_.setPassthroughData([this](auto &&PH1, auto &&PH2) {
-        fileTransferCallback(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2));
+    directCommand_.setPassthroughData([this](std::shared_ptr<uint8_t[]> data, uint8_t length) {
+        fileTransferCallback(std::move(data), length);
     });
 }
 
