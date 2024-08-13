@@ -37,23 +37,23 @@ public:
         return opf_->getSpine(idx);
     }
 
-    [[nodiscard]] auto findFileOffsetAtCharOffset(const std::string &path,
-                                                  uint32_t charOffset) -> uint32_t;
+    [[nodiscard]] auto findFileOffsetAtCharOffset(const std::string &path, uint32_t charOffset)
+        -> uint32_t;
 
-    [[nodiscard]] auto findCharOffsetAtFileOffset(const std::string &path,
-                                                  uint32_t fileOffset) -> uint32_t;
+    [[nodiscard]] auto findCharOffsetAtFileOffset(const std::string &path, uint32_t fileOffset)
+        -> uint32_t;
 
     [[nodiscard]] inline auto getSpineCount() const -> uint16_t { return opf_->getSpineCount(); }
 
-    [[nodiscard]] auto
-    getFile(const std::string &path) -> std::pair<std::shared_ptr<uint8_t[]>, uint32_t>;
+    [[nodiscard]] auto getFile(const std::string &path)
+        -> std::pair<std::shared_ptr<uint8_t[]>, uint32_t>;
 
     [[nodiscard]] inline auto getSpineIdx(const std::string &href) const -> SpineIdx {
         return opf_->getSpineIdx(href);
     }
 
-    [[nodiscard]] inline auto
-    getHrefByManifestId(const std::string &manifestId) const -> std::string {
+    [[nodiscard]] inline auto getHrefByManifestId(const std::string &manifestId) const
+        -> std::string {
         return opf_->getHrefByManifestId(manifestId);
     }
 
@@ -73,8 +73,8 @@ public:
 
     [[nodiscard]] inline auto isOpen() const -> bool { return fileOpen_; }
 
-    [[nodiscard]] auto getRelativeFilePath(const std::string &filename,
-                                           SpineIdx spineIdx) const -> std::string {
+    [[nodiscard]] auto getRelativeFilePath(const std::string &filename, SpineIdx spineIdx) const
+        -> std::string {
         std::string mainFilePath =
             opf_->getFullPath(static_cast<std::string>(opf_->getSpine(spineIdx).item->href));
         std::string path;
