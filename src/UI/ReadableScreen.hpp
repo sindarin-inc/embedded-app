@@ -36,10 +36,12 @@ public:
           renderer_(display, GetTextRectFromPrefs(display, prefs)), readable_(readable),
           prefs_(prefs), telemetry_(telemetry), fileSystem_(fileSystem), display_(display),
           popupMenuScreen_(display, prefs, fileSystem, readable, lightingController, renderer_,
-                           telemetry_, localStore, stream),
+                           telemetry_, localStore, stream_),
           readableSummaryScreen_(prefs, fileSystem, readable, display, renderer_),
           leftArrowView_(display, ArrowLeft), rightArrowView_(display, ArrowRight),
           upArrowView_(display, ArrowUp), downArrowView_(display, ArrowDown) {
+
+        log_d("Type in ReadableScreen constructor is %s", typeid(*(stream_.get())).name());
 
         currentScreen_ = this;
         renderer_.setStream(stream);

@@ -139,13 +139,14 @@ void ReadablePopupMenuScreen::populatePopupMenu() {
             log_d("Going through with delete");
             UserReadablesVector readablesToDelete = {};
             // Create a UserReadable from the readable_ and add it to the readablesToDelete
-            // vector static cast the stream_ to an EPubFile and close it It's always an
+            // dynamic_pointer_cast the stream_ to an EPubFile and close it
+            // It's always an
             // EPubFile if they uploaded it to us! Print out the dynamic type of stream_ to make
             // sure it's always an EPubFile
-            log_d("Type is %s", typeid(stream_.get()).name());
-            // EPubFile *temp = reinterpret_cast<EPubFile *>(stream_.get());
-            log_d("Got the reinterpret cast pointer, now about to call close");
-            theOneFile_->close();
+            log_d("Type in delete lambda is %s", typeid(*(stream_.get())).name());
+            std::shared_ptr<EPubFile> temp = std::dynamic_pointer_cast<EPubFile>(stream_);
+            log_d("Got the dynamic pointer cast pointer, now about to call close");
+            temp->close();
             log_d("Closed the file descriptor for %s", readable_->shortenedUuid.c_str());
             readablesToDelete.emplace_back();
             readablesToDelete.back().uuid = readable_->shortenedUuid;

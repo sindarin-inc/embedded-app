@@ -188,10 +188,19 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             auto [path, size] = localStore.readableFilePathForReading(readable);
             if (HasSuffix(path, ".epub")) {
                 log_i("Opening %s as epub", path.c_str());
-                stream = fileSystem.newEPubRendererStream(path.c_str(), readable);
+                std::shared_ptr<EPubFile> streamy =
+                    fileSystem.newEPubRendererStream(path.c_str(), readable);
+                // stream = std::dynamic_pointer_cast<EPubFile>(
+                //     fileSystem.newEPubRendererStream(path.c_str(), readable));
                 // copy this new stream file pointer into the global theOneFile_ so we can
                 // reference it later.
-                theOneFile_ = std::dynamic_pointer_cast<EPubFile>(stream);
+                theOneFile_ = std::dynamic_pointer_cast<EPubFile>(streamy);
+                log_d("Type in streamy maker is %s", typeid(*(streamy.get())).name());
+                log_d("Type of the one file is %s", typeid(*(theOneFile_.get())).name());
+                stream = streamy;
+                log_d("The pointer values are %p and %p and %p", streamy.get(), theOneFile_.get(),
+                      stream.get());
+                log_d("Type in stream maker is %s", typeid(*(stream.get())).name());
             } else if (HasSuffix(path, ".txt.gz")) {
                 log_i("Opening %s as gzip", path.c_str());
                 stream = fileSystem.newGzipRendererStream(path.c_str());

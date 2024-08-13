@@ -21,7 +21,7 @@ public:
                             const std::shared_ptr<Readable> &readable,
                             LightingController &lightingController, Renderer &renderer,
                             Telemetry &telemetry, LocalStore &localStore,
-                            const std::shared_ptr<RendererStream> &stream)
+                            std::shared_ptr<RendererStream> &stream)
         : EinkView(display), display_(display), prefs_(prefs), readable_(readable),
           renderer_(renderer), popupMenuView_(display), telemetry_(telemetry),
           localStore_(localStore), fileSystem_(fileSystem), stream_(stream),
@@ -94,7 +94,7 @@ protected:
     Telemetry &telemetry_;
     LocalStore &localStore_;
     FileSystem &fileSystem_;
-    const std::shared_ptr<RendererStream> &stream_;
+    std::shared_ptr<RendererStream> &stream_;
     LineMenuScreen lineMenuScreen_;
 
     bool firstLoad_ = true;
