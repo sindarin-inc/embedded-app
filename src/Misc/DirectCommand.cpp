@@ -7,8 +7,6 @@
 #include "Dispatch.hpp"
 #include "Platform.hpp"
 
-#define CIRCULAR_BUFFER_SIZE 2048
-
 extern DirectCommand directCommand;
 
 bool mirrorToSerial = false;
