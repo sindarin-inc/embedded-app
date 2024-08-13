@@ -135,13 +135,13 @@ void ReadablePopupMenuScreen::populatePopupMenu() {
             setCurrentScreen(*this);
             back();
         }));
-        lineMenuScreen_.addMenuItem(MenuItem("Delete: Are you sure?", [this]() {
+        lineMenuScreen_.addMenuItem(MenuItem("Delete: I'm sure!", [this]() {
             log_d("Going through with delete");
             UserReadablesVector readablesToDelete = {};
-            // Create a UserReadable from the readable_ and add it to the readablesToDelete vector
-            // static cast the stream_ to an EPubFile and close it
-            // It's always an EPubFile if they uploaded it to us!
-            // Print out the dynamic type of stream_ to make sure it's always an EPubFile
+            // Create a UserReadable from the readable_ and add it to the readablesToDelete
+            // vector static cast the stream_ to an EPubFile and close it It's always an
+            // EPubFile if they uploaded it to us! Print out the dynamic type of stream_ to make
+            // sure it's always an EPubFile
             log_d("Type is %s", typeid(stream_.get()).name());
             // EPubFile *temp = reinterpret_cast<EPubFile *>(stream_.get());
             log_d("Got the reinterpret cast pointer, now about to call close");
@@ -162,7 +162,8 @@ void ReadablePopupMenuScreen::populatePopupMenu() {
     }));
 
     deleteMenuItemView_ = popupMenuView_.menuItemViews.back();
-    // } else {
+    // }
+    // else {
     addMenuItem(MenuItem("Archive", [this]() {
         prefs_.readableArchivedChanged.set(readable_->shortenedUuid.c_str(), true);
         onMainMenu();
@@ -174,7 +175,7 @@ void ReadablePopupMenuScreen::populatePopupMenu() {
         back();
     }));
     unarchiveMenuItemView_ = popupMenuView_.menuItemViews.back();
-    // }
+    //}
 
     addMenuItem(MenuItem("Report page", [this]() {
         log_d("Reporting a problem with the page");
@@ -318,10 +319,11 @@ void ReadablePopupMenuScreen::render(DisplaySystem &display) {
 
         firstLoad_ = false;
     } else {
-        // NOTE: This Screen is quirky since it is rendered directly from ReadableScreen. The first
-        // time it is rendered, it will be rendered twice from ReadableScreen, once with the text in
-        // the background (using PARTIAL) and once without the text in the background (but using
-        // AU4). This creates the effect of the popup happening on top of the text.
+        // NOTE: This Screen is quirky since it is rendered directly from ReadableScreen. The
+        // first time it is rendered, it will be rendered twice from ReadableScreen, once with
+        // the text in the background (using PARTIAL) and once without the text in the
+        // background (but using AU4). This creates the effect of the popup happening on top of
+        // the text.
         std::shared_ptr<MenuItemView> selectedMenuItemView =
             popupMenuView_.menuItemViews[getCurrSelection()];
         for (auto &menuItemView : popupMenuView_.menuItemViews) {
