@@ -47,7 +47,7 @@ public:
                 // turn back on the processing of file data
                 directCommand_.setPassthroughData(
                     [this](std::shared_ptr<uint8_t[]> data, uint8_t length) {
-                    fileTransferCallback(data, length);
+                    fileTransferCallback(std::move(data), length);
                 });
                 awaitingCancelContinue_ = false;
                 usbSerial_.txSendData(reinterpret_cast<const uint8_t *>("CONTINUE"), 9);
@@ -56,7 +56,7 @@ public:
             return false;
         });
     }
-    void fileTransferCallback(std::shared_ptr<uint8_t[]> data, size_t rxSize);
+    void fileTransferCallback(const std::shared_ptr<uint8_t[]> &data, size_t rxSize);
 
 private:
     void handleCommand(const std::string &command, const std::string &payload);

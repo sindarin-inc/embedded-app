@@ -83,8 +83,9 @@ void FileTransfer::handleFileCommand(const std::string &command, const std::stri
 
     usbSerial_.txSendData(reinterpret_cast<const uint8_t *>(command.c_str()), command.length());
 
-    directCommand_.setPassthroughData(std::bind(&FileTransfer::fileTransferCallback, this,
-                                                std::placeholders::_1, std::placeholders::_2));
+    directCommand_.setPassthroughData([this](auto &&PH1, auto &&PH2) {
+        fileTransferCallback(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2));
+    });
 }
 
 void FileTransfer::handleTransferBookCommand(const std::string &command,
@@ -183,7 +184,7 @@ void FileTransfer::handleEPUB() {
     jsonDoc_ = nullptr;
 }
 
-void FileTransfer::fileTransferCallback(std::shared_ptr<uint8_t[]> data, size_t rxSize) {
+void FileTransfer::fileTransferCallback(const std::shared_ptr<uint8_t[]> &data, size_t rxSize) {
     timeoutTimer_.feed();
     size_t written = file_.write(data.get(), rxSize);
     // Update the hash calculation

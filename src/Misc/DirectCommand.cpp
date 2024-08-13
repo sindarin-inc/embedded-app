@@ -76,11 +76,12 @@ void DirectCommand::begin() {
         return false;
     });
 
-    USBSerial::getInstance().registerListener(
-        std::bind(&DirectCommand::receiveData, this, std::placeholders::_1, std::placeholders::_2));
+    USBSerial::getInstance().registerListener([this](auto &&PH1, auto &&PH2) {
+        receiveData(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2));
+    });
 }
 
-void DirectCommand::handleCommand(std::shared_ptr<uint8_t[]> data, uint8_t length) {
+void DirectCommand::handleCommand(const std::shared_ptr<uint8_t[]> &data, uint8_t length) {
     for (int i = 0; i < length; i++) {
         if (data[i] == '\n') {
             // found newline, process this command
@@ -116,7 +117,7 @@ void DirectCommand::handleCommand(std::shared_ptr<uint8_t[]> data, uint8_t lengt
     }
 }
 
-void DirectCommand::receiveData(std::shared_ptr<uint8_t[]> data, uint8_t length) {
+void DirectCommand::receiveData(const std::shared_ptr<uint8_t[]> &data, uint8_t length) {
     // Be sure we don't time out while receiving data
     powerManager_.feedInactivityTimer();
     if (passthroughDataFn_) {

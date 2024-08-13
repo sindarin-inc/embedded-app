@@ -32,8 +32,8 @@ public:
     DirectCommand(FileSystem &fileSystem, PowerManager &powerManager)
         : fileSystem_(fileSystem), powerManager_(powerManager){};
     void begin();
-    void receiveData(std::shared_ptr<uint8_t[]> data, uint8_t length);
-    void handleCommand(std::shared_ptr<uint8_t[]> data, uint8_t length);
+    void receiveData(const std::shared_ptr<uint8_t[]> &data, uint8_t length);
+    void handleCommand(const std::shared_ptr<uint8_t[]> &data, uint8_t length);
     void addCommandHandler(
         std::function<bool(std::string commandId, std::string payload)> commandHandler) {
         commandHandlers_.push_back(std::move(commandHandler));
