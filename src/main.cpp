@@ -112,9 +112,7 @@ WiFi wiFi(telemetry);
 
 USBSerial usbSerial;
 
-// By initializing these in this order, we ensure the command handlers
-// run in this order as well. DEBUG takes a long time (and is defined later)
-DirectCommand directCommand(fileSystem, powerManager);
+DirectCommand directCommand(usbSerial, fileSystem, powerManager);
 FileTransfer fileTransferListener(fileSystem, localStore, usbSerial, directCommand);
 
 bool bootCompleted = false;
@@ -149,6 +147,8 @@ void PollingLoopTask(void *parameter) {
 
         // Run the power loop first so that we don't show a 0% battery reading
         powerManager.loop();
+
+        directCommand.pollHwUart();
 
 #if CONFIG_USE_TURN_TOUCH_REMOTE
         // Skip scanning while WiFi is connected to avoid kicking off the WiFi connection
@@ -237,35 +237,37 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     }
 
     // The following commands can run after PowerManager::begin has completed
-    directCommand.addCommandHandler([](const std::string &command, const std::string &payload) {
-        if (command == "BATT") {
-            auto response =
-                StringFormat("BATT L:%.2f R:%.2f", powerManager.battery.getLeftBatteryVoltage(),
-                             powerManager.battery.getRightBatteryVoltage());
-            // Also log for convenience during testing
-            log_i("%s", response.c_str());
-            usbSerial.txSendLine(response);
-            return true;
-        } else if (command == "BOOTREASON") {
-            auto response =
-                StringFormat("BOOTREASON %s", powerManager.getBootInfo().humanStr().c_str());
-            // Also log for convenience during testing
-            log_i("%s", response.c_str());
-            usbSerial.txSendLine(response);
-            return true;
-        } else if (command == "LOCKS") {
-            usbSerial.txSendLine(command);
+    directCommand.addCommandHandler(
+        [](const std::string &command, const std::string &payload,
+           const std::function<void(const std::string &str)> &txLine) -> bool {
+            if (command == "BATT") {
+                auto response =
+                    StringFormat("BATT L:%.2f R:%.2f", powerManager.battery.getLeftBatteryVoltage(),
+                                 powerManager.battery.getRightBatteryVoltage());
+                // Also log for convenience during testing
+                log_i("%s", response.c_str());
+                txLine(response);
+                return true;
+            } else if (command == "BOOTREASON") {
+                auto response =
+                    StringFormat("BOOTREASON %s", powerManager.getBootInfo().humanStr().c_str());
+                // Also log for convenience during testing
+                log_i("%s", response.c_str());
+                txLine(response);
+                return true;
+            } else if (command == "LOCKS") {
+                txLine(command);
 #if !DISABLE_POWER_MANAGEMENT
-            // TODO: Would be nice to also dump to the command port
-            auto err = esp_pm_dump_locks(stdout);
-            if (err != ESP_OK) {
-                log_e("esp_pm_dump_locks error: %s", esp_err_to_name(err));
-            }
+                // TODO: Would be nice to also dump to the command port
+                auto err = esp_pm_dump_locks(stdout);
+                if (err != ESP_OK) {
+                    log_e("esp_pm_dump_locks error: %s", esp_err_to_name(err));
+                }
 #endif
-            return true;
-        }
-        return false;
-    });
+                return true;
+            }
+            return false;
+        });
 
     if (!fileSystem.begin()) {
         bootErrors.push_back({.type = BootError::Type::FileSystem});
@@ -566,57 +568,57 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     bootCompleted = true;
 
     // The following commands can run after app_main has completed
-    directCommand.addCommandHandler(
-        [](const std::string &command, const std::string &payload) -> bool {
-            if (command == "CONNECT") {
-                // This is just the connect handshake to indicate we're here and listening
-                usbSerial.txSendLine(command);
-                return true;
-            } else if (command == "MIRROR") {
-                myDisplay.mirrorToSerial = !myDisplay.mirrorToSerial;
-                usbSerial.txSendLine(command);
-                return true;
-            } else if (command == "GRID") {
-                DispatchGetUiQueue()->dispatch([]() {
-                    // Override brightness to max
-                    lightingController.setOverrideValuePercent(100);
-                    auto testScreen = new TestAlignmentScreen();
-                    rootUi.setCurrentScreen(*testScreen);
-                    UIInnerLoop(RemoteCommand::NONE);
-                });
-                usbSerial.txSendLine(command);
-                return true;
-            } else if (command == "UP") {
-                DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::UP); });
-                usbSerial.txSendLine(command);
-                return true;
-            } else if (command == "LEFT") {
-                DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::LEFT); });
-                usbSerial.txSendLine(command);
-                return true;
-            } else if (command == "RIGHT") {
-                DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::RIGHT); });
-                usbSerial.txSendLine(command);
-                return true;
-            } else if (command == "DOWN") {
-                DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::DOWN); });
-                usbSerial.txSendLine(command);
-                return true;
-            } else if (command == "ENTER") {
-                DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::ENTER); });
-                usbSerial.txSendLine(command);
-                return true;
-            } else if (command == "BACK") {
-                DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::BACK); });
-                usbSerial.txSendLine(command);
-                return true;
-            } else if (command == "UNPAIRPT") {
+    directCommand.addCommandHandler([](const std::string &command, const std::string &payload,
+                                       std::function<void(const std::string &str)> txLine) -> bool {
+        if (command == "CONNECT") {
+            // This is just the connect handshake to indicate we're here and listening
+            txLine(command);
+            return true;
+        } else if (command == "MIRROR") {
+            myDisplay.mirrorToSerial = !myDisplay.mirrorToSerial;
+            txLine(command);
+            return true;
+        } else if (command == "GRID") {
+            DispatchGetUiQueue()->dispatch([]() {
+                // Override brightness to max
+                lightingController.setOverrideValuePercent(100);
+                auto testScreen = new TestAlignmentScreen();
+                rootUi.setCurrentScreen(*testScreen);
+                UIInnerLoop(RemoteCommand::NONE);
+            });
+            txLine(command);
+            return true;
+        } else if (command == "UP") {
+            DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::UP); });
+            txLine(command);
+            return true;
+        } else if (command == "LEFT") {
+            DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::LEFT); });
+            txLine(command);
+            return true;
+        } else if (command == "RIGHT") {
+            DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::RIGHT); });
+            txLine(command);
+            return true;
+        } else if (command == "DOWN") {
+            DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::DOWN); });
+            txLine(command);
+            return true;
+        } else if (command == "ENTER") {
+            DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::ENTER); });
+            txLine(command);
+            return true;
+        } else if (command == "BACK") {
+            DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::BACK); });
+            txLine(command);
+            return true;
+        } else if (command == "UNPAIRPT") {
 #if CONFIG_USE_TURN_TOUCH_REMOTE
-                ttRemoteInput.unpairAndDisconnect();
+            ttRemoteInput.unpairAndDisconnect();
 #endif
-                usbSerial.txSendLine(command);
-                return true;
-            }
-            return false;
-        });
+            txLine(command);
+            return true;
+        }
+        return false;
+    });
 }
