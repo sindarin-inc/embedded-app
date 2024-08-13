@@ -156,10 +156,12 @@ void FileTransfer::handleFilePutCommand(const std::string &command, const std::s
         return;
     }
 
-    timeoutTimer_.start([this]() {
+    timeoutTimer_.start(
+        [this]() {
         log_e("Timed out! Resetting state to accept other commands");
         unsetPassthroughAndSendPutError();
-    }, 5000);
+        },
+        5000);
 
     // Set up the ctx_ hash calculation context
     mbedtls_md_init(&ctx_);
