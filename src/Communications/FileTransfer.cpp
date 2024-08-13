@@ -82,6 +82,8 @@ void FileTransfer::handleFileCommand(const std::string &command, const std::stri
     mbedtls_md_starts(&ctx_);
 
     usbSerial_.txSendData(reinterpret_cast<const uint8_t *>(command.c_str()), command.length());
+    usbSerial_.txSendData(reinterpret_cast<const uint8_t *>(" "), 1);
+    usbSerial_.txSendData(reinterpret_cast<const uint8_t *>(payload.c_str()), payload.length());
 
     directCommand_.setPassthroughData(
         [this](const std::shared_ptr<uint8_t[]> &data, uint8_t length) {
@@ -96,6 +98,8 @@ void FileTransfer::handleTransferBookCommand(const std::string &command,
         log_i("Transfer Book UUID: %s", bookUuid);
         fileUUID_ = bookUuid;
         usbSerial_.txSendData(reinterpret_cast<const uint8_t *>(command.c_str()), command.length());
+        usbSerial_.txSendData(reinterpret_cast<const uint8_t *>(" "), 1);
+        usbSerial_.txSendData(reinterpret_cast<const uint8_t *>(payload.c_str()), payload.length());
     } else {
         usbSerial_.txSendData(reinterpret_cast<const uint8_t *>("ERROR"), 6);
     }

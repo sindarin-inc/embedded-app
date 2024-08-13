@@ -87,8 +87,8 @@ void DirectCommand::handleCommand(const std::shared_ptr<uint8_t[]> &data, uint8_
             if (!commandHandlers_.empty() && !commandBuffer_.empty()) {
                 auto commandBuffer = ResolveBackspace(commandBuffer_);
                 DispatchGetCore0BackgroundQueue()->dispatch([this, commandBuffer] {
-                    log_i("Command being received: %s with size %zu", commandBuffer_.c_str(),
-                          commandBuffer_.size());
+                    log_i("Command being received: %s with size %zu", commandBuffer.c_str(),
+                          commandBuffer.size());
                     std::string commandId;
                     std::string payload;
                     auto spacePos = commandBuffer.find(' ');
