@@ -1,5 +1,7 @@
 #include "ReadablePopupMenuScreen.hpp"
 
+#include "UI/MsgPopup.hpp"
+
 extern std::shared_ptr<EPubFile> theOneFile;
 
 void ReadablePopupMenuScreen::setUpPopupMenu() {
@@ -81,7 +83,7 @@ void ReadablePopupMenuScreen::setUpPopupMenu() {
     // summary)
     populatePopupMenu();
 
-    if (readable_->processedBy.substr(0, 11) == "desktop_app") {
+    if (readable_->appProcessed) {
         // If the readable is from the desktop app, show the delete menu item.
         deleteMenuItemView_->setHidden(false);
         archiveMenuItemView_->setHidden(true);
@@ -128,7 +130,7 @@ void ReadablePopupMenuScreen::populatePopupMenu() {
     addMenuItem(MenuItem("Delete", [this]() {
         log_d("Showing delete confirmation!");
         lineMenuScreen_.resetMenuItems();
-        lineMenuScreen_.addMenuItem(MenuItem("Never mind", [this]() {
+        lineMenuScreen_.addMenuItem(MenuItem("Cancel", [this]() {
             log_d("Aborting delete!");
             setCurrentScreen(*this);
             back();
@@ -146,8 +148,17 @@ void ReadablePopupMenuScreen::populatePopupMenu() {
             readablesToDelete.back().isArchived = false;
             readablesToDelete.back().readable = readable_;
             localStore_.processReadableDeletion(readablesToDelete, localStore_.books());
-            onMainMenu();
-            esp_restart();
+            auto *restartSoonPopup =
+                new MsgPopup(display_, "Book deleted, press \ue000 to restart");
+            display_.clearDisplay();
+            this->setCurrentScreen(*restartSoonPopup);
+            setNeedsRerender();
+            restartSoonPopup->setBackCallback([this, restartSoonPopup]() {
+                display_.clearDisplay();
+                onMainMenu();
+                delete restartSoonPopup;
+                esp_restart();
+            });
         }));
         setCurrentScreen(lineMenuScreen_);
         setNeedsRerender();
