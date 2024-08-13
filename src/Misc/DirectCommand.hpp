@@ -30,7 +30,7 @@ public:
     //
 
     DirectCommand(FileSystem &fileSystem, PowerManager &powerManager)
-        : fileSystem_(fileSystem), powerManager_(powerManager) {};
+        : fileSystem_(fileSystem), powerManager_(powerManager){};
     void begin();
     void receiveData(const std::shared_ptr<uint8_t[]> &data, uint8_t length);
     void handleCommand(const std::shared_ptr<uint8_t[]> &data, uint8_t length);

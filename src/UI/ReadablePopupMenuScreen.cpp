@@ -1,6 +1,6 @@
 #include "ReadablePopupMenuScreen.hpp"
 
-extern std::shared_ptr<EPubFile> theOneFile_;
+extern std::shared_ptr<EPubFile> theOneFile;
 
 void ReadablePopupMenuScreen::setUpPopupMenu() {
     std::shared_ptr<Place> place = renderer_.getCurrentPlace();
