@@ -76,55 +76,38 @@ void DirectCommand::begin() {
         return false;
     });
 
-    circularPassthroughBuffer_ =
-        static_cast<uint8_t *>(heap_caps_malloc(CIRCULAR_BUFFER_SIZE, MALLOC_CAP_SPIRAM));
-
-    USBSerial::getInstance().registerListener([this](const uint8_t *data, size_t length) {
-        if (length > CIRCULAR_BUFFER_SIZE) {
-            // This should never happen because the RX on the USB serial is limited to 1024
-            // bytes
-            log_e("Data too large for circular buffer");
-            return;
-        }
-        if (length + circularPassthroughBufferPlace_ > CIRCULAR_BUFFER_SIZE) {
-            // Note this relies on that the receiveData below will have already processed
-            // the data from the beginning of the buffer before we get around to this.
-            circularPassthroughBufferPlace_ = 0;
-        }
-        memcpy(circularPassthroughBuffer_ + circularPassthroughBufferPlace_, data, length);
-        int offset = circularPassthroughBufferPlace_;
-        DispatchGetCore0BackgroundQueue()->dispatch(
-            [this, length, offset]() { receiveData(circularPassthroughBuffer_ + offset, length); });
-        circularPassthroughBufferPlace_ += length;
-    });
+    USBSerial::getInstance().registerListener(
+        std::bind(&DirectCommand::receiveData, this, std::placeholders::_1, std::placeholders::_2));
 }
 
-void DirectCommand::handleCommand(const uint8_t *data, uint8_t length) {
+void DirectCommand::handleCommand(std::shared_ptr<uint8_t[]> data, uint8_t length) {
     for (int i = 0; i < length; i++) {
         if (data[i] == '\n') {
             // found newline, process this command
             if (!commandHandlers_.empty() && !commandBuffer_.empty()) {
-                commandBuffer_ = ResolveBackspace(commandBuffer_);
-                for (auto &commandHandler : commandHandlers_) {
+                auto commandBuffer = ResolveBackspace(commandBuffer_);
+                DispatchGetCore0BackgroundQueue()->dispatch([this, commandBuffer] {
                     log_i("Command being received: %s with size %zu", commandBuffer_.c_str(),
                           commandBuffer_.size());
                     std::string commandId;
                     std::string payload;
-                    auto spacePos = commandBuffer_.find(' ');
+                    auto spacePos = commandBuffer.find(' ');
                     if (spacePos != std::string::npos) {
-                        commandId = commandBuffer_.substr(0, spacePos);
-                        payload = commandBuffer_.substr(spacePos + 1);
+                        commandId = commandBuffer.substr(0, spacePos);
+                        payload = commandBuffer.substr(spacePos + 1);
                     } else {
-                        commandId = commandBuffer_;
+                        commandId = commandBuffer;
                     }
                     // Uppercase the commandId
                     std::transform(commandId.begin(), commandId.end(), commandId.begin(),
                                    ::toupper);
-                    if (commandHandler(commandId, payload)) {
-                        // if the command was handled, break out of this loop
-                        break;
-                    };
-                }
+                    for (auto &commandHandler : commandHandlers_) {
+                        if (commandHandler(commandId, payload)) {
+                            // if the command was handled, break out of this loop
+                            break;
+                        };
+                    }
+                });
             }
             commandBuffer_.clear();
         } else if (data[i] != '\r') {
@@ -133,11 +116,12 @@ void DirectCommand::handleCommand(const uint8_t *data, uint8_t length) {
     }
 }
 
-void DirectCommand::receiveData(const uint8_t *data, uint8_t length) {
+void DirectCommand::receiveData(std::shared_ptr<uint8_t[]> data, uint8_t length) {
     // Be sure we don't time out while receiving data
     powerManager_.feedInactivityTimer();
     if (passthroughDataFn_) {
-        passthroughDataFn_(data, length);
+        DispatchGetCore0BackgroundQueue()->dispatch(
+            [this, data, length] { passthroughDataFn_(data, length); });
     } else {
         handleCommand(data, length);
     }

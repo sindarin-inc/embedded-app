@@ -45,7 +45,8 @@ public:
                 }
                 log_i("Got a CONTINUE command");
                 // turn back on the processing of file data
-                directCommand_.setPassthroughData([this](const uint8_t *data, uint8_t length) {
+                directCommand_.setPassthroughData(
+                    [this](std::shared_ptr<uint8_t[]> data, uint8_t length) {
                     fileTransferCallback(data, length);
                 });
                 awaitingCancelContinue_ = false;
@@ -55,7 +56,7 @@ public:
             return false;
         });
     }
-    void fileTransferCallback(const uint8_t *data, size_t rxSize);
+    void fileTransferCallback(std::shared_ptr<uint8_t[]> data, size_t rxSize);
 
 private:
     void handleCommand(const std::string &command, const std::string &payload);

@@ -1,5 +1,7 @@
 #include "Communications/USBSerial.hpp"
 
+#include "Misc/SpiramAllocator.hpp"
+
 extern USBSerial usbSerial;
 
 auto USBSerial::getInstance() -> USBSerial & { return usbSerial; }
@@ -55,14 +57,17 @@ void USBSerial::enableLogging() {
 void USBSerial::rxCommandCallback(int itf, cdcacm_event_t *event) {
 #if CONFIG_USE_TINYUSB_SERIAL
     size_t rxSize = 0;
-    esp_err_t ret = tinyusb_cdcacm_read(static_cast<tinyusb_cdcacm_itf_t>(itf), buffer_,
-                                        sizeof(buffer_) - 1, &rxSize);
+
+    auto buffer = SpiRamArrayPtr<uint8_t>(CONFIG_TINYUSB_CDC_RX_BUFSIZE + 1);
+
+    esp_err_t ret = tinyusb_cdcacm_read(static_cast<tinyusb_cdcacm_itf_t>(itf), buffer.get(),
+                                        CONFIG_TINYUSB_CDC_RX_BUFSIZE, &rxSize);
     if (ret == ESP_OK) {
-        buffer_[rxSize] = '\0';
+        buffer[rxSize] = '\0';
         // Iterate through all the listeners registered with the USBSerial device and send them the
         // data.
         for (auto &listener : listeners_) {
-            listener(buffer_, rxSize);
+            listener(buffer, rxSize);
         }
     }
 #endif
@@ -83,7 +88,7 @@ void USBSerial::popLastListener() {
 // or DirectCommand if needed.
 void USBSerial::txSendData(const uint8_t *data, size_t length) {
 #if CONFIG_USE_TINYUSB_SERIAL
-    size_t chunkSize = CONFIG_USB_CDC_RX_BUFSIZE;
+    size_t chunkSize = CONFIG_TINYUSB_CDC_TX_BUFSIZE;
 
     for (size_t offset = 0; offset < length; offset += chunkSize) {
         size_t bytesToSend = std::min(chunkSize, length - offset);

@@ -83,8 +83,8 @@ void FileTransfer::handleFileCommand(const std::string &command, const std::stri
 
     usbSerial_.txSendData(reinterpret_cast<const uint8_t *>(command.c_str()), command.length());
 
-    directCommand_.setPassthroughData(
-        [this](const uint8_t *data, uint8_t length) { fileTransferCallback(data, length); });
+    directCommand_.setPassthroughData(std::bind(&FileTransfer::fileTransferCallback, this,
+                                                std::placeholders::_1, std::placeholders::_2));
 }
 
 void FileTransfer::handleTransferBookCommand(const std::string &command,
@@ -183,11 +183,11 @@ void FileTransfer::handleEPUB() {
     jsonDoc_ = nullptr;
 }
 
-void FileTransfer::fileTransferCallback(const uint8_t *data, size_t rxSize) {
+void FileTransfer::fileTransferCallback(std::shared_ptr<uint8_t[]> data, size_t rxSize) {
     timeoutTimer_.feed();
-    size_t written = file_.write(data, rxSize);
+    size_t written = file_.write(data.get(), rxSize);
     // Update the hash calculation
-    mbedtls_md_update(&ctx_, data, rxSize);
+    mbedtls_md_update(&ctx_, data.get(), rxSize);
     if (written != rxSize) {
         // Probably need to fail harder here somehow.
         log_e("Failed to write to file the right amount of bits");
