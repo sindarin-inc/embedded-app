@@ -33,8 +33,9 @@ public:
         : fileSystem_(fileSystem), powerManager_(powerManager){};
     void begin();
     void receiveData(const uint8_t *data, uint8_t length);
-    void processCommand(const uint8_t *data, uint8_t length);
-    void addCommandHandler(std::function<bool(std::string)> commandHandler) {
+    void handleCommand(const uint8_t *data, uint8_t length);
+    void addCommandHandler(
+        std::function<bool(std::string commandId, std::string payload)> commandHandler) {
         commandHandlers_.push_back(std::move(commandHandler));
     }
     void setPassthroughData(std::function<void(const uint8_t *, uint8_t)> passthroughDataFn) {
@@ -47,7 +48,7 @@ private:
     FileSystem &fileSystem_;
     PowerManager &powerManager_;
     std::string commandBuffer_;
-    std::vector<std::function<bool(std::string)>> commandHandlers_;
+    std::vector<std::function<bool(std::string commandId, std::string payload)>> commandHandlers_;
     std::function<void(const uint8_t *, uint8_t)> passthroughDataFn_ = nullptr;
     uint8_t *circularPassthroughBuffer_ = nullptr;
     uint16_t circularPassthroughBufferPlace_ = 0;

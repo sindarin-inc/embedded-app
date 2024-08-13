@@ -5,27 +5,27 @@
 #include "Models/Json.hpp"
 #include "Models/Readable.hpp"
 
-void FileTransfer::handleCommand(const std::string &command) {
+void FileTransfer::handleCommand(const std::string &command, const std::string &payload) {
     if (awaitingFinalSuccess_) {
-        if (command.find("FILE PUT SUCCESS") != std::string::npos) {
+        if (command == "FILE" && payload == "PUT SUCCESS") {
             resetState();
             return;
         }
     }
-    if (command.find("FILE PUT") != std::string::npos) {
-        handleFileCommand(command);
-    } else if (command.find("TRANSFER BOOK") != std::string::npos) {
-        handleTransferBookCommand(command);
+    if (command == "FILE" && HasPrefix(payload.c_str(), "PUT")) {
+        handleFileCommand(command, payload);
+    } else if (command == "TRANSFER" && HasPrefix(payload.c_str(), "BOOK")) {
+        handleTransferBookCommand(command, payload);
     } else {
         usbSerial_.txSendData(reinterpret_cast<const uint8_t *>("ERROR"), 6);
     }
 }
 
-void FileTransfer::handleFileCommand(const std::string &command) {
+void FileTransfer::handleFileCommand(const std::string &command, const std::string &payload) {
     // Limited to
     char fileSizeStr[10];
     // Example: "FILE PUT EPUB 12345678 abcdef123456"
-    int numParsed = sscanf(command.c_str(), "FILE PUT %s %s %s", fileType_, fileSizeStr, checksum_);
+    int numParsed = sscanf(payload.c_str(), "PUT %9s %9s %64s", fileType_, fileSizeStr, checksum_);
     if (numParsed != 3) {
         usbSerial_.txSendData(reinterpret_cast<const uint8_t *>("ERROR"), 6);
         return;
@@ -87,9 +87,10 @@ void FileTransfer::handleFileCommand(const std::string &command) {
         [this](const uint8_t *data, uint8_t length) { fileTransferCallback(data, length); });
 }
 
-void FileTransfer::handleTransferBookCommand(const std::string &command) {
+void FileTransfer::handleTransferBookCommand(const std::string &command,
+                                             const std::string &payload) {
     char bookUuid[65]; // Large enough to hold the book UUID as a string
-    if (sscanf(command.c_str(), "TRANSFER BOOK %s", bookUuid) == 1) {
+    if (sscanf(payload.c_str(), "BOOK %64s", bookUuid) == 1) {
         log_i("Transfer Book UUID: %s", bookUuid);
         fileUUID_ = bookUuid;
         usbSerial_.txSendData(reinterpret_cast<const uint8_t *>(command.c_str()), command.length());

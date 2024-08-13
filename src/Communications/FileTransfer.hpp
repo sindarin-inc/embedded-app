@@ -24,10 +24,11 @@ public:
                  DirectCommand &directCommand)
         : fileSystem_(fileSystem), localStore_(localStore), usbSerial_(usbSerial),
           directCommand_(directCommand) {
-        directCommand_.addCommandHandler([this](const std::string &command) {
-            if (command.rfind("FILE", 0) == 0 || command.rfind("TRANSFER", 0) == 0) {
+        directCommand_.addCommandHandler(
+            [this](const std::string &command, const std::string &payload) {
+            if (command == "FILE" || command == "TRANSFER") {
                 log_i("Got a FILE or TRANSFER command and handled in FileTransfer.hpp");
-                handleCommand(command);
+                handleCommand(command, payload);
                 return true;
             } else if (command == "CANCEL") {
                 if (!awaitingCancelContinue_) {
@@ -57,9 +58,9 @@ public:
     void fileTransferCallback(const uint8_t *data, size_t rxSize);
 
 private:
-    void handleCommand(const std::string &command);
-    void handleFileCommand(const std::string &command);
-    void handleTransferBookCommand(const std::string &command);
+    void handleCommand(const std::string &command, const std::string &payload);
+    void handleFileCommand(const std::string &command, const std::string &payload);
+    void handleTransferBookCommand(const std::string &command, const std::string &payload);
     void handleEPUB();
     void handleJSON();
     void unsetPassthroughAndSendPutError();

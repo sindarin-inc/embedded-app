@@ -127,7 +127,7 @@ void UIInnerLoop(RemoteCommand command) {
 // Task for all periodic things that need to run ~1Hz. Polling tasks should be grouped here so that
 // they all complete in a tight loop, thus maximizing sleep time.
 void PollingLoopTask(void *parameter) {
-    directCommand.addCommandHandler([](const std::string &command) {
+    directCommand.addCommandHandler([](const std::string &command, const std::string &payload) {
         log_i("Received debug command: %s", command.c_str());
         if (command == "GRID") {
             DispatchGetUiQueue()->dispatch([]() {

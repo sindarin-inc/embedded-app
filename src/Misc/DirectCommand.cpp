@@ -35,7 +35,7 @@ void DirectCommand::begin() {
     // The only comamnds this class implements are the PROGRAM command which
     // allows the device to enter programming mode and the RESTART command
     // which reboots the device. Also the DEVICE_INFO command.
-    addCommandHandler([this](const std::string &command) {
+    addCommandHandler([this](const std::string &command, const std::string &payload) {
         if (command == "PROGRAM") {
             USBSerial::getInstance().disableLogging();
             USBSerial::getInstance().initJtag();
@@ -99,7 +99,7 @@ void DirectCommand::begin() {
     });
 }
 
-void DirectCommand::processCommand(const uint8_t *data, uint8_t length) {
+void DirectCommand::handleCommand(const uint8_t *data, uint8_t length) {
     for (int i = 0; i < length; i++) {
         if (data[i] == '\n') {
             // found newline, process this command
@@ -108,7 +108,19 @@ void DirectCommand::processCommand(const uint8_t *data, uint8_t length) {
                 for (auto &commandHandler : commandHandlers_) {
                     log_i("Command being received: %s with size %zu", commandBuffer_.c_str(),
                           commandBuffer_.size());
-                    if (commandHandler(commandBuffer_)) {
+                    std::string commandId;
+                    std::string payload;
+                    auto spacePos = commandBuffer_.find(' ');
+                    if (spacePos != std::string::npos) {
+                        commandId = commandBuffer_.substr(0, spacePos);
+                        payload = commandBuffer_.substr(spacePos + 1);
+                    } else {
+                        commandId = commandBuffer_;
+                    }
+                    // Uppercase the commandId
+                    std::transform(commandId.begin(), commandId.end(), commandId.begin(),
+                                   ::toupper);
+                    if (commandHandler(commandId, payload)) {
                         // if the command was handled, break out of this loop
                         break;
                     };
@@ -116,8 +128,6 @@ void DirectCommand::processCommand(const uint8_t *data, uint8_t length) {
             }
             commandBuffer_.clear();
         } else if (data[i] != '\r') {
-            // This used to do toupper but that's no longer needed as we
-            // tighten up the senders and receivers
             commandBuffer_ += data[i];
         }
     }
@@ -129,6 +139,6 @@ void DirectCommand::receiveData(const uint8_t *data, uint8_t length) {
     if (passthroughDataFn_) {
         passthroughDataFn_(data, length);
     } else {
-        processCommand(data, length);
+        handleCommand(data, length);
     }
 }
