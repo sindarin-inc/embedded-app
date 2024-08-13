@@ -304,6 +304,12 @@ void DisplayEinkET013TT1::updateDisplay(DisplaySystem::UpdateType updateType, bo
     }
 
     fullRefreshNext_ = false;
+
+    // Uncomment for some TTF performance debugging
+    // #if CONFIG_FONT_TTF
+    //     font_->getFontData()->cache.showStats();
+    //     log_d("Free stack space: %u", uxTaskGetStackHighWaterMark(nullptr));
+    // #endif
 }
 
 void DisplayEinkET013TT1::drawFullscreenBitmapFromFile(RendererStream &stream) {

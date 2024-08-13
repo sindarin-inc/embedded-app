@@ -14,15 +14,16 @@
 
 class Font {
 private:
-    FT_Face face_;
-    FT_Face privateFace_;
+    FT_Face face_{};
+    FT_Face privateFace_{};
 
     bool initialized_{false};
     FontData &fontData_;
     int size_;
+    int subSupSize_{-1};
     FIX16 spaceSize_{0};
-    uint8_t lastGlyphWidth_;
-    PixelResolution pixelResolution_{DEFAULT_PIXEL_RESOLUTION};
+    uint8_t lastGlyphWidth_{};
+    PixelResolution displayPixelResolution_{DEFAULT_DISPLAY_PIXEL_RESOLUTION};
     PixelResolution fontPixelResolution_{DEFAULT_FONT_PIXEL_RESOLUTION};
 
     GlyphCode unknownGlyphCode_{0};
@@ -43,47 +44,12 @@ private:
     ///
     auto ligKernUTF8Map(const std::string &line, LigKernMappingHandler handler) const -> void;
 
-    inline auto getGlyphHorizontalMetrics(GlyphCode glyphCode, int16_t &xoff, int16_t &advance,
-                                          int16_t &glyphWidth) -> bool {
-
-        FT_Face theFace = (glyphCode >= 0x8000) ? privateFace_ : face_;
-        GlyphCode theGlyphCode = (glyphCode >= 0x8000) ? glyphCode - 0x8000 : glyphCode;
-
-        int error = FT_Load_Glyph(theFace,            /* handle to face object */
-                                  theGlyphCode,       /* glyph index           */
-                                  FT_LOAD_NO_BITMAP); /* get only metrics      */
-
-        if (error) {
-            return false;
-        }
-
-        xoff = theFace->glyph->bitmap_left;
-        advance = theFace->glyph->advance.x >> 6;
-        glyphWidth = theFace->glyph->bitmap.width;
-
-        return true;
-    }
-
-    [[nodiscard]] inline auto getGlyphHOffset(GlyphCode glyphCode) -> int8_t {
-        Glyph glyph;
-
-        if (getGlyphMetrics(glyphCode, glyph)) {
-            return glyph.metrics.xoff;
-        }
-
-        return 0;
-    }
-
     auto ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2, FIX16 *kern) const -> bool;
-    auto getGlyph(GlyphCode glyphCode, Glyph &appGlyph, bool loadBitmap, bool caching = true,
-                  Pos atPos = Pos(0, 0), bool inverted = false) -> bool;
-    auto getGlyphMetrics(GlyphCode glyphCode, Glyph &appGlyph) -> bool;
 
-    void copyBitmap(Bitmap &to, bool toHeightBit, Bitmap &from, Pos atPos, bool inverted);
+    void copyBitmap(Bitmap &to, const Bitmap &from, Pos atPos, bool inverted);
 
 public:
     Font(FontData &fontData, int size) noexcept : fontData_(fontData), size_(size) {
-        initialized_ = false;
 
         if (fontData_.isInitialized()) {
             int error =
@@ -103,34 +69,36 @@ public:
 
                     GlyphCode glyphCode = FT_Get_Char_Index(face_, ' ');
 
-                    error = FT_Load_Glyph(face_,              /* handle to face object */
-                                          glyphCode,          /* glyph index           */
-                                          FT_LOAD_NO_BITMAP); /* load flags */
-                    if (error) {
-                        LOGE("Unable to load glyph for space char.");
-                    } else {
-                        spaceSize_ = static_cast<FIX16>(face_->glyph->advance.x);
-                        error = FT_New_Memory_Face(
-                            fontData_.getLibrary(), (const FT_Byte *)(fontData_.getPrivateData()),
-                            fontData_.getPrivateDataSize(), 0, &privateFace_);
-                        if (error) {
-                            LOGE("The memory of the private font format is unsupported or is "
-                                 "broken (%d).",
-                                 error);
-                        } else {
-                            error = FT_Set_Char_Size(
-                                privateFace_,         // handle to face object
-                                0,                    // char_width in 1/64th of points
-                                size_ * 64,           // char_height in 1/64th of points
-                                SCREEN_RES_PER_INCH,  // horizontal device resolution
-                                SCREEN_RES_PER_INCH); // vertical device resolution
-                            if (error) {
-                                LOGE("Unable to set private font size.");
-                            }
+                    std::optional<const Glyph *> glyph = fontData_.cache.getGlyph(
+                        *this, glyphCode, subSupSize_ >= 0 ? subSupSize_ : size_);
 
-                            unknownGlyphCode_ = translate(UNKNOWN_CODEPOINT);
-                            initialized_ = true;
+                    if (!glyph.has_value()) {
+                        LOGE("Unable to load glyph for space char.");
+                        spaceSize_ = 5 * 64; // Use a default size
+                    } else {
+                        spaceSize_ = glyph.value()->metrics.advance;
+                    }
+
+                    error = FT_New_Memory_Face(fontData_.getLibrary(),
+                                               (const FT_Byte *)(fontData_.getPrivateData()),
+                                               fontData_.getPrivateDataSize(), 0, &privateFace_);
+                    if (error) {
+                        LOGE("The memory of the private font format is unsupported or is "
+                             "broken (%d).",
+                             error);
+                    } else {
+                        error =
+                            FT_Set_Char_Size(privateFace_,        // handle to face object
+                                             0,                   // char_width in 1/64th of points
+                                             size_ * 64,          // char_height in 1/64th of points
+                                             SCREEN_RES_PER_INCH, // horizontal device resolution
+                                             SCREEN_RES_PER_INCH); // vertical device resolution
+                        if (error) {
+                            LOGE("Unable to set private font size.");
                         }
+
+                        unknownGlyphCode_ = translate(UNKNOWN_CODEPOINT);
+                        initialized_ = true;
                     }
                 }
             }
@@ -154,19 +122,54 @@ public:
         return isInitialized() ? face_->size->metrics.height >> 6 : 0;
     }
 
-    inline void setPixelResolution(PixelResolution res) { pixelResolution_ = res; }
+    [[nodiscard]] inline auto getFontData() const -> FontData * { return &fontData_; }
 
-    [[nodiscard]] inline auto getPixelResolution() const -> PixelResolution {
-        return (initialized_) ? pixelResolution_ : DEFAULT_PIXEL_RESOLUTION;
+    auto getGlyphForCache(GlyphCode glyphCode, Glyph &glyph) -> bool;
+
+    [[nodiscard]] inline auto setDisplayPixelResolution(PixelResolution res) -> bool {
+#if CONFIG_DISPLAY_PIXEL_RESOLUTION_IS_FIX
+        log_w("The display does not allow to change it's pixel resolution!");
+        return false;
+#else
+        if (initialized_) {
+            if (displayPixelResolution_ != res) {
+                // check for coherence of fontPixelResolution
+                if ((res == PixelResolution::ONE_BIT) &&
+                    (fontPixelResolution_ == PixelResolution::EIGHT_BITS)) {
+                    setFontPixelResolution(PixelResolution::ONE_BIT);
+                }
+                displayPixelResolution_ = res;
+            }
+        }
+        return true;
+#endif
     }
 
-    inline void setFontPixelResolution(PixelResolution res) { fontPixelResolution_ = res; }
+    [[nodiscard]] inline auto getDisplayPixelResolution() const -> PixelResolution {
+        return (initialized_) ? displayPixelResolution_ : DEFAULT_DISPLAY_PIXEL_RESOLUTION;
+    }
+
+    inline void setFontPixelResolution(PixelResolution res) {
+        if (initialized_) {
+            if (fontPixelResolution_ != res) {
+                if ((res == PixelResolution::EIGHT_BITS) &&
+                    (displayPixelResolution_ != PixelResolution::EIGHT_BITS)) {
+                    log_e(
+                        "Cannot set font resolution to EIGHT_BITS if the display resolution is not "
+                        "EIGHT_BITS!");
+                } else {
+                    fontData_.cache.clear();
+                    fontPixelResolution_ = res;
+                }
+            }
+        }
+    }
 
     [[nodiscard]] inline auto getFontPixelResolution() const -> PixelResolution {
         return (initialized_) ? fontPixelResolution_ : DEFAULT_FONT_PIXEL_RESOLUTION;
     }
 
-    auto translate(char32_t codePoint) const -> GlyphCode;
+    [[nodiscard]] auto translate(char32_t codePoint) const -> GlyphCode;
 
     auto drawSingleLineOfText(font_defs::Bitmap &canvas, font_defs::Pos pos,
                               const std::string &line, bool inverted) -> int;
@@ -180,36 +183,34 @@ public:
 
     // inline auto getTextWidthQuick(const char *buffer) -> int { return getTextWidth(buffer); }
     inline auto getTextWidthQuick(const char *buffer) -> int16_t {
-        if constexpr (TTF_TRACING) {
-            LOGD("getTextWidthQuick()");
-        }
 
         int16_t width = 0;
 
-        // log_w("word: %s", buffer);
-
-        const char *b = buffer;
-
         while (*buffer) {
-            int16_t xoff;
-            int16_t advance;
-            int16_t glyphWidth;
+
             GlyphCode glyphCode = translate(toChar32(&buffer));
 
-            if (getGlyphHorizontalMetrics(glyphCode, xoff, advance, glyphWidth)) {
-                width += (*buffer == '\0') ? (glyphWidth - xoff) : advance;
+            if (glyphCode == SPACE_CODE) {
+                width += spaceSize_ >> 6;
+            } else {
+                std::optional<const Glyph *> glyph = fontData_.cache.getGlyph(
+                    *this, glyphCode, subSupSize_ >= 0 ? subSupSize_ : size_);
+                if (glyph.has_value()) {
+                    width += (*buffer == '\0')
+                                 ? (glyph.value()->bitmap.dim.width - glyph.value()->metrics.xoff)
+                                 : (glyph.value()->metrics.advance >> 6);
+                }
             }
         }
 
-        // log_w(" width quick: %" PRIi16 ": %s", width, b);
         return width;
     }
 
     inline void setSupSubFontSize() {
-        int newSize = (size_ - SUP_SUB_FONT_DOWNSIZING) * 64;
+        subSupSize_ = (size_ - SUP_SUB_FONT_DOWNSIZING) * 64;
         int error = FT_Set_Char_Size(face_,                // handle to face object
                                      0,                    // char_width in 1/64th of points
-                                     newSize,              // char_height in 1/64th of points
+                                     subSupSize_,          // char_height in 1/64th of points
                                      SCREEN_RES_PER_INCH,  // horizontal device resolution
                                      SCREEN_RES_PER_INCH); // vertical device resolution
         if (error) {
@@ -218,6 +219,7 @@ public:
     }
 
     inline void setNormalFontSize() {
+        subSupSize_ = -1;
         int error = FT_Set_Char_Size(face_,                // handle to face object
                                      0,                    // char_width in 1/64th of points
                                      size_ * 64,           // char_height in 1/64th of points

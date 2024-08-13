@@ -52,21 +52,28 @@ public:
         return isInitialized() ? fontData_->getFace(faceIndex_) : nullptr;
     }
 
-    inline void setPixelResolution(PixelResolution res) {
+    inline auto setDisplayPixelResolution(PixelResolution res) -> bool {
+#if CONFIG_DISPLAY_PIXEL_RESOLUTION_IS_FIX
+        log_w("The display does not allow to change it's pixel resolution!");
+        return false;
+#else
+
         if constexpr (IBMF_TRACING) {
-            LOGD("setPixelResolution()");
+            LOGD("setDisplayPixelResolution_()");
         }
         if (isInitialized()) {
-            fontData_->getFace(faceIndex_)->setPixelResolution(res);
+            fontData_->getFace(faceIndex_)->setDisplayPixelResolution(res);
+            return true;
         }
+#endif
     }
 
-    [[nodiscard]] inline auto getPixelResolution() const -> PixelResolution {
+    [[nodiscard]] inline auto getDisplayPixelResolution() const -> PixelResolution {
         if constexpr (IBMF_TRACING) {
-            LOGD("getPixelResolution()");
+            LOGD("getDisplayPixelResolution_()");
         }
-        return (isInitialized()) ? fontData_->getFace(faceIndex_)->getPixelResolution()
-                                 : DEFAULT_PIXEL_RESOLUTION;
+        return (isInitialized()) ? fontData_->getFace(faceIndex_)->getDisplayPixelResolution()
+                                 : DEFAULT_DISPLAY_PIXEL_RESOLUTION;
     }
 
     [[nodiscard]] inline auto lineHeight() const -> int {
@@ -82,10 +89,10 @@ public:
 
     auto drawSingleLineOfText(ibmf_defs::Bitmap &canvas, ibmf_defs::Pos pos,
                               const std::string &line, bool inverted) const -> int;
-    auto getTextSize(const std::string &buffer) -> ibmf_defs::Dim;
+    [[nodiscard]] auto getTextSize(const std::string &buffer) const -> ibmf_defs::Dim;
     auto getTextWidth(const std::string &buffer) -> int;
 
-    auto getTextHeight(const std::string &buffer) -> int;
+    [[nodiscard]] auto getTextHeight(const std::string &buffer) const -> int;
 
     // Non-validating algorithm
     auto toChar32(const char **str) -> char32_t;

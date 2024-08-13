@@ -23,6 +23,15 @@ fi
 
 cp ../modules.cfg .
 
+# Save the original ftoption.h file. See at the end of the build below for its
+# recovery
+
+if [ ! -f ../freetype/include/freetype/config/ftoption.h.orig ]; then
+    mv ../freetype/include/freetype/config/ftoption.h ../freetype/include/freetype/config/ftoption.h.orig
+fi
+
+cp ../ftoption.h ../freetype/include/freetype/config/ftoption.h
+
 ./configure --host=xtensa-esp32s3-elf --prefix=$PWD/../esp32s3 --disable-shared --enable-static \
   --with-png=no \
   --with-zlib=no \
@@ -36,9 +45,17 @@ cp ../modules.cfg .
   --with-quickdraw-toolbox=no \
   --with-quickdraw-carbon=no \
   --with-ats=no \
-  CFLAGS="-mlongcalls"
+  CFLAGS="-mlongcalls -O2"
 
 make
 make install
 make clean
+
+# This is to remove the copied ftoption.h from the FreeType component such as
+# git won't see it as a change to an imported component.
+
+if [ -f ../freetype/include/freetype/config/ftoption.h.orig ]; then
+    mv ../freetype/include/freetype/config/ftoption.h.orig ../freetype/include/freetype/config/ftoption.h 
+fi
+
 cd ..

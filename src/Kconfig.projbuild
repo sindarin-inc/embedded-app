@@ -1,6 +1,6 @@
 menu "Sol Options"
 
-    menu "Display Type"
+    menu "Display Settings"
         choice
             prompt "Select Display Type"
             default DISPLAY_EINKET013TT1
@@ -15,6 +15,15 @@ menu "Sol Options"
                 bool "M5Stack Module Display (HDMI)"
 
         endchoice
+
+        config DISPLAY_PIXEL_RESOLUTION_IS_FIX
+            bool "Set to n for displays that support changing their pixel resolution dynamically."
+            default y
+
+        config TTF_SCREEN_RES_PER_INCH
+            int "Screen resolution per inch (for TTF sizing)"
+            default 150
+
     endmenu
 
     menu "BLE Settings"
