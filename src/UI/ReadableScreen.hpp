@@ -40,9 +40,6 @@ public:
           readableSummaryScreen_(prefs, fileSystem, readable, display, renderer_),
           leftArrowView_(display, ArrowLeft), rightArrowView_(display, ArrowRight),
           upArrowView_(display, ArrowUp), downArrowView_(display, ArrowDown) {
-
-        log_d("Type in ReadableScreen constructor is %s", typeid(*(stream_.get())).name());
-
         currentScreen_ = this;
         renderer_.setStream(stream);
 
