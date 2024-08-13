@@ -35,7 +35,7 @@ void DirectCommand::begin() {
     // The only comamnds this class implements are the PROGRAM command which
     // allows the device to enter programming mode and the RESTART command
     // which reboots the device. Also the DEVICE_INFO command.
-    addCommandHandler([this](const std::string &command) {
+    addCommandHandler([this](const std::string &command, const std::string &payload) {
         if (command == "PROGRAM") {
             USBSerial::getInstance().disableLogging();
             USBSerial::getInstance().initJtag();
@@ -64,7 +64,7 @@ void DirectCommand::begin() {
             std::string response = "SERIAL_NUMBER," + serialNumber + ";MAC_ADDRESS," + macAddress +
                                    ";FREE_SPACE," + freeSpace + "\n";
 
-            log_d("Sending device info: %s with size %d", response.c_str(), response.size());
+            log_d("Sending device info: %s with size %zu", response.c_str(), response.size());
             USBSerial::getInstance().txSendData(reinterpret_cast<const uint8_t *>(response.c_str()),
                                                 response.size());
             return true;
@@ -76,59 +76,55 @@ void DirectCommand::begin() {
         return false;
     });
 
-    circularPassthroughBuffer_ =
-        static_cast<uint8_t *>(heap_caps_malloc(CIRCULAR_BUFFER_SIZE, MALLOC_CAP_SPIRAM));
-
-    USBSerial::getInstance().registerListener([this](const uint8_t *data, size_t length) {
-        if (length > CIRCULAR_BUFFER_SIZE) {
-            // This should never happen because the RX on the USB serial is limited to 1024
-            // bytes
-            log_e("Data too large for circular buffer");
-            return;
-        }
-        if (length + circularPassthroughBufferPlace_ > CIRCULAR_BUFFER_SIZE) {
-            // Note this relies on that the receiveData below will have already processed
-            // the data from the beginning of the buffer before we get around to this.
-            circularPassthroughBufferPlace_ = 0;
-        }
-        memcpy(circularPassthroughBuffer_ + circularPassthroughBufferPlace_, data, length);
-        int offset = circularPassthroughBufferPlace_;
-        DispatchGetCore0BackgroundQueue()->dispatch(
-            [this, length, offset]() { receiveData(circularPassthroughBuffer_ + offset, length); });
-        circularPassthroughBufferPlace_ += length;
+    USBSerial::getInstance().registerListener(
+        [this](const std::shared_ptr<uint8_t[]> &data, uint8_t length) {
+        receiveData(data, length);
     });
 }
 
-void DirectCommand::processCommand(const uint8_t *data, uint8_t length) {
+void DirectCommand::handleCommand(const std::shared_ptr<uint8_t[]> &data, uint8_t length) {
     for (int i = 0; i < length; i++) {
         if (data[i] == '\n') {
             // found newline, process this command
             if (!commandHandlers_.empty() && !commandBuffer_.empty()) {
-                commandBuffer_ = ResolveBackspace(commandBuffer_);
-                for (auto &commandHandler : commandHandlers_) {
-                    log_i("Command being received: %s with size %zu", commandBuffer_.c_str(),
-                          commandBuffer_.size());
-                    if (commandHandler(commandBuffer_)) {
-                        // if the command was handled, break out of this loop
-                        break;
-                    };
-                }
+                auto commandBuffer = ResolveBackspace(commandBuffer_);
+                DispatchGetCore0BackgroundQueue()->dispatch([this, commandBuffer] {
+                    log_i("Command being received: %s with size %zu", commandBuffer.c_str(),
+                          commandBuffer.size());
+                    std::string commandId;
+                    std::string payload;
+                    auto spacePos = commandBuffer.find(' ');
+                    if (spacePos != std::string::npos) {
+                        commandId = commandBuffer.substr(0, spacePos);
+                        payload = commandBuffer.substr(spacePos + 1);
+                    } else {
+                        commandId = commandBuffer;
+                    }
+                    // Uppercase the commandId
+                    std::transform(commandId.begin(), commandId.end(), commandId.begin(),
+                                   ::toupper);
+                    for (auto &commandHandler : commandHandlers_) {
+                        if (commandHandler(commandId, payload)) {
+                            // if the command was handled, break out of this loop
+                            break;
+                        };
+                    }
+                });
             }
             commandBuffer_.clear();
         } else if (data[i] != '\r') {
-            // This used to do toupper but that's no longer needed as we
-            // tighten up the senders and receivers
             commandBuffer_ += data[i];
         }
     }
 }
 
-void DirectCommand::receiveData(const uint8_t *data, uint8_t length) {
+void DirectCommand::receiveData(const std::shared_ptr<uint8_t[]> &data, uint8_t length) {
     // Be sure we don't time out while receiving data
     powerManager_.feedInactivityTimer();
     if (passthroughDataFn_) {
-        passthroughDataFn_(data, length);
+        DispatchGetCore0BackgroundQueue()->dispatch(
+            [this, data, length] { passthroughDataFn_(data, length); });
     } else {
-        processCommand(data, length);
+        handleCommand(data, length);
     }
 }

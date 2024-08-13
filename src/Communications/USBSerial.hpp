@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <cstring>
 #include <esp_err.h>
+#include <memory>
 #include <tinyusb.h>
 
 #if CONFIG_USE_TINYUSB_SERIAL
@@ -16,8 +17,6 @@
 #include <utility>
 
 #include "sindarin-debug.h"
-
-#define CONFIG_USB_CDC_RX_BUFSIZE 1024
 
 class USBSerial {
 public:
@@ -33,12 +32,11 @@ public:
     void disableLogging();
     void enableLogging();
 
-    using SerialDataListener = std::function<void(const uint8_t *data, size_t length)>;
+    using SerialDataListener = std::function<void(std::shared_ptr<uint8_t[]>, size_t length)>;
     void registerListener(const SerialDataListener &listener);
     void popLastListener();
 
 private:
-    uint8_t buffer_[CONFIG_USB_CDC_RX_BUFSIZE + 1]{};
     enum class BootloaderState { Idle, State1, State2, State3, State4, State5, State6, State7 };
     BootloaderState currentState_{BootloaderState::Idle};
     std::vector<SerialDataListener> listeners_;

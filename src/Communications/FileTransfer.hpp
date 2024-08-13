@@ -7,6 +7,7 @@
 
 #include "Communications/USBSerial.hpp"
 #include "Misc/DirectCommand.hpp"
+#include "Misc/InactivityTimer.hpp"
 #include "Storage/FileSystem.hpp"
 #include "Storage/LocalStore.hpp"
 #include "freertos/FreeRTOS.h"
@@ -23,10 +24,11 @@ public:
                  DirectCommand &directCommand)
         : fileSystem_(fileSystem), localStore_(localStore), usbSerial_(usbSerial),
           directCommand_(directCommand) {
-        directCommand_.addCommandHandler([this](const std::string &command) {
-            if (command.rfind("FILE", 0) == 0 || command.rfind("TRANSFER", 0) == 0) {
+        directCommand_.addCommandHandler(
+            [this](const std::string &command, const std::string &payload) {
+            if (command == "FILE" || command == "TRANSFER") {
                 log_i("Got a FILE or TRANSFER command and handled in FileTransfer.hpp");
-                handleCommand(command);
+                handleCommand(command, payload);
                 return true;
             } else if (command == "CANCEL") {
                 if (!awaitingCancelContinue_) {
@@ -43,7 +45,8 @@ public:
                 }
                 log_i("Got a CONTINUE command");
                 // turn back on the processing of file data
-                directCommand_.setPassthroughData([this](const uint8_t *data, uint8_t length) {
+                directCommand_.setPassthroughData(
+                    [this](const std::shared_ptr<uint8_t[]> &data, uint8_t length) {
                     fileTransferCallback(data, length);
                 });
                 awaitingCancelContinue_ = false;
@@ -53,12 +56,12 @@ public:
             return false;
         });
     }
-    void fileTransferCallback(const uint8_t *data, size_t rxSize);
+    void fileTransferCallback(const std::shared_ptr<uint8_t[]> &data, size_t rxSize);
 
 private:
-    void handleCommand(const std::string &command);
-    void handleFileCommand(const std::string &command);
-    void handleTransferBookCommand(const std::string &command);
+    void handleCommand(const std::string &command, const std::string &payload);
+    void handleFileCommand(const std::string &command, const std::string &payload);
+    void handleTransferBookCommand(const std::string &command, const std::string &payload);
     void handleEPUB();
     void handleJSON();
     void unsetPassthroughAndSendPutError();
@@ -68,29 +71,9 @@ private:
         fileName_.clear();
         fileSize_ = 0;
         bytesReceived_ = 0;
-        // runningChecksum_ = 0;
         awaitingCancelContinue_ = false;
         awaitingFinalSuccess_ = false;
-        xTimerStop(timeoutTimer_, 0);
-    }
-
-    void timeoutTimerCallback(TimerHandle_t xTimer) {
-        if (timerFed_ == false) {
-            log_e("Timed out! Resetting state to accept other commands");
-            unsetPassthroughAndSendPutError();
-            xTimerStop(xTimer, 0);
-        } else {
-            timerFed_ = false;
-        }
-    }
-
-    // Static trampoline function
-    static void timerCallbackTrampoline(TimerHandle_t xTimer) {
-        // Retrieve the instance pointer we stored as the timer ID
-        auto *instance = static_cast<FileTransfer *>(pvTimerGetTimerID(xTimer));
-        if (instance) {
-            instance->timeoutTimerCallback(xTimer);
-        }
+        timeoutTimer_.stop();
     }
 
     FileSystem &fileSystem_;
@@ -99,19 +82,16 @@ private:
     DirectCommand &directCommand_;
 
     char fileType_[10]{};
-    char fileNameCharStr_[65]{};
     std::string fileName_;
     std::string fileUUID_;
     int fileSize_ = 0;
     int bytesReceived_ = 0;
     char checksum_[65]{};
-    int runningChecksum_ = 0;
     mbedtls_md_context_t ctx_{};
     mbedtls_md_type_t mdType_ = MBEDTLS_MD_SHA256;
     bool awaitingCancelContinue_ = false;
     bool awaitingFinalSuccess_ = false;
-    TimerHandle_t timeoutTimer_ = nullptr;
-    bool timerFed_ = false;
+    InactivityTimer timeoutTimer_;
     SFile file_;
     std::unique_ptr<SpiRamJsonDocument> jsonDoc_ = nullptr;
 };

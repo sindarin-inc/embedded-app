@@ -5,30 +5,40 @@
 #include "Models/Json.hpp"
 #include "Models/Readable.hpp"
 
-void FileTransfer::handleCommand(const std::string &command) {
+void FileTransfer::handleCommand(const std::string &command, const std::string &payload) {
     if (awaitingFinalSuccess_) {
-        if (command.find("FILE PUT SUCCESS") != std::string::npos) {
+        if (command == "FILE" && payload == "PUT SUCCESS") {
             resetState();
             return;
         }
     }
-    if (command.find("FILE PUT") != std::string::npos) {
-        handleFileCommand(command);
-    } else if (command.find("TRANSFER BOOK") != std::string::npos) {
-        handleTransferBookCommand(command);
+    if (command == "FILE" && HasPrefix(payload.c_str(), "PUT")) {
+        handleFileCommand(command, payload);
+    } else if (command == "TRANSFER" && HasPrefix(payload.c_str(), "BOOK")) {
+        handleTransferBookCommand(command, payload);
     } else {
         usbSerial_.txSendData(reinterpret_cast<const uint8_t *>("ERROR"), 6);
     }
 }
 
-void FileTransfer::handleFileCommand(const std::string &command) {
-    char checksumStr[65]; // Large enough to hold the checksum as a string
+void FileTransfer::handleFileCommand(const std::string &command, const std::string &payload) {
+    // Limited to
+    char fileSizeStr[10];
     // Example: "FILE PUT EPUB 12345678 abcdef123456"
-    sscanf(command.c_str(), "FILE PUT %s %d %s", fileType_, &fileSize_, checksumStr);
-    fileName_ = StringFormat("/book/%s.epub", fileUUID_.c_str());
-    memcpy(checksum_, checksumStr, 65);
+    int numParsed = sscanf(payload.c_str(), "PUT %9s %9s %64s", fileType_, fileSizeStr, checksum_);
+    if (numParsed != 3) {
+        usbSerial_.txSendData(reinterpret_cast<const uint8_t *>("ERROR"), 6);
+        return;
+    }
 
-    runningChecksum_ = 0;
+    fileSize_ = strtol(fileSizeStr, nullptr, 10);
+    if (fileSize_ == 0) {
+        usbSerial_.txSendData(reinterpret_cast<const uint8_t *>("ERROR"), 6);
+        return;
+    }
+
+    fileName_ = StringFormat("/book/%s.epub", fileUUID_.c_str());
+
     bytesReceived_ = 0;
 
     fileSystem_.createDir("/book", true);
@@ -52,26 +62,11 @@ void FileTransfer::handleFileCommand(const std::string &command) {
         usbSerial_.txSendData(reinterpret_cast<const uint8_t *>("ERROR"), 6);
         return;
     }
-    // Create a timer that triggers once after 5 seconds
-    timeoutTimer_ = xTimerCreate("FileSendTimer",     // Timer name
-                                 pdMS_TO_TICKS(5000), // Timer period in ticks (5000 ms = 5 seconds)
-                                 pdTRUE,              // Auto-reload -- repeating timer
-                                 static_cast<void *>(this), // Timer ID (passing 'this' pointer)
-                                 timerCallbackTrampoline    // Static trampoline function
-    );
 
-    if (timeoutTimer_ == nullptr) {
-        log_e("Failed to create timer");
-        usbSerial_.txSendData(reinterpret_cast<const uint8_t *>("ERROR"), 6);
-        return;
-    } else {
-        // Start the timer
-        if (xTimerStart(timeoutTimer_, 0) != pdPASS) {
-            log_e("Failed to start timer");
-            usbSerial_.txSendData(reinterpret_cast<const uint8_t *>("ERROR"), 6);
-            return;
-        }
-    }
+    timeoutTimer_.start([this]() {
+        log_e("Timed out! Resetting state to accept other commands");
+        unsetPassthroughAndSendPutError();
+    }, 5000);
 
     // Set up the ctx_ hash calculation context
 
@@ -85,17 +80,24 @@ void FileTransfer::handleFileCommand(const std::string &command) {
     mbedtls_md_starts(&ctx_);
 
     usbSerial_.txSendData(reinterpret_cast<const uint8_t *>(command.c_str()), command.length());
+    usbSerial_.txSendData(reinterpret_cast<const uint8_t *>(" "), 1);
+    usbSerial_.txSendData(reinterpret_cast<const uint8_t *>(payload.c_str()), payload.length());
 
     directCommand_.setPassthroughData(
-        [this](const uint8_t *data, uint8_t length) { fileTransferCallback(data, length); });
+        [this](const std::shared_ptr<uint8_t[]> &data, uint8_t length) {
+        fileTransferCallback(data, length);
+    });
 }
 
-void FileTransfer::handleTransferBookCommand(const std::string &command) {
+void FileTransfer::handleTransferBookCommand(const std::string &command,
+                                             const std::string &payload) {
     char bookUuid[65]; // Large enough to hold the book UUID as a string
-    if (sscanf(command.c_str(), "TRANSFER BOOK %s", bookUuid) == 1) {
+    if (sscanf(payload.c_str(), "BOOK %64s", bookUuid) == 1) {
         log_i("Transfer Book UUID: %s", bookUuid);
         fileUUID_ = bookUuid;
         usbSerial_.txSendData(reinterpret_cast<const uint8_t *>(command.c_str()), command.length());
+        usbSerial_.txSendData(reinterpret_cast<const uint8_t *>(" "), 1);
+        usbSerial_.txSendData(reinterpret_cast<const uint8_t *>(payload.c_str()), payload.length());
     } else {
         usbSerial_.txSendData(reinterpret_cast<const uint8_t *>("ERROR"), 6);
     }
@@ -185,12 +187,11 @@ void FileTransfer::handleEPUB() {
     jsonDoc_ = nullptr;
 }
 
-void FileTransfer::fileTransferCallback(const uint8_t *data, size_t rxSize) {
-    timerFed_ = true;
-    size_t written = file_.write(data, rxSize);
+void FileTransfer::fileTransferCallback(const std::shared_ptr<uint8_t[]> &data, size_t rxSize) {
+    timeoutTimer_.feed();
+    size_t written = file_.write(data.get(), rxSize);
     // Update the hash calculation
-    mbedtls_md_update(&ctx_, data, rxSize);
-    // runningChecksum_ = calculateChecksum(data, rxSize, runningChecksum_);
+    mbedtls_md_update(&ctx_, data.get(), rxSize);
     if (written != rxSize) {
         // Probably need to fail harder here somehow.
         log_e("Failed to write to file the right amount of bits");
@@ -215,7 +216,9 @@ void FileTransfer::fileTransferCallback(const uint8_t *data, size_t rxSize) {
 
         // Convert hash to hexadecimal string
         for (int i = 0; i < 32; i++) {
-            snprintf(&hashHex[i * 2], 3, "%02x", static_cast<unsigned int>(hash[i]));
+            if (!snprintf(&hashHex[i * 2], 3, "%02x", static_cast<unsigned int>(hash[i]))) {
+                log_e("Failed to convert hash to hex");
+            };
         }
 
         if (memcmp(checksum_, hashHex, 64) != 0) {

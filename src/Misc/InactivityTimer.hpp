@@ -54,6 +54,15 @@ public:
         xTimerStart(timer_, portMAX_DELAY);
     }
 
+    void stop() {
+        if (timer_ == nullptr) {
+            return;
+        }
+        xTimerStop(timer_, portMAX_DELAY);
+        xTimerDelete(timer_, portMAX_DELAY);
+        timer_ = nullptr;
+    }
+
 private:
     static void timerCallback(TimerHandle_t timer) {
         // Get the instance of the InactivityTimer from the timer handle.

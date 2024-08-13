@@ -234,15 +234,7 @@ void PowerManager::wakeupCheck(SolClock &clock) {
 
 auto PowerManager::inactivityTimeoutMs() -> int {
     if (state_ == PowerState::ActiveUSBCharging) {
-        if (PreferencesStore::paired == PairedStatus::Paired) {
-            // Because the user might be plugged into computer, we wait 5 minutes
-            // to turn off.
-            return 5 * 60 * 1000;
-        } else {
-            // Longer timeout for unpaired glasses in case users try to set-up the glasses while
-            // connected to USB
-            return 5 * 60 * 1000;
-        }
+        return 5 * 60 * 1000;
     } else if (state_ == PowerState::ActiveOverTemp) {
         // Shutdown relatively quickly if we're too hot
         return 10 * 1000;
@@ -265,12 +257,10 @@ auto PowerManager::begin() -> esp_err_t {
     }
     // Disable inactivity timer in emc testing mode
     if (!prefs_.emcMode.get().value_or(false)) {
-        inactivityTimer_.start(
-            [this]() {
+        inactivityTimer_.start([this]() {
             log_i("Inactive! Close and open temple to wake");
             deepSleep(SleepReason::Inactivity);
-            },
-            inactivityTimeoutMs());
+        }, inactivityTimeoutMs());
     }
 #endif
 
@@ -286,9 +276,7 @@ auto PowerManager::begin() -> esp_err_t {
     err = esp_pm_configure(&pmConfig_);
 
 #if CONFIG_USB_CONNECTED_PIN != GPIO_NUM_NC
-    attachInterrupt(
-        digitalPinToInterrupt(CONFIG_USB_CONNECTED_PIN),
-        [this]() {
+    attachInterrupt(digitalPinToInterrupt(CONFIG_USB_CONNECTED_PIN), [this]() {
         DispatchGetCore1BackgroundQueue()->dispatchFromISR([this]() {
             if (USBConnected()) {
                 // If USB is connected, disable operation unless we've disabled this behavior
@@ -312,8 +300,7 @@ auto PowerManager::begin() -> esp_err_t {
                 }
             }
         });
-        },
-        CHANGE);
+    }, CHANGE);
 #endif
 #endif
 
