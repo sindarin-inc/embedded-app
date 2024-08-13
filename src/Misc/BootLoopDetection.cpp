@@ -74,10 +74,11 @@ void BootLoopCheck(FileSystem &fs, PowerManager &pm) {
     auto resetReason = esp_reset_reason();
     if (resetReason != ESP_RST_PANIC && resetReason != ESP_RST_INT_WDT &&
         resetReason != ESP_RST_TASK_WDT) {
-        if (badBootCount != 0) {
+        // If we're coming from a POWERON, this value is meaningless so we don't log it
+        if (badBootCount != 0 && resetReason != ESP_RST_POWERON) {
             log_i("Good boot after %d bad boots", badBootCount);
-            badBootCount = 0;
         }
+        badBootCount = 0;
         return;
     }
 

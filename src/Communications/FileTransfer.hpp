@@ -36,7 +36,7 @@ public:
                 }
                 log_i("Transfer canceled by the sender");
                 file_.close();
-                usbSerial_.txSendData(reinterpret_cast<const uint8_t *>("CANCEL"), 7);
+                usbSerial_.txSendLine("CANCEL");
                 awaitingCancelContinue_ = false;
                 return true;
             } else if (command == "CONTINUE") {
@@ -50,7 +50,7 @@ public:
                     fileTransferCallback(data, length);
                 });
                 awaitingCancelContinue_ = false;
-                usbSerial_.txSendData(reinterpret_cast<const uint8_t *>("CONTINUE"), 9);
+                usbSerial_.txSendLine("CONTINUE");
                 return true;
             }
             return false;
