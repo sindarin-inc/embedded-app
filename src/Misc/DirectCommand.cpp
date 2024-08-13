@@ -75,8 +75,8 @@ void DirectCommand::begin() {
     });
 
     USBSerial::getInstance().registerListener(
-        [this](std::shared_ptr<uint8_t[]> data, uint8_t length) {
-        receiveData(std::move(data), length);
+        [this](const std::shared_ptr<uint8_t[]> &data, uint8_t length) {
+        receiveData(data, length);
     });
 }
 

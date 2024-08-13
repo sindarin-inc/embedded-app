@@ -46,8 +46,8 @@ public:
                 log_i("Got a CONTINUE command");
                 // turn back on the processing of file data
                 directCommand_.setPassthroughData(
-                    [this](std::shared_ptr<uint8_t[]> data, uint8_t length) {
-                    fileTransferCallback(std::move(data), length);
+                    [this](const std::shared_ptr<uint8_t[]> &data, uint8_t length) {
+                    fileTransferCallback(data, length);
                 });
                 awaitingCancelContinue_ = false;
                 usbSerial_.txSendData(reinterpret_cast<const uint8_t *>("CONTINUE"), 9);
