@@ -21,6 +21,8 @@ void FileTransfer::handleCommand(const std::string &command, const std::string &
         handleFilePutCommand(command, payload, txLine);
     } else if (command == "FILE" && HasPrefix(payload.c_str(), "GET")) {
         handleFileGetCommand(command, payload, txLine);
+    } else if (command == "FILE" && HasPrefix(payload.c_str(), "LS")) {
+        handleFileLSCommand(command, payload, txLine);
     } else if (command == "TRANSFER" && HasPrefix(payload.c_str(), "BOOK")) {
         handleTransferBookCommand(command, payload, txLine);
     } else {
@@ -41,6 +43,40 @@ void FileTransfer::sendFileChunk() {
     }
     awaitingFileGetSuccess_ = true;
     fileGet_.close();
+}
+
+void FileTransfer::handleFileLSCommand(const std::string &command, const std::string &payload,
+                                       const DirectCommand::TxLine &txLine) {
+    char dirname[65]; // Large enough to hold the filename as a string
+    if (sscanf(payload.c_str(), "LS %64s", dirname) == 1) {
+        log_i("Directory name to list is: %s", dirname);
+        std::string dirPath = StringFormat("%s", dirname);
+        FileList fileListing;
+        FileList dirListing;
+        int retVal = fileSystem_.listDirWithSubdirectories(dirPath, fileListing, dirListing);
+        if (retVal == -1) {
+            log_e("Failed to open %s", dirPath.c_str());
+            txLine("ERROR");
+            return;
+        }
+
+        // Create a string that is ' ' seperated with all the elements of the fileListing vector
+        std::string fileListingString;
+        for (const auto &file : fileListing) {
+            fileListingString += file + " ";
+        }
+
+        for (const auto &dir : dirListing) {
+            fileListingString += dir + "/ ";
+        }
+
+        // get rid of the trailing space at the end (or / for dir)
+        fileListingString.pop_back();
+
+        txLine(command + " " + payload + " " + fileListingString);
+    } else {
+        txLine("ERROR");
+    }
 }
 
 void FileTransfer::handleFileGetCommand(const std::string &command, const std::string &payload,

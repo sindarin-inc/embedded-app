@@ -76,6 +76,8 @@ private:
                               const DirectCommand::TxLine &txLine);
     void handleFileGetCommand(const std::string &command, const std::string &payload,
                               const DirectCommand::TxLine &txLine);
+    void handleFileLSCommand(const std::string &command, const std::string &payload,
+                             const DirectCommand::TxLine &txLine);
     void handleTransferBookCommand(const std::string &command, const std::string &payload,
                                    const DirectCommand::TxLine &txLine);
     void handleEPUB();
