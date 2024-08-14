@@ -33,7 +33,7 @@ auto ResolveBackspace(const std::string &input) -> std::string {
 // Make sure this is called after the USBSerial instance is created
 void DirectCommand::begin() {
     addCommandHandler([this](const std::string &command, const std::string &payload,
-                             const std::function<void(const std::string &str)> &txLine) {
+                             const DirectCommand::TxLine &txLine) {
         // The following commands can run at any time even the earliest boot levels
         if (command == "ALLOWOFF") {
             AllowPowerOff();
@@ -92,8 +92,7 @@ void DirectCommand::begin() {
     });
 }
 
-void DirectCommand::handleCommand(const std::string &line,
-                                  const std::function<void(const std::string &str)> &txLine) {
+void DirectCommand::handleCommand(const std::string &line, const DirectCommand::TxLine &txLine) {
     if (line.empty()) {
         return;
     }

@@ -6,7 +6,7 @@
 #include "Models/Readable.hpp"
 
 void FileTransfer::handleCommand(const std::string &command, const std::string &payload,
-                                 const std::function<void(const std::string &str)> &txLine) {
+                                 const DirectCommand::TxLine &txLine) {
     if (awaitingFinalSuccess_) {
         if (command == "FILE" && payload == "PUT SUCCESS") {
             resetState();
@@ -23,7 +23,7 @@ void FileTransfer::handleCommand(const std::string &command, const std::string &
 }
 
 void FileTransfer::handleFileCommand(const std::string &command, const std::string &payload,
-                                     const std::function<void(const std::string &str)> &txLine) {
+                                     const DirectCommand::TxLine &txLine) {
     // Limited to
     char fileSizeStr[10];
     // Example: "FILE PUT EPUB 12345678 abcdef123456"
@@ -91,9 +91,8 @@ void FileTransfer::handleFileCommand(const std::string &command, const std::stri
     });
 }
 
-void FileTransfer::handleTransferBookCommand(
-    const std::string &command, const std::string &payload,
-    const std::function<void(const std::string &str)> &txLine) {
+void FileTransfer::handleTransferBookCommand(const std::string &command, const std::string &payload,
+                                             const DirectCommand::TxLine &txLine) {
     char bookUuid[65]; // Large enough to hold the book UUID as a string
     if (sscanf(payload.c_str(), "BOOK %64s", bookUuid) == 1) {
         log_i("Transfer Book UUID: %s", bookUuid);

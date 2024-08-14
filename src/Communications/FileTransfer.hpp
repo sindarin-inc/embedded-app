@@ -26,7 +26,7 @@ public:
           directCommand_(directCommand) {
         directCommand_.addCommandHandler(
             [this](const std::string &command, const std::string &payload,
-                   const std::function<void(const std::string &str)> &txLine) {
+                   const DirectCommand::TxLine &txLine) {
             if (command == "FILE" || command == "TRANSFER") {
                 log_i("Got a FILE or TRANSFER command and handled in FileTransfer.hpp");
                 handleCommand(command, payload, txLine);
@@ -61,11 +61,11 @@ public:
 
 private:
     void handleCommand(const std::string &command, const std::string &payload,
-                       const std::function<void(const std::string &str)> &txLine);
+                       const DirectCommand::TxLine &txLine);
     void handleFileCommand(const std::string &command, const std::string &payload,
-                           const std::function<void(const std::string &str)> &txLine);
+                           const DirectCommand::TxLine &txLine);
     void handleTransferBookCommand(const std::string &command, const std::string &payload,
-                                   const std::function<void(const std::string &str)> &txLine);
+                                   const DirectCommand::TxLine &txLine);
     void handleEPUB();
     void handleJSON();
     void unsetPassthroughAndSendPutError();

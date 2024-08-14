@@ -29,16 +29,16 @@ public:
     // START_FILE_TRANSFER
     //
 
-    using CommandHandler = std::function<bool(std::string commandId, std::string payload,
-                                              std::function<void(const std::string &str)> txLine)>;
+    using TxLine = std::function<void(const std::string &str)>;
+    using CommandHandler =
+        std::function<bool(std::string commandId, std::string payload, TxLine txLine)>;
 
     DirectCommand(USBSerial &usbSerial, FileSystem &fileSystem, PowerManager &powerManager)
         : usbSerial_(usbSerial), fileSystem_(fileSystem), powerManager_(powerManager){};
     void begin();
     void receiveTusbPortData(const std::shared_ptr<uint8_t[]> &data, uint8_t length);
     void pollHwUart();
-    void handleCommand(const std::string &line,
-                       const std::function<void(const std::string &str)> &txLine);
+    void handleCommand(const std::string &line, const TxLine &txLine);
     void addCommandHandler(CommandHandler commandHandler) {
         commandHandlers_.push_back(std::move(commandHandler));
     }

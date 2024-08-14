@@ -237,37 +237,36 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     }
 
     // The following commands can run after PowerManager::begin has completed
-    directCommand.addCommandHandler(
-        [](const std::string &command, const std::string &payload,
-           const std::function<void(const std::string &str)> &txLine) -> bool {
-            if (command == "BATT") {
-                auto response =
-                    StringFormat("BATT L:%.2f R:%.2f", powerManager.battery.getLeftBatteryVoltage(),
-                                 powerManager.battery.getRightBatteryVoltage());
-                // Also log for convenience during testing
-                log_i("%s", response.c_str());
-                txLine(response);
-                return true;
-            } else if (command == "BOOTREASON") {
-                auto response =
-                    StringFormat("BOOTREASON %s", powerManager.getBootInfo().humanStr().c_str());
-                // Also log for convenience during testing
-                log_i("%s", response.c_str());
-                txLine(response);
-                return true;
-            } else if (command == "LOCKS") {
-                txLine(command);
+    directCommand.addCommandHandler([](const std::string &command, const std::string &payload,
+                                       const DirectCommand::TxLine &txLine) -> bool {
+        if (command == "BATT") {
+            auto response =
+                StringFormat("BATT L:%.2f R:%.2f", powerManager.battery.getLeftBatteryVoltage(),
+                             powerManager.battery.getRightBatteryVoltage());
+            // Also log for convenience during testing
+            log_i("%s", response.c_str());
+            txLine(response);
+            return true;
+        } else if (command == "BOOTREASON") {
+            auto response =
+                StringFormat("BOOTREASON %s", powerManager.getBootInfo().humanStr().c_str());
+            // Also log for convenience during testing
+            log_i("%s", response.c_str());
+            txLine(response);
+            return true;
+        } else if (command == "LOCKS") {
+            txLine(command);
 #if !DISABLE_POWER_MANAGEMENT
-                // TODO: Would be nice to also dump to the command port
-                auto err = esp_pm_dump_locks(stdout);
-                if (err != ESP_OK) {
-                    log_e("esp_pm_dump_locks error: %s", esp_err_to_name(err));
-                }
-#endif
-                return true;
+            // TODO: Would be nice to also dump to the command port
+            auto err = esp_pm_dump_locks(stdout);
+            if (err != ESP_OK) {
+                log_e("esp_pm_dump_locks error: %s", esp_err_to_name(err));
             }
-            return false;
-        });
+#endif
+            return true;
+        }
+        return false;
+    });
 
     if (!fileSystem.begin()) {
         bootErrors.push_back({.type = BootError::Type::FileSystem});
@@ -569,7 +568,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 
     // The following commands can run after app_main has completed
     directCommand.addCommandHandler([](const std::string &command, const std::string &payload,
-                                       std::function<void(const std::string &str)> txLine) -> bool {
+                                       DirectCommand::TxLine txLine) -> bool {
         if (command == "CONNECT") {
             // This is just the connect handshake to indicate we're here and listening
             txLine(command);
