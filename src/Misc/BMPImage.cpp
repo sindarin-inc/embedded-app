@@ -4,7 +4,7 @@
 #include "Renderers/RendererStream.hpp"
 #include "bmp.h"
 
-static std::shared_ptr<uint8_t[]> bmpConversionLUT = nullptr;
+std::shared_ptr<uint8_t[]> bmpConversionLUT = nullptr;
 
 void BMPImage::createLUT() {
     if (bmpConversionLUT) {

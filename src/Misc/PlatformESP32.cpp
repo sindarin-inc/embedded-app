@@ -34,8 +34,8 @@ bool ledcFailed = false;
 uint8_t sysOnPin;
 bool platformInitialized;
 
-static uint8_t minLightingDutyCycle;
-static uint8_t maxLightingDutyCycle;
+uint8_t minLightingDutyCycle;
+uint8_t maxLightingDutyCycle;
 
 void PinMode(int pin, int mode) {
     gpio_set_direction(static_cast<gpio_num_t>(pin), static_cast<gpio_mode_t>(mode));
