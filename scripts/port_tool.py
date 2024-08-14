@@ -161,49 +161,93 @@ def reset_usb_jtag_port(ser: serial.Serial, programming_mode: bool = False):
 
 def main():
     logging.basicConfig(level=logging.WARN)
+    parser = argparse.ArgumentParser(description="Tool for interacting with Sol Reader devices.")
 
-    parser = argparse.ArgumentParser(description="Discover serial ports for Sol Reader devices.")
-    parser.add_argument("--reset", action="store_true", help="Reset the device out of programming mode.")
-    parser.add_argument(
+    subparsers = parser.add_subparsers(dest="command", required=True, help="Sub-command to run")
+
+    # Subparser for the find_port command
+    find_parser = subparsers.add_parser("find_port", help="Find a specific type of port.")
+    find_parser.add_argument(
         "port_type",
-        choices=["logging", "programming"],
-        help="Specify the type of port to find (logging or programming).",
+        choices=["logging", "programming", "jtag"],
+        help="Specify the type of port to find.",
     )
+
+    # Subparser for the reset_jtag command
+    reset_parser = subparsers.add_parser("reset_jtag", help="Reset the device out of programming mode.")
+
+    # Log level
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="store_const",
+        dest="loglevel",
+        const=logging.DEBUG,
+        help="Increase verbosity to show DEBUG level logging.",
+    )
+
     args = parser.parse_args()
 
-    if args.reset:
+    if args.loglevel:
+        logging.getLogger().setLevel(args.loglevel)
+
+    port = None
+    if args.command == "reset_jtag":
         port = find_usb_jtag_port()
         if port:
             ser = serial.Serial(port, 115200, timeout=1)
             reset_usb_jtag_port(ser)
             ser.close()
         else:
-            logger.error("Could not find USB JTAG port to reset.")
+            logging.error("Could not find USB JTAG port to reset.")
+            exit(1)
 
-    if args.port_type == "logging":
-        port = find_control_port()
-        if port:
-            ser = serial.Serial(port, 115200, timeout=1)
-            ser.write(b"\nLOGGING_ON\n")
-            ser.close()
-        port = find_logging_port()
-
-    elif args.port_type == "programming":
-        port = find_usb_jtag_port()
-        # If we're not already in programming mode, we need to reset the device into programming mode
-        if not port:
+    elif args.command == "find_port":
+        if args.port_type == "logging":
             port = find_control_port()
             if port:
+                logging.debug(f"Found control port at {port}. Enabling logging.")
                 ser = serial.Serial(port, 115200, timeout=1)
-                ser.write(b"\nPROGRAM\n")
+                ser.write(b"\nLOGGING_ON\n")
+                ser.flush()
                 ser.close()
-                port = wait_for_usb_jtag_port(timeout=3)
+                port = find_logging_port()
+                if port:
+                    print(port)
+                else:
+                    logging.error("Could not find logging port after enabling logging.")
+                    exit(1)
+            else:
+                logging.error("Could not find control port to enable logging.")
+                exit(1)
 
-    if port:
-        print(port)
-    else:
-        logger.error(f"Port not found for {args.port_type}")
-        exit(1)
+        elif args.port_type == "programming":
+            port = find_usb_jtag_port()
+            if not port:
+                port = find_control_port()
+                if port:
+                    logging.debug(f"Found control port at {port}. Resetting into programming mode.")
+                    ser = serial.Serial(port, 115200, timeout=1)
+                    ser.write(b"\nPROGRAM\n")
+                    ser.flush()
+                    ser.close()
+                    port = wait_for_usb_jtag_port(timeout=3)
+                    if port:
+                        print(port)
+                    else:
+                        logging.error("Could not find USB JTAG port after reset.")
+                        exit(1)
+                else:
+                    logging.error("Could not find control port to reset into programming mode.")
+                    exit(1)
+
+        elif args.port_type == "jtag":
+            port = wait_for_usb_jtag_port(timeout=3)
+            if port:
+                print(port)
+            else:
+                logging.error("Could not find USB JTAG port.")
+                exit(1)
 
 
 if __name__ == "__main__":
