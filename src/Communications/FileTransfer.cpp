@@ -5,7 +5,8 @@
 #include "Models/Json.hpp"
 #include "Models/Readable.hpp"
 
-void FileTransfer::handleCommand(const std::string &command, const std::string &payload) {
+void FileTransfer::handleCommand(const std::string &command, const std::string &payload,
+                                 const DirectCommand::TxLine &txLine) {
     if (awaitingFinalSuccess_) {
         if (command == "FILE" && payload == "PUT SUCCESS") {
             resetState();
@@ -13,27 +14,28 @@ void FileTransfer::handleCommand(const std::string &command, const std::string &
         }
     }
     if (command == "FILE" && HasPrefix(payload.c_str(), "PUT")) {
-        handleFileCommand(command, payload);
+        handleFileCommand(command, payload, txLine);
     } else if (command == "TRANSFER" && HasPrefix(payload.c_str(), "BOOK")) {
-        handleTransferBookCommand(command, payload);
+        handleTransferBookCommand(command, payload, txLine);
     } else {
-        usbSerial_.txSendData(reinterpret_cast<const uint8_t *>("ERROR"), 6);
+        txLine("ERROR");
     }
 }
 
-void FileTransfer::handleFileCommand(const std::string &command, const std::string &payload) {
+void FileTransfer::handleFileCommand(const std::string &command, const std::string &payload,
+                                     const DirectCommand::TxLine &txLine) {
     // Limited to
     char fileSizeStr[10];
     // Example: "FILE PUT EPUB 12345678 abcdef123456"
     int numParsed = sscanf(payload.c_str(), "PUT %9s %9s %64s", fileType_, fileSizeStr, checksum_);
     if (numParsed != 3) {
-        usbSerial_.txSendData(reinterpret_cast<const uint8_t *>("ERROR"), 6);
+        txLine("ERROR");
         return;
     }
 
     fileSize_ = strtol(fileSizeStr, nullptr, 10);
     if (fileSize_ == 0) {
-        usbSerial_.txSendData(reinterpret_cast<const uint8_t *>("ERROR"), 6);
+        txLine("ERROR");
         return;
     }
 
@@ -50,7 +52,7 @@ void FileTransfer::handleFileCommand(const std::string &command, const std::stri
         filePath = StringFormat("/book/%s.epub", fileUUID_.c_str());
     } else {
         log_e("Unsupported file type: %s", fileType_);
-        usbSerial_.txSendData(reinterpret_cast<const uint8_t *>("ERROR"), 6);
+        txLine("ERROR");
         return;
     }
 
@@ -59,7 +61,7 @@ void FileTransfer::handleFileCommand(const std::string &command, const std::stri
 
     if (file_.getFilePtr() == nullptr) {
         log_e("Failed to open file for writing");
-        usbSerial_.txSendData(reinterpret_cast<const uint8_t *>("ERROR"), 6);
+        txLine("ERROR");
         return;
     }
 
@@ -75,15 +77,13 @@ void FileTransfer::handleFileCommand(const std::string &command, const std::stri
     mbedtls_md_init(&ctx_);
     if (mbedtls_md_setup(&ctx_, mbedtls_md_info_from_type(mdType_), 0) != ESP_OK) {
         log_e("Failed to set up hash calculator");
-        usbSerial_.txSendData(reinterpret_cast<const uint8_t *>("ERROR"), 6);
+        txLine("ERROR");
         return;
     }
 
     mbedtls_md_starts(&ctx_);
 
-    usbSerial_.txSendData(reinterpret_cast<const uint8_t *>(command.c_str()), command.length());
-    usbSerial_.txSendData(reinterpret_cast<const uint8_t *>(" "), 1);
-    usbSerial_.txSendData(reinterpret_cast<const uint8_t *>(payload.c_str()), payload.length());
+    txLine(StringFormat("%s %s", command.c_str(), payload.c_str()));
 
     directCommand_.setPassthroughData(
         [this](const std::shared_ptr<uint8_t[]> &data, uint8_t length) {
@@ -91,23 +91,21 @@ void FileTransfer::handleFileCommand(const std::string &command, const std::stri
     });
 }
 
-void FileTransfer::handleTransferBookCommand(const std::string &command,
-                                             const std::string &payload) {
+void FileTransfer::handleTransferBookCommand(const std::string &command, const std::string &payload,
+                                             const DirectCommand::TxLine &txLine) {
     char bookUuid[65]; // Large enough to hold the book UUID as a string
     if (sscanf(payload.c_str(), "BOOK %64s", bookUuid) == 1) {
         log_i("Transfer Book UUID: %s", bookUuid);
         fileUUID_ = bookUuid;
-        usbSerial_.txSendData(reinterpret_cast<const uint8_t *>(command.c_str()), command.length());
-        usbSerial_.txSendData(reinterpret_cast<const uint8_t *>(" "), 1);
-        usbSerial_.txSendData(reinterpret_cast<const uint8_t *>(payload.c_str()), payload.length());
+        txLine(StringFormat("%s %s", command.c_str(), payload.c_str()));
     } else {
-        usbSerial_.txSendData(reinterpret_cast<const uint8_t *>("ERROR"), 6);
+        txLine("ERROR");
     }
 }
 
 void FileTransfer::unsetPassthroughAndSendPutError() {
     directCommand_.unsetPassthroughData();
-    usbSerial_.txSendData(reinterpret_cast<const uint8_t *>("FILE PUT ERROR"), 15);
+    usbSerial_.txSendLine("FILE PUT ERROR");
     mbedtls_md_free(&ctx_);
     resetState();
 }
@@ -205,7 +203,7 @@ void FileTransfer::fileTransferCallback(const std::shared_ptr<uint8_t[]> &data, 
     if ((bytesReceived_ < fileSize_) &&
         (bytesReceived_ % (CHUNK_SIZE * CHUNK_HANDSHAKE_INTERVAL) == 0)) {
         directCommand_.unsetPassthroughData();
-        usbSerial_.txSendData(reinterpret_cast<const uint8_t *>("CONTINUE"), 9);
+        usbSerial_.txSendLine("CONTINUE");
         awaitingCancelContinue_ = true;
         return;
     }
@@ -236,7 +234,7 @@ void FileTransfer::fileTransferCallback(const std::shared_ptr<uint8_t[]> &data, 
 
         mbedtls_md_free(&ctx_);
         directCommand_.unsetPassthroughData();
-        usbSerial_.txSendData(reinterpret_cast<const uint8_t *>("FILE PUT SUCCESS"), 17);
+        usbSerial_.txSendLine("FILE PUT SUCCESS");
         awaitingFinalSuccess_ = true;
     }
 }

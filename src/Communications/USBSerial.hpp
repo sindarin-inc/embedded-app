@@ -29,6 +29,7 @@ public:
     void rxLoggingCallback(int itf, cdcacm_event_t *event);
     void rxCommandCallback(int itf, cdcacm_event_t *event);
     void txSendData(const uint8_t *data, size_t length);
+    void txSendLine(const std::string &str);
     void disableLogging();
     void enableLogging();
 
@@ -40,9 +41,12 @@ private:
     enum class BootloaderState { Idle, State1, State2, State3, State4, State5, State6, State7 };
     BootloaderState currentState_{BootloaderState::Idle};
     std::vector<SerialDataListener> listeners_;
-    bool loggingEnabled_ = false;
 
     static void cdcacmCommandCallback(int itf, cdcacm_event_t *event) {
         USBSerial::getInstance().rxCommandCallback(itf, event);
     }
+
+    void enableLoggingInternal();
+
+    static bool loggingEnabled;
 };

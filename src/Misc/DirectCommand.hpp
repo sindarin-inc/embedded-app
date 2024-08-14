@@ -29,13 +29,17 @@ public:
     // START_FILE_TRANSFER
     //
 
-    DirectCommand(FileSystem &fileSystem, PowerManager &powerManager)
-        : fileSystem_(fileSystem), powerManager_(powerManager){};
+    using TxLine = std::function<void(const std::string &str)>;
+    using CommandHandler =
+        std::function<bool(std::string commandId, std::string payload, TxLine txLine)>;
+
+    DirectCommand(USBSerial &usbSerial, FileSystem &fileSystem, PowerManager &powerManager)
+        : usbSerial_(usbSerial), fileSystem_(fileSystem), powerManager_(powerManager){};
     void begin();
-    void receiveData(const std::shared_ptr<uint8_t[]> &data, uint8_t length);
-    void handleCommand(const std::shared_ptr<uint8_t[]> &data, uint8_t length);
-    void addCommandHandler(
-        std::function<bool(std::string commandId, std::string payload)> commandHandler) {
+    void receiveTusbPortData(const std::shared_ptr<uint8_t[]> &data, uint8_t length);
+    void pollHwUart();
+    void handleCommand(const std::string &line, const TxLine &txLine);
+    void addCommandHandler(CommandHandler commandHandler) {
         commandHandlers_.push_back(std::move(commandHandler));
     }
     void setPassthroughData(
@@ -46,10 +50,12 @@ public:
     void unsetPassthroughData() { passthroughDataFn_ = nullptr; };
 
 private:
+    USBSerial &usbSerial_;
     FileSystem &fileSystem_;
     PowerManager &powerManager_;
-    std::string commandBuffer_;
-    std::vector<std::function<bool(std::string commandId, std::string payload)>> commandHandlers_;
+    std::string tusbCommandBuffer_;
+    std::string hwUartCommandBuffer_;
+    std::vector<CommandHandler> commandHandlers_;
     std::function<void(std::shared_ptr<uint8_t[]> data, uint8_t length)> passthroughDataFn_ =
         nullptr;
 };
