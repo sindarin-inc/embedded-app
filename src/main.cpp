@@ -568,7 +568,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 
     // The following commands can run after app_main has completed
     directCommand.addCommandHandler([](const std::string &command, const std::string &payload,
-                                       DirectCommand::TxLine txLine) -> bool {
+                                       const DirectCommand::TxLine &txLine) -> bool {
         if (command == "CONNECT") {
             // This is just the connect handshake to indicate we're here and listening
             txLine(command);
