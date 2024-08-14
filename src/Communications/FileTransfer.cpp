@@ -79,8 +79,8 @@ void FileTransfer::handleFileGetCommand(const std::string &command, const std::s
 
         mbedtls_md_finish(&ctx_, reinterpret_cast<unsigned char *>(hash));
 
-        std::string fileData =
-            StringFormat("%d", file.size()) + " " + BytesToHex((const uint8_t *)hash, 32);
+        std::string fileData = StringFormat("%d", file.size()) + " " +
+                               BytesToHex(reinterpret_cast<const uint8_t *>(hash), 32);
 
         file.close();
 
@@ -143,10 +143,12 @@ void FileTransfer::handleFilePutCommand(const std::string &command, const std::s
         return;
     }
 
-    timeoutTimer_.start([this]() {
+    timeoutTimer_.start(
+        [this]() {
         log_e("Timed out! Resetting state to accept other commands");
         unsetPassthroughAndSendPutError();
-    }, 5000);
+        },
+        5000);
 
     // Set up the ctx_ hash calculation context
     mbedtls_md_init(&ctx_);
@@ -289,7 +291,7 @@ void FileTransfer::fileTransferCallback(const std::shared_ptr<uint8_t[]> &data, 
         mbedtls_md_finish(&ctx_, reinterpret_cast<unsigned char *>(hash));
 
         // Convert hash to hexadecimal string
-        std::string hashHex = BytesToHex((const uint8_t *)hash, 32);
+        std::string hashHex = BytesToHex(reinterpret_cast<const uint8_t *>(hash), 32);
 
         if (memcmp(checksum_, hashHex.c_str(), 64) != 0) {
             log_e("Hash verification failed: expected %s and got %s", checksum_, hashHex.c_str());

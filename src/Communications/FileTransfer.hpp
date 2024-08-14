@@ -25,9 +25,9 @@ public:
                  DirectCommand &directCommand)
         : fileSystem_(fileSystem), localStore_(localStore), usbSerial_(usbSerial),
           directCommand_(directCommand) {
-        directCommand_.addCommandHandler([this](const std::string &command,
-                                                const std::string &payload,
-                                                const DirectCommand::TxLine &txLine) {
+        directCommand_.addCommandHandler(
+            [this](const std::string &command, const std::string &payload,
+                   const DirectCommand::TxLine &txLine) {
             if (command == "FILE" || command == "TRANSFER") {
                 log_i("Got a FILE or TRANSFER command and handled in FileTransfer.hpp");
                 handleCommand(command, payload, txLine);
