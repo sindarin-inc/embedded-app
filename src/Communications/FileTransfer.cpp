@@ -13,14 +13,8 @@ void FileTransfer::handleCommand(const std::string &command, const std::string &
         }
     }
     if (awaitingFileGetSuccess_) {
-        if (command == "FILE" && payload == "GET SUCCESS") {
-            resetState();
-            return;
-        } else {
-            // Do we need to do anything different in the ERROR case? Probably not.
-            resetState();
-            return;
-        }
+        resetState();
+        return;
     }
     if (command == "FILE" && HasPrefix(payload.c_str(), "PUT")) {
         handleFilePutCommand(command, payload);
@@ -57,6 +51,7 @@ void FileTransfer::handleFileGetCommand(const std::string &command, const std::s
         if (!file || static_cast<int>(file.size()) == 0) {
             log_e("Failed to open %s", filePath.c_str());
             usbSerial_.txSendData(reinterpret_cast<const uint8_t *>("ERROR"), 6);
+            file.close();
             return;
         }
 
@@ -65,6 +60,7 @@ void FileTransfer::handleFileGetCommand(const std::string &command, const std::s
         if (mbedtls_md_setup(&ctx_, mbedtls_md_info_from_type(mdType_), 0) != ESP_OK) {
             log_e("Failed to set up hash calculator");
             usbSerial_.txSendData(reinterpret_cast<const uint8_t *>("ERROR"), 6);
+            file.close();
             return;
         }
 
@@ -78,21 +74,14 @@ void FileTransfer::handleFileGetCommand(const std::string &command, const std::s
         }
 
         char hash[32];
-        char hashHex[65];
 
         mbedtls_md_finish(&ctx_, reinterpret_cast<unsigned char *>(hash));
 
-        // Convert hash to hexadecimal string
-        for (int i = 0; i < 32; i++) {
-            if (!snprintf(&hashHex[i * 2], 3, "%02x", static_cast<unsigned int>(hash[i]))) {
-                log_e("Failed to convert hash to hex");
-                usbSerial_.txSendData(reinterpret_cast<const uint8_t *>("ERROR"), 6);
-                return;
-            };
-        }
+        std::string fileData =
+            StringFormat("%d", file.size()) + BytesToHex((const uint8_t *)hash, 32);
 
-        std::string fileData = StringFormat("%d %s", file.size(), hashHex);
         file.close();
+
         // Reopen the file for reading and transmitting
         // Make sure this works before sending the ACK
         fileGet_ = fileSystem_.open(filePath, FILE_READ);
@@ -156,12 +145,10 @@ void FileTransfer::handleFilePutCommand(const std::string &command, const std::s
         return;
     }
 
-    timeoutTimer_.start(
-        [this]() {
+    timeoutTimer_.start([this]() {
         log_e("Timed out! Resetting state to accept other commands");
         unsetPassthroughAndSendPutError();
-        },
-        5000);
+    }, 5000);
 
     // Set up the ctx_ hash calculation context
     mbedtls_md_init(&ctx_);
@@ -304,19 +291,14 @@ void FileTransfer::fileTransferCallback(const std::shared_ptr<uint8_t[]> &data, 
     if (bytesReceived_ >= fileSize_) {
         filePut_.close();
         char hash[32];
-        char hashHex[65];
 
         mbedtls_md_finish(&ctx_, reinterpret_cast<unsigned char *>(hash));
 
         // Convert hash to hexadecimal string
-        for (int i = 0; i < 32; i++) {
-            if (!snprintf(&hashHex[i * 2], 3, "%02x", static_cast<unsigned int>(hash[i]))) {
-                log_e("Failed to convert hash to hex");
-            };
-        }
+        std::string hashHex = BytesToHex((const uint8_t *)hash, 32);
 
-        if (memcmp(checksum_, hashHex, 64) != 0) {
-            log_e("Hash verification failed: expected %s and got %s", checksum_, hashHex);
+        if (memcmp(checksum_, hashHex.c_str(), 64) != 0) {
+            log_e("Hash verification failed: expected %s and got %s", checksum_, hashHex.c_str());
             unsetPassthroughAndSendPutError();
             return;
         }
