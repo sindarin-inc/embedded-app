@@ -2,8 +2,6 @@
 
 #include "UI/MsgPopup.hpp"
 
-extern std::shared_ptr<EPubFile> theOneFile;
-
 void ReadablePopupMenuScreen::setUpPopupMenu() {
     std::shared_ptr<Place> place = renderer_.getCurrentPlace();
 
@@ -157,7 +155,7 @@ void ReadablePopupMenuScreen::populatePopupMenu() {
                 display_.clearDisplay();
                 onMainMenu();
                 delete restartSoonPopup;
-                esp_restart();
+                PowerManager::getInstance().reboot();
             });
         }));
         setCurrentScreen(lineMenuScreen_);
