@@ -70,12 +70,6 @@ auto PmUnlock(esp_pm_lock_handle_t *lock) -> void {
 auto PowerManager::getInstance() -> PowerManager & { return powerManager; }
 
 void PowerManager::wakeupCheck(SolClock &clock) {
-    // If you want to see this using `idf.py monitor --no-reset` you'll need to delay a bit for the
-    // USB to connect.
-    if (USBConnected()) {
-        Delay(1000);
-    }
-
     // From these three variables we can figure out exactly why we're booting
     bootInfo_.resetReason = esp_reset_reason();
     bootInfo_.rtcResetReason = rtc_get_reset_reason(0);
@@ -133,8 +127,6 @@ void PowerManager::wakeupCheck(SolClock &clock) {
             auto percentage = battery.getBatteryPercentage();
             if (USBConnected()) {
                 log_i("USB connected, battery level: %d%%", int(percentage));
-                // Wait just a little moment so we can flash software if we get stuck
-                Delay(1000);
             } else if (ulp_waitForClose) {
                 ulp_waitForClose = 0;
                 // If the temples were never closed and usb just disconnected, let's power up
@@ -789,7 +781,7 @@ void PowerManager::deepSleepInternal(SleepReason reason) {
         if (err != ESP_OK) {
             log_e("error enabling timer wakeup for deep sleep %d", err);
         } else {
-            log_d("Sleeping for %" PRIu64 " seconds", sleepTime / 1000000);
+            log_i("Sleeping for %" PRIu64 " seconds", sleepTime / 1000000);
         }
     } else {
         log_w("No scheduled wakeup (nextSyncTime=%" PRIu64 ", now=%" PRIu64 ")",

@@ -100,6 +100,8 @@ public:
 
     static TimerHandle_t animationTimer;
 
+    bool mirrorToSerial = false;
+
     Style style;
 
     // MARK: - Required virtual methods that subclasses must implement

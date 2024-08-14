@@ -112,9 +112,7 @@ WiFi wiFi(telemetry);
 
 USBSerial usbSerial;
 
-// By initializing these in this order, we ensure the command handlers
-// run in this order as well. DEBUG takes a long time (and is defined later)
-DirectCommand directCommand(fileSystem, powerManager);
+DirectCommand directCommand(usbSerial, fileSystem, powerManager);
 FileTransfer fileTransferListener(fileSystem, localStore, usbSerial, directCommand);
 
 bool bootCompleted = false;
@@ -127,87 +125,6 @@ void UIInnerLoop(RemoteCommand command) {
 // Task for all periodic things that need to run ~1Hz. Polling tasks should be grouped here so that
 // they all complete in a tight loop, thus maximizing sleep time.
 void PollingLoopTask(void *parameter) {
-    directCommand.addCommandHandler([](const std::string &command, const std::string &payload) {
-        log_i("Received debug command: %s", command.c_str());
-        if (command == "GRID") {
-            DispatchGetUiQueue()->dispatch([]() {
-                // Override brightness to max
-                lightingController.setOverrideValuePercent(100);
-                auto testScreen = new TestAlignmentScreen();
-                rootUi.setCurrentScreen(*testScreen);
-                UIInnerLoop(RemoteCommand::NONE);
-            });
-            return true;
-        } else if (command == "UP") {
-            DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::UP); });
-            return true;
-        } else if (command == "LEFT") {
-            DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::LEFT); });
-            return true;
-        } else if (command == "RIGHT") {
-            DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::RIGHT); });
-            return true;
-        } else if (command == "DOWN") {
-            DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::DOWN); });
-            return true;
-        } else if (command == "ENTER") {
-            DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::ENTER); });
-            return true;
-        } else if (command == "BACK") {
-            DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::BACK); });
-            return true;
-        } else if (command == "SLEEPOFF") {
-            powerManager.debugDisableLightSleep();
-            return true;
-        } else if (command == "SLEEPON") {
-            powerManager.debugEnableLightSleep();
-            return true;
-        } else if (command == "LOCKS") {
-#if !DISABLE_POWER_MANAGEMENT
-            auto err = esp_pm_dump_locks(stdout);
-            if (err != ESP_OK) {
-                log_e("esp_pm_dump_locks error: %s", esp_err_to_name(err));
-            }
-#endif
-            return true;
-        } else if (command == "ALLOWOFF") {
-            AllowPowerOff();
-            return true;
-        } else if (command == "UNPAIRPT") {
-#if CONFIG_USE_TURN_TOUCH_REMOTE
-            ttRemoteInput.unpairAndDisconnect();
-#endif
-            return true;
-        } else if (command == "VERSION") {
-            log_i("Version: %s Git: %s", SemanticVersionString(), GitVersionString());
-            return true;
-        } else if (command == "BATT") {
-            log_i("Left: %f Right: %f", powerManager.battery.getLeftBatteryVoltage(),
-                  powerManager.battery.getRightBatteryVoltage());
-            return true;
-        } else if (command == "SERIAL") {
-            log_i("SN: %s", GetSerialNumber().c_str());
-            return true;
-        } else if (command == "USBPWR") {
-            log_i("USB Power: %d", USBConnected());
-            return true;
-        } else if (command == "BOOTREASON") {
-            log_i("Boot reason: %s", powerManager.getBootInfo().humanStr().c_str());
-            return true;
-        } else if (command == "LOGGING_ON") {
-            USBSerial::getInstance().enableLogging();
-            prefs.loggingOn.set(true);
-            return true;
-        } else if (command == "LOGGING_OFF") {
-            USBSerial::getInstance().disableLogging();
-            prefs.loggingOn.set(false);
-            return true;
-        } else {
-            log_w("Unknown debug command: %s", command.c_str());
-        }
-        return false;
-    });
-
     int factoryResetStartTimeMs = 0;
     while (powerManager.state() != PowerState::ShuttingDown) {
         // check if factory reset button is held down
@@ -230,6 +147,8 @@ void PollingLoopTask(void *parameter) {
 
         // Run the power loop first so that we don't show a 0% battery reading
         powerManager.loop();
+
+        directCommand.pollHwUart();
 
 #if CONFIG_USE_TURN_TOUCH_REMOTE
         // Skip scanning while WiFi is connected to avoid kicking off the WiFi connection
@@ -269,26 +188,12 @@ void StatsTask(void *parameter) {
 
 auto UIGetCurrentScreen() { return rootUi.getCurrentScreen(); }
 
-#if CONFIG_AUTOSTART_ARDUINO
-void loop() { vTaskDelay(portMAX_DELAY); };
-void setup() {
-#else
 extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
-    // Note that with the new logging interface, we won't get any logs until later
-    // after prefs have begun. Hence the below #if 0 in case you need to turn on logging
-    // earlier for debugging.
     usbSerial.begin();
-#if 0
-    usbSerial.enableLogging();
-#endif
     directCommand.begin();
-    HardwareInit();
-#endif
 
-#if !SIMULATOR
-    // Configure log level for all Sindarin logs
-    esp_log_level_set("Sol", ESP_LOG_DEBUG);
-#endif
+    HardwareInit();
+
     powerManager.wakeupCheck(solClock);
 
     BootLoopCheck(fileSystem, powerManager);
@@ -306,11 +211,6 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 
     if (!prefs.begin()) {
         bootErrors.push_back({.type = BootError::Type::Preferences});
-    }
-
-    // Note with this change we won't get any logs until after here.
-    if (prefs.loggingOn.get().value_or(false)) {
-        usbSerial.enableLogging();
     }
 
     solClock.begin();
@@ -336,10 +236,42 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         bootErrors.push_back({.type = BootError::Type::PowerManagement});
     }
 
+    // The following commands can run after PowerManager::begin has completed
+    directCommand.addCommandHandler([](const std::string &command, const std::string &payload,
+                                       const DirectCommand::TxLine &txLine) -> bool {
+        if (command == "BATT") {
+            auto response =
+                StringFormat("BATT L:%.2f R:%.2f", powerManager.battery.getLeftBatteryVoltage(),
+                             powerManager.battery.getRightBatteryVoltage());
+            // Also log for convenience during testing
+            log_i("%s", response.c_str());
+            txLine(response);
+            return true;
+        } else if (command == "BOOTREASON") {
+            auto response =
+                StringFormat("BOOTREASON %s", powerManager.getBootInfo().humanStr().c_str());
+            // Also log for convenience during testing
+            log_i("%s", response.c_str());
+            txLine(response);
+            return true;
+        } else if (command == "LOCKS") {
+            txLine(command);
+#if !DISABLE_POWER_MANAGEMENT
+            // TODO: Would be nice to also dump to the command port
+            auto err = esp_pm_dump_locks(stdout);
+            if (err != ESP_OK) {
+                log_e("esp_pm_dump_locks error: %s", esp_err_to_name(err));
+            }
+#endif
+            return true;
+        }
+        return false;
+    });
+
     if (!fileSystem.begin()) {
         bootErrors.push_back({.type = BootError::Type::FileSystem});
     } else {
-        log_d("Filesystem ready!");
+        log_i("Filesystem ready!");
     }
 
     // Set current boot id
@@ -633,4 +565,59 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     GoodBootTimer();
 
     bootCompleted = true;
+
+    // The following commands can run after app_main has completed
+    directCommand.addCommandHandler([](const std::string &command, const std::string &payload,
+                                       DirectCommand::TxLine txLine) -> bool {
+        if (command == "CONNECT") {
+            // This is just the connect handshake to indicate we're here and listening
+            txLine(command);
+            return true;
+        } else if (command == "MIRROR") {
+            myDisplay.mirrorToSerial = !myDisplay.mirrorToSerial;
+            txLine(command);
+            return true;
+        } else if (command == "GRID") {
+            DispatchGetUiQueue()->dispatch([]() {
+                // Override brightness to max
+                lightingController.setOverrideValuePercent(100);
+                auto testScreen = new TestAlignmentScreen();
+                rootUi.setCurrentScreen(*testScreen);
+                UIInnerLoop(RemoteCommand::NONE);
+            });
+            txLine(command);
+            return true;
+        } else if (command == "UP") {
+            DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::UP); });
+            txLine(command);
+            return true;
+        } else if (command == "LEFT") {
+            DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::LEFT); });
+            txLine(command);
+            return true;
+        } else if (command == "RIGHT") {
+            DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::RIGHT); });
+            txLine(command);
+            return true;
+        } else if (command == "DOWN") {
+            DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::DOWN); });
+            txLine(command);
+            return true;
+        } else if (command == "ENTER") {
+            DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::ENTER); });
+            txLine(command);
+            return true;
+        } else if (command == "BACK") {
+            DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::BACK); });
+            txLine(command);
+            return true;
+        } else if (command == "UNPAIRPT") {
+#if CONFIG_USE_TURN_TOUCH_REMOTE
+            ttRemoteInput.unpairAndDisconnect();
+#endif
+            txLine(command);
+            return true;
+        }
+        return false;
+    });
 }

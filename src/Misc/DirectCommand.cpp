@@ -1,15 +1,17 @@
 
 #include "DirectCommand.hpp"
 
+#if !SIMULATOR
+#include <driver/uart.h>
+#endif
 #include <esp_system.h>
 
 #include "Communications/USBSerial.hpp"
 #include "Dispatch.hpp"
 #include "Platform.hpp"
+#include "Version.hpp"
 
 extern DirectCommand directCommand;
-
-bool mirrorToSerial = false;
 
 auto DirectCommand::getInstance() -> DirectCommand & { return directCommand; }
 
@@ -30,99 +32,129 @@ auto ResolveBackspace(const std::string &input) -> std::string {
 
 // Make sure this is called after the USBSerial instance is created
 void DirectCommand::begin() {
-    // The only comamnds this class implements are the PROGRAM command which
-    // allows the device to enter programming mode and the RESTART command
-    // which reboots the device. Also the DEVICE_INFO command.
-    addCommandHandler([this](const std::string &command, const std::string &payload) {
-        if (command == "PROGRAM") {
-            USBSerial::getInstance().disableLogging();
-            USBSerial::getInstance().initJtag();
+    addCommandHandler([this](const std::string &command, const std::string &payload,
+                             const DirectCommand::TxLine &txLine) {
+        // The following commands can run at any time even the earliest boot levels
+        if (command == "ALLOWOFF") {
+            AllowPowerOff();
+            txLine(command);
             return true;
-        } else if (command == "CONNECT") {
-            log_d("Received CONNECT command");
-            // This is just the connect handshake to indicate we're here and listening
-            USBSerial::getInstance().txSendData(reinterpret_cast<const uint8_t *>("CONNECT"), 8);
-            log_d("Sent CONNECT command");
+        } else if (command == "SLEEPOFF") {
+            powerManager_.debugDisableLightSleep();
+            txLine(command);
+            return true;
+        } else if (command == "SLEEPON") {
+            powerManager_.debugEnableLightSleep();
+            txLine(command);
+            return true;
+        } else if (command == "PROGRAM") {
+            usbSerial_.disableLogging();
+            usbSerial_.initJtag();
             return true;
         } else if (command == "RESTART") {
-            USBSerial::getInstance().txSendData(reinterpret_cast<const uint8_t *>("SUCCESS"), 8);
+            txLine(command);
             // Wait 1 second before restarting so the receiver can get the success message
             vTaskDelay(1000 / portTICK_PERIOD_MS);
             esp_restart();
             return true;
         } else if (command == "DEVICE_INFO") {
-            USBSerial::getInstance().txSendData(reinterpret_cast<const uint8_t *>("SUCCESS"), 8);
-
-            // Build the response string of format
-            // SERIAL_NUMBER,123456;MAC_ADDRESS,00:00:00:00:00:00;FREE_SPACE,123456
-            std::string serialNumber = GetSerialNumber();
-            std::string macAddress = GetMacAddress();
-            std::string freeSpace = fileSystem_.getFreeSpace();
-
-            std::string response = "SERIAL_NUMBER," + serialNumber + ";MAC_ADDRESS," + macAddress +
-                                   ";FREE_SPACE," + freeSpace + "\n";
-
-            log_d("Sending device info: %s with size %zu", response.c_str(), response.size());
-            USBSerial::getInstance().txSendData(reinterpret_cast<const uint8_t *>(response.c_str()),
-                                                response.size());
+            txLine(StringFormat("DEVICE_INFO SERIAL_NUMBER,%s;MAC_ADDRESS,%s;FREE_SPACE,%s",
+                                GetSerialNumber().c_str(), GetMacAddress().c_str(),
+                                fileSystem_.getFreeSpace().c_str()));
             return true;
-        } else if (command == "MIRROR") {
-            mirrorToSerial = !mirrorToSerial;
-            USBSerial::getInstance().txSendData(reinterpret_cast<const uint8_t *>("SUCCESS"), 8);
+        } else if (command == "VERSION") {
+            txLine(StringFormat("VERSION SEMVER,%s;GIT,%s", SemanticVersionString(),
+                                GitVersionString()));
+            return true;
+        } else if (command == "LOGGING_ON") {
+            usbSerial_.enableLogging();
+            txLine(command);
+            return true;
+        } else if (command == "LOGGING_OFF") {
+            usbSerial_.disableLogging();
+            txLine(command);
+            return true;
+        } else if (command == "SERIAL") {
+            txLine(StringFormat("SERIAL %s", GetSerialNumber().c_str()));
+            return true;
+        } else if (command == "USBPWR") {
+            // Also log for convenience during testing
+            auto response = StringFormat("USBPWR %d", USBConnected());
+            log_i("%s", response.c_str());
+            txLine(response);
             return true;
         }
         return false;
     });
 
-    USBSerial::getInstance().registerListener(
-        [this](const std::shared_ptr<uint8_t[]> &data, uint8_t length) {
-        receiveData(data, length);
+    usbSerial_.registerListener([this](const std::shared_ptr<uint8_t[]> &data, uint8_t length) {
+        receiveTusbPortData(data, length);
     });
 }
 
-void DirectCommand::handleCommand(const std::shared_ptr<uint8_t[]> &data, uint8_t length) {
-    for (int i = 0; i < length; i++) {
-        if (data[i] == '\n') {
-            // found newline, process this command
-            if (!commandHandlers_.empty() && !commandBuffer_.empty()) {
-                auto commandBuffer = ResolveBackspace(commandBuffer_);
-                DispatchGetCore0BackgroundQueue()->dispatch([this, commandBuffer] {
-                    log_i("Command being received: %s with size %zu", commandBuffer.c_str(),
-                          commandBuffer.size());
-                    std::string commandId;
-                    std::string payload;
-                    auto spacePos = commandBuffer.find(' ');
-                    if (spacePos != std::string::npos) {
-                        commandId = commandBuffer.substr(0, spacePos);
-                        payload = commandBuffer.substr(spacePos + 1);
-                    } else {
-                        commandId = commandBuffer;
-                    }
-                    // Uppercase the commandId
-                    std::transform(commandId.begin(), commandId.end(), commandId.begin(),
-                                   ::toupper);
-                    for (auto &commandHandler : commandHandlers_) {
-                        if (commandHandler(commandId, payload)) {
-                            // if the command was handled, break out of this loop
-                            break;
-                        };
-                    }
-                });
-            }
-            commandBuffer_.clear();
-        } else if (data[i] != '\r') {
-            commandBuffer_ += data[i];
-        }
+void DirectCommand::handleCommand(const std::string &line, const DirectCommand::TxLine &txLine) {
+    if (line.empty()) {
+        return;
     }
+    auto commandBuffer = ResolveBackspace(line);
+    DispatchGetCore0BackgroundQueue()->dispatch([this, commandBuffer, txLine] {
+        log_i("Received command: %s", commandBuffer.c_str());
+        std::string commandId;
+        std::string payload;
+        auto spacePos = commandBuffer.find(' ');
+        if (spacePos != std::string::npos) {
+            commandId = commandBuffer.substr(0, spacePos);
+            payload = commandBuffer.substr(spacePos + 1);
+        } else {
+            commandId = commandBuffer;
+        }
+        // Uppercase the commandId
+        std::transform(commandId.begin(), commandId.end(), commandId.begin(), ::toupper);
+        for (auto &commandHandler : commandHandlers_) {
+            if (commandHandler(commandId, payload, txLine)) {
+                // if the command was handled, break out of this loop
+                break;
+            };
+        }
+    });
 }
 
-void DirectCommand::receiveData(const std::shared_ptr<uint8_t[]> &data, uint8_t length) {
+void DirectCommand::receiveTusbPortData(const std::shared_ptr<uint8_t[]> &data, uint8_t length) {
     // Be sure we don't time out while receiving data
     powerManager_.feedInactivityTimer();
     if (passthroughDataFn_) {
         DispatchGetCore0BackgroundQueue()->dispatch(
             [this, data, length] { passthroughDataFn_(data, length); });
     } else {
-        handleCommand(data, length);
+        for (int i = 0; i < length; i++) {
+            if (data[i] == '\n') {
+                // found newline, process this command
+                handleCommand(tusbCommandBuffer_,
+                              [this](const std::string &str) { usbSerial_.txSendLine(str); });
+                tusbCommandBuffer_.clear();
+            } else if (data[i] != '\r') {
+                tusbCommandBuffer_ += data[i];
+            }
+        }
     }
+}
+void DirectCommand::pollHwUart() {
+    // Handle debug commands early so that we can avoid sleep if necessary
+    // Spend the rest of the time waiting for debug commands (that will probably never come)
+    uint8_t data[64];
+#if !SIMULATOR
+    auto length = uart_read_bytes(UART_NUM_0, data, sizeof(data), 0);
+    for (int i = 0; i < length; i++) {
+        if (data[i] == '\n') {
+            // found newline, process this command
+            handleCommand(hwUartCommandBuffer_, [](const std::string &str) {
+                uart_write_bytes(UART_NUM_0, str.c_str(), str.length());
+                uart_write_bytes(UART_NUM_0, "\n", 1);
+            });
+            hwUartCommandBuffer_.clear();
+        } else if (data[i] != '\r') {
+            hwUartCommandBuffer_ += data[i];
+        }
+    }
+#endif
 }

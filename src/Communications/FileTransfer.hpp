@@ -25,11 +25,12 @@ public:
                  DirectCommand &directCommand)
         : fileSystem_(fileSystem), localStore_(localStore), usbSerial_(usbSerial),
           directCommand_(directCommand) {
-        directCommand_.addCommandHandler(
-            [this](const std::string &command, const std::string &payload) {
+        directCommand_.addCommandHandler([this](const std::string &command,
+                                                const std::string &payload,
+                                                const DirectCommand::TxLine &txLine) {
             if (command == "FILE" || command == "TRANSFER") {
                 log_i("Got a FILE or TRANSFER command and handled in FileTransfer.hpp");
-                handleCommand(command, payload);
+                handleCommand(command, payload, txLine);
                 return true;
             } else if (command == "CANCEL") {
                 if (!awaitingCancelContinue_) {
@@ -42,8 +43,7 @@ public:
                     fileGet_.close();
                     resetState();
                 }
-
-                usbSerial_.txSendData(reinterpret_cast<const uint8_t *>("CANCEL"), 6);
+                txLine("CANCEL");
                 awaitingCancelContinue_ = false;
                 return true;
             } else if (command == "CONTINUE") {
@@ -58,7 +58,7 @@ public:
                     });
                 }
                 awaitingCancelContinue_ = false;
-                usbSerial_.txSendData(reinterpret_cast<const uint8_t *>("CONTINUE"), 8);
+                txLine("CONTINUE");
                 if (totalGetTransferred_) {
                     DispatchGetCore0BackgroundQueue()->dispatch([this] { sendFileChunk(); });
                 }
@@ -70,10 +70,14 @@ public:
     void fileTransferCallback(const std::shared_ptr<uint8_t[]> &data, size_t rxSize);
 
 private:
-    void handleCommand(const std::string &command, const std::string &payload);
-    void handleFilePutCommand(const std::string &command, const std::string &payload);
-    void handleFileGetCommand(const std::string &command, const std::string &payload);
-    void handleTransferBookCommand(const std::string &command, const std::string &payload);
+    void handleCommand(const std::string &command, const std::string &payload,
+                       const DirectCommand::TxLine &txLine);
+    void handleFilePutCommand(const std::string &command, const std::string &payload,
+                              const DirectCommand::TxLine &txLine);
+    void handleFileGetCommand(const std::string &command, const std::string &payload,
+                              const DirectCommand::TxLine &txLine);
+    void handleTransferBookCommand(const std::string &command, const std::string &payload,
+                                   const DirectCommand::TxLine &txLine);
     void handleEPUB();
     void handleJSON();
     void unsetPassthroughAndSendPutError();
