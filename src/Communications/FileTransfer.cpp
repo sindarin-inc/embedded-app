@@ -297,7 +297,7 @@ void FileTransfer::fileTransferCallback(const std::shared_ptr<uint8_t[]> &data, 
     if ((bytesReceived_ < fileSize_) &&
         (bytesReceived_ % (CHUNK_SIZE * CHUNK_HANDSHAKE_INTERVAL) == 0)) {
         directCommand_.unsetPassthroughData();
-        usbSerial_.txSendData(reinterpret_cast<const uint8_t *>("CONTINUE"), 9);
+        usbSerial_.txSendData(reinterpret_cast<const uint8_t *>("CONTINUE"), 8);
         awaitingCancelContinue_ = true;
         return;
     }
