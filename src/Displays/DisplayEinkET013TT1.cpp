@@ -93,9 +93,15 @@ void DisplayEinkET013TT1::updateDisplay(DisplaySystem::UpdateType updateType, bo
                                         ScreenSide screen, Rect altRect) {
     auto queue = DispatchGetUiQueue(false);
     if (mirrorToSerial) {
+        static std::string serialPrefix;
+        constexpr size_t byteSize = EinkET013TT1_X_PIXELS * EinkET013TT1_Y_PIXELS / 8;
+        if (serialPrefix.empty()) {
+            serialPrefix = StringFormat("FRAME %zu", byteSize);
+        }
+        USBSerial::getInstance().txSendLine(serialPrefix);
         USBSerial::getInstance().txSendData(
-            reinterpret_cast<const uint8_t *>(gfxCanvas_.getBuffer()),
-            gfxCanvas_.width() * gfxCanvas_.height() / 8);
+            reinterpret_cast<const uint8_t *>(gfxCanvas_.getBuffer()), byteSize);
+        USBSerial::getInstance().txSendLine("");
     }
     if (queue == nullptr || !queue->isInQueue()) {
         log_w("updateDisplay called from outside the UI queue.");

@@ -570,8 +570,15 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
             txLine(command);
             return true;
         } else if (command == "MIRROR") {
-            myDisplay.mirrorToSerial = !myDisplay.mirrorToSerial;
-            txLine(command);
+            if (payload == "0") {
+                myDisplay.mirrorToSerial = false;
+                txLine("MIRROR 0");
+            } else if (payload == "1") {
+                myDisplay.mirrorToSerial = true;
+                txLine("MIRROR 1");
+            } else {
+                txLine(StringFormat("MIRROR %d", myDisplay.mirrorToSerial));
+            }
             return true;
         } else if (command == "GRID") {
             DispatchGetUiQueue()->dispatch([]() {
