@@ -9,7 +9,7 @@ import serial
 from serial.tools import list_ports
 from serial.tools.list_ports_common import ListPortInfo
 
-logger = logging.getLogger("port_finder")
+logger = logging.getLogger("port_tool")
 
 
 def find_windows_com_ports(vid: str, pid: str, serial_number: Optional[str] = None) -> list[str]:
@@ -180,6 +180,7 @@ def main():
         else:
             logger.error("Could not find USB JTAG port to reset.")
 
+<<<<<<< Updated upstream:scripts/port_finder.py
     if args.port_type == "logging":
         port = find_control_port()
         if port:
@@ -193,6 +194,11 @@ def main():
         # If we're not already in programming mode, we need to reset the device into programming mode
         if not port:
             port = find_control_port()
+=======
+    elif args.command == "find_port":
+        if args.port_type == "logging":
+            port = wait_for_control_port(3)
+>>>>>>> Stashed changes:scripts/port_tool.py
             if port:
                 ser = serial.Serial(port, 115200, timeout=1)
                 ser.write(b"\nPROGRAM\n")
