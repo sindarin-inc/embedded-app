@@ -51,8 +51,8 @@ auto WiFi::connectWiFiFromSettings() -> bool {
     return true;
 }
 
-void WiFi::disconnectWiFi() {
-    log_i("Pretending to disconnect WiFi");
+void WiFi::disconnectWiFi(int waitMs) {
+    log_i("Pretending to disconnect WiFi for %d ms", waitMs);
     setState(WiFiState::UNINITIALIZED);
 }
 
