@@ -9,7 +9,7 @@ import serial
 from serial.tools import list_ports
 from serial.tools.list_ports_common import ListPortInfo
 
-logger = logging.getLogger("port_finder")
+logger = logging.getLogger("port_tool")
 
 
 def find_windows_com_ports(vid: str, pid: str, serial_number: Optional[str] = None) -> list[str]:
@@ -204,7 +204,7 @@ def main():
 
     elif args.command == "find_port":
         if args.port_type == "logging":
-            port = find_control_port()
+            port = wait_for_control_port(3)
             if port:
                 logging.debug(f"Found control port at {port}. Enabling logging.")
                 ser = serial.Serial(port, 115200, timeout=1)
