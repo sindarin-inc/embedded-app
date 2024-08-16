@@ -583,7 +583,6 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
             }
             return true;
         } else if (command == "SCREENSHOT") {
-            txLine(command);
             myDisplay.sendCurrentScreenToSerial(true);
         } else if (command == "GRID") {
             DispatchGetUiQueue()->dispatch([]() {
