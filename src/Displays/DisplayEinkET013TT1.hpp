@@ -71,11 +71,20 @@ public:
     void setSkipSignalling(bool skip) override { driver_.setSkipSignalling(skip); }
 #endif
 
+    void sendCurrentScreenToSerial(bool screenshot = false) const;
+
 protected:
-    [[nodiscard]] auto nativeWidth() const -> uint16_t override { return EinkET013TT1_X_PIXELS; }
-    [[nodiscard]] auto nativeHeight() const -> uint16_t override { return EinkET013TT1_Y_PIXELS; }
+    [[nodiscard]] constexpr auto nativeWidth() const -> uint16_t override {
+        return EinkET013TT1_X_PIXELS;
+    }
+    [[nodiscard]] constexpr auto nativeHeight() const -> uint16_t override {
+        return EinkET013TT1_Y_PIXELS;
+    }
 
     [[nodiscard]] auto getBuffer() -> uint8_t * override { return gfxCanvas_.getBuffer(); }
+
+    // Send a frame buffer out the serial port.
+    void sendBufferToSerial(const uint8_t *buffer, bool screenshot = false) const;
 
     GFXcanvas1 gfxCanvas_;
     EinkET013TT1 driver_;

@@ -573,13 +573,18 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
             if (payload == "0") {
                 myDisplay.mirrorToSerial = false;
                 txLine("MIRROR 0");
+                myDisplay.sendCurrentScreenToSerial();
             } else if (payload == "1") {
                 myDisplay.mirrorToSerial = true;
                 txLine("MIRROR 1");
+                myDisplay.sendCurrentScreenToSerial();
             } else {
                 txLine(StringFormat("MIRROR %d", myDisplay.mirrorToSerial));
             }
             return true;
+        } else if (command == "SCREENSHOT") {
+            txLine(command);
+            myDisplay.sendCurrentScreenToSerial(true);
         } else if (command == "GRID") {
             DispatchGetUiQueue()->dispatch([]() {
                 // Override brightness to max
