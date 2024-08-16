@@ -9,6 +9,9 @@ void FileTransfer::handleCommand(const std::string &command, const std::string &
                                  const DirectCommand::TxLine &txLine) {
     if (awaitingFinalPutSuccess_) {
         if (command == "FILE" && payload == "PUT SUCCESS") {
+            if (strcmp(fileType_, "EPUB") == 0) {
+                txLine("TRANSFER BOOK SUCCESS");
+            }
             resetState();
             return;
         }
