@@ -71,15 +71,11 @@ public:
     void setSkipSignalling(bool skip) override { driver_.setSkipSignalling(skip); }
 #endif
 
-    void sendCurrentScreenToSerial(bool screenshot = false) const;
+    void sendCurrentScreenToSerial(bool screenshot = false) const override;
 
 protected:
-    [[nodiscard]] constexpr auto nativeWidth() const -> uint16_t override {
-        return EinkET013TT1_X_PIXELS;
-    }
-    [[nodiscard]] constexpr auto nativeHeight() const -> uint16_t override {
-        return EinkET013TT1_Y_PIXELS;
-    }
+    [[nodiscard]] auto nativeWidth() const -> uint16_t override { return EinkET013TT1_X_PIXELS; }
+    [[nodiscard]] auto nativeHeight() const -> uint16_t override { return EinkET013TT1_Y_PIXELS; }
 
     [[nodiscard]] auto getBuffer() -> uint8_t * override { return gfxCanvas_.getBuffer(); }
 
