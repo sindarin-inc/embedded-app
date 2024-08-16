@@ -92,7 +92,7 @@ public:
     // power on sequence in parallel to drawing the UI.
     void beginPowerOn();
 
-    auto getBuffer() const -> const uint8_t * { return previousBuffer_; }
+    [[nodiscard]] auto getBuffer() const -> const uint8_t * { return previousBuffer_; }
 
 protected:
     inline void setCS(bool value, ScreenSide screen) const;
