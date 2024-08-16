@@ -196,12 +196,12 @@ void FileTransfer::handleFilePutCommand(const std::string &command, const std::s
 
     mbedtls_md_starts(&ctx_);
 
-    txLine(StringFormat("%s %s", command.c_str(), payload.c_str()));
-
     directCommand_.setPassthroughData(
         [this](const std::shared_ptr<uint8_t[]> &data, uint8_t length) {
         fileTransferCallback(data, length);
     });
+
+    txLine(StringFormat("%s %s", command.c_str(), payload.c_str()));
 }
 
 void FileTransfer::handleTransferBookCommand(const std::string &command, const std::string &payload,
