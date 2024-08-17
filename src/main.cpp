@@ -585,6 +585,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         } else if (command == "SCREENSHOT") {
             myDisplay.sendCurrentScreenToSerial(true);
         } else if (command == "GRID") {
+            txLine(command);
             DispatchGetUiQueue()->dispatch([]() {
                 // Override brightness to max
                 lightingController.setOverrideValuePercent(100);
@@ -592,31 +593,30 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
                 rootUi.setCurrentScreen(*testScreen);
                 UIInnerLoop(RemoteCommand::NONE);
             });
-            txLine(command);
             return true;
         } else if (command == "UP") {
-            DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::UP); });
             txLine(command);
+            DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::UP); });
             return true;
         } else if (command == "LEFT") {
-            DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::LEFT); });
             txLine(command);
+            DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::LEFT); });
             return true;
         } else if (command == "RIGHT") {
-            DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::RIGHT); });
             txLine(command);
+            DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::RIGHT); });
             return true;
         } else if (command == "DOWN") {
-            DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::DOWN); });
             txLine(command);
+            DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::DOWN); });
             return true;
         } else if (command == "ENTER") {
-            DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::ENTER); });
             txLine(command);
+            DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::ENTER); });
             return true;
         } else if (command == "BACK") {
-            DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::BACK); });
             txLine(command);
+            DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::BACK); });
             return true;
         } else if (command == "UNPAIRPT") {
 #if CONFIG_USE_TURN_TOUCH_REMOTE
