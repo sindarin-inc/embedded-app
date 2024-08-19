@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <functional>
+#include <mbedtls/md.h>
 #include <string>
 #include <utility>
 
@@ -13,7 +14,6 @@
 #include "Storage/LocalStore.hpp"
 #include "freertos/FreeRTOS.h"
 #include "freertos/timers.h"
-#include "mbedtls/md.h"
 #include "sindarin-debug.h"
 
 #define CHUNK_SIZE 1024
