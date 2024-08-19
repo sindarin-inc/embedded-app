@@ -60,7 +60,8 @@ auto MainMenuScreen::layout(LayoutContext &context, Size size) -> Size {
             int y = 0;
             // Switch to Resolution-based here. 5x5 is a good size for the paging bubbles
             // on a 256 x 256 screen, but higher resolution screens will need larger bubbles
-            // XXXBCBC
+            // This is pretty arbitrary, but it's a start. Can be revisited if things don't look
+            // right on other displays.
             uint16_t bubbleSize = 0;
             if (display_.width() < 300) {
                 bubbleSize = 5;

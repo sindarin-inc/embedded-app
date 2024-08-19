@@ -54,7 +54,7 @@ auto TTFNotoSansLight::ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2
 
     if (resDef1.has_value() && resDef2.has_value() && (resDef1.value().first != 99) &&
         (resDef2.value().second != 99)) {
-        auto value = notoSansLight.mKerns[resDef1.value().first][resDef2.value().second];
+        auto value = notoSansLight.mKerns_[resDef1.value().first][resDef2.value().second];
         if (value != 0) {
             *kern = value;
             // LOGW("Class kern for %d (%d) and %d (%d): %d (%d)", glyphCode1,

@@ -160,16 +160,16 @@ const struct {
         0xe2, 0x9d, 0x01, 0x46
     };
 
-    const std::array<std::pair<uint32_t, int16_t>, 0> kerns = {{
+    const std::array<std::pair<uint32_t, int16_t>, 0> kerns_ = {{
     }};
 
     const std::array<std::pair<uint16_t, std::pair<uint16_t, uint16_t>>, 0> classesDefs_ = {{
     }};
 
-    const std::array<std::array<int16_t, 0>, 0> mKerns = {{
+    const std::array<std::array<int16_t, 0>, 0> mKerns_ = {{
     }};
 
-    const std::array<std::pair<uint32_t, uint16_t>, 0> ligatures = {{
+    const std::array<std::pair<uint32_t, uint16_t>, 0> ligatures_ = {{
     }};
 } solPrivateLight;
 

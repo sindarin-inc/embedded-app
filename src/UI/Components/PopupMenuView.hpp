@@ -91,9 +91,10 @@ public:
 
         // To be visually pleasing, the popup menu should take about 150% of the width
         // of the widest text -- this allows for the buttons as well
-        // XXXBCBC figure this out
         // return {maxWidthOfText * 110 / 100, y};
         // 152 / 100 makes it exactly what it was before (106).
+        // However, on other displays with larger resoltuions, the popup menu still seems a bit too
+        // big. Future work to figure this out.
         return {152 * x / 100, y};
     }
 
