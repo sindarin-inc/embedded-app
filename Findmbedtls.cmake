@@ -1,3 +1,7 @@
+# We put this in the root directory so it can be found from
+# the lib/Simulator/ directory (when doing make sim)
+# as well as the test/CatchTests/ directory (when doing make test)
+
 find_path(MBEDTLS_INCLUDE_DIR "mbedtls/md.h")
 
 # Find libraries (this will find either .so or .a)
