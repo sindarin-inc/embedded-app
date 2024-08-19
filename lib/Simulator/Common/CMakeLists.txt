@@ -41,9 +41,11 @@ add_subdirectory(${REPO_ROOT_DIR}/components/Adafruit-GFX-Library ${CMAKE_CURREN
 add_library(${PROJECT_NAME} STATIC ${SOURCES})
 
 find_package(Freetype REQUIRED)
-find_package(MbedTLS REQUIRED)
 
-target_link_libraries(${PROJECT_NAME} PUBLIC pugixml ArduinoJson miniz astubs esp-idf-stubs nvs_flash Adafruit-GFX-Library Freetype::Freetype MbedTLS::mbedtls)
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}")
+find_package(mbedtls REQUIRED)
+
+target_link_libraries(${PROJECT_NAME} PUBLIC pugixml ArduinoJson miniz astubs esp-idf-stubs nvs_flash Adafruit-GFX-Library Freetype::Freetype ${MBEDTLS_LIBRARIES})
 
 target_include_directories(${PROJECT_NAME} PUBLIC
     "${REPO_ROOT_DIR}/src"

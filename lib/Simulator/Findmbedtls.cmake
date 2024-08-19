@@ -1,0 +1,14 @@
+find_path(MBEDTLS_INCLUDE_DIR "mbedtls/md.h")
+find_library(MBEDTLS_LIBRARIES NAMES mbedtls libmedtls)
+
+if(MBEDTLS_INCLUDE_DIRS AND MBEDTLS_LIBRARIES)
+	set(MBEDTLS_FOUND TRUE)
+	set(MBEDTLS_LIBRARIES ${MBEDTLS_LIBRARIES})
+	set(MBEDTLS_INCLUDE_DIRS ${MBEDTLS_INCLUDE_DIR})
+	message("Found mbedtls library at ${MBEDTLS_LIBRARIES}")
+	message("Found mbedtls includes at ${MBEDTLS_INCLUDE_DIRS}")
+else()
+	set(MBEDTLS_FOUND FALSE)
+endif()
+
+mark_as_advanced(MBEDTLS_INCLUDE_DIRS MBEDTLS_LIBRARIES)
