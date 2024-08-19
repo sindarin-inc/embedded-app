@@ -9,16 +9,11 @@
 #endif
 #include "sindarin-debug.h"
 
-// Why we have these defined in both the driver and here doesn't
-// make a lot of sense to me, but before I rip it out, I'll just
-// note it here.
-#define EinkET013TT1_X_PIXELS EinkET013TT1_PIXEL_WIDTH
-#define EinkET013TT1_Y_PIXELS EinkET013TT1_PIXEL_HEIGHT
-
 class DisplayEinkET013TT1 : public DisplaySystem {
 public:
     DisplayEinkET013TT1(uint8_t csLeft, uint8_t csRight, uint8_t rst) noexcept
-        : gfxCanvas_(EinkET013TT1_X_PIXELS, EinkET013TT1_Y_PIXELS), driver_(csLeft, csRight, rst) {
+        : gfxCanvas_(EinkET013TT1_PIXEL_WIDTH, EinkET013TT1_PIXEL_HEIGHT),
+          driver_(csLeft, csRight, rst) {
         gfxClass_ = &gfxCanvas_;
     };
     DisplayEinkET013TT1(DisplayEinkET013TT1 const &) = delete;
@@ -79,8 +74,10 @@ public:
 #endif
 
 protected:
-    [[nodiscard]] auto nativeWidth() const -> uint16_t override { return EinkET013TT1_X_PIXELS; }
-    [[nodiscard]] auto nativeHeight() const -> uint16_t override { return EinkET013TT1_Y_PIXELS; }
+    [[nodiscard]] auto nativeWidth() const -> uint16_t override { return EinkET013TT1_PIXEL_WIDTH; }
+    [[nodiscard]] auto nativeHeight() const -> uint16_t override {
+        return EinkET013TT1_PIXEL_HEIGHT;
+    }
 
     [[nodiscard]] auto getBuffer() -> uint8_t * override { return gfxCanvas_.getBuffer(); }
 

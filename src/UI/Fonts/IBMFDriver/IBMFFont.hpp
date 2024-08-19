@@ -53,7 +53,7 @@ public:
     }
 
     inline auto setDisplayPixelResolution(PixelResolution res) -> bool {
-#if DISPLAY_PIXEL_RESOLUTION_IS_FIX
+#if CONFIG_DISPLAY_PIXEL_RESOLUTION_IS_FIX
         log_w("The display does not allow to change it's pixel resolution!");
         return false;
 #else
@@ -65,6 +65,7 @@ public:
             fontData_->getFace(faceIndex_)->setDisplayPixelResolution(res);
             return true;
         }
+        return false;
 #endif
     }
 

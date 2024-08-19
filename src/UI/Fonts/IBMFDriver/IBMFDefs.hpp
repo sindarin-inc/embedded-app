@@ -124,7 +124,7 @@ const constexpr int DEBUG = 0;
 #include "UI/Fonts/FontDefs.hpp"
 
 const constexpr uint8_t IBMF_VERSION = 4; // Font format version
-const constexpr uint8_t MAX_FACE_COUNT = 10;
+const constexpr uint8_t MAX_FACE_COUNT = 3;
 
 const constexpr uint8_t NO_LIG_KERN_PGM = 0xFF;
 

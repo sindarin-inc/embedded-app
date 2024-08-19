@@ -2,9 +2,10 @@
 
 #if CONFIG_FONT_TTF
 
+#include <esp_heap_caps.h>
+#include <freetype/ftmodapi.h>
+
 #include "TTFFontData.hpp"
-#include "esp_heap_caps.h"
-#include "freetype/ftmodapi.h"
 
 FT_Library FontData::library = nullptr;
 

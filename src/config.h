@@ -15,10 +15,6 @@
 
 #define Hastings20x40_3
 
-// Uncomment to disable power management when debugging on the rev1 dev board
-// XXXBCBC: Should move this to the build system
-#define DISABLE_POWER_MANAGEMENT 1
-
 // Currently using the App (BLE Server in firmware) is incompatible with
 // Turn Touch (BLE client in firmware). Enable one of these options or the
 // other.
@@ -98,32 +94,3 @@
 #define I2C_MASTER_SDA_IO 1
 #define I2C_MASTER_FREQ_HZ 400000
 #endif
-
-// This is a wart -- need to figure out how to have the right
-// one passed in from the build system.
-#if CONFIG_DISPLAY_WAVESHARE_6INHD
-#undef CONFIG_FONT_IBMF
-#define CONFIG_FONT_TTF 1
-
-// By default, we'll just use ONE BIT font rendering and display, but the below
-// will allow us to test out 8Bit should we want to
-// #define CONFIG_WAVESHARE_8BIT 1
-// This allows us to not actually do anything on the display through the driver
-// for testing headless
-// #define CONFIG_WAVESHARE_HEADLESS 1
-#endif
-
-// Uncomment the following lines to force the use of TTF
-// #undef CONFIG_FONT_IBMF
-// #undef CONFIG_FONT_TTF
-// #define CONFIG_FONT_TTF 1
-
-#if CONFIG_FONT_TTF
-#define SHOW_CACHE_STATS 0
-#endif
-
-#define ShOW_FREE_STACK_SPACE 0
-
-// Set DISPLAY_PIXEL_RESOLUTION_IS_FIX to 0 for displays that allow changing their pixel
-// resolution dynamically.
-#define DISPLAY_PIXEL_RESOLUTION_IS_FIX 1

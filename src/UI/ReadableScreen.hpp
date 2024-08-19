@@ -152,6 +152,7 @@ protected:
     Telemetry &telemetry_;
     FileSystem &fileSystem_;
 
+    bool firstLoad_ = true;
     bool inBookmark_ = false;
     bool showingFirstTimeView_ = false;
 
