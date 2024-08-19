@@ -55,6 +55,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC
     "${REPO_ROOT_DIR}/lib/inifile"
     "${REPO_ROOT_DIR}/lib/stb_image"
     "${REPO_ROOT_DIR}/lib/argparse"
+    "${MBEDTLS_INCLUDE_DIRS}"
 )
 
 # Set compile definitions based on the ENABLE_8BIT_DISPLAY option
