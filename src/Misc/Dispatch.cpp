@@ -11,7 +11,7 @@
 // This Bounce implementation is pulled from bounce.cpp
 // This allows you to use a class method as a c function pointer
 template <class T, class METHOD, METHOD M, class... PARAMS>
-static auto bounce(void *priv, PARAMS... params)
+auto bounce(void *priv, PARAMS... params)
     -> decltype(((*reinterpret_cast<T *>(priv)).*M)(params...)) {
     return ((*reinterpret_cast<T *>(priv)).*M)(params...);
 }
@@ -164,10 +164,10 @@ void DispatchQueue::dispatchOneOff(const fp_t &op, size_t threadStack, UBaseType
         nameBuf, threadStack, work, priority, nullptr, core);
 }
 
-static DispatchQueue *core0BackgroundQueue = nullptr;
-static DispatchQueue *core1BackgroundQueue = nullptr;
-static DispatchQueue *uiQueue = nullptr;
-static DispatchQueue *einkQueue = nullptr;
+DispatchQueue *core0BackgroundQueue = nullptr;
+DispatchQueue *core1BackgroundQueue = nullptr;
+DispatchQueue *uiQueue = nullptr;
+DispatchQueue *einkQueue = nullptr;
 
 auto DispatchGetCore0BackgroundQueue(bool create) -> DispatchQueue * {
     if (core0BackgroundQueue == nullptr && create) {
