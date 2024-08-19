@@ -45,9 +45,6 @@ find_package(Freetype REQUIRED)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}")
 find_package(mbedtls REQUIRED)
 
-message("In CMAKELists.txt: ${MBEDTLS_LIBRARIES}")
-message("INCLUDES:  ${MBEDTLS_INCLUDE_DIRS}")
-
 target_link_libraries(${PROJECT_NAME} PUBLIC pugixml ArduinoJson miniz astubs esp-idf-stubs nvs_flash Adafruit-GFX-Library Freetype::Freetype ${MBEDTLS_LIBRARIES})
 
 target_include_directories(${PROJECT_NAME} PUBLIC
