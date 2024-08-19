@@ -161,8 +161,8 @@ void USBSerial::begin() {
     // In the simulator, we create a pseudo-serial port for testing
     serialPort_ = std::make_unique<AsyncPseudoSerialPort>();
     log_d("Created a pseudo-serial port and you can connect to it at %s",
-          serialPort_->get_slave_name());
-    serialPort_->set_rx_callback([this](char *data, size_t length) {
+          serialPort_->getSlaveName());
+    serialPort_->setRxCallback([this](char *data, size_t length) {
         // Iterate through all the listeners registered with the USBSerial device and send them the
         // data.
         auto sharedData = std::shared_ptr<uint8_t[]>(new uint8_t[length]);

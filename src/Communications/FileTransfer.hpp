@@ -53,7 +53,7 @@ public:
                 if (!totalGetTransferred_) {
                     // turn back on the processing of file data
                     directCommand_.setPassthroughData(
-                        [this](const std::shared_ptr<uint8_t[]> &data, uint8_t length) {
+                        [this](const std::shared_ptr<uint8_t[]> &data, size_t length) {
                         fileTransferCallback(data, length);
                     });
                 }
