@@ -2,6 +2,8 @@
 
 #include <vector>
 
+class EPubFile;
+
 #include "Misc/SpiramAllocator.hpp"
 #include "Models/Readable.hpp"
 #include "Renderers/RendererStream.hpp"
@@ -21,7 +23,7 @@ public:
     // Note: Allocates the ContainerStream on the heap, make sure to `delete` it somewhere.
     auto newRendererStream(const char *path) const -> std::shared_ptr<RendererStream>;
     auto newEPubRendererStream(const char *path, const std::shared_ptr<Readable> &readable) const
-        -> std::shared_ptr<RendererStream>;
+        -> std::shared_ptr<EPubFile>;
     auto newGzipRendererStream(const char *path) const -> std::shared_ptr<RendererStream>;
 
     // Underlying methods to init and read data

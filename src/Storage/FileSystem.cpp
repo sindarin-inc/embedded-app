@@ -17,7 +17,7 @@ auto FileSystem::newRendererStream(const char *path) const -> std::shared_ptr<Re
 
 auto FileSystem::newEPubRendererStream(const char *path,
                                        const std::shared_ptr<Readable> &readable) const
-    -> std::shared_ptr<RendererStream> {
+    -> std::shared_ptr<EPubFile> {
     log_d("Attempting to open: %s", path);
     auto file = open(path);
     if (!file) {

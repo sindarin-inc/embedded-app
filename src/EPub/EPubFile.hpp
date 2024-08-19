@@ -106,6 +106,8 @@ public:
     auto getDictionaryContent(const std::shared_ptr<EPubPlace> &placeInReadable,
                               std::shared_ptr<TxtPlace> &placeInDictionary) -> SpiramString;
 
+    void close();
+
 private:
     Unzipper epubUnzipper_;
     const std::shared_ptr<Readable> readable_;
@@ -122,5 +124,4 @@ private:
     std::string currentFilePath_;
 
     auto open() -> bool;
-    void close();
 };
