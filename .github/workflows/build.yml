@@ -32,6 +32,9 @@ jobs:
       - name: Install SDL
         run: sudo apt update && sudo apt install -y libsdl2-dev libsdl2-image-dev
 
+      - name: Install mbedtls
+        run: sudo apt update && sudo apt install -y libmbedtls-dev
+
       - name: build
         run: |
           set -o pipefail
