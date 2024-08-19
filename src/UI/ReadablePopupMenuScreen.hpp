@@ -1,9 +1,12 @@
 #include "Misc/Menu.hpp"
 #include "Misc/Telemetry.hpp"
+#include "Renderers/RendererStream.hpp"
+#include "Storage/LocalStore.hpp"
 #include "UI/Components/EinkView.hpp"
 #include "UI/Components/PopupMenuView.hpp"
 #include "UI/ContainerScreen.hpp"
 #include "UI/LightingAdjustScreen.hpp"
+#include "UI/LineMenuScreen.hpp"
 #include "UI/ReadableDictionaryScreen.hpp"
 #include "UI/ReadablePlacemarkHistoryScreen.hpp"
 #include "UI/ReadableSeekScreen.hpp"
@@ -17,10 +20,12 @@ public:
     ReadablePopupMenuScreen(DisplaySystem &display, PreferencesStore &prefs, FileSystem &fileSystem,
                             const std::shared_ptr<Readable> &readable,
                             LightingController &lightingController, Renderer &renderer,
-                            Telemetry &telemetry)
+                            Telemetry &telemetry, LocalStore &localStore,
+                            std::shared_ptr<RendererStream> &stream)
         : EinkView(display), display_(display), prefs_(prefs), readable_(readable),
           renderer_(renderer), popupMenuView_(display), telemetry_(telemetry),
-          fileSystem_(fileSystem),
+          localStore_(localStore), fileSystem_(fileSystem), stream_(stream),
+          lineMenuScreen_(prefs, display),
           lightingAdjustScreen_(display, prefs, lightingController, telemetry),
           readableSeekScreen_(prefs, readable, renderer),
           readableTableOfContentsScreen_(prefs, readable, renderer, display, telemetry),
@@ -87,13 +92,17 @@ protected:
     Renderer &renderer_;
     PopupMenuView popupMenuView_;
     Telemetry &telemetry_;
+    LocalStore &localStore_;
     FileSystem &fileSystem_;
+    std::shared_ptr<RendererStream> &stream_;
+    LineMenuScreen lineMenuScreen_;
 
     bool firstLoad_ = true;
     ChapterIdx currentChapterIdx_ = -1;
 
     std::shared_ptr<MenuItemView> archiveMenuItemView_;
     std::shared_ptr<MenuItemView> unarchiveMenuItemView_;
+    std::shared_ptr<MenuItemView> deleteMenuItemView_;
 
     LightingAdjustScreen lightingAdjustScreen_;
     ReadableSeekScreen readableSeekScreen_;

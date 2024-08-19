@@ -178,3 +178,9 @@ private:
     SpiramString str_;
     SpiramStringBuf buf_;
 };
+
+// Compatibility allocator for miniz
+auto SpiZAlloc(void *opaque, size_t items, size_t size) -> void *;
+
+// Compatibility deallocator for miniz
+void SpiZFree(void *opaque, void *address);

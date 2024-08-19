@@ -7,6 +7,7 @@
 
 #include "Communications/USBSerial.hpp"
 #include "Misc/DirectCommand.hpp"
+#include "Misc/Dispatch.hpp"
 #include "Misc/InactivityTimer.hpp"
 #include "Storage/FileSystem.hpp"
 #include "Storage/LocalStore.hpp"
@@ -36,7 +37,12 @@ public:
                     log_e("Received a CANCEL command when not expecting one");
                 }
                 log_i("Transfer canceled by the sender");
-                file_.close();
+                if (!totalGetTransferred_) {
+                    filePut_.close();
+                } else {
+                    fileGet_.close();
+                    resetState();
+                }
                 txLine("CANCEL");
                 awaitingCancelContinue_ = false;
                 return true;
@@ -44,14 +50,18 @@ public:
                 if (!awaitingCancelContinue_) {
                     log_e("Received a CANCEL command when not expecting one");
                 }
-                log_i("Got a CONTINUE command");
-                // turn back on the processing of file data
-                directCommand_.setPassthroughData(
-                    [this](const std::shared_ptr<uint8_t[]> &data, uint8_t length) {
-                    fileTransferCallback(data, length);
-                });
+                if (!totalGetTransferred_) {
+                    // turn back on the processing of file data
+                    directCommand_.setPassthroughData(
+                        [this](const std::shared_ptr<uint8_t[]> &data, uint8_t length) {
+                        fileTransferCallback(data, length);
+                    });
+                }
                 awaitingCancelContinue_ = false;
                 txLine("CONTINUE");
+                if (totalGetTransferred_) {
+                    DispatchGetCore0BackgroundQueue()->dispatch([this] { sendFileChunk(); });
+                }
                 return true;
             }
             return false;
@@ -62,13 +72,18 @@ public:
 private:
     void handleCommand(const std::string &command, const std::string &payload,
                        const DirectCommand::TxLine &txLine);
-    void handleFileCommand(const std::string &command, const std::string &payload,
-                           const DirectCommand::TxLine &txLine);
+    void handleFilePutCommand(const std::string &command, const std::string &payload,
+                              const DirectCommand::TxLine &txLine);
+    void handleFileGetCommand(const std::string &command, const std::string &payload,
+                              const DirectCommand::TxLine &txLine);
+    void handleFileLSCommand(const std::string &command, const std::string &payload,
+                             const DirectCommand::TxLine &txLine);
     void handleTransferBookCommand(const std::string &command, const std::string &payload,
                                    const DirectCommand::TxLine &txLine);
     void handleEPUB();
     void handleJSON();
     void unsetPassthroughAndSendPutError();
+    void sendFileChunk();
 
     // Reset all the member variables to their initial state
     void resetState() {
@@ -76,7 +91,9 @@ private:
         fileSize_ = 0;
         bytesReceived_ = 0;
         awaitingCancelContinue_ = false;
-        awaitingFinalSuccess_ = false;
+        awaitingFinalPutSuccess_ = false;
+        awaitingFileGetSuccess_ = false;
+        totalGetTransferred_ = 0;
         timeoutTimer_.stop();
     }
 
@@ -90,12 +107,15 @@ private:
     std::string fileUUID_;
     int fileSize_ = 0;
     int bytesReceived_ = 0;
+    int totalGetTransferred_ = 0;
+    SFile fileGet_;
     char checksum_[65]{};
     mbedtls_md_context_t ctx_{};
     mbedtls_md_type_t mdType_ = MBEDTLS_MD_SHA256;
     bool awaitingCancelContinue_ = false;
-    bool awaitingFinalSuccess_ = false;
+    bool awaitingFinalPutSuccess_ = false;
+    bool awaitingFileGetSuccess_ = false;
     InactivityTimer timeoutTimer_;
-    SFile file_;
+    SFile filePut_;
     std::unique_ptr<SpiRamJsonDocument> jsonDoc_ = nullptr;
 };

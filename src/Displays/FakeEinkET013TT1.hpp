@@ -72,6 +72,8 @@ public:
 
     void setSkipSignalling(bool skip) { skipSignalling_ = skip; }
 
+    auto getBuffer() const -> const uint8_t * { return previousBuffer_; }
+
 protected:
     // Simulated positions of the eink particles rendered as 8-bit grayscale
     std::unique_ptr<uint8_t[]> particlePositions_;

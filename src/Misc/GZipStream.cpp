@@ -4,16 +4,11 @@
 
 #define MAX_GZIP_CHUNK_SIZE 32768
 
-static auto spiZAlloc(void *opaque, size_t items, size_t size) -> void * {
-    return SpiRamMalloc(items * size);
-}
-static void spiZFree(void *opaque, void *address) { SpiRamFree(address); }
-
 auto GZipStream::init() -> bool {
     memset(&zs_, 0, sizeof(zs_));
 
-    zs_.zalloc = spiZAlloc;
-    zs_.zfree = spiZFree;
+    zs_.zalloc = SpiZAlloc;
+    zs_.zfree = SpiZFree;
 
     int ret = mz_deflateInit2(&zs_, MZ_BEST_COMPRESSION, MZ_DEFLATED, -MZ_DEFAULT_WINDOW_BITS, 8,
                               MZ_DEFAULT_STRATEGY);

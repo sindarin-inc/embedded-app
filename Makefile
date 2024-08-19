@@ -112,11 +112,11 @@ build: check_idf
 
 .PHONY: flash
 flash: build
-	idf.py $(IDF_PROFILE) flash --port $$(python3 scripts/port_finder.py programming)
+	idf.py $(IDF_PROFILE) flash --port $$(python3 scripts/port_tool.py find_port programming)
 
 .PHONY: monitor
 monitor: check_idf
-	idf.py $(IDF_PROFILE) monitor --no-reset --port $$(python3 scripts/port_finder.py logging)
+	idf.py $(IDF_PROFILE) monitor --no-reset --port $$(python3 scripts/port_tool.py find_port logging)
 
 .PHONY: clean
 clean:
