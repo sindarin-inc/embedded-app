@@ -40,6 +40,8 @@ protected:
 
     unsigned int nextInterval_ = 0;
 
+    bool awaitingButton_ = false;
+
     DisplaySystem::UpdateType nextUpdateType_ = DisplaySystem::UpdateType::FULL;
 
     std::vector<std::function<void(DisplaySystem &)>> lambdas_;
