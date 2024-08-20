@@ -50,7 +50,7 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs)
     // Always run the manifesto in light mode.
 
     display_.invertDisplay(false);
-
+#if 0
     lambdas_.emplace_back([this](DisplaySystem &display) {
         std::string message = "Welcome to the Sol Reader! Let's begin...";
         display.clearDisplay();
@@ -289,13 +289,19 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs)
         nextUpdateType_ = DisplaySystem::UpdateType::ERASE;
         nextInterval_ = 10;
     });
-
+#endif
     lambdas_.emplace_back([this](DisplaySystem &display) {
         dropVcom_ = true;
         display.invertDisplay(false);
         display.drawXBitmap(0, 0, MANI_EYE1_BITS, mani_eye1_width, mani_eye1_height, display.fg);
+        // std::string message = "Press \ue000 to begin";
+        // display.setFont(static_cast<Font *>(&fontFace0));
+        // display.drawSingleLineOfText(message, (display.width() - display.getTextWidth(message)) /
+        // 2,
+        //                             200, true);
         nextUpdateType_ = DisplaySystem::UpdateType::PARTIAL;
-        nextInterval_ = 1250;
+        awaitingButton_ = true;
+        // nextInterval_ = 2000;
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
@@ -412,8 +418,11 @@ void DemoScreen::render(DisplaySystem &display) {
 
     // Must stop the timer because ChangePeriod starts it.
     xTimerStop(DisplaySystem::animationTimer, 0);
-    // Move to the next animation
-    xTimerChangePeriod(DisplaySystem::animationTimer, pdMS_TO_TICKS(nextInterval_), 0);
+
+    if (!awaitingButton_) {
+        // Move to the next animation
+        xTimerChangePeriod(DisplaySystem::animationTimer, pdMS_TO_TICKS(nextInterval_), 0);
+    }
     int nextVcomNudge = 0;
     if (dropVcom_) {
         nextVcomNudge = -2500;
@@ -421,18 +430,27 @@ void DemoScreen::render(DisplaySystem &display) {
         nextVcomNudge = 0;
     }
     display.updateDisplay(nextUpdateType_, true, nextVcomNudge);
-    currentScreen_++;
+    if (!awaitingButton_) {
+        currentScreen_++;
+    }
 }
 
 void DemoScreen::processCommand(RemoteCommand command) {
     switch (command) {
     case RemoteCommand::ENTER:
-        xTimerStop(DisplaySystem::animationTimer, 0);
-        // Gives us the full refresh
-        display_.clearDontChangeRefreshType();
-        display_.clearDisplay();
-        display_.clearFrameBuffer();
-        finishDemo();
+        if (awaitingButton_) {
+            awaitingButton_ = false;
+            xTimerStart(DisplaySystem::animationTimer, 0);
+            currentScreen_++;
+            setNeedsRerender();
+        } else {
+            xTimerStop(DisplaySystem::animationTimer, 0);
+            // Gives us the full refresh
+            display_.clearDontChangeRefreshType();
+            display_.clearDisplay();
+            display_.clearFrameBuffer();
+            finishDemo();
+        }
         break;
     case RemoteCommand::ANIMATION:
         setNeedsRerender();
