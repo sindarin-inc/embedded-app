@@ -23,18 +23,24 @@ auto MainMenuScreen::layout(LayoutContext &context, Size size) -> Size {
         [this](LayoutContext &context, Size size) -> Size {
             int x = 0;
             int y = 0;
-            int viewCount = topBarViews_.size();
+            int viewCount = 1; // topBarViews_.size();
             int boxWidth = (size.width - (viewCount - 1) * spacing) / viewCount;
             Size boxSize = {boxWidth, size.height};
 
             int place = 0;
+            context.setViewFrame(topLeftArrowView_, {{x + 60, y + 2}, {5, 10}},
+                                 LayoutOptionsSizeToFit | LayoutOptionsAlignLeft);
+            context.setViewFrame(topRightArrowView_, {{x + boxWidth - 70, y + 2}, {5, 10}},
+                                 LayoutOptionsSizeToFit | LayoutOptionsAlignRight);
             for (auto &view : topBarViews_) {
-                context.setViewFrame(*view, {{x, y}, boxSize},
-                                     LayoutOptionsSizeToFit | LayoutOptionsAlignCenter);
                 if (place == currentSelection_) {
-                    context.setViewFrame(topBarSelectionView_, {{x, y}, boxSize});
+                    context.setViewFrame(*view, {{x, y}, boxSize},
+                                         LayoutOptionsSizeToFit | LayoutOptionsAlignCenter);
                 }
-                x += boxWidth + spacing;
+                // if (place == currentSelection_) {
+                //     context.setViewFrame(topBarSelectionView_, {{x, y}, boxSize});
+                // }
+                // x += boxWidth + spacing;
                 place++;
             };
 
@@ -93,8 +99,18 @@ auto MainMenuScreen::layout(LayoutContext &context, Size size) -> Size {
 }
 
 void MainMenuScreen::drawInRect(Rect rect) {
+
+    topLeftArrowView_.draw();
+    topRightArrowView_.draw();
+
+    int place = 0;
     for (auto &view : topBarViews_) {
-        (*view).draw();
+        log_d("iterating through topBarViews_ %d", currentSelection_);
+        if (place == currentSelection_) {
+            log_d("drawing topBarSelectionView_ %d", currentSelection_);
+            (*view).draw();
+        }
+        place++;
     }
 
     for (auto &view : menuItemViews_) {

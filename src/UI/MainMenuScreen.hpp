@@ -17,7 +17,8 @@
 class MainMenuScreen : public MenuScreen {
 public:
     MainMenuScreen(Battery &battery, DisplaySystem &display, MenuStyleFamily myStyle)
-        : MenuScreen(battery, display, myStyle), topBarSelectionView_(display, 3){};
+        : MenuScreen(battery, display, myStyle), topBarSelectionView_(display, 3),
+          topLeftArrowView_(display), topRightArrowView_(display, ArrowRight){};
     MainMenuScreen(MainMenuScreen const &) = delete;
 
     auto layout(LayoutContext &context, Size size) -> Size override;
@@ -40,6 +41,8 @@ protected:
     std::vector<std::shared_ptr<BoxView>> menuPageViews_;
     std::vector<std::shared_ptr<SingleLineTextView>> topBarViews_;
     BoxView topBarSelectionView_;
+    ArrowView topLeftArrowView_;
+    ArrowView topRightArrowView_;
 
     int currentSelection_ = 0;
 };
