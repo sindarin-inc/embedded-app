@@ -42,10 +42,10 @@ add_library(${PROJECT_NAME} STATIC ${SOURCES})
 
 find_package(Freetype REQUIRED)
 
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}")
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/Common")
 
 # This is so make test will work from the test/CatchTests directory (to find the Findmbedtls.cmake file)
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/../../lib/Simulator")
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/../../lib/Simulator/Common")
 
 message("CMAKE_MODULE_PATH: ${CMAKE_MODULE_PATH}")
 find_package(mbedtls REQUIRED)
