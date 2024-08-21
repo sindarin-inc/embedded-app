@@ -67,10 +67,10 @@ private:
     void readLoop() {
         char buffer[1024];
         while (!stopThread) {
-            auto bytes_read = read(masterFd, buffer, sizeof(buffer));
-            if (bytes_read > 0) {
+            auto bytesRead = read(masterFd, buffer, sizeof(buffer));
+            if (bytesRead > 0) {
                 if (rxCallback) {
-                    rxCallback(buffer, bytes_read);
+                    rxCallback(buffer, bytesRead);
                 }
             } else {
                 // We tried using select but kept getting EINTR, so we're just going to sleep for a
