@@ -235,11 +235,13 @@ void ReadablePopupMenuScreen::populatePopupMenu() {
     }
 }
 
-void ReadablePopupMenuScreen::preselectArchiveMenuItem() {
+void ReadablePopupMenuScreen::preselectArchiveOrDeleteMenuItem() {
     bool archived = prefs_.readableArchivedChanged.get(readable_->shortenedUuid.c_str());
     int index = 0;
     for (auto &menuItemView : popupMenuView_.menuItemViews) {
-        if (menuItemView == (archived ? unarchiveMenuItemView_ : archiveMenuItemView_)) {
+        if (menuItemView == (readable_->localOnly
+                                 ? (deleteMenuItemView_)
+                                 : (archived ? unarchiveMenuItemView_ : archiveMenuItemView_))) {
             setCurrSelection(index);
             break;
         }
