@@ -105,9 +105,7 @@ void MainMenuScreen::drawInRect(Rect rect) {
 
     int place = 0;
     for (auto &view : topBarViews_) {
-        log_d("iterating through topBarViews_ %d", currentSelection_);
         if (place == currentSelection_) {
-            log_d("drawing topBarSelectionView_ %d", currentSelection_);
             (*view).draw();
         }
         place++;
