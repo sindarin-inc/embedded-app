@@ -38,20 +38,20 @@ public:
 
     ~AsyncPseudoSerialPort() {
         stopThread = true;
-        if (masterFd >= 0) close(masterFd);
-        if (slaveFd >= 0) close(slaveFd);
+        if (masterFd >= 0) {
+            close(masterFd);
+        }
+        if (slaveFd >= 0) {
+            close(slaveFd);
+        }
     }
 
     bool write(const char *data, size_t length) {
-        ssize_t written = 0;
-        // For some reason, sometimes it doesn't write the whole buffer
-        do {
-            written += ::write(masterFd, data + written, length - written);
-            if (written < 0) {
-                log_e("Error writing to PTY");
-                return false;
-            }
-        } while (written != static_cast<ssize_t>(length));
+        auto written = ::write(masterFd, data, length);
+        if (written < 0) {
+            log_e("Error writing to PTY");
+            return false;
+        }
         return true;
     }
 
@@ -63,7 +63,7 @@ private:
     void readLoop() {
         char buffer[1024];
         while (!stopThread) {
-            ssize_t bytes_read = ::read(masterFd, buffer, sizeof(buffer));
+            auto bytes_read = read(masterFd, buffer, sizeof(buffer));
             if (bytes_read > 0) {
                 if (rxCallback) {
                     rxCallback(buffer, bytes_read);
