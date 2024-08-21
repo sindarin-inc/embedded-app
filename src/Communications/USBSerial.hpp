@@ -16,7 +16,12 @@
 #include <string>
 #include <utility>
 
+#include "Misc/Dispatch.hpp"
 #include "sindarin-debug.h"
+
+#if SIMULATOR
+#include "Communications/AsyncPseudoSerialPort.hpp"
+#endif
 
 class USBSerial {
 public:
@@ -46,6 +51,9 @@ private:
         USBSerial::getInstance().rxCommandCallback(itf, event);
     }
 
+#if SIMULATOR
+    std::unique_ptr<AsyncPseudoSerialPort> serialPort_ = nullptr;
+#endif
     void enableLoggingInternal();
 
     static bool loggingEnabled;

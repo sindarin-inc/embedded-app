@@ -200,7 +200,7 @@ void FileTransfer::handleFilePutCommand(const std::string &command, const std::s
     mbedtls_md_starts(&ctx_);
 
     directCommand_.setPassthroughData(
-        [this](const std::shared_ptr<uint8_t[]> &data, uint8_t length) {
+        [this](const std::shared_ptr<uint8_t[]> &data, size_t length) {
         fileTransferCallback(data, length);
     });
 
@@ -337,6 +337,7 @@ void FileTransfer::fileTransferCallback(const std::shared_ptr<uint8_t[]> &data, 
             unsetPassthroughAndSendPutError();
             return;
         }
+
         if (strcmp(fileType_, "JSON") == 0) {
             handleJSON();
         } else if (strcmp(fileType_, "EPUB") == 0) {

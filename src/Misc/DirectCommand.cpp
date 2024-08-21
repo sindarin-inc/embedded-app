@@ -87,7 +87,7 @@ void DirectCommand::begin() {
         return false;
     });
 
-    usbSerial_.registerListener([this](const std::shared_ptr<uint8_t[]> &data, uint8_t length) {
+    usbSerial_.registerListener([this](const std::shared_ptr<uint8_t[]> &data, size_t length) {
         receiveTusbPortData(data, length);
     });
 }
@@ -119,7 +119,7 @@ void DirectCommand::handleCommand(const std::string &line, const DirectCommand::
     });
 }
 
-void DirectCommand::receiveTusbPortData(const std::shared_ptr<uint8_t[]> &data, uint8_t length) {
+void DirectCommand::receiveTusbPortData(const std::shared_ptr<uint8_t[]> &data, size_t length) {
     // Be sure we don't time out while receiving data
     powerManager_.feedInactivityTimer();
     if (passthroughDataFn_) {
