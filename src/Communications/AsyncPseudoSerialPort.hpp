@@ -47,11 +47,15 @@ public:
     }
 
     bool write(const char *data, size_t length) {
-        auto written = ::write(masterFd, data, length);
-        if (written < 0) {
-            log_e("Error writing to PTY");
-            return false;
-        }
+        ssize_t written = 0;
+        // For some reason, sometimes it doesn't write the whole buffer
+        do {
+            written += ::write(masterFd, data + written, length - written);
+            if (written < 0) {
+                log_e("Error writing to PTY");
+                return false;
+            }
+        } while (written != static_cast<ssize_t>(length));
         return true;
     }
 
