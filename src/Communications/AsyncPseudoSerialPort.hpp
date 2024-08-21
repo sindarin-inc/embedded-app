@@ -71,7 +71,7 @@ private:
             } else {
                 // We tried using select but kept getting EINTR, so we're just going to sleep for a
                 // bit
-                vTaskDelay(100 / portTICK_PERIOD_MS);
+                vTaskDelay(10 / portTICK_PERIOD_MS);
             }
         }
     }
