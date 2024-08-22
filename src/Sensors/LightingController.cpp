@@ -134,7 +134,10 @@ void LightingController::checkAmbientLight(int fadeMs, int timeoutMs) {
     // Adjust based on the offset
     predictedDutyCycle_ =
         std::clamp(readPredictedDutyCycle() + prefs_.brightnessOffset.get().value_or(0), 1,
-                   static_cast<int>(GetMaxLightingDutyCycle()));
+                   static_cast<int>(GetMaxLightingDutyCycle() * 7 / 100));
+
+    log_d("Setting duty to predicted duty cycle: %d %d channel0: %d channel1: %d",
+          predictedDutyCycle_, readPredictedDutyCycle(), channel0, channel1);
 
     // Bail out early if we have overridden the value here
     if (overrideDutyCycle_ != -1) {
