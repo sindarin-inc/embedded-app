@@ -114,26 +114,37 @@ auto LightingController::readPredictedDutyCycle() -> int {
                     static_cast<int>(GetMaxLightingDutyCycle()));
 }
 
+auto LightingController::scaleLux(float lux) -> float {
+    float scaledLux;
+
+    // if (lux <= 1) {
+    //     // Scale indoor light
+    //     scaledLux = lux * 200;
+    // } else if (lux <= 50) {
+    //     // Scale outdoor shade light
+    //     scaledLux = 200 + (lux - 1) * (800.0 / 49.0); // Maps 1-50 to 200-1000
+    // } else {
+    //     // Scale direct sunlight
+    //     scaledLux = lux * (1000.0 / 50.0); // Lux above 50 scales linearly, starting from 1000
+    // }
+
+    scaledLux = log10(lux + 1) * 300;
+
+    return scaledLux;
+}
+
 auto LightingController::luxify(uint16_t channel0, uint16_t channel1) -> float {
-    float lux;
+    float ratio = (float)channel1 / (channel0 + channel1);
+    float lux = 0.0;
 
-    // If Channel 0 is non-zero
-    if (channel0 != 0) {
-        float ratio = (float)channel1 / (float)channel0;
-
-        if (ratio <= 0.50) {
-            lux = (0.0304 * channel0) - ((0.062 * channel0) * pow(ratio, 1.4));
-        } else if (ratio <= 0.61) {
-            lux = (0.0224 * channel0) - (0.031 * channel1);
-        } else if (ratio <= 0.80) {
-            lux = (0.0128 * channel0) - (0.0153 * channel1);
-        } else if (ratio <= 1.30) {
-            lux = (0.00146 * channel0) - (0.00112 * channel1);
-        } else {
-            lux = 0; // Lux is insignificant
-        }
+    if (ratio < 0.45) {
+        lux = (1.7743 * channel0 + 1.1059 * channel1) / 1000;
+    } else if (ratio < 0.64 && ratio >= 0.45) {
+        lux = (4.2785 * channel0 - 1.9548 * channel1) / 1000;
+    } else if (ratio < 0.85 && ratio >= 0.64) {
+        lux = (0.5926 * channel0 + 0.1185 * channel1) / 1000;
     } else {
-        lux = 0; // No light detected
+        lux = 0;
     }
 
     return lux;
@@ -153,18 +164,18 @@ void LightingController::checkAmbientLight(int fadeMs, int timeoutMs) {
         return;
     }
 
-    float lux = luxify(channel0, channel1);
+    float scaledLux = scaleLux(luxify(channel0, channel1));
 
     // Clamp to a max value of 1000 to avoid the moving average getting too large
-    movingAverage_.add(std::min((uint16_t)(lux), static_cast<uint16_t>(1000)));
+    movingAverage_.add(std::min((uint16_t)(scaledLux), static_cast<uint16_t>(1000)));
 
     // Adjust based on the offset
     predictedDutyCycle_ =
         std::clamp(readPredictedDutyCycle() + prefs_.brightnessOffset.get().value_or(0), 1,
-                   static_cast<int>(GetMaxLightingDutyCycle() * 60 / 100));
+                   static_cast<int>(GetMaxLightingDutyCycle() * 80 / 100));
 
     log_d("Setting duty to predicted duty cycle: %d %d channel0: %d channel1: %d with a lux of %f",
-          predictedDutyCycle_, readPredictedDutyCycle(), channel0, channel1, lux);
+          predictedDutyCycle_, readPredictedDutyCycle(), channel0, channel1, scaledLux);
 
     // Bail out early if we have overridden the value here
     if (overrideDutyCycle_ != -1) {

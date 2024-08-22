@@ -47,6 +47,7 @@ public:
 
 protected:
     auto luxify(uint16_t channel1, uint16_t channel0) -> float;
+    auto scaleLux(float lux) -> float;
     PreferencesStore &prefs_;
     Ltr329Als lightSensor_;
     // Adjusting the number of samples here will change the responsiveness of the ambient light
