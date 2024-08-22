@@ -9,7 +9,8 @@
 
 class LightingController {
 public:
-    LightingController(PreferencesStore &prefs) : prefs_(prefs), lightSensor_(0) {}
+    LightingController(PreferencesStore &prefs)
+        : prefs_(prefs), lightSensor_(0), movingAverage_(25) {}
     LightingController(LightingController const &) = delete;
 
     // Simple diagnostic test to check if the ambient light sensor is reporting the correct part id

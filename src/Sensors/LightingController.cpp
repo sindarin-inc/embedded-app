@@ -114,24 +114,7 @@ auto LightingController::readPredictedDutyCycle() -> int {
                     static_cast<int>(GetMaxLightingDutyCycle()));
 }
 
-auto LightingController::scaleLux(float lux) -> float {
-    float scaledLux;
-
-    // if (lux <= 1) {
-    //     // Scale indoor light
-    //     scaledLux = lux * 200;
-    // } else if (lux <= 50) {
-    //     // Scale outdoor shade light
-    //     scaledLux = 200 + (lux - 1) * (800.0 / 49.0); // Maps 1-50 to 200-1000
-    // } else {
-    //     // Scale direct sunlight
-    //     scaledLux = lux * (1000.0 / 50.0); // Lux above 50 scales linearly, starting from 1000
-    // }
-
-    scaledLux = log10(lux + 1) * 300;
-
-    return scaledLux;
-}
+auto LightingController::scaleLux(float lux) -> float { return log10(lux + 1) * 300; }
 
 auto LightingController::luxify(uint16_t channel0, uint16_t channel1) -> float {
     float ratio = (float)channel1 / (channel0 + channel1);
@@ -174,8 +157,11 @@ void LightingController::checkAmbientLight(int fadeMs, int timeoutMs) {
         std::clamp(readPredictedDutyCycle() + prefs_.brightnessOffset.get().value_or(0), 1,
                    static_cast<int>(GetMaxLightingDutyCycle() * 80 / 100));
 
+// This will be removed before merge to main, but here for testing as we dial in the values
+#if 0
     log_d("Setting duty to predicted duty cycle: %d %d channel0: %d channel1: %d with a lux of %f",
           predictedDutyCycle_, readPredictedDutyCycle(), channel0, channel1, scaledLux);
+#endif
 
     // Bail out early if we have overridden the value here
     if (overrideDutyCycle_ != -1) {
