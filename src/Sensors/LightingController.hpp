@@ -46,6 +46,7 @@ public:
     void checkAmbientLight(int fadeMs = 1000, int timeoutMs = 100);
 
 protected:
+    auto luxify(uint16_t channel1, uint16_t channel0) -> float;
     PreferencesStore &prefs_;
     Ltr329Als lightSensor_;
     // Adjusting the number of samples here will change the responsiveness of the ambient light
