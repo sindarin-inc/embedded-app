@@ -47,7 +47,7 @@ public:
     void checkAmbientLight(int fadeMs = 1000, int timeoutMs = 100);
 
 protected:
-    auto luxify(uint16_t channel1, uint16_t channel0) -> float;
+    auto luxify(uint16_t channel0, uint16_t channel1) -> float;
     auto scaleLux(float lux) -> float;
     PreferencesStore &prefs_;
     Ltr329Als lightSensor_;

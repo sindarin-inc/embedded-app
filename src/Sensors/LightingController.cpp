@@ -114,10 +114,10 @@ auto LightingController::readPredictedDutyCycle() -> int {
                     static_cast<int>(GetMaxLightingDutyCycle()));
 }
 
-auto LightingController::scaleLux(float lux) -> float { return log10(lux + 1) * 300; }
+auto LightingController::scaleLux(float lux) -> float { return std::log10(lux + 1) * 300; }
 
 auto LightingController::luxify(uint16_t channel0, uint16_t channel1) -> float {
-    float ratio = (float)channel1 / (channel0 + channel1);
+    float ratio = static_cast<float>(channel1) / (channel0 + channel1);
     float lux = 0.0;
 
     if (ratio < 0.45) {
@@ -150,7 +150,7 @@ void LightingController::checkAmbientLight(int fadeMs, int timeoutMs) {
     float scaledLux = scaleLux(luxify(channel0, channel1));
 
     // Clamp to a max value of 1000 to avoid the moving average getting too large
-    movingAverage_.add(std::min((uint16_t)(scaledLux), static_cast<uint16_t>(1000)));
+    movingAverage_.add(std::min(static_cast<uint16_t>(scaledLux), static_cast<uint16_t>(1000)));
 
     // Adjust based on the offset
     predictedDutyCycle_ =
