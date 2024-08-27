@@ -93,9 +93,7 @@ void DisplayEinkET013TT1::updateDisplay(DisplaySystem::UpdateType updateType, bo
                                         ScreenSide screen, Rect altRect) {
     auto queue = DispatchGetUiQueue(false);
     if (mirrorToSerial) {
-        USBSerial::getInstance().txSendData(
-            reinterpret_cast<const uint8_t *>(gfxCanvas_.getBuffer()),
-            gfxCanvas_.width() * gfxCanvas_.height() / 8);
+        sendBufferToSerial(gfxCanvas_.getBuffer());
     }
     if (queue == nullptr || !queue->isInQueue()) {
         log_w("updateDisplay called from outside the UI queue.");
@@ -327,5 +325,32 @@ void DisplayEinkET013TT1::drawFullscreenBitmapFromFile(RendererStream &stream) {
         buffer[i] = buffer[i] ^ 0xFF; // XOR to invert all bits
     }
 }
+
+void DisplayEinkET013TT1::sendBufferToSerial(const uint8_t *buffer, bool screenshot) const {
+    constexpr size_t byteSize = EinkET013TT1_X_PIXELS * EinkET013TT1_Y_PIXELS / 8;
+
+    std::string *prefix;
+    if (screenshot) {
+        static std::string screenshotPrefix;
+        if (screenshotPrefix.empty()) {
+            screenshotPrefix = StringFormat("SCREENSHOT %zu", byteSize);
+        }
+        prefix = &screenshotPrefix;
+    } else {
+        static std::string framePrefix;
+        if (framePrefix.empty()) {
+            framePrefix = StringFormat("FRAME %zu", byteSize);
+        }
+        prefix = &framePrefix;
+    }
+    USBSerial::getInstance().txSendLine(*prefix);
+    USBSerial::getInstance().txSendData(buffer, byteSize);
+    USBSerial::getInstance().txSendLine("");
+}
+
+void DisplayEinkET013TT1::sendCurrentScreenToSerial(bool screenshot) const {
+    auto buffer = driver_.getBuffer();
+    sendBufferToSerial(buffer, screenshot);
+};
 
 #endif

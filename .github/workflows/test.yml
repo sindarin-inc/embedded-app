@@ -18,6 +18,9 @@ jobs:
           fetch-depth: 0
           submodules: "recursive"
 
+      - name: Install mbedtls
+        run: sudo apt update && sudo apt install -y libmbedtls-dev
+
       - name: Build unit tests binary
         run: |
           make test-build

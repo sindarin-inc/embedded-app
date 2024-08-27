@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <functional>
+#include <mbedtls/md.h>
 #include <string>
 #include <utility>
 
@@ -13,7 +14,6 @@
 #include "Storage/LocalStore.hpp"
 #include "freertos/FreeRTOS.h"
 #include "freertos/timers.h"
-#include "mbedtls/md.h"
 #include "sindarin-debug.h"
 
 #define CHUNK_SIZE 1024
@@ -53,7 +53,7 @@ public:
                 if (!totalGetTransferred_) {
                     // turn back on the processing of file data
                     directCommand_.setPassthroughData(
-                        [this](const std::shared_ptr<uint8_t[]> &data, uint8_t length) {
+                        [this](const std::shared_ptr<uint8_t[]> &data, size_t length) {
                         fileTransferCallback(data, length);
                     });
                 }

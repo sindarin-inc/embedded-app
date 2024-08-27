@@ -73,7 +73,7 @@ public:
     void drawInRect(Rect rect) override;
 
     void setUpPopupMenu();
-    void preselectArchiveMenuItem();
+    void preselectArchiveOrDeleteMenuItem();
     void preselectFirstItem();
     void preselectLastItem();
 

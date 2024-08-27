@@ -223,7 +223,9 @@ def main():
 
         elif args.port_type == "programming":
             port = find_usb_jtag_port()
-            if not port:
+            if port:
+                print(port)
+            else:
                 port = find_control_port()
                 if port:
                     logging.debug(f"Found control port at {port}. Resetting into programming mode.")

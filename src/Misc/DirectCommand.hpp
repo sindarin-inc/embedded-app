@@ -36,14 +36,14 @@ public:
     DirectCommand(USBSerial &usbSerial, FileSystem &fileSystem, PowerManager &powerManager)
         : usbSerial_(usbSerial), fileSystem_(fileSystem), powerManager_(powerManager){};
     void begin();
-    void receiveTusbPortData(const std::shared_ptr<uint8_t[]> &data, uint8_t length);
+    void receiveTusbPortData(const std::shared_ptr<uint8_t[]> &data, size_t length);
     void pollHwUart();
     void handleCommand(const std::string &line, const TxLine &txLine);
     void addCommandHandler(CommandHandler commandHandler) {
         commandHandlers_.push_back(std::move(commandHandler));
     }
     void setPassthroughData(
-        std::function<void(std::shared_ptr<uint8_t[]> data, uint8_t length)> passthroughDataFn) {
+        std::function<void(std::shared_ptr<uint8_t[]> data, size_t length)> passthroughDataFn) {
         passthroughDataFn_ = std::move(passthroughDataFn);
     }
 
@@ -56,6 +56,6 @@ private:
     std::string tusbCommandBuffer_;
     std::string hwUartCommandBuffer_;
     std::vector<CommandHandler> commandHandlers_;
-    std::function<void(std::shared_ptr<uint8_t[]> data, uint8_t length)> passthroughDataFn_ =
+    std::function<void(std::shared_ptr<uint8_t[]> data, size_t length)> passthroughDataFn_ =
         nullptr;
 };

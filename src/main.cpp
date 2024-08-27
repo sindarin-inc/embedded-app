@@ -306,14 +306,16 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
             }
         });
 
-        xTaskCreatePinnedToCore([](void *) {
+        xTaskCreatePinnedToCore(
+            [](void *) {
             while (powerManager.state() != PowerState::ShuttingDown) {
                 powerManager.loop();
                 vTaskDelay(1000 / portTICK_PERIOD_MS);
             }
             log_d("Background loop task exited");
             vTaskDelete(nullptr);
-        }, "BackgroundPowerLoop", 4096, nullptr, 1, nullptr, 1);
+            },
+            "BackgroundPowerLoop", 4096, nullptr, 1, nullptr, 1);
         BackgroundSyncAndSleep(powerManager, prefs, localStore, telemetry);
 
         // Should never get here, the system should be asleep
@@ -388,7 +390,8 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         lightingController.setOverrideValuePercent(100);
 
         // Also kick off a task to try to content sync every minute or so
-        xTaskCreatePinnedToCore([](void *) {
+        xTaskCreatePinnedToCore(
+            [](void *) {
             while (powerManager.state() != PowerState::ShuttingDown) {
                 PreferencesStore::syncReason = SyncReason::Periodic;
                 BackgroundSync(powerManager, prefs, localStore, telemetry);
@@ -396,7 +399,8 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
             }
             log_d("Sync loop task exited");
             vTaskDelete(nullptr);
-        }, "BackgroundSync", 4096, nullptr, 1, nullptr, 1);
+            },
+            "BackgroundSync", 4096, nullptr, 1, nullptr, 1);
     }
 
 #if USE_BLE
@@ -564,16 +568,27 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 
     // The following commands can run after app_main has completed
     directCommand.addCommandHandler([](const std::string &command, const std::string &payload,
-                                       DirectCommand::TxLine txLine) -> bool {
+                                       const DirectCommand::TxLine &txLine) -> bool {
         if (command == "CONNECT") {
             // This is just the connect handshake to indicate we're here and listening
             txLine(command);
             return true;
         } else if (command == "MIRROR") {
-            myDisplay.mirrorToSerial = !myDisplay.mirrorToSerial;
-            txLine(command);
+            if (payload == "0") {
+                myDisplay.mirrorToSerial = false;
+                txLine("MIRROR 0");
+            } else if (payload == "1") {
+                myDisplay.mirrorToSerial = true;
+                txLine("MIRROR 1");
+                myDisplay.sendCurrentScreenToSerial();
+            } else {
+                txLine(StringFormat("MIRROR %d", myDisplay.mirrorToSerial));
+            }
             return true;
+        } else if (command == "SCREENSHOT") {
+            myDisplay.sendCurrentScreenToSerial(true);
         } else if (command == "GRID") {
+            txLine(command);
             DispatchGetUiQueue()->dispatch([]() {
                 // Override brightness to max
                 lightingController.setOverrideValuePercent(100);
@@ -581,31 +596,30 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
                 rootUi.setCurrentScreen(*testScreen);
                 UIInnerLoop(RemoteCommand::NONE);
             });
-            txLine(command);
             return true;
         } else if (command == "UP") {
-            DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::UP); });
             txLine(command);
+            DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::UP); });
             return true;
         } else if (command == "LEFT") {
-            DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::LEFT); });
             txLine(command);
+            DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::LEFT); });
             return true;
         } else if (command == "RIGHT") {
-            DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::RIGHT); });
             txLine(command);
+            DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::RIGHT); });
             return true;
         } else if (command == "DOWN") {
-            DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::DOWN); });
             txLine(command);
+            DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::DOWN); });
             return true;
         } else if (command == "ENTER") {
-            DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::ENTER); });
             txLine(command);
+            DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::ENTER); });
             return true;
         } else if (command == "BACK") {
-            DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::BACK); });
             txLine(command);
+            DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::BACK); });
             return true;
         } else if (command == "UNPAIRPT") {
 #if CONFIG_USE_TURN_TOUCH_REMOTE

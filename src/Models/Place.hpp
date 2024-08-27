@@ -28,28 +28,12 @@ public:
 
     // The following are good for All subclasses BUT the EPubPlace class...
 
-    [[nodiscard]] virtual auto operator==(Place &rhs) const -> bool {
+    [[nodiscard]] virtual auto operator==(const Place &rhs) const -> bool {
         return (offset_ == rhs.getOffset());
     }
 
-    [[nodiscard]] virtual auto operator!=(Place &rhs) const -> bool {
+    [[nodiscard]] virtual auto operator!=(const Place &rhs) const -> bool {
         return (offset_ != rhs.getOffset());
-    }
-
-    [[nodiscard]] virtual auto operator>(Place &rhs) const -> bool {
-        return (offset_ > rhs.getOffset());
-    }
-
-    [[nodiscard]] virtual auto operator>=(Place &rhs) const -> bool {
-        return (offset_ >= rhs.getOffset());
-    }
-
-    [[nodiscard]] virtual auto operator<(Place &rhs) const -> bool {
-        return (offset_ < rhs.getOffset());
-    }
-
-    [[nodiscard]] virtual auto operator<=(Place &rhs) const -> bool {
-        return (offset_ <= rhs.getOffset());
     }
 
 protected:
@@ -94,10 +78,6 @@ public:
 // An EPubPlace is the location inside a .epub document. The href_ field relates to the href
 // located in the EPub opf's manifest. The offset_ field is a displacement inside the file
 // identified by the href_ field.
-//
-// WARNING:
-// The comparison operators assume that the comparison is done inside the same
-// file. If not, they return false.
 class EPubPlace : public Place {
 public:
     EPubPlace(uint32_t offset, std::string href) : href_(std::move(href)) { setOffset(offset); }
@@ -125,35 +105,12 @@ public:
 
     void setHRef(std::string href) { href_ = std::move(href); };
 
-    [[nodiscard]] auto operator==(Place &rhs) const -> bool override {
-        return rhs.isFor(DocType::EPUB) && (offset_ == rhs.getOffset()) &&
-               (href_ == reinterpret_cast<EPubPlace &>(rhs).getHRef());
+    [[nodiscard]] auto operator==(const EPubPlace &rhs) const -> bool {
+        return rhs.isFor(DocType::EPUB) && (offset_ == rhs.getOffset()) && (href_ == rhs.getHRef());
     }
 
-    [[nodiscard]] auto operator!=(Place &rhs) const -> bool override {
-        return rhs.isFor(DocType::EPUB) &&
-               ((offset_ != rhs.getOffset()) ||
-                (href_ != reinterpret_cast<EPubPlace &>(rhs).getHRef()));
-    }
-
-    [[nodiscard]] auto operator>(Place &rhs) const -> bool override {
-        return rhs.isFor(DocType::EPUB) && (offset_ > rhs.getOffset()) &&
-               (href_ == reinterpret_cast<EPubPlace &>(rhs).getHRef());
-    }
-
-    [[nodiscard]] auto operator>=(Place &rhs) const -> bool override {
-        return rhs.isFor(DocType::EPUB) && (offset_ >= rhs.getOffset()) &&
-               (href_ == reinterpret_cast<EPubPlace &>(rhs).getHRef());
-    }
-
-    [[nodiscard]] auto operator<(Place &rhs) const -> bool override {
-        return rhs.isFor(DocType::EPUB) && (offset_ < rhs.getOffset()) &&
-               (href_ == reinterpret_cast<EPubPlace &>(rhs).getHRef());
-    }
-
-    [[nodiscard]] auto operator<=(Place &rhs) const -> bool override {
-        return rhs.isFor(DocType::EPUB) && (offset_ <= rhs.getOffset()) &&
-               (href_ == reinterpret_cast<EPubPlace &>(rhs).getHRef());
+    [[nodiscard]] auto operator==(const Place &rhs) const -> bool override {
+        return rhs.isFor(DocType::EPUB) && (*this == reinterpret_cast<const EPubPlace &>(rhs));
     }
 
 private:

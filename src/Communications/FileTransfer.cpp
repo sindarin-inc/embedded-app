@@ -9,6 +9,9 @@ void FileTransfer::handleCommand(const std::string &command, const std::string &
                                  const DirectCommand::TxLine &txLine) {
     if (awaitingFinalPutSuccess_) {
         if (command == "FILE" && payload == "PUT SUCCESS") {
+            if (strcmp(fileType_, "EPUB") == 0) {
+                txLine("TRANSFER BOOK SUCCESS");
+            }
             resetState();
             return;
         }
@@ -196,12 +199,12 @@ void FileTransfer::handleFilePutCommand(const std::string &command, const std::s
 
     mbedtls_md_starts(&ctx_);
 
-    txLine(StringFormat("%s %s", command.c_str(), payload.c_str()));
-
     directCommand_.setPassthroughData(
-        [this](const std::shared_ptr<uint8_t[]> &data, uint8_t length) {
+        [this](const std::shared_ptr<uint8_t[]> &data, size_t length) {
         fileTransferCallback(data, length);
     });
+
+    txLine(StringFormat("%s %s", command.c_str(), payload.c_str()));
 }
 
 void FileTransfer::handleTransferBookCommand(const std::string &command, const std::string &payload,
@@ -334,6 +337,7 @@ void FileTransfer::fileTransferCallback(const std::shared_ptr<uint8_t[]> &data, 
             unsetPassthroughAndSendPutError();
             return;
         }
+
         if (strcmp(fileType_, "JSON") == 0) {
             handleJSON();
         } else if (strcmp(fileType_, "EPUB") == 0) {

@@ -42,7 +42,13 @@ add_library(${PROJECT_NAME} STATIC ${SOURCES})
 
 find_package(Freetype REQUIRED)
 
-target_link_libraries(${PROJECT_NAME} PUBLIC pugixml ArduinoJson miniz astubs esp-idf-stubs nvs_flash Adafruit-GFX-Library Freetype::Freetype)
+# Make find_package(mbedtls) to work since Findmbedtls.cmake is in this dir
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}")
+
+message("CMAKE_MODULE_PATH: ${CMAKE_MODULE_PATH}")
+find_package(mbedtls REQUIRED)
+
+target_link_libraries(${PROJECT_NAME} PUBLIC pugixml ArduinoJson miniz astubs esp-idf-stubs nvs_flash Adafruit-GFX-Library Freetype::Freetype ${MBEDTLS_LIBRARIES})
 
 target_include_directories(${PROJECT_NAME} PUBLIC
     "${REPO_ROOT_DIR}/src"
@@ -52,6 +58,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC
     "${REPO_ROOT_DIR}/lib/inifile"
     "${REPO_ROOT_DIR}/lib/stb_image"
     "${REPO_ROOT_DIR}/lib/argparse"
+    "${MBEDTLS_INCLUDE_DIRS}"
 )
 
 # Set compile definitions based on the ENABLE_8BIT_DISPLAY option

@@ -5,16 +5,6 @@
 
 #include "Misc/SpiramAllocator.hpp"
 
-static auto spiZAlloc(void *opaque, size_t items, size_t size) -> void * {
-    // log_d("spiZAlloc: %d %d", (int)items, (int)size);
-    return SpiRamMalloc(items * size);
-}
-
-static void spiZFree(void *opaque, void *address) {
-    // log_d("spiZFree");
-    SpiRamFree(address);
-}
-
 auto Unzipper::open() -> bool {
     if (!file_) {
         log_e("Unzipper has no file");
@@ -468,8 +458,8 @@ auto Unzipper::readFile(uint8_t *fileData, uint32_t fileDataSize) -> uint32_t {
             remains_ = currentFileEntry_->compressedSize % BUFFER_SIZE;
             current_ = 0;
 
-            zstr_.zalloc = spiZAlloc;
-            zstr_.zfree = spiZFree;
+            zstr_.zalloc = SpiZAlloc;
+            zstr_.zfree = SpiZFree;
             // zstr_.zalloc = nullptr;
             // zstr_.zfree = nullptr;
             zstr_.opaque = nullptr;
