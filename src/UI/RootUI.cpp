@@ -1,5 +1,6 @@
 #include "RootUI.hpp"
 
+#include <cstddef>
 #include <esp_sleep.h>
 #include <esp_system.h>
 #include <esp_timer.h>
@@ -466,7 +467,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
         // Check if the readable was read or modified in the last 7 days
         auto diff = std::chrono::duration_cast<std::chrono::hours>(now - mostRecent);
-        if (diff.count() <= 7 * 24) { // 7 days * 24 hours
+        if (diff.count() <= static_cast<long long>(7 *) 24) { // 7 days * 24 hours
             bool archived = prefs_.readableArchivedChanged.get(r->shortenedUuid.c_str());
             auto title = StringFormat("%s%s", archived ? "Archived: " : "", r->title.c_str());
 
