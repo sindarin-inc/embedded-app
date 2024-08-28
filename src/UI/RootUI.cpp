@@ -473,9 +473,11 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
             // Please refactor me
             recentMenu->addMenuItem(
-                r->isArticle() ? MenuItem(
-                                     title,
-                                     [this, r, display, mainMenu, createReadableScreen]() {
+                (isBible(r)) ?
+
+                             MenuItem(
+                                 title,
+                                 [this, r, createReadableScreen, display, mainMenu]() {
                 auto readableScreen = createReadableScreen(r);
                 if (readableScreen != nullptr) {
                     this->setCurrentScreen(*readableScreen);
@@ -489,8 +491,25 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                         delete errorPopup;
                     });
                 }
-                                     },
-                                     true)
+                                 })
+                : r->isArticle() ? MenuItem(
+                                       title,
+                                       [this, r, display, mainMenu, createReadableScreen]() {
+                auto readableScreen = createReadableScreen(r);
+                if (readableScreen != nullptr) {
+                    this->setCurrentScreen(*readableScreen);
+                } else {
+                    auto *errorPopup = new MsgPopup(*display, itemErrorMsg_);
+                    this->setCurrentScreen(*errorPopup);
+                    errorPopup->setBackCallback([this, errorPopup, mainMenu]() {
+                        mainMenu->setFirstLoad();
+                        display_->clearDisplay();
+                        setCurrentScreen(*mainMenu);
+                        delete errorPopup;
+                    });
+                }
+                                       },
+                                       true)
                 : MenuItem(title, StringFormat("%s", r->authorString().c_str()),
                            [this, r, display, mainMenu, createReadableScreen]() {
                 auto readableScreen = createReadableScreen(r);
