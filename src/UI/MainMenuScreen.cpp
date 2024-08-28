@@ -112,7 +112,7 @@ void MainMenuScreen::drawInRect(Rect rect) {
     }
 
     topBarSelectionView_.draw();
-    // clockBatteryView_.draw();
+    clockBatteryView_.draw();
 }
 
 // This largely mirrors the superclass implementation, but with enough
