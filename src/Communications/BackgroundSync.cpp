@@ -190,7 +190,7 @@ void BackgroundSyncAndSleep(PowerManager &powerManager, PreferencesStore &prefs,
     BackgroundSync(powerManager, prefs, localStore, telemetry);
 
     // TODO: Perhaps try dispatching this (maybe needs to happen outside of app_main)
-    WiFi::getInstance().disconnectWiFi();
+    WiFi::getInstance().disconnectWiFi(3000);
 
     PowerManager::getInstance().deepSleep(SleepReason::SyncDone);
 }

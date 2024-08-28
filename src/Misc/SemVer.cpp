@@ -26,27 +26,31 @@ auto SemVerCompareVersions(const std::string &version1, const std::string &versi
         if (end2 == std::string::npos) {
             end2 = version2.size();
         }
-        parts1.push_back(std::stoi(version1.substr(pos1, end1 - pos1)));
-        parts2.push_back(std::stoi(version2.substr(pos2, end2 - pos2)));
+        if (pos1 < version1.size()) {
+            parts1.push_back(std::stoi(version1.substr(pos1, end1 - pos1)));
+        } else {
+            parts1.push_back(0);
+        }
+        if (pos2 < version2.size()) {
+            parts2.push_back(std::stoi(version2.substr(pos2, end2 - pos2)));
+        } else {
+            parts2.push_back(0);
+        }
         pos1 = end1 + 1;
         pos2 = end2 + 1;
     }
 
     // Compare each part of the versions
-    for (size_t i = 0; i < std::min(parts1.size(), parts2.size()); i++) {
-        if (parts1[i] < parts2[i]) {
+    for (size_t i = 0; i < std::max(parts1.size(), parts2.size()); i++) {
+        int v1 = (i < parts1.size()) ? parts1[i] : 0;
+        int v2 = (i < parts2.size()) ? parts2[i] : 0;
+
+        if (v1 < v2) {
             return SemVerComparison::LessThan;
-        } else if (parts1[i] > parts2[i]) {
+        } else if (v1 > v2) {
             return SemVerComparison::GreaterThan;
         }
     }
 
-    // If all parts are equal, but one version has more parts, it is considered greater
-    if (parts1.size() < parts2.size()) {
-        return SemVerComparison::LessThan;
-    } else if (parts1.size() > parts2.size()) {
-        return SemVerComparison::GreaterThan;
-    } else {
-        return SemVerComparison::EqualTo;
-    }
+    return SemVerComparison::EqualTo;
 }

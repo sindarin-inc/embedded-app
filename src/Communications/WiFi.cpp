@@ -405,7 +405,7 @@ auto WiFi::connectWiFiSettingWithTimeout(int timeoutMs, const std::string &ssid,
     return true;
 }
 
-void WiFi::disconnectWiFi() {
+void WiFi::disconnectWiFi(int waitMs) {
     if (xSemaphoreTake(mutex_, portMAX_DELAY) != pdTRUE) {
         log_e("WiFi Mutex Failure");
     }
@@ -434,6 +434,11 @@ void WiFi::disconnectWiFi() {
     SHOW_HEAP();
 
     end();
+
+    // Optionally, wait for WiFi to stop
+    if (waitMs > 0) {
+        xEventGroupWaitBits(wifiEventGroup_, STOPPED, true, false, pdMS_TO_TICKS(waitMs));
+    }
 
     SHOW_HEAP();
 }
@@ -500,6 +505,10 @@ void WiFi::wiFiEventHandler(void *arg, esp_event_base_t eventBase, int32_t event
         xEventGroupSetBits(tthis->wifiEventGroup_, DISCONNECTED);
         break;
     }
+    case WIFI_EVENT_STA_STOP:
+        log_d("WIFI_EVENT_STA_STOP");
+        xEventGroupSetBits(tthis->wifiEventGroup_, STOPPED);
+        break;
     default:
         log_d("WIFI_EVENT: %" PRIi32, eventId);
     }

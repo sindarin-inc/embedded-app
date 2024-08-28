@@ -36,6 +36,7 @@ typedef enum {
     CONNECTED = 3,
     DISCONNECTED = 4,
     SCANNING = 5,
+    STOPPED = 6
 } WiFiState;
 
 class WiFi {
@@ -70,7 +71,7 @@ public:
     // Connection
     auto connectWiFi(const std::string &ssid = "", const std::string &password = "") -> esp_err_t;
     auto connectWiFiFromSettings() -> bool;
-    void disconnectWiFi();
+    void disconnectWiFi(int waitMs = 0);
     auto connected() -> bool;
 
     // Settings

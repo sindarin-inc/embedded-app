@@ -1064,7 +1064,14 @@ void EPubTokenizer::updatePagerIndent(bool iText) {
 //
 // Returns false if no valid menu parameter present.
 auto EPubTokenizer::processMenuParameters(pugi::xml_node node) -> bool {
-    if (node.type() != pugi::node_element) {
+    // We know we got a div node, so we are looking for a ul node
+    // Iterate from the first child of the div node until we find a pugi::node_element
+    // (node with the name "ul")
+    while ((node.type() != pugi::node_element) && (node != body_)) {
+        node = node.next_sibling();
+    }
+
+    if (node == body_) {
         return false;
     }
 
