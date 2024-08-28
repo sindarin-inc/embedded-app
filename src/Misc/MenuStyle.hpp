@@ -24,7 +24,7 @@ class MenuStyle {
 public:
     MenuStyle() {
 
-        mainMenu.itemFont = static_cast<Font *>(&fontFace1);
+        mainMenu.itemFont = static_cast<Font *>(&fontFace0);
         mainMenu.navigationFont = static_cast<Font *>(&fontFace0);
 
         mainMenu.xOffsetForArrows = 45;

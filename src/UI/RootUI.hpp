@@ -29,7 +29,7 @@ protected:
     std::string itemErrorMsg_ =
         "INTERNAL ERROR!\nThe item you tried to access\ncannot be read or "
         "found.\nPlease contact support.\n\nPress\u00a0\u00a0\ue000\u00a0\u00a0to return";
-    std::string settingsRestartMsg_ = "Settings change required restart!\nRestarting...";
+    std::string settingsRestartMsg_ = "Settings change requires restart...";
 
     PreferencesStore &prefs_;
     PowerManager &power_;
