@@ -419,8 +419,16 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     // Define parseDate function outside of the sorting lambda
     auto parseDate = [](const std::string &dateStr) -> std::chrono::system_clock::time_point {
         std::tm tm = {};
-        std::istringstream ss(dateStr);
+        std::stringstream ss(dateStr.substr(0, 19)); // Only parse the date and time part
         ss >> std::get_time(&tm, "%Y-%m-%dT%H:%M:%S");
+
+        if (ss.fail()) {
+            log_e("Failed to parse date string");
+        }
+
+        // Disable automatic DST adjustment
+        tm.tm_isdst = -1;
+
         return std::chrono::system_clock::from_time_t(std::mktime(&tm));
     };
 
@@ -443,7 +451,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         auto aTime = std::max(std::chrono::system_clock::from_time_t(aLastRead), aModified);
         auto bTime = std::max(std::chrono::system_clock::from_time_t(bLastRead), bModified);
 
-        return bTime > aTime; // Sort in descending order (most recent first)
+        return bTime < aTime; // Sort in descending order (most recent first)
         });
 
     // Get the current time
@@ -462,7 +470,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             bool archived = prefs_.readableArchivedChanged.get(r->shortenedUuid.c_str());
             auto title = StringFormat("%s%s", archived ? "Archived: " : "", r->title.c_str());
 
-            // Plesae refactor me?
+            // Please refactor me
             recentMenu->addMenuItem(
                 r->isArticle() ? MenuItem(
                                      title,
@@ -612,7 +620,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                     "Reader.\n\n"
                     "Crossway Publishing has generously provided the English "
                     "Standard Version"
-                    " of the Bible to you free of charge (Copyright 2001, Crossway Publishing).\n\n"
+                    "of the Bible to you free of charge (Copyright 2001, Crossway Publishing).\n\n"
                     " Not your thing? No worries! You can toggle this app off "
                     "in the Content Settings.\n\n"
                     " Look for more scripture and meditation Sol Reader apps down the road!\n\n\n"
