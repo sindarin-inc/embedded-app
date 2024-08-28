@@ -13,9 +13,6 @@
 void MainMenuScreen::addSubMenu(Menu *newSubMenu) { subMenus_.push_back(newSubMenu); }
 
 auto MainMenuScreen::layout(LayoutContext &context, Size size) -> Size {
-    const auto inset = 3;
-    const auto spacing = 5;
-
     int paddingForArrows = 65;
 
     // Layout the top bar -- note the calculation 20 - 2 * inset is to make the top bar 20 pixels
@@ -24,8 +21,6 @@ auto MainMenuScreen::layout(LayoutContext &context, Size size) -> Size {
         Rect::fromSize(size).inset(paddingForArrows, 0),
         LayoutOptionsSizeToFit | LayoutOptionsAlignCenterHorizontal,
         [this](LayoutContext &context, Size size) -> Size {
-            int place = 0;
-
             // Once waveshare branch is merged, update this with the more general case
             // that doesn't have magic numbers and uses variable size for the arrows
             // based on the size of the text
