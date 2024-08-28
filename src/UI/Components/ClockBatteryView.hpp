@@ -43,14 +43,13 @@ public:
         x += clockRect.size.width + 20;
         y += 2;
 
-        // auto iconRect = context.setViewFrame(batteryIconView_, {{x, y}, {size.width,
-        // size.height}},
-        //                                      LayoutOptionsSizeToFit);
+        auto iconRect = context.setViewFrame(batteryIconView_, {{x, y}, {size.width, size.height}},
+                                             LayoutOptionsSizeToFit);
 
-        // context.setViewFrame(batteryIconView_, iconRect, LayoutOptionsSizeToFit);
+        context.setViewFrame(batteryIconView_, iconRect, LayoutOptionsSizeToFit);
 
-        // x += iconRect.size.width;
-        // return {x, iconRect.size.height};
+        x += iconRect.size.width;
+        return {x, iconRect.size.height};
         return {clockRect.size.width, clockRect.size.height};
     }
 
@@ -82,8 +81,12 @@ public:
             batteryIconView_.setIcon(BATTERY_0_BITS, battery_0_width, battery_0_height);
         }
 
-        // batteryIconView_.draw();
-        clockView_.draw();
+        // Only show the battery and clock if the battery is low.
+        // We can probbaly do better than this.
+        if (percent <= 25) {
+            batteryIconView_.draw();
+            clockView_.draw();
+        }
     }
 
 protected:
