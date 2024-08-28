@@ -80,7 +80,7 @@ public:
         int x = 0;
         int y = 0;
         int right = size.width;
-        int indicatorRightPadding = 15;
+        int indicatorRightPadding = 10;
         int indicatorWidth = 5;
         auto indicatorWidthPlus = indicatorWidth + 8;
         Rect textRect{}, subtextRect{};
@@ -110,8 +110,8 @@ public:
 
         // Layout the subtext if necessary
         if (subtextView_ != nullptr && !subtextView_->isHidden()) {
-            // Tiny bit of padding in-between
-            y += 2;
+            // Squeeze the subtext up a bit
+            y -= 1;
             subtextRect =
                 context.setViewFrame(*subtextView_,
                                      {{indicatorWidthPlus + indicatorRightPadding, y},
