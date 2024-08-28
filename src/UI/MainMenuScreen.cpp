@@ -122,7 +122,7 @@ void MainMenuScreen::drawInRect(Rect rect) {
     }
 
     topBarSelectionView_.draw();
-    clockBatteryView_.draw();
+    // clockBatteryView_.draw();
 }
 
 // This largely mirrors the superclass implementation, but with enough
@@ -165,12 +165,11 @@ void MainMenuScreen::render(DisplaySystem &display) {
                           (subMenus_[currentSelection_]->getMenuName() == "Bible"))
                              ? myStyle_.itemFont
                              : myStyle_.navigationFont;
-            bool multiline =
-                (subMenus_[currentSelection_]->getMenuName() == "Articles") ? true : false;
+
             if (i >= menuItemViews_.size()) {
                 menuItemViews_.emplace_back(std::make_shared<MenuItemView>(display));
             }
-            menuItemViews_[i]->setMenuItem(menuItem, font, multiline);
+            menuItemViews_[i]->setMenuItem(menuItem, font, menuItems_[i].multiline);
             menuItemViews_[i]->setSelected(false);
             menuItemViews_[i]->setHidden(false);
         }

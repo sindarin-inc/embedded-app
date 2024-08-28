@@ -169,9 +169,14 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                            [isBible](const std::shared_ptr<Readable> &x) { return isBible(x); });
     auto hasBible = it != readables.end();
 
-    auto createReadableScreen = [this, display, mainMenu, booksMenu, bibleMenu, articlesMenu,
-                                 hasBible, &fileSystem, &lightingController, &localStore](
-                                    const std::shared_ptr<Readable> &readable) -> ReadableScreen * {
+    // Add a main menu item to create a Recent tab that shows the most recently read books or
+    // articles
+    auto recentMenu = new Menu(mainMenu->getMyStyle(), "Recent");
+
+    auto createReadableScreen =
+        [this, display, mainMenu, booksMenu, bibleMenu, articlesMenu, recentMenu, hasBible,
+         &fileSystem, &lightingController,
+         &localStore](const std::shared_ptr<Readable> &readable) -> ReadableScreen * {
         // TODO: Would be better to not allocate / delete these all the time
 
         std::shared_ptr<RendererStream> stream;
@@ -209,8 +214,9 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         // When switching to a readable from a menu, we should clear the display
         // to make the whites really white and the blacks really black.
         display->clearDisplay();
-        readableScreen->setBackCallback([this, display, stream, readableScreen, readable, booksMenu,
-                                         bibleMenu, hasBible, articlesMenu, mainMenu]() {
+        readableScreen->setBackCallback(
+            [this, display, stream, readableScreen, readable, booksMenu, bibleMenu, recentMenu,
+             hasBible, articlesMenu, mainMenu]() {
             bool archived = prefs_.readableArchivedChanged.get(readable->shortenedUuid.c_str());
             auto title =
                 StringFormat("%s%s", archived ? "Archived: " : "", readable->title.c_str());
@@ -233,6 +239,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             if (!prefs_.noBible.get().value_or(false) && hasBible) {
                 updateMenuTitle(bibleMenu);
             }
+            updateMenuTitle(recentMenu);
 
             // When leaving a readable to go back to the main menu, do a full clear
             // of the display.
@@ -306,6 +313,14 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             });
             });
     };
+
+    if (prefs_.firmwareLoaded.get().has_value()) {
+        Firmware firmware;
+        auto upgradeAvailable = localStore.getPendingFirmwareUpdate(firmware);
+        if (upgradeAvailable) {
+            recentMenu->addMenuItem(makeReleaseNotesMenuItem(firmware));
+        }
+    }
 
     if (prefs_.firmwareLoaded.get().has_value()) {
         Firmware firmware;
@@ -401,6 +416,98 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         }));
     }
 
+    // Define parseDate function outside of the sorting lambda
+    auto parseDate = [](const std::string &dateStr) -> std::chrono::system_clock::time_point {
+        std::tm tm = {};
+        std::istringstream ss(dateStr);
+        ss >> std::get_time(&tm, "%Y-%m-%dT%H:%M:%S");
+        return std::chrono::system_clock::from_time_t(std::mktime(&tm));
+    };
+
+    // Combine books and articles into a single vector
+    std::vector<std::shared_ptr<Readable>> allReadables;
+    allReadables.insert(allReadables.end(), readables.begin(), readables.end());
+    allReadables.insert(allReadables.end(), articles.begin(), articles.end());
+
+    // Sort the combined vector by last read time or date modified
+    std::sort(
+        allReadables.begin(), allReadables.end(),
+        [this, &parseDate](const std::shared_ptr<Readable> &a, const std::shared_ptr<Readable> &b) {
+        auto aLastRead = this->prefs_.lastReadTime.get(a->shortenedUuid.c_str());
+        auto bLastRead = this->prefs_.lastReadTime.get(b->shortenedUuid.c_str());
+
+        auto aModified = parseDate(a->dateModified.c_str());
+        auto bModified = parseDate(b->dateModified.c_str());
+
+        // Use the more recent of last read time or date modified
+        auto aTime = std::max(std::chrono::system_clock::from_time_t(aLastRead), aModified);
+        auto bTime = std::max(std::chrono::system_clock::from_time_t(bLastRead), bModified);
+
+        return bTime > aTime; // Sort in descending order (most recent first)
+        });
+
+    // Get the current time
+    auto now = std::chrono::system_clock::now();
+
+    // Add items to the Recent menu
+    for (const auto &r : allReadables) {
+        auto lastRead = std::chrono::system_clock::from_time_t(
+            this->prefs_.lastReadTime.get(r->shortenedUuid.c_str()));
+        auto lastModified = parseDate(r->dateModified.c_str());
+        auto mostRecent = std::max(lastRead, lastModified);
+
+        // Check if the readable was read or modified in the last 7 days
+        auto diff = std::chrono::duration_cast<std::chrono::hours>(now - mostRecent);
+        if (diff.count() <= 7 * 24) { // 7 days * 24 hours
+            bool archived = prefs_.readableArchivedChanged.get(r->shortenedUuid.c_str());
+            auto title = StringFormat("%s%s", archived ? "Archived: " : "", r->title.c_str());
+
+            // Plesae refactor me?
+            recentMenu->addMenuItem(
+                r->isArticle() ? MenuItem(
+                                     title,
+                                     [this, r, display, mainMenu, createReadableScreen]() {
+                auto readableScreen = createReadableScreen(r);
+                if (readableScreen != nullptr) {
+                    this->setCurrentScreen(*readableScreen);
+                } else {
+                    auto *errorPopup = new MsgPopup(*display, itemErrorMsg_);
+                    this->setCurrentScreen(*errorPopup);
+                    errorPopup->setBackCallback([this, errorPopup, mainMenu]() {
+                        mainMenu->setFirstLoad();
+                        display_->clearDisplay();
+                        setCurrentScreen(*mainMenu);
+                        delete errorPopup;
+                    });
+                }
+                                     },
+                                     true)
+                : MenuItem(title, StringFormat("%s", r->authorString().c_str()),
+                           [this, r, display, mainMenu, createReadableScreen]() {
+                auto readableScreen = createReadableScreen(r);
+                if (readableScreen != nullptr) {
+                    this->setCurrentScreen(*readableScreen);
+                } else {
+                    auto *errorPopup = new MsgPopup(*display, itemErrorMsg_);
+                    this->setCurrentScreen(*errorPopup);
+                    errorPopup->setBackCallback([this, errorPopup, mainMenu]() {
+                        mainMenu->setFirstLoad();
+                        display_->clearDisplay();
+                        setCurrentScreen(*mainMenu);
+                        delete errorPopup;
+                    });
+                }
+                  }));
+        }
+    }
+
+    // Only add the Recent tab if there are recent items
+    if (recentMenu->getNumItems() > 0) {
+        mainMenu->addSubMenu(recentMenu);
+    } else {
+        delete recentMenu;
+    }
+
     if (!prefs_.noBooks.get().value_or(false)) {
         mainMenu->addSubMenu(booksMenu);
     }
@@ -424,8 +531,9 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         bool archived = prefs_.readableArchivedChanged.get(r->shortenedUuid.c_str());
         auto title = StringFormat("%s%s", archived ? "Archived: " : "", r->title.c_str());
 
-        articlesMenu->addMenuItem(MenuItem(title,
-                                           [this, display, mainMenu, r, createReadableScreen]() {
+        articlesMenu->addMenuItem(MenuItem(
+            title,
+            [this, display, mainMenu, r, createReadableScreen]() {
             display->clearDisplay();
             auto readableScreen = createReadableScreen(r);
             if (readableScreen != nullptr) {
@@ -440,7 +548,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                     delete errorPopup;
                 });
             }
-        }));
+            },
+            true));
     }
 
     SHOW_HEAP();
@@ -463,7 +572,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         }));
     }
 
-    if (!prefs_.noArticles.get().value_or(false)) {
+    if (!prefs_.noArticles.get().value_or(false) && !articles.empty()) {
         mainMenu->addSubMenu(articlesMenu);
     }
 
