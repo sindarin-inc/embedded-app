@@ -16,35 +16,30 @@ auto MainMenuScreen::layout(LayoutContext &context, Size size) -> Size {
     const auto inset = 3;
     const auto spacing = 5;
 
+    int paddingForArrows = 65;
+
     // Layout the top bar -- note the calculation 20 - 2 * inset is to make the top bar 20 pixels
     // but this is hardcoded and should look at the size of the text for the words there instead.
     auto topBarRect = context.setSublayoutFrame(
-        {{inset, inset}, {size.width, 20 - 2 * inset}}, LayoutOptionsNone,
+        Rect::fromSize(size).inset(paddingForArrows, 0),
+        LayoutOptionsSizeToFit | LayoutOptionsAlignCenterHorizontal,
         [this](LayoutContext &context, Size size) -> Size {
-            int x = 0;
-            int y = 0;
-            int viewCount = 1; // topBarViews_.size();
-            int boxWidth = (size.width - (viewCount - 1) * spacing) / viewCount;
-            Size boxSize = {boxWidth, size.height};
-
             int place = 0;
-            context.setViewFrame(topLeftArrowView_, {{x + 60, y + 2}, {5, 10}},
-                                 LayoutOptionsSizeToFit | LayoutOptionsAlignLeft);
-            context.setViewFrame(topRightArrowView_, {{x + boxWidth - 70, y + 2}, {5, 10}},
-                                 LayoutOptionsSizeToFit | LayoutOptionsAlignRight);
-            for (auto &view : topBarViews_) {
-                if (place == currentSelection_) {
-                    context.setViewFrame(*view, {{x, y}, boxSize},
-                                         LayoutOptionsSizeToFit | LayoutOptionsAlignCenter);
-                }
-                // if (place == currentSelection_) {
-                //     context.setViewFrame(topBarSelectionView_, {{x, y}, boxSize});
-                // }
-                // x += boxWidth + spacing;
-                place++;
-            };
 
-            return size;
+            // Once waveshare branch is merged, update this with the more general case
+            // that doesn't have magic numbers and uses variable size for the arrows
+            // based on the size of the text
+            Rect arrowBox = {{0, 2}, {size.width, size.height}};
+            Rect topBarBox = {{2, 0}, {size.width, size.height}};
+            context.setViewSizeInRect(topLeftArrowView_, {5, 10}, arrowBox, LayoutOptionsAlignLeft);
+
+            context.setViewFrame(*(topBarViews_[currentSelection_]), topBarBox,
+                                 LayoutOptionsSizeToFit | LayoutOptionsAlignCenter);
+
+            context.setViewSizeInRect(topRightArrowView_, {5, 10}, arrowBox,
+                                      LayoutOptionsAlignRight);
+
+            return {size.width, 14};
         });
 
     // Then layout the clock/battery view on the bottom
