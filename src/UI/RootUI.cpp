@@ -474,7 +474,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             bool archived = prefs_.readableArchivedChanged.get(r->shortenedUuid.c_str());
             auto title = StringFormat("%s%s", archived ? "Archived: " : "", r->title.c_str());
 
-            // Please refactor me
             recentMenu->addMenuItem(
                 (isBible(r))
                     ?
