@@ -173,8 +173,6 @@ void USBSerial::begin() {
 
     if (USBSerial::loggingEnabled) {
         enableLoggingInternal();
-        // Wait a bit so we can get boot logs (mostly for the testers)
-        vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }
 

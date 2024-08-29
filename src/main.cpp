@@ -191,6 +191,10 @@ auto UIGetCurrentScreen() { return rootUi.getCurrentScreen(); }
 extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     usbSerial.begin();
     directCommand.begin();
+    if (usbSerial.isLoggingEnabled()) {
+        // Wait a bit so we can get boot logs (mostly for the testers)
+        vTaskDelay(pdMS_TO_TICKS(1000));
+    }
 
     HardwareInit();
 
