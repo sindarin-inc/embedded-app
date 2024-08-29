@@ -104,13 +104,13 @@ Telemetry telemetry(fileSystem, prefs);
 TTRemoteInput ttRemoteInput(prefs, telemetry);
 #endif
 
-PowerManager powerManager(fileSystem, prefs, lightingController, myDisplay, telemetry);
+USBSerial usbSerial;
+
+PowerManager powerManager(fileSystem, prefs, lightingController, myDisplay, telemetry, usbSerial);
 LocalStore localStore(fileSystem, prefs, powerManager.battery, telemetry);
 RootUI rootUi(prefs, powerManager, telemetry);
 SolClock solClock(prefs);
 WiFi wiFi(telemetry);
-
-USBSerial usbSerial;
 
 DirectCommand directCommand(usbSerial, fileSystem, powerManager);
 FileTransfer fileTransferListener(fileSystem, localStore, usbSerial, directCommand);

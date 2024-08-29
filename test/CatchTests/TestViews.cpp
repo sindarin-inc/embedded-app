@@ -3,6 +3,7 @@
 // Allow access to protected methods from tests
 #define protected public
 #define private public
+#include "Communications/USBSerial.hpp"
 #include "Misc/BMPImage.hpp"
 #include "Misc/Defer.hpp"
 #include "Misc/Telemetry.hpp"
@@ -338,10 +339,12 @@ TEST_CASE("Test some views independently") {
         prefs.textInsetBottom.remove();
         PosixFileSystem fileSystem("./test/CatchTests/TestData");
         Telemetry telemetry = Telemetry(fileSystem, prefs);
+        USBSerial usbSerial;
 
         SECTION("Test things that need power") {
             LightingController lightingController(prefs);
-            PowerManager power(fileSystem, prefs, lightingController, *display, telemetry);
+            PowerManager power(fileSystem, prefs, lightingController, *display, telemetry,
+                               usbSerial);
 
             SECTION("Test AboutScreen") {
                 AboutScreen screen(*display, prefs, power);

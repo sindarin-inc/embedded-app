@@ -29,6 +29,7 @@ public:
     USBSerial() = default;
     USBSerial(const USBSerial &) = delete;
     void begin();
+    void end();
     void initJtag();
     void lineStateChangedCallback(int itf, cdcacm_event_t *event);
     void rxLoggingCallback(int itf, cdcacm_event_t *event);

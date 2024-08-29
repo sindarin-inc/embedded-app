@@ -540,6 +540,7 @@ void PowerManager::beginShutdown() {
 
 void PowerManager::reboot() {
     beginShutdown();
+    usbSerial_.end();
     esp_restart();
 }
 
@@ -788,6 +789,7 @@ void PowerManager::deepSleepInternal(SleepReason reason) {
               PreferencesStore::nextSyncTime, uint64_t(now));
     }
 
+    usbSerial_.end();
     esp_deep_sleep_start();
 #endif
 }

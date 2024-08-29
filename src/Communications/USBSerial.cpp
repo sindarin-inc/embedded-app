@@ -15,9 +15,7 @@ auto USBSerial::getInstance() -> USBSerial & { return usbSerial; }
 
 void USBSerial::initJtag() {
 #if CONFIG_USE_TINYUSB_SERIAL
-    tusb_cdc_acm_deinit(TINYUSB_CDC_ACM_0);
-    tusb_cdc_acm_deinit(TINYUSB_CDC_ACM_1);
-    tinyusb_driver_uninstall();
+    end();
 
     usb_phy_config_t phyConf;
     std::memset(&phyConf, 0, sizeof(usb_phy_config_t));
@@ -178,4 +176,12 @@ void USBSerial::begin() {
         // Wait a bit so we can get boot logs (mostly for the testers)
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
+}
+
+void USBSerial::end() {
+#if CONFIG_USE_TINYUSB_SERIAL
+    tusb_cdc_acm_deinit(TINYUSB_CDC_ACM_0);
+    tusb_cdc_acm_deinit(TINYUSB_CDC_ACM_1);
+    tinyusb_driver_uninstall();
+#endif
 }
