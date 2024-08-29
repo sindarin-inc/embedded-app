@@ -296,11 +296,10 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs)
         dropVcom_ = true;
         display.invertDisplay(false);
         display.drawXBitmap(0, 0, MANI_EYE1_BITS, mani_eye1_width, mani_eye1_height, display.fg);
-        // std::string message = "Press \ue000 to begin";
-        // display.setFont(static_cast<Font *>(&fontFace0));
-        // display.drawSingleLineOfText(message, (display.width() - display.getTextWidth(message)) /
-        // 2,
-        //                             200, true);
+        std::string message = "Press \ue000 to begin";
+        display.setFont(static_cast<Font *>(&fontFace0));
+        display.drawSingleLineOfText(message, (display.width() - display.getTextWidth(message)) / 2,
+                                     202, true);
         nextUpdateType_ = DisplaySystem::UpdateType::PARTIAL;
         awaitingButton_ = true;
         // nextInterval_ = 2000;
