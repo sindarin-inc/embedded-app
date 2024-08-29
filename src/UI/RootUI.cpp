@@ -397,7 +397,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
         booksMenu->addMenuItem(MenuItem(
             StringFormat("%s", title.c_str()), StringFormat("%s", r->authorString().c_str()),
-            [this, r, handleReadableScreenCreation]() { handleReadableScreenCreation(r); }));
+            [r, handleReadableScreenCreation]() { handleReadableScreenCreation(r); }));
     }
 
     SHOW_HEAP();
@@ -474,23 +474,23 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             bool archived = prefs_.readableArchivedChanged.get(r->shortenedUuid.c_str());
             auto title = StringFormat("%s%s", archived ? "Archived: " : "", r->title.c_str());
 
-            recentMenu->addMenuItem(
-                (isBible(r))
-                    ?
+            recentMenu->addMenuItem((isBible(r)) ?
 
-                    MenuItem(title,
-                             [this, r,
-                              handleReadableScreenCreation]() { handleReadableScreenCreation(r); })
-                    : r->isArticle() ? MenuItem(
-                                           title,
-                                           [this, r, handleReadableScreenCreation]() {
+                                                 MenuItem(
+                                                     title,
+                                                     [r, handleReadableScreenCreation]() {
                 handleReadableScreenCreation(r);
-                                           },
-                                           true)
-                    : MenuItem(title, StringFormat("%s", r->authorString().c_str()),
-                               [this, r, handleReadableScreenCreation]() {
+                                                     })
+                                    : r->isArticle() ? MenuItem(
+                                                           title,
+                                                           [r, handleReadableScreenCreation]() {
                 handleReadableScreenCreation(r);
-                      }));
+                                                           },
+                                                           true)
+                                    : MenuItem(title, StringFormat("%s", r->authorString().c_str()),
+                                               [r, handleReadableScreenCreation]() {
+                handleReadableScreenCreation(r);
+                                      }));
         }
     }
 
@@ -526,7 +526,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
         articlesMenu->addMenuItem(MenuItem(
             title,
-            [this, display, mainMenu, r, handleReadableScreenCreation]() {
+            [display, r, handleReadableScreenCreation]() {
             display->clearDisplay();
             handleReadableScreenCreation(r);
             },
@@ -562,7 +562,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             if (isBible(r)) {
                 bool archived = prefs_.readableArchivedChanged.get(r->shortenedUuid.c_str());
                 auto title = StringFormat("%s%s", archived ? "Archived: " : "", r->title.c_str());
-                bibleMenu->addMenuItem(MenuItem(title, [this, r, handleReadableScreenCreation]() {
+                bibleMenu->addMenuItem(MenuItem(title, [r, handleReadableScreenCreation]() {
                     handleReadableScreenCreation(r);
                 }));
             }
