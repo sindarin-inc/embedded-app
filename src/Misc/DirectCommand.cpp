@@ -53,8 +53,6 @@ void DirectCommand::begin() {
             return true;
         } else if (command == "RESTART") {
             txLine(command);
-            // Wait 1 second before restarting so the receiver can get the success message
-            vTaskDelay(1000 / portTICK_PERIOD_MS);
             powerManager_.reboot();
             return true;
         } else if (command == "DEVICE_INFO") {
