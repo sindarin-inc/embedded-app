@@ -307,19 +307,19 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs)
         display.invertDisplay(false);
         display.drawXBitmap(0, 0, MANI_EYE2_BITS, mani_eye2_width, mani_eye2_height, display.fg);
         nextUpdateType_ = DisplaySystem::UpdateType::PARTIAL;
-        nextInterval_ = 500;
+        nextInterval_ = 1000;
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
         display.drawXBitmap(0, 0, MANI_EYE3_BITS, mani_eye3_width, mani_eye3_height, display.fg);
         nextUpdateType_ = DisplaySystem::UpdateType::PARTIAL;
-        nextInterval_ = 500;
+        nextInterval_ = 800;
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
         display.drawXBitmap(0, 0, MANI_EYE4_BITS, mani_eye4_width, mani_eye4_height, display.fg);
         nextUpdateType_ = DisplaySystem::UpdateType::PARTIAL;
-        nextInterval_ = 500;
+        nextInterval_ = 600;
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
