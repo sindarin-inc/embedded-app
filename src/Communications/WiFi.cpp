@@ -431,14 +431,14 @@ void WiFi::disconnectWiFi(int waitMs) {
         log_e("esp_wifi_stop failed with %s", esp_err_to_name(err));
     }
 
-    SHOW_HEAP();
-
-    end();
-
     // Optionally, wait for WiFi to stop
     if (waitMs > 0) {
         xEventGroupWaitBits(wifiEventGroup_, STOPPED, true, false, pdMS_TO_TICKS(waitMs));
     }
+
+    SHOW_HEAP();
+
+    end();
 
     SHOW_HEAP();
 }
