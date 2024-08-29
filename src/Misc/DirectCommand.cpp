@@ -55,7 +55,7 @@ void DirectCommand::begin() {
             txLine(command);
             // Wait 1 second before restarting so the receiver can get the success message
             vTaskDelay(1000 / portTICK_PERIOD_MS);
-            esp_restart();
+            powerManager_.reboot();
             return true;
         } else if (command == "DEVICE_INFO") {
             txLine(StringFormat("DEVICE_INFO SERIAL_NUMBER,%s;MAC_ADDRESS,%s;FREE_SPACE,%s",
