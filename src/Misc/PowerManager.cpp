@@ -28,6 +28,7 @@ uint32_t ulp_waitForClose; // NOLINT(readability-identifier-naming)
 #endif
 
 RTC_SLOW_ATTR bool ulpLoaded = false;
+RTC_NOINIT_ATTR bool PowerManager::sleepDisabled;
 
 extern const uint8_t ULP_MAIN_BIN_START[] asm("_binary_ulp_src_bin_start");
 extern const uint8_t ULP_MAIN_BIN_END[] asm("_binary_ulp_src_bin_end");
@@ -91,6 +92,7 @@ void PowerManager::wakeupCheck(SolClock &clock) {
     }
     case ESP_RST_POWERON:
         bootInfo_.reason = BootInfo::Reason::PowerOn;
+        sleepDisabled = false;
         break;
     case ESP_RST_SW:
         bootInfo_.reason = BootInfo::Reason::Sw;
@@ -262,7 +264,12 @@ auto PowerManager::begin() -> esp_err_t {
 #if !DISABLE_POWER_MANAGEMENT
     pmConfig_.max_freq_mhz = CPU_FREQ_MHZ_HIGH;
     pmConfig_.min_freq_mhz = CPU_FREQ_MHZ_LOW;
-    pmConfig_.light_sleep_enable = true;
+    if (sleepDisabled) {
+        pmConfig_.light_sleep_enable = false;
+        sleepDisabled = false;
+    } else {
+        pmConfig_.light_sleep_enable = true;
+    }
 
     if (USBConnected()) {
         PmLock("pm_usb", &usbPowerLightSleepLock_);
@@ -325,6 +332,8 @@ void PowerManager::powerOffInternal() {
 }
 
 auto PowerManager::debugDisableLightSleep() -> void {
+    // Disable sleep for the next boot as well
+    sleepDisabled = true;
 #if !DISABLE_POWER_MANAGEMENT
     PmLock("pm_debug", &debugCommandLightSleepLock_);
 #endif
