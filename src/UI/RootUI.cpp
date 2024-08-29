@@ -370,6 +370,23 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     SHOW_HEAP();
 
+    auto handleReadableScreenCreation =
+        [this, display, mainMenu, createReadableScreen](const std::shared_ptr<Readable> &r) {
+        auto readableScreen = createReadableScreen(r);
+        if (readableScreen != nullptr) {
+            this->setCurrentScreen(*readableScreen);
+        } else {
+            auto *errorPopup = new MsgPopup(*display, itemErrorMsg_);
+            this->setCurrentScreen(*errorPopup);
+            errorPopup->setBackCallback([this, errorPopup, mainMenu]() {
+                mainMenu->setFirstLoad();
+                display_->clearDisplay();
+                setCurrentScreen(*mainMenu);
+                delete errorPopup;
+            });
+        }
+    };
+
     for (const auto &r : readables) {
         bool archived = prefs_.readableArchivedChanged.get(r->shortenedUuid.c_str());
         auto title = StringFormat("%s%s", archived ? "Archived: " : "", r->title.c_str());
@@ -378,23 +395,9 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             continue;
         }
 
-        booksMenu->addMenuItem(MenuItem(StringFormat("%s", title.c_str()),
-                                        StringFormat("%s", r->authorString().c_str()),
-                                        [this, r, display, mainMenu, createReadableScreen]() {
-            auto readableScreen = createReadableScreen(r);
-            if (readableScreen != nullptr) {
-                this->setCurrentScreen(*readableScreen);
-            } else {
-                auto *errorPopup = new MsgPopup(*display, itemErrorMsg_);
-                this->setCurrentScreen(*errorPopup);
-                errorPopup->setBackCallback([this, errorPopup, mainMenu]() {
-                    mainMenu->setFirstLoad();
-                    display_->clearDisplay();
-                    setCurrentScreen(*mainMenu);
-                    delete errorPopup;
-                });
-            }
-        }));
+        booksMenu->addMenuItem(MenuItem(
+            StringFormat("%s", title.c_str()), StringFormat("%s", r->authorString().c_str()),
+            [this, r, handleReadableScreenCreation]() { handleReadableScreenCreation(r); }));
     }
 
     SHOW_HEAP();
@@ -473,59 +476,22 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
             // Please refactor me
             recentMenu->addMenuItem(
-                (isBible(r)) ?
+                (isBible(r))
+                    ?
 
-                             MenuItem(
-                                 title,
-                                 [this, r, createReadableScreen, display, mainMenu]() {
-                auto readableScreen = createReadableScreen(r);
-                if (readableScreen != nullptr) {
-                    this->setCurrentScreen(*readableScreen);
-                } else {
-                    auto *errorPopup = new MsgPopup(*display, itemErrorMsg_);
-                    this->setCurrentScreen(*errorPopup);
-                    errorPopup->setBackCallback([this, errorPopup, mainMenu]() {
-                        mainMenu->setFirstLoad();
-                        display_->clearDisplay();
-                        setCurrentScreen(*mainMenu);
-                        delete errorPopup;
-                    });
-                }
-                                 })
-                : r->isArticle() ? MenuItem(
-                                       title,
-                                       [this, r, display, mainMenu, createReadableScreen]() {
-                auto readableScreen = createReadableScreen(r);
-                if (readableScreen != nullptr) {
-                    this->setCurrentScreen(*readableScreen);
-                } else {
-                    auto *errorPopup = new MsgPopup(*display, itemErrorMsg_);
-                    this->setCurrentScreen(*errorPopup);
-                    errorPopup->setBackCallback([this, errorPopup, mainMenu]() {
-                        mainMenu->setFirstLoad();
-                        display_->clearDisplay();
-                        setCurrentScreen(*mainMenu);
-                        delete errorPopup;
-                    });
-                }
-                                       },
-                                       true)
-                : MenuItem(title, StringFormat("%s", r->authorString().c_str()),
-                           [this, r, display, mainMenu, createReadableScreen]() {
-                auto readableScreen = createReadableScreen(r);
-                if (readableScreen != nullptr) {
-                    this->setCurrentScreen(*readableScreen);
-                } else {
-                    auto *errorPopup = new MsgPopup(*display, itemErrorMsg_);
-                    this->setCurrentScreen(*errorPopup);
-                    errorPopup->setBackCallback([this, errorPopup, mainMenu]() {
-                        mainMenu->setFirstLoad();
-                        display_->clearDisplay();
-                        setCurrentScreen(*mainMenu);
-                        delete errorPopup;
-                    });
-                }
-                  }));
+                    MenuItem(title,
+                             [this, r,
+                              handleReadableScreenCreation]() { handleReadableScreenCreation(r); })
+                    : r->isArticle() ? MenuItem(
+                                           title,
+                                           [this, r, handleReadableScreenCreation]() {
+                handleReadableScreenCreation(r);
+                                           },
+                                           true)
+                    : MenuItem(title, StringFormat("%s", r->authorString().c_str()),
+                               [this, r, handleReadableScreenCreation]() {
+                handleReadableScreenCreation(r);
+                      }));
         }
     }
 
@@ -561,21 +527,9 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
         articlesMenu->addMenuItem(MenuItem(
             title,
-            [this, display, mainMenu, r, createReadableScreen]() {
+            [this, display, mainMenu, r, handleReadableScreenCreation]() {
             display->clearDisplay();
-            auto readableScreen = createReadableScreen(r);
-            if (readableScreen != nullptr) {
-                setCurrentScreen(*readableScreen);
-            } else {
-                auto *errorPopup = new MsgPopup(*display, itemErrorMsg_);
-                this->setCurrentScreen(*errorPopup);
-                errorPopup->setBackCallback([this, errorPopup, mainMenu]() {
-                    mainMenu->setFirstLoad();
-                    display_->clearDisplay();
-                    setCurrentScreen(*mainMenu);
-                    delete errorPopup;
-                });
-            }
+            handleReadableScreenCreation(r);
             },
             true));
     }
@@ -609,22 +563,9 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             if (isBible(r)) {
                 bool archived = prefs_.readableArchivedChanged.get(r->shortenedUuid.c_str());
                 auto title = StringFormat("%s%s", archived ? "Archived: " : "", r->title.c_str());
-                bibleMenu->addMenuItem(
-                    MenuItem(title, [this, r, createReadableScreen, display, mainMenu]() {
-                        auto readableScreen = createReadableScreen(r);
-                        if (readableScreen != nullptr) {
-                            this->setCurrentScreen(*readableScreen);
-                        } else {
-                            auto *errorPopup = new MsgPopup(*display, itemErrorMsg_);
-                            this->setCurrentScreen(*errorPopup);
-                            errorPopup->setBackCallback([this, errorPopup, mainMenu]() {
-                                mainMenu->setFirstLoad();
-                                display_->clearDisplay();
-                                setCurrentScreen(*mainMenu);
-                                delete errorPopup;
-                            });
-                        }
-                    }));
+                bibleMenu->addMenuItem(MenuItem(title, [this, r, handleReadableScreenCreation]() {
+                    handleReadableScreenCreation(r);
+                }));
             }
         }
 
@@ -1407,7 +1348,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         power_.reboot();
     }));
 #endif
-
     debugSettingsMenu->addMenuItem(MenuItem("About", [this, debugSettingsMenu, display]() {
         auto debugAboutScreen = new DebugAboutScreen(*display);
         this->setCurrentScreen(*debugAboutScreen);
