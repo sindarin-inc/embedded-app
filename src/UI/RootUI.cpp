@@ -81,6 +81,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     display_ = display;
     auto lastMagReading = power_.getLastMagReading();
 
+    HEAP_PROFILE_START(rootUILogBootData);
+
     std::unordered_map<std::string, TelemetryVariant> bootData = {
         {"fw", SemanticVersionString()},
         {"sha", GitVersionString()},
@@ -97,12 +99,17 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     this->telemetry_.logMetricData(TelemetryField::METRIC_BOOT, bootData);
 
+    HEAP_PROFILE_END(rootUILogBootData);
+
     MenuStyle styleFamilies;
 
+    HEAP_PROFILE_START(MainMenuScreen);
     auto mainMenu = new MainMenuScreen(power_.battery, *display_, styleFamilies.mainMenu);
+    HEAP_PROFILE_END(MainMenuScreen);
 
     SIZE_OF(*mainMenu);
 
+    HEAP_PROFILE_START(rootUIContent);
     auto &readables = localStore.books();
     auto &articles = localStore.articles();
     auto noContent = readables.empty() && articles.empty();
@@ -514,6 +521,10 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         }
         mainMenu->addSubMenu(bibleMenu);
     }
+
+    HEAP_PROFILE_END(rootUIContent);
+
+    HEAP_PROFILE_START(rootUISettings);
 
     auto settingsMenu = new Menu(styleFamilies.settingsMenu, "Settings");
     auto readingSettingsMenu =
@@ -1733,6 +1744,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     }
 
     mainMenu->addSubMenu(settingsMenu);
+
+    HEAP_PROFILE_END(rootUISettings);
 
     if (prefs_.cesMode.get().value_or(false)) {
         auto cesScreen = new DemoScreen(*display, prefs_);

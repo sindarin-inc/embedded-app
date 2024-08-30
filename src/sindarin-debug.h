@@ -112,6 +112,19 @@ extern "C" {
           heap_caps_get_free_size(MALLOC_CAP_8BIT) / 1000,                                         \
           heap_caps_get_total_size(MALLOC_CAP_8BIT) / 1000, __FILE__, __LINE__)
 
+#define HEAP_PROFILE_START(identifier)                                                             \
+    size_t heapStart##identifier = heap_caps_get_free_size(MALLOC_CAP_INTERNAL);
+
+#define HEAP_PROFILE_END(identifier)                                                               \
+    size_t heapEnd##identifier = heap_caps_get_free_size(MALLOC_CAP_INTERNAL);                     \
+    log_d("HEAP_PROFILE_END(" #identifier ") %zu alloc'd (%zu-%zu) %s:%d",                         \
+          heapStart##identifier - heapEnd##identifier, heapEnd##identifier, heapStart##identifier, \
+          __FILE__, __LINE__);
+
+#define SHOW_WATERMARK()                                                                           \
+    log_d("SHOW_WATERMARK(%s) (min remaining stack): %zu %s:%d", pcTaskGetName(nullptr),           \
+          uxTaskGetStackHighWaterMark(NULL), __FILE__, __LINE__);
+
 // NOTE: based on the uint32_t, this cannot profile anything longer than 17.89569707
 #define PROFILE_START(identifier)                                                                  \
     volatile uint32_t profileStart##identifier = 0;                                                \
