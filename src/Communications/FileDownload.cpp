@@ -201,9 +201,9 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry,
         int size;
     };
     constexpr int bufferSize = 4096;
-    HEAP_PROFILE_START(FileDownloadBuffer)
+    HEAP_PROFILE_START(FileDownloadBuffer);
     QueueHandle_t bufferQueue = xQueueCreate(1000, sizeof(DataBlock));
-    HEAP_PROFILE_END(FileDownloadBuffer)
+    HEAP_PROFILE_END(FileDownloadBuffer);
     if (bufferQueue == nullptr) {
         log_e("xQueueCreate failed");
         return ERR_ALLOCATION;
