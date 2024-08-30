@@ -539,7 +539,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     }
     PreferencesStore::screenClearedAtShutdown = false;
 
-    xTaskCreatePinnedToCore(PollingLoopTask, "Polling", 10000, nullptr, 1, nullptr, 0);
+    xTaskCreatePinnedToCore(PollingLoopTask, "Polling", 5000, nullptr, 1, nullptr, 0);
 
     // xTaskCreatePinnedToCore(StatsTask, "Stats", 5000, nullptr, 0, nullptr, 1);
 
