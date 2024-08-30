@@ -201,7 +201,9 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry,
         int size;
     };
     constexpr int bufferSize = 4096;
+    HEAP_PROFILE_START(FileDownloadBuffer);
     QueueHandle_t bufferQueue = xQueueCreate(1000, sizeof(DataBlock));
+    HEAP_PROFILE_END(FileDownloadBuffer);
     if (bufferQueue == nullptr) {
         log_e("xQueueCreate failed");
         return ERR_ALLOCATION;
@@ -293,8 +295,6 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry,
         [writer, writeCompleteSemaphore]() {
         writer();
         xSemaphoreGive(writeCompleteSemaphore);
-        // UBaseType_t watermark = uxTaskGetStackHighWaterMark(NULL);
-        // log_d("Disk writer task stack high watermark: %d", watermark);
         },
         4000, 2, 1, "FWrite");
 
@@ -308,8 +308,6 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry,
         if (xQueueSend(bufferQueue, &block, portMAX_DELAY) != pdPASS) {
             log_e("xQueueSend error");
         }
-        // UBaseType_t watermark = uxTaskGetStackHighWaterMark(NULL);
-        // log_d("Downloader task stack high watermark: %d", watermark);
         },
         5000, 3, 1, "FDownload");
 

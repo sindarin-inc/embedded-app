@@ -104,13 +104,13 @@ Telemetry telemetry(fileSystem, prefs);
 TTRemoteInput ttRemoteInput(prefs, telemetry);
 #endif
 
-PowerManager powerManager(fileSystem, prefs, lightingController, myDisplay, telemetry);
+USBSerial usbSerial;
+
+PowerManager powerManager(fileSystem, prefs, lightingController, myDisplay, telemetry, usbSerial);
 LocalStore localStore(fileSystem, prefs, powerManager.battery, telemetry);
 RootUI rootUi(prefs, powerManager, telemetry);
 SolClock solClock(prefs);
 WiFi wiFi(telemetry);
-
-USBSerial usbSerial;
 
 DirectCommand directCommand(usbSerial, fileSystem, powerManager);
 FileTransfer fileTransferListener(fileSystem, localStore, usbSerial, directCommand);
@@ -168,6 +168,8 @@ void PollingLoopTask(void *parameter) {
         // This happens after the delay, so that the first check can run with a faster fade.
         lightingController.checkAmbientLight();
 #endif
+        SHOW_HEAP();
+        SHOW_WATERMARK();
     }
     log_d("PollingLoopTask exited");
     vTaskDelete(nullptr);
@@ -189,10 +191,19 @@ void StatsTask(void *parameter) {
 auto UIGetCurrentScreen() { return rootUi.getCurrentScreen(); }
 
 extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
+    HEAP_PROFILE_START(usbSerial);
     usbSerial.begin();
-    directCommand.begin();
+    HEAP_PROFILE_END(usbSerial);
 
+    directCommand.begin();
+    if (usbSerial.isLoggingEnabled()) {
+        // Wait a bit so we can get boot logs (mostly for the testers)
+        vTaskDelay(pdMS_TO_TICKS(1000));
+    }
+
+    HEAP_PROFILE_START(HardwareInit);
     HardwareInit();
+    HEAP_PROFILE_END(HardwareInit);
 
     powerManager.wakeupCheck(solClock);
 
@@ -207,7 +218,9 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     }
 #endif
 
+    HEAP_PROFILE_START(InitializePlatform);
     InitializePlatform();
+    HEAP_PROFILE_END(InitializePlatform);
 
     if (!prefs.begin()) {
         bootErrors.push_back({.type = BootError::Type::Preferences});
@@ -232,9 +245,11 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 #endif
     }
 
+    HEAP_PROFILE_START(powerManagerBegin);
     if (powerManager.begin() != ESP_OK) {
         bootErrors.push_back({.type = BootError::Type::PowerManagement});
     }
+    HEAP_PROFILE_END(powerManagerBegin);
 
     // The following commands can run after PowerManager::begin has completed
     directCommand.addCommandHandler([](const std::string &command, const std::string &payload,
@@ -268,26 +283,22 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         return false;
     });
 
+    HEAP_PROFILE_START(fileSystemBegin);
     if (!fileSystem.begin()) {
         bootErrors.push_back({.type = BootError::Type::FileSystem});
     } else {
         log_i("Filesystem ready!");
     }
+    HEAP_PROFILE_END(fileSystemBegin);
 
     // Set current boot id
     auto bootCount = prefs.bootCount.get().value_or(0);
     bootCount++;
     prefs.bootCount.set(bootCount);
 
-    // This is a hack for now for debugging crashes while connected to the serial
-    // monitor -- don't save (and thus delete crashes) when connected to USB. This means
-    // the boot count will be wrong once this is saved, but that's probably ok
-    if (!USBConnected()) {
-        // file system started
-        // attempt to write any core dumps to disk for later upload
-        CrashReportWriter crashReportWriter(fileSystem, bootCount - 1);
-        crashReportWriter.writeCrashReportIfExists();
-    }
+    // Attempt to write any core dumps to disk for later upload
+    CrashReportWriter crashReportWriter(fileSystem, bootCount - 1);
+    crashReportWriter.writeCrashReportIfExists();
 
     if (powerManager.state() != PowerState::ActiveUSBCharging && !localStore.begin()) {
         bootErrors.push_back({.type = BootError::Type::LocalStore});
@@ -313,6 +324,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
                 vTaskDelay(1000 / portTICK_PERIOD_MS);
             }
             log_d("Background loop task exited");
+            SHOW_WATERMARK();
             vTaskDelete(nullptr);
             },
             "BackgroundPowerLoop", 4096, nullptr, 1, nullptr, 1);
@@ -340,8 +352,6 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     }
 #endif
 
-    SHOW_HEAP();
-
 #if CONFIG_DISPLAY_EINKET013TT1
 #ifdef DISPLAY_POWER
     // Turn on power to the screen
@@ -361,9 +371,11 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         break;
     }
 
+    HEAP_PROFILE_START(displaySetup);
     if (!myDisplay.setup()) {
         bootErrors.push_back({.type = BootError::Type::Display});
     }
+    HEAP_PROFILE_END(displaySetup);
 
     // This setting must happen *before* the below vcom set from
     // preferences. Otherwise, when in dark mode, the vcom
@@ -398,13 +410,16 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
                 vTaskDelay(60000 / portTICK_PERIOD_MS);
             }
             log_d("Sync loop task exited");
+            SHOW_WATERMARK();
             vTaskDelete(nullptr);
             },
             "BackgroundSync", 4096, nullptr, 1, nullptr, 1);
     }
 
 #if USE_BLE
+    HEAP_PROFILE_START(BLEDeviceInit);
     BLEDevice::init("Sol Reader");
+    HEAP_PROFILE_END(BLEDeviceInit);
 
     if (prefs.blePower.get().has_value()) {
         auto power = prefs.blePower.get().value_or(ESP_PWR_LVL_P3);
@@ -433,6 +448,8 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         });
     };
 #endif
+
+    HEAP_PROFILE_START(BLEServices);
 
 #if CONFIG_USE_TURN_TOUCH_REMOTE
     ttRemoteInput.setCallback(remoteCallback);
@@ -495,14 +512,13 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         bootErrors.push_back({.type = BootError::Type::BLEManagerAdvertising});
     }
 #endif
+    HEAP_PROFILE_END(BLEServices);
 
 #if !DISABLE_POWER_MANAGEMENT
     if (rtc_clk_slow_freq_get() != RTC_SLOW_FREQ_32K_XTAL) {
         bootErrors.push_back({.type = BootError::Type::LowPowerOscillator});
     }
 #endif
-
-    SHOW_HEAP();
 
 #if DISABLE_POWER_MANAGEMENT
     log_w("Power Management Disabled");
@@ -539,27 +555,33 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     }
     PreferencesStore::screenClearedAtShutdown = false;
 
-    xTaskCreatePinnedToCore(PollingLoopTask, "Polling", 10000, nullptr, 1, nullptr, 0);
+    HEAP_PROFILE_START(PollingTask);
+    xTaskCreatePinnedToCore(PollingLoopTask, "Polling", 5000, nullptr, 1, nullptr, 0);
+    HEAP_PROFILE_END(PollingTask);
 
     // xTaskCreatePinnedToCore(StatsTask, "Stats", 5000, nullptr, 0, nullptr, 1);
 
 #if CONFIG_USE_LTR329
     // Begin fade-in on the lighting before rendering the UI
-    DispatchGetUiQueue()->dispatch([]() { lightingController.checkAmbientLight(300, 100); });
+    DispatchGetUiQueue()->dispatch([]() {
+        HEAP_PROFILE_START(checkAmbientLight);
+        lightingController.checkAmbientLight(300, 100);
+        HEAP_PROFILE_END(checkAmbientLight);
+    });
 #endif
 
     // Render the first thing
     DispatchGetUiQueue()->dispatch([showChargingScreen]() {
-        SHOW_HEAP();
         if (powerManager.state() == PowerState::ActiveUSBCharging) {
             showChargingScreen();
         } else {
+            HEAP_PROFILE_START(rootUISetup);
             rootUi.setup(&myDisplay, localStore, fileSystem, lightingController);
+            HEAP_PROFILE_END(rootUISetup);
             UIInnerLoop(RemoteCommand::NONE);
             log_i("First screen rendered after boot in %" PRIu64 " ms",
                   esp_timer_get_time() / 1000);
         }
-        SHOW_HEAP();
     });
 
     GoodBootTimer();
@@ -630,4 +652,5 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         }
         return false;
     });
+    SHOW_HEAP();
 }

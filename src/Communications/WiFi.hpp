@@ -31,12 +31,12 @@ typedef enum {
 
 typedef enum {
     UNINITIALIZED = 0,
-    IDLE = 1,
-    CONNECTING = 2,
-    CONNECTED = 3,
-    DISCONNECTED = 4,
-    SCANNING = 5,
-    STOPPED = 6
+    IDLE = 1 << 0,
+    CONNECTING = 1 << 1,
+    CONNECTED = 1 << 2,
+    DISCONNECTED = 1 << 3,
+    SCANNING = 1 << 4,
+    STOPPED = 1 << 5,
 } WiFiState;
 
 class WiFi {

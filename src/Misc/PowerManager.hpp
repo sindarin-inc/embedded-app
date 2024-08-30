@@ -5,6 +5,7 @@
 #include <rom/rtc.h>
 #include <utility>
 
+#include "Communications/USBSerial.hpp"
 #include "Displays/DisplaySystem.hpp"
 #include "Misc/Battery.hpp"
 #include "Misc/InactivityTimer.hpp"
@@ -192,10 +193,10 @@ public:
     // Power manager initialization need to be as simple as possible
     PowerManager(FileSystem &fileSystem, PreferencesStore &prefs,
                  LightingController &lightingController, DisplaySystem &display,
-                 Telemetry &telemetry)
+                 Telemetry &telemetry, USBSerial &usbSerial)
         : battery(fileSystem, prefs, telemetry), prefs_(prefs),
           lightingController_(lightingController), display_(display), telemetry_(telemetry),
-          magSensor_(0) {}
+          usbSerial_(usbSerial), magSensor_(0) {}
 
     PowerManager(const PowerManager &) = delete;
 
@@ -273,6 +274,7 @@ protected:
     DisplaySystem &display_;
     InactivityTimer inactivityTimer_;
     Telemetry &telemetry_;
+    USBSerial &usbSerial_;
     Mmc5603 magSensor_;
     bool templeOpen_ = false;
     BootInfo bootInfo_;

@@ -106,6 +106,10 @@ size-components: check_idf
 size-files: check_idf
 	idf.py $(IDF_PROFILE) size-files
 
+.PHONY: size
+size: check_idf
+	idf.py $(IDF_PROFILE) size
+
 .PHONY: build
 build: check_idf
 	idf.py $(IDF_PROFILE) build
