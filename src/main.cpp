@@ -296,15 +296,9 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     bootCount++;
     prefs.bootCount.set(bootCount);
 
-    // This is a hack for now for debugging crashes while connected to the serial
-    // monitor -- don't save (and thus delete crashes) when connected to USB. This means
-    // the boot count will be wrong once this is saved, but that's probably ok
-    if (!USBConnected()) {
-        // file system started
-        // attempt to write any core dumps to disk for later upload
-        CrashReportWriter crashReportWriter(fileSystem, bootCount - 1);
-        crashReportWriter.writeCrashReportIfExists();
-    }
+    // Attempt to write any core dumps to disk for later upload
+    CrashReportWriter crashReportWriter(fileSystem, bootCount - 1);
+    crashReportWriter.writeCrashReportIfExists();
 
     if (powerManager.state() != PowerState::ActiveUSBCharging && !localStore.begin()) {
         bootErrors.push_back({.type = BootError::Type::LocalStore});
