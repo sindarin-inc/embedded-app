@@ -111,6 +111,9 @@ protected:
     ReadableDictionaryScreen readableDictionaryScreen_;
     ReadablePlacemarkHistoryScreen readablePlacemarkHistoryScreen_;
 
+    int popupTabIndex_ = 0;
+    uint8_t numTabs_ = 3;
+
     void addMenuItem(const MenuItem &newItem) override;
     void populatePopupMenu();
     void resetMenuItems() override {

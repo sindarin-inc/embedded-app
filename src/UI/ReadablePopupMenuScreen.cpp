@@ -113,124 +113,166 @@ void ReadablePopupMenuScreen::addMenuItem(const MenuItem &newItem) {
 
 void ReadablePopupMenuScreen::populatePopupMenu() {
     resetMenuItems();
+    auto stream = renderer_.getStream();
+    switch (popupTabIndex_) {
+    case 0:
+        addMenuItem(MenuItem("Main Menu", [this]() { onMainMenu(); }));
 
-    addMenuItem(MenuItem("Main Menu", [this]() { onMainMenu(); }));
-    addMenuItem(MenuItem("Bookmark", [this]() {
-        onBookmarkToggle();
-        back();
-    }));
-    addMenuItem(MenuItem("Brightness", [this]() {
-        log_d("Setting current screen to brightness screen");
-        lightingAdjustScreen_.setFirstLoad();
-        setCurrentScreen(lightingAdjustScreen_);
-    }));
+        if (renderer_.getCurrentPlace()->isFor(DocType::EPUB)) {
+            auto placeHref =
+                std::dynamic_pointer_cast<EPubPlace>(renderer_.getCurrentPlace())->getHRef();
 
-    addMenuItem(MenuItem("Delete", [this]() {
-        log_d("Showing delete confirmation!");
-        lineMenuScreen_.resetMenuItems();
-        lineMenuScreen_.addMenuItem(MenuItem("Cancel", [this]() {
-            log_d("Aborting delete!");
-            setCurrentScreen(*this);
+            if (fileSystem_.exists(readable_->placemarkHistoryFilePath())) {
+                addMenuItem(MenuItem("History", [this]() {
+                    readablePlacemarkHistoryScreen_.loadMenuItems();
+                    readablePlacemarkHistoryScreen_.setFirstLoad();
+                    setCurrentScreen(readablePlacemarkHistoryScreen_);
+                }));
+            }
+        }
+
+        if (stream->isFor(DocType::EPUB) && std::dynamic_pointer_cast<EPubFile>(stream)->hasToc()) {
+            addMenuItem(MenuItem("Contents", [this]() {
+                readableTableOfContentsScreen_.loadMenuItems();
+                readableTableOfContentsScreen_.setNearestChapterSelection(
+                    renderer_.getCurrentPlace());
+                readableTableOfContentsScreen_.setFirstLoad();
+                setCurrentScreen(readableTableOfContentsScreen_);
+            }));
+        } else {
+            addMenuItem(MenuItem("Seek", [this]() {
+                readableSeekScreen_.setFirstLoad();
+                setCurrentScreen(readableSeekScreen_);
+            }));
+        }
+
+        addMenuItem(MenuItem("Report page", [this]() {
+            log_d("Reporting a problem with the page");
+            onReport();
+        }));
+
+        addMenuItem(MenuItem("Delete", [this]() {
+            log_d("Showing delete confirmation!");
+            lineMenuScreen_.resetMenuItems();
+            lineMenuScreen_.addMenuItem(MenuItem("Cancel", [this]() {
+                log_d("Aborting delete!");
+                setCurrentScreen(*this);
+                back();
+            }));
+            lineMenuScreen_.addMenuItem(MenuItem("Delete: I'm sure!", [this]() {
+                UserReadablesVector readablesToDelete = {};
+                // Create a UserReadable from the readable_ and add it to the readablesToDelete
+                // dynamic_pointer_cast the stream_ to an EPubFile and close it
+                // It's always an EPubFile if they uploaded it to us! Print out the dynamic type
+                // of stream_ to make sure it's always an EPubFile
+                std::shared_ptr<EPubFile> temp = std::dynamic_pointer_cast<EPubFile>(stream_);
+                temp->close();
+                readablesToDelete.emplace_back();
+                readablesToDelete.back().uuid = readable_->shortenedUuid;
+                readablesToDelete.back().isArchived = false;
+                readablesToDelete.back().readable = readable_;
+                localStore_.processReadableDeletion(readablesToDelete, localStore_.books());
+                auto *restartSoonPopup =
+                    new MsgPopup(display_, "Book deleted, press \ue000 to restart");
+                display_.clearDisplay();
+                this->setCurrentScreen(*restartSoonPopup);
+                setNeedsRerender();
+                restartSoonPopup->setBackCallback([this, restartSoonPopup]() {
+                    display_.clearDisplay();
+                    onMainMenu();
+                    delete restartSoonPopup;
+                    PowerManager::getInstance().reboot();
+                });
+            }));
+            setCurrentScreen(lineMenuScreen_);
+            setNeedsRerender();
+        }));
+
+        deleteMenuItemView_ = popupMenuView_.menuItemViews.back();
+
+        addMenuItem(MenuItem("Archive", [this]() {
+            prefs_.readableArchivedChanged.set(readable_->shortenedUuid.c_str(), true);
+            onMainMenu();
+        }));
+        archiveMenuItemView_ = popupMenuView_.menuItemViews.back();
+
+        addMenuItem(MenuItem("Unarchive", [this]() {
+            this->prefs_.readableArchivedChanged.remove(readable_->shortenedUuid.c_str());
             back();
         }));
-        lineMenuScreen_.addMenuItem(MenuItem("Delete: I'm sure!", [this]() {
-            UserReadablesVector readablesToDelete = {};
-            // Create a UserReadable from the readable_ and add it to the readablesToDelete
-            // dynamic_pointer_cast the stream_ to an EPubFile and close it
-            // It's always an EPubFile if they uploaded it to us! Print out the dynamic type of
-            // stream_ to make sure it's always an EPubFile
-            std::shared_ptr<EPubFile> temp = std::dynamic_pointer_cast<EPubFile>(stream_);
-            temp->close();
-            readablesToDelete.emplace_back();
-            readablesToDelete.back().uuid = readable_->shortenedUuid;
-            readablesToDelete.back().isArchived = false;
-            readablesToDelete.back().readable = readable_;
-            localStore_.processReadableDeletion(readablesToDelete, localStore_.books());
-            auto *restartSoonPopup =
-                new MsgPopup(display_, "Book deleted, press \ue000 to restart");
-            display_.clearDisplay();
-            this->setCurrentScreen(*restartSoonPopup);
-            setNeedsRerender();
-            restartSoonPopup->setBackCallback([this, restartSoonPopup]() {
-                display_.clearDisplay();
-                onMainMenu();
-                delete restartSoonPopup;
-                PowerManager::getInstance().reboot();
-            });
-        }));
-        setCurrentScreen(lineMenuScreen_);
-        setNeedsRerender();
-    }));
+        unarchiveMenuItemView_ = popupMenuView_.menuItemViews.back();
 
-    deleteMenuItemView_ = popupMenuView_.menuItemViews.back();
+        addMenuItem(MenuItem("Return to text", [this]() { back(); }));
+        break;
 
-    addMenuItem(MenuItem("Archive", [this]() {
-        prefs_.readableArchivedChanged.set(readable_->shortenedUuid.c_str(), true);
-        onMainMenu();
-    }));
-    archiveMenuItemView_ = popupMenuView_.menuItemViews.back();
+    case 1:
+        if (renderer_.getCurrentPlace()->isFor(DocType::EPUB)) {
+            auto stream = std::dynamic_pointer_cast<EPubFile>(renderer_.getStream());
+            auto placeHref =
+                std::dynamic_pointer_cast<EPubPlace>(renderer_.getCurrentPlace())->getHRef();
 
-    addMenuItem(MenuItem("Unarchive", [this]() {
-        this->prefs_.readableArchivedChanged.remove(readable_->shortenedUuid.c_str());
-        back();
-    }));
-    unarchiveMenuItemView_ = popupMenuView_.menuItemViews.back();
+            if (stream->hasSummary(placeHref)) {
+                addMenuItem(MenuItem("Summary", [this]() {
+                    auto epubPlace =
+                        std::dynamic_pointer_cast<EPubPlace>(renderer_.getCurrentPlace());
+                    readableSummaryScreen_.setPlaceInReadable(epubPlace);
+                    readableSummaryScreen_.setFirstLoad();
+                    setCurrentScreen(readableSummaryScreen_);
+                }));
+            } else {
+                log_d("No summary for spine %s", placeHref.c_str());
+            }
 
-    addMenuItem(MenuItem("Report page", [this]() {
-        log_d("Reporting a problem with the page");
-        onReport();
-    }));
-
-    if (renderer_.getCurrentPlace()->isFor(DocType::EPUB)) {
-        auto stream = std::dynamic_pointer_cast<EPubFile>(renderer_.getStream());
-        auto placeHref =
-            std::dynamic_pointer_cast<EPubPlace>(renderer_.getCurrentPlace())->getHRef();
-
-        if (fileSystem_.exists(readable_->placemarkHistoryFilePath())) {
-            addMenuItem(MenuItem("History", [this]() {
-                readablePlacemarkHistoryScreen_.loadMenuItems();
-                readablePlacemarkHistoryScreen_.setFirstLoad();
-                setCurrentScreen(readablePlacemarkHistoryScreen_);
-            }));
-        }
-
-        if (stream->hasSummary(placeHref)) {
-            addMenuItem(MenuItem("Summary", [this]() {
-                auto epubPlace = std::dynamic_pointer_cast<EPubPlace>(renderer_.getCurrentPlace());
-                readableSummaryScreen_.setPlaceInReadable(epubPlace);
-                readableSummaryScreen_.setFirstLoad();
-                setCurrentScreen(readableSummaryScreen_);
-            }));
+            if (stream->hasDictionary(placeHref)) {
+                addMenuItem(MenuItem("Dictionary", [this]() {
+                    auto epubPlace =
+                        std::dynamic_pointer_cast<EPubPlace>(renderer_.getCurrentPlace());
+                    readableDictionaryScreen_.setPlaceInReadable(epubPlace);
+                    readableDictionaryScreen_.setFirstLoad();
+                    setCurrentScreen(readableDictionaryScreen_);
+                }));
+            } else {
+                log_d("No dictionary for spine %s", placeHref.c_str());
+            }
         } else {
-            log_d("No summary for spine %s", placeHref.c_str());
+            log_d("Not an EPub, so no summary or dictionary");
         }
 
-        if (stream->hasDictionary(placeHref)) {
-            addMenuItem(MenuItem("Dictionary", [this]() {
-                auto epubPlace = std::dynamic_pointer_cast<EPubPlace>(renderer_.getCurrentPlace());
-                readableDictionaryScreen_.setPlaceInReadable(epubPlace);
-                readableDictionaryScreen_.setFirstLoad();
-                setCurrentScreen(readableDictionaryScreen_);
-            }));
-        } else {
-            log_d("No dictionary for spine %s", placeHref.c_str());
-        }
-    } else {
-        log_d("Not an EPub, so no summary or dictionary");
-    }
-
-    auto stream = renderer_.getStream();
-    if (stream->isFor(DocType::EPUB) && std::dynamic_pointer_cast<EPubFile>(stream)->hasToc()) {
-        addMenuItem(MenuItem("Contents", [this]() {
-            readableTableOfContentsScreen_.loadMenuItems();
-            readableTableOfContentsScreen_.setNearestChapterSelection(renderer_.getCurrentPlace());
-            readableTableOfContentsScreen_.setFirstLoad();
-            setCurrentScreen(readableTableOfContentsScreen_);
+        addMenuItem(MenuItem("Footnotes", [this]() {
+            log_d("Future work!");
+            back();
         }));
-    } else {
-        addMenuItem(MenuItem("Seek", [this]() {
-            readableSeekScreen_.setFirstLoad();
-            setCurrentScreen(readableSeekScreen_);
+
+        addMenuItem(MenuItem("Ask a book", [this]() {
+            log_d("Future work!");
+            back();
+        }));
+
+        addMenuItem(MenuItem("Bookmark", [this]() {
+            onBookmarkToggle();
+            back();
+        }));
+        break;
+    case 2:
+        addMenuItem(MenuItem("Brightness", [this]() {
+            log_d("Setting current screen to brightness screen");
+            lightingAdjustScreen_.setFirstLoad();
+            setCurrentScreen(lightingAdjustScreen_);
+        }));
+        addMenuItem(MenuItem("Contrast", [this]() {
+            log_d("Setting current screen to contrast screen");
+            lightingAdjustScreen_.setFirstLoad();
+            setCurrentScreen(lightingAdjustScreen_);
+        }));
+        addMenuItem(MenuItem("Dark mode", [this]() {
+            log_d("Setting current screen to dark mode screen");
+            lightingAdjustScreen_.setFirstLoad();
+            setCurrentScreen(lightingAdjustScreen_);
+        }));
+        addMenuItem(MenuItem("Read faster", [this]() {
+            log_d("Setting current screen to read faster screen");
+            lightingAdjustScreen_.setFirstLoad();
+            setCurrentScreen(lightingAdjustScreen_);
         }));
     }
 }
@@ -251,7 +293,10 @@ void ReadablePopupMenuScreen::preselectArchiveOrDeleteMenuItem() {
 
 void ReadablePopupMenuScreen::preselectFirstItem() { setCurrSelection(0); }
 
-void ReadablePopupMenuScreen::preselectLastItem() { setCurrSelection(numMenuItems_ - 1); }
+void ReadablePopupMenuScreen::preselectLastItem() { //
+    popupTabIndex_ = 2;
+    setCurrSelection(0);
+}
 
 void ReadablePopupMenuScreen::processCommand(RemoteCommand command) {
     if (currentScreen_ != this) {
@@ -261,7 +306,17 @@ void ReadablePopupMenuScreen::processCommand(RemoteCommand command) {
 
     switch (command) {
     case RemoteCommand::LEFT:
-        back();
+        // back();
+        popupTabIndex_--;
+        while (popupTabIndex_ < 0) {
+            popupTabIndex_ += numTabs_;
+        }
+        popupTabIndex_ = popupTabIndex_ % numTabs_;
+        resetMenuItems();
+        populatePopupMenu();
+        firstLoad_ = true;
+        popupMenuView_.setNeedsLayout();
+        setNeedsRerender();
         break;
     case RemoteCommand::ENTER:
         if (getCurrItem().callback != nullptr) {
@@ -275,6 +330,13 @@ void ReadablePopupMenuScreen::processCommand(RemoteCommand command) {
         } while (popupMenuView_.menuItemViews[getCurrSelection()]->isHidden());
         break;
     case RemoteCommand::RIGHT:
+        popupTabIndex_ = (popupTabIndex_ + 1) % numTabs_;
+        resetMenuItems();
+        populatePopupMenu();
+        firstLoad_ = true;
+        popupMenuView_.setNeedsLayout();
+        setNeedsRerender();
+        break;
     case RemoteCommand::BACK:
         back();
         break;
