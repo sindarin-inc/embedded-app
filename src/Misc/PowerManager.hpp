@@ -285,9 +285,6 @@ protected:
     esp_pm_lock_handle_t usbPowerLightSleepLock_ = nullptr;
     esp_pm_lock_handle_t debugCommandLightSleepLock_ = nullptr;
 #endif
-
-    static bool sleepDisabled;
-
     void updateState();
 
     auto isTempleOpen(bool &open) -> esp_err_t;
