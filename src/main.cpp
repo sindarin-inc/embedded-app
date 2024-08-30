@@ -558,8 +558,10 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     PreferencesStore::screenClearedAtShutdown = false;
 
     HEAP_PROFILE_START(PollingTask);
-    xTaskCreatePinnedToCore(PollingLoopTask, "Polling", 10000, nullptr, 1, nullptr, 0);
+    xTaskCreatePinnedToCore(PollingLoopTask, "Polling", 5000, nullptr, 1, nullptr, 0);
     HEAP_PROFILE_END(PollingTask);
+
+    // xTaskCreatePinnedToCore(StatsTask, "Stats", 5000, nullptr, 0, nullptr, 1);
 
 #if CONFIG_USE_LTR329
     // Begin fade-in on the lighting before rendering the UI
