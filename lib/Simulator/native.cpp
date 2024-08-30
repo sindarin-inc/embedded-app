@@ -39,26 +39,26 @@ extern void UIInnerLoop(RemoteCommand command);
 #include "Displays/DisplayEinkET013TT1.hpp"
 #ifndef SIM_SCALE
 #define SIM_SCALE 2
-#endif
+#endif // SIM_SCALE
 extern DisplayEinkET013TT1 myDisplay;
 #elif DISPLAY_SIM_8BIT
 #ifndef SIM_WIDTH
 #define SIM_WIDTH 600
-#endif
+#endif // SIM_WIDTH
 #ifndef SIM_HEIGHT
 #define SIM_HEIGHT 600
-#endif
+#endif // SIM_HEIGHT
 #ifdef SIM_ONE_BIT
 #include "Displays/DisplaySim1Bit.hpp"
 DisplaySim1Bit myDisplay(SIM_WIDTH, SIM_HEIGHT);
 #else
 #include "Displays/DisplaySim8Bit.hpp"
 DisplaySim8Bit myDisplay(SIM_WIDTH, SIM_HEIGHT);
-#endif
+#endif // SIM_ONE_BIT
 #ifndef SIM_SCALE
 #define SIM_SCALE 1
-#endif
-#endif
+#endif // SIM_SCALE
+#endif // CONFIG_DISPLAY_EINKET013TT1
 
 extern "C" void app_main(void); // NOLINT(readability-identifier-naming)
 
