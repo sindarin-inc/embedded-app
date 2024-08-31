@@ -12,8 +12,9 @@ class PopupMenuView : public View, public Menu {
 public:
     PopupMenuView(DisplaySystem &display)
         : display_(display), popupMenuBackground_(display, 5), popupMenuForeground_(display, 5),
-          footer1TextView_(display, ""), footer2TextView_(display, ""),
-          footer3TextView_(display, "") {}
+          arrowViewLeft_(display), arrowViewRight_(display, ArrowDirection::ArrowRight),
+          titleTextView_(display, "Navigation"), footer1TextView_(display, ""),
+          footer2TextView_(display, ""), footer3TextView_(display, "") {}
 
     ~PopupMenuView() override = default;
 
@@ -40,6 +41,17 @@ public:
         auto foregroundFrame = context.setViewFrame(popupMenuForeground_, fullFrame.inset(5));
         auto contentFrame = foregroundFrame.inset(10);
         auto y = contentFrame.origin.y;
+
+        context.setViewFrame(arrowViewLeft_,
+                             {{contentFrame.origin.x, contentFrame.origin.y}, {4, 8}});
+        context.setViewFrame(titleTextView_,
+                             {{contentFrame.origin.x + 12, contentFrame.origin.y - 3},
+                              {contentFrame.size.width, 10}});
+        context.setViewFrame(
+            arrowViewRight_,
+            {{contentFrame.origin.x + contentFrame.size.width - 10, contentFrame.origin.y},
+             {4, 8}});
+        y += 20;
 
         for (auto &view : menuItemViews) {
             if (!view->isHidden()) {
@@ -92,7 +104,11 @@ public:
         popupMenuForeground_.strokeColor = display_.fg;
 
         popupMenuBackground_.draw();
-        popupMenuForeground_.draw();
+        // popupMenuForeground_.draw();
+
+        arrowViewLeft_.draw();
+        arrowViewRight_.draw();
+        titleTextView_.draw();
 
         for (auto &view : menuItemViews) {
             if (!view->isHidden()) {
@@ -107,11 +123,19 @@ public:
 
     std::vector<std::shared_ptr<MenuItemView>> menuItemViews;
 
+    // Set the title text view text
+    void setTitleText(std::string text) { titleTextView_.setText(std::move(text)); }
+
 protected:
     DisplaySystem &display_;
 
     BoxView popupMenuBackground_;
     BoxView popupMenuForeground_;
+
+    ArrowView arrowViewLeft_;
+    ArrowView arrowViewRight_;
+
+    SingleLineTextView titleTextView_;
 
     // Two lines of footer to put stuff like the clock on
     SingleLineTextView footer1TextView_;

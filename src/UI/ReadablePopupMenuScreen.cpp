@@ -81,24 +81,6 @@ void ReadablePopupMenuScreen::setUpPopupMenu() {
     // summary)
     populatePopupMenu();
 
-    if (readable_->appProcessed) {
-        // If the readable is from the desktop app, show the delete menu item.
-        deleteMenuItemView_->setHidden(false);
-        archiveMenuItemView_->setHidden(true);
-        unarchiveMenuItemView_->setHidden(true);
-    } else {
-        // Figure out if you should show the Archive menu item or the Unarchive menu item.
-        bool archived = prefs_.readableArchivedChanged.get(readable_->shortenedUuid.c_str());
-        deleteMenuItemView_->setHidden(true);
-        if (archived) {
-            archiveMenuItemView_->setHidden(true);
-            unarchiveMenuItemView_->setHidden(false);
-        } else {
-            archiveMenuItemView_->setHidden(false);
-            unarchiveMenuItemView_->setHidden(true);
-        }
-    }
-
     popupMenuView_.setNeedsLayout();
     setNeedsLayout();
     setFirstLoad();
@@ -248,6 +230,11 @@ void ReadablePopupMenuScreen::populatePopupMenu() {
             back();
         }));
 
+        addMenuItem(MenuItem("Highlight", [this]() {
+            log_d("Future work!");
+            back();
+        }));
+
         addMenuItem(MenuItem("Bookmark", [this]() {
             onBookmarkToggle();
             back();
@@ -256,11 +243,6 @@ void ReadablePopupMenuScreen::populatePopupMenu() {
     case 2:
         addMenuItem(MenuItem("Brightness", [this]() {
             log_d("Setting current screen to brightness screen");
-            lightingAdjustScreen_.setFirstLoad();
-            setCurrentScreen(lightingAdjustScreen_);
-        }));
-        addMenuItem(MenuItem("Contrast", [this]() {
-            log_d("Setting current screen to contrast screen");
             lightingAdjustScreen_.setFirstLoad();
             setCurrentScreen(lightingAdjustScreen_);
         }));
@@ -274,6 +256,39 @@ void ReadablePopupMenuScreen::populatePopupMenu() {
             lightingAdjustScreen_.setFirstLoad();
             setCurrentScreen(lightingAdjustScreen_);
         }));
+        addMenuItem(MenuItem("Font", [this]() {
+            log_d("Setting current screen to read faster screen");
+            lightingAdjustScreen_.setFirstLoad();
+            setCurrentScreen(lightingAdjustScreen_);
+        }));
+        addMenuItem(MenuItem("Resize text", [this]() {
+            log_d("Setting current screen to read faster screen");
+            lightingAdjustScreen_.setFirstLoad();
+            setCurrentScreen(lightingAdjustScreen_);
+        }));
+        addMenuItem(MenuItem("Move text", [this]() {
+            log_d("Setting current screen to read faster screen");
+            lightingAdjustScreen_.setFirstLoad();
+            setCurrentScreen(lightingAdjustScreen_);
+        }));
+    }
+
+    if (readable_->appProcessed) {
+        // If the readable is from the desktop app, show the delete menu item.
+        deleteMenuItemView_->setHidden(false);
+        archiveMenuItemView_->setHidden(true);
+        unarchiveMenuItemView_->setHidden(true);
+    } else {
+        // Figure out if you should show the Archive menu item or the Unarchive menu item.
+        bool archived = prefs_.readableArchivedChanged.get(readable_->shortenedUuid.c_str());
+        deleteMenuItemView_->setHidden(true);
+        if (archived) {
+            archiveMenuItemView_->setHidden(true);
+            unarchiveMenuItemView_->setHidden(false);
+        } else {
+            archiveMenuItemView_->setHidden(false);
+            unarchiveMenuItemView_->setHidden(true);
+        }
     }
 }
 
@@ -296,6 +311,11 @@ void ReadablePopupMenuScreen::preselectFirstItem() { setCurrSelection(0); }
 void ReadablePopupMenuScreen::preselectLastItem() { //
     popupTabIndex_ = 2;
     setCurrSelection(0);
+    resetMenuItems();
+    populatePopupMenu();
+    popupMenuView_.setTitleText(tabTitles_[popupTabIndex_]);
+    popupMenuView_.setNeedsLayout();
+    setNeedsRerender();
 }
 
 void ReadablePopupMenuScreen::processCommand(RemoteCommand command) {
@@ -312,6 +332,7 @@ void ReadablePopupMenuScreen::processCommand(RemoteCommand command) {
             popupTabIndex_ += numTabs_;
         }
         popupTabIndex_ = popupTabIndex_ % numTabs_;
+        popupMenuView_.setTitleText(tabTitles_[popupTabIndex_]);
         resetMenuItems();
         populatePopupMenu();
         firstLoad_ = true;
@@ -331,6 +352,7 @@ void ReadablePopupMenuScreen::processCommand(RemoteCommand command) {
         break;
     case RemoteCommand::RIGHT:
         popupTabIndex_ = (popupTabIndex_ + 1) % numTabs_;
+        popupMenuView_.setTitleText(tabTitles_[popupTabIndex_]);
         resetMenuItems();
         populatePopupMenu();
         firstLoad_ = true;
@@ -381,26 +403,26 @@ void ReadablePopupMenuScreen::render(DisplaySystem &display) {
         display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
 
         firstLoad_ = false;
-    } else {
-        // NOTE: This Screen is quirky since it is rendered directly from ReadableScreen. The
-        // first time it is rendered, it will be rendered twice from ReadableScreen, once with
-        // the text in the background (using PARTIAL) and once without the text in the
-        // background (but using AU4). This creates the effect of the popup happening on top of
-        // the text.
-        std::shared_ptr<MenuItemView> selectedMenuItemView =
-            popupMenuView_.menuItemViews[getCurrSelection()];
-        for (auto &menuItemView : popupMenuView_.menuItemViews) {
-            if (menuItemView && menuItemView == selectedMenuItemView) {
-                menuItemView->setSelected(true);
-            } else {
-                menuItemView->setSelected(false);
-            }
+    } // else {
+    // NOTE: This Screen is quirky since it is rendered directly from ReadableScreen. The
+    // first time it is rendered, it will be rendered twice from ReadableScreen, once with
+    // the text in the background (using PARTIAL) and once without the text in the
+    // background (but using AU4). This creates the effect of the popup happening on top of
+    // the text.
+    std::shared_ptr<MenuItemView> selectedMenuItemView =
+        popupMenuView_.menuItemViews[getCurrSelection()];
+    for (auto &menuItemView : popupMenuView_.menuItemViews) {
+        if (menuItemView && menuItemView == selectedMenuItemView) {
+            menuItemView->setSelected(true);
+        } else {
+            menuItemView->setSelected(false);
         }
-
-        popupMenuView_.draw();
-
-        display.updateDisplay(DisplaySystem::UpdateType::FAST_WITH_VCOM_NUDGE);
     }
+
+    popupMenuView_.draw();
+
+    display.updateDisplay(DisplaySystem::UpdateType::FAST_WITH_VCOM_NUDGE);
+    //    }
 };
 
 void ReadablePopupMenuScreen::showTemporaryMessage(DisplaySystem &display,

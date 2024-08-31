@@ -113,7 +113,7 @@ protected:
 
     int popupTabIndex_ = 0;
     uint8_t numTabs_ = 3;
-
+    std::vector<std::string> tabTitles_ = {"Navigation", "Context", "Experience"};
     void addMenuItem(const MenuItem &newItem) override;
     void populatePopupMenu();
     void resetMenuItems() override {
