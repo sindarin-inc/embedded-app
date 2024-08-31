@@ -51,7 +51,7 @@ auto DisplaySystem::setup() -> bool {
     return true;
 }
 
-void DisplaySystem::invertDisplay(bool newInvert) {
+void DisplaySystem::invertDisplay(bool newInvert, bool fillBg) {
     invertedDisplay_ = newInvert;
     if (invertedDisplay_) {
         bg = 0x0000;
@@ -60,10 +60,12 @@ void DisplaySystem::invertDisplay(bool newInvert) {
         bg = 0xFFFF;
         fg = 0x0000;
     }
-    fillScreen(bg);
+    if (fillBg) {
+        fillScreen(bg);
+    }
 }
 
-void DisplaySystem::flipInversion() { invertDisplay(!invertedDisplay_); }
+void DisplaySystem::flipInversion(bool fillBg) { invertDisplay(!invertedDisplay_, fillBg); }
 
 void DisplaySystem::setPartialRefresh() { partialRefresh_ = 1; }
 
@@ -131,7 +133,7 @@ auto DisplaySystem::drawSingleLineOfText(const std::string &line, int x, int y, 
         canvas.dim = font_defs::Dim(nativeWidth(), nativeHeight());
         newXPos = font_->drawSingleLineOfText(
             canvas, Pos(xOffset(x), yOffset(y + getTextHeight() - lineSpacing_ - 3)), line,
-            inverted ? !invertedDisplay_ : invertedDisplay_);
+            inverted ? !getInversion() : getInversion());
         newXPos -= displayInsets().left;
         gfxClass_->endWrite();
     }

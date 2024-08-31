@@ -99,12 +99,16 @@ public:
     }
 
     void drawInRect(Rect rect) override {
+        display_.flipInversion(false);
         popupMenuBackground_.fillColor = display_.bg;
         popupMenuBackground_.strokeColor = display_.bg;
         popupMenuForeground_.strokeColor = display_.fg;
 
         popupMenuBackground_.draw();
         // popupMenuForeground_.draw();
+
+        // display_.bg = 0xFFFF - display_.bg;
+        // display_.fg = 0xFFFF - display_.fg;
 
         arrowViewLeft_.draw();
         arrowViewRight_.draw();
@@ -119,6 +123,10 @@ public:
         footer1TextView_.draw();
         footer2TextView_.draw();
         footer3TextView_.draw();
+
+        display_.flipInversion(false);
+        // display_.bg = 0xFFFF - display_.bg;
+        // display_.fg = 0xFFFF - display_.fg;
     }
 
     std::vector<std::shared_ptr<MenuItemView>> menuItemViews;

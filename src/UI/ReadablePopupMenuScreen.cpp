@@ -248,8 +248,9 @@ void ReadablePopupMenuScreen::populatePopupMenu() {
         }));
         addMenuItem(MenuItem("Dark mode", [this]() {
             log_d("Setting current screen to dark mode screen");
-            lightingAdjustScreen_.setFirstLoad();
-            setCurrentScreen(lightingAdjustScreen_);
+            display_.flipInversion();
+            back();
+            // setCurrentScreen(lightingAdjustScreen_);
         }));
         addMenuItem(MenuItem("Read faster", [this]() {
             log_d("Setting current screen to read faster screen");
@@ -306,7 +307,15 @@ void ReadablePopupMenuScreen::preselectArchiveOrDeleteMenuItem() {
     }
 }
 
-void ReadablePopupMenuScreen::preselectFirstItem() { setCurrSelection(0); }
+void ReadablePopupMenuScreen::preselectFirstItem() {
+    popupTabIndex_ = 0;
+    setCurrSelection(0);
+    resetMenuItems();
+    populatePopupMenu();
+    popupMenuView_.setTitleText(tabTitles_[popupTabIndex_]);
+    popupMenuView_.setNeedsLayout();
+    setNeedsRerender();
+}
 
 void ReadablePopupMenuScreen::preselectLastItem() { //
     popupTabIndex_ = 2;

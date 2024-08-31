@@ -63,7 +63,7 @@ auto DisplayEinkET013TT1::setup() -> bool {
 // We not only need to set the bg and fg for the display,
 // we also need to change the VCOM because black on white
 // and white on black behave differently.
-void DisplayEinkET013TT1::invertDisplay(bool newInvert) {
+void DisplayEinkET013TT1::invertDisplay(bool newInvert, bool fillBg) {
     bool prevInvert = invertedDisplay_;
     invertedDisplay_ = newInvert;
     if (invertedDisplay_) {
@@ -85,7 +85,9 @@ void DisplayEinkET013TT1::invertDisplay(bool newInvert) {
             driver_.setVcomNudge(0);
         }
     }
-    fillScreen(bg);
+    if (fillBg) {
+        fillScreen(bg);
+    }
 }
 
 void DisplayEinkET013TT1::updateDisplay(DisplaySystem::UpdateType updateType, bool clearFrameBuffer,
