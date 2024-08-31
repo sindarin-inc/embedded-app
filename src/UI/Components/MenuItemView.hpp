@@ -30,13 +30,6 @@ public:
 
     ~MenuItemView() override = default;
 
-    auto getWidth() -> uint16_t {
-        if (textView_ != nullptr && !textView_->isHidden()) {
-            return (textView_->getTextWidth() + indicatorWidth_ + indicatorWidthAdjustment_);
-        }
-        return 0;
-    }
-
     void setMenuItem(const MenuItem &menuItem, Font *font = static_cast<Font *>(&fontFace0),
                      bool multiLine = false, bool subtitle = true) {
         if (textView_ != nullptr) {
@@ -112,11 +105,11 @@ public:
         if (textMultiView_ != nullptr && !textMultiView_->isHidden()) {
             textRect = context.setViewFrame(
                 *textMultiView_, {{indicatorWidthPlus, y}, {right - x - indicatorWidthPlus, 0}},
-                LayoutOptionsSizeToFitVertical);
+                LayoutOptionsSizeToFit);
         } else {
             textRect = context.setViewFrame(
                 *textView_, {{indicatorWidthPlus, y}, {right - x - indicatorWidthPlus, 0}},
-                LayoutOptionsSizeToFitVertical);
+                LayoutOptionsSizeToFit);
         }
 
         y += textRect.size.height;
@@ -151,7 +144,7 @@ public:
                                   Rect{{x, indicatorYNudge}, {indicatorWidth_, size.height}},
                                   LayoutOptionsAlignCenterVertical);
 
-        return {size.width, y};
+        return {textRect.right(), y};
     }
 
     void drawInRect(Rect rect) override {

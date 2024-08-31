@@ -44,15 +44,11 @@ public:
 
         for (auto &view : menuItemViews) {
             if (!view->isHidden()) {
-                /// XXXBCBC I'll need John's help tracking down why this doesn't look like the
-                // other menu item views from the Settings Menu
                 auto viewFrame =
                     context.setViewFrame(*view, {{contentFrame.origin.x, y}, contentFrame.size},
                                          LayoutOptionsSizeToFit | LayoutOptionsAlignTop);
                 y += viewFrame.size.height;
-                if (x < view->getWidth()) {
-                    x = view->getWidth();
-                }
+                x = std::max(x, viewFrame.size.width);
             }
         }
 

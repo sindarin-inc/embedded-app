@@ -32,15 +32,6 @@ public:
         }
     }
 
-    auto getTextWidth() -> uint16_t {
-        Font *oldFont = display_.getFont();
-        display_.setFont(font_);
-        uint16_t w, h;
-        display_.getTextSize(text_, &w, &h);
-        display_.setFont(oldFont);
-        return w;
-    }
-
     auto getTextHeight() -> uint16_t {
         Font *oldFont = display_.getFont();
         display_.setFont(font_);
