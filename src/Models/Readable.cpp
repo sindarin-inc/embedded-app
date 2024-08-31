@@ -10,6 +10,10 @@ auto convertToJson(const Readable &src, JsonVariant dst) -> bool {
     dst["date_modified"] = src.dateModified;
     dst["date_published"] = src.datePublished;
     dst["readable_type"] = src.readableType;
+    dst["processed_by"] = src.processedBy;
+    if (src.localOnly) {
+        dst["local_only"] = true;
+    }
     auto authorsJson = dst.createNestedArray("authors");
     for (const auto &author : src.authors) {
         authorsJson.add(author);

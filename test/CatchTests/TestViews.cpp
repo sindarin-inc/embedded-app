@@ -3,6 +3,7 @@
 // Allow access to protected methods from tests
 #define protected public
 #define private public
+#include "Communications/USBSerial.hpp"
 #include "Misc/BMPImage.hpp"
 #include "Misc/Defer.hpp"
 #include "Misc/Telemetry.hpp"
@@ -338,10 +339,12 @@ TEST_CASE("Test some views independently") {
         prefs.textInsetBottom.remove();
         PosixFileSystem fileSystem("./test/CatchTests/TestData");
         Telemetry telemetry = Telemetry(fileSystem, prefs);
+        USBSerial usbSerial;
 
         SECTION("Test things that need power") {
             LightingController lightingController(prefs);
-            PowerManager power(fileSystem, prefs, lightingController, *display, telemetry);
+            PowerManager power(fileSystem, prefs, lightingController, *display, telemetry,
+                               usbSerial);
 
             SECTION("Test AboutScreen") {
                 AboutScreen screen(*display, prefs, power);
@@ -461,6 +464,8 @@ TEST_CASE("Test some views independently") {
         LightingController lightingController(prefs);
 
         SECTION("Test Last Question in CES mode") {
+            Battery battery(fileSystem, prefs, telemetry);
+            LocalStore localStore(fileSystem, prefs, battery, telemetry);
             prefs.cesMode.set(true);
 
             auto readable = std::make_shared<Readable>();
@@ -473,12 +478,14 @@ TEST_CASE("Test some views independently") {
             renderer.setStream(stream);
 
             ReadableScreen readableScreen(stream, *display, readable, prefs, telemetry, fileSystem,
-                                          lightingController);
+                                          lightingController, localStore);
             readableScreen.render(*display);
             ASSERT_VIEW_UNCHANGED(display, "CesMode");
         }
 
         SECTION("Test EPUB image rendering with alternate bounding box") {
+            Battery battery(fileSystem, prefs, telemetry);
+            LocalStore localStore(fileSystem, prefs, battery, telemetry);
             auto readable = std::make_shared<Readable>();
             auto readablesJsonDoc = LoadJsonDoc(fileSystem, "/readables-lq-epub.json");
             readable->fromJson((*readablesJsonDoc)["readables"][0]);
@@ -489,7 +496,7 @@ TEST_CASE("Test some views independently") {
             renderer.setStream(stream);
 
             ReadableScreen readableScreen(stream, *display, readable, prefs, telemetry, fileSystem,
-                                          lightingController);
+                                          lightingController, localStore);
             readableScreen.render(*display);
             ASSERT_VIEW_UNCHANGED(display, "EpubImage");
         }

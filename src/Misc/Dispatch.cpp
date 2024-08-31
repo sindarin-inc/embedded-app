@@ -11,7 +11,7 @@
 // This Bounce implementation is pulled from bounce.cpp
 // This allows you to use a class method as a c function pointer
 template <class T, class METHOD, METHOD M, class... PARAMS>
-static auto bounce(void *priv, PARAMS... params)
+auto bounce(void *priv, PARAMS... params)
     -> decltype(((*reinterpret_cast<T *>(priv)).*M)(params...)) {
     return ((*reinterpret_cast<T *>(priv)).*M)(params...);
 }
@@ -138,6 +138,7 @@ void DispatchQueue::dispatchThreadHandler() {
             work->op();
         }
         delete work;
+        SHOW_WATERMARK();
     } while (shutdownType_ != ShutdownType::Immediate);
 
     // Set a signal to indicate a thread exited
@@ -159,32 +160,38 @@ void DispatchQueue::dispatchOneOff(const fp_t &op, size_t threadStack, UBaseType
         auto work = reinterpret_cast<WorkItem *>(param);
         work->op();
         delete work;
+        SHOW_WATERMARK();
         vTaskDelete(nullptr);
         },
         nameBuf, threadStack, work, priority, nullptr, core);
 }
 
-static DispatchQueue *core0BackgroundQueue = nullptr;
-static DispatchQueue *core1BackgroundQueue = nullptr;
-static DispatchQueue *uiQueue = nullptr;
-static DispatchQueue *einkQueue = nullptr;
+DispatchQueue *core0BackgroundQueue = nullptr;
+DispatchQueue *core1BackgroundQueue = nullptr;
+DispatchQueue *uiQueue = nullptr;
+DispatchQueue *einkQueue = nullptr;
 
 auto DispatchGetCore0BackgroundQueue(bool create) -> DispatchQueue * {
     if (core0BackgroundQueue == nullptr && create) {
+        HEAP_PROFILE_START(Core0BGQueue);
         core0BackgroundQueue = new DispatchQueue("Core0BG", 1, 10000, 0, 0);
+        HEAP_PROFILE_END(Core0BGQueue);
     }
     return core0BackgroundQueue;
 }
 
 auto DispatchGetCore1BackgroundQueue(bool create) -> DispatchQueue * {
     if (core1BackgroundQueue == nullptr && create) {
+        HEAP_PROFILE_START(Core1BGQueue);
         core1BackgroundQueue = new DispatchQueue("Core1BG", 1, 10000, 0, 1);
+        HEAP_PROFILE_END(Core1BGQueue);
     }
     return core1BackgroundQueue;
 }
 
 auto DispatchGetUiQueue(bool create) -> DispatchQueue * {
     if (uiQueue == nullptr && create) {
+        HEAP_PROFILE_START(UIQueue);
 #ifdef CONFIG_FONT_TTF
         // 10000 wasn't enough with TTF font rendering, neither was 20000
         // 22500 had enough for booting up, but not for the popup menu
@@ -192,13 +199,16 @@ auto DispatchGetUiQueue(bool create) -> DispatchQueue * {
 #else
         uiQueue = new DispatchQueue("UI", 1, 10000, 10, 1);
 #endif
+        HEAP_PROFILE_END(UIQueue);
     }
     return uiQueue;
 }
 
 auto DispatchGetEinkQueue(bool create) -> DispatchQueue * {
     if (einkQueue == nullptr && create) {
+        HEAP_PROFILE_START(EinkQueue);
         einkQueue = new DispatchQueue("Eink", 1, 4096, 11, 1);
+        HEAP_PROFILE_END(EinkQueue);
     }
     return einkQueue;
 }

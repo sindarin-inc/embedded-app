@@ -5,6 +5,7 @@
 #include "Models/ReadableBookmark.hpp"
 #include "Renderers/RendererStream.hpp"
 #include "Sensors/LightingController.hpp"
+#include "Storage/LocalStore.hpp"
 #include "Storage/PreferencesStore.hpp"
 #include "UI/Components/ArrowView.hpp"
 #include "UI/ContainerScreen.hpp"
@@ -30,16 +31,15 @@ public:
     ReadableScreen(const std::shared_ptr<RendererStream> &stream, DisplaySystem &display,
                    const std::shared_ptr<Readable> &readable, PreferencesStore &prefs,
                    Telemetry &telemetry, FileSystem &fileSystem,
-                   LightingController &lightingController)
+                   LightingController &lightingController, LocalStore &localStore)
         : EinkView(display), stream_(stream),
           renderer_(display, GetTextRectFromPrefs(display, prefs)), readable_(readable),
           prefs_(prefs), telemetry_(telemetry), fileSystem_(fileSystem), display_(display),
           popupMenuScreen_(display, prefs, fileSystem, readable, lightingController, renderer_,
-                           telemetry_),
+                           telemetry_, localStore, stream_),
           readableSummaryScreen_(prefs, fileSystem, readable, display, renderer_),
           leftArrowView_(display, ArrowLeft), rightArrowView_(display, ArrowRight),
           upArrowView_(display, ArrowUp), downArrowView_(display, ArrowDown) {
-
         currentScreen_ = this;
         renderer_.setStream(stream);
 

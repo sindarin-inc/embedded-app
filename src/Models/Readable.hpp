@@ -56,6 +56,7 @@ public:
     SpiramString dateCreated;
     SpiramString dateModified;
     SpiramString datePublished;
+    SpiramString processedBy;
     ReadableAuthorVector authors;
     ReadableFileVector files;
     ReadableBookmarksVector bookmarks;
@@ -70,6 +71,10 @@ public:
     //! Set to true if this is a readable side-loaded onto the device (that doesn't come from the
     //! server)
     bool localOnly = false;
+
+    // If the readable came from the app, this will be set to true
+    bool appProcessed = false;
+
     // For embedded-in-firmware epubs, this is the pointer to the epub's info
     const unsigned char *localBytes = nullptr;
     size_t localBytesSize = 0;
@@ -142,6 +147,12 @@ public:
         dateCreated = j["date_created"].as<std::string>();
         dateModified = j["date_modified"].as<std::string>();
         datePublished = j["date_published"].as<std::string>();
+        processedBy = j["processed_by"].as<std::string>();
+
+        if (processedBy.substr(0, 11) == "desktop_app") {
+            appProcessed = true;
+        }
+
         localOnly = j["local_only"].as<bool>();
         authors.clear();
         for (const auto &author : j["authors"].as<JsonArray>()) {

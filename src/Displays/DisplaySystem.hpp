@@ -100,6 +100,10 @@ public:
 
     static TimerHandle_t animationTimer;
 
+    bool mirrorToSerial = false;
+
+    virtual void sendCurrentScreenToSerial(bool screenshot = false) const {}
+
     Style style;
 
     // MARK: - Required virtual methods that subclasses must implement

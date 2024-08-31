@@ -34,8 +34,8 @@ bool ledcFailed = false;
 uint8_t sysOnPin;
 bool platformInitialized;
 
-static uint8_t minLightingDutyCycle;
-static uint8_t maxLightingDutyCycle;
+uint8_t minLightingDutyCycle;
+uint8_t maxLightingDutyCycle;
 
 void PinMode(int pin, int mode) {
     gpio_set_direction(static_cast<gpio_num_t>(pin), static_cast<gpio_mode_t>(mode));
@@ -130,7 +130,6 @@ void HardwareInit() {
 
 #endif
 
-    esp_log_level_set("*", static_cast<esp_log_level_t>(CONFIG_LOG_DEFAULT_LEVEL));
     err = nvs_flash_init();
     if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         const esp_partition_t *partition = esp_partition_find_first(

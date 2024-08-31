@@ -5,7 +5,7 @@
 
 #include "sindarin-debug.h"
 
-void CircBuffer::push(uint8_t *input, int size) {
+void CircBuffer::push(const uint8_t *input, int size) {
     if ((size_ + size) > capacity_) {
         int diff = size_ + size - capacity_;
 
