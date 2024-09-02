@@ -197,9 +197,7 @@ public:
 
     virtual void invertDisplay(bool newInvert, bool fillBg = true);
     void flipInversion(bool fillBg = true);
-    [[nodiscard]] auto getInversion() const -> bool {
-        return (bg == 0x0000);
-    } // return invertedDisplay_; }
+    [[nodiscard]] auto getInversion() const -> bool { return invertedDisplay_; }
 
     [[nodiscard]] auto getLineSpacing() const -> int { return lineSpacing_; }
     void setLineSpacing(int newSpacing) { lineSpacing_ = newSpacing; }

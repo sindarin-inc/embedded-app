@@ -11,8 +11,6 @@
 #include "Misc/Platform.hpp"
 #include "config.h"
 
-#define VCOM_INVERTED_MODE_DELTA 2500
-
 // Not currently used waveforms
 // const EinkET013TT1Waveform FULL_REFRESH_WAVEFORM = BC_EINK_31_35C_WAVEFORM_FULL;
 // const EinkET013TT1Waveform ORIGINAL_FULL_REFRESH_WAVEFORM = EINK_ORIGINAL_WAVEFORM_FULL;

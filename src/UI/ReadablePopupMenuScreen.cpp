@@ -186,8 +186,48 @@ void ReadablePopupMenuScreen::populatePopupMenu() {
 
         addMenuItem(MenuItem("Return to text", [this]() { back(); }));
         break;
-
     case 1:
+        addMenuItem(MenuItem("Brightness", [this]() {
+            log_d("Setting current screen to brightness screen");
+            lightingAdjustScreen_.setFirstLoad();
+            setCurrentScreen(lightingAdjustScreen_);
+        }));
+        addMenuItem(MenuItem("Dark mode", [this]() {
+            log_d("Setting current screen to dark mode screen");
+            display_.flipInversion();
+            back();
+            // setCurrentScreen(lightingAdjustScreen_);
+        }));
+        addMenuItem(MenuItem("Autopilot", [this]() {
+            log_d("Future work: Setting current screen to read faster screen");
+            // Need to figure out how to set this setting and then actually
+            // get it to start or stop the autopilot.
+#if 0
+            this->prefs_.autoPilot.set(!this->prefs_.autoPilot.get().value_or(false));
+            if (this->prefs_.autoPilot.get().value_or(false)) {
+                prefs_.autoPilotSpeed.set(10000);
+            } else {
+                prefs_.autoPilotSpeed.remove();
+            }
+            back();
+
+#endif
+        }));
+        // Gotta figure out how to get these to work within the readable
+        // Right now you have to go back to main menu and reload the readable
+        // to get these to work.
+        addMenuItem(MenuItem("Resize text", [this]() {
+            log_d("Setting current screen to read faster screen");
+            setCurrentScreen(resizeTextScreen_);
+        }));
+        addMenuItem(MenuItem("Move text", [this]() {
+            log_d("Setting current screen to read faster screen");
+            setCurrentScreen(offsetAdjustScreen_);
+        }));
+        addMenuItem(MenuItem("Return to text", [this]() { back(); }));
+        break;
+
+    case 2:
         if (renderer_.getCurrentPlace()->isFor(DocType::EPUB)) {
             auto stream = std::dynamic_pointer_cast<EPubFile>(renderer_.getStream());
             auto placeHref =
@@ -230,48 +270,12 @@ void ReadablePopupMenuScreen::populatePopupMenu() {
             back();
         }));
 
-        addMenuItem(MenuItem("Highlight", [this]() {
-            log_d("Future work!");
-            back();
-        }));
-
         addMenuItem(MenuItem("Bookmark", [this]() {
             onBookmarkToggle();
             back();
         }));
+        addMenuItem(MenuItem("Return to text", [this]() { back(); }));
         break;
-    case 2:
-        addMenuItem(MenuItem("Brightness", [this]() {
-            log_d("Setting current screen to brightness screen");
-            lightingAdjustScreen_.setFirstLoad();
-            setCurrentScreen(lightingAdjustScreen_);
-        }));
-        addMenuItem(MenuItem("Dark mode", [this]() {
-            log_d("Setting current screen to dark mode screen");
-            display_.flipInversion();
-            back();
-            // setCurrentScreen(lightingAdjustScreen_);
-        }));
-        addMenuItem(MenuItem("Read faster", [this]() {
-            log_d("Setting current screen to read faster screen");
-            lightingAdjustScreen_.setFirstLoad();
-            setCurrentScreen(lightingAdjustScreen_);
-        }));
-        addMenuItem(MenuItem("Font", [this]() {
-            log_d("Setting current screen to read faster screen");
-            lightingAdjustScreen_.setFirstLoad();
-            setCurrentScreen(lightingAdjustScreen_);
-        }));
-        addMenuItem(MenuItem("Resize text", [this]() {
-            log_d("Setting current screen to read faster screen");
-            lightingAdjustScreen_.setFirstLoad();
-            setCurrentScreen(lightingAdjustScreen_);
-        }));
-        addMenuItem(MenuItem("Move text", [this]() {
-            log_d("Setting current screen to read faster screen");
-            lightingAdjustScreen_.setFirstLoad();
-            setCurrentScreen(lightingAdjustScreen_);
-        }));
     }
 
     if (readable_->appProcessed) {
@@ -406,10 +410,11 @@ void ReadablePopupMenuScreen::render(DisplaySystem &display) {
         for (auto &menuItemView : popupMenuView_.menuItemViews) {
             menuItemView->setSelected(false);
         }
-
+        display_.flipInversion(false);
         popupMenuView_.draw();
 
         display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
+        display_.flipInversion(false);
 
         firstLoad_ = false;
     } // else {
@@ -428,11 +433,12 @@ void ReadablePopupMenuScreen::render(DisplaySystem &display) {
         }
     }
 
+    display_.flipInversion(false);
     popupMenuView_.draw();
-
     display.updateDisplay(DisplaySystem::UpdateType::FAST_WITH_VCOM_NUDGE);
-    //    }
-};
+    display_.flipInversion(true);
+    //}
+}
 
 void ReadablePopupMenuScreen::showTemporaryMessage(DisplaySystem &display,
                                                    const std::string &message, int duration) {

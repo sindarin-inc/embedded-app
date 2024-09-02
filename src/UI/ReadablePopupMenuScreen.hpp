@@ -7,11 +7,13 @@
 #include "UI/ContainerScreen.hpp"
 #include "UI/LightingAdjustScreen.hpp"
 #include "UI/LineMenuScreen.hpp"
+#include "UI/OffsetAdjustScreen.hpp"
 #include "UI/ReadableDictionaryScreen.hpp"
 #include "UI/ReadablePlacemarkHistoryScreen.hpp"
 #include "UI/ReadableSeekScreen.hpp"
 #include "UI/ReadableSummaryScreen.hpp"
 #include "UI/ReadableTableOfContentsScreen.hpp"
+#include "UI/ResizeBoxScreen.hpp"
 #include "UI/Screen.hpp"
 
 class ReadablePopupMenuScreen : public ContainerScreen, public EinkView, public Menu {
@@ -27,6 +29,8 @@ public:
           localStore_(localStore), fileSystem_(fileSystem), stream_(stream),
           lineMenuScreen_(prefs, display),
           lightingAdjustScreen_(display, prefs, lightingController, telemetry),
+          offsetAdjustScreen_(display, prefs, telemetry),
+          resizeTextScreen_(display, prefs, telemetry),
           readableSeekScreen_(prefs, readable, renderer),
           readableTableOfContentsScreen_(prefs, readable, renderer, display, telemetry),
           readableSummaryScreen_(prefs, fileSystem, readable, display, renderer),
@@ -36,6 +40,16 @@ public:
         this->setCurrentScreen(*this);
 
         lightingAdjustScreen_.setBackCallback([this]() {
+            this->setCurrentScreen(*this);
+            back();
+        });
+
+        offsetAdjustScreen_.setBackCallback([this]() {
+            this->setCurrentScreen(*this);
+            back();
+        });
+
+        resizeTextScreen_.setBackCallback([this]() {
             this->setCurrentScreen(*this);
             back();
         });
@@ -105,6 +119,8 @@ protected:
     std::shared_ptr<MenuItemView> deleteMenuItemView_;
 
     LightingAdjustScreen lightingAdjustScreen_;
+    OffsetAdjustScreen offsetAdjustScreen_;
+    ResizeBoxScreen resizeTextScreen_;
     ReadableSeekScreen readableSeekScreen_;
     ReadableTableOfContentsScreen readableTableOfContentsScreen_;
     ReadableSummaryScreen readableSummaryScreen_;
@@ -113,7 +129,7 @@ protected:
 
     int popupTabIndex_ = 0;
     uint8_t numTabs_ = 3;
-    std::vector<std::string> tabTitles_ = {"Navigation", "Context", "Experience"};
+    std::vector<std::string> tabTitles_ = {"Navigation", "Experience", "Context"};
     void addMenuItem(const MenuItem &newItem) override;
     void populatePopupMenu();
     void resetMenuItems() override {

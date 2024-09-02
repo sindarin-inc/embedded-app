@@ -12,6 +12,8 @@
 #define EinkET013TT1_X_PIXELS 256
 #define EinkET013TT1_Y_PIXELS 256
 
+#define VCOM_INVERTED_MODE_DELTA 2500
+
 class DisplayEinkET013TT1 : public DisplaySystem {
 public:
     DisplayEinkET013TT1(uint8_t csLeft, uint8_t csRight, uint8_t rst) noexcept

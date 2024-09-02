@@ -210,6 +210,9 @@ void ReadableScreen::render(DisplaySystem &display) {
 
     bool renderTransitionArrows = prefs_.pageTransitionArrows.get().value_or(false);
 
+    // In case the prefs have changed since the last render, update the renderer's rect
+    renderer_.setRect(GetTextRectFromPrefs(display, prefs_));
+
     if (currentScreen_ != this && !renderPopupBackground) {
         currentScreen_->render(display);
         return;
