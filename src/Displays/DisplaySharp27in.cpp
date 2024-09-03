@@ -33,7 +33,8 @@ void DisplaySharp27in::updateDisplay(DisplaySystem::UpdateType updateType, bool 
     }
 
     PROFILE_START(updateDisplay);
-    if (updateType == UpdateType::PARTIAL || updateType == UpdateType::FULL) {
+    if (updateType == UpdateType::PARTIAL || updateType == UpdateType::FULL ||
+        updateType == FAST_INDICATOR) {
         driver_.refresh(getBuffer());
     }
 

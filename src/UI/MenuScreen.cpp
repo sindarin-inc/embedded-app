@@ -8,25 +8,23 @@
 
 #define MAX_WIDTH 150
 
-#define HEIGHT_EVEN(x) ((((x) % 2 == 0) ? (x) : ((x) + 1)))
-
 // All of this needs to get fixed up for the ttf fonts to look right
 auto MenuScreen::layout(LayoutContext &context, Size size) -> Size {
 
     context.setSublayoutFrame(
-        {{0, 0}, {size.width, HEIGHT_EVEN(upperLeftTextView_.getTextHeight())}},
+        {{0, 0}, {size.width, upperLeftTextView_.getTextHeight()}},
         LayoutOptionsAlignTop | LayoutOptionsAlignLeft,
         [this](LayoutContext &context, Size size) -> Size {
-            // To render correctly, arrows should always have a height of (2x width - 1)
-            auto arrowRect = context.setViewFrame(
-                leftArrowView_,
-                {{0, 0},
-                 {std::max(5, HEIGHT_EVEN(upperLeftTextView_.getTextHeight() / 2)),
-                  std::max(9, HEIGHT_EVEN(upperLeftTextView_.getTextHeight()) - 1)}},
+            // Always have at least one pixel of top and bottom of the surrounding text
+            auto arrowHeight = upperLeftTextView_.getTextHeight() + 2;
+            auto arrowWidth = arrowHeight / 2 + 1;
+            // To render correctly, arrows should always have a height of (2x
+            // width - 1
+            auto arrowRect = context.setViewSizeInRect(
+                leftArrowView_, {arrowWidth, arrowHeight}, Rect::fromSize(size),
                 LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical);
             auto backTextRect = context.setViewFrame(
-                upperLeftTextView_,
-                {{std::max(5, HEIGHT_EVEN(upperLeftTextView_.getTextHeight() / 2)) * 2, 0}, size},
+                upperLeftTextView_, {{arrowRect.right() + arrowRect.size.width, 0}, size},
                 LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical);
 
             return {arrowRect.size.width + backTextRect.size.width,
@@ -150,13 +148,8 @@ void MenuScreen::render(DisplaySystem &display) {
 
     drawMenuItems(display, true);
     draw();
-#if CONFIG_DISPLAY_EINKET013TT1
-    display.updateDisplay(DisplaySystem::UpdateType::FAST_WITH_VCOM_NUDGE);
-#elif CONFIG_DISPLAY_WAVESHARE_6INHD
-    display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
-#else
-    display.updateDisplay(DisplaySystem::UpdateType::FULL);
-#endif
+
+    display.updateDisplay(DisplaySystem::UpdateType::FAST_INDICATOR);
 
     firstLoad_ = false;
 }

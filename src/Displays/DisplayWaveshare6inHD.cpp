@@ -37,7 +37,7 @@ void DisplayWaveshare6inHD::updateDisplay(DisplaySystem::UpdateType updateType,
     }
 
     PROFILE_START(updateDisplay);
-    if (updateType == UpdateType::PARTIAL) {
+    if (updateType == UpdateType::PARTIAL || updateType == UpdateType::FAST_INDICATOR) {
 #if !CONFIG_WAVESHARE_HEADLESS
 #if CONFIG_WAVESHARE_8BIT
         driver_.Eight_bp_Refresh(gfxCanvas_.getBuffer(), (UWORD)0, (UWORD)0,

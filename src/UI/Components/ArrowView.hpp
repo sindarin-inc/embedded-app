@@ -7,6 +7,8 @@
 
 enum ArrowDirection { ArrowLeft, ArrowRight, ArrowUp, ArrowDown };
 
+#define MAKE_ODD(x) ((((x) % 2 == 1) ? (x) : ((x)-1)))
+
 // A view that draws an arrow
 class ArrowView : public EinkView {
 public:
@@ -17,7 +19,15 @@ public:
     ArrowDirection arrowDirection = ArrowLeft;
     uint16_t color;
 
-    auto layout(LayoutContext &context, Size size) -> Size override { return size; }
+    auto layout(LayoutContext &context, Size size) -> Size override {
+        // Figure out whether we are width or height constrained
+
+        if (arrowDirection == ArrowLeft || arrowDirection == ArrowRight) {
+            return {MAKE_ODD(size.width), MAKE_ODD(size.width) * 2 - 1};
+        } else {
+            return {MAKE_ODD(size.height) * 2 - 1, MAKE_ODD(size.height)};
+        }
+    }
 
     void drawInRect(Rect rect) override {
         // have to set it again here in case the color changed since the the constructor.

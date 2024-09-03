@@ -176,13 +176,7 @@ void ToggleMenuScreen::render(DisplaySystem &display) {
     drawBubbles_ = true;
     draw();
 
-#if CONFIG_DISPLAY_EINKET013TT1
-    display.updateDisplay(DisplaySystem::UpdateType::FAST_WITH_VCOM_NUDGE);
-#elif CONFIG_DISPLAY_WAVESHARE_6INHD
-    display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
-#else
-    display.updateDisplay(DisplaySystem::UpdateType::FULL);
-#endif
+    display.updateDisplay(DisplaySystem::UpdateType::FAST_INDICATOR);
 
     drawBubbles_ = false;
     firstLoad_ = false;

@@ -112,7 +112,7 @@ public:
         FULL,
         PARTIAL,
         FAST,
-        FAST_WITH_VCOM_NUDGE,
+        FAST_INDICATOR,
         FAST_ORIGINAL_AU4,
         ORIGINAL_PARTIAL,
         ERASE,

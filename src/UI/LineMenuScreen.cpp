@@ -64,13 +64,7 @@ void LineMenuScreen::render(DisplaySystem &display) {
     // Redraw with a different vcom setting for the menu item bullet
     draw();
 
-#if CONFIG_DISPLAY_EINKET013TT1
-    display.updateDisplay(DisplaySystem::UpdateType::FAST_WITH_VCOM_NUDGE);
-#elif CONFIG_DISPLAY_WAVESHARE6INHD
-    display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
-#else
-    display.updateDisplay(DisplaySystem::UpdateType::FULL);
-#endif
+    display.updateDisplay(DisplaySystem::UpdateType::FAST_INDICATOR);
 
     firstLoad_ = false;
 }
