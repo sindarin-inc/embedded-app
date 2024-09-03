@@ -5,11 +5,7 @@
 auto ReadablePlacemarkHistoryScreen::layout(LayoutContext &context, Size size) -> Size {
     const auto inset = 2;
 
-    // This mirrors what happens in MenuScreen right now. We may want to refactor this into a
-    // helper so that it is reused and consistent.
-    context.setViewFrame(leftArrowView_, {{0, 1}, {5, 10}},
-                         LayoutOptionsSizeToFit | LayoutOptionsAlignTop | LayoutOptionsAlignLeft);
-    context.setViewFrame(upperLeftTextView_, {{10, 0}, size},
+    context.setViewFrame(backLabelView_, Rect::fromSize(size),
                          LayoutOptionsSizeToFit | LayoutOptionsAlignTop | LayoutOptionsAlignLeft);
 
     auto insetRect = context.setSublayoutFrame(
@@ -47,8 +43,7 @@ auto ReadablePlacemarkHistoryScreen::layout(LayoutContext &context, Size size) -
 };
 
 void ReadablePlacemarkHistoryScreen::drawInRect(Rect rect) {
-    leftArrowView_.draw();
-    upperLeftTextView_.draw();
+    backLabelView_.draw();
 
     for (auto &view : menuItemViews_) {
         (*view).draw();

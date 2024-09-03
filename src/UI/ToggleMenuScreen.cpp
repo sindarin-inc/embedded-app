@@ -7,29 +7,9 @@
 
 #define MAX_WIDTH 150
 
-#define HEIGHT_EVEN(x) ((((x) % 2 == 0) ? (x) : ((x) + 1)))
-
 auto ToggleMenuScreen::layout(LayoutContext &context, Size size) -> Size {
-    const auto inset = 3;
-    context.setSublayoutFrame(
-        {{0, 0}, {size.width, HEIGHT_EVEN(upperLeftTextView_.getTextHeight())}},
-        LayoutOptionsAlignTop | LayoutOptionsAlignLeft,
-        [this](LayoutContext &context, Size size) -> Size {
-            // To render correctly, arrows should always have a height of (2x width - 1)
-            auto arrowRect = context.setViewFrame(
-                leftArrowView_,
-                {{0, 0},
-                 {std::max(5, HEIGHT_EVEN(upperLeftTextView_.getTextHeight() / 2)),
-                  std::max(9, HEIGHT_EVEN(upperLeftTextView_.getTextHeight()) - 1)}},
-                LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical);
-            auto backTextRect = context.setViewFrame(
-                upperLeftTextView_,
-                {{std::max(5, HEIGHT_EVEN(upperLeftTextView_.getTextHeight() / 2)) * 2, 0}, size},
-                LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical);
-
-            return {arrowRect.size.width + backTextRect.size.width,
-                    std::max(arrowRect.size.height, backTextRect.size.height)};
-        });
+    context.setViewFrame(backLabelView_, Rect::fromSize(size),
+                         LayoutOptionsSizeToFit | LayoutOptionsAlignTop | LayoutOptionsAlignLeft);
 
     const auto mainInset = 2;
 
@@ -40,6 +20,7 @@ auto ToggleMenuScreen::layout(LayoutContext &context, Size size) -> Size {
             int x = 0;
             int y = 0;
             int place = 0;
+            const auto inset = 3;
 
             Rect offRect =
                 context.setViewFrame(offTextView_, {{inset, y}, {size.width - 2 * inset - 19, 0}},
@@ -104,8 +85,7 @@ auto ToggleMenuScreen::layout(LayoutContext &context, Size size) -> Size {
 }
 
 void ToggleMenuScreen::drawInRect(Rect rect) {
-    leftArrowView_.draw();
-    upperLeftTextView_.draw();
+    backLabelView_.draw();
     onTextView_.draw();
     offTextView_.draw();
     for (auto &view : menuItemViews_) {

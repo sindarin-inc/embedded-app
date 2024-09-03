@@ -11,25 +11,8 @@
 // All of this needs to get fixed up for the ttf fonts to look right
 auto MenuScreen::layout(LayoutContext &context, Size size) -> Size {
 
-    context.setSublayoutFrame(
-        {{0, 0}, {size.width, upperLeftTextView_.getTextHeight()}},
-        LayoutOptionsAlignTop | LayoutOptionsAlignLeft,
-        [this](LayoutContext &context, Size size) -> Size {
-            // Always have at least one pixel of top and bottom of the surrounding text
-            auto arrowHeight = upperLeftTextView_.getTextHeight() + 2;
-            auto arrowWidth = arrowHeight / 2 + 1;
-            // To render correctly, arrows should always have a height of (2x
-            // width - 1
-            auto arrowRect = context.setViewSizeInRect(
-                leftArrowView_, {arrowWidth, arrowHeight}, Rect::fromSize(size),
-                LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical);
-            auto backTextRect = context.setViewFrame(
-                upperLeftTextView_, {{arrowRect.right() + arrowRect.size.width, 0}, size},
-                LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical);
-
-            return {arrowRect.size.width + backTextRect.size.width,
-                    std::max(arrowRect.size.height, backTextRect.size.height)};
-        });
+    context.setViewFrame(backLabelView_, Rect::fromSize(size),
+                         LayoutOptionsSizeToFit | LayoutOptionsAlignTop | LayoutOptionsAlignLeft);
 
     context.setViewFrame(clockBatteryView_, {{0, 0}, size},
                          LayoutOptionsSizeToFit | LayoutOptionsAlignBottom |
@@ -40,8 +23,7 @@ auto MenuScreen::layout(LayoutContext &context, Size size) -> Size {
 void MenuScreen::requireRestart() { restartOnBack_ = true; }
 
 void MenuScreen::drawInRect(Rect rect) {
-    leftArrowView_.draw();
-    upperLeftTextView_.draw();
+    backLabelView_.draw();
     clockBatteryView_.draw();
 }
 

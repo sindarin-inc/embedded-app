@@ -47,6 +47,8 @@ public:
 
     void setFont(Font *font) { font_ = font; }
 
+    const Font *getFont() { return font_; }
+
     auto layout(LayoutContext &context, Size size) -> Size override {
         uint16_t w, h;
         // Leave the display font the way we found it.
