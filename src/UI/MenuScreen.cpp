@@ -77,6 +77,7 @@ void MenuScreen::drawMenuItems(DisplaySystem &display, bool withBullet, bool wit
         // Good default for 1 bit smallest font
         auto indicatorWidth = (height + 1) / 3;
         // Mirroring our previous defaults but now at least it's dynamic
+        // TODO: Make this a MenuItemView instead
         auto indicatorWidthAdjustment = indicatorWidth * 8 / 5;
 
         if ((i == currSelection_) && (withBullet)) {
