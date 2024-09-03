@@ -64,10 +64,15 @@ auto LightingAdjustScreen::layout(LayoutContext &context, Size size) -> Size {
         });
 
     // Put the arrow on the right and left -- either is fine to exit the screen
-    context.setViewFrame(leftArrowView_, {{0, size.height / 2 - 5}, {5, 10}});
+    // TODO(256displayonly): Fix plz
+    auto arrowWidth = 5;
+    context.setViewSizeInRect(leftArrowView_, {arrowWidth, 0}, Rect::fromSize(size),
+                              LayoutOptionsSizeToFit | LayoutOptionsAlignLeft |
+                                  LayoutOptionsAlignCenterVertical);
 
-    // Put the arrow on the right and left -- either is fine to exit the screen
-    context.setViewFrame(rightArrowView_, {{size.width - 5, size.height / 2 - 5}, {5, 10}});
+    context.setViewSizeInRect(rightArrowView_, {arrowWidth, 0}, Rect::fromSize(size),
+                              LayoutOptionsSizeToFit | LayoutOptionsAlignRight |
+                                  LayoutOptionsAlignCenterVertical);
 
     return size;
 }

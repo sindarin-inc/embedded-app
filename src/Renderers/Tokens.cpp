@@ -27,7 +27,8 @@ auto Tokens::add(Token &token, const char *str, uint8_t length) -> bool {
         //     getTokensCount(),
         //     getCStrPoolCount());
     } else {
-        log_e("tokens_[] too small!: (%s)", tokensIsFull() ? "TOKENS" : "CSTR_POOL");
+        log_e("tokens_[] too small %d!: (%s)", TOKENS_SIZE,
+              tokensIsFull() ? "TOKENS" : "CSTR_POOL");
         REND_EXIT_SIM;
         return false;
     }

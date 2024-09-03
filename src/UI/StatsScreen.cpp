@@ -31,13 +31,13 @@ void StatsScreen::render(DisplaySystem &display) {
     }
 
     display.setFont(static_cast<Font *>(&fontFace0));
-    display.drawSingleLineOfText(wordsMessage,
-                                 (display.width() - display.getTextWidth(wordsMessage)) / 2,
-                                 (display.height() / 2 - (display.getTextHeight() * 2 + 1) / 2));
-    display.drawSingleLineOfText(timeMessage,
-                                 (display.width() - display.getTextWidth(timeMessage)) / 2,
-                                 (display.height() / 2 - (display.getTextHeight() * 2 + 1) / 2 +
-                                  display.getTextHeight() + 1));
+    display.drawSingleLineOfText(
+        wordsMessage, (display.width() - display.getTextWidth(wordsMessage)) / 2,
+        (display.height() / 2 - (display.getLineHeightPlusSpacing() * 2 + 1) / 2));
+    display.drawSingleLineOfText(
+        timeMessage, (display.width() - display.getTextWidth(timeMessage)) / 2,
+        (display.height() / 2 - (display.getLineHeightPlusSpacing() * 2 + 1) / 2 +
+         display.getLineHeightPlusSpacing() + 1));
     display.updateDisplay();
 }
 

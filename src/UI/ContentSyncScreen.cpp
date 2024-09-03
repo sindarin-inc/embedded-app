@@ -204,7 +204,8 @@ void ContentSyncScreen::render(DisplaySystem &display) {
     draw();
 
     display.updateDisplay(nextUpdate_);
-    nextUpdate_ = DisplaySystem::UpdateType::FAST_WITH_VCOM_NUDGE;
+
+    nextUpdate_ = DisplaySystem::UpdateType::FAST_INDICATOR;
 }
 
 void ContentSyncScreen::processCommand(RemoteCommand command) {

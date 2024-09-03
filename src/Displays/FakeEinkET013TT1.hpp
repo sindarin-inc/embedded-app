@@ -11,8 +11,16 @@
 #include "CustomWaveforms.hpp"
 #include "EinkTypes.hpp"
 
+#ifndef SIM_WIDTH
 #define EinkET013TT1_PIXEL_WIDTH 256
+#else
+#define EinkET013TT1_PIXEL_WIDTH SIM_WIDTH
+#endif
+#ifndef SIM_HEIGHT
 #define EinkET013TT1_PIXEL_HEIGHT 256
+#else
+#define EinkET013TT1_PIXEL_HEIGHT SIM_HEIGHT
+#endif
 #define FRAMERATE_DEFAULT 24
 #define PARTICLE_MOVEMENT_DEFAULT 40
 
@@ -64,6 +72,8 @@ public:
 
     auto buffer() -> std::unique_ptr<uint8_t[]> & { return particlePositions_; }
 
+    auto getPixel(const uint8_t *buffer, int x, int y) -> uint8_t;
+
     auto getSkipWaveform() -> bool { return skipWaveform_; }
 
     void setSkipWaveform(bool skip) { skipWaveform_ = skip; }
@@ -83,8 +93,6 @@ protected:
 
     uint8_t previousBuffer_[EinkET013TT1_PIXEL_WIDTH * EinkET013TT1_PIXEL_HEIGHT / 8];
     int framerate_ = FRAMERATE_DEFAULT;
-
-    auto getPixel(const uint8_t *buffer, int x, int y) -> uint8_t;
 };
 
 #endif

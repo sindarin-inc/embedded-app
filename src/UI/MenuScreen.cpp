@@ -8,11 +8,10 @@
 
 #define MAX_WIDTH 150
 
+// All of this needs to get fixed up for the ttf fonts to look right
 auto MenuScreen::layout(LayoutContext &context, Size size) -> Size {
 
-    context.setViewFrame(leftArrowView_, {{0, 1}, {5, 10}},
-                         LayoutOptionsSizeToFit | LayoutOptionsAlignTop | LayoutOptionsAlignLeft);
-    context.setViewFrame(upperLeftTextView_, {{10, 0}, size},
+    context.setViewFrame(backLabelView_, Rect::fromSize(size),
                          LayoutOptionsSizeToFit | LayoutOptionsAlignTop | LayoutOptionsAlignLeft);
 
     context.setViewFrame(clockBatteryView_, {{0, 0}, size},
@@ -24,8 +23,7 @@ auto MenuScreen::layout(LayoutContext &context, Size size) -> Size {
 void MenuScreen::requireRestart() { restartOnBack_ = true; }
 
 void MenuScreen::drawInRect(Rect rect) {
-    leftArrowView_.draw();
-    upperLeftTextView_.draw();
+    backLabelView_.draw();
     clockBatteryView_.draw();
 }
 
@@ -41,7 +39,7 @@ void MenuScreen::drawMenuItems(DisplaySystem &display, bool withBullet, bool wit
     // text. Bias a bit to the top by subtracting 5.
     if (getNumItems() < myStyle_.numberOfItemsPerPage) {
         additionalYOffset = (myStyle_.numberOfItemsPerPage - getNumItems() - 1) *
-                            (display.getTextHeight() - display.getLineSpacing() + 3) / 2;
+                            (display.getLineHeightPlusSpacing() - display.getLineSpacing() + 3) / 2;
     }
 
     for (int i = currMenuPage_ * myStyle_.numberOfItemsPerPage;
@@ -63,18 +61,33 @@ void MenuScreen::drawMenuItems(DisplaySystem &display, bool withBullet, bool wit
             itemTitle, xOffsetForMenu + 5,
             yOffsetForMenu + additionalYOffset - 1 +
                 (i % myStyle_.numberOfItemsPerPage) *
-                    (display.getTextHeight() - display.getLineSpacing() + 1));
+                    (display.getLineHeightPlusSpacing() - display.getLineSpacing() + 1));
 
         // xoffset for main menu is 12, for settings menu is 23
         // yoffset for main menu is some crazy thing
         // for settings menu some other crazy thing
+        // Switch to Resolution-based here. 5x5 is a good size for the paging bubbles
+        // on a 256 x 256 screen, but higher resolution screens will need larger bubbles
+        //
+        // This probably should change to a layout item that is Vertically Center Aligned
+        // with the menu item. That's the only way to get it to look right on small screens
+        // and large screens.
+        // Copied from MenuItemView -- why arent't these MenuItemViews?
+        auto height = display.getLineHeightPlusSpacing();
+        // Good default for 1 bit smallest font
+        auto indicatorWidth = (height + 1) / 3;
+        // Mirroring our previous defaults but now at least it's dynamic
+        // TODO: Make this a MenuItemView instead
+        auto indicatorWidthAdjustment = indicatorWidth * 8 / 5;
+
         if ((i == currSelection_) && (withBullet)) {
-            display.fillRoundRect(xOffsetForMenu - display.getTextHeight() / 4 - 2,
-                                  yOffsetForMenu + additionalYOffset +
-                                      (i % myStyle_.numberOfItemsPerPage) *
-                                          (display.getTextHeight() - display.getLineSpacing() + 1) +
-                                      4,
-                                  5, 5, 3, display.fg);
+            display.fillRoundRect(
+                xOffsetForMenu - indicatorWidthAdjustment,
+                yOffsetForMenu + additionalYOffset +
+                    (i % myStyle_.numberOfItemsPerPage) *
+                        (display.getLineHeightPlusSpacing() - display.getLineSpacing() + 1) +
+                    indicatorWidth * 4 / 5,
+                indicatorWidth, indicatorWidth, indicatorWidth * 5 / 3, display.fg);
         }
     }
 
@@ -110,13 +123,16 @@ void MenuScreen::render(DisplaySystem &display) {
     if (firstLoad_) {
         clockBatteryView_.updateTime();
         drawMenuItems(display, false);
+#if CONFIG_DISPLAY_EINKET013TT1
         draw();
         display.updateDisplay(DisplaySystem::UpdateType::FULL);
+#endif
     }
 
     drawMenuItems(display, true);
     draw();
-    display.updateDisplay(DisplaySystem::UpdateType::FAST_WITH_VCOM_NUDGE);
+
+    display.updateDisplay(DisplaySystem::UpdateType::FAST_INDICATOR);
 
     firstLoad_ = false;
 }

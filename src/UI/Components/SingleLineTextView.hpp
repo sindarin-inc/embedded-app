@@ -32,11 +32,22 @@ public:
         }
     }
 
+    auto getTextHeight() -> uint16_t {
+        Font *oldFont = display_.getFont();
+        display_.setFont(font_);
+        uint16_t w, h;
+        display_.getTextSize(text_, &w, &h);
+        display_.setFont(oldFont);
+        return h;
+    }
+
     void setTopPadding(uint8_t topPaddingValue) { topPadding = topPaddingValue; }
 
     auto getText() -> const std::string & { return text_; }
 
     void setFont(Font *font) { font_ = font; }
+
+    auto getFont() -> const Font * { return font_; }
 
     auto layout(LayoutContext &context, Size size) -> Size override {
         uint16_t w, h;

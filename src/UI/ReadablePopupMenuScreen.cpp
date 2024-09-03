@@ -261,6 +261,7 @@ void ReadablePopupMenuScreen::processCommand(RemoteCommand command) {
 
     switch (command) {
     case RemoteCommand::LEFT:
+        log_d("NAVIGATION: Leaving popup menu and returning to text");
         back();
         break;
     case RemoteCommand::ENTER:
@@ -271,16 +272,19 @@ void ReadablePopupMenuScreen::processCommand(RemoteCommand command) {
     case RemoteCommand::DOWN:
         do {
             nextSelection();
+            log_d("NAVIGATION: Popup menu selection: %s", getCurrItem().title.c_str());
             setNeedsRerender();
         } while (popupMenuView_.menuItemViews[getCurrSelection()]->isHidden());
         break;
     case RemoteCommand::RIGHT:
     case RemoteCommand::BACK:
+        log_d("NAVIGATION: Leaving popup menu and returning to text");
         back();
         break;
     case RemoteCommand::UP:
         do {
             prevSelection();
+            log_d("NAVIGATION: Popup menu selection: %s", getCurrItem().title.c_str());
             setNeedsRerender();
         } while (popupMenuView_.menuItemViews[getCurrSelection()]->isHidden());
         break;
@@ -314,9 +318,10 @@ void ReadablePopupMenuScreen::render(DisplaySystem &display) {
             menuItemView->setSelected(false);
         }
 
+#if CONFIG_DISPLAY_EINKET013TT1
         popupMenuView_.draw();
-
         display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
+#endif
 
         firstLoad_ = false;
     } else {
@@ -337,7 +342,7 @@ void ReadablePopupMenuScreen::render(DisplaySystem &display) {
 
         popupMenuView_.draw();
 
-        display.updateDisplay(DisplaySystem::UpdateType::FAST_WITH_VCOM_NUDGE);
+        display.updateDisplay(DisplaySystem::UpdateType::FAST_INDICATOR);
     }
 };
 
