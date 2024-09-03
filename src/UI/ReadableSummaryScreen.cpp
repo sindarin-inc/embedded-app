@@ -16,7 +16,7 @@ auto ReadableSummaryScreen::layout(LayoutContext &context, Size size) -> Size {
 
     context.setViewFrame(backgroundView_, backgroundFrame);
 
-    auto contentFrame = backgroundFrame.inset(10, 2);
+    auto contentFrame = backgroundFrame.inset(10, 10, 2, 3);
 
     context.setViewFrame(dismissLabelView_, contentFrame,
                          LayoutOptionsSizeToFit | LayoutOptionsAlignTop);
