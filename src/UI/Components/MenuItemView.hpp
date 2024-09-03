@@ -18,7 +18,7 @@ public:
                  Font *font = static_cast<Font *>(&fontFace0), bool multiLine = false,
                  bool subtitle = true)
         : MenuItemView(display) {
-        auto height = std::max(14, display.getTextHeight(font));
+        auto height = std::max(14, display.getLineHeightPlusSpacing(font));
         // Good default for 1 bit smallest font
         indicatorWidth_ = (height + 1) / 3;
         // Mirroring our previous defaults but now at least it's dynamic

@@ -39,7 +39,7 @@ void MenuScreen::drawMenuItems(DisplaySystem &display, bool withBullet, bool wit
     // text. Bias a bit to the top by subtracting 5.
     if (getNumItems() < myStyle_.numberOfItemsPerPage) {
         additionalYOffset = (myStyle_.numberOfItemsPerPage - getNumItems() - 1) *
-                            (display.getTextHeight() - display.getLineSpacing() + 3) / 2;
+                            (display.getLineHeightPlusSpacing() - display.getLineSpacing() + 3) / 2;
     }
 
     for (int i = currMenuPage_ * myStyle_.numberOfItemsPerPage;
@@ -61,7 +61,7 @@ void MenuScreen::drawMenuItems(DisplaySystem &display, bool withBullet, bool wit
             itemTitle, xOffsetForMenu + 5,
             yOffsetForMenu + additionalYOffset - 1 +
                 (i % myStyle_.numberOfItemsPerPage) *
-                    (display.getTextHeight() - display.getLineSpacing() + 1));
+                    (display.getLineHeightPlusSpacing() - display.getLineSpacing() + 1));
 
         // xoffset for main menu is 12, for settings menu is 23
         // yoffset for main menu is some crazy thing
@@ -73,20 +73,20 @@ void MenuScreen::drawMenuItems(DisplaySystem &display, bool withBullet, bool wit
         // with the menu item. That's the only way to get it to look right on small screens
         // and large screens.
         // Copied from MenuItemView -- why arent't these MenuItemViews?
-        auto height = display.getTextHeight();
+        auto height = display.getLineHeightPlusSpacing();
         // Good default for 1 bit smallest font
         auto indicatorWidth = (height + 1) / 3;
         // Mirroring our previous defaults but now at least it's dynamic
         auto indicatorWidthAdjustment = indicatorWidth * 8 / 5;
 
         if ((i == currSelection_) && (withBullet)) {
-            display.fillRoundRect(xOffsetForMenu - indicatorWidthAdjustment,
-                                  yOffsetForMenu + additionalYOffset +
-                                      (i % myStyle_.numberOfItemsPerPage) *
-                                          (display.getTextHeight() - display.getLineSpacing() + 1) +
-                                      indicatorWidth * 4 / 5,
-                                  indicatorWidth, indicatorWidth, indicatorWidth * 5 / 3,
-                                  display.fg);
+            display.fillRoundRect(
+                xOffsetForMenu - indicatorWidthAdjustment,
+                yOffsetForMenu + additionalYOffset +
+                    (i % myStyle_.numberOfItemsPerPage) *
+                        (display.getLineHeightPlusSpacing() - display.getLineSpacing() + 1) +
+                    indicatorWidth * 4 / 5,
+                indicatorWidth, indicatorWidth, indicatorWidth * 5 / 3, display.fg);
         }
     }
 
