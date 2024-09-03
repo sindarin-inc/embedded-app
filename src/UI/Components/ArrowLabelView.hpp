@@ -13,8 +13,7 @@ class ArrowLabelView : public View {
 public:
     ArrowLabelView(DisplaySystem &display, const std::string &text,
                    ArrowDirection direction = ArrowLeft, ArrowSide arrowSide = ArrowSide::Left)
-        : display_(display), arrowView_(display, direction), textView_(display, text),
-          arrowSide_(arrowSide) {}
+        : arrowView_(display, direction), textView_(display, text), arrowSide_(arrowSide) {}
 
     auto layout(LayoutContext &context, Size size) -> Size override {
         int arrowHeight;
@@ -70,7 +69,6 @@ public:
     }
 
 private:
-    DisplaySystem &display_;
     ArrowView arrowView_;
     SingleLineTextView textView_;
     ArrowSide arrowSide_;
