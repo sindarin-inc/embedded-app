@@ -154,8 +154,11 @@ void DisplaySystem::getTextSize(const std::string &buffer, uint16_t *w, uint16_t
     }
 }
 
-auto DisplaySystem::getTextHeight() -> int {
-    return (font_ != nullptr) ? font_->lineHeight() + lineSpacing_ : 0;
+auto DisplaySystem::getTextHeight(Font *font) -> int {
+    if (font == nullptr) {
+        return (font_ != nullptr) ? font_->lineHeight() + lineSpacing_ : 0;
+    }
+    return font->lineHeight() + lineSpacing_;
 }
 
 auto DisplaySystem::getTextHeight(const std::string &buffer) -> int {

@@ -213,7 +213,7 @@ public:
     auto drawSingleLineOfText(const std::string &line, int x, int y, bool inverted = false) -> int;
     void drawSingleLineOfCenteredText(const std::string &line);
     void getTextSize(const std::string &buffer, uint16_t *w, uint16_t *h);
-    auto getTextHeight() -> int;
+    auto getTextHeight(Font *font = nullptr) -> int;
     auto getTextHeight(const std::string &buffer) -> int;
     auto getTextWidth(const std::string &buffer) -> int;
 
