@@ -587,7 +587,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                     "Reader.\n\n"
                     "Crossway Publishing has generously provided the English "
                     "Standard Version"
-                    "of the Bible to you free of charge (Copyright 2001, Crossway Publishing).\n\n"
+                    " of the Bible to you free of charge (Copyright 2001, Crossway Publishing).\n\n"
                     " Not your thing? No worries! You can toggle this app off "
                     "in the Content Settings.\n\n"
                     " Look for more scripture and meditation Sol Reader apps down the road!\n\n\n"
