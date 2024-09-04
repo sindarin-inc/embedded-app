@@ -49,7 +49,7 @@ auto inline Reverse8Bits(uint8_t value) -> uint8_t {
  * @param mosi The MOSI pin
  * @param cs The display chip select pin - **NOTE** this is ACTIVE HIGH!
  */
-Sharp27in::Sharp27in(uint8_t clk, uint8_t mosi, uint8_t cs) : cs_(cs), clk_(clk), mosi_(mosi) {}
+Sharp27in::Sharp27in(uint8_t clk, uint8_t mosi, uint8_t cs) : cs_(cs), mosi_(mosi), clk_(clk) {}
 
 /**
  * @brief Start the driver object, setting up pins and configuring a buffer for
