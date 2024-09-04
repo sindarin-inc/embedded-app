@@ -34,7 +34,7 @@ public:
         mainMenu.arrowTextSpacing = 5;
         mainMenu.xOffsetForList = 15;
         mainMenu.yOffsetForList = 60;
-        mainMenu.numberOfItemsPerPage = 4;
+        mainMenu.numberOfItemsPerPage = 5;
 
         settingsMenu.itemFont = static_cast<Font *>(&fontFace0);
         settingsMenu.navigationFont = static_cast<Font *>(&fontFace0);

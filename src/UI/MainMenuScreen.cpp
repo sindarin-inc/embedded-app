@@ -95,8 +95,10 @@ auto MainMenuScreen::layout(LayoutContext &context, Size size) -> Size {
                 }
                 auto viewFrame = context.setViewFrame(*view, {{0, y}, {size.width, 0}},
                                                       LayoutOptionsSizeToFitVertical);
-                context.setViewFrame(*checkMarkViews_[i], {{150, y + 4}, {size.width, 0}},
-                                     LayoutOptionsAlignRight);
+                if (i < 1) {
+                    context.setViewFrame(*checkMarkViews_[i], {{150, y + 4}, {size.width, 0}},
+                                         LayoutOptionsAlignRight);
+                }
                 y += viewFrame.size.height + mainSpacing;
                 i++;
             }
@@ -124,7 +126,9 @@ void MainMenuScreen::drawInRect(Rect rect) {
     int i = 0;
     for (auto &view : menuItemViews_) {
         (*view).draw();
-        checkMarkViews_[i]->draw();
+        if (i < 1) {
+            checkMarkViews_[i]->draw();
+        }
         i++;
     }
 

@@ -339,6 +339,22 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         }
     }
 
+    auto makeOnboardingMenuItem0 = [this, &localStore, display, mainMenu]() {
+        return MenuItem("Put on your Sol Reader!", //"3 minutes",
+                        [this, display, mainMenu, &localStore]() {
+            auto customizeFaceScreen = new OffsetAdjustScreen(
+                *display, prefs_, this->telemetry_); // new CustomizeFaceScreen(*display, prefs_);
+            display->clearDisplay();
+            this->setCurrentScreen(*customizeFaceScreen);
+            customizeFaceScreen->setBackCallback([this, display, customizeFaceScreen, mainMenu]() {
+                display->clearDisplay();
+                mainMenu->setFirstLoad();
+                setCurrentScreen(*mainMenu);
+                delete customizeFaceScreen;
+            });
+        });
+    };
+
     auto makeOnboardingMenuItem1 = [this, &localStore, display, mainMenu]() {
         return MenuItem("Customize for your face", //"3 minutes",
                         [this, display, mainMenu, &localStore]() {
@@ -403,6 +419,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         });
     };
 
+    welcomeMenu->addMenuItem(makeOnboardingMenuItem0());
     welcomeMenu->addMenuItem(makeOnboardingMenuItem1());
     welcomeMenu->addMenuItem(makeOnboardingMenuItem2());
     welcomeMenu->addMenuItem(makeOnboardingMenuItem3());
@@ -1996,7 +2013,16 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         // calibration
         // screen
 
-        setCurrentScreen(*mainMenu);
+        auto firstTimeScreen = new DemoScreen(*display, prefs_);
+        this->setCurrentScreen(*firstTimeScreen);
+        firstTimeScreen->setBackCallback([this, firstTimeScreen, mainMenu, display]() {
+            display->clearDisplay();
+            setCurrentScreen(*mainMenu);
+            mainMenu->render(*this->display_);
+            delete firstTimeScreen;
+        });
+
+        //        setCurrentScreen(*mainMenu);
     }
 
     // If we are in demo mode, overright whatever the current screen would have been

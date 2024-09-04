@@ -31,6 +31,12 @@ public:
             [](void *param) {
             auto *self = static_cast<AsyncPseudoSerialPort *>(param);
             self->readLoop();
+            if (self->masterFd >= 0) {
+                close(self->masterFd);
+            }
+            if (self->slaveFd >= 0) {
+                close(self->slaveFd);
+            }
             vTaskDelete(nullptr);
             },
             "AsyncPseudoSerialPort", 4096, this, 1, nullptr);

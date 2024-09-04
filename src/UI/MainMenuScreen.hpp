@@ -21,7 +21,7 @@ public:
     MainMenuScreen(Battery &battery, DisplaySystem &display, MenuStyleFamily myStyle)
         : MenuScreen(battery, display, myStyle), topBarSelectionView_(display, 3),
           topLeftArrowView_(display), topRightArrowView_(display, ArrowRight) {
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0; i < 2; i++) {
             checkMarkViews_.push_back(std::make_shared<IconView>(
                 display, CHECK_MARK_BITS, CheckMark_width, CheckMark_height));
         }
