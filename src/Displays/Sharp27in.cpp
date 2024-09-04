@@ -68,6 +68,10 @@ bool Sharp27in::begin(void) {
     // SPI device
     DigitalWrite(cs_, LOW);
 
+    // Set the EXT pin to low (the adafruit board has a resistor to do this)
+    // PinMode(7, OUTPUT);
+    // DigitalWrite(7, LOW);
+
     spi_bus_config_t buscfg = {
         .mosi_io_num = CONFIG_DISPLAY_SHARP_27IN_MOSI,
         .miso_io_num = -1,
