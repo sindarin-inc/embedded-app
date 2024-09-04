@@ -16,8 +16,10 @@ public:
     MenuItem(std::string title) : title(std::move(title)){};
     MenuItem(std::string title, std::string subtitle)
         : title(std::move(title)), subtitle(std::move(subtitle)){};
-    MenuItem(std::string title, std::function<void()> callback, bool multiline = false)
-        : title(std::move(title)), callback(std::move(callback)), multiline(multiline){};
+    MenuItem(std::string title, std::function<void()> callback, bool multiline = false,
+             bool showSolLogo = false)
+        : title(std::move(title)), callback(std::move(callback)), multiline(multiline),
+          showSolLogo(showSolLogo){};
     MenuItem(std::string title, std::string subtitle, std::function<void()> callback)
         : title(std::move(title)), subtitle(std::move(subtitle)), callback(std::move(callback)) {}
 
@@ -29,6 +31,7 @@ public:
     bool isToggle = false;
     bool toggleValue = false;
     bool multiline = false;
+    bool showSolLogo = false;
     uint8_t topPadding = 0;
 };
 

@@ -154,7 +154,7 @@ void USBSerial::begin() {
     ESP_ERROR_CHECK(tusb_cdc_acm_init(&acmCfg2));
 #endif
 
-#if SIMULATOR
+#if 0
     log_d("About to make a pseudo-serial port in the simulator");
     // In the simulator, we create a pseudo-serial port for testing
     serialPort_ = std::make_unique<AsyncPseudoSerialPort>();

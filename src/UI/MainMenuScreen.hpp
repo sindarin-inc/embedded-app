@@ -4,6 +4,7 @@
 #include "Misc/Battery.hpp"
 #include "Misc/MenuStyle.hpp"
 #include "Renderers/Renderer.hpp"
+#include "UI/Bitmaps/CheckMark.xbm"
 #include "UI/Components/BoxView.hpp"
 #include "UI/Components/ClockBatteryView.hpp"
 #include "UI/Components/EinkView.hpp"
@@ -14,11 +15,17 @@
 #include "UI/Layout/View.hpp"
 #include "UI/MenuScreen.hpp"
 #include "sindarin-debug.h"
+
 class MainMenuScreen : public MenuScreen {
 public:
     MainMenuScreen(Battery &battery, DisplaySystem &display, MenuStyleFamily myStyle)
         : MenuScreen(battery, display, myStyle), topBarSelectionView_(display, 3),
-          topLeftArrowView_(display), topRightArrowView_(display, ArrowRight){};
+          topLeftArrowView_(display), topRightArrowView_(display, ArrowRight) {
+        for (int i = 0; i < 4; i++) {
+            checkMarkViews_.push_back(std::make_shared<IconView>(
+                display, CHECK_MARK_BITS, CheckMark_width, CheckMark_height));
+        }
+    };
     MainMenuScreen(MainMenuScreen const &) = delete;
 
     auto layout(LayoutContext &context, Size size) -> Size override;
@@ -44,6 +51,7 @@ protected:
     ArrowView topLeftArrowView_;
     ArrowView topRightArrowView_;
 
+    std::vector<std::shared_ptr<IconView>> checkMarkViews_;
     int currentSelection_ = 0;
 };
 

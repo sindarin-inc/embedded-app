@@ -163,6 +163,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         }
     }
 
+    auto welcomeMenu = new Menu(mainMenu->getMyStyle(), "Welcome");
     auto booksMenu = new Menu(mainMenu->getMyStyle(), "Books");
     auto articlesMenu = new Menu(mainMenu->getMyStyle(), "Articles");
 
@@ -338,6 +339,75 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         }
     }
 
+    auto makeOnboardingMenuItem1 = [this, &localStore, display, mainMenu]() {
+        return MenuItem("Customize for your face", //"3 minutes",
+                        [this, display, mainMenu, &localStore]() {
+            auto customizeFaceScreen = new OffsetAdjustScreen(
+                *display, prefs_, this->telemetry_); // new CustomizeFaceScreen(*display, prefs_);
+            display->clearDisplay();
+            this->setCurrentScreen(*customizeFaceScreen);
+            customizeFaceScreen->setBackCallback([this, display, customizeFaceScreen, mainMenu]() {
+                display->clearDisplay();
+                mainMenu->setFirstLoad();
+                setCurrentScreen(*mainMenu);
+                delete customizeFaceScreen;
+            });
+        });
+    };
+
+    auto makeOnboardingMenuItem2 = [this, &localStore, display, mainMenu]() {
+        return MenuItem("Download your first book", // "5 minutes",
+                        [this, display, mainMenu, &localStore]() {
+            auto customizeFaceScreen = new OffsetAdjustScreen(
+                *display, prefs_, this->telemetry_); // new CustomizeFaceScreen(*display, prefs_);
+            display->clearDisplay();
+            this->setCurrentScreen(*customizeFaceScreen);
+            customizeFaceScreen->setBackCallback([this, display, customizeFaceScreen, mainMenu]() {
+                display->clearDisplay();
+                mainMenu->setFirstLoad();
+                setCurrentScreen(*mainMenu);
+                delete customizeFaceScreen;
+            });
+        });
+    };
+
+    auto makeOnboardingMenuItem3 = [this, &localStore, display, mainMenu]() {
+        return MenuItem("Learn to read faster", //"For the rest of your life",
+                        [this, display, mainMenu, &localStore]() {
+            auto customizeFaceScreen = new OffsetAdjustScreen(
+                *display, prefs_, this->telemetry_); // new CustomizeFaceScreen(*display, prefs_);
+            display->clearDisplay();
+            this->setCurrentScreen(*customizeFaceScreen);
+            customizeFaceScreen->setBackCallback([this, display, customizeFaceScreen, mainMenu]() {
+                display->clearDisplay();
+                mainMenu->setFirstLoad();
+                setCurrentScreen(*mainMenu);
+                delete customizeFaceScreen;
+            });
+        });
+    };
+
+    auto makeOnboardingMenuItem4 = [this, &localStore, display, mainMenu]() {
+        return MenuItem("Advanced setup", //"As long as you want",
+                        [this, display, mainMenu, &localStore]() {
+            auto customizeFaceScreen = new OffsetAdjustScreen(
+                *display, prefs_, this->telemetry_); // new CustomizeFaceScreen(*display, prefs_);
+            display->clearDisplay();
+            this->setCurrentScreen(*customizeFaceScreen);
+            customizeFaceScreen->setBackCallback([this, display, customizeFaceScreen, mainMenu]() {
+                display->clearDisplay();
+                mainMenu->setFirstLoad();
+                setCurrentScreen(*mainMenu);
+                delete customizeFaceScreen;
+            });
+        });
+    };
+
+    welcomeMenu->addMenuItem(makeOnboardingMenuItem1());
+    welcomeMenu->addMenuItem(makeOnboardingMenuItem2());
+    welcomeMenu->addMenuItem(makeOnboardingMenuItem3());
+    welcomeMenu->addMenuItem(makeOnboardingMenuItem4());
+
     auto makeContentSyncMenuItem = [this, display, &localStore,
                                     mainMenu](const char *title) -> MenuItem {
         return {title,
@@ -500,6 +570,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                                       }));
         }
     }
+
+    mainMenu->addSubMenu(welcomeMenu);
 
     // Only add the Recent tab if there are recent items
     if (recentMenu->getNumItems() > 0) {

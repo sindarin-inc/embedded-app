@@ -28,7 +28,7 @@ auto MainMenuScreen::layout(LayoutContext &context, Size size) -> Size {
             auto arrowWidth = (height + 1) / 3;
             auto arrowHeight = arrowWidth * 2 - 1;
             Rect arrowBox = {{0, 2}, {size.width, size.height}};
-            Rect topBarBox = {{2, 0}, {size.width, size.height}};
+            Rect topBarBox = {{0, -1}, {size.width, size.height}};
             context.setViewSizeInRect(topLeftArrowView_, {arrowWidth, arrowHeight}, arrowBox,
                                       LayoutOptionsAlignLeft);
 
@@ -88,13 +88,17 @@ auto MainMenuScreen::layout(LayoutContext &context, Size size) -> Size {
         [this](LayoutContext &context, Size size) -> Size {
             int y = 0;
             const auto mainSpacing = 8;
+            int i = 0;
             for (auto &view : menuItemViews_) {
                 if (view->isHidden()) {
                     continue;
                 }
                 auto viewFrame = context.setViewFrame(*view, {{0, y}, {size.width, 0}},
                                                       LayoutOptionsSizeToFitVertical);
+                context.setViewFrame(*checkMarkViews_[i], {{150, y + 4}, {size.width, 0}},
+                                     LayoutOptionsAlignRight);
                 y += viewFrame.size.height + mainSpacing;
+                i++;
             }
             y -= mainSpacing;
 
@@ -117,8 +121,11 @@ void MainMenuScreen::drawInRect(Rect rect) {
         place++;
     }
 
+    int i = 0;
     for (auto &view : menuItemViews_) {
         (*view).draw();
+        checkMarkViews_[i]->draw();
+        i++;
     }
 
     if (menuPageViews_.size() > 1) {
