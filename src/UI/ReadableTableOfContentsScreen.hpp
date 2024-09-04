@@ -24,8 +24,7 @@ public:
     ReadableTableOfContentsScreen(PreferencesStore &prefs, std::shared_ptr<Readable> readable,
                                   Renderer &renderer, DisplaySystem &display, Telemetry &telemetry)
         : EinkView(display), prefs_(prefs), readable_(std::move(readable)), renderer_(renderer),
-          display_(display), telemetry_(telemetry), upperLeftTextView_(display, upperLeftText_),
-          leftArrowView_(display) {
+          display_(display), telemetry_(telemetry), backLabelView_(display, "Dismiss") {
         numMenuItems_ = 0;
         MenuStyle styleFamilies;
         myStyle_ = styleFamilies.mainMenu;
@@ -62,8 +61,5 @@ protected:
     std::vector<std::shared_ptr<MenuItemView>> menuItemViews_;
     bool firstLoad_ = true;
 
-    std::string upperLeftText_ = "Dismiss";
-    SingleLineTextView upperLeftTextView_;
-
-    ArrowView leftArrowView_;
+    ArrowLabelView backLabelView_;
 };

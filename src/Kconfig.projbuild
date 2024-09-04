@@ -14,16 +14,72 @@ menu "Sol Options"
             config DISPLAY_M5STACK_MODULE_DISPLAY
                 bool "M5Stack Module Display (HDMI)"
 
+            config DISPLAY_WAVESHARE_6INHD
+                bool "Waveshare 6in HD Display"
+
+            config DISPLAY_SHARP_27IN
+                bool "Sharpmem 2.7in Display"
         endchoice
 
         config DISPLAY_PIXEL_RESOLUTION_IS_FIX
-            bool "Set to n for displays that support changing their pixel resolution dynamically."
+            bool "Display pixel resolution is unchangeable at runtime."
             default y
 
         config TTF_SCREEN_RES_PER_INCH
             int "Screen resolution per inch (for TTF sizing)"
             default 150
 
+        menu "Display Pins"
+            config DISPLAY_WAVESHARE_6INHD_MOSI
+                depends on DISPLAY_WAVESHARE_6INHD
+                int "MOSI Pin"
+                default 35
+
+            config DISPLAY_WAVESHARE_6INHD_MISO
+                depends on DISPLAY_WAVESHARE_6INHD
+                int "MISO Pin"
+                default 37
+
+            config DISPLAY_WAVESHARE_6INHD_CLK
+                depends on DISPLAY_WAVESHARE_6INHD
+                int "CLK Pin"
+                default 34
+
+            config DISPLAY_WAVESHARE_6INHD_BUSY
+                depends on DISPLAY_WAVESHARE_6INHD
+                int "BUSY Pin"
+                default 6
+
+            config DISPLAY_WAVESHARE_6INHD_CS
+                depends on DISPLAY_WAVESHARE_6INHD
+                int "CS Pin"
+                default 3
+
+            config DISPLAY_WAVESHARE_6INHD_RESET
+                depends on DISPLAY_WAVESHARE_6INHD
+                int "RESET Pin"
+                default 5
+
+            config DISPLAY_SHARP_27IN_MOSI
+                depends on DISPLAY_SHARP_27IN
+                int "MOSI Pin"
+                default 35
+
+            config DISPLAY_SHARP_27IN_CLK
+                depends on DISPLAY_SHARP_27IN
+                int "CLK Pin"
+                default 34
+
+            config DISPLAY_SHARP_27IN_CS
+                depends on DISPLAY_SHARP_27IN
+                int "CS Pin"
+                default 3
+
+            config DISPLAY_SHARP_27IN_DISP
+                depends on DISPLAY_SHARP_27IN
+                int "DISP Pin"
+                default 6
+        endmenu
     endmenu
 
     menu "BLE Settings"
@@ -76,6 +132,11 @@ menu "Sol Options"
         config USE_TINYUSB_SERIAL
             bool "Use TinyUSB for Serial Communication"
             default y
+
+        config CONFIG_DISABLE_POWER_MANAGEMENT
+            bool "Disable Power Management"
+            default n
+
     endmenu
 
     menu "Pin Selection"
@@ -118,7 +179,8 @@ menu "Sol Options"
 
         choice
             prompt "Font System"
-            default FONT_IBMF
+            default FONT_IBMF if DISPLAY_EINKET013TT1 || DISPLAY_SHARP_27IN
+            default FONT_TTF
     
             config FONT_IBMF
                 bool "IBMF 1bpp Sol Sans Font"

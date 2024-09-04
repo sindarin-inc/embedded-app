@@ -3,6 +3,7 @@
 #include "DisplayEinkET013TT1.hpp"
 
 #include <algorithm>
+#include <freertos/task.h>
 
 #include "Communications/USBSerial.hpp"
 #include "Displays/CustomWaveforms.hpp"
@@ -276,7 +277,7 @@ void DisplayEinkET013TT1::updateDisplay(DisplaySystem::UpdateType updateType, bo
             numPartials_ = 0;
         }
         break;
-    case FAST_WITH_VCOM_NUDGE:
+    case FAST_INDICATOR:
         if (!fullRefreshNext_) {
             if (getInversion()) {
                 driver_.update(BC_INVERTED_EINK_10_13C_WAVEFORM_AU4, gfxCanvas_.getBuffer(),
@@ -327,7 +328,7 @@ void DisplayEinkET013TT1::drawFullscreenBitmapFromFile(RendererStream &stream) {
 }
 
 void DisplayEinkET013TT1::sendBufferToSerial(const uint8_t *buffer, bool screenshot) const {
-    constexpr size_t byteSize = EinkET013TT1_X_PIXELS * EinkET013TT1_Y_PIXELS / 8;
+    constexpr size_t byteSize = EinkET013TT1_PIXEL_WIDTH * EinkET013TT1_PIXEL_HEIGHT / 8;
 
     std::string *prefix;
     if (screenshot) {

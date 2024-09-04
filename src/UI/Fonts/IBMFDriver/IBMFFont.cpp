@@ -59,6 +59,17 @@ auto Font::drawSingleLineOfText(ibmf_defs::Bitmap &canvas, ibmf_defs::Pos pos,
 
     ibmf_defs::Pos atPos = pos;
 
+    font_defs::Dim dim = getTextSize("T");
+
+    // Half of the difference between the line height (less subscripts) and the height
+    // of the font is how much we need to move up the text to ensure the subscript part
+    // of letters that go below the baseline still fit within the bounding box.
+    int16_t up = (lineHeight() - dim.height - 1) / 2;
+
+    // We get passed in the upper left coordinate, so we need to shift that down by the
+    // height of the line.
+    atPos.y += lineHeight() - up;
+
     if constexpr (IBMF_TRACING) {
         LOGD("drawSingleLineOfText()");
     }

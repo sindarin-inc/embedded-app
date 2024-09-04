@@ -87,7 +87,8 @@ public:
     // Switch to 1/10 of a line as this gives us more flexibilty in rendering
     // precision between lines.
     [[nodiscard]] auto getMaxDeciLines() -> int16_t {
-        return (rect_.height * NEWLINE_DECI_LINE_HEIGHT) / (this->display_.getTextHeight());
+        return (rect_.height * NEWLINE_DECI_LINE_HEIGHT) /
+               (this->display_.getLineHeightPlusSpacing());
     }
 
     inline void clear() {
@@ -197,11 +198,11 @@ public:
     inline void addSpaceWidth() { currentLineWidth_ += spaceWidth_; }
 
     [[nodiscard]] inline auto deciToPix(uint16_t decilineValue) const -> uint16_t {
-        return (display_.getTextHeight() * decilineValue) / NEWLINE_DECI_LINE_HEIGHT;
+        return (display_.getLineHeightPlusSpacing() * decilineValue) / NEWLINE_DECI_LINE_HEIGHT;
     }
 
     [[nodiscard]] inline auto pixToDeci(uint16_t pixValue) const -> uint16_t {
-        return ((NEWLINE_DECI_LINE_HEIGHT * pixValue)) / display_.getTextHeight();
+        return ((NEWLINE_DECI_LINE_HEIGHT * pixValue)) / display_.getLineHeightPlusSpacing();
     }
 
     void addMenuParameter(const std::string &key, const std::string &value);

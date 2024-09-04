@@ -21,8 +21,11 @@ public:
         return Rect::fromSize({display_.width(), display_.height()})
             .inset(defaultInset.left, defaultInset.right, defaultInset.top, defaultInset.bottom);
     }
-
+#ifdef SIM_LAYOUT_DEBUG
+    bool drawDebugBox = true;
+#else
     bool drawDebugBox = false;
+#endif
 
 protected:
     DisplaySystem &display_;

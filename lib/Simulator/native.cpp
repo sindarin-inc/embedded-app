@@ -37,13 +37,28 @@ extern void UIInnerLoop(RemoteCommand command);
 
 #if CONFIG_DISPLAY_EINKET013TT1
 #include "Displays/DisplayEinkET013TT1.hpp"
-#define SCALE 2
+#ifndef SIM_SCALE
+#define SIM_SCALE 2
+#endif // SIM_SCALE
 extern DisplayEinkET013TT1 myDisplay;
 #elif DISPLAY_SIM_8BIT
+#ifndef SIM_WIDTH
+#define SIM_WIDTH 600
+#endif // SIM_WIDTH
+#ifndef SIM_HEIGHT
+#define SIM_HEIGHT 600
+#endif // SIM_HEIGHT
+#ifdef SIM_ONE_BIT
+#include "Displays/DisplaySim1Bit.hpp"
+DisplaySim1Bit myDisplay(SIM_WIDTH, SIM_HEIGHT);
+#else
 #include "Displays/DisplaySim8Bit.hpp"
-DisplaySim8Bit myDisplay(600, 600);
-#define SCALE 1
-#endif
+DisplaySim8Bit myDisplay(SIM_WIDTH, SIM_HEIGHT);
+#endif // SIM_ONE_BIT
+#ifndef SIM_SCALE
+#define SIM_SCALE 1
+#endif // SIM_SCALE
+#endif // CONFIG_DISPLAY_EINKET013TT1
 
 extern "C" void app_main(void); // NOLINT(readability-identifier-naming)
 
@@ -65,6 +80,13 @@ float lerp(float a, float b, float t) { return a + t * (b - a); }
 void SimDrawScreen() {
     for (int x = 0; x < myDisplay.gfxClass()->width(); x++) {
         for (int y = 0; y < myDisplay.gfxClass()->height(); y++) {
+#ifdef SIM_ONE_BIT
+            SDL_SetRenderDrawColor(renderer, 240, 240, 240, 0xFF);
+
+            if (myDisplay.getPixel(x, y)) {
+                SDL_RenderDrawPoint(renderer, x, y);
+            }
+#else
             uint8_t color = myDisplay.buffer()[x + y * myDisplay.gfxClass()->width()];
             float colorF = color / 255.0;
             uint16_t brightnessOffset =
@@ -75,6 +97,7 @@ void SimDrawScreen() {
                 lerp(40 + brightnessOffset, 240 - brightnessOffset, colorF),
                 lerp(40 + brightnessOffset, 227 - brightnessOffset, colorF), 0xFF);
             SDL_RenderDrawPoint(renderer, x, y);
+#endif
         }
     }
     if (movieOn_) {
@@ -270,8 +293,8 @@ auto main(int argc, char *argv[]) -> int {
         return 1;
     }
 
-    SDL_CreateWindowAndRenderer(myDisplay.gfxClass()->width() * SCALE,
-                                ((myDisplay.gfxClass()->height() + SIM_LED_DIM) * SCALE), 0,
+    SDL_CreateWindowAndRenderer(myDisplay.gfxClass()->width() * SIM_SCALE,
+                                ((myDisplay.gfxClass()->height() + SIM_LED_DIM) * SIM_SCALE), 0,
                                 &window, &renderer);
     if (renderer == NULL) {
         fprintf(stderr, "Could not create renderer: %s\n", SDL_GetError());
@@ -280,7 +303,7 @@ auto main(int argc, char *argv[]) -> int {
 
     deviceScreen = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET,
                                      myDisplay.gfxClass()->width(), myDisplay.gfxClass()->height());
-    SDL_RenderSetScale(renderer, SCALE, SCALE);
+    SDL_RenderSetScale(renderer, SIM_SCALE, SIM_SCALE);
 
 #if defined(EMSCRIPTEN)
     emscripten_set_main_loop(emscriptemLoop, 0, 0);

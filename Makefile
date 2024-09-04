@@ -27,12 +27,19 @@ else ifeq ($(TARGET),m5stack-atom-display)
 	IDF_PROFILE = -B build-$(TARGET) -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.$(TARGET)"
 else ifeq ($(TARGET),m5stack-module-display)
 	IDF_PROFILE = -B build-$(TARGET) -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.$(TARGET)"
+else ifeq ($(TARGET),waveshare-6inhd)
+	IDF_PROFILE = -B build-$(TARGET) -DSDKCONFIG_DEFAULTS="sdkconfig.defaults.$(TARGET)"
+else ifeq ($(TARGET),sharp-27in)
+	IDF_PROFILE = -B build-$(TARGET) -DSDKCONFIG_DEFAULTS="sdkconfig.defaults.$(TARGET)"
 endif
+
+# Optional variables for the Simulator builds
+CMAKE_SIM_DISPLAY_OPTIONS := $(if $(SIM_WIDTH),-DSIM_WIDTH=$(SIM_WIDTH)) $(if $(SIM_HEIGHT),-DSIM_HEIGHT=$(SIM_HEIGHT)) $(if $(SIM_SCALE),-DSIM_SCALE=$(SIM_SCALE)) $(if $(SIM_LAYOUT_DEBUG),-DSIM_LAYOUT_DEBUG=$(SIM_LAYOUT_DEBUG)) $(if $(SIM_ONE_BIT),-DSIM_ONE_BIT=$(SIM_ONE_BIT))
 
 .PHONY: sim-build
 sim-build:
 	mkdir -p lib/Simulator/build
-	cd lib/Simulator/build && cmake $(CMAKE_FLAGS) .. && $(MAKE)
+	cd lib/Simulator/build && cmake $(CMAKE_FLAGS) $(CMAKE_SIM_DISPLAY_OPTIONS) .. && $(MAKE)
 
 .PHONY: sim-run
 sim: sim-build
@@ -41,7 +48,7 @@ sim: sim-build
 .PHONY: sim8-build
 sim8-build:
 	mkdir -p lib/Simulator/build8
-	cd lib/Simulator/build8 && cmake $(CMAKE_FLAGS) -DENABLE_8BIT_DISPLAY=ON .. && $(MAKE)
+	cd lib/Simulator/build8 && cmake $(CMAKE_FLAGS) -DENABLE_8BIT_DISPLAY=ON $(CMAKE_SIM_DISPLAY_OPTIONS) .. && $(MAKE)
 
 .PHONY: sim-run8
 sim8: sim8-build
@@ -129,6 +136,8 @@ clean:
 	rm -fr lib/Simulator/build8
 	rm -fr scripts/epub-render/build
 	rm -fr test/CatchTests/build
+	rm -fr test/CatchTests/Images/TestRun/*diff.png
+	rm -fr test/CatchTests/Images/TestRun/GylphTests/*diff.png
 
 .PHONY: clang-tidy
 clang-tidy: check_idf

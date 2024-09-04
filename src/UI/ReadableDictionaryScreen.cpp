@@ -10,14 +10,10 @@ auto ReadableDictionaryScreen::layout(LayoutContext &context, Size size) -> Size
 
     context.setViewFrame(backgroundView_, backgroundFrame);
 
-    auto contentFrame = backgroundFrame.inset(10);
-    context.setViewFrame(leftArrowView_,
-                         {{contentFrame.origin.x, contentFrame.origin.y - 4}, {10, 5}});
-    context.setViewFrame(upperLeftTextView_,
-                         {{contentFrame.origin.x + 15, contentFrame.origin.y - 8},
-                          {contentFrame.size.width, contentFrame.size.height}});
+    auto contentFrame = backgroundFrame.inset(10, 2);
 
-    contentFrame_ = contentFrame;
+    context.setViewFrame(dismissLabelView_, contentFrame,
+                         LayoutOptionsSizeToFit | LayoutOptionsAlignTop);
 
     return {size.width, size.height};
 };
@@ -27,8 +23,7 @@ void ReadableDictionaryScreen::drawInRect(Rect rect) {
     backgroundView_.strokeColor = display_.fg;
     backgroundView_.draw();
 
-    leftArrowView_.draw();
-    upperLeftTextView_.draw();
+    dismissLabelView_.draw();
 }
 
 void ReadableDictionaryScreen::setPlaceInReadable(std::shared_ptr<EPubPlace> placeInReadable) {

@@ -5,11 +5,7 @@
 auto ReadablePlacemarkHistoryScreen::layout(LayoutContext &context, Size size) -> Size {
     const auto inset = 2;
 
-    // This mirrors what happens in MenuScreen right now. We may want to refactor this into a
-    // helper so that it is reused and consistent.
-    context.setViewFrame(leftArrowView_, {{0, 1}, {5, 10}},
-                         LayoutOptionsSizeToFit | LayoutOptionsAlignTop | LayoutOptionsAlignLeft);
-    context.setViewFrame(upperLeftTextView_, {{10, 0}, size},
+    context.setViewFrame(backLabelView_, Rect::fromSize(size),
                          LayoutOptionsSizeToFit | LayoutOptionsAlignTop | LayoutOptionsAlignLeft);
 
     auto insetRect = context.setSublayoutFrame(
@@ -47,8 +43,7 @@ auto ReadablePlacemarkHistoryScreen::layout(LayoutContext &context, Size size) -
 };
 
 void ReadablePlacemarkHistoryScreen::drawInRect(Rect rect) {
-    leftArrowView_.draw();
-    upperLeftTextView_.draw();
+    backLabelView_.draw();
 
     for (auto &view : menuItemViews_) {
         (*view).draw();
@@ -95,10 +90,11 @@ void ReadablePlacemarkHistoryScreen::render(DisplaySystem &display) {
             }
             menuPageIndicatorViews_.push_back(menuPageView);
         }
-
+#if CONFIG_DISPLAY_EINKET013TT1
         draw();
         PROFILE_END_LOG_US(ReadablePlacemarkHistoryScreenLayoutAndDraw);
         display.updateDisplay(DisplaySystem::UpdateType::FULL);
+#endif
     }
 
     if (menuItemViews_.empty()) {
@@ -118,7 +114,7 @@ void ReadablePlacemarkHistoryScreen::render(DisplaySystem &display) {
     // Redraw with a different vcom setting for the menu item bullet
     draw();
 
-    display.updateDisplay(DisplaySystem::UpdateType::FAST_WITH_VCOM_NUDGE);
+    display.updateDisplay(DisplaySystem::UpdateType::FAST_INDICATOR);
 
     firstLoad_ = false;
 }

@@ -48,14 +48,20 @@
 DisplayEinkET013TT1 myDisplay(DISPLAY_CS_LEFT, DISPLAY_CS_RIGHT, DISPLAY_RST);
 #elif DISPLAY_SIM_8BIT
 // Declared in native.cpp
-#include "Displays/DisplaySim8Bit.hpp"
-extern DisplaySim8Bit myDisplay;
+#include "Displays/DisplaySim1Bit.hpp"
+extern DisplaySim1Bit myDisplay;
 #elif CONFIG_DISPLAY_M5STACK_ATOM_DISPLAY
 #include "Displays/DisplayM5StackAtomDisplay.hpp"
 DisplayM5StackAtomDisplay myDisplay;
 #elif CONFIG_DISPLAY_M5STACK_MODULE_DISPLAY
 #include "Displays/DisplayM5StackModuleDisplay.hpp"
 DisplayM5StackModuleDisplay myDisplay;
+#elif CONFIG_DISPLAY_WAVESHARE_6INHD
+#include "Displays/DisplayWaveshare6inHD.hpp"
+DisplayWaveshare6inHD myDisplay;
+#elif CONFIG_DISPLAY_SHARP_27IN
+#include "Displays/DisplaySharp27in.hpp"
+DisplaySharp27in myDisplay;
 #endif
 
 PreferencesStore prefs;
@@ -179,7 +185,7 @@ void StatsTask(void *parameter) {
     while (powerManager.state() != PowerState::ShuttingDown) {
         // Spit out data on locks every 30s
         vTaskDelay(30000 / portTICK_PERIOD_MS);
-#if !SIMULATOR && !DISABLE_POWER_MANAGEMENT
+#if !SIMULATOR && !CONFIG_DISABLE_POWER_MANAGEMENT
         if (USBConnected()) {
             esp_pm_dump_locks(stdout);
         }
@@ -271,7 +277,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
             return true;
         } else if (command == "LOCKS") {
             txLine(command);
-#if !DISABLE_POWER_MANAGEMENT
+#if !CONFIG_DISABLE_POWER_MANAGEMENT
             // TODO: Would be nice to also dump to the command port
             auto err = esp_pm_dump_locks(stdout);
             if (err != ESP_OK) {
@@ -514,13 +520,13 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 #endif
     HEAP_PROFILE_END(BLEServices);
 
-#if !DISABLE_POWER_MANAGEMENT
+#if !CONFIG_DISABLE_POWER_MANAGEMENT
     if (rtc_clk_slow_freq_get() != RTC_SLOW_FREQ_32K_XTAL) {
         bootErrors.push_back({.type = BootError::Type::LowPowerOscillator});
     }
 #endif
 
-#if DISABLE_POWER_MANAGEMENT
+#if CONFIG_DISABLE_POWER_MANAGEMENT
     log_w("Power Management Disabled");
 #endif
 

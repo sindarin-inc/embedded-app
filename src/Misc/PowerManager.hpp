@@ -18,7 +18,7 @@
 #include "Displays/DisplayEinkET013TT1.hpp"
 #endif
 
-#if !DISABLE_POWER_MANAGEMENT
+#if !CONFIG_DISABLE_POWER_MANAGEMENT
 #include <esp_pm.h>
 #endif
 
@@ -280,7 +280,7 @@ protected:
     BootInfo bootInfo_;
     Xyz8bit lastMagReading_ = {};
     float lastMagAngle_ = 0;
-#if !DISABLE_POWER_MANAGEMENT
+#if !CONFIG_DISABLE_POWER_MANAGEMENT
     esp_pm_config_t pmConfig_{};
     esp_pm_lock_handle_t usbPowerLightSleepLock_ = nullptr;
     esp_pm_lock_handle_t debugCommandLightSleepLock_ = nullptr;
