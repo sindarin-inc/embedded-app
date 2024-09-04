@@ -7,15 +7,14 @@
 #include "sindarin-debug.h"
 
 BatteryScreen::BatteryScreen(DisplaySystem &display, PreferencesStore &prefs, Battery &battery)
-    : display_(display), prefs_(prefs), battery_(battery) {
+    : display_(display), prefs_(prefs), battery_(battery), leftTemp_(99), rightTemp_(99) {
 
 #if CONFIG_DISPLAY_EINKET013TT1
     auto *driver = (dynamic_cast<DisplayEinkET013TT1 *>(&display))->getDriver();
     leftTemp_ = driver->readTemperature(ScreenSide::Left);
     rightTemp_ = driver->readTemperature(ScreenSide::Right);
 #else
-    leftTemp_ = 99;
-    rightTemp_ = 99;
+
 #endif
 }
 
