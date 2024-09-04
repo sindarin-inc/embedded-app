@@ -87,7 +87,7 @@ public:
         int x = 0;
         int y = 0;
         int right = size.width;
-        int indicatorRightPadding = 15;
+        int indicatorRightPadding = 10;
         auto indicatorWidthPlus = indicatorWidth_ + indicatorWidthAdjustment_;
         Rect textRect{}, subtextRect{};
 
