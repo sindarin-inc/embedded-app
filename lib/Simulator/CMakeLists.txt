@@ -27,3 +27,23 @@ target_compile_options(${PROJECT_NAME}
     PRIVATE
     -include ${REPO_ROOT_DIR}/src/config.h
 )
+
+# This is only used in native.cpp so we only define it
+# here
+if (DEFINED SIM_SCALE)
+    add_compile_definitions(SIM_SCALE=${SIM_SCALE})
+endif()
+
+# Check if SIM_WIDTH and SIM_HEIGHT are set
+# WARNING: Duplicated in Simulator/Common/CMakeLists.txt
+if (DEFINED SIM_WIDTH)
+    add_compile_definitions(SIM_WIDTH=${SIM_WIDTH})
+endif()
+
+if (DEFINED SIM_HEIGHT)
+    add_compile_definitions(SIM_HEIGHT=${SIM_HEIGHT})
+endif()
+
+if (DEFINED SIM_ONE_BIT)
+    add_compile_definitions(SIM_ONE_BIT=${SIM_ONE_BIT})
+endif()

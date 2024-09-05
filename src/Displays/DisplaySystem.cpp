@@ -129,9 +129,8 @@ auto DisplaySystem::drawSingleLineOfText(const std::string &line, int x, int y, 
         font_defs::Bitmap canvas{};
         canvas.pixels = getBuffer();
         canvas.dim = font_defs::Dim(nativeWidth(), nativeHeight());
-        newXPos = font_->drawSingleLineOfText(
-            canvas, Pos(xOffset(x), yOffset(y + getTextHeight() - lineSpacing_ - 3)), line,
-            inverted ? !invertedDisplay_ : invertedDisplay_);
+        newXPos = font_->drawSingleLineOfText(canvas, Pos(xOffset(x), yOffset(y)), line,
+                                              inverted ? !invertedDisplay_ : invertedDisplay_);
         newXPos -= displayInsets().left;
         gfxClass_->endWrite();
     }
@@ -141,7 +140,7 @@ auto DisplaySystem::drawSingleLineOfText(const std::string &line, int x, int y, 
 
 void DisplaySystem::drawSingleLineOfCenteredText(const std::string &line) {
     this->drawSingleLineOfText(line, (width() - getTextWidth(line)) / 2,
-                               (height() - this->getTextHeight()) / 2);
+                               (height() - this->getLineHeightPlusSpacing()) / 2);
 }
 
 void DisplaySystem::getTextSize(const std::string &buffer, uint16_t *w, uint16_t *h) {
@@ -155,8 +154,11 @@ void DisplaySystem::getTextSize(const std::string &buffer, uint16_t *w, uint16_t
     }
 }
 
-auto DisplaySystem::getTextHeight() -> int {
-    return (font_ != nullptr) ? font_->lineHeight() + lineSpacing_ : 0;
+auto DisplaySystem::getLineHeightPlusSpacing(Font *font) -> int {
+    if (font == nullptr) {
+        return (font_ != nullptr) ? font_->lineHeight() + lineSpacing_ : 0;
+    }
+    return font->lineHeight() + lineSpacing_;
 }
 
 auto DisplaySystem::getTextHeight(const std::string &buffer) -> int {

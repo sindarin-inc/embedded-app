@@ -2,6 +2,7 @@
 
 #include <utility>
 
+#include "BoxView.hpp"
 #include "EinkView.hpp"
 #include "IconView.hpp"
 #include "Misc/Battery.hpp"
@@ -37,19 +38,15 @@ public:
     }
 
     auto layout(LayoutContext &context, Size size) -> Size override {
-        int x = 0;
-        int y = 0;
-        auto clockRect = context.setViewFrame(clockView_, {{x, y}, size}, LayoutOptionsSizeToFit);
-        x += clockRect.size.width + 20;
-        y += 2;
+        auto clockRect = context.setViewFrame(
+            clockView_, {{0, 0}, size}, LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical);
 
-        auto iconRect = context.setViewFrame(batteryIconView_, {{x, y}, {size.width, size.height}},
-                                             LayoutOptionsSizeToFit);
+        auto iconRect =
+            context.setViewFrame(batteryIconView_, {{clockRect.size.width + 20, 0}, size},
+                                 LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical);
 
-        context.setViewFrame(batteryIconView_, iconRect, LayoutOptionsSizeToFit);
-
-        x += iconRect.size.width;
-        return {x, iconRect.size.height};
+        return {clockRect.size.width + iconRect.size.width + 20,
+                std::max(clockRect.size.height, iconRect.size.height)};
     }
 
     void drawInRect(Rect rect) override {

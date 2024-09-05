@@ -4,6 +4,8 @@ dependencies:
     version: 67233bbe63e6bbe748b9e1bfb7e1f786ba98e7d4
     path: usb/esp_tinyusb
     git: https://github.com/espressif/idf-extra-components.git
+#  Should we do this here instead of in components?
+#  espressif/freetype: "^2.10.4"
   ## Required IDF version
   idf:
     version: ">=5.1.0"

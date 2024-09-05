@@ -5,28 +5,25 @@
 #include "Misc/SpiramAllocator.hpp"
 #include "Models/UserReadablePartialChapterSummary.hpp"
 
+#define HEIGHT_EVEN(x) ((((x) % 2 == 0) ? (x) : ((x) + 1)))
+
 auto ReadableSummaryScreen::layout(LayoutContext &context, Size size) -> Size {
     auto fullFrame = Rect::fromSize(size);
+    log_d("ReadableSummaryScreen layout: %d x %d", size.width, size.height);
+    log_d("full frame is %d %d %d %d", fullFrame.origin.x, fullFrame.origin.y, fullFrame.size.width,
+          fullFrame.size.height);
     auto backgroundFrame = fullFrame.inset(0);
 
     context.setViewFrame(backgroundView_, backgroundFrame);
 
-    auto contentFrame = backgroundFrame.inset(10);
-    context.setViewFrame(leftArrowView_,
-                         {{contentFrame.origin.x, contentFrame.origin.y - 4}, {10, 5}});
-    context.setViewFrame(upperLeftTextView_,
-                         {{contentFrame.origin.x + 15, contentFrame.origin.y - 8},
-                          {contentFrame.size.width, contentFrame.size.height}});
-    context.setViewSizeInRect(rightArrowView_, {10, 5},
-                              {{contentFrame.origin.x, 12}, contentFrame.size},
-                              LayoutOptionsAlignBottom | LayoutOptionsAlignRight);
-    context.setViewFrame(
-        bottomRightTextView_,
-        {{contentFrame.origin.x, contentFrame.origin.y + contentFrame.size.height - 6},
-         {contentFrame.size.width - 12, 10}},
-        LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical | LayoutOptionsAlignRight);
+    auto contentFrame = backgroundFrame.inset(10, 10, 2, 3);
 
-    contentFrame_ = contentFrame;
+    context.setViewFrame(dismissLabelView_, contentFrame,
+                         LayoutOptionsSizeToFit | LayoutOptionsAlignTop);
+
+    context.setViewFrame(showUnreadLabelView_, contentFrame,
+                         LayoutOptionsSizeToFit | LayoutOptionsAlignRight |
+                             LayoutOptionsAlignBottom);
 
     return size;
 }
@@ -36,10 +33,8 @@ void ReadableSummaryScreen::drawInRect(Rect rect) {
     backgroundView_.strokeColor = display_.fg;
     backgroundView_.draw();
 
-    leftArrowView_.draw();
-    upperLeftTextView_.draw();
-    rightArrowView_.draw();
-    bottomRightTextView_.draw();
+    dismissLabelView_.draw();
+    showUnreadLabelView_.draw();
 }
 
 void ReadableSummaryScreen::setPlaceInReadable(std::shared_ptr<EPubPlace> placeInReadable) {
@@ -56,13 +51,10 @@ void ReadableSummaryScreen::render(DisplaySystem &display) {
     setFrame(defaultFrameRect());
 
     if (showUnread_) {
-        bottomRightText_ = "Hide Unread Chapters";
+        showUnreadLabelView_.setText("Hide Unread Chapters");
     } else {
-        bottomRightText_ = "Show Unread Chapters";
+        showUnreadLabelView_.setText("Show Unread Chapters");
     }
-
-    bottomRightTextView_.setText(bottomRightText_);
-    rightArrowView_.setNeedsLayout();
 
     draw();
 

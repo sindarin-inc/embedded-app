@@ -43,8 +43,13 @@ const constexpr PixelResolution DEFAULT_DISPLAY_PIXEL_RESOLUTION = PixelResoluti
 const constexpr PixelResolution DEFAULT_FONT_PIXEL_RESOLUTION = PixelResolution::ONE_BIT;
 #endif
 #else
+#if CONFIG_WAVESHARE_8BIT
+const constexpr PixelResolution DEFAULT_DISPLAY_PIXEL_RESOLUTION = PixelResolution::EIGHT_BITS;
+const constexpr PixelResolution DEFAULT_FONT_PIXEL_RESOLUTION = PixelResolution::EIGHT_BITS;
+#else
 const constexpr PixelResolution DEFAULT_DISPLAY_PIXEL_RESOLUTION = PixelResolution::ONE_BIT;
 const constexpr PixelResolution DEFAULT_FONT_PIXEL_RESOLUTION = PixelResolution::ONE_BIT;
+#endif
 #endif
 
 const constexpr bool PIXEL_RESOLUTION_OK =
@@ -56,7 +61,7 @@ static_assert(DEFAULT_FONT_PIXEL_RESOLUTION == PixelResolution::ONE_BIT,
               "For CONFIG_FONT_IBMF, the DEFAULT_FONT_PIXEL_RESOLUTION must be equal to ONE_BIT!");
 #endif
 
-#if !SIMULATOR
+#if !SIMULATOR && !CONFIG_WAVESHARE_8BIT
 static_assert(DEFAULT_DISPLAY_PIXEL_RESOLUTION == PixelResolution::ONE_BIT,
               "The first version of Sol Reader only supports an ONE_BIT display!");
 static_assert(DEFAULT_FONT_PIXEL_RESOLUTION == PixelResolution::ONE_BIT,

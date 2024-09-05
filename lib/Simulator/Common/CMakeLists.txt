@@ -96,7 +96,7 @@ target_compile_definitions(${PROJECT_NAME} PUBLIC
     ENABLE_OTA=0
     GIT_VERSION=\"release/v1.0.0-3-geea60cbf-dirt\"
     DISABLE_LOW_VOLTAGE_HALT=1
-    DISABLE_POWER_MANAGEMENT=1
+    CONFIG_DISABLE_POWER_MANAGEMENT=1
     RTC_SLOW_ATTR=
     RTC_NOINIT_ATTR=
     CONFIG_TTF_SCREEN_RES_PER_INCH=150
@@ -106,3 +106,21 @@ target_compile_options(${PROJECT_NAME}
     PRIVATE
     -include ${REPO_ROOT_DIR}/src/config.h
 )
+
+# Check if SIM_WIDTH and SIM_HEIGHT are set
+# WARNING: Duplicated in Simulator/CMakeLists.txt
+if(DEFINED SIM_WIDTH)
+    add_compile_definitions(SIM_WIDTH=${SIM_WIDTH})
+endif()
+
+if(DEFINED SIM_HEIGHT)
+    add_compile_definitions(SIM_HEIGHT=${SIM_HEIGHT})
+endif()
+
+if(DEFINED SIM_LAYOUT_DEBUG)
+    add_compile_definitions(SIM_LAYOUT_DEBUG=${SIM_LAYOUT_DEBUG})
+endif()
+
+if(DEFINED SIM_ONE_BIT)
+    add_compile_definitions(SIM_ONE_BIT=${SIM_ONE_BIT})
+endif()
