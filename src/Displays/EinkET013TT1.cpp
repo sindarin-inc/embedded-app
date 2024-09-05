@@ -230,7 +230,10 @@ void EinkET013TT1::updateInternal(const EinkET013TT1Waveform &waveform, const ui
 
     // Set up convenience variables to index into various parts of the scanline
     // TODO: Are there clever union types or other struct packing things we could do here?
-    uint8_t scanLine[48];
+    // We're supposed to use `DMA_ATTR static` since this is used as a SPI buffer.
+    // See:
+    // https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-guides/memory-types.html#dma-capable-requirement
+    DMA_ATTR static uint8_t scanLine[48];
     uint8_t *borderSettings = &(scanLine[0]);
     if (border_ == BORDER_SETTING_NONE) {
         memcpy(borderSettings, BORDER_NONE, 4);
