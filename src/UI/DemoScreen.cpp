@@ -353,8 +353,8 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs)
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
-        dropVcom_ = false;
-        display.invertDisplay(false);
+        dropVcom_ = true;
+        display.invertDisplay(true);
         display.drawXBitmap((display.width() - sol_logo_width) / 2,
                             (display.height() - sol_logo_height) / 2, SOL_LOGO_BITS, sol_logo_width,
                             sol_logo_height, display.fg);
