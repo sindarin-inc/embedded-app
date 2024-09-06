@@ -3,7 +3,9 @@
 #include "NewMenuItemSingleLineView.hpp"
 
 NewMenuView::NewMenuView(DisplaySystem &display)
-    : EinkView(display), pagingIndicatorView_(display), indicatorView_(display, 0) {
+    : EinkView(display), indicatorPadding(indicatorWidth), pagingIndicatorWidth(indicatorWidth),
+      pagingIndicatorPadding(2 * indicatorWidth), pagingIndicatorView_(display),
+      indicatorView_(display, 0) {
 
     indicatorView_.fillColor = display.fg;
 
@@ -11,13 +13,9 @@ NewMenuView::NewMenuView(DisplaySystem &display)
 
     // 5px on 256x256, scales up for larger displays
     indicatorWidth = std::max(5, smallestDimension / 51);
-    indicatorPadding = indicatorWidth;
-
-    pagingIndicatorWidth = indicatorWidth;
-    pagingIndicatorPadding = 2 * indicatorWidth;
 }
 
-void NewMenuView::addMenuItem(std::shared_ptr<NewMenuItem> menuItem) {
+void NewMenuView::addMenuItem(const std::shared_ptr<NewMenuItem> &menuItem) {
     menuItems_.push_back(menuItem);
     createMenuItemViews();
 
@@ -110,7 +108,7 @@ auto NewMenuView::layout(LayoutContext &context, Size size) -> Size {
             // a little lower than its center
             Rect indicatorRect = {{0, itemRect.origin.y + 1},
                                   {indicatorWidth, itemRect.size.height}};
-            Size indicatorSize;
+            Size indicatorSize{};
             switch (indicatorType_) {
             case IndicatorType::None:
             case IndicatorType::Dot:

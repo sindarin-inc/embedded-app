@@ -14,7 +14,7 @@ public:
 
     NewMenuView(DisplaySystem &display);
 
-    void addMenuItem(std::shared_ptr<NewMenuItem> menuItem);
+    void addMenuItem(const std::shared_ptr<NewMenuItem> &menuItem);
     auto setSelectedIndex(size_t index) -> bool;
     auto moveSelection(int delta) -> bool;
     void setIndicatorType(IndicatorType type);
@@ -22,8 +22,8 @@ public:
     auto layout(LayoutContext &context, Size size) -> Size override;
     void drawInRect(Rect rect) override;
 
-    size_t getSelectedIndex() const { return selectedIndex_; }
-    size_t getItemCount() const { return menuItems_.size(); }
+    auto getSelectedIndex() const -> size_t { return selectedIndex_; }
+    auto getItemCount() const -> size_t { return menuItems_.size(); }
     void executeSelectedItem() {
         if (selectedIndex_ < menuItems_.size()) {
             menuItems_[selectedIndex_]->execute();

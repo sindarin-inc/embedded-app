@@ -5,8 +5,8 @@ NewMenuScreen::NewMenuScreen(DisplaySystem &display, std::string title)
     titleView_.setText(title_);
 }
 
-void NewMenuScreen::addMenuItem(std::shared_ptr<NewMenuItem> menuItem) {
-    menuView_.addMenuItem(std::move(menuItem));
+void NewMenuScreen::addMenuItem(const std::shared_ptr<NewMenuItem> &menuItem) {
+    menuView_.addMenuItem(menuItem);
 }
 
 void NewMenuScreen::processCommand(RemoteCommand command) {
@@ -21,7 +21,10 @@ void NewMenuScreen::processCommand(RemoteCommand command) {
         menuView_.executeSelectedItem();
         break;
     case RemoteCommand::BACK:
-        // Handle back action (e.g., close this screen)
+    case RemoteCommand::LEFT:
+        firstLoad_ = true;
+        back();
+        setNeedsRerender();
         break;
     default:
         // Handle other commands or ignore
@@ -37,7 +40,6 @@ auto NewMenuScreen::layout(LayoutContext &context, Size size) -> Size {
     auto titleRect =
         context.setViewFrame(titleView_, {{0, y}, {size.width, 0}},
                              LayoutOptionsSizeToFit | LayoutOptionsAlignCenterHorizontal);
-    y += titleRect.size.height + 10; // Add some spacing after the title
 
     // Layout menu
     context.setViewFrame(menuView_, Rect::fromSize(size),

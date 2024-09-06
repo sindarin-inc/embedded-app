@@ -10,7 +10,7 @@ class NewMenuScreen : public Screen, public EinkView {
 public:
     NewMenuScreen(DisplaySystem &display, std::string title);
 
-    void addMenuItem(std::shared_ptr<NewMenuItem> item);
+    void addMenuItem(const std::shared_ptr<NewMenuItem> &item);
     void processCommand(RemoteCommand command) override;
 
     auto layout(LayoutContext &context, Size size) -> Size override;
