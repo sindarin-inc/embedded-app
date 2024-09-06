@@ -3,11 +3,12 @@
 #include "NewMenuItemSingleLineView.hpp"
 
 NewMenuView::NewMenuView(DisplaySystem &display)
-    : EinkView(display), pagingIndicatorView_(display), indicatorView_(display, 0),
-      // 5px on 256x256, scales up for larger displays
+    : EinkView(display),
       indicatorWidth(std::max(5, std::min(display.width(), display.height()) / 51)),
-      indicatorPadding(indicatorWidth), pagingIndicatorWidth(indicatorWidth),
-      pagingIndicatorPadding(2 * indicatorWidth) {
+      indicatorPadding(indicatorWidth),
+      // 5px on 256x256, scales up for larger displays
+      pagingIndicatorWidth(indicatorWidth), pagingIndicatorPadding(2 * indicatorWidth),
+      pagingIndicatorView_(display), indicatorView_(display, 0) {
 
     indicatorView_.fillColor = display.fg;
 
