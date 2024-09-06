@@ -89,5 +89,5 @@ public:
 
 protected:
     std::string text_;
-    Font *font_{};
+    Font *font_{static_cast<Font *>(&fontFace0)};
 };
