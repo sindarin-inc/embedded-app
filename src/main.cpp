@@ -48,14 +48,20 @@
 DisplayEinkET013TT1 myDisplay(DISPLAY_CS_LEFT, DISPLAY_CS_RIGHT, DISPLAY_RST);
 #elif DISPLAY_SIM_8BIT
 // Declared in native.cpp
-#include "Displays/DisplaySim8Bit.hpp"
-extern DisplaySim8Bit myDisplay;
+#include "Displays/DisplaySim1Bit.hpp"
+extern DisplaySim1Bit myDisplay;
 #elif CONFIG_DISPLAY_M5STACK_ATOM_DISPLAY
 #include "Displays/DisplayM5StackAtomDisplay.hpp"
 DisplayM5StackAtomDisplay myDisplay;
 #elif CONFIG_DISPLAY_M5STACK_MODULE_DISPLAY
 #include "Displays/DisplayM5StackModuleDisplay.hpp"
 DisplayM5StackModuleDisplay myDisplay;
+#elif CONFIG_DISPLAY_WAVESHARE_6INHD
+#include "Displays/DisplayWaveshare6inHD.hpp"
+DisplayWaveshare6inHD myDisplay;
+#elif CONFIG_DISPLAY_SHARP_27IN
+#include "Displays/DisplaySharp27in.hpp"
+DisplaySharp27in myDisplay;
 #endif
 
 PreferencesStore prefs;
@@ -104,13 +110,13 @@ Telemetry telemetry(fileSystem, prefs);
 TTRemoteInput ttRemoteInput(prefs, telemetry);
 #endif
 
-PowerManager powerManager(fileSystem, prefs, lightingController, myDisplay, telemetry);
+USBSerial usbSerial;
+
+PowerManager powerManager(fileSystem, prefs, lightingController, myDisplay, telemetry, usbSerial);
 LocalStore localStore(fileSystem, prefs, powerManager.battery, telemetry);
 RootUI rootUi(prefs, powerManager, telemetry);
 SolClock solClock(prefs);
 WiFi wiFi(telemetry);
-
-USBSerial usbSerial;
 
 DirectCommand directCommand(usbSerial, fileSystem, powerManager);
 FileTransfer fileTransferListener(fileSystem, localStore, usbSerial, directCommand);
@@ -168,6 +174,8 @@ void PollingLoopTask(void *parameter) {
         // This happens after the delay, so that the first check can run with a faster fade.
         lightingController.checkAmbientLight();
 #endif
+        SHOW_HEAP();
+        SHOW_WATERMARK();
     }
     log_d("PollingLoopTask exited");
     vTaskDelete(nullptr);
@@ -177,7 +185,7 @@ void StatsTask(void *parameter) {
     while (powerManager.state() != PowerState::ShuttingDown) {
         // Spit out data on locks every 30s
         vTaskDelay(30000 / portTICK_PERIOD_MS);
-#if !SIMULATOR && !DISABLE_POWER_MANAGEMENT
+#if !SIMULATOR && !CONFIG_DISABLE_POWER_MANAGEMENT
         if (USBConnected()) {
             esp_pm_dump_locks(stdout);
         }
@@ -189,10 +197,19 @@ void StatsTask(void *parameter) {
 auto UIGetCurrentScreen() { return rootUi.getCurrentScreen(); }
 
 extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
+    HEAP_PROFILE_START(usbSerial);
     usbSerial.begin();
-    directCommand.begin();
+    HEAP_PROFILE_END(usbSerial);
 
+    directCommand.begin();
+    if (usbSerial.isLoggingEnabled()) {
+        // Wait a bit so we can get boot logs (mostly for the testers)
+        vTaskDelay(pdMS_TO_TICKS(1000));
+    }
+
+    HEAP_PROFILE_START(HardwareInit);
     HardwareInit();
+    HEAP_PROFILE_END(HardwareInit);
 
     powerManager.wakeupCheck(solClock);
 
@@ -207,7 +224,9 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     }
 #endif
 
+    HEAP_PROFILE_START(InitializePlatform);
     InitializePlatform();
+    HEAP_PROFILE_END(InitializePlatform);
 
     if (!prefs.begin()) {
         bootErrors.push_back({.type = BootError::Type::Preferences});
@@ -232,9 +251,11 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 #endif
     }
 
+    HEAP_PROFILE_START(powerManagerBegin);
     if (powerManager.begin() != ESP_OK) {
         bootErrors.push_back({.type = BootError::Type::PowerManagement});
     }
+    HEAP_PROFILE_END(powerManagerBegin);
 
     // The following commands can run after PowerManager::begin has completed
     directCommand.addCommandHandler([](const std::string &command, const std::string &payload,
@@ -256,7 +277,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
             return true;
         } else if (command == "LOCKS") {
             txLine(command);
-#if !DISABLE_POWER_MANAGEMENT
+#if !CONFIG_DISABLE_POWER_MANAGEMENT
             // TODO: Would be nice to also dump to the command port
             auto err = esp_pm_dump_locks(stdout);
             if (err != ESP_OK) {
@@ -268,26 +289,22 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         return false;
     });
 
+    HEAP_PROFILE_START(fileSystemBegin);
     if (!fileSystem.begin()) {
         bootErrors.push_back({.type = BootError::Type::FileSystem});
     } else {
         log_i("Filesystem ready!");
     }
+    HEAP_PROFILE_END(fileSystemBegin);
 
     // Set current boot id
     auto bootCount = prefs.bootCount.get().value_or(0);
     bootCount++;
     prefs.bootCount.set(bootCount);
 
-    // This is a hack for now for debugging crashes while connected to the serial
-    // monitor -- don't save (and thus delete crashes) when connected to USB. This means
-    // the boot count will be wrong once this is saved, but that's probably ok
-    if (!USBConnected()) {
-        // file system started
-        // attempt to write any core dumps to disk for later upload
-        CrashReportWriter crashReportWriter(fileSystem, bootCount - 1);
-        crashReportWriter.writeCrashReportIfExists();
-    }
+    // Attempt to write any core dumps to disk for later upload
+    CrashReportWriter crashReportWriter(fileSystem, bootCount - 1);
+    crashReportWriter.writeCrashReportIfExists();
 
     if (powerManager.state() != PowerState::ActiveUSBCharging && !localStore.begin()) {
         bootErrors.push_back({.type = BootError::Type::LocalStore});
@@ -313,6 +330,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
                 vTaskDelay(1000 / portTICK_PERIOD_MS);
             }
             log_d("Background loop task exited");
+            SHOW_WATERMARK();
             vTaskDelete(nullptr);
             },
             "BackgroundPowerLoop", 4096, nullptr, 1, nullptr, 1);
@@ -340,8 +358,6 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     }
 #endif
 
-    SHOW_HEAP();
-
 #if CONFIG_DISPLAY_EINKET013TT1
 #ifdef DISPLAY_POWER
     // Turn on power to the screen
@@ -361,9 +377,11 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         break;
     }
 
+    HEAP_PROFILE_START(displaySetup);
     if (!myDisplay.setup()) {
         bootErrors.push_back({.type = BootError::Type::Display});
     }
+    HEAP_PROFILE_END(displaySetup);
 
     // This setting must happen *before* the below vcom set from
     // preferences. Otherwise, when in dark mode, the vcom
@@ -398,13 +416,16 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
                 vTaskDelay(60000 / portTICK_PERIOD_MS);
             }
             log_d("Sync loop task exited");
+            SHOW_WATERMARK();
             vTaskDelete(nullptr);
             },
             "BackgroundSync", 4096, nullptr, 1, nullptr, 1);
     }
 
 #if USE_BLE
+    HEAP_PROFILE_START(BLEDeviceInit);
     BLEDevice::init("Sol Reader");
+    HEAP_PROFILE_END(BLEDeviceInit);
 
     if (prefs.blePower.get().has_value()) {
         auto power = prefs.blePower.get().value_or(ESP_PWR_LVL_P3);
@@ -433,6 +454,8 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         });
     };
 #endif
+
+    HEAP_PROFILE_START(BLEServices);
 
 #if CONFIG_USE_TURN_TOUCH_REMOTE
     ttRemoteInput.setCallback(remoteCallback);
@@ -495,16 +518,15 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         bootErrors.push_back({.type = BootError::Type::BLEManagerAdvertising});
     }
 #endif
+    HEAP_PROFILE_END(BLEServices);
 
-#if !DISABLE_POWER_MANAGEMENT
+#if !CONFIG_DISABLE_POWER_MANAGEMENT
     if (rtc_clk_slow_freq_get() != RTC_SLOW_FREQ_32K_XTAL) {
         bootErrors.push_back({.type = BootError::Type::LowPowerOscillator});
     }
 #endif
 
-    SHOW_HEAP();
-
-#if DISABLE_POWER_MANAGEMENT
+#if CONFIG_DISABLE_POWER_MANAGEMENT
     log_w("Power Management Disabled");
 #endif
 
@@ -539,27 +561,33 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     }
     PreferencesStore::screenClearedAtShutdown = false;
 
-    xTaskCreatePinnedToCore(PollingLoopTask, "Polling", 10000, nullptr, 1, nullptr, 0);
+    HEAP_PROFILE_START(PollingTask);
+    xTaskCreatePinnedToCore(PollingLoopTask, "Polling", 5000, nullptr, 1, nullptr, 0);
+    HEAP_PROFILE_END(PollingTask);
 
     // xTaskCreatePinnedToCore(StatsTask, "Stats", 5000, nullptr, 0, nullptr, 1);
 
 #if CONFIG_USE_LTR329
     // Begin fade-in on the lighting before rendering the UI
-    DispatchGetUiQueue()->dispatch([]() { lightingController.checkAmbientLight(300, 100); });
+    DispatchGetUiQueue()->dispatch([]() {
+        HEAP_PROFILE_START(checkAmbientLight);
+        lightingController.checkAmbientLight(300, 100);
+        HEAP_PROFILE_END(checkAmbientLight);
+    });
 #endif
 
     // Render the first thing
     DispatchGetUiQueue()->dispatch([showChargingScreen]() {
-        SHOW_HEAP();
         if (powerManager.state() == PowerState::ActiveUSBCharging) {
             showChargingScreen();
         } else {
+            HEAP_PROFILE_START(rootUISetup);
             rootUi.setup(&myDisplay, localStore, fileSystem, lightingController);
+            HEAP_PROFILE_END(rootUISetup);
             UIInnerLoop(RemoteCommand::NONE);
             log_i("First screen rendered after boot in %" PRIu64 " ms",
                   esp_timer_get_time() / 1000);
         }
-        SHOW_HEAP();
     });
 
     GoodBootTimer();
@@ -574,10 +602,21 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
             txLine(command);
             return true;
         } else if (command == "MIRROR") {
-            myDisplay.mirrorToSerial = !myDisplay.mirrorToSerial;
-            txLine(command);
+            if (payload == "0") {
+                myDisplay.mirrorToSerial = false;
+                txLine("MIRROR 0");
+            } else if (payload == "1") {
+                myDisplay.mirrorToSerial = true;
+                txLine("MIRROR 1");
+                myDisplay.sendCurrentScreenToSerial();
+            } else {
+                txLine(StringFormat("MIRROR %d", myDisplay.mirrorToSerial));
+            }
             return true;
+        } else if (command == "SCREENSHOT") {
+            myDisplay.sendCurrentScreenToSerial(true);
         } else if (command == "GRID") {
+            txLine(command);
             DispatchGetUiQueue()->dispatch([]() {
                 // Override brightness to max
                 lightingController.setOverrideValuePercent(100);
@@ -585,31 +624,30 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
                 rootUi.setCurrentScreen(*testScreen);
                 UIInnerLoop(RemoteCommand::NONE);
             });
-            txLine(command);
             return true;
         } else if (command == "UP") {
-            DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::UP); });
             txLine(command);
+            DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::UP); });
             return true;
         } else if (command == "LEFT") {
-            DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::LEFT); });
             txLine(command);
+            DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::LEFT); });
             return true;
         } else if (command == "RIGHT") {
-            DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::RIGHT); });
             txLine(command);
+            DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::RIGHT); });
             return true;
         } else if (command == "DOWN") {
-            DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::DOWN); });
             txLine(command);
+            DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::DOWN); });
             return true;
         } else if (command == "ENTER") {
-            DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::ENTER); });
             txLine(command);
+            DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::ENTER); });
             return true;
         } else if (command == "BACK") {
-            DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::BACK); });
             txLine(command);
+            DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::BACK); });
             return true;
         } else if (command == "UNPAIRPT") {
 #if CONFIG_USE_TURN_TOUCH_REMOTE
@@ -620,4 +658,5 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         }
         return false;
     });
+    SHOW_HEAP();
 }

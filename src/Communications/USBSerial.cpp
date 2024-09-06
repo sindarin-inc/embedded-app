@@ -15,9 +15,7 @@ auto USBSerial::getInstance() -> USBSerial & { return usbSerial; }
 
 void USBSerial::initJtag() {
 #if CONFIG_USE_TINYUSB_SERIAL
-    tusb_cdc_acm_deinit(TINYUSB_CDC_ACM_0);
-    tusb_cdc_acm_deinit(TINYUSB_CDC_ACM_1);
-    tinyusb_driver_uninstall();
+    end();
 
     usb_phy_config_t phyConf;
     std::memset(&phyConf, 0, sizeof(usb_phy_config_t));
@@ -102,6 +100,10 @@ void USBSerial::txSendData(const uint8_t *data, size_t length) {
         tinyusb_cdcacm_write_flush(TINYUSB_CDC_ACM_0, pdMS_TO_TICKS(5));
     }
 #endif
+#if SIMULATOR
+    // In the simulator, we write to the pseudo-serial port
+    serialPort_->write(reinterpret_cast<const char *>(data), length);
+#endif
 }
 
 void USBSerial::txSendLine(const std::string &str) {
@@ -152,9 +154,32 @@ void USBSerial::begin() {
     ESP_ERROR_CHECK(tusb_cdc_acm_init(&acmCfg2));
 #endif
 
+#if SIMULATOR
+    log_d("About to make a pseudo-serial port in the simulator");
+    // In the simulator, we create a pseudo-serial port for testing
+    serialPort_ = std::make_unique<AsyncPseudoSerialPort>();
+    log_d("Created a pseudo-serial port and you can connect to it at %s",
+          serialPort_->getSlaveName());
+    serialPort_->setRxCallback([this](char *data, size_t length) {
+        // Iterate through all the listeners registered with the USBSerial device and send them the
+        // data.
+        auto sharedData = std::shared_ptr<uint8_t[]>(new uint8_t[length]);
+        std::memcpy(sharedData.get(), data, length);
+        for (auto &listener : listeners_) {
+            listener(sharedData, length);
+        }
+    });
+#endif
+
     if (USBSerial::loggingEnabled) {
         enableLoggingInternal();
-        // Wait a bit so we can get boot logs (mostly for the testers)
-        vTaskDelay(pdMS_TO_TICKS(1000));
     }
+}
+
+void USBSerial::end() {
+#if CONFIG_USE_TINYUSB_SERIAL
+    tusb_cdc_acm_deinit(TINYUSB_CDC_ACM_0);
+    tusb_cdc_acm_deinit(TINYUSB_CDC_ACM_1);
+    tinyusb_driver_uninstall();
+#endif
 }

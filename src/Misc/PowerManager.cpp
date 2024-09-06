@@ -36,7 +36,7 @@ extern const uint8_t ULP_MAIN_BIN_END[] asm("_binary_ulp_src_bin_end");
 
 extern PowerManager powerManager;
 
-#if !DISABLE_POWER_MANAGEMENT
+#if !CONFIG_DISABLE_POWER_MANAGEMENT
 auto PmLock(const char *name, esp_pm_lock_handle_t *lock) -> void {
     if (*lock == nullptr) {
         auto err = esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, name, lock);
@@ -259,7 +259,7 @@ auto PowerManager::begin() -> esp_err_t {
 #endif
 
     esp_err_t err = ESP_OK;
-#if !DISABLE_POWER_MANAGEMENT
+#if !CONFIG_DISABLE_POWER_MANAGEMENT
     pmConfig_.max_freq_mhz = CPU_FREQ_MHZ_HIGH;
     pmConfig_.min_freq_mhz = CPU_FREQ_MHZ_LOW;
     pmConfig_.light_sleep_enable = true;
@@ -325,13 +325,13 @@ void PowerManager::powerOffInternal() {
 }
 
 auto PowerManager::debugDisableLightSleep() -> void {
-#if !DISABLE_POWER_MANAGEMENT
+#if !CONFIG_DISABLE_POWER_MANAGEMENT
     PmLock("pm_debug", &debugCommandLightSleepLock_);
 #endif
 }
 
 auto PowerManager::debugEnableLightSleep() -> void {
-#if !DISABLE_POWER_MANAGEMENT
+#if !CONFIG_DISABLE_POWER_MANAGEMENT
     PmUnlock(&debugCommandLightSleepLock_);
 #endif
 }
@@ -540,6 +540,7 @@ void PowerManager::beginShutdown() {
 
 void PowerManager::reboot() {
     beginShutdown();
+    usbSerial_.end();
     esp_restart();
 }
 
@@ -788,6 +789,7 @@ void PowerManager::deepSleepInternal(SleepReason reason) {
               PreferencesStore::nextSyncTime, uint64_t(now));
     }
 
+    usbSerial_.end();
     esp_deep_sleep_start();
 #endif
 }

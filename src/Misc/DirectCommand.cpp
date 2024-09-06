@@ -53,9 +53,7 @@ void DirectCommand::begin() {
             return true;
         } else if (command == "RESTART") {
             txLine(command);
-            // Wait 1 second before restarting so the receiver can get the success message
-            vTaskDelay(1000 / portTICK_PERIOD_MS);
-            esp_restart();
+            powerManager_.reboot();
             return true;
         } else if (command == "DEVICE_INFO") {
             txLine(StringFormat("DEVICE_INFO SERIAL_NUMBER,%s;MAC_ADDRESS,%s;FREE_SPACE,%s",
@@ -87,7 +85,7 @@ void DirectCommand::begin() {
         return false;
     });
 
-    usbSerial_.registerListener([this](const std::shared_ptr<uint8_t[]> &data, uint8_t length) {
+    usbSerial_.registerListener([this](const std::shared_ptr<uint8_t[]> &data, size_t length) {
         receiveTusbPortData(data, length);
     });
 }
@@ -119,7 +117,7 @@ void DirectCommand::handleCommand(const std::string &line, const DirectCommand::
     });
 }
 
-void DirectCommand::receiveTusbPortData(const std::shared_ptr<uint8_t[]> &data, uint8_t length) {
+void DirectCommand::receiveTusbPortData(const std::shared_ptr<uint8_t[]> &data, size_t length) {
     // Be sure we don't time out while receiving data
     powerManager_.feedInactivityTimer();
     if (passthroughDataFn_) {

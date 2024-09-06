@@ -10,13 +10,12 @@
 #include "Misc/MenuStyle.hpp"
 #include "Misc/PowerManager.hpp"
 #include "Renderers/Renderer.hpp"
-#include "UI/Components/ArrowView.hpp"
+#include "UI/Components/ArrowLabelView.hpp"
 #include "UI/Components/BoxView.hpp"
 #include "UI/Components/ClockBatteryView.hpp"
 #include "UI/Components/EinkView.hpp"
 #include "UI/Components/IconView.hpp"
 #include "UI/Components/MenuItemView.hpp"
-#include "UI/Components/SingleLineTextView.hpp"
 #include "UI/Components/StackView.hpp"
 #include "UI/Layout/View.hpp"
 #include "UI/Screen.hpp"
@@ -26,10 +25,9 @@ class MenuScreen : public Screen, public Menu, public EinkView {
 
 public:
     MenuScreen(Battery &battery, DisplaySystem &display, MenuStyleFamily myStyle,
-               std::string menuName = "Default", std::string upperLeftText = "Main Menu")
+               std::string menuName = "Default", const std::string &upperLeftText = "Main Menu")
         : Menu(myStyle, std::move(menuName)), EinkView(display),
-          upperLeftText_(std::move(upperLeftText)), clockBatteryView_(battery, display),
-          upperLeftTextView_(display, upperLeftText_), leftArrowView_(display) {
+          clockBatteryView_(battery, display), backLabelView_(display, upperLeftText) {
         numMenuItems_ = 0;
     };
 
@@ -60,15 +58,11 @@ public:
 protected:
     bool firstLoad_ = true;
 
-    std::string upperLeftText_ = "Main Menu";
-
     std::string extraTextBelowMenu_;
 
     ClockBatteryView clockBatteryView_;
 
-    SingleLineTextView upperLeftTextView_;
-
-    ArrowView leftArrowView_;
+    ArrowLabelView backLabelView_;
 
     bool restartOnBack_ = false;
 };

@@ -18,6 +18,13 @@ public:
                  Font *font = static_cast<Font *>(&fontFace0), bool multiLine = false,
                  bool subtitle = true)
         : MenuItemView(display) {
+        auto height = std::max(14, display.getLineHeightPlusSpacing(font));
+        // Good default for 1 bit smallest font
+        indicatorWidth_ = (height + 1) / 3;
+        // Mirroring our previous defaults but now at least it's dynamic
+        // I used to have this as indicatorWidth_ but then clang moved this to above
+        // which makes the calculation wrong!
+        indicatorWidthAdjustment_ = ((height + 1) / 3) * 8 / 5;
         setMenuItem(menuItem, font, multiLine, subtitle);
     }
 
@@ -81,8 +88,7 @@ public:
         int y = 0;
         int right = size.width;
         int indicatorRightPadding = 15;
-        int indicatorWidth = 5;
-        auto indicatorWidthPlus = indicatorWidth + 8;
+        auto indicatorWidthPlus = indicatorWidth_ + indicatorWidthAdjustment_;
         Rect textRect{}, subtextRect{};
 
         // Layout the right text view if necessary
@@ -99,11 +105,11 @@ public:
         if (textMultiView_ != nullptr && !textMultiView_->isHidden()) {
             textRect = context.setViewFrame(
                 *textMultiView_, {{indicatorWidthPlus, y}, {right - x - indicatorWidthPlus, 0}},
-                LayoutOptionsSizeToFitVertical);
+                LayoutOptionsSizeToFit);
         } else {
             textRect = context.setViewFrame(
                 *textView_, {{indicatorWidthPlus, y}, {right - x - indicatorWidthPlus, 0}},
-                LayoutOptionsSizeToFitVertical);
+                LayoutOptionsSizeToFit);
         }
 
         y += textRect.size.height;
@@ -124,7 +130,7 @@ public:
         int indicatorHeight;
         int indicatorYNudge = 0;
         if (circleIndicator_) {
-            indicatorHeight = indicatorWidth;
+            indicatorHeight = indicatorWidth_;
             indicatorYNudge = 1;
         } else {
             // Extends above and below the size by indicatorExtraVerticalHeight_
@@ -134,11 +140,11 @@ public:
                 indicatorYNudge = 2;
             }
         }
-        context.setViewSizeInRect(indicator_, {indicatorWidth, indicatorHeight},
-                                  Rect{{x, indicatorYNudge}, {indicatorWidth, size.height}},
+        context.setViewSizeInRect(indicator_, {indicatorWidth_, indicatorHeight},
+                                  Rect{{x, indicatorYNudge}, {indicatorWidth_, size.height}},
                                   LayoutOptionsAlignCenterVertical);
 
-        return {size.width, y};
+        return {textRect.right(), y};
     }
 
     void drawInRect(Rect rect) override {
@@ -181,6 +187,8 @@ protected:
     // Extra height on top and bottom of the indicator relative to the size to fit the text.
     // By default, the tall indicator extends 3px above and below the size that fits
     // Unsused if circleIndicator_ is true
+    int indicatorWidth_ = 5;
+    int indicatorWidthAdjustment_ = 8;
     int indicatorExtraVerticalHeight_ = 3;
     bool circleIndicator_ = false;
     bool selected_ = false;

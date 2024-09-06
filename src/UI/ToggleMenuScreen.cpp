@@ -8,11 +8,7 @@
 #define MAX_WIDTH 150
 
 auto ToggleMenuScreen::layout(LayoutContext &context, Size size) -> Size {
-    const auto inset = 3;
-
-    context.setViewFrame(leftArrowView_, {{0, 1}, {5, 10}},
-                         LayoutOptionsSizeToFit | LayoutOptionsAlignTop | LayoutOptionsAlignLeft);
-    context.setViewFrame(upperLeftTextView_, {{10, 0}, size},
+    context.setViewFrame(backLabelView_, Rect::fromSize(size),
                          LayoutOptionsSizeToFit | LayoutOptionsAlignTop | LayoutOptionsAlignLeft);
 
     const auto mainInset = 2;
@@ -24,6 +20,7 @@ auto ToggleMenuScreen::layout(LayoutContext &context, Size size) -> Size {
             int x = 0;
             int y = 0;
             int place = 0;
+            const auto inset = 3;
 
             Rect offRect =
                 context.setViewFrame(offTextView_, {{inset, y}, {size.width - 2 * inset - 19, 0}},
@@ -44,8 +41,8 @@ auto ToggleMenuScreen::layout(LayoutContext &context, Size size) -> Size {
                                          {{x, y}, {size.width - 70, viewFrame.size.height + 1}});
                 }
 
-                // Only layout the bubble if it's visible (doing this here instead of draw since we
-                // already have the place in the vector here)
+                // Only layout the bubble if it's visible (doing this here instead of draw since
+                // we already have the place in the vector here)
                 if (showToggleBubble_[place]) {
                     Rect alignWithRect = menuToggleValues_[place] ? onRect : offRect;
                     // Align the bubble horizontally with the on/off text and vertically witht
@@ -88,8 +85,7 @@ auto ToggleMenuScreen::layout(LayoutContext &context, Size size) -> Size {
 }
 
 void ToggleMenuScreen::drawInRect(Rect rect) {
-    leftArrowView_.draw();
-    upperLeftTextView_.draw();
+    backLabelView_.draw();
     onTextView_.draw();
     offTextView_.draw();
     for (auto &view : menuItemViews_) {
@@ -151,14 +147,16 @@ void ToggleMenuScreen::render(DisplaySystem &display) {
                 display_.fg;
         }
 
+#if CONFIG_DISPLAY_EINKET013TT1
         draw();
         display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
+#endif
     }
 
     drawBubbles_ = true;
     draw();
 
-    display.updateDisplay(DisplaySystem::UpdateType::FAST_WITH_VCOM_NUDGE);
+    display.updateDisplay(DisplaySystem::UpdateType::FAST_INDICATOR);
 
     drawBubbles_ = false;
     firstLoad_ = false;

@@ -381,7 +381,7 @@ void DemoScreen::drawTripleLine(DisplaySystem &display, std::string one, std::st
     std::string message;
     display.setFont(static_cast<Font *>(&fontFace1));
     message = std::move(one);
-    int yAdjust = display.getTextHeight() - display.getLineSpacing();
+    int yAdjust = display.getLineHeightPlusSpacing() - display.getLineSpacing();
 
     yAdjust = (yAdjust + 1) / 2;
 

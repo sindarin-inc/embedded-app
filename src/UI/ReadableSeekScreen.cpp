@@ -33,26 +33,26 @@ void ReadableSeekScreen::render(DisplaySystem &display) {
     display.fillRect(x, y, progressWidth, barHeight, display.fg);
 
     x += barWidth + spacing;
-    display.drawSingleLineOfText(percentStr, x, y + display.getTextHeight() - 16);
+    display.drawSingleLineOfText(percentStr, x, y + display.getLineHeightPlusSpacing() - 16);
 
     // Cursor is from the baseline of the text I think
-    y += barHeight + display.getTextHeight();
+    y += barHeight + display.getLineHeightPlusSpacing();
     uint16_t textWidth, textHeight;
     auto message1 = "Press right and left";
     display.getTextSize(message1, &textWidth, &textHeight);
     display.drawSingleLineOfText(message1, (display.width() - textWidth) / 2, y);
 
-    y += display.getTextHeight();
+    y += display.getLineHeightPlusSpacing();
     auto message2 = "to seek through";
     display.getTextSize(message2, &textWidth, &textHeight);
     display.drawSingleLineOfText(message2, (display.width() - textWidth) / 2, y);
 
-    y += display.getTextHeight();
+    y += display.getLineHeightPlusSpacing();
     auto message3 = "book or article";
     display.getTextSize(message3, &textWidth, &textHeight);
     display.drawSingleLineOfText(message3, (display.width() - textWidth) / 2, y);
 
-    y += display.getTextHeight() + 10;
+    y += display.getLineHeightPlusSpacing() + 10;
     std::string message4 = "Seek granularity: ";
     message4 += StringFormat("%.1f%%", (100 / static_cast<float>(seekGranularity_)));
     display.getTextSize(message4, &textWidth, &textHeight);

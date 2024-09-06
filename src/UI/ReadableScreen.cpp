@@ -178,7 +178,7 @@ void ReadableScreen::turnPage() {
             return;
         }
         showPopupMenu();
-        popupMenuScreen_.preselectArchiveMenuItem();
+        popupMenuScreen_.preselectArchiveOrDeleteMenuItem();
     } else {
         readable_->placePrev = readable_->place;
         readable_->place = newPlace_;

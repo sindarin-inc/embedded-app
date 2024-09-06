@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <driver/spi_master.h>
 #include <string>
-#if !DISABLE_POWER_MANAGEMENT
+#if !CONFIG_DISABLE_POWER_MANAGEMENT
 #include <esp_pm.h>
 #endif
 
@@ -92,6 +92,8 @@ public:
     // power on sequence in parallel to drawing the UI.
     void beginPowerOn();
 
+    [[nodiscard]] auto getBuffer() const -> const uint8_t * { return previousBuffer_; }
+
 protected:
     inline void setCS(bool value, ScreenSide screen) const;
     void powerOnInternal();
@@ -143,7 +145,7 @@ protected:
     bool poweredOn_ = false;
     DispatchQueue *einkQueue_{};
 
-#if !DISABLE_POWER_MANAGEMENT
+#if !CONFIG_DISABLE_POWER_MANAGEMENT
     esp_pm_lock_handle_t freqLock_{};
 #endif
 };

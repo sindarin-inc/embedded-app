@@ -9,10 +9,9 @@
 #include "Models/Readable.hpp"
 #include "Renderers/Renderer.hpp"
 #include "Storage/PreferencesStore.hpp"
-#include "UI/Components/ArrowView.hpp"
+#include "UI/Components/ArrowLabelView.hpp"
 #include "UI/Components/BoxView.hpp"
 #include "UI/Components/EinkView.hpp"
-#include "UI/Components/SingleLineTextView.hpp"
 #include "UI/Layout/View.hpp"
 #include "UI/Screen.hpp"
 #include "sindarin-debug.h"
@@ -22,8 +21,8 @@ public:
     ReadableDictionaryScreen(PreferencesStore &prefs, std::shared_ptr<Readable> readable,
                              DisplaySystem &display, Renderer &renderer)
         : EinkView(display), prefs_(prefs), readable_(std::move(readable)), renderer_(renderer),
-          display_(display), upperLeftTextView_(display, upperLeftText_),
-          leftArrowView_(display, ArrowUp), backgroundView_(display, 5) {}
+          display_(display), dismissLabelView_(display, "Dismiss", ArrowUp),
+          backgroundView_(display, 5) {}
 
     auto layout(LayoutContext &context, Size size) -> Size override;
     void drawInRect(Rect rect) override;
@@ -51,9 +50,6 @@ protected:
     std::shared_ptr<RendererStream> rendererStream_;
     bool atEnd_ = false;
 
-    std::string upperLeftText_ = "Dismiss";
-    SingleLineTextView upperLeftTextView_;
-    ArrowView leftArrowView_;
+    ArrowLabelView dismissLabelView_;
     BoxView backgroundView_;
-    Rect contentFrame_{};
 };

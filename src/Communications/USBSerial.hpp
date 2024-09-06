@@ -16,7 +16,12 @@
 #include <string>
 #include <utility>
 
+#include "Misc/Dispatch.hpp"
 #include "sindarin-debug.h"
+
+#if SIMULATOR
+#include "Communications/AsyncPseudoSerialPort.hpp"
+#endif
 
 class USBSerial {
 public:
@@ -24,6 +29,7 @@ public:
     USBSerial() = default;
     USBSerial(const USBSerial &) = delete;
     void begin();
+    void end();
     void initJtag();
     void lineStateChangedCallback(int itf, cdcacm_event_t *event);
     void rxLoggingCallback(int itf, cdcacm_event_t *event);
@@ -32,6 +38,7 @@ public:
     void txSendLine(const std::string &str);
     void disableLogging();
     void enableLogging();
+    auto isLoggingEnabled() -> bool { return loggingEnabled; }
 
     using SerialDataListener = std::function<void(std::shared_ptr<uint8_t[]>, size_t length)>;
     void registerListener(const SerialDataListener &listener);
@@ -46,6 +53,9 @@ private:
         USBSerial::getInstance().rxCommandCallback(itf, event);
     }
 
+#if SIMULATOR
+    std::unique_ptr<AsyncPseudoSerialPort> serialPort_ = nullptr;
+#endif
     void enableLoggingInternal();
 
     static bool loggingEnabled;
