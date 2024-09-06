@@ -1,0 +1,17 @@
+#pragma once
+
+#include <functional>
+#include <string>
+
+// Base class for a menu item (menu row) model
+class NewMenuItem {
+public:
+    NewMenuItem(std::function<void()> callback) : callback_(std::move(callback)) {}
+
+    virtual void execute() const {
+        if (callback_) callback_();
+    }
+
+protected:
+    std::function<void()> callback_;
+};
