@@ -1,7 +1,6 @@
 #pragma once
 
 #include <functional>
-#include <string>
 
 // Base class for a menu item (menu row) model
 class NewMenuItem {
