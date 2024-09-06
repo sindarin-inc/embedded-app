@@ -1,5 +1,7 @@
 #include "NewMenuScreen.hpp"
 
+#include "Misc/Platform.hpp"
+
 NewMenuScreen::NewMenuScreen(DisplaySystem &display, std::string title)
     : EinkView(display), menuView_(display), titleView_(display), title_(std::move(title)) {
     titleView_.setText(title_);
@@ -50,6 +52,28 @@ auto NewMenuScreen::layout(LayoutContext &context, Size size) -> Size {
 void NewMenuScreen::drawInRect(Rect rect) {
     titleView_.draw();
     menuView_.draw();
+}
+
+auto NewMenuScreen::setSelectedIndex(size_t index) -> bool {
+    auto newPage = menuView_.setSelectedIndex(index);
+    if (newPage) {
+        firstLoad_ = true;
+    }
+    setNeedsRerender();
+    return newPage;
+}
+
+void NewMenuScreen::showTemporaryMessage(DisplaySystem &display, const std::string &message,
+                                         int duration, bool rerenderAfter) {
+    display.setFont(display.style.getFontFamily().settingsFont);
+    display.drawSingleLineOfCenteredText(message);
+    display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
+    Delay(duration);
+    if (rerenderAfter) {
+        setNeedsRerender();
+        this->firstLoad_ = true;
+        this->render(display);
+    }
 }
 
 void NewMenuScreen::moveSelection(int delta) {

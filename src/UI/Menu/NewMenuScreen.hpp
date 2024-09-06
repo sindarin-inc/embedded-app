@@ -11,11 +11,18 @@ class NewMenuScreen : public Screen, public EinkView {
 public:
     NewMenuScreen(DisplaySystem &display, std::string title);
 
+    auto setSelectedIndex(size_t index) -> bool;
+
     void addMenuItem(const std::shared_ptr<NewMenuItem> &item);
     void processCommand(RemoteCommand command) override;
 
     auto layout(LayoutContext &context, Size size) -> Size override;
     void drawInRect(Rect rect) override;
+
+    void showTemporaryMessage(DisplaySystem &display, const std::string &message,
+                              int duration = 2000, bool rerenderAfter = true);
+
+    void setFirstLoad() { firstLoad_ = true; }
 
     // Implement Screen methods
     void render(DisplaySystem &display) override;
