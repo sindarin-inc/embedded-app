@@ -3,6 +3,7 @@
 #include "Displays/DisplaySystem.hpp"
 #include "Inputs/RemoteInput.hpp"
 #include "UI/Components/EinkView.hpp"
+#include "UI/Components/SingleLineTextView.hpp"
 #include "UI/Menu/NewMenuView.hpp"
 #include "UI/Screen.hpp"
 

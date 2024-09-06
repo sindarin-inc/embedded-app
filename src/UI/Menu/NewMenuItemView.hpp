@@ -2,7 +2,6 @@
 
 #include "NewMenuItem.hpp"
 #include "UI/Components/EinkView.hpp"
-#include "UI/Components/SingleLineTextView.hpp"
 
 // Abstract base class for a menu item view (menu row view)
 class NewMenuItemView : public EinkView {
