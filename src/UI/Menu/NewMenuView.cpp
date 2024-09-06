@@ -3,16 +3,15 @@
 #include "NewMenuItemSingleLineView.hpp"
 
 NewMenuView::NewMenuView(DisplaySystem &display)
-    : EinkView(display), indicatorPadding(indicatorWidth), pagingIndicatorWidth(indicatorWidth),
-      pagingIndicatorPadding(2 * indicatorWidth), pagingIndicatorView_(display),
-      indicatorView_(display, 0) {
+    : EinkView(display), pagingIndicatorView_(display), indicatorView_(display, 0),
+      // 5px on 256x256, scales up for larger displays
+      indicatorWidth(std::max(5, std::min(display.width(), display.height()) / 51)),
+      indicatorPadding(indicatorWidth), pagingIndicatorWidth(indicatorWidth),
+      pagingIndicatorPadding(2 * indicatorWidth) {
 
     indicatorView_.fillColor = display.fg;
 
     uint16_t smallestDimension = std::min(display.width(), display.height());
-
-    // 5px on 256x256, scales up for larger displays
-    indicatorWidth = std::max(5, smallestDimension / 51);
 }
 
 void NewMenuView::addMenuItem(const std::shared_ptr<NewMenuItem> &menuItem) {
