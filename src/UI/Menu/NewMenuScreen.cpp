@@ -37,9 +37,8 @@ auto NewMenuScreen::layout(LayoutContext &context, Size size) -> Size {
     int y = 0;
 
     // Layout title
-    auto titleRect =
-        context.setViewFrame(titleView_, {{0, y}, {size.width, 0}},
-                             LayoutOptionsSizeToFit | LayoutOptionsAlignCenterHorizontal);
+    context.setViewFrame(titleView_, {{0, y}, {size.width, 0}},
+                         LayoutOptionsSizeToFit | LayoutOptionsAlignCenterHorizontal);
 
     // Layout menu
     context.setViewFrame(menuView_, Rect::fromSize(size),
