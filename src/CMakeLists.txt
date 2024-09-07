@@ -42,6 +42,7 @@ set(components
     app_update
     usb
     freetype
+    esp_lcd
 
     # Uncomment for M5Stack displays
     # M5GFX

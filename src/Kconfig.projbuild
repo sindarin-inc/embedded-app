@@ -19,6 +19,9 @@ menu "Sol Options"
 
             config DISPLAY_SHARP_27IN
                 bool "Sharpmem 2.7in Display"
+
+            config DISPLAY_EINK047TC1
+                bool "E-Ink 0.47in Display (LilyGo T5 4.7 V2.3)"
         endchoice
 
         config DISPLAY_PIXEL_RESOLUTION_IS_FIX

@@ -61,6 +61,9 @@ DisplayWaveshare6inHD myDisplay;
 #elif CONFIG_DISPLAY_SHARP_27IN
 #include "Displays/DisplaySharp27in.hpp"
 DisplaySharp27in myDisplay;
+#elif CONFIG_DISPLAY_EINK047TC1
+#include "Displays/Eink047TC1/DisplayEink047TC1.hpp"
+DisplayEink047TC1 myDisplay;
 #endif
 
 PreferencesStore prefs;
