@@ -72,8 +72,8 @@ void DisplayEink047TC1::updateDisplay(DisplaySystem::UpdateType updateType, bool
         uint8_t byte = gfxCanvas_.getBuffer()[i];
         for (int j = 0; j < 4; j++) {
             uint8_t twoBits = 0;
-            if (byte & 0x80) twoBits |= 0xF0;
-            if (byte & 0x40) twoBits |= 0x0F;
+            if (byte & 0x40) twoBits |= 0xF0;
+            if (byte & 0x80) twoBits |= 0x0F;
             new4bitBuffer[i * 4 + j] = twoBits;
             byte <<= 2;
         }
