@@ -62,23 +62,41 @@ void DisplayEink047TC1::updateDisplay(DisplaySystem::UpdateType updateType, bool
             reverseBits(gfxCanvas_.getBuffer()[2 * i] | (gfxCanvas_.getBuffer()[2 * i + 1] << 8));
     }
 
+    uint8_t *new4bitBuffer =
+        (uint8_t *)heap_caps_malloc(EPD_WIDTH * EPD_HEIGHT / 2, MALLOC_CAP_SPIRAM);
+
+    // Take each bit out of the canvas and turn it into 4 bits in the new4bitBuffer
+    // Each byte of the canvas is 8 bits and 8 pixels. Each byte of the new4bitBuffer is
+    // 4 bits and 2 pixels.
+    for (int i = 0; i < EPD_WIDTH * EPD_HEIGHT / 8; i++) {
+        uint8_t byte = gfxCanvas_.getBuffer()[i];
+        for (int j = 0; j < 4; j++) {
+            uint8_t twoBits = 0;
+            if (byte & 0x80) twoBits |= 0xF0;
+            if (byte & 0x40) twoBits |= 0x0F;
+            new4bitBuffer[i * 4 + j] = twoBits;
+            byte <<= 2;
+        }
+    }
+
     switch (updateType) {
     case UNSPECIFIED:
     case FULL:
         epd_clear_area(epd_full_screen());
-        // epd_draw_grayscale_image(epd_full_screen(), new4bitBuffer);
-        epd_draw_frame_1bit(epd_full_screen(), reverseBitsBuffer, BLACK_ON_WHITE, 4000);
+        epd_draw_grayscale_image(epd_full_screen(), new4bitBuffer);
+        // epd_draw_frame_1bit(epd_full_screen(), reverseBitsBuffer, BLACK_ON_WHITE, 4000);
         break;
     case PARTIAL:
     case FAST:
     default:
-        // epd_draw_grayscale_image(epd_full_screen(), new4bitBuffer);
-        epd_draw_frame_1bit(epd_full_screen(), reverseBitsBuffer, BLACK_ON_WHITE, 4000);
-        //  log_e("Unsupported update type");
+        epd_draw_grayscale_image(epd_full_screen(), new4bitBuffer);
+        // epd_draw_frame_1bit(epd_full_screen(), reverseBitsBuffer, BLACK_ON_WHITE, 4000);
+        //   log_e("Unsupported update type");
         break;
     }
 
     heap_caps_free(new4bitBuffer);
+    heap_caps_free(reverseBitsBuffer);
     if (clearFrameBuffer) {
         fillScreen(bg);
     }
