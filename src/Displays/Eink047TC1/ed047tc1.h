@@ -10,7 +10,7 @@ extern "C" {
 /******************************************************************************/
 
 #include <driver/gpio.h>
-
+#include <esp_attr.h>
 #include <stdint.h>
 
 /******************************************************************************/
@@ -66,7 +66,7 @@ extern "C" {
 #define D0 GPIO_NUM_8
 
 #else
-    #error "Unknown SOC"
+#error "Unknown SOC"
 #endif
 
 /******************************************************************************/
@@ -121,7 +121,7 @@ void IRAM_ATTR epd_skip();
 /**
  * @brief Get the currently writable line buffer.
  */
-uint8_t * IRAM_ATTR epd_get_current_buffer();
+uint8_t *IRAM_ATTR epd_get_current_buffer();
 
 /**
  * @brief Switches front and back line buffer.

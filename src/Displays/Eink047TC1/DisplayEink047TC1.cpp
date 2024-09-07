@@ -49,16 +49,14 @@ void DisplayEink047TC1::updateDisplay(DisplaySystem::UpdateType updateType, bool
     case FULL:
         epd_clear_area(epd_full_screen());
         epd_draw_grayscale_image(epd_full_screen(), gfxCanvas_.getBuffer());
+        // epd_draw_frame_1bit(epd_full_screen(), gfxCanvas_.getBuffer(), BLACK_ON_WHITE, 4000);
         break;
     case PARTIAL:
-        epd_draw_grayscale_image(epd_full_screen(), gfxCanvas_.getBuffer());
-        break;
     case FAST:
-        // Implement fast update if supported
-        epd_draw_grayscale_image(epd_full_screen(), gfxCanvas_.getBuffer());
-        break;
     default:
-        log_e("Unsupported update type");
+        epd_draw_grayscale_image(epd_full_screen(), gfxCanvas_.getBuffer());
+        epd_draw_frame_1bit(epd_full_screen(), gfxCanvas_.getBuffer(), BLACK_ON_WHITE, 4000);
+        // log_e("Unsupported update type");
         break;
     }
 

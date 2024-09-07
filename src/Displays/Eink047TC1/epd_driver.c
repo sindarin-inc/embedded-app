@@ -156,7 +156,7 @@ void epd_init()
     skipping = 0;
     epd_base_init(EPD_WIDTH);
 
-    conversion_lut = (uint8_t *)heap_caps_malloc(1 << 16, MALLOC_CAP_8BIT);
+    conversion_lut = (uint8_t *)heap_caps_malloc(1 << 16, MALLOC_CAP_SPIRAM);
     assert(conversion_lut != NULL);
     output_queue = xQueueCreate(64, EPD_WIDTH / 2);
 }

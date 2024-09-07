@@ -1,9 +1,13 @@
 #ifndef DISPLAY_EINK_047TC1_H
 #define DISPLAY_EINK_047TC1_H
 
-#include "Eink047TC1.hpp"
+#include "Displays/DisplaySystem.hpp"
 #include "sindarin-debug.h"
-#include "src/Display/DisplaySystem.hpp"
+
+extern "C" {
+#include "ed047tc1.h"
+#include "epd_driver.h"
+}
 
 class DisplayEink047TC1 : public DisplaySystem {
 public:
@@ -51,6 +55,7 @@ protected:
     void sendBufferToSerial(const uint8_t *buffer, bool screenshot = false) const;
 
     GFXcanvas1 gfxCanvas_;
+    // GFXcanvas4 gfxCanvas_;
 };
 
 #endif
