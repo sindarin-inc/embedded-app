@@ -153,6 +153,10 @@ menu "Sol Options"
             int "Battery Voltage Lower Divider"
             default 160
 
+        config FACTORY_RESET_BUTTON_PIN
+            int "Factory Reset Button Pin"
+            default 0
+
     endmenu
 
     menu "Pin Selection"

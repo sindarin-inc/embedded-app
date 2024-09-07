@@ -137,8 +137,8 @@ void UIInnerLoop(RemoteCommand command) {
 void PollingLoopTask(void *parameter) {
     int factoryResetStartTimeMs = 0;
     while (powerManager.state() != PowerState::ShuttingDown) {
-        // check if factory reset button is held down
-        if (DigitalRead(FACTORY_RESET_BUTTON) == 0) {
+        if (CONFIG_FACTORY_RESET_BUTTON_PIN != GPIO_NUM_NC &&
+            DigitalRead(CONFIG_FACTORY_RESET_BUTTON_PIN) == 0) {
             // prevent inactivity sleep while button held down
             powerManager.feedInactivityTimer();
             if (factoryResetStartTimeMs == 0) {
