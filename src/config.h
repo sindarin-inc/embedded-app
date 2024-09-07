@@ -62,6 +62,7 @@
 // Unused on ESP32-S3
 #define DEFAULT_VREF 0
 
+#if CONFIG_LEDC_BACKLIGHT
 #if defined(REVSION) && REVISION < 7
 // On revisions prior to 7, the screen's power was tied to pin 26 along with the backlight, so
 // define the power pin to turn on display and keep it on.
@@ -70,8 +71,10 @@
 #define BACKLIGHT_RIGHT 2
 #define BACKLIGHT_LEFT 17
 #endif
+#endif
 
 // Sol3
+#if CONFIG_DISPLAY_EINKET013TT1
 #define DISPLAY_CS_LEFT 21
 #define DISPLAY_CS_RIGHT 11
 #define USE_SYS_ON 1
@@ -83,6 +86,7 @@
 #define DISPLAY_MOSI 12
 #define DISPLAY_MISO 14
 #define DISPLAY_CLK 13
+#endif
 
 #define CPU_FREQ_MHZ_HIGH 240
 #define CPU_FREQ_MHZ_LOW 40
