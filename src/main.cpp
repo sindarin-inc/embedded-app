@@ -518,7 +518,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 #endif
     HEAP_PROFILE_END(BLEServices);
 
-#if !CONFIG_DISABLE_POWER_MANAGEMENT
+#if !CONFIG_DISABLE_POWER_MANAGEMENT && defined(CONFIG_RTC_CLK_SRC_EXT_CRYS)
     if (rtc_clk_slow_freq_get() != RTC_SLOW_FREQ_32K_XTAL) {
         bootErrors.push_back({.type = BootError::Type::LowPowerOscillator});
     }
