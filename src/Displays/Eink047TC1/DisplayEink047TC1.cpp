@@ -55,11 +55,10 @@ void DisplayEink047TC1::updateDisplay(DisplaySystem::UpdateType updateType, bool
     }
 
     // Convert the buffer by reveresing the bits of each word (two byte chunks)
-    uint8_t *new4bitBuffer =
+    uint8_t *reverseBitsBuffer =
         (uint8_t *)heap_caps_malloc(EPD_WIDTH * EPD_HEIGHT / 8, MALLOC_CAP_SPIRAM);
     for (int i = 0; i < EPD_WIDTH * EPD_HEIGHT / 16; i++) {
-        // write the 1-bit buffer to a 4-bit part of the right index into new4bitBuffer
-        ((uint16_t *)new4bitBuffer)[i] =
+        ((uint16_t *)reverseBitsBuffer)[i] =
             reverseBits(gfxCanvas_.getBuffer()[2 * i] | (gfxCanvas_.getBuffer()[2 * i + 1] << 8));
     }
 
@@ -68,13 +67,13 @@ void DisplayEink047TC1::updateDisplay(DisplaySystem::UpdateType updateType, bool
     case FULL:
         epd_clear_area(epd_full_screen());
         // epd_draw_grayscale_image(epd_full_screen(), new4bitBuffer);
-        epd_draw_frame_1bit(epd_full_screen(), new4bitBuffer, BLACK_ON_WHITE, 4000);
+        epd_draw_frame_1bit(epd_full_screen(), reverseBitsBuffer, BLACK_ON_WHITE, 4000);
         break;
     case PARTIAL:
     case FAST:
     default:
         // epd_draw_grayscale_image(epd_full_screen(), new4bitBuffer);
-        epd_draw_frame_1bit(epd_full_screen(), new4bitBuffer, BLACK_ON_WHITE, 4000);
+        epd_draw_frame_1bit(epd_full_screen(), reverseBitsBuffer, BLACK_ON_WHITE, 4000);
         //  log_e("Unsupported update type");
         break;
     }
