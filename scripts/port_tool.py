@@ -213,6 +213,11 @@ def main():
 
     elif args.command == "find_port":
         if args.port_type == "logging":
+            port = find_usb_jtag_port()
+            if port:
+                logging.debug(f"Found USB JTAG port at {port}.")
+                print(port)
+                return
             port = wait_for_control_port(3)
             if port:
                 logging.debug(f"Found control port at {port}. Enabling logging.")
