@@ -272,7 +272,7 @@ auto PowerManager::begin() -> esp_err_t {
     }
     err = esp_pm_configure(&pmConfig_);
 
-#if CONFIG_USB_CONNECTED_PIN != GPIO_NUM_NC
+#if CONFIG_USB_CONNECTED_PIN != -1
     attachInterrupt(
         digitalPinToInterrupt(CONFIG_USB_CONNECTED_PIN),
         [this]() {
@@ -652,7 +652,7 @@ auto ToString(SleepReason reason) -> const char * {
 }
 
 auto PowerManager::enableUsbWakeup() -> esp_err_t {
-#if CONFIG_USB_CONNECTED_PIN != GPIO_NUM_NC
+#if CONFIG_USB_CONNECTED_PIN != -1
     esp_err_t err;
     if (USBConnected()) {
         err = esp_sleep_enable_ext0_wakeup(static_cast<gpio_num_t>(CONFIG_USB_CONNECTED_PIN), 0);

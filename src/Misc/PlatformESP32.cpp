@@ -92,7 +92,7 @@ void HardwareInit() {
     }
 #endif
 
-#if CONFIG_USB_CONNECTED_PIN != GPIO_NUM_NC
+#if CONFIG_USB_CONNECTED_PIN != -1
     PinMode(CONFIG_USB_CONNECTED_PIN, INPUT);
 #endif
 
@@ -477,7 +477,7 @@ auto GetRunTimeMs() -> uint32_t {
 }
 
 auto USBConnected() -> bool {
-#if CONFIG_USB_CONNECTED_PIN != GPIO_NUM_NC
+#if CONFIG_USB_CONNECTED_PIN != -1
     return DigitalRead(CONFIG_USB_CONNECTED_PIN);
 #else
     // No way to know if USB is connected on old boards. But it's probably not.
