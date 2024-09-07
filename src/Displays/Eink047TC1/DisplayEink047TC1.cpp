@@ -82,13 +82,15 @@ void DisplayEink047TC1::updateDisplay(DisplaySystem::UpdateType updateType, bool
     switch (updateType) {
     case UNSPECIFIED:
     case FULL:
-        epd_clear_area(epd_full_screen());
+        epd_clear_area_cycles(epd_full_screen(), 1, 50);
         epd_draw_grayscale_image(epd_full_screen(), new4bitBuffer);
         // epd_draw_frame_1bit(epd_full_screen(), reverseBitsBuffer, BLACK_ON_WHITE, 4000);
         break;
     case PARTIAL:
     case FAST:
     default:
+        // Push all the pixels to white on fash refresh
+        epd_push_pixels(epd_full_screen(), 50, 1);
         epd_draw_grayscale_image(epd_full_screen(), new4bitBuffer);
         // epd_draw_frame_1bit(epd_full_screen(), reverseBitsBuffer, BLACK_ON_WHITE, 4000);
         //   log_e("Unsupported update type");
