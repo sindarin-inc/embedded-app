@@ -53,15 +53,6 @@
 #define LED_OFF LOW
 #endif
 
-#define BAT_VOLTAGE_RIGHT 10
-#define BAT_VOLTAGE_LEFT 4
-#define BATT_CHANNEL_RIGHT ADC_CHANNEL_9
-#define BATT_CHANNEL_LEFT ADC_CHANNEL_3
-#define UPPER_DIVIDER 442
-#define LOWER_DIVIDER 160
-// Unused on ESP32-S3
-#define DEFAULT_VREF 0
-
 #if CONFIG_LEDC_BACKLIGHT
 #if defined(REVSION) && REVISION < 7
 // On revisions prior to 7, the screen's power was tied to pin 26 along with the backlight, so
