@@ -33,6 +33,16 @@ void DisplayEink047TC1::invertDisplay(bool newInvert) {
     fillScreen(bg);
 }
 
+uint16_t inline reverseBits(uint16_t value) {
+    uint16_t reversed = 0;
+    for (int i = 0; i < 16; ++i) {
+        if (value & (1 << i)) {
+            reversed |= (1 << (15 - i));
+        }
+    }
+    return reversed;
+}
+
 void DisplayEink047TC1::updateDisplay(DisplaySystem::UpdateType updateType, bool clearFrameBuffer,
                                       int vcomNudge, DisplaySystem::UpdateType altUpdateType,
                                       ScreenSide screen, Rect altRect) {
@@ -44,22 +54,32 @@ void DisplayEink047TC1::updateDisplay(DisplaySystem::UpdateType updateType, bool
         log_w("updateDisplay called from outside the UI queue.");
     }
 
+    // Convert the buffer by reveresing the bits of each word (two byte chunks)
+    uint8_t *new4bitBuffer =
+        (uint8_t *)heap_caps_malloc(EPD_WIDTH * EPD_HEIGHT / 8, MALLOC_CAP_SPIRAM);
+    for (int i = 0; i < EPD_WIDTH * EPD_HEIGHT / 16; i++) {
+        // write the 1-bit buffer to a 4-bit part of the right index into new4bitBuffer
+        ((uint16_t *)new4bitBuffer)[i] =
+            reverseBits(gfxCanvas_.getBuffer()[2 * i] | (gfxCanvas_.getBuffer()[2 * i + 1] << 8));
+    }
+
     switch (updateType) {
     case UNSPECIFIED:
     case FULL:
         epd_clear_area(epd_full_screen());
-        epd_draw_grayscale_image(epd_full_screen(), gfxCanvas_.getBuffer());
-        // epd_draw_frame_1bit(epd_full_screen(), gfxCanvas_.getBuffer(), BLACK_ON_WHITE, 4000);
+        // epd_draw_grayscale_image(epd_full_screen(), new4bitBuffer);
+        epd_draw_frame_1bit(epd_full_screen(), new4bitBuffer, BLACK_ON_WHITE, 4000);
         break;
     case PARTIAL:
     case FAST:
     default:
-        epd_draw_grayscale_image(epd_full_screen(), gfxCanvas_.getBuffer());
-        epd_draw_frame_1bit(epd_full_screen(), gfxCanvas_.getBuffer(), BLACK_ON_WHITE, 4000);
-        // log_e("Unsupported update type");
+        // epd_draw_grayscale_image(epd_full_screen(), new4bitBuffer);
+        epd_draw_frame_1bit(epd_full_screen(), new4bitBuffer, BLACK_ON_WHITE, 4000);
+        //  log_e("Unsupported update type");
         break;
     }
 
+    heap_caps_free(new4bitBuffer);
     if (clearFrameBuffer) {
         fillScreen(bg);
     }
