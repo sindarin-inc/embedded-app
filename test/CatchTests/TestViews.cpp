@@ -512,7 +512,7 @@ TEST_CASE("Test some views independently") {
             Telemetry telemetry(fs, prefs);
             Battery battery(fs, prefs, telemetry);
             LightingController lightingController(prefs);
-            PowerManager power(fs, prefs, lightingController, *display, telemetry);
+            PowerManager power(fs, prefs, lightingController, *display, telemetry, usbSerial);
             LocalStore localStore(fs, prefs, battery, telemetry);
 
             ContentSyncScreen screen(*display, localStore, prefs, telemetry, power);
