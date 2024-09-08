@@ -315,7 +315,9 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 
 #if USE_BLE
     log_i("Initializing BLE");
+    HEAP_PROFILE_START(BLEDeviceInit);
     BLEDevice::init("Sol Reader");
+    HEAP_PROFILE_END(BLEDeviceInit);
 
     if (prefs.blePower.get().has_value()) {
         auto power = prefs.blePower.get().value_or(ESP_PWR_LVL_P3);
