@@ -1345,10 +1345,11 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             }));
         }
 
-        auto wifiSyncMessage =
-            std::string(prefs_.wifiSyncEnabled.get().value_or(true) ? "Turn off WiFi sync (BLE only)"
-                                                                : "Turn on WiFi sync");
-        debugSettingsMenu->addMenuItem(MenuItem(wifiSyncMessage, [this, debugSettingsMenu, display]() {
+        auto wifiSyncMessage = std::string(prefs_.wifiSyncEnabled.get().value_or(true)
+                                               ? "Turn off WiFi sync (BLE only)"
+                                               : "Turn on WiFi sync");
+        debugSettingsMenu->addMenuItem(MenuItem(wifiSyncMessage,
+                                                [this, debugSettingsMenu, display]() {
             prefs_.wifiSyncEnabled.set(!prefs_.wifiSyncEnabled.get().value_or(true));
             debugSettingsMenu->showTemporaryMessage(*display, "Wifi Sync turned off.", 2000, false);
             power_.reboot();
