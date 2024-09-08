@@ -11,7 +11,7 @@
 
 class ReadingSettingsMenuScreen : public Screen, public EinkView {
 public:
-    ReadingSettingsMenuScreen(DisplaySystem &display, std::string backTitle);
+    ReadingSettingsMenuScreen(DisplaySystem &display, const std::string &backTitle);
 
     auto setSelectedIndex(size_t index) -> bool;
 

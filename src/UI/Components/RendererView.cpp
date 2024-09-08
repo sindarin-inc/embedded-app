@@ -20,7 +20,8 @@ void RendererView::drawInRect(Rect rect) {
         dottedBoxView_.draw();
     }
     auto textBox = rect.inset(padding);
-    renderer_.setRect(DisplayRect({(uint16_t)textBox.left(), (uint16_t)textBox.top(),
-                                   (uint16_t)textBox.size.width, (uint16_t)textBox.size.height}));
+    renderer_.setRect(DisplayRect(
+        {static_cast<uint16_t>(textBox.left()), static_cast<uint16_t>(textBox.top()),
+         static_cast<uint16_t>(textBox.size.width), static_cast<uint16_t>(textBox.size.height)}));
     renderer_.renderFirstPage(0, true);
 }

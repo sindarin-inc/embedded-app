@@ -2,8 +2,9 @@
 
 #include "Misc/Platform.hpp"
 
-ReadingSettingsMenuScreen::ReadingSettingsMenuScreen(DisplaySystem &display, std::string backTitle)
-    : EinkView(display), menuView_(display), backLabelView_(display, std::move(backTitle)),
+ReadingSettingsMenuScreen::ReadingSettingsMenuScreen(DisplaySystem &display,
+                                                     const std::string &backTitle)
+    : EinkView(display), menuView_(display), backLabelView_(display, backTitle),
       renderer_(display, DisplayRect({0, 0, 0, 0})), rendererView_(display, renderer_) {
     menuView_.padding = 1;
     menuView_.itemsPerPage = 8;
