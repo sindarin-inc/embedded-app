@@ -28,6 +28,6 @@ managed_components
 venv
 current_samples_*
 warnings.txt
-test/CatchTests/TestData/metrics/
-test/CatchTests/EPubTestData/metrics/
+test/CatchTests/*/metrics/
+test/CatchTests/*/coredumps/
 build-log.txt
