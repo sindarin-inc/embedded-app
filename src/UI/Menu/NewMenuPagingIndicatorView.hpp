@@ -1,0 +1,21 @@
+#pragma once
+
+#include "UI/Components/EinkView.hpp"
+
+class NewMenuPagingIndicatorView : public EinkView {
+public:
+    NewMenuPagingIndicatorView(DisplaySystem &display) : EinkView(display){};
+
+    void setTotalPages(int totalPages);
+    auto totalPages() const { return totalPages_; }
+    void setCurrentPage(int currentPage);
+
+    auto layout(LayoutContext &context, Size size) -> Size override;
+    void drawInRect(Rect rect) override;
+
+    int indicatorSpacing = 3;
+
+private:
+    int totalPages_ = 1;
+    int currentPage_ = 0;
+};
