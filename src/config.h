@@ -15,9 +15,6 @@
 
 #define Hastings20x40_3
 
-// Uncomment to disable power management when debugging on the rev1 dev board
-// #define DISABLE_POWER_MANAGEMENT 1
-
 // Currently using the App (BLE Server in firmware) is incompatible with
 // Turn Touch (BLE client in firmware). Enable one of these options or the
 // other.
@@ -70,9 +67,6 @@
 // define the power pin to turn on display and keep it on.
 #define DISPLAY_POWER 26
 #else // Revision 7 and above defaults
-#ifndef CONFIG_LEDC_BACKLIGHT
-#define CONFIG_LEDC_BACKLIGHT 1
-#endif
 #define BACKLIGHT_RIGHT 2
 #define BACKLIGHT_LEFT 17
 #endif

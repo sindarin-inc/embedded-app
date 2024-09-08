@@ -100,7 +100,7 @@ auto IBMFFace::ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2, FIX16 
     }
 
     // TODO: Implement optical kerning for 8-bits resolution (GT)
-    if (pixelResolution_ == PixelResolution::EIGHT_BITS) {
+    if (displayPixelResolution_ == PixelResolution::EIGHT_BITS) {
         *kern = 1;
         return false;
     }
@@ -485,7 +485,7 @@ auto IBMFFace::getGlyph(GlyphCode glyphCode, Glyph &appGlyph, bool loadBitmap, b
 
     Dim dim = Dim(glyphInfo->bitmapWidth, glyphInfo->bitmapHeight);
     uint8_t pitch =
-        (pixelResolution_ == PixelResolution::ONE_BIT) ? ((dim.width + 7) >> 3) : dim.width;
+        (displayPixelResolution_ == PixelResolution::ONE_BIT) ? ((dim.width + 7) >> 3) : dim.width;
     Pos glyphOffsets = Pos(0, 0);
 
     glyphOffsets.y = -glyphInfo->verticalOffset;
@@ -498,7 +498,7 @@ auto IBMFFace::getGlyph(GlyphCode glyphCode, Glyph &appGlyph, bool loadBitmap, b
             uint16_t size = dim.height * pitch;
 
             uint8_t white;
-            if (pixelResolution_ == PixelResolution::ONE_BIT) {
+            if (displayPixelResolution_ == PixelResolution::ONE_BIT) {
                 white = WHITE_ONE_BIT ? 0xFF : 0;
             } else {
                 white = WHITE_EIGHT_BITS;
@@ -522,7 +522,7 @@ auto IBMFFace::getGlyph(GlyphCode glyphCode, Glyph &appGlyph, bool loadBitmap, b
             .length = glyphInfo->packetLength,
             .pitch = pitch,
         };
-        RLEExtractor rle(pixelResolution_);
+        RLEExtractor rle(displayPixelResolution_);
 
         Pos outPos = Pos(atPos.x + glyphOffsets.x, atPos.y + glyphOffsets.y);
         // std::cout << "inPos: [" << atPos.x << ", " << atPos.y << "], outPos: [" << outPos.x
@@ -631,7 +631,7 @@ auto IBMFFace::showBitmap(const Bitmap &bitmap) const -> void {
         }
         std::cout << '+' << std::endl << std::flush;
 
-        if (pixelResolution_ == PixelResolution::ONE_BIT) {
+        if (displayPixelResolution_ == PixelResolution::ONE_BIT) {
             uint32_t rowSize = (bitmap.dim.width + 7) >> 3;
             for (row = 0, rowPtr = bitmap.pixels; row < bitmap.dim.height;
                  row++, rowPtr += rowSize) {

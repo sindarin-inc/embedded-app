@@ -47,11 +47,15 @@ std::array<FontEntry, 1> fontsList{{
 
 FontData mainFont = FontData(fontsList[0].content, fontsList[0].length);
 
-// The following definitions identifie four pre-defined empty font faces that are expected
+// The following definitions identifie three pre-defined empty font faces that are expected
 // to be initialized through a call to font.load() method at application startup. It is expected
-// that the selected font contains up to 4 face sizes. The numbers 0 to 3 are related to the face
+// that the selected font contains up to 3 face sizes. The numbers 0 to 2 are related to the face
 // index inside the font. If an index doesn't exists, the driver will use the largest index
 // available instead.
+//
+// PLEASE NOTE:
+// If more faces are to be added, the MAX_FACE_COUNT definition in IBMFDefs.hpp must be adjusted 
+// accordingly.
 
 Font fontFace0 = Font(mainFont, 0);
 Font fontFace1 = Font(mainFont, 1);
@@ -94,8 +98,19 @@ TTFNotoSansLight mainFont;
 // The following definitions identifie three pre-defined empty font face sizes initialized at
 // application startup. The second parameter is the face point size.
 
+// Defaults for different targets
+#if DISPLAY_SIM_8BIT
 Font fontFace0 = Font(mainFont, 8);
 Font fontFace1 = Font(mainFont, 10);
 Font fontFace2 = Font(mainFont, 12);
+#elif CONFIG_DISPLAY_WAVESHARE_6INHD
+Font fontFace0 = Font(mainFont, 20);
+Font fontFace1 = Font(mainFont, 20);
+Font fontFace2 = Font(mainFont, 20);
+#else
+Font fontFace0 = Font(mainFont, 12);
+Font fontFace1 = Font(mainFont, 16);
+Font fontFace2 = Font(mainFont, 20);
+#endif
 
 #endif

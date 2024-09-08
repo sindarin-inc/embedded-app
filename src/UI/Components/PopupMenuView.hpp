@@ -40,6 +40,7 @@ public:
         auto foregroundFrame = context.setViewFrame(popupMenuForeground_, fullFrame.inset(5));
         auto contentFrame = foregroundFrame.inset(10);
         auto y = contentFrame.origin.y;
+        auto x = 0;
 
         for (auto &view : menuItemViews) {
             if (!view->isHidden()) {
@@ -47,6 +48,7 @@ public:
                     context.setViewFrame(*view, {{contentFrame.origin.x, y}, contentFrame.size},
                                          LayoutOptionsSizeToFit | LayoutOptionsAlignTop);
                 y += viewFrame.size.height;
+                x = std::max(x, viewFrame.size.width);
             }
         }
 
@@ -83,7 +85,13 @@ public:
         // Make room for foregroundFrame box
         y += 5;
 
-        return {106, y};
+        // To be visually pleasing, the popup menu should take about 150% of the width
+        // of the widest text -- this allows for the buttons as well
+        // return {maxWidthOfText * 110 / 100, y};
+        // 152 / 100 makes it exactly what it was before (106).
+        // However, on other displays with larger resoltuions, the popup menu still seems a bit too
+        // big. Future work to figure this out.
+        return {152 * x / 100, y};
     }
 
     void drawInRect(Rect rect) override {

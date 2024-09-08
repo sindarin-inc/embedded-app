@@ -1,14 +1,21 @@
 #include "Communications/USBSerial.hpp"
 
+#include <esp_log.h>
+#include <esp_system.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
+
+#include "Misc/SpiramAllocator.hpp"
+
+RTC_NOINIT_ATTR bool USBSerial::loggingEnabled;
+
 extern USBSerial usbSerial;
 
 auto USBSerial::getInstance() -> USBSerial & { return usbSerial; }
 
 void USBSerial::initJtag() {
 #if CONFIG_USE_TINYUSB_SERIAL
-    tusb_cdc_acm_deinit(TINYUSB_CDC_ACM_0);
-    tusb_cdc_acm_deinit(TINYUSB_CDC_ACM_1);
-    tinyusb_driver_uninstall();
+    end();
 
     usb_phy_config_t phyConf;
     std::memset(&phyConf, 0, sizeof(usb_phy_config_t));
@@ -20,32 +27,31 @@ void USBSerial::initJtag() {
 }
 
 void USBSerial::disableLogging() {
-    if (loggingEnabled_) {
+    if (USBSerial::loggingEnabled) {
         log_i("Disabling logging");
 #if CONFIG_USE_TINYUSB_SERIAL
         esp_tusb_deinit_console(TINYUSB_CDC_ACM_1); // turn off log to usb
         tusb_cdc_acm_deinit(TINYUSB_CDC_ACM_1);
 #endif
-        loggingEnabled_ = false;
+        USBSerial::loggingEnabled = false;
     }
 }
 
-void USBSerial::enableLogging() {
-    if (!loggingEnabled_) {
+void USBSerial::enableLoggingInternal() {
 #if CONFIG_USE_TINYUSB_SERIAL
-        tinyusb_config_cdcacm_t acmCfg = {.usb_dev = TINYUSB_USBDEV_0,
-                                          .cdc_port = TINYUSB_CDC_ACM_1,
-                                          .callback_rx = nullptr,
-                                          .callback_rx_wanted_char = nullptr,
-                                          .callback_line_state_changed = nullptr,
-                                          .callback_line_coding_changed = nullptr};
-
-        ESP_ERROR_CHECK(tusb_cdc_acm_init(&acmCfg));
-        esp_tusb_init_console(TINYUSB_CDC_ACM_1);
+    esp_tusb_init_console(TINYUSB_CDC_ACM_1);
 #endif
-        // This log message will go nowhere probably
-        log_i("Logging enabled");
-        loggingEnabled_ = true;
+    // Configure log level for all Sindarin logs
+    // esp_log_level_set("*", static_cast<esp_log_level_t>(CONFIG_LOG_DEFAULT_LEVEL));
+    esp_log_level_set("Sol", ESP_LOG_DEBUG);
+
+    log_i("Logging enabled (level=%d)", esp_log_level_get("Sol"));
+    USBSerial::loggingEnabled = true;
+}
+
+void USBSerial::enableLogging() {
+    if (!USBSerial::loggingEnabled) {
+        enableLoggingInternal();
     }
 }
 
@@ -55,21 +61,23 @@ void USBSerial::enableLogging() {
 void USBSerial::rxCommandCallback(int itf, cdcacm_event_t *event) {
 #if CONFIG_USE_TINYUSB_SERIAL
     size_t rxSize = 0;
-    esp_err_t ret = tinyusb_cdcacm_read(static_cast<tinyusb_cdcacm_itf_t>(itf), buffer_,
-                                        sizeof(buffer_) - 1, &rxSize);
+
+    auto buffer = SpiRamArrayPtr<uint8_t>(CONFIG_TINYUSB_CDC_RX_BUFSIZE + 1);
+
+    esp_err_t ret = tinyusb_cdcacm_read(static_cast<tinyusb_cdcacm_itf_t>(itf), buffer.get(),
+                                        CONFIG_TINYUSB_CDC_RX_BUFSIZE, &rxSize);
     if (ret == ESP_OK) {
-        buffer_[rxSize] = '\0';
+        buffer[rxSize] = '\0';
         // Iterate through all the listeners registered with the USBSerial device and send them the
         // data.
         for (auto &listener : listeners_) {
-            listener(buffer_, rxSize);
+            listener(buffer, rxSize);
         }
     }
 #endif
 }
 
 void USBSerial::registerListener(const SerialDataListener &listener) {
-    log_i("Registered a listener");
     listeners_.push_back(listener);
 }
 
@@ -83,7 +91,7 @@ void USBSerial::popLastListener() {
 // or DirectCommand if needed.
 void USBSerial::txSendData(const uint8_t *data, size_t length) {
 #if CONFIG_USE_TINYUSB_SERIAL
-    size_t chunkSize = CONFIG_USB_CDC_RX_BUFSIZE;
+    size_t chunkSize = CONFIG_TINYUSB_CDC_TX_BUFSIZE;
 
     for (size_t offset = 0; offset < length; offset += chunkSize) {
         size_t bytesToSend = std::min(chunkSize, length - offset);
@@ -92,9 +100,23 @@ void USBSerial::txSendData(const uint8_t *data, size_t length) {
         tinyusb_cdcacm_write_flush(TINYUSB_CDC_ACM_0, pdMS_TO_TICKS(5));
     }
 #endif
+#if SIMULATOR
+    // In the simulator, we write to the pseudo-serial port
+    serialPort_->write(reinterpret_cast<const char *>(data), length);
+#endif
+}
+
+void USBSerial::txSendLine(const std::string &str) {
+    txSendData(reinterpret_cast<const uint8_t *>(str.c_str()), str.size());
+    txSendData(reinterpret_cast<const uint8_t *>("\n"), 1);
 }
 
 void USBSerial::begin() {
+    // Since we don't otherwise init this variable, we do it here on power on
+    if (esp_reset_reason() == ESP_RST_POWERON) {
+        USBSerial::loggingEnabled = false;
+    }
+
 #if CONFIG_USE_TINYUSB_SERIAL
     const tinyusb_config_t tusbCfg = {.device_descriptor = nullptr,
                                       .string_descriptor = nullptr,
@@ -103,13 +125,61 @@ void USBSerial::begin() {
 
     ESP_ERROR_CHECK(tinyusb_driver_install(&tusbCfg));
 
-    tinyusb_config_cdcacm_t acmCfg = {.usb_dev = TINYUSB_USBDEV_0,
-                                      .cdc_port = TINYUSB_CDC_ACM_0,
-                                      .callback_rx = USBSerial::cdcacmCommandCallback,
-                                      .callback_rx_wanted_char = nullptr,
-                                      .callback_line_state_changed = nullptr,
-                                      .callback_line_coding_changed = nullptr};
-
+    tinyusb_config_cdcacm_t acmCfg =
+        {
+            .usb_dev = TINYUSB_USBDEV_0,
+            .cdc_port = TINYUSB_CDC_ACM_0,
+            .callback_rx = USBSerial::cdcacmCommandCallback,
+            .callback_rx_wanted_char = nullptr,
+            .callback_line_state_changed =
+                [](int itf, cdcacm_event_t *event) {
+        auto *data = &event->line_state_changed_data;
+        log_d("Line state changed on port 0 dtr=%d rts=%d", data->dtr, data->rts);
+            },
+            .callback_line_coding_changed = nullptr,
+    };
     ESP_ERROR_CHECK(tusb_cdc_acm_init(&acmCfg));
+
+    tinyusb_config_cdcacm_t acmCfg2 = {.usb_dev = TINYUSB_USBDEV_0,
+                                       .cdc_port = TINYUSB_CDC_ACM_1,
+                                       .callback_rx = nullptr,
+                                       .callback_rx_wanted_char = nullptr,
+                                       .callback_line_state_changed =
+                                           [](int itf, cdcacm_event_t *event) {
+        auto *data = &event->line_state_changed_data;
+        log_d("Line state changed on port 1 dtr=%d rts=%d", data->dtr, data->rts);
+                                       },
+                                       .callback_line_coding_changed = nullptr};
+
+    ESP_ERROR_CHECK(tusb_cdc_acm_init(&acmCfg2));
+#endif
+
+#if SIMULATOR
+    log_d("About to make a pseudo-serial port in the simulator");
+    // In the simulator, we create a pseudo-serial port for testing
+    serialPort_ = std::make_unique<AsyncPseudoSerialPort>();
+    log_d("Created a pseudo-serial port and you can connect to it at %s",
+          serialPort_->getSlaveName());
+    serialPort_->setRxCallback([this](char *data, size_t length) {
+        // Iterate through all the listeners registered with the USBSerial device and send them the
+        // data.
+        auto sharedData = std::shared_ptr<uint8_t[]>(new uint8_t[length]);
+        std::memcpy(sharedData.get(), data, length);
+        for (auto &listener : listeners_) {
+            listener(sharedData, length);
+        }
+    });
+#endif
+
+    if (USBSerial::loggingEnabled) {
+        enableLoggingInternal();
+    }
+}
+
+void USBSerial::end() {
+#if CONFIG_USE_TINYUSB_SERIAL
+    tusb_cdc_acm_deinit(TINYUSB_CDC_ACM_0);
+    tusb_cdc_acm_deinit(TINYUSB_CDC_ACM_1);
+    tinyusb_driver_uninstall();
 #endif
 }

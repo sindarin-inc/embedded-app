@@ -1,13 +1,16 @@
 #ifndef SINDARIN_DEBUG_H
 #define SINDARIN_DEBUG_H
 
+#ifndef DEBUG_MEMORY
+#define DEBUG_MEMORY 0
+#endif
+
 #if SIMULATOR
 
 #include <assert.h>
 #include <chrono>
 #include <stdio.h>
 
-#define SHOW_HEAP()
 #define PROFILE_START(identifier)                                                                  \
     auto profileStart##identifier = std::chrono::high_resolution_clock::now();
 
@@ -106,12 +109,6 @@ extern "C" {
 #define log_e(format, ...) ESP_LOGE("Sol", format, ##__VA_ARGS__);
 #endif
 
-#define SHOW_HEAP()                                                                                \
-    log_d("Free heap: %zuk/%zuk Free PSRAM: %zuk/%zuk %s:%d ",                                     \
-          heap_caps_get_free_size(MALLOC_CAP_INTERNAL) / 1000, GetHeapSize() / 1000,               \
-          heap_caps_get_free_size(MALLOC_CAP_8BIT) / 1000,                                         \
-          heap_caps_get_total_size(MALLOC_CAP_8BIT) / 1000, __FILE__, __LINE__)
-
 // NOTE: based on the uint32_t, this cannot profile anything longer than 17.89569707
 #define PROFILE_START(identifier)                                                                  \
     volatile uint32_t profileStart##identifier = 0;                                                \
@@ -170,5 +167,35 @@ extern "C" {
     PROFILE_LOG_NS(identifier);
 
 #define SIZE_OF(obj) log_d("SIZE_OF(%s): %zu", #obj, sizeof(obj))
+
+#if DEBUG_MEMORY
+
+#define SHOW_HEAP()                                                                                \
+    log_d("Free heap: %zuk/%zuk Free PSRAM: %zuk/%zuk %s:%d ",                                     \
+          heap_caps_get_free_size(MALLOC_CAP_INTERNAL) / 1000, GetHeapSize() / 1000,               \
+          heap_caps_get_free_size(MALLOC_CAP_8BIT) / 1000,                                         \
+          heap_caps_get_total_size(MALLOC_CAP_8BIT) / 1000, __FILE__, __LINE__)
+
+#define HEAP_PROFILE_START(identifier)                                                             \
+    size_t heapStart##identifier = heap_caps_get_free_size(MALLOC_CAP_INTERNAL);
+
+#define HEAP_PROFILE_END(identifier)                                                               \
+    size_t heapEnd##identifier = heap_caps_get_free_size(MALLOC_CAP_INTERNAL);                     \
+    log_d("HEAP_PROFILE_END(" #identifier ") %zu alloc'd (%zu-%zu) %s:%d",                         \
+          heapStart##identifier - heapEnd##identifier, heapEnd##identifier, heapStart##identifier, \
+          __FILE__, __LINE__);
+
+#define SHOW_WATERMARK()                                                                           \
+    log_d("SHOW_WATERMARK(%s) (min remaining stack): %zu %s:%d", pcTaskGetName(nullptr),           \
+          uxTaskGetStackHighWaterMark(NULL), __FILE__, __LINE__);
+
+#else
+
+#define SHOW_HEAP()
+#define HEAP_PROFILE_START(identifier)
+#define HEAP_PROFILE_END(identifier)
+#define SHOW_WATERMARK()
+
+#endif
 
 #endif

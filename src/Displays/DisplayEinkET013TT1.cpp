@@ -3,6 +3,7 @@
 #include "DisplayEinkET013TT1.hpp"
 
 #include <algorithm>
+#include <freertos/task.h>
 
 #include "Communications/USBSerial.hpp"
 #include "Displays/CustomWaveforms.hpp"
@@ -12,8 +13,6 @@
 #include "config.h"
 
 #define VCOM_INVERTED_MODE_DELTA 2500
-
-extern bool mirrorToSerial;
 
 // Not currently used waveforms
 // const EinkET013TT1Waveform FULL_REFRESH_WAVEFORM = BC_EINK_31_35C_WAVEFORM_FULL;
@@ -95,9 +94,7 @@ void DisplayEinkET013TT1::updateDisplay(DisplaySystem::UpdateType updateType, bo
                                         ScreenSide screen, Rect altRect) {
     auto queue = DispatchGetUiQueue(false);
     if (mirrorToSerial) {
-        USBSerial::getInstance().txSendData(
-            reinterpret_cast<const uint8_t *>(gfxCanvas_.getBuffer()),
-            gfxCanvas_.width() * gfxCanvas_.height() / 8);
+        sendBufferToSerial(gfxCanvas_.getBuffer());
     }
     if (queue == nullptr || !queue->isInQueue()) {
         log_w("updateDisplay called from outside the UI queue.");
@@ -280,7 +277,7 @@ void DisplayEinkET013TT1::updateDisplay(DisplaySystem::UpdateType updateType, bo
             numPartials_ = 0;
         }
         break;
-    case FAST_WITH_VCOM_NUDGE:
+    case FAST_INDICATOR:
         if (!fullRefreshNext_) {
             if (getInversion()) {
                 driver_.update(BC_INVERTED_EINK_10_13C_WAVEFORM_AU4, gfxCanvas_.getBuffer(),
@@ -304,6 +301,12 @@ void DisplayEinkET013TT1::updateDisplay(DisplaySystem::UpdateType updateType, bo
     }
 
     fullRefreshNext_ = false;
+
+    // Uncomment for some TTF performance debugging
+    // #if CONFIG_FONT_TTF
+    //     font_->getFontData()->cache.showStats();
+    //     log_d("Free stack space: %u", uxTaskGetStackHighWaterMark(nullptr));
+    // #endif
 }
 
 void DisplayEinkET013TT1::drawFullscreenBitmapFromFile(RendererStream &stream) {
@@ -323,5 +326,32 @@ void DisplayEinkET013TT1::drawFullscreenBitmapFromFile(RendererStream &stream) {
         buffer[i] = buffer[i] ^ 0xFF; // XOR to invert all bits
     }
 }
+
+void DisplayEinkET013TT1::sendBufferToSerial(const uint8_t *buffer, bool screenshot) const {
+    constexpr size_t byteSize = EinkET013TT1_PIXEL_WIDTH * EinkET013TT1_PIXEL_HEIGHT / 8;
+
+    std::string *prefix;
+    if (screenshot) {
+        static std::string screenshotPrefix;
+        if (screenshotPrefix.empty()) {
+            screenshotPrefix = StringFormat("SCREENSHOT %zu", byteSize);
+        }
+        prefix = &screenshotPrefix;
+    } else {
+        static std::string framePrefix;
+        if (framePrefix.empty()) {
+            framePrefix = StringFormat("FRAME %zu", byteSize);
+        }
+        prefix = &framePrefix;
+    }
+    USBSerial::getInstance().txSendLine(*prefix);
+    USBSerial::getInstance().txSendData(buffer, byteSize);
+    USBSerial::getInstance().txSendLine("");
+}
+
+void DisplayEinkET013TT1::sendCurrentScreenToSerial(bool screenshot) const {
+    auto buffer = driver_.getBuffer();
+    sendBufferToSerial(buffer, screenshot);
+};
 
 #endif

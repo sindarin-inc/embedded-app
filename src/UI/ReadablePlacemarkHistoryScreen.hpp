@@ -11,7 +11,7 @@
 #include "Models/UserReadablePlacemarkHistory.hpp"
 #include "Renderers/Renderer.hpp"
 #include "Storage/PreferencesStore.hpp"
-#include "UI/Components/ArrowView.hpp"
+#include "UI/Components/ArrowLabelView.hpp"
 #include "UI/Components/BoxView.hpp"
 #include "UI/Components/EinkView.hpp"
 #include "UI/Components/MenuItemView.hpp"
@@ -27,7 +27,7 @@ public:
                                    DisplaySystem &display, Telemetry &telemetry)
         : EinkView(display), prefs_(prefs), readable_(std::move(readable)), renderer_(renderer),
           display_(display), telemetry_(telemetry), fileSystem_(fileSystem),
-          upperLeftTextView_(display, upperLeftText_), leftArrowView_(display) {
+          backLabelView_(display, "Dismiss") {
         numMenuItems_ = 0;
         MenuStyle styleFamilies;
         myStyle_ = styleFamilies.mainMenu;
@@ -63,8 +63,5 @@ protected:
     std::vector<std::shared_ptr<MenuItemView>> menuItemViews_;
     bool firstLoad_ = true;
 
-    std::string upperLeftText_ = "Dismiss";
-    SingleLineTextView upperLeftTextView_;
-
-    ArrowView leftArrowView_;
+    ArrowLabelView backLabelView_;
 };

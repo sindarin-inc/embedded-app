@@ -17,12 +17,7 @@ typedef struct __attribute__((__packed__)) {
     uint8_t operatingSystemID;
 } gzHeader;
 
-static gzHeader gzhdr;
-
-static auto spiZAlloc(void *opaque, size_t items, size_t size) -> void * {
-    return SpiRamMalloc(items * size);
-}
-static void spiZFree(void *opaque, void *address) { SpiRamFree(address); }
+gzHeader gzhdr;
 
 auto GUnzip::init() -> bool {
 
@@ -42,8 +37,8 @@ auto GUnzip::init() -> bool {
     gzHeaderBytes_ = 0;
     readHeader_ = false;
 
-    zstr_.zalloc = spiZAlloc;
-    zstr_.zfree = spiZFree;
+    zstr_.zalloc = SpiZAlloc;
+    zstr_.zfree = SpiZFree;
 
     zstr_.avail_in = 0;
     zstr_.next_in = nullptr;

@@ -42,7 +42,13 @@ add_library(${PROJECT_NAME} STATIC ${SOURCES})
 
 find_package(Freetype REQUIRED)
 
-target_link_libraries(${PROJECT_NAME} PUBLIC pugixml ArduinoJson miniz astubs esp-idf-stubs nvs_flash Adafruit-GFX-Library Freetype::Freetype)
+# Make find_package(mbedtls) to work since Findmbedtls.cmake is in this dir
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}")
+
+message("CMAKE_MODULE_PATH: ${CMAKE_MODULE_PATH}")
+find_package(mbedtls REQUIRED)
+
+target_link_libraries(${PROJECT_NAME} PUBLIC pugixml ArduinoJson miniz astubs esp-idf-stubs nvs_flash Adafruit-GFX-Library Freetype::Freetype ${MBEDTLS_LIBRARIES})
 
 target_include_directories(${PROJECT_NAME} PUBLIC
     "${REPO_ROOT_DIR}/src"
@@ -52,6 +58,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC
     "${REPO_ROOT_DIR}/lib/inifile"
     "${REPO_ROOT_DIR}/lib/stb_image"
     "${REPO_ROOT_DIR}/lib/argparse"
+    "${MBEDTLS_INCLUDE_DIRS}"
 )
 
 # Set compile definitions based on the ENABLE_8BIT_DISPLAY option
@@ -90,11 +97,31 @@ target_compile_definitions(${PROJECT_NAME} PUBLIC
     ENABLE_OTA=0
     GIT_VERSION=\"release/v1.0.0-3-geea60cbf-dirt\"
     DISABLE_LOW_VOLTAGE_HALT=1
-    DISABLE_POWER_MANAGEMENT=1
+    CONFIG_DISABLE_POWER_MANAGEMENT=1
     RTC_SLOW_ATTR=
+    RTC_NOINIT_ATTR=
+    CONFIG_TTF_SCREEN_RES_PER_INCH=150
 )
 
 target_compile_options(${PROJECT_NAME}
     PRIVATE
     -include ${REPO_ROOT_DIR}/src/config.h
 )
+
+# Check if SIM_WIDTH and SIM_HEIGHT are set
+# WARNING: Duplicated in Simulator/CMakeLists.txt
+if(DEFINED SIM_WIDTH)
+    add_compile_definitions(SIM_WIDTH=${SIM_WIDTH})
+endif()
+
+if(DEFINED SIM_HEIGHT)
+    add_compile_definitions(SIM_HEIGHT=${SIM_HEIGHT})
+endif()
+
+if(DEFINED SIM_LAYOUT_DEBUG)
+    add_compile_definitions(SIM_LAYOUT_DEBUG=${SIM_LAYOUT_DEBUG})
+endif()
+
+if(DEFINED SIM_ONE_BIT)
+    add_compile_definitions(SIM_ONE_BIT=${SIM_ONE_BIT})
+endif()

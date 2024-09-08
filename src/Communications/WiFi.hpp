@@ -31,11 +31,12 @@ typedef enum {
 
 typedef enum {
     UNINITIALIZED = 0,
-    IDLE = 1,
-    CONNECTING = 2,
-    CONNECTED = 3,
-    DISCONNECTED = 4,
-    SCANNING = 5,
+    IDLE = 1 << 0,
+    CONNECTING = 1 << 1,
+    CONNECTED = 1 << 2,
+    DISCONNECTED = 1 << 3,
+    SCANNING = 1 << 4,
+    STOPPED = 1 << 5,
 } WiFiState;
 
 class WiFi {
@@ -71,7 +72,7 @@ public:
     // Connection
     auto connectWiFi(const std::string &ssid = "", const std::string &password = "") -> esp_err_t;
     auto connectWiFiFromSettings() -> bool;
-    void disconnectWiFi();
+    void disconnectWiFi(int waitMs = 0);
     auto connected() -> bool;
 
     // Settings

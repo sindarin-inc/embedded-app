@@ -59,6 +59,17 @@ auto Font::drawSingleLineOfText(ibmf_defs::Bitmap &canvas, ibmf_defs::Pos pos,
 
     ibmf_defs::Pos atPos = pos;
 
+    font_defs::Dim dim = getTextSize("T");
+
+    // Half of the difference between the line height (less subscripts) and the height
+    // of the font is how much we need to move up the text to ensure the subscript part
+    // of letters that go below the baseline still fit within the bounding box.
+    int16_t up = (lineHeight() - dim.height - 1) / 2;
+
+    // We get passed in the upper left coordinate, so we need to shift that down by the
+    // height of the line.
+    atPos.y += lineHeight() - up;
+
     if constexpr (IBMF_TRACING) {
         LOGD("drawSingleLineOfText()");
     }
@@ -72,7 +83,7 @@ auto Font::drawSingleLineOfText(ibmf_defs::Bitmap &canvas, ibmf_defs::Pos pos,
         // The following may require some modification as the next Sol Glasses version
         // may be using a different pitch than the one computed here.
 
-        canvas.pitch = (getPixelResolution() == PixelResolution::ONE_BIT)
+        canvas.pitch = (getDisplayPixelResolution() == PixelResolution::ONE_BIT)
                            ? (canvas.dim.width + 7) >> 3
                            : canvas.dim.width;
 
@@ -103,7 +114,7 @@ auto Font::drawSingleLineOfText(ibmf_defs::Bitmap &canvas, ibmf_defs::Pos pos,
     return atPos.x;
 }
 
-auto Font::getTextSize(const std::string &buffer) -> ibmf_defs::Dim {
+auto Font::getTextSize(const std::string &buffer) const -> ibmf_defs::Dim {
     // LOGD("getTextSize(): %s", buffer.c_str());
     if constexpr (IBMF_TRACING) {
         LOGD("getTextSize()");
@@ -214,7 +225,7 @@ auto Font::toChar32(const char **str) -> char32_t {
     return res;
 }
 
-auto Font::getTextHeight(const std::string &buffer) -> int {
+auto Font::getTextHeight(const std::string &buffer) const -> int {
     if constexpr (IBMF_TRACING) {
         LOGD("getTextHeight()");
     }

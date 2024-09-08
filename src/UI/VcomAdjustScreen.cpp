@@ -22,7 +22,7 @@ void VcomAdjustScreen::render(DisplaySystem &display) {
     auto vcomStr = StringFormat("%dmV", vCom);
 
     int vcomStrWidth = display.getTextWidth(vcomStr);
-    int vcomStrHeight = display.getTextHeight();
+    int vcomStrHeight = display.getLineHeightPlusSpacing();
 
     // This doesn't seem like the right interface.
     // We should use the DisplaySystem.drawSingleLineOfText here

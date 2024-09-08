@@ -55,6 +55,10 @@
 #   -cppcoreguidelines-pro-type-vararg,
 # I don't want to have to always define all special member functions
 #   -cppcoreguidelines-special-member-functions,
+# I don't think there's a better way to do macros than do-while
+#   -cppcoreguidelines-avoid-do-while,
+# I don't get this at all. Seems like reference data memebers are good, actually
+#   -cppcoreguidelines-avoid-const-or-ref-data-members,
 
 # This does a decent job of replacing c-style casts and is the only google check that made sense as of clang-tidy 15
 #   google-readability-casting,
@@ -123,6 +127,8 @@ Checks: >-
   -cppcoreguidelines-pro-type-union-access,
   -cppcoreguidelines-pro-type-vararg,
   -cppcoreguidelines-special-member-functions,
+  -cppcoreguidelines-avoid-do-while,
+  -cppcoreguidelines-avoid-const-or-ref-data-members,
   google-readability-casting,
   misc-*,
   -misc-const-correctness,

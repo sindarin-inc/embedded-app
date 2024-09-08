@@ -1,5 +1,7 @@
 #include "ReadablePopupMenuScreen.hpp"
 
+#include "UI/MsgPopup.hpp"
+
 void ReadablePopupMenuScreen::setUpPopupMenu() {
     std::shared_ptr<Place> place = renderer_.getCurrentPlace();
 
@@ -79,14 +81,22 @@ void ReadablePopupMenuScreen::setUpPopupMenu() {
     // summary)
     populatePopupMenu();
 
-    // Figure out if you should show the Archive menu item or the Unarchive menu item.
-    bool archived = prefs_.readableArchivedChanged.get(readable_->shortenedUuid.c_str());
-    if (archived) {
+    if (readable_->appProcessed) {
+        // If the readable is from the desktop app, show the delete menu item.
+        deleteMenuItemView_->setHidden(false);
         archiveMenuItemView_->setHidden(true);
-        unarchiveMenuItemView_->setHidden(false);
-    } else {
-        archiveMenuItemView_->setHidden(false);
         unarchiveMenuItemView_->setHidden(true);
+    } else {
+        // Figure out if you should show the Archive menu item or the Unarchive menu item.
+        bool archived = prefs_.readableArchivedChanged.get(readable_->shortenedUuid.c_str());
+        deleteMenuItemView_->setHidden(true);
+        if (archived) {
+            archiveMenuItemView_->setHidden(true);
+            unarchiveMenuItemView_->setHidden(false);
+        } else {
+            archiveMenuItemView_->setHidden(false);
+            unarchiveMenuItemView_->setHidden(true);
+        }
     }
 
     popupMenuView_.setNeedsLayout();
@@ -114,6 +124,46 @@ void ReadablePopupMenuScreen::populatePopupMenu() {
         lightingAdjustScreen_.setFirstLoad();
         setCurrentScreen(lightingAdjustScreen_);
     }));
+
+    addMenuItem(MenuItem("Delete", [this]() {
+        log_d("Showing delete confirmation!");
+        lineMenuScreen_.resetMenuItems();
+        lineMenuScreen_.addMenuItem(MenuItem("Cancel", [this]() {
+            log_d("Aborting delete!");
+            setCurrentScreen(*this);
+            back();
+        }));
+        lineMenuScreen_.addMenuItem(MenuItem("Delete: I'm sure!", [this]() {
+            UserReadablesVector readablesToDelete = {};
+            // Create a UserReadable from the readable_ and add it to the readablesToDelete
+            // dynamic_pointer_cast the stream_ to an EPubFile and close it
+            // It's always an EPubFile if they uploaded it to us! Print out the dynamic type of
+            // stream_ to make sure it's always an EPubFile
+            std::shared_ptr<EPubFile> temp = std::dynamic_pointer_cast<EPubFile>(stream_);
+            temp->close();
+            readablesToDelete.emplace_back();
+            readablesToDelete.back().uuid = readable_->shortenedUuid;
+            readablesToDelete.back().isArchived = false;
+            readablesToDelete.back().readable = readable_;
+            localStore_.processReadableDeletion(readablesToDelete, localStore_.books());
+            auto *restartSoonPopup =
+                new MsgPopup(display_, "Book deleted, press \ue000 to restart");
+            display_.clearDisplay();
+            this->setCurrentScreen(*restartSoonPopup);
+            setNeedsRerender();
+            restartSoonPopup->setBackCallback([this, restartSoonPopup]() {
+                display_.clearDisplay();
+                onMainMenu();
+                delete restartSoonPopup;
+                PowerManager::getInstance().reboot();
+            });
+        }));
+        setCurrentScreen(lineMenuScreen_);
+        setNeedsRerender();
+    }));
+
+    deleteMenuItemView_ = popupMenuView_.menuItemViews.back();
+
     addMenuItem(MenuItem("Archive", [this]() {
         prefs_.readableArchivedChanged.set(readable_->shortenedUuid.c_str(), true);
         onMainMenu();
@@ -185,11 +235,13 @@ void ReadablePopupMenuScreen::populatePopupMenu() {
     }
 }
 
-void ReadablePopupMenuScreen::preselectArchiveMenuItem() {
+void ReadablePopupMenuScreen::preselectArchiveOrDeleteMenuItem() {
     bool archived = prefs_.readableArchivedChanged.get(readable_->shortenedUuid.c_str());
     int index = 0;
     for (auto &menuItemView : popupMenuView_.menuItemViews) {
-        if (menuItemView == (archived ? unarchiveMenuItemView_ : archiveMenuItemView_)) {
+        if (menuItemView == (readable_->localOnly
+                                 ? (deleteMenuItemView_)
+                                 : (archived ? unarchiveMenuItemView_ : archiveMenuItemView_))) {
             setCurrSelection(index);
             break;
         }
@@ -209,6 +261,7 @@ void ReadablePopupMenuScreen::processCommand(RemoteCommand command) {
 
     switch (command) {
     case RemoteCommand::LEFT:
+        log_d("NAVIGATION: Leaving popup menu and returning to text");
         back();
         break;
     case RemoteCommand::ENTER:
@@ -219,16 +272,19 @@ void ReadablePopupMenuScreen::processCommand(RemoteCommand command) {
     case RemoteCommand::DOWN:
         do {
             nextSelection();
+            log_d("NAVIGATION: Popup menu selection: %s", getCurrItem().title.c_str());
             setNeedsRerender();
         } while (popupMenuView_.menuItemViews[getCurrSelection()]->isHidden());
         break;
     case RemoteCommand::RIGHT:
     case RemoteCommand::BACK:
+        log_d("NAVIGATION: Leaving popup menu and returning to text");
         back();
         break;
     case RemoteCommand::UP:
         do {
             prevSelection();
+            log_d("NAVIGATION: Popup menu selection: %s", getCurrItem().title.c_str());
             setNeedsRerender();
         } while (popupMenuView_.menuItemViews[getCurrSelection()]->isHidden());
         break;
@@ -262,16 +318,18 @@ void ReadablePopupMenuScreen::render(DisplaySystem &display) {
             menuItemView->setSelected(false);
         }
 
+#if CONFIG_DISPLAY_EINKET013TT1
         popupMenuView_.draw();
-
         display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
+#endif
 
         firstLoad_ = false;
     } else {
-        // NOTE: This Screen is quirky since it is rendered directly from ReadableScreen. The first
-        // time it is rendered, it will be rendered twice from ReadableScreen, once with the text in
-        // the background (using PARTIAL) and once without the text in the background (but using
-        // AU4). This creates the effect of the popup happening on top of the text.
+        // NOTE: This Screen is quirky since it is rendered directly from ReadableScreen. The
+        // first time it is rendered, it will be rendered twice from ReadableScreen, once with
+        // the text in the background (using PARTIAL) and once without the text in the
+        // background (but using AU4). This creates the effect of the popup happening on top of
+        // the text.
         std::shared_ptr<MenuItemView> selectedMenuItemView =
             popupMenuView_.menuItemViews[getCurrSelection()];
         for (auto &menuItemView : popupMenuView_.menuItemViews) {
@@ -284,7 +342,7 @@ void ReadablePopupMenuScreen::render(DisplaySystem &display) {
 
         popupMenuView_.draw();
 
-        display.updateDisplay(DisplaySystem::UpdateType::FAST_WITH_VCOM_NUDGE);
+        display.updateDisplay(DisplaySystem::UpdateType::FAST_INDICATOR);
     }
 };
 

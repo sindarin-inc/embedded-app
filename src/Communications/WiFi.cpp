@@ -17,7 +17,8 @@ auto WiFi::begin() -> esp_err_t {
         return ESP_OK;
     }
 
-    SHOW_HEAP();
+    HEAP_PROFILE_START(WiFiBegin);
+    defer { HEAP_PROFILE_END(WiFiBegin); };
 
     // create event group if uninitialized
     if (wifiEventGroup_ == nullptr) {
@@ -29,7 +30,6 @@ auto WiFi::begin() -> esp_err_t {
         log_e("esp_netif_init failed with error %s", esp_err_to_name(err));
         return err;
     }
-    SHOW_HEAP();
 
     err = esp_event_loop_create_default(); // 4k
     if (err != ESP_OK) {
@@ -51,13 +51,10 @@ auto WiFi::begin() -> esp_err_t {
         return err;
     }
 
-    SHOW_HEAP();
     staNetif_ = esp_netif_create_default_wifi_sta(); // 1k
     if (staNetif_ == nullptr) {
         log_e("esp_netif_create_default_wifi_sta returned NULL") return ESP_ERR_NO_MEM;
     }
-
-    SHOW_HEAP();
 
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     cfg.static_tx_buf_num = 0;
@@ -71,14 +68,12 @@ auto WiFi::begin() -> esp_err_t {
         log_e("esp_wifi_init failed with error %s", esp_err_to_name(err));
         return err;
     }
-    SHOW_HEAP();
 
     err = esp_wifi_set_mode(WIFI_MODE_STA); // 0k
     if (err != ESP_OK) {
         log_e("esp_wifi_set_mode failed with error %s", esp_err_to_name(err));
         return err;
     }
-    SHOW_HEAP();
 
     setState(WiFiState::IDLE);
 
@@ -409,7 +404,7 @@ auto WiFi::connectWiFiSettingWithTimeout(int timeoutMs, const std::string &ssid,
     return true;
 }
 
-void WiFi::disconnectWiFi() {
+void WiFi::disconnectWiFi(int waitMs) {
     if (xSemaphoreTake(mutex_, portMAX_DELAY) != pdTRUE) {
         log_e("WiFi Mutex Failure");
     }
@@ -433,6 +428,11 @@ void WiFi::disconnectWiFi() {
     err = esp_wifi_stop();
     if (err != ESP_OK) {
         log_e("esp_wifi_stop failed with %s", esp_err_to_name(err));
+    }
+
+    // Optionally, wait for WiFi to stop
+    if (waitMs > 0) {
+        xEventGroupWaitBits(wifiEventGroup_, STOPPED, true, false, pdMS_TO_TICKS(waitMs));
     }
 
     SHOW_HEAP();
@@ -504,6 +504,10 @@ void WiFi::wiFiEventHandler(void *arg, esp_event_base_t eventBase, int32_t event
         xEventGroupSetBits(tthis->wifiEventGroup_, DISCONNECTED);
         break;
     }
+    case WIFI_EVENT_STA_STOP:
+        log_d("WIFI_EVENT_STA_STOP");
+        xEventGroupSetBits(tthis->wifiEventGroup_, STOPPED);
+        break;
     default:
         log_d("WIFI_EVENT: %" PRIi32, eventId);
     }
