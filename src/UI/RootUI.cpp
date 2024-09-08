@@ -44,6 +44,10 @@
 #include "UI/LineMenuScreen.hpp"
 #include "UI/LineSpacingScreen.hpp"
 #include "UI/MainMenuScreen.hpp"
+#include "UI/Menu/NewMenuItemSingleLine.hpp"
+#include "UI/Menu/NewMenuScreen.hpp"
+#include "UI/Menu/NewMenuView.hpp"
+#include "UI/Menu/ReadingSettingsMenuScreen.hpp"
 #include "UI/MsgPopup.hpp"
 #include "UI/OffsetAdjustScreen.hpp"
 #include "UI/OnboardingContentSyncScreen.hpp"
@@ -528,8 +532,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     auto settingsMenu = new Menu(styleFamilies.settingsMenu, "Settings");
 
-    auto readingSettingsMenu =
-        new MenuScreen(power_.battery, *display, styleFamilies.settingsMenu, "Reading");
+    auto readingSettingsMenu = new ReadingSettingsMenuScreen(*display, "Main Menu");
 
     readingSettingsMenu->setBackCallback([this, mainMenu]() {
         this->display_->clearDisplay();
@@ -543,25 +546,25 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         this->setCurrentScreen(*readingSettingsMenu);
     }));
 
-    readingSettingsMenu->addMenuItem(MenuItem("Text Size", [this, display, readingSettingsMenu]() {
-        auto fontMenu = new MenuScreen(power_.battery, *display, readingSettingsMenu->getMyStyle(),
-                                       "Font Settings", "Reading Settings");
-        fontMenu->setExtraText("Example text size");
-        fontMenu->addMenuItem(MenuItem("Small", [this, fontMenu]() {
+    readingSettingsMenu->addMenuItem(
+        std::make_shared<NewMenuItemSingleLine>("Text Size",
+                                                [this, display, readingSettingsMenu]() {
+        auto fontMenu = new ReadingSettingsMenuScreen(*display, "Reading Settings");
+        fontMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>("Small", [this, fontMenu]() {
             this->display_->style.setFontFamily(this->display_->style.solSansSmall);
             this->display_->clearDisplay();
             prefs_.font.set(PREFS_SOL_SMALL);
             this->telemetry_.logMetricData(TelemetryField::METRIC_STYLE, {{"text_size", "small"}});
             fontMenu->setNeedsRerender();
         }));
-        fontMenu->addMenuItem(MenuItem("Medium", [this, fontMenu]() {
+        fontMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>("Medium", [this, fontMenu]() {
             this->display_->style.setFontFamily(this->display_->style.solSansMedium);
             this->display_->clearDisplay();
             prefs_.font.set(PREFS_SOL_MEDIUM);
             this->telemetry_.logMetricData(TelemetryField::METRIC_STYLE, {{"text_size", "medium"}});
             fontMenu->setNeedsRerender();
         }));
-        fontMenu->addMenuItem(MenuItem("Large", [this, fontMenu]() {
+        fontMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>("Large", [this, fontMenu]() {
             this->display_->style.setFontFamily(this->display_->style.solSansLarge);
             this->display_->clearDisplay();
             prefs_.font.set(PREFS_SOL_LARGE);
@@ -576,14 +579,14 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         } else if (prefs_.font.get().value_or(PREFS_SOL_SMALL) == PREFS_SOL_LARGE) {
             menuIndex = 2;
         }
-        fontMenu->setCurrSelection(menuIndex);
+        fontMenu->setSelectedIndex(menuIndex);
         setCurrentScreen(*fontMenu);
         fontMenu->setBackCallback([this, fontMenu, readingSettingsMenu]() {
             readingSettingsMenu->setFirstLoad();
             setCurrentScreen(*readingSettingsMenu);
             delete fontMenu;
         });
-    }));
+        }));
 
 #if 0
     if (prefs_.fontsLibrary.get().value_or(false)) {
@@ -610,8 +613,9 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     }
 #endif
 
-    readingSettingsMenu->addMenuItem(MenuItem("Brightness", [this, display, readingSettingsMenu,
-                                                             &lightingController]() {
+    readingSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
+        "Brightness",
+        [this, display, readingSettingsMenu, &lightingController]() {
         auto lightingAdjustScreen =
             new LightingAdjustScreen(*display, this->prefs_, lightingController, this->telemetry_);
         this->display_->clearDisplay();
@@ -621,11 +625,12 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             setCurrentScreen(*readingSettingsMenu);
             delete lightingAdjustScreen;
         });
-    }));
+        }));
 
 #if CONFIG_DISPLAY_EINKET013TT1
-    readingSettingsMenu->addMenuItem(MenuItem("Contrast", [this, display, readingSettingsMenu,
-                                                           &lightingController]() {
+    readingSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
+        "Contrast",
+        [this, display, readingSettingsMenu, &lightingController]() {
         auto contrastAdjustScreen =
             new ContrastAdjustScreen(*display, this->prefs_, lightingController, this->telemetry_);
         this->display_->clearDisplay();
@@ -635,48 +640,51 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             setCurrentScreen(*readingSettingsMenu);
             delete contrastAdjustScreen;
         });
-    }));
+        }));
 #endif
 
-    readingSettingsMenu->addMenuItem(MenuItem("Move Page in Display",
-                                              [this, readingSettingsMenu, display]() {
-        log_d("Loading adjust offset");
-        auto offsetAdjust = new OffsetAdjustScreen(*display, prefs_, this->telemetry_);
-        this->setCurrentScreen(*offsetAdjust);
-        log_d("setting up callback");
-        offsetAdjust->setBackCallback([this, offsetAdjust, readingSettingsMenu]() {
-            readingSettingsMenu->setFirstLoad();
-            setCurrentScreen(*readingSettingsMenu);
-            delete offsetAdjust;
-        });
-        log_d("set up callback");
-    }));
+    readingSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
+        "Move Page in Display", [this, readingSettingsMenu, display]() {
+            log_d("Loading adjust offset");
+            auto offsetAdjust = new OffsetAdjustScreen(*display, prefs_, this->telemetry_);
+            this->setCurrentScreen(*offsetAdjust);
+            log_d("setting up callback");
+            offsetAdjust->setBackCallback([this, offsetAdjust, readingSettingsMenu]() {
+                readingSettingsMenu->setFirstLoad();
+                setCurrentScreen(*readingSettingsMenu);
+                delete offsetAdjust;
+            });
+            log_d("set up callback");
+        }));
 
-    readingSettingsMenu->addMenuItem(MenuItem("Resize Page",
-                                              [this, readingSettingsMenu, display]() {
-        log_d("Loading resize box");
-        auto resizeBox = new ResizeBoxScreen(*display, prefs_, this->telemetry_);
-        this->setCurrentScreen(*resizeBox);
-        log_d("setting up callback");
-        resizeBox->setBackCallback([this, resizeBox, readingSettingsMenu]() {
-            readingSettingsMenu->setFirstLoad();
-            setCurrentScreen(*readingSettingsMenu);
-            delete resizeBox;
-        });
-        log_d("set up callback");
-    }));
+    readingSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
+        "Resize Page", [this, readingSettingsMenu, display]() {
+            log_d("Loading resize box");
+            auto resizeBox = new ResizeBoxScreen(*display, prefs_, this->telemetry_);
+            this->setCurrentScreen(*resizeBox);
+            log_d("setting up callback");
+            resizeBox->setBackCallback([this, resizeBox, readingSettingsMenu]() {
+                readingSettingsMenu->setFirstLoad();
+                setCurrentScreen(*readingSettingsMenu);
+                delete resizeBox;
+            });
+            log_d("set up callback");
+        }));
 
-    readingSettingsMenu->addMenuItem(MenuItem("Line Spacing",
-                                              [this, readingSettingsMenu, display]() {
-        auto lineSpacingScreen = new LineSpacingScreen(*display, prefs_, this->telemetry_);
-        this->setCurrentScreen(*lineSpacingScreen);
-        lineSpacingScreen->setBackCallback([this, lineSpacingScreen, readingSettingsMenu]() {
-            readingSettingsMenu->setFirstLoad();
-            setCurrentScreen(*readingSettingsMenu);
-            delete lineSpacingScreen;
-        });
-    }));
+    readingSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
+        "Line Spacing", [this, readingSettingsMenu, display]() {
+            auto lineSpacingScreen = new LineSpacingScreen(*display, prefs_, this->telemetry_);
+            this->setCurrentScreen(*lineSpacingScreen);
+            lineSpacingScreen->setBackCallback([this, lineSpacingScreen, readingSettingsMenu]() {
+                readingSettingsMenu->setFirstLoad();
+                setCurrentScreen(*readingSettingsMenu);
+                delete lineSpacingScreen;
+            });
+        }));
 
+#if 0
+    // This will be moving to System Settings in the new Settings UI but I'm not putting it there
+    // yet because it needs to be rewritten anyway.
     readingSettingsMenu->addMenuItem(MenuItem("Inactivity Timer",
                                               [this, readingSettingsMenu, display]() {
         auto inactivityMenu =
@@ -704,7 +712,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                     inactivityMenu->setNeedsRerender();
                 }));
         };
-
         addInactivityMenuItem("5 minutes", 5, this->display_->style.solSansSmall);
         addInactivityMenuItem("10 minutes", 10, this->display_->style.solSansMedium);
         addInactivityMenuItem("15 minutes", 15, this->display_->style.solSansLarge);
@@ -737,16 +744,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             }
         });
     }));
-
-    readingSettingsMenu->addMenuItem(MenuItem("Statistics", [this, readingSettingsMenu, display]() {
-        auto statsScreen = new StatsScreen(*display, prefs_);
-        this->setCurrentScreen(*statsScreen);
-        statsScreen->setBackCallback([this, statsScreen, readingSettingsMenu]() {
-            readingSettingsMenu->setFirstLoad();
-            setCurrentScreen(*readingSettingsMenu);
-            delete statsScreen;
-        });
-    }));
+#endif
 
     auto contentSettingsMenu =
         new ToggleMenuScreen(power_.battery, *display_, styleFamilies.settingsMenu, "Content");
