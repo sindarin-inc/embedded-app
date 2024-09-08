@@ -48,6 +48,7 @@
 #include "UI/Menu/NewMenuItemSingleLine.hpp"
 #include "UI/Menu/NewMenuScreen.hpp"
 #include "UI/Menu/NewMenuView.hpp"
+#include "UI/Menu/ReadingSettingsMenuScreen.hpp"
 #include "UI/MsgPopup.hpp"
 #include "UI/OffsetAdjustScreen.hpp"
 #include "UI/OnboardingContentSyncScreen.hpp"
@@ -608,7 +609,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     auto settingsMenu = new Menu(styleFamilies.settingsMenu, "Settings");
 
-    auto readingSettingsMenu = new NewMenuScreen(*display, "Reading");
+    auto readingSettingsMenu = new ReadingSettingsMenuScreen(*display, "Main Menu");
 
     readingSettingsMenu->setBackCallback([this, mainMenu]() {
         this->display_->clearDisplay();
@@ -625,7 +626,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     readingSettingsMenu->addMenuItem(
         std::make_shared<NewMenuItemSingleLine>("Text Size",
                                                 [this, display, readingSettingsMenu]() {
-        auto fontMenu = new NewMenuScreen(*display, "Font Settings");
+        auto fontMenu = new ReadingSettingsMenuScreen(*display, "Reading Settings");
         // fontMenu->setExtraText("Example text size");
         fontMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>("Small", [this, fontMenu]() {
             this->display_->style.setFontFamily(this->display_->style.solSansSmall);
@@ -759,6 +760,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             });
         }));
 
+#if 0
+    // This will be moving to System Settings in the new Settings UI
     readingSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
         "Inactivity Timer", [this, readingSettingsMenu, display]() {
             auto inactivityMenu = new NewMenuScreen(*display, "Inactivity Timer");
@@ -817,6 +820,9 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             });
         }));
 
+#endif
+#if 0
+    // Going away in the new Settings UI
     readingSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
         "Statistics", [this, readingSettingsMenu, display]() {
             auto statsScreen = new StatsScreen(*display, prefs_);
@@ -827,6 +833,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 delete statsScreen;
             });
         }));
+
+#endif
 
     auto contentSettingsMenu =
         new ToggleMenuScreen(power_.battery, *display_, styleFamilies.settingsMenu, "Content");

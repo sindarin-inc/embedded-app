@@ -36,8 +36,8 @@ public:
         }
     }
 
-    uint16_t padding = 1;
-    uint8_t itemsPerPage = 12;
+    uint16_t padding = 5;
+    uint8_t itemsPerPage = 8;
     uint16_t indicatorWidth = 0;         // Default in constructor
     uint16_t indicatorPadding = 0;       // Default in constructor
     uint16_t pagingIndicatorWidth = 0;   // Default in constructor
