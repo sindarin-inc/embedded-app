@@ -75,10 +75,9 @@ auto ReadingSettingsMenuScreen::layout(LayoutContext &context, Size size) -> Siz
         menuView_, Rect::fromSize(size).inset(size.width / 7, backBox.size.height + padding),
         LayoutOptionsSizeToFitVertical);
 
-    int yOffset = menuBox.size.height + backBox.size.height + 2 * padding;
+    int yOffset = menuBox.bottom() + padding;
 
-    context.setViewFrame(rendererView_, {{0, yOffset}, {size.width, size.height - yOffset}},
-                         LayoutOptionsConstrainSize | LayoutOptionsAlignCenterHorizontal);
+    context.setViewFrame(rendererView_, {{0, yOffset}, {size.width, size.height - yOffset}});
 
     return size;
 }
@@ -97,7 +96,6 @@ void ReadingSettingsMenuScreen::moveSelection(int delta) {
     setNeedsRerender();
 }
 
-// Implement Screen method
 void ReadingSettingsMenuScreen::render(DisplaySystem &display) {
     setFrame(defaultFrameRect());
     draw();

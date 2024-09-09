@@ -45,8 +45,6 @@
 #include "UI/LineSpacingScreen.hpp"
 #include "UI/MainMenuScreen.hpp"
 #include "UI/Menu/NewMenuItemSingleLine.hpp"
-#include "UI/Menu/NewMenuScreen.hpp"
-#include "UI/Menu/NewMenuView.hpp"
 #include "UI/Menu/ReadingSettingsMenuScreen.hpp"
 #include "UI/MsgPopup.hpp"
 #include "UI/OffsetAdjustScreen.hpp"
