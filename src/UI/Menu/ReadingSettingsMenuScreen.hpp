@@ -22,7 +22,7 @@ public:
     void drawInRect(Rect rect) override;
 
     void setFirstLoad() { firstLoad_ = true; }
-    // Implement Screen methods
+
     void render(DisplaySystem &display) override;
 
 private:

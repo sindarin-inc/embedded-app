@@ -44,8 +44,10 @@
 #include "UI/LineMenuScreen.hpp"
 #include "UI/LineSpacingScreen.hpp"
 #include "UI/MainMenuScreen.hpp"
+#include "UI/Menu/InactivitySettingMenuScreen.hpp"
 #include "UI/Menu/NewMenuItemSingleLine.hpp"
 #include "UI/Menu/ReadingSettingsMenuScreen.hpp"
+#include "UI/Menu/SystemSettingsMenuScreen.hpp"
 #include "UI/MsgPopup.hpp"
 #include "UI/OffsetAdjustScreen.hpp"
 #include "UI/OnboardingContentSyncScreen.hpp"
@@ -680,70 +682,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             });
         }));
 
-#if 0
-    // This will be moving to System Settings in the new Settings UI but I'm not putting it there
-    // yet because it needs to be rewritten anyway.
-    readingSettingsMenu->addMenuItem(MenuItem("Inactivity Timer",
-                                              [this, readingSettingsMenu, display]() {
-        auto inactivityMenu =
-            new MenuScreen(power_.battery, *display, readingSettingsMenu->getMyStyle(),
-                           "Inactivity Timer", "Reading Settings");
-        auto updateExtraText = [this, inactivityMenu]() {
-            this->display_->style.setFontFamily(this->display_->style.solSansSmall);
-            std::string message = std::string(SpiRamStringFormat(
-                "Screen will sleep after %d minutes of inactivity.",
-                prefs_.inactivityMinutes.get().value_or(DEFAULT_INACTIVITY_MINUTES)));
-            inactivityMenu->setExtraText(message);
-        };
-        auto addInactivityMenuItem =
-            [this, inactivityMenu, updateExtraText](const std::string &label, int minutes,
-                                                    const FontFamily fontFamily) {
-            inactivityMenu->addMenuItem(
-                MenuItem(label, [this, inactivityMenu, updateExtraText, minutes, fontFamily]() {
-                    this->display_->style.setFontFamily(fontFamily);
-                    this->display_->clearDisplay();
-                    prefs_.inactivityMinutes.set(minutes);
-                    updateExtraText();
-                    inactivityMenu->requireRestart();
-                    this->telemetry_.logMetricData(TelemetryField::METRIC_STYLE,
-                                                   {{"inactivity_minutes", minutes}});
-                    inactivityMenu->setNeedsRerender();
-                }));
-        };
-        addInactivityMenuItem("5 minutes", 5, this->display_->style.solSansSmall);
-        addInactivityMenuItem("10 minutes", 10, this->display_->style.solSansMedium);
-        addInactivityMenuItem("15 minutes", 15, this->display_->style.solSansLarge);
-        addInactivityMenuItem("20 minutes", 20, this->display_->style.solSansLarge);
-        addInactivityMenuItem("30 minutes", 30, this->display_->style.solSansLarge);
-        int menuIndex = 0;
-        if (prefs_.inactivityMinutes.get().value_or(DEFAULT_INACTIVITY_MINUTES) == 5) {
-            menuIndex = 0;
-        } else if (prefs_.inactivityMinutes.get().value_or(DEFAULT_INACTIVITY_MINUTES) == 10) {
-            menuIndex = 1;
-        } else if (prefs_.inactivityMinutes.get().value_or(DEFAULT_INACTIVITY_MINUTES) == 15) {
-            menuIndex = 2;
-        } else if (prefs_.inactivityMinutes.get().value_or(DEFAULT_INACTIVITY_MINUTES) == 20) {
-            menuIndex = 3;
-        } else if (prefs_.inactivityMinutes.get().value_or(DEFAULT_INACTIVITY_MINUTES) == 30) {
-            menuIndex = 4;
-        }
-        updateExtraText();
-        inactivityMenu->setCurrSelection(menuIndex);
-        setCurrentScreen(*inactivityMenu);
-        inactivityMenu->setBackCallback([this, inactivityMenu, readingSettingsMenu, display]() {
-            if (inactivityMenu->getRequireRestart()) {
-                PreferencesStore::settingsOnRestart = true;
-                showTemporaryMessage(*display, settingsRestartMsg_, 1500, false);
-                this->power_.reboot();
-            } else {
-                readingSettingsMenu->setFirstLoad();
-                setCurrentScreen(*readingSettingsMenu);
-                delete inactivityMenu;
-            }
-        });
-    }));
-#endif
-
     auto contentSettingsMenu =
         new ToggleMenuScreen(power_.battery, *display_, styleFamilies.settingsMenu, "Content");
 
@@ -1012,8 +950,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     // Hide the bubble for the last item, Sync content now
     contentSettingsMenu->setToggleLastItem(false, false);
 
-    auto systemSettingsMenu =
-        new MenuScreen(power_.battery, *display, styleFamilies.settingsMenu, "System");
+    auto systemSettingsMenu = new SystemSettingsMenuScreen(*display, "Main Menu");
 
     systemSettingsMenu->setBackCallback([this, mainMenu]() {
         this->display_->clearDisplay();
@@ -1027,111 +964,179 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         this->setCurrentScreen(*systemSettingsMenu);
     }));
 
-    systemSettingsMenu->addMenuItem(MenuItem("About", [this, systemSettingsMenu, display]() {
-        auto aboutScreen = new AboutScreen(*display, prefs_, power_);
-        this->setCurrentScreen(*aboutScreen);
-        aboutScreen->setBackCallback([this, aboutScreen, systemSettingsMenu]() {
-            systemSettingsMenu->setFirstLoad();
-            display_->clearDisplay();
-            setCurrentScreen(*systemSettingsMenu);
-            delete aboutScreen;
-        });
-    }));
+    systemSettingsMenu->addMenuItem(
+        std::make_shared<NewMenuItemSingleLine>("About", [this, systemSettingsMenu, display]() {
+            auto aboutScreen = new AboutScreen(*display, prefs_, power_);
+            this->setCurrentScreen(*aboutScreen);
+            aboutScreen->setBackCallback([this, aboutScreen, systemSettingsMenu]() {
+                systemSettingsMenu->setFirstLoad();
+                display_->clearDisplay();
+                setCurrentScreen(*systemSettingsMenu);
+                delete aboutScreen;
+            });
+        }));
 
-    systemSettingsMenu->addMenuItem(MenuItem("Legal & Regulatory",
-                                             [this, systemSettingsMenu, display]() {
-        auto legalScreen = new LegalScreen(*display, prefs_, power_);
-        this->setCurrentScreen(*legalScreen);
-        legalScreen->setBackCallback([this, legalScreen, systemSettingsMenu]() {
-            systemSettingsMenu->setFirstLoad();
-            display_->clearDisplay();
-            setCurrentScreen(*systemSettingsMenu);
-            delete legalScreen;
-        });
-    }));
+    systemSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
+        "Legal & Regulatory", [this, systemSettingsMenu, display]() {
+            auto legalScreen = new LegalScreen(*display, prefs_, power_);
+            this->setCurrentScreen(*legalScreen);
+            legalScreen->setBackCallback([this, legalScreen, systemSettingsMenu]() {
+                systemSettingsMenu->setFirstLoad();
+                display_->clearDisplay();
+                setCurrentScreen(*systemSettingsMenu);
+                delete legalScreen;
+            });
+        }));
 
-    systemSettingsMenu->addMenuItem(MenuItem("Firmware Update",
-                                             [this, systemSettingsMenu, display]() {
-        // If we don't have WiFi configured, show the QR code instead
-        if (!WiFi::getInstance().hasWiFiCredentials()) {
-            auto appDownloadScreen = new AppDownloadScreen(*display);
-            this->setCurrentScreen(*appDownloadScreen);
-            appDownloadScreen->setBackCallback(
-                [this, appDownloadScreen, systemSettingsMenu, display]() {
+    systemSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
+        "Firmware Update", [this, systemSettingsMenu, display]() {
+            // If we don't have WiFi configured, show the QR code instead
+            if (!WiFi::getInstance().hasWiFiCredentials()) {
+                auto appDownloadScreen = new AppDownloadScreen(*display);
+                this->setCurrentScreen(*appDownloadScreen);
+                appDownloadScreen->setBackCallback(
+                    [this, appDownloadScreen, systemSettingsMenu, display]() {
                 display->clearDisplay();
                 systemSettingsMenu->setFirstLoad();
                 setCurrentScreen(*systemSettingsMenu);
                 delete appDownloadScreen;
-            });
-            return;
-        }
+                });
+                return;
+            }
 
-        auto firmwareUpdateScreen = new FirmwareUpdateScreen(*display, telemetry_, prefs_);
-        this->setCurrentScreen(*firmwareUpdateScreen);
-        firmwareUpdateScreen->setBackCallback(
-            [this, firmwareUpdateScreen, systemSettingsMenu, display]() {
+            auto firmwareUpdateScreen = new FirmwareUpdateScreen(*display, telemetry_, prefs_);
+            this->setCurrentScreen(*firmwareUpdateScreen);
+            firmwareUpdateScreen->setBackCallback(
+                [this, firmwareUpdateScreen, systemSettingsMenu, display]() {
             systemSettingsMenu->setFirstLoad();
             setCurrentScreen(*systemSettingsMenu);
             systemSettingsMenu->render(*display);
             delete firmwareUpdateScreen;
-        });
-        firmwareUpdateScreen->begin();
-    }));
+            });
+            firmwareUpdateScreen->begin();
+        }));
 
-    systemSettingsMenu->addMenuItem(MenuItem("Manifesto", [this, systemSettingsMenu, display]() {
-        auto demoScreen = new DemoScreen(*display, prefs_);
-        this->setCurrentScreen(*demoScreen);
-        demoScreen->setBackCallback([this, demoScreen, systemSettingsMenu, display]() {
-            systemSettingsMenu->setFirstLoad();
-            display->clearDisplay();
-            setCurrentScreen(*systemSettingsMenu);
-            systemSettingsMenu->render(*this->display_);
-            delete demoScreen;
-        });
-    }));
+    systemSettingsMenu->addMenuItem(
+        std::make_shared<NewMenuItemSingleLine>("Manifesto", [this, systemSettingsMenu, display]() {
+            auto demoScreen = new DemoScreen(*display, prefs_);
+            this->setCurrentScreen(*demoScreen);
+            demoScreen->setBackCallback([this, demoScreen, systemSettingsMenu, display]() {
+                systemSettingsMenu->setFirstLoad();
+                display->clearDisplay();
+                setCurrentScreen(*systemSettingsMenu);
+                systemSettingsMenu->render(*this->display_);
+                delete demoScreen;
+            });
+        }));
 
+    systemSettingsMenu->addMenuItem(
+        std::make_shared<NewMenuItemSingleLine>("Inactivity Timer",
+                                                [this, systemSettingsMenu, display]() {
+        auto inactivityMenu = new InactivitySettingMenuScreen(*display, "System Settings");
+        auto updateExtraText = [this, inactivityMenu]() {
+            this->display_->style.setFontFamily(this->display_->style.solSansSmall);
+            std::string message = std::string(SpiRamStringFormat(
+                "Sleep after %d minutes of inactivity.",
+                prefs_.inactivityMinutes.get().value_or(DEFAULT_INACTIVITY_MINUTES)));
+            inactivityMenu->setExtraText(message);
+        };
+        auto addInactivityMenuItem =
+            [this, inactivityMenu, updateExtraText](const std::string &label, int minutes,
+                                                    const FontFamily fontFamily) {
+            inactivityMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
+                label, [this, inactivityMenu, updateExtraText, minutes, fontFamily]() {
+                    this->display_->style.setFontFamily(fontFamily);
+                    this->display_->clearDisplay();
+                    prefs_.inactivityMinutes.set(minutes);
+                    updateExtraText();
+                    inactivityMenu->requireRestart();
+                    this->telemetry_.logMetricData(TelemetryField::METRIC_STYLE,
+                                                   {{"inactivity_minutes", minutes}});
+                    inactivityMenu->setNeedsRerender();
+                }));
+        };
+        addInactivityMenuItem("5 minutes", 5, this->display_->style.solSansSmall);
+        addInactivityMenuItem("10 minutes", 10, this->display_->style.solSansMedium);
+        addInactivityMenuItem("15 minutes", 15, this->display_->style.solSansLarge);
+        addInactivityMenuItem("20 minutes", 20, this->display_->style.solSansLarge);
+        addInactivityMenuItem("30 minutes", 30, this->display_->style.solSansLarge);
+        int menuIndex = 0;
+        if (prefs_.inactivityMinutes.get().value_or(DEFAULT_INACTIVITY_MINUTES) == 5) {
+            menuIndex = 0;
+        } else if (prefs_.inactivityMinutes.get().value_or(DEFAULT_INACTIVITY_MINUTES) == 10) {
+            menuIndex = 1;
+        } else if (prefs_.inactivityMinutes.get().value_or(DEFAULT_INACTIVITY_MINUTES) == 15) {
+            menuIndex = 2;
+        } else if (prefs_.inactivityMinutes.get().value_or(DEFAULT_INACTIVITY_MINUTES) == 20) {
+            menuIndex = 3;
+        } else if (prefs_.inactivityMinutes.get().value_or(DEFAULT_INACTIVITY_MINUTES) == 30) {
+            menuIndex = 4;
+        }
+        updateExtraText();
+        inactivityMenu->setSelectedIndex(menuIndex);
+        setCurrentScreen(*inactivityMenu);
+        inactivityMenu->setBackCallback([this, inactivityMenu, systemSettingsMenu, display]() {
+            if (inactivityMenu->getRequireRestart()) {
+                PreferencesStore::settingsOnRestart = true;
+                inactivityMenu->showTemporaryMessage(*display, settingsRestartMsg_, 1500, false);
+                this->power_.reboot();
+            } else {
+                systemSettingsMenu->setFirstLoad();
+                setCurrentScreen(*systemSettingsMenu);
+                delete inactivityMenu;
+            }
+        });
+        }));
+
+// Going away
+#if 0
     systemSettingsMenu->addMenuItem(MenuItem("Reset Statistics",
                                              [this, systemSettingsMenu, display]() {
         prefs_.wordCount.remove();
         prefs_.totalReadingTimeSeconds.remove();
         systemSettingsMenu->showTemporaryMessage(*display, "Statistics reset.");
     }));
+#endif
 
-    systemSettingsMenu->addMenuItem(MenuItem("Clear All Content and Restart",
-                                             [this, systemSettingsMenu, display, &localStore]() {
-        localStore.deleteReadables(false);
-        localStore.deleteArticles(false);
-        systemSettingsMenu->showTemporaryMessage(*display, "Content cleared.", 2000, false);
-        power_.reboot();
-    }));
+    systemSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
+        "Clear Content and Restart", [this, systemSettingsMenu, display, &localStore]() {
+            localStore.deleteReadables(false);
+            localStore.deleteArticles(false);
+            systemSettingsMenu->showTemporaryMessage(*display, "Content cleared. Restarting...",
+                                                     2000, false);
+            power_.reboot();
+        }));
 
-    systemSettingsMenu->addMenuItem(MenuItem("Clear WiFi Settings",
-                                             [systemSettingsMenu, display]() {
+    systemSettingsMenu->addMenuItem(
+        std::make_shared<NewMenuItemSingleLine>("Clear WiFi Settings",
+                                                [systemSettingsMenu, display]() {
         WiFi::getInstance().clearWiFiCredentials();
         log_w("WiFi settings cleared.");
         systemSettingsMenu->showTemporaryMessage(*display, "WiFi settings cleared.", 2000, true);
-    }));
+        systemSettingsMenu->setFirstLoad();
+        }));
 
-    systemSettingsMenu->addMenuItem(MenuItem("WiFi Scan", [this, systemSettingsMenu, display]() {
-        auto wiFiScanScreen = new WiFiScanScreen(*display, WiFi::getInstance());
-        wiFiScanScreen->begin();
-        this->setCurrentScreen(*wiFiScanScreen);
-        wiFiScanScreen->setBackCallback([this, wiFiScanScreen, systemSettingsMenu, display]() {
-            systemSettingsMenu->setFirstLoad();
-            display->clearDisplay();
-            setCurrentScreen(*systemSettingsMenu);
-            systemSettingsMenu->render(*this->display_);
-            delete wiFiScanScreen;
-        });
-    }));
+    systemSettingsMenu->addMenuItem(
+        std::make_shared<NewMenuItemSingleLine>("WiFi Scan", [this, systemSettingsMenu, display]() {
+            auto wiFiScanScreen = new WiFiScanScreen(*display, WiFi::getInstance());
+            wiFiScanScreen->begin();
+            this->setCurrentScreen(*wiFiScanScreen);
+            wiFiScanScreen->setBackCallback([this, wiFiScanScreen, systemSettingsMenu, display]() {
+                systemSettingsMenu->setFirstLoad();
+                display->clearDisplay();
+                setCurrentScreen(*systemSettingsMenu);
+                systemSettingsMenu->render(*this->display_);
+                delete wiFiScanScreen;
+            });
+        }));
 
-    systemSettingsMenu->addMenuItem(MenuItem("Factory Defaults",
-                                             [this, systemSettingsMenu, display, &fileSystem]() {
-        SoftFactoryReset(fileSystem);
-        log_w("NVS and FS cleared. Rebooting...");
-        systemSettingsMenu->showTemporaryMessage(*display, "Resetting Device! Rebooting...");
-        power_.reboot();
-    }));
+    systemSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
+        "Factory Defaults", [this, systemSettingsMenu, display, &fileSystem]() {
+            SoftFactoryReset(fileSystem);
+            log_w("NVS and FS cleared. Restarting...");
+            systemSettingsMenu->showTemporaryMessage(*display, "Resetting Device! Restarting...");
+            power_.reboot();
+        }));
 
     auto experimentalSettingsMenu =
         new ToggleMenuScreen(power_.battery, *display_, styleFamilies.settingsMenu, "Experimental");
@@ -1312,7 +1317,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             prefs_.pairedTurnTouchAddress.remove();
             prefs_.lastPageTurnerBuild.remove();
             PreferencesStore::lastPageTurnerBattery = 0;
-            log_w("Unpaired PageTurner. Rebooting...");
+            log_w("Unpaired PageTurner. Restarting...");
             debugSettingsMenu->showTemporaryMessage(*display, "Unpaired PageTurner! Resetting...",
                                                     2000, false);
             power_.reboot();
@@ -1344,8 +1349,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         debugSettingsMenu->addMenuItem(MenuItem("Reset Preferences",
                                                 [this, debugSettingsMenu, display]() {
             prefs_.clear();
-            log_w("Preferences cleared. Rebooting...");
-            debugSettingsMenu->showTemporaryMessage(*display, "Preferences cleared. Rebooting...",
+            log_w("Preferences cleared. Restarting...");
+            debugSettingsMenu->showTemporaryMessage(*display, "Preferences cleared. Restarting...",
                                                     2000, false);
             power_.reboot();
         }));

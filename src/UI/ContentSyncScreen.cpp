@@ -112,7 +112,7 @@ void ContentSyncScreen::cancel() {
     CancelFlag::cancel(cancel_);
     telemetry_.logMetric(TelemetryField::METRIC_SYNC_STATUS, "sync-cancelled");
     WiFi::getInstance().disconnectWiFi();
-    showPopup("Sync cancelled!\n\nRebooting system...");
+    showPopup("Sync cancelled!\n\nRestarting...");
     render(display_);
     vTaskDelay(3000 / portTICK_PERIOD_MS);
     PowerManager::getInstance().reboot();
@@ -190,14 +190,13 @@ void ContentSyncScreen::render(DisplaySystem &display) {
         if (state_.booksDownloaded > 0 || state_.articlesDownloaded > 0) {
             message += "\n";
         }
-        message += "Rebooting system...";
+        message += "Restarting...";
         showPopup(message);
 
         break;
     }
     case ContentSyncState::Failure:
-        showPopup(
-            StringFormat("Sync unsuccessful\n%s\n\nRebooting system...", state_.message.c_str()));
+        showPopup(StringFormat("Sync unsuccessful\n%s\n\nRestarting...", state_.message.c_str()));
         break;
     }
 

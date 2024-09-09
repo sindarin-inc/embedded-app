@@ -115,7 +115,7 @@ void FirmwareUpdateScreen::cancel() {
     firmwareDownloader_.cancel();
     telemetry_.logMetric(TelemetryField::METRIC_FIRMWARE_UPDATE, "update-cancelled");
     WiFi::getInstance().disconnectWiFi();
-    showPopup("Update cancelled!\n\nRebooting system...");
+    showPopup("Update cancelled!\n\nRestarting...");
     render(display_);
     vTaskDelay(3000 / portTICK_PERIOD_MS);
     back();
@@ -194,7 +194,7 @@ void FirmwareUpdateScreen::render(DisplaySystem &display) {
         if (state_.state == FirmwareDownloadState::AlreadyUpToDate) {
             showPopup(StringFormat("Already up to date\n\n(version: %s)", SemanticVersionString()));
         } else {
-            showPopup(StringFormat("Updated to %s\n\nRebooting system...",
+            showPopup(StringFormat("Updated to %s\n\nRestarting...",
                                    firmwareDownloader_.versionString.c_str()));
         }
         break;
