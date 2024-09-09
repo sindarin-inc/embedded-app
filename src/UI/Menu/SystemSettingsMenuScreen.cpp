@@ -48,8 +48,6 @@ auto SystemSettingsMenuScreen::setSelectedIndex(size_t index) -> bool {
 }
 
 auto SystemSettingsMenuScreen::layout(LayoutContext &context, Size size) -> Size {
-    int y = 0;
-
     // Layout back label
     context.setViewFrame(backLabelView_, {{0, 0}, {size.width, 0}},
                          LayoutOptionsSizeToFit | LayoutOptionsAlignLeft);
