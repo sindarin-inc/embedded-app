@@ -132,8 +132,8 @@ void WiFiSettingsMenuScreen::drawInRect(Rect rect) {
     configuredAccessView_.draw();
 
     // draw all the veiws in configuredAccessPoints_
-    for (int i = 0; i < configuredAccessPoints_.size(); i++) {
-        configuredAccessPoints_[i]->draw();
+    for (auto &configuredAccessPoint : configuredAccessPoints_) {
+        configuredAccessPoint->draw();
     }
 }
 
