@@ -68,12 +68,12 @@ menu "Sol Options"
             config DISPLAY_SHARP_27IN_CLK
                 depends on DISPLAY_SHARP_27IN
                 int "CLK Pin"
-                default 34
+                default 36
 
             config DISPLAY_SHARP_27IN_CS
                 depends on DISPLAY_SHARP_27IN
                 int "CS Pin"
-                default 3
+                default 34
 
             config DISPLAY_SHARP_27IN_DISP
                 depends on DISPLAY_SHARP_27IN
