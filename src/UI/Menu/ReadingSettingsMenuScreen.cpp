@@ -70,6 +70,7 @@ void ReadingSettingsMenuScreen::processCommand(RemoteCommand command) {
         back();
         setNeedsRerender();
         break;
+    // We rely on the animation timer which is set in the renderer view in autopilot mode
     case RemoteCommand::ANIMATION:
         setNeedsRerender();
     default:
@@ -120,23 +121,8 @@ void ReadingSettingsMenuScreen::moveSelection(int delta) {
     setNeedsRerender();
 }
 
-void ReadingSettingsMenuScreen::resetTimer() {
-    auto totalLength = renderer_.getTotalLengthOfLines();
-    nextInterval_ = totalLength != 0
-                        ? pageSpeed_ *
-                              renderer_.getLengthOfLine(rendererView_.getNumSkipLines() - 1) /
-                              totalLength
-                        : 0;
-    if (nextInterval_ == 0) {
-        nextInterval_ = 1000;
-    }
-
-    xTimerChangePeriod(DisplaySystem::animationTimer, pdMS_TO_TICKS(nextInterval_), 0);
-}
-
 void ReadingSettingsMenuScreen::render(DisplaySystem &display) {
     setFrame(defaultFrameRect());
-    bool fromFirstLoad = false;
     if (firstLoad_ || !rendererView_.autoPilotMode()) {
         draw();
         if (firstLoad_) {
@@ -145,19 +131,14 @@ void ReadingSettingsMenuScreen::render(DisplaySystem &display) {
         }
         menuView_.drawIndicator();
         display.updateDisplay(DisplaySystem::UpdateType::FAST_INDICATOR);
-        fromFirstLoad = true;
     } else if (rendererView_.autoPilotMode()) {
         draw();
         menuView_.drawIndicator();
         // Because the increment happens after the render, so this is the beginning of a new page
-        if (rendererView_.getNumSkipLines() == 1) {
+        if (rendererView_.newPage()) {
             display.updateDisplay(DisplaySystem::UpdateType::FULL, true);
         } else {
             display.updateDisplay(DisplaySystem::UpdateType::FAST_ORIGINAL_AU4, true);
         }
-        resetTimer();
-    }
-    if (fromFirstLoad && rendererView_.autoPilotMode()) {
-        resetTimer();
     }
 }

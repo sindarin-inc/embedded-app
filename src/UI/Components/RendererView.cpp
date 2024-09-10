@@ -15,6 +15,18 @@ auto RendererView::layout(LayoutContext &context, Size size) -> Size {
     return size;
 }
 
+void RendererView::resetTimer() {
+    auto totalLength = renderer_.getTotalLengthOfLines();
+    nextInterval_ = totalLength != 0
+                        ? pageSpeed_ * renderer_.getLengthOfLine(numSkipLines_ - 1) / totalLength
+                        : 0;
+    if (nextInterval_ == 0) {
+        nextInterval_ = 1000;
+    }
+
+    xTimerChangePeriod(DisplaySystem::animationTimer, pdMS_TO_TICKS(nextInterval_), 0);
+}
+
 void RendererView::drawInRect(Rect rect) {
     if (dottedBox) {
         dottedBoxView_.draw();
@@ -47,5 +59,6 @@ void RendererView::drawInRect(Rect rect) {
             currentPlace_ = nullptr;
             nextPlace_ = nullptr;
         }
+        resetTimer();
     }
 }

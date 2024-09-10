@@ -21,7 +21,7 @@ public:
         nextPlace_ = nullptr;
     }
 
-    auto getNumSkipLines() const -> uint16_t { return numSkipLines_; }
+    auto newPage() const -> bool { return autoPilotMode_ ? (numSkipLines_ == 1) : true; }
 
     bool dottedBox = false;
     uint16_t padding = 3;
@@ -34,4 +34,9 @@ private:
     uint16_t numSkipLines_ = 0;
     std::shared_ptr<Place> currentPlace_ = nullptr;
     std::shared_ptr<Place> nextPlace_ = nullptr;
+
+    void resetTimer();
+
+    unsigned long nextInterval_ = 0;
+    int pageSpeed_ = 10000;
 };

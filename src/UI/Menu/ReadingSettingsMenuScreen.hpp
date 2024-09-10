@@ -36,6 +36,12 @@ public:
         setFirstLoad();
     }
 
+    // When they press back, we need to stop the animation timer and reset the renderer
+    void leaveMenu() {
+        rendererView_.resetRenderer();
+        xTimerStop(DisplaySystem::animationTimer, 0);
+    }
+
 private:
     NewMenuView menuView_;
     ArrowLabelView backLabelView_;
@@ -44,11 +50,6 @@ private:
     RendererView rendererView_;
 
     bool firstLoad_{true};
-
-    void resetTimer();
-
-    unsigned long nextInterval_ = 0;
-    int pageSpeed_ = 10000;
 
     void moveSelection(int delta);
 };

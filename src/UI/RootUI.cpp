@@ -540,9 +540,10 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         readingSettingsMenu->turnOffAutoPilot();
     }
 
-    readingSettingsMenu->setBackCallback([this, mainMenu]() {
+    readingSettingsMenu->setBackCallback([this, mainMenu, readingSettingsMenu]() {
         this->display_->clearDisplay();
         mainMenu->setFirstLoad();
+        readingSettingsMenu->leaveMenu();
         setCurrentScreen(*mainMenu);
     });
 
