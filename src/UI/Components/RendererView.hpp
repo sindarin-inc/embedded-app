@@ -19,7 +19,7 @@ public:
         nextPlace_ = nullptr;
     }
 
-    auto getNumSkipLines() -> uint16_t { return numSkipLines_; }
+    auto getNumSkipLines() const -> uint16_t { return numSkipLines_; }
 
     bool dottedBox = false;
     uint16_t padding = 3;
