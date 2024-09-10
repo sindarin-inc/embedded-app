@@ -17,7 +17,7 @@ void WiFiSettingsMenuScreen::loadWifiSettings() {
     WiFiSettings settings;
     settings.load();
     if (settings.count() > 0) {
-        std::string listOfAccessPoints = "";
+        std::string listOfAccessPoints;
         configuredAccessView_.setText("Configured Access Points:");
         for (int i = 0; i < settings.count(); i++) {
             listOfAccessPoints += settings.settings[i].ssid + "\n";
