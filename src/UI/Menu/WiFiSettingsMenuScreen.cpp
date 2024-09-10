@@ -145,7 +145,6 @@ void WiFiSettingsMenuScreen::moveSelection(int delta) {
     setNeedsRerender();
 }
 
-// Implement Screen method
 void WiFiSettingsMenuScreen::render(DisplaySystem &display) {
     setFrame(defaultFrameRect());
     draw();
