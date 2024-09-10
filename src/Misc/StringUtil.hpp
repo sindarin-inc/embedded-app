@@ -13,7 +13,7 @@
 // https://github.com/fmtlib/fmt
 
 auto WordCount(const char *str) -> int;
-auto BytesToHex(const uint8_t *data, size_t size) -> std::string;
+auto BytesToHex(const uint8_t *data, size_t size, const char *separator = nullptr) -> std::string;
 
 // Normally we would avoid these warnings with something like
 //   __attribute__((format(printf, 1, 2)))

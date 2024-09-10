@@ -54,7 +54,7 @@ auto InactivitySettingMenuScreen::layout(LayoutContext &context, Size size) -> S
                          LayoutOptionsSizeToFit | LayoutOptionsAlignLeft);
     // Layout menu
     context.setViewFrame(menuView_, Rect::fromSize(size).inset(size.width / 7, 0),
-                         LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical);
+                         LayoutOptionsSizeToFitVertical | LayoutOptionsAlignCenterVertical);
 
     context.setViewFrame(extraTextView_, Rect::fromSize(size),
                          LayoutOptionsSizeToFit | LayoutOptionsAlignBottom |
@@ -66,9 +66,8 @@ auto InactivitySettingMenuScreen::layout(LayoutContext &context, Size size) -> S
 void InactivitySettingMenuScreen::showTemporaryMessage(DisplaySystem &display,
                                                        const std::string &message, int duration,
                                                        bool rerenderAfter) {
-    auto *popup = new MsgPopup(display, message);
-    popup->render(display);
-    delete popup;
+    MsgPopup popup(display, message);
+    popup.render(display);
     if (rerenderAfter) {
         Delay(duration);
         setNeedsRerender();
@@ -90,7 +89,6 @@ void InactivitySettingMenuScreen::moveSelection(int delta) {
     setNeedsRerender();
 }
 
-// Implement Screen method
 void InactivitySettingMenuScreen::render(DisplaySystem &display) {
     setFrame(defaultFrameRect());
     draw();
