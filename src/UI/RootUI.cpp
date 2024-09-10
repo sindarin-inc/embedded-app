@@ -48,6 +48,7 @@
 #include "UI/Menu/NewMenuItemSingleLine.hpp"
 #include "UI/Menu/ReadingSettingsMenuScreen.hpp"
 #include "UI/Menu/SystemSettingsMenuScreen.hpp"
+#include "UI/Menu/WiFiSettingsMenuScreen.hpp"
 #include "UI/MsgPopup.hpp"
 #include "UI/OffsetAdjustScreen.hpp"
 #include "UI/OnboardingContentSyncScreen.hpp"
@@ -1108,26 +1109,54 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         }));
 
     systemSettingsMenu->addMenuItem(
-        std::make_shared<NewMenuItemSingleLine>("Clear WiFi Settings",
-                                                [systemSettingsMenu, display]() {
-        WiFi::getInstance().clearWiFiCredentials();
-        log_w("WiFi settings cleared.");
-        systemSettingsMenu->showTemporaryMessage(*display, "WiFi settings cleared.", 2000, true);
-        systemSettingsMenu->setFirstLoad();
-        }));
+        std::make_shared<NewMenuItemSingleLine>("WiFi", [this, systemSettingsMenu, display]() {
+            auto wifiSettingsMenuScreen =
+                std::make_shared<WiFiSettingsMenuScreen>(*display, this->prefs_);
 
-    systemSettingsMenu->addMenuItem(
-        std::make_shared<NewMenuItemSingleLine>("WiFi Scan", [this, systemSettingsMenu, display]() {
-            auto wiFiScanScreen = new WiFiScanScreen(*display, WiFi::getInstance());
-            wiFiScanScreen->begin();
-            this->setCurrentScreen(*wiFiScanScreen);
-            wiFiScanScreen->setBackCallback([this, wiFiScanScreen, systemSettingsMenu, display]() {
+            wifiSettingsMenuScreen->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
+                "WiFi Scan", [this, wifiSettingsMenuScreen, display]() {
+                    auto wiFiScanScreen = new WiFiScanScreen(*display, WiFi::getInstance());
+                    wiFiScanScreen->begin();
+                    this->setCurrentScreen(*wiFiScanScreen);
+                    wiFiScanScreen->setBackCallback(
+                        [this, wiFiScanScreen, wifiSettingsMenuScreen, display]() {
+                wifiSettingsMenuScreen->setFirstLoad();
+                display->clearDisplay();
+                setCurrentScreen(*wifiSettingsMenuScreen);
+                wifiSettingsMenuScreen->render(*this->display_);
+                delete wiFiScanScreen;
+                    });
+                }));
+
+            wifiSettingsMenuScreen->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
+                "Clear WiFi Settings", [wifiSettingsMenuScreen, display]() {
+                    WiFi::getInstance().clearWiFiCredentials();
+                    log_w("WiFi settings cleared.");
+                    wifiSettingsMenuScreen->showTemporaryMessage(*display, "WiFi settings cleared.",
+                                                                 2000, true);
+                    wifiSettingsMenuScreen->setFirstLoad();
+                }));
+
+            wifiSettingsMenuScreen->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
+                "Enable / Disable WiFi", [wifiSettingsMenuScreen, display, this]() {
+                    if (this->prefs_.wifiDisabled.get().value_or(false)) {
+                        this->prefs_.wifiDisabled.set(false);
+                    } else {
+                        this->prefs_.wifiDisabled.set(true);
+                    }
+                    wifiSettingsMenuScreen->setFirstLoad();
+                    wifiSettingsMenuScreen->setNeedsRerender();
+                }));
+
+            wifiSettingsMenuScreen->setBackCallback([this, systemSettingsMenu, display]() {
                 systemSettingsMenu->setFirstLoad();
                 display->clearDisplay();
                 setCurrentScreen(*systemSettingsMenu);
                 systemSettingsMenu->render(*this->display_);
-                delete wiFiScanScreen;
             });
+
+            wifiSettingsMenuScreen->setFirstLoad();
+            setCurrentScreen(*wifiSettingsMenuScreen);
         }));
 
     systemSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
@@ -1760,7 +1789,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             });
         }
     } else if (prefs_.emcMode.get().value_or(false)) {
-        log_d("Starting EMC mode readable reading turn page every 30s and content sync every 60s");
+        log_d("Starting EMC mode readable reading turn page every 30s and content sync every "
+              "60s");
         auto it = std::find_if(readables.begin(), readables.end(),
                                [](const std::shared_ptr<Readable> &x) {
             return (x->title == "The Last Question");
@@ -1859,8 +1889,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     // Yes, clang-tidy, it is weird that we are calling `new` and not `delete` and we know this
     // should be a shared_ptr or something. But just leave us alone for now, ok?
     // NOTE: I couldn't figure out how to use
-    // NOLINTNEXTLINE(clang-analyzer-cplusplus.NewDeleteLeaks) in a way that disabled these warnings
-    // for these variables
+    // NOLINTNEXTLINE(clang-analyzer-cplusplus.NewDeleteLeaks) in a way that disabled these
+    // warnings for these variables
 #ifdef __clang_analyzer__
     delete articlesMenu;
     delete booksMenu;
