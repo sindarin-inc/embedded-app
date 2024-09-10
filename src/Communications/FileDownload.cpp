@@ -29,7 +29,8 @@ auto CreateClient(const std::string &url, bool useBle, const std::shared_ptr<Can
 
 auto DownloadFileCommon(
     const char *url, const std::function<bool(int httpCode, int contentLength)> &openedConnection,
-    const std::function<size_t(HttpClient &client, int index, int contentLength)> &readWrite,
+    const std::function<size_t(std::shared_ptr<HttpClient> client, int index, int contentLength)>
+        &readWrite,
     const std::shared_ptr<CancelFlag> &cancel, bool useBle, int expectedSize,
     const std::function<void(int bytesWritten, float percentage)> &progressCallback, bool gzip)
     -> int {
@@ -50,7 +51,7 @@ auto DownloadFileCommon(
 
     auto sindarinApi = SindarinAPI::getInstance();
     if (sindarinApi->isSindarinUrl(url)) {
-        sindarinApi->setAuth(*client);
+        sindarinApi->setAuth(client);
     }
 
     auto time = esp_timer_get_time();
@@ -136,7 +137,7 @@ auto DownloadFileCommon(
             return ERR_CANCELLED;
         }
 
-        int readLen = readWrite(*client, totalReadLen, contentLength);
+        int readLen = readWrite(client, totalReadLen, contentLength);
         if (readLen <= 0) {
             log_w("readWrite failed (readLen == %d, totalReadLen: %d, contentLength: %d, connected "
                   "%d)",
@@ -198,9 +199,10 @@ auto DownloadFileWithWriteBytes(
 
     return DownloadFileCommon(
         url, openedConnection,
-        [buffer, bufferSize, writeBytes](HttpClient &client, int index, int contentLength) {
-        int readLen = client.read(reinterpret_cast<char *>(buffer.get()),
-                                  std::min(bufferSize, contentLength - index));
+        [buffer, bufferSize, writeBytes](std::shared_ptr<HttpClient> client, int index,
+                                         int contentLength) {
+        int readLen = client->read(reinterpret_cast<char *>(buffer.get()),
+                                   std::min(bufferSize, contentLength - index));
 
         auto written = writeBytes(buffer.get(), static_cast<size_t>(readLen));
         if (written != readLen) {
@@ -270,7 +272,8 @@ auto DownloadFileToPath(const char *url, FileSystem &fileSystem, Telemetry &tele
         return true;
     };
 
-    auto reader = [bufferQueue](HttpClient &client, int index, int contentLength) -> size_t {
+    auto reader = [bufferQueue](std::shared_ptr<HttpClient> client, int index,
+                                int contentLength) -> size_t {
         // NOTE: This gets free'd by the queue consumer. It only needs to be free'd here if we fail
         // to write it to the queue
         auto *data = static_cast<uint8_t *>(SpiRamMalloc(bufferSize));
@@ -278,7 +281,7 @@ auto DownloadFileToPath(const char *url, FileSystem &fileSystem, Telemetry &tele
             log_e("SpiRamMalloc(%d) failed", bufferSize);
             return 0;
         }
-        int bytesRead = client.read(reinterpret_cast<char *>(data), bufferSize);
+        int bytesRead = client->read(reinterpret_cast<char *>(data), bufferSize);
         if (bytesRead <= 0) {
             log_w("client.read returned %d bytes", bytesRead);
             SpiRamFree(data);

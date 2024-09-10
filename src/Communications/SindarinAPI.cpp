@@ -35,13 +35,13 @@ auto SindarinAPI::isSindarinUrl(const char *url) -> bool {
     return HasPrefix(url, baseUrl_.c_str());
 }
 
-auto SindarinAPI::setAuth(HttpClient &client) -> esp_err_t {
+auto SindarinAPI::setAuth(std::shared_ptr<HttpClient> client) -> esp_err_t {
     if (accessToken_.empty()) {
         log_w("Called setAuth, but no access token is set");
         return ESP_ERR_NOT_FOUND;
     }
-    return client.setHeader("Authorization",
-                            StringFormat("Tolkien %s", accessToken_.c_str()).c_str());
+    return client->setHeader("Authorization",
+                             StringFormat("Tolkien %s", accessToken_.c_str()).c_str());
 }
 
 void SindarinAPI::setAccessToken(const std::string &token) { accessToken_ = token; }
@@ -63,7 +63,7 @@ auto SindarinAPI::checkSync(const std::string &url, CheckSyncRequest &req, Check
         return ERR_CLIENT_OPEN;
     }
 
-    auto err = setAuth(*client);
+    auto err = setAuth(client);
     if (err != ESP_OK) {
         return ERR_SET_AUTH;
     }
@@ -148,31 +148,32 @@ auto SindarinAPI::checkSync(const std::string &url, CheckSyncRequest &req, Check
 }
 
 auto SindarinAPI::checkFirmware(FirmwareResponse *resp) -> int {
-    WiFiHttpClient client(StringFormat("%s/firmware/", baseUrl_.c_str()).c_str());
+    auto client = createClient(StringFormat("%s/firmware/", baseUrl_.c_str()), "application/json",
+                               HTTP_METHOD_POST, false, nullptr);
 
     auto err = setAuth(client);
     if (err != ESP_OK) {
         return ERR_SET_AUTH;
     }
 
-    err = client.open(0);
+    err = client->open(0);
     if (err != ESP_OK) {
         return ERR_CLIENT_OPEN;
     }
-    defer { client.close(); };
+    defer { client->close(); };
 
-    auto contentLength = client.fetchHeaders();
+    auto contentLength = client->fetchHeaders();
     if (contentLength <= 0) {
         log_e("Failed to fetch headers");
         return ERR_CONTENT_LENGTH;
     }
 
-    int httpCode = client.getStatusCode();
+    int httpCode = client->getStatusCode();
     if (httpCode != 200) {
         log_e("Failed to check sync: %d", httpCode);
         return httpCode;
     }
-    auto stream = client.makeReadStream();
+    auto stream = client->makeReadStream();
 
     SHOW_HEAP();
 
@@ -261,7 +262,7 @@ auto SindarinAPI::uploadTelemetryFile(SFile &telemetryFile, const std::string &l
         return ERR_CLIENT_OPEN;
     }
 
-    auto err = setAuth(*client);
+    auto err = setAuth(client);
     if (err != ESP_OK) {
         return ERR_SET_AUTH;
     }
@@ -314,19 +315,20 @@ auto SindarinAPI::uploadTelemetryFile(SFile &telemetryFile, const std::string &l
 }
 
 auto SindarinAPI::uploadCrashReport(SFile &crashFile, const std::string &contentType) -> int {
-    WiFiHttpClient client(StringFormat("%s/coredumps/", baseUrl_.c_str()).c_str(),
-                          contentType.c_str(), HTTP_METHOD_POST, true);
+    auto client = createClient(StringFormat("%s/coredumps/", baseUrl_.c_str()), contentType,
+                               HTTP_METHOD_POST, false, nullptr);
+
     auto err = setAuth(client);
     if (err != ESP_OK) {
         return ERR_SET_AUTH;
     }
 
     int writeSize = crashFile.size();
-    err = client.open(writeSize);
+    err = client->open(writeSize);
     if (err != ESP_OK) {
         return ERR_CLIENT_OPEN;
     }
-    defer { client.close(); };
+    defer { client->close(); };
 
     size_t bufferSize = 4096;
     auto buffer = SpiRamArrayPtr<char>(bufferSize);
@@ -334,10 +336,10 @@ auto SindarinAPI::uploadCrashReport(SFile &crashFile, const std::string &content
     int totalBytesWritten = 0;
     while (totalBytesWritten < writeSize) {
         auto bytesRead = crashFile.readBytes(buffer.get(), bufferSize);
-        auto bytesWritten = client.write(buffer.get(), bytesRead);
+        auto bytesWritten = client->write(buffer.get(), bytesRead);
         if (bytesWritten != bytesRead) {
             log_w("client.write failed (bytesWritten == %d)", bytesWritten);
-            if (!client.connected) {
+            if (!client->connected) {
                 log_w("Connection closed, bailing out");
                 return ERR_CLIENT_DISCONNECTED;
             }
@@ -345,6 +347,6 @@ auto SindarinAPI::uploadCrashReport(SFile &crashFile, const std::string &content
         totalBytesWritten += bytesWritten;
     }
 
-    client.fetchHeaders();
-    return client.getStatusCode();
+    client->fetchHeaders();
+    return client->getStatusCode();
 }

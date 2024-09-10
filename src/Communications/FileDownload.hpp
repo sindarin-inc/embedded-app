@@ -9,7 +9,8 @@
 
 auto DownloadFileCommon(
     const char *url, const std::function<bool(int httpCode, int contentLength)> &openedConnection,
-    const std::function<size_t(HttpClient &client, int index, int contentLength)> &readWrite,
+    const std::function<size_t(std::shared_ptr<HttpClient> client, int index, int contentLength)>
+        &readWrite,
     const std::shared_ptr<CancelFlag> &cancel, bool useBle, int expectedSize,
     const std::function<void(int bytesWritten, float percentage)> &progressCallback, bool gzip)
     -> int;

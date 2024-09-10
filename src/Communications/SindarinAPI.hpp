@@ -71,7 +71,7 @@ public:
                              const std::shared_ptr<CancelFlag> &cancel = nullptr) -> int;
     auto uploadCrashReport(SFile &crashFile, const std::string &contentType) -> int;
 
-    auto setAuth(HttpClient &client) -> esp_err_t;
+    auto setAuth(std::shared_ptr<HttpClient> client) -> esp_err_t;
 
 protected:
     static std::shared_ptr<SindarinAPI> instance;
