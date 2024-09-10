@@ -341,7 +341,7 @@ auto WiFi::connectWiFi(const std::string &ssid, const std::string &password) -> 
 }
 
 auto WiFi::connectWiFiFromSettings() -> bool {
-    if (!prefs_.wifiSyncEnabled.get().value_or(true)) {
+    if (!prefs_.wifiDisabled.get().value_or(false)) {
         log_i("WiFi sync disabled, not connecting");
         return false;
     }

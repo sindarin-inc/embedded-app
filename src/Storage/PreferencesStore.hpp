@@ -348,7 +348,7 @@ public:
           cesMode(*this, "ces"),
           emcMode(*this, "emc"),
           wifiPower(*this, "wifi-power"),
-          wifiSyncEnabled(*this, "wifi-sync"),
+          wifiDisabled(*this, "wifi-disabled"),
           inactivityMinutes(*this, "inact-min"),
           tzIana(*this, "tz-iana"),
           tzPosix(*this, "tz-posix"),
@@ -627,7 +627,7 @@ public:
     PrefsItem<bool> cesMode;
     PrefsItem<bool> emcMode;
     PrefsItem<int> wifiPower;
-    PrefsItem<bool> wifiSyncEnabled;
+    PrefsItem<bool> wifiDisabled;
     PrefsItem<int> inactivityMinutes;
     PrefsItem<std::string> tzIana;
     PrefsItem<std::string> tzPosix;
