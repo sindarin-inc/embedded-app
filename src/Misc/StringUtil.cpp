@@ -22,13 +22,16 @@ auto WordCount(const char *str) -> int {
 
 // bytesToHex
 // https://stackoverflow.com/a/3386294
-auto BytesToHex(const uint8_t *data, size_t size) -> std::string {
+auto BytesToHex(const uint8_t *data, size_t size, const char *separator) -> std::string {
     std::string result;
     for (size_t i = 0; i < size; ++i) {
         char buf[3];
         // NOLINTNEXTLINE(cert-err33-c) -- this is a safe format string
         snprintf(buf, sizeof(buf), "%02x", data[i]);
         result += buf;
+        if (separator && i < size - 1) {
+            result += separator;
+        }
     }
     return result;
 }
