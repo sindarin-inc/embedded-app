@@ -54,7 +54,7 @@ auto InactivitySettingMenuScreen::layout(LayoutContext &context, Size size) -> S
                          LayoutOptionsSizeToFit | LayoutOptionsAlignLeft);
     // Layout menu
     context.setViewFrame(menuView_, Rect::fromSize(size).inset(size.width / 7, 0),
-                         LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical);
+                         LayoutOptionsSizeToFitVertical | LayoutOptionsAlignCenterVertical);
 
     context.setViewFrame(extraTextView_, Rect::fromSize(size),
                          LayoutOptionsSizeToFit | LayoutOptionsAlignBottom |
