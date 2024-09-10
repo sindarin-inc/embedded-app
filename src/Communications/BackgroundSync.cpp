@@ -168,6 +168,13 @@ void BackgroundSyncInternal(PowerManager &powerManager, PreferencesStore &prefs,
 
 void BackgroundSync(PowerManager &powerManager, PreferencesStore &prefs, LocalStore &localStore,
                     Telemetry &telemetry) {
+    // Don't perform a background sync if wifi is disabled manually
+    // TODO: Once BLE sync is merged, check to see if that is still enabled
+    // and if so, continue with the sync but DON'T use wifi for it. Maybe have to
+    // change the guts of this a bit to pull that off.
+    if (prefs.wifiDisabled.get().value_or(false)) {
+        return;
+    }
     // Debug LED so we know what's happening (will be turned off when deep sleep happens)
     // Only turn on if debug menu is enabled
     if (prefs.showDebugMenu.get().value_or(false)) {
