@@ -7,6 +7,7 @@
 WiFiSettingsMenuScreen::WiFiSettingsMenuScreen(DisplaySystem &display, PreferencesStore &prefs)
     : EinkView(display), prefs_(prefs), menuView_(display),
       backLabelView_(display, "System Settings"), wifiEnabledView_(display, ""),
+      bleEnabledView_(display, ""),
       configuredAccessView_(display, "Configured Access Points:    ") {
     menuView_.padding = 1;
 }
@@ -40,7 +41,7 @@ void WiFiSettingsMenuScreen::processCommand(RemoteCommand command) {
 }
 
 auto WiFiSettingsMenuScreen::layout(LayoutContext &context, Size size) -> Size {
-    int y = size.height / 6;
+    int y = size.height / 7;
     context.setViewFrame(backLabelView_, {{0, 0}, {size.width, 0}},
                          LayoutOptionsSizeToFit | LayoutOptionsAlignLeft);
 
@@ -52,8 +53,23 @@ auto WiFiSettingsMenuScreen::layout(LayoutContext &context, Size size) -> Size {
         newWifiText += "Enabled";
     }
     wifiEnabledView_.setText(newWifiText);
+
+    std::string newBleText = "Bluetooth Sync ";
+    if (prefs_.bleDisabled.get().value_or(false)) {
+        newBleText += "Disabled";
+    } else {
+        newBleText += "Enabled";
+    }
+    bleEnabledView_.setText(newBleText);
+
     // Layout title
-    context.setViewFrame(wifiEnabledView_, {{0, y}, {size.width, 0}},
+    auto wifiEnabledBox =
+        context.setViewFrame(wifiEnabledView_, {{0, y}, {size.width, 0}},
+                             LayoutOptionsSizeToFit | LayoutOptionsAlignCenterHorizontal);
+
+    y += wifiEnabledBox.size.height + 1;
+
+    context.setViewFrame(bleEnabledView_, {{0, y}, {size.width, 0}},
                          LayoutOptionsSizeToFit | LayoutOptionsAlignCenterHorizontal);
 
     // Layout menu
@@ -67,14 +83,14 @@ auto WiFiSettingsMenuScreen::layout(LayoutContext &context, Size size) -> Size {
         LayoutOptionsSizeToFit);
 
     WiFiSettings settings;
-    y = configuredLabelBox.bottom() + 5;
+    y = configuredLabelBox.bottom() + 2;
     for (int i = 0; i < settings.count(); i++) {
         configuredAccessPoints_.push_back(
             std::make_shared<SingleLineTextView>(display_, settings.settings[i].ssid));
         auto itemBox = context.setViewFrame(*configuredAccessPoints_[i],
                                             {{18, y}, {size.width - 18, size.height - y}},
                                             LayoutOptionsSizeToFit);
-        y += itemBox.size.height + 3;
+        y += itemBox.size.height + 1;
     }
 
     return size;
@@ -96,6 +112,7 @@ void WiFiSettingsMenuScreen::showTemporaryMessage(DisplaySystem &display,
 void WiFiSettingsMenuScreen::drawInRect(Rect rect) {
     backLabelView_.draw();
     wifiEnabledView_.draw();
+    bleEnabledView_.draw();
     menuView_.draw();
 
     // Take care of the case where the user has cleared out the access points

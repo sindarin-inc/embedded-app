@@ -1108,8 +1108,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             power_.reboot();
         }));
 
-    systemSettingsMenu->addMenuItem(
-        std::make_shared<NewMenuItemSingleLine>("WiFi", [this, systemSettingsMenu, display]() {
+    systemSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
+        "WiFi and Bluetooth", [this, systemSettingsMenu, display]() {
             auto wifiSettingsMenuScreen =
                 std::make_shared<WiFiSettingsMenuScreen>(*display, this->prefs_);
 
@@ -1143,6 +1143,17 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                         this->prefs_.wifiDisabled.set(false);
                     } else {
                         this->prefs_.wifiDisabled.set(true);
+                    }
+                    wifiSettingsMenuScreen->setFirstLoad();
+                    wifiSettingsMenuScreen->setNeedsRerender();
+                }));
+
+            wifiSettingsMenuScreen->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
+                "Enable / Disable Bluetooth Sync", [wifiSettingsMenuScreen, display, this]() {
+                    if (this->prefs_.bleDisabled.get().value_or(false)) {
+                        this->prefs_.bleDisabled.set(false);
+                    } else {
+                        this->prefs_.bleDisabled.set(true);
                     }
                     wifiSettingsMenuScreen->setFirstLoad();
                     wifiSettingsMenuScreen->setNeedsRerender();

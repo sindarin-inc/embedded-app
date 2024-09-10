@@ -383,6 +383,7 @@ public:
           textInsetTop(*this, "text-inset-t"),
           textInsetBottom(*this, "text-inset-b"),
           wifiDisabled(*this, "wifi-disable"),
+          bleDisabled(*this, "ble-disable"),
           preferencesStoreMigrationVersion_(*this, "ps-version") {}
     // clang-format on
 
@@ -669,6 +670,7 @@ public:
     PrefsItem<uint16_t> textInsetTop;
     PrefsItem<uint16_t> textInsetBottom;
     PrefsItem<bool> wifiDisabled;
+    PrefsItem<bool> bleDisabled;
 
     // These are RTC_SLOW_MEM variables that persist across deep sleep / wake cycles but will be
     // reset on power cycles

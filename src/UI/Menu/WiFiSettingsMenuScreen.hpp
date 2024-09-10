@@ -32,6 +32,7 @@ private:
     NewMenuView menuView_;
     ArrowLabelView backLabelView_;
     SingleLineTextView wifiEnabledView_;
+    SingleLineTextView bleEnabledView_;
     SingleLineTextView configuredAccessView_;
     std::vector<std::shared_ptr<SingleLineTextView>> configuredAccessPoints_;
 
