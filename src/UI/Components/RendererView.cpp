@@ -36,7 +36,7 @@ void RendererView::drawInRect(Rect rect) {
             numSkipLines_++;
         }
         // If the line is blank, we want to skip it. Also, skip multiple newlines in a row.
-        while ((renderer_.getLengthOfLine(numSkipLines_) == 1) &&
+        while ((renderer_.getLengthOfLine(numSkipLines_) == 0) &&
                numSkipLines_ < renderer_.getNumRenderedLines()) {
             numSkipLines_++;
         }

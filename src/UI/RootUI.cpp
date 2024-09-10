@@ -1856,11 +1856,11 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     SHOW_HEAP();
 
-// Yes, clang-tidy, it is weird that we are calling `new` and not `delete` and we know this
-// should be a shared_ptr or something. But just leave us alone for now, ok?
-// NOTE: I couldn't figure out how to use
-// NOLINTNEXTLINE(clang-analyzer-cplusplus.NewDeleteLeaks) in a way that disabled these warnings
-// for these variables
+    // Yes, clang-tidy, it is weird that we are calling `new` and not `delete` and we know this
+    // should be a shared_ptr or something. But just leave us alone for now, ok?
+    // NOTE: I couldn't figure out how to use
+    // NOLINTNEXTLINE(clang-analyzer-cplusplus.NewDeleteLeaks) in a way that disabled these warnings
+    // for these variables
 #ifdef __clang_analyzer__
     delete articlesMenu;
     delete booksMenu;

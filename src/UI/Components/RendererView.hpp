@@ -13,6 +13,8 @@ public:
 
     void setAutopilot(bool autoPilotMode) { autoPilotMode_ = autoPilotMode; }
 
+    auto autoPilotMode() const -> bool { return autoPilotMode_; }
+
     void resetRenderer() {
         numSkipLines_ = 0;
         currentPlace_ = nullptr;

@@ -26,13 +26,11 @@ public:
     void render(DisplaySystem &display) override;
 
     void turnOnAutoPilot() {
-        autoPilotOn_ = true;
         rendererView_.setAutopilot(true);
         setFirstLoad();
     }
 
     void turnOffAutoPilot() {
-        autoPilotOn_ = false;
         rendererView_.resetRenderer();
         rendererView_.setAutopilot(false);
         setFirstLoad();
@@ -46,8 +44,6 @@ private:
     RendererView rendererView_;
 
     bool firstLoad_{true};
-
-    bool autoPilotOn_{false};
 
     void resetTimer();
 

@@ -15,7 +15,7 @@ ReadingSettingsMenuScreen::ReadingSettingsMenuScreen(DisplaySystem &display,
 
     by James S.J.R.R.A. Tolkien Christensen
 
-    
+
     "Elen síla lúmenn' omentielvo" Frodo said to Captain James Holden. (A star shines on the hour of our meeting).
     
     "Yes, Frodo." Holden answered. "There are about 1300 stars we could visit whenever you're up for it. But please get rid of that evil jewelry. We wouldn't want the protomolecule to get a hold of that."
@@ -137,7 +137,7 @@ void ReadingSettingsMenuScreen::resetTimer() {
 void ReadingSettingsMenuScreen::render(DisplaySystem &display) {
     setFrame(defaultFrameRect());
     bool fromFirstLoad = false;
-    if (firstLoad_ || !autoPilotOn_) {
+    if (firstLoad_ || !rendererView_.autoPilotMode()) {
         draw();
         if (firstLoad_) {
             display.updateDisplay(DisplaySystem::UpdateType::FULL, false);
@@ -146,7 +146,7 @@ void ReadingSettingsMenuScreen::render(DisplaySystem &display) {
         menuView_.drawIndicator();
         display.updateDisplay(DisplaySystem::UpdateType::FAST_INDICATOR);
         fromFirstLoad = true;
-    } else if (autoPilotOn_) {
+    } else if (rendererView_.autoPilotMode()) {
         draw();
         menuView_.drawIndicator();
         // Because the increment happens after the render, so this is the beginning of a new page
@@ -157,7 +157,7 @@ void ReadingSettingsMenuScreen::render(DisplaySystem &display) {
         }
         resetTimer();
     }
-    if (fromFirstLoad && autoPilotOn_) {
+    if (fromFirstLoad && rendererView_.autoPilotMode()) {
         resetTimer();
     }
 }
