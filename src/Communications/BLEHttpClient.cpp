@@ -58,8 +58,6 @@ auto BLEHttpClient::write(const char *body, int length) -> int {
 
 auto BLEHttpClient::fetchHeaders(int expectedSize, const std::shared_ptr<CancelFlag> &cancel)
     -> int {
-    // 30 seconds of advertising to connect to BLE proxy on mobile app
-    constexpr auto advertisingTimeoutMs = 30 * 1000;
     constexpr auto fetchingTimeoutMs = 1 * 60 * 1000; // 1 minute of downloading headers per book
     statusCode_ = 0;
     contentLength_ = 0;
@@ -96,14 +94,8 @@ auto BLEHttpClient::fetchHeaders(int expectedSize, const std::shared_ptr<CancelF
 
         auto currentTime = esp_timer_get_time();
         auto timedOut =
-            (currentTime - startTime) > (static_cast<long long>(advertisingTimeoutMs) * 1000);
-        auto fetchingTimedOut =
             (currentTime - startTime) > (static_cast<long long>(fetchingTimeoutMs) * 1000);
         if (timedOut) {
-            log_e("Timed out waiting for beginning of headers response");
-            return ERR_BLE_TIMED_OUT;
-        } else if (fetchingTimedOut) {
-            // Reset the timer if we're still fetching
             log_e("Timed out waiting for end of headers response");
             return ERR_BLE_TIMED_OUT;
         }
