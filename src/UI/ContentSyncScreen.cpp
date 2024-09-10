@@ -37,13 +37,15 @@ ContentSyncScreen::ContentSyncScreen(DisplaySystem &display, LocalStore &localSt
     popupTextView_->dynamicWidth = true;
     popupTextView_->setHidden(true);
 
-    power_.addStateChangeCallback([this](PowerState state) {
+    power_.addStateChangeCallback(this, [this](PowerState state) {
         if (state == PowerState::ShuttingDown) {
             log_d("Signaling content sync to cancel");
             this->cancel();
         }
     });
-};
+}
+
+ContentSyncScreen::~ContentSyncScreen() { power_.removeStateChangeCallback(this); }
 
 auto ContentSyncScreen::layout(LayoutContext &context, Size size) -> Size {
     context.setSublayoutFrame(

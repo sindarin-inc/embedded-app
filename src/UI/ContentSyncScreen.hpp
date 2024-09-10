@@ -18,6 +18,7 @@ class ContentSyncScreen : public Screen, public EinkView {
 public:
     ContentSyncScreen(DisplaySystem &display, LocalStore &localStore, PreferencesStore &prefs,
                       Telemetry &telemetry, PowerManager &power);
+    ~ContentSyncScreen();
 
     void begin();
 

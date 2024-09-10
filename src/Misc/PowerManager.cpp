@@ -284,7 +284,7 @@ auto PowerManager::begin() -> esp_err_t {
                     state_ = PowerState::ActiveUSBCharging;
                     inactivityTimer_.setTimeoutMs(inactivityTimeoutMs());
                     for (auto &callback : stateChangeCallbacks_) {
-                        callback(state_);
+                        callback.second(state_);
                     }
                 }
                 // USB is connected so disable light sleep
@@ -346,7 +346,7 @@ void PowerManager::loop() {
             state_ = PowerState::ActiveBatteryDepleted;
             inactivityTimer_.setTimeoutMs(inactivityTimeoutMs());
             for (auto &callback : stateChangeCallbacks_) {
-                callback(state_);
+                callback.second(state_);
             }
         } else {
             powerOff();
@@ -397,7 +397,7 @@ void PowerManager::loop() {
         state_ = PowerState::ActiveOverTemp;
         inactivityTimer_.setTimeoutMs(inactivityTimeoutMs());
         for (auto &callback : stateChangeCallbacks_) {
-            callback(state_);
+            callback.second(state_);
         }
     }
 
@@ -487,7 +487,7 @@ void PowerManager::beginShutdown() {
     auto previousState = state_;
     state_ = PowerState::ShuttingDown;
     for (auto &callback : stateChangeCallbacks_) {
-        callback(state_);
+        callback.second(state_);
     }
 
     auto taskName = pcTaskGetName(nullptr);
