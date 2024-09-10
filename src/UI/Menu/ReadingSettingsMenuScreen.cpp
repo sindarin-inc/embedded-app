@@ -127,8 +127,12 @@ void ReadingSettingsMenuScreen::moveSelection(int delta) {
 }
 
 void ReadingSettingsMenuScreen::resetTimer() {
-    nextInterval_ = pageSpeed_ * renderer_.getLengthOfLine(rendererView_.getNumSkipLines() - 1) /
-                    renderer_.getTotalLengthOfLines();
+    auto totalLength = renderer_.getTotalLengthOfLines();
+    nextInterval_ = totalLength != 0
+                        ? pageSpeed_ *
+                              renderer_.getLengthOfLine(rendererView_.getNumSkipLines() - 1) /
+                              totalLength
+                        : 0;
     if (nextInterval_ == 0) {
         nextInterval_ = 1000;
     }
