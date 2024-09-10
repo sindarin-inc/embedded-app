@@ -113,7 +113,7 @@ void ReleaseNotesScreen::runUpdate() {
     localStore_.resetFirmware();
 
     display_.drawSingleLineOfCenteredText(
-        StringFormat("%s installed! Rebooting.", firmware_.version.c_str()));
+        StringFormat("%s installed! Restarting...", firmware_.version.c_str()));
     display_.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
 
     Delay(2000);
