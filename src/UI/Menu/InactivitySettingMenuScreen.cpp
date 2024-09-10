@@ -66,9 +66,8 @@ auto InactivitySettingMenuScreen::layout(LayoutContext &context, Size size) -> S
 void InactivitySettingMenuScreen::showTemporaryMessage(DisplaySystem &display,
                                                        const std::string &message, int duration,
                                                        bool rerenderAfter) {
-    auto *popup = new MsgPopup(display, message);
-    popup->render(display);
-    delete popup;
+    MsgPopup popup(display, message);
+    popup.render(display);
     if (rerenderAfter) {
         Delay(duration);
         setNeedsRerender();
