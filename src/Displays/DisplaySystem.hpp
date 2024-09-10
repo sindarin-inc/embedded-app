@@ -55,6 +55,11 @@ struct DisplayRect {
         return !(*this == other);
     }
 
+    static auto fromRect(Rect rect) -> DisplayRect {
+        return {static_cast<uint16_t>(rect.origin.x), static_cast<uint16_t>(rect.origin.y),
+                static_cast<uint16_t>(rect.size.width), static_cast<uint16_t>(rect.size.height)};
+    }
+
     static auto fromSizeAndInsets(uint16_t width, uint16_t height, DisplayInset inset)
         -> DisplayRect {
         return {inset.left, inset.top, static_cast<uint16_t>(width - inset.left - inset.right),

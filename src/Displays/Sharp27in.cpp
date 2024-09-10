@@ -3,9 +3,9 @@
 #include "Sharp27in.hpp"
 
 #include <algorithm>
+#include <cmath>
 #include <cstring>
 #include <esp_err.h>
-#include <math.h>
 
 #include "Misc/Platform.hpp"
 #include "sindarin-debug.h"
@@ -32,7 +32,7 @@
         sharpmemVcom_ = sharpmemVcom_ ? 0x00 : SHARPMEM_BIT_VCOM;                                  \
     } while (0);
 
-uint8_t inline reverse8Bits(uint8_t value) {
+auto inline Reverse8Bits(uint8_t value) -> uint8_t {
     uint8_t reversed = 0;
     for (int i = 0; i < 8; ++i) {
         if (value & (1 << i)) {
@@ -49,11 +49,7 @@ uint8_t inline reverse8Bits(uint8_t value) {
  * @param mosi The MOSI pin
  * @param cs The display chip select pin - **NOTE** this is ACTIVE HIGH!
  */
-Sharp27in::Sharp27in(uint8_t clk, uint8_t mosi, uint8_t cs) {
-    cs_ = cs;
-    mosi_ = mosi;
-    clk_ = clk;
-}
+Sharp27in::Sharp27in(uint8_t clk, uint8_t mosi, uint8_t cs) : cs_(cs), mosi_(mosi), clk_(clk) {}
 
 /**
  * @brief Start the driver object, setting up pins and configuring a buffer for
@@ -61,12 +57,16 @@ Sharp27in::Sharp27in(uint8_t clk, uint8_t mosi, uint8_t cs) {
  *
  * @return boolean true: success false: failure
  */
-bool Sharp27in::begin(void) {
+auto Sharp27in::begin() -> bool {
     PinMode(cs_, OUTPUT);
 
     // this display is weird in that cs_ is active HIGH not LOW like every other
     // SPI device
     DigitalWrite(cs_, LOW);
+
+    // Set the EXT pin to low (the adafruit board has a resistor to do this)
+    // PinMode(7, OUTPUT);
+    // DigitalWrite(7, LOW);
 
     spi_bus_config_t buscfg = {
         .mosi_io_num = CONFIG_DISPLAY_SHARP_27IN_MOSI,
@@ -113,7 +113,7 @@ void inline Sharp27in::writeSPI(const uint8_t *data, size_t len) {
     spi_transaction_t t = {
         .length = len * 8,
         .tx_buffer = data,
-        .rx_buffer = NULL,
+        .rx_buffer = nullptr,
     };
 
     esp_err_t err = spi_device_polling_transmit(spiHigh_, &t);
@@ -132,9 +132,10 @@ void Sharp27in::clearDisplay() {
     // Send the clear screen command rather than doing a HW refresh (quicker)
     DigitalWrite(cs_, HIGH);
 
-    uint8_t clear_data[2] = {reverse8Bits((uint8_t)(sharpmemVcom_ | SHARPMEM_BIT_CLEAR)), 0x00};
+    uint8_t clearData[2] = {Reverse8Bits(static_cast<uint8_t>(sharpmemVcom_ | SHARPMEM_BIT_CLEAR)),
+                            0x00};
 
-    writeSPI(clear_data, 2);
+    writeSPI(clearData, 2);
 
     TOGGLE_VCOM;
     DigitalWrite(cs_, LOW);
@@ -152,30 +153,30 @@ void Sharp27in::refresh(uint8_t *sharpmemBuffer) {
 
     // Send the write command
     uint8_t command = sharpmemVcom_ | SHARPMEM_BIT_WRITECMD;
-    command = reverse8Bits(command);
+    command = Reverse8Bits(command);
     writeSPI(&command, 1);
 
     TOGGLE_VCOM;
 
-    uint8_t bytes_per_line = SHARP_27IN_X_PIXELS / 8;
+    uint8_t bytesPerLine = SHARP_27IN_X_PIXELS / 8;
     uint16_t totalbytes = (SHARP_27IN_X_PIXELS * SHARP_27IN_Y_PIXELS) / 8;
 
-    for (i = 0; i < totalbytes; i += bytes_per_line) {
-        uint8_t line[bytes_per_line + 2];
+    for (i = 0; i < totalbytes; i += bytesPerLine) {
+        uint8_t line[bytesPerLine + 2];
         // Send address byte
         currentline = ((i + 1) / (SHARP_27IN_X_PIXELS / 8)) + 1;
-        line[0] = reverse8Bits(currentline);
+        line[0] = Reverse8Bits(currentline);
 
         // copy over this line
         // Interestnigly, all the commands have to have their bits reversed
         // but our canvas already has the bits the way this display wants them
-        memcpy(line + 1, sharpmemBuffer + i, bytes_per_line);
+        memcpy(line + 1, sharpmemBuffer + i, bytesPerLine);
 
         // Send end of line
-        line[bytes_per_line + 1] = 0x00;
+        line[bytesPerLine + 1] = 0x00;
 
         // send it!
-        writeSPI(line, bytes_per_line + 2);
+        writeSPI(line, bytesPerLine + 2);
     }
 
     // Send another trailing 8 bits for the last line
