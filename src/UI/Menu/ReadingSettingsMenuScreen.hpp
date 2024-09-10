@@ -25,6 +25,19 @@ public:
     // Implement Screen methods
     void render(DisplaySystem &display) override;
 
+    void turnOnAutoPilot() {
+        autoPilotOn_ = true;
+        rendererView_.setAutopilot(true);
+        setFirstLoad();
+    }
+
+    void turnOffAutoPilot() {
+        autoPilotOn_ = false;
+        rendererView_.resetRenderer();
+        rendererView_.setAutopilot(false);
+        setFirstLoad();
+    }
+
 private:
     NewMenuView menuView_;
     ArrowLabelView backLabelView_;
@@ -33,6 +46,13 @@ private:
     RendererView rendererView_;
 
     bool firstLoad_{true};
+
+    bool autoPilotOn_{false};
+
+    void resetTimer();
+
+    unsigned long nextInterval_ = 0;
+    int pageSpeed_ = 10000;
 
     void moveSelection(int delta);
 };

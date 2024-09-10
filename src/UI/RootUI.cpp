@@ -532,6 +532,14 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     auto readingSettingsMenu = new ReadingSettingsMenuScreen(*display, "Main Menu");
 
+    if (this->prefs_.autoPilot.get().value_or(false)) {
+        prefs_.autoPilotSpeed.set(10000);
+        readingSettingsMenu->turnOnAutoPilot();
+    } else {
+        prefs_.autoPilotSpeed.remove();
+        readingSettingsMenu->turnOffAutoPilot();
+    }
+
     readingSettingsMenu->setBackCallback([this, mainMenu]() {
         this->display_->clearDisplay();
         mainMenu->setFirstLoad();
@@ -611,6 +619,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     }
 #endif
 
+#if 0
+// Brightness and contrast are going to move elsewhere
     readingSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
         "Brightness",
         [this, display, readingSettingsMenu, &lightingController]() {
@@ -639,6 +649,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             delete contrastAdjustScreen;
         });
         }));
+#endif
 #endif
 
     readingSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
@@ -678,6 +689,33 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 setCurrentScreen(*readingSettingsMenu);
                 delete lineSpacingScreen;
             });
+        }));
+
+    readingSettingsMenu->addMenuItem(
+        std::make_shared<NewMenuItemSingleLine>("Toggle Dark Mode", [this, readingSettingsMenu]() {
+            this->prefs_.darkMode.set(!this->prefs_.darkMode.get().value_or(false));
+            // Reserved for future use? Potentially lighting up and down?
+            this->display_->flipInversion();
+            // When we invert, we should do a full clear of the display to make sure
+            // the blacks are really gone.
+            this->display_->clearDisplay();
+            prefs_.invertSetting.set(this->display_->getInversion());
+            readingSettingsMenu->setNeedsRerender();
+            readingSettingsMenu->setFirstLoad();
+        }));
+
+    readingSettingsMenu->addMenuItem(
+        std::make_shared<NewMenuItemSingleLine>("Toggle Autopilot", [this, readingSettingsMenu]() {
+            this->prefs_.autoPilot.set(!this->prefs_.autoPilot.get().value_or(false));
+            if (this->prefs_.autoPilot.get().value_or(false)) {
+                prefs_.autoPilotSpeed.set(10000);
+                readingSettingsMenu->turnOnAutoPilot();
+            } else {
+                prefs_.autoPilotSpeed.remove();
+                readingSettingsMenu->turnOffAutoPilot();
+            }
+            readingSettingsMenu->setNeedsRerender();
+            readingSettingsMenu->setFirstLoad();
         }));
 
 #if 0
@@ -1158,24 +1196,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         this->setCurrentScreen(*experimentalSettingsMenu);
     }));
 
-    experimentalSettingsMenu->addMenuItem(MenuItem("Dark Mode", [this, experimentalSettingsMenu]() {
-        this->prefs_.darkMode.set(!this->prefs_.darkMode.get().value_or(false));
-        // Reserved for future use? Potentially lighting up and down?
-        this->display_->flipInversion();
-        // When we invert, we should do a full clear of the display to make sure
-        // the blacks are really gone.
-        this->display_->clearDisplay();
-        prefs_.invertSetting.set(this->display_->getInversion());
-        experimentalSettingsMenu->setNeedsRerender();
-        experimentalSettingsMenu->setFirstLoad();
-    }));
-
-    if (prefs_.darkMode.get().value_or(false)) {
-        experimentalSettingsMenu->setToggleLastItem(true);
-    } else {
-        experimentalSettingsMenu->setToggleLastItem(false);
-    }
-
 #if 0
     experimentalSettingsMenu->addMenuItem(MenuItem("Fonts Library",
                                                    [this, experimentalSettingsMenu]() {
@@ -1189,21 +1209,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         experimentalSettingsMenu->setToggleLastItem(false);
     }
 #endif
-
-    experimentalSettingsMenu->addMenuItem(MenuItem("Autopilot", [this]() {
-        this->prefs_.autoPilot.set(!this->prefs_.autoPilot.get().value_or(false));
-        if (this->prefs_.autoPilot.get().value_or(false)) {
-            prefs_.autoPilotSpeed.set(10000);
-        } else {
-            prefs_.autoPilotSpeed.remove();
-        }
-    }));
-
-    if (prefs_.autoPilot.get().value_or(false)) {
-        experimentalSettingsMenu->setToggleLastItem(true);
-    } else {
-        experimentalSettingsMenu->setToggleLastItem(false);
-    }
 
     experimentalSettingsMenu->addMenuItem(MenuItem("Show summary", [this]() {
         this->prefs_.noShowPartialChapterSummary.set(
@@ -1851,11 +1856,11 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     SHOW_HEAP();
 
-    // Yes, clang-tidy, it is weird that we are calling `new` and not `delete` and we know this
-    // should be a shared_ptr or something. But just leave us alone for now, ok?
-    // NOTE: I couldn't figure out how to use
-    // NOLINTNEXTLINE(clang-analyzer-cplusplus.NewDeleteLeaks) in a way that disabled these warnings
-    // for these variables
+// Yes, clang-tidy, it is weird that we are calling `new` and not `delete` and we know this
+// should be a shared_ptr or something. But just leave us alone for now, ok?
+// NOTE: I couldn't figure out how to use
+// NOLINTNEXTLINE(clang-analyzer-cplusplus.NewDeleteLeaks) in a way that disabled these warnings
+// for these variables
 #ifdef __clang_analyzer__
     delete articlesMenu;
     delete booksMenu;

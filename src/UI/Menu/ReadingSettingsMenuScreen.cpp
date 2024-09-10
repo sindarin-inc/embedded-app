@@ -13,16 +13,44 @@ ReadingSettingsMenuScreen::ReadingSettingsMenuScreen(DisplaySystem &display,
     std::string message;
     message +=
         "Beneath a rugged exterior, Pirate Captain O'Malley harbored a love for poetry. Between "
-        "skirmishes and treasure hunts, he'd pen verses inspired by the sea's beauty. A stolen, "
-        "enchanted quill from a captured merchant vessel soon revealed its magic, making his poems "
-        "come to life. The images he wrote danced in the air, telling tales of love, adventure, "
-        "and the sea. O'Malley's crew, once fierce and merciless, became entranced by the art of "
-        "words, turning their ship into a floating haven of poetry and wonder. "
-        "However, the enchanted quill's magic drew the ire of Poseidon, god of the sea. Waves "
-        "turned treacherous, testing the pirate crew's newfound love for poetry. Frustrated, "
-        "O'Malley used the quill to write a poem addressing Poseidon. The god appeared, "
-        "challenging O'Malley to a duel of verses. Poseidon's poetry conjured storms; O'Malley's "
-        "verses evoked calm seas.";
+        "skirmishes and treasure hunts, he'd pen verses inspired by the sea's beauty. His "
+        "weathered "
+        "hands, more accustomed to wielding cutlasses and steering ships, now delicately held "
+        "quills "
+        "and parchment. The crew initially scoffed at their captain's peculiar hobby, but soon "
+        "found "
+        "themselves drawn to the lyrical tales of their adventures.\n\n"
+        "A stolen, enchanted quill from a captured merchant vessel soon revealed its magic, making "
+        "his "
+        "poems come to life. The images he wrote danced in the air, telling tales of love, "
+        "adventure, "
+        "and the sea. Shimmering dolphins leapt from ethereal waves, while ghostly ships sailed "
+        "through "
+        "misty skies. O'Malley's crew, once fierce and merciless, became entranced by the art of "
+        "words, turning their ship into a floating haven of poetry and wonder. Hardened pirates "
+        "began to explore their own creative sides, composing ballads of their exploits and "
+        "sonnets "
+        "to distant loves.\n\n"
+        "However, the enchanted quill's magic drew the ire of Poseidon, god of the sea. The deity, "
+        "feeling his domain was being usurped by mortal creativity, grew jealous and vengeful. "
+        "Waves "
+        "turned treacherous, testing the pirate crew's newfound love for poetry. Storms battered "
+        "their ship, and sea monsters lurked in the depths, threatening to drag them under. Yet, "
+        "the pirates found solace and strength in their verses, their words becoming shields "
+        "against "
+        "the god's wrath.\n\n"
+        "Frustrated but undeterred, O'Malley used the quill to write a poem addressing Poseidon "
+        "directly. The god appeared in a towering column of water, his trident crackling with "
+        "power. Instead of striking the pirates down, Poseidon, intrigued by their audacity, "
+        "challenged O'Malley to a duel of verses. The fate of the ship and crew hung in the "
+        "balance as god and mortal faced off in a battle of words.\n\n"
+        "Poseidon's poetry conjured storms, tsunamis, and maelstroms, his words carrying the "
+        "raw power of nature. O'Malley's verses evoked calm seas, the beauty of sunsets, and "
+        "the enduring spirit of those who sailed the oceans. The duel raged for days, with "
+        "each poem shifting the very fabric of reality around the ship. In the end, Poseidon "
+        "conceded, moved by the depth of emotion in O'Malley's words. The god granted the "
+        "pirates safe passage and blessed the enchanted quill, ensuring their poetic legacy "
+        "would live on through the ages.";
     auto stream = std::make_shared<StdStringStream>(message);
     renderer_.setStream(stream);
 }
@@ -48,6 +76,8 @@ void ReadingSettingsMenuScreen::processCommand(RemoteCommand command) {
         back();
         setNeedsRerender();
         break;
+    case RemoteCommand::ANIMATION:
+        setNeedsRerender();
     default:
         // Handle other commands or ignore
         break;
@@ -96,15 +126,40 @@ void ReadingSettingsMenuScreen::moveSelection(int delta) {
     setNeedsRerender();
 }
 
-void ReadingSettingsMenuScreen::render(DisplaySystem &display) {
-    setFrame(defaultFrameRect());
-    draw();
-
-    if (firstLoad_) {
-        display.updateDisplay(DisplaySystem::UpdateType::FULL, false);
-        firstLoad_ = false;
+void ReadingSettingsMenuScreen::resetTimer() {
+    nextInterval_ = pageSpeed_ * renderer_.getLengthOfLine(rendererView_.getNumSkipLines() - 1) /
+                    renderer_.getTotalLengthOfLines();
+    if (nextInterval_ == 0) {
+        nextInterval_ = 1000;
     }
 
-    menuView_.drawIndicator();
-    display.updateDisplay(DisplaySystem::UpdateType::FAST_INDICATOR);
+    xTimerChangePeriod(DisplaySystem::animationTimer, pdMS_TO_TICKS(nextInterval_), 0);
+}
+
+void ReadingSettingsMenuScreen::render(DisplaySystem &display) {
+    setFrame(defaultFrameRect());
+    bool fromFirstLoad = false;
+    if (firstLoad_ || !autoPilotOn_) {
+        draw();
+        if (firstLoad_) {
+            display.updateDisplay(DisplaySystem::UpdateType::FULL, false);
+            firstLoad_ = false;
+        }
+        menuView_.drawIndicator();
+        display.updateDisplay(DisplaySystem::UpdateType::FAST_INDICATOR);
+        fromFirstLoad = true;
+    } else if (autoPilotOn_) {
+        draw();
+        menuView_.drawIndicator();
+        // Because the increment happens after the render, so this is the beginning of a new page
+        if (rendererView_.getNumSkipLines() == 1) {
+            display.updateDisplay(DisplaySystem::UpdateType::FULL, true);
+        } else {
+            display.updateDisplay(DisplaySystem::UpdateType::FAST_ORIGINAL_AU4, true);
+        }
+        resetTimer();
+    }
+    if (fromFirstLoad && autoPilotOn_) {
+        resetTimer();
+    }
 }
