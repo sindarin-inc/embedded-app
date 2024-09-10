@@ -84,7 +84,6 @@ void SystemSettingsMenuScreen::moveSelection(int delta) {
     setNeedsRerender();
 }
 
-// Implement Screen method
 void SystemSettingsMenuScreen::render(DisplaySystem &display) {
     setFrame(defaultFrameRect());
     draw();
