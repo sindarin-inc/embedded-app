@@ -10,8 +10,9 @@
 #include "Storage/PreferencesStore.hpp"
 #include "sindarin-debug.h"
 
-using WebRequestHandler = std::function<void(const std::string &, const char *, size_t)>;
-using SubscriptionStatusCallback = std::function<void(bool)>;
+using WebRequestHandler =
+    std::function<void(const std::string &key, const char *body, size_t bodySize)>;
+using SubscriptionStatusCallback = std::function<void(bool connected)>;
 
 class BLEProxy : BLECharacteristicProvider {
 public:
