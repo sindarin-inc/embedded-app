@@ -1157,6 +1157,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 "Clear WiFi Settings", [wifiSettingsMenuScreen, display]() {
                     WiFi::getInstance().clearWiFiCredentials();
                     log_w("WiFi settings cleared.");
+                    wifiSettingsMenuScreen->loadWifiSettings();
                     wifiSettingsMenuScreen->showTemporaryMessage(*display, "WiFi settings cleared.",
                                                                  2000, true);
                     wifiSettingsMenuScreen->setFirstLoad();

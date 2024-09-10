@@ -7,9 +7,26 @@
 WiFiSettingsMenuScreen::WiFiSettingsMenuScreen(DisplaySystem &display, PreferencesStore &prefs)
     : EinkView(display), prefs_(prefs), menuView_(display),
       backLabelView_(display, "System Settings"), wifiEnabledView_(display, ""),
-      bleEnabledView_(display, ""),
-      configuredAccessView_(display, "Configured Access Points:    ") {
+      bleEnabledView_(display, ""), configuredAccessView_(display, "Configured Access Points:    "),
+      configuredAccessPointsView_(display, MAX_WIFI_SETTINGS) {
     menuView_.padding = 1;
+    loadWifiSettings();
+}
+
+void WiFiSettingsMenuScreen::loadWifiSettings() {
+    WiFiSettings settings;
+    settings.load();
+    if (settings.count() > 0) {
+        std::string listOfAccessPoints = "";
+        configuredAccessView_.setText("Configured Access Points:");
+        for (int i = 0; i < settings.count(); i++) {
+            listOfAccessPoints += settings.settings[i].ssid + "\n";
+        }
+        configuredAccessPointsView_.setText(listOfAccessPoints);
+    } else {
+        configuredAccessView_.setText("No configured Access Points");
+    }
+    setNeedsLayout();
 }
 
 void WiFiSettingsMenuScreen::addMenuItem(const std::shared_ptr<NewMenuItem> &menuItem) {
@@ -34,7 +51,6 @@ void WiFiSettingsMenuScreen::processCommand(RemoteCommand command) {
         setNeedsRerender();
         break;
     default:
-        // Handle other commands or ignore
         break;
     }
     setNeedsLayout();
@@ -62,7 +78,6 @@ auto WiFiSettingsMenuScreen::layout(LayoutContext &context, Size size) -> Size {
     }
     bleEnabledView_.setText(newBleText);
 
-    // Layout title
     auto wifiEnabledBox =
         context.setViewFrame(wifiEnabledView_, {{0, y}, {size.width, 0}},
                              LayoutOptionsSizeToFit | LayoutOptionsAlignCenterHorizontal);
@@ -72,7 +87,6 @@ auto WiFiSettingsMenuScreen::layout(LayoutContext &context, Size size) -> Size {
     context.setViewFrame(bleEnabledView_, {{0, y}, {size.width, 0}},
                          LayoutOptionsSizeToFit | LayoutOptionsAlignCenterHorizontal);
 
-    // Layout menu
     auto menuBox =
         context.setViewFrame(menuView_, Rect::fromSize(size).inset(0, size.height / 3),
                              LayoutOptionsAlignCenterHorizontal | LayoutOptionsSizeToFit);
@@ -83,15 +97,11 @@ auto WiFiSettingsMenuScreen::layout(LayoutContext &context, Size size) -> Size {
         LayoutOptionsSizeToFit);
 
     WiFiSettings settings;
+
     y = configuredLabelBox.bottom() + 2;
-    for (int i = 0; i < settings.count(); i++) {
-        configuredAccessPoints_.push_back(
-            std::make_shared<SingleLineTextView>(display_, settings.settings[i].ssid));
-        auto itemBox = context.setViewFrame(*configuredAccessPoints_[i],
-                                            {{18, y}, {size.width - 18, size.height - y}},
-                                            LayoutOptionsSizeToFit);
-        y += itemBox.size.height + 1;
-    }
+
+    context.setViewFrame(configuredAccessPointsView_, {{18, y}, {size.width - 18, size.height - y}},
+                         LayoutOptionsSizeToFit);
 
     return size;
 }
@@ -114,27 +124,8 @@ void WiFiSettingsMenuScreen::drawInRect(Rect rect) {
     wifiEnabledView_.draw();
     bleEnabledView_.draw();
     menuView_.draw();
-
-    // Take care of the case where the user has cleared out the access points
-    // since the last time we laid out the screen and also update the message
-    // to say "No configured access points" if there are none.
-    WiFiSettings settings;
-    if (settings.count() == 0) {
-        configuredAccessPoints_.clear();
-        configuredAccessView_.setText("No configured Access Points");
-    } else {
-        // Need the extra spaces here because sometimes the layout is with this text but then the
-        // drawing happens with the above text. Perhaps we could have a setNeedsLayout() call
-        // that happens after the clear command, but I'm not sure that's cleaner.
-        configuredAccessView_.setText("Configured Access Points:    ");
-    }
-
     configuredAccessView_.draw();
-
-    // draw all the veiws in configuredAccessPoints_
-    for (auto &configuredAccessPoint : configuredAccessPoints_) {
-        configuredAccessPoint->draw();
-    }
+    configuredAccessPointsView_.draw();
 }
 
 void WiFiSettingsMenuScreen::moveSelection(int delta) {

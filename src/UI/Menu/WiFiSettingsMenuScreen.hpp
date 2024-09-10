@@ -5,6 +5,7 @@
 #include "Storage/PreferencesStore.hpp"
 #include "UI/Components/ArrowLabelView.hpp"
 #include "UI/Components/EinkView.hpp"
+#include "UI/Components/MultiLineTextView.hpp"
 #include "UI/Components/SingleLineTextView.hpp"
 #include "UI/Menu/NewMenuView.hpp"
 #include "UI/Screen.hpp"
@@ -21,10 +22,12 @@ public:
 
     void setFirstLoad() { firstLoad_ = true; }
 
+    // Must be called any time the wifi settings could have changed.
+    void loadWifiSettings();
+
     void showTemporaryMessage(DisplaySystem &display, const std::string &message,
                               int duration = 2000, bool rerenderAfter = false);
 
-    // Implement Screen methods
     void render(DisplaySystem &display) override;
 
 private:
@@ -34,7 +37,7 @@ private:
     SingleLineTextView wifiEnabledView_;
     SingleLineTextView bleEnabledView_;
     SingleLineTextView configuredAccessView_;
-    std::vector<std::shared_ptr<SingleLineTextView>> configuredAccessPoints_;
+    MultiLineTextView configuredAccessPointsView_;
 
     bool firstLoad_{true};
 
