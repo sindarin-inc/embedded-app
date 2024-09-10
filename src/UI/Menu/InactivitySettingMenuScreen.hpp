@@ -27,7 +27,6 @@ public:
 
     void render(DisplaySystem &display) override;
 
-    // Set extra text
     void setExtraText(const std::string &text) { extraTextView_.setText(text); };
 
     void requireRestart() { restartOnBack_ = true; }
