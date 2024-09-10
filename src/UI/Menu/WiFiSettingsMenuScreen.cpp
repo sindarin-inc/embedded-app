@@ -7,7 +7,9 @@
 WiFiSettingsMenuScreen::WiFiSettingsMenuScreen(DisplaySystem &display, PreferencesStore &prefs)
     : EinkView(display), prefs_(prefs), menuView_(display),
       backLabelView_(display, "System Settings"), wifiEnabledView_(display, ""),
-      configuredAccessView_(display, "Configured Access Points:") {}
+      configuredAccessView_(display, "Configured Access Points:    ") {
+    menuView_.padding = 1;
+}
 
 void WiFiSettingsMenuScreen::addMenuItem(const std::shared_ptr<NewMenuItem> &menuItem) {
     menuView_.addMenuItem(menuItem);
@@ -42,7 +44,7 @@ auto WiFiSettingsMenuScreen::layout(LayoutContext &context, Size size) -> Size {
     context.setViewFrame(backLabelView_, {{0, 0}, {size.width, 0}},
                          LayoutOptionsSizeToFit | LayoutOptionsAlignLeft);
 
-    std::string newWifiText = "WiFi: ";
+    std::string newWifiText = "WiFi ";
 
     if (prefs_.wifiDisabled.get().value_or(false)) {
         newWifiText += "Disabled";
@@ -61,16 +63,17 @@ auto WiFiSettingsMenuScreen::layout(LayoutContext &context, Size size) -> Size {
 
     auto configuredLabelBox = context.setViewFrame(
         configuredAccessView_,
-        {{15, menuBox.bottom() + 15}, {size.width - 15, size.height - menuBox.bottom() + 15}});
+        {{15, menuBox.bottom() + 15}, {size.width - 15, size.height - menuBox.bottom() - 15}},
+        LayoutOptionsSizeToFit);
 
     WiFiSettings settings;
-    y = configuredLabelBox.size.height + 5;
+    y = configuredLabelBox.bottom() + 5;
     for (int i = 0; i < settings.count(); i++) {
         configuredAccessPoints_.push_back(
             std::make_shared<SingleLineTextView>(display_, settings.settings[i].ssid));
-        auto itemBox = context.setViewFrame(
-            *configuredAccessPoints_[i],
-            {{18, menuBox.bottom()}, {size.width - 18, size.height - menuBox.bottom()}});
+        auto itemBox = context.setViewFrame(*configuredAccessPoints_[i],
+                                            {{18, y}, {size.width - 18, size.height - y}},
+                                            LayoutOptionsSizeToFit);
         y += itemBox.size.height + 3;
     }
 
@@ -94,6 +97,21 @@ void WiFiSettingsMenuScreen::drawInRect(Rect rect) {
     backLabelView_.draw();
     wifiEnabledView_.draw();
     menuView_.draw();
+
+    // Take care of the case where the user has cleared out the access points
+    // since the last time we laid out the screen and also update the message
+    // to say "No configured access points" if there are none.
+    WiFiSettings settings;
+    if (settings.count() == 0) {
+        configuredAccessPoints_.clear();
+        configuredAccessView_.setText("No configured Access Points");
+    } else {
+        // Need the extra spaces here because sometimes the layout is with this text but then the
+        // drawing happens with the above text. Perhaps we could have a setNeedsLayout() call
+        // that happens after the clear command, but I'm not sure that's cleaner.
+        configuredAccessView_.setText("Configured Access Points:    ");
+    }
+
     configuredAccessView_.draw();
 
     // draw all the veiws in configuredAccessPoints_
