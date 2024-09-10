@@ -56,7 +56,7 @@ struct DisplayRect {
     }
 
     static auto fromRect(Rect rect) -> DisplayRect {
-        return {static_cast<uint16_t>(rect.x), static_cast<uint16_t>(rect.y),
+        return {static_cast<uint16_t>(rect.origin.x), static_cast<uint16_t>(rect.origin.y),
                 static_cast<uint16_t>(rect.size.width), static_cast<uint16_t>(rect.size.height)};
     }
 
