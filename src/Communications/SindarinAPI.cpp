@@ -35,7 +35,7 @@ auto SindarinAPI::isSindarinUrl(const char *url) -> bool {
     return HasPrefix(url, baseUrl_.c_str());
 }
 
-auto SindarinAPI::setAuth(std::shared_ptr<HttpClient> client) -> esp_err_t {
+auto SindarinAPI::setAuth(const std::shared_ptr<HttpClient> &client) -> esp_err_t {
     if (accessToken_.empty()) {
         log_w("Called setAuth, but no access token is set");
         return ESP_ERR_NOT_FOUND;

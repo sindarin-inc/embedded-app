@@ -199,7 +199,7 @@ auto DownloadFileWithWriteBytes(
 
     return DownloadFileCommon(
         url, openedConnection,
-        [buffer, bufferSize, writeBytes](std::shared_ptr<HttpClient> client, int index,
+        [buffer, bufferSize, writeBytes](const std::shared_ptr<HttpClient> &client, int index,
                                          int contentLength) {
         int readLen = client->read(reinterpret_cast<char *>(buffer.get()),
                                    std::min(bufferSize, contentLength - index));
@@ -272,7 +272,7 @@ auto DownloadFileToPath(const char *url, FileSystem &fileSystem, Telemetry &tele
         return true;
     };
 
-    auto reader = [bufferQueue](std::shared_ptr<HttpClient> client, int index,
+    auto reader = [bufferQueue](const std::shared_ptr<HttpClient> &client, int index,
                                 int contentLength) -> size_t {
         // NOTE: This gets free'd by the queue consumer. It only needs to be free'd here if we fail
         // to write it to the queue
