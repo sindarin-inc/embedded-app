@@ -89,7 +89,6 @@ void InactivitySettingMenuScreen::moveSelection(int delta) {
     setNeedsRerender();
 }
 
-// Implement Screen method
 void InactivitySettingMenuScreen::render(DisplaySystem &display) {
     setFrame(defaultFrameRect());
     draw();
