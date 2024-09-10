@@ -343,6 +343,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 #endif
 
 #if CONFIG_USE_BLE_SERVER_PROXY
+    HEAP_PROFILE_START(bleSyncService);
     auto syncService = bleSyncService.configureService(bleManager->server());
     BLEProxy::getInstance()->setPrefs(&prefs);
     BLEProxy::getInstance()->configureCharacteristics(syncService);
@@ -350,6 +351,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     if (!bleSyncService.start()) {
         bootErrors.push_back({.type = BootError::Type::BLESync});
     }
+    HEAP_PROFILE_END(bleSyncService);
 #endif
 
     // powerManager.forceBackground();
