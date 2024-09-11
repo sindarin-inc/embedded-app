@@ -15,6 +15,11 @@ public:
     NewMenuView(DisplaySystem &display);
 
     void addMenuItem(const std::shared_ptr<NewMenuItem> &menuItem);
+    void resetMenuItems() {
+        menuItems_.clear();
+        selectedIndex_ = 0;
+        currentPage_ = 0;
+    }
     auto setSelectedIndex(size_t index) -> bool;
     auto moveSelection(int delta) -> bool;
     void setIndicatorType(IndicatorType type);

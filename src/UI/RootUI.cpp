@@ -45,6 +45,9 @@
 #include "UI/LineSpacingScreen.hpp"
 #include "UI/MainMenuScreen.hpp"
 #include "UI/Menu/InactivitySettingMenuScreen.hpp"
+#include "UI/Menu/NewMainMenuScreen.hpp"
+#include "UI/Menu/NewMenuItemArticle.hpp"
+#include "UI/Menu/NewMenuItemBook.hpp"
 #include "UI/Menu/NewMenuItemSingleLine.hpp"
 #include "UI/Menu/ReadingSettingsMenuScreen.hpp"
 #include "UI/Menu/SystemSettingsMenuScreen.hpp"
@@ -116,6 +119,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     HEAP_PROFILE_START(rootUIContent);
     auto &readables = localStore.books();
     auto &articles = localStore.articles();
+
+#if 0
     auto noContent = readables.empty() && articles.empty();
     // If there is no content, add some default content
     if (noContent) {
@@ -141,7 +146,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             }
         }
     }
-
+#endif
     // If prefs_.bookSortCriteria isn't selected, sort the readables by last update and store them
     if (!prefs_.bookSortCriteria.get().has_value()) {
         log_i("No book sort order chosen, sorting by last update and saving readables");
@@ -166,27 +171,21 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         }
     }
 
-    auto booksMenu = new Menu(mainMenu->getMyStyle(), "Books");
-    auto articlesMenu = new Menu(mainMenu->getMyStyle(), "Articles");
-
     // Bible hack (to show off if we wanted to have different "apps" that had different
     // behavior. For now, it's just the same as a regular book.)
     auto isBible = [](const std::shared_ptr<Readable> &r) -> bool {
         return (r->title == "Psalms and Proverbs" || r->title == "New Testament" ||
                 r->title == "Old Testament" || r->title == "Torah");
     };
-    auto bibleMenu = new Menu(mainMenu->getMyStyle(), "Bible");
+
     auto it = std::find_if(readables.begin(), readables.end(),
                            [isBible](const std::shared_ptr<Readable> &x) { return isBible(x); });
     auto hasBible = it != readables.end();
 
-    // Add a main menu item to create a Recent tab that shows the most recently read books or
-    // articles
-    auto recentMenu = new Menu(mainMenu->getMyStyle(), "Recent");
+    auto newMainMenu = new NewMainMenuScreen(*display_);
 
     auto createReadableScreen =
-        [this, display, mainMenu, booksMenu, bibleMenu, articlesMenu, recentMenu, hasBible,
-         &fileSystem, &lightingController,
+        [this, display, newMainMenu, hasBible, &fileSystem, &lightingController,
          &localStore](const std::shared_ptr<Readable> &readable) -> ReadableScreen * {
         // TODO: Would be better to not allocate / delete these all the time
 
@@ -226,38 +225,21 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         // to make the whites really white and the blacks really black.
         display->clearDisplay();
         readableScreen->setBackCallback(
-            [this, display, stream, readableScreen, readable, booksMenu, bibleMenu, recentMenu,
-             hasBible, articlesMenu, mainMenu]() {
+            [this, display, stream, readableScreen, readable, hasBible, newMainMenu]() {
             bool archived = prefs_.readableArchivedChanged.get(readable->shortenedUuid.c_str());
             auto title =
                 StringFormat("%s%s", archived ? "Archived: " : "", readable->title.c_str());
             auto displayedTitle =
                 StringFormat("%s%s", !archived ? "Archived: " : "", readable->title.c_str());
             log_d("Changing readable title to %s", title.c_str());
-            // Iterate through the menu items and change the title of the item that matches by title
-            auto updateMenuTitle = [displayedTitle, title](auto &menu) {
-                auto readableMenuItem = menu->getMenuItemByTitle(displayedTitle);
-                if (readableMenuItem != -1) {
-                    menu->changeItemTitleAt(readableMenuItem, title);
-                }
-            };
-
-            if (readable->isArticle()) {
-                updateMenuTitle(articlesMenu);
-            } else {
-                updateMenuTitle(booksMenu);
-            }
-            if (!prefs_.noBible.get().value_or(false) && hasBible) {
-                updateMenuTitle(bibleMenu);
-            }
-            updateMenuTitle(recentMenu);
 
             // When leaving a readable to go back to the main menu, do a full clear
             // of the display.
             prefs_.lastReadableId.remove();
             display->clearDisplay();
-            mainMenu->setFirstLoad();
-            setCurrentScreen(*mainMenu);
+            newMainMenu->setFirstLoad();
+            newMainMenu->populateMenuView();
+            setCurrentScreen(*newMainMenu);
 
             // TODO: Probably not the most kosher practice to delete the `ReadableScreen` from
             // _inside_ ReadableScreen.backCallback. I suppose we could either mark these for
@@ -269,20 +251,21 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         return readableScreen;
     };
 
-    auto createTutorialScreen = [this, display, mainMenu](SpiramString text,
-                                                          int bit) -> TutorialScreen * {
+#if 0
+    auto createTutorialScreen = [this, display, newMainMenu](SpiramString text,
+                                                             int bit) -> TutorialScreen * {
         auto tutorialScreen = new TutorialScreen(*display, this->prefs_, std::move(text), bit);
 
-        tutorialScreen->setBackCallback([this, display, mainMenu, tutorialScreen]() {
+        tutorialScreen->setBackCallback([this, display, newMainMenu, tutorialScreen]() {
             display->clearDisplay();
-            mainMenu->setFirstLoad();
-            setCurrentScreen(*mainMenu);
+            newMainMenu->setFirstLoad();
+            setCurrentScreen(*newMainMenu);
             delete tutorialScreen;
         });
 
         return tutorialScreen;
     };
-
+#endif
     auto currentReadable = prefs_.lastReadableId.get();
 
     bool hasLastQuestion = false;
@@ -304,55 +287,42 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     // If there is firmware available, show the Update Firmware item in the books tab.
     auto makeReleaseNotesMenuItem =
-        [this, &localStore, display, mainMenu](const Firmware &firmware) {
+        [this, &localStore, display, newMainMenu](const Firmware &firmware) {
         log_i("Found pending firmware update %s", firmware.version.c_str());
-        return MenuItem(
+        return std::make_shared<NewMenuItemBook>(
             "Upgrade Software",
             StringFormat("From %s to %s", SemanticVersionString(), firmware.version.c_str()),
-            [this, display, mainMenu, &localStore, firmware]() {
+            [this, display, newMainMenu, &localStore, firmware]() {
             auto releaseNotesScreen =
                 new ReleaseNotesScreen(*display, this->prefs_, power_, localStore, firmware);
             display->clearDisplay();
             this->setCurrentScreen(*releaseNotesScreen);
             // auto resizeBox = new ResizeBoxScreen(*display, prefs_);
             // this->setCurrentScreen(*resizeBox);
-            releaseNotesScreen->setBackCallback([this, display, releaseNotesScreen, mainMenu]() {
+            releaseNotesScreen->setBackCallback([this, display, releaseNotesScreen, newMainMenu]() {
                 display->clearDisplay();
-                mainMenu->setFirstLoad();
-                setCurrentScreen(*mainMenu);
+                newMainMenu->setFirstLoad();
+                newMainMenu->populateMenuView();
+                setCurrentScreen(*newMainMenu);
                 delete releaseNotesScreen;
             });
             });
     };
 
-    if (prefs_.firmwareLoaded.get().has_value()) {
-        Firmware firmware;
-        auto upgradeAvailable = localStore.getPendingFirmwareUpdate(firmware);
-        if (upgradeAvailable) {
-            recentMenu->addMenuItem(makeReleaseNotesMenuItem(firmware));
-        }
-    }
-
-    if (prefs_.firmwareLoaded.get().has_value()) {
-        Firmware firmware;
-        auto upgradeAvailable = localStore.getPendingFirmwareUpdate(firmware);
-        if (upgradeAvailable) {
-            booksMenu->addMenuItem(makeReleaseNotesMenuItem(firmware));
-        }
-    }
-
-    auto makeContentSyncMenuItem = [this, display, &localStore,
-                                    mainMenu](const char *title) -> MenuItem {
-        return {title,
-                [this, display, &localStore, mainMenu]() {
+    auto makeContentSyncMenuItem = [this, display, &localStore, newMainMenu](
+                                       const char *title) -> std::shared_ptr<NewMenuItem> {
+        return std::make_shared<NewMenuItemSingleLine>(title,
+                                                       [this, display, &localStore, newMainMenu]() {
             // If we're not yet paired, show the app screen instead
             if (PreferencesStore::paired == PairedStatus::Unpaired) {
                 auto appDownloadScreen = new AppDownloadScreen(*display);
                 this->setCurrentScreen(*appDownloadScreen);
-                appDownloadScreen->setBackCallback([this, appDownloadScreen, mainMenu, display]() {
+                appDownloadScreen->setBackCallback(
+                    [this, appDownloadScreen, newMainMenu, display]() {
                     display->clearDisplay();
-                    mainMenu->setFirstLoad();
-                    setCurrentScreen(*mainMenu);
+                    newMainMenu->setFirstLoad();
+                    newMainMenu->populateMenuView();
+                    setCurrentScreen(*newMainMenu);
                     delete appDownloadScreen;
                 });
                 return;
@@ -360,58 +330,49 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
             auto contentSyncScreen =
                 new ContentSyncScreen(*display, localStore, this->prefs_, this->telemetry_);
-            display->setFont(mainMenu->getMyStyle().navigationFont);
+            // display->setFont(mainMenu->getMyStyle().navigationFont);
             this->setCurrentScreen(*contentSyncScreen);
-            contentSyncScreen->setBackCallback([this, contentSyncScreen, mainMenu, display]() {
+            contentSyncScreen->setBackCallback([this, contentSyncScreen, newMainMenu, display]() {
                 display->clearDisplay();
-                mainMenu->setFirstLoad();
-                setCurrentScreen(*mainMenu);
-                mainMenu->render(*display);
+                newMainMenu->setFirstLoad();
+                newMainMenu->populateMenuView();
+                setCurrentScreen(*newMainMenu);
+                newMainMenu->render(*display);
                 delete contentSyncScreen;
             });
             contentSyncScreen->begin();
-                }};
+        });
     };
 
+#if 0
     // If there are no books, show the Sync Content item in the books tab.
     if (noContent) {
         booksMenu->addMenuItem(makeContentSyncMenuItem("Sync Content"));
     }
-
+#endif
     SHOW_HEAP();
 
     auto handleReadableScreenCreation =
-        [this, display, mainMenu, createReadableScreen](const std::shared_ptr<Readable> &r) {
+        [this, display, newMainMenu, createReadableScreen](const std::shared_ptr<Readable> &r) {
         auto readableScreen = createReadableScreen(r);
         if (readableScreen != nullptr) {
             this->setCurrentScreen(*readableScreen);
         } else {
             auto *errorPopup = new MsgPopup(*display, itemErrorMsg_);
             this->setCurrentScreen(*errorPopup);
-            errorPopup->setBackCallback([this, errorPopup, mainMenu]() {
-                mainMenu->setFirstLoad();
+            errorPopup->setBackCallback([this, errorPopup, newMainMenu]() {
+                newMainMenu->setFirstLoad();
                 display_->clearDisplay();
-                setCurrentScreen(*mainMenu);
+                setCurrentScreen(*newMainMenu);
                 delete errorPopup;
             });
         }
     };
 
-    for (const auto &r : readables) {
-        bool archived = prefs_.readableArchivedChanged.get(r->shortenedUuid.c_str());
-        auto title = StringFormat("%s%s", archived ? "Archived: " : "", r->title.c_str());
-        // Bible books go in their own menu / app
-        if (!prefs_.noBible.get().value_or(false) && isBible(r)) {
-            continue;
-        }
-
-        booksMenu->addMenuItem(MenuItem(
-            StringFormat("%s", title.c_str()), StringFormat("%s", r->authorString().c_str()),
-            [r, handleReadableScreenCreation]() { handleReadableScreenCreation(r); }));
-    }
-
     SHOW_HEAP();
 
+// All tutorials are going away in favor of new onboarding
+#if 0
     if (!(prefs_.tutorialsDeleted.get().value_or(0) & TUTORIAL_SCREEN_BOOKS)) {
         booksMenu->addMenuItem(MenuItem("\ue000 Books Tutorial", "",
                                         [this, createTutorialScreen]() {
@@ -429,69 +390,202 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             this->setCurrentScreen(*tutorialScreen);
         }));
     }
-
-    // Add items to the Recent menu
-    for (const auto &r : localStore.recents()) {
-        bool archived = prefs_.readableArchivedChanged.get(r->shortenedUuid.c_str());
-        auto title = StringFormat("%s%s", archived ? "Archived: " : "", r->title.c_str());
-
-        recentMenu->addMenuItem(
-            (isBible(r)) ?
-
-                         MenuItem(
-                             title,
-                             [r, handleReadableScreenCreation]() {
-            handleReadableScreenCreation(r);
-                             })
-            : r->isArticle()
-              ? MenuItem(
-                    title, [r, handleReadableScreenCreation]() { handleReadableScreenCreation(r); },
-                    true)
-              : MenuItem(title, StringFormat("%s", r->authorString().c_str()),
-                         [r, handleReadableScreenCreation]() { handleReadableScreenCreation(r); }));
-    }
-
-    // Only add the Recent tab if there are recent items
-    if (recentMenu->getNumItems() > 0) {
-        mainMenu->addSubMenu(recentMenu);
-    } else {
-        delete recentMenu;
-    }
-
-    if (!prefs_.noBooks.get().value_or(false)) {
-        mainMenu->addSubMenu(booksMenu);
-    }
+#endif
 
     log_i("Loading %zu Pocket articles", articles.size());
 
-    if (prefs_.firmwareLoaded.get().has_value()) {
-        Firmware firmware;
-        auto upgradeAvailable = localStore.getPendingFirmwareUpdate(firmware);
-        if (upgradeAvailable) {
-            articlesMenu->addMenuItem(makeReleaseNotesMenuItem(firmware));
+    auto recentMenuFactory = [this, &localStore, handleReadableScreenCreation, isBible]() {
+        auto &recents = localStore.recents();
+        std::vector<std::shared_ptr<NewMenuItem>> menuItems;
+        for (const auto &recent : recents) {
+            bool archived = prefs_.readableArchivedChanged.get(recent->shortenedUuid.c_str());
+            auto title = StringFormat("%s%s", archived ? "Archived: " : "", recent->title.c_str());
+
+            std::shared_ptr<NewMenuItem> menuItem;
+            if (isBible(recent)) {
+                menuItem = std::make_shared<NewMenuItemSingleLine>(
+                    title, [recent, handleReadableScreenCreation]() {
+                        handleReadableScreenCreation(recent);
+                    });
+            } else if (recent->isArticle()) {
+                menuItem =
+                    std::make_shared<NewMenuItemArticle>(title, std::string(recent->readableType),
+                                                         [recent, handleReadableScreenCreation]() {
+                    handleReadableScreenCreation(recent);
+                    });
+            } else {
+                menuItem =
+                    std::make_shared<NewMenuItemBook>(title, std::string(recent->authors[0].name),
+                                                      [recent, handleReadableScreenCreation]() {
+                    handleReadableScreenCreation(recent);
+                    });
+            }
+            menuItems.emplace_back(menuItem);
         }
+        return menuItems;
+    };
+
+    auto booksMenuFactory = [this, &localStore, handleReadableScreenCreation, isBible,
+                             makeReleaseNotesMenuItem, makeContentSyncMenuItem]() {
+        auto &books = localStore.books();
+        std::vector<std::shared_ptr<NewMenuItem>> menuItems;
+
+        if (this->prefs_.firmwareLoaded.get().has_value()) {
+            Firmware firmware;
+            auto upgradeAvailable = localStore.getPendingFirmwareUpdate(firmware);
+            if (upgradeAvailable) {
+                menuItems.emplace_back(makeReleaseNotesMenuItem(firmware));
+            }
+        }
+
+        for (const auto &book : books) {
+            // Bible books go in their own menu / app
+            if (!prefs_.noBible.get().value_or(false) && isBible(book)) {
+                continue;
+            }
+            bool archived = prefs_.readableArchivedChanged.get(book->shortenedUuid.c_str());
+            auto title = StringFormat("%s%s", archived ? "Archived: " : "", book->title.c_str());
+            menuItems.emplace_back(std::make_shared<NewMenuItemBook>(
+                std::string(book->title), std::string(book->authors[0].name),
+                [book, handleReadableScreenCreation]() { handleReadableScreenCreation(book); }));
+        }
+
+        if (books.empty() && localStore.articles().empty()) {
+            std::shared_ptr<Readable> lastQuestion = std::make_shared<Readable>(
+                "d7570c42-18a9-4795-a44e-9cee09b9fe3e", "The Last Question", LASTQUESTION_EPUB,
+                LASTQUESTION_EPUB_SIZE);
+            lastQuestion->authors.emplace_back("91ae1429-c6d4-4b8b-88fa-81041d838f92",
+                                               "Isaac Asimov", "");
+            if (!prefs_.readableArchivedChanged.get(lastQuestion->shortenedUuid.c_str())) {
+                menuItems.emplace_back(std::make_shared<NewMenuItemBook>(
+                    std::string(lastQuestion->title), std::string(lastQuestion->authors[0].name),
+                    [lastQuestion, handleReadableScreenCreation]() {
+                    handleReadableScreenCreation(lastQuestion);
+                    }));
+            }
+            menuItems.emplace_back(makeContentSyncMenuItem("Sync Content"));
+        }
+        return menuItems;
+    };
+
+    auto articlesMenuFactory = [this, &localStore, handleReadableScreenCreation,
+                                makeReleaseNotesMenuItem, makeContentSyncMenuItem]() {
+        auto &articles = localStore.articles();
+        std::vector<std::shared_ptr<NewMenuItem>> menuItems;
+
+        if (this->prefs_.firmwareLoaded.get().has_value()) {
+            Firmware firmware;
+            auto upgradeAvailable = localStore.getPendingFirmwareUpdate(firmware);
+            if (upgradeAvailable) {
+                menuItems.emplace_back(makeReleaseNotesMenuItem(firmware));
+            }
+        }
+
+        for (const auto &article : articles) {
+            bool archived = prefs_.readableArchivedChanged.get(article->shortenedUuid.c_str());
+            auto title = StringFormat("%s%s", archived ? "Archived: " : "", article->title.c_str());
+            menuItems.emplace_back(
+                std::make_shared<NewMenuItemArticle>(title, std::string(article->readableType),
+                                                     [article, handleReadableScreenCreation]() {
+                handleReadableScreenCreation(article);
+                }));
+        }
+
+        if (articles.empty() && localStore.books().empty()) {
+            menuItems.emplace_back(makeContentSyncMenuItem("Sync Content"));
+        }
+
+        return menuItems;
+    };
+
+    auto bibleMenuFactory =
+        [this, &localStore, handleReadableScreenCreation, isBible, makeReleaseNotesMenuItem]() {
+        auto &books = localStore.books();
+        std::vector<std::shared_ptr<NewMenuItem>> menuItems;
+
+        if (this->prefs_.firmwareLoaded.get().has_value()) {
+            Firmware firmware;
+            auto upgradeAvailable = localStore.getPendingFirmwareUpdate(firmware);
+            if (upgradeAvailable) {
+                menuItems.emplace_back(makeReleaseNotesMenuItem(firmware));
+            }
+        }
+
+        for (const auto &book : books) {
+            // Bible books go in their own menu / app
+            if (isBible(book)) {
+                bool archived = prefs_.readableArchivedChanged.get(book->shortenedUuid.c_str());
+                auto title =
+                    StringFormat("%s%s", archived ? "Archived: " : "", book->title.c_str());
+                menuItems.emplace_back(std::make_shared<NewMenuItemSingleLine>(
+                    std::string(book->title), [book, handleReadableScreenCreation]() {
+                        handleReadableScreenCreation(book);
+                    }));
+            }
+        }
+
+        if (books.empty() && localStore.articles().empty() &&
+            !prefs_.noBible.get().value_or(false)) {
+            std::shared_ptr<Readable> psalmsAndProverbs = std::make_shared<Readable>(
+                "6863fd3c-77a9-468e-93fa-f70d8b79029f", "Psalms and Proverbs",
+                PSALMSANDPROVERBS_EPUB, PSALMSANDPROVERBS_EPUB_SIZE);
+            psalmsAndProverbs->authors.emplace_back("7632d6ec-7339-4752-8672-a966503e1003",
+                                                    "Crossway ESV", "");
+            if (!prefs_.readableArchivedChanged.get(psalmsAndProverbs->shortenedUuid.c_str())) {
+                menuItems.emplace_back(std::make_shared<NewMenuItemSingleLine>(
+                    std::string(psalmsAndProverbs->title),
+                    [psalmsAndProverbs, handleReadableScreenCreation]() {
+                    handleReadableScreenCreation(psalmsAndProverbs);
+                    }));
+            }
+        }
+        return menuItems;
+    };
+
+    auto settingsMenuFactory = [this, display, newMainMenu]() {
+        auto readingSettingsMenu = new ReadingSettingsMenuScreen(*display, "Main Menu");
+
+        readingSettingsMenu->setBackCallback([this, newMainMenu]() {
+            this->display_->clearDisplay();
+            newMainMenu->setFirstLoad();
+            newMainMenu->populateMenuView();
+            setCurrentScreen(*newMainMenu);
+        });
+
+        std::vector<std::shared_ptr<NewMenuItem>> menuItems;
+
+        menuItems.emplace_back(
+            std::make_shared<NewMenuItemSingleLine>("Reading", [this, readingSettingsMenu]() {
+                log_d("Loading Reading Settings Menu");
+                readingSettingsMenu->setFirstLoad();
+                this->setCurrentScreen(*readingSettingsMenu);
+            }));
+
+        return menuItems;
+    };
+
+    //    auto newMainMenu = std::make_shared<NewMainMenuScreen>(*display_);
+
+    if (localStore.recents().size()) {
+        newMainMenu->addTab("Recent", recentMenuFactory);
+    }
+    if (localStore.books().size() && !prefs_.noBooks.get().value_or(false)) {
+        newMainMenu->addTab("Books", booksMenuFactory);
+    }
+    if (localStore.articles().size() && !prefs_.noArticles.get().value_or(false)) {
+        newMainMenu->addTab("Articles", articlesMenuFactory);
     }
 
-    // If there are no articles, show the Sync Content item in the articles tab.
-    if (articles.empty()) {
-        articlesMenu->addMenuItem(makeContentSyncMenuItem("Sync Content"));
+    if (!prefs_.noBible.get().value_or(false) && bibleMenuFactory().size() > 0) {
+        newMainMenu->addTab("Bible", bibleMenuFactory);
     }
 
-    for (const auto &r : articles) {
-        bool archived = prefs_.readableArchivedChanged.get(r->shortenedUuid.c_str());
-        auto title = StringFormat("%s%s", archived ? "Archived: " : "", r->title.c_str());
+    newMainMenu->addTab("Settings", settingsMenuFactory);
 
-        articlesMenu->addMenuItem(MenuItem(
-            title,
-            [display, r, handleReadableScreenCreation]() {
-            display->clearDisplay();
-            handleReadableScreenCreation(r);
-            },
-            true));
-    }
+    newMainMenu->populateMenuView();
 
     SHOW_HEAP();
-
+#if 0
     if (!(prefs_.tutorialsDeleted.get().value_or(0) & TUTORIAL_SCREEN_ARTICLES)) {
         articlesMenu->addMenuItem(MenuItem("\ue000 Articles Tutorial",
                                            [this, createTutorialScreen]() {
@@ -548,7 +642,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         }
         mainMenu->addSubMenu(bibleMenu);
     }
-
+#endif
     HEAP_PROFILE_END(rootUIContent);
 
     HEAP_PROFILE_START(rootUISettings);
@@ -967,9 +1061,9 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         // Hide the toggle for the sort order menu
         contentSettingsMenu->setToggleLastItem(false, false);
     }
-
+#if 0
     contentSettingsMenu->addMenuItem(makeContentSyncMenuItem("Sync content now"));
-
+#endif
     // Hide the bubble for the last item, Sync content now
     contentSettingsMenu->setToggleLastItem(false, false);
 
@@ -1729,7 +1823,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             power_.powerOff();
         }));
     }
-
+#if 0
     if (!(prefs_.tutorialsDeleted.get().value_or(0) & TUTORIAL_SCREEN_SETTINGS)) {
         settingsMenu->addMenuItem(MenuItem("\ue000 Settings Tutorial",
                                            [this, createTutorialScreen]() {
@@ -1742,7 +1836,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             this->setCurrentScreen(*tutorialScreen);
         }));
     }
-
+#endif
     mainMenu->addSubMenu(settingsMenu);
 
     HEAP_PROFILE_END(rootUISettings);
@@ -1871,7 +1965,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         // calibration
         // screen
 
-        setCurrentScreen(*mainMenu);
+        // setCurrentScreen(*mainMenu);
+        setCurrentScreen(*newMainMenu);
     }
 
     // If we are in demo mode, overright whatever the current screen would have been

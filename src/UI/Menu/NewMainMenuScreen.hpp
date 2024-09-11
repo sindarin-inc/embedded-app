@@ -1,0 +1,15 @@
+#pragma once
+
+#include "Displays/DisplaySystem.hpp"
+#include "UI/Components/SingleLineTextView.hpp"
+#include "UI/Menu/CarouselMenuScreen.hpp"
+
+class NewMainMenuScreen : public CarouselMenuScreen {
+public:
+    NewMainMenuScreen(DisplaySystem &display);
+
+    auto layout(LayoutContext &context, Size size) -> Size override;
+    void drawInRect(Rect rect) override;
+
+    void render(DisplaySystem &display) override;
+};

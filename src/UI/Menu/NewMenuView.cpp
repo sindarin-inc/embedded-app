@@ -1,5 +1,7 @@
 #include "NewMenuView.hpp"
 
+#include "NewMenuItemArticleView.hpp"
+#include "NewMenuItemBookView.hpp"
 #include "NewMenuItemSingleLineView.hpp"
 
 NewMenuView::NewMenuView(DisplaySystem &display)
@@ -63,6 +65,12 @@ void NewMenuView::createMenuItemViews() {
         // NOTE: Here is where you create different item views based on the menu item models
         if (auto item = std::dynamic_pointer_cast<NewMenuItemSingleLine>(menuItem)) {
             menuItemViews_.push_back(std::make_unique<NewMenuItemSingleLineView>(display_, item));
+        }
+        if (auto item = std::dynamic_pointer_cast<NewMenuItemBook>(menuItem)) {
+            menuItemViews_.push_back(std::make_unique<NewMenuItemBookView>(display_, item));
+        }
+        if (auto item = std::dynamic_pointer_cast<NewMenuItemArticle>(menuItem)) {
+            menuItemViews_.push_back(std::make_unique<NewMenuItemArticleView>(display_, item));
         }
     }
 }
