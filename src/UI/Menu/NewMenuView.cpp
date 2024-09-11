@@ -14,7 +14,20 @@ NewMenuView::NewMenuView(DisplaySystem &display)
 
 void NewMenuView::addMenuItem(const std::shared_ptr<NewMenuItem> &menuItem) {
     menuItems_.push_back(menuItem);
-    createMenuItemViews();
+
+    // NOTE: Here is where you create different item views based on the menu item models
+    if (auto item = std::dynamic_pointer_cast<NewMenuItemSingleLine>(menuItem)) {
+        log_d("Adding single line item");
+        menuItemViews_.push_back(std::make_unique<NewMenuItemSingleLineView>(display_, item));
+    }
+    if (auto item = std::dynamic_pointer_cast<NewMenuItemBook>(menuItem)) {
+        log_d("Adding book item");
+        menuItemViews_.push_back(std::make_unique<NewMenuItemBookView>(display_, item));
+    }
+    if (auto item = std::dynamic_pointer_cast<NewMenuItemArticle>(menuItem)) {
+        log_d("Adding article item");
+        menuItemViews_.push_back(std::make_unique<NewMenuItemArticleView>(display_, item));
+    }
 
     int totalPages = (menuItems_.size() + itemsPerPage - 1) / itemsPerPage;
     if (totalPages > 1) {
@@ -23,6 +36,8 @@ void NewMenuView::addMenuItem(const std::shared_ptr<NewMenuItem> &menuItem) {
     } else {
         pagingIndicatorView_.setHidden(true);
     }
+
+    setNeedsLayout();
 }
 
 auto NewMenuView::setSelectedIndex(size_t index) -> bool {
@@ -54,22 +69,6 @@ void NewMenuView::setIndicatorType(IndicatorType type) {
     if (indicatorType_ != type) {
         indicatorType_ = type;
         setNeedsLayout();
-    }
-}
-
-void NewMenuView::createMenuItemViews() {
-    menuItemViews_.clear();
-    for (const auto &menuItem : menuItems_) {
-        // NOTE: Here is where you create different item views based on the menu item models
-        if (auto item = std::dynamic_pointer_cast<NewMenuItemSingleLine>(menuItem)) {
-            menuItemViews_.push_back(std::make_unique<NewMenuItemSingleLineView>(display_, item));
-        }
-        if (auto item = std::dynamic_pointer_cast<NewMenuItemBook>(menuItem)) {
-            menuItemViews_.push_back(std::make_unique<NewMenuItemBookView>(display_, item));
-        }
-        if (auto item = std::dynamic_pointer_cast<NewMenuItemArticle>(menuItem)) {
-            menuItemViews_.push_back(std::make_unique<NewMenuItemArticleView>(display_, item));
-        }
     }
 }
 

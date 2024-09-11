@@ -30,6 +30,9 @@ public:
 
     void setFirstLoad() { firstLoad_ = true; }
 
+    void showTemporaryMessage(DisplaySystem &display, const std::string &message,
+                              int duration = 2000, bool rerenderAfter = false);
+
     auto layout(LayoutContext &context, Size size) -> Size override = 0;
     void drawInRect(Rect rect) override = 0;
     void render(DisplaySystem &display) override = 0;

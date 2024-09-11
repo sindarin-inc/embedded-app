@@ -32,7 +32,7 @@ void NewMainMenuScreen::render(DisplaySystem &display) {
     draw();
 
     if (firstLoad_) {
-        display.updateDisplay(DisplaySystem::UpdateType::FULL, false);
+        display.updateDisplay(DisplaySystem::UpdateType::PARTIAL, false);
         firstLoad_ = false;
     }
 

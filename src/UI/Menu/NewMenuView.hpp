@@ -17,6 +17,7 @@ public:
     void addMenuItem(const std::shared_ptr<NewMenuItem> &menuItem);
     void resetMenuItems() {
         menuItems_.clear();
+        menuItemViews_.clear();
         selectedIndex_ = 0;
         currentPage_ = 0;
     }

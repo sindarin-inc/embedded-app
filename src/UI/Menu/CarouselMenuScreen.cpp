@@ -1,5 +1,8 @@
 #include "CarouselMenuScreen.hpp"
 
+#include "Misc/Platform.hpp"
+#include "UI/MsgPopup.hpp"
+
 CarouselMenuScreen::CarouselMenuScreen(DisplaySystem &display)
     : EinkView(display), currentTabTitle_(""), titleView_(display, ""), menuView_(display) {}
 
@@ -20,6 +23,17 @@ void CarouselMenuScreen::populateMenuView() {
     }
 
     titleView_.setText(currentTabTitle_);
+}
+
+void CarouselMenuScreen::showTemporaryMessage(DisplaySystem &display, const std::string &message,
+                                              int duration, bool rerenderAfter) {
+    MsgPopup popup(display, message);
+    popup.render(display);
+    if (rerenderAfter) {
+        Delay(duration);
+        setNeedsRerender();
+        this->render(display);
+    }
 }
 
 void CarouselMenuScreen::processCommand(RemoteCommand command) {
