@@ -51,6 +51,7 @@
 #include "UI/Menu/NewMenuItemSingleLine.hpp"
 #include "UI/Menu/ReadingSettingsMenuScreen.hpp"
 #include "UI/Menu/SystemSettingsMenuScreen.hpp"
+#include "UI/Menu/WiFiSettingsMenuScreen.hpp"
 #include "UI/MsgPopup.hpp"
 #include "UI/OffsetAdjustScreen.hpp"
 #include "UI/OnboardingContentSyncScreen.hpp"
@@ -325,6 +326,20 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                     setCurrentScreen(*newMainMenu);
                     delete appDownloadScreen;
                 });
+                return;
+            }
+
+            // Fix this eventually to match the other one once MainMenu is refactored and
+            // showTemporaryMessage uses the msgPopup.
+            std::string turnOnWifiMsg = "Enable WiFi to perform a Content Sync.";
+
+            // If wifi has been disabled, show a popup encouraging the user to
+            // turn on wifi to perform the firmware sync.
+            if (this->prefs_.wifiDisabled.get().value_or(false)) {
+                // TODO: There's a bug when this is called from the Sync Content menu item in the
+                // Content menu but because that menu is going away entirely and will be
+                // replaced, we'll worry about that once we know where it lands.
+                mainMenu->showTemporaryMessage(*display, turnOnWifiMsg, 2000, true);
                 return;
             }
 
@@ -651,9 +666,18 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     auto readingSettingsMenu = new ReadingSettingsMenuScreen(*display, "Main Menu");
 
-    readingSettingsMenu->setBackCallback([this, mainMenu]() {
+    if (this->prefs_.autoPilot.get().value_or(false)) {
+        prefs_.autoPilotSpeed.set(10000);
+        readingSettingsMenu->turnOnAutoPilot();
+    } else {
+        prefs_.autoPilotSpeed.remove();
+        readingSettingsMenu->turnOffAutoPilot();
+    }
+
+    readingSettingsMenu->setBackCallback([this, mainMenu, readingSettingsMenu]() {
         this->display_->clearDisplay();
         mainMenu->setFirstLoad();
+        readingSettingsMenu->leaveMenu();
         setCurrentScreen(*mainMenu);
     });
 
@@ -730,6 +754,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     }
 #endif
 
+#if 0
+// Brightness and contrast are going to move elsewhere
     readingSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
         "Brightness",
         [this, display, readingSettingsMenu, &lightingController]() {
@@ -758,6 +784,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             delete contrastAdjustScreen;
         });
         }));
+#endif
 #endif
 
     readingSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
@@ -797,6 +824,33 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 setCurrentScreen(*readingSettingsMenu);
                 delete lineSpacingScreen;
             });
+        }));
+
+    readingSettingsMenu->addMenuItem(
+        std::make_shared<NewMenuItemSingleLine>("Toggle Dark Mode", [this, readingSettingsMenu]() {
+            this->prefs_.darkMode.set(!this->prefs_.darkMode.get().value_or(false));
+            // Reserved for future use? Potentially lighting up and down?
+            this->display_->flipInversion();
+            // When we invert, we should do a full clear of the display to make sure
+            // the blacks are really gone.
+            this->display_->clearDisplay();
+            prefs_.invertSetting.set(this->display_->getInversion());
+            readingSettingsMenu->setNeedsRerender();
+            readingSettingsMenu->setFirstLoad();
+        }));
+
+    readingSettingsMenu->addMenuItem(
+        std::make_shared<NewMenuItemSingleLine>("Toggle Autopilot", [this, readingSettingsMenu]() {
+            this->prefs_.autoPilot.set(!this->prefs_.autoPilot.get().value_or(false));
+            if (this->prefs_.autoPilot.get().value_or(false)) {
+                prefs_.autoPilotSpeed.set(10000);
+                readingSettingsMenu->turnOnAutoPilot();
+            } else {
+                prefs_.autoPilotSpeed.remove();
+                readingSettingsMenu->turnOffAutoPilot();
+            }
+            readingSettingsMenu->setNeedsRerender();
+            readingSettingsMenu->setFirstLoad();
         }));
 
     auto contentSettingsMenu =
@@ -1121,6 +1175,17 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 return;
             }
 
+            std::string turnOnWifiMsg =
+                "Enable WiFi from Settings -> Wifi and Bluetooth to perform a Firmware Update";
+
+            // If wifi has been disabled, show a popup encouraging the user to
+            // turn on wifi to perform the firmware sync.
+            if (this->prefs_.wifiDisabled.get().value_or(false)) {
+                systemSettingsMenu->showTemporaryMessage(*display, turnOnWifiMsg, 2000, true);
+                systemSettingsMenu->setFirstLoad();
+                return;
+            }
+
             auto firmwareUpdateScreen = new FirmwareUpdateScreen(*display, telemetry_, prefs_);
             this->setCurrentScreen(*firmwareUpdateScreen);
             firmwareUpdateScreen->setBackCallback(
@@ -1224,27 +1289,67 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             power_.reboot();
         }));
 
-    systemSettingsMenu->addMenuItem(
-        std::make_shared<NewMenuItemSingleLine>("Clear WiFi Settings",
-                                                [systemSettingsMenu, display]() {
-        WiFi::getInstance().clearWiFiCredentials();
-        log_w("WiFi settings cleared.");
-        systemSettingsMenu->showTemporaryMessage(*display, "WiFi settings cleared.", 2000, true);
-        systemSettingsMenu->setFirstLoad();
-        }));
+    systemSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
+        "WiFi and Bluetooth", [this, systemSettingsMenu, display]() {
+            auto wifiSettingsMenuScreen =
+                std::make_shared<WiFiSettingsMenuScreen>(*display, this->prefs_);
 
-    systemSettingsMenu->addMenuItem(
-        std::make_shared<NewMenuItemSingleLine>("WiFi Scan", [this, systemSettingsMenu, display]() {
-            auto wiFiScanScreen = new WiFiScanScreen(*display, WiFi::getInstance());
-            wiFiScanScreen->begin();
-            this->setCurrentScreen(*wiFiScanScreen);
-            wiFiScanScreen->setBackCallback([this, wiFiScanScreen, systemSettingsMenu, display]() {
+            wifiSettingsMenuScreen->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
+                "WiFi Scan", [this, wifiSettingsMenuScreen, display]() {
+                    auto wiFiScanScreen = new WiFiScanScreen(*display, WiFi::getInstance());
+                    wiFiScanScreen->begin();
+                    this->setCurrentScreen(*wiFiScanScreen);
+                    wiFiScanScreen->setBackCallback(
+                        [this, wiFiScanScreen, wifiSettingsMenuScreen, display]() {
+                wifiSettingsMenuScreen->setFirstLoad();
+                display->clearDisplay();
+                setCurrentScreen(*wifiSettingsMenuScreen);
+                wifiSettingsMenuScreen->render(*this->display_);
+                delete wiFiScanScreen;
+                    });
+                }));
+
+            wifiSettingsMenuScreen->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
+                "Clear WiFi Settings", [wifiSettingsMenuScreen, display]() {
+                    WiFi::getInstance().clearWiFiCredentials();
+                    log_w("WiFi settings cleared.");
+                    wifiSettingsMenuScreen->loadWifiSettings();
+                    wifiSettingsMenuScreen->showTemporaryMessage(*display, "WiFi settings cleared.",
+                                                                 2000, true);
+                    wifiSettingsMenuScreen->setFirstLoad();
+                }));
+
+            wifiSettingsMenuScreen->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
+                "Enable / Disable WiFi", [wifiSettingsMenuScreen, this]() {
+                    if (this->prefs_.wifiDisabled.get().value_or(false)) {
+                        this->prefs_.wifiDisabled.set(false);
+                    } else {
+                        this->prefs_.wifiDisabled.set(true);
+                    }
+                    wifiSettingsMenuScreen->setFirstLoad();
+                    wifiSettingsMenuScreen->setNeedsRerender();
+                }));
+
+            wifiSettingsMenuScreen->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
+                "Enable / Disable Bluetooth Sync", [wifiSettingsMenuScreen, this]() {
+                    if (this->prefs_.bleDisabled.get().value_or(false)) {
+                        this->prefs_.bleDisabled.set(false);
+                    } else {
+                        this->prefs_.bleDisabled.set(true);
+                    }
+                    wifiSettingsMenuScreen->setFirstLoad();
+                    wifiSettingsMenuScreen->setNeedsRerender();
+                }));
+
+            wifiSettingsMenuScreen->setBackCallback([this, systemSettingsMenu, display]() {
                 systemSettingsMenu->setFirstLoad();
                 display->clearDisplay();
                 setCurrentScreen(*systemSettingsMenu);
                 systemSettingsMenu->render(*this->display_);
-                delete wiFiScanScreen;
             });
+
+            wifiSettingsMenuScreen->setFirstLoad();
+            setCurrentScreen(*wifiSettingsMenuScreen);
         }));
 
     systemSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
@@ -1280,24 +1385,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         this->setCurrentScreen(*experimentalSettingsMenu);
     }));
 
-    experimentalSettingsMenu->addMenuItem(MenuItem("Dark Mode", [this, experimentalSettingsMenu]() {
-        this->prefs_.darkMode.set(!this->prefs_.darkMode.get().value_or(false));
-        // Reserved for future use? Potentially lighting up and down?
-        this->display_->flipInversion();
-        // When we invert, we should do a full clear of the display to make sure
-        // the blacks are really gone.
-        this->display_->clearDisplay();
-        prefs_.invertSetting.set(this->display_->getInversion());
-        experimentalSettingsMenu->setNeedsRerender();
-        experimentalSettingsMenu->setFirstLoad();
-    }));
-
-    if (prefs_.darkMode.get().value_or(false)) {
-        experimentalSettingsMenu->setToggleLastItem(true);
-    } else {
-        experimentalSettingsMenu->setToggleLastItem(false);
-    }
-
 #if 0
     experimentalSettingsMenu->addMenuItem(MenuItem("Fonts Library",
                                                    [this, experimentalSettingsMenu]() {
@@ -1311,21 +1398,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         experimentalSettingsMenu->setToggleLastItem(false);
     }
 #endif
-
-    experimentalSettingsMenu->addMenuItem(MenuItem("Autopilot", [this]() {
-        this->prefs_.autoPilot.set(!this->prefs_.autoPilot.get().value_or(false));
-        if (this->prefs_.autoPilot.get().value_or(false)) {
-            prefs_.autoPilotSpeed.set(10000);
-        } else {
-            prefs_.autoPilotSpeed.remove();
-        }
-    }));
-
-    if (prefs_.autoPilot.get().value_or(false)) {
-        experimentalSettingsMenu->setToggleLastItem(true);
-    } else {
-        experimentalSettingsMenu->setToggleLastItem(false);
-    }
 
     experimentalSettingsMenu->addMenuItem(MenuItem("Show summary", [this]() {
         this->prefs_.noShowPartialChapterSummary.set(
@@ -1877,7 +1949,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             });
         }
     } else if (prefs_.emcMode.get().value_or(false)) {
-        log_d("Starting EMC mode readable reading turn page every 30s and content sync every 60s");
+        log_d("Starting EMC mode readable reading turn page every 30s and content sync every "
+              "60s");
         auto it = std::find_if(readables.begin(), readables.end(),
                                [](const std::shared_ptr<Readable> &x) {
             return (x->title == "The Last Question");
@@ -1977,8 +2050,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     // Yes, clang-tidy, it is weird that we are calling `new` and not `delete` and we know this
     // should be a shared_ptr or something. But just leave us alone for now, ok?
     // NOTE: I couldn't figure out how to use
-    // NOLINTNEXTLINE(clang-analyzer-cplusplus.NewDeleteLeaks) in a way that disabled these warnings
-    // for these variables
+    // NOLINTNEXTLINE(clang-analyzer-cplusplus.NewDeleteLeaks) in a way that disabled these
+    // warnings for these variables
 #ifdef __clang_analyzer__
     delete articlesMenu;
     delete booksMenu;

@@ -36,6 +36,8 @@ public:
     }
 
     void drawIndicator() {
+        indicatorView_.fillColor = display_.fg;
+        indicatorView_.strokeColor = display_.fg;
         if (indicatorType_ != IndicatorType::None) {
             indicatorView_.draw();
         }
