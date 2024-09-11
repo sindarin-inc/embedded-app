@@ -17,13 +17,11 @@ auto RendererView::layout(LayoutContext &context, Size size) -> Size {
 
 void RendererView::resetTimer() {
     auto totalLength = renderer_.getTotalLengthOfLines();
-    nextInterval_ = totalLength != 0
-                        ? pageSpeed_ * renderer_.getLengthOfLine(numSkipLines_ - 1) / totalLength
-                        : 0;
+    nextInterval_ =
+        totalLength != 0 ? pageSpeed_ * renderer_.getLengthOfLine(numSkipLines_) / totalLength : 0;
     if (nextInterval_ == 0) {
         nextInterval_ = 1000;
     }
-
     xTimerChangePeriod(DisplaySystem::animationTimer, pdMS_TO_TICKS(nextInterval_), 0);
 }
 
@@ -39,6 +37,9 @@ void RendererView::drawInRect(Rect rect) {
     } else {
         std::tie(nextPlace_, unusedDarkPicturePercent) =
             renderer_.renderPage(currentPlace_, numSkipLines_, true);
+
+        resetTimer();
+
         if (numSkipLines_ >= renderer_.getNumRenderedLines()) {
             numSkipLines_ = 0;
             currentPlace_ = nextPlace_;
@@ -52,11 +53,15 @@ void RendererView::drawInRect(Rect rect) {
         }
 
         if (renderer_.atEndOfFile() && numSkipLines_ >= renderer_.getNumRenderedLines()) {
-            // If we've rendered the whole stream, reset to the beginning.
-            numSkipLines_ = 0;
-            currentPlace_ = nullptr;
-            nextPlace_ = nullptr;
+            if (autoPilotWraparound_) {
+                // If we've rendered the whole stream, reset to the beginning if that flag is set..
+                numSkipLines_ = 0;
+                currentPlace_ = nullptr;
+                nextPlace_ = nullptr;
+            } else {
+                // If we've rendered the whole stream, stop the animation.
+                xTimerStop(DisplaySystem::animationTimer, 0);
+            }
         }
-        resetTimer();
     }
 }

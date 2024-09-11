@@ -15,7 +15,10 @@ public:
 
     auto autoPilotMode() const -> bool { return autoPilotMode_; }
 
+    auto setAutoPilotWraparound() { autoPilotWraparound_ = true; }
+
     void resetRenderer() {
+
         numSkipLines_ = 0;
         currentPlace_ = nullptr;
         nextPlace_ = nullptr;
@@ -31,6 +34,7 @@ private:
     BoxView dottedBoxView_;
     // For autopilot mode
     bool autoPilotMode_ = false;
+    bool autoPilotWraparound_ = false;
     uint16_t numSkipLines_ = 0;
     std::shared_ptr<Place> currentPlace_ = nullptr;
     std::shared_ptr<Place> nextPlace_ = nullptr;

@@ -9,6 +9,7 @@ ReadingSettingsMenuScreen::ReadingSettingsMenuScreen(DisplaySystem &display,
     menuView_.padding = 1;
     menuView_.itemsPerPage = 8;
     rendererView_.dottedBox = true;
+    rendererView_.setAutoPilotWraparound();
 
     std::string message;
     message += R"(The Expanse of the Lord of the Rings
@@ -73,6 +74,7 @@ void ReadingSettingsMenuScreen::processCommand(RemoteCommand command) {
     // We rely on the animation timer which is set in the renderer view in autopilot mode
     case RemoteCommand::ANIMATION:
         setNeedsRerender();
+        break;
     default:
         // Handle other commands or ignore
         break;
@@ -134,7 +136,6 @@ void ReadingSettingsMenuScreen::render(DisplaySystem &display) {
     } else if (rendererView_.autoPilotMode()) {
         draw();
         menuView_.drawIndicator();
-        // Because the increment happens after the render, so this is the beginning of a new page
         if (rendererView_.newPage()) {
             display.updateDisplay(DisplaySystem::UpdateType::FULL, true);
         } else {
