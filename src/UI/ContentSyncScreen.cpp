@@ -265,7 +265,12 @@ void ContentSyncScreen::begin() {
     // btdm_controller_task crash
     BLEManager::getInstance()->stopAdvertising();
     auto bleManager = BLEManager::getInstance();
-    bleManager->disconnectAllClients();
+    // Check if already connected to sync service, if not, disconnect all clients
+    if (!bleManager->connectedProxy) {
+        bleManager->disconnectAllClients();
+    } else {
+        log_d("Already connected to sync service, not disconnecting clients");
+    }
     auto resumeBLE = [bleManager] { bleManager->startAdvertisingIfNecessary(); };
 #else
     auto resumeBLE = [] {};

@@ -141,6 +141,13 @@ auto BLEHttpClient::handleWebRequest(const SpiramString &key, const char *body, 
         } else if (type == "B") {
             // Body
             bleProxy_->writeBody(requestBody_, chunkNumber);
+        } else if (type == "E") {
+            // End of request
+            log_d("BLE Sync, end of request, acknowledging: %d", state_);
+            state_ = BLE_HTTP_CLIENT_IDLE;
+            bleProxy_->acknowledgeKey(key);
+        } else {
+            log_w("Unknown key while handling web request: %s", key.c_str());
         }
     } else if (key == "S") {
         // Status code
@@ -207,10 +214,12 @@ auto BLEHttpClient::handleWebRequest(const SpiramString &key, const char *body, 
         xSemaphoreGive(dataSemaphore_);
 
         if (chunkNumber == totalChunks) {
+            state_ = BLE_HTTP_CLIENT_WAITING_FOR_END_OF_REQUEST;
             bleProxy_->acknowledgeKey(key);
         }
     } else if (key == "E") {
         // End of request
+        log_d("BLE Sync, end of request, acknowledging: %d", state_);
         state_ = BLE_HTTP_CLIENT_IDLE;
         bleProxy_->acknowledgeKey(key);
 
@@ -253,6 +262,29 @@ auto BLEHttpClient::read(char *buffer, int length) -> int {
     if (responseBody_.size() > 0) {
         log_d("Data remaining in buffer: %d", responseBody_.size());
         xSemaphoreGive(dataSemaphore_);
+    }
+
+    if (state_ == BLE_HTTP_CLIENT_WAITING_FOR_END_OF_REQUEST) {
+        // Wait for response up to 3s
+        RateLimiter rl(1, 3);
+        auto startTime = esp_timer_get_time();
+        while (state_ == BLE_HTTP_CLIENT_WAITING_FOR_END_OF_REQUEST) {
+            auto currentTime = esp_timer_get_time();
+            constexpr auto fetchingTimeoutMs = 3 * 1000;
+            auto timedOut =
+                (currentTime - startTime) > (static_cast<long long>(fetchingTimeoutMs) * 1000);
+            if (timedOut) {
+                log_e("Timed out waiting for end of request response");
+                return ERR_BLE_TIMED_OUT;
+            }
+            rl.checkAndExecute(0, [](int64_t time, float percentage) {
+                log_d("Waiting for BLE proxy to respond...");
+            });
+
+            vTaskDelay(1000 / portTICK_PERIOD_MS);
+        }
+        log_d("BLE Sync state, end of request: %d", state_);
+        state_ = BLE_HTTP_CLIENT_IDLE;
     }
 
     return bytesToCopy;
