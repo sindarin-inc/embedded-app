@@ -8,3 +8,5 @@ void *heap_caps_malloc(size_t size, uint32_t caps) { return malloc(size); }
 void *heap_caps_realloc(void *ptr, size_t size, uint32_t caps) { return realloc(ptr, size); }
 
 void heap_caps_free(void *ptr) { free(ptr); }
+
+size_t heap_caps_get_largest_free_block(uint32_t caps) { return 100000; }
