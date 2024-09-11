@@ -188,7 +188,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     auto newMainMenu = new NewMainMenuScreen(*display_);
 
     auto createReadableScreen =
-        [this, display, newMainMenu, hasBible, &fileSystem, &lightingController,
+        [this, display, newMainMenu, &fileSystem, &lightingController,
          &localStore](const std::shared_ptr<Readable> &readable) -> ReadableScreen * {
         // TODO: Would be better to not allocate / delete these all the time
 
