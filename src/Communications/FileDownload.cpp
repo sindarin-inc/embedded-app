@@ -1,5 +1,6 @@
 #include "FileDownload.hpp"
 
+#include <esp_heap_caps.h>
 #include <esp_timer.h>
 #include <utility>
 
@@ -248,7 +249,17 @@ auto DownloadFileToPath(const char *url, FileSystem &fileSystem, Telemetry &tele
     };
     constexpr int bufferSize = 4096;
     HEAP_PROFILE_START(FileDownloadBuffer);
-    QueueHandle_t bufferQueue = xQueueCreate(1000, sizeof(DataBlock));
+
+    // TODO: A ring buffer would probably be more appropriate here
+    auto queueSize =
+        std::min(static_cast<size_t>(1000),
+                 (heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL) - 100) / sizeof(DataBlock));
+    if (queueSize < 1000) {
+        log_w("RAM is low. Largest free block is only %zu bytes, queueSize=%zu",
+              heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL), queueSize);
+    }
+    QueueHandle_t bufferQueue = xQueueCreate(queueSize, sizeof(DataBlock));
+
     HEAP_PROFILE_END(FileDownloadBuffer);
     if (bufferQueue == nullptr) {
         log_e("xQueueCreate failed");
