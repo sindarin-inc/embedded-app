@@ -36,12 +36,6 @@ auto DownloadFileCommon(
     }
     auto client = CreateClient(url, useBle, cancel);
 
-    // Ensure connected to WiFi
-    if (!client->connected) {
-        log_e("Not connected to WiFi/BLE, bailing out of file download");
-        return ERR_CLIENT_DISCONNECTED;
-    }
-
     auto sindarinApi = SindarinAPI::getInstance();
     if (sindarinApi->isSindarinUrl(url)) {
         sindarinApi->setAuth(client);
