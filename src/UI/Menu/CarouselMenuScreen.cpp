@@ -1,10 +1,11 @@
 #include "CarouselMenuScreen.hpp"
 
 CarouselMenuScreen::CarouselMenuScreen(DisplaySystem &display)
-    : EinkView(display), currentTabTitle_(""), titleView_(display, ""), menuView_(display) {}
+    : EinkView(display), titleView_(display, ""), menuView_(display) {}
 
-void CarouselMenuScreen::addTab(std::string tabName, MenuItemFactory menuItemFactory) {
-    menuTabs_.emplace_back(std::make_tuple(tabName, menuItemFactory));
+void CarouselMenuScreen::addTab(const std::string &tabName,
+                                const MenuItemFactory &menuItemFactory) {
+    menuTabs_.emplace_back(tabName, menuItemFactory);
 }
 
 void CarouselMenuScreen::setCurrentTabIndex(int index) { currentTabIndex_ = index; }
