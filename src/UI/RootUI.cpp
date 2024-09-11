@@ -312,8 +312,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     auto makeContentSyncMenuItem = [this, display, &localStore, newMainMenu](
                                        const char *title) -> std::shared_ptr<NewMenuItem> {
-        return std::make_shared<NewMenuItemSingleLine>(title, [this, display, &localStore,
-                                                               newMainMenu, mainMenu]() {
+        return std::make_shared<NewMenuItemSingleLine>(title,
+                                                       [this, display, &localStore, newMainMenu]() {
             // If we're not yet paired, show the app screen instead
             if (PreferencesStore::paired == PairedStatus::Unpaired) {
                 auto appDownloadScreen = new AppDownloadScreen(*display);
