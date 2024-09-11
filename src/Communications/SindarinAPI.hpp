@@ -29,7 +29,6 @@ enum SindarinError {
     ERR_JSON_OBJECT_PARSE = -6,
     ERR_SET_HEADER = -7,
     ERR_CLIENT_DISCONNECTED = -8,
-    ERR_CREATE_DIR = -12,
     // Used in FileDownload
     ERR_OPEN_BLOCK = -9,
     ERR_SIZE_MISMATCH = -10,
@@ -39,6 +38,7 @@ enum SindarinError {
     ERR_READ_EMPTY = -14,
     ERR_BLE_NOT_CONNECTED = -15,
     ERR_BLE_TIMED_OUT = -16,
+    ERR_CREATE_DIR = -17,
 };
 
 class SindarinAPI {
