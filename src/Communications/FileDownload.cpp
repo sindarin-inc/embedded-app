@@ -17,15 +17,7 @@
 
 auto CreateClient(const std::string &url, bool useBle, const std::shared_ptr<CancelFlag> &cancel)
     -> std::shared_ptr<HttpClient> {
-    if (useBle) {
-#if CONFIG_USE_BLE_SERVER_PROXY
-        return std::make_shared<BLEHttpClient>(url.c_str(), cancel);
-#else
-        return nullptr;
-#endif
-    } else {
-        return std::make_shared<WiFiHttpClient>(url.c_str());
-    }
+    return SindarinAPI::createClient(url, "", HTTP_METHOD_GET, useBle, cancel);
 }
 
 auto DownloadFileCommon(

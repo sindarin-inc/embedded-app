@@ -63,9 +63,10 @@ public:
                           Telemetry &telemetry, const std::string &path,
                           const std::shared_ptr<CancelFlag> &cancel, bool useBle,
                           const std::function<void(int percentage)> &progressCallback) -> int;
-    auto createClient(const std::string &url, const std::string &contentType,
-                      esp_http_client_method_t method, bool useBle,
-                      const std::shared_ptr<CancelFlag> &cancel) -> std::shared_ptr<HttpClient>;
+    static auto createClient(const std::string &url, const std::string &contentType,
+                             esp_http_client_method_t method, bool useBle,
+                             const std::shared_ptr<CancelFlag> &cancel)
+        -> std::shared_ptr<HttpClient>;
     auto uploadTelemetryFile(SFile &telemetryFile, const std::string &localPath,
                              FileSystem &fileSystem, bool useBle = false,
                              const std::shared_ptr<CancelFlag> &cancel = nullptr) -> int;

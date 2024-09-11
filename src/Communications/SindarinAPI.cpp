@@ -231,6 +231,8 @@ auto SindarinAPI::createClient(const std::string &url, const std::string &conten
                                esp_http_client_method_t method, bool useBle,
                                const std::shared_ptr<CancelFlag> &cancel)
     -> std::shared_ptr<HttpClient> {
+    HEAP_PROFILE_START(createClient);
+    defer { HEAP_PROFILE_END(createClient); };
     if (useBle) {
 #if CONFIG_USE_BLE_SERVER_PROXY
         return std::make_shared<BLEHttpClient>(url.c_str(), cancel, contentType.c_str(), method);
