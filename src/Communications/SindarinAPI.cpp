@@ -313,7 +313,20 @@ auto SindarinAPI::uploadTelemetryFile(SFile &telemetryFile, const std::string &l
 
     // Send request and fetch response
     client->fetchHeaders(0, cancel);
-    return client->getStatusCode();
+    auto httpCode = client->getStatusCode();
+    log_d("Telemetry upload http code: %d", httpCode);
+
+    // Download the body
+    auto stream = client->makeReadStream();
+    auto body = std::make_unique<SpiRamJsonDocument>(1024);
+    auto error = ArduinoJson::deserializeJson(*body, *stream);
+    if (error.code() != DeserializationError::Ok) {
+        log_e("Failed to deserialize telemetry response: %s", error.c_str());
+        return ERR_JSON_DESERIALIZE;
+    }
+    log_d("Telemetry response: %s", DumpJson(*body).c_str());
+
+    return httpCode;
 }
 
 auto SindarinAPI::uploadCrashReport(SFile &crashFile, const std::string &contentType) -> int {

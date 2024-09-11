@@ -11,7 +11,7 @@
 #include "sindarin-debug.h"
 
 using WebRequestHandler =
-    std::function<void(const std::string &key, const char *body, size_t bodySize)>;
+    std::function<void(const SpiramString &key, const char *body, size_t bodySize)>;
 using SubscriptionStatusCallback = std::function<void(bool connected)>;
 
 class BLEProxy : BLECharacteristicProvider {
@@ -39,6 +39,7 @@ public:
     auto calculateChecksum(const SpiramString &body) -> SpiramString;
 
     void writeResponseBody(const SpiramString &key, const SpiramString &body);
+    void acknowledgeKey(const SpiramString &key);
 
     void registerWebRequestHandler(const WebRequestHandler &handler);
     void registerSubscriptionStatusCallback(const SubscriptionStatusCallback &callback);
@@ -88,7 +89,7 @@ protected:
 
             // Extract the key and body
             size_t equalsIndex = equalsPos - valuePtr;
-            std::string key = std::string(valuePtr, equalsIndex);
+            SpiramString key = SpiramString(std::string(valuePtr, equalsIndex));
             const char *body = valuePtr + equalsIndex + 1;
             size_t bodyLength = valueSize - (body - valuePtr);
 

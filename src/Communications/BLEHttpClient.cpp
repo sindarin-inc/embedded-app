@@ -105,7 +105,7 @@ auto BLEHttpClient::fetchHeaders(int expectedSize, const std::shared_ptr<CancelF
 
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
-    log_d("BLE Sync state, fetching headers: %d", state_);
+    log_d("BLE Sync state, fetched headers: %d", state_);
 
     // Extract the Content-Length header
     char *contentLengthHeader = nullptr;
@@ -114,17 +114,22 @@ auto BLEHttpClient::fetchHeaders(int expectedSize, const std::shared_ptr<CancelF
         auto contentLength = strtol(contentLengthHeader, nullptr, 10);
         log_d("BLE Sync Content-Length: %ld", contentLength);
         contentLength_ = contentLength;
-        return contentLength;
+    } else {
+        log_d("No Content-Length header found");
     }
 
-    log_d("No Content-Length header found");
+    // Acknowledge the headers once they are parsed
+    bleProxy_->acknowledgeKey("H");
 
-    return 0;
+    return contentLength_;
 }
 
-auto BLEHttpClient::handleWebRequest(const std::string &key, const char *body, size_t bodySize)
+auto BLEHttpClient::handleWebRequest(const SpiramString &key, const char *body, size_t bodySize)
     -> bool {
     // If the key contains more than a single character, it's re-requesting a chunk of the body
+    if (key != "B") {
+        log_d("BLE Sync handleWebRequest: %s %.*s", key.c_str(), bodySize, body);
+    }
     if (key.length() > 1) {
         // Re-send the body chunk requested: B123=. chunkNumber is after the first character and
         // before the =.
@@ -141,12 +146,14 @@ auto BLEHttpClient::handleWebRequest(const std::string &key, const char *body, s
         // Status code
         log_d("Got status code: %.*s", bodySize, body);
         statusCode_ = strtol(reinterpret_cast<const char *>(body), nullptr, 10);
+        bleProxy_->acknowledgeKey(key);
     } else if (key == "H") {
         // Header
         // Extract header (e.g. "H=Content-Length:12345")
         // Find the positions of ':'
         if (bodySize == 0) {
             log_d("Received end of headers");
+            // We'll acknowledge the headers once they are parsed
             state_ = BLE_HTTP_CLIENT_FETCHING_RESPONSE_BODY;
             return false;
         }
@@ -198,9 +205,14 @@ auto BLEHttpClient::handleWebRequest(const std::string &key, const char *body, s
         state_ = BLE_HTTP_CLIENT_FETCHING_RESPONSE_BODY;
 
         xSemaphoreGive(dataSemaphore_);
+
+        if (chunkNumber == totalChunks) {
+            bleProxy_->acknowledgeKey(key);
+        }
     } else if (key == "E") {
         // End of request
         state_ = BLE_HTTP_CLIENT_IDLE;
+        bleProxy_->acknowledgeKey(key);
 
         return true;
     }
@@ -239,6 +251,7 @@ auto BLEHttpClient::read(char *buffer, int length) -> int {
 
     // If there is still data remaining in the buffer, give the semaphore back
     if (responseBody_.size() > 0) {
+        log_d("Data remaining in buffer: %d", responseBody_.size());
         xSemaphoreGive(dataSemaphore_);
     }
 
@@ -248,7 +261,7 @@ auto BLEHttpClient::read(char *buffer, int length) -> int {
 auto BLEHttpClient::open(int contentLength) -> esp_err_t {
     // Register web request handler which receives the response from the mobile app
     bleProxy_->registerWebRequestHandler(
-        [this](const std::string &key, const char *body, size_t bodySize) -> void {
+        [this](const SpiramString &key, const char *body, size_t bodySize) -> void {
             bool completed = this->handleWebRequest(key, body, bodySize);
             if (completed) {
                 log_d("BLE HTTP request completed");

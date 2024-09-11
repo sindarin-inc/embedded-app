@@ -132,4 +132,10 @@ auto BLEProxy::calculateChecksum(const SpiramString &body) -> SpiramString {
     return SpiRamStringFormat("%02x", checksum);
 }
 
+void BLEProxy::acknowledgeKey(const SpiramString &key) {
+    log_i("Acknowledging key: %s", key.c_str());
+    proxyCharacteristic_->setValue(key + ".");
+    proxyCharacteristic_->notify();
+}
+
 #endif // CONFIG_USE_BLE_SERVER_PROXY

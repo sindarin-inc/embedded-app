@@ -51,7 +51,7 @@ public:
 
     auto endChunkedData() -> bool override;
 
-    auto handleWebRequest(const std::string &key, const char *body, size_t bodySize) -> bool;
+    auto handleWebRequest(const SpiramString &key, const char *body, size_t bodySize) -> bool;
 
     void cancel();
 
