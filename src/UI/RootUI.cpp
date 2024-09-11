@@ -228,7 +228,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         // to make the whites really white and the blacks really black.
         display->clearDisplay();
         readableScreen->setBackCallback(
-            [this, display, stream, readableScreen, readable, hasBible, newMainMenu]() {
+            [this, display, stream, readableScreen, readable, newMainMenu]() {
             bool archived = prefs_.readableArchivedChanged.get(readable->shortenedUuid.c_str());
             auto title =
                 StringFormat("%s%s", archived ? "Archived: " : "", readable->title.c_str());
@@ -312,8 +312,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     auto makeContentSyncMenuItem = [this, display, &localStore, newMainMenu](
                                        const char *title) -> std::shared_ptr<NewMenuItem> {
-        return std::make_shared<NewMenuItemSingleLine>(title,
-                                                       [this, display, &localStore, newMainMenu]() {
+        return std::make_shared<NewMenuItemSingleLine>(title, [this, display, &localStore,
+                                                               newMainMenu, mainMenu]() {
             // If we're not yet paired, show the app screen instead
             if (PreferencesStore::paired == PairedStatus::Unpaired) {
                 auto appDownloadScreen = new AppDownloadScreen(*display);
@@ -1730,17 +1730,17 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     //    auto newMainMenu = std::make_shared<NewMainMenuScreen>(*display_);
 
-    if (localStore.recents().size()) {
+    if (!localStore.recents().empty()) {
         newMainMenu->addTab("Recent", recentMenuFactory);
     }
-    if (localStore.books().size() && !prefs_.noBooks.get().value_or(false)) {
+    if (!localStore.books().empty() && !prefs_.noBooks.get().value_or(false)) {
         newMainMenu->addTab("Books", booksMenuFactory);
     }
-    if (localStore.articles().size() && !prefs_.noArticles.get().value_or(false)) {
+    if (!localStore.articles().empty() && !prefs_.noArticles.get().value_or(false)) {
         newMainMenu->addTab("Articles", articlesMenuFactory);
     }
 
-    if (!prefs_.noBible.get().value_or(false) && bibleMenuFactory().size() > 0) {
+    if (!prefs_.noBible.get().value_or(false) && !bibleMenuFactory().empty()) {
         newMainMenu->addTab("Bible", bibleMenuFactory);
     }
 

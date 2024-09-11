@@ -20,7 +20,7 @@ public:
     // Add a tab to the carousel menu. The tab name is the text that will be displayed on top in
     // angle brackets. The second argument is a lambda that is a menu factory that will create the
     // menu items for that tab when it is selected.
-    void addTab(std::string tabName, MenuItemFactory menuItemFactory);
+    void addTab(const std::string &tabName, const MenuItemFactory &menuItemFactory);
 
     void populateMenuView();
 

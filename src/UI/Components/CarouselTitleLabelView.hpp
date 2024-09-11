@@ -23,7 +23,7 @@ public:
         context.setSublayoutSizeInRect(
             size, {{0, 0}, {boxWidth, arrowHeight}},
             LayoutOptionsAlignTop | LayoutOptionsAlignCenterVertical,
-            [this, paddingBetweenArrows, arrowHeight](LayoutContext &context, Size size) -> Size {
+            [this, arrowHeight](LayoutContext &context, Size size) -> Size {
                 context.setViewSizeInRect(
                     leftArrowView_, {0, arrowHeight}, {{0, 1}, {size.width, size.height}},
                     LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical |
