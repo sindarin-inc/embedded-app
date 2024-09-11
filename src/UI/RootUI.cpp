@@ -1,6 +1,5 @@
 #include "RootUI.hpp"
 
-#include <cstddef>
 #include <esp_sleep.h>
 #include <esp_system.h>
 #include <esp_timer.h>
@@ -431,78 +430,25 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         }));
     }
 
-    // Define parseDate function outside of the sorting lambda
-    auto parseDate = [](const std::string &dateStr) -> std::chrono::system_clock::time_point {
-        std::tm tm = {};
-        std::stringstream ss(dateStr.substr(0, 19)); // Only parse the date and time part
-        ss >> std::get_time(&tm, "%Y-%m-%dT%H:%M:%S");
-
-        if (ss.fail()) {
-            log_e("Failed to parse date string");
-        }
-
-        // Disable automatic DST adjustment
-        tm.tm_isdst = -1;
-
-        return std::chrono::system_clock::from_time_t(std::mktime(&tm));
-    };
-
-    // Combine books and articles into a single vector
-    std::vector<std::shared_ptr<Readable>> allReadables;
-    allReadables.insert(allReadables.end(), readables.begin(), readables.end());
-    allReadables.insert(allReadables.end(), articles.begin(), articles.end());
-
-    // Sort the combined vector by last read time or date modified
-    std::sort(
-        allReadables.begin(), allReadables.end(),
-        [this, &parseDate](const std::shared_ptr<Readable> &a, const std::shared_ptr<Readable> &b) {
-        auto aLastRead = this->prefs_.lastReadTime.get(a->shortenedUuid.c_str());
-        auto bLastRead = this->prefs_.lastReadTime.get(b->shortenedUuid.c_str());
-
-        auto aModified = parseDate(a->dateModified.c_str());
-        auto bModified = parseDate(b->dateModified.c_str());
-
-        // Use the more recent of last read time or date modified
-        auto aTime = std::max(std::chrono::system_clock::from_time_t(aLastRead), aModified);
-        auto bTime = std::max(std::chrono::system_clock::from_time_t(bLastRead), bModified);
-
-        return bTime < aTime; // Sort in descending order (most recent first)
-        });
-
-    // Get the current time
-    auto now = std::chrono::system_clock::now();
-
     // Add items to the Recent menu
-    for (const auto &r : allReadables) {
-        auto lastRead = std::chrono::system_clock::from_time_t(
-            this->prefs_.lastReadTime.get(r->shortenedUuid.c_str()));
-        auto lastModified = parseDate(r->dateModified.c_str());
-        auto mostRecent = std::max(lastRead, lastModified);
+    for (const auto &r : localStore.recents()) {
+        bool archived = prefs_.readableArchivedChanged.get(r->shortenedUuid.c_str());
+        auto title = StringFormat("%s%s", archived ? "Archived: " : "", r->title.c_str());
 
-        // Check if the readable was read or modified in the last 7 days
-        auto diff = std::chrono::duration_cast<std::chrono::hours>(now - mostRecent);
-        if (diff.count() <= static_cast<long long>(7 * 24)) { // 7 days * 24 hours
-            bool archived = prefs_.readableArchivedChanged.get(r->shortenedUuid.c_str());
-            auto title = StringFormat("%s%s", archived ? "Archived: " : "", r->title.c_str());
+        recentMenu->addMenuItem(
+            (isBible(r)) ?
 
-            recentMenu->addMenuItem((isBible(r)) ?
-
-                                                 MenuItem(
-                                                     title,
-                                                     [r, handleReadableScreenCreation]() {
-                handleReadableScreenCreation(r);
-                                                     })
-                                    : r->isArticle() ? MenuItem(
-                                                           title,
-                                                           [r, handleReadableScreenCreation]() {
-                handleReadableScreenCreation(r);
-                                                           },
-                                                           true)
-                                    : MenuItem(title, StringFormat("%s", r->authorString().c_str()),
-                                               [r, handleReadableScreenCreation]() {
-                handleReadableScreenCreation(r);
-                                      }));
-        }
+                         MenuItem(
+                             title,
+                             [r, handleReadableScreenCreation]() {
+            handleReadableScreenCreation(r);
+                             })
+            : r->isArticle()
+              ? MenuItem(
+                    title, [r, handleReadableScreenCreation]() { handleReadableScreenCreation(r); },
+                    true)
+              : MenuItem(title, StringFormat("%s", r->authorString().c_str()),
+                         [r, handleReadableScreenCreation]() { handleReadableScreenCreation(r); }));
     }
 
     // Only add the Recent tab if there are recent items
