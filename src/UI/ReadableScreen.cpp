@@ -371,8 +371,11 @@ void ReadableScreen::render(DisplaySystem &display) {
 
         // Only if we didn't end on a newline. Othwerise wait for next render to turn page.
         if (speedLinesToSkip_ != renderer_.getNumRenderedLines()) {
-            nextInterval_ = pageSpeed_ * renderer_.getLengthOfLine(speedLinesToSkip_) /
-                            renderer_.getTotalLengthOfLines();
+            auto totalLength = renderer_.getTotalLengthOfLines();
+            nextInterval_ =
+                (totalLength != 0)
+                    ? pageSpeed_ * renderer_.getLengthOfLine(speedLinesToSkip_) / totalLength
+                    : 0;
             if (nextInterval_ == 0) {
                 nextInterval_ = 1;
             }
