@@ -275,7 +275,9 @@ auto BLEHttpClient::read(char *buffer, int length) -> int {
                 (currentTime - startTime) > (static_cast<long long>(fetchingTimeoutMs) * 1000);
             if (timedOut) {
                 log_e("Timed out waiting for end of request response");
-                return ERR_BLE_TIMED_OUT;
+                // return ERR_BLE_TIMED_OUT; // Instead of erroring out, since we got this far,
+                // assume the request completed
+                break;
             }
             rl.checkAndExecute(0, [](int64_t time, float percentage) {
                 log_d("Waiting for BLE proxy to respond...");
