@@ -1170,8 +1170,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         auto experimentalSettingsMenu =
             std::make_shared<GenericSettingsMenuScreen>(*display, "Experimental");
 
-        experimentalSettingsMenu->setBackCallback(
-            [this, display, newMainMenu, experimentalSettingsMenu]() {
+        experimentalSettingsMenu->setBackCallback([this, newMainMenu, experimentalSettingsMenu]() {
             this->display_->clearDisplay();
             newMainMenu->setFirstLoad();
             setCurrentScreen(*newMainMenu);
