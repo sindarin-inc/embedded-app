@@ -655,32 +655,36 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             });
             }));
 
-        readingSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
-            "Toggle Dark Mode", [this, readingSettingsMenu]() {
-                this->prefs_.darkMode.set(!this->prefs_.darkMode.get().value_or(false));
-                // Reserved for future use? Potentially lighting up and down?
-                this->display_->flipInversion();
-                // When we invert, we should do a full clear of the display to make sure
-                // the blacks are really gone.
-                this->display_->clearDisplay();
-                prefs_.invertSetting.set(this->display_->getInversion());
-                readingSettingsMenu->setNeedsRerender();
-                readingSettingsMenu->setFirstLoad();
-            }));
+        readingSettingsMenu->addMenuItem(std::make_shared<NewMenuItemCheckable>(
+            "Dark Mode",
+            [this, readingSettingsMenu]() {
+            this->prefs_.darkMode.set(!this->prefs_.darkMode.get().value_or(false));
+            // Reserved for future use? Potentially lighting up and down?
+            this->display_->flipInversion();
+            // When we invert, we should do a full clear of the display to make sure
+            // the blacks are really gone.
+            this->display_->clearDisplay();
+            prefs_.invertSetting.set(this->display_->getInversion());
+            readingSettingsMenu->setNeedsRerender();
+            readingSettingsMenu->setFirstLoad();
+            },
+            [this]() -> bool { return this->prefs_.darkMode.get().value_or(false); }));
 
-        readingSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
-            "Toggle Autopilot", [this, readingSettingsMenu]() {
-                this->prefs_.autoPilot.set(!this->prefs_.autoPilot.get().value_or(false));
-                if (this->prefs_.autoPilot.get().value_or(false)) {
-                    prefs_.autoPilotSpeed.set(10000);
-                    readingSettingsMenu->turnOnAutoPilot();
-                } else {
-                    prefs_.autoPilotSpeed.remove();
-                    readingSettingsMenu->turnOffAutoPilot();
-                }
-                readingSettingsMenu->setNeedsRerender();
-                readingSettingsMenu->setFirstLoad();
-            }));
+        readingSettingsMenu->addMenuItem(std::make_shared<NewMenuItemCheckable>(
+            "Autopilot",
+            [this, readingSettingsMenu]() {
+            this->prefs_.autoPilot.set(!this->prefs_.autoPilot.get().value_or(false));
+            if (this->prefs_.autoPilot.get().value_or(false)) {
+                prefs_.autoPilotSpeed.set(10000);
+                readingSettingsMenu->turnOnAutoPilot();
+            } else {
+                prefs_.autoPilotSpeed.remove();
+                readingSettingsMenu->turnOffAutoPilot();
+            }
+            readingSettingsMenu->setNeedsRerender();
+            readingSettingsMenu->setFirstLoad();
+            },
+            [this]() -> bool { return this->prefs_.autoPilot.get().value_or(false); }));
 
         auto contentSettingsMenu =
             std::make_shared<GenericSettingsMenuScreen>(*display_, "Main Menu");
