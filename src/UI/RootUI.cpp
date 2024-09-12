@@ -478,6 +478,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             }
             menuItems.emplace_back(makeContentSyncMenuItem("Sync Content"));
         }
+
+        menuItems.emplace_back(makeContentSyncMenuItem("Sync Content"));
         return menuItems;
     };
 
@@ -512,7 +514,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     };
 
     auto bibleMenuFactory = [this, &localStore, handleReadableScreenCreation, isBible,
-                             makeReleaseNotesMenuItem, noContent]() {
+                             makeReleaseNotesMenuItem, makeContentSyncMenuItem, noContent]() {
         auto &books = localStore.books();
         std::vector<std::shared_ptr<NewMenuItem>> menuItems;
 
@@ -549,6 +551,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                     [psalmsAndProverbs, handleReadableScreenCreation]() {
                     handleReadableScreenCreation(psalmsAndProverbs);
                     }));
+                menuItems.emplace_back(makeContentSyncMenuItem("Sync Content"));
             }
         }
         return menuItems;
