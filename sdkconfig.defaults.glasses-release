@@ -2,3 +2,4 @@
 # Espressif IoT Development Framework (ESP-IDF) Project Minimal Configuration
 #
 CONFIG_COMPILER_OPTIMIZATION_PERF=y
+CONFIG_HEAP_POISONING_LIGHT=y
