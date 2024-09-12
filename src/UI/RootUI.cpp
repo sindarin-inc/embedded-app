@@ -60,7 +60,6 @@
 #include "UI/ResizeBoxScreen.hpp"
 #include "UI/StatsScreen.hpp"
 #include "UI/TestAlignmentScreen.hpp"
-#include "UI/ToggleMenuScreen.hpp"
 #include "UI/TutorialScreen.hpp"
 #include "UI/WiFiScanScreen.hpp"
 #include "Version.hpp"
