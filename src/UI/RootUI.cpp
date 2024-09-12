@@ -949,7 +949,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         // Hide the bubble for the last item, Sync content now
         contentSettingsMenu->setToggleLastItem(false, false);
 
-        contentSettingsMenu->addMenuItem(MenuItem("Sync content now", [this]() {}));
+        contentSettingsMenu->addMenuItem(MenuItem("Sync content now", []() {}));
 
         auto systemSettingsMenu = std::make_shared<SystemSettingsMenuScreen>(*display, "Main Menu");
 
