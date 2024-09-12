@@ -2064,7 +2064,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     SHOW_HEAP();
 }
 
-void RootUI::handleBrowse(FileSystem &fileSystem, std::shared_ptr<MenuScreen> fsMenu,
+void RootUI::handleBrowse(FileSystem &fileSystem, const std::shared_ptr<MenuScreen> &fsMenu,
                           const std::string &path) {
     FileList localFiles, localDirs;
 
