@@ -185,7 +185,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                            [isBible](const std::shared_ptr<Readable> &x) { return isBible(x); });
     auto hasBible = it != readables.end();
 
-    auto newMainMenu = new NewMainMenuScreen(*display_);
+    auto newMainMenu = std::make_shared<NewMainMenuScreen>(*display_);
 
     auto createReadableScreen =
         [this, display, newMainMenu, &fileSystem, &lightingController,
@@ -1730,8 +1730,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
         return menuItems;
     };
-
-    //    auto newMainMenu = std::make_shared<NewMainMenuScreen>(*display_);
 
     if (!localStore.recents().empty()) {
         newMainMenu->addTab("Recent", recentMenuFactory);
