@@ -1069,27 +1069,29 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                         wifiSettingsMenuScreen->setFirstLoad();
                     }));
 
-                wifiSettingsMenuScreen->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
-                    "Enable / Disable WiFi", [wifiSettingsMenuScreen, this]() {
-                        if (this->prefs_.wifiDisabled.get().value_or(false)) {
-                            this->prefs_.wifiDisabled.set(false);
-                        } else {
-                            this->prefs_.wifiDisabled.set(true);
-                        }
-                        wifiSettingsMenuScreen->setFirstLoad();
-                        wifiSettingsMenuScreen->setNeedsRerender();
-                    }));
+                wifiSettingsMenuScreen->addMenuItem(std::make_shared<NewMenuItemCheckable>(
+                    "WiFi is Enabled",
+                    [wifiSettingsMenuScreen, this]() {
+                if (this->prefs_.wifiDisabled.get().value_or(false)) {
+                    this->prefs_.wifiDisabled.set(false);
+                } else {
+                    this->prefs_.wifiDisabled.set(true);
+                }
+                wifiSettingsMenuScreen->setNeedsRerender();
+                    },
+                    [this]() -> bool { return !this->prefs_.wifiDisabled.get().value_or(false); }));
 
-                wifiSettingsMenuScreen->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
-                    "Enable / Disable Bluetooth Sync", [wifiSettingsMenuScreen, this]() {
-                        if (this->prefs_.bleDisabled.get().value_or(false)) {
-                            this->prefs_.bleDisabled.set(false);
-                        } else {
-                            this->prefs_.bleDisabled.set(true);
-                        }
-                        wifiSettingsMenuScreen->setFirstLoad();
-                        wifiSettingsMenuScreen->setNeedsRerender();
-                    }));
+                wifiSettingsMenuScreen->addMenuItem(std::make_shared<NewMenuItemCheckable>(
+                    "Bluetooth Sync is Enabled",
+                    [wifiSettingsMenuScreen, this]() {
+                if (this->prefs_.bleDisabled.get().value_or(false)) {
+                    this->prefs_.bleDisabled.set(false);
+                } else {
+                    this->prefs_.bleDisabled.set(true);
+                }
+                wifiSettingsMenuScreen->setNeedsRerender();
+                    },
+                    [this]() -> bool { return !this->prefs_.bleDisabled.get().value_or(false); }));
 
                 wifiSettingsMenuScreen->setBackCallback([this, systemSettingsMenu, display]() {
                     systemSettingsMenu->setFirstLoad();

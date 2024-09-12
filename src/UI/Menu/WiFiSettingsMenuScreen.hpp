@@ -34,8 +34,6 @@ private:
     PreferencesStore &prefs_;
     NewMenuView menuView_;
     ArrowLabelView backLabelView_;
-    SingleLineTextView wifiEnabledView_;
-    SingleLineTextView bleEnabledView_;
     SingleLineTextView configuredAccessView_;
     MultiLineTextView configuredAccessPointsView_;
 
