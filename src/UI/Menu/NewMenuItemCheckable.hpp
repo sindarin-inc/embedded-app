@@ -9,21 +9,16 @@
 class NewMenuItemCheckable : public NewMenuItem {
 public:
     ~NewMenuItemCheckable() override = default;
-    NewMenuItemCheckable(std::string title, bool initialChecked, std::function<void()> callback)
-        : NewMenuItem(std::move(callback)), title_(std::move(title)), isChecked_(initialChecked) {}
+    NewMenuItemCheckable(std::string title, std::function<void()> callback,
+                         std::function<bool()> isCheckedCallback)
+        : NewMenuItem(std::move(callback)), title_(std::move(title)),
+          isCheckedCallback_(std::move(isCheckedCallback)) {}
 
     [[nodiscard]] auto title() const -> const std::string & { return title_; }
 
-    [[nodiscard]] auto isChecked() const -> bool { return isChecked_; }
-
-    void execute() override {
-        isChecked_ = !isChecked_;
-        if (callback_) {
-            callback_();
-        }
-    }
+    [[nodiscard]] auto isChecked() const -> bool { return isCheckedCallback_(); }
 
 private:
     std::string title_;
-    bool isChecked_;
+    std::function<bool()> isCheckedCallback_;
 };

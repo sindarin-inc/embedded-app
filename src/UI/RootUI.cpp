@@ -1121,19 +1121,23 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         });
 
         experimentalSettingsMenu->addMenuItem(std::make_shared<NewMenuItemCheckable>(
-            "Show Summary", !this->prefs_.noShowPartialChapterSummary.get().value_or(false),
+            "Show Summary",
             [this, experimentalSettingsMenu]() {
             this->prefs_.noShowPartialChapterSummary.set(
                 !this->prefs_.noShowPartialChapterSummary.get().value_or(false));
             experimentalSettingsMenu->setNeedsRerender();
+            },
+            [this]() -> bool {
+                return !this->prefs_.noShowPartialChapterSummary.get().value_or(false);
             }));
 
         experimentalSettingsMenu->addMenuItem(std::make_shared<NewMenuItemCheckable>(
-            "Fast Page Transitions", this->prefs_.fastTransitions.get().value_or(false),
+            "Fast Page Transitions",
             [this, experimentalSettingsMenu]() {
             this->prefs_.fastTransitions.set(!this->prefs_.fastTransitions.get().value_or(false));
             experimentalSettingsMenu->setNeedsRerender();
-            }));
+            },
+            [this]() -> bool { return this->prefs_.fastTransitions.get().value_or(false); }));
 
         std::vector<std::shared_ptr<NewMenuItem>> menuItems;
 
