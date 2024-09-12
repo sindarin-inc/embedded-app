@@ -43,7 +43,6 @@
 #include "UI/LightingAdjustScreen.hpp"
 #include "UI/LineMenuScreen.hpp"
 #include "UI/LineSpacingScreen.hpp"
-#include "UI/MainMenuScreen.hpp"
 #include "UI/Menu/InactivitySettingMenuScreen.hpp"
 #include "UI/Menu/NewMainMenuScreen.hpp"
 #include "UI/Menu/NewMenuItemArticle.hpp"
@@ -111,13 +110,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     MenuStyle styleFamilies;
 
-    HEAP_PROFILE_START(MainMenuScreen);
-    auto mainMenu =
-        std::make_shared<MainMenuScreen>(power_.battery, *display_, styleFamilies.mainMenu);
-    HEAP_PROFILE_END(MainMenuScreen);
-
-    SIZE_OF(*mainMenu);
-
     HEAP_PROFILE_START(rootUIContent);
     auto &readables = localStore.books();
     auto &articles = localStore.articles();
@@ -155,11 +147,11 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 r->title == "Old Testament" || r->title == "Torah");
     };
 
-    auto it = std::find_if(readables.begin(), readables.end(),
-                           [isBible](const std::shared_ptr<Readable> &x) { return isBible(x); });
-    auto hasBible = it != readables.end();
-
+    HEAP_PROFILE_START(NewMainMenuScreen);
     auto newMainMenu = std::make_shared<NewMainMenuScreen>(*display_, power_.battery);
+    HEAP_PROFILE_END(NewMainMenuScreen);
+
+    SIZE_OF(*newMainMenu);
 
     auto createReadableScreen =
         [this, display, newMainMenu, &fileSystem, &lightingController, &localStore](
@@ -238,9 +230,10 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     auto currentReadable = prefs_.lastReadableId.get();
 
     bool hasLastQuestion = false;
-    it = std::find_if(readables.begin(), readables.end(), [](const std::shared_ptr<Readable> &x) {
-        return (x->title == "The Last Question");
-    });
+    auto it =
+        std::find_if(readables.begin(), readables.end(), [](const std::shared_ptr<Readable> &x) {
+            return (x->title == "The Last Question");
+        });
     if (it == readables.end()) {
         log_d("Could not find readable: %s, not enabling CES or EMC modes", "The Last Question");
     } else {
