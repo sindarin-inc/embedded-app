@@ -550,8 +550,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         return menuItems;
     };
 
-    auto settingsMenuFactory =
-        [this, display, newMainMenu, styleFamilies, &localStore, &fileSystem, hasLastQuestion]() {
+    auto settingsMenuFactory = [this, display, newMainMenu, styleFamilies, &localStore, &fileSystem,
+                                hasLastQuestion, makeContentSyncMenuItem, &lightingController]() {
         auto readingSettingsMenu =
             std::make_shared<ReadingSettingsMenuScreen>(*display, "Main Menu");
 
@@ -683,101 +683,16 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 readingSettingsMenu->setFirstLoad();
             }));
 
-        auto contentSettingsMenu = std::make_shared<ToggleMenuScreen>(
-            power_.battery, *display_, styleFamilies.settingsMenu, "Content");
-
-        contentSettingsMenu->setBackCallback([this, newMainMenu, display, contentSettingsMenu]() {
-            // Ideally we'd move this into the ToggleClass so it's not duplicated with
-            // experimentalSettingsMenu below, but that would require teh ToggleMenuScreen
-            // to have the power intead of just the battery and also the prefs. Big deal or not?
-            if (contentSettingsMenu->getRequireRestart()) {
-                // Start on the settings menu when we boot so it feels like we just
-                // went back to it!
-                PreferencesStore::settingsOnRestart = true;
-                contentSettingsMenu->showTemporaryMessage(*display, settingsRestartMsg_, 1500,
-                                                          false);
-                this->power_.reboot();
-            } else {
-                this->display_->clearDisplay();
-                newMainMenu->setFirstLoad();
-                setCurrentScreen(*newMainMenu);
-            }
-        });
-
-        contentSettingsMenu->addMenuItem(MenuItem("Books", [this, contentSettingsMenu]() {
-            this->prefs_.noBooks.set(!this->prefs_.noBooks.get().value_or(false));
-            contentSettingsMenu->requireRestart();
-        }));
-
-        if (prefs_.noBooks.get().value_or(false)) {
-            contentSettingsMenu->setToggleLastItem(false);
-        } else {
-            contentSettingsMenu->setToggleLastItem(true);
-        }
-
-        contentSettingsMenu->addMenuItem(MenuItem("Articles", [this, contentSettingsMenu]() {
-            this->prefs_.noArticles.set(!this->prefs_.noArticles.get().value_or(false));
-            contentSettingsMenu->requireRestart();
-        }));
-
-        if (prefs_.noArticles.get().value_or(false)) {
-            contentSettingsMenu->setToggleLastItem(false);
-        } else {
-            contentSettingsMenu->setToggleLastItem(true);
-        }
-
-        contentSettingsMenu->addMenuItem(MenuItem("Bible", [this, contentSettingsMenu]() {
-            this->prefs_.noBible.set(!this->prefs_.noBible.get().value_or(false));
-            contentSettingsMenu->requireRestart();
-        }));
-
-        if (prefs_.noBible.get().value_or(false)) {
-            contentSettingsMenu->setToggleLastItem(false);
-        } else {
-            contentSettingsMenu->setToggleLastItem(true);
-        }
-
-        contentSettingsMenu->addMenuItem(MenuItem("Sync content on close", [this]() {
-            this->prefs_.noDeliverOnClose.set(!this->prefs_.noDeliverOnClose.get().value_or(false));
-        }));
-
-        if (prefs_.noDeliverOnClose.get().value_or(false)) {
-            contentSettingsMenu->setToggleLastItem(false);
-        } else {
-            contentSettingsMenu->setToggleLastItem(true);
-        }
-
-        contentSettingsMenu->addMenuItem(MenuItem("Morning content sync", [this]() {
-            this->prefs_.noMorningDelivery.set(
-                !this->prefs_.noMorningDelivery.get().value_or(false));
-        }));
-
-        if (prefs_.noMorningDelivery.get().value_or(false)) {
-            contentSettingsMenu->setToggleLastItem(false);
-        } else {
-            contentSettingsMenu->setToggleLastItem(true);
-        }
-
-        contentSettingsMenu->addMenuItem(MenuItem("Evening content sync", [this]() {
-            this->prefs_.eveningDelivery.set(!this->prefs_.eveningDelivery.get().value_or(false));
-        }));
-
-        if (prefs_.eveningDelivery.get().value_or(false)) {
-            contentSettingsMenu->setToggleLastItem(true);
-        } else {
-            contentSettingsMenu->setToggleLastItem(false);
-        }
+        auto contentSettingsMenu =
+            std::make_shared<GenericSettingsMenuScreen>(*display_, "Main Menu");
 
         for (auto modelType : {ReadablesModelType::Book, ReadablesModelType::Article}) {
-            auto sortOrderMenuItem = MenuItem(
-                modelType == ReadablesModelType::Book ? "Book sort order" : "Article sort order",
+            auto sortOrderMenuItem = std::make_shared<NewMenuItemSingleLine>(
+                modelType == ReadablesModelType::Book ? "Book Sort Order" : "Article Sort Order",
                 [this, &localStore, display, contentSettingsMenu, modelType]() {
-                auto sortMenu = std::make_shared<MenuScreen>(
-                    power_.battery, *display, contentSettingsMenu->getMyStyle(),
-                    modelType == ReadablesModelType::Book ? "Book Sort Order"
-                                                          : "Article Sort Order",
-                    "Content Settings");
-                sortMenu->addMenuItem(MenuItem(
+                auto sortMenu =
+                    std::make_shared<GenericSettingsMenuScreen>(*display, "Content Settings");
+                sortMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
                     "Alphabetical", [this, &localStore, display, contentSettingsMenu, modelType]() {
                         if (modelType == ReadablesModelType::Book) {
                             this->prefs_.bookSortCriteria.set(
@@ -796,9 +711,9 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                                                                   500, false);
                         this->power_.reboot();
                     }));
-                sortMenu->addMenuItem(
-                    MenuItem("Date added, most recent",
-                             [this, &localStore, display, contentSettingsMenu, modelType]() {
+                sortMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
+                    "Date added, most recent",
+                    [this, &localStore, display, contentSettingsMenu, modelType]() {
                     if (modelType == ReadablesModelType::Book) {
                         this->prefs_.bookSortCriteria.set(
                             static_cast<int>(SortCriteria::DateModified));
@@ -816,9 +731,9 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                                                               false);
                     this->power_.reboot();
                     }));
-                sortMenu->addMenuItem(
-                    MenuItem("Date added, least recent",
-                             [this, &localStore, display, contentSettingsMenu, modelType]() {
+                sortMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
+                    "Date added, least recent",
+                    [this, &localStore, display, contentSettingsMenu, modelType]() {
                     if (modelType == ReadablesModelType::Book) {
                         this->prefs_.bookSortCriteria.set(
                             static_cast<int>(SortCriteria::DateModified));
@@ -836,9 +751,9 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                                                               false);
                     this->power_.reboot();
                     }));
-                sortMenu->addMenuItem(
-                    MenuItem("Last read, most recent",
-                             [this, &localStore, display, contentSettingsMenu, modelType]() {
+                sortMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
+                    "Last read, most recent",
+                    [this, &localStore, display, contentSettingsMenu, modelType]() {
                     if (modelType == ReadablesModelType::Book) {
                         this->prefs_.bookSortCriteria.set(static_cast<int>(SortCriteria::LastRead));
                         this->prefs_.bookSortDirection.set(
@@ -855,9 +770,9 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                                                               false);
                     this->power_.reboot();
                     }));
-                sortMenu->addMenuItem(
-                    MenuItem("Last read, least recent",
-                             [this, &localStore, display, contentSettingsMenu, modelType]() {
+                sortMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
+                    "Last read, least recent",
+                    [this, &localStore, display, contentSettingsMenu, modelType]() {
                     if (modelType == ReadablesModelType::Book) {
                         this->prefs_.bookSortCriteria.set(static_cast<int>(SortCriteria::LastRead));
                         this->prefs_.bookSortDirection.set(
@@ -874,8 +789,9 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                                                               false);
                     this->power_.reboot();
                     }));
-                sortMenu->addMenuItem(MenuItem("Random", [this, &localStore, display,
-                                                          contentSettingsMenu, modelType]() {
+                sortMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
+                    "Random",
+                    [this, &localStore, display, contentSettingsMenu, modelType]() {
                     if (modelType == ReadablesModelType::Book) {
                         this->prefs_.bookSortCriteria.set(static_cast<int>(SortCriteria::Random));
                         this->prefs_.bookSortDirection.set(
@@ -891,7 +807,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                     contentSettingsMenu->showTemporaryMessage(*display, settingsRestartMsg_, 500,
                                                               false);
                     this->power_.reboot();
-                }));
+                    }));
                 int menuIndex = 0;
                 auto sortCriteria = modelType == ReadablesModelType::Book
                                         ? this->prefs_.bookSortCriteria
@@ -924,26 +840,26 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                     menuIndex = 5;
                     break;
                 }
-                sortMenu->setCurrSelection(menuIndex);
+                sortMenu->setSelectedIndex(menuIndex);
                 setCurrentScreen(*sortMenu);
                 sortMenu->setBackCallback([this, sortMenu, contentSettingsMenu]() {
                     contentSettingsMenu->setFirstLoad();
                     setCurrentScreen(*contentSettingsMenu);
                 });
                 });
-            if (modelType == ReadablesModelType::Book) {
-                sortOrderMenuItem.topPadding = 10;
-            }
+            // if (modelType == ReadablesModelType::Book) {
+            //     sortOrderMenuItem.topPadding = 10;
+            // }
             contentSettingsMenu->addMenuItem(sortOrderMenuItem);
-
-            // Hide the toggle for the sort order menu
-            contentSettingsMenu->setToggleLastItem(false, false);
         }
 
-        // Hide the bubble for the last item, Sync content now
-        contentSettingsMenu->setToggleLastItem(false, false);
+        contentSettingsMenu->addMenuItem(makeContentSyncMenuItem("Sync Content Now"));
 
-        contentSettingsMenu->addMenuItem(MenuItem("Sync content now", []() {}));
+        contentSettingsMenu->setBackCallback([this, newMainMenu, contentSettingsMenu]() {
+            this->display_->clearDisplay();
+            newMainMenu->setFirstLoad();
+            setCurrentScreen(*newMainMenu);
+        });
 
         auto systemSettingsMenu =
             std::make_shared<GenericSettingsMenuScreen>(*display, "Main Menu");
@@ -964,6 +880,35 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                     setCurrentScreen(*systemSettingsMenu);
                 });
             }));
+
+        // Brightness and contrast are going to move elsewhere
+        systemSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
+            "Brightness", [this, display, systemSettingsMenu, &lightingController]() {
+                auto lightingAdjustScreen = std::make_shared<LightingAdjustScreen>(
+                    *display, this->prefs_, lightingController, this->telemetry_);
+                this->display_->clearDisplay();
+                setCurrentScreen(*lightingAdjustScreen);
+                lightingAdjustScreen->setBackCallback(
+                    [this, lightingAdjustScreen, systemSettingsMenu]() {
+                systemSettingsMenu->setFirstLoad();
+                setCurrentScreen(*systemSettingsMenu);
+                });
+            }));
+
+#if CONFIG_DISPLAY_EINKET013TT1
+        systemSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
+            "Contrast", [this, display, systemSettingsMenu, &lightingController]() {
+                auto contrastAdjustScreen = std::make_shared<ContrastAdjustScreen>(
+                    *display, this->prefs_, lightingController, this->telemetry_);
+                this->display_->clearDisplay();
+                setCurrentScreen(*contrastAdjustScreen);
+                contrastAdjustScreen->setBackCallback(
+                    [this, contrastAdjustScreen, systemSettingsMenu]() {
+                systemSettingsMenu->setFirstLoad();
+                setCurrentScreen(*systemSettingsMenu);
+                });
+            }));
+#endif
 
         systemSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
             "Legal & Regulatory", [this, systemSettingsMenu, display]() {
@@ -1168,7 +1113,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             }));
 
         auto experimentalSettingsMenu =
-            std::make_shared<GenericSettingsMenuScreen>(*display, "Experimental");
+            std::make_shared<GenericSettingsMenuScreen>(*display, "Main Menu");
 
         experimentalSettingsMenu->setBackCallback([this, newMainMenu, experimentalSettingsMenu]() {
             this->display_->clearDisplay();
@@ -1699,37 +1644,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             });
         }));
     }
-#endif
-
-#if 0
-// Brightness and contrast are going to move elsewhere
-    readingSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
-        "Brightness",
-        [this, display, readingSettingsMenu, &lightingController]() {
-        auto lightingAdjustScreen =
-            std::make_shared<LightingAdjustScreen>(*display, this->prefs_, lightingController, this->telemetry_);
-        this->display_->clearDisplay();
-        setCurrentScreen(*lightingAdjustScreen);
-        lightingAdjustScreen->setBackCallback([this, lightingAdjustScreen, readingSettingsMenu]() {
-            readingSettingsMenu->setFirstLoad();
-            setCurrentScreen(*readingSettingsMenu);
-        });
-        }));
-
-#if CONFIG_DISPLAY_EINKET013TT1
-    readingSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
-        "Contrast",
-        [this, display, readingSettingsMenu, &lightingController]() {
-        auto contrastAdjustScreen =
-            std::make_shared<ContrastAdjustScreen>(*display, this->prefs_, lightingController, this->telemetry_);
-        this->display_->clearDisplay();
-        setCurrentScreen(*contrastAdjustScreen);
-        contrastAdjustScreen->setBackCallback([this, contrastAdjustScreen, readingSettingsMenu]() {
-            readingSettingsMenu->setFirstLoad();
-            setCurrentScreen(*readingSettingsMenu);
-        });
-        }));
-#endif
 #endif
 
 #if 0
