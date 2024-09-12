@@ -30,7 +30,7 @@ public:
 
     void setTabToTitle(const std::string &tabTitle);
 
-    int getNumTabs() const { return menuTabs_.size(); }
+    auto getNumTabs() const -> int { return menuTabs_.size(); }
 
     void setFirstLoad() { firstLoad_ = true; }
 
