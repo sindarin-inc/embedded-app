@@ -549,6 +549,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         return menuItems;
     };
 
+    // There's a memory leak in here somewhere that loses ~15k of ram when switching to this tab and
+    // then away from this tab. This doesn't happen in the other tabs.
     auto settingsMenuFactory = [this, display, newMainMenu, styleFamilies, &localStore, &fileSystem,
                                 hasLastQuestion, makeContentSyncMenuItem, &lightingController]() {
         auto readingSettingsMenu =
