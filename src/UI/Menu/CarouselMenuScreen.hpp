@@ -28,6 +28,10 @@ public:
 
     void setCurrentTabIndex(int index);
 
+    void setTabToTitle(const std::string &tabTitle);
+
+    int getNumTabs() const { return menuTabs_.size(); }
+
     void setFirstLoad() { firstLoad_ = true; }
 
     void showTemporaryMessage(DisplaySystem &display, const std::string &message,

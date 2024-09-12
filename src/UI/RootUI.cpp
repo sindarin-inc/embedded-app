@@ -124,33 +124,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     bool noContent = readables.empty() && articles.empty();
 
-#if 0
-    auto noContent = readables.empty() && articles.empty();
-    // If there is no content, add some default content
-    if (noContent) {
-        log_i("No content found, adding default readables to menu");
-
-        std::shared_ptr<Readable> lastQuestion =
-            std::make_shared<Readable>("d7570c42-18a9-4795-a44e-9cee09b9fe3e", "The Last Question",
-                                       LASTQUESTION_EPUB, LASTQUESTION_EPUB_SIZE);
-        lastQuestion->authors.emplace_back("91ae1429-c6d4-4b8b-88fa-81041d838f92", "Isaac Asimov",
-                                           "");
-        if (!prefs_.readableArchivedChanged.get(lastQuestion->shortenedUuid.c_str())) {
-            readables.push_back(lastQuestion);
-        }
-        // If there is no content, and we haven't diabled the Bible, add Psalms and Proverbs
-        if (!prefs_.noBible.get().value_or(false)) {
-            std::shared_ptr<Readable> psalmsAndProverbs = std::make_shared<Readable>(
-                "6863fd3c-77a9-468e-93fa-f70d8b79029f", "Psalms and Proverbs",
-                PSALMSANDPROVERBS_EPUB, PSALMSANDPROVERBS_EPUB_SIZE);
-            psalmsAndProverbs->authors.emplace_back("7632d6ec-7339-4752-8672-a966503e1003",
-                                                    "Crossway ESV", "");
-            if (!prefs_.readableArchivedChanged.get(lastQuestion->shortenedUuid.c_str())) {
-                readables.push_back(psalmsAndProverbs);
-            }
-        }
-    }
-#endif
     // If prefs_.bookSortCriteria isn't selected, sort the readables by last update and store them
     if (!prefs_.bookSortCriteria.get().has_value()) {
         log_i("No book sort order chosen, sorting by last update and saving readables");
@@ -248,10 +221,10 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         return readableScreen;
     };
 
-#if 0
-    auto createTutorialScreen = [this, display, newMainMenu](SpiramString text,
-                                                             int bit) -> TutorialScreen * {
-        auto tutorialScreen = std::make_shared<TutorialScreen>(*display, this->prefs_, std::move(text), bit);
+    auto createTutorialScreen = [this, display, newMainMenu](
+                                    SpiramString text, int bit) -> std::shared_ptr<TutorialScreen> {
+        auto tutorialScreen =
+            std::make_shared<TutorialScreen>(*display, this->prefs_, std::move(text), bit);
 
         tutorialScreen->setBackCallback([this, display, newMainMenu, tutorialScreen]() {
             display->clearDisplay();
@@ -261,7 +234,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
         return tutorialScreen;
     };
-#endif
+
     auto currentReadable = prefs_.lastReadableId.get();
 
     bool hasLastQuestion = false;
@@ -335,7 +308,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
             auto contentSyncScreen = std::make_shared<ContentSyncScreen>(
                 *display, localStore, this->prefs_, this->telemetry_);
-            // display->setFont(mainMenu->getMyStyle().navigationFont);
             this->setCurrentScreen(*contentSyncScreen);
             contentSyncScreen->setBackCallback([this, contentSyncScreen, newMainMenu, display]() {
                 display->clearDisplay();
@@ -347,12 +319,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         });
     };
 
-#if 0
-    // If there are no books, show the Sync Content item in the books tab.
-    if (noContent) {
-        booksMenu->addMenuItem(makeContentSyncMenuItem("Sync Content"));
-    }
-#endif
     SHOW_HEAP();
 
     auto handleReadableScreenCreation =
@@ -372,27 +338,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     };
 
     SHOW_HEAP();
-
-// All tutorials are going away in favor of new onboarding
-#if 0
-    if (!(prefs_.tutorialsDeleted.get().value_or(0) & TUTORIAL_SCREEN_BOOKS)) {
-        booksMenu->addMenuItem(MenuItem("\ue000 Books Tutorial", "",
-                                        [this, createTutorialScreen]() {
-            SpiramString message = SpiramString(
-                "Welcome to the Books menu. This tab "
-                "shows you the books currently synced to your Sol Reader. To add more books or "
-                "manage the books on your device, use the Sol mobile app.\n\n"
-                "Did you know "
-                "you can change the position, width, and height of the page in the Sol Reader "
-                "display? "
-                "Simply go to Settings -> Reading -> Resize Page."
-                "\n\n\nPress "
-                "\ue000 (center) to continue.");
-            auto tutorialScreen = createTutorialScreen(message, TUTORIAL_SCREEN_BOOKS);
-            this->setCurrentScreen(*tutorialScreen);
-        }));
-    }
-#endif
 
     log_i("Loading %zu Pocket articles", articles.size());
 
@@ -428,7 +373,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     };
 
     auto booksMenuFactory = [this, &localStore, handleReadableScreenCreation, isBible,
-                             makeReleaseNotesMenuItem, makeContentSyncMenuItem, noContent]() {
+                             makeReleaseNotesMenuItem, makeContentSyncMenuItem,
+                             createTutorialScreen, noContent]() {
         auto &books = localStore.books();
         std::vector<std::shared_ptr<NewMenuItem>> menuItems;
 
@@ -452,7 +398,9 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 [book, handleReadableScreenCreation]() { handleReadableScreenCreation(book); }));
         }
 
+        log_d("noContent in the books factory: %d", noContent);
         if (noContent) {
+            log_d("Got into noContent in the books factory: %d", noContent);
             std::shared_ptr<Readable> lastQuestion = std::make_shared<Readable>(
                 "d7570c42-18a9-4795-a44e-9cee09b9fe3e", "The Last Question", LASTQUESTION_EPUB,
                 LASTQUESTION_EPUB_SIZE);
@@ -468,12 +416,31 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             menuItems.emplace_back(makeContentSyncMenuItem("Sync Content"));
         }
 
-        menuItems.emplace_back(makeContentSyncMenuItem("Sync Content"));
+        if (!(prefs_.tutorialsDeleted.get().value_or(0) & TUTORIAL_SCREEN_BOOKS)) {
+            menuItems.emplace_back(
+                std::make_shared<NewMenuItemSingleLine>("\ue000 Books Tutorial",
+                                                        [this, createTutorialScreen]() {
+                SpiramString message = SpiramString(
+                    "Welcome to the Books menu. This tab "
+                    "shows you the books currently synced to your Sol Reader. To add more books or "
+                    "manage the books on your device, use the Sol mobile app.\n\n"
+                    "Did you know "
+                    "you can change the position, width, and height of the page in the Sol Reader "
+                    "display? "
+                    "Simply go to Settings -> Reading -> Resize Page."
+                    "\n\n\nPress "
+                    "\ue000 (center) to continue.");
+                auto tutorialScreen = createTutorialScreen(message, TUTORIAL_SCREEN_BOOKS);
+                this->setCurrentScreen(*tutorialScreen);
+                }));
+        }
+
         return menuItems;
     };
 
     auto articlesMenuFactory = [this, &localStore, handleReadableScreenCreation,
-                                makeReleaseNotesMenuItem, makeContentSyncMenuItem, noContent]() {
+                                makeReleaseNotesMenuItem, makeContentSyncMenuItem,
+                                createTutorialScreen, noContent]() {
         auto &articles = localStore.articles();
         std::vector<std::shared_ptr<NewMenuItem>> menuItems;
 
@@ -499,11 +466,32 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             menuItems.emplace_back(makeContentSyncMenuItem("Sync Content"));
         }
 
+        if (!(prefs_.tutorialsDeleted.get().value_or(0) & TUTORIAL_SCREEN_ARTICLES)) {
+            menuItems.emplace_back(std::make_shared<NewMenuItemSingleLine>(
+                "\ue000 Articles Tutorial", [this, createTutorialScreen]() {
+                    SpiramString message = SpiRamStringFormat(
+                        "Welcome to the Articles menu. This tab "
+                        "shows you the articles currently synced to your Sol "
+                        "Reader. To add more articles, "
+                        "simply connect your Pocket account in the Sol mobile app "
+                        "or forward newsletters "
+                        "from your inbox to add@solreader.com.\n\n"
+                        "Did you know "
+                        "you can change the sort order of your books and articles? "
+                        "Simply go to Settings -> Content -> Sort Order."
+                        "\n\n\nPress \ue000 (center) to "
+                        "continue.\n");
+                    auto tutorialScreen = createTutorialScreen(message, TUTORIAL_SCREEN_ARTICLES);
+                    this->setCurrentScreen(*tutorialScreen);
+                }));
+        }
+
         return menuItems;
     };
 
     auto bibleMenuFactory = [this, &localStore, handleReadableScreenCreation, isBible,
-                             makeReleaseNotesMenuItem, makeContentSyncMenuItem, noContent]() {
+                             makeReleaseNotesMenuItem, makeContentSyncMenuItem,
+                             createTutorialScreen, noContent]() {
         auto &books = localStore.books();
         std::vector<std::shared_ptr<NewMenuItem>> menuItems;
 
@@ -540,8 +528,30 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                     [psalmsAndProverbs, handleReadableScreenCreation]() {
                     handleReadableScreenCreation(psalmsAndProverbs);
                     }));
-                menuItems.emplace_back(makeContentSyncMenuItem("Sync Content"));
             }
+        }
+
+        if (!(prefs_.tutorialsDeleted.get().value_or(0) & TUTORIAL_SCREEN_BIBLE)) {
+            menuItems.emplace_back(
+                std::make_shared<NewMenuItemSingleLine>("\ue000 Why have a Bible app?",
+                                                        [this, createTutorialScreen]() {
+                SpiramString message = SpiRamStringFormat(
+                    "The Gutenberg Bible "
+                    "was the earliest major book printed using mass-produced movable "
+                    "metal type in Europe. It marked the start of the Gutenberg Revolution "
+                    "and the age of printed books in the West. So we thought it would be "
+                    "appropriate to include the Bible as one of the first books on the Sol "
+                    "Reader.\n\n"
+                    "Crossway Publishing has generously provided the English "
+                    "Standard Version"
+                    " of the Bible to you free of charge (Copyright 2001, Crossway Publishing).\n\n"
+                    " Not your thing? No worries! You can toggle this app off "
+                    "in the Content Settings.\n\n"
+                    " Look for more scripture and meditation Sol Reader apps down the road!\n\n\n"
+                    " Press \ue000 (center) to continue.");
+                auto tutorialScreen = createTutorialScreen(message, TUTORIAL_SCREEN_BIBLE);
+                this->setCurrentScreen(*tutorialScreen);
+                }));
         }
         return menuItems;
     };
@@ -938,6 +948,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
         // Hide the bubble for the last item, Sync content now
         contentSettingsMenu->setToggleLastItem(false, false);
+
+        contentSettingsMenu->addMenuItem(MenuItem("Sync content now", [this]() {}));
 
         auto systemSettingsMenu = std::make_shared<SystemSettingsMenuScreen>(*display, "Main Menu");
 
@@ -1710,14 +1722,14 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     if (!localStore.recents().empty()) {
         newMainMenu->addTab("Recent", recentMenuFactory);
     }
-    if (!localStore.books().empty() && !prefs_.noBooks.get().value_or(false)) {
+    if (!booksMenuFactory().empty() && !prefs_.noBooks.get().value_or(false)) {
         newMainMenu->addTab("Books", booksMenuFactory);
     }
-    if (!localStore.articles().empty() && !prefs_.noArticles.get().value_or(false)) {
+    if (!articlesMenuFactory().empty() && !prefs_.noArticles.get().value_or(false)) {
         newMainMenu->addTab("Articles", articlesMenuFactory);
     }
 
-    if (!prefs_.noBible.get().value_or(false) && !bibleMenuFactory().empty()) {
+    if (!bibleMenuFactory().empty() && !prefs_.noBible.get().value_or(false)) {
         newMainMenu->addTab("Bible", bibleMenuFactory);
     }
 
@@ -1726,64 +1738,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     newMainMenu->populateMenuView();
 
     SHOW_HEAP();
-#if 0
-    if (!(prefs_.tutorialsDeleted.get().value_or(0) & TUTORIAL_SCREEN_ARTICLES)) {
-        articlesMenu->addMenuItem(MenuItem("\ue000 Articles Tutorial",
-                                           [this, createTutorialScreen]() {
-            SpiramString message = SpiRamStringFormat(
-                "Welcome to the Articles menu. This tab "
-                "shows you the articles currently synced to your Sol Reader. To add more articles, "
-                "simply connect your Pocket account in the Sol mobile app or forward newsletters "
-                "from your inbox to add@solreader.com.\n\n"
-                "Did you know "
-                "you can change the sort order of your books and articles? "
-                "Simply go to Settings -> Content -> Sort Order."
-                "\n\n\nPress \ue000 (center) to "
-                "continue.\n");
-            auto tutorialScreen = createTutorialScreen(message, TUTORIAL_SCREEN_ARTICLES);
-            this->setCurrentScreen(*tutorialScreen);
-        }));
-    }
 
-    if (!prefs_.noArticles.get().value_or(false) && !articles.empty()) {
-        mainMenu->addSubMenu(articlesMenu);
-    }
-
-    if (!prefs_.noBible.get().value_or(false) && hasBible) {
-        for (const auto &r : readables) {
-            if (isBible(r)) {
-                bool archived = prefs_.readableArchivedChanged.get(r->shortenedUuid.c_str());
-                auto title = StringFormat("%s%s", archived ? "Archived: " : "", r->title.c_str());
-                bibleMenu->addMenuItem(MenuItem(title, [r, handleReadableScreenCreation]() {
-                    handleReadableScreenCreation(r);
-                }));
-            }
-        }
-
-        if (!(prefs_.tutorialsDeleted.get().value_or(0) & TUTORIAL_SCREEN_BIBLE)) {
-            bibleMenu->addMenuItem(MenuItem("\ue000 Why have a Bible app?",
-                                            [this, createTutorialScreen]() {
-                SpiramString message = SpiRamStringFormat(
-                    "The Gutenberg Bible "
-                    "was the earliest major book printed using mass-produced movable "
-                    "metal type in Europe. It marked the start of the Gutenberg Revolution "
-                    "and the age of printed books in the West. So we thought it would be "
-                    "appropriate to include the Bible as one of the first books on the Sol "
-                    "Reader.\n\n"
-                    "Crossway Publishing has generously provided the English "
-                    "Standard Version"
-                    " of the Bible to you free of charge (Copyright 2001, Crossway Publishing).\n\n"
-                    " Not your thing? No worries! You can toggle this app off "
-                    "in the Content Settings.\n\n"
-                    " Look for more scripture and meditation Sol Reader apps down the road!\n\n\n"
-                    " Press \ue000 (center) to continue.");
-                auto tutorialScreen = createTutorialScreen(message, TUTORIAL_SCREEN_BIBLE);
-                this->setCurrentScreen(*tutorialScreen);
-            }));
-        }
-        mainMenu->addSubMenu(bibleMenu);
-    }
-#endif
     HEAP_PROFILE_END(rootUIContent);
 
     HEAP_PROFILE_START(rootUISettings);
@@ -1842,65 +1797,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         }));
 #endif
 #endif
-#if 0
-    auto contentSettingsMenu =
-        std::make_shared<ToggleMenuScreen>(power_.battery, *display_, styleFamilies.settingsMenu, "Content");
-
-    contentSettingsMenu->setBackCallback([this, mainMenu, display, contentSettingsMenu]() {
-        // Ideally we'd move this into the ToggleClass so it's not duplicated with
-        // experimentalSettingsMenu below, but that would require teh ToggleMenuScreen
-        // to have the power intead of just the battery and also the prefs. Big deal or not?
-        if (contentSettingsMenu->getRequireRestart()) {
-            // Start on the settings menu when we boot so it feels like we just
-            // went back to it!
-            PreferencesStore::settingsOnRestart = true;
-            contentSettingsMenu->showTemporaryMessage(*display, settingsRestartMsg_, 1500, false);
-            this->power_.reboot();
-        } else {
-            this->display_->clearDisplay();
-            mainMenu->setFirstLoad();
-            setCurrentScreen(*mainMenu);
-        }
-    });
-
-    contentSettingsMenu->addMenuItem(MenuItem("Books", [this, contentSettingsMenu]() {
-        this->prefs_.noBooks.set(!this->prefs_.noBooks.get().value_or(false));
-        contentSettingsMenu->requireRestart();
-    }));
-
-    if (prefs_.noBooks.get().value_or(false)) {
-        contentSettingsMenu->setToggleLastItem(false);
-    } else {
-        contentSettingsMenu->setToggleLastItem(true);
-    }
-#endif
-// At some point, we may split out News (emails) and Articles (pocket), but for now
-// We'll keep it the same.
-#if 0
-    contentSettingsMenu->addMenuItem(MenuItem("News", [this, display, contentSettingsMenu]() {
-        this->prefs_.showNews.set(!this->prefs_.showNews.get().value_or(false));
-    }));
-
-    if (prefs_.showNews.get().value_or(false)) {
-        contentSettingsMenu->setToggleLastItem(true);
-    } else {
-        contentSettingsMenu->setToggleLastItem(false);
-    }
-#endif
-
-#if 0
-    contentSettingsMenu->addMenuItem(makeContentSyncMenuItem("Sync content now"));
-#endif
-
-// Going away
-#if 0
-    systemSettingsMenu->addMenuItem(MenuItem("Reset Statistics",
-                                             [this, systemSettingsMenu, display]() {
-        prefs_.wordCount.remove();
-        prefs_.totalReadingTimeSeconds.remove();
-        systemSettingsMenu->showTemporaryMessage(*display, "Statistics reset.");
-    }));
-#endif
 
 #if 0
     experimentalSettingsMenu->addMenuItem(MenuItem("Fonts Library",
@@ -1913,21 +1809,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         experimentalSettingsMenu->setToggleLastItem(true);
     } else {
         experimentalSettingsMenu->setToggleLastItem(false);
-    }
-#endif
-
-#if 0
-    if (!(prefs_.tutorialsDeleted.get().value_or(0) & TUTORIAL_SCREEN_SETTINGS)) {
-        settingsMenu->addMenuItem(MenuItem("\ue000 Settings Tutorial",
-                                           [this, createTutorialScreen]() {
-            SpiramString message = SpiRamStringFormat(
-                "Welcome to the settings menu. Here you can "
-                "change the settings of your Sol Reader. Check out the "
-                "experimental settings for features we are beta testing!\n\n\nPress "
-                "\ue000 (center) to continue.  ");
-            auto tutorialScreen = createTutorialScreen(message, TUTORIAL_SCREEN_SETTINGS);
-            this->setCurrentScreen(*tutorialScreen);
-        }));
     }
 #endif
 
@@ -1960,10 +1841,10 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         } else {
             auto errorPopup = std::make_shared<MsgPopup>(*display, itemErrorMsg_);
             this->setCurrentScreen(*errorPopup);
-            errorPopup->setBackCallback([this, errorPopup, mainMenu]() {
-                mainMenu->setFirstLoad();
+            errorPopup->setBackCallback([this, errorPopup, newMainMenu]() {
+                newMainMenu->setFirstLoad();
                 display_->clearDisplay();
-                setCurrentScreen(*mainMenu);
+                setCurrentScreen(*newMainMenu);
             });
         }
     } else if (prefs_.emcMode.get().value_or(false)) {
@@ -1986,10 +1867,10 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         } else {
             auto errorPopup = std::make_shared<MsgPopup>(*display, itemErrorMsg_);
             this->setCurrentScreen(*errorPopup);
-            errorPopup->setBackCallback([this, errorPopup, mainMenu]() {
-                mainMenu->setFirstLoad();
+            errorPopup->setBackCallback([this, errorPopup, newMainMenu]() {
+                newMainMenu->setFirstLoad();
                 display_->clearDisplay();
-                setCurrentScreen(*mainMenu);
+                setCurrentScreen(*newMainMenu);
             });
         }
     } else if (currentReadable.has_value()) {
@@ -2013,18 +1894,21 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 this->setCurrentScreen(*readableScreen);
                 log_i("Resuming readable %s at place %s", (*it)->title.c_str(),
                       (*it)->place->str().c_str());
+                // Technically. we might want this to go to Recent, but for now this will do.
                 if (articlesIterator != articles.end()) {
-                    mainMenu->setTabToArticles();
+                    newMainMenu->setTabToTitle("Articles");
                 } else if (isBible(*it)) {
-                    mainMenu->setTabToBible();
+                    newMainMenu->setTabToTitle("Bible");
+                } else {
+                    newMainMenu->setTabToTitle("Books");
                 }
             } else {
                 auto errorPopup = std::make_shared<MsgPopup>(*display, itemErrorMsg_);
                 this->setCurrentScreen(*errorPopup);
-                errorPopup->setBackCallback([this, errorPopup, mainMenu]() {
-                    mainMenu->setFirstLoad();
+                errorPopup->setBackCallback([this, errorPopup, newMainMenu]() {
+                    newMainMenu->setFirstLoad();
                     display_->clearDisplay();
-                    setCurrentScreen(*mainMenu);
+                    setCurrentScreen(*newMainMenu);
                 });
             }
         } else {
@@ -2037,7 +1921,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     // and clear out that pref.
     if (PreferencesStore::settingsOnRestart) {
         PreferencesStore::settingsOnRestart = false;
-        mainMenu->setTabToLast();
+        newMainMenu->setTabToTitle("Settings");
     }
 
     // This still has to be this way rather than else if because the
@@ -2051,15 +1935,9 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         // hasn't on boot.
 
         // By default, if we don't already have a different first screen ready, show the
-        // calibration
-        // screen
-
-        // setCurrentScreen(*mainMenu);
+        // main menu screen
         setCurrentScreen(*newMainMenu);
     }
-
-    // If we are in demo mode, overright whatever the current screen would have been
-    // with the demo code and set the back callback to mainMenu.
 
     SHOW_HEAP();
 }
