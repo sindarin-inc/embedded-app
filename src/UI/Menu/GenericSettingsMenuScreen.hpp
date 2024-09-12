@@ -8,9 +8,9 @@
 #include "UI/Menu/NewMenuView.hpp"
 #include "UI/Screen.hpp"
 
-class SystemSettingsMenuScreen : public Screen, public EinkView {
+class GenericSettingsMenuScreen : public Screen, public EinkView {
 public:
-    SystemSettingsMenuScreen(DisplaySystem &display, const std::string &backTitle);
+    GenericSettingsMenuScreen(DisplaySystem &display, const std::string &backTitle);
 
     auto setSelectedIndex(size_t index) -> bool;
 

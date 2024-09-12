@@ -43,7 +43,7 @@
 #include "UI/LightingAdjustScreen.hpp"
 #include "UI/LineMenuScreen.hpp"
 #include "UI/LineSpacingScreen.hpp"
-#include "UI/Menu/ExperimentalSettingsMenuScreen.hpp"
+#include "UI/Menu/GenericSettingsMenuScreen.hpp"
 #include "UI/Menu/InactivitySettingMenuScreen.hpp"
 #include "UI/Menu/NewMainMenuScreen.hpp"
 #include "UI/Menu/NewMenuItemArticle.hpp"
@@ -51,7 +51,6 @@
 #include "UI/Menu/NewMenuItemCheckable.hpp"
 #include "UI/Menu/NewMenuItemSingleLine.hpp"
 #include "UI/Menu/ReadingSettingsMenuScreen.hpp"
-#include "UI/Menu/SystemSettingsMenuScreen.hpp"
 #include "UI/Menu/WiFiSettingsMenuScreen.hpp"
 #include "UI/MsgPopup.hpp"
 #include "UI/OffsetAdjustScreen.hpp"
@@ -946,7 +945,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
         contentSettingsMenu->addMenuItem(MenuItem("Sync content now", []() {}));
 
-        auto systemSettingsMenu = std::make_shared<SystemSettingsMenuScreen>(*display, "Main Menu");
+        auto systemSettingsMenu =
+            std::make_shared<GenericSettingsMenuScreen>(*display, "Main Menu");
 
         systemSettingsMenu->setBackCallback([this, newMainMenu]() {
             this->display_->clearDisplay();
@@ -1168,7 +1168,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             }));
 
         auto experimentalSettingsMenu =
-            std::make_shared<ExperimentalSettingsMenuScreen>(*display, "Experimental");
+            std::make_shared<GenericSettingsMenuScreen>(*display, "Experimental");
 
         experimentalSettingsMenu->setBackCallback(
             [this, display, newMainMenu, experimentalSettingsMenu]() {

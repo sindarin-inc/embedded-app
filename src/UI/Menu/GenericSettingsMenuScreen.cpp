@@ -1,21 +1,20 @@
-#include "ExperimentalSettingsMenuScreen.hpp"
+#include "GenericSettingsMenuScreen.hpp"
 
 #include "Renderers/Renderer.hpp"
 #include "UI/MsgPopup.hpp"
 
-// As is, this looks like a strict copy of SettingsMenuScreen.cpp
-ExperimentalSettingsMenuScreen::ExperimentalSettingsMenuScreen(DisplaySystem &display,
-                                                               const std::string &backTitle)
+GenericSettingsMenuScreen::GenericSettingsMenuScreen(DisplaySystem &display,
+                                                     const std::string &backTitle)
     : EinkView(display), menuView_(display), backLabelView_(display, backTitle) {
     menuView_.padding = 1;
     menuView_.itemsPerPage = 12;
 }
 
-void ExperimentalSettingsMenuScreen::addMenuItem(const std::shared_ptr<NewMenuItem> &menuItem) {
+void GenericSettingsMenuScreen::addMenuItem(const std::shared_ptr<NewMenuItem> &menuItem) {
     menuView_.addMenuItem(menuItem);
 }
 
-void ExperimentalSettingsMenuScreen::processCommand(RemoteCommand command) {
+void GenericSettingsMenuScreen::processCommand(RemoteCommand command) {
     switch (command) {
     case RemoteCommand::UP:
         moveSelection(-1);
@@ -39,7 +38,7 @@ void ExperimentalSettingsMenuScreen::processCommand(RemoteCommand command) {
     setNeedsLayout();
 }
 
-auto ExperimentalSettingsMenuScreen::setSelectedIndex(size_t index) -> bool {
+auto GenericSettingsMenuScreen::setSelectedIndex(size_t index) -> bool {
     auto newPage = menuView_.setSelectedIndex(index);
     if (newPage) {
         firstLoad_ = true;
@@ -48,7 +47,7 @@ auto ExperimentalSettingsMenuScreen::setSelectedIndex(size_t index) -> bool {
     return newPage;
 }
 
-auto ExperimentalSettingsMenuScreen::layout(LayoutContext &context, Size size) -> Size {
+auto GenericSettingsMenuScreen::layout(LayoutContext &context, Size size) -> Size {
     // Layout back label
     context.setViewFrame(backLabelView_, {{0, 0}, {size.width, 0}},
                          LayoutOptionsSizeToFit | LayoutOptionsAlignLeft);
@@ -59,9 +58,9 @@ auto ExperimentalSettingsMenuScreen::layout(LayoutContext &context, Size size) -
     return size;
 }
 
-void ExperimentalSettingsMenuScreen::showTemporaryMessage(DisplaySystem &display,
-                                                          const std::string &message, int duration,
-                                                          bool rerenderAfter) {
+void GenericSettingsMenuScreen::showTemporaryMessage(DisplaySystem &display,
+                                                     const std::string &message, int duration,
+                                                     bool rerenderAfter) {
     auto *popup = new MsgPopup(display, message);
     popup->render(display);
     delete popup;
@@ -72,12 +71,12 @@ void ExperimentalSettingsMenuScreen::showTemporaryMessage(DisplaySystem &display
     }
 }
 
-void ExperimentalSettingsMenuScreen::drawInRect(Rect rect) {
+void GenericSettingsMenuScreen::drawInRect(Rect rect) {
     backLabelView_.draw();
     menuView_.draw();
 }
 
-void ExperimentalSettingsMenuScreen::moveSelection(int delta) {
+void GenericSettingsMenuScreen::moveSelection(int delta) {
     auto newPage = menuView_.moveSelection(delta);
     if (newPage) {
         firstLoad_ = true;
@@ -85,7 +84,7 @@ void ExperimentalSettingsMenuScreen::moveSelection(int delta) {
     setNeedsRerender();
 }
 
-void ExperimentalSettingsMenuScreen::render(DisplaySystem &display) {
+void GenericSettingsMenuScreen::render(DisplaySystem &display) {
     setFrame(defaultFrameRect());
     draw();
 
