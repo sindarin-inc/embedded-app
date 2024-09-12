@@ -850,9 +850,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                     setCurrentScreen(*contentSettingsMenu);
                 });
                 });
-            // if (modelType == ReadablesModelType::Book) {
-            //     sortOrderMenuItem.topPadding = 10;
-            // }
             contentSettingsMenu->addMenuItem(sortOrderMenuItem);
         }
 
