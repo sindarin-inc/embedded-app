@@ -131,11 +131,11 @@ void ReadingSettingsMenuScreen::render(DisplaySystem &display) {
             display.updateDisplay(DisplaySystem::UpdateType::FULL, false);
             firstLoad_ = false;
         }
-        menuView_.drawIndicator();
+        menuView_.drawIndicatorAndFastElements();
         display.updateDisplay(DisplaySystem::UpdateType::FAST_INDICATOR);
     } else if (rendererView_.autoPilotMode()) {
         draw();
-        menuView_.drawIndicator();
+        menuView_.drawIndicatorAndFastElements();
         if (rendererView_.newPage()) {
             display.updateDisplay(DisplaySystem::UpdateType::FULL, true);
         } else {

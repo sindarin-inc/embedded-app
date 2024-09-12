@@ -43,10 +43,12 @@
 #include "UI/LightingAdjustScreen.hpp"
 #include "UI/LineMenuScreen.hpp"
 #include "UI/LineSpacingScreen.hpp"
+#include "UI/Menu/ExperimentalSettingsMenuScreen.hpp"
 #include "UI/Menu/InactivitySettingMenuScreen.hpp"
 #include "UI/Menu/NewMainMenuScreen.hpp"
 #include "UI/Menu/NewMenuItemArticle.hpp"
 #include "UI/Menu/NewMenuItemBook.hpp"
+#include "UI/Menu/NewMenuItemCheckable.hpp"
 #include "UI/Menu/NewMenuItemSingleLine.hpp"
 #include "UI/Menu/ReadingSettingsMenuScreen.hpp"
 #include "UI/Menu/SystemSettingsMenuScreen.hpp"
@@ -1165,90 +1167,30 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 power_.reboot();
             }));
 
-        auto experimentalSettingsMenu = std::make_shared<ToggleMenuScreen>(
-            power_.battery, *display_, styleFamilies.settingsMenu, "Experimental");
+        auto experimentalSettingsMenu =
+            std::make_shared<ExperimentalSettingsMenuScreen>(*display, "Experimental");
 
         experimentalSettingsMenu->setBackCallback(
             [this, display, newMainMenu, experimentalSettingsMenu]() {
-            if (experimentalSettingsMenu->getRequireRestart()) {
-                // Start on the settings menu when we boot so it feels like we just
-                // went back to it!
-                PreferencesStore::settingsOnRestart = true;
-                experimentalSettingsMenu->showTemporaryMessage(*display, settingsRestartMsg_, 1500,
-                                                               false);
-                this->power_.reboot();
-            } else {
-                this->display_->clearDisplay();
-                newMainMenu->setFirstLoad();
-                setCurrentScreen(*newMainMenu);
-            }
+            this->display_->clearDisplay();
+            newMainMenu->setFirstLoad();
+            setCurrentScreen(*newMainMenu);
         });
 
-        experimentalSettingsMenu->addMenuItem(MenuItem("Show summary", [this]() {
+        experimentalSettingsMenu->addMenuItem(std::make_shared<NewMenuItemCheckable>(
+            "Show Summary", !this->prefs_.noShowPartialChapterSummary.get().value_or(false),
+            [this, experimentalSettingsMenu]() {
             this->prefs_.noShowPartialChapterSummary.set(
                 !this->prefs_.noShowPartialChapterSummary.get().value_or(false));
-        }));
+            experimentalSettingsMenu->setNeedsRerender();
+            }));
 
-        if (prefs_.noShowPartialChapterSummary.get().value_or(false)) {
-            experimentalSettingsMenu->setToggleLastItem(false);
-        } else {
-            experimentalSettingsMenu->setToggleLastItem(true);
-        }
-
-        experimentalSettingsMenu->addMenuItem(MenuItem("Bookmark Right Select", [this]() {
-            this->prefs_.fastBookmarkRight.set(
-                !this->prefs_.fastBookmarkRight.get().value_or(false));
-        }));
-
-        if (prefs_.fastBookmarkRight.get().value_or(false)) {
-            experimentalSettingsMenu->setToggleLastItem(true);
-        } else {
-            experimentalSettingsMenu->setToggleLastItem(false);
-        }
-
-        experimentalSettingsMenu->addMenuItem(MenuItem("Bookmark Center Select", [this]() {
-            this->prefs_.fastBookmarkCenter.set(
-                !this->prefs_.fastBookmarkCenter.get().value_or(false));
-        }));
-
-        if (prefs_.fastBookmarkCenter.get().value_or(false)) {
-            experimentalSettingsMenu->setToggleLastItem(true);
-        } else {
-            experimentalSettingsMenu->setToggleLastItem(false);
-        }
-
-        experimentalSettingsMenu->addMenuItem(MenuItem("Fast Page Transitions", [this]() {
+        experimentalSettingsMenu->addMenuItem(std::make_shared<NewMenuItemCheckable>(
+            "Fast Page Transitions", this->prefs_.fastTransitions.get().value_or(false),
+            [this, experimentalSettingsMenu]() {
             this->prefs_.fastTransitions.set(!this->prefs_.fastTransitions.get().value_or(false));
-        }));
-
-        if (prefs_.fastTransitions.get().value_or(false)) {
-            experimentalSettingsMenu->setToggleLastItem(true);
-        } else {
-            experimentalSettingsMenu->setToggleLastItem(false);
-        }
-
-        experimentalSettingsMenu->addMenuItem(MenuItem("Page Transition Arrows", [this]() {
-            this->prefs_.pageTransitionArrows.set(
-                !this->prefs_.pageTransitionArrows.get().value_or(false));
-        }));
-
-        if (prefs_.pageTransitionArrows.get().value_or(false)) {
-            experimentalSettingsMenu->setToggleLastItem(true);
-        } else {
-            experimentalSettingsMenu->setToggleLastItem(false);
-        }
-
-        experimentalSettingsMenu->addMenuItem(MenuItem("Upload Crashes on Sync", [this]() {
-            this->prefs_.noUploadCrashes.set(!this->prefs_.noUploadCrashes.get().value_or(false));
-        }));
-
-        // This one is opposite because we want to default it to true and make them
-        // turn it off if they don't want it. At least for beta.
-        if (prefs_.noUploadCrashes.get().value_or(false)) {
-            experimentalSettingsMenu->setToggleLastItem(false);
-        } else {
-            experimentalSettingsMenu->setToggleLastItem(true);
-        }
+            experimentalSettingsMenu->setNeedsRerender();
+            }));
 
         std::vector<std::shared_ptr<NewMenuItem>> menuItems;
 

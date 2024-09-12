@@ -36,11 +36,18 @@ public:
         }
     }
 
-    void drawIndicator() {
+    void drawIndicatorAndFastElements() {
         indicatorView_.fillColor = display_.fg;
         indicatorView_.strokeColor = display_.fg;
         if (indicatorType_ != IndicatorType::None) {
             indicatorView_.draw();
+        }
+
+        size_t startIndex = currentPage_ * itemsPerPage;
+        size_t endIndex = std::min(startIndex + itemsPerPage, menuItemViews_.size());
+
+        for (size_t i = startIndex; i < endIndex; ++i) {
+            menuItemViews_[i]->drawFastOnlyElements();
         }
     }
 
