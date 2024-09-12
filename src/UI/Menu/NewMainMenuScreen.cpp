@@ -1,6 +1,7 @@
 #include "NewMainMenuScreen.hpp"
 
-NewMainMenuScreen::NewMainMenuScreen(DisplaySystem &display) : CarouselMenuScreen(display) {
+NewMainMenuScreen::NewMainMenuScreen(DisplaySystem &display, Battery &battery)
+    : CarouselMenuScreen(display), clockBatteryView_(battery, display) {
     titleView_.setText(currentTabTitle_);
     menuView_.padding = 5;
     menuView_.itemsPerPage = 4;
@@ -18,17 +19,27 @@ auto NewMainMenuScreen::layout(LayoutContext &context, Size size) -> Size {
     context.setViewFrame(menuView_, Rect::fromSize(size),
                          LayoutOptionsSizeToFitVertical | LayoutOptionsAlignCenterVertical);
 
+    context.setViewFrame(clockBatteryView_, Rect::fromSize(size),
+                         LayoutOptionsSizeToFit | LayoutOptionsAlignBottom |
+                             LayoutOptionsAlignCenterHorizontal);
+
     return size;
 }
 
 void NewMainMenuScreen::drawInRect(Rect rect) {
     titleView_.draw();
     menuView_.draw();
+    clockBatteryView_.draw();
 }
 
 // Implement Screen method
 void NewMainMenuScreen::render(DisplaySystem &display) {
     setFrame(defaultFrameRect());
+
+    if (firstLoad_) {
+        clockBatteryView_.updateTime();
+    }
+
     draw();
 
     if (firstLoad_) {

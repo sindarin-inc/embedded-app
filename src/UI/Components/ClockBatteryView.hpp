@@ -31,6 +31,8 @@ public:
           clockView_(display, ""), battery_(battery) {}
     ~ClockBatteryView() override = default;
 
+    auto batteryLow() -> bool { return battery_.getBatteryPercentage() <= 37.0; }
+
     auto updateTime() {
         SolClock &theClock = SolClock::getInstance();
         clockView_.setText(theClock.getTimeString());
@@ -40,13 +42,16 @@ public:
     auto layout(LayoutContext &context, Size size) -> Size override {
         auto clockRect = context.setViewFrame(
             clockView_, {{0, 0}, size}, LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical);
+        if (batteryLow()) {
+            auto iconRect =
+                context.setViewFrame(batteryIconView_, {{clockRect.size.width + 10, 0}, size},
+                                     LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical);
 
-        auto iconRect =
-            context.setViewFrame(batteryIconView_, {{clockRect.size.width + 20, 0}, size},
-                                 LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical);
-
-        return {clockRect.size.width + iconRect.size.width + 20,
-                std::max(clockRect.size.height, iconRect.size.height)};
+            return {clockRect.size.width + iconRect.size.width + 10,
+                    std::max(clockRect.size.height, iconRect.size.height)};
+        } else {
+            return {clockRect.size.width, clockRect.size.height};
+        }
     }
 
     void drawInRect(Rect rect) override {
@@ -79,10 +84,10 @@ public:
 
         // Only show the battery and clock if the battery is low.
         // We can probbaly do better than this.
-        if (percent <= 25) {
+        if (batteryLow()) {
             batteryIconView_.draw();
-            clockView_.draw();
         }
+        clockView_.draw();
     }
 
 protected:
