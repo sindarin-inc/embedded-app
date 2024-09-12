@@ -112,7 +112,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     MenuStyle styleFamilies;
 
     HEAP_PROFILE_START(MainMenuScreen);
-    auto mainMenu = new MainMenuScreen(power_.battery, *display_, styleFamilies.mainMenu);
+    auto mainMenu =
+        std::make_shared<MainMenuScreen>(power_.battery, *display_, styleFamilies.mainMenu);
     HEAP_PROFILE_END(MainMenuScreen);
 
     SIZE_OF(*mainMenu);
@@ -188,8 +189,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     auto newMainMenu = std::make_shared<NewMainMenuScreen>(*display_);
 
     auto createReadableScreen =
-        [this, display, newMainMenu, &fileSystem, &lightingController,
-         &localStore](const std::shared_ptr<Readable> &readable) -> ReadableScreen * {
+        [this, display, newMainMenu, &fileSystem, &lightingController, &localStore](
+            const std::shared_ptr<Readable> &readable) -> std::shared_ptr<ReadableScreen> {
         // TODO: Would be better to not allocate / delete these all the time
 
         std::shared_ptr<RendererStream> stream;
@@ -217,9 +218,9 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             return nullptr;
         }
 
-        auto *readableScreen =
-            new ReadableScreen(stream, *display, readable, this->prefs_, this->telemetry_,
-                               fileSystem, lightingController, localStore);
+        auto readableScreen = std::make_shared<ReadableScreen>(
+            stream, *display, readable, this->prefs_, this->telemetry_, fileSystem,
+            lightingController, localStore);
 
         this->telemetry_.logMetric(TelemetryField::METRIC_READABLE_OPEN, readable->uuid,
                                    readable->telemetryPlacemarkMetrics());
@@ -242,12 +243,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             display->clearDisplay();
             newMainMenu->setFirstLoad();
             setCurrentScreen(*newMainMenu);
-
-            // TODO: Probably not the most kosher practice to delete the `ReadableScreen` from
-            // _inside_ ReadableScreen.backCallback. I suppose we could either mark these for
-            // deletion on the next loop by adding them to a vector, OR we could rearrange things
-            // so that the `backCallback` is copied by the parent screen, and then executed there.
-            delete readableScreen;
         });
 
         return readableScreen;
@@ -256,13 +251,12 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 #if 0
     auto createTutorialScreen = [this, display, newMainMenu](SpiramString text,
                                                              int bit) -> TutorialScreen * {
-        auto tutorialScreen = new TutorialScreen(*display, this->prefs_, std::move(text), bit);
+        auto tutorialScreen = std::make_shared<TutorialScreen>(*display, this->prefs_, std::move(text), bit);
 
         tutorialScreen->setBackCallback([this, display, newMainMenu, tutorialScreen]() {
             display->clearDisplay();
             newMainMenu->setFirstLoad();
             setCurrentScreen(*newMainMenu);
-            delete tutorialScreen;
         });
 
         return tutorialScreen;
@@ -295,17 +289,14 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             "Upgrade Software",
             StringFormat("From %s to %s", SemanticVersionString(), firmware.version.c_str()),
             [this, display, newMainMenu, &localStore, firmware]() {
-            auto releaseNotesScreen =
-                new ReleaseNotesScreen(*display, this->prefs_, power_, localStore, firmware);
+            auto releaseNotesScreen = std::make_shared<ReleaseNotesScreen>(
+                *display, this->prefs_, power_, localStore, firmware);
             display->clearDisplay();
             this->setCurrentScreen(*releaseNotesScreen);
-            // auto resizeBox = new ResizeBoxScreen(*display, prefs_);
-            // this->setCurrentScreen(*resizeBox);
             releaseNotesScreen->setBackCallback([this, display, releaseNotesScreen, newMainMenu]() {
                 display->clearDisplay();
                 newMainMenu->setFirstLoad();
                 setCurrentScreen(*newMainMenu);
-                delete releaseNotesScreen;
             });
             });
     };
@@ -316,14 +307,13 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                                                        [this, display, &localStore, newMainMenu]() {
             // If we're not yet paired, show the app screen instead
             if (PreferencesStore::paired == PairedStatus::Unpaired) {
-                auto appDownloadScreen = new AppDownloadScreen(*display);
+                auto appDownloadScreen = std::make_shared<AppDownloadScreen>(*display);
                 this->setCurrentScreen(*appDownloadScreen);
                 appDownloadScreen->setBackCallback(
                     [this, appDownloadScreen, newMainMenu, display]() {
                     display->clearDisplay();
                     newMainMenu->setFirstLoad();
                     setCurrentScreen(*newMainMenu);
-                    delete appDownloadScreen;
                 });
                 return;
             }
@@ -339,11 +329,12 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 // Content menu but because that menu is going away entirely and will be
                 // replaced, we'll worry about that once we know where it lands.
                 newMainMenu->showTemporaryMessage(*display, turnOnWifiMsg, 2000, true);
+                newMainMenu->setFirstLoad();
                 return;
             }
 
-            auto contentSyncScreen =
-                new ContentSyncScreen(*display, localStore, this->prefs_, this->telemetry_);
+            auto contentSyncScreen = std::make_shared<ContentSyncScreen>(
+                *display, localStore, this->prefs_, this->telemetry_);
             // display->setFont(mainMenu->getMyStyle().navigationFont);
             this->setCurrentScreen(*contentSyncScreen);
             contentSyncScreen->setBackCallback([this, contentSyncScreen, newMainMenu, display]() {
@@ -351,7 +342,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 newMainMenu->setFirstLoad();
                 setCurrentScreen(*newMainMenu);
                 newMainMenu->render(*display);
-                delete contentSyncScreen;
             });
             contentSyncScreen->begin();
         });
@@ -371,13 +361,12 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         if (readableScreen != nullptr) {
             this->setCurrentScreen(*readableScreen);
         } else {
-            auto *errorPopup = new MsgPopup(*display, itemErrorMsg_);
+            auto errorPopup = std::make_shared<MsgPopup>(*display, itemErrorMsg_);
             this->setCurrentScreen(*errorPopup);
             errorPopup->setBackCallback([this, errorPopup, newMainMenu]() {
                 newMainMenu->setFirstLoad();
                 display_->clearDisplay();
                 setCurrentScreen(*newMainMenu);
-                delete errorPopup;
             });
         }
     };
@@ -559,7 +548,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     auto settingsMenuFactory =
         [this, display, newMainMenu, styleFamilies, &localStore, &fileSystem, hasLastQuestion]() {
-        auto readingSettingsMenu = new ReadingSettingsMenuScreen(*display, "Main Menu");
+        auto readingSettingsMenu =
+            std::make_shared<ReadingSettingsMenuScreen>(*display, "Main Menu");
 
         if (this->prefs_.autoPilot.get().value_or(false)) {
             prefs_.autoPilotSpeed.set(10000);
@@ -577,7 +567,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
         readingSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
             "Text Size", [this, display, readingSettingsMenu]() {
-                auto fontMenu = new ReadingSettingsMenuScreen(*display, "Reading Settings");
+                auto fontMenu =
+                    std::make_shared<ReadingSettingsMenuScreen>(*display, "Reading Settings");
                 fontMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>("Small",
                                                                               [this, fontMenu]() {
                 this->display_->style.setFontFamily(this->display_->style.solSansSmall);
@@ -618,20 +609,19 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 fontMenu->setBackCallback([this, fontMenu, readingSettingsMenu]() {
                     readingSettingsMenu->setFirstLoad();
                     setCurrentScreen(*readingSettingsMenu);
-                    delete fontMenu;
                 });
             }));
 
         readingSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
             "Move Page in Display", [this, readingSettingsMenu, display]() {
                 log_d("Loading adjust offset");
-                auto offsetAdjust = new OffsetAdjustScreen(*display, prefs_, this->telemetry_);
+                auto offsetAdjust =
+                    std::make_shared<OffsetAdjustScreen>(*display, prefs_, this->telemetry_);
                 this->setCurrentScreen(*offsetAdjust);
                 log_d("setting up callback");
                 offsetAdjust->setBackCallback([this, offsetAdjust, readingSettingsMenu]() {
                     readingSettingsMenu->setFirstLoad();
                     setCurrentScreen(*readingSettingsMenu);
-                    delete offsetAdjust;
                 });
                 log_d("set up callback");
             }));
@@ -639,13 +629,13 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         readingSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
             "Resize Page", [this, readingSettingsMenu, display]() {
                 log_d("Loading resize box");
-                auto resizeBox = new ResizeBoxScreen(*display, prefs_, this->telemetry_);
+                auto resizeBox =
+                    std::make_shared<ResizeBoxScreen>(*display, prefs_, this->telemetry_);
                 this->setCurrentScreen(*resizeBox);
                 log_d("setting up callback");
                 resizeBox->setBackCallback([this, resizeBox, readingSettingsMenu]() {
                     readingSettingsMenu->setFirstLoad();
                     setCurrentScreen(*readingSettingsMenu);
-                    delete resizeBox;
                 });
                 log_d("set up callback");
             }));
@@ -653,12 +643,12 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         readingSettingsMenu->addMenuItem(
             std::make_shared<NewMenuItemSingleLine>("Line Spacing",
                                                     [this, readingSettingsMenu, display]() {
-            auto lineSpacingScreen = new LineSpacingScreen(*display, prefs_, this->telemetry_);
+            auto lineSpacingScreen =
+                std::make_shared<LineSpacingScreen>(*display, prefs_, this->telemetry_);
             this->setCurrentScreen(*lineSpacingScreen);
             lineSpacingScreen->setBackCallback([this, lineSpacingScreen, readingSettingsMenu]() {
                 readingSettingsMenu->setFirstLoad();
                 setCurrentScreen(*readingSettingsMenu);
-                delete lineSpacingScreen;
             });
             }));
 
@@ -689,8 +679,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 readingSettingsMenu->setFirstLoad();
             }));
 
-        auto contentSettingsMenu =
-            new ToggleMenuScreen(power_.battery, *display_, styleFamilies.settingsMenu, "Content");
+        auto contentSettingsMenu = std::make_shared<ToggleMenuScreen>(
+            power_.battery, *display_, styleFamilies.settingsMenu, "Content");
 
         contentSettingsMenu->setBackCallback([this, newMainMenu, display, contentSettingsMenu]() {
             // Ideally we'd move this into the ToggleClass so it's not duplicated with
@@ -778,11 +768,11 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             auto sortOrderMenuItem = MenuItem(
                 modelType == ReadablesModelType::Book ? "Book sort order" : "Article sort order",
                 [this, &localStore, display, contentSettingsMenu, modelType]() {
-                auto sortMenu =
-                    new MenuScreen(power_.battery, *display, contentSettingsMenu->getMyStyle(),
-                                   modelType == ReadablesModelType::Book ? "Book Sort Order"
-                                                                         : "Article Sort Order",
-                                   "Content Settings");
+                auto sortMenu = std::make_shared<MenuScreen>(
+                    power_.battery, *display, contentSettingsMenu->getMyStyle(),
+                    modelType == ReadablesModelType::Book ? "Book Sort Order"
+                                                          : "Article Sort Order",
+                    "Content Settings");
                 sortMenu->addMenuItem(MenuItem(
                     "Alphabetical", [this, &localStore, display, contentSettingsMenu, modelType]() {
                         if (modelType == ReadablesModelType::Book) {
@@ -935,7 +925,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 sortMenu->setBackCallback([this, sortMenu, contentSettingsMenu]() {
                     contentSettingsMenu->setFirstLoad();
                     setCurrentScreen(*contentSettingsMenu);
-                    delete sortMenu;
                 });
                 });
             if (modelType == ReadablesModelType::Book) {
@@ -950,7 +939,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         // Hide the bubble for the last item, Sync content now
         contentSettingsMenu->setToggleLastItem(false, false);
 
-        auto systemSettingsMenu = new SystemSettingsMenuScreen(*display, "Main Menu");
+        auto systemSettingsMenu = std::make_shared<SystemSettingsMenuScreen>(*display, "Main Menu");
 
         systemSettingsMenu->setBackCallback([this, newMainMenu]() {
             this->display_->clearDisplay();
@@ -960,25 +949,23 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
         systemSettingsMenu->addMenuItem(
             std::make_shared<NewMenuItemSingleLine>("About", [this, systemSettingsMenu, display]() {
-                auto aboutScreen = new AboutScreen(*display, prefs_, power_);
+                auto aboutScreen = std::make_shared<AboutScreen>(*display, prefs_, power_);
                 this->setCurrentScreen(*aboutScreen);
                 aboutScreen->setBackCallback([this, aboutScreen, systemSettingsMenu]() {
                     systemSettingsMenu->setFirstLoad();
                     display_->clearDisplay();
                     setCurrentScreen(*systemSettingsMenu);
-                    delete aboutScreen;
                 });
             }));
 
         systemSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
             "Legal & Regulatory", [this, systemSettingsMenu, display]() {
-                auto legalScreen = new LegalScreen(*display, prefs_, power_);
+                auto legalScreen = std::make_shared<LegalScreen>(*display, prefs_, power_);
                 this->setCurrentScreen(*legalScreen);
                 legalScreen->setBackCallback([this, legalScreen, systemSettingsMenu]() {
                     systemSettingsMenu->setFirstLoad();
                     display_->clearDisplay();
                     setCurrentScreen(*systemSettingsMenu);
-                    delete legalScreen;
                 });
             }));
 
@@ -986,14 +973,13 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             "Firmware Update", [this, systemSettingsMenu, display]() {
                 // If we don't have WiFi configured, show the QR code instead
                 if (!WiFi::getInstance().hasWiFiCredentials()) {
-                    auto appDownloadScreen = new AppDownloadScreen(*display);
+                    auto appDownloadScreen = std::make_shared<AppDownloadScreen>(*display);
                     this->setCurrentScreen(*appDownloadScreen);
                     appDownloadScreen->setBackCallback(
                         [this, appDownloadScreen, systemSettingsMenu, display]() {
                     display->clearDisplay();
                     systemSettingsMenu->setFirstLoad();
                     setCurrentScreen(*systemSettingsMenu);
-                    delete appDownloadScreen;
                     });
                     return;
                 }
@@ -1009,35 +995,35 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                     return;
                 }
 
-                auto firmwareUpdateScreen = new FirmwareUpdateScreen(*display, telemetry_, prefs_);
+                auto firmwareUpdateScreen =
+                    std::make_shared<FirmwareUpdateScreen>(*display, telemetry_, prefs_);
                 this->setCurrentScreen(*firmwareUpdateScreen);
                 firmwareUpdateScreen->setBackCallback(
                     [this, firmwareUpdateScreen, systemSettingsMenu, display]() {
                 systemSettingsMenu->setFirstLoad();
                 setCurrentScreen(*systemSettingsMenu);
                 systemSettingsMenu->render(*display);
-                delete firmwareUpdateScreen;
                 });
                 firmwareUpdateScreen->begin();
             }));
 
         systemSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
             "Manifesto", [this, systemSettingsMenu, display]() {
-                auto demoScreen = new DemoScreen(*display, prefs_);
+                auto demoScreen = std::make_shared<DemoScreen>(*display, prefs_);
                 this->setCurrentScreen(*demoScreen);
                 demoScreen->setBackCallback([this, demoScreen, systemSettingsMenu, display]() {
                     systemSettingsMenu->setFirstLoad();
                     display->clearDisplay();
                     setCurrentScreen(*systemSettingsMenu);
                     systemSettingsMenu->render(*this->display_);
-                    delete demoScreen;
                 });
             }));
 
         systemSettingsMenu->addMenuItem(
             std::make_shared<NewMenuItemSingleLine>("Inactivity Timer",
                                                     [this, systemSettingsMenu, display]() {
-            auto inactivityMenu = new InactivitySettingMenuScreen(*display, "System Settings");
+            auto inactivityMenu =
+                std::make_shared<InactivitySettingMenuScreen>(*display, "System Settings");
             auto updateExtraText = [this, inactivityMenu]() {
                 this->display_->style.setFontFamily(this->display_->style.solSansSmall);
                 std::string message = std::string(SpiRamStringFormat(
@@ -1089,7 +1075,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 } else {
                     systemSettingsMenu->setFirstLoad();
                     setCurrentScreen(*systemSettingsMenu);
-                    delete inactivityMenu;
                 }
             });
             }));
@@ -1110,7 +1095,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
                 wifiSettingsMenuScreen->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
                     "WiFi Scan", [this, wifiSettingsMenuScreen, display]() {
-                        auto wiFiScanScreen = new WiFiScanScreen(*display, WiFi::getInstance());
+                        auto wiFiScanScreen =
+                            std::make_shared<WiFiScanScreen>(*display, WiFi::getInstance());
                         wiFiScanScreen->begin();
                         this->setCurrentScreen(*wiFiScanScreen);
                         wiFiScanScreen->setBackCallback(
@@ -1119,7 +1105,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                     display->clearDisplay();
                     setCurrentScreen(*wifiSettingsMenuScreen);
                     wifiSettingsMenuScreen->render(*this->display_);
-                    delete wiFiScanScreen;
                         });
                     }));
 
@@ -1175,7 +1160,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 power_.reboot();
             }));
 
-        auto experimentalSettingsMenu = new ToggleMenuScreen(
+        auto experimentalSettingsMenu = std::make_shared<ToggleMenuScreen>(
             power_.battery, *display_, styleFamilies.settingsMenu, "Experimental");
 
         experimentalSettingsMenu->setBackCallback(
@@ -1312,8 +1297,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         // Power Off
 
         if (prefs_.showDebugMenu.get().value_or(false)) {
-            auto debugSettingsMenu =
-                new MenuScreen(power_.battery, *display, styleFamilies.settingsMenu, "Debug");
+            auto debugSettingsMenu = std::make_shared<MenuScreen>(
+                power_.battery, *display, styleFamilies.settingsMenu, "Debug");
 
             debugSettingsMenu->setBackCallback([this, newMainMenu]() {
                 this->display_->clearDisplay();
@@ -1342,13 +1327,12 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 #endif
 
             debugSettingsMenu->addMenuItem(MenuItem("About", [this, debugSettingsMenu, display]() {
-                auto debugAboutScreen = new DebugAboutScreen(*display);
+                auto debugAboutScreen = std::make_shared<DebugAboutScreen>(*display);
                 this->setCurrentScreen(*debugAboutScreen);
                 debugAboutScreen->setBackCallback([this, debugAboutScreen, debugSettingsMenu]() {
                     debugSettingsMenu->setFirstLoad();
                     display_->clearDisplay();
                     setCurrentScreen(*debugSettingsMenu);
-                    delete debugAboutScreen;
                 });
             }));
 
@@ -1417,9 +1401,9 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 }));
             debugSettingsMenu->addMenuItem(
                 MenuItem("File System Browser", [this, display, debugSettingsMenu, &fileSystem]() {
-                    auto fsMenu =
-                        new MenuScreen(power_.battery, *display, debugSettingsMenu->getMyStyle(),
-                                       "FS Browser", "Debug Settings");
+                    auto fsMenu = std::make_shared<MenuScreen>(power_.battery, *display,
+                                                               debugSettingsMenu->getMyStyle(),
+                                                               "FS Browser", "Debug Settings");
 
                     handleBrowse(fileSystem, fsMenu);
 
@@ -1427,42 +1411,39 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                     fsMenu->setBackCallback([this, fsMenu, debugSettingsMenu]() {
                         debugSettingsMenu->setFirstLoad();
                         setCurrentScreen(*debugSettingsMenu);
-                        delete fsMenu;
                     });
                 }));
 
             debugSettingsMenu->addMenuItem(MenuItem("Batteries and Temperature",
                                                     [this, display, debugSettingsMenu]() {
-                auto batteryScreen = new BatteryScreen(*display, prefs_, power_.battery);
+                auto batteryScreen =
+                    std::make_shared<BatteryScreen>(*display, prefs_, power_.battery);
                 this->setCurrentScreen(*batteryScreen);
                 batteryScreen->setBackCallback([this, batteryScreen, debugSettingsMenu]() {
                     debugSettingsMenu->setFirstLoad();
                     setCurrentScreen(*debugSettingsMenu);
-                    delete batteryScreen;
                 });
             }));
 
             debugSettingsMenu->addMenuItem(MenuItem("Optics Test", [this, debugSettingsMenu]() {
-                auto opticsTestScreen = new CalibrationScreen();
+                auto opticsTestScreen = std::make_shared<CalibrationScreen>();
                 opticsTestScreen->setOpticsTest();
                 this->display_->clearDisplay();
                 this->setCurrentScreen(*opticsTestScreen);
                 opticsTestScreen->setBackCallback([this, opticsTestScreen, debugSettingsMenu]() {
                     debugSettingsMenu->setFirstLoad();
                     setCurrentScreen(*debugSettingsMenu);
-                    delete opticsTestScreen;
                 });
             }));
 
             debugSettingsMenu->addMenuItem(MenuItem("Binocular Optics Test",
                                                     [this, debugSettingsMenu]() {
-                auto opticsTestScreen = new TestAlignmentScreen();
+                auto opticsTestScreen = std::make_shared<TestAlignmentScreen>();
                 this->display_->clearDisplay();
                 this->setCurrentScreen(*opticsTestScreen);
                 opticsTestScreen->setBackCallback([this, opticsTestScreen, debugSettingsMenu]() {
                     debugSettingsMenu->setFirstLoad();
                     setCurrentScreen(*debugSettingsMenu);
-                    delete opticsTestScreen;
                 });
             }));
 
@@ -1490,22 +1471,21 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 /*
     debugSettingsMenu->addMenuItem(
         MenuItem("Alignment Setup", [this, debugSettingsMenu, display, &lightingController]() {
-            auto alignmentScreen = new AlignmentScreen(*display, prefs_, lightingController);
-            this->setCurrentScreen(*alignmentScreen);
+            auto alignmentScreen = std::make_shared<AlignmentScreen>(*display, prefs_,
+   lightingController); this->setCurrentScreen(*alignmentScreen);
             alignmentScreen->setBackCallback([this, alignmentScreen, debugSettingsMenu, display]() {
                 debugSettingsMenu->setFirstLoad();
                 display->clearDisplay();
                 setCurrentScreen(*debugSettingsMenu);
-                delete alignmentScreen;
             });
         }));
 */
 #if CONFIG_DISPLAY_EINKET013TT1
             debugSettingsMenu->addMenuItem(MenuItem("Set Vcom",
                                                     [this, display, debugSettingsMenu]() {
-                auto vcomMenu =
-                    new MenuScreen(power_.battery, *display, debugSettingsMenu->getMyStyle(),
-                                   "Vcom Settings", "Debug Settings");
+                auto vcomMenu = std::make_shared<MenuScreen>(power_.battery, *display,
+                                                             debugSettingsMenu->getMyStyle(),
+                                                             "Vcom Settings", "Debug Settings");
                 auto *driver = (dynamic_cast<DisplayEinkET013TT1 *>(display))->getDriver();
                 vcomMenu->addMenuItem(MenuItem("0V", [this, vcomMenu, driver]() {
                     driver->setVcom(0);
@@ -1546,16 +1526,15 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 vcomMenu->setBackCallback([this, vcomMenu, debugSettingsMenu]() {
                     debugSettingsMenu->setFirstLoad();
                     setCurrentScreen(*debugSettingsMenu);
-                    delete vcomMenu;
                 });
             }));
 #endif
 
             debugSettingsMenu->addMenuItem(MenuItem("Set WiFi Power",
                                                     [this, display, debugSettingsMenu]() {
-                auto wifiPowerMenu =
-                    new MenuScreen(power_.battery, *display, debugSettingsMenu->getMyStyle(),
-                                   "WiFi Power Settings", "Debug Settings");
+                auto wifiPowerMenu = std::make_shared<MenuScreen>(
+                    power_.battery, *display, debugSettingsMenu->getMyStyle(),
+                    "WiFi Power Settings", "Debug Settings");
 
                 auto powerToString = [](wifi_power_t power) -> std::string {
                     switch (power) {
@@ -1628,7 +1607,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 wifiPowerMenu->setBackCallback([this, wifiPowerMenu, debugSettingsMenu]() {
                     debugSettingsMenu->setFirstLoad();
                     setCurrentScreen(*debugSettingsMenu);
-                    delete wifiPowerMenu;
                 });
             }));
 
@@ -1646,9 +1624,9 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 #endif
                 };
 
-                auto blePowerMenu =
-                    new MenuScreen(power_.battery, *display, debugSettingsMenu->getMyStyle(),
-                                   "BLE Power Settings", "Debug Settings");
+                auto blePowerMenu = std::make_shared<MenuScreen>(
+                    power_.battery, *display, debugSettingsMenu->getMyStyle(), "BLE Power Settings",
+                    "Debug Settings");
 
                 auto powerToString = [](esp_power_level_t power) -> std::string {
                     auto it = blePowerOptions.find(power);
@@ -1692,7 +1670,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 blePowerMenu->setBackCallback([this, blePowerMenu, debugSettingsMenu]() {
                     debugSettingsMenu->setFirstLoad();
                     setCurrentScreen(*debugSettingsMenu);
-                    delete blePowerMenu;
                 });
             }));
 #endif
@@ -1700,13 +1677,12 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 #if CONFIG_DISPLAY_EINKET013TT1
             debugSettingsMenu->addMenuItem(MenuItem("Set Vcom Precise",
                                                     [this, display, debugSettingsMenu]() {
-                auto vcomPreciseScreen = new VcomAdjustScreen(*display, this->prefs_);
+                auto vcomPreciseScreen = std::make_shared<VcomAdjustScreen>(*display, this->prefs_);
                 this->display_->clearDisplay();
                 setCurrentScreen(*vcomPreciseScreen);
                 vcomPreciseScreen->setBackCallback([this, vcomPreciseScreen, debugSettingsMenu]() {
                     debugSettingsMenu->setFirstLoad();
                     setCurrentScreen(*debugSettingsMenu);
-                    delete vcomPreciseScreen;
                 });
             }));
 #endif
@@ -1817,7 +1793,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         readingSettingsMenu->addMenuItem(MenuItem("Font Type (Experimental)",
                                                   [this, display, readingSettingsMenu]() {
             auto fontTypeMenu =
-                new MenuScreen(power_.battery, *display, readingSettingsMenu->getMyStyle(),
+                std::make_shared<MenuScreen>(power_.battery, *display, readingSettingsMenu->getMyStyle(),
                                "Font Type Settings", "Reading Settings");
             for (int i = 0; i < fontsList.size(); i++) {
                 fontTypeMenu->addMenuItem(MenuItem(fontsList[i].caption, [this, fontTypeMenu, i]() {
@@ -1831,7 +1807,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             fontTypeMenu->setBackCallback([this, fontTypeMenu, readingSettingsMenu]() {
                 readingSettingsMenu->setFirstLoad();
                 setCurrentScreen(*readingSettingsMenu);
-                delete fontTypeMenu;
             });
         }));
     }
@@ -1843,13 +1818,12 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         "Brightness",
         [this, display, readingSettingsMenu, &lightingController]() {
         auto lightingAdjustScreen =
-            new LightingAdjustScreen(*display, this->prefs_, lightingController, this->telemetry_);
+            std::make_shared<LightingAdjustScreen>(*display, this->prefs_, lightingController, this->telemetry_);
         this->display_->clearDisplay();
         setCurrentScreen(*lightingAdjustScreen);
         lightingAdjustScreen->setBackCallback([this, lightingAdjustScreen, readingSettingsMenu]() {
             readingSettingsMenu->setFirstLoad();
             setCurrentScreen(*readingSettingsMenu);
-            delete lightingAdjustScreen;
         });
         }));
 
@@ -1858,20 +1832,19 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         "Contrast",
         [this, display, readingSettingsMenu, &lightingController]() {
         auto contrastAdjustScreen =
-            new ContrastAdjustScreen(*display, this->prefs_, lightingController, this->telemetry_);
+            std::make_shared<ContrastAdjustScreen>(*display, this->prefs_, lightingController, this->telemetry_);
         this->display_->clearDisplay();
         setCurrentScreen(*contrastAdjustScreen);
         contrastAdjustScreen->setBackCallback([this, contrastAdjustScreen, readingSettingsMenu]() {
             readingSettingsMenu->setFirstLoad();
             setCurrentScreen(*readingSettingsMenu);
-            delete contrastAdjustScreen;
         });
         }));
 #endif
 #endif
 #if 0
     auto contentSettingsMenu =
-        new ToggleMenuScreen(power_.battery, *display_, styleFamilies.settingsMenu, "Content");
+        std::make_shared<ToggleMenuScreen>(power_.battery, *display_, styleFamilies.settingsMenu, "Content");
 
     contentSettingsMenu->setBackCallback([this, mainMenu, display, contentSettingsMenu]() {
         // Ideally we'd move this into the ToggleClass so it's not duplicated with
@@ -1961,7 +1934,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     HEAP_PROFILE_END(rootUISettings);
 
     if (prefs_.cesMode.get().value_or(false)) {
-        auto cesScreen = new DemoScreen(*display, prefs_);
+        auto cesScreen = std::make_shared<DemoScreen>(*display, prefs_);
 
         // reset prefs for of The Last Question readable
         log_d("Starting CES mode readable load");
@@ -1982,17 +1955,15 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 log_i("Setting Readable Screen after focus in CES mode");
                 this->setCurrentScreen(*readableScreen);
                 readableScreen->render(*this->display_);
-                delete cesScreen;
             });
             this->setCurrentScreen(*cesScreen);
         } else {
-            auto *errorPopup = new MsgPopup(*display, itemErrorMsg_);
+            auto errorPopup = std::make_shared<MsgPopup>(*display, itemErrorMsg_);
             this->setCurrentScreen(*errorPopup);
             errorPopup->setBackCallback([this, errorPopup, mainMenu]() {
                 mainMenu->setFirstLoad();
                 display_->clearDisplay();
                 setCurrentScreen(*mainMenu);
-                delete errorPopup;
             });
         }
     } else if (prefs_.emcMode.get().value_or(false)) {
@@ -2013,13 +1984,12 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             this->display_->setFont(this->display_->style.getFontFamily().readableFont);
             this->setCurrentScreen(*readableScreen);
         } else {
-            auto *errorPopup = new MsgPopup(*display, itemErrorMsg_);
+            auto errorPopup = std::make_shared<MsgPopup>(*display, itemErrorMsg_);
             this->setCurrentScreen(*errorPopup);
             errorPopup->setBackCallback([this, errorPopup, mainMenu]() {
                 mainMenu->setFirstLoad();
                 display_->clearDisplay();
                 setCurrentScreen(*mainMenu);
-                delete errorPopup;
             });
         }
     } else if (currentReadable.has_value()) {
@@ -2049,13 +2019,12 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                     mainMenu->setTabToBible();
                 }
             } else {
-                auto *errorPopup = new MsgPopup(*display, itemErrorMsg_);
+                auto errorPopup = std::make_shared<MsgPopup>(*display, itemErrorMsg_);
                 this->setCurrentScreen(*errorPopup);
                 errorPopup->setBackCallback([this, errorPopup, mainMenu]() {
                     mainMenu->setFirstLoad();
                     display_->clearDisplay();
                     setCurrentScreen(*mainMenu);
-                    delete errorPopup;
                 });
             }
         } else {
@@ -2093,19 +2062,10 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     // with the demo code and set the back callback to mainMenu.
 
     SHOW_HEAP();
-
-    // Yes, clang-tidy, it is weird that we are calling `new` and not `delete` and we know this
-    // should be a shared_ptr or something. But just leave us alone for now, ok?
-    // NOTE: I couldn't figure out how to use
-    // NOLINTNEXTLINE(clang-analyzer-cplusplus.NewDeleteLeaks) in a way that disabled these
-    // warnings for these variables
-#ifdef __clang_analyzer__
-    delete articlesMenu;
-    delete booksMenu;
-#endif
 }
 
-void RootUI::handleBrowse(FileSystem &fileSystem, MenuScreen *fsMenu, const std::string &path) {
+void RootUI::handleBrowse(FileSystem &fileSystem, std::shared_ptr<MenuScreen> fsMenu,
+                          const std::string &path) {
     FileList localFiles, localDirs;
 
     fileSystem.listDirWithSubdirectories(path, localFiles, localDirs);

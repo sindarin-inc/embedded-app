@@ -23,7 +23,8 @@ public:
 
     void setup(DisplaySystem *display, LocalStore &localStore, FileSystem &fileSystem,
                LightingController &lightingController);
-    void handleBrowse(FileSystem &fileSystem, MenuScreen *fsMenu, const std::string &path = "/");
+    void handleBrowse(FileSystem &fileSystem, std::shared_ptr<MenuScreen> fsMenu,
+                      const std::string &path = "/");
 
 protected:
     std::string itemErrorMsg_ =
