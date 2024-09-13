@@ -34,8 +34,8 @@ void CarouselMenuScreen::populateMenuView() {
     // The system menu doesn't seem to be cleaning up when going to another tab.
     auto menuItems = currentTabFactory();
 
-    for (int i = 0; i < menuItems->size(); i++) {
-        menuView_.addMenuItem(menuItems->at(i));
+    for (auto &i : *menuItems) {
+        menuView_.addMenuItem(i);
     }
 
     // Make sure this reference is deleted.
