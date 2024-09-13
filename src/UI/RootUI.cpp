@@ -334,9 +334,10 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     log_i("Loading %zu Pocket articles", articles.size());
 
-    auto recentMenuFactory = [this, &localStore, handleReadableScreenCreation, isBible]() {
+    auto recentMenuFactory = [this, &localStore, handleReadableScreenCreation,
+                              isBible]() -> MenuItemSharedPtrVector {
         auto &recents = localStore.recents();
-        std::vector<std::shared_ptr<NewMenuItem>> menuItems;
+        auto menuItems = std::make_shared<MenuItemVector>();
         for (const auto &recent : recents) {
             bool archived = prefs_.readableArchivedChanged.get(recent->shortenedUuid.c_str());
             auto title = StringFormat("%s%s", archived ? "Archived: " : "", recent->title.c_str());
@@ -360,22 +361,22 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                     handleReadableScreenCreation(recent);
                     });
             }
-            menuItems.emplace_back(menuItem);
+            menuItems->emplace_back(menuItem);
         }
         return menuItems;
     };
 
     auto booksMenuFactory = [this, &localStore, handleReadableScreenCreation, isBible,
                              makeReleaseNotesMenuItem, makeContentSyncMenuItem,
-                             createTutorialScreen, noContent]() {
+                             createTutorialScreen, noContent]() -> MenuItemSharedPtrVector {
         auto &books = localStore.books();
-        std::vector<std::shared_ptr<NewMenuItem>> menuItems;
+        auto menuItems = std::make_shared<MenuItemVector>();
 
         if (this->prefs_.firmwareLoaded.get().has_value()) {
             Firmware firmware;
             auto upgradeAvailable = localStore.getPendingFirmwareUpdate(firmware);
             if (upgradeAvailable) {
-                menuItems.emplace_back(makeReleaseNotesMenuItem(firmware));
+                menuItems->emplace_back(makeReleaseNotesMenuItem(firmware));
             }
         }
 
@@ -386,7 +387,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             }
             bool archived = prefs_.readableArchivedChanged.get(book->shortenedUuid.c_str());
             auto title = StringFormat("%s%s", archived ? "Archived: " : "", book->title.c_str());
-            menuItems.emplace_back(std::make_shared<NewMenuItemBook>(
+            menuItems->emplace_back(std::make_shared<NewMenuItemBook>(
                 std::string(book->title), std::string(book->authors[0].name),
                 [book, handleReadableScreenCreation]() { handleReadableScreenCreation(book); }));
         }
@@ -400,17 +401,17 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             lastQuestion->authors.emplace_back("91ae1429-c6d4-4b8b-88fa-81041d838f92",
                                                "Isaac Asimov", "");
             if (!prefs_.readableArchivedChanged.get(lastQuestion->shortenedUuid.c_str())) {
-                menuItems.emplace_back(std::make_shared<NewMenuItemBook>(
+                menuItems->emplace_back(std::make_shared<NewMenuItemBook>(
                     std::string(lastQuestion->title), std::string(lastQuestion->authors[0].name),
                     [lastQuestion, handleReadableScreenCreation]() {
                     handleReadableScreenCreation(lastQuestion);
                     }));
             }
-            menuItems.emplace_back(makeContentSyncMenuItem("Sync Content"));
+            menuItems->emplace_back(makeContentSyncMenuItem("Sync Content"));
         }
 
         if (!(prefs_.tutorialsDeleted.get().value_or(0) & TUTORIAL_SCREEN_BOOKS)) {
-            menuItems.emplace_back(
+            menuItems->emplace_back(
                 std::make_shared<NewMenuItemSingleLine>("\ue000 Books Tutorial",
                                                         [this, createTutorialScreen]() {
                 SpiramString message = SpiramString(
@@ -433,22 +434,22 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     auto articlesMenuFactory = [this, &localStore, handleReadableScreenCreation,
                                 makeReleaseNotesMenuItem, makeContentSyncMenuItem,
-                                createTutorialScreen, noContent]() {
+                                createTutorialScreen, noContent]() -> MenuItemSharedPtrVector {
         auto &articles = localStore.articles();
-        std::vector<std::shared_ptr<NewMenuItem>> menuItems;
+        auto menuItems = std::make_shared<MenuItemVector>();
 
         if (this->prefs_.firmwareLoaded.get().has_value()) {
             Firmware firmware;
             auto upgradeAvailable = localStore.getPendingFirmwareUpdate(firmware);
             if (upgradeAvailable) {
-                menuItems.emplace_back(makeReleaseNotesMenuItem(firmware));
+                menuItems->emplace_back(makeReleaseNotesMenuItem(firmware));
             }
         }
 
         for (const auto &article : articles) {
             bool archived = prefs_.readableArchivedChanged.get(article->shortenedUuid.c_str());
             auto title = StringFormat("%s%s", archived ? "Archived: " : "", article->title.c_str());
-            menuItems.emplace_back(
+            menuItems->emplace_back(
                 std::make_shared<NewMenuItemArticle>(title, std::string(article->readableType),
                                                      [article, handleReadableScreenCreation]() {
                 handleReadableScreenCreation(article);
@@ -456,11 +457,11 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         }
 
         if (noContent) {
-            menuItems.emplace_back(makeContentSyncMenuItem("Sync Content"));
+            menuItems->emplace_back(makeContentSyncMenuItem("Sync Content"));
         }
 
         if (!(prefs_.tutorialsDeleted.get().value_or(0) & TUTORIAL_SCREEN_ARTICLES)) {
-            menuItems.emplace_back(std::make_shared<NewMenuItemSingleLine>(
+            menuItems->emplace_back(std::make_shared<NewMenuItemSingleLine>(
                 "\ue000 Articles Tutorial", [this, createTutorialScreen]() {
                     SpiramString message = SpiRamStringFormat(
                         "Welcome to the Articles menu. This tab "
@@ -484,15 +485,15 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     auto bibleMenuFactory = [this, &localStore, handleReadableScreenCreation, isBible,
                              makeReleaseNotesMenuItem, makeContentSyncMenuItem,
-                             createTutorialScreen, noContent]() {
+                             createTutorialScreen, noContent]() -> MenuItemSharedPtrVector {
         auto &books = localStore.books();
-        std::vector<std::shared_ptr<NewMenuItem>> menuItems;
+        auto menuItems = std::make_shared<MenuItemVector>();
 
         if (this->prefs_.firmwareLoaded.get().has_value()) {
             Firmware firmware;
             auto upgradeAvailable = localStore.getPendingFirmwareUpdate(firmware);
             if (upgradeAvailable) {
-                menuItems.emplace_back(makeReleaseNotesMenuItem(firmware));
+                menuItems->emplace_back(makeReleaseNotesMenuItem(firmware));
             }
         }
 
@@ -502,7 +503,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 bool archived = prefs_.readableArchivedChanged.get(book->shortenedUuid.c_str());
                 auto title =
                     StringFormat("%s%s", archived ? "Archived: " : "", book->title.c_str());
-                menuItems.emplace_back(std::make_shared<NewMenuItemSingleLine>(
+                menuItems->emplace_back(std::make_shared<NewMenuItemSingleLine>(
                     std::string(book->title), [book, handleReadableScreenCreation]() {
                         handleReadableScreenCreation(book);
                     }));
@@ -516,7 +517,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             psalmsAndProverbs->authors.emplace_back("7632d6ec-7339-4752-8672-a966503e1003",
                                                     "Crossway ESV", "");
             if (!prefs_.readableArchivedChanged.get(psalmsAndProverbs->shortenedUuid.c_str())) {
-                menuItems.emplace_back(std::make_shared<NewMenuItemSingleLine>(
+                menuItems->emplace_back(std::make_shared<NewMenuItemSingleLine>(
                     std::string(psalmsAndProverbs->title),
                     [psalmsAndProverbs, handleReadableScreenCreation]() {
                     handleReadableScreenCreation(psalmsAndProverbs);
@@ -525,7 +526,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         }
 
         if (!(prefs_.tutorialsDeleted.get().value_or(0) & TUTORIAL_SCREEN_BIBLE)) {
-            menuItems.emplace_back(
+            menuItems->emplace_back(
                 std::make_shared<NewMenuItemSingleLine>("\ue000 Why have a Bible app?",
                                                         [this, createTutorialScreen]() {
                 SpiramString message = SpiRamStringFormat(
@@ -552,7 +553,9 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     // There's a memory leak in here somewhere that loses ~15k of ram when switching to this tab and
     // then away from this tab. This doesn't happen in the other tabs.
     auto settingsMenuFactory = [this, display, newMainMenu, styleFamilies, &localStore, &fileSystem,
-                                hasLastQuestion, makeContentSyncMenuItem, &lightingController]() {
+                                hasLastQuestion, makeContentSyncMenuItem,
+                                &lightingController]() -> MenuItemSharedPtrVector {
+        auto menuItems = std::make_shared<MenuItemVector>();
         auto readingSettingsMenu =
             std::make_shared<ReadingSettingsMenuScreen>(*display, "Main Menu");
 
@@ -1144,30 +1147,28 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             },
             [this]() -> bool { return this->prefs_.fastTransitions.get().value_or(false); }));
 
-        std::vector<std::shared_ptr<NewMenuItem>> menuItems;
-
-        menuItems.emplace_back(
+        menuItems->emplace_back(
             std::make_shared<NewMenuItemSingleLine>("Reading", [this, readingSettingsMenu]() {
                 log_d("Loading Reading Settings Menu");
                 readingSettingsMenu->setFirstLoad();
                 this->setCurrentScreen(*readingSettingsMenu);
             }));
 
-        menuItems.emplace_back(
+        menuItems->emplace_back(
             std::make_shared<NewMenuItemSingleLine>("Content", [this, contentSettingsMenu]() {
                 log_d("Loading Reading Settings Menu");
                 contentSettingsMenu->setFirstLoad();
                 this->setCurrentScreen(*contentSettingsMenu);
             }));
 
-        menuItems.emplace_back(
+        menuItems->emplace_back(
             std::make_shared<NewMenuItemSingleLine>("System", [this, systemSettingsMenu]() {
                 log_d("Loading System Settings Menu");
                 systemSettingsMenu->setFirstLoad();
                 this->setCurrentScreen(*systemSettingsMenu);
             }));
 
-        menuItems.emplace_back(std::make_shared<NewMenuItemSingleLine>(
+        menuItems->emplace_back(std::make_shared<NewMenuItemSingleLine>(
             "Experimental", [this, experimentalSettingsMenu]() {
                 log_d("Loading System Settings Menu");
                 experimentalSettingsMenu->setFirstLoad();
@@ -1205,7 +1206,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 setCurrentScreen(*newMainMenu);
             });
 
-            menuItems.emplace_back(
+            menuItems->emplace_back(
                 std::make_shared<NewMenuItemSingleLine>("Debug", [this, debugSettingsMenu]() {
                     log_d("Loading System Settings Menu");
                     debugSettingsMenu->setFirstLoad();
@@ -1609,14 +1610,14 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     if (!localStore.recents().empty()) {
         newMainMenu->addTab("Recent", recentMenuFactory);
     }
-    if (!booksMenuFactory().empty() && !prefs_.noBooks.get().value_or(false)) {
+    if (!booksMenuFactory()->empty() && !prefs_.noBooks.get().value_or(false)) {
         newMainMenu->addTab("Books", booksMenuFactory);
     }
-    if (!articlesMenuFactory().empty() && !prefs_.noArticles.get().value_or(false)) {
+    if (!articlesMenuFactory()->empty() && !prefs_.noArticles.get().value_or(false)) {
         newMainMenu->addTab("Articles", articlesMenuFactory);
     }
 
-    if (!bibleMenuFactory().empty() && !prefs_.noBible.get().value_or(false)) {
+    if (!bibleMenuFactory()->empty() && !prefs_.noBible.get().value_or(false)) {
         newMainMenu->addTab("Bible", bibleMenuFactory);
     }
 

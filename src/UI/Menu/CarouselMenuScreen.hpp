@@ -7,7 +7,9 @@
 #include "UI/Menu/NewMenuView.hpp"
 #include "UI/Screen.hpp"
 
-using MenuItemFactory = std::function<std::vector<std::shared_ptr<NewMenuItem>>()>;
+using MenuItemVector = std::vector<std::shared_ptr<NewMenuItem>>;
+using MenuItemSharedPtrVector = std::shared_ptr<MenuItemVector>;
+using MenuItemFactory = std::function<MenuItemSharedPtrVector()>;
 using CarouselMenuEntry = std::tuple<std::string, MenuItemFactory>;
 
 // An abstract base class for a carousel menu screen. It handles the

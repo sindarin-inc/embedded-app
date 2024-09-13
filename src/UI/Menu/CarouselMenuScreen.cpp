@@ -32,11 +32,14 @@ void CarouselMenuScreen::populateMenuView() {
 
     // Does this somehow keep extra references around to the shared_ptrs?
     // The system menu doesn't seem to be cleaning up when going to another tab.
-    std::vector<std::shared_ptr<NewMenuItem>> menuItems = currentTabFactory();
-    for (const auto &menuitem : menuItems) {
-        menuView_.addMenuItem(menuitem);
+    auto menuItems = currentTabFactory();
+
+    for (int i = 0; i < menuItems->size(); i++) {
+        menuView_.addMenuItem(menuItems->at(i));
     }
 
+    // Make sure this reference is deleted.
+    menuItems = nullptr;
     titleView_.setText(currentTabTitle_);
 }
 
