@@ -181,9 +181,9 @@ extern "C" {
 
 #define HEAP_PROFILE_END(identifier)                                                               \
     size_t heapEnd##identifier = heap_caps_get_free_size(MALLOC_CAP_INTERNAL);                     \
-    log_d("HEAP_PROFILE_END(" #identifier ") %zu alloc'd (%zu-%zu) %s:%d",                         \
-          heapStart##identifier - heapEnd##identifier, heapEnd##identifier, heapStart##identifier, \
-          __FILE__, __LINE__);
+    log_d("HEAP_PROFILE_END(" #identifier ") %d alloc'd (%zu-%zu) %s:%d",                          \
+          static_cast<int>(heapStart##identifier) - static_cast<int>(heapEnd##identifier),         \
+          heapEnd##identifier, heapStart##identifier, __FILE__, __LINE__);
 
 #define SHOW_WATERMARK()                                                                           \
     log_d("SHOW_WATERMARK(%s) (min remaining stack): %zu %s:%d", pcTaskGetName(nullptr),           \
