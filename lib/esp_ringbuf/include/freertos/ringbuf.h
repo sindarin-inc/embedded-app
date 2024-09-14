@@ -13,6 +13,15 @@
 extern "C" {
 #endif
 
+#define NEED_VOLATILE_MUX
+
+typedef struct {
+    NEED_VOLATILE_MUX uint32_t owner;
+    NEED_VOLATILE_MUX uint32_t count;
+} spinlock_t;
+
+typedef spinlock_t portMUX_TYPE;
+
 /**
  * Type by which ring buffers are referenced. For example, a call to xRingbufferCreate()
  * returns a RingbufHandle_t variable that can then be used as a parameter to

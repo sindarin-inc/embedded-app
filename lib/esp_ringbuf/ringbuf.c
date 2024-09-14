@@ -11,6 +11,7 @@
 #include "freertos/task.h"
 #include "freertos/queue.h"
 #include "freertos/ringbuf.h"
+#include "stdio.h"
 
 // ------------------------------------------------- Macros and Types --------------------------------------------------
 
@@ -31,6 +32,29 @@
 #define rbITEM_DUMMY_DATA_FLAG      ( ( UBaseType_t ) 2 )   //Data from here to end of the ring buffer is dummy data. Restart reading at start of head of the buffer
 #define rbITEM_SPLIT_FLAG           ( ( UBaseType_t ) 4 )   //Valid for RINGBUF_TYPE_ALLOWSPLIT, indicating that rest of the data is wrapped around
 #define rbITEM_WRITTEN_FLAG         ( ( UBaseType_t ) 8 )   //Item has been written to by the application, thus can be read
+
+#define portMUX_INITIALIZE(mux)
+
+
+#undef portTRY_ENTER_CRITICAL
+#undef portENTER_CRITICAL
+#undef portEXIT_CRITICAL
+#define portTRY_ENTER_CRITICAL(mux, timeout)        xPortEnterCriticalTimeout(timeout)
+#define portENTER_CRITICAL(mux)                     vPortEnterCritical()
+#define portEXIT_CRITICAL(mux)                      vPortExitCritical()
+
+#define portTRY_ENTER_CRITICAL_ISR(mux, timeout)    xPortEnterCriticalTimeout(timeout)
+#define portENTER_CRITICAL_ISR(mux)                 vPortEnterCritical()
+#define portEXIT_CRITICAL_ISR(mux)                  vPortExitCritical()
+
+#define portTRY_ENTER_CRITICAL_SAFE(mux, timeout)   xPortEnterCriticalTimeoutSafe()
+#define portENTER_CRITICAL_SAFE(mux)                vPortEnterCriticalSafe()
+#define portEXIT_CRITICAL_SAFE(mux)                 vPortExitCriticalSafe()
+
+#define portMUX_INITIALIZER_UNLOCKED {                      \
+            .owner = portMUX_FREE_VAL,                      \
+            .count = 0,                                     \
+        }
 
 typedef struct {
     //This size of this structure must be 32-bit aligned
