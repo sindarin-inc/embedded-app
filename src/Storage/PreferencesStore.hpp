@@ -385,7 +385,7 @@ public:
           textInsetBottom(*this, "text-inset-b"),
           wifiDisabled(*this, "wifi-disable"),
           bleDisabled(*this, "ble-disable"),
-          preferencesStoreMigrationVersion_(*this, "ps-version") {}
+          preferencesStoreMigrationVersion_(*this, "ps-version") = default;
     // clang-format on
 
     PreferencesStore(PreferencesStore &) = delete;
