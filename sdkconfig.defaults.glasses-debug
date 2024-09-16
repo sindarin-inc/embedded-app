@@ -2,3 +2,4 @@
 # Espressif IoT Development Framework (ESP-IDF) Project Minimal Configuration
 #
 CONFIG_HEAP_POISONING_COMPREHENSIVE=y
+CONFIG_COMPILER_STACK_CHECK_MODE_STRONG=y
