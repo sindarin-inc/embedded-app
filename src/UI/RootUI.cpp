@@ -346,15 +346,15 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
             // Fix this eventually to match the other one once MainMenu is refactored and
             // showTemporaryMessage uses the msgPopup.
-            std::string turnOnWifiMsg = "Enable WiFi to perform a Content Sync.";
-
-            // If wifi has been disabled, show a popup encouraging the user to
-            // turn on wifi to perform the firmware sync.
-            if (this->prefs_.wifiDisabled.get().value_or(false)) {
+            // If wifi & ble have been disabled, show a popup encouraging the user to
+            // turn on wifi or BLE to perform the content sync.
+            if (this->prefs_.wifiDisabled.get().value_or(false) &&
+                this->prefs_.bleDisabled.get().value_or(false)) {
                 // TODO: There's a bug when this is called from the Sync Content menu item in the
                 // Content menu but because that menu is going away entirely and will be
                 // replaced, we'll worry about that once we know where it lands.
-                mainMenu->showTemporaryMessage(*display, turnOnWifiMsg, 2000, true);
+                mainMenu->showTemporaryMessage(
+                    *display, "Enable WiFi or BLE to perform a Content Sync.", 2000, true);
                 return;
             }
 

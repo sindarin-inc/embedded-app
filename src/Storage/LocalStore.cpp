@@ -1103,13 +1103,18 @@ auto LocalStore::processReadableDownload(
                          {"title", readable->title.c_str()},
                          {"http-code", httpCode}});
                 } else if (httpCode == ERR_CLIENT_DISCONNECTED) {
+                    if (CancelFlag::isCancelled(cancel)) {
+                        break;
+                    }
                     // Reconnect to wifi/ble if disconnected
                     auto wifiConnected = false;
-                    if (!WiFi::getInstance().connectWiFiFromSettings()) {
-                        this->telemetry_.logMetric(TelemetryField::METRIC_WIFI,
-                                                   "sync-wifi-retry-failed");
-                    } else {
-                        wifiConnected = true;
+                    if (!this->prefs_.wifiDisabled.get().value_or(false)) {
+                        if (!WiFi::getInstance().connectWiFiFromSettings()) {
+                            this->telemetry_.logMetric(TelemetryField::METRIC_WIFI,
+                                                       "sync-wifi-retry-failed");
+                        } else {
+                            wifiConnected = true;
+                        }
                     }
 
 #if CONFIG_USE_BLE_SERVER_PROXY
