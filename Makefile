@@ -129,6 +129,10 @@ flash: build
 monitor: check_idf
 	idf.py $(IDF_PROFILE) monitor --no-reset --port $$(python3 scripts/port_tool.py find_port logging)
 
+.PHONY: monitor-devboard
+monitor-devboard: check_idf
+	idf.py $(IDF_PROFILE) monitor --no-reset --port $$(python3 scripts/port_tool.py find_port devboard)
+
 .PHONY: clean
 clean:
 	rm -fr build*
