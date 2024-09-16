@@ -65,8 +65,12 @@ auto GetFromStorage(uint32_t nvsHandle, const char *key, T &value) -> esp_err_t 
         err = nvs_get_i32(nvsHandle, key, reinterpret_cast<int32_t *>(&value));
     } else if constexpr (std::is_same_v<T, uint32_t>) {
         err = nvs_get_u32(nvsHandle, key, &value);
-    } else if constexpr (std::is_same_v<T, uint64_t> || std::is_same_v<T, BLEAddress>) {
+    } else if constexpr (std::is_same_v<T, uint64_t>) {
         err = nvs_get_u64(nvsHandle, key, reinterpret_cast<uint64_t *>(&value));
+    } else if constexpr (std::is_same_v<T, BLEAddress>) {
+        uint64_t addr;
+        err = nvs_get_u64(nvsHandle, key, &addr);
+        value = BLEAddress(addr);
     } else if constexpr (std::is_same_v<T, std::string>) {
         size_t len = 0;
         // NVS strings can be up to 4000 bytes long, so we need to get the length first
@@ -143,8 +147,10 @@ auto WriteToStorage(uint32_t nvsHandle, const char *key, T &value) -> esp_err_t 
         err = nvs_set_i32(nvsHandle, key, value);
     } else if constexpr (std::is_same_v<T, uint32_t>) {
         err = nvs_set_u32(nvsHandle, key, value);
-    } else if constexpr (std::is_same_v<T, uint64_t> || std::is_same_v<T, BLEAddress>) {
+    } else if constexpr (std::is_same_v<T, uint64_t>) {
         err = nvs_set_u64(nvsHandle, key, value);
+    } else if constexpr (std::is_same_v<T, BLEAddress>) {
+        err = nvs_set_u64(nvsHandle, key, static_cast<uint64_t>(value));
     } else if constexpr (std::is_same_v<T, std::string>) {
         err = nvs_set_str(nvsHandle, key, value.c_str());
     } else {
