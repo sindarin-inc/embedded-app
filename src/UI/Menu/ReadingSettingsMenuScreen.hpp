@@ -25,6 +25,23 @@ public:
 
     void render(DisplaySystem &display) override;
 
+    void turnOnAutoPilot() {
+        rendererView_.setAutopilot(true);
+        setFirstLoad();
+    }
+
+    void turnOffAutoPilot() {
+        rendererView_.resetRenderer();
+        rendererView_.setAutopilot(false);
+        setFirstLoad();
+    }
+
+    // When they press back, we need to stop the animation timer and reset the renderer
+    void leaveMenu() {
+        rendererView_.resetRenderer();
+        xTimerStop(DisplaySystem::animationTimer, 0);
+    }
+
 private:
     NewMenuView menuView_;
     ArrowLabelView backLabelView_;

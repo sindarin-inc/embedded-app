@@ -8,9 +8,7 @@ NewMenuView::NewMenuView(DisplaySystem &display)
       indicatorWidth(std::max(5, std::min(display.width(), display.height()) / 51)),
       indicatorPadding(indicatorWidth), pagingIndicatorWidth(indicatorWidth),
       pagingIndicatorPadding(2 * indicatorWidth), pagingIndicatorView_(display),
-      indicatorView_(display, 0) {
-    indicatorView_.fillColor = display.fg;
-}
+      indicatorView_(display, 0) {}
 
 void NewMenuView::addMenuItem(const std::shared_ptr<NewMenuItem> &menuItem) {
     menuItems_.push_back(menuItem);

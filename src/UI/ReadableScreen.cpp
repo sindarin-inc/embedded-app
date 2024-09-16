@@ -364,15 +364,18 @@ void ReadableScreen::render(DisplaySystem &display) {
         atEnd_ = checkAtEnd();
 
         // If the line is blank, we want to skip it. Also, skip multiple newlines in a row.
-        while ((renderer_.getLengthOfLine(speedLinesToSkip_) == 1) &&
+        while ((renderer_.getLengthOfLine(speedLinesToSkip_) == 0) &&
                speedLinesToSkip_ < renderer_.getNumRenderedLines()) {
             speedLinesToSkip_++;
         }
 
         // Only if we didn't end on a newline. Othwerise wait for next render to turn page.
         if (speedLinesToSkip_ != renderer_.getNumRenderedLines()) {
-            nextInterval_ = pageSpeed_ * renderer_.getLengthOfLine(speedLinesToSkip_) /
-                            renderer_.getTotalLengthOfLines();
+            auto totalLength = renderer_.getTotalLengthOfLines();
+            nextInterval_ =
+                (totalLength != 0)
+                    ? pageSpeed_ * renderer_.getLengthOfLine(speedLinesToSkip_) / totalLength
+                    : 0;
             if (nextInterval_ == 0) {
                 nextInterval_ = 1;
             }
