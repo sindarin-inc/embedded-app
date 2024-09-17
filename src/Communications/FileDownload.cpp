@@ -17,7 +17,9 @@
 #include "sindarin-debug.h"
 
 // Saves us a little RAM at the expense of some download performance
-#define CONFIG_FILEDOWNLOAD_DISK_WRITE_NO_TASK 1
+// NOTE: Running the disk write on a separate core from BLE seems to potentially trigger the
+// btdm_controller_task WDT issues. Test this thoroughly with BLE sync if enabling.
+#define CONFIG_FILEDOWNLOAD_DISK_WRITE_NO_TASK 0
 
 auto CreateClient(const std::string &url, bool useBle, const std::shared_ptr<CancelFlag> &cancel)
     -> std::shared_ptr<HttpClient> {
