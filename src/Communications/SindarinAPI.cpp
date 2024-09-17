@@ -149,7 +149,7 @@ auto SindarinAPI::checkSync(const std::string &url, CheckSyncRequest &req, Check
 
 auto SindarinAPI::checkFirmware(FirmwareResponse *resp) -> int {
     auto client = createClient(StringFormat("%s/firmware/", baseUrl_.c_str()), "application/json",
-                               HTTP_METHOD_POST, false, nullptr);
+                               HTTP_METHOD_GET, false, nullptr);
 
     auto err = setAuth(client);
     if (err != ESP_OK) {
