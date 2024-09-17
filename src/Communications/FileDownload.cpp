@@ -317,7 +317,7 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry,
             return;
         }
         },
-        5000, 3, 1, "FDownload");
+        4200, 3, 1, "FDownload");
     if (!dispatched) {
         return ERR_ALLOCATION;
     }
@@ -331,7 +331,7 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry,
 #else
     // Having both the HTTP and the disk write tasks on core 1 seems to be the fastest
     // configuration, presumably since it allows the WiFi driver to have free reign over core 0
-    dispatched = DispatchQueue::dispatchOneOffSync(writer, 4000, 2, 1, "FWrite");
+    dispatched = DispatchQueue::dispatchOneOffSync(writer, 3000, 2, 1, "FWrite");
     if (!dispatched) {
         return ERR_ALLOCATION;
     }
