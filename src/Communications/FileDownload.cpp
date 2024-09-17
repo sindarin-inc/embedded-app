@@ -266,7 +266,8 @@ auto DownloadFileToPath(const char *url, FileSystem &fileSystem, Telemetry &tele
         return true;
     };
 
-    auto reader = [ringbuf](const std::shared_ptr<HttpClient> &client, int index, int contentLength) -> size_t {
+    auto reader = [ringbuf](const std::shared_ptr<HttpClient> &client, int index,
+                            int contentLength) -> size_t {
         DataBlock *block = nullptr;
         auto err = xRingbufferSendAcquire(ringbuf, reinterpret_cast<void **>(&block),
                                           sizeof(DataBlock), portMAX_DELAY);
@@ -340,7 +341,8 @@ auto DownloadFileToPath(const char *url, FileSystem &fileSystem, Telemetry &tele
     int httpCode;
     auto dispatched = DispatchQueue::dispatchOneOff(
         [url, openedConnection, reader, gzip, &httpCode, ringbuf, cancel, useBle, length]() {
-        httpCode = DownloadFileCommon(url, openedConnection, reader, cancel, useBle, length, nullptr, gzip);
+        httpCode = DownloadFileCommon(url, openedConnection, reader, cancel, useBle, length,
+                                      nullptr, gzip);
         DataBlock *block;
         auto err = xRingbufferSendAcquire(ringbuf, reinterpret_cast<void **>(&block),
                                           sizeof(DataBlock), portMAX_DELAY);
