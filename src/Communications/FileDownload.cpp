@@ -210,6 +210,9 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry,
     }
     defer { vRingbufferDelete(ringbuf); };
 
+    SemaphoreHandle_t writeCompleteSemaphore = xSemaphoreCreateBinary();
+    defer { vSemaphoreDelete(writeCompleteSemaphore); };
+
     // Open the file for writing
     auto file = fileSystem.open(fullPath, FILE_WRITE, true);
     if (!file) {
@@ -295,6 +298,14 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry,
         }
     };
 
+    // Spin up the disk writer task and wait for bytes in the queue
+    DispatchQueue::dispatchOneOff(
+        [writer, writeCompleteSemaphore]() {
+        writer();
+        xSemaphoreGive(writeCompleteSemaphore);
+        },
+        4000, 2, 1, "FWrite");
+
     // Spin up the downloader task
     int httpCode;
     auto dispatched = DispatchQueue::dispatchOneOff(
@@ -319,11 +330,8 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry,
         return ERR_ALLOCATION;
     }
 
-    // Bump up the current task's priority so we write a little faster
-    auto priority = uxTaskPriorityGet(nullptr);
-    vTaskPrioritySet(nullptr, 2);
-    writer();
-    vTaskPrioritySet(nullptr, priority);
+    // Wait for disk write to complete
+    xSemaphoreTake(writeCompleteSemaphore, portMAX_DELAY);
 
     file.close();
 
