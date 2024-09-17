@@ -205,9 +205,9 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry,
 
     // Create a ~4MB ring buffer for data transfer between download and write tasks. Round to the
     // nearest sizeof(DataBlock)
-    constexpr size_t maxRingbufSize = 1000000 / sizeof(DataBlock) * sizeof(DataBlock);
+    constexpr size_t maxRingbufSize = 4000000 / sizeof(DataBlock) * sizeof(DataBlock);
     auto ringbufSize =
-        std::min(maxRingbufSize, heap_caps_get_largest_free_block(MALLOC_CAP_SPIRAM));
+        std::min(maxRingbufSize, heap_caps_get_largest_free_block(MALLOC_CAP_SPIRAM) - 10000);
 
     log_d("Creating ring buffer of size %zu", ringbufSize);
 
