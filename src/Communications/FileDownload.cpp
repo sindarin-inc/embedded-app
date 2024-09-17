@@ -1,6 +1,7 @@
 #include "FileDownload.hpp"
 
 #include <esp_timer.h>
+#include <freertos/ringbuf.h>
 #include <utility>
 
 #include "Communications/SindarinAPI.hpp"
@@ -194,21 +195,21 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry,
     // fully fit in SPIRAM. We accomplish this by running the disk writing in a separate task
     // (thread) and passing data between the downloader and the file writer using a FreeRTOS queue.
 
-    // 1000 queue slots * 4096 bytes = 4096000 bytes. Any files bigger than this _might_ get their
-    // download delayed by disk write performance.
     struct DataBlock {
-        uint8_t *data;
-        int size;
+        uint8_t data[4096];
+        size_t size;
     };
-    constexpr int bufferSize = 4096;
-    HEAP_PROFILE_START(FileDownloadBuffer);
-    QueueHandle_t bufferQueue = xQueueCreate(1000, sizeof(DataBlock));
-    HEAP_PROFILE_END(FileDownloadBuffer);
-    if (bufferQueue == nullptr) {
-        log_e("xQueueCreate failed");
+
+    // Create a ~4MB ring buffer for data transfer between download and write tasks. Round to the
+    // nearest sizeof(DataBlock)
+    constexpr size_t ringbufSize = 40000000 * sizeof(DataBlock) / sizeof(DataBlock);
+    RingbufHandle_t ringbuf = xRingbufferCreate(ringbufSize, RINGBUF_TYPE_NOSPLIT);
+    if (ringbuf == NULL) {
+        log_e("Failed to create ring buffer");
         return ERR_ALLOCATION;
     }
-    defer { vQueueDelete(bufferQueue); };
+    defer { vRingbufferDelete(ringbuf); };
+
     SemaphoreHandle_t writeCompleteSemaphore = xSemaphoreCreateBinary();
     defer { vSemaphoreDelete(writeCompleteSemaphore); };
 
@@ -226,24 +227,26 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry,
         return true;
     };
 
-    auto reader = [bufferQueue](WiFiHttpClient &client, int index, int contentLength) -> size_t {
-        // NOTE: This gets free'd by the queue consumer. It only needs to be free'd here if we fail
-        // to write it to the queue
-        auto *data = static_cast<uint8_t *>(SpiRamMalloc(bufferSize));
-        if (data == nullptr) {
-            log_e("SpiRamMalloc(%d) failed", bufferSize);
+    auto reader = [ringbuf](WiFiHttpClient &client, int index, int contentLength) -> size_t {
+        DataBlock *block;
+        auto err = xRingbufferSendAcquire(ringbuf, reinterpret_cast<void **>(&block),
+                                          sizeof(DataBlock), pdMS_TO_TICKS(30000));
+        if (err != pdTRUE) {
+            log_e("Failed to acquire ring buffer slot");
             return 0;
         }
-        int bytesRead = client.read(reinterpret_cast<char *>(data), bufferSize);
+
+        int bytesRead = client.read(reinterpret_cast<char *>(block->data), sizeof(block->data));
         if (bytesRead <= 0) {
             log_w("client.read returned %d bytes", bytesRead);
-            SpiRamFree(data);
             return 0;
         }
-        DataBlock block = {data, bytesRead};
-        if (xQueueSend(bufferQueue, &block, portMAX_DELAY) != pdPASS) {
-            log_e("xQueueSend failed");
-            SpiRamFree(data);
+
+        block->size = bytesRead;
+
+        err = xRingbufferSendComplete(ringbuf, block);
+        if (err != pdTRUE) {
+            log_e("Failed to complete ring buffer send");
             return 0;
         }
         return bytesRead;
@@ -252,31 +255,35 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry,
     auto downloadStart = esp_timer_get_time();
 
     RateLimiter rl(5, 20, 10);
-    auto writer = [&file, bufferQueue, progressCallback, downloadStart, &fileLength,
-                   &rl]() -> void {
+    auto writer = [&file, ringbuf, progressCallback, downloadStart, &fileLength, &rl]() -> void {
         int written = 0;
 
         while (true) {
-            DataBlock block{};
-            if (xQueueReceive(bufferQueue, &block, portMAX_DELAY) != pdPASS) {
-                log_e("xQueueReceive failed");
-            }
+            size_t blockSize = 0;
+            DataBlock *block = reinterpret_cast<DataBlock *>(
+                xRingbufferReceive(ringbuf, &blockSize, portMAX_DELAY));
 
-            // log_d("Writing %d bytes %p", block.size, block.data);
+            if (block == nullptr || blockSize == 0) {
+                log_w("No data available, ending write.");
+                break;
+            }
 
             // This is the signal for EOF
-            if (block.data == nullptr) {
+            if (block->size == 0) {
                 progressCallback(100);
+                vRingbufferReturnItem(ringbuf, block);
                 break;
             }
 
-            auto bytesWritten = file.write(block.data, block.size); // Adjust size as needed
-            SpiRamFree(block.data);
-            if (bytesWritten != block.size) {
-                log_e("Failed to write %d bytes, wrote %zu", block.size, bytesWritten);
-                // We'll catch the failure at the filesize check at the end
+            auto bytesWritten = file.write(block->data, block->size);
+
+            if (bytesWritten != block->size) {
+                log_e("Failed to write %zu bytes, wrote %zu", block->size, bytesWritten);
+                vRingbufferReturnItem(ringbuf, block);
                 break;
             }
+
+            vRingbufferReturnItem(ringbuf, block);
 
             written += bytesWritten;
 
@@ -301,13 +308,17 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry,
     // Spin up the downloader task
     int httpCode;
     DispatchQueue::dispatchOneOff(
-        [url, openedConnection, reader, gzip, &httpCode, bufferQueue, cancel]() {
+        [url, openedConnection, reader, gzip, &httpCode, ringbuf, cancel]() {
         httpCode = DownloadFile(url, openedConnection, reader, cancel, nullptr, gzip);
-        // Once we get here the download is done, so we can signal the writer task to exit
-        DataBlock block = {nullptr, 0};
-        if (xQueueSend(bufferQueue, &block, portMAX_DELAY) != pdPASS) {
-            log_e("xQueueSend error");
+        DataBlock *block;
+        auto err = xRingbufferSendAcquire(ringbuf, reinterpret_cast<void **>(&block),
+                                          sizeof(DataBlock), pdMS_TO_TICKS(30000));
+        if (err != pdTRUE) {
+            log_e("Failed to acquire ring buffer slot");
+            return;
         }
+        block->size = 0;
+        xRingbufferSendComplete(ringbuf, block);
         },
         5000, 3, 1, "FDownload");
 
