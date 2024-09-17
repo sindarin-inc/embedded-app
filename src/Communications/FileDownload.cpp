@@ -201,8 +201,17 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry,
         int size;
     };
     constexpr int bufferSize = 4096;
+    constexpr int queueLen = 1000;
     HEAP_PROFILE_START(FileDownloadBuffer);
-    QueueHandle_t bufferQueue = xQueueCreate(1000, sizeof(DataBlock));
+
+    // Create queue in SPIRAM. This is janky IMO but it's what the ESP-IDF does:
+    // https://github.com/espressif/esp-idf/blob/release/v5.3/components/esp_wifi/esp32s3/esp_adapter.c#L129
+    void *queueStorage =
+        heap_caps_malloc(sizeof(StaticQueue_t) + (1000 * sizeof(DataBlock)), MALLOC_CAP_SPIRAM);
+    QueueHandle_t bufferQueue = xQueueCreateStatic(queueLen, sizeof(DataBlock),
+                                                   (uint8_t *)queueStorage + sizeof(StaticQueue_t),
+                                                   (StaticQueue_t *)queueStorage);
+
     HEAP_PROFILE_END(FileDownloadBuffer);
     if (bufferQueue == nullptr) {
         log_e("xQueueCreate failed");
