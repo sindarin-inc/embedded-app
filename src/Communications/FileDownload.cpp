@@ -204,8 +204,8 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry,
     // nearest sizeof(DataBlock)
     constexpr size_t ringbufSize = 40000000 * sizeof(DataBlock) / sizeof(DataBlock);
     RingbufHandle_t ringbuf = xRingbufferCreate(ringbufSize, RINGBUF_TYPE_NOSPLIT);
-    if (ringbuf == NULL) {
-        log_e("Failed to create ring buffer");
+    if (ringbuf == nullptr) {
+        log_e("xRingbufferCreate failed");
         return ERR_ALLOCATION;
     }
     defer { vRingbufferDelete(ringbuf); };
@@ -228,10 +228,10 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry,
     };
 
     auto reader = [ringbuf](WiFiHttpClient &client, int index, int contentLength) -> size_t {
-        DataBlock *block;
+        DataBlock *block = nullptr;
         auto err = xRingbufferSendAcquire(ringbuf, reinterpret_cast<void **>(&block),
-                                          sizeof(DataBlock), pdMS_TO_TICKS(30000));
-        if (err != pdTRUE) {
+                                          sizeof(DataBlock), portMAX_DELAY);
+        if (err != pdTRUE || block == nullptr) {
             log_e("Failed to acquire ring buffer slot");
             return 0;
         }
@@ -260,11 +260,11 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry,
 
         while (true) {
             size_t blockSize = 0;
-            DataBlock *block = reinterpret_cast<DataBlock *>(
+            auto *block = reinterpret_cast<DataBlock *>(
                 xRingbufferReceive(ringbuf, &blockSize, portMAX_DELAY));
 
             if (block == nullptr || blockSize == 0) {
-                log_w("No data available, ending write.");
+                log_e("xRingbufferReceive failed");
                 break;
             }
 
@@ -312,13 +312,17 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry,
         httpCode = DownloadFile(url, openedConnection, reader, cancel, nullptr, gzip);
         DataBlock *block;
         auto err = xRingbufferSendAcquire(ringbuf, reinterpret_cast<void **>(&block),
-                                          sizeof(DataBlock), pdMS_TO_TICKS(30000));
+                                          sizeof(DataBlock), portMAX_DELAY);
         if (err != pdTRUE) {
-            log_e("Failed to acquire ring buffer slot");
+            log_e("xRingbufferSendAcquire error");
             return;
         }
         block->size = 0;
-        xRingbufferSendComplete(ringbuf, block);
+        err = xRingbufferSendComplete(ringbuf, block);
+        if (err != pdTRUE) {
+            log_e("xRingbufferSendComplete error");
+            return;
+        }
         },
         5000, 3, 1, "FDownload");
 
