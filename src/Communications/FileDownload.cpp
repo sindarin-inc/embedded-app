@@ -296,7 +296,7 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry,
 
     // Spin up the downloader task
     int httpCode;
-    DispatchQueue::dispatchOneOff(
+    auto dispatched = DispatchQueue::dispatchOneOff(
         [url, openedConnection, reader, gzip, &httpCode, ringbuf, cancel]() {
         httpCode = DownloadFile(url, openedConnection, reader, cancel, nullptr, gzip);
         DataBlock *block;
@@ -314,6 +314,9 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry,
         }
         },
         5000, 3, 1, "FDownload");
+    if (!dispatched) {
+        return ERR_ALLOCATION;
+    }
 
     // Bump up the current task's priority so we write a little faster
     auto priority = uxTaskPriorityGet(nullptr);

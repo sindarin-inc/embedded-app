@@ -150,12 +150,12 @@ void DispatchQueue::dispatchThreadHandler() {
     vTaskDelete(nullptr);
 }
 
-void DispatchQueue::dispatchOneOff(const fp_t &op, size_t threadStack, UBaseType_t priority,
-                                   BaseType_t core, const char *name) {
+auto DispatchQueue::dispatchOneOff(const fp_t &op, size_t threadStack, UBaseType_t priority,
+                                   BaseType_t core, const char *name) -> bool {
     auto work = new WorkItem{.op = op, .quit = false};
     char nameBuf[16];
     SafeSnprintf(nameBuf, sizeof(nameBuf), "D:%s", name);
-    xTaskCreatePinnedToCore(
+    auto res = xTaskCreatePinnedToCore(
         [](void *param) {
         auto work = reinterpret_cast<WorkItem *>(param);
         work->op();
@@ -164,6 +164,12 @@ void DispatchQueue::dispatchOneOff(const fp_t &op, size_t threadStack, UBaseType
         vTaskDelete(nullptr);
         },
         nameBuf, threadStack, work, priority, nullptr, core);
+    if (res != pdPASS) {
+        log_e("xTaskCreatePinnedToCore failed (%s)", name);
+        delete work;
+        return false;
+    }
+    return true;
 }
 
 DispatchQueue *core0BackgroundQueue = nullptr;
