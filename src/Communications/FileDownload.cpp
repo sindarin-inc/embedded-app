@@ -216,6 +216,7 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry,
         log_e("Failed to open file %s for writing", fullPath.c_str());
         return ERR_FILE_OPEN;
     }
+    defer { file.close(); };
 
     int fileLength = 0;
     auto openedConnection = [&fileLength](int httpCode, int contentLength) -> bool {
