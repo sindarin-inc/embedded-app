@@ -117,7 +117,9 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     HEAP_PROFILE_START(rootUIContent);
     auto &readables = localStore.books();
     auto &articles = localStore.articles();
-    auto noContent = readables.empty() && articles.empty();
+    auto noBooks = readables.empty();
+    auto noArticles = articles.empty();
+    auto noContent = noBooks && noArticles;
     // If there is no content, add some default content
     if (noContent) {
         log_i("No content found, adding default readables to menu");
@@ -374,7 +376,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     };
 
     // If there are no books, show the Sync Content item in the books tab.
-    if (noContent) {
+    if (noBooks) {
         booksMenu->addMenuItem(makeContentSyncMenuItem("Sync Content"));
     }
 

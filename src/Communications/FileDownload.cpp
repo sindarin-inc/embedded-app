@@ -2,6 +2,7 @@
 
 #include <esp_heap_caps.h>
 #include <esp_timer.h>
+#include <freertos/ringbuf.h>
 #include <utility>
 
 #if CONFIG_USE_BLE_SERVER_PROXY
@@ -14,6 +15,9 @@
 #include "Misc/RateLimiter.hpp"
 #include "Misc/SpiramAllocator.hpp"
 #include "sindarin-debug.h"
+
+// Saves us a little RAM at the expense of some download performance
+#define CONFIG_FILEDOWNLOAD_DISK_WRITE_NO_TASK 1
 
 auto CreateClient(const std::string &url, bool useBle, const std::shared_ptr<CancelFlag> &cancel)
     -> std::shared_ptr<HttpClient> {
@@ -221,39 +225,31 @@ auto DownloadFileToPath(const char *url, FileSystem &fileSystem, Telemetry &tele
         log_d("Deleted %s", path);
     }
 
-    // Disk writes are relatively slow (~40KB/s) while network downloads may be 10x faster. To
+    // Disk writes are relatively slow (~40KB/s) while network downloads may be up to 10x faster. To
     // minimize the chances of a network hiccup breaking the download, we want to download as fast
     // as possible to SPIRAM but we still want to be able to download large files that _may_ not
     // fully fit in SPIRAM. We accomplish this by running the disk writing in a separate task
-    // (thread) and passing data between the downloader and the file writer using a FreeRTOS queue.
+    // (thread) and passing data between the downloader and the file writer using a ring buffer.
 
-    // 1000 queue slots * 4096 bytes = 4096000 bytes. Any files bigger than this _might_ get their
-    // download delayed by disk write performance.
     struct DataBlock {
-        uint8_t *data;
-        int size;
+        uint8_t data[4096];
+        size_t size;
     };
-    constexpr int bufferSize = 4096;
-    HEAP_PROFILE_START(FileDownloadBuffer);
 
-    // TODO: A ring buffer would probably be more appropriate here
-    auto queueSize =
-        std::min(static_cast<size_t>(1000),
-                 (heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL) - 100) / sizeof(DataBlock));
-    if (queueSize < 1000) {
-        log_w("RAM is low. Largest free block is only %zu bytes, queueSize=%zu",
-              heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL), queueSize);
-    }
-    QueueHandle_t bufferQueue = xQueueCreate(queueSize, sizeof(DataBlock));
+    // Create a ~4MB ring buffer for data transfer between download and write tasks. Round to the
+    // nearest sizeof(DataBlock)
+    constexpr size_t maxRingbufSize = 4000000 / sizeof(DataBlock) * sizeof(DataBlock);
+    auto ringbufSize =
+        std::min(maxRingbufSize, heap_caps_get_largest_free_block(MALLOC_CAP_SPIRAM) - 10000);
 
-    HEAP_PROFILE_END(FileDownloadBuffer);
-    if (bufferQueue == nullptr) {
-        log_e("xQueueCreate failed");
+    log_d("Creating ring buffer of size %zu", ringbufSize);
+
+    RingbufHandle_t ringbuf = xRingbufferCreate(ringbufSize, RINGBUF_TYPE_NOSPLIT);
+    if (ringbuf == nullptr) {
+        log_e("xRingbufferCreate failed");
         return ERR_ALLOCATION;
     }
-    defer { vQueueDelete(bufferQueue); };
-    SemaphoreHandle_t writeCompleteSemaphore = xSemaphoreCreateBinary();
-    defer { vSemaphoreDelete(writeCompleteSemaphore); };
+    defer { vRingbufferDelete(ringbuf); };
 
     // Open the file for writing
     auto file = fileSystem.open(fullPath, FILE_WRITE, true);
@@ -261,6 +257,7 @@ auto DownloadFileToPath(const char *url, FileSystem &fileSystem, Telemetry &tele
         log_e("Failed to open file %s for writing", fullPath.c_str());
         return ERR_FILE_OPEN;
     }
+    defer { file.close(); };
 
     int fileLength = 0;
     auto openedConnection = [&fileLength](int httpCode, int contentLength) -> bool {
@@ -269,25 +266,26 @@ auto DownloadFileToPath(const char *url, FileSystem &fileSystem, Telemetry &tele
         return true;
     };
 
-    auto reader = [bufferQueue](const std::shared_ptr<HttpClient> &client, int index,
-                                int contentLength) -> size_t {
-        // NOTE: This gets free'd by the queue consumer. It only needs to be free'd here if we fail
-        // to write it to the queue
-        auto *data = static_cast<uint8_t *>(SpiRamMalloc(bufferSize));
-        if (data == nullptr) {
-            log_e("SpiRamMalloc(%d) failed", bufferSize);
+    auto reader = [ringbuf](const std::shared_ptr<HttpClient> &client, int index, int contentLength) -> size_t {
+        DataBlock *block = nullptr;
+        auto err = xRingbufferSendAcquire(ringbuf, reinterpret_cast<void **>(&block),
+                                          sizeof(DataBlock), portMAX_DELAY);
+        if (err != pdTRUE || block == nullptr) {
+            log_e("Failed to acquire ring buffer slot");
             return 0;
         }
-        int bytesRead = client->read(reinterpret_cast<char *>(data), bufferSize);
+
+        int bytesRead = client->read(reinterpret_cast<char *>(block->data), sizeof(block->data));
         if (bytesRead <= 0) {
             log_w("client.read returned %d bytes", bytesRead);
-            SpiRamFree(data);
             return 0;
         }
-        DataBlock block = {data, bytesRead};
-        if (xQueueSend(bufferQueue, &block, portMAX_DELAY) != pdPASS) {
-            log_e("xQueueSend failed");
-            SpiRamFree(data);
+
+        block->size = bytesRead;
+
+        err = xRingbufferSendComplete(ringbuf, block);
+        if (err != pdTRUE) {
+            log_e("Failed to complete ring buffer send");
             return 0;
         }
         return bytesRead;
@@ -296,31 +294,35 @@ auto DownloadFileToPath(const char *url, FileSystem &fileSystem, Telemetry &tele
     auto downloadStart = esp_timer_get_time();
 
     RateLimiter rl(5, 20, 10);
-    auto writer = [&file, bufferQueue, progressCallback, downloadStart, &fileLength,
-                   &rl]() -> void {
+    auto writer = [&file, ringbuf, progressCallback, downloadStart, &fileLength, &rl]() -> void {
         int written = 0;
 
         while (true) {
-            DataBlock block{};
-            if (xQueueReceive(bufferQueue, &block, portMAX_DELAY) != pdPASS) {
-                log_e("xQueueReceive failed");
-            }
+            size_t blockSize = 0;
+            auto *block = reinterpret_cast<DataBlock *>(
+                xRingbufferReceive(ringbuf, &blockSize, portMAX_DELAY));
 
-            // log_d("Writing %d bytes %p", block.size, block.data);
+            if (block == nullptr || blockSize == 0) {
+                log_e("xRingbufferReceive failed");
+                break;
+            }
 
             // This is the signal for EOF
-            if (block.data == nullptr) {
+            if (block->size == 0) {
                 progressCallback(100);
+                vRingbufferReturnItem(ringbuf, block);
                 break;
             }
 
-            auto bytesWritten = file.write(block.data, block.size); // Adjust size as needed
-            SpiRamFree(block.data);
-            if (bytesWritten != block.size) {
-                log_e("Failed to write %d bytes, wrote %zu", block.size, bytesWritten);
-                // We'll catch the failure at the filesize check at the end
+            auto bytesWritten = file.write(block->data, block->size);
+
+            if (bytesWritten != block->size) {
+                log_e("Failed to write %zu bytes, wrote %zu", block->size, bytesWritten);
+                vRingbufferReturnItem(ringbuf, block);
                 break;
             }
+
+            vRingbufferReturnItem(ringbuf, block);
 
             written += bytesWritten;
 
@@ -334,30 +336,44 @@ auto DownloadFileToPath(const char *url, FileSystem &fileSystem, Telemetry &tele
         }
     };
 
-    // Spin up the disk writer task and wait for bytes in the queue
-    DispatchQueue::dispatchOneOff(
-        [writer, writeCompleteSemaphore]() {
-        writer();
-        xSemaphoreGive(writeCompleteSemaphore);
-        },
-        4000, 2, 1, "FWrite");
-
     // Spin up the downloader task
     int httpCode;
-    DispatchQueue::dispatchOneOff(
-        [url, openedConnection, reader, gzip, &httpCode, bufferQueue, cancel, useBle, length]() {
-        httpCode = DownloadFileCommon(url, openedConnection, reader, cancel, useBle, length,
-                                      nullptr, gzip);
-        // Once we get here the download is done, so we can signal the writer task to exit
-        DataBlock block = {nullptr, 0};
-        if (xQueueSend(bufferQueue, &block, portMAX_DELAY) != pdPASS) {
-            log_e("xQueueSend error");
+    auto dispatched = DispatchQueue::dispatchOneOff(
+        [url, openedConnection, reader, gzip, &httpCode, ringbuf, cancel, useBle, length]() {
+        httpCode = DownloadFileCommon(url, openedConnection, reader, cancel, useBle, length, nullptr, gzip);
+        DataBlock *block;
+        auto err = xRingbufferSendAcquire(ringbuf, reinterpret_cast<void **>(&block),
+                                          sizeof(DataBlock), portMAX_DELAY);
+        if (err != pdTRUE) {
+            log_e("xRingbufferSendAcquire error");
+            return;
+        }
+        block->size = 0;
+        err = xRingbufferSendComplete(ringbuf, block);
+        if (err != pdTRUE) {
+            log_e("xRingbufferSendComplete error");
+            return;
         }
         },
-        5000, 3, 1, "FDownload");
+        4200, 3, 1, "FDownload");
+    if (!dispatched) {
+        return ERR_ALLOCATION;
+    }
 
-    // Wait for disk write to complete
-    xSemaphoreTake(writeCompleteSemaphore, portMAX_DELAY);
+#if CONFIG_FILEDOWNLOAD_DISK_WRITE_NO_TASK
+    // This is ~5KB/s slower but saves us the RAM overhead of creating a new task
+    auto priority = uxTaskPriorityGet(nullptr);
+    vTaskPrioritySet(nullptr, 2);
+    writer();
+    vTaskPrioritySet(nullptr, priority);
+#else
+    // Having both the HTTP and the disk write tasks on core 1 seems to be the fastest
+    // configuration, presumably since it allows the WiFi driver to have free reign over core 0
+    dispatched = DispatchQueue::dispatchOneOffSync(writer, 3000, 2, 1, "FWrite");
+    if (!dispatched) {
+        return ERR_ALLOCATION;
+    }
+#endif
 
     file.close();
 

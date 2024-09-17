@@ -55,11 +55,11 @@ sim8: sim8-build
 	./lib/Simulator/build8/simulator
 
 .PHONY: lldb
-lldb: sim
+lldb: sim-build
 	lldb lib/Simulator/build/simulator
 
 .PHONY: lldb8
-lldb8: sim8
+lldb8: sim8-build
 	lldb lib/Simulator/build8/simulator
 
 .PHONY: test-build

@@ -2,6 +2,7 @@
 
 #include <cassert>
 
+#include "Misc/Defer.hpp"
 #include "Misc/Platform.hpp"
 #include "Misc/StringUtil.hpp"
 
@@ -102,6 +103,16 @@ void DispatchQueue::dispatch(fp_t &&op) {
     }
 }
 
+void DispatchQueue::dispatchSync(fp_t &&op) {
+    SemaphoreHandle_t completeSemaphore = xSemaphoreCreateBinary();
+    defer { vSemaphoreDelete(completeSemaphore); };
+    dispatch([&op, completeSemaphore]() {
+        op();
+        xSemaphoreGive(completeSemaphore);
+    });
+    xSemaphoreTake(completeSemaphore, portMAX_DELAY);
+}
+
 void DispatchQueue::dispatchFromISR(const fp_t &op) {
     if (shutdownType_ == ShutdownType::None) {
         auto work = new WorkItem{.op = op, .quit = false};
@@ -150,12 +161,12 @@ void DispatchQueue::dispatchThreadHandler() {
     vTaskDelete(nullptr);
 }
 
-void DispatchQueue::dispatchOneOff(const fp_t &op, size_t threadStack, UBaseType_t priority,
-                                   BaseType_t core, const char *name) {
+auto DispatchQueue::dispatchOneOff(const fp_t &op, size_t threadStack, UBaseType_t priority,
+                                   BaseType_t core, const char *name) -> bool {
     auto work = new WorkItem{.op = op, .quit = false};
     char nameBuf[16];
     SafeSnprintf(nameBuf, sizeof(nameBuf), "D:%s", name);
-    xTaskCreatePinnedToCore(
+    auto res = xTaskCreatePinnedToCore(
         [](void *param) {
         auto work = reinterpret_cast<WorkItem *>(param);
         work->op();
@@ -164,6 +175,29 @@ void DispatchQueue::dispatchOneOff(const fp_t &op, size_t threadStack, UBaseType
         vTaskDelete(nullptr);
         },
         nameBuf, threadStack, work, priority, nullptr, core);
+    if (res != pdPASS) {
+        log_e("xTaskCreatePinnedToCore failed (%s)", name);
+        delete work;
+        return false;
+    }
+    return true;
+}
+
+auto DispatchQueue::dispatchOneOffSync(const fp_t &op, size_t threadStack, UBaseType_t priority,
+                                       BaseType_t core, const char *name) -> bool {
+    SemaphoreHandle_t completeSemaphore = xSemaphoreCreateBinary();
+    defer { vSemaphoreDelete(completeSemaphore); };
+    auto dispatched = dispatchOneOff(
+        [&op, completeSemaphore]() {
+        op();
+        xSemaphoreGive(completeSemaphore);
+        },
+        threadStack, priority, core, name);
+    if (!dispatched) {
+        return false;
+    }
+    xSemaphoreTake(completeSemaphore, portMAX_DELAY);
+    return true;
 }
 
 DispatchQueue *core0BackgroundQueue = nullptr;
