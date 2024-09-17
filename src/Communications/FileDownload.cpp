@@ -12,6 +12,9 @@
 #include "Misc/SpiramAllocator.hpp"
 #include "sindarin-debug.h"
 
+// Saves us a little RAM at the expense of some download performance
+#define CONFIG_FILEDOWNLOAD_DISK_WRITE_NO_TASK 1
+
 auto DownloadFile(
     const char *url, const std::function<bool(int httpCode, int contentLength)> &openedConnection,
     const std::function<size_t(WiFiHttpClient &client, int index, int contentLength)> &readWrite,
@@ -210,9 +213,6 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry,
     }
     defer { vRingbufferDelete(ringbuf); };
 
-    SemaphoreHandle_t writeCompleteSemaphore = xSemaphoreCreateBinary();
-    defer { vSemaphoreDelete(writeCompleteSemaphore); };
-
     // Open the file for writing
     auto file = fileSystem.open(fullPath, FILE_WRITE, true);
     if (!file) {
@@ -298,14 +298,6 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry,
         }
     };
 
-    // Spin up the disk writer task and wait for bytes in the queue
-    DispatchQueue::dispatchOneOff(
-        [writer, writeCompleteSemaphore]() {
-        writer();
-        xSemaphoreGive(writeCompleteSemaphore);
-        },
-        4000, 2, 1, "FWrite");
-
     // Spin up the downloader task
     int httpCode;
     auto dispatched = DispatchQueue::dispatchOneOff(
@@ -330,8 +322,30 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry,
         return ERR_ALLOCATION;
     }
 
+#if CONFIG_FILEDOWNLOAD_DISK_WRITE_NO_TASK
+    // This is ~5KB/s slower but saves us the RAM overhead of creating a new task
+    auto priority = uxTaskPriorityGet(nullptr);
+    vTaskPrioritySet(nullptr, 2);
+    writer();
+    vTaskPrioritySet(nullptr, priority);
+#else
+    // Spin up the disk writer task and wait for bytes in the queue
+    SemaphoreHandle_t writeCompleteSemaphore = xSemaphoreCreateBinary();
+    defer { vSemaphoreDelete(writeCompleteSemaphore); };
+    // Having both the HTTP and the disk write tasks on core 1 seems to be the fastest
+    // configuration, presumably since it allows the WiFi driver to have free reign over core 0
+    dispatched = DispatchQueue::dispatchOneOff(
+        [writer, writeCompleteSemaphore]() {
+        writer();
+        xSemaphoreGive(writeCompleteSemaphore);
+        },
+        4000, 2, 1, "FWrite");
+    if (!dispatched) {
+        return ERR_ALLOCATION;
+    }
     // Wait for disk write to complete
     xSemaphoreTake(writeCompleteSemaphore, portMAX_DELAY);
+#endif
 
     file.close();
 
