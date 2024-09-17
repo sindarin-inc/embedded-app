@@ -192,11 +192,11 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry,
         log_d("Deleted %s", path);
     }
 
-    // Disk writes are relatively slow (~40KB/s) while network downloads may be 10x faster. To
+    // Disk writes are relatively slow (~40KB/s) while network downloads may be up to 10x faster. To
     // minimize the chances of a network hiccup breaking the download, we want to download as fast
     // as possible to SPIRAM but we still want to be able to download large files that _may_ not
     // fully fit in SPIRAM. We accomplish this by running the disk writing in a separate task
-    // (thread) and passing data between the downloader and the file writer using a FreeRTOS queue.
+    // (thread) and passing data between the downloader and the file writer using a ring buffer.
 
     struct DataBlock {
         uint8_t data[4096];
@@ -205,7 +205,12 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry,
 
     // Create a ~4MB ring buffer for data transfer between download and write tasks. Round to the
     // nearest sizeof(DataBlock)
-    constexpr size_t ringbufSize = 40000000 * sizeof(DataBlock) / sizeof(DataBlock);
+    constexpr size_t maxRingbufSize = 1000000 / sizeof(DataBlock) * sizeof(DataBlock);
+    auto ringbufSize =
+        std::min(maxRingbufSize, heap_caps_get_largest_free_block(MALLOC_CAP_SPIRAM));
+
+    log_d("Creating ring buffer of size %zu", ringbufSize);
+
     RingbufHandle_t ringbuf = xRingbufferCreate(ringbufSize, RINGBUF_TYPE_NOSPLIT);
     if (ringbuf == nullptr) {
         log_e("xRingbufferCreate failed");
