@@ -1,7 +1,6 @@
 #include "GenericSettingsMenuScreen.hpp"
 
 #include "Renderers/Renderer.hpp"
-#include "UI/MsgPopup.hpp"
 
 GenericSettingsMenuScreen::GenericSettingsMenuScreen(DisplaySystem &display,
                                                      const std::string &backTitle)
@@ -58,19 +57,6 @@ auto GenericSettingsMenuScreen::layout(LayoutContext &context, Size size) -> Siz
     return size;
 }
 
-void GenericSettingsMenuScreen::showTemporaryMessage(DisplaySystem &display,
-                                                     const std::string &message, int duration,
-                                                     bool rerenderAfter) {
-    auto *popup = new MsgPopup(display, message);
-    popup->render(display);
-    delete popup;
-    if (rerenderAfter) {
-        Delay(duration);
-        setNeedsRerender();
-        this->render(display);
-    }
-}
-
 void GenericSettingsMenuScreen::drawInRect(Rect rect) {
     backLabelView_.draw();
     menuView_.draw();
@@ -93,7 +79,7 @@ void GenericSettingsMenuScreen::render(DisplaySystem &display) {
         firstLoad_ = false;
     }
 
-    menuView_.drawIndicatorAndFastElements();
+    menuView_.drawFastElements();
 
     display.updateDisplay(DisplaySystem::UpdateType::FAST_INDICATOR);
 }

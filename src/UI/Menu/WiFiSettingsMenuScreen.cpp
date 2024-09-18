@@ -79,19 +79,6 @@ auto WiFiSettingsMenuScreen::layout(LayoutContext &context, Size size) -> Size {
     return size;
 }
 
-void WiFiSettingsMenuScreen::showTemporaryMessage(DisplaySystem &display,
-                                                  const std::string &message, int duration,
-                                                  bool rerenderAfter) {
-    auto *popup = new MsgPopup(display, message);
-    popup->render(display);
-    delete popup;
-    if (rerenderAfter) {
-        Delay(duration);
-        setNeedsRerender();
-        this->render(display);
-    }
-}
-
 void WiFiSettingsMenuScreen::drawInRect(Rect rect) {
     backLabelView_.draw();
     menuView_.draw();
@@ -116,6 +103,6 @@ void WiFiSettingsMenuScreen::render(DisplaySystem &display) {
         firstLoad_ = false;
     }
 
-    menuView_.drawIndicatorAndFastElements();
+    menuView_.drawFastElements();
     display.updateDisplay(DisplaySystem::UpdateType::FAST_INDICATOR);
 }

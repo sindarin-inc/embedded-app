@@ -12,10 +12,11 @@
 #include "Storage/FileSystem.hpp"
 #include "Storage/LocalStore.hpp"
 #include "Storage/PreferencesStore.hpp"
-#include "UI/ContainerScreen.hpp"
-#include "UI/MenuScreen.hpp"
+#include "UI/Menu/GenericSettingsMenuScreen.hpp"
+#include "UI/Screen.hpp"
+#include "UI/ScreenStack.hpp"
 
-class RootUI : public ContainerScreen {
+class RootUI : public Screen {
 public:
     RootUI(PreferencesStore &prefs, PowerManager &power, Telemetry &telemetry) noexcept
         : prefs_(prefs), power_(power), telemetry_(telemetry) {}
@@ -23,10 +24,29 @@ public:
 
     void setup(DisplaySystem *display, LocalStore &localStore, FileSystem &fileSystem,
                LightingController &lightingController);
-    void handleBrowse(FileSystem &fileSystem, const std::shared_ptr<MenuScreen> &fsMenu,
+    void handleBrowse(FileSystem &fileSystem,
+                      const std::shared_ptr<GenericSettingsMenuScreen> &fsMenu,
                       const std::string &path = "/");
 
+    void clearNeedsRerender() override;
+
+    void setCurrentScreen(std::shared_ptr<Screen> screen);
+
+    auto needsRerender() -> bool override;
+    void render(DisplaySystem &display) override;
+    void processCommand(RemoteCommand command) override;
+    auto getCurrentScreen() -> std::shared_ptr<Screen> {
+        if (screenStack_.empty()) {
+            return nullptr;
+        }
+        return screenStack_.top();
+    }
+
+    // auto setSelfShared(std::shared_ptr<Screen> rootUIThis) { thisShared_ = rootUIThis; }
+
 protected:
+    ScreenStack screenStack_;
+    //  std::shared_ptr<Screen> thisShared_{};
     std::string itemErrorMsg_ =
         "INTERNAL ERROR!\nThe item you tried to access\ncannot be read or "
         "found.\nPlease contact support.\n\nPress\u00a0\u00a0\ue000\u00a0\u00a0to return";

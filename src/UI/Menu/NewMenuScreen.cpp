@@ -70,6 +70,6 @@ void NewMenuScreen::render(DisplaySystem &display) {
         firstLoad_ = false;
     }
 
-    menuView_.drawIndicatorAndFastElements();
+    menuView_.drawFastElements();
     display.updateDisplay(DisplaySystem::UpdateType::FAST_INDICATOR);
 }

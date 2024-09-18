@@ -33,7 +33,10 @@ public:
     void processCommand(RemoteCommand command) override;
 
     void setPlacemark();
-    void setFirstLoad() { loadedChapterId_ = ""; }
+    void setFirstLoad() override {
+        Screen::setFirstLoad();
+        loadedChapterId_ = "";
+    }
     void setPlaceInReadable(std::shared_ptr<EPubPlace> placeInReadable);
 
 protected:

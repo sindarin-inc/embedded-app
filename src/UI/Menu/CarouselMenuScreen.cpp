@@ -43,17 +43,6 @@ void CarouselMenuScreen::populateMenuView() {
     titleView_.setText(currentTabTitle_);
 }
 
-void CarouselMenuScreen::showTemporaryMessage(DisplaySystem &display, const std::string &message,
-                                              int duration, bool rerenderAfter) {
-    MsgPopup popup(display, message);
-    popup.render(display);
-    if (rerenderAfter) {
-        Delay(duration);
-        setNeedsRerender();
-        this->render(display);
-    }
-}
-
 void CarouselMenuScreen::processCommand(RemoteCommand command) {
     switch (command) {
     case RemoteCommand::UP:

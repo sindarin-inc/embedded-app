@@ -7,7 +7,6 @@
 #include "IconView.hpp"
 #include "Misc/Battery.hpp"
 #include "Misc/SolClock.hpp"
-#include "Misc/Style.hpp"
 #include "SingleLineTextView.hpp"
 #include "UI/Bitmaps/Battery_0.hpp"
 #include "UI/Bitmaps/Battery_10.hpp"

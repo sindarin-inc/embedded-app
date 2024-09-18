@@ -5,7 +5,6 @@
 #include <vector>
 
 #include "EinkView.hpp"
-#include "Misc/Style.hpp"
 #include "SingleLineTextView.hpp"
 #include "UI/Fonts/Fonts.hpp"
 

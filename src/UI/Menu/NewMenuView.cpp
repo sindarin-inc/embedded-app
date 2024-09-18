@@ -4,6 +4,7 @@
 #include "NewMenuItemBookView.hpp"
 #include "NewMenuItemCheckableView.hpp"
 #include "NewMenuItemSingleLineView.hpp"
+#include "NewMenuItemTOCView.hpp"
 
 NewMenuView::NewMenuView(DisplaySystem &display)
     : EinkView(display),
@@ -28,6 +29,9 @@ void NewMenuView::addMenuItem(const std::shared_ptr<NewMenuItem> &menuItem) {
     }
     if (auto item = std::dynamic_pointer_cast<NewMenuItemCheckable>(menuItem)) {
         menuItemViews_.push_back(std::make_unique<NewMenuItemCheckableView>(display_, item));
+    }
+    if (auto item = std::dynamic_pointer_cast<NewMenuItemTOC>(menuItem)) {
+        menuItemViews_.push_back(std::make_unique<NewMenuItemTOCView>(display_, item));
     }
 
     int totalPages = (menuItems_.size() + itemsPerPage - 1) / itemsPerPage;

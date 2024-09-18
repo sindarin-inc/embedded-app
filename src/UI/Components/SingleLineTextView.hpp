@@ -4,7 +4,7 @@
 #include <utility>
 
 #include "EinkView.hpp"
-#include "Misc/Style.hpp"
+#include "UI/Fonts/Fonts.hpp"
 #include "UI/Fonts/TextTruncation.hpp"
 
 // A view that draws a line of text

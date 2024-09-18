@@ -3,9 +3,11 @@
 #include "Misc/Platform.hpp"
 
 ReadingSettingsMenuScreen::ReadingSettingsMenuScreen(DisplaySystem &display,
-                                                     const std::string &backTitle)
+                                                     const std::string &backTitle,
+                                                     PreferencesStore &prefs)
     : EinkView(display), menuView_(display), backLabelView_(display, backTitle),
-      renderer_(display, DisplayRect({0, 0, 0, 0})), rendererView_(display, renderer_) {
+      renderer_(display, DisplayRect({0, 0, 0, 0}), prefs), prefs_(prefs),
+      rendererView_(display, renderer_) {
     menuView_.padding = 1;
     menuView_.itemsPerPage = 8;
     rendererView_.dottedBox = true;
@@ -131,11 +133,11 @@ void ReadingSettingsMenuScreen::render(DisplaySystem &display) {
             display.updateDisplay(DisplaySystem::UpdateType::FULL, false);
             firstLoad_ = false;
         }
-        menuView_.drawIndicatorAndFastElements();
+        menuView_.drawFastElements();
         display.updateDisplay(DisplaySystem::UpdateType::FAST_INDICATOR);
     } else if (rendererView_.autoPilotMode()) {
         draw();
-        menuView_.drawIndicatorAndFastElements();
+        menuView_.drawFastElements();
         if (rendererView_.newPage()) {
             display.updateDisplay(DisplaySystem::UpdateType::FULL, true);
         } else {

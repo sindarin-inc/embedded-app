@@ -2,10 +2,12 @@
 
 #include "Displays/DisplaySystem.hpp"
 #include "Inputs/RemoteInput.hpp"
+#include "Misc/Platform.hpp"
 #include "UI/Components/ArrowLabelView.hpp"
 #include "UI/Components/EinkView.hpp"
 #include "UI/Components/SingleLineTextView.hpp"
 #include "UI/Menu/NewMenuView.hpp"
+#include "UI/MsgPopup.hpp"
 #include "UI/Screen.hpp"
 
 class InactivitySettingMenuScreen : public Screen, public EinkView {
@@ -20,11 +22,6 @@ public:
     auto layout(LayoutContext &context, Size size) -> Size override;
     void drawInRect(Rect rect) override;
 
-    void setFirstLoad() { firstLoad_ = true; }
-
-    void showTemporaryMessage(DisplaySystem &display, const std::string &message,
-                              int duration = 2000, bool rerenderAfter = false);
-
     void render(DisplaySystem &display) override;
 
     void setExtraText(const std::string &text) { extraTextView_.setText(text); };
@@ -33,12 +30,21 @@ public:
 
     auto getRequireRestart() const -> bool { return restartOnBack_; }
 
+    void showTemporaryMessage(DisplaySystem &display, const std::string &message,
+                              int duration = 2000, bool rerenderAfter = false) override {
+        auto popup = std::make_shared<MsgPopup>(display, message);
+        popup->render(display);
+        if (rerenderAfter) {
+            Delay(duration);
+            setNeedsRerender();
+            this->render(display);
+        }
+    }
+
 private:
     NewMenuView menuView_;
     ArrowLabelView backLabelView_;
     SingleLineTextView extraTextView_;
-
-    bool firstLoad_{true};
 
     void moveSelection(int delta);
 

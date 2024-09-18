@@ -8,8 +8,8 @@
 
 OffsetAdjustScreen::OffsetAdjustScreen(DisplaySystem &display, PreferencesStore &prefs,
                                        Telemetry &telemetry)
-    : display_(display), renderer_(display, GetTextRectFromPrefs(display, prefs)), prefs_(prefs),
-      telemetry_(telemetry) {
+    : display_(display), renderer_(display, GetTextRectFromPrefs(display, prefs), prefs),
+      prefs_(prefs), telemetry_(telemetry) {
 
     std::string message;
     // This needs to be pretty big for smaller fonts

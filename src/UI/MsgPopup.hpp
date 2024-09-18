@@ -20,7 +20,7 @@ public:
         : EinkView(display), display_(display), boxView_(display, 8), textView_(display, 8) {
         textView_.setText(msg);
         textView_.alignCenter = true;
-        textView_.setFont(display_.style.getFontFamily().popupFont);
+        textView_.setFont(static_cast<Font *>(&fontFace0));
     }
     ~MsgPopup() override = default;
 
