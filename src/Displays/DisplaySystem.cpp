@@ -10,6 +10,7 @@
 #include "Misc/PBMImage.hpp"
 #include "Misc/StringUtil.hpp"
 #include "UI/Fonts/Font.hpp"
+#include "UI/Fonts/Fonts.hpp"
 #include "sindarin-debug.h"
 
 DisplaySystem::DisplaySystem() = default;
@@ -25,7 +26,7 @@ void DisplaySystem::animationTimerCallback(TimerHandle_t timer) {
 
 auto DisplaySystem::setup() -> bool {
     // Default to original font
-    setFont(style.getFontFamily().mainMenuFont);
+    setFont(static_cast<Font *>(&fontFace0));
     gfxClass_->setTextColor(fg, bg);
 
 #ifdef DISPLAY_ROTATION

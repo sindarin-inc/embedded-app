@@ -16,6 +16,20 @@
 // Change speed of speed reading in increments of 2 seconds
 #define PAGE_SPEED_INCREMENT 2000
 
+void ReadableScreen::setCurrentScreen(std::shared_ptr<Screen> screen) {
+    if (currentScreen_) {
+        currentScreen_->setFirstLoad();
+    }
+    if (screen) {
+        screen->setNeedsRerender();
+    } else {
+        renderPopup_ = false;
+        firstLoad_ = true;
+        setNeedsRerender();
+    }
+    currentScreen_ = screen;
+}
+
 auto ReadableScreen::layout(LayoutContext &context, Size size) -> Size {
     int arrowWidth = 24;
     int arrowHeight = 8;
@@ -178,7 +192,7 @@ void ReadableScreen::turnPage() {
             return;
         }
         showPopupMenu();
-        popupMenuScreen_.preselectArchiveOrDeleteMenuItem();
+        // popupMenuScreen_->preselectArchiveOrDeleteMenuItem();
     } else {
         readable_->placePrev = readable_->place;
         readable_->place = newPlace_;
@@ -206,11 +220,11 @@ void ReadableScreen::render(DisplaySystem &display) {
     // the display (`fillScreen(bg);`) after updateDisplay. Then we could simply draw over
     // existing screen contents without rerendering it. But that would be a pretty global
     // change, so we'll leave it for now.
-    bool renderPopupBackground = currentScreen_ == &popupMenuScreen_ && renderPopup_;
+    bool renderPopupBackground = currentScreen_ == popupMenuScreen_ && renderPopup_;
 
     bool renderTransitionArrows = prefs_.pageTransitionArrows.get().value_or(false);
 
-    if (currentScreen_ != this && !renderPopupBackground) {
+    if (currentScreen_ && !renderPopupBackground) {
         currentScreen_->render(display);
         return;
     }
@@ -218,10 +232,10 @@ void ReadableScreen::render(DisplaySystem &display) {
     if (!hookScreens_.empty()) {
         auto &hookScreen = hookScreens_[0];
         hookScreen->setNeedsRerender();
-        setCurrentScreen(*hookScreen);
+        setCurrentScreen(hookScreen);
         hookScreen->setBackCallback([this, hookScreen]() {
             this->setNeedsRerender();
-            setCurrentScreen(*this);
+            setCurrentScreen(nullptr);
             this->hookScreens_.erase(this->hookScreens_.begin());
         });
         hookScreen->render(display);
@@ -241,7 +255,7 @@ void ReadableScreen::render(DisplaySystem &display) {
     telemetry_.logMetric(TelemetryField::METRIC_READABLE_PLACE, readable_->shortenedUuid.c_str(),
                          readable_->telemetryPlacemarkMetrics());
 
-    display.setFont(display.style.getFontFamily().readableFont);
+    display.setFont(static_cast<Font *>(&fontFace0));
 
     // If there is a partial chapter summary, open that instead
     if (firstLoad_ && !renderedPartialSummary_ &&
@@ -253,10 +267,10 @@ void ReadableScreen::render(DisplaySystem &display) {
             if (*partialChapterSummary->ePubPlace == *epubPlace) {
                 log_d("Rendering partial chapter summary for %s, place %s",
                       readable_->shortenedUuid.c_str(), readable_->place->str().c_str());
-                readableSummaryScreen_.setPlaceInReadable(epubPlace);
-                readableSummaryScreen_.setFirstLoad();
+                readableSummaryScreen_->setPlaceInReadable(epubPlace);
+                readableSummaryScreen_->setFirstLoad();
                 setCurrentScreen(readableSummaryScreen_);
-                readableSummaryScreen_.render(display);
+                readableSummaryScreen_->render(display);
                 return;
             } else {
                 log_i("Partial chapter summary does not match current place, not showing: %s vs %s",
@@ -412,9 +426,9 @@ void ReadableScreen::render(DisplaySystem &display) {
 
     if (renderPopupBackground) {
         // Initial popup render (will use PARTIAL and not clear out the text)
-        popupMenuScreen_.render(display);
+        popupMenuScreen_->render(display);
         // Render again (This time it will use AU4 and render without the text)
-        popupMenuScreen_.render(display);
+        popupMenuScreen_->render(display);
     } else if ((pageSpeed_ != 0) && (speedLinesToSkip_ > 0)) {
         if (autoPilotForceFull_) {
             display.updateDisplay(DisplaySystem::UpdateType::FULL, true,
@@ -484,11 +498,11 @@ void ReadableScreen::incrementReadingTime() {
 
 void ReadableScreen::showPopupMenu() {
     renderPopup_ = true;
-    popupMenuScreen_.setUpPopupMenu();
+    popupMenuScreen_->setUpPopupMenu();
     setCurrentScreen(popupMenuScreen_);
 }
 
-void ReadableScreen::hidePopupMenu() { setCurrentScreen(*this); }
+void ReadableScreen::hidePopupMenu() { setCurrentScreen(nullptr); }
 
 void ReadableScreen::processCommandDemoMode(RemoteCommand command) {
     switch (command) {
@@ -593,7 +607,7 @@ void ReadableScreen::processCommandNormal(RemoteCommand command) {
         break;
     case RemoteCommand::DOWN:
         showPopupMenu();
-        popupMenuScreen_.preselectLastItem();
+        // popupMenuScreen_->preselectLastItem();
         break;
     case RemoteCommand::RIGHT:
         if (prefs_.fastBookmarkRight.get().value_or(false)) {
@@ -606,7 +620,7 @@ void ReadableScreen::processCommandNormal(RemoteCommand command) {
     case RemoteCommand::BACK:
     case RemoteCommand::UP:
         showPopupMenu();
-        popupMenuScreen_.preselectFirstItem();
+        //  popupMenuScreen_->preselectFirstItem();
         break;
 
     case RemoteCommand::ANIMATION:
@@ -618,8 +632,12 @@ void ReadableScreen::processCommandNormal(RemoteCommand command) {
 }
 
 void ReadableScreen::processCommand(RemoteCommand command) {
-    if (currentScreen_ != this) {
+    if (currentScreen_) {
         currentScreen_->processCommand(command);
+        // currentScreen could be reset to null here
+        if (currentScreen_ && currentScreen_->needsRerender()) {
+            setNeedsRerender();
+        }
         return;
     }
 

@@ -63,18 +63,6 @@ auto InactivitySettingMenuScreen::layout(LayoutContext &context, Size size) -> S
     return size;
 }
 
-void InactivitySettingMenuScreen::showTemporaryMessage(DisplaySystem &display,
-                                                       const std::string &message, int duration,
-                                                       bool rerenderAfter) {
-    MsgPopup popup(display, message);
-    popup.render(display);
-    if (rerenderAfter) {
-        Delay(duration);
-        setNeedsRerender();
-        this->render(display);
-    }
-}
-
 void InactivitySettingMenuScreen::drawInRect(Rect rect) {
     backLabelView_.draw();
     menuView_.draw();
@@ -98,6 +86,6 @@ void InactivitySettingMenuScreen::render(DisplaySystem &display) {
         firstLoad_ = false;
     }
 
-    menuView_.drawIndicatorAndFastElements();
+    menuView_.drawFastElements();
     display.updateDisplay(DisplaySystem::UpdateType::FAST_INDICATOR);
 }

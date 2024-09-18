@@ -19,7 +19,6 @@
 
 #include "Displays/EinkTypes.hpp"
 #include "Misc/StringUtil.hpp"
-#include "Misc/Style.hpp"
 #include "Storage/FileSystem.hpp"
 #include "UI/Fonts/Font.hpp"
 #include "UI/Layout/Types.hpp"
@@ -108,8 +107,6 @@ public:
     bool mirrorToSerial = false;
 
     virtual void sendCurrentScreenToSerial(bool screenshot = false) const {}
-
-    Style style;
 
     // MARK: - Required virtual methods that subclasses must implement
     enum UpdateType {

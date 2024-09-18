@@ -11,7 +11,7 @@ public:
     OnboardingContentSyncScreen(DisplaySystem &display, LocalStore &localStore,
                                 PreferencesStore &prefs, Telemetry &telemetry)
         : display_(display), localStore_(localStore), prefs_(prefs), telemetry_(telemetry),
-          onboardingSyncRenderer_(display, GetTextRectFromPrefs(display, prefs)){};
+          onboardingSyncRenderer_(display, GetTextRectFromPrefs(display, prefs), prefs){};
 
     void render(DisplaySystem &display) override;
     void processCommand(RemoteCommand command) override;

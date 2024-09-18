@@ -2,9 +2,11 @@
 
 #include "Displays/DisplaySystem.hpp"
 #include "Inputs/RemoteInput.hpp"
+#include "Misc/Platform.hpp"
 #include "UI/Components/CarouselTitleLabelView.hpp"
 #include "UI/Components/EinkView.hpp"
 #include "UI/Menu/NewMenuView.hpp"
+#include "UI/MsgPopup.hpp"
 #include "UI/Screen.hpp"
 
 using MenuItemVector = std::vector<std::shared_ptr<NewMenuItem>>;
@@ -34,14 +36,20 @@ public:
 
     auto getNumTabs() const -> int { return menuTabs_.size(); }
 
-    void setFirstLoad() { firstLoad_ = true; }
-
-    void showTemporaryMessage(DisplaySystem &display, const std::string &message,
-                              int duration = 2000, bool rerenderAfter = false);
-
     auto layout(LayoutContext &context, Size size) -> Size override = 0;
     void drawInRect(Rect rect) override = 0;
     void render(DisplaySystem &display) override = 0;
+
+    void showTemporaryMessage(DisplaySystem &display, const std::string &message,
+                              int duration = 2000, bool rerenderAfter = false) override {
+        auto popup = std::make_shared<MsgPopup>(display, message);
+        popup->render(display);
+        if (rerenderAfter) {
+            Delay(duration);
+            setNeedsRerender();
+            this->render(display);
+        }
+    }
 
 protected:
     // We give access to these to the subclasses so they can style the menuView_ and layout and draw
@@ -49,7 +57,6 @@ protected:
     std::string currentTabTitle_;
     CarouselTitleLabelView titleView_;
     NewMenuView menuView_;
-    bool firstLoad_{true};
 
 private:
     std::vector<CarouselMenuEntry> menuTabs_;

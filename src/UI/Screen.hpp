@@ -15,15 +15,21 @@ public:
     virtual void render(DisplaySystem &display) = 0;
     virtual void processCommand(RemoteCommand command) = 0;
     virtual void setNeedsRerender() { needsRerender_ = true; }
+    virtual void setFirstLoad() { firstLoad_ = true; }
     virtual auto needsRerender() -> bool { return needsRerender_; }
     virtual void clearNeedsRerender() { needsRerender_ = false; }
+
+    // Subclasses must implement this to show a temporary message that can be displayed
+    // from their screen. This can't do it here because the MsgPopup is a subclass of
+    // this class.
+    virtual void showTemporaryMessage(DisplaySystem &display, const std::string &message,
+                                      int duration = 2000, bool rerenderAfter = false){};
 
     virtual void loop(DisplaySystem &display, RemoteCommand command) {
         if (command != RemoteCommand::NONE) {
             processCommand(command);
         }
         if (needsRerender()) {
-            display.beginPowerOn();
             render(display);
             clearNeedsRerender();
         }
@@ -37,6 +43,7 @@ public:
     }
 
 protected:
-    bool needsRerender_ = true;
+    bool needsRerender_{true};
+    bool firstLoad_{true};
     std::function<void()> backCallback_;
 };

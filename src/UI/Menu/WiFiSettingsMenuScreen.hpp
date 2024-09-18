@@ -2,12 +2,14 @@
 
 #include "Displays/DisplaySystem.hpp"
 #include "Inputs/RemoteInput.hpp"
+#include "Misc/Platform.hpp"
 #include "Storage/PreferencesStore.hpp"
 #include "UI/Components/ArrowLabelView.hpp"
 #include "UI/Components/EinkView.hpp"
 #include "UI/Components/MultiLineTextView.hpp"
 #include "UI/Components/SingleLineTextView.hpp"
 #include "UI/Menu/NewMenuView.hpp"
+#include "UI/MsgPopup.hpp"
 #include "UI/Screen.hpp"
 
 class WiFiSettingsMenuScreen : public Screen, public EinkView {
@@ -20,15 +22,21 @@ public:
     auto layout(LayoutContext &context, Size size) -> Size override;
     void drawInRect(Rect rect) override;
 
-    void setFirstLoad() { firstLoad_ = true; }
-
     // Must be called any time the wifi settings could have changed.
     void loadWifiSettings();
 
-    void showTemporaryMessage(DisplaySystem &display, const std::string &message,
-                              int duration = 2000, bool rerenderAfter = false);
-
     void render(DisplaySystem &display) override;
+
+    void showTemporaryMessage(DisplaySystem &display, const std::string &message,
+                              int duration = 2000, bool rerenderAfter = false) override {
+        auto popup = std::make_shared<MsgPopup>(display, message);
+        popup->render(display);
+        if (rerenderAfter) {
+            Delay(duration);
+            setNeedsRerender();
+            this->render(display);
+        }
+    }
 
 private:
     PreferencesStore &prefs_;
@@ -36,8 +44,6 @@ private:
     ArrowLabelView backLabelView_;
     SingleLineTextView configuredAccessView_;
     MultiLineTextView configuredAccessPointsView_;
-
-    bool firstLoad_{true};
 
     void moveSelection(int delta);
 };

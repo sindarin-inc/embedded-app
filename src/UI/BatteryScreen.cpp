@@ -4,6 +4,7 @@
 #include "Displays/DisplayEinkET013TT1.hpp"
 #endif
 
+#include "UI/Fonts/Fonts.hpp"
 #include "sindarin-debug.h"
 
 BatteryScreen::BatteryScreen(DisplaySystem &display, PreferencesStore &prefs, Battery &battery)
@@ -20,7 +21,7 @@ BatteryScreen::BatteryScreen(DisplaySystem &display, PreferencesStore &prefs, Ba
 
 void BatteryScreen::render(DisplaySystem &display) {
     uint16_t width = 0, height = 0;
-    display.setFont(display.style.getFontFamily().readableFont);
+    display.setFont(static_cast<Font *>(&fontFace0));
     auto batteryStatus = battery_.getBatteryLifeString();
 
     auto ptBatteryPct = PreferencesStore::lastPageTurnerBattery;

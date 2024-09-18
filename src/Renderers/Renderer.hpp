@@ -6,6 +6,7 @@
 #include "NullTokenizer.hpp"
 #include "Pager.hpp"
 #include "RendererDefs.hpp"
+#include "Storage/PreferencesStore.hpp"
 #include "Tokenizer.hpp"
 #include "Tokens.hpp"
 
@@ -14,8 +15,9 @@ using namespace renderer_defs;
 class Renderer {
 
 public:
-    Renderer(DisplaySystem &display, DisplayRect rect)
-        : display_(display), rect_(rect), tokens_(display), pager_(tokens_, display, rect) {
+    Renderer(DisplaySystem &display, DisplayRect rect, PreferencesStore &prefs)
+        : display_(display), rect_(rect), tokens_(display), pager_(tokens_, display, rect),
+          prefs_(prefs) {
         // log_w("constructor...");
         tokenizer_ = std::make_shared<NullTokenizer>(display, rect_, tokens_, pager_);
     }
@@ -108,6 +110,7 @@ private:
     DisplayRect rect_;
     Tokens tokens_;
     Pager pager_;
+    PreferencesStore &prefs_;
 
     std::shared_ptr<Tokenizer> tokenizer_{nullptr};
 

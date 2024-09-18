@@ -4,6 +4,7 @@
 #include "Misc/Platform.hpp"
 #include "Misc/PowerManager.hpp"
 #include "Renderers/RendererStream.hpp"
+#include "UI/Fonts/Fonts.hpp"
 
 #if CONFIG_USE_TURN_TOUCH_REMOTE
 #include "Inputs/TTRemoteInput.hpp"

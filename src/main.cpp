@@ -27,7 +27,6 @@
 #include "Misc/SolClock.hpp"
 #include "Misc/SolMorse.hpp"
 #include "Misc/StringUtil.hpp"
-#include "Misc/Style.hpp"
 #include "Models/Readable.hpp"
 #include "Storage/CrashReportWriter.hpp"
 #include "Storage/LocalStore.hpp"
@@ -114,7 +113,7 @@ USBSerial usbSerial;
 
 PowerManager powerManager(fileSystem, prefs, lightingController, myDisplay, telemetry, usbSerial);
 LocalStore localStore(fileSystem, prefs, powerManager.battery, telemetry);
-RootUI rootUi(prefs, powerManager, telemetry);
+std::shared_ptr<RootUI> rootUi;
 SolClock solClock(prefs);
 WiFi wiFi(telemetry);
 
@@ -125,7 +124,7 @@ bool bootCompleted = false;
 
 void UIInnerLoop(RemoteCommand command) {
     powerManager.feedInactivityTimer();
-    rootUi.loop(myDisplay, command);
+    rootUi->loop(myDisplay, command);
 }
 
 // Task for all periodic things that need to run ~1Hz. Polling tasks should be grouped here so that
@@ -194,7 +193,7 @@ void StatsTask(void *parameter) {
     vTaskDelete(nullptr);
 }
 
-auto UIGetCurrentScreen() { return rootUi.getCurrentScreen(); }
+auto UIGetCurrentScreen() { return rootUi->getCurrentScreen(); }
 
 extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     HEAP_PROFILE_START(usbSerial);
@@ -231,6 +230,11 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     if (!prefs.begin()) {
         bootErrors.push_back({.type = BootError::Type::Preferences});
     }
+
+    rootUi = std::make_shared<RootUI>(prefs, powerManager, telemetry);
+
+    // I'm sure there's a cleaner way to do this?
+    // rootUi->setSelfShared(rootUi);
 
     solClock.begin();
 
@@ -367,13 +371,13 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 
     switch (prefs.font.get().value_or(PREFS_SOL_SMALL)) {
     case PREFS_SOL_MEDIUM:
-        myDisplay.style.setFontFamily(myDisplay.style.solSansMedium);
+        myDisplay.setFont(static_cast<Font *>(&fontFace1));
         break;
     case PREFS_SOL_LARGE:
-        myDisplay.style.setFontFamily(myDisplay.style.solSansLarge);
+        myDisplay.setFont(static_cast<Font *>(&fontFace2));
         break;
     case PREFS_SOL_SMALL:
-        myDisplay.style.setFontFamily(myDisplay.style.solSansSmall);
+        myDisplay.setFont(static_cast<Font *>(&fontFace0));
         break;
     }
 
@@ -532,8 +536,8 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 
     auto showChargingScreen = []() {
         lightingController.setOverrideValuePercent(100);
-        auto chargingScreen = new ChargingScreen(prefs);
-        rootUi.setCurrentScreen(*chargingScreen);
+        auto chargingScreen = std::make_shared<ChargingScreen>(prefs);
+        rootUi->setCurrentScreen(chargingScreen);
         UIInnerLoop(RemoteCommand::NONE);
     };
 
@@ -542,12 +546,12 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
             if (state == PowerState::ActiveUSBCharging) {
                 showChargingScreen();
             } else if (state == PowerState::ActiveOverTemp) {
-                auto overTempScreen = new OverTempScreen();
-                rootUi.setCurrentScreen(*overTempScreen);
+                auto overTempScreen = std::make_shared<OverTempScreen>();
+                rootUi->setCurrentScreen(overTempScreen);
                 UIInnerLoop(RemoteCommand::NONE);
             } else if (state == PowerState::ActiveBatteryDepleted) {
-                auto powerDepletedScreen = new PowerDepletedScreen();
-                rootUi.setCurrentScreen(*powerDepletedScreen);
+                auto powerDepletedScreen = std::make_shared<PowerDepletedScreen>();
+                rootUi->setCurrentScreen(powerDepletedScreen);
                 UIInnerLoop(RemoteCommand::NONE);
             }
         });
@@ -582,7 +586,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
             showChargingScreen();
         } else {
             HEAP_PROFILE_START(rootUISetup);
-            rootUi.setup(&myDisplay, localStore, fileSystem, lightingController);
+            rootUi->setup(&myDisplay, localStore, fileSystem, lightingController);
             HEAP_PROFILE_END(rootUISetup);
             UIInnerLoop(RemoteCommand::NONE);
             log_i("First screen rendered after boot in %" PRIu64 " ms",
@@ -620,8 +624,8 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
             DispatchGetUiQueue()->dispatch([]() {
                 // Override brightness to max
                 lightingController.setOverrideValuePercent(100);
-                auto testScreen = new TestAlignmentScreen();
-                rootUi.setCurrentScreen(*testScreen);
+                auto testScreen = std::make_shared<TestAlignmentScreen>();
+                rootUi->setCurrentScreen(testScreen);
                 UIInnerLoop(RemoteCommand::NONE);
             });
             return true;
