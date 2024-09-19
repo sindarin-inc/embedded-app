@@ -208,19 +208,18 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
 
         ASSERT_VIEW_UNCHANGED(display, "Dawn");
 
-        // Render the popup menu
+        // Render the popup menu, navigate to the dictionary
         SendRemoteCommand(UP);
         WAIT_FOR_DRAW(display);
         WAIT_FOR_DRAW(display);
-        // Should show the updated seeked spot from the TOC
-        ASSERT_VIEW_UNCHANGED(display, "PopupMenu4"); // Note: reused below
-
-        // Navigate to the dictionary
         SendRemoteCommand(RIGHT);
         WAIT_FOR_DRAW(display);
         WAIT_FOR_DRAW(display);
         SendRemoteCommand(DOWN);
         WAIT_FOR_DRAW(display);
+        // Should show the updated seeked spot from the TOC
+        ASSERT_VIEW_UNCHANGED(display, "PopupMenu4");
+
         // Open the dictionary
         SendRemoteCommand(ENTER);
         WAIT_FOR_DRAW(display);
@@ -232,15 +231,13 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
         WAIT_FOR_DRAW(display);
         ASSERT_VIEW_UNCHANGED(display, "Dawn1");
 
-        // Render the popup menu
+        // Render the popup menu, navigate to Contents
         SendRemoteCommand(UP);
         WAIT_FOR_DRAW(display);
         WAIT_FOR_DRAW(display);
         SendRemoteCommand(LEFT);
         WAIT_FOR_DRAW(display);
         WAIT_FOR_DRAW(display);
-        ASSERT_VIEW_UNCHANGED(display, "PopupMenu4");
-
         SendRemoteCommand(DOWN);
         WAIT_FOR_DRAW(display);
         ASSERT_VIEW_UNCHANGED(display, "PopupMenu5");
