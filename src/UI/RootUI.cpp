@@ -326,11 +326,16 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
             auto contentSyncScreen = std::make_shared<ContentSyncScreen>(
                 *display, localStore, this->prefs_, this->telemetry_);
-            this->setCurrentScreen(contentSyncScreen);
             contentSyncScreen->setBackCallback([this, display]() {
                 display->clearDisplay();
                 screenStack_.pop();
             });
+            this->setCurrentScreen(contentSyncScreen);
+            // Is this a problem here now becuase this is happening on a different thread?
+            // There's currently a bug where if the sync is already in sync, the screen
+            // shows the temporary messsage, but then we don't end up back in the main menu (on the
+            // display). We may need a different paradigm than stack push and pop here.
+            // TODO: Fix this
             contentSyncScreen->begin();
         });
     };
