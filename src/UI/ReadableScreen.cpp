@@ -16,7 +16,7 @@
 // Change speed of speed reading in increments of 2 seconds
 #define PAGE_SPEED_INCREMENT 2000
 
-void ReadableScreen::setCurrentScreen(std::shared_ptr<Screen> screen) {
+void ReadableScreen::setCurrentScreen(const std::shared_ptr<Screen> &screen) {
     if (currentScreen_) {
         currentScreen_->setFirstLoad();
     }

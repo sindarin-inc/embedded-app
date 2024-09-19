@@ -79,7 +79,7 @@
 
 #define LAST_READABLE_ID "rui-readable"
 
-void RootUI::setCurrentScreen(std::shared_ptr<Screen> screen) {
+void RootUI::setCurrentScreen(const std::shared_ptr<Screen> &screen) {
     screen->setNeedsRerender();
     screenStack_.push(screen);
 }
@@ -517,8 +517,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     };
 
     auto bibleMenuFactory = [this, &localStore, handleReadableScreenCreation, isBible,
-                             makeReleaseNotesMenuItem, makeContentSyncMenuItem,
-                             createTutorialScreen, noContent]() -> MenuItemSharedPtrVector {
+                             makeReleaseNotesMenuItem, createTutorialScreen,
+                             noContent]() -> MenuItemSharedPtrVector {
         auto &books = localStore.books();
         auto menuItems = std::make_shared<MenuItemVector>();
 
@@ -979,7 +979,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 auto firmwareUpdateScreen =
                     std::make_shared<FirmwareUpdateScreen>(*display, telemetry_, prefs_);
                 this->setCurrentScreen(firmwareUpdateScreen);
-                firmwareUpdateScreen->setBackCallback([this, display]() { screenStack_.pop(); });
+                firmwareUpdateScreen->setBackCallback([this]() { screenStack_.pop(); });
                 firmwareUpdateScreen->begin();
                     }));
 

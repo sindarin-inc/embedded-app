@@ -32,7 +32,7 @@ public:
 
     void setCurrentTabIndex(int index);
 
-    auto getCurrentTabIndex() -> int { return currentTabIndex_; }
+    auto getCurrentTabIndex() const -> int { return currentTabIndex_; }
 
     void setTabToTitle(const std::string &tabTitle);
 

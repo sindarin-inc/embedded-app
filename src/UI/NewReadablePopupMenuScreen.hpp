@@ -1,3 +1,5 @@
+#include <utility>
+
 #include "Misc/Telemetry.hpp"
 #include "Renderers/RendererStream.hpp"
 #include "Storage/LocalStore.hpp"
@@ -15,15 +17,16 @@ class NewReadablePopupMenuScreen : public CarouselMenuScreen {
 
 public:
     NewReadablePopupMenuScreen(DisplaySystem &display, PreferencesStore &prefs,
-                               FileSystem &fileSystem, const std::shared_ptr<Readable> &readable,
+                               FileSystem &fileSystem, std::shared_ptr<Readable> readable,
                                LightingController &lightingController, Renderer &renderer,
                                Telemetry &telemetry, LocalStore &localStore,
                                std::shared_ptr<RendererStream> &stream)
-        : CarouselMenuScreen(display), display_(display), prefs_(prefs), readable_(readable),
-          renderer_(renderer), popupMenuBackground_(display, 5), popupMenuForeground_(display, 5),
-          footer1TextView_(display, ""), footer2TextView_(display, ""),
-          footer3TextView_(display, ""), telemetry_(telemetry), localStore_(localStore),
-          fileSystem_(fileSystem), stream_(stream), lineMenuScreen_(prefs, display) {
+        : CarouselMenuScreen(display), display_(display), prefs_(prefs),
+          readable_(std::move(readable)), renderer_(renderer), popupMenuBackground_(display, 5),
+          popupMenuForeground_(display, 5), footer1TextView_(display, ""),
+          footer2TextView_(display, ""), footer3TextView_(display, ""), telemetry_(telemetry),
+          localStore_(localStore), fileSystem_(fileSystem), stream_(stream),
+          lineMenuScreen_(prefs, display) {
 
         menuView_.padding = 0;
         menuView_.itemsPerPage = 8;

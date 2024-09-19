@@ -30,7 +30,7 @@ public:
 
     void clearNeedsRerender() override;
 
-    void setCurrentScreen(std::shared_ptr<Screen> screen);
+    void setCurrentScreen(const std::shared_ptr<Screen> &screen);
 
     auto needsRerender() -> bool override;
     void render(DisplaySystem &display) override;

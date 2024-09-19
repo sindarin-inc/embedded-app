@@ -111,7 +111,7 @@ public:
             auto menuItems = std::make_shared<MenuItemVector>();
 
             auto menuItem = std::make_shared<NewMenuItemSingleLine>(
-                "Main Menu", [this, onMainMenu]() { onMainMenu(); });
+                "Main Menu", [onMainMenu]() { onMainMenu(); });
 
             menuItems->emplace_back(menuItem);
 
@@ -179,16 +179,16 @@ public:
             auto deleteMenuItem =
                 std::make_shared<NewMenuItemSingleLine>("Delete", [this, onMainMenu]() {
                     log_d("Showing delete confirmation!");
-                    auto lineMenuScreen_ =
+                    auto lineMenuScreen =
                         std::make_shared<LineMenuScreen>(this->prefs_, this->display_);
-                    lineMenuScreen_->resetMenuItems();
-                    lineMenuScreen_->addMenuItem(std::make_shared<NewMenuItemSingleLine>("Cancel",
-                                                                                         [this]() {
+                    lineMenuScreen->resetMenuItems();
+                    lineMenuScreen->addMenuItem(std::make_shared<NewMenuItemSingleLine>("Cancel",
+                                                                                        [this]() {
                     log_d("Aborting delete!");
                     setCurrentScreen(nullptr);
                     back();
                     }));
-                    lineMenuScreen_->addMenuItem(
+                    lineMenuScreen->addMenuItem(
                         std::make_shared<NewMenuItemSingleLine>("Delete: I'm sure!",
                                                                 [this, onMainMenu]() {
                     UserReadablesVector readablesToDelete = {};
@@ -214,7 +214,7 @@ public:
                         PowerManager::getInstance().reboot();
                     });
                         }));
-                    setCurrentScreen(lineMenuScreen_);
+                    setCurrentScreen(lineMenuScreen);
                     setNeedsRerender();
                 });
 
@@ -345,7 +345,7 @@ public:
                 log_d("Not an EPub, so no history or summary or dictionary");
             }
 
-            menuItem = std::make_shared<NewMenuItemSingleLine>("Report Page", [this, onReport]() {
+            menuItem = std::make_shared<NewMenuItemSingleLine>("Report Page", [onReport]() {
                 log_d("Reporting a problem with the page");
                 onReport();
             });
@@ -545,7 +545,7 @@ public:
     auto getStream() { return stream_; }
 
 protected:
-    void setCurrentScreen(std::shared_ptr<Screen> screen);
+    void setCurrentScreen(const std::shared_ptr<Screen> &screen);
 
     auto getCurrentScreen() -> std::shared_ptr<Screen> { return currentScreen_; }
 
