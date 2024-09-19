@@ -176,7 +176,7 @@ TEST_CASE("Test EPub Books Rendering", "[.][epub]") {
         WAIT_FOR_DRAW(display);
 
         screen = UIGetCurrentScreen();
-        readableScreen = dynamic_pointer_cast<ReadableScreen>(screen);
+        readableScreen = std::dynamic_pointer_cast<ReadableScreen>(screen);
 
         if (readableScreen != nullptr) {
 
@@ -234,7 +234,7 @@ TEST_CASE("Test EPub Books Rendering", "[.][epub]") {
         WAIT_FOR_DRAW(display);
 
         screen = UIGetCurrentScreen();
-        readableScreen = dynamic_pointer_cast<ReadableScreen>(screen);
+        readableScreen = std::dynamic_pointer_cast<ReadableScreen>(screen);
 
         if (readableScreen != nullptr) {
 
