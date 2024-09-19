@@ -93,14 +93,15 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
         SendRemoteCommand(UP);
         WAIT_FOR_DRAW(display);
         WAIT_FOR_DRAW(display);
-        SendRemoteCommand(DOWN);
+        SendRemoteCommand(RIGHT);
+        WAIT_FOR_DRAW(display);
         WAIT_FOR_DRAW(display);
         SendRemoteCommand(ENTER);
         WAIT_FOR_DRAW(display);
         ASSERT_VIEW_UNCHANGED(display, "LastQuestion1Bookmarked");
 
         // Render the popup menu to confirm page 1
-        SendRemoteCommand(DOWN);
+        SendRemoteCommand(UP);
         WAIT_FOR_DRAW(display);
         WAIT_FOR_DRAW(display);
         ASSERT_VIEW_UNCHANGED(display, "PopupMenu1");
@@ -190,6 +191,9 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
         }
 
         ASSERT_VIEW_UNCHANGED(display, "PopupTOC");
+
+        SendRemoteCommand(ENTER);
+        WAIT_FOR_DRAW(display);
 
         SendRemoteCommand(ENTER);
         WAIT_FOR_DRAW(display);
