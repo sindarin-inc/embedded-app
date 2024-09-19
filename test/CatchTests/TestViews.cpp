@@ -106,7 +106,7 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
         ASSERT_VIEW_UNCHANGED(display, "PopupMenu1");
 
         // Return to book on page 1, then start paging through the book
-        SendRemoteCommand(LEFT);
+        SendRemoteCommand(UP);
         WAIT_FOR_DRAW(display);
         SendRemoteCommand(ENTER);
         WAIT_FOR_DRAW(display);
@@ -133,8 +133,10 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
         ASSERT_VIEW_UNCHANGED(display, "LastQuestion7");
 
         // Render the popup menu
-        SendRemoteCommand(DOWN);
+        SendRemoteCommand(UP);
         WAIT_FOR_DRAW(display);
+        WAIT_FOR_DRAW(display);
+        SendRemoteCommand(DOWN);
         WAIT_FOR_DRAW(display);
         ASSERT_VIEW_UNCHANGED(display, "PopupMenu2");
 
@@ -171,8 +173,11 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
         WAIT_FOR_DRAW(display);
 
         // Render the popup menu
-        SendRemoteCommand(DOWN);
+        SendRemoteCommand(UP);
         WAIT_FOR_DRAW(display);
+        WAIT_FOR_DRAW(display);
+
+        SendRemoteCommand(DOWN);
         WAIT_FOR_DRAW(display);
 
         SendRemoteCommand(ENTER);
@@ -192,14 +197,16 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
         ASSERT_VIEW_UNCHANGED(display, "Dawn");
 
         // Render the popup menu
-        SendRemoteCommand(DOWN);
+        SendRemoteCommand(UP);
         WAIT_FOR_DRAW(display);
         WAIT_FOR_DRAW(display);
         ASSERT_VIEW_UNCHANGED(display,
                               "PopupMenu4"); // Should show the updated seeked spot from the TOC
 
         // Open the dictionary
-        SendRemoteCommand(UP);
+        SendRemoteCommand(RIGHT);
+        WAIT_FOR_DRAW(display);
+        SendRemoteCommand(DOWN);
         WAIT_FOR_DRAW(display);
         SendRemoteCommand(ENTER);
         WAIT_FOR_DRAW(display);
@@ -212,10 +219,14 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
         ASSERT_VIEW_UNCHANGED(display, "Dawn1");
 
         // Render the popup menu
-        SendRemoteCommand(DOWN);
+        SendRemoteCommand(UP);
         WAIT_FOR_DRAW(display);
         WAIT_FOR_DRAW(display);
         ASSERT_VIEW_UNCHANGED(display, "PopupMenu4");
+
+        SendRemoteCommand(DOWN);
+        WAIT_FOR_DRAW(display);
+        ASSERT_VIEW_UNCHANGED(display, "PopupMenu5");
 
         // Open the next chapter to ensure the dictionary shows something different
         SendRemoteCommand(ENTER);
@@ -320,14 +331,14 @@ TEST_CASE("Test some views independently") {
     auto display = createDisplay();
 
     SECTION("Test PowerDepletedScreen") {
-        PowerDepletedScreen screen;
-        screen.render(*display);
+        auto screen = std::make_shared<PowerDepletedScreen>();
+        screen->render(*display);
         ASSERT_VIEW_UNCHANGED(display, "PowerDepletedScreen");
     }
 
     SECTION("Test LayoutTestScreen") {
-        LayoutTestScreen screen(*display);
-        screen.render(*display);
+        auto screen = std::make_shared<LayoutTestScreen>(*display);
+        screen->render(*display);
         ASSERT_VIEW_UNCHANGED(display, "LayoutTestScreen");
     }
 
@@ -351,23 +362,23 @@ TEST_CASE("Test some views independently") {
                                usbSerial);
 
             SECTION("Test AboutScreen") {
-                AboutScreen screen(*display, prefs, power);
-                screen.render(*display);
+                auto screen = std::make_shared<AboutScreen>(*display, prefs, power);
+                screen->render(*display);
                 ASSERT_VIEW_UNCHANGED(display, "AboutScreen");
             }
 
             SECTION("Test LegalScreen") {
-                LegalScreen screen(*display, prefs, power);
-                screen.render(*display);
+                auto screen = std::make_shared<LegalScreen>(*display, prefs, power);
+                screen->render(*display);
                 ASSERT_VIEW_UNCHANGED(display, "LegalScreen1Before");
-                screen.processCommand(LEFT);
-                screen.render(*display);
+                screen->processCommand(LEFT);
+                screen->render(*display);
                 ASSERT_VIEW_UNCHANGED(display, "LegalScreen2Before");
-                screen.processCommand(LEFT);
-                screen.render(*display);
+                screen->processCommand(LEFT);
+                screen->render(*display);
                 ASSERT_VIEW_UNCHANGED(display, "LegalScreen1After");
-                screen.processCommand(RIGHT);
-                screen.render(*display);
+                screen->processCommand(RIGHT);
+                screen->render(*display);
                 ASSERT_VIEW_UNCHANGED(display, "LegalScreen2After");
             }
 
@@ -382,8 +393,9 @@ TEST_CASE("Test some views independently") {
                 Firmware firmware;
                 auto upgradeAvailable = localStore.getPendingFirmwareUpdate(firmware);
                 REQUIRE(upgradeAvailable);
-                ReleaseNotesScreen screen(*display, prefs, power, localStore, firmware);
-                screen.render(*display);
+                auto screen = std::make_shared<ReleaseNotesScreen>(*display, prefs, power,
+                                                                   localStore, firmware);
+                screen->render(*display);
                 ASSERT_VIEW_UNCHANGED(display, "ReleaseNotesScreen");
             }
 
@@ -391,61 +403,62 @@ TEST_CASE("Test some views independently") {
                 Telemetry telemetry(fileSystem, prefs);
                 Battery battery(fileSystem, prefs, telemetry);
                 LocalStore localStore(fileSystem, prefs, battery, telemetry);
-                ContentSyncScreen screen(*display, localStore, prefs, telemetry);
-                screen.render(*display);
+                auto screen =
+                    std::make_shared<ContentSyncScreen>(*display, localStore, prefs, telemetry);
+                screen->render(*display);
                 ASSERT_VIEW_UNCHANGED(display, "ContentSyncScreen1");
 
-                screen.state_ = ContentSyncState{.state = ContentSyncState::State::SyncingArticles,
-                                                 .percentage = 63};
-                screen.render(*display);
+                screen->state_ = ContentSyncState{.state = ContentSyncState::State::SyncingArticles,
+                                                  .percentage = 63};
+                screen->render(*display);
                 ASSERT_VIEW_UNCHANGED(display, "ContentSyncScreen2");
 
-                screen.state_ = ContentSyncState{.state = ContentSyncState::State::Synced,
-                                                 .booksDownloaded = 3,
-                                                 .articlesDownloaded = 10};
-                screen.render(*display);
+                screen->state_ = ContentSyncState{.state = ContentSyncState::State::Synced,
+                                                  .booksDownloaded = 3,
+                                                  .articlesDownloaded = 10};
+                screen->render(*display);
                 ASSERT_VIEW_UNCHANGED(display, "ContentSyncScreen3");
             }
         }
 
         SECTION("Test OffsetAdjustScreen") {
-            OffsetAdjustScreen screen(*display, prefs, telemetry);
-            screen.render(*display);
+            auto screen = std::make_shared<OffsetAdjustScreen>(*display, prefs, telemetry);
+            screen->render(*display);
             ASSERT_VIEW_UNCHANGED(display, "OffsetAdjustScreen");
         }
 
         SECTION("Test ResizeBoxScreen") {
-            ResizeBoxScreen screen(*display, prefs, telemetry);
-            screen.render(*display);
+            auto screen = std::make_shared<ResizeBoxScreen>(*display, prefs, telemetry);
+            screen->render(*display);
             ASSERT_VIEW_UNCHANGED(display, "ResizeBoxScreen");
         }
 
         SECTION("Test ResizeBoxScreen with pinned left") {
-            OffsetAdjustScreen offsetScreen(*display, prefs, telemetry);
-            offsetScreen.render(*display);
-            offsetScreen.processCommand(LEFT);
-            offsetScreen.processCommand(LEFT);
-            offsetScreen.processCommand(LEFT);
-            offsetScreen.processCommand(LEFT);
-            offsetScreen.processCommand(LEFT);
-            offsetScreen.processCommand(LEFT);
-            offsetScreen.processCommand(LEFT);
+            auto offsetScreen = std::make_shared<OffsetAdjustScreen>(*display, prefs, telemetry);
+            offsetScreen->render(*display);
+            offsetScreen->processCommand(LEFT);
+            offsetScreen->processCommand(LEFT);
+            offsetScreen->processCommand(LEFT);
+            offsetScreen->processCommand(LEFT);
+            offsetScreen->processCommand(LEFT);
+            offsetScreen->processCommand(LEFT);
+            offsetScreen->processCommand(LEFT);
             // These are the extra lefts to make sure nothing changes on display
-            offsetScreen.processCommand(LEFT);
-            offsetScreen.processCommand(LEFT);
+            offsetScreen->processCommand(LEFT);
+            offsetScreen->processCommand(LEFT);
             // Save setting
-            offsetScreen.processCommand(ENTER);
-            ResizeBoxScreen resizeScreen(*display, prefs, telemetry);
-            resizeScreen.render(*display);
-            resizeScreen.processCommand(LEFT);
-            resizeScreen.processCommand(LEFT);
-            resizeScreen.render(*display);
+            offsetScreen->processCommand(ENTER);
+            auto resizeScreen = std::make_shared<ResizeBoxScreen>(*display, prefs, telemetry);
+            resizeScreen->render(*display);
+            resizeScreen->processCommand(LEFT);
+            resizeScreen->processCommand(LEFT);
+            resizeScreen->render(*display);
             ASSERT_VIEW_UNCHANGED(display, "ResizeBoxScreenLeftPinned");
         }
 
         SECTION("Test LineSpacingScreen") {
-            LineSpacingScreen screen(*display, prefs, telemetry);
-            screen.render(*display);
+            auto screen = std::make_shared<LineSpacingScreen>(*display, prefs, telemetry);
+            screen->render(*display);
             ASSERT_VIEW_UNCHANGED(display, "LineSpacingScreen");
         }
 
@@ -459,10 +472,11 @@ TEST_CASE("Test some views independently") {
             auto [path, size] = LocalStore::readableFilePathForReading(fileSystem, readable);
             auto stream = fileSystem.newEPubRendererStream(path.c_str(), readable);
             renderer.setStream(stream);
-            ReadableTableOfContentsScreen screen(prefs, readable, renderer, *display, telemetry);
-            screen.loadMenuItems();
+            auto screen = std::make_shared<ReadableTableOfContentsScreen>(prefs, readable, renderer,
+                                                                          *display, telemetry);
+            screen->loadMenuItems();
 
-            screen.render(*display);
+            screen->render(*display);
             ASSERT_VIEW_UNCHANGED(display, "ReadableTableOfContentsScreen");
         }
 
@@ -483,9 +497,10 @@ TEST_CASE("Test some views independently") {
             auto stream = fileSystem.newGzipRendererStream(path.c_str());
             renderer.setStream(stream);
 
-            ReadableScreen readableScreen(stream, *display, readable, prefs, telemetry, fileSystem,
-                                          lightingController, localStore);
-            readableScreen.render(*display);
+            auto readableScreen =
+                std::make_shared<ReadableScreen>(stream, *display, readable, prefs, telemetry,
+                                                 fileSystem, lightingController, localStore);
+            readableScreen->render(*display);
             ASSERT_VIEW_UNCHANGED(display, "CesMode");
         }
 
@@ -502,15 +517,16 @@ TEST_CASE("Test some views independently") {
             auto stream = fileSystem.newEPubRendererStream(path.c_str(), readable);
             renderer.setStream(stream);
 
-            ReadableScreen readableScreen(stream, *display, readable, prefs, telemetry, fileSystem,
-                                          lightingController, localStore);
-            readableScreen.render(*display);
+            auto readableScreen =
+                std::make_shared<ReadableScreen>(stream, *display, readable, prefs, telemetry,
+                                                 fileSystem, lightingController, localStore);
+            readableScreen->render(*display);
             ASSERT_VIEW_UNCHANGED(display, "EpubImage");
         }
 
         SECTION("Test DemoScreen") {
-            DemoScreen screen(*display, prefs);
-            screen.render(*display);
+            auto screen = std::make_shared<DemoScreen>(*display, prefs);
+            screen->render(*display);
             ASSERT_VIEW_UNCHANGED(display, "DemoScreen");
         }
     }
@@ -528,8 +544,9 @@ TEST_CASE("Test bmp file rendering") {
         BMPImage image;
         image.readFromStream(stream);
 
-        BitmapScreen screen(image.getBuffer(), image.getWidth(), image.getHeight());
-        screen.render(*display);
+        auto screen =
+            std::make_shared<BitmapScreen>(image.getBuffer(), image.getWidth(), image.getHeight());
+        screen->render(*display);
         ASSERT_VIEW_UNCHANGED(display, "BitmapViewBooks");
     }
 
@@ -539,8 +556,9 @@ TEST_CASE("Test bmp file rendering") {
         BMPImage image;
         image.readFromStream(stream);
 
-        BitmapScreen screen(image.getBuffer(), image.getWidth(), image.getHeight());
-        screen.render(*display);
+        auto screen =
+            std::make_shared<BitmapScreen>(image.getBuffer(), image.getWidth(), image.getHeight());
+        screen->render(*display);
         ASSERT_VIEW_UNCHANGED(display, "BitmapViewBooks");
     }
 }

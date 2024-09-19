@@ -115,24 +115,39 @@ public:
 
             menuItems->emplace_back(menuItem);
 
-            menuItem = std::make_shared<NewMenuItemSingleLine>("Contents", [this]() {
-                auto toc = std::make_shared<ReadableTableOfContentsScreen>(
-                    prefs_, readable_, renderer_, display_, telemetry_);
+            auto stream = renderer_.getStream();
+            if (stream && stream->isFor(DocType::EPUB) &&
+                std::dynamic_pointer_cast<EPubFile>(stream)->hasToc()) {
+                menuItem = std::make_shared<NewMenuItemSingleLine>("Contents", [this]() {
+                    auto toc = std::make_shared<ReadableTableOfContentsScreen>(
+                        prefs_, readable_, renderer_, display_, telemetry_);
 
-                auto stream = renderer_.getStream();
-                if (stream->isFor(DocType::EPUB) &&
-                    std::dynamic_pointer_cast<EPubFile>(stream)->hasToc()) {
-                    toc->loadMenuItems();
-                    toc->setNearestChapterSelection(renderer_.getCurrentPlace());
-                    toc->setFirstLoad();
-                }
+                    auto stream = renderer_.getStream();
+                    if (stream->isFor(DocType::EPUB) &&
+                        std::dynamic_pointer_cast<EPubFile>(stream)->hasToc()) {
+                        toc->loadMenuItems();
+                        toc->setNearestChapterSelection(renderer_.getCurrentPlace());
+                        toc->setFirstLoad();
+                    }
 
-                toc->setBackCallback([this]() {
-                    this->setCurrentScreen(nullptr);
-                    setNeedsRerender();
+                    toc->setBackCallback([this]() {
+                        this->setCurrentScreen(nullptr);
+                        setNeedsRerender();
+                    });
+                    this->setCurrentScreen(toc);
                 });
-                this->setCurrentScreen(toc);
-            });
+            } else {
+                menuItem = std::make_shared<NewMenuItemSingleLine>("Seek", [this]() {
+                    auto readableSeekScreen =
+                        std::make_shared<ReadableSeekScreen>(prefs_, readable_, renderer_);
+                    readableSeekScreen->setFirstLoad();
+                    readableSeekScreen->setBackCallback([this]() {
+                        this->setCurrentScreen(nullptr);
+                        setNeedsRerender();
+                    });
+                    setCurrentScreen(readableSeekScreen);
+                });
+            }
 
             menuItems->emplace_back(menuItem);
 
@@ -142,7 +157,8 @@ public:
                 this->prefs_.autoPilot.set(!this->prefs_.autoPilot.get().value_or(false));
                 if (this->prefs_.autoPilot.get().value_or(false)) {
                     // Get the speed from the prefs if its there, but if it's 0 or not there,
-                    // set it to the default speed because they just explicitly turned on autopilot.
+                    // set it to the default speed because they just explicitly turned on
+                    // autopilot.
                     pageSpeed_ = prefs_.autoPilotSpeed.get().value_or(0);
                     if (pageSpeed_ == 0) {
                         prefs_.autoPilotSpeed.set(10000);
@@ -216,13 +232,14 @@ public:
             });
 
             // Note the two non-used menu items will get cleaned up at the end of this lambda
-            // This seems a bit more readable than doing this math up front or putting all the code
-            // above in this if / else nesting.
+            // This seems a bit more readable than doing this math up front or putting all the
+            // code above in this if / else nesting.
             if (readable_->appProcessed) {
                 // If the readable is from the desktop app, show the delete menu item.
                 menuItems->emplace_back(deleteMenuItem);
             } else {
-                // Figure out if you should show the Archive menu item or the Unarchive menu item.
+                // Figure out if you should show the Archive menu item or the Unarchive menu
+                // item.
                 bool archived =
                     prefs_.readableArchivedChanged.get(readable_->shortenedUuid.c_str());
                 if (archived) {
@@ -485,8 +502,8 @@ public:
         log_d("readablePlace: \"%s\"", thePlace.c_str());
         readable_->place = Place::factory(thePlace, stream->getDocType());
 
-        // for the animation bits since we may end up coming back to this constructor after being
-        // interrupted.
+        // for the animation bits since we may end up coming back to this constructor after
+        // being interrupted.
         newPlace_ = readable_->place;
         atEnd_ = this->checkAtEnd();
         pageSpeed_ = prefs_.autoPilotSpeed.get().value_or(0);
