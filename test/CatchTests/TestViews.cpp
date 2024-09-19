@@ -98,6 +98,7 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
         WAIT_FOR_DRAW(display);
         SendRemoteCommand(ENTER);
         WAIT_FOR_DRAW(display);
+        WAIT_FOR_DRAW(display);
         ASSERT_VIEW_UNCHANGED(display, "LastQuestion1Bookmarked");
 
         // Render the popup menu to confirm page 1
