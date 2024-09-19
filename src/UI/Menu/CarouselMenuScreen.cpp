@@ -20,6 +20,10 @@ void CarouselMenuScreen::setTabToTitle(const std::string &tabTitle) {
     }
 }
 
+void CarouselMenuScreen::regenerateCurrentTab() { setCurrentTabIndex(getCurrentTabIndex()); }
+
+// Note, MainMenuScreen and PopupMenuScreen rely on the fact that this will populate
+// even if the passed in index is the same as the currentTab.
 void CarouselMenuScreen::setCurrentTabIndex(int index) {
     currentTabIndex_ = index;
     populateMenuView();

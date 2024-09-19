@@ -30,65 +30,9 @@ void ReadableScreen::setCurrentScreen(std::shared_ptr<Screen> screen) {
     currentScreen_ = screen;
 }
 
-auto ReadableScreen::layout(LayoutContext &context, Size size) -> Size {
-    int arrowWidth = 24;
-    int arrowHeight = 8;
-    int sidePadding = -15;
-    int topBottomPadding = -10;
-    auto arrowContainer = Rect::fromSize(size).inset(sidePadding, topBottomPadding);
-    context.setViewSizeInRect(leftArrowView_, {arrowHeight, arrowWidth}, arrowContainer,
-                              LayoutOptionsAlignLeft | LayoutOptionsAlignCenterVertical);
-    context.setViewSizeInRect(rightArrowView_, {arrowHeight, arrowWidth}, arrowContainer,
-                              LayoutOptionsAlignRight | LayoutOptionsAlignCenterVertical);
-    context.setViewSizeInRect(upArrowView_, {arrowWidth, arrowHeight}, arrowContainer,
-                              LayoutOptionsAlignTop | LayoutOptionsAlignCenterHorizontal);
-    context.setViewSizeInRect(downArrowView_, {arrowWidth, arrowHeight}, arrowContainer,
-                              LayoutOptionsAlignBottom | LayoutOptionsAlignCenterHorizontal);
-    return size;
-}
+auto ReadableScreen::layout(LayoutContext &context, Size size) -> Size { return size; }
 
-void ReadableScreen::drawArrows(bool eraseArrow = false) {
-    switch (lastArrowPress_) {
-    case REMOTE_LEFT:
-        leftArrowView_.color = eraseArrow ? display_.bg : display_.fg;
-        leftArrowView_.draw();
-        break;
-    case REMOTE_RIGHT:
-    case REMOTE_CENTER: {
-        // Because the user can repurpose the center button and right button, we need to check
-        // if they did that before showing the right arrow.
-        bool skipDisplay = false;
-
-        if (prefs_.fastBookmarkRight.get().value_or(false) && (lastArrowPress_ == REMOTE_RIGHT)) {
-            skipDisplay = true;
-        }
-        if (prefs_.fastBookmarkCenter.get().value_or(false) && (lastArrowPress_ == REMOTE_CENTER)) {
-            skipDisplay = true;
-        }
-        if (!skipDisplay) {
-            rightArrowView_.color = eraseArrow ? display_.bg : display_.fg;
-            rightArrowView_.draw();
-        }
-        break;
-    }
-    case REMOTE_UP:
-        if (!prefs_.cesMode.get().value_or(false)) {
-            upArrowView_.color = eraseArrow ? display_.bg : display_.fg;
-            upArrowView_.draw();
-        }
-        break;
-    case REMOTE_DOWN:
-        if (!prefs_.cesMode.get().value_or(false)) {
-            downArrowView_.color = eraseArrow ? display_.bg : display_.fg;
-            downArrowView_.draw();
-        }
-        break;
-    default:
-        break;
-    }
-}
-
-void ReadableScreen::drawInRect(Rect rect) { drawArrows(); }
+void ReadableScreen::drawInRect(Rect rect) {}
 
 // Once we have a real database, this will all be replaced.
 // For now, since we assume that there won't be TOO many bookmarks, we simply
@@ -192,7 +136,8 @@ void ReadableScreen::turnPage() {
             return;
         }
         showPopupMenu();
-        // popupMenuScreen_->preselectArchiveOrDeleteMenuItem();
+        // See the layout in popupNavigationFactory to ensure this is still the right setting.
+        popupMenuScreen_->preselectIndexAt(3);
     } else {
         readable_->placePrev = readable_->place;
         readable_->place = newPlace_;
@@ -222,8 +167,6 @@ void ReadableScreen::render(DisplaySystem &display) {
     // change, so we'll leave it for now.
     bool renderPopupBackground = currentScreen_ == popupMenuScreen_ && renderPopup_;
 
-    bool renderTransitionArrows = prefs_.pageTransitionArrows.get().value_or(false);
-
     if (currentScreen_ && !renderPopupBackground) {
         currentScreen_->render(display);
         return;
@@ -243,13 +186,6 @@ void ReadableScreen::render(DisplaySystem &display) {
     }
 
     setFrame(defaultFrameRect());
-
-    if (renderTransitionArrows) {
-        if (lastArrowPress_ != REMOTE_NONE) {
-            draw();
-            display.updateDisplay(DisplaySystem::UpdateType::FAST);
-        }
-    }
 
     prefs_.lastReadableId.set(readable_->uuid.c_str());
     telemetry_.logMetric(TelemetryField::METRIC_READABLE_PLACE, readable_->shortenedUuid.c_str(),
@@ -314,9 +250,12 @@ void ReadableScreen::render(DisplaySystem &display) {
     if (!emcMode && !prefs_.firstAutopilotRead.get().value_or(false) && (pageSpeed_ != 0)) {
         // We need to make sure this goes onto the second page because of a bug in the renderer.
         std::string message =
-            "Welcome to the beta of Autopilot mode! Here is what each button does "
-            "while in autopilot mode.\n\n\nUp or Down: Popup Menu\n\nLeft: Slow Down "
-            "\n\nRight: Speed Up\n\nCenter: Pause/unpause\n\n\nPress any button "
+            "Welcome to Autopilot! Here is what each button does "
+            "while in autopilot.\n\n\n\ue003  or  \ue004 (up or down): Popup Menu\n\n\ue001  "
+            "(left): "
+            "Slow Down "
+            "\n\n\ue002  (right): Speed Up\n\n\ue000  (center) : Pause/unpause\n\n\nPress any "
+            "button "
             "to start reading... \n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n";
 
         auto streamFirstTime = std::make_shared<StdStringStream>(message);
@@ -326,11 +265,8 @@ void ReadableScreen::render(DisplaySystem &display) {
         showingFirstTimeView_ = true;
         renderer_.renderFirstPage();
 
-        if (prefs_.fastTransitions.get().value_or(false)) {
-            display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
-        } else {
-            display.updateDisplay(DisplaySystem::UpdateType::FULL);
-        }
+        display.updateDisplay(DisplaySystem::UpdateType::FULL);
+
         return;
     }
 
@@ -439,27 +375,14 @@ void ReadableScreen::render(DisplaySystem &display) {
                                   display.darkPictureVComAdj(darkPicturePercent));
         }
     } else {
-        if (renderTransitionArrows) {
-            draw();
-        }
         if (prefs_.fastTransitions.get().value_or(false)) {
-            display.updateDisplay(DisplaySystem::UpdateType::PARTIAL,
-                                  (renderTransitionArrows) ? false : true,
+            display.updateDisplay(DisplaySystem::UpdateType::PARTIAL, true,
                                   display.darkPictureVComAdj(darkPicturePercent));
         } else {
-            display.updateDisplay(DisplaySystem::UpdateType::FULL,
-                                  (renderTransitionArrows) ? false : true,
-                                  display.darkPictureVComAdj(darkPicturePercent));
-        }
-        if (renderTransitionArrows) {
-            drawArrows(true);
-            display.updateDisplay(DisplaySystem::UpdateType::ERASE, false,
+            display.updateDisplay(DisplaySystem::UpdateType::FULL, true,
                                   display.darkPictureVComAdj(darkPicturePercent));
         }
     }
-
-    // remember the time this page was rendered
-    readingStartTime_ = GetRunTimeMs();
 
     if (pageSpeed_ != 0) {
         // Must stop the timer because ChangePeriod starts it.
@@ -486,19 +409,10 @@ void ReadableScreen::render(DisplaySystem &display) {
     firstLoad_ = false;
 }
 
-void ReadableScreen::incrementReadingTime() {
-    // increment total reading time
-    auto endMillis = GetRunTimeMs();
-    auto thisPageReadingTimeSeconds =
-        (endMillis > readingStartTime_) ? (endMillis - readingStartTime_) / 1000 : 0;
-    auto totalReadingTimeSeconds = prefs_.totalReadingTimeSeconds.get().value_or(0);
-    totalReadingTimeSeconds += thisPageReadingTimeSeconds;
-    prefs_.totalReadingTimeSeconds.set(totalReadingTimeSeconds);
-}
-
 void ReadableScreen::showPopupMenu() {
     renderPopup_ = true;
     popupMenuScreen_->setUpPopupMenu();
+    popupMenuScreen_->regenerateCurrentTab();
     setCurrentScreen(popupMenuScreen_);
 }
 
@@ -607,7 +521,6 @@ void ReadableScreen::processCommandNormal(RemoteCommand command) {
         break;
     case RemoteCommand::DOWN:
         showPopupMenu();
-        // popupMenuScreen_->preselectLastItem();
         break;
     case RemoteCommand::RIGHT:
         if (prefs_.fastBookmarkRight.get().value_or(false)) {
@@ -620,7 +533,6 @@ void ReadableScreen::processCommandNormal(RemoteCommand command) {
     case RemoteCommand::BACK:
     case RemoteCommand::UP:
         showPopupMenu();
-        //  popupMenuScreen_->preselectFirstItem();
         break;
 
     case RemoteCommand::ANIMATION:
@@ -679,9 +591,5 @@ void ReadableScreen::processCommand(RemoteCommand command) {
         processCommandAutoPilot(command);
     } else {
         processCommandNormal(command);
-    }
-
-    if (needsRerender_) {
-        incrementReadingTime();
     }
 }

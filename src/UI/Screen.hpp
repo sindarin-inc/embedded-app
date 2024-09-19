@@ -9,7 +9,7 @@
 Abstract base class for subclasses that represent a piece of content that takes over the whole
 screen.
 */
-class Screen {
+class Screen : public std::enable_shared_from_this<Screen> {
 public:
     virtual ~Screen() = default;
     virtual void render(DisplaySystem &display) = 0;
@@ -37,9 +37,14 @@ public:
 
     void setBackCallback(std::function<void()> callback) { backCallback_ = std::move(callback); }
     virtual void back() {
+        // We need to keep another reference to this until the back method completes.
+        // This is because we pop and then need to sometimes do extra cleanup work in the
+        // backCallback method and we don't want the memory to go away from under us.
+        auto temp = shared_from_this();
         if (backCallback_ != nullptr) {
             backCallback_();
         }
+        // temp goes out of scope and releases the last reference to the pointer.
     }
 
 protected:

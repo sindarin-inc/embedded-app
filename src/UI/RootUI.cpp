@@ -235,6 +235,10 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             prefs_.lastReadableId.remove();
             display->clearDisplay();
             screenStack_.pop();
+
+            // TODO: This causes problems but we have to figure out how to update the title on
+            // archive.
+            std::static_pointer_cast<NewMainMenuScreen>(screenStack_.top())->regenerateCurrentTab();
         });
 
         return readableScreen;
@@ -406,7 +410,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             bool archived = prefs_.readableArchivedChanged.get(book->shortenedUuid.c_str());
             auto title = StringFormat("%s%s", archived ? "Archived: " : "", book->title.c_str());
             menuItems->emplace_back(std::make_shared<NewMenuItemBook>(
-                std::string(book->title), std::string(book->authors[0].name),
+                std::string(title), std::string(book->authors[0].name),
                 [book, handleReadableScreenCreation]() { handleReadableScreenCreation(book); }));
         }
 
@@ -522,7 +526,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 auto title =
                     StringFormat("%s%s", archived ? "Archived: " : "", book->title.c_str());
                 menuItems->emplace_back(std::make_shared<NewMenuItemSingleLine>(
-                    std::string(book->title), [book, handleReadableScreenCreation]() {
+                    std::string(title), [book, handleReadableScreenCreation]() {
                         handleReadableScreenCreation(book);
                     }));
             }
@@ -1708,6 +1712,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     HEAP_PROFILE_END(rootUISettings);
 
+    screenStack_.push(newMainMenu);
+
     if (prefs_.cesMode.get().value_or(false)) {
         auto cesScreen = std::make_shared<DemoScreen>(*display, prefs_);
 
@@ -1811,21 +1817,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     if (PreferencesStore::settingsOnRestart) {
         PreferencesStore::settingsOnRestart = false;
         newMainMenu->setTabToTitle("Settings");
-    }
-
-    // This still has to be this way rather than else if because the
-    // currentReadable.has_value() Could return true but if we don't find that readable, no
-    // screen will be set. I asssume this would happen if the FS is updated underneath us to
-    // remove that readable.
-    if (screenStack_.empty()) {
-        // If we've already connected to an input device, go straight
-        // to the main menu. We will clean this up a bit moving forward
-        // but for now it makes it clear when it's connected and when it
-        // hasn't on boot.
-
-        // By default, if we don't already have a different first screen ready, show the
-        // main menu screen
-        screenStack_.push(newMainMenu);
     }
 
     SHOW_HEAP();

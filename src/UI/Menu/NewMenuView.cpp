@@ -80,6 +80,7 @@ void NewMenuView::setIndicatorType(IndicatorType type) {
 auto NewMenuView::layout(LayoutContext &context, Size size) -> Size {
     int y = 0;
     int x = 0;
+    int widthOfIndicator = 0;
 
     // Reserve space for indicator
     if (indicatorType_ != IndicatorType::None) {
@@ -95,11 +96,12 @@ auto NewMenuView::layout(LayoutContext &context, Size size) -> Size {
             LayoutOptionsSizeToFitVertical | LayoutOptionsAlignCenterVertical |
                 LayoutOptionsAlignRight);
         width -= pagingIndicatorRect.size.width + pagingIndicatorPadding;
+        widthOfIndicator += pagingIndicatorRect.size.width + indicatorPadding;
     }
 
     // The remaining space for the menu items
-
     // Draw the menu items
+    int maxWidth = 0;
     size_t startIndex = currentPage_ * itemsPerPage;
     size_t endIndex = std::min(startIndex + itemsPerPage, menuItemViews_.size());
     for (size_t i = startIndex; i < endIndex; ++i) {
@@ -107,6 +109,7 @@ auto NewMenuView::layout(LayoutContext &context, Size size) -> Size {
         (*menuItemViews_[i]).setSelected(selected);
         auto itemRect = context.setViewFrame(*menuItemViews_[i], {{x, y}, {width, 0}},
                                              LayoutOptionsSizeToFit | LayoutOptionsConstrainWidth);
+        maxWidth = std::max(maxWidth, itemRect.size.width);
         y += itemRect.size.height + padding;
 
         // If this is the selected item, draw the indicator center aligned with the item
@@ -128,11 +131,12 @@ auto NewMenuView::layout(LayoutContext &context, Size size) -> Size {
             indicatorView_.cornerRadius = indicatorWidth / 2;
             context.setViewSizeInRect(indicatorView_, indicatorSize, indicatorRect,
                                       LayoutOptionsAlignCenterVertical);
+            widthOfIndicator += indicatorWidth + indicatorPadding;
         }
     }
     y -= padding;
 
-    return {size.width, y};
+    return {maxWidth + widthOfIndicator, y};
 }
 
 void NewMenuView::drawInRect(Rect rect) {

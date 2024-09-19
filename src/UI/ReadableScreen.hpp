@@ -1,5 +1,6 @@
 #include <utility>
 
+#include "Misc/PowerManager.hpp"
 #include "Misc/Telemetry.hpp"
 #include "Models/Readable.hpp"
 #include "Models/ReadableBookmark.hpp"
@@ -11,9 +12,18 @@
 #include "UI/ContrastAdjustScreen.hpp"
 #include "UI/FirstHookTestScreen.hpp"
 #include "UI/LightingAdjustScreen.hpp"
+#include "UI/LineMenuScreen.hpp"
+#include "UI/LineSpacingScreen.hpp"
+#include "UI/Menu/NewMenuItemCheckable.hpp"
 #include "UI/Menu/NewMenuItemSingleLine.hpp"
+#include "UI/Menu/ReadingSettingsMenuScreen.hpp"
 #include "UI/MsgPopup.hpp"
 #include "UI/NewReadablePopupMenuScreen.hpp"
+#include "UI/OffsetAdjustScreen.hpp"
+#include "UI/ReadableDictionaryScreen.hpp"
+#include "UI/ReadablePlacemarkHistoryScreen.hpp"
+#include "UI/ReadableSummaryScreen.hpp"
+#include "UI/ResizeBoxScreen.hpp"
 #include "UI/Screen.hpp"
 #include "Version.hpp"
 #include "config.h"
@@ -37,51 +47,71 @@ public:
         : EinkView(display), stream_(stream),
           renderer_(display, GetTextRectFromPrefs(display, prefs), prefs), readable_(readable),
           prefs_(prefs), telemetry_(telemetry), fileSystem_(fileSystem),
-          lightingController_(lightingController), display_(display),
-          leftArrowView_(display, ArrowLeft), rightArrowView_(display, ArrowRight),
-          upArrowView_(display, ArrowUp), downArrowView_(display, ArrowDown) {
+          lightingController_(lightingController), display_(display), localStore_(localStore) {
 
-        auto popupNavigationFactory = [this]() -> MenuItemSharedPtrVector {
+        notExist_ = std::make_shared<MsgPopup>(
+            this->display_,
+            "This content doesn't have that feature.\nPress any button to continue.");
+
+        notExist_->setBackCallback([this]() {
+            this->display_.clearDisplay();
+            this->setCurrentScreen(nullptr);
+        });
+
+        readablePlacemarkHistoryScreen_ = std::make_shared<ReadablePlacemarkHistoryScreen>(
+            this->prefs_, this->fileSystem_, this->readable_, this->renderer_, this->display_,
+            this->telemetry_);
+        readablePlacemarkHistoryScreen_->setBackCallback([this]() { setCurrentScreen(nullptr); });
+
+        readableDictionaryScreen_ = std::make_shared<ReadableDictionaryScreen>(
+            this->prefs_, this->readable_, this->display_, this->renderer_);
+        readableDictionaryScreen_->setBackCallback([this]() { setCurrentScreen(nullptr); });
+
+        std::function<void()> onMainMenu = [this]() {
+            hidePopupMenu();
+            prefs_.lastReadableId.remove();
+            if (!prefs_.cesMode.get().value_or(false)) {
+                if (pageSpeed_ != 0) {
+                    xTimerStop(DisplaySystem::animationTimer, 0);
+                }
+            }
+            setNeedsRerender();
+            setCurrentScreen(nullptr);
+            back();
+        };
+
+        std::function<void()> onBookmarkToggle = [this]() {
+            inBookmark_ = !inBookmark_;
+            writeOutBookmarkUpdate();
+        };
+
+        std::function<void()> onReport = [this, &display]() {
+            setNeedsRerender();
+            auto metrics = readable_->telemetryPlacemarkMetrics();
+            metrics["fw"] = SemanticVersionString();
+            auto insets = GetTextInsetFromPrefs(display, prefs_);
+            metrics["in_l"] = insets.left;
+            metrics["in_r"] = insets.right;
+            metrics["in_t"] = insets.top;
+            metrics["in_b"] = insets.bottom;
+            metrics["text_size"] = prefs_.font.get().value_or(PREFS_SOL_SMALL);
+            metrics["line_spacing"] = prefs_.lineSpacing.get().value_or(0);
+            telemetry_.logMetric(TelemetryField::METRIC_REPORT, readable_->uuid.c_str(), metrics);
+            auto reportPopup = std::make_shared<MsgPopup>(
+                display, "Thank you, our team will\nreview this page for\nformatting issues.");
+            display.clearDisplay();
+            this->setCurrentScreen(reportPopup);
+            reportPopup->setBackCallback([this, &display]() {
+                display.clearDisplay();
+                this->setCurrentScreen(nullptr);
+            });
+        };
+
+        auto popupNavigationFactory = [this, onMainMenu]() -> MenuItemSharedPtrVector {
             auto menuItems = std::make_shared<MenuItemVector>();
 
-            auto menuItem = std::make_shared<NewMenuItemSingleLine>("Main Menu", [this]() {
-                setCurrentScreen(nullptr);
-                back();
-            });
-
-            menuItems->emplace_back(menuItem);
-
-            menuItem = std::make_shared<NewMenuItemSingleLine>("Brightness", [this]() {
-                auto brightness = std::make_shared<LightingAdjustScreen>(
-                    display_, prefs_, lightingController_, telemetry_);
-
-                brightness->setBackCallback([this]() {
-                    this->setCurrentScreen(nullptr);
-                    setNeedsRerender();
-                });
-                this->setCurrentScreen(brightness);
-            });
-
-            menuItems->emplace_back(menuItem);
-
-            menuItem = std::make_shared<NewMenuItemSingleLine>("Contrast", [this]() {
-                auto contrast = std::make_shared<ContrastAdjustScreen>(
-                    display_, prefs_, lightingController_, telemetry_);
-
-                contrast->setBackCallback([this]() {
-                    this->setCurrentScreen(nullptr);
-                    setNeedsRerender();
-                });
-                this->setCurrentScreen(contrast);
-            });
-
-            menuItems->emplace_back(menuItem);
-
-            menuItem = std::make_shared<NewMenuItemSingleLine>("Report Page", []() {});
-
-            menuItems->emplace_back(menuItem);
-
-            menuItem = std::make_shared<NewMenuItemSingleLine>("Archive", []() {});
+            auto menuItem = std::make_shared<NewMenuItemSingleLine>(
+                "Main Menu", [this, onMainMenu]() { onMainMenu(); });
 
             menuItems->emplace_back(menuItem);
 
@@ -106,7 +136,117 @@ public:
 
             menuItems->emplace_back(menuItem);
 
+            auto menuItemCheckable = std::make_shared<NewMenuItemCheckable>(
+                "Autopilot",
+                [this]() {
+                this->prefs_.autoPilot.set(!this->prefs_.autoPilot.get().value_or(false));
+                if (this->prefs_.autoPilot.get().value_or(false)) {
+                    // Get the speed from the prefs if its there, but if it's 0 or not there,
+                    // set it to the default speed because they just explicitly turned on autopilot.
+                    pageSpeed_ = prefs_.autoPilotSpeed.get().value_or(0);
+                    if (pageSpeed_ == 0) {
+                        prefs_.autoPilotSpeed.set(10000);
+                        pageSpeed_ = prefs_.autoPilotSpeed.get().value_or(0);
+                    }
+                } else {
+                    prefs_.autoPilotSpeed.remove();
+                    pageSpeed_ = 0;
+                }
+                display_.clearDisplay();
+                this->setCurrentScreen(nullptr);
+                setNeedsRerender();
+                },
+                [this]() -> bool { return this->prefs_.autoPilot.get().value_or(false); });
+
+            menuItems->emplace_back(menuItemCheckable);
+
+            auto deleteMenuItem =
+                std::make_shared<NewMenuItemSingleLine>("Delete", [this, onMainMenu]() {
+                    log_d("Showing delete confirmation!");
+                    auto lineMenuScreen_ =
+                        std::make_shared<LineMenuScreen>(this->prefs_, this->display_);
+                    lineMenuScreen_->resetMenuItems();
+                    lineMenuScreen_->addMenuItem(std::make_shared<NewMenuItemSingleLine>("Cancel",
+                                                                                         [this]() {
+                    log_d("Aborting delete!");
+                    setCurrentScreen(nullptr);
+                    back();
+                    }));
+                    lineMenuScreen_->addMenuItem(
+                        std::make_shared<NewMenuItemSingleLine>("Delete: I'm sure!",
+                                                                [this, onMainMenu]() {
+                    UserReadablesVector readablesToDelete = {};
+                    // Create a UserReadable from the readable_ and add it to the
+                    // readablesToDelete dynamic_pointer_cast the stream_ to an EPubFile and
+                    // close it It's always an EPubFile if they uploaded it to us! Print out the
+                    // dynamic type of stream_ to make sure it's always an EPubFile
+                    std::shared_ptr<EPubFile> temp = std::dynamic_pointer_cast<EPubFile>(stream_);
+                    temp->close();
+                    readablesToDelete.emplace_back();
+                    readablesToDelete.back().uuid = readable_->shortenedUuid;
+                    readablesToDelete.back().isArchived = false;
+                    readablesToDelete.back().readable = readable_;
+                    localStore_.processReadableDeletion(readablesToDelete, localStore_.books());
+                    auto restartSoonPopup = std::make_shared<MsgPopup>(
+                        display_, "Book deleted, press \ue000 to restart");
+                    display_.clearDisplay();
+                    this->setCurrentScreen(restartSoonPopup);
+                    setNeedsRerender();
+                    restartSoonPopup->setBackCallback([this, onMainMenu]() {
+                        display_.clearDisplay();
+                        onMainMenu();
+                        PowerManager::getInstance().reboot();
+                    });
+                        }));
+                    setCurrentScreen(lineMenuScreen_);
+                    setNeedsRerender();
+                });
+
+            auto archiveMenuItem = std::make_shared<NewMenuItemSingleLine>("Archive",
+                                                                           [this, onMainMenu]() {
+                this->prefs_.readableArchivedChanged.set(readable_->shortenedUuid.c_str(), true);
+                onMainMenu();
+            });
+
+            auto unarchiveMenuItem = std::make_shared<NewMenuItemSingleLine>("Unarchive", [this]() {
+                this->prefs_.readableArchivedChanged.remove(readable_->shortenedUuid.c_str());
+                display_.clearDisplay();
+                this->setCurrentScreen(nullptr);
+                setNeedsRerender();
+            });
+
+            // Note the two non-used menu items will get cleaned up at the end of this lambda
+            // This seems a bit more readable than doing this math up front or putting all the code
+            // above in this if / else nesting.
+            if (readable_->appProcessed) {
+                // If the readable is from the desktop app, show the delete menu item.
+                menuItems->emplace_back(deleteMenuItem);
+            } else {
+                // Figure out if you should show the Archive menu item or the Unarchive menu item.
+                bool archived =
+                    prefs_.readableArchivedChanged.get(readable_->shortenedUuid.c_str());
+                if (archived) {
+                    menuItems->emplace_back(unarchiveMenuItem);
+                } else {
+                    menuItems->emplace_back(archiveMenuItem);
+                }
+            }
+
+            menuItem = std::make_shared<NewMenuItemSingleLine>("Brightness", [this]() {
+                auto brightness = std::make_shared<LightingAdjustScreen>(
+                    display_, prefs_, lightingController_, telemetry_);
+
+                brightness->setBackCallback([this]() {
+                    this->setCurrentScreen(nullptr);
+                    setNeedsRerender();
+                });
+                this->setCurrentScreen(brightness);
+            });
+
+            menuItems->emplace_back(menuItem);
+
             menuItem = std::make_shared<NewMenuItemSingleLine>("Back to Text", [this]() {
+                display_.clearDisplay();
                 this->setCurrentScreen(nullptr);
                 setNeedsRerender();
             });
@@ -116,40 +256,87 @@ public:
             return menuItems;
         };
 
-        auto popupContextFactory = [this]() -> MenuItemSharedPtrVector {
+        auto popupContextFactory = [this, onBookmarkToggle, onReport]() -> MenuItemSharedPtrVector {
             auto menuItems = std::make_shared<MenuItemVector>();
 
-            auto menuItem = std::make_shared<NewMenuItemSingleLine>("Dictionary", []() {});
+            auto menuItem =
+                std::make_shared<NewMenuItemSingleLine>("Bookmark", [this, onBookmarkToggle]() {
+                    onBookmarkToggle();
+                    display_.clearDisplay();
+                    this->setCurrentScreen(nullptr);
+                    setNeedsRerender();
+                });
 
             menuItems->emplace_back(menuItem);
 
-            menuItem = std::make_shared<NewMenuItemSingleLine>("Summary", [this]() {
+            if (renderer_.getCurrentPlace()->isFor(DocType::EPUB)) {
+                auto stream = std::dynamic_pointer_cast<EPubFile>(renderer_.getStream());
+                auto placeHref =
+                    std::dynamic_pointer_cast<EPubPlace>(renderer_.getCurrentPlace())->getHRef();
 
-            });
+                if (stream->hasDictionary(placeHref)) {
+                    menuItems->emplace_back(std::make_shared<NewMenuItemSingleLine>("Dictionary",
+                                                                                    [this]() {
+                        auto epubPlace =
+                            std::dynamic_pointer_cast<EPubPlace>(renderer_.getCurrentPlace());
 
-            menuItems->emplace_back(menuItem);
+                        readableDictionaryScreen_->setPlaceInReadable(epubPlace);
+                        readableDictionaryScreen_->setFirstLoad();
+                        setCurrentScreen(readableDictionaryScreen_);
+                    }));
+                } else {
+                    menuItems->emplace_back(std::make_shared<NewMenuItemSingleLine>(
+                        "Dictionary", [this]() { setCurrentScreen(notExist_); }));
+                    log_d("No dictionary for spine %s", placeHref.c_str());
+                }
 
-            menuItem = std::make_shared<NewMenuItemSingleLine>("History", []() {});
+                if (stream->hasSummary(placeHref)) {
+                    menuItems->emplace_back(std::make_shared<NewMenuItemSingleLine>("Summary",
+                                                                                    [this]() {
+                        auto epubPlace =
+                            std::dynamic_pointer_cast<EPubPlace>(renderer_.getCurrentPlace());
+                        readableSummaryScreen_->setPlaceInReadable(epubPlace);
+                        readableSummaryScreen_->setFirstLoad();
+                        setCurrentScreen(readableSummaryScreen_);
+                    }));
+                } else {
+                    log_d("No summary for spine %s", placeHref.c_str());
+                    menuItems->emplace_back(std::make_shared<NewMenuItemSingleLine>(
+                        "Summary", [this]() { setCurrentScreen(notExist_); }));
+                }
 
-            menuItems->emplace_back(menuItem);
+                if (fileSystem_.exists(readable_->placemarkHistoryFilePath())) {
+                    menuItems->emplace_back(std::make_shared<NewMenuItemSingleLine>("History",
+                                                                                    [this]() {
+                        readablePlacemarkHistoryScreen_->loadMenuItems();
+                        readablePlacemarkHistoryScreen_->setFirstLoad();
+                        setCurrentScreen(readablePlacemarkHistoryScreen_);
+                    }));
+                } else {
+                    menuItems->emplace_back(std::make_shared<NewMenuItemSingleLine>(
+                        "History", [this]() { setCurrentScreen(notExist_); }));
+                }
+            } else {
+                menuItems->emplace_back(std::make_shared<NewMenuItemSingleLine>(
+                    "Dictionary", [this]() { setCurrentScreen(notExist_); }));
 
-            menuItem = std::make_shared<NewMenuItemSingleLine>("Bookmark", []() {});
+                menuItems->emplace_back(std::make_shared<NewMenuItemSingleLine>(
+                    "Summary", [this]() { setCurrentScreen(notExist_); }));
 
-            menuItems->emplace_back(menuItem);
+                menuItems->emplace_back(std::make_shared<NewMenuItemSingleLine>(
+                    "History", [this]() { setCurrentScreen(notExist_); }));
+                log_d("Not an EPub, so no history or summary or dictionary");
+            }
 
-            menuItem = std::make_shared<NewMenuItemSingleLine>("Footnotes", [this]() {
-
-            });
-
-            menuItems->emplace_back(menuItem);
-
-            menuItem = std::make_shared<NewMenuItemSingleLine>("Ask a Book", [this]() {
-
+            menuItem = std::make_shared<NewMenuItemSingleLine>("Report Page", [this, onReport]() {
+                log_d("Reporting a problem with the page");
+                onReport();
             });
 
             menuItems->emplace_back(menuItem);
 
             menuItem = std::make_shared<NewMenuItemSingleLine>("Back to Text", [this]() {
+                display_.clearDisplay();
                 this->setCurrentScreen(nullptr);
                 setNeedsRerender();
             });
@@ -163,40 +350,106 @@ public:
             auto menuItems = std::make_shared<MenuItemVector>();
 
             auto menuItem = std::make_shared<NewMenuItemSingleLine>("Text Size", [this]() {
-
+                auto fontMenu = std::make_shared<ReadingSettingsMenuScreen>(
+                    this->display_, "Reading Settings", prefs_);
+                fontMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>("Small", [this]() {
+                    this->display_.setFont(static_cast<Font *>(&fontFace0));
+                    this->display_.clearDisplay();
+                    prefs_.font.set(PREFS_SOL_SMALL);
+                    this->telemetry_.logMetricData(TelemetryField::METRIC_STYLE,
+                                                   {{"text_size", "small"}});
+                    getCurrentScreen()->setNeedsRerender();
+                }));
+                fontMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>("Medium", [this]() {
+                    this->display_.setFont(static_cast<Font *>(&fontFace1));
+                    this->display_.clearDisplay();
+                    prefs_.font.set(PREFS_SOL_MEDIUM);
+                    this->telemetry_.logMetricData(TelemetryField::METRIC_STYLE,
+                                                   {{"text_size", "medium"}});
+                    getCurrentScreen()->setNeedsRerender();
+                }));
+                fontMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>("Large", [this]() {
+                    this->display_.setFont(static_cast<Font *>(&fontFace2));
+                    this->display_.clearDisplay();
+                    prefs_.font.set(PREFS_SOL_LARGE);
+                    this->telemetry_.logMetricData(TelemetryField::METRIC_STYLE,
+                                                   {{"text_size", "large"}});
+                    getCurrentScreen()->setNeedsRerender();
+                }));
+                int menuIndex = 0;
+                if (prefs_.font.get().value_or(PREFS_SOL_SMALL) == PREFS_SOL_SMALL) {
+                    menuIndex = 0;
+                } else if (prefs_.font.get().value_or(PREFS_SOL_SMALL) == PREFS_SOL_MEDIUM) {
+                    menuIndex = 1;
+                } else if (prefs_.font.get().value_or(PREFS_SOL_SMALL) == PREFS_SOL_LARGE) {
+                    menuIndex = 2;
+                }
+                fontMenu->setSelectedIndex(menuIndex);
+                setCurrentScreen(fontMenu);
+                fontMenu->setBackCallback([this]() { setCurrentScreen(nullptr); });
             });
 
             menuItems->emplace_back(menuItem);
 
-            menuItem = std::make_shared<NewMenuItemSingleLine>("Move Page", []() {});
+            menuItem = std::make_shared<NewMenuItemSingleLine>("Move Text", [this]() {
+                log_d("Loading adjust offset");
+                auto offsetAdjust =
+                    std::make_shared<OffsetAdjustScreen>(this->display_, prefs_, this->telemetry_);
+                this->setCurrentScreen(offsetAdjust);
+                log_d("setting up callback");
+                offsetAdjust->setBackCallback([this]() {
+                    this->renderer_.setRect(GetTextRectFromPrefs(this->display_, this->prefs_));
+                    setCurrentScreen(nullptr);
+                });
+                log_d("set up callback");
+            });
 
             menuItems->emplace_back(menuItem);
 
             menuItem = std::make_shared<NewMenuItemSingleLine>("Resize Page", [this]() {
-
+                log_d("Loading resize box");
+                auto resizeBox =
+                    std::make_shared<ResizeBoxScreen>(this->display_, prefs_, this->telemetry_);
+                this->setCurrentScreen(resizeBox);
+                log_d("setting up callback");
+                resizeBox->setBackCallback([this]() {
+                    this->renderer_.setRect(GetTextRectFromPrefs(this->display_, this->prefs_));
+                    setCurrentScreen(nullptr);
+                });
+                log_d("set up callback");
             });
 
             menuItems->emplace_back(menuItem);
 
-            menuItem = std::make_shared<NewMenuItemSingleLine>("Spacing", [this]() {
-
+            menuItem = std::make_shared<NewMenuItemSingleLine>("Line Spacing", [this]() {
+                auto lineSpacingScreen =
+                    std::make_shared<LineSpacingScreen>(this->display_, prefs_, this->telemetry_);
+                this->setCurrentScreen(lineSpacingScreen);
+                lineSpacingScreen->setBackCallback([this]() { setCurrentScreen(nullptr); });
             });
 
             menuItems->emplace_back(menuItem);
 
-            menuItem = std::make_shared<NewMenuItemSingleLine>("Dark Mode", [this]() {
+            auto menuItemCheckable = std::make_shared<NewMenuItemCheckable>(
+                "Dark Mode",
+                [this]() {
+                this->prefs_.darkMode.set(!this->prefs_.darkMode.get().value_or(false));
+                // Reserved for future use? Potentially lighting up and down?
+                this->display_.flipInversion();
+                // When we invert, we should do a full clear of the display to make sure
+                // the blacks are really gone.
+                this->display_.clearDisplay();
+                prefs_.invertSetting.set(this->display_.getInversion());
+                display_.clearDisplay();
+                setNeedsRerender();
+                setFirstLoad();
+                },
+                [this]() -> bool { return this->prefs_.darkMode.get().value_or(false); });
 
-            });
-
-            menuItems->emplace_back(menuItem);
-
-            menuItem = std::make_shared<NewMenuItemSingleLine>("Autopilot", [this]() {
-
-            });
-
-            menuItems->emplace_back(menuItem);
+            menuItems->emplace_back(menuItemCheckable);
 
             menuItem = std::make_shared<NewMenuItemSingleLine>("Back to Text", [this]() {
+                display_.clearDisplay();
                 this->setCurrentScreen(nullptr);
                 setNeedsRerender();
             });
@@ -246,48 +499,6 @@ public:
             this->setCurrentScreen(nullptr);
         });
 
-        popupMenuScreen_->onMainMenu = [this]() {
-            hidePopupMenu();
-            prefs_.lastReadableId.remove();
-            if (!prefs_.cesMode.get().value_or(false)) {
-                if (pageSpeed_ != 0) {
-                    xTimerStop(DisplaySystem::animationTimer, 0);
-                }
-            }
-            setNeedsRerender();
-            back();
-        };
-
-        popupMenuScreen_->onBookmarkToggle = [this]() {
-            inBookmark_ = !inBookmark_;
-            setNeedsRerender();
-            writeOutBookmarkUpdate();
-        };
-
-        popupMenuScreen_->onReport = [this, &display]() {
-            setNeedsRerender();
-            auto metrics = readable_->telemetryPlacemarkMetrics();
-            metrics["fw"] = SemanticVersionString();
-            auto insets = GetTextInsetFromPrefs(display, prefs_);
-            metrics["in_l"] = insets.left;
-            metrics["in_r"] = insets.right;
-            metrics["in_t"] = insets.top;
-            metrics["in_b"] = insets.bottom;
-            metrics["text_size"] = prefs_.font.get().value_or(PREFS_SOL_SMALL);
-            metrics["line_spacing"] = prefs_.lineSpacing.get().value_or(0);
-            telemetry_.logMetric(TelemetryField::METRIC_REPORT, readable_->uuid.c_str(), metrics);
-            auto reportPopup = std::make_shared<MsgPopup>(
-                display, "Thank you, our team will\nreview this page for\nformatting issues.");
-            display.clearDisplay();
-            this->setCurrentScreen(reportPopup);
-            reportPopup->setBackCallback([this, &display]() {
-                display.clearDisplay();
-                this->setCurrentScreen(nullptr);
-            });
-        };
-
-        popupMenuScreen_->onRerender = [this]() { renderPopup_ = true; };
-
         readableSummaryScreen_->setBackCallback([this, &display]() {
             renderedPartialSummary_ = true;
             display.clearDisplay();
@@ -297,6 +508,7 @@ public:
 
     ~ReadableScreen() override = default;
 
+    // TODO: Someday
     auto layout(LayoutContext &context, Size size) -> Size override;
     void drawInRect(Rect rect) override;
 
@@ -314,10 +526,6 @@ public:
     }
 
     auto getStream() { return stream_; }
-
-    // auto setSelfShared(std::shared_ptr<Screen> readableScreenThis) {
-    //     thisShared_ = readableScreenThis;
-    // }
 
 protected:
     void setCurrentScreen(std::shared_ptr<Screen> screen);
@@ -353,8 +561,12 @@ protected:
 
     DisplaySystem &display_;
 
+    LocalStore &localStore_;
+
     std::shared_ptr<NewReadablePopupMenuScreen> popupMenuScreen_;
-    std::shared_ptr<ReadableSummaryScreen> readableSummaryScreen_;
+    std::shared_ptr<ReadableSummaryScreen> readableSummaryScreen_{nullptr};
+    std::shared_ptr<ReadablePlacemarkHistoryScreen> readablePlacemarkHistoryScreen_{nullptr};
+    std::shared_ptr<ReadableDictionaryScreen> readableDictionaryScreen_{nullptr};
 
     std::vector<std::shared_ptr<Screen>> hookScreens_;
 
@@ -365,16 +577,11 @@ protected:
     int pageSpeed_ = 10000;
     bool autoPilotPause_ = false;
 
-    ArrowView leftArrowView_;
-    ArrowView rightArrowView_;
-    ArrowView upArrowView_;
-    ArrowView downArrowView_;
-
     std::shared_ptr<Screen> currentScreen_{nullptr};
-    // std::shared_ptr<Screen> thisShared_{nullptr};
+
+    std::shared_ptr<MsgPopup> notExist_{nullptr};
 
 private:
-    void incrementReadingTime();
     void turnPage();
     uint32_t readingStartTime_{};
     LastArrowPress lastArrowPress_ = REMOTE_NONE;

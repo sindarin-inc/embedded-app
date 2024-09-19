@@ -30,7 +30,7 @@ public:
         menuView_.itemsPerPage = 11;
     }
 
-    void addMenuItem(const std::shared_ptr<NewMenuItem> &item);
+    void addMenuItem(const std::shared_ptr<NewMenuItem> &item) { menuView_.addMenuItem(item); }
 
     auto layout(LayoutContext &context, Size size) -> Size override;
     void drawInRect(Rect rect) override;
