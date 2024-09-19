@@ -11,13 +11,12 @@
 class MsgPopup : public Screen, public EinkView {
 
 private:
-    DisplaySystem &display_;
     BoxView boxView_;
     MultiLineTextView textView_;
 
 public:
     MsgPopup(DisplaySystem &display, const std::string &msg)
-        : EinkView(display), display_(display), boxView_(display, 8), textView_(display, 8) {
+        : EinkView(display), boxView_(display, 8), textView_(display, 8) {
         textView_.setText(msg);
         textView_.alignCenter = true;
         textView_.setFont(static_cast<Font *>(&fontFace0));

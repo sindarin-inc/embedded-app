@@ -1118,8 +1118,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 systemSettingsMenu->addMenuItem(
                     std::make_shared<NewMenuItemSingleLine>("WiFi and Bluetooth",
                                                             [this, display]() {
-                auto wifiSettingsMenuScreen =
-                    std::make_shared<WiFiSettingsMenuScreen>(*display, this->prefs_);
+                auto wifiSettingsMenuScreen = std::make_shared<WiFiSettingsMenuScreen>(*display);
 
                 wifiSettingsMenuScreen->addMenuItem(
                     std::make_shared<NewMenuItemSingleLine>("WiFi Scan", [this, display]() {

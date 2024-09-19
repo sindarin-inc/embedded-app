@@ -4,9 +4,8 @@
 #include "Misc/Platform.hpp"
 #include "UI/MsgPopup.hpp"
 
-WiFiSettingsMenuScreen::WiFiSettingsMenuScreen(DisplaySystem &display, PreferencesStore &prefs)
-    : EinkView(display), prefs_(prefs), menuView_(display),
-      backLabelView_(display, "System Settings"),
+WiFiSettingsMenuScreen::WiFiSettingsMenuScreen(DisplaySystem &display)
+    : EinkView(display), menuView_(display), backLabelView_(display, "System Settings"),
       configuredAccessView_(display, "Configured Access Points:    "),
       configuredAccessPointsView_(display, MAX_WIFI_SETTINGS) {
     menuView_.padding = 1;

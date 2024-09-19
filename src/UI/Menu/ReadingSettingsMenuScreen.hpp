@@ -46,7 +46,6 @@ private:
     NewMenuView menuView_;
     ArrowLabelView backLabelView_;
     Renderer renderer_;
-    PreferencesStore &prefs_;
 
     RendererView rendererView_;
 

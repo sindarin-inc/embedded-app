@@ -14,7 +14,7 @@
 
 class WiFiSettingsMenuScreen : public Screen, public EinkView {
 public:
-    WiFiSettingsMenuScreen(DisplaySystem &display, PreferencesStore &prefs);
+    WiFiSettingsMenuScreen(DisplaySystem &display);
 
     void addMenuItem(const std::shared_ptr<NewMenuItem> &item);
     void processCommand(RemoteCommand command) override;
@@ -39,7 +39,6 @@ public:
     }
 
 private:
-    PreferencesStore &prefs_;
     NewMenuView menuView_;
     ArrowLabelView backLabelView_;
     SingleLineTextView configuredAccessView_;

@@ -6,8 +6,7 @@ ReadingSettingsMenuScreen::ReadingSettingsMenuScreen(DisplaySystem &display,
                                                      const std::string &backTitle,
                                                      PreferencesStore &prefs)
     : EinkView(display), menuView_(display), backLabelView_(display, backTitle),
-      renderer_(display, DisplayRect({0, 0, 0, 0}), prefs), prefs_(prefs),
-      rendererView_(display, renderer_) {
+      renderer_(display, DisplayRect({0, 0, 0, 0}), prefs), rendererView_(display, renderer_) {
     menuView_.padding = 1;
     menuView_.itemsPerPage = 8;
     rendererView_.dottedBox = true;

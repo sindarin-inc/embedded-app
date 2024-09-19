@@ -148,10 +148,8 @@ auto NewReadablePopupMenuScreen::layout(LayoutContext &context, Size size) -> Si
         footerRect.origin.y = y;
     }
     if (!footer3TextView_.getText().empty()) {
-        auto footerBottomBottomRect =
-            context.setViewFrame(footer3TextView_, footerRect,
-                                 LayoutOptionsSizeToFit | LayoutOptionsAlignCenterHorizontal);
-        y += footerBottomBottomRect.size.height;
+        context.setViewFrame(footer3TextView_, footerRect,
+                             LayoutOptionsSizeToFit | LayoutOptionsAlignCenterHorizontal);
     }
 
     // To be visually pleasing, the popup menu should take about 150% of the width
