@@ -1483,22 +1483,22 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                     auto wifiPowerMenu =
                         std::make_shared<GenericSettingsMenuScreen>(*display, "Debug Settings");
 
-                    auto powerToString = [](wifi_power_t power) -> std::string {
-                        switch (power) {
-                        case WIFI_POWER_19_5dBm:
-                            return "Max (19.5dBm)";
-                        case WIFI_POWER_16dBm:
-                            return "High (16dBm)";
-                        case WIFI_POWER_11dBm:
-                            return "Medium (11dBm)";
-                        case WIFI_POWER_5dBm:
-                            return "Low (5dBm)";
-                        case WIFI_POWER_MINUS_1dBm:
-                            return "Min (-1dBm)";
-                        default:
-                            return "Unknown";
-                        }
-                    };
+                    // auto powerToString = [](wifi_power_t power) -> std::string {
+                    //     switch (power) {
+                    //     case WIFI_POWER_19_5dBm:
+                    //         return "Max (19.5dBm)";
+                    //     case WIFI_POWER_16dBm:
+                    //         return "High (16dBm)";
+                    //     case WIFI_POWER_11dBm:
+                    //         return "Medium (11dBm)";
+                    //     case WIFI_POWER_5dBm:
+                    //         return "Low (5dBm)";
+                    //     case WIFI_POWER_MINUS_1dBm:
+                    //         return "Min (-1dBm)";
+                    //     default:
+                    //         return "Unknown";
+                    //     }
+                    // };
 
                     // TODO Add this to GenericSettingsMenuScreen perhaps?
                     // wifiPowerMenu->setExtraText(powerToString(WiFi::getInstance().getWiFiPower()));

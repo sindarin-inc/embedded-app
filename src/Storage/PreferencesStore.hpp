@@ -200,7 +200,7 @@ public:
     class PrefsItem : public PrefsItemBase<T> {
     public:
         PrefsItem(PreferencesStore &prefs, const char *key) : PrefsItemBase<T>(prefs) {
-            strncpy(this->key_, key, sizeof(this->key_));
+            std::snprintf(this->key_, sizeof(this->key_), "%s", key);
         }
         virtual ~PrefsItem() = default;
 
