@@ -25,7 +25,7 @@ public:
           footer3TextView_(display, ""), telemetry_(telemetry), localStore_(localStore),
           fileSystem_(fileSystem), stream_(stream), lineMenuScreen_(prefs, display) {
 
-        menuView_.padding = 1;
+        menuView_.padding = 0;
         menuView_.itemsPerPage = 8;
         menuView_.indicatorWidth = 5;
         menuView_.indicatorPadding = 5;
