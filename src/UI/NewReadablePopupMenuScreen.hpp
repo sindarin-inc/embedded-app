@@ -37,12 +37,9 @@ public:
     auto layout(LayoutContext &context, Size size) -> Size override;
     void drawInRect(Rect rect) override;
 
-    std::function<void()> onMainMenu;
-    std::function<void()> onBookmarkToggle;
-    std::function<void()> onReport;
-    std::function<void()> onRerender;
-
     void setUpPopupMenu();
+
+    void preselectIndexAt(int index);
 
 protected:
     DisplaySystem &display_;

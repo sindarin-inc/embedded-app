@@ -32,6 +32,8 @@ public:
 
     void setCurrentTabIndex(int index);
 
+    auto getCurrentTabIndex() -> int { return currentTabIndex_; }
+
     void setTabToTitle(const std::string &tabTitle);
 
     auto getNumTabs() const -> int { return menuTabs_.size(); }
@@ -39,6 +41,8 @@ public:
     auto layout(LayoutContext &context, Size size) -> Size override = 0;
     void drawInRect(Rect rect) override = 0;
     void render(DisplaySystem &display) override = 0;
+
+    void regenerateCurrentTab();
 
     void showTemporaryMessage(DisplaySystem &display, const std::string &message,
                               int duration = 2000, bool rerenderAfter = false) override {

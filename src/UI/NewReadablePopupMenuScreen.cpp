@@ -3,15 +3,86 @@
 #include "UI/MsgPopup.hpp"
 
 void NewReadablePopupMenuScreen::setUpPopupMenu() {
-    footer1TextView_.setText("15 Remaining");
-    footer2TextView_.setText("312 of 790");
-    footer3TextView_.setText("3:33pm");
+    std::shared_ptr<Place> place = renderer_.getCurrentPlace();
+
+    std::string placeStringForBottom;
+    std::string chapterPagesRemainingString;
+
+    if (place->isFor(DocType::EPUB)) {
+        auto stream = std::dynamic_pointer_cast<EPubFile>(renderer_.getStream());
+        auto ePubPlace = std::dynamic_pointer_cast<EPubPlace>(place);
+        auto &chapterHref = ePubPlace->getHRef();
+        currentChapterIdx_ = stream->getChapterIdx(chapterHref);
+
+        if (currentChapterIdx_ >= 0) {
+            const auto &toc = stream->getToc();
+            auto &chapter = toc[currentChapterIdx_];
+            auto spineIdx = renderer_.getStreamPlace(renderer_.getCurrentPlace()).getSpineIdx();
+            // TODO(john): This isn't exactly right because `place->getOffset()` is a byte offset,
+            // not a letter offset from the beginning of the chapter. The chapters always start with
+            // extra html-y stuff at the start so this is always inflated by some amount.
+
+            // If current spine item is not the first in the chapter, add offsets of previous spine
+            // items in chapter to get the correct offset
+            auto previousSpineOffset = stream->getOffsetPreviousSpineItemsInChapter(spineIdx);
+            auto currentOffset =
+                chapter.epubOffset + previousSpineOffset + renderer_.getCurrentPlace()->getOffset();
+
+            // Get the end offset of the last chapter (to determine the length of the book)
+            auto &lastChapter = toc[stream->getToc().size() - 1];
+            auto lastChapterEndOffset = lastChapter.endEpubOffset;
+
+            if (currentOffset < lastChapterEndOffset) {
+                if (stream->isAnArticle()) {
+                    placeStringForBottom =
+                        StringFormat("%d of %d page%s", SOL_PAGE_NUMBER(currentOffset),
+                                     SOL_PAGE_NUMBER(lastChapterEndOffset),
+                                     SOL_PAGE_NUMBER(lastChapterEndOffset) == 1 ? "" : "s");
+                } else {
+                    placeStringForBottom = StringFormat("%d of %d", SOL_PAGE_NUMBER(currentOffset),
+                                                        SOL_PAGE_NUMBER(lastChapterEndOffset));
+                }
+            }
+
+            // Determine how many Sol Pages are left in the chapter
+            if (chapter.endEpubOffset > currentOffset && !stream->isAnArticle()) {
+                auto chapterPagesRemaining = chapter.endEpubOffset - currentOffset;
+                chapterPagesRemainingString =
+                    StringFormat("%d page%s left", SOL_PAGE_NUMBER(chapterPagesRemaining),
+                                 SOL_PAGE_NUMBER(chapterPagesRemaining) == 1 ? "" : "s");
+            }
+            // log_w("Chapter %d, %s, current:%d=%" PRIu32 "+%" PRIu32 "(%" PRIu32 ") end: %"
+            // PRIu32,
+            //       currentChapterIdx_, chapter.title.c_str(), currentOffset, chapter.epubOffset,
+            //       renderer_.getTxtOffset(), renderer_.getCurrentPlace()->getOffset(),
+            //       lastChapterEndOffset);
+        } else {
+            log_w("Couldn't find chapter index (%d) for href %s", currentChapterIdx_,
+                  chapterHref.c_str());
+        }
+    } else {
+        size_t lengthOfFile = renderer_.size();
+        placeStringForBottom = StringFormat("%d of %d", SOL_PAGE_NUMBER(renderer_.getTxtOffset()),
+                                            SOL_PAGE_NUMBER(lengthOfFile));
+    }
+
+    if (!chapterPagesRemainingString.empty()) {
+        footer1TextView_.setText(chapterPagesRemainingString);
+    }
+    if (!placeStringForBottom.empty()) {
+        footer2TextView_.setText(placeStringForBottom);
+    }
+
+    SolClock &theClock = SolClock::getInstance();
+    auto timeString = theClock.getTimeString();
+    footer3TextView_.setText(timeString);
 
     setNeedsLayout();
 }
 
-void NewReadablePopupMenuScreen::drawInRect(Rect rect) {
+void NewReadablePopupMenuScreen::preselectIndexAt(int index) { menuView_.setSelectedIndex(index); }
 
+void NewReadablePopupMenuScreen::drawInRect(Rect rect) {
     popupMenuBackground_.fillColor = display_.bg;
     popupMenuBackground_.strokeColor = display_.bg;
     popupMenuForeground_.strokeColor = display_.fg;
@@ -19,44 +90,46 @@ void NewReadablePopupMenuScreen::drawInRect(Rect rect) {
     popupMenuBackground_.draw();
     popupMenuForeground_.draw();
 
+    titleView_.draw();
+    menuView_.draw();
+
     footer1TextView_.draw();
     footer2TextView_.draw();
     footer3TextView_.draw();
-
-    titleView_.draw();
-    menuView_.draw();
 }
 
 auto NewReadablePopupMenuScreen::layout(LayoutContext &context, Size size) -> Size {
-
     auto fullFrame = Rect::fromSize(size);
 
-    context.setViewFrame(popupMenuBackground_, fullFrame);
+    // Right now we are forcing this to be an inset from the full height of the size
+    // but it would be better if it could layout all the stuff inside it and determine
+    // the right height.
+    auto backgroundFrame =
+        context.setViewFrame(popupMenuBackground_, fullFrame.inset(size.width / 4 - 5, 10));
     // Border is inset by 5 pixels on the top and bottom and then 1/4 of the width on the left and
     // right. This will need to be adjusted for different screen resolutions.
     auto foregroundFrame =
-        context.setViewFrame(popupMenuForeground_, fullFrame.inset(size.width / 4, 5));
-    auto contentFrame = foregroundFrame.inset(size.width / 4 + 5, 10);
+        context.setViewFrame(popupMenuForeground_, fullFrame.inset(size.width / 4, 15));
+    auto contentFrame = foregroundFrame.inset(5, 10);
     auto y = contentFrame.origin.y;
-    auto x = 0;
 
     auto titleBox = context.setViewFrame(
         titleView_, {{contentFrame.origin.x, y}, contentFrame.size},
         LayoutOptionsSizeToFit | LayoutOptionsAlignTop | LayoutOptionsAlignCenterHorizontal);
 
-    y += titleBox.size.height + 10;
+    y += titleBox.size.height + 12;
 
-    // TODO: Fix me -- not sure if the MenuView needs to be changed to not do the ConstrainWidth in
-    // order to handle the case where it's used in both the MainMenu and the PopupMenu
     auto menuBox = context.setViewFrame(
-        menuView_, {{contentFrame.origin.x / 2 + 10, y}, contentFrame.size},
-        LayoutOptionsSizeToFit | LayoutOptionsAlignTop | LayoutOptionsAlignCenterHorizontal);
+        menuView_,
+        {{contentFrame.origin.x + contentFrame.size.width / 9, y},
+         {contentFrame.size.width - 2 * contentFrame.size.width / 9, contentFrame.size.height}},
+        LayoutOptionsSizeToFit | LayoutOptionsAlignTop | LayoutOptionsAlignLeft);
 
     y += menuBox.size.height + 2;
 
     // Nudge down the footers
     if (!footer1TextView_.getText().empty() || !footer2TextView_.getText().empty()) {
-        y += 5;
+        y += 8;
     }
 
     auto footerRect = Rect({{contentFrame.origin.x, y}, {contentFrame.size.width, 0}});
@@ -81,16 +154,14 @@ auto NewReadablePopupMenuScreen::layout(LayoutContext &context, Size size) -> Si
         y += footerBottomBottomRect.size.height;
     }
 
-    // Add bottom padding
-    y += 5;
-
     // To be visually pleasing, the popup menu should take about 150% of the width
     // of the widest text -- this allows for the buttons as well
     // return {maxWidthOfText * 110 / 100, y};
     // 152 / 100 makes it exactly what it was before (106).
     // However, on other displays with larger resoltuions, the popup menu still seems a bit too
     // big. Future work to figure this out.
-    return {152 * x / 100, y};
+    // return {152 * menuBox.size.width / 100, y};
+    return backgroundFrame.size;
 }
 
 void NewReadablePopupMenuScreen::render(DisplaySystem &display) {

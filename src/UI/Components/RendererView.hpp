@@ -18,7 +18,6 @@ public:
     auto setAutoPilotWraparound() { autoPilotWraparound_ = true; }
 
     void resetRenderer() {
-
         numSkipLines_ = 0;
         currentPlace_ = nullptr;
         nextPlace_ = nullptr;
