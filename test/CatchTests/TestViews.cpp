@@ -27,6 +27,10 @@
 #undef protected
 #undef private
 
+extern Font fontFace0;
+extern Font fontFace1;
+extern Font fontFace2;
+
 TEST_CASE("First few screens render correctly and handle remote commands") {
 
     SetupFileSystemMock("TestData");
@@ -373,7 +377,7 @@ TEST_CASE("Test some views independently") {
                 Battery battery(fs, prefs, telemetry);
                 LocalStore localStore(fs, prefs, battery, telemetry);
 
-                (*display).style.setFontFamily((*display).style.solSansSmall);
+                (*display).setFont(static_cast<Font *>(&fontFace0));
 
                 Firmware firmware;
                 auto upgradeAvailable = localStore.getPendingFirmwareUpdate(firmware);
@@ -448,9 +452,10 @@ TEST_CASE("Test some views independently") {
         SECTION("Test ReadableTableOfContentsScreen") {
             auto readable = std::make_shared<Readable>();
             auto readablesJsonDoc = LoadJsonDoc(fileSystem, "/readables.json");
+            auto prefs = PreferencesStore();
             readable->fromJson((*readablesJsonDoc)["readables"][1]);
 
-            Renderer renderer(*display, display->defaultTextRect());
+            Renderer renderer(*display, display->defaultTextRect(), prefs);
             auto [path, size] = LocalStore::readableFilePathForReading(fileSystem, readable);
             auto stream = fileSystem.newEPubRendererStream(path.c_str(), readable);
             renderer.setStream(stream);
@@ -470,9 +475,10 @@ TEST_CASE("Test some views independently") {
 
             auto readable = std::make_shared<Readable>();
             auto readablesJsonDoc = LoadJsonDoc(fileSystem, "/readables.json");
+            auto prefs = PreferencesStore();
             readable->fromJson((*readablesJsonDoc)["readables"][0]);
 
-            Renderer renderer(*display, display->defaultTextRect());
+            Renderer renderer(*display, display->defaultTextRect(), prefs);
             auto [path, size] = LocalStore::readableFilePathForReading(fileSystem, readable);
             auto stream = fileSystem.newGzipRendererStream(path.c_str());
             renderer.setStream(stream);
@@ -488,9 +494,10 @@ TEST_CASE("Test some views independently") {
             LocalStore localStore(fileSystem, prefs, battery, telemetry);
             auto readable = std::make_shared<Readable>();
             auto readablesJsonDoc = LoadJsonDoc(fileSystem, "/readables-lq-epub.json");
+            auto prefs = PreferencesStore();
             readable->fromJson((*readablesJsonDoc)["readables"][0]);
 
-            Renderer renderer(*display, {10, 20, 236, 236});
+            Renderer renderer(*display, {10, 20, 236, 236}, prefs);
             auto [path, size] = LocalStore::readableFilePathForReading(fileSystem, readable);
             auto stream = fileSystem.newEPubRendererStream(path.c_str(), readable);
             renderer.setStream(stream);
