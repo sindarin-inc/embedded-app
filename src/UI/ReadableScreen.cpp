@@ -361,9 +361,6 @@ void ReadableScreen::render(DisplaySystem &display) {
     log_d("%s is the new place in the text %s", newPlace_->str().c_str(), atEnd_ ? "(at end)" : "");
 
     if (renderPopupBackground) {
-        // Initial popup render (will use PARTIAL and not clear out the text)
-        popupMenuScreen_->render(display);
-        // Render again (This time it will use AU4 and render without the text)
         popupMenuScreen_->render(display);
     } else if ((pageSpeed_ != 0) && (speedLinesToSkip_ > 0)) {
         if (autoPilotForceFull_) {

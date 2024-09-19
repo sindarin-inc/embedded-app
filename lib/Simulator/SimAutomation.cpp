@@ -17,7 +17,7 @@
 
 // From main.cpp
 extern void UIInnerLoop(RemoteCommand command);
-extern Screen *UIGetCurrentScreen();
+extern auto UIGetCurrentScreen() -> std::shared_ptr<Screen>;
 
 // From native.cpp
 extern void SimDrawScreen();

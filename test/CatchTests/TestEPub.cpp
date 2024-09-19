@@ -24,7 +24,7 @@
 
 #include <sstream>
 
-extern auto UIGetCurrentScreen() -> Screen *;
+extern auto UIGetCurrentScreen() -> std::shared_ptr<Screen>;
 
 TEST_CASE("Test some individual EPub formatting edge cases", "[epub-format]") {
     auto display = createDisplay();
@@ -113,7 +113,7 @@ TEST_CASE("Test EPub Books Rendering", "[.][epub]") {
         // WAIT_FOR_DRAW(display);
 
         auto screen = UIGetCurrentScreen();
-        auto readableScreen = dynamic_cast<ReadableScreen *>(screen);
+        auto readableScreen = std::dynamic_pointer_cast<ReadableScreen>(screen);
 
         if (readableScreen != nullptr) {
 

@@ -178,7 +178,9 @@ void NewReadablePopupMenuScreen::render(DisplaySystem &display) {
         // background (but using AU4). This creates the effect of the popup happening on top of
         // the text.
         firstLoad_ = false;
-        display.updateDisplay(DisplaySystem::UpdateType::PARTIAL, false);
+        display.updateDisplay(DisplaySystem::UpdateType::PARTIAL, true);
+        // Redraw but this time without the text (since updateDsplay will clear the screen)
+        draw();
 #endif
     }
     menuView_.drawFastElements();

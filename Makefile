@@ -55,11 +55,11 @@ sim8: sim8-build
 	./lib/Simulator/build8/simulator
 
 .PHONY: lldb
-lldb: sim
+lldb: sim-build
 	lldb lib/Simulator/build/simulator
 
 .PHONY: lldb8
-lldb8: sim8
+lldb8: sim8-build
 	lldb lib/Simulator/build8/simulator
 
 .PHONY: test-build
@@ -72,6 +72,10 @@ test: test-build
 	./test/CatchTests/build/tests
 	./test/CatchTests/build/tests '[epub]'
 	./test/CatchTests/build/tests '[content-sync]'
+
+.PHONY: lldb-test-epub
+lldb-test-epub: test-build
+	lldb ./test/CatchTests/build/tests '[epub]'
 
 .PHONY: epub-render-build
 epub-render-build:
