@@ -10,8 +10,9 @@
 #include "Storage/PreferencesStore.hpp"
 #include "sindarin-debug.h"
 
-using WebRequestHandler = std::function<void(const SpiramString &, const SpiramString &)>;
-using SubscriptionStatusCallback = std::function<void(bool)>;
+using WebRequestHandler =
+    std::function<void(const SpiramString &key, const char *body, size_t bodySize)>;
+using SubscriptionStatusCallback = std::function<void(bool connected)>;
 
 class BLEProxy : BLECharacteristicProvider {
 public:
@@ -19,7 +20,7 @@ public:
     BLEProxy(BLEProxy const &) = delete;
     ~BLEProxy() override = default;
 
-    static auto getInstance() -> std::shared_ptr<BLEProxy>;
+    static auto getInstance(bool create = true) -> std::shared_ptr<BLEProxy>;
 
     void setPrefs(PreferencesStore *prefs) { prefs_ = prefs; };
     void configureCharacteristics(BLEService *service) override;
@@ -38,6 +39,7 @@ public:
     auto calculateChecksum(const SpiramString &body) -> SpiramString;
 
     void writeResponseBody(const SpiramString &key, const SpiramString &body);
+    void acknowledgeKey(const SpiramString &key);
 
     void registerWebRequestHandler(const WebRequestHandler &handler);
     void registerSubscriptionStatusCallback(const SubscriptionStatusCallback &callback);
@@ -66,8 +68,7 @@ protected:
 
         void onWrite(NimBLECharacteristic *characteristic, NimBLEConnInfo &connInfo) override {
             NimBLEAttValue value = characteristic->getValue();
-            std::string_view valueStr(reinterpret_cast<const char *>(value.c_str()),
-                                      value.length());
+            const char *valuePtr = value.c_str();
             size_t valueSize = value.size();
 
             if (valueSize == 0) {
@@ -75,25 +76,54 @@ protected:
                 return;
             }
 
-            log_d("BLEProxy::CharacteristicCallbacks::onWrite: %s", value.c_str());
-            // Send the body to the web request handler.
-            size_t equalsIndex = valueStr.find('=');
-            if (equalsIndex != std::string::npos) {
-                SpiramString key = SpiramString(valueStr.substr(0, equalsIndex));
-                SpiramString body = SpiramString(valueStr.substr(equalsIndex + 1));
-                if (key == "auth") {
-                    if (body == BLEProxy::getInstance()->prefs_->bleAuthKey.get()) {
-                        log_i("BLEProxy::CharacteristicCallbacks::onWrite: Authed");
-                        BLEManager::getInstance()->markAsAuthed();
-                    } else {
-                        log_w(
-                            "BLEProxy::CharacteristicCallbacks::onWrite: Auth failed (%s, "
-                            "expected %s)",
-                            body.c_str(),
-                            BLEProxy::getInstance()->prefs_->bleAuthKey.get().value_or("").c_str());
-                    }
-                } else if (BLEProxy::getInstance()->webRequestHandler_) {
-                    BLEProxy::getInstance()->webRequestHandler_(key, body);
+            // log_d("BLEProxy::CharacteristicCallbacks::onWrite: %zu bytes / %.*s", valueSize, 8,
+            //       valuePtr);
+
+            // Find the = character
+            const char *equalsPos = strchr(valuePtr, '=');
+            if (!equalsPos) {
+                log_w("BLEProxy::CharacteristicCallbacks::onWrite: Invalid value format: %s",
+                      valuePtr);
+                return;
+            }
+
+            // Extract the key and body
+            size_t equalsIndex = equalsPos - valuePtr;
+            SpiramString key = SpiramString(std::string(valuePtr, equalsIndex));
+            const char *body = valuePtr + equalsIndex + 1;
+            size_t bodyLength = valueSize - (body - valuePtr);
+
+            // Send the body to the web request handler
+            if (key == "auth") {
+                if (body == BLEProxy::getInstance()->prefs_->bleAuthKey.get().value_or("")) {
+                    log_i("BLEProxy::CharacteristicCallbacks::onWrite: Authed");
+                    BLEManager::getInstance()->markAsAuthed();
+                } else {
+                    log_w("BLEProxy::CharacteristicCallbacks::onWrite: Auth failed (%s, expected "
+                          "%s)",
+                          body,
+                          BLEProxy::getInstance()->prefs_->bleAuthKey.get().value_or("").c_str());
+                }
+            } else if (BLEProxy::getInstance()->webRequestHandler_) {
+                // Parse B=#/#:value out of valuePtr using valueSize for bounds
+                // if (key == "B" && chunkNumber <= 1) {
+                //     // Dump valuePtr as hex
+                //     int32_t chunkNumber =
+                //         strtol(valuePtr + 2, nullptr, 10); // Parses the number after 'B='
+                //     log_d(
+                //         "BLEProxy::CharacteristicCallbacks::onWrite: %" PRIi32 " %s",
+                //         chunkNumber, BytesToHex(reinterpret_cast<const uint8_t *>(valuePtr),
+                //         valueSize).c_str());
+                // }
+                BLEProxy::getInstance()->webRequestHandler_(key, body, bodyLength);
+            } else {
+                if (key == "E") {
+                    log_i("BLEProxy::CharacteristicCallbacks::onWrite: End of request, already "
+                          "handled");
+                } else {
+                    log_w("BLEProxy::CharacteristicCallbacks::onWrite: No web request handler or "
+                          "auth, unhandled: %s",
+                          key.c_str());
                 }
             }
         }

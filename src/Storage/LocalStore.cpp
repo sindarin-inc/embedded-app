@@ -13,6 +13,9 @@
 #include <unordered_map>
 #include <utility>
 
+#if USE_BLE
+#include "Communications/BLEManager.hpp"
+#endif
 #include "Communications/HtmlCleaner.hpp"
 #include "Communications/WiFi.hpp"
 #include "Misc/Crypto.hpp"
@@ -609,6 +612,7 @@ void LocalStore::syncFromRemote(
     SyncReason syncReason, const std::shared_ptr<CancelFlag> &cancel,
     const std::function<void(ContentSyncState state)> &progressCallback) {
     auto wifiConnected = false;
+    auto bleConnected = false;
     if (!WiFi::getInstance().hasWiFiCredentials()) {
         this->telemetry_.logMetric(TelemetryField::METRIC_WIFI, "sync-wifi-no-credentials");
         progressCallback(
@@ -627,6 +631,19 @@ void LocalStore::syncFromRemote(
     } else {
         wifiConnected = true;
     }
+
+#if CONFIG_USE_BLE_SERVER_PROXY
+    if (!wifiConnected) {
+        if (!BLEManager::getInstance()->connectProxy(cancel)) {
+            this->telemetry_.logMetric(TelemetryField::METRIC_WIFI, "sync-ble-failed");
+            progressCallback(ContentSyncState{.state = ContentSyncState::State::Failure,
+                                              .message = "Failed to connect to WiFi."});
+            return;
+        } else {
+            bleConnected = true;
+        }
+    }
+#endif
 
     if (CancelFlag::isCancelled(cancel)) {
         return;
@@ -678,33 +695,34 @@ void LocalStore::syncFromRemote(
     // call from whatever queue is most fitting based on the context. In tests, this might not be in
     // a queue.
     auto queue = DispatchGetCore0BackgroundQueue();
-    queue->dispatch([this, cancel] {
-        // auto useBle = !wifiConnected;
-        auto useBle = false;
+    queue->dispatch([this, cancel, wifiConnected, bleConnected] {
         auto retries = 2;
         while (retries > 0) {
-            log_d("Uploading telemetry, useBle: %d", useBle);
+            log_d("Uploading telemetry, wifiConnected: %d, bleConnected: %d", wifiConnected,
+                  bleConnected);
             if (CancelFlag::isCancelled(cancel)) {
                 return;
             }
 
-            auto httpCode = this->telemetry_.uploadAndResetTelemetry(this->fileSystem, useBle);
+            auto httpCode =
+                this->telemetry_.uploadAndResetTelemetry(this->fileSystem, bleConnected, cancel);
             if (httpCode != 201) {
                 this->telemetry_.logMetric(TelemetryField::METRIC_SYNC_STATUS,
                                            "sync-telemetry-failed",
-                                           {{"http-code", httpCode}, {"use-ble", useBle}});
-                // useBle = true;
+                                           {{"http-code", httpCode}, {"use-ble", bleConnected}});
                 retries -= 1;
+                log_d("Telemetry upload failed, retrying (%d retries left)", retries);
             } else {
                 this->telemetry_.logMetric(TelemetryField::METRIC_SYNC_STATUS,
-                                           "sync-telemetry-success", {{"use-ble", useBle}});
+                                           "sync-telemetry-success", {{"use-ble", bleConnected}});
+                log_d("Telemetry uploaded successfully");
                 break;
             }
         }
     });
 
     // Run this work on a separate thread, since it's long running
-    queue->dispatch([this, syncReason, progressCallback, cancel] {
+    queue->dispatch([this, syncReason, progressCallback, cancel, bleConnected] {
         if (CancelFlag::isCancelled(cancel)) {
             return;
         }
@@ -719,6 +737,7 @@ void LocalStore::syncFromRemote(
         int booksDownloaded = 0;
         int articlesDownloaded = 0;
 
+        log_d("Syncing books and articles");
         progressCallback(ContentSyncState{.state = ContentSyncState::State::CheckingSync});
 
         std::vector<ReadablesVector *> readablesList = {&books_, &articles_};
@@ -768,6 +787,10 @@ void LocalStore::syncFromRemote(
                                               : ContentSyncState::State::SyncingArticles});
 
             while (nextPageUrl.length() || nextPageCounter == 0) {
+                if (CancelFlag::isCancelled(cancel)) {
+                    return;
+                }
+
                 if (nextPageCounter == 0) {
                     log_d("Fetching first page of %ss",
                           ReadableModelTypeToString(modelType).c_str());
@@ -791,19 +814,18 @@ void LocalStore::syncFromRemote(
                     break;
                 }
 
-                if (CancelFlag::isCancelled(cancel)) {
-                    return;
-                }
                 int httpCode = 0;
                 if (nextPageCounter == 1) {
                     SHOW_HEAP();
                     httpCode = SindarinAPI::getInstance()->checkSync(
-                        checkSyncRequest, &checkSyncResponse, this->telemetry_);
+                        checkSyncRequest, &checkSyncResponse, this->telemetry_, bleConnected,
+                        cancel);
                     totalCount = checkSyncResponse.totalCount;
                     SHOW_HEAP();
                 } else {
                     httpCode = SindarinAPI::getInstance()->checkSync(
-                        nextPageUrl, checkSyncRequest, &checkSyncResponse, this->telemetry_);
+                        nextPageUrl, checkSyncRequest, &checkSyncResponse, this->telemetry_,
+                        bleConnected, cancel);
                 }
                 if (CancelFlag::isCancelled(cancel)) {
                     return;
@@ -890,7 +912,7 @@ void LocalStore::syncFromRemote(
                                      readablesToDownload, *readables, cancel, downloadIndex,
                                      modelType == ReadablesModelType::Book ? booksDownloaded
                                                                            : articlesDownloaded,
-                                     progressCallback, modelType, totalCount) ||
+                                     progressCallback, modelType, totalCount, bleConnected) ||
                                  failedDownload;
                 if (failedDownload) {
                     log_d("Failed to process %ss, have %zu %ss",
@@ -950,7 +972,7 @@ void LocalStore::syncFromRemote(
 
             SHOW_HEAP();
             SindarinAPI::getInstance()->checkSync(checkSyncRequest, &checkSyncResponse,
-                                                  this->telemetry_);
+                                                  this->telemetry_, bleConnected, cancel);
 
             // TODO: Force reload of rootUI instead of rebooting
             if (checkSyncResponse.synced) {
@@ -1071,7 +1093,7 @@ auto LocalStore::processReadableDownload(
     const UserReadablesVector &readablesToDownload, ReadablesVector &readables,
     const std::shared_ptr<CancelFlag> &cancel, int &downloadIndex, int &successfullyDownloaded,
     const std::function<void(ContentSyncState)> &progressCallback, ReadablesModelType modelType,
-    int totalCount) -> bool {
+    int totalCount, bool useBle) -> bool {
     bool failedDownload = false;
 
     if (readablesToDownload.empty()) {
@@ -1086,9 +1108,10 @@ auto LocalStore::processReadableDownload(
 
         float currPercentage = static_cast<float>(downloadIndex) * pctPerReadable;
         const auto &readable = userReadable.readable;
-        auto path = readableFilePathForWriting(readable);
-        log_i("Downloading %s (file=%s, url=%s)", readable->title.c_str(), path.c_str(),
-              readable->remoteUrl().c_str());
+        auto path = readableFilePathForWriting(readable, !useBle);
+        auto expectedSize = readable->file(path).size;
+        log_i("Downloading %s (file=%s, url=%s, size=%d)", readable->title.c_str(), path.c_str(),
+              readable->remoteUrl().c_str(), expectedSize);
         SHOW_HEAP();
 
         for (int t = 0; t < NUMBER_OF_READABLE_DOWNLOAD_TRIES; t++) {
@@ -1097,7 +1120,7 @@ auto LocalStore::processReadableDownload(
             }
 
             auto httpCode = SindarinAPI::getInstance()->downloadReadable(
-                readable, this->fileSystem, this->telemetry_, path, cancel,
+                readable, this->fileSystem, this->telemetry_, path, cancel, useBle,
                 [progressCallback, currPercentage, pctPerReadable, modelType](int percentage) {
                 int pctThisReadable = percentage * pctPerReadable / 100;
                 progressCallback(ContentSyncState{
@@ -1128,7 +1151,7 @@ auto LocalStore::processReadableDownload(
 
                 break;
             } else {
-                log_w("Failed to download file. Retrying...");
+                log_w("Failed to download file. Retrying... (httpCode: %d)", httpCode);
                 if (t == NUMBER_OF_READABLE_DOWNLOAD_TRIES - 1) {
                     log_e("Failed to download file.");
                     failedDownload = true;
@@ -1140,6 +1163,27 @@ auto LocalStore::processReadableDownload(
                         {{"uuid", readable->uuid},
                          {"title", readable->title.c_str()},
                          {"http-code", httpCode}});
+                } else if (httpCode == ERR_CLIENT_DISCONNECTED) {
+                    if (CancelFlag::isCancelled(cancel)) {
+                        break;
+                    }
+                    // Reconnect to wifi/ble if disconnected
+                    auto wifiConnected = false;
+                    if (!this->prefs_.wifiDisabled.get().value_or(false)) {
+                        if (!WiFi::getInstance().connectWiFiFromSettings()) {
+                            this->telemetry_.logMetric(TelemetryField::METRIC_WIFI,
+                                                       "sync-wifi-retry-failed");
+                        } else {
+                            wifiConnected = true;
+                        }
+                    }
+
+#if CONFIG_USE_BLE_SERVER_PROXY
+                    if (!wifiConnected && !BLEManager::getInstance()->connectProxy(cancel)) {
+                        this->telemetry_.logMetric(TelemetryField::METRIC_WIFI,
+                                                   "sync-ble-retry-failed");
+                    }
+#endif
                 }
             }
         }
@@ -1339,12 +1383,16 @@ auto LocalStore::saveReadables(ReadablesVector &readables) -> bool {
     return true;
 };
 
-auto LocalStore::readableFilePathForWriting(const std::shared_ptr<Readable> &readable) const
-    -> std::string {
+auto LocalStore::readableFilePathForWriting(const std::shared_ptr<Readable> &readable,
+                                            bool gzip) const -> std::string {
     if (readable->remoteUrl().substr(readable->remoteUrl().find_last_of('.') + 1) == "epub") {
         return StringFormat("/%s/%s.epub", readable->readableType.c_str(), readable->uuid.c_str());
     }
-    return StringFormat("/%s/%s.txt.gz", readable->readableType.c_str(), readable->uuid.c_str());
+    if (gzip) {
+        return StringFormat("/%s/%s.txt.gz", readable->readableType.c_str(),
+                            readable->uuid.c_str());
+    }
+    return StringFormat("/%s/%s.txt", readable->readableType.c_str(), readable->uuid.c_str());
 }
 
 auto LocalStore::readableFilePathForReading(FileSystem &fileSystem,

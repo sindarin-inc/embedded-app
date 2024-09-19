@@ -30,9 +30,13 @@
 #ifndef CONFIG_USE_BLE_SERVER_IMPROV
 #define CONFIG_USE_BLE_SERVER_IMPROV 1
 #endif
+#ifndef CONFIG_USE_BLE_SERVER_PROXY
+#define CONFIG_USE_BLE_SERVER_PROXY 1
+#endif
 #define USE_BLE                                                                                    \
     (CONFIG_USE_TURN_TOUCH_REMOTE || CONFIG_USE_BLE_SERVER_REMOTE ||                               \
-     CONFIG_USE_BLE_SERVER_SETTINGS || CONFIG_USE_BLE_SERVER_IMPROV)
+     CONFIG_USE_BLE_SERVER_SETTINGS || CONFIG_USE_BLE_SERVER_IMPROV ||                             \
+     CONFIG_USE_BLE_SERVER_PROXY)
 
 // #define DISABLE_SPIRAM
 

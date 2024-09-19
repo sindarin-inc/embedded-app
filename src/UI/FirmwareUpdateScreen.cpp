@@ -240,7 +240,7 @@ void FirmwareUpdateScreen::begin() {
     // Stop BLE advertising and disconnect all connections to avoid interference.
     BLEManager::getInstance()->stopAdvertising();
     auto bleManager = BLEManager::getInstance();
-    bleManager->disconnectAll();
+    bleManager->disconnectAllClients();
     auto resumeBLE = [bleManager] { bleManager->startAdvertisingIfNecessary(); };
 #else
     auto resumeBLE = [] {};

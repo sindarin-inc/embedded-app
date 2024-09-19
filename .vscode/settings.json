@@ -159,4 +159,7 @@
     "[cmake]": {
         "editor.defaultFormatter": "josetr.cmake-language-support-vscode"
     },
+    "files.exclude": {
+        "build-*/*": true
+    },
 }

@@ -99,7 +99,7 @@ void runBackwardsUnitTest(DisplaySystem &display, SDL_Window *window, SDL_Render
     defer { display.setSkipWaveform(skipWaveform); };
 
     auto screen = UIGetCurrentScreen();
-    auto readableScreen = dynamic_cast<ReadableScreen *>(screen);
+    auto readableScreen = std::dynamic_pointer_cast<ReadableScreen>(screen);
 
     if (readableScreen != nullptr) {
         bool first = true;
@@ -138,7 +138,7 @@ void saveBookImages(DisplaySystem &display, SDL_Window *window, SDL_Renderer *re
     defer { display.setSkipWaveform(skipWaveform); };
 
     auto screen = UIGetCurrentScreen();
-    auto readableScreen = dynamic_cast<ReadableScreen *>(screen);
+    auto readableScreen = std::dynamic_pointer_cast<ReadableScreen>(screen);
 
     if (readableScreen != nullptr) {
         for (int i = 0;; i++) {

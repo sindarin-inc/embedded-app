@@ -142,8 +142,9 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     HEAP_PROFILE_START(rootUIContent);
     auto &readables = localStore.books();
     auto &articles = localStore.articles();
-
-    bool noContent = readables.empty() && articles.empty();
+    auto noBooks = readables.empty();
+    auto noArticles = articles.empty();
+    auto noContent = noBooks && noArticles;
 
     // If prefs_.bookSortCriteria isn't selected, sort the readables by last update and store them
     if (!prefs_.bookSortCriteria.get().has_value()) {
@@ -311,21 +312,21 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
             // Fix this eventually to match the other one once MainMenu is refactored and
             // showTemporaryMessage uses the msgPopup.
-            std::string turnOnWifiMsg = "Enable WiFi to perform a Content Sync.";
-
-            // If wifi has been disabled, show a popup encouraging the user to
-            // turn on wifi to perform the firmware sync.
-            if (this->prefs_.wifiDisabled.get().value_or(false)) {
+            // If wifi & ble have been disabled, show a popup encouraging the user to
+            // turn on wifi or BLE to perform the content sync.
+            if (this->prefs_.wifiDisabled.get().value_or(false) &&
+                this->prefs_.bleDisabled.get().value_or(false)) {
                 // TODO: There's a bug when this is called from the Sync Content menu item in the
                 // Content menu but because that menu is going away entirely and will be
                 // replaced, we'll worry about that once we know where it lands.
-                screenStack_.top()->showTemporaryMessage(*display, turnOnWifiMsg, 2000, true);
+                screenStack_.top()->showTemporaryMessage(
+                    *display, "Enable WiFi or BLE to perform a Content Sync.", 2000, true);
                 screenStack_.top()->setFirstLoad();
                 return;
             }
 
             auto contentSyncScreen = std::make_shared<ContentSyncScreen>(
-                *display, localStore, this->prefs_, this->telemetry_);
+                *display, localStore, this->prefs_, this->telemetry_, power_);
             contentSyncScreen->setBackCallback([this, display]() {
                 display->clearDisplay();
                 screenStack_.pop();
@@ -397,7 +398,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     auto booksMenuFactory = [this, &localStore, handleReadableScreenCreation, isBible,
                              makeReleaseNotesMenuItem, makeContentSyncMenuItem,
-                             createTutorialScreen, noContent]() -> MenuItemSharedPtrVector {
+                             createTutorialScreen, noContent,
+                             noBooks]() -> MenuItemSharedPtrVector {
         auto &books = localStore.books();
         auto menuItems = std::make_shared<MenuItemVector>();
 
@@ -436,6 +438,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                     handleReadableScreenCreation(lastQuestion);
                     }));
             }
+        }
+        if (noBooks) {
             menuItems->emplace_back(makeContentSyncMenuItem("Sync Content"));
         }
 
@@ -463,7 +467,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     auto articlesMenuFactory = [this, &localStore, handleReadableScreenCreation,
                                 makeReleaseNotesMenuItem, makeContentSyncMenuItem,
-                                createTutorialScreen, noContent]() -> MenuItemSharedPtrVector {
+                                createTutorialScreen, noArticles]() -> MenuItemSharedPtrVector {
         auto &articles = localStore.articles();
         auto menuItems = std::make_shared<MenuItemVector>();
 
@@ -485,7 +489,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 }));
         }
 
-        if (noContent) {
+        if (noArticles) {
             menuItems->emplace_back(makeContentSyncMenuItem("Sync Content"));
         }
 

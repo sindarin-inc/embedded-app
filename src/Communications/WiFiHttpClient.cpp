@@ -13,7 +13,7 @@
 
 WiFiHttpClient::WiFiHttpClient(const char *url, const char *contentType,
                                esp_http_client_method_t method, bool gzip)
-    : HttpClient(url, contentType, method, gzip), url_(strdup(url)) {
+    : HttpClient(url, contentType, method, gzip) {
 
     userAgent_ = StringFormat("SolReader/%s (%s)", SemanticVersionString(), GitVersionString());
 
@@ -96,15 +96,6 @@ auto WiFiHttpClient::setHeader(const char *key, const char *value) -> esp_err_t 
         log_e("esp_http_client_set_header err=%s", esp_err_to_name(err));
     }
     return err;
-}
-
-auto WiFiHttpClient::getResponseHeader(const char *key, char **value) -> esp_err_t {
-    auto it = responseHeaders_.find(key);
-    if (it == responseHeaders_.end()) {
-        return ESP_ERR_NOT_FOUND;
-    }
-    *value = const_cast<char *>(it->second.c_str());
-    return ESP_OK;
 }
 
 auto WiFiHttpClient::open(int contentLength) -> esp_err_t {
@@ -216,11 +207,10 @@ auto WiFiHttpClient::writeChunkedData(const char *data, int length) -> bool {
 
 auto WiFiHttpClient::endChunkedData() -> bool { return writeChunkedData(nullptr, 0); }
 
-auto WiFiHttpClient::makeWriteStream() -> std::shared_ptr<HttpOstream<4096>> {
-    return std::make_shared<HttpOstream<4096>>(client_);
+auto WiFiHttpClient::fetchHeaders(int expectedSize, const std::shared_ptr<CancelFlag> &cancel)
+    -> int {
+    return esp_http_client_fetch_headers(client_);
 }
-
-auto WiFiHttpClient::fetchHeaders() -> int { return esp_http_client_fetch_headers(client_); }
 
 // auto WiFiHttpClient::getContentLength() -> int { return
 // esp_http_client_get_content_length(client_);
@@ -238,8 +228,4 @@ auto WiFiHttpClient::close() -> esp_err_t {
         log_e("esp_http_client_close err=%s", esp_err_to_name(err));
     }
     return err;
-}
-
-auto WiFiHttpClient::makeReadStream() -> std::shared_ptr<HttpIstream<4096>> {
-    return std::make_shared<HttpIstream<4096>>(client_);
 }

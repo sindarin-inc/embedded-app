@@ -5,14 +5,14 @@
 #endif
 #include "Communications/WiFi.hpp"
 #include "Misc/Platform.hpp"
-#include "Misc/PowerManager.hpp"
 #include "Misc/RateLimiter.hpp"
 #include "Renderers/RendererStream.hpp"
 
 ContentSyncScreen::ContentSyncScreen(DisplaySystem &display, LocalStore &localStore,
-                                     PreferencesStore &prefs, Telemetry &telemetry)
+                                     PreferencesStore &prefs, Telemetry &telemetry,
+                                     PowerManager &power)
     : EinkView(display), localStore_(localStore), prefs_(prefs), telemetry_(telemetry),
-      cancelView_(display, "Press \ue000 to cancel", &fontFace0) {
+      power_(power), cancelView_(display, "Press \ue000 to cancel", &fontFace0) {
     for (auto &textView : textViews_) {
         textView = std::make_shared<SingleLineTextView>(display, "", &fontFace0);
     }
@@ -36,7 +36,16 @@ ContentSyncScreen::ContentSyncScreen(DisplaySystem &display, LocalStore &localSt
     popupTextView_->alignCenter = true;
     popupTextView_->dynamicWidth = true;
     popupTextView_->setHidden(true);
-};
+
+    power_.addStateChangeCallback(this, [this](PowerState state) {
+        if (state == PowerState::ShuttingDown) {
+            log_d("Signaling content sync to cancel");
+            this->cancel();
+        }
+    });
+}
+
+ContentSyncScreen::~ContentSyncScreen() { power_.removeStateChangeCallback(this); }
 
 auto ContentSyncScreen::layout(LayoutContext &context, Size size) -> Size {
     context.setSublayoutFrame(
@@ -112,10 +121,16 @@ void ContentSyncScreen::cancel() {
     CancelFlag::cancel(cancel_);
     telemetry_.logMetric(TelemetryField::METRIC_SYNC_STATUS, "sync-cancelled");
     WiFi::getInstance().disconnectWiFi();
+#if CONFIG_USE_BLE_SERVER_PROXY
+    auto bleManager = BLEManager::getInstance(false);
+    if (bleManager != nullptr) {
+        bleManager->disconnectProxy();
+    }
+#endif
     showPopup("Sync cancelled!\n\nRestarting...");
     render(display_);
     vTaskDelay(3000 / portTICK_PERIOD_MS);
-    PowerManager::getInstance().reboot();
+    power_.reboot();
 }
 
 void ContentSyncScreen::render(DisplaySystem &display) {
@@ -223,7 +238,13 @@ void ContentSyncScreen::fail(const std::string &message) {
     render(display_);
     vTaskDelay(3000 / portTICK_PERIOD_MS);
     WiFi::getInstance().disconnectWiFi();
-    PowerManager::getInstance().reboot();
+#if CONFIG_USE_BLE_SERVER_PROXY
+    auto bleManager = BLEManager::getInstance(false);
+    if (bleManager != nullptr) {
+        bleManager->disconnectProxy();
+    }
+#endif
+    power_.reboot();
 }
 
 void ContentSyncScreen::begin() {
@@ -244,7 +265,12 @@ void ContentSyncScreen::begin() {
     // btdm_controller_task crash
     BLEManager::getInstance()->stopAdvertising();
     auto bleManager = BLEManager::getInstance();
-    bleManager->disconnectAll();
+    // Check if already connected to sync service, if not, disconnect all clients
+    if (!bleManager->connectedProxy) {
+        bleManager->disconnectAllClients();
+    } else {
+        log_d("Already connected to sync service, not disconnecting clients");
+    }
     auto resumeBLE = [bleManager] { bleManager->startAdvertisingIfNecessary(); };
 #else
     auto resumeBLE = [] {};
@@ -256,18 +282,27 @@ void ContentSyncScreen::begin() {
     DispatchGetCore0BackgroundQueue()->dispatch([this, rl, resumeBLE]() {
         localStore_.syncFromRemote(SyncReason::Manual, cancel_,
                                    [this, rl, resumeBLE](const ContentSyncState &state) {
+            log_d("Progress callback: %d%%", state.percentage);
+
             if (CancelFlag::isCancelled(cancel_)) {
                 return;
             }
 
-            PowerManager::getInstance().feedInactivityTimer();
+            power_.feedInactivityTimer();
             if (state.state == ContentSyncState::Failure ||
                 state.state == ContentSyncState::Synced ||
                 state.state == ContentSyncState::AlreadySynced) {
+                log_d("Content sync failed, disconnecting WiFi and BLE");
                 WiFi::getInstance().disconnectWiFi();
+#if CONFIG_USE_BLE_SERVER_PROXY
+                auto bleManager = BLEManager::getInstance(false);
+                if (bleManager != nullptr) {
+                    bleManager->disconnectProxy();
+                }
+#endif
             }
-            // Skip updates if the state is the same and the percentage isn't different (or if not
-            // enough time has elapsed)
+            // Skip updates if the state is the same and the percentage isn't different (or if
+            // not enough time has elapsed)
             if (state.state == state_.state) {
                 if (!rl->shouldExecute(state.percentage)) {
                     return;
@@ -277,6 +312,7 @@ void ContentSyncScreen::begin() {
             }
 
             // Do UI stuff back on core 1
+            log_d("Dispatching Content Sync UI update for state %d", state.state);
             DispatchGetUiQueue()->dispatch([this, state, resumeBLE]() {
                 this->updateState(state);
                 this->render(this->display_);
@@ -284,7 +320,7 @@ void ContentSyncScreen::begin() {
                 if (state.state == ContentSyncState::Synced) {
                     log_d("Content sync done, rebooting");
                     Delay(2000);
-                    PowerManager::getInstance().reboot();
+                    power_.reboot();
                 } else if (state.state == ContentSyncState::AlreadySynced) {
                     log_d("Content sync already synced");
                     Delay(2000);
@@ -295,7 +331,7 @@ void ContentSyncScreen::begin() {
                     if (state.booksDownloaded > 0 || state.articlesDownloaded > 0) {
                         log_d("Content sync failed, but we got new content, rebooting");
                         Delay(2000);
-                        PowerManager::getInstance().reboot();
+                        power_.reboot();
                     } else {
                         log_d("Content sync failed, going back");
                         Delay(2000);

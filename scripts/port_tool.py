@@ -142,6 +142,15 @@ def wait_for_logging_port(timeout=10) -> Optional[str]:
     return port
 
 
+def find_devboard_port() -> Optional[str]:
+    return port_by_index(find_ports_by_device_name("CP2102N"), 0)
+
+
+def wait_for_devboard_port(timeout=10) -> Optional[str]:
+    port = wait_for_not_none(find_devboard_port, timeout)
+    return port
+
+
 def reset_usb_jtag_port(ser: serial.Serial, programming_mode: bool = False):
     """Useful to reset out of programming mode"""
     if ser.is_open:
@@ -169,7 +178,7 @@ def main():
     find_parser = subparsers.add_parser("find_port", help="Find a specific type of port.")
     find_parser.add_argument(
         "port_type",
-        choices=["logging", "programming", "jtag"],
+        choices=["logging", "programming", "jtag", "devboard"],
         help="Specify the type of port to find.",
     )
 
@@ -249,6 +258,14 @@ def main():
                 print(port)
             else:
                 logging.error("Could not find USB JTAG port.")
+                exit(1)
+
+        if args.port_type == "devboard":
+            port = wait_for_devboard_port(timeout=3)
+            if port:
+                print(port)
+            else:
+                logging.error("Could not find devboard port.")
                 exit(1)
 
 

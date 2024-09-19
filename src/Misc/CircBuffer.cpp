@@ -47,6 +47,20 @@ void CircBuffer::copyFrom(int pos, uint8_t *output, int size) {
     }
 }
 
+void CircBuffer::moveFrom(int pos, uint8_t *output, int size) {
+    if (size > size_) {
+        // Trying to move more data than exists, potential error handling
+        log_e("CircBuffer error: tried to move %d bytes from buffer of size %d", size, size_);
+        return;
+    }
+
+    copyFrom(pos, output, size);
+
+    // Move the start position forward by 'size' and reduce the buffer size accordingly
+    startPos_ = (startPos_ + size) % capacity_;
+    size_ -= size;
+}
+
 void CircBuffer::clear() {
     size_ = 0;
     startPos_ = 0;

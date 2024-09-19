@@ -10,6 +10,9 @@
 #include <ulp_riscv_i2c.h>
 #endif
 
+#if USE_BLE
+#include "Communications/BLEManager.hpp"
+#endif
 #include "Communications/WiFi.hpp"
 #include "Misc/Dispatch.hpp"
 #include "Platform.hpp"
@@ -280,8 +283,8 @@ auto PowerManager::begin() -> esp_err_t {
                     log_i("USB connected, switching to ActiveUSBCharging");
                     state_ = PowerState::ActiveUSBCharging;
                     inactivityTimer_.setTimeoutMs(inactivityTimeoutMs());
-                    if (stateChangeCallback_ != nullptr) {
-                        stateChangeCallback_(state_);
+                    for (auto &callback : stateChangeCallbacks_) {
+                        callback.second(state_);
                     }
                 }
                 // USB is connected so disable light sleep
@@ -342,8 +345,8 @@ void PowerManager::loop() {
         if (state_ == PowerState::Active || state_ == PowerState::ActiveForcedOn) {
             state_ = PowerState::ActiveBatteryDepleted;
             inactivityTimer_.setTimeoutMs(inactivityTimeoutMs());
-            if (stateChangeCallback_ != nullptr) {
-                stateChangeCallback_(state_);
+            for (auto &callback : stateChangeCallbacks_) {
+                callback.second(state_);
             }
         } else {
             powerOff();
@@ -393,8 +396,8 @@ void PowerManager::loop() {
         log_e("Temperature is too high (%d)! Going to sleep.", temperature);
         state_ = PowerState::ActiveOverTemp;
         inactivityTimer_.setTimeoutMs(inactivityTimeoutMs());
-        if (stateChangeCallback_ != nullptr) {
-            stateChangeCallback_(state_);
+        for (auto &callback : stateChangeCallbacks_) {
+            callback.second(state_);
         }
     }
 
@@ -483,8 +486,8 @@ void PowerManager::releaseLED() {
 void PowerManager::beginShutdown() {
     auto previousState = state_;
     state_ = PowerState::ShuttingDown;
-    if (stateChangeCallback_ != nullptr) {
-        stateChangeCallback_(state_);
+    for (auto &callback : stateChangeCallbacks_) {
+        callback.second(state_);
     }
 
     auto taskName = pcTaskGetName(nullptr);
@@ -494,6 +497,14 @@ void PowerManager::beginShutdown() {
 
     // Disconnect WiFi as a quick-and-dirty way to cancel long running syncs
     WiFi::getInstance().disconnectWiFi();
+#if USE_BLE
+    auto bleManager = BLEManager::getInstance(false);
+    if (bleManager != nullptr) {
+        bleManager->stopAdvertising();
+        bleManager->disconnectAllClients();
+        bleManager->disconnectProxy();
+    }
+#endif
 
     if (beginShutdownCallback_ != nullptr) {
         beginShutdownCallback_();
@@ -539,9 +550,11 @@ void PowerManager::beginShutdown() {
 }
 
 void PowerManager::reboot() {
-    beginShutdown();
-    usbSerial_.end();
-    esp_restart();
+    if (state_ != PowerState::ShuttingDown) {
+        beginShutdown();
+        usbSerial_.end();
+        esp_restart();
+    }
 }
 
 void PowerManager::scheduleSync(SyncReason reason, time_t time) {

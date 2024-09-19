@@ -42,6 +42,9 @@ public:
     void dispatch(fp_t &&op);
     void dispatchFromISR(fp_t &&op);
 
+    // dispatch and wait for completion
+    void dispatchSync(fp_t &&op);
+
     // Returns true if were' currently executing inside this queue
     auto isInQueue() -> bool;
 
@@ -62,8 +65,12 @@ public:
 
     // Fires up a task for only the purpose of running a single function.
     // Handy since you can use lambda captures with it.
-    static void dispatchOneOff(const fp_t &op, size_t threadStack = 1024, UBaseType_t priority = 5,
-                               BaseType_t core = 1, const char *name = "OneOff");
+    static auto dispatchOneOff(const fp_t &op, size_t threadStack = 1024, UBaseType_t priority = 5,
+                               BaseType_t core = 1, const char *name = "OneOff") -> bool;
+    // Like dispatchOneOff, but waits for the function to complete before returning. Useful for
+    // synchronously running things on other cores.
+    static auto dispatchOneOffSync(const fp_t &op, size_t threadStack, UBaseType_t priority,
+                                   BaseType_t core, const char *name) -> bool;
 
 private:
     std::string name_;

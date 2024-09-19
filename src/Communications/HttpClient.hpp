@@ -6,6 +6,7 @@
 
 #include "Communications/HttpIstream.hpp"
 #include "Communications/HttpOstream.hpp"
+#include "Misc/CancelFlag.hpp"
 #include "Misc/GZipStream.hpp"
 
 struct CaseInsensitive {
@@ -27,7 +28,14 @@ public:
 
     virtual auto setHeader(const char *key, const char *value) -> esp_err_t = 0;
 
-    virtual auto getResponseHeader(const char *key, char **value) -> esp_err_t = 0;
+    virtual auto getResponseHeader(const char *key, char **value) -> esp_err_t {
+        auto it = responseHeaders_.find(key);
+        if (it == responseHeaders_.end()) {
+            return ESP_ERR_NOT_FOUND;
+        }
+        *value = const_cast<char *>(it->second.c_str());
+        return ESP_OK;
+    }
 
     virtual auto open(int contentLength = 0) -> esp_err_t = 0;
 
@@ -35,9 +43,13 @@ public:
 
     virtual auto write(const char *body, int length) -> int = 0;
 
-    virtual auto makeWriteStream() -> std::shared_ptr<HttpOstream<4096>> = 0;
+    virtual auto makeWriteStream() -> std::shared_ptr<HttpOstream<4096>> {
+        return std::make_shared<HttpOstream<4096>>(
+            [this](char *buffer, size_t size) -> size_t { return write(buffer, size); });
+    }
 
-    virtual auto fetchHeaders() -> int = 0;
+    virtual auto fetchHeaders(int expectedSize = 0,
+                              const std::shared_ptr<CancelFlag> &cancel = nullptr) -> int = 0;
 
     // auto getContentLength() -> int;
 
@@ -47,7 +59,10 @@ public:
 
     virtual auto close() -> esp_err_t = 0;
 
-    virtual auto makeReadStream() -> std::shared_ptr<HttpIstream<4096>> = 0;
+    virtual auto makeReadStream() -> std::shared_ptr<HttpIstream<4096>> {
+        return std::make_shared<HttpIstream<4096>>(
+            [this](char *buffer, size_t size) -> size_t { return read(buffer, size); });
+    }
 
     virtual auto isChunkedResponse() -> bool = 0;
 
@@ -57,14 +72,7 @@ public:
 
     bool connected{};
 
-private:
+protected:
     char *url_;
-    std::string userAgent_;
-    esp_http_client_handle_t client_{};
     std::multimap<std::string, std::string, CaseInsensitive> responseHeaders_;
-    bool gzip_{};
-    GZipStream gz_;
-    int gzUncompressedBytesRemaining_{};
-
-    auto writeAvailableCompressedData() -> bool;
 };

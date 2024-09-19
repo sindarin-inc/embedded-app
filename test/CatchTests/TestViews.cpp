@@ -419,8 +419,8 @@ TEST_CASE("Test some views independently") {
                 Telemetry telemetry(fileSystem, prefs);
                 Battery battery(fileSystem, prefs, telemetry);
                 LocalStore localStore(fileSystem, prefs, battery, telemetry);
-                auto screen =
-                    std::make_shared<ContentSyncScreen>(*display, localStore, prefs, telemetry);
+                auto screen = std::make_shared<ContentSyncScreen>(*display, localStore, prefs,
+                                                                  telemetry, power);
                 screen->render(*display);
                 ASSERT_VIEW_UNCHANGED(display, "ContentSyncScreen1");
 
@@ -544,6 +544,30 @@ TEST_CASE("Test some views independently") {
             auto screen = std::make_shared<DemoScreen>(*display, prefs);
             screen->render(*display);
             ASSERT_VIEW_UNCHANGED(display, "DemoScreen");
+        }
+
+        SECTION("Test ContentSyncScreen") {
+            PosixFileSystem fs("./test/CatchTests/TestData/ReleaseNotesScreen/");
+            Telemetry telemetry(fs, prefs);
+            Battery battery(fs, prefs, telemetry);
+            LightingController lightingController(prefs);
+            PowerManager power(fs, prefs, lightingController, *display, telemetry, usbSerial);
+            LocalStore localStore(fs, prefs, battery, telemetry);
+
+            ContentSyncScreen screen(*display, localStore, prefs, telemetry, power);
+            screen.render(*display);
+            ASSERT_VIEW_UNCHANGED(display, "ContentSyncScreen1");
+
+            screen.state_ = ContentSyncState{.state = ContentSyncState::State::SyncingArticles,
+                                             .percentage = 63};
+            screen.render(*display);
+            ASSERT_VIEW_UNCHANGED(display, "ContentSyncScreen2");
+
+            screen.state_ = ContentSyncState{.state = ContentSyncState::State::Synced,
+                                             .booksDownloaded = 3,
+                                             .articlesDownloaded = 10};
+            screen.render(*display);
+            ASSERT_VIEW_UNCHANGED(display, "ContentSyncScreen3");
         }
     }
 }
