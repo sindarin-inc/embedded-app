@@ -9,9 +9,9 @@ class NewMenuItemArticleView : public NewMenuItemView {
 public:
     NewMenuItemArticleView(DisplaySystem &display,
                            const std::shared_ptr<NewMenuItemArticle> &menuItem)
-        : NewMenuItemView(display), titleView_(display, 2), sourceView_(display) {
-        titleView_.setText(menuItem->title());
-        sourceView_.setText(menuItem->source(), true);
+        : NewMenuItemView(display), titleView_(display, 2) /*, sourceView_(display) */ {
+        titleView_.setText(std::string(menuItem->title()));
+        // sourceView_.setText(menuItem->source(), true);
     }
 
     auto layout(LayoutContext &context, Size size) -> Size override {
@@ -38,5 +38,5 @@ public:
 
 protected:
     MultiLineTextView titleView_;
-    SingleLineTextView sourceView_;
+    // SingleLineTextView sourceView_;
 };

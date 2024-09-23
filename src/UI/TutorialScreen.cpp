@@ -3,12 +3,14 @@
 #include <Update.h>
 
 #include "Misc/Platform.hpp"
+#include "UI/Fonts/Fonts.hpp"
 #include "UI/Menu/NewMenuItemSingleLine.hpp"
 #include "sindarin-debug.h"
 
 TutorialScreen::TutorialScreen(DisplaySystem &display, PreferencesStore &prefs, SpiramString text,
                                int bit)
-    : display_(display), renderer_(display, GetTextRectFromPrefs(display, prefs), prefs),
+    : display_(display),
+      renderer_(display, GetTextRectFromPrefs(display, prefs), static_cast<Font *>(&fontFace0)),
       prefs_(prefs), menu_(prefs, display) {
 
     auto stream = std::make_shared<StdStringStream>(text);

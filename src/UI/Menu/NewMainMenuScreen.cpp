@@ -2,7 +2,6 @@
 
 NewMainMenuScreen::NewMainMenuScreen(DisplaySystem &display, Battery &battery)
     : CarouselMenuScreen(display), clockBatteryView_(battery, display) {
-    titleView_.setText(currentTabTitle_);
     menuView_.padding = 5;
     menuView_.itemsPerPage = 4;
     menuView_.indicatorWidth = 5;
@@ -14,7 +13,7 @@ NewMainMenuScreen::NewMainMenuScreen(DisplaySystem &display, Battery &battery)
 
 auto NewMainMenuScreen::layout(LayoutContext &context, Size size) -> Size {
     context.setViewFrame(titleView_, {{0, 0}, {size.width, 0}},
-                         LayoutOptionsSizeToFit | LayoutOptionsAlignCenterHorizontal);
+                         LayoutOptionsSizeToFit | LayoutOptionsAlignCenter);
 
     context.setViewFrame(menuView_, Rect::fromSize(size),
                          LayoutOptionsSizeToFitVertical | LayoutOptionsAlignCenterVertical);
@@ -32,7 +31,6 @@ void NewMainMenuScreen::drawInRect(Rect rect) {
     clockBatteryView_.draw();
 }
 
-// Implement Screen method
 void NewMainMenuScreen::render(DisplaySystem &display) {
     setFrame(defaultFrameRect());
 

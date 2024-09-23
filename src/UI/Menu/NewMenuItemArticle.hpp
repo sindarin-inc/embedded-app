@@ -4,20 +4,21 @@
 #include <string>
 #include <utility>
 
+#include "Models/Readable.hpp"
 #include "NewMenuItem.hpp"
 
 class NewMenuItemArticle : public NewMenuItem {
 public:
     ~NewMenuItemArticle() override = default;
     // We take in the source now even though we don't use it right now. Planning ahead.
-    NewMenuItemArticle(std::string title, std::string source, std::function<void()> callback)
-        : NewMenuItem(std::move(callback)), title_(std::move(title)), source_(std::move(source)) {}
+    NewMenuItemArticle(std::shared_ptr<Readable> readable, std::function<void()> callback)
+        : NewMenuItem(std::move(callback)), readable_(readable) {}
 
-    [[nodiscard]] auto title() const -> const std::string & { return title_; }
+    [[nodiscard]] auto title() const -> const SpiramString & { return readable_->title; }
 
-    [[nodiscard]] auto source() const -> const std::string & { return source_; }
+    // The source isn't in in the Readable yet, so we return an empty string for now.
+    // [[nodiscard]] auto source() const -> const std::string & { return readable->source; }
 
 private:
-    std::string title_;
-    std::string source_;
+    std::shared_ptr<Readable> readable_;
 };

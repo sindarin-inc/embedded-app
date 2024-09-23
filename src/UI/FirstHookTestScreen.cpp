@@ -2,13 +2,15 @@
 
 #include <memory>
 
+#include "UI/Fonts/Fonts.hpp"
 #include "sindarin-debug.h"
 
 #define OFFSET_ADJUST_AMOUNT 5
 
 FirstHookTestScreen::FirstHookTestScreen(DisplaySystem &display, PreferencesStore &prefs,
                                          Telemetry &telemetry)
-    : display_(display), renderer_(display, GetTextRectFromPrefs(display, prefs), prefs),
+    : display_(display),
+      renderer_(display, GetTextRectFromPrefs(display, prefs), static_cast<Font *>(&fontFace0)),
       prefs_(prefs), telemetry_(telemetry) {
 
     std::string message;

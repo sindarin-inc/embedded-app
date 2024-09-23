@@ -3,13 +3,15 @@
 #include <Update.h>
 
 #include "Misc/Platform.hpp"
+#include "UI/Fonts/Fonts.hpp"
 #include "UI/Menu/NewMenuItemSingleLine.hpp"
 #include "sindarin-debug.h"
 
 ReleaseNotesScreen::ReleaseNotesScreen(DisplaySystem &display, PreferencesStore &prefs,
                                        PowerManager &power, LocalStore &localStore,
                                        const Firmware &firmware)
-    : display_(display), renderer_(display, GetTextRectFromPrefs(display, prefs), prefs),
+    : display_(display),
+      renderer_(display, GetTextRectFromPrefs(display, prefs), static_cast<Font *>(&fontFace0)),
       prefs_(prefs), power_(power), localStore_(localStore), firmware_(firmware),
       menu_(prefs, display) {
 

@@ -31,7 +31,6 @@ void CarouselMenuScreen::setCurrentTabIndex(int index) {
 
 void CarouselMenuScreen::populateMenuView() {
     menuView_.resetMenuItems();
-    currentTabTitle_ = std::get<0>(menuTabs_[currentTabIndex_]);
     auto &currentTabFactory = std::get<1>(menuTabs_[currentTabIndex_]);
 
     // Does this somehow keep extra references around to the shared_ptrs?
@@ -42,9 +41,7 @@ void CarouselMenuScreen::populateMenuView() {
         menuView_.addMenuItem(i);
     }
 
-    // Make sure this reference is deleted.
-    menuItems = nullptr;
-    titleView_.setText(currentTabTitle_);
+    titleView_.setText(getCurrentTabTitle());
 }
 
 void CarouselMenuScreen::processCommand(RemoteCommand command) {

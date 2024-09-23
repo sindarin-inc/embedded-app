@@ -6,7 +6,6 @@
 #include "NullTokenizer.hpp"
 #include "Pager.hpp"
 #include "RendererDefs.hpp"
-#include "Storage/PreferencesStore.hpp"
 #include "Tokenizer.hpp"
 #include "Tokens.hpp"
 
@@ -15,9 +14,9 @@ using namespace renderer_defs;
 class Renderer {
 
 public:
-    Renderer(DisplaySystem &display, DisplayRect rect, PreferencesStore &prefs)
+    Renderer(DisplaySystem &display, DisplayRect rect, Font *font)
         : display_(display), rect_(rect), tokens_(display), pager_(tokens_, display, rect),
-          prefs_(prefs) {
+          font_(font) {
         // log_w("constructor...");
         tokenizer_ = std::make_shared<NullTokenizer>(display, rect_, tokens_, pager_);
     }
@@ -27,6 +26,8 @@ public:
         pager_.setRect(rect);
         tokenizer_->setRect(rect);
     }
+
+    auto setFont(Font *font) -> void { font_ = font; }
 
     auto setStream(const std::shared_ptr<RendererStream> &stream) -> void {
         // log_w("setStream...");
@@ -110,7 +111,7 @@ private:
     DisplayRect rect_;
     Tokens tokens_;
     Pager pager_;
-    PreferencesStore &prefs_;
+    Font *font_;
 
     std::shared_ptr<Tokenizer> tokenizer_{nullptr};
 

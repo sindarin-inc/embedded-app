@@ -20,24 +20,16 @@ public:
         // Because arrowHeight is 2xArrowWidth.
         auto boxWidth = paddingBetweenArrows + arrowHeight + 1;
 
-        context.setSublayoutSizeInRect(
-            size, {{0, 0}, {boxWidth, arrowHeight}},
-            LayoutOptionsAlignTop | LayoutOptionsAlignCenterVertical,
-            [this, arrowHeight](LayoutContext &context, Size size) -> Size {
-                context.setViewSizeInRect(
-                    leftArrowView_, {0, arrowHeight}, {{0, 1}, {size.width, size.height}},
-                    LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical |
-                        LayoutOptionsAlignLeft);
+        context.setViewSizeInRect(
+            leftArrowView_, {0, arrowHeight}, {{0, 1}, {size.width, size.height}},
+            LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical | LayoutOptionsAlignLeft);
 
-                context.setViewFrame(textView_, {{1, 0}, {size.width, size.height}},
-                                     LayoutOptionsSizeToFit | LayoutOptionsAlignCenter);
+        context.setViewFrame(textView_, {{1, 0}, {size.width, size.height}},
+                             LayoutOptionsSizeToFit | LayoutOptionsAlignCenter);
 
-                context.setViewSizeInRect(
-                    rightArrowView_, {0, arrowHeight}, {{0, 1}, {size.width, size.height}},
-                    LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical |
-                        LayoutOptionsAlignRight);
-                return size;
-            });
+        context.setViewSizeInRect(
+            rightArrowView_, {0, arrowHeight}, {{0, 1}, {size.width, size.height}},
+            LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical | LayoutOptionsAlignRight);
 
         return {boxWidth, arrowHeight};
     }

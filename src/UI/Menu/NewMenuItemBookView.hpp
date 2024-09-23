@@ -8,9 +8,9 @@ class NewMenuItemBookView : public NewMenuItemView {
 public:
     NewMenuItemBookView(DisplaySystem &display, const std::shared_ptr<NewMenuItemBook> &menuItem)
         : NewMenuItemView(display), titleView_(display), authorView_(display) {
-        titleView_.setText(menuItem->title());
+        titleView_.setText(std::string(menuItem->title()));
         // Make the author text all caps
-        authorView_.setText(menuItem->author(), true);
+        authorView_.setText(std::string(menuItem->author()), true);
     }
 
     auto layout(LayoutContext &context, Size size) -> Size override {
@@ -18,11 +18,10 @@ public:
             context.setViewFrame(titleView_, Rect::fromSize(size), LayoutOptionsSizeToFit);
         // Yes, we are indenting the author view by the height of the title view. This looks better
         // and scales nicely to bigger displays. It looks funny I know.
-        auto authorRect =
-            context.setViewFrame(authorView_,
-                                 {{display_.getFont()->lineHeight() * 2 / 3, titleRect.size.height},
-                                  {size.width, size.height}},
-                                 LayoutOptionsSizeToFit);
+        auto authorRect = context.setViewFrame(
+            authorView_,
+            {{titleRect.size.height * 2 / 3, titleRect.size.height}, {size.width, size.height}},
+            LayoutOptionsSizeToFit);
         return {std::max(titleRect.size.width, authorRect.size.width),
                 titleRect.size.height + authorRect.size.height};
     }

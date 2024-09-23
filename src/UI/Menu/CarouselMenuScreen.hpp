@@ -55,10 +55,11 @@ public:
         }
     }
 
+    auto getCurrentTabTitle() const -> std::string {
+        return std::get<0>(menuTabs_[currentTabIndex_]);
+    }
+
 protected:
-    // We give access to these to the subclasses so they can style the menuView_ and layout and draw
-    // the title as needed.
-    std::string currentTabTitle_;
     CarouselTitleLabelView titleView_;
     NewMenuView menuView_;
 

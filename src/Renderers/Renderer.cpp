@@ -21,17 +21,7 @@ auto Renderer::renderPage(std::shared_ptr<Place> fromPlace, int16_t numSkipLines
     // This needs to happen before loading into buffer since it will affect what we load into the
     // buffer.
 
-    switch (prefs_.font.get().value_or(PREFS_SOL_SMALL)) {
-    case PREFS_SOL_MEDIUM:
-        display_.setFont(static_cast<Font *>(&fontFace1));
-        break;
-    case PREFS_SOL_LARGE:
-        display_.setFont(static_cast<Font *>(&fontFace2));
-        break;
-    case PREFS_SOL_SMALL:
-        display_.setFont(static_cast<Font *>(&fontFace0));
-        break;
-    }
+    display_.setFont(font_);
 
     tokens_.clear();
     pager_.clear();

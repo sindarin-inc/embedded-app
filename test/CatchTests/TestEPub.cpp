@@ -41,7 +41,7 @@ TEST_CASE("Test some individual EPub formatting edge cases", "[epub-format]") {
         auto epubFile = std::make_shared<EPubFile>(file, readable);
         auto prefs = PreferencesStore();
 
-        Renderer renderer(*display, display->defaultTextRect(), prefs);
+        Renderer renderer(*display, display->defaultTextRect(), static_cast<Font *>(&fontFace0));
         renderer.setStream(epubFile);
         renderer.renderPage(std::make_shared<EPubPlace>(0, "newlines_without_spaces.xhtml"));
         display->updateDisplay(DisplaySystem::UpdateType::FULL, true);
@@ -57,7 +57,7 @@ TEST_CASE("Test some individual EPub formatting edge cases", "[epub-format]") {
         auto epubFile = std::make_shared<EPubFile>(file, readable);
         auto prefs = PreferencesStore();
 
-        Renderer renderer(*display, display->defaultTextRect(), prefs);
+        Renderer renderer(*display, display->defaultTextRect(), static_cast<Font *>(&fontFace0));
         renderer.setStream(epubFile);
         renderer.renderPage(std::make_shared<EPubPlace>(0, "multiple_nbsp.xhtml"));
         display->updateDisplay(DisplaySystem::UpdateType::FULL, true);
@@ -73,7 +73,7 @@ TEST_CASE("Test some individual EPub formatting edge cases", "[epub-format]") {
         auto epubFile = std::make_shared<EPubFile>(file, readable);
         auto prefs = PreferencesStore();
 
-        Renderer renderer(*display, display->defaultTextRect(), prefs);
+        Renderer renderer(*display, display->defaultTextRect(), static_cast<Font *>(&fontFace0));
         renderer.setStream(epubFile);
         auto place = std::make_shared<EPubPlace>(0, "Basic Latin.xhtml");
 

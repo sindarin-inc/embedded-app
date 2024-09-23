@@ -43,9 +43,9 @@ public:
     ReadableScreen(const std::shared_ptr<RendererStream> &stream, DisplaySystem &display,
                    const std::shared_ptr<Readable> &readable, PreferencesStore &prefs,
                    Telemetry &telemetry, FileSystem &fileSystem,
-                   LightingController &lightingController, LocalStore &localStore)
+                   LightingController &lightingController, LocalStore &localStore, Font *font)
         : EinkView(display), stream_(stream),
-          renderer_(display, GetTextRectFromPrefs(display, prefs), prefs), readable_(readable),
+          renderer_(display, GetTextRectFromPrefs(display, prefs), font), readable_(readable),
           prefs_(prefs), telemetry_(telemetry), fileSystem_(fileSystem),
           lightingController_(lightingController), display_(display), localStore_(localStore) {
 

@@ -23,6 +23,8 @@ public:
     auto layout(LayoutContext &context, Size size) -> Size override;
     void drawInRect(Rect rect) override;
 
+    void resetFont();
+
     void render(DisplaySystem &display) override;
 
     void turnOnAutoPilot() {
@@ -48,6 +50,8 @@ private:
     Renderer renderer_;
 
     RendererView rendererView_;
+
+    PreferencesStore &prefs_;
 
     void moveSelection(int delta);
 };

@@ -1,12 +1,14 @@
 #include "ReadingSettingsMenuScreen.hpp"
 
 #include "Misc/Platform.hpp"
+#include "UI/Fonts/Fonts.hpp"
 
 ReadingSettingsMenuScreen::ReadingSettingsMenuScreen(DisplaySystem &display,
                                                      const std::string &backTitle,
                                                      PreferencesStore &prefs)
     : EinkView(display), menuView_(display), backLabelView_(display, backTitle),
-      renderer_(display, DisplayRect({0, 0, 0, 0}), prefs), rendererView_(display, renderer_) {
+      renderer_(display, DisplayRect({0, 0, 0, 0}), static_cast<Font *>(&fontFace0)),
+      rendererView_(display, renderer_), prefs_(prefs) {
     menuView_.padding = 1;
     menuView_.itemsPerPage = 8;
     rendererView_.dottedBox = true;
@@ -53,6 +55,23 @@ ReadingSettingsMenuScreen::ReadingSettingsMenuScreen(DisplaySystem &display,
 
 void ReadingSettingsMenuScreen::addMenuItem(const std::shared_ptr<NewMenuItem> &menuItem) {
     menuView_.addMenuItem(menuItem);
+}
+
+void ReadingSettingsMenuScreen::resetFont() {
+    Font *font;
+    switch (prefs_.font.get().value_or(PREFS_SOL_SMALL)) {
+    case PREFS_SOL_MEDIUM:
+        font = static_cast<Font *>(&fontFace1);
+        break;
+    case PREFS_SOL_LARGE:
+        font = static_cast<Font *>(&fontFace2);
+        break;
+    case PREFS_SOL_SMALL:
+        font = static_cast<Font *>(&fontFace0);
+        break;
+    }
+
+    renderer_.setFont(font);
 }
 
 void ReadingSettingsMenuScreen::processCommand(RemoteCommand command) {
@@ -111,6 +130,8 @@ auto ReadingSettingsMenuScreen::layout(LayoutContext &context, Size size) -> Siz
 }
 
 void ReadingSettingsMenuScreen::drawInRect(Rect rect) {
+    // Always load the font from prefs
+    resetFont();
     backLabelView_.draw();
     menuView_.draw();
     rendererView_.draw();

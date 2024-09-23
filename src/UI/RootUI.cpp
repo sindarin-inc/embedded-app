@@ -213,9 +213,22 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             return nullptr;
         }
 
+        Font *font;
+        switch (prefs_.font.get().value_or(PREFS_SOL_SMALL)) {
+        case PREFS_SOL_MEDIUM:
+            font = static_cast<Font *>(&fontFace1);
+            break;
+        case PREFS_SOL_LARGE:
+            font = static_cast<Font *>(&fontFace2);
+            break;
+        case PREFS_SOL_SMALL:
+            font = static_cast<Font *>(&fontFace0);
+            break;
+        }
+
         auto readableScreen = std::make_shared<ReadableScreen>(
             stream, *display, readable, this->prefs_, this->telemetry_, fileSystem,
-            lightingController, localStore);
+            lightingController, localStore, font);
 
         this->telemetry_.logMetric(TelemetryField::METRIC_READABLE_OPEN, readable->uuid,
                                    readable->telemetryPlacemarkMetrics());
@@ -281,9 +294,9 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     // If there is firmware available, show the Update Firmware item in the books tab.
     auto makeReleaseNotesMenuItem = [this, &localStore, display](const Firmware &firmware) {
         log_i("Found pending firmware update %s", firmware.version.c_str());
-        return std::make_shared<NewMenuItemBook>(
-            "Upgrade Software",
-            StringFormat("From %s to %s", SemanticVersionString(), firmware.version.c_str()),
+        return std::make_shared<NewMenuItemSingleLine>(
+            StringFormat("Upgrade Software from %s to %s", SemanticVersionString(),
+                         firmware.version.c_str()),
             [this, display, &localStore, firmware]() {
             auto releaseNotesScreen = std::make_shared<ReleaseNotesScreen>(
                 *display, this->prefs_, power_, localStore, firmware);
@@ -379,16 +392,14 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                         handleReadableScreenCreation(recent);
                     });
             } else if (recent->isArticle()) {
-                menuItem =
-                    std::make_shared<NewMenuItemArticle>(title, std::string(recent->readableType),
-                                                         [recent, handleReadableScreenCreation]() {
-                    handleReadableScreenCreation(recent);
+                menuItem = std::make_shared<NewMenuItemArticle>(
+                    recent, [recent, handleReadableScreenCreation]() {
+                        handleReadableScreenCreation(recent);
                     });
             } else {
-                menuItem =
-                    std::make_shared<NewMenuItemBook>(title, std::string(recent->authors[0].name),
-                                                      [recent, handleReadableScreenCreation]() {
-                    handleReadableScreenCreation(recent);
+                menuItem = std::make_shared<NewMenuItemBook>(
+                    recent, [recent, handleReadableScreenCreation]() {
+                        handleReadableScreenCreation(recent);
                     });
             }
             menuItems->emplace_back(menuItem);
@@ -418,9 +429,10 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             }
             bool archived = prefs_.readableArchivedChanged.get(book->shortenedUuid.c_str());
             auto title = StringFormat("%s%s", archived ? "Archived: " : "", book->title.c_str());
-            menuItems->emplace_back(std::make_shared<NewMenuItemBook>(
-                std::string(title), std::string(book->authors[0].name),
-                [book, handleReadableScreenCreation]() { handleReadableScreenCreation(book); }));
+            menuItems->emplace_back(
+                std::make_shared<NewMenuItemBook>(book, [book, handleReadableScreenCreation]() {
+                    handleReadableScreenCreation(book);
+                }));
         }
 
         log_d("noContent in the books factory: %d", noContent);
@@ -433,9 +445,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                                                "Isaac Asimov", "");
             if (!prefs_.readableArchivedChanged.get(lastQuestion->shortenedUuid.c_str())) {
                 menuItems->emplace_back(std::make_shared<NewMenuItemBook>(
-                    std::string(lastQuestion->title), std::string(lastQuestion->authors[0].name),
-                    [lastQuestion, handleReadableScreenCreation]() {
-                    handleReadableScreenCreation(lastQuestion);
+                    lastQuestion, [lastQuestion, handleReadableScreenCreation]() {
+                        handleReadableScreenCreation(lastQuestion);
                     }));
             }
         }
@@ -482,10 +493,9 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         for (const auto &article : articles) {
             bool archived = prefs_.readableArchivedChanged.get(article->shortenedUuid.c_str());
             auto title = StringFormat("%s%s", archived ? "Archived: " : "", article->title.c_str());
-            menuItems->emplace_back(
-                std::make_shared<NewMenuItemArticle>(title, std::string(article->readableType),
-                                                     [article, handleReadableScreenCreation]() {
-                handleReadableScreenCreation(article);
+            menuItems->emplace_back(std::make_shared<NewMenuItemArticle>(
+                article, [article, handleReadableScreenCreation]() {
+                    handleReadableScreenCreation(article);
                 }));
         }
 
@@ -583,8 +593,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         return menuItems;
     };
 
-    // There's a memory leak in here somewhere that loses ~15k of ram when switching to this tab and
-    // then away from this tab. This doesn't happen in the other tabs.
     auto settingsMenuFactory = [this, display, &localStore, &fileSystem, hasLastQuestion,
                                 makeContentSyncMenuItem,
                                 &lightingController]() -> MenuItemSharedPtrVector {
@@ -616,7 +624,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 auto fontMenu = std::make_shared<ReadingSettingsMenuScreen>(
                     *display, "Reading Settings", prefs_);
                 fontMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>("Small", [this]() {
-                    this->display_->setFont(static_cast<Font *>(&fontFace0));
                     this->display_->clearDisplay();
                     prefs_.font.set(PREFS_SOL_SMALL);
                     this->telemetry_.logMetricData(TelemetryField::METRIC_STYLE,
@@ -624,7 +631,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                     screenStack_.top()->setNeedsRerender();
                 }));
                 fontMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>("Medium", [this]() {
-                    this->display_->setFont(static_cast<Font *>(&fontFace1));
                     this->display_->clearDisplay();
                     prefs_.font.set(PREFS_SOL_MEDIUM);
                     this->telemetry_.logMetricData(TelemetryField::METRIC_STYLE,
@@ -632,7 +638,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                     screenStack_.top()->setNeedsRerender();
                 }));
                 fontMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>("Large", [this]() {
-                    this->display_->setFont(static_cast<Font *>(&fontFace2));
                     this->display_->clearDisplay();
                     prefs_.font.set(PREFS_SOL_LARGE);
                     this->telemetry_.logMetricData(TelemetryField::METRIC_STYLE,

@@ -484,7 +484,8 @@ TEST_CASE("Test some views independently") {
             auto prefs = PreferencesStore();
             readable->fromJson((*readablesJsonDoc)["readables"][1]);
 
-            Renderer renderer(*display, display->defaultTextRect(), prefs);
+            Renderer renderer(*display, display->defaultTextRect(),
+                              static_cast<Font *>(&fontFace0));
             auto [path, size] = LocalStore::readableFilePathForReading(fileSystem, readable);
             auto stream = fileSystem.newEPubRendererStream(path.c_str(), readable);
             renderer.setStream(stream);
@@ -508,14 +509,15 @@ TEST_CASE("Test some views independently") {
             auto prefs = PreferencesStore();
             readable->fromJson((*readablesJsonDoc)["readables"][0]);
 
-            Renderer renderer(*display, display->defaultTextRect(), prefs);
+            Renderer renderer(*display, display->defaultTextRect(),
+                              static_cast<Font *>(&fontFace0));
             auto [path, size] = LocalStore::readableFilePathForReading(fileSystem, readable);
             auto stream = fileSystem.newGzipRendererStream(path.c_str());
             renderer.setStream(stream);
 
-            auto readableScreen =
-                std::make_shared<ReadableScreen>(stream, *display, readable, prefs, telemetry,
-                                                 fileSystem, lightingController, localStore);
+            auto readableScreen = std::make_shared<ReadableScreen>(
+                stream, *display, readable, prefs, telemetry, fileSystem, lightingController,
+                localStore, static_cast<Font *>(&fontFace0));
             readableScreen->render(*display);
             ASSERT_VIEW_UNCHANGED(display, "CesMode");
         }
@@ -528,14 +530,14 @@ TEST_CASE("Test some views independently") {
             auto prefs = PreferencesStore();
             readable->fromJson((*readablesJsonDoc)["readables"][0]);
 
-            Renderer renderer(*display, {10, 20, 236, 236}, prefs);
+            Renderer renderer(*display, {10, 20, 236, 236}, static_cast<Font *>(&fontFace0));
             auto [path, size] = LocalStore::readableFilePathForReading(fileSystem, readable);
             auto stream = fileSystem.newEPubRendererStream(path.c_str(), readable);
             renderer.setStream(stream);
 
-            auto readableScreen =
-                std::make_shared<ReadableScreen>(stream, *display, readable, prefs, telemetry,
-                                                 fileSystem, lightingController, localStore);
+            auto readableScreen = std::make_shared<ReadableScreen>(
+                stream, *display, readable, prefs, telemetry, fileSystem, lightingController,
+                localStore, static_cast<Font *>(&fontFace0));
             readableScreen->render(*display);
             ASSERT_VIEW_UNCHANGED(display, "EpubImage");
         }
