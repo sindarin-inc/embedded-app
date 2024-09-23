@@ -121,7 +121,9 @@ int main(int argc, char **argv) {
 
     auto epubFile = std::make_shared<EPubFile>(file, readable);
 
-    Renderer renderer(*display, boundingBoxRect);
+    auto prefs = std::make_shared<Preferences>();
+
+    Renderer renderer(*display, boundingBoxRect, prefs);
     renderer.setStream(epubFile);
     renderer.renderPage(place);
 
