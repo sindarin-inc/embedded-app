@@ -57,7 +57,7 @@ void LineSpacingScreen::processCommand(RemoteCommand command) {
         telemetry_.logMetricData(TelemetryField::METRIC_STYLE, {{"line_spacing", lineSpacing_}});
 
         back();
-        break;
+        return;
     default:
         break;
     }

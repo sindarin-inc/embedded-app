@@ -59,9 +59,9 @@ void ReadablePlacemarkHistoryScreen::processCommand(RemoteCommand command) {
     case RemoteCommand::BACK:
     case RemoteCommand::LEFT:
         firstLoad_ = true;
-        back();
         setNeedsRerender();
-        break;
+        back();
+        return;
     default:
         break;
     }

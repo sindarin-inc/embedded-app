@@ -29,9 +29,9 @@ void InactivitySettingMenuScreen::processCommand(RemoteCommand command) {
     case RemoteCommand::BACK:
     case RemoteCommand::LEFT:
         firstLoad_ = true;
-        back();
         setNeedsRerender();
-        break;
+        back();
+        return;
     default:
         // Handle other commands or ignore
         break;

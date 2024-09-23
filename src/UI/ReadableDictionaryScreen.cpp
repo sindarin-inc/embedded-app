@@ -108,16 +108,17 @@ void ReadableDictionaryScreen::processCommand(RemoteCommand command) {
     switch (command) {
     case RemoteCommand::UP:
         restoreRendererStream();
-        back();
         setNeedsRerender();
-        break;
+        back();
+        return;
     case RemoteCommand::ENTER:
     case RemoteCommand::RIGHT:
         if (atEnd_) {
             restoreRendererStream();
+            setNeedsRerender();
             back();
+            return;
         }
-
         setNeedsRerender();
         break;
     case RemoteCommand::BACK:

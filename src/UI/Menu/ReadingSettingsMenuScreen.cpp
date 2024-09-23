@@ -69,9 +69,9 @@ void ReadingSettingsMenuScreen::processCommand(RemoteCommand command) {
     case RemoteCommand::BACK:
     case RemoteCommand::LEFT:
         firstLoad_ = true;
-        back();
         setNeedsRerender();
-        break;
+        back();
+        return;
     // We rely on the animation timer which is set in the renderer view in autopilot mode
     case RemoteCommand::ANIMATION:
         setNeedsRerender();

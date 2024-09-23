@@ -124,9 +124,9 @@ void ReadableSummaryScreen::processCommand(RemoteCommand command) {
     switch (command) {
     case RemoteCommand::UP:
         restoreRendererStream();
-        back();
         setNeedsRerender();
-        break;
+        back();
+        return;
     case RemoteCommand::DOWN:
         showUnread_ = !showUnread_;
         preservePlace_ = prevPlace_;
@@ -137,7 +137,9 @@ void ReadableSummaryScreen::processCommand(RemoteCommand command) {
     case RemoteCommand::RIGHT:
         if (atEnd_) {
             restoreRendererStream();
+            setNeedsRerender();
             back();
+            return;
         }
 
         setNeedsRerender();

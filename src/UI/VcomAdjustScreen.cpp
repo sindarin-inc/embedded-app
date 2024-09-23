@@ -44,9 +44,9 @@ void VcomAdjustScreen::processCommand(RemoteCommand command) {
     case RemoteCommand::ENTER:
         prefs_.vcom.set(vCom);
         log_d("Saving vcom to preferences: (%d)", vCom);
-        back();
         setNeedsRerender();
-        break;
+        back();
+        return;
     case RemoteCommand::DOWN:
         vCom += STEP_IN_MV;
         if (vCom > MAX_VCOM_IN_MV) {

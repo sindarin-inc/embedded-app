@@ -95,8 +95,9 @@ void ResizeBoxScreen::processCommand(RemoteCommand command) {
                                                                 {"in_r", insets.right},
                                                                 {"in_t", insets.top},
                                                                 {"in_b", insets.bottom}});
+        SetTextInset(prefs_, insets);
         back();
-        break;
+        return;
     default:
         break;
     }
