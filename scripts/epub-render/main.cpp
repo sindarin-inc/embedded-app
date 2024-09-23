@@ -13,6 +13,7 @@
 #include "DisplayUtil.hpp"
 #include "EPub/EPubFile.hpp"
 #include "Renderers/Renderer.hpp"
+#include "Storage/PreferencesStore.hpp"
 #include "UI/Fonts/Fonts.hpp"
 
 int main(int argc, char **argv) {
@@ -121,7 +122,7 @@ int main(int argc, char **argv) {
 
     auto epubFile = std::make_shared<EPubFile>(file, readable);
 
-    auto prefs = std::make_shared<Preferences>();
+    auto prefs = PreferencesStore();
 
     Renderer renderer(*display, boundingBoxRect, prefs);
     renderer.setStream(epubFile);
