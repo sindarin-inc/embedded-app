@@ -17,7 +17,7 @@ private:
 public:
     static void showTemporaryMessage(DisplaySystem &display, const std::string &message,
                                      int duration = 2000, bool rerenderAfter = false,
-                                     std::shared_ptr<Screen> screen = nullptr) {
+                                     const std::shared_ptr<Screen> &screen = nullptr) {
         auto popup = std::make_shared<MsgPopup>(display, message);
         popup->render(display);
         if (rerenderAfter) {
