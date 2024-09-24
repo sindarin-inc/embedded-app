@@ -58,7 +58,7 @@ void ReadingSettingsMenuScreen::addMenuItem(const std::shared_ptr<NewMenuItem> &
 }
 
 void ReadingSettingsMenuScreen::resetFont() {
-    Font *font;
+    Font *font = nullptr;
     switch (prefs_.font.get().value_or(PREFS_SOL_SMALL)) {
     case PREFS_SOL_MEDIUM:
         font = static_cast<Font *>(&fontFace1);
@@ -71,7 +71,9 @@ void ReadingSettingsMenuScreen::resetFont() {
         break;
     }
 
-    renderer_.setFont(font);
+    if (font) {
+        renderer_.setFont(font);
+    }
 }
 
 void ReadingSettingsMenuScreen::processCommand(RemoteCommand command) {
