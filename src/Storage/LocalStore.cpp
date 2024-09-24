@@ -44,7 +44,9 @@ auto LocalStore::begin() -> bool {
 
     migrateIfNeeded();
 
+    PROFILE_START(computeRecentReadables);
     computeRecentReadables();
+    PROFILE_END_LOG_US(computeRecentReadables);
 
     return loadedBooks && loadedArticles;
 }
