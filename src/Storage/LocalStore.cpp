@@ -1,7 +1,6 @@
 #include "LocalStore.hpp"
 
 #include <algorithm>
-#include <chrono>
 #include <esp_system.h>
 #include <esp_timer.h>
 #include <freertos/FreeRTOS.h>
@@ -556,9 +555,9 @@ void LocalStore::resetReadablesBookmarksChanged(const ReadablesVector &readables
 void LocalStore::computeRecentReadables() {
     recents_.clear();
 
-    auto parseDate = [](const std::string &dateStr) -> std::chrono::system_clock::time_point {
-        std::tm tm = {};
-        std::stringstream ss(dateStr.substr(0, 19)); // Only parse the date and time part
+    auto parseDate = [](const std::string &dateStr) -> time_t {
+        struct tm tm = {};
+        std::istringstream ss(dateStr.substr(0, 19)); // Only parse the date and time part
         ss >> std::get_time(&tm, "%Y-%m-%dT%H:%M:%S");
 
         if (ss.fail()) {
@@ -568,7 +567,7 @@ void LocalStore::computeRecentReadables() {
         // Disable automatic DST adjustment
         tm.tm_isdst = -1;
 
-        return std::chrono::system_clock::from_time_t(std::mktime(&tm));
+        return mktime(&tm);
     };
 
     // Combine books and articles into a single vector
@@ -580,31 +579,31 @@ void LocalStore::computeRecentReadables() {
     std::sort(
         allReadables.begin(), allReadables.end(),
         [this, &parseDate](const std::shared_ptr<Readable> &a, const std::shared_ptr<Readable> &b) {
-        auto aLastRead = this->prefs_.lastReadTime.get(a->shortenedUuid.c_str());
-        auto bLastRead = this->prefs_.lastReadTime.get(b->shortenedUuid.c_str());
+        time_t aLastRead = this->prefs_.lastReadTime.get(a->shortenedUuid.c_str());
+        time_t bLastRead = this->prefs_.lastReadTime.get(b->shortenedUuid.c_str());
 
-        auto aModified = parseDate(a->dateModified.c_str());
-        auto bModified = parseDate(b->dateModified.c_str());
+        time_t aModified = parseDate(a->dateModified.c_str());
+        time_t bModified = parseDate(b->dateModified.c_str());
 
         // Use the more recent of last read time or date modified
-        auto aTime = std::max(std::chrono::system_clock::from_time_t(aLastRead), aModified);
-        auto bTime = std::max(std::chrono::system_clock::from_time_t(bLastRead), bModified);
+        time_t aTime = std::max(aLastRead, aModified);
+        time_t bTime = std::max(bLastRead, bModified);
 
         return bTime < aTime; // Sort in descending order (most recent first)
         });
 
     // Get the current time
-    auto now = std::chrono::system_clock::now();
+    time_t now = time(nullptr);
 
     // Add items to the recents_ vector
     for (const auto &r : allReadables) {
-        auto lastRead = std::chrono::system_clock::from_time_t(
-            this->prefs_.lastReadTime.get(r->shortenedUuid.c_str()));
-        auto lastModified = parseDate(r->dateModified.c_str());
-        auto mostRecent = std::max(lastRead, lastModified);
+        time_t lastRead = this->prefs_.lastReadTime.get(r->shortenedUuid.c_str());
+        time_t lastModified = parseDate(r->dateModified.c_str());
+        time_t mostRecent = std::max(lastRead, lastModified);
+
         // Check if the readable was read or modified in the last 7 days
-        auto diff = std::chrono::duration_cast<std::chrono::hours>(now - mostRecent);
-        if (diff.count() <= static_cast<long long>(7 * 24)) { // 7 days * 24 hours
+        double diff = difftime(now, mostRecent) / 3600.0; // Convert seconds to hours
+        if (diff <= 7 * 24) {                             // 7 days * 24 hours
             recents_.push_back(r);
         }
     }
