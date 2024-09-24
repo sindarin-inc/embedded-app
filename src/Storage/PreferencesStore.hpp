@@ -7,6 +7,7 @@
 #include <string>
 #include <vector>
 
+#include "Misc/StringUtil.hpp"
 #include "config.h"
 #include "sindarin-debug.h"
 
@@ -200,7 +201,9 @@ public:
     class PrefsItem : public PrefsItemBase<T> {
     public:
         PrefsItem(PreferencesStore &prefs, const char *key) : PrefsItemBase<T>(prefs) {
-            std::snprintf(this->key_, sizeof(this->key_), "%s", key);
+            if (!SafeSnprintf(this->key_, sizeof(this->key_), "%s", key)) {
+                log_e("Key too long: %s", key);
+            }
         }
         virtual ~PrefsItem() = default;
 
