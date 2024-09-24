@@ -80,7 +80,7 @@ void NewMenuView::setIndicatorType(IndicatorType type) {
 auto NewMenuView::layout(LayoutContext &context, Size size) -> Size {
     int y = 0;
     int x = 0;
-    int widthOfIndicator = 0;
+    int widthOfIndicators = 0;
 
     // Reserve space for indicator
     if (indicatorType_ != IndicatorType::None) {
@@ -96,7 +96,7 @@ auto NewMenuView::layout(LayoutContext &context, Size size) -> Size {
             LayoutOptionsSizeToFitVertical | LayoutOptionsAlignCenterVertical |
                 LayoutOptionsAlignRight);
         width -= pagingIndicatorRect.size.width + pagingIndicatorPadding;
-        widthOfIndicator += pagingIndicatorRect.size.width + indicatorPadding;
+        widthOfIndicators += pagingIndicatorRect.size.width + indicatorPadding;
     }
 
     // The remaining space for the menu items
@@ -131,12 +131,12 @@ auto NewMenuView::layout(LayoutContext &context, Size size) -> Size {
             indicatorView_.cornerRadius = indicatorWidth / 2;
             context.setViewSizeInRect(indicatorView_, indicatorSize, indicatorRect,
                                       LayoutOptionsAlignCenterVertical);
-            widthOfIndicator += indicatorWidth + indicatorPadding;
+            widthOfIndicators += indicatorWidth + indicatorPadding;
         }
     }
     y -= padding;
 
-    return {maxWidth + widthOfIndicator, y};
+    return {maxWidth + widthOfIndicators, y};
 }
 
 void NewMenuView::drawInRect(Rect rect) {

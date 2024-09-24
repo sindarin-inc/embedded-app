@@ -42,6 +42,8 @@ void CarouselMenuScreen::populateMenuView() {
     }
 
     titleView_.setText(getCurrentTabTitle());
+    firstLoad_ = true;
+    setNeedsRerender();
 }
 
 void CarouselMenuScreen::processCommand(RemoteCommand command) {
@@ -57,17 +59,11 @@ void CarouselMenuScreen::processCommand(RemoteCommand command) {
         break;
     case RemoteCommand::BACK:
     case RemoteCommand::LEFT:
-        currentTabIndex_ = (currentTabIndex_ - 1 + menuTabs_.size()) % menuTabs_.size();
-        populateMenuView();
-        firstLoad_ = true;
-        setNeedsRerender();
+        setCurrentTabIndex((currentTabIndex_ - 1 + menuTabs_.size()) % menuTabs_.size());
         break;
 
     case RemoteCommand::RIGHT:
-        currentTabIndex_ = (currentTabIndex_ + 1) % menuTabs_.size();
-        populateMenuView();
-        firstLoad_ = true;
-        setNeedsRerender();
+        setCurrentTabIndex((currentTabIndex_ + 1 + menuTabs_.size()) % menuTabs_.size());
         break;
     default:
         // Handle other commands or ignore

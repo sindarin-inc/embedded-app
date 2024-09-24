@@ -152,13 +152,6 @@ auto NewReadablePopupMenuScreen::layout(LayoutContext &context, Size size) -> Si
                              LayoutOptionsSizeToFit | LayoutOptionsAlignCenterHorizontal);
     }
 
-    // To be visually pleasing, the popup menu should take about 150% of the width
-    // of the widest text -- this allows for the buttons as well
-    // return {maxWidthOfText * 110 / 100, y};
-    // 152 / 100 makes it exactly what it was before (106).
-    // However, on other displays with larger resoltuions, the popup menu still seems a bit too
-    // big. Future work to figure this out.
-    // return {152 * menuBox.size.width / 100, y};
     return backgroundFrame.size;
 }
 

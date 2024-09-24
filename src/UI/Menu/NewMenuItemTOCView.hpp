@@ -13,18 +13,12 @@ public:
     }
 
     auto layout(LayoutContext &context, Size size) -> Size override {
-        auto lockupRect = context.setSublayoutFrame(
-            Rect::fromSize(size), LayoutOptionsSizeToFit,
-            [this](LayoutContext &context, Size size) -> Size {
-                auto placeRect =
-                    context.setViewFrame(placeView_, Rect::fromSize(size),
-                                         LayoutOptionsSizeToFit | LayoutOptionsAlignRight);
-                auto titleRect = context.setViewFrame(
-                    titleView_, Rect::fromSize(size).inset(0, placeRect.size.width + 3, 0, 0),
-                    LayoutOptionsSizeToFit);
-                return {size.width, std::max(titleRect.size.height, placeRect.size.height)};
-            });
-        return lockupRect.size;
+        auto placeRect = context.setViewFrame(placeView_, Rect::fromSize(size),
+                                              LayoutOptionsSizeToFit | LayoutOptionsAlignRight);
+        auto titleRect = context.setViewFrame(
+            titleView_, Rect::fromSize(size).inset(0, placeRect.size.width + 3, 0, 0),
+            LayoutOptionsSizeToFit);
+        return {size.width, std::max(titleRect.size.height, placeRect.size.height)};
     }
 
     void drawInRect(Rect rect) override {

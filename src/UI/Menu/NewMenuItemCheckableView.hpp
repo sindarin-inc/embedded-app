@@ -18,10 +18,11 @@ public:
     }
 
     auto layout(LayoutContext &context, Size size) -> Size override {
-        auto titleRect = context.setViewFrame(titleView_, Rect::fromSize(size),
-                                              LayoutOptionsSizeToFit | LayoutOptionsAlignLeft);
         auto checkmarkRect = context.setViewFrame(checkmarkView_, Rect::fromSize(size).inset(0, 4),
                                                   LayoutOptionsSizeToFit | LayoutOptionsAlignRight);
+        auto titleRect = context.setViewFrame(
+            titleView_, Rect::fromSize(size).inset(0, checkmarkRect.size.width + 3, 0, 0),
+            LayoutOptionsSizeToFit | LayoutOptionsAlignLeft);
 
         return {size.width, std::max({titleRect.size.height, checkmarkRect.size.height})};
     }
