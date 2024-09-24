@@ -121,7 +121,7 @@ int main(int argc, char **argv) {
 
     auto epubFile = std::make_shared<EPubFile>(file, readable);
 
-    Renderer renderer(*display, boundingBoxRect, static_cast<Font *>(fontFace0));
+    Renderer renderer(*display, boundingBoxRect, static_cast<Font *>(&fontFace0));
     renderer.setStream(epubFile);
     renderer.renderPage(place);
 
