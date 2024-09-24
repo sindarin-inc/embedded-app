@@ -11,7 +11,7 @@ class NewMenuItemBook : public NewMenuItem {
 public:
     ~NewMenuItemBook() override = default;
     NewMenuItemBook(std::shared_ptr<Readable> readable, std::function<void()> callback)
-        : NewMenuItem(std::move(callback)), readable_(readable) {}
+        : NewMenuItem(std::move(callback)), readable_(std::move(std::move(readable))) {}
 
     [[nodiscard]] auto title() const -> const SpiramString & { return readable_->title; }
 
