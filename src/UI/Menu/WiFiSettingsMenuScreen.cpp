@@ -6,7 +6,7 @@
 
 WiFiSettingsMenuScreen::WiFiSettingsMenuScreen(DisplaySystem &display)
     : EinkView(display), menuView_(display), backLabelView_(display, "System Settings"),
-      configuredAccessView_(display, "Configured Access Points:    "),
+      configuredAccessView_(display, "Configured Access Points:"),
       configuredAccessPointsView_(display, MAX_WIFI_SETTINGS) {
     menuView_.padding = 1;
     loadWifiSettings();
@@ -24,6 +24,7 @@ void WiFiSettingsMenuScreen::loadWifiSettings() {
         configuredAccessPointsView_.setText(listOfAccessPoints);
     } else {
         configuredAccessView_.setText("No configured Access Points");
+        configuredAccessPointsView_.setText("");
     }
     setNeedsLayout();
 }
@@ -66,7 +67,7 @@ auto WiFiSettingsMenuScreen::layout(LayoutContext &context, Size size) -> Size {
     auto configuredLabelBox = context.setViewFrame(
         configuredAccessView_,
         {{15, menuBox.bottom() + 15}, {size.width - 15, size.height - menuBox.bottom() - 15}},
-        LayoutOptionsSizeToFit);
+        LayoutOptionsSizeToFitVertical);
 
     WiFiSettings settings;
 
