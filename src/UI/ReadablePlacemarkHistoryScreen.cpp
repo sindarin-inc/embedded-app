@@ -43,6 +43,7 @@ void ReadablePlacemarkHistoryScreen::render(DisplaySystem &display) {
 }
 
 void ReadablePlacemarkHistoryScreen::processCommand(RemoteCommand command) {
+    auto temp = shared_from_this();
     switch (command) {
     case RemoteCommand::UP:
         moveSelection(-1);
@@ -68,6 +69,7 @@ void ReadablePlacemarkHistoryScreen::processCommand(RemoteCommand command) {
 }
 
 void ReadablePlacemarkHistoryScreen::loadMenuItems() {
+    auto temp = shared_from_this();
     menuView_.resetMenuItems();
     auto placemarkHistory = UserReadablePlacemarkHistory::loadForReadable(fileSystem_, readable_);
     if (placemarkHistory.empty()) {

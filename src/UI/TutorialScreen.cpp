@@ -19,11 +19,13 @@ TutorialScreen::TutorialScreen(DisplaySystem &display, PreferencesStore &prefs, 
     menu_.resetMenuItems();
     menu_.addMenuItem(std::make_shared<NewMenuItemSingleLine>("Delete this tutorial on next close",
                                                               [this, bit]() {
+        auto temp = shared_from_this();
         prefs_.tutorialsDeleted.set(prefs_.tutorialsDeleted.get().value_or(0) | bit);
         inMenu_ = false;
         back();
     }));
     menu_.addMenuItem(std::make_shared<NewMenuItemSingleLine>("Keep this tutorial", [this, bit]() {
+        auto temp = shared_from_this();
         // Set it here just in case they change their mind after deleting it and perform
         // this operation a second time.
         uint32_t mask = ~bit;

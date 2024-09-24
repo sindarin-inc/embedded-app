@@ -111,6 +111,7 @@ void FirmwareUpdateScreen::showPopup(const std::string &message) {
 }
 
 void FirmwareUpdateScreen::cancel() {
+    auto temp = shared_from_this();
     CancelFlag::cancel(cancel_);
     firmwareDownloader_.cancel();
     telemetry_.logMetric(TelemetryField::METRIC_FIRMWARE_UPDATE, "update-cancelled");
@@ -218,6 +219,7 @@ void FirmwareUpdateScreen::processCommand(RemoteCommand command) {
 }
 
 void FirmwareUpdateScreen::fail(const std::string &message) {
+    auto temp = shared_from_this();
     log_w("Firmware update failed: %s", message.c_str());
     WiFi::getInstance().disconnectWiFi();
 
@@ -282,6 +284,7 @@ void FirmwareUpdateScreen::begin() {
         }
 
         DispatchGetUiQueue()->dispatch([this, state, resumeBLE]() {
+            auto temp = shared_from_this();
             updateState(state); // Update the internal state with the new state.
             render(display_);   // Render the UI with the updated state.
 

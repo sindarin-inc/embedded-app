@@ -24,17 +24,6 @@ public:
 
     void render(DisplaySystem &display) override;
 
-    void showTemporaryMessage(DisplaySystem &display, const std::string &message,
-                              int duration = 2000, bool rerenderAfter = false) override {
-        auto popup = std::make_shared<MsgPopup>(display, message);
-        popup->render(display);
-        if (rerenderAfter) {
-            Delay(duration);
-            setNeedsRerender();
-            this->render(display);
-        }
-    }
-
 private:
     NewMenuView menuView_;
     ArrowLabelView backLabelView_;

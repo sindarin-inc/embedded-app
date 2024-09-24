@@ -99,6 +99,7 @@ void CalibrationScreen::render(DisplaySystem &display) {
 }
 
 void CalibrationScreen::processCommand(RemoteCommand command) {
+    auto temp = shared_from_this();
     switch (command) {
     case RemoteCommand::LEFT:
     case RemoteCommand::RIGHT:

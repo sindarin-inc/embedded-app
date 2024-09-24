@@ -30,7 +30,9 @@ public:
 
     void clearNeedsRerender() override;
 
-    void setCurrentScreen(const std::shared_ptr<Screen> &screen);
+    auto currentScreen() -> std::shared_ptr<Screen> { return screenStack_.top(); }
+    void pushScreen(const std::shared_ptr<Screen> &screen);
+    void popScreen(bool clearDisplay = true);
 
     auto needsRerender() -> bool override;
     void render(DisplaySystem &display) override;
@@ -42,11 +44,8 @@ public:
         return screenStack_.top();
     }
 
-    // auto setSelfShared(std::shared_ptr<Screen> rootUIThis) { thisShared_ = rootUIThis; }
-
 protected:
     ScreenStack screenStack_;
-    //  std::shared_ptr<Screen> thisShared_{};
     std::string itemErrorMsg_ =
         "INTERNAL ERROR!\nThe item you tried to access\ncannot be read or "
         "found.\nPlease contact support.\n\nPress\u00a0\u00a0\ue000\u00a0\u00a0to return";

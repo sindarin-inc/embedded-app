@@ -17,6 +17,7 @@ void BitmapScreen::render(DisplaySystem &display) {
 }
 
 void BitmapScreen::processCommand(RemoteCommand command) {
+    auto temp = shared_from_this();
     switch (command) {
     case RemoteCommand::LEFT:
     case RemoteCommand::RIGHT:

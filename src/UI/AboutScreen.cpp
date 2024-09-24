@@ -69,6 +69,7 @@ void AboutScreen::render(DisplaySystem &display) {
 }
 
 void AboutScreen::processCommand(RemoteCommand command) {
+    auto temp = shared_from_this();
     secretCode_.processCommand(command);
     if (command == RemoteCommand::ENTER) {
         back();

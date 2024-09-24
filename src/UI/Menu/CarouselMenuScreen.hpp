@@ -44,17 +44,6 @@ public:
 
     void regenerateCurrentTab();
 
-    void showTemporaryMessage(DisplaySystem &display, const std::string &message,
-                              int duration = 2000, bool rerenderAfter = false) override {
-        auto popup = std::make_shared<MsgPopup>(display, message);
-        popup->render(display);
-        if (rerenderAfter) {
-            Delay(duration);
-            setNeedsRerender();
-            this->render(display);
-        }
-    }
-
     auto getCurrentTabTitle() const -> std::string {
         return std::get<0>(menuTabs_[currentTabIndex_]);
     }

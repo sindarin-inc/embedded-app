@@ -77,6 +77,7 @@ void ReadingSettingsMenuScreen::resetFont() {
 }
 
 void ReadingSettingsMenuScreen::processCommand(RemoteCommand command) {
+    auto temp = shared_from_this();
     switch (command) {
     case RemoteCommand::UP:
         moveSelection(-1);

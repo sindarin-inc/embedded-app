@@ -398,6 +398,7 @@ void DemoScreen::drawTripleLine(DisplaySystem &display, std::string one, std::st
 }
 
 void DemoScreen::finishDemo() {
+    auto temp = shared_from_this();
     // When we're done with the onboarding screens, turn this mode off.
     dropVcom_ = false;
     display_.invertDisplay(originalInversion_);

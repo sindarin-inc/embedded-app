@@ -76,6 +76,7 @@ void ReadableSeekScreen::render(DisplaySystem &display) {
 }
 
 void ReadableSeekScreen::processCommand(RemoteCommand command) {
+    auto temp = shared_from_this();
     switch (command) {
     case RemoteCommand::LEFT: {
         // Do the -5% thing. This is unlikley to be right long-term

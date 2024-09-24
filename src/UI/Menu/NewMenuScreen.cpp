@@ -10,6 +10,7 @@ void NewMenuScreen::addMenuItem(const std::shared_ptr<NewMenuItem> &menuItem) {
 }
 
 void NewMenuScreen::processCommand(RemoteCommand command) {
+    auto temp = shared_from_this();
     switch (command) {
     case RemoteCommand::UP:
         moveSelection(-1);
@@ -26,8 +27,6 @@ void NewMenuScreen::processCommand(RemoteCommand command) {
         setNeedsRerender();
         back();
         return;
-        back();
-        break;
     default:
         // Handle other commands or ignore
         break;

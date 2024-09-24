@@ -138,6 +138,7 @@ void LegalScreen::render(DisplaySystem &display) {
 }
 
 void LegalScreen::processCommand(RemoteCommand command) {
+    auto temp = shared_from_this();
     // Ignore all other presses to match About menu but no secret code here.
     if (command == RemoteCommand::ENTER) {
         back();

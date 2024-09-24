@@ -121,6 +121,7 @@ void ReadableSummaryScreen::restoreRendererStream() {
 }
 
 void ReadableSummaryScreen::processCommand(RemoteCommand command) {
+    auto temp = shared_from_this();
     switch (command) {
     case RemoteCommand::UP:
         restoreRendererStream();

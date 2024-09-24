@@ -16,6 +16,7 @@ void InactivitySettingMenuScreen::addMenuItem(const std::shared_ptr<NewMenuItem>
 }
 
 void InactivitySettingMenuScreen::processCommand(RemoteCommand command) {
+    auto temp = shared_from_this();
     switch (command) {
     case RemoteCommand::UP:
         moveSelection(-1);

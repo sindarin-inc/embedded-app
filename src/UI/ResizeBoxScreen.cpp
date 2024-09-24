@@ -45,6 +45,7 @@ void ResizeBoxScreen::render(DisplaySystem &display) {
 }
 
 void ResizeBoxScreen::processCommand(RemoteCommand command) {
+    auto temp = shared_from_this();
     DisplayInset insets = GetTextInsetFromPrefs(display_, prefs_);
     DisplayRect rect = GetTextRectFromPrefs(display_, prefs_);
     switch (command) {

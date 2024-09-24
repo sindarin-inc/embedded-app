@@ -68,6 +68,7 @@ void DebugAboutScreen::render(DisplaySystem &display) {
 }
 
 void DebugAboutScreen::processCommand(RemoteCommand command) {
+    auto temp = shared_from_this();
     if (command == RemoteCommand::ENTER) {
         back();
     }

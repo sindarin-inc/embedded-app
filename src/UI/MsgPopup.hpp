@@ -15,6 +15,18 @@ private:
     MultiLineTextView textView_;
 
 public:
+    static void showTemporaryMessage(DisplaySystem &display, const std::string &message,
+                                     int duration = 2000, bool rerenderAfter = false,
+                                     std::shared_ptr<Screen> screen = nullptr) {
+        auto popup = std::make_shared<MsgPopup>(display, message);
+        popup->render(display);
+        if (rerenderAfter) {
+            Delay(duration);
+            screen->setNeedsRerender();
+            screen->render(display);
+        }
+    }
+
     MsgPopup(DisplaySystem &display, const std::string &msg)
         : EinkView(display), boxView_(display, 8), textView_(display, 8) {
         textView_.setText(msg);
@@ -46,6 +58,7 @@ public:
     }
 
     void processCommand(RemoteCommand command) override {
+        auto temp = shared_from_this();
         switch (command) {
         case RemoteCommand::ENTER:
             back();

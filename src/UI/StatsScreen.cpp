@@ -42,4 +42,7 @@ void StatsScreen::render(DisplaySystem &display) {
     display.updateDisplay();
 }
 
-void StatsScreen::processCommand(RemoteCommand command) { back(); }
+void StatsScreen::processCommand(RemoteCommand command) {
+    auto temp = shared_from_this();
+    back();
+}

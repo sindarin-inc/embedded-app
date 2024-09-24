@@ -44,6 +44,7 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
     readableDictionaryScreen_->setBackCallback([this]() { setCurrentScreen(nullptr); });
 
     auto onMainMenu = [this]() {
+        auto temp = shared_from_this();
         hidePopupMenu();
         prefs_.lastReadableId.remove();
         if (!prefs_.cesMode.get().value_or(false)) {
@@ -158,6 +159,7 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
             auto lineMenuScreen = std::make_shared<LineMenuScreen>(this->prefs_, this->display_);
             lineMenuScreen->resetMenuItems();
             lineMenuScreen->addMenuItem(std::make_shared<NewMenuItemSingleLine>("Cancel", [this]() {
+                auto temp = shared_from_this();
                 log_d("Aborting delete!");
                 setCurrentScreen(nullptr);
                 back();
@@ -895,6 +897,7 @@ void ReadableScreen::showPopupMenu() {
 void ReadableScreen::hidePopupMenu() { setCurrentScreen(nullptr); }
 
 void ReadableScreen::processCommandDemoMode(RemoteCommand command) {
+    auto temp = shared_from_this();
     switch (command) {
     case RemoteCommand::LEFT:
         numUps_ = 0;

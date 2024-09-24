@@ -84,6 +84,7 @@ void WiFiScanScreen::render(DisplaySystem &display) {
 }
 
 void WiFiScanScreen::processCommand(RemoteCommand command) {
+    auto temp = shared_from_this();
     // All commands just go back
     back();
 };
