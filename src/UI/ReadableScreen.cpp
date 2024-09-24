@@ -43,7 +43,7 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
         this->prefs_, this->readable_, this->display_, this->renderer_);
     readableDictionaryScreen_->setBackCallback([this]() { setCurrentScreen(nullptr); });
 
-    std::function<void()> onMainMenu = [this]() {
+    auto onMainMenu = [this]() {
         hidePopupMenu();
         prefs_.lastReadableId.remove();
         if (!prefs_.cesMode.get().value_or(false)) {
@@ -56,12 +56,12 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
         back();
     };
 
-    std::function<void()> onBookmarkToggle = [this]() {
+    auto onBookmarkToggle = [this]() {
         inBookmark_ = !inBookmark_;
         writeOutBookmarkUpdate();
     };
 
-    std::function<void()> onReport = [this, &display]() {
+    auto onReport = [this, &display]() {
         setNeedsRerender();
         auto metrics = readable_->telemetryPlacemarkMetrics();
         metrics["fw"] = SemanticVersionString();

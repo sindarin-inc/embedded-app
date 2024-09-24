@@ -514,8 +514,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                         "or forward newsletters "
                         "from your inbox to add@solreader.com.\n\n"
                         "Did you know "
-                        "you can change the sort order of your books and articles? "
-                        "Simply go to Settings -> Content -> Sort Order."
+                        "you can change the sort order of your articles? "
+                        "Simply go to Settings -> Content -> Article Sort Order."
                         "\n\n\nPress \ue000 (center) to "
                         "continue.\n");
                     auto tutorialScreen = createTutorialScreen(message, TUTORIAL_SCREEN_ARTICLES);
@@ -582,9 +582,9 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                     "Crossway Publishing has generously provided the English "
                     "Standard Version"
                     " of the Bible to you free of charge (Copyright 2001, Crossway Publishing).\n\n"
-                    " Not your thing? No worries! You can toggle this app off "
-                    "in the Content Settings.\n\n"
-                    " Look for more scripture and meditation Sol Reader apps down the road!\n\n\n"
+                    " Not your thing? No worries! Just archive these books and the tab "
+                    " will disappear.\n\n"
+                    " Look for more scripture and meditation Sol Reader tabs down the road!\n\n\n"
                     " Press \ue000 (center) to continue.");
                 auto tutorialScreen = createTutorialScreen(message, TUTORIAL_SCREEN_BIBLE);
                 this->setCurrentScreen(tutorialScreen);
