@@ -58,7 +58,7 @@ void ReadingSettingsMenuScreen::addMenuItem(const std::shared_ptr<NewMenuItem> &
 }
 
 void ReadingSettingsMenuScreen::resetFont() {
-    Font *font = fontFromPrefs(prefs_.font.get().value_or(PREFS_SOL_SMALL));
+    Font *font = FontFromPrefs(prefs_.font.get().value_or(PREFS_SOL_SMALL));
 
     if (font) {
         renderer_.setFont(font);

@@ -56,7 +56,7 @@ public:
     SpiramString url;
     SpiramString dateCreated;
     SpiramString dateModified;
-    time_t dateModifiedTime;
+    time_t dateModifiedTime{};
     SpiramString datePublished;
     SpiramString processedBy;
     ReadableAuthorVector authors;

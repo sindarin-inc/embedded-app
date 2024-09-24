@@ -228,7 +228,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             return nullptr;
         }
 
-        Font *font = fontFromPrefs(prefs_.font.get().value_or(PREFS_SOL_SMALL));
+        Font *font = FontFromPrefs(prefs_.font.get().value_or(PREFS_SOL_SMALL));
 
         auto readableScreen = std::make_shared<ReadableScreen>(
             stream, *display, readable, this->prefs_, this->telemetry_, fileSystem,

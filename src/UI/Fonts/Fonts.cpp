@@ -115,7 +115,7 @@ Font fontFace2 = Font(mainFont, 20);
 
 #endif
 
-auto fontFromPrefs(int choice) -> Font * {
+auto FontFromPrefs(int choice) -> Font * {
     switch (choice) {
     case PREFS_SOL_MEDIUM:
         return static_cast<Font *>(&fontFace1);

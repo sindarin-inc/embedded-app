@@ -42,4 +42,4 @@ extern Font fontFace2;
 
 #endif
 
-auto fontFromPrefs(int choice) -> Font *;
+auto FontFromPrefs(int choice) -> Font *;
