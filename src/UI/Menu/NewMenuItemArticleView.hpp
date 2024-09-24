@@ -10,7 +10,7 @@ public:
     NewMenuItemArticleView(DisplaySystem &display,
                            const std::shared_ptr<NewMenuItemArticle> &menuItem)
         : NewMenuItemView(display), titleView_(display, 2) /*, sourceView_(display) */ {
-        titleView_.setText(std::string(menuItem->title()));
+        titleView_.setText(menuItem->title());
         // sourceView_.setText(menuItem->source(), true);
     }
 

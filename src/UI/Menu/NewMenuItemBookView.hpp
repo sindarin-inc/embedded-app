@@ -8,7 +8,7 @@ class NewMenuItemBookView : public NewMenuItemView {
 public:
     NewMenuItemBookView(DisplaySystem &display, const std::shared_ptr<NewMenuItemBook> &menuItem)
         : NewMenuItemView(display), titleView_(display), authorView_(display) {
-        titleView_.setText(std::string(menuItem->title()));
+        titleView_.setText(menuItem->title());
         // Make the author text all caps
         authorView_.setText(std::string(menuItem->author()), true);
     }

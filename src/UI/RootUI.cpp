@@ -380,6 +380,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         auto menuItems = std::make_shared<MenuItemVector>();
         for (const auto &recent : recents) {
             bool archived = prefs_.readableArchivedChanged.get(recent->shortenedUuid.c_str());
+            // Still needed for the Bible one since that's just a NewMenuItemSingleLine
+            // The other two are handled by the menu item itself because they have the readable.
             auto title = StringFormat("%s%s", archived ? "Archived: " : "", recent->title.c_str());
 
             std::shared_ptr<NewMenuItem> menuItem;
@@ -390,14 +392,18 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                     });
             } else if (recent->isArticle()) {
                 menuItem = std::make_shared<NewMenuItemArticle>(
-                    recent, [recent, handleReadableScreenCreation]() {
-                        handleReadableScreenCreation(recent);
-                    });
+                    recent,
+                    [recent, handleReadableScreenCreation]() {
+                    handleReadableScreenCreation(recent);
+                    },
+                    archived);
             } else {
                 menuItem = std::make_shared<NewMenuItemBook>(
-                    recent, [recent, handleReadableScreenCreation]() {
-                        handleReadableScreenCreation(recent);
-                    });
+                    recent,
+                    [recent, handleReadableScreenCreation]() {
+                    handleReadableScreenCreation(recent);
+                    },
+                    archived);
             }
             menuItems->emplace_back(menuItem);
         }
@@ -425,11 +431,10 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 continue;
             }
             bool archived = prefs_.readableArchivedChanged.get(book->shortenedUuid.c_str());
-            auto title = StringFormat("%s%s", archived ? "Archived: " : "", book->title.c_str());
-            menuItems->emplace_back(
-                std::make_shared<NewMenuItemBook>(book, [book, handleReadableScreenCreation]() {
-                    handleReadableScreenCreation(book);
-                }));
+            menuItems->emplace_back(std::make_shared<NewMenuItemBook>(
+                book,
+                [book, handleReadableScreenCreation]() { handleReadableScreenCreation(book); },
+                archived));
         }
 
         log_d("noContent in the books factory: %d", noContent);
@@ -489,11 +494,12 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
         for (const auto &article : articles) {
             bool archived = prefs_.readableArchivedChanged.get(article->shortenedUuid.c_str());
-            auto title = StringFormat("%s%s", archived ? "Archived: " : "", article->title.c_str());
             menuItems->emplace_back(std::make_shared<NewMenuItemArticle>(
-                article, [article, handleReadableScreenCreation]() {
-                    handleReadableScreenCreation(article);
-                }));
+                article,
+                [article, handleReadableScreenCreation]() {
+                handleReadableScreenCreation(article);
+                },
+                archived));
         }
 
         if (noArticles) {
