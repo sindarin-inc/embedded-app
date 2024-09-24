@@ -162,17 +162,10 @@ void NewReadablePopupMenuScreen::render(DisplaySystem &display) {
     draw();
 
     if (firstLoad_) {
-#if CONFIG_DISPLAY_EINKET013TT1
-        // NOTE: This Screen is quirky since it is rendered directly from ReadableScreen. The
-        // first time it is rendered, it will be rendered twice from ReadableScreen, once with
-        // the text in the background (using PARTIAL) and once without the text in the
-        // background (but using AU4). This creates the effect of the popup happening on top of
-        // the text.
         firstLoad_ = false;
         display.updateDisplay(DisplaySystem::UpdateType::PARTIAL, true);
         // Redraw but this time without the text (since updateDsplay will clear the screen)
         draw();
-#endif
     }
     menuView_.drawFastElements();
     display.updateDisplay(DisplaySystem::UpdateType::FAST_INDICATOR);
