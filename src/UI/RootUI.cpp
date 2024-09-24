@@ -251,7 +251,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         // When switching to a readable from a menu, we should clear the display
         // to make the whites really white and the blacks really black.
         display->clearDisplay();
-        readableScreen->setBackCallback([this, display, stream, readable]() {
+        readableScreen->setBackCallback([this, stream, readable]() {
             bool archived = prefs_.readableArchivedChanged.get(readable->shortenedUuid.c_str());
             auto title =
                 StringFormat("%s%s", archived ? "Archived: " : "", readable->title.c_str());
@@ -274,7 +274,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         auto tutorialScreen =
             std::make_shared<TutorialScreen>(*display, this->prefs_, std::move(text), bit);
 
-        tutorialScreen->setBackCallback([this, display]() { this->popScreen(); });
+        tutorialScreen->setBackCallback([this]() { this->popScreen(); });
 
         return tutorialScreen;
     };
@@ -310,7 +310,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 *display, this->prefs_, power_, localStore, firmware);
             display->clearDisplay();
             pushScreen(releaseNotesScreen);
-            releaseNotesScreen->setBackCallback([this, display]() { this->popScreen(); });
+            releaseNotesScreen->setBackCallback([this]() { this->popScreen(); });
             });
     };
 
@@ -321,7 +321,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             if (PreferencesStore::paired == PairedStatus::Unpaired) {
                 auto appDownloadScreen = std::make_shared<AppDownloadScreen>(*display);
                 this->pushScreen(appDownloadScreen);
-                appDownloadScreen->setBackCallback([this, display]() { this->popScreen(); });
+                appDownloadScreen->setBackCallback([this]() { this->popScreen(); });
                 return;
             }
 
@@ -942,7 +942,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 if (!WiFi::getInstance().hasWiFiCredentials()) {
                     auto appDownloadScreen = std::make_shared<AppDownloadScreen>(*display);
                     this->pushScreen(appDownloadScreen);
-                    appDownloadScreen->setBackCallback([this, display]() { this->popScreen(); });
+                    appDownloadScreen->setBackCallback([this]() { this->popScreen(); });
                     return;
                 }
 
@@ -969,7 +969,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                     std::make_shared<NewMenuItemSingleLine>("Manifesto", [this, display]() {
                         auto demoScreen = std::make_shared<DemoScreen>(*display, prefs_);
                         this->pushScreen(demoScreen);
-                        demoScreen->setBackCallback([this, display]() { this->popScreen(); });
+                        demoScreen->setBackCallback([this]() { this->popScreen(); });
                     }));
 
                 systemSettingsMenu->addMenuItem(
@@ -1105,7 +1105,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                             std::make_shared<WiFiScanScreen>(*display, WiFi::getInstance());
                         wiFiScanScreen->begin();
                         this->pushScreen(wiFiScanScreen);
-                        wiFiScanScreen->setBackCallback([this, display]() { this->popScreen(); });
+                        wiFiScanScreen->setBackCallback([this]() { this->popScreen(); });
                     }));
 
                 wifiSettingsMenuScreen->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
@@ -1145,7 +1145,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                     },
                     [this]() -> bool { return !this->prefs_.bleDisabled.get().value_or(false); }));
 
-                wifiSettingsMenuScreen->setBackCallback([this, display]() { this->popScreen(); });
+                wifiSettingsMenuScreen->setBackCallback([this]() { this->popScreen(); });
 
                 wifiSettingsMenuScreen->setFirstLoad();
                 pushScreen(wifiSettingsMenuScreen);
@@ -1690,7 +1690,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         }
         auto readableScreen = createReadableScreen(*it);
         if (readableScreen != nullptr) {
-            cesScreen->setBackCallback([this, display]() { this->popScreen(); });
+            cesScreen->setBackCallback([this]() { this->popScreen(); });
             this->pushScreen(cesScreen);
         } else {
             auto errorPopup = std::make_shared<MsgPopup>(*display, itemErrorMsg_);
