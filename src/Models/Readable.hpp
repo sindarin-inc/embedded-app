@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <deque>
+#include <iomanip>
 #include <string>
 #include <unordered_map>
 #include <variant>
@@ -55,6 +56,7 @@ public:
     SpiramString url;
     SpiramString dateCreated;
     SpiramString dateModified;
+    time_t dateModifiedTime;
     SpiramString datePublished;
     SpiramString processedBy;
     ReadableAuthorVector authors;
@@ -132,6 +134,21 @@ public:
         return authors[0].name;
     }
 
+    auto parseDate(const std::string &dateStr) -> time_t {
+        struct tm tm = {};
+        std::istringstream ss(dateStr.substr(0, 19)); // Only parse the date and time part
+        ss >> std::get_time(&tm, "%Y-%m-%dT%H:%M:%S");
+
+        if (ss.fail()) {
+            log_e("Failed to parse date string");
+        }
+
+        // Disable automatic DST adjustment
+        tm.tm_isdst = -1;
+
+        return mktime(&tm);
+    };
+
     auto fromJson(const JsonObject &j) -> bool override {
         if (!j.containsKey("uuid") || !j.containsKey("title") || !j.containsKey("date_created") ||
             !j.containsKey("date_modified") || !j.containsKey("authors")) {
@@ -146,6 +163,7 @@ public:
         title = j["title"].as<std::string>();
         dateCreated = j["date_created"].as<std::string>();
         dateModified = j["date_modified"].as<std::string>();
+        dateModifiedTime = parseDate(std::string(dateModified));
         datePublished = j["date_published"].as<std::string>();
         processedBy = j["processed_by"].as<std::string>();
 

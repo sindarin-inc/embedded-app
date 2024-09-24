@@ -58,18 +58,7 @@ void ReadingSettingsMenuScreen::addMenuItem(const std::shared_ptr<NewMenuItem> &
 }
 
 void ReadingSettingsMenuScreen::resetFont() {
-    Font *font = nullptr;
-    switch (prefs_.font.get().value_or(PREFS_SOL_SMALL)) {
-    case PREFS_SOL_MEDIUM:
-        font = static_cast<Font *>(&fontFace1);
-        break;
-    case PREFS_SOL_LARGE:
-        font = static_cast<Font *>(&fontFace2);
-        break;
-    case PREFS_SOL_SMALL:
-        font = static_cast<Font *>(&fontFace0);
-        break;
-    }
+    Font *font = fontFromPrefs(prefs_.font.get().value_or(PREFS_SOL_SMALL));
 
     if (font) {
         renderer_.setFont(font);

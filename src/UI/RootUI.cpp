@@ -228,21 +228,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             return nullptr;
         }
 
-        Font *font = nullptr;
-        switch (prefs_.font.get().value_or(PREFS_SOL_SMALL)) {
-        case PREFS_SOL_MEDIUM:
-            font = static_cast<Font *>(&fontFace1);
-            break;
-        case PREFS_SOL_LARGE:
-            font = static_cast<Font *>(&fontFace2);
-            break;
-        case PREFS_SOL_SMALL:
-            font = static_cast<Font *>(&fontFace0);
-            break;
-        }
-        if (font == nullptr) {
-            log_e("Font is nullptr, this is bad");
-        }
+        Font *font = fontFromPrefs(prefs_.font.get().value_or(PREFS_SOL_SMALL));
 
         auto readableScreen = std::make_shared<ReadableScreen>(
             stream, *display, readable, this->prefs_, this->telemetry_, fileSystem,

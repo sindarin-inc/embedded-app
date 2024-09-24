@@ -406,17 +406,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 #endif
 #endif
 
-    switch (prefs.font.get().value_or(PREFS_SOL_SMALL)) {
-    case PREFS_SOL_MEDIUM:
-        myDisplay.setFont(static_cast<Font *>(&fontFace1));
-        break;
-    case PREFS_SOL_LARGE:
-        myDisplay.setFont(static_cast<Font *>(&fontFace2));
-        break;
-    case PREFS_SOL_SMALL:
-        myDisplay.setFont(static_cast<Font *>(&fontFace0));
-        break;
-    }
+    myDisplay.setFont(fontFromPrefs(prefs.font.get().value_or(PREFS_SOL_SMALL)));
 
     HEAP_PROFILE_START(displaySetup);
     if (!myDisplay.setup()) {
