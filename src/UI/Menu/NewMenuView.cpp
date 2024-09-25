@@ -34,13 +34,7 @@ void NewMenuView::addMenuItem(const std::shared_ptr<NewMenuItem> &menuItem) {
         menuItemViews_.push_back(std::make_unique<NewMenuItemTOCView>(display_, item));
     }
 
-    int totalPages = (menuItems_.size() + itemsPerPage - 1) / itemsPerPage;
-    if (totalPages > 1) {
-        pagingIndicatorView_.setTotalPages(totalPages);
-        pagingIndicatorView_.setHidden(false);
-    } else {
-        pagingIndicatorView_.setHidden(true);
-    }
+    updatePageState();
 
     setNeedsLayout();
 }

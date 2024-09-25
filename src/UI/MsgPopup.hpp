@@ -22,8 +22,13 @@ public:
         popup->render(display);
         if (rerenderAfter) {
             Delay(duration);
-            screen->setNeedsRerender();
-            screen->render(display);
+            if (screen) {
+                screen->setNeedsRerender();
+                screen->render(display);
+            } else {
+                log_e("No screen to rerender after message. This is probably a bug where you "
+                      "passed in true to rerender but no Screen to rerender after message.");
+            }
         }
     }
 

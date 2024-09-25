@@ -393,6 +393,11 @@ public:
           textInsetBottom(*this, "text-inset-b"),
           wifiDisabled(*this, "wifi-disable"),
           bleDisabled(*this, "ble-disable"),
+          onboardingComplete(*this, "onboard-done"),
+          seenCustomizeFace(*this, "seen-face"),
+          firstBookDownloaded(*this, "first-book"),
+          readFaster(*this, "read-faster"),
+          advancedSetup(*this, "adv-setup"),
           preferencesStoreMigrationVersion_(*this, "ps-version") {}
     // clang-format on
 
@@ -680,6 +685,11 @@ public:
     PrefsItem<uint16_t> textInsetBottom;
     PrefsItem<bool> wifiDisabled;
     PrefsItem<bool> bleDisabled;
+    PrefsItem<bool> onboardingComplete;
+    PrefsItem<bool> seenCustomizeFace;
+    PrefsItem<bool> firstBookDownloaded;
+    PrefsItem<bool> readFaster;
+    PrefsItem<bool> advancedSetup;
 
     // These are RTC_SLOW_MEM variables that persist across deep sleep / wake cycles but will be
     // reset on power cycles

@@ -51,6 +51,16 @@ public:
         }
     }
 
+    void updatePageState() {
+        int totalPages = (menuItems_.size() + itemsPerPage - 1) / itemsPerPage;
+        if (totalPages > 1) {
+            pagingIndicatorView_.setTotalPages(totalPages);
+            pagingIndicatorView_.setHidden(false);
+        } else {
+            pagingIndicatorView_.setHidden(true);
+        }
+    }
+
     uint16_t padding = 5;
     uint8_t itemsPerPage = 8;
     uint16_t indicatorWidth = 0;         // Default in constructor
