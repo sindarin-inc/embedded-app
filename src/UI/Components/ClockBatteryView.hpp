@@ -41,7 +41,10 @@ public:
     auto layout(LayoutContext &context, Size size) -> Size override {
         auto clockRect = context.setViewFrame(
             clockView_, {{0, 0}, size}, LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical);
-        if (batteryLow()) {
+        if (!batteryLow_ && !batteryLow()) {
+            batteryLow_ = true;
+        }
+        if (batteryLow_) {
             auto iconRect =
                 context.setViewFrame(batteryIconView_, {{clockRect.size.width + 10, 0}, size},
                                      LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical);
@@ -83,7 +86,7 @@ public:
 
         // Only show the battery and clock if the battery is low.
         // We can probbaly do better than this.
-        if (batteryLow()) {
+        if (batteryLow_) {
             batteryIconView_.draw();
         }
         clockView_.draw();
@@ -93,4 +96,9 @@ protected:
     IconView batteryIconView_;
     SingleLineTextView clockView_;
     Battery &battery_;
+    // When the battery is right on the boundary, sometimes it'll report low on the first check
+    // but then later be above the threshold which looks weird when it goes back and forth.
+    // So in a session, if we see the battery low, we remember that we saw it low so we always
+    // draw it in that session.
+    bool batteryLow_ = false;
 };
