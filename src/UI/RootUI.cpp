@@ -1729,7 +1729,23 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     HEAP_PROFILE_END(rootUISettings);
 
-    screenStack_.push(newMainMenu);
+    pushScreen(newMainMenu);
+
+    // If we are in onboarding mode, show the entry bumper first
+    if (!prefs_.onboardingComplete.get().value_or(false)) {
+        auto firstTimeScreen = std::make_shared<DemoScreen>(*display, prefs_);
+        pushScreen(firstTimeScreen);
+        firstTimeScreen->setBackCallback([this]() {
+            popScreen();
+            // Any screen that could possibly get to a backCallback without a command
+            // being sent through the loop must explicitly render at the end of its
+            // backCallback to ensure the screen is properly redrawn.
+            if (needsRerender()) {
+                render(*display_);
+                clearNeedsRerender();
+            }
+        });
+    }
 
     if (prefs_.cesMode.get().value_or(false)) {
         auto cesScreen = std::make_shared<DemoScreen>(*display, prefs_);
