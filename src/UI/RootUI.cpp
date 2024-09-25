@@ -360,6 +360,49 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     log_i("Loading %zu Pocket articles", articles.size());
 
+    auto welcomeMenuFactory = [this, display, &localStore,
+                               &fileSystem]() -> MenuItemSharedPtrVector {
+        auto menuItems = std::make_shared<MenuItemVector>();
+
+        menuItems->emplace_back(std::make_shared<NewMenuItemCheckable>(
+            "Put on your Sol Reader!",
+            [this, display]() {
+
+            },
+            []() {
+            return true; /* return checked or not*/
+            }));
+
+        menuItems->emplace_back(std::make_shared<NewMenuItemCheckable>(
+            "Customize for your face",
+            [this, display]() {
+
+            },
+            [this]() { return prefs_.seenCustomizeFace.get().value_or(false); }));
+
+        menuItems->emplace_back(std::make_shared<NewMenuItemCheckable>(
+            "Download your first book",
+            [this, display]() {
+
+            },
+            [this]() { return prefs_.firstBookDownloaded.get().value_or(false); }));
+
+        menuItems->emplace_back(std::make_shared<NewMenuItemCheckable>(
+            "Learn to read faster",
+            [this, display]() {
+
+            },
+            [this]() { return prefs_.readFaster.get().value_or(false); }));
+
+        menuItems->emplace_back(std::make_shared<NewMenuItemCheckable>(
+            "Advanced setup",
+            [this, display]() {
+
+            },
+            [this]() { return prefs_.advancedSetup.get().value_or(false); }));
+        return menuItems;
+    };
+
     auto recentMenuFactory = [this, &localStore, handleReadableScreenCreation,
                               isBible]() -> MenuItemSharedPtrVector {
         auto &recents = localStore.recents();
@@ -960,11 +1003,24 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 firmwareUpdateScreen->begin();
                     }));
 
-                systemSettingsMenu->addMenuItem(
-                    std::make_shared<NewMenuItemSingleLine>("Manifesto", [this, display]() {
-                        auto demoScreen = std::make_shared<DemoScreen>(*display, prefs_);
-                        this->pushScreen(demoScreen);
-                        demoScreen->setBackCallback([this]() { this->popScreen(); });
+                systemSettingsMenu->addMenuItem(std::make_shared<NewMenuItemCheckable>(
+                    "Onboarding Mode",
+                    [this]() {
+                currentScreen()->setFirstLoad();
+                if (this->prefs_.onboardingComplete.get().value_or(false)) {
+                    this->prefs_.onboardingComplete.set(false);
+                    MsgPopup::showTemporaryMessage(
+                        *display_, "Onboarding Mode On will take\neffect on next restart.", 2000,
+                        true, currentScreen());
+                } else {
+                    this->prefs_.onboardingComplete.set(true);
+                    MsgPopup::showTemporaryMessage(
+                        *display_, "Onboarding Mode Off will take\neffect on next restart.", 2000,
+                        true, currentScreen());
+                }
+                    },
+                    [this]() -> bool {
+                        return !this->prefs_.onboardingComplete.get().value_or(false);
                     }));
 
                 systemSettingsMenu->addMenuItem(
@@ -1603,6 +1659,10 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
         return menuItems;
     };
+
+    if (!prefs_.onboardingComplete.get().value_or(false)) {
+        newMainMenu->addTab("Welcome", welcomeMenuFactory);
+    }
 
     if (!localStore.recents().empty()) {
         newMainMenu->addTab("Recent", recentMenuFactory);

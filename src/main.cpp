@@ -406,7 +406,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 #endif
 #endif
 
-    myDisplay.setFont(fontFromPrefs(prefs.font.get().value_or(PREFS_SOL_SMALL)));
+    myDisplay.setFont(FontFromPrefs(prefs.font.get().value_or(PREFS_SOL_SMALL)));
 
     HEAP_PROFILE_START(displaySetup);
     if (!myDisplay.setup()) {
