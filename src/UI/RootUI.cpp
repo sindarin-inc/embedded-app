@@ -365,7 +365,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         auto menuItems = std::make_shared<MenuItemVector>();
 
         menuItems->emplace_back(std::make_shared<NewMenuItemCheckable>(
-            "Put on your Sol Reader!",
+            "Put on your Sol Reader! (1 min)",
             [this, display]() {
 
             },
@@ -374,14 +374,14 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             }));
 
         menuItems->emplace_back(std::make_shared<NewMenuItemCheckable>(
-            "Customize for your face",
+            "Customize for your face (3 min)",
             [this, display]() {
 
             },
             [this]() { return prefs_.seenCustomizeFace.get().value_or(false); }));
 
         menuItems->emplace_back(std::make_shared<NewMenuItemCheckable>(
-            "Download your first book",
+            "Download your first book (7 min)",
             [this, display]() {
             auto appDownloadScreen = std::make_shared<AppDownloadScreen>(*display);
             this->pushScreen(appDownloadScreen);
@@ -390,7 +390,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             [this]() { return prefs_.firstBookDownloaded.get().value_or(false); }));
 
         menuItems->emplace_back(std::make_shared<NewMenuItemCheckable>(
-            "Learn to read faster",
+            "Start to read faster",
             [this, display]() {
 
             },
