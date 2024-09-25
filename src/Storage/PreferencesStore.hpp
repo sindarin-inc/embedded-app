@@ -398,7 +398,6 @@ public:
           seenTextPlacement(*this, "seen-place"),
           firstBookDownloaded(*this, "first-book"),
           readFaster(*this, "read-faster"),
-          advancedSetup(*this, "adv-setup"),
           preferencesStoreMigrationVersion_(*this, "ps-version") {}
     // clang-format on
 
@@ -691,7 +690,6 @@ public:
     PrefsItem<bool> seenTextPlacement;
     PrefsItem<bool> firstBookDownloaded;
     PrefsItem<bool> readFaster;
-    PrefsItem<bool> advancedSetup;
 
     // These are RTC_SLOW_MEM variables that persist across deep sleep / wake cycles but will be
     // reset on power cycles
