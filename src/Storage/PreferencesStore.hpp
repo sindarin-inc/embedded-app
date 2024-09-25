@@ -394,7 +394,8 @@ public:
           wifiDisabled(*this, "wifi-disable"),
           bleDisabled(*this, "ble-disable"),
           onboardingComplete(*this, "onboard-done"),
-          seenCustomizeFace(*this, "seen-face"),
+          seenLetsFocus(*this, "seen-focus"),
+          seenTextPlacement(*this, "seen-place"),
           firstBookDownloaded(*this, "first-book"),
           readFaster(*this, "read-faster"),
           advancedSetup(*this, "adv-setup"),
@@ -686,7 +687,8 @@ public:
     PrefsItem<bool> wifiDisabled;
     PrefsItem<bool> bleDisabled;
     PrefsItem<bool> onboardingComplete;
-    PrefsItem<bool> seenCustomizeFace;
+    PrefsItem<bool> seenLetsFocus;
+    PrefsItem<bool> seenTextPlacement;
     PrefsItem<bool> firstBookDownloaded;
     PrefsItem<bool> readFaster;
     PrefsItem<bool> advancedSetup;

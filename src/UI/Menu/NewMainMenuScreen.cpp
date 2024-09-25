@@ -13,7 +13,7 @@ NewMainMenuScreen::NewMainMenuScreen(DisplaySystem &display, Battery &battery)
 
 auto NewMainMenuScreen::layout(LayoutContext &context, Size size) -> Size {
     if (getCurrentTabTitle() == "Welcome") {
-        menuView_.itemsPerPage = 5;
+        menuView_.itemsPerPage = 6;
     } else {
         menuView_.itemsPerPage = 4;
     }
