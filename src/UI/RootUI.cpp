@@ -383,7 +383,9 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         menuItems->emplace_back(std::make_shared<NewMenuItemCheckable>(
             "Download your first book",
             [this, display]() {
-
+            auto appDownloadScreen = std::make_shared<AppDownloadScreen>(*display);
+            this->pushScreen(appDownloadScreen);
+            appDownloadScreen->setBackCallback([this]() { this->popScreen(); });
             },
             [this]() { return prefs_.firstBookDownloaded.get().value_or(false); }));
 
