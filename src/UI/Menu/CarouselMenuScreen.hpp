@@ -34,7 +34,7 @@ public:
 
     auto getCurrentTabIndex() const -> int { return currentTabIndex_; }
 
-    void setTabToTitle(const std::string &tabTitle);
+    void setTabToTitle(const std::string &tabTitle, int index = 0);
 
     auto getNumTabs() const -> int { return menuTabs_.size(); }
 

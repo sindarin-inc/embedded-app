@@ -11,10 +11,11 @@ void CarouselMenuScreen::addTab(const std::string &tabName,
     menuTabs_.emplace_back(tabName, menuItemFactory);
 }
 
-void CarouselMenuScreen::setTabToTitle(const std::string &tabTitle) {
+void CarouselMenuScreen::setTabToTitle(const std::string &tabTitle, int index) {
     for (int i = 0; i < menuTabs_.size(); i++) {
         if (std::get<0>(menuTabs_[i]) == tabTitle) {
             setCurrentTabIndex(i);
+            menuView_.setSelectedIndex(index);
             return;
         }
     }

@@ -403,12 +403,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             },
             [this]() { return prefs_.readFaster.get().value_or(false); }));
 
-        menuItems->emplace_back(std::make_shared<NewMenuItemCheckable>(
-            "Advanced setup",
-            [this, display]() {
-
-            },
-            [this]() { return prefs_.advancedSetup.get().value_or(false); }));
         return menuItems;
     };
 
@@ -1740,6 +1734,18 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     // If we are in onboarding mode, show the entry bumper first
     if (!prefs_.onboardingComplete.get().value_or(false)) {
+        // Preselect the first item that hasn't been checked off yet
+        if (!prefs_.seenLetsFocus.get().value_or(false)) {
+            newMainMenu->setTabToTitle("Welcome", 1);
+        } else if (!prefs_.seenTextPlacement.get().value_or(false)) {
+            newMainMenu->setTabToTitle("Welcome", 2);
+        } else if (!prefs_.firstBookDownloaded.get().value_or(false)) {
+            newMainMenu->setTabToTitle("Welcome", 3);
+        } else if (!prefs_.readFaster.get().value_or(false)) {
+            newMainMenu->setTabToTitle("Welcome", 4);
+        } else {
+            newMainMenu->setTabToTitle("Welcome", 0);
+        }
         auto firstTimeScreen = std::make_shared<DemoScreen>(*display, prefs_);
         pushScreen(firstTimeScreen);
         firstTimeScreen->setBackCallback([this]() {
