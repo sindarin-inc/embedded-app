@@ -41,7 +41,7 @@ public:
     auto layout(LayoutContext &context, Size size) -> Size override {
         auto clockRect = context.setViewFrame(
             clockView_, {{0, 0}, size}, LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical);
-        if (!batteryLow_ && !batteryLow()) {
+        if (!batteryLow_ && batteryLow()) {
             batteryLow_ = true;
         }
         if (batteryLow_) {
