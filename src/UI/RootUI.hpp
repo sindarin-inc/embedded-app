@@ -33,6 +33,8 @@ public:
     auto currentScreen() -> std::shared_ptr<Screen> { return screenStack_.top(); }
     void pushScreen(const std::shared_ptr<Screen> &screen);
     void popScreen(bool clearDisplay = true);
+    // Handle with care...
+    void popAllScreens();
 
     auto needsRerender() -> bool override;
     void render(DisplaySystem &display) override;

@@ -140,7 +140,7 @@ public:
         ss >> std::get_time(&tm, "%Y-%m-%dT%H:%M:%S");
 
         if (ss.fail()) {
-            log_e("Failed to parse date string");
+            log_e("Failed to parse date string from %s", dateStr.c_str());
         }
 
         // Disable automatic DST adjustment

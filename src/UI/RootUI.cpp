@@ -99,6 +99,12 @@ void RootUI::popScreen(bool clearDisplay) {
     }
 }
 
+void RootUI::popAllScreens() {
+    while (!screenStack_.empty()) {
+        screenStack_.pop();
+    }
+}
+
 auto RootUI::needsRerender() -> bool {
     if (!screenStack_.empty()) {
         return currentScreen()->needsRerender();
@@ -328,6 +334,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             auto contentSyncScreen = std::make_shared<ContentSyncScreen>(
                 *display, localStore, this->prefs_, this->telemetry_, power_);
             contentSyncScreen->setBackCallback([this, display]() {
+            // When memory usage gets better, we'll want this back
+#if 0
                 this->popScreen();
                 // Any screen that could possibly get to a backCallback without a command
                 // being sent through the loop must explicitly render at the end of its
@@ -336,7 +344,16 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                     render(*display);
                     clearNeedsRerender();
                 }
+#else
+                PowerManager::getInstance().reboot();
+#endif
             });
+            // To give us as much memory as possible, get rid of all screens and have
+            // this be the only screen on the stack.
+            this->popAllScreens();
+            // Turn off the TinyUSB CDC driver to free up even more  (this is more memory than the
+            // screens)
+            USBSerial::getInstance().end();
             this->pushScreen(contentSyncScreen);
             contentSyncScreen->begin();
         });

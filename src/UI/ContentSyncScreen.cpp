@@ -181,7 +181,7 @@ void ContentSyncScreen::render(DisplaySystem &display) {
         checkmarkViews_[2]->setHidden(false);
         checkmarkViews_[3]->setHidden(false);
 
-        std::string message = "Already in sync!";
+        std::string message = "Already in sync! Restarting...";
         showPopup(message);
         break;
     }
