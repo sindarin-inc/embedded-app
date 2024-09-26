@@ -55,7 +55,6 @@ public:
     SpiramString content;
     SpiramString url;
     SpiramString dateCreated;
-    SpiramString dateModified;
     time_t dateModifiedTime{};
     SpiramString datePublished;
     SpiramString processedBy;
@@ -162,8 +161,7 @@ public:
         shortenedUuid.resize(TRUNCATE_READABLE_UUID_FOR_PLACEMARK_BYTES);
         title = j["title"].as<std::string>();
         dateCreated = j["date_created"].as<std::string>();
-        dateModified = j["date_modified"].as<std::string>();
-        dateModifiedTime = parseDate(std::string(dateModified));
+        dateModifiedTime = parseDate(std::string(j["date_modified"].as<std::string>()));
         datePublished = j["date_published"].as<std::string>();
         processedBy = j["processed_by"].as<std::string>();
 
