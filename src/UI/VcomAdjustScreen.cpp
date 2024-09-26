@@ -39,7 +39,6 @@ void VcomAdjustScreen::render(DisplaySystem &display) {
 }
 
 void VcomAdjustScreen::processCommand(RemoteCommand command) {
-    auto temp = shared_from_this();
     auto *driver = (dynamic_cast<DisplayEinkET013TT1 *>(&display_))->getDriver();
     switch (command) {
     case RemoteCommand::LEFT:

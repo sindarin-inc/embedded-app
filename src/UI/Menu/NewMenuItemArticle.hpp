@@ -13,8 +13,7 @@ public:
     // We take in the source now even though we don't use it right now. Planning ahead.
     NewMenuItemArticle(std::shared_ptr<Readable> readable, std::function<void()> callback,
                        bool archived = false)
-        : NewMenuItem(std::move(callback)), readable_(std::move(std::move(readable))),
-          archived_(archived) {}
+        : NewMenuItem(std::move(callback)), readable_(std::move(readable)), archived_(archived) {}
 
     [[nodiscard]] auto title() const -> std::string {
         return StringFormat("%s%s", archived_ ? "Archived: " : "", readable_->title.c_str());

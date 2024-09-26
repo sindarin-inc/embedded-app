@@ -84,7 +84,6 @@ void CrashReportScreen::render(DisplaySystem &display) {
 void CrashReportScreen::processCommand(RemoteCommand command) {}
 
 void CrashReportScreen::fail(const std::string &message) {
-    auto temp = shared_from_this();
     log_w("Firmware update failed: %s", message.c_str());
     state_.state = CrashUploadState::Failure;
     state_.message = message;
@@ -111,7 +110,6 @@ void CrashReportScreen::begin() {
 
     crashReportUploader_.uploadCrash([this](const CrashUploadState &state) {
         DispatchGetUiQueue()->dispatch([this, state]() {
-            auto temp = shared_from_this();
             log_d("Updating from state %d to %d", state_.state, state.state);
             updateState(state);
             this->render(this->display_);

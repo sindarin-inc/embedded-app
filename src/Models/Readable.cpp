@@ -7,7 +7,7 @@ auto convertToJson(const Readable &src, JsonVariant dst) -> bool {
     dst["uuid"] = src.uuid;
     dst["title"] = src.title;
     dst["date_created"] = src.dateCreated;
-    dst["date_modified"] = src.dateModified;
+    dst["date_modified"] = src.dateModifiedTime;
     dst["date_published"] = src.datePublished;
     dst["readable_type"] = src.readableType;
     dst["processed_by"] = src.processedBy;

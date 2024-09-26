@@ -31,7 +31,6 @@ void LineMenuScreen::render(DisplaySystem &display) {
 }
 
 void LineMenuScreen::processCommand(RemoteCommand command) {
-    auto temp = shared_from_this();
     switch (command) {
     case RemoteCommand::UP:
         moveSelection(-1);

@@ -123,6 +123,11 @@ FileTransfer fileTransferListener(fileSystem, localStore, usbSerial, directComma
 bool bootCompleted = false;
 
 void UIInnerLoop(RemoteCommand command) {
+    // This grabs the shared pointer and holds it until the whole
+    // function exits. This is important because if it gets deleted
+    // then the screen could be deleted after it's poppoed off the stack
+    // during its backCallback cleanup.
+    auto temp = rootUi.currentScreen();
     powerManager.feedInactivityTimer();
     rootUi.loop(myDisplay, command);
 }
