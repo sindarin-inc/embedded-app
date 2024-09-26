@@ -121,7 +121,6 @@ void ContrastAdjustScreen::logTelemetry(int setting, const char *direction) {
 }
 
 void ContrastAdjustScreen::processCommand(RemoteCommand command) {
-    auto temp = shared_from_this();
     auto *driver = (dynamic_cast<DisplayEinkET013TT1 *>(&display_))->getDriver();
 
     switch (command) {

@@ -46,7 +46,6 @@ void OffsetAdjustScreen::render(DisplaySystem &display) {
 }
 
 void OffsetAdjustScreen::processCommand(RemoteCommand command) {
-    auto temp = shared_from_this();
     DisplayInset insets = GetTextInsetFromPrefs(display_, prefs_);
     switch (command) {
     case RemoteCommand::LEFT:

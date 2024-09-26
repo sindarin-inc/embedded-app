@@ -26,7 +26,6 @@ void AlignmentScreen::render(DisplaySystem &display) {
 }
 
 void AlignmentScreen::processCommand(RemoteCommand command) {
-    auto temp = shared_from_this();
     // Note that this gets called even when there isn't a button press
     // if the screen is set from RootUI as the first screen to be shown.
     // That's why the increment is in the case statement instead of

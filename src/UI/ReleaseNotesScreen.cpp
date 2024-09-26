@@ -28,7 +28,6 @@ ReleaseNotesScreen::ReleaseNotesScreen(DisplaySystem &display, PreferencesStore 
         runUpdate();
     }));
     menu_.addMenuItem(std::make_shared<NewMenuItemSingleLine>("Maybe later", [this]() {
-        auto temp = shared_from_this();
         inMenu_ = false;
         back();
     }));
@@ -87,7 +86,6 @@ void ReleaseNotesScreen::processCommand(RemoteCommand command) {
 }
 
 void ReleaseNotesScreen::updateError(const std::string &logMessage) {
-    auto temp = shared_from_this();
     auto error = Update.getError();
     log_e("%s error (%d)", logMessage.c_str(), error);
     display_.drawSingleLineOfCenteredText(StringFormat("Install failed (%d)", error));
@@ -98,7 +96,6 @@ void ReleaseNotesScreen::updateError(const std::string &logMessage) {
 }
 
 void ReleaseNotesScreen::runUpdate() {
-    auto temp = shared_from_this();
     display_.drawSingleLineOfCenteredText("Updating...");
     display_.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
 

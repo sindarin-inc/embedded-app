@@ -58,7 +58,6 @@ public:
     }
 
     void processCommand(RemoteCommand command) override {
-        auto temp = shared_from_this();
         switch (command) {
         case RemoteCommand::ENTER:
             back();

@@ -43,7 +43,6 @@ void ReadableTableOfContentsScreen::render(DisplaySystem &display) {
 }
 
 void ReadableTableOfContentsScreen::processCommand(RemoteCommand command) {
-    auto temp = shared_from_this();
     switch (command) {
     case RemoteCommand::UP:
         moveSelection(-1);
@@ -79,10 +78,7 @@ void ReadableTableOfContentsScreen::loadMenuItems() {
             title = StringFormat("  %s", chapter.title.c_str());
         }
         addMenuItem(std::make_shared<NewMenuItemTOC>(
-            title, Commify(SOL_PAGE_NUMBER(chapter.epubOffset)), [this]() {
-                auto temp = shared_from_this();
-                back();
-            }));
+            title, Commify(SOL_PAGE_NUMBER(chapter.epubOffset)), [this]() { back(); }));
     }
 }
 

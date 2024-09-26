@@ -116,7 +116,6 @@ void LightingAdjustScreen::logTelemetry(int setting, const char *direction) {
 }
 
 void LightingAdjustScreen::processCommand(RemoteCommand command) {
-    auto temp = shared_from_this();
     switch (command) {
     case RemoteCommand::LEFT:
     case RemoteCommand::RIGHT:

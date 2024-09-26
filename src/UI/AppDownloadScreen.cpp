@@ -37,10 +37,7 @@ void AppDownloadScreen::render(DisplaySystem &display) {
     display.updateDisplay();
 }
 
-void AppDownloadScreen::processCommand(RemoteCommand command) {
-    auto temp = shared_from_this();
-    back();
-}
+void AppDownloadScreen::processCommand(RemoteCommand command) { back(); }
 
 extern void UIInnerLoop(RemoteCommand command);
 

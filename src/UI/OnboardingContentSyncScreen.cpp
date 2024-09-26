@@ -45,14 +45,12 @@ void OnboardingContentSyncScreen::render(DisplaySystem &display) {
 }
 
 void OnboardingContentSyncScreen::processCommand(RemoteCommand command) {
-    auto temp = shared_from_this();
     if ((command == RemoteCommand::ENTER) && !WiFi::getInstance().hasWiFiCredentials()) {
         back();
     }
 };
 
 void OnboardingContentSyncScreen::fail(const std::string &message) {
-    auto temp = shared_from_this();
     log_w("Content sync failed: %s", message.c_str());
 
     this->telemetry_.logMetric(TelemetryField::METRIC_SYNC_STATUS, "sync-failed",

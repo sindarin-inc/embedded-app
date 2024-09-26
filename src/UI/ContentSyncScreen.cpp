@@ -248,7 +248,6 @@ void ContentSyncScreen::fail(const std::string &message) {
 }
 
 void ContentSyncScreen::begin() {
-    auto temp = shared_from_this();
     // If we're in first time mode, we need to make sure we have a cloud token and WiFi
     // credentials before we can do anything.
     if (!prefs_.cloudToken.get().has_value()) {

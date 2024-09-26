@@ -104,7 +104,6 @@ void LayoutTestScreen::render(DisplaySystem &display) {
 }
 
 void LayoutTestScreen::processCommand(RemoteCommand command) {
-    auto temp = shared_from_this();
     switch (command) {
     case RemoteCommand::LEFT:
         back();
