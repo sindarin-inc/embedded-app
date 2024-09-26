@@ -144,7 +144,7 @@ auto LocalStore::isReadableUnchanged(const ReadablesVector &readables,
             }
 
             // Next check if the readable is updated more recently than local copy
-            if (r->dateModified != readable->dateModified) {
+            if (r->dateModifiedTime != readable->dateModifiedTime) {
                 log_i("Found newer version of %s on server", path.c_str());
                 return false;
             }
@@ -1276,8 +1276,9 @@ void LocalStore::sortReadables(ReadablesVector &readables) {
             if (b->dateModified.empty()) {
                 return direction.type == SortDirection::Ascending;
             }
-            return direction.type == SortDirection::Ascending ? a->dateModified < b->dateModified
-                                                              : a->dateModified > b->dateModified;
+            return direction.type == SortDirection::Ascending
+                       ? a->dateModifiedTime < b->dateModifiedTime
+                       : a->dateModifiedTime > b->dateModifiedTime;
         } else if (criteria.type == SortCriteria::Alphabetical) {
             std::string aTitle = removeStopWords(a->title);
             std::string bTitle = removeStopWords(b->title);
