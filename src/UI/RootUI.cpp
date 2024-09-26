@@ -43,6 +43,7 @@
 #include "UI/LineSpacingScreen.hpp"
 #include "UI/Menu/GenericSettingsMenuScreen.hpp"
 #include "UI/Menu/InactivitySettingMenuScreen.hpp"
+#include "UI/Menu/LinkedMenuScreen.hpp"
 #include "UI/Menu/NewMainMenuScreen.hpp"
 #include "UI/Menu/NewMenuItemArticle.hpp"
 #include "UI/Menu/NewMenuItemBook.hpp"
@@ -376,7 +377,29 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         menuItems->emplace_back(std::make_shared<NewMenuItemCheckable>(
             "Let's focus (3 min)",
             [this, display]() {
+            auto screenVector = std::vector<std::shared_ptr<LinkedMenuScreen>>();
+            auto firstScreen = std::make_shared<LinkedMenuScreen>(*display_, "Back to Main Menu");
+            auto secondScreen = std::make_shared<LinkedMenuScreen>(*display_, "Back to Main Menu");
+            auto thirdScreen = std::make_shared<LinkedMenuScreen>(*display_, "Back to Main Menu");
 
+            firstScreen->setBackCallback([this]() { this->popScreen(); });
+            secondScreen->setBackCallback([this]() { this->popScreen(); });
+            thirdScreen->setBackCallback([this]() { this->popScreen(); });
+
+            firstScreen->setNextScreen(secondScreen, "Second Screen");
+            secondScreen->setNextScreen(thirdScreen, "Third Screen");
+            thirdScreen->setPreviousScreen(secondScreen, "Second Screen");
+            secondScreen->setPreviousScreen(firstScreen, "First Screen");
+
+            firstScreen->addBackMenuItem();
+            secondScreen->addBackMenuItem();
+            thirdScreen->addBackMenuItem();
+
+            screenVector.emplace_back(firstScreen);
+            screenVector.emplace_back(secondScreen);
+            screenVector.emplace_back(thirdScreen);
+
+            this->pushScreen(screenVector[0]);
             },
             [this]() { return prefs_.seenLetsFocus.get().value_or(false); }));
 
