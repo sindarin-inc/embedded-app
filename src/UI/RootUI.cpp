@@ -333,7 +333,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
             auto contentSyncScreen = std::make_shared<ContentSyncScreen>(
                 *display, localStore, this->prefs_, this->telemetry_, power_);
-            contentSyncScreen->setBackCallback([this, display]() {
+            contentSyncScreen->setBackCallback([]() {
             // When memory usage gets better, we'll want this back
 #if 0
                 this->popScreen();
