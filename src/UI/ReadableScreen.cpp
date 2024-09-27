@@ -707,52 +707,33 @@ void ReadableScreen::render(DisplaySystem &display) {
     // If it's the first read of the book, show the help screen.
     // Then ignore the next press of the button
     if (!emcMode && !prefs_.firstRead.get().value_or(false)) {
-
-        // We need to make sure this goes onto the second page because of a bug in the renderer.
-        std::string message =
-            "Welcome to reading with Sol! This is a one page tutorial on what each button does "
-            "while reading.\n\n\n\ue003  or  \ue004   Popup Menu\n\n\ue001   "
-            "Previous "
-            "Page\n\n\ue000  or  \uE002  Next Page\n\n\nThat's "
-            "it! Press "
-            "any button... "
-            "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n";
-
-        auto streamFirstTime = std::make_shared<StdStringStream>(message);
-        renderer_.setStream(streamFirstTime);
-
+        std::string bookOrArticle = (readable_->isArticle()) ? "article" : "book";
+        std::string message = "Welcome to your first " + bookOrArticle +
+                              "!\n\n"
+                              "\ue000  or  \uE002   Next Page\n\n"
+                              "\ue001   Previous Page\n\n"
+                              "\ue003  or  \ue004   Popup Menu\n\n "
+                              "Press any button to start...";
+        MsgPopup::showTemporaryMessage(display, message);
         prefs_.firstRead.set(true);
         showingFirstTimeView_ = true;
-        renderer_.renderFirstPage();
-
-        if (prefs_.fastTransitions.get().value_or(false)) {
-            display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
-        } else {
-            display.updateDisplay(DisplaySystem::UpdateType::FULL);
-        }
         return;
     }
 
     if (!emcMode && !prefs_.firstAutopilotRead.get().value_or(false) && (pageSpeed_ != 0)) {
         // We need to make sure this goes onto the second page because of a bug in the renderer.
-        std::string message =
-            "Welcome to Autopilot! Here is what each button does "
-            "while in autopilot.\n\n\n\ue003  or  \ue004 (up or down): Popup Menu\n\n\ue001  "
-            "(left): "
-            "Slow Down "
-            "\n\n\ue002  (right): Speed Up\n\n\ue000  (center) : Pause/unpause\n\n\nPress any "
-            "button "
-            "to start reading... \n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n";
+        std::string message = "Welcome to Autopilot!\n\n"
+                              "\ue003  or  \ue004   Popup Menu\n\n"
+                              "\ue001   Slow Down\n\n"
+                              "\ue002   Speed Up\n\n"
+                              "\ue000   Pause/unpause\n\n"
+                              "Press any button to start...";
 
-        auto streamFirstTime = std::make_shared<StdStringStream>(message);
-        renderer_.setStream(streamFirstTime);
-
+        MsgPopup::showTemporaryMessage(display, message);
         prefs_.firstAutopilotRead.set(true);
+        // Make sure the next screen is a full refresh
+        display.clearDisplay();
         showingFirstTimeView_ = true;
-        renderer_.renderFirstPage();
-
-        display.updateDisplay(DisplaySystem::UpdateType::FULL);
-
         return;
     }
 
@@ -935,12 +916,20 @@ void ReadableScreen::processCommandDemoMode(RemoteCommand command) {
     }
 }
 
+void ReadableScreen::backUpAutopilot(int numLines) {
+    // When entering the popup menu from autopilot, go back up to some lines so that coming
+    // out the user can not be behind.
+    speedLinesToSkip_ = std::max(0, static_cast<int>(speedLinesToSkip_) - numLines);
+}
+
 void ReadableScreen::processCommandAutoPilot(RemoteCommand command) {
     switch (command) {
     case RemoteCommand::LEFT:
         pageSpeed_ = std::min(pageSpeed_ + PAGE_SPEED_INCREMENT, SLOWEST_PAGE_SPEED);
         prefs_.autoPilotSpeed.set(pageSpeed_);
         log_d("Slowing down: New Page Speed is %u", pageSpeed_);
+        // If they want to slow down, given them a couple lines back.
+        backUpAutopilot(2);
         break;
     case RemoteCommand::ENTER:
         // If we aren't pause, pause.
@@ -957,14 +946,8 @@ void ReadableScreen::processCommandAutoPilot(RemoteCommand command) {
     case RemoteCommand::DOWN:
     case RemoteCommand::BACK:
     case RemoteCommand::UP:
-        // When entering the popup menu from autopilot, go back up to two line so that coming
-        // out the user can not be behind.
-        if (speedLinesToSkip_ > 0) {
-            speedLinesToSkip_--;
-        }
-        if (speedLinesToSkip_ > 0) {
-            speedLinesToSkip_--;
-        }
+        // Given them a couple lines back on popup menu for context
+        backUpAutopilot(2);
         xTimerStop(DisplaySystem::animationTimer, 0);
         processCommandNormal(command);
         break;
@@ -972,6 +955,7 @@ void ReadableScreen::processCommandAutoPilot(RemoteCommand command) {
         pageSpeed_ = std::max(pageSpeed_ - PAGE_SPEED_INCREMENT, 1);
         log_d("Speeding up: New Page Speed is %u", pageSpeed_);
         prefs_.autoPilotSpeed.set(pageSpeed_);
+        backUpAutopilot(1);
         break;
 
     case RemoteCommand::ANIMATION:
@@ -1028,7 +1012,10 @@ void ReadableScreen::processCommandNormal(RemoteCommand command) {
 
 void ReadableScreen::processCommand(RemoteCommand command) {
     if (currentScreen_) {
-        currentScreen_->processCommand(command);
+        // Save off this pointer so it doesn't get cleaned up by the backCallback when
+        // we set currentScreen_ to nullptr
+        auto screen = currentScreen_;
+        screen->processCommand(command);
         // currentScreen could be reset to null here
         if (currentScreen_ && currentScreen_->needsRerender()) {
             setNeedsRerender();
@@ -1036,9 +1023,10 @@ void ReadableScreen::processCommand(RemoteCommand command) {
         return;
     }
 
+    // This is the first time view and so this command was from the "press any button" MsgPopup
+    // So we simply rerender the page without the popup and go about our business.
     if (showingFirstTimeView_) {
         showingFirstTimeView_ = false;
-        renderer_.setStream(stream_);
         setNeedsRerender();
         return;
     }
