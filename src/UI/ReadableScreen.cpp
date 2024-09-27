@@ -1028,6 +1028,9 @@ void ReadableScreen::processCommandNormal(RemoteCommand command) {
 
 void ReadableScreen::processCommand(RemoteCommand command) {
     if (currentScreen_) {
+        // Save off this pointer so it doesn't get cleaned up by the backCallback when
+        // we set currentScreen_ to nullptr
+        auto temp = currentScreen_;
         currentScreen_->processCommand(command);
         // currentScreen could be reset to null here
         if (currentScreen_ && currentScreen_->needsRerender()) {
