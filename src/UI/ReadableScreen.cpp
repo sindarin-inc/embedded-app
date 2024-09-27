@@ -928,12 +928,27 @@ void ReadableScreen::processCommandDemoMode(RemoteCommand command) {
     }
 }
 
+void ReadableScreen::backUpAutopilot(int numLines) {
+    // When entering the popup menu from autopilot, go back up to two line so that coming
+    // out the user can not be behind.
+    if (numLines > 1) {
+        if (speedLinesToSkip_ > numLines - 1) {
+            speedLinesToSkip_ -= numLines;
+        }
+    }
+    if (speedLinesToSkip_ > 0) {
+        speedLinesToSkip_--;
+    }
+}
+
 void ReadableScreen::processCommandAutoPilot(RemoteCommand command) {
     switch (command) {
     case RemoteCommand::LEFT:
         pageSpeed_ = std::min(pageSpeed_ + PAGE_SPEED_INCREMENT, SLOWEST_PAGE_SPEED);
         prefs_.autoPilotSpeed.set(pageSpeed_);
         log_d("Slowing down: New Page Speed is %u", pageSpeed_);
+        // If they want to slow down, given them a couple lines back.
+        backUpAutopilot(2);
         break;
     case RemoteCommand::ENTER:
         // If we aren't pause, pause.
@@ -950,14 +965,8 @@ void ReadableScreen::processCommandAutoPilot(RemoteCommand command) {
     case RemoteCommand::DOWN:
     case RemoteCommand::BACK:
     case RemoteCommand::UP:
-        // When entering the popup menu from autopilot, go back up to two line so that coming
-        // out the user can not be behind.
-        if (speedLinesToSkip_ > 0) {
-            speedLinesToSkip_--;
-        }
-        if (speedLinesToSkip_ > 0) {
-            speedLinesToSkip_--;
-        }
+        // Given them a couple lines back on popup menu for context
+        backUpAutopilot(2);
         xTimerStop(DisplaySystem::animationTimer, 0);
         processCommandNormal(command);
         break;
@@ -965,6 +974,7 @@ void ReadableScreen::processCommandAutoPilot(RemoteCommand command) {
         pageSpeed_ = std::max(pageSpeed_ - PAGE_SPEED_INCREMENT, 1);
         log_d("Speeding up: New Page Speed is %u", pageSpeed_);
         prefs_.autoPilotSpeed.set(pageSpeed_);
+        backUpAutopilot();
         break;
 
     case RemoteCommand::ANIMATION:
