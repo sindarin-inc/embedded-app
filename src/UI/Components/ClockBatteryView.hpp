@@ -39,8 +39,11 @@ public:
     }
 
     auto layout(LayoutContext &context, Size size) -> Size override {
-        auto clockRect = context.setViewFrame(
-            clockView_, {{0, 0}, size}, LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical);
+        if (isValidTime()) {
+            auto clockRect =
+                context.setViewFrame(clockView_, {{0, 0}, size},
+                                     LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical);
+        }
         if (!batteryLow_ && batteryLow()) {
             batteryLow_ = true;
         }
@@ -89,10 +92,13 @@ public:
         if (batteryLow_) {
             batteryIconView_.draw();
         }
-        clockView_.draw();
+        if (isValidTime()) {
+            clockView_.draw();
+        }
     }
 
 protected:
+    auto isValidTime() -> bool { return SolClock::getInstance().getEpochTime() > 1000000000; }
     IconView batteryIconView_;
     SingleLineTextView clockView_;
     Battery &battery_;
