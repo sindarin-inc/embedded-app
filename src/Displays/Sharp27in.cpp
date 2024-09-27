@@ -78,7 +78,7 @@ auto Sharp27in::begin() -> bool {
         .flags = SPICOMMON_BUSFLAG_MASTER | SPI_DEVICE_TXBIT_LSBFIRST,
     };
 
-    esp_err_t err = spi_bus_initialize(DISPLAY_SPI, &buscfg, SPI_DMA_DISABLED);
+    esp_err_t err = spi_bus_initialize(CONFIG_DISPLAY_SPI, &buscfg, SPI_DMA_DISABLED);
     if (err != ESP_OK) {
         log_e("Error initializing SPI bus %d", err);
         return false;
@@ -95,7 +95,7 @@ auto Sharp27in::begin() -> bool {
         .queue_size = 1,
     };
 
-    err = spi_bus_add_device(DISPLAY_SPI, &devcfg, &spiHigh_);
+    err = spi_bus_add_device(CONFIG_DISPLAY_SPI, &devcfg, &spiHigh_);
     if (err != ESP_OK) {
         log_e("Error adding display device to SPI bus: %d", err);
         return false;
