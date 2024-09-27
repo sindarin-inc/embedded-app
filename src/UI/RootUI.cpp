@@ -269,7 +269,10 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         auto tutorialScreen =
             std::make_shared<TutorialScreen>(*display, this->prefs_, std::move(text), bit);
 
-        tutorialScreen->setBackCallback([this]() { this->popScreen(); });
+        tutorialScreen->setBackCallback([this]() {
+            this->popScreen();
+            std::static_pointer_cast<NewMainMenuScreen>(currentScreen())->regenerateCurrentTab();
+        });
 
         return tutorialScreen;
     };
