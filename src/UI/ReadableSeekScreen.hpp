@@ -16,13 +16,10 @@ public:
     void processCommand(RemoteCommand command) override;
     void render(DisplaySystem &display) override;
 
-    void setFirstLoad() { firstLoad_ = true; }
-
 protected:
     PreferencesStore &prefs_;
     std::shared_ptr<Readable> readable_;
     Renderer &renderer_;
-    bool firstLoad_ = true;
 
     // How much to seek in terms of denominator of the total number of pages.
     // Default is 20 (5%) -- 100 is 1%, 1000 is .1%, etc.

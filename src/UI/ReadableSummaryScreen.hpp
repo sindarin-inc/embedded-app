@@ -33,7 +33,6 @@ public:
     void processCommand(RemoteCommand command) override;
 
     void setPlacemark();
-    void setFirstLoad() { firstLoad_ = true; }
     void setPlaceInReadable(std::shared_ptr<EPubPlace> placeInReadable);
 
 protected:
@@ -43,7 +42,6 @@ protected:
     Renderer &renderer_;
     DisplaySystem &display_;
 
-    bool firstLoad_ = true;
     bool showUnread_ = false;
     std::shared_ptr<EPubPlace> placeInReadable_;
     std::shared_ptr<TxtPlace> newPlace_;

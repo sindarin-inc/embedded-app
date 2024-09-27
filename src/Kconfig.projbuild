@@ -133,9 +133,29 @@ menu "Sol Options"
             bool "Use TinyUSB for Serial Communication"
             default y
 
-        config CONFIG_DISABLE_POWER_MANAGEMENT
+        config DISABLE_POWER_MANAGEMENT
             bool "Disable Power Management"
             default n
+
+        config BAT_VOLTAGE_RIGHT_PIN
+            int "Battery Voltage Right Pin"
+            default 10
+
+        config BAT_VOLTAGE_LEFT_PIN
+            int "Battery Voltage Left Pin"
+            default 4
+
+        config BAT_VOLTAGE_UPPER_DIVIDER
+            int "Battery Voltage Upper Divider"
+            default 442
+
+        config BAT_VOLTAGE_LOWER_DIVIDER
+            int "Battery Voltage Lower Divider"
+            default 160
+
+        config FACTORY_RESET_BUTTON_PIN
+            int "Factory Reset Button Pin"
+            default 0
 
     endmenu
 

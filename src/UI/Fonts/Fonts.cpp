@@ -1,9 +1,9 @@
-
 #include <Adafruit_GFX.h>
 #include <array>
 #include <cinttypes>
 
 #include "FontEntry.hpp"
+#include "Storage/PreferencesStore.hpp"
 #include "config.h"
 
 #if CONFIG_FONT_IBMF
@@ -114,3 +114,18 @@ Font fontFace2 = Font(mainFont, 20);
 #endif
 
 #endif
+
+auto FontFromPrefs(int choice) -> Font * {
+    switch (choice) {
+    case PREFS_SOL_MEDIUM:
+        return static_cast<Font *>(&fontFace1);
+    case PREFS_SOL_LARGE:
+        return static_cast<Font *>(&fontFace2);
+    case PREFS_SOL_SMALL:
+        return static_cast<Font *>(&fontFace0);
+    default:
+        break;
+    }
+    log_e("Invalid font choice: probably a bug");
+    return nullptr;
+}

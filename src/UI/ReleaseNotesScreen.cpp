@@ -3,13 +3,17 @@
 #include <Update.h>
 
 #include "Misc/Platform.hpp"
+#include "UI/Fonts/Fonts.hpp"
+#include "UI/Menu/NewMenuItemSingleLine.hpp"
 #include "sindarin-debug.h"
 
 ReleaseNotesScreen::ReleaseNotesScreen(DisplaySystem &display, PreferencesStore &prefs,
                                        PowerManager &power, LocalStore &localStore,
                                        const Firmware &firmware)
-    : display_(display), renderer_(display, GetTextRectFromPrefs(display, prefs)), prefs_(prefs),
-      power_(power), localStore_(localStore), firmware_(firmware), menu_(prefs, display) {
+    : display_(display),
+      renderer_(display, GetTextRectFromPrefs(display, prefs), static_cast<Font *>(&fontFace0)),
+      prefs_(prefs), power_(power), localStore_(localStore), firmware_(firmware),
+      menu_(prefs, display) {
 
     SpiramString message = SpiRamStringFormat(
         "New firmware %s is now available! Here's what's new:\n\n", firmware.version.c_str());
@@ -19,15 +23,19 @@ ReleaseNotesScreen::ReleaseNotesScreen(DisplaySystem &display, PreferencesStore 
     renderer_.setStream(stream);
 
     menu_.resetMenuItems();
-    menu_.addMenuItem(MenuItem("Update Now", [this]() { runUpdate(); }));
-    menu_.addMenuItem(MenuItem("Maybe later", [this]() { back(); }));
-
-    setCurrentScreen(*this);
+    menu_.addMenuItem(std::make_shared<NewMenuItemSingleLine>("Update Now", [this]() {
+        inMenu_ = false;
+        runUpdate();
+    }));
+    menu_.addMenuItem(std::make_shared<NewMenuItemSingleLine>("Maybe later", [this]() {
+        inMenu_ = false;
+        back();
+    }));
 }
 
 void ReleaseNotesScreen::render(DisplaySystem &display) {
-    if (currentScreen_ != this) {
-        currentScreen_->render(display);
+    if (inMenu_) {
+        menu_.render(display);
         return;
     }
 
@@ -44,8 +52,11 @@ void ReleaseNotesScreen::render(DisplaySystem &display) {
 }
 
 void ReleaseNotesScreen::processCommand(RemoteCommand command) {
-    if (currentScreen_ != this) {
-        currentScreen_->processCommand(command);
+    if (inMenu_) {
+        menu_.processCommand(command);
+        if (menu_.needsRerender()) {
+            setNeedsRerender();
+        }
         return;
     }
 
@@ -56,14 +67,14 @@ void ReleaseNotesScreen::processCommand(RemoteCommand command) {
         break;
     case RemoteCommand::UP:
     case RemoteCommand::BACK:
-        setCurrentScreen(menu_);
+        inMenu_ = true;
         setNeedsRerender();
         break;
     case RemoteCommand::DOWN:
     case RemoteCommand::RIGHT:
     case RemoteCommand::ENTER:
         if (atEnd()) {
-            setCurrentScreen(menu_);
+            inMenu_ = true;
             setNeedsRerender();
         }
         place_ = newPlace_;

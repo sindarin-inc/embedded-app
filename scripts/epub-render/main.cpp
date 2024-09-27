@@ -13,6 +13,7 @@
 #include "DisplayUtil.hpp"
 #include "EPub/EPubFile.hpp"
 #include "Renderers/Renderer.hpp"
+#include "UI/Fonts/Fonts.hpp"
 
 int main(int argc, char **argv) {
     argparse::ArgumentParser program("epub-render");
@@ -91,11 +92,11 @@ int main(int argc, char **argv) {
 
     auto font = program.get<std::string>("--font");
     if (font == "solSansSmall") {
-        (*display).style.setFontFamily((*display).style.solSansSmall);
+        (*display).setFont(static_cast<Font *>(&fontFace0));
     } else if (font == "solSansMedium") {
-        (*display).style.setFontFamily((*display).style.solSansMedium);
+        (*display).setFont(static_cast<Font *>(&fontFace1));
     } else if (font == "solSansLarge") {
-        (*display).style.setFontFamily((*display).style.solSansLarge);
+        (*display).setFont(static_cast<Font *>(&fontFace2));
     } else {
         std::cerr << "Invalid font specified. Must be one of 'solSansSmall', "
                      "'solSansMedium', 'solSansLarge' "
@@ -120,7 +121,7 @@ int main(int argc, char **argv) {
 
     auto epubFile = std::make_shared<EPubFile>(file, readable);
 
-    Renderer renderer(*display, boundingBoxRect);
+    Renderer renderer(*display, boundingBoxRect, static_cast<Font *>(&fontFace0));
     renderer.setStream(epubFile);
     renderer.renderPage(place);
 

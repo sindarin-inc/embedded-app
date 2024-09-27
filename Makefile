@@ -73,6 +73,10 @@ test: test-build
 	./test/CatchTests/build/tests '[epub]'
 	./test/CatchTests/build/tests '[content-sync]'
 
+.PHONY: lldb-test-epub
+lldb-test-epub: test-build
+	lldb ./test/CatchTests/build/tests '[epub]'
+
 .PHONY: epub-render-build
 epub-render-build:
 	mkdir -p scripts/epub-render/build
@@ -136,8 +140,7 @@ monitor-devboard: check_idf
 .PHONY: clean
 clean:
 	rm -fr build*
-	rm -fr lib/Simulator/build
-	rm -fr lib/Simulator/build8
+	rm -fr lib/Simulator/build*
 	rm -fr scripts/epub-render/build
 	rm -fr test/CatchTests/build
 	rm -fr test/CatchTests/Images/TestRun/*diff.png

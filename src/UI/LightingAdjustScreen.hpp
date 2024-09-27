@@ -21,14 +21,12 @@ public:
     auto layout(LayoutContext &context, Size size) -> Size override;
     void drawInRect(Rect rect) override;
 
-    void setFirstLoad() { firstLoad_ = true; }
     void logTelemetry(int setting, const char *direction);
 
 protected:
     PreferencesStore &prefs_;
     LightingController &lightingController_;
     Telemetry &telemetry_;
-    bool firstLoad_ = true;
 
     // Subviews
     IconView lightbulbView_;

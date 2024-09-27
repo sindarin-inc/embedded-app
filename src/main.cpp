@@ -27,7 +27,6 @@
 #include "Misc/SolClock.hpp"
 #include "Misc/SolMorse.hpp"
 #include "Misc/StringUtil.hpp"
-#include "Misc/Style.hpp"
 #include "Models/Readable.hpp"
 #include "Storage/CrashReportWriter.hpp"
 #include "Storage/LocalStore.hpp"
@@ -124,6 +123,11 @@ FileTransfer fileTransferListener(fileSystem, localStore, usbSerial, directComma
 bool bootCompleted = false;
 
 void UIInnerLoop(RemoteCommand command) {
+    // This grabs the shared pointer and holds it until the whole
+    // function exits. This is important because if it gets deleted
+    // then the screen could be deleted after it's poppoed off the stack
+    // during its backCallback cleanup.
+    auto temp = rootUi.currentScreen();
     powerManager.feedInactivityTimer();
     rootUi.loop(myDisplay, command);
 }
@@ -133,8 +137,8 @@ void UIInnerLoop(RemoteCommand command) {
 void PollingLoopTask(void *parameter) {
     int factoryResetStartTimeMs = 0;
     while (powerManager.state() != PowerState::ShuttingDown) {
-        // check if factory reset button is held down
-        if (DigitalRead(FACTORY_RESET_BUTTON) == 0) {
+        if (CONFIG_FACTORY_RESET_BUTTON_PIN != GPIO_NUM_NC &&
+            DigitalRead(CONFIG_FACTORY_RESET_BUTTON_PIN) == 0) {
             // prevent inactivity sleep while button held down
             powerManager.feedInactivityTimer();
             if (factoryResetStartTimeMs == 0) {
@@ -407,17 +411,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 #endif
 #endif
 
-    switch (prefs.font.get().value_or(PREFS_SOL_SMALL)) {
-    case PREFS_SOL_MEDIUM:
-        myDisplay.style.setFontFamily(myDisplay.style.solSansMedium);
-        break;
-    case PREFS_SOL_LARGE:
-        myDisplay.style.setFontFamily(myDisplay.style.solSansLarge);
-        break;
-    case PREFS_SOL_SMALL:
-        myDisplay.style.setFontFamily(myDisplay.style.solSansSmall);
-        break;
-    }
+    myDisplay.setFont(FontFromPrefs(prefs.font.get().value_or(PREFS_SOL_SMALL)));
 
     HEAP_PROFILE_START(displaySetup);
     if (!myDisplay.setup()) {
@@ -524,7 +518,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 #endif
     HEAP_PROFILE_END(BLEServices);
 
-#if !CONFIG_DISABLE_POWER_MANAGEMENT
+#if !CONFIG_DISABLE_POWER_MANAGEMENT && defined(CONFIG_RTC_CLK_SRC_EXT_CRYS)
     if (rtc_clk_slow_freq_get() != RTC_SLOW_FREQ_32K_XTAL) {
         bootErrors.push_back({.type = BootError::Type::LowPowerOscillator});
     }
@@ -536,8 +530,8 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 
     auto showChargingScreen = []() {
         lightingController.setOverrideValuePercent(100);
-        auto chargingScreen = new ChargingScreen(prefs);
-        rootUi.setCurrentScreen(*chargingScreen);
+        auto chargingScreen = std::make_shared<ChargingScreen>(prefs);
+        rootUi.pushScreen(chargingScreen);
         UIInnerLoop(RemoteCommand::NONE);
     };
 
@@ -546,12 +540,12 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
             if (state == PowerState::ActiveUSBCharging) {
                 showChargingScreen();
             } else if (state == PowerState::ActiveOverTemp) {
-                auto overTempScreen = new OverTempScreen();
-                rootUi.setCurrentScreen(*overTempScreen);
+                auto overTempScreen = std::make_shared<OverTempScreen>();
+                rootUi.pushScreen(overTempScreen);
                 UIInnerLoop(RemoteCommand::NONE);
             } else if (state == PowerState::ActiveBatteryDepleted) {
-                auto powerDepletedScreen = new PowerDepletedScreen();
-                rootUi.setCurrentScreen(*powerDepletedScreen);
+                auto powerDepletedScreen = std::make_shared<PowerDepletedScreen>();
+                rootUi.pushScreen(powerDepletedScreen);
                 UIInnerLoop(RemoteCommand::NONE);
             }
         });
@@ -624,8 +618,8 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
             DispatchGetUiQueue()->dispatch([]() {
                 // Override brightness to max
                 lightingController.setOverrideValuePercent(100);
-                auto testScreen = new TestAlignmentScreen();
-                rootUi.setCurrentScreen(*testScreen);
+                auto testScreen = std::make_shared<TestAlignmentScreen>();
+                rootUi.pushScreen(testScreen);
                 UIInnerLoop(RemoteCommand::NONE);
             });
             return true;

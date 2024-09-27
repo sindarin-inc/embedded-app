@@ -30,6 +30,9 @@
 
 adc_cali_handle_t adcCalHandle;
 adc_oneshot_unit_handle_t adcOneshotHandle;
+adc_channel_t leftChannel;
+adc_channel_t rightChannel;
+
 bool ledcFailed = false;
 uint8_t sysOnPin;
 bool platformInitialized;
@@ -89,7 +92,7 @@ void HardwareInit() {
     }
 #endif
 
-#if CONFIG_USB_CONNECTED_PIN != GPIO_NUM_NC
+#if CONFIG_USB_CONNECTED_PIN != -1
     PinMode(CONFIG_USB_CONNECTED_PIN, INPUT);
 #endif
 
@@ -115,7 +118,17 @@ void HardwareInit() {
     }
 
     adc_oneshot_unit_init_cfg_t adcOneshotCfg;
-    adcOneshotCfg.unit_id = ADC_UNIT_1;
+
+    // Assumes both batteries are on the same ADC unit
+    if (adc_oneshot_io_to_channel(CONFIG_BAT_VOLTAGE_LEFT_PIN, &(adcOneshotCfg.unit_id),
+                                  &leftChannel) != ESP_OK) {
+        log_e("error getting adc channel for left battery");
+    }
+    if (adc_oneshot_io_to_channel(CONFIG_BAT_VOLTAGE_RIGHT_PIN, &(adcOneshotCfg.unit_id),
+                                  &rightChannel) != ESP_OK) {
+        log_e("error getting adc channel for right battery");
+    }
+
     adcOneshotCfg.clk_src = ADC_RTC_CLK_SRC_DEFAULT;
     adcOneshotCfg.ulp_mode = ADC_ULP_MODE_DISABLE;
 
@@ -125,8 +138,8 @@ void HardwareInit() {
     adcChanCfg.bitwidth = adcConfig.bitwidth;
     adcChanCfg.atten = adcConfig.atten;
 
-    ESP_ERROR_CHECK(adc_oneshot_config_channel(adcOneshotHandle, BATT_CHANNEL_LEFT, &adcChanCfg));
-    ESP_ERROR_CHECK(adc_oneshot_config_channel(adcOneshotHandle, BATT_CHANNEL_RIGHT, &adcChanCfg));
+    ESP_ERROR_CHECK(adc_oneshot_config_channel(adcOneshotHandle, leftChannel, &adcChanCfg));
+    ESP_ERROR_CHECK(adc_oneshot_config_channel(adcOneshotHandle, rightChannel, &adcChanCfg));
 
 #endif
 
@@ -339,7 +352,7 @@ auto DeinitializePlatform() -> esp_err_t {
 // https://github.com/tinypico/tinypico-arduino/blob/master/TinyPICO-Helper/src/TinyPICO.cpp#L207
 auto GetBatteryVoltageLeft() -> float {
     int raw;
-    if (adc_oneshot_read(adcOneshotHandle, BATT_CHANNEL_LEFT, &raw) != ESP_OK) {
+    if (adc_oneshot_read(adcOneshotHandle, leftChannel, &raw) != ESP_OK) {
         log_e("error reading raw adc value for left battery");
         return 0.0;
     }
@@ -349,13 +362,15 @@ auto GetBatteryVoltageLeft() -> float {
         log_e("error reading left battery voltage");
         return 0.0;
     }
-    auto mv = static_cast<float>(UPPER_DIVIDER + LOWER_DIVIDER) / LOWER_DIVIDER * millivolts;
+    auto mv =
+        static_cast<float>(CONFIG_BAT_VOLTAGE_UPPER_DIVIDER + CONFIG_BAT_VOLTAGE_LOWER_DIVIDER) /
+        CONFIG_BAT_VOLTAGE_LOWER_DIVIDER * millivolts;
     return static_cast<float>(mv) / 1000.0;
 }
 
 auto GetBatteryVoltageRight() -> float {
     int raw;
-    if (adc_oneshot_read(adcOneshotHandle, BATT_CHANNEL_RIGHT, &raw) != ESP_OK) {
+    if (adc_oneshot_read(adcOneshotHandle, rightChannel, &raw) != ESP_OK) {
         log_e("error reading raw adc value for right battery");
         return 0.0;
     }
@@ -365,7 +380,9 @@ auto GetBatteryVoltageRight() -> float {
         log_e("error reading left battery voltage");
         return 0.0;
     }
-    auto mv = static_cast<float>(UPPER_DIVIDER + LOWER_DIVIDER) / LOWER_DIVIDER * millivolts;
+    auto mv =
+        static_cast<float>(CONFIG_BAT_VOLTAGE_UPPER_DIVIDER + CONFIG_BAT_VOLTAGE_LOWER_DIVIDER) /
+        CONFIG_BAT_VOLTAGE_LOWER_DIVIDER * millivolts;
     return static_cast<float>(mv) / 1000.0;
 }
 
@@ -460,7 +477,7 @@ auto GetRunTimeMs() -> uint32_t {
 }
 
 auto USBConnected() -> bool {
-#if CONFIG_USB_CONNECTED_PIN != GPIO_NUM_NC
+#if CONFIG_USB_CONNECTED_PIN != -1
     return DigitalRead(CONFIG_USB_CONNECTED_PIN);
 #else
     // No way to know if USB is connected on old boards. But it's probably not.

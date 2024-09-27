@@ -1,11 +1,14 @@
 #include "ReadingSettingsMenuScreen.hpp"
 
 #include "Misc/Platform.hpp"
+#include "UI/Fonts/Fonts.hpp"
 
 ReadingSettingsMenuScreen::ReadingSettingsMenuScreen(DisplaySystem &display,
-                                                     const std::string &backTitle)
+                                                     const std::string &backTitle,
+                                                     PreferencesStore &prefs)
     : EinkView(display), menuView_(display), backLabelView_(display, backTitle),
-      renderer_(display, DisplayRect({0, 0, 0, 0})), rendererView_(display, renderer_) {
+      renderer_(display, DisplayRect({0, 0, 0, 0}), static_cast<Font *>(&fontFace0)),
+      rendererView_(display, renderer_), prefs_(prefs) {
     menuView_.padding = 1;
     menuView_.itemsPerPage = 8;
     rendererView_.dottedBox = true;
@@ -54,6 +57,14 @@ void ReadingSettingsMenuScreen::addMenuItem(const std::shared_ptr<NewMenuItem> &
     menuView_.addMenuItem(menuItem);
 }
 
+void ReadingSettingsMenuScreen::resetFont() {
+    Font *font = FontFromPrefs(prefs_.font.get().value_or(PREFS_SOL_SMALL));
+
+    if (font) {
+        renderer_.setFont(font);
+    }
+}
+
 void ReadingSettingsMenuScreen::processCommand(RemoteCommand command) {
     switch (command) {
     case RemoteCommand::UP:
@@ -68,9 +79,9 @@ void ReadingSettingsMenuScreen::processCommand(RemoteCommand command) {
     case RemoteCommand::BACK:
     case RemoteCommand::LEFT:
         firstLoad_ = true;
-        back();
         setNeedsRerender();
-        break;
+        back();
+        return;
     // We rely on the animation timer which is set in the renderer view in autopilot mode
     case RemoteCommand::ANIMATION:
         setNeedsRerender();
@@ -110,6 +121,8 @@ auto ReadingSettingsMenuScreen::layout(LayoutContext &context, Size size) -> Siz
 }
 
 void ReadingSettingsMenuScreen::drawInRect(Rect rect) {
+    // Always load the font from prefs
+    resetFont();
     backLabelView_.draw();
     menuView_.draw();
     rendererView_.draw();
@@ -131,11 +144,11 @@ void ReadingSettingsMenuScreen::render(DisplaySystem &display) {
             display.updateDisplay(DisplaySystem::UpdateType::FULL, false);
             firstLoad_ = false;
         }
-        menuView_.drawIndicator();
+        menuView_.drawFastElements();
         display.updateDisplay(DisplaySystem::UpdateType::FAST_INDICATOR);
     } else if (rendererView_.autoPilotMode()) {
         draw();
-        menuView_.drawIndicator();
+        menuView_.drawFastElements();
         if (rendererView_.newPage()) {
             display.updateDisplay(DisplaySystem::UpdateType::FULL, true);
         } else {

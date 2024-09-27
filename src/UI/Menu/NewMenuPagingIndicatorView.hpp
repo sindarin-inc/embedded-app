@@ -13,7 +13,7 @@ public:
     auto layout(LayoutContext &context, Size size) -> Size override;
     void drawInRect(Rect rect) override;
 
-    int indicatorSpacing = 3;
+    int indicatorSpacing = 5;
 
 private:
     int totalPages_ = 1;

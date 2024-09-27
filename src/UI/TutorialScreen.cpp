@@ -3,35 +3,39 @@
 #include <Update.h>
 
 #include "Misc/Platform.hpp"
+#include "UI/Fonts/Fonts.hpp"
+#include "UI/Menu/NewMenuItemSingleLine.hpp"
 #include "sindarin-debug.h"
 
 TutorialScreen::TutorialScreen(DisplaySystem &display, PreferencesStore &prefs, SpiramString text,
                                int bit)
-    : display_(display), renderer_(display, GetTextRectFromPrefs(display, prefs)), prefs_(prefs),
-      menu_(prefs, display) {
+    : display_(display),
+      renderer_(display, GetTextRectFromPrefs(display, prefs), static_cast<Font *>(&fontFace0)),
+      prefs_(prefs), menu_(prefs, display) {
 
     auto stream = std::make_shared<StdStringStream>(text);
     renderer_.setStream(stream);
 
     menu_.resetMenuItems();
-    menu_.addMenuItem(MenuItem("Delete this tutorial on next close", [this, bit]() {
+    menu_.addMenuItem(std::make_shared<NewMenuItemSingleLine>("Delete this tutorial on next close",
+                                                              [this, bit]() {
         prefs_.tutorialsDeleted.set(prefs_.tutorialsDeleted.get().value_or(0) | bit);
+        inMenu_ = false;
         back();
     }));
-    menu_.addMenuItem(MenuItem("Keep this tutorial", [this, bit]() {
+    menu_.addMenuItem(std::make_shared<NewMenuItemSingleLine>("Keep this tutorial", [this, bit]() {
         // Set it here just in case they change their mind after deleting it and perform
         // this operation a second time.
         uint32_t mask = ~bit;
         prefs_.tutorialsDeleted.set(prefs_.tutorialsDeleted.get().value_or(0) & mask);
+        inMenu_ = false;
         back();
     }));
-
-    setCurrentScreen(*this);
 }
 
 void TutorialScreen::render(DisplaySystem &display) {
-    if (currentScreen_ != this) {
-        currentScreen_->render(display);
+    if (inMenu_) {
+        menu_.render(display);
         return;
     }
 
@@ -43,8 +47,11 @@ void TutorialScreen::render(DisplaySystem &display) {
 }
 
 void TutorialScreen::processCommand(RemoteCommand command) {
-    if (currentScreen_ != this) {
-        currentScreen_->processCommand(command);
+    if (inMenu_) {
+        menu_.processCommand(command);
+        if (menu_.needsRerender()) {
+            setNeedsRerender();
+        }
         return;
     }
 
@@ -55,14 +62,14 @@ void TutorialScreen::processCommand(RemoteCommand command) {
         break;
     case RemoteCommand::UP:
     case RemoteCommand::BACK:
-        setCurrentScreen(menu_);
+        inMenu_ = true;
         setNeedsRerender();
         break;
     case RemoteCommand::DOWN:
     case RemoteCommand::RIGHT:
     case RemoteCommand::ENTER:
         if (atEnd()) {
-            setCurrentScreen(menu_);
+            inMenu_ = true;
             setNeedsRerender();
         }
         place_ = newPlace_;

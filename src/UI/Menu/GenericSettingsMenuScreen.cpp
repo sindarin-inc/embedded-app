@@ -1,20 +1,19 @@
-#include "SystemSettingsMenuScreen.hpp"
+#include "GenericSettingsMenuScreen.hpp"
 
 #include "Renderers/Renderer.hpp"
-#include "UI/MsgPopup.hpp"
 
-SystemSettingsMenuScreen::SystemSettingsMenuScreen(DisplaySystem &display,
-                                                   const std::string &backTitle)
+GenericSettingsMenuScreen::GenericSettingsMenuScreen(DisplaySystem &display,
+                                                     const std::string &backTitle)
     : EinkView(display), menuView_(display), backLabelView_(display, backTitle) {
     menuView_.padding = 1;
     menuView_.itemsPerPage = 12;
 }
 
-void SystemSettingsMenuScreen::addMenuItem(const std::shared_ptr<NewMenuItem> &menuItem) {
+void GenericSettingsMenuScreen::addMenuItem(const std::shared_ptr<NewMenuItem> &menuItem) {
     menuView_.addMenuItem(menuItem);
 }
 
-void SystemSettingsMenuScreen::processCommand(RemoteCommand command) {
+void GenericSettingsMenuScreen::processCommand(RemoteCommand command) {
     switch (command) {
     case RemoteCommand::UP:
         moveSelection(-1);
@@ -28,9 +27,9 @@ void SystemSettingsMenuScreen::processCommand(RemoteCommand command) {
     case RemoteCommand::BACK:
     case RemoteCommand::LEFT:
         firstLoad_ = true;
-        back();
         setNeedsRerender();
-        break;
+        back();
+        return;
     default:
         // Handle other commands or ignore
         break;
@@ -38,7 +37,7 @@ void SystemSettingsMenuScreen::processCommand(RemoteCommand command) {
     setNeedsLayout();
 }
 
-auto SystemSettingsMenuScreen::setSelectedIndex(size_t index) -> bool {
+auto GenericSettingsMenuScreen::setSelectedIndex(size_t index) -> bool {
     auto newPage = menuView_.setSelectedIndex(index);
     if (newPage) {
         firstLoad_ = true;
@@ -47,36 +46,23 @@ auto SystemSettingsMenuScreen::setSelectedIndex(size_t index) -> bool {
     return newPage;
 }
 
-auto SystemSettingsMenuScreen::layout(LayoutContext &context, Size size) -> Size {
+auto GenericSettingsMenuScreen::layout(LayoutContext &context, Size size) -> Size {
     // Layout back label
     context.setViewFrame(backLabelView_, {{0, 0}, {size.width, 0}},
                          LayoutOptionsSizeToFit | LayoutOptionsAlignLeft);
     // Layout menu
     context.setViewFrame(menuView_, Rect::fromSize(size).inset(size.width / 7, 0),
-                         LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical);
+                         LayoutOptionsSizeToFitVertical | LayoutOptionsAlignCenterVertical);
 
     return size;
 }
 
-void SystemSettingsMenuScreen::showTemporaryMessage(DisplaySystem &display,
-                                                    const std::string &message, int duration,
-                                                    bool rerenderAfter) {
-    auto *popup = new MsgPopup(display, message);
-    popup->render(display);
-    delete popup;
-    if (rerenderAfter) {
-        Delay(duration);
-        setNeedsRerender();
-        this->render(display);
-    }
-}
-
-void SystemSettingsMenuScreen::drawInRect(Rect rect) {
+void GenericSettingsMenuScreen::drawInRect(Rect rect) {
     backLabelView_.draw();
     menuView_.draw();
 }
 
-void SystemSettingsMenuScreen::moveSelection(int delta) {
+void GenericSettingsMenuScreen::moveSelection(int delta) {
     auto newPage = menuView_.moveSelection(delta);
     if (newPage) {
         firstLoad_ = true;
@@ -84,7 +70,7 @@ void SystemSettingsMenuScreen::moveSelection(int delta) {
     setNeedsRerender();
 }
 
-void SystemSettingsMenuScreen::render(DisplaySystem &display) {
+void GenericSettingsMenuScreen::render(DisplaySystem &display) {
     setFrame(defaultFrameRect());
     draw();
 
@@ -93,6 +79,7 @@ void SystemSettingsMenuScreen::render(DisplaySystem &display) {
         firstLoad_ = false;
     }
 
-    menuView_.drawIndicator();
+    menuView_.drawFastElements();
+
     display.updateDisplay(DisplaySystem::UpdateType::FAST_INDICATOR);
 }

@@ -42,6 +42,10 @@ auto LocalStore::begin() -> bool {
 
     migrateIfNeeded();
 
+    PROFILE_START(computeRecentReadables);
+    computeRecentReadables();
+    PROFILE_END_LOG_US(computeRecentReadables);
+
     return loadedBooks && loadedArticles;
 }
 
@@ -543,6 +547,46 @@ void LocalStore::resetReadablesBookmarksChanged(const ReadablesVector &readables
             log_d("Resetting bookmarks changed for \"%s\" (now synced to server)",
                   readable->title.c_str());
             prefs_.readableBookmarksChanged.remove(readable->shortenedUuid.c_str());
+        }
+    }
+}
+
+void LocalStore::computeRecentReadables() {
+    recents_.clear();
+    // Combine books and articles into a single vector
+    std::vector<std::shared_ptr<Readable>> allReadables;
+    allReadables.insert(allReadables.end(), books_.begin(), books_.end());
+    allReadables.insert(allReadables.end(), articles_.begin(), articles_.end());
+
+    // Sort the combined vector by last read time or date modified
+    std::sort(allReadables.begin(), allReadables.end(),
+              [this](const std::shared_ptr<Readable> &a, const std::shared_ptr<Readable> &b) {
+        time_t aLastRead = this->prefs_.lastReadTime.get(a->shortenedUuid.c_str());
+        time_t bLastRead = this->prefs_.lastReadTime.get(b->shortenedUuid.c_str());
+
+        time_t aModified = a->dateModifiedTime;
+        time_t bModified = b->dateModifiedTime;
+
+        // Use the more recent of last read time or date modified
+        time_t aTime = std::max(aLastRead, aModified);
+        time_t bTime = std::max(bLastRead, bModified);
+
+        return bTime < aTime; // Sort in descending order (most recent first)
+    });
+
+    // Get the current time
+    time_t now = time(nullptr);
+
+    // Add items to the recents_ vector
+    for (const auto &r : allReadables) {
+        time_t lastRead = this->prefs_.lastReadTime.get(r->shortenedUuid.c_str());
+        time_t lastModified = r->dateModifiedTime;
+        time_t mostRecent = std::max(lastRead, lastModified);
+
+        // Check if the readable was read or modified in the last 7 days
+        double diff = difftime(now, mostRecent) / 3600.0; // Convert seconds to hours
+        if (diff <= 7 * 24) {                             // 7 days * 24 hours
+            recents_.push_back(r);
         }
     }
 }
@@ -1232,8 +1276,9 @@ void LocalStore::sortReadables(ReadablesVector &readables) {
             if (b->dateModified.empty()) {
                 return direction.type == SortDirection::Ascending;
             }
-            return direction.type == SortDirection::Ascending ? a->dateModified < b->dateModified
-                                                              : a->dateModified > b->dateModified;
+            return direction.type == SortDirection::Ascending
+                       ? a->dateModifiedTime < b->dateModifiedTime
+                       : a->dateModifiedTime > b->dateModifiedTime;
         } else if (criteria.type == SortCriteria::Alphabetical) {
             std::string aTitle = removeStopWords(a->title);
             std::string bTitle = removeStopWords(b->title);

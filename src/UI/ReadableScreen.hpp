@@ -1,5 +1,6 @@
 #include <utility>
 
+#include "Misc/PowerManager.hpp"
 #include "Misc/Telemetry.hpp"
 #include "Models/Readable.hpp"
 #include "Models/ReadableBookmark.hpp"
@@ -8,10 +9,21 @@
 #include "Storage/LocalStore.hpp"
 #include "Storage/PreferencesStore.hpp"
 #include "UI/Components/ArrowView.hpp"
-#include "UI/ContainerScreen.hpp"
+#include "UI/ContrastAdjustScreen.hpp"
 #include "UI/FirstHookTestScreen.hpp"
+#include "UI/LightingAdjustScreen.hpp"
+#include "UI/LineMenuScreen.hpp"
+#include "UI/LineSpacingScreen.hpp"
+#include "UI/Menu/NewMenuItemCheckable.hpp"
+#include "UI/Menu/NewMenuItemSingleLine.hpp"
+#include "UI/Menu/ReadingSettingsMenuScreen.hpp"
 #include "UI/MsgPopup.hpp"
-#include "UI/ReadablePopupMenuScreen.hpp"
+#include "UI/NewReadablePopupMenuScreen.hpp"
+#include "UI/OffsetAdjustScreen.hpp"
+#include "UI/ReadableDictionaryScreen.hpp"
+#include "UI/ReadablePlacemarkHistoryScreen.hpp"
+#include "UI/ReadableSummaryScreen.hpp"
+#include "UI/ResizeBoxScreen.hpp"
 #include "UI/Screen.hpp"
 #include "Version.hpp"
 #include "config.h"
@@ -26,98 +38,16 @@ enum LastArrowPress {
 };
 
 // TODO: make the readable copy here in Spiram
-class ReadableScreen : public ContainerScreen, public EinkView {
+class ReadableScreen : public Screen, public EinkView {
 public:
     ReadableScreen(const std::shared_ptr<RendererStream> &stream, DisplaySystem &display,
                    const std::shared_ptr<Readable> &readable, PreferencesStore &prefs,
                    Telemetry &telemetry, FileSystem &fileSystem,
-                   LightingController &lightingController, LocalStore &localStore)
-        : EinkView(display), stream_(stream),
-          renderer_(display, GetTextRectFromPrefs(display, prefs)), readable_(readable),
-          prefs_(prefs), telemetry_(telemetry), fileSystem_(fileSystem), display_(display),
-          popupMenuScreen_(display, prefs, fileSystem, readable, lightingController, renderer_,
-                           telemetry_, localStore, stream_),
-          readableSummaryScreen_(prefs, fileSystem, readable, display, renderer_),
-          leftArrowView_(display, ArrowLeft), rightArrowView_(display, ArrowRight),
-          upArrowView_(display, ArrowUp), downArrowView_(display, ArrowDown) {
-        currentScreen_ = this;
-        renderer_.setStream(stream);
-
-        std::string thePlace = prefs_.readablePlace.get(readable_->shortenedUuid.c_str());
-        if (prefs_.cesMode.get().value_or(false)) {
-            // For CES mode we intentionally want to ignore the saved place
-            thePlace = "";
-        }
-
-        log_d("readablePlace: \"%s\"", thePlace.c_str());
-        readable_->place = Place::factory(thePlace, stream->getDocType());
-
-        // for the animation bits since we may end up coming back to this constructor after being
-        // interrupted.
-        newPlace_ = readable_->place;
-        atEnd_ = this->checkAtEnd();
-        pageSpeed_ = prefs_.autoPilotSpeed.get().value_or(0);
-
-        log_d("Found place for %s = %s %s", readable_->shortenedUuid.c_str(),
-              readable_->place->str().c_str(), atEnd_ ? "(at end)" : "");
-
-        popupMenuScreen_.setBackCallback([this]() {
-            autoPilotForceFull_ = true;
-            this->setCurrentScreen(*this);
-        });
-
-        popupMenuScreen_.onMainMenu = [this]() {
-            hidePopupMenu();
-            prefs_.lastReadableId.remove();
-            if (!prefs_.cesMode.get().value_or(false)) {
-                if (pageSpeed_ != 0) {
-                    xTimerStop(DisplaySystem::animationTimer, 0);
-                }
-            }
-            setNeedsRerender();
-            back();
-        };
-
-        popupMenuScreen_.onBookmarkToggle = [this]() {
-            inBookmark_ = !inBookmark_;
-            setNeedsRerender();
-            writeOutBookmarkUpdate();
-        };
-
-        popupMenuScreen_.onReport = [this, &display]() {
-            setNeedsRerender();
-            auto metrics = readable_->telemetryPlacemarkMetrics();
-            metrics["fw"] = SemanticVersionString();
-            auto insets = GetTextInsetFromPrefs(display, prefs_);
-            metrics["in_l"] = insets.left;
-            metrics["in_r"] = insets.right;
-            metrics["in_t"] = insets.top;
-            metrics["in_b"] = insets.bottom;
-            metrics["text_size"] = prefs_.font.get().value_or(PREFS_SOL_SMALL);
-            metrics["line_spacing"] = prefs_.lineSpacing.get().value_or(0);
-            telemetry_.logMetric(TelemetryField::METRIC_REPORT, readable_->uuid.c_str(), metrics);
-            auto *reportPopup = new MsgPopup(
-                display, "Thank you, our team will\nreview this page for\nformatting issues.");
-            display.clearDisplay();
-            this->setCurrentScreen(*reportPopup);
-            reportPopup->setBackCallback([this, reportPopup, &display]() {
-                display.clearDisplay();
-                this->setCurrentScreen(*this);
-                delete reportPopup;
-            });
-        };
-
-        popupMenuScreen_.onRerender = [this]() { renderPopup_ = true; };
-
-        readableSummaryScreen_.setBackCallback([this, &display]() {
-            renderedPartialSummary_ = true;
-            display.clearDisplay();
-            this->setCurrentScreen(*this);
-        });
-    }
+                   LightingController &lightingController, LocalStore &localStore, Font *font);
 
     ~ReadableScreen() override = default;
 
+    // TODO: Someday we should update this layout method to use the new RendererView
     auto layout(LayoutContext &context, Size size) -> Size override;
     void drawInRect(Rect rect) override;
 
@@ -137,6 +67,10 @@ public:
     auto getStream() { return stream_; }
 
 protected:
+    void setCurrentScreen(const std::shared_ptr<Screen> &screen);
+
+    auto getCurrentScreen() -> std::shared_ptr<Screen> { return currentScreen_; }
+
     void processCommandDemoMode(RemoteCommand command);
     void processCommandAutoPilot(RemoteCommand command);
     void processCommandNormal(RemoteCommand command);
@@ -151,6 +85,7 @@ protected:
     PreferencesStore &prefs_;
     Telemetry &telemetry_;
     FileSystem &fileSystem_;
+    LightingController &lightingController_;
 
     bool firstLoad_ = true;
     bool inBookmark_ = false;
@@ -165,8 +100,12 @@ protected:
 
     DisplaySystem &display_;
 
-    ReadablePopupMenuScreen popupMenuScreen_;
-    ReadableSummaryScreen readableSummaryScreen_;
+    LocalStore &localStore_;
+
+    std::shared_ptr<NewReadablePopupMenuScreen> popupMenuScreen_;
+    std::shared_ptr<ReadableSummaryScreen> readableSummaryScreen_{nullptr};
+    std::shared_ptr<ReadablePlacemarkHistoryScreen> readablePlacemarkHistoryScreen_{nullptr};
+    std::shared_ptr<ReadableDictionaryScreen> readableDictionaryScreen_{nullptr};
 
     std::vector<std::shared_ptr<Screen>> hookScreens_;
 
@@ -177,13 +116,11 @@ protected:
     int pageSpeed_ = 10000;
     bool autoPilotPause_ = false;
 
-    ArrowView leftArrowView_;
-    ArrowView rightArrowView_;
-    ArrowView upArrowView_;
-    ArrowView downArrowView_;
+    std::shared_ptr<Screen> currentScreen_{nullptr};
+
+    std::shared_ptr<MsgPopup> notExist_{nullptr};
 
 private:
-    void incrementReadingTime();
     void turnPage();
     uint32_t readingStartTime_{};
     LastArrowPress lastArrowPress_ = REMOTE_NONE;

@@ -5,6 +5,10 @@
 #include "ViewTestCommon.hpp"
 #include "sindarin-debug.h"
 
+extern Font fontFace0;
+extern Font fontFace1;
+extern Font fontFace2;
+
 class GlyphTestScreen : public Screen {
 public:
     GlyphTestScreen(const std::vector<std::string> &glyphs, int gridWidth, int gridHeight)
@@ -143,14 +147,14 @@ TEST_CASE("Test glyph rendering") {
     };
 
     SECTION("Test small font Glyphs") {
-        renderAllGlyphs("GlyphTests/GlyphTestS", 12, 16, display->style.solSansSmall.readableFont);
+        renderAllGlyphs("GlyphTests/GlyphTestS", 12, 16, static_cast<Font *>(&fontFace0));
     }
 
     SECTION("Test medium font Glyphs") {
-        renderAllGlyphs("GlyphTests/GlyphTestM", 10, 14, display->style.solSansMedium.readableFont);
+        renderAllGlyphs("GlyphTests/GlyphTestM", 10, 14, static_cast<Font *>(&fontFace1));
     }
 
     SECTION("Test large font Glyphs") {
-        renderAllGlyphs("GlyphTests/GlyphTestL", 8, 12, display->style.solSansLarge.readableFont);
+        renderAllGlyphs("GlyphTests/GlyphTestL", 8, 12, static_cast<Font *>(&fontFace2));
     }
 }

@@ -15,6 +15,12 @@ public:
     NewMenuView(DisplaySystem &display);
 
     void addMenuItem(const std::shared_ptr<NewMenuItem> &menuItem);
+    void resetMenuItems() {
+        menuItems_.clear();
+        menuItemViews_.clear();
+        selectedIndex_ = 0;
+        currentPage_ = 0;
+    }
     auto setSelectedIndex(size_t index) -> bool;
     auto moveSelection(int delta) -> bool;
     void setIndicatorType(IndicatorType type);
@@ -30,11 +36,18 @@ public:
         }
     }
 
-    void drawIndicator() {
+    void drawFastElements() {
         indicatorView_.fillColor = display_.fg;
         indicatorView_.strokeColor = display_.fg;
         if (indicatorType_ != IndicatorType::None) {
             indicatorView_.draw();
+        }
+
+        size_t startIndex = currentPage_ * itemsPerPage;
+        size_t endIndex = std::min(startIndex + itemsPerPage, menuItemViews_.size());
+
+        for (size_t i = startIndex; i < endIndex; ++i) {
+            menuItemViews_[i]->drawFastOnlyElements();
         }
     }
 

@@ -2,14 +2,16 @@
 
 #include <memory>
 
+#include "UI/Fonts/Fonts.hpp"
 #include "sindarin-debug.h"
 
 #define OFFSET_ADJUST_AMOUNT 5
 
 OffsetAdjustScreen::OffsetAdjustScreen(DisplaySystem &display, PreferencesStore &prefs,
                                        Telemetry &telemetry)
-    : display_(display), renderer_(display, GetTextRectFromPrefs(display, prefs)), prefs_(prefs),
-      telemetry_(telemetry) {
+    : display_(display),
+      renderer_(display, GetTextRectFromPrefs(display, prefs), static_cast<Font *>(&fontFace0)),
+      prefs_(prefs), telemetry_(telemetry) {
 
     std::string message;
     // This needs to be pretty big for smaller fonts
@@ -89,8 +91,9 @@ void OffsetAdjustScreen::processCommand(RemoteCommand command) {
                                                                 {"in_r", insets.right},
                                                                 {"in_t", insets.top},
                                                                 {"in_b", insets.bottom}});
+        SetTextInset(prefs_, insets);
         back();
-        break;
+        return;
     default:
         break;
     }

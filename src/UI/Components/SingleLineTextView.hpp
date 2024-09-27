@@ -4,7 +4,7 @@
 #include <utility>
 
 #include "EinkView.hpp"
-#include "Misc/Style.hpp"
+#include "UI/Fonts/Fonts.hpp"
 #include "UI/Fonts/TextTruncation.hpp"
 
 // A view that draws a line of text
@@ -64,6 +64,13 @@ public:
         }
 
         display_.getTextSize(text_, &w, &h);
+
+        // TODO: Ask Guy to fix this in the renderer
+        // Any number that starts with a 1 has 2 extra pixels on the right side as
+        // rendered by the font.
+        if (text_[0] == '1') {
+            w -= 2;
+        }
 
         // If we don't have the option to grow horizontally as much as we want,
         // (which, honestly, we should probably never give a text view, right?)
