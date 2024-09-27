@@ -210,6 +210,15 @@ void TTRemoteInput::scanForPairedDevice() {
         log_e("Failed to start scan");
         return;
     }
+
+    // Wait for the scan to complete
+    Delay(RESCAN_INTERVAL_MS);
+
+    // Stop the scan
+    scan->stop();
+
+    // Delete the scan object to free up resources
+    BLEDevice::getScan()->clearResults();
 }
 
 void TTRemoteInput::scanForDevice() {
