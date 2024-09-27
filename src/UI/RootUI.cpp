@@ -378,18 +378,18 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             "Let's focus (3 min)",
             [this, display]() {
             auto screenVector = std::vector<std::shared_ptr<LinkedMenuScreen>>();
-            auto firstScreen = std::make_shared<LinkedMenuScreen>(*display_, "Back to Main Menu");
-            auto secondScreen = std::make_shared<LinkedMenuScreen>(*display_, "Back to Main Menu");
-            auto thirdScreen = std::make_shared<LinkedMenuScreen>(*display_, "Back to Main Menu");
+            auto firstScreen = std::make_shared<LinkedMenuScreen>(*display_, "\ue000 Main Menu");
+            auto secondScreen = std::make_shared<LinkedMenuScreen>(*display_, "\ue000 Main Menu");
+            auto thirdScreen = std::make_shared<LinkedMenuScreen>(*display_, "\ue000 Main Menu");
 
             firstScreen->setBackCallback([this]() { this->popScreen(); });
             secondScreen->setBackCallback([this]() { this->popScreen(); });
             thirdScreen->setBackCallback([this]() { this->popScreen(); });
 
-            firstScreen->setNextScreen(secondScreen, "Second Screen");
-            secondScreen->setNextScreen(thirdScreen, "Third Screen");
-            thirdScreen->setPreviousScreen(secondScreen, "Second Screen");
-            secondScreen->setPreviousScreen(firstScreen, "First Screen");
+            firstScreen->setNextScreen(secondScreen, "Eye Spacing");
+            secondScreen->setNextScreen(thirdScreen, "Text Placement");
+            thirdScreen->setPreviousScreen(secondScreen, "Eye Spacing");
+            secondScreen->setPreviousScreen(firstScreen, "Lens Focus");
 
             firstScreen->addBackMenuItem();
             secondScreen->addBackMenuItem();
@@ -1769,6 +1769,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         } else {
             newMainMenu->setTabToTitle("Welcome", 0);
         }
+#if 0
         auto firstTimeScreen = std::make_shared<DemoScreen>(*display, prefs_);
         pushScreen(firstTimeScreen);
         firstTimeScreen->setBackCallback([this]() {
@@ -1781,6 +1782,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 clearNeedsRerender();
             }
         });
+#endif
     }
 
     if (prefs_.cesMode.get().value_or(false)) {

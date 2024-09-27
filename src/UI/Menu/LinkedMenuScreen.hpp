@@ -2,7 +2,10 @@
 
 #include "Displays/DisplaySystem.hpp"
 #include "Inputs/RemoteInput.hpp"
+#include "Renderers/Renderer.hpp"
 #include "UI/Components/EinkView.hpp"
+#include "UI/Components/MultiLineTextView.hpp"
+#include "UI/Components/RendererView.hpp"
 #include "UI/Components/SingleLineTextView.hpp"
 #include "UI/Menu/NewMenuItemSingleLine.hpp"
 #include "UI/Menu/NewMenuView.hpp"
@@ -20,7 +23,7 @@ public:
 
     void setNextScreen(const std::shared_ptr<Screen> screen, std::string title) {
         nextScreen_ = screen;
-        addMenuItem(std::make_shared<NewMenuItemSingleLine>("Next: " + title, [this]() {
+        addMenuItem(std::make_shared<NewMenuItemSingleLine>(title + " \ue002", [this]() {
             if (nextScreen_) {
                 gotoNextScreen();
             }
@@ -28,7 +31,7 @@ public:
     }
     void setPreviousScreen(const std::shared_ptr<Screen> screen, std::string title) {
         previousScreen_ = screen;
-        addMenuItem(std::make_shared<NewMenuItemSingleLine>("Previous: " + title, [this]() {
+        addMenuItem(std::make_shared<NewMenuItemSingleLine>("\ue001 " + title, [this]() {
             if (previousScreen_) {
                 gotoPreviousScreen();
             }
@@ -67,6 +70,8 @@ private:
     NewMenuView menuView_;
     SingleLineTextView backLabelView_;
     std::string backLabel_;
+
+    MultiLineTextView rendererView_;
 
     void moveSelection(int delta);
 };

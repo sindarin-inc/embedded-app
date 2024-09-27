@@ -4,7 +4,7 @@ extern RootUI rootUi;
 
 LinkedMenuScreen::LinkedMenuScreen(DisplaySystem &display, std::string backLabel)
     : EinkView(display), menuView_(display), backLabelView_(display),
-      backLabel_(std::move(backLabel)) {
+      backLabel_(std::move(backLabel)), rendererView_(display, 3) {
     menuView_.padding = 5;
     menuView_.itemsPerPage = 4;
     menuView_.indicatorWidth = 5;
@@ -13,6 +13,10 @@ LinkedMenuScreen::LinkedMenuScreen(DisplaySystem &display, std::string backLabel
     menuView_.pagingIndicatorPadding = 5;
     menuView_.setIndicatorType(NewMenuView::IndicatorType::Line);
     backLabelView_.setText(backLabel_);
+
+    // DISABLE LIGHT SENSOR AS SOON AS THIS SCREN COMES UP
+    rendererView_.setText("Turn each lens like a binoculars until this text is in focus.");
+    rendererView_.alignCenter = true;
 }
 
 void LinkedMenuScreen::addMenuItem(const std::shared_ptr<NewMenuItem> &menuItem) {
@@ -51,13 +55,21 @@ void LinkedMenuScreen::processCommand(RemoteCommand command) {
 auto LinkedMenuScreen::layout(LayoutContext &context, Size size) -> Size {
     int y = 0;
 
+    // Make it 30px wide max
+    context.setViewFrame(rendererView_, {{size.width / 2 - 45, size.height / 2 - 45}, {90, 90}},
+                         LayoutOptionsSizeToFit | LayoutOptionsAlignCenter);
+
     context.setViewFrame(menuView_, Rect::fromSize(size),
-                         LayoutOptionsSizeToFitVertical | LayoutOptionsAlignCenterVertical);
+                         LayoutOptionsSizeToFit | LayoutOptionsAlignCenterHorizontal |
+                             LayoutOptionsAlignBottom);
 
     return size;
 }
 
-void LinkedMenuScreen::drawInRect(Rect rect) { menuView_.draw(); }
+void LinkedMenuScreen::drawInRect(Rect rect) {
+    rendererView_.draw();
+    menuView_.draw();
+}
 
 void LinkedMenuScreen::render(DisplaySystem &display) {
     setFrame(defaultFrameRect());
