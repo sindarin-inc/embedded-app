@@ -752,7 +752,8 @@ void ReadableScreen::render(DisplaySystem &display) {
         renderer_.renderFirstPage();
 
         display.updateDisplay(DisplaySystem::UpdateType::FULL);
-
+        // Make sure the next screen is a full refresh as well
+        display.clearDisplay();
         return;
     }
 
