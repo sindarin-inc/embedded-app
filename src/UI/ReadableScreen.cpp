@@ -707,7 +707,9 @@ void ReadableScreen::render(DisplaySystem &display) {
     // If it's the first read of the book, show the help screen.
     // Then ignore the next press of the button
     if (!emcMode && !prefs_.firstRead.get().value_or(false)) {
-        std::string message = "Welcome to your first book or article!\n\n"
+        std::string bookOrArticle = (readable_->isArticle()) ? "article" : "book";
+        std::string message = "Welcome to your first " + bookOrArticle +
+                              "!\n\n"
                               "\ue000  or  \uE002   Next Page\n\n"
                               "\ue001   Previous Page\n\n"
                               "\ue003  or  \ue004   Popup Menu\n\n "
