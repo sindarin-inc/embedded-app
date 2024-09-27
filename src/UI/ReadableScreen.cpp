@@ -938,7 +938,7 @@ void ReadableScreen::processCommandDemoMode(RemoteCommand command) {
 void ReadableScreen::backUpAutopilot(int numLines) {
     // When entering the popup menu from autopilot, go back up to some lines so that coming
     // out the user can not be behind.
-    speedLinesToSkip_ = std::max(0, (int)speedLinesToSkip_ - numLines);
+    speedLinesToSkip_ = std::max(0, static_cast<int>(speedLinesToSkip_) - numLines);
 }
 
 void ReadableScreen::processCommandAutoPilot(RemoteCommand command) {
