@@ -53,15 +53,7 @@
 #define LED_OFF LOW
 #endif
 
-#define BAT_VOLTAGE_RIGHT 10
-#define BAT_VOLTAGE_LEFT 4
-#define BATT_CHANNEL_RIGHT ADC_CHANNEL_9
-#define BATT_CHANNEL_LEFT ADC_CHANNEL_3
-#define UPPER_DIVIDER 442
-#define LOWER_DIVIDER 160
-// Unused on ESP32-S3
-#define DEFAULT_VREF 0
-
+#if CONFIG_LEDC_BACKLIGHT
 #if defined(REVSION) && REVISION < 7
 // On revisions prior to 7, the screen's power was tied to pin 26 along with the backlight, so
 // define the power pin to turn on display and keep it on.
@@ -70,8 +62,10 @@
 #define BACKLIGHT_RIGHT 2
 #define BACKLIGHT_LEFT 17
 #endif
+#endif
 
 // Sol3
+#if CONFIG_DISPLAY_EINKET013TT1
 #define DISPLAY_CS_LEFT 21
 #define DISPLAY_CS_RIGHT 11
 #define USE_SYS_ON 1
@@ -79,10 +73,14 @@
 #define DISPLAY_RST 9
 #endif
 
-#define DISPLAY_SPI SPI2_HOST
 #define DISPLAY_MOSI 12
 #define DISPLAY_MISO 14
 #define DISPLAY_CLK 13
+#endif
+
+#if CONFIG_DISPLAY_EINKET013TT1 || CONFIG_DISPLAY_SHARP_27IN || CONFIG_DISPLAY_WAVESHARE_6INHD
+#define CONFIG_DISPLAY_SPI SPI2_HOST
+#endif
 
 #define CPU_FREQ_MHZ_HIGH 240
 #define CPU_FREQ_MHZ_LOW 40

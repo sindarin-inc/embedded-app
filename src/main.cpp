@@ -137,8 +137,8 @@ void UIInnerLoop(RemoteCommand command) {
 void PollingLoopTask(void *parameter) {
     int factoryResetStartTimeMs = 0;
     while (powerManager.state() != PowerState::ShuttingDown) {
-        // check if factory reset button is held down
-        if (DigitalRead(FACTORY_RESET_BUTTON) == 0) {
+        if (CONFIG_FACTORY_RESET_BUTTON_PIN != GPIO_NUM_NC &&
+            DigitalRead(CONFIG_FACTORY_RESET_BUTTON_PIN) == 0) {
             // prevent inactivity sleep while button held down
             powerManager.feedInactivityTimer();
             if (factoryResetStartTimeMs == 0) {
@@ -518,7 +518,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 #endif
     HEAP_PROFILE_END(BLEServices);
 
-#if !CONFIG_DISABLE_POWER_MANAGEMENT
+#if !CONFIG_DISABLE_POWER_MANAGEMENT && defined(CONFIG_RTC_CLK_SRC_EXT_CRYS)
     if (rtc_clk_slow_freq_get() != RTC_SLOW_FREQ_32K_XTAL) {
         bootErrors.push_back({.type = BootError::Type::LowPowerOscillator});
     }
