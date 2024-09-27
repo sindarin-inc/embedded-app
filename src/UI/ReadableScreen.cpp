@@ -929,16 +929,9 @@ void ReadableScreen::processCommandDemoMode(RemoteCommand command) {
 }
 
 void ReadableScreen::backUpAutopilot(int numLines) {
-    // When entering the popup menu from autopilot, go back up to two line so that coming
+    // When entering the popup menu from autopilot, go back up to some lines so that coming
     // out the user can not be behind.
-    if (numLines > 1) {
-        if (speedLinesToSkip_ > numLines - 1) {
-            speedLinesToSkip_ -= numLines;
-        }
-    }
-    if (speedLinesToSkip_ > 0) {
-        speedLinesToSkip_--;
-    }
+    speedLinesToSkip_ = std::max(0, (int)speedLinesToSkip_ - numLines);
 }
 
 void ReadableScreen::processCommandAutoPilot(RemoteCommand command) {
@@ -974,7 +967,7 @@ void ReadableScreen::processCommandAutoPilot(RemoteCommand command) {
         pageSpeed_ = std::max(pageSpeed_ - PAGE_SPEED_INCREMENT, 1);
         log_d("Speeding up: New Page Speed is %u", pageSpeed_);
         prefs_.autoPilotSpeed.set(pageSpeed_);
-        backUpAutopilot();
+        backUpAutopilot(1);
         break;
 
     case RemoteCommand::ANIMATION:
