@@ -377,10 +377,19 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     log_i("Loading %zu Pocket articles", articles.size());
 
-    auto recentMenuFactory = [this, &localStore, handleReadableScreenCreation,
-                              isBible]() -> MenuItemSharedPtrVector {
+    auto recentMenuFactory = [this, &localStore, handleReadableScreenCreation, isBible,
+                              makeReleaseNotesMenuItem]() -> MenuItemSharedPtrVector {
         auto &recents = localStore.recents();
         auto menuItems = std::make_shared<MenuItemVector>();
+
+        if (this->prefs_.firmwareLoaded.get().has_value()) {
+            Firmware firmware;
+            auto upgradeAvailable = localStore.getPendingFirmwareUpdate(firmware);
+            if (upgradeAvailable) {
+                menuItems->emplace_back(makeReleaseNotesMenuItem(firmware));
+            }
+        }
+
         for (const auto &recent : recents) {
             bool archived = prefs_.readableArchivedChanged.get(recent->shortenedUuid.c_str());
             // Still needed for the Bible one since that's just a NewMenuItemSingleLine

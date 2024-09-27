@@ -374,8 +374,15 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
                 menuIndex = 2;
             }
             fontMenu->setSelectedIndex(menuIndex);
+
             setCurrentScreen(fontMenu);
-            fontMenu->setBackCallback([this]() { setCurrentScreen(nullptr); });
+            fontMenu->setBackCallback([this]() {
+                Font *font = FontFromPrefs(prefs_.font.get().value_or(PREFS_SOL_SMALL));
+                if (font) {
+                    this->renderer_.setFont(font);
+                }
+                setCurrentScreen(nullptr);
+            });
         });
 
         menuItems->emplace_back(menuItem);
