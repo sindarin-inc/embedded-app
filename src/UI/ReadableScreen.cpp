@@ -798,6 +798,12 @@ void ReadableScreen::render(DisplaySystem &display) {
             }
         }
 
+        // This happens if the very first screen rendered is an image where there's only 1 "line"
+        if (nextInterval_ == 0) {
+            // Let them look at the image for 1 second and then move on.
+            nextInterval_ = 1000;
+        }
+
         // Give the user extra time for the first line.
         if (speedLinesToSkip_ == 0) {
             nextInterval_ *= 2;
