@@ -123,6 +123,8 @@ protected:
                       advertisedDevice->getRSSI());
             }
 
+            BLEDevice::getScan()->clearResults();
+
             enclosed->dispatchConnection(*(filteredDevices[0]));
         }
     };
