@@ -586,7 +586,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             }
         }
 
-        if ((menuItems->size() > 0) &&
+        if ((!menuItems->empty()) &&
             (!(prefs_.tutorialsDeleted.get().value_or(0) & TUTORIAL_SCREEN_BIBLE))) {
             menuItems->emplace_back(std::make_shared<NewMenuItemSingleLine>(
                 "\ue000 Why have the Bible?", [this, createTutorialScreen]() {
