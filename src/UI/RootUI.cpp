@@ -586,7 +586,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             }
         }
 
-        if (!(prefs_.tutorialsDeleted.get().value_or(0) & TUTORIAL_SCREEN_BIBLE)) {
+        if ((menuItems->size() > 0) &&
+            (!(prefs_.tutorialsDeleted.get().value_or(0) & TUTORIAL_SCREEN_BIBLE))) {
             menuItems->emplace_back(std::make_shared<NewMenuItemSingleLine>(
                 "\ue000 Why have the Bible?", [this, createTutorialScreen]() {
                     SpiramString message = SpiRamStringFormat(
