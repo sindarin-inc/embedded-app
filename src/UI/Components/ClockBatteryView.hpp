@@ -39,11 +39,9 @@ public:
     }
 
     auto layout(LayoutContext &context, Size size) -> Size override {
-        if (isValidTime()) {
-            auto clockRect =
-                context.setViewFrame(clockView_, {{0, 0}, size},
-                                     LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical);
-        }
+        // We'll lay it out even if we don't draw it.
+        auto clockRect = context.setViewFrame(
+            clockView_, {{0, 0}, size}, LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical);
         if (!batteryLow_ && batteryLow()) {
             batteryLow_ = true;
         }
