@@ -55,11 +55,11 @@ void USBSerial::enableLogging() {
     }
 }
 
+#if CONFIG_USE_TINYUSB_SERIAL
 // This is the main callback for the USB serial port that is used for commands.
 // It reads from the port and then processes the data and sends the command to the
 // DirectCommand class for processing.
 void USBSerial::rxCommandCallback(int itf, cdcacm_event_t *event) {
-#if CONFIG_USE_TINYUSB_SERIAL
     size_t rxSize = 0;
 
     auto buffer = SpiRamArrayPtr<uint8_t>(CONFIG_TINYUSB_CDC_RX_BUFSIZE + 1);
@@ -74,8 +74,8 @@ void USBSerial::rxCommandCallback(int itf, cdcacm_event_t *event) {
             listener(buffer, rxSize);
         }
     }
-#endif
 }
+#endif
 
 void USBSerial::registerListener(const SerialDataListener &listener) {
     listeners_.push_back(listener);

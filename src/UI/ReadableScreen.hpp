@@ -71,6 +71,7 @@ protected:
 
     auto getCurrentScreen() -> std::shared_ptr<Screen> { return currentScreen_; }
 
+    void backUpAutopilot(int numLines = 1);
     void processCommandDemoMode(RemoteCommand command);
     void processCommandAutoPilot(RemoteCommand command);
     void processCommandNormal(RemoteCommand command);

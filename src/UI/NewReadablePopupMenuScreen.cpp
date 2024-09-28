@@ -101,15 +101,17 @@ void NewReadablePopupMenuScreen::drawInRect(Rect rect) {
 auto NewReadablePopupMenuScreen::layout(LayoutContext &context, Size size) -> Size {
     auto fullFrame = Rect::fromSize(size);
 
+    auto backgroundInset = size.width * 2 / 9;
+
     // Right now we are forcing this to be an inset from the full height of the size
     // but it would be better if it could layout all the stuff inside it and determine
     // the right height.
     auto backgroundFrame =
-        context.setViewFrame(popupMenuBackground_, fullFrame.inset(size.width / 4 - 5, 13));
+        context.setViewFrame(popupMenuBackground_, fullFrame.inset(backgroundInset, 13));
     // Border is inset by 5 pixels on the top and bottom and then 1/4 of the width on the left and
     // right. This will need to be adjusted for different screen resolutions.
     auto foregroundFrame =
-        context.setViewFrame(popupMenuForeground_, fullFrame.inset(size.width / 4, 18));
+        context.setViewFrame(popupMenuForeground_, fullFrame.inset(backgroundInset + 5, 18));
     auto contentFrame = foregroundFrame.inset(5, 10);
     auto y = contentFrame.origin.y;
 

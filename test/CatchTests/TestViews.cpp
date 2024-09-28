@@ -166,12 +166,14 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
         }
         SendRemoteCommand(UP);
         WAIT_FOR_DRAW(display);
-        SendRemoteCommand(UP); // Show popup menu
+        SendRemoteCommand(UP); // Show popup menu and we are on seek item still
         WAIT_FOR_DRAW(display);
         WAIT_FOR_DRAW(display);
         ASSERT_VIEW_UNCHANGED(display, "PopupMenu3");
 
         // Go back to the main menu
+        SendRemoteCommand(UP);
+        WAIT_FOR_DRAW(display);
         SendRemoteCommand(ENTER);
         WAIT_FOR_DRAW(display);
         WAIT_FOR_DRAW(display);
@@ -238,8 +240,6 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
         SendRemoteCommand(LEFT);
         WAIT_FOR_DRAW(display);
         WAIT_FOR_DRAW(display);
-        SendRemoteCommand(DOWN);
-        WAIT_FOR_DRAW(display);
         ASSERT_VIEW_UNCHANGED(display, "PopupMenu5");
 
         // Open the next chapter to ensure the dictionary shows something different
@@ -264,8 +264,6 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
         WAIT_FOR_DRAW(display);
 
         // Open the dictionary
-        SendRemoteCommand(DOWN);
-        WAIT_FOR_DRAW(display);
         SendRemoteCommand(ENTER);
         WAIT_FOR_DRAW(display);
         ASSERT_VIEW_UNCHANGED(display, "Dictionary3");
@@ -282,8 +280,6 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
         // Render the popup menu and go to the summary
         SendRemoteCommand(UP);
         WAIT_FOR_DRAW(display);
-        WAIT_FOR_DRAW(display);
-        SendRemoteCommand(DOWN);
         WAIT_FOR_DRAW(display);
         SendRemoteCommand(DOWN);
         WAIT_FOR_DRAW(display);
@@ -321,10 +317,6 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
         // Render the popup menu and go to placemark history
         SendRemoteCommand(UP);
         WAIT_FOR_DRAW(display);
-        WAIT_FOR_DRAW(display);
-        SendRemoteCommand(DOWN);
-        WAIT_FOR_DRAW(display);
-        SendRemoteCommand(DOWN);
         WAIT_FOR_DRAW(display);
         SendRemoteCommand(DOWN);
         WAIT_FOR_DRAW(display);

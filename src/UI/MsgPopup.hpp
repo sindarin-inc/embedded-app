@@ -28,7 +28,7 @@ public:
     }
 
     MsgPopup(DisplaySystem &display, const std::string &msg)
-        : EinkView(display), boxView_(display, 8), textView_(display, 8) {
+        : EinkView(display), boxView_(display, 12), textView_(display, 12) {
         textView_.setText(msg);
         textView_.alignCenter = true;
         textView_.setFont(static_cast<Font *>(&fontFace0));
