@@ -112,8 +112,6 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
         ASSERT_VIEW_UNCHANGED(display, "PopupMenu1");
 
         // Return to book on page 1
-        // SendRemoteCommand(UP);
-        // WAIT_FOR_DRAW(display);
         SendRemoteCommand(ENTER);
         WAIT_FOR_DRAW(display);
 
