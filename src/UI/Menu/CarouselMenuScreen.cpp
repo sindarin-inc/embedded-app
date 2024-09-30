@@ -27,6 +27,15 @@ void CarouselMenuScreen::regenerateCurrentTab() { setCurrentTabIndex(getCurrentT
 void CarouselMenuScreen::setCurrentTabIndex(int index) {
     currentTabIndex_ = index;
     populateMenuView();
+    // The current tab can become empty if the user deletes the tutorial readable and there
+    // are no other items in the tab. This really only happens on the Bible tab if there
+    // are no bible readables but the tutorial readable is still there.
+    if (menuView_.getItemCount() == 0) {
+        // delete the current tab
+        menuTabs_.erase(menuTabs_.begin() + currentTabIndex_);
+        // this will set the current tab to the next tab from what it was previously.
+        populateMenuView();
+    }
 }
 
 void CarouselMenuScreen::populateMenuView() {

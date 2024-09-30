@@ -20,6 +20,11 @@
 // NOTE: Running the disk write on a separate core from BLE seems to potentially trigger the
 // btdm_controller_task WDT issues. Test this thoroughly with BLE sync if enabling.
 #define CONFIG_FILEDOWNLOAD_DISK_WRITE_NO_TASK 0
+#define CONFIG_FILEDOWNLOAD_DOWNLOAD_NO_TASK 1
+
+#if CONFIG_FILEDOWNLOAD_DOWNLOAD_NO_TASK && CONFIG_FILEDOWNLOAD_DISK_WRITE_NO_TASK
+#error "Both download and disk write tasks are disabled, this is not supported"
+#endif
 
 auto CreateClient(const std::string &url, bool useBle, const std::shared_ptr<CancelFlag> &cancel)
     -> std::shared_ptr<HttpClient> {
@@ -341,7 +346,7 @@ auto DownloadFileToPath(const char *url, FileSystem &fileSystem, Telemetry &tele
 
     // Spin up the downloader task
     int httpCode;
-    auto dispatched = DispatchQueue::dispatchOneOff(
+    auto downloader =
         [url, openedConnection, reader, gzip, &httpCode, ringbuf, cancel, useBle, length]() {
         httpCode = DownloadFileCommon(url, openedConnection, reader, cancel, useBle, length,
                                       nullptr, gzip);
@@ -358,23 +363,35 @@ auto DownloadFileToPath(const char *url, FileSystem &fileSystem, Telemetry &tele
             log_e("xRingbufferSendComplete error");
             return;
         }
-        },
-        4200, 3, 1, "FDownload");
-    if (!dispatched) {
+    };
+
+#if CONFIG_FILEDOWNLOAD_DOWNLOAD_NO_TASK
+    auto priority = uxTaskPriorityGet(nullptr);
+    vTaskPrioritySet(nullptr, 3);
+    downloader();
+    vTaskPrioritySet(nullptr, priority);
+    SHOW_WATERMARK();
+#else
+    // Note: 8192 is the size that all the esp-idf examples use for esp_http_client. It's probably
+    // overkill but after getting stack overflows on 1.0.0-1.0.3 it's probably better to be safe
+    auto downloadDispatched = DispatchQueue::dispatchOneOff(downloader, 8192, 3, 1, "FDownload");
+    if (!downloadDispatched) {
         return ERR_ALLOCATION;
     }
+#endif
 
 #if CONFIG_FILEDOWNLOAD_DISK_WRITE_NO_TASK
-    // This is ~5KB/s slower but saves us the RAM overhead of creating a new task
+    // This is ~1-5KB/s slower but saves us the RAM overhead of creating a new task
     auto priority = uxTaskPriorityGet(nullptr);
     vTaskPrioritySet(nullptr, 2);
     writer();
     vTaskPrioritySet(nullptr, priority);
+    SHOW_WATERMARK();
 #else
     // Having both the HTTP and the disk write tasks on core 1 seems to be the fastest
     // configuration, presumably since it allows the WiFi driver to have free reign over core 0
-    dispatched = DispatchQueue::dispatchOneOffSync(writer, 3000, 2, 1, "FWrite");
-    if (!dispatched) {
+    auto writeDispatched = DispatchQueue::dispatchOneOffSync(writer, 3000, 2, 1, "FWrite");
+    if (!writeDispatched) {
         return ERR_ALLOCATION;
     }
 #endif

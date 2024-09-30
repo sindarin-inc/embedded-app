@@ -263,7 +263,10 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         auto tutorialScreen =
             std::make_shared<TutorialScreen>(*display, this->prefs_, std::move(text), bit);
 
-        tutorialScreen->setBackCallback([this]() { this->popScreen(); });
+        tutorialScreen->setBackCallback([this]() {
+            this->popScreen();
+            std::static_pointer_cast<NewMainMenuScreen>(currentScreen())->regenerateCurrentTab();
+        });
 
         return tutorialScreen;
     };
@@ -571,26 +574,25 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             }
         }
 
-        if (!(prefs_.tutorialsDeleted.get().value_or(0) & TUTORIAL_SCREEN_BIBLE)) {
-            menuItems->emplace_back(
-                std::make_shared<NewMenuItemSingleLine>("\ue000 Why have a Bible app?",
-                                                        [this, createTutorialScreen]() {
-                SpiramString message = SpiRamStringFormat(
-                    "The Gutenberg Bible "
-                    "was the earliest major book printed using mass-produced movable "
-                    "metal type in Europe. It marked the start of the Gutenberg Revolution "
-                    "and the age of printed books in the West. So we thought it would be "
-                    "appropriate to include the Bible as one of the first books on the Sol "
-                    "Reader.\n\n"
-                    "Crossway Publishing has generously provided the English "
-                    "Standard Version"
-                    " of the Bible to you free of charge (Copyright 2001, Crossway Publishing).\n\n"
-                    " Not your thing? No worries! Just archive these books and the tab "
-                    " will disappear.\n\n"
-                    " Look for more scripture and meditation Sol Reader tabs down the road!\n\n\n"
-                    " Press \ue000 (center) to continue.");
-                auto tutorialScreen = createTutorialScreen(message, TUTORIAL_SCREEN_BIBLE);
-                this->pushScreen(tutorialScreen);
+        if ((!menuItems->empty()) &&
+            (!(prefs_.tutorialsDeleted.get().value_or(0) & TUTORIAL_SCREEN_BIBLE))) {
+            menuItems->emplace_back(std::make_shared<NewMenuItemSingleLine>(
+                "\ue000 Why have the Bible?", [this, createTutorialScreen]() {
+                    SpiramString message = SpiRamStringFormat(
+                        "The Gutenberg Bible "
+                        "was the earliest major book printed using mass-produced movable "
+                        "metal type in Europe. It marked the start of the Gutenberg Revolution "
+                        "and the age of printed books in the West. So we thought it would be "
+                        "appropriate to include the Bible as one of the first books on the Sol "
+                        "Reader.\n\n"
+                        "Crossway Publishing has provided the English "
+                        "Standard Version"
+                        " of the Bible (Copyright 2001, Crossway Publishing).\n\n"
+                        " Not your thing? No worries! Just archive these books and the tab "
+                        " will disappear.\n\n"
+                        " Press \ue000 (center) to continue.");
+                    auto tutorialScreen = createTutorialScreen(message, TUTORIAL_SCREEN_BIBLE);
+                    this->pushScreen(tutorialScreen);
                 }));
         }
         return menuItems;
