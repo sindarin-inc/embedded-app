@@ -633,7 +633,7 @@ void LocalStore::syncFromRemote(
     }
 
     // If we don't have a clock that's accurate, sync it
-    if (wifiConnected && SolClock::getInstance().getEpochTime() < 1000000000) {
+    if (wifiConnected && !SolClock::getInstance().isValidTime()) {
         log_i("Clock not set, syncing from internet");
         // Sync the clock
         this->telemetry_.logMetric(TelemetryField::METRIC_CLOCK_SET, "pre-sync",

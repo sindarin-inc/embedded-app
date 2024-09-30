@@ -90,13 +90,12 @@ public:
         if (batteryLow_) {
             batteryIconView_.draw();
         }
-        if (isValidTime()) {
+        if (SolClock::getInstance().isValidTime()) {
             clockView_.draw();
         }
     }
 
 protected:
-    auto isValidTime() -> bool { return SolClock::getInstance().getEpochTime() > 1000000000; }
     IconView batteryIconView_;
     SingleLineTextView clockView_;
     Battery &battery_;

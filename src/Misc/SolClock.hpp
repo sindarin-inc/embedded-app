@@ -16,6 +16,8 @@ public:
     SolClock(SolClock const &) = delete;
     ~SolClock() { vEventGroupDelete(timeSyncEventGroup_); }
 
+    auto isValidTime() -> bool { return getEpochTime() > 1000000000; }
+
     void begin() { loadTimeZone(); }
 
     auto getTimeString() -> std::string;
