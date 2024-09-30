@@ -86,8 +86,11 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
     auto popupNavigationFactory = [this, onMainMenu]() -> MenuItemSharedPtrVector {
         auto menuItems = std::make_shared<MenuItemVector>();
 
-        auto menuItem =
-            std::make_shared<NewMenuItemSingleLine>("Main Menu", [onMainMenu]() { onMainMenu(); });
+        auto menuItem = std::make_shared<NewMenuItemSingleLine>("Back to Text", [this]() {
+            display_.clearDisplay();
+            this->setCurrentScreen(nullptr);
+            setNeedsRerender();
+        });
 
         menuItems->emplace_back(menuItem);
 
@@ -234,11 +237,8 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
 
         menuItems->emplace_back(menuItem);
 
-        menuItem = std::make_shared<NewMenuItemSingleLine>("Back to Text", [this]() {
-            display_.clearDisplay();
-            this->setCurrentScreen(nullptr);
-            setNeedsRerender();
-        });
+        menuItem =
+            std::make_shared<NewMenuItemSingleLine>("Main Menu", [onMainMenu]() { onMainMenu(); });
 
         menuItems->emplace_back(menuItem);
 
@@ -248,13 +248,20 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
     auto popupContextFactory = [this, onBookmarkToggle, onReport]() -> MenuItemSharedPtrVector {
         auto menuItems = std::make_shared<MenuItemVector>();
 
-        auto menuItem =
-            std::make_shared<NewMenuItemSingleLine>("Bookmark", [this, onBookmarkToggle]() {
-                onBookmarkToggle();
-                display_.clearDisplay();
-                this->setCurrentScreen(nullptr);
-                setNeedsRerender();
-            });
+        auto menuItem = std::make_shared<NewMenuItemSingleLine>("Back to Text", [this]() {
+            display_.clearDisplay();
+            this->setCurrentScreen(nullptr);
+            setNeedsRerender();
+        });
+
+        menuItems->emplace_back(menuItem);
+
+        menuItem = std::make_shared<NewMenuItemSingleLine>("Bookmark", [this, onBookmarkToggle]() {
+            onBookmarkToggle();
+            display_.clearDisplay();
+            this->setCurrentScreen(nullptr);
+            setNeedsRerender();
+        });
 
         menuItems->emplace_back(menuItem);
 
@@ -324,7 +331,13 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
 
         menuItems->emplace_back(menuItem);
 
-        menuItem = std::make_shared<NewMenuItemSingleLine>("Back to Text", [this]() {
+        return menuItems;
+    };
+
+    auto popupStyleFactory = [this]() -> MenuItemSharedPtrVector {
+        auto menuItems = std::make_shared<MenuItemVector>();
+
+        auto menuItem = std::make_shared<NewMenuItemSingleLine>("Back to Text", [this]() {
             display_.clearDisplay();
             this->setCurrentScreen(nullptr);
             setNeedsRerender();
@@ -332,13 +345,7 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
 
         menuItems->emplace_back(menuItem);
 
-        return menuItems;
-    };
-
-    auto popupStyleFactory = [this]() -> MenuItemSharedPtrVector {
-        auto menuItems = std::make_shared<MenuItemVector>();
-
-        auto menuItem = std::make_shared<NewMenuItemSingleLine>("Text Size", [this]() {
+        menuItem = std::make_shared<NewMenuItemSingleLine>("Text Size", [this]() {
             auto fontMenu = std::make_shared<ReadingSettingsMenuScreen>(this->display_,
                                                                         "Reading Settings", prefs_);
             fontMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>("Small", [this]() {
@@ -443,14 +450,6 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
             [this]() -> bool { return this->prefs_.darkMode.get().value_or(false); });
 
         menuItems->emplace_back(menuItemCheckable);
-
-        menuItem = std::make_shared<NewMenuItemSingleLine>("Back to Text", [this]() {
-            display_.clearDisplay();
-            this->setCurrentScreen(nullptr);
-            setNeedsRerender();
-        });
-
-        menuItems->emplace_back(menuItem);
 
         return menuItems;
     };

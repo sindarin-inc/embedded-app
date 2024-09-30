@@ -157,6 +157,9 @@ TEST_CASE("Test EPub Books Rendering", "[.][epub]") {
 
         ASSERT_VIEW_UNCHANGED(display, "LastPagePopupMenu");
 
+        SendRemoteCommand(UP);
+        WAIT_FOR_DRAW(display);
+
         SendRemoteCommand(ENTER);
         WAIT_FOR_DRAW(display);
         WAIT_FOR_DRAW(display);
