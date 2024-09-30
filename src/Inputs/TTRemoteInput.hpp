@@ -122,9 +122,6 @@ protected:
                 log_d("PageTurner: %s, RSSI: %d", advertisedDevice->getAddress().toString().c_str(),
                       advertisedDevice->getRSSI());
             }
-
-            BLEDevice::getScan()->clearResults();
-
             enclosed->dispatchConnection(*(filteredDevices[0]));
         }
     };

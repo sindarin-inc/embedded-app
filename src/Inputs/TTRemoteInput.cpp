@@ -112,6 +112,8 @@ auto TTRemoteInput::connectToDevice(BLEAdvertisedDevice &device) -> bool {
         if (!prefs_.pairedTurnTouchAddress.get().has_value()) {
             prefs_.pairedTurnTouchAddress.set(address);
         }
+
+        BLEDevice::getScan()->clearResults();
     });
 
     SHOW_HEAP();
