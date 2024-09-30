@@ -122,7 +122,6 @@ protected:
                 log_d("PageTurner: %s, RSSI: %d", advertisedDevice->getAddress().toString().c_str(),
                       advertisedDevice->getRSSI());
             }
-
             enclosed->dispatchConnection(*(filteredDevices[0]));
         }
     };

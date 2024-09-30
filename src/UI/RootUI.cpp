@@ -99,12 +99,6 @@ void RootUI::popScreen(bool clearDisplay) {
     }
 }
 
-void RootUI::popAllScreens() {
-    while (!screenStack_.empty()) {
-        screenStack_.pop();
-    }
-}
-
 auto RootUI::needsRerender() -> bool {
     if (!screenStack_.empty()) {
         return currentScreen()->needsRerender();
@@ -336,33 +330,29 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
             auto contentSyncScreen = std::make_shared<ContentSyncScreen>(
                 *display, localStore, this->prefs_, this->telemetry_, power_);
-            contentSyncScreen->setBackCallback([]() {
-            // When memory usage gets better, we'll want this back
-#if 0
+            contentSyncScreen->setBackCallback([this, display]() {
+                // Ensure this sticks around until the end of the function
+                // It wasn't picked up in the UIInnerLoop version because there isn't
+                // a command sent to process the backCallback
+                auto temp = currentScreen();
                 this->popScreen();
                 // Any screen that could possibly get to a backCallback without a command
                 // being sent through the loop must explicitly render at the end of its
                 // backCallback to ensure the screen is properly redrawn.
-                if (needsRerender()) {
-                    render(*display);
-                    clearNeedsRerender();
-                }
-#else
-                PowerManager::getInstance().reboot();
-#endif
+                currentScreen()->setFirstLoad();
+                render(*display);
+                currentScreen()->clearNeedsRerender();
+                // TODO: After a successful content sync, re-setup the Local Store to be current.
+                // Once we do that, the following two lines will regenerate the tab so we don't
+                // need to restart to get the menu to be correct!
+                // if (auto mainMenu = dynamic_cast<NewMainMenuScreen *>(currentScreen().get())) {
+                //     mainMenu->regenerateCurrentTab();
+                // }
             });
-            // To give us as much memory as possible, get rid of all screens and have
-            // this be the only screen on the stack.
-            this->popAllScreens();
-            // Turn off the TinyUSB CDC driver to free up even more  (this is more memory than the
-            // screens)
-            USBSerial::getInstance().end();
             this->pushScreen(contentSyncScreen);
             contentSyncScreen->begin();
         });
     };
-
-    SHOW_HEAP();
 
     auto handleReadableScreenCreation =
         [this, display, createReadableScreen](const std::shared_ptr<Readable> &r) {
@@ -375,8 +365,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             errorPopup->setBackCallback([this]() { this->popScreen(); });
         }
     };
-
-    SHOW_HEAP();
 
     log_i("Loading %zu Pocket articles", articles.size());
 
