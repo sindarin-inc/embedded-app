@@ -4,7 +4,7 @@ extern RootUI rootUi;
 
 LinkedMenuScreen::LinkedMenuScreen(DisplaySystem &display, std::string backLabel)
     : EinkView(display), menuView_(display), backLabelView_(display),
-      backLabel_(std::move(backLabel)), rendererView_(display, 3) {
+      backLabel_(std::move(backLabel)), rendererView_(display, 4) {
     menuView_.padding = 5;
     menuView_.itemsPerPage = 4;
     menuView_.indicatorWidth = 5;
@@ -14,8 +14,9 @@ LinkedMenuScreen::LinkedMenuScreen(DisplaySystem &display, std::string backLabel
     menuView_.setIndicatorType(NewMenuView::IndicatorType::Line);
     backLabelView_.setText(backLabel_);
 
-    // DISABLE LIGHT SENSOR AS SOON AS THIS SCREN COMES UP
-    rendererView_.setText("Turn each lens like a binoculars until this text is in focus.");
+    rendererView_.setText(
+        "You open an ancient, dusty book, its pages crackling under your fingers. A strange energy "
+        "fills the room, pulling you deeper into the story.");
     rendererView_.alignCenter = true;
 }
 
@@ -56,7 +57,7 @@ auto LinkedMenuScreen::layout(LayoutContext &context, Size size) -> Size {
     int y = 0;
 
     // Make it 30px wide max
-    context.setViewFrame(rendererView_, {{size.width / 2 - 45, size.height / 2 - 45}, {90, 90}},
+    context.setViewFrame(rendererView_, {{size.width / 2 - 90, size.height / 2 - 100}, {180, 180}},
                          LayoutOptionsSizeToFit | LayoutOptionsAlignCenter);
 
     context.setViewFrame(menuView_, Rect::fromSize(size),

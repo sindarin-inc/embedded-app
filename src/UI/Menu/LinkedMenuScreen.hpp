@@ -23,7 +23,7 @@ public:
 
     void setNextScreen(const std::shared_ptr<Screen> screen, std::string title) {
         nextScreen_ = screen;
-        addMenuItem(std::make_shared<NewMenuItemSingleLine>(title + " \ue002", [this]() {
+        addMenuItem(std::make_shared<NewMenuItemSingleLine>(title, [this]() {
             if (nextScreen_) {
                 gotoNextScreen();
             }
@@ -31,7 +31,7 @@ public:
     }
     void setPreviousScreen(const std::shared_ptr<Screen> screen, std::string title) {
         previousScreen_ = screen;
-        addMenuItem(std::make_shared<NewMenuItemSingleLine>("\ue001 " + title, [this]() {
+        addMenuItem(std::make_shared<NewMenuItemSingleLine>(title, [this]() {
             if (previousScreen_) {
                 gotoPreviousScreen();
             }

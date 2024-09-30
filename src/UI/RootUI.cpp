@@ -378,18 +378,21 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             "Let's focus (3 min)",
             [this, display]() {
             auto screenVector = std::vector<std::shared_ptr<LinkedMenuScreen>>();
-            auto firstScreen = std::make_shared<LinkedMenuScreen>(*display_, "\ue000 Main Menu");
-            auto secondScreen = std::make_shared<LinkedMenuScreen>(*display_, "\ue000 Main Menu");
-            auto thirdScreen = std::make_shared<LinkedMenuScreen>(*display_, "\ue000 Main Menu");
+            auto firstScreen =
+                std::make_shared<LinkedMenuScreen>(*display_, "Investigate the strange energy");
+            auto secondScreen =
+                std::make_shared<LinkedMenuScreen>(*display_, "Investigate the strange energy");
+            auto thirdScreen =
+                std::make_shared<LinkedMenuScreen>(*display_, "Investigate the strange energy");
 
             firstScreen->setBackCallback([this]() { this->popScreen(); });
             secondScreen->setBackCallback([this]() { this->popScreen(); });
             thirdScreen->setBackCallback([this]() { this->popScreen(); });
 
-            firstScreen->setNextScreen(secondScreen, "Eye Spacing");
-            secondScreen->setNextScreen(thirdScreen, "Text Placement");
+            firstScreen->setNextScreen(secondScreen, "Choose your own adventure");
+            secondScreen->setNextScreen(thirdScreen, "Turn the page and read on");
             thirdScreen->setPreviousScreen(secondScreen, "Eye Spacing");
-            secondScreen->setPreviousScreen(firstScreen, "Lens Focus");
+            secondScreen->setPreviousScreen(firstScreen, "Close the book and leave");
 
             firstScreen->addBackMenuItem();
             secondScreen->addBackMenuItem();
@@ -418,13 +421,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             appDownloadScreen->setBackCallback([this]() { this->popScreen(); });
             },
             [this]() { return prefs_.firstBookDownloaded.get().value_or(false); }));
-
-        menuItems->emplace_back(std::make_shared<NewMenuItemCheckable>(
-            "Read faster",
-            [this, display]() {
-
-            },
-            [this]() { return prefs_.readFaster.get().value_or(false); }));
 
         return menuItems;
     };
