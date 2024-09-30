@@ -193,8 +193,24 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
 
         auto archiveMenuItem =
             std::make_shared<NewMenuItemSingleLine>("Archive", [this, onMainMenu]() {
+                std::string bookOrArticle = (readable_->isArticle()) ? "article" : "book";
                 this->prefs_.readableArchivedChanged.set(readable_->shortenedUuid.c_str(), true);
-                onMainMenu();
+                if (!prefs_.didFirstArchive.get().value_or(false)) {
+                    auto message =
+                        "You've just archived your first " + bookOrArticle +
+                        "! It will be removed from your Sol Reader the next time you close the "
+                        "device. To retrieve this " +
+                        bookOrArticle +
+                        " later, you can fetch it from your archives using the Sol App on your "
+                        "mobile device.";
+                    auto popup = std::make_shared<MsgPopup>(display_, message);
+
+                    prefs_.didFirstArchive.set(true);
+                    popup->setBackCallback([this, onMainMenu]() { onMainMenu(); });
+                    setCurrentScreen(popup);
+                } else {
+                    onMainMenu();
+                }
             });
 
         auto unarchiveMenuItem = std::make_shared<NewMenuItemSingleLine>("Unarchive", [this]() {
