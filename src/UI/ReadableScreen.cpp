@@ -206,7 +206,7 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
                     auto popup = std::make_shared<MsgPopup>(display_, message);
 
                     prefs_.didFirstArchive.set(true);
-                    popup->setBackCallback([this, onMainMenu]() { onMainMenu(); });
+                    popup->setBackCallback([onMainMenu]() { onMainMenu(); });
                     setCurrentScreen(popup);
                 } else {
                     onMainMenu();
