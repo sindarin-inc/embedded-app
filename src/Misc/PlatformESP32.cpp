@@ -184,10 +184,12 @@ auto HardwareDeinit() -> esp_err_t {
     }
 #endif
 
+#if USE_I2C
     err = i2c_driver_delete(I2C_NUM_0);
     if (err != ESP_OK) {
         log_e("Failed to delete I2C driver with err %s", esp_err_to_name(err));
     }
+#endif
 
     return err;
 }
