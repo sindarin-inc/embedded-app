@@ -37,7 +37,7 @@ auto EPubFile::findFileOffsetAtCharOffset(const std::string &path, uint32_t char
     return walker.offset;
 }
 
-auto EPubFile::findCharOffsetAtFileOffset(const std::string &path, uint32_t fileOffset)
+auto EPubFile::findCharOffsetAtFileOffset(const std::string_view &path, uint32_t fileOffset)
     -> uint32_t {
 
     pugi::xml_document &doc = getXHTMLFile(path);
@@ -117,7 +117,7 @@ auto EPubFile::getFile(const std::string &completeFilePath)
     return {nullptr, 0};
 }
 
-auto EPubFile::getXHTMLFile(const std::string &path) -> pugi::xml_document & {
+auto EPubFile::getXHTMLFile(const std::string_view &path) -> pugi::xml_document & {
     std::string filePath = opf_->getFullPath(path);
     // log_w("Loading file %s", filePath.c_str());
     uint32_t length;
@@ -174,7 +174,7 @@ auto EPubFile::getChapterIdx(const std::shared_ptr<EPubPlace> &ePubPlace) const 
     return opf_->getChapterIdx(ePubPlace->getHRef());
 }
 
-auto EPubFile::getChapterIdx(const std::string &href) const -> ChapterIdx {
+auto EPubFile::getChapterIdx(const std::string_view &href) const -> ChapterIdx {
     return opf_->getChapterIdx(href);
 }
 
@@ -261,7 +261,7 @@ auto EPubFile::getToc() -> ReadableTableOfContentsChapterVector {
     return toc;
 }
 
-auto EPubFile::hasSummary(const std::string &spineHref) -> bool {
+auto EPubFile::hasSummary(const std::string_view &spineHref) -> bool {
     return hasEpubAddition(spineHref, "summary");
 }
 
@@ -366,7 +366,7 @@ auto EPubFile::getSummaryContent(
     return summaryText;
 }
 
-auto EPubFile::hasEpubAddition(const std::string &spineHref, const std::string &additionType)
+auto EPubFile::hasEpubAddition(const std::string_view &spineHref, const std::string &additionType)
     -> bool {
     // Find the chapterId corresponding to this spineHref
     auto chapterSpineHref = opf_->getChapterFirstHref(spineHref);
@@ -383,7 +383,7 @@ auto EPubFile::hasEpubAddition(const std::string &spineHref, const std::string &
     return false;
 }
 
-auto EPubFile::hasDictionary(const std::string &spineHref) -> bool {
+auto EPubFile::hasDictionary(const std::string_view &spineHref) -> bool {
     return hasEpubAddition(spineHref, "dictionary");
 }
 
