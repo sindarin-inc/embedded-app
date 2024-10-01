@@ -259,9 +259,12 @@ menu "Sol Options"
     
             config FONT_IBMF
                 bool "IBMF 1bpp Sol Sans Font"
+                default y
 
             config FONT_TTF
                 bool "TTF Font via FreeType"
+                default n
+
         endchoice
         
     endmenu
