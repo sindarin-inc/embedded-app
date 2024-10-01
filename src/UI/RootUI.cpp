@@ -43,6 +43,7 @@
 #include "UI/LineSpacingScreen.hpp"
 #include "UI/Menu/GenericSettingsMenuScreen.hpp"
 #include "UI/Menu/InactivitySettingMenuScreen.hpp"
+#include "UI/Menu/LetsFocusWelcomeMenuScreen.hpp"
 #include "UI/Menu/LinkedMenuScreen.hpp"
 #include "UI/Menu/NewMainMenuScreen.hpp"
 #include "UI/Menu/NewMenuItemArticle.hpp"
@@ -397,32 +398,11 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         menuItems->emplace_back(std::make_shared<NewMenuItemCheckable>(
             "Let's focus (3 min)",
             [this, display]() {
-            auto screenVector = std::vector<std::shared_ptr<LinkedMenuScreen>>();
-            auto firstScreen =
-                std::make_shared<LinkedMenuScreen>(*display_, "Investigate the strange energy");
-            auto secondScreen =
-                std::make_shared<LinkedMenuScreen>(*display_, "Investigate the strange energy");
-            auto thirdScreen =
-                std::make_shared<LinkedMenuScreen>(*display_, "Investigate the strange energy");
-
-            firstScreen->setBackCallback([this]() { this->popScreen(); });
-            secondScreen->setBackCallback([this]() { this->popScreen(); });
-            thirdScreen->setBackCallback([this]() { this->popScreen(); });
-
-            firstScreen->setNextScreen(secondScreen, "Choose your own adventure");
-            secondScreen->setNextScreen(thirdScreen, "Turn the page and read on");
-            thirdScreen->setPreviousScreen(secondScreen, "Eye Spacing");
-            secondScreen->setPreviousScreen(firstScreen, "Close the book and leave");
-
-            firstScreen->addBackMenuItem();
-            secondScreen->addBackMenuItem();
-            thirdScreen->addBackMenuItem();
-
-            screenVector.emplace_back(firstScreen);
-            screenVector.emplace_back(secondScreen);
-            screenVector.emplace_back(thirdScreen);
-
-            this->pushScreen(screenVector[0]);
+            auto letsFocusScreen = std::make_shared<LetsFocusWelcomeMenuScreen>(*display);
+            letsFocusScreen->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
+                "Back to Main Menu", [this]() { this->popScreen(); }));
+            this->pushScreen(letsFocusScreen);
+            prefs_.seenLetsFocus.set(true);
             },
             [this]() { return prefs_.seenLetsFocus.get().value_or(false); }));
 
@@ -431,7 +411,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             [this, display]() {
 
             },
-            [this]() { return prefs_.seenLetsFocus.get().value_or(false); }));
+            [this]() { return prefs_.seenTextPlacement.get().value_or(false); }));
 
         menuItems->emplace_back(std::make_shared<NewMenuItemCheckable>(
             "Get your first book (7 min)",
@@ -1780,8 +1760,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             newMainMenu->setTabToTitle("Welcome", 2);
         } else if (!prefs_.firstBookDownloaded.get().value_or(false)) {
             newMainMenu->setTabToTitle("Welcome", 3);
-        } else if (!prefs_.readFaster.get().value_or(false)) {
-            newMainMenu->setTabToTitle("Welcome", 4);
         } else {
             newMainMenu->setTabToTitle("Welcome", 0);
         }
