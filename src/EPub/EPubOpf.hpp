@@ -32,7 +32,7 @@ public:
     [[nodiscard]] auto getSpine(SpineIdx idx) const -> const SpineItem & { return spine_[idx]; }
 
     [[nodiscard]] auto getFullPath(const std::string_view &fileName) const -> std::string {
-        return StringFormat("%s/%s", basePath_.c_str(), fileName.data());
+        return StringFormat("%s%.*s", basePath_.c_str(), fileName.size(), fileName.data());
     }
 
     [[nodiscard]] inline auto getSpineCount() const -> uint16_t { return spine_.size(); }
