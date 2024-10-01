@@ -53,7 +53,7 @@ public:
     }
 
     [[nodiscard]] inline auto getHrefByManifestId(const std::string &manifestId) const
-        -> std::string {
+        -> std::string_view {
         return opf_->getHrefByManifestId(manifestId);
     }
 

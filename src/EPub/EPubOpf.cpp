@@ -144,10 +144,10 @@ auto EPubOpf::exists(const std::string &id) const -> bool {
     return manifest_.find(static_cast<SpiramString>(id)) != manifest_.end();
 }
 
-auto EPubOpf::getHrefByManifestId(const std::string &manifestId) const -> std::string {
+auto EPubOpf::getHrefByManifestId(const std::string &manifestId) const -> std::string_view {
     auto it = manifest_.find(static_cast<SpiramString>(manifestId));
     if (it != manifest_.end()) {
-        return static_cast<std::string>(it->second.href);
+        return it->second.href;
     }
     return "";
 }

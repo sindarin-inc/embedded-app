@@ -210,7 +210,7 @@ auto EPubFile::getToc() -> ReadableTableOfContentsChapterVector {
     }
 
     std::string tocId = "nav";
-    std::string tocPath = opf_->getHrefByManifestId(tocId);
+    auto tocPath = opf_->getHrefByManifestId(tocId);
     pugi::xml_document &tocDoc = getXHTMLFile(tocPath);
 
     ReadableTableOfContentsChapterVector toc;
@@ -326,8 +326,7 @@ auto EPubFile::getSummaryContent(
         } else {
             std::string currentChapterId =
                 opf_->getManifestIdByHref(static_cast<std::string>(chapter.href));
-            std::string currentSummaryPath =
-                opf_->getHrefByManifestId("summary-" + currentChapterId);
+            auto currentSummaryPath = opf_->getHrefByManifestId("summary-" + currentChapterId);
             if (currentSummaryPath.empty()) {
                 log_w("No summary for %s", chapter.href.c_str());
                 continue;
@@ -408,8 +407,8 @@ auto EPubFile::getDictionaryContent(const std::shared_ptr<EPubPlace> &placeInRea
     }
 
     auto previousSpineOffset = 0;
-    if (std::string(getToc()[chapterIdx].href) != spineHref) {
-        spineHref = std::string(getToc()[chapterIdx].href);
+    if (getToc()[chapterIdx].href != spineHref) {
+        spineHref = getToc()[chapterIdx].href;
         spineId = opf_->getManifestIdByHref(spineHref);
         // If we're looking at a spine item that doesn't match the chapter, we need to calculate the
         // offset to match how the server is calculating word locations, which is cumulatively
@@ -420,7 +419,7 @@ auto EPubFile::getDictionaryContent(const std::shared_ptr<EPubPlace> &placeInRea
 
     // Convert chapterId to dictionary file path
     std::string dictionaryId = "dictionary-" + spineId;
-    std::string dictionaryPath = opf_->getHrefByManifestId(dictionaryId);
+    auto dictionaryPath = opf_->getHrefByManifestId(dictionaryId);
     // int currentOffset = findCharOffsetAtFileOffset(spineHref, fileOffset);
     int currentOffset = fileOffset + previousSpineOffset;
     pugi::xml_document &doc = getXHTMLFile(dictionaryPath);

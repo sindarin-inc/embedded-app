@@ -50,7 +50,7 @@ public:
     auto exists(const std::string &id) const -> bool;
 
     // TODO: It'd probably be good practice to use a type alias for manifest IDs
-    auto getHrefByManifestId(const std::string &manifestId) const -> std::string;
+    auto getHrefByManifestId(const std::string &manifestId) const -> std::string_view;
     auto getManifestIdByHref(const std::string_view &href) const -> std::string;
 
 private:
