@@ -5,7 +5,7 @@ class RateLimiter {
 public:
     RateLimiter(int64_t minTime, int64_t maxTime, float minPercentage = 0.0f)
         : minTimeUs_(minTime * 1000000), maxTimeUs_(maxTime * 1000000),
-          minPercentage_(minPercentage) {}
+          minPercentage_(minPercentage), lastTime_(esp_timer_get_time()) {}
 
     auto shouldExecute(float percentage) -> bool {
         auto now = esp_timer_get_time();
@@ -35,6 +35,6 @@ private:
     int64_t minTimeUs_;
     int64_t maxTimeUs_;
     int minPercentage_;
-    int64_t lastTime_{0};
+    int64_t lastTime_;
     float lastPercentage_{0};
 };
