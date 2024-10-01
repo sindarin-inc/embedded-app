@@ -104,7 +104,7 @@ public:
 
     [[nodiscard]] auto isZero() const -> bool override { return href_ == "null"; };
 
-    void setHRef(const std::string_view &href) { href_ = std::move(href); };
+    void setHRef(const std::string_view &href) { href_ = href; };
 
     [[nodiscard]] auto operator==(const EPubPlace &rhs) const -> bool {
         return rhs.isFor(DocType::EPUB) && (offset_ == rhs.getOffset()) && (href_ == rhs.getHRef());
