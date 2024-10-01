@@ -292,6 +292,55 @@ menu "Sol Options"
         config INCLUDE_DEFAULT_CONTENT
             bool "Include Default Content"
             default y
+    endmenu
+
+    menu "File Storage"
+        choice
+            prompt "Filesystem"
+            default FILESYSTEM_LITTLEFS
+
+            config FILESYSTEM_LITTLEFS
+                bool "Use LittleFS (internal flash)"
+
+            config FILESYSTEM_SDFAT
+                bool "Use SD card with FatFS"
+
+        endchoice
+
+        if FILESYSTEM_SDFAT
+
+            menu "SD Card Settings"
+                config SDIO_D0_PIN
+                    int "SDIO D0 Pin"
+                    default 39
+
+                config SDIO_D1_PIN
+                    int "SDIO D1 Pin"
+                    default 40
+
+                config SDIO_D2_PIN
+                    int "SDIO D2 Pin"
+                    default 41
+
+                config SDIO_D3_PIN
+                    int "SDIO D3 Pin"
+                    default 42
+
+                config SDIO_CLK_PIN
+                    int "SDIO CLK Pin"
+                    default 43
+
+                config SDIO_CMD_PIN
+                    int "SDIO CMD Pin"
+                    default 44
+
+                config SDIO_PWR_PIN
+                    int "SDIO PWR Pin"
+                    default 45
+        
+            endmenu
+
+        endif
 
     endmenu
 

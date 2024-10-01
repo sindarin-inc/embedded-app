@@ -71,6 +71,8 @@ set(components
 if(IDF_TARGET STREQUAL "esp32p4")
     list(APPEND components
         esp_lcd
+        fatfs
+        sdmmc
     )
 elseif(IDF_TARGET STREQUAL "esp32s3")
     list(APPEND components
