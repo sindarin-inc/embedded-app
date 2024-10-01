@@ -108,6 +108,9 @@ LightingController lightingController(prefs);
 #if SIMULATOR
 #include "Storage/PosixFileSystem.hpp"
 PosixFileSystem fileSystem;
+#elif CONFIG_FILESYSTEM_SDFAT
+#include "Storage/SDFatFileSystem.hpp"
+SDFatFileSystem fileSystem;
 #else
 #include "Storage/LittleFSFileSystem.hpp"
 LittleFSFileSystem fileSystem;
