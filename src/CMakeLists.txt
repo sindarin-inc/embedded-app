@@ -43,6 +43,8 @@ set(components
     usb
     freetype
     esp_lcd
+    fatfs
+    sdmmc
 
     # Uncomment for M5Stack displays
     # M5GFX

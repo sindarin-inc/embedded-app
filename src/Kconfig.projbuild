@@ -214,4 +214,11 @@ menu "Sol Options"
         
     endmenu
 
+    menu "File Storage"
+        config FILESYSTEM_SDFAT
+            bool "Use SD card FatFS"
+            default y if DISPLAY_EINK047TC1
+            default n
+    endmenu
+
 endmenu
