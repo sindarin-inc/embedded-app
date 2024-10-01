@@ -29,8 +29,7 @@ public:
     // Underlying methods to init and read data
     virtual auto begin() -> bool { return true; };
 
-    virtual auto open(const std::string &path, const char *mode = FILE_READ,
-                      const bool create = false) const -> SFile {
+    virtual auto open(const std::string &path, const char *mode = FILE_READ) const -> SFile {
         log_e("Abstract");
         assert(0);
         return {};

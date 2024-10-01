@@ -16,7 +16,7 @@ public:
     static auto loadForReadable(FileSystem &fileSystem, const std::shared_ptr<Readable> &readable)
         -> std::shared_ptr<UserReadablePartialChapterSummary> {
         auto partialSummaryPath = readable->partialSummaryFilePath();
-        auto file = fileSystem.open(partialSummaryPath, FILE_READ, false);
+        auto file = fileSystem.open(partialSummaryPath, FILE_READ);
         // Check if partial summary already exists
         if (!file) {
             return nullptr;

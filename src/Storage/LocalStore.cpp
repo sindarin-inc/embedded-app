@@ -295,7 +295,7 @@ void LocalStore::changedReadablesBookmarksJson(ReadableBookmarksVector &bookmark
                                            .c_str(),
                                        {{"uuid", readable->shortenedUuid}});
             std::string bookmarkPath = readable->bookmarkFilePath();
-            SFile bookmarkFile = fileSystem.open(bookmarkPath, FILE_READ, false);
+            SFile bookmarkFile = fileSystem.open(bookmarkPath, FILE_READ);
             if (!bookmarkFile) {
                 log_i("Failed to open bookmark file: %s", bookmarkPath.c_str());
                 continue;
@@ -436,7 +436,7 @@ auto LocalStore::processReadablePartialChapterSummary(
 
     auto partialSummaryPath = readable->partialSummaryFilePath();
     fileSystem.remove(partialSummaryPath);
-    auto file = fileSystem.open(partialSummaryPath, FILE_WRITE, false);
+    auto file = fileSystem.open(partialSummaryPath, FILE_WRITE);
     if (!file) {
         log_e("Failed to open partial summary file for writing");
         return false;
@@ -482,8 +482,7 @@ auto LocalStore::processReadablePlacemarkHistory(
         return false;
     }
 
-    SFile placemarkHistoryFile =
-        fileSystem.open(readable->placemarkHistoryFilePath(), FILE_WRITE, true);
+    SFile placemarkHistoryFile = fileSystem.open(readable->placemarkHistoryFilePath(), FILE_WRITE);
     if (!placemarkHistoryFile) {
         log_i("Failed to open placemark history file: %s",
               readable->placemarkHistoryFilePath().c_str());
@@ -1357,7 +1356,7 @@ auto LocalStore::saveReadables(ReadablesVector &readables) -> bool {
     }
 
     // Write doc to disk
-    SFile file = fileSystem.open(path, FILE_WRITE, true);
+    SFile file = fileSystem.open(path, FILE_WRITE);
     if (!file) {
         log_e("Failed to open file for writing");
         return false;

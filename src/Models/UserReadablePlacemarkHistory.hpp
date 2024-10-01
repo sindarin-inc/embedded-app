@@ -17,7 +17,7 @@ public:
         -> SpiramVector<UserReadablePlacemarkHistory> {
 
         auto placemarkHistoryPath = readable->placemarkHistoryFilePath();
-        auto placemarkHistoryFile = fileSystem.open(placemarkHistoryPath, FILE_READ, false);
+        auto placemarkHistoryFile = fileSystem.open(placemarkHistoryPath, FILE_READ);
         if (!placemarkHistoryFile) {
             log_w("Failed to open placemark history file for reading");
             return {};

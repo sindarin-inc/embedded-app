@@ -173,7 +173,7 @@ void FileTransfer::handleFilePutCommand(const std::string &command, const std::s
         return;
     }
 
-    filePut_ = fileSystem_.open(filePath, FILE_WRITE, true);
+    filePut_ = fileSystem_.open(filePath, FILE_WRITE);
     log_i("File opened for writing: %s", filePath.c_str());
 
     if (filePut_.getFilePtr() == nullptr) {

@@ -266,7 +266,7 @@ auto DownloadFileToPath(const char *url, FileSystem &fileSystem, Telemetry &tele
     defer { vRingbufferDelete(ringbuf); };
 
     // Open the file for writing
-    auto file = fileSystem.open(fullPath, FILE_WRITE, true);
+    auto file = fileSystem.open(fullPath, FILE_WRITE);
     if (!file) {
         log_e("Failed to open file %s for writing", fullPath.c_str());
         return ERR_FILE_OPEN;

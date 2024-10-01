@@ -149,7 +149,7 @@ auto GUnzip::decompressFile(FileSystem &fileSystem, const std::string &inputFile
                             const std::string &outputFileName) -> bool {
 
     SFile in = fileSystem.open(inputFileName);
-    SFile out = fileSystem.open(outputFileName, "w", true);
+    SFile out = fileSystem.open(outputFileName, "w");
 
     compressedSize_ = in.size();
 
