@@ -49,6 +49,7 @@
 #include "UI/Menu/NewMenuItemBook.hpp"
 #include "UI/Menu/NewMenuItemCheckable.hpp"
 #include "UI/Menu/NewMenuItemSingleLine.hpp"
+#include "UI/Menu/PutOnWelcomeMenuScreen.hpp"
 #include "UI/Menu/ReadingSettingsMenuScreen.hpp"
 #include "UI/Menu/WiFiSettingsMenuScreen.hpp"
 #include "UI/MsgPopup.hpp"
@@ -368,11 +369,30 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         menuItems->emplace_back(std::make_shared<NewMenuItemCheckable>(
             "Put on your Sol Reader! (1 min)",
             [this, display]() {
+            auto putOnWelcomeMenuScreen = std::make_shared<PutOnWelcomeMenuScreen>(*display);
+            putOnWelcomeMenuScreen->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
+                "Back to Main Menu", [this]() { this->popScreen(); }));
+            putOnWelcomeMenuScreen->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
+                "Watch Sol Manifesto (1 min)", [this, display]() {
+                    auto manifestoScreen = std::make_shared<DemoScreen>(*display, prefs_, true);
+                    this->pushScreen(manifestoScreen);
+                    manifestoScreen->setBackCallback([this]() {
+                        this->popScreen();
+                        // Any screen that could possibly get to a backCallback without a command
+                        // being sent through the loop must explicitly render at the end of its
+                        // backCallback to ensure the screen is properly redrawn.
+                        if (needsRerender()) {
+                            render(*display_);
+                            clearNeedsRerender();
+                        }
+                    });
+                }));
 
+            this->pushScreen(putOnWelcomeMenuScreen);
             },
             []() {
-            return true; /* return checked or not*/
-            }));
+            return true; /* return checked or not - this one is always checked */
+        }));
 
         menuItems->emplace_back(std::make_shared<NewMenuItemCheckable>(
             "Let's focus (3 min)",
