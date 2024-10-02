@@ -44,6 +44,7 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs)
     : display_(display),
       renderer_(display, GetTextRectFromPrefs(display, prefs), static_cast<Font *>(&fontFace0)),
       prefs_(prefs), originalInversion_(display_.getInversion()) {
+    backWithoutInput_ = true;
     // We want to control exactly when full and partial will happen.
     // This allows us to cross ownership boundaries and to force a partial update
     // even when we switch to the main menu the first time.

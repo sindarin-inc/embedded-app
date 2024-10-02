@@ -16,6 +16,8 @@ public:
     virtual void processCommand(RemoteCommand command) = 0;
     virtual void setNeedsRerender() { needsRerender_ = true; }
     virtual void setFirstLoad() { firstLoad_ = true; }
+    virtual void setBackWithoutInput() { backWithoutInput_ = true; }
+    virtual auto backWithoutInput() -> bool { return backWithoutInput_; }
     virtual auto needsRerender() -> bool { return needsRerender_; }
     virtual void clearNeedsRerender() { needsRerender_ = false; }
 
@@ -41,5 +43,6 @@ public:
 protected:
     bool needsRerender_{true};
     bool firstLoad_{true};
+    bool backWithoutInput_{false};
     std::function<void()> backCallback_;
 };

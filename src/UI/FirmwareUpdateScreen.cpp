@@ -14,6 +14,7 @@ FirmwareUpdateScreen::FirmwareUpdateScreen(DisplaySystem &display, Telemetry &te
                                            PreferencesStore &prefs)
     : EinkView(display), telemetry_(telemetry), firmwareDownloader_(prefs),
       cancelView_(display, "Press \ue000 to cancel", &fontFace0) {
+    backWithoutInput_ = true;
     for (auto &textView : textViews_) {
         textView = std::make_shared<SingleLineTextView>(display, "", &fontFace0);
     }

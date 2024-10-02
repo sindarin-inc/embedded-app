@@ -14,6 +14,7 @@ ReleaseNotesScreen::ReleaseNotesScreen(DisplaySystem &display, PreferencesStore 
       renderer_(display, GetTextRectFromPrefs(display, prefs), static_cast<Font *>(&fontFace0)),
       prefs_(prefs), power_(power), localStore_(localStore), firmware_(firmware),
       menu_(prefs, display) {
+    backWithoutInput_ = true;
 
     SpiramString message = SpiRamStringFormat(
         "New firmware %s is now available! Here's what's new:\n\n", firmware.version.c_str());

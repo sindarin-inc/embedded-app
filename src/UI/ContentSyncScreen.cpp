@@ -13,6 +13,7 @@ ContentSyncScreen::ContentSyncScreen(DisplaySystem &display, LocalStore &localSt
                                      PowerManager &power)
     : EinkView(display), localStore_(localStore), prefs_(prefs), telemetry_(telemetry),
       power_(power), cancelView_(display, "Press \ue000 to cancel", &fontFace0) {
+    backWithoutInput_ = true;
     for (auto &textView : textViews_) {
         textView = std::make_shared<SingleLineTextView>(display, "", &fontFace0);
     }

@@ -92,10 +92,16 @@ void RootUI::popScreen(bool clearDisplay) {
             log_e("Trying to clear display with no display");
         }
     }
+    auto backWithoutInput = screenStack_.top()->backWithoutInput();
     if (!screenStack_.empty()) {
         screenStack_.pop();
     } else {
         log_e("Trying to pop screen with no screen to pop");
+    }
+    if (backWithoutInput) {
+        currentScreen()->setFirstLoad();
+        render(*display_);
+        currentScreen()->clearNeedsRerender();
     }
 }
 
@@ -344,12 +350,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 // a command sent to process the backCallback
                 auto temp = currentScreen();
                 this->popScreen();
-                // Any screen that could possibly get to a backCallback without a command
-                // being sent through the loop must explicitly render at the end of its
-                // backCallback to ensure the screen is properly redrawn.
-                currentScreen()->setFirstLoad();
-                render(*display);
-                currentScreen()->clearNeedsRerender();
                 // TODO: After a successful content sync, re-setup the Local Store to be current.
                 // Once we do that, the following two lines will regenerate the tab so we don't
                 // need to restart to get the menu to be correct!
@@ -988,16 +988,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                     std::make_shared<NewMenuItemSingleLine>("Manifesto", [this, display]() {
                         auto demoScreen = std::make_shared<DemoScreen>(*display, prefs_);
                         this->pushScreen(demoScreen);
-                        demoScreen->setBackCallback([this, display]() {
-                            this->popScreen();
-                            // Any screen that could possibly get to a backCallback without a
-                            // command
-                            // being sent through the loop must explicitly render at the end of its
-                            // backCallback to ensure the screen is properly redrawn.
-                            currentScreen()->setFirstLoad();
-                            render(*display);
-                            currentScreen()->clearNeedsRerender();
-                        });
+                        demoScreen->setBackCallback([this, display]() { this->popScreen(); });
                     }));
 
                 systemSettingsMenu->addMenuItem(
