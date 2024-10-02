@@ -52,6 +52,7 @@
 #include "UI/Menu/NewMenuItemSingleLine.hpp"
 #include "UI/Menu/PutOnWelcomeMenuScreen.hpp"
 #include "UI/Menu/ReadingSettingsMenuScreen.hpp"
+#include "UI/Menu/TextPlacementWelcomeMenuScreen.hpp"
 #include "UI/Menu/WiFiSettingsMenuScreen.hpp"
 #include "UI/MsgPopup.hpp"
 #include "UI/OffsetAdjustScreen.hpp"
@@ -407,9 +408,32 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             [this]() { return prefs_.seenLetsFocus.get().value_or(false); }));
 
         menuItems->emplace_back(std::make_shared<NewMenuItemCheckable>(
-            "Text placement (5 min)",
+            "Text placement (2 min)",
             [this, display]() {
-
+            auto textPlacementScreen = std::make_shared<TextPlacementWelcomeMenuScreen>(*display);
+            textPlacementScreen->addMenuItem(
+                std::make_shared<NewMenuItemSingleLine>("Set this template as default",
+                                                        [this]() {
+                switch (std::static_pointer_cast<TextPlacementWelcomeMenuScreen>(currentScreen())
+                            ->getCurrentTextSelection()) {
+                case 0:
+                    log_d("Setting prefs to Comfortable");
+                    // prefs_.textTemplate.set(TextTemplate::Comfortable);
+                    break;
+                case 1:
+                    log_d("Setting prefs to Condensed");
+                    // prefs_.textTemplate.set(TextTemplate::Condensed);
+                    break;
+                case 2:
+                    log_d("Setting prefs to Bottom");
+                    // prefs_.textTemplate.set(TextTemplate::Bottom);
+                    break;
+                }
+                }));
+            textPlacementScreen->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
+                "Back to Main Menu", [this]() { this->popScreen(); }));
+            this->pushScreen(textPlacementScreen);
+            prefs_.seenTextPlacement.set(true);
             },
             [this]() { return prefs_.seenTextPlacement.get().value_or(false); }));
 

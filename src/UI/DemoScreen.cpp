@@ -53,6 +53,7 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs, bool ful
 
     display_.invertDisplay(false);
     if (fullManifesto_) {
+#if 0
         lambdas_.emplace_back([this](DisplaySystem &display) {
             std::string message = "Welcome to the Sol Reader! Let's begin...";
             display.clearDisplay();
@@ -65,6 +66,7 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs, bool ful
             nextUpdateType_ = DisplaySystem::UpdateType::FULL;
             nextInterval_ = 3000;
         });
+#endif
 
         lambdas_.emplace_back([this](DisplaySystem &display) {
             dropVcom_ = true;
@@ -303,13 +305,20 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs, bool ful
         dropVcom_ = true;
         display.invertDisplay(false);
         display.drawXBitmap(0, 0, MANI_EYE1_BITS, mani_eye1_width, mani_eye1_height, display.fg);
-        std::string message = "Press \ue000 to begin";
+        std::string message;
+        if (!fullManifesto_) {
+            message = "Press \ue000 to begin";
+            awaitingButton_ = true;
+        } else {
+            message = "Welcome to Sol!";
+            nextInterval_ = 2000;
+        }
+
         display.setFont(static_cast<Font *>(&fontFace0));
         display.drawSingleLineOfText(message, (display.width() - display.getTextWidth(message)) / 2,
                                      202, true);
+
         nextUpdateType_ = DisplaySystem::UpdateType::PARTIAL;
-        awaitingButton_ = true;
-        // nextInterval_ = 2000;
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
