@@ -41,6 +41,7 @@
 #include "UI/LightingAdjustScreen.hpp"
 #include "UI/LineMenuScreen.hpp"
 #include "UI/LineSpacingScreen.hpp"
+#include "UI/Menu/FirstBookWelcomeMenuScreen.hpp"
 #include "UI/Menu/GenericSettingsMenuScreen.hpp"
 #include "UI/Menu/InactivitySettingMenuScreen.hpp"
 #include "UI/Menu/LetsFocusWelcomeMenuScreen.hpp"
@@ -364,8 +365,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     log_i("Loading %zu Pocket articles", articles.size());
 
-    auto welcomeMenuFactory = [this, display, &localStore,
-                               &fileSystem]() -> MenuItemSharedPtrVector {
+    auto welcomeMenuFactory = [this, display, &localStore, &fileSystem,
+                               noContent]() -> MenuItemSharedPtrVector {
         auto menuItems = std::make_shared<MenuItemVector>();
 
         menuItems->emplace_back(std::make_shared<NewMenuItemCheckable>(
@@ -465,13 +466,41 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             [this]() { return prefs_.seenTextPlacement.get().value_or(false); }));
 
         menuItems->emplace_back(std::make_shared<NewMenuItemCheckable>(
-            "Get your first book (7 min)",
+            "Get your first book (5 min)",
             [this, display]() {
-            auto appDownloadScreen = std::make_shared<AppDownloadScreen>(*display);
-            this->pushScreen(appDownloadScreen);
-            appDownloadScreen->setBackCallback([this]() { this->popScreen(); });
+            auto firstBookWelcomeMenuScreen =
+                std::make_shared<FirstBookWelcomeMenuScreen>(*display);
+
+            firstBookWelcomeMenuScreen->addMenuItem(
+                std::make_shared<NewMenuItemSingleLine>("I need a book!", [this, display]() {
+                    auto appDownloadScreen = std::make_shared<AppDownloadScreen>(*display);
+                    appDownloadScreen->firstLoad = true;
+                    this->pushScreen(appDownloadScreen);
+                    appDownloadScreen->setBackCallback([this]() { this->popScreen(); });
+                }));
+
+            firstBookWelcomeMenuScreen->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
+                "I have a DRM-free EPUB", [this, display]() {
+                    auto manifestoScreen = std::make_shared<DemoScreen>(*display, prefs_, true);
+                    this->pushScreen(manifestoScreen);
+                    manifestoScreen->setBackCallback([this]() {
+                        this->popScreen();
+                        // Any screen that could possibly get to a backCallback without a command
+                        // being sent through the loop must explicitly render at the end of its
+                        // backCallback to ensure the screen is properly redrawn.
+                        if (needsRerender()) {
+                            render(*display_);
+                            clearNeedsRerender();
+                        }
+                    });
+                }));
+
+            firstBookWelcomeMenuScreen->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
+                "Back to Main Menu", [this]() { this->popScreen(); }));
+
+            this->pushScreen(firstBookWelcomeMenuScreen);
             },
-            [this]() { return prefs_.firstBookDownloaded.get().value_or(false); }));
+            [this, noContent]() { return !noContent; }));
 
         return menuItems;
     };
@@ -1077,19 +1106,19 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                     }));
 
                 systemSettingsMenu->addMenuItem(std::make_shared<NewMenuItemCheckable>(
-                    "Onboarding Mode",
+                    "Show Welcome Tab",
                     [this]() {
                 currentScreen()->setFirstLoad();
                 if (this->prefs_.onboardingComplete.get().value_or(false)) {
                     this->prefs_.onboardingComplete.set(false);
-                    MsgPopup::showTemporaryMessage(
-                        *display_, "Onboarding Mode On will take\neffect on next restart.", 2000,
-                        true, currentScreen());
+                    MsgPopup::showTemporaryMessage(*display_,
+                                                   "Welcome Tab will be\nshown on next restart.",
+                                                   2000, true, currentScreen());
                 } else {
                     this->prefs_.onboardingComplete.set(true);
-                    MsgPopup::showTemporaryMessage(
-                        *display_, "Onboarding Mode Off will take\neffect on next restart.", 2000,
-                        true, currentScreen());
+                    MsgPopup::showTemporaryMessage(*display_,
+                                                   "Welcome Tab will be\nhidden on next restart.",
+                                                   2000, true, currentScreen());
                 }
                     },
                     [this]() -> bool {
@@ -1809,10 +1838,12 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             newMainMenu->setTabToTitle("Welcome", 1);
         } else if (!prefs_.seenTextPlacement.get().value_or(false)) {
             newMainMenu->setTabToTitle("Welcome", 2);
-        } else if (!prefs_.firstBookDownloaded.get().value_or(false)) {
+        } else if (noContent) {
             newMainMenu->setTabToTitle("Welcome", 3);
         } else {
-            newMainMenu->setTabToTitle("Welcome", 0);
+            // Onboaring is actually complete, so show the next menu over
+            // instead of the welcome tab.
+            newMainMenu->setCurrentTabIndex(1);
         }
 #if 0
         auto firstTimeScreen = std::make_shared<DemoScreen>(*display, prefs_);
