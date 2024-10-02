@@ -302,7 +302,15 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 *display, this->prefs_, power_, localStore, firmware);
             display->clearDisplay();
             pushScreen(releaseNotesScreen);
-            releaseNotesScreen->setBackCallback([this]() { this->popScreen(); });
+            releaseNotesScreen->setBackCallback([this, display]() {
+                this->popScreen();
+                // Any screen that could possibly get to a backCallback without a command
+                // being sent through the loop must explicitly render at the end of its
+                // backCallback to ensure the screen is properly redrawn.
+                currentScreen()->setFirstLoad();
+                render(*display);
+                currentScreen()->clearNeedsRerender();
+            });
             });
     };
 
@@ -980,7 +988,16 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                     std::make_shared<NewMenuItemSingleLine>("Manifesto", [this, display]() {
                         auto demoScreen = std::make_shared<DemoScreen>(*display, prefs_);
                         this->pushScreen(demoScreen);
-                        demoScreen->setBackCallback([this]() { this->popScreen(); });
+                        demoScreen->setBackCallback([this, display]() {
+                            this->popScreen();
+                            // Any screen that could possibly get to a backCallback without a
+                            // command
+                            // being sent through the loop must explicitly render at the end of its
+                            // backCallback to ensure the screen is properly redrawn.
+                            currentScreen()->setFirstLoad();
+                            render(*display);
+                            currentScreen()->clearNeedsRerender();
+                        });
                     }));
 
                 systemSettingsMenu->addMenuItem(
