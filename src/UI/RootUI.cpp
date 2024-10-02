@@ -961,7 +961,15 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 if (!WiFi::getInstance().hasWiFiCredentials()) {
                     auto appDownloadScreen = std::make_shared<AppDownloadScreen>(*display);
                     this->pushScreen(appDownloadScreen);
-                    appDownloadScreen->setBackCallback([this]() { this->popScreen(); });
+                    appDownloadScreen->setBackCallback([this, display]() {
+                        this->popScreen();
+                        // Any screen that could possibly get to a backCallback without a command
+                        // being sent through the loop must explicitly render at the end of its
+                        // backCallback to ensure the screen is properly redrawn.
+                        currentScreen()->setFirstLoad();
+                        render(*display);
+                        currentScreen()->clearNeedsRerender();
+                    });
                     return;
                 }
 
