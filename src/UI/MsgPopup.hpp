@@ -23,6 +23,7 @@ public:
         if (rerenderAfter) {
             Delay(duration);
             if (screen) {
+                display.clearDisplay();
                 screen->setNeedsRerender();
                 screen->render(display);
             } else {

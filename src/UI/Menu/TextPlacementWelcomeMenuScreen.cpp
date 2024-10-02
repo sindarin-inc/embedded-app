@@ -44,12 +44,18 @@ void TextPlacementWelcomeMenuScreen::processCommand(RemoteCommand command) {
         break;
     case RemoteCommand::BACK:
     case RemoteCommand::LEFT:
+        if (textSelection_ == 0) {
+            return;
+        }
         textSelection_ = (textSelection_ + texts_.size() - 1) % texts_.size();
         setText();
         setFirstLoad();
         setNeedsRerender();
         break;
     case RemoteCommand::RIGHT:
+        if (textSelection_ == texts_.size() - 1) {
+            return;
+        }
         textSelection_ = (textSelection_ + 1) % texts_.size();
         setText();
         setFirstLoad();

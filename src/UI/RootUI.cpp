@@ -413,19 +413,46 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             auto textPlacementScreen = std::make_shared<TextPlacementWelcomeMenuScreen>(*display);
             textPlacementScreen->addMenuItem(
                 std::make_shared<NewMenuItemSingleLine>("Set this template as default",
-                                                        [this]() {
+                                                        [this, display]() {
                 switch (std::static_pointer_cast<TextPlacementWelcomeMenuScreen>(currentScreen())
                             ->getCurrentTextSelection()) {
                 case 0:
+                    prefs_.textInsetLeft.set(35);
+                    prefs_.textInsetRight.set(30);
+                    prefs_.textInsetTop.set(25);
+                    prefs_.textInsetBottom.set(25);
+                    prefs_.lineSpacing.set(1);
+                    prefs_.font.set(PREFS_SOL_SMALL);
                     log_d("Setting prefs to Comfortable");
+                    setFirstLoad();
+                    MsgPopup::showTemporaryMessage(*display, "Comfortable text placement set", 2000,
+                                                   true, currentScreen());
                     // prefs_.textTemplate.set(TextTemplate::Comfortable);
                     break;
                 case 1:
+                    prefs_.textInsetLeft.set(25);
+                    prefs_.textInsetRight.set(20);
+                    prefs_.textInsetTop.set(15);
+                    prefs_.textInsetBottom.set(15);
+                    prefs_.font.set(PREFS_SOL_SMALL);
+                    prefs_.lineSpacing.set(-1);
                     log_d("Setting prefs to Condensed");
+                    setFirstLoad();
+                    MsgPopup::showTemporaryMessage(*display, "Condensed text placement set", 2000,
+                                                   true, currentScreen());
                     // prefs_.textTemplate.set(TextTemplate::Condensed);
                     break;
                 case 2:
+                    prefs_.textInsetLeft.set(30);
+                    prefs_.textInsetRight.set(20);
+                    prefs_.textInsetTop.set(100);
+                    prefs_.textInsetBottom.set(10);
+                    prefs_.font.set(PREFS_SOL_MEDIUM);
+                    prefs_.lineSpacing.set(0);
                     log_d("Setting prefs to Bottom");
+                    setFirstLoad();
+                    MsgPopup::showTemporaryMessage(*display, "Bottom text placement set", 2000,
+                                                   true, currentScreen());
                     // prefs_.textTemplate.set(TextTemplate::Bottom);
                     break;
                 }
