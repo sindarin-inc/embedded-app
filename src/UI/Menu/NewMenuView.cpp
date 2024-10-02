@@ -34,8 +34,6 @@ void NewMenuView::addMenuItem(const std::shared_ptr<NewMenuItem> &menuItem) {
         menuItemViews_.push_back(std::make_unique<NewMenuItemTOCView>(display_, item));
     }
 
-    updatePageState();
-
     setNeedsLayout();
 }
 

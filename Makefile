@@ -140,8 +140,7 @@ monitor-devboard: check_idf
 .PHONY: clean
 clean:
 	rm -fr build*
-	rm -fr lib/Simulator/build
-	rm -fr lib/Simulator/build8
+	rm -fr lib/Simulator/build*
 	rm -fr scripts/epub-render/build
 	rm -fr test/CatchTests/build
 	rm -fr test/CatchTests/Images/TestRun/*diff.png

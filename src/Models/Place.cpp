@@ -3,6 +3,7 @@
 #include <cstring>
 #include <iostream>
 
+#include "Misc/SpiramAllocator.hpp"
 #include "sindarin-debug.h"
 
 auto Place::factory(const std::string &placeStr, DocType docType) -> std::shared_ptr<Place> {
@@ -21,7 +22,7 @@ auto Place::factory(const std::string &placeStr, DocType docType) -> std::shared
             }
             if (*e == ']') {
                 offset = strtol(s, nullptr, 10);
-                return std::make_shared<TxtPlace>(offset);
+                return SpiRamPtr<TxtPlace>(offset);
             }
         } else if (strncmp(s, "EPUB;offset:", 12) == 0) {
             s += 12;
@@ -40,33 +41,33 @@ auto Place::factory(const std::string &placeStr, DocType docType) -> std::shared
                     }
                     if (*e == ']') {
                         href.assign(s, e - s);
-                        return std::make_shared<EPubPlace>(offset, href);
+                        return SpiRamPtr<EPubPlace>(offset, href);
                     }
                 }
             }
         }
     } else if (placeStr.length() > 0) {
         offset = strtol(placeStr.c_str(), nullptr, 10);
-        return std::make_shared<TxtPlace>(offset);
+        return SpiRamPtr<TxtPlace>(offset);
     }
 
     if (docType == DocType::TXT) {
-        return std::make_shared<TxtPlace>(0);
+        return SpiRamPtr<TxtPlace>(0);
     } else if (docType == DocType::EPUB) {
-        return std::make_shared<EPubPlace>(0, "");
+        return SpiRamPtr<EPubPlace>(0, "");
     } else {
         log_e("Unable to parse place string properly: \"%s\"", placeStr.c_str());
         if constexpr (REND_ON_ERROR_EXIT) {
             exit(1);
         }
-        return std::make_shared<NonePlace>();
+        return SpiRamPtr<NonePlace>();
     }
 }
 
 auto Place::factory(uint32_t offset, const std::string &href) -> std::shared_ptr<Place> {
-    return std::make_shared<EPubPlace>(offset, href);
+    return SpiRamPtr<EPubPlace>(offset, href);
 }
 
 auto Place::factory(uint32_t offset) -> std::shared_ptr<Place> {
-    return std::make_shared<TxtPlace>(offset);
+    return SpiRamPtr<TxtPlace>(offset);
 }

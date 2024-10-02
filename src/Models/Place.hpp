@@ -6,6 +6,7 @@
 #include <utility>
 
 #include "DocType.hpp"
+#include "Misc/SpiramAllocator.hpp"
 #include "sindarin-debug.h"
 
 class Place {
@@ -80,7 +81,7 @@ public:
 // identified by the href_ field.
 class EPubPlace : public Place {
 public:
-    EPubPlace(uint32_t offset, std::string href) : href_(std::move(href)) { setOffset(offset); }
+    EPubPlace(uint32_t offset, const std::string_view &href) : href_(href) { setOffset(offset); }
     EPubPlace() : Place() { setOffset(0); }
     ~EPubPlace() override = default;
 
@@ -89,7 +90,7 @@ public:
     }
     [[nodiscard]] auto getDocType() const -> DocType override { return DocType::EPUB; };
     [[nodiscard]] auto getOffset() const -> uint32_t { return offset_; }
-    [[nodiscard]] auto getHRef() const -> const std::string & { return href_; }
+    [[nodiscard]] auto getHRef() const -> const SpiramString & { return href_; }
 
     [[nodiscard]] auto str() const -> std::string override {
         std::string s;
@@ -103,7 +104,7 @@ public:
 
     [[nodiscard]] auto isZero() const -> bool override { return href_ == "null"; };
 
-    void setHRef(std::string href) { href_ = std::move(href); };
+    void setHRef(const std::string_view &href) { href_ = href; };
 
     [[nodiscard]] auto operator==(const EPubPlace &rhs) const -> bool {
         return rhs.isFor(DocType::EPUB) && (offset_ == rhs.getOffset()) && (href_ == rhs.getHRef());
@@ -114,5 +115,5 @@ public:
     }
 
 private:
-    std::string href_;
+    SpiramString href_;
 };

@@ -396,6 +396,7 @@ public:
           onboardingComplete(*this, "onboard-done"),
           seenLetsFocus(*this, "seen-focus"),
           seenTextPlacement(*this, "seen-place"),
+          didFirstArchive(*this, "first-archive"),
           preferencesStoreMigrationVersion_(*this, "ps-version") {}
     // clang-format on
 
@@ -686,7 +687,7 @@ public:
     PrefsItem<bool> onboardingComplete;
     PrefsItem<bool> seenLetsFocus;
     PrefsItem<bool> seenTextPlacement;
-
+    PrefsItem<bool> didFirstArchive;
     // These are RTC_SLOW_MEM variables that persist across deep sleep / wake cycles but will be
     // reset on power cycles
     static SyncReason syncReason;

@@ -52,7 +52,7 @@ auto GenericSettingsMenuScreen::layout(LayoutContext &context, Size size) -> Siz
                          LayoutOptionsSizeToFit | LayoutOptionsAlignLeft);
     // Layout menu
     context.setViewFrame(menuView_, Rect::fromSize(size).inset(size.width / 7, 0),
-                         LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical);
+                         LayoutOptionsSizeToFitVertical | LayoutOptionsAlignCenterVertical);
 
     return size;
 }

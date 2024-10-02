@@ -8,14 +8,13 @@ CarouselMenuScreen::CarouselMenuScreen(DisplaySystem &display)
 
 void CarouselMenuScreen::addTab(const std::string &tabName,
                                 const MenuItemFactory &menuItemFactory) {
-    menuTabs_.emplace_back(tabName, menuItemFactory);
+    menuTabs_.emplace_back(tabName, menuItemFactory, 0);
 }
 
-void CarouselMenuScreen::setTabToTitle(const std::string &tabTitle, int index) {
+void CarouselMenuScreen::setTabToTitle(const std::string &tabTitle) {
     for (int i = 0; i < menuTabs_.size(); i++) {
         if (std::get<0>(menuTabs_[i]) == tabTitle) {
             setCurrentTabIndex(i);
-            menuView_.setSelectedIndex(index);
             return;
         }
     }
@@ -28,6 +27,15 @@ void CarouselMenuScreen::regenerateCurrentTab() { setCurrentTabIndex(getCurrentT
 void CarouselMenuScreen::setCurrentTabIndex(int index) {
     currentTabIndex_ = index;
     populateMenuView();
+    // The current tab can become empty if the user deletes the tutorial readable and there
+    // are no other items in the tab. This really only happens on the Bible tab if there
+    // are no bible readables but the tutorial readable is still there.
+    if (menuView_.getItemCount() == 0) {
+        // delete the current tab
+        menuTabs_.erase(menuTabs_.begin() + currentTabIndex_);
+        // this will set the current tab to the next tab from what it was previously.
+        populateMenuView();
+    }
 }
 
 void CarouselMenuScreen::populateMenuView() {
@@ -41,6 +49,8 @@ void CarouselMenuScreen::populateMenuView() {
     for (auto &i : *menuItems) {
         menuView_.addMenuItem(i);
     }
+
+    menuView_.setSelectedIndex(std::get<2>(menuTabs_[currentTabIndex_]));
 
     titleView_.setText(getCurrentTabTitle());
     firstLoad_ = true;
@@ -75,6 +85,7 @@ void CarouselMenuScreen::processCommand(RemoteCommand command) {
 
 void CarouselMenuScreen::moveSelection(int delta) {
     auto newPage = menuView_.moveSelection(delta);
+    std::get<2>(menuTabs_[currentTabIndex_]) = menuView_.getSelectedIndex();
     if (newPage) {
         firstLoad_ = true;
     }

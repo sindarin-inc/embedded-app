@@ -17,7 +17,7 @@ TutorialScreen::TutorialScreen(DisplaySystem &display, PreferencesStore &prefs, 
     renderer_.setStream(stream);
 
     menu_.resetMenuItems();
-    menu_.addMenuItem(std::make_shared<NewMenuItemSingleLine>("Delete this tutorial on next close",
+    menu_.addMenuItem(std::make_shared<NewMenuItemSingleLine>("Delete this tutorial",
                                                               [this, bit]() {
         prefs_.tutorialsDeleted.set(prefs_.tutorialsDeleted.get().value_or(0) | bit);
         inMenu_ = false;

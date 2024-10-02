@@ -193,8 +193,24 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
 
         auto archiveMenuItem =
             std::make_shared<NewMenuItemSingleLine>("Archive", [this, onMainMenu]() {
+                std::string bookOrArticle = (readable_->isArticle()) ? "article" : "book";
                 this->prefs_.readableArchivedChanged.set(readable_->shortenedUuid.c_str(), true);
-                onMainMenu();
+                if (!prefs_.didFirstArchive.get().value_or(false)) {
+                    auto message =
+                        "You've just archived your first " + bookOrArticle +
+                        "! It will be removed from your Sol Reader the next time you close the "
+                        "device. To retrieve this " +
+                        bookOrArticle +
+                        " later, you can fetch it from your archives using the Sol App on your "
+                        "mobile device.";
+                    auto popup = std::make_shared<MsgPopup>(display_, message);
+
+                    prefs_.didFirstArchive.set(true);
+                    popup->setBackCallback([onMainMenu]() { onMainMenu(); });
+                    setCurrentScreen(popup);
+                } else {
+                    onMainMenu();
+                }
             });
 
         auto unarchiveMenuItem = std::make_shared<NewMenuItemSingleLine>("Unarchive", [this]() {
@@ -374,8 +390,15 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
                 menuIndex = 2;
             }
             fontMenu->setSelectedIndex(menuIndex);
+
             setCurrentScreen(fontMenu);
-            fontMenu->setBackCallback([this]() { setCurrentScreen(nullptr); });
+            fontMenu->setBackCallback([this]() {
+                Font *font = FontFromPrefs(prefs_.font.get().value_or(PREFS_SOL_SMALL));
+                if (font) {
+                    this->renderer_.setFont(font);
+                }
+                setCurrentScreen(nullptr);
+            });
         });
 
         menuItems->emplace_back(menuItem);
@@ -700,7 +723,9 @@ void ReadableScreen::render(DisplaySystem &display) {
     // If it's the first read of the book, show the help screen.
     // Then ignore the next press of the button
     if (!emcMode && !prefs_.firstRead.get().value_or(false)) {
-        std::string message = "Welcome to your first book or article!\n\n"
+        std::string bookOrArticle = (readable_->isArticle()) ? "article" : "book";
+        std::string message = "Welcome to your first " + bookOrArticle +
+                              "!\n\n"
                               "\ue000  or  \uE002   Next Page\n\n"
                               "\ue001   Previous Page\n\n"
                               "\ue003  or  \ue004   Popup Menu\n\n "
@@ -722,6 +747,7 @@ void ReadableScreen::render(DisplaySystem &display) {
 
         MsgPopup::showTemporaryMessage(display, message);
         prefs_.firstAutopilotRead.set(true);
+        // Make sure the next screen is a full refresh
         display.clearDisplay();
         showingFirstTimeView_ = true;
         return;
@@ -786,6 +812,12 @@ void ReadableScreen::render(DisplaySystem &display) {
             if (nextInterval_ == 0) {
                 nextInterval_ = 1;
             }
+        }
+
+        // This happens if the very first screen rendered is an image where there's only 1 "line"
+        if (nextInterval_ == 0) {
+            // Let them look at the image for 1 second and then move on.
+            nextInterval_ = 1000;
         }
 
         // Give the user extra time for the first line.
@@ -906,12 +938,20 @@ void ReadableScreen::processCommandDemoMode(RemoteCommand command) {
     }
 }
 
+void ReadableScreen::backUpAutopilot(int numLines) {
+    // When entering the popup menu from autopilot, go back up to some lines so that coming
+    // out the user can not be behind.
+    speedLinesToSkip_ = std::max(0, static_cast<int>(speedLinesToSkip_) - numLines);
+}
+
 void ReadableScreen::processCommandAutoPilot(RemoteCommand command) {
     switch (command) {
     case RemoteCommand::LEFT:
         pageSpeed_ = std::min(pageSpeed_ + PAGE_SPEED_INCREMENT, SLOWEST_PAGE_SPEED);
         prefs_.autoPilotSpeed.set(pageSpeed_);
         log_d("Slowing down: New Page Speed is %u", pageSpeed_);
+        // If they want to slow down, given them a couple lines back.
+        backUpAutopilot(2);
         break;
     case RemoteCommand::ENTER:
         // If we aren't pause, pause.
@@ -928,14 +968,8 @@ void ReadableScreen::processCommandAutoPilot(RemoteCommand command) {
     case RemoteCommand::DOWN:
     case RemoteCommand::BACK:
     case RemoteCommand::UP:
-        // When entering the popup menu from autopilot, go back up to two line so that coming
-        // out the user can not be behind.
-        if (speedLinesToSkip_ > 0) {
-            speedLinesToSkip_--;
-        }
-        if (speedLinesToSkip_ > 0) {
-            speedLinesToSkip_--;
-        }
+        // Given them a couple lines back on popup menu for context
+        backUpAutopilot(2);
         xTimerStop(DisplaySystem::animationTimer, 0);
         processCommandNormal(command);
         break;
@@ -943,6 +977,7 @@ void ReadableScreen::processCommandAutoPilot(RemoteCommand command) {
         pageSpeed_ = std::max(pageSpeed_ - PAGE_SPEED_INCREMENT, 1);
         log_d("Speeding up: New Page Speed is %u", pageSpeed_);
         prefs_.autoPilotSpeed.set(pageSpeed_);
+        backUpAutopilot(1);
         break;
 
     case RemoteCommand::ANIMATION:
@@ -999,7 +1034,10 @@ void ReadableScreen::processCommandNormal(RemoteCommand command) {
 
 void ReadableScreen::processCommand(RemoteCommand command) {
     if (currentScreen_) {
-        currentScreen_->processCommand(command);
+        // Save off this pointer so it doesn't get cleaned up by the backCallback when
+        // we set currentScreen_ to nullptr
+        auto screen = currentScreen_;
+        screen->processCommand(command);
         // currentScreen could be reset to null here
         if (currentScreen_ && currentScreen_->needsRerender()) {
             setNeedsRerender();

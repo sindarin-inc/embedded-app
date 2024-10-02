@@ -268,7 +268,10 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         auto tutorialScreen =
             std::make_shared<TutorialScreen>(*display, this->prefs_, std::move(text), bit);
 
-        tutorialScreen->setBackCallback([this]() { this->popScreen(); });
+        tutorialScreen->setBackCallback([this]() {
+            this->popScreen();
+            std::static_pointer_cast<NewMainMenuScreen>(currentScreen())->regenerateCurrentTab();
+        });
 
         return tutorialScreen;
     };
@@ -333,21 +336,28 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             auto contentSyncScreen = std::make_shared<ContentSyncScreen>(
                 *display, localStore, this->prefs_, this->telemetry_, power_);
             contentSyncScreen->setBackCallback([this, display]() {
+                // Ensure this sticks around until the end of the function
+                // It wasn't picked up in the UIInnerLoop version because there isn't
+                // a command sent to process the backCallback
+                auto temp = currentScreen();
                 this->popScreen();
                 // Any screen that could possibly get to a backCallback without a command
                 // being sent through the loop must explicitly render at the end of its
                 // backCallback to ensure the screen is properly redrawn.
-                if (needsRerender()) {
-                    render(*display);
-                    clearNeedsRerender();
-                }
+                currentScreen()->setFirstLoad();
+                render(*display);
+                currentScreen()->clearNeedsRerender();
+                // TODO: After a successful content sync, re-setup the Local Store to be current.
+                // Once we do that, the following two lines will regenerate the tab so we don't
+                // need to restart to get the menu to be correct!
+                // if (auto mainMenu = dynamic_cast<NewMainMenuScreen *>(currentScreen().get())) {
+                //     mainMenu->regenerateCurrentTab();
+                // }
             });
             this->pushScreen(contentSyncScreen);
             contentSyncScreen->begin();
         });
     };
-
-    SHOW_HEAP();
 
     auto handleReadableScreenCreation =
         [this, display, createReadableScreen](const std::shared_ptr<Readable> &r) {
@@ -505,10 +515,19 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         return menuItems;
     };
 
-    auto recentMenuFactory = [this, &localStore, handleReadableScreenCreation,
-                              isBible]() -> MenuItemSharedPtrVector {
+    auto recentMenuFactory = [this, &localStore, handleReadableScreenCreation, isBible,
+                              makeReleaseNotesMenuItem]() -> MenuItemSharedPtrVector {
         auto &recents = localStore.recents();
         auto menuItems = std::make_shared<MenuItemVector>();
+
+        if (this->prefs_.firmwareLoaded.get().has_value()) {
+            Firmware firmware;
+            auto upgradeAvailable = localStore.getPendingFirmwareUpdate(firmware);
+            if (upgradeAvailable) {
+                menuItems->emplace_back(makeReleaseNotesMenuItem(firmware));
+            }
+        }
+
         for (const auto &recent : recents) {
             bool archived = prefs_.readableArchivedChanged.get(recent->shortenedUuid.c_str());
             // Still needed for the Bible one since that's just a NewMenuItemSingleLine
@@ -702,26 +721,25 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             }
         }
 
-        if (!(prefs_.tutorialsDeleted.get().value_or(0) & TUTORIAL_SCREEN_BIBLE)) {
-            menuItems->emplace_back(
-                std::make_shared<NewMenuItemSingleLine>("\ue000 Why have a Bible app?",
-                                                        [this, createTutorialScreen]() {
-                SpiramString message = SpiRamStringFormat(
-                    "The Gutenberg Bible "
-                    "was the earliest major book printed using mass-produced movable "
-                    "metal type in Europe. It marked the start of the Gutenberg Revolution "
-                    "and the age of printed books in the West. So we thought it would be "
-                    "appropriate to include the Bible as one of the first books on the Sol "
-                    "Reader.\n\n"
-                    "Crossway Publishing has generously provided the English "
-                    "Standard Version"
-                    " of the Bible to you free of charge (Copyright 2001, Crossway Publishing).\n\n"
-                    " Not your thing? No worries! Just archive these books and the tab "
-                    " will disappear.\n\n"
-                    " Look for more scripture and meditation Sol Reader tabs down the road!\n\n\n"
-                    " Press \ue000 (center) to continue.");
-                auto tutorialScreen = createTutorialScreen(message, TUTORIAL_SCREEN_BIBLE);
-                this->pushScreen(tutorialScreen);
+        if ((!menuItems->empty()) &&
+            (!(prefs_.tutorialsDeleted.get().value_or(0) & TUTORIAL_SCREEN_BIBLE))) {
+            menuItems->emplace_back(std::make_shared<NewMenuItemSingleLine>(
+                "\ue000 Why have the Bible?", [this, createTutorialScreen]() {
+                    SpiramString message = SpiRamStringFormat(
+                        "The Gutenberg Bible "
+                        "was the earliest major book printed using mass-produced movable "
+                        "metal type in Europe. It marked the start of the Gutenberg Revolution "
+                        "and the age of printed books in the West. So we thought it would be "
+                        "appropriate to include the Bible as one of the first books on the Sol "
+                        "Reader.\n\n"
+                        "Crossway Publishing has provided the English "
+                        "Standard Version"
+                        " of the Bible (Copyright 2001, Crossway Publishing).\n\n"
+                        " Not your thing? No worries! Just archive these books and the tab "
+                        " will disappear.\n\n"
+                        " Press \ue000 (center) to continue.");
+                    auto tutorialScreen = createTutorialScreen(message, TUTORIAL_SCREEN_BIBLE);
+                    this->pushScreen(tutorialScreen);
                 }));
         }
         return menuItems;
