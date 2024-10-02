@@ -365,6 +365,22 @@ auto DownloadFileToPath(const char *url, FileSystem &fileSystem, Telemetry &tele
         }
     };
 
+#if !CONFIG_FILEDOWNLOAD_DISK_WRITE_NO_TASK
+    // Having both the HTTP and the disk write tasks on core 1 seems to be the fastest
+    // configuration, presumably since it allows the WiFi driver to have free reign over core 0
+    SemaphoreHandle_t completeSemaphore = xSemaphoreCreateBinary();
+    defer { vSemaphoreDelete(completeSemaphore); };
+    auto writeDispatched = DispatchQueue::dispatchOneOff(
+        [completeSemaphore, &writer]() {
+        writer();
+        xSemaphoreGive(completeSemaphore);
+        },
+        4000, 2, 1, "FWrite");
+    if (!writeDispatched) {
+        return ERR_ALLOCATION;
+    }
+#endif
+
 #if CONFIG_FILEDOWNLOAD_DOWNLOAD_NO_TASK
     auto priority = uxTaskPriorityGet(nullptr);
     vTaskPrioritySet(nullptr, 3);
@@ -388,12 +404,8 @@ auto DownloadFileToPath(const char *url, FileSystem &fileSystem, Telemetry &tele
     vTaskPrioritySet(nullptr, priority);
     SHOW_WATERMARK();
 #else
-    // Having both the HTTP and the disk write tasks on core 1 seems to be the fastest
-    // configuration, presumably since it allows the WiFi driver to have free reign over core 0
-    auto writeDispatched = DispatchQueue::dispatchOneOffSync(writer, 3000, 2, 1, "FWrite");
-    if (!writeDispatched) {
-        return ERR_ALLOCATION;
-    }
+    // Wait for the writer task to finish
+    xSemaphoreTake(completeSemaphore, portMAX_DELAY);
 #endif
 
     file.close();
