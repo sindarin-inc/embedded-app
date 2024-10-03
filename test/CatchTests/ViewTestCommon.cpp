@@ -84,6 +84,7 @@ void StartAppMain(FONT_CHOICES font, int x, int y, int lineSpacing) {
     prefs.invertSetting.set(0);
     prefs.font.set(font);
     prefs.lineSpacing.set(lineSpacing);
+    prefs.dontShowWelcome.set(true);
     prefs.textInsetLeft.set(x);
     prefs.textInsetRight.set(x);
     prefs.textInsetTop.set(y);
