@@ -345,6 +345,7 @@ public:
         }
 
         auto get(size_t index) -> bool {
+            lock();
             if (!loaded_) {
                 uint64_t value;
                 esp_err_t err = GetFromStorage(this->prefs.nvsHandle_, key_, value);
@@ -353,6 +354,7 @@ public:
                 }
                 loaded_ = true;
             }
+            unlock();
             bool result = (flags_ & (1ULL << index)) != 0;
             return result;
         }
