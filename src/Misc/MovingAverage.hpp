@@ -5,7 +5,7 @@
 template <typename T, std::size_t N>
 class MovingAverage {
 public:
-    MovingAverage(T inertiaThreshold)
+    MovingAverage(T inertiaThreshold = 0)
         : sum_(0), inertiaThreshold_(inertiaThreshold), lastValidAverage_(0) {}
 
     void add(T value) {
