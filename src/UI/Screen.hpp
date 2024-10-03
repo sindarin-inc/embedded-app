@@ -15,6 +15,7 @@ public:
     virtual void render(DisplaySystem &display) = 0;
     virtual void processCommand(RemoteCommand command) = 0;
     virtual void setNeedsRerender() { needsRerender_ = true; }
+    virtual void setFirstLoad() { firstLoad_ = true; }
     virtual auto needsRerender() -> bool { return needsRerender_; }
     virtual void clearNeedsRerender() { needsRerender_ = false; }
 
@@ -34,9 +35,11 @@ public:
         if (backCallback_ != nullptr) {
             backCallback_();
         }
+        // temp goes out of scope and releases the last reference to the pointer.
     }
 
 protected:
-    bool needsRerender_ = true;
+    bool needsRerender_{true};
+    bool firstLoad_{true};
     std::function<void()> backCallback_;
 };

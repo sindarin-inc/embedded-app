@@ -38,6 +38,8 @@ add_subdirectory(${REPO_ROOT_DIR}/components/miniz ${CMAKE_CURRENT_BINARY_DIR}/m
 
 add_subdirectory(${REPO_ROOT_DIR}/components/Adafruit-GFX-Library ${CMAKE_CURRENT_BINARY_DIR}/Adafruit-GFX-Library)
 
+add_subdirectory(${REPO_ROOT_DIR}/lib/esp_ringbuf ${CMAKE_CURRENT_BINARY_DIR}/esp_ringbuf)
+
 add_library(${PROJECT_NAME} STATIC ${SOURCES})
 
 find_package(Freetype REQUIRED)
@@ -48,7 +50,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}")
 message("CMAKE_MODULE_PATH: ${CMAKE_MODULE_PATH}")
 find_package(mbedtls REQUIRED)
 
-target_link_libraries(${PROJECT_NAME} PUBLIC pugixml ArduinoJson miniz astubs esp-idf-stubs nvs_flash Adafruit-GFX-Library Freetype::Freetype ${MBEDTLS_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} PUBLIC pugixml ArduinoJson miniz astubs esp-idf-stubs nvs_flash Adafruit-GFX-Library Freetype::Freetype ${MBEDTLS_LIBRARIES} esp_ringbuf)
 
 target_include_directories(${PROJECT_NAME} PUBLIC
     "${REPO_ROOT_DIR}/src"
@@ -83,6 +85,7 @@ target_compile_definitions(${PROJECT_NAME} PUBLIC
     CONFIG_USE_BLE_SERVER_REMOTE=0
     CONFIG_USE_BLE_SERVER_SETTINGS=0
     CONFIG_USE_BLE_SERVER_IMPROV=0
+    CONFIG_USE_BLE_SERVER_PROXY=0
     CONFIG_RED_LED=7
     CONFIG_GREEN_LED=6
     CONFIG_BLUE_LED=18
@@ -93,6 +96,7 @@ target_compile_definitions(${PROJECT_NAME} PUBLIC
     CONFIG_TOKENS_SIZE=500
     CONFIG_MAX_BYTES_PER_LINE=200
     CONFIG_LINES_SIZE=36
+    CONFIG_FACTORY_RESET_BUTTON_PIN=-1
     ENABLE_OTA=0
     GIT_VERSION=\"release/v1.0.0-3-geea60cbf-dirt\"
     DISABLE_LOW_VOLTAGE_HALT=1

@@ -75,12 +75,6 @@ private:
                                std::is_same<T, std::string>, std::is_same<T, SpiramString>>,
             "Unsupported type for logMetricImpl");
 
-        // create log directory in filesystem if it doesn't exist
-        if (!fileSystem_.createDir("/metrics")) {
-            log_e("could not create /metrics directory (%s)", TelemetryFieldToString(field));
-            return;
-        }
-
         auto timestamp = SolClock::getInstance().getEpochTime();
 
         std::string dataJsonFormat = mapToJson(data);
@@ -112,6 +106,12 @@ private:
         log_i("Logging metric: %s %s", TelemetryFieldToString(field), logString.c_str());
 
         Telemetry::dispatchQueue()->dispatch([this, logString, field]() {
+            // create log directory in filesystem if it doesn't exist
+            if (!fileSystem_.createDir("/metrics")) {
+                log_e("could not create /metrics directory (%s)", TelemetryFieldToString(field));
+                return;
+            }
+
             std::string path = Telemetry::metricLogPath();
             SFile file = fileSystem_.open(path, FILE_APPEND);
             if (file.size() < MAX_TELEMETRY_LOG_SIZE) {

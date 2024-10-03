@@ -24,11 +24,11 @@
 
 #include <sstream>
 
-extern auto UIGetCurrentScreen() -> Screen *;
+extern auto UIGetCurrentScreen() -> std::shared_ptr<Screen>;
 
 TEST_CASE("Test some individual EPub formatting edge cases", "[epub-format]") {
     auto display = createDisplay();
-    (*display).style.setFontFamily((*display).style.solSansSmall);
+    (*display).setFont(static_cast<Font *>(&fontFace0));
 
     PosixFileSystem fs("./test/CatchTests");
     fs.begin();
@@ -39,8 +39,9 @@ TEST_CASE("Test some individual EPub formatting edge cases", "[epub-format]") {
 
         auto file = fs.open("/Fixtures/epub/formatting.epub");
         auto epubFile = std::make_shared<EPubFile>(file, readable);
+        auto prefs = PreferencesStore();
 
-        Renderer renderer(*display, display->defaultTextRect());
+        Renderer renderer(*display, display->defaultTextRect(), static_cast<Font *>(&fontFace0));
         renderer.setStream(epubFile);
         renderer.renderPage(std::make_shared<EPubPlace>(0, "newlines_without_spaces.xhtml"));
         display->updateDisplay(DisplaySystem::UpdateType::FULL, true);
@@ -54,8 +55,9 @@ TEST_CASE("Test some individual EPub formatting edge cases", "[epub-format]") {
 
         auto file = fs.open("/Fixtures/epub/formatting.epub");
         auto epubFile = std::make_shared<EPubFile>(file, readable);
+        auto prefs = PreferencesStore();
 
-        Renderer renderer(*display, display->defaultTextRect());
+        Renderer renderer(*display, display->defaultTextRect(), static_cast<Font *>(&fontFace0));
         renderer.setStream(epubFile);
         renderer.renderPage(std::make_shared<EPubPlace>(0, "multiple_nbsp.xhtml"));
         display->updateDisplay(DisplaySystem::UpdateType::FULL, true);
@@ -69,8 +71,9 @@ TEST_CASE("Test some individual EPub formatting edge cases", "[epub-format]") {
 
         auto file = fs.open("/Fixtures/epub/glyphs.epub");
         auto epubFile = std::make_shared<EPubFile>(file, readable);
+        auto prefs = PreferencesStore();
 
-        Renderer renderer(*display, display->defaultTextRect());
+        Renderer renderer(*display, display->defaultTextRect(), static_cast<Font *>(&fontFace0));
         renderer.setStream(epubFile);
         auto place = std::make_shared<EPubPlace>(0, "Basic Latin.xhtml");
 
@@ -110,7 +113,7 @@ TEST_CASE("Test EPub Books Rendering", "[.][epub]") {
         // WAIT_FOR_DRAW(display);
 
         auto screen = UIGetCurrentScreen();
-        auto readableScreen = dynamic_cast<ReadableScreen *>(screen);
+        auto readableScreen = std::dynamic_pointer_cast<ReadableScreen>(screen);
 
         if (readableScreen != nullptr) {
 
@@ -173,7 +176,7 @@ TEST_CASE("Test EPub Books Rendering", "[.][epub]") {
         WAIT_FOR_DRAW(display);
 
         screen = UIGetCurrentScreen();
-        readableScreen = dynamic_cast<ReadableScreen *>(screen);
+        readableScreen = std::dynamic_pointer_cast<ReadableScreen>(screen);
 
         if (readableScreen != nullptr) {
 
@@ -231,7 +234,7 @@ TEST_CASE("Test EPub Books Rendering", "[.][epub]") {
         WAIT_FOR_DRAW(display);
 
         screen = UIGetCurrentScreen();
-        readableScreen = dynamic_cast<ReadableScreen *>(screen);
+        readableScreen = std::dynamic_pointer_cast<ReadableScreen>(screen);
 
         if (readableScreen != nullptr) {
 

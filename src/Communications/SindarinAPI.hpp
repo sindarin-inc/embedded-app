@@ -29,13 +29,16 @@ enum SindarinError {
     ERR_JSON_OBJECT_PARSE = -6,
     ERR_SET_HEADER = -7,
     ERR_CLIENT_DISCONNECTED = -8,
-    ERR_CREATE_DIR = -12,
     // Used in FileDownload
     ERR_OPEN_BLOCK = -9,
     ERR_SIZE_MISMATCH = -10,
     ERR_FILE_OPEN = -11,
     ERR_ALLOCATION = -12,
     ERR_CANCELLED = -13,
+    ERR_READ_EMPTY = -14,
+    ERR_BLE_NOT_CONNECTED = -15,
+    ERR_BLE_TIMED_OUT = -16,
+    ERR_CREATE_DIR = -17,
 };
 
 class SindarinAPI {
@@ -49,24 +52,27 @@ public:
     auto isSindarinUrl(const char *url) -> bool;
     void setAccessToken(const std::string &accessToken);
 
-    auto checkSync(CheckSyncRequest &req, CheckSyncResponse *resp, Telemetry &telemetry) -> int;
+    auto checkSync(CheckSyncRequest &req, CheckSyncResponse *resp, Telemetry &telemetry,
+                   bool useBle, const std::shared_ptr<CancelFlag> &cancel) -> int;
     auto checkSync(const std::string &url, CheckSyncRequest &req, CheckSyncResponse *resp,
-                   Telemetry &telemetry) -> int;
+                   Telemetry &telemetry, bool useBle, const std::shared_ptr<CancelFlag> &cancel)
+        -> int;
     auto checkFirmware(FirmwareResponse *resp) -> int;
 
     auto downloadReadable(const std::shared_ptr<Readable> &readable, FileSystem &fileSystem,
                           Telemetry &telemetry, const std::string &path,
-                          const std::shared_ptr<CancelFlag> &cancel,
+                          const std::shared_ptr<CancelFlag> &cancel, bool useBle,
                           const std::function<void(int percentage)> &progressCallback) -> int;
-    auto createClient(const std::string &url, const std::string &contentType,
-                      esp_http_client_method_t method, bool useBle,
-                      const std::shared_ptr<CancelFlag> &cancel) -> std::shared_ptr<HttpClient>;
+    static auto createClient(const std::string &url, const std::string &contentType,
+                             esp_http_client_method_t method, bool useBle,
+                             const std::shared_ptr<CancelFlag> &cancel)
+        -> std::shared_ptr<HttpClient>;
     auto uploadTelemetryFile(SFile &telemetryFile, const std::string &localPath,
                              FileSystem &fileSystem, bool useBle = false,
                              const std::shared_ptr<CancelFlag> &cancel = nullptr) -> int;
     auto uploadCrashReport(SFile &crashFile, const std::string &contentType) -> int;
 
-    auto setAuth(HttpClient &client) -> esp_err_t;
+    auto setAuth(const std::shared_ptr<HttpClient> &client) -> esp_err_t;
 
 protected:
     static std::shared_ptr<SindarinAPI> instance;

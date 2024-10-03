@@ -1,5 +1,6 @@
 #include "UI/LineSpacingScreen.hpp"
 
+#include "UI/Fonts/Fonts.hpp"
 #include "sindarin-debug.h"
 
 #define MIN_LINE_SPACING (-2)
@@ -7,8 +8,9 @@
 
 LineSpacingScreen::LineSpacingScreen(DisplaySystem &display, PreferencesStore &prefs,
                                      Telemetry &telemetry)
-    : display_(display), renderer_(display, GetTextRectFromPrefs(display, prefs)), prefs_(prefs),
-      telemetry_(telemetry), lineSpacing_(prefs.lineSpacing.get().value_or(0)) {
+    : display_(display),
+      renderer_(display, GetTextRectFromPrefs(display, prefs), static_cast<Font *>(&fontFace0)),
+      prefs_(prefs), telemetry_(telemetry), lineSpacing_(prefs.lineSpacing.get().value_or(0)) {
 
     std::string message;
     for (int i = 0; i < 200; i++) {
@@ -57,7 +59,7 @@ void LineSpacingScreen::processCommand(RemoteCommand command) {
         telemetry_.logMetricData(TelemetryField::METRIC_STYLE, {{"line_spacing", lineSpacing_}});
 
         back();
-        break;
+        return;
     default:
         break;
     }

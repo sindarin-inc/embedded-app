@@ -7,6 +7,7 @@
 #include <string>
 #include <vector>
 
+#include "Misc/StringUtil.hpp"
 #include "config.h"
 #include "sindarin-debug.h"
 
@@ -65,8 +66,12 @@ auto GetFromStorage(uint32_t nvsHandle, const char *key, T &value) -> esp_err_t 
         err = nvs_get_i32(nvsHandle, key, reinterpret_cast<int32_t *>(&value));
     } else if constexpr (std::is_same_v<T, uint32_t>) {
         err = nvs_get_u32(nvsHandle, key, &value);
-    } else if constexpr (std::is_same_v<T, uint64_t> || std::is_same_v<T, BLEAddress>) {
+    } else if constexpr (std::is_same_v<T, uint64_t>) {
         err = nvs_get_u64(nvsHandle, key, reinterpret_cast<uint64_t *>(&value));
+    } else if constexpr (std::is_same_v<T, BLEAddress>) {
+        uint64_t addr;
+        err = nvs_get_u64(nvsHandle, key, &addr);
+        value = BLEAddress(addr);
     } else if constexpr (std::is_same_v<T, std::string>) {
         size_t len = 0;
         // NVS strings can be up to 4000 bytes long, so we need to get the length first
@@ -143,8 +148,10 @@ auto WriteToStorage(uint32_t nvsHandle, const char *key, T &value) -> esp_err_t 
         err = nvs_set_i32(nvsHandle, key, value);
     } else if constexpr (std::is_same_v<T, uint32_t>) {
         err = nvs_set_u32(nvsHandle, key, value);
-    } else if constexpr (std::is_same_v<T, uint64_t> || std::is_same_v<T, BLEAddress>) {
+    } else if constexpr (std::is_same_v<T, uint64_t>) {
         err = nvs_set_u64(nvsHandle, key, value);
+    } else if constexpr (std::is_same_v<T, BLEAddress>) {
+        err = nvs_set_u64(nvsHandle, key, static_cast<uint64_t>(value));
     } else if constexpr (std::is_same_v<T, std::string>) {
         err = nvs_set_str(nvsHandle, key, value.c_str());
     } else {
@@ -194,7 +201,9 @@ public:
     class PrefsItem : public PrefsItemBase<T> {
     public:
         PrefsItem(PreferencesStore &prefs, const char *key) : PrefsItemBase<T>(prefs) {
-            strncpy(this->key_, key, sizeof(this->key_));
+            if (!SafeSnprintf(this->key_, sizeof(this->key_), "%s", key)) {
+                log_e("Key too long: %s", key);
+            }
         }
         virtual ~PrefsItem() = default;
 
@@ -382,6 +391,9 @@ public:
           textInsetRight(*this, "text-inset-r"),
           textInsetTop(*this, "text-inset-t"),
           textInsetBottom(*this, "text-inset-b"),
+          wifiDisabled(*this, "wifi-disable"),
+          bleDisabled(*this, "ble-disable"),
+          didFirstArchive(*this, "first-archive"),
           preferencesStoreMigrationVersion_(*this, "ps-version") {}
     // clang-format on
 
@@ -667,7 +679,9 @@ public:
     PrefsItem<uint16_t> textInsetRight;
     PrefsItem<uint16_t> textInsetTop;
     PrefsItem<uint16_t> textInsetBottom;
-
+    PrefsItem<bool> wifiDisabled;
+    PrefsItem<bool> bleDisabled;
+    PrefsItem<bool> didFirstArchive;
     // These are RTC_SLOW_MEM variables that persist across deep sleep / wake cycles but will be
     // reset on power cycles
     static SyncReason syncReason;

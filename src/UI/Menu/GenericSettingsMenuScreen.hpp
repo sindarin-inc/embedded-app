@@ -1,0 +1,32 @@
+#pragma once
+
+#include "Displays/DisplaySystem.hpp"
+#include "Inputs/RemoteInput.hpp"
+#include "Misc/Platform.hpp"
+#include "UI/Components/ArrowLabelView.hpp"
+#include "UI/Components/EinkView.hpp"
+#include "UI/Components/SingleLineTextView.hpp"
+#include "UI/Menu/NewMenuView.hpp"
+#include "UI/MsgPopup.hpp"
+#include "UI/Screen.hpp"
+
+class GenericSettingsMenuScreen : public Screen, public EinkView {
+public:
+    GenericSettingsMenuScreen(DisplaySystem &display, const std::string &backTitle);
+
+    auto setSelectedIndex(size_t index) -> bool;
+
+    void addMenuItem(const std::shared_ptr<NewMenuItem> &item);
+    void processCommand(RemoteCommand command) override;
+
+    auto layout(LayoutContext &context, Size size) -> Size override;
+    void drawInRect(Rect rect) override;
+
+    void render(DisplaySystem &display) override;
+
+private:
+    NewMenuView menuView_;
+    ArrowLabelView backLabelView_;
+
+    void moveSelection(int delta);
+};

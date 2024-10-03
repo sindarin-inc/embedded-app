@@ -112,6 +112,8 @@ auto TTRemoteInput::connectToDevice(BLEAdvertisedDevice &device) -> bool {
         if (!prefs_.pairedTurnTouchAddress.get().has_value()) {
             prefs_.pairedTurnTouchAddress.set(address);
         }
+
+        BLEDevice::getScan()->clearResults();
     });
 
     SHOW_HEAP();
@@ -130,7 +132,7 @@ auto TTRemoteInput::connectToDevice(BLEAdvertisedDevice &device) -> bool {
 
 void TTRemoteInput::dispatchConnection(BLEAdvertisedDevice &device) {
     state_ = CONNECTING;
-    DispatchQueue::dispatchOneOff(
+    auto dispatched = DispatchQueue::dispatchOneOff(
         [this, &device] {
         if (!connectToDevice(device)) {
             client_->disconnect();
@@ -138,6 +140,11 @@ void TTRemoteInput::dispatchConnection(BLEAdvertisedDevice &device) {
         }
         },
         4000, 3, 0);
+    if (!dispatched) {
+        log_e("dispatchConnection failed");
+        client_->disconnect();
+        state_ = SCANNING;
+    }
 }
 
 void TTRemoteInput::unpairAndDisconnect() {

@@ -10,4 +10,8 @@ public:
 
     // Subclasses can implement to change appearance when selected
     virtual void setSelected(bool selected) {}
+
+    // This can be overridden to draw things that should only be drawn like the indicator is
+    // (e.g., the checkmark)
+    virtual void drawFastOnlyElements(){};
 };

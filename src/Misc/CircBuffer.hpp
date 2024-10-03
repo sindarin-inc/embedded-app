@@ -17,6 +17,7 @@ public:
 
     void push(const uint8_t *input, int size);
     void copyFrom(int pos, uint8_t *output, int size);
+    void moveFrom(int pos, uint8_t *output, int size);
     void clear();
 
     [[nodiscard]] auto size() const -> int { return size_; }

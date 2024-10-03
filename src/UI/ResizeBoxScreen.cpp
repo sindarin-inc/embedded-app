@@ -1,5 +1,6 @@
 #include "UI/ResizeBoxScreen.hpp"
 
+#include "UI/Fonts/Fonts.hpp"
 #include "sindarin-debug.h"
 
 #define BOX_OFFSET_ADJUST_AMOUNT 10
@@ -9,8 +10,9 @@
 // I didn't want to over-engineer it here.
 ResizeBoxScreen::ResizeBoxScreen(DisplaySystem &display, PreferencesStore &prefs,
                                  Telemetry &telemetry)
-    : display_(display), renderer_(display, GetTextRectFromPrefs(display, prefs)), prefs_(prefs),
-      telemetry_(telemetry) {
+    : display_(display),
+      renderer_(display, GetTextRectFromPrefs(display, prefs), static_cast<Font *>(&fontFace0)),
+      prefs_(prefs), telemetry_(telemetry) {
 
     std::string message;
     message += "Press up to increase vertical dimension, down to decrease vertical "
@@ -95,8 +97,9 @@ void ResizeBoxScreen::processCommand(RemoteCommand command) {
                                                                 {"in_r", insets.right},
                                                                 {"in_t", insets.top},
                                                                 {"in_b", insets.bottom}});
+        SetTextInset(prefs_, insets);
         back();
-        break;
+        return;
     default:
         break;
     }

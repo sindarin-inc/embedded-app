@@ -13,6 +13,14 @@ public:
     auto layout(LayoutContext &context, Size size) -> Size override { return size; }
 
     void drawInRect(Rect rect) override {
+
+        if (dotted && fillColor.has_value() && strokeColor.has_value()) {
+            display_.drawDottedBox(rect.origin.x, rect.origin.y, rect.origin.x + rect.size.width,
+                                   rect.origin.y + rect.size.height, 1, 2);
+            // No need to draw anything else if it's dotted.
+            return;
+        }
+
         if (fillColor.has_value()) {
             if (cornerRadius > 0) {
                 display_.fillRoundRect(rect.origin.x, rect.origin.y, rect.size.width,
@@ -36,4 +44,5 @@ public:
     std::optional<uint16_t> fillColor;
     std::optional<uint16_t> strokeColor;
     int cornerRadius;
+    bool dotted = false;
 };

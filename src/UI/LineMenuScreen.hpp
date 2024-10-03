@@ -3,32 +3,27 @@
 #include <memory>
 #include <vector>
 
-#include "Misc/Menu.hpp"
-#include "Misc/MenuStyle.hpp"
 #include "Models/Readable.hpp"
 #include "Storage/PreferencesStore.hpp"
 #include "UI/Components/BoxView.hpp"
 #include "UI/Components/EinkView.hpp"
 #include "UI/Components/IconView.hpp"
-#include "UI/Components/MenuItemView.hpp"
 #include "UI/Components/SingleLineTextView.hpp"
 #include "UI/Components/StackView.hpp"
 #include "UI/Layout/View.hpp"
-#include "UI/MenuScreen.hpp"
+#include "UI/Menu/NewMenuView.hpp"
 #include "UI/Screen.hpp"
 #include "sindarin-debug.h"
 
-class LineMenuScreen : public Screen, public Menu, public EinkView {
+class LineMenuScreen : public Screen, public EinkView {
 public:
-    LineMenuScreen(PreferencesStore &prefs, DisplaySystem &display, MenuStyleFamily menuStyle)
-        : Menu(menuStyle), EinkView(display), display_(display) {
-        numMenuItems_ = 0;
-    }
     LineMenuScreen(PreferencesStore &prefs, DisplaySystem &display)
-        : EinkView(display), display_(display) {
-        numMenuItems_ = 0;
-        MenuStyle styleFamilies;
-        myStyle_ = styleFamilies.mainMenu;
+        : EinkView(display), menuView_(display), display_(display) {
+        menuView_.padding = 3;
+        menuView_.itemsPerPage = 4;
+        menuView_.indicatorWidth = 5;
+        menuView_.indicatorPadding = 5;
+        menuView_.setIndicatorType(NewMenuView::IndicatorType::Line);
     }
 
     auto layout(LayoutContext &context, Size size) -> Size override;
@@ -38,20 +33,17 @@ public:
 
     void processCommand(RemoteCommand command) override;
 
-    void resetMenuItems() override {
-        Menu::resetMenuItems();
-        menuItemViews_.clear();
+    void resetMenuItems() {
+        menuView_.resetMenuItems();
         firstLoad_ = true;
     }
 
-    void addMenuItem(const MenuItem &newItem) override {
-        Menu::addMenuItem(newItem);
-        auto menuItemView = std::make_shared<MenuItemView>(display_, newItem);
-        menuItemViews_.push_back(menuItemView);
-    }
+    void addMenuItem(const std::shared_ptr<NewMenuItem> &item) { menuView_.addMenuItem(item); }
 
 protected:
+    NewMenuView menuView_;
     DisplaySystem &display_;
-    std::vector<std::shared_ptr<MenuItemView>> menuItemViews_;
     bool firstLoad_ = true;
+
+    void moveSelection(int delta);
 };

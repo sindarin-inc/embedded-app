@@ -8,8 +8,6 @@
 #include <memory>
 
 #include "Communications/HttpClient.hpp"
-#include "Communications/HttpIstream.hpp"
-#include "Communications/HttpOstream.hpp"
 #include "Misc/GZipStream.hpp"
 
 class WiFiHttpClient : public HttpClient {
@@ -22,17 +20,14 @@ public:
 
     auto setHeader(const char *key, const char *value) -> esp_err_t override;
 
-    auto getResponseHeader(const char *key, char **value) -> esp_err_t override;
-
     auto open(int contentLength = 0) -> esp_err_t override;
 
     // auto perform() -> esp_err_t;
 
     auto write(const char *body, int length) -> int override;
 
-    auto makeWriteStream() -> std::shared_ptr<HttpOstream<4096>> override;
-
-    auto fetchHeaders() -> int override;
+    auto fetchHeaders(int expectedSize = 0, const std::shared_ptr<CancelFlag> &cancel = nullptr)
+        -> int override;
 
     // auto getContentLength() -> int;
 
@@ -41,8 +36,6 @@ public:
     auto read(char *buffer, int length) -> int override;
 
     auto close() -> esp_err_t override;
-
-    auto makeReadStream() -> std::shared_ptr<HttpIstream<4096>> override;
 
     auto isChunkedResponse() -> bool override;
 
@@ -53,7 +46,6 @@ public:
     bool connected;
 
 private:
-    char *url_;
     std::string userAgent_;
     esp_http_client_handle_t client_;
     std::multimap<std::string, std::string, CaseInsensitive> responseHeaders_;

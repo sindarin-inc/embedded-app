@@ -2,156 +2,73 @@
 
 #include "Misc/StringUtil.hpp"
 
+void ReadablePlacemarkHistoryScreen::moveSelection(int delta) {
+    auto newPage = menuView_.moveSelection(delta);
+    if (newPage) {
+        firstLoad_ = true;
+    }
+    setNeedsRerender();
+}
+
 auto ReadablePlacemarkHistoryScreen::layout(LayoutContext &context, Size size) -> Size {
     const auto inset = 2;
 
     context.setViewFrame(backLabelView_, Rect::fromSize(size),
                          LayoutOptionsSizeToFit | LayoutOptionsAlignTop | LayoutOptionsAlignLeft);
 
-    auto insetRect = context.setSublayoutFrame(
-        Rect{{0, 0}, size}.inset(inset),
-        LayoutOptionsSizeToFitVertical | LayoutOptionsAlignCenterVertical,
-        [this](LayoutContext &context, Size size) -> Size {
-            int x = 0;
-            int y = 0;
-
-            for (auto &view : menuItemViews_) {
-                auto viewFrame = context.setViewFrame(
-                    *view, {{x, y}, size}, LayoutOptionsSizeToFitVertical | LayoutOptionsAlignTop);
-                y += viewFrame.size.height + 1;
-            }
-
-            return {size.width, y};
-        });
-
-    context.setSublayoutFrame(
-        {{size.width + 10, 0}, {10, size.height}},
-        LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical | LayoutOptionsAlignRight,
-        [this](LayoutContext &context, Size size) -> Size {
-            int x = 0;
-            int y = 0;
-            Size boxSize = {5, 5};
-            for (auto &view : menuPageIndicatorViews_) {
-                auto viewFrame = context.setViewFrame(*view, {{x, y}, boxSize});
-                y += viewFrame.size.height + 5;
-            }
-
-            return {size.width, y};
-        });
+    auto insetRect =
+        context.setViewFrame(menuView_, Rect::fromSize(size).inset(inset),
+                             LayoutOptionsSizeToFitVertical | LayoutOptionsAlignCenterVertical);
 
     return {size.width, insetRect.size.height + 2 * inset};
 };
 
 void ReadablePlacemarkHistoryScreen::drawInRect(Rect rect) {
     backLabelView_.draw();
-
-    for (auto &view : menuItemViews_) {
-        (*view).draw();
-    }
-
-    if (menuPageIndicatorViews_.size() > 1) {
-        for (auto &view : menuPageIndicatorViews_) {
-            (*view).draw();
-        }
-    }
+    menuView_.draw();
 }
 
 void ReadablePlacemarkHistoryScreen::render(DisplaySystem &display) {
     setNeedsLayout();
-
     setFrame(defaultFrameRect());
-
-    if (firstLoad_) {
-        PROFILE_START(ReadablePlacemarkHistoryScreenLayoutAndDraw);
-        menuItemsPage_.clear();
-        menuItemViews_.clear();
-        menuPageIndicatorViews_.clear();
-
-        populateMenuItems(menuItemsPage_);
-
-        for (auto &menuItem : menuItemsPage_) {
-            auto menuItemView = std::make_shared<MenuItemView>(
-                display, menuItem, myStyle_.navigationFont, false, false);
-            menuItemView->setCircleIndicator(true);
-            menuItemView->setRightText(menuItem.subtitle);
-            menuItemViews_.push_back(menuItemView);
-        }
-
-        int numPages = getNumItems() / getMyStyle().numberOfItemsPerPage + 1;
-        if (getNumItems() % getMyStyle().numberOfItemsPerPage == 0) {
-            numPages--;
-        }
-
-        for (int i = 0; i < numPages; i++) {
-            auto menuPageView = std::make_shared<BoxView>(display, 3);
-
-            if (i == (getCurrSelection() / getMyStyle().numberOfItemsPerPage)) {
-                menuPageView->fillColor = display.fg;
-            }
-            menuPageIndicatorViews_.push_back(menuPageView);
-        }
-#if CONFIG_DISPLAY_EINKET013TT1
-        draw();
-        PROFILE_END_LOG_US(ReadablePlacemarkHistoryScreenLayoutAndDraw);
-        display.updateDisplay(DisplaySystem::UpdateType::FULL);
-#endif
-    }
-
-    if (menuItemViews_.empty()) {
-        log_w("No views to draw in ReadablePlacemarkHistoryScreen");
-    }
-
-    std::shared_ptr<MenuItemView> selectedMenuItemView =
-        menuItemViews_[getCurrSelection() % getMyStyle().numberOfItemsPerPage];
-    for (auto &menuItemView : menuItemViews_) {
-        if (menuItemView && menuItemView == selectedMenuItemView) {
-            menuItemView->setSelected(true);
-        } else {
-            menuItemView->setSelected(false);
-        }
-    }
-
-    // Redraw with a different vcom setting for the menu item bullet
     draw();
 
-    display.updateDisplay(DisplaySystem::UpdateType::FAST_INDICATOR);
+    if (firstLoad_) {
+        display.updateDisplay(DisplaySystem::UpdateType::FULL, false);
+        firstLoad_ = false;
+    }
 
-    firstLoad_ = false;
+    menuView_.drawFastElements();
+    display.updateDisplay(DisplaySystem::UpdateType::FAST_INDICATOR);
 }
 
 void ReadablePlacemarkHistoryScreen::processCommand(RemoteCommand command) {
     switch (command) {
     case RemoteCommand::UP:
-        if (prevSelection()) {
-            firstLoad_ = true;
-        }
+        moveSelection(-1);
         setNeedsRerender();
         break;
     case RemoteCommand::DOWN:
-        if (nextSelection()) {
-            firstLoad_ = true;
-        }
+        moveSelection(1);
         setNeedsRerender();
         break;
     case RemoteCommand::ENTER:
     case RemoteCommand::RIGHT:
-        if (getCurrItem().callback != nullptr) {
-            getCurrItem().callback();
-        }
+        menuView_.executeSelectedItem();
         break;
     case RemoteCommand::BACK:
     case RemoteCommand::LEFT:
         firstLoad_ = true;
-        back();
         setNeedsRerender();
-        break;
+        back();
+        return;
     default:
         break;
     }
 }
 
 void ReadablePlacemarkHistoryScreen::loadMenuItems() {
-    resetMenuItems();
+    menuView_.resetMenuItems();
     auto placemarkHistory = UserReadablePlacemarkHistory::loadForReadable(fileSystem_, readable_);
     if (placemarkHistory.empty()) {
         log_e("Failed to load placemark history");
@@ -191,15 +108,16 @@ void ReadablePlacemarkHistoryScreen::loadMenuItems() {
             // Don't repeat the same placemark
             continue;
         }
-        addMenuItem(MenuItem(chapterTitle,
-                             Commify(SOL_PAGE_NUMBER(
-                                 chapterHrefToOffset[SpiramString(placemark.ePubPlace->getHRef())] +
-                                 placemark.ePubPlace->getOffset())),
-                             [this, placemark]() {
+        addMenuItem(std::make_shared<NewMenuItemTOC>(
+            chapterTitle,
+            Commify(
+                SOL_PAGE_NUMBER(chapterHrefToOffset[SpiramString(placemark.ePubPlace->getHRef())] +
+                                placemark.ePubPlace->getOffset())),
+            [this, placemark]() {
             // Set readable's placemark to selected placemark history
             setPlacemark(placemark.ePubPlace);
             back();
-        }));
+            }));
         recentPlacemark = &placemark;
     }
 }

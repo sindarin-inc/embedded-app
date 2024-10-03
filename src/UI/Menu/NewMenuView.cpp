@@ -1,6 +1,10 @@
 #include "NewMenuView.hpp"
 
+#include "NewMenuItemArticleView.hpp"
+#include "NewMenuItemBookView.hpp"
+#include "NewMenuItemCheckableView.hpp"
 #include "NewMenuItemSingleLineView.hpp"
+#include "NewMenuItemTOCView.hpp"
 
 NewMenuView::NewMenuView(DisplaySystem &display)
     : EinkView(display),
@@ -8,13 +12,27 @@ NewMenuView::NewMenuView(DisplaySystem &display)
       indicatorWidth(std::max(5, std::min(display.width(), display.height()) / 51)),
       indicatorPadding(indicatorWidth), pagingIndicatorWidth(indicatorWidth),
       pagingIndicatorPadding(2 * indicatorWidth), pagingIndicatorView_(display),
-      indicatorView_(display, 0) {
-    indicatorView_.fillColor = display.fg;
-}
+      indicatorView_(display, 0) {}
 
 void NewMenuView::addMenuItem(const std::shared_ptr<NewMenuItem> &menuItem) {
     menuItems_.push_back(menuItem);
-    createMenuItemViews();
+
+    // NOTE: Here is where you create different item views based on the menu item models
+    if (auto item = std::dynamic_pointer_cast<NewMenuItemSingleLine>(menuItem)) {
+        menuItemViews_.push_back(std::make_unique<NewMenuItemSingleLineView>(display_, item));
+    }
+    if (auto item = std::dynamic_pointer_cast<NewMenuItemBook>(menuItem)) {
+        menuItemViews_.push_back(std::make_unique<NewMenuItemBookView>(display_, item));
+    }
+    if (auto item = std::dynamic_pointer_cast<NewMenuItemArticle>(menuItem)) {
+        menuItemViews_.push_back(std::make_unique<NewMenuItemArticleView>(display_, item));
+    }
+    if (auto item = std::dynamic_pointer_cast<NewMenuItemCheckable>(menuItem)) {
+        menuItemViews_.push_back(std::make_unique<NewMenuItemCheckableView>(display_, item));
+    }
+    if (auto item = std::dynamic_pointer_cast<NewMenuItemTOC>(menuItem)) {
+        menuItemViews_.push_back(std::make_unique<NewMenuItemTOCView>(display_, item));
+    }
 
     int totalPages = (menuItems_.size() + itemsPerPage - 1) / itemsPerPage;
     if (totalPages > 1) {
@@ -23,6 +41,8 @@ void NewMenuView::addMenuItem(const std::shared_ptr<NewMenuItem> &menuItem) {
     } else {
         pagingIndicatorView_.setHidden(true);
     }
+
+    setNeedsLayout();
 }
 
 auto NewMenuView::setSelectedIndex(size_t index) -> bool {
@@ -57,19 +77,10 @@ void NewMenuView::setIndicatorType(IndicatorType type) {
     }
 }
 
-void NewMenuView::createMenuItemViews() {
-    menuItemViews_.clear();
-    for (const auto &menuItem : menuItems_) {
-        // NOTE: Here is where you create different item views based on the menu item models
-        if (auto item = std::dynamic_pointer_cast<NewMenuItemSingleLine>(menuItem)) {
-            menuItemViews_.push_back(std::make_unique<NewMenuItemSingleLineView>(display_, item));
-        }
-    }
-}
-
 auto NewMenuView::layout(LayoutContext &context, Size size) -> Size {
     int y = 0;
     int x = 0;
+    int widthOfPagingIndicators = 0;
 
     // Reserve space for indicator
     if (indicatorType_ != IndicatorType::None) {
@@ -85,11 +96,12 @@ auto NewMenuView::layout(LayoutContext &context, Size size) -> Size {
             LayoutOptionsSizeToFitVertical | LayoutOptionsAlignCenterVertical |
                 LayoutOptionsAlignRight);
         width -= pagingIndicatorRect.size.width + pagingIndicatorPadding;
+        widthOfPagingIndicators += pagingIndicatorRect.size.width + indicatorPadding;
     }
 
     // The remaining space for the menu items
-
     // Draw the menu items
+    int maxWidth = 0;
     size_t startIndex = currentPage_ * itemsPerPage;
     size_t endIndex = std::min(startIndex + itemsPerPage, menuItemViews_.size());
     for (size_t i = startIndex; i < endIndex; ++i) {
@@ -97,6 +109,7 @@ auto NewMenuView::layout(LayoutContext &context, Size size) -> Size {
         (*menuItemViews_[i]).setSelected(selected);
         auto itemRect = context.setViewFrame(*menuItemViews_[i], {{x, y}, {width, 0}},
                                              LayoutOptionsSizeToFit | LayoutOptionsConstrainWidth);
+        maxWidth = std::max(maxWidth, itemRect.right());
         y += itemRect.size.height + padding;
 
         // If this is the selected item, draw the indicator center aligned with the item
@@ -122,7 +135,7 @@ auto NewMenuView::layout(LayoutContext &context, Size size) -> Size {
     }
     y -= padding;
 
-    return {size.width, y};
+    return {maxWidth + widthOfPagingIndicators, y};
 }
 
 void NewMenuView::drawInRect(Rect rect) {

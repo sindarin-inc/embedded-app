@@ -31,9 +31,11 @@ public:
     void begin();
     void end();
     void initJtag();
+#if CONFIG_USE_TINYUSB_SERIAL
     void lineStateChangedCallback(int itf, cdcacm_event_t *event);
     void rxLoggingCallback(int itf, cdcacm_event_t *event);
     void rxCommandCallback(int itf, cdcacm_event_t *event);
+#endif
     void txSendData(const uint8_t *data, size_t length);
     void txSendLine(const std::string &str);
     void disableLogging();
@@ -49,9 +51,11 @@ private:
     BootloaderState currentState_{BootloaderState::Idle};
     std::vector<SerialDataListener> listeners_;
 
+#if CONFIG_USE_TINYUSB_SERIAL
     static void cdcacmCommandCallback(int itf, cdcacm_event_t *event) {
         USBSerial::getInstance().rxCommandCallback(itf, event);
     }
+#endif
 
 #if SIMULATOR
     std::unique_ptr<AsyncPseudoSerialPort> serialPort_ = nullptr;

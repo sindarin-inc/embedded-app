@@ -5,6 +5,7 @@
 #include <utility>
 #include <vector>
 
+#include "Misc/SpiramAllocator.hpp"
 #include "Models/Place.hpp"
 #include "Models/Readable.hpp"
 #include "Renderers/Renderer.hpp"
@@ -33,7 +34,10 @@ public:
     void processCommand(RemoteCommand command) override;
 
     void setPlacemark();
-    void setFirstLoad() { loadedChapterId_ = ""; }
+    void setFirstLoad() override {
+        Screen::setFirstLoad();
+        loadedChapterHref_ = "";
+    }
     void setPlaceInReadable(std::shared_ptr<EPubPlace> placeInReadable);
 
 protected:
@@ -42,7 +46,7 @@ protected:
     Renderer &renderer_;
     DisplaySystem &display_;
 
-    std::string loadedChapterId_;
+    SpiramString loadedChapterHref_;
     std::shared_ptr<EPubPlace> placeInReadable_ = nullptr;
     std::shared_ptr<TxtPlace> newPlace_ = nullptr;
     std::shared_ptr<TxtPlace> prevPlace_ = nullptr;

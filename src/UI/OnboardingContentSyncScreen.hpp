@@ -4,6 +4,7 @@
 #include "Renderers/Renderer.hpp"
 #include "Storage/LocalStore.hpp"
 #include "Storage/PreferencesStore.hpp"
+#include "UI/Fonts/Fonts.hpp"
 #include "UI/Screen.hpp"
 
 class OnboardingContentSyncScreen : public Screen {
@@ -11,7 +12,8 @@ public:
     OnboardingContentSyncScreen(DisplaySystem &display, LocalStore &localStore,
                                 PreferencesStore &prefs, Telemetry &telemetry)
         : display_(display), localStore_(localStore), prefs_(prefs), telemetry_(telemetry),
-          onboardingSyncRenderer_(display, GetTextRectFromPrefs(display, prefs)){};
+          onboardingSyncRenderer_(display, GetTextRectFromPrefs(display, prefs),
+                                  static_cast<Font *>(&fontFace0)){};
 
     void render(DisplaySystem &display) override;
     void processCommand(RemoteCommand command) override;

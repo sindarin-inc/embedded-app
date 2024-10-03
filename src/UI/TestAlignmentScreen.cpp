@@ -3,7 +3,6 @@
 #include <cmath>
 
 #include "Displays/EinkTypes.hpp"
-#include "Misc/Style.hpp"
 
 void DrawEvenCircle(Adafruit_GFX *gfx, int16_t centerX, int16_t centerY, int16_t radius,
                     uint16_t color) {

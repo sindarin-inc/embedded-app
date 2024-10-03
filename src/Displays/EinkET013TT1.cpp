@@ -125,7 +125,7 @@ void EinkET013TT1::init() {
         // .isr_cpu_id = INTR_CPU_ID_1,
     };
     // TODO: Why don't we have any available DMA channels? Maybe they are used by Flash and RAM?
-    ESP_ERROR_CHECK(spi_bus_initialize(DISPLAY_SPI, &buscfg, SPI_DMA_DISABLED));
+    ESP_ERROR_CHECK(spi_bus_initialize(CONFIG_DISPLAY_SPI, &buscfg, SPI_DMA_DISABLED));
 
     spi_device_interface_config_t devcfg = {
         .command_bits = 16,
@@ -141,13 +141,13 @@ void EinkET013TT1::init() {
         .queue_size = 5,
     };
 
-    ESP_ERROR_CHECK(spi_bus_add_device(DISPLAY_SPI, &devcfg, &spiHigh_));
+    ESP_ERROR_CHECK(spi_bus_add_device(CONFIG_DISPLAY_SPI, &devcfg, &spiHigh_));
 
     // For reading, the EinkET013TT1 datasheet specifies 8MHz
     devcfg.clock_speed_hz = 8 * 1000 * 1000;
     devcfg.command_bits = 8;
 
-    ESP_ERROR_CHECK(spi_bus_add_device(DISPLAY_SPI, &devcfg, &spiLow_));
+    ESP_ERROR_CHECK(spi_bus_add_device(CONFIG_DISPLAY_SPI, &devcfg, &spiLow_));
 
     if (vcomInMV_ == 0) {
         setVcom(VCOM_DEFAULT);
@@ -230,7 +230,10 @@ void EinkET013TT1::updateInternal(const EinkET013TT1Waveform &waveform, const ui
 
     // Set up convenience variables to index into various parts of the scanline
     // TODO: Are there clever union types or other struct packing things we could do here?
-    uint8_t scanLine[48];
+    // We're supposed to use `DMA_ATTR static` since this is used as a SPI buffer.
+    // See:
+    // https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-guides/memory-types.html#dma-capable-requirement
+    DMA_ATTR static uint8_t scanLine[48];
     uint8_t *borderSettings = &(scanLine[0]);
     if (border_ == BORDER_SETTING_NONE) {
         memcpy(borderSettings, BORDER_NONE, 4);
@@ -366,6 +369,10 @@ void EinkET013TT1::updateInternal(const EinkET013TT1Waveform &waveform, const ui
             // `writeRegister` takes 24.7us at 160MHz (5994 cycles) which is about right since
             // we're sending 50bytes at 20MHz so 50*8*(1/20000000)=20us
             writeRegister(WRITE_GATE_SOURCE_DATA, scanLine, sizeof(scanLine), screen);
+
+            // If we wanted, we could make the `writeRegister` call above async & DMA-driven and do
+            // 25us of processing here (perhaps for the next gate)
+
             // Wait for frame timer and busy signal
             waitForTimer();
             startTimer(timerDelayNs_);

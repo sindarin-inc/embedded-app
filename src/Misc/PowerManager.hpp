@@ -207,15 +207,17 @@ public:
 
     auto forceOn() -> void { state_ = PowerState::ActiveForcedOn; }
     auto disableForceOn() -> void { state_ = PowerState::Active; }
+    auto forceBackground() -> void { state_ = PowerState::Background; }
 
     auto debugDisableLightSleep() -> void;
     auto debugEnableLightSleep() -> void;
 
     auto state() -> PowerState { return state_; }
 
-    void setStateChangeCallback(std::function<void(PowerState)> callback) {
-        stateChangeCallback_ = std::move(callback);
+    void addStateChangeCallback(void *key, std::function<void(PowerState)> callback) {
+        stateChangeCallbacks_[key] = std::move(callback);
     }
+    void removeStateChangeCallback(void *key) { stateChangeCallbacks_.erase(key); }
 
     void setBeginShutdownCallback(const std::function<void()> &callback) {
         beginShutdownCallback_ = callback;
@@ -268,7 +270,7 @@ public:
 protected:
     PreferencesStore &prefs_;
     PowerState state_ = PowerState::Booting;
-    std::function<void(PowerState)> stateChangeCallback_;
+    std::unordered_map<void *, std::function<void(PowerState)>> stateChangeCallbacks_;
     std::function<void()> beginShutdownCallback_;
     LightingController &lightingController_;
     DisplaySystem &display_;

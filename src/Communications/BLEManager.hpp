@@ -4,20 +4,29 @@
 #include <memory>
 
 #include "Communications/BLEAbstractions.hpp"
+#include "Misc/CancelFlag.hpp"
 #include "sindarin-debug.h"
 
 class BLEManager {
 public:
     BLEManager();
     BLEManager(BLEManager const &) = delete;
-    static auto getInstance() -> std::shared_ptr<BLEManager>;
+    static auto getInstance(bool create = true) -> std::shared_ptr<BLEManager>;
+#if CONFIG_USE_BLE_SERVER_PROXY
+    auto connectProxy(const std::shared_ptr<CancelFlag> &cancel = nullptr) -> bool;
+    void disconnectProxy();
+#endif
     auto startAdvertisingIfNecessary() -> bool;
     auto stopAdvertising() -> bool;
     void enableService(BLEService *service);
     void disableService(BLEService *service);
     auto server() -> BLEServer *;
-    void disconnectAll() {
+    void disconnectAllClients() {
+        if (server_ == nullptr) {
+            return;
+        }
         auto peerDevices = server()->getPeerDevices();
+        log_d("Disconnecting %d BLE devices", peerDevices.size());
         for (auto &device : peerDevices) {
             server()->disconnect(device, BLE_ERR_REM_USER_CONN_TERM);
         }
@@ -41,9 +50,12 @@ public:
         }
         return true;
     }
+    [[nodiscard]] auto connected() const -> bool { return connectedProxy; }
+    bool connectedProxy{false};
 
 protected:
     static std::shared_ptr<BLEManager> instance;
+
     BLEServer *server_ = nullptr;
     bool authed_ = false;
     uint16_t connId_ = BLE_HS_CONN_HANDLE_NONE;
@@ -54,7 +66,7 @@ protected:
         ServerCallbacks(BLEManager *enclosure) : enclosed(enclosure) {}
         void onConnect(NimBLEServer *pServer, NimBLEConnInfo &connInfo) override {
             SHOW_HEAP();
-            log_i("BLE client connected to our server!");
+            log_i("BLE client connected to our server");
 
             // Store the connection ID so we can disconnect later
             uint16_t connId = connInfo.getConnHandle();
@@ -76,8 +88,10 @@ protected:
         }
         void onDisconnect(NimBLEServer *pServer, NimBLEConnInfo &connInfo, int reason) override {
             SHOW_HEAP();
-            log_i("BLE client disconnected from our server!");
+            log_i("BLE client disconnected from our server");
             enclosed->authed_ = false;
+            enclosed->connectedProxy = false;
+            enclosed->setConnId(BLE_HS_CONN_HANDLE_NONE);
         }
     };
 };

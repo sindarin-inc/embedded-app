@@ -88,6 +88,8 @@ public:
     // Convenience methods
     auto books() -> ReadablesVector & { return books_; };
     auto articles() -> ReadablesVector & { return articles_; };
+    auto recents() -> ReadablesVector & { return recents_; };
+
     auto readablesModelType(const ReadablesVector &readables) -> ReadablesModelType;
     [[nodiscard]] auto isReadableUnchanged(const ReadablesVector &readables,
                                            const std::shared_ptr<Readable> &readable,
@@ -127,7 +129,7 @@ public:
                                  const std::shared_ptr<CancelFlag> &cancel, int &downloadIndex,
                                  int &successfullyDownloaded,
                                  const std::function<void(ContentSyncState)> &progressCallback,
-                                 ReadablesModelType modelType, int totalCount) -> bool;
+                                 ReadablesModelType modelType, int totalCount, bool useBle) -> bool;
     void deleteReadables(bool restart = true);
     void deleteArticles(bool restart = true);
     void deleteReadableFiles(const ReadablesVector &readables, bool restart);
@@ -137,8 +139,8 @@ public:
     auto saveReadables(ReadablesVector &readables) -> bool;
 
     // Methods for interacting with readable files on disk
-    [[nodiscard]] auto readableFilePathForWriting(const std::shared_ptr<Readable> &readable) const
-        -> std::string;
+    [[nodiscard]] auto readableFilePathForWriting(const std::shared_ptr<Readable> &readable,
+                                                  bool gzip = true) const -> std::string;
     // When reading, we will take whatever readable file type that's available
     [[nodiscard]] static auto readableFilePathForReading(FileSystem &fileSystem,
                                                          const std::shared_ptr<Readable> &readable)
@@ -174,4 +176,7 @@ private:
 
     ReadablesVector books_;
     ReadablesVector articles_;
+
+    ReadablesVector recents_;
+    void computeRecentReadables();
 };
