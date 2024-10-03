@@ -201,6 +201,7 @@ public:
     class PrefsItem : public PrefsItemBase<T> {
     public:
         PrefsItem(PreferencesStore &prefs, const char *key) : PrefsItemBase<T>(prefs) {
+            static_assert(!std::is_same<T, bool>::value, "Use BooleanFlags for bools");
             if (!SafeSnprintf(this->key_, sizeof(this->key_), "%s", key)) {
                 log_e("Key too long: %s", key);
             }
