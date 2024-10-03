@@ -41,6 +41,7 @@
 #include "UI/LightingAdjustScreen.hpp"
 #include "UI/LineMenuScreen.hpp"
 #include "UI/LineSpacingScreen.hpp"
+#include "UI/Menu/DRMFreeWelcomeMenuScreen.hpp"
 #include "UI/Menu/FirstBookWelcomeMenuScreen.hpp"
 #include "UI/Menu/GenericSettingsMenuScreen.hpp"
 #include "UI/Menu/InactivitySettingMenuScreen.hpp"
@@ -375,8 +376,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     log_i("Loading %zu Pocket articles", articles.size());
 
-    auto welcomeMenuFactory = [this, display, &localStore, &fileSystem,
-                               noContent]() -> MenuItemSharedPtrVector {
+    auto welcomeMenuFactory = [this, display, &localStore, &fileSystem, noContent,
+                               makeContentSyncMenuItem]() -> MenuItemSharedPtrVector {
         auto menuItems = std::make_shared<MenuItemVector>();
 
         menuItems->emplace_back(std::make_shared<NewMenuItemCheckable>(
@@ -423,7 +424,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             [this, display]() {
             auto textPlacementScreen = std::make_shared<TextPlacementWelcomeMenuScreen>(*display);
             textPlacementScreen->addMenuItem(
-                std::make_shared<NewMenuItemSingleLine>("Set this template as default",
+                std::make_shared<NewMenuItemSingleLine>("Choose this template",
                                                         [this, display]() {
                 switch (std::static_pointer_cast<TextPlacementWelcomeMenuScreen>(currentScreen())
                             ->getCurrentTextSelection()) {
@@ -477,32 +478,26 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
         menuItems->emplace_back(std::make_shared<NewMenuItemCheckable>(
             "Get your first book (5 min)",
-            [this, display]() {
+            [this, display, makeContentSyncMenuItem]() {
             auto firstBookWelcomeMenuScreen =
                 std::make_shared<FirstBookWelcomeMenuScreen>(*display);
 
-            firstBookWelcomeMenuScreen->addMenuItem(
-                std::make_shared<NewMenuItemSingleLine>("I need a book!", [this, display]() {
-                    auto appDownloadScreen = std::make_shared<AppDownloadScreen>(*display);
-                    appDownloadScreen->firstLoad = true;
-                    this->pushScreen(appDownloadScreen);
-                    appDownloadScreen->setBackCallback([this]() { this->popScreen(); });
-                }));
+            if (PreferencesStore::paired == PairedStatus::Unpaired) {
+                firstBookWelcomeMenuScreen->addMenuItem(
+                    makeContentSyncMenuItem("Get books with the Sol App"));
+            } else {
+                firstBookWelcomeMenuScreen->addMenuItem(
+                    makeContentSyncMenuItem("Sync Content Now"));
+            }
 
             firstBookWelcomeMenuScreen->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
-                "I have a DRM-free EPUB", [this, display]() {
-                    auto manifestoScreen = std::make_shared<DemoScreen>(*display, prefs_, true);
-                    this->pushScreen(manifestoScreen);
-                    manifestoScreen->setBackCallback([this]() {
-                        this->popScreen();
-                        // Any screen that could possibly get to a backCallback without a command
-                        // being sent through the loop must explicitly render at the end of its
-                        // backCallback to ensure the screen is properly redrawn.
-                        if (needsRerender()) {
-                            render(*display_);
-                            clearNeedsRerender();
-                        }
-                    });
+                "Direct transfer via USB", [this, display]() {
+                    auto drmFreeScreen = std::make_shared<DRMFreeWelcomeMenuScreen>(*display);
+                    this->pushScreen(drmFreeScreen);
+                    drmFreeScreen->setBackCallback([this]() { this->popScreen(); });
+
+                    drmFreeScreen->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
+                        "Back", [this]() { this->popScreen(); }));
                 }));
 
             firstBookWelcomeMenuScreen->addMenuItem(std::make_shared<NewMenuItemSingleLine>(

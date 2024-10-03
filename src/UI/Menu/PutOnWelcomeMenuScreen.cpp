@@ -63,6 +63,7 @@ auto PutOnWelcomeMenuScreen::layout(LayoutContext &context, Size size) -> Size {
 }
 
 void PutOnWelcomeMenuScreen::drawInRect(Rect rect) {
+    display_.setLineSpacing(-1);
     rendererView_.draw();
     menuView_.draw();
 }
