@@ -375,8 +375,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     log_i("Loading %zu Pocket articles", articles.size());
 
-    auto welcomeMenuFactory = [this, display, &localStore, &fileSystem, noContent,
-                               makeContentSyncMenuItem,
+    auto welcomeMenuFactory = [this, display, noContent, makeContentSyncMenuItem,
                                &lightingController]() -> MenuItemSharedPtrVector {
         auto menuItems = std::make_shared<MenuItemVector>();
 
@@ -504,7 +503,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
             this->pushScreen(firstBookWelcomeMenuScreen);
             },
-            [this, noContent]() { return !noContent; }));
+            [noContent]() { return !noContent; }));
 
         return menuItems;
     };
