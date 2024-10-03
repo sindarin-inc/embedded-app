@@ -51,11 +51,11 @@ protected:
 
     [[nodiscard]] auto getBuffer(void) -> uint8_t * override { return gfxCanvas_.getBuffer(); }
 
+    GFXcanvas8 gfxCanvas_;
     uint16_t width_;
     uint16_t height_;
     std::unique_ptr<uint8_t[]> buffer_;
     bool skipSignalling_ = false;
-    GFXcanvas8 gfxCanvas_;
     bool fullRefreshNext_ = false;
     QueueHandle_t renderQueue_ = nullptr;
 };
