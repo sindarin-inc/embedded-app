@@ -341,7 +341,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
             auto contentSyncScreen = std::make_shared<ContentSyncScreen>(
                 *display, localStore, this->prefs_, this->telemetry_, power_);
-            contentSyncScreen->setBackCallback([this, display]() {
+            contentSyncScreen->setBackCallback([this]() {
                 // Ensure this sticks around until the end of the function
                 // It wasn't picked up in the UIInnerLoop version because there isn't
                 // a command sent to process the backCallback
