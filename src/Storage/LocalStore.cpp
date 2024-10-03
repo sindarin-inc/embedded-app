@@ -144,7 +144,7 @@ auto LocalStore::isReadableUnchanged(const ReadablesVector &readables,
             }
 
             // Next check if the readable is updated more recently than local copy
-            if (r->dateModifiedTime != readable->dateModifiedTime) {
+            if (r->dateModified != readable->dateModified) {
                 log_i("Found newer version of %s on server", path.c_str());
                 return false;
             }
