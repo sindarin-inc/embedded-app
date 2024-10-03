@@ -2,6 +2,8 @@
 
 #include <cinttypes>
 #include <cstring>
+#include <freertos/FreeRTOS.h>
+#include <freertos/semphr.h>
 #include <nvs.h>
 #include <optional>
 #include <string>
@@ -325,41 +327,59 @@ public:
     class BooleanFlags : public PrefsItemBase<uint64_t> {
     public:
         BooleanFlags(PreferencesStore &prefs, const char *key)
-            : PrefsItemBase<uint64_t>(prefs), key_(key) {}
+            : PrefsItemBase<uint64_t>(prefs), key_(key), mutex_(xSemaphoreCreateMutex()) {}
 
-        void loadValue() {
-            uint64_t value;
-            esp_err_t err = GetFromStorage(this->prefs.nvsHandle_, key_, value);
-            if (err == ESP_OK) {
-                flags_ = value;
+        ~BooleanFlags() { vSemaphoreDelete(mutex_); }
+
+        void lock() {
+            // Only use the semaphore if FreeRTOS is running
+            if (xTaskGetSchedulerState() == taskSCHEDULER_RUNNING) {
+                xSemaphoreTake(mutex_, portMAX_DELAY);
+            }
+        }
+
+        void unlock() {
+            if (xTaskGetSchedulerState() == taskSCHEDULER_RUNNING) {
+                xSemaphoreGive(mutex_);
             }
         }
 
         auto get(size_t index) -> bool {
             if (!loaded_) {
-                loadValue();
+                uint64_t value;
+                esp_err_t err = GetFromStorage(this->prefs.nvsHandle_, key_, value);
+                if (err == ESP_OK) {
+                    flags_ = value;
+                }
                 loaded_ = true;
             }
-            return (flags_ & (1ULL << index)) != 0;
+            bool result = (flags_ & (1ULL << index)) != 0;
+            return result;
         }
 
         void set(size_t index, bool value, bool deferWrite = false) {
+            lock();
+            auto flagsBefore = flags_;
             if (value) {
                 flags_ |= (1ULL << index);
             } else {
                 flags_ &= ~(1ULL << index);
             }
-            dirty_ = true;
-            if (!deferWrite) {
-                write();
+            dirty_ = flagsBefore != flags_;
+            if (dirty_ && !deferWrite) {
+                writeToStorage(key_, flags_);
+                dirty_ = false;
             }
+            unlock();
         }
 
         void write() {
+            lock();
             if (dirty_) {
                 this->writeToStorage(key_, flags_);
                 dirty_ = false;
             }
+            unlock();
         }
 
     private:
@@ -367,6 +387,7 @@ public:
         uint64_t flags_ = 0;
         const char *key_;
         bool dirty_{false};
+        SemaphoreHandle_t mutex_;
     };
 
     class BooleanFlag {
