@@ -36,6 +36,13 @@ public:
 
     auto needsRerender() -> bool override;
     void render(DisplaySystem &display) override;
+    void renderIfNeeded(DisplaySystem &display) {
+        if (needsRerender()) {
+            display.beginPowerOn();
+            render(display);
+            clearNeedsRerender();
+        }
+    };
     void processCommand(RemoteCommand command) override;
     auto getCurrentScreen() -> std::shared_ptr<Screen> {
         if (screenStack_.empty()) {
@@ -45,18 +52,17 @@ public:
     }
 
     void loop(DisplaySystem &display, RemoteCommand command) {
+        loopRunning_ = true;
         if (command != RemoteCommand::NONE) {
             processCommand(command);
         }
-        if (needsRerender()) {
-            display.beginPowerOn();
-            render(display);
-            clearNeedsRerender();
-        }
+        renderIfNeeded(display);
+        loopRunning_ = false;
     }
 
 protected:
     ScreenStack screenStack_;
+    bool loopRunning_ = false;
     const char *itemErrorMsg_ =
         "INTERNAL ERROR!\nThe item you tried to access\ncannot be read or "
         "found.\nPlease contact support.\n\nPress\u00a0\u00a0\ue000\u00a0\u00a0to return";

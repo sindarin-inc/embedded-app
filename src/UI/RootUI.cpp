@@ -82,6 +82,12 @@
 void RootUI::pushScreen(const std::shared_ptr<Screen> &screen) {
     screen->setNeedsRerender();
     screenStack_.push(screen);
+    // If this was called from `loop()` then we'll rerender automatically at the end of the loop.
+    // Otherwise, we should rerender now.
+    if (!loopRunning_) {
+        log_d("Pushing screen outside loop(), rerendering now");
+        renderIfNeeded(*display_);
+    }
 }
 
 void RootUI::popScreen(bool clearDisplay) {
@@ -96,6 +102,11 @@ void RootUI::popScreen(bool clearDisplay) {
         screenStack_.pop();
     } else {
         log_e("Trying to pop screen with no screen to pop");
+    }
+    // If this was called from `loop()` then we'll rerender automatically at the end of the loop.
+    // Otherwise, we should rerender now.
+    if (!loopRunning_) {
+        renderIfNeeded(*display_);
     }
 }
 
@@ -336,12 +347,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 // a command sent to process the backCallback
                 auto temp = currentScreen();
                 this->popScreen();
-                // Any screen that could possibly get to a backCallback without a command
-                // being sent through the loop must explicitly render at the end of its
-                // backCallback to ensure the screen is properly redrawn.
-                currentScreen()->setFirstLoad();
-                render(*display);
-                currentScreen()->clearNeedsRerender();
                 // TODO: After a successful content sync, re-setup the Local Store to be current.
                 // Once we do that, the following two lines will regenerate the tab so we don't
                 // need to restart to get the menu to be correct!
