@@ -39,12 +39,18 @@ void LetsFocusWelcomeMenuScreen::processCommand(RemoteCommand command) {
         break;
     case RemoteCommand::BACK:
     case RemoteCommand::LEFT:
+        if (textSelection_ == 0) {
+            return;
+        }
         textSelection_ = (textSelection_ + texts_.size() - 1) % texts_.size();
         setText();
         setFirstLoad();
         setNeedsRerender();
         break;
     case RemoteCommand::RIGHT:
+        if (textSelection_ == texts_.size() - 1) {
+            return;
+        }
         textSelection_ = (textSelection_ + 1) % texts_.size();
         setText();
         setFirstLoad();
@@ -58,8 +64,6 @@ void LetsFocusWelcomeMenuScreen::processCommand(RemoteCommand command) {
 }
 
 auto LetsFocusWelcomeMenuScreen::layout(LayoutContext &context, Size size) -> Size {
-    int y = 0;
-
     auto arrowHeight = 9;
 
     context.setViewSizeInRect(leftArrowView_, {0, arrowHeight}, {{0, 1}, {size.width, size.height}},

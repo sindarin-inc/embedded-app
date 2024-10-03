@@ -40,7 +40,7 @@ public:
     [[nodiscard]] auto findFileOffsetAtCharOffset(const std::string &path, uint32_t charOffset)
         -> uint32_t;
 
-    [[nodiscard]] auto findCharOffsetAtFileOffset(const std::string &path, uint32_t fileOffset)
+    [[nodiscard]] auto findCharOffsetAtFileOffset(const std::string_view &path, uint32_t fileOffset)
         -> uint32_t;
 
     [[nodiscard]] inline auto getSpineCount() const -> uint16_t { return opf_->getSpineCount(); }
@@ -48,12 +48,12 @@ public:
     [[nodiscard]] auto getFile(const std::string &path)
         -> std::pair<std::shared_ptr<uint8_t[]>, uint32_t>;
 
-    [[nodiscard]] inline auto getSpineIdx(const std::string &href) const -> SpineIdx {
+    [[nodiscard]] inline auto getSpineIdx(const std::string_view &href) const -> SpineIdx {
         return opf_->getSpineIdx(href);
     }
 
     [[nodiscard]] inline auto getHrefByManifestId(const std::string &manifestId) const
-        -> std::string {
+        -> std::string_view {
         return opf_->getHrefByManifestId(manifestId);
     }
 
@@ -61,7 +61,7 @@ public:
         return opf_->getManifestIdByHref(href);
     }
 
-    [[nodiscard]] auto getXHTMLFile(const std::string &path) -> pugi::xml_document &;
+    [[nodiscard]] auto getXHTMLFile(const std::string_view &path) -> pugi::xml_document &;
 
     [[nodiscard]] inline auto getOffset(const pugi::char_t *item) const -> uint32_t {
         return item - reinterpret_cast<pugi::char_t *>(currentFileBuffer_.get());
@@ -86,7 +86,7 @@ public:
     auto getUncompressedSize(SpineIdx spineIdx) -> uint32_t;
 
     auto getChapterIdx(const std::shared_ptr<EPubPlace> &ePubPlace) const -> ChapterIdx;
-    auto getChapterIdx(const std::string &href) const -> ChapterIdx;
+    auto getChapterIdx(const std::string_view &href) const -> ChapterIdx;
     auto getChapterIdx(SpineIdx spineIdx) const -> ChapterIdx;
     auto spineIdxIsChapterStart(SpineIdx spineIdx) const -> bool;
     auto getChapterFirstSpineIdx(SpineIdx spineIdx) const -> SpineIdx;
@@ -95,14 +95,15 @@ public:
     auto hasToc() -> bool;
     auto getToc() -> ReadableTableOfContentsChapterVector;
 
-    auto hasEpubAddition(const std::string &spineHref, const std::string &additionType) -> bool;
-    auto hasSummary(const std::string &spineHref) -> bool;
+    auto hasEpubAddition(const std::string_view &spineHref, const std::string &additionType)
+        -> bool;
+    auto hasSummary(const std::string_view &spineHref) -> bool;
     auto getSummaryContent(
         const std::shared_ptr<EPubPlace> &placeInReadable,
         std::shared_ptr<TxtPlace> &placeInSummary,
         const std::shared_ptr<UserReadablePartialChapterSummary> &partialChapterSummary,
         bool includeUnread) -> SpiramString;
-    auto hasDictionary(const std::string &spineHref) -> bool;
+    auto hasDictionary(const std::string_view &spineHref) -> bool;
     auto getDictionaryContent(const std::shared_ptr<EPubPlace> &placeInReadable,
                               std::shared_ptr<TxtPlace> &placeInDictionary) -> SpiramString;
 

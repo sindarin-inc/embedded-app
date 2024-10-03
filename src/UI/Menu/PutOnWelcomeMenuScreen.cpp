@@ -50,8 +50,6 @@ void PutOnWelcomeMenuScreen::processCommand(RemoteCommand command) {
 }
 
 auto PutOnWelcomeMenuScreen::layout(LayoutContext &context, Size size) -> Size {
-    int y = 0;
-
     context.setViewFrame(rendererView_, Rect::fromSize(size).inset(10, 10),
                          LayoutOptionsSizeToFit | LayoutOptionsAlignCenter);
 
@@ -63,6 +61,7 @@ auto PutOnWelcomeMenuScreen::layout(LayoutContext &context, Size size) -> Size {
 }
 
 void PutOnWelcomeMenuScreen::drawInRect(Rect rect) {
+    display_.setLineSpacing(-1);
     rendererView_.draw();
     menuView_.draw();
 }

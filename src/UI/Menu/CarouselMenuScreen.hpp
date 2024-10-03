@@ -12,7 +12,8 @@
 using MenuItemVector = std::vector<std::shared_ptr<NewMenuItem>>;
 using MenuItemSharedPtrVector = std::shared_ptr<MenuItemVector>;
 using MenuItemFactory = std::function<MenuItemSharedPtrVector()>;
-using CarouselMenuEntry = std::tuple<std::string, MenuItemFactory>;
+// The int is the index into that tab to cache that value.
+using CarouselMenuEntry = std::tuple<std::string, MenuItemFactory, int>;
 
 // An abstract base class for a carousel menu screen. It handles the
 // adding of tabs and the selection of items but the subclasses must
@@ -34,7 +35,7 @@ public:
 
     auto getCurrentTabIndex() const -> int { return currentTabIndex_; }
 
-    void setTabToTitle(const std::string &tabTitle, int index = 0);
+    void setTabToTitle(const std::string &tabTitle, int index = -1);
 
     auto getNumTabs() const -> int { return menuTabs_.size(); }
 

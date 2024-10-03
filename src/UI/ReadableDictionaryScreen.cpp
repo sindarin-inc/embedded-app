@@ -49,7 +49,7 @@ void ReadableDictionaryScreen::render(DisplaySystem &display) {
 
     uint8_t darkPicturePercent = 0;
 
-    if (loadedChapterId_ != placeInReadable_->getHRef()) {
+    if (loadedChapterHref_ != placeInReadable_->getHRef()) {
         std::shared_ptr<TxtPlace> placeInDictionary = nullptr;
         rendererStream_ = renderer_.getStream();
         if (rendererStream_ == nullptr) {
@@ -93,7 +93,7 @@ void ReadableDictionaryScreen::render(DisplaySystem &display) {
         display.updateDisplay(DisplaySystem::UpdateType::FULL, true,
                               display.darkPictureVComAdj(darkPicturePercent));
     }
-    loadedChapterId_ = placeInReadable_->getHRef();
+    loadedChapterHref_ = placeInReadable_->getHRef();
 
     // Restore the renderer's rect
     renderer_.setRect(GetTextRectFromPrefs(display, prefs_));

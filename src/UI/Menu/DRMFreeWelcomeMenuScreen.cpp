@@ -1,10 +1,9 @@
-#include "LinkedMenuScreen.hpp"
+#include "DRMFreeWelcomeMenuScreen.hpp"
 
-extern RootUI rootUi;
-
-LinkedMenuScreen::LinkedMenuScreen(DisplaySystem &display, std::string backLabel)
-    : EinkView(display), menuView_(display), backLabelView_(display),
-      backLabel_(std::move(backLabel)), rendererView_(display, 4) {
+DRMFreeWelcomeMenuScreen::DRMFreeWelcomeMenuScreen(DisplaySystem &display)
+    : EinkView(display), menuView_(display),
+      renderer_(display, DisplayRect({0, 0, 0, 0}), static_cast<Font *>(&fontFace0)),
+      rendererView_(display, renderer_) {
     menuView_.padding = 5;
     menuView_.itemsPerPage = 4;
     menuView_.indicatorWidth = 5;
@@ -12,19 +11,24 @@ LinkedMenuScreen::LinkedMenuScreen(DisplaySystem &display, std::string backLabel
     menuView_.pagingIndicatorWidth = 5;
     menuView_.pagingIndicatorPadding = 5;
     menuView_.setIndicatorType(NewMenuView::IndicatorType::Line);
-    backLabelView_.setText(backLabel_);
 
-    rendererView_.setText(
-        "You open an ancient, dusty book, its pages crackling under your fingers. A strange energy "
-        "fills the room, pulling you deeper into the story.");
-    rendererView_.alignCenter = true;
+    std::string message;
+    message +=
+        "If you have a DRM-free EPUB, you can transfer it directly via USB using the Sol "
+        "Desktop App. Download the app from solreader.com/app. Direct USB transfers miss "
+        "out on our Sol EPUB features like reading-in-app, automated AI summaries, dictionary, and "
+        "more.\n\nTo access these features, get the Sol mobile app, drop your DRM-Free EPUB to "
+        "add.solreader.com and it'll sync to your Sol Reader on your next content sync.";
+
+    auto stream = std::make_shared<StdStringStream>(message);
+    renderer_.setStream(stream);
 }
 
-void LinkedMenuScreen::addMenuItem(const std::shared_ptr<NewMenuItem> &menuItem) {
+void DRMFreeWelcomeMenuScreen::addMenuItem(const std::shared_ptr<NewMenuItem> &menuItem) {
     menuView_.addMenuItem(menuItem);
 }
 
-void LinkedMenuScreen::processCommand(RemoteCommand command) {
+void DRMFreeWelcomeMenuScreen::processCommand(RemoteCommand command) {
     switch (command) {
     case RemoteCommand::UP:
         moveSelection(-1);
@@ -37,14 +41,7 @@ void LinkedMenuScreen::processCommand(RemoteCommand command) {
         break;
     case RemoteCommand::BACK:
     case RemoteCommand::LEFT:
-        if (previousScreen_) {
-            gotoPreviousScreen();
-        }
-        break;
     case RemoteCommand::RIGHT:
-        if (nextScreen_) {
-            gotoNextScreen();
-        }
         break;
     default:
         // Handle other commands or ignore
@@ -53,11 +50,8 @@ void LinkedMenuScreen::processCommand(RemoteCommand command) {
     setNeedsLayout();
 }
 
-auto LinkedMenuScreen::layout(LayoutContext &context, Size size) -> Size {
-    int y = 0;
-
-    // Make it 30px wide max
-    context.setViewFrame(rendererView_, {{size.width / 2 - 90, size.height / 2 - 100}, {180, 180}},
+auto DRMFreeWelcomeMenuScreen::layout(LayoutContext &context, Size size) -> Size {
+    context.setViewFrame(rendererView_, Rect::fromSize(size).inset(10, 10),
                          LayoutOptionsSizeToFit | LayoutOptionsAlignCenter);
 
     context.setViewFrame(menuView_, Rect::fromSize(size),
@@ -67,12 +61,13 @@ auto LinkedMenuScreen::layout(LayoutContext &context, Size size) -> Size {
     return size;
 }
 
-void LinkedMenuScreen::drawInRect(Rect rect) {
+void DRMFreeWelcomeMenuScreen::drawInRect(Rect rect) {
+    display_.setLineSpacing(-1);
     rendererView_.draw();
     menuView_.draw();
 }
 
-void LinkedMenuScreen::render(DisplaySystem &display) {
+void DRMFreeWelcomeMenuScreen::render(DisplaySystem &display) {
     setFrame(defaultFrameRect());
     draw();
 
@@ -85,7 +80,7 @@ void LinkedMenuScreen::render(DisplaySystem &display) {
     display.updateDisplay(DisplaySystem::UpdateType::FAST_INDICATOR);
 }
 
-void LinkedMenuScreen::moveSelection(int delta) {
+void DRMFreeWelcomeMenuScreen::moveSelection(int delta) {
     auto newPage = menuView_.moveSelection(delta);
     if (newPage) {
         firstLoad_ = true;

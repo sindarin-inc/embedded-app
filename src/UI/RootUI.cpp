@@ -41,10 +41,11 @@
 #include "UI/LightingAdjustScreen.hpp"
 #include "UI/LineMenuScreen.hpp"
 #include "UI/LineSpacingScreen.hpp"
+#include "UI/Menu/DRMFreeWelcomeMenuScreen.hpp"
+#include "UI/Menu/FirstBookWelcomeMenuScreen.hpp"
 #include "UI/Menu/GenericSettingsMenuScreen.hpp"
 #include "UI/Menu/InactivitySettingMenuScreen.hpp"
 #include "UI/Menu/LetsFocusWelcomeMenuScreen.hpp"
-#include "UI/Menu/LinkedMenuScreen.hpp"
 #include "UI/Menu/NewMainMenuScreen.hpp"
 #include "UI/Menu/NewMenuItemArticle.hpp"
 #include "UI/Menu/NewMenuItemBook.hpp"
@@ -267,7 +268,10 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         auto tutorialScreen =
             std::make_shared<TutorialScreen>(*display, this->prefs_, std::move(text), bit);
 
-        tutorialScreen->setBackCallback([this]() { this->popScreen(); });
+        tutorialScreen->setBackCallback([this]() {
+            this->popScreen();
+            std::static_pointer_cast<NewMainMenuScreen>(currentScreen())->regenerateCurrentTab();
+        });
 
         return tutorialScreen;
     };
@@ -332,21 +336,28 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             auto contentSyncScreen = std::make_shared<ContentSyncScreen>(
                 *display, localStore, this->prefs_, this->telemetry_, power_);
             contentSyncScreen->setBackCallback([this, display]() {
+                // Ensure this sticks around until the end of the function
+                // It wasn't picked up in the UIInnerLoop version because there isn't
+                // a command sent to process the backCallback
+                auto temp = currentScreen();
                 this->popScreen();
                 // Any screen that could possibly get to a backCallback without a command
                 // being sent through the loop must explicitly render at the end of its
                 // backCallback to ensure the screen is properly redrawn.
-                if (needsRerender()) {
-                    render(*display);
-                    clearNeedsRerender();
-                }
+                currentScreen()->setFirstLoad();
+                render(*display);
+                currentScreen()->clearNeedsRerender();
+                // TODO: After a successful content sync, re-setup the Local Store to be current.
+                // Once we do that, the following two lines will regenerate the tab so we don't
+                // need to restart to get the menu to be correct!
+                // if (auto mainMenu = dynamic_cast<NewMainMenuScreen *>(currentScreen().get())) {
+                //     mainMenu->regenerateCurrentTab();
+                // }
             });
             this->pushScreen(contentSyncScreen);
             contentSyncScreen->begin();
         });
     };
-
-    SHOW_HEAP();
 
     auto handleReadableScreenCreation =
         [this, display, createReadableScreen](const std::shared_ptr<Readable> &r) {
@@ -364,8 +375,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     log_i("Loading %zu Pocket articles", articles.size());
 
-    auto welcomeMenuFactory = [this, display, &localStore,
-                               &fileSystem]() -> MenuItemSharedPtrVector {
+    auto welcomeMenuFactory = [this, display, noContent, makeContentSyncMenuItem,
+                               &lightingController]() -> MenuItemSharedPtrVector {
         auto menuItems = std::make_shared<MenuItemVector>();
 
         menuItems->emplace_back(std::make_shared<NewMenuItemCheckable>(
@@ -398,10 +409,14 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
         menuItems->emplace_back(std::make_shared<NewMenuItemCheckable>(
             "Let's focus (3 min)",
-            [this, display]() {
+            [this, display, &lightingController]() {
             auto letsFocusScreen = std::make_shared<LetsFocusWelcomeMenuScreen>(*display);
             letsFocusScreen->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
-                "Back to Main Menu", [this]() { this->popScreen(); }));
+                "Back to Main Menu", [this, &lightingController]() {
+                    this->popScreen();
+                    lightingController.resume();
+                }));
+            lightingController.pause();
             this->pushScreen(letsFocusScreen);
             prefs_.seenLetsFocus.set(true);
             },
@@ -412,20 +427,47 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             [this, display]() {
             auto textPlacementScreen = std::make_shared<TextPlacementWelcomeMenuScreen>(*display);
             textPlacementScreen->addMenuItem(
-                std::make_shared<NewMenuItemSingleLine>("Set this template as default",
-                                                        [this]() {
+                std::make_shared<NewMenuItemSingleLine>("Choose this template",
+                                                        [this, display]() {
                 switch (std::static_pointer_cast<TextPlacementWelcomeMenuScreen>(currentScreen())
                             ->getCurrentTextSelection()) {
                 case 0:
+                    prefs_.textInsetLeft.set(35);
+                    prefs_.textInsetRight.set(30);
+                    prefs_.textInsetTop.set(25);
+                    prefs_.textInsetBottom.set(25);
+                    prefs_.lineSpacing.set(1);
+                    prefs_.font.set(PREFS_SOL_SMALL);
                     log_d("Setting prefs to Comfortable");
+                    setFirstLoad();
+                    MsgPopup::showTemporaryMessage(*display, "Comfortable text placement set", 2000,
+                                                   true, currentScreen());
                     // prefs_.textTemplate.set(TextTemplate::Comfortable);
                     break;
                 case 1:
+                    prefs_.textInsetLeft.set(25);
+                    prefs_.textInsetRight.set(20);
+                    prefs_.textInsetTop.set(15);
+                    prefs_.textInsetBottom.set(15);
+                    prefs_.font.set(PREFS_SOL_SMALL);
+                    prefs_.lineSpacing.set(-1);
                     log_d("Setting prefs to Condensed");
+                    setFirstLoad();
+                    MsgPopup::showTemporaryMessage(*display, "Condensed text placement set", 2000,
+                                                   true, currentScreen());
                     // prefs_.textTemplate.set(TextTemplate::Condensed);
                     break;
                 case 2:
+                    prefs_.textInsetLeft.set(30);
+                    prefs_.textInsetRight.set(20);
+                    prefs_.textInsetTop.set(100);
+                    prefs_.textInsetBottom.set(10);
+                    prefs_.font.set(PREFS_SOL_MEDIUM);
+                    prefs_.lineSpacing.set(0);
                     log_d("Setting prefs to Bottom");
+                    setFirstLoad();
+                    MsgPopup::showTemporaryMessage(*display, "Bottom text placement set", 2000,
+                                                   true, currentScreen());
                     // prefs_.textTemplate.set(TextTemplate::Bottom);
                     break;
                 }
@@ -438,21 +480,47 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             [this]() { return prefs_.seenTextPlacement.get().value_or(false); }));
 
         menuItems->emplace_back(std::make_shared<NewMenuItemCheckable>(
-            "Get your first book (7 min)",
-            [this, display]() {
-            auto appDownloadScreen = std::make_shared<AppDownloadScreen>(*display);
-            this->pushScreen(appDownloadScreen);
-            appDownloadScreen->setBackCallback([this]() { this->popScreen(); });
+            "Get your first book (5 min)",
+            [this, display, makeContentSyncMenuItem]() {
+            auto firstBookWelcomeMenuScreen =
+                std::make_shared<FirstBookWelcomeMenuScreen>(*display);
+
+            firstBookWelcomeMenuScreen->addMenuItem(
+                makeContentSyncMenuItem("Get content via the Sol App"));
+
+            firstBookWelcomeMenuScreen->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
+                "Direct transfer via USB", [this, display]() {
+                    auto drmFreeScreen = std::make_shared<DRMFreeWelcomeMenuScreen>(*display);
+                    this->pushScreen(drmFreeScreen);
+                    drmFreeScreen->setBackCallback([this]() { this->popScreen(); });
+
+                    drmFreeScreen->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
+                        "Back", [this]() { this->popScreen(); }));
+                }));
+
+            firstBookWelcomeMenuScreen->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
+                "Back to Main Menu", [this]() { this->popScreen(); }));
+
+            this->pushScreen(firstBookWelcomeMenuScreen);
             },
-            [this]() { return prefs_.firstBookDownloaded.get().value_or(false); }));
+            [noContent]() { return !noContent; }));
 
         return menuItems;
     };
 
-    auto recentMenuFactory = [this, &localStore, handleReadableScreenCreation,
-                              isBible]() -> MenuItemSharedPtrVector {
+    auto recentMenuFactory = [this, &localStore, handleReadableScreenCreation, isBible,
+                              makeReleaseNotesMenuItem]() -> MenuItemSharedPtrVector {
         auto &recents = localStore.recents();
         auto menuItems = std::make_shared<MenuItemVector>();
+
+        if (this->prefs_.firmwareLoaded.get().has_value()) {
+            Firmware firmware;
+            auto upgradeAvailable = localStore.getPendingFirmwareUpdate(firmware);
+            if (upgradeAvailable) {
+                menuItems->emplace_back(makeReleaseNotesMenuItem(firmware));
+            }
+        }
+
         for (const auto &recent : recents) {
             bool archived = prefs_.readableArchivedChanged.get(recent->shortenedUuid.c_str());
             // Still needed for the Bible one since that's just a NewMenuItemSingleLine
@@ -646,26 +714,25 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             }
         }
 
-        if (!(prefs_.tutorialsDeleted.get().value_or(0) & TUTORIAL_SCREEN_BIBLE)) {
-            menuItems->emplace_back(
-                std::make_shared<NewMenuItemSingleLine>("\ue000 Why have a Bible app?",
-                                                        [this, createTutorialScreen]() {
-                SpiramString message = SpiRamStringFormat(
-                    "The Gutenberg Bible "
-                    "was the earliest major book printed using mass-produced movable "
-                    "metal type in Europe. It marked the start of the Gutenberg Revolution "
-                    "and the age of printed books in the West. So we thought it would be "
-                    "appropriate to include the Bible as one of the first books on the Sol "
-                    "Reader.\n\n"
-                    "Crossway Publishing has generously provided the English "
-                    "Standard Version"
-                    " of the Bible to you free of charge (Copyright 2001, Crossway Publishing).\n\n"
-                    " Not your thing? No worries! Just archive these books and the tab "
-                    " will disappear.\n\n"
-                    " Look for more scripture and meditation Sol Reader tabs down the road!\n\n\n"
-                    " Press \ue000 (center) to continue.");
-                auto tutorialScreen = createTutorialScreen(message, TUTORIAL_SCREEN_BIBLE);
-                this->pushScreen(tutorialScreen);
+        if ((!menuItems->empty()) &&
+            (!(prefs_.tutorialsDeleted.get().value_or(0) & TUTORIAL_SCREEN_BIBLE))) {
+            menuItems->emplace_back(std::make_shared<NewMenuItemSingleLine>(
+                "\ue000 Why have the Bible?", [this, createTutorialScreen]() {
+                    SpiramString message = SpiRamStringFormat(
+                        "The Gutenberg Bible "
+                        "was the earliest major book printed using mass-produced movable "
+                        "metal type in Europe. It marked the start of the Gutenberg Revolution "
+                        "and the age of printed books in the West. So we thought it would be "
+                        "appropriate to include the Bible as one of the first books on the Sol "
+                        "Reader.\n\n"
+                        "Crossway Publishing has provided the English "
+                        "Standard Version"
+                        " of the Bible (Copyright 2001, Crossway Publishing).\n\n"
+                        " Not your thing? No worries! Just archive these books and the tab "
+                        " will disappear.\n\n"
+                        " Press \ue000 (center) to continue.");
+                    auto tutorialScreen = createTutorialScreen(message, TUTORIAL_SCREEN_BIBLE);
+                    this->pushScreen(tutorialScreen);
                 }));
         }
         return menuItems;
@@ -976,52 +1043,53 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             }));
 
         menuItems->emplace_back(std::make_shared<NewMenuItemSingleLine>(
-            "System", [this, display, &lightingController, &localStore, &fileSystem]() {
-                log_d("Loading System Settings Menu");
+            "System",
+            [this, display, &lightingController, &localStore, &fileSystem]() {
+            log_d("Loading System Settings Menu");
 
-                auto systemSettingsMenu =
-                    std::make_shared<GenericSettingsMenuScreen>(*display, "Main Menu");
+            auto systemSettingsMenu =
+                std::make_shared<GenericSettingsMenuScreen>(*display, "Main Menu");
 
-                systemSettingsMenu->setBackCallback([this]() { this->popScreen(); });
+            systemSettingsMenu->setBackCallback([this]() { this->popScreen(); });
 
-                systemSettingsMenu->addMenuItem(
-                    std::make_shared<NewMenuItemSingleLine>("About", [this, display]() {
-                        auto aboutScreen = std::make_shared<AboutScreen>(*display, prefs_, power_);
-                        this->pushScreen(aboutScreen);
-                        aboutScreen->setBackCallback([this]() { this->popScreen(); });
-                    }));
+            systemSettingsMenu->addMenuItem(
+                std::make_shared<NewMenuItemSingleLine>("About", [this, display]() {
+                    auto aboutScreen = std::make_shared<AboutScreen>(*display, prefs_, power_);
+                    this->pushScreen(aboutScreen);
+                    aboutScreen->setBackCallback([this]() { this->popScreen(); });
+                }));
 
-                // Brightness and contrast are going to move elsewhere
-                systemSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
-                    "Brightness", [this, display, &lightingController]() {
-                        auto lightingAdjustScreen = std::make_shared<LightingAdjustScreen>(
-                            *display, this->prefs_, lightingController, this->telemetry_);
-                        this->display_->clearDisplay();
-                        pushScreen(lightingAdjustScreen);
-                        lightingAdjustScreen->setBackCallback([this]() { this->popScreen(false); });
-                    }));
+            // Brightness and contrast are going to move elsewhere
+            systemSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
+                "Brightness", [this, display, &lightingController]() {
+                    auto lightingAdjustScreen = std::make_shared<LightingAdjustScreen>(
+                        *display, this->prefs_, lightingController, this->telemetry_);
+                    this->display_->clearDisplay();
+                    pushScreen(lightingAdjustScreen);
+                    lightingAdjustScreen->setBackCallback([this]() { this->popScreen(false); });
+                }));
 
 #if CONFIG_DISPLAY_EINKET013TT1
-                systemSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
-                    "Contrast", [this, display, &lightingController]() {
-                        auto contrastAdjustScreen = std::make_shared<ContrastAdjustScreen>(
-                            *display, this->prefs_, lightingController, this->telemetry_);
-                        this->display_->clearDisplay();
-                        pushScreen(contrastAdjustScreen);
-                        contrastAdjustScreen->setBackCallback([this]() { this->popScreen(false); });
-                    }));
+            systemSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
+                "Contrast", [this, display, &lightingController]() {
+                    auto contrastAdjustScreen = std::make_shared<ContrastAdjustScreen>(
+                        *display, this->prefs_, lightingController, this->telemetry_);
+                    this->display_->clearDisplay();
+                    pushScreen(contrastAdjustScreen);
+                    contrastAdjustScreen->setBackCallback([this]() { this->popScreen(false); });
+                }));
 #endif
 
-                systemSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
-                    "Legal & Regulatory", [this, display]() {
-                        auto legalScreen = std::make_shared<LegalScreen>(*display, prefs_, power_);
-                        this->pushScreen(legalScreen);
-                        legalScreen->setBackCallback([this]() { this->popScreen(); });
-                    }));
+            systemSettingsMenu->addMenuItem(
+                std::make_shared<NewMenuItemSingleLine>("Legal & Regulatory", [this, display]() {
+                    auto legalScreen = std::make_shared<LegalScreen>(*display, prefs_, power_);
+                    this->pushScreen(legalScreen);
+                    legalScreen->setBackCallback([this]() { this->popScreen(); });
+                }));
 
-                systemSettingsMenu->addMenuItem(
-                    std::make_shared<NewMenuItemSingleLine>("Firmware Update",
-                                                            [this, display]() {
+            systemSettingsMenu->addMenuItem(
+                std::make_shared<NewMenuItemSingleLine>("Firmware Update",
+                                                        [this, display]() {
                 // If we don't have WiFi configured, show the QR code instead
                 if (!WiFi::getInstance().hasWiFiCredentials()) {
                     auto appDownloadScreen = std::make_shared<AppDownloadScreen>(*display);
@@ -1047,31 +1115,29 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 this->pushScreen(firmwareUpdateScreen);
                 firmwareUpdateScreen->setBackCallback([this]() { this->popScreen(false); });
                 firmwareUpdateScreen->begin();
-                    }));
+                }));
 
-                systemSettingsMenu->addMenuItem(std::make_shared<NewMenuItemCheckable>(
-                    "Onboarding Mode",
-                    [this]() {
+            systemSettingsMenu->addMenuItem(std::make_shared<NewMenuItemCheckable>(
+                "Show Welcome Tab",
+                [this]() {
                 currentScreen()->setFirstLoad();
-                if (this->prefs_.onboardingComplete.get().value_or(false)) {
-                    this->prefs_.onboardingComplete.set(false);
-                    MsgPopup::showTemporaryMessage(
-                        *display_, "Onboarding Mode On will take\neffect on next restart.", 2000,
-                        true, currentScreen());
+                if (this->prefs_.dontShowWelcome.get().value_or(false)) {
+                    this->prefs_.dontShowWelcome.set(false);
+                    MsgPopup::showTemporaryMessage(*display_,
+                                                   "Welcome Tab will be\nshown on next restart.",
+                                                   2000, true, currentScreen());
                 } else {
-                    this->prefs_.onboardingComplete.set(true);
-                    MsgPopup::showTemporaryMessage(
-                        *display_, "Onboarding Mode Off will take\neffect on next restart.", 2000,
-                        true, currentScreen());
+                    this->prefs_.dontShowWelcome.set(true);
+                    MsgPopup::showTemporaryMessage(*display_,
+                                                   "Welcome Tab will be\nhidden on next restart.",
+                                                   2000, true, currentScreen());
                 }
-                    },
-                    [this]() -> bool {
-                        return !this->prefs_.onboardingComplete.get().value_or(false);
-                    }));
+                },
+                [this]() -> bool { return !this->prefs_.dontShowWelcome.get().value_or(false); }));
 
-                systemSettingsMenu->addMenuItem(
-                    std::make_shared<NewMenuItemSingleLine>("Inactivity Timer",
-                                                            [this, display]() {
+            systemSettingsMenu->addMenuItem(
+                std::make_shared<NewMenuItemSingleLine>("Inactivity Timer",
+                                                        [this, display]() {
                 auto inactivityMenu =
                     std::make_shared<InactivitySettingMenuScreen>(*display, "System Settings");
 
@@ -1180,20 +1246,20 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                         this->popScreen(false);
                     }
                 });
-                    }));
+                }));
 
-                systemSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
-                    "Clear Content and Restart", [this, display, &localStore]() {
-                        localStore.deleteReadables(false);
-                        localStore.deleteArticles(false);
-                        MsgPopup::showTemporaryMessage(*display, "Content cleared. Restarting...",
-                                                       2000, false, currentScreen());
-                        power_.reboot();
-                    }));
+            systemSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
+                "Clear Content and Restart", [this, display, &localStore]() {
+                    localStore.deleteReadables(false);
+                    localStore.deleteArticles(false);
+                    MsgPopup::showTemporaryMessage(*display, "Content cleared. Restarting...", 2000,
+                                                   false, currentScreen());
+                    power_.reboot();
+                }));
 
-                systemSettingsMenu->addMenuItem(
-                    std::make_shared<NewMenuItemSingleLine>("WiFi and Bluetooth",
-                                                            [this, display]() {
+            systemSettingsMenu->addMenuItem(
+                std::make_shared<NewMenuItemSingleLine>("WiFi and Bluetooth",
+                                                        [this, display]() {
                 auto wifiSettingsMenuScreen = std::make_shared<WiFiSettingsMenuScreen>(*display);
 
                 wifiSettingsMenuScreen->addMenuItem(
@@ -1246,19 +1312,19 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
                 wifiSettingsMenuScreen->setFirstLoad();
                 pushScreen(wifiSettingsMenuScreen);
-                    }));
+                }));
 
-                systemSettingsMenu->addMenuItem(
-                    std::make_shared<NewMenuItemSingleLine>("Factory Defaults",
-                                                            [this, display, &fileSystem]() {
+            systemSettingsMenu->addMenuItem(
+                std::make_shared<NewMenuItemSingleLine>("Factory Defaults",
+                                                        [this, display, &fileSystem]() {
                 SoftFactoryReset(fileSystem);
                 log_w("NVS and FS cleared. Restarting...");
                 MsgPopup::showTemporaryMessage(*display, "Resetting Device! Restarting...", 2000);
                 power_.reboot();
-                    }));
+                }));
 
-                systemSettingsMenu->setFirstLoad();
-                this->pushScreen(systemSettingsMenu);
+            systemSettingsMenu->setFirstLoad();
+            this->pushScreen(systemSettingsMenu);
             }));
 
         menuItems->emplace_back(std::make_shared<NewMenuItemSingleLine>("Experimental",
@@ -1706,7 +1772,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         return menuItems;
     };
 
-    if (!prefs_.onboardingComplete.get().value_or(false)) {
+    if (!prefs_.dontShowWelcome.get().value_or(false)) {
         newMainMenu->addTab("Welcome", welcomeMenuFactory);
     }
 
@@ -1776,31 +1842,36 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     pushScreen(newMainMenu);
 
     // If we are in onboarding mode, show the entry bumper first
-    if (!prefs_.onboardingComplete.get().value_or(false)) {
+    if (!prefs_.dontShowWelcome.get().value_or(false)) {
+        bool showWelcomeVideo = true;
         // Preselect the first item that hasn't been checked off yet
         if (!prefs_.seenLetsFocus.get().value_or(false)) {
             newMainMenu->setTabToTitle("Welcome", 1);
         } else if (!prefs_.seenTextPlacement.get().value_or(false)) {
             newMainMenu->setTabToTitle("Welcome", 2);
-        } else if (!prefs_.firstBookDownloaded.get().value_or(false)) {
+        } else if (noContent) {
             newMainMenu->setTabToTitle("Welcome", 3);
         } else {
-            newMainMenu->setTabToTitle("Welcome", 0);
+            // Onboaring is actually complete, so show the next menu over
+            // instead of the welcome tab.
+            newMainMenu->setCurrentTabIndex(1);
+            showWelcomeVideo = false;
         }
-#if 0
-        auto firstTimeScreen = std::make_shared<DemoScreen>(*display, prefs_);
-        pushScreen(firstTimeScreen);
-        firstTimeScreen->setBackCallback([this]() {
-            popScreen();
-            // Any screen that could possibly get to a backCallback without a command
-            // being sent through the loop must explicitly render at the end of its
-            // backCallback to ensure the screen is properly redrawn.
-            if (needsRerender()) {
-                render(*display_);
-                clearNeedsRerender();
-            }
-        });
-#endif
+
+        if (showWelcomeVideo) {
+            auto firstTimeScreen = std::make_shared<DemoScreen>(*display, prefs_);
+            pushScreen(firstTimeScreen);
+            firstTimeScreen->setBackCallback([this]() {
+                popScreen();
+                // Any screen that could possibly get to a backCallback without a command
+                // being sent through the loop must explicitly render at the end of its
+                // backCallback to ensure the screen is properly redrawn.
+                if (needsRerender()) {
+                    render(*display_);
+                    clearNeedsRerender();
+                }
+            });
+        }
     }
 
     if (prefs_.cesMode.get().value_or(false)) {

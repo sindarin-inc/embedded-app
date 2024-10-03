@@ -39,6 +39,7 @@ public:
     }
 
     auto layout(LayoutContext &context, Size size) -> Size override {
+        // We'll lay it out even if we don't draw it.
         auto clockRect = context.setViewFrame(
             clockView_, {{0, 0}, size}, LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical);
         if (!batteryLow_ && batteryLow()) {
@@ -89,7 +90,9 @@ public:
         if (batteryLow_) {
             batteryIconView_.draw();
         }
-        clockView_.draw();
+        if (SolClock::getInstance().isValidTime()) {
+            clockView_.draw();
+        }
     }
 
 protected:

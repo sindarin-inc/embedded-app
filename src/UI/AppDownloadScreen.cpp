@@ -11,7 +11,7 @@ auto AppDownloadScreen::layout(LayoutContext &context, Size size) -> Size {
                                              LayoutOptionsSizeToFit | LayoutOptionsAlignCenter);
 
     // Now put the top text on top of the QR code
-    context.setViewSizeInRect(topLineView_, {100, 100},
+    context.setViewSizeInRect(topLineView_, {180, 100},
                               {{0, 0}, {size.width, iconViewRect.origin.y - 7}},
                               LayoutOptionsSizeToFitVertical | LayoutOptionsAlignBottom |
                                   LayoutOptionsAlignCenterHorizontal);

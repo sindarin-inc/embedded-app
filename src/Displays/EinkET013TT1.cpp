@@ -125,7 +125,7 @@ void EinkET013TT1::init() {
         // .isr_cpu_id = INTR_CPU_ID_1,
     };
     // TODO: Why don't we have any available DMA channels? Maybe they are used by Flash and RAM?
-    ESP_ERROR_CHECK(spi_bus_initialize(DISPLAY_SPI, &buscfg, SPI_DMA_DISABLED));
+    ESP_ERROR_CHECK(spi_bus_initialize(CONFIG_DISPLAY_SPI, &buscfg, SPI_DMA_DISABLED));
 
     spi_device_interface_config_t devcfg = {
         .command_bits = 16,
@@ -141,13 +141,13 @@ void EinkET013TT1::init() {
         .queue_size = 5,
     };
 
-    ESP_ERROR_CHECK(spi_bus_add_device(DISPLAY_SPI, &devcfg, &spiHigh_));
+    ESP_ERROR_CHECK(spi_bus_add_device(CONFIG_DISPLAY_SPI, &devcfg, &spiHigh_));
 
     // For reading, the EinkET013TT1 datasheet specifies 8MHz
     devcfg.clock_speed_hz = 8 * 1000 * 1000;
     devcfg.command_bits = 8;
 
-    ESP_ERROR_CHECK(spi_bus_add_device(DISPLAY_SPI, &devcfg, &spiLow_));
+    ESP_ERROR_CHECK(spi_bus_add_device(CONFIG_DISPLAY_SPI, &devcfg, &spiLow_));
 
     if (vcomInMV_ == 0) {
         setVcom(VCOM_DEFAULT);
