@@ -11,7 +11,10 @@ extern "C" {
 
 class DisplayEink047TC1 : public DisplaySystem {
 public:
-    DisplayEink047TC1() noexcept : gfxCanvas_(EPD_WIDTH, EPD_HEIGHT) { gfxClass_ = &gfxCanvas_; };
+    DisplayEink047TC1() noexcept : gfxCanvas_(EPD_WIDTH, EPD_HEIGHT) {
+        gfxClass_ = &gfxCanvas_;
+        gfxCanvas_.setRotation(1);
+    };
     DisplayEink047TC1(DisplayEink047TC1 const &) = delete;
 
     ~DisplayEink047TC1() override = default;

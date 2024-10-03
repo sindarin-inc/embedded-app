@@ -27,8 +27,8 @@ void DisplaySystem::animationTimerCallback(TimerHandle_t timer) {
 auto DisplaySystem::setup() -> bool {
     gfxClass_->setTextColor(fg, bg);
 
-#ifdef DISPLAY_ROTATION
-    setRotation(DISPLAY_ROTATION);
+#ifdef CONFIG_DISPLAY_ROTATION
+    setRotation(CONFIG_DISPLAY_ROTATION);
 #else
     gfxClass_->setRotation(0);
 #endif

@@ -83,6 +83,16 @@ menu "Sol Options"
                 int "DISP Pin"
                 default 6
         endmenu
+
+        config CONFIG_DISPLAY_ROTATION
+            default 0
+            int "Display Rotation"
+            help
+                0: No rotation
+                1: 90 degrees clockwise
+                2: 180 degrees
+                3: 90 degrees counter-clockwise
+
     endmenu
 
     menu "BLE Settings"
