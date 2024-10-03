@@ -114,6 +114,25 @@ auto LightingController::readPredictedDutyCycle() -> int {
                     static_cast<int>(GetMaxLightingDutyCycle()));
 }
 
+auto LightingController::scaleLux(float lux) -> float { return std::log10(lux + 1) * 300; }
+
+auto LightingController::luxify(uint16_t channel0, uint16_t channel1) -> float {
+    float ratio = static_cast<float>(channel1) / (channel0 + channel1);
+    float lux = 0.0;
+
+    if (ratio < 0.45) {
+        lux = (1.7743 * channel0 + 1.1059 * channel1) / 1000;
+    } else if (ratio < 0.64 && ratio >= 0.45) {
+        lux = (4.2785 * channel0 - 1.9548 * channel1) / 1000;
+    } else if (ratio < 0.85 && ratio >= 0.64) {
+        lux = (0.5926 * channel0 + 0.1185 * channel1) / 1000;
+    } else {
+        lux = 0;
+    }
+
+    return lux;
+}
+
 void LightingController::checkAmbientLight(int fadeMs, int timeoutMs) {
     if (paused_) {
         log_i("Ambient light check requested but lights are paused, ignoring");
@@ -133,13 +152,19 @@ void LightingController::checkAmbientLight(int fadeMs, int timeoutMs) {
         return;
     }
 
+    float scaledLux = scaleLux(luxify(channel0, channel1));
+
     // Clamp to a max value of 1000 to avoid the moving average getting too large
-    movingAverage_.add(std::min(channel1, static_cast<uint16_t>(1000)));
+    movingAverage_.add(std::min(static_cast<uint16_t>(scaledLux), static_cast<uint16_t>(1000)));
 
     // Adjust based on the offset
     predictedDutyCycle_ =
         std::clamp(readPredictedDutyCycle() + prefs_.brightnessOffset.get().value_or(0), 1,
-                   static_cast<int>(GetMaxLightingDutyCycle()));
+                   static_cast<int>(GetMaxLightingDutyCycle() * 80 / 100));
+
+    // Here for testing as we dial in the values
+    // log_d("Setting duty to predicted duty cycle: %d %d channel0: %d channel1: %d with a lux of
+    // %f", predictedDutyCycle_, readPredictedDutyCycle(), channel0, channel1, scaledLux);
 
     // Bail out early if we have overridden the value here
     if (overrideDutyCycle_ != -1) {
