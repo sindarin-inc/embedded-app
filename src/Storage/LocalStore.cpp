@@ -1151,13 +1151,17 @@ auto LocalStore::processReadableDownload(
                         break;
                     }
                     // Reconnect to wifi/ble if disconnected
+#if CONFIG_USE_BLE_SERVER_PROXY
                     auto wifiConnected = false;
+#endif
                     if (!this->prefs_.wifiDisabled.get().value_or(false)) {
                         if (!WiFi::getInstance().connectWiFiFromSettings()) {
                             this->telemetry_.logMetric(TelemetryField::METRIC_WIFI,
                                                        "sync-wifi-retry-failed");
                         } else {
+#if CONFIG_USE_BLE_SERVER_PROXY
                             wifiConnected = true;
+#endif
                         }
                     }
 

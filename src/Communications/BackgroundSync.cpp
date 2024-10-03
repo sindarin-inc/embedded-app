@@ -22,7 +22,9 @@ void BackgroundSyncInternal(PowerManager &powerManager, PreferencesStore &prefs,
                             LocalStore &localStore, Telemetry &telemetry) {
     // Create a notification group to wait for background tasks
     auto wifiConnected = false;
+#if CONFIG_USE_BLE_SERVER_PROXY
     auto bleConnected = false;
+#endif
     auto backgroundGroup = xEventGroupCreate();
     defer {
         vEventGroupDelete(backgroundGroup);
