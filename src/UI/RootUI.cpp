@@ -430,7 +430,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
         for (const auto &book : books) {
             // Bible books go in their own menu / app
-            if (!prefs_.noBible.get().value_or(false) && isBible(book)) {
+            if (isBible(book)) {
                 continue;
             }
             bool archived = prefs_.readableArchivedChanged.get(book->shortenedUuid.c_str());
@@ -559,7 +559,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             }
         }
 
-        if (noContent && !prefs_.noBible.get().value_or(false)) {
+        if (noContent) {
             std::shared_ptr<Readable> psalmsAndProverbs = std::make_shared<Readable>(
                 "6863fd3c-77a9-468e-93fa-f70d8b79029f", "Psalms and Proverbs",
                 PSALMSANDPROVERBS_EPUB, PSALMSANDPROVERBS_EPUB_SIZE);
@@ -1623,14 +1623,14 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     if (!localStore.recents().empty()) {
         newMainMenu->addTab("Recent", recentMenuFactory);
     }
-    if (!booksMenuFactory()->empty() && !prefs_.noBooks.get().value_or(false)) {
+    if (!booksMenuFactory()->empty()) {
         newMainMenu->addTab("Books", booksMenuFactory);
     }
-    if (!articlesMenuFactory()->empty() && !prefs_.noArticles.get().value_or(false)) {
+    if (!articlesMenuFactory()->empty()) {
         newMainMenu->addTab("Articles", articlesMenuFactory);
     }
 
-    if (!bibleMenuFactory()->empty() && !prefs_.noBible.get().value_or(false)) {
+    if (!bibleMenuFactory()->empty()) {
         newMainMenu->addTab("Bible", bibleMenuFactory);
     }
 

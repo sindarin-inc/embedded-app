@@ -9,9 +9,6 @@ TEST_CASE("getNextEventEpoch returns the correct next event epoch time", "[next_
     int morningNews = 6;
     int eveningNews = 20;
 
-    prefs.noMorningDelivery.set(false);
-    prefs.eveningDelivery.set(false);
-
     SolClock clock(prefs);
 
     // TODO: How do we mock the time?

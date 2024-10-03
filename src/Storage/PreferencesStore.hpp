@@ -361,17 +361,9 @@ public:
           tzIana(*this, "tz-iana"),
           tzPosix(*this, "tz-posix"),
           firmwareLoaded(*this, "fw-loaded"),
-          noBooks(*this, "no-books"),
-          showNews(*this, "show-news"),
-          noArticles(*this, "no-articles"),
-          noBible(*this, "no-bible"),
-          noDeliverOnClose(*this, "no-deliv-close"),
-          noMorningDelivery(*this, "no-morn-sync"),
-          eveningDelivery(*this, "eve-deliver"),
           darkMode(*this, "dark-mode"),
           autoPilot(*this, "auto-pilot"),
           fastTransitions(*this, "fast-tran"),
-          noUploadCrashes(*this, "no-upload-crash"),
           showDebugMenu(*this, "show-debug"),
           noShowPartialChapterSummary(*this, "no-part-summary"),
           fastBookmarkRight(*this, "fst-mark-right"),
@@ -513,6 +505,16 @@ public:
                 nvs_erase_key(nvsHandle_, "bright-off-en");
                 nvs_erase_key(nvsHandle_, "logging");
                 break;
+            case 7:
+                nvs_erase_key(nvsHandle_, "no-books");
+                nvs_erase_key(nvsHandle_, "show-news");
+                nvs_erase_key(nvsHandle_, "no-articles");
+                nvs_erase_key(nvsHandle_, "no-bible");
+                nvs_erase_key(nvsHandle_, "no-deliv-close");
+                nvs_erase_key(nvsHandle_, "no-morn-sync");
+                nvs_erase_key(nvsHandle_, "eve-deliver");
+                nvs_erase_key(nvsHandle_, "no-upload-crash");
+                break;
             default:
                 log_e("Unknown migration version: %" PRIu32, migrationVersion);
                 return;
@@ -643,17 +645,9 @@ public:
     PrefsItem<std::string> tzPosix;
     // Firmware that's been loaded to the other flash slot but not yet installed
     PrefsItem<std::string> firmwareLoaded;
-    PrefsItem<bool> noBooks;
-    PrefsItem<bool> showNews;
-    PrefsItem<bool> noArticles;
-    PrefsItem<bool> noBible;
-    PrefsItem<bool> noDeliverOnClose;
-    PrefsItem<bool> noMorningDelivery;
-    PrefsItem<bool> eveningDelivery;
     PrefsItem<bool> darkMode;
     PrefsItem<bool> autoPilot;
     PrefsItem<bool> fastTransitions;
-    PrefsItem<bool> noUploadCrashes;
     PrefsItem<bool> showDebugMenu;
     PrefsItem<bool> noShowPartialChapterSummary;
     PrefsItem<bool> fastBookmarkRight;
@@ -696,7 +690,7 @@ public:
     static PairedStatus paired;
 
 protected:
-    const uint32_t latestMigrationVersion_ = 7;
+    const uint32_t latestMigrationVersion_ = 8;
     uint32_t nvsHandle_{};
     bool started_{};
 

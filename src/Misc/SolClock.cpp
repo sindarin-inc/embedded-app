@@ -157,8 +157,8 @@ auto SolClock::calculateNextSyncTime(time_t now) -> time_t {
 
     // Set morning delivery to 6am and evening delivery to 8pm
     // if the user has toggled those options on.
-    int morningNews = prefs_.noMorningDelivery.get().value_or(false) ? 0 : 6;
-    int eveningNews = prefs_.eveningDelivery.get().value_or(false) ? 20 : 0;
+    int morningNews = 6;
+    int eveningNews = 20;
 
     // If otherwise unselected, let's force a sync at 6am
     if (morningNews == 0 && eveningNews == 0) {
