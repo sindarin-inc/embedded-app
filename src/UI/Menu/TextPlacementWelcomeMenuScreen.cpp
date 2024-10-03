@@ -69,8 +69,6 @@ void TextPlacementWelcomeMenuScreen::processCommand(RemoteCommand command) {
 }
 
 auto TextPlacementWelcomeMenuScreen::layout(LayoutContext &context, Size size) -> Size {
-    int y = 0;
-
     auto arrowHeight = 9;
 
     context.setViewSizeInRect(leftArrowView_, {0, arrowHeight},

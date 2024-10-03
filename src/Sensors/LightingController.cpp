@@ -115,6 +115,11 @@ auto LightingController::readPredictedDutyCycle() -> int {
 }
 
 void LightingController::checkAmbientLight(int fadeMs, int timeoutMs) {
+    if (paused_) {
+        log_i("Ambient light check requested but lights are paused, ignoring");
+        return;
+    }
+
     if (!enabled_) {
         log_i("Ambient light check requested but lights are out, ignoring");
         return;

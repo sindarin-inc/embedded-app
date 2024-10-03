@@ -64,8 +64,6 @@ void LetsFocusWelcomeMenuScreen::processCommand(RemoteCommand command) {
 }
 
 auto LetsFocusWelcomeMenuScreen::layout(LayoutContext &context, Size size) -> Size {
-    int y = 0;
-
     auto arrowHeight = 9;
 
     context.setViewSizeInRect(leftArrowView_, {0, arrowHeight}, {{0, 1}, {size.width, size.height}},

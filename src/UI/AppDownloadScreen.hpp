@@ -18,7 +18,7 @@ class AppDownloadScreen : public Screen, public EinkView {
 public:
     AppDownloadScreen(DisplaySystem &display)
         : Screen(), EinkView(display),
-          syncPollingTimer_(xTimerCreate("syncPollingTimer", pdMS_TO_TICKS(5000), pdTRUE, this,
+          syncPollingTimer_(xTimerCreate("syncPollingTimer", pdMS_TO_TICKS(2000), pdTRUE, this,
                                          AppDownloadScreen::timerCallback)),
           topLineView_(display, 3),
           iconView_(display, DOWNLOAD_APP_QR_BITS, DownloadAppQr_width, DownloadAppQr_height, 3),

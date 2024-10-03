@@ -393,7 +393,7 @@ public:
           textInsetBottom(*this, "text-inset-b"),
           wifiDisabled(*this, "wifi-disable"),
           bleDisabled(*this, "ble-disable"),
-          onboardingComplete(*this, "onboard-done"),
+          dontShowWelcome(*this, "onboard-done"),
           seenLetsFocus(*this, "seen-focus"),
           seenTextPlacement(*this, "seen-place"),
           didFirstArchive(*this, "first-archive"),
@@ -684,7 +684,7 @@ public:
     PrefsItem<uint16_t> textInsetBottom;
     PrefsItem<bool> wifiDisabled;
     PrefsItem<bool> bleDisabled;
-    PrefsItem<bool> onboardingComplete;
+    PrefsItem<bool> dontShowWelcome;
     PrefsItem<bool> seenLetsFocus;
     PrefsItem<bool> seenTextPlacement;
     PrefsItem<bool> didFirstArchive;

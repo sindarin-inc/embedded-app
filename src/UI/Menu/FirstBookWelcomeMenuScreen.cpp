@@ -46,8 +46,6 @@ void FirstBookWelcomeMenuScreen::processCommand(RemoteCommand command) {
 }
 
 auto FirstBookWelcomeMenuScreen::layout(LayoutContext &context, Size size) -> Size {
-    int y = 0;
-
     context.setViewFrame(rendererView_, Rect::fromSize(size).inset(45, 35, 65, 65),
                          LayoutOptionsSizeToFit | LayoutOptionsAlignCenter);
 

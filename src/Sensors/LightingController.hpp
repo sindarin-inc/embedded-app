@@ -12,6 +12,9 @@ public:
     LightingController(PreferencesStore &prefs) : prefs_(prefs), lightSensor_(0) {}
     LightingController(LightingController const &) = delete;
 
+    void pause() { paused_ = true; }
+    void resume() { paused_ = false; }
+
     // Simple diagnostic test to check if the ambient light sensor is reporting the correct part id
     // and manufacturer id
     auto checkSensorAvailable() -> bool;
@@ -52,6 +55,8 @@ protected:
     // adjustments
     MovingAverage<int, 5> movingAverage_;
     bool enabled_ = false;
+
+    bool paused_ = false;
 
     // Duty cycle as predicted by the ambient light sensor
     int predictedDutyCycle_ = 0;
