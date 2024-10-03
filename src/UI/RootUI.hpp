@@ -44,6 +44,17 @@ public:
         return screenStack_.top();
     }
 
+    void loop(DisplaySystem &display, RemoteCommand command) {
+        if (command != RemoteCommand::NONE) {
+            processCommand(command);
+        }
+        if (needsRerender()) {
+            display.beginPowerOn();
+            render(display);
+            clearNeedsRerender();
+        }
+    }
+
 protected:
     ScreenStack screenStack_;
     std::string itemErrorMsg_ =
