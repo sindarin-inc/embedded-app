@@ -83,7 +83,7 @@ menu "Sol Options"
                 int "DISP Pin"
                 default 6
         endmenu
-
+        
         config CONFIG_DISPLAY_ROTATION
             default 0
             int "Display Rotation"
