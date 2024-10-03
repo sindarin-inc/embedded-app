@@ -377,9 +377,7 @@ public:
 
         void set(bool value, bool deferWrite = false) { flags_.set(index_, value, deferWrite); }
 
-        void remove() {
-            // No-op for BooleanFlag
-        }
+        void remove() { set(false); }
 
     private:
         BooleanFlags &flags_;
