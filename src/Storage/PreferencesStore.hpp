@@ -457,13 +457,10 @@ public:
           fastTransitions(boolFlags_, 7),
           showDebugMenu(boolFlags_, 8),
           noShowPartialChapterSummary(boolFlags_, 9),
-          fastBookmarkRight(boolFlags_, 10),
-          fastBookmarkCenter(boolFlags_, 11),
-          pageTransitionArrows(boolFlags_, 12),
-          allowUsageWhileCharging(boolFlags_, 13),
+          allowUsageWhileCharging(boolFlags_, 10),
           wifiSettingsJson(*this, "wifi-settings"),
           localStoreMigrationVersion(*this, "ls-version"),
-          fontsLibrary(boolFlags_, 14),
+          fontsLibrary(boolFlags_, 11),
           fontType(*this, "font-type"),
           tutorialsDeleted(*this, "tutorials"),
           bleAdvertisingKey(*this, "ble-adv-key"),
@@ -474,9 +471,9 @@ public:
           textInsetRight(*this, "text-inset-r"),
           textInsetTop(*this, "text-inset-t"),
           textInsetBottom(*this, "text-inset-b"),
-          wifiDisabled(boolFlags_, 15),
-          bleDisabled(boolFlags_, 16),
-          didFirstArchive(boolFlags_, 17),
+          wifiDisabled(boolFlags_, 12),
+          bleDisabled(boolFlags_, 13),
+          didFirstArchive(boolFlags_, 14),
           preferencesStoreMigrationVersion_(*this, "ps-version"),
           boolFlags_(*this, "bool-flags") {}
     // clang-format on
@@ -606,6 +603,9 @@ public:
                 nvs_erase_key(nvsHandle_, "no-morn-sync");
                 nvs_erase_key(nvsHandle_, "eve-deliver");
                 nvs_erase_key(nvsHandle_, "no-upload-crash");
+                nvs_erase_key(nvsHandle_, "fst-mark-right");
+                nvs_erase_key(nvsHandle_, "fst-mark-cent");
+                nvs_erase_key(nvsHandle_, "page-arrows");
                 break;
             case 8: {
                 auto migrateBool = [this](const char *oldKey, BooleanFlag &newFlag) {
@@ -627,9 +627,6 @@ public:
                 migrateBool("fast-tran", fastTransitions);
                 migrateBool("show-debug", showDebugMenu);
                 migrateBool("no-part-summary", noShowPartialChapterSummary);
-                migrateBool("fst-mark-right", fastBookmarkRight);
-                migrateBool("fst-mark-cent", fastBookmarkCenter);
-                migrateBool("page-arrows", pageTransitionArrows);
                 migrateBool("allow-use-chg", allowUsageWhileCharging);
                 migrateBool("fonts-lib", fontsLibrary);
                 migrateBool("wifi-disable", wifiDisabled);
@@ -775,9 +772,6 @@ public:
     BooleanFlag fastTransitions;
     BooleanFlag showDebugMenu;
     BooleanFlag noShowPartialChapterSummary;
-    BooleanFlag fastBookmarkRight;
-    BooleanFlag fastBookmarkCenter;
-    BooleanFlag pageTransitionArrows;
     BooleanFlag allowUsageWhileCharging;
     PrefsItem<std::string> wifiSettingsJson;
     PrefsItem<uint32_t> localStoreMigrationVersion;

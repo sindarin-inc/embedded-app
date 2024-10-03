@@ -91,7 +91,6 @@ void StartAppMain(FONT_CHOICES font, int x, int y, int lineSpacing) {
     prefs.bookSortCriteria.set(0);
     prefs.bookSortDirection.set(0);
     prefs.firstRead.set(0);
-    prefs.pageTransitionArrows.set(false);
     prefs.lastReadableId.remove();
     prefs.readablePlace.remove("93d56842");
 

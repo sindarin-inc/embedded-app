@@ -1001,23 +1001,13 @@ void ReadableScreen::processCommandNormal(RemoteCommand command) {
                                 SolClock::getInstance().getEpochTime());
         break;
     case RemoteCommand::ENTER:
-        if (prefs_.fastBookmarkCenter.get().value_or(false)) {
-            inBookmark_ = !inBookmark_;
-            writeOutBookmarkUpdate();
-        } else {
-            turnPage();
-        }
+        turnPage();
         break;
     case RemoteCommand::DOWN:
         showPopupMenu();
         break;
     case RemoteCommand::RIGHT:
-        if (prefs_.fastBookmarkRight.get().value_or(false)) {
-            inBookmark_ = !inBookmark_;
-            writeOutBookmarkUpdate();
-        } else {
-            turnPage();
-        }
+        turnPage();
         break;
     case RemoteCommand::BACK:
     case RemoteCommand::UP:
