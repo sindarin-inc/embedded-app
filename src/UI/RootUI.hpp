@@ -57,10 +57,10 @@ public:
 
 protected:
     ScreenStack screenStack_;
-    std::string itemErrorMsg_ =
+    const char *itemErrorMsg_ =
         "INTERNAL ERROR!\nThe item you tried to access\ncannot be read or "
         "found.\nPlease contact support.\n\nPress\u00a0\u00a0\ue000\u00a0\u00a0to return";
-    std::string settingsRestartMsg_ = "Settings change requires restart...";
+    const char *settingsRestartMsg_ = "Settings change requires restart...";
 
     PreferencesStore &prefs_;
     PowerManager &power_;
