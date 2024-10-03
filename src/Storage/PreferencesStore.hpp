@@ -408,35 +408,35 @@ public:
           readablePlaceChanged(*this, "-pc"),
           readableArchivedChanged(*this, "-ar"),
           readableBookmarksChanged(*this, "-bm"),
-          invertSetting(boolFlags, 0),
+          invertSetting(boolFlags_, 0),
           vcom(*this, "vcom"),
           font(*this, "font"),
           lineSpacing(*this, "line-space"),
           wordCount(*this, "word-count"),
           totalReadingTimeSeconds(*this, "tot-rd-time"),
           bootCount(*this, "boot-count"),
-          firstRead(boolFlags, 1),
+          firstRead(boolFlags_, 1),
           autoPilotSpeed(*this, "auto-speed"),
-          firstAutopilotRead(boolFlags, 2),
-          cesMode(boolFlags, 3),
-          emcMode(boolFlags, 4),
+          firstAutopilotRead(boolFlags_, 2),
+          cesMode(boolFlags_, 3),
+          emcMode(boolFlags_, 4),
           wifiPower(*this, "wifi-power"),
           inactivityMinutes(*this, "inact-min"),
           tzIana(*this, "tz-iana"),
           tzPosix(*this, "tz-posix"),
           firmwareLoaded(*this, "fw-loaded"),
-          darkMode(boolFlags, 12),
-          autoPilot(boolFlags, 13),
-          fastTransitions(boolFlags, 14),
-          showDebugMenu(boolFlags, 16),
-          noShowPartialChapterSummary(boolFlags, 17),
-          fastBookmarkRight(boolFlags, 18),
-          fastBookmarkCenter(boolFlags, 19),
-          pageTransitionArrows(boolFlags, 20),
-          allowUsageWhileCharging(boolFlags, 21),
+          darkMode(boolFlags_, 12),
+          autoPilot(boolFlags_, 13),
+          fastTransitions(boolFlags_, 14),
+          showDebugMenu(boolFlags_, 16),
+          noShowPartialChapterSummary(boolFlags_, 17),
+          fastBookmarkRight(boolFlags_, 18),
+          fastBookmarkCenter(boolFlags_, 19),
+          pageTransitionArrows(boolFlags_, 20),
+          allowUsageWhileCharging(boolFlags_, 21),
           wifiSettingsJson(*this, "wifi-settings"),
           localStoreMigrationVersion(*this, "ls-version"),
-          fontsLibrary(boolFlags, 22),
+          fontsLibrary(boolFlags_, 22),
           fontType(*this, "font-type"),
           tutorialsDeleted(*this, "tutorials"),
           bleAdvertisingKey(*this, "ble-adv-key"),
@@ -447,11 +447,11 @@ public:
           textInsetRight(*this, "text-inset-r"),
           textInsetTop(*this, "text-inset-t"),
           textInsetBottom(*this, "text-inset-b"),
-          wifiDisabled(boolFlags, 23),
-          bleDisabled(boolFlags, 24),
-          didFirstArchive(boolFlags, 25),
+          wifiDisabled(boolFlags_, 23),
+          bleDisabled(boolFlags_, 24),
+          didFirstArchive(boolFlags_, 25),
           preferencesStoreMigrationVersion_(*this, "ps-version"),
-          boolFlags(*this, "bool-flags") {}
+          boolFlags_(*this, "bool-flags") {}
     // clang-format on
 
     PreferencesStore(PreferencesStore &) = delete;
@@ -610,7 +610,7 @@ public:
                 migrateBool("first-archive", didFirstArchive);
 
                 // Write all changes to NVS at once
-                boolFlags.write();
+                boolFlags_.write();
                 break;
             }
             default:
@@ -793,7 +793,7 @@ protected:
     bool started_{};
 
     PrefsItem<uint32_t> preferencesStoreMigrationVersion_;
-    BooleanFlags boolFlags;
+    BooleanFlags boolFlags_;
 
     void commit() const {
         esp_err_t err = nvs_commit(nvsHandle_);
