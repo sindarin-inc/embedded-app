@@ -43,9 +43,6 @@ void DRMFreeWelcomeMenuScreen::processCommand(RemoteCommand command) {
     case RemoteCommand::LEFT:
     case RemoteCommand::RIGHT:
         break;
-    default:
-        // Handle other commands or ignore
-        break;
     }
     setNeedsLayout();
 }
@@ -62,9 +59,11 @@ auto DRMFreeWelcomeMenuScreen::layout(LayoutContext &context, Size size) -> Size
 }
 
 void DRMFreeWelcomeMenuScreen::drawInRect(Rect rect) {
+    auto oldLineSpacing = display_.getLineSpacing();
     display_.setLineSpacing(-1);
     rendererView_.draw();
     menuView_.draw();
+    display_.setLineSpacing(oldLineSpacing);
 }
 
 void DRMFreeWelcomeMenuScreen::render(DisplaySystem &display) {
