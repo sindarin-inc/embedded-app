@@ -1170,7 +1170,8 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                     "Factory Defaults: I'm sure!", [this, display, &fileSystem]() {
                         SoftFactoryReset(fileSystem);
                         log_w("NVS and FS cleared. Restarting...");
-                        MsgPopup::showTemporaryMessage(*display, "Resetting Device! Restarting...", 2000);                     
+                        MsgPopup::showTemporaryMessage(*display, "Resetting Device! Restarting...",
+                                                       2000);
                         power_.reboot();
                     }));
                 pushScreen(lineMenuScreen);
