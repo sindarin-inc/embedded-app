@@ -53,21 +53,6 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs, bool ful
 
     display_.invertDisplay(false);
     if (fullManifesto_) {
-#if 0
-        lambdas_.emplace_back([this](DisplaySystem &display) {
-            std::string message = "Welcome to the Sol Reader! Let's begin...";
-            display.clearDisplay();
-            display.clearFrameBuffer();
-            display.setFont(static_cast<Font *>(&fontFace0));
-            display.drawSingleLineOfText(message,
-                                         display.width() / 2 - display.getTextWidth(message) / 2,
-                                         display.height() / 2 - display.getTextHeight(message));
-            drawSkipMessage(display);
-            nextUpdateType_ = DisplaySystem::UpdateType::FULL;
-            nextInterval_ = 3000;
-        });
-#endif
-
         lambdas_.emplace_back([this](DisplaySystem &display) {
             dropVcom_ = true;
             display.drawXBitmap(0, 0, MANI_BOOK1_BITS, mani_book1_width, mani_book1_height,
