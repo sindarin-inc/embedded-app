@@ -344,7 +344,7 @@ public:
             }
         }
 
-        void loadValueIfNecessary_() {
+        void loadValueIfNecessary() {
             if (!loaded_) {
                 uint64_t value;
                 esp_err_t err = GetFromStorage(this->prefs.nvsHandle_, key_, value);
@@ -357,7 +357,7 @@ public:
 
         auto get(size_t index) -> bool {
             lock();
-            loadValueIfNecessary_();
+            loadValueIfNecessary();
             bool result = (flags_ & (1ULL << index)) != 0;
             unlock();
             return result;
@@ -365,7 +365,7 @@ public:
 
         void set(size_t index, bool value, bool deferWrite = false) {
             lock();
-            loadValueIfNecessary_();
+            loadValueIfNecessary();
             auto flagsBefore = flags_;
             if (value) {
                 flags_ |= (1ULL << index);
