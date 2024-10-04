@@ -84,13 +84,13 @@
 
 #define LAST_READABLE_ID "rui-readable"
 
-void RootUI::pushScreen(const std::shared_ptr<Screen> &screen) {
+void RootUI::pushScreen(const std::shared_ptr<Screen> &screen, bool deferRender) {
     screen->setNeedsRerender();
     screenStack_.push(screen);
     // If this was called from `loop()` then we'll rerender automatically at the end of the loop.
     // Otherwise, we should rerender now.
-    if (!loopRunning_ && display_ != nullptr) {
-        log_d("Pushing screen outside loop(), rerendering now");
+    if (!loopRunning_ && display_ != nullptr && !deferRender) {
+        log_d("Pushing screen outside loop() manually set, rerendering now");
         renderIfNeeded(*display_);
     }
 }
@@ -1844,7 +1844,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     HEAP_PROFILE_END(rootUISettings);
 
-    pushScreen(newMainMenu);
+    pushScreen(newMainMenu, true);
 
     // If we are in onboarding mode, show the entry bumper first
     if (!prefs_.dontShowWelcome.get().value_or(false)) {
@@ -1865,7 +1865,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
         if (showWelcomeVideo) {
             auto firstTimeScreen = std::make_shared<DemoScreen>(*display, prefs_);
-            pushScreen(firstTimeScreen);
+            pushScreen(firstTimeScreen, true);
             firstTimeScreen->setBackCallback([this]() {
                 popScreen();
                 // Any screen that could possibly get to a backCallback without a command
@@ -1896,10 +1896,10 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         auto readableScreen = createReadableScreen(*it);
         if (readableScreen != nullptr) {
             cesScreen->setBackCallback([this]() { this->popScreen(); });
-            this->pushScreen(cesScreen);
+            this->pushScreen(cesScreen, true);
         } else {
             auto errorPopup = std::make_shared<MsgPopup>(*display, itemErrorMsg_);
-            this->pushScreen(errorPopup);
+            this->pushScreen(errorPopup, true);
             errorPopup->setBackCallback([this]() { this->popScreen(); });
         }
     } else if (prefs_.emcMode.get().value_or(false)) {
@@ -1918,10 +1918,10 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         if (readableScreen != nullptr) {
             display->clearDisplay();
             this->display_->setFont(static_cast<Font *>(&fontFace0));
-            this->pushScreen(readableScreen);
+            this->pushScreen(readableScreen, true);
         } else {
             auto errorPopup = std::make_shared<MsgPopup>(*display, itemErrorMsg_);
-            this->pushScreen(errorPopup);
+            this->pushScreen(errorPopup, true);
             errorPopup->setBackCallback([this]() { this->popScreen(); });
         }
     } else if (currentReadable.has_value()) {
@@ -1942,7 +1942,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             auto readableScreen = createReadableScreen(*it);
             if (readableScreen != nullptr) {
                 this->display_->setFont(static_cast<Font *>(&fontFace0));
-                this->pushScreen(readableScreen);
+                this->pushScreen(readableScreen, true);
                 log_i("Resuming readable %s at place %s", (*it)->title.c_str(),
                       (*it)->place->str().c_str());
                 // Technically. we might want this to go to Recent, but for now this will do.
@@ -1955,7 +1955,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 }
             } else {
                 auto errorPopup = std::make_shared<MsgPopup>(*display, itemErrorMsg_);
-                this->pushScreen(errorPopup);
+                this->pushScreen(errorPopup, true);
                 errorPopup->setBackCallback([this]() { this->popScreen(); });
             }
         } else {
@@ -1971,6 +1971,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         newMainMenu->setTabToTitle("Settings");
     }
 
+    renderIfNeeded(*display_);
     SHOW_HEAP();
 }
 
