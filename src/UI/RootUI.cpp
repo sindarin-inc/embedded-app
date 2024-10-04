@@ -1160,22 +1160,22 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                 pushScreen(wifiSettingsMenuScreen);
                     }));
 
-                systemSettingsMenu->addMenuItem(
-                    std::make_shared<NewMenuItemSingleLine>("Factory Defaults",
-                                                            [this, display, &fileSystem]() {
-                auto lineMenuScreen = std::make_shared<LineMenuScreen>(this->prefs_, *display);
-                lineMenuScreen->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
-                    "Cancel", [this]() { this->popScreen(); }));
-                lineMenuScreen->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
-                    "Factory Defaults: I'm sure!", [this, display, &fileSystem]() {
-                        SoftFactoryReset(fileSystem);
-                        log_w("NVS and FS cleared. Restarting...");
-                        MsgPopup::showTemporaryMessage(*display, "Resetting Device! Restarting...",
-                                                       2000);
-                        power_.reboot();
-                    }));
-                pushScreen(lineMenuScreen);
-                setNeedsRerender();
+                systemSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
+                    "Factory Defaults", [this, &fileSystem]() {
+                        auto lineMenuScreen =
+                            std::make_shared<LineMenuScreen>(this->prefs_, this->display_);
+                        lineMenuScreen->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
+                            "Cancel", [this]() { this->popScreen(); }));
+                        lineMenuScreen->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
+                            "Factory Defaults: I'm sure!", [this, &fileSystem]() {
+                                SoftFactoryReset(fileSystem);
+                                log_w("NVS and FS cleared. Restarting...");
+                                MsgPopup::showTemporaryMessage(
+                                    this->display_, "Resetting Device! Restarting...", 2000);
+                                power_.reboot();
+                            }));
+                        pushScreen(lineMenuScreen);
+                        setNeedsRerender();
                     }));
 
                 systemSettingsMenu->setFirstLoad();
