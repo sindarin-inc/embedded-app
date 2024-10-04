@@ -42,9 +42,6 @@ void PutOnWelcomeMenuScreen::processCommand(RemoteCommand command) {
     case RemoteCommand::LEFT:
     case RemoteCommand::RIGHT:
         break;
-    default:
-        // Handle other commands or ignore
-        break;
     }
     setNeedsLayout();
 }
