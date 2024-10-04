@@ -144,6 +144,7 @@ target_compile_options(${PROJECT_NAME} PRIVATE
     -Wno-unknown-pragmas
     -Wno-missing-field-initializers
 
-    # Some things that seem to happen in the sim build but not esp-idf
+    # Some things that fail in the sim build but not esp-idf
     -Wno-comment
+    -Wno-deprecated-copy
 )
