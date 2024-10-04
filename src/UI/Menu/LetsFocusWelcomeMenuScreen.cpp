@@ -56,9 +56,6 @@ void LetsFocusWelcomeMenuScreen::processCommand(RemoteCommand command) {
         setFirstLoad();
         setNeedsRerender();
         break;
-    default:
-        // Handle other commands or ignore
-        break;
     }
     setNeedsLayout();
 }
