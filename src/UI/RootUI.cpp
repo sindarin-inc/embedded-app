@@ -89,7 +89,7 @@ void RootUI::pushScreen(const std::shared_ptr<Screen> &screen) {
     screenStack_.push(screen);
     // If this was called from `loop()` then we'll rerender automatically at the end of the loop.
     // Otherwise, we should rerender now.
-    if (!loopRunning_) {
+    if (!loopRunning_ && display_ != nullptr) {
         log_d("Pushing screen outside loop(), rerendering now");
         renderIfNeeded(*display_);
     }
@@ -110,7 +110,7 @@ void RootUI::popScreen(bool clearDisplay) {
     }
     // If this was called from `loop()` then we'll rerender automatically at the end of the loop.
     // Otherwise, we should rerender now.
-    if (!loopRunning_) {
+    if (!loopRunning_ && display_ != nullptr) {
         renderIfNeeded(*display_);
     }
 }
