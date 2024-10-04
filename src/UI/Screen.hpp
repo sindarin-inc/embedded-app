@@ -19,17 +19,6 @@ public:
     virtual auto needsRerender() -> bool { return needsRerender_; }
     virtual void clearNeedsRerender() { needsRerender_ = false; }
 
-    virtual void loop(DisplaySystem &display, RemoteCommand command) {
-        if (command != RemoteCommand::NONE) {
-            processCommand(command);
-        }
-        if (needsRerender()) {
-            display.beginPowerOn();
-            render(display);
-            clearNeedsRerender();
-        }
-    }
-
     void setBackCallback(std::function<void()> callback) { backCallback_ = std::move(callback); }
     virtual void back() {
         if (backCallback_ != nullptr) {

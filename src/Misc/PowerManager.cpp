@@ -577,15 +577,12 @@ void PowerManager::deepSleep(SleepReason reason) {
     time_t now = SolClock::getInstance().getEpochTime();
     switch (reason) {
     case SleepReason::Inactivity:
-        if (!prefs_.noDeliverOnClose.get().value_or(false) &&
-            state_ != PowerState::ActiveOverTemp) {
+        if (state_ != PowerState::ActiveOverTemp) {
             scheduleSync(SyncReason::OnInactivity, now + 30);
         }
         break;
     case SleepReason::TempleClosed:
-        if (!prefs_.noDeliverOnClose.get().value_or(false)) {
-            scheduleSync(SyncReason::OnClose, now + 30);
-        }
+        scheduleSync(SyncReason::OnClose, now + 30);
         break;
     case SleepReason::UpdateUSBState:
         if (USBConnected()) {

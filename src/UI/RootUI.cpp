@@ -87,6 +87,12 @@
 void RootUI::pushScreen(const std::shared_ptr<Screen> &screen) {
     screen->setNeedsRerender();
     screenStack_.push(screen);
+    // If this was called from `loop()` then we'll rerender automatically at the end of the loop.
+    // Otherwise, we should rerender now.
+    if (!loopRunning_) {
+        log_d("Pushing screen outside loop(), rerendering now");
+        renderIfNeeded(*display_);
+    }
 }
 
 void RootUI::popScreen(bool clearDisplay) {
@@ -101,6 +107,11 @@ void RootUI::popScreen(bool clearDisplay) {
         screenStack_.pop();
     } else {
         log_e("Trying to pop screen with no screen to pop");
+    }
+    // If this was called from `loop()` then we'll rerender automatically at the end of the loop.
+    // Otherwise, we should rerender now.
+    if (!loopRunning_) {
+        renderIfNeeded(*display_);
     }
 }
 
@@ -335,18 +346,12 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
             auto contentSyncScreen = std::make_shared<ContentSyncScreen>(
                 *display, localStore, this->prefs_, this->telemetry_, power_);
-            contentSyncScreen->setBackCallback([this, display]() {
+            contentSyncScreen->setBackCallback([this]() {
                 // Ensure this sticks around until the end of the function
                 // It wasn't picked up in the UIInnerLoop version because there isn't
                 // a command sent to process the backCallback
                 auto temp = currentScreen();
                 this->popScreen();
-                // Any screen that could possibly get to a backCallback without a command
-                // being sent through the loop must explicitly render at the end of its
-                // backCallback to ensure the screen is properly redrawn.
-                currentScreen()->setFirstLoad();
-                render(*display);
-                currentScreen()->clearNeedsRerender();
                 // TODO: After a successful content sync, re-setup the Local Store to be current.
                 // Once we do that, the following two lines will regenerate the tab so we don't
                 // need to restart to get the menu to be correct!
@@ -570,7 +575,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
         for (const auto &book : books) {
             // Bible books go in their own menu / app
-            if (!prefs_.noBible.get().value_or(false) && isBible(book)) {
+            if (isBible(book)) {
                 continue;
             }
             bool archived = prefs_.readableArchivedChanged.get(book->shortenedUuid.c_str());
@@ -699,7 +704,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             }
         }
 
-        if (noContent && !prefs_.noBible.get().value_or(false)) {
+        if (noContent) {
             std::shared_ptr<Readable> psalmsAndProverbs = std::make_shared<Readable>(
                 "6863fd3c-77a9-468e-93fa-f70d8b79029f", "Psalms and Proverbs",
                 PSALMSANDPROVERBS_EPUB, PSALMSANDPROVERBS_EPUB_SIZE);
@@ -1779,14 +1784,14 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     if (!localStore.recents().empty()) {
         newMainMenu->addTab("Recent", recentMenuFactory);
     }
-    if (!booksMenuFactory()->empty() && !prefs_.noBooks.get().value_or(false)) {
+    if (!booksMenuFactory()->empty()) {
         newMainMenu->addTab("Books", booksMenuFactory);
     }
-    if (!articlesMenuFactory()->empty() && !prefs_.noArticles.get().value_or(false)) {
+    if (!articlesMenuFactory()->empty()) {
         newMainMenu->addTab("Articles", articlesMenuFactory);
     }
 
-    if (!bibleMenuFactory()->empty() && !prefs_.noBible.get().value_or(false)) {
+    if (!bibleMenuFactory()->empty()) {
         newMainMenu->addTab("Bible", bibleMenuFactory);
     }
 
