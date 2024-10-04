@@ -380,7 +380,7 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
         auto menuItems = std::make_shared<MenuItemVector>();
 
         menuItems->emplace_back(std::make_shared<NewMenuItemCheckable>(
-            "Put on your Sol Reader! (1 min)",
+            "Put on your Sol Reader!",
             [this]() {
             auto putOnWelcomeMenuScreen = std::make_shared<PutOnWelcomeMenuScreen>(display_);
             putOnWelcomeMenuScreen->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
