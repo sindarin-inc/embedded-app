@@ -18,11 +18,12 @@
 
 class RootUI : public Screen {
 public:
-    RootUI(PreferencesStore &prefs, PowerManager &power, Telemetry &telemetry) noexcept
-        : prefs_(prefs), power_(power), telemetry_(telemetry) {}
+    RootUI(DisplaySystem &display, PreferencesStore &prefs, PowerManager &power,
+           Telemetry &telemetry) noexcept
+        : display_(display), prefs_(prefs), power_(power), telemetry_(telemetry) {}
     RootUI(RootUI const &) = delete;
 
-    void setup(DisplaySystem *display, LocalStore &localStore, FileSystem &fileSystem,
+    void setup(LocalStore &localStore, FileSystem &fileSystem,
                LightingController &lightingController);
     void handleBrowse(FileSystem &fileSystem,
                       const std::shared_ptr<GenericSettingsMenuScreen> &fsMenu,
@@ -36,10 +37,10 @@ public:
 
     auto needsRerender() -> bool override;
     void render(DisplaySystem &display) override;
-    void renderIfNeeded(DisplaySystem &display) {
+    void renderIfNeeded() {
         if (needsRerender()) {
-            display.beginPowerOn();
-            render(display);
+            display_.beginPowerOn();
+            render(display_);
             clearNeedsRerender();
         }
     };
@@ -51,12 +52,12 @@ public:
         return screenStack_.top();
     }
 
-    void loop(DisplaySystem &display, RemoteCommand command) {
+    void loop(RemoteCommand command) {
         loopRunning_ = true;
         if (command != RemoteCommand::NONE) {
             processCommand(command);
         }
-        renderIfNeeded(display);
+        renderIfNeeded();
         loopRunning_ = false;
     }
 
@@ -68,8 +69,8 @@ protected:
         "found.\nPlease contact support.\n\nPress\u00a0\u00a0\ue000\u00a0\u00a0to return";
     const char *settingsRestartMsg_ = "Settings change requires restart...";
 
+    DisplaySystem &display_;
     PreferencesStore &prefs_;
     PowerManager &power_;
-    DisplaySystem *display_ = nullptr;
     Telemetry &telemetry_;
 };

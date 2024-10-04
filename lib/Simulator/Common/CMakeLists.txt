@@ -128,3 +128,23 @@ endif()
 if(DEFINED SIM_ONE_BIT)
     add_compile_definitions(SIM_ONE_BIT=${SIM_ONE_BIT})
 endif()
+
+# This should mirror the compile options used for the ESP-IDF build
+target_compile_options(${PROJECT_NAME} PRIVATE
+    -Wall
+    -Werror=all
+    -Wno-error=unused-function
+    -Wno-error=unused-variable
+    -Wno-error=unused-but-set-variable
+    -Wno-error=deprecated-declarations
+    -Wextra
+    -Wno-unused-parameter
+    -Wno-sign-compare
+    -Wno-enum-conversion
+    -Wno-unknown-pragmas
+    -Wno-missing-field-initializers
+
+    # Some things that fail in the sim build but not esp-idf
+    -Wno-comment
+    -Wno-deprecated-copy
+)

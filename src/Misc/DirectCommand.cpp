@@ -139,8 +139,8 @@ void DirectCommand::receiveTusbPortData(const std::shared_ptr<uint8_t[]> &data, 
 void DirectCommand::pollHwUart() {
     // Handle debug commands early so that we can avoid sleep if necessary
     // Spend the rest of the time waiting for debug commands (that will probably never come)
-    uint8_t data[64];
 #if !SIMULATOR
+    uint8_t data[64];
     auto length = uart_read_bytes(UART_NUM_0, data, sizeof(data), 0);
     for (int i = 0; i < length; i++) {
         if (data[i] == '\n') {

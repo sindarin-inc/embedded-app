@@ -126,12 +126,7 @@ jobs:
 
       # Build scripts/epub-render with cmake
       - name: Build epub-render
-        run: |
-          cd scripts/epub-render
-          mkdir -p build
-          cd build
-          cmake ..
-          make -j
+        run: make epub-render-build
 
       - name: Rename binary with Git SHA
         run: |

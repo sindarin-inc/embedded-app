@@ -149,6 +149,11 @@ void DispatchQueue::dispatchThreadHandler() {
             work->op();
         }
         delete work;
+        auto watermark = uxTaskGetStackHighWaterMark(nullptr);
+        if (watermark < 256) {
+            log_w("Dispatch thread %s stack low (watermark: %zu)", pcTaskGetName(nullptr),
+                  watermark);
+        }
         SHOW_WATERMARK();
     } while (shutdownType_ != ShutdownType::Immediate);
 
@@ -171,6 +176,11 @@ auto DispatchQueue::dispatchOneOff(const fp_t &op, size_t threadStack, UBaseType
         auto work = reinterpret_cast<WorkItem *>(param);
         work->op();
         delete work;
+        auto watermark = uxTaskGetStackHighWaterMark(nullptr);
+        if (watermark < 256) {
+            log_w("Dispatch thread %s stack low (watermark: %zu)", pcTaskGetName(nullptr),
+                  watermark);
+        }
         SHOW_WATERMARK();
         vTaskDelete(nullptr);
         },

@@ -113,7 +113,7 @@ USBSerial usbSerial;
 
 PowerManager powerManager(fileSystem, prefs, lightingController, myDisplay, telemetry, usbSerial);
 LocalStore localStore(fileSystem, prefs, powerManager.battery, telemetry);
-RootUI rootUi(prefs, powerManager, telemetry);
+RootUI rootUi(myDisplay, prefs, powerManager, telemetry);
 SolClock solClock(prefs);
 WiFi wiFi(telemetry, prefs);
 
@@ -129,7 +129,7 @@ void UIInnerLoop(RemoteCommand command) {
     // during its backCallback cleanup.
     auto temp = rootUi.currentScreen();
     powerManager.feedInactivityTimer();
-    rootUi.loop(myDisplay, command);
+    rootUi.loop(command);
 }
 
 // Task for all periodic things that need to run ~1Hz. Polling tasks should be grouped here so that
@@ -532,7 +532,6 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         lightingController.setOverrideValuePercent(100);
         auto chargingScreen = std::make_shared<ChargingScreen>(prefs);
         rootUi.pushScreen(chargingScreen);
-        UIInnerLoop(RemoteCommand::NONE);
     };
 
     powerManager.addStateChangeCallback(nullptr, [&showChargingScreen](PowerState state) {
@@ -542,11 +541,9 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
             } else if (state == PowerState::ActiveOverTemp) {
                 auto overTempScreen = std::make_shared<OverTempScreen>();
                 rootUi.pushScreen(overTempScreen);
-                UIInnerLoop(RemoteCommand::NONE);
             } else if (state == PowerState::ActiveBatteryDepleted) {
                 auto powerDepletedScreen = std::make_shared<PowerDepletedScreen>();
                 rootUi.pushScreen(powerDepletedScreen);
-                UIInnerLoop(RemoteCommand::NONE);
             }
         });
     });
@@ -580,9 +577,9 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
             showChargingScreen();
         } else {
             HEAP_PROFILE_START(rootUISetup);
-            rootUi.setup(&myDisplay, localStore, fileSystem, lightingController);
+            rootUi.setup(localStore, fileSystem, lightingController);
             HEAP_PROFILE_END(rootUISetup);
-            UIInnerLoop(RemoteCommand::NONE);
+            rootUi.renderIfNeeded();
             log_i("First screen rendered after boot in %" PRIu64 " ms",
                   esp_timer_get_time() / 1000);
         }
@@ -620,7 +617,6 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
                 lightingController.setOverrideValuePercent(100);
                 auto testScreen = std::make_shared<TestAlignmentScreen>();
                 rootUi.pushScreen(testScreen);
-                UIInnerLoop(RemoteCommand::NONE);
             });
             return true;
         } else if (command == "UP") {
