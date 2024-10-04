@@ -47,8 +47,6 @@ public:
     void popLastListener();
 
 private:
-    enum class BootloaderState { Idle, State1, State2, State3, State4, State5, State6, State7 };
-    BootloaderState currentState_{BootloaderState::Idle};
     std::vector<SerialDataListener> listeners_;
 
 #if CONFIG_USE_TINYUSB_SERIAL

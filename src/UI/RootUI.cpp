@@ -89,19 +89,15 @@ void RootUI::pushScreen(const std::shared_ptr<Screen> &screen, bool deferRender)
     screenStack_.push(screen);
     // If this was called from `loop()` then we'll rerender automatically at the end of the loop.
     // Otherwise, we should rerender now.
-    if (!loopRunning_ && display_ != nullptr && !deferRender) {
+    if (!loopRunning_ && !deferRender) {
         log_d("Pushing screen outside loop() manually set, rerendering now");
-        renderIfNeeded(*display_);
+        renderIfNeeded();
     }
 }
 
 void RootUI::popScreen(bool clearDisplay) {
     if (clearDisplay) {
-        if (display_ != nullptr) {
-            display_->clearDisplay();
-        } else {
-            log_e("Trying to clear display with no display");
-        }
+        display_.clearDisplay();
     }
     if (!screenStack_.empty()) {
         screenStack_.pop();
@@ -110,8 +106,8 @@ void RootUI::popScreen(bool clearDisplay) {
     }
     // If this was called from `loop()` then we'll rerender automatically at the end of the loop.
     // Otherwise, we should rerender now.
-    if (!loopRunning_ && display_ != nullptr) {
-        renderIfNeeded(*display_);
+    if (!loopRunning_) {
+        renderIfNeeded();
     }
 }
 
@@ -144,10 +140,9 @@ void RootUI::clearNeedsRerender() {
 }
 
 // NOLINTNEXTLINE(readability-function-size): It's big, I know
-void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &fileSystem,
+void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                    LightingController &lightingController) {
 
-    display_ = display;
     auto lastMagReading = power_.getLastMagReading();
 
     HEAP_PROFILE_START(rootUILogBootData);
@@ -209,13 +204,13 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     };
 
     HEAP_PROFILE_START(NewMainMenuScreen);
-    auto newMainMenu = std::make_shared<NewMainMenuScreen>(*display_, power_.battery);
+    auto newMainMenu = std::make_shared<NewMainMenuScreen>(display_, power_.battery);
     HEAP_PROFILE_END(NewMainMenuScreen);
 
     SIZE_OF(*newMainMenu);
 
     auto createReadableScreen =
-        [this, display, &fileSystem, &lightingController, &localStore](
+        [this, &fileSystem, &lightingController, &localStore](
             const std::shared_ptr<Readable> &readable) -> std::shared_ptr<ReadableScreen> {
         // TODO: Would be better to not allocate / delete these all the time
 
@@ -247,7 +242,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         Font *font = FontFromPrefs(prefs_.font.get().value_or(PREFS_SOL_SMALL));
 
         auto readableScreen = std::make_shared<ReadableScreen>(
-            stream, *display, readable, this->prefs_, this->telemetry_, fileSystem,
+            stream, display_, readable, this->prefs_, this->telemetry_, fileSystem,
             lightingController, localStore, font);
 
         this->telemetry_.logMetric(TelemetryField::METRIC_READABLE_OPEN, readable->uuid,
@@ -255,7 +250,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
         // When switching to a readable from a menu, we should clear the display
         // to make the whites really white and the blacks really black.
-        display->clearDisplay();
+        display_.clearDisplay();
         readableScreen->setBackCallback([this, stream, readable]() {
             bool archived = prefs_.readableArchivedChanged.get(readable->shortenedUuid.c_str());
             auto title =
@@ -274,10 +269,10 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         return readableScreen;
     };
 
-    auto createTutorialScreen = [this, display](SpiramString text,
-                                                int bit) -> std::shared_ptr<TutorialScreen> {
+    auto createTutorialScreen = [this](SpiramString text,
+                                       int bit) -> std::shared_ptr<TutorialScreen> {
         auto tutorialScreen =
-            std::make_shared<TutorialScreen>(*display, this->prefs_, std::move(text), bit);
+            std::make_shared<TutorialScreen>(display_, this->prefs_, std::move(text), bit);
 
         tutorialScreen->setBackCallback([this]() {
             this->popScreen();
@@ -308,26 +303,26 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     }
 
     // If there is firmware available, show the Update Firmware item in the books tab.
-    auto makeReleaseNotesMenuItem = [this, &localStore, display](const Firmware &firmware) {
+    auto makeReleaseNotesMenuItem = [this, &localStore](const Firmware &firmware) {
         log_i("Found pending firmware update %s", firmware.version.c_str());
         return std::make_shared<NewMenuItemSingleLine>(
             StringFormat("Upgrade Software from %s to %s", SemanticVersionString(),
                          firmware.version.c_str()),
-            [this, display, &localStore, firmware]() {
+            [this, &localStore, firmware]() {
             auto releaseNotesScreen = std::make_shared<ReleaseNotesScreen>(
-                *display, this->prefs_, power_, localStore, firmware);
-            display->clearDisplay();
+                display_, this->prefs_, power_, localStore, firmware);
+            display_.clearDisplay();
             pushScreen(releaseNotesScreen);
             releaseNotesScreen->setBackCallback([this]() { this->popScreen(); });
             });
     };
 
     auto makeContentSyncMenuItem =
-        [this, display, &localStore](const char *title) -> std::shared_ptr<NewMenuItem> {
-        return std::make_shared<NewMenuItemSingleLine>(title, [this, display, &localStore]() {
+        [this, &localStore](const char *title) -> std::shared_ptr<NewMenuItem> {
+        return std::make_shared<NewMenuItemSingleLine>(title, [this, &localStore]() {
             // If we're not yet paired, show the app screen instead
             if (PreferencesStore::paired == PairedStatus::Unpaired) {
-                auto appDownloadScreen = std::make_shared<AppDownloadScreen>(*display);
+                auto appDownloadScreen = std::make_shared<AppDownloadScreen>(display_);
                 this->pushScreen(appDownloadScreen);
                 appDownloadScreen->setBackCallback([this]() { this->popScreen(); });
                 return;
@@ -337,7 +332,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             // turn on wifi or BLE to perform the content sync.
             if (this->prefs_.wifiDisabled.get().value_or(false) &&
                 this->prefs_.bleDisabled.get().value_or(false)) {
-                MsgPopup::showTemporaryMessage(*display,
+                MsgPopup::showTemporaryMessage(display_,
                                                "Enable WiFi or BLE to perform a Content Sync.",
                                                2000, true, currentScreen());
                 currentScreen()->setFirstLoad();
@@ -345,7 +340,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             }
 
             auto contentSyncScreen = std::make_shared<ContentSyncScreen>(
-                *display, localStore, this->prefs_, this->telemetry_, power_);
+                display_, localStore, this->prefs_, this->telemetry_, power_);
             contentSyncScreen->setBackCallback([this]() {
                 // Ensure this sticks around until the end of the function
                 // It wasn't picked up in the UIInnerLoop version because there isn't
@@ -365,12 +360,12 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     };
 
     auto handleReadableScreenCreation =
-        [this, display, createReadableScreen](const std::shared_ptr<Readable> &r) {
+        [this, createReadableScreen](const std::shared_ptr<Readable> &r) {
         auto readableScreen = createReadableScreen(r);
         if (readableScreen != nullptr) {
             this->pushScreen(readableScreen);
         } else {
-            auto errorPopup = std::make_shared<MsgPopup>(*display, itemErrorMsg_);
+            auto errorPopup = std::make_shared<MsgPopup>(display_, itemErrorMsg_);
             this->pushScreen(errorPopup);
             errorPopup->setBackCallback([this]() { this->popScreen(); });
         }
@@ -380,19 +375,19 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     log_i("Loading %zu Pocket articles", articles.size());
 
-    auto welcomeMenuFactory = [this, display, noContent, makeContentSyncMenuItem,
+    auto welcomeMenuFactory = [this, noContent, makeContentSyncMenuItem,
                                &lightingController]() -> MenuItemSharedPtrVector {
         auto menuItems = std::make_shared<MenuItemVector>();
 
         menuItems->emplace_back(std::make_shared<NewMenuItemCheckable>(
             "Put on your Sol Reader! (1 min)",
-            [this, display]() {
-            auto putOnWelcomeMenuScreen = std::make_shared<PutOnWelcomeMenuScreen>(*display);
+            [this]() {
+            auto putOnWelcomeMenuScreen = std::make_shared<PutOnWelcomeMenuScreen>(display_);
             putOnWelcomeMenuScreen->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
                 "Back to Main Menu", [this]() { this->popScreen(); }));
-            putOnWelcomeMenuScreen->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
-                "Watch Sol Manifesto (1 min)", [this, display]() {
-                    auto manifestoScreen = std::make_shared<DemoScreen>(*display, prefs_, true);
+            putOnWelcomeMenuScreen->addMenuItem(
+                std::make_shared<NewMenuItemSingleLine>("Watch Sol Manifesto (1 min)", [this]() {
+                    auto manifestoScreen = std::make_shared<DemoScreen>(display_, prefs_, true);
                     this->pushScreen(manifestoScreen);
                     manifestoScreen->setBackCallback([this]() {
                         this->popScreen();
@@ -400,7 +395,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                         // being sent through the loop must explicitly render at the end of its
                         // backCallback to ensure the screen is properly redrawn.
                         if (needsRerender()) {
-                            render(*display_);
+                            render(display_);
                             clearNeedsRerender();
                         }
                     });
@@ -414,8 +409,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
         menuItems->emplace_back(std::make_shared<NewMenuItemCheckable>(
             "Let's focus (3 min)",
-            [this, display, &lightingController]() {
-            auto letsFocusScreen = std::make_shared<LetsFocusWelcomeMenuScreen>(*display);
+            [this, &lightingController]() {
+            auto letsFocusScreen = std::make_shared<LetsFocusWelcomeMenuScreen>(display_);
             letsFocusScreen->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
                 "Back to Main Menu", [this, &lightingController]() {
                     this->popScreen();
@@ -429,11 +424,11 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
         menuItems->emplace_back(std::make_shared<NewMenuItemCheckable>(
             "Text placement (2 min)",
-            [this, display]() {
-            auto textPlacementScreen = std::make_shared<TextPlacementWelcomeMenuScreen>(*display);
+            [this]() {
+            auto textPlacementScreen = std::make_shared<TextPlacementWelcomeMenuScreen>(display_);
             textPlacementScreen->addMenuItem(
                 std::make_shared<NewMenuItemSingleLine>("Choose this template",
-                                                        [this, display]() {
+                                                        [this]() {
                 switch (std::static_pointer_cast<TextPlacementWelcomeMenuScreen>(currentScreen())
                             ->getCurrentTextSelection()) {
                 case 0:
@@ -445,7 +440,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                     prefs_.font.set(PREFS_SOL_SMALL);
                     log_d("Setting prefs to Comfortable");
                     setFirstLoad();
-                    MsgPopup::showTemporaryMessage(*display, "Comfortable text placement set", 2000,
+                    MsgPopup::showTemporaryMessage(display_, "Comfortable text placement set", 2000,
                                                    true, currentScreen());
                     // prefs_.textTemplate.set(TextTemplate::Comfortable);
                     break;
@@ -458,7 +453,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                     prefs_.lineSpacing.set(-1);
                     log_d("Setting prefs to Condensed");
                     setFirstLoad();
-                    MsgPopup::showTemporaryMessage(*display, "Condensed text placement set", 2000,
+                    MsgPopup::showTemporaryMessage(display_, "Condensed text placement set", 2000,
                                                    true, currentScreen());
                     // prefs_.textTemplate.set(TextTemplate::Condensed);
                     break;
@@ -471,7 +466,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                     prefs_.lineSpacing.set(0);
                     log_d("Setting prefs to Bottom");
                     setFirstLoad();
-                    MsgPopup::showTemporaryMessage(*display, "Bottom text placement set", 2000,
+                    MsgPopup::showTemporaryMessage(display_, "Bottom text placement set", 2000,
                                                    true, currentScreen());
                     // prefs_.textTemplate.set(TextTemplate::Bottom);
                     break;
@@ -486,16 +481,16 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
         menuItems->emplace_back(std::make_shared<NewMenuItemCheckable>(
             "Get your first book (5 min)",
-            [this, display, makeContentSyncMenuItem]() {
+            [this, makeContentSyncMenuItem]() {
             auto firstBookWelcomeMenuScreen =
-                std::make_shared<FirstBookWelcomeMenuScreen>(*display);
+                std::make_shared<FirstBookWelcomeMenuScreen>(display_);
 
             firstBookWelcomeMenuScreen->addMenuItem(
                 makeContentSyncMenuItem("Get content via the Sol App"));
 
-            firstBookWelcomeMenuScreen->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
-                "Direct transfer via USB", [this, display]() {
-                    auto drmFreeScreen = std::make_shared<DRMFreeWelcomeMenuScreen>(*display);
+            firstBookWelcomeMenuScreen->addMenuItem(
+                std::make_shared<NewMenuItemSingleLine>("Direct transfer via USB", [this]() {
+                    auto drmFreeScreen = std::make_shared<DRMFreeWelcomeMenuScreen>(display_);
                     this->pushScreen(drmFreeScreen);
                     drmFreeScreen->setBackCallback([this]() { this->popScreen(); });
 
@@ -743,17 +738,16 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         return menuItems;
     };
 
-    auto settingsMenuFactory = [this, display, &localStore, &fileSystem, hasLastQuestion,
+    auto settingsMenuFactory = [this, &localStore, &fileSystem, hasLastQuestion,
                                 makeContentSyncMenuItem,
                                 &lightingController]() -> MenuItemSharedPtrVector {
         auto menuItems = std::make_shared<MenuItemVector>();
 
-        menuItems->emplace_back(std::make_shared<NewMenuItemSingleLine>("Reading",
-                                                                        [this, display]() {
+        menuItems->emplace_back(std::make_shared<NewMenuItemSingleLine>("Reading", [this]() {
             log_d("Loading Reading Settings Menu");
 
             auto readingSettingsMenu =
-                std::make_shared<ReadingSettingsMenuScreen>(*display, "Main Menu", prefs_);
+                std::make_shared<ReadingSettingsMenuScreen>(display_, "Main Menu", prefs_);
 
             if (this->prefs_.autoPilot.get().value_or(false)) {
                 prefs_.autoPilotSpeed.set(10000);
@@ -765,27 +759,26 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
             readingSettingsMenu->setBackCallback([this]() { this->popScreen(); });
 
-            readingSettingsMenu->addMenuItem(
-                std::make_shared<NewMenuItemSingleLine>("Text Size",
-                                                        [this, display]() {
+            readingSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>("Text Size",
+                                                                                     [this]() {
                 auto fontMenu = std::make_shared<ReadingSettingsMenuScreen>(
-                    *display, "Reading Settings", prefs_);
+                    display_, "Reading Settings", prefs_);
                 fontMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>("Small", [this]() {
-                    this->display_->clearDisplay();
+                    display_.clearDisplay();
                     prefs_.font.set(PREFS_SOL_SMALL);
                     this->telemetry_.logMetricData(TelemetryField::METRIC_STYLE,
                                                    {{"text_size", "small"}});
                     currentScreen()->setNeedsRerender();
                 }));
                 fontMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>("Medium", [this]() {
-                    this->display_->clearDisplay();
+                    display_.clearDisplay();
                     prefs_.font.set(PREFS_SOL_MEDIUM);
                     this->telemetry_.logMetricData(TelemetryField::METRIC_STYLE,
                                                    {{"text_size", "medium"}});
                     currentScreen()->setNeedsRerender();
                 }));
                 fontMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>("Large", [this]() {
-                    this->display_->clearDisplay();
+                    display_.clearDisplay();
                     prefs_.font.set(PREFS_SOL_LARGE);
                     this->telemetry_.logMetricData(TelemetryField::METRIC_STYLE,
                                                    {{"text_size", "large"}});
@@ -802,48 +795,48 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 fontMenu->setSelectedIndex(menuIndex);
                 pushScreen(fontMenu);
                 fontMenu->setBackCallback([this]() { this->popScreen(false); });
-                }));
+            }));
 
             readingSettingsMenu->addMenuItem(
-                std::make_shared<NewMenuItemSingleLine>("Move Page in Display", [this, display]() {
+                std::make_shared<NewMenuItemSingleLine>("Move Page in Display", [this]() {
                     log_d("Loading adjust offset");
                     auto offsetAdjust =
-                        std::make_shared<OffsetAdjustScreen>(*display, prefs_, this->telemetry_);
+                        std::make_shared<OffsetAdjustScreen>(display_, prefs_, this->telemetry_);
                     this->pushScreen(offsetAdjust);
                     log_d("setting up callback");
                     offsetAdjust->setBackCallback([this]() { this->popScreen(false); });
                     log_d("set up callback");
                 }));
 
-            readingSettingsMenu->addMenuItem(
-                std::make_shared<NewMenuItemSingleLine>("Resize Page", [this, display]() {
-                    log_d("Loading resize box");
-                    auto resizeBox =
-                        std::make_shared<ResizeBoxScreen>(*display, prefs_, this->telemetry_);
-                    this->pushScreen(resizeBox);
-                    log_d("setting up callback");
-                    resizeBox->setBackCallback([this]() { this->popScreen(false); });
-                    log_d("set up callback");
-                }));
+            readingSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>("Resize Page",
+                                                                                     [this]() {
+                log_d("Loading resize box");
+                auto resizeBox =
+                    std::make_shared<ResizeBoxScreen>(display_, prefs_, this->telemetry_);
+                this->pushScreen(resizeBox);
+                log_d("setting up callback");
+                resizeBox->setBackCallback([this]() { this->popScreen(false); });
+                log_d("set up callback");
+            }));
 
-            readingSettingsMenu->addMenuItem(
-                std::make_shared<NewMenuItemSingleLine>("Line Spacing", [this, display]() {
-                    auto lineSpacingScreen =
-                        std::make_shared<LineSpacingScreen>(*display, prefs_, this->telemetry_);
-                    this->pushScreen(lineSpacingScreen);
-                    lineSpacingScreen->setBackCallback([this]() { this->popScreen(false); });
-                }));
+            readingSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>("Line Spacing",
+                                                                                     [this]() {
+                auto lineSpacingScreen =
+                    std::make_shared<LineSpacingScreen>(display_, prefs_, this->telemetry_);
+                this->pushScreen(lineSpacingScreen);
+                lineSpacingScreen->setBackCallback([this]() { this->popScreen(false); });
+            }));
 
             readingSettingsMenu->addMenuItem(std::make_shared<NewMenuItemCheckable>(
                 "Dark Mode",
                 [this]() {
                 this->prefs_.darkMode.set(!this->prefs_.darkMode.get().value_or(false));
                 // Reserved for future use? Potentially lighting up and down?
-                this->display_->flipInversion();
+                display_.flipInversion();
                 // When we invert, we should do a full clear of the display to make sure
                 // the blacks are really gone.
-                this->display_->clearDisplay();
-                prefs_.invertSetting.set(this->display_->getInversion());
+                display_.clearDisplay();
+                prefs_.invertSetting.set(display_.getInversion());
                 currentScreen()->setNeedsRerender();
                 currentScreen()->setFirstLoad();
                 },
@@ -873,21 +866,21 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         }));
 
         menuItems->emplace_back(std::make_shared<NewMenuItemSingleLine>(
-            "Content", [this, display, &localStore, makeContentSyncMenuItem]() {
+            "Content", [this, &localStore, makeContentSyncMenuItem]() {
                 log_d("Loading Reading Settings Menu");
 
                 auto contentSettingsMenu =
-                    std::make_shared<GenericSettingsMenuScreen>(*display_, "Main Menu");
+                    std::make_shared<GenericSettingsMenuScreen>(display_, "Main Menu");
 
                 for (auto modelType : {ReadablesModelType::Book, ReadablesModelType::Article}) {
                     auto sortOrderMenuItem = std::make_shared<NewMenuItemSingleLine>(
                         modelType == ReadablesModelType::Book ? "Book Sort Order"
                                                               : "Article Sort Order",
-                        [this, &localStore, display, modelType]() {
+                        [this, &localStore, modelType]() {
                     auto sortMenu =
-                        std::make_shared<GenericSettingsMenuScreen>(*display, "Content Settings");
+                        std::make_shared<GenericSettingsMenuScreen>(display_, "Content Settings");
                     sortMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
-                        "Alphabetical", [this, &localStore, display, modelType]() {
+                        "Alphabetical", [this, &localStore, modelType]() {
                             if (modelType == ReadablesModelType::Book) {
                                 this->prefs_.bookSortCriteria.set(
                                     static_cast<int>(SortCriteria::Alphabetical));
@@ -901,12 +894,12 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                                     static_cast<int>(SortDirection::Ascending));
                                 localStore.saveReadables(localStore.articles());
                             }
-                            MsgPopup::showTemporaryMessage(*display, settingsRestartMsg_, 500,
+                            MsgPopup::showTemporaryMessage(display_, settingsRestartMsg_, 500,
                                                            false, currentScreen());
                             this->power_.reboot();
                         }));
                     sortMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
-                        "Date added, most recent", [this, &localStore, display, modelType]() {
+                        "Date added, most recent", [this, &localStore, modelType]() {
                             if (modelType == ReadablesModelType::Book) {
                                 this->prefs_.bookSortCriteria.set(
                                     static_cast<int>(SortCriteria::DateModified));
@@ -920,12 +913,12 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                                     static_cast<int>(SortDirection::Descending));
                                 localStore.saveReadables(localStore.articles());
                             }
-                            MsgPopup::showTemporaryMessage(*display, settingsRestartMsg_, 500,
+                            MsgPopup::showTemporaryMessage(display_, settingsRestartMsg_, 500,
                                                            false, currentScreen());
                             this->power_.reboot();
                         }));
                     sortMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
-                        "Date added, least recent", [this, &localStore, display, modelType]() {
+                        "Date added, least recent", [this, &localStore, modelType]() {
                             if (modelType == ReadablesModelType::Book) {
                                 this->prefs_.bookSortCriteria.set(
                                     static_cast<int>(SortCriteria::DateModified));
@@ -939,12 +932,12 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                                     static_cast<int>(SortDirection::Ascending));
                                 localStore.saveReadables(localStore.articles());
                             }
-                            MsgPopup::showTemporaryMessage(*display, settingsRestartMsg_, 500,
+                            MsgPopup::showTemporaryMessage(display_, settingsRestartMsg_, 500,
                                                            false, currentScreen());
                             this->power_.reboot();
                         }));
                     sortMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
-                        "Last read, most recent", [this, &localStore, display, modelType]() {
+                        "Last read, most recent", [this, &localStore, modelType]() {
                             if (modelType == ReadablesModelType::Book) {
                                 this->prefs_.bookSortCriteria.set(
                                     static_cast<int>(SortCriteria::LastRead));
@@ -958,12 +951,12 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                                     static_cast<int>(SortDirection::Descending));
                                 localStore.saveReadables(localStore.articles());
                             }
-                            MsgPopup::showTemporaryMessage(*display, settingsRestartMsg_, 500,
+                            MsgPopup::showTemporaryMessage(display_, settingsRestartMsg_, 500,
                                                            false, currentScreen());
                             this->power_.reboot();
                         }));
                     sortMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
-                        "Last read, least recent", [this, &localStore, display, modelType]() {
+                        "Last read, least recent", [this, &localStore, modelType]() {
                             if (modelType == ReadablesModelType::Book) {
                                 this->prefs_.bookSortCriteria.set(
                                     static_cast<int>(SortCriteria::LastRead));
@@ -977,12 +970,12 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                                     static_cast<int>(SortDirection::Ascending));
                                 localStore.saveReadables(localStore.articles());
                             }
-                            MsgPopup::showTemporaryMessage(*display, settingsRestartMsg_, 500,
+                            MsgPopup::showTemporaryMessage(display_, settingsRestartMsg_, 500,
                                                            false, currentScreen());
                             this->power_.reboot();
                         }));
                     sortMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
-                        "Random", [this, &localStore, display, modelType]() {
+                        "Random", [this, &localStore, modelType]() {
                             if (modelType == ReadablesModelType::Book) {
                                 this->prefs_.bookSortCriteria.set(
                                     static_cast<int>(SortCriteria::Random));
@@ -996,7 +989,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                                     static_cast<int>(SortDirection::Ascending));
                                 localStore.saveReadables(localStore.articles());
                             }
-                            MsgPopup::showTemporaryMessage(*display, settingsRestartMsg_, 500,
+                            MsgPopup::showTemporaryMessage(display_, settingsRestartMsg_, 500,
                                                            false, currentScreen());
                             this->power_.reboot();
                         }));
@@ -1049,55 +1042,55 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
         menuItems->emplace_back(std::make_shared<NewMenuItemSingleLine>(
             "System",
-            [this, display, &lightingController, &localStore, &fileSystem]() {
+            [this, &lightingController, &localStore, &fileSystem]() {
             log_d("Loading System Settings Menu");
 
             auto systemSettingsMenu =
-                std::make_shared<GenericSettingsMenuScreen>(*display, "Main Menu");
+                std::make_shared<GenericSettingsMenuScreen>(display_, "Main Menu");
 
             systemSettingsMenu->setBackCallback([this]() { this->popScreen(); });
 
-            systemSettingsMenu->addMenuItem(
-                std::make_shared<NewMenuItemSingleLine>("About", [this, display]() {
-                    auto aboutScreen = std::make_shared<AboutScreen>(*display, prefs_, power_);
-                    this->pushScreen(aboutScreen);
-                    aboutScreen->setBackCallback([this]() { this->popScreen(); });
-                }));
+            systemSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>("About",
+                                                                                    [this]() {
+                auto aboutScreen = std::make_shared<AboutScreen>(display_, prefs_, power_);
+                this->pushScreen(aboutScreen);
+                aboutScreen->setBackCallback([this]() { this->popScreen(); });
+            }));
 
             // Brightness and contrast are going to move elsewhere
             systemSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
-                "Brightness", [this, display, &lightingController]() {
+                "Brightness", [this, &lightingController]() {
                     auto lightingAdjustScreen = std::make_shared<LightingAdjustScreen>(
-                        *display, this->prefs_, lightingController, this->telemetry_);
-                    this->display_->clearDisplay();
+                        display_, this->prefs_, lightingController, this->telemetry_);
+                    display_.clearDisplay();
                     pushScreen(lightingAdjustScreen);
                     lightingAdjustScreen->setBackCallback([this]() { this->popScreen(false); });
                 }));
 
 #if CONFIG_DISPLAY_EINKET013TT1
-            systemSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
-                "Contrast", [this, display, &lightingController]() {
+            systemSettingsMenu->addMenuItem(
+                std::make_shared<NewMenuItemSingleLine>("Contrast", [this, &lightingController]() {
                     auto contrastAdjustScreen = std::make_shared<ContrastAdjustScreen>(
-                        *display, this->prefs_, lightingController, this->telemetry_);
-                    this->display_->clearDisplay();
+                        display_, this->prefs_, lightingController, this->telemetry_);
+                    display_.clearDisplay();
                     pushScreen(contrastAdjustScreen);
                     contrastAdjustScreen->setBackCallback([this]() { this->popScreen(false); });
                 }));
 #endif
 
             systemSettingsMenu->addMenuItem(
-                std::make_shared<NewMenuItemSingleLine>("Legal & Regulatory", [this, display]() {
-                    auto legalScreen = std::make_shared<LegalScreen>(*display, prefs_, power_);
+                std::make_shared<NewMenuItemSingleLine>("Legal & Regulatory", [this]() {
+                    auto legalScreen = std::make_shared<LegalScreen>(display_, prefs_, power_);
                     this->pushScreen(legalScreen);
                     legalScreen->setBackCallback([this]() { this->popScreen(); });
                 }));
 
             systemSettingsMenu->addMenuItem(
                 std::make_shared<NewMenuItemSingleLine>("Firmware Update",
-                                                        [this, display]() {
+                                                        [this]() {
                 // If we don't have WiFi configured, show the QR code instead
                 if (!WiFi::getInstance().hasWiFiCredentials()) {
-                    auto appDownloadScreen = std::make_shared<AppDownloadScreen>(*display);
+                    auto appDownloadScreen = std::make_shared<AppDownloadScreen>(display_);
                     this->pushScreen(appDownloadScreen);
                     appDownloadScreen->setBackCallback([this]() { this->popScreen(); });
                     return;
@@ -1109,14 +1102,14 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 // If wifi has been disabled, show a popup encouraging the user to
                 // turn on wifi to perform the firmware sync.
                 if (this->prefs_.wifiDisabled.get().value_or(false)) {
-                    MsgPopup::showTemporaryMessage(*display, turnOnWifiMsg, 2000, true,
+                    MsgPopup::showTemporaryMessage(display_, turnOnWifiMsg, 2000, true,
                                                    currentScreen());
                     currentScreen()->setFirstLoad();
                     return;
                 }
 
                 auto firmwareUpdateScreen =
-                    std::make_shared<FirmwareUpdateScreen>(*display, telemetry_, prefs_);
+                    std::make_shared<FirmwareUpdateScreen>(display_, telemetry_, prefs_);
                 this->pushScreen(firmwareUpdateScreen);
                 firmwareUpdateScreen->setBackCallback([this]() { this->popScreen(false); });
                 firmwareUpdateScreen->begin();
@@ -1128,12 +1121,12 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 currentScreen()->setFirstLoad();
                 if (this->prefs_.dontShowWelcome.get().value_or(false)) {
                     this->prefs_.dontShowWelcome.set(false);
-                    MsgPopup::showTemporaryMessage(*display_,
+                    MsgPopup::showTemporaryMessage(display_,
                                                    "Welcome Tab will be\nshown on next restart.",
                                                    2000, true, currentScreen());
                 } else {
                     this->prefs_.dontShowWelcome.set(true);
-                    MsgPopup::showTemporaryMessage(*display_,
+                    MsgPopup::showTemporaryMessage(display_,
                                                    "Welcome Tab will be\nhidden on next restart.",
                                                    2000, true, currentScreen());
                 }
@@ -1142,9 +1135,9 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
             systemSettingsMenu->addMenuItem(
                 std::make_shared<NewMenuItemSingleLine>("Inactivity Timer",
-                                                        [this, display]() {
+                                                        [this]() {
                 auto inactivityMenu =
-                    std::make_shared<InactivitySettingMenuScreen>(*display, "System Settings");
+                    std::make_shared<InactivitySettingMenuScreen>(display_, "System Settings");
 
                 auto updateExtraText = [this]() {
                     std::string message = std::string(SpiRamStringFormat(
@@ -1158,7 +1151,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 // inactivityMenuItem as a shared pointer.
                 inactivityMenu->addMenuItem(
                     std::make_shared<NewMenuItemSingleLine>("5 minutes", [this, updateExtraText]() {
-                        this->display_->clearDisplay();
+                        display_.clearDisplay();
                         prefs_.inactivityMinutes.set(5);
                         updateExtraText();
                         std::static_pointer_cast<InactivitySettingMenuScreen>(currentScreen())
@@ -1171,7 +1164,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
                 inactivityMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
                     "10 minutes", [this, updateExtraText]() {
-                        this->display_->clearDisplay();
+                        display_.clearDisplay();
                         prefs_.inactivityMinutes.set(10);
                         updateExtraText();
                         std::static_pointer_cast<InactivitySettingMenuScreen>(currentScreen())
@@ -1184,7 +1177,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
                 inactivityMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
                     "15 minutes", [this, updateExtraText]() {
-                        this->display_->clearDisplay();
+                        display_.clearDisplay();
                         prefs_.inactivityMinutes.set(15);
                         updateExtraText();
                         std::static_pointer_cast<InactivitySettingMenuScreen>(currentScreen())
@@ -1197,7 +1190,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
                 inactivityMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
                     "20 minutes", [this, updateExtraText]() {
-                        this->display_->clearDisplay();
+                        display_.clearDisplay();
                         prefs_.inactivityMinutes.set(20);
                         updateExtraText();
                         std::static_pointer_cast<InactivitySettingMenuScreen>(currentScreen())
@@ -1210,7 +1203,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
                 inactivityMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
                     "30 minutes", [this, updateExtraText]() {
-                        this->display_->clearDisplay();
+                        display_.clearDisplay();
                         prefs_.inactivityMinutes.set(30);
                         updateExtraText();
                         std::static_pointer_cast<InactivitySettingMenuScreen>(currentScreen())
@@ -1240,11 +1233,11 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 inactivityMenu->setSelectedIndex(menuIndex);
                 pushScreen(inactivityMenu);
 
-                inactivityMenu->setBackCallback([this, display]() {
+                inactivityMenu->setBackCallback([this]() {
                     if (std::static_pointer_cast<InactivitySettingMenuScreen>(currentScreen())
                             ->getRequireRestart()) {
                         PreferencesStore::settingsOnRestart = true;
-                        MsgPopup::showTemporaryMessage(*display, settingsRestartMsg_, 1500, false,
+                        MsgPopup::showTemporaryMessage(display_, settingsRestartMsg_, 1500, false,
                                                        currentScreen());
                         this->power_.reboot();
                     } else {
@@ -1254,35 +1247,35 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 }));
 
             systemSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
-                "Clear Content and Restart", [this, display, &localStore]() {
+                "Clear Content and Restart", [this, &localStore]() {
                     localStore.deleteReadables(false);
                     localStore.deleteArticles(false);
-                    MsgPopup::showTemporaryMessage(*display, "Content cleared. Restarting...", 2000,
+                    MsgPopup::showTemporaryMessage(display_, "Content cleared. Restarting...", 2000,
                                                    false, currentScreen());
                     power_.reboot();
                 }));
 
             systemSettingsMenu->addMenuItem(
                 std::make_shared<NewMenuItemSingleLine>("WiFi and Bluetooth",
-                                                        [this, display]() {
-                auto wifiSettingsMenuScreen = std::make_shared<WiFiSettingsMenuScreen>(*display);
+                                                        [this]() {
+                auto wifiSettingsMenuScreen = std::make_shared<WiFiSettingsMenuScreen>(display_);
 
                 wifiSettingsMenuScreen->addMenuItem(
-                    std::make_shared<NewMenuItemSingleLine>("WiFi Scan", [this, display]() {
+                    std::make_shared<NewMenuItemSingleLine>("WiFi Scan", [this]() {
                         auto wiFiScanScreen =
-                            std::make_shared<WiFiScanScreen>(*display, WiFi::getInstance());
+                            std::make_shared<WiFiScanScreen>(display_, WiFi::getInstance());
                         wiFiScanScreen->begin();
                         this->pushScreen(wiFiScanScreen);
                         wiFiScanScreen->setBackCallback([this]() { this->popScreen(); });
                     }));
 
-                wifiSettingsMenuScreen->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
-                    "Clear WiFi Settings", [this, display]() {
+                wifiSettingsMenuScreen->addMenuItem(
+                    std::make_shared<NewMenuItemSingleLine>("Clear WiFi Settings", [this]() {
                         WiFi::getInstance().clearWiFiCredentials();
                         log_w("WiFi settings cleared.");
                         std::static_pointer_cast<WiFiSettingsMenuScreen>(currentScreen())
                             ->loadWifiSettings();
-                        MsgPopup::showTemporaryMessage(*display, "WiFi settings cleared.", 2000,
+                        MsgPopup::showTemporaryMessage(display_, "WiFi settings cleared.", 2000,
                                                        true, currentScreen());
                         currentScreen()->setFirstLoad();
                     }));
@@ -1320,23 +1313,31 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 }));
 
             systemSettingsMenu->addMenuItem(
-                std::make_shared<NewMenuItemSingleLine>("Factory Defaults",
-                                                        [this, display, &fileSystem]() {
-                SoftFactoryReset(fileSystem);
-                log_w("NVS and FS cleared. Restarting...");
-                MsgPopup::showTemporaryMessage(*display, "Resetting Device! Restarting...", 2000);
-                power_.reboot();
+                std::make_shared<NewMenuItemSingleLine>("Factory Defaults", [this, &fileSystem]() {
+                    auto lineMenuScreen =
+                        std::make_shared<LineMenuScreen>(this->prefs_, this->display_);
+                    lineMenuScreen->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
+                        "Cancel", [this]() { this->popScreen(); }));
+                    lineMenuScreen->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
+                        "Factory Defaults: I'm sure!", [this, &fileSystem]() {
+                            SoftFactoryReset(fileSystem);
+                            log_w("NVS and FS cleared. Restarting...");
+                            MsgPopup::showTemporaryMessage(this->display_,
+                                                           "Resetting Device! Restarting...", 2000);
+                            power_.reboot();
+                        }));
+                    pushScreen(lineMenuScreen);
+                    setNeedsRerender();
                 }));
 
             systemSettingsMenu->setFirstLoad();
             this->pushScreen(systemSettingsMenu);
             }));
 
-        menuItems->emplace_back(std::make_shared<NewMenuItemSingleLine>("Experimental",
-                                                                        [this, display]() {
+        menuItems->emplace_back(std::make_shared<NewMenuItemSingleLine>("Experimental", [this]() {
             log_d("Loading Experimental Settings Menu");
             auto experimentalSettingsMenu =
-                std::make_shared<GenericSettingsMenuScreen>(*display, "Main Menu");
+                std::make_shared<GenericSettingsMenuScreen>(display_, "Main Menu");
 
             experimentalSettingsMenu->setBackCallback([this]() { this->popScreen(); });
 
@@ -1368,51 +1369,51 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
             menuItems->emplace_back(std::make_shared<NewMenuItemSingleLine>(
                 "Debug",
-                [this, display, hasLastQuestion, &localStore, &fileSystem]() {
+                [this, hasLastQuestion, &localStore, &fileSystem]() {
                 log_d("Loading System Settings Menu");
 
                 auto debugSettingsMenu =
-                    std::make_shared<GenericSettingsMenuScreen>(*display, "Debug");
+                    std::make_shared<GenericSettingsMenuScreen>(display_, "Debug");
 
                 debugSettingsMenu->setBackCallback([this]() { this->popScreen(); });
 
 #if CONFIG_USE_TURN_TOUCH_REMOTE
                 debugSettingsMenu->addMenuItem(
-                    std::make_shared<NewMenuItemSingleLine>("Unpair PageTurner", [this, display]() {
+                    std::make_shared<NewMenuItemSingleLine>("Unpair PageTurner", [this]() {
                         prefs_.pairedTurnTouchAddress.remove();
                         prefs_.lastPageTurnerBuild.remove();
                         PreferencesStore::lastPageTurnerBattery = 0;
                         log_w("Unpaired PageTurner. Restarting...");
-                        MsgPopup::showTemporaryMessage(*display,
+                        MsgPopup::showTemporaryMessage(display_,
                                                        "Unpaired PageTurner! Resetting...", 2000,
                                                        false, currentScreen());
                         power_.reboot();
                     }));
 #endif
 
-                debugSettingsMenu->addMenuItem(
-                    std::make_shared<NewMenuItemSingleLine>("About", [this, display]() {
-                        auto debugAboutScreen = std::make_shared<DebugAboutScreen>(*display);
-                        debugAboutScreen->setBackCallback([this]() { this->popScreen(); });
-                        this->pushScreen(debugAboutScreen);
-                    }));
+                debugSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>("About",
+                                                                                       [this]() {
+                    auto debugAboutScreen = std::make_shared<DebugAboutScreen>(display_);
+                    debugAboutScreen->setBackCallback([this]() { this->popScreen(); });
+                    this->pushScreen(debugAboutScreen);
+                }));
 
                 if (hasLastQuestion) {
-                    debugSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
-                        "Turn on Demo Mode", [this, display]() {
+                    debugSettingsMenu->addMenuItem(
+                        std::make_shared<NewMenuItemSingleLine>("Turn on Demo Mode", [this]() {
                             log_d("Demo On!");
                             prefs_.cesMode.set(true);
-                            MsgPopup::showTemporaryMessage(*display, "Demo mode on! Resetting...",
+                            MsgPopup::showTemporaryMessage(display_, "Demo mode on! Resetting...",
                                                            2000, false, currentScreen());
                             power_.reboot();
                         }));
                 }
 
                 debugSettingsMenu->addMenuItem(
-                    std::make_shared<NewMenuItemSingleLine>("Reset Preferences", [this, display]() {
+                    std::make_shared<NewMenuItemSingleLine>("Reset Preferences", [this]() {
                         prefs_.clear();
                         log_w("Preferences cleared. Restarting...");
-                        MsgPopup::showTemporaryMessage(*display,
+                        MsgPopup::showTemporaryMessage(display_,
                                                        "Preferences cleared. Restarting...", 2000,
                                                        false, currentScreen());
                         power_.reboot();
@@ -1420,18 +1421,18 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
                 if (prefs_.allowUsageWhileCharging.get().value_or(false)) {
                     debugSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
-                        "Disable use while charging", [this, display]() {
+                        "Disable use while charging", [this]() {
                             prefs_.allowUsageWhileCharging.remove();
-                            MsgPopup::showTemporaryMessage(*display,
+                            MsgPopup::showTemporaryMessage(display_,
                                                            "Disabling use while charging...", 500,
                                                            false, currentScreen());
                             power_.reboot();
                         }));
                 } else {
                     debugSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
-                        "Enable use while charging", [this, display]() {
+                        "Enable use while charging", [this]() {
                             prefs_.allowUsageWhileCharging.set(true);
-                            MsgPopup::showTemporaryMessage(*display,
+                            MsgPopup::showTemporaryMessage(display_,
                                                            "Enabling use while charging...", 500,
                                                            false, currentScreen());
                             power_.reboot();
@@ -1439,37 +1440,37 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 }
 
                 debugSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
-                    "Clear Books and Restart", [this, display, &localStore]() {
+                    "Clear Books and Restart", [this, &localStore]() {
                         localStore.deleteReadables();
-                        MsgPopup::showTemporaryMessage(*display, "Books reset.");
+                        MsgPopup::showTemporaryMessage(display_, "Books reset.");
                         Delay(1500);
                         power_.reboot();
                     }));
 
                 debugSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
-                    "Clear Articles and Restart", [this, display, &localStore]() {
+                    "Clear Articles and Restart", [this, &localStore]() {
                         localStore.deleteArticles();
-                        MsgPopup::showTemporaryMessage(*display, "Articles reset.");
+                        MsgPopup::showTemporaryMessage(display_, "Articles reset.");
                         Delay(1500);
                         power_.reboot();
                     }));
 
                 debugSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
-                    "Clear Crash Reports and Restart", [this, display, &fileSystem]() {
+                    "Clear Crash Reports and Restart", [this, &fileSystem]() {
                         FileList coreDumpFiles;
                         fileSystem.listDir("/coredumps", coreDumpFiles);
                         for (auto &file : coreDumpFiles) {
                             log_i("Removing %s", file.c_str());
                             fileSystem.remove(StringFormat("%s%s", "/coredumps/", file.c_str()));
                         }
-                        MsgPopup::showTemporaryMessage(*display, "Crash Reports cleared.");
+                        MsgPopup::showTemporaryMessage(display_, "Crash Reports cleared.");
                         Delay(1500);
                         power_.reboot();
                     }));
                 debugSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
-                    "File System Browser", [this, display, &fileSystem]() {
+                    "File System Browser", [this, &fileSystem]() {
                         auto fsMenu =
-                            std::make_shared<GenericSettingsMenuScreen>(*display, "Debug Settings");
+                            std::make_shared<GenericSettingsMenuScreen>(display_, "Debug Settings");
 
                         handleBrowse(fileSystem, fsMenu);
 
@@ -1477,10 +1478,10 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                         fsMenu->setBackCallback([this]() { this->popScreen(false); });
                     }));
 
-                debugSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
-                    "Batteries and Temperature", [this, display]() {
+                debugSettingsMenu->addMenuItem(
+                    std::make_shared<NewMenuItemSingleLine>("Batteries and Temperature", [this]() {
                         auto batteryScreen =
-                            std::make_shared<BatteryScreen>(*display, prefs_, power_.battery);
+                            std::make_shared<BatteryScreen>(display_, prefs_, power_.battery);
                         this->pushScreen(batteryScreen);
                         batteryScreen->setBackCallback([this]() { this->popScreen(false); });
                     }));
@@ -1489,7 +1490,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                     std::make_shared<NewMenuItemSingleLine>("Optics Test", [this]() {
                         auto opticsTestScreen = std::make_shared<CalibrationScreen>();
                         opticsTestScreen->setOpticsTest();
-                        this->display_->clearDisplay();
+                        display_.clearDisplay();
                         this->pushScreen(opticsTestScreen);
                         opticsTestScreen->setBackCallback([this]() { this->popScreen(false); });
                     }));
@@ -1497,7 +1498,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 debugSettingsMenu->addMenuItem(
                     std::make_shared<NewMenuItemSingleLine>("Binocular Optics Test", [this]() {
                         auto opticsTestScreen = std::make_shared<TestAlignmentScreen>();
-                        this->display_->clearDisplay();
+                        display_.clearDisplay();
                         this->pushScreen(opticsTestScreen);
                         opticsTestScreen->setBackCallback([this]() { this->popScreen(false); });
                     }));
@@ -1505,20 +1506,20 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 SHOW_HEAP();
 
                 if (hasLastQuestion) {
-                    debugSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
-                        "Turn on EMC Mode", [this, display]() {
+                    debugSettingsMenu->addMenuItem(
+                        std::make_shared<NewMenuItemSingleLine>("Turn on EMC Mode", [this]() {
                             log_d("EMC On!");
                             prefs_.emcMode.set(true);
-                            MsgPopup::showTemporaryMessage(*display, "EMC mode on! Resetting...",
+                            MsgPopup::showTemporaryMessage(display_, "EMC mode on! Resetting...",
                                                            2000, false, currentScreen());
                             power_.reboot();
                         }));
 
-                    debugSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
-                        "Turn off EMC Mode", [this, display]() {
+                    debugSettingsMenu->addMenuItem(
+                        std::make_shared<NewMenuItemSingleLine>("Turn off EMC Mode", [this]() {
                             log_d("EMC Off!");
                             prefs_.emcMode.remove();
-                            MsgPopup::showTemporaryMessage(*display, "EMC mode off! Resetting...",
+                            MsgPopup::showTemporaryMessage(display_, "EMC mode off! Resetting...",
                                                            2000, false, currentScreen());
                             power_.reboot();
                         }));
@@ -1526,20 +1527,18 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 /*
     debugSettingsMenu->addMenuItem(
         std::make_shared<NewMenuItemSingleLine>("Alignment Setup", [this,
-   display, &lightingController]() { auto alignmentScreen =
-   std::make_shared<AlignmentScreen>(*display, prefs_, lightingController);
-   this->pushScreen(alignmentScreen); alignmentScreen->setBackCallback([this,
-   display]() {  this->popScreen();
+   &lightingController]() { auto alignmentScreen =
+   std::make_shared<AlignmentScreen>(display_, prefs_, lightingController);
+   this->pushScreen(alignmentScreen); alignmentScreen->setBackCallback([this]() { this->popScreen();
             });
         }));
 */
 #if CONFIG_DISPLAY_EINKET013TT1
-                debugSettingsMenu->addMenuItem(
-                    std::make_shared<NewMenuItemSingleLine>("Set Vcom",
-                                                            [this, display]() {
+                debugSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>("Set Vcom",
+                                                                                       [this]() {
                     auto vcomMenu =
-                        std::make_shared<GenericSettingsMenuScreen>(*display, "Debug Settings");
-                    auto *driver = (dynamic_cast<DisplayEinkET013TT1 *>(display))->getDriver();
+                        std::make_shared<GenericSettingsMenuScreen>(display_, "Debug Settings");
+                    auto *driver = (dynamic_cast<DisplayEinkET013TT1 *>(&display_))->getDriver();
                     vcomMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>("0V",
                                                                                   [this, driver]() {
                         driver->setVcom(0);
@@ -1591,13 +1590,13 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                     }));
                     pushScreen(vcomMenu);
                     vcomMenu->setBackCallback([this]() { this->popScreen(false); });
-                    }));
+                }));
 #endif
 
                 debugSettingsMenu->addMenuItem(
-                    std::make_shared<NewMenuItemSingleLine>("Set WiFi Power", [this, display]() {
+                    std::make_shared<NewMenuItemSingleLine>("Set WiFi Power", [this]() {
                         auto wifiPowerMenu =
-                            std::make_shared<GenericSettingsMenuScreen>(*display, "Debug Settings");
+                            std::make_shared<GenericSettingsMenuScreen>(display_, "Debug Settings");
 
                         // auto powerToString = [](wifi_power_t power) -> std::string {
                         //     switch (power) {
@@ -1619,9 +1618,9 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                         // TODO Add this to GenericSettingsMenuScreen perhaps?
                         // wifiPowerMenu->setExtraText(powerToString(WiFi::getInstance().getWiFiPower()));
 
-                        auto confirmMessage = [this, display](wifi_power_t power) {
+                        auto confirmMessage = [this](wifi_power_t power) {
                             this->prefs_.wifiPower.set(power);
-                            MsgPopup::showTemporaryMessage(*display, "Power set", 200, false,
+                            MsgPopup::showTemporaryMessage(display_, "Power set", 200, false,
                                                            currentScreen());
                             currentScreen()->back();
                         };
@@ -1680,7 +1679,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 #if USE_BLE
                 debugSettingsMenu->addMenuItem(
                     std::make_shared<NewMenuItemSingleLine>("Set BLE Power",
-                                                            [this, display]() {
+                                                            [this]() {
                     static std::unordered_map<esp_power_level_t, std::string> blePowerOptions = {
                         {ESP_PWR_LVL_P3, "+3dBm"},
                         {ESP_PWR_LVL_N0, "0dBm"},
@@ -1693,7 +1692,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                     };
 
                     auto blePowerMenu =
-                        std::make_shared<GenericSettingsMenuScreen>(*display, "Debug Settings");
+                        std::make_shared<GenericSettingsMenuScreen>(display_, "Debug Settings");
 
                     auto powerToString = [](esp_power_level_t power) -> std::string {
                         auto it = blePowerOptions.find(power);
@@ -1705,7 +1704,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                     // TODO: Maybe add this
                     // blePowerMenu->setExtraText(powerToString(currentPower));
 
-                    auto confirmMessage = [this, display, powerToString](esp_power_level_t power) {
+                    auto confirmMessage = [this, powerToString](esp_power_level_t power) {
                         esp_err_t err = esp_ble_tx_power_set(ESP_BLE_PWR_TYPE_DEFAULT, power);
                         if (err != ESP_OK) {
                             log_e("esp_ble_tx_power_set ESP_BLE_PWR_TYPE_DEFAULT err:%s",
@@ -1713,7 +1712,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                         }
                         prefs_.blePower.set(power);
                         MsgPopup::showTemporaryMessage(
-                            *display, StringFormat("Power set to %s", powerToString(power).c_str()),
+                            display_, StringFormat("Power set to %s", powerToString(power).c_str()),
                             200, false, currentScreen());
                         currentScreen()->back();
                     };
@@ -1742,32 +1741,32 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
 #if CONFIG_DISPLAY_EINKET013TT1
                 debugSettingsMenu->addMenuItem(
-                    std::make_shared<NewMenuItemSingleLine>("Set Vcom Precise", [this, display]() {
+                    std::make_shared<NewMenuItemSingleLine>("Set Vcom Precise", [this]() {
                         auto vcomPreciseScreen =
-                            std::make_shared<VcomAdjustScreen>(*display, this->prefs_);
-                        this->display_->clearDisplay();
+                            std::make_shared<VcomAdjustScreen>(display_, this->prefs_);
+                        display_.clearDisplay();
                         pushScreen(vcomPreciseScreen);
                         vcomPreciseScreen->setBackCallback([this]() { this->popScreen(false); });
                     }));
 #endif
 
-                debugSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
-                    "Format FS", [this, display, &fileSystem]() {
+                debugSettingsMenu->addMenuItem(
+                    std::make_shared<NewMenuItemSingleLine>("Format FS", [this, &fileSystem]() {
                         log_w("Formatting...");
                         MsgPopup::showTemporaryMessage(
-                            *display, "Formatting, this will take several minutes.", 2000, false,
+                            display_, "Formatting, this will take several minutes.", 2000, false,
                             currentScreen());
                         fileSystem.format();
                         power_.reboot();
                     }));
 
-                debugSettingsMenu->addMenuItem(
-                    std::make_shared<NewMenuItemSingleLine>("Power Off", [this, display]() {
-                        log_w("Powering off.");
-                        MsgPopup::showTemporaryMessage(*display, "Powering off.", 2000, false,
-                                                       currentScreen());
-                        power_.powerOff();
-                    }));
+                debugSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>("Power Off",
+                                                                                       [this]() {
+                    log_w("Powering off.");
+                    MsgPopup::showTemporaryMessage(display_, "Powering off.", 2000, false,
+                                                   currentScreen());
+                    power_.powerOff();
+                }));
 
                 debugSettingsMenu->setFirstLoad();
                 this->pushScreen(debugSettingsMenu);
@@ -1808,15 +1807,15 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 #if 0
     if (prefs_.fontsLibrary.get().value_or(false)) {
         readingSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>("Font Type (Experimental)",
-                                                  [this, display, readingSettingsMenu]() {
+                                                  [this, readingSettingsMenu]() {
             auto fontTypeMenu =
-                std::make_shared<GenericSettingsMenuScreen>( *display, 
+                std::make_shared<GenericSettingsMenuScreen>( display_, 
                                "Reading Settings");
             for (int i = 0; i < fontsList.size(); i++) {
                 fontTypeMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(fontsList[i].caption, [this, fontTypeMenu, i]() {
                     mainFont.load((MemoryPtr)fontsList[i].content, fontsList[i].length);
                     prefs_.fontType.set(i);
-                    this->display_->clearDisplay();
+                    display_.clearDisplay();
                     fontTypeMenu->setNeedsRerender();
                 }));
             }
@@ -1864,7 +1863,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         }
 
         if (showWelcomeVideo) {
-            auto firstTimeScreen = std::make_shared<DemoScreen>(*display, prefs_);
+            auto firstTimeScreen = std::make_shared<DemoScreen>(display_, prefs_);
             pushScreen(firstTimeScreen, true);
             firstTimeScreen->setBackCallback([this]() {
                 popScreen();
@@ -1872,7 +1871,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 // being sent through the loop must explicitly render at the end of its
                 // backCallback to ensure the screen is properly redrawn.
                 if (needsRerender()) {
-                    render(*display_);
+                    render(display_);
                     clearNeedsRerender();
                 }
             });
@@ -1880,7 +1879,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     }
 
     if (prefs_.cesMode.get().value_or(false)) {
-        auto cesScreen = std::make_shared<DemoScreen>(*display, prefs_);
+        auto cesScreen = std::make_shared<DemoScreen>(display_, prefs_);
 
         // reset prefs for of The Last Question readable
         log_d("Starting CES mode readable load");
@@ -1898,8 +1897,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             cesScreen->setBackCallback([this]() { this->popScreen(); });
             this->pushScreen(cesScreen, true);
         } else {
-            auto errorPopup = std::make_shared<MsgPopup>(*display, itemErrorMsg_);
-            this->pushScreen(errorPopup, true);
+            auto errorPopup = std::make_shared<MsgPopup>(display_, itemErrorMsg_);
+            this->pushScreen(errorPopup);
             errorPopup->setBackCallback([this]() { this->popScreen(); });
         }
     } else if (prefs_.emcMode.get().value_or(false)) {
@@ -1916,12 +1915,12 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         }
         auto readableScreen = createReadableScreen(*it);
         if (readableScreen != nullptr) {
-            display->clearDisplay();
-            this->display_->setFont(static_cast<Font *>(&fontFace0));
+            display_.clearDisplay();
+            display_.setFont(static_cast<Font *>(&fontFace0));
             this->pushScreen(readableScreen, true);
         } else {
-            auto errorPopup = std::make_shared<MsgPopup>(*display, itemErrorMsg_);
-            this->pushScreen(errorPopup, true);
+            auto errorPopup = std::make_shared<MsgPopup>(display_, itemErrorMsg_);
+            this->pushScreen(errorPopup);
             errorPopup->setBackCallback([this]() { this->popScreen(); });
         }
     } else if (currentReadable.has_value()) {
@@ -1941,7 +1940,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             auto it = (booksIterator != readables.end()) ? booksIterator : articlesIterator;
             auto readableScreen = createReadableScreen(*it);
             if (readableScreen != nullptr) {
-                this->display_->setFont(static_cast<Font *>(&fontFace0));
+                display_.setFont(static_cast<Font *>(&fontFace0));
                 this->pushScreen(readableScreen, true);
                 log_i("Resuming readable %s at place %s", (*it)->title.c_str(),
                       (*it)->place->str().c_str());
@@ -1954,7 +1953,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                     newMainMenu->setTabToTitle("Books");
                 }
             } else {
-                auto errorPopup = std::make_shared<MsgPopup>(*display, itemErrorMsg_);
+                auto errorPopup = std::make_shared<MsgPopup>(display_, itemErrorMsg_);
                 this->pushScreen(errorPopup, true);
                 errorPopup->setBackCallback([this]() { this->popScreen(); });
             }
@@ -1971,7 +1970,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         newMainMenu->setTabToTitle("Settings");
     }
 
-    renderIfNeeded(*display_);
+    renderIfNeeded();
     SHOW_HEAP();
 }
 
@@ -1988,7 +1987,7 @@ void RootUI::handleBrowse(FileSystem &fileSystem,
         log_d("Next Dir is %s", dir.c_str());
         fsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
             StringFormat("%s/", dir.c_str()), [this, fsMenu, &fileSystem, path, dir]() {
-                this->display_->clearDisplay();
+                display_.clearDisplay();
                 handleBrowse(fileSystem, fsMenu, path + dir + "/");
                 // fsMenu->setExtraText(StringFormat("Browsing %s", (path + dir + "/").c_str()));
                 fsMenu->setNeedsRerender();
@@ -2003,7 +2002,7 @@ void RootUI::handleBrowse(FileSystem &fileSystem,
                 while (toSerialOutput.available()) {
                     printf("%c", toSerialOutput.read());
                 }
-                this->display_->clearDisplay();
+                display_.clearDisplay();
                 // fsMenu->setExtraText(StringFormat("output %s to serial", (path + file).c_str()));
                 fsMenu->setNeedsRerender();
             }));

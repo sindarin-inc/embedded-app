@@ -2,6 +2,8 @@
 
 #include <cinttypes>
 #include <cstring>
+#include <freertos/FreeRTOS.h>
+#include <freertos/semphr.h>
 #include <nvs.h>
 #include <optional>
 #include <string>
@@ -201,6 +203,7 @@ public:
     class PrefsItem : public PrefsItemBase<T> {
     public:
         PrefsItem(PreferencesStore &prefs, const char *key) : PrefsItemBase<T>(prefs) {
+            static_assert(!std::is_same<T, bool>::value, "Use BooleanFlags for bools");
             if (!SafeSnprintf(this->key_, sizeof(this->key_), "%s", key)) {
                 log_e("Key too long: %s", key);
             }
@@ -321,6 +324,94 @@ public:
         const char *suffix_;
     };
 
+    class BooleanFlags : public PrefsItemBase<uint64_t> {
+    public:
+        BooleanFlags(PreferencesStore &prefs, const char *key)
+            : PrefsItemBase<uint64_t>(prefs), key_(key), mutex_(xSemaphoreCreateMutex()) {}
+
+        ~BooleanFlags() { vSemaphoreDelete(mutex_); }
+
+        void lock() {
+            // Only use the semaphore if FreeRTOS is running
+            if (xTaskGetSchedulerState() == taskSCHEDULER_RUNNING) {
+                xSemaphoreTake(mutex_, portMAX_DELAY);
+            }
+        }
+
+        void unlock() {
+            if (xTaskGetSchedulerState() == taskSCHEDULER_RUNNING) {
+                xSemaphoreGive(mutex_);
+            }
+        }
+
+        void loadValueIfNecessary() {
+            if (!loaded_) {
+                uint64_t value;
+                esp_err_t err = GetFromStorage(this->prefs.nvsHandle_, key_, value);
+                if (err == ESP_OK) {
+                    flags_ = value;
+                }
+                loaded_ = true;
+            }
+        }
+
+        auto get(size_t index) -> bool {
+            lock();
+            loadValueIfNecessary();
+            bool result = (flags_ & (1ULL << index)) != 0;
+            unlock();
+            return result;
+        }
+
+        void set(size_t index, bool value, bool deferWrite = false) {
+            lock();
+            loadValueIfNecessary();
+            auto flagsBefore = flags_;
+            if (value) {
+                flags_ |= (1ULL << index);
+            } else {
+                flags_ &= ~(1ULL << index);
+            }
+            dirty_ = flagsBefore != flags_;
+            if (dirty_ && !deferWrite) {
+                writeToStorage(key_, flags_);
+                dirty_ = false;
+            }
+            unlock();
+        }
+
+        void write() {
+            lock();
+            if (dirty_) {
+                this->writeToStorage(key_, flags_);
+                dirty_ = false;
+            }
+            unlock();
+        }
+
+    private:
+        bool loaded_ = false;
+        uint64_t flags_ = 0;
+        const char *key_;
+        bool dirty_{false};
+        SemaphoreHandle_t mutex_;
+    };
+
+    class BooleanFlag {
+    public:
+        BooleanFlag(BooleanFlags &flags, size_t index) : flags_(flags), index_(index) {}
+
+        auto get() -> std::optional<bool> { return std::optional<bool>(flags_.get(index_)); }
+
+        void set(bool value, bool deferWrite = false) { flags_.set(index_, value, deferWrite); }
+
+        void remove() { set(false); }
+
+    private:
+        BooleanFlags &flags_;
+        size_t index_;
+    };
+
     PreferencesStore() noexcept
         :
     // Ignoring clang-tidy and keeping these on their own lines otherwise diffs become very
@@ -344,35 +435,32 @@ public:
           readablePlaceChanged(*this, "-pc"),
           readableArchivedChanged(*this, "-ar"),
           readableBookmarksChanged(*this, "-bm"),
-          invertSetting(*this, "invert"),
+          invertSetting(boolFlags_, 0),
           vcom(*this, "vcom"),
           font(*this, "font"),
           lineSpacing(*this, "line-space"),
           wordCount(*this, "word-count"),
           totalReadingTimeSeconds(*this, "tot-rd-time"),
           bootCount(*this, "boot-count"),
-          firstRead(*this, "first-read"),
+          firstRead(boolFlags_, 1),
           autoPilotSpeed(*this, "auto-speed"),
-          firstAutopilotRead(*this, "fst-auto-rd"),
-          cesMode(*this, "ces"),
-          emcMode(*this, "emc"),
+          firstAutopilotRead(boolFlags_, 2),
+          cesMode(boolFlags_, 3),
+          emcMode(boolFlags_, 4),
           wifiPower(*this, "wifi-power"),
           inactivityMinutes(*this, "inact-min"),
           tzIana(*this, "tz-iana"),
           tzPosix(*this, "tz-posix"),
           firmwareLoaded(*this, "fw-loaded"),
-          darkMode(*this, "dark-mode"),
-          autoPilot(*this, "auto-pilot"),
-          fastTransitions(*this, "fast-tran"),
-          showDebugMenu(*this, "show-debug"),
-          noShowPartialChapterSummary(*this, "no-part-summary"),
-          fastBookmarkRight(*this, "fst-mark-right"),
-          fastBookmarkCenter(*this, "fst-mark-cent"),
-          pageTransitionArrows(*this, "page-arrows"),
-          allowUsageWhileCharging(*this, "allow-use-chg"),
+          darkMode(boolFlags_, 5),
+          autoPilot(boolFlags_, 6),
+          fastTransitions(boolFlags_, 7),
+          showDebugMenu(boolFlags_, 8),
+          noShowPartialChapterSummary(boolFlags_, 9),
+          allowUsageWhileCharging(boolFlags_, 10),
           wifiSettingsJson(*this, "wifi-settings"),
           localStoreMigrationVersion(*this, "ls-version"),
-          fontsLibrary(*this, "fonts-lib"),
+          fontsLibrary(boolFlags_, 11),
           fontType(*this, "font-type"),
           tutorialsDeleted(*this, "tutorials"),
           bleAdvertisingKey(*this, "ble-adv-key"),
@@ -382,14 +470,15 @@ public:
           textInsetLeft(*this, "text-inset-l"),
           textInsetRight(*this, "text-inset-r"),
           textInsetTop(*this, "text-inset-t"),
-          textInsetBottom(*this, "text-inset-b"),
-          wifiDisabled(*this, "wifi-disable"),
-          bleDisabled(*this, "ble-disable"),
-          dontShowWelcome(*this, "onboard-done"),
-          seenLetsFocus(*this, "seen-focus"),
-          seenTextPlacement(*this, "seen-place"),
-          didFirstArchive(*this, "first-archive"),
-          preferencesStoreMigrationVersion_(*this, "ps-version") {}
+          textInsetBottom(*this, "text-inset-b"),          
+          wifiDisabled(boolFlags_, 12),
+          bleDisabled(boolFlags_, 13),
+          didFirstArchive(boolFlags_, 14),
+          dontShowWelcome(boolFlags_, 15),
+          seenLetsFocus(boolFlags_, 16),
+          seenTextPlacement(boolFlags_, 17),
+          preferencesStoreMigrationVersion_(*this, "ps-version"),
+          boolFlags_(*this, "bool-flags") {}
     // clang-format on
 
     PreferencesStore(PreferencesStore &) = delete;
@@ -517,7 +606,40 @@ public:
                 nvs_erase_key(nvsHandle_, "no-morn-sync");
                 nvs_erase_key(nvsHandle_, "eve-deliver");
                 nvs_erase_key(nvsHandle_, "no-upload-crash");
+                nvs_erase_key(nvsHandle_, "fst-mark-right");
+                nvs_erase_key(nvsHandle_, "fst-mark-cent");
+                nvs_erase_key(nvsHandle_, "page-arrows");
                 break;
+            case 8: {
+                auto migrateBool = [this](const char *oldKey, BooleanFlag &newFlag) {
+                    bool oldValue = false;
+                    esp_err_t err = GetFromStorage(nvsHandle_, oldKey, oldValue);
+                    if (err == ESP_OK) {
+                        newFlag.set(oldValue, true);
+                        nvs_erase_key(nvsHandle_, oldKey);
+                    }
+                };
+
+                migrateBool("invert", invertSetting);
+                migrateBool("first-read", firstRead);
+                migrateBool("fst-auto-rd", firstAutopilotRead);
+                migrateBool("ces", cesMode);
+                migrateBool("emc", emcMode);
+                migrateBool("dark-mode", darkMode);
+                migrateBool("auto-pilot", autoPilot);
+                migrateBool("fast-tran", fastTransitions);
+                migrateBool("show-debug", showDebugMenu);
+                migrateBool("no-part-summary", noShowPartialChapterSummary);
+                migrateBool("allow-use-chg", allowUsageWhileCharging);
+                migrateBool("fonts-lib", fontsLibrary);
+                migrateBool("wifi-disable", wifiDisabled);
+                migrateBool("ble-disable", bleDisabled);
+                migrateBool("first-archive", didFirstArchive);
+
+                // Write all changes to NVS at once
+                boolFlags_.write();
+                break;
+            }
             default:
                 log_e("Unknown migration version: %" PRIu32, migrationVersion);
                 return;
@@ -630,36 +752,33 @@ public:
     KeyedPrefsItem<bool> readablePlaceChanged;
     KeyedPrefsItem<bool> readableArchivedChanged;
     KeyedPrefsItem<bool> readableBookmarksChanged;
-    PrefsItem<bool> invertSetting;
+    BooleanFlag invertSetting;
     PrefsItem<int> vcom;
     PrefsItem<int> font;
     PrefsItem<int> lineSpacing;
     PrefsItem<uint32_t> wordCount;
     PrefsItem<uint32_t> totalReadingTimeSeconds;
     PrefsItem<uint32_t> bootCount;
-    PrefsItem<bool> firstRead;
+    BooleanFlag firstRead;
     PrefsItem<uint32_t> autoPilotSpeed;
-    PrefsItem<bool> firstAutopilotRead;
-    PrefsItem<bool> cesMode;
-    PrefsItem<bool> emcMode;
+    BooleanFlag firstAutopilotRead;
+    BooleanFlag cesMode;
+    BooleanFlag emcMode;
     PrefsItem<int> wifiPower;
     PrefsItem<int> inactivityMinutes;
     PrefsItem<std::string> tzIana;
     PrefsItem<std::string> tzPosix;
     // Firmware that's been loaded to the other flash slot but not yet installed
     PrefsItem<std::string> firmwareLoaded;
-    PrefsItem<bool> darkMode;
-    PrefsItem<bool> autoPilot;
-    PrefsItem<bool> fastTransitions;
-    PrefsItem<bool> showDebugMenu;
-    PrefsItem<bool> noShowPartialChapterSummary;
-    PrefsItem<bool> fastBookmarkRight;
-    PrefsItem<bool> fastBookmarkCenter;
-    PrefsItem<bool> pageTransitionArrows;
-    PrefsItem<bool> allowUsageWhileCharging;
+    BooleanFlag darkMode;
+    BooleanFlag autoPilot;
+    BooleanFlag fastTransitions;
+    BooleanFlag showDebugMenu;
+    BooleanFlag noShowPartialChapterSummary;
+    BooleanFlag allowUsageWhileCharging;
     PrefsItem<std::string> wifiSettingsJson;
     PrefsItem<uint32_t> localStoreMigrationVersion;
-    PrefsItem<bool> fontsLibrary;
+    BooleanFlag fontsLibrary;
     PrefsItem<int> fontType;
     PrefsItem<uint32_t> tutorialsDeleted;
     // Value that's advertised in manufacturer data as a hint to mobile apps so that they can
@@ -676,12 +795,13 @@ public:
     PrefsItem<uint16_t> textInsetRight;
     PrefsItem<uint16_t> textInsetTop;
     PrefsItem<uint16_t> textInsetBottom;
-    PrefsItem<bool> wifiDisabled;
-    PrefsItem<bool> bleDisabled;
-    PrefsItem<bool> dontShowWelcome;
-    PrefsItem<bool> seenLetsFocus;
-    PrefsItem<bool> seenTextPlacement;
-    PrefsItem<bool> didFirstArchive;
+    BooleanFlag wifiDisabled;
+    BooleanFlag bleDisabled;
+    BooleanFlag didFirstArchive;
+    BooleanFlag dontShowWelcome;
+    BooleanFlag seenLetsFocus;
+    BooleanFlag seenTextPlacement;
+
     // These are RTC_SLOW_MEM variables that persist across deep sleep / wake cycles but will be
     // reset on power cycles
     static SyncReason syncReason;
@@ -696,11 +816,12 @@ public:
     static PairedStatus paired;
 
 protected:
-    const uint32_t latestMigrationVersion_ = 8;
+    const uint32_t latestMigrationVersion_ = 9;
     uint32_t nvsHandle_{};
     bool started_{};
 
     PrefsItem<uint32_t> preferencesStoreMigrationVersion_;
+    BooleanFlags boolFlags_;
 
     void commit() const {
         esp_err_t err = nvs_commit(nvsHandle_);

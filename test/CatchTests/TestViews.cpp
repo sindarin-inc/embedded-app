@@ -498,7 +498,6 @@ TEST_CASE("Test some views independently") {
 
             auto readable = std::make_shared<Readable>();
             auto readablesJsonDoc = LoadJsonDoc(fileSystem, "/readables.json");
-            auto prefs = PreferencesStore();
             readable->fromJson((*readablesJsonDoc)["readables"][0]);
 
             Renderer renderer(*display, display->defaultTextRect(),
@@ -519,7 +518,6 @@ TEST_CASE("Test some views independently") {
             LocalStore localStore(fileSystem, prefs, battery, telemetry);
             auto readable = std::make_shared<Readable>();
             auto readablesJsonDoc = LoadJsonDoc(fileSystem, "/readables-lq-epub.json");
-            auto prefs = PreferencesStore();
             readable->fromJson((*readablesJsonDoc)["readables"][0]);
 
             Renderer renderer(*display, {10, 20, 236, 236}, static_cast<Font *>(&fontFace0));

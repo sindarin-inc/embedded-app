@@ -6,6 +6,7 @@
 #include "sindarin-debug.h"
 
 auto Ltr329Als::registerReadByte(ltr329als01_reg_t regAddr, uint8_t *data) const -> esp_err_t {
+    log_d("Reading byte from register %02x (i2cNum=%d)", regAddr, i2cNum_);
     return ESP_OK;
 }
 

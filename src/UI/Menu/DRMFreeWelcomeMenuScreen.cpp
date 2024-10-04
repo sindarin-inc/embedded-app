@@ -42,6 +42,8 @@ void DRMFreeWelcomeMenuScreen::processCommand(RemoteCommand command) {
     case RemoteCommand::BACK:
     case RemoteCommand::LEFT:
     case RemoteCommand::RIGHT:
+    case RemoteCommand::NONE:
+    case RemoteCommand::ANIMATION:
         break;
     }
     setNeedsLayout();
