@@ -27,11 +27,8 @@ public:
         tokenizer_->setRect(rect);
     }
 
-    [[nodiscard]] auto getLineSpacing() const -> int { return lineSpacing_; }
-    void setLineSpacing(int newSpacing) {
-        lineSpacing_ = newSpacing;
-        pager_.setLineSpacing(newSpacing);
-    }
+    [[nodiscard]] auto getLineSpacing() const -> int { return pager_.getLineSpacing(); }
+    void setLineSpacing(int newSpacing) { pager_.setLineSpacing(newSpacing); }
 
     auto setFont(Font *font) -> void { font_ = font; }
 
@@ -126,5 +123,4 @@ private:
     StreamPlace nextPlace_{};
 
     auto goBackwardsOnePage(StreamPlace endPlace) -> StreamPlace;
-    int lineSpacing_ = 0;
 };

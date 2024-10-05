@@ -86,6 +86,7 @@ public:
         stream_ = std::static_pointer_cast<EPubFile>(stream);
     }
 
+    [[nodiscard]] auto getLineSpacing() const -> int { return lineSpacing_; }
     void setLineSpacing(int newSpacing) { lineSpacing_ = newSpacing; }
 
     [[nodiscard]] auto getLineHeightPlusSpacing() const -> int {
