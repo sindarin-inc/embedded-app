@@ -94,7 +94,7 @@ public:
     }
     // Switch to 1/10 of a line as this gives us more flexibilty in rendering
     // precision between lines.
-    [[nodiscard]] auto getMaxDeciLines() -> int16_t {
+    [[nodiscard]] auto getMaxDeciLines() const -> int16_t {
         return (rect_.height * NEWLINE_DECI_LINE_HEIGHT) / (getLineHeightPlusSpacing());
     }
 
