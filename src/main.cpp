@@ -435,8 +435,6 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     }
 #endif
 
-    myDisplay.setLineSpacing(prefs.lineSpacing.get().value_or(0));
-
     SIZE_OF(myDisplay);
 
     // For all the EMC modes, we'll keep the lights at 100%

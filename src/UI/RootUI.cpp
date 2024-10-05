@@ -56,7 +56,6 @@
 #include "UI/ReadableScreen.hpp"
 #include "UI/ReleaseNotesScreen.hpp"
 #include "UI/ResizeBoxScreen.hpp"
-#include "UI/StatsScreen.hpp"
 #include "UI/TestAlignmentScreen.hpp"
 #include "UI/TutorialScreen.hpp"
 #include "UI/WiFiScanScreen.hpp"
@@ -684,7 +683,11 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                 auto lineSpacingScreen =
                     std::make_shared<LineSpacingScreen>(display_, prefs_, this->telemetry_);
                 this->pushScreen(lineSpacingScreen);
-                lineSpacingScreen->setBackCallback([this]() { this->popScreen(false); });
+                lineSpacingScreen->setBackCallback([this]() {
+                    this->popScreen(false);
+                    std::static_pointer_cast<ReadingSettingsMenuScreen>(currentScreen())
+                        ->setRendererLineSpacingFromPrefs();
+                });
             }));
 
             readingSettingsMenu->addMenuItem(std::make_shared<NewMenuItemCheckable>(

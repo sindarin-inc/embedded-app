@@ -353,15 +353,15 @@ void Pager::drawSingleLine(LineInfo &lineInfo, int yPos) const {
         if ((static_cast<uint16_t>(tokenId) & (static_cast<uint16_t>(TokenId::SUBTEXT) |
                                                static_cast<uint16_t>(TokenId::SUPTEXT))) != 0) {
 
-            int32_t yOffset = display_.getLineHeightPlusSpacing() / 5;
-            auto normalHeight = display_.getLineHeightPlusSpacing();
+            int32_t yOffset = getLineHeightPlusSpacing() / 5;
+            auto normalHeight = getLineHeightPlusSpacing();
 
             display_.getFont()->setSupSubFontSize();
 
             if (tokenId == TokenId::SUBTEXT) {
-                theYPos += normalHeight - display_.getLineHeightPlusSpacing() + yOffset;
+                theYPos += normalHeight - getLineHeightPlusSpacing() + yOffset;
             } else { // TokenId::SUPTEXT
-                theYPos += normalHeight - display_.getLineHeightPlusSpacing() - yOffset;
+                theYPos += normalHeight - getLineHeightPlusSpacing() - yOffset;
             }
             xPos = display_.drawSingleLineOfText(lineSegment.data(), xPos, theYPos);
             display_.getFont()->setNormalFontSize();

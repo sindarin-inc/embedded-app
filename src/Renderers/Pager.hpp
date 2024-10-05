@@ -40,6 +40,8 @@ private:
 
     MenuParameters menuParameters_;
 
+    int lineSpacing_{0};
+
     [[nodiscard]] inline auto lastLineTokenIdx(Idx lineIdx) const -> Idx {
         return lines_[lineIdx].tokenIdx + lines_[lineIdx].tokenCount - 1;
     }
@@ -84,11 +86,15 @@ public:
         stream_ = std::static_pointer_cast<EPubFile>(stream);
     }
 
+    void setLineSpacing(int newSpacing) { lineSpacing_ = newSpacing; }
+
+    [[nodiscard]] auto getLineHeightPlusSpacing() const -> int {
+        return display_.getFont()->lineHeight() + lineSpacing_;
+    }
     // Switch to 1/10 of a line as this gives us more flexibilty in rendering
     // precision between lines.
     [[nodiscard]] auto getMaxDeciLines() -> int16_t {
-        return (rect_.height * NEWLINE_DECI_LINE_HEIGHT) /
-               (this->display_.getLineHeightPlusSpacing());
+        return (rect_.height * NEWLINE_DECI_LINE_HEIGHT) / (getLineHeightPlusSpacing());
     }
 
     inline void clear() {
@@ -198,11 +204,11 @@ public:
     inline void addSpaceWidth() { currentLineWidth_ += spaceWidth_; }
 
     [[nodiscard]] inline auto deciToPix(uint16_t decilineValue) const -> uint16_t {
-        return (display_.getLineHeightPlusSpacing() * decilineValue) / NEWLINE_DECI_LINE_HEIGHT;
+        return (getLineHeightPlusSpacing() * decilineValue) / NEWLINE_DECI_LINE_HEIGHT;
     }
 
     [[nodiscard]] inline auto pixToDeci(uint16_t pixValue) const -> uint16_t {
-        return ((NEWLINE_DECI_LINE_HEIGHT * pixValue)) / display_.getLineHeightPlusSpacing();
+        return ((NEWLINE_DECI_LINE_HEIGHT * pixValue)) / getLineHeightPlusSpacing();
     }
 
     void addMenuParameter(const std::string &key, const std::string &value);

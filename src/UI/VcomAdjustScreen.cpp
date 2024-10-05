@@ -20,12 +20,13 @@ VcomAdjustScreen::VcomAdjustScreen(DisplaySystem &display, PreferencesStore &pre
 }
 
 void VcomAdjustScreen::render(DisplaySystem &display) {
-    display.setFont(static_cast<Font *>(&fontFace2));
+    Font *font = static_cast<Font *>(&fontFace2);
+    display.setFont(font);
 
     auto vcomStr = StringFormat("%dmV", vCom);
 
     int vcomStrWidth = display.getTextWidth(vcomStr);
-    int vcomStrHeight = display.getLineHeightPlusSpacing();
+    int vcomStrHeight = font->lineHeight();
 
     // This doesn't seem like the right interface.
     // We should use the DisplaySystem.drawSingleLineOfText here

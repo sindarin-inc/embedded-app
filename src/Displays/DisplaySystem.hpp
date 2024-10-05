@@ -201,9 +201,6 @@ public:
     void flipInversion();
     [[nodiscard]] auto getInversion() const -> bool { return invertedDisplay_; }
 
-    [[nodiscard]] auto getLineSpacing() const -> int { return lineSpacing_; }
-    void setLineSpacing(int newSpacing) { lineSpacing_ = newSpacing; }
-
     virtual void clearDisplay(){};
     virtual void clearFrameBuffer() { fillScreen(bg); };
 
@@ -215,7 +212,6 @@ public:
     auto drawSingleLineOfText(const std::string &line, int x, int y, bool inverted = false) -> int;
     void drawSingleLineOfCenteredText(const std::string &line);
     void getTextSize(const std::string &buffer, uint16_t *w, uint16_t *h);
-    auto getLineHeightPlusSpacing(Font *font = nullptr) -> int;
     auto getTextHeight(const std::string &buffer) -> int;
     auto getTextWidth(const std::string &buffer) -> int;
 
@@ -308,8 +304,6 @@ protected:
     bool invertedDisplay_ = false;
 
     bool forceRefreshType_ = false;
-
-    int lineSpacing_ = 0;
 };
 
 #endif

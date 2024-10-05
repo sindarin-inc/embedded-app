@@ -141,7 +141,7 @@ auto DisplaySystem::drawSingleLineOfText(const std::string &line, int x, int y, 
 
 void DisplaySystem::drawSingleLineOfCenteredText(const std::string &line) {
     this->drawSingleLineOfText(line, (width() - getTextWidth(line)) / 2,
-                               (height() - this->getLineHeightPlusSpacing()) / 2);
+                               (height() - getTextHeight(line)) / 2);
 }
 
 void DisplaySystem::getTextSize(const std::string &buffer, uint16_t *w, uint16_t *h) {
@@ -153,13 +153,6 @@ void DisplaySystem::getTextSize(const std::string &buffer, uint16_t *w, uint16_t
         *w = 0;
         *h = 0;
     }
-}
-
-auto DisplaySystem::getLineHeightPlusSpacing(Font *font) -> int {
-    if (font == nullptr) {
-        return (font_ != nullptr) ? font_->lineHeight() + lineSpacing_ : 0;
-    }
-    return font->lineHeight() + lineSpacing_;
 }
 
 auto DisplaySystem::getTextHeight(const std::string &buffer) -> int {

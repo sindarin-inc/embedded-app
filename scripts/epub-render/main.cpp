@@ -106,7 +106,6 @@ int main(int argc, char **argv) {
     std::cout << "Font: " << font << std::endl;
 
     auto lineSpacing = program.get<int>("--lineSpacing");
-    (*display).setLineSpacing(lineSpacing);
     std::cout << "Line spacing: " << lineSpacing << std::endl;
 
     auto outputPath = program.get<std::filesystem::path>("outFile");
@@ -124,6 +123,7 @@ int main(int argc, char **argv) {
     Renderer renderer(*display, boundingBoxRect, static_cast<Font *>(&fontFace0));
     renderer.setStream(epubFile);
     renderer.renderPage(place);
+    renderer.setLineSpacing(lineSpacing);
 
     display->updateDisplay(DisplaySystem::UpdateType::FULL, true);
 

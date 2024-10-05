@@ -26,6 +26,7 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
       prefs_(prefs), telemetry_(telemetry), fileSystem_(fileSystem),
       lightingController_(lightingController), display_(display), localStore_(localStore) {
 
+    renderer_.setLineSpacing(prefs.lineSpacing.get().value_or(0));
     notExist_ = std::make_shared<MsgPopup>(
         this->display_, "This content doesn't have that feature.\nPress any button to continue.");
 
@@ -437,7 +438,12 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
             auto lineSpacingScreen =
                 std::make_shared<LineSpacingScreen>(this->display_, prefs_, this->telemetry_);
             this->setCurrentScreen(lineSpacingScreen);
-            lineSpacingScreen->setBackCallback([this]() { setCurrentScreen(nullptr); });
+            lineSpacingScreen->setBackCallback([this]() {
+                setCurrentScreen(nullptr);
+                // Update the renderer with the new line spacing -- needed here, otherwise we'd have
+                // to do it in the render() method and that'd be reading from NVS a lot...
+                this->renderer_.setLineSpacing(prefs_.lineSpacing.get().value_or(0));
+            });
         });
 
         menuItems->emplace_back(menuItem);

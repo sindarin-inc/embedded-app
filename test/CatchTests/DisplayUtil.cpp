@@ -9,7 +9,6 @@ std::shared_ptr<DisplayEinkET013TT1> createDisplay() {
     (*display).setSkipWaveform(true);
     (*display).setSkipSignalling(true);
     (*display).setFont(static_cast<Font *>(&fontFace1));
-    (*display).setLineSpacing(0);
     (*display).setup();
     (*display).invertDisplay(false);
     return display;
