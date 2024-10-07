@@ -28,7 +28,6 @@ extern auto UIGetCurrentScreen() -> std::shared_ptr<Screen>;
 
 TEST_CASE("Test some individual EPub formatting edge cases", "[epub-format]") {
     auto display = createDisplay();
-    (*display).setFont(static_cast<Font *>(&fontFace0));
 
     PosixFileSystem fs("./test/CatchTests");
     fs.begin();
