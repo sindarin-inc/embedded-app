@@ -19,6 +19,9 @@ public:
           font_(font) {
         // log_w("constructor...");
         tokenizer_ = std::make_shared<NullTokenizer>(font_, rect_, tokens_, pager_);
+        // Be sure the pager and tokenizer are set up with the correct rect and font
+        setRect(rect);
+        setFont(font);
     }
 
     auto setRect(DisplayRect rect) -> void {

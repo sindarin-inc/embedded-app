@@ -32,7 +32,7 @@ public:
             }
             int x = (i % gridWidth) * xSpacing + 5;
             int y = (i / gridWidth) * ySpacing + 5;
-            display.drawSingleLineOfText(glyphs[pageStartIndex + i], x, y, font_);
+            display.drawSingleLineOfText(glyphs[pageStartIndex + i], x, y, false, font_);
         }
 
         display.updateDisplay();

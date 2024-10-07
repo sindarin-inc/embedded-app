@@ -10,13 +10,13 @@
 // A view that draws a line of text
 class SingleLineTextView : public EinkView {
 public:
-    SingleLineTextView(DisplaySystem &display) : EinkView(display) {}
+    SingleLineTextView(DisplaySystem &display)
+        : EinkView(display), font_(static_cast<Font *>(&fontFace0)) {}
 
     //! Convenience method to initialize and then set text and font
     SingleLineTextView(DisplaySystem &display, std::string text,
                        Font *font = static_cast<Font *>(&fontFace0), bool allCaps = false)
         : SingleLineTextView(display) {
-        setFont(font);
         setText(std::move(text), allCaps);
     }
 
@@ -56,7 +56,6 @@ public:
         }
 
         display_.getTextSize(text_, &w, &h, font_);
-
         // TODO: Ask Guy to fix this in the renderer
         // Any number that starts with a 1 has 2 extra pixels on the right side as
         // rendered by the font.
@@ -75,12 +74,12 @@ public:
     }
 
     void drawInRect(Rect rect) override {
-        display_.drawSingleLineOfText(text_, rect.origin.x, rect.origin.y, font_);
+        display_.drawSingleLineOfText(text_, rect.origin.x, rect.origin.y, false, font_);
     }
 
     uint8_t topPadding = 0;
 
 protected:
     std::string text_;
-    Font *font_{static_cast<Font *>(&fontFace0)};
+    Font *font_;
 };

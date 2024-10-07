@@ -208,13 +208,15 @@ public:
                               Font *font = static_cast<Font *>(&fontFace0)) -> int;
     void drawSingleLineOfCenteredText(const std::string &line, bool inverted = false,
                                       Font *font = static_cast<Font *>(&fontFace0));
+
+    // These getText* helpers were historically in this class, but they no longer need to be here
+    // technically since the font is always passed in or it uses the default font.
     void getTextSize(const std::string &buffer, uint16_t *w, uint16_t *h,
                      Font *font = static_cast<Font *>(&fontFace0));
     auto getTextHeight(const std::string &buffer, Font *font = static_cast<Font *>(&fontFace0))
         -> int;
     auto getTextWidth(const std::string &buffer, Font *font = static_cast<Font *>(&fontFace0))
         -> int;
-
     inline auto getTextWidthQuick(const char *buffer, Font *font = static_cast<Font *>(&fontFace0))
         -> int {
         if (font == nullptr) {

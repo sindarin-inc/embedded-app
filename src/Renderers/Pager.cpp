@@ -363,10 +363,10 @@ void Pager::drawSingleLine(LineInfo &lineInfo, int yPos) const {
             } else { // TokenId::SUPTEXT
                 theYPos += normalHeight - getLineHeightPlusSpacing() - yOffset;
             }
-            xPos = display_.drawSingleLineOfText(lineSegment.data(), xPos, theYPos);
-            font_.getFont()->setNormalFontSize();
+            xPos = display_.drawSingleLineOfText(lineSegment.data(), xPos, theYPos, false, font_);
+            font_->setNormalFontSize();
         } else {
-            xPos = display_.drawSingleLineOfText(lineSegment.data(), xPos, yPos);
+            xPos = display_.drawSingleLineOfText(lineSegment.data(), xPos, yPos, false, font_);
         }
     }
 }
@@ -546,7 +546,7 @@ auto Pager::displayPage(int16_t numSkipLines) -> uint8_t {
             Line line;
             getLine(lines_[lineIdx], line);
             display_.drawSingleLineOfText(line.data(), rect_.x + lines_[lineIdx].leftIndent,
-                                          rect_.y + deciToPix(deciY));
+                                          rect_.y + deciToPix(deciY), false, font_);
 #endif
             deciY += NEWLINE_DECI_LINE_HEIGHT;
             break;
@@ -564,7 +564,7 @@ auto Pager::displayPage(int16_t numSkipLines) -> uint8_t {
             Line line;
             getLine(lines_[lineIdx], line);
             display_.drawSingleLineOfText(line.data(), rect_.x + lines_[lineIdx].leftIndent,
-                                          rect_.y + deciToPix(deciY));
+                                          rect_.y + deciToPix(deciY), false, font_);
 #endif
             deciY += NEWLINE_DECI_LINE_HEIGHT + ENDPARAGRAPH_DECI_LINE_HEIGHT;
         } break;
@@ -583,7 +583,7 @@ auto Pager::displayPage(int16_t numSkipLines) -> uint8_t {
                 REND_WLOG("[%" PRIu16 "] %s: <%s>", lineIdx, token.streamPlace.str().c_str(),
                           line.data());
                 display_.drawSingleLineOfText(line.data(), rect_.x + lines_[lineIdx].leftIndent,
-                                              rect_.y + deciToPix(deciY));
+                                              rect_.y + deciToPix(deciY), false, font_);
 #endif
             } else {
                 REND_WLOG("[%" PRIu16 "] %s: <SKIPPED>", lineIdx, token.streamPlace.str().c_str());
