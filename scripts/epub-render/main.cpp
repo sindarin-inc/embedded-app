@@ -91,13 +91,13 @@ int main(int argc, char **argv) {
     std::cout << "Bounding box: " << x << "," << y << "," << w << "," << h << std::endl;
 
     Font *font = static_cast<Font *>(&fontFace0);
-    auto font = program.get<std::string>("--font");
-    if (font == "solSansSmall") {
+    auto fontArg = program.get<std::string>("--font");
+    if (fontArg == "solSansSmall") {
         // Leaving this here even though it's the default in case we change the default.
         font = static_cast<Font *>(&fontFace0);
-    } else if (font == "solSansMedium") {
+    } else if (fontArg == "solSansMedium") {
         font = static_cast<Font *>(&fontFace1);
-    } else if (font == "solSansLarge") {
+    } else if (fontArg == "solSansLarge") {
         font = static_cast<Font *>(&fontFace2);
     } else {
         std::cerr << "Invalid font specified. Must be one of 'solSansSmall', "
