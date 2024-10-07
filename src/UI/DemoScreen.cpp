@@ -57,7 +57,6 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs)
         std::string message = "Welcome to the Sol Reader! Let's begin...";
         display.clearDisplay();
         display.clearFrameBuffer();
-        display.setFont(static_cast<Font *>(&fontFace0));
         display.drawSingleLineOfText(message,
                                      display.width() / 2 - display.getTextWidth(message) / 2,
                                      display.height() / 2 - display.getTextHeight(message));
@@ -362,40 +361,40 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs)
 
 void DemoScreen::drawSkipMessage(DisplaySystem &display, bool inverted) {
     std::string message = "Press \ue000 to skip";
-    display.setFont(static_cast<Font *>(&fontFace0));
     display.drawSingleLineOfText(message, (display.width() - display.getTextWidth(message)) / 2,
                                  235, inverted);
 }
 
 void DemoScreen::drawDoubleLine(DisplaySystem &display, std::string one, std::string two) {
     std::string message;
-    display.setFont(static_cast<Font *>(&fontFace1));
+    Font *font = static_cast<Font *>(&fontFace1);
     message = std::move(one);
     display.drawSingleLineOfText(message, (display.width() - display.getTextWidth(message)) / 2,
-                                 (display.height() - display.getTextHeight(message)) / 2 - 12);
+                                 (display.height() - display.getTextHeight(message)) / 2 - 12,
+                                 false, font);
     message = std::move(two);
     display.drawSingleLineOfText(message, (display.width() - display.getTextWidth(message)) / 2,
-                                 (display.height() + display.getTextHeight(message)) / 2 - 4);
+                                 (display.height() + display.getTextHeight(message)) / 2 - 4, false,
+                                 font);
 }
 
 void DemoScreen::drawTripleLine(DisplaySystem &display, std::string one, std::string two,
                                 std::string three, bool invert) {
     std::string message;
     Font *font = static_cast<Font *>(&fontFace1);
-    display.setFont(font);
     message = std::move(one);
     int yAdjust = font->lineHeight();
 
     yAdjust = (yAdjust + 1) / 2;
 
     display.drawSingleLineOfText(message, (display.width() - display.getTextWidth(message)) / 2,
-                                 display.height() / 2 - yAdjust - yAdjust * 2 - 4, invert);
+                                 display.height() / 2 - yAdjust - yAdjust * 2 - 4, invert, font);
     message = std::move(two);
     display.drawSingleLineOfText(message, (display.width() - display.getTextWidth(message)) / 2,
-                                 display.height() / 2 - yAdjust, invert);
+                                 display.height() / 2 - yAdjust, invert, font);
     message = std::move(three);
     display.drawSingleLineOfText(message, (display.width() - display.getTextWidth(message)) / 2,
-                                 display.height() / 2 + yAdjust + 4, invert);
+                                 display.height() / 2 + yAdjust + 4, invert, font);
 }
 
 void DemoScreen::finishDemo() {

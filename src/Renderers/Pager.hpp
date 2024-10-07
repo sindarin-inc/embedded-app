@@ -42,6 +42,8 @@ private:
 
     int lineSpacing_{0};
 
+    Font *font_{nullptr};
+
     [[nodiscard]] inline auto lastLineTokenIdx(Idx lineIdx) const -> Idx {
         return lines_[lineIdx].tokenIdx + lines_[lineIdx].tokenCount - 1;
     }
@@ -89,8 +91,10 @@ public:
     [[nodiscard]] auto getLineSpacing() const -> int { return lineSpacing_; }
     void setLineSpacing(int newSpacing) { lineSpacing_ = newSpacing; }
 
+    void setFont(Font *font) { font_ = font; }
+
     [[nodiscard]] auto getLineHeightPlusSpacing() const -> int {
-        return display_.getFont()->lineHeight() + lineSpacing_;
+        return font_->lineHeight() + lineSpacing_;
     }
     // Switch to 1/10 of a line as this gives us more flexibilty in rendering
     // precision between lines.

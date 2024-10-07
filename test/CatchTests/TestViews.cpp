@@ -396,9 +396,6 @@ TEST_CASE("Test some views independently") {
                 Telemetry telemetry(fs, prefs);
                 Battery battery(fs, prefs, telemetry);
                 LocalStore localStore(fs, prefs, battery, telemetry);
-
-                (*display).setFont(static_cast<Font *>(&fontFace0));
-
                 Firmware firmware;
                 auto upgradeAvailable = localStore.getPendingFirmwareUpdate(firmware);
                 REQUIRE(upgradeAvailable);

@@ -1730,7 +1730,6 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
         auto readableScreen = createReadableScreen(*it);
         if (readableScreen != nullptr) {
             display_.clearDisplay();
-            display_.setFont(static_cast<Font *>(&fontFace0));
             this->pushScreen(readableScreen);
         } else {
             auto errorPopup = std::make_shared<MsgPopup>(display_, itemErrorMsg_);
@@ -1754,7 +1753,6 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
             auto it = (booksIterator != readables.end()) ? booksIterator : articlesIterator;
             auto readableScreen = createReadableScreen(*it);
             if (readableScreen != nullptr) {
-                display_.setFont(static_cast<Font *>(&fontFace0));
                 this->pushScreen(readableScreen);
                 log_i("Resuming readable %s at place %s", (*it)->title.c_str(),
                       (*it)->place->str().c_str());

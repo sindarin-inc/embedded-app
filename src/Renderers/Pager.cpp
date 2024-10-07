@@ -356,7 +356,7 @@ void Pager::drawSingleLine(LineInfo &lineInfo, int yPos) const {
             int32_t yOffset = getLineHeightPlusSpacing() / 5;
             auto normalHeight = getLineHeightPlusSpacing();
 
-            display_.getFont()->setSupSubFontSize();
+            font_->setSupSubFontSize();
 
             if (tokenId == TokenId::SUBTEXT) {
                 theYPos += normalHeight - getLineHeightPlusSpacing() + yOffset;
@@ -364,7 +364,7 @@ void Pager::drawSingleLine(LineInfo &lineInfo, int yPos) const {
                 theYPos += normalHeight - getLineHeightPlusSpacing() - yOffset;
             }
             xPos = display_.drawSingleLineOfText(lineSegment.data(), xPos, theYPos);
-            display_.getFont()->setNormalFontSize();
+            font_.getFont()->setNormalFontSize();
         } else {
             xPos = display_.drawSingleLineOfText(lineSegment.data(), xPos, yPos);
         }

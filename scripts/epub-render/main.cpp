@@ -90,13 +90,15 @@ int main(int argc, char **argv) {
     DisplayRect boundingBoxRect = {x, y, w, h};
     std::cout << "Bounding box: " << x << "," << y << "," << w << "," << h << std::endl;
 
+    Font *font = static_cast<Font *>(&fontFace0);
     auto font = program.get<std::string>("--font");
     if (font == "solSansSmall") {
-        (*display).setFont(static_cast<Font *>(&fontFace0));
+        // Leaving this here even though it's the default in case we change the default.
+        font = static_cast<Font *>(&fontFace0);
     } else if (font == "solSansMedium") {
-        (*display).setFont(static_cast<Font *>(&fontFace1));
+        font = static_cast<Font *>(&fontFace1);
     } else if (font == "solSansLarge") {
-        (*display).setFont(static_cast<Font *>(&fontFace2));
+        font = static_cast<Font *>(&fontFace2);
     } else {
         std::cerr << "Invalid font specified. Must be one of 'solSansSmall', "
                      "'solSansMedium', 'solSansLarge' "
@@ -120,7 +122,7 @@ int main(int argc, char **argv) {
 
     auto epubFile = std::make_shared<EPubFile>(file, readable);
 
-    Renderer renderer(*display, boundingBoxRect, static_cast<Font *>(&fontFace0));
+    Renderer renderer(*display, boundingBoxRect, font);
     renderer.setStream(epubFile);
     renderer.renderPage(place);
     renderer.setLineSpacing(lineSpacing);

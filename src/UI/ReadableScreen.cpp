@@ -359,7 +359,6 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
             auto fontMenu = std::make_shared<ReadingSettingsMenuScreen>(this->display_,
                                                                         "Reading Settings", prefs_);
             fontMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>("Small", [this]() {
-                this->display_.setFont(static_cast<Font *>(&fontFace0));
                 this->display_.clearDisplay();
                 prefs_.font.set(PREFS_SOL_SMALL);
                 this->telemetry_.logMetricData(TelemetryField::METRIC_STYLE,
@@ -367,7 +366,6 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
                 getCurrentScreen()->setNeedsRerender();
             }));
             fontMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>("Medium", [this]() {
-                this->display_.setFont(static_cast<Font *>(&fontFace1));
                 this->display_.clearDisplay();
                 prefs_.font.set(PREFS_SOL_MEDIUM);
                 this->telemetry_.logMetricData(TelemetryField::METRIC_STYLE,
@@ -375,7 +373,6 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
                 getCurrentScreen()->setNeedsRerender();
             }));
             fontMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>("Large", [this]() {
-                this->display_.setFont(static_cast<Font *>(&fontFace2));
                 this->display_.clearDisplay();
                 prefs_.font.set(PREFS_SOL_LARGE);
                 this->telemetry_.logMetricData(TelemetryField::METRIC_STYLE,
@@ -698,8 +695,6 @@ void ReadableScreen::render(DisplaySystem &display) {
     prefs_.lastReadableId.set(readable_->uuid.c_str());
     telemetry_.logMetric(TelemetryField::METRIC_READABLE_PLACE, readable_->shortenedUuid.c_str(),
                          readable_->telemetryPlacemarkMetrics());
-
-    display.setFont(static_cast<Font *>(&fontFace0));
 
     // If there is a partial chapter summary, open that instead
     if (firstLoad_ && !renderedPartialSummary_ &&

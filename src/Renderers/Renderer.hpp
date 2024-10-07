@@ -18,7 +18,7 @@ public:
         : display_(display), rect_(rect), tokens_(display), pager_(tokens_, display, rect),
           font_(font) {
         // log_w("constructor...");
-        tokenizer_ = std::make_shared<NullTokenizer>(display, rect_, tokens_, pager_);
+        tokenizer_ = std::make_shared<NullTokenizer>(font_, rect_, tokens_, pager_);
     }
 
     auto setRect(DisplayRect rect) -> void {
@@ -30,11 +30,17 @@ public:
     [[nodiscard]] auto getLineSpacing() const -> int { return pager_.getLineSpacing(); }
     void setLineSpacing(int newSpacing) { pager_.setLineSpacing(newSpacing); }
 
-    auto setFont(Font *font) -> void { font_ = font; }
+    auto setFont(Font *font) -> void {
+        font_ = font;
+        pager_.setFont(font_);
+        tokenizer_->setFont(font_);
+    }
+
+    auto getFont() const -> Font * { return font_; }
 
     auto setStream(const std::shared_ptr<RendererStream> &stream) -> void {
         // log_w("setStream...");
-        tokenizer_ = Tokenizer::factory(stream, display_, rect_, tokens_, pager_);
+        tokenizer_ = Tokenizer::factory(stream, font_, rect_, tokens_, pager_);
     }
 
     [[nodiscard]] inline auto getStream() -> std::shared_ptr<RendererStream> {

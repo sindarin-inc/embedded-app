@@ -1281,7 +1281,7 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                         (void)snprintf(listLineStart, 49, "%c  ", LEVEL_CHAR[listLevel_]);
                     }
                     listIndent_[listLevel_] = (listLevel_ * 15) + 5;
-                    listUndent_[listLevel_] = display_.getTextWidth(listLineStart);
+                    listUndent_[listLevel_] = font_->getTextWidth(listLineStart);
                 }
 
                 if (tokenizingStarted_ && (listLevel_ >= 0)) {
