@@ -44,7 +44,7 @@ void CalibrationScreen::render(DisplaySystem &display) {
 
         int letsWidth = display.getTextWidth("let's");
         int focusWidth = display.getTextWidth("focus");
-        int focusHeight = display.getTextHeight("let's focus");
+        int focusHeight = display.defaultLineHeight();
 
         for (int i = 30; i > 23; i--) {
             display.drawCircle(midpointX, midpointY, i, display.fg);
