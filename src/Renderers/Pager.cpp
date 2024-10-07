@@ -578,7 +578,7 @@ auto Pager::displayPage(int16_t numSkipLines) -> uint8_t {
                 Line line;
                 getLine(lines_[lineIdx], line);
                 // log_w("Real line width: %" PRIu16 " indent: %" PRIu16,
-                //       display_.getTextWidth(line.data()) + lines_[lineIdx].leftIndent,
+                //       display_.getTextWidth(line.data(), font_) + lines_[lineIdx].leftIndent,
                 //       lines_[lineIdx].leftIndent);
                 REND_WLOG("[%" PRIu16 "] %s: <%s>", lineIdx, token.streamPlace.str().c_str(),
                           line.data());

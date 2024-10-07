@@ -15,7 +15,7 @@ class Renderer {
 
 public:
     Renderer(DisplaySystem &display, DisplayRect rect, Font *font)
-        : display_(display), rect_(rect), tokens_(display), pager_(tokens_, display, rect),
+        : display_(display), rect_(rect), tokens_(font), pager_(tokens_, display, rect),
           font_(font) {
         // log_w("constructor...");
         tokenizer_ = std::make_shared<NullTokenizer>(font_, rect_, tokens_, pager_);
@@ -37,6 +37,7 @@ public:
         font_ = font;
         pager_.setFont(font_);
         tokenizer_->setFont(font_);
+        tokens_.setFont(font_);
     }
 
     [[nodiscard]] auto getFont() const -> Font * { return font_; }

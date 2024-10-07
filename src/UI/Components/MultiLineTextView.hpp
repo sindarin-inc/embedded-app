@@ -61,7 +61,7 @@ public:
 
             if (c == ' ' || c == '\n' || c == '\t' || c == '\r' || c == '-' ||
                 i + charLen == text.size()) {
-                if (display.getTextWidth(line + word) > width) {
+                if (display.getTextWidth(line + word, font_) > width) {
                     splitLines_.push_back(line);
                     line = "";
                 } else if (c == '\n') {
