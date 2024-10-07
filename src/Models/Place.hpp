@@ -11,7 +11,11 @@
 
 class Place {
 private:
+#if SIMULATOR
     static constexpr bool REND_ON_ERROR_EXIT = true;
+#else
+    static constexpr bool REND_ON_ERROR_EXIT = false;
+#endif
 
 public:
     virtual ~Place() = default;
