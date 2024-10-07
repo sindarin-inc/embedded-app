@@ -36,7 +36,7 @@ public:
         tokenizer_->setFont(font_);
     }
 
-    auto getFont() const -> Font * { return font_; }
+    [[nodiscard]] auto getFont() const -> Font * { return font_; }
 
     auto setStream(const std::shared_ptr<RendererStream> &stream) -> void {
         // log_w("setStream...");

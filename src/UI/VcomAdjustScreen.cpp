@@ -22,7 +22,7 @@ VcomAdjustScreen::VcomAdjustScreen(DisplaySystem &display, PreferencesStore &pre
 void VcomAdjustScreen::render(DisplaySystem &display) {
     auto vcomStr = StringFormat("%dmV", vCom);
 
-    display.drawSingleLineOfCenteredText(vcomStr.c_str(), false, static_cast<Font *>(&fontFace2));
+    display.drawSingleLineOfCenteredText(vcomStr, false, static_cast<Font *>(&fontFace2));
 
     display.updateDisplay();
 }
