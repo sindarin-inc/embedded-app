@@ -106,9 +106,9 @@ void TextPlacementWelcomeMenuScreen::drawInRect(Rect rect) {
         renderer_.setFont(&fontFace0);
     }
     if (textSelection_ == 0) {
-        renderer_.setLineSpacing(1);
+        renderer_.setLineSpacing(0);
     } else if (textSelection_ == 1) {
-        renderer_.setLineSpacing(-1);
+        renderer_.setLineSpacing(-2);
     } else if (textSelection_ == 2) {
         renderer_.setLineSpacing(0);
     }

@@ -450,7 +450,7 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                     prefs_.textInsetRight.set(30);
                     prefs_.textInsetTop.set(25);
                     prefs_.textInsetBottom.set(25);
-                    prefs_.lineSpacing.set(1);
+                    prefs_.lineSpacing.set(0);
                     prefs_.font.set(PREFS_SOL_SMALL);
                     log_d("Setting prefs to Comfortable");
                     MsgPopup::showTemporaryMessage(display_, "Comfortable text placement set");
@@ -463,7 +463,7 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                     prefs_.textInsetTop.set(15);
                     prefs_.textInsetBottom.set(15);
                     prefs_.font.set(PREFS_SOL_SMALL);
-                    prefs_.lineSpacing.set(-1);
+                    prefs_.lineSpacing.set(-2);
                     log_d("Setting prefs to Condensed");
                     MsgPopup::showTemporaryMessage(display_, "Condensed text placement set");
                     Delay(2000);

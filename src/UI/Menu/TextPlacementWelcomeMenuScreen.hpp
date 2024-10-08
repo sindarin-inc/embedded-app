@@ -42,7 +42,8 @@ private:
          {0, 0, 0, 0}},
         {"This is the Condensed template for those who like to pack as many words on the page as "
          "possible. The text has the smallest line spacing and takes up the most space on the "
-         "screen.",
+         "screen.\n\nSee how much extra filler text we have to write here just to fill up the "
+         "page? It's pretty great!",
          {-8, -8, -8, -8}},
         {"Some readers prefer to have the text weighted towards the "
          "bottom of the display to limit the amount the eyes have to move to read a page. The "
