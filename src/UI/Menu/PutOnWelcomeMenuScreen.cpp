@@ -15,7 +15,7 @@ PutOnWelcomeMenuScreen::PutOnWelcomeMenuScreen(DisplaySystem &display)
     std::string message;
     message +=
         "Welcome to your Sol Reader!\n\nYou've taken the first steps towards a new way to enjoy "
-        "comfortable, distraction-free reading. These onboarding steps will help you get set up in "
+        "comfortable, distraction-free reading. These welcome steps will help you get set up in "
         "no time at all.\n\nBut if setup isn't your thing, simply head back to the Main Menu and "
         "press   \ue002   to get to Books or   \ue001   to get to Settings.";
 

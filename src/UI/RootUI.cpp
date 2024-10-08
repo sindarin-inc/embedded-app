@@ -412,17 +412,15 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
         menuItems->emplace_back(std::make_shared<NewMenuItemCheckable>(
             "Put on your Sol Reader!",
             [this, popAndSetIndexOrDone]() {
-            auto putOnWelcomeMenuScreen = std::make_shared<PutOnWelcomeMenuScreen>(display_);
-            putOnWelcomeMenuScreen->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
-                "Back to Welcome Menu", [popAndSetIndexOrDone]() { popAndSetIndexOrDone(); }));
-            putOnWelcomeMenuScreen->addMenuItem(
-                std::make_shared<NewMenuItemSingleLine>("Watch Sol Manifesto (1 min)", [this]() {
-                    auto manifestoScreen = std::make_shared<DemoScreen>(display_, prefs_, true);
-                    this->pushScreen(manifestoScreen);
-                    manifestoScreen->setBackCallback([this]() { this->popScreen(); });
-                }));
-
-            this->pushScreen(putOnWelcomeMenuScreen);
+            auto manifestoScreen = std::make_shared<DemoScreen>(display_, prefs_);
+            this->pushScreen(manifestoScreen);
+            manifestoScreen->setBackCallback([this, popAndSetIndexOrDone]() {
+                popAndSetIndexOrDone();
+                if (needsRerender()) {
+                    render(display_);
+                    clearNeedsRerender();
+                }
+            });
             },
             []() {
             return true; /* return checked or not - this one is always checked */
