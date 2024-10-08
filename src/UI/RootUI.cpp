@@ -316,46 +316,53 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
             });
     };
 
-    auto makeContentSyncMenuItem =
-        [this, &localStore](const char *title) -> std::shared_ptr<NewMenuItem> {
-        return std::make_shared<NewMenuItemSingleLine>(title, [this, &localStore]() {
-            // If we're not yet paired, show the app screen instead
-            if (PreferencesStore::paired == PairedStatus::Unpaired) {
-                auto appDownloadScreen = std::make_shared<AppDownloadScreen>(display_);
-                this->pushScreen(appDownloadScreen);
-                appDownloadScreen->setBackCallback([this]() { this->popScreen(); });
-                return;
-            }
-
-            // If wifi & ble have been disabled, show a popup encouraging the user to
-            // turn on wifi or BLE to perform the content sync.
-            if (this->prefs_.wifiDisabled.get().value_or(false) &&
-                this->prefs_.bleDisabled.get().value_or(false)) {
-                MsgPopup::showTemporaryMessage(display_,
-                                               "Enable WiFi or BLE to perform a Content Sync.",
-                                               2000, true, currentScreen());
-                currentScreen()->setFirstLoad();
-                return;
-            }
-
-            auto contentSyncScreen = std::make_shared<ContentSyncScreen>(
-                display_, localStore, this->prefs_, this->telemetry_, power_);
-            contentSyncScreen->setBackCallback([this]() {
-                // Ensure this sticks around until the end of the function
-                // It wasn't picked up in the UIInnerLoop version because there isn't
-                // a command sent to process the backCallback
-                auto temp = currentScreen();
-                this->popScreen();
-                // TODO: After a successful content sync, re-setup the Local Store to be current.
-                // Once we do that, the following two lines will regenerate the tab so we don't
-                // need to restart to get the menu to be correct!
-                // if (auto mainMenu = dynamic_cast<NewMainMenuScreen *>(currentScreen().get())) {
-                //     mainMenu->regenerateCurrentTab();
-                // }
-            });
-            this->pushScreen(contentSyncScreen);
-            contentSyncScreen->begin();
+    auto makeAndStartContentSync = [this, &localStore]() {
+        auto contentSyncScreen = std::make_shared<ContentSyncScreen>(
+            display_, localStore, this->prefs_, this->telemetry_, power_);
+        contentSyncScreen->setBackCallback([this]() {
+            // Ensure this sticks around until the end of the function
+            // It wasn't picked up in the UIInnerLoop version because there isn't
+            // a command sent to process the backCallback
+            auto temp = currentScreen();
+            this->popScreen();
+            // TODO: After a successful content sync, re-setup the Local Store to be current.
+            // Once we do that, the following two lines will regenerate the tab so we don't
+            // need to restart to get the menu to be correct!
+            // if (auto mainMenu = dynamic_cast<NewMainMenuScreen *>(currentScreen().get())) {
+            //     mainMenu->regenerateCurrentTab();
+            // }
         });
+        this->pushScreen(contentSyncScreen);
+        contentSyncScreen->begin();
+    };
+
+    auto makeContentSyncMenuItem = [this, &localStore, makeAndStartContentSync](
+                                       const char *title,
+                                       bool immediateSync = false) -> std::shared_ptr<NewMenuItem> {
+        return std::make_shared<NewMenuItemSingleLine>(
+            title, [this, &localStore, makeAndStartContentSync, immediateSync]() {
+                // If we're not yet paired, show the app screen instead
+                if (PreferencesStore::paired == PairedStatus::Unpaired) {
+                    auto appDownloadScreen = std::make_shared<AppDownloadScreen>(
+                        display_, immediateSync, makeAndStartContentSync);
+                    this->pushScreen(appDownloadScreen);
+                    appDownloadScreen->setBackCallback([this]() { this->popScreen(); });
+                    return;
+                }
+
+                // If wifi & ble have been disabled, show a popup encouraging the user to
+                // turn on wifi or BLE to perform the content sync.
+                if (!immediateSync && this->prefs_.wifiDisabled.get().value_or(false) &&
+                    this->prefs_.bleDisabled.get().value_or(false)) {
+                    MsgPopup::showTemporaryMessage(display_,
+                                                   "Enable WiFi or BLE to perform a Content Sync.",
+                                                   2000, true, currentScreen());
+                    currentScreen()->setFirstLoad();
+                    return;
+                }
+
+                makeAndStartContentSync();
+            });
     };
 
     auto handleReadableScreenCreation =
@@ -497,7 +504,7 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                 std::make_shared<FirstBookWelcomeMenuScreen>(display_);
 
             firstBookWelcomeMenuScreen->addMenuItem(
-                makeContentSyncMenuItem("Get content via the Sol Reader app"));
+                makeContentSyncMenuItem("Get content via the Sol Reader app", true));
 
             firstBookWelcomeMenuScreen->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
                 "Direct transfer via USB", [this, popAndSetIndexOrDone]() {

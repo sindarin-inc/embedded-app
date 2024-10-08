@@ -4,6 +4,8 @@
 #include "Storage/PreferencesStore.hpp"
 #include "sindarin-debug.h"
 
+AppDownloadScreen *AppDownloadScreen::currentInstance_{nullptr};
+
 auto AppDownloadScreen::layout(LayoutContext &context, Size size) -> Size {
 
     // Center the QR code as the layout anchor
@@ -44,7 +46,14 @@ extern void UIInnerLoop(RemoteCommand command);
 void AppDownloadScreen::timerCallback(TimerHandle_t timer) {
     // If paired status goes to paired, go back
     if (PreferencesStore::paired == PairedStatus::Paired) {
-        DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::BACK); });
+        DispatchGetUiQueue()->dispatch([]() {
+            if (currentInstance()->immediateContentSync_ &&
+                currentInstance()->makeAndStartContentSync_) {
+                currentInstance()->makeAndStartContentSync_();
+            } else {
+                UIInnerLoop(RemoteCommand::BACK);
+            }
+        });
         xTimerStop(timer, 0);
     }
 }
