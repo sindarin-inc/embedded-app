@@ -625,7 +625,7 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                 SpiramString message = SpiramString(
                     "Welcome to the Books menu. This tab "
                     "shows you the books currently synced to your Sol Reader. To add more books or "
-                    "manage the books on your device, use the Sol mobile app.\n\n"
+                    "manage the books on your device, use the Sol Reader app.\n\n"
                     "Did you know "
                     "you can change the position, width, and height of the page in the Sol Reader "
                     "display? "
@@ -675,7 +675,7 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                         "Welcome to the Articles menu. This tab "
                         "shows you the articles currently synced to your Sol "
                         "Reader. To add more articles, "
-                        "simply connect your Pocket account in the Sol mobile app "
+                        "simply connect your Pocket account in the Sol Reader app "
                         "or forward newsletters "
                         "from your inbox to add@solreader.com.\n\n"
                         "Did you know "
