@@ -30,7 +30,7 @@ private:
     uint8_t textSelection_ = 0;
 
     std::vector<std::tuple<std::string, Inset>> texts_ = {
-        {"Turn each lens like a binoculars until this text is in focus.", {50, 40, 85, 65}},
+        {"Turn each lens like binoculars until this text is in focus.", {50, 40, 85, 65}},
         {"For some readers, the distance between their eyes impacts focus. The knob on top allows "
          "you to adjust the eye spacing. Line the lenses up so each one is directly in front of "
          "each eye.",

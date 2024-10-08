@@ -384,7 +384,7 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
             [this]() {
             auto putOnWelcomeMenuScreen = std::make_shared<PutOnWelcomeMenuScreen>(display_);
             putOnWelcomeMenuScreen->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
-                "Back to Main Menu", [this]() { this->popScreen(); }));
+                "Back to Welcome Menu", [this]() { this->popScreen(); }));
             putOnWelcomeMenuScreen->addMenuItem(
                 std::make_shared<NewMenuItemSingleLine>("Watch Sol Manifesto (1 min)", [this]() {
                     auto manifestoScreen = std::make_shared<DemoScreen>(display_, prefs_, true);
@@ -412,7 +412,7 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
             [this, &lightingController]() {
             auto letsFocusScreen = std::make_shared<LetsFocusWelcomeMenuScreen>(display_);
             letsFocusScreen->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
-                "Back to Main Menu", [this, &lightingController]() {
+                "Back to Welcome Menu", [this, &lightingController]() {
                     this->popScreen();
                     lightingController.resume();
                 }));
@@ -473,7 +473,7 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                 }
                 }));
             textPlacementScreen->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
-                "Back to Main Menu", [this]() { this->popScreen(); }));
+                "Back to Welcome Menu", [this]() { this->popScreen(); }));
             this->pushScreen(textPlacementScreen);
             prefs_.seenTextPlacement.set(true);
             },
@@ -499,7 +499,7 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                 }));
 
             firstBookWelcomeMenuScreen->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
-                "Back to Main Menu", [this]() { this->popScreen(); }));
+                "Back to Welcome Menu", [this]() { this->popScreen(); }));
 
             this->pushScreen(firstBookWelcomeMenuScreen);
             },
