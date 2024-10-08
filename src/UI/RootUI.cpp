@@ -431,7 +431,7 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
         menuItems->emplace_back(std::make_shared<NewMenuItemCheckable>(
             "Let's focus (3 min)",
             [this, &lightingController, popAndSetIndexOrDone]() {
-            auto letsFocusScreen = std::make_shared<LetsFocusWelcomeMenuScreen>(display_);
+            auto letsFocusScreen = std::make_shared<LetsFocusWelcomeMenuScreen>(display_, prefs_);
             letsFocusScreen->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
                 "Back to Welcome Menu", [&lightingController, popAndSetIndexOrDone]() {
                     popAndSetIndexOrDone();
@@ -439,7 +439,6 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                 }));
             lightingController.pause();
             this->pushScreen(letsFocusScreen);
-            prefs_.seenLetsFocus.set(true);
             },
             [this]() { return prefs_.seenLetsFocus.get().value_or(false); }));
 
@@ -450,6 +449,7 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
             textPlacementScreen->addMenuItem(
                 std::make_shared<NewMenuItemSingleLine>("Choose this template",
                                                         [this, popAndSetIndexOrDone]() {
+                prefs_.seenTextPlacement.set(true);
                 switch (std::static_pointer_cast<TextPlacementWelcomeMenuScreen>(currentScreen())
                             ->getCurrentTextSelection()) {
                 case 0:
@@ -493,7 +493,6 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
             textPlacementScreen->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
                 "Back to Welcome Menu", [popAndSetIndexOrDone]() { popAndSetIndexOrDone(); }));
             this->pushScreen(textPlacementScreen);
-            prefs_.seenTextPlacement.set(true);
             },
             [this]() { return prefs_.seenTextPlacement.get().value_or(false); }));
 
@@ -1871,7 +1870,7 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
 
     // If we are in onboarding mode, show the entry bumper first
     if (!prefs_.dontShowWelcome.get().value_or(false)) {
-        bool showWelcomeVideo = true;
+        bool showWelcomeVideo = false; // true;
         int welcomeTabIndex = welcomeIndex();
 
         if (welcomeTabIndex != 4) {

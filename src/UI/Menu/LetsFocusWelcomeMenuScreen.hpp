@@ -3,7 +3,7 @@
 #include "Displays/DisplaySystem.hpp"
 #include "Inputs/RemoteInput.hpp"
 #include "Renderers/Renderer.hpp"
-#include "UI/Components/ArrowView.hpp"
+#include "UI/Components/ArrowLabelView.hpp"
 #include "UI/Components/EinkView.hpp"
 #include "UI/Components/RendererView.hpp"
 #include "UI/Menu/NewMenuView.hpp"
@@ -12,7 +12,7 @@
 
 class LetsFocusWelcomeMenuScreen : public Screen, public EinkView {
 public:
-    LetsFocusWelcomeMenuScreen(DisplaySystem &display);
+    LetsFocusWelcomeMenuScreen(DisplaySystem &display, PreferencesStore &prefs);
 
     void addMenuItem(const std::shared_ptr<NewMenuItem> &item);
     void processCommand(RemoteCommand command) override;
@@ -22,11 +22,12 @@ public:
     void render(DisplaySystem &display) override;
 
 private:
+    PreferencesStore &prefs_;
     NewMenuView menuView_;
     Renderer renderer_;
     RendererView rendererView_;
-    ArrowView leftArrowView_;
-    ArrowView rightArrowView_;
+    ArrowLabelView leftArrowView_;
+    ArrowLabelView rightArrowView_;
     uint8_t textSelection_ = 0;
 
     std::vector<std::tuple<std::string, Inset>> texts_ = {
@@ -34,6 +35,11 @@ private:
         {"For some readers, the distance between their eyes impacts focus. The knob on top of your "
          "Sol Reader allows you to adjust the eye spacing. Line the lenses up so each one is "
          "directly in front of each eye.",
+         {35, 21, 45, 34}},
+        {"Feeling good? Press \ue000 to continue your setup!\n\n"
+         "Also, you just learned how to turn the page and go back a page. "
+         "Well done! Fun fact: while reading a book, you can also use the \ue000 button to turn "
+         "the page.",
          {35, 21, 45, 34}},
     };
 

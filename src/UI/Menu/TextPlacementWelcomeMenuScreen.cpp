@@ -112,10 +112,10 @@ void TextPlacementWelcomeMenuScreen::drawInRect(Rect rect) {
     } else if (textSelection_ == 2) {
         renderer_.setLineSpacing(0);
     }
-    if (textSelection_ == 1 || textSelection_ == 2) {
+    if (textSelection_ != 0) {
         leftArrowView_.draw();
     }
-    if (textSelection_ == 0 || textSelection_ == 1) {
+    if (textSelection_ != texts_.size() - 1) {
         rightArrowView_.draw();
     }
     rendererView_.draw();
