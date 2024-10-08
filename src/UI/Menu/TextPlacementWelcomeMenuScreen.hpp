@@ -44,11 +44,11 @@ private:
          "possible. The text has the smallest line spacing and takes up the most space on the "
          "screen.\n\nSee how much extra filler text we have to write here just to fill up the "
          "page? It's pretty great!",
-         {-8, -8, -8, -8}},
+         {-4, -12, -8, -8}},
         {"Some readers prefer to have the text weighted towards the "
          "bottom of the display to limit the amount the eyes have to move to read a page. The "
          "Bottom template uses the medium sized text for the least amount of eye movement.",
-         {-8, -8, 80, 0}}};
+         {-3, -13, 80, 0}}};
 
     void setText();
     void moveSelection(int delta);
