@@ -11,8 +11,9 @@ extern Font fontFace2;
 
 class GlyphTestScreen : public Screen {
 public:
-    GlyphTestScreen(const std::vector<std::string> &glyphs, int gridWidth, int gridHeight)
-        : glyphs(glyphs), gridWidth(gridWidth), gridHeight(gridHeight) {}
+    GlyphTestScreen(const std::vector<std::string> &glyphs, int gridWidth, int gridHeight,
+                    Font *font)
+        : glyphs(glyphs), gridWidth(gridWidth), gridHeight(gridHeight), font_(font) {}
 
     void render(DisplaySystem &display) override {
         // In the past the display box defaulted to 5px insets
@@ -31,7 +32,7 @@ public:
             }
             int x = (i % gridWidth) * xSpacing + 5;
             int y = (i / gridWidth) * ySpacing + 5;
-            display.drawSingleLineOfText(glyphs[pageStartIndex + i], x, y);
+            display.drawSingleLineOfText(glyphs[pageStartIndex + i], x, y, false, font_);
         }
 
         display.updateDisplay();
@@ -47,6 +48,7 @@ private:
     int gridWidth;
     int gridHeight;
     int page = 0;
+    Font *font_;
 };
 
 TEST_CASE("Test glyph rendering") {
@@ -115,8 +117,7 @@ TEST_CASE("Test glyph rendering") {
 
     auto renderGlyphs = [&display](std::vector<std::string> &glyphs, const std::string &key,
                                    int gridWidth, int gridHeight, Font *font) {
-        GlyphTestScreen screen(glyphs, gridWidth, gridHeight);
-        display->setFont(font);
+        GlyphTestScreen screen(glyphs, gridWidth, gridHeight, font);
         for (int i = 0; i < screen.pages(); i++) {
             screen.setPage(i);
             screen.render(*display);

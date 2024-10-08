@@ -19,6 +19,7 @@ LineSpacingScreen::LineSpacingScreen(DisplaySystem &display, PreferencesStore &p
     }
     auto stream = std::make_shared<StdStringStream>(message);
     renderer_.setStream(stream);
+    renderer_.setLineSpacing(lineSpacing_);
 }
 
 void LineSpacingScreen::render(DisplaySystem &display) {
@@ -38,7 +39,7 @@ void LineSpacingScreen::processCommand(RemoteCommand command) {
             lineSpacing_ = MAX_LINE_SPACING;
         }
 
-        display_.setLineSpacing(lineSpacing_);
+        renderer_.setLineSpacing(lineSpacing_);
         setNeedsRerender();
         break;
     case RemoteCommand::DOWN:
@@ -46,7 +47,7 @@ void LineSpacingScreen::processCommand(RemoteCommand command) {
         if (lineSpacing_ < MIN_LINE_SPACING) {
             lineSpacing_ = MIN_LINE_SPACING;
         }
-        display_.setLineSpacing(lineSpacing_);
+        renderer_.setLineSpacing(lineSpacing_);
         setNeedsRerender();
         break;
     case RemoteCommand::BACK:
@@ -64,5 +65,5 @@ void LineSpacingScreen::processCommand(RemoteCommand command) {
         break;
     }
 
-    log_d("setting new lineSpacing to be %d", display_.getLineSpacing());
+    log_d("setting new lineSpacing to be %d", renderer_.getLineSpacing());
 }

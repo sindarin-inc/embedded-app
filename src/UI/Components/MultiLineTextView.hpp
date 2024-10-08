@@ -61,7 +61,7 @@ public:
 
             if (c == ' ' || c == '\n' || c == '\t' || c == '\r' || c == '-' ||
                 i + charLen == text.size()) {
-                if (display.getTextWidth(line + word) > width) {
+                if (display.getTextWidth(line + word, font_) > width) {
                     splitLines_.push_back(line);
                     line = "";
                 } else if (c == '\n') {
@@ -91,17 +91,12 @@ public:
     }
 
     auto layout(LayoutContext &context, Size size) -> Size override {
-        // Leave the display font the way we found it.
-        // Probably not ideal, but for now it'll have to do.
-        Font *oldFont = display_.getFont();
-        display_.setFont(font_);
-
         splitMultiLine(display_, size.width, text_);
 
         lineWidths_.clear();
         if (alignCenter || dynamicWidth) {
             for (auto &line : splitLines_) {
-                int lineWidth = display_.getTextWidth(line);
+                int lineWidth = display_.getTextWidth(line, font_);
                 lineWidths_.push_back(lineWidth);
             }
         }
@@ -125,15 +120,10 @@ public:
         int lineCount = std::min(static_cast<size_t>(maxLines_), splitLines_.size());
         int height = lineCount * font_->lineHeight() + (lineCount - 1) * spacingOffset_;
 
-        display_.setFont(oldFont);
         return {width, height};
     }
 
     void drawInRect(Rect rect) override {
-        // Leave the display font the way we found it.
-        // Probably not ideal, but for now it'll have to do.
-        Font *oldFont = display_.getFont();
-        display_.setFont(font_);
         if (splitLines_.size() > maxLines_) {
             int i = 1;
             while ((splitLines_[maxLines_ - 1][splitLines_[maxLines_ - 1].size() - i] != ' ') &&
@@ -152,11 +142,10 @@ public:
         for (int i = 0; i < maxLines_ && i < splitLines_.size(); i++) {
             // The plus 1 in the y is because we know what drawSingleLineOfText will do. It's
             // not ideal, but it works.
-            display_.drawSingleLineOfText(splitLines_[i], rect.origin.x + lineXOffsets_[i],
-                                          rect.origin.y +
-                                              i * (font_->lineHeight() + spacingOffset_) - 1);
+            display_.drawSingleLineOfText(
+                splitLines_[i], rect.origin.x + lineXOffsets_[i],
+                rect.origin.y + i * (font_->lineHeight() + spacingOffset_) - 1, false, font_);
         }
-        display_.setFont(oldFont);
     }
 
     bool dynamicWidth = false;

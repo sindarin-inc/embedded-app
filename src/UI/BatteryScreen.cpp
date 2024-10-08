@@ -21,9 +21,7 @@ BatteryScreen::BatteryScreen(DisplaySystem &display, PreferencesStore &prefs, Ba
 
 void BatteryScreen::render(DisplaySystem &display) {
     uint16_t width = 0, height = 0;
-    display.setFont(static_cast<Font *>(&fontFace0));
     auto batteryStatus = battery_.getBatteryLifeString();
-
     auto ptBatteryPct = PreferencesStore::lastPageTurnerBattery;
     auto ptBuild = prefs_.lastPageTurnerBuild.get().value_or("Unknown build");
     auto ptBatteryStatus = StringFormat("Page Turner: %d%% (%s)", ptBatteryPct, ptBuild.c_str());

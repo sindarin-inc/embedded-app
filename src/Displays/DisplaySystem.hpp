@@ -21,6 +21,7 @@
 #include "Misc/StringUtil.hpp"
 #include "Storage/FileSystem.hpp"
 #include "UI/Fonts/Font.hpp"
+#include "UI/Fonts/Fonts.hpp"
 #include "UI/Layout/Types.hpp"
 
 struct DisplayInset {
@@ -147,13 +148,7 @@ public:
         gfxClass_->fillTriangle(xOffset(x0), yOffset(y0), xOffset(x1), yOffset(y1), xOffset(x2),
                                 yOffset(y2), color);
     }
-    void setFont(Font *f) {
-        if (f != nullptr) {
-            font_ = f;
-        } else {
-            log_e("Received a bad (null) font pointer!");
-        }
-    }
+
     void fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color) {
         gfxClass_->fillRect(xOffset(x), yOffset(y), w, h, color);
     }
@@ -201,26 +196,33 @@ public:
     void flipInversion();
     [[nodiscard]] auto getInversion() const -> bool { return invertedDisplay_; }
 
-    [[nodiscard]] auto getLineSpacing() const -> int { return lineSpacing_; }
-    void setLineSpacing(int newSpacing) { lineSpacing_ = newSpacing; }
-
     virtual void clearDisplay(){};
     virtual void clearFrameBuffer() { fillScreen(bg); };
 
     void forceDontChangeRefreshType() { forceRefreshType_ = true; }
     void clearDontChangeRefreshType() { forceRefreshType_ = false; }
 
-    // MARK: - Text rendering code
-    auto getFont() -> Font *;
-    auto drawSingleLineOfText(const std::string &line, int x, int y, bool inverted = false) -> int;
-    void drawSingleLineOfCenteredText(const std::string &line);
-    void getTextSize(const std::string &buffer, uint16_t *w, uint16_t *h);
-    auto getLineHeightPlusSpacing(Font *font = nullptr) -> int;
-    auto getTextHeight(const std::string &buffer) -> int;
-    auto getTextWidth(const std::string &buffer) -> int;
+    auto drawSingleLineOfText(const std::string &line, int x, int y, bool inverted = false,
+                              Font *font = static_cast<Font *>(&fontFace0)) -> int;
+    void drawSingleLineOfCenteredText(const std::string &line, bool inverted = false,
+                                      Font *font = static_cast<Font *>(&fontFace0));
 
-    inline auto getTextWidthQuick(const char *buffer) -> int {
-        return font_->getTextWidthQuick(buffer);
+    // These getText* helpers were historically in this class, but they no longer need to be here
+    // technically since the font is always passed in or it uses the default font.
+    [[nodiscard]] auto defaultLineHeight() const -> int { return fontFace0.lineHeight(); }
+    void getTextSize(const std::string &buffer, uint16_t *w, uint16_t *h,
+                     Font *font = static_cast<Font *>(&fontFace0));
+    auto getTextHeight(const std::string &buffer, Font *font = static_cast<Font *>(&fontFace0))
+        -> int;
+    auto getTextWidth(const std::string &buffer, Font *font = static_cast<Font *>(&fontFace0))
+        -> int;
+    inline auto getTextWidthQuick(const char *buffer, Font *font = static_cast<Font *>(&fontFace0))
+        -> int {
+        if (font == nullptr) {
+            return -1;
+        } else {
+            return font->getTextWidthQuick(buffer);
+        }
     }
 
     // MARK: - Graphic drawing code
@@ -300,7 +302,6 @@ protected:
 
     // Must be set in the constructor of subclasses
     Adafruit_GFX *gfxClass_ = nullptr;
-    Font *font_ = nullptr;
 
     int partialRefresh_ = 0;
     uint16_t partialX_ = 0, partialY_ = 0, partialW_ = 0, partialH_ = 0;
@@ -308,8 +309,6 @@ protected:
     bool invertedDisplay_ = false;
 
     bool forceRefreshType_ = false;
-
-    int lineSpacing_ = 0;
 };
 
 #endif

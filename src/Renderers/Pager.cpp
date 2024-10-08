@@ -353,20 +353,20 @@ void Pager::drawSingleLine(LineInfo &lineInfo, int yPos) const {
         if ((static_cast<uint16_t>(tokenId) & (static_cast<uint16_t>(TokenId::SUBTEXT) |
                                                static_cast<uint16_t>(TokenId::SUPTEXT))) != 0) {
 
-            int32_t yOffset = display_.getLineHeightPlusSpacing() / 5;
-            auto normalHeight = display_.getLineHeightPlusSpacing();
+            int32_t yOffset = getLineHeightPlusSpacing() / 5;
+            auto normalHeight = getLineHeightPlusSpacing();
 
-            display_.getFont()->setSupSubFontSize();
+            font_->setSupSubFontSize();
 
             if (tokenId == TokenId::SUBTEXT) {
-                theYPos += normalHeight - display_.getLineHeightPlusSpacing() + yOffset;
+                theYPos += normalHeight - getLineHeightPlusSpacing() + yOffset;
             } else { // TokenId::SUPTEXT
-                theYPos += normalHeight - display_.getLineHeightPlusSpacing() - yOffset;
+                theYPos += normalHeight - getLineHeightPlusSpacing() - yOffset;
             }
-            xPos = display_.drawSingleLineOfText(lineSegment.data(), xPos, theYPos);
-            display_.getFont()->setNormalFontSize();
+            xPos = display_.drawSingleLineOfText(lineSegment.data(), xPos, theYPos, false, font_);
+            font_->setNormalFontSize();
         } else {
-            xPos = display_.drawSingleLineOfText(lineSegment.data(), xPos, yPos);
+            xPos = display_.drawSingleLineOfText(lineSegment.data(), xPos, yPos, false, font_);
         }
     }
 }
@@ -546,7 +546,7 @@ auto Pager::displayPage(int16_t numSkipLines) -> uint8_t {
             Line line;
             getLine(lines_[lineIdx], line);
             display_.drawSingleLineOfText(line.data(), rect_.x + lines_[lineIdx].leftIndent,
-                                          rect_.y + deciToPix(deciY));
+                                          rect_.y + deciToPix(deciY), false, font_);
 #endif
             deciY += NEWLINE_DECI_LINE_HEIGHT;
             break;
@@ -564,7 +564,7 @@ auto Pager::displayPage(int16_t numSkipLines) -> uint8_t {
             Line line;
             getLine(lines_[lineIdx], line);
             display_.drawSingleLineOfText(line.data(), rect_.x + lines_[lineIdx].leftIndent,
-                                          rect_.y + deciToPix(deciY));
+                                          rect_.y + deciToPix(deciY), false, font_);
 #endif
             deciY += NEWLINE_DECI_LINE_HEIGHT + ENDPARAGRAPH_DECI_LINE_HEIGHT;
         } break;
@@ -578,12 +578,12 @@ auto Pager::displayPage(int16_t numSkipLines) -> uint8_t {
                 Line line;
                 getLine(lines_[lineIdx], line);
                 // log_w("Real line width: %" PRIu16 " indent: %" PRIu16,
-                //       display_.getTextWidth(line.data()) + lines_[lineIdx].leftIndent,
+                //       display_.getTextWidth(line.data(), font_) + lines_[lineIdx].leftIndent,
                 //       lines_[lineIdx].leftIndent);
                 REND_WLOG("[%" PRIu16 "] %s: <%s>", lineIdx, token.streamPlace.str().c_str(),
                           line.data());
                 display_.drawSingleLineOfText(line.data(), rect_.x + lines_[lineIdx].leftIndent,
-                                              rect_.y + deciToPix(deciY));
+                                              rect_.y + deciToPix(deciY), false, font_);
 #endif
             } else {
                 REND_WLOG("[%" PRIu16 "] %s: <SKIPPED>", lineIdx, token.streamPlace.str().c_str());

@@ -411,8 +411,6 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 #endif
 #endif
 
-    myDisplay.setFont(FontFromPrefs(prefs.font.get().value_or(PREFS_SOL_SMALL)));
-
     HEAP_PROFILE_START(displaySetup);
     if (!myDisplay.setup()) {
         bootErrors.push_back({.type = BootError::Type::Display});
@@ -434,8 +432,6 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         myDisplay.getDriver()->setVcom(vcomSetting.value());
     }
 #endif
-
-    myDisplay.setLineSpacing(prefs.lineSpacing.get().value_or(0));
 
     SIZE_OF(myDisplay);
 

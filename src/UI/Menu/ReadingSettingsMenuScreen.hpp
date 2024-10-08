@@ -38,6 +38,10 @@ public:
         setFirstLoad();
     }
 
+    void setRendererLineSpacingFromPrefs() {
+        renderer_.setLineSpacing(prefs_.lineSpacing.get().value_or(0));
+    }
+
     // When they press back, we need to stop the animation timer and reset the renderer
     void leaveMenu() {
         rendererView_.resetRenderer();

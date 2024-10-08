@@ -8,7 +8,7 @@ using namespace renderer_defs;
 
 class Tokens {
 private:
-    DisplaySystem &display_;
+    Font *font_;
 
     TokensArray tokens_{};
     Idx tokensTailIdx_{0};
@@ -46,10 +46,12 @@ private:
     }
 
 public:
-    Tokens(DisplaySystem &display) : display_(display) {}
+    Tokens(Font *font) : font_(font) {}
     [[nodiscard]] inline auto operator[](renderer_defs::Idx idx) const -> const Token & {
         return tokens_[idx];
     }
+
+    inline auto setFont(Font *font) -> void { font_ = font; }
 
     [[nodiscard]] inline auto tokenAt(renderer_defs::Idx idx) -> Token & { return tokens_[idx]; }
 

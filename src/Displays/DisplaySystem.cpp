@@ -25,8 +25,6 @@ void DisplaySystem::animationTimerCallback(TimerHandle_t timer) {
 }
 
 auto DisplaySystem::setup() -> bool {
-    // Default to original font
-    setFont(static_cast<Font *>(&fontFace0));
     gfxClass_->setTextColor(fg, bg);
 
 #ifdef DISPLAY_ROTATION
@@ -115,23 +113,21 @@ void DisplaySystem::setFullWindow() {
     partialH_ = gfxClass_->height();
 }
 
-auto DisplaySystem::getFont() -> Font * { return font_; }
-
 // Eventually, we could add an optional argument at the end to wrap the text
 // and return whether the text was wrapped or not.
 // But that's for another day.
 //
 // Returns the x position at the end of string, without the bounding box offset.
-auto DisplaySystem::drawSingleLineOfText(const std::string &line, int x, int y, bool inverted)
-    -> int {
+auto DisplaySystem::drawSingleLineOfText(const std::string &line, int x, int y, bool inverted,
+                                         Font *font) -> int {
     int newXPos = x;
-    if (font_ != nullptr) {
+    if (font != nullptr) {
         gfxClass_->startWrite();
         font_defs::Bitmap canvas{};
         canvas.pixels = getBuffer();
         canvas.dim = font_defs::Dim(nativeWidth(), nativeHeight());
-        newXPos = font_->drawSingleLineOfText(canvas, Pos(xOffset(x), yOffset(y)), line,
-                                              inverted ? !invertedDisplay_ : invertedDisplay_);
+        newXPos = font->drawSingleLineOfText(canvas, Pos(xOffset(x), yOffset(y)), line,
+                                             inverted ? !invertedDisplay_ : invertedDisplay_);
         newXPos -= displayInsets().left;
         gfxClass_->endWrite();
     }
@@ -139,14 +135,15 @@ auto DisplaySystem::drawSingleLineOfText(const std::string &line, int x, int y, 
     return newXPos;
 }
 
-void DisplaySystem::drawSingleLineOfCenteredText(const std::string &line) {
+void DisplaySystem::drawSingleLineOfCenteredText(const std::string &line, bool inverted,
+                                                 Font *font) {
     this->drawSingleLineOfText(line, (width() - getTextWidth(line)) / 2,
-                               (height() - this->getLineHeightPlusSpacing()) / 2);
+                               (height() - getTextHeight(line)) / 2, inverted, font);
 }
 
-void DisplaySystem::getTextSize(const std::string &buffer, uint16_t *w, uint16_t *h) {
-    if (font_ != nullptr) {
-        Dim dim = font_->getTextSize(buffer);
+void DisplaySystem::getTextSize(const std::string &buffer, uint16_t *w, uint16_t *h, Font *font) {
+    if (font != nullptr) {
+        Dim dim = font->getTextSize(buffer);
         *w = dim.width;
         *h = dim.height;
     } else {
@@ -155,19 +152,12 @@ void DisplaySystem::getTextSize(const std::string &buffer, uint16_t *w, uint16_t
     }
 }
 
-auto DisplaySystem::getLineHeightPlusSpacing(Font *font) -> int {
-    if (font == nullptr) {
-        return (font_ != nullptr) ? font_->lineHeight() + lineSpacing_ : 0;
-    }
-    return font->lineHeight() + lineSpacing_;
+auto DisplaySystem::getTextHeight(const std::string &buffer, Font *font) -> int {
+    return (font != nullptr) ? font->getTextHeight(buffer) : 0;
 }
 
-auto DisplaySystem::getTextHeight(const std::string &buffer) -> int {
-    return (font_ != nullptr) ? font_->getTextHeight(buffer) : 0;
-}
-
-auto DisplaySystem::getTextWidth(const std::string &buffer) -> int {
-    return (font_ != nullptr) ? font_->getTextWidth(buffer) : 0;
+auto DisplaySystem::getTextWidth(const std::string &buffer, Font *font) -> int {
+    return (font != nullptr) ? font->getTextWidth(buffer) : 0;
 }
 
 void DisplaySystem::drawBox(int startX, int startY, int endX, int endY) {

@@ -61,7 +61,6 @@
 #include "UI/ReadableScreen.hpp"
 #include "UI/ReleaseNotesScreen.hpp"
 #include "UI/ResizeBoxScreen.hpp"
-#include "UI/StatsScreen.hpp"
 #include "UI/TestAlignmentScreen.hpp"
 #include "UI/TutorialScreen.hpp"
 #include "UI/WiFiScanScreen.hpp"
@@ -824,7 +823,11 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                 auto lineSpacingScreen =
                     std::make_shared<LineSpacingScreen>(display_, prefs_, this->telemetry_);
                 this->pushScreen(lineSpacingScreen);
-                lineSpacingScreen->setBackCallback([this]() { this->popScreen(false); });
+                lineSpacingScreen->setBackCallback([this]() {
+                    this->popScreen(false);
+                    std::static_pointer_cast<ReadingSettingsMenuScreen>(currentScreen())
+                        ->setRendererLineSpacingFromPrefs();
+                });
             }));
 
             readingSettingsMenu->addMenuItem(std::make_shared<NewMenuItemCheckable>(
@@ -1916,7 +1919,6 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
         auto readableScreen = createReadableScreen(*it);
         if (readableScreen != nullptr) {
             display_.clearDisplay();
-            display_.setFont(static_cast<Font *>(&fontFace0));
             this->pushScreen(readableScreen, true);
         } else {
             auto errorPopup = std::make_shared<MsgPopup>(display_, itemErrorMsg_);
@@ -1940,7 +1942,6 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
             auto it = (booksIterator != readables.end()) ? booksIterator : articlesIterator;
             auto readableScreen = createReadableScreen(*it);
             if (readableScreen != nullptr) {
-                display_.setFont(static_cast<Font *>(&fontFace0));
                 this->pushScreen(readableScreen, true);
                 log_i("Resuming readable %s at place %s", (*it)->title.c_str(),
                       (*it)->place->str().c_str());

@@ -90,13 +90,15 @@ int main(int argc, char **argv) {
     DisplayRect boundingBoxRect = {x, y, w, h};
     std::cout << "Bounding box: " << x << "," << y << "," << w << "," << h << std::endl;
 
-    auto font = program.get<std::string>("--font");
-    if (font == "solSansSmall") {
-        (*display).setFont(static_cast<Font *>(&fontFace0));
-    } else if (font == "solSansMedium") {
-        (*display).setFont(static_cast<Font *>(&fontFace1));
-    } else if (font == "solSansLarge") {
-        (*display).setFont(static_cast<Font *>(&fontFace2));
+    Font *font = &fontFace0;
+    auto fontArg = program.get<std::string>("--font");
+    if (fontArg == "solSansSmall") {
+        // Leaving this here even though it's the default in case we change the default.
+        font = &fontFace0;
+    } else if (fontArg == "solSansMedium") {
+        font = &fontFace1;
+    } else if (fontArg == "solSansLarge") {
+        font = &fontFace2;
     } else {
         std::cerr << "Invalid font specified. Must be one of 'solSansSmall', "
                      "'solSansMedium', 'solSansLarge' "
@@ -106,7 +108,6 @@ int main(int argc, char **argv) {
     std::cout << "Font: " << font << std::endl;
 
     auto lineSpacing = program.get<int>("--lineSpacing");
-    (*display).setLineSpacing(lineSpacing);
     std::cout << "Line spacing: " << lineSpacing << std::endl;
 
     auto outputPath = program.get<std::filesystem::path>("outFile");
@@ -121,9 +122,10 @@ int main(int argc, char **argv) {
 
     auto epubFile = std::make_shared<EPubFile>(file, readable);
 
-    Renderer renderer(*display, boundingBoxRect, static_cast<Font *>(&fontFace0));
+    Renderer renderer(*display, boundingBoxRect, font);
     renderer.setStream(epubFile);
     renderer.renderPage(place);
+    renderer.setLineSpacing(lineSpacing);
 
     display->updateDisplay(DisplaySystem::UpdateType::FULL, true);
 

@@ -41,11 +41,10 @@ void CalibrationScreen::render(DisplaySystem &display) {
 
         display.fillRect(0, 0, display.width(), display.height(), display.fg);
         display.fillRect(2, 2, display.width() - 4, display.height() - 4, display.bg);
-        display.setFont(static_cast<Font *>(&fontFace0));
 
         int letsWidth = display.getTextWidth("let's");
         int focusWidth = display.getTextWidth("focus");
-        int focusHeight = display.getLineHeightPlusSpacing();
+        int focusHeight = display.defaultLineHeight();
 
         for (int i = 30; i > 23; i--) {
             display.drawCircle(midpointX, midpointY, i, display.fg);
@@ -62,10 +61,10 @@ void CalibrationScreen::render(DisplaySystem &display) {
         display.setCursor(edgeOffset, display.height() - edgeOffset - 2); // lower left
         display.println("lower left");
         display.setCursor(edgeOffset,
-                          display.getLineHeightPlusSpacing() - 2); // upper left
+                          display.getTextHeight("upper left")); // upper left
         display.println("upper left");
         display.setCursor(display.width() - display.getTextWidth("upper right") - edgeOffset,
-                          display.getLineHeightPlusSpacing() - 2);
+                          display.getTextHeight("upper right"));
         display.println("upper right");
 
         display.updateDisplay();

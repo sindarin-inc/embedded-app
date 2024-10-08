@@ -5,20 +5,20 @@
 #include "Renderers/RendererStream.hpp"
 #include "TxtTokenizer.hpp"
 
-auto Tokenizer::factory(const std::shared_ptr<RendererStream> &stream, DisplaySystem &display,
+auto Tokenizer::factory(const std::shared_ptr<RendererStream> &stream, Font *font,
                         DisplayRect &rect, Tokens &tokens, Pager &pager)
     -> std::shared_ptr<Tokenizer> {
     std::shared_ptr<Tokenizer> tokenizer;
 
     if (stream->isFor(DocType::TXT)) {
-        tokenizer = std::make_shared<TxtTokenizer>(display, rect, tokens, pager);
+        tokenizer = std::make_shared<TxtTokenizer>(font, rect, tokens, pager);
     } else if (stream->isFor(DocType::EPUB)) {
-        tokenizer = std::make_shared<EPubTokenizer>(display, rect, tokens, pager);
+        tokenizer = std::make_shared<EPubTokenizer>(font, rect, tokens, pager);
     } else {
         log_e("Stream is of wrong type (must be TXT or EPUB)!: %" PRIu8,
               static_cast<uint8_t>(stream->getDocType()));
         REND_EXIT_SIM;
-        tokenizer = std::make_shared<NullTokenizer>(display, rect, tokens, pager);
+        tokenizer = std::make_shared<NullTokenizer>(font, rect, tokens, pager);
     }
     tokenizer->setStream(stream);
     pager.setStream(stream);

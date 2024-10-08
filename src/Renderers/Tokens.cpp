@@ -12,8 +12,8 @@ auto Tokens::add(Token &token, const char *str, uint8_t length) -> bool {
 
         if ((token.pixWidth == 0) && (token.cStr != nullptr) && (token.cStr[0] != '\n')) {
             token.pixWidth = (token.tokenId == TokenId::ITEXT)
-                                 ? display_.getTextWidth(token.cStr)
-                                 : display_.getTextWidthQuick(token.cStr);
+                                 ? font_->getTextWidth(token.cStr)
+                                 : font_->getTextWidthQuick(token.cStr);
             // log_w("Token width of %s is %" PRIu16, token.cStr, token.pixWidth);
         }
 

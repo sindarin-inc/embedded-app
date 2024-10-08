@@ -20,22 +20,11 @@ VcomAdjustScreen::VcomAdjustScreen(DisplaySystem &display, PreferencesStore &pre
 }
 
 void VcomAdjustScreen::render(DisplaySystem &display) {
-    display.setFont(static_cast<Font *>(&fontFace2));
-
     auto vcomStr = StringFormat("%dmV", vCom);
 
-    int vcomStrWidth = display.getTextWidth(vcomStr);
-    int vcomStrHeight = display.getLineHeightPlusSpacing();
-
-    // This doesn't seem like the right interface.
-    // We should use the DisplaySystem.drawSingleLineOfText here
-    display.setCursor(display.width() / 2 - vcomStrWidth / 2,
-                      display.height() / 2 - vcomStrHeight / 2);
-    display.println(vcomStr.c_str());
+    display.drawSingleLineOfCenteredText(vcomStr, false, static_cast<Font *>(&fontFace2));
 
     display.updateDisplay();
-
-    display.setFont(static_cast<Font *>(&fontFace0));
 }
 
 void VcomAdjustScreen::processCommand(RemoteCommand command) {

@@ -164,6 +164,7 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
             SendRemoteCommand(RIGHT);
             WAIT_FOR_DRAW(display);
         }
+        ASSERT_VIEW_UNCHANGED(display, "SeekingAround");
         SendRemoteCommand(UP);
         WAIT_FOR_DRAW(display);
         SendRemoteCommand(UP); // Show popup menu and we are on seek item still
@@ -395,9 +396,6 @@ TEST_CASE("Test some views independently") {
                 Telemetry telemetry(fs, prefs);
                 Battery battery(fs, prefs, telemetry);
                 LocalStore localStore(fs, prefs, battery, telemetry);
-
-                (*display).setFont(static_cast<Font *>(&fontFace0));
-
                 Firmware firmware;
                 auto upgradeAvailable = localStore.getPendingFirmwareUpdate(firmware);
                 REQUIRE(upgradeAvailable);
@@ -466,6 +464,16 @@ TEST_CASE("Test some views independently") {
 
         SECTION("Test LineSpacingScreen") {
             auto screen = std::make_shared<LineSpacingScreen>(*display, prefs, telemetry);
+            screen->render(*display);
+            ASSERT_VIEW_UNCHANGED(display, "LineSpacingScreen");
+            screen->processCommand(UP);
+            screen->processCommand(UP);
+            screen->processCommand(UP);
+            screen->render(*display);
+            ASSERT_VIEW_UNCHANGED(display, "LineSpacingScreenWide");
+            screen->processCommand(DOWN);
+            screen->processCommand(DOWN);
+            screen->processCommand(DOWN);
             screen->render(*display);
             ASSERT_VIEW_UNCHANGED(display, "LineSpacingScreen");
         }
