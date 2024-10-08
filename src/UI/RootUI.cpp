@@ -374,30 +374,45 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
 
     log_i("Loading %zu Pocket articles", articles.size());
 
-    auto welcomeMenuFactory = [this, noContent, makeContentSyncMenuItem,
-                               &lightingController]() -> MenuItemSharedPtrVector {
+    auto welcomeIndex = [this, noContent]() -> int {
+        if (!prefs_.seenLetsFocus.get().value_or(false)) {
+            return 1;
+        } else if (!prefs_.seenTextPlacement.get().value_or(false)) {
+            return 2;
+        } else if (noContent) {
+            return 3;
+        }
+        return 4;
+    };
+
+    auto welcomeMenuFactory = [this, noContent, makeContentSyncMenuItem, &lightingController,
+                               welcomeIndex]() -> MenuItemSharedPtrVector {
+        auto popAndSetIndexOrDone = [this, welcomeIndex]() {
+            this->popScreen();
+            setFirstLoad();
+            int welcomeTabIndex = welcomeIndex();
+            if (welcomeTabIndex != 4) {
+                std::static_pointer_cast<NewMainMenuScreen>(currentScreen())
+                    ->setTabToTitle("Welcome", welcomeTabIndex);
+            } else {
+                std::static_pointer_cast<NewMainMenuScreen>(currentScreen())->setCurrentTabIndex(1);
+                MsgPopup::showTemporaryMessage(display_, "Welcome Tab Complete!\nHappy Reading...",
+                                               2000, true, currentScreen());
+            }
+        };
         auto menuItems = std::make_shared<MenuItemVector>();
 
         menuItems->emplace_back(std::make_shared<NewMenuItemCheckable>(
             "Put on your Sol Reader!",
-            [this]() {
+            [this, popAndSetIndexOrDone]() {
             auto putOnWelcomeMenuScreen = std::make_shared<PutOnWelcomeMenuScreen>(display_);
             putOnWelcomeMenuScreen->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
-                "Back to Welcome Menu", [this]() { this->popScreen(); }));
+                "Back to Welcome Menu", [popAndSetIndexOrDone]() { popAndSetIndexOrDone(); }));
             putOnWelcomeMenuScreen->addMenuItem(
                 std::make_shared<NewMenuItemSingleLine>("Watch Sol Manifesto (1 min)", [this]() {
                     auto manifestoScreen = std::make_shared<DemoScreen>(display_, prefs_, true);
                     this->pushScreen(manifestoScreen);
-                    manifestoScreen->setBackCallback([this]() {
-                        this->popScreen();
-                        // Any screen that could possibly get to a backCallback without a command
-                        // being sent through the loop must explicitly render at the end of its
-                        // backCallback to ensure the screen is properly redrawn.
-                        if (needsRerender()) {
-                            render(display_);
-                            clearNeedsRerender();
-                        }
-                    });
+                    manifestoScreen->setBackCallback([this]() { this->popScreen(); });
                 }));
 
             this->pushScreen(putOnWelcomeMenuScreen);
@@ -408,11 +423,11 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
 
         menuItems->emplace_back(std::make_shared<NewMenuItemCheckable>(
             "Let's focus (3 min)",
-            [this, &lightingController]() {
+            [this, &lightingController, popAndSetIndexOrDone]() {
             auto letsFocusScreen = std::make_shared<LetsFocusWelcomeMenuScreen>(display_);
             letsFocusScreen->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
-                "Back to Welcome Menu", [this, &lightingController]() {
-                    this->popScreen();
+                "Back to Welcome Menu", [&lightingController, popAndSetIndexOrDone]() {
+                    popAndSetIndexOrDone();
                     lightingController.resume();
                 }));
             lightingController.pause();
@@ -423,11 +438,11 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
 
         menuItems->emplace_back(std::make_shared<NewMenuItemCheckable>(
             "Text placement (2 min)",
-            [this]() {
+            [this, popAndSetIndexOrDone]() {
             auto textPlacementScreen = std::make_shared<TextPlacementWelcomeMenuScreen>(display_);
             textPlacementScreen->addMenuItem(
                 std::make_shared<NewMenuItemSingleLine>("Choose this template",
-                                                        [this]() {
+                                                        [this, popAndSetIndexOrDone]() {
                 switch (std::static_pointer_cast<TextPlacementWelcomeMenuScreen>(currentScreen())
                             ->getCurrentTextSelection()) {
                 case 0:
@@ -438,10 +453,9 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                     prefs_.lineSpacing.set(1);
                     prefs_.font.set(PREFS_SOL_SMALL);
                     log_d("Setting prefs to Comfortable");
-                    this->popScreen();
-                    setFirstLoad();
-                    MsgPopup::showTemporaryMessage(display_, "Comfortable text placement set", 2000,
-                                                   true, currentScreen());
+                    MsgPopup::showTemporaryMessage(display_, "Comfortable text placement set");
+                    Delay(2000);
+                    popAndSetIndexOrDone();
                     break;
                 case 1:
                     prefs_.textInsetLeft.set(25);
@@ -451,10 +465,9 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                     prefs_.font.set(PREFS_SOL_SMALL);
                     prefs_.lineSpacing.set(-1);
                     log_d("Setting prefs to Condensed");
-                    this->popScreen();
-                    setFirstLoad();
-                    MsgPopup::showTemporaryMessage(display_, "Condensed text placement set", 2000,
-                                                   true, currentScreen());
+                    MsgPopup::showTemporaryMessage(display_, "Condensed text placement set");
+                    Delay(2000);
+                    popAndSetIndexOrDone();
                     break;
                 case 2:
                     prefs_.textInsetLeft.set(30);
@@ -464,15 +477,14 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                     prefs_.font.set(PREFS_SOL_MEDIUM);
                     prefs_.lineSpacing.set(0);
                     log_d("Setting prefs to Bottom");
-                    this->popScreen();
-                    setFirstLoad();
-                    MsgPopup::showTemporaryMessage(display_, "Bottom text placement set", 2000,
-                                                   true, currentScreen());
+                    MsgPopup::showTemporaryMessage(display_, "Bottom text placement set");
+                    Delay(2000);
+                    popAndSetIndexOrDone();
                     break;
                 }
                 }));
             textPlacementScreen->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
-                "Back to Welcome Menu", [this]() { this->popScreen(); }));
+                "Back to Welcome Menu", [popAndSetIndexOrDone]() { popAndSetIndexOrDone(); }));
             this->pushScreen(textPlacementScreen);
             prefs_.seenTextPlacement.set(true);
             },
@@ -480,25 +492,26 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
 
         menuItems->emplace_back(std::make_shared<NewMenuItemCheckable>(
             "Get your first book (5 min)",
-            [this, makeContentSyncMenuItem]() {
+            [this, makeContentSyncMenuItem, popAndSetIndexOrDone]() {
             auto firstBookWelcomeMenuScreen =
                 std::make_shared<FirstBookWelcomeMenuScreen>(display_);
 
             firstBookWelcomeMenuScreen->addMenuItem(
                 makeContentSyncMenuItem("Get content via the Sol App"));
 
-            firstBookWelcomeMenuScreen->addMenuItem(
-                std::make_shared<NewMenuItemSingleLine>("Direct transfer via USB", [this]() {
+            firstBookWelcomeMenuScreen->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
+                "Direct transfer via USB", [this, popAndSetIndexOrDone]() {
                     auto drmFreeScreen = std::make_shared<DRMFreeWelcomeMenuScreen>(display_);
                     this->pushScreen(drmFreeScreen);
-                    drmFreeScreen->setBackCallback([this]() { this->popScreen(); });
+                    drmFreeScreen->setBackCallback(
+                        [popAndSetIndexOrDone]() { popAndSetIndexOrDone(); });
 
                     drmFreeScreen->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
                         "Back", [this]() { this->popScreen(); }));
                 }));
 
             firstBookWelcomeMenuScreen->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
-                "Back to Welcome Menu", [this]() { this->popScreen(); }));
+                "Back to Welcome Menu", [popAndSetIndexOrDone]() { popAndSetIndexOrDone(); }));
 
             this->pushScreen(firstBookWelcomeMenuScreen);
             },
@@ -1851,13 +1864,10 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
     // If we are in onboarding mode, show the entry bumper first
     if (!prefs_.dontShowWelcome.get().value_or(false)) {
         bool showWelcomeVideo = true;
-        // Preselect the first item that hasn't been checked off yet
-        if (!prefs_.seenLetsFocus.get().value_or(false)) {
-            newMainMenu->setTabToTitle("Welcome", 1);
-        } else if (!prefs_.seenTextPlacement.get().value_or(false)) {
-            newMainMenu->setTabToTitle("Welcome", 2);
-        } else if (noContent) {
-            newMainMenu->setTabToTitle("Welcome", 3);
+        int welcomeTabIndex = welcomeIndex();
+
+        if (welcomeTabIndex != 4) {
+            newMainMenu->setTabToTitle("Welcome", welcomeTabIndex);
         } else {
             // Onboaring is actually complete, so show the next menu over
             // instead of the welcome tab.
