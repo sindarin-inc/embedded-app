@@ -374,13 +374,13 @@ void DemoScreen::drawDoubleLine(DisplaySystem &display, std::string one, std::st
     std::string message;
     Font *font = static_cast<Font *>(&fontFace1);
     message = std::move(one);
-    display.drawSingleLineOfText(message, (display.width() - display.getTextWidth(message)) / 2,
-                                 (display.height() - display.getTextHeight(message)) / 2 - 12,
-                                 false, font);
+    display.drawSingleLineOfText(
+        message, (display.width() - display.getTextWidth(message, font)) / 2,
+        (display.height() - display.getTextHeight(message, font)) / 2 - 12, false, font);
     message = std::move(two);
-    display.drawSingleLineOfText(message, (display.width() - display.getTextWidth(message)) / 2,
-                                 (display.height() + display.getTextHeight(message)) / 2 - 4, false,
-                                 font);
+    display.drawSingleLineOfText(
+        message, (display.width() - display.getTextWidth(message, font)) / 2,
+        (display.height() + display.getTextHeight(message, font)) / 2 - 4, false, font);
 }
 
 void DemoScreen::drawTripleLine(DisplaySystem &display, std::string one, std::string two,
@@ -392,13 +392,16 @@ void DemoScreen::drawTripleLine(DisplaySystem &display, std::string one, std::st
 
     yAdjust = (yAdjust + 1) / 2;
 
-    display.drawSingleLineOfText(message, (display.width() - display.getTextWidth(message)) / 2,
+    display.drawSingleLineOfText(message,
+                                 (display.width() - display.getTextWidth(message, font)) / 2,
                                  display.height() / 2 - yAdjust - yAdjust * 2 - 4, invert, font);
     message = std::move(two);
-    display.drawSingleLineOfText(message, (display.width() - display.getTextWidth(message)) / 2,
+    display.drawSingleLineOfText(message,
+                                 (display.width() - display.getTextWidth(message, font)) / 2,
                                  display.height() / 2 - yAdjust, invert, font);
     message = std::move(three);
-    display.drawSingleLineOfText(message, (display.width() - display.getTextWidth(message)) / 2,
+    display.drawSingleLineOfText(message,
+                                 (display.width() - display.getTextWidth(message, font)) / 2,
                                  display.height() / 2 + yAdjust + 4, invert, font);
 }
 
