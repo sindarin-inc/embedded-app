@@ -90,15 +90,15 @@ int main(int argc, char **argv) {
     DisplayRect boundingBoxRect = {x, y, w, h};
     std::cout << "Bounding box: " << x << "," << y << "," << w << "," << h << std::endl;
 
-    Font *font = static_cast<Font *>(&fontFace0);
+    Font *font = &fontFace0;
     auto fontArg = program.get<std::string>("--font");
     if (fontArg == "solSansSmall") {
         // Leaving this here even though it's the default in case we change the default.
-        font = static_cast<Font *>(&fontFace0);
+        font = &fontFace0;
     } else if (fontArg == "solSansMedium") {
-        font = static_cast<Font *>(&fontFace1);
+        font = &fontFace1;
     } else if (fontArg == "solSansLarge") {
-        font = static_cast<Font *>(&fontFace2);
+        font = &fontFace2;
     } else {
         std::cerr << "Invalid font specified. Must be one of 'solSansSmall', "
                      "'solSansMedium', 'solSansLarge' "
