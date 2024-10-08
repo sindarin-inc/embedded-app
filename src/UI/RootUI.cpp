@@ -497,7 +497,7 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                 std::make_shared<FirstBookWelcomeMenuScreen>(display_);
 
             firstBookWelcomeMenuScreen->addMenuItem(
-                makeContentSyncMenuItem("Get content via the Sol App"));
+                makeContentSyncMenuItem("Get content via the Sol Reader app"));
 
             firstBookWelcomeMenuScreen->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
                 "Direct transfer via USB", [this, popAndSetIndexOrDone]() {

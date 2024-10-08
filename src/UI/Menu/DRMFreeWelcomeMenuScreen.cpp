@@ -14,11 +14,11 @@ DRMFreeWelcomeMenuScreen::DRMFreeWelcomeMenuScreen(DisplaySystem &display)
 
     std::string message;
     message +=
-        "If you have a DRM-free EPUB, you can transfer it directly via USB using the Sol "
-        "Desktop App. Download the app from solreader.com/app. Direct USB transfers miss "
+        "If you have a DRM-free EPUB, you can transfer it directly via USB using our desktop app."
+        " Download the app from solreader.com/app. Direct USB transfers miss "
         "out on our Sol EPUB features like reading-in-app, automated AI summaries, dictionary, and "
-        "more.\n\nTo access these features, get the Sol mobile app, drop your DRM-Free EPUB to "
-        "add.solreader.com and it'll sync to your Sol Reader on your next content sync.";
+        "more.\n\nTo access these features, get our mobile app, then pair your Sol Reader to the "
+        "app. Finally, drop your DRM-Free EPUB to add.solreader.com and sync!";
 
     auto stream = std::make_shared<StdStringStream>(message);
     renderer_.setStream(stream);
