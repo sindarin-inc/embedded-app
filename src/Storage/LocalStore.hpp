@@ -165,6 +165,7 @@ public:
     void migrateTxtPlacemarksToEpubPlacemarks();
     void deleteAllToCJson();
     void migrateIfNeeded();
+    void computeRecentReadables();
 
     FileSystem &fileSystem;
 
@@ -178,5 +179,4 @@ private:
     ReadablesVector articles_;
 
     ReadablesVector recents_;
-    void computeRecentReadables();
 };

@@ -529,6 +529,7 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
 
     auto recentMenuFactory = [this, &localStore, handleReadableScreenCreation, isBible,
                               makeReleaseNotesMenuItem]() -> MenuItemSharedPtrVector {
+        localStore.computeRecentReadables();
         auto &recents = localStore.recents();
         auto menuItems = std::make_shared<MenuItemVector>();
 
