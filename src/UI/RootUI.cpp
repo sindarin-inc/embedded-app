@@ -340,7 +340,7 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                                        const char *title,
                                        bool immediateSync = false) -> std::shared_ptr<NewMenuItem> {
         return std::make_shared<NewMenuItemSingleLine>(
-            title, [this, &localStore, makeAndStartContentSync, immediateSync]() {
+            title, [this, makeAndStartContentSync, immediateSync]() {
                 // If we're not yet paired, show the app screen instead
                 if (PreferencesStore::paired == PairedStatus::Unpaired) {
                     auto appDownloadScreen = std::make_shared<AppDownloadScreen>(

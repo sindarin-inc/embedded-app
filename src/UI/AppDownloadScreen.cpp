@@ -4,7 +4,7 @@
 #include "Storage/PreferencesStore.hpp"
 #include "sindarin-debug.h"
 
-AppDownloadScreen *AppDownloadScreen::currentInstance_{nullptr};
+AppDownloadScreen *AppDownloadScreen::currentInstance{nullptr};
 
 auto AppDownloadScreen::layout(LayoutContext &context, Size size) -> Size {
 
