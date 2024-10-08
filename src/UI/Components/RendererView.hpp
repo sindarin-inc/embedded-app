@@ -17,10 +17,6 @@ public:
 
     auto setAutoPilotWraparound() { autoPilotWraparound_ = true; }
 
-    auto setFont(Font *font) -> void { renderer_.setFont(font); }
-
-    auto setLineSpacing(int newSpacing) -> void { renderer_.setLineSpacing(newSpacing); }
-
     void resetRenderer() {
         numSkipLines_ = 0;
         currentPlace_ = nullptr;
