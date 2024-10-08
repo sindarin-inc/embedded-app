@@ -48,7 +48,7 @@ public:
 
     static void timerCallback(TimerHandle_t timer);
 
-    static auto currentInstance() -> AppDownloadScreen * { return currentInstance; }
+    static auto getCurrentInstance() -> AppDownloadScreen * { return currentInstance; }
     static void setCurrentInstance(AppDownloadScreen *screen) { currentInstance = screen; }
 
 protected:

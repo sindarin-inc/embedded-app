@@ -47,9 +47,9 @@ void AppDownloadScreen::timerCallback(TimerHandle_t timer) {
     // If paired status goes to paired, go back
     if (PreferencesStore::paired == PairedStatus::Paired) {
         DispatchGetUiQueue()->dispatch([]() {
-            if (currentInstance()->immediateContentSync_ &&
-                currentInstance()->makeAndStartContentSync_) {
-                currentInstance()->makeAndStartContentSync_();
+            if (getCurrentInstance()->immediateContentSync_ &&
+                getCurrentInstance()->makeAndStartContentSync_) {
+                getCurrentInstance()->makeAndStartContentSync_();
             } else {
                 UIInnerLoop(RemoteCommand::BACK);
             }
