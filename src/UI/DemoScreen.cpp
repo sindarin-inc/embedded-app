@@ -298,8 +298,6 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs, bool ful
             message = "Welcome to Sol!";
             nextInterval_ = 2000;
         }
-
-        display.setFont(static_cast<Font *>(&fontFace0));
         display.drawSingleLineOfText(message, (display.width() - display.getTextWidth(message)) / 2,
                                      202, true);
 

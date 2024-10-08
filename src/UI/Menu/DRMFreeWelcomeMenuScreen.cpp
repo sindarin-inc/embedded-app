@@ -22,6 +22,7 @@ DRMFreeWelcomeMenuScreen::DRMFreeWelcomeMenuScreen(DisplaySystem &display)
 
     auto stream = std::make_shared<StdStringStream>(message);
     renderer_.setStream(stream);
+    renderer_.setLineSpacing(-1);
 }
 
 void DRMFreeWelcomeMenuScreen::addMenuItem(const std::shared_ptr<NewMenuItem> &menuItem) {
@@ -61,11 +62,8 @@ auto DRMFreeWelcomeMenuScreen::layout(LayoutContext &context, Size size) -> Size
 }
 
 void DRMFreeWelcomeMenuScreen::drawInRect(Rect rect) {
-    auto oldLineSpacing = display_.getLineSpacing();
-    display_.setLineSpacing(-1);
     rendererView_.draw();
     menuView_.draw();
-    display_.setLineSpacing(oldLineSpacing);
 }
 
 void DRMFreeWelcomeMenuScreen::render(DisplaySystem &display) {

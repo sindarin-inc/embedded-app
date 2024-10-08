@@ -21,6 +21,7 @@ PutOnWelcomeMenuScreen::PutOnWelcomeMenuScreen(DisplaySystem &display)
 
     auto stream = std::make_shared<StdStringStream>(message);
     renderer_.setStream(stream);
+    renderer_.setLineSpacing(-1);
 }
 
 void PutOnWelcomeMenuScreen::addMenuItem(const std::shared_ptr<NewMenuItem> &menuItem) {
@@ -60,11 +61,8 @@ auto PutOnWelcomeMenuScreen::layout(LayoutContext &context, Size size) -> Size {
 }
 
 void PutOnWelcomeMenuScreen::drawInRect(Rect rect) {
-    auto oldLineSpacing = display_.getLineSpacing();
-    display_.setLineSpacing(-1);
     rendererView_.draw();
     menuView_.draw();
-    display_.setLineSpacing(oldLineSpacing);
 }
 
 void PutOnWelcomeMenuScreen::render(DisplaySystem &display) {

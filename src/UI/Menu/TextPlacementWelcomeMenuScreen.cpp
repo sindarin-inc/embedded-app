@@ -100,18 +100,17 @@ auto TextPlacementWelcomeMenuScreen::layout(LayoutContext &context, Size size) -
 }
 
 void TextPlacementWelcomeMenuScreen::drawInRect(Rect rect) {
-    auto oldLineSpacing = display_.getLineSpacing();
     if (textSelection_ == 2) {
         rendererView_.setFont(&fontFace1);
     } else {
         rendererView_.setFont(&fontFace0);
     }
     if (textSelection_ == 0) {
-        display_.setLineSpacing(1);
+        rendererView_.setLineSpacing(1);
     } else if (textSelection_ == 1) {
-        display_.setLineSpacing(-1);
+        rendererView_.setLineSpacing(-1);
     } else if (textSelection_ == 2) {
-        display_.setLineSpacing(0);
+        rendererView_.setLineSpacing(0);
     }
     if (textSelection_ == 1 || textSelection_ == 2) {
         leftArrowView_.draw();
@@ -121,7 +120,6 @@ void TextPlacementWelcomeMenuScreen::drawInRect(Rect rect) {
     }
     rendererView_.draw();
     menuView_.draw();
-    display_.setLineSpacing(oldLineSpacing);
 }
 
 void TextPlacementWelcomeMenuScreen::render(DisplaySystem &display) {
