@@ -3,6 +3,7 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/timers.h>
 #include <memory>
+#include <utility>
 #include <vector>
 
 #include "UI/Bitmaps/DownloadAppQr.xbm"
@@ -24,7 +25,7 @@ public:
           topLineView_(display, 3),
           iconView_(display, DOWNLOAD_APP_QR_BITS, DownloadAppQr_width, DownloadAppQr_height, 3),
           bottomLine_(display, "solreader.com/app"), immediateContentSync_(immediateContentSync),
-          makeAndStartContentSync_(makeAndStartContentSync) {
+          makeAndStartContentSync_(std::move(std::move(makeAndStartContentSync))) {
         topLineView_.setText(
             "Purchase books, connect to your Sol Reader, set up WiFi, read, and more "
             "with the Sol Reader app");
@@ -47,8 +48,8 @@ public:
 
     static void timerCallback(TimerHandle_t timer);
 
-    static AppDownloadScreen *currentInstance() { return currentInstance_; }
-    static void setCurrentInstance(AppDownloadScreen *screen) { currentInstance_ = screen; }
+    static auto currentInstance() -> AppDownloadScreen * { return currentInstance; }
+    static void setCurrentInstance(AppDownloadScreen *screen) { currentInstance = screen; }
 
 protected:
     // TODO: It'd be nicer to have his be event driven, but seems overly heavy to set up a global
@@ -62,5 +63,5 @@ protected:
     bool immediateContentSync_{false};
     std::function<void()> makeAndStartContentSync_;
 
-    static AppDownloadScreen *currentInstance_;
+    static AppDownloadScreen *currentInstance;
 };
