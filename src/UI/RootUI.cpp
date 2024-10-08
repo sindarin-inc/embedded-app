@@ -438,10 +438,10 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                     prefs_.lineSpacing.set(1);
                     prefs_.font.set(PREFS_SOL_SMALL);
                     log_d("Setting prefs to Comfortable");
+                    this->popScreen();
                     setFirstLoad();
                     MsgPopup::showTemporaryMessage(display_, "Comfortable text placement set", 2000,
                                                    true, currentScreen());
-                    // prefs_.textTemplate.set(TextTemplate::Comfortable);
                     break;
                 case 1:
                     prefs_.textInsetLeft.set(25);
@@ -451,10 +451,10 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                     prefs_.font.set(PREFS_SOL_SMALL);
                     prefs_.lineSpacing.set(-1);
                     log_d("Setting prefs to Condensed");
+                    this->popScreen();
                     setFirstLoad();
                     MsgPopup::showTemporaryMessage(display_, "Condensed text placement set", 2000,
                                                    true, currentScreen());
-                    // prefs_.textTemplate.set(TextTemplate::Condensed);
                     break;
                 case 2:
                     prefs_.textInsetLeft.set(30);
@@ -464,10 +464,10 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                     prefs_.font.set(PREFS_SOL_MEDIUM);
                     prefs_.lineSpacing.set(0);
                     log_d("Setting prefs to Bottom");
+                    this->popScreen();
                     setFirstLoad();
                     MsgPopup::showTemporaryMessage(display_, "Bottom text placement set", 2000,
                                                    true, currentScreen());
-                    // prefs_.textTemplate.set(TextTemplate::Bottom);
                     break;
                 }
                 }));
