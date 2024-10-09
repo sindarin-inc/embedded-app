@@ -393,7 +393,7 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
     };
 
     auto welcomeMenuFactory = [this, noContent, makeContentSyncMenuItem, &lightingController,
-                               welcomeIndex]() -> MenuItemSharedPtrVector {
+                               welcomeIndex, readables]() -> MenuItemSharedPtrVector {
         auto popAndSetIndexOrDone = [this, welcomeIndex]() {
             this->popScreen();
             setFirstLoad();
@@ -496,7 +496,9 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
             [this]() { return prefs_.seenTextPlacement.get().value_or(false); }));
 
         menuItems->emplace_back(std::make_shared<NewMenuItemCheckable>(
-            "Get your first book (5 min)",
+            noContent              ? "Get your first book (5 min)"
+            : readables.size() > 1 ? StringFormat("You have %zu books", readables.size())
+                                   : StringFormat("You have %zu book", readables.size()),
             [this, makeContentSyncMenuItem, popAndSetIndexOrDone]() {
             auto firstBookWelcomeMenuScreen =
                 std::make_shared<FirstBookWelcomeMenuScreen>(display_);
