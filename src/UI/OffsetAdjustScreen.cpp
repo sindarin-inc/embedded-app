@@ -11,7 +11,7 @@ OffsetAdjustScreen::OffsetAdjustScreen(DisplaySystem &display, PreferencesStore 
                                        Telemetry &telemetry)
     : display_(display),
       renderer_(display, GetTextRectFromPrefs(display, prefs), static_cast<Font *>(&fontFace0)),
-      prefs_(prefs), telemetry_(telemetry) {
+      prefs_(prefs), telemetry_(telemetry), rendererRef_(renderer_) {
 
     std::string message;
     // This needs to be pretty big for smaller fonts
@@ -32,6 +32,12 @@ OffsetAdjustScreen::OffsetAdjustScreen(DisplaySystem &display, PreferencesStore 
     auto stream = std::make_shared<StdStringStream>(message);
     renderer_.setStream(stream);
 }
+OffsetAdjustScreen::OffsetAdjustScreen(DisplaySystem &display, PreferencesStore &prefs,
+                                       Telemetry &telemetry, Renderer &renderer,
+                                       std::shared_ptr<Readable> readable)
+    : display_(display),
+      renderer_(display, GetTextRectFromPrefs(display, prefs), static_cast<Font *>(&fontFace0)),
+      readable_(readable), prefs_(prefs), telemetry_(telemetry), rendererRef_(renderer) {}
 
 void OffsetAdjustScreen::render(DisplaySystem &display) {
     // Get the bounding box
@@ -40,8 +46,13 @@ void OffsetAdjustScreen::render(DisplaySystem &display) {
     // The horizontal padding adds one blank pixel column on either side of the rect
     display.drawDottedBox(textBox.x - 2, textBox.y, textBox.x + textBox.width + 1,
                           textBox.y + textBox.height - 1, 1, 2);
-    this->renderer_.setRect(textBox);
-    this->renderer_.renderFirstPage(0, true);
+    if (readable_ == nullptr) {
+        this->renderer_.setRect(textBox);
+        this->renderer_.renderFirstPage(0, true);
+    } else {
+        rendererRef_.setRect(textBox);
+        rendererRef_.renderPage(readable_->place, 0);
+    }
     display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
 }
 
