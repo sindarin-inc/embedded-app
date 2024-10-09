@@ -18,9 +18,6 @@ TextPlacementWelcomeMenuScreen::TextPlacementWelcomeMenuScreen(DisplaySystem &di
 
 void TextPlacementWelcomeMenuScreen::setText() {
     std::string message;
-    if (textSelection_ != 2) {
-        message += introText_;
-    }
     message += std::get<0>(texts_[textSelection_]);
     auto stream = std::make_shared<StdStringStream>(message);
     renderer_.setStream(stream);

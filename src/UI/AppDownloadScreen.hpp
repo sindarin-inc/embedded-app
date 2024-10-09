@@ -28,7 +28,7 @@ public:
           makeAndStartContentSync_(std::move(makeAndStartContentSync)) {
         topLineView_.setText(
             "Purchase books, connect to your Sol Reader, set up WiFi, read, and more "
-            "with the Sol Reader app");
+            "with the Sol app");
         topLineView_.alignCenter = true;
 
         xTimerStart(syncPollingTimer_, 0);

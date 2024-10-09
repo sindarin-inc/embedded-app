@@ -517,7 +517,7 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                 std::make_shared<FirstBookWelcomeMenuScreen>(display_);
 
             firstBookWelcomeMenuScreen->addMenuItem(
-                makeContentSyncMenuItem("Get content via the Sol Reader app"));
+                makeContentSyncMenuItem("Get content via the Sol app"));
 
             firstBookWelcomeMenuScreen->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
                 "Direct transfer via USB", [this, popAndSetIndexOrDone]() {
@@ -639,7 +639,7 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                 SpiramString message = SpiramString(
                     "Welcome to the Books menu. This tab "
                     "shows you the books currently synced to your Sol Reader. To add more books or "
-                    "manage the books on your device, use the Sol Reader app.\n\n"
+                    "manage the books on your device, use the Sol app.\n\n"
                     "Did you know "
                     "you can change the position, width, and height of the page in the Sol Reader "
                     "display? "
@@ -685,18 +685,18 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
         if (!(prefs_.tutorialsDeleted.get().value_or(0) & TUTORIAL_SCREEN_ARTICLES)) {
             menuItems->emplace_back(std::make_shared<NewMenuItemSingleLine>(
                 "\ue000 Articles Tutorial", [this, createTutorialScreen]() {
-                    SpiramString message = SpiRamStringFormat(
-                        "Welcome to the Articles menu. This tab "
-                        "shows you the articles currently synced to your Sol "
-                        "Reader. To add more articles, "
-                        "simply connect your Pocket account in the Sol Reader app "
-                        "or forward newsletters "
-                        "from your inbox to add@solreader.com.\n\n"
-                        "Did you know "
-                        "you can change the sort order of your articles? "
-                        "Simply go to Settings -> Content -> Article Sort Order."
-                        "\n\n\nPress \ue000 (center) to "
-                        "continue.\n");
+                    SpiramString message =
+                        SpiRamStringFormat("Welcome to the Articles menu. This tab "
+                                           "shows you the articles currently synced to your Sol "
+                                           "Reader. To add more articles, "
+                                           "simply connect your Pocket account in the Sol app "
+                                           "or forward newsletters "
+                                           "from your inbox to add@solreader.com.\n\n"
+                                           "Did you know "
+                                           "you can change the sort order of your articles? "
+                                           "Simply go to Settings -> Content -> Article Sort Order."
+                                           "\n\n\nPress \ue000 (center) to "
+                                           "continue.\n");
                     auto tutorialScreen = createTutorialScreen(message, TUTORIAL_SCREEN_ARTICLES);
                     this->pushScreen(tutorialScreen);
                 }));
@@ -1908,7 +1908,7 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
 
     // If we are in onboarding mode, show the entry bumper first
     if (!prefs_.dontShowWelcome.get().value_or(false)) {
-        bool showWelcomeVideo = true;
+        bool showWelcomeVideo = false; // true;
         bool forceShowWelcome = prefs_.forceShowWelcome.get().value_or(false);
 
         if (welcomeTabIndex != 4 || forceShowWelcome) {

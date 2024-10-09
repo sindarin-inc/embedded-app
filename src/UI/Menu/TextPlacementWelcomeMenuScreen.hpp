@@ -31,19 +31,19 @@ private:
     ArrowView rightArrowView_;
     uint8_t textSelection_ = 0;
 
-    std::string introText_ =
-        "These screens will show you three template views for text placement. You can select your "
-        "preferred text placement. Don't worry, you can always change it later and customize even "
-        "further in the Reading Settings menu!\n\n\n";
-
     std::vector<std::tuple<std::string, Inset>> texts_ = {
-        {"This is an example of the Comfortable template which is the default.\n\nIt features "
+        {"These screens will show you three template views for text placement. You can select your "
+         "preferred text placement now; don't worry, it can be changed anytime and customized even "
+         "further in the Settings menu!\n\n\n"
+         "This is an example of the Comfortable template, which is the default.\n\nIt features "
          "small text, average line spacing, and large margins.",
          {0, 0, 0, 0}},
         {"This is the Condensed template for those who like to pack as many words on the page as "
          "possible. The text has the smallest line spacing and takes up the most space on the "
-         "screen.\n\nSee how much extra filler text we have to write here just to fill up the "
-         "page? It's pretty great!",
+         "screen.\n\nCan you believe how much additional, seemingly unnecessary filler text we're "
+         "being forced to write here just for the sole purpose of making sure the content "
+         "stretches out to fill up the page, even though it doesn't really add any value or "
+         "substance to what we're trying to communicate in the first place?\n\nIt's pretty great!",
          {-4, -12, -8, -8}},
         {"Some readers prefer to have the text weighted towards the "
          "bottom of the display to limit the amount the eyes have to move to read a page. The "

@@ -31,13 +31,14 @@ private:
     uint8_t textSelection_ = 0;
 
     std::vector<std::tuple<std::string, Inset>> texts_ = {
-        {"Turn each lens like binoculars until this text is in focus.", {50, 40, 85, 65}},
-        {"For some readers, the distance between their eyes impacts focus. The knob on top of your "
+        {"Twist each lens at the ridged edge like binoculars until this text is in focus.",
+         {50, 42, 77, 53}},
+        {"For some people, the distance between their eyes impacts focus. The knob on top of your "
          "Sol Reader allows you to adjust the eye spacing. Line the lenses up so each one is "
          "directly in front of each eye.",
          {35, 21, 45, 34}},
         {"Feeling good? Press \ue000 to continue your setup!\n\n"
-         "Also, you just learned how to turn the page and go back a page. "
+         "Also, you just learned how to turn the page  \ue002  and go back a page  \ue001 . "
          "Well done! Fun fact: while reading a book, you can also use the \ue000 button to turn "
          "the page.",
          {35, 21, 45, 34}},
