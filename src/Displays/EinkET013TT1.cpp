@@ -600,7 +600,8 @@ void EinkET013TT1::powerOnInternal() {
 
     // Fire up the charge pumps
     // Disable everything (probably a no-op)
-    writeRegister(PUMP_SETTING_2, 0x00, screen);
+    // This makes an audible click
+    // writeRegister(PUMP_SETTING_2, 0x00, screen);
     Delay(30);
     // Enable positive charge pump VH (VDH +14V & VGH +19V)
     writeRegister(PUMP_SETTING_2, 0x01, screen);
@@ -653,7 +654,8 @@ void EinkET013TT1::powerOffInternal() {
     writeRegister(PUMP_SETTING_1, 0x80, screen);
     // Also disable positive charge pump VH (VDH +14V & VGH +19V)
     // All charge pumps are off at this point
-    writeRegister(PUMP_SETTING_2, 0x00, screen);
+    // This makes an audible click
+    // writeRegister(PUMP_SETTING_2, 0x00, screen);
     Delay(30);
     // LVDS OFF, Band-gap circuit OFF, Temperature sensor OFF
     writeRegister(THERMAL_SENSOR_SETTING, 0x00, screen);
