@@ -477,6 +477,8 @@ public:
           dontShowWelcome(boolFlags_, 15),
           seenLetsFocus(boolFlags_, 16),
           seenTextPlacement(boolFlags_, 17),
+          forceShowWelcome(boolFlags_, 18),
+          /// DO NOT TOUCH ABOVE LINES WITH NUMBERS
           preferencesStoreMigrationVersion_(*this, "ps-version"),
           boolFlags_(*this, "bool-flags") {}
     // clang-format on
@@ -801,6 +803,7 @@ public:
     BooleanFlag dontShowWelcome;
     BooleanFlag seenLetsFocus;
     BooleanFlag seenTextPlacement;
+    BooleanFlag forceShowWelcome;
 
     // These are RTC_SLOW_MEM variables that persist across deep sleep / wake cycles but will be
     // reset on power cycles

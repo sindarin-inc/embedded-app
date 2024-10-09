@@ -889,19 +889,18 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
             this->pushScreen(readingSettingsMenu);
         }));
 
-        menuItems->emplace_back(
-            std::make_shared<NewMenuItemSingleLine>("Content",
-                                                    [this, &localStore, makeContentSyncMenuItem]() {
-            log_d("Loading Reading Settings Menu");
+        menuItems->emplace_back(std::make_shared<NewMenuItemSingleLine>(
+            "Content", [this, &localStore, makeContentSyncMenuItem]() {
+                log_d("Loading Reading Settings Menu");
 
-            auto contentSettingsMenu =
-                std::make_shared<GenericSettingsMenuScreen>(display_, "Main Menu");
+                auto contentSettingsMenu =
+                    std::make_shared<GenericSettingsMenuScreen>(display_, "Main Menu");
 
-            for (auto modelType : {ReadablesModelType::Book, ReadablesModelType::Article}) {
-                auto sortOrderMenuItem = std::make_shared<NewMenuItemSingleLine>(
-                    modelType == ReadablesModelType::Book ? "Book Sort Order"
-                                                          : "Article Sort Order",
-                    [this, &localStore, modelType]() {
+                for (auto modelType : {ReadablesModelType::Book, ReadablesModelType::Article}) {
+                    auto sortOrderMenuItem = std::make_shared<NewMenuItemSingleLine>(
+                        modelType == ReadablesModelType::Book ? "Book Sort Order"
+                                                              : "Article Sort Order",
+                        [this, &localStore, modelType]() {
                     auto sortMenu =
                         std::make_shared<GenericSettingsMenuScreen>(display_, "Content Settings");
                     sortMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
@@ -1053,47 +1052,54 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                     sortMenu->setSelectedIndex(menuIndex);
                     pushScreen(sortMenu);
                     sortMenu->setBackCallback([this]() { this->popScreen(false); });
-                    });
-                contentSettingsMenu->addMenuItem(sortOrderMenuItem);
-            }
+                        });
+                    contentSettingsMenu->addMenuItem(sortOrderMenuItem);
+                }
 
-            contentSettingsMenu->addMenuItem(std::make_shared<NewMenuItemCheckable>(
-                "Show Welcome Tab",
-                [this]() {
+                contentSettingsMenu->addMenuItem(std::make_shared<NewMenuItemCheckable>(
+                    "Show Welcome Tab",
+                    [this]() {
                 currentScreen()->setFirstLoad();
-                if (this->prefs_.dontShowWelcome.get().value_or(false)) {
+                if (this->prefs_.dontShowWelcome.get().value_or(false) &&
+                    !this->prefs_.forceShowWelcome.get().value_or(false)) {
                     this->prefs_.dontShowWelcome.set(false);
+                    this->prefs_.forceShowWelcome.set(true);
                     MsgPopup::showTemporaryMessage(display_,
                                                    "Welcome Tab will be\nshown on next restart.",
                                                    2000, true, currentScreen());
+
                 } else {
                     this->prefs_.dontShowWelcome.set(true);
+                    this->prefs_.forceShowWelcome.set(false);
                     MsgPopup::showTemporaryMessage(display_,
                                                    "Welcome Tab will be\nhidden on next restart.",
                                                    2000, true, currentScreen());
                 }
-                },
-                [this]() -> bool { return !this->prefs_.dontShowWelcome.get().value_or(false); }));
+                    },
+                    [this]() -> bool {
+                        return !this->prefs_.dontShowWelcome.get().value_or(false) ||
+                               this->prefs_.forceShowWelcome.get().value_or(false);
+                    }));
 
-            contentSettingsMenu->addMenuItem(
-                std::make_shared<NewMenuItemSingleLine>("Sol Manifesto (1 min)", [this]() {
-                    auto manifestoScreen = std::make_shared<DemoScreen>(display_, prefs_, true);
-                    this->pushScreen(manifestoScreen);
-                    manifestoScreen->setBackCallback([this]() {
-                        this->popScreen();
-                        if (needsRerender()) {
-                            render(display_);
-                            clearNeedsRerender();
-                        }
-                    });
-                }));
+                contentSettingsMenu->addMenuItem(
+                    std::make_shared<NewMenuItemSingleLine>("Sol Manifesto (1 min)", [this]() {
+                        auto manifestoScreen = std::make_shared<DemoScreen>(display_, prefs_, true);
+                        this->pushScreen(manifestoScreen);
+                        manifestoScreen->setBackCallback([this]() {
+                            this->popScreen();
+                            if (needsRerender()) {
+                                render(display_);
+                                clearNeedsRerender();
+                            }
+                        });
+                    }));
 
-            contentSettingsMenu->addMenuItem(makeContentSyncMenuItem("Sync Content Now"));
+                contentSettingsMenu->addMenuItem(makeContentSyncMenuItem("Sync Content Now"));
 
-            contentSettingsMenu->setBackCallback([this]() { this->popScreen(); });
+                contentSettingsMenu->setBackCallback([this]() { this->popScreen(); });
 
-            contentSettingsMenu->setFirstLoad();
-            this->pushScreen(contentSettingsMenu);
+                contentSettingsMenu->setFirstLoad();
+                this->pushScreen(contentSettingsMenu);
             }));
 
         menuItems->emplace_back(std::make_shared<NewMenuItemSingleLine>(
@@ -1812,7 +1818,13 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
         return menuItems;
     };
 
-    if (!prefs_.dontShowWelcome.get().value_or(false)) {
+    int welcomeTabIndex = welcomeIndex();
+    if (welcomeTabIndex == 4) {
+        this->prefs_.dontShowWelcome.set(true);
+    }
+
+    if (!prefs_.dontShowWelcome.get().value_or(false) ||
+        prefs_.forceShowWelcome.get().value_or(false)) {
         newMainMenu->addTab("Welcome", welcomeMenuFactory);
     }
 
@@ -1884,16 +1896,18 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
     // If we are in onboarding mode, show the entry bumper first
     if (!prefs_.dontShowWelcome.get().value_or(false)) {
         bool showWelcomeVideo = true;
-        int welcomeTabIndex = welcomeIndex();
+        bool forceShowWelcome = prefs_.forceShowWelcome.get().value_or(false);
 
-        if (welcomeTabIndex != 4) {
-            newMainMenu->setTabToTitle("Welcome", welcomeTabIndex);
+        if (welcomeTabIndex != 4 || forceShowWelcome) {
+            newMainMenu->setTabToTitle("Welcome", forceShowWelcome ? 0 : welcomeTabIndex);
+            if (forceShowWelcome) {
+                showWelcomeVideo = false;
+            }
         } else {
             // Onboaring is actually complete, so show the next menu over
-            // instead of the welcome tab. And also set the pref to not show anymore.
+            // instead of the welcome tab.
             newMainMenu->setCurrentTabIndex(1);
             showWelcomeVideo = false;
-            this->prefs_.dontShowWelcome.set(true);
         }
 
         if (showWelcomeVideo) {
