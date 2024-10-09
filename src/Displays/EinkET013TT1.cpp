@@ -578,8 +578,8 @@ void EinkET013TT1::powerOnInternal() {
 
     auto screen = ScreenSide::Both;
 
-    // Set the system clock speed
-    // It's unclear what the 0x10 does. It's not in the datasheet.
+    // Set the system clock speed, enable the oscillator, use internal charge pumps
+    // OSCM=0b11, OSCON=1, CPEXT=0
     writeRegister(OSC_POWER_SETTING, OSC_SELECT | 0x10, screen);
 
     // LVDS OFF, Band-gap circuit ON, Temperature sensor ON
@@ -590,6 +590,8 @@ void EinkET013TT1::powerOnInternal() {
     // screen and isn't worth changing, but I'm not 100% sure on that.
     writeRegister(CHANNEL_SETTING, CHANNEL_SETTINGS, sizeof(CHANNEL_SETTINGS), screen);
 
+    // DIS_VH=0 Don't discharge positive charge pumps
+    // CPDISM=0b00 Don't discharge negative charge pumps
     // CPS=0b11 Charge pump strength to max
     // CPM=0b11 Charge pump soft start mode to max
     writeRegister(PUMP_SETTING_1, 0x0F, screen);
@@ -599,9 +601,11 @@ void EinkET013TT1::powerOnInternal() {
     writeRegister(PWM_WIDTH_SELECT, VcomMVToRegisterValue(vcomInMV_), screen);
 
     // Fire up the charge pumps
+
     // Disable everything (probably a no-op)
-    // This makes an audible click
+    // This makes an audible click if the positive charge pump is enabled
     // writeRegister(PUMP_SETTING_2, 0x00, screen);
+
     Delay(30);
     // Enable positive charge pump VH (VDH +14V & VGH +19V)
     writeRegister(PUMP_SETTING_2, 0x01, screen);
@@ -649,13 +653,18 @@ void EinkET013TT1::powerOffInternal() {
     writeRegister(MYSTERY_SETTING_2, 0x00, screen);
     // Disable internal charge pump for oscillator power
     writeRegister(OSC_POWER_SETTING, 0x40, screen);
+    // DIS_VH=1 Discharge positive charge pumps
+    // CPDISM=0b00 Don't discharge negative charge pumps
     // CPS=0b10 Charge pump strength to half
     // CPM=0b00 Charge pump soft start mode to min
     writeRegister(PUMP_SETTING_1, 0x80, screen);
     // Also disable positive charge pump VH (VDH +14V & VGH +19V)
     // All charge pumps are off at this point
+
+    // EN_VH=0 Disable the positive charge pumps
     // This makes an audible click
     // writeRegister(PUMP_SETTING_2, 0x00, screen);
+
     Delay(30);
     // LVDS OFF, Band-gap circuit OFF, Temperature sensor OFF
     writeRegister(THERMAL_SENSOR_SETTING, 0x00, screen);
