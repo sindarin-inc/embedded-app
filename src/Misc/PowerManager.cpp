@@ -485,10 +485,9 @@ void PowerManager::releaseLED() {
 
 void PowerManager::beginShutdown() {
     // If shutdown hangs, then crash
-    TimerHandle_t abortTimer = xTimerCreate("AbortTimer", pdMS_TO_TICKS(15000), pdFALSE, nullptr,
-                                            [](TimerHandle_t xTimer) {
-        assert(false && "Shutdown hung for 20 seconds, aborting!");
-    });
+    TimerHandle_t abortTimer =
+        xTimerCreate("AbortTimer", pdMS_TO_TICKS(15000), pdFALSE, nullptr,
+                     [](TimerHandle_t xTimer) { assert(false && "Shutdown hung, aborting!"); });
     if (abortTimer == nullptr) {
         log_e("Failed to create abort timer");
     } else if (xTimerStart(abortTimer, 0) != pdPASS) {
