@@ -16,11 +16,18 @@
 #include "Misc/SpiramAllocator.hpp"
 #include "sindarin-debug.h"
 
-// Saves us a little RAM at the expense of some download performance
+// There's three ways DownloadFileToPath can run:
+// 1. Both download and disk writes happening on core 1 tasks (download+write is running ~33KB/s but
+// uses less RAM)
+// 2. Disk writes in a task but download happening on the caller's task (download+write is
+// ~36.5KB/s but uses more RAM)
+// 3. Downloads in a task but disk writes happening on the caller's task (not recommended - see note
+// below on btdm_controller_task)
+
 // NOTE: Running the disk write on a separate core from BLE seems to potentially trigger the
 // btdm_controller_task WDT issues. Test this thoroughly with BLE sync if enabling.
 #define CONFIG_FILEDOWNLOAD_DISK_WRITE_NO_TASK 0
-#define CONFIG_FILEDOWNLOAD_DOWNLOAD_NO_TASK 1
+#define CONFIG_FILEDOWNLOAD_DOWNLOAD_NO_TASK 0
 
 #if CONFIG_FILEDOWNLOAD_DOWNLOAD_NO_TASK && CONFIG_FILEDOWNLOAD_DISK_WRITE_NO_TASK
 #error "Both download and disk write tasks are disabled, this is not supported"
