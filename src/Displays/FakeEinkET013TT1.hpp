@@ -84,6 +84,8 @@ public:
 
     auto getBuffer() const -> const uint8_t * { return previousBuffer_; }
 
+    void shutdown() {}
+
 protected:
     // Simulated positions of the eink particles rendered as 8-bit grayscale
     std::unique_ptr<uint8_t[]> particlePositions_;
