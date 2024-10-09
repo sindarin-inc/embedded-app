@@ -92,7 +92,10 @@ static uint8_t const BORDER_TEMPLATE[4] = {0x00, 0x00, 0x00, 0x0C};
 
 static uint8_t const BORDER_NONE[4] = {0x00, 0x00, 0x00, 0x03};
 
-void EinkET013TT1::init() {
+void EinkET013TT1::initSpi() {
+    if (spiHigh_ != nullptr && spiLow_ != nullptr) {
+        return;
+    }
     log_d("Initializing EinkET013TT1 with config csLeft_=%d csRight_=%d rst_=%d mosi=%d miso=%d "
           "clk=%d",
           csLeft_, csRight_, rst_, DISPLAY_MOSI, DISPLAY_MISO, DISPLAY_CLK);
@@ -148,6 +151,10 @@ void EinkET013TT1::init() {
     devcfg.command_bits = 8;
 
     ESP_ERROR_CHECK(spi_bus_add_device(CONFIG_DISPLAY_SPI, &devcfg, &spiLow_));
+}
+
+void EinkET013TT1::init() {
+    initSpi();
 
     if (vcomInMV_ == 0) {
         setVcom(VCOM_DEFAULT);
@@ -463,9 +470,9 @@ void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *b
     vEventGroupDelete(group);
 }
 
-void EinkET013TT1::writeRegister(Register index, const uint8_t *data, size_t len,
-                                 ScreenSide screen) {
-    if (!einkQueue_->isInQueue()) {
+void EinkET013TT1::writeRegister(Register index, const uint8_t *data, size_t len, ScreenSide screen,
+                                 bool outOfQueue) {
+    if (!outOfQueue && !einkQueue_->isInQueue()) {
         log_w("writeRegister called from outside of einkQueue_");
     }
     spi_transaction_t t = {
@@ -478,8 +485,9 @@ void EinkET013TT1::writeRegister(Register index, const uint8_t *data, size_t len
     setCS(HIGH, screen);
 }
 
-inline void EinkET013TT1::writeRegister(Register index, uint8_t data, ScreenSide screen) {
-    writeRegister(index, &data, 1, screen);
+inline void EinkET013TT1::writeRegister(Register index, uint8_t data, ScreenSide screen,
+                                        bool outOfQueue) {
+    writeRegister(index, &data, 1, screen, outOfQueue);
 }
 
 auto EinkET013TT1::readRegister(uint8_t index, ScreenSide screen) -> uint8_t {
@@ -652,7 +660,7 @@ void EinkET013TT1::powerOffInternal() {
     // This is not in the datasheet and its function is a mystery
     writeRegister(MYSTERY_SETTING_2, 0x00, screen);
     // Disable internal charge pump for oscillator power
-    writeRegister(OSC_POWER_SETTING, 0x40, screen);
+    writeRegister(OSC_POWER_SETTING, 0x00, screen);
     // DIS_VH=1 Discharge positive charge pumps
     // CPDISM=0b00 Don't discharge negative charge pumps
     // CPS=0b10 Charge pump strength to half
@@ -674,6 +682,17 @@ void EinkET013TT1::powerOffInternal() {
 
     poweredOn_ = false;
     log_d("EinkET013TT1 powered off");
+}
+
+void EinkET013TT1::shutdown() {
+    initSpi();
+    einkQueue_ = nullptr;
+    // Disable charge pumps
+    writeRegister(PUMP_SETTING_2, 0x00, ScreenSide::Both, true);
+    // Disable internal charge pump for oscillator power
+    writeRegister(OSC_POWER_SETTING, 0x00, ScreenSide::Both, true);
+    // LVDS OFF, Band-gap circuit OFF, Temperature sensor OFF
+    writeRegister(THERMAL_SENSOR_SETTING, 0x00, ScreenSide::Both, true);
 }
 
 inline void EinkET013TT1::startTimer(uint32_t ns) {
