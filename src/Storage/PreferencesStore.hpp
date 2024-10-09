@@ -401,7 +401,7 @@ public:
     public:
         BooleanFlag(BooleanFlags &flags, size_t index) : flags_(flags), index_(index) {}
 
-        auto get() -> std::optional<bool> { return std::optional<bool>(flags_.get(index_)); }
+        auto get() -> std::optional<bool> { return {flags_.get(index_)}; }
 
         void set(bool value, bool deferWrite = false) { flags_.set(index_, value, deferWrite); }
 
