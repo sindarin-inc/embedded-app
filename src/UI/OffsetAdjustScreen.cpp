@@ -1,6 +1,7 @@
 #include "UI/OffsetAdjustScreen.hpp"
 
 #include <memory>
+#include <utility>
 
 #include "UI/Fonts/Fonts.hpp"
 #include "sindarin-debug.h"
@@ -37,7 +38,8 @@ OffsetAdjustScreen::OffsetAdjustScreen(DisplaySystem &display, PreferencesStore 
                                        std::shared_ptr<Readable> readable)
     : display_(display),
       renderer_(display, GetTextRectFromPrefs(display, prefs), static_cast<Font *>(&fontFace0)),
-      readable_(readable), prefs_(prefs), telemetry_(telemetry), rendererRef_(renderer) {}
+      readable_(std::move(std::move(readable))), prefs_(prefs), telemetry_(telemetry),
+      rendererRef_(renderer) {}
 
 void OffsetAdjustScreen::render(DisplaySystem &display) {
     // Get the bounding box
