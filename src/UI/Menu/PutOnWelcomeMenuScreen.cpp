@@ -12,8 +12,7 @@ PutOnWelcomeMenuScreen::PutOnWelcomeMenuScreen(DisplaySystem &display)
     menuView_.pagingIndicatorPadding = 5;
     menuView_.setIndicatorType(NewMenuView::IndicatorType::Line);
 
-    std::string message;
-    message +=
+    std::string message =
         "Welcome to your Sol Reader!\n\nYou've taken the first steps towards a new way to enjoy "
         "comfortable, distraction-free reading. These welcome steps will help you get set up in "
         "no time at all.\n\nBut if setup isn't your thing, simply head back to the Main Menu and "

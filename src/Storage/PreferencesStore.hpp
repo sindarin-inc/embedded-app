@@ -470,7 +470,7 @@ public:
           textInsetLeft(*this, "text-inset-l"),
           textInsetRight(*this, "text-inset-r"),
           textInsetTop(*this, "text-inset-t"),
-          textInsetBottom(*this, "text-inset-b"),          
+          textInsetBottom(*this, "text-inset-b"),
           wifiDisabled(boolFlags_, 12),
           bleDisabled(boolFlags_, 13),
           didFirstArchive(boolFlags_, 14),
@@ -478,7 +478,8 @@ public:
           seenLetsFocus(boolFlags_, 16),
           seenTextPlacement(boolFlags_, 17),
           forceShowWelcome(boolFlags_, 18),
-          /// DO NOT TOUCH ABOVE LINES WITH NUMBERS
+          // only touch the lines above this when deleting those prefs. Do not renumber. Add below 
+          // to add a new boolFlag with incrementing value.
           preferencesStoreMigrationVersion_(*this, "ps-version"),
           boolFlags_(*this, "bool-flags") {}
     // clang-format on

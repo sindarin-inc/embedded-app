@@ -324,7 +324,8 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
             // It wasn't picked up in the UIInnerLoop version because there isn't
             // a command sent to process the backCallback
             auto temp = currentScreen();
-            this->popScreen();
+            // Dispatching to avoid temp going out of scope and the pointer getting cleaned up.
+            DispatchGetUiQueue()->dispatch([this]() { this->popScreen(); });
             // TODO: After a successful content sync, re-setup the Local Store to be current.
             // Once we do that, the following two lines will regenerate the tab so we don't
             // need to restart to get the menu to be correct!
@@ -336,33 +337,31 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
         contentSyncScreen->begin();
     };
 
-    auto makeContentSyncMenuItem = [this, makeAndStartContentSync](
-                                       const char *title,
-                                       bool immediateSync = false) -> std::shared_ptr<NewMenuItem> {
-        return std::make_shared<NewMenuItemSingleLine>(
-            title, [this, makeAndStartContentSync, immediateSync]() {
-                // If we're not yet paired, show the app screen instead
-                if (PreferencesStore::paired == PairedStatus::Unpaired) {
-                    auto appDownloadScreen = std::make_shared<AppDownloadScreen>(
-                        display_, immediateSync, makeAndStartContentSync);
-                    this->pushScreen(appDownloadScreen);
-                    appDownloadScreen->setBackCallback([this]() { this->popScreen(); });
-                    return;
-                }
+    auto makeContentSyncMenuItem =
+        [this, makeAndStartContentSync](const char *title) -> std::shared_ptr<NewMenuItem> {
+        return std::make_shared<NewMenuItemSingleLine>(title, [this, makeAndStartContentSync]() {
+            // If we're not yet paired, show the app screen instead
+            if (PreferencesStore::paired == PairedStatus::Unpaired) {
+                auto appDownloadScreen =
+                    std::make_shared<AppDownloadScreen>(display_, makeAndStartContentSync);
+                this->pushScreen(appDownloadScreen);
+                appDownloadScreen->setBackCallback([this]() { this->popScreen(); });
+                return;
+            }
 
-                // If wifi & ble have been disabled, show a popup encouraging the user to
-                // turn on wifi or BLE to perform the content sync.
-                if (!immediateSync && this->prefs_.wifiDisabled.get().value_or(false) &&
-                    this->prefs_.bleDisabled.get().value_or(false)) {
-                    MsgPopup::showTemporaryMessage(display_,
-                                                   "Enable WiFi or BLE to perform a Content Sync.",
-                                                   2000, true, currentScreen());
-                    currentScreen()->setFirstLoad();
-                    return;
-                }
+            // If wifi & ble have been disabled, show a popup encouraging the user to
+            // turn on wifi or BLE to perform the content sync.
+            if (this->prefs_.wifiDisabled.get().value_or(false) &&
+                this->prefs_.bleDisabled.get().value_or(false)) {
+                MsgPopup::showTemporaryMessage(display_,
+                                               "Enable WiFi or BLE to perform a Content Sync.",
+                                               2000, true, currentScreen());
+                currentScreen()->setFirstLoad();
+                return;
+            }
 
-                makeAndStartContentSync();
-            });
+            makeAndStartContentSync();
+        });
     };
 
     auto handleReadableScreenCreation =
@@ -490,7 +489,21 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                 }
                 }));
             textPlacementScreen->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
-                "Back to Welcome Menu", [popAndSetIndexOrDone]() { popAndSetIndexOrDone(); }));
+                "Back to Welcome Menu", [this, popAndSetIndexOrDone]() {
+                    // For brand new users, we want to make sure they actually select
+                    // one of the text placement options.
+                    // But for legacy users, if they have adjusted the text placement previously,
+                    // and then cancel out of this screen, we don't want to force them to select
+                    // one of the options just to have the checkmark appear. So this handles that
+                    // case.
+                    if (prefs_.textInsetLeft.get().has_value() ||
+                        prefs_.textInsetRight.get().has_value() ||
+                        prefs_.textInsetTop.get().has_value() ||
+                        prefs_.textInsetBottom.get().has_value()) {
+                        prefs_.seenTextPlacement.set(true);
+                    }
+                    popAndSetIndexOrDone();
+                }));
             this->pushScreen(textPlacementScreen);
             },
             [this]() { return prefs_.seenTextPlacement.get().value_or(false); }));
@@ -504,7 +517,7 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                 std::make_shared<FirstBookWelcomeMenuScreen>(display_);
 
             firstBookWelcomeMenuScreen->addMenuItem(
-                makeContentSyncMenuItem("Get content via the Sol Reader app", true));
+                makeContentSyncMenuItem("Get content via the Sol Reader app"));
 
             firstBookWelcomeMenuScreen->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
                 "Direct transfer via USB", [this, popAndSetIndexOrDone]() {

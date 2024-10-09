@@ -100,17 +100,19 @@ auto TextPlacementWelcomeMenuScreen::layout(LayoutContext &context, Size size) -
 }
 
 void TextPlacementWelcomeMenuScreen::drawInRect(Rect rect) {
-    if (textSelection_ == 2) {
-        renderer_.setFont(&fontFace1);
-    } else {
+    switch (textSelection_) {
+    case 0:
+        renderer_.setLineSpacing(0);
         renderer_.setFont(&fontFace0);
-    }
-    if (textSelection_ == 0) {
-        renderer_.setLineSpacing(0);
-    } else if (textSelection_ == 1) {
+        break;
+    case 1:
         renderer_.setLineSpacing(-2);
-    } else if (textSelection_ == 2) {
+        renderer_.setFont(&fontFace0);
+        break;
+    case 2:
         renderer_.setLineSpacing(0);
+        renderer_.setFont(&fontFace1);
+        break;
     }
     if (textSelection_ != 0) {
         leftArrowView_.draw();

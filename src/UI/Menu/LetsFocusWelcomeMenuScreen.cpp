@@ -69,6 +69,9 @@ void LetsFocusWelcomeMenuScreen::processCommand(RemoteCommand command) {
 }
 
 auto LetsFocusWelcomeMenuScreen::layout(LayoutContext &context, Size size) -> Size {
+    // We need to push the left arrow view all the way to the left of the screen
+    // and the right arrow view all the way to the right of the screen. That's why the -15 and + 30
+    // to size.width below.
     context.setViewFrame(leftArrowView_, {{-15, 1}, size},
                          LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical);
 

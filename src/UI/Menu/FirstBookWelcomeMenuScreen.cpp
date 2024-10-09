@@ -12,8 +12,8 @@ FirstBookWelcomeMenuScreen::FirstBookWelcomeMenuScreen(DisplaySystem &display)
     menuView_.pagingIndicatorPadding = 5;
     menuView_.setIndicatorType(NewMenuView::IndicatorType::Line);
 
-    std::string message;
-    message += "Let's get the first book on your Sol Reader!\n\nChoose your own adventure below.";
+    std::string message =
+        "Let's get the first book on your Sol Reader!\n\nChoose your own adventure below.";
 
     auto stream = std::make_shared<StdStringStream>(message);
     renderer_.setStream(stream);
