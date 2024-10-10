@@ -1908,7 +1908,7 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
 
     // If we are in onboarding mode, show the entry bumper first
     if (!prefs_.dontShowWelcome.get().value_or(false)) {
-        bool showWelcomeVideo = false;
+        bool showWelcomeVideo = true;
         bool forceShowWelcome = prefs_.forceShowWelcome.get().value_or(false);
 
         if (welcomeTabIndex != 4 || forceShowWelcome) {
