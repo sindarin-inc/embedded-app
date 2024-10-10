@@ -557,7 +557,7 @@ void EinkET013TT1::beginPowerOn() {
             powerOnInternal();
             if (einkQueue_->size() == 0) {
                 // If we get here and don't have something queued yet, the render code took longer
-                // than the powerOn code (180ms) and so the render code is the refresh bottleneck.
+                // than the powerOn code (90ms) and so the render code is the refresh bottleneck.
                 log_w("Render code took longer than power on code!");
             }
         }
@@ -610,18 +610,19 @@ void EinkET013TT1::powerOnInternal() {
 
     // Fire up the charge pumps
 
-    // Disable everything (probably a no-op)
-    // This makes an audible click if the positive charge pump is enabled
-    // writeRegister(PUMP_SETTING_2, 0x00, screen);
-
-    Delay(30);
-    // Enable positive charge pump VH (VDH +14V & VGH +19V)
-    writeRegister(PUMP_SETTING_2, 0x01, screen);
-    Delay(30);
-    // Also enable negative charge pump VN (VDL -14V & VGL -19V)
-    writeRegister(PUMP_SETTING_2, 0x03, screen);
-    Delay(30);
+    // Only turn the VH & VN charge pumps on once (consumes ~80uA of while on)
+    static bool chargePumpsOn = false;
+    if (!chargePumpsOn) {
+        // Enable positive charge pump VH (VDH +14V & VGH +19V)
+        writeRegister(PUMP_SETTING_2, 0x01, screen);
+        Delay(30);
+        // Also enable negative charge pump VN (VDL -14V & VGL -19V)
+        writeRegister(PUMP_SETTING_2, 0x03, screen);
+        Delay(30);
+    }
     // Also enable negative charge pump VCL (-5.6V)
+    // Note: It seems to be necessary to turn this one off/on otherwise the screen will drift. Just
+    // disconnecting VCOM it is not enough.
     writeRegister(PUMP_SETTING_2, 0x07, screen);
     Delay(60);
     // Also enable (connect) VCOM
@@ -654,26 +655,15 @@ void EinkET013TT1::powerOffInternal() {
     // Also disable negative charge pump VCL (-5.6V)
     writeRegister(PUMP_SETTING_2, 0x03, screen);
     Delay(30);
-    // Also disable negative charge pump VN (VDL -14V & VGL -19V)
-    writeRegister(PUMP_SETTING_2, 0x01, screen);
-    Delay(30);
     // This is not in the datasheet and its function is a mystery
     writeRegister(MYSTERY_SETTING_2, 0x00, screen);
     // Disable internal charge pump for oscillator power
     writeRegister(OSC_POWER_SETTING, 0x00, screen);
-    // DIS_VH=1 Discharge positive charge pumps
+    // DIS_VH=0 Don't discharge positive charge pumps
     // CPDISM=0b00 Don't discharge negative charge pumps
     // CPS=0b10 Charge pump strength to half
     // CPM=0b00 Charge pump soft start mode to min
-    writeRegister(PUMP_SETTING_1, 0x80, screen);
-    // Also disable positive charge pump VH (VDH +14V & VGH +19V)
-    // All charge pumps are off at this point
-
-    // EN_VH=0 Disable the positive charge pumps
-    // This makes an audible click
-    // writeRegister(PUMP_SETTING_2, 0x00, screen);
-
-    Delay(30);
+    writeRegister(PUMP_SETTING_1, 0x00, screen);
     // LVDS OFF, Band-gap circuit OFF, Temperature sensor OFF
     writeRegister(THERMAL_SENSOR_SETTING, 0x00, screen);
     Delay(30);
@@ -687,12 +677,19 @@ void EinkET013TT1::powerOffInternal() {
 void EinkET013TT1::shutdown() {
     initSpi();
     einkQueue_ = nullptr;
-    // Disable charge pumps
+    // Disable negative charge pump VN (VDL -14V & VGL -19V)
+    writeRegister(PUMP_SETTING_2, 0x01, ScreenSide::Both, true);
+    // NOTE: This delay must be here, otherwise the charge pump will not be disabled (which is
+    // surprising and strange)
+    Delay(30);
+    // Disable positive charge pump VH (VDH +14V & VGH +19V)
     writeRegister(PUMP_SETTING_2, 0x00, ScreenSide::Both, true);
     // Disable internal charge pump for oscillator power
     writeRegister(OSC_POWER_SETTING, 0x00, ScreenSide::Both, true);
     // LVDS OFF, Band-gap circuit OFF, Temperature sensor OFF
     writeRegister(THERMAL_SENSOR_SETTING, 0x00, ScreenSide::Both, true);
+    // No idea what this does but the original driver does it at power off so we will do it here too
+    writeRegister(MYSTERY_SETTING_2, 0x02, ScreenSide::Both, true);
 }
 
 inline void EinkET013TT1::startTimer(uint32_t ns) {
