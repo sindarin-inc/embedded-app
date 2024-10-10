@@ -14,7 +14,6 @@
 #include "Communications/BLEManager.hpp"
 #endif
 #include "Communications/WiFi.hpp"
-#include "Misc/Defer.hpp"
 #include "Misc/Dispatch.hpp"
 #include "Platform.hpp"
 #include "Sensors/TempleAngle.hpp"
