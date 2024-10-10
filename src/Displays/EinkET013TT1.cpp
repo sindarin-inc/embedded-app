@@ -586,51 +586,50 @@ void EinkET013TT1::powerOnInternal() {
 
     auto screen = ScreenSide::Both;
 
-    // Set the system clock speed, enable the oscillator, use internal charge pumps
-    // OSCM=0b11, OSCON=1, CPEXT=0
-    writeRegister(OSC_POWER_SETTING, OSC_SELECT | 0x10, screen);
-
-    // LVDS OFF, Band-gap circuit ON, Temperature sensor ON
-    writeRegister(THERMAL_SENSOR_SETTING, 0x03, screen);
-
-    // Configure which channels use gate voltages and which channels use source voltages.
-    // I think this is a function of how the shift registers are physically wired to the
-    // screen and isn't worth changing, but I'm not 100% sure on that.
-    writeRegister(CHANNEL_SETTING, CHANNEL_SETTINGS, sizeof(CHANNEL_SETTINGS), screen);
-
-    // DIS_VH=0 Don't discharge positive charge pumps
-    // CPDISM=0b00 Don't discharge negative charge pumps
-    // CPS=0b11 Charge pump strength to max
-    // CPM=0b11 Charge pump soft start mode to max
-    writeRegister(PUMP_SETTING_1, 0x0F, screen);
-    // Select PWM width for vcom. Specified value is divided into 256 levels between the
-    // voltages of GND and VCL (-5.6V)
-    // 0 for -5600mV, 255 for 0V
-    writeRegister(PWM_WIDTH_SELECT, VcomMVToRegisterValue(vcomInMV_), screen);
-
-    // Fire up the charge pumps
-
-    // Only turn the VH & VN charge pumps on once (consumes ~80uA of while on)
     static bool chargePumpsOn = false;
     if (!chargePumpsOn) {
+        // Set the system clock speed, enable the oscillator, use internal charge pumps
+        // OSCM=0b11, OSCON=1, CPEXT=0
+        writeRegister(OSC_POWER_SETTING, OSC_SELECT | 0x10, screen);
+
+        // LVDS OFF, Band-gap circuit ON, Temperature sensor ON
+        writeRegister(THERMAL_SENSOR_SETTING, 0x03, screen);
+
+        // Configure which channels use gate voltages and which channels use source voltages.
+        // I think this is a function of how the shift registers are physically wired to the
+        // screen and isn't worth changing, but I'm not 100% sure on that.
+        writeRegister(CHANNEL_SETTING, CHANNEL_SETTINGS, sizeof(CHANNEL_SETTINGS), screen);
+
+        // DIS_VH=0 Don't discharge positive charge pumps
+        // CPDISM=0b00 Don't discharge negative charge pumps
+        // CPS=0b11 Charge pump strength to max
+        // CPM=0b11 Charge pump soft start mode to max
+        writeRegister(PUMP_SETTING_1, 0x0F, screen);
+        // Select PWM width for vcom. Specified value is divided into 256 levels between the
+        // voltages of GND and VCL (-5.6V)
+        // 0 for -5600mV, 255 for 0V
+        writeRegister(PWM_WIDTH_SELECT, VcomMVToRegisterValue(vcomInMV_), screen);
+
+        // Fire up the charge pumps
+        // Disable everything (probably a no-op)
+        writeRegister(PUMP_SETTING_2, 0x00, screen);
+        Delay(30);
         // Enable positive charge pump VH (VDH +14V & VGH +19V)
         writeRegister(PUMP_SETTING_2, 0x01, screen);
         Delay(30);
         // Also enable negative charge pump VN (VDL -14V & VGL -19V)
         writeRegister(PUMP_SETTING_2, 0x03, screen);
         Delay(30);
-    }
-    // Also enable negative charge pump VCL (-5.6V)
-    // Note: It seems to be necessary to turn this one off/on otherwise the screen will drift. Just
-    // disconnecting VCOM it is not enough.
-    writeRegister(PUMP_SETTING_2, 0x07, screen);
-    Delay(60);
-    // Also enable (connect) VCOM
-    writeRegister(PUMP_SETTING_2, 0x0F, screen);
-    Delay(30);
+        // Also enable negative charge pump VCL (-5.6V)
+        writeRegister(PUMP_SETTING_2, 0x07, screen);
+        Delay(60);
+        // Also enable (connect) VCOM
+        writeRegister(PUMP_SETTING_2, 0x0F, screen);
+        Delay(30);
 
-    // This is not in the datasheet and its function is a mystery
-    writeRegister(DRIVER_LATCH_RESET_PULSE_GENERATE, 0x10, screen);
+        // This is not in the datasheet and its function is a mystery
+        writeRegister(DRIVER_LATCH_RESET_PULSE_GENERATE, 0x10, screen);
+    }
 
     spi_device_release_bus(spiHigh_);
 
@@ -647,28 +646,7 @@ void EinkET013TT1::powerOffInternal() {
         return;
     }
 
-    auto screen = ScreenSide::Both;
-
-    // Disable (disconnect) VCOM
-    writeRegister(PUMP_SETTING_2, 0x07, screen);
-    Delay(30);
-    // Also disable negative charge pump VCL (-5.6V)
-    writeRegister(PUMP_SETTING_2, 0x03, screen);
-    Delay(30);
-    // This is not in the datasheet and its function is a mystery
-    writeRegister(MYSTERY_SETTING_2, 0x00, screen);
-    // Disable internal charge pump for oscillator power
-    writeRegister(OSC_POWER_SETTING, 0x00, screen);
-    // DIS_VH=0 Don't discharge positive charge pumps
-    // CPDISM=0b00 Don't discharge negative charge pumps
-    // CPS=0b10 Charge pump strength to half
-    // CPM=0b00 Charge pump soft start mode to min
-    writeRegister(PUMP_SETTING_1, 0x00, screen);
-    // LVDS OFF, Band-gap circuit OFF, Temperature sensor OFF
-    writeRegister(THERMAL_SENSOR_SETTING, 0x00, screen);
-    Delay(30);
-    // This is not in the datasheet and its function is a mystery
-    writeRegister(MYSTERY_SETTING_2, 0x02, screen);
+    // Do nothing
 
     poweredOn_ = false;
     log_d("EinkET013TT1 powered off");
@@ -677,18 +655,33 @@ void EinkET013TT1::powerOffInternal() {
 void EinkET013TT1::shutdown() {
     initSpi();
     einkQueue_ = nullptr;
-    // Disable negative charge pump VN (VDL -14V & VGL -19V)
-    writeRegister(PUMP_SETTING_2, 0x01, ScreenSide::Both, true);
-    // NOTE: This delay must be here, otherwise the charge pump will not be disabled (which is
+
+    // Disable (disconnect) VCOM
+    writeRegister(PUMP_SETTING_2, 0x07, ScreenSide::Both, true);
+    // NOTE: These delays must be here, otherwise the charge pump will not be disabled (which is
     // surprising and strange)
     Delay(30);
-    // Disable positive charge pump VH (VDH +14V & VGH +19V)
-    writeRegister(PUMP_SETTING_2, 0x00, ScreenSide::Both, true);
+    // Also disable negative charge pump VCL (-5.6V)
+    writeRegister(PUMP_SETTING_2, 0x03, ScreenSide::Both, true);
+    Delay(30);
+    // Also disable negative charge pump VN (VDL -14V & VGL -19V)
+    writeRegister(PUMP_SETTING_2, 0x01, ScreenSide::Both, true);
+    Delay(30);
+    // This is not in the datasheet and its function is a mystery
+    writeRegister(MYSTERY_SETTING_2, 0x00, ScreenSide::Both, true);
     // Disable internal charge pump for oscillator power
-    writeRegister(OSC_POWER_SETTING, 0x00, ScreenSide::Both, true);
+    writeRegister(OSC_POWER_SETTING, 0x40, ScreenSide::Both, true);
+    // CPS=0b10 Charge pump strength to half
+    // CPM=0b00 Charge pump soft start mode to min
+    writeRegister(PUMP_SETTING_1, 0x80, ScreenSide::Both, true);
+    // Also disable positive charge pump VH (VDH +14V & VGH +19V)
+    // All charge pumps are off at this point
+    writeRegister(PUMP_SETTING_2, 0x00, ScreenSide::Both, true);
+    Delay(30);
     // LVDS OFF, Band-gap circuit OFF, Temperature sensor OFF
     writeRegister(THERMAL_SENSOR_SETTING, 0x00, ScreenSide::Both, true);
-    // No idea what this does but the original driver does it at power off so we will do it here too
+    Delay(30);
+    // This is not in the datasheet and its function is a mystery
     writeRegister(MYSTERY_SETTING_2, 0x02, ScreenSide::Both, true);
 }
 
