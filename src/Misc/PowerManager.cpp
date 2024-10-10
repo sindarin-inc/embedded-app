@@ -14,6 +14,7 @@
 #include "Communications/BLEManager.hpp"
 #endif
 #include "Communications/WiFi.hpp"
+#include "Misc/Defer.hpp"
 #include "Misc/Dispatch.hpp"
 #include "Platform.hpp"
 #include "Sensors/TempleAngle.hpp"
@@ -308,10 +309,17 @@ auto PowerManager::begin() -> esp_err_t {
 }
 
 void PowerManager::powerOff() {
+    if (xSemaphoreTake(mutex_, portMAX_DELAY) != pdTRUE) {
+        log_e("PM mutex_ Failure");
+    }
+
     this->telemetry_.logMetric(TelemetryField::METRIC_SHUTDOWN, "PowerOff");
 
     beginShutdown();
     powerOffInternal();
+    while (true) {
+        vTaskDelay(portMAX_DELAY);
+    }
 }
 
 void PowerManager::powerOffInternal() {
@@ -572,10 +580,15 @@ void PowerManager::beginShutdown() {
 }
 
 void PowerManager::reboot() {
-    if (state_ != PowerState::ShuttingDown) {
-        beginShutdown();
-        usbSerial_.end();
-        esp_restart();
+    if (xSemaphoreTake(mutex_, portMAX_DELAY) != pdTRUE) {
+        log_e("PM mutex_ Failure");
+    }
+
+    beginShutdown();
+    usbSerial_.end();
+    esp_restart();
+    while (true) {
+        vTaskDelay(portMAX_DELAY);
     }
 }
 
@@ -587,6 +600,10 @@ void PowerManager::scheduleSync(SyncReason reason, time_t time) {
 }
 
 void PowerManager::deepSleep(SleepReason reason) {
+    if (xSemaphoreTake(mutex_, portMAX_DELAY) != pdTRUE) {
+        log_e("PM mutex_ Failure");
+    }
+
     this->telemetry_.logMetric(TelemetryField::METRIC_SHUTDOWN, ToString(reason));
 
 #if DISABLE_DEEP_SLEEP
@@ -644,6 +661,9 @@ void PowerManager::deepSleep(SleepReason reason) {
 
     beginShutdown();
     deepSleepInternal(reason);
+    while (true) {
+        vTaskDelay(portMAX_DELAY);
+    }
 }
 
 auto ToString(SleepReason reason) -> const char * {

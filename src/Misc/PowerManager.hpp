@@ -196,7 +196,7 @@ public:
                  Telemetry &telemetry, USBSerial &usbSerial)
         : battery(fileSystem, prefs, telemetry), prefs_(prefs),
           lightingController_(lightingController), display_(display), telemetry_(telemetry),
-          usbSerial_(usbSerial), magSensor_(0) {}
+          usbSerial_(usbSerial), magSensor_(0), mutex_(xSemaphoreCreateMutex()) {}
 
     PowerManager(const PowerManager &) = delete;
 
@@ -224,13 +224,13 @@ public:
     }
 
     // Power lifecycle functions
-    void reboot();
-    void deepSleep(SleepReason reason);
+    void __attribute__((noreturn)) reboot();
+    void __attribute__((noreturn)) deepSleep(SleepReason reason);
     // Fully power down the device (assuming USB is disconnected and left temple closed)
     // Note: This should be used sparingly as it's unintuitive to the user if you get into
     // this state and USB is connected, since the deep-sleep-forever won't exit until usb is
     // disconnected and the left temple is closed
-    void powerOff();
+    void __attribute__((noreturn)) powerOff();
 
     void feedInactivityTimer() { inactivityTimer_.feed(); }
     void disableInactivityTimer() { inactivityTimer_.pause(); }
@@ -287,6 +287,8 @@ protected:
     esp_pm_lock_handle_t usbPowerLightSleepLock_ = nullptr;
     esp_pm_lock_handle_t debugCommandLightSleepLock_ = nullptr;
 #endif
+    SemaphoreHandle_t mutex_;
+
     void updateState();
 
     auto isTempleOpen(bool &open) -> esp_err_t;
