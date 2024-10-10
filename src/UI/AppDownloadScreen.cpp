@@ -44,8 +44,8 @@ extern void UIInnerLoop(RemoteCommand command);
 void AppDownloadScreen::timerCallback(TimerHandle_t timer) {
     // If paired status goes to paired, go back
     if (PreferencesStore::paired == PairedStatus::Paired) {
-        DispatchGetUiQueue()->dispatch([timer]() {
-            auto *instance = reinterpret_cast<AppDownloadScreen *>(pvTimerGetTimerID(timer));
+        auto *instance = reinterpret_cast<AppDownloadScreen *>(pvTimerGetTimerID(timer));
+        DispatchGetUiQueue()->dispatch([instance]() {
             if (instance->makeAndStartContentSync_) {
                 instance->makeAndStartContentSync_();
             } else {
