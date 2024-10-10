@@ -404,7 +404,7 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
         menuItem = std::make_shared<NewMenuItemSingleLine>("Move Text", [this]() {
             log_d("Loading adjust offset");
             auto offsetAdjust = std::make_shared<OffsetAdjustScreen>(
-                this->display_, prefs_, this->telemetry_, this->renderer_, this->readable_);
+                this->display_, prefs_, this->telemetry_, this->renderer_, this->readable_->place);
             this->setCurrentScreen(offsetAdjust);
             log_d("setting up callback");
             offsetAdjust->setBackCallback([this]() {

@@ -13,7 +13,7 @@ public:
     OffsetAdjustScreen(DisplaySystem &display, PreferencesStore &prefs, Telemetry &telemetry);
 
     OffsetAdjustScreen(DisplaySystem &display, PreferencesStore &prefs, Telemetry &telemetry,
-                       Renderer &renderer, std::shared_ptr<Readable> readable);
+                       Renderer &renderer, std::shared_ptr<Place> place);
 
     void render(DisplaySystem &display) override;
     void processCommand(RemoteCommand command) override;
@@ -21,7 +21,7 @@ public:
 protected:
     DisplaySystem &display_;
     Renderer renderer_;
-    std::shared_ptr<Readable> readable_{nullptr};
+    std::shared_ptr<Place> place_{nullptr};
     PreferencesStore &prefs_;
     Telemetry &telemetry_;
     Renderer &rendererRef_;

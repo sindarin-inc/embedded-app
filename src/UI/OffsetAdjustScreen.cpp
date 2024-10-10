@@ -34,10 +34,10 @@ OffsetAdjustScreen::OffsetAdjustScreen(DisplaySystem &display, PreferencesStore 
 }
 OffsetAdjustScreen::OffsetAdjustScreen(DisplaySystem &display, PreferencesStore &prefs,
                                        Telemetry &telemetry, Renderer &renderer,
-                                       std::shared_ptr<Readable> readable)
+                                       std::shared_ptr<Place> place)
     : display_(display),
       renderer_(display, GetTextRectFromPrefs(display, prefs), static_cast<Font *>(&fontFace0)),
-      readable_(readable), prefs_(prefs), telemetry_(telemetry), rendererRef_(renderer) {}
+      place_(place), prefs_(prefs), telemetry_(telemetry), rendererRef_(renderer) {}
 
 void OffsetAdjustScreen::render(DisplaySystem &display) {
     // Get the bounding box
@@ -46,12 +46,12 @@ void OffsetAdjustScreen::render(DisplaySystem &display) {
     // The horizontal padding adds one blank pixel column on either side of the rect
     display.drawDottedBox(textBox.x - 2, textBox.y, textBox.x + textBox.width + 1,
                           textBox.y + textBox.height - 1, 1, 2);
-    if (readable_ == nullptr) {
+    if (place_ == nullptr) {
         this->renderer_.setRect(textBox);
         this->renderer_.renderFirstPage(0, true);
     } else {
         rendererRef_.setRect(textBox);
-        rendererRef_.renderPage(readable_->place, 0);
+        rendererRef_.renderPage(place_, 0);
     }
     display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
 }
