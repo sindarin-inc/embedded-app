@@ -309,7 +309,7 @@ auto PowerManager::begin() -> esp_err_t {
 
 void PowerManager::powerOff() {
     if (xSemaphoreTake(mutex_, portMAX_DELAY) != pdTRUE) {
-        log_e("PM mutex_ Failure");
+        assert(false && "PM mutex_ Failure");
     }
 
     this->telemetry_.logMetric(TelemetryField::METRIC_SHUTDOWN, "PowerOff");
@@ -580,7 +580,7 @@ void PowerManager::beginShutdown() {
 
 void PowerManager::reboot() {
     if (xSemaphoreTake(mutex_, portMAX_DELAY) != pdTRUE) {
-        log_e("PM mutex_ Failure");
+        assert(false && "PM mutex_ Failure");
     }
 
     beginShutdown();
@@ -600,7 +600,7 @@ void PowerManager::scheduleSync(SyncReason reason, time_t time) {
 
 void PowerManager::deepSleep(SleepReason reason) {
     if (xSemaphoreTake(mutex_, portMAX_DELAY) != pdTRUE) {
-        log_e("PM mutex_ Failure");
+        assert(false && "PM mutex_ Failure");
     }
 
     this->telemetry_.logMetric(TelemetryField::METRIC_SHUTDOWN, ToString(reason));
