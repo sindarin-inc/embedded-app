@@ -5,14 +5,20 @@
 #include "Misc/Telemetry.hpp"
 #include "Renderers/Renderer.hpp"
 #include "Storage/PreferencesStore.hpp"
+#include "UI/Components/BoxView.hpp"
+#include "UI/Components/EinkView.hpp"
+#include "UI/Components/MultiLineTextView.hpp"
 #include "UI/Screen.hpp"
 
 // Eventually we'll want to refactor this with the OffsetAdjustScreen
 // and ResizeBoxScreen since so much of the functionality is the same
 // This is just to test that this concept works ok.
-class LineSpacingScreen : public Screen {
+class LineSpacingScreen : public Screen, public EinkView {
 public:
     LineSpacingScreen(DisplaySystem &display, PreferencesStore &prefs, Telemetry &telemetry);
+
+    auto layout(LayoutContext &context, Size size) -> Size override;
+    void drawInRect(Rect rect) override;
 
 protected:
     void render(DisplaySystem &display) override;
@@ -24,6 +30,13 @@ protected:
     Telemetry &telemetry_;
 
     int lineSpacing_;
+
+    BoxView outerBoxView_;
+    BoxView backgroundBoxView_;
+
+    MultiLineTextView explanationView_;
+
+    auto setupInstructions() -> void;
 };
 
 #endif
