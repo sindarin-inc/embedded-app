@@ -59,7 +59,8 @@ LineSpacingScreen::LineSpacingScreen(DisplaySystem &display, PreferencesStore &p
                                      std::shared_ptr<Place> place)
     : EinkView(display), display_(display),
       renderer_(display, GetTextRectFromPrefs(display, prefs), static_cast<Font *>(&fontFace0)),
-      place_(std::move(place)), prefs_(prefs), telemetry_(telemetry), rendererRef_(renderer),
+      place_(std::move(place)), prefs_(prefs), telemetry_(telemetry),
+      lineSpacing_(prefs.lineSpacing.get().value_or(0)), rendererRef_(renderer),
       outerBoxView_(display, 5), backgroundBoxView_(display, 5), explanationView_(display, 5) {
     setupInstructions();
 }
