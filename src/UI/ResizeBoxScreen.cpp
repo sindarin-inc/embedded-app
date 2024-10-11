@@ -51,24 +51,18 @@ auto ResizeBoxScreen::setupInstructions() -> void {
     instructions += "\ue000  Done";
 
     explanationView_.setText(instructions);
+    explanationView_.dynamicWidth = true;
 
     setNeedsLayout();
 }
 
 auto ResizeBoxScreen::layout(LayoutContext &context, Size size) -> Size {
-    auto explanationFrame =
-        context.setViewFrame(explanationView_, Rect::fromSize(size).inset(50, 0),
-                             LayoutOptionsSizeToFit | LayoutOptionsAlignCenter);
+    auto explanationFrame = context.setViewFrame(explanationView_, Rect::fromSize(size),
+                                                 LayoutOptionsSizeToFit | LayoutOptionsAlignCenter);
+    auto outerBoxViewFrame = context.setViewFrame(outerBoxView_, explanationFrame.inset(-5));
+    context.setViewFrame(backgroundBoxView_, outerBoxViewFrame.inset(-8));
 
-    auto outerBoxViewFrame = explanationFrame.inset(-5);
-    auto backgroundBoxViewFrame = outerBoxViewFrame.inset(-8);
-
-    context.setViewFrame(backgroundBoxView_, backgroundBoxViewFrame,
-                         LayoutOptionsSizeToFit | LayoutOptionsAlignCenter);
-    context.setViewFrame(outerBoxView_, outerBoxViewFrame,
-                         LayoutOptionsSizeToFit | LayoutOptionsAlignCenter);
-
-    return backgroundBoxViewFrame.size;
+    return size;
 }
 
 void ResizeBoxScreen::drawInRect(Rect rect) {
