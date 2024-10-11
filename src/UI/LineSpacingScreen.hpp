@@ -31,7 +31,7 @@ protected:
     std::shared_ptr<Place> place_{nullptr};
     PreferencesStore &prefs_;
     Telemetry &telemetry_;
-    int lineSpacing_;
+    int lineSpacing_{};
 
     Renderer &rendererRef_;
 
