@@ -401,7 +401,7 @@ public:
     public:
         BooleanFlag(BooleanFlags &flags, size_t index) : flags_(flags), index_(index) {}
 
-        auto get() -> std::optional<bool> { return std::optional<bool>(flags_.get(index_)); }
+        auto get() -> std::optional<bool> { return {flags_.get(index_)}; }
 
         void set(bool value, bool deferWrite = false) { flags_.set(index_, value, deferWrite); }
 
@@ -474,6 +474,12 @@ public:
           wifiDisabled(boolFlags_, 12),
           bleDisabled(boolFlags_, 13),
           didFirstArchive(boolFlags_, 14),
+          dontShowWelcome(boolFlags_, 15),
+          seenLetsFocus(boolFlags_, 16),
+          seenTextPlacement(boolFlags_, 17),
+          forceShowWelcome(boolFlags_, 18),
+          // only touch the lines above this when deleting those prefs. Do not renumber. Add below 
+          // to add a new boolFlag with incrementing value.
           preferencesStoreMigrationVersion_(*this, "ps-version"),
           boolFlags_(*this, "bool-flags") {}
     // clang-format on
@@ -795,6 +801,11 @@ public:
     BooleanFlag wifiDisabled;
     BooleanFlag bleDisabled;
     BooleanFlag didFirstArchive;
+    BooleanFlag dontShowWelcome;
+    BooleanFlag seenLetsFocus;
+    BooleanFlag seenTextPlacement;
+    BooleanFlag forceShowWelcome;
+
     // These are RTC_SLOW_MEM variables that persist across deep sleep / wake cycles but will be
     // reset on power cycles
     static SyncReason syncReason;

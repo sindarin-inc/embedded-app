@@ -52,6 +52,22 @@ struct Rect {
     }
 };
 
+struct Inset {
+    int left;
+    int right;
+    int top;
+    int bottom;
+
+    auto operator==(const Inset &other) const -> bool {
+        return left == other.left && right == other.right && top == other.top &&
+               bottom == other.bottom;
+    }
+    auto operator!=(const Inset &other) const -> bool {
+        return left != other.left || right != other.right || top != other.top ||
+               bottom != other.bottom;
+    }
+};
+
 enum LayoutOptions {
     LayoutOptionsNone = 0,
 

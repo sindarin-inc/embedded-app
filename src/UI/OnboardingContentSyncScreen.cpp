@@ -19,7 +19,7 @@ void OnboardingContentSyncScreen::render(DisplaySystem &display) {
         if (!WiFi::getInstance().hasWiFiCredentials()) {
             message =
                 "Looks like you didn't set up the mobile app before you got here.\n\n"
-                "Go to solreader.com/app and download the Sol Reader app to get connected to "
+                "Go to solreader.com/app and download the Sol app to get connected to "
                 "WiFi so we can download your content.\n\n"
                 "Don't feel like it right now? No worries! You can browse around the menus and "
                 "read a couple of tutorials.\n\n\nPress the \ue000 button to continue.";

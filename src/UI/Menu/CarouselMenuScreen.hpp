@@ -35,7 +35,9 @@ public:
 
     auto getCurrentTabIndex() const -> int { return currentTabIndex_; }
 
-    void setTabToTitle(const std::string &tabTitle);
+    // Optionally override the row index for this tab with the rowIndex parameter.
+    // By default, it'll go to the first row or the most recently selected item on that tab.
+    void setTabToTitle(const std::string &tabTitle, int rowIndex = -1);
 
     auto getNumTabs() const -> int { return menuTabs_.size(); }
 

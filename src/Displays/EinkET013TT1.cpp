@@ -92,7 +92,10 @@ static uint8_t const BORDER_TEMPLATE[4] = {0x00, 0x00, 0x00, 0x0C};
 
 static uint8_t const BORDER_NONE[4] = {0x00, 0x00, 0x00, 0x03};
 
-void EinkET013TT1::init() {
+void EinkET013TT1::initSpi() {
+    if (spiHigh_ != nullptr && spiLow_ != nullptr) {
+        return;
+    }
     log_d("Initializing EinkET013TT1 with config csLeft_=%d csRight_=%d rst_=%d mosi=%d miso=%d "
           "clk=%d",
           csLeft_, csRight_, rst_, DISPLAY_MOSI, DISPLAY_MISO, DISPLAY_CLK);
@@ -148,6 +151,10 @@ void EinkET013TT1::init() {
     devcfg.command_bits = 8;
 
     ESP_ERROR_CHECK(spi_bus_add_device(CONFIG_DISPLAY_SPI, &devcfg, &spiLow_));
+}
+
+void EinkET013TT1::init() {
+    initSpi();
 
     if (vcomInMV_ == 0) {
         setVcom(VCOM_DEFAULT);
@@ -463,9 +470,9 @@ void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *b
     vEventGroupDelete(group);
 }
 
-void EinkET013TT1::writeRegister(Register index, const uint8_t *data, size_t len,
-                                 ScreenSide screen) {
-    if (!einkQueue_->isInQueue()) {
+void EinkET013TT1::writeRegister(Register index, const uint8_t *data, size_t len, ScreenSide screen,
+                                 bool outOfQueue) {
+    if (!outOfQueue && !einkQueue_->isInQueue()) {
         log_w("writeRegister called from outside of einkQueue_");
     }
     spi_transaction_t t = {
@@ -478,8 +485,9 @@ void EinkET013TT1::writeRegister(Register index, const uint8_t *data, size_t len
     setCS(HIGH, screen);
 }
 
-inline void EinkET013TT1::writeRegister(Register index, uint8_t data, ScreenSide screen) {
-    writeRegister(index, &data, 1, screen);
+inline void EinkET013TT1::writeRegister(Register index, uint8_t data, ScreenSide screen,
+                                        bool outOfQueue) {
+    writeRegister(index, &data, 1, screen, outOfQueue);
 }
 
 auto EinkET013TT1::readRegister(uint8_t index, ScreenSide screen) -> uint8_t {
@@ -549,7 +557,7 @@ void EinkET013TT1::beginPowerOn() {
             powerOnInternal();
             if (einkQueue_->size() == 0) {
                 // If we get here and don't have something queued yet, the render code took longer
-                // than the powerOn code (180ms) and so the render code is the refresh bottleneck.
+                // than the powerOn code (90ms) and so the render code is the refresh bottleneck.
                 log_w("Render code took longer than power on code!");
             }
         }
@@ -578,8 +586,8 @@ void EinkET013TT1::powerOnInternal() {
 
     auto screen = ScreenSide::Both;
 
-    // Set the system clock speed
-    // It's unclear what the 0x10 does. It's not in the datasheet.
+    // Set the system clock speed, enable the oscillator, use internal charge pumps
+    // OSCM=0b11, OSCON=1, CPEXT=0
     writeRegister(OSC_POWER_SETTING, OSC_SELECT | 0x10, screen);
 
     // LVDS OFF, Band-gap circuit ON, Temperature sensor ON
@@ -590,6 +598,8 @@ void EinkET013TT1::powerOnInternal() {
     // screen and isn't worth changing, but I'm not 100% sure on that.
     writeRegister(CHANNEL_SETTING, CHANNEL_SETTINGS, sizeof(CHANNEL_SETTINGS), screen);
 
+    // DIS_VH=0 Don't discharge positive charge pumps
+    // CPDISM=0b00 Don't discharge negative charge pumps
     // CPS=0b11 Charge pump strength to max
     // CPM=0b11 Charge pump soft start mode to max
     writeRegister(PUMP_SETTING_1, 0x0F, screen);
@@ -599,16 +609,20 @@ void EinkET013TT1::powerOnInternal() {
     writeRegister(PWM_WIDTH_SELECT, VcomMVToRegisterValue(vcomInMV_), screen);
 
     // Fire up the charge pumps
-    // Disable everything (probably a no-op)
-    writeRegister(PUMP_SETTING_2, 0x00, screen);
-    Delay(30);
-    // Enable positive charge pump VH (VDH +14V & VGH +19V)
-    writeRegister(PUMP_SETTING_2, 0x01, screen);
-    Delay(30);
-    // Also enable negative charge pump VN (VDL -14V & VGL -19V)
-    writeRegister(PUMP_SETTING_2, 0x03, screen);
-    Delay(30);
+
+    // Only turn the VH & VN charge pumps on once (consumes ~80uA of while on)
+    static bool chargePumpsOn = false;
+    if (!chargePumpsOn) {
+        // Enable positive charge pump VH (VDH +14V & VGH +19V)
+        writeRegister(PUMP_SETTING_2, 0x01, screen);
+        Delay(30);
+        // Also enable negative charge pump VN (VDL -14V & VGL -19V)
+        writeRegister(PUMP_SETTING_2, 0x03, screen);
+        Delay(30);
+    }
     // Also enable negative charge pump VCL (-5.6V)
+    // Note: It seems to be necessary to turn this one off/on otherwise the screen will drift. Just
+    // disconnecting VCOM it is not enough.
     writeRegister(PUMP_SETTING_2, 0x07, screen);
     Delay(60);
     // Also enable (connect) VCOM
@@ -641,20 +655,15 @@ void EinkET013TT1::powerOffInternal() {
     // Also disable negative charge pump VCL (-5.6V)
     writeRegister(PUMP_SETTING_2, 0x03, screen);
     Delay(30);
-    // Also disable negative charge pump VN (VDL -14V & VGL -19V)
-    writeRegister(PUMP_SETTING_2, 0x01, screen);
-    Delay(30);
     // This is not in the datasheet and its function is a mystery
     writeRegister(MYSTERY_SETTING_2, 0x00, screen);
     // Disable internal charge pump for oscillator power
-    writeRegister(OSC_POWER_SETTING, 0x40, screen);
+    writeRegister(OSC_POWER_SETTING, 0x00, screen);
+    // DIS_VH=0 Don't discharge positive charge pumps
+    // CPDISM=0b00 Don't discharge negative charge pumps
     // CPS=0b10 Charge pump strength to half
     // CPM=0b00 Charge pump soft start mode to min
-    writeRegister(PUMP_SETTING_1, 0x80, screen);
-    // Also disable positive charge pump VH (VDH +14V & VGH +19V)
-    // All charge pumps are off at this point
-    writeRegister(PUMP_SETTING_2, 0x00, screen);
-    Delay(30);
+    writeRegister(PUMP_SETTING_1, 0x00, screen);
     // LVDS OFF, Band-gap circuit OFF, Temperature sensor OFF
     writeRegister(THERMAL_SENSOR_SETTING, 0x00, screen);
     Delay(30);
@@ -663,6 +672,24 @@ void EinkET013TT1::powerOffInternal() {
 
     poweredOn_ = false;
     log_d("EinkET013TT1 powered off");
+}
+
+void EinkET013TT1::shutdown() {
+    initSpi();
+    einkQueue_ = nullptr;
+    // Disable negative charge pump VN (VDL -14V & VGL -19V)
+    writeRegister(PUMP_SETTING_2, 0x01, ScreenSide::Both, true);
+    // NOTE: This delay must be here, otherwise the charge pump will not be disabled (which is
+    // surprising and strange)
+    Delay(30);
+    // Disable positive charge pump VH (VDH +14V & VGH +19V)
+    writeRegister(PUMP_SETTING_2, 0x00, ScreenSide::Both, true);
+    // Disable internal charge pump for oscillator power
+    writeRegister(OSC_POWER_SETTING, 0x00, ScreenSide::Both, true);
+    // LVDS OFF, Band-gap circuit OFF, Temperature sensor OFF
+    writeRegister(THERMAL_SENSOR_SETTING, 0x00, ScreenSide::Both, true);
+    // No idea what this does but the original driver does it at power off so we will do it here too
+    writeRegister(MYSTERY_SETTING_2, 0x02, ScreenSide::Both, true);
 }
 
 inline void EinkET013TT1::startTimer(uint32_t ns) {

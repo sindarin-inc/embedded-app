@@ -356,8 +356,8 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
         auto menuItems = std::make_shared<MenuItemVector>();
 
         auto menuItem = std::make_shared<NewMenuItemSingleLine>("Text Size", [this]() {
-            auto fontMenu = std::make_shared<ReadingSettingsMenuScreen>(this->display_,
-                                                                        "Reading Settings", prefs_);
+            auto fontMenu =
+                std::make_shared<ReadingSettingsMenuScreen>(this->display_, "Back to Text", prefs_);
             fontMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>("Small", [this]() {
                 this->display_.clearDisplay();
                 prefs_.font.set(PREFS_SOL_SMALL);

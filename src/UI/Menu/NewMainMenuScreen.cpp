@@ -12,6 +12,17 @@ NewMainMenuScreen::NewMainMenuScreen(DisplaySystem &display, Battery &battery)
 }
 
 auto NewMainMenuScreen::layout(LayoutContext &context, Size size) -> Size {
+    if (getCurrentTabTitle() == "Welcome") {
+        menuView_.itemsPerPage = 6;
+    } else if (getCurrentTabTitle() == "Settings") {
+        // This is in case the debug menu is enabled so it'll all fit on one screen.
+        menuView_.itemsPerPage = 5;
+    } else {
+        menuView_.itemsPerPage = 4;
+    }
+    // I know generally we aren't supposed to do this, but I don't know where else to do this.
+    menuView_.updatePageState();
+
     context.setViewFrame(titleView_, {{0, 0}, {size.width, 0}},
                          LayoutOptionsSizeToFit | LayoutOptionsAlignCenter);
 

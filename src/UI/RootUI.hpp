@@ -32,7 +32,7 @@ public:
     void clearNeedsRerender() override;
 
     auto currentScreen() -> std::shared_ptr<Screen> { return screenStack_.top(); }
-    void pushScreen(const std::shared_ptr<Screen> &screen);
+    void pushScreen(const std::shared_ptr<Screen> &screen, bool deferRender = false);
     void popScreen(bool clearDisplay = true);
 
     auto needsRerender() -> bool override;

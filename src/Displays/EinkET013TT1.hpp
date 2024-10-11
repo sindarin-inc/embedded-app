@@ -94,12 +94,18 @@ public:
 
     [[nodiscard]] auto getBuffer() const -> const uint8_t * { return previousBuffer_; }
 
+    // Permanently shut down the display for this execution.
+    void shutdown();
+
 protected:
+    void initSpi();
     inline void setCS(bool value, ScreenSide screen) const;
     void powerOnInternal();
     void powerOffInternal();
-    inline void writeRegister(Register index, uint8_t data, ScreenSide screen);
-    void writeRegister(Register index, const uint8_t *data, size_t len, ScreenSide screen);
+    inline void writeRegister(Register index, uint8_t data, ScreenSide screen,
+                              bool outOfQueue = false);
+    void writeRegister(Register index, const uint8_t *data, size_t len, ScreenSide screen,
+                       bool outOfQueue = false);
     auto readRegister(uint8_t index, ScreenSide screen) -> uint8_t;
     auto readPumpStatus(ScreenSide screen) -> PumpStatus;
     // According to the data sheet the device ID is 0 by default, but that's the same

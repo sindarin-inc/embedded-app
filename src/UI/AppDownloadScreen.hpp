@@ -3,6 +3,7 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/timers.h>
 #include <memory>
+#include <utility>
 #include <vector>
 
 #include "UI/Bitmaps/DownloadAppQr.xbm"
@@ -16,14 +17,18 @@
 // Example of a more complex view that combines other views in a layout
 class AppDownloadScreen : public Screen, public EinkView {
 public:
-    AppDownloadScreen(DisplaySystem &display)
+    AppDownloadScreen(DisplaySystem &display,
+                      std::function<void()> makeAndStartContentSync = nullptr)
         : Screen(), EinkView(display),
-          syncPollingTimer_(xTimerCreate("syncPollingTimer", pdMS_TO_TICKS(5000), pdTRUE, this,
+          syncPollingTimer_(xTimerCreate("syncPollingTimer", pdMS_TO_TICKS(2000), pdTRUE, this,
                                          AppDownloadScreen::timerCallback)),
-          topLineView_(display, 2),
+          topLineView_(display, 3),
           iconView_(display, DOWNLOAD_APP_QR_BITS, DownloadAppQr_width, DownloadAppQr_height, 3),
-          bottomLine_(display, "solreader.com/app") {
-        topLineView_.setText("Set up WiFi with the\nSol Reader app");
+          bottomLine_(display, "solreader.com/app"),
+          makeAndStartContentSync_(std::move(makeAndStartContentSync)) {
+        topLineView_.setText(
+            "Purchase books, connect to your Sol Reader, set up WiFi, read, and more "
+            "with the Sol app");
         topLineView_.alignCenter = true;
 
         xTimerStart(syncPollingTimer_, 0);
@@ -50,4 +55,6 @@ protected:
     MultiLineTextView topLineView_;
     IconView iconView_;
     SingleLineTextView bottomLine_;
+
+    std::function<void()> makeAndStartContentSync_;
 };
