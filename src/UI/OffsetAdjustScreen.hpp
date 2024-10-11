@@ -6,9 +6,12 @@
 #include "Models/Readable.hpp"
 #include "Renderers/Renderer.hpp"
 #include "Storage/PreferencesStore.hpp"
+#include "UI/Components/BoxView.hpp"
+#include "UI/Components/EinkView.hpp"
+#include "UI/Components/MultiLineTextView.hpp"
 #include "UI/Screen.hpp"
 
-class OffsetAdjustScreen : public Screen {
+class OffsetAdjustScreen : public Screen, public EinkView {
 public:
     OffsetAdjustScreen(DisplaySystem &display, PreferencesStore &prefs, Telemetry &telemetry);
 
@@ -17,6 +20,8 @@ public:
 
     void render(DisplaySystem &display) override;
     void processCommand(RemoteCommand command) override;
+    auto layout(LayoutContext &context, Size size) -> Size override;
+    void drawInRect(Rect rect) override;
 
 protected:
     DisplaySystem &display_;
@@ -25,6 +30,13 @@ protected:
     PreferencesStore &prefs_;
     Telemetry &telemetry_;
     Renderer &rendererRef_;
+
+    BoxView outerBoxView_;
+    BoxView backgroundBoxView_;
+
+    MultiLineTextView explanationView_;
+
+    auto setupInstructions() -> void;
 };
 
 #endif

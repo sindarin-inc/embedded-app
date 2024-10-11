@@ -10,14 +10,12 @@
 // I didn't want to over-engineer it here.
 ResizeBoxScreen::ResizeBoxScreen(DisplaySystem &display, PreferencesStore &prefs,
                                  Telemetry &telemetry)
-    : display_(display),
+    : EinkView(display), display_(display),
       renderer_(display, GetTextRectFromPrefs(display, prefs), static_cast<Font *>(&fontFace0)),
-      prefs_(prefs), telemetry_(telemetry) {
+      prefs_(prefs), telemetry_(telemetry), outerBoxView_(display, 5),
+      backgroundBoxView_(display, 5), explanationView_(display, 5) {
 
     std::string message;
-    message += "Press up to increase vertical dimension, down to decrease vertical "
-               "dimension, left to increase horizontal dimension, right to decrease "
-               "horizontal dimension. Press \ue000 (center) when finished.\n\n";
     message +=
         "In a secluded tower lived a wizard named Elinor, obsessed with reading. Her passion lay "
         "not in spells but in stories. One ancient tome enchanted her; its runes sparkled with "
@@ -29,18 +27,62 @@ ResizeBoxScreen::ResizeBoxScreen(DisplaySystem &display, PreferencesStore &prefs
         "she orchestrated a plan. The dragon left, villagers hailed her as a hero. But Elinor "
         "found no joy; her wisdom couldn't decipher the dragon's untold tale.";
     auto stream = std::make_shared<StdStringStream>(message);
+
+    std::string instructions = "\ue003  Stretch vertical\n";
+    instructions += "\ue004  Shrink vertical\n";
+    instructions += "\ue001   Stretch horizontal\n";
+    instructions += "\ue002   Shrink horizontal\n";
+    instructions += "\ue000  Done";
+
+    explanationView_.setText(instructions);
+
     renderer_.setStream(stream);
+    setNeedsLayout();
+}
+
+auto ResizeBoxScreen::layout(LayoutContext &context, Size size) -> Size {
+    auto explanationFrame =
+        context.setViewFrame(explanationView_, Rect::fromSize(size).inset(50, 0),
+                             LayoutOptionsSizeToFit | LayoutOptionsAlignCenter);
+
+    auto outerBoxViewFrame = explanationFrame.inset(-5);
+    auto backgroundBoxViewFrame = outerBoxViewFrame.inset(-8);
+
+    context.setViewFrame(backgroundBoxView_, backgroundBoxViewFrame,
+                         LayoutOptionsSizeToFit | LayoutOptionsAlignCenter);
+    context.setViewFrame(outerBoxView_, outerBoxViewFrame,
+                         LayoutOptionsSizeToFit | LayoutOptionsAlignCenter);
+
+    return backgroundBoxViewFrame.size;
+}
+
+void ResizeBoxScreen::drawInRect(Rect rect) {
+    outerBoxView_.fillColor = display_.bg;
+    outerBoxView_.strokeColor = display_.fg;
+    backgroundBoxView_.fillColor = display_.bg;
+    backgroundBoxView_.strokeColor = display_.bg;
+
+    backgroundBoxView_.draw();
+    outerBoxView_.draw();
+    explanationView_.draw();
 }
 
 void ResizeBoxScreen::render(DisplaySystem &display) {
     // Get the bounding box
     auto textBox = GetTextRectFromPrefs(display, prefs_);
+
+    setFrame(defaultFrameRect());
+
+    this->renderer_.setRect(textBox);
+    this->renderer_.renderFirstPage(0, true);
+
+    draw();
+
     // The natural line spacing handles the vertical padding
     // The horizontal padding adds one blank pixel column on either side of the rect
     display.drawDottedBox(textBox.x - 2, textBox.y, textBox.x + textBox.width + 1,
                           textBox.y + textBox.height - 1, 1, 2);
-    this->renderer_.setRect(textBox);
-    this->renderer_.renderFirstPage(0, true);
+
     display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
 }
 
