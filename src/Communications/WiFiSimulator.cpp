@@ -21,8 +21,6 @@ auto WiFi::end() -> esp_err_t { return ESP_OK; }
 
 auto WiFi::getWifiConfig(wifi_config_t *conf) -> esp_err_t { return ESP_OK; }
 
-auto WiFi::hasWiFiCredentials(wifi_config_t *conf) -> bool { return true; }
-
 auto WiFi::hasWiFiCredentials() -> bool { return true; }
 
 auto WiFi::scanNetworks(const std::function<void(std::shared_ptr<wifi_ap_record_t[]> apRecords,

@@ -91,5 +91,3 @@ void WiFiSettings::addSetting(const std::string &ssid, const std::string &passwo
 }
 
 void WiFiSettings::clear() { settings.clear(); }
-
-auto WiFiSettings::needsMigration() -> bool { return !prefs.wifiSettingsJson.get().has_value(); }
