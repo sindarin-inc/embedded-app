@@ -40,44 +40,20 @@ public:
 
     void logMetricData(TelemetryField field,
                        std::unordered_map<std::string, TelemetryVariant> data = {}) {
-        logMetricImpl(field, "", data);
+        logMetric(field, "", std::move(data));
     }
 
     template <typename T>
     void logMetric(TelemetryField field, T value,
                    std::unordered_map<std::string, TelemetryVariant> data = {}) {
-        logMetricImpl(field, value, data);
-    }
-
-    auto variantToJson(const TelemetryVariant &v) -> std::string;
-    auto mapToJson(const std::unordered_map<std::string, TelemetryVariant> &data) -> std::string;
-
-    static auto metricLogPath() -> std::string { return "/metrics/telemetry.jsonl"; }
-
-    auto uploadAndResetTelemetry(FileSystem &fileSystem, bool useBle = false,
-                                 const std::shared_ptr<CancelFlag> &cancel = nullptr) -> int;
-
-protected:
-    FileSystem &fileSystem_;
-    PreferencesStore &prefs_;
-    unsigned long lastLoggingTime_ = 0;
-
-private:
-    static auto dispatchQueue() -> DispatchQueue * { return DispatchGetCore1BackgroundQueue(); }
-
-    template <typename T>
-    void logMetricImpl(TelemetryField field, T value,
-                       std::unordered_map<std::string, TelemetryVariant> &data) {
         static_assert(
             std::disjunction_v<std::is_same<T, float>, std::is_same<T, uint32_t>,
                                std::is_same<T, uint16_t>, std::is_same<T, int>,
                                std::is_same<T, char *>, std::is_same<T, const char *>,
                                std::is_same<T, std::string>, std::is_same<T, SpiramString>>,
-            "Unsupported type for logMetricImpl");
+            "Unsupported type for logMetric");
 
-        auto timestamp = SolClock::getInstance().getEpochTime();
-
-        std::string dataJsonFormat = mapToJson(data);
+        // It's difficult to capture all types T in the lambda so we convert to a string first
         std::string valueFormat;
         if constexpr (std::is_same<T, float>::value) {
             valueFormat = StringFormat(R"(,"v":%.2f)", value);
@@ -96,36 +72,28 @@ private:
                 valueFormat = StringFormat(R"(,"v":"%s")", value.c_str());
             }
         }
-
-        std::string format = R"({"ts":%lld,"k":"%s"%s%s})";
-
-        std::string logString;
-        logString = StringFormat(format.c_str(), timestamp, TelemetryFieldToString(field),
-                                 valueFormat.c_str(), dataJsonFormat.c_str());
-
-        log_i("Logging metric: %s %s", TelemetryFieldToString(field), logString.c_str());
-
-        Telemetry::dispatchQueue()->dispatch([this, logString, field]() {
-            // create log directory in filesystem if it doesn't exist
-            if (!fileSystem_.createDir("/metrics")) {
-                log_e("could not create /metrics directory (%s)", TelemetryFieldToString(field));
-                return;
-            }
-
-            std::string path = Telemetry::metricLogPath();
-            SFile file = fileSystem_.open(path, FILE_APPEND);
-            if (file.size() < MAX_TELEMETRY_LOG_SIZE) {
-                file.write(reinterpret_cast<const uint8_t *>(logString.c_str()),
-                           logString.length());
-                file.write('\n');
-                file.flush();
-                file.close();
-            } else {
-                log_e("%s", StringFormat("Telemetry log file for %s is too large. Ignoring.",
-                                         TelemetryFieldToString(field))
-                                .c_str());
-                file.close();
-            }
+        Telemetry::dispatchQueue()->dispatch(
+            [this, field, valueFormat = std::move(valueFormat), data = std::move(data)]() {
+            logMetricImpl(field, valueFormat, data);
         });
     }
+
+    auto variantToJson(const TelemetryVariant &v) -> std::string;
+    auto mapToJson(const std::unordered_map<std::string, TelemetryVariant> &data) -> std::string;
+
+    static auto metricLogPath() -> std::string { return "/metrics/telemetry.jsonl"; }
+
+    auto uploadAndResetTelemetry(FileSystem &fileSystem, bool useBle = false,
+                                 const std::shared_ptr<CancelFlag> &cancel = nullptr) -> int;
+
+protected:
+    FileSystem &fileSystem_;
+    PreferencesStore &prefs_;
+    unsigned long lastLoggingTime_ = 0;
+
+private:
+    static auto dispatchQueue() -> DispatchQueue * { return DispatchGetCore1BackgroundQueue(); }
+
+    void logMetricImpl(TelemetryField field, const std::string &valueFormat,
+                       const std::unordered_map<std::string, TelemetryVariant> &data);
 };

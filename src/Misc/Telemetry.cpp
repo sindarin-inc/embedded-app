@@ -102,3 +102,36 @@ auto Telemetry::uploadAndResetTelemetry(FileSystem &fileSystem, bool useBle,
 
     return httpCode;
 }
+
+void Telemetry::logMetricImpl(TelemetryField field, const std::string &valueFormat,
+                              const std::unordered_map<std::string, TelemetryVariant> &data) {
+
+    auto timestamp = SolClock::getInstance().getEpochTime();
+
+    std::string dataJsonFormat = mapToJson(data);
+
+    std::string logString =
+        StringFormat(R"({"ts":%lld,"k":"%s"%s%s})", timestamp, TelemetryFieldToString(field),
+                     valueFormat.c_str(), dataJsonFormat.c_str());
+    log_i("Logging metric: %s %s", TelemetryFieldToString(field), logString.c_str());
+
+    // create log directory in filesystem if it doesn't exist
+    if (!fileSystem_.createDir("/metrics")) {
+        log_e("could not create /metrics directory (%s)", TelemetryFieldToString(field));
+        return;
+    }
+
+    std::string path = Telemetry::metricLogPath();
+    SFile file = fileSystem_.open(path, FILE_APPEND);
+    if (file.size() < MAX_TELEMETRY_LOG_SIZE) {
+        file.write(reinterpret_cast<const uint8_t *>(logString.c_str()), logString.length());
+        file.write('\n');
+        file.flush();
+        file.close();
+    } else {
+        log_e("%s", StringFormat("Telemetry log file for %s is too large. Ignoring.",
+                                 TelemetryFieldToString(field))
+                        .c_str());
+        file.close();
+    }
+}
