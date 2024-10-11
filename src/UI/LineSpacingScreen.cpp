@@ -66,8 +66,8 @@ LineSpacingScreen::LineSpacingScreen(DisplaySystem &display, PreferencesStore &p
 }
 
 auto LineSpacingScreen::setupInstructions() -> void {
-    std::string instructions = "\ue003  Decrease\n";
-    instructions += "\ue004  Increase\n";
+    std::string instructions = "\ue003  Increase\n";
+    instructions += "\ue004  Decrease\n";
     instructions += "\ue000  Done";
 
     explanationView_.setText(instructions);
@@ -119,14 +119,14 @@ void LineSpacingScreen::processCommand(RemoteCommand command) {
     case RemoteCommand::RIGHT:
         // Intentionally left out for now
         break;
-    case RemoteCommand::DOWN:
+    case RemoteCommand::UP:
         lineSpacing_++;
         if (lineSpacing_ > MAX_LINE_SPACING) {
             lineSpacing_ = MAX_LINE_SPACING;
         }
         setNeedsRerender();
         break;
-    case RemoteCommand::UP:
+    case RemoteCommand::DOWN:
         lineSpacing_--;
         if (lineSpacing_ < MIN_LINE_SPACING) {
             lineSpacing_ = MIN_LINE_SPACING;

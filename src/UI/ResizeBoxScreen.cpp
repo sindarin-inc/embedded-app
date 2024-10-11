@@ -46,8 +46,8 @@ ResizeBoxScreen::ResizeBoxScreen(DisplaySystem &display, PreferencesStore &prefs
 auto ResizeBoxScreen::setupInstructions() -> void {
     std::string instructions = "\ue003  Stretch vertical\n";
     instructions += "\ue004  Shrink vertical\n";
-    instructions += "\ue001   Stretch horizontal\n";
-    instructions += "\ue002   Shrink horizontal\n";
+    instructions += "\ue002   Stretch horizontal\n";
+    instructions += "\ue001   Shrink horizontal\n";
     instructions += "\ue000  Done";
 
     explanationView_.setText(instructions);
@@ -103,7 +103,7 @@ void ResizeBoxScreen::processCommand(RemoteCommand command) {
     DisplayInset insets = GetTextInsetFromPrefs(display_, prefs_);
     DisplayRect rect = GetTextRectFromPrefs(display_, prefs_);
     switch (command) {
-    case RemoteCommand::LEFT:
+    case RemoteCommand::RIGHT:
         if (insets.left - BOX_OFFSET_ADJUST_AMOUNT >= display_.minTextInsets().left) {
             insets.left -= BOX_OFFSET_ADJUST_AMOUNT / 2;
             setNeedsRerender();
@@ -113,7 +113,7 @@ void ResizeBoxScreen::processCommand(RemoteCommand command) {
             setNeedsRerender();
         }
         break;
-    case RemoteCommand::RIGHT:
+    case RemoteCommand::LEFT:
         if (rect.width - BOX_OFFSET_ADJUST_AMOUNT >= display_.minTextBoxWidth()) {
             insets.right += BOX_OFFSET_ADJUST_AMOUNT / 2;
             insets.left += BOX_OFFSET_ADJUST_AMOUNT / 2;

@@ -456,8 +456,8 @@ TEST_CASE("Test some views independently") {
             offsetScreen->processCommand(ENTER);
             auto resizeScreen = std::make_shared<ResizeBoxScreen>(*display, prefs, telemetry);
             resizeScreen->render(*display);
-            resizeScreen->processCommand(LEFT);
-            resizeScreen->processCommand(LEFT);
+            resizeScreen->processCommand(RIGHT);
+            resizeScreen->processCommand(RIGHT);
             resizeScreen->render(*display);
             ASSERT_VIEW_UNCHANGED(display, "ResizeBoxScreenLeftPinned");
         }
@@ -466,14 +466,14 @@ TEST_CASE("Test some views independently") {
             auto screen = std::make_shared<LineSpacingScreen>(*display, prefs, telemetry);
             screen->render(*display);
             ASSERT_VIEW_UNCHANGED(display, "LineSpacingScreen");
-            screen->processCommand(DOWN);
-            screen->processCommand(DOWN);
-            screen->processCommand(DOWN);
+            screen->processCommand(UP);
+            screen->processCommand(UP);
+            screen->processCommand(UP);
             screen->render(*display);
             ASSERT_VIEW_UNCHANGED(display, "LineSpacingScreenWide");
-            screen->processCommand(UP);
-            screen->processCommand(UP);
-            screen->processCommand(UP);
+            screen->processCommand(DOWN);
+            screen->processCommand(DOWN);
+            screen->processCommand(DOWN);
             screen->render(*display);
             ASSERT_VIEW_UNCHANGED(display, "LineSpacingScreen");
         }
