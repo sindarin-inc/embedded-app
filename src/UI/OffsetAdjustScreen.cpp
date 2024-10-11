@@ -63,7 +63,7 @@ auto OffsetAdjustScreen::layout(LayoutContext &context, Size size) -> Size {
                              LayoutOptionsSizeToFit | LayoutOptionsAlignCenter);
 
     auto outerBoxViewFrame = explanationFrame.inset(-5);
-    auto backgroundBoxViewFrame = outerBoxViewFrame.inset(-7);
+    auto backgroundBoxViewFrame = outerBoxViewFrame.inset(-8);
 
     context.setViewFrame(backgroundBoxView_, backgroundBoxViewFrame,
                          LayoutOptionsSizeToFit | LayoutOptionsAlignCenter);

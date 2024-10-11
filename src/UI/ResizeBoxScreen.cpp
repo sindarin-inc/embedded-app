@@ -12,7 +12,7 @@ ResizeBoxScreen::ResizeBoxScreen(DisplaySystem &display, PreferencesStore &prefs
                                  Telemetry &telemetry)
     : EinkView(display), display_(display),
       renderer_(display, GetTextRectFromPrefs(display, prefs), static_cast<Font *>(&fontFace0)),
-      prefs_(prefs), telemetry_(telemetry), outerBoxView_(display, 5),
+      prefs_(prefs), telemetry_(telemetry), rendererRef_(renderer_), outerBoxView_(display, 5),
       backgroundBoxView_(display, 5), explanationView_(display, 5) {
 
     std::string message;
@@ -28,6 +28,22 @@ ResizeBoxScreen::ResizeBoxScreen(DisplaySystem &display, PreferencesStore &prefs
         "found no joy; her wisdom couldn't decipher the dragon's untold tale.";
     auto stream = std::make_shared<StdStringStream>(message);
 
+    renderer_.setStream(stream);
+
+    setupInstructions();
+}
+
+ResizeBoxScreen::ResizeBoxScreen(DisplaySystem &display, PreferencesStore &prefs,
+                                 Telemetry &telemetry, Renderer &renderer,
+                                 std::shared_ptr<Place> place)
+    : EinkView(display), display_(display),
+      renderer_(display, GetTextRectFromPrefs(display, prefs), static_cast<Font *>(&fontFace0)),
+      place_(std::move(place)), prefs_(prefs), telemetry_(telemetry), rendererRef_(renderer),
+      outerBoxView_(display, 5), backgroundBoxView_(display, 5), explanationView_(display, 5) {
+    setupInstructions();
+}
+
+auto ResizeBoxScreen::setupInstructions() -> void {
     std::string instructions = "\ue003  Stretch vertical\n";
     instructions += "\ue004  Shrink vertical\n";
     instructions += "\ue001   Stretch horizontal\n";
@@ -36,7 +52,6 @@ ResizeBoxScreen::ResizeBoxScreen(DisplaySystem &display, PreferencesStore &prefs
 
     explanationView_.setText(instructions);
 
-    renderer_.setStream(stream);
     setNeedsLayout();
 }
 
@@ -73,8 +88,13 @@ void ResizeBoxScreen::render(DisplaySystem &display) {
 
     setFrame(defaultFrameRect());
 
-    this->renderer_.setRect(textBox);
-    this->renderer_.renderFirstPage(0, true);
+    if (place_ == nullptr) {
+        this->renderer_.setRect(textBox);
+        this->renderer_.renderFirstPage(0, true);
+    } else {
+        rendererRef_.setRect(textBox);
+        rendererRef_.renderPage(place_, 0);
+    }
 
     draw();
 

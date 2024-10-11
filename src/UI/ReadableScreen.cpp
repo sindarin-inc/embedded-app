@@ -418,8 +418,8 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
 
         menuItem = std::make_shared<NewMenuItemSingleLine>("Resize Page", [this]() {
             log_d("Loading resize box");
-            auto resizeBox =
-                std::make_shared<ResizeBoxScreen>(this->display_, prefs_, this->telemetry_);
+            auto resizeBox = std::make_shared<ResizeBoxScreen>(
+                this->display_, prefs_, this->telemetry_, this->renderer_, this->readable_->place);
             this->setCurrentScreen(resizeBox);
             log_d("setting up callback");
             resizeBox->setBackCallback([this]() {
@@ -432,8 +432,8 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
         menuItems->emplace_back(menuItem);
 
         menuItem = std::make_shared<NewMenuItemSingleLine>("Line Spacing", [this]() {
-            auto lineSpacingScreen =
-                std::make_shared<LineSpacingScreen>(this->display_, prefs_, this->telemetry_);
+            auto lineSpacingScreen = std::make_shared<LineSpacingScreen>(
+                this->display_, prefs_, this->telemetry_, this->renderer_, this->readable_->place);
             this->setCurrentScreen(lineSpacingScreen);
             lineSpacingScreen->setBackCallback([this]() {
                 setCurrentScreen(nullptr);

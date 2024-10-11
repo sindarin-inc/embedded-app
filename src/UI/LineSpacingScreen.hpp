@@ -16,6 +16,8 @@
 class LineSpacingScreen : public Screen, public EinkView {
 public:
     LineSpacingScreen(DisplaySystem &display, PreferencesStore &prefs, Telemetry &telemetry);
+    LineSpacingScreen(DisplaySystem &display, PreferencesStore &prefs, Telemetry &telemetry,
+                      Renderer &renderer, std::shared_ptr<Place> place);
 
     auto layout(LayoutContext &context, Size size) -> Size override;
     void drawInRect(Rect rect) override;
@@ -26,10 +28,12 @@ protected:
 
     DisplaySystem &display_;
     Renderer renderer_;
+    std::shared_ptr<Place> place_{nullptr};
     PreferencesStore &prefs_;
     Telemetry &telemetry_;
-
     int lineSpacing_;
+
+    Renderer &rendererRef_;
 
     BoxView outerBoxView_;
     BoxView backgroundBoxView_;

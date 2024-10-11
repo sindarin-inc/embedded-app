@@ -11,7 +11,8 @@ LineSpacingScreen::LineSpacingScreen(DisplaySystem &display, PreferencesStore &p
     : EinkView(display), display_(display),
       renderer_(display, GetTextRectFromPrefs(display, prefs), static_cast<Font *>(&fontFace0)),
       prefs_(prefs), telemetry_(telemetry), lineSpacing_(prefs.lineSpacing.get().value_or(0)),
-      outerBoxView_(display, 5), backgroundBoxView_(display, 5), explanationView_(display, 3) {
+      rendererRef_(renderer_), outerBoxView_(display, 5), backgroundBoxView_(display, 5),
+      explanationView_(display, 3) {
 
     std::string message;
     message += R"(The Expanse of the Lord of the Rings
@@ -54,6 +55,16 @@ LineSpacingScreen::LineSpacingScreen(DisplaySystem &display, PreferencesStore &p
     setupInstructions();
 }
 
+LineSpacingScreen::LineSpacingScreen(DisplaySystem &display, PreferencesStore &prefs,
+                                     Telemetry &telemetry, Renderer &renderer,
+                                     std::shared_ptr<Place> place)
+    : EinkView(display), display_(display),
+      renderer_(display, GetTextRectFromPrefs(display, prefs), static_cast<Font *>(&fontFace0)),
+      place_(std::move(place)), prefs_(prefs), telemetry_(telemetry), rendererRef_(renderer),
+      outerBoxView_(display, 5), backgroundBoxView_(display, 5), explanationView_(display, 5) {
+    setupInstructions();
+}
+
 auto LineSpacingScreen::setupInstructions() -> void {
     std::string instructions = "\ue003  Decrease\n";
     instructions += "\ue004  Increase\n";
@@ -70,7 +81,7 @@ auto LineSpacingScreen::layout(LayoutContext &context, Size size) -> Size {
                              LayoutOptionsSizeToFit | LayoutOptionsAlignCenter);
 
     auto outerBoxViewFrame = explanationFrame.inset(-5);
-    auto backgroundBoxViewFrame = outerBoxViewFrame.inset(-7);
+    auto backgroundBoxViewFrame = outerBoxViewFrame.inset(-8);
 
     context.setViewFrame(backgroundBoxView_, backgroundBoxViewFrame,
                          LayoutOptionsSizeToFit | LayoutOptionsAlignCenter);
@@ -92,8 +103,18 @@ void LineSpacingScreen::drawInRect(Rect rect) {
 }
 
 void LineSpacingScreen::render(DisplaySystem &display) {
+    // Get the bounding box
+    auto textBox = GetTextRectFromPrefs(display, prefs_);
     setFrame(defaultFrameRect());
-    this->renderer_.renderFirstPage(0, true);
+    if (place_ == nullptr) {
+        this->renderer_.setLineSpacing(lineSpacing_);
+        this->renderer_.setRect(textBox);
+        this->renderer_.renderFirstPage(0, true);
+    } else {
+        rendererRef_.setLineSpacing(lineSpacing_);
+        rendererRef_.setRect(textBox);
+        rendererRef_.renderPage(place_, 0);
+    }
     draw();
     display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
 }
@@ -109,8 +130,6 @@ void LineSpacingScreen::processCommand(RemoteCommand command) {
         if (lineSpacing_ > MAX_LINE_SPACING) {
             lineSpacing_ = MAX_LINE_SPACING;
         }
-
-        renderer_.setLineSpacing(lineSpacing_);
         setNeedsRerender();
         break;
     case RemoteCommand::UP:
@@ -118,7 +137,6 @@ void LineSpacingScreen::processCommand(RemoteCommand command) {
         if (lineSpacing_ < MIN_LINE_SPACING) {
             lineSpacing_ = MIN_LINE_SPACING;
         }
-        renderer_.setLineSpacing(lineSpacing_);
         setNeedsRerender();
         break;
     case RemoteCommand::BACK:
