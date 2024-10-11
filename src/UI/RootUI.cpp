@@ -1906,39 +1906,6 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
 
     pushScreen(newMainMenu, true);
 
-    // If we are in onboarding mode, show the entry bumper first
-    if (!prefs_.dontShowWelcome.get().value_or(false)) {
-        bool showWelcomeVideo = true;
-        bool forceShowWelcome = prefs_.forceShowWelcome.get().value_or(false);
-
-        if (welcomeTabIndex != 4 || forceShowWelcome) {
-            newMainMenu->setTabToTitle("Welcome", forceShowWelcome ? 0 : welcomeTabIndex);
-            if (forceShowWelcome) {
-                showWelcomeVideo = false;
-            }
-        } else {
-            // Onboaring is actually complete, so show the next menu over
-            // instead of the welcome tab.
-            newMainMenu->setCurrentTabIndex(1);
-            showWelcomeVideo = false;
-        }
-
-        if (showWelcomeVideo) {
-            auto firstTimeScreen = std::make_shared<DemoScreen>(display_, prefs_);
-            pushScreen(firstTimeScreen, true);
-            firstTimeScreen->setBackCallback([this]() {
-                popScreen();
-                // Any screen that could possibly get to a backCallback without a command
-                // being sent through the loop must explicitly render at the end of its
-                // backCallback to ensure the screen is properly redrawn.
-                if (needsRerender()) {
-                    render(display_);
-                    clearNeedsRerender();
-                }
-            });
-        }
-    }
-
     if (prefs_.cesMode.get().value_or(false)) {
         auto cesScreen = std::make_shared<DemoScreen>(display_, prefs_);
 
@@ -2019,6 +1986,39 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
         } else {
             // Assume this readable has gone away (or changed from id to uuid)
             prefs_.lastReadableId.remove();
+        }
+    }
+
+    // If we are in onboarding mode, show the entry bumper first
+    if (!prefs_.dontShowWelcome.get().value_or(false)) {
+        bool showWelcomeVideo = true;
+        bool forceShowWelcome = prefs_.forceShowWelcome.get().value_or(false);
+
+        if (welcomeTabIndex != 4 || forceShowWelcome) {
+            newMainMenu->setTabToTitle("Welcome", forceShowWelcome ? 0 : welcomeTabIndex);
+            if (forceShowWelcome) {
+                showWelcomeVideo = false;
+            }
+        } else {
+            // Onboaring is actually complete, so show the next menu over
+            // instead of the welcome tab.
+            newMainMenu->setCurrentTabIndex(1);
+            showWelcomeVideo = false;
+        }
+
+        if (showWelcomeVideo) {
+            auto firstTimeScreen = std::make_shared<DemoScreen>(display_, prefs_);
+            pushScreen(firstTimeScreen, true);
+            firstTimeScreen->setBackCallback([this]() {
+                popScreen();
+                // Any screen that could possibly get to a backCallback without a command
+                // being sent through the loop must explicitly render at the end of its
+                // backCallback to ensure the screen is properly redrawn.
+                if (needsRerender()) {
+                    render(display_);
+                    clearNeedsRerender();
+                }
+            });
         }
     }
 
