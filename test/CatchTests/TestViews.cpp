@@ -466,14 +466,14 @@ TEST_CASE("Test some views independently") {
             auto screen = std::make_shared<LineSpacingScreen>(*display, prefs, telemetry);
             screen->render(*display);
             ASSERT_VIEW_UNCHANGED(display, "LineSpacingScreen");
-            screen->processCommand(UP);
-            screen->processCommand(UP);
-            screen->processCommand(UP);
+            screen->processCommand(DOWN);
+            screen->processCommand(DOWN);
+            screen->processCommand(DOWN);
             screen->render(*display);
             ASSERT_VIEW_UNCHANGED(display, "LineSpacingScreenWide");
-            screen->processCommand(DOWN);
-            screen->processCommand(DOWN);
-            screen->processCommand(DOWN);
+            screen->processCommand(UP);
+            screen->processCommand(UP);
+            screen->processCommand(UP);
             screen->render(*display);
             ASSERT_VIEW_UNCHANGED(display, "LineSpacingScreen");
         }
