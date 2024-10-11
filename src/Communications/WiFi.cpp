@@ -361,6 +361,11 @@ auto WiFi::connectWiFiSettingWithTimeout(int timeoutMs, const std::string &ssid,
         return false;
     }
 
+    // Successful connection, save WiFi settings
+    log_i("Successful connection, saving WiFi settings for %s.", ssid.c_str());
+    settings_.setActiveSetting(ssid, password);
+    settings_.save();
+
     return true;
 }
 
@@ -480,26 +485,6 @@ void WiFi::ipEventHandler(void *arg, esp_event_base_t eventBase, int32_t eventId
         auto *event = static_cast<ip_event_got_ip_t *>(eventData);
         // NOLINTNEXTLINE(cppcoreguidelines-pro-type-cstyle-cast): There's a cast in IP2STR
         log_i("IP_EVENT_STA_GOT_IP: " IPSTR, IP2STR(&event->ip_info.ip));
-
-        // successful connection
-        // save current wifi settings
-        log_i("successful connection, saving settings.");
-        wifi_config_t conf;
-        esp_err_t err = esp_wifi_get_config(WIFI_IF_STA, &conf);
-        if (err != ESP_OK) {
-            log_e("got ip: esp_wifi_get_config failed with error %s", esp_err_to_name(err));
-            break;
-        }
-
-        auto ssidChar = reinterpret_cast<const char *>(conf.sta.ssid);
-        std::string ssid(ssidChar, strnlen(ssidChar, sizeof(conf.sta.ssid)));
-        auto passwordChar = reinterpret_cast<const char *>(conf.sta.password);
-        std::string password(passwordChar, strnlen(passwordChar, sizeof(conf.sta.password)));
-
-        log_d("Saving most-recent WiFi: %s", ssid.c_str());
-
-        tthis->settings_.setActiveSetting(ssid, password);
-        tthis->settings_.save();
         tthis->setState(WiFiState::CONNECTED);
         xEventGroupSetBits(tthis->wifiEventGroup_, CONNECTED);
         break;

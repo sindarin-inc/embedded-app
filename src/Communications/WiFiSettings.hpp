@@ -11,6 +11,8 @@
 class WiFiSetting : public JsonSerializable {
 public:
     WiFiSetting() = default;
+    WiFiSetting(const std::string &ssid, const std::string &password)
+        : ssid(ssid), password(password){};
     ~WiFiSetting() override = default;
 
     std::string ssid;
