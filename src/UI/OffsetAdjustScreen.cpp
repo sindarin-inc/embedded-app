@@ -30,7 +30,7 @@ OffsetAdjustScreen::OffsetAdjustScreen(DisplaySystem &display, PreferencesStore 
         "verses evoked calm seas.";
     auto stream = std::make_shared<StdStringStream>(message);
 
-    renderer_.setStream(stream);
+    rendererRef_.setStream(stream);
 
     setupInstructions();
 }
@@ -90,11 +90,10 @@ void OffsetAdjustScreen::render(DisplaySystem &display) {
 
     setFrame(defaultFrameRect());
 
+    rendererRef_.setRect(textBox);
     if (place_ == nullptr) {
-        this->renderer_.setRect(textBox);
-        this->renderer_.renderFirstPage(0, true);
+        rendererRef_.renderFirstPage(0, true);
     } else {
-        rendererRef_.setRect(textBox);
         rendererRef_.renderPage(place_, 0);
     }
 

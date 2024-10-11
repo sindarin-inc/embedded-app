@@ -28,7 +28,7 @@ ResizeBoxScreen::ResizeBoxScreen(DisplaySystem &display, PreferencesStore &prefs
         "found no joy; her wisdom couldn't decipher the dragon's untold tale.";
     auto stream = std::make_shared<StdStringStream>(message);
 
-    renderer_.setStream(stream);
+    rendererRef_.setStream(stream);
 
     setupInstructions();
 }
@@ -88,11 +88,10 @@ void ResizeBoxScreen::render(DisplaySystem &display) {
 
     setFrame(defaultFrameRect());
 
+    rendererRef_.setRect(textBox);
     if (place_ == nullptr) {
-        this->renderer_.setRect(textBox);
-        this->renderer_.renderFirstPage(0, true);
+        rendererRef_.renderFirstPage(0, true);
     } else {
-        rendererRef_.setRect(textBox);
         rendererRef_.renderPage(place_, 0);
     }
 

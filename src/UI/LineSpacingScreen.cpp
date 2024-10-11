@@ -49,8 +49,7 @@ LineSpacingScreen::LineSpacingScreen(DisplaySystem &display, PreferencesStore &p
     "FOOL OF A TOOK!"
     )";
     auto stream = std::make_shared<StdStringStream>(message);
-    renderer_.setStream(stream);
-    renderer_.setLineSpacing(lineSpacing_);
+    rendererRef_.setStream(stream);
 
     setupInstructions();
 }
@@ -106,15 +105,15 @@ void LineSpacingScreen::render(DisplaySystem &display) {
     // Get the bounding box
     auto textBox = GetTextRectFromPrefs(display, prefs_);
     setFrame(defaultFrameRect());
+
+    rendererRef_.setRect(textBox);
+    rendererRef_.setLineSpacing(lineSpacing_);
     if (place_ == nullptr) {
-        this->renderer_.setLineSpacing(lineSpacing_);
-        this->renderer_.setRect(textBox);
-        this->renderer_.renderFirstPage(0, true);
+        rendererRef_.renderFirstPage(0, true);
     } else {
-        rendererRef_.setLineSpacing(lineSpacing_);
-        rendererRef_.setRect(textBox);
         rendererRef_.renderPage(place_, 0);
     }
+
     draw();
     display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
 }
@@ -154,5 +153,5 @@ void LineSpacingScreen::processCommand(RemoteCommand command) {
         break;
     }
 
-    log_d("setting new lineSpacing to be %d", renderer_.getLineSpacing());
+    log_d("setting new lineSpacing to be %d", lineSpacing_);
 }
