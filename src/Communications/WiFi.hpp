@@ -124,5 +124,3 @@ protected:
     auto connectWiFiSettingWithTimeout(int timeoutMs, const std::string &ssid,
                                        const std::string &password) -> bool;
 };
-
-std::pair<std::string, std::string> WifiCredentialsToString(const wifi_config_t &conf);

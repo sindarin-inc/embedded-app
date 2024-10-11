@@ -491,8 +491,10 @@ void WiFi::ipEventHandler(void *arg, esp_event_base_t eventBase, int32_t eventId
             break;
         }
 
-        std::string ssid = reinterpret_cast<char *>(conf.sta.ssid);
-        std::string password = reinterpret_cast<char *>(conf.sta.password);
+        auto ssidChar = reinterpret_cast<const char *>(conf.sta.ssid);
+        std::string ssid(ssidChar, strnlen(ssidChar, sizeof(conf.sta.ssid)));
+        auto passwordChar = reinterpret_cast<const char *>(conf.sta.password);
+        std::string password(passwordChar, strnlen(passwordChar, sizeof(conf.sta.password)));
 
         log_d("Saving most-recent WiFi: %s", ssid.c_str());
 
