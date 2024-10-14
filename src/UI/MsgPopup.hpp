@@ -23,10 +23,10 @@ public:
     }
     ~MsgPopup() override = default;
 
-    void startTimer(int duration_ = 2000) {
+    void startTimer(int duration = 2000) {
         // Must stop the timer because ChangePeriod starts it.
         xTimerStop(DisplaySystem::animationTimer, 0);
-        xTimerChangePeriod(DisplaySystem::animationTimer, pdMS_TO_TICKS(duration_), 0);
+        xTimerChangePeriod(DisplaySystem::animationTimer, pdMS_TO_TICKS(duration), 0);
     }
 
     auto layout(LayoutContext &context, Size size) -> Size override {
