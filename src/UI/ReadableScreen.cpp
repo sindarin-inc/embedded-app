@@ -731,9 +731,11 @@ void ReadableScreen::render(DisplaySystem &display) {
                               "\ue001   Previous Page\n\n"
                               "\ue003  or  \ue004   Popup Menu\n\n "
                               "Press any button to start...";
-        MsgPopup::showTemporaryMessage(display, message);
+        auto msgPopup = std::make_shared<MsgPopup>(display, message);
+        msgPopup->setBackCallback([this]() { this->setCurrentScreen(nullptr); });
+        currentScreen_ = msgPopup;
+        msgPopup->render(display);
         prefs_.firstRead.set(true);
-        showingFirstTimeView_ = true;
         return;
     }
 
@@ -746,11 +748,13 @@ void ReadableScreen::render(DisplaySystem &display) {
                               "\ue000   Pause/unpause\n\n"
                               "Press any button to start...";
 
-        MsgPopup::showTemporaryMessage(display, message);
+        auto msgPopup = std::make_shared<MsgPopup>(display, message);
+        msgPopup->setBackCallback([this]() { this->setCurrentScreen(nullptr); });
+        currentScreen_ = msgPopup;
+        msgPopup->render(display);
         prefs_.firstAutopilotRead.set(true);
         // Make sure the next screen is a full refresh
         display.clearDisplay();
-        showingFirstTimeView_ = true;
         return;
     }
 

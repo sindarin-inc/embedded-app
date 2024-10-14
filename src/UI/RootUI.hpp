@@ -1,5 +1,6 @@
 #pragma once
 
+#include <functional>
 #include <vector>
 
 #include "Displays/DisplaySystem.hpp"
@@ -73,4 +74,10 @@ protected:
     PreferencesStore &prefs_;
     PowerManager &power_;
     Telemetry &telemetry_;
+
+    bool inMsgPopup_ = false;
+
+    // second parameter is a function that should be called in cleanup
+    void showTemporaryMessage(const std::string &msg, const std::function<void()> &cleanupFunc,
+                              bool useTimer = false, int duration = 2000);
 };

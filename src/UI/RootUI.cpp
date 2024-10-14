@@ -125,8 +125,10 @@ void RootUI::render(DisplaySystem &display) {
 };
 
 void RootUI::processCommand(RemoteCommand command) {
-    if (!screenStack_.empty()) {
-        currentScreen()->processCommand(command);
+    if (!inMsgPopup_) {
+        if (!screenStack_.empty()) {
+            currentScreen()->processCommand(command);
+        }
     }
 }
 
@@ -135,6 +137,20 @@ void RootUI::clearNeedsRerender() {
         currentScreen()->clearNeedsRerender();
     } else {
         Screen::clearNeedsRerender();
+    }
+}
+
+// second parameter is a function that should be called in cleanup
+void RootUI::showTemporaryMessage(const std::string &msg, const std::function<void()> &cleanupFunc,
+                                  bool useTimer, int duration) {
+    auto msgPopup = std::make_shared<MsgPopup>(display_, msg);
+
+    msgPopup->setBackCallback([cleanupFunc]() { cleanupFunc(); });
+
+    pushScreen(msgPopup);
+
+    if (useTimer) {
+        msgPopup->startTimer(duration);
     }
 }
 
@@ -353,9 +369,9 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
             // turn on wifi or BLE to perform the content sync.
             if (this->prefs_.wifiDisabled.get().value_or(false) &&
                 this->prefs_.bleDisabled.get().value_or(false)) {
-                MsgPopup::showTemporaryMessage(display_,
-                                               "Enable WiFi or BLE to perform a Content Sync.",
-                                               2000, true, currentScreen());
+                showTemporaryMessage(
+                    "Enable WiFi or BLE to perform a Content Sync.",
+                    [this]() { this->popScreen(); }, true);
                 currentScreen()->setFirstLoad();
                 return;
             }
@@ -394,6 +410,7 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
     auto welcomeMenuFactory = [this, noContent, makeContentSyncMenuItem, &lightingController,
                                welcomeIndex, readables]() -> MenuItemSharedPtrVector {
         auto popAndSetIndexOrDone = [this, welcomeIndex]() {
+            auto temp = currentScreen();
             this->popScreen();
             setFirstLoad();
             int welcomeTabIndex = welcomeIndex();
@@ -403,10 +420,12 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
             } else {
                 this->prefs_.dontShowWelcome.set(true);
                 std::static_pointer_cast<NewMainMenuScreen>(currentScreen())->setCurrentTabIndex(1);
-                MsgPopup::showTemporaryMessage(display_, "Welcome Tab Complete!\nHappy Reading...",
-                                               2000, true, currentScreen());
+                showTemporaryMessage(
+                    "Welcome Tab Complete!\nHappy Reading...", [this]() { this->popScreen(); },
+                    true);
             }
         };
+
         auto menuItems = std::make_shared<MenuItemVector>();
 
         menuItems->emplace_back(std::make_shared<NewMenuItemCheckable>(
@@ -443,10 +462,16 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
         menuItems->emplace_back(std::make_shared<NewMenuItemCheckable>(
             "Text placement (2 min)",
             [this, popAndSetIndexOrDone]() {
+            auto doublePop = [this, popAndSetIndexOrDone]() {
+                // pop again out of this to head back to main menu
+                auto temp = currentScreen();
+                this->popScreen();
+                popAndSetIndexOrDone();
+            };
             auto textPlacementScreen = std::make_shared<TextPlacementWelcomeMenuScreen>(display_);
             textPlacementScreen->addMenuItem(
                 std::make_shared<NewMenuItemSingleLine>("Choose this template",
-                                                        [this, popAndSetIndexOrDone]() {
+                                                        [this, doublePop]() {
                 prefs_.seenTextPlacement.set(true);
                 switch (std::static_pointer_cast<TextPlacementWelcomeMenuScreen>(currentScreen())
                             ->getCurrentTextSelection()) {
@@ -458,9 +483,7 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                     prefs_.lineSpacing.set(0);
                     prefs_.font.set(PREFS_SOL_SMALL);
                     log_d("Setting prefs to Comfortable");
-                    MsgPopup::showTemporaryMessage(display_, "Comfortable text placement set");
-                    Delay(2000);
-                    popAndSetIndexOrDone();
+                    showTemporaryMessage("Comfortable text placement set", doublePop, true);
                     break;
                 case 1:
                     prefs_.textInsetLeft.set(25);
@@ -470,9 +493,7 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                     prefs_.font.set(PREFS_SOL_SMALL);
                     prefs_.lineSpacing.set(-2);
                     log_d("Setting prefs to Condensed");
-                    MsgPopup::showTemporaryMessage(display_, "Condensed text placement set");
-                    Delay(2000);
-                    popAndSetIndexOrDone();
+                    showTemporaryMessage("Condensed text placement set", doublePop, true);
                     break;
                 case 2:
                     prefs_.textInsetLeft.set(30);
@@ -482,9 +503,7 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                     prefs_.font.set(PREFS_SOL_MEDIUM);
                     prefs_.lineSpacing.set(0);
                     log_d("Setting prefs to Bottom");
-                    MsgPopup::showTemporaryMessage(display_, "Bottom text placement set");
-                    Delay(2000);
-                    popAndSetIndexOrDone();
+                    showTemporaryMessage("Bottom text placement set", doublePop, true);
                     break;
                 }
                 }));
@@ -931,9 +950,6 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                                     static_cast<int>(SortDirection::Ascending));
                                 localStore.saveReadables(localStore.articles());
                             }
-                            MsgPopup::showTemporaryMessage(display_, settingsRestartMsg_, 500,
-                                                           false, currentScreen());
-                            this->power_.reboot();
                         }));
                     sortMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
                         "Date added, most recent", [this, &localStore, modelType]() {
@@ -950,9 +966,6 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                                     static_cast<int>(SortDirection::Descending));
                                 localStore.saveReadables(localStore.articles());
                             }
-                            MsgPopup::showTemporaryMessage(display_, settingsRestartMsg_, 500,
-                                                           false, currentScreen());
-                            this->power_.reboot();
                         }));
                     sortMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
                         "Date added, least recent", [this, &localStore, modelType]() {
@@ -969,9 +982,6 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                                     static_cast<int>(SortDirection::Ascending));
                                 localStore.saveReadables(localStore.articles());
                             }
-                            MsgPopup::showTemporaryMessage(display_, settingsRestartMsg_, 500,
-                                                           false, currentScreen());
-                            this->power_.reboot();
                         }));
                     sortMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
                         "Last read, most recent", [this, &localStore, modelType]() {
@@ -988,9 +998,6 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                                     static_cast<int>(SortDirection::Descending));
                                 localStore.saveReadables(localStore.articles());
                             }
-                            MsgPopup::showTemporaryMessage(display_, settingsRestartMsg_, 500,
-                                                           false, currentScreen());
-                            this->power_.reboot();
                         }));
                     sortMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
                         "Last read, least recent", [this, &localStore, modelType]() {
@@ -1007,9 +1014,6 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                                     static_cast<int>(SortDirection::Ascending));
                                 localStore.saveReadables(localStore.articles());
                             }
-                            MsgPopup::showTemporaryMessage(display_, settingsRestartMsg_, 500,
-                                                           false, currentScreen());
-                            this->power_.reboot();
                         }));
                     sortMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
                         "Random", [this, &localStore, modelType]() {
@@ -1026,9 +1030,6 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                                     static_cast<int>(SortDirection::Ascending));
                                 localStore.saveReadables(localStore.articles());
                             }
-                            MsgPopup::showTemporaryMessage(display_, settingsRestartMsg_, 500,
-                                                           false, currentScreen());
-                            this->power_.reboot();
                         }));
                     int menuIndex = 0;
                     auto sortCriteria = modelType == ReadablesModelType::Book
@@ -1077,16 +1078,16 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                     !this->prefs_.forceShowWelcome.get().value_or(false)) {
                     this->prefs_.dontShowWelcome.set(false);
                     this->prefs_.forceShowWelcome.set(true);
-                    MsgPopup::showTemporaryMessage(display_,
-                                                   "Welcome Tab will be\nshown on next restart.",
-                                                   2000, true, currentScreen());
+                    showTemporaryMessage(
+                        "Welcome Tab will be\nshown on next restart.",
+                        [this]() { this->popScreen(); }, true);
 
                 } else {
                     this->prefs_.dontShowWelcome.set(true);
                     this->prefs_.forceShowWelcome.set(false);
-                    MsgPopup::showTemporaryMessage(display_,
-                                                   "Welcome Tab will be\nhidden on next restart.",
-                                                   2000, true, currentScreen());
+                    showTemporaryMessage(
+                        "Welcome Tab will be\nhidden on next restart.",
+                        [this]() { this->popScreen(); }, true);
                 }
                     },
                     [this]() -> bool {
@@ -1175,8 +1176,8 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                         // If wifi has been disabled, show a popup encouraging the user to
                         // turn on wifi to perform the firmware sync.
                         if (this->prefs_.wifiDisabled.get().value_or(false)) {
-                            MsgPopup::showTemporaryMessage(display_, turnOnWifiMsg, 2000, true,
-                                                           currentScreen());
+                            showTemporaryMessage(
+                                turnOnWifiMsg, [this]() { this->popScreen(); }, true);
                             currentScreen()->setFirstLoad();
                             return;
                         }
@@ -1292,8 +1293,8 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                     if (std::static_pointer_cast<InactivitySettingMenuScreen>(currentScreen())
                             ->getRequireRestart()) {
                         PreferencesStore::settingsOnRestart = true;
-                        MsgPopup::showTemporaryMessage(display_, settingsRestartMsg_, 1500, false,
-                                                       currentScreen());
+                        showTemporaryMessage(
+                            settingsRestartMsg_, [this]() { power_.reboot(); }, true);
                         this->power_.reboot();
                     } else {
                         this->popScreen(false);
@@ -1305,9 +1306,8 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                     "Clear Content and Restart", [this, &localStore]() {
                         localStore.deleteReadables(false);
                         localStore.deleteArticles(false);
-                        MsgPopup::showTemporaryMessage(display_, "Content cleared. Restarting...",
-                                                       2000, false, currentScreen());
-                        power_.reboot();
+                        showTemporaryMessage(
+                            "Content cleared. Restarting...", [this]() { power_.reboot(); }, true);
                     }));
 
                 systemSettingsMenu->addMenuItem(
@@ -1330,8 +1330,8 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                         log_w("WiFi settings cleared.");
                         std::static_pointer_cast<WiFiSettingsMenuScreen>(currentScreen())
                             ->loadWifiSettings();
-                        MsgPopup::showTemporaryMessage(display_, "WiFi settings cleared.", 2000,
-                                                       true, currentScreen());
+                        showTemporaryMessage(
+                            "WiFi settings cleared.", [this]() { this->popScreen(); }, true);
                         currentScreen()->setFirstLoad();
                     }));
 
@@ -1373,13 +1373,13 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                             std::make_shared<LineMenuScreen>(this->prefs_, this->display_);
                         lineMenuScreen->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
                             "Cancel", [this]() { this->popScreen(); }));
-                        lineMenuScreen->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
-                            "Factory Defaults: I'm sure!", [this, &fileSystem]() {
-                                SoftFactoryReset(fileSystem);
-                                log_w("NVS and FS cleared. Restarting...");
-                                MsgPopup::showTemporaryMessage(
-                                    this->display_, "Resetting Device! Restarting...", 2000);
-                                power_.reboot();
+                        lineMenuScreen->addMenuItem(
+                            std::make_shared<NewMenuItemSingleLine>("Factory Defaults: I'm sure!",
+                                                                    [this, &fileSystem]() {
+                    SoftFactoryReset(fileSystem);
+                    log_w("NVS and FS cleared. Restarting...");
+                    showTemporaryMessage(
+                        "Resetting Device! Restarting...", [this]() { power_.reboot(); }, true);
                             }));
                         pushScreen(lineMenuScreen);
                         setNeedsRerender();
@@ -1439,10 +1439,9 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                         prefs_.lastPageTurnerBuild.remove();
                         PreferencesStore::lastPageTurnerBattery = 0;
                         log_w("Unpaired PageTurner. Restarting...");
-                        MsgPopup::showTemporaryMessage(display_,
-                                                       "Unpaired PageTurner! Resetting...", 2000,
-                                                       false, currentScreen());
-                        power_.reboot();
+                        showTemporaryMessage(
+                            "Unpaired PageTurner! Resetting...", [this]() { power_.reboot(); },
+                            true);
                     }));
 #endif
 
@@ -1458,9 +1457,8 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                         std::make_shared<NewMenuItemSingleLine>("Turn on Demo Mode", [this]() {
                             log_d("Demo On!");
                             prefs_.cesMode.set(true);
-                            MsgPopup::showTemporaryMessage(display_, "Demo mode on! Resetting...",
-                                                           2000, false, currentScreen());
-                            power_.reboot();
+                            showTemporaryMessage(
+                                "Demo mode on! Resetting...", [this]() { power_.reboot(); }, true);
                         }));
                 }
 
@@ -1468,46 +1466,41 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                     std::make_shared<NewMenuItemSingleLine>("Reset Preferences", [this]() {
                         prefs_.clear();
                         log_w("Preferences cleared. Restarting...");
-                        MsgPopup::showTemporaryMessage(display_,
-                                                       "Preferences cleared. Restarting...", 2000,
-                                                       false, currentScreen());
-                        power_.reboot();
+                        showTemporaryMessage(
+                            "Preferences cleared. Restarting...", [this]() { power_.reboot(); },
+                            true);
                     }));
 
                 if (prefs_.allowUsageWhileCharging.get().value_or(false)) {
-                    debugSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
-                        "Disable use while charging", [this]() {
-                            prefs_.allowUsageWhileCharging.remove();
-                            MsgPopup::showTemporaryMessage(display_,
-                                                           "Disabling use while charging...", 500,
-                                                           false, currentScreen());
-                            power_.reboot();
+                    debugSettingsMenu->addMenuItem(
+                        std::make_shared<NewMenuItemSingleLine>("Disable use while charging",
+                                                                [this]() {
+                        prefs_.allowUsageWhileCharging.remove();
+                        showTemporaryMessage(
+                            "Disabling use while charging...", [this]() { power_.reboot(); }, true);
                         }));
                 } else {
-                    debugSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
-                        "Enable use while charging", [this]() {
-                            prefs_.allowUsageWhileCharging.set(true);
-                            MsgPopup::showTemporaryMessage(display_,
-                                                           "Enabling use while charging...", 500,
-                                                           false, currentScreen());
-                            power_.reboot();
+                    debugSettingsMenu->addMenuItem(
+                        std::make_shared<NewMenuItemSingleLine>("Enable use while charging",
+                                                                [this]() {
+                        prefs_.allowUsageWhileCharging.set(true);
+                        showTemporaryMessage(
+                            "Enabling use while charging...", [this]() { power_.reboot(); }, true);
                         }));
                 }
 
                 debugSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
                     "Clear Books and Restart", [this, &localStore]() {
                         localStore.deleteReadables();
-                        MsgPopup::showTemporaryMessage(display_, "Books reset.");
-                        Delay(1500);
-                        power_.reboot();
+                        showTemporaryMessage(
+                            "Books reset.", [this]() { power_.reboot(); }, true);
                     }));
 
                 debugSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
                     "Clear Articles and Restart", [this, &localStore]() {
                         localStore.deleteArticles();
-                        MsgPopup::showTemporaryMessage(display_, "Articles reset.");
-                        Delay(1500);
-                        power_.reboot();
+                        showTemporaryMessage(
+                            "Articles reset.", [this]() { power_.reboot(); }, true);
                     }));
 
                 debugSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
@@ -1518,9 +1511,8 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                             log_i("Removing %s", file.c_str());
                             fileSystem.remove(StringFormat("%s%s", "/coredumps/", file.c_str()));
                         }
-                        MsgPopup::showTemporaryMessage(display_, "Crash Reports cleared.");
-                        Delay(1500);
-                        power_.reboot();
+                        showTemporaryMessage(
+                            "Crash Reports cleared.", [this]() { power_.reboot(); }, true);
                     }));
                 debugSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
                     "File System Browser", [this, &fileSystem]() {
@@ -1565,18 +1557,16 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                         std::make_shared<NewMenuItemSingleLine>("Turn on EMC Mode", [this]() {
                             log_d("EMC On!");
                             prefs_.emcMode.set(true);
-                            MsgPopup::showTemporaryMessage(display_, "EMC mode on! Resetting...",
-                                                           2000, false, currentScreen());
-                            power_.reboot();
+                            showTemporaryMessage(
+                                "EMC mode on! Resetting...", [this]() { power_.reboot(); }, true);
                         }));
 
                     debugSettingsMenu->addMenuItem(
                         std::make_shared<NewMenuItemSingleLine>("Turn off EMC Mode", [this]() {
                             log_d("EMC Off!");
                             prefs_.emcMode.remove();
-                            MsgPopup::showTemporaryMessage(display_, "EMC mode off! Resetting...",
-                                                           2000, false, currentScreen());
-                            power_.reboot();
+                            showTemporaryMessage(
+                                "EMC mode off! Resetting...", [this]() { power_.reboot(); }, true);
                         }));
                 }
 /*
@@ -1675,9 +1665,8 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
 
                         auto confirmMessage = [this](wifi_power_t power) {
                             this->prefs_.wifiPower.set(power);
-                            MsgPopup::showTemporaryMessage(display_, "Power set", 200, false,
-                                                           currentScreen());
-                            currentScreen()->back();
+                            showTemporaryMessage(
+                                "Power set", [this]() { popScreen(); }, true);
                         };
 
                         wifiPowerMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
@@ -1766,10 +1755,9 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                                   esp_err_to_name(err));
                         }
                         prefs_.blePower.set(power);
-                        MsgPopup::showTemporaryMessage(
-                            display_, StringFormat("Power set to %s", powerToString(power).c_str()),
-                            200, false, currentScreen());
-                        currentScreen()->back();
+                        showTemporaryMessage(
+                            StringFormat("Power set to %s", powerToString(power).c_str()),
+                            [this]() { popScreen(); }, true);
                     };
                     for (const auto &powerItem : blePowerOptions) {
                         blePowerMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
@@ -1808,19 +1796,20 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                 debugSettingsMenu->addMenuItem(
                     std::make_shared<NewMenuItemSingleLine>("Format FS", [this, &fileSystem]() {
                         log_w("Formatting...");
-                        MsgPopup::showTemporaryMessage(
-                            display_, "Formatting, this will take several minutes.", 2000, false,
-                            currentScreen());
+                        showTemporaryMessage(
+                            "Formatting, this will take several minutes.",
+                            [this, &fileSystem]() {
                         fileSystem.format();
                         power_.reboot();
+                            },
+                            true);
                     }));
 
                 debugSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>("Power Off",
                                                                                        [this]() {
                     log_w("Powering off.");
-                    MsgPopup::showTemporaryMessage(display_, "Powering off.", 2000, false,
-                                                   currentScreen());
-                    power_.powerOff();
+                    showTemporaryMessage(
+                        "Powering off.", [this]() { power_.powerOff(); }, true);
                 }));
 
                 debugSettingsMenu->setFirstLoad();
