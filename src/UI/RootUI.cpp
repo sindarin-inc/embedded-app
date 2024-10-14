@@ -142,16 +142,11 @@ void RootUI::clearNeedsRerender() {
 
 // second parameter is a function that should be called in cleanup
 void RootUI::showTemporaryMessage(const std::string &msg, const std::function<void()> &cleanupFunc,
-                                  bool useTimer, int duration) {
+                                  int duration) {
     auto msgPopup = std::make_shared<MsgPopup>(display_, msg);
-
     msgPopup->setBackCallback([cleanupFunc]() { cleanupFunc(); });
-
     pushScreen(msgPopup);
-
-    if (useTimer) {
-        msgPopup->startTimer(duration);
-    }
+    msgPopup->startTimer(duration);
 }
 
 // NOLINTNEXTLINE(readability-function-size): It's big, I know
@@ -369,9 +364,8 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
             // turn on wifi or BLE to perform the content sync.
             if (this->prefs_.wifiDisabled.get().value_or(false) &&
                 this->prefs_.bleDisabled.get().value_or(false)) {
-                showTemporaryMessage(
-                    "Enable WiFi or BLE to perform a Content Sync.",
-                    [this]() { this->popScreen(); }, true);
+                showTemporaryMessage("Enable WiFi or BLE to perform a Content Sync.",
+                                     [this]() { this->popScreen(); });
                 currentScreen()->setFirstLoad();
                 return;
             }
@@ -420,9 +414,8 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
             } else {
                 this->prefs_.dontShowWelcome.set(true);
                 std::static_pointer_cast<NewMainMenuScreen>(currentScreen())->setCurrentTabIndex(1);
-                showTemporaryMessage(
-                    "Welcome Tab Complete!\nHappy Reading...", [this]() { this->popScreen(); },
-                    true);
+                showTemporaryMessage("Welcome Tab Complete!\nHappy  ...",
+                                     [this]() { this->popScreen(); });
             }
         };
 
@@ -483,7 +476,7 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                     prefs_.lineSpacing.set(0);
                     prefs_.font.set(PREFS_SOL_SMALL);
                     log_d("Setting prefs to Comfortable");
-                    showTemporaryMessage("Comfortable text placement set", doublePop, true);
+                    showTemporaryMessage("Comfortable text placement set", doublePop);
                     break;
                 case 1:
                     prefs_.textInsetLeft.set(25);
@@ -493,7 +486,7 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                     prefs_.font.set(PREFS_SOL_SMALL);
                     prefs_.lineSpacing.set(-2);
                     log_d("Setting prefs to Condensed");
-                    showTemporaryMessage("Condensed text placement set", doublePop, true);
+                    showTemporaryMessage("Condensed text placement set", doublePop);
                     break;
                 case 2:
                     prefs_.textInsetLeft.set(30);
@@ -503,7 +496,7 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                     prefs_.font.set(PREFS_SOL_MEDIUM);
                     prefs_.lineSpacing.set(0);
                     log_d("Setting prefs to Bottom");
-                    showTemporaryMessage("Bottom text placement set", doublePop, true);
+                    showTemporaryMessage("Bottom text placement set", doublePop);
                     break;
                 }
                 }));
@@ -704,18 +697,18 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
         if (!(prefs_.tutorialsDeleted.get().value_or(0) & TUTORIAL_SCREEN_ARTICLES)) {
             menuItems->emplace_back(std::make_shared<NewMenuItemSingleLine>(
                 "\ue000 Articles Tutorial", [this, createTutorialScreen]() {
-                    SpiramString message =
-                        SpiRamStringFormat("Welcome to the Articles menu. This tab "
-                                           "shows you the articles currently synced to your Sol "
-                                           "Reader. To add more articles, "
-                                           "simply connect your Pocket account in the Sol app "
-                                           "or forward newsletters "
-                                           "from your inbox to add@solreader.com.\n\n"
-                                           "Did you know "
-                                           "you can change the sort order of your articles? "
-                                           "Simply go to Settings -> Content -> Article Sort Order."
-                                           "\n\n\nPress \ue000 (center) to "
-                                           "continue.\n");
+                    SpiramString message = SpiRamStringFormat(
+                        "Welcome to the Articles menu. This tab "
+                        "shows you the articles currently synced to your Sol "
+                        "Reader. To add more articles, "
+                        "simply connect your Pocket account in the Sol app "
+                        "or forward newsletters "
+                        "from your inbox to add@solreader.com.\n\n"
+                        "Did you know "
+                        "you can change the sort order of your articles? "
+                        "Simply go to Settings -> Content Management -> Article Sort Order."
+                        "\n\n\nPress \ue000 (center) to "
+                        "continue.\n");
                     auto tutorialScreen = createTutorialScreen(message, TUTORIAL_SCREEN_ARTICLES);
                     this->pushScreen(tutorialScreen);
                 }));
@@ -795,7 +788,7 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                                 &lightingController]() -> MenuItemSharedPtrVector {
         auto menuItems = std::make_shared<MenuItemVector>();
 
-        menuItems->emplace_back(std::make_shared<NewMenuItemSingleLine>("Reading", [this]() {
+        menuItems->emplace_back(std::make_shared<NewMenuItemSingleLine>("Reading Style", [this]() {
             log_d("Loading Reading Settings Menu");
 
             auto readingSettingsMenu =
@@ -813,8 +806,8 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
 
             readingSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>("Text Size",
                                                                                      [this]() {
-                auto fontMenu = std::make_shared<ReadingSettingsMenuScreen>(
-                    display_, "Reading Settings", prefs_);
+                auto fontMenu =
+                    std::make_shared<ReadingSettingsMenuScreen>(display_, "Reading Style", prefs_);
                 fontMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>("Small", [this]() {
                     display_.clearDisplay();
                     prefs_.font.set(PREFS_SOL_SMALL);
@@ -922,7 +915,7 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
         }));
 
         menuItems->emplace_back(std::make_shared<NewMenuItemSingleLine>(
-            "Content", [this, &localStore, makeContentSyncMenuItem]() {
+            "Content Management", [this, &localStore, makeContentSyncMenuItem]() {
                 log_d("Loading Reading Settings Menu");
 
                 auto contentSettingsMenu =
@@ -934,103 +927,205 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                                                               : "Article Sort Order",
                         [this, &localStore, modelType]() {
                     auto sortMenu =
-                        std::make_shared<GenericSettingsMenuScreen>(display_, "Content Settings");
-                    sortMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
-                        "Alphabetical", [this, &localStore, modelType]() {
-                            if (modelType == ReadablesModelType::Book) {
-                                this->prefs_.bookSortCriteria.set(
-                                    static_cast<int>(SortCriteria::Alphabetical));
-                                this->prefs_.bookSortDirection.set(
-                                    static_cast<int>(SortDirection::Ascending));
-                                localStore.saveReadables(localStore.books());
-                            } else if (modelType == ReadablesModelType::Article) {
-                                this->prefs_.articleSortCriteria.set(
-                                    static_cast<int>(SortCriteria::Alphabetical));
-                                this->prefs_.articleSortDirection.set(
-                                    static_cast<int>(SortDirection::Ascending));
-                                localStore.saveReadables(localStore.articles());
-                            }
-                        }));
-                    sortMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
-                        "Date added, most recent", [this, &localStore, modelType]() {
-                            if (modelType == ReadablesModelType::Book) {
-                                this->prefs_.bookSortCriteria.set(
-                                    static_cast<int>(SortCriteria::DateModified));
-                                this->prefs_.bookSortDirection.set(
-                                    static_cast<int>(SortDirection::Descending));
-                                localStore.saveReadables(localStore.books());
-                            } else if (modelType == ReadablesModelType::Article) {
-                                this->prefs_.articleSortCriteria.set(
-                                    static_cast<int>(SortCriteria::DateModified));
-                                this->prefs_.articleSortDirection.set(
-                                    static_cast<int>(SortDirection::Descending));
-                                localStore.saveReadables(localStore.articles());
-                            }
-                        }));
-                    sortMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
-                        "Date added, least recent", [this, &localStore, modelType]() {
-                            if (modelType == ReadablesModelType::Book) {
-                                this->prefs_.bookSortCriteria.set(
-                                    static_cast<int>(SortCriteria::DateModified));
-                                this->prefs_.bookSortDirection.set(
-                                    static_cast<int>(SortDirection::Ascending));
-                                localStore.saveReadables(localStore.books());
-                            } else if (modelType == ReadablesModelType::Article) {
-                                this->prefs_.articleSortCriteria.set(
-                                    static_cast<int>(SortCriteria::DateModified));
-                                this->prefs_.articleSortDirection.set(
-                                    static_cast<int>(SortDirection::Ascending));
-                                localStore.saveReadables(localStore.articles());
-                            }
-                        }));
-                    sortMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
-                        "Last read, most recent", [this, &localStore, modelType]() {
-                            if (modelType == ReadablesModelType::Book) {
-                                this->prefs_.bookSortCriteria.set(
-                                    static_cast<int>(SortCriteria::LastRead));
-                                this->prefs_.bookSortDirection.set(
-                                    static_cast<int>(SortDirection::Descending));
-                                localStore.saveReadables(localStore.books());
-                            } else if (modelType == ReadablesModelType::Article) {
-                                this->prefs_.articleSortCriteria.set(
-                                    static_cast<int>(SortCriteria::LastRead));
-                                this->prefs_.articleSortDirection.set(
-                                    static_cast<int>(SortDirection::Descending));
-                                localStore.saveReadables(localStore.articles());
-                            }
-                        }));
-                    sortMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
-                        "Last read, least recent", [this, &localStore, modelType]() {
-                            if (modelType == ReadablesModelType::Book) {
-                                this->prefs_.bookSortCriteria.set(
-                                    static_cast<int>(SortCriteria::LastRead));
-                                this->prefs_.bookSortDirection.set(
-                                    static_cast<int>(SortDirection::Ascending));
-                                localStore.saveReadables(localStore.books());
-                            } else if (modelType == ReadablesModelType::Article) {
-                                this->prefs_.articleSortCriteria.set(
-                                    static_cast<int>(SortCriteria::LastRead));
-                                this->prefs_.articleSortDirection.set(
-                                    static_cast<int>(SortDirection::Ascending));
-                                localStore.saveReadables(localStore.articles());
-                            }
-                        }));
-                    sortMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
-                        "Random", [this, &localStore, modelType]() {
-                            if (modelType == ReadablesModelType::Book) {
-                                this->prefs_.bookSortCriteria.set(
-                                    static_cast<int>(SortCriteria::Random));
-                                this->prefs_.bookSortDirection.set(
-                                    static_cast<int>(SortDirection::Ascending));
-                                localStore.saveReadables(localStore.books());
-                            } else if (modelType == ReadablesModelType::Article) {
-                                this->prefs_.articleSortCriteria.set(
-                                    static_cast<int>(SortCriteria::Random));
-                                this->prefs_.articleSortDirection.set(
-                                    static_cast<int>(SortDirection::Ascending));
-                                localStore.saveReadables(localStore.articles());
-                            }
-                        }));
+                        std::make_shared<GenericSettingsMenuScreen>(display_, "Content Management");
+                    sortMenu->addMenuItem(std::make_shared<NewMenuItemCheckable>(
+                        "Alphabetical",
+                        [this, &localStore, modelType]() {
+                        if (modelType == ReadablesModelType::Book) {
+                            this->prefs_.bookSortCriteria.set(
+                                static_cast<int>(SortCriteria::Alphabetical));
+                            this->prefs_.bookSortDirection.set(
+                                static_cast<int>(SortDirection::Ascending));
+                            localStore.saveReadables(localStore.books());
+                        } else if (modelType == ReadablesModelType::Article) {
+                            this->prefs_.articleSortCriteria.set(
+                                static_cast<int>(SortCriteria::Alphabetical));
+                            this->prefs_.articleSortDirection.set(
+                                static_cast<int>(SortDirection::Ascending));
+                            localStore.saveReadables(localStore.articles());
+                        }
+                        currentScreen()->setNeedsRerender();
+                        },
+                        [this, modelType]() {
+                        if (modelType == ReadablesModelType::Book) {
+                            return (this->prefs_.bookSortCriteria.get().value_or(0) ==
+                                        static_cast<int>(SortCriteria::Alphabetical) &&
+                                    this->prefs_.bookSortDirection.get().value_or(0) ==
+                                        static_cast<int>(SortDirection::Ascending));
+                        } else if (modelType == ReadablesModelType::Article) {
+
+                            return (this->prefs_.articleSortCriteria.get().value_or(0) ==
+                                        static_cast<int>(SortCriteria::Alphabetical) &&
+                                    this->prefs_.articleSortDirection.get().value_or(0) ==
+                                        static_cast<int>(SortDirection::Ascending));
+                        }
+                        return false;
+                    }));
+                    sortMenu->addMenuItem(std::make_shared<NewMenuItemCheckable>(
+                        "Date added, most recent",
+                        [this, &localStore, modelType]() {
+                        if (modelType == ReadablesModelType::Book) {
+                            this->prefs_.bookSortCriteria.set(
+                                static_cast<int>(SortCriteria::DateModified));
+                            this->prefs_.bookSortDirection.set(
+                                static_cast<int>(SortDirection::Descending));
+                            localStore.saveReadables(localStore.books());
+                        } else if (modelType == ReadablesModelType::Article) {
+                            this->prefs_.articleSortCriteria.set(
+                                static_cast<int>(SortCriteria::DateModified));
+                            this->prefs_.articleSortDirection.set(
+                                static_cast<int>(SortDirection::Descending));
+                            localStore.saveReadables(localStore.articles());
+                        }
+                        currentScreen()->setNeedsRerender();
+                        },
+                        [this, modelType]() {
+                        if (modelType == ReadablesModelType::Book) {
+                            return (this->prefs_.bookSortCriteria.get().value_or(0) ==
+                                        static_cast<int>(SortCriteria::DateModified) &&
+                                    this->prefs_.bookSortDirection.get().value_or(0) ==
+                                        static_cast<int>(SortDirection::Descending));
+                        } else if (modelType == ReadablesModelType::Article) {
+
+                            return (this->prefs_.articleSortCriteria.get().value_or(0) ==
+                                        static_cast<int>(SortCriteria::DateModified) &&
+                                    this->prefs_.articleSortDirection.get().value_or(0) ==
+                                        static_cast<int>(SortDirection::Descending));
+                        }
+                        return false;
+                    }));
+                    sortMenu->addMenuItem(std::make_shared<NewMenuItemCheckable>(
+                        "Date added, least recent",
+                        [this, &localStore, modelType]() {
+                        if (modelType == ReadablesModelType::Book) {
+                            this->prefs_.bookSortCriteria.set(
+                                static_cast<int>(SortCriteria::DateModified));
+                            this->prefs_.bookSortDirection.set(
+                                static_cast<int>(SortDirection::Ascending));
+                            localStore.saveReadables(localStore.books());
+                        } else if (modelType == ReadablesModelType::Article) {
+                            this->prefs_.articleSortCriteria.set(
+                                static_cast<int>(SortCriteria::DateModified));
+                            this->prefs_.articleSortDirection.set(
+                                static_cast<int>(SortDirection::Ascending));
+                            localStore.saveReadables(localStore.articles());
+                        }
+                        currentScreen()->setNeedsRerender();
+                        },
+                        [this, modelType]() {
+                        if (modelType == ReadablesModelType::Book) {
+                            return (this->prefs_.bookSortCriteria.get().value_or(0) ==
+                                        static_cast<int>(SortCriteria::DateModified) &&
+                                    this->prefs_.bookSortDirection.get().value_or(0) ==
+                                        static_cast<int>(SortDirection::Ascending));
+                        } else if (modelType == ReadablesModelType::Article) {
+
+                            return (this->prefs_.articleSortCriteria.get().value_or(0) ==
+                                        static_cast<int>(SortCriteria::DateModified) &&
+                                    this->prefs_.articleSortDirection.get().value_or(0) ==
+                                        static_cast<int>(SortDirection::Ascending));
+                        }
+                        return false;
+                    }));
+                    sortMenu->addMenuItem(std::make_shared<NewMenuItemCheckable>(
+                        "Last read, most recent",
+                        [this, &localStore, modelType]() {
+                        if (modelType == ReadablesModelType::Book) {
+                            this->prefs_.bookSortCriteria.set(
+                                static_cast<int>(SortCriteria::LastRead));
+                            this->prefs_.bookSortDirection.set(
+                                static_cast<int>(SortDirection::Descending));
+                            localStore.saveReadables(localStore.books());
+                        } else if (modelType == ReadablesModelType::Article) {
+                            this->prefs_.articleSortCriteria.set(
+                                static_cast<int>(SortCriteria::LastRead));
+                            this->prefs_.articleSortDirection.set(
+                                static_cast<int>(SortDirection::Descending));
+                            localStore.saveReadables(localStore.articles());
+                        }
+                        currentScreen()->setNeedsRerender();
+                        },
+                        [this, modelType]() {
+                        if (modelType == ReadablesModelType::Book) {
+                            return (this->prefs_.bookSortCriteria.get().value_or(0) ==
+                                        static_cast<int>(SortCriteria::LastRead) &&
+                                    this->prefs_.bookSortDirection.get().value_or(0) ==
+                                        static_cast<int>(SortDirection::Descending));
+                        } else if (modelType == ReadablesModelType::Article) {
+
+                            return (this->prefs_.articleSortCriteria.get().value_or(0) ==
+                                        static_cast<int>(SortCriteria::LastRead) &&
+                                    this->prefs_.articleSortDirection.get().value_or(0) ==
+                                        static_cast<int>(SortDirection::Descending));
+                        }
+                        return false;
+                    }));
+                    sortMenu->addMenuItem(std::make_shared<NewMenuItemCheckable>(
+                        "Last read, least recent",
+                        [this, &localStore, modelType]() {
+                        if (modelType == ReadablesModelType::Book) {
+                            this->prefs_.bookSortCriteria.set(
+                                static_cast<int>(SortCriteria::LastRead));
+                            this->prefs_.bookSortDirection.set(
+                                static_cast<int>(SortDirection::Ascending));
+                            localStore.saveReadables(localStore.books());
+                        } else if (modelType == ReadablesModelType::Article) {
+                            this->prefs_.articleSortCriteria.set(
+                                static_cast<int>(SortCriteria::LastRead));
+                            this->prefs_.articleSortDirection.set(
+                                static_cast<int>(SortDirection::Ascending));
+                            localStore.saveReadables(localStore.articles());
+                        }
+                        currentScreen()->setNeedsRerender();
+                        },
+                        [this, modelType]() {
+                        if (modelType == ReadablesModelType::Book) {
+                            return (this->prefs_.bookSortCriteria.get().value_or(0) ==
+                                        static_cast<int>(SortCriteria::LastRead) &&
+                                    this->prefs_.bookSortDirection.get().value_or(0) ==
+                                        static_cast<int>(SortDirection::Ascending));
+                        } else if (modelType == ReadablesModelType::Article) {
+
+                            return (this->prefs_.articleSortCriteria.get().value_or(0) ==
+                                        static_cast<int>(SortCriteria::LastRead) &&
+                                    this->prefs_.articleSortDirection.get().value_or(0) ==
+                                        static_cast<int>(SortDirection::Ascending));
+                        }
+                        return false;
+                    }));
+                    sortMenu->addMenuItem(std::make_shared<NewMenuItemCheckable>(
+                        "Random",
+                        [this, &localStore, modelType]() {
+                        if (modelType == ReadablesModelType::Book) {
+                            this->prefs_.bookSortCriteria.set(
+                                static_cast<int>(SortCriteria::Random));
+                            this->prefs_.bookSortDirection.set(
+                                static_cast<int>(SortDirection::Ascending));
+                            localStore.saveReadables(localStore.books());
+                        } else if (modelType == ReadablesModelType::Article) {
+                            this->prefs_.articleSortCriteria.set(
+                                static_cast<int>(SortCriteria::Random));
+                            this->prefs_.articleSortDirection.set(
+                                static_cast<int>(SortDirection::Ascending));
+                            localStore.saveReadables(localStore.articles());
+                        }
+                        currentScreen()->setNeedsRerender();
+                        },
+                        [this, modelType]() {
+                        if (modelType == ReadablesModelType::Book) {
+                            return (this->prefs_.bookSortCriteria.get().value_or(0) ==
+                                        static_cast<int>(SortCriteria::Random) &&
+                                    this->prefs_.bookSortDirection.get().value_or(0) ==
+                                        static_cast<int>(SortDirection::Ascending));
+                        } else if (modelType == ReadablesModelType::Article) {
+
+                            return (this->prefs_.articleSortCriteria.get().value_or(0) ==
+                                        static_cast<int>(SortCriteria::Random) &&
+                                    this->prefs_.articleSortDirection.get().value_or(0) ==
+                                        static_cast<int>(SortDirection::Ascending));
+                        }
+                        return false;
+                    }));
                     int menuIndex = 0;
                     auto sortCriteria = modelType == ReadablesModelType::Book
                                             ? this->prefs_.bookSortCriteria
@@ -1078,16 +1173,14 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                     !this->prefs_.forceShowWelcome.get().value_or(false)) {
                     this->prefs_.dontShowWelcome.set(false);
                     this->prefs_.forceShowWelcome.set(true);
-                    showTemporaryMessage(
-                        "Welcome Tab will be\nshown on next restart.",
-                        [this]() { this->popScreen(); }, true);
+                    showTemporaryMessage("Welcome Tab will be\nshown on next restart.",
+                                         [this]() { this->popScreen(); });
 
                 } else {
                     this->prefs_.dontShowWelcome.set(true);
                     this->prefs_.forceShowWelcome.set(false);
-                    showTemporaryMessage(
-                        "Welcome Tab will be\nhidden on next restart.",
-                        [this]() { this->popScreen(); }, true);
+                    showTemporaryMessage("Welcome Tab will be\nhidden on next restart.",
+                                         [this]() { this->popScreen(); });
                 }
                     },
                     [this]() -> bool {
@@ -1115,6 +1208,87 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                 contentSettingsMenu->setFirstLoad();
                 this->pushScreen(contentSettingsMenu);
             }));
+
+        menuItems->emplace_back(std::make_shared<NewMenuItemSingleLine>("Experimental Features",
+                                                                        [this]() {
+            log_d("Loading Experimental Settings Menu");
+            auto experimentalSettingsMenu =
+                std::make_shared<GenericSettingsMenuScreen>(display_, "Main Menu");
+
+            experimentalSettingsMenu->setBackCallback([this]() { this->popScreen(); });
+
+            experimentalSettingsMenu->addMenuItem(std::make_shared<NewMenuItemCheckable>(
+                "Show Partial Summary",
+                [this]() {
+                if (!prefs_.seenPartialSummaryOverview.get().value_or(false)) {
+                    std::string message =
+                        "You know how when you binge watch a show (you'd never do that, would "
+                        "you?), you often will get a \"Previously on\" overview "
+                        "at the beginning of each episode? This feature gives you \"Previously "
+                        "on\" "
+                        "but for your reading! Any time you leave a reading "
+                        "session in the middle of a chapter, we'll generate a partial chapter "
+                        "summary for you (no spoilers) to "
+                        "review on your next reading session.\n\n\n"
+                        "Press any button to continue...";
+                    auto msgPopup = std::make_shared<MsgPopup>(display_, message);
+                    msgPopup->setBackCallback([this]() { this->popScreen(); });
+                    pushScreen(msgPopup);
+                    prefs_.seenPartialSummaryOverview.set(true);
+                } else {
+                    this->prefs_.noShowPartialChapterSummary.set(
+                        !this->prefs_.noShowPartialChapterSummary.get().value_or(false));
+                    currentScreen()->setNeedsRerender();
+                }
+                },
+                [this]() -> bool {
+                    return !this->prefs_.noShowPartialChapterSummary.get().value_or(false);
+                }));
+
+            experimentalSettingsMenu->addMenuItem(std::make_shared<NewMenuItemCheckable>(
+                "Fast Page Transitions",
+                [this]() {
+                if (!prefs_.seenFastPageTransitionsOverview.get().value_or(false)) {
+                    std::string message =
+                        "Have you noticed on some screen transitions, the Eink "
+                        "displays of your Sol Reader flash black and then white? "
+                        "This is called a full refresh. By default, all page "
+                        "turns use full refresh. "
+                        "The Fast Page Transitions "
+                        "option speeds up your page turns "
+                        "by only doing a full refresh when needed to ensure the display doesn't "
+                        "have too many remnants of previous pages.\n\n"
+                        "Press any button to continue...";
+                    auto msgPopup = std::make_shared<MsgPopup>(display_, message);
+                    msgPopup->setBackCallback([this]() { this->popScreen(); });
+                    pushScreen(msgPopup);
+                    prefs_.seenFastPageTransitionsOverview.set(true);
+                } else {
+                    this->prefs_.fastTransitions.set(
+                        !this->prefs_.fastTransitions.get().value_or(false));
+                    currentScreen()->setNeedsRerender();
+                }
+                },
+                [this]() -> bool { return this->prefs_.fastTransitions.get().value_or(false); }));
+
+            experimentalSettingsMenu->setFirstLoad();
+            pushScreen(experimentalSettingsMenu);
+            if (!prefs_.seenExperimentalOverview.get().value_or(false)) {
+                std::string message =
+                    "Welcome to our Experimental Features! These are new features to make your "
+                    "reading experience even more next level. \n\n"
+                    "Have an idea for a new feature? Drop us a line at hello@solreader.com or "
+                    "message us "
+                    "in the "
+                    "Support section of the Reader tab in your Sol app.\n\n"
+                    "Press any button to continue...";
+                auto msgPopup = std::make_shared<MsgPopup>(display_, message);
+                // Leaky leaky
+                msgPopup->setBackCallback([this]() { this->popScreen(); });
+                pushScreen(msgPopup);
+                prefs_.seenExperimentalOverview.set(true);
+            }
+        }));
 
         menuItems->emplace_back(std::make_shared<NewMenuItemSingleLine>(
             "System", [this, &lightingController, &localStore, &fileSystem]() {
@@ -1176,8 +1350,7 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                         // If wifi has been disabled, show a popup encouraging the user to
                         // turn on wifi to perform the firmware sync.
                         if (this->prefs_.wifiDisabled.get().value_or(false)) {
-                            showTemporaryMessage(
-                                turnOnWifiMsg, [this]() { this->popScreen(); }, true);
+                            showTemporaryMessage(turnOnWifiMsg, [this]() { this->popScreen(); });
                             currentScreen()->setFirstLoad();
                             return;
                         }
@@ -1293,8 +1466,7 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                     if (std::static_pointer_cast<InactivitySettingMenuScreen>(currentScreen())
                             ->getRequireRestart()) {
                         PreferencesStore::settingsOnRestart = true;
-                        showTemporaryMessage(
-                            settingsRestartMsg_, [this]() { power_.reboot(); }, true);
+                        showTemporaryMessage(settingsRestartMsg_, [this]() { power_.reboot(); });
                         this->power_.reboot();
                     } else {
                         this->popScreen(false);
@@ -1306,8 +1478,8 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                     "Clear Content and Restart", [this, &localStore]() {
                         localStore.deleteReadables(false);
                         localStore.deleteArticles(false);
-                        showTemporaryMessage(
-                            "Content cleared. Restarting...", [this]() { power_.reboot(); }, true);
+                        showTemporaryMessage("Content cleared. Restarting...",
+                                             [this]() { power_.reboot(); });
                     }));
 
                 systemSettingsMenu->addMenuItem(
@@ -1330,8 +1502,8 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                         log_w("WiFi settings cleared.");
                         std::static_pointer_cast<WiFiSettingsMenuScreen>(currentScreen())
                             ->loadWifiSettings();
-                        showTemporaryMessage(
-                            "WiFi settings cleared.", [this]() { this->popScreen(); }, true);
+                        showTemporaryMessage("WiFi settings cleared.",
+                                             [this]() { this->popScreen(); });
                         currentScreen()->setFirstLoad();
                     }));
 
@@ -1373,13 +1545,12 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                             std::make_shared<LineMenuScreen>(this->prefs_, this->display_);
                         lineMenuScreen->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
                             "Cancel", [this]() { this->popScreen(); }));
-                        lineMenuScreen->addMenuItem(
-                            std::make_shared<NewMenuItemSingleLine>("Factory Defaults: I'm sure!",
-                                                                    [this, &fileSystem]() {
-                    SoftFactoryReset(fileSystem);
-                    log_w("NVS and FS cleared. Restarting...");
-                    showTemporaryMessage(
-                        "Resetting Device! Restarting...", [this]() { power_.reboot(); }, true);
+                        lineMenuScreen->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
+                            "Factory Defaults: I'm sure!", [this, &fileSystem]() {
+                                SoftFactoryReset(fileSystem);
+                                log_w("NVS and FS cleared. Restarting...");
+                                showTemporaryMessage("Resetting Device! Restarting...",
+                                                     [this]() { power_.reboot(); });
                             }));
                         pushScreen(lineMenuScreen);
                         setNeedsRerender();
@@ -1388,37 +1559,6 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                 systemSettingsMenu->setFirstLoad();
                 this->pushScreen(systemSettingsMenu);
             }));
-
-        menuItems->emplace_back(std::make_shared<NewMenuItemSingleLine>("Experimental", [this]() {
-            log_d("Loading Experimental Settings Menu");
-            auto experimentalSettingsMenu =
-                std::make_shared<GenericSettingsMenuScreen>(display_, "Main Menu");
-
-            experimentalSettingsMenu->setBackCallback([this]() { this->popScreen(); });
-
-            experimentalSettingsMenu->addMenuItem(std::make_shared<NewMenuItemCheckable>(
-                "Show Summary",
-                [this]() {
-                this->prefs_.noShowPartialChapterSummary.set(
-                    !this->prefs_.noShowPartialChapterSummary.get().value_or(false));
-                currentScreen()->setNeedsRerender();
-                },
-                [this]() -> bool {
-                    return !this->prefs_.noShowPartialChapterSummary.get().value_or(false);
-                }));
-
-            experimentalSettingsMenu->addMenuItem(std::make_shared<NewMenuItemCheckable>(
-                "Fast Page Transitions",
-                [this]() {
-                this->prefs_.fastTransitions.set(
-                    !this->prefs_.fastTransitions.get().value_or(false));
-                currentScreen()->setNeedsRerender();
-                },
-                [this]() -> bool { return this->prefs_.fastTransitions.get().value_or(false); }));
-
-            experimentalSettingsMenu->setFirstLoad();
-            this->pushScreen(experimentalSettingsMenu);
-        }));
 
         if (prefs_.showDebugMenu.get().value_or(false)) {
 
@@ -1439,9 +1579,8 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                         prefs_.lastPageTurnerBuild.remove();
                         PreferencesStore::lastPageTurnerBattery = 0;
                         log_w("Unpaired PageTurner. Restarting...");
-                        showTemporaryMessage(
-                            "Unpaired PageTurner! Resetting...", [this]() { power_.reboot(); },
-                            true);
+                        showTemporaryMessage("Unpaired PageTurner! Resetting...",
+                                             [this]() { power_.reboot(); });
                     }));
 #endif
 
@@ -1457,8 +1596,8 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                         std::make_shared<NewMenuItemSingleLine>("Turn on Demo Mode", [this]() {
                             log_d("Demo On!");
                             prefs_.cesMode.set(true);
-                            showTemporaryMessage(
-                                "Demo mode on! Resetting...", [this]() { power_.reboot(); }, true);
+                            showTemporaryMessage("Demo mode on! Resetting...",
+                                                 [this]() { power_.reboot(); });
                         }));
                 }
 
@@ -1466,53 +1605,48 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                     std::make_shared<NewMenuItemSingleLine>("Reset Preferences", [this]() {
                         prefs_.clear();
                         log_w("Preferences cleared. Restarting...");
-                        showTemporaryMessage(
-                            "Preferences cleared. Restarting...", [this]() { power_.reboot(); },
-                            true);
+                        showTemporaryMessage("Preferences cleared. Restarting...",
+                                             [this]() { power_.reboot(); });
                     }));
 
                 if (prefs_.allowUsageWhileCharging.get().value_or(false)) {
-                    debugSettingsMenu->addMenuItem(
-                        std::make_shared<NewMenuItemSingleLine>("Disable use while charging",
-                                                                [this]() {
-                        prefs_.allowUsageWhileCharging.remove();
-                        showTemporaryMessage(
-                            "Disabling use while charging...", [this]() { power_.reboot(); }, true);
+                    debugSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
+                        "Disable use while charging", [this]() {
+                            prefs_.allowUsageWhileCharging.remove();
+                            showTemporaryMessage("Disabling use while charging...",
+                                                 [this]() { power_.reboot(); });
                         }));
                 } else {
-                    debugSettingsMenu->addMenuItem(
-                        std::make_shared<NewMenuItemSingleLine>("Enable use while charging",
-                                                                [this]() {
-                        prefs_.allowUsageWhileCharging.set(true);
-                        showTemporaryMessage(
-                            "Enabling use while charging...", [this]() { power_.reboot(); }, true);
+                    debugSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
+                        "Enable use while charging", [this]() {
+                            prefs_.allowUsageWhileCharging.set(true);
+                            showTemporaryMessage("Enabling use while charging...",
+                                                 [this]() { power_.reboot(); });
                         }));
                 }
 
                 debugSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
                     "Clear Books and Restart", [this, &localStore]() {
                         localStore.deleteReadables();
-                        showTemporaryMessage(
-                            "Books reset.", [this]() { power_.reboot(); }, true);
+                        showTemporaryMessage("Books reset.", [this]() { power_.reboot(); });
                     }));
 
                 debugSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
                     "Clear Articles and Restart", [this, &localStore]() {
                         localStore.deleteArticles();
-                        showTemporaryMessage(
-                            "Articles reset.", [this]() { power_.reboot(); }, true);
+                        showTemporaryMessage("Articles reset.", [this]() { power_.reboot(); });
                     }));
 
-                debugSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
-                    "Clear Crash Reports and Restart", [this, &fileSystem]() {
-                        FileList coreDumpFiles;
-                        fileSystem.listDir("/coredumps", coreDumpFiles);
-                        for (auto &file : coreDumpFiles) {
-                            log_i("Removing %s", file.c_str());
-                            fileSystem.remove(StringFormat("%s%s", "/coredumps/", file.c_str()));
-                        }
-                        showTemporaryMessage(
-                            "Crash Reports cleared.", [this]() { power_.reboot(); }, true);
+                debugSettingsMenu->addMenuItem(
+                    std::make_shared<NewMenuItemSingleLine>("Clear Crash Reports and Restart",
+                                                            [this, &fileSystem]() {
+                    FileList coreDumpFiles;
+                    fileSystem.listDir("/coredumps", coreDumpFiles);
+                    for (auto &file : coreDumpFiles) {
+                        log_i("Removing %s", file.c_str());
+                        fileSystem.remove(StringFormat("%s%s", "/coredumps/", file.c_str()));
+                    }
+                    showTemporaryMessage("Crash Reports cleared.", [this]() { power_.reboot(); });
                     }));
                 debugSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
                     "File System Browser", [this, &fileSystem]() {
@@ -1557,16 +1691,16 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                         std::make_shared<NewMenuItemSingleLine>("Turn on EMC Mode", [this]() {
                             log_d("EMC On!");
                             prefs_.emcMode.set(true);
-                            showTemporaryMessage(
-                                "EMC mode on! Resetting...", [this]() { power_.reboot(); }, true);
+                            showTemporaryMessage("EMC mode on! Resetting...",
+                                                 [this]() { power_.reboot(); });
                         }));
 
                     debugSettingsMenu->addMenuItem(
                         std::make_shared<NewMenuItemSingleLine>("Turn off EMC Mode", [this]() {
                             log_d("EMC Off!");
                             prefs_.emcMode.remove();
-                            showTemporaryMessage(
-                                "EMC mode off! Resetting...", [this]() { power_.reboot(); }, true);
+                            showTemporaryMessage("EMC mode off! Resetting...",
+                                                 [this]() { power_.reboot(); });
                         }));
                 }
 /*
@@ -1665,8 +1799,7 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
 
                         auto confirmMessage = [this](wifi_power_t power) {
                             this->prefs_.wifiPower.set(power);
-                            showTemporaryMessage(
-                                "Power set", [this]() { popScreen(); }, true);
+                            showTemporaryMessage("Power set", [this]() { popScreen(); });
                         };
 
                         wifiPowerMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
@@ -1757,7 +1890,7 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                         prefs_.blePower.set(power);
                         showTemporaryMessage(
                             StringFormat("Power set to %s", powerToString(power).c_str()),
-                            [this]() { popScreen(); }, true);
+                            [this]() { popScreen(); });
                     };
                     for (const auto &powerItem : blePowerOptions) {
                         blePowerMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
@@ -1796,20 +1929,17 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                 debugSettingsMenu->addMenuItem(
                     std::make_shared<NewMenuItemSingleLine>("Format FS", [this, &fileSystem]() {
                         log_w("Formatting...");
-                        showTemporaryMessage(
-                            "Formatting, this will take several minutes.",
-                            [this, &fileSystem]() {
+                        showTemporaryMessage("Formatting, this will take several minutes.",
+                                             [this, &fileSystem]() {
                         fileSystem.format();
                         power_.reboot();
-                            },
-                            true);
+                        });
                     }));
 
                 debugSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>("Power Off",
                                                                                        [this]() {
                     log_w("Powering off.");
-                    showTemporaryMessage(
-                        "Powering off.", [this]() { power_.powerOff(); }, true);
+                    showTemporaryMessage("Powering off.", [this]() { power_.powerOff(); });
                 }));
 
                 debugSettingsMenu->setFirstLoad();
@@ -1860,7 +1990,7 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                                                   [this, readingSettingsMenu]() {
             auto fontTypeMenu =
                 std::make_shared<GenericSettingsMenuScreen>( display_, 
-                               "Reading Settings");
+                               "Reading Style");
             for (int i = 0; i < fontsList.size(); i++) {
                 fontTypeMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(fontsList[i].caption, [this, fontTypeMenu, i]() {
                     mainFont.load((MemoryPtr)fontsList[i].content, fontsList[i].length);

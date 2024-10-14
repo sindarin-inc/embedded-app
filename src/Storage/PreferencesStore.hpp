@@ -478,6 +478,9 @@ public:
           seenLetsFocus(boolFlags_, 16),
           seenTextPlacement(boolFlags_, 17),
           forceShowWelcome(boolFlags_, 18),
+          seenExperimentalOverview(boolFlags_, 19),
+          seenPartialSummaryOverview(boolFlags_, 20),
+          seenFastPageTransitionsOverview(boolFlags_, 21),
           // only touch the lines above this when deleting those prefs. Do not renumber. Add below 
           // to add a new boolFlag with incrementing value.
           preferencesStoreMigrationVersion_(*this, "ps-version"),
@@ -805,6 +808,9 @@ public:
     BooleanFlag seenLetsFocus;
     BooleanFlag seenTextPlacement;
     BooleanFlag forceShowWelcome;
+    BooleanFlag seenExperimentalOverview;
+    BooleanFlag seenPartialSummaryOverview;
+    BooleanFlag seenFastPageTransitionsOverview;
 
     // These are RTC_SLOW_MEM variables that persist across deep sleep / wake cycles but will be
     // reset on power cycles

@@ -79,5 +79,5 @@ protected:
 
     // second parameter is a function that should be called in cleanup
     void showTemporaryMessage(const std::string &msg, const std::function<void()> &cleanupFunc,
-                              bool useTimer = false, int duration = 2000);
+                              int duration = 2000);
 };
