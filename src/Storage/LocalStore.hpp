@@ -70,7 +70,7 @@ struct ContentSyncState {
 
     std::string message;
 
-    auto running() const -> bool {
+    [[nodiscard]] auto running() const -> bool {
         return state != Idle && state != Synced && state != AlreadySynced && state != Failure;
     }
 };
