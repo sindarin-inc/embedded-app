@@ -118,6 +118,10 @@ void ContentSyncScreen::showPopup(const std::string &message) {
 }
 
 void ContentSyncScreen::cancel() {
+    // No-op if we're not running
+    if (!state_.running()) {
+        return;
+    }
     CancelFlag::cancel(cancel_);
     telemetry_.logMetric(TelemetryField::METRIC_SYNC_STATUS, "sync-cancelled");
     WiFi::getInstance().disconnectWiFi();
