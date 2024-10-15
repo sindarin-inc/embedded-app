@@ -1040,14 +1040,6 @@ void ReadableScreen::processCommand(RemoteCommand command) {
         return;
     }
 
-    // This is the first time view and so this command was from the "press any button" MsgPopup
-    // So we simply rerender the page without the popup and go about our business.
-    if (showingFirstTimeView_) {
-        showingFirstTimeView_ = false;
-        setNeedsRerender();
-        return;
-    }
-
     switch (command) {
     case RemoteCommand::LEFT:
         lastArrowPress_ = REMOTE_LEFT;

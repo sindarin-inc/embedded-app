@@ -90,7 +90,6 @@ protected:
 
     bool firstLoad_ = true;
     bool inBookmark_ = false;
-    bool showingFirstTimeView_ = false;
 
     std::shared_ptr<Place> newPlace_ = nullptr;
     bool atEnd_ = false;
