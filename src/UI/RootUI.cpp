@@ -141,11 +141,11 @@ void RootUI::clearNeedsRerender() {
 }
 
 // second parameter is a function that should be called in cleanup
-// NOLINTNEXTLINE(clang-analyzer-cplusplus.NewDeleteLeaks)
 // Clang-tidy isn't understanding our pushScreen taking ownership probably?
 void RootUI::showTemporaryMessage(const std::string &msg, const std::function<void()> &cleanupFunc,
                                   int duration) {
     auto msgPopup = std::make_shared<MsgPopup>(display_, msg);
+    // NOLINTNEXTLINE(clang-analyzer-cplusplus.NewDeleteLeaks)
     msgPopup->setBackCallback([cleanupFunc]() { cleanupFunc(); });
     pushScreen(msgPopup);
     msgPopup->startTimer(duration);
