@@ -1283,7 +1283,6 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                     "Support section of the Reader tab in your Sol app.\n\n"
                     "Press any button to continue...";
                 auto msgPopup = std::make_shared<MsgPopup>(display_, message);
-                // Leaky leaky
                 msgPopup->setBackCallback([this]() { this->popScreen(); });
                 pushScreen(msgPopup);
                 prefs_.seenExperimentalOverview.set(true);
