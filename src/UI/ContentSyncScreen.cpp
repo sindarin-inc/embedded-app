@@ -40,7 +40,7 @@ ContentSyncScreen::ContentSyncScreen(DisplaySystem &display, LocalStore &localSt
     power_.addStateChangeCallback(this, [this](PowerState state) {
         if (state == PowerState::ShuttingDown) {
             log_d("Signaling content sync to cancel");
-            this->cancel();
+            CancelFlag::cancel(cancel_);
         }
     });
 }
@@ -118,10 +118,6 @@ void ContentSyncScreen::showPopup(const std::string &message) {
 }
 
 void ContentSyncScreen::cancel() {
-    // No-op if we're not running
-    if (!state_.running()) {
-        return;
-    }
     CancelFlag::cancel(cancel_);
     telemetry_.logMetric(TelemetryField::METRIC_SYNC_STATUS, "sync-cancelled");
     WiFi::getInstance().disconnectWiFi();
