@@ -1,7 +1,7 @@
 #include "WiFiHttpClient.hpp"
 
 #include <cstring>
-#include <esp_crt_bundle.h>
+// #include <esp_crt_bundle.h>
 #include <iostream>
 #include <stdexcept>
 #include <string>
@@ -59,7 +59,7 @@ WiFiHttpClient::WiFiHttpClient(const char *url, const char *contentType,
             return ESP_OK;
         },
         .user_data = reinterpret_cast<void *>(this),
-        .crt_bundle_attach = esp_crt_bundle_attach,
+        // .crt_bundle_attach = esp_crt_bundle_attach,
     };
     client_ = esp_http_client_init(&config);
     if (client_ == nullptr) {
