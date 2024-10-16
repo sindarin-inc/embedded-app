@@ -75,8 +75,6 @@ protected:
     PowerManager &power_;
     Telemetry &telemetry_;
 
-    bool inMsgPopup_ = false;
-
     // second parameter is a function that should be called in cleanup
     void showTemporaryMessage(const std::string &msg, const std::function<void()> &cleanupFunc,
                               int duration = 2000);

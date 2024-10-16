@@ -125,10 +125,8 @@ void RootUI::render(DisplaySystem &display) {
 };
 
 void RootUI::processCommand(RemoteCommand command) {
-    if (!inMsgPopup_) {
-        if (!screenStack_.empty()) {
-            currentScreen()->processCommand(command);
-        }
+    if (!screenStack_.empty()) {
+        currentScreen()->processCommand(command);
     }
 }
 
@@ -145,7 +143,6 @@ void RootUI::clearNeedsRerender() {
 void RootUI::showTemporaryMessage(const std::string &msg, const std::function<void()> &cleanupFunc,
                                   int duration) {
     auto msgPopup = std::make_shared<MsgPopup>(display_, msg);
-    // NOLINTNEXTLINE(clang-analyzer-cplusplus.NewDeleteLeaks)
     msgPopup->setBackCallback(cleanupFunc);
     pushScreen(msgPopup);
     msgPopup->startTimer(duration);
@@ -416,7 +413,7 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
             } else {
                 this->prefs_.dontShowWelcome.set(true);
                 std::static_pointer_cast<NewMainMenuScreen>(currentScreen())->setCurrentTabIndex(1);
-                showTemporaryMessage("Welcome Tab Complete!\nHappy  ...",
+                showTemporaryMessage("Welcome Tab Complete!\nHappy Reading...",
                                      [this]() { this->popScreen(); });
             }
         };

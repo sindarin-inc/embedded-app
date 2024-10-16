@@ -51,19 +51,5 @@ public:
         display.updateDisplay();
     }
 
-    void processCommand(RemoteCommand command) override {
-        switch (command) {
-        case RemoteCommand::ENTER:
-        case RemoteCommand::ANIMATION:
-        case RemoteCommand::BACK:
-        case RemoteCommand::LEFT:
-        case RemoteCommand::RIGHT:
-        case RemoteCommand::UP:
-        case RemoteCommand::DOWN:
-            back();
-            break;
-        default:
-            break;
-        }
-    }
+    void processCommand(RemoteCommand command) override { back(); }
 };
