@@ -51,7 +51,6 @@
 #include "UI/Menu/NewMenuItemBook.hpp"
 #include "UI/Menu/NewMenuItemCheckable.hpp"
 #include "UI/Menu/NewMenuItemSingleLine.hpp"
-#include "UI/Menu/PutOnWelcomeMenuScreen.hpp"
 #include "UI/Menu/ReadingSettingsMenuScreen.hpp"
 #include "UI/Menu/TextPlacementWelcomeMenuScreen.hpp"
 #include "UI/Menu/WiFiSettingsMenuScreen.hpp"
