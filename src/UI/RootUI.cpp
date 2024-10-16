@@ -110,9 +110,9 @@ void RootUI::popScreen(bool clearDisplay) {
     }
 }
 
-void RootUI::popToMainMenu(bool clearDisplay) {
+void RootUI::popToMainMenu() {
     while (!screenStack_.empty() && !dynamic_cast<NewMainMenuScreen *>(screenStack_.top().get())) {
-        popScreen(clearDisplay);
+        popScreen(true);
     }
 }
 
@@ -145,7 +145,6 @@ void RootUI::clearNeedsRerender() {
 }
 
 // second parameter is a function that should be called in cleanup
-// Clang-tidy isn't understanding our pushScreen taking ownership probably?
 void RootUI::showTemporaryMessage(const std::string &msg, const std::function<void()> &cleanupFunc,
                                   int duration) {
     auto msgPopup = std::make_shared<MsgPopup>(display_, msg);
