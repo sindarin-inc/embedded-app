@@ -155,8 +155,7 @@ auto SindarinAPI::checkFirmware(FirmwareResponse *resp, bool useHttp) -> int {
             endpoint = StringFormat("http://%s", baseUrl_.c_str() + 8);
         }
     }
-    auto client = createClient(StringFormat("%s/firmware/", baseUrl_.c_str()), "application/json",
-                               HTTP_METHOD_GET, false, nullptr);
+    auto client = createClient(endpoint, "application/json", HTTP_METHOD_GET, false, nullptr);
 
     auto err = setAuth(client);
     if (err != ESP_OK) {
