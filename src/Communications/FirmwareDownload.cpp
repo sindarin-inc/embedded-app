@@ -34,7 +34,7 @@ void FirmwareDownloader::downloadFirmware(
 
     setState(FirmwareDownloadState{.state = FirmwareDownloadState::State::CheckingForLatest});
 
-    auto queue = DispatchGetCore0BackgroundQueue();
+    auto queue = DispatchGetCore1BackgroundQueue();
     queue->dispatch([this, setState] {
         auto httpCode = SindarinAPI::getInstance()->checkFirmware(&response);
         if (httpCode != 200) {
