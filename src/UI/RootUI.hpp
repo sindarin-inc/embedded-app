@@ -36,6 +36,8 @@ public:
     void pushScreen(const std::shared_ptr<Screen> &screen, bool deferRender = false);
     void popScreen(bool clearDisplay = true);
 
+    void popToMainMenu(bool clearDisplay = true);
+
     auto needsRerender() -> bool override;
     void render(DisplaySystem &display) override;
     void renderIfNeeded() {

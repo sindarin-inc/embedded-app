@@ -110,6 +110,12 @@ void RootUI::popScreen(bool clearDisplay) {
     }
 }
 
+void RootUI::popToMainMenu(bool clearDisplay) {
+    while (!screenStack_.empty() && !dynamic_cast<NewMainMenuScreen *>(screenStack_.top().get())) {
+        popScreen(clearDisplay);
+    }
+}
+
 auto RootUI::needsRerender() -> bool {
     if (!screenStack_.empty()) {
         return currentScreen()->needsRerender();
@@ -404,7 +410,7 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                                welcomeIndex, readables]() -> MenuItemSharedPtrVector {
         auto popAndSetIndexOrDone = [this, welcomeIndex]() {
             auto temp = currentScreen();
-            this->popScreen();
+            this->popToMainMenu();
             setFirstLoad();
             int welcomeTabIndex = welcomeIndex();
             if (welcomeTabIndex != 4) {
@@ -454,16 +460,10 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
         menuItems->emplace_back(std::make_shared<NewMenuItemCheckable>(
             "Text placement (2 min)",
             [this, popAndSetIndexOrDone]() {
-            auto doublePop = [this, popAndSetIndexOrDone]() {
-                // pop again out of this to head back to main menu
-                auto temp = currentScreen();
-                this->popScreen();
-                popAndSetIndexOrDone();
-            };
             auto textPlacementScreen = std::make_shared<TextPlacementWelcomeMenuScreen>(display_);
             textPlacementScreen->addMenuItem(
                 std::make_shared<NewMenuItemSingleLine>("Choose this template",
-                                                        [this, doublePop]() {
+                                                        [this, popAndSetIndexOrDone]() {
                 prefs_.seenTextPlacement.set(true);
                 switch (std::static_pointer_cast<TextPlacementWelcomeMenuScreen>(currentScreen())
                             ->getCurrentTextSelection()) {
@@ -475,7 +475,7 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                     prefs_.lineSpacing.set(0);
                     prefs_.font.set(PREFS_SOL_SMALL);
                     log_d("Setting prefs to Comfortable");
-                    showTemporaryMessage("Comfortable text placement set", doublePop);
+                    showTemporaryMessage("Comfortable text placement set", popAndSetIndexOrDone);
                     break;
                 case 1:
                     prefs_.textInsetLeft.set(25);
@@ -485,7 +485,7 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                     prefs_.font.set(PREFS_SOL_SMALL);
                     prefs_.lineSpacing.set(-2);
                     log_d("Setting prefs to Condensed");
-                    showTemporaryMessage("Condensed text placement set", doublePop);
+                    showTemporaryMessage("Condensed text placement set", popAndSetIndexOrDone);
                     break;
                 case 2:
                     prefs_.textInsetLeft.set(30);
@@ -495,7 +495,7 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                     prefs_.font.set(PREFS_SOL_MEDIUM);
                     prefs_.lineSpacing.set(0);
                     log_d("Setting prefs to Bottom");
-                    showTemporaryMessage("Bottom text placement set", doublePop);
+                    showTemporaryMessage("Bottom text placement set", popAndSetIndexOrDone);
                     break;
                 }
                 }));
