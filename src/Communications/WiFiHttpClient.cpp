@@ -81,6 +81,7 @@ WiFiHttpClient::WiFiHttpClient(const char *url, const char *contentType,
             log_e("Failed esp_http_client_set_header with %s", esp_err_to_name(err));
         }
     }
+    log_i("making request to %s", url);
 }
 
 WiFiHttpClient::~WiFiHttpClient() {
