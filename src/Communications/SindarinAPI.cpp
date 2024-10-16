@@ -147,7 +147,7 @@ auto SindarinAPI::checkFirmware(FirmwareResponse *resp, bool useHttp) -> int {
     if (useHttp) {
         // Replace the https prefix with http
         if (HasPrefix(endpoint.c_str(), "https://")) {
-            endpoint = StringFormat("http://%s", baseUrl_.c_str() + 8);
+            endpoint = StringFormat("http://%s", endpoint.c_str() + 8);
         }
     }
     WiFiHttpClient client(endpoint.c_str());
