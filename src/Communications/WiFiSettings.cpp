@@ -61,6 +61,8 @@ auto WiFiSettings::settingExists(const std::string &ssid, const std::string &pas
 }
 
 void WiFiSettings::setActiveSetting(const std::string &ssid, const std::string &password) {
+    std::string ssidLocal = std::move(ssid);
+    std::string passwordLocal = std::move(password);
     // find setting
     for (auto it = settings.begin(); it != settings.end(); it++) {
         if (it->ssid == ssid && it->password == password) {
@@ -69,7 +71,7 @@ void WiFiSettings::setActiveSetting(const std::string &ssid, const std::string &
         }
     }
 
-    addSetting(ssid, password);
+    addSetting(ssidLocal, passwordLocal);
 }
 
 void WiFiSettings::addSetting(const std::string &ssid, const std::string &password) {

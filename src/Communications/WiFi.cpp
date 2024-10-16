@@ -342,6 +342,11 @@ auto WiFi::connectWiFiFromSettings() -> bool {
     return false;
 }
 
+auto WiFi::saveSetting(const std::string &ssid, const std::string &password) -> void {
+    settings_.setActiveSetting(ssid, password);
+    settings_.save();
+}
+
 auto WiFi::connectWiFiSettingWithTimeout(int timeoutMs, const std::string &ssid,
                                          const std::string &password) -> bool {
     if (connectWiFi(ssid, password) != ESP_OK) {
