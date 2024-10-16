@@ -142,8 +142,15 @@ auto SindarinAPI::checkSync(const std::string &url, CheckSyncRequest &req, Check
     return httpCode;
 }
 
-auto SindarinAPI::checkFirmware(FirmwareResponse *resp) -> int {
-    WiFiHttpClient client(StringFormat("%s/firmware/", baseUrl_.c_str()).c_str());
+auto SindarinAPI::checkFirmware(FirmwareResponse *resp, bool useHttp) -> int {
+    auto endpoint = StringFormat("%s/firmware/", baseUrl_.c_str());
+    if (useHttp) {
+        // Replace the https prefix with http
+        if (HasPrefix(endpoint.c_str(), "https://")) {
+            endpoint = StringFormat("http://%s", baseUrl_.c_str() + 8);
+        }
+    }
+    WiFiHttpClient client(endpoint.c_str());
 
     auto err = setAuth(client);
     if (err != ESP_OK) {

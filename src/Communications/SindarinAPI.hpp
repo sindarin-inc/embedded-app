@@ -52,7 +52,7 @@ public:
     auto checkSync(CheckSyncRequest &req, CheckSyncResponse *resp, Telemetry &telemetry) -> int;
     auto checkSync(const std::string &url, CheckSyncRequest &req, CheckSyncResponse *resp,
                    Telemetry &telemetry) -> int;
-    auto checkFirmware(FirmwareResponse *resp) -> int;
+    auto checkFirmware(FirmwareResponse *resp, bool useHttp = false) -> int;
 
     auto downloadReadable(const std::shared_ptr<Readable> &readable, FileSystem &fileSystem,
                           Telemetry &telemetry, const std::string &path,
