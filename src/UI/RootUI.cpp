@@ -409,7 +409,6 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
     auto welcomeMenuFactory = [this, noContent, makeContentSyncMenuItem, &lightingController,
                                welcomeIndex, readables]() -> MenuItemSharedPtrVector {
         auto popAndSetIndexOrDone = [this, welcomeIndex]() {
-            auto temp = currentScreen();
             this->popToMainMenu();
             setFirstLoad();
             int welcomeTabIndex = welcomeIndex();
