@@ -111,14 +111,14 @@ TEST_CASE("Test EPub Books Rendering", "[.][epub]") {
         WAIT_FOR_DRAW(display);
         // WAIT_FOR_DRAW(display);
 
+        ASSERT_VIEW_UNCHANGED(display, "OnePageTutorial");
+        SendRemoteCommand(ENTER);
+        WAIT_FOR_DRAW(display);
+
         auto screen = UIGetCurrentScreen();
         auto readableScreen = std::dynamic_pointer_cast<ReadableScreen>(screen);
 
         if (readableScreen != nullptr) {
-
-            ASSERT_VIEW_UNCHANGED(display, "OnePageTutorial");
-            SendRemoteCommand(ENTER);
-            WAIT_FOR_DRAW(display);
 
             int pageNbr = 1;
             ChapterIdx chapterIdx = 0;
