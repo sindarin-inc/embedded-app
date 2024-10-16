@@ -652,10 +652,6 @@ void ReadableScreen::turnPage() {
                                 SolClock::getInstance().getEpochTime());
         speedLinesToSkip_ = 0;
     }
-
-    uint32_t wc = prefs_.wordCount.get().value_or(0);
-    wc = wc + renderer_.getCurrentPageWordCount();
-    prefs_.wordCount.set(wc);
 }
 
 auto ReadableScreen::checkAtEnd() -> bool { return renderer_.atEndOfFile(); }
