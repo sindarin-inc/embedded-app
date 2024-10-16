@@ -150,10 +150,14 @@ void RootUI::clearNeedsRerender() {
 
 void RootUI::showTemporaryMessage(const std::string &msg, const std::function<void()> &cleanupFunc,
                                   int duration) {
-    auto msgPopup = std::make_shared<MsgPopup>(display_, msg);
-    msgPopup->setBackCallback([this, cleanupFunc = cleanupFunc]() mutable {
+    auto msgPopup = std::make_shared<MsgPopup>(display_, msg, cleanupFunc);
+    msgPopup->setBackCallback([this]() {
+        // We do this because we want to ensure that the cleanup function is called after the screen
+        // is popped. A little unintuitive, but it's what the interface needs (see
+        // popAndSetIndexOrDone -- if we did that first, there'd be an extra pop).
+        auto msgPopup = std::static_pointer_cast<MsgPopup>(currentScreen());
         popScreen();
-        cleanupFunc();
+        msgPopup->cleanupFunc();
     });
     pushScreen(msgPopup);
     if (duration > 0) {
@@ -391,9 +395,7 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
         if (readableScreen != nullptr) {
             this->pushScreen(readableScreen);
         } else {
-            auto errorPopup = std::make_shared<MsgPopup>(display_, itemErrorMsg_);
-            this->pushScreen(errorPopup);
-            errorPopup->setBackCallback([this]() { this->popScreen(); });
+            showTemporaryMessage(itemErrorMsg_, TEMP_MSG_DURATION_NO_CLOSE);
         }
     };
 
@@ -1232,9 +1234,7 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                         "summary for you (no spoilers) to "
                         "review on your next reading session.\n\n\n"
                         "Press any button to continue...";
-                    auto msgPopup = std::make_shared<MsgPopup>(display_, message);
-                    msgPopup->setBackCallback([this]() { this->popScreen(); });
-                    pushScreen(msgPopup);
+                    showTemporaryMessage(message, TEMP_MSG_DURATION_NO_CLOSE);
                     prefs_.seenPartialSummaryOverview.set(true);
                 } else {
                     this->prefs_.noShowPartialChapterSummary.set(
@@ -1260,9 +1260,7 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                         "by only doing a full refresh when needed to ensure the display doesn't "
                         "have too many remnants of previous pages.\n\n"
                         "Press any button to continue...";
-                    auto msgPopup = std::make_shared<MsgPopup>(display_, message);
-                    msgPopup->setBackCallback([this]() { this->popScreen(); });
-                    pushScreen(msgPopup);
+                    showTemporaryMessage(message, TEMP_MSG_DURATION_NO_CLOSE);
                     prefs_.seenFastPageTransitionsOverview.set(true);
                 } else {
                     this->prefs_.fastTransitions.set(
@@ -1283,9 +1281,7 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                     "in the "
                     "Support section of the Reader tab in your Sol app.\n\n"
                     "Press any button to continue...";
-                auto msgPopup = std::make_shared<MsgPopup>(display_, message);
-                msgPopup->setBackCallback([this]() { this->popScreen(); });
-                pushScreen(msgPopup);
+                showTemporaryMessage(message, TEMP_MSG_DURATION_NO_CLOSE);
                 prefs_.seenExperimentalOverview.set(true);
             }
         }));
@@ -2042,9 +2038,7 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
             cesScreen->setBackCallback([this]() { this->popScreen(); });
             this->pushScreen(cesScreen, true);
         } else {
-            auto errorPopup = std::make_shared<MsgPopup>(display_, itemErrorMsg_);
-            this->pushScreen(errorPopup);
-            errorPopup->setBackCallback([this]() { this->popScreen(); });
+            showTemporaryMessage(itemErrorMsg_);
         }
     } else if (prefs_.emcMode.get().value_or(false)) {
         log_d("Starting EMC mode readable reading turn page every 30s and content sync every "
@@ -2063,9 +2057,7 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
             display_.clearDisplay();
             this->pushScreen(readableScreen, true);
         } else {
-            auto errorPopup = std::make_shared<MsgPopup>(display_, itemErrorMsg_);
-            this->pushScreen(errorPopup);
-            errorPopup->setBackCallback([this]() { this->popScreen(); });
+            showTemporaryMessage(itemErrorMsg_, TEMP_MSG_DURATION_NO_CLOSE);
         }
     } else if (currentReadable.has_value()) {
         // Check if we left-off on a readable and if so, reload that readable by default
@@ -2096,9 +2088,7 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                     newMainMenu->setTabToTitle("Books");
                 }
             } else {
-                auto errorPopup = std::make_shared<MsgPopup>(display_, itemErrorMsg_);
-                this->pushScreen(errorPopup, true);
-                errorPopup->setBackCallback([this]() { this->popScreen(); });
+                showTemporaryMessage(itemErrorMsg_, TEMP_MSG_DURATION_NO_CLOSE);
             }
         } else {
             // Assume this readable has gone away (or changed from id to uuid)
