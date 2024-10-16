@@ -131,7 +131,4 @@ void ReleaseNotesScreen::runUpdate() {
 
     // Reboot
     power_.reboot();
-
-    // Only for the sim
-    back();
 }
