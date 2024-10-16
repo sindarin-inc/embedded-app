@@ -151,7 +151,7 @@ void RootUI::clearNeedsRerender() {
 void RootUI::showTemporaryMessage(const std::string &msg, const std::function<void()> &cleanupFunc,
                                   int duration) {
     auto msgPopup = std::make_shared<MsgPopup>(display_, msg);
-    msgPopup->setBackCallback([this, &cleanupFunc]() {
+    msgPopup->setBackCallback([this, cleanupFunc]() {
         popScreen();
         cleanupFunc();
     });
