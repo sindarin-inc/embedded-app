@@ -17,10 +17,9 @@ private:
 
 public:
     MsgPopup(
-        DisplaySystem &display, const std::string &msg,
-        const std::function<void()> &cleanupFunc = []() {})
+        DisplaySystem &display, const std::string &msg, std::function<void()> cleanupFunc = []() {})
         : EinkView(display), boxView_(display, 12), textView_(display, 12),
-          cleanupFunc_(cleanupFunc) {
+          cleanupFunc_(std::move(cleanupFunc)) {
         textView_.setText(msg);
         textView_.alignCenter = true;
         textView_.setFont(static_cast<Font *>(&fontFace0));
