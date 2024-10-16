@@ -70,8 +70,7 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
         metrics["line_spacing"] = prefs_.lineSpacing.get().value_or(0);
         telemetry_.logMetric(TelemetryField::METRIC_REPORT, readable_->uuid.c_str(), metrics);
         RootUI::getInstance().showTemporaryMessage(
-            "Thank you, our team will\nreview this page for\nformatting issues.",
-            []() { RootUI::getInstance().popScreen(); }, 0);
+            "Thank you, our team will\nreview this page for\nformatting issues.", 0);
     };
 
     auto popupNavigationFactory = [this, onMainMenu]() -> MenuItemSharedPtrVector {
@@ -195,12 +194,7 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
                         "mobile device.";
 
                     RootUI::getInstance().showTemporaryMessage(
-                        message,
-                        [onMainMenu]() {
-                    RootUI::getInstance().popScreen();
-                    onMainMenu();
-                        },
-                        0);
+                        message, [onMainMenu]() { onMainMenu(); }, 0);
 
                     prefs_.didFirstArchive.set(true);
                 } else {
@@ -287,8 +281,7 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
             } else {
                 menuItems->emplace_back(std::make_shared<NewMenuItemSingleLine>("Dictionary",
                                                                                 [this]() {
-                    RootUI::getInstance().showTemporaryMessage(
-                        notExistMessage_, []() { RootUI::getInstance().popScreen(); }, 0);
+                    RootUI::getInstance().showTemporaryMessage(notExistMessage_, 0);
                 }));
                 log_d("No dictionary for spine %s", placeHref.c_str());
             }
@@ -306,8 +299,7 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
                 log_d("No summary for spine %s", placeHref.c_str());
                 menuItems->emplace_back(std::make_shared<NewMenuItemSingleLine>("Summary",
                                                                                 [this]() {
-                    RootUI::getInstance().showTemporaryMessage(
-                        notExistMessage_, []() { RootUI::getInstance().popScreen(); }, 0);
+                    RootUI::getInstance().showTemporaryMessage(notExistMessage_, 0);
                 }));
             }
 
@@ -321,24 +313,20 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
             } else {
                 menuItems->emplace_back(std::make_shared<NewMenuItemSingleLine>("History",
                                                                                 [this]() {
-                    RootUI::getInstance().showTemporaryMessage(
-                        notExistMessage_, []() { RootUI::getInstance().popScreen(); }, 0);
+                    RootUI::getInstance().showTemporaryMessage(notExistMessage_, 0);
                 }));
             }
         } else {
             menuItems->emplace_back(std::make_shared<NewMenuItemSingleLine>("Dictionary", [this]() {
-                RootUI::getInstance().showTemporaryMessage(
-                    notExistMessage_, []() { RootUI::getInstance().popScreen(); }, 0);
+                RootUI::getInstance().showTemporaryMessage(notExistMessage_, 0);
             }));
 
             menuItems->emplace_back(std::make_shared<NewMenuItemSingleLine>("Summary", [this]() {
-                RootUI::getInstance().showTemporaryMessage(
-                    notExistMessage_, []() { RootUI::getInstance().popScreen(); }, 0);
+                RootUI::getInstance().showTemporaryMessage(notExistMessage_, 0);
             }));
 
             menuItems->emplace_back(std::make_shared<NewMenuItemSingleLine>("History", [this]() {
-                RootUI::getInstance().showTemporaryMessage(
-                    notExistMessage_, []() { RootUI::getInstance().popScreen(); }, 0);
+                RootUI::getInstance().showTemporaryMessage(notExistMessage_, 0);
             }));
             log_d("Not an EPub, so no history or summary or dictionary");
         }
@@ -736,8 +724,7 @@ void ReadableScreen::render(DisplaySystem &display) {
                               "\ue001   Previous Page\n\n"
                               "\ue003  or  \ue004   Popup Menu\n\n "
                               "Press any button to start...";
-        RootUI::getInstance().showTemporaryMessage(
-            message, []() { RootUI::getInstance().popScreen(); }, 0);
+        RootUI::getInstance().showTemporaryMessage(message, 0);
         // We're in the UI loop here (in the render method) so it won't get rendered right away.
         // So in this case, we have to explicitly tell RootUI to render it.
         RootUI::getInstance().renderIfNeeded();
@@ -754,8 +741,7 @@ void ReadableScreen::render(DisplaySystem &display) {
                               "\ue000   Pause/unpause\n\n"
                               "Press any button to start...";
 
-        RootUI::getInstance().showTemporaryMessage(
-            message, []() { RootUI::getInstance().popScreen(); }, 0);
+        RootUI::getInstance().showTemporaryMessage(message, 0);
         // We're in the UI loop here (in the render method) so it won't get rendered right away.
         // So in this case, we have to explicitly tell RootUI to render it.
         RootUI::getInstance().renderIfNeeded();

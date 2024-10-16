@@ -151,7 +151,10 @@ void RootUI::clearNeedsRerender() {
 void RootUI::showTemporaryMessage(const std::string &msg, const std::function<void()> &cleanupFunc,
                                   int duration) {
     auto msgPopup = std::make_shared<MsgPopup>(display_, msg);
-    msgPopup->setBackCallback(cleanupFunc);
+    msgPopup->setBackCallback([this, cleanupFunc]() {
+        popScreen();
+        cleanupFunc();
+    });
     pushScreen(msgPopup);
     if (duration > 0) {
         msgPopup->startTimer(duration);
@@ -373,8 +376,7 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
             // turn on wifi or BLE to perform the content sync.
             if (this->prefs_.wifiDisabled.get().value_or(false) &&
                 this->prefs_.bleDisabled.get().value_or(false)) {
-                showTemporaryMessage("Enable WiFi or BLE to perform a Content Sync.",
-                                     [this]() { this->popScreen(); });
+                showTemporaryMessage("Enable WiFi or BLE to perform a Content Sync.");
                 currentScreen()->setFirstLoad();
                 return;
             }
@@ -422,8 +424,7 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
             } else {
                 this->prefs_.dontShowWelcome.set(true);
                 std::static_pointer_cast<NewMainMenuScreen>(currentScreen())->setCurrentTabIndex(1);
-                showTemporaryMessage("Welcome Tab Complete!\nHappy Reading...",
-                                     [this]() { this->popScreen(); });
+                showTemporaryMessage("Welcome Tab Complete!\nHappy Reading...");
             }
         };
 
@@ -1175,14 +1176,12 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                     !this->prefs_.forceShowWelcome.get().value_or(false)) {
                     this->prefs_.dontShowWelcome.set(false);
                     this->prefs_.forceShowWelcome.set(true);
-                    showTemporaryMessage("Welcome Tab will be\nshown on next restart.",
-                                         [this]() { this->popScreen(); });
+                    showTemporaryMessage("Welcome Tab will be\nshown on next restart.");
 
                 } else {
                     this->prefs_.dontShowWelcome.set(true);
                     this->prefs_.forceShowWelcome.set(false);
-                    showTemporaryMessage("Welcome Tab will be\nhidden on next restart.",
-                                         [this]() { this->popScreen(); });
+                    showTemporaryMessage("Welcome Tab will be\nhidden on next restart.");
                 }
                     },
                     [this]() -> bool {
@@ -1351,7 +1350,7 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                         // If wifi has been disabled, show a popup encouraging the user to
                         // turn on wifi to perform the firmware sync.
                         if (this->prefs_.wifiDisabled.get().value_or(false)) {
-                            showTemporaryMessage(turnOnWifiMsg, [this]() { this->popScreen(); });
+                            showTemporaryMessage(turnOnWifiMsg);
                             currentScreen()->setFirstLoad();
                             return;
                         }
@@ -1503,8 +1502,7 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                         log_w("WiFi settings cleared.");
                         std::static_pointer_cast<WiFiSettingsMenuScreen>(currentScreen())
                             ->loadWifiSettings();
-                        showTemporaryMessage("WiFi settings cleared.",
-                                             [this]() { this->popScreen(); });
+                        showTemporaryMessage("WiFi settings cleared.");
                         currentScreen()->setFirstLoad();
                     }));
 
@@ -1800,7 +1798,7 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
 
                         auto confirmMessage = [this](wifi_power_t power) {
                             this->prefs_.wifiPower.set(power);
-                            showTemporaryMessage("Power set", [this]() { popScreen(); });
+                            showTemporaryMessage("Power set");
                         };
 
                         wifiPowerMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
@@ -1890,8 +1888,7 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                         }
                         prefs_.blePower.set(power);
                         showTemporaryMessage(
-                            StringFormat("Power set to %s", powerToString(power).c_str()),
-                            [this]() { popScreen(); });
+                            StringFormat("Power set to %s", powerToString(power).c_str()));
                     };
                     for (const auto &powerItem : blePowerOptions) {
                         blePowerMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
