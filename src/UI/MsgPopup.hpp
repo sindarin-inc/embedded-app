@@ -24,7 +24,9 @@ public:
     ~MsgPopup() override = default;
 
     void startTimer(int duration = 2000) {
-        // Must stop the timer because ChangePeriod starts it.
+        // Must stop the timer because ChangePeriod starts it. This prevents an issue where
+        // someone starts the timer multiple times and then there's an extra trigger of the Timer
+        // that another screen gets.
         xTimerStop(DisplaySystem::animationTimer, 0);
         xTimerChangePeriod(DisplaySystem::animationTimer, pdMS_TO_TICKS(duration), 0);
     }
@@ -51,5 +53,10 @@ public:
         display.updateDisplay();
     }
 
-    void processCommand(RemoteCommand command) override { back(); }
+    void processCommand(RemoteCommand command) override {
+        // Stop the timer in case we get here through button press.
+        // Technically this does a stop even if it's not running (in the other case), but that's ok.
+        xTimerStop(DisplaySystem::animationTimer, 0);
+        back();
+    }
 };
