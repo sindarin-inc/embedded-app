@@ -146,7 +146,7 @@ void RootUI::showTemporaryMessage(const std::string &msg, const std::function<vo
                                   int duration) {
     auto msgPopup = std::make_shared<MsgPopup>(display_, msg);
     // NOLINTNEXTLINE(clang-analyzer-cplusplus.NewDeleteLeaks)
-    msgPopup->setBackCallback([cleanupFunc]() { cleanupFunc(); });
+    msgPopup->setBackCallback(cleanupFunc);
     pushScreen(msgPopup);
     msgPopup->startTimer(duration);
 }
