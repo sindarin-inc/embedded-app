@@ -147,7 +147,14 @@ auto SindarinAPI::checkSync(const std::string &url, CheckSyncRequest &req, Check
     return httpCode;
 }
 
-auto SindarinAPI::checkFirmware(FirmwareResponse *resp) -> int {
+auto SindarinAPI::checkFirmware(FirmwareResponse *resp, bool useHttp) -> int {
+    auto endpoint = StringFormat("%s/firmware/", baseUrl_.c_str());
+    if (useHttp) {
+        // Replace the https prefix with http
+        if (HasPrefix(endpoint.c_str(), "https://")) {
+            endpoint = StringFormat("http://%s", baseUrl_.c_str() + 8);
+        }
+    }
     auto client = createClient(StringFormat("%s/firmware/", baseUrl_.c_str()), "application/json",
                                HTTP_METHOD_GET, false, nullptr);
 

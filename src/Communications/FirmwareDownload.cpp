@@ -38,10 +38,14 @@ void FirmwareDownloader::downloadFirmware(
     queue->dispatch([this, setState] {
         auto httpCode = SindarinAPI::getInstance()->checkFirmware(&response);
         if (httpCode != 200) {
-            log_e("Failed to get firmware (HTTP %d)", httpCode);
-            setState(FirmwareDownloadState{.state = FirmwareDownloadState::State::Failure,
-                                           .message = "Failed to check for update"});
-            return;
+            // Try as HTTP in case something goes wrong with certs
+            httpCode = SindarinAPI::getInstance()->checkFirmware(&response, true);
+            if (httpCode != 200) {
+                log_e("Failed to get firmware (HTTP %d)", httpCode);
+                setState(FirmwareDownloadState{.state = FirmwareDownloadState::State::Failure,
+                                               .message = "Failed to check for update"});
+                return;
+            }
         }
 
         if (skipInstall_ && prefs_.firmwareLoaded.get().value_or("0.0.0") ==
