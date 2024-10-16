@@ -66,12 +66,15 @@ public:
 
     static auto getInstance() -> RootUI &;
 
+#define TEMP_MSG_DURATION_DEFAULT 2000
+#define TEMP_MSG_DURATION_NO_CLOSE 0
+
     // second parameter is a function that should be called in cleanup
     // By default, the duration is 2 seconds. If you set the duration to 0, it will not
     // automatically close and requires input to close.
     void showTemporaryMessage(
         const std::string &msg, const std::function<void()> &cleanupFunc = []() {},
-        int duration = 2000);
+        int duration = TEMP_MSG_DURATION_DEFAULT);
 
     // Helper for when you want default cleanup but also setting duration.
     void showTemporaryMessage(const std::string &msg, int duration) {
