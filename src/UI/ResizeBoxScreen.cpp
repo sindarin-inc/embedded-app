@@ -29,6 +29,7 @@ ResizeBoxScreen::ResizeBoxScreen(DisplaySystem &display, PreferencesStore &prefs
     auto stream = std::make_shared<StdStringStream>(message);
 
     rendererRef_.setStream(stream);
+    rendererRef_.setLineSpacing(prefs.lineSpacing.get().value_or(0));
 
     setupInstructions();
 }
