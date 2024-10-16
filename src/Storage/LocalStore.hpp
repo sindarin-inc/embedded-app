@@ -69,6 +69,10 @@ struct ContentSyncState {
     int articlesDownloaded{};
 
     std::string message;
+
+    [[nodiscard]] auto running() const -> bool {
+        return state != Idle && state != Synced && state != AlreadySynced && state != Failure;
+    }
 };
 
 using ReadablesVector = std::vector<std::shared_ptr<Readable>>;

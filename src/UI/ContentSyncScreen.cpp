@@ -40,7 +40,7 @@ ContentSyncScreen::ContentSyncScreen(DisplaySystem &display, LocalStore &localSt
     power_.addStateChangeCallback(this, [this](PowerState state) {
         if (state == PowerState::ShuttingDown) {
             log_d("Signaling content sync to cancel");
-            this->cancel();
+            CancelFlag::cancel(cancel_);
         }
     });
 }

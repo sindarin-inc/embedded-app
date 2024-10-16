@@ -227,6 +227,9 @@ public:
         }
 
         virtual void set(T value) {
+            if (this->loaded_ && this->value_ == value) {
+                return;
+            }
             this->value_ = value;
             this->writeToStorage(this->key_, value);
         }
@@ -439,8 +442,6 @@ public:
           vcom(*this, "vcom"),
           font(*this, "font"),
           lineSpacing(*this, "line-space"),
-          wordCount(*this, "word-count"),
-          totalReadingTimeSeconds(*this, "tot-rd-time"),
           bootCount(*this, "boot-count"),
           firstRead(boolFlags_, 1),
           autoPilotSpeed(*this, "auto-speed"),
@@ -646,6 +647,10 @@ public:
                 boolFlags_.write();
                 break;
             }
+            case 9:
+                nvs_erase_key(nvsHandle_, "word-count");
+                nvs_erase_key(nvsHandle_, "tot-rd-time");
+                break;
             default:
                 log_e("Unknown migration version: %" PRIu32, migrationVersion);
                 return;
@@ -762,8 +767,6 @@ public:
     PrefsItem<int> vcom;
     PrefsItem<int> font;
     PrefsItem<int> lineSpacing;
-    PrefsItem<uint32_t> wordCount;
-    PrefsItem<uint32_t> totalReadingTimeSeconds;
     PrefsItem<uint32_t> bootCount;
     BooleanFlag firstRead;
     PrefsItem<uint32_t> autoPilotSpeed;
@@ -826,7 +829,7 @@ public:
     static PairedStatus paired;
 
 protected:
-    const uint32_t latestMigrationVersion_ = 9;
+    const uint32_t latestMigrationVersion_ = 10;
     uint32_t nvsHandle_{};
     bool started_{};
 

@@ -63,6 +63,8 @@ public:
 
     void clearWiFiCredentials();
 
+    auto saveSetting(const std::string &ssid, const std::string &password) -> void;
+
     // Scanning
     auto scanNetworks(const std::function<void(std::shared_ptr<wifi_ap_record_t[]> apRecords,
                                                int recordCount)> &channelScanCompleteCB)

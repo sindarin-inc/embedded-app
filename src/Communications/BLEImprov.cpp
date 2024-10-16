@@ -113,6 +113,7 @@ void BLEImprov::setError(improv::Error error, bool notify) {
 
 void BLEImprov::doneConnecting() {
     this->setState(STATE_CONNECTED);
+    WiFi::getInstance().saveSetting(this->lastCommand_.ssid, this->lastCommand_.password);
     log_i("Connected, IP address: %s", WiFi::getInstance().getLocalIpStr().c_str());
     SHOW_HEAP();
 }
