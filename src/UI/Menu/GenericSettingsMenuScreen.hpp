@@ -7,7 +7,6 @@
 #include "UI/Components/EinkView.hpp"
 #include "UI/Components/SingleLineTextView.hpp"
 #include "UI/Menu/NewMenuView.hpp"
-#include "UI/MsgPopup.hpp"
 #include "UI/Screen.hpp"
 
 class GenericSettingsMenuScreen : public Screen, public EinkView {

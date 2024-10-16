@@ -1,7 +1,6 @@
 #include "CarouselMenuScreen.hpp"
 
 #include "Misc/Platform.hpp"
-#include "UI/MsgPopup.hpp"
 
 CarouselMenuScreen::CarouselMenuScreen(DisplaySystem &display)
     : EinkView(display), titleView_(display, ""), menuView_(display) {}

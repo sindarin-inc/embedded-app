@@ -3,12 +3,14 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/queue.h>
 #include <freertos/timers.h>
+#include <functional>
 #include <utility>
 
 #include "Misc/Platform.hpp"
 #include "Models/UserReadablePartialChapterSummary.hpp"
 #include "UI/Bitmaps/Auto_Pilot_Icons.hpp"
 #include "UI/ReadableHookScreens.hpp"
+#include "UI/RootUI.hpp"
 #include "sindarin-debug.h"
 
 // Two minutes per page currently
@@ -27,13 +29,6 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
       lightingController_(lightingController), display_(display), localStore_(localStore) {
 
     renderer_.setLineSpacing(prefs.lineSpacing.get().value_or(0));
-    notExist_ = std::make_shared<MsgPopup>(
-        this->display_, "This content doesn't have that feature.\nPress any button to continue.");
-
-    notExist_->setBackCallback([this]() {
-        this->display_.clearDisplay();
-        this->setCurrentScreen(nullptr);
-    });
 
     readablePlacemarkHistoryScreen_ = std::make_shared<ReadablePlacemarkHistoryScreen>(
         this->prefs_, this->fileSystem_, this->readable_, this->renderer_, this->display_,
@@ -74,14 +69,9 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
         metrics["text_size"] = prefs_.font.get().value_or(PREFS_SOL_SMALL);
         metrics["line_spacing"] = prefs_.lineSpacing.get().value_or(0);
         telemetry_.logMetric(TelemetryField::METRIC_REPORT, readable_->uuid.c_str(), metrics);
-        auto reportPopup = std::make_shared<MsgPopup>(
-            display, "Thank you, our team will\nreview this page for\nformatting issues.");
-        display.clearDisplay();
-        this->setCurrentScreen(reportPopup);
-        reportPopup->setBackCallback([this, &display]() {
-            display.clearDisplay();
-            this->setCurrentScreen(nullptr);
-        });
+        RootUI::getInstance().showTemporaryMessage(
+            "Thank you, our team will\nreview this page for\nformatting issues.",
+            []() { RootUI::getInstance().popScreen(); }, 0);
     };
 
     auto popupNavigationFactory = [this, onMainMenu]() -> MenuItemSharedPtrVector {
@@ -177,16 +167,15 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
                     readablesToDelete.back().isArchived = false;
                     readablesToDelete.back().readable = readable_;
                     localStore_.processReadableDeletion(readablesToDelete, localStore_.books());
-                    auto restartSoonPopup = std::make_shared<MsgPopup>(
-                        display_, "Book deleted, press \ue000 to restart");
+
+                    RootUI::getInstance().showTemporaryMessage(
+                        "Book deleted, press any button to restart",
+                        [this, onMainMenu]() {
                     display_.clearDisplay();
-                    this->setCurrentScreen(restartSoonPopup);
-                    setNeedsRerender();
-                    restartSoonPopup->setBackCallback([this, onMainMenu]() {
-                        display_.clearDisplay();
-                        onMainMenu();
-                        PowerManager::getInstance().reboot();
-                    });
+                    onMainMenu();
+                    PowerManager::getInstance().reboot();
+                        },
+                        0);
                 }));
             setCurrentScreen(lineMenuScreen);
             setNeedsRerender();
@@ -204,11 +193,16 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
                         bookOrArticle +
                         " later, you can fetch it from your archives using the Sol App on your "
                         "mobile device.";
-                    auto popup = std::make_shared<MsgPopup>(display_, message);
+
+                    RootUI::getInstance().showTemporaryMessage(
+                        message,
+                        [onMainMenu]() {
+                    RootUI::getInstance().popScreen();
+                    onMainMenu();
+                        },
+                        0);
 
                     prefs_.didFirstArchive.set(true);
-                    popup->setBackCallback([onMainMenu]() { onMainMenu(); });
-                    setCurrentScreen(popup);
                 } else {
                     onMainMenu();
                 }
@@ -291,8 +285,11 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
                     setCurrentScreen(readableDictionaryScreen_);
                 }));
             } else {
-                menuItems->emplace_back(std::make_shared<NewMenuItemSingleLine>(
-                    "Dictionary", [this]() { setCurrentScreen(notExist_); }));
+                menuItems->emplace_back(std::make_shared<NewMenuItemSingleLine>("Dictionary",
+                                                                                [this]() {
+                    RootUI::getInstance().showTemporaryMessage(
+                        notExistMessage_, []() { RootUI::getInstance().popScreen(); }, 0);
+                }));
                 log_d("No dictionary for spine %s", placeHref.c_str());
             }
 
@@ -307,8 +304,11 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
                 }));
             } else {
                 log_d("No summary for spine %s", placeHref.c_str());
-                menuItems->emplace_back(std::make_shared<NewMenuItemSingleLine>(
-                    "Summary", [this]() { setCurrentScreen(notExist_); }));
+                menuItems->emplace_back(std::make_shared<NewMenuItemSingleLine>("Summary",
+                                                                                [this]() {
+                    RootUI::getInstance().showTemporaryMessage(
+                        notExistMessage_, []() { RootUI::getInstance().popScreen(); }, 0);
+                }));
             }
 
             if (fileSystem_.exists(readable_->placemarkHistoryFilePath())) {
@@ -319,18 +319,27 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
                     setCurrentScreen(readablePlacemarkHistoryScreen_);
                 }));
             } else {
-                menuItems->emplace_back(std::make_shared<NewMenuItemSingleLine>(
-                    "History", [this]() { setCurrentScreen(notExist_); }));
+                menuItems->emplace_back(std::make_shared<NewMenuItemSingleLine>("History",
+                                                                                [this]() {
+                    RootUI::getInstance().showTemporaryMessage(
+                        notExistMessage_, []() { RootUI::getInstance().popScreen(); }, 0);
+                }));
             }
         } else {
-            menuItems->emplace_back(std::make_shared<NewMenuItemSingleLine>(
-                "Dictionary", [this]() { setCurrentScreen(notExist_); }));
+            menuItems->emplace_back(std::make_shared<NewMenuItemSingleLine>("Dictionary", [this]() {
+                RootUI::getInstance().showTemporaryMessage(
+                    notExistMessage_, []() { RootUI::getInstance().popScreen(); }, 0);
+            }));
 
-            menuItems->emplace_back(std::make_shared<NewMenuItemSingleLine>(
-                "Summary", [this]() { setCurrentScreen(notExist_); }));
+            menuItems->emplace_back(std::make_shared<NewMenuItemSingleLine>("Summary", [this]() {
+                RootUI::getInstance().showTemporaryMessage(
+                    notExistMessage_, []() { RootUI::getInstance().popScreen(); }, 0);
+            }));
 
-            menuItems->emplace_back(std::make_shared<NewMenuItemSingleLine>(
-                "History", [this]() { setCurrentScreen(notExist_); }));
+            menuItems->emplace_back(std::make_shared<NewMenuItemSingleLine>("History", [this]() {
+                RootUI::getInstance().showTemporaryMessage(
+                    notExistMessage_, []() { RootUI::getInstance().popScreen(); }, 0);
+            }));
             log_d("Not an EPub, so no history or summary or dictionary");
         }
 
@@ -727,10 +736,11 @@ void ReadableScreen::render(DisplaySystem &display) {
                               "\ue001   Previous Page\n\n"
                               "\ue003  or  \ue004   Popup Menu\n\n "
                               "Press any button to start...";
-        auto msgPopup = std::make_shared<MsgPopup>(display, message);
-        msgPopup->setBackCallback([this]() { this->setCurrentScreen(nullptr); });
-        currentScreen_ = msgPopup;
-        msgPopup->render(display);
+        RootUI::getInstance().showTemporaryMessage(
+            message, []() { RootUI::getInstance().popScreen(); }, 0);
+        // We're in the UI loop here (in the render method) so it won't get rendered right away.
+        // So in this case, we have to explicitly tell RootUI to render it.
+        RootUI::getInstance().renderIfNeeded();
         prefs_.firstRead.set(true);
         return;
     }
@@ -744,10 +754,11 @@ void ReadableScreen::render(DisplaySystem &display) {
                               "\ue000   Pause/unpause\n\n"
                               "Press any button to start...";
 
-        auto msgPopup = std::make_shared<MsgPopup>(display, message);
-        msgPopup->setBackCallback([this]() { this->setCurrentScreen(nullptr); });
-        currentScreen_ = msgPopup;
-        msgPopup->render(display);
+        RootUI::getInstance().showTemporaryMessage(
+            message, []() { RootUI::getInstance().popScreen(); }, 0);
+        // We're in the UI loop here (in the render method) so it won't get rendered right away.
+        // So in this case, we have to explicitly tell RootUI to render it.
+        RootUI::getInstance().renderIfNeeded();
         prefs_.firstAutopilotRead.set(true);
         // Make sure the next screen is a full refresh
         display.clearDisplay();

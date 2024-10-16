@@ -83,6 +83,10 @@
 
 #define LAST_READABLE_ID "rui-readable"
 
+extern RootUI rootUi;
+
+auto RootUI::getInstance() -> RootUI & { return rootUi; }
+
 void RootUI::pushScreen(const std::shared_ptr<Screen> &screen, bool deferRender) {
     screen->setNeedsRerender();
     screenStack_.push(screen);
@@ -144,13 +148,14 @@ void RootUI::clearNeedsRerender() {
     }
 }
 
-// second parameter is a function that should be called in cleanup
 void RootUI::showTemporaryMessage(const std::string &msg, const std::function<void()> &cleanupFunc,
                                   int duration) {
     auto msgPopup = std::make_shared<MsgPopup>(display_, msg);
     msgPopup->setBackCallback(cleanupFunc);
     pushScreen(msgPopup);
-    msgPopup->startTimer(duration);
+    if (duration > 0) {
+        msgPopup->startTimer(duration);
+    }
 }
 
 // NOLINTNEXTLINE(readability-function-size): It's big, I know

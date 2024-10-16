@@ -1,7 +1,6 @@
 #include "InactivitySettingMenuScreen.hpp"
 
 #include "Renderers/Renderer.hpp"
-#include "UI/MsgPopup.hpp"
 
 InactivitySettingMenuScreen::InactivitySettingMenuScreen(DisplaySystem &display,
                                                          const std::string &backTitle)

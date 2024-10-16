@@ -2,7 +2,6 @@
 
 #include "Communications/WiFiSettings.hpp"
 #include "Misc/Platform.hpp"
-#include "UI/MsgPopup.hpp"
 
 WiFiSettingsMenuScreen::WiFiSettingsMenuScreen(DisplaySystem &display)
     : EinkView(display), menuView_(display), backLabelView_(display, "System Settings"),

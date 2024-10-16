@@ -1,7 +1,5 @@
 #include "UI/NewReadablePopupMenuScreen.hpp"
 
-#include "UI/MsgPopup.hpp"
-
 void NewReadablePopupMenuScreen::setUpPopupMenu() {
     std::shared_ptr<Place> place = renderer_.getCurrentPlace();
 

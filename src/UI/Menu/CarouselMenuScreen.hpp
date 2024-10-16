@@ -6,7 +6,6 @@
 #include "UI/Components/CarouselTitleLabelView.hpp"
 #include "UI/Components/EinkView.hpp"
 #include "UI/Menu/NewMenuView.hpp"
-#include "UI/MsgPopup.hpp"
 #include "UI/Screen.hpp"
 
 using MenuItemVector = std::vector<std::shared_ptr<NewMenuItem>>;
