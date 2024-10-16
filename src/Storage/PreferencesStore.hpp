@@ -640,11 +640,11 @@ public:
                 // Write all changes to NVS at once
                 boolFlags_.write();
                 break;
+            }
             case 9:
                 nvs_erase_key(nvsHandle_, "word-count");
                 nvs_erase_key(nvsHandle_, "tot-rd-time");
                 break;
-            }
             default:
                 log_e("Unknown migration version: %" PRIu32, migrationVersion);
                 return;
