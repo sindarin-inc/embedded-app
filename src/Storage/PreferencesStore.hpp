@@ -227,6 +227,9 @@ public:
         }
 
         virtual void set(T value) {
+            if (this->loaded_ && this->value_ == value) {
+                return;
+            }
             this->value_ = value;
             this->writeToStorage(this->key_, value);
         }
