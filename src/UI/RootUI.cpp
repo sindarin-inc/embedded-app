@@ -150,14 +150,14 @@ void RootUI::clearNeedsRerender() {
 
 void RootUI::showTemporaryMessage(const std::string &msg, const std::function<void()> &cleanupFunc,
                                   int duration) {
-    auto msgPopup = std::make_shared<MsgPopup>(display_, msg, cleanupFunc);
-    msgPopup->setBackCallback([this]() {
+    auto msgPopup = std::make_shared<MsgPopup>(display_, msg);
+    // NOLINTNEXTLINE(clang-analyzer-cplusplus.NewDeleteLeaks)
+    msgPopup->setBackCallback([this, cleanupFunc]() {
         // We do this because we want to ensure that the cleanup function is called after the screen
         // is popped. A little unintuitive, but it's what the interface needs (see
         // popAndSetIndexOrDone -- if we did that first, there'd be an extra pop).
-        auto msgPopup = std::static_pointer_cast<MsgPopup>(currentScreen());
         popScreen();
-        msgPopup->cleanupFunc();
+        cleanupFunc();
     });
     pushScreen(msgPopup);
     if (duration > 0) {
@@ -540,9 +540,7 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                 "Direct transfer via USB", [this, popAndSetIndexOrDone]() {
                     auto drmFreeScreen = std::make_shared<DRMFreeWelcomeMenuScreen>(display_);
                     this->pushScreen(drmFreeScreen);
-                    drmFreeScreen->setBackCallback(
-                        [popAndSetIndexOrDone]() { popAndSetIndexOrDone(); });
-
+                    drmFreeScreen->setBackCallback(popAndSetIndexOrDone);
                     drmFreeScreen->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
                         "Back", [this]() { this->popScreen(); }));
                 }));
