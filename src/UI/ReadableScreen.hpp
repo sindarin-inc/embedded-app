@@ -122,7 +122,7 @@ private:
     uint32_t readingStartTime_{};
     LastArrowPress lastArrowPress_ = REMOTE_NONE;
 
-    std::string notExistMessage_ =
+    const char *notExistMessage_ =
         "This content doesn't have that feature.\nPress any button to continue.";
 
     int numUps_ = 0;

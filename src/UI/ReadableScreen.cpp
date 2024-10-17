@@ -143,8 +143,7 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
 
         menuItems->emplace_back(menuItemCheckable);
 
-        auto deleteMenuItem = std::make_shared<NewMenuItemSingleLine>("Delete",
-                                                                      [this, onMainMenu]() {
+        auto deleteMenuItem = std::make_shared<NewMenuItemSingleLine>("Delete", [this]() {
             log_d("Showing delete confirmation!");
             auto lineMenuScreen = std::make_shared<LineMenuScreen>(this->prefs_, this->display_);
             lineMenuScreen->resetMenuItems();
@@ -153,30 +152,25 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
                 setCurrentScreen(nullptr);
                 back();
             }));
-            lineMenuScreen->addMenuItem(
-                std::make_shared<NewMenuItemSingleLine>("Delete: I'm sure!", [this, onMainMenu]() {
-                    UserReadablesVector readablesToDelete = {};
-                    // Create a UserReadable from the readable_ and add it to the
-                    // readablesToDelete dynamic_pointer_cast the stream_ to an EPubFile and
-                    // close it It's always an EPubFile if they uploaded it to us! Print out the
-                    // dynamic type of stream_ to make sure it's always an EPubFile
-                    std::shared_ptr<EPubFile> temp = std::dynamic_pointer_cast<EPubFile>(stream_);
-                    temp->close();
-                    readablesToDelete.emplace_back();
-                    readablesToDelete.back().uuid = readable_->shortenedUuid;
-                    readablesToDelete.back().isArchived = false;
-                    readablesToDelete.back().readable = readable_;
-                    localStore_.processReadableDeletion(readablesToDelete, localStore_.books());
+            lineMenuScreen->addMenuItem(std::make_shared<NewMenuItemSingleLine>("Delete: I'm sure!",
+                                                                                [this]() {
+                UserReadablesVector readablesToDelete = {};
+                // Create a UserReadable from the readable_ and add it to the
+                // readablesToDelete dynamic_pointer_cast the stream_ to an EPubFile and
+                // close it It's always an EPubFile if they uploaded it to us! Print out the
+                // dynamic type of stream_ to make sure it's always an EPubFile
+                std::shared_ptr<EPubFile> temp = std::dynamic_pointer_cast<EPubFile>(stream_);
+                temp->close();
+                readablesToDelete.emplace_back();
+                readablesToDelete.back().uuid = readable_->shortenedUuid;
+                readablesToDelete.back().isArchived = false;
+                readablesToDelete.back().readable = readable_;
+                localStore_.processReadableDeletion(readablesToDelete, localStore_.books());
 
-                    RootUI::getInstance().showTemporaryMessage(
-                        "Book deleted, press any button to restart",
-                        [this, onMainMenu]() {
-                    display_.clearDisplay();
-                    onMainMenu();
-                    PowerManager::getInstance().reboot();
-                        },
-                        0);
-                }));
+                RootUI::getInstance().showTemporaryMessage(
+                    "Book deleted, press any button to restart",
+                    []() { PowerManager::getInstance().reboot(); }, 0);
+            }));
             setCurrentScreen(lineMenuScreen);
             setNeedsRerender();
         });

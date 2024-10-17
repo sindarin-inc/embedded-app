@@ -1530,6 +1530,10 @@ void LocalStore::readableFilePurge(const std::shared_ptr<Readable> &readable) {
     prefs_.readablePlaceChanged.remove(readable->shortenedUuid.c_str());
     prefs_.readableArchivedChanged.remove(readable->shortenedUuid.c_str());
     prefs_.readableBookmarksChanged.remove(readable->shortenedUuid.c_str());
+
+    if (readable->shortenedUuid == prefs_.lastReadableId.get()) {
+        prefs_.lastReadableId.remove();
+    }
 }
 
 const char *firmwarePath = "/firmware.json";
