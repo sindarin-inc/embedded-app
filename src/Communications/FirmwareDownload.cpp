@@ -135,7 +135,6 @@ void FirmwareDownloader::downloadFirmware(
 
         setState(FirmwareDownloadState{.state = FirmwareDownloadState::State::Installed});
     };
-    // Note: 8192 is the size that all the esp-idf examples use for esp_http_client. It's probably
-    // overkill but after getting stack overflows on 1.0.0-1.0.3 it's probably better to be safe
+    // Note: 8192 is the size that all the esp-idf examples use for esp_http_client.
     DispatchQueue::dispatchOneOff(updateFwIfNeeded, 8192, 0, 1, "FWUpdate");
 }
