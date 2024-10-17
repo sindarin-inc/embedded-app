@@ -11,10 +11,10 @@
 OffsetAdjustScreen::OffsetAdjustScreen(DisplaySystem &display, PreferencesStore &prefs,
                                        Telemetry &telemetry)
     : EinkView(display), display_(display),
-      renderer_(display, GetTextRectFromPrefs(display, prefs), static_cast<Font *>(&fontFace0)),
+      renderer_(display, GetTextRectFromPrefs(display, prefs),
+                FontFromPrefs(prefs.font.get().value_or(PREFS_SOL_SMALL))),
       prefs_(prefs), telemetry_(telemetry), rendererRef_(renderer_), outerBoxView_(display, 5),
       backgroundBoxView_(display, 5), explanationView_(display, 5) {
-
     std::string message;
     message +=
         "Beneath a rugged exterior, Pirate Captain O'Malley harbored a love for poetry. Between "
@@ -31,7 +31,7 @@ OffsetAdjustScreen::OffsetAdjustScreen(DisplaySystem &display, PreferencesStore 
     auto stream = std::make_shared<StdStringStream>(message);
 
     rendererRef_.setStream(stream);
-
+    rendererRef_.setLineSpacing(prefs.lineSpacing.get().value_or(0));
     setupInstructions();
 }
 
@@ -39,7 +39,8 @@ OffsetAdjustScreen::OffsetAdjustScreen(DisplaySystem &display, PreferencesStore 
                                        Telemetry &telemetry, Renderer &renderer,
                                        std::shared_ptr<Place> place)
     : EinkView(display), display_(display),
-      renderer_(display, GetTextRectFromPrefs(display, prefs), static_cast<Font *>(&fontFace0)),
+      renderer_(display, GetTextRectFromPrefs(display, prefs),
+                FontFromPrefs(prefs.font.get().value_or(PREFS_SOL_SMALL))),
       place_(std::move(place)), prefs_(prefs), telemetry_(telemetry), rendererRef_(renderer),
       outerBoxView_(display, 5), backgroundBoxView_(display, 5), explanationView_(display, 5) {
     setupInstructions();

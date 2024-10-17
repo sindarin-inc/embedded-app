@@ -293,9 +293,6 @@ void FirmwareUpdateScreen::begin() {
             } else if (state.state == FirmwareDownloadState::Installed) {
                 vTaskDelay(pdMS_TO_TICKS(3000));
                 PowerManager::getInstance().reboot();
-                // Only for the sim
-                resumeBLE();
-                back();
             }
         });
     });

@@ -48,6 +48,9 @@ auto BLEManager::connectProxy(const std::shared_ptr<CancelFlag> &cancel) -> bool
     enableService(BLEProxy::getInstance()->getService());
     startAdvertisingIfNecessary();
 
+    // Disconnect from any previous BLE connection
+    disconnectAllClients();
+
     BLEProxy::getInstance()->registerSubscriptionStatusCallback([this](bool connected) {
         log_i("BLE proxy subscription status now: %d", connected);
         this->connectedProxy = connected;
