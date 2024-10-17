@@ -14,7 +14,7 @@ void CarouselMenuScreen::setTabToTitle(const std::string &tabTitle, int rowIndex
     for (int i = 0; i < menuTabs_.size(); i++) {
         if (std::get<0>(menuTabs_[i]) == tabTitle) {
             setCurrentTabIndex(i);
-            // If we're passed in an index here, override the previous index.
+            // If we're passed in an index here, override the previous cached ID value.
             if (rowIndex != -1) {
                 std::get<2>(menuTabs_[i]) = menuView_.getIDfromRowIndex(rowIndex);
                 menuView_.setSelectedByMenuItemID(std::get<2>(menuTabs_[i]));
