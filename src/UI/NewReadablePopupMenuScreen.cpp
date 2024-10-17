@@ -97,60 +97,54 @@ void NewReadablePopupMenuScreen::drawInRect(Rect rect) {
 }
 
 auto NewReadablePopupMenuScreen::layout(LayoutContext &context, Size size) -> Size {
-    auto fullFrame = Rect::fromSize(size);
+    // TODO(john): Add layout for landscape
+    auto contentFrame = context.setSublayoutFrame(
+        Rect::fromSize(size), LayoutOptionsSizeToFit | LayoutOptionsAlignCenter,
+        [this](LayoutContext &context, Size size) -> Size {
+            int y = 0;
+            auto titleBox = context.setViewFrame(titleView_, {{0, y}, size},
+                                                 LayoutOptionsSizeToFit | LayoutOptionsAlignTop |
+                                                     LayoutOptionsAlignCenterHorizontal);
 
-    auto backgroundInset = size.width * 2 / 9;
+            y += titleBox.size.height + 12;
 
-    // Right now we are forcing this to be an inset from the full height of the size
-    // but it would be better if it could layout all the stuff inside it and determine
-    // the right height.
+            auto menuBox = context.setViewFrame(
+                menuView_, {{10, y}, {size.width - 10, size.height - y}},
+                LayoutOptionsSizeToFit | LayoutOptionsAlignTop | LayoutOptionsAlignLeft);
+
+            y += menuBox.size.height + 10;
+
+            if (!footer1TextView_.getText().empty()) {
+                auto footer1Rect = context.setViewFrame(footer1TextView_, {{0, y}, size},
+                                                        LayoutOptionsSizeToFit |
+                                                            LayoutOptionsAlignCenterHorizontal);
+                y += footer1Rect.size.height;
+            }
+            if (!footer2TextView_.getText().empty()) {
+                auto footer2Rect = context.setViewFrame(footer2TextView_, {{0, y}, size},
+                                                        LayoutOptionsSizeToFit |
+                                                            LayoutOptionsAlignCenterHorizontal);
+                y += footer2Rect.size.height;
+            }
+            if (!footer3TextView_.getText().empty()) {
+                auto footer3Rect = context.setViewFrame(footer3TextView_, {{0, y}, size},
+                                                        LayoutOptionsSizeToFit |
+                                                            LayoutOptionsAlignCenterHorizontal);
+                y += footer3Rect.size.height;
+            }
+
+            // We are hardcoding a width here because we have 3 different tabs and each has a
+            // differnt width so doing it dynamically would make the bounding box width jump around
+            // when you go left and right bewteen tabs. And the y+1 is to give just a bit more space
+            // in the bottom for weighting visually.
+            return {size.width * 5 / 9 - 18, y + 1};
+        });
+
+    // Border is 5 pixels on all sides
+    auto foregroundFrame = context.setViewFrame(popupMenuForeground_, contentFrame.inset(-5, -10));
+
     auto backgroundFrame =
-        context.setViewFrame(popupMenuBackground_, fullFrame.inset(backgroundInset, 13));
-    // Border is inset by 5 pixels on the top and bottom and then 1/4 of the width on the left and
-    // right. This will need to be adjusted for different screen resolutions.
-    auto foregroundFrame =
-        context.setViewFrame(popupMenuForeground_, fullFrame.inset(backgroundInset + 5, 18));
-    auto contentFrame = foregroundFrame.inset(5, 10);
-    auto y = contentFrame.origin.y;
-
-    auto titleBox = context.setViewFrame(
-        titleView_, {{contentFrame.origin.x, y}, contentFrame.size},
-        LayoutOptionsSizeToFit | LayoutOptionsAlignTop | LayoutOptionsAlignCenterHorizontal);
-
-    y += titleBox.size.height + 12;
-
-    auto menuBox = context.setViewFrame(
-        menuView_,
-        {{contentFrame.origin.x + contentFrame.size.width / 9, y},
-         {contentFrame.size.width - 2 * contentFrame.size.width / 9, contentFrame.size.height}},
-        LayoutOptionsSizeToFit | LayoutOptionsAlignTop | LayoutOptionsAlignLeft);
-
-    y += menuBox.size.height + 2;
-
-    // Nudge down the footers
-    if (!footer1TextView_.getText().empty() || !footer2TextView_.getText().empty()) {
-        y += 8;
-    }
-
-    auto footerRect = Rect({{contentFrame.origin.x, y}, {contentFrame.size.width, 0}});
-    if (!footer1TextView_.getText().empty()) {
-        auto footerTopRect =
-            context.setViewFrame(footer1TextView_, footerRect,
-                                 LayoutOptionsSizeToFit | LayoutOptionsAlignCenterHorizontal);
-        y += footerTopRect.size.height;
-        footerRect.origin.y = y;
-    }
-    if (!footer2TextView_.getText().empty()) {
-        auto footerBottomRect =
-            context.setViewFrame(footer2TextView_, footerRect,
-                                 LayoutOptionsSizeToFit | LayoutOptionsAlignCenterHorizontal);
-        y += footerBottomRect.size.height;
-        footerRect.origin.y = y;
-    }
-    if (!footer3TextView_.getText().empty()) {
-        context.setViewFrame(footer3TextView_, footerRect,
-                             LayoutOptionsSizeToFit | LayoutOptionsAlignCenterHorizontal);
-    }
+        context.setViewFrame(popupMenuBackground_, foregroundFrame.inset(-5, -5));
 
     return backgroundFrame.size;
 }
