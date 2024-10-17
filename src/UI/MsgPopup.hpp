@@ -13,20 +13,19 @@ class MsgPopup : public Screen, public EinkView {
 private:
     BoxView boxView_;
     MultiLineTextView textView_;
-    std::function<void()> cleanupFunc_;
 
 public:
     MsgPopup(
         DisplaySystem &display, const std::string &msg, std::function<void()> cleanupFunc = []() {})
         : EinkView(display), boxView_(display, 12), textView_(display, 12),
-          cleanupFunc_(std::move(cleanupFunc)) {
+          cleanupFunc(std::move(cleanupFunc)) {
         textView_.setText(msg);
         textView_.alignCenter = true;
         textView_.setFont(static_cast<Font *>(&fontFace0));
     }
     ~MsgPopup() override = default;
 
-    void cleanupFunc() { cleanupFunc_(); }
+    std::function<void()> cleanupFunc;
 
     void startTimer(int duration = 2000) {
         // Must stop the timer because ChangePeriod starts it. This prevents an issue where
