@@ -97,7 +97,6 @@ void NewReadablePopupMenuScreen::drawInRect(Rect rect) {
 }
 
 auto NewReadablePopupMenuScreen::layout(LayoutContext &context, Size size) -> Size {
-    // TODO(john): Add layout for landscape
     auto contentFrame = context.setSublayoutFrame(
         Rect::fromSize(size), LayoutOptionsSizeToFit | LayoutOptionsAlignCenter,
         [this](LayoutContext &context, Size size) -> Size {
@@ -140,11 +139,9 @@ auto NewReadablePopupMenuScreen::layout(LayoutContext &context, Size size) -> Si
             return {size.width * 5 / 9 - 18, y + 1};
         });
 
-    // Border is 5 pixels on all sides
     auto foregroundFrame = context.setViewFrame(popupMenuForeground_, contentFrame.inset(-5, -10));
 
-    auto backgroundFrame =
-        context.setViewFrame(popupMenuBackground_, foregroundFrame.inset(-5, -5));
+    auto backgroundFrame = context.setViewFrame(popupMenuBackground_, foregroundFrame.inset(-5));
 
     return backgroundFrame.size;
 }
