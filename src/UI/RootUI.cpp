@@ -546,7 +546,7 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                 }));
 
             firstBookWelcomeMenuScreen->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
-                "Back to Welcome Menu", [popAndSetIndexOrDone]() { popAndSetIndexOrDone(); }));
+                "Back to Welcome Menu", popAndSetIndexOrDone));
 
             this->pushScreen(firstBookWelcomeMenuScreen);
             },

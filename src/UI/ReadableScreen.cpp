@@ -77,8 +77,7 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
     auto popupNavigationFactory = [this, onMainMenu]() -> MenuItemSharedPtrVector {
         auto menuItems = std::make_shared<MenuItemVector>();
 
-        auto menuItem =
-            std::make_shared<NewMenuItemSingleLine>("Main Menu", [onMainMenu]() { onMainMenu(); });
+        auto menuItem = std::make_shared<NewMenuItemSingleLine>("Main Menu", onMainMenu);
 
         menuItems->emplace_back(menuItem);
 
