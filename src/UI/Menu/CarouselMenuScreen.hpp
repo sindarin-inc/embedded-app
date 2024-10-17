@@ -11,8 +11,8 @@
 using MenuItemVector = std::vector<std::shared_ptr<NewMenuItem>>;
 using MenuItemSharedPtrVector = std::shared_ptr<MenuItemVector>;
 using MenuItemFactory = std::function<MenuItemSharedPtrVector()>;
-// The int is the index into that tab to cache that value.
-using CarouselMenuEntry = std::tuple<std::string, MenuItemFactory, int>;
+// The std::string is the currently selected item ID in that tab to cache that value.
+using CarouselMenuEntry = std::tuple<std::string, MenuItemFactory, std::string>;
 
 // An abstract base class for a carousel menu screen. It handles the
 // adding of tabs and the selection of items but the subclasses must

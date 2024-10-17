@@ -14,6 +14,8 @@ public:
         : NewMenuItem(std::move(callback)), title_(std::move(title)),
           isCheckedCallback_(std::move(isCheckedCallback)) {}
 
+    [[nodiscard]] auto id() const -> std::string override { return title_; }
+
     [[nodiscard]] auto title() const -> const std::string & { return title_; }
 
     [[nodiscard]] auto isChecked() const -> bool { return isCheckedCallback_(); }

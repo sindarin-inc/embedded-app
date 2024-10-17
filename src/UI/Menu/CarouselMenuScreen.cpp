@@ -7,17 +7,18 @@ CarouselMenuScreen::CarouselMenuScreen(DisplaySystem &display)
 
 void CarouselMenuScreen::addTab(const std::string &tabName,
                                 const MenuItemFactory &menuItemFactory) {
-    menuTabs_.emplace_back(tabName, menuItemFactory, 0);
+    menuTabs_.emplace_back(tabName, menuItemFactory, "");
 }
 
 void CarouselMenuScreen::setTabToTitle(const std::string &tabTitle, int rowIndex) {
     for (int i = 0; i < menuTabs_.size(); i++) {
         if (std::get<0>(menuTabs_[i]) == tabTitle) {
+            setCurrentTabIndex(i);
             // If we're passed in an index here, override the previous index.
             if (rowIndex != -1) {
-                std::get<2>(menuTabs_[i]) = rowIndex;
+                std::get<2>(menuTabs_[i]) = menuView_.getIDfromRowIndex(rowIndex);
+                menuView_.setSelectedByMenuItemID(std::get<2>(menuTabs_[i]));
             }
-            setCurrentTabIndex(i);
             return;
         }
     }
@@ -53,7 +54,7 @@ void CarouselMenuScreen::populateMenuView() {
         menuView_.addMenuItem(i);
     }
 
-    menuView_.setSelectedIndex(std::get<2>(menuTabs_[currentTabIndex_]));
+    menuView_.setSelectedByMenuItemID(std::get<2>(menuTabs_[currentTabIndex_]));
 
     titleView_.setText(getCurrentTabTitle());
     firstLoad_ = true;
@@ -88,7 +89,7 @@ void CarouselMenuScreen::processCommand(RemoteCommand command) {
 
 void CarouselMenuScreen::moveSelection(int delta) {
     auto newPage = menuView_.moveSelection(delta);
-    std::get<2>(menuTabs_[currentTabIndex_]) = menuView_.getSelectedIndex();
+    std::get<2>(menuTabs_[currentTabIndex_]) = menuView_.getSelectedMenuItemID();
     if (newPage) {
         firstLoad_ = true;
     }

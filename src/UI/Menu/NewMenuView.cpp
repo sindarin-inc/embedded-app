@@ -59,6 +59,30 @@ auto NewMenuView::setSelectedIndex(size_t index) -> bool {
     return false;
 }
 
+auto NewMenuView::setSelectedByMenuItemID(const std::string &menuItemID) -> bool {
+    for (size_t i = 0; i < menuItems_.size(); ++i) {
+        if (menuItems_[i]->id() == menuItemID) {
+            return setSelectedIndex(i);
+        }
+    }
+    // If we don't find it, select the first item.
+    return setSelectedIndex(0);
+}
+
+auto NewMenuView::getIDfromRowIndex(size_t index) const -> std::string {
+    if (index < menuItems_.size()) {
+        return menuItems_[index]->id();
+    }
+    return "";
+}
+
+auto NewMenuView::getSelectedMenuItemID() const -> std::string {
+    if (selectedIndex_ < menuItems_.size()) {
+        return menuItems_[selectedIndex_]->id();
+    }
+    return "";
+}
+
 auto NewMenuView::moveSelection(int delta) -> bool {
     int newIndex = static_cast<int>(getSelectedIndex()) + delta;
     // Wrap around

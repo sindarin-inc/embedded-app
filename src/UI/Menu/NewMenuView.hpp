@@ -25,6 +25,11 @@ public:
     auto moveSelection(int delta) -> bool;
     void setIndicatorType(IndicatorType type);
 
+    auto setSelectedByMenuItemID(const std::string &menuItemID) -> bool;
+    auto getSelectedMenuItemID() const -> std::string;
+
+    auto getIDfromRowIndex(size_t index) const -> std::string;
+
     auto layout(LayoutContext &context, Size size) -> Size override;
     void drawInRect(Rect rect) override;
 

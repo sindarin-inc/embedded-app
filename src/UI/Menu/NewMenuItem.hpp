@@ -8,6 +8,7 @@ public:
     virtual ~NewMenuItem() = default;
     NewMenuItem(std::function<void()> callback) : callback_(std::move(callback)) {}
 
+    virtual auto id() const -> std::string = 0;
     virtual void execute() {
         if (callback_) {
             callback_();

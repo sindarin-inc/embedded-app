@@ -12,6 +12,8 @@ public:
     NewMenuItemTOC(std::string title, std::string place, std::function<void()> callback)
         : NewMenuItem(std::move(callback)), title_(std::move(title)), place_(std::move(place)) {}
 
+    [[nodiscard]] auto id() const -> std::string override { return title_; }
+
     [[nodiscard]] auto title() const -> const std::string & { return title_; }
 
     [[nodiscard]] auto place() const -> const std::string & { return place_; }

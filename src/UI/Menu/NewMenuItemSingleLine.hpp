@@ -12,6 +12,8 @@ public:
     NewMenuItemSingleLine(std::string title, std::function<void()> callback)
         : NewMenuItem(std::move(callback)), title_(std::move(title)) {}
 
+    [[nodiscard]] auto id() const -> std::string override { return title_; }
+
     [[nodiscard]] auto title() const -> const std::string & { return title_; }
 
 private:
