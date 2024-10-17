@@ -188,8 +188,8 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
                         " later, you can fetch it from your archives using the Sol App on your "
                         "mobile device.";
 
-                    RootUI::getInstance().showTemporaryMessage(
-                        message, [onMainMenu]() { onMainMenu(); }, TEMP_MSG_DURATION_NO_CLOSE);
+                    RootUI::getInstance().showTemporaryMessage(message, onMainMenu,
+                                                               TEMP_MSG_DURATION_NO_CLOSE);
 
                     prefs_.didFirstArchive.set(true);
                 } else {
