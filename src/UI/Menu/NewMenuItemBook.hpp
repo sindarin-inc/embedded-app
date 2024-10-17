@@ -15,7 +15,9 @@ public:
         : NewMenuItem(std::move(callback)), readable_(std::move(std::move(readable))),
           archived_(archived) {}
 
-    [[nodiscard]] auto id() const -> std::string override { return readable_-> shortenedUuid; }
+    [[nodiscard]] auto id() const -> std::string override {
+        return readable_->shortenedUuid.c_str();
+    }
 
     [[nodiscard]] auto title() const -> std::string {
         return StringFormat("%s%s", archived_ ? "Archived: " : "", readable_->title.c_str());
