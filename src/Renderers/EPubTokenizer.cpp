@@ -1258,21 +1258,20 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                     return false;
                 }
 
-                auto listLineStart = new char[50];
-                defer { delete[] listLineStart; };
+                auto listLineStart = std::make_unique<char[]>(50);
 
                 if (listLevel_ >= 0) {
                     if (listType_[listLevel_] == ListType::ORDERED) {
                         pugi::xml_attribute attr = node.attribute("value");
                         int32_t seqNbr =
                             attr ? strtol(attr.value(), nullptr, 10) : listSeqNbr_[listLevel_];
-                        (void)snprintf(listLineStart, 49, "%" PRIi32 ".  ", seqNbr);
+                        (void)snprintf(listLineStart.get(), 49, "%" PRIi32 ".  ", seqNbr);
                         listSeqNbr_[listLevel_] = ++seqNbr;
                     } else {
-                        (void)snprintf(listLineStart, 49, "%c  ", LEVEL_CHAR[listLevel_]);
+                        (void)snprintf(listLineStart.get(), 49, "%c  ", LEVEL_CHAR[listLevel_]);
                     }
                     listIndent_[listLevel_] = (listLevel_ * 15) + 5;
-                    listUndent_[listLevel_] = font_->getTextWidth(listLineStart);
+                    listUndent_[listLevel_] = font_->getTextWidth(listLineStart.get());
                 }
 
                 if (tokenizingStarted_ && (listLevel_ >= 0)) {
@@ -1281,7 +1280,7 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                     newToken.streamPlace = {currentStreamOffset_, currentSpineIdx_};
                     newToken.tokenId = TokenId::ITEXT;
 
-                    tokens_.addStr(newToken, listLineStart);
+                    tokens_.addStr(newToken, listLineStart.get());
                     lastToken_ = nullptr;
 
                     if (addTokenToPage(newToken)) {
