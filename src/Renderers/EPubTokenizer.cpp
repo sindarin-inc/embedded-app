@@ -860,16 +860,6 @@ void EPubTokenizer::processPictureTag(pugi::xml_node node) {
 
     if (source) {
         Token &pictureToken = tokens_.getNextAvailable();
-
-        // pictureToken = {.cStr = nullptr,
-        //                 .picture = nullptr,
-        //                 .streamPlace = {currentStreamOffset_, currentSpineIdx_},
-        //                 .pixWidth = 0,
-        //                 .pixHeight = 0,
-        //                 .length = 0,
-        //                 .tokenId = TokenId::PICTURE,
-        //                 .spacesAfter = 0};
-
         pictureToken.streamPlace = {currentStreamOffset_, currentSpineIdx_};
         pictureToken.tokenId = TokenId::PICTURE;
 
