@@ -1281,7 +1281,8 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                     return false;
                 }
 
-                char listLineStart[50];
+                auto listLineStart = new char[50];
+                defer { delete[] listLineStart; };
 
                 if (listLevel_ >= 0) {
                     if (listType_[listLevel_] == ListType::ORDERED) {
