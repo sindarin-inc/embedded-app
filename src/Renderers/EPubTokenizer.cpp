@@ -1103,6 +1103,9 @@ auto EPubTokenizer::processMenuParameters(pugi::xml_node node) -> bool {
 // continue, false if its time to stop (We are at the end of a page (going forward) or the
 // toPlace_ has been reached (going backward))
 auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
+    // If tags are nested more than ~50 tags deep we will run out of stack. Proactively crash so
+    // it's easier to diagnose next time.
+    assert(uxTaskGetStackHighWaterMark(nullptr) >= 128 && "Stack low in EPubTokenizer::interpret");
 
     currentStreamOffset_ = node.offset_debug();
 
