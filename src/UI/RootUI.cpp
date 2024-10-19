@@ -2101,6 +2101,9 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
             newMainMenu->setTabToTitle("Welcome", forceShowWelcome ? 0 : welcomeTabIndex);
             if (forceShowWelcome) {
                 showWelcomeVideo = false;
+            } else if (currentReadable.has_value()) {
+                // If we have a current readable, we shouldn't force the video
+                showWelcomeVideo = false;
             }
         } else {
             // Onboaring is actually complete, so show the next menu over
