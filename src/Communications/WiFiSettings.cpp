@@ -55,9 +55,12 @@ void WiFiSettings::setActiveSetting(std::string ssid, std::string password) {
     load();
 
     // Erase the setting from the vector
-    for (auto it = settings.begin(); it != settings.end(); it++) {
+    for (auto it = settings.begin(); it != settings.end();) {
         if (it->ssid == ssid && it->password == password) {
-            settings.erase(it);
+            // Erase returns the next iterator
+            it = settings.erase(it);
+        } else {
+            it++;
         }
     }
 
