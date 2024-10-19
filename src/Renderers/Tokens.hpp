@@ -163,7 +163,7 @@ public:
                 REND_ELOG("forgetLast(): tokens[] is full!");
             }
         }
-        memset((uint8_t *) &tokens_[tokensTailIdx_], 0, sizeof(Token));
+        memset(reinterpret_cast<uint8_t *>(&tokens_[tokensTailIdx_]), 0, sizeof(Token));
         return tokens_[tokensTailIdx_];
     }
 

@@ -1443,7 +1443,7 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                         }
                         if (!beginningOfPage_) {
                             Token &newToken = tokens_.getNextAvailable();
-                            
+
                             // newToken = {.cStr = nullptr,
                             //             .picture = nullptr,
                             //             .streamPlace = {currentStreamOffset_, currentSpineIdx_},
@@ -1451,7 +1451,8 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                             //             .pixHeight = 0,
                             //             .length = 0,
                             //             .tokenId =
-                            //                 inTableRow_ ? TokenId::NEWLINE : TokenId::ENDPARAGRAPH,
+                            //                 inTableRow_ ? TokenId::NEWLINE :
+                            //                 TokenId::ENDPARAGRAPH,
                             //             .spacesAfter = 0};
 
                             newToken.streamPlace = {currentStreamOffset_, currentSpineIdx_};
@@ -1491,9 +1492,9 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                             //             .pixHeight = 0,
                             //             .length = 0,
                             //             .tokenId =
-                            //                 inTableRow_ ? TokenId::NEWLINE : TokenId::ENDPARAGRAPH,
+                            //                 inTableRow_ ? TokenId::NEWLINE :
+                            //                 TokenId::ENDPARAGRAPH,
                             //             .spacesAfter = 0};
-
 
                             newToken.streamPlace = {currentStreamOffset_, currentSpineIdx_};
                             newToken.tokenId =
@@ -1615,7 +1616,7 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
 
                             newToken.streamPlace = {currentStreamOffset_, currentSpineIdx_};
                             newToken.tokenId = TokenId::ENDPARAGRAPH;
-                                                                    
+
                             lastToken_ = nullptr;
 
                             addTokenToPage(newToken, "\n", 1);
