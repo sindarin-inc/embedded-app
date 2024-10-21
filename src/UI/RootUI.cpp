@@ -2099,10 +2099,9 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
 
         if (welcomeTabIndex != 4 || forceShowWelcome) {
             newMainMenu->setTabToTitle("Welcome", forceShowWelcome ? 0 : welcomeTabIndex);
-            if (forceShowWelcome) {
-                showWelcomeVideo = false;
-            } else if (currentReadable.has_value()) {
-                // If we have a current readable, we shouldn't force the video
+            // If we're always showing the welcome tab, or if we have a current readable we're about
+            // to open, don't show the video
+            if (forceShowWelcome || currentReadable.has_value()) {
                 showWelcomeVideo = false;
             }
         } else {
