@@ -50,6 +50,7 @@
 #include "UI/Menu/NewMenuItemArticle.hpp"
 #include "UI/Menu/NewMenuItemBook.hpp"
 #include "UI/Menu/NewMenuItemCheckable.hpp"
+#include "UI/Menu/NewMenuItemMultiLine.hpp"
 #include "UI/Menu/NewMenuItemSingleLine.hpp"
 #include "UI/Menu/ReadingSettingsMenuScreen.hpp"
 #include "UI/Menu/TextPlacementWelcomeMenuScreen.hpp"
@@ -329,15 +330,15 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
     // If there is firmware available, show the Update Firmware item in the books tab.
     auto makeReleaseNotesMenuItem = [this, &localStore](const Firmware &firmware) {
         log_i("Found pending firmware update %s", firmware.version.c_str());
-        return std::make_shared<NewMenuItemSingleLine>(
+        return std::make_shared<NewMenuItemMultiLine>(
             StringFormat("Upgrade Software from %s to %s", SemanticVersionString(),
                          firmware.version.c_str()),
-            [this, &localStore, firmware]() {
-            auto releaseNotesScreen = std::make_shared<ReleaseNotesScreen>(
-                display_, this->prefs_, power_, localStore, firmware);
-            display_.clearDisplay();
-            pushScreen(releaseNotesScreen);
-            releaseNotesScreen->setBackCallback([this]() { this->popScreen(); });
+            2, [this, &localStore, firmware]() {
+                auto releaseNotesScreen = std::make_shared<ReleaseNotesScreen>(
+                    display_, this->prefs_, power_, localStore, firmware);
+                display_.clearDisplay();
+                pushScreen(releaseNotesScreen);
+                releaseNotesScreen->setBackCallback([this]() { this->popScreen(); });
             });
     };
 
