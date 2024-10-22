@@ -12,7 +12,8 @@
 
 FirmwareUpdateScreen::FirmwareUpdateScreen(DisplaySystem &display, Telemetry &telemetry,
                                            PreferencesStore &prefs)
-    : EinkView(display), telemetry_(telemetry), firmwareDownloader_(prefs),
+    : EinkView(display), telemetry_(telemetry), cancel_(std::make_shared<CancelFlag>()),
+      firmwareDownloader_(prefs, cancel_),
       cancelView_(display, "Press \ue000 to cancel", &fontFace0) {
     for (auto &textView : textViews_) {
         textView = std::make_shared<SingleLineTextView>(display, "", &fontFace0);
@@ -112,7 +113,6 @@ void FirmwareUpdateScreen::showPopup(const std::string &message) {
 
 void FirmwareUpdateScreen::cancel() {
     CancelFlag::cancel(cancel_);
-    firmwareDownloader_.cancel();
     telemetry_.logMetric(TelemetryField::METRIC_FIRMWARE_UPDATE, "update-cancelled");
     WiFi::getInstance().disconnectWiFi();
     showPopup("Update cancelled!\n\nRestarting...");
@@ -256,7 +256,6 @@ void FirmwareUpdateScreen::begin() {
     }
 
     auto rl = std::make_shared<RateLimiter>(1, 20, 1);
-    cancel_ = std::make_shared<CancelFlag>();
     firmwareDownloader_.downloadFirmware([this, rl, resumeBLE](const FirmwareDownloadState &state) {
         if (CancelFlag::isCancelled(cancel_)) {
             return;

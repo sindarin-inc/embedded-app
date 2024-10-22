@@ -17,8 +17,7 @@ void FirmwareDownloader::downloadFirmware(
     const std::function<void(FirmwareDownloadState state)> &progressCallback) {
 
     auto setState = [progressCallback, this](FirmwareDownloadState state) {
-        // Don't call the callback if we've been cancelled
-        if (cancelled_) {
+        if (CancelFlag::isCancelled(cancel_)) {
             return;
         }
         progressCallback(std::move(state));
@@ -100,12 +99,12 @@ void FirmwareDownloader::downloadFirmware(
             [](const uint8_t *buf, size_t size) {
             return Update.write(const_cast<uint8_t *>(buf), size);
             },
-            nullptr, false, 0,
+            cancel_, false, 0,
             [setState](int bytesWritten, float percentage) {
             setState(FirmwareDownloadState{.state = FirmwareDownloadState::State::Downloading,
                                            .percentage = static_cast<int>(percentage)});
         },
-             false);
+        false);
 
         if (httpCode != 200) {
             log_e("Failed to download firmware with code %d", httpCode);
