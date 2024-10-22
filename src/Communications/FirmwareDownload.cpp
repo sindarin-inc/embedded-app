@@ -71,7 +71,7 @@ void FirmwareDownloader::downloadFirmware(
 
         log_d("Downloading firmware from %s", response.latestGlassesFirmware.url.c_str());
         std::string failMessage;
-        auto success = DownloadFileWithWriteBytes(
+        httpCode = DownloadFileWithWriteBytes(
             response.latestGlassesFirmware.url.c_str(),
             [this, &failMessage](int httpCode, int contentLength) -> bool {
                 if (httpCode != 200) {
@@ -107,9 +107,13 @@ void FirmwareDownloader::downloadFirmware(
         },
              false);
 
-        if (!success) {
-            log_e("Failed to download firmware");
-            if (!WiFi::getInstance().connected()) {
+        if (httpCode != 200) {
+            log_e("Failed to download firmware with code %d", httpCode);
+            if (httpCode == ERR_CANCELLED) {
+                setState(FirmwareDownloadState{.state = FirmwareDownloadState::State::Failure,
+                                               .message = "Cancelled"});
+                return;
+            } else if (!WiFi::getInstance().connected()) {
                 setState(FirmwareDownloadState{.state = FirmwareDownloadState::State::Failure,
                                                .message = "Failed: WiFi disconnected!"});
             } else {
