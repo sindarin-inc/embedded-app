@@ -256,8 +256,10 @@ void FirmwareUpdateScreen::begin() {
     }
 
     auto rl = std::make_shared<RateLimiter>(1, 20, 1);
-    firmwareDownloader_.downloadFirmware([this, rl, resumeBLE](const FirmwareDownloadState &state) {
-        if (CancelFlag::isCancelled(cancel_)) {
+    auto cancelCopy = cancel_;
+    firmwareDownloader_.downloadFirmware(
+        [this, rl, resumeBLE, cancelCopy](const FirmwareDownloadState &state) {
+        if (CancelFlag::isCancelled(cancelCopy)) {
             return;
         }
 
@@ -280,7 +282,10 @@ void FirmwareUpdateScreen::begin() {
             rl->resetPercentage();
         }
 
-        DispatchGetUiQueue()->dispatch([this, state, resumeBLE]() {
+        DispatchGetUiQueue()->dispatch([this, state, resumeBLE, cancelCopy]() {
+            if (CancelFlag::isCancelled(cancelCopy)) {
+                return;
+            }
             updateState(state); // Update the internal state with the new state.
             render(display_);   // Render the UI with the updated state.
 
