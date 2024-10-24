@@ -58,6 +58,8 @@ void StartFreeRtos(bool runAppMain) {
     sigaddset(&mask, SIGALRM);
     pthread_sigmask(SIG_BLOCK, &mask, NULL);
 
+    vPortSetExternalThread(pthread_self());
+
     // Start the FreeRTOS scheduler
     assert(SchedulerThread == nullptr && "FreeRTOS scheduler already started");
     SchedulerThread = std::make_shared<std::thread>([runAppMain]() {

@@ -320,6 +320,8 @@ auto main(int argc, char *argv[]) -> int {
     sigaddset(&mask, SIGALRM);
     pthread_sigmask(SIG_BLOCK, &mask, NULL);
 
+    vPortSetExternalThread(pthread_self());
+
     // Start the FreeRTOS scheduler
     std::thread schedulerThread([]() {
         // ESP-IDF does `app_main` in a task as well. We need to do this so we can use
