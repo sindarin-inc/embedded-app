@@ -37,3 +37,7 @@ target_compile_options(${PROJECT_NAME}
     PRIVATE
     -include ${REPO_ROOT_DIR}/src/config.h
 )
+
+set_target_properties(${PROJECT_NAME} PROPERTIES
+    CXX_STANDARD 20
+)
