@@ -330,19 +330,26 @@ public:
     class BooleanFlags : public PrefsItemBase<uint64_t> {
     public:
         BooleanFlags(PreferencesStore &prefs, const char *key)
-            : PrefsItemBase<uint64_t>(prefs), key_(key), mutex_(xSemaphoreCreateMutex()) {}
+            : PrefsItemBase<uint64_t>(prefs), key_(key) {}
 
-        ~BooleanFlags() { vSemaphoreDelete(mutex_); }
+        ~BooleanFlags() {
+            if (mutex_ != nullptr) {
+                vSemaphoreDelete(mutex_);
+            }
+        }
 
         void lock() {
             // Only use the semaphore if FreeRTOS is running
             if (xTaskGetSchedulerState() == taskSCHEDULER_RUNNING) {
+                if (mutex_ == nullptr) {
+                    mutex_ = xSemaphoreCreateMutex();
+                }
                 xSemaphoreTake(mutex_, portMAX_DELAY);
             }
         }
 
         void unlock() {
-            if (xTaskGetSchedulerState() == taskSCHEDULER_RUNNING) {
+            if (xTaskGetSchedulerState() == taskSCHEDULER_RUNNING && mutex_ != nullptr) {
                 xSemaphoreGive(mutex_);
             }
         }
@@ -397,7 +404,7 @@ public:
         uint64_t flags_ = 0;
         const char *key_;
         bool dirty_{false};
-        SemaphoreHandle_t mutex_;
+        SemaphoreHandle_t mutex_ = nullptr;
     };
 
     class BooleanFlag {

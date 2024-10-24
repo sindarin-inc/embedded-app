@@ -25,6 +25,10 @@ auto WiFi::begin() -> esp_err_t {
         wifiEventGroup_ = xEventGroupCreate();
     }
 
+    if (mutex_ == nullptr) {
+        mutex_ = xSemaphoreCreateMutex();
+    }
+
     esp_err_t err = esp_netif_init(); // ~5k
     if (err != ESP_OK) {
         log_e("esp_netif_init failed with error %s", esp_err_to_name(err));

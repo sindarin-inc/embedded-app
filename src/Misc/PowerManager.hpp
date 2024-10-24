@@ -196,7 +196,7 @@ public:
                  Telemetry &telemetry, USBSerial &usbSerial)
         : battery(fileSystem, prefs, telemetry), prefs_(prefs),
           lightingController_(lightingController), display_(display), telemetry_(telemetry),
-          usbSerial_(usbSerial), magSensor_(0), mutex_(xSemaphoreCreateMutex()) {}
+          usbSerial_(usbSerial), magSensor_(0) {}
 
     PowerManager(const PowerManager &) = delete;
 
@@ -287,7 +287,7 @@ protected:
     esp_pm_lock_handle_t usbPowerLightSleepLock_ = nullptr;
     esp_pm_lock_handle_t debugCommandLightSleepLock_ = nullptr;
 #endif
-    SemaphoreHandle_t mutex_;
+    SemaphoreHandle_t mutex_ = nullptr;
 
     void updateState();
 

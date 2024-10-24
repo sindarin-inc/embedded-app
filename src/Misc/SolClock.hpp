@@ -12,13 +12,20 @@ class SolClock {
 public:
     static auto getInstance() -> SolClock &;
 
-    SolClock(PreferencesStore &prefs) : timeSyncEventGroup_(xEventGroupCreate()), prefs_(prefs) {}
+    SolClock(PreferencesStore &prefs) : prefs_(prefs) {}
     SolClock(SolClock const &) = delete;
-    ~SolClock() { vEventGroupDelete(timeSyncEventGroup_); }
+    ~SolClock() {
+        if (timeSyncEventGroup_ != nullptr) {
+            vEventGroupDelete(timeSyncEventGroup_);
+        }
+    }
 
     auto isValidTime() -> bool { return getEpochTime() > 1000000000; }
 
-    void begin() { loadTimeZone(); }
+    void begin() {
+        timeSyncEventGroup_ = xEventGroupCreate();
+        loadTimeZone();
+    }
 
     auto getTimeString() -> std::string;
 
@@ -39,7 +46,7 @@ public:
     auto getEpochTime() -> time_t;
 
 protected:
-    EventGroupHandle_t timeSyncEventGroup_;
+    EventGroupHandle_t timeSyncEventGroup_ = nullptr;
     PreferencesStore &prefs_;
 
     void loadTimeZone();

@@ -44,12 +44,7 @@ class WiFi {
 public:
     static auto getInstance() -> WiFi &;
 
-    WiFi(Telemetry &telemetry, PreferencesStore &prefs)
-        : telemetry_(telemetry), prefs_(prefs), mutex_(xSemaphoreCreateMutex()) {
-        if (mutex_ == nullptr) {
-            log_e("Failed to create WiFi mutex");
-        }
-    };
+    WiFi(Telemetry &telemetry, PreferencesStore &prefs) : telemetry_(telemetry), prefs_(prefs) {}
     WiFi(WiFi const &) = delete;
     ~WiFi() {
         if (mutex_ != nullptr) {

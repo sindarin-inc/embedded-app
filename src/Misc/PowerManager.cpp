@@ -243,6 +243,7 @@ auto PowerManager::inactivityTimeoutMs() -> int {
 }
 
 auto PowerManager::begin() -> esp_err_t {
+    mutex_ = xSemaphoreCreateMutex();
 #if !SIMULATOR
     // If USB is connected, disable operation unless we've disabled this behavior
     if (USBConnected() && state_ == PowerState::Active &&
