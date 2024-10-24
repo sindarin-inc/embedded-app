@@ -107,7 +107,7 @@ void BackgroundSyncInternal(PowerManager &powerManager, PreferencesStore &prefs,
             state.state == ContentSyncState::AlreadySynced) {
             if (state.state == ContentSyncState::Failure) {
                 telemetry.logMetric(TelemetryField::METRIC_SYNC_STATUS, "sync-failed",
-                                    {{"message", state.message.c_str()}});
+                                    {{"message", state.message}});
                 log_i("Content sync failed with error: %s", state.message.c_str());
             } else if (state.state == ContentSyncState::Synced) {
                 telemetry.logMetric(TelemetryField::METRIC_SYNC_STATUS, "sync-success");

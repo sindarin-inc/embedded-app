@@ -44,7 +44,7 @@ TEST_CASE("Test Telemetry Logging", "[.][telemetry]") {
             telemetry.logMetric(METRIC_EVENT, "test_event");
             std::string testString = "TestWiFi";
             telemetry.logMetricData(METRIC_WIFI,
-                                    {{"ssid", testString.c_str()}, {"status", "connected"}});
+                                    {{"ssid", testString}, {"status", std::string("connected")}});
             testString = "CHANGED";
 
             Telemetry::dispatchQueue()->waitEmpty(pdMS_TO_TICKS(100));
