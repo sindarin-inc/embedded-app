@@ -7,6 +7,7 @@
 #include <freertos/task.h>
 #include <iostream>
 #include <memory>
+#include <semaphore>
 #include <signal.h>
 #include <thread>
 #include <unistd.h>
@@ -49,6 +50,8 @@ void appMainTask(void *parameters) {
     vTaskDelete(NULL);
 }
 
+pthread_t mainThread;
+
 void StartFreeRtos(bool runAppMain) {
     // The FreeRTOS tick handler happens via SIGALRM, and it also kicks off preemptive task
     // switching, which is not what we want on the main thread, since it's not a real FreeRTOS task.
@@ -58,20 +61,34 @@ void StartFreeRtos(bool runAppMain) {
     sigaddset(&mask, SIGALRM);
     pthread_sigmask(SIG_BLOCK, &mask, NULL);
 
+    std::binary_semaphore semaphore(0);
+
     vPortSetExternalThread(pthread_self());
 
     // Start the FreeRTOS scheduler
     assert(SchedulerThread == nullptr && "FreeRTOS scheduler already started");
-    SchedulerThread = std::make_shared<std::thread>([runAppMain]() {
+    SchedulerThread = std::make_shared<std::thread>([runAppMain, &semaphore]() {
         if (runAppMain) {
             // ESP-IDF does `app_main` in a task as well. We need to do this so we can use
             // FreeRTOS-timed stuff like vTaskDelay
             xTaskCreate(appMainTask, "app_main", 10000, NULL, 1, NULL);
         }
+        // Task to signal that the scheduler has started
+        xTaskCreate(
+            [](void *param) {
+            log_i("FreeRTOS scheduler started");
+            auto s = static_cast<std::binary_semaphore *>(param);
+            s->release(); // Signal that the worker has completed
+            vTaskDelete(nullptr);
+            },
+            "start", 10000, &semaphore, 1, nullptr);
         log_i("Starting FreeRTOS scheduler");
         vTaskStartScheduler();
         log_i("FreeRTOS scheduler exited");
     });
+
+    // Wait until the scheduler has started
+    semaphore.try_acquire_for(std::chrono::seconds(5));
 }
 
 void StartAppMain(FONT_CHOICES font, int x, int y, int lineSpacing) {
