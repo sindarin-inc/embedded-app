@@ -3,6 +3,7 @@
 #include "NewMenuItemArticleView.hpp"
 #include "NewMenuItemBookView.hpp"
 #include "NewMenuItemCheckableView.hpp"
+#include "NewMenuItemMultiLineView.hpp"
 #include "NewMenuItemSingleLineView.hpp"
 #include "NewMenuItemTOCView.hpp"
 
@@ -20,6 +21,9 @@ void NewMenuView::addMenuItem(const std::shared_ptr<NewMenuItem> &menuItem) {
     // NOTE: Here is where you create different item views based on the menu item models
     if (auto item = std::dynamic_pointer_cast<NewMenuItemSingleLine>(menuItem)) {
         menuItemViews_.push_back(std::make_unique<NewMenuItemSingleLineView>(display_, item));
+    }
+    if (auto item = std::dynamic_pointer_cast<NewMenuItemMultiLine>(menuItem)) {
+        menuItemViews_.push_back(std::make_unique<NewMenuItemMultiLineView>(display_, item));
     }
     if (auto item = std::dynamic_pointer_cast<NewMenuItemBook>(menuItem)) {
         menuItemViews_.push_back(std::make_unique<NewMenuItemBookView>(display_, item));
