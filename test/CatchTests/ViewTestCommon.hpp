@@ -6,6 +6,11 @@
 #include "Inputs/RemoteInput.hpp"
 #include "Storage/PreferencesStore.hpp"
 
+// Mock the time in SolClock
+void MockClock();
+
+void UnMockClock();
+
 // NOTE: If not running app_main from here, you need to have at least one task already created
 // before calling this API.
 void StartFreeRtos(bool runAppMain = false);

@@ -42,10 +42,16 @@ std::string directory;
 std::string testRunPrefix = "Images/TestRun/";
 std::string acceptedPathPrefix = "Images/Accepted/";
 
-void appMainTask(void *parameters) {
+void MockClock() {
     useSimulatorTestTime = true;
     simulatorTestHours = 12;
     simulatorTestMinutes = 21;
+}
+
+void UnMockClock() { useSimulatorTestTime = false; }
+
+void appMainTask(void *parameters) {
+    MockClock();
     app_main();
     vTaskDelete(NULL);
 }

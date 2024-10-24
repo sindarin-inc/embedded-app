@@ -215,4 +215,12 @@ auto SolClock::calculateNextSyncTime(time_t now) -> time_t {
     return nextEventEpoch;
 }
 
-auto SolClock::getEpochTime() -> time_t { return time(nullptr); }
+auto SolClock::getEpochTime() -> time_t {
+#if SIMULATOR
+    if (useSimulatorTestTime) {
+        return 1610000000;
+    }
+#endif
+
+    return time(nullptr);
+}
