@@ -94,6 +94,7 @@ static inline Thread_t * prvGetThreadFromTask( TaskHandle_t xTask )
 
 static pthread_once_t hSigSetupThread = PTHREAD_ONCE_INIT;
 static sigset_t xAllSignals;
+pthread_t xExternalThread;
 static sigset_t xSchedulerOriginalSignalMask;
 static pthread_t hMainThread = ( pthread_t ) NULL;
 static volatile portBASE_TYPE uxCriticalNesting;
@@ -337,15 +338,24 @@ void vPortYield( void )
 }
 /*-----------------------------------------------------------*/
 
-void vPortDisableInterrupts( void )
-{
-    pthread_sigmask( SIG_BLOCK, &xAllSignals, NULL );
+void vPortSetExternalThread(pthread_t externalThread) {
+    xExternalThread = externalThread;
 }
 /*-----------------------------------------------------------*/
 
-void vPortEnableInterrupts( void )
-{
-    pthread_sigmask( SIG_UNBLOCK, &xAllSignals, NULL );
+void vPortDisableInterrupts(void) {
+    if (pthread_self() == xExternalThread) {
+        return;
+    }
+    pthread_sigmask(SIG_BLOCK, &xAllSignals, NULL);
+}
+/*-----------------------------------------------------------*/
+
+void vPortEnableInterrupts(void) {
+    if (pthread_self() == xExternalThread) {
+        return;
+    }
+    pthread_sigmask(SIG_UNBLOCK, &xAllSignals, NULL);
 }
 /*-----------------------------------------------------------*/
 
@@ -416,6 +426,11 @@ void prvSetupTimerInterrupt( void )
 
 static void vPortSystemTickHandler( int sig )
 {
+    if (pthread_self() == xExternalThread) {
+        fprintf(stderr, "vPortSystemTickHandler called from non-FreeRTOS thread\n");
+        return;
+    }
+
     // printf("%d-", sig);
     // fflush(stdout);
     Thread_t * pxThreadToSuspend;

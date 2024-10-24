@@ -35,6 +35,7 @@ extern "C" {
 #endif
 
 #include <limits.h>
+#include <pthread.h>
 
 /*-----------------------------------------------------------
  * Port specific definitions.
@@ -85,6 +86,7 @@ extern void vPortYield( void );
 /*-----------------------------------------------------------*/
 
 /* Critical section management. */
+extern void vPortSetExternalThread( pthread_t externalThread );
 extern void vPortDisableInterrupts( void );
 extern void vPortEnableInterrupts( void );
 #define portSET_INTERRUPT_MASK()        ( vPortDisableInterrupts() )
