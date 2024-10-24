@@ -55,7 +55,8 @@ auto GetFromStorage(uint32_t nvsHandle, const char *key, T &value) -> esp_err_t 
         std::disjunction_v<std::is_same<T, bool>, std::is_same<T, int>, std::is_same<T, int16_t>,
                            std::is_same<T, uint16_t>, std::is_same<T, int32_t>,
                            std::is_same<T, uint32_t>, std::is_same<T, uint64_t>,
-                           std::is_same<T, std::string>, std::is_same<T, BLEAddress>>,
+                           std::is_same<T, std::string>, std::is_same<T, BLEAddress>,
+                           std::is_same<T, std::vector<uint8_t>>>,
         "Unsupported type for NVS storage");
     esp_err_t err;
     if constexpr (std::is_same_v<T, bool>) {
@@ -91,6 +92,13 @@ auto GetFromStorage(uint32_t nvsHandle, const char *key, T &value) -> esp_err_t 
                 value.resize(len - 1);
             }
         }
+    } else if constexpr (std::is_same_v<T, std::vector<uint8_t>>) {
+        size_t len = 0;
+        err = nvs_get_blob(nvsHandle, key, nullptr, &len);
+        if (err == ESP_OK) {
+            value.resize(len);
+            err = nvs_get_blob(nvsHandle, key, value.data(), &len);
+        }
     } else {
         // Should never happen because of the static_assert
         log_e("Unhandled prefs type");
@@ -108,7 +116,8 @@ auto GetNVSType() -> nvs_type_t {
         std::disjunction_v<std::is_same<T, bool>, std::is_same<T, int>, std::is_same<T, int16_t>,
                            std::is_same<T, uint16_t>, std::is_same<T, int32_t>,
                            std::is_same<T, uint32_t>, std::is_same<T, uint64_t>,
-                           std::is_same<T, std::string>, std::is_same<T, BLEAddress>>,
+                           std::is_same<T, std::string>, std::is_same<T, BLEAddress>,
+                           std::is_same<T, std::vector<uint8_t>>>,
         "Unsupported type for NVS storage");
     if constexpr (std::is_same_v<T, bool>) {
         return NVS_TYPE_U8;
@@ -124,6 +133,8 @@ auto GetNVSType() -> nvs_type_t {
         return NVS_TYPE_U64;
     } else if constexpr (std::is_same_v<T, std::string>) {
         return NVS_TYPE_STR;
+    } else if constexpr (std::is_same_v<T, std::vector<uint8_t>>) {
+        return NVS_TYPE_BLOB;
     } else {
         // Should never happen because of the static_assert
         log_e("Unhandled prefs type");
@@ -137,7 +148,8 @@ auto WriteToStorage(uint32_t nvsHandle, const char *key, T &value) -> esp_err_t 
         std::disjunction_v<std::is_same<T, bool>, std::is_same<T, int>, std::is_same<T, int16_t>,
                            std::is_same<T, uint16_t>, std::is_same<T, int32_t>,
                            std::is_same<T, uint32_t>, std::is_same<T, uint64_t>,
-                           std::is_same<T, std::string>, std::is_same<T, BLEAddress>>,
+                           std::is_same<T, std::string>, std::is_same<T, BLEAddress>,
+                           std::is_same<T, std::vector<uint8_t>>>,
         "Unsupported type for NVS storage");
     esp_err_t err;
     if constexpr (std::is_same_v<T, bool>) {
@@ -156,6 +168,8 @@ auto WriteToStorage(uint32_t nvsHandle, const char *key, T &value) -> esp_err_t 
         err = nvs_set_u64(nvsHandle, key, static_cast<uint64_t>(value));
     } else if constexpr (std::is_same_v<T, std::string>) {
         err = nvs_set_str(nvsHandle, key, value.c_str());
+    } else if constexpr (std::is_same_v<T, std::vector<uint8_t>>) {
+        err = nvs_set_blob(nvsHandle, key, value.data(), value.size());
     } else {
         log_e("Unhandled prefs type for key %s", key);
         assert(0);
