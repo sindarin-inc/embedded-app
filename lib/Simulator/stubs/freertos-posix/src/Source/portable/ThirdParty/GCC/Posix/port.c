@@ -271,8 +271,10 @@ void vPortEndScheduler( void )
     ( void ) pthread_kill( hMainThread, SIG_RESUME );
 
     /* Waiting to be deleted here. */
-    pxCurrentThread = prvGetThreadFromTask( xTaskGetCurrentTaskHandle() );
-    event_wait( pxCurrentThread->ev );
+    if ( xExternalThread != pthread_self() ) {
+        pxCurrentThread = prvGetThreadFromTask( xTaskGetCurrentTaskHandle() );
+        event_wait( pxCurrentThread->ev );
+    }
     pthread_testcancel();
 }
 /*-----------------------------------------------------------*/
