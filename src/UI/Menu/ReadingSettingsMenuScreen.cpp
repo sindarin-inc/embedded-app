@@ -227,7 +227,9 @@ void ReadingSettingsMenuScreen::populateMenuItems() {
 
     // Helper function to convert 24h to 12h format with AM/PM
     auto formatTime = [](int hour) -> std::string {
-        if (hour == -1) return "Manual";
+        if (hour == -1) {
+            return "Manual";
+        }
         const char *period = (hour >= 12) ? "pm" : "am";
         int displayHour = (hour == 0) ? 12 : ((hour > 12) ? hour - 12 : hour);
         return StringFormat("%d:00%s", displayHour, period);
