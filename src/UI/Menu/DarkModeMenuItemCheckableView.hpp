@@ -26,9 +26,9 @@ public:
             LayoutOptionsSizeToFit | LayoutOptionsAlignLeft);
 
         // Arrow is to the immediate right of the title
-        auto arrowRect = context.setViewFrame(
-            arrowView_, Rect::fromSize(size).inset(titleRect.size.width + 3, 0, 0, 0),
-            LayoutOptionsSizeToFit | LayoutOptionsAlignLeft);
+        context.setViewFrame(arrowView_,
+                             Rect::fromSize(size).inset(titleRect.size.width + 3, 0, 0, 0),
+                             LayoutOptionsSizeToFit | LayoutOptionsAlignLeft);
 
         return {size.width, std::max({titleRect.size.height, checkmarkRect.size.height})};
     }
