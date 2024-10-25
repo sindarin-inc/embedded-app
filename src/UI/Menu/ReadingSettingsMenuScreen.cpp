@@ -273,8 +273,7 @@ void ReadingSettingsMenuScreen::populateMenuItems() {
             auto timeMenu = std::make_shared<GenericSettingsMenuScreen>(display_, "Dark Mode");
 
             timeMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>("Manual", [this]() {
-                prefs_.invertStartHour.set(-1);
-                prefs_.invertEndHour.set(-1);
+                prefs_.invertStartHour.set(-1); // Only clear start hour
                 popScreen_(true);
                 popScreen_(true);
                 regenerateMenuItems();
@@ -309,8 +308,7 @@ void ReadingSettingsMenuScreen::populateMenuItems() {
             auto timeMenu = std::make_shared<GenericSettingsMenuScreen>(display_, "Dark Mode");
 
             timeMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>("Manual", [this]() {
-                prefs_.invertStartHour.set(-1);
-                prefs_.invertEndHour.set(-1);
+                prefs_.invertEndHour.set(-1); // Only clear end hour
                 popScreen_(true);
                 popScreen_(true);
                 regenerateMenuItems();
