@@ -439,6 +439,8 @@ public:
           readableArchivedChanged(*this, "-ar"),
           readableBookmarksChanged(*this, "-bm"),
           invertSetting(boolFlags_, 0),
+          invertStartHour(*this, "invert-start"),
+          invertEndHour(*this, "invert-end"),
           vcom(*this, "vcom"),
           font(*this, "font"),
           lineSpacing(*this, "line-space"),
@@ -764,6 +766,8 @@ public:
     KeyedPrefsItem<bool> readableArchivedChanged;
     KeyedPrefsItem<bool> readableBookmarksChanged;
     BooleanFlag invertSetting;
+    PrefsItem<int> invertStartHour;
+    PrefsItem<int> invertEndHour;
     PrefsItem<int> vcom;
     PrefsItem<int> font;
     PrefsItem<int> lineSpacing;

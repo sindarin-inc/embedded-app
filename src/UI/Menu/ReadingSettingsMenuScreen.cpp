@@ -82,6 +82,10 @@ void ReadingSettingsMenuScreen::processCommand(RemoteCommand command) {
         setNeedsRerender();
         back();
         return;
+    case RemoteCommand::RIGHT:
+        log_d("Right");
+        menuView_.executeSelectedItemSubmenu();
+        return;
     // We rely on the animation timer which is set in the renderer view in autopilot mode
     case RemoteCommand::ANIMATION:
         setNeedsRerender();

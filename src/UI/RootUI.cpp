@@ -42,6 +42,7 @@
 #include "UI/LineMenuScreen.hpp"
 #include "UI/LineSpacingScreen.hpp"
 #include "UI/Menu/DRMFreeWelcomeMenuScreen.hpp"
+#include "UI/Menu/DarkModeMenuItemCheckable.hpp"
 #include "UI/Menu/FirstBookWelcomeMenuScreen.hpp"
 #include "UI/Menu/GenericSettingsMenuScreen.hpp"
 #include "UI/Menu/InactivitySettingMenuScreen.hpp"
@@ -878,9 +879,8 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                 });
             }));
 
-            readingSettingsMenu->addMenuItem(std::make_shared<NewMenuItemCheckable>(
-                "Dark Mode",
-                [this]() {
+            auto centerCallback = [this]() {
+                // Toggle dark mode
                 this->prefs_.darkMode.set(!this->prefs_.darkMode.get().value_or(false));
                 // Reserved for future use? Potentially lighting up and down?
                 display_.flipInversion();
@@ -890,8 +890,97 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                 prefs_.invertSetting.set(display_.getInversion());
                 currentScreen()->setNeedsRerender();
                 currentScreen()->setFirstLoad();
-                },
-                [this]() -> bool { return this->prefs_.darkMode.get().value_or(false); }));
+            };
+            auto isDarkModeChecked = [this]() -> bool {
+                return this->prefs_.darkMode.get().value_or(false);
+            };
+            auto rightCallback = [this]() {
+                // Open submenu on right button press
+                auto darkModeMenu =
+                    std::make_shared<GenericSettingsMenuScreen>(display_, "Reading Style");
+
+                // Helper to create the time selection submenu
+                auto createTimeMenu = [this](const std::string &title, bool isStart) {
+                    auto timeMenu =
+                        std::make_shared<GenericSettingsMenuScreen>(display_, "Dark Mode");
+
+                    // Add "Always On" option
+                    timeMenu->addMenuItem(
+                        std::make_shared<NewMenuItemSingleLine>("Always On", [this, isStart]() {
+                            if (isStart) {
+                                prefs_.invertStartHour.set(-1);
+                                prefs_.invertEndHour.set(-1);
+                            }
+                            this->popScreen();
+                            this->popScreen();
+                            currentScreen()->setNeedsRerender();
+                        }));
+
+                    // Add hourly options (0-23)
+                    for (int hour = 0; hour < 24; hour++) {
+                        std::string timeStr = StringFormat("%02d:00", hour);
+                        timeMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
+                            timeStr, [this, hour, isStart]() {
+                                if (isStart) {
+                                    prefs_.invertStartHour.set(hour);
+                                } else {
+                                    prefs_.invertEndHour.set(hour);
+                                }
+                                this->popScreen();
+                                this->popScreen();
+                                currentScreen()->setNeedsRerender();
+                            }));
+                    }
+
+                    timeMenu->setBackCallback([this]() { this->popScreen(); });
+                    return timeMenu;
+                };
+
+                // Add Start Time menu item
+                darkModeMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
+                    StringFormat(
+                        "Turn on after: %s",
+                        prefs_.invertStartHour.get().value_or(-1) == -1
+                            ? "Manual"
+                            : StringFormat("%02d:00", prefs_.invertStartHour.get().value_or(0))
+                                  .c_str()),
+                    [this, createTimeMenu]() {
+                    auto timeMenu = createTimeMenu("Start Time", true);
+                    this->pushScreen(timeMenu);
+                    }));
+
+                // Add End Time menu item
+                darkModeMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
+                    StringFormat(
+                        "Turn off after: %s",
+                        prefs_.invertEndHour.get().value_or(-1) == -1
+                            ? "Manual"
+                            : StringFormat("%02d:00", prefs_.invertEndHour.get().value_or(23))
+                                  .c_str()),
+                    [this, createTimeMenu]() {
+                    auto timeMenu = createTimeMenu("End Time", false);
+                    this->pushScreen(timeMenu);
+                    }));
+
+                darkModeMenu->setBackCallback([this]() {
+                    this->popScreen();
+                    // Update dark mode based on current time if not "Manual"
+                    if (prefs_.invertStartHour.get().value_or(-1) != -1) {
+                        // TODO: Add logic to check current time and set dark mode accordingly
+                    }
+                });
+
+                this->pushScreen(darkModeMenu);
+            };
+            readingSettingsMenu->addMenuItem(std::make_shared<DarkModeMenuItemCheckable>(
+                StringFormat("Dark Mode%s",
+                             prefs_.invertStartHour.get().value_or(-1) == -1
+                                 ? " Not automatic"
+                                 : StringFormat(" (%02d:00-%02d:00)",
+                                                prefs_.invertStartHour.get().value_or(0),
+                                                prefs_.invertEndHour.get().value_or(23))
+                                       .c_str()),
+                centerCallback, isDarkModeChecked, rightCallback));
 
             readingSettingsMenu->addMenuItem(std::make_shared<NewMenuItemCheckable>(
                 "Autopilot",

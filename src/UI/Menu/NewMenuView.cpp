@@ -1,5 +1,6 @@
 #include "NewMenuView.hpp"
 
+#include "DarkModeMenuItemCheckableView.hpp"
 #include "NewMenuItemArticleView.hpp"
 #include "NewMenuItemBookView.hpp"
 #include "NewMenuItemCheckableView.hpp"
@@ -30,6 +31,9 @@ void NewMenuView::addMenuItem(const std::shared_ptr<NewMenuItem> &menuItem) {
     }
     if (auto item = std::dynamic_pointer_cast<NewMenuItemArticle>(menuItem)) {
         menuItemViews_.push_back(std::make_unique<NewMenuItemArticleView>(display_, item));
+    }
+    if (auto item = std::dynamic_pointer_cast<DarkModeMenuItemCheckable>(menuItem)) {
+        menuItemViews_.push_back(std::make_unique<DarkModeMenuItemCheckableView>(display_, item));
     }
     if (auto item = std::dynamic_pointer_cast<NewMenuItemCheckable>(menuItem)) {
         menuItemViews_.push_back(std::make_unique<NewMenuItemCheckableView>(display_, item));
