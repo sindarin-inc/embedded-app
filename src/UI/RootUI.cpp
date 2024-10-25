@@ -936,6 +936,14 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                             }));
                     }
 
+                    // Set the selected index based on current start hour
+                    int menuIndex = 0; // Default to Manual (first item)
+                    if (prefs_.invertStartHour.get().has_value()) {
+                        menuIndex =
+                            prefs_.invertStartHour.get().value() + 1; // +1 because Manual is first
+                    }
+                    timeMenu->setSelectedIndex(menuIndex);
+
                     timeMenu->setBackCallback([this]() { this->popScreen(); });
                     this->pushScreen(timeMenu);
                     }));
@@ -968,6 +976,14 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                                 currentScreen()->setNeedsRerender();
                             }));
                     }
+
+                    // Set the selected index based on current end hour
+                    int menuIndex = 0; // Default to Manual (first item)
+                    if (prefs_.invertEndHour.get().has_value()) {
+                        menuIndex =
+                            prefs_.invertEndHour.get().value() + 1; // +1 because Manual is first
+                    }
+                    timeMenu->setSelectedIndex(menuIndex);
 
                     timeMenu->setBackCallback([this]() { this->popScreen(); });
                     this->pushScreen(timeMenu);

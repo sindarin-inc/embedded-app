@@ -113,9 +113,11 @@ auto ReadingSettingsMenuScreen::layout(LayoutContext &context, Size size) -> Siz
     auto backBox = context.setViewFrame(backLabelView_, {{0, 0}, {size.width, 0}},
                                         LayoutOptionsSizeToFit | LayoutOptionsAlignLeft);
     // Layout menu
-    auto menuBox = context.setViewFrame(
-        menuView_, Rect::fromSize(size).inset(size.width / 7, backBox.size.height + padding),
-        LayoutOptionsSizeToFitVertical);
+    auto menuBox = context.setViewFrame(menuView_,
+                                        Rect::fromSize(size).inset(size.width / 7, 0,
+                                                                   backBox.size.height + padding,
+                                                                   backBox.size.height + padding),
+                                        LayoutOptionsSizeToFitVertical);
 
     int yOffset = menuBox.bottom() + padding;
 
