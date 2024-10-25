@@ -879,6 +879,14 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                 });
             }));
 
+            // Helper function to convert 24h to 12h format with AM/PM
+            auto formatTime = [](int hour) -> std::string {
+                if (hour == -1) return "Manual";
+                const char *period = (hour >= 12) ? "pm" : "am";
+                int displayHour = (hour == 0) ? 12 : ((hour > 12) ? hour - 12 : hour);
+                return StringFormat("%d:00%s", displayHour, period);
+            };
+
             auto centerCallback = [this]() {
                 // Toggle dark mode
                 this->prefs_.darkMode.set(!this->prefs_.darkMode.get().value_or(false));
@@ -894,38 +902,34 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
             auto isDarkModeChecked = [this]() -> bool {
                 return this->prefs_.darkMode.get().value_or(false);
             };
-            auto rightCallback = [this]() {
+            auto rightCallback = [this, formatTime]() {
                 // Open submenu on right button press
                 auto darkModeMenu =
                     std::make_shared<GenericSettingsMenuScreen>(display_, "Reading Style");
 
-                // Helper to create the time selection submenu
-                auto createTimeMenu = [this](const std::string &title, bool isStart) {
+                // Update the Start Time menu item text
+                darkModeMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
+                    StringFormat("Turn on after: %s",
+                                 formatTime(prefs_.invertStartHour.get().value_or(-1)).c_str()),
+                    [this, formatTime]() {
                     auto timeMenu =
                         std::make_shared<GenericSettingsMenuScreen>(display_, "Dark Mode");
 
-                    // Add "Always On" option
-                    timeMenu->addMenuItem(
-                        std::make_shared<NewMenuItemSingleLine>("Always On", [this, isStart]() {
-                            if (isStart) {
-                                prefs_.invertStartHour.set(-1);
-                                prefs_.invertEndHour.set(-1);
-                            }
-                            this->popScreen();
-                            this->popScreen();
-                            currentScreen()->setNeedsRerender();
-                        }));
+                    // Add "Manual" option
+                    timeMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>("Manual",
+                                                                                  [this]() {
+                        prefs_.invertStartHour.set(-1);
+                        prefs_.invertEndHour.set(-1);
+                        this->popScreen();
+                        this->popScreen();
+                        currentScreen()->setNeedsRerender();
+                    }));
 
                     // Add hourly options (0-23)
                     for (int hour = 0; hour < 24; hour++) {
-                        std::string timeStr = StringFormat("%02d:00", hour);
                         timeMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
-                            timeStr, [this, hour, isStart]() {
-                                if (isStart) {
-                                    prefs_.invertStartHour.set(hour);
-                                } else {
-                                    prefs_.invertEndHour.set(hour);
-                                }
+                            formatTime(hour), [this, hour]() {
+                                prefs_.invertStartHour.set(hour);
                                 this->popScreen();
                                 this->popScreen();
                                 currentScreen()->setNeedsRerender();
@@ -933,32 +937,39 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                     }
 
                     timeMenu->setBackCallback([this]() { this->popScreen(); });
-                    return timeMenu;
-                };
-
-                // Add Start Time menu item
-                darkModeMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
-                    StringFormat(
-                        "Turn on after: %s",
-                        prefs_.invertStartHour.get().value_or(-1) == -1
-                            ? "Manual"
-                            : StringFormat("%02d:00", prefs_.invertStartHour.get().value_or(0))
-                                  .c_str()),
-                    [this, createTimeMenu]() {
-                    auto timeMenu = createTimeMenu("Start Time", true);
                     this->pushScreen(timeMenu);
                     }));
 
-                // Add End Time menu item
+                // Update the End Time menu item text
                 darkModeMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
-                    StringFormat(
-                        "Turn off after: %s",
-                        prefs_.invertEndHour.get().value_or(-1) == -1
-                            ? "Manual"
-                            : StringFormat("%02d:00", prefs_.invertEndHour.get().value_or(23))
-                                  .c_str()),
-                    [this, createTimeMenu]() {
-                    auto timeMenu = createTimeMenu("End Time", false);
+                    StringFormat("Turn off after: %s",
+                                 formatTime(prefs_.invertEndHour.get().value_or(-1)).c_str()),
+                    [this, formatTime]() {
+                    auto timeMenu =
+                        std::make_shared<GenericSettingsMenuScreen>(display_, "Dark Mode");
+
+                    // Add "Manual" option
+                    timeMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>("Manual",
+                                                                                  [this]() {
+                        prefs_.invertStartHour.set(-1);
+                        prefs_.invertEndHour.set(-1);
+                        this->popScreen();
+                        this->popScreen();
+                        currentScreen()->setNeedsRerender();
+                    }));
+
+                    // Add hourly options (0-23)
+                    for (int hour = 0; hour < 24; hour++) {
+                        timeMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
+                            formatTime(hour), [this, hour]() {
+                                prefs_.invertEndHour.set(hour);
+                                this->popScreen();
+                                this->popScreen();
+                                currentScreen()->setNeedsRerender();
+                            }));
+                    }
+
+                    timeMenu->setBackCallback([this]() { this->popScreen(); });
                     this->pushScreen(timeMenu);
                     }));
 
@@ -973,13 +984,14 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                 this->pushScreen(darkModeMenu);
             };
             readingSettingsMenu->addMenuItem(std::make_shared<DarkModeMenuItemCheckable>(
-                StringFormat("Dark Mode%s",
-                             prefs_.invertStartHour.get().value_or(-1) == -1
-                                 ? " Not automatic"
-                                 : StringFormat(" (%02d:00-%02d:00)",
-                                                prefs_.invertStartHour.get().value_or(0),
-                                                prefs_.invertEndHour.get().value_or(23))
-                                       .c_str()),
+                StringFormat(
+                    "Dark Mode%s",
+                    prefs_.invertStartHour.get().value_or(-1) == -1
+                        ? " (Manual)"
+                        : StringFormat(" (%s-%s)",
+                                       formatTime(prefs_.invertStartHour.get().value_or(0)).c_str(),
+                                       formatTime(prefs_.invertEndHour.get().value_or(23)).c_str())
+                              .c_str()),
                 centerCallback, isDarkModeChecked, rightCallback));
 
             readingSettingsMenu->addMenuItem(std::make_shared<NewMenuItemCheckable>(
