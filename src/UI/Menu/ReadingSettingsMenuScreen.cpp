@@ -173,16 +173,22 @@ void ReadingSettingsMenuScreen::populateMenuItems() {
         fontMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>("Small", [this]() {
             display_.clearDisplay();
             prefs_.font.set(PREFS_SOL_SMALL);
+            telemetry_.logMetricData(TelemetryField::METRIC_STYLE,
+                                     {{"text_size", std::string("small")}});
             setNeedsRerender();
         }));
         fontMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>("Medium", [this]() {
             display_.clearDisplay();
             prefs_.font.set(PREFS_SOL_MEDIUM);
+            telemetry_.logMetricData(TelemetryField::METRIC_STYLE,
+                                     {{"text_size", std::string("medium")}});
             setNeedsRerender();
         }));
         fontMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>("Large", [this]() {
             display_.clearDisplay();
             prefs_.font.set(PREFS_SOL_LARGE);
+            telemetry_.logMetricData(TelemetryField::METRIC_STYLE,
+                                     {{"text_size", std::string("large")}});
             setNeedsRerender();
         }));
         int menuIndex = 0;
