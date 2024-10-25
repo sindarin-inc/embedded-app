@@ -1,5 +1,7 @@
 #include "EPubFile.hpp"
 
+#include <vector>
+
 #include "EPubDefs.hpp"
 #include "EPubMetaFile.hpp"
 
@@ -127,8 +129,12 @@ auto EPubFile::getXHTMLFile(const std::string_view &path) -> pugi::xml_document 
         // log_w("currentFilePath_: %s, filePath : %s", currentFilePath_.c_str(), filePath.c_str());
 
         std::tie(currentFileBuffer_, length) = getFile(filePath);
+        currentFileContentStart_ = 0;
 
         if (currentFileBuffer_ != nullptr) {
+            currentFileContentStart_ =
+                solDrm_.decryptInPlaceIfNecessary(currentFileBuffer_.get(), length);
+
             // Using load_buffer_inplace() is mandatory here as it permits the
             // computation of a node offset location, as string elements are taken
             // directly in the currentFileBuffer instead of being copied.
@@ -136,7 +142,8 @@ auto EPubFile::getXHTMLFile(const std::string_view &path) -> pugi::xml_document 
 
             EPUB_PROFILE_START(ParseXHTML);
             pugi::xml_parse_result result = currentFileDoc_.load_buffer_inplace(
-                currentFileBuffer_.get(), length,
+                currentFileBuffer_.get() + currentFileContentStart_,
+                length - currentFileContentStart_,
                 (pugi::parse_default | pugi::parse_ws_pcdata) & ~pugi::parse_escapes);
             EPUB_PROFILE_END(ParseXHTML);
 

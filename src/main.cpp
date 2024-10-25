@@ -29,6 +29,7 @@
 #include "Misc/StringUtil.hpp"
 #include "Models/Readable.hpp"
 #include "Storage/CrashReportWriter.hpp"
+#include "Storage/SolDrm.hpp"
 #include "Storage/LocalStore.hpp"
 #include "Storage/PreferencesStore.hpp"
 #include "UI/ChargingScreen.hpp"
@@ -112,8 +113,9 @@ TTRemoteInput ttRemoteInput(prefs, telemetry);
 USBSerial usbSerial;
 
 PowerManager powerManager(fileSystem, prefs, lightingController, myDisplay, telemetry, usbSerial);
-LocalStore localStore(fileSystem, prefs, powerManager.battery, telemetry);
-RootUI rootUi(myDisplay, prefs, powerManager, telemetry);
+SolDrm solDrm(prefs);
+LocalStore localStore(fileSystem, prefs, powerManager.battery, telemetry, solDrm);
+RootUI rootUi(myDisplay, prefs, powerManager, telemetry, solDrm);
 SolClock solClock(prefs);
 WiFi wiFi(telemetry, prefs);
 

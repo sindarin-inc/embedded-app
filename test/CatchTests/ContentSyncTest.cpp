@@ -11,6 +11,7 @@
 #include "Misc/Defer.hpp"
 #include "Storage/LocalStore.hpp"
 #include "Storage/PosixFileSystem.hpp"
+#include "Storage/SolDrm.hpp"
 #include "ViewTestCommon.hpp"
 
 std::string loadMockResponse(const std::string &filepath) {
@@ -86,8 +87,9 @@ TEST_CASE("Run a basic content sync", "[.][content-sync]") {
     battery.loop();
     auto api = SindarinAPI::getInstance();
     api->overrideBaseUrl("http://localhost:55011");
+    SolDrm solDrm(prefs);
 
-    LocalStore localStore(fs, prefs, battery, telemetry);
+    LocalStore localStore(fs, prefs, battery, telemetry, solDrm);
 
     ContentSyncState lastState;
     DispatchQueue::dispatchOneOff([&lastState, &localStore]() {

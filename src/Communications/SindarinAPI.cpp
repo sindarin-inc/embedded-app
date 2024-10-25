@@ -207,12 +207,12 @@ auto SindarinAPI::downloadReadable(const std::shared_ptr<Readable> &readable,
                                    FileSystem &fileSystem, Telemetry &telemetry,
                                    const std::string &path,
                                    const std::shared_ptr<CancelFlag> &cancel, bool useBle,
+                                   const std::string &publicKey,
                                    const std::function<void(int percentage)> &progressCallback)
     -> int {
     // auto remoteUrl = readable.remoteUrl();
     auto file = readable->file(path);
     auto remoteUrl = file.fileProxied;
-    auto fileSize = file.size;
 
     // Create the directory if necessary
     // Grab the dir from the path
@@ -226,9 +226,15 @@ auto SindarinAPI::downloadReadable(const std::shared_ptr<Readable> &readable,
     }
 
     bool gzip = HasSuffix(path, ".gz");
+
+    std::string requestBody;
+    if (!publicKey.empty()) {
+        requestBody = StringFormat(R"({"public_key": "%s"})", publicKey.c_str());
+        log_d("Request body: %s", requestBody.c_str());
+    }
     auto httpCode = DownloadFileToPath(
-        remoteUrl.c_str(), fileSystem, telemetry, path.c_str(), fileSize, cancel, useBle,
-        [progressCallback](float percentage) { progressCallback(percentage); }, gzip);
+        remoteUrl.c_str(), fileSystem, telemetry, path.c_str(), 0, cancel, useBle,
+        [progressCallback](float percentage) { progressCallback(percentage); }, gzip, requestBody);
 
     return httpCode;
 }

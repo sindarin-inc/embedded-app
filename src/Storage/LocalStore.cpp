@@ -90,13 +90,6 @@ auto LocalStore::loadReadablesFromFile(ReadablesVector &readables, const std::st
             log_w("Couldn't find readable with path %s", path.c_str());
             continue;
         }
-        int fileSize = readableGetUncompressedSize(readable, path, size);
-
-        if (fileSize >= 0 && !readable->files.empty() && fileSize != readable->file(path).size) {
-            log_w("File size mismatch for %s (%d on disk vs %d in local store), ignoring",
-                  path.c_str(), fileSize, readable->file(path).size);
-            continue;
-        }
         readables.push_back(readable);
     }
 
@@ -133,15 +126,16 @@ auto LocalStore::isReadableUnchanged(const ReadablesVector &readables,
             }
 
             // If we have a file object, check that the size matches
-            if (!r->files.empty() && !ignoreFileSizeCheck) {
-                if (fileSize >= 0 && fileSize != readable->file().size) {
-                    log_w("File size mismatch for %s (%d on disk vs %d in local store), ignoring",
-                          path.c_str(), fileSize, readable->file().size);
-                    return false;
-                } else {
-                    return true;
-                }
-            }
+            // if (!r->files.empty() && !ignoreFileSizeCheck) {
+            //     if (fileSize >= 0 && fileSize != readable->file().size) {
+            //         log_w("File size mismatch for %s (%d on disk vs %d in local store),
+            //         ignoring",
+            //               path.c_str(), fileSize, readable->file().size);
+            //         return false;
+            //     } else {
+            //         return true;
+            //     }
+            // }
 
             // Next check if the readable is updated more recently than local copy
             if (r->dateModified != readable->dateModified) {
@@ -690,6 +684,14 @@ auto LocalStore::syncFromRemote(bool wifiConnected, bool bleConnected, SyncReaso
     log_d("Syncing books and articles");
     progressCallback(ContentSyncState{.state = ContentSyncState::State::CheckingSync});
 
+    std::string publicKey = solDrm_.publicKeyPem();
+    // Remove -----BEGIN PUBLIC KEY-----\n prefix/
+    publicKey = publicKey.substr(publicKey.find('\n') + 1);
+    // Remove \n-----END PUBLIC KEY-----\n suffix
+    publicKey = publicKey.substr(0, publicKey.find("\n-----END PUBLIC KEY-----\n"));
+    publicKey = ReplaceAll(publicKey, "\n", "");
+    log_i("Public key: %s", publicKey.c_str());
+
     std::vector<ReadablesVector *> readablesList = {&books_, &articles_};
     for (auto &readables : readablesList) {
         if (CancelFlag::isCancelled(cancel)) {
@@ -857,7 +859,8 @@ auto LocalStore::syncFromRemote(bool wifiConnected, bool bleConnected, SyncReaso
                 processReadableDownload(readablesToDownload, *readables, cancel, downloadIndex,
                                         modelType == ReadablesModelType::Book ? booksDownloaded
                                                                               : articlesDownloaded,
-                                        progressCallback, modelType, totalCount, bleConnected) ||
+                                        progressCallback, modelType, totalCount, bleConnected,
+                                        modelType == ReadablesModelType::Book ? publicKey : "") ||
                 failedDownload;
             if (failedDownload) {
                 log_d("Failed to process %ss, have %zu %ss",
@@ -1043,7 +1046,7 @@ auto LocalStore::processReadableDownload(
     const UserReadablesVector &readablesToDownload, ReadablesVector &readables,
     const std::shared_ptr<CancelFlag> &cancel, int &downloadIndex, int &successfullyDownloaded,
     const std::function<void(ContentSyncState)> &progressCallback, ReadablesModelType modelType,
-    int totalCount, bool useBle) -> bool {
+    int totalCount, bool useBle, const std::string &publicKey) -> bool {
     bool failedDownload = false;
 
     if (readablesToDownload.empty()) {
@@ -1070,7 +1073,7 @@ auto LocalStore::processReadableDownload(
             }
 
             auto httpCode = SindarinAPI::getInstance()->downloadReadable(
-                readable, this->fileSystem, this->telemetry_, path, cancel, useBle,
+                readable, this->fileSystem, this->telemetry_, path, cancel, useBle, publicKey,
                 [progressCallback, currPercentage, pctPerReadable, modelType](int percentage) {
                 int pctThisReadable = percentage * pctPerReadable / 100;
                 progressCallback(ContentSyncState{

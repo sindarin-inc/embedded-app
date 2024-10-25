@@ -13,6 +13,7 @@
 #include "Models/UserReadablePartialChapterSummary.hpp"
 #include "Storage/FileSystem.hpp"
 #include "Storage/PreferencesStore.hpp"
+#include "Storage/SolDrm.hpp"
 
 struct SortCriteria {
     enum Type { DateModified, Alphabetical, LastRead, Random } type = DateModified;
@@ -82,8 +83,9 @@ using UserReadablesVector = SpiramVector<UserReadable>;
 class LocalStore {
 public:
     LocalStore(FileSystem &fileSystem, PreferencesStore &prefs, Battery &battery,
-               Telemetry &telemetry)
-        : fileSystem(fileSystem), prefs_(prefs), battery_(battery), telemetry_(telemetry){};
+               Telemetry &telemetry, SolDrm &solDrm)
+        : fileSystem(fileSystem), prefs_(prefs), battery_(battery), telemetry_(telemetry),
+          solDrm_(solDrm){};
     LocalStore(LocalStore const &) = delete;
 
     auto begin() -> bool;
@@ -135,7 +137,8 @@ public:
                                  const std::shared_ptr<CancelFlag> &cancel, int &downloadIndex,
                                  int &successfullyDownloaded,
                                  const std::function<void(ContentSyncState)> &progressCallback,
-                                 ReadablesModelType modelType, int totalCount, bool useBle) -> bool;
+                                 ReadablesModelType modelType, int totalCount, bool useBle,
+                                 const std::string &publicKey) -> bool;
     void deleteReadables(bool restart = true);
     void deleteArticles(bool restart = true);
     void deleteReadableFiles(const ReadablesVector &readables, bool restart);
@@ -180,6 +183,7 @@ private:
     PreferencesStore &prefs_;
     Battery &battery_;
     Telemetry &telemetry_;
+    SolDrm &solDrm_;
 
     ReadablesVector books_;
     ReadablesVector articles_;

@@ -120,7 +120,9 @@ int main(int argc, char **argv) {
     auto readable = std::make_shared<Readable>();
     readable->readableType = readableType;
 
-    auto epubFile = std::make_shared<EPubFile>(file, readable);
+    PreferencesStore prefs;
+    SolDrm solDrm(prefs);
+    auto epubFile = std::make_shared<EPubFile>(file, readable, solDrm);
 
     Renderer renderer(*display, boundingBoxRect, font);
     renderer.setStream(epubFile);

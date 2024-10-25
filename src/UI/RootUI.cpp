@@ -246,12 +246,12 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
             // Handle this is an in-memory epub
             auto file =
                 SFile(std::make_shared<RamFile>(readable->localBytes, readable->localBytesSize));
-            stream = std::make_shared<EPubFile>(file, readable);
+            stream = std::make_shared<EPubFile>(file, readable, solDrm_);
         } else {
             auto [path, size] = localStore.readableFilePathForReading(readable);
             if (HasSuffix(path, ".epub")) {
                 log_i("Opening %s as epub", path.c_str());
-                stream = fileSystem.newEPubRendererStream(path.c_str(), readable);
+                stream = fileSystem.newEPubRendererStream(path.c_str(), readable, solDrm_);
             } else if (HasSuffix(path, ".txt.gz")) {
                 log_i("Opening %s as gzip", path.c_str());
                 stream = fileSystem.newGzipRendererStream(path.c_str());

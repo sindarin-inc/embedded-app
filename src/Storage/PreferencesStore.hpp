@@ -496,6 +496,7 @@ public:
           seenExperimentalOverview(boolFlags_, 19),
           seenPartialSummaryOverview(boolFlags_, 20),
           seenFastPageTransitionsOverview(boolFlags_, 21),
+          privateKey(*this, "private-key"),
           // only touch the lines above this when deleting those prefs. Do not renumber. Add below 
           // to add a new boolFlag with incrementing value.
           preferencesStoreMigrationVersion_(*this, "ps-version"),
@@ -828,6 +829,7 @@ public:
     BooleanFlag seenExperimentalOverview;
     BooleanFlag seenPartialSummaryOverview;
     BooleanFlag seenFastPageTransitionsOverview;
+    PrefsItem<std::vector<uint8_t>> privateKey;
 
     // These are RTC_SLOW_MEM variables that persist across deep sleep / wake cycles but will be
     // reset on power cycles

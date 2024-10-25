@@ -78,8 +78,12 @@ test: test-build
 test-content-sync: test-build
 	./test/CatchTests/build/tests '[content-sync]'
 
-.PHONY: lldb-test-epub
-lldb-test-epub: test-build
+.PHONY: test-lldb
+test-lldb: test-build
+	lldb ./test/CatchTests/build/tests
+
+.PHONY: test-epub-lldb
+test-epub-lldb: test-build
 	lldb ./test/CatchTests/build/tests '[epub]'
 
 .PHONY: epub-render-build
