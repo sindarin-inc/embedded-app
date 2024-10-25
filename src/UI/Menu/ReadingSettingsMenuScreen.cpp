@@ -5,10 +5,13 @@
 
 ReadingSettingsMenuScreen::ReadingSettingsMenuScreen(DisplaySystem &display,
                                                      const std::string &backTitle,
-                                                     PreferencesStore &prefs)
+                                                     PreferencesStore &prefs, Telemetry &telemetry,
+                                                     PushScreenFunc pushScreen,
+                                                     PopScreenFunc popScreen)
     : EinkView(display), menuView_(display), backLabelView_(display, backTitle),
       renderer_(display, DisplayRect({0, 0, 0, 0}), static_cast<Font *>(&fontFace0)),
-      rendererView_(display, renderer_), prefs_(prefs) {
+      rendererView_(display, renderer_), prefs_(prefs), telemetry_(telemetry),
+      pushScreen_(std::move(pushScreen)), popScreen_(std::move(popScreen)) {
     menuView_.padding = 1;
     menuView_.itemsPerPage = 8;
     rendererView_.dottedBox = true;
@@ -80,10 +83,10 @@ void ReadingSettingsMenuScreen::processCommand(RemoteCommand command) {
     case RemoteCommand::LEFT:
         firstLoad_ = true;
         setNeedsRerender();
-        back();
+        leaveMenu();      // Stop animation timer and reset renderer
+        popScreen_(true); // Return to main menu
         return;
     case RemoteCommand::RIGHT:
-        log_d("Right");
         menuView_.executeSelectedItemSubmenu();
         return;
     // We rely on the animation timer which is set in the renderer view in autopilot mode
@@ -161,4 +164,220 @@ void ReadingSettingsMenuScreen::render(DisplaySystem &display) {
             display.updateDisplay(DisplaySystem::UpdateType::FAST_ORIGINAL_AU4, true);
         }
     }
+}
+
+void ReadingSettingsMenuScreen::populateMenuItems() {
+    addMenuItem(std::make_shared<NewMenuItemSingleLine>("Text Size", [this]() {
+        auto fontMenu = std::make_shared<ReadingSettingsMenuScreen>(
+            display_, "Reading Style", prefs_, telemetry_, pushScreen_, popScreen_);
+        fontMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>("Small", [this]() {
+            display_.clearDisplay();
+            prefs_.font.set(PREFS_SOL_SMALL);
+            setNeedsRerender();
+        }));
+        fontMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>("Medium", [this]() {
+            display_.clearDisplay();
+            prefs_.font.set(PREFS_SOL_MEDIUM);
+            setNeedsRerender();
+        }));
+        fontMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>("Large", [this]() {
+            display_.clearDisplay();
+            prefs_.font.set(PREFS_SOL_LARGE);
+            setNeedsRerender();
+        }));
+        int menuIndex = 0;
+        if (prefs_.font.get().value_or(PREFS_SOL_SMALL) == PREFS_SOL_SMALL) {
+            menuIndex = 0;
+        } else if (prefs_.font.get().value_or(PREFS_SOL_SMALL) == PREFS_SOL_MEDIUM) {
+            menuIndex = 1;
+        } else if (prefs_.font.get().value_or(PREFS_SOL_SMALL) == PREFS_SOL_LARGE) {
+            menuIndex = 2;
+        }
+        fontMenu->setSelectedIndex(menuIndex);
+        pushScreen_(fontMenu);
+        fontMenu->setBackCallback([this]() { popScreen_(false); });
+    }));
+
+    addMenuItem(std::make_shared<NewMenuItemSingleLine>("Move Page in Display", [this]() {
+        log_d("Loading adjust offset");
+        auto offsetAdjust = std::make_shared<OffsetAdjustScreen>(display_, prefs_, telemetry_);
+        pushScreen_(offsetAdjust);
+        log_d("setting up callback");
+        offsetAdjust->setBackCallback([this]() { popScreen_(false); });
+        log_d("set up callback");
+    }));
+
+    addMenuItem(std::make_shared<NewMenuItemSingleLine>("Resize Page", [this]() {
+        log_d("Loading resize box");
+        auto resizeBox = std::make_shared<ResizeBoxScreen>(display_, prefs_, telemetry_);
+        pushScreen_(resizeBox);
+        log_d("setting up callback");
+        resizeBox->setBackCallback([this]() { popScreen_(false); });
+        log_d("set up callback");
+    }));
+
+    addMenuItem(std::make_shared<NewMenuItemSingleLine>("Line Spacing", [this]() {
+        auto lineSpacingScreen = std::make_shared<LineSpacingScreen>(display_, prefs_, telemetry_);
+        pushScreen_(lineSpacingScreen);
+        lineSpacingScreen->setBackCallback([this]() {
+            popScreen_(false);
+            setRendererLineSpacingFromPrefs();
+        });
+    }));
+
+    // Helper function to convert 24h to 12h format with AM/PM
+    auto formatTime = [](int hour) -> std::string {
+        if (hour == -1) return "Manual";
+        const char *period = (hour >= 12) ? "pm" : "am";
+        int displayHour = (hour == 0) ? 12 : ((hour > 12) ? hour - 12 : hour);
+        return StringFormat("%d:00%s", displayHour, period);
+    };
+
+    // Helper function to get the dark mode schedule text
+    auto getDarkModeScheduleText = [](int startHour, int endHour,
+                                      const auto &formatTime) -> std::string {
+        if (startHour == -1 && endHour == -1) {
+            return " (Manual)";
+        } else if (startHour == -1) {
+            return StringFormat(" (Off at %s)", formatTime(endHour).c_str());
+        } else if (endHour == -1) {
+            return StringFormat(" (On at %s)", formatTime(startHour).c_str());
+        } else {
+            return StringFormat(" (%s-%s)", formatTime(startHour).c_str(),
+                                formatTime(endHour).c_str());
+        }
+    };
+
+    auto centerCallback = [this]() {
+        // Toggle dark mode
+        this->prefs_.darkMode.set(!this->prefs_.darkMode.get().value_or(false));
+        display_.flipInversion();
+        display_.clearDisplay();
+        prefs_.invertSetting.set(display_.getInversion());
+        setNeedsRerender();
+        setFirstLoad();
+    };
+
+    auto isDarkModeChecked = [this]() -> bool {
+        return this->prefs_.darkMode.get().value_or(false);
+    };
+
+    auto rightCallback =
+        [this, formatTime, centerCallback]() { // Add centerCallback to capture list
+        auto darkModeMenu = std::make_shared<GenericSettingsMenuScreen>(display_, "Reading Style");
+
+        darkModeMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
+            StringFormat("Turn on after: %s",
+                         formatTime(prefs_.invertStartHour.get().value_or(-1)).c_str()),
+            [this, formatTime]() {
+            auto timeMenu = std::make_shared<GenericSettingsMenuScreen>(display_, "Dark Mode");
+
+            timeMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>("Manual", [this]() {
+                prefs_.invertStartHour.set(-1);
+                prefs_.invertEndHour.set(-1);
+                popScreen_(true);
+                popScreen_(true);
+                regenerateMenuItems();
+                setNeedsRerender();
+            }));
+
+            for (int hour = 0; hour < 24; hour++) {
+                timeMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(formatTime(hour),
+                                                                              [this, hour]() {
+                    prefs_.invertStartHour.set(hour);
+                    popScreen_(true);
+                    popScreen_(true);
+                    regenerateMenuItems();
+                    setNeedsRerender();
+                }));
+            }
+
+            int menuIndex = 0;
+            if (prefs_.invertStartHour.get().has_value()) {
+                menuIndex = prefs_.invertStartHour.get().value() + 1;
+            }
+            timeMenu->setSelectedIndex(menuIndex);
+
+            timeMenu->setBackCallback([this]() { popScreen_(true); });
+            pushScreen_(timeMenu);
+            }));
+
+        darkModeMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
+            StringFormat("Turn off after: %s",
+                         formatTime(prefs_.invertEndHour.get().value_or(-1)).c_str()),
+            [this, formatTime]() {
+            auto timeMenu = std::make_shared<GenericSettingsMenuScreen>(display_, "Dark Mode");
+
+            timeMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>("Manual", [this]() {
+                prefs_.invertStartHour.set(-1);
+                prefs_.invertEndHour.set(-1);
+                popScreen_(true);
+                popScreen_(true);
+                regenerateMenuItems();
+                setNeedsRerender();
+            }));
+
+            for (int hour = 0; hour < 24; hour++) {
+                timeMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(formatTime(hour),
+                                                                              [this, hour]() {
+                    prefs_.invertEndHour.set(hour);
+                    popScreen_(true);
+                    popScreen_(true);
+                    regenerateMenuItems();
+                    setNeedsRerender();
+                }));
+            }
+
+            int menuIndex = 0;
+            if (prefs_.invertEndHour.get().has_value()) {
+                menuIndex = prefs_.invertEndHour.get().value() + 1;
+            }
+            timeMenu->setSelectedIndex(menuIndex);
+
+            timeMenu->setBackCallback([this]() { popScreen_(true); });
+            pushScreen_(timeMenu);
+            }));
+
+        // Add new menu items to manually toggle dark mode
+        darkModeMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
+            prefs_.darkMode.get().value_or(false) ? "Turn dark mode off" : "Turn dark mode on",
+            [this, centerCallback]() { // Explicitly capture centerCallback here too
+            centerCallback();          // Reuse the existing dark mode toggle code
+            popScreen_(true);
+            regenerateMenuItems();
+            setNeedsRerender();
+            }));
+
+        darkModeMenu->setBackCallback([this]() {
+            popScreen_(true);
+            if (prefs_.invertStartHour.get().value_or(-1) != -1) {
+                // TODO: Add logic to check current time and set dark mode accordingly
+            }
+        });
+
+        pushScreen_(darkModeMenu);
+    };
+
+    addMenuItem(std::make_shared<DarkModeMenuItemCheckable>(
+        StringFormat("Dark Mode%s",
+                     getDarkModeScheduleText(prefs_.invertStartHour.get().value_or(-1),
+                                             prefs_.invertEndHour.get().value_or(-1), formatTime)
+                         .c_str()),
+        centerCallback, isDarkModeChecked, rightCallback));
+
+    addMenuItem(std::make_shared<NewMenuItemCheckable>(
+        "Autopilot",
+        [this]() {
+        this->prefs_.autoPilot.set(!this->prefs_.autoPilot.get().value_or(false));
+        if (this->prefs_.autoPilot.get().value_or(false)) {
+            prefs_.autoPilotSpeed.set(10000);
+            turnOnAutoPilot();
+        } else {
+            prefs_.autoPilotSpeed.remove();
+            turnOffAutoPilot();
+        }
+        setNeedsRerender();
+        setFirstLoad();
+        },
+        [this]() -> bool { return this->prefs_.autoPilot.get().value_or(false); }));
 }

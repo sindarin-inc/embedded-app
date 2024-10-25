@@ -2,18 +2,30 @@
 
 #include "Displays/DisplaySystem.hpp"
 #include "Inputs/RemoteInput.hpp"
+#include "Misc/StringUtil.hpp"
 #include "Storage/PreferencesStore.hpp"
 #include "UI/Components/ArrowLabelView.hpp"
 #include "UI/Components/EinkView.hpp"
 #include "UI/Components/RendererView.hpp"
 #include "UI/Components/SingleLineTextView.hpp"
+#include "UI/LineSpacingScreen.hpp"
+#include "UI/Menu/DarkModeMenuItemCheckable.hpp"
+#include "UI/Menu/GenericSettingsMenuScreen.hpp"
+#include "UI/Menu/NewMenuItemCheckable.hpp"
+#include "UI/Menu/NewMenuItemSingleLine.hpp"
 #include "UI/Menu/NewMenuView.hpp"
+#include "UI/OffsetAdjustScreen.hpp"
+#include "UI/ResizeBoxScreen.hpp"
 #include "UI/Screen.hpp"
 
 class ReadingSettingsMenuScreen : public Screen, public EinkView {
 public:
+    using PushScreenFunc = std::function<void(const std::shared_ptr<Screen> &)>;
+    using PopScreenFunc = std::function<void(bool)>;
+
     ReadingSettingsMenuScreen(DisplaySystem &display, const std::string &backTitle,
-                              PreferencesStore &prefs);
+                              PreferencesStore &prefs, Telemetry &telemetry,
+                              PushScreenFunc pushScreen, PopScreenFunc popScreen);
 
     auto setSelectedIndex(size_t index) -> bool;
 
@@ -48,14 +60,24 @@ public:
         xTimerStop(DisplaySystem::animationTimer, 0);
     }
 
+    void regenerateMenuItems() {
+        size_t lastIndex = menuView_.getSelectedIndex();
+        menuView_.resetMenuItems();
+        populateMenuItems();
+        menuView_.setSelectedIndex(lastIndex);
+    }
+
+    void populateMenuItems();
+
 private:
     NewMenuView menuView_;
     ArrowLabelView backLabelView_;
     Renderer renderer_;
-
     RendererView rendererView_;
-
     PreferencesStore &prefs_;
+    Telemetry &telemetry_;
+    PushScreenFunc pushScreen_;
+    PopScreenFunc popScreen_;
 
     void moveSelection(int delta);
 };
