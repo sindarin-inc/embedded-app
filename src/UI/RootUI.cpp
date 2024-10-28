@@ -2075,10 +2075,12 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                 this->pushScreen(readableScreen, true);
                 log_i("Resuming readable %s at place %s", (*it)->title.c_str(),
                       (*it)->place->str().c_str());
-                // Technically. we might want this to go to Recent, but for now this will do.
+
                 // Note that this is fragile in how the id is cacluated from NewMenuItemBook and
                 // NewMenuItemArticle. If those change, this will break.
-                if (articlesIterator != articles.end()) {
+                if (newMainMenu->isTitleInTab("Recent", (*it)->shortenedUuid.c_str())) {
+                    newMainMenu->setTabToTitle("Recent", (*it)->shortenedUuid.c_str());
+                } else if (articlesIterator != articles.end()) {
                     newMainMenu->setTabToTitle("Articles", (*it)->shortenedUuid.c_str());
                 } else if (isBible(*it)) {
                     newMainMenu->setTabToTitle("Bible", (*it)->shortenedUuid.c_str());

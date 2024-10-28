@@ -35,6 +35,15 @@ void CarouselMenuScreen::setTabToTitle(const std::string &tabTitle, std::string 
     }
 }
 
+bool CarouselMenuScreen::isTitleInTab(const std::string &tabTitle, std::string id) {
+    for (int i = 0; i < menuTabs_.size(); i++) {
+        if (std::get<0>(menuTabs_[i]) == tabTitle) {
+            return menuView_.isIDInMenu(id);
+        }
+    }
+    return false;
+}
+
 void CarouselMenuScreen::regenerateCurrentTab() { setCurrentTabIndex(getCurrentTabIndex()); }
 
 // Note, MainMenuScreen and PopupMenuScreen rely on the fact that this will populate

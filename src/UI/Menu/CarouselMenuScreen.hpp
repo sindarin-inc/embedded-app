@@ -42,6 +42,8 @@ public:
     // menu to that readable when you go back to it.
     void setTabToTitle(const std::string &tabTitle, std::string id);
 
+    bool isTitleInTab(const std::string &tabTitle, std::string id);
+
     auto getNumTabs() const -> int { return menuTabs_.size(); }
 
     auto layout(LayoutContext &context, Size size) -> Size override = 0;

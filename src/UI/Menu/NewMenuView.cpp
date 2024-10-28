@@ -83,6 +83,15 @@ auto NewMenuView::getSelectedMenuItemID() const -> std::string {
     return "";
 }
 
+auto NewMenuView::isIDInMenu(std::string id) -> bool {
+    for (size_t i = 0; i < menuItems_.size(); ++i) {
+        if (menuItems_[i]->id() == id) {
+            return true;
+        }
+    }
+    return false;
+}
+
 auto NewMenuView::moveSelection(int delta) -> bool {
     int newIndex = static_cast<int>(getSelectedIndex()) + delta;
     // Wrap around
