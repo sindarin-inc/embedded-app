@@ -48,8 +48,7 @@ static rmt_config_t row_rmt_config;
 /***        exported functions                                              ***/
 /******************************************************************************/
 
-void rmt_pulse_init(gpio_num_t pin)
-{
+void rmt_pulse_init(gpio_num_t pin) {
     row_rmt_config.rmt_mode = RMT_MODE_TX;
     // currently hardcoded: use channel 0
     row_rmt_config.channel = RMT_CHANNEL_1;
@@ -66,35 +65,29 @@ void rmt_pulse_init(gpio_num_t pin)
     row_rmt_config.tx_config.idle_level = RMT_IDLE_LEVEL_LOW;
     row_rmt_config.tx_config.idle_output_en = true;
 
-// #if ESP_IDF_VERSION_MAJOR >= 4
-//     rmt_isr_register(rmt_interrupt_handler, 0,
-//                      ESP_INTR_FLAG_LEVEL3, &gRMT_intr_handle);
-// #else
-//     esp_intr_alloc(ETS_RMT_INTR_SOURCE, ESP_INTR_FLAG_LEVEL3,
-//                    rmt_interrupt_handler, 0, &gRMT_intr_handle);
-// #endif
+    // #if ESP_IDF_VERSION_MAJOR >= 4
+    //     rmt_isr_register(rmt_interrupt_handler, 0,
+    //                      ESP_INTR_FLAG_LEVEL3, &gRMT_intr_handle);
+    // #else
+    //     esp_intr_alloc(ETS_RMT_INTR_SOURCE, ESP_INTR_FLAG_LEVEL3,
+    //                    rmt_interrupt_handler, 0, &gRMT_intr_handle);
+    // #endif
 
     rmt_config(&row_rmt_config);
     rmt_driver_install(RMT_CHANNEL_1, 0, 0);
     // rmt_set_tx_intr_en(row_rmt_config.channel, true);
 }
 
-
-void IRAM_ATTR pulse_ckv_ticks(uint16_t high_time_ticks,
-                               uint16_t low_time_ticks, bool wait)
-{
+void IRAM_ATTR pulse_ckv_ticks(uint16_t high_time_ticks, uint16_t low_time_ticks, bool wait) {
     // while (!rmt_tx_done) ;
 
     rmt_item32_t rmt_mem_ptr;
-    if (high_time_ticks > 0)
-    {
+    if (high_time_ticks > 0) {
         rmt_mem_ptr.level0 = 1;
         rmt_mem_ptr.duration0 = high_time_ticks;
         rmt_mem_ptr.level1 = 0;
         rmt_mem_ptr.duration1 = low_time_ticks;
-    }
-    else
-    {
+    } else {
         rmt_mem_ptr.level0 = 1;
         rmt_mem_ptr.duration0 = low_time_ticks;
         rmt_mem_ptr.level1 = 0;
@@ -109,12 +102,9 @@ void IRAM_ATTR pulse_ckv_ticks(uint16_t high_time_ticks,
     // while (wait && !rmt_tx_done) ;
 }
 
-
-void IRAM_ATTR pulse_ckv_us(uint16_t high_time_us, uint16_t low_time_us, bool wait)
-{
+void IRAM_ATTR pulse_ckv_us(uint16_t high_time_us, uint16_t low_time_us, bool wait) {
     pulse_ckv_ticks(10 * high_time_us, 10 * low_time_us, wait);
 }
-
 
 // bool IRAM_ATTR rmt_busy()
 // {

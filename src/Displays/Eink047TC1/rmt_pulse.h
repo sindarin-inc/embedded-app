@@ -13,10 +13,9 @@ extern "C" {
 /***        include files                                                   ***/
 /******************************************************************************/
 
-#include <stdint.h>
-
 #include <driver/gpio.h>
 #include <esp_attr.h>
+#include <stdint.h>
 
 /******************************************************************************/
 /***        macro definitions                                               ***/

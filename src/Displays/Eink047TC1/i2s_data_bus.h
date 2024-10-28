@@ -16,7 +16,6 @@ extern "C" {
 
 #include <driver/gpio.h>
 #include <esp_attr.h>
-
 #include <stdint.h>
 
 /******************************************************************************/
@@ -30,8 +29,7 @@ extern "C" {
 /**
  * I2S bus configuration parameters.
  */
-typedef struct
-{
+typedef struct {
     /// GPIO numbers of the parallel bus pins.
     gpio_num_t data_0;
     gpio_num_t data_1;
