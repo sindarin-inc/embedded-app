@@ -50,6 +50,7 @@
 #include "UI/Menu/NewMenuItemArticle.hpp"
 #include "UI/Menu/NewMenuItemBook.hpp"
 #include "UI/Menu/NewMenuItemCheckable.hpp"
+#include "UI/Menu/NewMenuItemMultiLine.hpp"
 #include "UI/Menu/NewMenuItemSingleLine.hpp"
 #include "UI/Menu/ReadingSettingsMenuScreen.hpp"
 #include "UI/Menu/TextPlacementWelcomeMenuScreen.hpp"
@@ -172,8 +173,8 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
     HEAP_PROFILE_START(rootUILogBootData);
 
     std::unordered_map<std::string, TelemetryVariant> bootData = {
-        {"fw", SemanticVersionString()},
-        {"sha", GitVersionString()},
+        {"fw", std::string(SemanticVersionString())},
+        {"sha", std::string(GitVersionString())},
         {"bc", prefs_.bootCount.get().value_or(0)},
         {"br", power_.getBootInfo().telemetryStr()},
         {"mag_x", lastMagReading.x},
@@ -329,15 +330,15 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
     // If there is firmware available, show the Update Firmware item in the books tab.
     auto makeReleaseNotesMenuItem = [this, &localStore](const Firmware &firmware) {
         log_i("Found pending firmware update %s", firmware.version.c_str());
-        return std::make_shared<NewMenuItemSingleLine>(
+        return std::make_shared<NewMenuItemMultiLine>(
             StringFormat("Upgrade Software from %s to %s", SemanticVersionString(),
                          firmware.version.c_str()),
-            [this, &localStore, firmware]() {
-            auto releaseNotesScreen = std::make_shared<ReleaseNotesScreen>(
-                display_, this->prefs_, power_, localStore, firmware);
-            display_.clearDisplay();
-            pushScreen(releaseNotesScreen);
-            releaseNotesScreen->setBackCallback([this]() { this->popScreen(); });
+            2, [this, &localStore, firmware]() {
+                auto releaseNotesScreen = std::make_shared<ReleaseNotesScreen>(
+                    display_, this->prefs_, power_, localStore, firmware);
+                display_.clearDisplay();
+                pushScreen(releaseNotesScreen);
+                releaseNotesScreen->setBackCallback([this]() { this->popScreen(); });
             });
     };
 
@@ -813,21 +814,21 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                     display_.clearDisplay();
                     prefs_.font.set(PREFS_SOL_SMALL);
                     this->telemetry_.logMetricData(TelemetryField::METRIC_STYLE,
-                                                   {{"text_size", "small"}});
+                                                   {{"text_size", std::string("small")}});
                     currentScreen()->setNeedsRerender();
                 }));
                 fontMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>("Medium", [this]() {
                     display_.clearDisplay();
                     prefs_.font.set(PREFS_SOL_MEDIUM);
                     this->telemetry_.logMetricData(TelemetryField::METRIC_STYLE,
-                                                   {{"text_size", "medium"}});
+                                                   {{"text_size", std::string("medium")}});
                     currentScreen()->setNeedsRerender();
                 }));
                 fontMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>("Large", [this]() {
                     display_.clearDisplay();
                     prefs_.font.set(PREFS_SOL_LARGE);
                     this->telemetry_.logMetricData(TelemetryField::METRIC_STYLE,
-                                                   {{"text_size", "large"}});
+                                                   {{"text_size", std::string("large")}});
                     currentScreen()->setNeedsRerender();
                 }));
                 int menuIndex = 0;
@@ -2104,7 +2105,9 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
 
         if (welcomeTabIndex != 4 || forceShowWelcome) {
             newMainMenu->setTabToTitle("Welcome", forceShowWelcome ? 0 : welcomeTabIndex);
-            if (forceShowWelcome) {
+            // If we're always showing the welcome tab, or if we have a current readable we're about
+            // to open, don't show the video
+            if (forceShowWelcome || currentReadable.has_value()) {
                 showWelcomeVideo = false;
             }
         } else {

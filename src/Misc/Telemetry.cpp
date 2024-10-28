@@ -59,8 +59,6 @@ auto Telemetry::variantToJson(const TelemetryVariant &v) -> std::string {
         return ss.str();
     } else if (std::holds_alternative<SpiramString>(v)) {
         return "\"" + std::string(std::get<SpiramString>(v)) + "\"";
-    } else if (std::holds_alternative<const char *>(v)) {
-        return "\"" + std::string(std::get<const char *>(v)) + "\"";
     } else {
         return "\"" + std::get<std::string>(v) + "\"";
     }

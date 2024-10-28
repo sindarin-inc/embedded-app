@@ -91,14 +91,14 @@ auto SindarinAPI::checkSync(const std::string &url, CheckSyncRequest &req, Check
                          writeLength, bodyLength);
         log_w("%s", message.c_str());
         telemetry.logMetric(TelemetryField::METRIC_SYNC_STATUS, "sync-failed",
-                            {{"message", message.c_str()}});
+                            {{"message", message}});
         return ERR_CLIENT_WRITE;
     }
 
     int contentLength = client->fetchHeaders(0, cancel);
     if (contentLength <= 0) {
-        auto message = "Failed to fetch headers";
-        log_e("%s", message);
+        std::string message = "Failed to fetch headers";
+        log_e("%s", message.c_str());
         telemetry.logMetric(TelemetryField::METRIC_SYNC_STATUS, "sync-failed",
                             {{"message", message}});
         return ERR_CONTENT_LENGTH;
@@ -108,7 +108,7 @@ auto SindarinAPI::checkSync(const std::string &url, CheckSyncRequest &req, Check
         auto message = StringFormat("Failed to check sync: %d", httpCode);
         log_e("%s", message.c_str());
         telemetry.logMetric(TelemetryField::METRIC_SYNC_STATUS, "sync-failed",
-                            {{"message", message.c_str()}});
+                            {{"message", message}});
         return httpCode;
     }
     auto stream = client->makeReadStream();
@@ -126,15 +126,15 @@ auto SindarinAPI::checkSync(const std::string &url, CheckSyncRequest &req, Check
                                     error.c_str(), contentLength);
         log_e("%s", message.c_str());
         telemetry.logMetric(TelemetryField::METRIC_SYNC_STATUS, "sync-failed",
-                            {{"message", message.c_str()}});
+                            {{"message", message}});
         return ERR_JSON_DESERIALIZE;
     }
 
     SHOW_HEAP();
 
     if (!resp->fromJson(respJson->as<JsonObject>())) {
-        auto message = "Failed to parse sync response";
-        log_e("%s", message);
+        std::string message = "Failed to parse sync response";
+        log_e("%s", message.c_str());
         telemetry.logMetric(TelemetryField::METRIC_SYNC_STATUS, "sync-failed",
                             {{"message", message}});
         return ERR_JSON_OBJECT_PARSE;

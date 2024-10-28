@@ -60,7 +60,7 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
     auto onReport = [this, &display]() {
         setNeedsRerender();
         auto metrics = readable_->telemetryPlacemarkMetrics();
-        metrics["fw"] = SemanticVersionString();
+        metrics["fw"] = std::string(SemanticVersionString());
         auto insets = GetTextInsetFromPrefs(display, prefs_);
         metrics["in_l"] = insets.left;
         metrics["in_r"] = insets.right;
@@ -359,21 +359,21 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
                 this->display_.clearDisplay();
                 prefs_.font.set(PREFS_SOL_SMALL);
                 this->telemetry_.logMetricData(TelemetryField::METRIC_STYLE,
-                                               {{"text_size", "small"}});
+                                               {{"text_size", std::string("small")}});
                 getCurrentScreen()->setNeedsRerender();
             }));
             fontMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>("Medium", [this]() {
                 this->display_.clearDisplay();
                 prefs_.font.set(PREFS_SOL_MEDIUM);
                 this->telemetry_.logMetricData(TelemetryField::METRIC_STYLE,
-                                               {{"text_size", "medium"}});
+                                               {{"text_size", std::string("medium")}});
                 getCurrentScreen()->setNeedsRerender();
             }));
             fontMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>("Large", [this]() {
                 this->display_.clearDisplay();
                 prefs_.font.set(PREFS_SOL_LARGE);
                 this->telemetry_.logMetricData(TelemetryField::METRIC_STYLE,
-                                               {{"text_size", "large"}});
+                                               {{"text_size", std::string("large")}});
                 getCurrentScreen()->setNeedsRerender();
             }));
             int menuIndex = 0;

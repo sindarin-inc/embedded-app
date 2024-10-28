@@ -56,7 +56,7 @@ void BackgroundSyncInternal(PowerManager &powerManager, PreferencesStore &prefs,
 
     // Check for firmware first (in case there's some super busted issue that needs fixing)
     if (wifiConnected) {
-        auto firmwareDownloader = std::make_shared<FirmwareDownloader>(prefs, true);
+        auto firmwareDownloader = std::make_shared<FirmwareDownloader>(prefs, cancel, true);
         firmwareDownloader->downloadFirmware([firmwareDownloader, &localStore, &backgroundGroup](
                                                  const FirmwareDownloadState &state) {
             if (state.state == FirmwareDownloadState::Failure) {
@@ -86,9 +86,9 @@ void BackgroundSyncInternal(PowerManager &powerManager, PreferencesStore &prefs,
 
         // Wait for firmware download to finish
         auto bits =
-            xEventGroupWaitBits(backgroundGroup, 1, pdTRUE, pdTRUE, pdMS_TO_TICKS(5 * 60 * 1000));
+            xEventGroupWaitBits(backgroundGroup, 1, pdTRUE, pdTRUE, pdMS_TO_TICKS(10 * 60 * 1000));
         if (!(bits & 1)) {
-            firmwareDownloader->cancel();
+            CancelFlag::cancel(cancel);
             log_w("Firmware download timed out");
         }
         xEventGroupClearBits(backgroundGroup, 1);
@@ -107,7 +107,7 @@ void BackgroundSyncInternal(PowerManager &powerManager, PreferencesStore &prefs,
             state.state == ContentSyncState::AlreadySynced) {
             if (state.state == ContentSyncState::Failure) {
                 telemetry.logMetric(TelemetryField::METRIC_SYNC_STATUS, "sync-failed",
-                                    {{"message", state.message.c_str()}});
+                                    {{"message", state.message}});
                 log_i("Content sync failed with error: %s", state.message.c_str());
             } else if (state.state == ContentSyncState::Synced) {
                 telemetry.logMetric(TelemetryField::METRIC_SYNC_STATUS, "sync-success");

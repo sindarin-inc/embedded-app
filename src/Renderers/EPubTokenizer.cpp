@@ -860,14 +860,8 @@ void EPubTokenizer::processPictureTag(pugi::xml_node node) {
 
     if (source) {
         Token &pictureToken = tokens_.getNextAvailable();
-        pictureToken = {.cStr = nullptr,
-                        .picture = nullptr,
-                        .streamPlace = {currentStreamOffset_, currentSpineIdx_},
-                        .pixWidth = 0,
-                        .pixHeight = 0,
-                        .length = 0,
-                        .tokenId = TokenId::PICTURE,
-                        .spacesAfter = 0};
+        pictureToken.streamPlace = {currentStreamOffset_, currentSpineIdx_};
+        pictureToken.tokenId = TokenId::PICTURE;
 
         std::string pictureFilePath = stream_->getRelativeFilePath(
             source.attribute("srcset").value(), fromPlace_.getSpineIdx());
@@ -1099,6 +1093,12 @@ auto EPubTokenizer::processMenuParameters(pugi::xml_node node) -> bool {
 // continue, false if its time to stop (We are at the end of a page (going forward) or the
 // toPlace_ has been reached (going backward))
 auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
+    // If tags are nested more than ~50 tags deep we will run out of stack. Proactively crash so
+    // it's easier to diagnose next time.
+    if (xTaskGetCurrentTaskHandle() != nullptr) {
+        assert(uxTaskGetStackHighWaterMark(nullptr) >= 128 &&
+               "Stack low in EPubTokenizer::interpret");
+    }
 
     currentStreamOffset_ = node.offset_debug();
 
@@ -1208,14 +1208,9 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                     if (listLevel_ >= 0) {
                         if (!beginningOfPage_) {
                             Token &newToken = tokens_.getNextAvailable();
-                            newToken = {.cStr = nullptr,
-                                        .picture = nullptr,
-                                        .streamPlace = {currentStreamOffset_, currentSpineIdx_},
-                                        .pixWidth = 0,
-                                        .pixHeight = 0,
-                                        .length = 0,
-                                        .tokenId = TokenId::NEWLINE,
-                                        .spacesAfter = 0};
+                            newToken.streamPlace = {currentStreamOffset_, currentSpineIdx_};
+                            newToken.tokenId = TokenId::NEWLINE;
+
                             lastToken_ = nullptr;
 
                             addTokenToPage(newToken, "\n", 1);
@@ -1240,14 +1235,9 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                     if (listLevel_ >= 0) {
                         if (!beginningOfPage_) {
                             Token &newToken = tokens_.getNextAvailable();
-                            newToken = {.cStr = nullptr,
-                                        .picture = nullptr,
-                                        .streamPlace = {currentStreamOffset_, currentSpineIdx_},
-                                        .pixWidth = 0,
-                                        .pixHeight = 0,
-                                        .length = 0,
-                                        .tokenId = TokenId::NEWLINE,
-                                        .spacesAfter = 0};
+                            newToken.streamPlace = {currentStreamOffset_, currentSpineIdx_};
+                            newToken.tokenId = TokenId::NEWLINE;
+
                             lastToken_ = nullptr;
 
                             addTokenToPage(newToken, "\n", 1);
@@ -1268,35 +1258,29 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                     return false;
                 }
 
-                char listLineStart[50];
+                auto listLineStart = std::make_unique<char[]>(50);
 
                 if (listLevel_ >= 0) {
                     if (listType_[listLevel_] == ListType::ORDERED) {
                         pugi::xml_attribute attr = node.attribute("value");
                         int32_t seqNbr =
                             attr ? strtol(attr.value(), nullptr, 10) : listSeqNbr_[listLevel_];
-                        (void)snprintf(listLineStart, 49, "%" PRIi32 ".  ", seqNbr);
+                        (void)snprintf(listLineStart.get(), 49, "%" PRIi32 ".  ", seqNbr);
                         listSeqNbr_[listLevel_] = ++seqNbr;
                     } else {
-                        (void)snprintf(listLineStart, 49, "%c  ", LEVEL_CHAR[listLevel_]);
+                        (void)snprintf(listLineStart.get(), 49, "%c  ", LEVEL_CHAR[listLevel_]);
                     }
                     listIndent_[listLevel_] = (listLevel_ * 15) + 5;
-                    listUndent_[listLevel_] = font_->getTextWidth(listLineStart);
+                    listUndent_[listLevel_] = font_->getTextWidth(listLineStart.get());
                 }
 
                 if (tokenizingStarted_ && (listLevel_ >= 0)) {
                     updatePagerIndent(true);
                     Token &newToken = tokens_.getNextAvailable();
-                    // log_w("LI start: %s", listLineStart_);
-                    newToken = {.cStr = nullptr,
-                                .picture = nullptr,
-                                .streamPlace = {currentStreamOffset_, currentSpineIdx_},
-                                .pixWidth = 0,
-                                .pixHeight = 0,
-                                .length = 0,
-                                .tokenId = TokenId::ITEXT,
-                                .spacesAfter = 0};
-                    tokens_.addStr(newToken, listLineStart);
+                    newToken.streamPlace = {currentStreamOffset_, currentSpineIdx_};
+                    newToken.tokenId = TokenId::ITEXT;
+
+                    tokens_.addStr(newToken, listLineStart.get());
                     lastToken_ = nullptr;
 
                     if (addTokenToPage(newToken)) {
@@ -1324,14 +1308,9 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                         return false;
                     }
                     Token &newToken = tokens_.getNextAvailable();
-                    newToken = {.cStr = nullptr,
-                                .picture = nullptr,
-                                .streamPlace = {currentStreamOffset_, currentSpineIdx_},
-                                .pixWidth = 0,
-                                .pixHeight = 0,
-                                .length = 0,
-                                .tokenId = TokenId::BTABLE,
-                                .spacesAfter = 0};
+                    newToken.streamPlace = {currentStreamOffset_, currentSpineIdx_};
+                    newToken.tokenId = TokenId::BTABLE;
+
                     lastToken_ = nullptr;
 
                     if (addTokenToPage(newToken, "{TABLE}", 7)) {
@@ -1346,14 +1325,9 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                         return false;
                     }
                     Token &newToken = tokens_.getNextAvailable();
-                    newToken = {.cStr = nullptr,
-                                .picture = nullptr,
-                                .streamPlace = {currentStreamOffset_, currentSpineIdx_},
-                                .pixWidth = 0,
-                                .pixHeight = 0,
-                                .length = 0,
-                                .tokenId = TokenId::HRULE,
-                                .spacesAfter = 0};
+                    newToken.streamPlace = {currentStreamOffset_, currentSpineIdx_};
+                    newToken.tokenId = TokenId::HRULE;
+
                     lastToken_ = nullptr;
 
                     if (addTokenToPage(newToken)) {
@@ -1415,15 +1389,10 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                         }
                         if (!beginningOfPage_) {
                             Token &newToken = tokens_.getNextAvailable();
-                            newToken = {.cStr = nullptr,
-                                        .picture = nullptr,
-                                        .streamPlace = {currentStreamOffset_, currentSpineIdx_},
-                                        .pixWidth = 0,
-                                        .pixHeight = 0,
-                                        .length = 0,
-                                        .tokenId =
-                                            inTableRow_ ? TokenId::NEWLINE : TokenId::ENDPARAGRAPH,
-                                        .spacesAfter = 0};
+                            newToken.streamPlace = {currentStreamOffset_, currentSpineIdx_};
+                            newToken.tokenId =
+                                inTableRow_ ? TokenId::NEWLINE : TokenId::ENDPARAGRAPH;
+
                             lastToken_ = nullptr;
 
                             addTokenToPage(newToken, "\n", 1);
@@ -1449,15 +1418,10 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                         }
                         if (!beginningOfPage_) {
                             Token &newToken = tokens_.getNextAvailable();
-                            newToken = {.cStr = nullptr,
-                                        .picture = nullptr,
-                                        .streamPlace = {currentStreamOffset_, currentSpineIdx_},
-                                        .pixWidth = 0,
-                                        .pixHeight = 0,
-                                        .length = 0,
-                                        .tokenId =
-                                            inTableRow_ ? TokenId::NEWLINE : TokenId::ENDPARAGRAPH,
-                                        .spacesAfter = 0};
+                            newToken.streamPlace = {currentStreamOffset_, currentSpineIdx_};
+                            newToken.tokenId =
+                                inTableRow_ ? TokenId::NEWLINE : TokenId::ENDPARAGRAPH;
+
                             lastToken_ = nullptr;
 
                             addTokenToPage(newToken, "\n", 1);
@@ -1501,14 +1465,9 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                             return false;
                         }
                         Token &newToken = tokens_.getNextAvailable();
-                        newToken = {.cStr = nullptr,
-                                    .picture = nullptr,
-                                    .streamPlace = {currentStreamOffset_, currentSpineIdx_},
-                                    .pixWidth = 0,
-                                    .pixHeight = 0,
-                                    .length = 0,
-                                    .tokenId = TokenId::HRULE,
-                                    .spacesAfter = 0};
+                        newToken.streamPlace = {currentStreamOffset_, currentSpineIdx_};
+                        newToken.tokenId = TokenId::HRULE;
+
                         lastToken_ = nullptr;
                         if (addTokenToPage(newToken, "\n", 1)) {
                             return false;
@@ -1526,14 +1485,9 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                         }
                         if (!beginningOfPage_) {
                             Token &newToken = tokens_.getNextAvailable();
-                            newToken = {.cStr = nullptr,
-                                        .picture = nullptr,
-                                        .streamPlace = {currentStreamOffset_, currentSpineIdx_},
-                                        .pixWidth = 0,
-                                        .pixHeight = 0,
-                                        .length = 0,
-                                        .tokenId = TokenId::ENDPARAGRAPH,
-                                        .spacesAfter = 0};
+                            newToken.streamPlace = {currentStreamOffset_, currentSpineIdx_};
+                            newToken.tokenId = TokenId::ENDPARAGRAPH;
+
                             lastToken_ = nullptr;
 
                             addTokenToPage(newToken, "\n", 1);
@@ -1552,14 +1506,9 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                         }
                         if (!beginningOfPage_) {
                             Token &newToken = tokens_.getNextAvailable();
-                            newToken = {.cStr = nullptr,
-                                        .picture = nullptr,
-                                        .streamPlace = {currentStreamOffset_, currentSpineIdx_},
-                                        .pixWidth = 0,
-                                        .pixHeight = 0,
-                                        .length = 0,
-                                        .tokenId = TokenId::ENDPARAGRAPH,
-                                        .spacesAfter = 0};
+                            newToken.streamPlace = {currentStreamOffset_, currentSpineIdx_};
+                            newToken.tokenId = TokenId::ENDPARAGRAPH;
+
                             lastToken_ = nullptr;
 
                             addTokenToPage(newToken, "\n", 1);
@@ -1576,14 +1525,9 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                         }
                         if (!beginningOfPage_) {
                             Token &newToken = tokens_.getNextAvailable();
-                            newToken = {.cStr = nullptr,
-                                        .picture = nullptr,
-                                        .streamPlace = {currentStreamOffset_, currentSpineIdx_},
-                                        .pixWidth = 0,
-                                        .pixHeight = 0,
-                                        .length = 0,
-                                        .tokenId = TokenId::NEWLINE,
-                                        .spacesAfter = 0};
+                            newToken.streamPlace = {currentStreamOffset_, currentSpineIdx_};
+                            newToken.tokenId = TokenId::NEWLINE;
+
                             lastToken_ = nullptr;
 
                             addTokenToPage(newToken, "\n", 1);
@@ -1610,14 +1554,9 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                             return false;
                         }
                         Token &newToken = tokens_.getNextAvailable();
-                        newToken = {.cStr = nullptr,
-                                    .picture = nullptr,
-                                    .streamPlace = {currentStreamOffset_, currentSpineIdx_},
-                                    .pixWidth = 0,
-                                    .pixHeight = 0,
-                                    .length = 0,
-                                    .tokenId = TokenId::ETABLE,
-                                    .spacesAfter = 0};
+                        newToken.streamPlace = {currentStreamOffset_, currentSpineIdx_};
+                        newToken.tokenId = TokenId::ETABLE;
+
                         lastToken_ = nullptr;
 
                         if (addTokenToPage(newToken, "{END TABLE}", 11)) {
@@ -1736,14 +1675,9 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint32_t len) -> bool 
         if (superscript_) {
             superscript_ = false;
             Token &newToken = tokens_.getNextAvailable();
-            newToken = {.cStr = nullptr,
-                        .picture = nullptr,
-                        .streamPlace = {streamOffset, currentSpineIdx_},
-                        .pixWidth = 0,
-                        .pixHeight = 0,
-                        .length = 0,
-                        .tokenId = TokenId::TEXT,
-                        .spacesAfter = 0};
+            newToken.streamPlace = {streamOffset, currentSpineIdx_};
+            newToken.tokenId = TokenId::TEXT;
+
             do {
                 auto chIt =
                     superscriptCharacters.find(SpiramString(reinterpret_cast<char *>(&curChar), 1));
@@ -1771,14 +1705,9 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint32_t len) -> bool 
         } else if (subscript_) {
             subscript_ = false;
             Token &newToken = tokens_.getNextAvailable();
-            newToken = {.cStr = nullptr,
-                        .picture = nullptr,
-                        .streamPlace = {streamOffset, currentSpineIdx_},
-                        .pixWidth = 0,
-                        .pixHeight = 0,
-                        .length = 0,
-                        .tokenId = TokenId::TEXT,
-                        .spacesAfter = 0};
+            newToken.streamPlace = {streamOffset, currentSpineIdx_};
+            newToken.tokenId = TokenId::TEXT;
+
             do {
                 auto chIt =
                     subscriptCharacters.find(SpiramString(reinterpret_cast<char *>(&curChar), 1));
@@ -1811,42 +1740,24 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint32_t len) -> bool 
                 superscript_ = false;
                 closeTextToken();
                 textToken_ = &tokens_.getNextAvailable();
-                *textToken_ = {.cStr = nullptr,
-                               .picture = nullptr,
-                               .streamPlace = {streamOffset, currentSpineIdx_},
-                               .pixWidth = 0,
-                               .pixHeight = 0,
-                               .length = 0,
-                               .tokenId = TokenId::SUPTEXT,
-                               .spacesAfter = 0};
+                textToken_->streamPlace = {streamOffset, currentSpineIdx_};
+                textToken_->tokenId = TokenId::SUPTEXT;
 
             } else if (subscript_) {
                 subscript_ = false;
                 closeTextToken();
                 textToken_ = &tokens_.getNextAvailable();
-                *textToken_ = {.cStr = nullptr,
-                               .picture = nullptr,
-                               .streamPlace = {streamOffset, currentSpineIdx_},
-                               .pixWidth = 0,
-                               .pixHeight = 0,
-                               .length = 0,
-                               .tokenId = TokenId::SUBTEXT,
-                               .spacesAfter = 0};
+                textToken_->streamPlace = {streamOffset, currentSpineIdx_};
+                textToken_->tokenId = TokenId::SUBTEXT;
 
             } else
 #endif
 
                 if (textToken_ == nullptr) {
                 textToken_ = &tokens_.getNextAvailable();
+                textToken_->streamPlace = {streamOffset, currentSpineIdx_};
+                textToken_->tokenId = TokenId::TEXT;
 
-                *textToken_ = {.cStr = nullptr,
-                               .picture = nullptr,
-                               .streamPlace = {streamOffset, currentSpineIdx_},
-                               .pixWidth = 0,
-                               .pixHeight = 0,
-                               .length = 0,
-                               .tokenId = TokenId::TEXT,
-                               .spacesAfter = 0};
                 textCharCount_ = 0;
             }
 

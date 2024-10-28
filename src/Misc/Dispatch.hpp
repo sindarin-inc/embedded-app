@@ -56,6 +56,16 @@ public:
         // Only report the queue as not empty if it's not a quit signal that's queued
         return hasItem && !queued->quit;
     }
+    auto waitEmpty(TickType_t timeout) -> bool {
+        TickType_t startTime = xTaskGetTickCount();
+        while (uxQueueMessagesWaiting(q_) > 0) {
+            if (xTaskGetTickCount() - startTime >= timeout) {
+                return false;
+            }
+            vTaskDelay(pdMS_TO_TICKS(10));
+        }
+        return true;
+    }
 
     // Deleted operations
     DispatchQueue(const DispatchQueue &rhs) = delete;
