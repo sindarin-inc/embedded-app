@@ -30,7 +30,7 @@ public:
 
     auto getIDfromRowIndex(size_t index) const -> std::string;
 
-    auto isIDInMenu(std::string id) -> bool;
+    auto isIDInMenu(const std::string &id) -> bool;
 
     auto layout(LayoutContext &context, Size size) -> Size override;
     void drawInRect(Rect rect) override;

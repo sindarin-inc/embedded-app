@@ -42,7 +42,7 @@ public:
     // menu to that readable when you go back to it.
     void setTabToTitle(const std::string &tabTitle, std::string id);
 
-    bool isTitleInTab(const std::string &tabTitle, std::string id);
+    auto isTitleInTab(const std::string &tabTitle, const std::string &id) -> bool;
 
     auto getNumTabs() const -> int { return menuTabs_.size(); }
 

@@ -87,9 +87,9 @@ auto NewMenuView::getSelectedMenuItemID() const -> std::string {
     return "";
 }
 
-auto NewMenuView::isIDInMenu(std::string id) -> bool {
-    for (size_t i = 0; i < menuItems_.size(); ++i) {
-        if (menuItems_[i]->id() == id) {
+auto NewMenuView::isIDInMenu(const std::string &id) -> bool {
+    for (auto &menuItem : menuItems_) {
+        if (menuItem->id() == id) {
             return true;
         }
     }
