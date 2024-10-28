@@ -24,6 +24,17 @@ void CarouselMenuScreen::setTabToTitle(const std::string &tabTitle, int rowIndex
     }
 }
 
+void CarouselMenuScreen::setTabToTitle(const std::string &tabTitle, std::string id) {
+    for (int i = 0; i < menuTabs_.size(); i++) {
+        if (std::get<0>(menuTabs_[i]) == tabTitle) {
+            setCurrentTabIndex(i);
+            std::get<2>(menuTabs_[i]) = std::move(id);
+            menuView_.setSelectedByMenuItemID(std::get<2>(menuTabs_[i]));
+            return;
+        }
+    }
+}
+
 void CarouselMenuScreen::regenerateCurrentTab() { setCurrentTabIndex(getCurrentTabIndex()); }
 
 // Note, MainMenuScreen and PopupMenuScreen rely on the fact that this will populate

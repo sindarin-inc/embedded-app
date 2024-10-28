@@ -2076,12 +2076,15 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                 log_i("Resuming readable %s at place %s", (*it)->title.c_str(),
                       (*it)->place->str().c_str());
                 // Technically. we might want this to go to Recent, but for now this will do.
+                // Note that this is fragile in how the id is cacluated from NewMenuItemBook and
+                // NewMenuItemArticle. If those change, this will break.
                 if (articlesIterator != articles.end()) {
-                    newMainMenu->setTabToTitle("Articles");
+                    newMainMenu->setTabToTitle("Articles", (*it)->shortenedUuid.c_str());
                 } else if (isBible(*it)) {
-                    newMainMenu->setTabToTitle("Bible");
+                    newMainMenu->setTabToTitle("Bible", (*it)->shortenedUuid.c_str());
                 } else {
-                    newMainMenu->setTabToTitle("Books");
+                    log_d("Iterator shortened string is %s", (*it)->shortenedUuid.c_str());
+                    newMainMenu->setTabToTitle("Books", (*it)->shortenedUuid.c_str());
                 }
             } else {
                 showTemporaryMessage(itemErrorMsg_, TEMP_MSG_DURATION_NO_CLOSE);

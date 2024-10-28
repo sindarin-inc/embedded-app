@@ -38,6 +38,10 @@ public:
     // By default, it'll go to the first row or the most recently selected item on that tab.
     void setTabToTitle(const std::string &tabTitle, int rowIndex = -1);
 
+    // This one is for when you start in a readable and then we have to be able to set the main
+    // menu to that readable when you go back to it.
+    void setTabToTitle(const std::string &tabTitle, std::string id);
+
     auto getNumTabs() const -> int { return menuTabs_.size(); }
 
     auto layout(LayoutContext &context, Size size) -> Size override = 0;
