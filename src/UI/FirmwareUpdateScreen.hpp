@@ -29,10 +29,10 @@ public:
 
 protected:
     Telemetry &telemetry_;
+    std::shared_ptr<CancelFlag> cancel_;
     FirmwareDownloader firmwareDownloader_;
     FirmwareDownloadState state_;
     DisplaySystem::UpdateType nextUpdate_ = DisplaySystem::UpdateType::FULL;
-    std::shared_ptr<CancelFlag> cancel_;
 
     // UI
     std::array<std::shared_ptr<SingleLineTextView>, 4> textViews_;

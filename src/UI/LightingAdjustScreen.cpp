@@ -97,7 +97,7 @@ void LightingAdjustScreen::render(DisplaySystem &display) {
     firstLoad_ = false;
 }
 
-void LightingAdjustScreen::logTelemetry(int setting, const char *direction) {
+void LightingAdjustScreen::logTelemetry(int setting, std::string direction) {
     DispatchGetCore0BackgroundQueue()->dispatch([this, setting, direction]() {
         uint16_t channel1, channel0;
         lightingController_.readAmbientLightData(channel1, channel0);

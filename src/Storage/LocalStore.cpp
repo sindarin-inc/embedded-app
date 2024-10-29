@@ -235,7 +235,7 @@ void LocalStore::changedReadablePlacemarkJson(const ReadablesVector &readables,
                                        StringFormat("sync-%ss-placemark-upload",
                                                     ReadableModelTypeToString(modelType).c_str())
                                            .c_str(),
-                                       {{"uuid", readable->shortenedUuid.c_str()}});
+                                       {{"uuid", readable->shortenedUuid}});
             std::string place = prefs_.readablePlace.get(readable->shortenedUuid.c_str());
             log_i("Placemark on %s %s %s has changed to %s",
                   ReadableModelTypeToString(modelType).c_str(), readable->title.c_str(),
@@ -263,7 +263,7 @@ void LocalStore::changedReadablesArchivedJson(const ReadablesVector &readables,
                                        StringFormat("sync-%ss-archive-upload",
                                                     ReadableModelTypeToString(modelType).c_str())
                                            .c_str(),
-                                       {{"uuid", readable->shortenedUuid.c_str()}});
+                                       {{"uuid", readable->shortenedUuid}});
             log_i("Archived %s %s %s", ReadableModelTypeToString(modelType).c_str(),
                   readable->title.c_str(), readable->uuid.c_str());
             ReadableArchive archive;
@@ -293,7 +293,7 @@ void LocalStore::changedReadablesBookmarksJson(ReadableBookmarksVector &bookmark
                                        StringFormat("sync-%ss-bookmark-upload",
                                                     ReadableModelTypeToString(modelType).c_str())
                                            .c_str(),
-                                       {{"uuid", readable->shortenedUuid.c_str()}});
+                                       {{"uuid", readable->shortenedUuid}});
             std::string bookmarkPath = readable->bookmarkFilePath();
             SFile bookmarkFile = fileSystem.open(bookmarkPath, FILE_READ, false);
             if (!bookmarkFile) {
@@ -507,7 +507,7 @@ void LocalStore::resetReadablesPlacemarkChanged(const ReadablesVector &readables
                                        StringFormat("sync-%ss-placemark-synced",
                                                     ReadableModelTypeToString(modelType).c_str())
                                            .c_str(),
-                                       {{"uuid", readable->shortenedUuid.c_str()}});
+                                       {{"uuid", readable->shortenedUuid}});
             log_d("Resetting placemark changed for \"%s\" (now synced to server)",
                   readable->title.c_str());
             prefs_.readablePlaceChanged.remove(readable->shortenedUuid.c_str());
@@ -525,7 +525,7 @@ void LocalStore::resetReadablesArchivedChanged(const ReadablesVector &readables)
                                        StringFormat("sync-%ss-archive-synced",
                                                     ReadableModelTypeToString(modelType).c_str())
                                            .c_str(),
-                                       {{"uuid", readable->shortenedUuid.c_str()}});
+                                       {{"uuid", readable->shortenedUuid}});
             log_d("Resetting article archive changed for \"%s\" (now synced to server)",
                   readable->title.c_str());
             prefs_.readableArchivedChanged.remove(readable->shortenedUuid.c_str());
@@ -543,7 +543,7 @@ void LocalStore::resetReadablesBookmarksChanged(const ReadablesVector &readables
                                        StringFormat("sync-%ss-bookmark-synced",
                                                     ReadableModelTypeToString(modelType).c_str())
                                            .c_str(),
-                                       {{"uuid", readable->shortenedUuid.c_str()}});
+                                       {{"uuid", readable->shortenedUuid}});
             log_d("Resetting bookmarks changed for \"%s\" (now synced to server)",
                   readable->title.c_str());
             prefs_.readableBookmarksChanged.remove(readable->shortenedUuid.c_str());
@@ -1124,7 +1124,7 @@ auto LocalStore::processReadableDownload(
                         TelemetryField::METRIC_SYNC_STATUS,
                         StringFormat("failed-save-%s",
                                      ReadableModelTypeToString(modelType).c_str()),
-                        {{"uuid", readable->uuid}, {"title", readable->title.c_str()}});
+                        {{"uuid", readable->uuid}, {"title", readable->title}});
                 } else {
                     // Readables that were previously TXT and are now EPUB may still need their
                     // placemark updated
@@ -1144,7 +1144,7 @@ auto LocalStore::processReadableDownload(
                                      ReadableModelTypeToString(modelType).c_str())
                             .c_str(),
                         {{"uuid", readable->uuid},
-                         {"title", readable->title.c_str()},
+                         {"title", readable->title},
                          {"http-code", httpCode}});
                 } else if (httpCode == ERR_CLIENT_DISCONNECTED) {
                     if (CancelFlag::isCancelled(cancel)) {

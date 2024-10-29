@@ -34,17 +34,17 @@ struct FirmwareDownloadState {
 
 class FirmwareDownloader {
 public:
-    FirmwareDownloader(PreferencesStore &prefs, bool skipInstall = false)
-        : prefs_(prefs), skipInstall_(skipInstall){};
+    FirmwareDownloader(PreferencesStore &prefs, std::shared_ptr<CancelFlag> cancel,
+                       bool skipInstall = false)
+        : prefs_(prefs), cancel_(std::move(cancel)), skipInstall_(skipInstall){};
 
     void downloadFirmware(const std::function<void(FirmwareDownloadState state)> &progressCallback);
-    void cancel() { cancelled_ = true; }
 
     std::string versionString;
     FirmwareResponse response;
 
 protected:
     PreferencesStore &prefs_;
+    std::shared_ptr<CancelFlag> cancel_;
     bool skipInstall_;
-    bool cancelled_ = false;
 };

@@ -72,6 +72,7 @@ test: test-build
 	./test/CatchTests/build/tests
 	./test/CatchTests/build/tests '[epub]'
 	./test/CatchTests/build/tests '[content-sync]'
+	./test/CatchTests/build/tests '[telemetry]'
 
 .PHONY: lldb-test-epub
 lldb-test-epub: test-build

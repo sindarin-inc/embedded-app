@@ -173,8 +173,8 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
     HEAP_PROFILE_START(rootUILogBootData);
 
     std::unordered_map<std::string, TelemetryVariant> bootData = {
-        {"fw", SemanticVersionString()},
-        {"sha", GitVersionString()},
+        {"fw", std::string(SemanticVersionString())},
+        {"sha", std::string(GitVersionString())},
         {"bc", prefs_.bootCount.get().value_or(0)},
         {"br", power_.getBootInfo().telemetryStr()},
         {"mag_x", lastMagReading.x},
@@ -814,21 +814,21 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                     display_.clearDisplay();
                     prefs_.font.set(PREFS_SOL_SMALL);
                     this->telemetry_.logMetricData(TelemetryField::METRIC_STYLE,
-                                                   {{"text_size", "small"}});
+                                                   {{"text_size", std::string("small")}});
                     currentScreen()->setNeedsRerender();
                 }));
                 fontMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>("Medium", [this]() {
                     display_.clearDisplay();
                     prefs_.font.set(PREFS_SOL_MEDIUM);
                     this->telemetry_.logMetricData(TelemetryField::METRIC_STYLE,
-                                                   {{"text_size", "medium"}});
+                                                   {{"text_size", std::string("medium")}});
                     currentScreen()->setNeedsRerender();
                 }));
                 fontMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>("Large", [this]() {
                     display_.clearDisplay();
                     prefs_.font.set(PREFS_SOL_LARGE);
                     this->telemetry_.logMetricData(TelemetryField::METRIC_STYLE,
-                                                   {{"text_size", "large"}});
+                                                   {{"text_size", std::string("large")}});
                     currentScreen()->setNeedsRerender();
                 }));
                 int menuIndex = 0;
