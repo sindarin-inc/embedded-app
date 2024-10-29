@@ -1,6 +1,7 @@
 #pragma once
 
 #include <set>
+#include <utility>
 
 #include "EPub/EPubFile.hpp"
 #include "Misc/SpiramAllocator.hpp"
@@ -10,24 +11,25 @@ using namespace renderer_defs;
 
 class Footnote {
 public:
-    StreamPlace streamPlace_; // Where the note is being referenced
-    SpiramString id_;         // Note id
-    SpiramString filename_;   // Note filename
-    SpiramString content_;    // Note paragraph(s)
-    bool contentFound_;       // true if content populated
+    StreamPlace streamPlace; // Where the note is being referenced
+    SpiramString id;         // Note id
+    SpiramString filename;   // Note filename
+    SpiramString content;    // Note paragraph(s)
+    bool contentFound;       // true if content populated
 
     Footnote(StreamPlace streamPlace, SpiramString id, SpiramString filename, SpiramString content,
              bool contentFound)
-        : streamPlace_(streamPlace), id_(id), filename_(filename), content_(content),
-          contentFound_(contentFound) {}
+        : streamPlace(streamPlace), id(std::move(std::move(id))),
+          filename(std::move(std::move(filename))), content(std::move(std::move(content))),
+          contentFound(contentFound) {}
 
     void show(int i) {
         SpiramString none = "<none>";
-        std::cout << i << ": Id:" << id_ << " filename:" << (filename_.empty() ? none : filename_)
-                  << " chapter place:" << streamPlace_.str() << std::endl
+        std::cout << i << ": Id:" << id << " filename:" << (filename.empty() ? none : filename)
+                  << " chapter place:" << streamPlace.str() << std::endl
                   << std::flush;
-        if (contentFound_) {
-            std::cout << "   Content:" << content_ << std::endl;
+        if (contentFound) {
+            std::cout << "   Content:" << content << std::endl;
         }
     }
 };
@@ -37,7 +39,7 @@ class FootnoteMgr {
 private:
     SpiramVector<std::shared_ptr<Footnote>> footnotes_;
 
-    SpineIdx currentSpineIdx_;
+    SpineIdx currentSpineIdx_{};
 
     /**
      * @brief Filter relative filename
@@ -67,7 +69,8 @@ public:
      * @return true The chapter was properly parse
      * @return false There was problems parsing the chapter
      */
-    [[nodiscard]] auto parseChapter(std::shared_ptr<EPubFile> stream, SpineIdx spineIdx) -> bool;
+    [[nodiscard]] auto parseChapter(const std::shared_ptr<EPubFile> &stream, SpineIdx spineIdx)
+        -> bool;
 
     /**
      * @brief Generates Footnote entries
@@ -90,9 +93,9 @@ public:
      *
      * @return true All note content have been retrieved successfully.
      */
-    [[nodiscard]] auto retrieveNotes(std::shared_ptr<EPubFile> stream) -> bool;
+    [[nodiscard]] auto retrieveNotes(const std::shared_ptr<EPubFile> &stream) -> bool;
 
-    [[nodiscard]] inline auto is_empty() -> bool { return footnotes_.empty(); }
+    [[nodiscard]] inline auto isEmpty() -> bool { return footnotes_.empty(); }
 
     inline void clear() { footnotes_.clear(); }
 
@@ -102,7 +105,7 @@ public:
         std::cout << "----- FootNote Entries -----" << std::endl << std::flush;
 
         int i = 1;
-        for (std::shared_ptr<Footnote> entry : footnotes_) {
+        for (const std::shared_ptr<Footnote> &entry : footnotes_) {
             entry->show(i++);
         }
 

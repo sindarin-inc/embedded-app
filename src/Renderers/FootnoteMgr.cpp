@@ -46,13 +46,17 @@ auto FootnoteMgr::adjustFilename(const char *filename) -> SpiramString {
         } else if ((*fn == '/') && (fn[1] == '.') && (fn[2] == '.') && (fn[3] == '/')) {
             while (idx > 0) {
                 idx -= 1;
-                if (adjFName[idx] == '/') break;
+                if (adjFName[idx] == '/') {
+                    break;
+                }
             }
             fn += idx > 0 ? 3 : 4;
         } else if ((*fn == '.') && (fn[1] == '.') && (fn[2] == '/')) {
             while (idx > 0) {
                 idx -= 1;
-                if (adjFName[idx] == '/') break;
+                if (adjFName[idx] == '/') {
+                    break;
+                }
             }
             fn += idx > 0 ? 2 : 3;
         } else if ((*fn == '.') && (fn[1] == '/')) {
@@ -67,7 +71,7 @@ auto FootnoteMgr::adjustFilename(const char *filename) -> SpiramString {
     return SpiramString(adjFName.get());
 }
 
-auto FootnoteMgr::parseChapter(std::shared_ptr<EPubFile> stream, SpineIdx spineIdx) -> bool {
+auto FootnoteMgr::parseChapter(const std::shared_ptr<EPubFile> &stream, SpineIdx spineIdx) -> bool {
 
     clear();
 
@@ -89,8 +93,8 @@ auto FootnoteMgr::parseChapter(std::shared_ptr<EPubFile> stream, SpineIdx spineI
         pugi::xml_node node = doc.child("html").child("body").first_child();
 
         struct Interpret : pugi::xml_tree_walker {
-            SpineIdx currentSpineIdx;
-            FootnoteMgr *footnoteMgr;
+            SpineIdx currentSpineIdx{};
+            FootnoteMgr *footnoteMgr{};
 
             auto for_each(pugi::xml_node &node) -> bool override {
                 if (node.type() == pugi::node_element) {
@@ -155,36 +159,35 @@ auto FootnoteMgr::parseChapter(std::shared_ptr<EPubFile> stream, SpineIdx spineI
     return true;
 }
 
-auto FootnoteMgr::retrieveNotes(std::shared_ptr<EPubFile> stream) -> bool {
+auto FootnoteMgr::retrieveNotes(const std::shared_ptr<EPubFile> &stream) -> bool {
 
     std::set<std::string> filenames;
     SpiramMap<SpiramString, int> idMap;
 
     int idx = 0;
     for (auto &entry : footnotes_) {
-        if (entry->filename_.empty()) {
+        if (entry->filename.empty()) {
             // This happen when a href contains only a '#' followed by the id. This means that the
             // footnote his in the chapter's spine.
-            entry->filename_ =
-                stream->getSpine(entry->streamPlace_.getSpineIdx()).item->href.c_str();
+            entry->filename = stream->getSpine(entry->streamPlace.getSpineIdx()).item->href.c_str();
         } else {
-            entry->filename_ = adjustFilename(entry->filename_.c_str());
+            entry->filename = adjustFilename(entry->filename.c_str());
         }
-        filenames.insert(entry->filename_.c_str());
-        idMap[entry->id_.c_str()] = idx++;
+        filenames.insert(entry->filename.c_str());
+        idMap[entry->id.c_str()] = idx++;
     }
 
     std::cout << "----- Files to check for footnotes -----" << std::endl;
-    for (auto entryFilename : filenames) {
+    for (const auto &entryFilename : filenames) {
         std::cout << "filename: " << entryFilename << std::endl;
     }
     std::cout << "----- [end] -----" << std::endl;
 
     struct Walker : pugi::xml_tree_walker {
-        struct xml_string_writer : pugi::xml_writer {
-            SpiramString *result;
+        struct XmlStringWriter : pugi::xml_writer {
+            SpiramString *result{};
 
-            virtual void write(const void *data, size_t size) {
+            void write(const void *data, size_t size) override {
                 result->append(static_cast<const char *>(data), size);
             }
 
@@ -194,10 +197,10 @@ auto FootnoteMgr::retrieveNotes(std::shared_ptr<EPubFile> stream) -> bool {
         auto for_each(pugi::xml_node &node) -> bool override {
             pugi::xml_attribute id = node.attribute("id");
             if (id) {
-                auto it = idMap_->find(id.value());
-                if (it != idMap_->end()) {
+                auto it = idMap->find(id.value());
+                if (it != idMap->end()) {
                     pugi::xml_node pNode = node;
-                    writer.setup(&((*footnotes_)[it->second]->content_));
+                    writer.setup(&((*footnotes)[it->second]->content));
                     while (pNode && strcmp(pNode.name(), "p") != 0) {
                         pNode = pNode.parent();
                     }
@@ -205,7 +208,7 @@ auto FootnoteMgr::retrieveNotes(std::shared_ptr<EPubFile> stream) -> bool {
                         pNode = node;
                     }
                     pNode.print(writer, "", pugi::format_raw);
-                    (*footnotes_)[it->second]->contentFound_ = true;
+                    (*footnotes)[it->second]->contentFound = true;
                 }
             }
             return true;
@@ -213,17 +216,17 @@ auto FootnoteMgr::retrieveNotes(std::shared_ptr<EPubFile> stream) -> bool {
 
         void setup(SpiramMap<SpiramString, int> *idMap,
                    SpiramVector<std::shared_ptr<Footnote>> *footnotes) {
-            idMap_ = idMap;
-            footnotes_ = footnotes;
+            idMap = idMap;
+            footnotes = footnotes;
         }
 
-        SpiramMap<SpiramString, int> *idMap_;
-        SpiramVector<std::shared_ptr<Footnote>> *footnotes_;
+        SpiramMap<SpiramString, int> *idMap{};
+        SpiramVector<std::shared_ptr<Footnote>> *footnotes{};
     } fileWalker;
 
     fileWalker.setup(&idMap, &footnotes_);
 
-    for (auto entryFilename : filenames) {
+    for (const auto &entryFilename : filenames) {
         pugi::xml_document doc;
         auto [buffer, length] = stream->getFile(stream->getFullPath(entryFilename));
         if (buffer != nullptr) {
