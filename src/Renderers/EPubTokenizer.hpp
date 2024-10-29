@@ -4,6 +4,7 @@
 #include <unordered_map>
 
 #include "EPub/EPubFile.hpp"
+#include "FootnoteMgr.hpp"
 #include "Misc/SpiramAllocator.hpp"
 #include "Tokenizer.hpp"
 
@@ -86,16 +87,15 @@ public:
         : Tokenizer(font, rect, tokens, pager) {}
     ~EPubTokenizer() override = default;
 
-    [[nodiscard]] auto loadAndTokenizePage(StreamPlace fromPlace, bool backwards = false,
-                                           StreamPlace *toPlace = nullptr,
-                                           bool retrieveMenuParameters = false)
-        -> std::pair<StreamPlace, StreamPlace> override;
+    [[nodiscard]] auto loadAndTokenizePage(
+        StreamPlace fromPlace, bool backwards = false, StreamPlace *toPlace = nullptr,
+        bool retrieveMenuParameters = false) -> std::pair<StreamPlace, StreamPlace> override;
 
-    [[nodiscard]] auto toStreamPlace(const std::shared_ptr<Place> place) const
-        -> StreamPlace override;
+    [[nodiscard]] auto
+    toStreamPlace(const std::shared_ptr<Place> place) const -> StreamPlace override;
 
-    [[nodiscard]] inline auto toPlace(const StreamPlace &streamPlace) const
-        -> std::shared_ptr<Place> override {
+    [[nodiscard]] inline auto
+    toPlace(const StreamPlace &streamPlace) const -> std::shared_ptr<Place> override {
         const EPubOpf::SpineItem &spineItem = stream_->getSpine(streamPlace.getSpineIdx());
         return std::make_shared<EPubPlace>(streamPlace.getOffset(),
                                            static_cast<std::string>(spineItem.item->href));
@@ -119,8 +119,8 @@ public:
 
     [[nodiscard]] auto isEmpty(pugi::xml_node node) -> bool;
 
-    [[nodiscard]] auto goBackward(StreamPlace streamPlace, uint32_t offsetToSubtract)
-        -> StreamPlace override;
+    [[nodiscard]] auto goBackward(StreamPlace streamPlace,
+                                  uint32_t offsetToSubtract) -> StreamPlace override;
 
     [[nodiscard]] inline auto isAnArticle() const -> bool override {
         return stream_->isAnArticle();
@@ -137,6 +137,7 @@ public:
 private:
     std::shared_ptr<EPubFile> stream_;
     pugi::xml_node body_;
+    FootnoteMgr footnoteMgr_;
 
     // clang-format off
 

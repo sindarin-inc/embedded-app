@@ -831,6 +831,12 @@ auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, S
         REND_PROFILE_END(tokenizeProcess);
     }
 
+    if constexpr (FOOTNOTE_RETRIEVAL) {
+        if (!footnoteMgr_.parseChapter(stream_, currentSpineIdx_)) {
+            log_w("Footnote parser completed with errors!");
+        }
+    }
+
     REND_WLOG("End of job: Page start: %s, next page at: %s",
               pager_.getStreamPlaceOfFirstLine().str().c_str(),
               pager_.getNextPageStreamPlace().str().c_str());
@@ -1190,6 +1196,14 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                     return false;
                 }
                 superscript_ = true;
+
+                // if constexpr (FOOTNOTE_RETRIEVAL) {
+                //     const char *href = node.child("a").attribute("href").value();
+                //     if (href[0] != '\0') {
+                //         footnoteMgr_.addEntry(href, {currentStreamOffset_, currentSpineIdx_});
+                //     }
+                // }
+
                 break;
 
             case Tag::SUB:
@@ -1300,6 +1314,12 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                     postText_[0] = ']';
                     preText_[1] = postText_[1] = '\0';
                 }
+                // if constexpr (FOOTNOTE_RETRIEVAL) {
+                //     const char *href = node.attribute("href").value();
+                //     if (node.child("sup") && (href[0] != '\0')) {
+                //         footNodeMgr_.addEntry(href, {currentStreamOffset_, currentSpineIdx_});
+                //     }
+                // }
             } break;
 
             case Tag::TABLE:

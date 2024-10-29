@@ -1,7 +1,7 @@
 /**
- * pugixml parser - version 1.13
+ * pugixml parser - version 1.14
  * --------------------------------------------------------
- * Copyright (C) 2006-2022, by Arseny Kapoulkine (arseny.kapoulkine@gmail.com)
+ * Copyright (C) 2006-2024, by Arseny Kapoulkine (arseny.kapoulkine@gmail.com)
  * Report bugs and download new versions at https://pugixml.org/
  *
  * This library is distributed under the MIT License. See notice at the end
@@ -18,30 +18,27 @@
 // #define PUGIXML_WCHAR_MODE
 
 // Uncomment this to enable compact mode
-#define PUGIXML_COMPACT
+// #define PUGIXML_COMPACT
 
 // Uncomment this to disable XPath
-#define PUGIXML_NO_XPATH
+// #define PUGIXML_NO_XPATH
 
 // Uncomment this to disable STL
-#define PUGIXML_NO_STL
+// #define PUGIXML_NO_STL
 
 // Uncomment this to disable exceptions
-#define PUGIXML_NO_EXCEPTIONS
+// #define PUGIXML_NO_EXCEPTIONS
 
 // Set this to control attributes for public classes/functions, i.e.:
 // #define PUGIXML_API __declspec(dllexport) // to export all public symbols from DLL
 // #define PUGIXML_CLASS __declspec(dllimport) // to import all classes from DLL
-// #define PUGIXML_FUNCTION __fastcall // to set calling conventions to all public functions to
-// fastcall In absence of PUGIXML_CLASS/PUGIXML_FUNCTION definitions PUGIXML_API is used instead
+// #define PUGIXML_FUNCTION __fastcall // to set calling conventions to all public functions to fastcall
+// In absence of PUGIXML_CLASS/PUGIXML_FUNCTION definitions PUGIXML_API is used instead
 
 // Tune these constants to adjust memory-related behavior
 // #define PUGIXML_MEMORY_PAGE_SIZE 32768
 // #define PUGIXML_MEMORY_OUTPUT_STACK 10240
 // #define PUGIXML_MEMORY_XPATH_PAGE_SIZE 4096
-
-#define PUGIXML_MEMORY_PAGE_SIZE 8192
-#define PUGIXML_MEMORY_OUTPUT_STACK 2048
 
 // Tune this constant to adjust max nesting for XPath queries
 // #define PUGIXML_XPATH_DEPTH_LIMIT 1024
@@ -52,10 +49,15 @@
 // Uncomment this to enable long long support
 // #define PUGIXML_HAS_LONG_LONG
 
+// Uncomment this to enable support for std::string_view (requires c++17 and for PUGIXML_NO_STL to not be set)
+// Note: In a future version of pugixml this macro will become obsolete.
+//       Support will then be enabled automatically if the used C++ standard supports it.
+// #define PUGIXML_STRING_VIEW
+
 #endif
 
 /**
- * Copyright (c) 2006-2022 Arseny Kapoulkine
+ * Copyright (c) 2006-2024 Arseny Kapoulkine
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
