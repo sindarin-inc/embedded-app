@@ -216,8 +216,8 @@ auto FootnoteMgr::retrieveNotes(const std::shared_ptr<EPubFile> &stream) -> bool
 
         void setup(SpiramMap<SpiramString, int> *idMap,
                    SpiramVector<std::shared_ptr<Footnote>> *footnotes) {
-            idMap = idMap;
-            footnotes = footnotes;
+            this->idMap = idMap;
+            this->footnotes = footnotes;
         }
 
         SpiramMap<SpiramString, int> *idMap{};
