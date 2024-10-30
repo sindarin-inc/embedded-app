@@ -1,10 +1,10 @@
 #include "FootnoteMgr.hpp"
 
-void FootnoteMgr::addEntry(const char *href, StreamPlace streamPlace) {
+auto FootnoteMgr::addEntry(const char *href, StreamPlace streamPlace) -> bool {
 
     if (href == nullptr) {
         log_e("href is null!!");
-        return;
+        return false;
     }
 
     SpiramString id{""}, filename{""};
@@ -16,13 +16,13 @@ void FootnoteMgr::addEntry(const char *href, StreamPlace streamPlace) {
 
     if ((ptr == nullptr) || (*ptr != '#')) {
         log_e("Invalid href: %s", href);
-        return;
+        return false;
     }
 
     ptr += 1; // pass the '#'
     if (ptr == nullptr) {
         log_e("Invalid Id after '#': %s", href);
-        return;
+        return false;
     }
 
     while (*ptr != '\0') {
@@ -30,6 +30,8 @@ void FootnoteMgr::addEntry(const char *href, StreamPlace streamPlace) {
     }
 
     footnotes_.push_back(SpiRamPtr<Footnote>(streamPlace, id, filename, SpiramString{}, false));
+
+    return true;
 }
 
 #define HEXTONIBBLE(c) ((c) >= 'A' ? ((c) >= 'a' ? ((c) - 'a') : ((c) - 'A')) + 10 : ((c) - '0'))
@@ -81,7 +83,7 @@ auto FootnoteMgr::parseChapter(const std::shared_ptr<EPubFile> &stream, SpineIdx
 
     currentSpineIdx_ = spineIdx;
 
-    REND_PROFILE_START(parseChapter);
+    FOOTNOTE_PROFILE_START(parseChapter);
 
     do {
         REND_PROFILE_START(loadXMLFile)
@@ -99,18 +101,25 @@ auto FootnoteMgr::parseChapter(const std::shared_ptr<EPubFile> &stream, SpineIdx
             auto for_each(pugi::xml_node &node) -> bool override {
                 if (node.type() == pugi::node_element) {
 
+                    bool result = true;
+
                     if (strcmp(node.name(), "sup") == 0) {
                         const char *href = node.child("a").attribute("href").value();
                         if (href[0] != '\0') {
-                            footnoteMgr->addEntry(href, {static_cast<uint32_t>(node.offset_debug()),
-                                                         currentSpineIdx});
+                            result = footnoteMgr->addEntry(
+                                href,
+                                {static_cast<uint32_t>(node.offset_debug()), currentSpineIdx});
                         }
                     } else if (strcmp(node.name(), "a") == 0) {
                         const char *href = node.attribute("href").value();
                         if (node.child("sup") && (href[0] != '\0')) {
-                            footnoteMgr->addEntry(href, {static_cast<uint32_t>(node.offset_debug()),
-                                                         currentSpineIdx});
+                            result = footnoteMgr->addEntry(
+                                href,
+                                {static_cast<uint32_t>(node.offset_debug()), currentSpineIdx});
                         }
+                    }
+                    if (!result) {
+                        log_w("Footnote entry not added.");
                     }
                 }
 
@@ -147,7 +156,7 @@ auto FootnoteMgr::parseChapter(const std::shared_ptr<EPubFile> &stream, SpineIdx
     } while ((currentSpineIdx_ < stream->getSpineCount()) &&
              !stream->spineIdxIsChapterStart(currentSpineIdx_));
 
-    REND_PROFILE_END(parseChapter);
+    FOOTNOTE_PROFILE_END(parseChapter);
 
     // This is for debugging
 
@@ -163,6 +172,9 @@ auto FootnoteMgr::retrieveNotes(const std::shared_ptr<EPubFile> &stream) -> bool
 
     std::set<std::string> filenames;
     SpiramMap<SpiramString, int> idMap;
+    bool status{true};
+
+    FOOTNOTE_PROFILE_START(retrieveNotes);
 
     int idx = 0;
     for (auto &entry : footnotes_) {
@@ -243,20 +255,25 @@ auto FootnoteMgr::retrieveNotes(const std::shared_ptr<EPubFile> &stream) -> bool
 
                 } else {
                     log_e("<body> tag not found in %s.", entryFilename.c_str());
-                    return false;
+                    status = false;
+                    break;
                 }
             } else {
                 log_e("Unable to parse file %s with pugixml.",
                       stream->getFullPath(entryFilename).c_str());
-                return false;
+                status = false;
+                break;
             }
         } else {
             log_e("Unable to retrieve file %s.", stream->getFullPath(entryFilename).c_str());
-            return false;
+            status = false;
+            break;
         }
     }
 
-    return true;
+    FOOTNOTE_PROFILE_END(retrieveNotes);
+
+    return status;
 }
 
 #if SIMULATOR
@@ -269,15 +286,16 @@ auto FootnoteMgr::retrieveNotes(const std::shared_ptr<EPubFile> &stream) -> bool
 namespace fs = std::filesystem;
 
 void FootnoteMgr::testEPubFiles() {
-    char *folder;
-    char *logFile;
+    bool error{false};
+    char *folder{nullptr};
+    char *logFile{nullptr};
 
     folder = getenv("FOOTNOTE_TEST_FOLDER");
 
     if (folder == nullptr) {
         std::cerr << "Please define environment variable FOOTNOTE_TEST_FOLDER where "
                   << "EPub ebook files reside to be use for testing the FootnoteMgr." << std::endl;
-        return;
+        error = true;
     }
 
     logFile = getenv("FOOTNOTE_TEST_LOGFILE");
@@ -285,6 +303,10 @@ void FootnoteMgr::testEPubFiles() {
     if (logFile == nullptr) {
         std::cerr << "Please define environment variable FOOTNOTE_TEST_LOGFILE where "
                   << "the result log will be generated." << std::endl;
+        error = true;
+    }
+
+    if (error) {
         return;
     }
 

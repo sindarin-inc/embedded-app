@@ -9,6 +9,16 @@
 
 using namespace renderer_defs;
 
+#define FOOTNOTE_PROFILING 1
+
+#if FOOTNOTE_PROFILING
+#define FOOTNOTE_PROFILE_START(v) PROFILE_START(v)
+#define FOOTNOTE_PROFILE_END(v) PROFILE_END_LOG_MS(v)
+#else
+#define FOOTNOTE_PROFILE_START(v)
+#define FOOTNOTE_PROFILE_END(v)
+#endif
+
 class Footnote {
 public:
     StreamPlace streamPlace; // Where the note is being referenced
@@ -80,8 +90,9 @@ public:
      *
      * @param href Anchor's href that point at the note location.
      * @param streamPlace Tag location in the chapter.
+     * @return true The footnote has been added successfully.
      */
-    void addEntry(const char *href, StreamPlace streamPlace);
+    [[nodiscard]] auto addEntry(const char *href, StreamPlace streamPlace) -> bool;
 
     /**
      * @brief Retrieve notes content
