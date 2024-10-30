@@ -5,9 +5,9 @@
 CarouselMenuScreen::CarouselMenuScreen(DisplaySystem &display)
     : EinkView(display), titleView_(display, ""), menuView_(display) {}
 
-void CarouselMenuScreen::addTab(const std::string &tabName,
-                                const MenuItemFactory &menuItemFactory) {
-    menuTabs_.emplace_back(tabName, menuItemFactory, "");
+void CarouselMenuScreen::addTab(const std::string &tabName, const MenuItemFactory &menuItemFactory,
+                                int itemsPerPage) {
+    menuTabs_.emplace_back(tabName, menuItemFactory, itemsPerPage, "");
 }
 
 void CarouselMenuScreen::setTabToTitle(const std::string &tabTitle, int rowIndex) {
@@ -16,8 +16,8 @@ void CarouselMenuScreen::setTabToTitle(const std::string &tabTitle, int rowIndex
             setCurrentTabIndex(i);
             // If we're passed in an index here, override the previous cached ID value.
             if (rowIndex != -1) {
-                std::get<2>(menuTabs_[i]) = menuView_.getIDfromRowIndex(rowIndex);
-                menuView_.setSelectedByMenuItemID(std::get<2>(menuTabs_[i]));
+                std::get<3>(menuTabs_[i]) = menuView_.getIDfromRowIndex(rowIndex);
+                menuView_.setSelectedByMenuItemID(std::get<3>(menuTabs_[i]));
             }
             return;
         }
@@ -50,11 +50,13 @@ void CarouselMenuScreen::populateMenuView() {
     // The system menu doesn't seem to be cleaning up when going to another tab.
     auto menuItems = currentTabFactory();
 
+    menuView_.itemsPerPage = std::get<2>(menuTabs_[currentTabIndex_]);
+
     for (auto &i : *menuItems) {
         menuView_.addMenuItem(i);
     }
 
-    menuView_.setSelectedByMenuItemID(std::get<2>(menuTabs_[currentTabIndex_]));
+    menuView_.setSelectedByMenuItemID(std::get<3>(menuTabs_[currentTabIndex_]));
 
     titleView_.setText(getCurrentTabTitle());
     firstLoad_ = true;
@@ -89,7 +91,7 @@ void CarouselMenuScreen::processCommand(RemoteCommand command) {
 
 void CarouselMenuScreen::moveSelection(int delta) {
     auto newPage = menuView_.moveSelection(delta);
-    std::get<2>(menuTabs_[currentTabIndex_]) = menuView_.getSelectedMenuItemID();
+    std::get<3>(menuTabs_[currentTabIndex_]) = menuView_.getSelectedMenuItemID();
     if (newPage) {
         firstLoad_ = true;
     }

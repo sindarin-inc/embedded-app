@@ -12,7 +12,8 @@ using MenuItemVector = std::vector<std::shared_ptr<NewMenuItem>>;
 using MenuItemSharedPtrVector = std::shared_ptr<MenuItemVector>;
 using MenuItemFactory = std::function<MenuItemSharedPtrVector()>;
 // The std::string is the currently selected item ID in that tab to cache that value.
-using CarouselMenuEntry = std::tuple<std::string, MenuItemFactory, std::string>;
+// The int is the max number of items per page for that tab.
+using CarouselMenuEntry = std::tuple<std::string, MenuItemFactory, int, std::string>;
 
 // An abstract base class for a carousel menu screen. It handles the
 // adding of tabs and the selection of items but the subclasses must
@@ -24,7 +25,8 @@ public:
     // Add a tab to the carousel menu. The tab name is the text that will be displayed on top in
     // angle brackets. The second argument is a lambda that is a menu factory that will create the
     // menu items for that tab when it is selected.
-    void addTab(const std::string &tabName, const MenuItemFactory &menuItemFactory);
+    void addTab(const std::string &tabName, const MenuItemFactory &menuItemFactory,
+                int itemsPerPage);
 
     void populateMenuView();
 

@@ -1949,24 +1949,24 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
 
     if (!prefs_.dontShowWelcome.get().value_or(false) ||
         prefs_.forceShowWelcome.get().value_or(false)) {
-        newMainMenu->addTab("Welcome", welcomeMenuFactory);
+        newMainMenu->addTab("Welcome", welcomeMenuFactory, 6);
     }
 
     if (!localStore.recents().empty()) {
-        newMainMenu->addTab("Recent", recentMenuFactory);
+        newMainMenu->addTab("Recent", recentMenuFactory, 4);
     }
     if (!booksMenuFactory()->empty()) {
-        newMainMenu->addTab("Books", booksMenuFactory);
+        newMainMenu->addTab("Books", booksMenuFactory, 4);
     }
     if (!articlesMenuFactory()->empty()) {
-        newMainMenu->addTab("Articles", articlesMenuFactory);
+        newMainMenu->addTab("Articles", articlesMenuFactory, 4);
     }
 
     if (!bibleMenuFactory()->empty()) {
-        newMainMenu->addTab("Bible", bibleMenuFactory);
+        newMainMenu->addTab("Bible", bibleMenuFactory, 4);
     }
 
-    newMainMenu->addTab("Settings", settingsMenuFactory);
+    newMainMenu->addTab("Settings", settingsMenuFactory, 5);
 
     newMainMenu->populateMenuView();
 
