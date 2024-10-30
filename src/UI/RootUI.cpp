@@ -1560,7 +1560,7 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                 log_d("Loading System Settings Menu");
 
                 auto debugSettingsMenu =
-                    std::make_shared<GenericSettingsMenuScreen>(display_, "Debug");
+                    std::make_shared<GenericSettingsMenuScreen>(display_, "Main Menu");
 
                 debugSettingsMenu->setBackCallback([this]() { this->popScreen(); });
 
@@ -1695,15 +1695,16 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                                                  [this]() { power_.reboot(); });
                         }));
                 }
-/*
-    debugSettingsMenu->addMenuItem(
-        std::make_shared<NewMenuItemSingleLine>("Alignment Setup", [this,
-   &lightingController]() { auto alignmentScreen =
-   std::make_shared<AlignmentScreen>(display_, prefs_, lightingController);
-   this->pushScreen(alignmentScreen); alignmentScreen->setBackCallback([this]() { this->popScreen();
-            });
-        }));
-*/
+                /*
+                    debugSettingsMenu->addMenuItem(
+                        std::make_shared<NewMenuItemSingleLine>("Alignment Setup", [this,
+                   &lightingController]() { auto alignmentScreen =
+                   std::make_shared<AlignmentScreen>(display_, prefs_, lightingController);
+                   this->pushScreen(alignmentScreen); alignmentScreen->setBackCallback([this]() {
+                   this->popScreen();
+                            });
+                        }));
+                */
 #if CONFIG_DISPLAY_EINKET013TT1
                 debugSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>("Set Vcom",
                                                                                        [this]() {
