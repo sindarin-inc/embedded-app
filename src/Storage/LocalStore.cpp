@@ -753,7 +753,7 @@ void LocalStore::syncFromRemote(
             checkSyncRequest.skipSummary = true;
             checkSyncRequest.skipToc = true;
             checkSyncRequest.ptBattery = PreferencesStore::lastPageTurnerBattery;
-            checkSyncRequest.battery = static_cast<uint8_t>(battery_.getBatteryPercentage());
+            checkSyncRequest.battery = static_cast<uint8_t>(battery_.getBatteryPercentageInVolts());
             checkSyncRequest.ptBuild = this->prefs_.lastPageTurnerBuild.get().value_or("");
             checkSyncRequest.build = SemanticVersionString();
             checkSyncRequest.gitHash = GitVersionString();

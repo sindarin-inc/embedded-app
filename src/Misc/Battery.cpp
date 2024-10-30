@@ -106,12 +106,12 @@ auto Battery::getBatteryLifeString() -> std::string {
 }
 
 auto Battery::getBatteryPercentageOnlyString() -> std::string {
-    float batteryAverage = getBatteryPercentage();
+    float batteryAverage = getBatteryPercentageInVolts();
     std::string averageOutput = StringFormat("%.0f%%", batteryAverage);
     return averageOutput;
 }
 
-auto Battery::getBatteryPercentage() -> float {
+auto Battery::getBatteryPercentageInVolts() -> float {
     float voltageLevelLeft = this->getLeftBatteryVoltage();
     float batteryFractionLeft =
         (voltageLevelLeft - BATTERY_MIN_VOLTAGE) / (BATTERY_MAX_VOLTAGE - BATTERY_MIN_VOLTAGE);
@@ -133,6 +133,34 @@ auto Battery::getBatteryPercentage() -> float {
     return batteryAverage;
 }
 
+auto Battery::getBatteryPercentageInTime() -> int {
+    auto percent = getBatteryPercentageInVolts();
+    if (percent > 95.0) {
+        return 100;
+    } else if (percent > 87.0) {
+        return 90;
+    } else if (percent > 80.0) {
+        return 80;
+    } else if (percent > 70.0) {
+        return 70;
+    } else if (percent > 60.0) {
+        return 60;
+    } else if (percent > 53.0) {
+        return 50;
+    } else if (percent > 48.0) {
+        return 40;
+    } else if (percent > 42.0) {
+        return 30;
+    } else if (percent > 37.0) {
+        return 20;
+    } else if (percent > 25.0) {
+        return 10;
+    } else {
+        return 0;
+    }
+    return 0;
+}
+
 auto Battery::getDepleted() const -> bool {
 #if SIMULATOR
     return false;
@@ -142,7 +170,7 @@ auto Battery::getDepleted() const -> bool {
 }
 
 void Battery::saveLastBatteryReport() {
-    float batteryAverage = getBatteryPercentage();
+    float batteryAverage = getBatteryPercentageInVolts();
     if (batteryAverage > 0) {
         PreferencesStore::lastBatteryReport = static_cast<uint8_t>(batteryAverage);
     }

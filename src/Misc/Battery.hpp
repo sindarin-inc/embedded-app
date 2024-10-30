@@ -30,7 +30,14 @@ public:
     auto getBatteryPercentageOnlyString() -> std::string;
     auto getLeftBatteryVoltage() -> float;
     auto getRightBatteryVoltage() -> float;
-    auto getBatteryPercentage() -> float;
+    auto getBatteryPercentageInVolts() -> float;
+    auto getBatteryPercentageInTime() -> int;
+
+    // Less than ~20% of time remaining
+    auto batteryLow() -> bool { return getBatteryPercentageInVolts() <= 37.0; }
+
+    // Less than ~10% of time remaining
+    auto batteryVeryLow() -> bool { return getBatteryPercentageInVolts() <= 25.0; }
 
     [[nodiscard]] auto getDepleted() const -> bool;
 

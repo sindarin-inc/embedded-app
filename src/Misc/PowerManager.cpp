@@ -127,7 +127,7 @@ void PowerManager::wakeupCheck(SolClock &clock) {
             // We're waking up because USB was connected (so we can set the LED)
             // Check if the USB LED should be on
             checkUsb();
-            auto percentage = battery.getBatteryPercentage();
+            auto percentage = battery.getBatteryPercentageInVolts();
             if (USBConnected()) {
                 log_i("USB connected, battery level: %d%%", int(percentage));
             } else if (ulp_waitForClose) {
@@ -429,7 +429,7 @@ void PowerManager::checkUsb() {
     if (USBConnected()) {
         // TODO: Should we take multiple measurements?
         battery.takeMeasurement();
-        auto percentage = battery.getBatteryPercentage();
+        auto percentage = battery.getBatteryPercentageInVolts();
         gpio_hold_dis(static_cast<gpio_num_t>(CONFIG_GREEN_LED));
         gpio_hold_dis(static_cast<gpio_num_t>(CONFIG_RED_LED));
 

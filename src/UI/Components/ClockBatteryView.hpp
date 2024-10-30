@@ -30,8 +30,6 @@ public:
           clockView_(display, ""), battery_(battery) {}
     ~ClockBatteryView() override = default;
 
-    auto batteryLow() -> bool { return battery_.getBatteryPercentage() <= 37.0; }
-
     auto updateTime() {
         SolClock &theClock = SolClock::getInstance();
         clockView_.setText(theClock.getTimeString());
@@ -42,7 +40,7 @@ public:
         // We'll lay it out even if we don't draw it.
         auto clockRect = context.setViewFrame(
             clockView_, {{0, 0}, size}, LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical);
-        if (!batteryLow_ && batteryLow()) {
+        if (!batteryLow_ && battery_.batteryLow()) {
             batteryLow_ = true;
         }
         if (batteryLow_) {
@@ -58,31 +56,40 @@ public:
     }
 
     void drawInRect(Rect rect) override {
-
-        auto percent = battery_.getBatteryPercentage();
-
-        if (percent > 95.0) {
+        switch (battery_.getBatteryPercentageInTime()) {
+        case 100:
             batteryIconView_.setIcon(BATTERY_100_BITS, battery_100_width, battery_100_height);
-        } else if (percent > 87.0) {
+            break;
+        case 90:
             batteryIconView_.setIcon(BATTERY_90_BITS, battery_90_width, battery_90_height);
-        } else if (percent > 80.0) {
+            break;
+        case 80:
             batteryIconView_.setIcon(BATTERY_80_BITS, battery_80_width, battery_80_height);
-        } else if (percent > 70.0) {
+            break;
+        case 70:
             batteryIconView_.setIcon(BATTERY_70_BITS, battery_70_width, battery_70_height);
-        } else if (percent > 60.0) {
+            break;
+        case 60:
             batteryIconView_.setIcon(BATTERY_60_BITS, battery_60_width, battery_60_height);
-        } else if (percent > 53.0) {
+            break;
+        case 50:
             batteryIconView_.setIcon(BATTERY_50_BITS, battery_50_width, battery_50_height);
-        } else if (percent > 48.0) {
+            break;
+        case 40:
             batteryIconView_.setIcon(BATTERY_40_BITS, battery_40_width, battery_40_height);
-        } else if (percent > 42.0) {
+            break;
+        case 30:
             batteryIconView_.setIcon(BATTERY_30_BITS, battery_30_width, battery_30_height);
-        } else if (percent > 37.0) {
+            break;
+        case 20:
             batteryIconView_.setIcon(BATTERY_20_BITS, battery_20_width, battery_20_height);
-        } else if (percent > 25.0) {
+            break;
+        case 10:
             batteryIconView_.setIcon(BATTERY_10_BITS, battery_10_width, battery_10_height);
-        } else {
+            break;
+        case 0:
             batteryIconView_.setIcon(BATTERY_0_BITS, battery_0_width, battery_0_height);
+            break;
         }
 
         // Only show the battery and clock if the battery is low.
