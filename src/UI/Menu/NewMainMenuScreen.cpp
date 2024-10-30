@@ -22,6 +22,10 @@ auto NewMainMenuScreen::layout(LayoutContext &context, Size size) -> Size {
     }
     // I know generally we aren't supposed to do this, but I don't know where else to do this.
     menuView_.updatePageState();
+    // We do this because if the page state changes, then we need the menu view to recalculate
+    // the page the current selected index is on. A little clunky, but because we have
+    // this menu have variable sizes of menuView items, we have to do it.
+    menuView_.setSelectedIndex(menuView_.getSelectedIndex());
 
     context.setViewFrame(titleView_, {{0, 0}, {size.width, 0}},
                          LayoutOptionsSizeToFit | LayoutOptionsAlignCenter);

@@ -1557,7 +1557,7 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
             menuItems->emplace_back(std::make_shared<NewMenuItemSingleLine>(
                 "Debug",
                 [this, hasLastQuestion, &localStore, &fileSystem]() {
-                log_d("Loading System Settings Menu");
+                log_d("Loading Debug Menu");
 
                 auto debugSettingsMenu =
                     std::make_shared<GenericSettingsMenuScreen>(display_, "Main Menu");
