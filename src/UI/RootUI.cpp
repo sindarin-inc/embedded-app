@@ -1468,7 +1468,7 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                     }));
 
                 systemSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
-                    "Clear Content and Restart", [this, &localStore]() {
+                    "Clear Content (restart)", [this, &localStore]() {
                         localStore.deleteReadables(false);
                         localStore.deleteArticles(false);
                         showTemporaryMessage("Content cleared. Restarting...",
@@ -1602,15 +1602,15 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                     }));
 
                 if (prefs_.allowUsageWhileCharging.get().value_or(false)) {
-                    debugSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
-                        "Disable use while charging", [this]() {
+                    debugSettingsMenu->addMenuItem(
+                        std::make_shared<NewMenuItemSingleLine>("No use while charging", [this]() {
                             prefs_.allowUsageWhileCharging.remove();
                             showTemporaryMessage("Disabling use while charging...",
                                                  [this]() { power_.reboot(); });
                         }));
                 } else {
-                    debugSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
-                        "Enable use while charging", [this]() {
+                    debugSettingsMenu->addMenuItem(
+                        std::make_shared<NewMenuItemSingleLine>("Use while charging", [this]() {
                             prefs_.allowUsageWhileCharging.set(true);
                             showTemporaryMessage("Enabling use while charging...",
                                                  [this]() { power_.reboot(); });
@@ -1618,19 +1618,19 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                 }
 
                 debugSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
-                    "Clear Books and Restart", [this, &localStore]() {
+                    "Clear Books (restart)", [this, &localStore]() {
                         localStore.deleteReadables();
                         showTemporaryMessage("Books reset.", [this]() { power_.reboot(); });
                     }));
 
                 debugSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
-                    "Clear Articles and Restart", [this, &localStore]() {
+                    "Clear Articles (restart)", [this, &localStore]() {
                         localStore.deleteArticles();
                         showTemporaryMessage("Articles reset.", [this]() { power_.reboot(); });
                     }));
 
                 debugSettingsMenu->addMenuItem(
-                    std::make_shared<NewMenuItemSingleLine>("Clear Crash Reports and Restart",
+                    std::make_shared<NewMenuItemSingleLine>("Clear Crashes (restart)",
                                                             [this, &fileSystem]() {
                     FileList coreDumpFiles;
                     fileSystem.listDir("/coredumps", coreDumpFiles);
@@ -1652,7 +1652,7 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                     }));
 
                 debugSettingsMenu->addMenuItem(
-                    std::make_shared<NewMenuItemSingleLine>("Batteries and Temperature", [this]() {
+                    std::make_shared<NewMenuItemSingleLine>("Batteries and Temp", [this]() {
                         auto batteryScreen =
                             std::make_shared<BatteryScreen>(display_, prefs_, power_.battery);
                         this->pushScreen(batteryScreen);
