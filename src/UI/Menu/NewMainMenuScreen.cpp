@@ -12,6 +12,9 @@ NewMainMenuScreen::NewMainMenuScreen(DisplaySystem &display, Battery &battery)
 }
 
 auto NewMainMenuScreen::layout(LayoutContext &context, Size size) -> Size {
+    // This is a bad place to do this because the menuView item selected could get
+    // set before this is called. Future work to figure out the right place
+    // for this to live.
     if (getCurrentTabTitle() == "Welcome") {
         menuView_.itemsPerPage = 6;
     } else if (getCurrentTabTitle() == "Settings") {
