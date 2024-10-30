@@ -79,8 +79,8 @@ public:
      * @return true The chapter was properly parse
      * @return false There was problems parsing the chapter
      */
-    [[nodiscard]] auto parseChapter(const std::shared_ptr<EPubFile> &stream,
-                                    SpineIdx spineIdx) -> bool;
+    [[nodiscard]] auto parseChapter(const std::shared_ptr<EPubFile> &stream, SpineIdx spineIdx)
+        -> bool;
 
     /**
      * @brief Generates Footnote entries
