@@ -65,6 +65,10 @@ static constexpr bool REND_STATS = true;
 static constexpr bool REND_STATS = false;
 #endif
 
+#ifndef FOOTNOTE_RETRIEVAL
+#define FOOTNOTE_RETRIEVAL 0
+#endif
+
 // Used by the Tokenizer::getFileLocation() method in case of error
 static constexpr uint32_t LOCATION_ERROR = 0xFFFFFFFF;
 
@@ -77,8 +81,6 @@ static constexpr uint32_t LOCATION_ERROR = 0xFFFFFFFF;
 static constexpr uint16_t NEWLINE_DECI_LINE_HEIGHT = 10;
 static constexpr uint16_t ENDPARAGRAPH_DECI_LINE_HEIGHT = 4;
 static constexpr uint16_t HRULE_DECI_LINE_HEIGHT = 4;
-
-static constexpr bool FOOTNOTE_RETRIEVAL = true;
 
 // A Page array must be large enough to accommodate the need to load a complete display page,
 // but also able to load a complete paragraph that can precede the page when the back page

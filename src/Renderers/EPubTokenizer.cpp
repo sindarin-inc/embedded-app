@@ -831,11 +831,14 @@ auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, S
         REND_PROFILE_END(tokenizeProcess);
     }
 
-    if constexpr (FOOTNOTE_RETRIEVAL) {
-        if (!footnoteMgr_.parseChapter(stream_, currentSpineIdx_)) {
-            log_w("Footnote parser completed with errors!");
-        }
+#if FOOTNOTE_RETRIEVAL
+    if (!footnoteMgr_.parseChapter(stream_, currentSpineIdx_)) {
+        log_w("Footnote parser completed with errors!");
+    } else if (!footnoteMgr_.retrieveNotes(stream_)) {
+        log_w("Footnote retrieval completed with errors!");
     }
+    footnoteMgr_.show();
+#endif
 
     REND_WLOG("End of job: Page start: %s, next page at: %s",
               pager_.getStreamPlaceOfFirstLine().str().c_str(),

@@ -151,10 +151,10 @@ auto FootnoteMgr::parseChapter(const std::shared_ptr<EPubFile> &stream, SpineIdx
 
     // This is for debugging
 
-    if (!retrieveNotes(stream)) {
-        log_e("Unable to retrieve all footnotes");
-    }
-    show();
+    // if (!retrieveNotes(stream)) {
+    //     log_e("Unable to retrieve all footnotes");
+    // }
+    // show();
 
     return true;
 }
@@ -177,11 +177,11 @@ auto FootnoteMgr::retrieveNotes(const std::shared_ptr<EPubFile> &stream) -> bool
         idMap[entry->id.c_str()] = idx++;
     }
 
-    std::cout << "----- Files to check for footnotes -----" << std::endl;
-    for (const auto &entryFilename : filenames) {
-        std::cout << "filename: " << entryFilename << std::endl;
-    }
-    std::cout << "----- [end] -----" << std::endl;
+    // std::cout << "----- Files to check for footnotes -----" << std::endl;
+    // for (const auto &entryFilename : filenames) {
+    //     std::cout << "filename: " << entryFilename << std::endl;
+    // }
+    // std::cout << "----- [end] -----" << std::endl;
 
     struct Walker : pugi::xml_tree_walker {
         struct XmlStringWriter : pugi::xml_writer {
@@ -230,7 +230,7 @@ auto FootnoteMgr::retrieveNotes(const std::shared_ptr<EPubFile> &stream) -> bool
         pugi::xml_document doc;
         auto [buffer, length] = stream->getFile(stream->getFullPath(entryFilename));
         if (buffer != nullptr) {
-            log_i("File %s, length = %" PRIu32 " ...", entryFilename.c_str(), length);
+            // log_i("File %s, length = %" PRIu32 " ...", entryFilename.c_str(), length);
             pugi::xml_parse_result result = doc.load_buffer_inplace(
                 buffer.get(), length,
                 (pugi::parse_default | pugi::parse_ws_pcdata) & ~pugi::parse_escapes);
@@ -258,3 +258,70 @@ auto FootnoteMgr::retrieveNotes(const std::shared_ptr<EPubFile> &stream) -> bool
 
     return true;
 }
+
+#if SIMULATOR
+
+#include <cstdlib>
+#include <filesystem>
+#include <fstream>
+#include <iostream>
+
+namespace fs = std::filesystem;
+
+void FootnoteMgr::testEPubFiles() {
+    char *folder;
+    char *logFile;
+
+    folder = getenv("FOOTNOTE_TEST_FOLDER");
+
+    if (folder == nullptr) {
+        std::cerr << "Please define environment variable FOOTNOTE_TEST_FOLDER where "
+                  << "EPub ebook files reside to be use for testing the FootnoteMgr." << std::endl;
+        return;
+    }
+
+    logFile = getenv("FOOTNOTE_TEST_LOGFILE");
+
+    if (logFile == nullptr) {
+        std::cerr << "Please define environment variable FOOTNOTE_TEST_LOGFILE where "
+                  << "the result log will be generated." << std::endl;
+        return;
+    }
+
+    std::cout << "FOOTNOTE_TEST_FOLDER = " << folder << std::endl
+              << "FOOTNOTE_TEST_LOGFILE = " << logFile << std::endl;
+
+    std::ofstream logStream;
+
+    logStream.open(logFile);
+
+    for (const auto &entry : fs::directory_iterator(folder)) {
+        logStream << "===== " << entry.path().c_str() << " =====" << std::endl;
+
+        auto file = SFile(std::make_shared<VFSFile>(entry.path().c_str(), FILE_READ, false));
+        auto readable = std::make_shared<Readable>();
+        readable->readableType = "book";
+
+        auto stream = std::make_shared<EPubFile>(file, readable);
+
+        auto spineCount = stream->getSpineCount();
+        for (SpineIdx idx = 0; idx < spineCount; idx++) {
+            if (stream->spineIdxIsChapterStart(idx)) {
+                logStream << "----- Chapter at spineIdx " << idx << " -----" << std::endl;
+                if (!parseChapter(stream, idx)) {
+                    logStream << "Some errors parsing chapter." << std::endl;
+                } else if (!retrieveNotes(stream)) {
+                    logStream << "Some errors retrieving notes." << std::endl;
+                }
+                show(logStream);
+            }
+        }
+
+        stream->close();
+    }
+
+    logStream.close();
+    std::cout << "Testing FootnoteMgr completed." << std::endl;
+}
+
+#endif

@@ -23,13 +23,13 @@ public:
           filename(std::move(std::move(filename))), content(std::move(std::move(content))),
           contentFound(contentFound) {}
 
-    void show(int i) {
+    void show(int i, std::ostream &outstream = std::cout) {
         SpiramString none = "<none>";
-        std::cout << i << ": Id:" << id << " filename:" << (filename.empty() ? none : filename)
+        outstream << i << ": Id:" << id << " filename:" << (filename.empty() ? none : filename)
                   << " chapter place:" << streamPlace.str() << std::endl
                   << std::flush;
         if (contentFound) {
-            std::cout << "   Content:" << content << std::endl;
+            outstream << "   Content:" << content << std::endl;
         }
     }
 };
@@ -69,8 +69,8 @@ public:
      * @return true The chapter was properly parse
      * @return false There was problems parsing the chapter
      */
-    [[nodiscard]] auto parseChapter(const std::shared_ptr<EPubFile> &stream, SpineIdx spineIdx)
-        -> bool;
+    [[nodiscard]] auto parseChapter(const std::shared_ptr<EPubFile> &stream,
+                                    SpineIdx spineIdx) -> bool;
 
     /**
      * @brief Generates Footnote entries
@@ -101,14 +101,20 @@ public:
 
     // Debugging code
 
-    void show() {
-        std::cout << "----- FootNote Entries -----" << std::endl << std::flush;
+    void show(std::ostream &outstream = std::cout) {
+        if (footnotes_.empty()) {
+            outstream << "No footnote" << std::endl;
+        } else {
+            outstream << "FootNote Entries:" << std::endl << std::flush;
 
-        int i = 1;
-        for (const std::shared_ptr<Footnote> &entry : footnotes_) {
-            entry->show(i++);
+            int i = 1;
+            for (const std::shared_ptr<Footnote> &entry : footnotes_) {
+                entry->show(i++, outstream);
+            }
         }
-
-        std::cout << "----- end -----" << std::endl << std::flush;
     }
+
+#if SIMULATOR
+    void testEPubFiles();
+#endif
 };
