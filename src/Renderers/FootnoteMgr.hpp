@@ -62,8 +62,8 @@ private:
      * @param currentFolder The folder where the chapter file is located, from the manifest
      * @return SpiramString The filtered filename
      */
-    [[nodiscard]] auto cleanupPath(const char *filename,
-                                   const char *currentFolder) -> std::shared_ptr<SpiramString>;
+    [[nodiscard]] auto cleanupPath(const char *filename, const char *currentFolder)
+        -> std::shared_ptr<SpiramString>;
 
 public:
     /**
@@ -81,8 +81,8 @@ public:
      * @return true The chapter was properly parse
      * @return false There was problems parsing the chapter
      */
-    [[nodiscard]] auto parseChapter(const std::shared_ptr<EPubFile> &stream,
-                                    SpineIdx spineIdx) -> bool;
+    [[nodiscard]] auto parseChapter(const std::shared_ptr<EPubFile> &stream, SpineIdx spineIdx)
+        -> bool;
 
     /**
      * @brief Generates Footnote entries

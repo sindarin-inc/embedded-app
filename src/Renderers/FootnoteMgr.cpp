@@ -38,8 +38,8 @@ auto FootnoteMgr::addEntry(const char *href, StreamPlace streamPlace) -> bool {
 
 #define HEXTONIBBLE(c) ((c) >= 'A' ? ((c) >= 'a' ? ((c) - 'a') : ((c) - 'A')) + 10 : ((c) - '0'))
 
-auto FootnoteMgr::cleanupPath(const char *filename,
-                              const char *currentFolder) -> std::shared_ptr<SpiramString> {
+auto FootnoteMgr::cleanupPath(const char *filename, const char *currentFolder)
+    -> std::shared_ptr<SpiramString> {
     // Allocate memory for the result
     auto cleanedPath = std::make_shared<SpiramString>();
     SpiramString fullPath{};
@@ -73,12 +73,16 @@ auto FootnoteMgr::cleanupPath(const char *filename,
             int pos = -1;
             int lastPos = -1;
             while ((pos = s.find('%', pos + 1)) != -1) {
-                if (pos != lastPos) t.append(s.substr(lastPos + 1, pos - (lastPos + 1)));
+                if (pos != lastPos) {
+                    t.append(s.substr(lastPos + 1, pos - (lastPos + 1)));
+                }
                 t.push_back(static_cast<char>(HEXTONIBBLE(s[pos + 1]) << 4) +
                             HEXTONIBBLE(s[pos + 2]));
                 pos = lastPos = pos + 2;
             }
-            if ((lastPos + 1) < s.size()) t.append(s.substr(lastPos + 1, s.size() - lastPos + 1));
+            if ((lastPos + 1) < s.size()) {
+                t.append(s.substr(lastPos + 1, s.size() - lastPos + 1));
+            }
             tokens.push_back(t);
         }
     }
