@@ -1451,9 +1451,12 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                            30) {
                     menuIndex = 4;
                 }
-                updateExtraText();
+
                 inactivityMenu->setSelectedIndex(menuIndex);
                 pushScreen(inactivityMenu);
+                // This must be done after the pushScreen since it assumes the currentScreen
+                // is the inactivityMenu.
+                updateExtraText();
 
                 inactivityMenu->setBackCallback([this]() {
                     if (std::static_pointer_cast<InactivitySettingMenuScreen>(currentScreen())
