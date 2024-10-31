@@ -59,9 +59,11 @@ private:
      * contain characters in a hexadecimal format (like %xx).
      *
      * @param filename The filename to filter
+     * @param currentFolder The folder where the chapter file is located, from the manifest
      * @return SpiramString The filtered filename
      */
-    [[nodiscard]] auto adjustFilename(const char *filename) -> SpiramString;
+    [[nodiscard]] auto cleanupPath(const char *filename,
+                                   const char *currentFolder) -> std::shared_ptr<SpiramString>;
 
 public:
     /**
@@ -79,8 +81,8 @@ public:
      * @return true The chapter was properly parse
      * @return false There was problems parsing the chapter
      */
-    [[nodiscard]] auto parseChapter(const std::shared_ptr<EPubFile> &stream, SpineIdx spineIdx)
-        -> bool;
+    [[nodiscard]] auto parseChapter(const std::shared_ptr<EPubFile> &stream,
+                                    SpineIdx spineIdx) -> bool;
 
     /**
      * @brief Generates Footnote entries
@@ -106,9 +108,12 @@ public:
      */
     [[nodiscard]] auto retrieveNotes(const std::shared_ptr<EPubFile> &stream) -> bool;
 
-    [[nodiscard]] inline auto isEmpty() -> bool { return footnotes_.empty(); }
+    [[nodiscard]] inline auto isEmpty() -> bool const { return footnotes_.empty(); }
 
     inline void clear() { footnotes_.clear(); }
+
+    [[nodiscard]] auto getFootnoteHTML(int index) -> std::shared_ptr<SpiramString> const;
+    [[nodiscard]] auto getAllFootnotesHTML() -> std::shared_ptr<SpiramString> const;
 
     // Debugging code
 

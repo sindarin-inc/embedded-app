@@ -27,3 +27,7 @@ void goBackwardNumPages(DisplaySystem &display, SDL_Window *window, SDL_Renderer
 
 void goForwardNumPages(DisplaySystem &display, SDL_Window *window, SDL_Renderer *renderer,
                        int numPages);
+
+void testFootnoteMgrBatch();
+
+void showCurrentChapterFootnotes();

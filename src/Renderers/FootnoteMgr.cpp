@@ -1,5 +1,7 @@
 #include "FootnoteMgr.hpp"
 
+#include <sstream>
+
 auto FootnoteMgr::addEntry(const char *href, StreamPlace streamPlace) -> bool {
 
     if (href == nullptr) {
@@ -10,23 +12,23 @@ auto FootnoteMgr::addEntry(const char *href, StreamPlace streamPlace) -> bool {
     SpiramString id{""}, filename{""};
 
     const char *ptr = href;
-    while (ptr && (*ptr != '#')) {
-        filename += *ptr++;
+    while ((*ptr != '\0') && (*ptr != '#')) {
+        filename.push_back(*ptr++);
     }
 
-    if ((ptr == nullptr) || (*ptr != '#')) {
-        log_e("Invalid href: %s", href);
+    if ((*ptr == '\0') || (*ptr != '#')) {
+        // log_e("Invalid href: %s", href);
         return false;
     }
 
     ptr += 1; // pass the '#'
-    if (ptr == nullptr) {
-        log_e("Invalid Id after '#': %s", href);
+    if (*ptr == '\0') {
+        // log_e("Invalid Id after '#': %s", href);
         return false;
     }
 
     while (*ptr != '\0') {
-        id += *ptr++;
+        id.push_back(*ptr++);
     }
 
     footnotes_.push_back(SpiRamPtr<Footnote>(streamPlace, id, filename, SpiramString{}, false));
@@ -36,41 +38,65 @@ auto FootnoteMgr::addEntry(const char *href, StreamPlace streamPlace) -> bool {
 
 #define HEXTONIBBLE(c) ((c) >= 'A' ? ((c) >= 'a' ? ((c) - 'a') : ((c) - 'A')) + 10 : ((c) - '0'))
 
-auto FootnoteMgr::adjustFilename(const char *filename) -> SpiramString {
-    auto adjFName = SpiRamArrayPtr<char>(256);
-    int idx{0};
-    const char *fn = filename;
+auto FootnoteMgr::cleanupPath(const char *filename,
+                              const char *currentFolder) -> std::shared_ptr<SpiramString> {
+    // Allocate memory for the result
+    auto cleanedPath = std::make_shared<SpiramString>();
+    SpiramString fullPath{};
+    bool absolute{false};
 
-    while ((idx < 254) && (*fn != '\0')) {
-        if ((*fn == '%') && (fn[1] != '\0') && (fn[2] != '\0')) {
-            adjFName[idx++] = (HEXTONIBBLE(fn[1]) << 4) + HEXTONIBBLE(fn[2]);
-            fn += 3;
-        } else if ((*fn == '/') && (fn[1] == '.') && (fn[2] == '.') && (fn[3] == '/')) {
-            while (idx > 0) {
-                idx -= 1;
-                if (adjFName[idx] == '/') {
-                    break;
-                }
+    // If filename starts with '/', it is an absolute path
+    if (filename[0] == '/') {
+        fullPath = filename;
+        absolute = true;
+    } else {
+        // Create a combined path
+        fullPath = currentFolder;
+        fullPath.push_back('/');
+        fullPath.append(filename);
+    }
+
+    std::vector<SpiramString> tokens;
+    std::istringstream f(fullPath.c_str());
+
+    SpiramString s;
+    while (std::getline(f, s, '/')) {
+        std::cout << "-> " << s << std::endl;
+        if (s.empty()) {
+        } else if (s == "..") {
+            if (!tokens.empty()) {
+                tokens.pop_back();
             }
-            fn += idx > 0 ? 3 : 4;
-        } else if ((*fn == '.') && (fn[1] == '.') && (fn[2] == '/')) {
-            while (idx > 0) {
-                idx -= 1;
-                if (adjFName[idx] == '/') {
-                    break;
-                }
-            }
-            fn += idx > 0 ? 2 : 3;
-        } else if ((*fn == '.') && (fn[1] == '/')) {
-            fn += idx > 0 ? 1 : 2;
+        } else if (s == ".") {
         } else {
-            adjFName[idx++] = *fn++;
+            SpiramString t;
+            int pos = -1;
+            int lastPos = -1;
+            while ((pos = s.find('%', pos + 1)) != -1) {
+                if (pos != lastPos) t.append(s.substr(lastPos + 1, pos - (lastPos + 1)));
+                t.push_back(static_cast<char>(HEXTONIBBLE(s[pos + 1]) << 4) +
+                            HEXTONIBBLE(s[pos + 2]));
+                pos = lastPos = pos + 2;
+            }
+            if ((lastPos + 1) < s.size()) t.append(s.substr(lastPos + 1, s.size() - lastPos + 1));
+            tokens.push_back(t);
         }
     }
 
-    adjFName[idx] = 0;
+    // Rebuild the cleaned path
+    if (absolute) {
+        cleanedPath->push_back('/');
+    }
+    for (auto &token : tokens) {
+        cleanedPath->append(token);
+        cleanedPath->push_back('/');
+    }
 
-    return SpiramString(adjFName.get());
+    cleanedPath->pop_back();
+
+    std::cout << "Cleaned path: " << *cleanedPath << std::endl;
+
+    return cleanedPath;
 }
 
 auto FootnoteMgr::parseChapter(const std::shared_ptr<EPubFile> &stream, SpineIdx spineIdx) -> bool {
@@ -112,12 +138,22 @@ auto FootnoteMgr::parseChapter(const std::shared_ptr<EPubFile> &stream, SpineIdx
                         }
                     } else if (strcmp(node.name(), "a") == 0) {
                         const char *href = node.attribute("href").value();
-                        if (node.child("sup") && (href[0] != '\0')) {
-                            result = footnoteMgr->addEntry(
-                                href,
-                                {static_cast<uint32_t>(node.offset_debug()), currentSpineIdx});
+                        if ((href[0] != '0') && (strncmp(href, "http://", 7) != 0) &&
+                            (strncmp(href, "https://", 8) != 0)) {
+                            if (node.attribute("id") || node.child("sup")) {
+                                result = footnoteMgr->addEntry(
+                                    href,
+                                    {static_cast<uint32_t>(node.offset_debug()), currentSpineIdx});
+                            }
+                            // if (node.child("sup") && (href[0] != '\0')) {
+                            //     result = footnoteMgr->addEntry(
+                            //         href,
+                            //         {static_cast<uint32_t>(node.offset_debug()),
+                            //         currentSpineIdx});
+                            // }
                         }
                     }
+
                     if (!result) {
                         log_w("Footnote entry not added.");
                     }
@@ -179,11 +215,13 @@ auto FootnoteMgr::retrieveNotes(const std::shared_ptr<EPubFile> &stream) -> bool
     int idx = 0;
     for (auto &entry : footnotes_) {
         if (entry->filename.empty()) {
-            // This happen when a href contains only a '#' followed by the id. This means that the
-            // footnote his in the chapter's spine.
+            // This happen when a href contains only a '#' followed by the id. This means that
+            // the footnote his in the chapter's spine.
             entry->filename = stream->getSpine(entry->streamPlace.getSpineIdx()).item->href.c_str();
         } else {
-            entry->filename = adjustFilename(entry->filename.c_str());
+            entry->filename = *cleanupPath(
+                entry->filename.c_str(),
+                stream->getSpineRelativeFolderPath(entry->streamPlace.getSpineIdx()).c_str());
         }
         filenames.insert(entry->filename.c_str());
         idMap[entry->id.c_str()] = idx++;
@@ -274,6 +312,42 @@ auto FootnoteMgr::retrieveNotes(const std::shared_ptr<EPubFile> &stream) -> bool
     FOOTNOTE_PROFILE_END(retrieveNotes);
 
     return status;
+}
+
+auto FootnoteMgr::getFootnoteHTML(int index) -> std::shared_ptr<SpiramString> const {
+    auto result = std::make_shared<SpiramString>();
+
+    result->assign("<?xml version='1.0' encoding='utf-8'?><!DOCTYPE html><html><head/><body>");
+
+    if ((index < footnotes_.size()) && footnotes_[index]->contentFound) {
+        result->append(footnotes_[index]->content);
+    } else {
+        result->append("<p>No Footnote</p>");
+    }
+
+    result->append("</body></html>");
+
+    return result;
+}
+
+auto FootnoteMgr::getAllFootnotesHTML() -> std::shared_ptr<SpiramString> const {
+    auto result = std::make_shared<SpiramString>();
+
+    result->assign("<?xml version='1.0' encoding='utf-8'?><!DOCTYPE html><html><head/><body>");
+
+    if (footnotes_.empty()) {
+        result->append("<p>No Footnote</p>");
+    } else {
+        for (auto &footnote : footnotes_) {
+            if (footnote->contentFound) {
+                result->append(footnote->content);
+            }
+        }
+    }
+
+    result->append("</body></html>");
+
+    return result;
 }
 
 #if SIMULATOR

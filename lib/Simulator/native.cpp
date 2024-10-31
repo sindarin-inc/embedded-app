@@ -14,10 +14,10 @@
 #include "Misc/Dispatch.hpp"
 #include "Misc/Math.hpp"
 #include "Misc/Platform.hpp"
-#include "Renderers/FootnoteMgr.hpp"
 #include "Sensors/LightingController.hpp"
 #include "SimAutomation.hpp"
 #include "Storage/PreferencesStore.hpp"
+#include "UI/RootUI.hpp"
 #include "sindarin-debug.h"
 
 #if SIMULATOR_BLE
@@ -180,11 +180,6 @@ void SimDrawLeds() {
 #endif
 };
 
-void testFootnoteMgr() {
-    FootnoteMgr footnoteMgr;
-    footnoteMgr.testEPubFiles();
-}
-
 #if SIMULATOR_BLE
 // BLE command from the TurnTouch remote
 RemoteCommand ttCommand;
@@ -252,7 +247,10 @@ auto mainLoop() -> bool {
                 saveBookImages(myDisplay, window, renderer);
                 break;
             case 'f':
-                testFootnoteMgr();
+                testFootnoteMgrBatch();
+                break;
+            case 'g':
+                showCurrentChapterFootnotes();
                 break;
             }
 
