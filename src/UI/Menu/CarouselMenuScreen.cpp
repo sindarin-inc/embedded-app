@@ -35,10 +35,11 @@ void CarouselMenuScreen::setTabToTitle(const std::string &tabTitle, std::string 
     }
 }
 
-auto CarouselMenuScreen::isTitleInTab(const std::string &tabTitle, const std::string &id) -> bool {
+auto CarouselMenuScreen::isTitleInTab(const std::string &tabTitle, const std::string &title)
+    -> bool {
     for (auto &menuTab : menuTabs_) {
         if (std::get<0>(menuTab) == tabTitle) {
-            return menuView_.isIDInMenu(id);
+            return menuView_.isIDInMenu(title);
         }
     }
     return false;
