@@ -592,43 +592,20 @@ void LocalStore::computeRecentReadables() {
 }
 
 void LocalStore::syncFromRemote(
-    SyncReason syncReason, const std::shared_ptr<CancelFlag> &cancel,
+    bool *syncSuccessful, bool wifiConnected, bool bleConnected, SyncReason syncReason,
+    const std::shared_ptr<CancelFlag> &cancel,
     const std::function<void(ContentSyncState state)> &progressCallback) {
-    auto wifiConnected = false;
-    auto bleConnected = false;
     if (!WiFi::getInstance().hasWiFiCredentials()) {
         this->telemetry_.logMetric(TelemetryField::METRIC_WIFI, "sync-wifi-no-credentials");
         progressCallback(
             ContentSyncState{.state = ContentSyncState::State::Failure,
                              .message = "Go to Settings > WiFi Setup in the Sol app."});
+        *syncSuccessful = false;
         return;
     }
 
-    progressCallback(ContentSyncState{.state = ContentSyncState::State::ConnectingWifi});
-
-    if (!WiFi::getInstance().connectWiFiFromSettings()) {
-        this->telemetry_.logMetric(TelemetryField::METRIC_WIFI, "sync-wifi-failed");
-        // progressCallback(ContentSyncState{.state = ContentSyncState::State::Failure,
-        //                                   .message = "Failed to connect to WiFi."});
-        // return;
-    } else {
-        wifiConnected = true;
-    }
-
-#if CONFIG_USE_BLE_SERVER_PROXY
-    if (!wifiConnected) {
-        if (!BLEManager::getInstance()->connectProxy(cancel)) {
-            this->telemetry_.logMetric(TelemetryField::METRIC_WIFI, "sync-ble-failed");
-            progressCallback(ContentSyncState{.state = ContentSyncState::State::Failure,
-                                              .message = "Failed to connect to WiFi."});
-            return;
-        } else {
-            bleConnected = true;
-        }
-    }
-#endif
-
     if (CancelFlag::isCancelled(cancel)) {
+        *syncSuccessful = false;
         return;
     }
 
@@ -649,6 +626,7 @@ void LocalStore::syncFromRemote(
     }
 
     if (CancelFlag::isCancelled(cancel)) {
+        *syncSuccessful = false;
         return;
     }
 
@@ -664,6 +642,7 @@ void LocalStore::syncFromRemote(
         progressCallback(
             ContentSyncState{.state = ContentSyncState::State::Failure,
                              .message = "Go to Settings > Pair Glasses in the Sol app."});
+        *syncSuccessful = false;
         return;
     }
 
@@ -678,12 +657,13 @@ void LocalStore::syncFromRemote(
     // call from whatever queue is most fitting based on the context. In tests, this might not be in
     // a queue.
     auto queue = DispatchGetCore0BackgroundQueue();
-    queue->dispatch([this, cancel, wifiConnected, bleConnected] {
+    queue->dispatch([this, cancel, wifiConnected, bleConnected, syncSuccessful] {
         auto retries = 2;
         while (retries > 0) {
             log_d("Uploading telemetry, wifiConnected: %d, bleConnected: %d", wifiConnected,
                   bleConnected);
             if (CancelFlag::isCancelled(cancel)) {
+                *syncSuccessful = false;
                 return;
             }
 
@@ -705,8 +685,9 @@ void LocalStore::syncFromRemote(
     });
 
     // Run this work on a separate thread, since it's long running
-    queue->dispatch([this, syncReason, progressCallback, cancel, bleConnected] {
+    queue->dispatch([this, syncReason, progressCallback, cancel, bleConnected, syncSuccessful] {
         if (CancelFlag::isCancelled(cancel)) {
+            *syncSuccessful = false;
             return;
         }
 
@@ -726,6 +707,7 @@ void LocalStore::syncFromRemote(
         std::vector<ReadablesVector *> readablesList = {&books_, &articles_};
         for (auto &readables : readablesList) {
             if (CancelFlag::isCancelled(cancel)) {
+                *syncSuccessful = false;
                 return;
             }
 
@@ -771,6 +753,7 @@ void LocalStore::syncFromRemote(
 
             while (nextPageUrl.length() || nextPageCounter == 0) {
                 if (CancelFlag::isCancelled(cancel)) {
+                    *syncSuccessful = false;
                     return;
                 }
 
@@ -811,6 +794,7 @@ void LocalStore::syncFromRemote(
                         bleConnected, cancel);
                 }
                 if (CancelFlag::isCancelled(cancel)) {
+                    *syncSuccessful = false;
                     return;
                 }
                 log_d("Server has %d %ss, next page: %s", checkSyncResponse.totalCount,
@@ -843,6 +827,7 @@ void LocalStore::syncFromRemote(
                                      ReadableModelTypeToString(modelType).c_str())
                             .c_str(),
                         {{"http-code", httpCode}});
+                    *syncSuccessful = false;
                     return;
                 }
 
@@ -853,6 +838,7 @@ void LocalStore::syncFromRemote(
                     this->processReadables(*readables, userReadables);
 
                 if (CancelFlag::isCancelled(cancel)) {
+                    *syncSuccessful = false;
                     return;
                 }
                 SHOW_HEAP();
@@ -941,6 +927,7 @@ void LocalStore::syncFromRemote(
             }
 
             if (CancelFlag::isCancelled(cancel)) {
+                *syncSuccessful = false;
                 return;
             }
 
@@ -982,23 +969,32 @@ void LocalStore::syncFromRemote(
         }
 
         if (CancelFlag::isCancelled(cancel)) {
+            *syncSuccessful = false;
             return;
         }
 
         if (booksAlreadySynced && articlesAlreadySynced) {
             progressCallback(ContentSyncState{.state = ContentSyncState::State::AlreadySynced});
+            *syncSuccessful = true;
+            return;
         } else if (booksNowSynced || articlesNowSynced) {
             progressCallback(ContentSyncState{.state = ContentSyncState::State::Synced,
                                               .booksDownloaded = booksDownloaded,
                                               .articlesDownloaded = articlesDownloaded});
+            *syncSuccessful = true;
+            return;
         } else if (checkSyncFailures > 0) {
             progressCallback(ContentSyncState{.state = ContentSyncState::State::Failure,
                                               .booksDownloaded = booksDownloaded,
                                               .articlesDownloaded = articlesDownloaded,
                                               .message = "Failed to check sync"});
+            *syncSuccessful = false;
+            return;
         } else {
             progressCallback(ContentSyncState{.state = ContentSyncState::State::AlreadySynced,
                                               .message = "Already synced"});
+            *syncSuccessful = true;
+            return;
         }
         log_d("Min watermark for task %s: %u bytes (%s:%d)", pcTaskGetName(nullptr),
               (unsigned int)uxTaskGetStackHighWaterMark(NULL), __FILE__, __LINE__);

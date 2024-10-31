@@ -276,70 +276,102 @@ void ContentSyncScreen::begin() {
     auto resumeBLE = [] {};
 #endif
 
-    // Rate limit to not update more than every 1s, and only if the percentage has changed
     auto rl = std::make_shared<RateLimiter>(1, 20, 1);
     cancel_ = std::make_shared<CancelFlag>();
-    DispatchGetCore0BackgroundQueue()->dispatch([this, rl, resumeBLE]() {
-        localStore_.syncFromRemote(SyncReason::Manual, cancel_,
-                                   [this, rl, resumeBLE](const ContentSyncState &state) {
-            log_d("Progress callback: %d%%", state.percentage);
+    auto progressCallback = [this, rl, resumeBLE](const ContentSyncState &state) {
+        log_d("Progress callback: %d%%", state.percentage);
 
-            if (CancelFlag::isCancelled(cancel_)) {
+        if (CancelFlag::isCancelled(cancel_)) {
+            return;
+        }
+
+        power_.feedInactivityTimer();
+        if (state.state == ContentSyncState::Failure || state.state == ContentSyncState::Synced ||
+            state.state == ContentSyncState::AlreadySynced) {
+            log_d("Content sync failed, disconnecting WiFi and BLE");
+            WiFi::getInstance().disconnectWiFi();
+#if CONFIG_USE_BLE_SERVER_PROXY
+            auto bleManager = BLEManager::getInstance(false);
+            if (bleManager != nullptr) {
+                bleManager->disconnectProxy();
+            }
+#endif
+        }
+        // Skip updates if the state is the same and the percentage isn't different (or if
+        // not enough time has elapsed)
+        if (state.state == state_.state) {
+            if (!rl->shouldExecute(state.percentage)) {
                 return;
             }
+        } else {
+            rl->resetPercentage();
+        }
 
-            power_.feedInactivityTimer();
-            if (state.state == ContentSyncState::Failure ||
-                state.state == ContentSyncState::Synced ||
-                state.state == ContentSyncState::AlreadySynced) {
-                log_d("Content sync failed, disconnecting WiFi and BLE");
-                WiFi::getInstance().disconnectWiFi();
-#if CONFIG_USE_BLE_SERVER_PROXY
-                auto bleManager = BLEManager::getInstance(false);
-                if (bleManager != nullptr) {
-                    bleManager->disconnectProxy();
-                }
-#endif
-            }
-            // Skip updates if the state is the same and the percentage isn't different (or if
-            // not enough time has elapsed)
-            if (state.state == state_.state) {
-                if (!rl->shouldExecute(state.percentage)) {
-                    return;
-                }
-            } else {
-                rl->resetPercentage();
-            }
+        // Do UI stuff back on core 1
+        log_d("Dispatching Content Sync UI update for state %d", state.state);
+        DispatchGetUiQueue()->dispatch([this, state, resumeBLE]() {
+            this->updateState(state);
+            this->render(this->display_);
 
-            // Do UI stuff back on core 1
-            log_d("Dispatching Content Sync UI update for state %d", state.state);
-            DispatchGetUiQueue()->dispatch([this, state, resumeBLE]() {
-                this->updateState(state);
-                this->render(this->display_);
-
-                if (state.state == ContentSyncState::Synced) {
-                    log_d("Content sync done, rebooting");
+            if (state.state == ContentSyncState::Synced) {
+                log_d("Content sync done, rebooting");
+                Delay(2000);
+                power_.reboot();
+            } else if (state.state == ContentSyncState::AlreadySynced) {
+                log_d("Content sync already synced");
+                Delay(2000);
+                resumeBLE();
+                back();
+            } else if (state.state == ContentSyncState::Failure) {
+                // If we got any new content force a restart, otherwise just go back
+                if (state.booksDownloaded > 0 || state.articlesDownloaded > 0) {
+                    log_d("Content sync failed, but we got new content, rebooting");
                     Delay(2000);
                     power_.reboot();
-                } else if (state.state == ContentSyncState::AlreadySynced) {
-                    log_d("Content sync already synced");
+                } else {
+                    log_d("Content sync failed, going back");
                     Delay(2000);
                     resumeBLE();
                     back();
-                } else if (state.state == ContentSyncState::Failure) {
-                    // If we got any new content force a restart, otherwise just go back
-                    if (state.booksDownloaded > 0 || state.articlesDownloaded > 0) {
-                        log_d("Content sync failed, but we got new content, rebooting");
-                        Delay(2000);
-                        power_.reboot();
-                    } else {
-                        log_d("Content sync failed, going back");
-                        Delay(2000);
-                        resumeBLE();
-                        back();
-                    }
                 }
-            });
+            }
         });
+    };
+
+    // Connect to WiFi
+    progressCallback(ContentSyncState{.state = ContentSyncState::State::ConnectingWifi});
+
+    bool wifiConnected = false;
+    bool bleConnected = false;
+    if (!WiFi::getInstance().connectWiFiFromSettings()) {
+        telemetry_.logMetric(TelemetryField::METRIC_WIFI, "sync-wifi-failed");
+#if !CONFIG_USE_BLE_SERVER_PROXY
+        progressCallback(ContentSyncState{.state = ContentSyncState::State::Failure,
+                                          .message = "Failed to connect to WiFi."});
+        return;
+#endif
+    } else {
+        wifiConnected = true;
+    }
+
+#if CONFIG_USE_BLE_SERVER_PROXY
+    if (!wifiConnected) {
+        if (!BLEManager::getInstance()->connectProxy(cancel_)) {
+            telemetry_.logMetric(TelemetryField::METRIC_WIFI, "sync-ble-failed");
+            progressCallback(ContentSyncState{.state = ContentSyncState::State::Failure,
+                                              .message = "Failed to connect to WiFi or BLE."});
+            return;
+        } else {
+            bleConnected = true;
+        }
+    }
+#endif
+
+    // Rate limit to not update more than every 1s, and only if the percentage has changed
+    DispatchGetCore0BackgroundQueue()->dispatch(
+        [this, rl, resumeBLE, wifiConnected, bleConnected, progressCallback]() {
+        bool syncSuccessful = false;
+        localStore_.syncFromRemote(&syncSuccessful, wifiConnected, bleConnected, SyncReason::Manual,
+                                   cancel_, progressCallback);
     });
 }
