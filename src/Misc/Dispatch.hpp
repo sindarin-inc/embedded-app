@@ -75,8 +75,8 @@ public:
 
     // Fires up a task for only the purpose of running a single function.
     // Handy since you can use lambda captures with it.
-    static auto dispatchOneOff(const fp_t &op, size_t threadStack = 1024, UBaseType_t priority = 5,
-                               BaseType_t core = 1, const char *name = "OneOff") -> bool;
+    static auto dispatchOneOff(const fp_t &op, size_t threadStack, UBaseType_t priority,
+                               BaseType_t core, const char *name) -> bool;
     // Like dispatchOneOff, but waits for the function to complete before returning. Useful for
     // synchronously running things on other cores.
     static auto dispatchOneOffSync(const fp_t &op, size_t threadStack, UBaseType_t priority,

@@ -89,14 +89,17 @@ TEST_CASE("Run a basic content sync", "[.][content-sync]") {
     LocalStore localStore(fs, prefs, battery, telemetry);
 
     ContentSyncState lastState;
-    DispatchQueue::dispatchOneOff([&lastState, &localStore]() {
+    auto cancel = std::make_shared<CancelFlag>();
+
+    DispatchQueue::dispatchOneOff(
+        [&lastState, &localStore, cancel]() {
         // This needs to run in a task to have things like Delay work
-        localStore.syncFromRemote(SyncReason::Manual, nullptr,
-                                  [&lastState](ContentSyncState state) {
+        localStore.syncFromRemote(SyncReason::Manual, cancel, [&lastState](ContentSyncState state) {
             log_i("Test sync state: %d", state.state);
             lastState = state;
         });
-    });
+        },
+        8192, 1, 1, "contentsync");
 
     StartFreeRtos();
     std::shared_ptr<httplib::Server> server;
