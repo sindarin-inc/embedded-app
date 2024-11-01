@@ -1603,14 +1603,14 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
 
                 if (prefs_.allowUsageWhileCharging.get().value_or(false)) {
                     debugSettingsMenu->addMenuItem(
-                        std::make_shared<NewMenuItemSingleLine>("No use while charging", [this]() {
+                        std::make_shared<NewMenuItemSingleLine>("Disable while charging", [this]() {
                             prefs_.allowUsageWhileCharging.remove();
                             showTemporaryMessage("Disabling use while charging...",
                                                  [this]() { power_.reboot(); });
                         }));
                 } else {
                     debugSettingsMenu->addMenuItem(
-                        std::make_shared<NewMenuItemSingleLine>("Use while charging", [this]() {
+                        std::make_shared<NewMenuItemSingleLine>("Enable while charging", [this]() {
                             prefs_.allowUsageWhileCharging.set(true);
                             showTemporaryMessage("Enabling use while charging...",
                                                  [this]() { power_.reboot(); });
