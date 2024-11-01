@@ -11,9 +11,27 @@
 using MenuItemVector = std::vector<std::shared_ptr<NewMenuItem>>;
 using MenuItemSharedPtrVector = std::shared_ptr<MenuItemVector>;
 using MenuItemFactory = std::function<MenuItemSharedPtrVector()>;
-// The std::string is the currently selected item ID in that tab to cache that value.
-// The int is the max number of items per page for that tab.
-using CarouselMenuEntry = std::tuple<std::string, MenuItemFactory, int, std::string>;
+
+class CarouselMenuEntry {
+public:
+    CarouselMenuEntry(const std::string &tabName, const MenuItemFactory &factory,
+                      int maxItemsPerPage, const std::string &selectedItemId = "")
+        : tabName_(tabName), menuFactory_(factory), maxItemsPerPage_(maxItemsPerPage),
+          selectedItemId_(selectedItemId) {}
+
+    auto getTabName() const -> const std::string & { return tabName_; }
+    auto getMenuFactory() const -> const MenuItemFactory & { return menuFactory_; }
+    auto getMaxItemsPerPage() const -> int { return maxItemsPerPage_; }
+    auto getSelectedItemId() const -> const std::string & { return selectedItemId_; }
+
+    void setSelectedItemId(const std::string &id) { selectedItemId_ = id; }
+
+private:
+    std::string tabName_;         // Name displayed in the tab
+    MenuItemFactory menuFactory_; // Factory function to create menu items
+    int maxItemsPerPage_;         // Maximum number of items to display per page
+    std::string selectedItemId_;  // ID of currently selected item in this tab
+};
 
 // An abstract base class for a carousel menu screen. It handles the
 // adding of tabs and the selection of items but the subclasses must
@@ -49,7 +67,7 @@ public:
     void regenerateCurrentTab();
 
     auto getCurrentTabTitle() const -> std::string {
-        return std::get<0>(menuTabs_[currentTabIndex_]);
+        return menuTabs_[currentTabIndex_].getTabName();
     }
 
 protected:
