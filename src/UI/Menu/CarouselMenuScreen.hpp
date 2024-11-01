@@ -36,7 +36,13 @@ public:
 
     // Optionally override the row index for this tab with the rowIndex parameter.
     // By default, it'll go to the first row or the most recently selected item on that tab.
-    void setTabToTitle(const std::string &tabTitle, int rowIndex = -1);
+    void setTabWithName(const std::string &tabName, int rowIndex = -1);
+
+    // This one is for when you start in a readable and then we have to be able to set the main
+    // menu to that readable when you go back to it.
+    void setTabWithName(const std::string &tabName, std::string id);
+
+    auto isMenuIDInTab(const std::string &tabName, const std::string &id) -> bool;
 
     auto getNumTabs() const -> int { return menuTabs_.size(); }
 
