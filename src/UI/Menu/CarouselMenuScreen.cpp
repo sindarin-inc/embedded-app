@@ -10,9 +10,9 @@ void CarouselMenuScreen::addTab(const std::string &tabName, const MenuItemFactor
     menuTabs_.emplace_back(tabName, menuItemFactory, itemsPerPage, "");
 }
 
-void CarouselMenuScreen::setTabToTitle(const std::string &tabTitle, int rowIndex) {
+void CarouselMenuScreen::setTabWithName(const std::string &tabName, int rowIndex) {
     for (int i = 0; i < menuTabs_.size(); i++) {
-        if (menuTabs_[i].getTabName() == tabTitle) {
+        if (menuTabs_[i].getTabName() == tabName) {
             setCurrentTabIndex(i);
             if (rowIndex != -1) {
                 menuTabs_[i].setSelectedItemId(menuView_.getIDfromRowIndex(rowIndex));
@@ -21,6 +21,26 @@ void CarouselMenuScreen::setTabToTitle(const std::string &tabTitle, int rowIndex
             return;
         }
     }
+}
+
+void CarouselMenuScreen::setTabWithName(const std::string &tabName, std::string id) {
+    for (int i = 0; i < menuTabs_.size(); i++) {
+        if (menuTabs_[i].getTabName() == tabName) {
+            setCurrentTabIndex(i);
+            menuTabs_[i].setSelectedItemId(std::move(id));
+            menuView_.setSelectedByMenuItemID(menuTabs_[i].getSelectedItemId());
+            return;
+        }
+    }
+}
+
+auto CarouselMenuScreen::isMenuIDInTab(const std::string &tabName, const std::string &id) -> bool {
+    for (auto &menuTab : menuTabs_) {
+        if (menuTab.getTabName() == tabName) {
+            return menuView_.isIDInMenu(id);
+        }
+    }
+    return false;
 }
 
 void CarouselMenuScreen::regenerateCurrentTab() { setCurrentTabIndex(getCurrentTabIndex()); }
