@@ -10,6 +10,7 @@
 using namespace renderer_defs;
 
 #define FOOTNOTE_PROFILING 1
+#define FOOTNOTE_DEBUGGING 1
 
 #if FOOTNOTE_PROFILING
 #define FOOTNOTE_PROFILE_START(v) PROFILE_START(v)
@@ -17,6 +18,14 @@ using namespace renderer_defs;
 #else
 #define FOOTNOTE_PROFILE_START(v)
 #define FOOTNOTE_PROFILE_END(v)
+#endif
+
+const constexpr bool FootnoteDebugging =
+
+#if FOOTNOTE_DEBUGGING
+    true;
+#else
+    false;
 #endif
 
 class Footnote {
@@ -58,12 +67,10 @@ private:
      * attribute, the filename contains relative constructs ("../xxxx" or "xxxx/../xxx"). Can also
      * contain characters in a hexadecimal format (like %xx).
      *
-     * @param filename The filename to filter
+     * @param filename [in/out] The filename to filter
      * @param currentFolder The folder where the chapter file is located, from the manifest
-     * @return SpiramString The filtered filename
      */
-    [[nodiscard]] auto cleanupPath(const char *filename,
-                                   const char *currentFolder) -> std::shared_ptr<SpiramString>;
+    void cleanupPath(SpiramString &filename, const char *currentFolder) const;
 
 public:
     /**
@@ -91,10 +98,14 @@ public:
      * without their content.
      *
      * @param href Anchor's href that point at the note location.
+     * @param stream The EPub file to validate heuristics on anchor validity.
      * @param streamPlace Tag location in the chapter.
+     * @param idsInSpine Map of ids present in current spine before current location.
      * @return true The footnote has been added successfully.
      */
-    [[nodiscard]] auto addEntry(const char *href, StreamPlace streamPlace) -> bool;
+    [[nodiscard]] auto addEntry(const char *href, const std::shared_ptr<EPubFile> &stream,
+                                StreamPlace streamPlace,
+                                const SpiramMap<SpiramString, uint32_t> &idsInSpine) -> bool;
 
     /**
      * @brief Retrieve notes content
@@ -108,12 +119,12 @@ public:
      */
     [[nodiscard]] auto retrieveNotes(const std::shared_ptr<EPubFile> &stream) -> bool;
 
-    [[nodiscard]] inline auto isEmpty() -> bool const { return footnotes_.empty(); }
+    [[nodiscard]] inline auto isEmpty() const -> bool { return footnotes_.empty(); }
 
     inline void clear() { footnotes_.clear(); }
 
-    [[nodiscard]] auto getFootnoteHTML(int index) -> std::shared_ptr<SpiramString> const;
-    [[nodiscard]] auto getAllFootnotesHTML() -> std::shared_ptr<SpiramString> const;
+    [[nodiscard]] auto getFootnoteHTML(int index) const -> std::shared_ptr<SpiramString>;
+    [[nodiscard]] auto getAllFootnotesHTML() const -> std::shared_ptr<SpiramString>;
 
     // Debugging code
 

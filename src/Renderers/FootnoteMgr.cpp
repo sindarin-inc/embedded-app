@@ -2,58 +2,22 @@
 
 #include <sstream>
 
-auto FootnoteMgr::addEntry(const char *href, StreamPlace streamPlace) -> bool {
-
-    if (href == nullptr) {
-        log_e("href is null!!");
-        return false;
-    }
-
-    SpiramString id{""}, filename{""};
-
-    const char *ptr = href;
-    while ((*ptr != '\0') && (*ptr != '#')) {
-        filename.push_back(*ptr++);
-    }
-
-    if ((*ptr == '\0') || (*ptr != '#')) {
-        // log_e("Invalid href: %s", href);
-        return false;
-    }
-
-    ptr += 1; // pass the '#'
-    if (*ptr == '\0') {
-        // log_e("Invalid Id after '#': %s", href);
-        return false;
-    }
-
-    while (*ptr != '\0') {
-        id.push_back(*ptr++);
-    }
-
-    footnotes_.push_back(SpiRamPtr<Footnote>(streamPlace, id, filename, SpiramString{}, false));
-
-    return true;
-}
-
 #define HEXTONIBBLE(c) ((c) >= 'A' ? ((c) >= 'a' ? ((c) - 'a') : ((c) - 'A')) + 10 : ((c) - '0'))
 
-auto FootnoteMgr::cleanupPath(const char *filename,
-                              const char *currentFolder) -> std::shared_ptr<SpiramString> {
+void FootnoteMgr::cleanupPath(SpiramString &filename, const char *currentFolder) const {
     // Allocate memory for the result
-    auto cleanedPath = std::make_shared<SpiramString>();
     SpiramString fullPath{};
     bool absolute{false};
 
     // If filename starts with '/', it is an absolute path
     if (filename[0] == '/') {
-        fullPath = filename;
+        fullPath = filename.c_str();
         absolute = true;
     } else {
         // Create a combined path
         fullPath = currentFolder;
         fullPath.push_back('/');
-        fullPath.append(filename);
+        fullPath.append(filename.c_str());
     }
 
     std::vector<SpiramString> tokens;
@@ -61,7 +25,7 @@ auto FootnoteMgr::cleanupPath(const char *filename,
 
     SpiramString s;
     while (std::getline(f, s, '/')) {
-        std::cout << "-> " << s << std::endl;
+        //  std::cout << "-> " << s << std::endl;
         if (s.empty()) {
         } else if (s == "..") {
             if (!tokens.empty()) {
@@ -84,19 +48,91 @@ auto FootnoteMgr::cleanupPath(const char *filename,
     }
 
     // Rebuild the cleaned path
+    filename.clear();
     if (absolute) {
-        cleanedPath->push_back('/');
+        filename.push_back('/');
     }
     for (auto &token : tokens) {
-        cleanedPath->append(token);
-        cleanedPath->push_back('/');
+        filename.append(token);
+        filename.push_back('/');
     }
 
-    cleanedPath->pop_back();
+    filename.pop_back();
 
-    std::cout << "Cleaned path: " << *cleanedPath << std::endl;
+    // std::cout << "Cleaned path: " << *filename << std::endl;
+}
 
-    return cleanedPath;
+auto FootnoteMgr::addEntry(const char *href, const std::shared_ptr<EPubFile> &stream,
+                           StreamPlace streamPlace,
+                           const SpiramMap<SpiramString, uint32_t> &idsInSpine) -> bool {
+
+    if ((href == nullptr) || (href[0] == '\0')) {
+        if constexpr (FootnoteDebugging) {
+            log_e("href is empty!!");
+        }
+        return false;
+    }
+
+    SpiramString id{""}, filename{""};
+
+    const char *ptr = href;
+    while ((*ptr != '\0') && (*ptr != '#')) {
+        filename.push_back(*ptr++);
+    }
+
+    if (filename.empty()) {
+        // This happen when a href contains only a '#' followed by the id. This means that
+        // the footnote his in the same spine.
+        filename = stream->getSpine(streamPlace.getSpineIdx()).item->href.c_str();
+    } else {
+        cleanupPath(filename,
+                    stream->getSpineRelativeFolderPath(streamPlace.getSpineIdx()).c_str());
+        SpineIdx spineIdx = stream->getSpineIdx(filename.c_str());
+        if (spineIdx < streamPlace.getSpineIdx()) {
+            // Heuristic part 1: a footnote anchor cannot be pointing at a previous location.
+            if constexpr (FootnoteDebugging) {
+                log_w("Potential Footnote at spineIdx %d is locate before current location %s. "
+                      "Rejected!",
+                      spineIdx, streamPlace.str().c_str());
+            }
+            return false;
+        }
+    }
+
+    if ((*ptr == '\0') || (*ptr != '#')) {
+        if constexpr (FootnoteDebugging) {
+            log_e("Invalid href: %s", href);
+        }
+        return false;
+    }
+
+    ptr += 1; // pass the '#'
+    if (*ptr == '\0') {
+        if constexpr (FootnoteDebugging) {
+            log_e("Invalid Id after '#': %s", href);
+        }
+        return false;
+    }
+
+    while (*ptr != '\0') {
+        id.push_back(*ptr++);
+    }
+
+    // If the anchor point at a location preceding in the spine, it is considered non-valid
+    auto it = idsInSpine.find(id);
+    if ((it != idsInSpine.end()) && (it->second < streamPlace.getOffset())) {
+        // Heuristic part 2: a footnote anchor cannot be pointing at a previous location.
+        if constexpr (FootnoteDebugging) {
+            log_w("Potential Footnote at offset %" PRIu32
+                  " is locate before current location %s. Rejected!",
+                  it->second, streamPlace.str().c_str());
+        }
+        return false;
+    }
+
+    footnotes_.push_back(SpiRamPtr<Footnote>(streamPlace, id, filename, SpiramString{}, false));
+
+    return true;
 }
 
 auto FootnoteMgr::parseChapter(const std::shared_ptr<EPubFile> &stream, SpineIdx spineIdx) -> bool {
@@ -123,27 +159,38 @@ auto FootnoteMgr::parseChapter(const std::shared_ptr<EPubFile> &stream, SpineIdx
         struct Interpret : pugi::xml_tree_walker {
             SpineIdx currentSpineIdx{};
             FootnoteMgr *footnoteMgr{};
+            const std::shared_ptr<EPubFile> *stream;
+            SpiramMap<SpiramString, uint32_t> idsInSpine;
 
             auto for_each(pugi::xml_node &node) -> bool override {
                 if (node.type() == pugi::node_element) {
 
                     bool result = true;
 
+                    SpiramString id = node.attribute("id").value();
+                    if (!id.empty()) {
+                        idsInSpine[id] = node.offset_debug();
+                    }
                     if (strcmp(node.name(), "sup") == 0) {
+                        // case 1: <sup><a href ="xxx">yyy</a></sup>
                         const char *href = node.child("a").attribute("href").value();
                         if (href[0] != '\0') {
                             result = footnoteMgr->addEntry(
-                                href,
-                                {static_cast<uint32_t>(node.offset_debug()), currentSpineIdx});
+                                href, *stream,
+                                {static_cast<uint32_t>(node.offset_debug()), currentSpineIdx},
+                                idsInSpine);
                         }
                     } else if (strcmp(node.name(), "a") == 0) {
+                        // case 2: <a href="xxx"><sup>yyy</sup></a>
+                        // case 3: <a href="xxx" id="iii">yyy</a>
                         const char *href = node.attribute("href").value();
                         if ((href[0] != '0') && (strncmp(href, "http://", 7) != 0) &&
                             (strncmp(href, "https://", 8) != 0)) {
                             if (node.attribute("id") || node.child("sup")) {
                                 result = footnoteMgr->addEntry(
-                                    href,
-                                    {static_cast<uint32_t>(node.offset_debug()), currentSpineIdx});
+                                    href, *stream,
+                                    {static_cast<uint32_t>(node.offset_debug()), currentSpineIdx},
+                                    idsInSpine);
                             }
                             // if (node.child("sup") && (href[0] != '\0')) {
                             //     result = footnoteMgr->addEntry(
@@ -155,20 +202,25 @@ auto FootnoteMgr::parseChapter(const std::shared_ptr<EPubFile> &stream, SpineIdx
                     }
 
                     if (!result) {
-                        log_w("Footnote entry not added.");
+                        if constexpr (FootnoteDebugging) {
+                            log_w("Footnote entry not added.");
+                        }
                     }
                 }
 
                 return true;
             }
 
-            void setup(SpineIdx spineIdx, FootnoteMgr *mgr) {
+            void setup(SpineIdx spineIdx, FootnoteMgr *mgr,
+                       const std::shared_ptr<EPubFile> &stream) {
                 currentSpineIdx = spineIdx;
                 footnoteMgr = mgr;
+                this->stream = &stream;
+                idsInSpine.clear();
             }
         } interpret;
 
-        interpret.setup(currentSpineIdx_, this);
+        interpret.setup(currentSpineIdx_, this, stream);
 
         if (node) {
             do {
@@ -176,7 +228,9 @@ auto FootnoteMgr::parseChapter(const std::shared_ptr<EPubFile> &stream, SpineIdx
                 node = node.next_sibling();
             } while (node);
         } else {
-            log_w("HTML file %s is empty.", spineItem.item->href.c_str());
+            if constexpr (FootnoteDebugging) {
+                log_w("HTML file %s is empty.", spineItem.item->href.c_str());
+            }
         }
 
         if (!node) {
@@ -194,13 +248,12 @@ auto FootnoteMgr::parseChapter(const std::shared_ptr<EPubFile> &stream, SpineIdx
 
     FOOTNOTE_PROFILE_END(parseChapter);
 
-    // This is for debugging
-
-    // if (!retrieveNotes(stream)) {
-    //     log_e("Unable to retrieve all footnotes");
-    // }
-    // show();
-
+    if constexpr (FootnoteDebugging) {
+        if (!retrieveNotes(stream)) {
+            log_e("Unable to retrieve all footnotes");
+            show();
+        }
+    }
     return true;
 }
 
@@ -214,15 +267,6 @@ auto FootnoteMgr::retrieveNotes(const std::shared_ptr<EPubFile> &stream) -> bool
 
     int idx = 0;
     for (auto &entry : footnotes_) {
-        if (entry->filename.empty()) {
-            // This happen when a href contains only a '#' followed by the id. This means that
-            // the footnote his in the chapter's spine.
-            entry->filename = stream->getSpine(entry->streamPlace.getSpineIdx()).item->href.c_str();
-        } else {
-            entry->filename = *cleanupPath(
-                entry->filename.c_str(),
-                stream->getSpineRelativeFolderPath(entry->streamPlace.getSpineIdx()).c_str());
-        }
         filenames.insert(entry->filename.c_str());
         idMap[entry->id.c_str()] = idx++;
     }
@@ -280,7 +324,9 @@ auto FootnoteMgr::retrieveNotes(const std::shared_ptr<EPubFile> &stream) -> bool
         pugi::xml_document doc;
         auto [buffer, length] = stream->getFile(stream->getFullPath(entryFilename));
         if (buffer != nullptr) {
-            // log_i("File %s, length = %" PRIu32 " ...", entryFilename.c_str(), length);
+            if constexpr (FootnoteDebugging) {
+                log_i("File %s, length = %" PRIu32 " ...", entryFilename.c_str(), length);
+            }
             pugi::xml_parse_result result = doc.load_buffer_inplace(
                 buffer.get(), length,
                 (pugi::parse_default | pugi::parse_ws_pcdata) & ~pugi::parse_escapes);
@@ -292,18 +338,24 @@ auto FootnoteMgr::retrieveNotes(const std::shared_ptr<EPubFile> &stream) -> bool
                     body.traverse(fileWalker);
 
                 } else {
-                    log_e("<body> tag not found in %s.", entryFilename.c_str());
+                    if constexpr (FootnoteDebugging) {
+                        log_e("<body> tag not found in %s.", entryFilename.c_str());
+                    }
                     status = false;
                     break;
                 }
             } else {
-                log_e("Unable to parse file %s with pugixml.",
-                      stream->getFullPath(entryFilename).c_str());
+                if constexpr (FootnoteDebugging) {
+                    log_e("Unable to parse file %s with pugixml.",
+                          stream->getFullPath(entryFilename).c_str());
+                }
                 status = false;
                 break;
             }
         } else {
-            log_e("Unable to retrieve file %s.", stream->getFullPath(entryFilename).c_str());
+            if constexpr (FootnoteDebugging) {
+                log_e("Unable to retrieve file %s.", stream->getFullPath(entryFilename).c_str());
+            }
             status = false;
             break;
         }
@@ -314,7 +366,7 @@ auto FootnoteMgr::retrieveNotes(const std::shared_ptr<EPubFile> &stream) -> bool
     return status;
 }
 
-auto FootnoteMgr::getFootnoteHTML(int index) -> std::shared_ptr<SpiramString> const {
+auto FootnoteMgr::getFootnoteHTML(int index) const -> std::shared_ptr<SpiramString> {
     auto result = std::make_shared<SpiramString>();
 
     result->assign("<?xml version='1.0' encoding='utf-8'?><!DOCTYPE html><html><head/><body>");
@@ -330,7 +382,7 @@ auto FootnoteMgr::getFootnoteHTML(int index) -> std::shared_ptr<SpiramString> co
     return result;
 }
 
-auto FootnoteMgr::getAllFootnotesHTML() -> std::shared_ptr<SpiramString> const {
+auto FootnoteMgr::getAllFootnotesHTML() const -> std::shared_ptr<SpiramString> {
     auto result = std::make_shared<SpiramString>();
 
     result->assign("<?xml version='1.0' encoding='utf-8'?><!DOCTYPE html><html><head/><body>");
