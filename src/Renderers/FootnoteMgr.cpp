@@ -37,12 +37,16 @@ void FootnoteMgr::cleanupPath(SpiramString &filename, const char *currentFolder)
             int pos = -1;
             int lastPos = -1;
             while ((pos = s.find('%', pos + 1)) != -1) {
-                if (pos != lastPos) t.append(s.substr(lastPos + 1, pos - (lastPos + 1)));
+                if (pos != lastPos) {
+                    t.append(s.substr(lastPos + 1, pos - (lastPos + 1)));
+                }
                 t.push_back(static_cast<char>(HEXTONIBBLE(s[pos + 1]) << 4) +
                             HEXTONIBBLE(s[pos + 2]));
                 pos = lastPos = pos + 2;
             }
-            if ((lastPos + 1) < s.size()) t.append(s.substr(lastPos + 1, s.size() - lastPos + 1));
+            if ((lastPos + 1) < s.size()) {
+                t.append(s.substr(lastPos + 1, s.size() - lastPos + 1));
+            }
             tokens.push_back(t);
         }
     }
