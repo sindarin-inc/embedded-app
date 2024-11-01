@@ -33,7 +33,7 @@ public:
     auto getBatteryPercentage() -> float;
 
     // Less than ~10% of time remaining
-    auto batteryVeryLow() -> bool { return getBatteryPercentageInVolts() <= 25.0; }
+    auto batteryVeryLow() -> bool { return getBatteryPercentage() <= 25.0; }
 
     [[nodiscard]] auto getDepleted() const -> bool;
 
