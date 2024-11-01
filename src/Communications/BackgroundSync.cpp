@@ -24,9 +24,8 @@ auto BackgroundSyncWithTransport(PowerManager &powerManager, PreferencesStore &p
     // Create a notification group to wait for background tasks
     log_d("Background sync starting with wifi: %d, ble: %d", useWifi, useBle);
     auto wifiConnected = false;
-#if CONFIG_USE_BLE_SERVER_PROXY
     auto bleConnected = false;
-#endif
+
     auto backgroundGroup = xEventGroupCreate();
     defer {
         vEventGroupDelete(backgroundGroup);

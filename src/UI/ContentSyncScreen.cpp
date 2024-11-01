@@ -338,38 +338,37 @@ void ContentSyncScreen::begin() {
         });
     };
 
-    // Connect to WiFi
-    progressCallback(ContentSyncState{.state = ContentSyncState::State::ConnectingWifi});
+    // Rate limit to not update more than every 1s, and only if the percentage has changed
+    DispatchGetCore0BackgroundQueue()->dispatch([this, rl, progressCallback]() {
+        // Connect to WiFi
+        progressCallback(ContentSyncState{.state = ContentSyncState::State::ConnectingWifi});
 
-    bool wifiConnected = false;
-    bool bleConnected = false;
-    if (!WiFi::getInstance().connectWiFiFromSettings()) {
-        telemetry_.logMetric(TelemetryField::METRIC_WIFI, "sync-wifi-failed");
+        bool wifiConnected = false;
+        bool bleConnected = false;
+        if (!WiFi::getInstance().connectWiFiFromSettings()) {
+            telemetry_.logMetric(TelemetryField::METRIC_WIFI, "sync-wifi-failed");
 #if !CONFIG_USE_BLE_SERVER_PROXY
-        progressCallback(ContentSyncState{.state = ContentSyncState::State::Failure,
-                                          .message = "Failed to connect to WiFi."});
-        return;
+            progressCallback(ContentSyncState{.state = ContentSyncState::State::Failure,
+                                              .message = "Failed to connect to WiFi."});
+            return;
 #endif
-    } else {
-        wifiConnected = true;
-    }
+        } else {
+            wifiConnected = true;
+        }
 
 #if CONFIG_USE_BLE_SERVER_PROXY
-    if (!wifiConnected) {
-        if (!BLEManager::getInstance()->connectProxy(cancel_)) {
-            telemetry_.logMetric(TelemetryField::METRIC_WIFI, "sync-ble-failed");
-            progressCallback(ContentSyncState{.state = ContentSyncState::State::Failure,
-                                              .message = "Failed to connect to WiFi or BLE."});
-            return;
-        } else {
-            bleConnected = true;
+        if (!wifiConnected) {
+            if (!BLEManager::getInstance()->connectProxy(cancel_)) {
+                telemetry_.logMetric(TelemetryField::METRIC_WIFI, "sync-ble-failed");
+                progressCallback(ContentSyncState{.state = ContentSyncState::State::Failure,
+                                                  .message = "Failed to connect to WiFi or BLE."});
+                return;
+            } else {
+                bleConnected = true;
+            }
         }
-    }
 #endif
 
-    // Rate limit to not update more than every 1s, and only if the percentage has changed
-    DispatchGetCore0BackgroundQueue()->dispatch(
-        [this, rl, resumeBLE, wifiConnected, bleConnected, progressCallback]() {
         bool syncSuccessful = false;
         localStore_.syncFromRemote(&syncSuccessful, wifiConnected, bleConnected, SyncReason::Manual,
                                    cancel_, progressCallback);
