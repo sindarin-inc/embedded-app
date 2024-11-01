@@ -421,7 +421,7 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
             int welcomeTabIndex = welcomeIndex();
             if (welcomeTabIndex != 4) {
                 std::static_pointer_cast<NewMainMenuScreen>(currentScreen())
-                    ->setTabToTitle("Welcome", welcomeTabIndex);
+                    ->setTabWithName("Welcome", welcomeTabIndex);
             } else {
                 this->prefs_.dontShowWelcome.set(true);
                 std::static_pointer_cast<NewMainMenuScreen>(currentScreen())->setCurrentTabIndex(1);
@@ -2082,15 +2082,15 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
 
                 // Note that this is fragile in how the id is cacluated from NewMenuItemBook and
                 // NewMenuItemArticle. If those change, this will break.
-                if (newMainMenu->isTitleInTab("Recent", (*it)->shortenedUuid.c_str())) {
-                    newMainMenu->setTabToTitle("Recent", (*it)->shortenedUuid.c_str());
+                if (newMainMenu->isMenuIDInTab("Recent", (*it)->shortenedUuid.c_str())) {
+                    newMainMenu->setTabWithName("Recent", (*it)->shortenedUuid.c_str());
                 } else if (articlesIterator != articles.end()) {
-                    newMainMenu->setTabToTitle("Articles", (*it)->shortenedUuid.c_str());
+                    newMainMenu->setTabWithName("Articles", (*it)->shortenedUuid.c_str());
                 } else if (isBible(*it)) {
-                    newMainMenu->setTabToTitle("Bible", (*it)->shortenedUuid.c_str());
+                    newMainMenu->setTabWithName("Bible", (*it)->shortenedUuid.c_str());
                 } else {
                     log_d("Iterator shortened string is %s", (*it)->shortenedUuid.c_str());
-                    newMainMenu->setTabToTitle("Books", (*it)->shortenedUuid.c_str());
+                    newMainMenu->setTabWithName("Books", (*it)->shortenedUuid.c_str());
                 }
             } else {
                 showTemporaryMessage(itemErrorMsg_, TEMP_MSG_DURATION_NO_CLOSE);
@@ -2107,7 +2107,7 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
         bool forceShowWelcome = prefs_.forceShowWelcome.get().value_or(false);
 
         if (welcomeTabIndex != 4 || forceShowWelcome) {
-            newMainMenu->setTabToTitle("Welcome", forceShowWelcome ? 0 : welcomeTabIndex);
+            newMainMenu->setTabWithName("Welcome", forceShowWelcome ? 0 : welcomeTabIndex);
             // If we're always showing the welcome tab, or if we have a current readable we're about
             // to open, don't show the video
             if (forceShowWelcome || currentReadable.has_value()) {
@@ -2140,7 +2140,7 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
     // and clear out that pref.
     if (PreferencesStore::settingsOnRestart) {
         PreferencesStore::settingsOnRestart = false;
-        newMainMenu->setTabToTitle("Settings");
+        newMainMenu->setTabWithName("Settings");
     }
 
     renderIfNeeded();

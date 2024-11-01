@@ -39,13 +39,15 @@ public:
     }
 
     auto layout(LayoutContext &context, Size size) -> Size override {
-        Rect clockRect = {{0, 0}, {0, 0}};
-        Rect batteryRect = {{0, 0}, {0, 0}};
+        Rect clockRect = Rect::zero();
+        Rect batteryRect = Rect::zero();
 
+        int x = 0;
         if (SolClock::getInstance().isValidTime()) {
             clockRect =
                 context.setViewFrame(clockView_, {{0, 0}, size},
                                      LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical);
+            x += clockRect.size.width;
         }
 
         if (!batteryLow_ && batteryLow()) {
@@ -53,16 +55,17 @@ public:
         }
 
         if (batteryLow_) {
-            int batteryWidthPadding = (clockRect.size.width != 0) ? 10 : 0;
-            batteryRect = context.setViewFrame(
-                batteryIconView_, {{clockRect.size.width + batteryWidthPadding, 0}, size},
-                LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical);
+            // Add a little padding between the clock and the battery if there is a clock
+            if (x != 0) {
+                x += 10;
+            }
+            batteryRect =
+                context.setViewFrame(batteryIconView_, {{x, 0}, size},
+                                     LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical);
+            x += batteryRect.size.width;
         }
 
-        int widthPadding = ((clockRect.size.width != 0) && (batteryRect.size.width != 0)) ? 10 : 0;
-
-        return {clockRect.size.width + batteryRect.size.width + widthPadding,
-                std::max(clockRect.size.height, batteryRect.size.height)};
+        return {x, std::max(clockRect.size.height, batteryRect.size.height)};
     }
 
     void drawInRect(Rect rect) override {
