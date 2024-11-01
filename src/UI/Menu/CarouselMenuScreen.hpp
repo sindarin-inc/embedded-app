@@ -1,5 +1,7 @@
 #pragma once
 
+#include <utility>
+
 #include "Displays/DisplaySystem.hpp"
 #include "Inputs/RemoteInput.hpp"
 #include "Misc/Platform.hpp"
@@ -14,15 +16,15 @@ using MenuItemFactory = std::function<MenuItemSharedPtrVector()>;
 
 class CarouselMenuEntry {
 public:
-    CarouselMenuEntry(const std::string &tabName, const MenuItemFactory &factory,
-                      int maxItemsPerPage, const std::string &selectedItemId = "")
-        : tabName_(tabName), menuFactory_(factory), maxItemsPerPage_(maxItemsPerPage),
-          selectedItemId_(selectedItemId) {}
+    CarouselMenuEntry(std::string tabName, MenuItemFactory factory, int maxItemsPerPage,
+                      std::string selectedItemId = "")
+        : tabName_(std::move(tabName)), menuFactory_(std::move(factory)),
+          maxItemsPerPage_(maxItemsPerPage), selectedItemId_(std::move(selectedItemId)) {}
 
-    auto getTabName() const -> const std::string & { return tabName_; }
-    auto getMenuFactory() const -> const MenuItemFactory & { return menuFactory_; }
-    auto getMaxItemsPerPage() const -> int { return maxItemsPerPage_; }
-    auto getSelectedItemId() const -> const std::string & { return selectedItemId_; }
+    [[nodiscard]] auto getTabName() const -> const std::string & { return tabName_; }
+    [[nodiscard]] auto getMenuFactory() const -> const MenuItemFactory & { return menuFactory_; }
+    [[nodiscard]] auto getMaxItemsPerPage() const -> int { return maxItemsPerPage_; }
+    [[nodiscard]] auto getSelectedItemId() const -> const std::string & { return selectedItemId_; }
 
     void setSelectedItemId(const std::string &id) { selectedItemId_ = id; }
 
@@ -60,7 +62,7 @@ public:
 
     // This one is for when you start in a readable and then we have to be able to set the main
     // menu to that readable when you go back to it.
-    void setTabWithName(const std::string &tabName, std::string id);
+    void setTabWithName(const std::string &tabName, const std::string &id);
 
     auto isMenuIDInTab(const std::string &tabName, const std::string &id) -> bool;
 

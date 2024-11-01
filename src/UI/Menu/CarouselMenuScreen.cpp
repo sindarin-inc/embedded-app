@@ -23,11 +23,11 @@ void CarouselMenuScreen::setTabWithName(const std::string &tabName, int rowIndex
     }
 }
 
-void CarouselMenuScreen::setTabWithName(const std::string &tabName, std::string id) {
+void CarouselMenuScreen::setTabWithName(const std::string &tabName, const std::string &id) {
     for (int i = 0; i < menuTabs_.size(); i++) {
         if (menuTabs_[i].getTabName() == tabName) {
             setCurrentTabIndex(i);
-            menuTabs_[i].setSelectedItemId(std::move(id));
+            menuTabs_[i].setSelectedItemId(id);
             menuView_.setSelectedByMenuItemID(menuTabs_[i].getSelectedItemId());
             return;
         }
