@@ -2096,9 +2096,11 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
         }
     }
 
+    bool showWelcomeVideo = false;
+
     // If we are in onboarding mode, show the entry bumper first
     if (!prefs_.dontShowWelcome.get().value_or(false)) {
-        bool showWelcomeVideo = true;
+        showWelcomeVideo = true;
         bool forceShowWelcome = prefs_.forceShowWelcome.get().value_or(false);
 
         if (welcomeTabIndex != 4 || forceShowWelcome) {
@@ -2129,6 +2131,10 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                 }
             });
         }
+    }
+
+    if (!showWelcomeVideo && power_.battery.batteryVeryLow()) {
+        showTemporaryMessage("Your battery is very low. Please charge your Sol Reader soon!", 4000);
     }
 
     // A settings changed caused this restart, so go to the settings tab
