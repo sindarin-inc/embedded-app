@@ -57,7 +57,7 @@ auto BackgroundSyncWithTransport(PowerManager &powerManager, PreferencesStore &p
 #endif
 
     // Check for firmware first (in case there's some super busted issue that needs fixing)
-    if (useWifi && wifiConnected) {
+    if (wifiConnected) {
         auto firmwareDownloader = std::make_shared<FirmwareDownloader>(prefs, cancel, true);
         firmwareDownloader->downloadFirmware([firmwareDownloader, &localStore, &backgroundGroup](
                                                  const FirmwareDownloadState &state) {
@@ -102,9 +102,9 @@ auto BackgroundSyncWithTransport(PowerManager &powerManager, PreferencesStore &p
 
     auto syncSuccessful = false;
 
-    localStore.syncFromRemote(
-        &syncSuccessful, wifiConnected, bleConnected, PreferencesStore::syncReason, cancel,
-        [&powerManager, &backgroundGroup, &telemetry](const ContentSyncState &state) {
+    localStore.syncFromRemote(wifiConnected, bleConnected, PreferencesStore::syncReason, cancel,
+                              [&powerManager, &backgroundGroup, &telemetry,
+                               &syncSuccessful](const ContentSyncState &state) {
         powerManager.feedInactivityTimer();
 
         if (state.state == ContentSyncState::Failure || state.state == ContentSyncState::Synced ||
@@ -116,9 +116,11 @@ auto BackgroundSyncWithTransport(PowerManager &powerManager, PreferencesStore &p
             } else if (state.state == ContentSyncState::Synced) {
                 telemetry.logMetric(TelemetryField::METRIC_SYNC_STATUS, "sync-success");
                 log_i("Content sync successful");
+                syncSuccessful = true;
             } else if (state.state == ContentSyncState::AlreadySynced) {
                 telemetry.logMetric(TelemetryField::METRIC_SYNC_STATUS, "sync-already-synced");
                 log_i("Content sync already synced");
+                syncSuccessful = true;
             } else {
                 return;
             }
@@ -126,7 +128,7 @@ auto BackgroundSyncWithTransport(PowerManager &powerManager, PreferencesStore &p
                 xEventGroupSetBits(backgroundGroup, 1);
             }
         }
-        });
+    });
     log_d("Background content sync finished, syncSuccessful: %d", syncSuccessful);
 
     // Wait for content sync to finish

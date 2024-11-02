@@ -1,5 +1,6 @@
 #include "ContentSyncScreen.hpp"
 
+#include <freertos/FreeRTOS.h>
 #if !SIMULATOR
 #include "Communications/BLEManager.hpp"
 #endif
@@ -276,70 +277,109 @@ void ContentSyncScreen::begin() {
     auto resumeBLE = [] {};
 #endif
 
+    // Rate limit to not update more than every 1s, and only if the percentage has changed
     auto rl = std::make_shared<RateLimiter>(1, 20, 1);
     cancel_ = std::make_shared<CancelFlag>();
-    auto progressCallback = [this, rl, resumeBLE](const ContentSyncState &state) {
-        log_d("Progress callback: %d%%", state.percentage);
+    DispatchGetCore0BackgroundQueue()->dispatch([this, rl, resumeBLE]() {
+        auto backgroundGroup = xEventGroupCreate();
+        defer {
+            log_d("Content sync deleting background group: %p", backgroundGroup);
+            vEventGroupDelete(backgroundGroup);
+            backgroundGroup = nullptr;
+        };
 
-        if (CancelFlag::isCancelled(cancel_)) {
-            return;
-        }
+        log_d("Content sync starting with background group: %p", backgroundGroup);
+        auto syncSuccessful = false;
+        auto progressCallback = [this, rl, resumeBLE, &syncSuccessful,
+                                 &backgroundGroup](const ContentSyncState &state) {
+            log_d("Progress callback: %d, %d%%", state.state, state.percentage);
 
-        power_.feedInactivityTimer();
-        if (state.state == ContentSyncState::Failure || state.state == ContentSyncState::Synced ||
-            state.state == ContentSyncState::AlreadySynced) {
-            log_d("Content sync failed, disconnecting WiFi and BLE");
-            WiFi::getInstance().disconnectWiFi();
-#if CONFIG_USE_BLE_SERVER_PROXY
-            auto bleManager = BLEManager::getInstance(false);
-            if (bleManager != nullptr) {
-                bleManager->disconnectProxy();
-            }
-#endif
-        }
-        // Skip updates if the state is the same and the percentage isn't different (or if
-        // not enough time has elapsed)
-        if (state.state == state_.state) {
-            if (!rl->shouldExecute(state.percentage)) {
+            if (CancelFlag::isCancelled(cancel_)) {
                 return;
             }
-        } else {
-            rl->resetPercentage();
-        }
 
-        // Do UI stuff back on core 1
-        log_d("Dispatching Content Sync UI update for state %d", state.state);
-        DispatchGetUiQueue()->dispatch([this, state, resumeBLE]() {
-            this->updateState(state);
-            this->render(this->display_);
-
-            if (state.state == ContentSyncState::Synced) {
-                log_d("Content sync done, rebooting");
-                Delay(2000);
-                power_.reboot();
-            } else if (state.state == ContentSyncState::AlreadySynced) {
-                log_d("Content sync already synced");
-                Delay(2000);
-                resumeBLE();
-                back();
-            } else if (state.state == ContentSyncState::Failure) {
-                // If we got any new content force a restart, otherwise just go back
-                if (state.booksDownloaded > 0 || state.articlesDownloaded > 0) {
-                    log_d("Content sync failed, but we got new content, rebooting");
-                    Delay(2000);
-                    power_.reboot();
-                } else {
-                    log_d("Content sync failed, going back");
-                    Delay(2000);
-                    resumeBLE();
-                    back();
+            power_.feedInactivityTimer();
+            if (state.state == ContentSyncState::Failure ||
+                state.state == ContentSyncState::Synced ||
+                state.state == ContentSyncState::AlreadySynced) {
+                log_d("Content sync failed, disconnecting WiFi and BLE");
+                WiFi::getInstance().disconnectWiFi();
+#if CONFIG_USE_BLE_SERVER_PROXY
+                auto bleManager = BLEManager::getInstance(false);
+                if (bleManager != nullptr) {
+                    bleManager->disconnectProxy();
                 }
+#endif
             }
-        });
-    };
+            // Skip updates if the state is the same and the percentage isn't different (or if
+            // not enough time has elapsed)
+            if (state.state == state_.state) {
+                if (!rl->shouldExecute(state.percentage)) {
+                    return;
+                }
+            } else {
+                rl->resetPercentage();
+            }
 
-    // Rate limit to not update more than every 1s, and only if the percentage has changed
-    DispatchGetCore0BackgroundQueue()->dispatch([this, rl, progressCallback]() {
+            // Do UI stuff back on core 1
+            log_d("Dispatching Content Sync UI update for state %d", state.state);
+#if CONFIG_USE_BLE_SERVER_PROXY
+            auto tryWithBle = !state.usedBle;
+#else
+            auto tryWithBle = false;
+#endif
+            if (state.state == ContentSyncState::Failure && tryWithBle) {
+                log_d("Content sync with wifi failed, trying again with BLE");
+                log_d("Wifi content sync done, setting background group bit: %p", backgroundGroup);
+                if (backgroundGroup != nullptr) {
+                    xEventGroupSetBits(backgroundGroup, 1);
+                }
+            } else {
+                DispatchGetUiQueue()->dispatch(
+                    [this, state, resumeBLE, &syncSuccessful, &backgroundGroup]() {
+                    this->updateState(state);
+                    this->render(this->display_);
+                    auto finished = false;
+
+                    if (state.state == ContentSyncState::Synced) {
+                        log_d("Content sync done, rebooting");
+                        syncSuccessful = true;
+                        Delay(2000);
+                        power_.reboot();
+                        finished = true;
+                    } else if (state.state == ContentSyncState::AlreadySynced) {
+                        log_d("Content sync already synced");
+                        syncSuccessful = true;
+                        Delay(2000);
+                        resumeBLE();
+                        back();
+                        finished = true;
+                    } else if (state.state == ContentSyncState::Failure) {
+                        // If we got any new content force a restart, otherwise just go back
+                        if (state.booksDownloaded > 0 || state.articlesDownloaded > 0) {
+                            log_d("Content sync failed, but we got new content, rebooting");
+                            Delay(2000);
+                            power_.reboot();
+                        } else {
+                            log_d("Content sync failed, going back");
+                            Delay(2000);
+                            resumeBLE();
+                            back();
+                        }
+                        finished = true;
+                    }
+
+                    if (finished) {
+                        log_d("Wifi content sync done, setting background group bit: %p",
+                              backgroundGroup);
+                        if (backgroundGroup != nullptr) {
+                            xEventGroupSetBits(backgroundGroup, 1);
+                        }
+                    }
+                });
+            }
+        };
+
         // Connect to WiFi
         progressCallback(ContentSyncState{.state = ContentSyncState::State::ConnectingWifi});
 
@@ -356,8 +396,24 @@ void ContentSyncScreen::begin() {
             wifiConnected = true;
         }
 
+        if (wifiConnected) {
+            localStore_.syncFromRemote(wifiConnected, bleConnected, SyncReason::Manual, cancel_,
+                                       progressCallback);
+        }
+        // Wait for wifi content sync to finish
+        log_d("Waiting for wifi content sync to finish: %p", backgroundGroup);
+        auto bits =
+            xEventGroupWaitBits(backgroundGroup, 1, pdTRUE, pdTRUE, pdMS_TO_TICKS(10 * 60 * 1000));
+        if (!(bits & 1)) {
+            CancelFlag::cancel(cancel_);
+            log_w("Wifi content sync timed out");
+        }
+        xEventGroupClearBits(backgroundGroup, 1);
+
+        log_d("Sync successful: %d, wifi connected: %d, attempting BLE sync", syncSuccessful,
+              wifiConnected);
 #if CONFIG_USE_BLE_SERVER_PROXY
-        if (!wifiConnected) {
+        if (!syncSuccessful || !wifiConnected) {
             if (!BLEManager::getInstance()->connectProxy(cancel_)) {
                 telemetry_.logMetric(TelemetryField::METRIC_WIFI, "sync-ble-failed");
                 progressCallback(ContentSyncState{.state = ContentSyncState::State::Failure,
@@ -365,12 +421,12 @@ void ContentSyncScreen::begin() {
                 return;
             } else {
                 bleConnected = true;
+                wifiConnected = false;
             }
+            WiFi::getInstance().disconnectWiFi(3000);
+            localStore_.syncFromRemote(wifiConnected, bleConnected, SyncReason::Manual, cancel_,
+                                       progressCallback);
         }
 #endif
-
-        bool syncSuccessful = false;
-        localStore_.syncFromRemote(&syncSuccessful, wifiConnected, bleConnected, SyncReason::Manual,
-                                   cancel_, progressCallback);
     });
 }

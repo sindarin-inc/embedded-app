@@ -67,6 +67,7 @@ struct ContentSyncState {
     int percentage{};
     int booksDownloaded{};
     int articlesDownloaded{};
+    bool usedBle = false;
 
     std::string message;
 
@@ -122,8 +123,8 @@ public:
     void resetReadablesArchivedChanged(const ReadablesVector &readables);
     void resetReadablesBookmarksChanged(const ReadablesVector &readables);
 
-    void syncFromRemote(bool *syncSuccessful, bool wifiConnected, bool bleConnected,
-                        SyncReason syncReason, const std::shared_ptr<CancelFlag> &cancel,
+    void syncFromRemote(bool wifiConnected, bool bleConnected, SyncReason syncReason,
+                        const std::shared_ptr<CancelFlag> &cancel,
                         const std::function<void(ContentSyncState state)> &progressCallback);
     auto processReadables(const ReadablesVector &readables, UserReadablesVector &serverReadables)
         -> std::pair<UserReadablesVector, UserReadablesVector>;
