@@ -163,7 +163,7 @@ auto FootnoteMgr::parseChapter(const std::shared_ptr<EPubFile> &stream, SpineIdx
         struct Interpret : pugi::xml_tree_walker {
             SpineIdx currentSpineIdx{};
             FootnoteMgr *footnoteMgr{};
-            const std::shared_ptr<EPubFile> *stream;
+            const std::shared_ptr<EPubFile> *stream{};
             SpiramMap<SpiramString, uint32_t> idsInSpine;
 
             auto for_each(pugi::xml_node &node) -> bool override {
