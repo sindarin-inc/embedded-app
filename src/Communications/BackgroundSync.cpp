@@ -228,8 +228,7 @@ void BackgroundSync(PowerManager &powerManager, PreferencesStore &prefs, LocalSt
     if (!syncSuccessful && !prefs.bleDisabled.get().value_or(false)) {
         // Disconnect from wifi if connected
         WiFi::getInstance().disconnectWiFi(3000);
-        syncSuccessful =
-            BackgroundSyncWithTransport(powerManager, prefs, localStore, telemetry, false, true);
+        BackgroundSyncWithTransport(powerManager, prefs, localStore, telemetry, false, true);
     }
 
     if (prefs.showDebugMenu.get().value_or(false)) {
