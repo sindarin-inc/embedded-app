@@ -247,10 +247,10 @@ auto mainLoop() -> bool {
                 saveBookImages(myDisplay, window, renderer);
                 break;
             case 'f':
-                testFootnoteMgrBatch();
+                testFootnoteMgrHTMLBatch();
                 break;
             case 'g':
-                showCurrentChapterFootnotes();
+                showCurrentChapterFootnotes(); // Not working yet
                 break;
             }
 

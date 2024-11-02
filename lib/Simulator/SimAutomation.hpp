@@ -30,4 +30,6 @@ void goForwardNumPages(DisplaySystem &display, SDL_Window *window, SDL_Renderer 
 
 void testFootnoteMgrBatch();
 
+void testFootnoteMgrHTMLBatch();
+
 void showCurrentChapterFootnotes();

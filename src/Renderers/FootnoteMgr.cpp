@@ -252,12 +252,6 @@ auto FootnoteMgr::parseChapter(const std::shared_ptr<EPubFile> &stream, SpineIdx
 
     FOOTNOTE_PROFILE_END(parseChapter);
 
-    if constexpr (FootnoteDebugging) {
-        if (!retrieveNotes(stream)) {
-            log_e("Unable to retrieve all footnotes");
-            show();
-        }
-    }
     return true;
 }
 
@@ -471,6 +465,85 @@ void FootnoteMgr::testEPubFiles() {
 
         stream->close();
     }
+
+    logStream.close();
+    std::cout << "Testing FootnoteMgr completed." << std::endl;
+}
+
+void FootnoteMgr::testEPubFilesHTML() {
+    bool error{false};
+    char *folder{nullptr};
+    std::string logFile{};
+
+    folder = getenv("FOOTNOTE_TEST_FOLDER");
+
+    if (folder == nullptr) {
+        std::cerr << "Please define environment variable FOOTNOTE_TEST_FOLDER where "
+                  << "EPub ebook files reside to be use for testing the FootnoteMgr." << std::endl;
+        error = true;
+    }
+
+    logFile.append(getenv("FOOTNOTE_TEST_LOGFILE"));
+
+    if (logFile.empty()) {
+        std::cerr << "Please define environment variable FOOTNOTE_TEST_LOGFILE where "
+                  << "the result log will be generated." << std::endl;
+        error = true;
+    }
+
+    if (error) {
+        return;
+    }
+
+    logFile.append(".html");
+
+    std::cout << "FOOTNOTE_TEST_FOLDER = " << folder << std::endl
+              << "FOOTNOTE_TEST_LOGFILE = " << logFile << std::endl;
+
+    std::ofstream logStream;
+
+    logStream.open(logFile);
+
+    for (const auto &entry : fs::directory_iterator(folder)) {
+        logStream
+            << "<?xml version='1.0' encoding='utf-8'?><!DOCTYPE html><html><head/><body><style "
+               "type=\"text/css\"> p {margin-bottom: 0.5em;  margin-top: -0.3em;} .warning { "
+               "color: orange } .error { color: red } </style>"
+            << std::endl;
+        logStream << "<br/><hr/><h1>" << entry.path().c_str() << "</h1>" << std::endl;
+
+        auto file = SFile(std::make_shared<VFSFile>(entry.path().c_str(), FILE_READ, false));
+        auto readable = std::make_shared<Readable>();
+        readable->readableType = "book";
+
+        auto stream = std::make_shared<EPubFile>(file, readable);
+
+        auto spineCount = stream->getSpineCount();
+        for (SpineIdx idx = 0; idx < spineCount; idx++) {
+            if (stream->spineIdxIsChapterStart(idx)) {
+                logStream << "<h2>Chapter at spineIdx " << idx << "</h2>" << std::endl;
+                if (!parseChapter(stream, idx)) {
+                    logStream << "<p class=\"error\"><b><i>Some errors parsing chapter.</i></b></p>"
+                              << std::endl;
+                } else if (!retrieveNotes(stream)) {
+                    logStream
+                        << "<p class=\"error\"><b><i>Some errors retrieving notes.<i/></b></p>"
+                        << std::endl;
+                }
+                if (isEmpty()) {
+                    logStream << "<p class=\"warning\"><b><i>No Footnote</i></b></p>" << std::endl;
+                } else {
+                    logStream << "<p><small>Entries count: " << footnotes_.size() << ".</small></p>"
+                              << std::endl;
+                }
+                show(logStream, true);
+            }
+        }
+
+        stream->close();
+    }
+
+    logStream << "<br/><hr/></body></html>" << std::endl;
 
     logStream.close();
     std::cout << "Testing FootnoteMgr completed." << std::endl;

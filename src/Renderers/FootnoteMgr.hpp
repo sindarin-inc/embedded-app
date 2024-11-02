@@ -10,7 +10,7 @@
 using namespace renderer_defs;
 
 #define FOOTNOTE_PROFILING 1
-#define FOOTNOTE_DEBUGGING 1
+#define FOOTNOTE_DEBUGGING 0
 
 #if FOOTNOTE_PROFILING
 #define FOOTNOTE_PROFILE_START(v) PROFILE_START(v)
@@ -21,7 +21,6 @@ using namespace renderer_defs;
 #endif
 
 const constexpr bool FootnoteDebugging =
-
 #if FOOTNOTE_DEBUGGING
     true;
 #else
@@ -42,13 +41,27 @@ public:
           filename(std::move(std::move(filename))), content(std::move(std::move(content))),
           contentFound(contentFound) {}
 
-    void show(int i, std::ostream &outstream = std::cout) {
-        SpiramString none = "<none>";
-        outstream << i << ": Id:" << id << " filename:" << (filename.empty() ? none : filename)
-                  << " chapter place:" << streamPlace.str() << std::endl
-                  << std::flush;
-        if (contentFound) {
-            outstream << "   Content:" << content << std::endl;
+    void show(int i, std::ostream &outstream = std::cout, bool html = false) {
+        SpiramString none = "[none]";
+        if (html) {
+            outstream << "<small><i>" << i << ": <b>Id</b>: " << id
+                      << " <b>Filename</b>: " << (filename.empty() ? none : filename)
+                      << " <b>Location</b>: " << streamPlace.str();
+            if (contentFound) {
+                outstream << " <b>Content</b>:" << "</i></small><br/>" << content;
+            } else {
+                outstream << " <b>Content: <span class=\"error\">Empty</span></b></i></small>";
+            }
+        } else {
+            outstream << i << ": Id: " << id
+                      << " Filename: " << (filename.empty() ? none : filename)
+                      << " Location: " << streamPlace.str() << std::endl
+                      << std::flush;
+            if (contentFound) {
+                outstream << "   Content:" << content << std::endl;
+            } else {
+                outstream << " Content: Empty" << std::endl;
+            }
         }
     }
 };
@@ -128,20 +141,17 @@ public:
 
     // Debugging code
 
-    void show(std::ostream &outstream = std::cout) {
-        if (footnotes_.empty()) {
-            outstream << "No footnote" << std::endl;
-        } else {
-            outstream << "FootNote Entries:" << std::endl << std::flush;
-
+    void show(std::ostream &outstream = std::cout, bool html = false) {
+        if (!footnotes_.empty()) {
             int i = 1;
             for (const std::shared_ptr<Footnote> &entry : footnotes_) {
-                entry->show(i++, outstream);
+                entry->show(i++, outstream, html);
             }
         }
     }
 
 #if SIMULATOR
     void testEPubFiles();
+    void testEPubFilesHTML();
 #endif
 };

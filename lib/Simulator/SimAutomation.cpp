@@ -219,6 +219,11 @@ void testFootnoteMgrBatch() {
     footnoteMgr.testEPubFiles();
 }
 
+void testFootnoteMgrHTMLBatch() {
+    FootnoteMgr footnoteMgr;
+    footnoteMgr.testEPubFilesHTML();
+}
+
 void showCurrentChapterFootnotes() {
 #if 0
     auto screen = UIGetCurrentScreen();
