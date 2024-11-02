@@ -48,7 +48,8 @@ public:
                       << " <b>Filename</b>: " << (filename.empty() ? none : filename)
                       << " <b>Location</b>: " << streamPlace.str();
             if (contentFound) {
-                outstream << " <b>Content</b>:" << "</i></small><br/>" << content;
+                outstream << " <b>Content</b>:"
+                          << "</i></small><br/>" << content;
             } else {
                 outstream << " <b>Content: <span class=\"error\">Empty</span></b></i></small>";
             }
