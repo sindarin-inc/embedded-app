@@ -69,5 +69,4 @@ void CrashUploader::uploadCrash(
     }
 
     progressCallback(CrashUploadState{.state = CrashUploadState::State::Done});
-    return;
 }
