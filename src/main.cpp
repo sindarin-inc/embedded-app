@@ -380,7 +380,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
             vTaskDelete(nullptr);
             },
             "BackgroundPowerLoop", 4096, nullptr, 1, nullptr, 1);
-        BackgroundSyncAndSleep(powerManager, prefs, localStore, telemetry);
+        BackgroundSyncAndSleep(powerManager, prefs, localStore, telemetry, fileSystem);
 
         // Should never get here, the system should be asleep
         return;
@@ -444,14 +444,14 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
             [](void *) {
             while (powerManager.state() != PowerState::ShuttingDown) {
                 PreferencesStore::syncReason = SyncReason::Periodic;
-                BackgroundSync(powerManager, prefs, localStore, telemetry);
+                BackgroundSync(powerManager, prefs, localStore, telemetry, fileSystem);
                 vTaskDelay(60000 / portTICK_PERIOD_MS);
             }
             log_d("Sync loop task exited");
             SHOW_WATERMARK();
             vTaskDelete(nullptr);
             },
-            "BackgroundSync", 4096, nullptr, 1, nullptr, 1);
+            "BackgroundSync", 8192, nullptr, 1, nullptr, 0);
     }
 
 #if CONFIG_USE_TURN_TOUCH_REMOTE || CONFIG_USE_BLE_SERVER_REMOTE
