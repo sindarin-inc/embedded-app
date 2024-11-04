@@ -177,7 +177,8 @@ void BackgroundSyncAndSleep(PowerManager &powerManager, PreferencesStore &prefs,
         [&powerManager, &prefs, &localStore, &telemetry, &fileSystem]() {
         BackgroundSync(powerManager, prefs, localStore, telemetry, fileSystem);
         },
-        8192, 1, 0, "Sync", pdMS_TO_TICKS(15000));
+        8192, 1, 0, "Sync", pdMS_TO_TICKS(15 * 60 * 1000));
+
     BackgroundSyncCancel();
 
     WiFi::getInstance().disconnectWiFi(3000);
