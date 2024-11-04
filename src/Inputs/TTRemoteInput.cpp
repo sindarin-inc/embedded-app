@@ -215,7 +215,7 @@ void TTRemoteInput::scanForPairedDevice() {
 }
 
 void TTRemoteInput::scanForDevice() {
-    DigitalWrite(CONFIG_BLUE_LED, LED_ON);
+    TurnOnBlueLED();
     auto address = this->prefs_.pairedTurnTouchAddress.get();
     if (address.has_value()) {
         log_i("Scanning for paired PageTurner %s", std::string(address.value()).c_str());
@@ -225,7 +225,7 @@ void TTRemoteInput::scanForDevice() {
         scanForNewDevice();
     }
     lastScanMs_ = Millis();
-    DigitalWrite(CONFIG_BLUE_LED, LED_OFF);
+    TurnOffBlueLED();
 }
 
 void TTRemoteInput::buttonNotificationCallback(BLERemoteCharacteristic *remoteCharacteristic,

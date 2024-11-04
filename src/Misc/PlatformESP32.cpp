@@ -237,21 +237,22 @@ void InitializePlatform() {
 #ifdef DISPLAY_POWER
     PinMode(DISPLAY_POWER, OUTPUT);
 #endif
+    esp_err_t err;
+
 #if CONFIG_LEDC_BACKLIGHT
     // This allows LEDC to work in light sleep on ESP32-S3
-    esp_err_t err = esp_sleep_pd_config(ESP_PD_DOMAIN_RC_FAST, ESP_PD_OPTION_ON);
+    err = esp_sleep_pd_config(ESP_PD_DOMAIN_RC_FAST, ESP_PD_OPTION_ON);
 
     if (err != ESP_OK) {
         log_e("Error configuring esp_sleep_pd_config: %s", esp_err_to_name(err));
     }
 
-    // Backlight configs
-    ledc_timer_config_t ledcTimer = {.speed_mode = LEDC_LOW_SPEED_MODE,
-                                     .duty_resolution = LEDC_TIMER_8_BIT,
-                                     .timer_num = LEDC_TIMER_0,
-                                     .freq_hz = 1000,
-                                     .clk_cfg = LEDC_USE_RC_FAST_CLK};
-    err = ledc_timer_config(&ledcTimer);
+    ledc_timer_config_t ledcBacklightTimer = {.speed_mode = LEDC_LOW_SPEED_MODE,
+                                              .duty_resolution = LEDC_TIMER_8_BIT,
+                                              .timer_num = LEDC_TIMER_0,
+                                              .freq_hz = 1000,
+                                              .clk_cfg = LEDC_USE_RC_FAST_CLK};
+    err = ledc_timer_config(&ledcBacklightTimer);
     if (err != ESP_OK) {
         log_e("Error configuring LEDC timer: %s", esp_err_to_name(err));
         ledcFailed = true;
@@ -278,7 +279,7 @@ void InitializePlatform() {
     };
 
     err = ledc_channel_config(&ledcLChannel);
-    if (ledc_channel_config(&ledcLChannel) != ESP_OK) {
+    if (err != ESP_OK) {
         log_e("Error configuring left LEDC: %s", esp_err_to_name(err));
         ledcFailed = true;
     }
@@ -296,6 +297,73 @@ void InitializePlatform() {
         return;
     }
 #endif
+
+#if CONFIG_PWM_LEDS
+
+    ledc_timer_config_t ledcRGBLEDTimer = {.speed_mode = LEDC_LOW_SPEED_MODE,
+                                           .duty_resolution = LEDC_TIMER_8_BIT,
+                                           .timer_num = LEDC_TIMER_1,
+                                           .freq_hz = 1000,
+                                           .clk_cfg = LEDC_USE_RC_FAST_CLK};
+    err = ledc_timer_config(&ledcRGBLEDTimer);
+    if (err != ESP_OK) {
+        log_e("Error configuring LEDC timer: %s", esp_err_to_name(err));
+        ledcFailed = true;
+    }
+
+    ledc_channel_config_t ledcRedChannel = {
+        .gpio_num = CONFIG_RED_LED,
+        .speed_mode = LEDC_LOW_SPEED_MODE,
+        .channel = LEDC_CHANNEL_2,
+        .intr_type = LEDC_INTR_DISABLE,
+        .timer_sel = LEDC_TIMER_1,
+        .duty = 256,
+        .hpoint = 0 //
+    };
+
+    ledc_channel_config_t ledcGreenChannel = {
+        .gpio_num = CONFIG_GREEN_LED,
+        .speed_mode = LEDC_LOW_SPEED_MODE,
+        .channel = LEDC_CHANNEL_3,
+        .intr_type = LEDC_INTR_DISABLE,
+        .timer_sel = LEDC_TIMER_1,
+        .duty = 256,
+        .hpoint = 0 //
+    };
+
+#ifdef CONFIG_BLUE_LED
+    ledc_channel_config_t ledcBlueChannel = {
+        .gpio_num = CONFIG_BLUE_LED,
+        .speed_mode = LEDC_LOW_SPEED_MODE,
+        .channel = LEDC_CHANNEL_4,
+        .intr_type = LEDC_INTR_DISABLE,
+        .timer_sel = LEDC_TIMER_1,
+        .duty = 256,
+        .hpoint = 0 //
+    };
+#endif
+
+    err = ledc_channel_config(&ledcRedChannel);
+    if (err != ESP_OK) {
+        log_e("Error configuring Red LED: %s", esp_err_to_name(err));
+        ledcFailed = true;
+    }
+
+    err = ledc_channel_config(&ledcGreenChannel);
+    if (err != ESP_OK) {
+        log_e("Error configuring Green LED: %s", esp_err_to_name(err));
+        ledcFailed = true;
+    }
+
+#ifdef CONFIG_BLUE_LED
+    err = ledc_channel_config(&ledcBlueChannel);
+    if (err != ESP_OK) {
+        log_e("Error configuring Blue LED: %s", esp_err_to_name(err));
+        ledcFailed = true;
+    }
+#endif
+#endif
+
 #endif // CONFIG_DISPLAY_EINKET013TT1
 
     // Configure the UART for reading (used for testing)
@@ -465,6 +533,83 @@ void SetRightScreenLightFade(int dutyCycle, int fadeMs) {
     }
 #endif
 }
+
+void SetRedLEDDutyCycle(int dutyCycle) {
+    if (ledcFailed) {
+        return;
+    }
+#if CONFIG_PWM_LEDS
+    log_d("Setting red LED duty cycle to %d", dutyCycle);
+    esp_err_t err;
+    err = ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_2, dutyCycle);
+    if (err != ESP_OK) {
+        log_e("Error setting duty ch0: %s", esp_err_to_name(err));
+        return;
+    }
+    err = ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_2);
+    if (err != ESP_OK) {
+        log_e("Error updating duty: %s", esp_err_to_name(err));
+        return;
+    }
+#endif
+}
+
+void SetGreenLEDDutyCycle(int dutyCycle) {
+    if (ledcFailed) {
+        return;
+    }
+#if CONFIG_PWM_LEDS
+    log_d("Setting green LED duty cycle to %d", dutyCycle);
+    esp_err_t err;
+    err = ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_3, dutyCycle);
+    if (err != ESP_OK) {
+        log_e("Error setting duty ch0: %s", esp_err_to_name(err));
+        return;
+    }
+    err = ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_3);
+    if (err != ESP_OK) {
+        log_e("Error updating duty: %s", esp_err_to_name(err));
+        return;
+    }
+#endif
+}
+
+void SetBlueLEDDutyCycle(int dutyCycle) {
+    if (ledcFailed) {
+        return;
+    }
+#if CONFIG_PWM_LEDS
+#ifdef CONFIG_BLUE_LED
+    log_d("Setting blue LED duty cycle to %d", dutyCycle);
+    esp_err_t err;
+    err = ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_4, dutyCycle);
+    if (err != ESP_OK) {
+        log_e("Error setting duty ch0: %s", esp_err_to_name(err));
+        return;
+    }
+    err = ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_4);
+    if (err != ESP_OK) {
+        log_e("Error updating duty: %s", esp_err_to_name(err));
+        return;
+    }
+#endif
+#endif
+}
+
+// Our RGB is a common anode, so we want to turn it on by driving the voltage low
+// which means a duty cycle of 256 is off and 0 is fully on.
+
+void TurnOnRedLED() { SetRedLEDDutyCycle(245); }
+
+void TurnOffRedLED() { SetRedLEDDutyCycle(256); }
+
+void TurnOnGreenLED() { SetGreenLEDDutyCycle(250); }
+
+void TurnOffGreenLED() { SetGreenLEDDutyCycle(256); }
+
+void TurnOnBlueLED() { SetBlueLEDDutyCycle(245); }
+
+void TurnOffBlueLED() { SetBlueLEDDutyCycle(256); }
 
 auto GetMinLightingDutyCycle() -> uint8_t { return minLightingDutyCycle; }
 

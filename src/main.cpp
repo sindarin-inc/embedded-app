@@ -242,16 +242,16 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 
     if (esp_reset_reason() == ESP_RST_POWERON) {
         // Flash all the LEDs
-        DigitalWrite(CONFIG_RED_LED, LED_ON);
+        TurnOnRedLED();
         vTaskDelay(200 / portTICK_PERIOD_MS);
-        DigitalWrite(CONFIG_RED_LED, LED_OFF);
-        DigitalWrite(CONFIG_GREEN_LED, LED_ON);
+        TurnOffRedLED();
+        TurnOnGreenLED();
         vTaskDelay(200 / portTICK_PERIOD_MS);
-        DigitalWrite(CONFIG_GREEN_LED, LED_OFF);
+        TurnOffGreenLED();
 #ifdef CONFIG_BLUE_LED
-        DigitalWrite(CONFIG_BLUE_LED, LED_ON);
+        TurnOnBlueLED();
         vTaskDelay(200 / portTICK_PERIOD_MS);
-        DigitalWrite(CONFIG_BLUE_LED, LED_OFF);
+        TurnOffBlueLED();
 #endif
     }
 

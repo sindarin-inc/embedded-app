@@ -117,6 +117,10 @@ menu "Sol Options"
             bool "LEDC Backlight"
             default y
 
+        config PWM_LEDS
+            bool "PWM LEDs"
+            default y
+
         config USE_LTR329
             bool "Use LTR329 Ambient Light Sensor"
             default y

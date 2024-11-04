@@ -94,6 +94,13 @@ void DigitalWrite(int pin, int level);
 
 auto DigitalRead(uint8_t pin) -> int;
 
+void TurnOnRedLED();
+void TurnOffRedLED();
+void TurnOnGreenLED();
+void TurnOffGreenLED();
+void TurnOnBlueLED();
+void TurnOffBlueLED();
+
 void USBDeviceInit();
 
 #if !SIMULATOR
