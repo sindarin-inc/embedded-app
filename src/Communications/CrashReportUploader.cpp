@@ -17,10 +17,6 @@
 void CrashUploader::uploadCrash(
     const std::function<void(CrashUploadState state)> &progressCallback) {
 
-    if (uxTaskGetStackHighWaterMark(nullptr) < 7000) {
-        log_w("uploadCrash task stack low: %zu", uxTaskGetStackHighWaterMark(nullptr));
-    }
-
     // begin by checking if crash report exists
     progressCallback(CrashUploadState{.state = CrashUploadState::State::CheckingForCrashReport});
 

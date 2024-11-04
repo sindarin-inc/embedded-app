@@ -15,10 +15,6 @@
 void FirmwareDownloader::downloadFirmware(
     const std::function<void(FirmwareDownloadState state)> &progressCallback) {
 
-    if (uxTaskGetStackHighWaterMark(nullptr) < 7000) {
-        log_w("downloadFirmware task stack low: %zu", uxTaskGetStackHighWaterMark(nullptr));
-    }
-
     auto setState = [progressCallback, this](FirmwareDownloadState state) {
         if (CancelFlag::isCancelled(cancel_)) {
             return;

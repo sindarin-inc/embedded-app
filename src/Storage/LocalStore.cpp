@@ -597,10 +597,6 @@ void LocalStore::syncFromRemote(
     auto wifiConnected = false;
     auto bleConnected = false;
 
-    if (uxTaskGetStackHighWaterMark(nullptr) < 7000) {
-        log_w("syncFromRemote task stack low: %zu", uxTaskGetStackHighWaterMark(nullptr));
-    }
-
     if (!WiFi::getInstance().hasWiFiCredentials()) {
         this->telemetry_.logMetric(TelemetryField::METRIC_WIFI, "sync-wifi-no-credentials");
         progressCallback(

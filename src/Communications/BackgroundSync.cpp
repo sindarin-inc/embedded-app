@@ -29,10 +29,6 @@ void BackgroundSync(PowerManager &powerManager, PreferencesStore &prefs, LocalSt
         return;
     }
 
-    if (uxTaskGetStackHighWaterMark(nullptr) < 7000) {
-        log_w("BackgroundSync task stack low: %zu", uxTaskGetStackHighWaterMark(nullptr));
-    }
-
     auto wifiConnected = false;
 #if CONFIG_USE_BLE_SERVER_PROXY
     auto bleConnected = false;
