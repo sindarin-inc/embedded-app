@@ -430,6 +430,7 @@ void PowerManager::checkUsb() {
         // TODO: Should we take multiple measurements?
         battery.takeMeasurement();
         auto percentage = battery.getBatteryPercentage();
+
         gpio_hold_dis(static_cast<gpio_num_t>(CONFIG_GREEN_LED));
         gpio_hold_dis(static_cast<gpio_num_t>(CONFIG_RED_LED));
 
@@ -469,6 +470,7 @@ void PowerManager::checkUsb() {
             // log_d("Battery not fully charged, turning on red LED. Percentage: %d%%",
             //       int(percentage));
         }
+
         gpio_hold_en(static_cast<gpio_num_t>(CONFIG_GREEN_LED));
         gpio_hold_en(static_cast<gpio_num_t>(CONFIG_RED_LED));
         gpio_deep_sleep_hold_en();
