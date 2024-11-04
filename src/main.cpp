@@ -383,7 +383,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         BackgroundSyncAndSleep(powerManager, prefs, localStore, telemetry, fileSystem);
 
         // Should never get here, the system should be asleep
-        return;
+        assert(false && "BackgroundSyncAndSleep should never return");
     }
 
     // Below code should only execute on an Active boot
