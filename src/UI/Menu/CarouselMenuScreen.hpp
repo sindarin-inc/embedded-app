@@ -1,5 +1,7 @@
 #pragma once
 
+#include <utility>
+
 #include "Displays/DisplaySystem.hpp"
 #include "Inputs/RemoteInput.hpp"
 #include "Misc/Platform.hpp"
@@ -11,8 +13,27 @@
 using MenuItemVector = std::vector<std::shared_ptr<NewMenuItem>>;
 using MenuItemSharedPtrVector = std::shared_ptr<MenuItemVector>;
 using MenuItemFactory = std::function<MenuItemSharedPtrVector()>;
-// The std::string is the currently selected item ID in that tab to cache that value.
-using CarouselMenuEntry = std::tuple<std::string, MenuItemFactory, std::string>;
+
+class CarouselMenuEntry {
+public:
+    CarouselMenuEntry(std::string tabName, MenuItemFactory factory, int maxItemsPerPage,
+                      std::string selectedItemId = "")
+        : tabName_(std::move(tabName)), menuFactory_(std::move(factory)),
+          maxItemsPerPage_(maxItemsPerPage), selectedItemId_(std::move(selectedItemId)) {}
+
+    [[nodiscard]] auto getTabName() const -> const std::string & { return tabName_; }
+    [[nodiscard]] auto getMenuFactory() const -> const MenuItemFactory & { return menuFactory_; }
+    [[nodiscard]] auto getMaxItemsPerPage() const -> int { return maxItemsPerPage_; }
+    [[nodiscard]] auto getSelectedItemId() const -> const std::string & { return selectedItemId_; }
+
+    void setSelectedItemId(const std::string &id) { selectedItemId_ = id; }
+
+private:
+    std::string tabName_;         // Name displayed in the tab
+    MenuItemFactory menuFactory_; // Factory function to create menu items
+    int maxItemsPerPage_;         // Maximum number of items to display per page
+    std::string selectedItemId_;  // ID of currently selected item in this tab
+};
 
 // An abstract base class for a carousel menu screen. It handles the
 // adding of tabs and the selection of items but the subclasses must
@@ -24,7 +45,8 @@ public:
     // Add a tab to the carousel menu. The tab name is the text that will be displayed on top in
     // angle brackets. The second argument is a lambda that is a menu factory that will create the
     // menu items for that tab when it is selected.
-    void addTab(const std::string &tabName, const MenuItemFactory &menuItemFactory);
+    void addTab(const std::string &tabName, const MenuItemFactory &menuItemFactory,
+                int itemsPerPage);
 
     void populateMenuView();
 
@@ -40,7 +62,7 @@ public:
 
     // This one is for when you start in a readable and then we have to be able to set the main
     // menu to that readable when you go back to it.
-    void setTabWithName(const std::string &tabName, std::string id);
+    void setTabWithName(const std::string &tabName, const std::string &id);
 
     auto isMenuIDInTab(const std::string &tabName, const std::string &id) -> bool;
 
@@ -53,7 +75,7 @@ public:
     void regenerateCurrentTab();
 
     auto getCurrentTabTitle() const -> std::string {
-        return std::get<0>(menuTabs_[currentTabIndex_]);
+        return menuTabs_[currentTabIndex_].getTabName();
     }
 
 protected:

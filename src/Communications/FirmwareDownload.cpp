@@ -7,7 +7,6 @@
 
 #include "Communications/FileDownload.hpp"
 #include "Communications/WiFi.hpp"
-#include "Misc/Dispatch.hpp"
 #include "Misc/SemVer.hpp"
 #include "Misc/StringUtil.hpp"
 #include "Version.hpp"
@@ -33,115 +32,110 @@ void FirmwareDownloader::downloadFirmware(
 
     setState(FirmwareDownloadState{.state = FirmwareDownloadState::State::CheckingForLatest});
 
-    auto updateFwIfNeeded = [this, setState] {
-        auto httpCode = SindarinAPI::getInstance()->checkFirmware(&response);
+    auto httpCode = SindarinAPI::getInstance()->checkFirmware(&response);
+    if (httpCode != 200) {
+        // Try as HTTP in case something goes wrong with certs
+        httpCode = SindarinAPI::getInstance()->checkFirmware(&response, true);
         if (httpCode != 200) {
-            // Try as HTTP in case something goes wrong with certs
-            httpCode = SindarinAPI::getInstance()->checkFirmware(&response, true);
+            log_e("Failed to get firmware (HTTP %d)", httpCode);
+            setState(FirmwareDownloadState{.state = FirmwareDownloadState::State::Failure,
+                                           .message = "Failed to check for update"});
+            return;
+        }
+    }
+
+    if (skipInstall_ &&
+        prefs_.firmwareLoaded.get().value_or("0.0.0") == response.latestGlassesFirmware.version) {
+        log_d("Firmware already downloaded and ready to install.");
+        setState(FirmwareDownloadState{.state = FirmwareDownloadState::State::AlreadyDownloaded});
+        return;
+    }
+
+    versionString = SemanticVersionString();
+    log_d("Existing version: %s, server version: %s", versionString.c_str(),
+          response.latestGlassesFirmware.version.c_str());
+    if (SemVerCompareVersions(response.latestGlassesFirmware.version, versionString) !=
+        SemVerComparison::GreaterThan) {
+        setState(FirmwareDownloadState{.state = FirmwareDownloadState::State::AlreadyUpToDate});
+        return;
+    }
+
+    versionString = response.latestGlassesFirmware.version;
+
+    setState(
+        FirmwareDownloadState{.state = FirmwareDownloadState::State::Downloading, .percentage = 0});
+
+    log_d("Downloading firmware from %s", response.latestGlassesFirmware.url.c_str());
+    std::string failMessage;
+    httpCode = DownloadFileWithWriteBytes(
+        response.latestGlassesFirmware.url.c_str(),
+        [this, &failMessage](int httpCode, int contentLength) -> bool {
             if (httpCode != 200) {
-                log_e("Failed to get firmware (HTTP %d)", httpCode);
-                setState(FirmwareDownloadState{.state = FirmwareDownloadState::State::Failure,
-                                               .message = "Failed to check for update"});
-                return;
+                log_e("HTTP GET to %s failed, error: %d",
+                      response.latestGlassesFirmware.url.c_str(), httpCode);
+                failMessage = StringFormat("Download failed (%d)", httpCode);
+                return false;
             }
-        }
 
-        if (skipInstall_ && prefs_.firmwareLoaded.get().value_or("0.0.0") ==
-                                response.latestGlassesFirmware.version) {
-            log_d("Firmware already downloaded and ready to install.");
-            setState(
-                FirmwareDownloadState{.state = FirmwareDownloadState::State::AlreadyDownloaded});
-            return;
-        }
+            if (!Update.begin(contentLength, U_FLASH)) {
+                auto error = Update.getError();
+                log_e("Failed to Update.begin (err=%d contentLength=%d)", error, contentLength);
+                failMessage = StringFormat("Failed to begin update (%d)", error);
+                return false;
+            }
 
-        versionString = SemanticVersionString();
-        log_d("Existing version: %s, server version: %s", versionString.c_str(),
-              response.latestGlassesFirmware.version.c_str());
-        if (SemVerCompareVersions(response.latestGlassesFirmware.version, versionString) !=
-            SemVerComparison::GreaterThan) {
-            setState(FirmwareDownloadState{.state = FirmwareDownloadState::State::AlreadyUpToDate});
-            return;
-        }
+            if (!Update.setMD5(response.latestGlassesFirmware.md5.c_str())) {
+                auto error = Update.getError();
+                log_e("Failed to Update.setMD5 (err=%d)", error);
+                failMessage = StringFormat("Failed to begin update (%d)", error);
+                return false;
+            }
 
-        versionString = response.latestGlassesFirmware.version;
-
-        setState(FirmwareDownloadState{.state = FirmwareDownloadState::State::Downloading,
-                                       .percentage = 0});
-
-        log_d("Downloading firmware from %s", response.latestGlassesFirmware.url.c_str());
-        std::string failMessage;
-        httpCode = DownloadFileWithWriteBytes(
-            response.latestGlassesFirmware.url.c_str(),
-            [this, &failMessage](int httpCode, int contentLength) -> bool {
-                if (httpCode != 200) {
-                    log_e("HTTP GET to %s failed, error: %d",
-                          response.latestGlassesFirmware.url.c_str(), httpCode);
-                    failMessage = StringFormat("Download failed (%d)", httpCode);
-                    return false;
-                }
-
-                if (!Update.begin(contentLength, U_FLASH)) {
-                    auto error = Update.getError();
-                    log_e("Failed to Update.begin (err=%d contentLength=%d)", error, contentLength);
-                    failMessage = StringFormat("Failed to begin update (%d)", error);
-                    return false;
-                }
-
-                if (!Update.setMD5(response.latestGlassesFirmware.md5.c_str())) {
-                    auto error = Update.getError();
-                    log_e("Failed to Update.setMD5 (err=%d)", error);
-                    failMessage = StringFormat("Failed to begin update (%d)", error);
-                    return false;
-                }
-
-                return true;
-            },
-            [](const uint8_t *buf, size_t size) {
-            return Update.write(const_cast<uint8_t *>(buf), size);
-            },
-            cancel_, false, 0,
-            [setState](int bytesWritten, float percentage) {
-            setState(FirmwareDownloadState{.state = FirmwareDownloadState::State::Downloading,
-                                           .percentage = static_cast<int>(percentage)});
+            return true;
         },
-        false);
+        [](const uint8_t *buf, size_t size) {
+        return Update.write(const_cast<uint8_t *>(buf), size);
+        },
+        cancel_, false, 0,
+        [setState](int bytesWritten, float percentage) {
+        setState(FirmwareDownloadState{.state = FirmwareDownloadState::State::Downloading,
+                                       .percentage = static_cast<int>(percentage)});
+    },
+    false);
 
-        if (httpCode != 200) {
-            log_e("Failed to download firmware with code %d", httpCode);
-            if (httpCode == ERR_CANCELLED) {
-                setState(FirmwareDownloadState{.state = FirmwareDownloadState::State::Failure,
-                                               .message = "Cancelled"});
-                return;
-            } else if (!WiFi::getInstance().connected()) {
-                setState(FirmwareDownloadState{.state = FirmwareDownloadState::State::Failure,
-                                               .message = "Failed: WiFi disconnected!"});
-            } else {
-                setState(FirmwareDownloadState{.state = FirmwareDownloadState::State::Failure,
-                                               .message = failMessage});
-            }
-            Update.abort();
+    if (httpCode != 200) {
+        log_e("Failed to download firmware with code %d", httpCode);
+        if (httpCode == ERR_CANCELLED) {
+            setState(FirmwareDownloadState{.state = FirmwareDownloadState::State::Failure,
+                                           .message = "Cancelled"});
             return;
+        } else if (!WiFi::getInstance().connected()) {
+            setState(FirmwareDownloadState{.state = FirmwareDownloadState::State::Failure,
+                                           .message = "Failed: WiFi disconnected!"});
+        } else {
+            setState(FirmwareDownloadState{.state = FirmwareDownloadState::State::Failure,
+                                           .message = failMessage});
         }
+        Update.abort();
+        return;
+    }
 
-        if (skipInstall_) {
-            setState(FirmwareDownloadState{.state = FirmwareDownloadState::State::Downloaded});
-            return;
-        }
+    if (skipInstall_) {
+        setState(FirmwareDownloadState{.state = FirmwareDownloadState::State::Downloaded});
+        return;
+    }
 
-        setState(FirmwareDownloadState{.state = FirmwareDownloadState::State::Installing});
+    setState(FirmwareDownloadState{.state = FirmwareDownloadState::State::Installing});
 
-        // Swap out the firmware
-        if (!Update.end()) {
-            auto error = Update.getError();
-            log_e("Failed to Update.end() (%d)", error);
-            setState(FirmwareDownloadState{
-                .state = FirmwareDownloadState::State::Failure,
-                .message = StringFormat("Failed to finalize update (%d)", error)});
-            return;
-        }
+    // Swap out the firmware
+    if (!Update.end()) {
+        auto error = Update.getError();
+        log_e("Failed to Update.end() (%d)", error);
+        setState(FirmwareDownloadState{.state = FirmwareDownloadState::State::Failure,
+                                       .message =
+                                           StringFormat("Failed to finalize update (%d)", error)});
+        return;
+    }
 
-        setState(FirmwareDownloadState{.state = FirmwareDownloadState::State::Installed});
-    };
-    // Note: 8192 is the size that all the esp-idf examples use for esp_http_client.
-    DispatchQueue::dispatchOneOff(updateFwIfNeeded, 8192, 0, 1, "FWUpdate");
+    setState(FirmwareDownloadState{.state = FirmwareDownloadState::State::Installed});
 }

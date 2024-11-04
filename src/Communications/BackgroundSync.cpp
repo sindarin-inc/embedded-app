@@ -18,20 +18,21 @@ std::shared_ptr<CancelFlag> cancel;
 
 void BackgroundSyncCancel() { CancelFlag::cancel(cancel); }
 
-auto BackgroundSyncWithTransport(PowerManager &powerManager, PreferencesStore &prefs,
-                                 LocalStore &localStore, Telemetry &telemetry, bool useWifi,
-                                 bool useBle) -> bool {
-    // Create a notification group to wait for background tasks
-    log_d("Background sync starting with wifi: %d, ble: %d", useWifi, useBle);
+void BackgroundSync(PowerManager &powerManager, PreferencesStore &prefs, LocalStore &localStore,
+                    Telemetry &telemetry, FileSystem &fileSystem, bool useWifi, bool useBle)
+    ->bool {
+    log_d("Background sync starting");
+
+    // Don't perform a background sync if wifi is disabled manually
+    // TODO: Once BLE sync is merged, check to see if that is still enabled
+    // and if so, continue with the sync but DON'T use wifi for it. Maybe have to
+    // change the guts of this a bit to pull that off.
+    if (prefs.wifiDisabled.get().value_or(false) && prefs.bleDisabled.get().value_or(false)) {
+        return;
+    }
+
     auto wifiConnected = false;
     auto bleConnected = false;
-
-    auto backgroundGroup = xEventGroupCreate();
-    defer {
-        vEventGroupDelete(backgroundGroup);
-        backgroundGroup = nullptr;
-    };
-    auto &fileSystem = localStore.fileSystem;
 
     cancel = std::make_shared<CancelFlag>();
 
@@ -39,7 +40,6 @@ auto BackgroundSyncWithTransport(PowerManager &powerManager, PreferencesStore &p
     if (useWifi) {
         if (!WiFi::getInstance().connectWiFiFromSettings()) {
             telemetry.logMetric(TelemetryField::METRIC_WIFI, "sync-wifi-failed");
-            return false;
         } else {
             wifiConnected = true;
         }
@@ -59,8 +59,8 @@ auto BackgroundSyncWithTransport(PowerManager &powerManager, PreferencesStore &p
     // Check for firmware first (in case there's some super busted issue that needs fixing)
     if (wifiConnected) {
         auto firmwareDownloader = std::make_shared<FirmwareDownloader>(prefs, cancel, true);
-        firmwareDownloader->downloadFirmware([firmwareDownloader, &localStore, &backgroundGroup](
-                                                 const FirmwareDownloadState &state) {
+        firmwareDownloader->downloadFirmware(
+            [firmwareDownloader, &localStore](const FirmwareDownloadState &state) {
             if (state.state == FirmwareDownloadState::Failure) {
                 log_i("Firmware download for %s failed with error: %s",
                       firmwareDownloader->response.latestGlassesFirmware.version.c_str(),
@@ -77,23 +77,7 @@ auto BackgroundSyncWithTransport(PowerManager &powerManager, PreferencesStore &p
             } else {
                 return;
             }
-            if (backgroundGroup != nullptr) {
-                xEventGroupSetBits(backgroundGroup, 1);
-            }
         });
-
-        if (CancelFlag::isCancelled(cancel)) {
-            return false;
-        }
-
-        // Wait for firmware download to finish
-        auto bits =
-            xEventGroupWaitBits(backgroundGroup, 1, pdTRUE, pdTRUE, pdMS_TO_TICKS(10 * 60 * 1000));
-        if (!(bits & 1)) {
-            CancelFlag::cancel(cancel);
-            log_w("Firmware download timed out");
-        }
-        xEventGroupClearBits(backgroundGroup, 1);
     }
 
     if (CancelFlag::isCancelled(cancel)) {
@@ -102,9 +86,9 @@ auto BackgroundSyncWithTransport(PowerManager &powerManager, PreferencesStore &p
 
     auto syncSuccessful = false;
 
-    localStore.syncFromRemote(wifiConnected, bleConnected, PreferencesStore::syncReason, cancel,
-                              [&powerManager, &backgroundGroup, &telemetry,
-                               &syncSuccessful](const ContentSyncState &state) {
+    localStore.syncFromRemote(
+        PreferencesStore::syncReason, cancel,
+        [&powerManager, &telemetry, &syncSuccessful](const ContentSyncState &state) {
         powerManager.feedInactivityTimer();
 
         if (state.state == ContentSyncState::Failure || state.state == ContentSyncState::Synced ||
@@ -124,21 +108,10 @@ auto BackgroundSyncWithTransport(PowerManager &powerManager, PreferencesStore &p
             } else {
                 return;
             }
-            if (backgroundGroup != nullptr) {
-                xEventGroupSetBits(backgroundGroup, 1);
-            }
         }
-    });
-    log_d("Background content sync finished, syncSuccessful: %d", syncSuccessful);
+        });
 
-    // Wait for content sync to finish
-    auto bits =
-        xEventGroupWaitBits(backgroundGroup, 1, pdTRUE, pdTRUE, pdMS_TO_TICKS(10 * 60 * 1000));
-    if (!(bits & 1)) {
-        CancelFlag::cancel(cancel);
-        log_w("Content sync timed out");
-    }
-    xEventGroupClearBits(backgroundGroup, 1);
+    log_d("Background content sync finished, syncSuccessful: %d", syncSuccessful);
 
     if (CancelFlag::isCancelled(cancel)) {
         return false;
@@ -180,7 +153,7 @@ auto BackgroundSyncWithTransport(PowerManager &powerManager, PreferencesStore &p
         if (coreDumpCount > 0) {
             log_i("Uploading %d core dumps", coreDumpCount);
             CrashUploader crashUploader(fileSystem, prefs);
-            crashUploader.uploadCrash([&backgroundGroup](const CrashUploadState &state) {
+            crashUploader.uploadCrash([](const CrashUploadState &state) {
                 if (state.state == CrashUploadState::Failure) {
                     log_e("Failed to upload crash reports");
                 } else if (state.state == CrashUploadState::NoCrashReport) {
@@ -190,63 +163,43 @@ auto BackgroundSyncWithTransport(PowerManager &powerManager, PreferencesStore &p
                 } else {
                     return;
                 }
-                if (backgroundGroup != nullptr) {
-                    xEventGroupSetBits(backgroundGroup, 1);
-                }
             });
-
-            auto bits = xEventGroupWaitBits(backgroundGroup, 1, pdTRUE, pdTRUE,
-                                            pdMS_TO_TICKS(2 * 60 * 1000));
-            if (!(bits & 1)) {
-                log_w("Coredump upload timed out");
-            }
-            xEventGroupClearBits(backgroundGroup, 1);
         }
     }
 
     return syncSuccessful;
 }
 
-void BackgroundSync(PowerManager &powerManager, PreferencesStore &prefs, LocalStore &localStore,
-                    Telemetry &telemetry) {
-    if (prefs.wifiDisabled.get().value_or(false) && prefs.bleDisabled.get().value_or(false)) {
-        return;
-    }
-
-    // Debug LED so we know what's happening (will be turned off when deep sleep happens)
-    // Only turn on if debug menu is enabled
-    if (prefs.showDebugMenu.get().value_or(false)) {
-        DigitalWrite(CONFIG_BLUE_LED, LED_ON);
-    }
-
-    // Try WiFi first if enabled
-    auto syncSuccessful = false;
-    if (!prefs.wifiDisabled.get().value_or(false)) {
-        syncSuccessful =
-            BackgroundSyncWithTransport(powerManager, prefs, localStore, telemetry, true, false);
-    }
-
-    // If WiFi sync failed and BLE is enabled, try BLE
-    if (!syncSuccessful && !prefs.bleDisabled.get().value_or(false)) {
-        // Disconnect from wifi if connected
-        WiFi::getInstance().disconnectWiFi(3000);
-        BackgroundSyncWithTransport(powerManager, prefs, localStore, telemetry, false, true);
-    }
-
-    if (prefs.showDebugMenu.get().value_or(false)) {
-        DigitalWrite(CONFIG_BLUE_LED, LED_OFF);
-    }
-}
-
 // TODO: It would probably be good to do some sort of retry with exponential
 // backup if we fail. But We don't want to drain battery if you're away from
 // WiFi. So we'll need to think carefully how we want to handle that.
 void BackgroundSyncAndSleep(PowerManager &powerManager, PreferencesStore &prefs,
-                            LocalStore &localStore, Telemetry &telemetry) {
+                            LocalStore &localStore, Telemetry &telemetry, FileSystem &fileSystem) {
+    // If debug menu is enabled, light up the blue LED so we know what's happening
+    if (prefs.showDebugMenu.get().value_or(false)) {
+        DigitalWrite(CONFIG_BLUE_LED, LED_ON);
+    }
 
-    BackgroundSync(powerManager, prefs, localStore, telemetry);
+    DispatchQueue::dispatchOneOffSync(
+        [&powerManager, &prefs, &localStore, &telemetry, &fileSystem]() {
+        // Try WiFi first if enabled
+        auto syncSuccessful = false;
+        if (!prefs.wifiDisabled.get().value_or(false)) {
+            syncSuccessful =
+                BackgroundSync(powerManager, prefs, localStore, telemetry, fileSystem, true, false);
+        }
 
-    // TODO: Perhaps try dispatching this (maybe needs to happen outside of app_main)
+        // If WiFi sync failed and BLE is enabled, try BLE
+        if (!syncSuccessful && !prefs.bleDisabled.get().value_or(false)) {
+            // Disconnect from wifi if connected
+            WiFi::getInstance().disconnectWiFi(3000);
+            BackgroundSync(powerManager, prefs, localStore, telemetry, fileSystem, false, true);
+        }
+        },
+        8192, 1, 0, "Sync", pdMS_TO_TICKS(15 * 60 * 1000));
+
+    BackgroundSyncCancel();
+
     WiFi::getInstance().disconnectWiFi(3000);
 #if CONFIG_USE_BLE_SERVER_PROXY
     auto bleManager = BLEManager::getInstance(false);
@@ -254,6 +207,10 @@ void BackgroundSyncAndSleep(PowerManager &powerManager, PreferencesStore &prefs,
         bleManager->disconnectProxy();
     }
 #endif
+
+    if (prefs.showDebugMenu.get().value_or(false)) {
+        DigitalWrite(CONFIG_BLUE_LED, LED_OFF);
+    }
 
     PowerManager::getInstance().deepSleep(SleepReason::SyncDone);
 }

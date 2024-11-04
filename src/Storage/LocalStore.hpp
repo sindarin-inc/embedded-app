@@ -5,7 +5,6 @@
 
 #include "Communications/SindarinAPI.hpp"
 #include "Misc/Battery.hpp"
-#include "Misc/Dispatch.hpp"
 #include "Misc/Telemetry.hpp"
 #include "Models/CheckSync.hpp"
 #include "Models/Place.hpp"

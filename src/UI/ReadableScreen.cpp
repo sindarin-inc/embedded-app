@@ -475,11 +475,11 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
         display, prefs, fileSystem, readable, lightingController, renderer_, telemetry_, localStore,
         stream_);
 
-    popupMenuScreen_->addTab("Popup", popupNavigationFactory);
+    popupMenuScreen_->addTab("Popup", popupNavigationFactory, 8);
 
-    popupMenuScreen_->addTab("Context", popupContextFactory);
+    popupMenuScreen_->addTab("Context", popupContextFactory, 8);
 
-    popupMenuScreen_->addTab("Style", popupStyleFactory);
+    popupMenuScreen_->addTab("Style", popupStyleFactory, 8);
 
     popupMenuScreen_->populateMenuView();
 

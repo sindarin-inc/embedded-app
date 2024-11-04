@@ -5,31 +5,30 @@
 CarouselMenuScreen::CarouselMenuScreen(DisplaySystem &display)
     : EinkView(display), titleView_(display, ""), menuView_(display) {}
 
-void CarouselMenuScreen::addTab(const std::string &tabName,
-                                const MenuItemFactory &menuItemFactory) {
-    menuTabs_.emplace_back(tabName, menuItemFactory, "");
+void CarouselMenuScreen::addTab(const std::string &tabName, const MenuItemFactory &menuItemFactory,
+                                int itemsPerPage) {
+    menuTabs_.emplace_back(tabName, menuItemFactory, itemsPerPage, "");
 }
 
 void CarouselMenuScreen::setTabWithName(const std::string &tabName, int rowIndex) {
     for (int i = 0; i < menuTabs_.size(); i++) {
-        if (std::get<0>(menuTabs_[i]) == tabName) {
+        if (menuTabs_[i].getTabName() == tabName) {
             setCurrentTabIndex(i);
-            // If we're passed in an index here, override the previous cached ID value.
             if (rowIndex != -1) {
-                std::get<2>(menuTabs_[i]) = menuView_.getIDfromRowIndex(rowIndex);
-                menuView_.setSelectedByMenuItemID(std::get<2>(menuTabs_[i]));
+                menuTabs_[i].setSelectedItemId(menuView_.getIDfromRowIndex(rowIndex));
+                menuView_.setSelectedByMenuItemID(menuTabs_[i].getSelectedItemId());
             }
             return;
         }
     }
 }
 
-void CarouselMenuScreen::setTabWithName(const std::string &tabName, std::string id) {
+void CarouselMenuScreen::setTabWithName(const std::string &tabName, const std::string &id) {
     for (int i = 0; i < menuTabs_.size(); i++) {
-        if (std::get<0>(menuTabs_[i]) == tabName) {
+        if (menuTabs_[i].getTabName() == tabName) {
             setCurrentTabIndex(i);
-            std::get<2>(menuTabs_[i]) = std::move(id);
-            menuView_.setSelectedByMenuItemID(std::get<2>(menuTabs_[i]));
+            menuTabs_[i].setSelectedItemId(id);
+            menuView_.setSelectedByMenuItemID(menuTabs_[i].getSelectedItemId());
             return;
         }
     }
@@ -37,7 +36,7 @@ void CarouselMenuScreen::setTabWithName(const std::string &tabName, std::string 
 
 auto CarouselMenuScreen::isMenuIDInTab(const std::string &tabName, const std::string &id) -> bool {
     for (auto &menuTab : menuTabs_) {
-        if (std::get<0>(menuTab) == tabName) {
+        if (menuTab.getTabName() == tabName) {
             return menuView_.isIDInMenu(id);
         }
     }
@@ -64,19 +63,17 @@ void CarouselMenuScreen::setCurrentTabIndex(int index) {
 
 void CarouselMenuScreen::populateMenuView() {
     menuView_.resetMenuItems();
-    auto &currentTabFactory = std::get<1>(menuTabs_[currentTabIndex_]);
+    auto &currentTab = menuTabs_[currentTabIndex_];
 
-    // Does this somehow keep extra references around to the shared_ptrs?
-    // The system menu doesn't seem to be cleaning up when going to another tab.
-    auto menuItems = currentTabFactory();
+    auto menuItems = currentTab.getMenuFactory()();
+    menuView_.itemsPerPage = currentTab.getMaxItemsPerPage();
 
     for (auto &i : *menuItems) {
         menuView_.addMenuItem(i);
     }
 
-    menuView_.setSelectedByMenuItemID(std::get<2>(menuTabs_[currentTabIndex_]));
-
-    titleView_.setText(getCurrentTabTitle());
+    menuView_.setSelectedByMenuItemID(currentTab.getSelectedItemId());
+    titleView_.setText(currentTab.getTabName());
     firstLoad_ = true;
     setNeedsRerender();
 }
@@ -109,7 +106,7 @@ void CarouselMenuScreen::processCommand(RemoteCommand command) {
 
 void CarouselMenuScreen::moveSelection(int delta) {
     auto newPage = menuView_.moveSelection(delta);
-    std::get<2>(menuTabs_[currentTabIndex_]) = menuView_.getSelectedMenuItemID();
+    menuTabs_[currentTabIndex_].setSelectedItemId(menuView_.getSelectedMenuItemID());
     if (newPage) {
         firstLoad_ = true;
     }
