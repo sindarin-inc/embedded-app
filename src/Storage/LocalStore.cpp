@@ -591,21 +591,21 @@ void LocalStore::computeRecentReadables() {
     }
 }
 
-void LocalStore::syncFromRemote(
-    bool wifiConnected, bool bleConnected, SyncReason syncReason,
-    const std::shared_ptr<CancelFlag> &cancel,
-    const std::function<void(ContentSyncState state)> &progressCallback) {
+auto LocalStore::syncFromRemote(bool wifiConnected, bool bleConnected, SyncReason syncReason,
+                                const std::shared_ptr<CancelFlag> &cancel,
+                                const std::function<void(ContentSyncState state)> &progressCallback)
+    -> bool {
 
     if (!WiFi::getInstance().hasWiFiCredentials()) {
         this->telemetry_.logMetric(TelemetryField::METRIC_WIFI, "sync-wifi-no-credentials");
         progressCallback(
             ContentSyncState{.state = ContentSyncState::State::Failure,
                              .message = "Go to Settings > WiFi Setup in the Sol app."});
-        return;
+        return false;
     }
 
     if (CancelFlag::isCancelled(cancel)) {
-        return;
+        return false;
     }
 
     // If we don't have a clock that's accurate, sync it
@@ -625,7 +625,7 @@ void LocalStore::syncFromRemote(
     }
 
     if (CancelFlag::isCancelled(cancel)) {
-        return;
+        return false;
     }
 
     // Uncomment below line to set your access token for local development
@@ -640,7 +640,7 @@ void LocalStore::syncFromRemote(
         progressCallback(
             ContentSyncState{.state = ContentSyncState::State::Failure,
                              .message = "Go to Settings > Pair Glasses in the Sol app."});
-        return;
+        return false;
     }
 
     // Uncomment below line to steal your access token for local development
@@ -655,7 +655,7 @@ void LocalStore::syncFromRemote(
         log_d("Uploading telemetry, wifiConnected: %d, bleConnected: %d", wifiConnected,
               bleConnected);
         if (CancelFlag::isCancelled(cancel)) {
-            return;
+            return false;
         }
 
         auto httpCode =
@@ -674,7 +674,7 @@ void LocalStore::syncFromRemote(
     }
 
     if (CancelFlag::isCancelled(cancel)) {
-        return;
+        return false;
     }
 
     CheckSyncRequest checkSyncRequest;
@@ -693,7 +693,7 @@ void LocalStore::syncFromRemote(
     std::vector<ReadablesVector *> readablesList = {&books_, &articles_};
     for (auto &readables : readablesList) {
         if (CancelFlag::isCancelled(cancel)) {
-            return;
+            return false;
         }
 
         bool failedDownload = false;
@@ -737,7 +737,7 @@ void LocalStore::syncFromRemote(
 
         while (nextPageUrl.length() || nextPageCounter == 0) {
             if (CancelFlag::isCancelled(cancel)) {
-                return;
+                return false;
             }
 
             if (nextPageCounter == 0) {
@@ -774,7 +774,7 @@ void LocalStore::syncFromRemote(
                     bleConnected, cancel);
             }
             if (CancelFlag::isCancelled(cancel)) {
-                return;
+                return false;
             }
             log_d("Server has %d %ss, next page: %s", checkSyncResponse.totalCount,
                   ReadableModelTypeToString(modelType).c_str(), nextPageUrl.c_str());
@@ -806,7 +806,7 @@ void LocalStore::syncFromRemote(
                     StringFormat("failed-sync-%ss", ReadableModelTypeToString(modelType).c_str())
                         .c_str(),
                     {{"http-code", httpCode}});
-                return;
+                return false;
             }
 
             // Look through all the books and articles and download any that we don't have
@@ -816,7 +816,7 @@ void LocalStore::syncFromRemote(
                 this->processReadables(*readables, userReadables);
 
             if (CancelFlag::isCancelled(cancel)) {
-                return;
+                return false;
             }
             SHOW_HEAP();
             log_d("%ss to download: %zu", ReadableModelTypeToString(modelType).c_str(),
@@ -903,7 +903,7 @@ void LocalStore::syncFromRemote(
         }
 
         if (CancelFlag::isCancelled(cancel)) {
-            return;
+            return false;
         }
 
         // Update the since dates and try once more to sync to ensure we don't miss anything
@@ -942,27 +942,34 @@ void LocalStore::syncFromRemote(
     }
 
     if (CancelFlag::isCancelled(cancel)) {
-        return;
+        return false;
     }
 
+    bool syncSuccessful = false;
     if (booksAlreadySynced && articlesAlreadySynced) {
         progressCallback(ContentSyncState{.state = ContentSyncState::State::AlreadySynced});
+        syncSuccessful = true;
     } else if (booksNowSynced || articlesNowSynced) {
         progressCallback(ContentSyncState{.state = ContentSyncState::State::Synced,
                                           .booksDownloaded = booksDownloaded,
                                           .articlesDownloaded = articlesDownloaded});
+        syncSuccessful = true;
     } else if (checkSyncFailures > 0) {
         progressCallback(ContentSyncState{.state = ContentSyncState::State::Failure,
                                           .booksDownloaded = booksDownloaded,
                                           .articlesDownloaded = articlesDownloaded,
                                           .usedBle = bleConnected,
                                           .message = "Failed to check sync"});
+        syncSuccessful = false;
     } else {
         progressCallback(ContentSyncState{.state = ContentSyncState::State::AlreadySynced,
                                           .message = "Already synced"});
+        syncSuccessful = true;
     }
     log_d("Min watermark for task %s: %u bytes (%s:%d)", pcTaskGetName(nullptr),
           (unsigned int)uxTaskGetStackHighWaterMark(NULL), __FILE__, __LINE__);
+
+    return syncSuccessful;
 }
 
 auto LocalStore::processReadables(const ReadablesVector &readables,

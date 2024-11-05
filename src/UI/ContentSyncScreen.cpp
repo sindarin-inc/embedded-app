@@ -281,17 +281,7 @@ void ContentSyncScreen::begin() {
     auto rl = std::make_shared<RateLimiter>(1, 20, 1);
     cancel_ = std::make_shared<CancelFlag>();
     DispatchGetCore0BackgroundQueue()->dispatch([this, rl, resumeBLE]() {
-        auto backgroundGroup = xEventGroupCreate();
-        defer {
-            log_d("Content sync deleting background group: %p", backgroundGroup);
-            vEventGroupDelete(backgroundGroup);
-            backgroundGroup = nullptr;
-        };
-
-        log_d("Content sync starting with background group: %p", backgroundGroup);
-        auto syncSuccessful = false;
-        auto progressCallback = [this, rl, resumeBLE, &syncSuccessful,
-                                 &backgroundGroup](const ContentSyncState &state) {
+        auto progressCallback = [this, rl, resumeBLE](const ContentSyncState &state) {
             log_d("Progress callback: %d, %d%%", state.state, state.percentage);
 
             if (CancelFlag::isCancelled(cancel_)) {
@@ -330,30 +320,20 @@ void ContentSyncScreen::begin() {
 #endif
             if (state.state == ContentSyncState::Failure && tryWithBle) {
                 log_d("Content sync with wifi failed, trying again with BLE");
-                log_d("Wifi content sync done, setting background group bit: %p", backgroundGroup);
-                if (backgroundGroup != nullptr) {
-                    xEventGroupSetBits(backgroundGroup, 1);
-                }
             } else {
-                DispatchGetUiQueue()->dispatch(
-                    [this, state, resumeBLE, &syncSuccessful, &backgroundGroup]() {
+                DispatchGetUiQueue()->dispatch([this, state, resumeBLE]() {
                     this->updateState(state);
                     this->render(this->display_);
-                    auto finished = false;
 
                     if (state.state == ContentSyncState::Synced) {
                         log_d("Content sync done, rebooting");
-                        syncSuccessful = true;
                         Delay(2000);
                         power_.reboot();
-                        finished = true;
                     } else if (state.state == ContentSyncState::AlreadySynced) {
                         log_d("Content sync already synced");
-                        syncSuccessful = true;
                         Delay(2000);
                         resumeBLE();
                         back();
-                        finished = true;
                     } else if (state.state == ContentSyncState::Failure) {
                         // If we got any new content force a restart, otherwise just go back
                         if (state.booksDownloaded > 0 || state.articlesDownloaded > 0) {
@@ -365,15 +345,6 @@ void ContentSyncScreen::begin() {
                             Delay(2000);
                             resumeBLE();
                             back();
-                        }
-                        finished = true;
-                    }
-
-                    if (finished) {
-                        log_d("Wifi content sync done, setting background group bit: %p",
-                              backgroundGroup);
-                        if (backgroundGroup != nullptr) {
-                            xEventGroupSetBits(backgroundGroup, 1);
                         }
                     }
                 });
@@ -396,19 +367,11 @@ void ContentSyncScreen::begin() {
             wifiConnected = true;
         }
 
+        auto syncSuccessful = false;
         if (wifiConnected) {
-            localStore_.syncFromRemote(wifiConnected, bleConnected, SyncReason::Manual, cancel_,
-                                       progressCallback);
+            syncSuccessful = localStore_.syncFromRemote(
+                wifiConnected, bleConnected, SyncReason::Manual, cancel_, progressCallback);
         }
-        // Wait for wifi content sync to finish
-        log_d("Waiting for wifi content sync to finish: %p", backgroundGroup);
-        auto bits =
-            xEventGroupWaitBits(backgroundGroup, 1, pdTRUE, pdTRUE, pdMS_TO_TICKS(10 * 60 * 1000));
-        if (!(bits & 1)) {
-            CancelFlag::cancel(cancel_);
-            log_w("Wifi content sync timed out");
-        }
-        xEventGroupClearBits(backgroundGroup, 1);
 
         log_d("Sync successful: %d, wifi connected: %d, attempting BLE sync", syncSuccessful,
               wifiConnected);

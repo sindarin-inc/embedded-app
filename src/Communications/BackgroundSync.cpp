@@ -84,11 +84,9 @@ auto BackgroundSync(PowerManager &powerManager, PreferencesStore &prefs, LocalSt
         return false;
     }
 
-    auto syncSuccessful = false;
-
-    localStore.syncFromRemote(
-        wifiConnected, bleConnected, PreferencesStore::syncReason, cancel,
-        [&powerManager, &telemetry, &syncSuccessful](const ContentSyncState &state) {
+    auto syncSuccessful =
+        localStore.syncFromRemote(wifiConnected, bleConnected, PreferencesStore::syncReason, cancel,
+                                  [&powerManager, &telemetry](const ContentSyncState &state) {
         powerManager.feedInactivityTimer();
 
         if (state.state == ContentSyncState::Failure || state.state == ContentSyncState::Synced ||
@@ -100,11 +98,9 @@ auto BackgroundSync(PowerManager &powerManager, PreferencesStore &prefs, LocalSt
             } else if (state.state == ContentSyncState::Synced) {
                 telemetry.logMetric(TelemetryField::METRIC_SYNC_STATUS, "sync-success");
                 log_i("Content sync successful");
-                syncSuccessful = true;
             } else if (state.state == ContentSyncState::AlreadySynced) {
                 telemetry.logMetric(TelemetryField::METRIC_SYNC_STATUS, "sync-already-synced");
                 log_i("Content sync already synced");
-                syncSuccessful = true;
             } else {
                 return;
             }

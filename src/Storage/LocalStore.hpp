@@ -122,9 +122,10 @@ public:
     void resetReadablesArchivedChanged(const ReadablesVector &readables);
     void resetReadablesBookmarksChanged(const ReadablesVector &readables);
 
-    void syncFromRemote(bool wifiConnected, bool bleConnected, SyncReason syncReason,
+    auto syncFromRemote(bool wifiConnected, bool bleConnected, SyncReason syncReason,
                         const std::shared_ptr<CancelFlag> &cancel,
-                        const std::function<void(ContentSyncState state)> &progressCallback);
+                        const std::function<void(ContentSyncState state)> &progressCallback)
+        -> bool;
     auto processReadables(const ReadablesVector &readables, UserReadablesVector &serverReadables)
         -> std::pair<UserReadablesVector, UserReadablesVector>;
     void processReadableDeletion(const UserReadablesVector &readablesToDelete,
