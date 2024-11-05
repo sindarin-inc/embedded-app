@@ -945,31 +945,31 @@ auto LocalStore::syncFromRemote(bool wifiConnected, bool bleConnected, SyncReaso
         return false;
     }
 
-    bool syncSuccessful = false;
+    defer {
+        log_d("Min watermark for task %s: %u bytes (%s:%d)", pcTaskGetName(nullptr),
+              (unsigned int)uxTaskGetStackHighWaterMark(NULL), __FILE__, __LINE__);
+    };
+
     if (booksAlreadySynced && articlesAlreadySynced) {
         progressCallback(ContentSyncState{.state = ContentSyncState::State::AlreadySynced});
-        syncSuccessful = true;
+        return true;
     } else if (booksNowSynced || articlesNowSynced) {
         progressCallback(ContentSyncState{.state = ContentSyncState::State::Synced,
                                           .booksDownloaded = booksDownloaded,
                                           .articlesDownloaded = articlesDownloaded});
-        syncSuccessful = true;
+        return true;
     } else if (checkSyncFailures > 0) {
         progressCallback(ContentSyncState{.state = ContentSyncState::State::Failure,
                                           .booksDownloaded = booksDownloaded,
                                           .articlesDownloaded = articlesDownloaded,
                                           .usedBle = bleConnected,
                                           .message = "Failed to check sync"});
-        syncSuccessful = false;
+        return false;
     } else {
         progressCallback(ContentSyncState{.state = ContentSyncState::State::AlreadySynced,
                                           .message = "Already synced"});
-        syncSuccessful = true;
+        return true;
     }
-    log_d("Min watermark for task %s: %u bytes (%s:%d)", pcTaskGetName(nullptr),
-          (unsigned int)uxTaskGetStackHighWaterMark(NULL), __FILE__, __LINE__);
-
-    return syncSuccessful;
 }
 
 auto LocalStore::processReadables(const ReadablesVector &readables,
