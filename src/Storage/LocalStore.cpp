@@ -799,6 +799,7 @@ void LocalStore::syncFromRemote(
             if (httpCode != 200) {
                 log_e("Failed to check sync (HTTP %d)", httpCode);
                 progressCallback(ContentSyncState{.state = ContentSyncState::State::Failure,
+                                                  .usedBle = bleConnected,
                                                   .message = "Failed to check sync"});
                 this->telemetry_.logMetric(
                     TelemetryField::METRIC_SYNC_STATUS,
@@ -954,6 +955,7 @@ void LocalStore::syncFromRemote(
         progressCallback(ContentSyncState{.state = ContentSyncState::State::Failure,
                                           .booksDownloaded = booksDownloaded,
                                           .articlesDownloaded = articlesDownloaded,
+                                          .usedBle = bleConnected,
                                           .message = "Failed to check sync"});
     } else {
         progressCallback(ContentSyncState{.state = ContentSyncState::State::AlreadySynced,

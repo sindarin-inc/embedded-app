@@ -18,9 +18,9 @@ std::shared_ptr<CancelFlag> cancel;
 
 void BackgroundSyncCancel() { CancelFlag::cancel(cancel); }
 
-void BackgroundSync(PowerManager &powerManager, PreferencesStore &prefs, LocalStore &localStore,
+auto BackgroundSync(PowerManager &powerManager, PreferencesStore &prefs, LocalStore &localStore,
                     Telemetry &telemetry, FileSystem &fileSystem, bool useWifi, bool useBle)
-    ->bool {
+    -> bool {
     log_d("Background sync starting");
 
     // Don't perform a background sync if wifi is disabled manually
@@ -28,7 +28,7 @@ void BackgroundSync(PowerManager &powerManager, PreferencesStore &prefs, LocalSt
     // and if so, continue with the sync but DON'T use wifi for it. Maybe have to
     // change the guts of this a bit to pull that off.
     if (prefs.wifiDisabled.get().value_or(false) && prefs.bleDisabled.get().value_or(false)) {
-        return;
+        return false;
     }
 
     auto wifiConnected = false;
@@ -87,7 +87,7 @@ void BackgroundSync(PowerManager &powerManager, PreferencesStore &prefs, LocalSt
     auto syncSuccessful = false;
 
     localStore.syncFromRemote(
-        PreferencesStore::syncReason, cancel,
+        wifiConnected, bleConnected, PreferencesStore::syncReason, cancel,
         [&powerManager, &telemetry, &syncSuccessful](const ContentSyncState &state) {
         powerManager.feedInactivityTimer();
 

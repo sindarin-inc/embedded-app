@@ -417,6 +417,7 @@ void ContentSyncScreen::begin() {
             if (!BLEManager::getInstance()->connectProxy(cancel_)) {
                 telemetry_.logMetric(TelemetryField::METRIC_WIFI, "sync-ble-failed");
                 progressCallback(ContentSyncState{.state = ContentSyncState::State::Failure,
+                                                  .usedBle = true,
                                                   .message = "Failed to connect to WiFi or BLE."});
                 return;
             } else {

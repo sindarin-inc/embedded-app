@@ -6,8 +6,9 @@
 
 void BackgroundSyncCancel();
 
-void BackgroundSync(PowerManager &powerManager, PreferencesStore &prefs, LocalStore &localStore,
-                    Telemetry &telemetry, FileSystem &fileSystem);
+auto BackgroundSync(PowerManager &powerManager, PreferencesStore &prefs, LocalStore &localStore,
+                    Telemetry &telemetry, FileSystem &fileSystem, bool useWifi, bool useBle)
+    -> bool;
 
 void __attribute__((noreturn))
 BackgroundSyncAndSleep(PowerManager &powerManager, PreferencesStore &prefs, LocalStore &localStore,

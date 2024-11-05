@@ -444,7 +444,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
             [](void *) {
             while (powerManager.state() != PowerState::ShuttingDown) {
                 PreferencesStore::syncReason = SyncReason::Periodic;
-                BackgroundSync(powerManager, prefs, localStore, telemetry, fileSystem);
+                BackgroundSync(powerManager, prefs, localStore, telemetry, fileSystem, true, false);
                 vTaskDelay(60000 / portTICK_PERIOD_MS);
             }
             log_d("Sync loop task exited");
