@@ -37,9 +37,8 @@ public:
 
     Footnote(StreamPlace streamPlace, SpiramString id, SpiramString filename, SpiramString content,
              bool contentFound)
-        : streamPlace(streamPlace), id(std::move(id)),
-          filename(std::move(filename)), content(std::move(content)),
-          contentFound(contentFound) {}
+        : streamPlace(streamPlace), id(std::move(id)), filename(std::move(filename)),
+          content(std::move(content)), contentFound(contentFound) {}
 
     void show(int i, std::ostream &outstream = std::cout, bool html = false) {
         SpiramString none = "[none]";
