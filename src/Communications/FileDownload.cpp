@@ -37,7 +37,7 @@ auto DownloadFileCommon(
     const char *url, const std::function<bool(int httpCode, int contentLength)> &openedConnection,
     const std::function<size_t(std::shared_ptr<HttpClient> client, int index, int contentLength)>
         &readWrite,
-    const std::shared_ptr<CancelFlag> &cancel, bool useBle, int expectedSize,
+    const std::shared_ptr<CancelFlag> &cancel, bool useBle,
     const std::function<void(int bytesWritten, float percentage)> &progressCallback, bool gzip,
     const std::string &requestBodyJson) -> int {
     if (CancelFlag::isCancelled(cancel)) {
@@ -77,7 +77,7 @@ auto DownloadFileCommon(
         client->write(requestBodyJson.c_str(), requestBodyJson.size());
     }
 
-    auto contentLength = client->fetchHeaders(expectedSize, cancel);
+    auto contentLength = client->fetchHeaders(cancel);
 
     // Get a bit of the body, for debugging, since it might contain an error message
     auto readBody = [&client] {
@@ -203,7 +203,7 @@ auto DownloadFileCommon(
 auto DownloadFileWithWriteBytes(
     const char *url, const std::function<bool(int httpCode, int contentLength)> &openedConnection,
     const std::function<size_t(const uint8_t *buf, size_t size)> &writeBytes,
-    const std::shared_ptr<CancelFlag> &cancel, bool useBle, int expectedSize,
+    const std::shared_ptr<CancelFlag> &cancel, bool useBle,
     const std::function<void(int bytesWritten, float percentage)> &progressCallback, bool gzip)
     -> int {
 
@@ -224,7 +224,7 @@ auto DownloadFileWithWriteBytes(
 
         return readLen;
         },
-        cancel, useBle, expectedSize, progressCallback, gzip);
+        cancel, useBle, progressCallback, gzip);
 }
 
 auto DownloadFileToPath(const char *url, FileSystem &fileSystem, Telemetry &telemetry,
@@ -363,9 +363,9 @@ auto DownloadFileToPath(const char *url, FileSystem &fileSystem, Telemetry &tele
     // Spin up the downloader task
     int httpCode;
     auto downloader = [url, openedConnection, reader, gzip, &httpCode, ringbuf, cancel, useBle,
-                       expectedSize, &requestBodyJson]() {
-        httpCode = DownloadFileCommon(url, openedConnection, reader, cancel, useBle, expectedSize,
-                                      nullptr, gzip, requestBodyJson);
+                       &requestBodyJson]() {
+        httpCode = DownloadFileCommon(url, openedConnection, reader, cancel, useBle, nullptr, gzip,
+                                      requestBodyJson);
 
         DataBlock *block;
         auto err = xRingbufferSendAcquire(ringbuf, reinterpret_cast<void **>(&block),
@@ -456,7 +456,7 @@ auto DownloadFileToPath(const char *url, FileSystem &fileSystem, Telemetry &tele
 
     if (expectedSize != 0 && expectedSize != fileSize) {
         // TODO: What's the best API to get errors from the stream?
-        log_e("Downloaded file is shorter than expected, expected %d bytes but got %zu bytes (%s)",
+        log_e("Downloaded file size is wrong, expected %d bytes but got %zu bytes (%s)",
               expectedSize, fileSize, gzip ? "uncompressed" : "compressed");
         telemetry.logMetric(TelemetryField::METRIC_SYNC_STATUS, "wrong-size",
                             {{"expected", expectedSize}, {"actual", static_cast<int>(fileSize)}});

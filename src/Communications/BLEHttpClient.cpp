@@ -56,8 +56,7 @@ auto BLEHttpClient::write(const char *body, int length) -> int {
     return length;
 }
 
-auto BLEHttpClient::fetchHeaders(int expectedSize, const std::shared_ptr<CancelFlag> &cancel)
-    -> int {
+auto BLEHttpClient::fetchHeaders(const std::shared_ptr<CancelFlag> &cancel) -> int {
     constexpr auto fetchingTimeoutMs = 1 * 60 * 1000; // 1 minute of downloading headers per book
     statusCode_ = 0;
     contentLength_ = 0;

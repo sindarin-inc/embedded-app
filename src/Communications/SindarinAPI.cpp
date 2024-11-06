@@ -95,7 +95,7 @@ auto SindarinAPI::checkSync(const std::string &url, CheckSyncRequest &req, Check
         return ERR_CLIENT_WRITE;
     }
 
-    int contentLength = client->fetchHeaders(0, cancel);
+    int contentLength = client->fetchHeaders(cancel);
     if (contentLength <= 0) {
         std::string message = "Failed to fetch headers";
         log_e("%s", message.c_str());
@@ -324,7 +324,7 @@ auto SindarinAPI::uploadTelemetryFile(SFile &telemetryFile, const std::string &l
     }
 
     // Send request and fetch response
-    client->fetchHeaders(0, cancel);
+    client->fetchHeaders(cancel);
     auto httpCode = client->getStatusCode();
     log_d("Telemetry upload http code: %d", httpCode);
 
