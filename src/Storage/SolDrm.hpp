@@ -17,7 +17,8 @@ public:
     ~SolDrm();
 
     auto publicKeyPem() -> std::string;
-    auto decryptInPlaceIfNecessary(uint8_t *data, size_t length) -> size_t;
+    auto decryptInPlaceIfNecessary(const std::shared_ptr<uint8_t[]> &data, size_t length)
+        -> std::pair<std::shared_ptr<uint8_t[]>, size_t>;
 
 private:
     struct FileHeader {

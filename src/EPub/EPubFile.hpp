@@ -1,7 +1,5 @@
 #pragma once
 
-#include <array>
-#include <optional>
 #include <pugixml.hpp>
 #include <utility>
 
@@ -67,8 +65,7 @@ public:
     [[nodiscard]] auto getXHTMLFile(const std::string_view &path) -> pugi::xml_document &;
 
     [[nodiscard]] inline auto getOffset(const pugi::char_t *item) const -> uint32_t {
-        return item - reinterpret_cast<pugi::char_t *>(currentFileBuffer_.get() +
-                                                       currentFileContentStart_);
+        return item - reinterpret_cast<pugi::char_t *>(currentFileBuffer_.get());
     }
 
     [[nodiscard]] inline auto getFullPath(const std::string &filename) const -> std::string {
@@ -126,11 +123,8 @@ private:
 
     // std::unique_ptr<pugi::char_t[]> currentFileBuffer_;
     std::shared_ptr<uint8_t[]> currentFileBuffer_;
-    // Offset from the beginning of `currentFileBuffer_` where the file content starts
-    size_t currentFileContentStart_;
     std::string currentFilePath_;
+    SolDrm &solDrm_;
 
     auto open() -> bool;
-
-    SolDrm &solDrm_;
 };

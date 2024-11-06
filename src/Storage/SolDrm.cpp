@@ -4,6 +4,7 @@
 #include <mbedtls/error.h>
 #include <mbedtls/gcm.h>
 #include <mbedtls/rsa.h>
+#include <miniz/miniz.h>
 
 #include "Misc/Defer.hpp"
 #include "Misc/SpiramAllocator.hpp"
@@ -261,33 +262,110 @@ auto SolDrm::decryptAESInPlace(uint8_t *encryptedData, size_t encryptedLength, c
     return true;
 }
 
-auto SolDrm::decryptInPlaceIfNecessary(uint8_t *data, size_t length) -> size_t {
-    size_t contentStart = 0;
-
+auto SolDrm::decryptInPlaceIfNecessary(const std::shared_ptr<uint8_t[]> &data, size_t length)
+    -> std::pair<std::shared_ptr<uint8_t[]>, size_t> {
     // Check if the file is encrypted
-    auto encryptionInfo = parseFileHeader(data, length);
-    if (encryptionInfo.has_value()) {
-
-        // File is encrypted, decrypt it
-        contentStart =
-            8 + encryptionInfo->encryptionType.size() + encryptionInfo->encryptedAESKey.size() + 32;
-
-        // Decrypt the AES key using SolDrm's RSA decryption
-        PROFILE_START(decryptRSA);
-        auto [aesKey, aesKeyLength] = decryptRSA(encryptionInfo->encryptedAESKey.data(),
-                                                 encryptionInfo->encryptedAESKey.size());
-        if (!aesKey) {
-            log_e("Failed to decrypt AES key");
-        }
-        PROFILE_END_LOG_US(decryptRSA);
-
-        // Decrypt the content with AES
-        PROFILE_START(decryptAESInPlace);
-        decryptAESInPlace(data + contentStart, length - contentStart - 1, aesKey.get(),
-                          aesKeyLength, encryptionInfo->aesNonce, encryptionInfo->aesTag);
-        PROFILE_END_LOG_US(decryptAESInPlace);
+    auto encryptionInfo = parseFileHeader(data.get(), length);
+    if (!encryptionInfo.has_value()) {
+        // Not encrypted
+        return {data, length};
     }
-    return contentStart;
+
+    size_t contentStart =
+        8 + encryptionInfo->encryptionType.size() + encryptionInfo->encryptedAESKey.size() + 32;
+
+    // Decrypt the AES key using SolDrm's RSA decryption
+    PROFILE_START(decryptRSA);
+    auto [aesKey, aesKeyLength] =
+        decryptRSA(encryptionInfo->encryptedAESKey.data(), encryptionInfo->encryptedAESKey.size());
+    if (!aesKey) {
+        log_e("Failed to decrypt AES key");
+        return {nullptr, 0};
+    }
+    PROFILE_END_LOG_US(decryptRSA);
+
+    // Decrypt the content with AES
+    PROFILE_START(decryptAESInPlace);
+    if (!decryptAESInPlace(data.get() + contentStart, length - contentStart - 1, aesKey.get(),
+                           aesKeyLength, encryptionInfo->aesNonce, encryptionInfo->aesTag)) {
+        log_e("Failed to decrypt content with AES");
+        return {nullptr, 0};
+    }
+    PROFILE_END_LOG_US(decryptAESInPlace);
+
+    // Now that we're decrypted, decompress the data
+    PROFILE_START(decompress);
+    defer { PROFILE_END_LOG_US(decompress); };
+
+    // log_d("First 16 bytes of compressed data: %s",
+    //       BytesToHex(data.get() + contentStart, std::min(size_t(16), length - contentStart -
+    //       1))
+    //           .c_str());
+
+    mz_stream stream;
+    memset(&stream, 0, sizeof(stream));
+    stream.zalloc = SpiZAlloc;
+    stream.zfree = SpiZFree;
+    stream.opaque = nullptr;
+    auto status = mz_inflateInit(&stream);
+    if (status != MZ_OK) {
+        log_e("Failed to initialize decompression with error %d", status);
+        return {nullptr, 0};
+    }
+    defer { mz_inflateEnd(&stream); };
+
+    // Set up source buffer and verify it
+    stream.next_in = data.get() + contentStart;
+    stream.avail_in = length - contentStart - 1;
+    log_d("Input buffer: next_in=%p, avail_in=%u", (void *)stream.next_in, stream.avail_in);
+    log_d("First two bytes at next_in: 0x%02x 0x%02x", stream.next_in[0], stream.next_in[1]);
+
+    // TODO: It would be nice to have a way to know the decompressed size so we wouldnt have to
+    // handle MZ_BUF_ERROR and potentially duplicate work
+    size_t decompressedSize = (length - contentStart - 1) * 3;
+    auto decompressedData = SpiRamArrayPtr<uint8_t>(decompressedSize);
+
+    while (true) {
+        // Reset stream for each attempt
+        mz_inflateEnd(&stream);
+        status = mz_inflateInit(&stream);
+        if (status != MZ_OK) {
+            log_e("Failed to reinitialize decompression with error %d", status);
+            return {nullptr, 0};
+        }
+
+        // Reset input position
+        stream.next_in = data.get() + contentStart;
+        stream.avail_in = length - contentStart - 1;
+
+        // Set up output buffer
+        stream.next_out = decompressedData.get();
+        stream.avail_out = decompressedSize;
+
+        log_d("Trying decompression with output buffer size %zu", decompressedSize);
+
+        // Try to decompress
+        status = mz_inflate(&stream, MZ_FINISH);
+        log_d("Inflate status: %d, consumed %lu bytes, produced %lu bytes", status, stream.total_in,
+              stream.total_out);
+
+        if (status == MZ_STREAM_END) {
+            // Success!
+            break;
+        } else if (status == MZ_BUF_ERROR || (status == MZ_OK && stream.avail_out == 0)) {
+            // Need more output space
+            decompressedSize *= 2;
+            log_w("Increasing buffer size to %zu", decompressedSize);
+            decompressedData = std::shared_ptr<uint8_t[]>(new uint8_t[decompressedSize]);
+            continue;
+        } else {
+            // Real error
+            log_e("Decompression failed with status %d", status);
+            return {nullptr, 0};
+        }
+    }
+
+    return {decompressedData, stream.total_out};
 }
 
 auto SolDrm::parseFileHeader(const uint8_t *data, size_t length) -> std::optional<FileHeader> {
