@@ -79,10 +79,23 @@ auto DownloadFileCommon(
 
     auto contentLength = client->fetchHeaders(expectedSize, cancel);
 
+    // Get a bit of the body, for debugging, since it might contain an error message
+    auto readBody = [&client] {
+        char buffer[256];
+        auto read = client->read(buffer, sizeof(buffer));
+        buffer[read] = '\0';
+        if (read > 0) {
+            log_w("Error body: %s", buffer);
+        } else {
+            log_d("No error body: %s", buffer);
+        }
+    };
+
     auto httpCode = client->getStatusCode();
     if (httpCode != 200) {
         if (httpCode != 0) {
             log_w("Status code was %d", httpCode);
+            readBody();
             return httpCode;
         } else {
             log_w("Status code was 0, assuming connection error");
@@ -125,14 +138,7 @@ auto DownloadFileCommon(
     }
 
     if (!openedConnection(httpCode, contentLength)) {
-        // Get the body anyways, for debugging, since it might contain an error message
-        char buffer[256];
-        auto read = client->read(buffer, sizeof(buffer));
-        if (read > 0) {
-            log_w("Error body: %s", buffer);
-        } else {
-            log_d("No error body: %s", buffer);
-        }
+        readBody();
         return ERR_OPEN_BLOCK;
     }
 
