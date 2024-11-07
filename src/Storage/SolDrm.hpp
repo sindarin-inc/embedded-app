@@ -33,6 +33,7 @@ private:
     mbedtls_ctr_drbg_context ctrDrbg_{};
     mbedtls_entropy_context entropy_{};
 
+    void mbedtlsPrintError(const char *func, int ret);
     void initIfNecessary();
     auto generateKeypair(unsigned int keySize = 1024) -> int;
     auto parseFileHeader(const uint8_t *data, size_t length) -> std::optional<FileHeader>;

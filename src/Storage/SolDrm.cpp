@@ -17,6 +17,12 @@ SolDrm::~SolDrm() {
     }
 }
 
+void SolDrm::mbedtlsPrintError(const char *func, int ret) {
+    char errorBuf[100];
+    mbedtls_strerror(ret, errorBuf, sizeof(errorBuf));
+    log_e("%s failed: %s (error code: -0x%04x)", func, errorBuf, -ret);
+}
+
 void SolDrm::initIfNecessary() {
     if (initialized_) {
         return;
@@ -26,7 +32,7 @@ void SolDrm::initIfNecessary() {
 
     int ret = mbedtls_ctr_drbg_seed(&ctrDrbg_, mbedtls_entropy_func, &entropy_, nullptr, 0);
     if (ret != 0) {
-        log_e("mbedtls_ctr_drbg_seed 0x%x", ret);
+        mbedtlsPrintError("mbedtls_ctr_drbg_seed", ret);
     }
 
     // If we don't have a private key, generate one
@@ -38,17 +44,18 @@ void SolDrm::initIfNecessary() {
 }
 
 auto SolDrm::generateKeypair(unsigned int keySize) -> int {
-    log_i("Generating RSA keypair of size %d", keySize);
+    log_d("Generating RSA keypair of size %d", keySize);
 
     PROFILE_START(generateKeypair);
 
     int ret;
     mbedtls_pk_context key;
     mbedtls_pk_init(&key);
+    defer { mbedtls_pk_free(&key); };
 
     ret = mbedtls_pk_setup(&key, mbedtls_pk_info_from_type(MBEDTLS_PK_RSA));
     if (ret != 0) {
-        log_e("mbedtls_pk_setup 0x%x", ret);
+        mbedtlsPrintError("mbedtls_pk_setup", ret);
         return ret;
     }
 
@@ -57,61 +64,40 @@ auto SolDrm::generateKeypair(unsigned int keySize) -> int {
     ret = mbedtls_rsa_gen_key(mbedtls_pk_rsa(key), mbedtls_ctr_drbg_random, &ctrDrbg_, keySize,
                               exponent);
     if (ret != 0) {
-        log_e("mbedtls_rsa_gen_key 0x%x", ret);
+        mbedtlsPrintError("mbedtls_rsa_gen_key", ret);
         return ret;
     }
 
-    // Save or use the key here; for example, print it in PEM format
-    size_t outputBufferSize = 10000;
+    // Allocate enough space for DER format
+    size_t outputBufferSize = (keySize / 8) * 8 + 64;
     char *outputBuffer = static_cast<char *>(SpiRamMalloc(outputBufferSize));
+    defer { SpiRamFree(outputBuffer); };
 
-    // Write the private key in DER format
-    // auto privateKeyLength =
-    //     mbedtls_pk_write_key_der(&key, (unsigned char *)outputBuffer, outputBufferSize);
-    // if (privateKeyLength < 0) {
-    //     log_e("Failed to write private key in DER format - 0x%x", privateKeyLength);
-    //     SpiRamFree(outputBuffer);
-    //     mbedtls_pk_free(&key);
-    //     return privateKeyLength;
-    // }
-
-    // log_i("Private key DER length: %d bytes", privateKeyLength);
-
-    ret = mbedtls_pk_write_key_pem(&key, reinterpret_cast<unsigned char *>(outputBuffer),
+    // Write the private key in DER format (~609 bytes)
+    ret = mbedtls_pk_write_key_der(&key, reinterpret_cast<unsigned char *>(outputBuffer),
                                    outputBufferSize);
-    if (ret != 0) {
-        log_e("mbedtls_pk_write_key_pem 0x%x\n", ret);
-        SpiRamFree(outputBuffer);
-        mbedtls_pk_free(&key);
+    if (ret <= 0) {
+        mbedtlsPrintError("mbedtls_pk_write_key_der", ret);
         return ret;
     }
-    log_i("Private key:\n%s\n", outputBuffer);
+    size_t derLen = ret;
+    log_i("Private key DER length: %zu bytes", derLen);
 
-    std::vector<uint8_t> privateKey(outputBuffer, outputBuffer + strlen(outputBuffer) + 1);
-    prefs_.privateKey.set(privateKey);
+    // Important: DER data starts from the end of the buffer!
+    auto *derStart = reinterpret_cast<unsigned char *>(outputBuffer + outputBufferSize - derLen);
+    std::vector<uint8_t> privateKey(derStart, derStart + derLen);
+    prefs_.privateKey.set(std::move(privateKey));
 
-    // // Write the public key in DER format
-    // auto public_key_len = mbedtls_pk_write_pubkey_der(&key, (unsigned char *)output_buf, 64000);
-    // if (public_key_len < 0) {
-    //     log_e("Failed to write public key in DER format - 0x%x", public_key_len);
-    //     SpiRamFree(output_buf);
-    //     mbedtls_pk_free(&key);
-    //     return public_key_len;
+    // // Write the private key in PEM format (~892 bytes)
+    // ret = mbedtls_pk_write_key_pem(&key, reinterpret_cast<unsigned char *>(outputBuffer),
+    //                                outputBufferSize);
+    // if (ret != 0) {
+    //     mbedtlsPrintError("mbedtls_pk_write_key_pem", ret);
+    //     return ret;
     // }
-    // log_i("Public key DER length: %d bytes", public_key_len);
-
-    ret = mbedtls_pk_write_pubkey_pem(&key, reinterpret_cast<unsigned char *>(outputBuffer),
-                                      outputBufferSize);
-    if (ret != 0) {
-        log_e("mbedtls_pk_write_key_pem 0x%x\n", ret);
-        SpiRamFree(outputBuffer);
-        mbedtls_pk_free(&key);
-        return ret;
-    }
-    log_i("Public key:\n%s\n", outputBuffer);
-
-    SpiRamFree(outputBuffer);
-    mbedtls_pk_free(&key);
+    // log_d("Private key PEM (%zu bytes):\n%s\n", strlen(outputBuffer) + 1, outputBuffer);
+    // std::vector<uint8_t> privateKey(outputBuffer, outputBuffer + strlen(outputBuffer) + 1);
+    // prefs_.privateKey.set(privateKey);
 
     PROFILE_END_LOG_MS(generateKeypair);
 
@@ -137,26 +123,26 @@ auto SolDrm::publicKeyPem() -> std::string {
     int ret = mbedtls_pk_parse_key(&key, privateKey.data(), privateKey.size(), nullptr, 0,
                                    mbedtls_ctr_drbg_random, &ctrDrbg_);
     if (ret != 0) {
-        log_e("mbedtls_pk_parse_key: -0x%x", -ret);
+        mbedtlsPrintError("mbedtls_pk_parse_key", ret);
         return "";
     }
 
-    size_t estimatedPemSize = (privateKey.size() * 4 / 3) + 100;
-    auto *output_buf = static_cast<unsigned char *>(SpiRamMalloc(estimatedPemSize));
-    defer { SpiRamFree(output_buf); };
-    if (output_buf == nullptr) {
+    size_t estimatedPemSize = (privateKey.size() / 3) * 4 + 100;
+    auto *outputBuffer = static_cast<unsigned char *>(SpiRamMalloc(estimatedPemSize));
+    if (outputBuffer == nullptr) {
         log_e("Failed to allocate memory for output buffer");
         return "";
     }
+    defer { SpiRamFree(outputBuffer); };
 
-    ret = mbedtls_pk_write_pubkey_pem(&key, output_buf, estimatedPemSize);
+    ret = mbedtls_pk_write_pubkey_pem(&key, outputBuffer, estimatedPemSize);
     if (ret != 0) {
-        log_e("Failed to write public key in PEM format: -0x%x", -ret);
+        mbedtlsPrintError("mbedtls_pk_write_pubkey_pem", ret);
         return "";
     }
 
-    std::string publicKey = reinterpret_cast<char *>(output_buf);
-    log_i("Public key:\n%s\n", publicKey.c_str());
+    std::string publicKey = reinterpret_cast<char *>(outputBuffer);
+    log_d("Public key:\n%s", publicKey.c_str());
     return publicKey;
 }
 
@@ -178,9 +164,7 @@ auto SolDrm::decryptRSA(const uint8_t *data, size_t length)
     int ret = mbedtls_pk_parse_key(&key, privateKey.data(), privateKey.size(), nullptr, 0,
                                    mbedtls_ctr_drbg_random, &ctrDrbg_);
     if (ret != 0) {
-        char errorBuf[100];
-        mbedtls_strerror(ret, errorBuf, sizeof(errorBuf));
-        log_e("mbedtls_pk_parse_key failed: %s (error code: -0x%04x)", errorBuf, -ret);
+        mbedtlsPrintError("mbedtls_pk_parse_key", ret);
         return {nullptr, 0};
     }
 
@@ -201,16 +185,17 @@ auto SolDrm::decryptRSA(const uint8_t *data, size_t length)
     size_t outputLength = 0;
     auto ctx = mbedtls_pk_rsa(key);
 
-    mbedtls_rsa_set_padding(ctx, MBEDTLS_RSA_PKCS_V21, MBEDTLS_MD_SHA1);
+    ret = mbedtls_rsa_set_padding(ctx, MBEDTLS_RSA_PKCS_V21, MBEDTLS_MD_SHA1);
+    if (ret != 0) {
+        mbedtlsPrintError("mbedtls_rsa_set_padding", ret);
+        return {nullptr, 0};
+    }
 
     // This takes ~160ms using a 1024-bit key
     ret = mbedtls_rsa_rsaes_oaep_decrypt(ctx, mbedtls_ctr_drbg_random, &ctrDrbg_, nullptr, 0,
                                          &outputLength, data, decryptedData.get(), keyLength);
-
     if (ret != 0) {
-        char errorBuf[100];
-        mbedtls_strerror(ret, errorBuf, sizeof(errorBuf));
-        log_e("mbedtls_rsa_rsaes_oaep_decrypt failed: %s (error code: -0x%04x)", errorBuf, -ret);
+        mbedtlsPrintError("mbedtls_rsa_rsaes_oaep_decrypt", ret);
         return {nullptr, 0};
     }
 
@@ -232,9 +217,7 @@ auto SolDrm::decryptAESInPlace(uint8_t *encryptedData, size_t encryptedLength, c
 
     int ret = mbedtls_gcm_setkey(&aes, MBEDTLS_CIPHER_ID_AES, key, 256);
     if (ret != 0) {
-        char errorBuf[100];
-        mbedtls_strerror(ret, errorBuf, sizeof(errorBuf));
-        log_e("mbedtls_gcm_setkey failed: %s", errorBuf);
+        mbedtlsPrintError("mbedtls_gcm_setkey", ret);
         return false;
     }
 
@@ -242,15 +225,12 @@ auto SolDrm::decryptAESInPlace(uint8_t *encryptedData, size_t encryptedLength, c
                                    tag.data(), tag.size(), encryptedData, encryptedData);
 
     if (ret != 0) {
-        char errorBuf[100];
-        mbedtls_strerror(ret, errorBuf, sizeof(errorBuf));
-        log_e("mbedtls_gcm_auth_decrypt failed: %s (error code: -0x%04x)", errorBuf, -ret);
+        mbedtlsPrintError("mbedtls_gcm_auth_decrypt", ret);
         log_d("AES Key: %s", BytesToHex(key, keyLength).c_str());
         log_d("IV: %s", BytesToHex(iv.data(), iv.size()).c_str());
         log_d("Tag: %s", BytesToHex(tag.data(), tag.size()).c_str());
         log_d("First 16 bytes of encrypted data: %s",
               BytesToHex(encryptedData, std::min(size_t(16), encryptedLength)).c_str());
-        // return {};
         return false;
     }
 
