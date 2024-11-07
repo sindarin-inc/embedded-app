@@ -46,15 +46,13 @@ auto SolDrm::generateKeypair(unsigned int keySize) -> int {
     mbedtls_pk_context key;
     mbedtls_pk_init(&key);
 
-    PROFILE_START(generateKeypairSetup);
     ret = mbedtls_pk_setup(&key, mbedtls_pk_info_from_type(MBEDTLS_PK_RSA));
     if (ret != 0) {
         log_e("mbedtls_pk_setup 0x%x", ret);
         return ret;
     }
-    PROFILE_END(generateKeypairSetup);
 
-    PROFILE_START(generateKeypairGen);
+    // Takes ~4s for a 1024-bit key
     constexpr int exponent = 65537;
     ret = mbedtls_rsa_gen_key(mbedtls_pk_rsa(key), mbedtls_ctr_drbg_random, &ctrDrbg_, keySize,
                               exponent);
@@ -62,7 +60,6 @@ auto SolDrm::generateKeypair(unsigned int keySize) -> int {
         log_e("mbedtls_rsa_gen_key 0x%x", ret);
         return ret;
     }
-    PROFILE_END(generateKeypairGen);
 
     // Save or use the key here; for example, print it in PEM format
     size_t outputBufferSize = 10000;
@@ -116,10 +113,7 @@ auto SolDrm::generateKeypair(unsigned int keySize) -> int {
     SpiRamFree(outputBuffer);
     mbedtls_pk_free(&key);
 
-    PROFILE_END(generateKeypair);
-    PROFILE_LOG_MS(generateKeypair);
-    PROFILE_LOG_MS(generateKeypairSetup);
-    PROFILE_LOG_MS(generateKeypairGen);
+    PROFILE_END_LOG_MS(generateKeypair);
 
     return 0;
 }
@@ -209,6 +203,7 @@ auto SolDrm::decryptRSA(const uint8_t *data, size_t length)
 
     mbedtls_rsa_set_padding(ctx, MBEDTLS_RSA_PKCS_V21, MBEDTLS_MD_SHA1);
 
+    // This takes ~160ms using a 1024-bit key
     ret = mbedtls_rsa_rsaes_oaep_decrypt(ctx, mbedtls_ctr_drbg_random, &ctrDrbg_, nullptr, 0,
                                          &outputLength, data, decryptedData.get(), keyLength);
 
@@ -282,7 +277,7 @@ auto SolDrm::decryptInPlaceIfNecessary(const std::shared_ptr<uint8_t[]> &data, s
         log_e("Failed to decrypt AES key");
         return {nullptr, 0};
     }
-    PROFILE_END_LOG_US(decryptRSA);
+    PROFILE_END_LOG_MS(decryptRSA);
 
     // Decrypt the content with AES
     PROFILE_START(decryptAESInPlace);
@@ -291,11 +286,11 @@ auto SolDrm::decryptInPlaceIfNecessary(const std::shared_ptr<uint8_t[]> &data, s
         log_e("Failed to decrypt content with AES");
         return {nullptr, 0};
     }
-    PROFILE_END_LOG_US(decryptAESInPlace);
+    PROFILE_END_LOG_MS(decryptAESInPlace);
 
     // Now that we're decrypted, decompress the data
     PROFILE_START(decompress);
-    defer { PROFILE_END_LOG_US(decompress); };
+    defer { PROFILE_END_LOG_MS(decompress); };
 
     // log_d("First 16 bytes of compressed data: %s",
     //       BytesToHex(data.get() + contentStart, std::min(size_t(16), length - contentStart -
