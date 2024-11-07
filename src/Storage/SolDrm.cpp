@@ -85,8 +85,7 @@ auto SolDrm::generateKeypair(unsigned int keySize) -> int {
 
     // Important: DER data starts from the end of the buffer!
     auto *derStart = reinterpret_cast<unsigned char *>(outputBuffer + outputBufferSize - derLen);
-    std::vector<uint8_t> privateKey(derStart, derStart + derLen);
-    prefs_.privateKey.set(std::move(privateKey));
+    prefs_.privateKey.set({derStart, derStart + derLen});
 
     // // Write the private key in PEM format (~892 bytes)
     // ret = mbedtls_pk_write_key_pem(&key, reinterpret_cast<unsigned char *>(outputBuffer),
@@ -96,8 +95,7 @@ auto SolDrm::generateKeypair(unsigned int keySize) -> int {
     //     return ret;
     // }
     // log_d("Private key PEM (%zu bytes):\n%s\n", strlen(outputBuffer) + 1, outputBuffer);
-    // std::vector<uint8_t> privateKey(outputBuffer, outputBuffer + strlen(outputBuffer) + 1);
-    // prefs_.privateKey.set(privateKey);
+    // prefs_.privateKey.set({outputBuffer, outputBuffer + strlen(outputBuffer) + 1});
 
     PROFILE_END_LOG_MS(generateKeypair);
 
