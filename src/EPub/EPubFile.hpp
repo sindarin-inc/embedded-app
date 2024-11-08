@@ -125,6 +125,7 @@ private:
     std::shared_ptr<uint8_t[]> currentFileBuffer_;
     std::string currentFilePath_;
     SolDrm &solDrm_;
+    std::optional<std::vector<uint8_t>> solDrmKey_;
 
     auto open() -> bool;
 };

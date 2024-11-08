@@ -144,14 +144,13 @@ auto SolDrm::publicKeyPem() -> std::string {
     return publicKey;
 }
 
-auto SolDrm::decryptRSA(const uint8_t *data, size_t length)
-    -> std::pair<std::shared_ptr<uint8_t[]>, size_t> {
+auto SolDrm::decryptRSA(const uint8_t *data, size_t length) -> std::vector<uint8_t> {
     initIfNecessary();
 
     auto privateKeyOptional = prefs_.privateKey.get();
     if (!privateKeyOptional.has_value()) {
         log_e("Private key not found");
-        return {nullptr, 0};
+        return {};
     }
     auto privateKey = privateKeyOptional.value();
 
@@ -163,57 +162,59 @@ auto SolDrm::decryptRSA(const uint8_t *data, size_t length)
                                    mbedtls_ctr_drbg_random, &ctrDrbg_);
     if (ret != 0) {
         mbedtlsPrintError("mbedtls_pk_parse_key", ret);
-        return {nullptr, 0};
+        return {};
     }
 
     if (mbedtls_pk_can_do(&key, MBEDTLS_PK_RSA)) {
         log_d("RSA key loaded successfully");
     } else {
         log_e("Failed to load RSA key");
-        return {nullptr, 0};
+        return {};
     }
 
     size_t keyLength = mbedtls_pk_get_len(&key);
     if (length != keyLength) {
         log_e("Encrypted data size (%zu) does not match key length (%zu)", length, keyLength);
-        return {nullptr, 0};
+        return {};
     }
 
-    auto decryptedData = std::shared_ptr<uint8_t[]>(new uint8_t[keyLength]);
+    auto decryptedData = std::vector<uint8_t>(keyLength);
     size_t outputLength = 0;
     auto ctx = mbedtls_pk_rsa(key);
 
     ret = mbedtls_rsa_set_padding(ctx, MBEDTLS_RSA_PKCS_V21, MBEDTLS_MD_SHA1);
     if (ret != 0) {
         mbedtlsPrintError("mbedtls_rsa_set_padding", ret);
-        return {nullptr, 0};
+        return {};
     }
 
     // This takes ~160ms using a 1024-bit key
     ret = mbedtls_rsa_rsaes_oaep_decrypt(ctx, mbedtls_ctr_drbg_random, &ctrDrbg_, nullptr, 0,
-                                         &outputLength, data, decryptedData.get(), keyLength);
+                                         &outputLength, data, decryptedData.data(), keyLength);
     if (ret != 0) {
         mbedtlsPrintError("mbedtls_rsa_rsaes_oaep_decrypt", ret);
-        return {nullptr, 0};
+        return {};
     }
+    decryptedData.resize(outputLength);
 
-    return {decryptedData, outputLength};
+    return decryptedData;
 }
 
-auto SolDrm::decryptAESInPlace(uint8_t *encryptedData, size_t encryptedLength, const uint8_t *key,
-                               size_t keyLength, const std::array<uint8_t, 16> &iv,
+auto SolDrm::decryptAESInPlace(uint8_t *encryptedData, size_t encryptedLength,
+                               const std::vector<uint8_t> &aesKey,
+                               const std::array<uint8_t, 16> &iv,
                                const std::array<uint8_t, 16> &tag) -> bool {
 
     mbedtls_gcm_context aes;
     mbedtls_gcm_init(&aes);
     defer { mbedtls_gcm_free(&aes); };
 
-    if (keyLength != 32) {
-        log_e("Invalid AES key size. Expected 32 bytes for AES-256, got %zu bytes", keyLength);
+    if (aesKey.size() != 32) {
+        log_e("Invalid AES key size. Expected 32 bytes for AES-256, got %zu bytes", aesKey.size());
         return false;
     }
 
-    int ret = mbedtls_gcm_setkey(&aes, MBEDTLS_CIPHER_ID_AES, key, 256);
+    int ret = mbedtls_gcm_setkey(&aes, MBEDTLS_CIPHER_ID_AES, aesKey.data(), 256);
     if (ret != 0) {
         mbedtlsPrintError("mbedtls_gcm_setkey", ret);
         return false;
@@ -224,7 +225,7 @@ auto SolDrm::decryptAESInPlace(uint8_t *encryptedData, size_t encryptedLength, c
 
     if (ret != 0) {
         mbedtlsPrintError("mbedtls_gcm_auth_decrypt", ret);
-        log_d("AES Key: %s", BytesToHex(key, keyLength).c_str());
+        log_d("AES Key: %s", BytesToHex(aesKey.data(), aesKey.size()).c_str());
         log_d("IV: %s", BytesToHex(iv.data(), iv.size()).c_str());
         log_d("Tag: %s", BytesToHex(tag.data(), tag.size()).c_str());
         log_d("First 16 bytes of encrypted data: %s",
@@ -235,10 +236,11 @@ auto SolDrm::decryptAESInPlace(uint8_t *encryptedData, size_t encryptedLength, c
     return true;
 }
 
-auto SolDrm::decryptInPlaceIfNecessary(const std::shared_ptr<uint8_t[]> &data, size_t length)
+auto SolDrm::decryptInPlaceIfNecessary(const std::vector<uint8_t> &aesKey,
+                                       const std::shared_ptr<uint8_t[]> &data, size_t length)
     -> std::pair<std::shared_ptr<uint8_t[]>, size_t> {
     // Check if the file is encrypted
-    auto fileHeader = parseFileHeader(data.get(), length);
+    auto fileHeader = parseContentFileHeader(data.get(), length);
     if (!fileHeader.has_value()) {
         // Not encrypted
         return {data, length};
@@ -246,20 +248,10 @@ auto SolDrm::decryptInPlaceIfNecessary(const std::shared_ptr<uint8_t[]> &data, s
 
     size_t contentStart = fileHeader->contentStart();
 
-    // Decrypt the AES key using SolDrm's RSA decryption
-    PROFILE_START(decryptRSA);
-    auto [aesKey, aesKeyLength] =
-        decryptRSA(fileHeader->encryptedAESKey.data(), fileHeader->encryptedAESKey.size());
-    if (!aesKey) {
-        log_e("Failed to decrypt AES key");
-        return {nullptr, 0};
-    }
-    PROFILE_END_LOG_MS(decryptRSA);
-
     // Decrypt the content with AES
     PROFILE_START(decryptAESInPlace);
-    if (!decryptAESInPlace(data.get() + contentStart, length - contentStart - 1, aesKey.get(),
-                           aesKeyLength, fileHeader->aesNonce, fileHeader->aesTag)) {
+    if (!decryptAESInPlace(data.get() + contentStart, length - contentStart - 1, aesKey,
+                           fileHeader->aesNonce, fileHeader->aesTag)) {
         log_e("Failed to decrypt content with AES");
         return {nullptr, 0};
     }
@@ -331,7 +323,8 @@ auto SolDrm::decryptInPlaceIfNecessary(const std::shared_ptr<uint8_t[]> &data, s
     return {decompressedData, stream.total_out};
 }
 
-auto SolDrm::parseFileHeader(const uint8_t *data, size_t length) -> std::optional<FileHeader> {
+auto SolDrm::parseKeyfile(const uint8_t *data, size_t length)
+    -> std::optional<std::vector<uint8_t>> {
     // DRM'd files must start with SOLDRMv1
     if (!HasPrefix(reinterpret_cast<const char *>(data), FileHeader::magicHeader(),
                    std::min(length, FileHeader::magicHeaderSize()))) {
@@ -340,33 +333,59 @@ auto SolDrm::parseFileHeader(const uint8_t *data, size_t length) -> std::optiona
 
     int dataPtr = FileHeader::magicHeaderSize();
 
-    FileHeader header;
+    KeyFileHeader header;
+
+    header.encryptionType = data[dataPtr];
+    dataPtr++;
+
+    header.encryptedAESKeySize = (data[dataPtr] << 24) | (data[dataPtr + 1] << 16) |
+                                 (data[dataPtr + 2] << 8) | data[dataPtr + 3];
+    dataPtr += 4;
+
+    if (length < (dataPtr + header.encryptedAESKeySize)) {
+        log_w("Keyfile is too short for header %zu", length);
+        return std::nullopt;
+    }
+
+    header.encryptedAESKey =
+        std::vector<uint8_t>(&data[dataPtr], &data[dataPtr] + header.encryptedAESKeySize);
+
+    log_d("Encrypted AES key of size %zu: %s", header.encryptedAESKey.size(),
+          BytesToHex(header.encryptedAESKey.data(), header.encryptedAESKey.size()).c_str());
+
+    // Decrypt the AES key using SolDrm's RSA decryption
+    PROFILE_START(decryptRSA);
+    auto aesKey = decryptRSA(header.encryptedAESKey.data(), header.encryptedAESKey.size());
+    if (aesKey.empty()) {
+        log_e("Failed to decrypt AES key");
+        return std::nullopt;
+    }
+    PROFILE_END_LOG_MS(decryptRSA);
+
+    return aesKey;
+}
+
+auto SolDrm::parseContentFileHeader(const uint8_t *data, size_t length)
+    -> std::optional<ContentFileHeader> {
+    // DRM'd files must start with SOLDRMv1
+    if (!HasPrefix(reinterpret_cast<const char *>(data), FileHeader::magicHeader(),
+                   std::min(length, FileHeader::magicHeaderSize()))) {
+        return std::nullopt;
+    }
+
+    int dataPtr = FileHeader::magicHeaderSize();
+
+    ContentFileHeader header;
 
     header.headerSize = (data[dataPtr] << 24) | (data[dataPtr + 1] << 16) |
                         (data[dataPtr + 2] << 8) | data[dataPtr + 3];
+    log_d("Header size: %zu", header.headerSize);
     dataPtr += 4;
 
     if (length < (header.headerSize + FileHeader::magicHeaderSize())) {
         log_w("File is too short for header %zu %zu", length, header.headerSize);
         return std::nullopt;
     }
-
-    header.encryptionType = data[dataPtr];
-    dataPtr++;
-
-    // Parse encrypted AES key length (big-endian)
-    uint32_t aesKeyLength = (data[dataPtr] << 24) | (data[dataPtr + 1] << 16) |
-                            (data[dataPtr + 2] << 8) | data[dataPtr + 3];
-    if (length < dataPtr + aesKeyLength + 32) {
-        log_e("Encrypted AES key is too short");
-        return std::nullopt;
-    }
-    dataPtr += 4;
-    header.encryptedAESKey = std::vector<uint8_t>(&data[dataPtr], &data[dataPtr] + aesKeyLength);
-    dataPtr += aesKeyLength;
-
-    log_d("Encrypted AES key of size %zu: %s", header.encryptedAESKey.size(),
-          BytesToHex(header.encryptedAESKey.data(), header.encryptedAESKey.size()).c_str());
 
     // Parse AES nonce and tag
     std::copy_n(&data[dataPtr], 16, header.aesNonce.begin());
