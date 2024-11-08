@@ -38,13 +38,12 @@ private:
 
     class ContentFileHeader : FileHeader {
     public:
-        size_t headerSize;
         std::array<uint8_t, 16> aesNonce{};
         std::array<uint8_t, 16> aesTag{};
         uint8_t compressionType;
         size_t decompressedSize;
 
-        auto contentStart() const -> size_t { return magicHeaderSize() + 4 + headerSize; };
+        static auto headerSize() -> size_t { return magicHeaderSize() + 16 + 16 + 1 + 4; };
     };
 
     PreferencesStore &prefs_;

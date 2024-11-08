@@ -246,7 +246,7 @@ auto SolDrm::decryptInPlaceIfNecessary(const std::vector<uint8_t> &aesKey,
         return {data, length};
     }
 
-    size_t contentStart = fileHeader->contentStart();
+    size_t contentStart = ContentFileHeader::headerSize();
 
     // Decrypt the content with AES
     PROFILE_START(decryptAESInPlace);
@@ -377,13 +377,8 @@ auto SolDrm::parseContentFileHeader(const uint8_t *data, size_t length)
 
     ContentFileHeader header;
 
-    header.headerSize = (data[dataPtr] << 24) | (data[dataPtr + 1] << 16) |
-                        (data[dataPtr + 2] << 8) | data[dataPtr + 3];
-    log_d("Header size: %zu", header.headerSize);
-    dataPtr += 4;
-
-    if (length < (header.headerSize + FileHeader::magicHeaderSize())) {
-        log_w("File is too short for header %zu %zu", length, header.headerSize);
+    if (length < ContentFileHeader::headerSize()) {
+        log_w("File is too short for header %zu %zu", length, ContentFileHeader::headerSize());
         return std::nullopt;
     }
 
@@ -395,8 +390,7 @@ auto SolDrm::parseContentFileHeader(const uint8_t *data, size_t length)
 
     header.compressionType = data[dataPtr];
     dataPtr++;
-    // Ignore the first 4 bytes of decompressed size (only use 32 bits)
-    dataPtr += 4;
+
     header.decompressedSize = (data[dataPtr] << 24) | (data[dataPtr + 1] << 16) |
                               (data[dataPtr + 2] << 8) | data[dataPtr + 3];
     dataPtr += 4;
