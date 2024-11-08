@@ -125,19 +125,7 @@ auto LocalStore::isReadableUnchanged(const ReadablesVector &readables,
                 }
             }
 
-            // If we have a file object, check that the size matches
-            // if (!r->files.empty() && !ignoreFileSizeCheck) {
-            //     if (fileSize >= 0 && fileSize != readable->file().size) {
-            //         log_w("File size mismatch for %s (%d on disk vs %d in local store),
-            //         ignoring",
-            //               path.c_str(), fileSize, readable->file().size);
-            //         return false;
-            //     } else {
-            //         return true;
-            //     }
-            // }
-
-            // Next check if the readable is updated more recently than local copy
+            // Check if the readable is updated more recently than local copy
             if (r->dateModified != readable->dateModified) {
                 log_i("Found newer version of %s on server", path.c_str());
                 return false;

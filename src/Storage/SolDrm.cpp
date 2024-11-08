@@ -87,16 +87,6 @@ auto SolDrm::generateKeypair(unsigned int keySize) -> int {
     auto *derStart = reinterpret_cast<unsigned char *>(outputBuffer + outputBufferSize - derLen);
     prefs_.privateKey.set({derStart, derStart + derLen});
 
-    // // Write the private key in PEM format (~892 bytes)
-    // ret = mbedtls_pk_write_key_pem(&key, reinterpret_cast<unsigned char *>(outputBuffer),
-    //                                outputBufferSize);
-    // if (ret != 0) {
-    //     mbedtlsPrintError("mbedtls_pk_write_key_pem", ret);
-    //     return ret;
-    // }
-    // log_d("Private key PEM (%zu bytes):\n%s\n", strlen(outputBuffer) + 1, outputBuffer);
-    // prefs_.privateKey.set({outputBuffer, outputBuffer + strlen(outputBuffer) + 1});
-
     PROFILE_END_LOG_MS(generateKeypair);
 
     return 0;
