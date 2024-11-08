@@ -57,8 +57,11 @@ auto HasSuffix(std::string const &str, std::string const &suffix) -> bool {
            str.compare(str.size() - suffix.size(), suffix.size(), suffix) == 0;
 }
 
-auto HasPrefix(const char *str, const char *pre) -> bool {
-    return strncmp(pre, str, strlen(pre)) == 0;
+auto HasPrefix(const char *str, const char *pre, size_t maxToCompare) -> bool {
+    if (maxToCompare == 0) {
+        maxToCompare = strlen(pre);
+    }
+    return strncmp(pre, str, maxToCompare) == 0;
 }
 
 auto Commify(uint32_t n) -> std::string {

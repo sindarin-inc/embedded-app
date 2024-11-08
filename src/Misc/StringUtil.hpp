@@ -60,7 +60,7 @@ auto SafeSnprintf(char *str, size_t size, const char *format, ...) -> bool;
 
 auto HasSuffix(std::string const &str, std::string const &suffix) -> bool;
 
-auto HasPrefix(const char *str, const char *pre) -> bool;
+auto HasPrefix(const char *str, const char *pre, size_t maxToCompare = 0) -> bool;
 
 auto Commify(uint32_t n) -> std::string;
 

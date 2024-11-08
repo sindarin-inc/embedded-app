@@ -238,19 +238,18 @@ auto SolDrm::decryptAESInPlace(uint8_t *encryptedData, size_t encryptedLength, c
 auto SolDrm::decryptInPlaceIfNecessary(const std::shared_ptr<uint8_t[]> &data, size_t length)
     -> std::pair<std::shared_ptr<uint8_t[]>, size_t> {
     // Check if the file is encrypted
-    auto encryptionInfo = parseFileHeader(data.get(), length);
-    if (!encryptionInfo.has_value()) {
+    auto fileHeader = parseFileHeader(data.get(), length);
+    if (!fileHeader.has_value()) {
         // Not encrypted
         return {data, length};
     }
 
-    size_t contentStart =
-        8 + encryptionInfo->encryptionType.size() + encryptionInfo->encryptedAESKey.size() + 32;
+    size_t contentStart = fileHeader->contentStart();
 
     // Decrypt the AES key using SolDrm's RSA decryption
     PROFILE_START(decryptRSA);
     auto [aesKey, aesKeyLength] =
-        decryptRSA(encryptionInfo->encryptedAESKey.data(), encryptionInfo->encryptedAESKey.size());
+        decryptRSA(fileHeader->encryptedAESKey.data(), fileHeader->encryptedAESKey.size());
     if (!aesKey) {
         log_e("Failed to decrypt AES key");
         return {nullptr, 0};
@@ -260,7 +259,7 @@ auto SolDrm::decryptInPlaceIfNecessary(const std::shared_ptr<uint8_t[]> &data, s
     // Decrypt the content with AES
     PROFILE_START(decryptAESInPlace);
     if (!decryptAESInPlace(data.get() + contentStart, length - contentStart - 1, aesKey.get(),
-                           aesKeyLength, encryptionInfo->aesNonce, encryptionInfo->aesTag)) {
+                           aesKeyLength, fileHeader->aesNonce, fileHeader->aesTag)) {
         log_e("Failed to decrypt content with AES");
         return {nullptr, 0};
     }
@@ -293,10 +292,7 @@ auto SolDrm::decryptInPlaceIfNecessary(const std::shared_ptr<uint8_t[]> &data, s
     log_d("Input buffer: next_in=%p, avail_in=%u", (void *)stream.next_in, stream.avail_in);
     log_d("First two bytes at next_in: 0x%02x 0x%02x", stream.next_in[0], stream.next_in[1]);
 
-    // TODO: It would be nice to have a way to know the decompressed size so we wouldnt have to
-    // handle MZ_BUF_ERROR and potentially duplicate work
-    size_t decompressedSize = (length - contentStart - 1) * 3;
-    auto decompressedData = SpiRamArrayPtr<uint8_t>(decompressedSize);
+    auto decompressedData = SpiRamArrayPtr<uint8_t>(fileHeader->decompressedSize);
 
     while (true) {
         // Reset stream for each attempt
@@ -313,9 +309,9 @@ auto SolDrm::decryptInPlaceIfNecessary(const std::shared_ptr<uint8_t[]> &data, s
 
         // Set up output buffer
         stream.next_out = decompressedData.get();
-        stream.avail_out = decompressedSize;
+        stream.avail_out = fileHeader->decompressedSize;
 
-        log_d("Trying decompression with output buffer size %zu", decompressedSize);
+        log_d("Trying decompression with output buffer size %zu", fileHeader->decompressedSize);
 
         // Try to decompress
         status = mz_inflate(&stream, MZ_FINISH);
@@ -325,12 +321,6 @@ auto SolDrm::decryptInPlaceIfNecessary(const std::shared_ptr<uint8_t[]> &data, s
         if (status == MZ_STREAM_END) {
             // Success!
             break;
-        } else if (status == MZ_BUF_ERROR || (status == MZ_OK && stream.avail_out == 0)) {
-            // Need more output space
-            decompressedSize *= 2;
-            log_w("Increasing buffer size to %zu", decompressedSize);
-            decompressedData = std::shared_ptr<uint8_t[]>(new uint8_t[decompressedSize]);
-            continue;
         } else {
             // Real error
             log_e("Decompression failed with status %d", status);
@@ -342,40 +332,55 @@ auto SolDrm::decryptInPlaceIfNecessary(const std::shared_ptr<uint8_t[]> &data, s
 }
 
 auto SolDrm::parseFileHeader(const uint8_t *data, size_t length) -> std::optional<FileHeader> {
-    // Minimum size for encryption header
-    if (length < 40) {
+    // DRM'd files must start with SOLDRMv1
+    if (!HasPrefix(reinterpret_cast<const char *>(data), FileHeader::magicHeader(),
+                   std::min(length, FileHeader::magicHeaderSize()))) {
         return std::nullopt;
     }
+
+    int dataPtr = FileHeader::magicHeaderSize();
 
     FileHeader header;
 
-    // Parse encryption type length (big-endian)
-    uint32_t encTypeLength = (data[0] << 24) | (data[1] << 16) | (data[2] << 8) | data[3];
-    log_d("Encryption type length: %" PRIu32, encTypeLength);
-    if (length < 4 + encTypeLength + 36) {
-        log_e("Encryption info is too short");
+    header.headerSize = (data[dataPtr] << 24) | (data[dataPtr + 1] << 16) |
+                        (data[dataPtr + 2] << 8) | data[dataPtr + 3];
+    dataPtr += 4;
+
+    if (length < (header.headerSize + FileHeader::magicHeaderSize())) {
+        log_w("File is too short for header %zu %zu", length, header.headerSize);
         return std::nullopt;
     }
-    header.encryptionType = std::string(data + 4, data + 4 + encTypeLength);
+
+    header.encryptionType = data[dataPtr];
+    dataPtr++;
 
     // Parse encrypted AES key length (big-endian)
-    uint32_t aesKeyLength = (data[4 + encTypeLength] << 24) | (data[5 + encTypeLength] << 16) |
-                            (data[6 + encTypeLength] << 8) | data[7 + encTypeLength];
-    if (length < 8 + encTypeLength + aesKeyLength + 32) {
+    uint32_t aesKeyLength = (data[dataPtr] << 24) | (data[dataPtr + 1] << 16) |
+                            (data[dataPtr + 2] << 8) | data[dataPtr + 3];
+    if (length < dataPtr + aesKeyLength + 32) {
         log_e("Encrypted AES key is too short");
         return std::nullopt;
     }
-    header.encryptedAESKey =
-        std::vector<uint8_t>(data + 8 + encTypeLength, data + 8 + encTypeLength + aesKeyLength);
+    dataPtr += 4;
+    header.encryptedAESKey = std::vector<uint8_t>(&data[dataPtr], &data[dataPtr] + aesKeyLength);
+    dataPtr += aesKeyLength;
 
     log_d("Encrypted AES key of size %zu: %s", header.encryptedAESKey.size(),
           BytesToHex(header.encryptedAESKey.data(), header.encryptedAESKey.size()).c_str());
 
     // Parse AES nonce and tag
-    std::copy_n(data + 8 + encTypeLength + aesKeyLength, 16, header.aesNonce.begin());
-    std::copy_n(data + 24 + encTypeLength + aesKeyLength, 16, header.aesTag.begin());
+    std::copy_n(&data[dataPtr], 16, header.aesNonce.begin());
+    dataPtr += 16;
+    std::copy_n(&data[dataPtr], 16, header.aesTag.begin());
+    dataPtr += 16;
 
-    log_d("Encryption info: %s", header.encryptionType.c_str());
+    header.compressionType = data[dataPtr];
+    dataPtr++;
+    // Ignore the first 4 bytes of decompressed size (only use 32 bits)
+    dataPtr += 4;
+    header.decompressedSize = (data[dataPtr] << 24) | (data[dataPtr + 1] << 16) |
+                              (data[dataPtr + 2] << 8) | data[dataPtr + 3];
+    dataPtr += 4;
 
     return header;
 }

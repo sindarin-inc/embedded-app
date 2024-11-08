@@ -22,10 +22,18 @@ public:
 
 private:
     struct FileHeader {
-        std::string encryptionType;
+        size_t headerSize;
+        uint8_t encryptionType;
         std::vector<uint8_t> encryptedAESKey;
         std::array<uint8_t, 16> aesNonce{};
         std::array<uint8_t, 16> aesTag{};
+        uint8_t compressionType;
+        size_t decompressedSize;
+
+        static auto magicHeader() -> const char * { return "SOLDRMv01"; }
+        static auto magicHeaderSize() -> size_t { return 9; }
+
+        auto contentStart() const -> size_t { return magicHeaderSize() + headerSize; };
     };
 
     PreferencesStore &prefs_;
