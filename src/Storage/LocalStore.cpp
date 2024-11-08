@@ -685,12 +685,6 @@ auto LocalStore::syncFromRemote(bool wifiConnected, bool bleConnected, SyncReaso
     progressCallback(ContentSyncState{.state = ContentSyncState::State::CheckingSync});
 
     std::string publicKey = solDrm_.publicKeyPem();
-    // Remove -----BEGIN PUBLIC KEY-----\n prefix/
-    publicKey = publicKey.substr(publicKey.find('\n') + 1);
-    // Remove \n-----END PUBLIC KEY-----\n suffix
-    publicKey = publicKey.substr(0, publicKey.find("\n-----END PUBLIC KEY-----\n"));
-    publicKey = ReplaceAll(publicKey, "\n", "");
-    log_i("Public key: %s", publicKey.c_str());
 
     std::vector<ReadablesVector *> readablesList = {&books_, &articles_};
     for (auto &readables : readablesList) {

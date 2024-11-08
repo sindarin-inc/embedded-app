@@ -229,7 +229,10 @@ auto SindarinAPI::downloadReadable(const std::shared_ptr<Readable> &readable,
 
     std::string requestBody;
     if (!publicKey.empty()) {
-        requestBody = StringFormat(R"({"public_key": "%s"})", publicKey.c_str());
+        auto doc = std::make_unique<SpiRamJsonDocument>(512);
+        auto body = doc->to<JsonObject>();
+        body["public_key"] = publicKey;
+        ArduinoJson::serializeJson(*doc, requestBody);
         log_d("Request body: %s", requestBody.c_str());
     }
     auto httpCode = DownloadFileToPath(
