@@ -31,8 +31,8 @@ private:
 
     class KeyFileHeader : FileHeader {
     public:
-        uint8_t encryptionType;
-        size_t encryptedAESKeySize;
+        uint8_t encryptionType{};
+        size_t encryptedAESKeySize{};
         std::vector<uint8_t> encryptedAESKey;
     };
 
@@ -40,8 +40,8 @@ private:
     public:
         std::array<uint8_t, 16> aesNonce{};
         std::array<uint8_t, 16> aesTag{};
-        uint8_t compressionType;
-        size_t decompressedSize;
+        uint8_t compressionType{};
+        size_t decompressedSize{};
 
         static auto headerSize() -> size_t { return magicHeaderSize() + 16 + 16 + 1 + 4; };
     };
