@@ -640,7 +640,7 @@ void ReadableScreen::turnPage() {
         showPopupMenu();
 
         // See the layout in popupNavigationFactory to ensure this is still the right setting.
-        popupMenuScreen_->setTabWithName("Popup", "3");
+        popupMenuScreen_->setTabWithName("Popup", 3);
     } else {
         readable_->placePrev = readable_->place;
         readable_->place = newPlace_;
