@@ -103,14 +103,14 @@ void DispatchQueue::dispatch(fp_t &&op) {
     }
 }
 
-void DispatchQueue::dispatchSync(fp_t &&op) {
+void DispatchQueue::dispatchSync(fp_t &&op, TickType_t timeout) {
     SemaphoreHandle_t completeSemaphore = xSemaphoreCreateBinary();
     defer { vSemaphoreDelete(completeSemaphore); };
     dispatch([&op, completeSemaphore]() {
         op();
         xSemaphoreGive(completeSemaphore);
     });
-    xSemaphoreTake(completeSemaphore, portMAX_DELAY);
+    xSemaphoreTake(completeSemaphore, timeout);
 }
 
 void DispatchQueue::dispatchFromISR(const fp_t &op) {
@@ -194,7 +194,8 @@ auto DispatchQueue::dispatchOneOff(const fp_t &op, size_t threadStack, UBaseType
 }
 
 auto DispatchQueue::dispatchOneOffSync(const fp_t &op, size_t threadStack, UBaseType_t priority,
-                                       BaseType_t core, const char *name) -> bool {
+                                       BaseType_t core, const char *name, TickType_t timeout)
+    -> bool {
     SemaphoreHandle_t completeSemaphore = xSemaphoreCreateBinary();
     defer { vSemaphoreDelete(completeSemaphore); };
     auto dispatched = dispatchOneOff(
@@ -206,7 +207,7 @@ auto DispatchQueue::dispatchOneOffSync(const fp_t &op, size_t threadStack, UBase
     if (!dispatched) {
         return false;
     }
-    xSemaphoreTake(completeSemaphore, portMAX_DELAY);
+    xSemaphoreTake(completeSemaphore, timeout);
     return true;
 }
 

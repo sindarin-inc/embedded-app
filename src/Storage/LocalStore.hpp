@@ -5,7 +5,6 @@
 
 #include "Communications/SindarinAPI.hpp"
 #include "Misc/Battery.hpp"
-#include "Misc/Dispatch.hpp"
 #include "Misc/Telemetry.hpp"
 #include "Models/CheckSync.hpp"
 #include "Models/Place.hpp"
@@ -67,6 +66,7 @@ struct ContentSyncState {
     int percentage{};
     int booksDownloaded{};
     int articlesDownloaded{};
+    bool usedBle = false;
 
     std::string message;
 
@@ -122,8 +122,10 @@ public:
     void resetReadablesArchivedChanged(const ReadablesVector &readables);
     void resetReadablesBookmarksChanged(const ReadablesVector &readables);
 
-    void syncFromRemote(SyncReason syncReason, const std::shared_ptr<CancelFlag> &cancel,
-                        const std::function<void(ContentSyncState state)> &progressCallback);
+    auto syncFromRemote(bool wifiConnected, bool bleConnected, SyncReason syncReason,
+                        const std::shared_ptr<CancelFlag> &cancel,
+                        const std::function<void(ContentSyncState state)> &progressCallback)
+        -> bool;
     auto processReadables(const ReadablesVector &readables, UserReadablesVector &serverReadables)
         -> std::pair<UserReadablesVector, UserReadablesVector>;
     void processReadableDeletion(const UserReadablesVector &readablesToDelete,

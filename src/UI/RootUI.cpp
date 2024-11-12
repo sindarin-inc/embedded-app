@@ -421,7 +421,7 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
             int welcomeTabIndex = welcomeIndex();
             if (welcomeTabIndex != 4) {
                 std::static_pointer_cast<NewMainMenuScreen>(currentScreen())
-                    ->setTabToTitle("Welcome", welcomeTabIndex);
+                    ->setTabWithName("Welcome", welcomeTabIndex);
             } else {
                 this->prefs_.dontShowWelcome.set(true);
                 std::static_pointer_cast<NewMainMenuScreen>(currentScreen())->setCurrentTabIndex(1);
@@ -1471,7 +1471,7 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                     }));
 
                 systemSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
-                    "Clear Content and Restart", [this, &localStore]() {
+                    "Clear Content (restart)", [this, &localStore]() {
                         localStore.deleteReadables(false);
                         localStore.deleteArticles(false);
                         showTemporaryMessage("Content cleared. Restarting...",
@@ -1560,10 +1560,10 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
             menuItems->emplace_back(std::make_shared<NewMenuItemSingleLine>(
                 "Debug",
                 [this, hasLastQuestion, &localStore, &fileSystem]() {
-                log_d("Loading System Settings Menu");
+                log_d("Loading Debug Menu");
 
                 auto debugSettingsMenu =
-                    std::make_shared<GenericSettingsMenuScreen>(display_, "Debug");
+                    std::make_shared<GenericSettingsMenuScreen>(display_, "Main Menu");
 
                 debugSettingsMenu->setBackCallback([this]() { this->popScreen(); });
 
@@ -1605,15 +1605,15 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                     }));
 
                 if (prefs_.allowUsageWhileCharging.get().value_or(false)) {
-                    debugSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
-                        "Disable use while charging", [this]() {
+                    debugSettingsMenu->addMenuItem(
+                        std::make_shared<NewMenuItemSingleLine>("Disable while charging", [this]() {
                             prefs_.allowUsageWhileCharging.remove();
                             showTemporaryMessage("Disabling use while charging...",
                                                  [this]() { power_.reboot(); });
                         }));
                 } else {
-                    debugSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
-                        "Enable use while charging", [this]() {
+                    debugSettingsMenu->addMenuItem(
+                        std::make_shared<NewMenuItemSingleLine>("Enable while charging", [this]() {
                             prefs_.allowUsageWhileCharging.set(true);
                             showTemporaryMessage("Enabling use while charging...",
                                                  [this]() { power_.reboot(); });
@@ -1621,19 +1621,19 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                 }
 
                 debugSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
-                    "Clear Books and Restart", [this, &localStore]() {
+                    "Clear Books (restart)", [this, &localStore]() {
                         localStore.deleteReadables();
                         showTemporaryMessage("Books reset.", [this]() { power_.reboot(); });
                     }));
 
                 debugSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
-                    "Clear Articles and Restart", [this, &localStore]() {
+                    "Clear Articles (restart)", [this, &localStore]() {
                         localStore.deleteArticles();
                         showTemporaryMessage("Articles reset.", [this]() { power_.reboot(); });
                     }));
 
                 debugSettingsMenu->addMenuItem(
-                    std::make_shared<NewMenuItemSingleLine>("Clear Crash Reports and Restart",
+                    std::make_shared<NewMenuItemSingleLine>("Clear Crashes (restart)",
                                                             [this, &fileSystem]() {
                     FileList coreDumpFiles;
                     fileSystem.listDir("/coredumps", coreDumpFiles);
@@ -1655,7 +1655,7 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                     }));
 
                 debugSettingsMenu->addMenuItem(
-                    std::make_shared<NewMenuItemSingleLine>("Batteries and Temperature", [this]() {
+                    std::make_shared<NewMenuItemSingleLine>("Batteries and Temp", [this]() {
                         auto batteryScreen =
                             std::make_shared<BatteryScreen>(display_, prefs_, power_.battery);
                         this->pushScreen(batteryScreen);
@@ -1698,15 +1698,16 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                                                  [this]() { power_.reboot(); });
                         }));
                 }
-/*
-    debugSettingsMenu->addMenuItem(
-        std::make_shared<NewMenuItemSingleLine>("Alignment Setup", [this,
-   &lightingController]() { auto alignmentScreen =
-   std::make_shared<AlignmentScreen>(display_, prefs_, lightingController);
-   this->pushScreen(alignmentScreen); alignmentScreen->setBackCallback([this]() { this->popScreen();
-            });
-        }));
-*/
+                /*
+                    debugSettingsMenu->addMenuItem(
+                        std::make_shared<NewMenuItemSingleLine>("Alignment Setup", [this,
+                   &lightingController]() { auto alignmentScreen =
+                   std::make_shared<AlignmentScreen>(display_, prefs_, lightingController);
+                   this->pushScreen(alignmentScreen); alignmentScreen->setBackCallback([this]() {
+                   this->popScreen();
+                            });
+                        }));
+                */
 #if CONFIG_DISPLAY_EINKET013TT1
                 debugSettingsMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>("Set Vcom",
                                                                                        [this]() {
@@ -1951,24 +1952,24 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
 
     if (!prefs_.dontShowWelcome.get().value_or(false) ||
         prefs_.forceShowWelcome.get().value_or(false)) {
-        newMainMenu->addTab("Welcome", welcomeMenuFactory);
+        newMainMenu->addTab("Welcome", welcomeMenuFactory, 6);
     }
 
     if (!localStore.recents().empty()) {
-        newMainMenu->addTab("Recent", recentMenuFactory);
+        newMainMenu->addTab("Recent", recentMenuFactory, 4);
     }
     if (!booksMenuFactory()->empty()) {
-        newMainMenu->addTab("Books", booksMenuFactory);
+        newMainMenu->addTab("Books", booksMenuFactory, 4);
     }
     if (!articlesMenuFactory()->empty()) {
-        newMainMenu->addTab("Articles", articlesMenuFactory);
+        newMainMenu->addTab("Articles", articlesMenuFactory, 4);
     }
 
     if (!bibleMenuFactory()->empty()) {
-        newMainMenu->addTab("Bible", bibleMenuFactory);
+        newMainMenu->addTab("Bible", bibleMenuFactory, 4);
     }
 
-    newMainMenu->addTab("Settings", settingsMenuFactory);
+    newMainMenu->addTab("Settings", settingsMenuFactory, 5);
 
     newMainMenu->populateMenuView();
 
@@ -2079,13 +2080,18 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                 this->pushScreen(readableScreen, true);
                 log_i("Resuming readable %s at place %s", (*it)->title.c_str(),
                       (*it)->place->str().c_str());
-                // Technically. we might want this to go to Recent, but for now this will do.
-                if (articlesIterator != articles.end()) {
-                    newMainMenu->setTabToTitle("Articles");
+
+                // Note that this is fragile in how the id is cacluated from NewMenuItemBook and
+                // NewMenuItemArticle. If those change, this will break.
+                if (newMainMenu->isMenuIDInTab("Recent", (*it)->shortenedUuid.c_str())) {
+                    newMainMenu->setTabWithName("Recent", (*it)->shortenedUuid.c_str());
+                } else if (articlesIterator != articles.end()) {
+                    newMainMenu->setTabWithName("Articles", (*it)->shortenedUuid.c_str());
                 } else if (isBible(*it)) {
-                    newMainMenu->setTabToTitle("Bible");
+                    newMainMenu->setTabWithName("Bible", (*it)->shortenedUuid.c_str());
                 } else {
-                    newMainMenu->setTabToTitle("Books");
+                    log_d("Iterator shortened string is %s", (*it)->shortenedUuid.c_str());
+                    newMainMenu->setTabWithName("Books", (*it)->shortenedUuid.c_str());
                 }
             } else {
                 showTemporaryMessage(itemErrorMsg_, TEMP_MSG_DURATION_NO_CLOSE);
@@ -2096,13 +2102,15 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
         }
     }
 
+    bool showWelcomeVideo = false;
+
     // If we are in onboarding mode, show the entry bumper first
     if (!prefs_.dontShowWelcome.get().value_or(false)) {
-        bool showWelcomeVideo = true;
+        showWelcomeVideo = true;
         bool forceShowWelcome = prefs_.forceShowWelcome.get().value_or(false);
 
         if (welcomeTabIndex != 4 || forceShowWelcome) {
-            newMainMenu->setTabToTitle("Welcome", forceShowWelcome ? 0 : welcomeTabIndex);
+            newMainMenu->setTabWithName("Welcome", forceShowWelcome ? 0 : welcomeTabIndex);
             // If we're always showing the welcome tab, or if we have a current readable we're about
             // to open, don't show the video
             if (forceShowWelcome || currentReadable.has_value()) {
@@ -2131,11 +2139,15 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
         }
     }
 
+    if (!showWelcomeVideo && power_.battery.batteryVeryLow()) {
+        showTemporaryMessage("Your battery is very low. Please charge your Sol Reader soon!", 4000);
+    }
+
     // A settings changed caused this restart, so go to the settings tab
     // and clear out that pref.
     if (PreferencesStore::settingsOnRestart) {
         PreferencesStore::settingsOnRestart = false;
-        newMainMenu->setTabToTitle("Settings");
+        newMainMenu->setTabWithName("Settings");
     }
 
     renderIfNeeded();

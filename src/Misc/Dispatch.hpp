@@ -43,7 +43,7 @@ public:
     void dispatchFromISR(fp_t &&op);
 
     // dispatch and wait for completion
-    void dispatchSync(fp_t &&op);
+    void dispatchSync(fp_t &&op, TickType_t timeout = portMAX_DELAY);
 
     // Returns true if were' currently executing inside this queue
     auto isInQueue() -> bool;
@@ -80,7 +80,8 @@ public:
     // Like dispatchOneOff, but waits for the function to complete before returning. Useful for
     // synchronously running things on other cores.
     static auto dispatchOneOffSync(const fp_t &op, size_t threadStack, UBaseType_t priority,
-                                   BaseType_t core, const char *name) -> bool;
+                                   BaseType_t core, const char *name,
+                                   TickType_t timeout = portMAX_DELAY) -> bool;
 
 private:
     std::string name_;

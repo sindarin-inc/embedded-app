@@ -30,6 +30,8 @@ public:
 
     auto getIDfromRowIndex(size_t index) const -> std::string;
 
+    auto isIDInMenu(const std::string &id) -> bool;
+
     auto layout(LayoutContext &context, Size size) -> Size override;
     void drawInRect(Rect rect) override;
 
@@ -53,16 +55,6 @@ public:
 
         for (size_t i = startIndex; i < endIndex; ++i) {
             menuItemViews_[i]->drawFastOnlyElements();
-        }
-    }
-
-    void updatePageState() {
-        int totalPages = (menuItems_.size() + itemsPerPage - 1) / itemsPerPage;
-        if (totalPages > 1) {
-            pagingIndicatorView_.setTotalPages(totalPages);
-            pagingIndicatorView_.setHidden(false);
-        } else {
-            pagingIndicatorView_.setHidden(true);
         }
     }
 

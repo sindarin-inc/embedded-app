@@ -6,6 +6,7 @@
 #include <streambuf>
 #include <thread>
 
+#include "Communications/WiFi.hpp"
 #include "Misc/Battery.hpp"
 #include "Misc/Defer.hpp"
 #include "Storage/LocalStore.hpp"
@@ -94,8 +95,10 @@ TEST_CASE("Run a basic content sync", "[.][content-sync]") {
     DispatchQueue::dispatchOneOff(
         [&lastState, &localStore, cancel]() {
         // This needs to run in a task to have things like Delay work
-        localStore.syncFromRemote(SyncReason::Manual, cancel, [&lastState](ContentSyncState state) {
-            log_i("Test sync state: %d", state.state);
+        WiFi::getInstance().connectWiFiFromSettings();
+        localStore.syncFromRemote(true, false, SyncReason::Manual, nullptr,
+                                  [&lastState](ContentSyncState state) {
+            log_i("Test sync state: %d %s", state.state, state.usedBle ? "(used BLE)" : "");
             lastState = state;
         });
         },

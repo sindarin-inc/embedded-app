@@ -236,6 +236,9 @@ auto PowerManager::inactivityTimeoutMs() -> int {
     } else if (state_ == PowerState::ActiveBatteryDepleted) {
         // Shutdown quickly if we're out of battery
         return 5 * 1000;
+    } else if (state_ == PowerState::Background) {
+        // Background inactivity timeout is 16 mins
+        return 16 * 60 * 1000;
     } else {
         // Normal inactivity timeout is 10 minutes
         return prefs_.inactivityMinutes.get().value_or(DEFAULT_INACTIVITY_MINUTES) * 60 * 1000;
