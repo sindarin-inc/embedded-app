@@ -92,7 +92,10 @@ TEST_CASE("Run a basic content sync", "[.][content-sync]") {
     LocalStore localStore(fs, prefs, battery, telemetry, solDrm);
 
     ContentSyncState lastState;
-    DispatchQueue::dispatchOneOff([&lastState, &localStore]() {
+    auto cancel = std::make_shared<CancelFlag>();
+
+    DispatchQueue::dispatchOneOff(
+        [&lastState, &localStore, cancel]() {
         // This needs to run in a task to have things like Delay work
         WiFi::getInstance().connectWiFiFromSettings();
         localStore.syncFromRemote(true, false, SyncReason::Manual, nullptr,
@@ -100,7 +103,8 @@ TEST_CASE("Run a basic content sync", "[.][content-sync]") {
             log_i("Test sync state: %d %s", state.state, state.usedBle ? "(used BLE)" : "");
             lastState = state;
         });
-    });
+        },
+        8192, 1, 1, "contentsync");
 
     StartFreeRtos();
     std::shared_ptr<httplib::Server> server;

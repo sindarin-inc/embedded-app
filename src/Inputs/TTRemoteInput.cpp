@@ -139,7 +139,7 @@ void TTRemoteInput::dispatchConnection(BLEAdvertisedDevice &device) {
             state_ = SCANNING;
         }
         },
-        4000, 3, 0);
+        4000, 3, 0, "TTRemote");
     if (!dispatched) {
         log_e("dispatchConnection failed");
         client_->disconnect();

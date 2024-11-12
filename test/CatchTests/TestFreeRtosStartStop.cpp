@@ -10,14 +10,17 @@
 TEST_CASE("Start and stop freertos", "[.][freertos]") {
     for (int i = 0; i < 3; i++) {
         bool done = false;
-        DispatchQueue::dispatchOneOff([&done]() {
+        StartFreeRtos(false);
+
+        DispatchQueue::dispatchOneOff(
+            [&done]() {
             log_i("Start 1");
             Delay(1000);
             log_i("Done 1");
             done = true;
-        });
+            },
+            2048, 1, 1, "testfreertos");
 
-        StartFreeRtos(false);
         while (!done) {
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
