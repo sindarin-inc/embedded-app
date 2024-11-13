@@ -326,6 +326,11 @@ auto SolDrm::parseKeyfile(const uint8_t *data, size_t length)
     KeyFileHeader header;
 
     header.encryptionType = data[dataPtr];
+    if (header.encryptionType != 1) {
+        log_e("Unsupported encryption type %d", header.encryptionType);
+        return std::nullopt;
+    }
+
     dataPtr++;
 
     header.encryptedAESKeySize = (data[dataPtr] << 24) | (data[dataPtr + 1] << 16) |
@@ -379,6 +384,11 @@ auto SolDrm::parseContentFileHeader(const uint8_t *data, size_t length)
     dataPtr += 16;
 
     header.compressionType = data[dataPtr];
+    if (header.compressionType != 1) {
+        log_e("Unsupported compression type %d", header.compressionType);
+        return std::nullopt;
+    }
+
     dataPtr++;
 
     header.decompressedSize = (data[dataPtr] << 24) | (data[dataPtr + 1] << 16) |
