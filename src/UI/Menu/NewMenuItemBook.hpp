@@ -23,7 +23,12 @@ public:
         return StringFormat("%s%s", archived_ ? "Archived: " : "", readable_->title.c_str());
     }
 
-    [[nodiscard]] auto author() const -> const SpiramString & { return readable_->authors[0].name; }
+    [[nodiscard]] auto author() const -> const SpiramString & {
+        if (readable_->authors.empty()) {
+            return "";
+        }
+        return readable_->authors[0].name;
+    }
 
 private:
     std::shared_ptr<Readable> readable_;
