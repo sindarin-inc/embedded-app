@@ -31,7 +31,7 @@ extern Font fontFace0;
 extern Font fontFace1;
 extern Font fontFace2;
 
-TEST_CASE("First few screens render correctly and handle remote commands") {
+TEST_CASE("Run the app and navigate around with remote commands", "[.][navigation]") {
 
     SetupFileSystemMock("TestData");
     SetImagesFolder("Images");

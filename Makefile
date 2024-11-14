@@ -70,6 +70,7 @@ test-build:
 .PHONY: test
 test: test-build
 	./test/CatchTests/build/tests
+	./test/CatchTests/build/tests '[navigation]'
 	./test/CatchTests/build/tests '[epub]'
 	./test/CatchTests/build/tests '[content-sync]'
 	./test/CatchTests/build/tests '[telemetry]'
