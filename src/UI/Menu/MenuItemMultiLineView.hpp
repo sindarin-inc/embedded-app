@@ -1,14 +1,14 @@
 #pragma once
 
-#include "NewMenuItemMultiLine.hpp"
-#include "NewMenuItemView.hpp"
+#include "MenuItemMultiLine.hpp"
+#include "MenuItemView.hpp"
 #include "UI/Components/MultiLineTextView.hpp"
 
-class NewMenuItemMultiLineView : public NewMenuItemView {
+class MenuItemMultiLineView : public MenuItemView {
 public:
-    NewMenuItemMultiLineView(DisplaySystem &display,
-                             const std::shared_ptr<NewMenuItemMultiLine> &menuItem)
-        : NewMenuItemView(display), textView_(display, menuItem->maxLines()) {
+    MenuItemMultiLineView(DisplaySystem &display,
+                          const std::shared_ptr<MenuItemMultiLine> &menuItem)
+        : MenuItemView(display), textView_(display, menuItem->maxLines()) {
         textView_.setText(menuItem->text());
     }
 

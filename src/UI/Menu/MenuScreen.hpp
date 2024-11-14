@@ -4,14 +4,14 @@
 #include "Inputs/RemoteInput.hpp"
 #include "UI/Components/EinkView.hpp"
 #include "UI/Components/SingleLineTextView.hpp"
-#include "UI/Menu/NewMenuView.hpp"
+#include "UI/Menu/MenuView.hpp"
 #include "UI/Screen.hpp"
 
-class NewMenuScreen : public Screen, public EinkView {
+class MenuScreen : public Screen, public EinkView {
 public:
-    NewMenuScreen(DisplaySystem &display, std::string title);
+    MenuScreen(DisplaySystem &display, std::string title);
 
-    void addMenuItem(const std::shared_ptr<NewMenuItem> &item);
+    void addMenuItem(const std::shared_ptr<MenuItem> &item);
     void processCommand(RemoteCommand command) override;
 
     auto layout(LayoutContext &context, Size size) -> Size override;
@@ -21,7 +21,7 @@ public:
     void render(DisplaySystem &display) override;
 
 private:
-    NewMenuView menuView_;
+    MenuView menuView_;
     SingleLineTextView titleView_;
 
     bool firstLoad_{true};

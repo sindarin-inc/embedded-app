@@ -13,7 +13,7 @@ LetsFocusWelcomeMenuScreen::LetsFocusWelcomeMenuScreen(DisplaySystem &display,
     menuView_.indicatorPadding = 5;
     menuView_.pagingIndicatorWidth = 5;
     menuView_.pagingIndicatorPadding = 5;
-    menuView_.setIndicatorType(NewMenuView::IndicatorType::Line);
+    menuView_.setIndicatorType(MenuView::IndicatorType::Line);
 
     setText();
 }
@@ -24,7 +24,7 @@ void LetsFocusWelcomeMenuScreen::setText() {
     setNeedsLayout();
 }
 
-void LetsFocusWelcomeMenuScreen::addMenuItem(const std::shared_ptr<NewMenuItem> &menuItem) {
+void LetsFocusWelcomeMenuScreen::addMenuItem(const std::shared_ptr<MenuItem> &menuItem) {
     menuView_.addMenuItem(menuItem);
 }
 

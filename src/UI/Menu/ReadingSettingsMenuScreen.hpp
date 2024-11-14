@@ -7,7 +7,7 @@
 #include "UI/Components/EinkView.hpp"
 #include "UI/Components/RendererView.hpp"
 #include "UI/Components/SingleLineTextView.hpp"
-#include "UI/Menu/NewMenuView.hpp"
+#include "UI/Menu/MenuView.hpp"
 #include "UI/Screen.hpp"
 
 class ReadingSettingsMenuScreen : public Screen, public EinkView {
@@ -17,7 +17,7 @@ public:
 
     auto setSelectedIndex(size_t index) -> bool;
 
-    void addMenuItem(const std::shared_ptr<NewMenuItem> &item);
+    void addMenuItem(const std::shared_ptr<MenuItem> &item);
     void processCommand(RemoteCommand command) override;
 
     auto layout(LayoutContext &context, Size size) -> Size override;
@@ -49,7 +49,7 @@ public:
     }
 
 private:
-    NewMenuView menuView_;
+    MenuView menuView_;
     ArrowLabelView backLabelView_;
     Renderer renderer_;
 

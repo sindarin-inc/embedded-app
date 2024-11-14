@@ -4,15 +4,15 @@
 #include <string>
 #include <utility>
 
+#include "MenuItem.hpp"
 #include "Models/Readable.hpp"
-#include "NewMenuItem.hpp"
 
-class NewMenuItemBook : public NewMenuItem {
+class MenuItemBook : public MenuItem {
 public:
-    ~NewMenuItemBook() override = default;
-    NewMenuItemBook(std::shared_ptr<Readable> readable, std::function<void()> callback,
-                    bool archived = false)
-        : NewMenuItem(std::move(callback)), readable_(std::move(std::move(readable))),
+    ~MenuItemBook() override = default;
+    MenuItemBook(std::shared_ptr<Readable> readable, std::function<void()> callback,
+                 bool archived = false)
+        : MenuItem(std::move(callback)), readable_(std::move(std::move(readable))),
           archived_(archived) {}
 
     [[nodiscard]] auto id() const -> std::string override {

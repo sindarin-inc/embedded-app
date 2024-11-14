@@ -4,13 +4,13 @@
 #include <string>
 #include <utility>
 
-#include "NewMenuItem.hpp"
+#include "MenuItem.hpp"
 
-class NewMenuItemMultiLine : public NewMenuItem {
+class MenuItemMultiLine : public MenuItem {
 public:
-    ~NewMenuItemMultiLine() override = default;
-    NewMenuItemMultiLine(std::string text, int maxLines, std::function<void()> callback)
-        : NewMenuItem(std::move(callback)), text_(std::move(text)), maxLines_(maxLines) {}
+    ~MenuItemMultiLine() override = default;
+    MenuItemMultiLine(std::string text, int maxLines, std::function<void()> callback)
+        : MenuItem(std::move(callback)), text_(std::move(text)), maxLines_(maxLines) {}
 
     [[nodiscard]] auto id() const -> std::string override { return text_; }
 

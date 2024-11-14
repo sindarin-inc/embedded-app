@@ -4,7 +4,7 @@
 
 #include "Misc/Platform.hpp"
 #include "UI/Fonts/Fonts.hpp"
-#include "UI/Menu/NewMenuItemSingleLine.hpp"
+#include "UI/Menu/MenuItemSingleLine.hpp"
 #include "sindarin-debug.h"
 
 ReleaseNotesScreen::ReleaseNotesScreen(DisplaySystem &display, PreferencesStore &prefs,
@@ -23,11 +23,11 @@ ReleaseNotesScreen::ReleaseNotesScreen(DisplaySystem &display, PreferencesStore 
     renderer_.setStream(stream);
 
     menu_.resetMenuItems();
-    menu_.addMenuItem(std::make_shared<NewMenuItemSingleLine>("Update Now", [this]() {
+    menu_.addMenuItem(std::make_shared<MenuItemSingleLine>("Update Now", [this]() {
         inMenu_ = false;
         runUpdate();
     }));
-    menu_.addMenuItem(std::make_shared<NewMenuItemSingleLine>("Maybe later", [this]() {
+    menu_.addMenuItem(std::make_shared<MenuItemSingleLine>("Maybe later", [this]() {
         inMenu_ = false;
         back();
     }));

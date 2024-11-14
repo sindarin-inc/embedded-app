@@ -10,7 +10,7 @@ InactivitySettingMenuScreen::InactivitySettingMenuScreen(DisplaySystem &display,
     menuView_.itemsPerPage = 12;
 }
 
-void InactivitySettingMenuScreen::addMenuItem(const std::shared_ptr<NewMenuItem> &menuItem) {
+void InactivitySettingMenuScreen::addMenuItem(const std::shared_ptr<MenuItem> &menuItem) {
     menuView_.addMenuItem(menuItem);
 }
 

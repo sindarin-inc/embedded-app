@@ -13,8 +13,8 @@
 #include "UI/Components/BoxView.hpp"
 #include "UI/Components/EinkView.hpp"
 #include "UI/Layout/View.hpp"
-#include "UI/Menu/NewMenuItemTOC.hpp"
-#include "UI/Menu/NewMenuView.hpp"
+#include "UI/Menu/MenuItemTOC.hpp"
+#include "UI/Menu/MenuView.hpp"
 #include "UI/Screen.hpp"
 #include "sindarin-debug.h"
 
@@ -29,7 +29,7 @@ public:
         menuView_.itemsPerPage = 11;
     }
 
-    void addMenuItem(const std::shared_ptr<NewMenuItem> &item) { menuView_.addMenuItem(item); }
+    void addMenuItem(const std::shared_ptr<MenuItem> &item) { menuView_.addMenuItem(item); }
 
     auto layout(LayoutContext &context, Size size) -> Size override;
     void drawInRect(Rect rect) override;
@@ -49,7 +49,7 @@ protected:
     Renderer &renderer_;
     DisplaySystem &display_;
     Telemetry &telemetry_;
-    NewMenuView menuView_;
+    MenuView menuView_;
 
     ArrowLabelView backLabelView_;
 

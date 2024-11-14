@@ -1,13 +1,13 @@
 #pragma once
 
-#include "NewMenuItemBook.hpp"
-#include "NewMenuItemView.hpp"
+#include "MenuItemBook.hpp"
+#include "MenuItemView.hpp"
 #include "UI/Components/SingleLineTextView.hpp"
 
-class NewMenuItemBookView : public NewMenuItemView {
+class MenuItemBookView : public MenuItemView {
 public:
-    NewMenuItemBookView(DisplaySystem &display, const std::shared_ptr<NewMenuItemBook> &menuItem)
-        : NewMenuItemView(display), titleView_(display), authorView_(display) {
+    MenuItemBookView(DisplaySystem &display, const std::shared_ptr<MenuItemBook> &menuItem)
+        : MenuItemView(display), titleView_(display), authorView_(display) {
         titleView_.setText(menuItem->title());
         // Make the author text all caps
         authorView_.setText(std::string(menuItem->author()), true);

@@ -108,7 +108,7 @@ void ReadablePlacemarkHistoryScreen::loadMenuItems() {
             // Don't repeat the same placemark
             continue;
         }
-        addMenuItem(std::make_shared<NewMenuItemTOC>(
+        addMenuItem(std::make_shared<MenuItemTOC>(
             chapterTitle,
             Commify(
                 SOL_PAGE_NUMBER(chapterHrefToOffset[SpiramString(placemark.ePubPlace->getHRef())] +

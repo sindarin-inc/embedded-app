@@ -6,7 +6,7 @@
 #include "UI/Components/ArrowLabelView.hpp"
 #include "UI/Components/EinkView.hpp"
 #include "UI/Components/RendererView.hpp"
-#include "UI/Menu/NewMenuView.hpp"
+#include "UI/Menu/MenuView.hpp"
 #include "UI/RootUI.hpp"
 #include "UI/Screen.hpp"
 
@@ -14,7 +14,7 @@ class LetsFocusWelcomeMenuScreen : public Screen, public EinkView {
 public:
     LetsFocusWelcomeMenuScreen(DisplaySystem &display, PreferencesStore &prefs);
 
-    void addMenuItem(const std::shared_ptr<NewMenuItem> &item);
+    void addMenuItem(const std::shared_ptr<MenuItem> &item);
     void processCommand(RemoteCommand command) override;
 
     auto layout(LayoutContext &context, Size size) -> Size override;
@@ -23,7 +23,7 @@ public:
 
 private:
     PreferencesStore &prefs_;
-    NewMenuView menuView_;
+    MenuView menuView_;
     Renderer renderer_;
     RendererView rendererView_;
     ArrowLabelView leftArrowView_;
