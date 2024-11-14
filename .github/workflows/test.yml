@@ -19,24 +19,41 @@ jobs:
           submodules: "recursive"
 
       - name: Install mbedtls
-        run: sudo apt update && sudo apt install -y libmbedtls-dev
+        run: sudo apt update && sudo apt install -y libmbedtls-dev gdb
+
+      - name: Allow gdb to attach to processes
+        run: |
+          echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope
 
       - name: Build unit tests binary
         run: |
           make test-build
 
+      - name: Run timeout test
+        run: |
+          ./scripts/test_watchdog.sh './test/CatchTests/build/tests [timeout]' 10
+        continue-on-error: true
+
+      - name: Run crash test
+        run: |
+          ./scripts/test_watchdog.sh './test/CatchTests/build/tests [crash]' 10
+        continue-on-error: true
+
       - name: Run unit tests
         run: |
-          ./test/CatchTests/build/tests --reporter console --reporter junit::out=catch-results-main.xml
+          ./scripts/test_watchdog.sh './test/CatchTests/build/tests --reporter console --reporter junit::out=catch-results-main.xml' 60
 
-      # Because of a FreeRTOS startup/shutdown issue, these must be run separately
       - name: Run epub tests
         run: |
-          ./test/CatchTests/build/tests '[epub]' --reporter console --reporter junit::out=catch-results-epub.xml
+          ./scripts/test_watchdog.sh './test/CatchTests/build/tests [epub] --reporter console --reporter junit::out=catch-results-epub.xml' 60
 
       - name: Run content-sync tests
         run: |
-          ./test/CatchTests/build/tests '[content-sync]' --reporter console --reporter junit::out=catch-results-sync.xml
+          ./scripts/test_watchdog.sh './test/CatchTests/build/tests [content-sync] --reporter console --reporter junit::out=catch-results-sync.xml' 60
+
+      - name: Run telemetry tests
+        run: |
+          ./scripts/test_watchdog.sh './test/CatchTests/build/tests [telemetry] --reporter console --reporter junit::out=catch-results-telemetry.xml' 60
 
       - name: Test Report
         uses: dorny/test-reporter@v1
