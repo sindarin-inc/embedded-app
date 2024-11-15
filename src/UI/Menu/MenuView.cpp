@@ -1,13 +1,13 @@
-#include "NewMenuView.hpp"
+#include "MenuView.hpp"
 
-#include "NewMenuItemArticleView.hpp"
-#include "NewMenuItemBookView.hpp"
-#include "NewMenuItemCheckableView.hpp"
-#include "NewMenuItemMultiLineView.hpp"
-#include "NewMenuItemSingleLineView.hpp"
-#include "NewMenuItemTOCView.hpp"
+#include "MenuItemArticleView.hpp"
+#include "MenuItemBookView.hpp"
+#include "MenuItemCheckableView.hpp"
+#include "MenuItemMultiLineView.hpp"
+#include "MenuItemSingleLineView.hpp"
+#include "MenuItemTOCView.hpp"
 
-NewMenuView::NewMenuView(DisplaySystem &display)
+MenuView::MenuView(DisplaySystem &display)
     : EinkView(display),
       // 5px on 256x256, scales up for larger displays
       indicatorWidth(std::max(5, std::min(display.width(), display.height()) / 51)),
@@ -15,27 +15,27 @@ NewMenuView::NewMenuView(DisplaySystem &display)
       pagingIndicatorPadding(2 * indicatorWidth), pagingIndicatorView_(display),
       indicatorView_(display, 0) {}
 
-void NewMenuView::addMenuItem(const std::shared_ptr<NewMenuItem> &menuItem) {
+void MenuView::addMenuItem(const std::shared_ptr<MenuItem> &menuItem) {
     menuItems_.push_back(menuItem);
 
     // NOTE: Here is where you create different item views based on the menu item models
-    if (auto item = std::dynamic_pointer_cast<NewMenuItemSingleLine>(menuItem)) {
-        menuItemViews_.push_back(std::make_unique<NewMenuItemSingleLineView>(display_, item));
+    if (auto item = std::dynamic_pointer_cast<MenuItemSingleLine>(menuItem)) {
+        menuItemViews_.push_back(std::make_unique<MenuItemSingleLineView>(display_, item));
     }
-    if (auto item = std::dynamic_pointer_cast<NewMenuItemMultiLine>(menuItem)) {
-        menuItemViews_.push_back(std::make_unique<NewMenuItemMultiLineView>(display_, item));
+    if (auto item = std::dynamic_pointer_cast<MenuItemMultiLine>(menuItem)) {
+        menuItemViews_.push_back(std::make_unique<MenuItemMultiLineView>(display_, item));
     }
-    if (auto item = std::dynamic_pointer_cast<NewMenuItemBook>(menuItem)) {
-        menuItemViews_.push_back(std::make_unique<NewMenuItemBookView>(display_, item));
+    if (auto item = std::dynamic_pointer_cast<MenuItemBook>(menuItem)) {
+        menuItemViews_.push_back(std::make_unique<MenuItemBookView>(display_, item));
     }
-    if (auto item = std::dynamic_pointer_cast<NewMenuItemArticle>(menuItem)) {
-        menuItemViews_.push_back(std::make_unique<NewMenuItemArticleView>(display_, item));
+    if (auto item = std::dynamic_pointer_cast<MenuItemArticle>(menuItem)) {
+        menuItemViews_.push_back(std::make_unique<MenuItemArticleView>(display_, item));
     }
-    if (auto item = std::dynamic_pointer_cast<NewMenuItemCheckable>(menuItem)) {
-        menuItemViews_.push_back(std::make_unique<NewMenuItemCheckableView>(display_, item));
+    if (auto item = std::dynamic_pointer_cast<MenuItemCheckable>(menuItem)) {
+        menuItemViews_.push_back(std::make_unique<MenuItemCheckableView>(display_, item));
     }
-    if (auto item = std::dynamic_pointer_cast<NewMenuItemTOC>(menuItem)) {
-        menuItemViews_.push_back(std::make_unique<NewMenuItemTOCView>(display_, item));
+    if (auto item = std::dynamic_pointer_cast<MenuItemTOC>(menuItem)) {
+        menuItemViews_.push_back(std::make_unique<MenuItemTOCView>(display_, item));
     }
 
     int totalPages = (menuItems_.size() + itemsPerPage - 1) / itemsPerPage;
@@ -49,7 +49,7 @@ void NewMenuView::addMenuItem(const std::shared_ptr<NewMenuItem> &menuItem) {
     setNeedsLayout();
 }
 
-auto NewMenuView::setSelectedIndex(size_t index) -> bool {
+auto MenuView::setSelectedIndex(size_t index) -> bool {
     if (index < menuItems_.size()) {
         selectedIndex_ = index % menuItems_.size();
         setNeedsLayout();
@@ -63,7 +63,7 @@ auto NewMenuView::setSelectedIndex(size_t index) -> bool {
     return false;
 }
 
-auto NewMenuView::setSelectedByMenuItemID(const std::string &menuItemID) -> bool {
+auto MenuView::setSelectedByMenuItemID(const std::string &menuItemID) -> bool {
     for (size_t i = 0; i < menuItems_.size(); ++i) {
         if (menuItems_[i]->id() == menuItemID) {
             return setSelectedIndex(i);
@@ -73,21 +73,21 @@ auto NewMenuView::setSelectedByMenuItemID(const std::string &menuItemID) -> bool
     return setSelectedIndex(0);
 }
 
-auto NewMenuView::getIDfromRowIndex(size_t index) const -> std::string {
+auto MenuView::getIDfromRowIndex(size_t index) const -> std::string {
     if (index < menuItems_.size()) {
         return menuItems_[index]->id();
     }
     return "";
 }
 
-auto NewMenuView::getSelectedMenuItemID() const -> std::string {
+auto MenuView::getSelectedMenuItemID() const -> std::string {
     if (selectedIndex_ < menuItems_.size()) {
         return menuItems_[selectedIndex_]->id();
     }
     return "";
 }
 
-auto NewMenuView::isIDInMenu(const std::string &id) -> bool {
+auto MenuView::isIDInMenu(const std::string &id) -> bool {
     for (auto &menuItem : menuItems_) {
         if (menuItem->id() == id) {
             return true;
@@ -96,7 +96,7 @@ auto NewMenuView::isIDInMenu(const std::string &id) -> bool {
     return false;
 }
 
-auto NewMenuView::moveSelection(int delta) -> bool {
+auto MenuView::moveSelection(int delta) -> bool {
     int newIndex = static_cast<int>(getSelectedIndex()) + delta;
     // Wrap around
     if (newIndex < 0) {
@@ -107,14 +107,14 @@ auto NewMenuView::moveSelection(int delta) -> bool {
     return setSelectedIndex(newIndex);
 }
 
-void NewMenuView::setIndicatorType(IndicatorType type) {
+void MenuView::setIndicatorType(IndicatorType type) {
     if (indicatorType_ != type) {
         indicatorType_ = type;
         setNeedsLayout();
     }
 }
 
-auto NewMenuView::layout(LayoutContext &context, Size size) -> Size {
+auto MenuView::layout(LayoutContext &context, Size size) -> Size {
     int y = 0;
     int x = 0;
     int widthOfPagingIndicators = 0;
@@ -175,7 +175,7 @@ auto NewMenuView::layout(LayoutContext &context, Size size) -> Size {
     return {maxWidth + widthOfPagingIndicators, y};
 }
 
-void NewMenuView::drawInRect(Rect rect) {
+void MenuView::drawInRect(Rect rect) {
     size_t startIndex = currentPage_ * itemsPerPage;
     size_t endIndex = std::min(startIndex + itemsPerPage, menuItemViews_.size());
 

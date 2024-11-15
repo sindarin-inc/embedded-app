@@ -6,7 +6,7 @@
 #include "UI/Components/ArrowView.hpp"
 #include "UI/Components/EinkView.hpp"
 #include "UI/Components/RendererView.hpp"
-#include "UI/Menu/NewMenuView.hpp"
+#include "UI/Menu/MenuView.hpp"
 #include "UI/RootUI.hpp"
 #include "UI/Screen.hpp"
 
@@ -14,7 +14,7 @@ class TextPlacementWelcomeMenuScreen : public Screen, public EinkView {
 public:
     TextPlacementWelcomeMenuScreen(DisplaySystem &display);
 
-    void addMenuItem(const std::shared_ptr<NewMenuItem> &item);
+    void addMenuItem(const std::shared_ptr<MenuItem> &item);
     void processCommand(RemoteCommand command) override;
 
     [[nodiscard]] auto getCurrentTextSelection() const -> uint8_t { return textSelection_; }
@@ -24,7 +24,7 @@ public:
     void render(DisplaySystem &display) override;
 
 private:
-    NewMenuView menuView_;
+    MenuView menuView_;
     Renderer renderer_;
     RendererView rendererView_;
     ArrowView leftArrowView_;

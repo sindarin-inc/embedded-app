@@ -67,7 +67,7 @@ void DispatchQueue::beginShutdown(bool graceful) {
     for (int i = 0; i < threads_.size(); i++) {
         // Queue one quit signal for each thread
         auto quit = new WorkItem{.op = nullptr, .quit = true};
-        xQueueSend(q_, (void *)&quit, portMAX_DELAY);
+        xQueueSendFromISR(q_, (void *)&quit, NULL);
     }
 }
 

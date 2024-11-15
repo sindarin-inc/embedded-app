@@ -1,21 +1,21 @@
-#include "NewMenuPagingIndicatorView.hpp"
+#include "MenuPagingIndicatorView.hpp"
 
-void NewMenuPagingIndicatorView::setTotalPages(int totalPages) {
+void MenuPagingIndicatorView::setTotalPages(int totalPages) {
     totalPages_ = std::max(1, totalPages);
     setNeedsLayout();
 }
 
-void NewMenuPagingIndicatorView::setCurrentPage(int currentPage) {
+void MenuPagingIndicatorView::setCurrentPage(int currentPage) {
     currentPage_ = std::clamp(currentPage, 0, totalPages_ - 1);
     setNeedsLayout();
 }
 
-auto NewMenuPagingIndicatorView::layout(LayoutContext &context, Size size) -> Size {
+auto MenuPagingIndicatorView::layout(LayoutContext &context, Size size) -> Size {
     int totalHeight = totalPages_ * size.width + (totalPages_ - 1) * indicatorSpacing;
     return {size.width, totalHeight};
 }
 
-void NewMenuPagingIndicatorView::drawInRect(Rect rect) {
+void MenuPagingIndicatorView::drawInRect(Rect rect) {
     int x = rect.origin.x;
     int startY = rect.origin.y;
     int indicatorWidth = rect.size.width;

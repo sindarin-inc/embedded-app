@@ -4,10 +4,10 @@
 #include <string>
 
 // Base class for a menu item (menu row) model
-class NewMenuItem {
+class MenuItem {
 public:
-    virtual ~NewMenuItem() = default;
-    NewMenuItem(std::function<void()> callback) : callback_(std::move(callback)) {}
+    virtual ~MenuItem() = default;
+    MenuItem(std::function<void()> callback) : callback_(std::move(callback)) {}
 
     [[nodiscard]] virtual auto id() const -> std::string = 0;
     virtual void execute() {

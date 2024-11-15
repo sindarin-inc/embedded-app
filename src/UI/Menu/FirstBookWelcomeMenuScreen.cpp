@@ -10,7 +10,7 @@ FirstBookWelcomeMenuScreen::FirstBookWelcomeMenuScreen(DisplaySystem &display)
     menuView_.indicatorPadding = 5;
     menuView_.pagingIndicatorWidth = 5;
     menuView_.pagingIndicatorPadding = 5;
-    menuView_.setIndicatorType(NewMenuView::IndicatorType::Line);
+    menuView_.setIndicatorType(MenuView::IndicatorType::Line);
 
     std::string message =
         "Let's get the first book on your Sol Reader!\n\nChoose your own adventure below.";
@@ -19,7 +19,7 @@ FirstBookWelcomeMenuScreen::FirstBookWelcomeMenuScreen(DisplaySystem &display)
     renderer_.setStream(stream);
 }
 
-void FirstBookWelcomeMenuScreen::addMenuItem(const std::shared_ptr<NewMenuItem> &menuItem) {
+void FirstBookWelcomeMenuScreen::addMenuItem(const std::shared_ptr<MenuItem> &menuItem) {
     menuView_.addMenuItem(menuItem);
 }
 

@@ -1,14 +1,14 @@
 #pragma once
 
-#include "NewMenuItemSingleLine.hpp"
-#include "NewMenuItemView.hpp"
+#include "MenuItemSingleLine.hpp"
+#include "MenuItemView.hpp"
 #include "UI/Components/SingleLineTextView.hpp"
 
-class NewMenuItemSingleLineView : public NewMenuItemView {
+class MenuItemSingleLineView : public MenuItemView {
 public:
-    NewMenuItemSingleLineView(DisplaySystem &display,
-                              const std::shared_ptr<NewMenuItemSingleLine> &menuItem)
-        : NewMenuItemView(display), titleView_(display) {
+    MenuItemSingleLineView(DisplaySystem &display,
+                           const std::shared_ptr<MenuItemSingleLine> &menuItem)
+        : MenuItemView(display), titleView_(display) {
         titleView_.setText(menuItem->title());
     }
 

@@ -128,6 +128,9 @@ void StartAppMain(FONT_CHOICES font, int x, int y, int lineSpacing) {
 
 void StopFreeRtos() {
     log_i("Stopping FreeRTOS scheduler");
+    DispatchBeginShutdown();
+    // Wait a couple seconds for the dispatch queues to finish
+    usleep(2000000);
     vTaskEndScheduler();
     (*SchedulerThread).join();
     SchedulerThread = nullptr;

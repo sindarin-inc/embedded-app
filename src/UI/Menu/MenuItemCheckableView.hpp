@@ -1,16 +1,16 @@
 #pragma once
 
-#include "NewMenuItemView.hpp"
+#include "MenuItemView.hpp"
 #include "UI/Bitmaps/CheckMark.xbm"
 #include "UI/Components/IconView.hpp"
 #include "UI/Components/SingleLineTextView.hpp"
-#include "UI/Menu/NewMenuItemCheckable.hpp"
+#include "UI/Menu/MenuItemCheckable.hpp"
 
-class NewMenuItemCheckableView : public NewMenuItemView {
+class MenuItemCheckableView : public MenuItemView {
 public:
-    NewMenuItemCheckableView(DisplaySystem &display,
-                             const std::shared_ptr<NewMenuItemCheckable> &menuItem)
-        : NewMenuItemView(display), titleView_(display),
+    MenuItemCheckableView(DisplaySystem &display,
+                          const std::shared_ptr<MenuItemCheckable> &menuItem)
+        : MenuItemView(display), titleView_(display),
           checkmarkView_(display, CHECK_MARK_BITS, CheckMark_width, CheckMark_height),
           menuItem_(menuItem) {
         titleView_.setText(menuItem->title());
@@ -38,5 +38,5 @@ public:
 protected:
     SingleLineTextView titleView_;
     IconView checkmarkView_;
-    std::shared_ptr<NewMenuItemCheckable> menuItem_;
+    std::shared_ptr<MenuItemCheckable> menuItem_;
 };

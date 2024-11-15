@@ -11,7 +11,7 @@
 #include "UI/Components/SingleLineTextView.hpp"
 #include "UI/Components/StackView.hpp"
 #include "UI/Layout/View.hpp"
-#include "UI/Menu/NewMenuView.hpp"
+#include "UI/Menu/MenuView.hpp"
 #include "UI/Screen.hpp"
 #include "sindarin-debug.h"
 
@@ -23,7 +23,7 @@ public:
         menuView_.itemsPerPage = 4;
         menuView_.indicatorWidth = 5;
         menuView_.indicatorPadding = 5;
-        menuView_.setIndicatorType(NewMenuView::IndicatorType::Line);
+        menuView_.setIndicatorType(MenuView::IndicatorType::Line);
     }
 
     auto layout(LayoutContext &context, Size size) -> Size override;
@@ -38,10 +38,10 @@ public:
         firstLoad_ = true;
     }
 
-    void addMenuItem(const std::shared_ptr<NewMenuItem> &item) { menuView_.addMenuItem(item); }
+    void addMenuItem(const std::shared_ptr<MenuItem> &item) { menuView_.addMenuItem(item); }
 
 protected:
-    NewMenuView menuView_;
+    MenuView menuView_;
     DisplaySystem &display_;
     bool firstLoad_ = true;
 

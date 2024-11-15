@@ -7,10 +7,10 @@
 #include "Misc/Platform.hpp"
 #include "UI/Components/CarouselTitleLabelView.hpp"
 #include "UI/Components/EinkView.hpp"
-#include "UI/Menu/NewMenuView.hpp"
+#include "UI/Menu/MenuView.hpp"
 #include "UI/Screen.hpp"
 
-using MenuItemVector = std::vector<std::shared_ptr<NewMenuItem>>;
+using MenuItemVector = std::vector<std::shared_ptr<MenuItem>>;
 using MenuItemSharedPtrVector = std::shared_ptr<MenuItemVector>;
 using MenuItemFactory = std::function<MenuItemSharedPtrVector()>;
 
@@ -80,7 +80,7 @@ public:
 
 protected:
     CarouselTitleLabelView titleView_;
-    NewMenuView menuView_;
+    MenuView menuView_;
 
 private:
     std::vector<CarouselMenuEntry> menuTabs_;

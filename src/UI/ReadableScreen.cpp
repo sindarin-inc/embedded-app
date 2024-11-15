@@ -77,14 +77,14 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
     auto popupNavigationFactory = [this, onMainMenu]() -> MenuItemSharedPtrVector {
         auto menuItems = std::make_shared<MenuItemVector>();
 
-        auto menuItem = std::make_shared<NewMenuItemSingleLine>("Main Menu", onMainMenu);
+        auto menuItem = std::make_shared<MenuItemSingleLine>("Main Menu", onMainMenu);
 
         menuItems->emplace_back(menuItem);
 
         auto stream = renderer_.getStream();
         if (stream && stream->isFor(DocType::EPUB) &&
             std::dynamic_pointer_cast<EPubFile>(stream)->hasToc()) {
-            menuItem = std::make_shared<NewMenuItemSingleLine>("Contents", [this]() {
+            menuItem = std::make_shared<MenuItemSingleLine>("Contents", [this]() {
                 auto toc = std::make_shared<ReadableTableOfContentsScreen>(
                     prefs_, readable_, renderer_, display_, telemetry_);
 
@@ -103,7 +103,7 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
                 this->setCurrentScreen(toc);
             });
         } else {
-            menuItem = std::make_shared<NewMenuItemSingleLine>("Seek", [this]() {
+            menuItem = std::make_shared<MenuItemSingleLine>("Seek", [this]() {
                 auto readableSeekScreen =
                     std::make_shared<ReadableSeekScreen>(prefs_, readable_, renderer_);
                 readableSeekScreen->setFirstLoad();
@@ -117,7 +117,7 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
 
         menuItems->emplace_back(menuItem);
 
-        auto menuItemCheckable = std::make_shared<NewMenuItemCheckable>(
+        auto menuItemCheckable = std::make_shared<MenuItemCheckable>(
             "Autopilot",
             [this]() {
             this->prefs_.autoPilot.set(!this->prefs_.autoPilot.get().value_or(false));
@@ -142,17 +142,17 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
 
         menuItems->emplace_back(menuItemCheckable);
 
-        auto deleteMenuItem = std::make_shared<NewMenuItemSingleLine>("Delete", [this]() {
+        auto deleteMenuItem = std::make_shared<MenuItemSingleLine>("Delete", [this]() {
             log_d("Showing delete confirmation!");
             auto lineMenuScreen = std::make_shared<LineMenuScreen>(this->prefs_, this->display_);
             lineMenuScreen->resetMenuItems();
-            lineMenuScreen->addMenuItem(std::make_shared<NewMenuItemSingleLine>("Cancel", [this]() {
+            lineMenuScreen->addMenuItem(std::make_shared<MenuItemSingleLine>("Cancel", [this]() {
                 log_d("Aborting delete!");
                 setCurrentScreen(nullptr);
                 back();
             }));
-            lineMenuScreen->addMenuItem(std::make_shared<NewMenuItemSingleLine>("Delete: I'm sure!",
-                                                                                [this]() {
+            lineMenuScreen->addMenuItem(std::make_shared<MenuItemSingleLine>("Delete: I'm sure!",
+                                                                             [this]() {
                 UserReadablesVector readablesToDelete = {};
                 // Create a UserReadable from the readable_ and add it to the
                 // readablesToDelete dynamic_pointer_cast the stream_ to an EPubFile and
@@ -175,7 +175,7 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
         });
 
         auto archiveMenuItem =
-            std::make_shared<NewMenuItemSingleLine>("Archive", [this, onMainMenu]() {
+            std::make_shared<MenuItemSingleLine>("Archive", [this, onMainMenu]() {
                 std::string bookOrArticle = (readable_->isArticle()) ? "article" : "book";
                 this->prefs_.readableArchivedChanged.set(readable_->shortenedUuid.c_str(), true);
                 if (!prefs_.didFirstArchive.get().value_or(false)) {
@@ -196,7 +196,7 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
                 }
             });
 
-        auto unarchiveMenuItem = std::make_shared<NewMenuItemSingleLine>("Unarchive", [this]() {
+        auto unarchiveMenuItem = std::make_shared<MenuItemSingleLine>("Unarchive", [this]() {
             this->prefs_.readableArchivedChanged.remove(readable_->shortenedUuid.c_str());
             display_.clearDisplay();
             this->setCurrentScreen(nullptr);
@@ -220,7 +220,7 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
             }
         }
 
-        menuItem = std::make_shared<NewMenuItemSingleLine>("Brightness", [this]() {
+        menuItem = std::make_shared<MenuItemSingleLine>("Brightness", [this]() {
             auto brightness = std::make_shared<LightingAdjustScreen>(
                 display_, prefs_, lightingController_, telemetry_);
 
@@ -233,7 +233,7 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
 
         menuItems->emplace_back(menuItem);
 
-        menuItem = std::make_shared<NewMenuItemSingleLine>("Back to Text", [this]() {
+        menuItem = std::make_shared<MenuItemSingleLine>("Back to Text", [this]() {
             display_.clearDisplay();
             this->setCurrentScreen(nullptr);
             setNeedsRerender();
@@ -248,7 +248,7 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
         auto menuItems = std::make_shared<MenuItemVector>();
 
         auto menuItem =
-            std::make_shared<NewMenuItemSingleLine>("Bookmark", [this, onBookmarkToggle]() {
+            std::make_shared<MenuItemSingleLine>("Bookmark", [this, onBookmarkToggle]() {
                 onBookmarkToggle();
                 display_.clearDisplay();
                 this->setCurrentScreen(nullptr);
@@ -263,8 +263,8 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
                 std::dynamic_pointer_cast<EPubPlace>(renderer_.getCurrentPlace())->getHRef();
 
             if (stream->hasDictionary(placeHref)) {
-                menuItems->emplace_back(std::make_shared<NewMenuItemSingleLine>("Dictionary",
-                                                                                [this]() {
+                menuItems->emplace_back(std::make_shared<MenuItemSingleLine>("Dictionary",
+                                                                             [this]() {
                     auto epubPlace =
                         std::dynamic_pointer_cast<EPubPlace>(renderer_.getCurrentPlace());
 
@@ -273,8 +273,8 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
                     setCurrentScreen(readableDictionaryScreen_);
                 }));
             } else {
-                menuItems->emplace_back(std::make_shared<NewMenuItemSingleLine>("Dictionary",
-                                                                                [this]() {
+                menuItems->emplace_back(std::make_shared<MenuItemSingleLine>("Dictionary",
+                                                                             [this]() {
                     RootUI::getInstance().showTemporaryMessage(notExistMessage_,
                                                                TEMP_MSG_DURATION_NO_CLOSE);
                 }));
@@ -282,8 +282,7 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
             }
 
             if (stream->hasSummary(placeHref)) {
-                menuItems->emplace_back(std::make_shared<NewMenuItemSingleLine>("Summary",
-                                                                                [this]() {
+                menuItems->emplace_back(std::make_shared<MenuItemSingleLine>("Summary", [this]() {
                     auto epubPlace =
                         std::dynamic_pointer_cast<EPubPlace>(renderer_.getCurrentPlace());
                     readableSummaryScreen_->setPlaceInReadable(epubPlace);
@@ -292,53 +291,50 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
                 }));
             } else {
                 log_d("No summary for spine %s", placeHref.c_str());
-                menuItems->emplace_back(std::make_shared<NewMenuItemSingleLine>("Summary",
-                                                                                [this]() {
+                menuItems->emplace_back(std::make_shared<MenuItemSingleLine>("Summary", [this]() {
                     RootUI::getInstance().showTemporaryMessage(notExistMessage_,
                                                                TEMP_MSG_DURATION_NO_CLOSE);
                 }));
             }
 
             if (fileSystem_.exists(readable_->placemarkHistoryFilePath())) {
-                menuItems->emplace_back(std::make_shared<NewMenuItemSingleLine>("History",
-                                                                                [this]() {
+                menuItems->emplace_back(std::make_shared<MenuItemSingleLine>("History", [this]() {
                     readablePlacemarkHistoryScreen_->loadMenuItems();
                     readablePlacemarkHistoryScreen_->setFirstLoad();
                     setCurrentScreen(readablePlacemarkHistoryScreen_);
                 }));
             } else {
-                menuItems->emplace_back(std::make_shared<NewMenuItemSingleLine>("History",
-                                                                                [this]() {
+                menuItems->emplace_back(std::make_shared<MenuItemSingleLine>("History", [this]() {
                     RootUI::getInstance().showTemporaryMessage(notExistMessage_,
                                                                TEMP_MSG_DURATION_NO_CLOSE);
                 }));
             }
         } else {
-            menuItems->emplace_back(std::make_shared<NewMenuItemSingleLine>("Dictionary", [this]() {
+            menuItems->emplace_back(std::make_shared<MenuItemSingleLine>("Dictionary", [this]() {
                 RootUI::getInstance().showTemporaryMessage(notExistMessage_,
                                                            TEMP_MSG_DURATION_NO_CLOSE);
             }));
 
-            menuItems->emplace_back(std::make_shared<NewMenuItemSingleLine>("Summary", [this]() {
+            menuItems->emplace_back(std::make_shared<MenuItemSingleLine>("Summary", [this]() {
                 RootUI::getInstance().showTemporaryMessage(notExistMessage_,
                                                            TEMP_MSG_DURATION_NO_CLOSE);
             }));
 
-            menuItems->emplace_back(std::make_shared<NewMenuItemSingleLine>("History", [this]() {
+            menuItems->emplace_back(std::make_shared<MenuItemSingleLine>("History", [this]() {
                 RootUI::getInstance().showTemporaryMessage(notExistMessage_,
                                                            TEMP_MSG_DURATION_NO_CLOSE);
             }));
             log_d("Not an EPub, so no history or summary or dictionary");
         }
 
-        menuItem = std::make_shared<NewMenuItemSingleLine>("Report Page", [onReport]() {
+        menuItem = std::make_shared<MenuItemSingleLine>("Report Page", [onReport]() {
             log_d("Reporting a problem with the page");
             onReport();
         });
 
         menuItems->emplace_back(menuItem);
 
-        menuItem = std::make_shared<NewMenuItemSingleLine>("Back to Text", [this]() {
+        menuItem = std::make_shared<MenuItemSingleLine>("Back to Text", [this]() {
             display_.clearDisplay();
             this->setCurrentScreen(nullptr);
             setNeedsRerender();
@@ -352,24 +348,24 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
     auto popupStyleFactory = [this]() -> MenuItemSharedPtrVector {
         auto menuItems = std::make_shared<MenuItemVector>();
 
-        auto menuItem = std::make_shared<NewMenuItemSingleLine>("Text Size", [this]() {
+        auto menuItem = std::make_shared<MenuItemSingleLine>("Text Size", [this]() {
             auto fontMenu =
                 std::make_shared<ReadingSettingsMenuScreen>(this->display_, "Back to Text", prefs_);
-            fontMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>("Small", [this]() {
+            fontMenu->addMenuItem(std::make_shared<MenuItemSingleLine>("Small", [this]() {
                 this->display_.clearDisplay();
                 prefs_.font.set(PREFS_SOL_SMALL);
                 this->telemetry_.logMetricData(TelemetryField::METRIC_STYLE,
                                                {{"text_size", std::string("small")}});
                 getCurrentScreen()->setNeedsRerender();
             }));
-            fontMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>("Medium", [this]() {
+            fontMenu->addMenuItem(std::make_shared<MenuItemSingleLine>("Medium", [this]() {
                 this->display_.clearDisplay();
                 prefs_.font.set(PREFS_SOL_MEDIUM);
                 this->telemetry_.logMetricData(TelemetryField::METRIC_STYLE,
                                                {{"text_size", std::string("medium")}});
                 getCurrentScreen()->setNeedsRerender();
             }));
-            fontMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>("Large", [this]() {
+            fontMenu->addMenuItem(std::make_shared<MenuItemSingleLine>("Large", [this]() {
                 this->display_.clearDisplay();
                 prefs_.font.set(PREFS_SOL_LARGE);
                 this->telemetry_.logMetricData(TelemetryField::METRIC_STYLE,
@@ -398,7 +394,7 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
 
         menuItems->emplace_back(menuItem);
 
-        menuItem = std::make_shared<NewMenuItemSingleLine>("Move Text", [this]() {
+        menuItem = std::make_shared<MenuItemSingleLine>("Move Text", [this]() {
             log_d("Loading adjust offset");
             auto offsetAdjust = std::make_shared<OffsetAdjustScreen>(
                 this->display_, prefs_, this->telemetry_, this->renderer_, this->readable_->place);
@@ -413,7 +409,7 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
 
         menuItems->emplace_back(menuItem);
 
-        menuItem = std::make_shared<NewMenuItemSingleLine>("Resize Page", [this]() {
+        menuItem = std::make_shared<MenuItemSingleLine>("Resize Page", [this]() {
             log_d("Loading resize box");
             auto resizeBox = std::make_shared<ResizeBoxScreen>(
                 this->display_, prefs_, this->telemetry_, this->renderer_, this->readable_->place);
@@ -428,7 +424,7 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
 
         menuItems->emplace_back(menuItem);
 
-        menuItem = std::make_shared<NewMenuItemSingleLine>("Line Spacing", [this]() {
+        menuItem = std::make_shared<MenuItemSingleLine>("Line Spacing", [this]() {
             auto lineSpacingScreen = std::make_shared<LineSpacingScreen>(
                 this->display_, prefs_, this->telemetry_, this->renderer_, this->readable_->place);
             this->setCurrentScreen(lineSpacingScreen);
@@ -442,7 +438,7 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
 
         menuItems->emplace_back(menuItem);
 
-        auto menuItemCheckable = std::make_shared<NewMenuItemCheckable>(
+        auto menuItemCheckable = std::make_shared<MenuItemCheckable>(
             "Dark Mode",
             [this]() {
             this->prefs_.darkMode.set(!this->prefs_.darkMode.get().value_or(false));
@@ -460,7 +456,7 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
 
         menuItems->emplace_back(menuItemCheckable);
 
-        menuItem = std::make_shared<NewMenuItemSingleLine>("Back to Text", [this]() {
+        menuItem = std::make_shared<MenuItemSingleLine>("Back to Text", [this]() {
             display_.clearDisplay();
             this->setCurrentScreen(nullptr);
             setNeedsRerender();
