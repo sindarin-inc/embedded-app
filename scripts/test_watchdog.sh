@@ -31,8 +31,8 @@ while kill -0 $TEST_PID 2> /dev/null; do
     SECONDS_ELAPSED=$((SECONDS_ELAPSED + 1))
 
     if [ "$SECONDS_ELAPSED" -ge "$TIMEOUT" ]; then
-        echo "Test suite timed out. Sending SIGABRT to generate core dump..."
-        kill -SIGABRT $TEST_PID
+        echo "Test suite timed out. Sending SIGSEGV to generate core dump..."
+        kill -SIGSEGV $TEST_PID
         wait $TEST_PID  # Wait for the process to terminate and generate core dump
         break
     fi
