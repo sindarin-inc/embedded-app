@@ -1,13 +1,13 @@
 #include "Communications/USBSerial.hpp"
 
-#include <esp_log.h>
 #include <esp_system.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 
 #include "Misc/SpiramAllocator.hpp"
 
-RTC_NOINIT_ATTR bool USBSerial::loggingEnabled;
+RTC_NOINIT_ATTR bool USBSerial::usbLoggingEnabled;
+RTC_NOINIT_ATTR esp_log_level_t USBSerial::logLevel;
 
 extern USBSerial usbSerial;
 
@@ -27,13 +27,13 @@ void USBSerial::initJtag() {
 }
 
 void USBSerial::disableLogging() {
-    if (USBSerial::loggingEnabled) {
+    if (USBSerial::usbLoggingEnabled) {
         log_i("Disabling logging");
 #if CONFIG_USE_TINYUSB_SERIAL
         esp_tusb_deinit_console(TINYUSB_CDC_ACM_1); // turn off log to usb
         tusb_cdc_acm_deinit(TINYUSB_CDC_ACM_1);
 #endif
-        USBSerial::loggingEnabled = false;
+        USBSerial::usbLoggingEnabled = false;
     }
 }
 
@@ -41,16 +41,13 @@ void USBSerial::enableLoggingInternal() {
 #if CONFIG_USE_TINYUSB_SERIAL
     esp_tusb_init_console(TINYUSB_CDC_ACM_1);
 #endif
-    // Configure log level for all Sindarin logs
-    // esp_log_level_set("*", static_cast<esp_log_level_t>(CONFIG_LOG_DEFAULT_LEVEL));
-    esp_log_level_set("Sol", ESP_LOG_DEBUG);
 
     log_i("Logging enabled (level=%d)", esp_log_level_get("Sol"));
-    USBSerial::loggingEnabled = true;
+    USBSerial::usbLoggingEnabled = true;
 }
 
 void USBSerial::enableLogging() {
-    if (!USBSerial::loggingEnabled) {
+    if (!USBSerial::usbLoggingEnabled) {
         enableLoggingInternal();
     }
 }
@@ -114,7 +111,7 @@ void USBSerial::txSendLine(const std::string &str) {
 void USBSerial::begin() {
     // Since we don't otherwise init this variable, we do it here on power on
     if (esp_reset_reason() == ESP_RST_POWERON) {
-        USBSerial::loggingEnabled = false;
+        USBSerial::usbLoggingEnabled = false;
     }
 
 #if CONFIG_USE_TINYUSB_SERIAL
@@ -171,9 +168,10 @@ void USBSerial::begin() {
     });
 #endif
 
-    if (USBSerial::loggingEnabled) {
+    if (USBSerial::usbLoggingEnabled) {
         enableLoggingInternal();
     }
+    setLogLevel(logLevel);
 }
 
 void USBSerial::end() {

@@ -29,9 +29,9 @@
 #include "Misc/StringUtil.hpp"
 #include "Models/Readable.hpp"
 #include "Storage/CrashReportWriter.hpp"
-#include "Storage/SolDrm.hpp"
 #include "Storage/LocalStore.hpp"
 #include "Storage/PreferencesStore.hpp"
+#include "Storage/SolDrm.hpp"
 #include "UI/ChargingScreen.hpp"
 #include "UI/OverTempScreen.hpp"
 #include "UI/PowerDepletedScreen.hpp"
@@ -208,7 +208,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     HEAP_PROFILE_END(usbSerial);
 
     directCommand.begin();
-    if (usbSerial.isLoggingEnabled()) {
+    if (usbSerial.isUsbLoggingEnabled()) {
         // Wait a bit so we can get boot logs (mostly for the testers)
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
