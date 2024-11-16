@@ -100,6 +100,8 @@ public:
 protected:
     void initSpi();
     inline void setCS(bool value, ScreenSide screen) const;
+    static void preTransCallback(spi_transaction_t *trans);
+    static void postTransCallback(spi_transaction_t *trans);
     void powerOnInternal();
     void powerOffInternal();
     inline void writeRegister(Register index, uint8_t data, ScreenSide screen,

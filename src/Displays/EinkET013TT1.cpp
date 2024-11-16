@@ -85,6 +85,22 @@ inline auto VcomMVToRegisterValue(uint32_t vcomInMV) -> uint8_t {
     return ((5600 + vcomInMV) * 255) / 5600;
 }
 
+struct TransactionData {
+    EinkET013TT1 *driver;
+    ScreenSide screen;
+};
+
+IRAM_ATTR void EinkET013TT1::preTransCallback(spi_transaction_t *trans) {
+    auto *data = static_cast<TransactionData *>(trans->user);
+    data->driver->setCS(LOW, data->screen);
+}
+
+IRAM_ATTR void EinkET013TT1::postTransCallback(spi_transaction_t *trans) {
+    auto *data = static_cast<TransactionData *>(trans->user);
+    data->driver->setCS(HIGH, data->screen);
+    delete data;
+}
+
 static const uint8_t CHANNEL_SETTINGS[] = {0x1E, 0x00, 0xE0};
 
 // Second byte will be replaced based on the frame transition
@@ -138,10 +154,11 @@ void EinkET013TT1::initSpi() {
         // at 20Mhz it should take 20us to send a 50 byte scanline (50*8*(1/20000000))
         .clock_speed_hz = 20 * 1000 * 1000, // Clock out at 20 MHz
         // Because we have two SPI devices we might drive at the same time, we're controlling the CS
-        // pins manually
-        // TODO: Investigate setting the CS pins automatically via `pre_cb` and `post_cb`
+        // pins manually in pre_cb and post_cb
         .spics_io_num = -1,
         .queue_size = 5,
+        .pre_cb = preTransCallback,
+        .post_cb = postTransCallback,
     };
 
     ESP_ERROR_CHECK(spi_bus_add_device(CONFIG_DISPLAY_SPI, &devcfg, &spiHigh_));
@@ -478,11 +495,11 @@ void EinkET013TT1::writeRegister(Register index, const uint8_t *data, size_t len
     spi_transaction_t t = {
         .cmd = static_cast<uint16_t>((0x70 << 8) | (index & 0x0F)), // 0x70 is the command prefix
         .length = len * 8,
-        .tx_buffer = data};
+        .user = new TransactionData{this, screen},
+        .tx_buffer = data,
+    };
 
-    setCS(LOW, screen);
     ESP_ERROR_CHECK(spi_device_polling_transmit(spiHigh_, &t));
-    setCS(HIGH, screen);
 }
 
 inline void EinkET013TT1::writeRegister(Register index, uint8_t data, ScreenSide screen,
@@ -495,21 +512,21 @@ auto EinkET013TT1::readRegister(uint8_t index, ScreenSide screen) -> uint8_t {
         log_w("readRegister called from outside of einkQueue_");
     }
     ESP_ERROR_CHECK(spi_device_acquire_bus(spiHigh_, portMAX_DELAY));
-    spi_transaction_t t = {.cmd = static_cast<uint16_t>((0x70 << 8) | (index & 0x0F))};
-    // TODO: Hardcoding reading to the left one for now
-    setCS(LOW, screen);
+
+    spi_transaction_t t = {
+        .cmd = static_cast<uint16_t>((0x70 << 8) | (index & 0x0F)),
+        .user = new TransactionData{this, screen},
+    };
     ESP_ERROR_CHECK(spi_device_polling_transmit(spiHigh_, &t));
-    setCS(HIGH, screen);
     spi_device_release_bus(spiHigh_);
 
     ESP_ERROR_CHECK(spi_device_acquire_bus(spiLow_, portMAX_DELAY));
     spi_transaction_t t2 = {.flags = SPI_TRANS_USE_RXDATA | SPI_TRANS_USE_TXDATA,
                             .cmd = 0x73,
                             .length = 8,
+                            .user = new TransactionData{this, screen},
                             .tx_data = {0xFF}};
-    setCS(LOW, screen);
     ESP_ERROR_CHECK(spi_device_polling_transmit(spiLow_, &t2));
-    setCS(HIGH, screen);
     uint8_t result = t2.rx_data[0];
     spi_device_release_bus(spiLow_);
 
@@ -539,10 +556,9 @@ auto EinkET013TT1::readDeviceIdReg(ScreenSide screen) -> uint8_t {
     spi_transaction_t t2 = {.flags = SPI_TRANS_USE_RXDATA | SPI_TRANS_USE_TXDATA,
                             .cmd = 0x71,
                             .length = 8,
+                            .user = new TransactionData{this, screen},
                             .tx_data = {0xFF}};
-    setCS(LOW, screen);
     ESP_ERROR_CHECK(spi_device_polling_transmit(spiLow_, &t2));
-    setCS(HIGH, screen);
 
     uint8_t result = t2.rx_data[0];
     spi_device_release_bus(spiLow_);
