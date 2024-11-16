@@ -4,9 +4,10 @@
 
 #include <algorithm>
 #include <cstring>
+#include <driver/gpio.h>
 #include <esp_err.h>
+#include <soc/gpio_struct.h>
 
-#include "Misc/Platform.hpp"
 #include "sindarin-debug.h"
 
 // esp_clk methods are deprecated in IDF 5+
@@ -85,20 +86,28 @@ inline auto VcomMVToRegisterValue(uint32_t vcomInMV) -> uint8_t {
     return ((5600 + vcomInMV) * 255) / 5600;
 }
 
-struct TransactionData {
-    EinkET013TT1 *driver;
-    ScreenSide screen;
-};
-
 IRAM_ATTR void EinkET013TT1::preTransCallback(spi_transaction_t *trans) {
-    auto *data = static_cast<TransactionData *>(trans->user);
-    data->driver->setCS(LOW, data->screen);
+    auto screen = static_cast<ScreenSide>(reinterpret_cast<uintptr_t>(trans->user));
+    if (screen == ScreenSide::Both) {
+        GPIO.out_w1tc = (1 << CONFIG_DISPLAY_EINKET013TT1_CS_LEFT);
+        GPIO.out_w1tc = (1 << CONFIG_DISPLAY_EINKET013TT1_CS_RIGHT);
+    } else if (screen == ScreenSide::Left) {
+        GPIO.out_w1tc = (1 << CONFIG_DISPLAY_EINKET013TT1_CS_LEFT);
+    } else if (screen == ScreenSide::Right) {
+        GPIO.out_w1tc = (1 << CONFIG_DISPLAY_EINKET013TT1_CS_RIGHT);
+    }
 }
 
 IRAM_ATTR void EinkET013TT1::postTransCallback(spi_transaction_t *trans) {
-    auto *data = static_cast<TransactionData *>(trans->user);
-    data->driver->setCS(HIGH, data->screen);
-    delete data;
+    auto screen = static_cast<ScreenSide>(reinterpret_cast<uintptr_t>(trans->user));
+    if (screen == ScreenSide::Both) {
+        GPIO.out_w1ts = (1 << CONFIG_DISPLAY_EINKET013TT1_CS_LEFT);
+        GPIO.out_w1ts = (1 << CONFIG_DISPLAY_EINKET013TT1_CS_RIGHT);
+    } else if (screen == ScreenSide::Left) {
+        GPIO.out_w1ts = (1 << CONFIG_DISPLAY_EINKET013TT1_CS_LEFT);
+    } else if (screen == ScreenSide::Right) {
+        GPIO.out_w1ts = (1 << CONFIG_DISPLAY_EINKET013TT1_CS_RIGHT);
+    }
 }
 
 static const uint8_t CHANNEL_SETTINGS[] = {0x1E, 0x00, 0xE0};
@@ -112,51 +121,63 @@ void EinkET013TT1::initSpi() {
     if (spiHigh_ != nullptr && spiLow_ != nullptr) {
         return;
     }
-    log_d("Initializing EinkET013TT1 with config csLeft_=%d csRight_=%d rst_=%d mosi=%d miso=%d "
+    log_d("Initializing EinkET013TT1 with config CS(l)=%d CS(r)=%d RST=%d MOSI=%d MISO=%d "
           "clk=%d",
-          csLeft_, csRight_, rst_, DISPLAY_MOSI, DISPLAY_MISO, DISPLAY_CLK);
-    PinMode(csLeft_, OUTPUT);
-    PinMode(csRight_, OUTPUT);
-    PinMode(rst_, OUTPUT);
+          CONFIG_DISPLAY_EINKET013TT1_CS_LEFT, CONFIG_DISPLAY_EINKET013TT1_CS_RIGHT,
+          CONFIG_DISPLAY_EINKET013TT1_RST, CONFIG_DISPLAY_EINKET013TT1_MOSI,
+          CONFIG_DISPLAY_EINKET013TT1_MISO, CONFIG_DISPLAY_EINKET013TT1_CLK);
+    gpio_set_direction(static_cast<gpio_num_t>(CONFIG_DISPLAY_EINKET013TT1_CS_LEFT),
+                       GPIO_MODE_OUTPUT);
+    gpio_set_direction(static_cast<gpio_num_t>(CONFIG_DISPLAY_EINKET013TT1_CS_RIGHT),
+                       GPIO_MODE_OUTPUT);
+    gpio_set_direction(static_cast<gpio_num_t>(CONFIG_DISPLAY_EINKET013TT1_RST), GPIO_MODE_OUTPUT);
     // The eink-provided driver only kept OEI low always, so we have it optional here
-#ifdef DISPLAY_OEI
-    log_w("Using DISPLAY_OEI pin %d", DISPLAY_OEI);
-    pinMode(DISPLAY_OEI, OUTPUT);
+#ifdef CONFIG_DISPLAY_EINKET013TT1_OEI
+    log_w("Using CONFIG_DISPLAY_EINKET013TT1_OEI pin %d", CONFIG_DISPLAY_EINKET013TT1_OEI);
+    gpio_set_direction(static_cast<gpio_num_t>(CONFIG_DISPLAY_EINKET013TT1_OEI), GPIO_MODE_OUTPUT);
 #endif
-#ifdef DISPLAY_BUSY
-    log_w("Using DISPLAY_BUSY pin %d", DISPLAY_BUSY);
-    pinMode(DISPLAY_BUSY, INPUT);
+#ifdef CONFIG_DISPLAY_EINKET013TT1_BUSY
+    log_w("Using CONFIG_DISPLAY_EINKET013TT1_BUSY pin %d", CONFIG_DISPLAY_EINKET013TT1_BUSY);
+    gpio_set_direction(static_cast<gpio_num_t>(CONFIG_DISPLAY_EINKET013TT1_BUSY), GPIO_MODE_INPUT);
 #endif
 
-    setCS(HIGH, ScreenSide::Both);
+    GPIO.out_w1ts = (1 << CONFIG_DISPLAY_EINKET013TT1_CS_LEFT);
+    GPIO.out_w1ts = (1 << CONFIG_DISPLAY_EINKET013TT1_CS_RIGHT);
 
     // Initialize the SPI bus
-    // TODO(john): It's maybe a little weird that some pins come in via config.h and some come in
-    // via the constructor
     spi_bus_config_t buscfg = {
-        .mosi_io_num = DISPLAY_MOSI,
-        .miso_io_num = DISPLAY_MISO,
-        .sclk_io_num = DISPLAY_CLK,
+        .mosi_io_num = CONFIG_DISPLAY_EINKET013TT1_MOSI,
+        .miso_io_num = CONFIG_DISPLAY_EINKET013TT1_MISO,
+        .sclk_io_num = CONFIG_DISPLAY_EINKET013TT1_CLK,
         // These must be unset or the SPI driver will try to use them
         .quadwp_io_num = -1,
         .quadhd_io_num = -1,
+        .max_transfer_sz = SCANLINE_SIZE,
         .flags = SPICOMMON_BUSFLAG_MASTER,
-        // .isr_cpu_id = INTR_CPU_ID_1,
+        .isr_cpu_id = INTR_CPU_ID_1,
+        .intr_flags = 0,
     };
-    // TODO: Why don't we have any available DMA channels? Maybe they are used by Flash and RAM?
-    ESP_ERROR_CHECK(spi_bus_initialize(CONFIG_DISPLAY_SPI, &buscfg, SPI_DMA_DISABLED));
+    ESP_ERROR_CHECK(spi_bus_initialize(CONFIG_DISPLAY_SPI, &buscfg, SPI_DMA_CH_AUTO));
 
     spi_device_interface_config_t devcfg = {
         .command_bits = 16,
+        .address_bits = 0,
+        .dummy_bits = 0,
         .mode = 0,
+        .clock_source = SPI_CLK_SRC_DEFAULT,
+        .duty_cycle_pos = 0,
+        .cs_ena_pretrans = 0,
+        .cs_ena_posttrans = 0,
         // According to the EinkET013TT1 datasheet, the min clock time is 50ns which equates to
         // 20MHz though experimentally 30MHz seems to be fine (but doesnt seem to have much benefit)
         // at 20Mhz it should take 20us to send a 50 byte scanline (50*8*(1/20000000))
         .clock_speed_hz = 20 * 1000 * 1000, // Clock out at 20 MHz
+        .input_delay_ns = 0,
         // Because we have two SPI devices we might drive at the same time, we're controlling the CS
         // pins manually in pre_cb and post_cb
         .spics_io_num = -1,
-        .queue_size = 5,
+        .flags = 0,
+        .queue_size = DMA_QUEUE_SIZE - 1,
         .pre_cb = preTransCallback,
         .post_cb = postTransCallback,
     };
@@ -176,9 +197,6 @@ void EinkET013TT1::init() {
     if (vcomInMV_ == 0) {
         setVcom(VCOM_DEFAULT);
     }
-    if (timerDelayNs_ == 0) {
-        setFramerate(FRAMERATE_DEFAULT);
-    }
     for (unsigned char &i : previousBuffer_) {
         i = 0xFF;
     }
@@ -197,11 +215,6 @@ void EinkET013TT1::setVcom(int mV) {
     vcomInMV_ = mV;
     log_d("Setting VCOM to %" PRIi32 " mV (register 0x9 = %" PRIu8 ")", vcomInMV_,
           VcomMVToRegisterValue(vcomInMV_));
-}
-
-void EinkET013TT1::setFramerate(int frameRate) {
-    frameRate = std::clamp(frameRate, 0, 100);
-    timerDelayNs_ = 1000000000.0f / frameRate / EinkET013TT1_GATE_COUNT;
 }
 
 void EinkET013TT1::setBorder(BorderSetting border) {
@@ -225,17 +238,6 @@ void EinkET013TT1::clear(const EinkET013TT1Waveform &waveform) {
     update(waveform, previousBuffer_);
 }
 
-inline void EinkET013TT1::setCS(bool value, ScreenSide screen) const {
-    if (screen == ScreenSide::Left) {
-        DigitalWrite(csLeft_, value);
-    } else if (screen == ScreenSide::Right) {
-        DigitalWrite(csRight_, value);
-    } else if (screen == ScreenSide::Both) {
-        DigitalWrite(csLeft_, value);
-        DigitalWrite(csRight_, value);
-    }
-}
-
 void EinkET013TT1::updateInternal(const EinkET013TT1Waveform &waveform, const uint8_t *buffer,
                                   int32_t overrideVcom, const EinkET013TT1Waveform &altWaveform,
                                   ScreenSide screen, EinkBox box) {
@@ -244,31 +246,12 @@ void EinkET013TT1::updateInternal(const EinkET013TT1Waveform &waveform, const ui
         log_d("Overriding VCOM from %" PRIi32 " (0x%02X) to %" PRIi32 " (0x%02X)", vcomInMV_,
               VcomMVToRegisterValue(vcomInMV_), overrideVcom, newVcomRegisterValue);
         writeRegister(PWM_WIDTH_SELECT, newVcomRegisterValue, screen);
-        Delay(30);
+        vTaskDelay(pdMS_TO_TICKS(30));
     }
 
-    timerOverruns_ = 0;
     busyWaits_ = 0;
     maxFrameCycles_ = 0;
     error_ = false;
-
-    // Set up convenience variables to index into various parts of the scanline
-    // TODO: Are there clever union types or other struct packing things we could do here?
-    // We're supposed to use `DMA_ATTR static` since this is used as a SPI buffer.
-    // See:
-    // https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-guides/memory-types.html#dma-capable-requirement
-    DMA_ATTR static uint8_t scanLine[48];
-    uint8_t *borderSettings = &(scanLine[0]);
-    if (border_ == BORDER_SETTING_NONE) {
-        memcpy(borderSettings, BORDER_NONE, 4);
-    } else {
-        memcpy(borderSettings, BORDER_TEMPLATE, 4);
-    }
-    auto *gateBlockLow = reinterpret_cast<uint32_t *>(&(scanLine[4]));
-    auto *gateSelectLow = reinterpret_cast<uint16_t *>(&(scanLine[8]));
-    uint8_t *sourceData = &(scanLine[10]);
-    auto *gateSelectHigh = reinterpret_cast<uint16_t *>(&(scanLine[42]));
-    auto *gateBlockHigh = reinterpret_cast<uint32_t *>(&(scanLine[44]));
 
     log_d("Updating display with waveform \"%s\"", waveform.name);
 
@@ -314,6 +297,16 @@ void EinkET013TT1::updateInternal(const EinkET013TT1Waveform &waveform, const ui
             rightPumpStatus.bits.lvds, rightPumpStatus.bits.vcpok, rightTemp,
             rightPumpStatus.value);
     }
+
+    // Pre-fill all the scanline DMA buffers with the border setting values when not setting the
+    // border
+    if (border_ == BORDER_SETTING_NONE) {
+        for (int i = 0; i < NUM_DMA_BUFFERS; i++) {
+            uint8_t *borderSettings = &(txBuffers_[i][0]);
+            memcpy(borderSettings, BORDER_NONE, 4);
+        }
+    }
+
     ESP_ERROR_CHECK(spi_device_acquire_bus(spiHigh_, portMAX_DELAY));
 
     PROFILE_START(sendFrames);
@@ -335,6 +328,7 @@ void EinkET013TT1::updateInternal(const EinkET013TT1Waveform &waveform, const ui
         frame.makeLUT(&lut);
         altFrame.makeLUT(&altLut);
 
+        // Pre-fill all the scanline DMA buffers with the border setting valu
         if (border_ != BORDER_SETTING_NONE) {
             auto borderBits = frame.getSetting(previousBorder_ & 0x01, border_);
             // In the original EPD driver, there were `Border_Black` and `Border_White` arrays
@@ -343,11 +337,27 @@ void EinkET013TT1::updateInternal(const EinkET013TT1Waveform &waveform, const ui
             // I'm not sure if this is a material difference. Possible the right two bits
             // actually set the border and the other 6 are noops. But doing the same thing as
             // the original driver for now.
-            borderSettings[1] = borderBits | borderBits << 2 | borderBits << 4 | borderBits << 6;
+            for (int i = 0; i < NUM_DMA_BUFFERS; i++) {
+                uint8_t *borderSettings = &(txBuffers_[i][0]);
+                memcpy(borderSettings, BORDER_TEMPLATE, 4);
+                borderSettings[1] =
+                    borderBits | borderBits << 2 | borderBits << 4 | borderBits << 6;
+            }
         }
 
         // For each horizontal half-line
-        for (int gate = 0; gate < EinkET013TT1_GATE_COUNT; gate++) {
+        for (int16_t gate = 0; gate < EinkET013TT1_GATE_COUNT; gate++) {
+            // Set up convenience variables to index into various parts of the scanline
+            // TODO: Are there clever union types or other struct packing things we could do
+            // here? Get a DMA buffer that we'll reuse for all our scanlines
+            uint8_t *scanLine = txBuffers_[txBufferIndex_];
+            txBufferIndex_ = (txBufferIndex_ + 1) % NUM_DMA_BUFFERS;
+            auto *gateBlockLow = reinterpret_cast<uint32_t *>(&(scanLine[4]));
+            auto *gateSelectLow = reinterpret_cast<uint16_t *>(&(scanLine[8]));
+            uint8_t *sourceData = &(scanLine[10]);
+            auto *gateSelectHigh = reinterpret_cast<uint16_t *>(&(scanLine[42]));
+            auto *gateBlockHigh = reinterpret_cast<uint32_t *>(&(scanLine[44]));
+
             // Pick the correct gate based on the index
             uint8_t gs = gate & 0x0F;
             uint8_t gb = gate >> 4;
@@ -362,8 +372,9 @@ void EinkET013TT1::updateInternal(const EinkET013TT1Waveform &waveform, const ui
             // Gate indices represent half-lines in this order (with connector down):
             // bottom left -> top left -> bottom right -> top right
             // Generate an index into our frame buffer that corresponds to this gate.
-            int bufferIndex = (EinkET013TT1_PIXEL_WIDTH / 8) *
-                              (EinkET013TT1_PIXEL_WIDTH - 1 - (gate % EinkET013TT1_PIXEL_WIDTH));
+            uint16_t bufferIndex =
+                (EinkET013TT1_PIXEL_WIDTH / 8) *
+                (EinkET013TT1_PIXEL_WIDTH - 1 - (gate % EinkET013TT1_PIXEL_WIDTH));
             if (gate >= EinkET013TT1_GATE_COUNT / 2) {
                 // The latter gates are on the right half of the screen, so nudge the index
                 // to point to the right half of the line.
@@ -374,41 +385,27 @@ void EinkET013TT1::updateInternal(const EinkET013TT1Waveform &waveform, const ui
             auto oldBuffer = &(previousBuffer_[bufferIndex]);
 
             // This for loop takes 4-16us at 240MHz
-            for (int pixel = 0; pixel < EinkET013TT1_PIXEL_WIDTH / 2; pixel += 4) {
+            for (uint16_t pixel = 0; pixel < EinkET013TT1_PIXEL_WIDTH / 2; pixel += 8) {
                 x = pixel + (gate / EinkET013TT1_PIXEL_WIDTH) * EinkET013TT1_PIXEL_WIDTH / 2;
-                uint8_t oldPixels;
-                uint8_t newPixels;
-                if (pixel % 8 == 0) {
-                    oldPixels = (oldBuffer[pixel / 8] >> 4) & 0xF;
-                    newPixels = (newBuffer[pixel / 8] >> 4) & 0xF;
-                } else {
-                    oldPixels = oldBuffer[pixel / 8] & 0xF;
-                    newPixels = newBuffer[pixel / 8] & 0xF;
-                }
                 auto *lutToUse = box.contains(x, y) ? &altLut : &lut;
-                sourceData[pixel / 4] = (*lutToUse)[oldPixels << 4 | newPixels];
+
+                uint8_t index = pixel / 8;
+                uint8_t oldPixels1 = (oldBuffer[index] >> 4) & 0xF;
+                uint8_t newPixels1 = (newBuffer[index] >> 4) & 0xF;
+                uint8_t oldPixels2 = oldBuffer[index] & 0xF;
+                uint8_t newPixels2 = newBuffer[index] & 0xF;
+
+                sourceData[pixel / 4] = (*lutToUse)[oldPixels1 << 4 | newPixels1];
+                sourceData[(pixel + 4) / 4] = (*lutToUse)[oldPixels2 << 4 | newPixels2];
             }
 
-            // Send the scan line!
-            // `writeRegister` takes 24.7us at 160MHz (5994 cycles) which is about right since
-            // we're sending 50bytes at 20MHz so 50*8*(1/20000000)=20us
-            writeRegister(WRITE_GATE_SOURCE_DATA, scanLine, sizeof(scanLine), screen);
-
-            // If we wanted, we could make the `writeRegister` call above async & DMA-driven and do
-            // 25us of processing here (perhaps for the next gate)
-
-            // Wait for frame timer and busy signal
-            waitForTimer();
-            startTimer(timerDelayNs_);
-            waitForNotBusy();
-            writeRegister(DRIVER_LATCH_RESET_PULSE_GENERATE, 0x10, screen);
+            writeRegisterAsync(WRITE_GATE_SOURCE_DATA, scanLine, 48, screen);
+            writeRegisterAsync(DRIVER_LATCH_RESET_PULSE_GENERATE, 0x10, screen);
         }
 
         // Send clear packet
-        writeRegister(WRITE_GATE_SOURCE_DATA, CLEAR_PACKET, sizeof(CLEAR_PACKET), screen);
-        waitForTimer();
-        waitForNotBusy();
-        writeRegister(DRIVER_LATCH_RESET_PULSE_GENERATE, 0x10, screen);
+        writeRegisterAsync(WRITE_GATE_SOURCE_DATA, CLEAR_PACKET, sizeof(CLEAR_PACKET), screen);
+        writeRegisterAsync(DRIVER_LATCH_RESET_PULSE_GENERATE, 0x10, screen);
 
         portYIELD();
     }
@@ -423,19 +420,14 @@ void EinkET013TT1::updateInternal(const EinkET013TT1Waveform &waveform, const ui
     if (overrideVcom != INT32_MAX) {
         auto oldVcomRegisterValue = VcomMVToRegisterValue(vcomInMV_);
         log_d("Restoring VCOM to %" PRIi32 " (0x%" PRIu8 ")", vcomInMV_, oldVcomRegisterValue);
-        writeRegister(PWM_WIDTH_SELECT, oldVcomRegisterValue, screen);
+        writeRegisterAsync(PWM_WIDTH_SELECT, oldVcomRegisterValue, screen);
     }
 
     float timeNs = PROFILE_CALCULATE_NS(sendFrames);
     int totalScanlines = (EinkET013TT1_GATE_COUNT + 1) * waveform.frameCount;
-    log_d("Sent %d frames in %.2fms (%.2fms/frame, %.2fus/gate, %d/%d overruns, %d/%d busyWaits)",
-          waveform.frameCount, timeNs / 1000000, timeNs / waveform.frameCount / 1000000,
-          timeNs / waveform.frameCount / (EinkET013TT1_GATE_COUNT + 1) / 1000, timerOverruns_,
-          totalScanlines, busyWaits_, totalScanlines);
-    if (timerOverruns_ > 0) {
-        log_w("%d timer overruns happened! %.2fus maxFrame", timerOverruns_,
-              CYCLES_TO_US(maxFrameCycles_));
-    }
+    log_d("Sent %d frames in %.2fms (%.2fms/frame, %.2fus/gate)", waveform.frameCount,
+          timeNs / 1000000, timeNs / waveform.frameCount / 1000000,
+          timeNs / waveform.frameCount / (EinkET013TT1_GATE_COUNT + 1) / 1000);
 
     // Move new buffer to be previous buffer
     memcpy(previousBuffer_, buffer, sizeof(previousBuffer_));
@@ -471,7 +463,7 @@ void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *b
                 log_w("Sequential updates for %" PRIu32 "ms. Taking a 300ms break.",
                       Millis() - updateStartTime_);
                 updateStartTime_ = Millis();
-                Delay(300);
+                vTaskDelay(pdMS_TO_TICKS(300));
             }
         }
     });
@@ -487,58 +479,74 @@ void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *b
     vEventGroupDelete(group);
 }
 
+inline auto EinkET013TT1::makeTransaction(uint16_t cmd, size_t length, ScreenSide screen,
+                                          const void *txBuffer) -> spi_transaction_t * {
+    auto t = &spiTransactions_[spiTransactionIndex_];
+    spiTransactionIndex_ = (spiTransactionIndex_ + 1) % DMA_QUEUE_SIZE;
+    memset(t, 0, sizeof(*t));
+    t->cmd = cmd;
+    t->length = length;
+    t->user = reinterpret_cast<void *>(screen);
+    t->tx_buffer = txBuffer;
+    return t;
+}
+
 void EinkET013TT1::writeRegister(Register index, const uint8_t *data, size_t len, ScreenSide screen,
                                  bool outOfQueue) {
+
     if (!outOfQueue && !einkQueue_->isInQueue()) {
         log_w("writeRegister called from outside of einkQueue_");
     }
-    spi_transaction_t t = {
-        .cmd = static_cast<uint16_t>((0x70 << 8) | (index & 0x0F)), // 0x70 is the command prefix
-        .length = len * 8,
-        .user = new TransactionData{this, screen},
-        .tx_buffer = data,
-    };
 
-    ESP_ERROR_CHECK(spi_device_polling_transmit(spiHigh_, &t));
+    auto t = makeTransaction(REGISTER_TO_CMD(index), len * 8, screen, data);
+    ESP_ERROR_CHECK(spi_device_polling_transmit(spiHigh_, t));
 }
 
-inline void EinkET013TT1::writeRegister(Register index, uint8_t data, ScreenSide screen,
-                                        bool outOfQueue) {
+void EinkET013TT1::writeRegister(Register index, uint8_t data, ScreenSide screen, bool outOfQueue) {
     writeRegister(index, &data, 1, screen, outOfQueue);
 }
 
-auto EinkET013TT1::readRegister(uint8_t index, ScreenSide screen) -> uint8_t {
+inline void EinkET013TT1::writeRegisterAsync(Register index, const uint8_t *data, size_t len,
+                                             ScreenSide screen) {
+    auto t = makeTransaction(REGISTER_TO_CMD(index), len * 8, screen, data);
+    ESP_ERROR_CHECK(spi_device_queue_trans(spiHigh_, t, portMAX_DELAY));
+}
+
+inline void EinkET013TT1::writeRegisterAsync(Register index, const uint8_t data,
+                                             ScreenSide screen) {
+    auto t = makeTransaction(REGISTER_TO_CMD(index), 8, screen, nullptr);
+    t->flags = SPI_TRANS_USE_TXDATA;
+    t->tx_data[0] = data;
+    ESP_ERROR_CHECK(spi_device_queue_trans(spiHigh_, t, portMAX_DELAY));
+}
+
+auto EinkET013TT1::readRegister(Register index, ScreenSide screen) -> uint8_t {
     if (!einkQueue_->isInQueue()) {
         log_w("readRegister called from outside of einkQueue_");
     }
-    ESP_ERROR_CHECK(spi_device_acquire_bus(spiHigh_, portMAX_DELAY));
 
-    spi_transaction_t t = {
-        .cmd = static_cast<uint16_t>((0x70 << 8) | (index & 0x0F)),
-        .user = new TransactionData{this, screen},
-    };
-    ESP_ERROR_CHECK(spi_device_polling_transmit(spiHigh_, &t));
+    ESP_ERROR_CHECK(spi_device_acquire_bus(spiHigh_, portMAX_DELAY));
+    auto t = makeTransaction(REGISTER_TO_CMD(index), 8, screen, nullptr);
+    ESP_ERROR_CHECK(spi_device_polling_transmit(spiHigh_, t));
     spi_device_release_bus(spiHigh_);
 
     ESP_ERROR_CHECK(spi_device_acquire_bus(spiLow_, portMAX_DELAY));
-    spi_transaction_t t2 = {.flags = SPI_TRANS_USE_RXDATA | SPI_TRANS_USE_TXDATA,
-                            .cmd = 0x73,
-                            .length = 8,
-                            .user = new TransactionData{this, screen},
-                            .tx_data = {0xFF}};
-    ESP_ERROR_CHECK(spi_device_polling_transmit(spiLow_, &t2));
-    uint8_t result = t2.rx_data[0];
+    auto t2 = makeTransaction(0x73, 8, screen, nullptr);
+    t2->flags = SPI_TRANS_USE_RXDATA | SPI_TRANS_USE_TXDATA;
+    t2->tx_data[0] = 0xFF;
+    ESP_ERROR_CHECK(spi_device_polling_transmit(spiLow_, t2));
+    uint8_t result = t2->rx_data[0];
     spi_device_release_bus(spiLow_);
 
     return result;
 }
 
 auto EinkET013TT1::readPumpStatus(ScreenSide screen) -> PumpStatus {
-    return PumpStatus{readRegister(0x00, screen)};
+    return PumpStatus{readRegister(PUMP_STATUS, screen)};
 }
 
 auto EinkET013TT1::readTemperature(ScreenSide screen) -> int16_t {
-    uint16_t value = readRegister(0x0F, screen);
+    uint16_t value = readRegister(READ_SENSOR_REGISTER, screen);
 
     value &= 0x7F;
 
@@ -553,14 +561,11 @@ auto EinkET013TT1::readTemperature(ScreenSide screen) -> int16_t {
 
 auto EinkET013TT1::readDeviceIdReg(ScreenSide screen) -> uint8_t {
     ESP_ERROR_CHECK(spi_device_acquire_bus(spiLow_, portMAX_DELAY));
-    spi_transaction_t t2 = {.flags = SPI_TRANS_USE_RXDATA | SPI_TRANS_USE_TXDATA,
-                            .cmd = 0x71,
-                            .length = 8,
-                            .user = new TransactionData{this, screen},
-                            .tx_data = {0xFF}};
-    ESP_ERROR_CHECK(spi_device_polling_transmit(spiLow_, &t2));
-
-    uint8_t result = t2.rx_data[0];
+    auto t = makeTransaction(0x71, 8, screen, nullptr);
+    t->flags = SPI_TRANS_USE_RXDATA | SPI_TRANS_USE_TXDATA;
+    t->tx_data[0] = 0xFF;
+    ESP_ERROR_CHECK(spi_device_polling_transmit(spiLow_, t));
+    uint8_t result = t->rx_data[0];
     spi_device_release_bus(spiLow_);
 
     return result;
@@ -596,7 +601,7 @@ void EinkET013TT1::powerOnInternal() {
 
     log_d("Powering on EinkET013TT1");
 
-    DigitalWrite(rst_, HIGH);
+    gpio_set_level(static_cast<gpio_num_t>(CONFIG_DISPLAY_EINKET013TT1_RST), 1);
 
     ESP_ERROR_CHECK(spi_device_acquire_bus(spiHigh_, portMAX_DELAY));
 
@@ -631,19 +636,19 @@ void EinkET013TT1::powerOnInternal() {
     if (!chargePumpsOn) {
         // Enable positive charge pump VH (VDH +14V & VGH +19V)
         writeRegister(PUMP_SETTING_2, 0x01, screen);
-        Delay(30);
+        vTaskDelay(pdMS_TO_TICKS(30));
         // Also enable negative charge pump VN (VDL -14V & VGL -19V)
         writeRegister(PUMP_SETTING_2, 0x03, screen);
-        Delay(30);
+        vTaskDelay(pdMS_TO_TICKS(30));
     }
     // Also enable negative charge pump VCL (-5.6V)
     // Note: It seems to be necessary to turn this one off/on otherwise the screen will drift. Just
     // disconnecting VCOM it is not enough.
     writeRegister(PUMP_SETTING_2, 0x07, screen);
-    Delay(60);
+    vTaskDelay(pdMS_TO_TICKS(60));
     // Also enable (connect) VCOM
     writeRegister(PUMP_SETTING_2, 0x0F, screen);
-    Delay(30);
+    vTaskDelay(pdMS_TO_TICKS(30));
 
     // This is not in the datasheet and its function is a mystery
     writeRegister(DRIVER_LATCH_RESET_PULSE_GENERATE, 0x10, screen);
@@ -667,10 +672,10 @@ void EinkET013TT1::powerOffInternal() {
 
     // Disable (disconnect) VCOM
     writeRegister(PUMP_SETTING_2, 0x07, screen);
-    Delay(30);
+    vTaskDelay(pdMS_TO_TICKS(30));
     // Also disable negative charge pump VCL (-5.6V)
     writeRegister(PUMP_SETTING_2, 0x03, screen);
-    Delay(30);
+    vTaskDelay(pdMS_TO_TICKS(30));
     // This is not in the datasheet and its function is a mystery
     writeRegister(MYSTERY_SETTING_2, 0x00, screen);
     // Disable internal charge pump for oscillator power
@@ -682,7 +687,7 @@ void EinkET013TT1::powerOffInternal() {
     writeRegister(PUMP_SETTING_1, 0x00, screen);
     // LVDS OFF, Band-gap circuit OFF, Temperature sensor OFF
     writeRegister(THERMAL_SENSOR_SETTING, 0x00, screen);
-    Delay(30);
+    vTaskDelay(pdMS_TO_TICKS(30));
     // This is not in the datasheet and its function is a mystery
     writeRegister(MYSTERY_SETTING_2, 0x02, screen);
 
@@ -697,7 +702,7 @@ void EinkET013TT1::shutdown() {
     writeRegister(PUMP_SETTING_2, 0x01, ScreenSide::Both, true);
     // NOTE: This delay must be here, otherwise the charge pump will not be disabled (which is
     // surprising and strange)
-    Delay(30);
+    vTaskDelay(pdMS_TO_TICKS(30));
     // Disable positive charge pump VH (VDH +14V & VGH +19V)
     writeRegister(PUMP_SETTING_2, 0x00, ScreenSide::Both, true);
     // Disable internal charge pump for oscillator power
@@ -708,45 +713,12 @@ void EinkET013TT1::shutdown() {
     writeRegister(MYSTERY_SETTING_2, 0x02, ScreenSide::Both, true);
 }
 
-inline void EinkET013TT1::startTimer(uint32_t ns) {
-    RSR(CCOUNT, cycleCountStart_);
-    timerDurationCycles_ = (esp_clk_cpu_freq() / 1000000000.0) * ns;
-}
-
-inline auto EinkET013TT1::timerActivated() const -> bool { return timerDurationCycles_ != 0; }
-
-inline auto EinkET013TT1::timerRunning() const -> bool {
-    volatile uint32_t cycleCount = 0;
-    RSR(CCOUNT, cycleCount);
-    if (timerDurationCycles_ != 0 && cycleCount - cycleCountStart_ < timerDurationCycles_) {
-        return true;
-    }
-    return false;
-}
-
-inline void EinkET013TT1::waitForTimer() {
-    // If we ever wait for the timer, and the timer has already completed then we can conclude
-    // that that we spent too much time doing CPU things and the timer ran for longer than we
-    // wanted.
-    if (timerActivated() && !timerRunning()) {
-        volatile uint32_t cycleCount = 0;
-        RSR(CCOUNT, cycleCount);
-        maxFrameCycles_ = std::max(maxFrameCycles_, cycleCount - cycleCountStart_);
-        timerOverruns_ += 1;
-        timerDurationCycles_ = 0;
-        return;
-    }
-    while (timerRunning()) {
-    }
-    timerDurationCycles_ = 0;
-}
-
 inline void EinkET013TT1::waitForNotBusy() {
-#ifdef DISPLAY_BUSY
-    if (digitalRead(DISPLAY_BUSY) == HIGH) {
+#ifdef CONFIG_DISPLAY_EINKET013TT1_BUSY
+    if (gpio_get_level(static_cast<gpio_num_t>(CONFIG_DISPLAY_EINKET013TT1_BUSY)) == 1) {
         busyWaits_ += 1;
     }
-    while (digitalRead(DISPLAY_BUSY) == HIGH) {
+    while (gpio_get_level(static_cast<gpio_num_t>(CONFIG_DISPLAY_EINKET013TT1_BUSY)) == 1) {
     }
 #endif
 }
