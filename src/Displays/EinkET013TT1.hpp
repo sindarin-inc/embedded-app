@@ -152,8 +152,6 @@ protected:
     esp_pm_lock_handle_t freqLock_{};
 #endif
 
-    // Buffers for sending data. We use this every other dma transaction so it can be half the
-    // number of queueable transations
     static constexpr size_t DMA_QUEUE_SIZE = 64;
     static constexpr size_t NUM_DMA_BUFFERS = DMA_QUEUE_SIZE / 2;
     static constexpr size_t SCANLINE_SIZE = 48;

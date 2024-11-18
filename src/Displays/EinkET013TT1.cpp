@@ -314,6 +314,9 @@ void EinkET013TT1::updateInternal(const EinkET013TT1Waveform &waveform, const ui
     // Take into account for doing more frames in the altWaveform than the main one.
     int maxFrames = std::max(waveform.frameCount, altWaveform.frameCount);
 
+    // PROFILE_MULTIPLE_SETUP(processGate);
+    // PROFILE_MULTIPLE_SETUP(transmitGate);
+
     // For each frame in the waveform
     for (int frameIndex = 0; frameIndex < maxFrames; frameIndex++) {
         auto frame = waveform.frameOrDefault(frameIndex);
@@ -347,6 +350,9 @@ void EinkET013TT1::updateInternal(const EinkET013TT1Waveform &waveform, const ui
 
         // For each horizontal half-line
         for (int16_t gate = 0; gate < EinkET013TT1_GATE_COUNT; gate++) {
+            // On average, the waveform calculations take ~5us at 240MHz
+            // PROFILE_MULTIPLE_START(processGate);
+
             // Set up convenience variables to index into various parts of the scanline
             // TODO: Are there clever union types or other struct packing things we could do
             // here? Get a DMA buffer that we'll reuse for all our scanlines
@@ -384,7 +390,6 @@ void EinkET013TT1::updateInternal(const EinkET013TT1Waveform &waveform, const ui
             auto newBuffer = &(buffer[bufferIndex]);
             auto oldBuffer = &(previousBuffer_[bufferIndex]);
 
-            // This for loop takes 4-16us at 240MHz
             for (uint16_t pixel = 0; pixel < EinkET013TT1_PIXEL_WIDTH / 2; pixel += 8) {
                 x = pixel + (gate / EinkET013TT1_PIXEL_WIDTH) * EinkET013TT1_PIXEL_WIDTH / 2;
                 auto *lutToUse = box.contains(x, y) ? &altLut : &lut;
@@ -399,9 +404,19 @@ void EinkET013TT1::updateInternal(const EinkET013TT1Waveform &waveform, const ui
                 sourceData[(pixel + 4) / 4] = (*lutToUse)[oldPixels2 << 4 | newPixels2];
             }
 
+            // PROFILE_MULTIPLE_END(processGate);
+
+            // PROFILE_MULTIPLE_START(transmitGate);
+            // On average these two commands together are taking 45us for some reason. I would
+            // expect it to be half that (or less) on average (53 bytes / (20MHz / 8) = 21.2us).
+            // Interestingly spi_polling_transmit is taking only 41.70us so maybe DMA is not DMA-ing
             writeRegisterAsync(WRITE_GATE_SOURCE_DATA, scanLine, 48, screen);
             writeRegisterAsync(DRIVER_LATCH_RESET_PULSE_GENERATE, 0x10, screen);
+            // PROFILE_MULTIPLE_END(transmitGate);
         }
+
+        // PROFILE_MULTIPLE_LOG(processGate);
+        // PROFILE_MULTIPLE_LOG(transmitGate);
 
         // Send clear packet
         writeRegisterAsync(WRITE_GATE_SOURCE_DATA, CLEAR_PACKET, sizeof(CLEAR_PACKET), screen);
@@ -424,7 +439,6 @@ void EinkET013TT1::updateInternal(const EinkET013TT1Waveform &waveform, const ui
     }
 
     float timeNs = PROFILE_CALCULATE_NS(sendFrames);
-    int totalScanlines = (EinkET013TT1_GATE_COUNT + 1) * waveform.frameCount;
     log_d("Sent %d frames in %.2fms (%.2fms/frame, %.2fus/gate)", waveform.frameCount,
           timeNs / 1000000, timeNs / waveform.frameCount / 1000000,
           timeNs / waveform.frameCount / (EinkET013TT1_GATE_COUNT + 1) / 1000);
