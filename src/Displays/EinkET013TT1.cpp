@@ -110,7 +110,7 @@ IRAM_ATTR void EinkET013TT1::postTransCallback(spi_transaction_t *trans) {
     }
 }
 
-static const uint8_t CHANNEL_SETTINGS[] = {0x1E, 0x00, 0xE0};
+static const DMA_ATTR uint8_t CHANNEL_SETTINGS[] = {0x1E, 0x00, 0xE0};
 
 // Second byte will be replaced based on the frame transition
 static uint8_t const BORDER_TEMPLATE[4] = {0x00, 0x00, 0x00, 0x0C};
