@@ -23,6 +23,8 @@ ifeq ($(TARGET),glasses-release)
 	IDF_PROFILE = -B build-$(TARGET) -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.$(TARGET)"
 else ifeq ($(TARGET),glasses-debug)
 	IDF_PROFILE = -B build-$(TARGET) -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.$(TARGET)"
+else ifeq ($(TARGET),tester)
+	IDF_PROFILE = -B build-$(TARGET) -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.$(TARGET)"
 else ifeq ($(TARGET),m5stack-atom-display)
 	IDF_PROFILE = -B build-$(TARGET) -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.$(TARGET)"
 else ifeq ($(TARGET),m5stack-module-display)
@@ -141,6 +143,10 @@ flash: build
 .PHONY: monitor
 monitor: check_idf
 	idf.py $(IDF_PROFILE) monitor --no-reset --port $$(python3 scripts/port_tool.py find_port logging)
+
+.PHONY: monitor-jtag
+monitor-jtag: check_idf
+	idf.py $(IDF_PROFILE) monitor --no-reset
 
 .PHONY: monitor-devboard
 monitor-devboard: check_idf

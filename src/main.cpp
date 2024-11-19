@@ -250,7 +250,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         DigitalWrite(CONFIG_GREEN_LED, LED_ON);
         vTaskDelay(200 / portTICK_PERIOD_MS);
         DigitalWrite(CONFIG_GREEN_LED, LED_OFF);
-#ifdef CONFIG_BLUE_LED
+#if CONFIG_BLUE_LED != -1
         DigitalWrite(CONFIG_BLUE_LED, LED_ON);
         vTaskDelay(200 / portTICK_PERIOD_MS);
         DigitalWrite(CONFIG_BLUE_LED, LED_OFF);
@@ -406,11 +406,9 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     }
 #endif
 
-#if CONFIG_DISPLAY_EINKET013TT1
-#ifdef DISPLAY_POWER
+#if CONFIG_DISPLAY_POWER != -1
     // Turn on power to the screen
-    DigitalWrite(DISPLAY_POWER, HIGH);
-#endif
+    DigitalWrite(CONFIG_DISPLAY_POWER, HIGH);
 #endif
 
     HEAP_PROFILE_START(displaySetup);

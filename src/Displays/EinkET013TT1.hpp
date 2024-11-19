@@ -121,6 +121,8 @@ protected:
     [[nodiscard]] inline auto timerRunning() const -> bool;
     inline void waitForTimer();
     inline void waitForNotBusy();
+    auto checkScreenStatus(ScreenSide screen, const PumpStatus &pumpStatus, uint16_t temperature)
+        -> bool;
     void updateInternal(const EinkET013TT1Waveform &waveform, const uint8_t *buffer,
                         int32_t overrideVcom, const EinkET013TT1Waveform &altWaveform,
                         ScreenSide screen, EinkBox box);

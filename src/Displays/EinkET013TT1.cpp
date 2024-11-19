@@ -89,24 +89,40 @@ inline auto VcomMVToRegisterValue(uint32_t vcomInMV) -> uint8_t {
 IRAM_ATTR void EinkET013TT1::preTransCallback(spi_transaction_t *trans) {
     auto screen = static_cast<ScreenSide>(reinterpret_cast<uintptr_t>(trans->user));
     if (screen == ScreenSide::Both) {
+#if CONFIG_DISPLAY_EINKET013TT1_CS_LEFT != -1
         GPIO.out_w1tc = (1 << CONFIG_DISPLAY_EINKET013TT1_CS_LEFT);
+#endif
+#if CONFIG_DISPLAY_EINKET013TT1_CS_RIGHT != -1
         GPIO.out_w1tc = (1 << CONFIG_DISPLAY_EINKET013TT1_CS_RIGHT);
+#endif
     } else if (screen == ScreenSide::Left) {
+#if CONFIG_DISPLAY_EINKET013TT1_CS_LEFT != -1
         GPIO.out_w1tc = (1 << CONFIG_DISPLAY_EINKET013TT1_CS_LEFT);
+#endif
     } else if (screen == ScreenSide::Right) {
+#if CONFIG_DISPLAY_EINKET013TT1_CS_RIGHT != -1
         GPIO.out_w1tc = (1 << CONFIG_DISPLAY_EINKET013TT1_CS_RIGHT);
+#endif
     }
 }
 
 IRAM_ATTR void EinkET013TT1::postTransCallback(spi_transaction_t *trans) {
     auto screen = static_cast<ScreenSide>(reinterpret_cast<uintptr_t>(trans->user));
     if (screen == ScreenSide::Both) {
+#if CONFIG_DISPLAY_EINKET013TT1_CS_LEFT != -1
         GPIO.out_w1ts = (1 << CONFIG_DISPLAY_EINKET013TT1_CS_LEFT);
+#endif
+#if CONFIG_DISPLAY_EINKET013TT1_CS_RIGHT != -1
         GPIO.out_w1ts = (1 << CONFIG_DISPLAY_EINKET013TT1_CS_RIGHT);
+#endif
     } else if (screen == ScreenSide::Left) {
+#if CONFIG_DISPLAY_EINKET013TT1_CS_LEFT != -1
         GPIO.out_w1ts = (1 << CONFIG_DISPLAY_EINKET013TT1_CS_LEFT);
+#endif
     } else if (screen == ScreenSide::Right) {
+#if CONFIG_DISPLAY_EINKET013TT1_CS_RIGHT != -1
         GPIO.out_w1ts = (1 << CONFIG_DISPLAY_EINKET013TT1_CS_RIGHT);
+#endif
     }
 }
 
@@ -126,10 +142,16 @@ void EinkET013TT1::initSpi() {
           CONFIG_DISPLAY_EINKET013TT1_CS_LEFT, CONFIG_DISPLAY_EINKET013TT1_CS_RIGHT,
           CONFIG_DISPLAY_EINKET013TT1_RST, CONFIG_DISPLAY_EINKET013TT1_MOSI,
           CONFIG_DISPLAY_EINKET013TT1_MISO, CONFIG_DISPLAY_EINKET013TT1_CLK);
+#if CONFIG_DISPLAY_EINKET013TT1_CS_LEFT != -1
     gpio_set_direction(static_cast<gpio_num_t>(CONFIG_DISPLAY_EINKET013TT1_CS_LEFT),
                        GPIO_MODE_OUTPUT);
+    GPIO.out_w1ts = (1 << CONFIG_DISPLAY_EINKET013TT1_CS_LEFT);
+#endif
+#if CONFIG_DISPLAY_EINKET013TT1_CS_RIGHT != -1
     gpio_set_direction(static_cast<gpio_num_t>(CONFIG_DISPLAY_EINKET013TT1_CS_RIGHT),
                        GPIO_MODE_OUTPUT);
+    GPIO.out_w1ts = (1 << CONFIG_DISPLAY_EINKET013TT1_CS_RIGHT);
+#endif
     gpio_set_direction(static_cast<gpio_num_t>(CONFIG_DISPLAY_EINKET013TT1_RST), GPIO_MODE_OUTPUT);
     // The eink-provided driver only kept OEI low always, so we have it optional here
 #ifdef CONFIG_DISPLAY_EINKET013TT1_OEI
@@ -140,9 +162,6 @@ void EinkET013TT1::initSpi() {
     log_w("Using CONFIG_DISPLAY_EINKET013TT1_BUSY pin %d", CONFIG_DISPLAY_EINKET013TT1_BUSY);
     gpio_set_direction(static_cast<gpio_num_t>(CONFIG_DISPLAY_EINKET013TT1_BUSY), GPIO_MODE_INPUT);
 #endif
-
-    GPIO.out_w1ts = (1 << CONFIG_DISPLAY_EINKET013TT1_CS_LEFT);
-    GPIO.out_w1ts = (1 << CONFIG_DISPLAY_EINKET013TT1_CS_RIGHT);
 
     // Initialize the SPI bus
     spi_bus_config_t buscfg = {
@@ -246,6 +265,32 @@ void EinkET013TT1::clear(const EinkET013TT1Waveform &waveform) {
     update(waveform, previousBuffer_);
 }
 
+auto EinkET013TT1::checkScreenStatus(ScreenSide screen, const PumpStatus &pumpStatus,
+                                     uint16_t temperature) -> bool {
+    // Set the error flag if charge pumps aren't ready (VCPOK=0) or the screen is detecting a low
+    // voltage condition (LVDS=1)
+    auto sideString = screen == ScreenSide::Left ? "left" : "right";
+    if (pumpStatus.bits.unused != 0) {
+        log_e("Garbage data in %s pump status (MISO line pulled high?) LVDS=%d VCPOK=%d temp=%dºC "
+              "(0x%02X)",
+              sideString, pumpStatus.bits.lvds, pumpStatus.bits.vcpok, temperature,
+              pumpStatus.value);
+        return true;
+    } else if (!pumpStatus.bits.vcpok) {
+        log_e("Pump not ready in %s! LVDS=%d VCPOK=%d temp=%dºC (0x%02X)", sideString,
+              pumpStatus.bits.lvds, pumpStatus.bits.vcpok, temperature, pumpStatus.value);
+        return true;
+    } else if (pumpStatus.bits.lvds) {
+        log_e("Low voltage detected in %s! LVDS=%d VCPOK=%d temp=%dºC (0x%02X)", sideString,
+              pumpStatus.bits.lvds, pumpStatus.bits.vcpok, temperature, pumpStatus.value);
+        return true;
+    } else {
+        log_d("EinkET013TT1 %s is OK: LVDS=%d VCPOK=%d temp=%dºC (0x%02X)", sideString,
+              pumpStatus.bits.lvds, pumpStatus.bits.vcpok, temperature, pumpStatus.value);
+        return false;
+    }
+}
+
 void EinkET013TT1::updateInternal(const EinkET013TT1Waveform &waveform, const uint8_t *buffer,
                                   int32_t overrideVcom, const EinkET013TT1Waveform &altWaveform,
                                   ScreenSide screen, EinkBox box) {
@@ -268,44 +313,14 @@ void EinkET013TT1::updateInternal(const EinkET013TT1Waveform &waveform, const ui
     ESP_ERROR_CHECK(esp_pm_lock_acquire(freqLock_));
 #endif
 
-    // TODO: This is a very useful debug thing but doesn't actually affect how well the displays
-    // refresh. Might be worth removing in release builds to slightly shorten refresh time.
-    auto leftPumpStatus = readPumpStatus(ScreenSide::Left);
-    auto leftTemp = readTemperature(ScreenSide::Left);
-    auto rightPumpStatus = readPumpStatus(ScreenSide::Right);
-    auto rightTemp = readTemperature(ScreenSide::Right);
-
-    // Set the error flag if charge pumps aren't ready (VCPOK=0) or the screen is detecting a low
-    // voltage condition (LVDS=1)
-    if (leftPumpStatus.bits.unused != 0 || rightPumpStatus.bits.unused != 0) {
-        log_e("Garbage data in pump status (MISO line pulled high?) Left: LVDS=%d VCPOK=%d "
-              "temp=%dºC (0x%02X) Right: LVDS=%d VCPOK=%d temp=%dºC (0x%02X)",
-              leftPumpStatus.bits.lvds, leftPumpStatus.bits.vcpok, leftTemp, leftPumpStatus.value,
-              rightPumpStatus.bits.lvds, rightPumpStatus.bits.vcpok, rightTemp,
-              rightPumpStatus.value);
-        error_ = true;
-    } else if (!leftPumpStatus.bits.vcpok || !rightPumpStatus.bits.vcpok) {
-        log_e("Pump not ready! Left: LVDS=%d VCPOK=%d temp=%dºC (0x%02X) Right: LVDS=%d VCPOK=%d "
-              "temp=%dºC (0x%02X)",
-              leftPumpStatus.bits.lvds, leftPumpStatus.bits.vcpok, leftTemp, leftPumpStatus.value,
-              rightPumpStatus.bits.lvds, rightPumpStatus.bits.vcpok, rightTemp,
-              rightPumpStatus.value);
-        error_ = true;
-    } else if (leftPumpStatus.bits.lvds || rightPumpStatus.bits.lvds) {
-        log_e("Low voltage detected! Left: LVDS=%d VCPOK=%d temp=%dºC (0x%02X) Right: LVDS=%d "
-              "VCPOK=%d "
-              "temp=%dºC (0x%02X)",
-              leftPumpStatus.bits.lvds, leftPumpStatus.bits.vcpok, leftTemp, leftPumpStatus.value,
-              rightPumpStatus.bits.lvds, rightPumpStatus.bits.vcpok, rightTemp,
-              rightPumpStatus.value);
-        error_ = true;
-    } else {
-        log_d(
-            "Left: LVDS=%d VCPOK=%d temp=%dºC (0x%02X) Right: LVDS=%d VCPOK=%d temp=%dºC (0x%02X)",
-            leftPumpStatus.bits.lvds, leftPumpStatus.bits.vcpok, leftTemp, leftPumpStatus.value,
-            rightPumpStatus.bits.lvds, rightPumpStatus.bits.vcpok, rightTemp,
-            rightPumpStatus.value);
-    }
+#if CONFIG_DISPLAY_EINKET013TT1_CS_LEFT != -1
+    auto pumpStatusLeft = readPumpStatus(ScreenSide::Left);
+    auto tempLeft = readTemperature(ScreenSide::Left);
+#endif
+#if CONFIG_DISPLAY_EINKET013TT1_CS_RIGHT != -1
+    auto pumpStatusRight = readPumpStatus(ScreenSide::Right);
+    auto tempRight = readTemperature(ScreenSide::Right);
+#endif
 
     // Pre-fill all the scanline DMA buffers with the border setting values when not setting the
     // border
@@ -448,6 +463,13 @@ void EinkET013TT1::updateInternal(const EinkET013TT1Waveform &waveform, const ui
         log_d("Restoring VCOM to %" PRIi32 " (0x%" PRIu8 ")", vcomInMV_, oldVcomRegisterValue);
         writeRegister(PWM_WIDTH_SELECT, oldVcomRegisterValue, screen);
     }
+
+#if CONFIG_DISPLAY_EINKET013TT1_CS_LEFT != -1
+    error_ = checkScreenStatus(ScreenSide::Left, pumpStatusLeft, tempLeft) || error_;
+#endif
+#if CONFIG_DISPLAY_EINKET013TT1_CS_RIGHT != -1
+    error_ = checkScreenStatus(ScreenSide::Right, pumpStatusRight, tempRight) || error_;
+#endif
 
     float timeNs = PROFILE_CALCULATE_NS(sendFrames);
     int totalScanlines = (EinkET013TT1_GATE_COUNT + 1) * waveform.frameCount;

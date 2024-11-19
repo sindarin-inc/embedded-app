@@ -98,7 +98,7 @@ void BLESettings::blinkLedAfterConnect(BLECharacteristic *characteristic, const 
         DigitalWrite(CONFIG_GREEN_LED, LED_ON);
         vTaskDelay(200 / portTICK_PERIOD_MS);
         DigitalWrite(CONFIG_GREEN_LED, LED_OFF);
-#ifdef CONFIG_BLUE_LED
+#if CONFIG_BLUE_LED != -1
         DigitalWrite(CONFIG_BLUE_LED, LED_ON);
         vTaskDelay(200 / portTICK_PERIOD_MS);
         DigitalWrite(CONFIG_BLUE_LED, LED_OFF);

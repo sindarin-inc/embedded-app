@@ -1361,9 +1361,10 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                     std::make_shared<InactivitySettingMenuScreen>(display_, "System Settings");
 
                 auto updateExtraText = [this]() {
-                    std::string message = std::string(SpiRamStringFormat(
-                        "Sleep after %d minutes of inactivity.",
-                        prefs_.inactivityMinutes.get().value_or(DEFAULT_INACTIVITY_MINUTES)));
+                    std::string message =
+                        std::string(SpiRamStringFormat("Sleep after %d minutes of inactivity.",
+                                                       prefs_.inactivityMinutes.get().value_or(
+                                                           CONFIG_DEFAULT_INACTIVITY_MINUTES)));
                     std::static_pointer_cast<InactivitySettingMenuScreen>(currentScreen())
                         ->setExtraText(message);
                 };
@@ -1435,19 +1436,20 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                             ->setNeedsRerender();
                     }));
                 int menuIndex = 0;
-                if (prefs_.inactivityMinutes.get().value_or(DEFAULT_INACTIVITY_MINUTES) == 5) {
+                if (prefs_.inactivityMinutes.get().value_or(CONFIG_DEFAULT_INACTIVITY_MINUTES) ==
+                    5) {
                     menuIndex = 0;
-                } else if (prefs_.inactivityMinutes.get().value_or(DEFAULT_INACTIVITY_MINUTES) ==
-                           10) {
+                } else if (prefs_.inactivityMinutes.get().value_or(
+                               CONFIG_DEFAULT_INACTIVITY_MINUTES) == 10) {
                     menuIndex = 1;
-                } else if (prefs_.inactivityMinutes.get().value_or(DEFAULT_INACTIVITY_MINUTES) ==
-                           15) {
+                } else if (prefs_.inactivityMinutes.get().value_or(
+                               CONFIG_DEFAULT_INACTIVITY_MINUTES) == 15) {
                     menuIndex = 2;
-                } else if (prefs_.inactivityMinutes.get().value_or(DEFAULT_INACTIVITY_MINUTES) ==
-                           20) {
+                } else if (prefs_.inactivityMinutes.get().value_or(
+                               CONFIG_DEFAULT_INACTIVITY_MINUTES) == 20) {
                     menuIndex = 3;
-                } else if (prefs_.inactivityMinutes.get().value_or(DEFAULT_INACTIVITY_MINUTES) ==
-                           30) {
+                } else if (prefs_.inactivityMinutes.get().value_or(
+                               CONFIG_DEFAULT_INACTIVITY_MINUTES) == 30) {
                     menuIndex = 4;
                 }
 
