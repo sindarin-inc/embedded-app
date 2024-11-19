@@ -30,6 +30,36 @@ menu "Sol Options"
             default 150
 
         menu "Display Pins"
+            config DISPLAY_EINKET013TT1_CS_LEFT
+                depends on DISPLAY_EINKET013TT1
+                int "CS Left Pin"
+                default 21
+
+            config DISPLAY_EINKET013TT1_CS_RIGHT
+                depends on DISPLAY_EINKET013TT1
+                int "CS Right Pin"
+                default 11
+
+            config DISPLAY_EINKET013TT1_RST
+                depends on DISPLAY_EINKET013TT1
+                int "RST Pin"
+                default 9
+
+            config DISPLAY_EINKET013TT1_MOSI
+                depends on DISPLAY_EINKET013TT1
+                int "MOSI Pin"
+                default 12
+
+            config DISPLAY_EINKET013TT1_MISO
+                depends on DISPLAY_EINKET013TT1
+                int "MISO Pin"
+                default 14
+
+            config DISPLAY_EINKET013TT1_CLK
+                depends on DISPLAY_EINKET013TT1
+                int "CLK Pin"
+                default 13
+
             config DISPLAY_WAVESHARE_6INHD_MOSI
                 depends on DISPLAY_WAVESHARE_6INHD
                 int "MOSI Pin"
