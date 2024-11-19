@@ -1337,12 +1337,13 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                     return;
                 }
 
-                std::string turnOnWifiMsg = "Enable WiFi from Settings -> Wifi and "
+                std::string turnOnWifiMsg = "Enable WiFi or BLE from Settings -> Wifi and "
                                             "Bluetooth to perform a Firmware Update";
 
                 // If wifi has been disabled, show a popup encouraging the user to
                 // turn on wifi to perform the firmware sync.
-                if (this->prefs_.wifiDisabled.get().value_or(false)) {
+                if (this->prefs_.wifiDisabled.get().value_or(false) &&
+                    this->prefs_.bleDisabled.get().value_or(false)) {
                     showTemporaryMessage(turnOnWifiMsg);
                     currentScreen()->setFirstLoad();
                     return;

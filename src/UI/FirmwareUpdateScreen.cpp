@@ -13,7 +13,8 @@
 FirmwareUpdateScreen::FirmwareUpdateScreen(DisplaySystem &display, Telemetry &telemetry,
                                            PreferencesStore &prefs)
     : EinkView(display), telemetry_(telemetry), cancel_(std::make_shared<CancelFlag>()),
-      firmwareDownloader_(prefs, cancel_),
+      firmwareDownloader_(prefs, cancel_), prefs_(prefs),
+
       cancelView_(display, "Press \ue000 to cancel", &fontFace0) {
     for (auto &textView : textViews_) {
         textView = std::make_shared<SingleLineTextView>(display, "", &fontFace0);
@@ -115,6 +116,12 @@ void FirmwareUpdateScreen::cancel() {
     CancelFlag::cancel(cancel_);
     telemetry_.logMetric(TelemetryField::METRIC_FIRMWARE_UPDATE, "update-cancelled");
     WiFi::getInstance().disconnectWiFi();
+#if CONFIG_USE_BLE_SERVER_PROXY
+    auto bleManager = BLEManager::getInstance(false);
+    if (bleManager != nullptr) {
+        bleManager->disconnectProxy();
+    }
+#endif
     showPopup("Update cancelled!\n\nRestarting...");
     render(display_);
     vTaskDelay(3000 / portTICK_PERIOD_MS);
@@ -240,7 +247,12 @@ void FirmwareUpdateScreen::begin() {
     // Stop BLE advertising and disconnect all connections to avoid interference.
     BLEManager::getInstance()->stopAdvertising();
     auto bleManager = BLEManager::getInstance();
-    bleManager->disconnectAllClients();
+    // Check if already connected to sync service, if not, disconnect all clients
+    if (!bleManager->connectedProxy) {
+        bleManager->disconnectAllClients();
+    } else {
+        log_d("Already connected to sync service, not disconnecting clients");
+    }
     auto resumeBLE = [bleManager] { bleManager->startAdvertisingIfNecessary(); };
 #else
     auto resumeBLE = [] {};
@@ -249,8 +261,41 @@ void FirmwareUpdateScreen::begin() {
     state_.state = FirmwareDownloadState::ConnectingWifi;
     render(display_);
 
-    if (!WiFi::getInstance().connectWiFiFromSettings()) {
-        fail("Failed to connect to WiFi.");
+    bool wifiConnected = false;
+    bool bleConnected = false;
+
+    // Try WiFi first if not disabled
+    if (!prefs_.wifiDisabled.get().value_or(false)) {
+        if (!WiFi::getInstance().connectWiFiFromSettings()) {
+            telemetry_.logMetric(TelemetryField::METRIC_WIFI, "update-wifi-failed");
+#if !CONFIG_USE_BLE_SERVER_PROXY
+            fail("Failed to connect to WiFi.");
+            resumeBLE();
+            return;
+#endif
+        } else {
+            wifiConnected = true;
+        }
+    }
+
+#if CONFIG_USE_BLE_SERVER_PROXY
+    // Try BLE if WiFi failed and BLE is not disabled
+    if (!wifiConnected && !prefs_.bleDisabled.get().value_or(false)) {
+        if (!BLEManager::getInstance()->connectProxy(cancel_)) {
+            telemetry_.logMetric(TelemetryField::METRIC_WIFI, "update-ble-failed");
+            fail("Failed to connect via WiFi or BLE.");
+            resumeBLE();
+            return;
+        }
+        bleConnected = true;
+
+        // Disconnect WiFi if we're using BLE
+        WiFi::getInstance().disconnectWiFi(3000);
+    }
+#endif
+
+    if (!wifiConnected && !bleConnected) {
+        fail("No connection available");
         resumeBLE();
         return;
     }
@@ -258,9 +303,9 @@ void FirmwareUpdateScreen::begin() {
     auto rl = std::make_shared<RateLimiter>(1, 20, 1);
     auto cancelCopy = cancel_;
 
-    auto updateFwIfNeeded = [this, rl, resumeBLE, cancelCopy]() {
-        firmwareDownloader_.downloadFirmware(
-            [this, rl, resumeBLE, cancelCopy](const FirmwareDownloadState &state) {
+    auto updateFwIfNeeded = [this, rl, resumeBLE, cancelCopy, wifiConnected, bleConnected]() {
+        firmwareDownloader_.downloadFirmware([this, rl, resumeBLE, cancelCopy, wifiConnected,
+                                              bleConnected](const FirmwareDownloadState &state) {
             if (CancelFlag::isCancelled(cancelCopy)) {
                 return;
             }
@@ -272,10 +317,17 @@ void FirmwareUpdateScreen::begin() {
             if (state.state == FirmwareDownloadState::AlreadyUpToDate ||
                 state.state == FirmwareDownloadState::Failure ||
                 state.state == FirmwareDownloadState::Installed) {
-                WiFi::getInstance().disconnectWiFi();
+                if (wifiConnected) {
+                    WiFi::getInstance().disconnectWiFi();
+                }
+#if CONFIG_USE_BLE_SERVER_PROXY
+                if (bleConnected) {
+                    BLEManager::getInstance()->disconnectProxy();
+                }
+#endif
             }
-            // Skip updates if the state is the same and the percentage isn't different (or if not
-            // enough time has elapsed)
+
+            // Skip updates if the state is the same and the percentage isn't different
             if (state.state == state_.state) {
                 if (!rl->shouldExecute(state.percentage)) {
                     return;
@@ -303,6 +355,7 @@ void FirmwareUpdateScreen::begin() {
             });
         });
     };
+
     // Note: 8192 is the size that all the esp-idf examples use for esp_http_client.
     DispatchQueue::dispatchOneOff(updateFwIfNeeded, 8192, 0, 1, "FWUpdate");
 }

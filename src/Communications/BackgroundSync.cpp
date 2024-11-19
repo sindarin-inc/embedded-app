@@ -57,28 +57,26 @@ auto BackgroundSync(PowerManager &powerManager, PreferencesStore &prefs, LocalSt
 #endif
 
     // Check for firmware first (in case there's some super busted issue that needs fixing)
-    if (wifiConnected) {
-        auto firmwareDownloader = std::make_shared<FirmwareDownloader>(prefs, cancel, true);
-        firmwareDownloader->downloadFirmware(
-            [firmwareDownloader, &localStore](const FirmwareDownloadState &state) {
-            if (state.state == FirmwareDownloadState::Failure) {
-                log_i("Firmware download for %s failed with error: %s",
-                      firmwareDownloader->response.latestGlassesFirmware.version.c_str(),
-                      state.message.c_str());
-            } else if (state.state == FirmwareDownloadState::AlreadyDownloaded) {
-                log_i("Firmware download for %s already queued.",
-                      firmwareDownloader->response.latestGlassesFirmware.version.c_str());
-            } else if (state.state == FirmwareDownloadState::Downloaded) {
-                log_i("Firmware download for %s successful. Mark for install.",
-                      firmwareDownloader->response.latestGlassesFirmware.version.c_str());
-                localStore.saveFirmware(firmwareDownloader->response.latestGlassesFirmware);
-            } else if (state.state == FirmwareDownloadState::AlreadyUpToDate) {
-                log_i("Firmware up to date.");
-            } else {
-                return;
-            }
-        });
-    }
+    auto firmwareDownloader = std::make_shared<FirmwareDownloader>(prefs, cancel, true);
+    firmwareDownloader->downloadFirmware(
+        [firmwareDownloader, &localStore](const FirmwareDownloadState &state) {
+        if (state.state == FirmwareDownloadState::Failure) {
+            log_i("Firmware download for %s failed with error: %s",
+                  firmwareDownloader->response.latestGlassesFirmware.version.c_str(),
+                  state.message.c_str());
+        } else if (state.state == FirmwareDownloadState::AlreadyDownloaded) {
+            log_i("Firmware download for %s already queued.",
+                  firmwareDownloader->response.latestGlassesFirmware.version.c_str());
+        } else if (state.state == FirmwareDownloadState::Downloaded) {
+            log_i("Firmware download for %s successful. Mark for install.",
+                  firmwareDownloader->response.latestGlassesFirmware.version.c_str());
+            localStore.saveFirmware(firmwareDownloader->response.latestGlassesFirmware);
+        } else if (state.state == FirmwareDownloadState::AlreadyUpToDate) {
+            log_i("Firmware up to date.");
+        } else {
+            return;
+        }
+    });
 
     if (CancelFlag::isCancelled(cancel)) {
         return false;

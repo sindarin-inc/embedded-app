@@ -6,6 +6,11 @@
 #include "Communications/SindarinAPI.hpp"
 #include "Storage/PreferencesStore.hpp"
 
+#if CONFIG_USE_BLE_SERVER_PROXY
+#include "Communications/BLEManager.hpp"
+#include "Communications/BLEProxy.hpp"
+#endif
+
 #define FIRMWARE_BLOCK_SIZE 4096
 #define FIRMWARE_CHECK_MD5 1
 #define FIRMWARE_MD5_SIZE 32

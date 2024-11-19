@@ -57,7 +57,8 @@ public:
     auto checkSync(const std::string &url, CheckSyncRequest &req, CheckSyncResponse *resp,
                    Telemetry &telemetry, bool useBle, const std::shared_ptr<CancelFlag> &cancel)
         -> int;
-    auto checkFirmware(FirmwareResponse *resp, bool useHttp = false) -> int;
+    auto checkFirmware(FirmwareResponse *resp, bool useHttp = false, bool useBle = false,
+                       const std::shared_ptr<CancelFlag> &cancel = nullptr) -> int;
 
     auto downloadReadable(const std::shared_ptr<Readable> &readable, FileSystem &fileSystem,
                           Telemetry &telemetry, const std::string &path,
