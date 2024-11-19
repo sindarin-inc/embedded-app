@@ -60,6 +60,21 @@ menu "Sol Options"
                 int "CLK Pin"
                 default 13
 
+            config DISPLAY_WAVESHARE_6INHD_MOSI
+                depends on DISPLAY_WAVESHARE_6INHD
+                int "MOSI Pin"
+                default 35
+
+            config DISPLAY_WAVESHARE_6INHD_MISO
+                depends on DISPLAY_WAVESHARE_6INHD
+                int "MISO Pin"
+                default 37
+
+            config DISPLAY_WAVESHARE_6INHD_CLK
+                depends on DISPLAY_WAVESHARE_6INHD
+                int "CLK Pin"
+                default 34
+
             config DISPLAY_WAVESHARE_6INHD_BUSY
                 depends on DISPLAY_WAVESHARE_6INHD
                 int "BUSY Pin"
