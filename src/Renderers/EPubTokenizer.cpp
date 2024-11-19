@@ -831,8 +831,8 @@ auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, S
         REND_PROFILE_END(tokenizeProcess);
     }
 
-#if FOOTNOTE_RETRIEVAL
-    if (!footnoteMgr_.parseChapter(stream_, currentSpineIdx_)) {
+#if FOOTNOTE_RETRIEVAL_DEBUGGING
+    if (!footnoteMgr_.parse(stream_, currentSpineIdx_)) {
         log_w("Footnote parser completed with errors!");
     } else if (!footnoteMgr_.retrieveNotes(stream_)) {
         log_w("Footnote retrieval completed with errors!");
@@ -1200,12 +1200,12 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                 }
                 superscript_ = true;
 
-                // if constexpr (FOOTNOTE_RETRIEVAL) {
-                //     const char *href = node.child("a").attribute("href").value();
-                //     if (href[0] != '\0') {
-                //         footnoteMgr_.addEntry(href, {currentStreamOffset_, currentSpineIdx_});
-                //     }
-                // }
+#if FOOTNOTE_RETRIEVAL_DEBUGGING
+                const char *href = node.child("a").attribute("href").value();
+                if (href[0] != '\0') {
+                    footnoteMgr_.addEntry(href, {currentStreamOffset_, currentSpineIdx_});
+                }
+#endif
 
                 break;
 
@@ -1317,12 +1317,12 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                     postText_[0] = ']';
                     preText_[1] = postText_[1] = '\0';
                 }
-                // if constexpr (FOOTNOTE_RETRIEVAL) {
-                //     const char *href = node.attribute("href").value();
-                //     if (node.child("sup") && (href[0] != '\0')) {
-                //         footNodeMgr_.addEntry(href, {currentStreamOffset_, currentSpineIdx_});
-                //     }
-                // }
+#if FOOTNOTE_RETRIEVAL_DEBUGGING
+                const char *href = node.attribute("href").value();
+                if (node.child("sup") && (href[0] != '\0')) {
+                    footNodeMgr_.addEntry(href, {currentStreamOffset_, currentSpineIdx_});
+                }
+#endif
             } break;
 
             case Tag::TABLE:

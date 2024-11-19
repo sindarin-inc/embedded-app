@@ -67,7 +67,7 @@ void FootnoteMgr::cleanupPath(SpiramString &filename, const char *currentFolder)
 }
 
 auto FootnoteMgr::addEntry(const char *href, const std::shared_ptr<EPubFile> &stream,
-                           StreamPlace streamPlace,
+                           StreamPlace anchorStreamPlace,
                            const SpiramMap<SpiramString, uint32_t> &idsInSpine) -> bool {
 
     if ((href == nullptr) || (href[0] == '\0')) {
@@ -87,17 +87,17 @@ auto FootnoteMgr::addEntry(const char *href, const std::shared_ptr<EPubFile> &st
     if (filename.empty()) {
         // This happen when a href contains only a '#' followed by the id. This means that
         // the footnote his in the same spine.
-        filename = stream->getSpine(streamPlace.getSpineIdx()).item->href.c_str();
+        filename = stream->getSpine(anchorStreamPlace.getSpineIdx()).item->href.c_str();
     } else {
         cleanupPath(filename,
-                    stream->getSpineRelativeFolderPath(streamPlace.getSpineIdx()).c_str());
+                    stream->getSpineRelativeFolderPath(anchorStreamPlace.getSpineIdx()).c_str());
         SpineIdx spineIdx = stream->getSpineIdx(filename.c_str());
-        if (spineIdx < streamPlace.getSpineIdx()) {
+        if (spineIdx < anchorStreamPlace.getSpineIdx()) {
             // Heuristic part 1: a footnote anchor cannot be pointing at a previous location.
             if constexpr (FootnoteDebugging) {
                 log_w("Potential Footnote at spineIdx %d is locate before current location %s. "
                       "Rejected!",
-                      spineIdx, streamPlace.str().c_str());
+                      spineIdx, anchorStreamPlace.str().c_str());
             }
             return false;
         }
@@ -124,32 +124,41 @@ auto FootnoteMgr::addEntry(const char *href, const std::shared_ptr<EPubFile> &st
 
     // If the anchor point at a location preceding in the spine, it is considered non-valid
     auto it = idsInSpine.find(id);
-    if ((it != idsInSpine.end()) && (it->second < streamPlace.getOffset())) {
+    if ((it != idsInSpine.end()) && (it->second < anchorStreamPlace.getOffset())) {
         // Heuristic part 2: a footnote anchor cannot be pointing at a previous location.
         if constexpr (FootnoteDebugging) {
             log_w("Potential Footnote at offset %" PRIu32
                   " is locate before current location %s. Rejected!",
-                  it->second, streamPlace.str().c_str());
+                  it->second, anchorStreamPlace.str().c_str());
         }
         return false;
     }
 
-    footnotes_.push_back(SpiRamPtr<Footnote>(streamPlace, id, filename, SpiramString{}, false));
+#if SIMULATOR
+    footnotes_.push_back(SpiRamPtr<Footnote>(
+        anchorStreamPlace, stream->getSpine(anchorStreamPlace.getSpineIdx()).item->href, id,
+        filename, SpiramString{}, false));
+#else
+    footnotes_.push_back(
+        SpiRamPtr<Footnote>(anchorStreamPlace, id, filename, SpiramString{}, false));
+#endif
 
     return true;
 }
 
-auto FootnoteMgr::parseChapter(const std::shared_ptr<EPubFile> &stream, SpineIdx spineIdx) -> bool {
+auto FootnoteMgr::parse(const std::shared_ptr<EPubFile> &stream, SpineIdx spineIdx) -> bool {
 
     clear();
 
+#if FOOTNOTE_CHAPTER_BASED
     if (!stream->spineIdxIsChapterStart(spineIdx)) {
         spineIdx = stream->getChapterIdx(spineIdx);
     }
+#endif
 
     currentSpineIdx_ = spineIdx;
 
-    FOOTNOTE_PROFILE_START(parseChapter);
+    FOOTNOTE_PROFILE_START(parse);
 
     do {
         REND_PROFILE_START(loadXMLFile)
@@ -165,6 +174,26 @@ auto FootnoteMgr::parseChapter(const std::shared_ptr<EPubFile> &stream, SpineIdx
             FootnoteMgr *footnoteMgr{};
             const std::shared_ptr<EPubFile> *stream{};
             SpiramMap<SpiramString, uint32_t> idsInSpine;
+            bool skipNext;
+
+            struct FindSubNode : pugi::xml_tree_walker {
+                auto for_each(pugi::xml_node &node) -> bool override {
+                    if (nodeName == node.name()) {
+                        theNode = node;
+                        found = true;
+                        return false;
+                    }
+                    return true;
+                }
+                std::string_view nodeName;
+                pugi::xml_node theNode;
+                bool found;
+
+                inline void setup(const char *nodeName) {
+                    this->nodeName = nodeName;
+                    found = false;
+                }
+            } findSubNode;
 
             auto for_each(pugi::xml_node &node) -> bool override {
                 if (node.type() == pugi::node_element) {
@@ -172,37 +201,54 @@ auto FootnoteMgr::parseChapter(const std::shared_ptr<EPubFile> &stream, SpineIdx
                     bool result = true;
 
                     SpiramString id = node.attribute("id").value();
-                    if (!id.empty()) {
-                        idsInSpine[id] = node.offset_debug();
-                    }
                     if (strcmp(node.name(), "sup") == 0) {
-                        // case 1: <sup><a href ="xxx">yyy</a></sup>
-                        const char *href = node.child("a").attribute("href").value();
-                        if (href[0] != '\0') {
-                            result = footnoteMgr->addEntry(
-                                href, *stream,
-                                {static_cast<uint32_t>(node.offset_debug()), currentSpineIdx},
-                                idsInSpine);
-                        }
-                    } else if (strcmp(node.name(), "a") == 0) {
-                        // case 2: <a href="xxx"><sup>yyy</sup></a>
-                        // case 3: <a href="xxx" id="iii">yyy</a>
-                        const char *href = node.attribute("href").value();
-                        if ((href[0] != '0') && (strncmp(href, "http://", 7) != 0) &&
-                            (strncmp(href, "https://", 8) != 0)) {
-                            if (node.attribute("id") || node.child("sup")) {
+                        // case 1: <sup>...<a href ="xxx">yyy</a>...</sup>
+                        findSubNode.setup("a");
+                        node.traverse(findSubNode);
+                        if (findSubNode.found) {
+                            pugi::xml_node aNode = findSubNode.theNode;
+                            const char *href = aNode.attribute("href").value();
+                            if ((href[0] != '\0') && (strncmp(href, "http://", 7) != 0) &&
+                                (strncmp(href, "https://", 8) != 0)) {
                                 result = footnoteMgr->addEntry(
                                     href, *stream,
                                     {static_cast<uint32_t>(node.offset_debug()), currentSpineIdx},
                                     idsInSpine);
                             }
-                            // if (node.child("sup") && (href[0] != '\0')) {
-                            //     result = footnoteMgr->addEntry(
-                            //         href,
-                            //         {static_cast<uint32_t>(node.offset_debug()),
-                            //         currentSpineIdx});
-                            // }
+                            SpiramString aId = aNode.attribute("id").value();
+                            if (!aId.empty() && id.empty()) {
+                                id = aId;
+                            }
+                            skipNext = true;
                         }
+                    } else if (strcmp(node.name(), "a") == 0) {
+                        if (skipNext) {
+                            skipNext = false;
+                        } else {
+                            // case 2: <a href="xxx"><sup>yyy</sup></a>
+                            // case 3: <a href="xxx" id="iii">yyy</a>
+                            const char *href = node.attribute("href").value();
+                            if ((href[0] != '0') && (strncmp(href, "http://", 7) != 0) &&
+                                (strncmp(href, "https://", 8) != 0)) {
+                                if (node.attribute("id") || node.child("sup")) {
+                                    result = footnoteMgr->addEntry(
+                                        href, *stream,
+                                        {static_cast<uint32_t>(node.offset_debug()),
+                                         currentSpineIdx},
+                                        idsInSpine);
+                                }
+                                // if (node.child("sup") && (href[0] != '\0')) {
+                                //     result = footnoteMgr->addEntry(
+                                //         href,
+                                //         {static_cast<uint32_t>(node.offset_debug()),
+                                //         currentSpineIdx});
+                                // }
+                            }
+                        }
+                    }
+
+                    if (!id.empty()) {
+                        idsInSpine[id] = node.offset_debug();
                     }
 
                     if (!result) {
@@ -221,6 +267,7 @@ auto FootnoteMgr::parseChapter(const std::shared_ptr<EPubFile> &stream, SpineIdx
                 footnoteMgr = mgr;
                 this->stream = &stream;
                 idsInSpine.clear();
+                skipNext = false;
             }
         } interpret;
 
@@ -245,12 +292,17 @@ auto FootnoteMgr::parseChapter(const std::shared_ptr<EPubFile> &stream, SpineIdx
 
             // We break the process of paging if
             // - we are passed the end of the book
-            // - the new current file is the beginning of a chapter
+            // - the new current file is the beginning of a chapter if Chapter based
         }
-    } while ((currentSpineIdx_ < stream->getSpineCount()) &&
-             !stream->spineIdxIsChapterStart(currentSpineIdx_));
+    }
+#if FOOTNOTE_CHAPTER_BASED
+    while ((currentSpineIdx_ < stream->getSpineCount()) &&
+           !stream->spineIdxIsChapterStart(currentSpineIdx_));
+#else
+    while (false);
+#endif
 
-    FOOTNOTE_PROFILE_END(parseChapter);
+    FOOTNOTE_PROFILE_END(parse);
 
     return true;
 }
@@ -293,11 +345,13 @@ auto FootnoteMgr::retrieveNotes(const std::shared_ptr<EPubFile> &stream) -> bool
                 if (it != idMap->end()) {
                     pugi::xml_node pNode = node;
                     writer.setup(&((*footnotes)[it->second]->content));
-                    while (pNode && strcmp(pNode.name(), "p") != 0) {
+                    while (pNode && ((strcmp(pNode.name(), "p") != 0) &&
+                                     (strcmp(pNode.name(), "div") != 0) &&
+                                     (strcmp(pNode.name(), "li") != 0))) {
                         pNode = pNode.parent();
                     }
                     if (!pNode) {
-                        pNode = node;
+                        pNode = node.parent();
                     }
                     pNode.print(writer, "", pugi::format_raw);
                     (*footnotes)[it->second]->contentFound = true;
@@ -452,15 +506,25 @@ void FootnoteMgr::testEPubFiles() {
 
         auto spineCount = stream->getSpineCount();
         for (SpineIdx idx = 0; idx < spineCount; idx++) {
+#if FOOTNOTE_CHAPTER_BASED
             if (stream->spineIdxIsChapterStart(idx)) {
                 logStream << "----- Chapter at spineIdx " << idx << " -----" << std::endl;
-                if (!parseChapter(stream, idx)) {
-                    logStream << "Some errors parsing chapter." << std::endl;
+                if (!parse(stream, idx)) {
+                    logStream << "Some errors parsing the chapter." << std::endl;
                 } else if (!retrieveNotes(stream)) {
                     logStream << "Some errors retrieving notes." << std::endl;
                 }
                 show(logStream);
             }
+#else
+            logStream << "----- SpineIdx " << idx << " -----" << std::endl;
+            if (!parse(stream, idx)) {
+                logStream << "Some errors parsing the spine." << std::endl;
+            } else if (!retrieveNotes(stream)) {
+                logStream << "Some errors retrieving notes." << std::endl;
+            }
+            show(logStream);
+#endif
         }
 
         stream->close();
@@ -520,11 +584,13 @@ void FootnoteMgr::testEPubFilesHTML() {
 
         auto spineCount = stream->getSpineCount();
         for (SpineIdx idx = 0; idx < spineCount; idx++) {
+#if FOOTNOTE_CHAPTER_BASED
             if (stream->spineIdxIsChapterStart(idx)) {
                 logStream << "<h2>Chapter at spineIdx " << idx << "</h2>" << std::endl;
-                if (!parseChapter(stream, idx)) {
-                    logStream << "<p class=\"error\"><b><i>Some errors parsing chapter.</i></b></p>"
-                              << std::endl;
+                if (!parse(stream, idx)) {
+                    logStream
+                        << "<p class=\"error\"><b><i>Some errors parsing the chapter.</i></b></p>"
+                        << std::endl;
                 } else if (!retrieveNotes(stream)) {
                     logStream
                         << "<p class=\"error\"><b><i>Some errors retrieving notes.<i/></b></p>"
@@ -538,6 +604,23 @@ void FootnoteMgr::testEPubFilesHTML() {
                 }
                 show(logStream, true);
             }
+#else
+            logStream << "<h2>SpineIdx " << idx << "</h2>" << std::endl;
+            if (!parse(stream, idx)) {
+                logStream << "<p class=\"error\"><b><i>Some errors parsing the spine.</i></b></p>"
+                          << std::endl;
+            } else if (!retrieveNotes(stream)) {
+                logStream << "<p class=\"error\"><b><i>Some errors retrieving notes.<i/></b></p>"
+                          << std::endl;
+            }
+            if (isEmpty()) {
+                logStream << "<p class=\"warning\"><b><i>No Footnote</i></b></p>" << std::endl;
+            } else {
+                logStream << "<p><small>Entries count: " << footnotes_.size() << ".</small></p>"
+                          << std::endl;
+            }
+            show(logStream, true);
+#endif
         }
 
         stream->close();

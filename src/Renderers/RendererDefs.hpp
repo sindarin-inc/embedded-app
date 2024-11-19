@@ -65,8 +65,8 @@ static constexpr bool REND_STATS = true;
 static constexpr bool REND_STATS = false;
 #endif
 
-#ifndef FOOTNOTE_RETRIEVAL
-#define FOOTNOTE_RETRIEVAL 1
+#ifndef FOOTNOTE_RETRIEVAL_DEBUGGING
+#define FOOTNOTE_RETRIEVAL_DEBUGGING 0
 #endif
 
 // Used by the Tokenizer::getFileLocation() method in case of error

@@ -235,7 +235,7 @@ void showCurrentChapterFootnotes() {
             auto epubStream = std::dynamic_pointer_cast<ReadableScreen>(screen);
             auto streamPlace = readableScreen->getStreamPlace();
             FootnoteMgr footnoteMgr;
-            footnoteMgr.parseChapter(stream, streamPlace.getSpineIdx());
+            footnoteMgr.parse(stream, streamPlace.getSpineIdx());
         }
     }
 #endif
