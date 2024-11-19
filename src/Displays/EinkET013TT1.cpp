@@ -517,6 +517,7 @@ inline auto EinkET013TT1::makeTransaction(uint16_t cmd, size_t length, ScreenSid
     memset(t, 0, sizeof(*t));
     t->cmd = cmd;
     t->length = length;
+    // NOLINTNEXTLINE(performance-no-int-to-ptr)
     t->user = reinterpret_cast<void *>(screen);
     t->tx_buffer = txBuffer;
     return t;
