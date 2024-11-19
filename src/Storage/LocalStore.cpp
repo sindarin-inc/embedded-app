@@ -591,7 +591,7 @@ auto LocalStore::syncFromRemote(bool wifiConnected, bool bleConnected, SyncReaso
     }
 
     // If we don't have a clock that's accurate, sync it
-    if (!SolClock::getInstance().isValidTime() || true) {
+    if (!SolClock::getInstance().isValidTime()) {
         log_i("Clock not set, syncing from internet");
         // Try WiFi first if enabled
         auto success = false;

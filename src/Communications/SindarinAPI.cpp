@@ -388,10 +388,8 @@ auto SindarinAPI::uploadCrashReport(SFile &crashFile, const std::string &content
 
 auto SindarinAPI::getServerTime(time_t *time, bool useBle,
                                 const std::shared_ptr<CancelFlag> &cancel) -> int {
-    // Create a default cancel flag if none is provided
-    auto localCancel = cancel ? cancel : std::make_shared<CancelFlag>();
     auto endpoint = StringFormat("%s/time/", baseUrl_.c_str());
-    auto client = createClient(endpoint, "text/plain", HTTP_METHOD_GET, useBle, localCancel);
+    auto client = createClient(endpoint, "text/plain", HTTP_METHOD_GET, useBle, cancel);
     if (client == nullptr) {
         return ERR_CLIENT_OPEN;
     }
