@@ -48,6 +48,14 @@
                                                                profileStart##identifier)           \
               .count());
 
+#define PROFILE_MULTIPLE_SETUP(identifier)
+
+#define PROFILE_MULTIPLE_START(identifier)
+
+#define PROFILE_MULTIPLE_END(identifier)
+
+#define PROFILE_MULTIPLE_LOG(identifier)
+
 const char *pathToFileName(const char *path);
 
 #define SIM_LOG_COLOR_BLACK "30"
