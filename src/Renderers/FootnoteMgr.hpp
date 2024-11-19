@@ -68,7 +68,8 @@ public:
             outstream << " <b>in file</b>: " << anchorSpineFilename;
 #endif
             if (contentFound) {
-                outstream << " <b>Content</b>:" << "</i></small><br/>" << content;
+                outstream << " <b>Content</b>:"
+                          << "</i></small><br/>" << content;
             } else {
                 outstream
                     << " <b>Content: <span class=\"error\">Empty</span></b></i></small><br/><br/>";

@@ -174,7 +174,7 @@ auto FootnoteMgr::parse(const std::shared_ptr<EPubFile> &stream, SpineIdx spineI
             FootnoteMgr *footnoteMgr{};
             const std::shared_ptr<EPubFile> *stream{};
             SpiramMap<SpiramString, uint32_t> idsInSpine;
-            bool skipNext;
+            bool skipNext{};
 
             struct FindSubNode : pugi::xml_tree_walker {
                 auto for_each(pugi::xml_node &node) -> bool override {
@@ -187,7 +187,7 @@ auto FootnoteMgr::parse(const std::shared_ptr<EPubFile> &stream, SpineIdx spineI
                 }
                 std::string_view nodeName;
                 pugi::xml_node theNode;
-                bool found;
+                bool found{};
 
                 inline void setup(const char *nodeName) {
                     this->nodeName = nodeName;
