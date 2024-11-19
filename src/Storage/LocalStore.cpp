@@ -591,12 +591,21 @@ auto LocalStore::syncFromRemote(bool wifiConnected, bool bleConnected, SyncReaso
     }
 
     // If we don't have a clock that's accurate, sync it
-    if (wifiConnected && !SolClock::getInstance().isValidTime()) {
+    if (!SolClock::getInstance().isValidTime() || true) {
         log_i("Clock not set, syncing from internet");
-        // Sync the clock
-        this->telemetry_.logMetric(TelemetryField::METRIC_CLOCK_SET, "pre-sync",
-                                   {{"run-time", GetRunTimeMs()}});
-        auto success = SolClock::getInstance().setClockTimeFromInternet();
+        // Try WiFi first if enabled
+        auto success = false;
+        if (wifiConnected) {
+            success = SolClock::getInstance().setClockTimeFromInternet(true, false, cancel);
+        }
+
+#if CONFIG_USE_BLE_SERVER_PROXY
+        // If WiFi failed and we're using BLE, try that
+        if (!success && bleConnected) {
+            success = SolClock::getInstance().setClockTimeFromInternet(false, true, cancel);
+        }
+#endif
+
         if (success) {
             this->telemetry_.logMetric(TelemetryField::METRIC_CLOCK_SET, "success",
                                        {{"run-time", GetRunTimeMs()}});

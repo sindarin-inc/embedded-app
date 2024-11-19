@@ -6,7 +6,11 @@
 #include <string>
 #include <unordered_map>
 
+#include "Misc/CancelFlag.hpp"
 #include "Storage/PreferencesStore.hpp"
+#if CONFIG_USE_BLE_SERVER_PROXY
+#include "Communications/BLEManager.hpp"
+#endif
 
 class SolClock {
 public:
@@ -32,7 +36,8 @@ public:
     auto posixTimezoneString() -> std::string;
     void setTimezone(const std::string &ianaTimezone);
 
-    auto setClockTimeFromInternet() -> bool;
+    auto setClockTimeFromInternet(bool useWifi = true, bool useBle = false,
+                                  const std::shared_ptr<CancelFlag> &cancel = nullptr) -> bool;
 
     auto calculateNextSyncTime(time_t now) -> time_t;
 
@@ -43,4 +48,5 @@ protected:
     PreferencesStore &prefs_;
 
     void loadTimeZone();
+    auto configTimeSNTP() -> bool;
 };

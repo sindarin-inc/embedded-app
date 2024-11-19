@@ -8,6 +8,7 @@
 #include <cinttypes>
 #include <random>
 
+#include "../Communications/SindarinAPI.hpp"
 #include "../Communications/WiFi.hpp"
 #include "../Misc/Platform.hpp"
 #include "../Misc/StringUtil.hpp"
@@ -105,7 +106,7 @@ void SolClock::getClockTime(uint8_t &hours, uint8_t &minutes) {
     minutes = timeinfo.tm_min;
 }
 
-auto SolClock::setClockTimeFromInternet() -> bool {
+auto SolClock::configTimeSNTP() -> bool {
 #if !SIMULATOR
 
     // Configure the SNTP client
@@ -143,11 +144,49 @@ auto SolClock::setClockTimeFromInternet() -> bool {
         log_e("strftime failed");
     }
     log_i("The current date/time is: %s (%" PRIu64 ")", strftimeBuf, (uint64_t)now);
+    return true;
 #else
     log_i("Not setting clock time from internet in simulator");
+    return true;
+#endif
+}
+
+auto SolClock::setClockTimeFromInternet(bool useWifi, bool useBle,
+                                        const std::shared_ptr<CancelFlag> &cancel) -> bool {
+    if (useWifi && WiFi::getInstance().connected()) {
+        // Try SNTP first if WiFi is connected
+        if (configTimeSNTP()) {
+            return true;
+        }
+    }
+
+#if CONFIG_USE_BLE_SERVER_PROXY
+    if (useBle && BLEManager::getInstance()->connectedProxy) {
+        time_t serverTime = 0;
+        int httpCode = SindarinAPI::getInstance()->getServerTime(&serverTime, true, cancel);
+        if (httpCode == 200 && serverTime > 0) {
+            // Set the system time
+            struct timeval tv = {.tv_sec = serverTime, .tv_usec = 0};
+            if (settimeofday(&tv, nullptr) == 0) {
+                // Print the time as a string
+                struct tm timeinfo {};
+                localtime_r(&serverTime, &timeinfo);
+                char strftimeBuf[64];
+                size_t size = strftime(strftimeBuf, sizeof(strftimeBuf), "%c", &timeinfo);
+                if (size == 0) {
+                    log_e("strftime failed");
+                }
+                log_i("Set time from BLE proxy: %s (%" PRIu64 ")", strftimeBuf,
+                      (uint64_t)serverTime);
+                return true;
+            }
+            log_e("Failed to set time");
+        }
+        log_e("Failed to get time from server: %d", httpCode);
+    }
 #endif
 
-    return true;
+    return false;
 }
 
 auto SolClock::calculateNextSyncTime(time_t now) -> time_t {

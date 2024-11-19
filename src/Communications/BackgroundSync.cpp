@@ -124,7 +124,20 @@ auto BackgroundSync(PowerManager &powerManager, PreferencesStore &prefs, LocalSt
 
     telemetry.logMetric(TelemetryField::METRIC_CLOCK_SET, "pre-sync",
                         {{"run-time", GetRunTimeMs()}});
-    auto success = SolClock::getInstance().setClockTimeFromInternet();
+
+    // Try WiFi first if connected
+    auto success = false;
+    if (wifiConnected) {
+        success = SolClock::getInstance().setClockTimeFromInternet(true, false, cancel);
+    }
+
+#if CONFIG_USE_BLE_SERVER_PROXY
+    // If WiFi failed and we're using BLE, try that
+    if (!success && bleConnected) {
+        success = SolClock::getInstance().setClockTimeFromInternet(false, true, cancel);
+    }
+#endif
+
     if (success) {
         telemetry.logMetric(TelemetryField::METRIC_CLOCK_SET, "success",
                             {{"run-time", GetRunTimeMs()}});

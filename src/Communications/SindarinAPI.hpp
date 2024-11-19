@@ -76,6 +76,9 @@ public:
 
     auto setAuth(const std::shared_ptr<HttpClient> &client) -> esp_err_t;
 
+    auto getServerTime(time_t *time, bool useBle = false,
+                       const std::shared_ptr<CancelFlag> &cancel = nullptr) -> int;
+
 protected:
     static std::shared_ptr<SindarinAPI> instance;
     std::string baseUrl_;
