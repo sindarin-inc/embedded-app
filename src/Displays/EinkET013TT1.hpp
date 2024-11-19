@@ -107,12 +107,10 @@ protected:
     void powerOffInternal();
     inline auto makeTransaction(uint16_t cmd, size_t length, ScreenSide screen,
                                 const void *txBuffer = nullptr) -> spi_transaction_t *;
-    void writeRegister(Register index, uint8_t data, ScreenSide screen, bool outOfQueue = false);
-    void writeRegister(Register index, const uint8_t *data, size_t len, ScreenSide screen,
-                       bool outOfQueue = false);
-    inline void writeRegisterAsync(Register index, const uint8_t *data, size_t len,
-                                   ScreenSide screen);
-    inline void writeRegisterAsync(Register index, const uint8_t data, ScreenSide screen);
+    inline void writeRegister(Register index, uint8_t data, ScreenSide screen,
+                              bool outOfQueue = false);
+    inline void writeRegister(Register index, const uint8_t *data, size_t len, ScreenSide screen,
+                              bool outOfQueue = false);
     auto readRegister(Register index, ScreenSide screen) -> uint8_t;
     auto readPumpStatus(ScreenSide screen) -> PumpStatus;
     // According to the data sheet the device ID is 0 by default, but that's the same
@@ -152,13 +150,10 @@ protected:
     esp_pm_lock_handle_t freqLock_{};
 #endif
 
-    static constexpr size_t DMA_QUEUE_SIZE = 64;
-    static constexpr size_t NUM_DMA_BUFFERS = DMA_QUEUE_SIZE / 2;
+    // Buffers for sending scanline data.
     static constexpr size_t SCANLINE_SIZE = 48;
-    // Buffers for sending scanline data. We use this every other dma transaction so it can be half
-    // the number of queueable transations
-    std::array<uint8_t[SCANLINE_SIZE], NUM_DMA_BUFFERS> txBuffers_{};
+    std::array<uint8_t[SCANLINE_SIZE], 2> txBuffers_{};
     int txBufferIndex_ = 0;
-    std::array<spi_transaction_t, DMA_QUEUE_SIZE> spiTransactions_{};
+    std::array<spi_transaction_t, 2> spiTransactions_{};
     int spiTransactionIndex_ = 0;
 };

@@ -157,7 +157,7 @@ void EinkET013TT1::initSpi() {
         .isr_cpu_id = INTR_CPU_ID_1,
         .intr_flags = 0,
     };
-    ESP_ERROR_CHECK(spi_bus_initialize(CONFIG_DISPLAY_SPI, &buscfg, SPI_DMA_CH_AUTO));
+    ESP_ERROR_CHECK(spi_bus_initialize(CONFIG_DISPLAY_SPI, &buscfg, SPI_DMA_DISABLED));
 
     spi_device_interface_config_t devcfg = {
         .command_bits = 16,
@@ -177,7 +177,7 @@ void EinkET013TT1::initSpi() {
         // pins manually in pre_cb and post_cb
         .spics_io_num = -1,
         .flags = 0,
-        .queue_size = DMA_QUEUE_SIZE - 1,
+        .queue_size = 10,
         .pre_cb = preTransCallback,
         .post_cb = postTransCallback,
     };
@@ -301,8 +301,8 @@ void EinkET013TT1::updateInternal(const EinkET013TT1Waveform &waveform, const ui
     // Pre-fill all the scanline DMA buffers with the border setting values when not setting the
     // border
     if (border_ == BORDER_SETTING_NONE) {
-        for (int i = 0; i < NUM_DMA_BUFFERS; i++) {
-            uint8_t *borderSettings = &(txBuffers_[i][0]);
+        for (auto &txBuffer : txBuffers_) {
+            uint8_t *borderSettings = &(txBuffer[0]);
             memcpy(borderSettings, BORDER_NONE, 4);
         }
     }
@@ -340,8 +340,8 @@ void EinkET013TT1::updateInternal(const EinkET013TT1Waveform &waveform, const ui
             // I'm not sure if this is a material difference. Possible the right two bits
             // actually set the border and the other 6 are noops. But doing the same thing as
             // the original driver for now.
-            for (int i = 0; i < NUM_DMA_BUFFERS; i++) {
-                uint8_t *borderSettings = &(txBuffers_[i][0]);
+            for (auto &txBuffer : txBuffers_) {
+                uint8_t *borderSettings = &(txBuffer[0]);
                 memcpy(borderSettings, BORDER_TEMPLATE, 4);
                 borderSettings[1] =
                     borderBits | borderBits << 2 | borderBits << 4 | borderBits << 6;
@@ -355,9 +355,9 @@ void EinkET013TT1::updateInternal(const EinkET013TT1Waveform &waveform, const ui
 
             // Set up convenience variables to index into various parts of the scanline
             // TODO: Are there clever union types or other struct packing things we could do
-            // here? Get a DMA buffer that we'll reuse for all our scanlines
+            // here?
             uint8_t *scanLine = txBuffers_[txBufferIndex_];
-            txBufferIndex_ = (txBufferIndex_ + 1) % NUM_DMA_BUFFERS;
+            txBufferIndex_ = (txBufferIndex_ + 1) % txBuffers_.size();
             auto *gateBlockLow = reinterpret_cast<uint32_t *>(&(scanLine[4]));
             auto *gateSelectLow = reinterpret_cast<uint16_t *>(&(scanLine[8]));
             uint8_t *sourceData = &(scanLine[10]);
@@ -407,23 +407,40 @@ void EinkET013TT1::updateInternal(const EinkET013TT1Waveform &waveform, const ui
             // PROFILE_MULTIPLE_END(processGate);
 
             // PROFILE_MULTIPLE_START(transmitGate);
-            // On average these two commands together are taking 45us for some reason. I would
-            // expect it to be half that (or less) on average (53 bytes / (20MHz / 8) = 21.2us).
-            // Interestingly spi_polling_transmit is taking only 41.70us so maybe DMA is not DMA-ing
-            writeRegisterAsync(WRITE_GATE_SOURCE_DATA, scanLine, 48, screen);
-            writeRegisterAsync(DRIVER_LATCH_RESET_PULSE_GENERATE, 0x10, screen);
+
+            // ESP32 apparently has a pretty big overhead for DMA so it's not worth doing for < 64
+            // bytes. Using the polling method allows us to at least do some processing while the
+            // SPI transaction is being sent. I'm getting the following times:
+            // * spi_device_queue_trans: ~45us / gate
+            // * spi_device_polling_start / spi_device_polling_end: ~36us / gate
+            // * spi_device_polling_transmit: ~46us/gate / gate
+            // Theoretically this should be more like (53 bytes / (20MHz / 8) = 21.2us). There are
+            // people on the internet suggesting that to really get performance we need to abandon
+            // esp-idf's spi_master driver
+
+            if (!(gate == 0 && frameIndex == 0)) {
+                spi_device_polling_end(spiHigh_, pdMS_TO_TICKS(1));
+                writeRegister(DRIVER_LATCH_RESET_PULSE_GENERATE, 0x10, screen);
+            }
+            auto t =
+                makeTransaction(REGISTER_TO_CMD(WRITE_GATE_SOURCE_DATA), 48 * 8, screen, scanLine);
+            spi_device_polling_start(spiHigh_, t, portMAX_DELAY);
             // PROFILE_MULTIPLE_END(transmitGate);
         }
+
+        spi_device_polling_end(spiHigh_, pdMS_TO_TICKS(1));
+        writeRegister(DRIVER_LATCH_RESET_PULSE_GENERATE, 0x10, screen);
 
         // PROFILE_MULTIPLE_LOG(processGate);
         // PROFILE_MULTIPLE_LOG(transmitGate);
 
         // Send clear packet
-        writeRegisterAsync(WRITE_GATE_SOURCE_DATA, CLEAR_PACKET, sizeof(CLEAR_PACKET), screen);
-        writeRegisterAsync(DRIVER_LATCH_RESET_PULSE_GENERATE, 0x10, screen);
-
-        portYIELD();
+        auto t =
+            makeTransaction(REGISTER_TO_CMD(WRITE_GATE_SOURCE_DATA), 48 * 8, screen, CLEAR_PACKET);
+        spi_device_polling_start(spiHigh_, t, portMAX_DELAY);
     }
+    spi_device_polling_end(spiHigh_, pdMS_TO_TICKS(1));
+    writeRegister(DRIVER_LATCH_RESET_PULSE_GENERATE, 0x10, screen);
 
     PROFILE_END(sendFrames);
     spi_device_release_bus(spiHigh_);
@@ -435,7 +452,7 @@ void EinkET013TT1::updateInternal(const EinkET013TT1Waveform &waveform, const ui
     if (overrideVcom != INT32_MAX) {
         auto oldVcomRegisterValue = VcomMVToRegisterValue(vcomInMV_);
         log_d("Restoring VCOM to %" PRIi32 " (0x%" PRIu8 ")", vcomInMV_, oldVcomRegisterValue);
-        writeRegisterAsync(PWM_WIDTH_SELECT, oldVcomRegisterValue, screen);
+        writeRegister(PWM_WIDTH_SELECT, oldVcomRegisterValue, screen);
     }
 
     float timeNs = PROFILE_CALCULATE_NS(sendFrames);
@@ -496,7 +513,7 @@ void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *b
 inline auto EinkET013TT1::makeTransaction(uint16_t cmd, size_t length, ScreenSide screen,
                                           const void *txBuffer) -> spi_transaction_t * {
     auto t = &spiTransactions_[spiTransactionIndex_];
-    spiTransactionIndex_ = (spiTransactionIndex_ + 1) % DMA_QUEUE_SIZE;
+    spiTransactionIndex_ = (spiTransactionIndex_ + 1) % spiTransactions_.size();
     memset(t, 0, sizeof(*t));
     t->cmd = cmd;
     t->length = length;
@@ -505,33 +522,16 @@ inline auto EinkET013TT1::makeTransaction(uint16_t cmd, size_t length, ScreenSid
     return t;
 }
 
-void EinkET013TT1::writeRegister(Register index, const uint8_t *data, size_t len, ScreenSide screen,
-                                 bool outOfQueue) {
-
-    if (!outOfQueue && !einkQueue_->isInQueue()) {
-        log_w("writeRegister called from outside of einkQueue_");
-    }
+inline void EinkET013TT1::writeRegister(Register index, const uint8_t *data, size_t len,
+                                        ScreenSide screen, bool outOfQueue) {
 
     auto t = makeTransaction(REGISTER_TO_CMD(index), len * 8, screen, data);
     ESP_ERROR_CHECK(spi_device_polling_transmit(spiHigh_, t));
 }
 
-void EinkET013TT1::writeRegister(Register index, uint8_t data, ScreenSide screen, bool outOfQueue) {
+inline void EinkET013TT1::writeRegister(Register index, uint8_t data, ScreenSide screen,
+                                        bool outOfQueue) {
     writeRegister(index, &data, 1, screen, outOfQueue);
-}
-
-inline void EinkET013TT1::writeRegisterAsync(Register index, const uint8_t *data, size_t len,
-                                             ScreenSide screen) {
-    auto t = makeTransaction(REGISTER_TO_CMD(index), len * 8, screen, data);
-    ESP_ERROR_CHECK(spi_device_queue_trans(spiHigh_, t, portMAX_DELAY));
-}
-
-inline void EinkET013TT1::writeRegisterAsync(Register index, const uint8_t data,
-                                             ScreenSide screen) {
-    auto t = makeTransaction(REGISTER_TO_CMD(index), 8, screen, nullptr);
-    t->flags = SPI_TRANS_USE_TXDATA;
-    t->tx_data[0] = data;
-    ESP_ERROR_CHECK(spi_device_queue_trans(spiHigh_, t, portMAX_DELAY));
 }
 
 auto EinkET013TT1::readRegister(Register index, ScreenSide screen) -> uint8_t {
