@@ -340,6 +340,9 @@ void EinkET013TT1::updateInternal(const EinkET013TT1Waveform &waveform, const ui
     // Take into account for doing more frames in the altWaveform than the main one.
     int maxFrames = std::max(waveform.frameCount, altWaveform.frameCount);
 
+    // PROFILE_MULTIPLE_SETUP(processGate);
+    // PROFILE_MULTIPLE_SETUP(transmitGate);
+
     // For each frame in the waveform
     for (int frameIndex = 0; frameIndex < maxFrames; frameIndex++) {
         auto frame = waveform.frameOrDefault(frameIndex);
@@ -373,6 +376,9 @@ void EinkET013TT1::updateInternal(const EinkET013TT1Waveform &waveform, const ui
 
         // For each horizontal half-line
         for (int16_t gate = 0; gate < EinkET013TT1_GATE_COUNT; gate++) {
+            // On average, the waveform calculations take ~5us at 240MHz
+            // PROFILE_MULTIPLE_START(processGate);
+
             // Set up convenience variables to index into various parts of the scanline
             // TODO: Are there clever union types or other struct packing things we could do
             // here?
@@ -410,7 +416,6 @@ void EinkET013TT1::updateInternal(const EinkET013TT1Waveform &waveform, const ui
             auto newBuffer = &(buffer[bufferIndex]);
             auto oldBuffer = &(previousBuffer_[bufferIndex]);
 
-            // This for loop takes 4-16us at 240MHz
             for (uint16_t pixel = 0; pixel < EinkET013TT1_PIXEL_WIDTH / 2; pixel += 8) {
                 x = pixel + (gate / EinkET013TT1_PIXEL_WIDTH) * EinkET013TT1_PIXEL_WIDTH / 2;
                 auto *lutToUse = box.contains(x, y) ? &altLut : &lut;
@@ -425,7 +430,10 @@ void EinkET013TT1::updateInternal(const EinkET013TT1Waveform &waveform, const ui
                 sourceData[(pixel + 4) / 4] = (*lutToUse)[oldPixels2 << 4 | newPixels2];
             }
 
-            // Send the scan line!
+            // PROFILE_MULTIPLE_END(processGate);
+
+            // PROFILE_MULTIPLE_START(transmitGate);
+
             // ESP32 apparently has a pretty big overhead for DMA so it's not worth doing for < 64
             // bytes. Using the polling method allows us to at least do some processing while the
             // SPI transaction is being sent. I'm getting the following times:
@@ -435,23 +443,45 @@ void EinkET013TT1::updateInternal(const EinkET013TT1Waveform &waveform, const ui
             // Theoretically this should be more like (53 bytes / (20MHz / 8) = 21.2us). There are
             // people on the internet suggesting that to really get performance we need to abandon
             // esp-idf's spi_master driver
-            writeRegister(WRITE_GATE_SOURCE_DATA, scanLine, SCANLINE_SIZE, screen);
 
-            // Wait for frame timer and busy signal
-            waitForTimer();
-            startTimer(timerDelayNs_);
-            waitForNotBusy();
-            writeRegister(DRIVER_LATCH_RESET_PULSE_GENERATE, 0x10, screen);
+            if (!(gate == 0 && frameIndex == 0)) {
+                // Wait for frame timer and busy signal
+                spi_device_polling_end(spiHigh_, pdMS_TO_TICKS(1));
+                waitForTimer();
+                startTimer(timerDelayNs_);
+                waitForNotBusy();
+                writeRegister(DRIVER_LATCH_RESET_PULSE_GENERATE, 0x10, screen);
+            } else {
+                startTimer(timerDelayNs_);
+            }
+            auto t =
+                makeTransaction(REGISTER_TO_CMD(WRITE_GATE_SOURCE_DATA), 48 * 8, screen, scanLine);
+            spi_device_polling_start(spiHigh_, t, portMAX_DELAY);
+            // PROFILE_MULTIPLE_END(transmitGate);
         }
 
-        // Send clear packet
-        writeRegister(WRITE_GATE_SOURCE_DATA, CLEAR_PACKET, sizeof(CLEAR_PACKET), screen);
+        // Wait for frame timer and busy signal
+        spi_device_polling_end(spiHigh_, pdMS_TO_TICKS(1));
         waitForTimer();
+        startTimer(timerDelayNs_);
         waitForNotBusy();
         writeRegister(DRIVER_LATCH_RESET_PULSE_GENERATE, 0x10, screen);
 
-        portYIELD();
+        // PROFILE_MULTIPLE_LOG(processGate);
+        // PROFILE_MULTIPLE_LOG(transmitGate);
+
+        // Send clear packet
+        auto t =
+            makeTransaction(REGISTER_TO_CMD(WRITE_GATE_SOURCE_DATA), 48 * 8, screen, CLEAR_PACKET);
+        spi_device_polling_start(spiHigh_, t, portMAX_DELAY);
     }
+
+    // Wait for frame timer and busy signal
+    spi_device_polling_end(spiHigh_, pdMS_TO_TICKS(1));
+    waitForTimer();
+    startTimer(timerDelayNs_);
+    waitForNotBusy();
+    writeRegister(DRIVER_LATCH_RESET_PULSE_GENERATE, 0x10, screen);
 
     PROFILE_END(sendFrames);
     spi_device_release_bus(spiHigh_);
@@ -474,11 +504,10 @@ void EinkET013TT1::updateInternal(const EinkET013TT1Waveform &waveform, const ui
 #endif
 
     float timeNs = PROFILE_CALCULATE_NS(sendFrames);
-    int totalScanlines = (EinkET013TT1_GATE_COUNT + 1) * waveform.frameCount;
-    log_d("Sent %d frames in %.2fms (%.2fms/frame, %.2fus/gate, %d/%d overruns, %d/%d busyWaits)",
-          waveform.frameCount, timeNs / 1000000, timeNs / waveform.frameCount / 1000000,
-          timeNs / waveform.frameCount / (EinkET013TT1_GATE_COUNT + 1) / 1000, timerOverruns_,
-          totalScanlines, busyWaits_, totalScanlines);
+    log_d("Sent %d frames in %.2fms (%.2fms/frame, %.2fus/gate)", waveform.frameCount,
+          timeNs / 1000000, timeNs / waveform.frameCount / 1000000,
+          timeNs / waveform.frameCount / (EinkET013TT1_GATE_COUNT + 1) / 1000);
+
     if (timerOverruns_ > 0) {
         log_w("%d timer overruns happened! %.2fus maxFrame", timerOverruns_,
               CYCLES_TO_US(maxFrameCycles_));
