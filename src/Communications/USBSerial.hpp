@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <cstring>
 #include <esp_err.h>
+#include <esp_log.h>
 #include <memory>
 #include <tinyusb.h>
 
@@ -40,7 +41,11 @@ public:
     void txSendLine(const std::string &str);
     void disableLogging();
     void enableLogging();
-    auto isLoggingEnabled() -> bool { return loggingEnabled; }
+    auto isUsbLoggingEnabled() -> bool { return usbLoggingEnabled; }
+    void setLogLevel(esp_log_level_t level) {
+        logLevel = level;
+        esp_log_level_set("Sol", logLevel);
+    }
 
     using SerialDataListener = std::function<void(std::shared_ptr<uint8_t[]>, size_t length)>;
     void registerListener(const SerialDataListener &listener);
@@ -60,5 +65,6 @@ private:
 #endif
     void enableLoggingInternal();
 
-    static bool loggingEnabled;
+    static bool usbLoggingEnabled;
+    static esp_log_level_t logLevel;
 };

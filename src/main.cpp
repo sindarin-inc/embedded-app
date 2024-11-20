@@ -29,9 +29,9 @@
 #include "Misc/StringUtil.hpp"
 #include "Models/Readable.hpp"
 #include "Storage/CrashReportWriter.hpp"
-#include "Storage/SolDrm.hpp"
 #include "Storage/LocalStore.hpp"
 #include "Storage/PreferencesStore.hpp"
+#include "Storage/SolDrm.hpp"
 #include "UI/ChargingScreen.hpp"
 #include "UI/OverTempScreen.hpp"
 #include "UI/PowerDepletedScreen.hpp"
@@ -45,7 +45,7 @@
 
 #if CONFIG_DISPLAY_EINKET013TT1
 #include "Displays/DisplayEinkET013TT1.hpp"
-DisplayEinkET013TT1 myDisplay(DISPLAY_CS_LEFT, DISPLAY_CS_RIGHT, DISPLAY_RST);
+DisplayEinkET013TT1 myDisplay;
 #elif DISPLAY_SIM_8BIT
 // Declared in native.cpp
 #include "Displays/DisplaySim1Bit.hpp"
@@ -208,7 +208,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     HEAP_PROFILE_END(usbSerial);
 
     directCommand.begin();
-    if (usbSerial.isLoggingEnabled()) {
+    if (usbSerial.isUsbLoggingEnabled()) {
         // Wait a bit so we can get boot logs (mostly for the testers)
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
@@ -250,7 +250,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         DigitalWrite(CONFIG_GREEN_LED, LED_ON);
         vTaskDelay(200 / portTICK_PERIOD_MS);
         DigitalWrite(CONFIG_GREEN_LED, LED_OFF);
-#ifdef CONFIG_BLUE_LED
+#if CONFIG_BLUE_LED != -1
         DigitalWrite(CONFIG_BLUE_LED, LED_ON);
         vTaskDelay(200 / portTICK_PERIOD_MS);
         DigitalWrite(CONFIG_BLUE_LED, LED_OFF);
@@ -406,11 +406,9 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     }
 #endif
 
-#if CONFIG_DISPLAY_EINKET013TT1
-#ifdef DISPLAY_POWER
+#if CONFIG_DISPLAY_POWER != -1
     // Turn on power to the screen
-    DigitalWrite(DISPLAY_POWER, HIGH);
-#endif
+    DigitalWrite(CONFIG_DISPLAY_POWER, HIGH);
 #endif
 
     HEAP_PROFILE_START(displaySetup);

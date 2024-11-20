@@ -208,7 +208,7 @@ enum BorderSetting {
 
 #endif
 
-enum class ScreenSide {
+enum ScreenSide {
     Left = 1 << 0,
     Right = 1 << 1,
     Both = Left | Right,
