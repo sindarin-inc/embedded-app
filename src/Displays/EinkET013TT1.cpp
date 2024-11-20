@@ -173,10 +173,10 @@ void EinkET013TT1::initSpi() {
         .quadhd_io_num = -1,
         .max_transfer_sz = SCANLINE_SIZE,
         .flags = SPICOMMON_BUSFLAG_MASTER,
-        // .isr_cpu_id = INTR_CPU_ID_1,
+        .isr_cpu_id = INTR_CPU_ID_1,
         .intr_flags = 0,
     };
-    ESP_ERROR_CHECK(spi_bus_initialize(CONFIG_DISPLAY_SPI, &buscfg, SPI_DMA_DISABLED));
+    ESP_ERROR_CHECK(spi_bus_initialize(CONFIG_DISPLAY_SPI, &buscfg, SPI_DMA_CH_AUTO));
 
     spi_device_interface_config_t devcfg = {
         .command_bits = 16,
@@ -196,7 +196,7 @@ void EinkET013TT1::initSpi() {
         // pins manually in pre_cb and post_cb
         .spics_io_num = -1,
         .flags = 0,
-        .queue_size = 5,
+        .queue_size = DMA_QUEUE_SIZE - 1,
         .pre_cb = preTransCallback,
         .post_cb = postTransCallback,
     };
@@ -216,9 +216,6 @@ void EinkET013TT1::init() {
     if (vcomInMV_ == 0) {
         setVcom(VCOM_DEFAULT);
     }
-    if (timerDelayNs_ == 0) {
-        setFramerate(FRAMERATE_DEFAULT);
-    }
     for (unsigned char &i : previousBuffer_) {
         i = 0xFF;
     }
@@ -237,11 +234,6 @@ void EinkET013TT1::setVcom(int mV) {
     vcomInMV_ = mV;
     log_d("Setting VCOM to %" PRIi32 " mV (register 0x9 = %" PRIu8 ")", vcomInMV_,
           VcomMVToRegisterValue(vcomInMV_));
-}
-
-void EinkET013TT1::setFramerate(int frameRate) {
-    frameRate = std::clamp(frameRate, 0, 100);
-    timerDelayNs_ = 1000000000.0f / frameRate / EinkET013TT1_GATE_COUNT;
 }
 
 void EinkET013TT1::setBorder(BorderSetting border) {
@@ -302,7 +294,6 @@ void EinkET013TT1::updateInternal(const EinkET013TT1Waveform &waveform, const ui
         vTaskDelay(pdMS_TO_TICKS(30));
     }
 
-    timerOverruns_ = 0;
     busyWaits_ = 0;
     maxFrameCycles_ = 0;
     error_ = false;
@@ -338,6 +329,9 @@ void EinkET013TT1::updateInternal(const EinkET013TT1Waveform &waveform, const ui
     // Take into account for doing more frames in the altWaveform than the main one.
     int maxFrames = std::max(waveform.frameCount, altWaveform.frameCount);
 
+    // PROFILE_MULTIPLE_SETUP(processGate);
+    // PROFILE_MULTIPLE_SETUP(transmitGate);
+
     // For each frame in the waveform
     for (int frameIndex = 0; frameIndex < maxFrames; frameIndex++) {
         auto frame = waveform.frameOrDefault(frameIndex);
@@ -371,9 +365,13 @@ void EinkET013TT1::updateInternal(const EinkET013TT1Waveform &waveform, const ui
 
         // For each horizontal half-line
         for (int16_t gate = 0; gate < EinkET013TT1_GATE_COUNT; gate++) {
+            // On average, the waveform calculations take ~5us at 240MHz
+            // PROFILE_MULTIPLE_START(processGate);
+
             // Set up convenience variables to index into various parts of the scanline
             // TODO: Are there clever union types or other struct packing things we could do
             // here?
+            // Get a DMA buffer that we'll reuse for all our scanlines
             uint8_t *scanLine = txBuffers_[txBufferIndex_];
             txBufferIndex_ = (txBufferIndex_ + 1) % txBuffers_.size();
             auto *gateBlockLow = reinterpret_cast<uint32_t *>(&(scanLine[4]));
@@ -408,7 +406,6 @@ void EinkET013TT1::updateInternal(const EinkET013TT1Waveform &waveform, const ui
             auto newBuffer = &(buffer[bufferIndex]);
             auto oldBuffer = &(previousBuffer_[bufferIndex]);
 
-            // This for loop takes 4-16us at 240MHz
             for (uint16_t pixel = 0; pixel < EinkET013TT1_PIXEL_WIDTH / 2; pixel += 8) {
                 x = pixel + (gate / EinkET013TT1_PIXEL_WIDTH) * EinkET013TT1_PIXEL_WIDTH / 2;
                 auto *lutToUse = box.contains(x, y) ? &altLut : &lut;
@@ -423,30 +420,23 @@ void EinkET013TT1::updateInternal(const EinkET013TT1Waveform &waveform, const ui
                 sourceData[(pixel + 4) / 4] = (*lutToUse)[oldPixels2 << 4 | newPixels2];
             }
 
-            // Send the scan line!
-            // ESP32 apparently has a pretty big overhead for DMA so it's not worth doing for < 64
-            // bytes. Using the polling method allows us to at least do some processing while the
-            // SPI transaction is being sent. I'm getting the following times:
-            // * spi_device_queue_trans: ~45us / gate
-            // * spi_device_polling_start / spi_device_polling_end: ~36us / gate
-            // * spi_device_polling_transmit: ~46us/gate / gate
-            // Theoretically this should be more like (53 bytes / (20MHz / 8) = 21.2us). There are
-            // people on the internet suggesting that to really get performance we need to abandon
-            // esp-idf's spi_master driver
-            writeRegister(WRITE_GATE_SOURCE_DATA, scanLine, SCANLINE_SIZE, screen);
+            // PROFILE_MULTIPLE_END(processGate);
 
-            // Wait for frame timer and busy signal
-            waitForTimer();
-            startTimer(timerDelayNs_);
-            waitForNotBusy();
-            writeRegister(DRIVER_LATCH_RESET_PULSE_GENERATE, 0x10, screen);
+            // PROFILE_MULTIPLE_START(transmitGate);
+            // On average these two commands together are taking 45us for some reason. I would
+            // expect it to be half that (or less) on average (53 bytes / (20MHz / 8) = 21.2us).
+            // Interestingly spi_polling_transmit is taking only 41.70us so maybe DMA is not DMA-ing
+            writeRegisterAsync(WRITE_GATE_SOURCE_DATA, scanLine, 48, screen);
+            writeRegisterAsync(DRIVER_LATCH_RESET_PULSE_GENERATE, 0x10, screen);
+            // PROFILE_MULTIPLE_END(transmitGate);
         }
 
+        // PROFILE_MULTIPLE_LOG(processGate);
+        // PROFILE_MULTIPLE_LOG(transmitGate);
+
         // Send clear packet
-        writeRegister(WRITE_GATE_SOURCE_DATA, CLEAR_PACKET, sizeof(CLEAR_PACKET), screen);
-        waitForTimer();
-        waitForNotBusy();
-        writeRegister(DRIVER_LATCH_RESET_PULSE_GENERATE, 0x10, screen);
+        writeRegisterAsync(WRITE_GATE_SOURCE_DATA, CLEAR_PACKET, sizeof(CLEAR_PACKET), screen);
+        writeRegisterAsync(DRIVER_LATCH_RESET_PULSE_GENERATE, 0x10, screen);
 
         portYIELD();
     }
@@ -461,7 +451,7 @@ void EinkET013TT1::updateInternal(const EinkET013TT1Waveform &waveform, const ui
     if (overrideVcom != INT32_MAX) {
         auto oldVcomRegisterValue = VcomMVToRegisterValue(vcomInMV_);
         log_d("Restoring VCOM to %" PRIi32 " (0x%" PRIu8 ")", vcomInMV_, oldVcomRegisterValue);
-        writeRegister(PWM_WIDTH_SELECT, oldVcomRegisterValue, screen);
+        writeRegisterAsync(PWM_WIDTH_SELECT, oldVcomRegisterValue, screen);
     }
 
 #if CONFIG_DISPLAY_EINKET013TT1_CS_LEFT != -1
@@ -472,15 +462,9 @@ void EinkET013TT1::updateInternal(const EinkET013TT1Waveform &waveform, const ui
 #endif
 
     float timeNs = PROFILE_CALCULATE_NS(sendFrames);
-    int totalScanlines = (EinkET013TT1_GATE_COUNT + 1) * waveform.frameCount;
-    log_d("Sent %d frames in %.2fms (%.2fms/frame, %.2fus/gate, %d/%d overruns, %d/%d busyWaits)",
-          waveform.frameCount, timeNs / 1000000, timeNs / waveform.frameCount / 1000000,
-          timeNs / waveform.frameCount / (EinkET013TT1_GATE_COUNT + 1) / 1000, timerOverruns_,
-          totalScanlines, busyWaits_, totalScanlines);
-    if (timerOverruns_ > 0) {
-        log_w("%d timer overruns happened! %.2fus maxFrame", timerOverruns_,
-              CYCLES_TO_US(maxFrameCycles_));
-    }
+    log_d("Sent %d frames in %.2fms (%.2fms/frame, %.2fus/gate)", waveform.frameCount,
+          timeNs / 1000000, timeNs / waveform.frameCount / 1000000,
+          timeNs / waveform.frameCount / (EinkET013TT1_GATE_COUNT + 1) / 1000);
 
     // Move new buffer to be previous buffer
     memcpy(previousBuffer_, buffer, sizeof(previousBuffer_));
@@ -555,6 +539,20 @@ inline void EinkET013TT1::writeRegister(Register index, const uint8_t *data, siz
 inline void EinkET013TT1::writeRegister(Register index, uint8_t data, ScreenSide screen,
                                         bool outOfQueue) {
     writeRegister(index, &data, 1, screen, outOfQueue);
+}
+
+inline void EinkET013TT1::writeRegisterAsync(Register index, const uint8_t *data, size_t len,
+                                             ScreenSide screen) {
+    auto t = makeTransaction(REGISTER_TO_CMD(index), len * 8, screen, data);
+    ESP_ERROR_CHECK(spi_device_queue_trans(spiHigh_, t, portMAX_DELAY));
+}
+
+inline void EinkET013TT1::writeRegisterAsync(Register index, const uint8_t data,
+                                             ScreenSide screen) {
+    auto t = makeTransaction(REGISTER_TO_CMD(index), 8, screen, nullptr);
+    t->flags = SPI_TRANS_USE_TXDATA;
+    t->tx_data[0] = data;
+    ESP_ERROR_CHECK(spi_device_queue_trans(spiHigh_, t, portMAX_DELAY));
 }
 
 auto EinkET013TT1::readRegister(Register index, ScreenSide screen) -> uint8_t {
@@ -748,39 +746,6 @@ void EinkET013TT1::shutdown() {
     writeRegister(THERMAL_SENSOR_SETTING, 0x00, ScreenSide::Both, true);
     // No idea what this does but the original driver does it at power off so we will do it here too
     writeRegister(MYSTERY_SETTING_2, 0x02, ScreenSide::Both, true);
-}
-
-inline void EinkET013TT1::startTimer(uint32_t ns) {
-    RSR(CCOUNT, cycleCountStart_);
-    timerDurationCycles_ = (esp_clk_cpu_freq() / 1000000000.0) * ns;
-}
-
-inline auto EinkET013TT1::timerActivated() const -> bool { return timerDurationCycles_ != 0; }
-
-inline auto EinkET013TT1::timerRunning() const -> bool {
-    volatile uint32_t cycleCount = 0;
-    RSR(CCOUNT, cycleCount);
-    if (timerDurationCycles_ != 0 && cycleCount - cycleCountStart_ < timerDurationCycles_) {
-        return true;
-    }
-    return false;
-}
-
-inline void EinkET013TT1::waitForTimer() {
-    // If we ever wait for the timer, and the timer has already completed then we can conclude
-    // that that we spent too much time doing CPU things and the timer ran for longer than we
-    // wanted.
-    if (timerActivated() && !timerRunning()) {
-        volatile uint32_t cycleCount = 0;
-        RSR(CCOUNT, cycleCount);
-        maxFrameCycles_ = std::max(maxFrameCycles_, cycleCount - cycleCountStart_);
-        timerOverruns_ += 1;
-        timerDurationCycles_ = 0;
-        return;
-    }
-    while (timerRunning()) {
-    }
-    timerDurationCycles_ = 0;
 }
 
 inline void EinkET013TT1::waitForNotBusy() {

@@ -111,15 +111,14 @@ protected:
                               bool outOfQueue = false);
     inline void writeRegister(Register index, const uint8_t *data, size_t len, ScreenSide screen,
                               bool outOfQueue = false);
+    inline void writeRegisterAsync(Register index, const uint8_t *data, size_t len,
+                                   ScreenSide screen);
+    inline void writeRegisterAsync(Register index, const uint8_t data, ScreenSide screen);
     auto readRegister(Register index, ScreenSide screen) -> uint8_t;
     auto readPumpStatus(ScreenSide screen) -> PumpStatus;
     // According to the data sheet the device ID is 0 by default, but that's the same
     // when the screen is not connected. So I don't think `readDeviceIdReg` is useful.
     auto readDeviceIdReg(ScreenSide screen) -> uint8_t;
-    inline void startTimer(uint32_t ns);
-    [[nodiscard]] inline auto timerActivated() const -> bool;
-    [[nodiscard]] inline auto timerRunning() const -> bool;
-    inline void waitForTimer();
     inline void waitForNotBusy();
     auto checkScreenStatus(ScreenSide screen, const PumpStatus &pumpStatus, uint16_t temperature)
         -> bool;
@@ -134,7 +133,6 @@ protected:
     uint32_t vcomInMV_{};
     uint32_t vcomNudge_ = 0;
 
-    uint16_t timerOverruns_{};
     uint16_t busyWaits_{};
     uint32_t maxFrameCycles_{};
     bool error_{};
@@ -145,8 +143,6 @@ protected:
     uint8_t previousBuffer_[EinkET013TT1_PIXEL_WIDTH * EinkET013TT1_PIXEL_HEIGHT / 8]{};
 
     uint32_t updateStartTime_ = 0;
-    float timerDelayNs_ = 0;
-    uint32_t timerDurationCycles_ = 0;
     volatile uint32_t cycleCountStart_ = 0;
 
     spi_device_handle_t spiHigh_{};
@@ -159,10 +155,13 @@ protected:
     esp_pm_lock_handle_t freqLock_{};
 #endif
 
-    // Buffers for sending scanline data.
+    static constexpr size_t DMA_QUEUE_SIZE = 64;
+    static constexpr size_t NUM_DMA_BUFFERS = DMA_QUEUE_SIZE / 2;
     static constexpr size_t SCANLINE_SIZE = 48;
-    std::array<uint8_t[SCANLINE_SIZE], 2> txBuffers_{};
+    // Buffers for sending scanline data. We use this every other dma transaction so it can be half
+    // the number of queueable transations
+    std::array<uint8_t[SCANLINE_SIZE], NUM_DMA_BUFFERS> txBuffers_{};
     int txBufferIndex_ = 0;
-    std::array<spi_transaction_t, 2> spiTransactions_{};
+    std::array<spi_transaction_t, DMA_QUEUE_SIZE> spiTransactions_{};
     int spiTransactionIndex_ = 0;
 };
