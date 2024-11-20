@@ -28,8 +28,8 @@
 #define BACKLIGHT_PWM_CHANNEL 0
 #define HARDWARE_REVISION_LATEST 3
 
-adc_cali_handle_t adcCalHandle;
-adc_oneshot_unit_handle_t adcOneshotHandle;
+adc_cali_handle_t adcCalHandle = nullptr;
+adc_oneshot_unit_handle_t adcOneshotHandle = nullptr;
 adc_channel_t leftChannel;
 adc_channel_t rightChannel;
 
@@ -181,22 +181,26 @@ auto HardwareDeinit() -> esp_err_t {
     }
 
     // We need to shut down the ADC or else we consume ~1.6mA during deep sleep
-    err = adc_oneshot_del_unit(adcOneshotHandle);
-    if (err != ESP_OK) {
-        log_e("Failed to delete oneshot unit: %d", err);
+    if (adcOneshotHandle != nullptr) {
+        err = adc_oneshot_del_unit(adcOneshotHandle);
+        if (err != ESP_OK) {
+            log_e("Failed to delete oneshot unit: %d", err);
+        }
     }
 
-#if CONFIG_IDF_TARGET_ESP32S3
-    err = adc_cali_delete_scheme_curve_fitting(adcCalHandle);
-    if (err != ESP_OK) {
-        log_e("Failed to delete adc calibration scheme: %d", err);
+    if (adcCalHandle != nullptr) {
+        err = adc_cali_delete_scheme_curve_fitting(adcCalHandle);
+        if (err != ESP_OK) {
+            log_e("Failed to delete adc calibration scheme: %d", err);
+        }
     }
-#endif
 
+#if USE_I2C
     err = i2c_driver_delete(I2C_NUM_0);
     if (err != ESP_OK) {
         log_e("Failed to delete I2C driver with err %s", esp_err_to_name(err));
     }
+#endif
 
     return err;
 }
