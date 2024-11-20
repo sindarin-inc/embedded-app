@@ -89,7 +89,9 @@ void BLESettings::blinkLedAfterConnect(BLECharacteristic *characteristic, const 
     // TODO: Fully take over the LED for a while
     gpio_hold_dis(static_cast<gpio_num_t>(CONFIG_RED_LED));
     gpio_hold_dis(static_cast<gpio_num_t>(CONFIG_GREEN_LED));
+#if CONFIG_BLUE_LED != -1
     gpio_hold_dis(static_cast<gpio_num_t>(CONFIG_BLUE_LED));
+#endif
     for (int i = 0; i < 10; i++) {
         // Flash all the LEDs
         DigitalWrite(CONFIG_RED_LED, LED_ON);
