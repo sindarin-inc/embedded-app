@@ -257,47 +257,52 @@ void FirmwareUpdateScreen::begin() {
 
     auto rl = std::make_shared<RateLimiter>(1, 20, 1);
     auto cancelCopy = cancel_;
-    firmwareDownloader_.downloadFirmware(
-        [this, rl, resumeBLE, cancelCopy](const FirmwareDownloadState &state) {
-        if (CancelFlag::isCancelled(cancelCopy)) {
-            return;
-        }
 
-        PowerManager::getInstance().feedInactivityTimer();
-        if (state.state == FirmwareDownloadState::Failure) {
-            telemetry_.logMetric(TelemetryField::METRIC_FIRMWARE_UPDATE, "update-failed");
-        }
-        if (state.state == FirmwareDownloadState::AlreadyUpToDate ||
-            state.state == FirmwareDownloadState::Failure ||
-            state.state == FirmwareDownloadState::Installed) {
-            WiFi::getInstance().disconnectWiFi();
-        }
-        // Skip updates if the state is the same and the percentage isn't different (or if not
-        // enough time has elapsed)
-        if (state.state == state_.state) {
-            if (!rl->shouldExecute(state.percentage)) {
-                return;
-            }
-        } else {
-            rl->resetPercentage();
-        }
-
-        DispatchGetUiQueue()->dispatch([this, state, resumeBLE, cancelCopy]() {
+    auto updateFwIfNeeded = [this, rl, resumeBLE, cancelCopy]() {
+        firmwareDownloader_.downloadFirmware(
+            [this, rl, resumeBLE, cancelCopy](const FirmwareDownloadState &state) {
             if (CancelFlag::isCancelled(cancelCopy)) {
                 return;
             }
-            updateState(state); // Update the internal state with the new state.
-            render(display_);   // Render the UI with the updated state.
 
-            if (state.state == FirmwareDownloadState::AlreadyUpToDate ||
-                state.state == FirmwareDownloadState::Failure) {
-                vTaskDelay(pdMS_TO_TICKS(3000));
-                resumeBLE();
-                back();
-            } else if (state.state == FirmwareDownloadState::Installed) {
-                vTaskDelay(pdMS_TO_TICKS(3000));
-                PowerManager::getInstance().reboot();
+            PowerManager::getInstance().feedInactivityTimer();
+            if (state.state == FirmwareDownloadState::Failure) {
+                telemetry_.logMetric(TelemetryField::METRIC_FIRMWARE_UPDATE, "update-failed");
             }
+            if (state.state == FirmwareDownloadState::AlreadyUpToDate ||
+                state.state == FirmwareDownloadState::Failure ||
+                state.state == FirmwareDownloadState::Installed) {
+                WiFi::getInstance().disconnectWiFi();
+            }
+            // Skip updates if the state is the same and the percentage isn't different (or if not
+            // enough time has elapsed)
+            if (state.state == state_.state) {
+                if (!rl->shouldExecute(state.percentage)) {
+                    return;
+                }
+            } else {
+                rl->resetPercentage();
+            }
+
+            DispatchGetUiQueue()->dispatch([this, state, resumeBLE, cancelCopy]() {
+                if (CancelFlag::isCancelled(cancelCopy)) {
+                    return;
+                }
+                updateState(state); // Update the internal state with the new state.
+                render(display_);   // Render the UI with the updated state.
+
+                if (state.state == FirmwareDownloadState::AlreadyUpToDate ||
+                    state.state == FirmwareDownloadState::Failure) {
+                    vTaskDelay(pdMS_TO_TICKS(3000));
+                    resumeBLE();
+                    back();
+                } else if (state.state == FirmwareDownloadState::Installed) {
+                    vTaskDelay(pdMS_TO_TICKS(3000));
+                    PowerManager::getInstance().reboot();
+                }
+            });
         });
-    });
+    };
+    // Note: 8192 is the size that all the esp-idf examples use for esp_http_client.
+    DispatchQueue::dispatchOneOff(updateFwIfNeeded, 8192, 0, 1, "FWUpdate");
 }

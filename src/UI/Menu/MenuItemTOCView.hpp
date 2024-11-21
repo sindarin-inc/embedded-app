@@ -1,13 +1,13 @@
 #pragma once
 
-#include "NewMenuItemTOC.hpp"
-#include "NewMenuItemView.hpp"
+#include "MenuItemTOC.hpp"
+#include "MenuItemView.hpp"
 #include "UI/Components/SingleLineTextView.hpp"
 
-class NewMenuItemTOCView : public NewMenuItemView {
+class MenuItemTOCView : public MenuItemView {
 public:
-    NewMenuItemTOCView(DisplaySystem &display, const std::shared_ptr<NewMenuItemTOC> &menuItem)
-        : NewMenuItemView(display), titleView_(display), placeView_(display) {
+    MenuItemTOCView(DisplaySystem &display, const std::shared_ptr<MenuItemTOC> &menuItem)
+        : MenuItemView(display), titleView_(display), placeView_(display) {
         titleView_.setText(menuItem->title());
         placeView_.setText(menuItem->place());
     }

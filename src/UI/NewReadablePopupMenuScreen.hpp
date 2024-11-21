@@ -32,7 +32,7 @@ public:
         menuView_.itemsPerPage = 8;
         menuView_.indicatorWidth = 5;
         menuView_.indicatorPadding = 5;
-        menuView_.setIndicatorType(NewMenuView::IndicatorType::Dot);
+        menuView_.setIndicatorType(MenuView::IndicatorType::Dot);
     };
     ~NewReadablePopupMenuScreen() override = default;
 

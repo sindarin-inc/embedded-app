@@ -364,6 +364,7 @@ TEST_CASE("Test some views independently") {
         PosixFileSystem fileSystem("./test/CatchTests/TestData");
         Telemetry telemetry = Telemetry(fileSystem, prefs);
         USBSerial usbSerial;
+        SolDrm solDrm(prefs);
 
         SECTION("Test things that need power") {
             LightingController lightingController(prefs);
@@ -395,7 +396,7 @@ TEST_CASE("Test some views independently") {
                 PosixFileSystem fs("./test/CatchTests/TestData/ReleaseNotesScreen/");
                 Telemetry telemetry(fs, prefs);
                 Battery battery(fs, prefs, telemetry);
-                LocalStore localStore(fs, prefs, battery, telemetry);
+                LocalStore localStore(fs, prefs, battery, telemetry, solDrm);
                 Firmware firmware;
                 auto upgradeAvailable = localStore.getPendingFirmwareUpdate(firmware);
                 REQUIRE(upgradeAvailable);
@@ -408,7 +409,7 @@ TEST_CASE("Test some views independently") {
             SECTION("Test ContentSyncScreen") {
                 Telemetry telemetry(fileSystem, prefs);
                 Battery battery(fileSystem, prefs, telemetry);
-                LocalStore localStore(fileSystem, prefs, battery, telemetry);
+                LocalStore localStore(fileSystem, prefs, battery, telemetry, solDrm);
                 auto screen = std::make_shared<ContentSyncScreen>(*display, localStore, prefs,
                                                                   telemetry, power);
                 screen->render(*display);
@@ -487,7 +488,7 @@ TEST_CASE("Test some views independently") {
             Renderer renderer(*display, display->defaultTextRect(),
                               static_cast<Font *>(&fontFace0));
             auto [path, size] = LocalStore::readableFilePathForReading(fileSystem, readable);
-            auto stream = fileSystem.newEPubRendererStream(path.c_str(), readable);
+            auto stream = fileSystem.newEPubRendererStream(path.c_str(), readable, solDrm);
             renderer.setStream(stream);
             auto screen = std::make_shared<ReadableTableOfContentsScreen>(prefs, readable, renderer,
                                                                           *display, telemetry);
@@ -501,7 +502,7 @@ TEST_CASE("Test some views independently") {
 
         SECTION("Test Last Question in CES mode") {
             Battery battery(fileSystem, prefs, telemetry);
-            LocalStore localStore(fileSystem, prefs, battery, telemetry);
+            LocalStore localStore(fileSystem, prefs, battery, telemetry, solDrm);
             prefs.cesMode.set(true);
 
             auto readable = std::make_shared<Readable>();
@@ -523,14 +524,14 @@ TEST_CASE("Test some views independently") {
 
         SECTION("Test EPUB image rendering with alternate bounding box") {
             Battery battery(fileSystem, prefs, telemetry);
-            LocalStore localStore(fileSystem, prefs, battery, telemetry);
+            LocalStore localStore(fileSystem, prefs, battery, telemetry, solDrm);
             auto readable = std::make_shared<Readable>();
             auto readablesJsonDoc = LoadJsonDoc(fileSystem, "/readables-lq-epub.json");
             readable->fromJson((*readablesJsonDoc)["readables"][0]);
 
             Renderer renderer(*display, {10, 20, 236, 236}, static_cast<Font *>(&fontFace0));
             auto [path, size] = LocalStore::readableFilePathForReading(fileSystem, readable);
-            auto stream = fileSystem.newEPubRendererStream(path.c_str(), readable);
+            auto stream = fileSystem.newEPubRendererStream(path.c_str(), readable, solDrm);
             renderer.setStream(stream);
 
             auto readableScreen = std::make_shared<ReadableScreen>(
@@ -552,7 +553,7 @@ TEST_CASE("Test some views independently") {
             Battery battery(fs, prefs, telemetry);
             LightingController lightingController(prefs);
             PowerManager power(fs, prefs, lightingController, *display, telemetry, usbSerial);
-            LocalStore localStore(fs, prefs, battery, telemetry);
+            LocalStore localStore(fs, prefs, battery, telemetry, solDrm);
 
             ContentSyncScreen screen(*display, localStore, prefs, telemetry, power);
             screen.render(*display);

@@ -31,6 +31,7 @@
 #include "Storage/CrashReportWriter.hpp"
 #include "Storage/LocalStore.hpp"
 #include "Storage/PreferencesStore.hpp"
+#include "Storage/SolDrm.hpp"
 #include "UI/ChargingScreen.hpp"
 #include "UI/OverTempScreen.hpp"
 #include "UI/PowerDepletedScreen.hpp"
@@ -44,7 +45,7 @@
 
 #if CONFIG_DISPLAY_EINKET013TT1
 #include "Displays/DisplayEinkET013TT1.hpp"
-DisplayEinkET013TT1 myDisplay(DISPLAY_CS_LEFT, DISPLAY_CS_RIGHT, DISPLAY_RST);
+DisplayEinkET013TT1 myDisplay;
 #elif DISPLAY_SIM_8BIT
 // Declared in native.cpp
 #include "Displays/DisplaySim1Bit.hpp"
@@ -112,8 +113,9 @@ TTRemoteInput ttRemoteInput(prefs, telemetry);
 USBSerial usbSerial;
 
 PowerManager powerManager(fileSystem, prefs, lightingController, myDisplay, telemetry, usbSerial);
-LocalStore localStore(fileSystem, prefs, powerManager.battery, telemetry);
-RootUI rootUi(myDisplay, prefs, powerManager, telemetry);
+SolDrm solDrm(prefs);
+LocalStore localStore(fileSystem, prefs, powerManager.battery, telemetry, solDrm);
+RootUI rootUi(myDisplay, prefs, powerManager, telemetry, solDrm);
 SolClock solClock(prefs);
 WiFi wiFi(telemetry, prefs);
 
@@ -206,7 +208,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     HEAP_PROFILE_END(usbSerial);
 
     directCommand.begin();
-    if (usbSerial.isLoggingEnabled()) {
+    if (usbSerial.isUsbLoggingEnabled()) {
         // Wait a bit so we can get boot logs (mostly for the testers)
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
@@ -248,7 +250,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         DigitalWrite(CONFIG_GREEN_LED, LED_ON);
         vTaskDelay(200 / portTICK_PERIOD_MS);
         DigitalWrite(CONFIG_GREEN_LED, LED_OFF);
-#ifdef CONFIG_BLUE_LED
+#if CONFIG_BLUE_LED != -1
         DigitalWrite(CONFIG_BLUE_LED, LED_ON);
         vTaskDelay(200 / portTICK_PERIOD_MS);
         DigitalWrite(CONFIG_BLUE_LED, LED_OFF);
@@ -380,10 +382,10 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
             vTaskDelete(nullptr);
             },
             "BackgroundPowerLoop", 4096, nullptr, 1, nullptr, 1);
-        BackgroundSyncAndSleep(powerManager, prefs, localStore, telemetry);
+        BackgroundSyncAndSleep(powerManager, prefs, localStore, telemetry, fileSystem);
 
         // Should never get here, the system should be asleep
-        return;
+        assert(false && "BackgroundSyncAndSleep should never return");
     }
 
     // Below code should only execute on an Active boot
@@ -404,11 +406,9 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     }
 #endif
 
-#if CONFIG_DISPLAY_EINKET013TT1
-#ifdef DISPLAY_POWER
+#if CONFIG_DISPLAY_POWER != -1
     // Turn on power to the screen
-    DigitalWrite(DISPLAY_POWER, HIGH);
-#endif
+    DigitalWrite(CONFIG_DISPLAY_POWER, HIGH);
 #endif
 
     HEAP_PROFILE_START(displaySetup);
@@ -444,14 +444,14 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
             [](void *) {
             while (powerManager.state() != PowerState::ShuttingDown) {
                 PreferencesStore::syncReason = SyncReason::Periodic;
-                BackgroundSync(powerManager, prefs, localStore, telemetry);
+                BackgroundSync(powerManager, prefs, localStore, telemetry, fileSystem, true, false);
                 vTaskDelay(60000 / portTICK_PERIOD_MS);
             }
             log_d("Sync loop task exited");
             SHOW_WATERMARK();
             vTaskDelete(nullptr);
             },
-            "BackgroundSync", 4096, nullptr, 1, nullptr, 1);
+            "BackgroundSync", 8192, nullptr, 1, nullptr, 0);
     }
 
 #if CONFIG_USE_TURN_TOUCH_REMOTE || CONFIG_USE_BLE_SERVER_REMOTE

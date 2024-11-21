@@ -108,19 +108,21 @@ void CrashReportScreen::begin() {
         return;
     }
 
-    crashReportUploader_.uploadCrash([this](const CrashUploadState &state) {
-        DispatchGetUiQueue()->dispatch([this, state]() {
-            log_d("Updating from state %d to %d", state_.state, state.state);
-            updateState(state);
-            this->render(this->display_);
+    DispatchGetCore0BackgroundQueue()->dispatch([this]() {
+        crashReportUploader_.uploadCrash([this](const CrashUploadState &state) {
+            DispatchGetUiQueue()->dispatch([this, state]() {
+                log_d("Updating from state %d to %d", state_.state, state.state);
+                updateState(state);
+                this->render(this->display_);
 
-            if (state.state == CrashUploadState::Failure ||
-                state.state == CrashUploadState::NoCrashReport ||
-                state.state == CrashUploadState::Done) {
-                WiFi::getInstance().disconnectWiFi();
-                vTaskDelay(3000 / portTICK_PERIOD_MS);
-                back();
-            }
+                if (state.state == CrashUploadState::Failure ||
+                    state.state == CrashUploadState::NoCrashReport ||
+                    state.state == CrashUploadState::Done) {
+                    WiFi::getInstance().disconnectWiFi();
+                    vTaskDelay(3000 / portTICK_PERIOD_MS);
+                    back();
+                }
+            });
         });
     });
 }

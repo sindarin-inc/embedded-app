@@ -4,14 +4,14 @@
 #include <string>
 #include <utility>
 
-#include "NewMenuItem.hpp"
+#include "MenuItem.hpp"
 
-class NewMenuItemCheckable : public NewMenuItem {
+class MenuItemCheckable : public MenuItem {
 public:
-    ~NewMenuItemCheckable() override = default;
-    NewMenuItemCheckable(std::string title, std::function<void()> callback,
-                         std::function<bool()> isCheckedCallback)
-        : NewMenuItem(std::move(callback)), title_(std::move(title)),
+    ~MenuItemCheckable() override = default;
+    MenuItemCheckable(std::string title, std::function<void()> callback,
+                      std::function<bool()> isCheckedCallback)
+        : MenuItem(std::move(callback)), title_(std::move(title)),
           isCheckedCallback_(std::move(isCheckedCallback)) {}
 
     [[nodiscard]] auto id() const -> std::string override { return title_; }

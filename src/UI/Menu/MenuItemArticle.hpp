@@ -4,16 +4,16 @@
 #include <string>
 #include <utility>
 
+#include "MenuItem.hpp"
 #include "Models/Readable.hpp"
-#include "NewMenuItem.hpp"
 
-class NewMenuItemArticle : public NewMenuItem {
+class MenuItemArticle : public MenuItem {
 public:
-    ~NewMenuItemArticle() override = default;
+    ~MenuItemArticle() override = default;
     // We take in the source now even though we don't use it right now. Planning ahead.
-    NewMenuItemArticle(std::shared_ptr<Readable> readable, std::function<void()> callback,
-                       bool archived = false)
-        : NewMenuItem(std::move(callback)), readable_(std::move(readable)), archived_(archived) {}
+    MenuItemArticle(std::shared_ptr<Readable> readable, std::function<void()> callback,
+                    bool archived = false)
+        : MenuItem(std::move(callback)), readable_(std::move(readable)), archived_(archived) {}
 
     [[nodiscard]] auto id() const -> std::string override {
         return readable_->shortenedUuid.c_str();

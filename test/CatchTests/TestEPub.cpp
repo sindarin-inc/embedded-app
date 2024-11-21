@@ -37,8 +37,9 @@ TEST_CASE("Test some individual EPub formatting edge cases", "[epub-format]") {
         readable->readableType = "book";
 
         auto file = fs.open("/Fixtures/epub/formatting.epub");
-        auto epubFile = std::make_shared<EPubFile>(file, readable);
         auto prefs = PreferencesStore();
+        SolDrm solDrm(prefs);
+        auto epubFile = std::make_shared<EPubFile>(file, readable, solDrm);
 
         Renderer renderer(*display, display->defaultTextRect(), static_cast<Font *>(&fontFace0));
         renderer.setStream(epubFile);
@@ -53,8 +54,9 @@ TEST_CASE("Test some individual EPub formatting edge cases", "[epub-format]") {
         readable->readableType = "book";
 
         auto file = fs.open("/Fixtures/epub/formatting.epub");
-        auto epubFile = std::make_shared<EPubFile>(file, readable);
         auto prefs = PreferencesStore();
+        SolDrm solDrm(prefs);
+        auto epubFile = std::make_shared<EPubFile>(file, readable, solDrm);
 
         Renderer renderer(*display, display->defaultTextRect(), static_cast<Font *>(&fontFace0));
         renderer.setStream(epubFile);
@@ -69,8 +71,9 @@ TEST_CASE("Test some individual EPub formatting edge cases", "[epub-format]") {
         readable->readableType = "book";
 
         auto file = fs.open("/Fixtures/epub/glyphs.epub");
-        auto epubFile = std::make_shared<EPubFile>(file, readable);
         auto prefs = PreferencesStore();
+        SolDrm solDrm(prefs);
+        auto epubFile = std::make_shared<EPubFile>(file, readable, solDrm);
 
         Renderer renderer(*display, display->defaultTextRect(), static_cast<Font *>(&fontFace0));
         renderer.setStream(epubFile);

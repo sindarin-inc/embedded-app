@@ -1,15 +1,15 @@
-#include "NewMenuScreen.hpp"
+#include "MenuScreen.hpp"
 
-NewMenuScreen::NewMenuScreen(DisplaySystem &display, std::string title)
+MenuScreen::MenuScreen(DisplaySystem &display, std::string title)
     : EinkView(display), menuView_(display), titleView_(display), title_(std::move(title)) {
     titleView_.setText(title_);
 }
 
-void NewMenuScreen::addMenuItem(const std::shared_ptr<NewMenuItem> &menuItem) {
+void MenuScreen::addMenuItem(const std::shared_ptr<MenuItem> &menuItem) {
     menuView_.addMenuItem(menuItem);
 }
 
-void NewMenuScreen::processCommand(RemoteCommand command) {
+void MenuScreen::processCommand(RemoteCommand command) {
     switch (command) {
     case RemoteCommand::UP:
         moveSelection(-1);
@@ -33,7 +33,7 @@ void NewMenuScreen::processCommand(RemoteCommand command) {
     setNeedsLayout();
 }
 
-auto NewMenuScreen::layout(LayoutContext &context, Size size) -> Size {
+auto MenuScreen::layout(LayoutContext &context, Size size) -> Size {
     int y = 0;
 
     // Layout title
@@ -47,12 +47,12 @@ auto NewMenuScreen::layout(LayoutContext &context, Size size) -> Size {
     return size;
 }
 
-void NewMenuScreen::drawInRect(Rect rect) {
+void MenuScreen::drawInRect(Rect rect) {
     titleView_.draw();
     menuView_.draw();
 }
 
-void NewMenuScreen::moveSelection(int delta) {
+void MenuScreen::moveSelection(int delta) {
     auto newPage = menuView_.moveSelection(delta);
     if (newPage) {
         firstLoad_ = true;
@@ -61,7 +61,7 @@ void NewMenuScreen::moveSelection(int delta) {
 }
 
 // Implement Screen method
-void NewMenuScreen::render(DisplaySystem &display) {
+void MenuScreen::render(DisplaySystem &display) {
     setFrame(defaultFrameRect());
     draw();
 

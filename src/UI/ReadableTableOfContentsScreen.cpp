@@ -77,7 +77,7 @@ void ReadableTableOfContentsScreen::loadMenuItems() {
         if (!chapter.inSubsectionHref.empty()) {
             title = StringFormat("  %s", chapter.title.c_str());
         }
-        addMenuItem(std::make_shared<NewMenuItemTOC>(
+        addMenuItem(std::make_shared<MenuItemTOC>(
             title, Commify(SOL_PAGE_NUMBER(chapter.epubOffset)), [this]() { back(); }));
     }
 }

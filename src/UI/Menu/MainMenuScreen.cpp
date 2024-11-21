@@ -1,6 +1,6 @@
-#include "NewMainMenuScreen.hpp"
+#include "MainMenuScreen.hpp"
 
-NewMainMenuScreen::NewMainMenuScreen(DisplaySystem &display, Battery &battery)
+MainMenuScreen::MainMenuScreen(DisplaySystem &display, Battery &battery)
     : CarouselMenuScreen(display), clockBatteryView_(battery, display) {
     menuView_.padding = 5;
     menuView_.itemsPerPage = 4;
@@ -8,21 +8,10 @@ NewMainMenuScreen::NewMainMenuScreen(DisplaySystem &display, Battery &battery)
     menuView_.indicatorPadding = 5;
     menuView_.pagingIndicatorWidth = 5;
     menuView_.pagingIndicatorPadding = 5;
-    menuView_.setIndicatorType(NewMenuView::IndicatorType::Line);
+    menuView_.setIndicatorType(MenuView::IndicatorType::Line);
 }
 
-auto NewMainMenuScreen::layout(LayoutContext &context, Size size) -> Size {
-    if (getCurrentTabTitle() == "Welcome") {
-        menuView_.itemsPerPage = 6;
-    } else if (getCurrentTabTitle() == "Settings") {
-        // This is in case the debug menu is enabled so it'll all fit on one screen.
-        menuView_.itemsPerPage = 5;
-    } else {
-        menuView_.itemsPerPage = 4;
-    }
-    // I know generally we aren't supposed to do this, but I don't know where else to do this.
-    menuView_.updatePageState();
-
+auto MainMenuScreen::layout(LayoutContext &context, Size size) -> Size {
     context.setViewFrame(titleView_, {{0, 0}, {size.width, 0}},
                          LayoutOptionsSizeToFit | LayoutOptionsAlignCenter);
 
@@ -36,13 +25,13 @@ auto NewMainMenuScreen::layout(LayoutContext &context, Size size) -> Size {
     return size;
 }
 
-void NewMainMenuScreen::drawInRect(Rect rect) {
+void MainMenuScreen::drawInRect(Rect rect) {
     titleView_.draw();
     menuView_.draw();
     clockBatteryView_.draw();
 }
 
-void NewMainMenuScreen::render(DisplaySystem &display) {
+void MainMenuScreen::render(DisplaySystem &display) {
     setFrame(defaultFrameRect());
 
     if (firstLoad_) {

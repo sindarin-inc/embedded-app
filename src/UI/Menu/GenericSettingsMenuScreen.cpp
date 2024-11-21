@@ -9,7 +9,7 @@ GenericSettingsMenuScreen::GenericSettingsMenuScreen(DisplaySystem &display,
     menuView_.itemsPerPage = 12;
 }
 
-void GenericSettingsMenuScreen::addMenuItem(const std::shared_ptr<NewMenuItem> &menuItem) {
+void GenericSettingsMenuScreen::addMenuItem(const std::shared_ptr<MenuItem> &menuItem) {
     menuView_.addMenuItem(menuItem);
 }
 

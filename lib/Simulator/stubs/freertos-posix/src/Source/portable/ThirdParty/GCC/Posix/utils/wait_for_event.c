@@ -1,6 +1,6 @@
 /*
  * FreeRTOS Kernel <DEVELOPMENT BRANCH>
- * Copyright (C) 2021 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
+ * Copyright (C) 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *
  * SPDX-License-Identifier: MIT
  *
@@ -43,9 +43,13 @@ struct event * event_create( void )
 {
     struct event * ev = malloc( sizeof( struct event ) );
 
-    ev->event_triggered = false;
-    pthread_mutex_init( &ev->mutex, NULL );
-    pthread_cond_init( &ev->cond, NULL );
+    if( ev != NULL )
+    {
+        ev->event_triggered = false;
+        pthread_mutex_init( &ev->mutex, NULL );
+        pthread_cond_init( &ev->cond, NULL );
+    }
+
     return ev;
 }
 
@@ -77,10 +81,10 @@ bool event_wait_timed( struct event * ev,
 
     clock_gettime( CLOCK_REALTIME, &ts );
     ts.tv_sec += ms / 1000;
-    ts.tv_nsec += ((ms % 1000) * 1000000);
+    ts.tv_nsec += ( ( ms % 1000 ) * 1000000 );
     pthread_mutex_lock( &ev->mutex );
 
-    while( (ev->event_triggered == false) && (ret == 0) )
+    while( ( ev->event_triggered == false ) && ( ret == 0 ) )
     {
         ret = pthread_cond_timedwait( &ev->cond, &ev->mutex, &ts );
 

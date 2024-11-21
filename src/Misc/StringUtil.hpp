@@ -60,8 +60,10 @@ auto SafeSnprintf(char *str, size_t size, const char *format, ...) -> bool;
 
 auto HasSuffix(std::string const &str, std::string const &suffix) -> bool;
 
-auto HasPrefix(const char *str, const char *pre) -> bool;
+auto HasPrefix(const char *str, const char *pre, size_t maxToCompare = 0) -> bool;
 
 auto Commify(uint32_t n) -> std::string;
 
 auto CaseInsensitiveCompare(const std::string &str1, const std::string &str2) -> bool;
+
+auto ReplaceAll(std::string str, const std::string &from, const std::string &to) -> std::string;

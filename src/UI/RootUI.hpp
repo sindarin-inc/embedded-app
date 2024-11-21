@@ -13,6 +13,7 @@
 #include "Storage/FileSystem.hpp"
 #include "Storage/LocalStore.hpp"
 #include "Storage/PreferencesStore.hpp"
+#include "Storage/SolDrm.hpp"
 #include "UI/Menu/GenericSettingsMenuScreen.hpp"
 #include "UI/Screen.hpp"
 #include "UI/ScreenStack.hpp"
@@ -20,8 +21,8 @@
 class RootUI : public Screen {
 public:
     RootUI(DisplaySystem &display, PreferencesStore &prefs, PowerManager &power,
-           Telemetry &telemetry) noexcept
-        : display_(display), prefs_(prefs), power_(power), telemetry_(telemetry) {}
+           Telemetry &telemetry, SolDrm &solDrm) noexcept
+        : display_(display), prefs_(prefs), power_(power), telemetry_(telemetry), solDrm_(solDrm) {}
     RootUI(RootUI const &) = delete;
 
     void setup(LocalStore &localStore, FileSystem &fileSystem,
@@ -94,4 +95,5 @@ protected:
     PreferencesStore &prefs_;
     PowerManager &power_;
     Telemetry &telemetry_;
+    SolDrm &solDrm_;
 };

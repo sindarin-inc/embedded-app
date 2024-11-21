@@ -95,7 +95,7 @@ auto SindarinAPI::checkSync(const std::string &url, CheckSyncRequest &req, Check
         return ERR_CLIENT_WRITE;
     }
 
-    int contentLength = client->fetchHeaders(0, cancel);
+    int contentLength = client->fetchHeaders(cancel);
     if (contentLength <= 0) {
         std::string message = "Failed to fetch headers";
         log_e("%s", message.c_str());
@@ -207,12 +207,12 @@ auto SindarinAPI::downloadReadable(const std::shared_ptr<Readable> &readable,
                                    FileSystem &fileSystem, Telemetry &telemetry,
                                    const std::string &path,
                                    const std::shared_ptr<CancelFlag> &cancel, bool useBle,
+                                   const std::string &publicKey,
                                    const std::function<void(int percentage)> &progressCallback)
     -> int {
     // auto remoteUrl = readable.remoteUrl();
     auto file = readable->file(path);
     auto remoteUrl = file.fileProxied;
-    auto fileSize = file.size;
 
     // Create the directory if necessary
     // Grab the dir from the path
@@ -226,9 +226,18 @@ auto SindarinAPI::downloadReadable(const std::shared_ptr<Readable> &readable,
     }
 
     bool gzip = HasSuffix(path, ".gz");
+
+    std::string requestBody;
+    if (!publicKey.empty()) {
+        auto doc = std::make_unique<SpiRamJsonDocument>(512);
+        auto body = doc->to<JsonObject>();
+        body["public_key"] = publicKey;
+        ArduinoJson::serializeJson(*doc, requestBody);
+        log_d("Request body: %s", requestBody.c_str());
+    }
     auto httpCode = DownloadFileToPath(
-        remoteUrl.c_str(), fileSystem, telemetry, path.c_str(), fileSize, cancel, useBle,
-        [progressCallback](float percentage) { progressCallback(percentage); }, gzip);
+        remoteUrl.c_str(), fileSystem, telemetry, path.c_str(), 0, cancel, useBle,
+        [progressCallback](float percentage) { progressCallback(percentage); }, gzip, requestBody);
 
     return httpCode;
 }
@@ -318,7 +327,7 @@ auto SindarinAPI::uploadTelemetryFile(SFile &telemetryFile, const std::string &l
     }
 
     // Send request and fetch response
-    client->fetchHeaders(0, cancel);
+    client->fetchHeaders(cancel);
     auto httpCode = client->getStatusCode();
     log_d("Telemetry upload http code: %d", httpCode);
 

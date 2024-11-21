@@ -38,7 +38,8 @@ TEST_CASE("Test Telemetry Logging", "[.][telemetry]") {
         std::binary_semaphore semaphore(0);
 
         // FreeRTOS stuff needs to run in a task
-        DispatchQueue::dispatchOneOff([&telemetry, &semaphore]() {
+        DispatchQueue::dispatchOneOff(
+            [&telemetry, &semaphore]() {
             // Log some test metrics
             telemetry.logMetric(METRIC_BATTERY_VOLTAGE, 3.7f);
             telemetry.logMetric(METRIC_EVENT, "test_event");
@@ -49,7 +50,8 @@ TEST_CASE("Test Telemetry Logging", "[.][telemetry]") {
 
             Telemetry::dispatchQueue()->waitEmpty(pdMS_TO_TICKS(100));
             semaphore.release();
-        });
+            },
+            2048, 1, 1, "TestTelem");
 
         semaphore.try_acquire_for(std::chrono::seconds(2));
 

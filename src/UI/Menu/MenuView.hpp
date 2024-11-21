@@ -2,19 +2,19 @@
 
 #include <vector>
 
-#include "NewMenuItem.hpp"
-#include "NewMenuItemView.hpp"
-#include "NewMenuPagingIndicatorView.hpp"
+#include "MenuItem.hpp"
+#include "MenuItemView.hpp"
+#include "MenuPagingIndicatorView.hpp"
 #include "UI/Components/BoxView.hpp"
 #include "UI/Components/EinkView.hpp"
 
-class NewMenuView : public EinkView {
+class MenuView : public EinkView {
 public:
     enum class IndicatorType { Dot, Line, None };
 
-    NewMenuView(DisplaySystem &display);
+    MenuView(DisplaySystem &display);
 
-    void addMenuItem(const std::shared_ptr<NewMenuItem> &menuItem);
+    void addMenuItem(const std::shared_ptr<MenuItem> &menuItem);
     void resetMenuItems() {
         menuItems_.clear();
         menuItemViews_.clear();
@@ -29,6 +29,8 @@ public:
     auto getSelectedMenuItemID() const -> std::string;
 
     auto getIDfromRowIndex(size_t index) const -> std::string;
+
+    auto isIDInMenu(const std::string &id) -> bool;
 
     auto layout(LayoutContext &context, Size size) -> Size override;
     void drawInRect(Rect rect) override;
@@ -56,16 +58,6 @@ public:
         }
     }
 
-    void updatePageState() {
-        int totalPages = (menuItems_.size() + itemsPerPage - 1) / itemsPerPage;
-        if (totalPages > 1) {
-            pagingIndicatorView_.setTotalPages(totalPages);
-            pagingIndicatorView_.setHidden(false);
-        } else {
-            pagingIndicatorView_.setHidden(true);
-        }
-    }
-
     uint16_t padding = 5;
     uint8_t itemsPerPage = 8;
     uint16_t indicatorWidth = 0;         // Default in constructor
@@ -74,13 +66,13 @@ public:
     uint16_t pagingIndicatorPadding = 0; // Default in constructor
 
 private:
-    std::vector<std::shared_ptr<NewMenuItem>> menuItems_;
+    std::vector<std::shared_ptr<MenuItem>> menuItems_;
     size_t selectedIndex_ = 0;
     size_t currentPage_ = 0;
     IndicatorType indicatorType_ = IndicatorType::Dot;
 
-    std::vector<std::shared_ptr<NewMenuItemView>> menuItemViews_;
-    NewMenuPagingIndicatorView pagingIndicatorView_;
+    std::vector<std::shared_ptr<MenuItemView>> menuItemViews_;
+    MenuPagingIndicatorView pagingIndicatorView_;
     BoxView indicatorView_;
 
     void createMenuItemViews();
