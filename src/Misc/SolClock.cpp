@@ -8,11 +8,15 @@
 #include <cinttypes>
 #include <random>
 
-#include "../Communications/SindarinAPI.hpp"
-#include "../Communications/WiFi.hpp"
-#include "../Misc/Platform.hpp"
-#include "../Misc/StringUtil.hpp"
-#include "../Misc/Timezones.hpp"
+#include "Communications/SindarinAPI.hpp"
+#include "Communications/WiFi.hpp"
+#include "Misc/Platform.hpp"
+#include "Misc/StringUtil.hpp"
+#include "Misc/Timezones.hpp"
+
+#if CONFIG_USE_BLE_SERVER_PROXY
+#include "Communications/BLEManager.hpp"
+#endif
 
 extern SolClock solClock;
 

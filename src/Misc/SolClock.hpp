@@ -8,9 +8,6 @@
 
 #include "Misc/CancelFlag.hpp"
 #include "Storage/PreferencesStore.hpp"
-#if CONFIG_USE_BLE_SERVER_PROXY
-#include "Communications/BLEManager.hpp"
-#endif
 
 class SolClock {
 public:
