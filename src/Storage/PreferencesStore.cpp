@@ -6,6 +6,10 @@
 
 #include "Misc/Defer.hpp"
 
+#if PROFILE_NVS_WRITES
+RTC_SLOW_ATTR uint32_t nvsBlocksWritten;
+#endif
+
 RTC_SLOW_ATTR SyncReason PreferencesStore::syncReason;
 RTC_SLOW_ATTR uint64_t PreferencesStore::nextSyncTime;
 RTC_SLOW_ATTR int64_t PreferencesStore::ledChargeTime;
