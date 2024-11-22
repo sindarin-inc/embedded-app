@@ -226,13 +226,22 @@ void DisableCore0Wdt() {
 }
 
 void InitializePlatform() {
-#if USE_SYS_ON
     auto hardwareRevision = GetHardwareRevision();
+#if CONFIG_USE_SYS_ON
     if (hardwareRevision == 1) {
         sysOnPin = 5;
     } else {
         sysOnPin = 46;
     }
+    // The MCU will keep itself on until the digital magnetometer detects the temples are closed, or
+    // there are 5 mins of inactivity
+    ForcePowerOn();
+#endif
+
+#if CONFIG_DISPLAY_POWER != -1
+    PinMode(CONFIG_DISPLAY_POWER, OUTPUT);
+#endif
+#if CONFIG_LEDC_BACKLIGHT
     if (hardwareRevision < 3) {
         minLightingDutyCycle = 5;
         maxLightingDutyCycle = 60;
@@ -241,15 +250,6 @@ void InitializePlatform() {
         minLightingDutyCycle = 2;
         maxLightingDutyCycle = 210;
     }
-    // The MCU will keep itself on until the digital magnetometer detects the temples are closed, or
-    // there are 5 mins of inactivity
-    ForcePowerOn();
-#endif
-
-#ifdef CONFIG_DISPLAY_POWER
-    PinMode(CONFIG_DISPLAY_POWER, OUTPUT);
-#endif
-#if CONFIG_LEDC_BACKLIGHT
     // This allows LEDC to work in light sleep on ESP32-S3
     esp_err_t err = esp_sleep_pd_config(ESP_PD_DOMAIN_RC_FAST, ESP_PD_OPTION_ON);
 

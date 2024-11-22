@@ -16,6 +16,8 @@ extern "C" {
 #include <esp_private/esp_clk.h>
 }
 
+#define USE_TIMERS 1
+
 static const DRAM_ATTR uint8_t CLEAR_PACKET[48] = {
     0x00, 0x00, 0x00, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -751,8 +753,10 @@ void EinkET013TT1::shutdown() {
 }
 
 inline void EinkET013TT1::startTimer(uint32_t ns) {
+#if USE_TIMERS
     RSR(CCOUNT, cycleCountStart_);
     timerDurationCycles_ = (esp_clk_cpu_freq() / 1000000000.0) * ns;
+#endif
 }
 
 inline auto EinkET013TT1::timerActivated() const -> bool { return timerDurationCycles_ != 0; }
@@ -767,6 +771,7 @@ inline auto EinkET013TT1::timerRunning() const -> bool {
 }
 
 inline void EinkET013TT1::waitForTimer() {
+#if USE_TIMERS
     // If we ever wait for the timer, and the timer has already completed then we can conclude
     // that that we spent too much time doing CPU things and the timer ran for longer than we
     // wanted.
@@ -781,6 +786,7 @@ inline void EinkET013TT1::waitForTimer() {
     while (timerRunning()) {
     }
     timerDurationCycles_ = 0;
+#endif
 }
 
 inline void EinkET013TT1::waitForNotBusy() {
