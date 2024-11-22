@@ -38,24 +38,16 @@ void FirmwareDownloader::downloadFirmware(
     auto httpCode = 0;
 
     if (!prefs_.wifiDisabled.get().value_or(false)) {
-        httpCode = SindarinAPI::getInstance()->checkFirmware(&response, false, false, cancel_);
-        if (httpCode != 200) {
-            // Try as HTTP in case something goes wrong with certs
-            httpCode = SindarinAPI::getInstance()->checkFirmware(&response, true, false, cancel_);
-            if (httpCode != 200) {
-                log_e("Failed to get firmware over WiFi (HTTP %d)", httpCode);
-
-// Only fail if BLE is disabled or not available
-#if !CONFIG_USE_BLE_SERVER_PROXY
-                setState(FirmwareDownloadState{.state = FirmwareDownloadState::State::Failure,
-                                               .message = "Failed to check for update"});
-                return;
-#endif
-            } else {
-                wifiConnected = true;
-            }
-        } else {
+        httpCode = SindarinAPI::getInstance()->checkFirmware(&response, false, cancel_);
+        if (httpCode == 200) {
             wifiConnected = true;
+        } else {
+            log_e("Failed to get firmware over WiFi (HTTP %d)", httpCode);
+#if !CONFIG_USE_BLE_SERVER_PROXY
+            setState(FirmwareDownloadState{.state = FirmwareDownloadState::State::Failure,
+                                           .message = "Failed to check for update"});
+            return;
+#endif
         }
     }
 
@@ -72,15 +64,11 @@ void FirmwareDownloader::downloadFirmware(
         // Disconnect WiFi if we're using BLE
         WiFi::getInstance().disconnectWiFi(3000);
         log_d("Checking for firmware update via BLE");
-        httpCode = SindarinAPI::getInstance()->checkFirmware(&response, false, true, cancel_);
+        httpCode = SindarinAPI::getInstance()->checkFirmware(&response, true, cancel_);
         if (httpCode != 200) {
-            // Try as HTTP in case something goes wrong with certs
-            httpCode = SindarinAPI::getInstance()->checkFirmware(&response, true, true, cancel_);
-            if (httpCode != 200) {
-                setState(FirmwareDownloadState{.state = FirmwareDownloadState::State::Failure,
-                                               .message = "Failed to check for update via BLE"});
-                return;
-            }
+            setState(FirmwareDownloadState{.state = FirmwareDownloadState::State::Failure,
+                                           .message = "Failed to check for update via BLE"});
+            return;
         }
     }
 #endif

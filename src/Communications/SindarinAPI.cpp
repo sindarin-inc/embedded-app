@@ -147,8 +147,21 @@ auto SindarinAPI::checkSync(const std::string &url, CheckSyncRequest &req, Check
     return httpCode;
 }
 
-auto SindarinAPI::checkFirmware(FirmwareResponse *resp, bool useHttp, bool useBle,
+auto SindarinAPI::checkFirmware(FirmwareResponse *resp, bool useBle,
                                 const std::shared_ptr<CancelFlag> &cancel) -> int {
+    // Try HTTPS first
+    int httpCode = tryCheckFirmware(resp, false, useBle, cancel);
+
+    // If HTTPS fails, try HTTP
+    if (httpCode != 200) {
+        httpCode = tryCheckFirmware(resp, true, useBle, cancel);
+    }
+
+    return httpCode;
+}
+
+auto SindarinAPI::tryCheckFirmware(FirmwareResponse *resp, bool useHttp, bool useBle,
+                                   const std::shared_ptr<CancelFlag> &cancel) -> int {
     auto endpoint = StringFormat("%s/firmware/", baseUrl_.c_str());
     if (useHttp) {
         // Replace the https prefix with http

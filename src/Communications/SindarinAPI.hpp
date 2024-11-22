@@ -57,8 +57,8 @@ public:
     auto checkSync(const std::string &url, CheckSyncRequest &req, CheckSyncResponse *resp,
                    Telemetry &telemetry, bool useBle, const std::shared_ptr<CancelFlag> &cancel)
         -> int;
-    auto checkFirmware(FirmwareResponse *resp, bool useHttp = false, bool useBle = false,
-                       const std::shared_ptr<CancelFlag> &cancel = nullptr) -> int;
+    auto checkFirmware(FirmwareResponse *resp, bool useBle,
+                       const std::shared_ptr<CancelFlag> &cancel) -> int;
 
     auto downloadReadable(const std::shared_ptr<Readable> &readable, FileSystem &fileSystem,
                           Telemetry &telemetry, const std::string &path,
@@ -78,6 +78,10 @@ public:
 
     auto getServerTime(time_t *time, bool useBle = false,
                        const std::shared_ptr<CancelFlag> &cancel = nullptr) -> int;
+
+private:
+    auto tryCheckFirmware(FirmwareResponse *resp, bool useHttp, bool useBle,
+                          const std::shared_ptr<CancelFlag> &cancel) -> int;
 
 protected:
     static std::shared_ptr<SindarinAPI> instance;
