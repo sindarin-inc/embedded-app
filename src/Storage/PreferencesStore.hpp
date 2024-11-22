@@ -147,16 +147,15 @@ auto GetNVSType() -> nvs_type_t {
 #define PROFILE_NVS_WRITES 0
 
 #if PROFILE_NVS_WRITES
-
 extern uint32_t nvsBlocksWritten;
-
 #define PROFILE_NVS_WRITES_INCREMENT(profileLogKey, blocks)                                        \
     do {                                                                                           \
         nvsBlocksWritten += blocks;                                                                \
         log_d("NVS wrote %zu blocks for key %s, Total written since boot: %" PRIu32, blocks,       \
               profileLogKey, nvsBlocksWritten);                                                    \
     } while (0)
-
+#else
+#define PROFILE_NVS_WRITES_INCREMENT(profileLogKey, blocks)
 #endif
 
 template <typename T>
