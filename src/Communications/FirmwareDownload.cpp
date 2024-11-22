@@ -12,6 +12,10 @@
 #include "Version.hpp"
 #include "sindarin-debug.h"
 
+#if CONFIG_USE_BLE_SERVER_PROXY
+#include "Communications/BLEManager.hpp"
+#include "Communications/BLEProxy.hpp"
+#endif
 void FirmwareDownloader::downloadFirmware(
     const std::function<void(FirmwareDownloadState state)> &progressCallback) {
 

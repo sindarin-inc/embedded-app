@@ -144,11 +144,10 @@ auto SolClock::configTimeSNTP() -> bool {
         log_e("strftime failed");
     }
     log_i("The current date/time is: %s (%" PRIu64 ")", strftimeBuf, (uint64_t)now);
-    return true;
 #else
     log_i("Not setting clock time from internet in simulator");
-    return true;
 #endif
+    return true;
 }
 
 auto SolClock::setClockTimeFromInternet(bool useWifi, bool useBle,
@@ -164,25 +163,27 @@ auto SolClock::setClockTimeFromInternet(bool useWifi, bool useBle,
     if (useBle && BLEManager::getInstance()->connectedProxy) {
         time_t serverTime = 0;
         int httpCode = SindarinAPI::getInstance()->getServerTime(&serverTime, true, cancel);
-        if (httpCode == 200 && serverTime > 0) {
-            // Set the system time
-            struct timeval tv = {.tv_sec = serverTime, .tv_usec = 0};
-            if (settimeofday(&tv, nullptr) == 0) {
-                // Print the time as a string
-                struct tm timeinfo {};
-                localtime_r(&serverTime, &timeinfo);
-                char strftimeBuf[64];
-                size_t size = strftime(strftimeBuf, sizeof(strftimeBuf), "%c", &timeinfo);
-                if (size == 0) {
-                    log_e("strftime failed");
-                }
-                log_i("Set time from BLE proxy: %s (%" PRIu64 ")", strftimeBuf,
-                      (uint64_t)serverTime);
-                return true;
-            }
-            log_e("Failed to set time");
+        if (httpCode != 200 || serverTime <= 0) {
+            log_e("Failed to get time from server: %d", httpCode);
+            return false;
         }
-        log_e("Failed to get time from server: %d", httpCode);
+        // Set the system time
+        struct timeval tv = {.tv_sec = serverTime, .tv_usec = 0};
+        if (settimeofday(&tv, nullptr) != 0) {
+            log_e("Failed to set time");
+            return false;
+        }
+        // Print the time as a string
+        struct tm timeinfo {};
+        localtime_r(&serverTime, &timeinfo);
+        char strftimeBuf[64];
+        size_t size = strftime(strftimeBuf, sizeof(strftimeBuf), "%c", &timeinfo);
+        if (size == 0) {
+            log_e("strftime failed");
+            return false;
+        }
+        log_i("Set time from BLE proxy: %s (%" PRIu64 ")", strftimeBuf, (uint64_t)serverTime);
+        return true;
     }
 #endif
 
