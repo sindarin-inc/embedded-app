@@ -575,7 +575,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 
         // Get current hour (0-23)
         time_t now = SolClock::getInstance().getEpochTime();
-        struct tm timeinfo;
+        struct tm timeinfo = {};
         localtime_r(&now, &timeinfo);
         int currentHour = timeinfo.tm_hour;
 
