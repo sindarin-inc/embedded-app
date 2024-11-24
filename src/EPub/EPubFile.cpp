@@ -1,5 +1,7 @@
 #include "EPubFile.hpp"
 
+#include <vector>
+
 #include "EPubDefs.hpp"
 #include "EPubMetaFile.hpp"
 
@@ -129,6 +131,10 @@ auto EPubFile::getXHTMLFile(const std::string_view &path) -> pugi::xml_document 
         std::tie(currentFileBuffer_, length) = getFile(filePath);
 
         if (currentFileBuffer_ != nullptr) {
+            if (solDrmKey_.has_value()) {
+                std::tie(currentFileBuffer_, length) = solDrm_.decryptInPlaceIfNecessary(
+                    solDrmKey_.value(), currentFileBuffer_, length);
+            }
             // Using load_buffer_inplace() is mandatory here as it permits the
             // computation of a node offset location, as string elements are taken
             // directly in the currentFileBuffer instead of being copied.
@@ -546,6 +552,14 @@ auto EPubFile::open() -> bool {
         opf_->loadSpine(toc);
     }
     EPUB_PROFILE_END(EPubOpf)
+
+    EPUB_PROFILE_START(EPubParseKey)
+    // Load the DRM encryption key if it exists
+    auto [solDrmKeyBuffer, solDrmKeyLength] = getFile("sol_drm.key");
+    if (solDrmKeyBuffer != nullptr) {
+        solDrmKey_ = solDrm_.parseKeyfile(solDrmKeyBuffer.get(), solDrmKeyLength);
+    }
+    EPUB_PROFILE_END(EPubParseKey)
 
     PROFILE_END_LOG_MS(openEPub);
 

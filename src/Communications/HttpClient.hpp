@@ -48,8 +48,7 @@ public:
             [this](char *buffer, size_t size) -> size_t { return write(buffer, size); });
     }
 
-    virtual auto fetchHeaders(int expectedSize = 0,
-                              const std::shared_ptr<CancelFlag> &cancel = nullptr) -> int = 0;
+    virtual auto fetchHeaders(const std::shared_ptr<CancelFlag> &cancel = nullptr) -> int = 0;
 
     // auto getContentLength() -> int;
 

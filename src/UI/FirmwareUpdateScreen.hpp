@@ -32,6 +32,7 @@ protected:
     std::shared_ptr<CancelFlag> cancel_;
     FirmwareDownloader firmwareDownloader_;
     FirmwareDownloadState state_;
+    PreferencesStore &prefs_;
     DisplaySystem::UpdateType nextUpdate_ = DisplaySystem::UpdateType::FULL;
 
     // UI

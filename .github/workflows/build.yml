@@ -32,9 +32,6 @@ jobs:
       - name: Install SDL
         run: sudo apt update && sudo apt install -y libsdl2-dev libsdl2-image-dev
 
-      - name: Install mbedtls
-        run: sudo apt update && sudo apt install -y libmbedtls-dev
-
       - name: build
         run: |
           set -o pipefail
@@ -121,9 +118,6 @@ jobs:
         with:
           submodules: "recursive"
       
-      - name: Install mbedtls
-        run: sudo apt update && sudo apt install -y libmbedtls-dev
-
       # Build scripts/epub-render with cmake
       - name: Build epub-render
         run: make epub-render-build

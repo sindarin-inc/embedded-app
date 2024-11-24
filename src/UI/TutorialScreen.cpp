@@ -4,7 +4,7 @@
 
 #include "Misc/Platform.hpp"
 #include "UI/Fonts/Fonts.hpp"
-#include "UI/Menu/NewMenuItemSingleLine.hpp"
+#include "UI/Menu/MenuItemSingleLine.hpp"
 #include "sindarin-debug.h"
 
 TutorialScreen::TutorialScreen(DisplaySystem &display, PreferencesStore &prefs, SpiramString text,
@@ -17,13 +17,12 @@ TutorialScreen::TutorialScreen(DisplaySystem &display, PreferencesStore &prefs, 
     renderer_.setStream(stream);
 
     menu_.resetMenuItems();
-    menu_.addMenuItem(std::make_shared<NewMenuItemSingleLine>("Delete this tutorial",
-                                                              [this, bit]() {
+    menu_.addMenuItem(std::make_shared<MenuItemSingleLine>("Delete this tutorial", [this, bit]() {
         prefs_.tutorialsDeleted.set(prefs_.tutorialsDeleted.get().value_or(0) | bit);
         inMenu_ = false;
         back();
     }));
-    menu_.addMenuItem(std::make_shared<NewMenuItemSingleLine>("Keep this tutorial", [this, bit]() {
+    menu_.addMenuItem(std::make_shared<MenuItemSingleLine>("Keep this tutorial", [this, bit]() {
         // Set it here just in case they change their mind after deleting it and perform
         // this operation a second time.
         uint32_t mask = ~bit;

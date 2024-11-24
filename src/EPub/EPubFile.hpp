@@ -11,12 +11,13 @@
 #include "Models/Readable.hpp"
 #include "Models/UserReadablePartialChapterSummary.hpp"
 #include "Renderers/RendererStream.hpp"
+#include "Storage/SolDrm.hpp"
 
 class EPubFile : public RendererStream {
 public:
-    EPubFile(const SFile &file, std::shared_ptr<Readable> readable)
+    EPubFile(const SFile &file, std::shared_ptr<Readable> readable, SolDrm &solDrm)
         : RendererStream(DocType::EPUB), epubUnzipper_(file), readable_(std::move(readable)),
-          currentFileBuffer_(nullptr) {
+          currentFileBuffer_(nullptr), solDrm_(solDrm) {
         open();
     }
 
@@ -123,6 +124,8 @@ private:
     // std::unique_ptr<pugi::char_t[]> currentFileBuffer_;
     std::shared_ptr<uint8_t[]> currentFileBuffer_;
     std::string currentFilePath_;
+    SolDrm &solDrm_;
+    std::optional<std::vector<uint8_t>> solDrmKey_;
 
     auto open() -> bool;
 };

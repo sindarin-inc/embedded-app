@@ -57,11 +57,13 @@ public:
     auto checkSync(const std::string &url, CheckSyncRequest &req, CheckSyncResponse *resp,
                    Telemetry &telemetry, bool useBle, const std::shared_ptr<CancelFlag> &cancel)
         -> int;
-    auto checkFirmware(FirmwareResponse *resp, bool useHttp = false) -> int;
+    auto checkFirmware(FirmwareResponse *resp, bool useBle,
+                       const std::shared_ptr<CancelFlag> &cancel) -> int;
 
     auto downloadReadable(const std::shared_ptr<Readable> &readable, FileSystem &fileSystem,
                           Telemetry &telemetry, const std::string &path,
                           const std::shared_ptr<CancelFlag> &cancel, bool useBle,
+                          const std::string &publicKey,
                           const std::function<void(int percentage)> &progressCallback) -> int;
     static auto createClient(const std::string &url, const std::string &contentType,
                              esp_http_client_method_t method, bool useBle,
@@ -73,6 +75,13 @@ public:
     auto uploadCrashReport(SFile &crashFile, const std::string &contentType) -> int;
 
     auto setAuth(const std::shared_ptr<HttpClient> &client) -> esp_err_t;
+
+    auto getServerTime(time_t *time, bool useBle = false,
+                       const std::shared_ptr<CancelFlag> &cancel = nullptr) -> int;
+
+private:
+    auto tryCheckFirmware(FirmwareResponse *resp, bool useHttp, bool useBle,
+                          const std::shared_ptr<CancelFlag> &cancel) -> int;
 
 protected:
     static std::shared_ptr<SindarinAPI> instance;

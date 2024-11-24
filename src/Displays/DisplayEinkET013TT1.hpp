@@ -11,9 +11,8 @@
 
 class DisplayEinkET013TT1 : public DisplaySystem {
 public:
-    DisplayEinkET013TT1(uint8_t csLeft, uint8_t csRight, uint8_t rst) noexcept
-        : gfxCanvas_(EinkET013TT1_PIXEL_WIDTH, EinkET013TT1_PIXEL_HEIGHT),
-          driver_(csLeft, csRight, rst) {
+    DisplayEinkET013TT1() noexcept
+        : gfxCanvas_(EinkET013TT1_PIXEL_WIDTH, EinkET013TT1_PIXEL_HEIGHT) {
         gfxClass_ = &gfxCanvas_;
     };
     DisplayEinkET013TT1(DisplayEinkET013TT1 const &) = delete;

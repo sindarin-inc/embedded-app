@@ -28,7 +28,7 @@ void WiFiSettingsMenuScreen::loadWifiSettings() {
     setNeedsLayout();
 }
 
-void WiFiSettingsMenuScreen::addMenuItem(const std::shared_ptr<NewMenuItem> &menuItem) {
+void WiFiSettingsMenuScreen::addMenuItem(const std::shared_ptr<MenuItem> &menuItem) {
     menuView_.addMenuItem(menuItem);
 }
 

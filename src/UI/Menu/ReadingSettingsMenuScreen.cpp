@@ -56,7 +56,7 @@ ReadingSettingsMenuScreen::ReadingSettingsMenuScreen(DisplaySystem &display,
     renderer_.setStream(stream);
 }
 
-void ReadingSettingsMenuScreen::addMenuItem(const std::shared_ptr<NewMenuItem> &menuItem) {
+void ReadingSettingsMenuScreen::addMenuItem(const std::shared_ptr<MenuItem> &menuItem) {
     menuView_.addMenuItem(menuItem);
 }
 
@@ -167,24 +167,24 @@ void ReadingSettingsMenuScreen::render(DisplaySystem &display) {
 }
 
 void ReadingSettingsMenuScreen::populateMenuItems() {
-    addMenuItem(std::make_shared<NewMenuItemSingleLine>("Text Size", [this]() {
+    addMenuItem(std::make_shared<MenuItemSingleLine>("Text Size", [this]() {
         auto fontMenu = std::make_shared<ReadingSettingsMenuScreen>(
             display_, "Reading Style", prefs_, telemetry_, pushScreen_, popScreen_);
-        fontMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>("Small", [this]() {
+        fontMenu->addMenuItem(std::make_shared<MenuItemSingleLine>("Small", [this]() {
             display_.clearDisplay();
             prefs_.font.set(PREFS_SOL_SMALL);
             telemetry_.logMetricData(TelemetryField::METRIC_STYLE,
                                      {{"text_size", std::string("small")}});
             setNeedsRerender();
         }));
-        fontMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>("Medium", [this]() {
+        fontMenu->addMenuItem(std::make_shared<MenuItemSingleLine>("Medium", [this]() {
             display_.clearDisplay();
             prefs_.font.set(PREFS_SOL_MEDIUM);
             telemetry_.logMetricData(TelemetryField::METRIC_STYLE,
                                      {{"text_size", std::string("medium")}});
             setNeedsRerender();
         }));
-        fontMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>("Large", [this]() {
+        fontMenu->addMenuItem(std::make_shared<MenuItemSingleLine>("Large", [this]() {
             display_.clearDisplay();
             prefs_.font.set(PREFS_SOL_LARGE);
             telemetry_.logMetricData(TelemetryField::METRIC_STYLE,
@@ -204,7 +204,7 @@ void ReadingSettingsMenuScreen::populateMenuItems() {
         fontMenu->setBackCallback([this]() { popScreen_(false); });
     }));
 
-    addMenuItem(std::make_shared<NewMenuItemSingleLine>("Move Page in Display", [this]() {
+    addMenuItem(std::make_shared<MenuItemSingleLine>("Move Page in Display", [this]() {
         log_d("Loading adjust offset");
         auto offsetAdjust = std::make_shared<OffsetAdjustScreen>(display_, prefs_, telemetry_);
         pushScreen_(offsetAdjust);
@@ -213,7 +213,7 @@ void ReadingSettingsMenuScreen::populateMenuItems() {
         log_d("set up callback");
     }));
 
-    addMenuItem(std::make_shared<NewMenuItemSingleLine>("Resize Page", [this]() {
+    addMenuItem(std::make_shared<MenuItemSingleLine>("Resize Page", [this]() {
         log_d("Loading resize box");
         auto resizeBox = std::make_shared<ResizeBoxScreen>(display_, prefs_, telemetry_);
         pushScreen_(resizeBox);
@@ -222,7 +222,7 @@ void ReadingSettingsMenuScreen::populateMenuItems() {
         log_d("set up callback");
     }));
 
-    addMenuItem(std::make_shared<NewMenuItemSingleLine>("Line Spacing", [this]() {
+    addMenuItem(std::make_shared<MenuItemSingleLine>("Line Spacing", [this]() {
         auto lineSpacingScreen = std::make_shared<LineSpacingScreen>(display_, prefs_, telemetry_);
         pushScreen_(lineSpacingScreen);
         lineSpacingScreen->setBackCallback([this]() {
@@ -274,13 +274,13 @@ void ReadingSettingsMenuScreen::populateMenuItems() {
         [this, formatTime, centerCallback]() { // Add centerCallback to capture list
         auto darkModeMenu = std::make_shared<GenericSettingsMenuScreen>(display_, "Reading Style");
 
-        darkModeMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
+        darkModeMenu->addMenuItem(std::make_shared<MenuItemSingleLine>(
             StringFormat("Turn on after: %s",
                          formatTime(prefs_.invertStartHour.get().value_or(-1)).c_str()),
             [this, formatTime]() {
             auto timeMenu = std::make_shared<GenericSettingsMenuScreen>(display_, "Dark Mode");
 
-            timeMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>("Manual", [this]() {
+            timeMenu->addMenuItem(std::make_shared<MenuItemSingleLine>("Manual", [this]() {
                 prefs_.invertStartHour.set(-1); // Only clear start hour
                 popScreen_(true);
                 popScreen_(true);
@@ -289,8 +289,8 @@ void ReadingSettingsMenuScreen::populateMenuItems() {
             }));
 
             for (int hour = 0; hour < 24; hour++) {
-                timeMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(formatTime(hour),
-                                                                              [this, hour]() {
+                timeMenu->addMenuItem(std::make_shared<MenuItemSingleLine>(formatTime(hour),
+                                                                           [this, hour]() {
                     prefs_.invertStartHour.set(hour);
                     popScreen_(true);
                     popScreen_(true);
@@ -309,13 +309,13 @@ void ReadingSettingsMenuScreen::populateMenuItems() {
             pushScreen_(timeMenu);
             }));
 
-        darkModeMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
+        darkModeMenu->addMenuItem(std::make_shared<MenuItemSingleLine>(
             StringFormat("Turn off after: %s",
                          formatTime(prefs_.invertEndHour.get().value_or(-1)).c_str()),
             [this, formatTime]() {
             auto timeMenu = std::make_shared<GenericSettingsMenuScreen>(display_, "Dark Mode");
 
-            timeMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>("Manual", [this]() {
+            timeMenu->addMenuItem(std::make_shared<MenuItemSingleLine>("Manual", [this]() {
                 prefs_.invertEndHour.set(-1); // Only clear end hour
                 popScreen_(true);
                 popScreen_(true);
@@ -324,8 +324,8 @@ void ReadingSettingsMenuScreen::populateMenuItems() {
             }));
 
             for (int hour = 0; hour < 24; hour++) {
-                timeMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(formatTime(hour),
-                                                                              [this, hour]() {
+                timeMenu->addMenuItem(std::make_shared<MenuItemSingleLine>(formatTime(hour),
+                                                                           [this, hour]() {
                     prefs_.invertEndHour.set(hour);
                     popScreen_(true);
                     popScreen_(true);
@@ -345,7 +345,7 @@ void ReadingSettingsMenuScreen::populateMenuItems() {
             }));
 
         // Add new menu items to manually toggle dark mode
-        darkModeMenu->addMenuItem(std::make_shared<NewMenuItemSingleLine>(
+        darkModeMenu->addMenuItem(std::make_shared<MenuItemSingleLine>(
             prefs_.darkMode.get().value_or(false) ? "Turn dark mode off" : "Turn dark mode on",
             [this, centerCallback]() { // Explicitly capture centerCallback here too
             centerCallback();          // Reuse the existing dark mode toggle code
@@ -371,7 +371,7 @@ void ReadingSettingsMenuScreen::populateMenuItems() {
                          .c_str()),
         centerCallback, isDarkModeChecked, rightCallback));
 
-    addMenuItem(std::make_shared<NewMenuItemCheckable>(
+    addMenuItem(std::make_shared<MenuItemCheckable>(
         "Autopilot",
         [this]() {
         this->prefs_.autoPilot.set(!this->prefs_.autoPilot.get().value_or(false));

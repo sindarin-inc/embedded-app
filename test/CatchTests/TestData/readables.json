@@ -89,6 +89,28 @@
             ],
             "toc": [],
             "readable_type": "book"
+        },
+        {
+            "uuid": "00511216-5612-4863-8735-b42004f3e64a",
+            "title": "No Author Book",
+            "date_created": "2023-05-23T08:44:55.813541-07:00",
+            "date_modified": "2023-05-23T08:44:55.813554-07:00",
+            "date_published": "null",
+            "authors": [],
+            "files": [
+                {
+                    "uuid": "06aa0331-2758-49d5-83d8-f2e4929ee333",
+                    "name": "no-author-book.txt",
+                    "size": 25923,
+                    "filetype": "txt",
+                    "uploaded_at": "2022-10-20T08:44:53.847361-07:00",
+                    "sha_hash": "db07de86d749785a210282636c412ada8efc7046f8bb55a7ba06527714e89344",
+                    "file": "https://nyc3.digitaloceanspaces.com/sol-cloud/uploads/last-question.txt",
+                    "readable_type": "book"
+                }
+            ],
+            "toc": [],
+            "readable_type": "book"
         }
     ]
 }

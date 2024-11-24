@@ -400,7 +400,7 @@ void WiFi::disconnectWiFi(int waitMs) {
     }
 
     // Optionally, wait for WiFi to stop
-    if (waitMs > 0) {
+    if (wifiEventGroup_ != nullptr && waitMs > 0) {
         xEventGroupWaitBits(wifiEventGroup_, STOPPED, true, false, pdMS_TO_TICKS(waitMs));
     }
 

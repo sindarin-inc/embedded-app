@@ -2,9 +2,9 @@
 
 #include "UI/Components/EinkView.hpp"
 
-class NewMenuPagingIndicatorView : public EinkView {
+class MenuPagingIndicatorView : public EinkView {
 public:
-    NewMenuPagingIndicatorView(DisplaySystem &display) : EinkView(display){};
+    MenuPagingIndicatorView(DisplaySystem &display) : EinkView(display){};
 
     void setTotalPages(int totalPages);
     auto totalPages() const { return totalPages_; }

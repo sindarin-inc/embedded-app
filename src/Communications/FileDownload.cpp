@@ -33,18 +33,13 @@
 #error "Both download and disk write tasks are disabled, this is not supported"
 #endif
 
-auto CreateClient(const std::string &url, bool useBle, const std::shared_ptr<CancelFlag> &cancel)
-    -> std::shared_ptr<HttpClient> {
-    return SindarinAPI::createClient(url, "", HTTP_METHOD_GET, useBle, cancel);
-}
-
 auto DownloadFileCommon(
     const char *url, const std::function<bool(int httpCode, int contentLength)> &openedConnection,
     const std::function<size_t(std::shared_ptr<HttpClient> client, int index, int contentLength)>
         &readWrite,
-    const std::shared_ptr<CancelFlag> &cancel, bool useBle, int expectedSize,
-    const std::function<void(int bytesWritten, float percentage)> &progressCallback, bool gzip)
-    -> int {
+    const std::shared_ptr<CancelFlag> &cancel, bool useBle,
+    const std::function<void(int bytesWritten, float percentage)> &progressCallback, bool gzip,
+    const std::string &requestBodyJson) -> int {
     if (CancelFlag::isCancelled(cancel)) {
         return ERR_CANCELLED;
     }
@@ -52,7 +47,10 @@ auto DownloadFileCommon(
         // TODO: Support gzip over BLE
         gzip = false;
     }
-    auto client = CreateClient(url, useBle, cancel);
+
+    auto contentType = requestBodyJson.empty() ? "" : "application/json";
+    auto method = requestBodyJson.empty() ? HTTP_METHOD_GET : HTTP_METHOD_POST;
+    auto client = SindarinAPI::createClient(url, contentType, method, useBle, cancel);
 
     auto sindarinApi = SindarinAPI::getInstance();
     if (sindarinApi->isSindarinUrl(url)) {
@@ -69,18 +67,35 @@ auto DownloadFileCommon(
         }
     }
 
-    esp_err_t err = client->open();
+    esp_err_t err = client->open(requestBodyJson.size());
     if (err != ESP_OK) {
         return ERR_CLIENT_OPEN;
     }
     defer { client->close(); };
 
-    auto contentLength = client->fetchHeaders(expectedSize, cancel);
+    if (!requestBodyJson.empty()) {
+        client->write(requestBodyJson.c_str(), requestBodyJson.size());
+    }
+
+    auto contentLength = client->fetchHeaders(cancel);
+
+    // Get a bit of the body, for debugging, since it might contain an error message
+    auto readBody = [&client] {
+        char buffer[256];
+        auto read = client->read(buffer, sizeof(buffer));
+        buffer[read] = '\0';
+        if (read > 0) {
+            log_w("Error body: %s", buffer);
+        } else {
+            log_d("No error body: %s", buffer);
+        }
+    };
 
     auto httpCode = client->getStatusCode();
     if (httpCode != 200) {
         if (httpCode != 0) {
             log_w("Status code was %d", httpCode);
+            readBody();
             return httpCode;
         } else {
             log_w("Status code was 0, assuming connection error");
@@ -123,14 +138,7 @@ auto DownloadFileCommon(
     }
 
     if (!openedConnection(httpCode, contentLength)) {
-        // Get the body anyways, for debugging, since it might contain an error message
-        char buffer[256];
-        auto read = client->read(buffer, sizeof(buffer));
-        if (read > 0) {
-            log_w("Error body: %s", buffer);
-        } else {
-            log_d("No error body: %s", buffer);
-        }
+        readBody();
         return ERR_OPEN_BLOCK;
     }
 
@@ -195,7 +203,7 @@ auto DownloadFileCommon(
 auto DownloadFileWithWriteBytes(
     const char *url, const std::function<bool(int httpCode, int contentLength)> &openedConnection,
     const std::function<size_t(const uint8_t *buf, size_t size)> &writeBytes,
-    const std::shared_ptr<CancelFlag> &cancel, bool useBle, int expectedSize,
+    const std::shared_ptr<CancelFlag> &cancel, bool useBle,
     const std::function<void(int bytesWritten, float percentage)> &progressCallback, bool gzip)
     -> int {
 
@@ -216,13 +224,14 @@ auto DownloadFileWithWriteBytes(
 
         return readLen;
         },
-        cancel, useBle, expectedSize, progressCallback, gzip);
+        cancel, useBle, progressCallback, gzip);
 }
 
 auto DownloadFileToPath(const char *url, FileSystem &fileSystem, Telemetry &telemetry,
-                        const char *path, int length, const std::shared_ptr<CancelFlag> &cancel,
-                        bool useBle, const std::function<void(float percentage)> &progressCallback,
-                        bool gzip) -> int {
+                        const char *path, int expectedSize,
+                        const std::shared_ptr<CancelFlag> &cancel, bool useBle,
+                        const std::function<void(float percentage)> &progressCallback, bool gzip,
+                        const std::string &requestBodyJson) -> int {
 
     std::string fullPath(path);
 
@@ -353,10 +362,11 @@ auto DownloadFileToPath(const char *url, FileSystem &fileSystem, Telemetry &tele
 
     // Spin up the downloader task
     int httpCode;
-    auto downloader =
-        [url, openedConnection, reader, gzip, &httpCode, ringbuf, cancel, useBle, length]() {
-        httpCode = DownloadFileCommon(url, openedConnection, reader, cancel, useBle, length,
-                                      nullptr, gzip);
+    auto downloader = [url, openedConnection, reader, gzip, &httpCode, ringbuf, cancel, useBle,
+                       &requestBodyJson]() {
+        httpCode = DownloadFileCommon(url, openedConnection, reader, cancel, useBle, nullptr, gzip,
+                                      requestBodyJson);
+
         DataBlock *block;
         auto err = xRingbufferSendAcquire(ringbuf, reinterpret_cast<void **>(&block),
                                           sizeof(DataBlock), portMAX_DELAY);
@@ -444,12 +454,12 @@ auto DownloadFileToPath(const char *url, FileSystem &fileSystem, Telemetry &tele
         fileSize = fileSystem.size(fullPath);
     }
 
-    if (length != fileSize) {
+    if (expectedSize != 0 && expectedSize != fileSize) {
         // TODO: What's the best API to get errors from the stream?
-        log_e("Downloaded file is shorter than expected, expected %d bytes but got %zu bytes (%s)",
-              length, fileSize, gzip ? "uncompressed" : "compressed");
+        log_e("Downloaded file size is wrong, expected %d bytes but got %zu bytes (%s)",
+              expectedSize, fileSize, gzip ? "uncompressed" : "compressed");
         telemetry.logMetric(TelemetryField::METRIC_SYNC_STATUS, "wrong-size",
-                            {{"expected", length}, {"actual", static_cast<int>(fileSize)}});
+                            {{"expected", expectedSize}, {"actual", static_cast<int>(fileSize)}});
         return ERR_SIZE_MISMATCH;
     }
 

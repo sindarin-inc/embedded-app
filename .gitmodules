@@ -19,3 +19,6 @@
 [submodule "components/freetype/freetype"]
 	path = components/freetype/freetype
 	url = git@github.com:freetype/freetype.git
+[submodule "lib/mbedtls"]
+	path = lib/mbedtls
+	url = https://github.com/Mbed-TLS/mbedtls.git

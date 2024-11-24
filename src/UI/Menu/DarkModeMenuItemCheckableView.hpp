@@ -1,17 +1,17 @@
 #pragma once
 
-#include "NewMenuItemView.hpp"
+#include "MenuItemView.hpp"
 #include "UI/Bitmaps/CheckMark.xbm"
 #include "UI/Components/ArrowLabelView.hpp"
 #include "UI/Components/IconView.hpp"
 #include "UI/Components/SingleLineTextView.hpp"
 #include "UI/Menu/DarkModeMenuItemCheckable.hpp"
 
-class DarkModeMenuItemCheckableView : public NewMenuItemView {
+class DarkModeMenuItemCheckableView : public MenuItemView {
 public:
     DarkModeMenuItemCheckableView(DisplaySystem &display,
                                   const std::shared_ptr<DarkModeMenuItemCheckable> &menuItem)
-        : NewMenuItemView(display), titleView_(display),
+        : MenuItemView(display), titleView_(display),
           checkmarkView_(display, CHECK_MARK_BITS, CheckMark_width, CheckMark_height),
           arrowView_(display, "", ArrowRight), menuItem_(menuItem) {
         titleView_.setText(menuItem->title());

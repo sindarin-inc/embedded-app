@@ -48,6 +48,14 @@
                                                                profileStart##identifier)           \
               .count());
 
+#define PROFILE_MULTIPLE_SETUP(identifier)
+
+#define PROFILE_MULTIPLE_START(identifier)
+
+#define PROFILE_MULTIPLE_END(identifier)
+
+#define PROFILE_MULTIPLE_LOG(identifier)
+
 const char *pathToFileName(const char *path);
 
 #define SIM_LOG_COLOR_BLACK "30"
@@ -150,6 +158,36 @@ extern "C" {
     log_d("PROFILE_LOG_NS(" #identifier ") %.0fns (%" PRIu32 "-%" PRIu32 "=%" PRIu32 " cycles)",   \
           PROFILE_CALCULATE_NS(identifier), profileEnd##identifier, profileStart##identifier,      \
           profileEnd##identifier - profileStart##identifier)
+
+#define PROFILE_MULTIPLE_SETUP(identifier)                                                         \
+    uint32_t profileCount##identifier = 0;                                                         \
+    uint32_t profileTotalCycles##identifier = 0;                                                   \
+    uint32_t profileMaxCycles##identifier = 0;                                                     \
+    uint32_t profileMinCycles##identifier = UINT32_MAX;
+
+#define PROFILE_MULTIPLE_START(identifier)                                                         \
+    volatile uint32_t profileStart##identifier = 0;                                                \
+    RSR(CCOUNT, profileStart##identifier);
+
+#define PROFILE_MULTIPLE_END(identifier)                                                           \
+    volatile uint32_t profileEnd##identifier = 0;                                                  \
+    RSR(CCOUNT, profileEnd##identifier);                                                           \
+    profileCount##identifier += 1;                                                                 \
+    uint32_t profileCycles##identifier = profileEnd##identifier - profileStart##identifier;        \
+    profileTotalCycles##identifier += profileCycles##identifier;                                   \
+    if (profileCycles##identifier > profileMaxCycles##identifier) {                                \
+        profileMaxCycles##identifier = profileCycles##identifier;                                  \
+    }                                                                                              \
+    if (profileCycles##identifier < profileMinCycles##identifier) {                                \
+        profileMinCycles##identifier = profileCycles##identifier;                                  \
+    }
+
+#define PROFILE_MULTIPLE_LOG(identifier)                                                           \
+    log_d("PROFILE_MULTIPLE_LOG(" #identifier ") %.02fus/iteration (%.02fus / %" PRIu32            \
+          ") (max: %.02fus, min: %.02fus)",                                                        \
+          CYCLES_TO_US(profileTotalCycles##identifier / profileCount##identifier),                 \
+          CYCLES_TO_US(profileTotalCycles##identifier), profileCount##identifier,                  \
+          CYCLES_TO_US(profileMaxCycles##identifier), CYCLES_TO_US(profileMinCycles##identifier));
 
 #endif // SIMULATOR
 

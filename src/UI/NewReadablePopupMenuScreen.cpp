@@ -72,8 +72,10 @@ void NewReadablePopupMenuScreen::setUpPopupMenu() {
     }
 
     SolClock &theClock = SolClock::getInstance();
-    auto timeString = theClock.getTimeString();
-    footer3TextView_.setText(timeString);
+    if (theClock.isValidTime()) {
+        auto timeString = theClock.getTimeString();
+        footer3TextView_.setText(timeString);
+    }
 
     setNeedsLayout();
 }
@@ -111,7 +113,13 @@ auto NewReadablePopupMenuScreen::layout(LayoutContext &context, Size size) -> Si
                 menuView_, {{10, y}, {size.width - 10, size.height - y}},
                 LayoutOptionsSizeToFit | LayoutOptionsAlignTop | LayoutOptionsAlignLeft);
 
-            y += menuBox.size.height + 10;
+            y += menuBox.size.height;
+
+            // If there is at least one footer, advance the y
+            if (!footer1TextView_.getText().empty() || !footer2TextView_.getText().empty() ||
+                !footer3TextView_.getText().empty()) {
+                y += 10;
+            }
 
             if (!footer1TextView_.getText().empty()) {
                 auto footer1Rect = context.setViewFrame(footer1TextView_, {{0, y}, size},

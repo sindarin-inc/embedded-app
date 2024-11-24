@@ -4,13 +4,13 @@
 #include <string>
 #include <utility>
 
-#include "NewMenuItem.hpp"
+#include "MenuItem.hpp"
 
-class NewMenuItemTOC : public NewMenuItem {
+class MenuItemTOC : public MenuItem {
 public:
-    ~NewMenuItemTOC() override = default;
-    NewMenuItemTOC(std::string title, std::string place, std::function<void()> callback)
-        : NewMenuItem(std::move(callback)), title_(std::move(title)), place_(std::move(place)) {}
+    ~MenuItemTOC() override = default;
+    MenuItemTOC(std::string title, std::string place, std::function<void()> callback)
+        : MenuItem(std::move(callback)), title_(std::move(title)), place_(std::move(place)) {}
 
     [[nodiscard]] auto id() const -> std::string override { return title_; }
 
