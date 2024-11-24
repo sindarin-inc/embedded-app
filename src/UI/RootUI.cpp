@@ -797,7 +797,7 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
             auto readingSettingsMenu = std::make_shared<ReadingSettingsMenuScreen>(
                 display_, "Main Menu", prefs_, telemetry_,
                 [this](const std::shared_ptr<Screen> &screen) { this->pushScreen(screen); },
-                [this](bool clear) { this->popScreen(clear); });
+                [this]() { this->popScreen(); });
             readingSettingsMenu->populateMenuItems();
             readingSettingsMenu->setFirstLoad();
             this->pushScreen(readingSettingsMenu);

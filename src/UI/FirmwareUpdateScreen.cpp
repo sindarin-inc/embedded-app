@@ -320,11 +320,11 @@ void FirmwareUpdateScreen::begin() {
                 if (wifiConnected) {
                     WiFi::getInstance().disconnectWiFi();
                 }
-#if CONFIG_USE_BLE_SERVER_PROXY
                 if (bleConnected) {
+#if CONFIG_USE_BLE_SERVER_PROXY
                     BLEManager::getInstance()->disconnectProxy();
-                }
 #endif
+                }
             }
 
             // Skip updates if the state is the same and the percentage isn't different

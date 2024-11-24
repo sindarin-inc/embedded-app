@@ -3,19 +3,26 @@
 #include "Displays/DisplaySystem.hpp"
 #include "Inputs/RemoteInput.hpp"
 #include "Misc/StringUtil.hpp"
+#include "Misc/Telemetry.hpp"
 #include "Storage/PreferencesStore.hpp"
 #include "UI/Components/ArrowLabelView.hpp"
 #include "UI/Components/EinkView.hpp"
 #include "UI/Components/RendererView.hpp"
 #include "UI/Components/SingleLineTextView.hpp"
+#include "UI/LineSpacingScreen.hpp"
 #include "UI/Menu/DarkModeMenuItemCheckable.hpp"
+#include "UI/Menu/GenericSettingsMenuScreen.hpp"
+#include "UI/Menu/MenuItemCheckable.hpp"
+#include "UI/Menu/MenuItemSingleLine.hpp"
 #include "UI/Menu/MenuView.hpp"
+#include "UI/OffsetAdjustScreen.hpp"
+#include "UI/ResizeBoxScreen.hpp"
 #include "UI/Screen.hpp"
 
 class ReadingSettingsMenuScreen : public Screen, public EinkView {
 public:
     using PushScreenFunc = std::function<void(const std::shared_ptr<Screen> &)>;
-    using PopScreenFunc = std::function<void(bool)>;
+    using PopScreenFunc = std::function<void()>;
 
     ReadingSettingsMenuScreen(DisplaySystem &display, const std::string &backTitle,
                               PreferencesStore &prefs, Telemetry &telemetry,
@@ -46,12 +53,6 @@ public:
 
     void setRendererLineSpacingFromPrefs() {
         renderer_.setLineSpacing(prefs_.lineSpacing.get().value_or(0));
-    }
-
-    // When they press back, we need to stop the animation timer and reset the renderer
-    void leaveMenu() {
-        rendererView_.resetRenderer();
-        xTimerStop(DisplaySystem::animationTimer, 0);
     }
 
     void regenerateMenuItems() {

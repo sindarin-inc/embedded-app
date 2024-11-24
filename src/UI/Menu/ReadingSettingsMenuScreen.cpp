@@ -54,6 +54,13 @@ ReadingSettingsMenuScreen::ReadingSettingsMenuScreen(DisplaySystem &display,
 
     auto stream = std::make_shared<StdStringStream>(message);
     renderer_.setStream(stream);
+
+    setBackCallback([this]() {
+        // When they press back, we need to stop the animation timer and reset the renderer
+        rendererView_.resetRenderer();
+        xTimerStop(DisplaySystem::animationTimer, 0);
+        popScreen_(); // Return to main menu
+    });
 }
 
 void ReadingSettingsMenuScreen::addMenuItem(const std::shared_ptr<MenuItem> &menuItem) {
@@ -83,8 +90,7 @@ void ReadingSettingsMenuScreen::processCommand(RemoteCommand command) {
     case RemoteCommand::LEFT:
         firstLoad_ = true;
         setNeedsRerender();
-        leaveMenu();      // Stop animation timer and reset renderer
-        popScreen_(true); // Return to main menu
+        back();
         return;
     case RemoteCommand::RIGHT:
         menuView_.executeSelectedItemRightButton();
@@ -201,32 +207,28 @@ void ReadingSettingsMenuScreen::populateMenuItems() {
         }
         fontMenu->setSelectedIndex(menuIndex);
         pushScreen_(fontMenu);
-        fontMenu->setBackCallback([this]() { popScreen_(false); });
+        fontMenu->setBackCallback([this]() { popScreen_(); });
     }));
 
     addMenuItem(std::make_shared<MenuItemSingleLine>("Move Page in Display", [this]() {
         log_d("Loading adjust offset");
         auto offsetAdjust = std::make_shared<OffsetAdjustScreen>(display_, prefs_, telemetry_);
         pushScreen_(offsetAdjust);
-        log_d("setting up callback");
-        offsetAdjust->setBackCallback([this]() { popScreen_(false); });
-        log_d("set up callback");
+        offsetAdjust->setBackCallback([this]() { popScreen_(); });
     }));
 
     addMenuItem(std::make_shared<MenuItemSingleLine>("Resize Page", [this]() {
         log_d("Loading resize box");
         auto resizeBox = std::make_shared<ResizeBoxScreen>(display_, prefs_, telemetry_);
         pushScreen_(resizeBox);
-        log_d("setting up callback");
-        resizeBox->setBackCallback([this]() { popScreen_(false); });
-        log_d("set up callback");
+        resizeBox->setBackCallback([this]() { popScreen_(); });
     }));
 
     addMenuItem(std::make_shared<MenuItemSingleLine>("Line Spacing", [this]() {
         auto lineSpacingScreen = std::make_shared<LineSpacingScreen>(display_, prefs_, telemetry_);
         pushScreen_(lineSpacingScreen);
         lineSpacingScreen->setBackCallback([this]() {
-            popScreen_(false);
+            popScreen_();
             setRendererLineSpacingFromPrefs();
         });
     }));
@@ -282,8 +284,8 @@ void ReadingSettingsMenuScreen::populateMenuItems() {
 
             timeMenu->addMenuItem(std::make_shared<MenuItemSingleLine>("Manual", [this]() {
                 prefs_.invertStartHour.set(-1); // Only clear start hour
-                popScreen_(true);
-                popScreen_(true);
+                popScreen_();
+                popScreen_();
                 regenerateMenuItems();
                 setNeedsRerender();
             }));
@@ -292,8 +294,8 @@ void ReadingSettingsMenuScreen::populateMenuItems() {
                 timeMenu->addMenuItem(std::make_shared<MenuItemSingleLine>(formatTime(hour),
                                                                            [this, hour]() {
                     prefs_.invertStartHour.set(hour);
-                    popScreen_(true);
-                    popScreen_(true);
+                    popScreen_();
+                    popScreen_();
                     regenerateMenuItems();
                     setNeedsRerender();
                 }));
@@ -305,7 +307,7 @@ void ReadingSettingsMenuScreen::populateMenuItems() {
             }
             timeMenu->setSelectedIndex(menuIndex);
 
-            timeMenu->setBackCallback([this]() { popScreen_(true); });
+            timeMenu->setBackCallback([this]() { popScreen_(); });
             pushScreen_(timeMenu);
             }));
 
@@ -317,8 +319,8 @@ void ReadingSettingsMenuScreen::populateMenuItems() {
 
             timeMenu->addMenuItem(std::make_shared<MenuItemSingleLine>("Manual", [this]() {
                 prefs_.invertEndHour.set(-1); // Only clear end hour
-                popScreen_(true);
-                popScreen_(true);
+                popScreen_();
+                popScreen_();
                 regenerateMenuItems();
                 setNeedsRerender();
             }));
@@ -327,8 +329,8 @@ void ReadingSettingsMenuScreen::populateMenuItems() {
                 timeMenu->addMenuItem(std::make_shared<MenuItemSingleLine>(formatTime(hour),
                                                                            [this, hour]() {
                     prefs_.invertEndHour.set(hour);
-                    popScreen_(true);
-                    popScreen_(true);
+                    popScreen_();
+                    popScreen_();
                     regenerateMenuItems();
                     setNeedsRerender();
                 }));
@@ -340,7 +342,7 @@ void ReadingSettingsMenuScreen::populateMenuItems() {
             }
             timeMenu->setSelectedIndex(menuIndex);
 
-            timeMenu->setBackCallback([this]() { popScreen_(true); });
+            timeMenu->setBackCallback([this]() { popScreen_(); });
             pushScreen_(timeMenu);
             }));
 
@@ -349,13 +351,13 @@ void ReadingSettingsMenuScreen::populateMenuItems() {
             prefs_.darkMode.get().value_or(false) ? "Turn dark mode off" : "Turn dark mode on",
             [this, centerCallback]() { // Explicitly capture centerCallback here too
             centerCallback();          // Reuse the existing dark mode toggle code
-            popScreen_(true);
+            popScreen_();
             regenerateMenuItems();
             setNeedsRerender();
             }));
 
         darkModeMenu->setBackCallback([this]() {
-            popScreen_(true);
+            popScreen_();
             if (prefs_.invertStartHour.get().value_or(-1) != -1) {
                 // TODO: Add logic to check current time and set dark mode accordingly
             }
