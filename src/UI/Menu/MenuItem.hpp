@@ -8,7 +8,7 @@ class MenuItem {
 public:
     virtual ~MenuItem() = default;
     MenuItem(std::function<void()> callback, std::function<void()> submenuCallback = nullptr)
-        : callback_(std::move(callback)), submenuCallback_(std::move(submenuCallback)) {}
+        : callback_(std::move(callback)), rightButtonCallback(std::move(submenuCallback)) {}
 
     [[nodiscard]] virtual auto id() const -> std::string = 0;
     virtual void execute() {
@@ -16,13 +16,13 @@ public:
             callback_();
         }
     }
-    virtual void executeSubmenu() {
-        if (submenuCallback_) {
-            submenuCallback_();
+    virtual void executeRightButton() {
+        if (rightButtonCallback) {
+            rightButtonCallback();
         }
     }
 
 protected:
     std::function<void()> callback_;
-    std::function<void()> submenuCallback_;
+    std::function<void()> rightButtonCallback;
 };

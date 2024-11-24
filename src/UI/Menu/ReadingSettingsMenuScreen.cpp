@@ -87,7 +87,7 @@ void ReadingSettingsMenuScreen::processCommand(RemoteCommand command) {
         popScreen_(true); // Return to main menu
         return;
     case RemoteCommand::RIGHT:
-        menuView_.executeSelectedItemSubmenu();
+        menuView_.executeSelectedItemRightButton();
         return;
     // We rely on the animation timer which is set in the renderer view in autopilot mode
     case RemoteCommand::ANIMATION:

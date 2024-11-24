@@ -42,9 +42,9 @@ public:
             menuItems_[selectedIndex_]->execute();
         }
     }
-    void executeSelectedItemSubmenu() {
+    void executeSelectedItemRightButton() {
         if (selectedIndex_ < menuItems_.size()) {
-            menuItems_[selectedIndex_]->executeSubmenu();
+            menuItems_[selectedIndex_]->executeRightButton();
         }
     }
 
