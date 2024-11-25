@@ -28,31 +28,66 @@ public:
 };
 
 TEST_CASE("ReadOneBookmark functionality", "[readable-bookmark]") {
+    SECTION("Read valid ON bookmark") {
+        MockFile file(
+            "+ [EPUB;offset:100,href:chapter1.htm] [EPUB;offset:200,href:chapter1.htm]\n");
+        LocalBookmark bookmark;
+        REQUIRE(ReadOneBookmark(file, bookmark) == true);
+        REQUIRE(bookmark.status == BOOKMARK_ON);
+        REQUIRE(*bookmark.firstPlace == EPubPlace(100, "chapter1.htm"));
+        REQUIRE(*bookmark.lastPlace == EPubPlace(200, "chapter1.htm"));
+    }
+
+    SECTION("Read valid OFF bookmark") {
+        MockFile file(
+            "- [EPUB;offset:100,href:chapter1.htm] [EPUB;offset:200,href:chapter1.htm]\n");
+        LocalBookmark bookmark;
+        REQUIRE(ReadOneBookmark(file, bookmark) == true);
+        REQUIRE(bookmark.status == BOOKMARK_OFF);
+        REQUIRE(*bookmark.firstPlace == EPubPlace(100, "chapter1.htm"));
+        REQUIRE(*bookmark.lastPlace == EPubPlace(200, "chapter1.htm"));
+    }
+
+    SECTION("Read TXT bookmark") {
+        MockFile file("+ [TXT;offset:100] [TXT;offset:200]\n");
+        LocalBookmark bookmark;
+        REQUIRE(ReadOneBookmark(file, bookmark) == true);
+        REQUIRE(bookmark.status == BOOKMARK_ON);
+        REQUIRE(*bookmark.firstPlace == TxtPlace(100));
+        REQUIRE(*bookmark.lastPlace == TxtPlace(200));
+    }
+
+    SECTION("Invalid bookmark format") {
+        MockFile file("x [invalid] [format]\n");
+        LocalBookmark bookmark;
+        REQUIRE(ReadOneBookmark(file, bookmark) == false);
+    }
+
+    SECTION("Missing space after status character") {
+        MockFile file("+[invalid][format]\n");
+        LocalBookmark bookmark;
+        REQUIRE(ReadOneBookmark(file, bookmark) == false);
+    }
+
+    SECTION("Empty file") {
+        MockFile file("");
+        LocalBookmark bookmark;
+
+        REQUIRE(ReadOneBookmark(file, bookmark) == false);
+    }
+
     SECTION("Test nested brackets and spaces") {
         MockFile file("+ [EPUB;offset:293,href:Brandon Sanderson - [Mistborn 01] - The Final "
                       "Empire_split_000.htm] [EPUB;offset:3146,href:Brandon Sanderson - [Mistborn "
                       "01] - The Final Empire_split_000.htm]\n");
         LocalBookmark bookmark;
-
         REQUIRE(ReadOneBookmark(file, bookmark) == true);
         REQUIRE(bookmark.status == BOOKMARK_ON);
-
-        // Check first place
-        REQUIRE(bookmark.firstPlace != nullptr);
-        REQUIRE(bookmark.firstPlace->getDocType() == DocType::EPUB);
-        REQUIRE(bookmark.firstPlace->getOffset() == 293);
-        auto *firstEpubPlace = dynamic_cast<EPubPlace *>(bookmark.firstPlace.get());
-        REQUIRE(firstEpubPlace != nullptr);
-        REQUIRE(firstEpubPlace->getHRef() ==
-                "Brandon Sanderson - [Mistborn 01] - The Final Empire_split_000.htm");
-
-        // Check last place
-        REQUIRE(bookmark.lastPlace != nullptr);
-        REQUIRE(bookmark.lastPlace->getDocType() == DocType::EPUB);
-        REQUIRE(bookmark.lastPlace->getOffset() == 3146);
-        auto *lastEpubPlace = dynamic_cast<EPubPlace *>(bookmark.lastPlace.get());
-        REQUIRE(lastEpubPlace != nullptr);
-        REQUIRE(lastEpubPlace->getHRef() ==
-                "Brandon Sanderson - [Mistborn 01] - The Final Empire_split_000.htm");
+        REQUIRE(
+            *bookmark.firstPlace ==
+            EPubPlace(293, "Brandon Sanderson - [Mistborn 01] - The Final Empire_split_000.htm"));
+        REQUIRE(
+            *bookmark.lastPlace ==
+            EPubPlace(3146, "Brandon Sanderson - [Mistborn 01] - The Final Empire_split_000.htm"));
     }
 }
