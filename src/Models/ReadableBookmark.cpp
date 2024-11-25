@@ -39,12 +39,24 @@ auto ReadOneBookmark(SFile &file, LocalBookmark &bookmark) -> bool {
     if (*s) {
         bookmark.firstPlace = Place::factory(s);
 
+        // Find the second place on the line.
         if (*s == '[') {
             s++;
-            while (*s && (*s != '[')) {
+            // Handle nested brackets
+            int bracketCount = 1;
+            while (*s) {
+                if (*s == '[') {
+                    if (bracketCount == 0) {
+                        break;
+                    }
+                    bracketCount++;
+                } else if (*s == ']') {
+                    bracketCount--;
+                }
                 s++;
             }
         } else {
+            // Legacy bookmark format which was only numeric offsets like `+ 100 300`
             while (*s && (*s != ' ')) {
                 s++;
             }

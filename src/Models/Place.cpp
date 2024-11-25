@@ -36,7 +36,17 @@ auto Place::factory(const std::string &placeStr, DocType docType) -> std::shared
                 if (strncmp(s, "href:", 5) == 0) {
                     s += 5;
                     e = s;
-                    while (*e && (*e != ']')) {
+                    // Handle nested brackets
+                    int bracketCount = 0;
+                    while (*e) {
+                        if (*e == '[') {
+                            bracketCount++;
+                        } else if (*e == ']') {
+                            if (bracketCount == 0) {
+                                break;
+                            }
+                            bracketCount--;
+                        }
                         e++;
                     }
                     if (*e == ']') {
