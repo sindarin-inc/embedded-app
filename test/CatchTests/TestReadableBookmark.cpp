@@ -72,7 +72,6 @@ TEST_CASE("ReadOneBookmark functionality", "[readable-bookmark]") {
     SECTION("Empty file") {
         MockFile file("");
         LocalBookmark bookmark;
-
         REQUIRE(ReadOneBookmark(file, bookmark) == false);
     }
 
@@ -90,5 +89,44 @@ TEST_CASE("ReadOneBookmark functionality", "[readable-bookmark]") {
             bookmark.lastPlace->str() ==
             EPubPlace(3146, "Brandon Sanderson - [Mistborn 01] - The Final Empire_split_000.htm")
                 .str());
+    }
+
+    SECTION("Unpaired brackets in first place") {
+        MockFile file(
+            "+ [EPUB;offset:100,href:Bad[File.epub] [EPUB;offset:200,href:chapter2.epub]\n");
+        LocalBookmark bookmark;
+        REQUIRE(ReadOneBookmark(file, bookmark));
+        REQUIRE(bookmark.status == BOOKMARK_ON);
+        REQUIRE(bookmark.firstPlace->str() == EPubPlace(100, "Bad[File.epub").str());
+        REQUIRE(bookmark.lastPlace->str() == EPubPlace(200, "chapter2.epub").str());
+    }
+
+    SECTION("Unpaired brackets in second place") {
+        MockFile file(
+            "+ [EPUB;offset:100,href:chapter1.epub] [EPUB;offset:200,href:Bad[File.epub]\n");
+        LocalBookmark bookmark;
+        REQUIRE(ReadOneBookmark(file, bookmark));
+        REQUIRE(bookmark.status == BOOKMARK_ON);
+        REQUIRE(bookmark.firstPlace->str() == EPubPlace(100, "chapter1.epub").str());
+        REQUIRE(bookmark.lastPlace->str() == EPubPlace(200, "Bad[File.epub").str());
+    }
+
+    SECTION("Multiple unpaired brackets") {
+        MockFile file(
+            "+ [EPUB;offset:100,href:Bad[[File.epub] [EPUB;offset:200,href:Also]]Bad.epub]\n");
+        LocalBookmark bookmark;
+        REQUIRE(ReadOneBookmark(file, bookmark));
+        REQUIRE(bookmark.status == BOOKMARK_ON);
+        REQUIRE(bookmark.firstPlace->str() == EPubPlace(100, "Bad[[File.epub").str());
+        REQUIRE(bookmark.lastPlace->str() == EPubPlace(200, "Also]]Bad.epub").str());
+    }
+
+    SECTION("Missing final bracket") {
+        MockFile file(
+            "+ [EPUB;offset:100,href:chapter1.epub] [EPUB;offset:200,href:chapter2.epub\n");
+        LocalBookmark bookmark;
+        REQUIRE(ReadOneBookmark(file, bookmark));
+        REQUIRE(bookmark.firstPlace->str() == EPubPlace(100, "chapter1.epub").str());
+        REQUIRE(bookmark.lastPlace->str() == "[NONE;INVALID PLACE]");
     }
 }
