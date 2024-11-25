@@ -502,7 +502,10 @@ void FootnoteMgr::testEPubFiles() {
         auto readable = std::make_shared<Readable>();
         readable->readableType = "book";
 
-        auto stream = std::make_shared<EPubFile>(file, readable);
+        auto prefs = PreferencesStore();
+        SolDrm solDrm(prefs);
+
+        auto stream = std::make_shared<EPubFile>(file, readable, solDrm);
 
         auto spineCount = stream->getSpineCount();
         for (SpineIdx idx = 0; idx < spineCount; idx++) {
@@ -580,7 +583,10 @@ void FootnoteMgr::testEPubFilesHTML() {
         auto readable = std::make_shared<Readable>();
         readable->readableType = "book";
 
-        auto stream = std::make_shared<EPubFile>(file, readable);
+        auto prefs = PreferencesStore();
+        SolDrm solDrm(prefs);
+
+        auto stream = std::make_shared<EPubFile>(file, readable, solDrm);
 
         auto spineCount = stream->getSpineCount();
         for (SpineIdx idx = 0; idx < spineCount; idx++) {
