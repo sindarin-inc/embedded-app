@@ -35,11 +35,8 @@ auto Place::factory(const std::string &placeStr, DocType docType) -> std::shared
                 s = e;
                 if (strncmp(s, "href:", 5) == 0) {
                     s += 5;
-                    e = s;
-                    while (*e && (*e != ']')) {
-                        e++;
-                    }
-                    if (*e == ']') {
+                    e = placeStr.c_str() + placeStr.length() - 1;
+                    if ((*e == ']') && (e > s)) {
                         href.assign(s, e - s);
                         return SpiRamPtr<EPubPlace>(offset, href);
                     }
