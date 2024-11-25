@@ -48,16 +48,18 @@ auto ReadOneBookmark(SFile &file, LocalBookmark &bookmark) -> bool {
                 const char *t = bookmarkStr.c_str() + lastPos - 1;
 
                 // find where the first place is ending
-                while ((t > s) && (*t != ']'))
+                while ((t > s) && (*t != ']')) {
                     t--;
+                }
                 if (t > s) {
                     size_t length = t - s + 1;
                     bookmark.firstPlace = Place::factory(bookmarkStr.substr(firstPos, length));
 
                     s = bookmarkStr.c_str() + lastPos;
                     t = bookmarkStr.c_str() + bookmarkStr.length() - 1;
-                    while ((t > s) && (*t != ']'))
+                    while ((t > s) && (*t != ']')) {
                         t--;
+                    }
                     if (t > s) {
                         length = t - s + 1;
                         bookmark.lastPlace = Place::factory(bookmarkStr.substr(lastPos, length));
