@@ -34,8 +34,8 @@ TEST_CASE("ReadOneBookmark functionality", "[readable-bookmark]") {
         LocalBookmark bookmark;
         REQUIRE(ReadOneBookmark(file, bookmark) == true);
         REQUIRE(bookmark.status == BOOKMARK_ON);
-        REQUIRE(*bookmark.firstPlace == EPubPlace(100, "chapter1.htm"));
-        REQUIRE(*bookmark.lastPlace == EPubPlace(200, "chapter1.htm"));
+        REQUIRE(bookmark.firstPlace->str() == EPubPlace(100, "chapter1.htm").str());
+        REQUIRE(bookmark.lastPlace->str() == EPubPlace(200, "chapter1.htm").str());
     }
 
     SECTION("Read valid OFF bookmark") {
@@ -44,8 +44,8 @@ TEST_CASE("ReadOneBookmark functionality", "[readable-bookmark]") {
         LocalBookmark bookmark;
         REQUIRE(ReadOneBookmark(file, bookmark) == true);
         REQUIRE(bookmark.status == BOOKMARK_OFF);
-        REQUIRE(*bookmark.firstPlace == EPubPlace(100, "chapter1.htm"));
-        REQUIRE(*bookmark.lastPlace == EPubPlace(200, "chapter1.htm"));
+        REQUIRE(bookmark.firstPlace->str() == EPubPlace(100, "chapter1.htm").str());
+        REQUIRE(bookmark.lastPlace->str() == EPubPlace(200, "chapter1.htm").str());
     }
 
     SECTION("Read TXT bookmark") {
@@ -53,8 +53,8 @@ TEST_CASE("ReadOneBookmark functionality", "[readable-bookmark]") {
         LocalBookmark bookmark;
         REQUIRE(ReadOneBookmark(file, bookmark) == true);
         REQUIRE(bookmark.status == BOOKMARK_ON);
-        REQUIRE(*bookmark.firstPlace == TxtPlace(100));
-        REQUIRE(*bookmark.lastPlace == TxtPlace(200));
+        REQUIRE(bookmark.firstPlace->str() == TxtPlace(100).str());
+        REQUIRE(bookmark.lastPlace->str() == TxtPlace(200).str());
     }
 
     SECTION("Invalid bookmark format") {
@@ -83,11 +83,12 @@ TEST_CASE("ReadOneBookmark functionality", "[readable-bookmark]") {
         LocalBookmark bookmark;
         REQUIRE(ReadOneBookmark(file, bookmark) == true);
         REQUIRE(bookmark.status == BOOKMARK_ON);
+        REQUIRE(bookmark.firstPlace->str() ==
+                EPubPlace(293, "Brandon Sanderson - [Mistborn 01] - The Final Empire_split_000.htm")
+                    .str());
         REQUIRE(
-            *bookmark.firstPlace ==
-            EPubPlace(293, "Brandon Sanderson - [Mistborn 01] - The Final Empire_split_000.htm"));
-        REQUIRE(
-            *bookmark.lastPlace ==
-            EPubPlace(3146, "Brandon Sanderson - [Mistborn 01] - The Final Empire_split_000.htm"));
+            bookmark.lastPlace->str() ==
+            EPubPlace(3146, "Brandon Sanderson - [Mistborn 01] - The Final Empire_split_000.htm")
+                .str());
     }
 }
