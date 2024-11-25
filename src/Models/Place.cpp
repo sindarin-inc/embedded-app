@@ -55,7 +55,7 @@ auto Place::factory(const std::string &placeStr, DocType docType) -> std::shared
     } else {
         log_e("Unable to parse place string properly: \"%s\"", placeStr.c_str());
         if constexpr (REND_ON_ERROR_EXIT) {
-            exit(1);
+            assert(false && "Unable to parse place string properly");
         }
         return SpiRamPtr<NonePlace>();
     }
