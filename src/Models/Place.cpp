@@ -35,11 +35,8 @@ auto Place::factory(const std::string &placeStr, DocType docType) -> std::shared
                 s = e;
                 if (strncmp(s, "href:", 5) == 0) {
                     s += 5;
-                    e = s;
-                    while (*e && (*e != ']')) {
-                        e++;
-                    }
-                    if (*e == ']') {
+                    e = placeStr.c_str() + placeStr.length() - 1;
+                    if ((*e == ']') && (e > s)) {
                         href.assign(s, e - s);
                         return SpiRamPtr<EPubPlace>(offset, href);
                     }
@@ -58,7 +55,7 @@ auto Place::factory(const std::string &placeStr, DocType docType) -> std::shared
     } else {
         log_e("Unable to parse place string properly: \"%s\"", placeStr.c_str());
         if constexpr (REND_ON_ERROR_EXIT) {
-            exit(1);
+            assert(false && "Unable to parse place string properly");
         }
         return SpiRamPtr<NonePlace>();
     }

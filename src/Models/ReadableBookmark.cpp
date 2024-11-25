@@ -37,25 +37,48 @@ auto ReadOneBookmark(SFile &file, LocalBookmark &bookmark) -> bool {
         s++;
     }
     if (*s) {
-        bookmark.firstPlace = Place::factory(s);
-
         if (*s == '[') {
-            s++;
-            while (*s && (*s != '[')) {
-                s++;
+            // *s is pointing at the first place. Find the location of the second place.
+            size_t firstPos = s - bookmarkStr.c_str();
+            size_t lastPos = bookmarkStr.find("[EPUB;", firstPos + 1);
+            if (lastPos == -1) {
+                lastPos = bookmarkStr.find("[TXT;", firstPos + 1);
+            }
+            if (lastPos > 1) {
+                const char *t = bookmarkStr.c_str() + lastPos - 1;
+
+                // find where the first place is ending
+                while ((t > s) && (*t != ']')) {
+                    t--;
+                }
+                if (t > s) {
+                    size_t length = t - s + 1;
+                    bookmark.firstPlace = Place::factory(bookmarkStr.substr(firstPos, length));
+
+                    s = bookmarkStr.c_str() + lastPos;
+                    t = bookmarkStr.c_str() + bookmarkStr.length() - 1;
+                    while ((t > s) && (*t != ']')) {
+                        t--;
+                    }
+                    if (t > s) {
+                        length = t - s + 1;
+                        bookmark.lastPlace = Place::factory(bookmarkStr.substr(lastPos, length));
+                        return true;
+                    }
+                }
             }
         } else {
+            bookmark.firstPlace = Place::factory(s);
             while (*s && (*s != ' ')) {
                 s++;
             }
             while (*s == ' ') {
                 s++;
             }
-        }
-
-        if (*s) {
-            bookmark.lastPlace = Place::factory(s);
-            return true;
+            if (*s) {
+                bookmark.lastPlace = Place::factory(s);
+                return true;
+            }
         }
     }
 
