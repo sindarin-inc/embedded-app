@@ -53,7 +53,7 @@ public:
         }
         return ret;
     }
-    auto readStringUntil(char terminator) -> std::string {
+    virtual auto readStringUntil(char terminator) -> std::string {
         std::string res;
         int value;
         while (true) {
