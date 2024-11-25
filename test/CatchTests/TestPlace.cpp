@@ -65,4 +65,29 @@ TEST_CASE("Test Place factory", "[place]") {
         REQUIRE(place2->getOffset() == 456);
         REQUIRE(dynamic_cast<EPubPlace *>(place2.get())->getHRef() == "chapter.html");
     }
+
+    SECTION("Unpaired opening bracket in href") {
+        auto place = Place::factory("[EPUB;offset:100,href:Bad[File.epub]", DocType::EPUB);
+        REQUIRE(place->getOffset() == 100);
+        REQUIRE(dynamic_cast<EPubPlace *>(place.get())->getHRef() == "Bad[File.epub");
+    }
+
+    SECTION("Multiple unpaired opening brackets") {
+        auto place = Place::factory("[EPUB;offset:100,href:Bad[[File.epub]", DocType::EPUB);
+        REQUIRE(place->getOffset() == 100);
+        REQUIRE(dynamic_cast<EPubPlace *>(place.get())->getHRef() == "Bad[[File.epub");
+    }
+
+    SECTION("Unpaired closing bracket in href") {
+        auto place = Place::factory("[EPUB;offset:100,href:Bad]File.epub]", DocType::EPUB);
+        REQUIRE(place->getOffset() == 100);
+        REQUIRE(dynamic_cast<EPubPlace *>(place.get())->getHRef() == "Bad]File.epub");
+    }
+
+    SECTION("Missing final closing bracket") {
+        // Should return default place when format is invalid
+        auto place = Place::factory("[EPUB;offset:100,href:file.epub", DocType::EPUB);
+        REQUIRE(place->getOffset() == 0);
+        REQUIRE(dynamic_cast<EPubPlace *>(place.get())->getHRef() == "");
+    }
 }
