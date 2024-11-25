@@ -11,7 +11,7 @@
 
 class Place {
 private:
-#if SIMULATOR
+#if SIMULATOR && !TESTS
     static constexpr bool REND_ON_ERROR_EXIT = true;
 #else
     static constexpr bool REND_ON_ERROR_EXIT = false;
