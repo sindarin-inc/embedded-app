@@ -35,7 +35,9 @@ public:
 
     void drawInRect(Rect rect) override {
         titleView_.draw();
-        arrowView_.draw();
+        if (menuItem_->hasRightButtonCallback()) {
+            arrowView_.draw();
+        }
     }
 
     void drawFastOnlyElements() override {

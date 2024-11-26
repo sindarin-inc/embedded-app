@@ -43,6 +43,7 @@
 #include "UI/LineSpacingScreen.hpp"
 #include "UI/Menu/DRMFreeWelcomeMenuScreen.hpp"
 #include "UI/Menu/DarkModeMenuItemCheckable.hpp"
+#include "UI/Menu/ExperimentalMenuScreen.hpp"
 #include "UI/Menu/FirstBookWelcomeMenuScreen.hpp"
 #include "UI/Menu/GenericSettingsMenuScreen.hpp"
 #include "UI/Menu/InactivitySettingMenuScreen.hpp"
@@ -1099,61 +1100,11 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
         menuItems->emplace_back(std::make_shared<MenuItemSingleLine>("Experimental Features",
                                                                      [this]() {
             log_d("Loading Experimental Settings Menu");
-            auto experimentalSettingsMenu =
-                std::make_shared<GenericSettingsMenuScreen>(display_, "Main Menu");
-
+            auto experimentalSettingsMenu = std::make_shared<ExperimentalMenuScreen>(
+                display_, "Main Menu", prefs_, telemetry_,
+                [this](const std::shared_ptr<Screen> &screen) { this->pushScreen(screen); });
             experimentalSettingsMenu->setBackCallback([this]() { this->popScreen(); });
-
-            experimentalSettingsMenu->addMenuItem(std::make_shared<MenuItemCheckable>(
-                "Show Partial Summary",
-                [this]() {
-                if (!prefs_.seenPartialSummaryOverview.get().value_or(false)) {
-                    std::string message =
-                        "You know how when you binge watch a show (you'd never do that, would "
-                        "you?), you often will get a \"Previously on\" overview "
-                        "at the beginning of each episode? This feature gives you \"Previously "
-                        "on\" "
-                        "but for your reading! Any time you leave a reading "
-                        "session in the middle of a chapter, we'll generate a partial chapter "
-                        "summary for you (no spoilers) to "
-                        "review on your next reading session.\n\n\n"
-                        "Press any button to continue...";
-                    showTemporaryMessage(message, TEMP_MSG_DURATION_NO_CLOSE);
-                    prefs_.seenPartialSummaryOverview.set(true);
-                } else {
-                    this->prefs_.noShowPartialChapterSummary.set(
-                        !this->prefs_.noShowPartialChapterSummary.get().value_or(false));
-                    currentScreen()->setNeedsRerender();
-                }
-                },
-                [this]() -> bool {
-                    return !this->prefs_.noShowPartialChapterSummary.get().value_or(false);
-                }));
-
-            experimentalSettingsMenu->addMenuItem(std::make_shared<MenuItemCheckable>(
-                "Fast Page Transitions",
-                [this]() {
-                if (!prefs_.seenFastPageTransitionsOverview.get().value_or(false)) {
-                    std::string message =
-                        "Have you noticed on some screen transitions, the Eink "
-                        "displays of your Sol Reader flash black and then white? "
-                        "This is called a full refresh. By default, all page "
-                        "turns use full refresh. "
-                        "The Fast Page Transitions "
-                        "option speeds up your page turns "
-                        "by only doing a full refresh when needed to ensure the display doesn't "
-                        "have too many remnants of previous pages.\n\n"
-                        "Press any button to continue...";
-                    showTemporaryMessage(message, TEMP_MSG_DURATION_NO_CLOSE);
-                    prefs_.seenFastPageTransitionsOverview.set(true);
-                } else {
-                    this->prefs_.fastTransitions.set(
-                        !this->prefs_.fastTransitions.get().value_or(false));
-                    currentScreen()->setNeedsRerender();
-                }
-                },
-                [this]() -> bool { return this->prefs_.fastTransitions.get().value_or(false); }));
-
+            experimentalSettingsMenu->populateMenuItems();
             experimentalSettingsMenu->setFirstLoad();
             pushScreen(experimentalSettingsMenu);
             if (!prefs_.seenExperimentalOverview.get().value_or(false)) {
