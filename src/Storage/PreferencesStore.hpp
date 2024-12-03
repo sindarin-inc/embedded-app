@@ -144,6 +144,20 @@ auto GetNVSType() -> nvs_type_t {
     }
 }
 
+#define PROFILE_NVS_WRITES 0
+
+#if PROFILE_NVS_WRITES
+extern uint32_t nvsBlocksWritten;
+#define PROFILE_NVS_WRITES_INCREMENT(profileLogKey, blocks)                                        \
+    do {                                                                                           \
+        nvsBlocksWritten += blocks;                                                                \
+        log_d("NVS wrote %zu blocks for key %s, Total written since boot: %" PRIu32, blocks,       \
+              profileLogKey, nvsBlocksWritten);                                                    \
+    } while (0)
+#else
+#define PROFILE_NVS_WRITES_INCREMENT(profileLogKey, blocks)
+#endif
+
 template <typename T>
 auto WriteToStorage(uint32_t nvsHandle, const char *key, T &value) -> esp_err_t {
     static_assert(
@@ -156,23 +170,34 @@ auto WriteToStorage(uint32_t nvsHandle, const char *key, T &value) -> esp_err_t 
     esp_err_t err;
     if constexpr (std::is_same_v<T, bool>) {
         err = nvs_set_u8(nvsHandle, key, value);
+        PROFILE_NVS_WRITES_INCREMENT(key, 1);
     } else if constexpr (std::is_same_v<T, int16_t>) {
         err = nvs_set_i16(nvsHandle, key, value);
+        PROFILE_NVS_WRITES_INCREMENT(key, 1);
     } else if constexpr (std::is_same_v<T, uint16_t>) {
         err = nvs_set_u16(nvsHandle, key, value);
+        PROFILE_NVS_WRITES_INCREMENT(key, 1);
     } else if constexpr (std::is_same_v<T, int> || std::is_same_v<T, int32_t>) {
         err = nvs_set_i32(nvsHandle, key, value);
+        PROFILE_NVS_WRITES_INCREMENT(key, 1);
     } else if constexpr (std::is_same_v<T, uint32_t>) {
         err = nvs_set_u32(nvsHandle, key, value);
+        PROFILE_NVS_WRITES_INCREMENT(key, 1);
     } else if constexpr (std::is_same_v<T, uint64_t>) {
         err = nvs_set_u64(nvsHandle, key, value);
+        PROFILE_NVS_WRITES_INCREMENT(key, 1);
     } else if constexpr (std::is_same_v<T, BLEAddress>) {
         err = nvs_set_u64(nvsHandle, key, static_cast<uint64_t>(value));
+        PROFILE_NVS_WRITES_INCREMENT(key, 1);
     } else if constexpr (std::is_same_v<T, std::string>) {
         err = nvs_set_str(nvsHandle, key, value.c_str());
+        // String and blob writes have 8 bytes in the first block, then 32 bytes per block after
+        // so account for the 8 bytes but round up
+        PROFILE_NVS_WRITES_INCREMENT(key, std::max((size_t)1, (value.length() + 55) / 32));
     } else if constexpr (std::is_same_v<T, std::vector<uint8_t>> ||
                          std::is_same_v<T, SpiramVector<uint8_t>>) {
         err = nvs_set_blob(nvsHandle, key, value.data(), value.size());
+        PROFILE_NVS_WRITES_INCREMENT(key, std::max((size_t)1, (value.size() + 55) / 32));
     } else {
         log_e("Unhandled prefs type for key %s", key);
         assert(0);
