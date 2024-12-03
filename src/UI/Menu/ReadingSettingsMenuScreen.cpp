@@ -240,7 +240,7 @@ void ReadingSettingsMenuScreen::populateMenuItems() {
         }
         const char *period = (hour >= 12) ? "pm" : "am";
         int displayHour = (hour == 0) ? 12 : ((hour > 12) ? hour - 12 : hour);
-        return StringFormat("%d:00%s", displayHour, period);
+        return StringFormat("%d%s", displayHour, period);
     };
 
     // Helper function to get the dark mode schedule text
