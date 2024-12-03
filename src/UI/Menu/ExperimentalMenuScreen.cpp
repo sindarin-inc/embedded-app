@@ -241,6 +241,8 @@ void ExperimentalMenuScreen::populateMenuItems() {
                 int menuIndex = 0;
                 if (prefs_.invertStartHour.get().has_value()) {
                     menuIndex = prefs_.invertStartHour.get().value() + 1;
+                } else {
+                    menuIndex = 21; // Start at 8pm
                 }
                 timeMenu->setSelectedIndex(menuIndex);
 
@@ -279,6 +281,8 @@ void ExperimentalMenuScreen::populateMenuItems() {
                 int menuIndex = 0;
                 if (prefs_.invertEndHour.get().has_value()) {
                     menuIndex = prefs_.invertEndHour.get().value() + 1;
+                } else {
+                    menuIndex = 9; // End at 8am
                 }
                 timeMenu->setSelectedIndex(menuIndex);
 
