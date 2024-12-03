@@ -158,7 +158,7 @@ void ExperimentalMenuScreen::populateMenuItems() {
         }
         const char *period = (hour >= 12) ? "pm" : "am";
         int displayHour = (hour == 0) ? 12 : ((hour > 12) ? hour - 12 : hour);
-        return StringFormat("%d:00%s", displayHour, period);
+        return StringFormat("%d%s", displayHour, period);
     };
 
     // Helper function to get the dark mode schedule text
@@ -199,7 +199,7 @@ void ExperimentalMenuScreen::populateMenuItems() {
                 "Would you like your Sol Reader to automatically be in Dark Mode before "
                 "sunrise and after sunset? If so, this feature is for you! "
                 "You can set the time for Dark Mode to automatically turn on and off with this "
-                "Auto Dark feature. Need to manaully override? You can do that here too! "
+                "Auto Dark Mode feature. Need to manaully override? You can do that here too! "
                 "After you dismiss this message, simply press the center button again to "
                 "configure the times.\n\n"
                 "Press any button to continue...";
@@ -312,7 +312,7 @@ void ExperimentalMenuScreen::populateMenuItems() {
     };
 
     addMenuItem(std::make_shared<DarkModeMenuItemCheckable>(
-        StringFormat("Auto Dark%s",
+        StringFormat("Auto Dark Mode%s",
                      getDarkModeScheduleText(prefs_.invertStartHour.get().value_or(-1),
                                              prefs_.invertEndHour.get().value_or(-1), formatTime)
                          .c_str()),
