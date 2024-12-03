@@ -105,6 +105,9 @@ void ExperimentalMenuScreen::populateMenuItems() {
     addMenuItem(std::make_shared<MenuItemCheckable>(
         "Show Partial Summary",
         [this]() {
+        this->prefs_.noShowPartialChapterSummary.set(
+            !this->prefs_.noShowPartialChapterSummary.get().value_or(false));
+        setNeedsRerender();
         if (!prefs_.seenPartialSummaryOverview.get().value_or(false)) {
             std::string message =
                 "You know how when you binge watch a show (you'd never do that, would "
@@ -118,10 +121,6 @@ void ExperimentalMenuScreen::populateMenuItems() {
                 "Press any button to continue...";
             RootUI::getInstance().showTemporaryMessage(message, TEMP_MSG_DURATION_NO_CLOSE);
             prefs_.seenPartialSummaryOverview.set(true);
-        } else {
-            this->prefs_.noShowPartialChapterSummary.set(
-                !this->prefs_.noShowPartialChapterSummary.get().value_or(false));
-            setNeedsRerender();
         }
         },
         [this]() -> bool {
@@ -131,6 +130,8 @@ void ExperimentalMenuScreen::populateMenuItems() {
     addMenuItem(std::make_shared<MenuItemCheckable>(
         "Fast Page Transitions",
         [this]() {
+        this->prefs_.fastTransitions.set(!this->prefs_.fastTransitions.get().value_or(false));
+        setNeedsRerender();
         if (!prefs_.seenFastPageTransitionsOverview.get().value_or(false)) {
             std::string message =
                 "Have you noticed on some screen transitions, the Eink "
@@ -144,9 +145,6 @@ void ExperimentalMenuScreen::populateMenuItems() {
                 "Press any button to continue...";
             RootUI::getInstance().showTemporaryMessage(message, TEMP_MSG_DURATION_NO_CLOSE);
             prefs_.seenFastPageTransitionsOverview.set(true);
-        } else {
-            this->prefs_.fastTransitions.set(!this->prefs_.fastTransitions.get().value_or(false));
-            setNeedsRerender();
         }
         },
         [this]() -> bool { return this->prefs_.fastTransitions.get().value_or(false); }));
