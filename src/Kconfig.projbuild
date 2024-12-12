@@ -157,7 +157,7 @@ menu "Sol Options"
 
         config USE_SYS_ON
             bool "Use SYS_ON Pin"
-            default y if CONFIG_DISPLAY_EINKET013TT1
+            default y if DISPLAY_EINKET013TT1
             default n
 
         config DEFAULT_INACTIVITY_MINUTES

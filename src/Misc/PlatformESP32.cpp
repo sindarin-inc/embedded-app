@@ -236,6 +236,8 @@ void InitializePlatform() {
     // The MCU will keep itself on until the digital magnetometer detects the temples are closed, or
     // there are 5 mins of inactivity
     ForcePowerOn();
+#else
+    log_w("CONFIG_USE_SYS_ON is not set, MCU will not keep itself on");
 #endif
 
 #if CONFIG_DISPLAY_POWER != -1
@@ -568,15 +570,18 @@ auto GetHardwareRevision() -> uint8_t {
 }
 
 void ForcePowerOn() {
+#if CONFIG_USE_SYS_ON
     gpio_reset_pin(static_cast<gpio_num_t>(sysOnPin));
     gpio_set_pull_mode(static_cast<gpio_num_t>(sysOnPin), GPIO_FLOATING);
     gpio_set_direction(static_cast<gpio_num_t>(sysOnPin), GPIO_MODE_OUTPUT);
     gpio_set_level(static_cast<gpio_num_t>(sysOnPin), 1);
     gpio_hold_en(static_cast<gpio_num_t>(sysOnPin));
     gpio_deep_sleep_hold_en();
+#endif
 }
 
 void AllowPowerOff() {
+#if CONFIG_USE_SYS_ON
     gpio_deep_sleep_hold_dis();
     gpio_hold_dis(static_cast<gpio_num_t>(sysOnPin));
 
@@ -590,4 +595,5 @@ void AllowPowerOff() {
 
     // pinMode(sysOnPin, OUTPUT);
     // DigitalWrite(sysOnPin, LOW);
+#endif
 }
