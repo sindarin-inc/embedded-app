@@ -527,6 +527,9 @@ public:
           seenPartialSummaryOverview(boolFlags_, 20),
           seenFastPageTransitionsOverview(boolFlags_, 21),
           seenAutoDarkModeOverview(boolFlags_, 22),
+          seenBatteryWhenLowOverview(boolFlags_, 23),
+          alwaysShowBattery(boolFlags_, 24),
+
           privateKey(*this, "private-key"),
           // only touch the lines above this when deleting those prefs. Do not renumber. Add below 
           // to add a new boolFlag with incrementing value.
@@ -863,6 +866,8 @@ public:
     BooleanFlag seenPartialSummaryOverview;
     BooleanFlag seenFastPageTransitionsOverview;
     BooleanFlag seenAutoDarkModeOverview;
+    BooleanFlag seenBatteryWhenLowOverview;
+    BooleanFlag alwaysShowBattery;
     PrefsItem<SpiramVector<uint8_t>> privateKey;
 
     // These are RTC_SLOW_MEM variables that persist across deep sleep / wake cycles but will be

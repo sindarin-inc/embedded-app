@@ -1,7 +1,7 @@
 #include "MainMenuScreen.hpp"
 
-MainMenuScreen::MainMenuScreen(DisplaySystem &display, Battery &battery)
-    : CarouselMenuScreen(display), clockBatteryView_(battery, display) {
+MainMenuScreen::MainMenuScreen(DisplaySystem &display, Battery &battery, PreferencesStore &prefs)
+    : CarouselMenuScreen(display), clockBatteryView_(battery, display, prefs) {
     menuView_.padding = 5;
     menuView_.itemsPerPage = 4;
     menuView_.indicatorWidth = 5;

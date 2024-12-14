@@ -103,6 +103,26 @@ void ExperimentalMenuScreen::render(DisplaySystem &display) {
 void ExperimentalMenuScreen::populateMenuItems() {
 
     addMenuItem(std::make_shared<MenuItemCheckable>(
+        "Only Show Battery When Low",
+        [this]() {
+        this->prefs_.alwaysShowBattery.set(!this->prefs_.alwaysShowBattery.get().value_or(false));
+        setNeedsRerender();
+        if (!prefs_.seenBatteryWhenLowOverview.get().value_or(false)) {
+            std::string message =
+                "The battery life of your Sol Reader is so incredibly long "
+                "that by default, we only show you the battery life in the Main "
+                "Menu when it's less than 20% (which is a couple hours of reading under most "
+                "circumstances). But some people like to see their power level all the "
+                "time, so you can disable this option to always see your Sol Reader battery "
+                "life.\n\n"
+                "Press any button to continue...";
+            RootUI::getInstance().showTemporaryMessage(message, TEMP_MSG_DURATION_NO_CLOSE);
+            prefs_.seenBatteryWhenLowOverview.set(true);
+        }
+        },
+        [this]() -> bool { return !this->prefs_.alwaysShowBattery.get().value_or(false); }));
+
+    addMenuItem(std::make_shared<MenuItemCheckable>(
         "Show Partial Summary",
         [this]() {
         this->prefs_.noShowPartialChapterSummary.set(
