@@ -4,6 +4,18 @@
 
 #define HEXTONIBBLE(c) ((c) >= 'A' ? ((c) >= 'a' ? ((c) - 'a') : ((c) - 'A')) + 10 : ((c) - '0'))
 
+/**
+ * @brief Cleans up a given file path by resolving relative path components and decoding
+ * percent-encoded characters.
+ *
+ * This function takes a file path and a current folder path, and processes the file path to:
+ * - Resolve relative path components (e.g., "." and "..").
+ * - Decode percent-encoded characters (e.g., "%20" to space).
+ * - Combine the current folder path with the file path if the file path is not absolute.
+ *
+ * @param filename The file path to be cleaned up. This is both an input and output parameter.
+ * @param currentFolder The current folder path to be used if the file path is not absolute.
+ */
 void FootnoteMgr::cleanupPath(SpiramString &filename, const char *currentFolder) const {
     // Allocate memory for the result
     SpiramString fullPath{};
@@ -66,6 +78,18 @@ void FootnoteMgr::cleanupPath(SpiramString &filename, const char *currentFolder)
     // std::cout << "Cleaned path: " << *filename << std::endl;
 }
 
+/**
+ * @brief Adds a footnote entry to the manager.
+ *
+ * This function processes the given href to extract the filename and id of the footnote,
+ * validates the href and id, and adds the footnote to the internal list if valid.
+ *
+ * @param href The href string pointing to the footnote location.
+ * @param stream A shared pointer to the EPubFile stream.
+ * @param anchorStreamPlace The stream place of the anchor.
+ * @param idsInSpine A map of ids in the spine with their corresponding offsets.
+ * @return true if the footnote entry is successfully added, false otherwise.
+ */
 auto FootnoteMgr::addEntry(const char *href, const std::shared_ptr<EPubFile> &stream,
                            StreamPlace anchorStreamPlace,
                            const SpiramMap<SpiramString, uint32_t> &idsInSpine) -> bool {
@@ -146,6 +170,32 @@ auto FootnoteMgr::addEntry(const char *href, const std::shared_ptr<EPubFile> &st
     return true;
 }
 
+/**
+ * @brief Parses the EPUB file stream to extract footnotes.
+ *
+ * This function clears any existing footnotes and then processes the EPUB file stream
+ * starting from the given spine index to extract footnotes. The function supports both
+ * chapter-based and non-chapter-based parsing, depending on the FOOTNOTE_CHAPTER_BASED
+ * macro.
+ *
+ * @param stream A shared pointer to the EPubFile stream to be parsed.
+ * @param spineIdx The starting spine index for parsing.
+ * @return true if parsing is successful, false otherwise.
+ *
+ * The function traverses the XHTML content of the EPUB file, looking for footnote
+ * references within <sup> and <a> tags. It adds entries for these footnotes to the
+ * FootnoteMgr instance.
+ *
+ * The Interpret struct is used as an XML tree walker to traverse the XHTML content and
+ * extract footnote references. It handles different cases of footnote references, such as:
+ * - <sup>...<a href="xxx">yyy</a>...</sup>
+ * - <a href="xxx"><sup>yyy</sup></a>
+ * - <a href="xxx" id="iii">yyy</a>
+ *
+ * If the current file is empty or the end of the current file is reached, the function
+ * moves to the next file in the spine and continues parsing until the end of the book
+ * or the start of a new chapter (if chapter-based parsing is enabled).
+ */
 auto FootnoteMgr::parse(const std::shared_ptr<EPubFile> &stream, SpineIdx spineIdx) -> bool {
 
     clear();
@@ -307,6 +357,25 @@ auto FootnoteMgr::parse(const std::shared_ptr<EPubFile> &stream, SpineIdx spineI
     return true;
 }
 
+/**
+ * @brief Retrieves footnotes from the provided EPub file stream.
+ *
+ * This function processes the footnotes stored in the `footnotes_` member variable,
+ * extracts their filenames and IDs, and then parses the corresponding XML files
+ * to retrieve the footnote content. The content is extracted and stored in the
+ * `footnotes_` vector.
+ *
+ * @param stream A shared pointer to the EPubFile stream from which to retrieve the footnotes.
+ * @return true if found footnotes were successfully retrieved and parsed, false otherwise.
+ *
+ * The function performs the following steps:
+ * 1. Extracts filenames and IDs from the `footnotes_` vector.
+ * 2. Defines a custom XML tree walker to traverse the XML nodes and extract footnote content.
+ * 3. Iterates over the extracted filenames, loads the corresponding XML files, and uses the
+ *    custom XML tree walker to find and extract the footnote content.
+ * 4. Handles different XML structures to ensure the footnote content is correctly extracted.
+ * 5. Logs errors and returns false if any issues are encountered during the process.
+ */
 auto FootnoteMgr::retrieveNotes(const std::shared_ptr<EPubFile> &stream) -> bool {
 
     std::set<std::string> filenames;
@@ -345,16 +414,53 @@ auto FootnoteMgr::retrieveNotes(const std::shared_ptr<EPubFile> &stream) -> bool
                 if (it != idMap->end()) {
                     pugi::xml_node pNode = node;
                     writer.setup(&((*footnotes)[it->second]->content));
-                    while (pNode && ((strcmp(pNode.name(), "p") != 0) &&
-                                     (strcmp(pNode.name(), "div") != 0) &&
-                                     (strcmp(pNode.name(), "li") != 0))) {
-                        pNode = pNode.parent();
+
+                    // The footnote could be inside <br/> ... <br/> tags:
+
+                    bool brDelimitedFound = false;
+
+                    while (pNode && (strcmp(pNode.name(), "br") != 0)) {
+                        pNode = pNode.previous_sibling();
                     }
-                    if (!pNode) {
-                        pNode = node.parent();
+
+                    if (pNode) {
+                        pNode = pNode.next_sibling();
+
+                        // Be sure that there is an ending <br/> tag
+                        pugi::xml_node eNode = pNode;
+
+                        while (eNode && (strcmp(eNode.name(), "br") != 0)) {
+                            eNode = eNode.next_sibling();
+                        }
+
+                        if (eNode) {
+                            // put the result inside a <p> tag
+                            writer.write("<p>", 3);
+                            while (pNode && (strcmp(pNode.name(), "br") != 0)) {
+                                pNode.print(writer, "", pugi::format_raw);
+                                pNode = pNode.next_sibling();
+                            }
+                            writer.write("</p>", 4);
+                            (*footnotes)[it->second]->contentFound = true;
+                            brDelimitedFound = true;
+                        }
                     }
-                    pNode.print(writer, "", pugi::format_raw);
-                    (*footnotes)[it->second]->contentFound = true;
+
+                    if (!brDelimitedFound) {
+
+                        // Check for <p>, <div> or <li> tags
+
+                        pugi::xml_node pNode = node;
+                        while (pNode && ((strcmp(pNode.name(), "p") != 0) &&
+                                         (strcmp(pNode.name(), "div") != 0) &&
+                                         (strcmp(pNode.name(), "li") != 0))) {
+                            pNode = pNode.parent();
+                        }
+                        if (pNode) {
+                            pNode.print(writer, "", pugi::format_raw);
+                            (*footnotes)[it->second]->contentFound = true;
+                        }
+                    }
                 }
             }
             return true;
@@ -418,22 +524,39 @@ auto FootnoteMgr::retrieveNotes(const std::shared_ptr<EPubFile> &stream) -> bool
     return status;
 }
 
+/**
+ * @brief Generates the HTML representation of a footnote.
+ *
+ * This function creates an HTML document for the footnote at the specified index.
+ * If the footnote cannot be found, an empty string is returned.
+ *
+ * @param index The index of the footnote to retrieve.
+ *
+ * @return A shared pointer to a SpiramString containing the HTML representation of the footnote.
+ *         Will be an empty sring if the footnote content is not found.
+ */
 auto FootnoteMgr::getFootnoteHTML(int index) const -> std::shared_ptr<SpiramString> {
     auto result = std::make_shared<SpiramString>();
 
-    result->assign("<?xml version='1.0' encoding='utf-8'?><!DOCTYPE html><html><head/><body>");
-
     if ((index < footnotes_.size()) && footnotes_[index]->contentFound) {
+        result->assign("<?xml version='1.0' encoding='utf-8'?><!DOCTYPE html><html><head/><body>");
         result->append(footnotes_[index]->content);
-    } else {
-        result->append("<p>No Footnote</p>");
+        result->append("</body></html>");
     }
-
-    result->append("</body></html>");
 
     return result;
 }
 
+/**
+ * @brief Generates an HTML representation of all footnotes.
+ *
+ * This function creates an HTML document containing all the footnotes.
+ * If there are no footnotes, it will include a message indicating that
+ * no footnotes are available. Each footnote that has content found will
+ * be appended to the HTML body.
+ *
+ * @return A shared pointer to a SpiramString containing the HTML document.
+ */
 auto FootnoteMgr::getAllFootnotesHTML() const -> std::shared_ptr<SpiramString> {
     auto result = std::make_shared<SpiramString>();
 
@@ -463,6 +586,28 @@ auto FootnoteMgr::getAllFootnotesHTML() const -> std::shared_ptr<SpiramString> {
 
 namespace fs = std::filesystem;
 
+/**
+ * @brief Tests EPub files for footnotes.
+ *
+ * This function tests all EPub files located in a folder specified by the
+ * environment variable FOOTNOTE_TEST_FOLDER. It logs the results to a file
+ * specified by the environment variable FOOTNOTE_TEST_LOGFILE.
+ *
+ * The function performs the following steps:
+ * 1. Retrieves the folder path and log file path from environment variables.
+ * 2. Checks if the environment variables are defined. If not, it logs an error
+ *    message and returns.
+ * 3. Opens the log file for writing.
+ * 4. Iterates over each file in the specified folder.
+ * 5. For each file, it creates an EPubFile stream and retrieves the spine count.
+ * 6. Iterates over each spine index and parses the content.
+ * 7. Logs any errors encountered during parsing or note retrieval.
+ * 8. Closes the EPubFile stream and the log file.
+ *
+ * @note The function requires the following environment variables to be set:
+ * - FOOTNOTE_TEST_FOLDER: Path to the folder containing EPub files.
+ * - FOOTNOTE_TEST_LOGFILE: Path to the log file where results will be written.
+ */
 void FootnoteMgr::testEPubFiles() {
     bool error{false};
     char *folder{nullptr};
@@ -537,6 +682,26 @@ void FootnoteMgr::testEPubFiles() {
     std::cout << "Testing FootnoteMgr completed." << std::endl;
 }
 
+/**
+ * @brief Tests EPub files for footnotes and logs the results in an HTML file.
+ *
+ * This function reads all EPub files from a directory specified by the environment variable
+ * FOOTNOTE_TEST_FOLDER and logs the results of footnote parsing and retrieval to an HTML file
+ * specified by the environment variable FOOTNOTE_TEST_LOGFILE. The log file will be created
+ * with a .html extension if not already specified.
+ *
+ * The function performs the following steps:
+ * 1. Checks for the required environment variables FOOTNOTE_TEST_FOLDER and FOOTNOTE_TEST_LOGFILE.
+ * 2. Opens the log file for writing.
+ * 3. Iterates through each EPub file in the specified folder.
+ * 4. For each EPub file, it parses the spine and retrieves footnotes.
+ * 5. Logs the results, including any errors or warnings, to the HTML log file.
+ *
+ * @note The function will return early if the required environment variables are not set.
+ *
+ * @warning Ensure that the environment variables FOOTNOTE_TEST_FOLDER and FOOTNOTE_TEST_LOGFILE
+ * are defined before running this function.
+ */
 void FootnoteMgr::testEPubFilesHTML() {
     bool error{false};
     char *folder{nullptr};
@@ -550,9 +715,9 @@ void FootnoteMgr::testEPubFilesHTML() {
         error = true;
     }
 
-    logFile.append(getenv("FOOTNOTE_TEST_LOGFILE"));
+    char *logFileName = getenv("FOOTNOTE_TEST_LOGFILE");
 
-    if (logFile.empty()) {
+    if (logFileName == nullptr) {
         std::cerr << "Please define environment variable FOOTNOTE_TEST_LOGFILE where "
                   << "the result log will be generated." << std::endl;
         error = true;
@@ -562,7 +727,11 @@ void FootnoteMgr::testEPubFilesHTML() {
         return;
     }
 
-    logFile.append(".html");
+    logFile.append(logFileName);
+
+    if (logFile.find(".html") == std::string::npos) {
+        logFile.append(".html");
+    }
 
     std::cout << "FOOTNOTE_TEST_FOLDER = " << folder << std::endl
               << "FOOTNOTE_TEST_LOGFILE = " << logFile << std::endl;
@@ -571,13 +740,16 @@ void FootnoteMgr::testEPubFilesHTML() {
 
     logStream.open(logFile);
 
+    logStream << "<?xml version='1.0' encoding='utf-8'?><!DOCTYPE html><html><head/><body><style "
+                 "type=\"text/css\"> p {margin-bottom: 0.5em;  margin-top: -0.3em;} .warning { "
+                 "color: orange } .error { color: red } </style>"
+              << std::endl;
+
     for (const auto &entry : fs::directory_iterator(folder)) {
-        logStream
-            << "<?xml version='1.0' encoding='utf-8'?><!DOCTYPE html><html><head/><body><style "
-               "type=\"text/css\"> p {margin-bottom: 0.5em;  margin-top: -0.3em;} .warning { "
-               "color: orange } .error { color: red } </style>"
-            << std::endl;
+
         logStream << "<br/><hr/><h1>" << entry.path().c_str() << "</h1>" << std::endl;
+
+        std::cout << "===== OPENING " << entry.path().c_str() << " =====" << std::endl;
 
         auto file = SFile(std::make_shared<VFSFile>(entry.path().c_str(), FILE_READ, false));
         auto readable = std::make_shared<Readable>();
@@ -589,6 +761,9 @@ void FootnoteMgr::testEPubFilesHTML() {
         auto stream = std::make_shared<EPubFile>(file, readable, solDrm);
 
         auto spineCount = stream->getSpineCount();
+
+        std::cout << "Spine count: " << spineCount << std::endl;
+
         for (SpineIdx idx = 0; idx < spineCount; idx++) {
 #if FOOTNOTE_CHAPTER_BASED
             if (stream->spineIdxIsChapterStart(idx)) {

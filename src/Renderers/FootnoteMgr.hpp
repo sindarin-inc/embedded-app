@@ -90,6 +90,85 @@ public:
     }
 };
 
+/**
+ * @brief Footnotes retrieval and formatting
+ *
+ * This class is responsible of retrieving footnote information that is part of the current Book.
+ *
+ * Usage
+ * -----
+ *
+ * The normal usage of this class is as follow:
+ *
+ * 1) Call the FootnoteMgr::parse(epubfile, chapterSpineIdx) method to find the footnote tags
+ *    present in the chapter spineIdx.
+ *
+ * 2) The FootnoteMgr::isEmpty() can be used to check if any footnote tags were found. Please look
+ *    at the caveats section below for more information. Will return *false* if there is tag entries
+ *    found in the current chapter.
+ *
+ * 3) If the user wants to look at the footnotes, and there is some footnotes found by the parse()
+ *    method, you can then call the FootnoteMgr::retrieveNotes() method that will then search and
+ *    retrieve the footnotes as pointed to by the current chapter.
+ *
+ * Two possible use:
+ *
+ * 4a) [To show one footnote at a time]: Call the FootnoteMgr::size() to get the number of footnotes
+ *     and then call the FootnoteMgr::getFootnoteHTML(index) method in sequence to retrieve one
+ *     footnote at a time in a htnml format.
+ *
+ * 4b) [To show all footnotes at once]: Call the getAllFootnotesHTML().
+ *
+ * TAGS PARSING HEURISTICS
+ * -----------------------
+ *
+ * - An anchor (<a href="xxx"/>) is present in the text and is potentially pointing at a note.
+ *
+ * - The href attribute must contain a '#' followed by the note id.
+ *
+ * - If a URL is present in the href attribute before the '#', it must be pointing at a spine that
+ *   is located *after* the current chapter's spine.
+ *
+ * - The URL, if present, must not be containing 'http(s)://' prefix.
+ *
+ * - If there is no URL in the href attribute, the note must be located in the same spine as the
+ *   current one and must be located *after* the location of the anchor.
+ *
+ * FOOTNOTES PARSING HEURISTICS
+ * ----------------------------
+ *
+ * Footnotes are extracted from the text if:
+ *
+ * - The anchor is preceeded by a <br/> tag. A <br/> tag is than expected to follow the footnote.
+ *   If not, the footnote is not retrieved.
+ *
+ * - The anchor in inside a <p>...</p>, a <li>...</li> or a <div>...</div> tag.
+ *
+ * CAVEATS
+ * -------
+ *
+ * - The two methods parse() and retrieveNotes() are seperated to take into account the time
+ *   required to retrieve the footnotes themselves (could take several seconds depending on the
+ *   amount of them present in the chapter). The time to parse a chapter is much shorter.
+ *
+ * - The class doesn't distinguish real footnotes located in the same spine as the chapter, or the
+ *   notes located in another spine (often located at the end of the book).
+ *
+ * - Tags used to signify a footnote or a note can be using different numbering schemes, or specific
+ *   letters. They may appear in various order in the resulting list of notes.
+ *
+ * - As the epub formatting is based on html, there is no provision in the
+ *   EPUB standard to keep proper meta-data information about each piece of text: the parsing of
+ *   footnotes is using some heuristics to retrieve the information. These heuristics are not able
+ *   to cover all cases as some formatting could mislead the discovery of the tags or the footnotes
+ *   themselves, or get some tags that are not really footnote related. As the parse() method
+ *   complete its task, there is the potential that there is no footnote present even if the
+ *   isEmpty() method returns false.
+ *
+ * - Footnote text can contain url pointing at some other locations (like the internet). Nothing is
+ *   done to prevent that case.
+ */
+
 class FootnoteMgr {
 
 private:
@@ -157,6 +236,7 @@ public:
     [[nodiscard]] auto retrieveNotes(const std::shared_ptr<EPubFile> &stream) -> bool;
 
     [[nodiscard]] inline auto isEmpty() const -> bool { return footnotes_.empty(); }
+    [[nodiscard]] inline auto size() const -> size_t { return footnotes_.size(); }
 
     inline void clear() { footnotes_.clear(); }
 
@@ -169,7 +249,9 @@ public:
         if (!footnotes_.empty()) {
             int i = 1;
             for (const std::shared_ptr<Footnote> &entry : footnotes_) {
-                entry->show(i++, outstream, html);
+                if (entry->contentFound) {
+                    entry->show(i++, outstream, html);
+                }
             }
         }
     }
