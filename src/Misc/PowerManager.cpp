@@ -283,7 +283,8 @@ auto PowerManager::begin() -> esp_err_t {
         DispatchGetCore1BackgroundQueue()->dispatchFromISR([this]() {
             if (USBConnected()) {
                 // If USB is connected, disable operation unless we've disabled this behavior
-                if (!prefs_.allowUsageWhileCharging.get().value_or(false)) {
+                if (!prefs_.allowUsageWhileCharging.get().value_or(false) &&
+                    (state_ == PowerState::Active || state_ == PowerState::ActiveForcedOn)) {
                     log_i("USB connected, switching to ActiveUSBCharging");
                     state_ = PowerState::ActiveUSBCharging;
                     inactivityTimer_.setTimeoutMs(inactivityTimeoutMs());
