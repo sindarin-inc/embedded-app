@@ -26,7 +26,7 @@
 #include "sindarin-debug.h"
 
 #define BACKLIGHT_PWM_CHANNEL 0
-#define HARDWARE_REVISION_LATEST 3
+#define HARDWARE_REVISION_LATEST 9
 
 adc_cali_handle_t adcCalHandle = nullptr;
 adc_oneshot_unit_handle_t adcOneshotHandle = nullptr;
@@ -562,9 +562,17 @@ auto GetHardwareRevision() -> uint8_t {
         return HARDWARE_REVISION_LATEST;
     }
 
-    // Serial number starts with SOL01 where the `01` is the hardware revision. Turn those two ascii
-    // bytes into an int.
-    rev = (serialNumber[3] - '0') * 10 + (serialNumber[4] - '0');
+    // HANA reset our revision number to 01 in the build in January 2025, so we need to check for
+    // that case and treat it as a higher revision
+    if (serialNumber[3] == '0' && serialNumber[4] == '1' && serialNumber[5] == '2' &&
+        serialNumber[6] == '5') {
+        rev = 9;
+    } else {
+        // Serial number starts with SOL01 where the `01` is the hardware revision. Turn those two
+        // ascii bytes into an int.
+        rev = (serialNumber[3] - '0') * 10 + (serialNumber[4] - '0');
+    }
+
     log_d("Hardware revision: %d", rev.value());
     return rev.value();
 }
