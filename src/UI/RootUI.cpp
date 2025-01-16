@@ -231,7 +231,7 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
     };
 
     HEAP_PROFILE_START(MainMenuScreen);
-    auto newMainMenu = std::make_shared<MainMenuScreen>(display_, power_.battery);
+    auto newMainMenu = std::make_shared<MainMenuScreen>(display_, power_.battery, prefs_);
     HEAP_PROFILE_END(MainMenuScreen);
 
     SIZE_OF(*newMainMenu);
@@ -1097,9 +1097,8 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                 this->pushScreen(contentSettingsMenu);
             }));
 
-        menuItems->emplace_back(std::make_shared<MenuItemSingleLine>("Experimental Features",
-                                                                     [this]() {
-            log_d("Loading Experimental Settings Menu");
+        menuItems->emplace_back(std::make_shared<MenuItemSingleLine>("Advanced Features", [this]() {
+            log_d("Loading Advanced Features Menu");
             auto experimentalSettingsMenu = std::make_shared<ExperimentalMenuScreen>(
                 display_, "Main Menu", prefs_, telemetry_,
                 [this](const std::shared_ptr<Screen> &screen) { this->pushScreen(screen); });
@@ -1109,7 +1108,7 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
             pushScreen(experimentalSettingsMenu);
             if (!prefs_.seenExperimentalOverview.get().value_or(false)) {
                 std::string message =
-                    "Welcome to our Experimental Features! These are new features to make your "
+                    "Welcome to our Advanced Features! These are features to make your "
                     "reading experience even more next level. \n\n"
                     "Have an idea for a new feature? Drop us a line at hello@solreader.com or "
                     "message us "

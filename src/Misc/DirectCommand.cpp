@@ -150,8 +150,14 @@ void DirectCommand::receiveTusbPortData(const std::shared_ptr<uint8_t[]> &data, 
     // Be sure we don't time out while receiving data
     powerManager_.feedInactivityTimer();
     if (passthroughDataFn_) {
-        DispatchGetCore0BackgroundQueue()->dispatch(
-            [this, data, length] { passthroughDataFn_(data, length); });
+        DispatchGetCore0BackgroundQueue()->dispatch([this, data, length] {
+            // Check again since the function could have become null while the queue was waiting
+            if (passthroughDataFn_ != nullptr) {
+                passthroughDataFn_(data, length);
+            } else {
+                log_e("Would have crashed on passthroughDataFn_");
+            }
+        });
     } else {
         for (int i = 0; i < length; i++) {
             if (data[i] == '\n') {
@@ -165,6 +171,7 @@ void DirectCommand::receiveTusbPortData(const std::shared_ptr<uint8_t[]> &data, 
         }
     }
 }
+
 void DirectCommand::pollHwUart() {
     // Handle debug commands early so that we can avoid sleep if necessary
     // Spend the rest of the time waiting for debug commands (that will probably never come)

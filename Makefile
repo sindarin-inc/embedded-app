@@ -173,3 +173,9 @@ clang-tidy: check_idf
 	fi
 	IDF_TOOLCHAIN=clang idf.py -B build-clang clang-check --run-clang-tidy-py scripts/run-clang-tidy.py --run-clang-tidy-options "-fix -header-filter=embedded-app/src/.*" --exclude-paths managed_components --exclude-paths components
 	find src -iname "*.hpp" -o -iname "*.h" -o -iname "*.cpp" -o -iname "*.c" | xargs clang-format -i
+
+program-mode:
+	python3 scripts/port_tool.py find_port programming
+
+unpair-remote:
+	esptool.py erase_region 0x9000 0x5000

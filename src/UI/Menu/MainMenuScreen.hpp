@@ -7,7 +7,7 @@
 
 class MainMenuScreen : public CarouselMenuScreen {
 public:
-    MainMenuScreen(DisplaySystem &display, Battery &battery);
+    MainMenuScreen(DisplaySystem &display, Battery &battery, PreferencesStore &prefs);
 
     auto layout(LayoutContext &context, Size size) -> Size override;
     void drawInRect(Rect rect) override;

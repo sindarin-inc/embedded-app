@@ -324,16 +324,22 @@ void FileTransfer::fileTransferCallback(const std::shared_ptr<uint8_t[]> &data, 
         return;
     }
     if (bytesReceived_ >= fileSize_) {
-        filePut_.close();
-        char hash[32];
+        if (bytesReceived_ > fileSize_) {
+            log_w("Received too many bytes %d / %d", bytesReceived_, fileSize_);
+        }
 
-        mbedtls_md_finish(&ctx_, reinterpret_cast<unsigned char *>(hash));
+        filePut_.close();
+        unsigned char hash[32];
+
+        mbedtls_md_finish(&ctx_, hash);
+        mbedtls_md_free(&ctx_);
 
         // Convert hash to hexadecimal string
         std::string hashHex = BytesToHex(reinterpret_cast<const uint8_t *>(hash), 32);
 
         if (memcmp(checksum_, hashHex.c_str(), 64) != 0) {
-            log_e("Hash verification failed: expected %s and got %s", checksum_, hashHex.c_str());
+            log_e("Hash verification failed: expected %s and got %s (received %d/%d bytes)",
+                  checksum_, hashHex.c_str(), bytesReceived_, fileSize_);
             unsetPassthroughAndSendPutError();
             return;
         }
@@ -344,7 +350,6 @@ void FileTransfer::fileTransferCallback(const std::shared_ptr<uint8_t[]> &data, 
             handleEPUB();
         }
 
-        mbedtls_md_free(&ctx_);
         directCommand_.unsetPassthroughData();
         usbSerial_.txSendLine("FILE PUT SUCCESS");
         awaitingFinalPutSuccess_ = true;
