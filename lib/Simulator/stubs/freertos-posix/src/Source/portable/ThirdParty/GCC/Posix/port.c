@@ -245,24 +245,27 @@ void vPortStartFirstTask( void )
 /*
  * Clear a signal that is pending for the calling thread.
  */
-void prvClearPendingSignal( int sig ) {
+void prvClearPendingSignal( int sig )
+{
     sigset_t set, oldset;
 
     /* Block the signal */
-    sigemptyset(&set);
-    sigaddset(&set, sig);
-    pthread_sigmask(SIG_BLOCK, &set, &oldset);
+    sigemptyset( &set );
+    sigaddset( &set, sig );
+    pthread_sigmask( SIG_BLOCK, &set, &oldset );
 
     /* Check if signal is pending */
-    sigpending(&set);
-    if (sigismember(&set, sig)) {
+    sigpending( &set );
+
+    if( sigismember( &set, sig ) )
+    {
         int signum;
         /* Wait for and remove signal */
-        sigwait(&set, &signum);
+        sigwait( &set, &signum );
     }
 
     /* Restore the original signal mask */
-    pthread_sigmask(SIG_SETMASK, &oldset, NULL);
+    pthread_sigmask( SIG_SETMASK, &oldset, NULL );
 }
 /*-----------------------------------------------------------*/
 
