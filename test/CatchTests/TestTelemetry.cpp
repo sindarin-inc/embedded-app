@@ -30,11 +30,6 @@ TEST_CASE("Test Telemetry Logging", "[.][telemetry]") {
     Telemetry telemetry(fs, prefs);
 
     SECTION("Log various metrics and verify file contents") {
-        sigset_t mask;
-        sigemptyset(&mask);
-        sigaddset(&mask, SIGALRM);
-        pthread_sigmask(SIG_BLOCK, &mask, NULL);
-
         std::binary_semaphore semaphore(0);
 
         // FreeRTOS stuff needs to run in a task
