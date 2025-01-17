@@ -33,21 +33,22 @@ void MenuScreen::processCommand(RemoteCommand command) {
     setNeedsLayout();
 }
 
-auto MenuScreen::layout(LayoutContext &context, Size size) -> Size {
+auto MenuScreen::layout(SolUI::LayoutContext &context, SolUI::Size size) -> SolUI::Size {
     int y = 0;
 
     // Layout title
     context.setViewFrame(titleView_, {{0, y}, {size.width, 0}},
-                         LayoutOptionsSizeToFit | LayoutOptionsAlignCenterHorizontal);
+                         SolUI::LayoutOptionsSizeToFit | SolUI::LayoutOptionsAlignCenterHorizontal);
 
     // Layout menu
-    context.setViewFrame(menuView_, Rect::fromSize(size),
-                         LayoutOptionsSizeToFitVertical | LayoutOptionsAlignCenterVertical);
+    context.setViewFrame(menuView_, SolUI::Rect::fromSize(size),
+                         SolUI::LayoutOptionsSizeToFitVertical |
+                             SolUI::LayoutOptionsAlignCenterVertical);
 
     return size;
 }
 
-void MenuScreen::drawInRect(Rect rect) {
+void MenuScreen::drawInRect(SolUI::Rect rect) {
     titleView_.draw();
     menuView_.draw();
 }

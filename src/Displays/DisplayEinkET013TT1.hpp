@@ -34,7 +34,7 @@ public:
                        bool clearFrameBuffer = true, int vcomNudge = 0,
                        DisplaySystem::UpdateType altUpdateType = UNSPECIFIED,
                        ScreenSide screen = ScreenSide::Both,
-                       Rect altRect = {{0, 0}, {0, 0}}) override;
+                       SolUI::Rect altRect = {{0, 0}, {0, 0}}) override;
 
     void beginPowerOn() override { driver_.beginPowerOn(); };
 

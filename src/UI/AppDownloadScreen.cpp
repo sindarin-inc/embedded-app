@@ -4,27 +4,28 @@
 #include "Storage/PreferencesStore.hpp"
 #include "sindarin-debug.h"
 
-auto AppDownloadScreen::layout(LayoutContext &context, Size size) -> Size {
+auto AppDownloadScreen::layout(SolUI::LayoutContext &context, SolUI::Size size) -> SolUI::Size {
 
     // Center the QR code as the layout anchor
-    auto iconViewRect = context.setViewFrame(iconView_, {{0, 0}, {size.width, size.height}},
-                                             LayoutOptionsSizeToFit | LayoutOptionsAlignCenter);
+    auto iconViewRect =
+        context.setViewFrame(iconView_, {{0, 0}, {size.width, size.height}},
+                             SolUI::LayoutOptionsSizeToFit | SolUI::LayoutOptionsAlignCenter);
 
     // Now put the top text on top of the QR code
-    context.setViewSizeInRect(topLineView_, {180, 100},
-                              {{0, 0}, {size.width, iconViewRect.origin.y - 7}},
-                              LayoutOptionsSizeToFitVertical | LayoutOptionsAlignBottom |
-                                  LayoutOptionsAlignCenterHorizontal);
+    context.setViewSizeInRect(
+        topLineView_, {180, 100}, {{0, 0}, {size.width, iconViewRect.origin.y - 7}},
+        SolUI::LayoutOptionsSizeToFitVertical | SolUI::LayoutOptionsAlignBottom |
+            SolUI::LayoutOptionsAlignCenterHorizontal);
 
     // And put the bottom text below the QR code
     auto y = iconViewRect.bottom() + 5;
     context.setViewFrame(bottomLine_, {{0, y}, {size.width, size.height - y}},
-                         LayoutOptionsSizeToFit | LayoutOptionsAlignCenterHorizontal);
+                         SolUI::LayoutOptionsSizeToFit | SolUI::LayoutOptionsAlignCenterHorizontal);
 
     return size;
 }
 
-void AppDownloadScreen::drawInRect(Rect rect) {
+void AppDownloadScreen::drawInRect(SolUI::Rect rect) {
     topLineView_.draw();
     iconView_.draw();
     bottomLine_.draw();

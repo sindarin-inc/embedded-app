@@ -11,6 +11,8 @@
 #include "LayoutMath.hpp"
 #include "Types.hpp"
 
+namespace SolUI {
+
 class View;
 class LayoutContext;
 
@@ -147,3 +149,5 @@ protected:
     // Collection of inline sublayouts. Only used when the layout lambda creates a sublayout.
     std::unordered_map<int, std::shared_ptr<LayoutContext>> sublayouts_;
 };
+
+} // namespace SolUI

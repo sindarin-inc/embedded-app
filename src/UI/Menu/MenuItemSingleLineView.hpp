@@ -12,13 +12,13 @@ public:
         titleView_.setText(menuItem->title());
     }
 
-    auto layout(LayoutContext &context, Size size) -> Size override {
-        auto titleRect =
-            context.setViewFrame(titleView_, Rect::fromSize(size), LayoutOptionsSizeToFit);
+    auto layout(SolUI::LayoutContext &context, SolUI::Size size) -> SolUI::Size override {
+        auto titleRect = context.setViewFrame(titleView_, SolUI::Rect::fromSize(size),
+                                              SolUI::LayoutOptionsSizeToFit);
         return titleRect.size;
     }
 
-    void drawInRect(Rect rect) override { titleView_.draw(); }
+    void drawInRect(SolUI::Rect rect) override { titleView_.draw(); }
 
 protected:
     SingleLineTextView titleView_;

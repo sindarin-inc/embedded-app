@@ -48,10 +48,11 @@ ContentSyncScreen::ContentSyncScreen(DisplaySystem &display, LocalStore &localSt
 
 ContentSyncScreen::~ContentSyncScreen() { power_.removeStateChangeCallback(this); }
 
-auto ContentSyncScreen::layout(LayoutContext &context, Size size) -> Size {
+auto ContentSyncScreen::layout(SolUI::LayoutContext &context, SolUI::Size size) -> SolUI::Size {
     context.setSublayoutFrame(
-        Rect::fromSize(size), LayoutOptionsSizeToFitVertical | LayoutOptionsAlignCenterVertical,
-        [this](LayoutContext &context, Size size) -> Size {
+        SolUI::Rect::fromSize(size),
+        SolUI::LayoutOptionsSizeToFitVertical | SolUI::LayoutOptionsAlignCenterVertical,
+        [this](SolUI::LayoutContext &context, SolUI::Size size) -> SolUI::Size {
             int x = 0;
             int y = 0;
 
@@ -60,15 +61,16 @@ auto ContentSyncScreen::layout(LayoutContext &context, Size size) -> Size {
                 auto checkmarkView = checkmarkViews_[i];
                 auto progressBarView = progressBarsViews_[i];
                 auto rect = context.setViewFrame(*textView, {{x, y}, {size.width, size.height}},
-                                                 LayoutOptionsSizeToFitVertical);
+                                                 SolUI::LayoutOptionsSizeToFitVertical);
                 context.setViewFrame(*checkmarkView, rect,
-                                     LayoutOptionsSizeToFit | LayoutOptionsAlignRight |
-                                         LayoutOptionsAlignCenterVertical);
+                                     SolUI::LayoutOptionsSizeToFit |
+                                         SolUI::LayoutOptionsAlignRight |
+                                         SolUI::LayoutOptionsAlignCenterVertical);
                 y += rect.size.height;
                 y += 5;
 
                 context.setViewFrame(*progressBarView, {{x, y}, {size.width, size.height}},
-                                     LayoutOptionsSizeToFitVertical);
+                                     SolUI::LayoutOptionsSizeToFitVertical);
                 y += rect.size.height;
                 y += 10;
             }
@@ -78,20 +80,20 @@ auto ContentSyncScreen::layout(LayoutContext &context, Size size) -> Size {
         });
 
     if (!popupView_->isHidden()) {
-        auto popupTextRect =
-            context.setViewSizeInRect(*popupTextView_, {150, 150}, Rect::fromSize(size),
-                                      LayoutOptionsSizeToFit | LayoutOptionsAlignCenter);
+        auto popupTextRect = context.setViewSizeInRect(
+            *popupTextView_, {150, 150}, SolUI::Rect::fromSize(size),
+            SolUI::LayoutOptionsSizeToFit | SolUI::LayoutOptionsAlignCenter);
         context.setViewFrame(*popupView_, popupTextRect.inset(-10));
     }
 
-    context.setViewFrame(cancelView_, Rect::fromSize(size).inset(10),
-                         LayoutOptionsSizeToFit | LayoutOptionsAlignCenterHorizontal |
-                             LayoutOptionsAlignBottom);
+    context.setViewFrame(cancelView_, SolUI::Rect::fromSize(size).inset(10),
+                         SolUI::LayoutOptionsSizeToFit | SolUI::LayoutOptionsAlignCenterHorizontal |
+                             SolUI::LayoutOptionsAlignBottom);
 
     return {size.width, size.height};
 }
 
-void ContentSyncScreen::drawInRect(Rect rect) {
+void ContentSyncScreen::drawInRect(SolUI::Rect rect) {
     for (const auto &textView : textViews_) {
         (*textView).draw();
     }
@@ -137,7 +139,7 @@ void ContentSyncScreen::cancel() {
 void ContentSyncScreen::render(DisplaySystem &display) {
     int xPadding = 42;
     int yPadding = 10;
-    setFrame(Rect::fromSize({display.width(), display.height()}).inset(xPadding, yPadding));
+    setFrame(SolUI::Rect::fromSize({display.width(), display.height()}).inset(xPadding, yPadding));
 
     // Re-render based on state
     switch (state_.state) {

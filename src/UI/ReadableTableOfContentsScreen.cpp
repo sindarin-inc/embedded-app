@@ -10,20 +10,22 @@ void ReadableTableOfContentsScreen::moveSelection(int delta) {
     setNeedsRerender();
 }
 
-auto ReadableTableOfContentsScreen::layout(LayoutContext &context, Size size) -> Size {
+auto ReadableTableOfContentsScreen::layout(SolUI::LayoutContext &context, SolUI::Size size)
+    -> SolUI::Size {
     const auto inset = 2;
 
-    context.setViewFrame(backLabelView_, Rect::fromSize(size),
-                         LayoutOptionsSizeToFit | LayoutOptionsAlignTop | LayoutOptionsAlignLeft);
+    context.setViewFrame(backLabelView_, SolUI::Rect::fromSize(size),
+                         SolUI::LayoutOptionsSizeToFit | SolUI::LayoutOptionsAlignTop |
+                             SolUI::LayoutOptionsAlignLeft);
 
-    auto insetRect =
-        context.setViewFrame(menuView_, Rect::fromSize(size).inset(inset),
-                             LayoutOptionsSizeToFitVertical | LayoutOptionsAlignCenterVertical);
+    auto insetRect = context.setViewFrame(menuView_, SolUI::Rect::fromSize(size).inset(inset),
+                                          SolUI::LayoutOptionsSizeToFitVertical |
+                                              SolUI::LayoutOptionsAlignCenterVertical);
 
     return {size.width, insetRect.size.height + 2 * inset};
 };
 
-void ReadableTableOfContentsScreen::drawInRect(Rect rect) {
+void ReadableTableOfContentsScreen::drawInRect(SolUI::Rect rect) {
     backLabelView_.draw();
     menuView_.draw();
 }

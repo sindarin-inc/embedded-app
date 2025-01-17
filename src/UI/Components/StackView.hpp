@@ -10,12 +10,12 @@ public:
         : EinkView(display), views_(std::move(views)), spacing_(spacing), vertical_(vertical) {}
     ~StackView() override = default;
 
-    auto layout(LayoutContext &context, Size size) -> Size override {
+    auto layout(SolUI::LayoutContext &context, SolUI::Size size) -> SolUI::Size override {
         // Assume equal sizes for now
         int viewCount = views_.size();
         int dimension = vertical_ ? size.height : size.width;
 
-        Size boxSize{};
+        SolUI::Size boxSize{};
         if (vertical_) {
             int boxHeight = (dimension - (viewCount - 1) * spacing_) / viewCount;
             boxSize = {size.width, boxHeight};
@@ -28,8 +28,8 @@ public:
 
         for (auto &view : views_) {
             context.setViewFrame(*view, {{x, y}, boxSize},
-                                 LayoutOptionsSizeToFit | LayoutOptionsAlignCenter |
-                                     LayoutOptionsDefaultSize);
+                                 SolUI::LayoutOptionsSizeToFit | SolUI::LayoutOptionsAlignCenter |
+                                     SolUI::LayoutOptionsDefaultSize);
             if (vertical_) {
                 y += boxSize.height + spacing_;
             } else {
@@ -40,7 +40,7 @@ public:
         return size;
     }
 
-    void drawInRect(Rect rect) override {
+    void drawInRect(SolUI::Rect rect) override {
         for (auto &view : views_) {
             (*view).draw();
         }

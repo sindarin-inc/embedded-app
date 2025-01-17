@@ -8,14 +8,15 @@ void LineMenuScreen::moveSelection(int delta) {
     setNeedsRerender();
 }
 
-auto LineMenuScreen::layout(LayoutContext &context, Size size) -> Size {
-    context.setViewFrame(menuView_, Rect::fromSize(size),
-                         LayoutOptionsSizeToFitVertical | LayoutOptionsAlignCenterVertical);
+auto LineMenuScreen::layout(SolUI::LayoutContext &context, SolUI::Size size) -> SolUI::Size {
+    context.setViewFrame(menuView_, SolUI::Rect::fromSize(size),
+                         SolUI::LayoutOptionsSizeToFitVertical |
+                             SolUI::LayoutOptionsAlignCenterVertical);
 
     return size;
 };
 
-void LineMenuScreen::drawInRect(Rect rect) { menuView_.draw(); }
+void LineMenuScreen::drawInRect(SolUI::Rect rect) { menuView_.draw(); }
 
 void LineMenuScreen::render(DisplaySystem &display) {
     setFrame(defaultFrameRect());

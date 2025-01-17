@@ -13,24 +13,24 @@ public:
         authorView_.setText(std::string(menuItem->author()), true);
     }
 
-    auto layout(LayoutContext &context, Size size) -> Size override {
-        auto titleRect =
-            context.setViewFrame(titleView_, Rect::fromSize(size), LayoutOptionsSizeToFit);
+    auto layout(SolUI::LayoutContext &context, SolUI::Size size) -> SolUI::Size override {
+        auto titleRect = context.setViewFrame(titleView_, SolUI::Rect::fromSize(size),
+                                              SolUI::LayoutOptionsSizeToFit);
 
-        Rect authorRect = Rect::zero();
+        SolUI::Rect authorRect = SolUI::Rect::zero();
         if (!authorView_.getText().empty()) {
             // Yes, we are indenting the author view by the height of the title view. This looks
             // better and scales nicely to bigger displays. It looks funny I know.
             authorRect = context.setViewFrame(
                 authorView_,
                 {{titleRect.size.height * 2 / 3, titleRect.size.height}, {size.width, size.height}},
-                LayoutOptionsSizeToFit);
+                SolUI::LayoutOptionsSizeToFit);
         }
         return {std::max(titleRect.size.width, authorRect.size.width),
                 titleRect.size.height + authorRect.size.height};
     }
 
-    void drawInRect(Rect rect) override {
+    void drawInRect(SolUI::Rect rect) override {
         titleView_.draw();
         authorView_.draw();
     }

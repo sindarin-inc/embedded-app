@@ -10,8 +10,8 @@ public:
     auto totalPages() const { return totalPages_; }
     void setCurrentPage(int currentPage);
 
-    auto layout(LayoutContext &context, Size size) -> Size override;
-    void drawInRect(Rect rect) override;
+    auto layout(SolUI::LayoutContext &context, SolUI::Size size) -> SolUI::Size override;
+    void drawInRect(SolUI::Rect rect) override;
 
     int indicatorSpacing = 5;
 

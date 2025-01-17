@@ -47,22 +47,24 @@ auto InactivitySettingMenuScreen::setSelectedIndex(size_t index) -> bool {
     return newPage;
 }
 
-auto InactivitySettingMenuScreen::layout(LayoutContext &context, Size size) -> Size {
+auto InactivitySettingMenuScreen::layout(SolUI::LayoutContext &context, SolUI::Size size)
+    -> SolUI::Size {
     // Layout back label
     context.setViewFrame(backLabelView_, {{0, 0}, {size.width, 0}},
-                         LayoutOptionsSizeToFit | LayoutOptionsAlignLeft);
+                         SolUI::LayoutOptionsSizeToFit | SolUI::LayoutOptionsAlignLeft);
     // Layout menu
-    context.setViewFrame(menuView_, Rect::fromSize(size).inset(size.width / 7, 0),
-                         LayoutOptionsSizeToFitVertical | LayoutOptionsAlignCenterVertical);
+    context.setViewFrame(menuView_, SolUI::Rect::fromSize(size).inset(size.width / 7, 0),
+                         SolUI::LayoutOptionsSizeToFitVertical |
+                             SolUI::LayoutOptionsAlignCenterVertical);
 
-    context.setViewFrame(extraTextView_, Rect::fromSize(size),
-                         LayoutOptionsSizeToFit | LayoutOptionsAlignBottom |
-                             LayoutOptionsAlignCenterHorizontal);
+    context.setViewFrame(extraTextView_, SolUI::Rect::fromSize(size),
+                         SolUI::LayoutOptionsSizeToFit | SolUI::LayoutOptionsAlignBottom |
+                             SolUI::LayoutOptionsAlignCenterHorizontal);
 
     return size;
 }
 
-void InactivitySettingMenuScreen::drawInRect(Rect rect) {
+void InactivitySettingMenuScreen::drawInRect(SolUI::Rect rect) {
     backLabelView_.draw();
     menuView_.draw();
     extraTextView_.draw();

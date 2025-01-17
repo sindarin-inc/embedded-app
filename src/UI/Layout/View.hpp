@@ -4,6 +4,8 @@
 #include "LayoutMath.hpp"
 #include "Types.hpp"
 
+namespace SolUI {
+
 class View {
 public:
     // Constructor
@@ -64,3 +66,5 @@ private:
 
     bool hidden_ = false;
 };
+
+} // namespace SolUI

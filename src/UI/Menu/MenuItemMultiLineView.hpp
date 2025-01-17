@@ -12,14 +12,14 @@ public:
         textView_.setText(menuItem->text());
     }
 
-    auto layout(LayoutContext &context, Size size) -> Size override {
-        auto textRect =
-            context.setViewFrame(textView_, Rect::fromSize(size), LayoutOptionsSizeToFitVertical);
+    auto layout(SolUI::LayoutContext &context, SolUI::Size size) -> SolUI::Size override {
+        auto textRect = context.setViewFrame(textView_, SolUI::Rect::fromSize(size),
+                                             SolUI::LayoutOptionsSizeToFitVertical);
 
         return textRect.size;
     }
 
-    void drawInRect(Rect rect) override { textView_.draw(); }
+    void drawInRect(SolUI::Rect rect) override { textView_.draw(); }
 
 protected:
     MultiLineTextView textView_;

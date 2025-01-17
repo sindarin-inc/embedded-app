@@ -59,16 +59,17 @@ auto OffsetAdjustScreen::setupInstructions() -> void {
     setNeedsLayout();
 }
 
-auto OffsetAdjustScreen::layout(LayoutContext &context, Size size) -> Size {
-    auto explanationFrame = context.setViewFrame(explanationView_, Rect::fromSize(size),
-                                                 LayoutOptionsSizeToFit | LayoutOptionsAlignCenter);
+auto OffsetAdjustScreen::layout(SolUI::LayoutContext &context, SolUI::Size size) -> SolUI::Size {
+    auto explanationFrame =
+        context.setViewFrame(explanationView_, SolUI::Rect::fromSize(size),
+                             SolUI::LayoutOptionsSizeToFit | SolUI::LayoutOptionsAlignCenter);
     auto outerBoxViewFrame = context.setViewFrame(outerBoxView_, explanationFrame.inset(-5));
     context.setViewFrame(backgroundBoxView_, outerBoxViewFrame.inset(-8));
 
     return size;
 }
 
-void OffsetAdjustScreen::drawInRect(Rect rect) {
+void OffsetAdjustScreen::drawInRect(SolUI::Rect rect) {
     outerBoxView_.fillColor = display_.bg;
     outerBoxView_.strokeColor = display_.fg;
     backgroundBoxView_.fillColor = display_.bg;

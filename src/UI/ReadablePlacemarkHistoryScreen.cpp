@@ -10,20 +10,22 @@ void ReadablePlacemarkHistoryScreen::moveSelection(int delta) {
     setNeedsRerender();
 }
 
-auto ReadablePlacemarkHistoryScreen::layout(LayoutContext &context, Size size) -> Size {
+auto ReadablePlacemarkHistoryScreen::layout(SolUI::LayoutContext &context, SolUI::Size size)
+    -> SolUI::Size {
     const auto inset = 2;
 
-    context.setViewFrame(backLabelView_, Rect::fromSize(size),
-                         LayoutOptionsSizeToFit | LayoutOptionsAlignTop | LayoutOptionsAlignLeft);
+    context.setViewFrame(backLabelView_, SolUI::Rect::fromSize(size),
+                         SolUI::LayoutOptionsSizeToFit | SolUI::LayoutOptionsAlignTop |
+                             SolUI::LayoutOptionsAlignLeft);
 
-    auto insetRect =
-        context.setViewFrame(menuView_, Rect::fromSize(size).inset(inset),
-                             LayoutOptionsSizeToFitVertical | LayoutOptionsAlignCenterVertical);
+    auto insetRect = context.setViewFrame(menuView_, SolUI::Rect::fromSize(size).inset(inset),
+                                          SolUI::LayoutOptionsSizeToFitVertical |
+                                              SolUI::LayoutOptionsAlignCenterVertical);
 
     return {size.width, insetRect.size.height + 2 * inset};
 };
 
-void ReadablePlacemarkHistoryScreen::drawInRect(Rect rect) {
+void ReadablePlacemarkHistoryScreen::drawInRect(SolUI::Rect rect) {
     backLabelView_.draw();
     menuView_.draw();
 }

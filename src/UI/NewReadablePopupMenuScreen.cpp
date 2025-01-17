@@ -82,7 +82,7 @@ void NewReadablePopupMenuScreen::setUpPopupMenu() {
 
 void NewReadablePopupMenuScreen::preselectIndexAt(int index) { menuView_.setSelectedIndex(index); }
 
-void NewReadablePopupMenuScreen::drawInRect(Rect rect) {
+void NewReadablePopupMenuScreen::drawInRect(SolUI::Rect rect) {
     popupMenuBackground_.fillColor = display_.bg;
     popupMenuBackground_.strokeColor = display_.bg;
     popupMenuForeground_.strokeColor = display_.fg;
@@ -98,20 +98,24 @@ void NewReadablePopupMenuScreen::drawInRect(Rect rect) {
     footer3TextView_.draw();
 }
 
-auto NewReadablePopupMenuScreen::layout(LayoutContext &context, Size size) -> Size {
+auto NewReadablePopupMenuScreen::layout(SolUI::LayoutContext &context, SolUI::Size size)
+    -> SolUI::Size {
     auto contentFrame = context.setSublayoutFrame(
-        Rect::fromSize(size), LayoutOptionsSizeToFit | LayoutOptionsAlignCenter,
-        [this](LayoutContext &context, Size size) -> Size {
+        SolUI::Rect::fromSize(size),
+        SolUI::LayoutOptionsSizeToFit | SolUI::LayoutOptionsAlignCenter,
+        [this](SolUI::LayoutContext &context, SolUI::Size size) -> SolUI::Size {
             int y = 0;
-            auto titleBox = context.setViewFrame(titleView_, {{0, y}, size},
-                                                 LayoutOptionsSizeToFit | LayoutOptionsAlignTop |
-                                                     LayoutOptionsAlignCenterHorizontal);
+            auto titleBox =
+                context.setViewFrame(titleView_, {{0, y}, size},
+                                     SolUI::LayoutOptionsSizeToFit | SolUI::LayoutOptionsAlignTop |
+                                         SolUI::LayoutOptionsAlignCenterHorizontal);
 
             y += titleBox.size.height + 12;
 
-            auto menuBox = context.setViewFrame(
-                menuView_, {{10, y}, {size.width - 10, size.height - y}},
-                LayoutOptionsSizeToFit | LayoutOptionsAlignTop | LayoutOptionsAlignLeft);
+            auto menuBox =
+                context.setViewFrame(menuView_, {{10, y}, {size.width - 10, size.height - y}},
+                                     SolUI::LayoutOptionsSizeToFit | SolUI::LayoutOptionsAlignTop |
+                                         SolUI::LayoutOptionsAlignLeft);
 
             y += menuBox.size.height;
 
@@ -122,21 +126,21 @@ auto NewReadablePopupMenuScreen::layout(LayoutContext &context, Size size) -> Si
             }
 
             if (!footer1TextView_.getText().empty()) {
-                auto footer1Rect = context.setViewFrame(footer1TextView_, {{0, y}, size},
-                                                        LayoutOptionsSizeToFit |
-                                                            LayoutOptionsAlignCenterHorizontal);
+                auto footer1Rect = context.setViewFrame(
+                    footer1TextView_, {{0, y}, size},
+                    SolUI::LayoutOptionsSizeToFit | SolUI::LayoutOptionsAlignCenterHorizontal);
                 y += footer1Rect.size.height;
             }
             if (!footer2TextView_.getText().empty()) {
-                auto footer2Rect = context.setViewFrame(footer2TextView_, {{0, y}, size},
-                                                        LayoutOptionsSizeToFit |
-                                                            LayoutOptionsAlignCenterHorizontal);
+                auto footer2Rect = context.setViewFrame(
+                    footer2TextView_, {{0, y}, size},
+                    SolUI::LayoutOptionsSizeToFit | SolUI::LayoutOptionsAlignCenterHorizontal);
                 y += footer2Rect.size.height;
             }
             if (!footer3TextView_.getText().empty()) {
-                auto footer3Rect = context.setViewFrame(footer3TextView_, {{0, y}, size},
-                                                        LayoutOptionsSizeToFit |
-                                                            LayoutOptionsAlignCenterHorizontal);
+                auto footer3Rect = context.setViewFrame(
+                    footer3TextView_, {{0, y}, size},
+                    SolUI::LayoutOptionsSizeToFit | SolUI::LayoutOptionsAlignCenterHorizontal);
                 y += footer3Rect.size.height;
             }
 

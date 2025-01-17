@@ -50,18 +50,19 @@ void DRMFreeWelcomeMenuScreen::processCommand(RemoteCommand command) {
     setNeedsLayout();
 }
 
-auto DRMFreeWelcomeMenuScreen::layout(LayoutContext &context, Size size) -> Size {
-    context.setViewFrame(rendererView_, Rect::fromSize(size).inset(10, 10),
-                         LayoutOptionsSizeToFit | LayoutOptionsAlignCenter);
+auto DRMFreeWelcomeMenuScreen::layout(SolUI::LayoutContext &context, SolUI::Size size)
+    -> SolUI::Size {
+    context.setViewFrame(rendererView_, SolUI::Rect::fromSize(size).inset(10, 10),
+                         SolUI::LayoutOptionsSizeToFit | SolUI::LayoutOptionsAlignCenter);
 
-    context.setViewFrame(menuView_, Rect::fromSize(size),
-                         LayoutOptionsSizeToFit | LayoutOptionsAlignCenterHorizontal |
-                             LayoutOptionsAlignBottom);
+    context.setViewFrame(menuView_, SolUI::Rect::fromSize(size),
+                         SolUI::LayoutOptionsSizeToFit | SolUI::LayoutOptionsAlignCenterHorizontal |
+                             SolUI::LayoutOptionsAlignBottom);
 
     return size;
 }
 
-void DRMFreeWelcomeMenuScreen::drawInRect(Rect rect) {
+void DRMFreeWelcomeMenuScreen::drawInRect(SolUI::Rect rect) {
     rendererView_.draw();
     menuView_.draw();
 }

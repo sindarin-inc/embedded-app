@@ -34,7 +34,7 @@ public:
                        bool clearFrameBuffer = true, int vcomNudge = 0,
                        DisplaySystem::UpdateType altUpdateType = UNSPECIFIED,
                        ScreenSide screen = ScreenSide::Both,
-                       Rect altRect = {{0, 0}, {0, 0}}) override;
+                       SolUI::Rect altRect = {{0, 0}, {0, 0}}) override;
 
     // Simulator-specific methodds
     auto renderQueue() -> QueueHandle_t override { return renderQueue_; };

@@ -18,8 +18,8 @@ public:
     void addMenuItem(const std::shared_ptr<MenuItem> &item);
     void processCommand(RemoteCommand command) override;
 
-    auto layout(LayoutContext &context, Size size) -> Size override;
-    void drawInRect(Rect rect) override;
+    auto layout(SolUI::LayoutContext &context, SolUI::Size size) -> SolUI::Size override;
+    void drawInRect(SolUI::Rect rect) override;
 
     // Must be called any time the wifi settings could have changed.
     void loadWifiSettings();

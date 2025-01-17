@@ -10,9 +10,11 @@ public:
         : EinkView(display), strokeColor(display.fg), cornerRadius(cornerRadius) {}
     ~BoxView() override = default;
 
-    auto layout(LayoutContext &context, Size size) -> Size override { return size; }
+    auto layout(SolUI::LayoutContext &context, SolUI::Size size) -> SolUI::Size override {
+        return size;
+    }
 
-    void drawInRect(Rect rect) override {
+    void drawInRect(SolUI::Rect rect) override {
 
         if (dotted && fillColor.has_value() && strokeColor.has_value()) {
             display_.drawDottedBox(rect.origin.x, rect.origin.y, rect.origin.x + rect.size.width,

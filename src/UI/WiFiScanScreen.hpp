@@ -11,8 +11,8 @@ public:
         : EinkView(display), display_(display), wifi_(wifi), statusView_(display, "Scanning..."){};
 
     void begin();
-    auto layout(LayoutContext &context, Size size) -> Size override;
-    void drawInRect(Rect rect) override;
+    auto layout(SolUI::LayoutContext &context, SolUI::Size size) -> SolUI::Size override;
+    void drawInRect(SolUI::Rect rect) override;
     void render(DisplaySystem &display) override;
     void processCommand(RemoteCommand command) override;
 

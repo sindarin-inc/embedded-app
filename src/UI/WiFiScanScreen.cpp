@@ -54,20 +54,20 @@ void WiFiScanScreen::begin() {
     });
 }
 
-auto WiFiScanScreen::layout(LayoutContext &context, Size size) -> Size {
+auto WiFiScanScreen::layout(SolUI::LayoutContext &context, SolUI::Size size) -> SolUI::Size {
     context.setViewFrame(statusView_, {{0, 0}, size},
-                         LayoutOptionsSizeToFit | LayoutOptionsAlignCenter);
+                         SolUI::LayoutOptionsSizeToFit | SolUI::LayoutOptionsAlignCenter);
 
     int y = 0;
     for (auto &view : networkViews_) {
         auto textRect =
-            context.setViewFrame(view, {{-10, y}, size}, LayoutOptionsSizeToFitVertical);
+            context.setViewFrame(view, {{-10, y}, size}, SolUI::LayoutOptionsSizeToFitVertical);
         y += textRect.size.height + 2;
     }
     return size;
 }
 
-void WiFiScanScreen::drawInRect(Rect rect) {
+void WiFiScanScreen::drawInRect(SolUI::Rect rect) {
     for (auto &view : networkViews_) {
         view.draw();
     }

@@ -55,17 +55,18 @@ void WiFiSettingsMenuScreen::processCommand(RemoteCommand command) {
     setNeedsLayout();
 }
 
-auto WiFiSettingsMenuScreen::layout(LayoutContext &context, Size size) -> Size {
+auto WiFiSettingsMenuScreen::layout(SolUI::LayoutContext &context, SolUI::Size size)
+    -> SolUI::Size {
     context.setViewFrame(backLabelView_, {{0, 0}, {size.width, 0}},
-                         LayoutOptionsSizeToFit | LayoutOptionsAlignLeft);
-    auto menuBox =
-        context.setViewFrame(menuView_, Rect::fromSize(size).inset(size.width / 8, size.height / 6),
-                             LayoutOptionsAlignCenterHorizontal | LayoutOptionsSizeToFit);
+                         SolUI::LayoutOptionsSizeToFit | SolUI::LayoutOptionsAlignLeft);
+    auto menuBox = context.setViewFrame(
+        menuView_, SolUI::Rect::fromSize(size).inset(size.width / 8, size.height / 6),
+        SolUI::LayoutOptionsAlignCenterHorizontal | SolUI::LayoutOptionsSizeToFit);
 
     auto configuredLabelBox = context.setViewFrame(
         configuredAccessView_,
         {{15, menuBox.bottom() + 15}, {size.width - 15, size.height - menuBox.bottom() - 15}},
-        LayoutOptionsSizeToFitVertical);
+        SolUI::LayoutOptionsSizeToFitVertical);
 
     WiFiSettings settings;
 
@@ -73,12 +74,12 @@ auto WiFiSettingsMenuScreen::layout(LayoutContext &context, Size size) -> Size {
 
     context.setViewFrame(configuredAccessPointsView_,
                          {{size.width / 8, y}, {size.width - size.width / 8, size.height - y}},
-                         LayoutOptionsSizeToFit);
+                         SolUI::LayoutOptionsSizeToFit);
 
     return size;
 }
 
-void WiFiSettingsMenuScreen::drawInRect(Rect rect) {
+void WiFiSettingsMenuScreen::drawInRect(SolUI::Rect rect) {
     backLabelView_.draw();
     menuView_.draw();
     configuredAccessView_.draw();
