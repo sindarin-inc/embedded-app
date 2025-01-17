@@ -118,7 +118,7 @@ void MenuView::setIndicatorType(IndicatorType type) {
     }
 }
 
-auto MenuView::layout(SolUI::LayoutContext &context, SolUI::Size size) -> SolUI::Size {
+auto MenuView::layout(solui::LayoutContext &context, solui::Size size) -> solui::Size {
     int y = 0;
     int x = 0;
     int widthOfPagingIndicators = 0;
@@ -129,13 +129,13 @@ auto MenuView::layout(SolUI::LayoutContext &context, SolUI::Size size) -> SolUI:
     }
     int width = size.width - x;
 
-    auto pagingIndicatorRect = SolUI::Rect::zero();
+    auto pagingIndicatorRect = solui::Rect::zero();
     // Layout paging indicator on the right
     if (!pagingIndicatorView_.isHidden()) {
         pagingIndicatorRect = context.setViewSizeInRect(
-            pagingIndicatorView_, {pagingIndicatorWidth, 0}, SolUI::Rect::fromSize(size),
-            SolUI::LayoutOptionsSizeToFitVertical | SolUI::LayoutOptionsAlignCenterVertical |
-                SolUI::LayoutOptionsAlignRight);
+            pagingIndicatorView_, {pagingIndicatorWidth, 0}, solui::Rect::fromSize(size),
+            solui::LayoutOptionsSizeToFitVertical | solui::LayoutOptionsAlignCenterVertical |
+                solui::LayoutOptionsAlignRight);
         width -= pagingIndicatorRect.size.width + pagingIndicatorPadding;
         widthOfPagingIndicators += pagingIndicatorRect.size.width + indicatorPadding;
     }
@@ -149,8 +149,8 @@ auto MenuView::layout(SolUI::LayoutContext &context, SolUI::Size size) -> SolUI:
         bool selected = i == selectedIndex_;
         (*menuItemViews_[i]).setSelected(selected);
         auto itemRect = context.setViewFrame(*menuItemViews_[i], {{x, y}, {width, 0}},
-                                             SolUI::LayoutOptionsSizeToFit |
-                                                 SolUI::LayoutOptionsConstrainWidth);
+                                             solui::LayoutOptionsSizeToFit |
+                                                 solui::LayoutOptionsConstrainWidth);
         maxWidth = std::max(maxWidth, itemRect.right());
         y += itemRect.size.height + padding;
 
@@ -158,9 +158,9 @@ auto MenuView::layout(SolUI::LayoutContext &context, SolUI::Size size) -> SolUI:
         if (selected && indicatorType_ != IndicatorType::None) {
             // 1 px nudge downards to account for the fact that the center of gravity of text is
             // a little lower than its center
-            SolUI::Rect indicatorRect = {{0, itemRect.origin.y + 1},
+            solui::Rect indicatorRect = {{0, itemRect.origin.y + 1},
                                          {indicatorWidth, itemRect.size.height}};
-            SolUI::Size indicatorSize{};
+            solui::Size indicatorSize{};
             switch (indicatorType_) {
             case IndicatorType::None:
             case IndicatorType::Dot:
@@ -172,7 +172,7 @@ auto MenuView::layout(SolUI::LayoutContext &context, SolUI::Size size) -> SolUI:
             }
             indicatorView_.cornerRadius = indicatorWidth / 2;
             context.setViewSizeInRect(indicatorView_, indicatorSize, indicatorRect,
-                                      SolUI::LayoutOptionsAlignCenterVertical);
+                                      solui::LayoutOptionsAlignCenterVertical);
         }
     }
     y -= padding;
@@ -180,7 +180,7 @@ auto MenuView::layout(SolUI::LayoutContext &context, SolUI::Size size) -> SolUI:
     return {maxWidth + widthOfPagingIndicators, y};
 }
 
-void MenuView::drawInRect(SolUI::Rect rect) {
+void MenuView::drawInRect(solui::Rect rect) {
     size_t startIndex = currentPage_ * itemsPerPage;
     size_t endIndex = std::min(startIndex + itemsPerPage, menuItemViews_.size());
 

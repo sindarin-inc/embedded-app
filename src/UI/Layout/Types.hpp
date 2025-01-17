@@ -1,6 +1,6 @@
 #pragma once
 
-namespace SolUI {
+namespace solui {
 
 struct Point {
     int x;
@@ -130,4 +130,4 @@ enum LayoutOptions {
     LayoutOptionsAlignTop = 0,
 };
 
-} // namespace SolUI
+} // namespace solui

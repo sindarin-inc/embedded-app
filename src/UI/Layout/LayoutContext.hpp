@@ -11,7 +11,7 @@
 #include "LayoutMath.hpp"
 #include "Types.hpp"
 
-namespace SolUI {
+namespace solui {
 
 class View;
 class LayoutContext;
@@ -150,4 +150,4 @@ protected:
     std::unordered_map<int, std::shared_ptr<LayoutContext>> sublayouts_;
 };
 
-} // namespace SolUI
+} // namespace solui

@@ -18,11 +18,11 @@ public:
     CrazyBoxView(DisplaySystem &display) : EinkView(display) {}
     ~CrazyBoxView() override = default;
 
-    auto layout(SolUI::LayoutContext &context, SolUI::Size size) -> SolUI::Size override {
+    auto layout(solui::LayoutContext &context, solui::Size size) -> solui::Size override {
         return {300, 300};
     }
 
-    void drawInRect(SolUI::Rect rect) override {
+    void drawInRect(solui::Rect rect) override {
         display_.drawRect(rect.origin.x, rect.origin.y, rect.size.width, rect.size.height,
                           display_.fg);
         auto insetRect = rect.inset(2);
@@ -54,8 +54,8 @@ public:
                                          std::make_shared<SingleLineTextView>(display, "the")}),
           box1_(display), box2_(display), text1_(display, "Left"), crazyBoxView_(display) {}
 
-    auto layout(SolUI::LayoutContext &context, SolUI::Size size) -> SolUI::Size override;
-    void drawInRect(SolUI::Rect rect) override;
+    auto layout(solui::LayoutContext &context, solui::Size size) -> solui::Size override;
+    void drawInRect(solui::Rect rect) override;
 
     void processCommand(RemoteCommand command) override;
     void render(DisplaySystem &display) override;

@@ -10,7 +10,7 @@ public:
         : EinkView(display), iconBits_(iconBits), width_(width), height_(height), scale_(scale) {}
     ~IconView() override = default;
 
-    auto layout(SolUI::LayoutContext &context, SolUI::Size size) -> SolUI::Size override {
+    auto layout(solui::LayoutContext &context, solui::Size size) -> solui::Size override {
         return {width_ * scale_, height_ * scale_};
     }
 
@@ -21,7 +21,7 @@ public:
         setNeedsLayout();
     }
 
-    void drawInRect(SolUI::Rect rect) override {
+    void drawInRect(solui::Rect rect) override {
         if (scale_ == 1) {
             display_.drawXBitmap(rect.origin.x, rect.origin.y, iconBits_, width_, height_,
                                  display_.fg);

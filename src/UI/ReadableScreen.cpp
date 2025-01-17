@@ -530,11 +530,11 @@ void ReadableScreen::setCurrentScreen(const std::shared_ptr<Screen> &screen) {
     currentScreen_ = screen;
 }
 
-auto ReadableScreen::layout(SolUI::LayoutContext &context, SolUI::Size size) -> SolUI::Size {
+auto ReadableScreen::layout(solui::LayoutContext &context, solui::Size size) -> solui::Size {
     return size;
 }
 
-void ReadableScreen::drawInRect(SolUI::Rect rect) {}
+void ReadableScreen::drawInRect(solui::Rect rect) {}
 
 // Once we have a real database, this will all be replaced.
 // For now, since we assume that there won't be TOO many bookmarks, we simply

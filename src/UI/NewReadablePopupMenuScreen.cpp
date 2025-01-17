@@ -82,7 +82,7 @@ void NewReadablePopupMenuScreen::setUpPopupMenu() {
 
 void NewReadablePopupMenuScreen::preselectIndexAt(int index) { menuView_.setSelectedIndex(index); }
 
-void NewReadablePopupMenuScreen::drawInRect(SolUI::Rect rect) {
+void NewReadablePopupMenuScreen::drawInRect(solui::Rect rect) {
     popupMenuBackground_.fillColor = display_.bg;
     popupMenuBackground_.strokeColor = display_.bg;
     popupMenuForeground_.strokeColor = display_.fg;
@@ -98,24 +98,24 @@ void NewReadablePopupMenuScreen::drawInRect(SolUI::Rect rect) {
     footer3TextView_.draw();
 }
 
-auto NewReadablePopupMenuScreen::layout(SolUI::LayoutContext &context, SolUI::Size size)
-    -> SolUI::Size {
+auto NewReadablePopupMenuScreen::layout(solui::LayoutContext &context, solui::Size size)
+    -> solui::Size {
     auto contentFrame = context.setSublayoutFrame(
-        SolUI::Rect::fromSize(size),
-        SolUI::LayoutOptionsSizeToFit | SolUI::LayoutOptionsAlignCenter,
-        [this](SolUI::LayoutContext &context, SolUI::Size size) -> SolUI::Size {
+        solui::Rect::fromSize(size),
+        solui::LayoutOptionsSizeToFit | solui::LayoutOptionsAlignCenter,
+        [this](solui::LayoutContext &context, solui::Size size) -> solui::Size {
             int y = 0;
             auto titleBox =
                 context.setViewFrame(titleView_, {{0, y}, size},
-                                     SolUI::LayoutOptionsSizeToFit | SolUI::LayoutOptionsAlignTop |
-                                         SolUI::LayoutOptionsAlignCenterHorizontal);
+                                     solui::LayoutOptionsSizeToFit | solui::LayoutOptionsAlignTop |
+                                         solui::LayoutOptionsAlignCenterHorizontal);
 
             y += titleBox.size.height + 12;
 
             auto menuBox =
                 context.setViewFrame(menuView_, {{10, y}, {size.width - 10, size.height - y}},
-                                     SolUI::LayoutOptionsSizeToFit | SolUI::LayoutOptionsAlignTop |
-                                         SolUI::LayoutOptionsAlignLeft);
+                                     solui::LayoutOptionsSizeToFit | solui::LayoutOptionsAlignTop |
+                                         solui::LayoutOptionsAlignLeft);
 
             y += menuBox.size.height;
 
@@ -128,19 +128,19 @@ auto NewReadablePopupMenuScreen::layout(SolUI::LayoutContext &context, SolUI::Si
             if (!footer1TextView_.getText().empty()) {
                 auto footer1Rect = context.setViewFrame(
                     footer1TextView_, {{0, y}, size},
-                    SolUI::LayoutOptionsSizeToFit | SolUI::LayoutOptionsAlignCenterHorizontal);
+                    solui::LayoutOptionsSizeToFit | solui::LayoutOptionsAlignCenterHorizontal);
                 y += footer1Rect.size.height;
             }
             if (!footer2TextView_.getText().empty()) {
                 auto footer2Rect = context.setViewFrame(
                     footer2TextView_, {{0, y}, size},
-                    SolUI::LayoutOptionsSizeToFit | SolUI::LayoutOptionsAlignCenterHorizontal);
+                    solui::LayoutOptionsSizeToFit | solui::LayoutOptionsAlignCenterHorizontal);
                 y += footer2Rect.size.height;
             }
             if (!footer3TextView_.getText().empty()) {
                 auto footer3Rect = context.setViewFrame(
                     footer3TextView_, {{0, y}, size},
-                    SolUI::LayoutOptionsSizeToFit | SolUI::LayoutOptionsAlignCenterHorizontal);
+                    solui::LayoutOptionsSizeToFit | solui::LayoutOptionsAlignCenterHorizontal);
                 y += footer3Rect.size.height;
             }
 

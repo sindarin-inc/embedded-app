@@ -11,22 +11,22 @@ MainMenuScreen::MainMenuScreen(DisplaySystem &display, Battery &battery, Prefere
     menuView_.setIndicatorType(MenuView::IndicatorType::Line);
 }
 
-auto MainMenuScreen::layout(SolUI::LayoutContext &context, SolUI::Size size) -> SolUI::Size {
+auto MainMenuScreen::layout(solui::LayoutContext &context, solui::Size size) -> solui::Size {
     context.setViewFrame(titleView_, {{0, 0}, {size.width, 0}},
-                         SolUI::LayoutOptionsSizeToFit | SolUI::LayoutOptionsAlignCenter);
+                         solui::LayoutOptionsSizeToFit | solui::LayoutOptionsAlignCenter);
 
-    context.setViewFrame(menuView_, SolUI::Rect::fromSize(size),
-                         SolUI::LayoutOptionsSizeToFitVertical |
-                             SolUI::LayoutOptionsAlignCenterVertical);
+    context.setViewFrame(menuView_, solui::Rect::fromSize(size),
+                         solui::LayoutOptionsSizeToFitVertical |
+                             solui::LayoutOptionsAlignCenterVertical);
 
-    context.setViewFrame(clockBatteryView_, SolUI::Rect::fromSize(size),
-                         SolUI::LayoutOptionsSizeToFit | SolUI::LayoutOptionsAlignBottom |
-                             SolUI::LayoutOptionsAlignCenterHorizontal);
+    context.setViewFrame(clockBatteryView_, solui::Rect::fromSize(size),
+                         solui::LayoutOptionsSizeToFit | solui::LayoutOptionsAlignBottom |
+                             solui::LayoutOptionsAlignCenterHorizontal);
 
     return size;
 }
 
-void MainMenuScreen::drawInRect(SolUI::Rect rect) {
+void MainMenuScreen::drawInRect(solui::Rect rect) {
     titleView_.draw();
     menuView_.draw();
     clockBatteryView_.draw();

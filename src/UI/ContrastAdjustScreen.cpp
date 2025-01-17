@@ -22,26 +22,26 @@ ContrastAdjustScreen::ContrastAdjustScreen(DisplaySystem &display, PreferencesSt
     fillView_.fillColor = display_.fg;
 }
 
-auto ContrastAdjustScreen::layout(SolUI::LayoutContext &context, SolUI::Size size) -> SolUI::Size {
+auto ContrastAdjustScreen::layout(solui::LayoutContext &context, solui::Size size) -> solui::Size {
     int spacing = 8;
 
     // Sublayout for centering all the main content in the view
     context.setSublayoutFrame(
         {{0, 0}, {size.width, size.height}},
-        SolUI::LayoutOptionsSizeToFit | SolUI::LayoutOptionsAlignCenter,
-        [this, spacing](SolUI::LayoutContext &context, SolUI::Size size) -> SolUI::
+        solui::LayoutOptionsSizeToFit | solui::LayoutOptionsAlignCenter,
+        [this, spacing](solui::LayoutContext &context, solui::Size size) -> solui::
                                                                              Size {
         // Sublayout for horizontally centering the contrast icon and bar
         auto contrastAndBarRect = context.setSublayoutFrame(
             {{0, 0}, {size.width, size.height}},
-            SolUI::LayoutOptionsSizeToFit | SolUI::LayoutOptionsAlignCenterHorizontal,
-            [this, spacing](SolUI::LayoutContext &context, SolUI::Size size) -> SolUI::Size {
+            solui::LayoutOptionsSizeToFit | solui::LayoutOptionsAlignCenterHorizontal,
+            [this, spacing](solui::LayoutContext &context, solui::Size size) -> solui::Size {
                 int x = 0, y = 0;
                 auto contrastIconRect = context.setViewFrame(contrastIconView_, {{x, y}, {0, 0}},
-                                                             SolUI::LayoutOptionsSizeToFit);
+                                                             solui::LayoutOptionsSizeToFit);
                 x += contrastIconRect.size.width + spacing;
 
-                SolUI::Rect barRectFrame = {{x, y}, {10, contrastIconRect.size.height}};
+                solui::Rect barRectFrame = {{x, y}, {10, contrastIconRect.size.height}};
 
                 auto barRect = context.setViewFrame(barView_, barRectFrame);
 
@@ -62,12 +62,12 @@ auto ContrastAdjustScreen::layout(SolUI::LayoutContext &context, SolUI::Size siz
 
         auto firstLineRect =
             context.setViewFrame(firstLine_, {{0, y}, {size.width, 0}},
-                                 SolUI::LayoutOptionsSizeToFit | SolUI::LayoutOptionsAlignCenter);
+                                 solui::LayoutOptionsSizeToFit | solui::LayoutOptionsAlignCenter);
         y += firstLineRect.size.height;
 
         auto secondLineRect =
             context.setViewFrame(secondLine_, {{0, y}, {size.width, 0}},
-                                 SolUI::LayoutOptionsSizeToFit | SolUI::LayoutOptionsAlignCenter);
+                                 solui::LayoutOptionsSizeToFit | solui::LayoutOptionsAlignCenter);
         y += secondLineRect.size.height;
 
         return {size.width, y};
@@ -76,18 +76,18 @@ auto ContrastAdjustScreen::layout(SolUI::LayoutContext &context, SolUI::Size siz
     // Put the arrow on the right and left -- either is fine to exit the screen
     // TODO(256displayonly): Fix plz
     auto arrowWidth = 5;
-    context.setViewSizeInRect(leftArrowView_, {arrowWidth, 0}, SolUI::Rect::fromSize(size),
-                              SolUI::LayoutOptionsSizeToFit | SolUI::LayoutOptionsAlignLeft |
-                                  SolUI::LayoutOptionsAlignCenterVertical);
+    context.setViewSizeInRect(leftArrowView_, {arrowWidth, 0}, solui::Rect::fromSize(size),
+                              solui::LayoutOptionsSizeToFit | solui::LayoutOptionsAlignLeft |
+                                  solui::LayoutOptionsAlignCenterVertical);
 
-    context.setViewSizeInRect(rightArrowView_, {arrowWidth, 0}, SolUI::Rect::fromSize(size),
-                              SolUI::LayoutOptionsSizeToFit | SolUI::LayoutOptionsAlignRight |
-                                  SolUI::LayoutOptionsAlignCenterVertical);
+    context.setViewSizeInRect(rightArrowView_, {arrowWidth, 0}, solui::Rect::fromSize(size),
+                              solui::LayoutOptionsSizeToFit | solui::LayoutOptionsAlignRight |
+                                  solui::LayoutOptionsAlignCenterVertical);
 
     return size;
 }
 
-void ContrastAdjustScreen::drawInRect(SolUI::Rect rect) {
+void ContrastAdjustScreen::drawInRect(solui::Rect rect) {
     contrastIconView_.draw();
     barView_.draw();
     fillView_.draw();

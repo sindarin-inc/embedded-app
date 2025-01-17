@@ -3,7 +3,7 @@
 #include "Misc/StringUtil.hpp"
 #include "View.hpp"
 
-namespace SolUI {
+namespace solui {
 
 LayoutContext::LayoutContext(View &view)
     : view_(&view), layout_([this, &view](LayoutContext &layoutContext, Size size) {
@@ -34,7 +34,7 @@ auto LayoutContext::setLayoutSizeInRect(LayoutContext &layoutContext, const Size
     if ((options & LayoutOptionsAlignCenterHorizontal) != 0 &&
         (options & LayoutOptionsAlignRight) != 0) {
         log_w("Aligning %s inside %s with conflicting alignment options "
-              "(SolUI::LayoutOptionsAlignCenter/Horizontal and SolUI::LayoutOptionsAlignRight) "
+              "(solui::LayoutOptionsAlignCenter/Horizontal and solui::LayoutOptionsAlignRight) "
               "(this is probably a bug)",
               layoutContext.debugName().c_str(), debugName().c_str());
     }
@@ -43,7 +43,7 @@ auto LayoutContext::setLayoutSizeInRect(LayoutContext &layoutContext, const Size
     if ((options & LayoutOptionsAlignCenterVertical) != 0 &&
         (options & LayoutOptionsAlignBottom) != 0) {
         log_w("Aligning %s inside %s with conflicting alignment options "
-              "(SolUI::LayoutOptionsAlignCenter/Vertical and SolUI::LayoutOptionsAlignBottom) "
+              "(solui::LayoutOptionsAlignCenter/Vertical and solui::LayoutOptionsAlignBottom) "
               "(this is probably a bug)",
               layoutContext.debugName().c_str(), debugName().c_str());
     }
@@ -112,4 +112,4 @@ auto LayoutContext::layoutIfNeeded(const Size &size, bool sizing) -> Size {
     return layoutSize;
 }
 
-} // namespace SolUI
+} // namespace solui

@@ -47,8 +47,8 @@ public:
     ~ReadableScreen() override = default;
 
     // TODO: Someday we should update this layout method to use the new RendererView
-    auto layout(SolUI::LayoutContext &context, SolUI::Size size) -> SolUI::Size override;
-    void drawInRect(SolUI::Rect rect) override;
+    auto layout(solui::LayoutContext &context, solui::Size size) -> solui::Size override;
+    void drawInRect(solui::Rect rect) override;
 
     void render(DisplaySystem &display) override;
     void processCommand(RemoteCommand command) override;

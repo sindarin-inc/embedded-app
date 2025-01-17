@@ -33,7 +33,7 @@ DebugAboutScreen::DebugAboutScreen(DisplaySystem &display)
     textViews_.emplace_back(std::make_shared<SingleLineTextView>(display, chipRevStr));
 }
 
-auto DebugAboutScreen::layout(SolUI::LayoutContext &context, SolUI::Size size) -> SolUI::Size {
+auto DebugAboutScreen::layout(solui::LayoutContext &context, solui::Size size) -> solui::Size {
     uint8_t yAdvance = 17;
 
     int x = 0;
@@ -41,18 +41,18 @@ auto DebugAboutScreen::layout(SolUI::LayoutContext &context, SolUI::Size size) -
 
     for (auto &view : textViews_) {
         context.setViewFrame(*view, {{x, y}, size},
-                             SolUI::LayoutOptionsSizeToFit | SolUI::LayoutOptionsAlignLeft);
+                             solui::LayoutOptionsSizeToFit | solui::LayoutOptionsAlignLeft);
         y += yAdvance;
     }
 
     context.setViewFrame(returnToMenuView_, {{0, 0}, size},
-                         SolUI::LayoutOptionsSizeToFit | SolUI::LayoutOptionsAlignCenterHorizontal |
-                             SolUI::LayoutOptionsAlignBottom);
+                         solui::LayoutOptionsSizeToFit | solui::LayoutOptionsAlignCenterHorizontal |
+                             solui::LayoutOptionsAlignBottom);
 
     return size;
 }
 
-void DebugAboutScreen::drawInRect(SolUI::Rect rect) {
+void DebugAboutScreen::drawInRect(solui::Rect rect) {
     for (auto &view : textViews_) {
         view->draw();
     }

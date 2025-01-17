@@ -31,8 +31,8 @@ public:
 
     void addMenuItem(const std::shared_ptr<MenuItem> &item) { menuView_.addMenuItem(item); }
 
-    auto layout(SolUI::LayoutContext &context, SolUI::Size size) -> SolUI::Size override;
-    void drawInRect(SolUI::Rect rect) override;
+    auto layout(solui::LayoutContext &context, solui::Size size) -> solui::Size override;
+    void drawInRect(solui::Rect rect) override;
 
     void render(DisplaySystem &display) override;
 

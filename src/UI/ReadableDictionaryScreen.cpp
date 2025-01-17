@@ -4,9 +4,9 @@
 
 #include "Misc/SpiramAllocator.hpp"
 
-auto ReadableDictionaryScreen::layout(SolUI::LayoutContext &context, SolUI::Size size)
-    -> SolUI::Size {
-    auto fullFrame = SolUI::Rect::fromSize(size);
+auto ReadableDictionaryScreen::layout(solui::LayoutContext &context, solui::Size size)
+    -> solui::Size {
+    auto fullFrame = solui::Rect::fromSize(size);
     auto backgroundFrame = fullFrame.inset(0);
 
     context.setViewFrame(backgroundView_, backgroundFrame);
@@ -14,12 +14,12 @@ auto ReadableDictionaryScreen::layout(SolUI::LayoutContext &context, SolUI::Size
     auto contentFrame = backgroundFrame.inset(10, 2);
 
     context.setViewFrame(dismissLabelView_, contentFrame,
-                         SolUI::LayoutOptionsSizeToFit | SolUI::LayoutOptionsAlignTop);
+                         solui::LayoutOptionsSizeToFit | solui::LayoutOptionsAlignTop);
 
     return {size.width, size.height};
 };
 
-void ReadableDictionaryScreen::drawInRect(SolUI::Rect rect) {
+void ReadableDictionaryScreen::drawInRect(solui::Rect rect) {
     backgroundView_.fillColor = display_.bg;
     backgroundView_.strokeColor = display_.fg;
     backgroundView_.draw();

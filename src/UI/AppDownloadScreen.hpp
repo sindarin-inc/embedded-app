@@ -38,8 +38,8 @@ public:
         xTimerDelete(syncPollingTimer_, 0);
     }
 
-    auto layout(SolUI::LayoutContext &context, SolUI::Size size) -> SolUI::Size override;
-    void drawInRect(SolUI::Rect rect) override;
+    auto layout(solui::LayoutContext &context, solui::Size size) -> solui::Size override;
+    void drawInRect(solui::Rect rect) override;
     void processCommand(RemoteCommand command) override;
     void render(DisplaySystem &display) override;
 

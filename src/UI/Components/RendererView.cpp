@@ -8,9 +8,9 @@ RendererView::RendererView(DisplaySystem &display, Renderer &renderer)
     dottedBoxView_.dotted = true;
 }
 
-auto RendererView::layout(SolUI::LayoutContext &context, SolUI::Size size) -> SolUI::Size {
+auto RendererView::layout(solui::LayoutContext &context, solui::Size size) -> solui::Size {
 
-    auto outerBox = SolUI::Rect::fromSize(size);
+    auto outerBox = solui::Rect::fromSize(size);
     context.setViewFrame(dottedBoxView_, outerBox);
     return size;
 }
@@ -25,7 +25,7 @@ void RendererView::resetTimer() {
     xTimerChangePeriod(DisplaySystem::animationTimer, pdMS_TO_TICKS(nextInterval_), 0);
 }
 
-void RendererView::drawInRect(SolUI::Rect rect) {
+void RendererView::drawInRect(solui::Rect rect) {
     if (dottedBox) {
         dottedBoxView_.draw();
     }

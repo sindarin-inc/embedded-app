@@ -18,23 +18,23 @@ public:
         checkmarkView_.setHidden(false);
     }
 
-    auto layout(SolUI::LayoutContext &context, SolUI::Size size) -> SolUI::Size override {
+    auto layout(solui::LayoutContext &context, solui::Size size) -> solui::Size override {
         auto checkmarkRect =
-            context.setViewFrame(checkmarkView_, SolUI::Rect::fromSize(size).inset(0, 4),
-                                 SolUI::LayoutOptionsSizeToFit | SolUI::LayoutOptionsAlignRight);
+            context.setViewFrame(checkmarkView_, solui::Rect::fromSize(size).inset(0, 4),
+                                 solui::LayoutOptionsSizeToFit | solui::LayoutOptionsAlignRight);
         auto titleRect = context.setViewFrame(
-            titleView_, SolUI::Rect::fromSize(size).inset(0, checkmarkRect.size.width + 3, 0, 0),
-            SolUI::LayoutOptionsSizeToFit | SolUI::LayoutOptionsAlignLeft);
+            titleView_, solui::Rect::fromSize(size).inset(0, checkmarkRect.size.width + 3, 0, 0),
+            solui::LayoutOptionsSizeToFit | solui::LayoutOptionsAlignLeft);
 
         // Arrow is to the immediate right of the title
         context.setViewFrame(arrowView_,
-                             SolUI::Rect::fromSize(size).inset(titleRect.size.width + 3, 0, 0, 0),
-                             SolUI::LayoutOptionsSizeToFit | SolUI::LayoutOptionsAlignLeft);
+                             solui::Rect::fromSize(size).inset(titleRect.size.width + 3, 0, 0, 0),
+                             solui::LayoutOptionsSizeToFit | solui::LayoutOptionsAlignLeft);
 
         return {size.width, std::max({titleRect.size.height, checkmarkRect.size.height})};
     }
 
-    void drawInRect(SolUI::Rect rect) override {
+    void drawInRect(solui::Rect rect) override {
         titleView_.draw();
         if (menuItem_->hasRightButtonCallback()) {
             arrowView_.draw();

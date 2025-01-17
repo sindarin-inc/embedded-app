@@ -90,7 +90,7 @@ public:
         cachedWidth_ = width;
     }
 
-    auto layout(SolUI::LayoutContext &context, SolUI::Size size) -> SolUI::Size override {
+    auto layout(solui::LayoutContext &context, solui::Size size) -> solui::Size override {
         splitMultiLine(display_, size.width, text_);
 
         lineWidths_.clear();
@@ -123,7 +123,7 @@ public:
         return {width, height};
     }
 
-    void drawInRect(SolUI::Rect rect) override {
+    void drawInRect(solui::Rect rect) override {
         if (splitLines_.size() > maxLines_) {
             int i = 1;
             while ((splitLines_[maxLines_ - 1][splitLines_[maxLines_ - 1].size() - i] != ' ') &&

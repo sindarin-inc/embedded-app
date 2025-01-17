@@ -115,20 +115,20 @@ auto ReadingSettingsMenuScreen::setSelectedIndex(size_t index) -> bool {
     return newPage;
 }
 
-auto ReadingSettingsMenuScreen::layout(SolUI::LayoutContext &context, SolUI::Size size)
-    -> SolUI::Size {
+auto ReadingSettingsMenuScreen::layout(solui::LayoutContext &context, solui::Size size)
+    -> solui::Size {
     int padding = size.height / 20;
 
     // Layout back label
     auto backBox =
         context.setViewFrame(backLabelView_, {{0, 0}, {size.width, 0}},
-                             SolUI::LayoutOptionsSizeToFit | SolUI::LayoutOptionsAlignLeft);
+                             solui::LayoutOptionsSizeToFit | solui::LayoutOptionsAlignLeft);
     // Layout menu
     auto menuBox = context.setViewFrame(
         menuView_,
-        SolUI::Rect::fromSize(size).inset(size.width / 7, 0, backBox.size.height + padding,
+        solui::Rect::fromSize(size).inset(size.width / 7, 0, backBox.size.height + padding,
                                           backBox.size.height + padding),
-        SolUI::LayoutOptionsSizeToFitVertical);
+        solui::LayoutOptionsSizeToFitVertical);
 
     int yOffset = menuBox.bottom() + padding;
 
@@ -137,7 +137,7 @@ auto ReadingSettingsMenuScreen::layout(SolUI::LayoutContext &context, SolUI::Siz
     return size;
 }
 
-void ReadingSettingsMenuScreen::drawInRect(SolUI::Rect rect) {
+void ReadingSettingsMenuScreen::drawInRect(solui::Rect rect) {
     // Always load the font from prefs
     resetFont();
     backLabelView_.draw();

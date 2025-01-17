@@ -68,33 +68,33 @@ void LetsFocusWelcomeMenuScreen::processCommand(RemoteCommand command) {
     }
 }
 
-auto LetsFocusWelcomeMenuScreen::layout(SolUI::LayoutContext &context, SolUI::Size size)
-    -> SolUI::Size {
+auto LetsFocusWelcomeMenuScreen::layout(solui::LayoutContext &context, solui::Size size)
+    -> solui::Size {
     // We need to push the left arrow view all the way to the left of the screen
     // and the right arrow view all the way to the right of the screen. That's why the -15 and + 30
     // to size.width below.
     context.setViewFrame(leftArrowView_, {{-15, 1}, size},
-                         SolUI::LayoutOptionsSizeToFit | SolUI::LayoutOptionsAlignCenterVertical);
+                         solui::LayoutOptionsSizeToFit | solui::LayoutOptionsAlignCenterVertical);
 
     context.setViewFrame(rightArrowView_, {{-15, 1}, {size.width + 30, size.height}},
-                         SolUI::LayoutOptionsSizeToFit | SolUI::LayoutOptionsAlignCenterVertical |
-                             SolUI::LayoutOptionsAlignRight);
+                         solui::LayoutOptionsSizeToFit | solui::LayoutOptionsAlignCenterVertical |
+                             solui::LayoutOptionsAlignRight);
 
     context.setViewFrame(
         rendererView_,
-        SolUI::Rect::fromSize(size).inset(
+        solui::Rect::fromSize(size).inset(
             std::get<1>(texts_[textSelection_]).left, std::get<1>(texts_[textSelection_]).right,
             std::get<1>(texts_[textSelection_]).top, std::get<1>(texts_[textSelection_]).bottom),
-        SolUI::LayoutOptionsSizeToFit | SolUI::LayoutOptionsAlignCenter);
+        solui::LayoutOptionsSizeToFit | solui::LayoutOptionsAlignCenter);
 
-    context.setViewFrame(menuView_, SolUI::Rect::fromSize(size),
-                         SolUI::LayoutOptionsSizeToFit | SolUI::LayoutOptionsAlignCenterHorizontal |
-                             SolUI::LayoutOptionsAlignBottom);
+    context.setViewFrame(menuView_, solui::Rect::fromSize(size),
+                         solui::LayoutOptionsSizeToFit | solui::LayoutOptionsAlignCenterHorizontal |
+                             solui::LayoutOptionsAlignBottom);
 
     return size;
 }
 
-void LetsFocusWelcomeMenuScreen::drawInRect(SolUI::Rect rect) {
+void LetsFocusWelcomeMenuScreen::drawInRect(solui::Rect rect) {
     if (textSelection_ != 0) {
         leftArrowView_.draw();
     }

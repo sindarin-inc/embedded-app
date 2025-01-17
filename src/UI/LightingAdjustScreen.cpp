@@ -16,25 +16,25 @@ LightingAdjustScreen::LightingAdjustScreen(DisplaySystem &display, PreferencesSt
     fillView_.fillColor = display_.fg;
 }
 
-auto LightingAdjustScreen::layout(SolUI::LayoutContext &context, SolUI::Size size) -> SolUI::Size {
+auto LightingAdjustScreen::layout(solui::LayoutContext &context, solui::Size size) -> solui::Size {
     int spacing = 8;
 
     // Sublayout for centering all the main content in the view
     context.setSublayoutFrame(
         {{0, 0}, {size.width, size.height}},
-        SolUI::LayoutOptionsSizeToFit | SolUI::LayoutOptionsAlignCenter,
-        [this, spacing](SolUI::LayoutContext &context, SolUI::Size size) -> SolUI::Size {
+        solui::LayoutOptionsSizeToFit | solui::LayoutOptionsAlignCenter,
+        [this, spacing](solui::LayoutContext &context, solui::Size size) -> solui::Size {
             // Sublayout for horizontally centering the lightbulb and bar
             auto bulbAndBarRect = context.setSublayoutFrame(
                 {{0, 0}, {size.width, size.height}},
-                SolUI::LayoutOptionsSizeToFit | SolUI::LayoutOptionsAlignCenterHorizontal,
-                [this, spacing](SolUI::LayoutContext &context, SolUI::Size size) -> SolUI::Size {
+                solui::LayoutOptionsSizeToFit | solui::LayoutOptionsAlignCenterHorizontal,
+                [this, spacing](solui::LayoutContext &context, solui::Size size) -> solui::Size {
                     int x = 0, y = 0;
                     auto lightbulbRect = context.setViewFrame(lightbulbView_, {{x, y}, {0, 0}},
-                                                              SolUI::LayoutOptionsSizeToFit);
+                                                              solui::LayoutOptionsSizeToFit);
                     x += lightbulbRect.size.width + spacing;
 
-                    SolUI::Rect barRectFrame = {{x, y}, {10, lightbulbRect.size.height}};
+                    solui::Rect barRectFrame = {{x, y}, {10, lightbulbRect.size.height}};
 
                     auto barRect = context.setViewFrame(barView_, barRectFrame);
 
@@ -52,13 +52,13 @@ auto LightingAdjustScreen::layout(SolUI::LayoutContext &context, SolUI::Size siz
             y += bulbAndBarRect.size.height + spacing;
 
             auto firstLineRect = context.setViewFrame(firstLine_, {{0, y}, {size.width, 0}},
-                                                      SolUI::LayoutOptionsSizeToFit |
-                                                          SolUI::LayoutOptionsAlignCenter);
+                                                      solui::LayoutOptionsSizeToFit |
+                                                          solui::LayoutOptionsAlignCenter);
             y += firstLineRect.size.height;
 
             auto secondLineRect = context.setViewFrame(secondLine_, {{0, y}, {size.width, 0}},
-                                                       SolUI::LayoutOptionsSizeToFit |
-                                                           SolUI::LayoutOptionsAlignCenter);
+                                                       solui::LayoutOptionsSizeToFit |
+                                                           solui::LayoutOptionsAlignCenter);
             y += secondLineRect.size.height;
 
             return {size.width, y};
@@ -67,18 +67,18 @@ auto LightingAdjustScreen::layout(SolUI::LayoutContext &context, SolUI::Size siz
     // Put the arrow on the right and left -- either is fine to exit the screen
     // TODO(256displayonly): Fix plz
     auto arrowWidth = 5;
-    context.setViewSizeInRect(leftArrowView_, {arrowWidth, 0}, SolUI::Rect::fromSize(size),
-                              SolUI::LayoutOptionsSizeToFit | SolUI::LayoutOptionsAlignLeft |
-                                  SolUI::LayoutOptionsAlignCenterVertical);
+    context.setViewSizeInRect(leftArrowView_, {arrowWidth, 0}, solui::Rect::fromSize(size),
+                              solui::LayoutOptionsSizeToFit | solui::LayoutOptionsAlignLeft |
+                                  solui::LayoutOptionsAlignCenterVertical);
 
-    context.setViewSizeInRect(rightArrowView_, {arrowWidth, 0}, SolUI::Rect::fromSize(size),
-                              SolUI::LayoutOptionsSizeToFit | SolUI::LayoutOptionsAlignRight |
-                                  SolUI::LayoutOptionsAlignCenterVertical);
+    context.setViewSizeInRect(rightArrowView_, {arrowWidth, 0}, solui::Rect::fromSize(size),
+                              solui::LayoutOptionsSizeToFit | solui::LayoutOptionsAlignRight |
+                                  solui::LayoutOptionsAlignCenterVertical);
 
     return size;
 }
 
-void LightingAdjustScreen::drawInRect(SolUI::Rect rect) {
+void LightingAdjustScreen::drawInRect(solui::Rect rect) {
     lightbulbView_.draw();
     barView_.draw();
     fillView_.draw();

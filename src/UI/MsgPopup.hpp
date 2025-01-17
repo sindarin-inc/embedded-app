@@ -31,17 +31,17 @@ public:
         xTimerChangePeriod(DisplaySystem::animationTimer, pdMS_TO_TICKS(duration), 0);
     }
 
-    auto layout(SolUI::LayoutContext &context, SolUI::Size size) -> SolUI::Size override {
+    auto layout(solui::LayoutContext &context, solui::Size size) -> solui::Size override {
         auto textRect =
-            context.setViewFrame(textView_, SolUI::Rect::fromSize(size),
-                                 SolUI::LayoutOptionsSizeToFit | SolUI::LayoutOptionsAlignCenter);
+            context.setViewFrame(textView_, solui::Rect::fromSize(size),
+                                 solui::LayoutOptionsSizeToFit | solui::LayoutOptionsAlignCenter);
 
         context.setViewFrame(boxView_, textRect.inset(-10));
 
         return size;
     }
 
-    void drawInRect(SolUI::Rect rect) override {
+    void drawInRect(solui::Rect rect) override {
         boxView_.draw();
         textView_.draw();
     }

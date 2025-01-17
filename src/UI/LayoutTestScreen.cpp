@@ -1,6 +1,6 @@
 #include "LayoutTestScreen.hpp"
 
-auto LayoutTestScreen::layout(SolUI::LayoutContext &context, SolUI::Size size) -> SolUI::Size {
+auto LayoutTestScreen::layout(solui::LayoutContext &context, solui::Size size) -> solui::Size {
     // inset all around by 2px
     int x = 2;
     int y = 2;
@@ -9,8 +9,8 @@ auto LayoutTestScreen::layout(SolUI::LayoutContext &context, SolUI::Size size) -
     // Draw the icon vertically aligned on the left of the screen
     auto iconRect =
         context.setViewFrame(iconView_, {{x, y}, size},
-                             SolUI::LayoutOptionsSizeToFit | SolUI::LayoutOptionsAlignLeft |
-                                 SolUI::LayoutOptionsAlignCenterVertical);
+                             solui::LayoutOptionsSizeToFit | solui::LayoutOptionsAlignLeft |
+                                 solui::LayoutOptionsAlignCenterVertical);
 
     // Create a sublayout to draw a bunch of stuff centered vertically on the remaining right
     // area of the screen. This is kinda like making a figma group of a bunch of layers then
@@ -18,8 +18,8 @@ auto LayoutTestScreen::layout(SolUI::LayoutContext &context, SolUI::Size size) -
     x = iconRect.origin.x + iconRect.size.width + 2;
     auto rightColumnRect = context.setSublayoutFrame(
         {{x, 0}, {size.width - x, size.height}},
-        SolUI::LayoutOptionsSizeToFitVertical | SolUI::LayoutOptionsAlignCenterVertical,
-        [this](SolUI::LayoutContext &context, SolUI::Size size) -> SolUI::Size {
+        solui::LayoutOptionsSizeToFitVertical | solui::LayoutOptionsAlignCenterVertical,
+        [this](solui::LayoutContext &context, solui::Size size) -> solui::Size {
             int x = 0;
             int y = 0;
 
@@ -27,15 +27,15 @@ auto LayoutTestScreen::layout(SolUI::LayoutContext &context, SolUI::Size size) -
             int textWidth = size.width - x;
             auto topTextRect =
                 context.setViewFrame(topView_, {{x, y}, {textWidth, size.height}},
-                                     SolUI::LayoutOptionsSizeToFit | SolUI::LayoutOptionsAlignLeft |
-                                         SolUI::LayoutOptionsAlignTop);
+                                     solui::LayoutOptionsSizeToFit | solui::LayoutOptionsAlignLeft |
+                                         solui::LayoutOptionsAlignTop);
 
             // Draw the next line immediately below but with a 2px offset
             y += topTextRect.size.height;
             auto bottomTextRect =
                 context.setViewFrame(bottomView_, {{x, y}, {textWidth, size.height}},
-                                     SolUI::LayoutOptionsSizeToFit | SolUI::LayoutOptionsAlignLeft |
-                                         SolUI::LayoutOptionsAlignTop);
+                                     solui::LayoutOptionsSizeToFit | solui::LayoutOptionsAlignLeft |
+                                         solui::LayoutOptionsAlignTop);
 
             y += bottomTextRect.size.height;
             auto tripleBoxRect = context.setViewFrame(tripleBoxView_, {{x, y}, {textWidth, 10}});
@@ -44,14 +44,14 @@ auto LayoutTestScreen::layout(SolUI::LayoutContext &context, SolUI::Size size) -
 
             // Create a sublayout with some horizontal elements
             auto sublayoutRect = context.setSublayoutFrame(
-                {{x, y}, {textWidth, 10}}, SolUI::LayoutOptionsSizeToFit,
-                [this](SolUI::LayoutContext &context, SolUI::Size size) -> SolUI::Size {
+                {{x, y}, {textWidth, 10}}, solui::LayoutOptionsSizeToFit,
+                [this](solui::LayoutContext &context, solui::Size size) -> solui::Size {
                     int x = 0;
                     int y = 0;
 
                     // Text with a box around it
                     auto text1Rect = context.setViewFrame(text1_, {{x + 4, y + 2}, {20, 20}},
-                                                          SolUI::LayoutOptionsSizeToFit);
+                                                          solui::LayoutOptionsSizeToFit);
 
                     auto box1Rect = context.setViewFrame(
                         box1_, {{x, y}, {text1Rect.size.width + 8, text1Rect.size.height + 4}});
@@ -59,10 +59,10 @@ auto LayoutTestScreen::layout(SolUI::LayoutContext &context, SolUI::Size size) -
 
                     auto box2Rect =
                         context.setViewSizeInRect(box2_, {10, 10}, {{x, y}, {size.width - x, 10}},
-                                                  SolUI::LayoutOptionsAlignRight);
+                                                  solui::LayoutOptionsAlignRight);
                     y += box2Rect.size.height;
 
-                    return SolUI::Size{size.width, y};
+                    return solui::Size{size.width, y};
                 });
 
             y += sublayoutRect.size.height + 2;
@@ -75,7 +75,7 @@ auto LayoutTestScreen::layout(SolUI::LayoutContext &context, SolUI::Size size) -
 
             auto crazyBoxRect = context.setViewSizeInRect(crazyBoxView_, {size.width - 40, 15},
                                                           {{x, y}, {size.width, 15}},
-                                                          SolUI::LayoutOptionsAlignRight);
+                                                          solui::LayoutOptionsAlignRight);
             y += crazyBoxRect.size.height;
 
             return {size.width, y};
@@ -83,7 +83,7 @@ auto LayoutTestScreen::layout(SolUI::LayoutContext &context, SolUI::Size size) -
     return {size.width, std::max(rightColumnRect.size.height, iconRect.size.height)};
 };
 
-void LayoutTestScreen::drawInRect(SolUI::Rect rect) {
+void LayoutTestScreen::drawInRect(solui::Rect rect) {
     iconView_.draw();
     topView_.draw();
     bottomView_.draw();

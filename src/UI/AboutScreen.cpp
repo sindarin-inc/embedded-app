@@ -2,7 +2,7 @@
 
 #include "sindarin-debug.h"
 
-auto AboutScreen::layout(SolUI::LayoutContext &context, SolUI::Size size) -> SolUI::Size {
+auto AboutScreen::layout(solui::LayoutContext &context, solui::Size size) -> solui::Size {
     uint8_t leftPadding = 20;
     uint8_t yAdvance = 17;
 
@@ -10,47 +10,47 @@ auto AboutScreen::layout(SolUI::LayoutContext &context, SolUI::Size size) -> Sol
     int y = 10;
 
     context.setViewFrame(solLogoView_, {{x, y}, size},
-                         SolUI::LayoutOptionsSizeToFit | SolUI::LayoutOptionsAlignTop |
-                             SolUI::LayoutOptionsAlignCenterHorizontal);
+                         solui::LayoutOptionsSizeToFit | solui::LayoutOptionsAlignTop |
+                             solui::LayoutOptionsAlignCenterHorizontal);
 
     y += sol_logo_height + 22;
     x += leftPadding;
 
     context.setViewFrame(productNameView_, {{x, y}, size},
-                         SolUI::LayoutOptionsSizeToFit | SolUI::LayoutOptionsAlignLeft);
+                         solui::LayoutOptionsSizeToFit | solui::LayoutOptionsAlignLeft);
 
     y += yAdvance;
 
     context.setViewFrame(serialNumberView_, {{x, y}, size},
-                         SolUI::LayoutOptionsSizeToFit | SolUI::LayoutOptionsAlignLeft);
+                         solui::LayoutOptionsSizeToFit | solui::LayoutOptionsAlignLeft);
 
     y += yAdvance;
 
     context.setViewFrame(firmwareVersionView_, {{x, y}, size},
-                         SolUI::LayoutOptionsSizeToFit | SolUI::LayoutOptionsAlignLeft);
+                         solui::LayoutOptionsSizeToFit | solui::LayoutOptionsAlignLeft);
 
     y += yAdvance;
 
     context.setViewFrame(wifiMacView_, {{x, y}, size},
-                         SolUI::LayoutOptionsSizeToFit | SolUI::LayoutOptionsAlignLeft);
+                         solui::LayoutOptionsSizeToFit | solui::LayoutOptionsAlignLeft);
 
     y += yAdvance;
 
     context.setViewFrame(remoteFirmwareVersionView_, {{x, y}, size},
-                         SolUI::LayoutOptionsSizeToFit | SolUI::LayoutOptionsAlignLeft);
+                         solui::LayoutOptionsSizeToFit | solui::LayoutOptionsAlignLeft);
 
     y += yAdvance;
 
     context.setViewFrame(remoteBatteryView_, {{x, y}, size},
-                         SolUI::LayoutOptionsSizeToFit | SolUI::LayoutOptionsAlignLeft);
+                         solui::LayoutOptionsSizeToFit | solui::LayoutOptionsAlignLeft);
 
     context.setViewFrame(returnToMenuView_, {{0, 0}, size},
-                         SolUI::LayoutOptionsSizeToFit | SolUI::LayoutOptionsAlignCenterHorizontal |
-                             SolUI::LayoutOptionsAlignBottom);
+                         solui::LayoutOptionsSizeToFit | solui::LayoutOptionsAlignCenterHorizontal |
+                             solui::LayoutOptionsAlignBottom);
     return size;
 }
 
-void AboutScreen::drawInRect(SolUI::Rect rect) {
+void AboutScreen::drawInRect(solui::Rect rect) {
     solLogoView_.draw();
     productNameView_.draw();
     serialNumberView_.draw();

@@ -39,8 +39,8 @@ public:
           leftRightView_(display, "Press  \ue001 or \ue002  to see more", &fontFace0),
           returnToMenuView_(display, "Press  \ue000  to return to System Settings", &fontFace0){};
 
-    auto layout(SolUI::LayoutContext &context, SolUI::Size size) -> SolUI::Size override;
-    void drawInRect(SolUI::Rect rect) override;
+    auto layout(solui::LayoutContext &context, solui::Size size) -> solui::Size override;
+    void drawInRect(solui::Rect rect) override;
 
     void render(DisplaySystem &display) override;
     void processCommand(RemoteCommand command) override;

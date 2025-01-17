@@ -10,13 +10,13 @@ void MenuPagingIndicatorView::setCurrentPage(int currentPage) {
     setNeedsLayout();
 }
 
-auto MenuPagingIndicatorView::layout(SolUI::LayoutContext &context, SolUI::Size size)
-    -> SolUI::Size {
+auto MenuPagingIndicatorView::layout(solui::LayoutContext &context, solui::Size size)
+    -> solui::Size {
     int totalHeight = totalPages_ * size.width + (totalPages_ - 1) * indicatorSpacing;
     return {size.width, totalHeight};
 }
 
-void MenuPagingIndicatorView::drawInRect(SolUI::Rect rect) {
+void MenuPagingIndicatorView::drawInRect(solui::Rect rect) {
     int x = rect.origin.x;
     int startY = rect.origin.y;
     int indicatorWidth = rect.size.width;

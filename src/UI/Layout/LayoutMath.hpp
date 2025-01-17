@@ -2,7 +2,7 @@
 
 #include "Types.hpp"
 
-namespace SolUI {
+namespace solui {
 
 class LayoutContext;
 
@@ -13,4 +13,4 @@ auto SizeThatFitsForLayout(const LayoutContext &layoutContext, Size size, int op
 auto FrameForLayout(const LayoutContext &layoutContext, Size size, Rect inRect, int options)
     -> Rect;
 
-} // namespace SolUI
+} // namespace solui

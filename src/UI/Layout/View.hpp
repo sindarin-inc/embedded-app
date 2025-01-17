@@ -4,7 +4,7 @@
 #include "LayoutMath.hpp"
 #include "Types.hpp"
 
-namespace SolUI {
+namespace solui {
 
 class View {
 public:
@@ -67,4 +67,4 @@ private:
     bool hidden_ = false;
 };
 
-} // namespace SolUI
+} // namespace solui

@@ -3,7 +3,7 @@
 #include "Displays/DisplaySystem.hpp"
 #include "UI/Layout/View.hpp"
 
-class EinkView : public SolUI::View {
+class EinkView : public solui::View {
 public:
     EinkView(DisplaySystem &display) : display_(display) {}
 
@@ -16,9 +16,9 @@ public:
         }
     }
 
-    auto defaultFrameRect() -> SolUI::Rect {
+    auto defaultFrameRect() -> solui::Rect {
         auto defaultInset = display_.defaultUIInsets();
-        return SolUI::Rect::fromSize({display_.width(), display_.height()})
+        return solui::Rect::fromSize({display_.width(), display_.height()})
             .inset(defaultInset.left, defaultInset.right, defaultInset.top, defaultInset.bottom);
     }
 #ifdef SIM_LAYOUT_DEBUG

@@ -2,7 +2,7 @@
 
 #include "LayoutContext.hpp"
 
-namespace SolUI {
+namespace solui {
 
 auto AlignSizeInRect(const Size &size, const Rect &rect, int options) -> Rect {
     Point p = rect.origin;
@@ -99,4 +99,4 @@ auto FrameForLayout(const LayoutContext &layoutContext, Size size, Rect inRect, 
     return AlignSizeInRect(size, inRect, options);
 }
 
-} // namespace SolUI
+} // namespace solui
