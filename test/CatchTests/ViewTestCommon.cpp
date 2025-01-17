@@ -69,8 +69,6 @@ void StartFreeRtos(bool runAppMain) {
 
     std::binary_semaphore semaphore(0);
 
-    vPortSetExternalThread(pthread_self());
-
     // Start the FreeRTOS scheduler
     assert(SchedulerThread == nullptr && "FreeRTOS scheduler already started");
     SchedulerThread = std::make_shared<std::thread>([runAppMain, &semaphore]() {
