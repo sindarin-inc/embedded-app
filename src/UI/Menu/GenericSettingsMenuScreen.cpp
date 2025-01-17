@@ -46,20 +46,18 @@ auto GenericSettingsMenuScreen::setSelectedIndex(size_t index) -> bool {
     return newPage;
 }
 
-auto GenericSettingsMenuScreen::layout(solui::LayoutContext &context, solui::Size size)
-    -> solui::Size {
+auto GenericSettingsMenuScreen::layout(LayoutContext &context, SolSize size) -> SolSize {
     // Layout back label
     context.setViewFrame(backLabelView_, {{0, 0}, {size.width, 0}},
-                         solui::LayoutOptionsSizeToFit | solui::LayoutOptionsAlignLeft);
+                         LayoutOptionsSizeToFit | LayoutOptionsAlignLeft);
     // Layout menu
-    context.setViewFrame(menuView_, solui::Rect::fromSize(size).inset(size.width / 7, 0),
-                         solui::LayoutOptionsSizeToFitVertical |
-                             solui::LayoutOptionsAlignCenterVertical);
+    context.setViewFrame(menuView_, SolRect::fromSize(size).inset(size.width / 7, 0),
+                         LayoutOptionsSizeToFitVertical | LayoutOptionsAlignCenterVertical);
 
     return size;
 }
 
-void GenericSettingsMenuScreen::drawInRect(solui::Rect rect) {
+void GenericSettingsMenuScreen::drawInRect(SolRect rect) {
     backLabelView_.draw();
     menuView_.draw();
 }

@@ -11,22 +11,21 @@ MainMenuScreen::MainMenuScreen(DisplaySystem &display, Battery &battery, Prefere
     menuView_.setIndicatorType(MenuView::IndicatorType::Line);
 }
 
-auto MainMenuScreen::layout(solui::LayoutContext &context, solui::Size size) -> solui::Size {
+auto MainMenuScreen::layout(LayoutContext &context, SolSize size) -> SolSize {
     context.setViewFrame(titleView_, {{0, 0}, {size.width, 0}},
-                         solui::LayoutOptionsSizeToFit | solui::LayoutOptionsAlignCenter);
+                         LayoutOptionsSizeToFit | LayoutOptionsAlignCenter);
 
-    context.setViewFrame(menuView_, solui::Rect::fromSize(size),
-                         solui::LayoutOptionsSizeToFitVertical |
-                             solui::LayoutOptionsAlignCenterVertical);
+    context.setViewFrame(menuView_, SolRect::fromSize(size),
+                         LayoutOptionsSizeToFitVertical | LayoutOptionsAlignCenterVertical);
 
-    context.setViewFrame(clockBatteryView_, solui::Rect::fromSize(size),
-                         solui::LayoutOptionsSizeToFit | solui::LayoutOptionsAlignBottom |
-                             solui::LayoutOptionsAlignCenterHorizontal);
+    context.setViewFrame(clockBatteryView_, SolRect::fromSize(size),
+                         LayoutOptionsSizeToFit | LayoutOptionsAlignBottom |
+                             LayoutOptionsAlignCenterHorizontal);
 
     return size;
 }
 
-void MainMenuScreen::drawInRect(solui::Rect rect) {
+void MainMenuScreen::drawInRect(SolRect rect) {
     titleView_.draw();
     menuView_.draw();
     clockBatteryView_.draw();

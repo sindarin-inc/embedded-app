@@ -44,19 +44,18 @@ void FirstBookWelcomeMenuScreen::processCommand(RemoteCommand command) {
     setNeedsLayout();
 }
 
-auto FirstBookWelcomeMenuScreen::layout(solui::LayoutContext &context, solui::Size size)
-    -> solui::Size {
-    context.setViewFrame(rendererView_, solui::Rect::fromSize(size).inset(45, 35, 65, 65),
-                         solui::LayoutOptionsSizeToFit | solui::LayoutOptionsAlignCenter);
+auto FirstBookWelcomeMenuScreen::layout(LayoutContext &context, SolSize size) -> SolSize {
+    context.setViewFrame(rendererView_, SolRect::fromSize(size).inset(45, 35, 65, 65),
+                         LayoutOptionsSizeToFit | LayoutOptionsAlignCenter);
 
-    context.setViewFrame(menuView_, solui::Rect::fromSize(size),
-                         solui::LayoutOptionsSizeToFit | solui::LayoutOptionsAlignCenterHorizontal |
-                             solui::LayoutOptionsAlignBottom);
+    context.setViewFrame(menuView_, SolRect::fromSize(size),
+                         LayoutOptionsSizeToFit | LayoutOptionsAlignCenterHorizontal |
+                             LayoutOptionsAlignBottom);
 
     return size;
 }
 
-void FirstBookWelcomeMenuScreen::drawInRect(solui::Rect rect) {
+void FirstBookWelcomeMenuScreen::drawInRect(SolRect rect) {
     rendererView_.draw();
     menuView_.draw();
 }

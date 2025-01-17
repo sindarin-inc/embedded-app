@@ -38,15 +38,15 @@ public:
         setNeedsLayout();
     }
 
-    auto layout(solui::LayoutContext &context, solui::Size size) -> solui::Size override {
-        solui::Rect clockRect = solui::Rect::zero();
-        solui::Rect batteryRect = solui::Rect::zero();
+    auto layout(LayoutContext &context, SolSize size) -> SolSize override {
+        SolRect clockRect = SolRect::zero();
+        SolRect batteryRect = SolRect::zero();
 
         int x = 0;
         if (SolClock::getInstance().isValidTime()) {
-            clockRect = context.setViewFrame(clockView_, {{0, 0}, size},
-                                             solui::LayoutOptionsSizeToFit |
-                                                 solui::LayoutOptionsAlignCenterVertical);
+            clockRect =
+                context.setViewFrame(clockView_, {{0, 0}, size},
+                                     LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical);
             x += clockRect.size.width;
         }
 
@@ -59,16 +59,16 @@ public:
             if (x != 0) {
                 x += 10;
             }
-            batteryRect = context.setViewFrame(batteryIconView_, {{x, 0}, size},
-                                               solui::LayoutOptionsSizeToFit |
-                                                   solui::LayoutOptionsAlignCenterVertical);
+            batteryRect =
+                context.setViewFrame(batteryIconView_, {{x, 0}, size},
+                                     LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical);
             x += batteryRect.size.width;
         }
 
         return {x, std::max(clockRect.size.height, batteryRect.size.height)};
     }
 
-    void drawInRect(solui::Rect rect) override {
+    void drawInRect(SolRect rect) override {
 
         auto percent = battery_.getBatteryPercentage();
 

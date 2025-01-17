@@ -7,8 +7,8 @@
 
 #define HEIGHT_EVEN(x) ((((x) % 2 == 0) ? (x) : ((x) + 1)))
 
-auto ReadableSummaryScreen::layout(solui::LayoutContext &context, solui::Size size) -> solui::Size {
-    auto fullFrame = solui::Rect::fromSize(size);
+auto ReadableSummaryScreen::layout(LayoutContext &context, SolSize size) -> SolSize {
+    auto fullFrame = SolRect::fromSize(size);
     log_d("ReadableSummaryScreen layout: %d x %d", size.width, size.height);
     log_d("full frame is %d %d %d %d", fullFrame.origin.x, fullFrame.origin.y, fullFrame.size.width,
           fullFrame.size.height);
@@ -19,16 +19,16 @@ auto ReadableSummaryScreen::layout(solui::LayoutContext &context, solui::Size si
     auto contentFrame = backgroundFrame.inset(10, 10, 2, 3);
 
     context.setViewFrame(dismissLabelView_, contentFrame,
-                         solui::LayoutOptionsSizeToFit | solui::LayoutOptionsAlignTop);
+                         LayoutOptionsSizeToFit | LayoutOptionsAlignTop);
 
     context.setViewFrame(showUnreadLabelView_, contentFrame,
-                         solui::LayoutOptionsSizeToFit | solui::LayoutOptionsAlignRight |
-                             solui::LayoutOptionsAlignBottom);
+                         LayoutOptionsSizeToFit | LayoutOptionsAlignRight |
+                             LayoutOptionsAlignBottom);
 
     return size;
 }
 
-void ReadableSummaryScreen::drawInRect(solui::Rect rect) {
+void ReadableSummaryScreen::drawInRect(SolRect rect) {
     backgroundView_.fillColor = display_.bg;
     backgroundView_.strokeColor = display_.fg;
     backgroundView_.draw();

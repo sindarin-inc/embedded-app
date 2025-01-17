@@ -9,13 +9,13 @@ enum class ArrowSide {
     Right,
 };
 
-class ArrowLabelView : public solui::View {
+class ArrowLabelView : public View {
 public:
     ArrowLabelView(DisplaySystem &display, const std::string &text,
                    ArrowDirection direction = ArrowLeft, ArrowSide arrowSide = ArrowSide::Left)
         : arrowView_(display, direction), textView_(display, text), arrowSide_(arrowSide) {}
 
-    auto layout(solui::LayoutContext &context, solui::Size size) -> solui::Size override {
+    auto layout(LayoutContext &context, SolSize size) -> SolSize override {
         int arrowHeight;
 
         if (arrowView_.direction == ArrowLeft || arrowView_.direction == ArrowRight) {
@@ -31,29 +31,29 @@ public:
             // looks a little better to nudge the arrow down by 1px
             auto arrowRect = context.setViewSizeInRect(
                 arrowView_, {0, arrowHeight}, {{0, 1}, {size.width, size.height}},
-                solui::LayoutOptionsSizeToFit | solui::LayoutOptionsAlignCenterVertical);
+                LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical);
             auto padding = arrowHorizontal ? arrowRect.size.width : arrowRect.size.height;
-            auto backTextRect = context.setViewFrame(
-                textView_, {{arrowRect.right() + padding, 0}, size},
-                solui::LayoutOptionsSizeToFit | solui::LayoutOptionsAlignCenterVertical);
+            auto backTextRect =
+                context.setViewFrame(textView_, {{arrowRect.right() + padding, 0}, size},
+                                     LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical);
 
             return {backTextRect.right(), std::max(arrowHeight, backTextRect.size.height)};
         } else {
             auto arrowRect = context.setViewSizeInRect(
                 arrowView_, {0, arrowHeight}, {{0, 1}, {size.width, size.height}},
-                solui::LayoutOptionsSizeToFit | solui::LayoutOptionsAlignCenterVertical |
-                    solui::LayoutOptionsAlignRight);
+                LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical |
+                    LayoutOptionsAlignRight);
             auto padding = arrowHorizontal ? arrowRect.size.width : arrowRect.size.height;
-            auto backTextRect = context.setViewFrame(
-                textView_, {{0, 0}, {arrowRect.left() - padding, size.height}},
-                solui::LayoutOptionsSizeToFit | solui::LayoutOptionsAlignCenterVertical |
-                    solui::LayoutOptionsAlignRight);
+            auto backTextRect =
+                context.setViewFrame(textView_, {{0, 0}, {arrowRect.left() - padding, size.height}},
+                                     LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical |
+                                         LayoutOptionsAlignRight);
             return {size.width - backTextRect.left(),
                     std::max(arrowHeight, backTextRect.size.height)};
         }
     }
 
-    void drawInRect(solui::Rect rect) override {
+    void drawInRect(SolRect rect) override {
         arrowView_.draw();
         textView_.draw();
     }

@@ -32,8 +32,8 @@ public:
 
     auto isIDInMenu(const std::string &id) -> bool;
 
-    auto layout(solui::LayoutContext &context, solui::Size size) -> solui::Size override;
-    void drawInRect(solui::Rect rect) override;
+    auto layout(LayoutContext &context, SolSize size) -> SolSize override;
+    void drawInRect(SolRect rect) override;
 
     auto getSelectedIndex() const -> size_t { return selectedIndex_; }
     auto getItemCount() const -> size_t { return menuItems_.size(); }

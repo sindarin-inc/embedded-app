@@ -8,8 +8,8 @@ class RendererView : public EinkView {
 public:
     RendererView(DisplaySystem &display, Renderer &renderer);
 
-    auto layout(solui::LayoutContext &context, solui::Size size) -> solui::Size override;
-    void drawInRect(solui::Rect rect) override;
+    auto layout(LayoutContext &context, SolSize size) -> SolSize override;
+    void drawInRect(SolRect rect) override;
 
     void setAutopilot(bool autoPilotMode) { autoPilotMode_ = autoPilotMode; }
 

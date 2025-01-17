@@ -68,8 +68,8 @@ public:
 
     auto getNumTabs() const -> int { return menuTabs_.size(); }
 
-    auto layout(solui::LayoutContext &context, solui::Size size) -> solui::Size override = 0;
-    void drawInRect(solui::Rect rect) override = 0;
+    auto layout(LayoutContext &context, SolSize size) -> SolSize override = 0;
+    void drawInRect(SolRect rect) override = 0;
     void render(DisplaySystem &display) override = 0;
 
     void regenerateCurrentTab();

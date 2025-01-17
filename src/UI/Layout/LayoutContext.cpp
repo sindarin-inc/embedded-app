@@ -3,13 +3,11 @@
 #include "Misc/StringUtil.hpp"
 #include "View.hpp"
 
-namespace solui {
-
 LayoutContext::LayoutContext(View &view)
-    : view_(&view), layout_([this, &view](LayoutContext &layoutContext, Size size) {
+    : view_(&view), layout_([this, &view](LayoutContext &layoutContext, SolSize size) {
           return view.layout(*this, size);
       }),
-      frame_(Rect::zero()) {}
+      frame_(SolRect::zero()) {}
 
 auto LayoutContext::debugName() -> std::string {
     if (view_ == nullptr) {
@@ -23,8 +21,8 @@ auto LayoutContext::debugName() -> std::string {
     }
 }
 
-auto LayoutContext::setLayoutSizeInRect(LayoutContext &layoutContext, const Size &size,
-                                        const Rect &inRect, int options) -> Rect {
+auto LayoutContext::setLayoutSizeInRect(LayoutContext &layoutContext, const SolSize &size,
+                                        const SolRect &inRect, int options) -> SolRect {
     layoutContext.parentLayout_ = this;
 
 // Since we don't have run-time type information on the device right now, these logs are only really
@@ -34,7 +32,7 @@ auto LayoutContext::setLayoutSizeInRect(LayoutContext &layoutContext, const Size
     if ((options & LayoutOptionsAlignCenterHorizontal) != 0 &&
         (options & LayoutOptionsAlignRight) != 0) {
         log_w("Aligning %s inside %s with conflicting alignment options "
-              "(solui::LayoutOptionsAlignCenter/Horizontal and solui::LayoutOptionsAlignRight) "
+              "(LayoutOptionsAlignCenter/Horizontal and LayoutOptionsAlignRight) "
               "(this is probably a bug)",
               layoutContext.debugName().c_str(), debugName().c_str());
     }
@@ -43,7 +41,7 @@ auto LayoutContext::setLayoutSizeInRect(LayoutContext &layoutContext, const Size
     if ((options & LayoutOptionsAlignCenterVertical) != 0 &&
         (options & LayoutOptionsAlignBottom) != 0) {
         log_w("Aligning %s inside %s with conflicting alignment options "
-              "(solui::LayoutOptionsAlignCenter/Vertical and solui::LayoutOptionsAlignBottom) "
+              "(LayoutOptionsAlignCenter/Vertical and LayoutOptionsAlignBottom) "
               "(this is probably a bug)",
               layoutContext.debugName().c_str(), debugName().c_str());
     }
@@ -67,13 +65,13 @@ auto LayoutContext::setLayoutSizeInRect(LayoutContext &layoutContext, const Size
     return frame;
 }
 
-auto LayoutContext::setViewSizeInRect(View &view, const Size &size, const Rect &inRect, int options)
-    -> Rect {
+auto LayoutContext::setViewSizeInRect(View &view, const SolSize &size, const SolRect &inRect,
+                                      int options) -> SolRect {
     return setLayoutSizeInRect(view.layoutContext_, size, inRect, options);
 }
 
-auto LayoutContext::setSublayoutSizeInRect(const Size &size, const Rect &inRect, int options,
-                                           const LayoutLambda &layout) -> Rect {
+auto LayoutContext::setSublayoutSizeInRect(const SolSize &size, const SolRect &inRect, int options,
+                                           const LayoutLambda &layout) -> SolRect {
     // Create a new layout context for this sublayout if one doesn't exist already
     auto it = sublayouts_.find(sublayoutIndex_);
     if (it == sublayouts_.end()) {
@@ -83,7 +81,7 @@ auto LayoutContext::setSublayoutSizeInRect(const Size &size, const Rect &inRect,
 
     sublayoutIndex_++;
 
-    Rect frame = setLayoutSizeInRect(*sublayoutContext, size, inRect, options);
+    SolRect frame = setLayoutSizeInRect(*sublayoutContext, size, inRect, options);
     // Since there's no `draw` method for a sublayout (which is where we'd normally call
     // `layoutIfNeeded`), we go ahead and run the real layout here if we're not sizing.
     if (!sizing_) {
@@ -93,7 +91,7 @@ auto LayoutContext::setSublayoutSizeInRect(const Size &size, const Rect &inRect,
     return frame;
 }
 
-auto LayoutContext::layoutIfNeeded(const Size &size, bool sizing) -> Size {
+auto LayoutContext::layoutIfNeeded(const SolSize &size, bool sizing) -> SolSize {
     if ((size == cachedSize_ || size == cachedLayoutSize_) &&
         ((!needsSizing_ && sizing) || (!needsLayout_ && !sizing))) {
         return cachedLayoutSize_;
@@ -111,5 +109,3 @@ auto LayoutContext::layoutIfNeeded(const Size &size, bool sizing) -> Size {
     sizing_ = false;
     return layoutSize;
 }
-
-} // namespace solui

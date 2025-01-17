@@ -12,17 +12,16 @@ public:
         placeView_.setText(menuItem->place());
     }
 
-    auto layout(solui::LayoutContext &context, solui::Size size) -> solui::Size override {
-        auto placeRect =
-            context.setViewFrame(placeView_, solui::Rect::fromSize(size),
-                                 solui::LayoutOptionsSizeToFit | solui::LayoutOptionsAlignRight);
+    auto layout(LayoutContext &context, SolSize size) -> SolSize override {
+        auto placeRect = context.setViewFrame(placeView_, SolRect::fromSize(size),
+                                              LayoutOptionsSizeToFit | LayoutOptionsAlignRight);
         auto titleRect = context.setViewFrame(
-            titleView_, solui::Rect::fromSize(size).inset(0, placeRect.size.width + 3, 0, 0),
-            solui::LayoutOptionsSizeToFit);
+            titleView_, SolRect::fromSize(size).inset(0, placeRect.size.width + 3, 0, 0),
+            LayoutOptionsSizeToFit);
         return {size.width, std::max(titleRect.size.height, placeRect.size.height)};
     }
 
-    void drawInRect(solui::Rect rect) override {
+    void drawInRect(SolRect rect) override {
         titleView_.draw();
         placeView_.draw();
     }

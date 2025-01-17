@@ -65,42 +65,38 @@ void TextPlacementWelcomeMenuScreen::processCommand(RemoteCommand command) {
     setNeedsLayout();
 }
 
-auto TextPlacementWelcomeMenuScreen::layout(solui::LayoutContext &context, solui::Size size)
-    -> solui::Size {
+auto TextPlacementWelcomeMenuScreen::layout(LayoutContext &context, SolSize size) -> SolSize {
     auto arrowHeight = 9;
 
-    context.setViewSizeInRect(
-        leftArrowView_, {0, arrowHeight}, {{-15, 1}, {size.width, size.height}},
-        solui::LayoutOptionsSizeToFit | solui::LayoutOptionsAlignCenterVertical);
+    context.setViewSizeInRect(leftArrowView_, {0, arrowHeight},
+                              {{-15, 1}, {size.width, size.height}},
+                              LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical);
     context.setViewSizeInRect(
         rightArrowView_, {0, arrowHeight}, {{-15, 1}, {size.width + 30, size.height}},
-        solui::LayoutOptionsSizeToFit | solui::LayoutOptionsAlignCenterVertical |
-            solui::LayoutOptionsAlignRight);
+        LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical | LayoutOptionsAlignRight);
 
-    context.setViewFrame(
-        rendererView_,
-        solui::Rect::fromSize(size).inset(
-            std::get<1>(texts_[textSelection_]).left, std::get<1>(texts_[textSelection_]).right,
-            std::get<1>(texts_[textSelection_]).top, std::get<1>(texts_[textSelection_]).bottom),
-        solui::LayoutOptionsSizeToFit | solui::LayoutOptionsAlignCenter);
+    context.setViewFrame(rendererView_,
+                         SolRect::fromSize(size).inset(std::get<1>(texts_[textSelection_]).left,
+                                                       std::get<1>(texts_[textSelection_]).right,
+                                                       std::get<1>(texts_[textSelection_]).top,
+                                                       std::get<1>(texts_[textSelection_]).bottom),
+                         LayoutOptionsSizeToFit | LayoutOptionsAlignCenter);
 
     if (textSelection_ == 0 || textSelection_ == 1) {
-        context.setViewFrame(menuView_, solui::Rect::fromSize(size),
-                             solui::LayoutOptionsSizeToFit |
-                                 solui::LayoutOptionsAlignCenterHorizontal |
-                                 solui::LayoutOptionsAlignBottom);
+        context.setViewFrame(menuView_, SolRect::fromSize(size),
+                             LayoutOptionsSizeToFit | LayoutOptionsAlignCenterHorizontal |
+                                 LayoutOptionsAlignBottom);
     } else {
         // We're going to put the menu at the top of the scren for the Bottom template
-        context.setViewFrame(menuView_, solui::Rect::fromSize(size).inset(0, 15),
-                             solui::LayoutOptionsSizeToFit |
-                                 solui::LayoutOptionsAlignCenterHorizontal |
-                                 solui::LayoutOptionsAlignTop);
+        context.setViewFrame(menuView_, SolRect::fromSize(size).inset(0, 15),
+                             LayoutOptionsSizeToFit | LayoutOptionsAlignCenterHorizontal |
+                                 LayoutOptionsAlignTop);
     }
 
     return size;
 }
 
-void TextPlacementWelcomeMenuScreen::drawInRect(solui::Rect rect) {
+void TextPlacementWelcomeMenuScreen::drawInRect(SolRect rect) {
     switch (textSelection_) {
     case 0:
         renderer_.setLineSpacing(0);

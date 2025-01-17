@@ -25,8 +25,8 @@ public:
           display_(display), dismissLabelView_(display, "Dismiss", ArrowUp),
           backgroundView_(display, 5) {}
 
-    auto layout(solui::LayoutContext &context, solui::Size size) -> solui::Size override;
-    void drawInRect(solui::Rect rect) override;
+    auto layout(LayoutContext &context, SolSize size) -> SolSize override;
+    void drawInRect(SolRect rect) override;
     auto checkAtEnd() -> bool;
     void render(DisplaySystem &display) override;
     void restoreRendererStream();

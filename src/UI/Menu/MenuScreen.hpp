@@ -14,8 +14,8 @@ public:
     void addMenuItem(const std::shared_ptr<MenuItem> &item);
     void processCommand(RemoteCommand command) override;
 
-    auto layout(solui::LayoutContext &context, solui::Size size) -> solui::Size override;
-    void drawInRect(solui::Rect rect) override;
+    auto layout(LayoutContext &context, SolSize size) -> SolSize override;
+    void drawInRect(SolRect rect) override;
 
     // Implement Screen methods
     void render(DisplaySystem &display) override;

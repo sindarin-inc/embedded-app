@@ -42,11 +42,10 @@ FirmwareUpdateScreen::FirmwareUpdateScreen(DisplaySystem &display, Telemetry &te
     popupTextView_->setHidden(true);
 }
 
-auto FirmwareUpdateScreen::layout(solui::LayoutContext &context, solui::Size size) -> solui::Size {
+auto FirmwareUpdateScreen::layout(LayoutContext &context, SolSize size) -> SolSize {
     context.setSublayoutFrame(
-        solui::Rect::fromSize(size),
-        solui::LayoutOptionsSizeToFitVertical | solui::LayoutOptionsAlignCenterVertical,
-        [this](solui::LayoutContext &context, solui::Size size) -> solui::Size {
+        SolRect::fromSize(size), LayoutOptionsSizeToFitVertical | LayoutOptionsAlignCenterVertical,
+        [this](LayoutContext &context, SolSize size) -> SolSize {
             int x = 0;
             int y = 0;
 
@@ -55,16 +54,15 @@ auto FirmwareUpdateScreen::layout(solui::LayoutContext &context, solui::Size siz
                 auto checkmarkView = checkmarkViews_[i];
                 auto progressBarView = progressBarViews_[i];
                 auto rect = context.setViewFrame(*textView, {{x, y}, {size.width, size.height}},
-                                                 solui::LayoutOptionsSizeToFitVertical);
+                                                 LayoutOptionsSizeToFitVertical);
                 context.setViewFrame(*checkmarkView, rect,
-                                     solui::LayoutOptionsSizeToFit |
-                                         solui::LayoutOptionsAlignRight |
-                                         solui::LayoutOptionsAlignCenterVertical);
+                                     LayoutOptionsSizeToFit | LayoutOptionsAlignRight |
+                                         LayoutOptionsAlignCenterVertical);
                 y += rect.size.height;
                 y += 5;
 
                 context.setViewFrame(*progressBarView, {{x, y}, {size.width, size.height}},
-                                     solui::LayoutOptionsSizeToFitVertical);
+                                     LayoutOptionsSizeToFitVertical);
                 y += rect.size.height;
                 y += 10;
             }
@@ -74,20 +72,20 @@ auto FirmwareUpdateScreen::layout(solui::LayoutContext &context, solui::Size siz
         });
 
     if (!popupView_->isHidden()) {
-        auto popupTextRect = context.setViewSizeInRect(
-            *popupTextView_, {150, 150}, solui::Rect::fromSize(size),
-            solui::LayoutOptionsSizeToFit | solui::LayoutOptionsAlignCenter);
+        auto popupTextRect =
+            context.setViewSizeInRect(*popupTextView_, {150, 150}, SolRect::fromSize(size),
+                                      LayoutOptionsSizeToFit | LayoutOptionsAlignCenter);
         context.setViewFrame(*popupView_, popupTextRect.inset(-10));
     }
 
-    context.setViewFrame(cancelView_, solui::Rect::fromSize(size).inset(10),
-                         solui::LayoutOptionsSizeToFit | solui::LayoutOptionsAlignCenterHorizontal |
-                             solui::LayoutOptionsAlignBottom);
+    context.setViewFrame(cancelView_, SolRect::fromSize(size).inset(10),
+                         LayoutOptionsSizeToFit | LayoutOptionsAlignCenterHorizontal |
+                             LayoutOptionsAlignBottom);
 
     return {size.width, size.height};
 }
 
-void FirmwareUpdateScreen::drawInRect(solui::Rect rect) {
+void FirmwareUpdateScreen::drawInRect(SolRect rect) {
     for (const auto &textView : textViews_) {
         (*textView).draw();
     }
@@ -133,7 +131,7 @@ void FirmwareUpdateScreen::cancel() {
 void FirmwareUpdateScreen::render(DisplaySystem &display) {
     int xPadding = 42;
     int yPadding = 10;
-    setFrame(solui::Rect::fromSize({display.width(), display.height()}).inset(xPadding, yPadding));
+    setFrame(SolRect::fromSize({display.width(), display.height()}).inset(xPadding, yPadding));
 
     // Re-render based on state
     switch (state_.state) {

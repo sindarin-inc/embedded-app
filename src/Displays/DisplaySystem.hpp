@@ -55,7 +55,7 @@ struct DisplayRect {
         return !(*this == other);
     }
 
-    static auto fromRect(solui::Rect rect) -> DisplayRect {
+    static auto fromRect(SolRect rect) -> DisplayRect {
         return {static_cast<uint16_t>(rect.origin.x), static_cast<uint16_t>(rect.origin.y),
                 static_cast<uint16_t>(rect.size.width), static_cast<uint16_t>(rect.size.height)};
     }
@@ -124,7 +124,7 @@ public:
                                bool clearFrameBuffer = true, int vcomNudge = 0,
                                DisplaySystem::UpdateType altUpdateType = UNSPECIFIED,
                                ScreenSide screen = ScreenSide::Both,
-                               solui::Rect altRect = {{0, 0}, {0, 0}}) = 0;
+                               SolRect altRect = {{0, 0}, {0, 0}}) = 0;
 
     virtual void beginPowerOn() {}
 

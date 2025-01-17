@@ -2,7 +2,7 @@
 
 #include "sindarin-debug.h"
 
-auto LegalScreen::layout(solui::LayoutContext &context, solui::Size size) -> solui::Size {
+auto LegalScreen::layout(LayoutContext &context, SolSize size) -> SolSize {
     uint8_t leftPadding = 5;
     uint8_t yAdvance = 16;
     const uint8_t lineGroupPadding = 4;
@@ -12,91 +12,90 @@ auto LegalScreen::layout(solui::LayoutContext &context, solui::Size size) -> sol
 
     x += leftPadding;
 
-    context.setViewFrame(baclLine1View_, {{x, y}, size}, solui::LayoutOptionsSizeToFitVertical);
+    context.setViewFrame(baclLine1View_, {{x, y}, size}, LayoutOptionsSizeToFitVertical);
 
     y += yAdvance;
 
-    context.setViewFrame(baclLine2View_, {{x, y}, size}, solui::LayoutOptionsSizeToFitVertical);
+    context.setViewFrame(baclLine2View_, {{x, y}, size}, LayoutOptionsSizeToFitVertical);
 
     y += yAdvance - lineGroupPadding;
 
-    context.setViewFrame(fcc1LineView_, {{x, y}, size}, solui::LayoutOptionsSizeToFitVertical);
+    context.setViewFrame(fcc1LineView_, {{x, y}, size}, LayoutOptionsSizeToFitVertical);
 
     y += yAdvance;
 
-    context.setViewFrame(fcc1LineViewPart2_, {{x, y}, size}, solui::LayoutOptionsSizeToFitVertical);
+    context.setViewFrame(fcc1LineViewPart2_, {{x, y}, size}, LayoutOptionsSizeToFitVertical);
 
     y += yAdvance - lineGroupPadding;
 
-    context.setViewFrame(fcc2LineView_, {{x, y}, size}, solui::LayoutOptionsSizeToFitVertical);
+    context.setViewFrame(fcc2LineView_, {{x, y}, size}, LayoutOptionsSizeToFitVertical);
 
     y += yAdvance;
 
-    context.setViewFrame(fcc2LineViewPart2_, {{x, y}, size}, solui::LayoutOptionsSizeToFitVertical);
+    context.setViewFrame(fcc2LineViewPart2_, {{x, y}, size}, LayoutOptionsSizeToFitVertical);
 
     y += yAdvance - lineGroupPadding;
 
-    context.setViewFrame(opTemp1_, {{x, y}, size}, solui::LayoutOptionsSizeToFitVertical);
+    context.setViewFrame(opTemp1_, {{x, y}, size}, LayoutOptionsSizeToFitVertical);
 
     y += yAdvance;
 
-    context.setViewFrame(opTemp2_, {{x, y}, size}, solui::LayoutOptionsSizeToFitVertical);
+    context.setViewFrame(opTemp2_, {{x, y}, size}, LayoutOptionsSizeToFitVertical);
 
     y += yAdvance - lineGroupPadding;
 
-    context.setViewFrame(nonOpTemp1_, {{x, y}, size}, solui::LayoutOptionsSizeToFitVertical);
+    context.setViewFrame(nonOpTemp1_, {{x, y}, size}, LayoutOptionsSizeToFitVertical);
 
     y += yAdvance;
 
-    context.setViewFrame(nonOpTemp2_, {{x, y}, size}, solui::LayoutOptionsSizeToFitVertical);
+    context.setViewFrame(nonOpTemp2_, {{x, y}, size}, LayoutOptionsSizeToFitVertical);
 
     y += yAdvance - lineGroupPadding;
 
-    context.setViewFrame(opAlt_, {{x, y}, size}, solui::LayoutOptionsSizeToFitVertical);
+    context.setViewFrame(opAlt_, {{x, y}, size}, LayoutOptionsSizeToFitVertical);
 
     y += yAdvance - lineGroupPadding;
 
-    context.setViewFrame(relativeHumidity1_, {{x, y}, size}, solui::LayoutOptionsSizeToFitVertical);
+    context.setViewFrame(relativeHumidity1_, {{x, y}, size}, LayoutOptionsSizeToFitVertical);
 
     y += yAdvance;
 
-    context.setViewFrame(relativeHumidity2_, {{x, y}, size}, solui::LayoutOptionsSizeToFitVertical);
+    context.setViewFrame(relativeHumidity2_, {{x, y}, size}, LayoutOptionsSizeToFitVertical);
 
     context.setSublayoutFrame(
-        {{0, 0}, size}, solui::LayoutOptionsSizeToFitVertical | solui::LayoutOptionsAlignBottom,
-        [this](solui::LayoutContext &context, solui::Size size) -> solui::Size {
+        {{0, 0}, size}, LayoutOptionsSizeToFitVertical | LayoutOptionsAlignBottom,
+        [this](LayoutContext &context, SolSize size) -> SolSize {
             int y = 0;
-            auto leftRightRect = context.setViewFrame(
-                leftRightView_, {{0, y}, {size.width, 0}},
-                solui::LayoutOptionsSizeToFit | solui::LayoutOptionsAlignCenterHorizontal);
+            auto leftRightRect =
+                context.setViewFrame(leftRightView_, {{0, y}, {size.width, 0}},
+                                     LayoutOptionsSizeToFit | LayoutOptionsAlignCenterHorizontal);
             y += leftRightRect.size.height + 2;
-            auto returnToMenuRect = context.setViewFrame(
-                returnToMenuView_, {{0, y}, {size.width, 0}},
-                solui::LayoutOptionsSizeToFit | solui::LayoutOptionsAlignCenterHorizontal);
+            auto returnToMenuRect =
+                context.setViewFrame(returnToMenuView_, {{0, y}, {size.width, 0}},
+                                     LayoutOptionsSizeToFit | LayoutOptionsAlignCenterHorizontal);
             y += returnToMenuRect.size.height;
             return {size.width, y};
         });
 
     context.setSublayoutFrame(
-        {{0, -15}, size},
-        solui::LayoutOptionsSizeToFitVertical | solui::LayoutOptionsAlignCenterVertical,
-        [this](solui::LayoutContext &context, solui::Size size) -> solui::Size {
+        {{0, -15}, size}, LayoutOptionsSizeToFitVertical | LayoutOptionsAlignCenterVertical,
+        [this](LayoutContext &context, SolSize size) -> SolSize {
             int ukcaPadding = 22;
             int y = 0;
-            auto baclRect = context.setViewFrame(baclView_, {{0, y}, {size.width, 0}},
-                                                 solui::LayoutOptionsSizeToFit |
-                                                     solui::LayoutOptionsAlignCenterHorizontal);
+            auto baclRect =
+                context.setViewFrame(baclView_, {{0, y}, {size.width, 0}},
+                                     LayoutOptionsSizeToFit | LayoutOptionsAlignCenterHorizontal);
             y += baclRect.size.height + 5;
-            auto fccRect = context.setViewFrame(fccView_, {{0, y}, {size.width, 0}},
-                                                solui::LayoutOptionsSizeToFit |
-                                                    solui::LayoutOptionsAlignCenterHorizontal);
+            auto fccRect =
+                context.setViewFrame(fccView_, {{0, y}, {size.width, 0}},
+                                     LayoutOptionsSizeToFit | LayoutOptionsAlignCenterHorizontal);
             y += fccRect.size.height + 5;
             context.setViewFrame(ceView_, {{ukcaPadding, y}, {size.width - ukcaPadding * 2, 0}},
-                                 solui::LayoutOptionsSizeToFit | solui::LayoutOptionsAlignLeft);
+                                 LayoutOptionsSizeToFit | LayoutOptionsAlignLeft);
 
             auto ukcaRect = context.setViewFrame(
                 ukcaView_, {{ukcaPadding, y}, {size.width - ukcaPadding * 2, 0}},
-                solui::LayoutOptionsSizeToFit | solui::LayoutOptionsAlignRight);
+                LayoutOptionsSizeToFit | LayoutOptionsAlignRight);
 
             y += ukcaRect.size.height;
 
@@ -106,7 +105,7 @@ auto LegalScreen::layout(solui::LayoutContext &context, solui::Size size) -> sol
     return size;
 }
 
-void LegalScreen::drawInRect(solui::Rect rect) {
+void LegalScreen::drawInRect(SolRect rect) {
     if (!logosPage_) {
         baclLine1View_.draw();
         baclLine2View_.draw();

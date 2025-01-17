@@ -20,8 +20,8 @@ public:
 
     void render(DisplaySystem &display) override;
     void processCommand(RemoteCommand command) override;
-    auto layout(solui::LayoutContext &context, solui::Size size) -> solui::Size override;
-    void drawInRect(solui::Rect rect) override;
+    auto layout(LayoutContext &context, SolSize size) -> SolSize override;
+    void drawInRect(SolRect rect) override;
 
 protected:
     DisplaySystem &display_;

@@ -4,13 +4,13 @@
 #include "UI/Components/SingleLineTextView.hpp"
 #include "UI/Layout/View.hpp"
 
-class CarouselTitleLabelView : public solui::View {
+class CarouselTitleLabelView : public View {
 public:
     CarouselTitleLabelView(DisplaySystem &display, const std::string &text)
         : leftArrowView_(display, ArrowLeft), rightArrowView_(display, ArrowRight),
           textView_(display, text), display_(display) {}
 
-    auto layout(solui::LayoutContext &context, solui::Size size) -> solui::Size override {
+    auto layout(LayoutContext &context, SolSize size) -> SolSize override {
         int arrowHeight;
 
         arrowHeight = textView_.getFont()->lineHeight() - 3;
@@ -22,21 +22,19 @@ public:
 
         context.setViewSizeInRect(
             leftArrowView_, {0, arrowHeight}, {{0, 1}, {size.width, size.height}},
-            solui::LayoutOptionsSizeToFit | solui::LayoutOptionsAlignCenterVertical |
-                solui::LayoutOptionsAlignLeft);
+            LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical | LayoutOptionsAlignLeft);
 
         context.setViewFrame(textView_, {{1, 0}, {size.width, size.height}},
-                             solui::LayoutOptionsSizeToFit | solui::LayoutOptionsAlignCenter);
+                             LayoutOptionsSizeToFit | LayoutOptionsAlignCenter);
 
         context.setViewSizeInRect(
             rightArrowView_, {0, arrowHeight}, {{0, 1}, {size.width, size.height}},
-            solui::LayoutOptionsSizeToFit | solui::LayoutOptionsAlignCenterVertical |
-                solui::LayoutOptionsAlignRight);
+            LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical | LayoutOptionsAlignRight);
 
         return {boxWidth, arrowHeight};
     }
 
-    void drawInRect(solui::Rect rect) override {
+    void drawInRect(SolRect rect) override {
         leftArrowView_.draw();
         textView_.draw();
         rightArrowView_.draw();

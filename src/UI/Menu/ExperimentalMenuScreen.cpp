@@ -61,22 +61,20 @@ auto ExperimentalMenuScreen::setSelectedIndex(size_t index) -> bool {
     return newPage;
 }
 
-auto ExperimentalMenuScreen::layout(solui::LayoutContext &context, solui::Size size)
-    -> solui::Size {
+auto ExperimentalMenuScreen::layout(LayoutContext &context, SolSize size) -> SolSize {
     int padding = size.height / 20;
 
     // Layout back label
     context.setViewFrame(backLabelView_, {{0, 0}, {size.width, 0}},
-                         solui::LayoutOptionsSizeToFit | solui::LayoutOptionsAlignLeft);
+                         LayoutOptionsSizeToFit | LayoutOptionsAlignLeft);
     // Layout menu
-    context.setViewFrame(menuView_, solui::Rect::fromSize(size).inset(padding),
-                         solui::LayoutOptionsSizeToFitVertical |
-                             solui::LayoutOptionsAlignCenterVertical);
+    context.setViewFrame(menuView_, SolRect::fromSize(size).inset(padding),
+                         LayoutOptionsSizeToFitVertical | LayoutOptionsAlignCenterVertical);
 
     return size;
 }
 
-void ExperimentalMenuScreen::drawInRect(solui::Rect rect) {
+void ExperimentalMenuScreen::drawInRect(SolRect rect) {
     // Always load the font from prefs
     resetFont();
     backLabelView_.draw();
