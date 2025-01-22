@@ -8,7 +8,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_SYSTEM_NAME iOS)
 set(CMAKE_OSX_DEPLOYMENT_TARGET "18.0") # Minimum iOS version
 set(CMAKE_OSX_ARCHITECTURES "arm64") # Device and Simulator architectures
-set(CMAKE_OSX_SYSROOT iphoneos)
 
 # Set the option for simulator-common
 set(ENABLE_8BIT_DISPLAY OFF CACHE BOOL "Enable 8-bit display buffer" FORCE)
