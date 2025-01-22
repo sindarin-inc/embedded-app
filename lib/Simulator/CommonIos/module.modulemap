@@ -1,0 +1,6 @@
+framework module SolSimIos {
+    umbrella header "SolSimIos.h"
+
+    export *
+    module * { export * }
+}
