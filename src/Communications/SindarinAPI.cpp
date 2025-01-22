@@ -8,6 +8,7 @@
 #include "Communications/BLEProxy.hpp"
 #include "Communications/BLESyncService.hpp"
 #endif
+#include "Communications/WiFiHttpClient.hpp"
 #include "FileDownload.hpp"
 #include "Misc/Battery.hpp"
 #include "Misc/Defer.hpp"
@@ -86,9 +87,8 @@ auto SindarinAPI::checkSync(const std::string &url, CheckSyncRequest &req, Check
 
     int writeLength = client->write(reqBody.get(), bodyLength);
     if (writeLength != bodyLength) {
-        auto message =
-            StringFormat("WiFiHttpClient failed to write (writeLength=%d, bodyLength=%zu)",
-                         writeLength, bodyLength);
+        auto message = StringFormat("HttpClient failed to write (writeLength=%d, bodyLength=%zu)",
+                                    writeLength, bodyLength);
         log_w("%s", message.c_str());
         telemetry.logMetric(TelemetryField::METRIC_SYNC_STATUS, "sync-failed",
                             {{"message", message}});
@@ -273,8 +273,12 @@ auto SindarinAPI::createClient(const std::string &url, const std::string &conten
         return nullptr;
 #endif
     } else {
+#if CONFIG_USE_WIFI
         // Return an instance of WiFiHttpClient
         return std::make_shared<WiFiHttpClient>(url.c_str(), contentType.c_str(), method);
+#else
+        return nullptr;
+#endif
     }
 }
 

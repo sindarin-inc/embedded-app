@@ -196,6 +196,10 @@ menu "Sol Options"
             int "Factory Reset Button Pin"
             default 0
 
+        config USE_WIFI
+            bool "Use WiFi"
+            default y
+
     endmenu
 
     menu "Pin Selection"

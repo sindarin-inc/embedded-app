@@ -7,6 +7,8 @@ set(REPO_ROOT_DIR "${PROJECT_SOURCE_DIR}/../../..")
 # Define the option for the 8-bit display buffer
 option(ENABLE_8BIT_DISPLAY "Enable 8-bit display buffer" OFF)
 
+option(ENABLE_WIFI "Enable WiFi" ON)
+
 file(GLOB_RECURSE SOURCES
     "${REPO_ROOT_DIR}/src/*.cpp"
 )
@@ -74,6 +76,12 @@ else()
         CONFIG_DISPLAY_EINKET013TT1=1
         CONFIG_FONT_TTF=0
         CONFIG_FONT_IBMF=1
+    )
+endif()
+
+if(ENABLE_WIFI)
+    target_compile_definitions(${PROJECT_NAME} PUBLIC
+        CONFIG_USE_WIFI=1
     )
 endif()
 
