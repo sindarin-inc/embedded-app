@@ -246,7 +246,7 @@ auto FontData::load(MemoryPtr fontData, uint32_t length) -> bool {
 }
 
 void FontData::showCodePointBundles(int firstIdx, int count) const {
-    if constexpr (DEBUG) {
+    if constexpr (IBMF_DEBUG) {
         for (int idx = firstIdx; count > 0; idx++, count--) {
             std::cout << "[" << idx << "] "
                       << "First CodePoint: " << +(*codePointBundles_)[idx].firstCodePoint
@@ -257,7 +257,7 @@ void FontData::showCodePointBundles(int firstIdx, int count) const {
 }
 
 void FontData::showPlanes() const {
-    if constexpr (DEBUG) {
+    if constexpr (IBMF_DEBUG) {
         std::cout << "----------- Planes -----------" << std::endl;
         for (int i = 0; i < 4; i++) {
             std::cout << "[" << i
@@ -271,7 +271,7 @@ void FontData::showPlanes() const {
 }
 
 void FontData::showFont() const {
-    if constexpr (DEBUG) {
+    if constexpr (IBMF_DEBUG) {
         char marker[5];
         memcpy(marker, preamble_->marker, 4);
         marker[4] = 0;

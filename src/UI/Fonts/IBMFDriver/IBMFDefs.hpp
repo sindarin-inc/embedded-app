@@ -108,9 +108,9 @@ using namespace font_defs;
 // #define DEBUG_IBMF 1
 
 #ifdef DEBUG_IBMF
-const constexpr int DEBUG = DEBUG_IBMF;
+const constexpr int IBMF_DEBUG = DEBUG_IBMF;
 #else
-const constexpr int DEBUG = 0;
+const constexpr int IBMF_DEBUG = 0;
 #endif
 
 #if DEBUG_IBMF

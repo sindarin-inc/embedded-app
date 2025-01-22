@@ -616,7 +616,7 @@ auto IBMFFace::getGlyphMetrics(GlyphCode glyphCode, Glyph &appGlyph) -> bool {
 // }
 
 auto IBMFFace::showBitmap(const Bitmap &bitmap) const -> void {
-    if constexpr (DEBUG) {
+    if constexpr (IBMF_DEBUG) {
         uint32_t row, col;
         MemoryPtr rowPtr;
 
@@ -673,7 +673,7 @@ auto IBMFFace::showBitmap(const Bitmap &bitmap) const -> void {
 
 auto IBMFFace::showGlyph(const Glyph &glyph, GlyphCode glyphCode, char32_t codePoint) const
     -> void {
-    if constexpr (DEBUG) {
+    if constexpr (IBMF_DEBUG) {
         std::cout << "Glyph Base Code: 0x" << std::hex << glyphCode << std::dec << "(" << +codePoint
                   << ")" << std::endl
                   << "  Metrics: [" << std::dec << glyph.bitmap.dim.width << ", "
@@ -690,7 +690,7 @@ auto IBMFFace::showGlyph(const Glyph &glyph, GlyphCode glyphCode, char32_t codeP
 }
 
 auto IBMFFace::showGlyphInfo(GlyphCode i, const GlyphInfo &g) const -> void {
-    if constexpr (DEBUG) {
+    if constexpr (IBMF_DEBUG) {
         std::cout << "  [" << i << "]: w: " << +g.bitmapWidth << ", h: " << +g.bitmapHeight
                   << ", hoff: " << +g.horizontalOffset << ", voff: " << +g.verticalOffset
                   << ", pktLen: " << +g.packetLength
@@ -707,7 +707,7 @@ auto IBMFFace::showGlyphInfo(GlyphCode i, const GlyphInfo &g) const -> void {
 }
 
 auto IBMFFace::showLigKerns() const -> void {
-    if constexpr (DEBUG) {
+    if constexpr (IBMF_DEBUG) {
         std::cout << std::endl << "----------- Ligature / Kern programs: ----------" << std::endl;
         uint16_t i;
         for (i = 0; i < faceHeader_->ligKernStepCount; i++) {
@@ -734,7 +734,7 @@ auto IBMFFace::showLigKerns() const -> void {
 }
 
 auto IBMFFace::showFace() const -> void {
-    if constexpr (DEBUG) {
+    if constexpr (IBMF_DEBUG) {
 
         std::cout << std::endl << "----------- Face Header: ----------" << std::endl;
 
