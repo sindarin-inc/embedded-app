@@ -5,7 +5,6 @@
 #include <utility>
 
 #include "Communications/HttpClient.hpp"
-#include "Communications/WiFiHttpClient.hpp"
 #include "Misc/CancelFlag.hpp"
 #include "Misc/Telemetry.hpp"
 #include "Models/CheckSync.hpp"

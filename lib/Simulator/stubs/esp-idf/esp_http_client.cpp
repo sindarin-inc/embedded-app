@@ -1,5 +1,7 @@
 #include "esp_http_client.h"
 
+#if CONFIG_USE_WIFI
+
 #include "sindarin-debug.h"
 
 // Ignore warnings about deprecated OpenSSL stuff
@@ -249,3 +251,5 @@ int esp_http_client_read_response(esp_http_client_handle_t client, char *buffer,
 // {}
 
 // esp_err_t esp_http_client_get_chunk_length(esp_http_client_handle_t client, int *len) {}
+
+#endif

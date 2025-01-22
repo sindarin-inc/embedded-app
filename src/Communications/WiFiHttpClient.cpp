@@ -1,5 +1,7 @@
 #include "WiFiHttpClient.hpp"
 
+#if CONFIG_USE_WIFI
+
 #include <cstring>
 #include <esp_crt_bundle.h>
 #include <iostream>
@@ -228,3 +230,5 @@ auto WiFiHttpClient::close() -> esp_err_t {
     }
     return err;
 }
+
+#endif

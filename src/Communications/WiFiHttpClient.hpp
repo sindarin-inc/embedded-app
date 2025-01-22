@@ -1,8 +1,7 @@
 #pragma once
 
-// Technically we're not using anything Arduino here, but there's a bug in Arduino where it has to
-// come first or it breaks compilation
-// See: https://github.com/espressif/arduino-esp32/issues/6247
+#if CONFIG_USE_WIFI
+
 #include <esp_http_client.h>
 #include <map>
 #include <memory>
@@ -54,3 +53,5 @@ private:
 
     auto writeAvailableCompressedData() -> bool;
 };
+
+#endif

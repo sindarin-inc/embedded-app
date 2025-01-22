@@ -13,9 +13,16 @@ if(NOT TARGET freertos-posix)
     add_subdirectory(${PROJECT_SOURCE_DIR}/../freertos-posix ${CMAKE_CURRENT_BINARY_DIR}/freertos-posix)
 endif()
 
-find_package(OpenSSL REQUIRED)
+target_link_libraries(${PROJECT_NAME} PUBLIC freertos-posix)
 
-target_link_libraries(${PROJECT_NAME} PUBLIC freertos-posix OpenSSL::SSL)
+if(ENABLE_WIFI)
+    find_package(OpenSSL REQUIRED)
+    target_link_libraries(${PROJECT_NAME} PUBLIC OpenSSL::SSL)
+    target_compile_definitions(${PROJECT_NAME} PUBLIC
+        CONFIG_USE_WIFI=1
+        CPPHTTPLIB_OPENSSL_SUPPORT
+    )
+endif()
 
 # Note: We expose httplib since tests uses it
 target_include_directories(${PROJECT_NAME}
@@ -29,6 +36,4 @@ target_include_directories(${PROJECT_NAME}
 target_compile_definitions(${PROJECT_NAME}
     PRIVATE
     SIMULATOR=1
-    PUBLIC
-    CPPHTTPLIB_OPENSSL_SUPPORT
 )
