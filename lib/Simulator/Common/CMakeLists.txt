@@ -49,9 +49,7 @@ add_subdirectory(${REPO_ROOT_DIR}/lib/mbedtls ${CMAKE_CURRENT_BINARY_DIR}/mbedtl
 
 add_library(${PROJECT_NAME} STATIC ${SOURCES})
 
-find_package(Freetype REQUIRED)
-
-target_link_libraries(${PROJECT_NAME} PUBLIC pugixml ArduinoJson miniz astubs esp-idf-stubs nvs_flash Adafruit-GFX-Library Freetype::Freetype mbedtls mbedx509 mbedcrypto esp_ringbuf)
+target_link_libraries(${PROJECT_NAME} PUBLIC pugixml ArduinoJson miniz astubs esp-idf-stubs nvs_flash Adafruit-GFX-Library mbedtls mbedx509 mbedcrypto esp_ringbuf)
 
 target_include_directories(${PROJECT_NAME} PUBLIC
     "${REPO_ROOT_DIR}/src"
@@ -65,6 +63,8 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 
 # Set compile definitions based on the ENABLE_8BIT_DISPLAY option
 if(ENABLE_8BIT_DISPLAY)
+    find_package(Freetype REQUIRED)
+    target_link_libraries(${PROJECT_NAME} PUBLIC Freetype::Freetype)
     target_compile_definitions(${PROJECT_NAME} PUBLIC
         DISPLAY_SIM_8BIT=1
         CONFIG_DISPLAY_EINKET013TT1=0
