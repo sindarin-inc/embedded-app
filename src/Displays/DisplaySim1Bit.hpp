@@ -6,6 +6,9 @@
 #include "DisplaySystem.hpp"
 #include "sindarin-debug.h"
 
+static_assert(CONFIG_DISPLAY_WIDTH % 8 == 0, "CONFIG_DISPLAY_WIDTH must be a multiple of 8");
+static_assert(CONFIG_DISPLAY_HEIGHT % 8 == 0, "CONFIG_DISPLAY_HEIGHT must be a multiple of 8");
+
 class DisplaySim1Bit : public DisplaySystem {
 public:
     DisplaySim1Bit(uint16_t w, uint16_t h) noexcept : gfxCanvas_(w, h), width_(w), height_(h) {
@@ -22,7 +25,10 @@ public:
     };
 
     [[nodiscard]] auto defaultTextInsets() const -> DisplayInset override {
-        return {100, 100, 20, 20};
+        return {static_cast<uint16_t>(30 * nativeWidth() / 256),
+                static_cast<uint16_t>(30 * nativeHeight() / 256),
+                static_cast<uint16_t>(20 * nativeWidth() / 256),
+                static_cast<uint16_t>(20 * nativeHeight() / 256)};
     };
     [[nodiscard]] auto minTextInsets() const -> DisplayInset override { return {5, 5, 5, 5}; };
     [[nodiscard]] auto minTextBoxWidth() const -> int16_t override { return 125; };

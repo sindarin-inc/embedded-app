@@ -35,7 +35,7 @@ enum class PixelResolution : uint8_t { ONE_BIT, EIGHT_BITS };
 // Font resolution, for both CONFIG_FONT_IBMF and CONFIG_FONT_TTF
 
 #if SIMULATOR
-#if DISPLAY_SIM_8BIT
+#if CONFIG_DISPLAY_SIM_8BIT
 const constexpr PixelResolution DEFAULT_DISPLAY_PIXEL_RESOLUTION = PixelResolution::EIGHT_BITS;
 const constexpr PixelResolution DEFAULT_FONT_PIXEL_RESOLUTION = PixelResolution::EIGHT_BITS;
 #else

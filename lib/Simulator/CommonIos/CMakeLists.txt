@@ -10,8 +10,9 @@ set(CMAKE_OSX_DEPLOYMENT_TARGET "18.0") # Minimum iOS version
 set(CMAKE_OSX_ARCHITECTURES "arm64") # Device and Simulator architectures
 
 # Set the option for simulator-common
-set(ENABLE_8BIT_DISPLAY OFF CACHE BOOL "Enable 8-bit display buffer" FORCE)
 set(ENABLE_WIFI OFF CACHE BOOL "Enable WiFi" FORCE)
+set(DISPLAY_WIDTH "392")
+set(DISPLAY_HEIGHT "600")
 
 # Include the existing library
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../Common simulator-common)

@@ -7,6 +7,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 # Path to the root of the repo
 set(REPO_ROOT_DIR "${PROJECT_SOURCE_DIR}/../..")
+set(SIM_SCALE "1" CACHE STRING "Scale of the simulator display")
 
 file(GLOB_RECURSE SOURCES
     "${PROJECT_SOURCE_DIR}/native.cpp"
@@ -26,24 +27,6 @@ target_link_libraries(${PROJECT_NAME} ${SDL2_LIBRARIES} simulator-common)
 target_compile_options(${PROJECT_NAME}
     PRIVATE
     -include ${REPO_ROOT_DIR}/src/config.h
+    -DSIM_SCALE=${SIM_SCALE}
+    -DCONFIG_DISPLAY_TYPE=CONFIG_${DISPLAY_TYPE}
 )
-
-# This is only used in native.cpp so we only define it
-# here
-if (DEFINED SIM_SCALE)
-    add_compile_definitions(SIM_SCALE=${SIM_SCALE})
-endif()
-
-# Check if SIM_WIDTH and SIM_HEIGHT are set
-# WARNING: Duplicated in Simulator/Common/CMakeLists.txt
-if (DEFINED SIM_WIDTH)
-    add_compile_definitions(SIM_WIDTH=${SIM_WIDTH})
-endif()
-
-if (DEFINED SIM_HEIGHT)
-    add_compile_definitions(SIM_HEIGHT=${SIM_HEIGHT})
-endif()
-
-if (DEFINED SIM_ONE_BIT)
-    add_compile_definitions(SIM_ONE_BIT=${SIM_ONE_BIT})
-endif()

@@ -4,10 +4,12 @@ project(simulator-common)
 # Path to the root of the repo
 set(REPO_ROOT_DIR "${PROJECT_SOURCE_DIR}/../../..")
 
-# Define the option for the 8-bit display buffer
-option(ENABLE_8BIT_DISPLAY "Enable 8-bit display buffer" OFF)
-
 option(ENABLE_WIFI "Enable WiFi" ON)
+
+set(DISPLAY_WIDTH "256" CACHE STRING "Width of the simulator display")
+set(DISPLAY_HEIGHT "256" CACHE STRING "Height of the simulator display")
+option(SIM_LAYOUT_DEBUG "Enable layout debug" OFF)
+set(DISPLAY_TYPE "DISPLAY_EINKET013TT1" CACHE STRING "Select the display type (e.g., DISPLAY_SIM_8BIT, DISPLAY_SIM_1BIT, DISPLAY_EINKET013TT1)")
 
 file(GLOB_RECURSE SOURCES
     "${REPO_ROOT_DIR}/src/*.cpp"
@@ -61,22 +63,29 @@ target_include_directories(${PROJECT_NAME} PUBLIC
     "${REPO_ROOT_DIR}/lib/argparse"
 )
 
-# Set compile definitions based on the ENABLE_8BIT_DISPLAY option
-if(ENABLE_8BIT_DISPLAY)
+# Set compile definitions based on the selected DISPLAY_TYPE
+if(DISPLAY_TYPE STREQUAL "DISPLAY_SIM_8BIT")
     find_package(Freetype REQUIRED)
     target_link_libraries(${PROJECT_NAME} PUBLIC Freetype::Freetype)
     target_compile_definitions(${PROJECT_NAME} PUBLIC
-        DISPLAY_SIM_8BIT=1
-        CONFIG_DISPLAY_EINKET013TT1=0
+        CONFIG_DISPLAY_SIM_8BIT=1
         CONFIG_FONT_TTF=1
         CONFIG_FONT_IBMF=0
     )
-else()
+elseif(DISPLAY_TYPE STREQUAL "DISPLAY_SIM_1BIT")
+    target_compile_definitions(${PROJECT_NAME} PUBLIC
+        CONFIG_DISPLAY_SIM_1BIT=1
+        CONFIG_FONT_TTF=0
+        CONFIG_FONT_IBMF=1
+    )
+elseif(DISPLAY_TYPE STREQUAL "DISPLAY_EINKET013TT1")
     target_compile_definitions(${PROJECT_NAME} PUBLIC
         CONFIG_DISPLAY_EINKET013TT1=1
         CONFIG_FONT_TTF=0
         CONFIG_FONT_IBMF=1
     )
+else()
+    message(FATAL_ERROR "Invalid DISPLAY_TYPE: ${DISPLAY_TYPE}")
 endif()
 
 if(ENABLE_WIFI)
@@ -103,7 +112,6 @@ target_compile_definitions(${PROJECT_NAME} PUBLIC
     CONFIG_MAX_BYTES_PER_LINE=200
     CONFIG_LINES_SIZE=36
     CONFIG_FACTORY_RESET_BUTTON_PIN=-1
-    # SIM_LAYOUT_DEBUG=1
     ENABLE_OTA=0
     GIT_VERSION=\"release/v1.0.0-3-geea60cbf-dirt\"
     DISABLE_LOW_VOLTAGE_HALT=1
@@ -113,6 +121,8 @@ target_compile_definitions(${PROJECT_NAME} PUBLIC
     CONFIG_TTF_SCREEN_RES_PER_INCH=150
     CONFIG_DEFAULT_INACTIVITY_MINUTES=10
     CONFIG_DISPLAY_POWER=-1
+    CONFIG_DISPLAY_WIDTH=${DISPLAY_WIDTH}
+    CONFIG_DISPLAY_HEIGHT=${DISPLAY_HEIGHT}
 )
 
 target_compile_options(${PROJECT_NAME}
@@ -120,22 +130,10 @@ target_compile_options(${PROJECT_NAME}
     -include ${REPO_ROOT_DIR}/src/config.h
 )
 
-# Check if SIM_WIDTH and SIM_HEIGHT are set
-# WARNING: Duplicated in Simulator/CMakeLists.txt
-if(DEFINED SIM_WIDTH)
-    add_compile_definitions(SIM_WIDTH=${SIM_WIDTH})
-endif()
-
-if(DEFINED SIM_HEIGHT)
-    add_compile_definitions(SIM_HEIGHT=${SIM_HEIGHT})
-endif()
-
-if(DEFINED SIM_LAYOUT_DEBUG)
-    add_compile_definitions(SIM_LAYOUT_DEBUG=${SIM_LAYOUT_DEBUG})
-endif()
-
-if(DEFINED SIM_ONE_BIT)
-    add_compile_definitions(SIM_ONE_BIT=${SIM_ONE_BIT})
+if(SIM_LAYOUT_DEBUG)
+    target_compile_definitions(${PROJECT_NAME} PUBLIC
+        SIM_LAYOUT_DEBUG=${SIM_LAYOUT_DEBUG}
+    )
 endif()
 
 # This should mirror the compile options used for the ESP-IDF build

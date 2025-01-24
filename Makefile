@@ -36,12 +36,12 @@ else ifeq ($(TARGET),sharp-27in)
 endif
 
 # Optional variables for the Simulator builds
-CMAKE_SIM_DISPLAY_OPTIONS := $(if $(SIM_WIDTH),-DSIM_WIDTH=$(SIM_WIDTH)) $(if $(SIM_HEIGHT),-DSIM_HEIGHT=$(SIM_HEIGHT)) $(if $(SIM_SCALE),-DSIM_SCALE=$(SIM_SCALE)) $(if $(SIM_LAYOUT_DEBUG),-DSIM_LAYOUT_DEBUG=$(SIM_LAYOUT_DEBUG)) $(if $(SIM_ONE_BIT),-DSIM_ONE_BIT=$(SIM_ONE_BIT))
+CMAKE_SIM_DISPLAY_OPTIONS := $(if $(DISPLAY_WIDTH),-DDISPLAY_WIDTH=$(DISPLAY_WIDTH)) $(if $(DISPLAY_HEIGHT),-DDISPLAY_HEIGHT=$(DISPLAY_HEIGHT)) $(if $(DISPLAY_SCALE),-DDISPLAY_SCALE=$(DISPLAY_SCALE)) $(if $(DISPLAY_LAYOUT_DEBUG),-DDISPLAY_LAYOUT_DEBUG=$(DISPLAY_LAYOUT_DEBUG)) $(if $(DISPLAY_TYPE),-DDISPLAY_TYPE=$(DISPLAY_TYPE))
 
 .PHONY: sim-build
 sim-build:
 	mkdir -p lib/Simulator/build
-	cd lib/Simulator/build && cmake $(CMAKE_FLAGS) $(CMAKE_SIM_DISPLAY_OPTIONS) .. && $(MAKE)
+	cd lib/Simulator/build && cmake $(CMAKE_FLAGS) -DSIM_SCALE=2 $(CMAKE_SIM_DISPLAY_OPTIONS) .. && $(MAKE)
 
 .PHONY: sim-run
 sim: sim-build
@@ -50,7 +50,7 @@ sim: sim-build
 .PHONY: sim8-build
 sim8-build:
 	mkdir -p lib/Simulator/build8
-	cd lib/Simulator/build8 && cmake $(CMAKE_FLAGS) -DENABLE_8BIT_DISPLAY=ON $(CMAKE_SIM_DISPLAY_OPTIONS) .. && $(MAKE)
+	cd lib/Simulator/build8 && cmake $(CMAKE_FLAGS) -DDISPLAY_TYPE=DISPLAY_SIM_8BIT -DDISPLAY_WIDTH=600 -DDISPLAY_HEIGHT=600 $(CMAKE_SIM_DISPLAY_OPTIONS) .. && $(MAKE)
 
 .PHONY: sim-run8
 sim8: sim8-build
