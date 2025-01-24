@@ -328,7 +328,7 @@ void DisplayEinkET013TT1::drawFullscreenBitmapFromFile(RendererStream &stream) {
 }
 
 void DisplayEinkET013TT1::sendBufferToSerial(const uint8_t *buffer, bool screenshot) const {
-    constexpr size_t byteSize = EinkET013TT1_PIXEL_WIDTH * EinkET013TT1_PIXEL_HEIGHT / 8;
+    constexpr size_t byteSize = CONFIG_DISPLAY_WIDTH * CONFIG_DISPLAY_HEIGHT / 8;
 
     std::string *prefix;
     if (screenshot) {

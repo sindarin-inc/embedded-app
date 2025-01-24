@@ -190,8 +190,8 @@ auto CheckViewUnchanged(DisplayEinkET013TT1 &display, std::string key) -> ViewTe
     std::filesystem::create_directory(GetDirectory(directory + testRunPrefix));
     std::filesystem::create_directory(GetDirectory(directory + testRunPrefix + key));
 
-    if (!stbi_write_png(result.renderedImagePath.c_str(), EinkET013TT1_PIXEL_WIDTH,
-                        EinkET013TT1_PIXEL_HEIGHT, 1, display.buffer().get(), 0)) {
+    if (!stbi_write_png(result.renderedImagePath.c_str(), CONFIG_DISPLAY_WIDTH,
+                        CONFIG_DISPLAY_HEIGHT, 1, display.buffer().get(), 0)) {
         log_e("Unable to save rendered image to %s", result.renderedImagePath.c_str());
     }
 
@@ -217,7 +217,7 @@ auto CheckViewUnchanged(DisplayEinkET013TT1 &display, std::string key) -> ViewTe
     };
 
     // Bonus: Render a pixel-by-pixel diff image, save to png
-    uint8_t diffData[EinkET013TT1_PIXEL_WIDTH * EinkET013TT1_PIXEL_HEIGHT];
+    uint8_t diffData[CONFIG_DISPLAY_WIDTH * CONFIG_DISPLAY_HEIGHT];
 
     // Compare pixel by pixel the values to make sure they all match
     result.passed = true;
@@ -234,8 +234,8 @@ auto CheckViewUnchanged(DisplayEinkET013TT1 &display, std::string key) -> ViewTe
     if (!result.passed) {
         // Render out the diff image to a png
         result.diffImagePath = directory + testRunPrefix + key + "_diff.png";
-        if (!stbi_write_png(result.diffImagePath.c_str(), EinkET013TT1_PIXEL_WIDTH,
-                            EinkET013TT1_PIXEL_HEIGHT, 1, diffData, 0)) {
+        if (!stbi_write_png(result.diffImagePath.c_str(), CONFIG_DISPLAY_WIDTH,
+                            CONFIG_DISPLAY_HEIGHT, 1, diffData, 0)) {
             log_e("Unable to save diff image to %s", result.diffImagePath.c_str());
         }
 

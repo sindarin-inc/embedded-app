@@ -46,9 +46,12 @@
 #if CONFIG_DISPLAY_EINKET013TT1
 #include "Displays/DisplayEinkET013TT1.hpp"
 DisplayEinkET013TT1 myDisplay;
-#elif DISPLAY_SIM_8BIT
+#elif CONFIG_DISPLAY_SIM_8BIT
 #include "Displays/DisplaySim8Bit.hpp"
-DisplaySim8Bit myDisplay(SIM_WIDTH, SIM_HEIGHT);
+DisplaySim8Bit myDisplay(CONFIG_DISPLAY_WIDTH, CONFIG_DISPLAY_HEIGHT);
+#elif CONFIG_DISPLAY_SIM_1BIT
+#include "Displays/DisplaySim1Bit.hpp"
+DisplaySim1Bit myDisplay(CONFIG_DISPLAY_WIDTH, CONFIG_DISPLAY_HEIGHT);
 #elif CONFIG_DISPLAY_M5STACK_ATOM_DISPLAY
 #include "Displays/DisplayM5StackAtomDisplay.hpp"
 DisplayM5StackAtomDisplay myDisplay;
@@ -61,6 +64,8 @@ DisplayWaveshare6inHD myDisplay;
 #elif CONFIG_DISPLAY_SHARP_27IN
 #include "Displays/DisplaySharp27in.hpp"
 DisplaySharp27in myDisplay;
+#else
+#error "No display selected"
 #endif
 
 PreferencesStore prefs;

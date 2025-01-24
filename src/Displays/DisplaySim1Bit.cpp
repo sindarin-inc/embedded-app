@@ -1,4 +1,4 @@
-#if DISPLAY_SIM_8BIT
+#if CONFIG_DISPLAY_SIM_1BIT
 
 #include "DisplaySim1Bit.hpp"
 

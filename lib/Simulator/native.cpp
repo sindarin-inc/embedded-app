@@ -35,30 +35,22 @@
 extern PreferencesStore prefs;
 extern void UIInnerLoop(RemoteCommand command);
 
-#if CONFIG_DISPLAY_EINKET013TT1
-#include "Displays/DisplayEinkET013TT1.hpp"
-#ifndef SIM_SCALE
-#define SIM_SCALE 2
-#endif // SIM_SCALE
-extern DisplayEinkET013TT1 myDisplay;
-#elif DISPLAY_SIM_8BIT
-#ifndef SIM_WIDTH
-#define SIM_WIDTH 600
-#endif // SIM_WIDTH
-#ifndef SIM_HEIGHT
-#define SIM_HEIGHT 600
-#endif // SIM_HEIGHT
-#ifdef SIM_ONE_BIT
-#include "Displays/DisplaySim1Bit.hpp"
-extern DisplaySim1Bit myDisplay;
-#else
+#if CONFIG_DISPLAY_SIM_8BIT
 #include "Displays/DisplaySim8Bit.hpp"
 extern DisplaySim8Bit myDisplay;
-#endif // SIM_ONE_BIT
+#elif CONFIG_DISPLAY_SIM_1BIT
+#include "Displays/DisplaySim1Bit.hpp"
+extern DisplaySim1Bit myDisplay;
+#elif CONFIG_DISPLAY_EINKET013TT1
+#include "Displays/DisplayEinkET013TT1.hpp"
+extern DisplayEinkET013TT1 myDisplay;
+#else
+#error "No display selected"
+#endif
+
 #ifndef SIM_SCALE
 #define SIM_SCALE 1
 #endif // SIM_SCALE
-#endif // CONFIG_DISPLAY_EINKET013TT1
 
 extern "C" void app_main(void); // NOLINT(readability-identifier-naming)
 
@@ -80,7 +72,7 @@ float lerp(float a, float b, float t) { return a + t * (b - a); }
 void SimDrawScreen() {
     for (int x = 0; x < myDisplay.gfxClass()->width(); x++) {
         for (int y = 0; y < myDisplay.gfxClass()->height(); y++) {
-#ifdef SIM_ONE_BIT
+#ifdef CONFIG_DISPLAY_SIM_1BIT
             SDL_SetRenderDrawColor(renderer, 240, 240, 240, 0xFF);
 
             if (myDisplay.getPixel(x, y)) {

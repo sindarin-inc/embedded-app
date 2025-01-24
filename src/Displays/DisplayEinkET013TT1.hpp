@@ -1,5 +1,4 @@
-#ifndef DISPLAY_EINK_154IN_H
-#define DISPLAY_EINK_154IN_H
+#pragma once
 
 #include "DisplaySystem.hpp"
 #if SIMULATOR
@@ -9,10 +8,12 @@
 #endif
 #include "sindarin-debug.h"
 
+static_assert(CONFIG_DISPLAY_WIDTH % 8 == 0, "CONFIG_DISPLAY_WIDTH must be a multiple of 8");
+static_assert(CONFIG_DISPLAY_HEIGHT % 8 == 0, "CONFIG_DISPLAY_HEIGHT must be a multiple of 8");
+
 class DisplayEinkET013TT1 : public DisplaySystem {
 public:
-    DisplayEinkET013TT1() noexcept
-        : gfxCanvas_(EinkET013TT1_PIXEL_WIDTH, EinkET013TT1_PIXEL_HEIGHT) {
+    DisplayEinkET013TT1() noexcept : gfxCanvas_(CONFIG_DISPLAY_WIDTH, CONFIG_DISPLAY_HEIGHT) {
         gfxClass_ = &gfxCanvas_;
     };
     DisplayEinkET013TT1(DisplayEinkET013TT1 const &) = delete;
@@ -75,10 +76,8 @@ public:
     void sendCurrentScreenToSerial(bool screenshot = false) const override;
 
 protected:
-    [[nodiscard]] auto nativeWidth() const -> uint16_t override { return EinkET013TT1_PIXEL_WIDTH; }
-    [[nodiscard]] auto nativeHeight() const -> uint16_t override {
-        return EinkET013TT1_PIXEL_HEIGHT;
-    }
+    [[nodiscard]] auto nativeWidth() const -> uint16_t override { return CONFIG_DISPLAY_WIDTH; }
+    [[nodiscard]] auto nativeHeight() const -> uint16_t override { return CONFIG_DISPLAY_HEIGHT; }
 
     [[nodiscard]] auto getBuffer() -> uint8_t * override { return gfxCanvas_.getBuffer(); }
 
@@ -92,5 +91,3 @@ protected:
     uint16_t numPartials_ = 0;
     unsigned long firstPartialTime_ = 0;
 };
-
-#endif

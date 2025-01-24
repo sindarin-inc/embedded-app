@@ -30,8 +30,8 @@ void EinkET013TT1::clear(const EinkET013TT1Waveform &waveform) {
 }
 
 auto EinkET013TT1::getPixel(const uint8_t *buffer, int x, int y) -> uint8_t {
-    int byteIndex = (y * EinkET013TT1_PIXEL_WIDTH + x) / 8;
-    int bitIndex = (y * EinkET013TT1_PIXEL_WIDTH + x) % 8;
+    int byteIndex = (y * CONFIG_DISPLAY_WIDTH + x) / 8;
+    int bitIndex = (y * CONFIG_DISPLAY_WIDTH + x) % 8;
     return (buffer[byteIndex] >> (7 - bitIndex)) & 0x01;
 }
 
@@ -41,10 +41,10 @@ void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *b
     if (skipWaveform_) {
         // Skip waveform processing and just move the pixel all the way one way or another
         log_d("Skipping waveform processing (would have used \"%s\")", waveform.name);
-        for (int x = 0; x < EinkET013TT1_PIXEL_WIDTH; x++) {
-            for (int y = 0; y < EinkET013TT1_PIXEL_HEIGHT; y++) {
+        for (int x = 0; x < CONFIG_DISPLAY_WIDTH; x++) {
+            for (int y = 0; y < CONFIG_DISPLAY_HEIGHT; y++) {
                 auto pixel = getPixel(buffer, x, y);
-                particlePositions_[y * EinkET013TT1_PIXEL_WIDTH + x] = pixel * 255;
+                particlePositions_[y * CONFIG_DISPLAY_WIDTH + x] = pixel * 255;
             }
         }
         // Signal that we've drawn something
@@ -64,13 +64,13 @@ void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *b
             auto altFrame = altWaveform.frameOrDefault(frameIndex);
 
             // For each pixel, calculate the correct way to move it for the waveform
-            for (int x = 0; x < EinkET013TT1_PIXEL_WIDTH; x++) {
-                for (int y = 0; y < EinkET013TT1_PIXEL_HEIGHT; y++) {
+            for (int x = 0; x < CONFIG_DISPLAY_WIDTH; x++) {
+                for (int y = 0; y < CONFIG_DISPLAY_HEIGHT; y++) {
                     auto pixel = getPixel(buffer, x, y);
                     auto previousPixel = getPixel(previousBuffer_, x, y);
                     uint8_t setting = box.contains(x, y) ? altFrame.getSetting(previousPixel, pixel)
                                                          : frame.getSetting(previousPixel, pixel);
-                    auto position = particlePositions_[y * EinkET013TT1_PIXEL_WIDTH + x];
+                    auto position = particlePositions_[y * CONFIG_DISPLAY_WIDTH + x];
                     // TODO: We could probably get math-y here and simulate the movement of the
                     // particles with physics. For now we're just estimating.
                     switch (setting) {
@@ -83,7 +83,7 @@ void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *b
                     case NOCHG:
                         break;
                     }
-                    particlePositions_[y * EinkET013TT1_PIXEL_WIDTH + x] = position;
+                    particlePositions_[y * CONFIG_DISPLAY_WIDTH + x] = position;
                 }
             }
             uint8_t in = 1;
