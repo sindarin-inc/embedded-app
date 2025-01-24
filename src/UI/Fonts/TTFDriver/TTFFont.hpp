@@ -58,11 +58,11 @@ public:
             if (error) {
                 LOGE("The memory of the main font format is unsupported or is broken (%d).", error);
             } else {
-                int error = FT_Set_Char_Size(face_,      // handle to face object
-                                             0,          // char_width in 1/64th of points
-                                             size_ * 64, // char_height in 1/64th of points
-                                             150,        // horizontal device resolution
-                                             150);       // vertical device resolution
+                int error = FT_Set_Char_Size(face_,               // handle to face object
+                                             0,                   // char_width in 1/64th of points
+                                             size_ * 64,          // char_height in 1/64th of points
+                                             SCREEN_RES_PER_INCH, // horizontal device resolution
+                                             SCREEN_RES_PER_INCH); // vertical device resolution
                 if (error) {
                     LOGE("Unable to set font size.");
                 } else {
