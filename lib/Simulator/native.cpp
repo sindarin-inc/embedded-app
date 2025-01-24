@@ -50,10 +50,10 @@ extern DisplayEinkET013TT1 myDisplay;
 #endif // SIM_HEIGHT
 #ifdef SIM_ONE_BIT
 #include "Displays/DisplaySim1Bit.hpp"
-DisplaySim1Bit myDisplay(SIM_WIDTH, SIM_HEIGHT);
+extern DisplaySim1Bit myDisplay;
 #else
 #include "Displays/DisplaySim8Bit.hpp"
-DisplaySim8Bit myDisplay(SIM_WIDTH, SIM_HEIGHT);
+extern DisplaySim8Bit myDisplay;
 #endif // SIM_ONE_BIT
 #ifndef SIM_SCALE
 #define SIM_SCALE 1

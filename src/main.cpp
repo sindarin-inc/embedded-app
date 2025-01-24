@@ -47,9 +47,8 @@
 #include "Displays/DisplayEinkET013TT1.hpp"
 DisplayEinkET013TT1 myDisplay;
 #elif DISPLAY_SIM_8BIT
-// Declared in native.cpp
-#include "Displays/DisplaySim1Bit.hpp"
-extern DisplaySim1Bit myDisplay;
+#include "Displays/DisplaySim8Bit.hpp"
+DisplaySim8Bit myDisplay(SIM_WIDTH, SIM_HEIGHT);
 #elif CONFIG_DISPLAY_M5STACK_ATOM_DISPLAY
 #include "Displays/DisplayM5StackAtomDisplay.hpp"
 DisplayM5StackAtomDisplay myDisplay;
