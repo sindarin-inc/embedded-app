@@ -410,8 +410,8 @@ void EinkET013TT1::updateInternal(const EinkET013TT1Waveform &waveform, const ui
             auto oldBuffer = &(previousBuffer_[bufferIndex]);
 
             // This for loop takes 4-16us at 240MHz
-            for (uint16_t pixel = 0; pixel < EinkET013TT1_PIXEL_WIDTH / 2; pixel += 8) {
-                x = pixel + (gate / EinkET013TT1_PIXEL_WIDTH) * EinkET013TT1_PIXEL_WIDTH / 2;
+            for (uint16_t pixel = 0; pixel < CONFIG_DISPLAY_WIDTH / 2; pixel += 8) {
+                x = pixel + (gate / CONFIG_DISPLAY_WIDTH) * CONFIG_DISPLAY_WIDTH / 2;
                 auto *lutToUse = box.contains(x, y) ? &altLut : &lut;
 
                 uint8_t index = pixel / 8;
