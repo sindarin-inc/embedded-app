@@ -19,7 +19,7 @@ jobs:
           submodules: "recursive"
 
       - name: Install prerequisites
-        run: sudo apt update && sudo apt install -y gdb libfreetype-dev
+        run: sudo apt update && sudo apt install -y gdb
 
       - name: Allow gdb to attach to processes
         run: |

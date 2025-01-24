@@ -65,8 +65,12 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 
 # Set compile definitions based on the selected DISPLAY_TYPE
 if(DISPLAY_TYPE STREQUAL "DISPLAY_SIM_8BIT")
-    find_package(Freetype REQUIRED)
-    target_link_libraries(${PROJECT_NAME} PUBLIC Freetype::Freetype)
+    # Set FreeType options before adding the subdirectory
+    set(FT_DISABLE_PNG ON CACHE BOOL "Disable PNG support in FreeType" FORCE)
+    set(FT_DISABLE_HARFBUZZ ON CACHE BOOL "Disable HarfBuzz support in FreeType" FORCE)
+    set(FT_DISABLE_BROTLI ON CACHE BOOL "Disable Brotli support in FreeType" FORCE)
+    add_subdirectory(${REPO_ROOT_DIR}/components/freetype/freetype ${CMAKE_CURRENT_BINARY_DIR}/freetype)
+    target_link_libraries(${PROJECT_NAME} PUBLIC freetype)
     target_compile_definitions(${PROJECT_NAME} PUBLIC
         CONFIG_DISPLAY_SIM_8BIT=1
         CONFIG_FONT_TTF=1
