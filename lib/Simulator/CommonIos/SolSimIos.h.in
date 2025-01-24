@@ -1,0 +1,4 @@
+#pragma once
+
+// simulator-common definitions
+@SIMULATOR_DEFINITIONS@

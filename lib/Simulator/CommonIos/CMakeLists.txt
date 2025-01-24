@@ -36,11 +36,35 @@ target_link_options(SolSimIos PRIVATE -Wl,-u,_LightingSetting)
 
 target_link_options(SolSimIos PUBLIC -all_load)
 
+# Get the compile definitions from simulator-common
+get_target_property(SIM_DEFS simulator-common INTERFACE_COMPILE_DEFINITIONS)
+
+# Create a string of preprocessor definitions for the header
+set(SIMULATOR_DEFINITIONS "")
+foreach(def ${SIM_DEFS})
+    # Split the definition into name and value if it contains =
+    string(REGEX MATCH "([^=]+)=(.*)" matches "${def}")
+    if(matches)
+        # If there was an = sign, format as #define NAME VALUE
+        string(APPEND SIMULATOR_DEFINITIONS "#define ${CMAKE_MATCH_1} ${CMAKE_MATCH_2}\n")
+    else()
+        # If no = sign, just define the symbol
+        string(APPEND SIMULATOR_DEFINITIONS "#define ${def}\n")
+    endif()
+endforeach()
+
+# Configure the header file
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/SolSimIos.h.in
+    ${CMAKE_CURRENT_BINARY_DIR}/SolSimIos.h
+    @ONLY
+)
+
 # Set framework properties
 set_target_properties(SolSimIos PROPERTIES
     FRAMEWORK TRUE
     FRAMEWORK_VERSION A
-    PUBLIC_HEADER SolSimIos.h
+    PUBLIC_HEADER "${CMAKE_CURRENT_BINARY_DIR}/SolSimIos.h"
     MACOSX_FRAMEWORK_IDENTIFIER com.sindarin.SolSimIos
     XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "com.sindarin.SolSimIos"
     MACOSX_FRAMEWORK_SHORT_VERSION_STRING "1.0"
@@ -64,6 +88,6 @@ target_include_directories(SolSimIos PUBLIC
 
 # The following must be in the same directory scope as add_library() for the target
 # that uses the source file (i.e. for the fmwk target in this case)
-set_source_files_properties(SolSimIos.h PROPERTIES
+set_source_files_properties("${CMAKE_CURRENT_BINARY_DIR}/SolSimIos.h" PROPERTIES
     MACOSX_PACKAGE_LOCATION Headers/
 )
