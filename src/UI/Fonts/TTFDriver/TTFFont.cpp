@@ -308,6 +308,8 @@ auto Font::drawSingleLineOfText(font_defs::Bitmap &canvas, font_defs::Pos pos,
         // The following may require some modification as the next Sol Glasses version
         // may be using a different pitch than the one computed here.
 
+        atPos.y += lineHeight();
+
         canvas.pitch = (displayPixelResolution_ == PixelResolution::ONE_BIT)
                            ? (canvas.dim.width + 7) >> 3
                            : canvas.dim.width;
@@ -330,8 +332,9 @@ auto Font::drawSingleLineOfText(font_defs::Bitmap &canvas, font_defs::Pos pos,
                         // TODO: Ask Guy about the right way to handle line height and keeping the
                         // full text inside its box.
                         Pos outPos = Pos(atPos.x - glyph.value()->metrics.xoff,
-                                         atPos.y + glyph.value()->metrics.yoff +
-                                             glyph.value()->metrics.lineHeight - 4);
+                                         atPos.y + glyph.value()->metrics.yoff);
+                        //  atPos.y + glyph.value()->metrics.yoff +
+                        //      glyph.value()->metrics.lineHeight - 4);
                         copyBitmap(canvas, glyph.value()->bitmap, outPos, inverted);
                     }
 
