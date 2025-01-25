@@ -308,7 +308,7 @@ auto Font::drawSingleLineOfText(font_defs::Bitmap &canvas, font_defs::Pos pos,
         // The following may require some modification as the next Sol Glasses version
         // may be using a different pitch than the one computed here.
 
-        atPos.y += lineHeight();
+        atPos.y += lineHeight() + (face_->size->metrics.descender >> 6);
 
         canvas.pitch = (displayPixelResolution_ == PixelResolution::ONE_BIT)
                            ? (canvas.dim.width + 7) >> 3
