@@ -333,8 +333,6 @@ auto Font::drawSingleLineOfText(font_defs::Bitmap &canvas, font_defs::Pos pos,
                         // full text inside its box.
                         Pos outPos = Pos(atPos.x - glyph.value()->metrics.xoff,
                                          atPos.y + glyph.value()->metrics.yoff);
-                        //  atPos.y + glyph.value()->metrics.yoff +
-                        //      glyph.value()->metrics.lineHeight - 4);
                         copyBitmap(canvas, glyph.value()->bitmap, outPos, inverted);
                     }
 
