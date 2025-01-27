@@ -1,4 +1,41 @@
 #pragma once
 
 // simulator-common definitions
+// clang-format off
 @SIMULATOR_DEFINITIONS@
+// clang-format on
+
+#include <inttypes.h>
+
+// Add these button types above the @interface
+enum class SolRemoteButton {
+    North,
+    East,
+    West,
+    South,
+    Enter
+};
+
+void StartFreeRTOSScheduler();
+
+void StopFreeRTOSScheduler();
+
+void HandleButtonPress(SolRemoteButton button);
+
+int ScreenWidth();
+
+int ScreenHeight();
+
+void SetSkipWaveform(bool skip);
+
+uint8_t *GetDisplayBuffer();
+
+void SetLightingSetting(int lightingSetting);
+
+int GetLightingMinDutyCycle();
+
+int GetLightingMaxDutyCycle();
+
+int GetLightingSetting();
+
+bool NeedsRedraw();
