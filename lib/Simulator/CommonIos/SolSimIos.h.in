@@ -1,41 +1,49 @@
 #pragma once
 
+#include <Foundation/Foundation.h>
+
 // simulator-common definitions
 // clang-format off
 @SIMULATOR_DEFINITIONS@
-// clang-format on
+    // clang-format on
 
-#include <inttypes.h>
+    // Add these button types above the @interface
+    typedef NS_ENUM(NSInteger, SolRemoteButton) {
+        SolRemoteButtonNorth,
+        SolRemoteButtonEast,
+        SolRemoteButtonWest,
+        SolRemoteButtonSouth,
+        SolRemoteButtonEnter
+    };
 
-// Add these button types above the @interface
-enum class SolRemoteButton {
-    North,
-    East,
-    West,
-    South,
-    Enter
-};
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-void StartFreeRTOSScheduler();
+void StartFreeRTOSScheduler(void);
 
-void StopFreeRTOSScheduler();
+void StopFreeRTOSScheduler(void);
 
 void HandleButtonPress(SolRemoteButton button);
 
-int ScreenWidth();
+int ScreenWidth(void);
 
-int ScreenHeight();
+int ScreenHeight(void);
 
 void SetSkipWaveform(bool skip);
 
-uint8_t *GetDisplayBuffer();
+uint8_t *GetDisplayBuffer(void);
 
 void SetLightingSetting(int lightingSetting);
 
-int GetLightingMinDutyCycle();
+int GetLightingMinDutyCycle(void);
 
-int GetLightingMaxDutyCycle();
+int GetLightingMaxDutyCycle(void);
 
-int GetLightingSetting();
+int GetLightingSetting(void);
 
-bool NeedsRedraw();
+bool NeedsRedraw(void);
+
+#ifdef __cplusplus
+}
+#endif
