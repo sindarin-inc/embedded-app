@@ -8,11 +8,13 @@
 #include "Inputs/RemoteInput.hpp"
 #include "Misc/Platform.hpp"
 #include "Misc/Math.hpp"
+#include "Storage/PosixFileSystem.hpp"
 
 // Forward declarations
 extern void UIInnerLoop(RemoteCommand command);
 extern "C" void app_main(void);
 extern int LightingSetting;
+extern PosixFileSystem fileSystem;
 #define protected public
 #if CONFIG_DISPLAY_SIM_8BIT
 #include "Displays/DisplaySim8Bit.hpp"
@@ -104,4 +106,8 @@ extern "C" bool NeedsRedraw() {
     bool out;
     return myDisplay.renderQueue() != NULL &&
         xQueueReceiveFromISR(myDisplay.renderQueue(), &out, NULL) == pdTRUE;
+}
+
+extern "C" void SetFileSystemPrefix(const char *prefix) {
+    fileSystem.setPrefix(prefix);
 }

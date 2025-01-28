@@ -44,6 +44,8 @@ int GetLightingSetting(void);
 
 bool NeedsRedraw(void);
 
+void SetFileSystemPrefix(const char *prefix);
+
 #ifdef __cplusplus
 }
 #endif
