@@ -5,16 +5,16 @@
 // simulator-common definitions
 // clang-format off
 @SIMULATOR_DEFINITIONS@
-    // clang-format on
 
-    // Add these button types above the @interface
-    typedef NS_ENUM(NSInteger, SolRemoteButton) {
-        SolRemoteButtonNorth,
-        SolRemoteButtonEast,
-        SolRemoteButtonWest,
-        SolRemoteButtonSouth,
-        SolRemoteButtonEnter
-    };
+// Add these button types above the @interface
+typedef NS_ENUM(NSInteger, SolRemoteButton) {
+    SolRemoteButtonNorth,
+    SolRemoteButtonEast,
+    SolRemoteButtonWest,
+    SolRemoteButtonSouth,
+    SolRemoteButtonEnter
+};
+// clang-format on
 
 #ifdef __cplusplus
 extern "C" {

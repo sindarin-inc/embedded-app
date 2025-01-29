@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.15)
 project(sol-sim-ios)
 
+set(IOS TRUE)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -10,7 +11,7 @@ set(CMAKE_OSX_DEPLOYMENT_TARGET "18.0") # Minimum iOS version
 set(CMAKE_OSX_ARCHITECTURES "arm64") # Device and Simulator architectures
 
 # Set the option for simulator-common
-set(ENABLE_WIFI OFF CACHE BOOL "Enable WiFi" FORCE)
+set(ENABLE_WIFI ON CACHE BOOL "Enable WiFi" FORCE)
 set(DISPLAY_WIDTH "392" CACHE STRING "Width of the simulator display" FORCE)
 set(DISPLAY_HEIGHT "600" CACHE STRING "Height of the simulator display" FORCE)
 set(DISPLAY_TYPE "DISPLAY_SIM_8BIT" CACHE STRING "Select the display type (e.g., DISPLAY_SIM_8BIT, DISPLAY_SIM_1BIT, DISPLAY_EINKET013TT1)" FORCE)
@@ -97,3 +98,23 @@ target_include_directories(SolSimIos PUBLIC
 set_source_files_properties("${CMAKE_CURRENT_BINARY_DIR}/SolSimIos.h" PROPERTIES
     MACOSX_PACKAGE_LOCATION Headers/
 )
+
+if(ENABLE_WIFI)
+    # Add iOS HTTP client implementation
+    set_source_files_properties(
+        ${CMAKE_CURRENT_SOURCE_DIR}/../stubs/esp-idf/esp_http_client_ios.mm
+        PROPERTIES
+        COMPILE_FLAGS "-x objective-c++"
+    )
+
+    target_sources(SolSimIos PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/../stubs/esp-idf/esp_http_client_ios.mm
+    )
+
+    # Link required iOS frameworks
+    target_link_libraries(SolSimIos PRIVATE
+        "-framework Foundation"
+        "-framework CFNetwork"
+        "-framework Security"
+    )
+endif()

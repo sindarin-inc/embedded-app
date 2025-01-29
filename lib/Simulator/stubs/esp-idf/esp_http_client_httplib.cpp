@@ -20,7 +20,7 @@ public:
         std::string protocol = urlStr.substr(0, found);
         // urlNew is the url excluding the http part
         std::string urlNew = urlStr.substr(found + 3);
-        size_t found1 = urlNew.find_first_of(":");
+        // size_t found1 = urlNew.find_first_of(":");
         size_t found2 = urlNew.find_first_of("/");
 
         host = urlStr.substr(0, found2 + protocol.length() + 3);
