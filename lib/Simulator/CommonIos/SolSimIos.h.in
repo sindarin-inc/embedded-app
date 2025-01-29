@@ -46,6 +46,8 @@ bool NeedsRedraw(void);
 
 void SetFileSystemPrefix(const char *prefix);
 
+void SetupPrefs(const char *path);
+
 #ifdef __cplusplus
 }
 #endif

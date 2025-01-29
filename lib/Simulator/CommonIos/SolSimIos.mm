@@ -9,12 +9,14 @@
 #include "Misc/Platform.hpp"
 #include "Misc/Math.hpp"
 #include "Storage/PosixFileSystem.hpp"
+#include "Storage/PreferencesStore.hpp"
 
 // Forward declarations
 extern void UIInnerLoop(RemoteCommand command);
 extern "C" void app_main(void);
 extern int LightingSetting;
 extern PosixFileSystem fileSystem;
+extern PreferencesStore prefs;
 #define protected public
 #if CONFIG_DISPLAY_SIM_8BIT
 #include "Displays/DisplaySim8Bit.hpp"
@@ -110,4 +112,8 @@ extern "C" bool NeedsRedraw() {
 
 extern "C" void SetFileSystemPrefix(const char *prefix) {
     fileSystem.setPrefix(prefix);
+}
+
+extern "C" void SetupPrefs(const char *path) {
+    prefs.begin(path);
 }

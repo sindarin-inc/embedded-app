@@ -50,7 +50,14 @@ set(ENABLE_TESTING OFF CACHE BOOL "Disable mbedtls tests" FORCE)
 set(ENABLE_PROGRAMS OFF CACHE BOOL "Disable mbedtls programs" FORCE)
 add_subdirectory(${REPO_ROOT_DIR}/lib/mbedtls ${CMAKE_CURRENT_BINARY_DIR}/mbedtls)
 
-add_library(${PROJECT_NAME} STATIC ${SOURCES})
+if(NOT IOS AND ENABLE_WIFI)
+    set(HTTP_CLIENT_SOURCE "${REPO_ROOT_DIR}/lib/Simulator/stubs/esp-idf/esp_http_client_httplib.cpp")
+else()
+    # Linked externally
+    set(HTTP_CLIENT_SOURCE "")
+endif()
+
+add_library(${PROJECT_NAME} STATIC ${SOURCES} ${HTTP_CLIENT_SOURCE})
 
 target_link_libraries(${PROJECT_NAME} PUBLIC pugixml ArduinoJson miniz astubs esp-idf-stubs nvs_flash Adafruit-GFX-Library mbedtls mbedx509 mbedcrypto esp_ringbuf)
 
