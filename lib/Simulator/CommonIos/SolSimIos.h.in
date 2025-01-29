@@ -48,6 +48,8 @@ void SetFileSystemPrefix(const char *prefix);
 
 void SetupPrefs(const char *path);
 
+void SetCloudToken(const char *token);
+
 #ifdef __cplusplus
 }
 #endif

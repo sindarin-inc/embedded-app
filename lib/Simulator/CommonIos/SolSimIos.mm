@@ -117,3 +117,7 @@ extern "C" void SetFileSystemPrefix(const char *prefix) {
 extern "C" void SetupPrefs(const char *path) {
     prefs.begin(path);
 }
+
+extern "C" void SetCloudToken(const char *token) {
+    prefs.cloudToken.set(token);
+}
