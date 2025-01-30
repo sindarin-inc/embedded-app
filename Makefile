@@ -152,6 +152,10 @@ monitor-jtag: check_idf
 monitor-devboard: check_idf
 	idf.py $(IDF_PROFILE) monitor --no-reset --port $$(python3 scripts/port_tool.py find_port devboard)
 
+.PHONY: ios-framework
+ios-framework:
+	cd lib/Simulator/CommonIos && make build
+
 .PHONY: clean
 clean:
 	rm -fr build*
@@ -160,6 +164,7 @@ clean:
 	rm -fr test/CatchTests/build
 	rm -fr test/CatchTests/Images/TestRun/*diff.png
 	rm -fr test/CatchTests/Images/TestRun/GylphTests/*diff.png
+	rm -fr lib/Simulator/CommonIos/build*
 
 .PHONY: clang-tidy
 clang-tidy: check_idf
