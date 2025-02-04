@@ -67,8 +67,8 @@ void Battery::loop() {
     }
 }
 
-auto Battery::average(const std::array<float, BATTERY_MEASUREMENTS_COUNT> &array, int count)
-    -> float {
+auto Battery::average(const std::array<float, BATTERY_MEASUREMENTS_COUNT> &array,
+                      int count) -> float {
     if (count == 0) {
         return 0;
     }

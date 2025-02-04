@@ -26,8 +26,8 @@ public:
     void parse(const std::shared_ptr<uint8_t[]> &buffer, uint32_t length,
                const std::shared_ptr<Readable> &readable);
     void loadSpine(const ReadableTableOfContentsChapterVector &toc);
-    auto findChapterIdxInToc(const ReadableTableOfContentsChapterVector &toc, SpineItem &spineItem)
-        -> ChapterIdx;
+    auto findChapterIdxInToc(const ReadableTableOfContentsChapterVector &toc,
+                             SpineItem &spineItem) -> ChapterIdx;
 
     [[nodiscard]] auto getSpine(SpineIdx idx) const -> const SpineItem & { return spine_[idx]; }
 

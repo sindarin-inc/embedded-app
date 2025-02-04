@@ -6,8 +6,8 @@
 #include "TxtTokenizer.hpp"
 
 auto Tokenizer::factory(const std::shared_ptr<RendererStream> &stream, Font *font,
-                        DisplayRect &rect, Tokens &tokens, Pager &pager)
-    -> std::shared_ptr<Tokenizer> {
+                        DisplayRect &rect, Tokens &tokens,
+                        Pager &pager) -> std::shared_ptr<Tokenizer> {
     std::shared_ptr<Tokenizer> tokenizer;
 
     if (stream->isFor(DocType::TXT)) {

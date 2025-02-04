@@ -123,18 +123,17 @@ void USBSerial::begin() {
 
     ESP_ERROR_CHECK(tinyusb_driver_install(&tusbCfg));
 
-    tinyusb_config_cdcacm_t acmCfg =
-        {
-            .usb_dev = TINYUSB_USBDEV_0,
-            .cdc_port = TINYUSB_CDC_ACM_0,
-            .callback_rx = USBSerial::cdcacmCommandCallback,
-            .callback_rx_wanted_char = nullptr,
-            .callback_line_state_changed =
-                [](int itf, cdcacm_event_t *event) {
+    tinyusb_config_cdcacm_t acmCfg = {
+        .usb_dev = TINYUSB_USBDEV_0,
+        .cdc_port = TINYUSB_CDC_ACM_0,
+        .callback_rx = USBSerial::cdcacmCommandCallback,
+        .callback_rx_wanted_char = nullptr,
+        .callback_line_state_changed =
+            [](int itf, cdcacm_event_t *event) {
         auto *data = &event->line_state_changed_data;
         log_d("Line state changed on port 0 dtr=%d rts=%d", data->dtr, data->rts);
-            },
-            .callback_line_coding_changed = nullptr,
+    },
+        .callback_line_coding_changed = nullptr,
     };
     ESP_ERROR_CHECK(tusb_cdc_acm_init(&acmCfg));
 
@@ -146,7 +145,7 @@ void USBSerial::begin() {
                                            [](int itf, cdcacm_event_t *event) {
         auto *data = &event->line_state_changed_data;
         log_d("Line state changed on port 1 dtr=%d rts=%d", data->dtr, data->rts);
-                                       },
+    },
                                        .callback_line_coding_changed = nullptr};
 
     ESP_ERROR_CHECK(tusb_cdc_acm_init(&acmCfg2));

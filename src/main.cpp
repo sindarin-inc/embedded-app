@@ -387,8 +387,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
             }
         });
 
-        xTaskCreatePinnedToCore(
-            [](void *) {
+        xTaskCreatePinnedToCore([](void *) {
             while (powerManager.state() != PowerState::ShuttingDown) {
                 powerManager.loop();
                 vTaskDelay(1000 / portTICK_PERIOD_MS);
@@ -396,8 +395,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
             log_d("Background loop task exited");
             SHOW_WATERMARK();
             vTaskDelete(nullptr);
-            },
-            "BackgroundPowerLoop", 4096, nullptr, 1, nullptr, 1);
+        }, "BackgroundPowerLoop", 4096, nullptr, 1, nullptr, 1);
         BackgroundSyncAndSleep(powerManager, prefs, localStore, telemetry, fileSystem);
 
         // Should never get here, the system should be asleep
@@ -456,8 +454,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         lightingController.setOverrideValuePercent(100);
 
         // Also kick off a task to try to content sync every minute or so
-        xTaskCreatePinnedToCore(
-            [](void *) {
+        xTaskCreatePinnedToCore([](void *) {
             while (powerManager.state() != PowerState::ShuttingDown) {
                 PreferencesStore::syncReason = SyncReason::Periodic;
                 BackgroundSync(powerManager, prefs, localStore, telemetry, fileSystem, true, false);
@@ -466,8 +463,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
             log_d("Sync loop task exited");
             SHOW_WATERMARK();
             vTaskDelete(nullptr);
-            },
-            "BackgroundSync", 8192, nullptr, 1, nullptr, 0);
+        }, "BackgroundSync", 8192, nullptr, 1, nullptr, 0);
     }
 
 #if CONFIG_USE_TURN_TOUCH_REMOTE || CONFIG_USE_BLE_SERVER_REMOTE

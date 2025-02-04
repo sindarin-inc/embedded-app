@@ -102,9 +102,7 @@ void ExperimentalMenuScreen::render(DisplaySystem &display) {
 
 void ExperimentalMenuScreen::populateMenuItems() {
 
-    addMenuItem(std::make_shared<MenuItemCheckable>(
-        "Only Show Battery When Low",
-        [this]() {
+    addMenuItem(std::make_shared<MenuItemCheckable>("Only Show Battery When Low", [this]() {
         this->prefs_.alwaysShowBattery.set(!this->prefs_.alwaysShowBattery.get().value_or(false));
         setNeedsRerender();
         if (!prefs_.seenBatteryWhenLowOverview.get().value_or(false)) {
@@ -119,12 +117,9 @@ void ExperimentalMenuScreen::populateMenuItems() {
             RootUI::getInstance().showTemporaryMessage(message, TEMP_MSG_DURATION_NO_CLOSE);
             prefs_.seenBatteryWhenLowOverview.set(true);
         }
-        },
-        [this]() -> bool { return !this->prefs_.alwaysShowBattery.get().value_or(false); }));
+    }, [this]() -> bool { return !this->prefs_.alwaysShowBattery.get().value_or(false); }));
 
-    addMenuItem(std::make_shared<MenuItemCheckable>(
-        "Show Partial Summary",
-        [this]() {
+    addMenuItem(std::make_shared<MenuItemCheckable>("Show Partial Summary", [this]() {
         this->prefs_.noShowPartialChapterSummary.set(
             !this->prefs_.noShowPartialChapterSummary.get().value_or(false));
         setNeedsRerender();
@@ -142,14 +137,11 @@ void ExperimentalMenuScreen::populateMenuItems() {
             RootUI::getInstance().showTemporaryMessage(message, TEMP_MSG_DURATION_NO_CLOSE);
             prefs_.seenPartialSummaryOverview.set(true);
         }
-        },
-        [this]() -> bool {
-            return !this->prefs_.noShowPartialChapterSummary.get().value_or(false);
-        }));
+    }, [this]() -> bool {
+        return !this->prefs_.noShowPartialChapterSummary.get().value_or(false);
+    }));
 
-    addMenuItem(std::make_shared<MenuItemCheckable>(
-        "Fast Page Transitions",
-        [this]() {
+    addMenuItem(std::make_shared<MenuItemCheckable>("Fast Page Transitions", [this]() {
         this->prefs_.fastTransitions.set(!this->prefs_.fastTransitions.get().value_or(false));
         setNeedsRerender();
         if (!prefs_.seenFastPageTransitionsOverview.get().value_or(false)) {
@@ -166,8 +158,7 @@ void ExperimentalMenuScreen::populateMenuItems() {
             RootUI::getInstance().showTemporaryMessage(message, TEMP_MSG_DURATION_NO_CLOSE);
             prefs_.seenFastPageTransitionsOverview.set(true);
         }
-        },
-        [this]() -> bool { return this->prefs_.fastTransitions.get().value_or(false); }));
+    }, [this]() -> bool { return this->prefs_.fastTransitions.get().value_or(false); }));
 
     // Helper function to convert 24h to 12h format with AM/PM
     auto formatTime = [](int hour) -> std::string {
@@ -210,8 +201,8 @@ void ExperimentalMenuScreen::populateMenuItems() {
         return this->prefs_.darkMode.get().value_or(false);
     };
 
-    auto centerCallback =
-        [this, formatTime, toggleDarkMode]() { // Add toggleDarkMode to capture list
+    auto centerCallback = [this, formatTime,
+                           toggleDarkMode]() { // Add toggleDarkMode to capture list
         auto darkModeMenu = std::make_shared<GenericSettingsMenuScreen>(display_, "Reading Style");
 
         darkModeMenu->addMenuItem(std::make_shared<MenuItemSingleLine>(
@@ -230,8 +221,8 @@ void ExperimentalMenuScreen::populateMenuItems() {
             }));
 
             for (int hour = 0; hour < 24; hour++) {
-                timeMenu->addMenuItem(std::make_shared<MenuItemSingleLine>(formatTime(hour),
-                                                                           [this, hour]() {
+                timeMenu->addMenuItem(
+                    std::make_shared<MenuItemSingleLine>(formatTime(hour), [this, hour]() {
                     prefs_.invertStartHour.set(hour);
                     telemetry_.logMetricData(TelemetryField::METRIC_STYLE,
                                              {{"dark_mode_start", hour}});
@@ -252,7 +243,7 @@ void ExperimentalMenuScreen::populateMenuItems() {
 
             timeMenu->setBackCallback([this]() { back(); });
             pushScreen_(timeMenu);
-            }));
+        }));
 
         darkModeMenu->addMenuItem(std::make_shared<MenuItemSingleLine>(
             StringFormat("Turn off after: %s",
@@ -270,8 +261,8 @@ void ExperimentalMenuScreen::populateMenuItems() {
             }));
 
             for (int hour = 0; hour < 24; hour++) {
-                timeMenu->addMenuItem(std::make_shared<MenuItemSingleLine>(formatTime(hour),
-                                                                           [this, hour]() {
+                timeMenu->addMenuItem(
+                    std::make_shared<MenuItemSingleLine>(formatTime(hour), [this, hour]() {
                     prefs_.invertEndHour.set(hour);
                     telemetry_.logMetricData(TelemetryField::METRIC_STYLE,
                                              {{"dark_mode_end", hour}});
@@ -292,7 +283,7 @@ void ExperimentalMenuScreen::populateMenuItems() {
 
             timeMenu->setBackCallback([this]() { back(); });
             pushScreen_(timeMenu);
-            }));
+        }));
 
         // Add new menu items to manually toggle dark mode
         darkModeMenu->addMenuItem(std::make_shared<MenuItemSingleLine>(
@@ -302,7 +293,7 @@ void ExperimentalMenuScreen::populateMenuItems() {
             back();
             regenerateMenuItems();
             setNeedsRerender();
-            }));
+        }));
 
         darkModeMenu->setBackCallback([this]() {
             back();

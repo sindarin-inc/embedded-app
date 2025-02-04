@@ -124,10 +124,10 @@ public:
     void resetReadablesArchivedChanged(const ReadablesVector &readables);
     void resetReadablesBookmarksChanged(const ReadablesVector &readables);
 
-    auto syncFromRemote(bool wifiConnected, bool bleConnected, SyncReason syncReason,
-                        const std::shared_ptr<CancelFlag> &cancel,
-                        const std::function<void(ContentSyncState state)> &progressCallback)
-        -> bool;
+    auto
+    syncFromRemote(bool wifiConnected, bool bleConnected, SyncReason syncReason,
+                   const std::shared_ptr<CancelFlag> &cancel,
+                   const std::function<void(ContentSyncState state)> &progressCallback) -> bool;
     auto processReadables(const ReadablesVector &readables, UserReadablesVector &serverReadables)
         -> std::pair<UserReadablesVector, UserReadablesVector>;
     void processReadableDeletion(const UserReadablesVector &readablesToDelete,
@@ -157,8 +157,8 @@ public:
     [[nodiscard]] auto readableFilePathForReading(const std::shared_ptr<Readable> &readable) const
         -> std::pair<std::string, size_t>;
     [[nodiscard]] auto readableGetUncompressedSize(const std::shared_ptr<Readable> &readable,
-                                                   const std::string &path, size_t size) const
-        -> int;
+                                                   const std::string &path,
+                                                   size_t size) const -> int;
     void readableFilePurge(const std::shared_ptr<Readable> &readable);
 
     // Save a firmware JSON for future use. Indicates that firmware has already been successfully

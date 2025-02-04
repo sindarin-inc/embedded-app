@@ -50,14 +50,14 @@ struct DisplayRect {
                 static_cast<uint16_t>(rect.size.width), static_cast<uint16_t>(rect.size.height)};
     }
 
-    static auto fromSizeAndInsets(uint16_t width, uint16_t height, DisplayInset inset)
-        -> DisplayRect {
+    static auto fromSizeAndInsets(uint16_t width, uint16_t height,
+                                  DisplayInset inset) -> DisplayRect {
         return {inset.left, inset.top, static_cast<uint16_t>(width - inset.left - inset.right),
                 static_cast<uint16_t>(height - inset.top - inset.bottom)};
     }
 
-    [[nodiscard]] auto inset(uint16_t left, uint16_t right, uint16_t top, uint16_t bottom) const
-        -> DisplayRect {
+    [[nodiscard]] auto inset(uint16_t left, uint16_t right, uint16_t top,
+                             uint16_t bottom) const -> DisplayRect {
         return {static_cast<uint16_t>(x + left), static_cast<uint16_t>(y + top),
                 static_cast<uint16_t>(width - left - right),
                 static_cast<uint16_t>(height - top - bottom)};
@@ -186,7 +186,7 @@ public:
     void flipInversion();
     [[nodiscard]] auto getInversion() const -> bool { return invertedDisplay_; }
 
-    virtual void clearDisplay(){};
+    virtual void clearDisplay() {};
     virtual void clearFrameBuffer() { fillScreen(bg); };
 
     void forceDontChangeRefreshType() { forceRefreshType_ = true; }
@@ -202,12 +202,12 @@ public:
     [[nodiscard]] auto defaultLineHeight() const -> int { return fontFace0.lineHeight(); }
     void getTextSize(const std::string &buffer, uint16_t *w, uint16_t *h,
                      Font *font = static_cast<Font *>(&fontFace0));
-    auto getTextHeight(const std::string &buffer, Font *font = static_cast<Font *>(&fontFace0))
-        -> int;
-    auto getTextWidth(const std::string &buffer, Font *font = static_cast<Font *>(&fontFace0))
-        -> int;
-    inline auto getTextWidthQuick(const char *buffer, Font *font = static_cast<Font *>(&fontFace0))
-        -> int {
+    auto getTextHeight(const std::string &buffer,
+                       Font *font = static_cast<Font *>(&fontFace0)) -> int;
+    auto getTextWidth(const std::string &buffer,
+                      Font *font = static_cast<Font *>(&fontFace0)) -> int;
+    inline auto getTextWidthQuick(const char *buffer,
+                                  Font *font = static_cast<Font *>(&fontFace0)) -> int {
         if (font == nullptr) {
             return -1;
         } else {

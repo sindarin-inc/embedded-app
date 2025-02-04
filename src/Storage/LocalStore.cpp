@@ -49,8 +49,8 @@ auto LocalStore::begin() -> bool {
     return loadedBooks && loadedArticles;
 }
 
-auto LocalStore::loadReadablesFromFile(ReadablesVector &readables, const std::string &path)
-    -> bool {
+auto LocalStore::loadReadablesFromFile(ReadablesVector &readables,
+                                       const std::string &path) -> bool {
     log_d("Loading %ss from %s", ReadableModelTypeToString(readablesModelType(readables)).c_str(),
           path.c_str());
     SFile readablesFile = fileSystem.open(path);
@@ -340,10 +340,9 @@ void LocalStore::changedReadablesBookmarksJson(ReadableBookmarksVector &bookmark
     }
 }
 
-auto LocalStore::processReadablePlacemarksFromServer(const std::shared_ptr<Readable> &readable,
-                                                     const std::shared_ptr<TxtPlace> &txtPlace,
-                                                     const std::shared_ptr<EPubPlace> &ePubPlace)
-    -> bool {
+auto LocalStore::processReadablePlacemarksFromServer(
+    const std::shared_ptr<Readable> &readable, const std::shared_ptr<TxtPlace> &txtPlace,
+    const std::shared_ptr<EPubPlace> &ePubPlace) -> bool {
     auto [path, size] = readableFilePathForReading(readable);
     auto docType = RendererStream::parseDocType(path.c_str());
     auto prefsPlaceString = prefs_.readablePlace.get(readable->shortenedUuid.c_str());
@@ -1072,7 +1071,7 @@ auto LocalStore::processReadableDownload(
                                  ? ContentSyncState::State::SyncingBooks
                                  : ContentSyncState::State::SyncingArticles,
                     .percentage = static_cast<int>(currPercentage + pctThisReadable)});
-                });
+            });
             if (httpCode == 200) {
                 successfullyDownloaded += 1;
                 addReadable(readables, readable);

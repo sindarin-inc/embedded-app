@@ -104,6 +104,6 @@ private:
 
     auto registerReadByte(ltr329als01_reg_t regAddr, uint8_t *data) const -> esp_err_t;
 
-    [[nodiscard]] auto registerWriteByte(ltr329als01_reg_t regAddr, uint8_t data) const
-        -> esp_err_t;
+    [[nodiscard]] auto registerWriteByte(ltr329als01_reg_t regAddr,
+                                         uint8_t data) const -> esp_err_t;
 };

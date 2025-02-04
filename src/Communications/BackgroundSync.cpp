@@ -19,8 +19,8 @@ std::shared_ptr<CancelFlag> cancel;
 void BackgroundSyncCancel() { CancelFlag::cancel(cancel); }
 
 auto BackgroundSync(PowerManager &powerManager, PreferencesStore &prefs, LocalStore &localStore,
-                    Telemetry &telemetry, FileSystem &fileSystem, bool useWifi, bool useBle)
-    -> bool {
+                    Telemetry &telemetry, FileSystem &fileSystem, bool useWifi,
+                    bool useBle) -> bool {
     log_d("Background sync starting");
 
     // Don't perform a background sync if wifi is disabled manually
@@ -103,7 +103,7 @@ auto BackgroundSync(PowerManager &powerManager, PreferencesStore &prefs, LocalSt
                 return;
             }
         }
-        });
+    });
 
     log_d("Background content sync finished, syncSuccessful: %d", syncSuccessful);
 
@@ -202,8 +202,7 @@ void BackgroundSyncAndSleep(PowerManager &powerManager, PreferencesStore &prefs,
             WiFi::getInstance().disconnectWiFi(3000);
             BackgroundSync(powerManager, prefs, localStore, telemetry, fileSystem, false, true);
         }
-        },
-        8192, 1, 0, "Sync", pdMS_TO_TICKS(15 * 60 * 1000));
+    }, 8192, 1, 0, "Sync", pdMS_TO_TICKS(15 * 60 * 1000));
 
     BackgroundSyncCancel();
 

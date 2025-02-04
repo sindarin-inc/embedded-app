@@ -132,11 +132,11 @@ inline auto GetCycleCount() -> uint64_t {
 
 #define PROFILE_END(identifier) volatile uint32_t profileEnd##identifier = GetCycleCount();
 
-#define CYCLES_TO_MS(cycles) (((cycles)*1000.0f) / (esp_clk_cpu_freq()))
+#define CYCLES_TO_MS(cycles) (((cycles) * 1000.0f) / (esp_clk_cpu_freq()))
 
-#define CYCLES_TO_US(cycles) (((cycles)*1000.0f) / (esp_clk_cpu_freq() / 1000.0f))
+#define CYCLES_TO_US(cycles) (((cycles) * 1000.0f) / (esp_clk_cpu_freq() / 1000.0f))
 
-#define CYCLES_TO_NS(cycles) (((cycles)*1000.0f) / (esp_clk_cpu_freq() / 1000000.0f))
+#define CYCLES_TO_NS(cycles) (((cycles) * 1000.0f) / (esp_clk_cpu_freq() / 1000000.0f))
 
 #define PROFILE_CALCULATE_MS(identifier)                                                           \
     CYCLES_TO_MS(profileEnd##identifier - profileStart##identifier)
