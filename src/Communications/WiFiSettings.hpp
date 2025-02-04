@@ -1,5 +1,7 @@
 #pragma once
 
+#include <utility>
+
 #include "Misc/SpiramAllocator.hpp"
 #include "Models/Json.hpp"
 #include "Models/JsonSerializable.hpp"
@@ -11,6 +13,8 @@
 class WiFiSetting : public JsonSerializable {
 public:
     WiFiSetting() = default;
+    WiFiSetting(std::string ssid, std::string password)
+        : ssid(std::move(ssid)), password(std::move(password)){};
     ~WiFiSetting() override = default;
 
     std::string ssid;
@@ -36,7 +40,9 @@ public:
         load();
         return settings.size();
     }
-    void setActiveSetting(const std::string &ssid, const std::string &password);
+    // Intentionally not pass-by-reference since we're potentially changing the ordering of the
+    // settings
+    void setActiveSetting(std::string ssid, std::string password);
     void save() const;
     auto fromJson(const JsonObject &j) -> bool override {
         JsonArray jsonSettings = j["settings"];
@@ -54,8 +60,6 @@ public:
 
 private:
     bool loaded_ = false;
-    void addSetting(const std::string &ssid, const std::string &password);
-    auto settingExists(const std::string &ssid, const std::string &password) -> bool;
 };
 
 // NOLINTNEXTLINE(readability-identifier-naming) - ArduinoJson requires this name

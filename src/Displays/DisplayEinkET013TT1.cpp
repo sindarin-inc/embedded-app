@@ -91,7 +91,7 @@ void DisplayEinkET013TT1::invertDisplay(bool newInvert) {
 
 void DisplayEinkET013TT1::updateDisplay(DisplaySystem::UpdateType updateType, bool clearFrameBuffer,
                                         int vcomNudge, DisplaySystem::UpdateType altUpdateType,
-                                        ScreenSide screen, Rect altRect) {
+                                        ScreenSide screen, SolRect altRect) {
     auto queue = DispatchGetUiQueue(false);
     if (mirrorToSerial) {
         sendBufferToSerial(gfxCanvas_.getBuffer());

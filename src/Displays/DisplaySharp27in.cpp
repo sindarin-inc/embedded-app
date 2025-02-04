@@ -17,7 +17,7 @@ auto DisplaySharp27in::setup() -> bool {
 
 void DisplaySharp27in::updateDisplay(DisplaySystem::UpdateType updateType, bool clearFrameBuffer,
                                      int vcomNudge, DisplaySystem::UpdateType altUpdateType,
-                                     ScreenSide screen, Rect altRect) {
+                                     ScreenSide screen, SolRect altRect) {
     auto queue = DispatchGetUiQueue(false);
     if (queue == nullptr || !queue->isInQueue()) {
         log_w("updateDisplay called from outside the UI queue.");

@@ -7,9 +7,11 @@ public:
     ProgressBarView(DisplaySystem &display, int cornerRadius = 0) : EinkView(display) {}
     ~ProgressBarView() override = default;
 
-    auto layout(LayoutContext &context, Size size) -> Size override { return {size.width, 4}; }
+    auto layout(LayoutContext &context, SolSize size) -> SolSize override {
+        return {size.width, 4};
+    }
 
-    void drawInRect(Rect rect) override {
+    void drawInRect(SolRect rect) override {
         display_.drawRoundRect(rect.origin.x, rect.origin.y, rect.size.width, rect.size.height, 1,
                                display_.fg);
 

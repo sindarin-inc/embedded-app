@@ -28,6 +28,8 @@ add_executable(${PROJECT_NAME} ${SOURCES})
 
 target_link_libraries(${PROJECT_NAME} simulator-common catch2)
 
+target_compile_definitions(simulator-common PUBLIC TESTS=1)
+
 target_compile_definitions(${PROJECT_NAME}
     PUBLIC
     -DTESTS=1
@@ -36,4 +38,8 @@ target_compile_definitions(${PROJECT_NAME}
 target_compile_options(${PROJECT_NAME}
     PRIVATE
     -include ${REPO_ROOT_DIR}/src/config.h
+)
+
+set_target_properties(${PROJECT_NAME} PROPERTIES
+    CXX_STANDARD 20
 )

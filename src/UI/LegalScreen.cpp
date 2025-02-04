@@ -2,7 +2,7 @@
 
 #include "sindarin-debug.h"
 
-auto LegalScreen::layout(LayoutContext &context, Size size) -> Size {
+auto LegalScreen::layout(LayoutContext &context, SolSize size) -> SolSize {
     uint8_t leftPadding = 5;
     uint8_t yAdvance = 16;
     const uint8_t lineGroupPadding = 4;
@@ -64,7 +64,7 @@ auto LegalScreen::layout(LayoutContext &context, Size size) -> Size {
 
     context.setSublayoutFrame(
         {{0, 0}, size}, LayoutOptionsSizeToFitVertical | LayoutOptionsAlignBottom,
-        [this](LayoutContext &context, Size size) -> Size {
+        [this](LayoutContext &context, SolSize size) -> SolSize {
             int y = 0;
             auto leftRightRect =
                 context.setViewFrame(leftRightView_, {{0, y}, {size.width, 0}},
@@ -79,7 +79,7 @@ auto LegalScreen::layout(LayoutContext &context, Size size) -> Size {
 
     context.setSublayoutFrame(
         {{0, -15}, size}, LayoutOptionsSizeToFitVertical | LayoutOptionsAlignCenterVertical,
-        [this](LayoutContext &context, Size size) -> Size {
+        [this](LayoutContext &context, SolSize size) -> SolSize {
             int ukcaPadding = 22;
             int y = 0;
             auto baclRect =
@@ -105,7 +105,7 @@ auto LegalScreen::layout(LayoutContext &context, Size size) -> Size {
     return size;
 }
 
-void LegalScreen::drawInRect(Rect rect) {
+void LegalScreen::drawInRect(SolRect rect) {
     if (!logosPage_) {
         baclLine1View_.draw();
         baclLine2View_.draw();

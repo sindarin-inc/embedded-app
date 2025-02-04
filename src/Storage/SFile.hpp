@@ -53,7 +53,7 @@ public:
         }
         return ret;
     }
-    auto readStringUntil(char terminator) -> std::string {
+    virtual auto readStringUntil(char terminator) -> std::string {
         std::string res;
         int value;
         while (true) {
@@ -117,7 +117,9 @@ public:
                 getFileSize();
             }
         } else {
-            log_e("Failed to open file: %s", fname);
+            char errMsg[128];
+            strerror_r(errno, errMsg, sizeof(errMsg));
+            log_e("Error opening %s: (%d) %s", fname, errno, errMsg);
         }
     }
     ~VFSFile() override = default;

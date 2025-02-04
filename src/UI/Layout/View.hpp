@@ -16,11 +16,11 @@ public:
     View(const View &other) : layoutContext_(*this), hidden_(other.hidden_) {}
 
     // Getter and setter for the frame
-    void setFrame(const Rect &frame) { layoutContext_.setFrame(frame); }
+    void setFrame(const SolRect &frame) { layoutContext_.setFrame(frame); }
 
     // Virtual method for drawing the contents of the view inside a provided rect. Typically not
     // called directly. Use `draw()` instead.
-    virtual void drawInRect(Rect rect) = 0;
+    virtual void drawInRect(SolRect rect) = 0;
 
     // Draw the view in its current screen-coordinate frame
     virtual void draw() {
@@ -60,7 +60,7 @@ protected:
 private:
     // View subclasses should implement this method to layout any elements and return their
     // desired size. This will be called by LayoutContext and should not be called directly.
-    virtual auto layout(LayoutContext &context, Size size) -> Size = 0;
+    virtual auto layout(LayoutContext &context, SolSize size) -> SolSize = 0;
 
     bool hidden_ = false;
 };

@@ -2,6 +2,7 @@
 
 #include <cassert>
 
+#include "Misc/Defer.hpp"
 #include "Misc/Platform.hpp"
 #include "Misc/StringUtil.hpp"
 
@@ -66,7 +67,7 @@ void DispatchQueue::beginShutdown(bool graceful) {
     for (int i = 0; i < threads_.size(); i++) {
         // Queue one quit signal for each thread
         auto quit = new WorkItem{.op = nullptr, .quit = true};
-        xQueueSend(q_, (void *)&quit, portMAX_DELAY);
+        xQueueSendFromISR(q_, (void *)&quit, NULL);
     }
 }
 
@@ -100,6 +101,16 @@ void DispatchQueue::dispatch(fp_t &&op) {
         auto work = new WorkItem{.op = std::move(op), .quit = false};
         xQueueSend(q_, (void *)&work, portMAX_DELAY);
     }
+}
+
+void DispatchQueue::dispatchSync(fp_t &&op, TickType_t timeout) {
+    SemaphoreHandle_t completeSemaphore = xSemaphoreCreateBinary();
+    defer { vSemaphoreDelete(completeSemaphore); };
+    dispatch([&op, completeSemaphore]() {
+        op();
+        xSemaphoreGive(completeSemaphore);
+    });
+    xSemaphoreTake(completeSemaphore, timeout);
 }
 
 void DispatchQueue::dispatchFromISR(const fp_t &op) {
@@ -138,6 +149,11 @@ void DispatchQueue::dispatchThreadHandler() {
             work->op();
         }
         delete work;
+        auto watermark = uxTaskGetStackHighWaterMark(nullptr);
+        if (watermark < 256) {
+            log_w("Dispatch thread %s stack low (watermark: %zu)", pcTaskGetName(nullptr),
+                  watermark);
+        }
         SHOW_WATERMARK();
     } while (shutdownType_ != ShutdownType::Immediate);
 
@@ -150,20 +166,49 @@ void DispatchQueue::dispatchThreadHandler() {
     vTaskDelete(nullptr);
 }
 
-void DispatchQueue::dispatchOneOff(const fp_t &op, size_t threadStack, UBaseType_t priority,
-                                   BaseType_t core, const char *name) {
+auto DispatchQueue::dispatchOneOff(const fp_t &op, size_t threadStack, UBaseType_t priority,
+                                   BaseType_t core, const char *name) -> bool {
     auto work = new WorkItem{.op = op, .quit = false};
     char nameBuf[16];
     SafeSnprintf(nameBuf, sizeof(nameBuf), "D:%s", name);
-    xTaskCreatePinnedToCore(
+    auto res = xTaskCreatePinnedToCore(
         [](void *param) {
         auto work = reinterpret_cast<WorkItem *>(param);
         work->op();
         delete work;
+        auto watermark = uxTaskGetStackHighWaterMark(nullptr);
+        if (watermark < 256) {
+            log_w("Dispatch thread %s stack low (watermark: %zu)", pcTaskGetName(nullptr),
+                  watermark);
+        }
         SHOW_WATERMARK();
         vTaskDelete(nullptr);
         },
         nameBuf, threadStack, work, priority, nullptr, core);
+    if (res != pdPASS) {
+        log_e("xTaskCreatePinnedToCore failed (%s)", name);
+        delete work;
+        return false;
+    }
+    return true;
+}
+
+auto DispatchQueue::dispatchOneOffSync(const fp_t &op, size_t threadStack, UBaseType_t priority,
+                                       BaseType_t core, const char *name, TickType_t timeout)
+    -> bool {
+    SemaphoreHandle_t completeSemaphore = xSemaphoreCreateBinary();
+    defer { vSemaphoreDelete(completeSemaphore); };
+    auto dispatched = dispatchOneOff(
+        [&op, completeSemaphore]() {
+        op();
+        xSemaphoreGive(completeSemaphore);
+        },
+        threadStack, priority, core, name);
+    if (!dispatched) {
+        return false;
+    }
+    xSemaphoreTake(completeSemaphore, timeout);
+    return true;
 }
 
 DispatchQueue *core0BackgroundQueue = nullptr;

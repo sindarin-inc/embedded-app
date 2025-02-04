@@ -51,45 +51,26 @@ void WiFiSettings::save() const {
     prefs.wifiSettingsJson.set(wifiString);
 }
 
-auto WiFiSettings::settingExists(const std::string &ssid, const std::string &password) -> bool {
-    for (const auto &s : settings) {
-        if (s.ssid == ssid && s.password == password) {
-            return true;
-        }
-    }
-    return false;
-}
-
-void WiFiSettings::setActiveSetting(const std::string &ssid, const std::string &password) {
-    // find setting
-    for (auto it = settings.begin(); it != settings.end(); it++) {
-        if (it->ssid == ssid && it->password == password) {
-            settings.erase(it);
-            break;
-        }
-    }
-
-    addSetting(ssid, password);
-}
-
-void WiFiSettings::addSetting(const std::string &ssid, const std::string &password) {
+void WiFiSettings::setActiveSetting(std::string ssid, std::string password) {
     load();
-    // if this setting does not currently exist, add it to the top
-    if (settingExists(ssid, password)) {
-        return;
+
+    // Erase the setting from the vector
+    for (auto it = settings.begin(); it != settings.end();) {
+        if (it->ssid == ssid && it->password == password) {
+            // Erase returns the next iterator
+            it = settings.erase(it);
+        } else {
+            it++;
+        }
     }
 
-    WiFiSetting s;
-    s.ssid = ssid;
-    s.password = password;
+    // Stick the setting in the front
+    settings.emplace(settings.begin(), std::move(ssid), std::move(password));
 
-    settings.insert(settings.begin(), s);
+    // Truncate the end if we have too many settings
     if (settings.size() > MAX_WIFI_SETTINGS) {
         settings.erase(settings.end() - 1);
     }
-    log_d("added setting %s %s", ssid.c_str(), password.c_str());
 }
 
 void WiFiSettings::clear() { settings.clear(); }
-
-auto WiFiSettings::needsMigration() -> bool { return !prefs.wifiSettingsJson.get().has_value(); }

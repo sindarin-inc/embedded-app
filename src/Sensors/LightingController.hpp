@@ -9,8 +9,12 @@
 
 class LightingController {
 public:
-    LightingController(PreferencesStore &prefs) : prefs_(prefs), lightSensor_(0) {}
+    LightingController(PreferencesStore &prefs)
+        : prefs_(prefs), lightSensor_(0), movingAverage_(25) {}
     LightingController(LightingController const &) = delete;
+
+    void pause() { paused_ = true; }
+    void resume() { paused_ = false; }
 
     // Simple diagnostic test to check if the ambient light sensor is reporting the correct part id
     // and manufacturer id
@@ -46,12 +50,16 @@ public:
     void checkAmbientLight(int fadeMs = 1000, int timeoutMs = 100);
 
 protected:
+    auto luxify(uint16_t channel0, uint16_t channel1) -> float;
+    auto scaleLux(float lux) -> float;
     PreferencesStore &prefs_;
     Ltr329Als lightSensor_;
     // Adjusting the number of samples here will change the responsiveness of the ambient light
     // adjustments
     MovingAverage<int, 5> movingAverage_;
     bool enabled_ = false;
+
+    bool paused_ = false;
 
     // Duty cycle as predicted by the ambient light sensor
     int predictedDutyCycle_ = 0;

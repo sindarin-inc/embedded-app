@@ -4,7 +4,9 @@
 #include <inicpp.h>
 #include <optional>
 #include <string>
+#include <vector>
 
+#include "Base64.hpp"
 #include "sindarin-debug.h"
 
 static const char *PrefsKey = "prefs";
@@ -73,6 +75,14 @@ esp_err_t nvs_set_u64(nvs_handle_t handle, const char *key, uint64_t value) {
 
 esp_err_t nvs_set_str(nvs_handle_t handle, const char *key, const char *value) {
     IniFile[PrefsKey][key] = value;
+    return ESP_OK;
+}
+
+esp_err_t nvs_set_blob(nvs_handle_t handle, const char *key, const void *value, size_t length) {
+    std::vector<unsigned char> data(static_cast<const unsigned char *>(value),
+                                    static_cast<const unsigned char *>(value) + length);
+    std::string encoded = base64_encode(data.data(), data.size());
+    IniFile[PrefsKey][key] = encoded;
     return ESP_OK;
 }
 
@@ -149,6 +159,28 @@ esp_err_t nvs_get_str(nvs_handle_t handle, const char *key, char *out_value, siz
     } else {
         return (esp_err_t)ESP_ERR_NVS_NOT_FOUND;
     }
+}
+
+esp_err_t nvs_get_blob(nvs_handle_t handle, const char *key, void *out_value, size_t *length) {
+    auto encoded = IniFile[PrefsKey][key].as<std::string>();
+    if (encoded.empty()) {
+        return ESP_ERR_NVS_NOT_FOUND;
+    }
+
+    size_t decoded_size = base64_decode(encoded, nullptr, 0);
+
+    if (out_value == nullptr) {
+        *length = decoded_size;
+        return ESP_OK;
+    }
+
+    if (*length < decoded_size) {
+        return ESP_ERR_NVS_INVALID_LENGTH;
+    }
+
+    base64_decode(encoded, out_value, *length);
+    *length = decoded_size;
+    return ESP_OK;
 }
 
 esp_err_t nvs_erase_key(nvs_handle_t handle, const char *key) {

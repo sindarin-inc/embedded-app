@@ -1,20 +1,21 @@
 #include "UI/OffsetAdjustScreen.hpp"
 
 #include <memory>
+#include <utility>
 
+#include "UI/Fonts/Fonts.hpp"
 #include "sindarin-debug.h"
 
 #define OFFSET_ADJUST_AMOUNT 5
 
 OffsetAdjustScreen::OffsetAdjustScreen(DisplaySystem &display, PreferencesStore &prefs,
                                        Telemetry &telemetry)
-    : display_(display), renderer_(display, GetTextRectFromPrefs(display, prefs)), prefs_(prefs),
-      telemetry_(telemetry) {
-
+    : EinkView(display), display_(display),
+      renderer_(display, GetTextRectFromPrefs(display, prefs),
+                FontFromPrefs(prefs.font.get().value_or(PREFS_SOL_SMALL))),
+      prefs_(prefs), telemetry_(telemetry), rendererRef_(renderer_), outerBoxView_(display, 5),
+      backgroundBoxView_(display, 5), explanationView_(display, 5) {
     std::string message;
-    // This needs to be pretty big for smaller fonts
-    message += "Press arrows to move box around to your liking. Then "
-               "press \ue000 (center) when done!\n\n";
     message +=
         "Beneath a rugged exterior, Pirate Captain O'Malley harbored a love for poetry. Between "
         "skirmishes and treasure hunts, he'd pen verses inspired by the sea's beauty. A stolen, "
@@ -28,18 +29,76 @@ OffsetAdjustScreen::OffsetAdjustScreen(DisplaySystem &display, PreferencesStore 
         "challenging O'Malley to a duel of verses. Poseidon's poetry conjured storms; O'Malley's "
         "verses evoked calm seas.";
     auto stream = std::make_shared<StdStringStream>(message);
-    renderer_.setStream(stream);
+
+    rendererRef_.setStream(stream);
+    rendererRef_.setLineSpacing(prefs.lineSpacing.get().value_or(0));
+    setupInstructions();
+}
+
+OffsetAdjustScreen::OffsetAdjustScreen(DisplaySystem &display, PreferencesStore &prefs,
+                                       Telemetry &telemetry, Renderer &renderer,
+                                       std::shared_ptr<Place> place)
+    : EinkView(display), display_(display),
+      renderer_(display, GetTextRectFromPrefs(display, prefs),
+                FontFromPrefs(prefs.font.get().value_or(PREFS_SOL_SMALL))),
+      place_(std::move(place)), prefs_(prefs), telemetry_(telemetry), rendererRef_(renderer),
+      outerBoxView_(display, 5), backgroundBoxView_(display, 5), explanationView_(display, 5) {
+    setupInstructions();
+}
+
+auto OffsetAdjustScreen::setupInstructions() -> void {
+    std::string instructions = "\ue003  Move up\n";
+    instructions += "\ue004  Move down\n";
+    instructions += "\ue001   Move left\n";
+    instructions += "\ue002   Move right\n";
+    instructions += "\ue000  Done";
+
+    explanationView_.setText(instructions);
+    explanationView_.dynamicWidth = true;
+
+    setNeedsLayout();
+}
+
+auto OffsetAdjustScreen::layout(LayoutContext &context, SolSize size) -> SolSize {
+    auto explanationFrame = context.setViewFrame(explanationView_, SolRect::fromSize(size),
+                                                 LayoutOptionsSizeToFit | LayoutOptionsAlignCenter);
+    auto outerBoxViewFrame = context.setViewFrame(outerBoxView_, explanationFrame.inset(-5));
+    context.setViewFrame(backgroundBoxView_, outerBoxViewFrame.inset(-8));
+
+    return size;
+}
+
+void OffsetAdjustScreen::drawInRect(SolRect rect) {
+    outerBoxView_.fillColor = display_.bg;
+    outerBoxView_.strokeColor = display_.fg;
+    backgroundBoxView_.fillColor = display_.bg;
+    backgroundBoxView_.strokeColor = display_.bg;
+
+    backgroundBoxView_.draw();
+    outerBoxView_.draw();
+    explanationView_.draw();
 }
 
 void OffsetAdjustScreen::render(DisplaySystem &display) {
     // Get the bounding box
     auto textBox = GetTextRectFromPrefs(display, prefs_);
+
+    setFrame(defaultFrameRect());
+
+    rendererRef_.setRect(textBox);
+    if (place_ == nullptr) {
+        rendererRef_.renderFirstPage(0, true);
+    } else {
+        rendererRef_.renderPage(place_, 0);
+    }
+
+    draw();
+
     // The natural line spacing handles the vertical padding
     // The horizontal padding adds one blank pixel column on either side of the rect
     display.drawDottedBox(textBox.x - 2, textBox.y, textBox.x + textBox.width + 1,
                           textBox.y + textBox.height - 1, 1, 2);
-    this->renderer_.setRect(textBox);
-    this->renderer_.renderFirstPage(0, true);
+
     display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
 }
 
@@ -89,8 +148,9 @@ void OffsetAdjustScreen::processCommand(RemoteCommand command) {
                                                                 {"in_r", insets.right},
                                                                 {"in_t", insets.top},
                                                                 {"in_b", insets.bottom}});
+        SetTextInset(prefs_, insets);
         back();
-        break;
+        return;
     default:
         break;
     }

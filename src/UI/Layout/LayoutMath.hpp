@@ -4,9 +4,10 @@
 
 class LayoutContext;
 
-auto AlignSizeInRect(const Size &size, const Rect &rect, int options) -> Rect;
+auto AlignSizeInRect(const SolSize &size, const SolRect &rect, int options) -> SolRect;
 
-auto SizeThatFitsForLayout(const LayoutContext &layoutContext, Size size, int options) -> Size;
+auto SizeThatFitsForLayout(const LayoutContext &layoutContext, SolSize size, int options)
+    -> SolSize;
 
-auto FrameForLayout(const LayoutContext &layoutContext, Size size, Rect inRect, int options)
-    -> Rect;
+auto FrameForLayout(const LayoutContext &layoutContext, SolSize size, SolRect inRect, int options)
+    -> SolRect;

@@ -22,13 +22,16 @@ auto WordCount(const char *str) -> int {
 
 // bytesToHex
 // https://stackoverflow.com/a/3386294
-auto BytesToHex(const uint8_t *data, size_t size) -> std::string {
+auto BytesToHex(const uint8_t *data, size_t size, const char *separator) -> std::string {
     std::string result;
     for (size_t i = 0; i < size; ++i) {
         char buf[3];
         // NOLINTNEXTLINE(cert-err33-c) -- this is a safe format string
         snprintf(buf, sizeof(buf), "%02x", data[i]);
         result += buf;
+        if (separator && i < size - 1) {
+            result += separator;
+        }
     }
     return result;
 }
@@ -54,8 +57,11 @@ auto HasSuffix(std::string const &str, std::string const &suffix) -> bool {
            str.compare(str.size() - suffix.size(), suffix.size(), suffix) == 0;
 }
 
-auto HasPrefix(const char *str, const char *pre) -> bool {
-    return strncmp(pre, str, strlen(pre)) == 0;
+auto HasPrefix(const char *str, const char *pre, size_t maxToCompare) -> bool {
+    if (maxToCompare == 0) {
+        maxToCompare = strlen(pre);
+    }
+    return strncmp(pre, str, maxToCompare) == 0;
 }
 
 auto Commify(uint32_t n) -> std::string {
@@ -85,3 +91,12 @@ auto CaseInsensitiveCompare(const std::string &str1, const std::string &str2) ->
         return std::tolower(c1) < std::tolower(c2);
     });
 };
+
+auto ReplaceAll(std::string str, const std::string &from, const std::string &to) -> std::string {
+    std::string::size_type pos = 0;
+    while ((pos = str.find(from, pos)) != std::string::npos) {
+        str.replace(pos, from.length(), to);
+        pos += to.length();
+    }
+    return str;
+}

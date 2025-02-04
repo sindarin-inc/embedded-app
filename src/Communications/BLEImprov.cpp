@@ -4,6 +4,7 @@
 
 #include <esp_wifi.h>
 
+#include "Communications/BLEManager.hpp"
 #include "Communications/WiFi.hpp"
 #include "config.h"
 #include "sindarin-debug.h"
@@ -93,25 +94,22 @@ void BLEImprov::setState(BLEImprovState state) {
     }
     log_d("Switched improv state to %d (internal state = %d)", improvState, state);
     SHOW_HEAP();
-#if !defined(DISABLE_IMPROV)
     this->currentStateCharacteristic_->setValue(improvState);
     this->currentStateCharacteristic_->notify();
-#endif
     this->lastStateChangeMillis_ = Millis();
 }
 
 void BLEImprov::setError(improv::Error error, bool notify) {
-#if !defined(DISABLE_IMPROV)
     int errorInt = error;
     this->errorStateCharacteristic_->setValue(errorInt);
     if (notify) {
         this->errorStateCharacteristic_->notify();
     }
-#endif
 }
 
 void BLEImprov::doneConnecting() {
     this->setState(STATE_CONNECTED);
+    WiFi::getInstance().saveSetting(this->lastCommand_.ssid, this->lastCommand_.password);
     log_i("Connected, IP address: %s", WiFi::getInstance().getLocalIpStr().c_str());
     SHOW_HEAP();
 }
@@ -152,6 +150,12 @@ void BLEImprov::loop() {
                 this->setState(STATE_WAITING);
                 this->setError(improv::ERROR_UNABLE_TO_CONNECT);
                 WiFi::getInstance().disconnectWiFi();
+#if CONFIG_USE_BLE_SERVER_PROXY
+                auto bleManager = BLEManager::getInstance(false);
+                if (bleManager != nullptr) {
+                    bleManager->disconnectProxy();
+                }
+#endif
             }
         }
     } else if (this->state_ == STATE_READY_TO_SCAN) {

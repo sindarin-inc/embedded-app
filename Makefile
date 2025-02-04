@@ -23,6 +23,8 @@ ifeq ($(TARGET),glasses-release)
 	IDF_PROFILE = -B build-$(TARGET) -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.$(TARGET)"
 else ifeq ($(TARGET),glasses-debug)
 	IDF_PROFILE = -B build-$(TARGET) -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.$(TARGET)"
+else ifeq ($(TARGET),tester)
+	IDF_PROFILE = -B build-$(TARGET) -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.$(TARGET)"
 else ifeq ($(TARGET),m5stack-atom-display)
 	IDF_PROFILE = -B build-$(TARGET) -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.$(TARGET)"
 else ifeq ($(TARGET),m5stack-module-display)
@@ -55,11 +57,11 @@ sim8: sim8-build
 	./lib/Simulator/build8/simulator
 
 .PHONY: lldb
-lldb: sim
+lldb: sim-build
 	lldb lib/Simulator/build/simulator
 
 .PHONY: lldb8
-lldb8: sim8
+lldb8: sim8-build
 	lldb lib/Simulator/build8/simulator
 
 .PHONY: test-build
@@ -72,6 +74,19 @@ test: test-build
 	./test/CatchTests/build/tests
 	./test/CatchTests/build/tests '[epub]'
 	./test/CatchTests/build/tests '[content-sync]'
+	./test/CatchTests/build/tests '[telemetry]'
+
+.PHONY: test-content-sync
+test-content-sync: test-build
+	./test/CatchTests/build/tests '[content-sync]'
+
+.PHONY: test-lldb
+test-lldb: test-build
+	lldb ./test/CatchTests/build/tests
+
+.PHONY: test-epub-lldb
+test-epub-lldb: test-build
+	lldb ./test/CatchTests/build/tests '[epub]'
 
 .PHONY: epub-render-build
 epub-render-build:
@@ -129,11 +144,18 @@ flash: build
 monitor: check_idf
 	idf.py $(IDF_PROFILE) monitor --no-reset --port $$(python3 scripts/port_tool.py find_port logging)
 
+.PHONY: monitor-jtag
+monitor-jtag: check_idf
+	idf.py $(IDF_PROFILE) monitor --no-reset
+
+.PHONY: monitor-devboard
+monitor-devboard: check_idf
+	idf.py $(IDF_PROFILE) monitor --no-reset --port $$(python3 scripts/port_tool.py find_port devboard)
+
 .PHONY: clean
 clean:
 	rm -fr build*
-	rm -fr lib/Simulator/build
-	rm -fr lib/Simulator/build8
+	rm -fr lib/Simulator/build*
 	rm -fr scripts/epub-render/build
 	rm -fr test/CatchTests/build
 	rm -fr test/CatchTests/Images/TestRun/*diff.png
@@ -155,3 +177,9 @@ clang-tidy: check_idf
 .PHONY: clang-format
 clang-format: check_idf
 	find src -iname "*.hpp" -o -iname "*.h" -o -iname "*.cpp" -o -iname "*.c" | xargs clang-format -i
+
+program-mode:
+	python3 scripts/port_tool.py find_port programming
+
+unpair-remote:
+	esptool.py erase_region 0x9000 0x5000

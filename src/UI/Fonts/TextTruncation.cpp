@@ -46,13 +46,10 @@ auto TruncateStringToFitBinarySearchImpl(DisplaySystem &display, Font *font, con
                                          uint16_t maxWidth, uint16_t &initialWidth) -> std::string {
     uint16_t w, h;
 
-    Font *oldFont = display.getFont();
-    display.setFont(font);
-
     // Unicode ellipsis character
     const std::string ellipsis = "…"; // Unicode ellipsis character
     uint16_t ellipsisWidth, ellipsisHeight;
-    display.getTextSize(ellipsis, &ellipsisWidth, &ellipsisHeight);
+    display.getTextSize(ellipsis, &ellipsisWidth, &ellipsisHeight, font);
 
     int left = 0;
     int right = str.size() - 1;
@@ -60,7 +57,7 @@ auto TruncateStringToFitBinarySearchImpl(DisplaySystem &display, Font *font, con
 
     while (left <= right) {
         int mid = left + (right - left) / 2;
-        display.getTextSize(Utf8Substr(str, 0, mid + 1), &w, &h);
+        display.getTextSize(Utf8Substr(str, 0, mid + 1), &w, &h, font);
         int currentWidth = w;
 
         if (currentWidth + ellipsisWidth <= maxWidth) {
@@ -71,8 +68,6 @@ auto TruncateStringToFitBinarySearchImpl(DisplaySystem &display, Font *font, con
         }
     }
 
-    display.setFont(oldFont);
-
     return Utf8Substr(str, 0, charsToShow) + ellipsis;
 }
 
@@ -81,16 +76,13 @@ auto TruncateStringToFitEstimateImpl(DisplaySystem &display, Font *font, const s
                                      uint16_t maxWidth, uint16_t &initialWidth) -> std::string {
     uint16_t w, h;
 
-    Font *oldFont = display.getFont();
-    display.setFont(font);
-
     const std::string ellipsis = "…"; // Unicode ellipsis character
     uint16_t ellipsisWidth, ellipsisHeight;
-    display.getTextSize(ellipsis, &ellipsisWidth, &ellipsisHeight);
+    display.getTextSize(ellipsis, &ellipsisWidth, &ellipsisHeight, font);
 
     // Make an educated guess about how many characters we can fit in the space
     int estimatedEnd = static_cast<int>(str.size()) * maxWidth / initialWidth - 2;
-    display.getTextSize(Utf8Substr(str, 0, estimatedEnd), &w, &h);
+    display.getTextSize(Utf8Substr(str, 0, estimatedEnd), &w, &h, font);
     // Search up or down until we find the right size
     bool up = w + ellipsisWidth < maxWidth;
 
@@ -100,7 +92,7 @@ auto TruncateStringToFitEstimateImpl(DisplaySystem &display, Font *font, const s
         } else {
             estimatedEnd--;
         }
-        display.getTextSize(Utf8Substr(str, 0, estimatedEnd), &w, &h);
+        display.getTextSize(Utf8Substr(str, 0, estimatedEnd), &w, &h, font);
         w += ellipsisWidth;
 
         if (up && w > maxWidth) {
@@ -112,8 +104,6 @@ auto TruncateStringToFitEstimateImpl(DisplaySystem &display, Font *font, const s
             break;
         };
     }
-
-    display.setFont(oldFont);
 
     return Utf8Substr(str, 0, estimatedEnd) + ellipsis;
 }

@@ -15,7 +15,7 @@ public:
                    ArrowDirection direction = ArrowLeft, ArrowSide arrowSide = ArrowSide::Left)
         : arrowView_(display, direction), textView_(display, text), arrowSide_(arrowSide) {}
 
-    auto layout(LayoutContext &context, Size size) -> Size override {
+    auto layout(LayoutContext &context, SolSize size) -> SolSize override {
         int arrowHeight;
 
         if (arrowView_.direction == ArrowLeft || arrowView_.direction == ArrowRight) {
@@ -53,7 +53,7 @@ public:
         }
     }
 
-    void drawInRect(Rect rect) override {
+    void drawInRect(SolRect rect) override {
         arrowView_.draw();
         textView_.draw();
     }

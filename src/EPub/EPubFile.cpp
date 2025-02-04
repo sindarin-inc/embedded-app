@@ -1,5 +1,7 @@
 #include "EPubFile.hpp"
 
+#include <vector>
+
 #include "EPubDefs.hpp"
 #include "EPubMetaFile.hpp"
 
@@ -37,7 +39,7 @@ auto EPubFile::findFileOffsetAtCharOffset(const std::string &path, uint32_t char
     return walker.offset;
 }
 
-auto EPubFile::findCharOffsetAtFileOffset(const std::string &path, uint32_t fileOffset)
+auto EPubFile::findCharOffsetAtFileOffset(const std::string_view &path, uint32_t fileOffset)
     -> uint32_t {
 
     pugi::xml_document &doc = getXHTMLFile(path);
@@ -117,7 +119,7 @@ auto EPubFile::getFile(const std::string &completeFilePath)
     return {nullptr, 0};
 }
 
-auto EPubFile::getXHTMLFile(const std::string &path) -> pugi::xml_document & {
+auto EPubFile::getXHTMLFile(const std::string_view &path) -> pugi::xml_document & {
     std::string filePath = opf_->getFullPath(path);
     // log_w("Loading file %s", filePath.c_str());
     uint32_t length;
@@ -129,6 +131,10 @@ auto EPubFile::getXHTMLFile(const std::string &path) -> pugi::xml_document & {
         std::tie(currentFileBuffer_, length) = getFile(filePath);
 
         if (currentFileBuffer_ != nullptr) {
+            if (solDrmKey_.has_value()) {
+                std::tie(currentFileBuffer_, length) = solDrm_.decryptInPlaceIfNecessary(
+                    solDrmKey_.value(), currentFileBuffer_, length);
+            }
             // Using load_buffer_inplace() is mandatory here as it permits the
             // computation of a node offset location, as string elements are taken
             // directly in the currentFileBuffer instead of being copied.
@@ -174,7 +180,7 @@ auto EPubFile::getChapterIdx(const std::shared_ptr<EPubPlace> &ePubPlace) const 
     return opf_->getChapterIdx(ePubPlace->getHRef());
 }
 
-auto EPubFile::getChapterIdx(const std::string &href) const -> ChapterIdx {
+auto EPubFile::getChapterIdx(const std::string_view &href) const -> ChapterIdx {
     return opf_->getChapterIdx(href);
 }
 
@@ -210,7 +216,7 @@ auto EPubFile::getToc() -> ReadableTableOfContentsChapterVector {
     }
 
     std::string tocId = "nav";
-    std::string tocPath = opf_->getHrefByManifestId(tocId);
+    auto tocPath = opf_->getHrefByManifestId(tocId);
     pugi::xml_document &tocDoc = getXHTMLFile(tocPath);
 
     ReadableTableOfContentsChapterVector toc;
@@ -261,7 +267,7 @@ auto EPubFile::getToc() -> ReadableTableOfContentsChapterVector {
     return toc;
 }
 
-auto EPubFile::hasSummary(const std::string &spineHref) -> bool {
+auto EPubFile::hasSummary(const std::string_view &spineHref) -> bool {
     return hasEpubAddition(spineHref, "summary");
 }
 
@@ -326,8 +332,7 @@ auto EPubFile::getSummaryContent(
         } else {
             std::string currentChapterId =
                 opf_->getManifestIdByHref(static_cast<std::string>(chapter.href));
-            std::string currentSummaryPath =
-                opf_->getHrefByManifestId("summary-" + currentChapterId);
+            auto currentSummaryPath = opf_->getHrefByManifestId("summary-" + currentChapterId);
             if (currentSummaryPath.empty()) {
                 log_w("No summary for %s", chapter.href.c_str());
                 continue;
@@ -366,7 +371,7 @@ auto EPubFile::getSummaryContent(
     return summaryText;
 }
 
-auto EPubFile::hasEpubAddition(const std::string &spineHref, const std::string &additionType)
+auto EPubFile::hasEpubAddition(const std::string_view &spineHref, const std::string &additionType)
     -> bool {
     // Find the chapterId corresponding to this spineHref
     auto chapterSpineHref = opf_->getChapterFirstHref(spineHref);
@@ -383,7 +388,7 @@ auto EPubFile::hasEpubAddition(const std::string &spineHref, const std::string &
     return false;
 }
 
-auto EPubFile::hasDictionary(const std::string &spineHref) -> bool {
+auto EPubFile::hasDictionary(const std::string_view &spineHref) -> bool {
     return hasEpubAddition(spineHref, "dictionary");
 }
 
@@ -408,8 +413,8 @@ auto EPubFile::getDictionaryContent(const std::shared_ptr<EPubPlace> &placeInRea
     }
 
     auto previousSpineOffset = 0;
-    if (std::string(getToc()[chapterIdx].href) != spineHref) {
-        spineHref = std::string(getToc()[chapterIdx].href);
+    if (getToc()[chapterIdx].href != spineHref) {
+        spineHref = getToc()[chapterIdx].href;
         spineId = opf_->getManifestIdByHref(spineHref);
         // If we're looking at a spine item that doesn't match the chapter, we need to calculate the
         // offset to match how the server is calculating word locations, which is cumulatively
@@ -420,7 +425,7 @@ auto EPubFile::getDictionaryContent(const std::shared_ptr<EPubPlace> &placeInRea
 
     // Convert chapterId to dictionary file path
     std::string dictionaryId = "dictionary-" + spineId;
-    std::string dictionaryPath = opf_->getHrefByManifestId(dictionaryId);
+    auto dictionaryPath = opf_->getHrefByManifestId(dictionaryId);
     // int currentOffset = findCharOffsetAtFileOffset(spineHref, fileOffset);
     int currentOffset = fileOffset + previousSpineOffset;
     pugi::xml_document &doc = getXHTMLFile(dictionaryPath);
@@ -547,6 +552,14 @@ auto EPubFile::open() -> bool {
         opf_->loadSpine(toc);
     }
     EPUB_PROFILE_END(EPubOpf)
+
+    EPUB_PROFILE_START(EPubParseKey)
+    // Load the DRM encryption key if it exists
+    auto [solDrmKeyBuffer, solDrmKeyLength] = getFile("sol_drm.key");
+    if (solDrmKeyBuffer != nullptr) {
+        solDrmKey_ = solDrm_.parseKeyfile(solDrmKeyBuffer.get(), solDrmKeyLength);
+    }
+    EPUB_PROFILE_END(EPubParseKey)
 
     PROFILE_END_LOG_MS(openEPub);
 

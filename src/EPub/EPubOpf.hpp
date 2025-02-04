@@ -31,27 +31,27 @@ public:
 
     [[nodiscard]] auto getSpine(SpineIdx idx) const -> const SpineItem & { return spine_[idx]; }
 
-    [[nodiscard]] auto getFullPath(const std::string &fileName) const -> std::string {
-        return basePath_ + fileName;
+    [[nodiscard]] auto getFullPath(const std::string_view &fileName) const -> std::string {
+        return StringFormat("%s%.*s", basePath_.c_str(), fileName.size(), fileName.data());
     }
 
     [[nodiscard]] inline auto getSpineCount() const -> uint16_t { return spine_.size(); }
 
     void extractPath(const char *fname, std::string &path);
 
-    auto getSpineIdx(const std::string &href) const -> SpineIdx;
+    auto getSpineIdx(const std::string_view &href) const -> SpineIdx;
 
-    auto getChapterIdx(const std::string &href) const -> ChapterIdx;
+    auto getChapterIdx(const std::string_view &href) const -> ChapterIdx;
     auto getChapterIdx(SpineIdx spineIdx) const -> ChapterIdx;
     auto spineIdxIsChapterStart(SpineIdx spineIdx) const -> bool;
     auto getChapterFirstSpineIdx(SpineIdx spineIdx) const -> SpineIdx;
-    auto getChapterFirstHref(const std::string &spineHRef) const -> std::string;
+    auto getChapterFirstHref(const std::string_view &spineHRef) const -> std::string;
 
     auto exists(const std::string &id) const -> bool;
 
     // TODO: It'd probably be good practice to use a type alias for manifest IDs
-    auto getHrefByManifestId(const std::string &manifestId) const -> std::string;
-    auto getManifestIdByHref(const std::string &href) const -> std::string;
+    auto getHrefByManifestId(const std::string &manifestId) const -> std::string_view;
+    auto getManifestIdByHref(const std::string_view &href) const -> std::string;
 
 private:
     const char *path_;

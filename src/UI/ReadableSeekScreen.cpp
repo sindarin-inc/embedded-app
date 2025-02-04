@@ -3,8 +3,10 @@
 #include "Misc/SolClock.hpp"
 #include "Misc/StringUtil.hpp"
 #include "UI/Bitmaps/SeekBook.hpp"
+#include "UI/Fonts/Fonts.hpp"
 #include "UI/ReadableHookScreens.hpp"
 
+// TODO: This is a mess - should be in the new layout system
 void ReadableSeekScreen::render(DisplaySystem &display) {
     auto place = Place::factory(prefs_.readablePlace.get(readable_->shortenedUuid.c_str()));
     auto progress =
@@ -33,26 +35,28 @@ void ReadableSeekScreen::render(DisplaySystem &display) {
     display.fillRect(x, y, progressWidth, barHeight, display.fg);
 
     x += barWidth + spacing;
-    display.drawSingleLineOfText(percentStr, x, y + display.getLineHeightPlusSpacing() - 16);
+
+    Font *font = static_cast<Font *>(&fontFace0);
+    display.drawSingleLineOfText(percentStr, x, y + font->lineHeight() - 14);
 
     // Cursor is from the baseline of the text I think
-    y += barHeight + display.getLineHeightPlusSpacing();
+    y += barHeight + font->lineHeight();
     uint16_t textWidth, textHeight;
     auto message1 = "Press right and left";
     display.getTextSize(message1, &textWidth, &textHeight);
     display.drawSingleLineOfText(message1, (display.width() - textWidth) / 2, y);
 
-    y += display.getLineHeightPlusSpacing();
+    y += font->lineHeight();
     auto message2 = "to seek through";
     display.getTextSize(message2, &textWidth, &textHeight);
     display.drawSingleLineOfText(message2, (display.width() - textWidth) / 2, y);
 
-    y += display.getLineHeightPlusSpacing();
+    y += font->lineHeight();
     auto message3 = "book or article";
     display.getTextSize(message3, &textWidth, &textHeight);
     display.drawSingleLineOfText(message3, (display.width() - textWidth) / 2, y);
 
-    y += display.getLineHeightPlusSpacing() + 10;
+    y += font->lineHeight() + 10;
     std::string message4 = "Seek granularity: ";
     message4 += StringFormat("%.1f%%", (100 / static_cast<float>(seekGranularity_)));
     display.getTextSize(message4, &textWidth, &textHeight);

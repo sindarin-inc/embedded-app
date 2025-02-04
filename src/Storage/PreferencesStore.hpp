@@ -2,11 +2,14 @@
 
 #include <cinttypes>
 #include <cstring>
+#include <freertos/FreeRTOS.h>
+#include <freertos/semphr.h>
 #include <nvs.h>
 #include <optional>
 #include <string>
 #include <vector>
 
+#include "Misc/StringUtil.hpp"
 #include "config.h"
 #include "sindarin-debug.h"
 
@@ -49,10 +52,11 @@ enum class PairedStatus {
 template <typename T>
 auto GetFromStorage(uint32_t nvsHandle, const char *key, T &value) -> esp_err_t {
     static_assert(
-        std::disjunction_v<std::is_same<T, bool>, std::is_same<T, int>, std::is_same<T, int16_t>,
-                           std::is_same<T, uint16_t>, std::is_same<T, int32_t>,
-                           std::is_same<T, uint32_t>, std::is_same<T, uint64_t>,
-                           std::is_same<T, std::string>, std::is_same<T, BLEAddress>>,
+        std::disjunction_v<
+            std::is_same<T, bool>, std::is_same<T, int>, std::is_same<T, int16_t>,
+            std::is_same<T, uint16_t>, std::is_same<T, int32_t>, std::is_same<T, uint32_t>,
+            std::is_same<T, uint64_t>, std::is_same<T, std::string>, std::is_same<T, BLEAddress>,
+            std::is_same<T, std::vector<uint8_t>>, std::is_same<T, SpiramVector<uint8_t>>>,
         "Unsupported type for NVS storage");
     esp_err_t err;
     if constexpr (std::is_same_v<T, bool>) {
@@ -65,8 +69,12 @@ auto GetFromStorage(uint32_t nvsHandle, const char *key, T &value) -> esp_err_t 
         err = nvs_get_i32(nvsHandle, key, reinterpret_cast<int32_t *>(&value));
     } else if constexpr (std::is_same_v<T, uint32_t>) {
         err = nvs_get_u32(nvsHandle, key, &value);
-    } else if constexpr (std::is_same_v<T, uint64_t> || std::is_same_v<T, BLEAddress>) {
+    } else if constexpr (std::is_same_v<T, uint64_t>) {
         err = nvs_get_u64(nvsHandle, key, reinterpret_cast<uint64_t *>(&value));
+    } else if constexpr (std::is_same_v<T, BLEAddress>) {
+        uint64_t addr;
+        err = nvs_get_u64(nvsHandle, key, &addr);
+        value = BLEAddress(addr);
     } else if constexpr (std::is_same_v<T, std::string>) {
         size_t len = 0;
         // NVS strings can be up to 4000 bytes long, so we need to get the length first
@@ -84,6 +92,14 @@ auto GetFromStorage(uint32_t nvsHandle, const char *key, T &value) -> esp_err_t 
                 value.resize(len - 1);
             }
         }
+    } else if constexpr (std::is_same_v<T, std::vector<uint8_t>> ||
+                         std::is_same_v<T, SpiramVector<uint8_t>>) {
+        size_t len = 0;
+        err = nvs_get_blob(nvsHandle, key, nullptr, &len);
+        if (err == ESP_OK) {
+            value.resize(len);
+            err = nvs_get_blob(nvsHandle, key, value.data(), &len);
+        }
     } else {
         // Should never happen because of the static_assert
         log_e("Unhandled prefs type");
@@ -98,10 +114,11 @@ auto GetFromStorage(uint32_t nvsHandle, const char *key, T &value) -> esp_err_t 
 template <typename T>
 auto GetNVSType() -> nvs_type_t {
     static_assert(
-        std::disjunction_v<std::is_same<T, bool>, std::is_same<T, int>, std::is_same<T, int16_t>,
-                           std::is_same<T, uint16_t>, std::is_same<T, int32_t>,
-                           std::is_same<T, uint32_t>, std::is_same<T, uint64_t>,
-                           std::is_same<T, std::string>, std::is_same<T, BLEAddress>>,
+        std::disjunction_v<
+            std::is_same<T, bool>, std::is_same<T, int>, std::is_same<T, int16_t>,
+            std::is_same<T, uint16_t>, std::is_same<T, int32_t>, std::is_same<T, uint32_t>,
+            std::is_same<T, uint64_t>, std::is_same<T, std::string>, std::is_same<T, BLEAddress>,
+            std::is_same<T, std::vector<uint8_t>>, std::is_same<T, SpiramVector<uint8_t>>>,
         "Unsupported type for NVS storage");
     if constexpr (std::is_same_v<T, bool>) {
         return NVS_TYPE_U8;
@@ -117,6 +134,9 @@ auto GetNVSType() -> nvs_type_t {
         return NVS_TYPE_U64;
     } else if constexpr (std::is_same_v<T, std::string>) {
         return NVS_TYPE_STR;
+    } else if constexpr (std::is_same_v<T, std::vector<uint8_t>> ||
+                         std::is_same_v<T, SpiramVector<uint8_t>>) {
+        return NVS_TYPE_BLOB;
     } else {
         // Should never happen because of the static_assert
         log_e("Unhandled prefs type");
@@ -124,29 +144,60 @@ auto GetNVSType() -> nvs_type_t {
     }
 }
 
+#define PROFILE_NVS_WRITES 0
+
+#if PROFILE_NVS_WRITES
+extern uint32_t nvsBlocksWritten;
+#define PROFILE_NVS_WRITES_INCREMENT(profileLogKey, blocks)                                        \
+    do {                                                                                           \
+        nvsBlocksWritten += blocks;                                                                \
+        log_d("NVS wrote %zu blocks for key %s, Total written since boot: %" PRIu32, blocks,       \
+              profileLogKey, nvsBlocksWritten);                                                    \
+    } while (0)
+#else
+#define PROFILE_NVS_WRITES_INCREMENT(profileLogKey, blocks)
+#endif
+
 template <typename T>
 auto WriteToStorage(uint32_t nvsHandle, const char *key, T &value) -> esp_err_t {
     static_assert(
-        std::disjunction_v<std::is_same<T, bool>, std::is_same<T, int>, std::is_same<T, int16_t>,
-                           std::is_same<T, uint16_t>, std::is_same<T, int32_t>,
-                           std::is_same<T, uint32_t>, std::is_same<T, uint64_t>,
-                           std::is_same<T, std::string>, std::is_same<T, BLEAddress>>,
+        std::disjunction_v<
+            std::is_same<T, bool>, std::is_same<T, int>, std::is_same<T, int16_t>,
+            std::is_same<T, uint16_t>, std::is_same<T, int32_t>, std::is_same<T, uint32_t>,
+            std::is_same<T, uint64_t>, std::is_same<T, std::string>, std::is_same<T, BLEAddress>,
+            std::is_same<T, std::vector<uint8_t>>, std::is_same<T, SpiramVector<uint8_t>>>,
         "Unsupported type for NVS storage");
     esp_err_t err;
     if constexpr (std::is_same_v<T, bool>) {
         err = nvs_set_u8(nvsHandle, key, value);
+        PROFILE_NVS_WRITES_INCREMENT(key, 1);
     } else if constexpr (std::is_same_v<T, int16_t>) {
         err = nvs_set_i16(nvsHandle, key, value);
+        PROFILE_NVS_WRITES_INCREMENT(key, 1);
     } else if constexpr (std::is_same_v<T, uint16_t>) {
         err = nvs_set_u16(nvsHandle, key, value);
+        PROFILE_NVS_WRITES_INCREMENT(key, 1);
     } else if constexpr (std::is_same_v<T, int> || std::is_same_v<T, int32_t>) {
         err = nvs_set_i32(nvsHandle, key, value);
+        PROFILE_NVS_WRITES_INCREMENT(key, 1);
     } else if constexpr (std::is_same_v<T, uint32_t>) {
         err = nvs_set_u32(nvsHandle, key, value);
-    } else if constexpr (std::is_same_v<T, uint64_t> || std::is_same_v<T, BLEAddress>) {
+        PROFILE_NVS_WRITES_INCREMENT(key, 1);
+    } else if constexpr (std::is_same_v<T, uint64_t>) {
         err = nvs_set_u64(nvsHandle, key, value);
+        PROFILE_NVS_WRITES_INCREMENT(key, 1);
+    } else if constexpr (std::is_same_v<T, BLEAddress>) {
+        err = nvs_set_u64(nvsHandle, key, static_cast<uint64_t>(value));
+        PROFILE_NVS_WRITES_INCREMENT(key, 1);
     } else if constexpr (std::is_same_v<T, std::string>) {
         err = nvs_set_str(nvsHandle, key, value.c_str());
+        // String and blob writes have 8 bytes in the first block, then 32 bytes per block after
+        // so account for the 8 bytes but round up
+        PROFILE_NVS_WRITES_INCREMENT(key, std::max((size_t)1, (value.length() + 55) / 32));
+    } else if constexpr (std::is_same_v<T, std::vector<uint8_t>> ||
+                         std::is_same_v<T, SpiramVector<uint8_t>>) {
+        err = nvs_set_blob(nvsHandle, key, value.data(), value.size());
+        PROFILE_NVS_WRITES_INCREMENT(key, std::max((size_t)1, (value.size() + 55) / 32));
     } else {
         log_e("Unhandled prefs type for key %s", key);
         assert(0);
@@ -194,7 +245,10 @@ public:
     class PrefsItem : public PrefsItemBase<T> {
     public:
         PrefsItem(PreferencesStore &prefs, const char *key) : PrefsItemBase<T>(prefs) {
-            strncpy(this->key_, key, sizeof(this->key_));
+            static_assert(!std::is_same<T, bool>::value, "Use BooleanFlags for bools");
+            if (!SafeSnprintf(this->key_, sizeof(this->key_), "%s", key)) {
+                log_e("Key too long: %s", key);
+            }
         }
         virtual ~PrefsItem() = default;
 
@@ -215,6 +269,9 @@ public:
         }
 
         virtual void set(T value) {
+            if (this->loaded_ && this->value_ == value) {
+                return;
+            }
             this->value_ = value;
             this->writeToStorage(this->key_, value);
         }
@@ -312,6 +369,94 @@ public:
         const char *suffix_;
     };
 
+    class BooleanFlags : public PrefsItemBase<uint64_t> {
+    public:
+        BooleanFlags(PreferencesStore &prefs, const char *key)
+            : PrefsItemBase<uint64_t>(prefs), key_(key), mutex_(xSemaphoreCreateMutex()) {}
+
+        ~BooleanFlags() { vSemaphoreDelete(mutex_); }
+
+        void lock() {
+            // Only use the semaphore if FreeRTOS is running
+            if (xTaskGetSchedulerState() == taskSCHEDULER_RUNNING) {
+                xSemaphoreTake(mutex_, portMAX_DELAY);
+            }
+        }
+
+        void unlock() {
+            if (xTaskGetSchedulerState() == taskSCHEDULER_RUNNING) {
+                xSemaphoreGive(mutex_);
+            }
+        }
+
+        void loadValueIfNecessary() {
+            if (!loaded_) {
+                uint64_t value;
+                esp_err_t err = GetFromStorage(this->prefs.nvsHandle_, key_, value);
+                if (err == ESP_OK) {
+                    flags_ = value;
+                }
+                loaded_ = true;
+            }
+        }
+
+        auto get(size_t index) -> bool {
+            lock();
+            loadValueIfNecessary();
+            bool result = (flags_ & (1ULL << index)) != 0;
+            unlock();
+            return result;
+        }
+
+        void set(size_t index, bool value, bool deferWrite = false) {
+            lock();
+            loadValueIfNecessary();
+            auto flagsBefore = flags_;
+            if (value) {
+                flags_ |= (1ULL << index);
+            } else {
+                flags_ &= ~(1ULL << index);
+            }
+            dirty_ = flagsBefore != flags_;
+            if (dirty_ && !deferWrite) {
+                writeToStorage(key_, flags_);
+                dirty_ = false;
+            }
+            unlock();
+        }
+
+        void write() {
+            lock();
+            if (dirty_) {
+                this->writeToStorage(key_, flags_);
+                dirty_ = false;
+            }
+            unlock();
+        }
+
+    private:
+        bool loaded_ = false;
+        uint64_t flags_ = 0;
+        const char *key_;
+        bool dirty_{false};
+        SemaphoreHandle_t mutex_;
+    };
+
+    class BooleanFlag {
+    public:
+        BooleanFlag(BooleanFlags &flags, size_t index) : flags_(flags), index_(index) {}
+
+        auto get() -> std::optional<bool> { return {flags_.get(index_)}; }
+
+        void set(bool value, bool deferWrite = false) { flags_.set(index_, value, deferWrite); }
+
+        void remove() { set(false); }
+
+    private:
+        BooleanFlags &flags_;
+        size_t index_;
+    };
+
     PreferencesStore() noexcept
         :
     // Ignoring clang-tidy and keeping these on their own lines otherwise diffs become very
@@ -335,43 +480,32 @@ public:
           readablePlaceChanged(*this, "-pc"),
           readableArchivedChanged(*this, "-ar"),
           readableBookmarksChanged(*this, "-bm"),
-          invertSetting(*this, "invert"),
+          invertSetting(boolFlags_, 0),
+          invertStartHour(*this, "invert-start"),
+          invertEndHour(*this, "invert-end"),
           vcom(*this, "vcom"),
           font(*this, "font"),
           lineSpacing(*this, "line-space"),
-          wordCount(*this, "word-count"),
-          totalReadingTimeSeconds(*this, "tot-rd-time"),
           bootCount(*this, "boot-count"),
-          firstRead(*this, "first-read"),
+          firstRead(boolFlags_, 1),
           autoPilotSpeed(*this, "auto-speed"),
-          firstAutopilotRead(*this, "fst-auto-rd"),
-          cesMode(*this, "ces"),
-          emcMode(*this, "emc"),
+          firstAutopilotRead(boolFlags_, 2),
+          cesMode(boolFlags_, 3),
+          emcMode(boolFlags_, 4),
           wifiPower(*this, "wifi-power"),
           inactivityMinutes(*this, "inact-min"),
           tzIana(*this, "tz-iana"),
           tzPosix(*this, "tz-posix"),
           firmwareLoaded(*this, "fw-loaded"),
-          noBooks(*this, "no-books"),
-          showNews(*this, "show-news"),
-          noArticles(*this, "no-articles"),
-          noBible(*this, "no-bible"),
-          noDeliverOnClose(*this, "no-deliv-close"),
-          noMorningDelivery(*this, "no-morn-sync"),
-          eveningDelivery(*this, "eve-deliver"),
-          darkMode(*this, "dark-mode"),
-          autoPilot(*this, "auto-pilot"),
-          fastTransitions(*this, "fast-tran"),
-          noUploadCrashes(*this, "no-upload-crash"),
-          showDebugMenu(*this, "show-debug"),
-          noShowPartialChapterSummary(*this, "no-part-summary"),
-          fastBookmarkRight(*this, "fst-mark-right"),
-          fastBookmarkCenter(*this, "fst-mark-cent"),
-          pageTransitionArrows(*this, "page-arrows"),
-          allowUsageWhileCharging(*this, "allow-use-chg"),
+          darkMode(boolFlags_, 5),
+          autoPilot(boolFlags_, 6),
+          fastTransitions(boolFlags_, 7),
+          showDebugMenu(boolFlags_, 8),
+          noShowPartialChapterSummary(boolFlags_, 9),
+          allowUsageWhileCharging(boolFlags_, 10),
           wifiSettingsJson(*this, "wifi-settings"),
           localStoreMigrationVersion(*this, "ls-version"),
-          fontsLibrary(*this, "fonts-lib"),
+          fontsLibrary(boolFlags_, 11),
           fontType(*this, "font-type"),
           tutorialsDeleted(*this, "tutorials"),
           bleAdvertisingKey(*this, "ble-adv-key"),
@@ -382,7 +516,25 @@ public:
           textInsetRight(*this, "text-inset-r"),
           textInsetTop(*this, "text-inset-t"),
           textInsetBottom(*this, "text-inset-b"),
-          preferencesStoreMigrationVersion_(*this, "ps-version") {}
+          wifiDisabled(boolFlags_, 12),
+          bleDisabled(boolFlags_, 13),
+          didFirstArchive(boolFlags_, 14),
+          dontShowWelcome(boolFlags_, 15),
+          seenLetsFocus(boolFlags_, 16),
+          seenTextPlacement(boolFlags_, 17),
+          forceShowWelcome(boolFlags_, 18),
+          seenExperimentalOverview(boolFlags_, 19),
+          seenPartialSummaryOverview(boolFlags_, 20),
+          seenFastPageTransitionsOverview(boolFlags_, 21),
+          seenAutoDarkModeOverview(boolFlags_, 22),
+          seenBatteryWhenLowOverview(boolFlags_, 23),
+          alwaysShowBattery(boolFlags_, 24),
+
+          privateKey(*this, "private-key"),
+          // only touch the lines above this when deleting those prefs. Do not renumber. Add below 
+          // to add a new boolFlag with incrementing value.
+          preferencesStoreMigrationVersion_(*this, "ps-version"),
+          boolFlags_(*this, "bool-flags") {}
     // clang-format on
 
     PreferencesStore(PreferencesStore &) = delete;
@@ -501,6 +653,53 @@ public:
                 nvs_erase_key(nvsHandle_, "bright-off-en");
                 nvs_erase_key(nvsHandle_, "logging");
                 break;
+            case 7:
+                nvs_erase_key(nvsHandle_, "no-books");
+                nvs_erase_key(nvsHandle_, "show-news");
+                nvs_erase_key(nvsHandle_, "no-articles");
+                nvs_erase_key(nvsHandle_, "no-bible");
+                nvs_erase_key(nvsHandle_, "no-deliv-close");
+                nvs_erase_key(nvsHandle_, "no-morn-sync");
+                nvs_erase_key(nvsHandle_, "eve-deliver");
+                nvs_erase_key(nvsHandle_, "no-upload-crash");
+                nvs_erase_key(nvsHandle_, "fst-mark-right");
+                nvs_erase_key(nvsHandle_, "fst-mark-cent");
+                nvs_erase_key(nvsHandle_, "page-arrows");
+                break;
+            case 8: {
+                auto migrateBool = [this](const char *oldKey, BooleanFlag &newFlag) {
+                    bool oldValue = false;
+                    esp_err_t err = GetFromStorage(nvsHandle_, oldKey, oldValue);
+                    if (err == ESP_OK) {
+                        newFlag.set(oldValue, true);
+                        nvs_erase_key(nvsHandle_, oldKey);
+                    }
+                };
+
+                migrateBool("invert", invertSetting);
+                migrateBool("first-read", firstRead);
+                migrateBool("fst-auto-rd", firstAutopilotRead);
+                migrateBool("ces", cesMode);
+                migrateBool("emc", emcMode);
+                migrateBool("dark-mode", darkMode);
+                migrateBool("auto-pilot", autoPilot);
+                migrateBool("fast-tran", fastTransitions);
+                migrateBool("show-debug", showDebugMenu);
+                migrateBool("no-part-summary", noShowPartialChapterSummary);
+                migrateBool("allow-use-chg", allowUsageWhileCharging);
+                migrateBool("fonts-lib", fontsLibrary);
+                migrateBool("wifi-disable", wifiDisabled);
+                migrateBool("ble-disable", bleDisabled);
+                migrateBool("first-archive", didFirstArchive);
+
+                // Write all changes to NVS at once
+                boolFlags_.write();
+                break;
+            }
+            case 9:
+                nvs_erase_key(nvsHandle_, "word-count");
+                nvs_erase_key(nvsHandle_, "tot-rd-time");
+                break;
             default:
                 log_e("Unknown migration version: %" PRIu32, migrationVersion);
                 return;
@@ -613,44 +812,33 @@ public:
     KeyedPrefsItem<bool> readablePlaceChanged;
     KeyedPrefsItem<bool> readableArchivedChanged;
     KeyedPrefsItem<bool> readableBookmarksChanged;
-    PrefsItem<bool> invertSetting;
+    BooleanFlag invertSetting;
+    PrefsItem<int> invertStartHour;
+    PrefsItem<int> invertEndHour;
     PrefsItem<int> vcom;
     PrefsItem<int> font;
     PrefsItem<int> lineSpacing;
-    PrefsItem<uint32_t> wordCount;
-    PrefsItem<uint32_t> totalReadingTimeSeconds;
     PrefsItem<uint32_t> bootCount;
-    PrefsItem<bool> firstRead;
+    BooleanFlag firstRead;
     PrefsItem<uint32_t> autoPilotSpeed;
-    PrefsItem<bool> firstAutopilotRead;
-    PrefsItem<bool> cesMode;
-    PrefsItem<bool> emcMode;
+    BooleanFlag firstAutopilotRead;
+    BooleanFlag cesMode;
+    BooleanFlag emcMode;
     PrefsItem<int> wifiPower;
     PrefsItem<int> inactivityMinutes;
     PrefsItem<std::string> tzIana;
     PrefsItem<std::string> tzPosix;
     // Firmware that's been loaded to the other flash slot but not yet installed
     PrefsItem<std::string> firmwareLoaded;
-    PrefsItem<bool> noBooks;
-    PrefsItem<bool> showNews;
-    PrefsItem<bool> noArticles;
-    PrefsItem<bool> noBible;
-    PrefsItem<bool> noDeliverOnClose;
-    PrefsItem<bool> noMorningDelivery;
-    PrefsItem<bool> eveningDelivery;
-    PrefsItem<bool> darkMode;
-    PrefsItem<bool> autoPilot;
-    PrefsItem<bool> fastTransitions;
-    PrefsItem<bool> noUploadCrashes;
-    PrefsItem<bool> showDebugMenu;
-    PrefsItem<bool> noShowPartialChapterSummary;
-    PrefsItem<bool> fastBookmarkRight;
-    PrefsItem<bool> fastBookmarkCenter;
-    PrefsItem<bool> pageTransitionArrows;
-    PrefsItem<bool> allowUsageWhileCharging;
+    BooleanFlag darkMode;
+    BooleanFlag autoPilot;
+    BooleanFlag fastTransitions;
+    BooleanFlag showDebugMenu;
+    BooleanFlag noShowPartialChapterSummary;
+    BooleanFlag allowUsageWhileCharging;
     PrefsItem<std::string> wifiSettingsJson;
     PrefsItem<uint32_t> localStoreMigrationVersion;
-    PrefsItem<bool> fontsLibrary;
+    BooleanFlag fontsLibrary;
     PrefsItem<int> fontType;
     PrefsItem<uint32_t> tutorialsDeleted;
     // Value that's advertised in manufacturer data as a hint to mobile apps so that they can
@@ -667,6 +855,20 @@ public:
     PrefsItem<uint16_t> textInsetRight;
     PrefsItem<uint16_t> textInsetTop;
     PrefsItem<uint16_t> textInsetBottom;
+    BooleanFlag wifiDisabled;
+    BooleanFlag bleDisabled;
+    BooleanFlag didFirstArchive;
+    BooleanFlag dontShowWelcome;
+    BooleanFlag seenLetsFocus;
+    BooleanFlag seenTextPlacement;
+    BooleanFlag forceShowWelcome;
+    BooleanFlag seenExperimentalOverview;
+    BooleanFlag seenPartialSummaryOverview;
+    BooleanFlag seenFastPageTransitionsOverview;
+    BooleanFlag seenAutoDarkModeOverview;
+    BooleanFlag seenBatteryWhenLowOverview;
+    BooleanFlag alwaysShowBattery;
+    PrefsItem<SpiramVector<uint8_t>> privateKey;
 
     // These are RTC_SLOW_MEM variables that persist across deep sleep / wake cycles but will be
     // reset on power cycles
@@ -682,11 +884,12 @@ public:
     static PairedStatus paired;
 
 protected:
-    const uint32_t latestMigrationVersion_ = 7;
+    const uint32_t latestMigrationVersion_ = 10;
     uint32_t nvsHandle_{};
     bool started_{};
 
     PrefsItem<uint32_t> preferencesStoreMigrationVersion_;
+    BooleanFlags boolFlags_;
 
     void commit() const {
         esp_err_t err = nvs_commit(nvsHandle_);

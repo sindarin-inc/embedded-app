@@ -8,10 +8,15 @@
 #include <cinttypes>
 #include <random>
 
-#include "../Communications/WiFi.hpp"
-#include "../Misc/Platform.hpp"
-#include "../Misc/StringUtil.hpp"
-#include "../Misc/Timezones.hpp"
+#include "Communications/SindarinAPI.hpp"
+#include "Communications/WiFi.hpp"
+#include "Misc/Platform.hpp"
+#include "Misc/StringUtil.hpp"
+#include "Misc/Timezones.hpp"
+
+#if CONFIG_USE_BLE_SERVER_PROXY
+#include "Communications/BLEManager.hpp"
+#endif
 
 extern SolClock solClock;
 
@@ -105,7 +110,7 @@ void SolClock::getClockTime(uint8_t &hours, uint8_t &minutes) {
     minutes = timeinfo.tm_min;
 }
 
-auto SolClock::setClockTimeFromInternet() -> bool {
+auto SolClock::configTimeSNTP() -> bool {
 #if !SIMULATOR
 
     // Configure the SNTP client
@@ -146,8 +151,47 @@ auto SolClock::setClockTimeFromInternet() -> bool {
 #else
     log_i("Not setting clock time from internet in simulator");
 #endif
-
     return true;
+}
+
+auto SolClock::setClockTimeFromInternet(bool useWifi, bool useBle,
+                                        const std::shared_ptr<CancelFlag> &cancel) -> bool {
+    if (useWifi && WiFi::getInstance().connected()) {
+        // Try SNTP first if WiFi is connected
+        if (configTimeSNTP()) {
+            return true;
+        }
+    }
+
+#if CONFIG_USE_BLE_SERVER_PROXY
+    if (useBle && BLEManager::getInstance()->connectedProxy) {
+        time_t serverTime = 0;
+        int httpCode = SindarinAPI::getInstance()->getServerTime(&serverTime, true, cancel);
+        if (httpCode != 200 || serverTime <= 0) {
+            log_e("Failed to get time from server: %d", httpCode);
+            return false;
+        }
+        // Set the system time
+        struct timeval tv = {.tv_sec = serverTime, .tv_usec = 0};
+        if (settimeofday(&tv, nullptr) != 0) {
+            log_e("Failed to set time");
+            return false;
+        }
+        // Print the time as a string
+        struct tm timeinfo {};
+        localtime_r(&serverTime, &timeinfo);
+        char strftimeBuf[64];
+        size_t size = strftime(strftimeBuf, sizeof(strftimeBuf), "%c", &timeinfo);
+        if (size == 0) {
+            log_e("strftime failed");
+            return false;
+        }
+        log_i("Set time from BLE proxy: %s (%" PRIu64 ")", strftimeBuf, (uint64_t)serverTime);
+        return true;
+    }
+#endif
+
+    return false;
 }
 
 auto SolClock::calculateNextSyncTime(time_t now) -> time_t {
@@ -155,15 +199,9 @@ auto SolClock::calculateNextSyncTime(time_t now) -> time_t {
     struct tm timeinfo {};
     localtime_r(&now, &timeinfo);
 
-    // Set morning delivery to 6am and evening delivery to 8pm
-    // if the user has toggled those options on.
-    int morningNews = prefs_.noMorningDelivery.get().value_or(false) ? 0 : 6;
-    int eveningNews = prefs_.eveningDelivery.get().value_or(false) ? 20 : 0;
-
-    // If otherwise unselected, let's force a sync at 6am
-    if (morningNews == 0 && eveningNews == 0) {
-        morningNews = 6;
-    }
+    // Set morning delivery to 6am and evening delivery to 8pm.
+    int morningNews = 6;
+    int eveningNews = 20;
 
     // Create tm structs for the morning and evening events
     struct tm morningEvent = timeinfo;
@@ -221,4 +259,12 @@ auto SolClock::calculateNextSyncTime(time_t now) -> time_t {
     return nextEventEpoch;
 }
 
-auto SolClock::getEpochTime() -> time_t { return time(nullptr); }
+auto SolClock::getEpochTime() -> time_t {
+#if SIMULATOR
+    if (useSimulatorTestTime) {
+        return 1610000000;
+    }
+#endif
+
+    return time(nullptr);
+}

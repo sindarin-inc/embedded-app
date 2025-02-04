@@ -13,6 +13,7 @@
 #include "DisplayUtil.hpp"
 #include "EPub/EPubFile.hpp"
 #include "Renderers/Renderer.hpp"
+#include "UI/Fonts/Fonts.hpp"
 
 int main(int argc, char **argv) {
     argparse::ArgumentParser program("epub-render");
@@ -89,13 +90,15 @@ int main(int argc, char **argv) {
     DisplayRect boundingBoxRect = {x, y, w, h};
     std::cout << "Bounding box: " << x << "," << y << "," << w << "," << h << std::endl;
 
-    auto font = program.get<std::string>("--font");
-    if (font == "solSansSmall") {
-        (*display).style.setFontFamily((*display).style.solSansSmall);
-    } else if (font == "solSansMedium") {
-        (*display).style.setFontFamily((*display).style.solSansMedium);
-    } else if (font == "solSansLarge") {
-        (*display).style.setFontFamily((*display).style.solSansLarge);
+    Font *font = &fontFace0;
+    auto fontArg = program.get<std::string>("--font");
+    if (fontArg == "solSansSmall") {
+        // Leaving this here even though it's the default in case we change the default.
+        font = &fontFace0;
+    } else if (fontArg == "solSansMedium") {
+        font = &fontFace1;
+    } else if (fontArg == "solSansLarge") {
+        font = &fontFace2;
     } else {
         std::cerr << "Invalid font specified. Must be one of 'solSansSmall', "
                      "'solSansMedium', 'solSansLarge' "
@@ -105,7 +108,6 @@ int main(int argc, char **argv) {
     std::cout << "Font: " << font << std::endl;
 
     auto lineSpacing = program.get<int>("--lineSpacing");
-    (*display).setLineSpacing(lineSpacing);
     std::cout << "Line spacing: " << lineSpacing << std::endl;
 
     auto outputPath = program.get<std::filesystem::path>("outFile");
@@ -118,11 +120,14 @@ int main(int argc, char **argv) {
     auto readable = std::make_shared<Readable>();
     readable->readableType = readableType;
 
-    auto epubFile = std::make_shared<EPubFile>(file, readable);
+    PreferencesStore prefs;
+    SolDrm solDrm(prefs);
+    auto epubFile = std::make_shared<EPubFile>(file, readable, solDrm);
 
-    Renderer renderer(*display, boundingBoxRect);
+    Renderer renderer(*display, boundingBoxRect, font);
     renderer.setStream(epubFile);
     renderer.renderPage(place);
+    renderer.setLineSpacing(lineSpacing);
 
     display->updateDisplay(DisplaySystem::UpdateType::FULL, true);
 

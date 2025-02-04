@@ -27,11 +27,11 @@
 #include "Misc/SolClock.hpp"
 #include "Misc/SolMorse.hpp"
 #include "Misc/StringUtil.hpp"
-#include "Misc/Style.hpp"
 #include "Models/Readable.hpp"
 #include "Storage/CrashReportWriter.hpp"
 #include "Storage/LocalStore.hpp"
 #include "Storage/PreferencesStore.hpp"
+#include "Storage/SolDrm.hpp"
 #include "UI/ChargingScreen.hpp"
 #include "UI/OverTempScreen.hpp"
 #include "UI/PowerDepletedScreen.hpp"
@@ -45,7 +45,7 @@
 
 #if CONFIG_DISPLAY_EINKET013TT1
 #include "Displays/DisplayEinkET013TT1.hpp"
-DisplayEinkET013TT1 myDisplay(DISPLAY_CS_LEFT, DISPLAY_CS_RIGHT, DISPLAY_RST);
+DisplayEinkET013TT1 myDisplay;
 #elif DISPLAY_SIM_8BIT
 // Declared in native.cpp
 #include "Displays/DisplaySim1Bit.hpp"
@@ -113,10 +113,11 @@ TTRemoteInput ttRemoteInput(prefs, telemetry);
 USBSerial usbSerial;
 
 PowerManager powerManager(fileSystem, prefs, lightingController, myDisplay, telemetry, usbSerial);
-LocalStore localStore(fileSystem, prefs, powerManager.battery, telemetry);
-RootUI rootUi(prefs, powerManager, telemetry);
+SolDrm solDrm(prefs);
+LocalStore localStore(fileSystem, prefs, powerManager.battery, telemetry, solDrm);
+RootUI rootUi(myDisplay, prefs, powerManager, telemetry, solDrm);
 SolClock solClock(prefs);
-WiFi wiFi(telemetry);
+WiFi wiFi(telemetry, prefs);
 
 DirectCommand directCommand(usbSerial, fileSystem, powerManager);
 FileTransfer fileTransferListener(fileSystem, localStore, usbSerial, directCommand);
@@ -124,8 +125,13 @@ FileTransfer fileTransferListener(fileSystem, localStore, usbSerial, directComma
 bool bootCompleted = false;
 
 void UIInnerLoop(RemoteCommand command) {
+    // This grabs the shared pointer and holds it until the whole
+    // function exits. This is important because if it gets deleted
+    // then the screen could be deleted after it's poppoed off the stack
+    // during its backCallback cleanup.
+    auto temp = rootUi.currentScreen();
     powerManager.feedInactivityTimer();
-    rootUi.loop(myDisplay, command);
+    rootUi.loop(command);
 }
 
 // Task for all periodic things that need to run ~1Hz. Polling tasks should be grouped here so that
@@ -133,8 +139,8 @@ void UIInnerLoop(RemoteCommand command) {
 void PollingLoopTask(void *parameter) {
     int factoryResetStartTimeMs = 0;
     while (powerManager.state() != PowerState::ShuttingDown) {
-        // check if factory reset button is held down
-        if (DigitalRead(FACTORY_RESET_BUTTON) == 0) {
+        if (CONFIG_FACTORY_RESET_BUTTON_PIN != GPIO_NUM_NC &&
+            DigitalRead(CONFIG_FACTORY_RESET_BUTTON_PIN) == 0) {
             // prevent inactivity sleep while button held down
             powerManager.feedInactivityTimer();
             if (factoryResetStartTimeMs == 0) {
@@ -202,7 +208,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     HEAP_PROFILE_END(usbSerial);
 
     directCommand.begin();
-    if (usbSerial.isLoggingEnabled()) {
+    if (usbSerial.isUsbLoggingEnabled()) {
         // Wait a bit so we can get boot logs (mostly for the testers)
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
@@ -244,7 +250,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         DigitalWrite(CONFIG_GREEN_LED, LED_ON);
         vTaskDelay(200 / portTICK_PERIOD_MS);
         DigitalWrite(CONFIG_GREEN_LED, LED_OFF);
-#ifdef CONFIG_BLUE_LED
+#if CONFIG_BLUE_LED != -1
         DigitalWrite(CONFIG_BLUE_LED, LED_ON);
         vTaskDelay(200 / portTICK_PERIOD_MS);
         DigitalWrite(CONFIG_BLUE_LED, LED_OFF);
@@ -313,10 +319,52 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     WiFi::getInstance().setWiFiPower(
         (wifi_power_t)prefs.wifiPower.get().value_or(WIFI_POWER_16dBm));
 
+#if USE_BLE
+    log_i("Initializing BLE");
+    HEAP_PROFILE_START(BLEDeviceInit);
+    BLEDevice::init("Sol Reader");
+    HEAP_PROFILE_END(BLEDeviceInit);
+
+    if (prefs.blePower.get().has_value()) {
+        auto power = prefs.blePower.get().value_or(ESP_PWR_LVL_P3);
+        log_d("Setting default BLE power to %" PRIu32, power);
+        esp_err_t err =
+            esp_ble_tx_power_set(ESP_BLE_PWR_TYPE_DEFAULT, static_cast<esp_power_level_t>(power));
+        if (err != ESP_OK) {
+            log_e("esp_ble_tx_power_set err: %s", esp_err_to_name(err));
+        }
+    }
+
+    auto bleStatus = esp_bt_controller_get_status();
+    if (bleStatus != ESP_BT_CONTROLLER_STATUS_ENABLED) {
+        bootErrors.push_back({.type = BootError::Type::BLE});
+    }
+#endif
+
+#if USE_BLE
+    auto bleManager = BLEManager::getInstance();
+    if (prefs.bleAdvertisingKey.get().has_value()) {
+        bleManager->setManufacturerData(prefs.bleAdvertisingKey.get().value_or(""));
+    }
+#endif
+
+#if CONFIG_USE_BLE_SERVER_PROXY
+    HEAP_PROFILE_START(bleSyncService);
+    auto syncService = bleSyncService.configureService(bleManager->server());
+    BLEProxy::getInstance()->setPrefs(&prefs);
+    BLEProxy::getInstance()->configureCharacteristics(syncService);
+
+    if (!bleSyncService.start()) {
+        bootErrors.push_back({.type = BootError::Type::BLESync});
+    }
+    HEAP_PROFILE_END(bleSyncService);
+#endif
+
+    // powerManager.forceBackground();
     if (powerManager.state() == PowerState::Background) {
         log_i("Booting into PowerState::Background, running a content sync");
         // Spin up a task just to check the temple and battery
-        powerManager.setStateChangeCallback([](PowerState state) {
+        powerManager.addStateChangeCallback(nullptr, [](PowerState state) {
             if (state == PowerState::ShuttingDown) {
                 log_d("Signaling background sync to cancel");
                 BackgroundSyncCancel();
@@ -334,10 +382,10 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
             vTaskDelete(nullptr);
             },
             "BackgroundPowerLoop", 4096, nullptr, 1, nullptr, 1);
-        BackgroundSyncAndSleep(powerManager, prefs, localStore, telemetry);
+        BackgroundSyncAndSleep(powerManager, prefs, localStore, telemetry, fileSystem);
 
         // Should never get here, the system should be asleep
-        return;
+        assert(false && "BackgroundSyncAndSleep should never return");
     }
 
     // Below code should only execute on an Active boot
@@ -358,24 +406,10 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     }
 #endif
 
-#if CONFIG_DISPLAY_EINKET013TT1
-#ifdef DISPLAY_POWER
+#if CONFIG_DISPLAY_POWER != -1
     // Turn on power to the screen
-    DigitalWrite(DISPLAY_POWER, HIGH);
+    DigitalWrite(CONFIG_DISPLAY_POWER, HIGH);
 #endif
-#endif
-
-    switch (prefs.font.get().value_or(PREFS_SOL_SMALL)) {
-    case PREFS_SOL_MEDIUM:
-        myDisplay.style.setFontFamily(myDisplay.style.solSansMedium);
-        break;
-    case PREFS_SOL_LARGE:
-        myDisplay.style.setFontFamily(myDisplay.style.solSansLarge);
-        break;
-    case PREFS_SOL_SMALL:
-        myDisplay.style.setFontFamily(myDisplay.style.solSansSmall);
-        break;
-    }
 
     HEAP_PROFILE_START(displaySetup);
     if (!myDisplay.setup()) {
@@ -399,8 +433,6 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     }
 #endif
 
-    myDisplay.setLineSpacing(prefs.lineSpacing.get().value_or(0));
-
     SIZE_OF(myDisplay);
 
     // For all the EMC modes, we'll keep the lights at 100%
@@ -412,36 +444,15 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
             [](void *) {
             while (powerManager.state() != PowerState::ShuttingDown) {
                 PreferencesStore::syncReason = SyncReason::Periodic;
-                BackgroundSync(powerManager, prefs, localStore, telemetry);
+                BackgroundSync(powerManager, prefs, localStore, telemetry, fileSystem, true, false);
                 vTaskDelay(60000 / portTICK_PERIOD_MS);
             }
             log_d("Sync loop task exited");
             SHOW_WATERMARK();
             vTaskDelete(nullptr);
             },
-            "BackgroundSync", 4096, nullptr, 1, nullptr, 1);
+            "BackgroundSync", 8192, nullptr, 1, nullptr, 0);
     }
-
-#if USE_BLE
-    HEAP_PROFILE_START(BLEDeviceInit);
-    BLEDevice::init("Sol Reader");
-    HEAP_PROFILE_END(BLEDeviceInit);
-
-    if (prefs.blePower.get().has_value()) {
-        auto power = prefs.blePower.get().value_or(ESP_PWR_LVL_P3);
-        log_d("Setting default BLE power to %" PRIu32, power);
-        esp_err_t err =
-            esp_ble_tx_power_set(ESP_BLE_PWR_TYPE_DEFAULT, static_cast<esp_power_level_t>(power));
-        if (err != ESP_OK) {
-            log_e("esp_ble_tx_power_set err: %s", esp_err_to_name(err));
-        }
-    }
-
-    auto bleStatus = esp_bt_controller_get_status();
-    if (bleStatus != ESP_BT_CONTROLLER_STATUS_ENABLED) {
-        bootErrors.push_back({.type = BootError::Type::BLE});
-    }
-#endif
 
 #if CONFIG_USE_TURN_TOUCH_REMOTE || CONFIG_USE_BLE_SERVER_REMOTE
     auto remoteCallback = [](RemoteCommand command) {
@@ -460,13 +471,6 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 #if CONFIG_USE_TURN_TOUCH_REMOTE
     ttRemoteInput.setCallback(remoteCallback);
     powerManager.setBeginShutdownCallback([]() { ttRemoteInput.disconnectTemporarily(60); });
-#endif
-
-#if CONFIG_USE_BLE_SERVER_REMOTE || CONFIG_USE_BLE_SERVER_SETTINGS || CONFIG_USE_BLE_SERVER_IMPROV
-    auto bleManager = BLEManager::getInstance();
-    if (prefs.bleAdvertisingKey.get().has_value()) {
-        bleManager->setManufacturerData(prefs.bleAdvertisingKey.get().value_or(""));
-    }
 #endif
 
 #if CONFIG_USE_BLE_SERVER_REMOTE || CONFIG_USE_BLE_SERVER_SETTINGS
@@ -490,16 +494,6 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     }
 #endif
 
-#if CONFIG_USE_BLE_SERVER_PROXY
-    auto syncService = bleSyncService.configureService(bleManager->server());
-    BLEProxy::getInstance()->setPrefs(&prefs);
-    BLEProxy::getInstance()->configureCharacteristics(syncService);
-
-    if (!bleSyncService.start()) {
-        bootErrors.push_back({.type = BootError::Type::BLESync});
-    }
-#endif
-
 #if CONFIG_USE_BLE_SERVER_IMPROV
     // NOTE(john): It might make sense at some point to consolidate everything
     // as one service. However keeping these services separate for now allows us
@@ -520,7 +514,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 #endif
     HEAP_PROFILE_END(BLEServices);
 
-#if !CONFIG_DISABLE_POWER_MANAGEMENT
+#if !CONFIG_DISABLE_POWER_MANAGEMENT && defined(CONFIG_RTC_CLK_SRC_EXT_CRYS)
     if (rtc_clk_slow_freq_get() != RTC_SLOW_FREQ_32K_XTAL) {
         bootErrors.push_back({.type = BootError::Type::LowPowerOscillator});
     }
@@ -532,23 +526,20 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 
     auto showChargingScreen = []() {
         lightingController.setOverrideValuePercent(100);
-        auto chargingScreen = new ChargingScreen(prefs);
-        rootUi.setCurrentScreen(*chargingScreen);
-        UIInnerLoop(RemoteCommand::NONE);
+        auto chargingScreen = std::make_shared<ChargingScreen>(prefs);
+        rootUi.pushScreen(chargingScreen);
     };
 
-    powerManager.setStateChangeCallback([&showChargingScreen](PowerState state) {
+    powerManager.addStateChangeCallback(nullptr, [&showChargingScreen](PowerState state) {
         DispatchGetUiQueue()->dispatch([&showChargingScreen, state]() {
             if (state == PowerState::ActiveUSBCharging) {
                 showChargingScreen();
             } else if (state == PowerState::ActiveOverTemp) {
-                auto overTempScreen = new OverTempScreen();
-                rootUi.setCurrentScreen(*overTempScreen);
-                UIInnerLoop(RemoteCommand::NONE);
+                auto overTempScreen = std::make_shared<OverTempScreen>();
+                rootUi.pushScreen(overTempScreen);
             } else if (state == PowerState::ActiveBatteryDepleted) {
-                auto powerDepletedScreen = new PowerDepletedScreen();
-                rootUi.setCurrentScreen(*powerDepletedScreen);
-                UIInnerLoop(RemoteCommand::NONE);
+                auto powerDepletedScreen = std::make_shared<PowerDepletedScreen>();
+                rootUi.pushScreen(powerDepletedScreen);
             }
         });
     });
@@ -576,15 +567,56 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     });
 #endif
 
+    // Check if we should start in dark mode based on schedule
+    if (prefs.invertStartHour.get().has_value() || prefs.invertEndHour.get().has_value()) {
+        int startHour = prefs.invertStartHour.get().value_or(-1);
+        int endHour = prefs.invertEndHour.get().value_or(-1);
+        bool currentlyDark = prefs.darkMode.get().value_or(false);
+
+        // Get current hour (0-23)
+        time_t now = SolClock::getInstance().getEpochTime();
+        struct tm timeinfo = {};
+        localtime_r(&now, &timeinfo);
+        int currentHour = timeinfo.tm_hour;
+
+        bool shouldBeDark = currentlyDark; // Start with current state
+
+        if (startHour == -1) {
+            // Only end hour set - turn off dark mode if it's after end hour
+            if (currentHour >= endHour) {
+                shouldBeDark = false;
+            }
+        } else if (endHour == -1) {
+            // Only start hour set - turn off dark mode if it's before start hour
+            if (currentHour < startHour) {
+                shouldBeDark = false;
+            }
+        } else if (startHour < endHour) {
+            // Simple case: dark between start and end
+            // e.g., dark 8am (8) to 5pm (17)
+            shouldBeDark = (currentHour >= startHour && currentHour < endHour);
+        } else {
+            // Wraps around midnight
+            // e.g., dark 8pm (20) to 6am (6)
+            shouldBeDark = (currentHour >= startHour || currentHour < endHour);
+        }
+
+        if (shouldBeDark != currentlyDark) {
+            prefs.darkMode.set(shouldBeDark);
+            myDisplay.invertDisplay(shouldBeDark);
+            prefs.invertSetting.set(shouldBeDark);
+        }
+    }
+
     // Render the first thing
     DispatchGetUiQueue()->dispatch([showChargingScreen]() {
         if (powerManager.state() == PowerState::ActiveUSBCharging) {
             showChargingScreen();
         } else {
             HEAP_PROFILE_START(rootUISetup);
-            rootUi.setup(&myDisplay, localStore, fileSystem, lightingController);
+            rootUi.setup(localStore, fileSystem, lightingController);
             HEAP_PROFILE_END(rootUISetup);
-            UIInnerLoop(RemoteCommand::NONE);
+            rootUi.renderIfNeeded();
             log_i("First screen rendered after boot in %" PRIu64 " ms",
                   esp_timer_get_time() / 1000);
         }
@@ -620,9 +652,8 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
             DispatchGetUiQueue()->dispatch([]() {
                 // Override brightness to max
                 lightingController.setOverrideValuePercent(100);
-                auto testScreen = new TestAlignmentScreen();
-                rootUi.setCurrentScreen(*testScreen);
-                UIInnerLoop(RemoteCommand::NONE);
+                auto testScreen = std::make_shared<TestAlignmentScreen>();
+                rootUi.pushScreen(testScreen);
             });
             return true;
         } else if (command == "UP") {

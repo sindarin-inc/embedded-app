@@ -14,7 +14,7 @@
 
 class DemoScreen : public Screen {
 public:
-    DemoScreen(DisplaySystem &display, PreferencesStore &prefs);
+    DemoScreen(DisplaySystem &display, PreferencesStore &prefs, bool fullManifesto = false);
 
     void render(DisplaySystem &display) override;
     void processCommand(RemoteCommand command) override;
@@ -39,6 +39,10 @@ protected:
     unsigned int currentScreen_ = 0;
 
     unsigned int nextInterval_ = 0;
+
+    bool awaitingButton_ = false;
+
+    bool fullManifesto_ = false;
 
     DisplaySystem::UpdateType nextUpdateType_ = DisplaySystem::UpdateType::FULL;
 

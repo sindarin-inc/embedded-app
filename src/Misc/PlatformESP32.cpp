@@ -26,10 +26,13 @@
 #include "sindarin-debug.h"
 
 #define BACKLIGHT_PWM_CHANNEL 0
-#define HARDWARE_REVISION_LATEST 3
+#define HARDWARE_REVISION_LATEST 9
 
-adc_cali_handle_t adcCalHandle;
-adc_oneshot_unit_handle_t adcOneshotHandle;
+adc_cali_handle_t adcCalHandle = nullptr;
+adc_oneshot_unit_handle_t adcOneshotHandle = nullptr;
+adc_channel_t leftChannel;
+adc_channel_t rightChannel;
+
 bool ledcFailed = false;
 uint8_t sysOnPin;
 bool platformInitialized;
@@ -89,7 +92,7 @@ void HardwareInit() {
     }
 #endif
 
-#if CONFIG_USB_CONNECTED_PIN != GPIO_NUM_NC
+#if CONFIG_USB_CONNECTED_PIN != -1
     PinMode(CONFIG_USB_CONNECTED_PIN, INPUT);
 #endif
 
@@ -97,12 +100,13 @@ void HardwareInit() {
     DigitalWrite(CONFIG_GREEN_LED, LED_OFF);
     PinMode(CONFIG_RED_LED, OUTPUT);
     PinMode(CONFIG_GREEN_LED, OUTPUT);
-#ifdef CONFIG_BLUE_LED
+#if CONFIG_BLUE_LED != -1
     DigitalWrite(CONFIG_BLUE_LED, LED_OFF);
     PinMode(CONFIG_BLUE_LED, OUTPUT);
 #endif
 
-#if CONFIG_IDF_TARGET_ESP32S3
+#if CONFIG_IDF_TARGET_ESP32S3 && CONFIG_BAT_VOLTAGE_LEFT_PIN != -1 &&                              \
+    CONFIG_BAT_VOLTAGE_RIGHT_PIN != -1
     // Attenuation of 2.5db gets us up to a max of 1250mV
     // Using our 442k/160k divider, that's 4.7V max
     adc_cali_curve_fitting_config_t adcConfig;
@@ -115,7 +119,21 @@ void HardwareInit() {
     }
 
     adc_oneshot_unit_init_cfg_t adcOneshotCfg;
-    adcOneshotCfg.unit_id = ADC_UNIT_1;
+
+    // Assumes both batteries are on the same ADC unit
+#if CONFIG_BAT_VOLTAGE_LEFT_PIN != -1
+    if (adc_oneshot_io_to_channel(CONFIG_BAT_VOLTAGE_LEFT_PIN, &(adcOneshotCfg.unit_id),
+                                  &leftChannel) != ESP_OK) {
+        log_e("error getting adc channel for left battery");
+    }
+#endif
+#if CONFIG_BAT_VOLTAGE_RIGHT_PIN != -1
+    if (adc_oneshot_io_to_channel(CONFIG_BAT_VOLTAGE_RIGHT_PIN, &(adcOneshotCfg.unit_id),
+                                  &rightChannel) != ESP_OK) {
+        log_e("error getting adc channel for right battery");
+    }
+#endif
+
     adcOneshotCfg.clk_src = ADC_RTC_CLK_SRC_DEFAULT;
     adcOneshotCfg.ulp_mode = ADC_ULP_MODE_DISABLE;
 
@@ -125,8 +143,12 @@ void HardwareInit() {
     adcChanCfg.bitwidth = adcConfig.bitwidth;
     adcChanCfg.atten = adcConfig.atten;
 
-    ESP_ERROR_CHECK(adc_oneshot_config_channel(adcOneshotHandle, BATT_CHANNEL_LEFT, &adcChanCfg));
-    ESP_ERROR_CHECK(adc_oneshot_config_channel(adcOneshotHandle, BATT_CHANNEL_RIGHT, &adcChanCfg));
+#if CONFIG_BAT_VOLTAGE_LEFT_PIN != -1
+    ESP_ERROR_CHECK(adc_oneshot_config_channel(adcOneshotHandle, leftChannel, &adcChanCfg));
+#endif
+#if CONFIG_BAT_VOLTAGE_RIGHT_PIN != -1
+    ESP_ERROR_CHECK(adc_oneshot_config_channel(adcOneshotHandle, rightChannel, &adcChanCfg));
+#endif
 
 #endif
 
@@ -159,22 +181,26 @@ auto HardwareDeinit() -> esp_err_t {
     }
 
     // We need to shut down the ADC or else we consume ~1.6mA during deep sleep
-    err = adc_oneshot_del_unit(adcOneshotHandle);
-    if (err != ESP_OK) {
-        log_e("Failed to delete oneshot unit: %d", err);
+    if (adcOneshotHandle != nullptr) {
+        err = adc_oneshot_del_unit(adcOneshotHandle);
+        if (err != ESP_OK) {
+            log_e("Failed to delete oneshot unit: %d", err);
+        }
     }
 
-#if CONFIG_IDF_TARGET_ESP32S3
-    err = adc_cali_delete_scheme_curve_fitting(adcCalHandle);
-    if (err != ESP_OK) {
-        log_e("Failed to delete adc calibration scheme: %d", err);
+    if (adcCalHandle != nullptr) {
+        err = adc_cali_delete_scheme_curve_fitting(adcCalHandle);
+        if (err != ESP_OK) {
+            log_e("Failed to delete adc calibration scheme: %d", err);
+        }
     }
-#endif
 
+#if USE_I2C
     err = i2c_driver_delete(I2C_NUM_0);
     if (err != ESP_OK) {
         log_e("Failed to delete I2C driver with err %s", esp_err_to_name(err));
     }
+#endif
 
     return err;
 }
@@ -200,13 +226,24 @@ void DisableCore0Wdt() {
 }
 
 void InitializePlatform() {
-#if USE_SYS_ON
     auto hardwareRevision = GetHardwareRevision();
+#if CONFIG_USE_SYS_ON
     if (hardwareRevision == 1) {
         sysOnPin = 5;
     } else {
         sysOnPin = 46;
     }
+    // The MCU will keep itself on until the digital magnetometer detects the temples are closed, or
+    // there are 5 mins of inactivity
+    ForcePowerOn();
+#else
+    log_w("CONFIG_USE_SYS_ON is not set, MCU will not keep itself on");
+#endif
+
+#if CONFIG_DISPLAY_POWER != -1
+    PinMode(CONFIG_DISPLAY_POWER, OUTPUT);
+#endif
+#if CONFIG_LEDC_BACKLIGHT
     if (hardwareRevision < 3) {
         minLightingDutyCycle = 5;
         maxLightingDutyCycle = 60;
@@ -215,16 +252,6 @@ void InitializePlatform() {
         minLightingDutyCycle = 2;
         maxLightingDutyCycle = 210;
     }
-    // The MCU will keep itself on until the digital magnetometer detects the temples are closed, or
-    // there are 5 mins of inactivity
-    ForcePowerOn();
-#endif
-
-#if CONFIG_DISPLAY_EINKET013TT1
-#ifdef DISPLAY_POWER
-    PinMode(DISPLAY_POWER, OUTPUT);
-#endif
-#if CONFIG_LEDC_BACKLIGHT
     // This allows LEDC to work in light sleep on ESP32-S3
     esp_err_t err = esp_sleep_pd_config(ESP_PD_DOMAIN_RC_FAST, ESP_PD_OPTION_ON);
 
@@ -244,8 +271,9 @@ void InitializePlatform() {
         ledcFailed = true;
     }
 
+#if CONFIG_BACKLIGHT_LEFT != -1
     ledc_channel_config_t ledcLChannel = {
-        .gpio_num = BACKLIGHT_LEFT,
+        .gpio_num = CONFIG_BACKLIGHT_LEFT,
         .speed_mode = LEDC_LOW_SPEED_MODE,
         .channel = LEDC_CHANNEL_0,
         .intr_type = LEDC_INTR_DISABLE,
@@ -253,9 +281,15 @@ void InitializePlatform() {
         .duty = 0,
         .hpoint = 0 //
     };
-
+    err = ledc_channel_config(&ledcLChannel);
+    if (ledc_channel_config(&ledcLChannel) != ESP_OK) {
+        log_e("Error configuring left LEDC: %s", esp_err_to_name(err));
+        ledcFailed = true;
+    }
+#endif
+#if CONFIG_BACKLIGHT_RIGHT != -1
     ledc_channel_config_t ledcRChannel = {
-        .gpio_num = BACKLIGHT_RIGHT,
+        .gpio_num = CONFIG_BACKLIGHT_RIGHT,
         .speed_mode = LEDC_LOW_SPEED_MODE,
         .channel = LEDC_CHANNEL_1,
         .intr_type = LEDC_INTR_DISABLE,
@@ -263,19 +297,12 @@ void InitializePlatform() {
         .duty = 0,
         .hpoint = 0 //
     };
-
-    err = ledc_channel_config(&ledcLChannel);
-    if (ledc_channel_config(&ledcLChannel) != ESP_OK) {
-        log_e("Error configuring left LEDC: %s", esp_err_to_name(err));
-        ledcFailed = true;
-    }
-
     err = ledc_channel_config(&ledcRChannel);
     if (err != ESP_OK) {
         log_e("Error configuring right LEDC: %s", esp_err_to_name(err));
         ledcFailed = true;
     }
-
+#endif
     err = ledc_fade_func_install(0);
     if (err != ESP_OK) {
         log_e("Error installing LEDC fade function: %s", esp_err_to_name(err));
@@ -283,7 +310,6 @@ void InitializePlatform() {
         return;
     }
 #endif
-#endif // CONFIG_DISPLAY_EINKET013TT1
 
     // Configure the UART for reading (used for testing)
     const uart_config_t uartConfig = {
@@ -338,8 +364,9 @@ auto DeinitializePlatform() -> esp_err_t {
 // Forked from TinyPico's GetBatteryVoltage() method:
 // https://github.com/tinypico/tinypico-arduino/blob/master/TinyPICO-Helper/src/TinyPICO.cpp#L207
 auto GetBatteryVoltageLeft() -> float {
+#if CONFIG_BAT_VOLTAGE_LEFT_PIN != -1
     int raw;
-    if (adc_oneshot_read(adcOneshotHandle, BATT_CHANNEL_LEFT, &raw) != ESP_OK) {
+    if (adc_oneshot_read(adcOneshotHandle, leftChannel, &raw) != ESP_OK) {
         log_e("error reading raw adc value for left battery");
         return 0.0;
     }
@@ -349,13 +376,19 @@ auto GetBatteryVoltageLeft() -> float {
         log_e("error reading left battery voltage");
         return 0.0;
     }
-    auto mv = static_cast<float>(UPPER_DIVIDER + LOWER_DIVIDER) / LOWER_DIVIDER * millivolts;
+    auto mv =
+        static_cast<float>(CONFIG_BAT_VOLTAGE_UPPER_DIVIDER + CONFIG_BAT_VOLTAGE_LOWER_DIVIDER) /
+        CONFIG_BAT_VOLTAGE_LOWER_DIVIDER * millivolts;
     return static_cast<float>(mv) / 1000.0;
+#else
+    return 4.1;
+#endif
 }
 
 auto GetBatteryVoltageRight() -> float {
+#if CONFIG_BAT_VOLTAGE_RIGHT_PIN != -1
     int raw;
-    if (adc_oneshot_read(adcOneshotHandle, BATT_CHANNEL_RIGHT, &raw) != ESP_OK) {
+    if (adc_oneshot_read(adcOneshotHandle, rightChannel, &raw) != ESP_OK) {
         log_e("error reading raw adc value for right battery");
         return 0.0;
     }
@@ -365,8 +398,13 @@ auto GetBatteryVoltageRight() -> float {
         log_e("error reading left battery voltage");
         return 0.0;
     }
-    auto mv = static_cast<float>(UPPER_DIVIDER + LOWER_DIVIDER) / LOWER_DIVIDER * millivolts;
+    auto mv =
+        static_cast<float>(CONFIG_BAT_VOLTAGE_UPPER_DIVIDER + CONFIG_BAT_VOLTAGE_LOWER_DIVIDER) /
+        CONFIG_BAT_VOLTAGE_LOWER_DIVIDER * millivolts;
     return static_cast<float>(mv) / 1000.0;
+#else
+    return 4.1;
+#endif
 }
 
 void SetLeftScreenLight(int dutyCycle) {
@@ -460,7 +498,7 @@ auto GetRunTimeMs() -> uint32_t {
 }
 
 auto USBConnected() -> bool {
-#if CONFIG_USB_CONNECTED_PIN != GPIO_NUM_NC
+#if CONFIG_USB_CONNECTED_PIN != -1
     return DigitalRead(CONFIG_USB_CONNECTED_PIN);
 #else
     // No way to know if USB is connected on old boards. But it's probably not.
@@ -524,23 +562,34 @@ auto GetHardwareRevision() -> uint8_t {
         return HARDWARE_REVISION_LATEST;
     }
 
-    // Serial number starts with SOL01 where the `01` is the hardware revision. Turn those two ascii
-    // bytes into an int.
-    rev = (serialNumber[3] - '0') * 10 + (serialNumber[4] - '0');
+    // HANA reset our revision number to 01 in the build in January 2025, so we need to check for
+    // that case and treat it as a higher revision
+    if (serialNumber[3] == '0' && serialNumber[4] == '1' && serialNumber[5] == '2' &&
+        serialNumber[6] == '5') {
+        rev = 9;
+    } else {
+        // Serial number starts with SOL01 where the `01` is the hardware revision. Turn those two
+        // ascii bytes into an int.
+        rev = (serialNumber[3] - '0') * 10 + (serialNumber[4] - '0');
+    }
+
     log_d("Hardware revision: %d", rev.value());
     return rev.value();
 }
 
 void ForcePowerOn() {
+#if CONFIG_USE_SYS_ON
     gpio_reset_pin(static_cast<gpio_num_t>(sysOnPin));
     gpio_set_pull_mode(static_cast<gpio_num_t>(sysOnPin), GPIO_FLOATING);
     gpio_set_direction(static_cast<gpio_num_t>(sysOnPin), GPIO_MODE_OUTPUT);
     gpio_set_level(static_cast<gpio_num_t>(sysOnPin), 1);
     gpio_hold_en(static_cast<gpio_num_t>(sysOnPin));
     gpio_deep_sleep_hold_en();
+#endif
 }
 
 void AllowPowerOff() {
+#if CONFIG_USE_SYS_ON
     gpio_deep_sleep_hold_dis();
     gpio_hold_dis(static_cast<gpio_num_t>(sysOnPin));
 
@@ -554,4 +603,5 @@ void AllowPowerOff() {
 
     // pinMode(sysOnPin, OUTPUT);
     // DigitalWrite(sysOnPin, LOW);
+#endif
 }

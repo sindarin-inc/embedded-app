@@ -35,6 +35,7 @@ extern "C" {
 #endif
 
 #include <limits.h>
+#include <pthread.h>
 
 /*-----------------------------------------------------------
  * Port specific definitions.

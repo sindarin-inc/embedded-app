@@ -42,6 +42,9 @@ public:
     void dispatch(fp_t &&op);
     void dispatchFromISR(fp_t &&op);
 
+    // dispatch and wait for completion
+    void dispatchSync(fp_t &&op, TickType_t timeout = portMAX_DELAY);
+
     // Returns true if were' currently executing inside this queue
     auto isInQueue() -> bool;
 
@@ -53,6 +56,16 @@ public:
         // Only report the queue as not empty if it's not a quit signal that's queued
         return hasItem && !queued->quit;
     }
+    auto waitEmpty(TickType_t timeout) -> bool {
+        TickType_t startTime = xTaskGetTickCount();
+        while (uxQueueMessagesWaiting(q_) > 0) {
+            if (xTaskGetTickCount() - startTime >= timeout) {
+                return false;
+            }
+            vTaskDelay(pdMS_TO_TICKS(10));
+        }
+        return true;
+    }
 
     // Deleted operations
     DispatchQueue(const DispatchQueue &rhs) = delete;
@@ -62,8 +75,13 @@ public:
 
     // Fires up a task for only the purpose of running a single function.
     // Handy since you can use lambda captures with it.
-    static void dispatchOneOff(const fp_t &op, size_t threadStack = 1024, UBaseType_t priority = 5,
-                               BaseType_t core = 1, const char *name = "OneOff");
+    static auto dispatchOneOff(const fp_t &op, size_t threadStack, UBaseType_t priority,
+                               BaseType_t core, const char *name) -> bool;
+    // Like dispatchOneOff, but waits for the function to complete before returning. Useful for
+    // synchronously running things on other cores.
+    static auto dispatchOneOffSync(const fp_t &op, size_t threadStack, UBaseType_t priority,
+                                   BaseType_t core, const char *name,
+                                   TickType_t timeout = portMAX_DELAY) -> bool;
 
 private:
     std::string name_;

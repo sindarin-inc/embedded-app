@@ -6,6 +6,11 @@
 #include "Inputs/RemoteInput.hpp"
 #include "Storage/PreferencesStore.hpp"
 
+// Mock the time in SolClock
+void MockClock();
+
+void UnMockClock();
+
 // NOTE: If not running app_main from here, you need to have at least one task already created
 // before calling this API.
 void StartFreeRtos(bool runAppMain = false);
@@ -33,8 +38,8 @@ struct ViewTestResult {
 
 auto CheckViewUnchanged(DisplayEinkET013TT1 &display, std::string key) -> ViewTestResult;
 
-auto CheckViewUnchanged(std::shared_ptr<DisplayEinkET013TT1> display,
-                        std::string key) -> ViewTestResult;
+auto CheckViewUnchanged(std::shared_ptr<DisplayEinkET013TT1> display, std::string key)
+    -> ViewTestResult;
 
 #define ASSERT_VIEW_UNCHANGED(display, key) CHECK(CheckViewUnchanged(display, key).passed)
 
@@ -42,5 +47,5 @@ auto GetRootDisplay() -> DisplayEinkET013TT1 &;
 
 void SetupFileSystemMock(const std::string &directory);
 
-auto LoadJsonDoc(FileSystem &fileSystem,
-                 const std::string &path) -> std::unique_ptr<SpiRamJsonDocument>;
+auto LoadJsonDoc(FileSystem &fileSystem, const std::string &path)
+    -> std::unique_ptr<SpiRamJsonDocument>;

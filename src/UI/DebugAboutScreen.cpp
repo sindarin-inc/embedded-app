@@ -33,7 +33,7 @@ DebugAboutScreen::DebugAboutScreen(DisplaySystem &display)
     textViews_.emplace_back(std::make_shared<SingleLineTextView>(display, chipRevStr));
 }
 
-auto DebugAboutScreen::layout(LayoutContext &context, Size size) -> Size {
+auto DebugAboutScreen::layout(LayoutContext &context, SolSize size) -> SolSize {
     uint8_t yAdvance = 17;
 
     int x = 0;
@@ -52,7 +52,7 @@ auto DebugAboutScreen::layout(LayoutContext &context, Size size) -> Size {
     return size;
 }
 
-void DebugAboutScreen::drawInRect(Rect rect) {
+void DebugAboutScreen::drawInRect(SolRect rect) {
     for (auto &view : textViews_) {
         view->draw();
     }

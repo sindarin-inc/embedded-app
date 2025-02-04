@@ -13,8 +13,8 @@
 
 std::shared_ptr<BLEProxy> BLEProxy::instance = nullptr;
 
-auto BLEProxy::getInstance() -> std::shared_ptr<BLEProxy> {
-    if (instance == nullptr) {
+auto BLEProxy::getInstance(bool create) -> std::shared_ptr<BLEProxy> {
+    if (instance == nullptr && create) {
         instance = std::make_shared<BLEProxy>();
     }
     return instance;
@@ -115,8 +115,10 @@ void BLEProxy::sendChunk(const SpiramString &body, int chunkNumber, int numChunk
     SpiramString checksum = calculateChecksum(chunk);
     SpiramString value = SpiRamStringFormat("B=%d/%d-%s:%s", chunkNumber + 1, numChunks,
                                             checksum.c_str(), chunk.c_str());
-    // log_i("GATT client writing body chunk %d/%d: %s", chunkNumber + 1, numChunks, value.c_str());
-    log_i("GATT client writing body chunk %d/%d-%s", chunkNumber + 1, numChunks, checksum.c_str());
+    if (chunkNumber == 0 || chunkNumber == numChunks - 1) {
+        log_i("GATT client writing body chunk %d/%d: %zu bytes", chunkNumber + 1, numChunks,
+              sizeof(chunk));
+    }
     proxyCharacteristic_->setValue(value);
     proxyCharacteristic_->notify();
 }
@@ -128,6 +130,12 @@ auto BLEProxy::calculateChecksum(const SpiramString &body) -> SpiramString {
         // log_i("Checksumming %c (%d) = %d", c, c, checksum);
     }
     return SpiRamStringFormat("%02x", checksum);
+}
+
+void BLEProxy::acknowledgeKey(const SpiramString &key) {
+    log_i("Acknowledging key: %s", key.c_str());
+    proxyCharacteristic_->setValue(key + ".");
+    proxyCharacteristic_->notify();
 }
 
 #endif // CONFIG_USE_BLE_SERVER_PROXY

@@ -66,11 +66,40 @@ void DirectCommand::begin() {
             return true;
         } else if (command == "LOGGING_ON") {
             usbSerial_.enableLogging();
+            usbSerial_.setLogLevel(ESP_LOG_DEBUG);
             txLine(command);
             return true;
         } else if (command == "LOGGING_OFF") {
             usbSerial_.disableLogging();
             txLine(command);
+            return true;
+        } else if (command == "LOGLEVEL") {
+            if (payload.empty()) {
+                txLine("LOGLEVEL ERROR");
+                return true;
+            }
+            std::string level = payload;
+            std::transform(level.begin(), level.end(), level.begin(), ::toupper);
+
+            esp_log_level_t logLevel;
+            if (level == "NONE") {
+                logLevel = ESP_LOG_NONE;
+            } else if (level == "ERROR") {
+                logLevel = ESP_LOG_ERROR;
+            } else if (level == "WARN") {
+                logLevel = ESP_LOG_WARN;
+            } else if (level == "INFO") {
+                logLevel = ESP_LOG_INFO;
+            } else if (level == "DEBUG") {
+                logLevel = ESP_LOG_DEBUG;
+            } else if (level == "VERBOSE") {
+                logLevel = ESP_LOG_VERBOSE;
+            } else {
+                txLine("LOGLEVEL ERROR");
+                return true;
+            }
+            usbSerial_.setLogLevel(logLevel);
+            txLine(StringFormat("LOGLEVEL %s", level.c_str()));
             return true;
         } else if (command == "SERIAL") {
             txLine(StringFormat("SERIAL %s", GetSerialNumber().c_str()));
@@ -121,8 +150,14 @@ void DirectCommand::receiveTusbPortData(const std::shared_ptr<uint8_t[]> &data, 
     // Be sure we don't time out while receiving data
     powerManager_.feedInactivityTimer();
     if (passthroughDataFn_) {
-        DispatchGetCore0BackgroundQueue()->dispatch(
-            [this, data, length] { passthroughDataFn_(data, length); });
+        DispatchGetCore0BackgroundQueue()->dispatch([this, data, length] {
+            // Check again since the function could have become null while the queue was waiting
+            if (passthroughDataFn_ != nullptr) {
+                passthroughDataFn_(data, length);
+            } else {
+                log_e("Would have crashed on passthroughDataFn_");
+            }
+        });
     } else {
         for (int i = 0; i < length; i++) {
             if (data[i] == '\n') {
@@ -136,11 +171,12 @@ void DirectCommand::receiveTusbPortData(const std::shared_ptr<uint8_t[]> &data, 
         }
     }
 }
+
 void DirectCommand::pollHwUart() {
     // Handle debug commands early so that we can avoid sleep if necessary
     // Spend the rest of the time waiting for debug commands (that will probably never come)
-    uint8_t data[64];
 #if !SIMULATOR
+    uint8_t data[64];
     auto length = uart_read_bytes(UART_NUM_0, data, sizeof(data), 0);
     for (int i = 0; i < length; i++) {
         if (data[i] == '\n') {

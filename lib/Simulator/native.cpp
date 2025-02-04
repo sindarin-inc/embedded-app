@@ -312,14 +312,6 @@ auto main(int argc, char *argv[]) -> int {
     // Pre-initialize PreferencesStore to point to simprefs.ini
     prefs.begin("simprefs.ini");
 
-    // The FreeRTOS tick handler happens via SIGALRM, and it also kicks off preemptive task
-    // switching, which is not what we want on the main thread, since it's not a real FreeRTOS task.
-    // Just disable SIGALRM on this thread so that it only happens on FreeRTOS tasks.
-    sigset_t mask;
-    sigemptyset(&mask);
-    sigaddset(&mask, SIGALRM);
-    pthread_sigmask(SIG_BLOCK, &mask, NULL);
-
     // Start the FreeRTOS scheduler
     std::thread schedulerThread([]() {
         // ESP-IDF does `app_main` in a task as well. We need to do this so we can use

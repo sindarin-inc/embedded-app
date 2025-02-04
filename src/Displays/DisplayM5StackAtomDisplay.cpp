@@ -18,7 +18,7 @@ auto DisplayM5StackAtomDisplay::setup() -> bool {
 void DisplayM5StackAtomDisplay::updateDisplay(DisplaySystem::UpdateType updateType,
                                               bool clearFrameBuffer, int vcomNudge,
                                               DisplaySystem::UpdateType altUpdateType,
-                                              ScreenSide screen, Rect altRect) {
+                                              ScreenSide screen, SolRect altRect) {
     auto queue = DispatchGetUiQueue(false);
     if (queue == nullptr || !queue->isInQueue()) {
         log_w("updateDisplay called from outside the UI queue.");

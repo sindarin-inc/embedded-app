@@ -5,8 +5,8 @@
 class TxtTokenizer : public Tokenizer {
 
 public:
-    TxtTokenizer(DisplaySystem &display, DisplayRect &rect, Tokens &tokens, Pager &pager)
-        : Tokenizer(display, rect, tokens, pager) {}
+    TxtTokenizer(Font *font, DisplayRect &rect, Tokens &tokens, Pager &pager)
+        : Tokenizer(font, rect, tokens, pager) {}
     ~TxtTokenizer() override = default;
 
     [[nodiscard]] auto loadAndTokenizePage(StreamPlace fromPlace, bool backwards = false,

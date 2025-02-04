@@ -4,8 +4,8 @@
 
 #include "Misc/SpiramAllocator.hpp"
 
-auto ReadableDictionaryScreen::layout(LayoutContext &context, Size size) -> Size {
-    auto fullFrame = Rect::fromSize(size);
+auto ReadableDictionaryScreen::layout(LayoutContext &context, SolSize size) -> SolSize {
+    auto fullFrame = SolRect::fromSize(size);
     auto backgroundFrame = fullFrame.inset(0);
 
     context.setViewFrame(backgroundView_, backgroundFrame);
@@ -18,7 +18,7 @@ auto ReadableDictionaryScreen::layout(LayoutContext &context, Size size) -> Size
     return {size.width, size.height};
 };
 
-void ReadableDictionaryScreen::drawInRect(Rect rect) {
+void ReadableDictionaryScreen::drawInRect(SolRect rect) {
     backgroundView_.fillColor = display_.bg;
     backgroundView_.strokeColor = display_.fg;
     backgroundView_.draw();
@@ -49,7 +49,7 @@ void ReadableDictionaryScreen::render(DisplaySystem &display) {
 
     uint8_t darkPicturePercent = 0;
 
-    if (loadedChapterId_ != placeInReadable_->getHRef()) {
+    if (loadedChapterHref_ != placeInReadable_->getHRef()) {
         std::shared_ptr<TxtPlace> placeInDictionary = nullptr;
         rendererStream_ = renderer_.getStream();
         if (rendererStream_ == nullptr) {
@@ -93,7 +93,7 @@ void ReadableDictionaryScreen::render(DisplaySystem &display) {
         display.updateDisplay(DisplaySystem::UpdateType::FULL, true,
                               display.darkPictureVComAdj(darkPicturePercent));
     }
-    loadedChapterId_ = placeInReadable_->getHRef();
+    loadedChapterHref_ = placeInReadable_->getHRef();
 
     // Restore the renderer's rect
     renderer_.setRect(GetTextRectFromPrefs(display, prefs_));
@@ -108,16 +108,17 @@ void ReadableDictionaryScreen::processCommand(RemoteCommand command) {
     switch (command) {
     case RemoteCommand::UP:
         restoreRendererStream();
-        back();
         setNeedsRerender();
-        break;
+        back();
+        return;
     case RemoteCommand::ENTER:
     case RemoteCommand::RIGHT:
         if (atEnd_) {
             restoreRendererStream();
+            setNeedsRerender();
             back();
+            return;
         }
-
         setNeedsRerender();
         break;
     case RemoteCommand::BACK:

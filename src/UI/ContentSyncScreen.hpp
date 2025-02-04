@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Misc/CancelFlag.hpp"
+#include "Misc/PowerManager.hpp"
 #include "Misc/Telemetry.hpp"
 #include "Renderers/Renderer.hpp"
 #include "Storage/LocalStore.hpp"
@@ -16,12 +17,13 @@
 class ContentSyncScreen : public Screen, public EinkView {
 public:
     ContentSyncScreen(DisplaySystem &display, LocalStore &localStore, PreferencesStore &prefs,
-                      Telemetry &telemetry);
+                      Telemetry &telemetry, PowerManager &power);
+    ~ContentSyncScreen() override;
 
     void begin();
 
-    auto layout(LayoutContext &context, Size size) -> Size override;
-    void drawInRect(Rect rect) override;
+    auto layout(LayoutContext &context, SolSize size) -> SolSize override;
+    void drawInRect(SolRect rect) override;
 
     void render(DisplaySystem &display) override;
     void processCommand(RemoteCommand command) override;
@@ -30,6 +32,7 @@ protected:
     LocalStore &localStore_;
     PreferencesStore &prefs_;
     Telemetry &telemetry_;
+    PowerManager &power_;
     ContentSyncState state_;
     DisplaySystem::UpdateType nextUpdate_ = DisplaySystem::UpdateType::FULL;
     std::shared_ptr<CancelFlag> cancel_;

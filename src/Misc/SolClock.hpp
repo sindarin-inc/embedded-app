@@ -6,6 +6,7 @@
 #include <string>
 #include <unordered_map>
 
+#include "Misc/CancelFlag.hpp"
 #include "Storage/PreferencesStore.hpp"
 
 class SolClock {
@@ -15,6 +16,8 @@ public:
     SolClock(PreferencesStore &prefs) : timeSyncEventGroup_(xEventGroupCreate()), prefs_(prefs) {}
     SolClock(SolClock const &) = delete;
     ~SolClock() { vEventGroupDelete(timeSyncEventGroup_); }
+
+    auto isValidTime() -> bool { return getEpochTime() > 1000000000; }
 
     void begin() { loadTimeZone(); }
 
@@ -30,7 +33,8 @@ public:
     auto posixTimezoneString() -> std::string;
     void setTimezone(const std::string &ianaTimezone);
 
-    auto setClockTimeFromInternet() -> bool;
+    auto setClockTimeFromInternet(bool useWifi = true, bool useBle = false,
+                                  const std::shared_ptr<CancelFlag> &cancel = nullptr) -> bool;
 
     auto calculateNextSyncTime(time_t now) -> time_t;
 
@@ -41,4 +45,5 @@ protected:
     PreferencesStore &prefs_;
 
     void loadTimeZone();
+    auto configTimeSNTP() -> bool;
 };

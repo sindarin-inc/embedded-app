@@ -7,7 +7,6 @@
 #include "IconView.hpp"
 #include "Misc/Battery.hpp"
 #include "Misc/SolClock.hpp"
-#include "Misc/Style.hpp"
 #include "SingleLineTextView.hpp"
 #include "UI/Bitmaps/Battery_0.hpp"
 #include "UI/Bitmaps/Battery_10.hpp"
@@ -25,11 +24,13 @@
 // A view that draws a lockup of the battery and time
 class ClockBatteryView : public EinkView {
 public:
-    ClockBatteryView(Battery &battery, DisplaySystem &display)
+    ClockBatteryView(Battery &battery, DisplaySystem &display, PreferencesStore &prefs)
         : EinkView(display),
           batteryIconView_(display, BATTERY_0_BITS, battery_0_width, battery_0_height),
-          clockView_(display, ""), battery_(battery) {}
+          clockView_(display, ""), battery_(battery), prefs_(prefs) {}
     ~ClockBatteryView() override = default;
+
+    auto batteryLow() -> bool { return battery_.getBatteryPercentage() <= 37.0; }
 
     auto updateTime() {
         SolClock &theClock = SolClock::getInstance();
@@ -37,19 +38,37 @@ public:
         setNeedsLayout();
     }
 
-    auto layout(LayoutContext &context, Size size) -> Size override {
-        auto clockRect = context.setViewFrame(
-            clockView_, {{0, 0}, size}, LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical);
+    auto layout(LayoutContext &context, SolSize size) -> SolSize override {
+        SolRect clockRect = SolRect::zero();
+        SolRect batteryRect = SolRect::zero();
 
-        auto iconRect =
-            context.setViewFrame(batteryIconView_, {{clockRect.size.width + 20, 0}, size},
-                                 LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical);
+        int x = 0;
+        if (SolClock::getInstance().isValidTime()) {
+            clockRect =
+                context.setViewFrame(clockView_, {{0, 0}, size},
+                                     LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical);
+            x += clockRect.size.width;
+        }
 
-        return {clockRect.size.width + iconRect.size.width + 20,
-                std::max(clockRect.size.height, iconRect.size.height)};
+        if (!batteryLow_ && batteryLow()) {
+            batteryLow_ = true;
+        }
+
+        if (batteryLow_ || prefs_.alwaysShowBattery.get().value_or(false)) {
+            // Add a little padding between the clock and the battery if there is a clock
+            if (x != 0) {
+                x += 10;
+            }
+            batteryRect =
+                context.setViewFrame(batteryIconView_, {{x, 0}, size},
+                                     LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical);
+            x += batteryRect.size.width;
+        }
+
+        return {x, std::max(clockRect.size.height, batteryRect.size.height)};
     }
 
-    void drawInRect(Rect rect) override {
+    void drawInRect(SolRect rect) override {
 
         auto percent = battery_.getBatteryPercentage();
 
@@ -77,12 +96,25 @@ public:
             batteryIconView_.setIcon(BATTERY_0_BITS, battery_0_width, battery_0_height);
         }
 
-        batteryIconView_.draw();
-        clockView_.draw();
+        // Only show the battery and clock if the battery is low.
+        // We can probbaly do better than this.
+        if (batteryLow_ || prefs_.alwaysShowBattery.get().value_or(false)) {
+            batteryIconView_.draw();
+        }
+        if (SolClock::getInstance().isValidTime()) {
+            clockView_.draw();
+        }
     }
 
 protected:
     IconView batteryIconView_;
     SingleLineTextView clockView_;
     Battery &battery_;
+    // When the battery is right on the boundary, sometimes it'll report low on the first check
+    // but then later be above the threshold which looks weird when it goes back and forth.
+    // So in a session, if we see the battery low, we remember that we saw it low so we always
+    // draw it in that session.
+    bool batteryLow_ = false;
+
+    PreferencesStore &prefs_;
 };

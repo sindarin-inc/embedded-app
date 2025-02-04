@@ -54,7 +54,7 @@ void WiFiScanScreen::begin() {
     });
 }
 
-auto WiFiScanScreen::layout(LayoutContext &context, Size size) -> Size {
+auto WiFiScanScreen::layout(LayoutContext &context, SolSize size) -> SolSize {
     context.setViewFrame(statusView_, {{0, 0}, size},
                          LayoutOptionsSizeToFit | LayoutOptionsAlignCenter);
 
@@ -67,7 +67,7 @@ auto WiFiScanScreen::layout(LayoutContext &context, Size size) -> Size {
     return size;
 }
 
-void WiFiScanScreen::drawInRect(Rect rect) {
+void WiFiScanScreen::drawInRect(SolRect rect) {
     for (auto &view : networkViews_) {
         view.draw();
     }

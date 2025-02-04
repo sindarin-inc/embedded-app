@@ -10,6 +10,9 @@
 #include <ulp_riscv_i2c.h>
 #endif
 
+#if USE_BLE
+#include "Communications/BLEManager.hpp"
+#endif
 #include "Communications/WiFi.hpp"
 #include "Misc/Dispatch.hpp"
 #include "Platform.hpp"
@@ -233,9 +236,13 @@ auto PowerManager::inactivityTimeoutMs() -> int {
     } else if (state_ == PowerState::ActiveBatteryDepleted) {
         // Shutdown quickly if we're out of battery
         return 5 * 1000;
+    } else if (state_ == PowerState::Background) {
+        // Background inactivity timeout is 16 mins
+        return 16 * 60 * 1000;
     } else {
         // Normal inactivity timeout is 10 minutes
-        return prefs_.inactivityMinutes.get().value_or(DEFAULT_INACTIVITY_MINUTES) * 60 * 1000;
+        return prefs_.inactivityMinutes.get().value_or(CONFIG_DEFAULT_INACTIVITY_MINUTES) * 60 *
+               1000;
     }
 }
 
@@ -269,19 +276,20 @@ auto PowerManager::begin() -> esp_err_t {
     }
     err = esp_pm_configure(&pmConfig_);
 
-#if CONFIG_USB_CONNECTED_PIN != GPIO_NUM_NC
+#if CONFIG_USB_CONNECTED_PIN != -1
     attachInterrupt(
         digitalPinToInterrupt(CONFIG_USB_CONNECTED_PIN),
         [this]() {
         DispatchGetCore1BackgroundQueue()->dispatchFromISR([this]() {
             if (USBConnected()) {
                 // If USB is connected, disable operation unless we've disabled this behavior
-                if (!prefs_.allowUsageWhileCharging.get().value_or(false)) {
+                if (!prefs_.allowUsageWhileCharging.get().value_or(false) &&
+                    (state_ == PowerState::Active || state_ == PowerState::ActiveForcedOn)) {
                     log_i("USB connected, switching to ActiveUSBCharging");
                     state_ = PowerState::ActiveUSBCharging;
                     inactivityTimer_.setTimeoutMs(inactivityTimeoutMs());
-                    if (stateChangeCallback_ != nullptr) {
-                        stateChangeCallback_(state_);
+                    for (auto &callback : stateChangeCallbacks_) {
+                        callback.second(state_);
                     }
                 }
                 // USB is connected so disable light sleep
@@ -305,10 +313,17 @@ auto PowerManager::begin() -> esp_err_t {
 }
 
 void PowerManager::powerOff() {
+    if (xSemaphoreTake(mutex_, portMAX_DELAY) != pdTRUE) {
+        assert(false && "PM mutex_ Failure");
+    }
+
     this->telemetry_.logMetric(TelemetryField::METRIC_SHUTDOWN, "PowerOff");
 
     beginShutdown();
     powerOffInternal();
+    while (true) {
+        vTaskDelay(portMAX_DELAY);
+    }
 }
 
 void PowerManager::powerOffInternal() {
@@ -342,8 +357,8 @@ void PowerManager::loop() {
         if (state_ == PowerState::Active || state_ == PowerState::ActiveForcedOn) {
             state_ = PowerState::ActiveBatteryDepleted;
             inactivityTimer_.setTimeoutMs(inactivityTimeoutMs());
-            if (stateChangeCallback_ != nullptr) {
-                stateChangeCallback_(state_);
+            for (auto &callback : stateChangeCallbacks_) {
+                callback.second(state_);
             }
         } else {
             powerOff();
@@ -393,8 +408,8 @@ void PowerManager::loop() {
         log_e("Temperature is too high (%d)! Going to sleep.", temperature);
         state_ = PowerState::ActiveOverTemp;
         inactivityTimer_.setTimeoutMs(inactivityTimeoutMs());
-        if (stateChangeCallback_ != nullptr) {
-            stateChangeCallback_(state_);
+        for (auto &callback : stateChangeCallbacks_) {
+            callback.second(state_);
         }
     }
 
@@ -481,10 +496,20 @@ void PowerManager::releaseLED() {
 }
 
 void PowerManager::beginShutdown() {
+    // If shutdown hangs, then crash
+    TimerHandle_t abortTimer =
+        xTimerCreate("AbortTimer", pdMS_TO_TICKS(15000), pdFALSE, nullptr,
+                     [](TimerHandle_t xTimer) { assert(false && "Shutdown hung, aborting!"); });
+    if (abortTimer == nullptr) {
+        log_e("Failed to create abort timer");
+    } else if (xTimerStart(abortTimer, 0) != pdPASS) {
+        log_e("Failed to start abort timer");
+    }
+
     auto previousState = state_;
     state_ = PowerState::ShuttingDown;
-    if (stateChangeCallback_ != nullptr) {
-        stateChangeCallback_(state_);
+    for (auto &callback : stateChangeCallbacks_) {
+        callback.second(state_);
     }
 
     auto taskName = pcTaskGetName(nullptr);
@@ -494,6 +519,14 @@ void PowerManager::beginShutdown() {
 
     // Disconnect WiFi as a quick-and-dirty way to cancel long running syncs
     WiFi::getInstance().disconnectWiFi();
+#if USE_BLE
+    auto bleManager = BLEManager::getInstance(false);
+    if (bleManager != nullptr) {
+        bleManager->stopAdvertising();
+        bleManager->disconnectAllClients();
+        bleManager->disconnectProxy();
+    }
+#endif
 
     if (beginShutdownCallback_ != nullptr) {
         beginShutdownCallback_();
@@ -522,6 +555,12 @@ void PowerManager::beginShutdown() {
     }
     DispatchShutdown();
 
+#if CONFIG_DISPLAY_EINKET013TT1
+    // Force shutdown the screen
+    auto *driver = (dynamic_cast<DisplayEinkET013TT1 *>(&display_))->getDriver();
+    driver->shutdown();
+#endif
+
     // Make sure the ambient light sensor is off so it's not using power while in deep sleep
     lightingController_.shutdown(0);
 
@@ -536,12 +575,25 @@ void PowerManager::beginShutdown() {
     if (err != ESP_OK) {
         log_e("Failed to deinit hardware with err %s", esp_err_to_name(err));
     }
+
+    // At the end of the function, stop and delete the timer
+    if (abortTimer != nullptr) {
+        xTimerStop(abortTimer, 0);
+        xTimerDelete(abortTimer, 0);
+    }
 }
 
 void PowerManager::reboot() {
+    if (xSemaphoreTake(mutex_, portMAX_DELAY) != pdTRUE) {
+        assert(false && "PM mutex_ Failure");
+    }
+
     beginShutdown();
     usbSerial_.end();
     esp_restart();
+    while (true) {
+        vTaskDelay(portMAX_DELAY);
+    }
 }
 
 void PowerManager::scheduleSync(SyncReason reason, time_t time) {
@@ -552,6 +604,10 @@ void PowerManager::scheduleSync(SyncReason reason, time_t time) {
 }
 
 void PowerManager::deepSleep(SleepReason reason) {
+    if (xSemaphoreTake(mutex_, portMAX_DELAY) != pdTRUE) {
+        assert(false && "PM mutex_ Failure");
+    }
+
     this->telemetry_.logMetric(TelemetryField::METRIC_SHUTDOWN, ToString(reason));
 
 #if DISABLE_DEEP_SLEEP
@@ -564,15 +620,12 @@ void PowerManager::deepSleep(SleepReason reason) {
     time_t now = SolClock::getInstance().getEpochTime();
     switch (reason) {
     case SleepReason::Inactivity:
-        if (!prefs_.noDeliverOnClose.get().value_or(false) &&
-            state_ != PowerState::ActiveOverTemp) {
+        if (state_ != PowerState::ActiveOverTemp) {
             scheduleSync(SyncReason::OnInactivity, now + 30);
         }
         break;
     case SleepReason::TempleClosed:
-        if (!prefs_.noDeliverOnClose.get().value_or(false)) {
-            scheduleSync(SyncReason::OnClose, now + 30);
-        }
+        scheduleSync(SyncReason::OnClose, now + 30);
         break;
     case SleepReason::UpdateUSBState:
         if (USBConnected()) {
@@ -612,6 +665,9 @@ void PowerManager::deepSleep(SleepReason reason) {
 
     beginShutdown();
     deepSleepInternal(reason);
+    while (true) {
+        vTaskDelay(portMAX_DELAY);
+    }
 }
 
 auto ToString(SleepReason reason) -> const char * {
@@ -639,7 +695,7 @@ auto ToString(SleepReason reason) -> const char * {
 }
 
 auto PowerManager::enableUsbWakeup() -> esp_err_t {
-#if CONFIG_USB_CONNECTED_PIN != GPIO_NUM_NC
+#if CONFIG_USB_CONNECTED_PIN != -1
     esp_err_t err;
     if (USBConnected()) {
         err = esp_sleep_enable_ext0_wakeup(static_cast<gpio_num_t>(CONFIG_USB_CONNECTED_PIN), 0);

@@ -30,7 +30,7 @@ static constexpr bool REND_ON_ERROR_EXIT = true;
 #define REND_ELOG(f, ...)                                                                          \
     {                                                                                              \
         log_e(f, ##__VA_ARGS__);                                                                   \
-        exit(1);                                                                                   \
+        assert(false && "REND_ELOG");                                                              \
     }
 #else
 static constexpr bool REND_ON_ERROR_EXIT = false;

@@ -18,17 +18,15 @@ public:
     void processCommand(RemoteCommand command) override;
     void render(DisplaySystem &display) override;
 
-    auto layout(LayoutContext &context, Size size) -> Size override;
-    void drawInRect(Rect rect) override;
+    auto layout(LayoutContext &context, SolSize size) -> SolSize override;
+    void drawInRect(SolRect rect) override;
 
-    void setFirstLoad() { firstLoad_ = true; }
-    void logTelemetry(int setting, const char *direction);
+    void logTelemetry(int setting, std::string direction);
 
 protected:
     PreferencesStore &prefs_;
     LightingController &lightingController_;
     Telemetry &telemetry_;
-    bool firstLoad_ = true;
 
     // Subviews
     IconView lightbulbView_;

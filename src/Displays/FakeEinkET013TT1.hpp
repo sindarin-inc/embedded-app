@@ -28,7 +28,7 @@
 class EinkET013TT1 {
 public:
     // Constructor. Nothing interesting happens here until init()
-    EinkET013TT1(uint8_t csLeft, uint8_t csRight, uint8_t rst) {
+    EinkET013TT1() {
         particlePositions_ =
             std::make_unique<uint8_t[]>(EinkET013TT1_PIXEL_WIDTH * EinkET013TT1_PIXEL_HEIGHT);
     };
@@ -83,6 +83,8 @@ public:
     void setSkipSignalling(bool skip) { skipSignalling_ = skip; }
 
     auto getBuffer() const -> const uint8_t * { return previousBuffer_; }
+
+    void shutdown() {}
 
 protected:
     // Simulated positions of the eink particles rendered as 8-bit grayscale

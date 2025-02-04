@@ -75,7 +75,7 @@ Issues that will be fixed automatically will be fixed by clang-tidy, warnings wi
 
 The simulator compiles in <20s from a clean build, and even less on an incremental build. This makes it fast for us to iterate on anything that doesn't need the physical hardware.
 
-You'll need SDL2, openssl, freetype, and mbedtls for it to work: `brew install sdl2 openssl freetype mbedtls` (on Ubuntu `sudo apt install libsdl2-dev libssl-dev libfreetype-dev libmbedtls-dev`). Then you can run `make sim` to run it (or `make sim8` for the high-res version). After building once, you can also debug with lldb at the command line: `lldb lib/Simulator/build/simulator`.
+You'll need SDL2, openssl, and freetype for it to work: `brew install sdl2 openssl freetype` (on Ubuntu `sudo apt install libsdl2-dev libssl-dev libfreetype-dev`). Then you can run `make sim` to run it (or `make sim8` for the high-res version). After building once, you can also debug with lldb at the command line: `lldb lib/Simulator/build/simulator`.
 
 ### Extract your Sol cloud access token to download content onto the Simulator
 

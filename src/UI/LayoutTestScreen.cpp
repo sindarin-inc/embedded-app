@@ -1,6 +1,6 @@
 #include "LayoutTestScreen.hpp"
 
-auto LayoutTestScreen::layout(LayoutContext &context, Size size) -> Size {
+auto LayoutTestScreen::layout(LayoutContext &context, SolSize size) -> SolSize {
     // inset all around by 2px
     int x = 2;
     int y = 2;
@@ -18,7 +18,7 @@ auto LayoutTestScreen::layout(LayoutContext &context, Size size) -> Size {
     auto rightColumnRect = context.setSublayoutFrame(
         {{x, 0}, {size.width - x, size.height}},
         LayoutOptionsSizeToFitVertical | LayoutOptionsAlignCenterVertical,
-        [this](LayoutContext &context, Size size) -> Size {
+        [this](LayoutContext &context, SolSize size) -> SolSize {
             int x = 0;
             int y = 0;
 
@@ -42,7 +42,7 @@ auto LayoutTestScreen::layout(LayoutContext &context, Size size) -> Size {
             // Create a sublayout with some horizontal elements
             auto sublayoutRect = context.setSublayoutFrame(
                 {{x, y}, {textWidth, 10}}, LayoutOptionsSizeToFit,
-                [this](LayoutContext &context, Size size) -> Size {
+                [this](LayoutContext &context, SolSize size) -> SolSize {
                     int x = 0;
                     int y = 0;
 
@@ -58,7 +58,7 @@ auto LayoutTestScreen::layout(LayoutContext &context, Size size) -> Size {
                         box2_, {10, 10}, {{x, y}, {size.width - x, 10}}, LayoutOptionsAlignRight);
                     y += box2Rect.size.height;
 
-                    return Size{size.width, y};
+                    return SolSize{size.width, y};
                 });
 
             y += sublayoutRect.size.height + 2;
@@ -79,7 +79,7 @@ auto LayoutTestScreen::layout(LayoutContext &context, Size size) -> Size {
     return {size.width, std::max(rightColumnRect.size.height, iconRect.size.height)};
 };
 
-void LayoutTestScreen::drawInRect(Rect rect) {
+void LayoutTestScreen::drawInRect(SolRect rect) {
     iconView_.draw();
     topView_.draw();
     bottomView_.draw();

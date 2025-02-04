@@ -38,17 +38,18 @@ add_subdirectory(${REPO_ROOT_DIR}/components/miniz ${CMAKE_CURRENT_BINARY_DIR}/m
 
 add_subdirectory(${REPO_ROOT_DIR}/components/Adafruit-GFX-Library ${CMAKE_CURRENT_BINARY_DIR}/Adafruit-GFX-Library)
 
+add_subdirectory(${REPO_ROOT_DIR}/lib/esp_ringbuf ${CMAKE_CURRENT_BINARY_DIR}/esp_ringbuf)
+
+# Before adding mbedtls, set options to disable tests and programs
+set(ENABLE_TESTING OFF CACHE BOOL "Disable mbedtls tests" FORCE)
+set(ENABLE_PROGRAMS OFF CACHE BOOL "Disable mbedtls programs" FORCE)
+add_subdirectory(${REPO_ROOT_DIR}/lib/mbedtls ${CMAKE_CURRENT_BINARY_DIR}/mbedtls)
+
 add_library(${PROJECT_NAME} STATIC ${SOURCES})
 
 find_package(Freetype REQUIRED)
 
-# Make find_package(mbedtls) to work since Findmbedtls.cmake is in this dir
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}")
-
-message("CMAKE_MODULE_PATH: ${CMAKE_MODULE_PATH}")
-find_package(mbedtls REQUIRED)
-
-target_link_libraries(${PROJECT_NAME} PUBLIC pugixml ArduinoJson miniz astubs esp-idf-stubs nvs_flash Adafruit-GFX-Library Freetype::Freetype ${MBEDTLS_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} PUBLIC pugixml ArduinoJson miniz astubs esp-idf-stubs nvs_flash Adafruit-GFX-Library Freetype::Freetype mbedtls mbedx509 mbedcrypto esp_ringbuf)
 
 target_include_directories(${PROJECT_NAME} PUBLIC
     "${REPO_ROOT_DIR}/src"
@@ -58,7 +59,6 @@ target_include_directories(${PROJECT_NAME} PUBLIC
     "${REPO_ROOT_DIR}/lib/inifile"
     "${REPO_ROOT_DIR}/lib/stb_image"
     "${REPO_ROOT_DIR}/lib/argparse"
-    "${MBEDTLS_INCLUDE_DIRS}"
 )
 
 # Set compile definitions based on the ENABLE_8BIT_DISPLAY option
@@ -83,6 +83,7 @@ target_compile_definitions(${PROJECT_NAME} PUBLIC
     CONFIG_USE_BLE_SERVER_REMOTE=0
     CONFIG_USE_BLE_SERVER_SETTINGS=0
     CONFIG_USE_BLE_SERVER_IMPROV=0
+    CONFIG_USE_BLE_SERVER_PROXY=0
     CONFIG_RED_LED=7
     CONFIG_GREEN_LED=6
     CONFIG_BLUE_LED=18
@@ -93,6 +94,8 @@ target_compile_definitions(${PROJECT_NAME} PUBLIC
     CONFIG_TOKENS_SIZE=500
     CONFIG_MAX_BYTES_PER_LINE=200
     CONFIG_LINES_SIZE=36
+    CONFIG_FACTORY_RESET_BUTTON_PIN=-1
+    # SIM_LAYOUT_DEBUG=1
     ENABLE_OTA=0
     GIT_VERSION=\"release/v1.0.0-3-geea60cbf-dirt\"
     DISABLE_LOW_VOLTAGE_HALT=1
@@ -100,6 +103,8 @@ target_compile_definitions(${PROJECT_NAME} PUBLIC
     RTC_SLOW_ATTR=
     RTC_NOINIT_ATTR=
     CONFIG_TTF_SCREEN_RES_PER_INCH=150
+    CONFIG_DEFAULT_INACTIVITY_MINUTES=10
+    CONFIG_DISPLAY_POWER=-1
 )
 
 target_compile_options(${PROJECT_NAME}
@@ -124,3 +129,23 @@ endif()
 if(DEFINED SIM_ONE_BIT)
     add_compile_definitions(SIM_ONE_BIT=${SIM_ONE_BIT})
 endif()
+
+# This should mirror the compile options used for the ESP-IDF build
+target_compile_options(${PROJECT_NAME} PRIVATE
+    -Wall
+    -Werror=all
+    -Wno-error=unused-function
+    -Wno-error=unused-variable
+    -Wno-error=unused-but-set-variable
+    -Wno-error=deprecated-declarations
+    -Wextra
+    -Wno-unused-parameter
+    -Wno-sign-compare
+    -Wno-enum-conversion
+    -Wno-unknown-pragmas
+    -Wno-missing-field-initializers
+
+    # Some things that fail in the sim build but not esp-idf
+    -Wno-comment
+    -Wno-deprecated-copy
+)

@@ -7,8 +7,8 @@
 
 #define HEIGHT_EVEN(x) ((((x) % 2 == 0) ? (x) : ((x) + 1)))
 
-auto ReadableSummaryScreen::layout(LayoutContext &context, Size size) -> Size {
-    auto fullFrame = Rect::fromSize(size);
+auto ReadableSummaryScreen::layout(LayoutContext &context, SolSize size) -> SolSize {
+    auto fullFrame = SolRect::fromSize(size);
     log_d("ReadableSummaryScreen layout: %d x %d", size.width, size.height);
     log_d("full frame is %d %d %d %d", fullFrame.origin.x, fullFrame.origin.y, fullFrame.size.width,
           fullFrame.size.height);
@@ -28,7 +28,7 @@ auto ReadableSummaryScreen::layout(LayoutContext &context, Size size) -> Size {
     return size;
 }
 
-void ReadableSummaryScreen::drawInRect(Rect rect) {
+void ReadableSummaryScreen::drawInRect(SolRect rect) {
     backgroundView_.fillColor = display_.bg;
     backgroundView_.strokeColor = display_.fg;
     backgroundView_.draw();
@@ -124,9 +124,9 @@ void ReadableSummaryScreen::processCommand(RemoteCommand command) {
     switch (command) {
     case RemoteCommand::UP:
         restoreRendererStream();
-        back();
         setNeedsRerender();
-        break;
+        back();
+        return;
     case RemoteCommand::DOWN:
         showUnread_ = !showUnread_;
         preservePlace_ = prevPlace_;
@@ -137,7 +137,9 @@ void ReadableSummaryScreen::processCommand(RemoteCommand command) {
     case RemoteCommand::RIGHT:
         if (atEnd_) {
             restoreRendererStream();
+            setNeedsRerender();
             back();
+            return;
         }
 
         setNeedsRerender();

@@ -2,7 +2,6 @@
 
 #include "Renderers/Renderer.hpp"
 #include "Storage/PreferencesStore.hpp"
-#include "UI/ContainerScreen.hpp"
 #include "UI/LineMenuScreen.hpp"
 
 enum TutorialScreenBitsDeleted {
@@ -14,7 +13,7 @@ enum TutorialScreenBitsDeleted {
     TUTORIAL_SCREEN_SYSTEM_SETTINGS = 1 << 5
 };
 
-class TutorialScreen : public ContainerScreen {
+class TutorialScreen : public Screen {
 public:
     TutorialScreen(DisplaySystem &display, PreferencesStore &prefs, SpiramString text, int bit);
 
@@ -26,6 +25,8 @@ protected:
     Renderer renderer_;
     PreferencesStore &prefs_;
     LineMenuScreen menu_;
+
+    bool inMenu_ = false;
 
     std::shared_ptr<Place> place_, newPlace_;
 

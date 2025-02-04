@@ -23,7 +23,6 @@
 #endif
 
 static constexpr int MAX_OPERATIONAL_TEMPERATURE_C = 50;
-static constexpr int DEFAULT_INACTIVITY_MINUTES = 10;
 
 enum class PowerState {
     Booting,
@@ -196,7 +195,7 @@ public:
                  Telemetry &telemetry, USBSerial &usbSerial)
         : battery(fileSystem, prefs, telemetry), prefs_(prefs),
           lightingController_(lightingController), display_(display), telemetry_(telemetry),
-          usbSerial_(usbSerial), magSensor_(0) {}
+          usbSerial_(usbSerial), magSensor_(0), mutex_(xSemaphoreCreateMutex()) {}
 
     PowerManager(const PowerManager &) = delete;
 
@@ -207,28 +206,30 @@ public:
 
     auto forceOn() -> void { state_ = PowerState::ActiveForcedOn; }
     auto disableForceOn() -> void { state_ = PowerState::Active; }
+    auto forceBackground() -> void { state_ = PowerState::Background; }
 
     auto debugDisableLightSleep() -> void;
     auto debugEnableLightSleep() -> void;
 
     auto state() -> PowerState { return state_; }
 
-    void setStateChangeCallback(std::function<void(PowerState)> callback) {
-        stateChangeCallback_ = std::move(callback);
+    void addStateChangeCallback(void *key, std::function<void(PowerState)> callback) {
+        stateChangeCallbacks_[key] = std::move(callback);
     }
+    void removeStateChangeCallback(void *key) { stateChangeCallbacks_.erase(key); }
 
     void setBeginShutdownCallback(const std::function<void()> &callback) {
         beginShutdownCallback_ = callback;
     }
 
     // Power lifecycle functions
-    void reboot();
-    void deepSleep(SleepReason reason);
+    void __attribute__((noreturn)) reboot();
+    void __attribute__((noreturn)) deepSleep(SleepReason reason);
     // Fully power down the device (assuming USB is disconnected and left temple closed)
     // Note: This should be used sparingly as it's unintuitive to the user if you get into
     // this state and USB is connected, since the deep-sleep-forever won't exit until usb is
     // disconnected and the left temple is closed
-    void powerOff();
+    void __attribute__((noreturn)) powerOff();
 
     void feedInactivityTimer() { inactivityTimer_.feed(); }
     void disableInactivityTimer() { inactivityTimer_.pause(); }
@@ -268,7 +269,7 @@ public:
 protected:
     PreferencesStore &prefs_;
     PowerState state_ = PowerState::Booting;
-    std::function<void(PowerState)> stateChangeCallback_;
+    std::unordered_map<void *, std::function<void(PowerState)>> stateChangeCallbacks_;
     std::function<void()> beginShutdownCallback_;
     LightingController &lightingController_;
     DisplaySystem &display_;
@@ -285,6 +286,8 @@ protected:
     esp_pm_lock_handle_t usbPowerLightSleepLock_ = nullptr;
     esp_pm_lock_handle_t debugCommandLightSleepLock_ = nullptr;
 #endif
+    SemaphoreHandle_t mutex_;
+
     void updateState();
 
     auto isTempleOpen(bool &open) -> esp_err_t;

@@ -30,7 +30,7 @@ public:
                        bool clearFrameBuffer = true, int vcomNudge = 0,
                        DisplaySystem::UpdateType altUpdateType = UNSPECIFIED,
                        ScreenSide screen = ScreenSide::Both,
-                       Rect altRect = {{0, 0}, {0, 0}}) override;
+                       SolRect altRect = {{0, 0}, {0, 0}}) override;
 
 protected:
     [[nodiscard]] auto nativeWidth() const -> uint16_t override { return SHARP_27IN_X_PIXELS; }

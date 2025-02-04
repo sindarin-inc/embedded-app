@@ -95,7 +95,7 @@ void EPubOpf::extractPath(const char *fname, std::string &path) {
     }
 }
 
-auto EPubOpf::getSpineIdx(const std::string &href) const -> SpineIdx {
+auto EPubOpf::getSpineIdx(const std::string_view &href) const -> SpineIdx {
     for (SpineIdx spineIdx = 0;
          spineIdx <
          std::min(spine_.size(), static_cast<size_t>(std::numeric_limits<SpineIdx>::max()));
@@ -107,7 +107,7 @@ auto EPubOpf::getSpineIdx(const std::string &href) const -> SpineIdx {
     return -1;
 }
 
-auto EPubOpf::getChapterIdx(const std::string &href) const -> ChapterIdx {
+auto EPubOpf::getChapterIdx(const std::string_view &href) const -> ChapterIdx {
     SpineIdx spineIdx = getSpineIdx(href);
     if (spineIdx == -1) {
         return -1;
@@ -132,7 +132,7 @@ auto EPubOpf::getChapterFirstSpineIdx(SpineIdx spineIdx) const -> SpineIdx {
     return chapterSpineIdx;
 }
 
-auto EPubOpf::getChapterFirstHref(const std::string &spineHRef) const -> std::string {
+auto EPubOpf::getChapterFirstHref(const std::string_view &spineHRef) const -> std::string {
     auto spineIdx = getSpineIdx(spineHRef);
     auto chapterSpineIdx = getChapterFirstSpineIdx(spineIdx);
     return static_cast<std::string>(getSpine(chapterSpineIdx).item->href);
@@ -144,15 +144,15 @@ auto EPubOpf::exists(const std::string &id) const -> bool {
     return manifest_.find(static_cast<SpiramString>(id)) != manifest_.end();
 }
 
-auto EPubOpf::getHrefByManifestId(const std::string &manifestId) const -> std::string {
+auto EPubOpf::getHrefByManifestId(const std::string &manifestId) const -> std::string_view {
     auto it = manifest_.find(static_cast<SpiramString>(manifestId));
     if (it != manifest_.end()) {
-        return static_cast<std::string>(it->second.href);
+        return it->second.href;
     }
     return "";
 }
 
-auto EPubOpf::getManifestIdByHref(const std::string &href) const -> std::string {
+auto EPubOpf::getManifestIdByHref(const std::string_view &href) const -> std::string {
     for (auto &item : manifest_) {
         if (item.second.href == href) {
             return static_cast<std::string>(item.first);

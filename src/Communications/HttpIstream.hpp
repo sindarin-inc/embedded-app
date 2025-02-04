@@ -2,40 +2,39 @@
 
 #include <algorithm>
 #include <esp_http_client.h>
+#include <functional>
 #include <istream>
 #include <streambuf>
+#include <utility>
+#include <vector>
 
 #include "Misc/SpiramAllocator.hpp"
 #include "sindarin-debug.h"
 
 template <std::size_t BUFFER_SIZE = BUFSIZ>
-class HttpStreambuf : public std::streambuf {
+class HttpIStreambuf : public std::streambuf {
 public:
-    HttpStreambuf(esp_http_client_handle_t client) : client_(client) {
+    HttpIStreambuf(std::function<size_t(char *, size_t)> readFunc)
+        : readFunc_(std::move(readFunc)) {
         buffer_ =
             static_cast<char *>(SpiRamMalloc(std::max(static_cast<int>(BUFFER_SIZE), BUFSIZ)));
         setg(buffer_, buffer_, buffer_);
     }
 
-    ~HttpStreambuf() override { SpiRamFree(buffer_); }
+    ~HttpIStreambuf() override { SpiRamFree(buffer_); }
 
 private:
     char *buffer_;
-    esp_http_client_handle_t client_;
+    std::function<size_t(char *, size_t)> readFunc_;
 
     auto underflow() -> int_type override {
-        if (gptr() < egptr()) {
-            return *gptr();
-        }
-
-        char *buffer = eback();
-        int readLength = esp_http_client_read(client_, buffer, BUFSIZ);
-
+        auto readLength = readFunc_(buffer_, BUFFER_SIZE);
         if (readLength <= 0) {
             return traits_type::eof();
         }
 
-        setg(buffer, buffer, buffer + readLength);
+        setg(buffer_, buffer_, buffer_ + readLength);
+
         return *gptr();
     }
 };
@@ -43,8 +42,9 @@ private:
 template <std::size_t BUFFER_SIZE = BUFSIZ>
 class HttpIstream : public std::istream {
 public:
-    HttpIstream(esp_http_client_handle_t client) : std::istream(&buf_), buf_(client) {}
+    HttpIstream(std::function<size_t(char *, size_t)> readFunc)
+        : std::istream(&buf_), buf_(readFunc) {}
 
 private:
-    HttpStreambuf<BUFFER_SIZE> buf_;
+    HttpIStreambuf<BUFFER_SIZE> buf_;
 };

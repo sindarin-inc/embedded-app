@@ -6,10 +6,12 @@
 #include <streambuf>
 #include <thread>
 
+#include "Communications/WiFi.hpp"
 #include "Misc/Battery.hpp"
 #include "Misc/Defer.hpp"
 #include "Storage/LocalStore.hpp"
 #include "Storage/PosixFileSystem.hpp"
+#include "Storage/SolDrm.hpp"
 #include "ViewTestCommon.hpp"
 
 std::string loadMockResponse(const std::string &filepath) {
@@ -85,18 +87,24 @@ TEST_CASE("Run a basic content sync", "[.][content-sync]") {
     battery.loop();
     auto api = SindarinAPI::getInstance();
     api->overrideBaseUrl("http://localhost:55011");
+    SolDrm solDrm(prefs);
 
-    LocalStore localStore(fs, prefs, battery, telemetry);
+    LocalStore localStore(fs, prefs, battery, telemetry, solDrm);
 
     ContentSyncState lastState;
-    DispatchQueue::dispatchOneOff([&lastState, &localStore]() {
+    auto cancel = std::make_shared<CancelFlag>();
+
+    DispatchQueue::dispatchOneOff(
+        [&lastState, &localStore, cancel]() {
         // This needs to run in a task to have things like Delay work
-        localStore.syncFromRemote(SyncReason::Manual, nullptr,
+        WiFi::getInstance().connectWiFiFromSettings();
+        localStore.syncFromRemote(true, false, SyncReason::Manual, nullptr,
                                   [&lastState](ContentSyncState state) {
-            log_i("Test sync state: %d", state.state);
+            log_i("Test sync state: %d %s", state.state, state.usedBle ? "(used BLE)" : "");
             lastState = state;
         });
-    });
+        },
+        8192, 1, 1, "contentsync");
 
     StartFreeRtos();
     std::shared_ptr<httplib::Server> server;

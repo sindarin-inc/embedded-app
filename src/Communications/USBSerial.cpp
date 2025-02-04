@@ -1,13 +1,13 @@
 #include "Communications/USBSerial.hpp"
 
-#include <esp_log.h>
 #include <esp_system.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 
 #include "Misc/SpiramAllocator.hpp"
 
-RTC_NOINIT_ATTR bool USBSerial::loggingEnabled;
+RTC_NOINIT_ATTR bool USBSerial::usbLoggingEnabled;
+RTC_NOINIT_ATTR esp_log_level_t USBSerial::logLevel;
 
 extern USBSerial usbSerial;
 
@@ -27,13 +27,13 @@ void USBSerial::initJtag() {
 }
 
 void USBSerial::disableLogging() {
-    if (USBSerial::loggingEnabled) {
+    if (USBSerial::usbLoggingEnabled) {
         log_i("Disabling logging");
 #if CONFIG_USE_TINYUSB_SERIAL
         esp_tusb_deinit_console(TINYUSB_CDC_ACM_1); // turn off log to usb
         tusb_cdc_acm_deinit(TINYUSB_CDC_ACM_1);
 #endif
-        USBSerial::loggingEnabled = false;
+        USBSerial::usbLoggingEnabled = false;
     }
 }
 
@@ -41,25 +41,22 @@ void USBSerial::enableLoggingInternal() {
 #if CONFIG_USE_TINYUSB_SERIAL
     esp_tusb_init_console(TINYUSB_CDC_ACM_1);
 #endif
-    // Configure log level for all Sindarin logs
-    // esp_log_level_set("*", static_cast<esp_log_level_t>(CONFIG_LOG_DEFAULT_LEVEL));
-    esp_log_level_set("Sol", ESP_LOG_DEBUG);
 
     log_i("Logging enabled (level=%d)", esp_log_level_get("Sol"));
-    USBSerial::loggingEnabled = true;
+    USBSerial::usbLoggingEnabled = true;
 }
 
 void USBSerial::enableLogging() {
-    if (!USBSerial::loggingEnabled) {
+    if (!USBSerial::usbLoggingEnabled) {
         enableLoggingInternal();
     }
 }
 
+#if CONFIG_USE_TINYUSB_SERIAL
 // This is the main callback for the USB serial port that is used for commands.
 // It reads from the port and then processes the data and sends the command to the
 // DirectCommand class for processing.
 void USBSerial::rxCommandCallback(int itf, cdcacm_event_t *event) {
-#if CONFIG_USE_TINYUSB_SERIAL
     size_t rxSize = 0;
 
     auto buffer = SpiRamArrayPtr<uint8_t>(CONFIG_TINYUSB_CDC_RX_BUFSIZE + 1);
@@ -74,8 +71,8 @@ void USBSerial::rxCommandCallback(int itf, cdcacm_event_t *event) {
             listener(buffer, rxSize);
         }
     }
-#endif
 }
+#endif
 
 void USBSerial::registerListener(const SerialDataListener &listener) {
     listeners_.push_back(listener);
@@ -114,7 +111,8 @@ void USBSerial::txSendLine(const std::string &str) {
 void USBSerial::begin() {
     // Since we don't otherwise init this variable, we do it here on power on
     if (esp_reset_reason() == ESP_RST_POWERON) {
-        USBSerial::loggingEnabled = false;
+        USBSerial::usbLoggingEnabled = false;
+        USBSerial::logLevel = ESP_LOG_INFO;
     }
 
 #if CONFIG_USE_TINYUSB_SERIAL
@@ -154,7 +152,7 @@ void USBSerial::begin() {
     ESP_ERROR_CHECK(tusb_cdc_acm_init(&acmCfg2));
 #endif
 
-#if SIMULATOR
+#if 0
     log_d("About to make a pseudo-serial port in the simulator");
     // In the simulator, we create a pseudo-serial port for testing
     serialPort_ = std::make_unique<AsyncPseudoSerialPort>();
@@ -171,9 +169,10 @@ void USBSerial::begin() {
     });
 #endif
 
-    if (USBSerial::loggingEnabled) {
+    if (USBSerial::usbLoggingEnabled) {
         enableLoggingInternal();
     }
+    setLogLevel(logLevel);
 }
 
 void USBSerial::end() {

@@ -5,7 +5,6 @@
 
 #include "Communications/SindarinAPI.hpp"
 #include "Misc/Battery.hpp"
-#include "Misc/Dispatch.hpp"
 #include "Misc/Telemetry.hpp"
 #include "Models/CheckSync.hpp"
 #include "Models/Place.hpp"
@@ -14,6 +13,7 @@
 #include "Models/UserReadablePartialChapterSummary.hpp"
 #include "Storage/FileSystem.hpp"
 #include "Storage/PreferencesStore.hpp"
+#include "Storage/SolDrm.hpp"
 
 struct SortCriteria {
     enum Type { DateModified, Alphabetical, LastRead, Random } type = DateModified;
@@ -67,8 +67,13 @@ struct ContentSyncState {
     int percentage{};
     int booksDownloaded{};
     int articlesDownloaded{};
+    bool usedBle = false;
 
     std::string message;
+
+    [[nodiscard]] auto running() const -> bool {
+        return state != Idle && state != Synced && state != AlreadySynced && state != Failure;
+    }
 };
 
 using ReadablesVector = std::vector<std::shared_ptr<Readable>>;
@@ -78,8 +83,9 @@ using UserReadablesVector = SpiramVector<UserReadable>;
 class LocalStore {
 public:
     LocalStore(FileSystem &fileSystem, PreferencesStore &prefs, Battery &battery,
-               Telemetry &telemetry)
-        : fileSystem(fileSystem), prefs_(prefs), battery_(battery), telemetry_(telemetry){};
+               Telemetry &telemetry, SolDrm &solDrm)
+        : fileSystem(fileSystem), prefs_(prefs), battery_(battery), telemetry_(telemetry),
+          solDrm_(solDrm){};
     LocalStore(LocalStore const &) = delete;
 
     auto begin() -> bool;
@@ -88,6 +94,8 @@ public:
     // Convenience methods
     auto books() -> ReadablesVector & { return books_; };
     auto articles() -> ReadablesVector & { return articles_; };
+    auto recents() -> ReadablesVector & { return recents_; };
+
     auto readablesModelType(const ReadablesVector &readables) -> ReadablesModelType;
     [[nodiscard]] auto isReadableUnchanged(const ReadablesVector &readables,
                                            const std::shared_ptr<Readable> &readable,
@@ -116,8 +124,10 @@ public:
     void resetReadablesArchivedChanged(const ReadablesVector &readables);
     void resetReadablesBookmarksChanged(const ReadablesVector &readables);
 
-    void syncFromRemote(SyncReason syncReason, const std::shared_ptr<CancelFlag> &cancel,
-                        const std::function<void(ContentSyncState state)> &progressCallback);
+    auto syncFromRemote(bool wifiConnected, bool bleConnected, SyncReason syncReason,
+                        const std::shared_ptr<CancelFlag> &cancel,
+                        const std::function<void(ContentSyncState state)> &progressCallback)
+        -> bool;
     auto processReadables(const ReadablesVector &readables, UserReadablesVector &serverReadables)
         -> std::pair<UserReadablesVector, UserReadablesVector>;
     void processReadableDeletion(const UserReadablesVector &readablesToDelete,
@@ -127,7 +137,8 @@ public:
                                  const std::shared_ptr<CancelFlag> &cancel, int &downloadIndex,
                                  int &successfullyDownloaded,
                                  const std::function<void(ContentSyncState)> &progressCallback,
-                                 ReadablesModelType modelType, int totalCount) -> bool;
+                                 ReadablesModelType modelType, int totalCount, bool useBle,
+                                 const std::string &publicKey) -> bool;
     void deleteReadables(bool restart = true);
     void deleteArticles(bool restart = true);
     void deleteReadableFiles(const ReadablesVector &readables, bool restart);
@@ -137,8 +148,8 @@ public:
     auto saveReadables(ReadablesVector &readables) -> bool;
 
     // Methods for interacting with readable files on disk
-    [[nodiscard]] auto readableFilePathForWriting(const std::shared_ptr<Readable> &readable) const
-        -> std::string;
+    [[nodiscard]] auto readableFilePathForWriting(const std::shared_ptr<Readable> &readable,
+                                                  bool gzip = true) const -> std::string;
     // When reading, we will take whatever readable file type that's available
     [[nodiscard]] static auto readableFilePathForReading(FileSystem &fileSystem,
                                                          const std::shared_ptr<Readable> &readable)
@@ -163,6 +174,7 @@ public:
     void migrateTxtPlacemarksToEpubPlacemarks();
     void deleteAllToCJson();
     void migrateIfNeeded();
+    void computeRecentReadables();
 
     FileSystem &fileSystem;
 
@@ -171,7 +183,10 @@ private:
     PreferencesStore &prefs_;
     Battery &battery_;
     Telemetry &telemetry_;
+    SolDrm &solDrm_;
 
     ReadablesVector books_;
     ReadablesVector articles_;
+
+    ReadablesVector recents_;
 };

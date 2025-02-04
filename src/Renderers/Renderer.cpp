@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <utility>
 
+#include "UI/Fonts/Fonts.hpp"
+
 // Retrieve and show the page at fromPlace location.
 auto Renderer::renderPage(std::shared_ptr<Place> fromPlace, int16_t numSkipLines, bool forceRefresh,
                           bool retrieveMenuParameters)
@@ -15,10 +17,6 @@ auto Renderer::renderPage(std::shared_ptr<Place> fromPlace, int16_t numSkipLines
                                  : tokenizer_->toStreamPlace(std::move(fromPlace));
 
     REND_WLOG("%s is place in file being requested.", startPlace.str().c_str());
-
-    // This needs to happen before loading into buffer since it will affect what we load into the
-    // buffer.
-    display_.setFont(display_.style.getFontFamily().readableFont);
 
     tokens_.clear();
     pager_.clear();
@@ -64,9 +62,6 @@ auto Renderer::renderPage(std::shared_ptr<Place> fromPlace, int16_t numSkipLines
 
 // Seeks backwards and returns the place of one page previous.
 auto Renderer::goBackwardsOnePage(StreamPlace endPlace) -> StreamPlace {
-
-    display_.setFont(display_.style.getFontFamily().readableFont);
-
     tokens_.clear();
     pager_.clear();
 
@@ -79,7 +74,7 @@ auto Renderer::goBackwardsOnePage(StreamPlace endPlace) -> StreamPlace {
     // the document to find the preceeding page start.
 
     uint16_t charWidth, charHeight;
-    display_.getTextSize("G", &charWidth, &charHeight);
+    display_.getTextSize("G", &charWidth, &charHeight, font_);
 
     uint16_t maxPageCount = ((rect_.width / charWidth) + 1) * ((rect_.height / charHeight) + 1);
     if (maxPageCount > MAX_BYTES_PER_DISPLAY_PAGE) {

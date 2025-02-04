@@ -44,7 +44,8 @@ class WiFi {
 public:
     static auto getInstance() -> WiFi &;
 
-    WiFi(Telemetry &telemetry) : telemetry_(telemetry), mutex_(xSemaphoreCreateMutex()) {
+    WiFi(Telemetry &telemetry, PreferencesStore &prefs)
+        : telemetry_(telemetry), prefs_(prefs), mutex_(xSemaphoreCreateMutex()) {
         if (mutex_ == nullptr) {
             log_e("Failed to create WiFi mutex");
         }
@@ -58,10 +59,11 @@ public:
 
     // Credentials
     auto getWifiConfig(wifi_config_t *conf) -> esp_err_t;
-    auto hasWiFiCredentials(wifi_config_t *conf) -> bool;
     auto hasWiFiCredentials() -> bool;
 
     void clearWiFiCredentials();
+
+    auto saveSetting(const std::string &ssid, const std::string &password) -> void;
 
     // Scanning
     auto scanNetworks(const std::function<void(std::shared_ptr<wifi_ap_record_t[]> apRecords,
@@ -103,6 +105,7 @@ protected:
     esp_event_handler_instance_t ipEventHandlerInstance_{};
     WiFiSettings settings_;
     EventGroupHandle_t wifiEventGroup_ = nullptr;
+    PreferencesStore &prefs_;
     SemaphoreHandle_t mutex_;
 
     void setState(WiFiState state) {
@@ -122,5 +125,4 @@ protected:
 
     auto connectWiFiSettingWithTimeout(int timeoutMs, const std::string &ssid,
                                        const std::string &password) -> bool;
-    void migrateWiFiCredentials();
 };

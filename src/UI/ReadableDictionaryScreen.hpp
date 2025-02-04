@@ -5,6 +5,7 @@
 #include <utility>
 #include <vector>
 
+#include "Misc/SpiramAllocator.hpp"
 #include "Models/Place.hpp"
 #include "Models/Readable.hpp"
 #include "Renderers/Renderer.hpp"
@@ -24,8 +25,8 @@ public:
           display_(display), dismissLabelView_(display, "Dismiss", ArrowUp),
           backgroundView_(display, 5) {}
 
-    auto layout(LayoutContext &context, Size size) -> Size override;
-    void drawInRect(Rect rect) override;
+    auto layout(LayoutContext &context, SolSize size) -> SolSize override;
+    void drawInRect(SolRect rect) override;
     auto checkAtEnd() -> bool;
     void render(DisplaySystem &display) override;
     void restoreRendererStream();
@@ -33,7 +34,10 @@ public:
     void processCommand(RemoteCommand command) override;
 
     void setPlacemark();
-    void setFirstLoad() { loadedChapterId_ = ""; }
+    void setFirstLoad() override {
+        Screen::setFirstLoad();
+        loadedChapterHref_ = "";
+    }
     void setPlaceInReadable(std::shared_ptr<EPubPlace> placeInReadable);
 
 protected:
@@ -42,7 +46,7 @@ protected:
     Renderer &renderer_;
     DisplaySystem &display_;
 
-    std::string loadedChapterId_;
+    SpiramString loadedChapterHref_;
     std::shared_ptr<EPubPlace> placeInReadable_ = nullptr;
     std::shared_ptr<TxtPlace> newPlace_ = nullptr;
     std::shared_ptr<TxtPlace> prevPlace_ = nullptr;

@@ -1,5 +1,6 @@
 #include "UI/ResizeBoxScreen.hpp"
 
+#include "UI/Fonts/Fonts.hpp"
 #include "sindarin-debug.h"
 
 #define BOX_OFFSET_ADJUST_AMOUNT 10
@@ -9,13 +10,12 @@
 // I didn't want to over-engineer it here.
 ResizeBoxScreen::ResizeBoxScreen(DisplaySystem &display, PreferencesStore &prefs,
                                  Telemetry &telemetry)
-    : display_(display), renderer_(display, GetTextRectFromPrefs(display, prefs)), prefs_(prefs),
-      telemetry_(telemetry) {
-
+    : EinkView(display), display_(display),
+      renderer_(display, GetTextRectFromPrefs(display, prefs),
+                FontFromPrefs(prefs.font.get().value_or(PREFS_SOL_SMALL))),
+      prefs_(prefs), telemetry_(telemetry), rendererRef_(renderer_), outerBoxView_(display, 5),
+      backgroundBoxView_(display, 5), explanationView_(display, 5) {
     std::string message;
-    message += "Press up to increase vertical dimension, down to decrease vertical "
-               "dimension, left to increase horizontal dimension, right to decrease "
-               "horizontal dimension. Press \ue000 (center) when finished.\n\n";
     message +=
         "In a secluded tower lived a wizard named Elinor, obsessed with reading. Her passion lay "
         "not in spells but in stories. One ancient tome enchanted her; its runes sparkled with "
@@ -27,18 +27,77 @@ ResizeBoxScreen::ResizeBoxScreen(DisplaySystem &display, PreferencesStore &prefs
         "she orchestrated a plan. The dragon left, villagers hailed her as a hero. But Elinor "
         "found no joy; her wisdom couldn't decipher the dragon's untold tale.";
     auto stream = std::make_shared<StdStringStream>(message);
-    renderer_.setStream(stream);
+
+    rendererRef_.setStream(stream);
+    rendererRef_.setLineSpacing(prefs.lineSpacing.get().value_or(0));
+
+    setupInstructions();
+}
+
+ResizeBoxScreen::ResizeBoxScreen(DisplaySystem &display, PreferencesStore &prefs,
+                                 Telemetry &telemetry, Renderer &renderer,
+                                 std::shared_ptr<Place> place)
+    : EinkView(display), display_(display),
+      renderer_(display, GetTextRectFromPrefs(display, prefs),
+                FontFromPrefs(prefs.font.get().value_or(PREFS_SOL_SMALL))),
+      place_(std::move(place)), prefs_(prefs), telemetry_(telemetry), rendererRef_(renderer),
+      outerBoxView_(display, 5), backgroundBoxView_(display, 5), explanationView_(display, 5) {
+    setupInstructions();
+}
+
+auto ResizeBoxScreen::setupInstructions() -> void {
+    std::string instructions = "\ue003  Stretch vertical\n";
+    instructions += "\ue004  Shrink vertical\n";
+    instructions += "\ue002   Stretch horizontal\n";
+    instructions += "\ue001   Shrink horizontal\n";
+    instructions += "\ue000  Done";
+
+    explanationView_.setText(instructions);
+    explanationView_.dynamicWidth = true;
+
+    setNeedsLayout();
+}
+
+auto ResizeBoxScreen::layout(LayoutContext &context, SolSize size) -> SolSize {
+    auto explanationFrame = context.setViewFrame(explanationView_, SolRect::fromSize(size),
+                                                 LayoutOptionsSizeToFit | LayoutOptionsAlignCenter);
+    auto outerBoxViewFrame = context.setViewFrame(outerBoxView_, explanationFrame.inset(-5));
+    context.setViewFrame(backgroundBoxView_, outerBoxViewFrame.inset(-8));
+
+    return size;
+}
+
+void ResizeBoxScreen::drawInRect(SolRect rect) {
+    outerBoxView_.fillColor = display_.bg;
+    outerBoxView_.strokeColor = display_.fg;
+    backgroundBoxView_.fillColor = display_.bg;
+    backgroundBoxView_.strokeColor = display_.bg;
+
+    backgroundBoxView_.draw();
+    outerBoxView_.draw();
+    explanationView_.draw();
 }
 
 void ResizeBoxScreen::render(DisplaySystem &display) {
     // Get the bounding box
     auto textBox = GetTextRectFromPrefs(display, prefs_);
+
+    setFrame(defaultFrameRect());
+
+    rendererRef_.setRect(textBox);
+    if (place_ == nullptr) {
+        rendererRef_.renderFirstPage(0, true);
+    } else {
+        rendererRef_.renderPage(place_, 0);
+    }
+
+    draw();
+
     // The natural line spacing handles the vertical padding
     // The horizontal padding adds one blank pixel column on either side of the rect
     display.drawDottedBox(textBox.x - 2, textBox.y, textBox.x + textBox.width + 1,
                           textBox.y + textBox.height - 1, 1, 2);
-    this->renderer_.setRect(textBox);
-    this->renderer_.renderFirstPage(0, true);
+
     display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
 }
 
@@ -46,7 +105,7 @@ void ResizeBoxScreen::processCommand(RemoteCommand command) {
     DisplayInset insets = GetTextInsetFromPrefs(display_, prefs_);
     DisplayRect rect = GetTextRectFromPrefs(display_, prefs_);
     switch (command) {
-    case RemoteCommand::LEFT:
+    case RemoteCommand::RIGHT:
         if (insets.left - BOX_OFFSET_ADJUST_AMOUNT >= display_.minTextInsets().left) {
             insets.left -= BOX_OFFSET_ADJUST_AMOUNT / 2;
             setNeedsRerender();
@@ -56,7 +115,7 @@ void ResizeBoxScreen::processCommand(RemoteCommand command) {
             setNeedsRerender();
         }
         break;
-    case RemoteCommand::RIGHT:
+    case RemoteCommand::LEFT:
         if (rect.width - BOX_OFFSET_ADJUST_AMOUNT >= display_.minTextBoxWidth()) {
             insets.right += BOX_OFFSET_ADJUST_AMOUNT / 2;
             insets.left += BOX_OFFSET_ADJUST_AMOUNT / 2;
@@ -95,8 +154,9 @@ void ResizeBoxScreen::processCommand(RemoteCommand command) {
                                                                 {"in_r", insets.right},
                                                                 {"in_t", insets.top},
                                                                 {"in_b", insets.bottom}});
+        SetTextInset(prefs_, insets);
         back();
-        break;
+        return;
     default:
         break;
     }
