@@ -12,6 +12,7 @@
 #include "Inputs/RemoteInput.hpp"
 #include "Misc/Defer.hpp"
 #include "Misc/Dispatch.hpp"
+#include "Renderers/FootnoteMgr.hpp"
 #include "UI/ReadableScreen.hpp"
 #include "UI/Screen.hpp"
 
@@ -211,4 +212,31 @@ void goForwardNumPages(DisplaySystem &display, SDL_Window *window, SDL_Renderer 
         sendCodeAndRender(display, RemoteCommand::RIGHT, renderer);
         usleep(1000000.0 / 1.5);
     }
+}
+
+void testFootnoteMgrBatch() {
+    FootnoteMgr footnoteMgr;
+    footnoteMgr.testEPubFiles();
+}
+
+void testFootnoteMgrHTMLBatch() {
+    FootnoteMgr footnoteMgr;
+    footnoteMgr.testEPubFilesHTML();
+}
+
+void showCurrentChapterFootnotes() {
+#if 0
+    auto screen = UIGetCurrentScreen();
+    auto readableScreen = std::dynamic_pointer_cast<ReadableScreen>(screen);
+
+    if (readableScreen != nullptr) {
+        auto stream = readableScreen->getStream();
+        if ((stream != nullptr) && (stream->getDocType() == DocType::EPUB)) {
+            auto epubStream = std::dynamic_pointer_cast<ReadableScreen>(screen);
+            auto streamPlace = readableScreen->getStreamPlace();
+            FootnoteMgr footnoteMgr;
+            footnoteMgr.parse(stream, streamPlace.getSpineIdx());
+        }
+    }
+#endif
 }

@@ -4,6 +4,7 @@
 #include <unordered_map>
 
 #include "EPub/EPubFile.hpp"
+#include "FootnoteMgr.hpp"
 #include "Misc/SpiramAllocator.hpp"
 #include "Tokenizer.hpp"
 
@@ -137,6 +138,10 @@ public:
 private:
     std::shared_ptr<EPubFile> stream_;
     pugi::xml_node body_;
+
+#if FOOTNOTE_RETRIEVAL_DEBUGGING
+    FootnoteMgr footnoteMgr_;
+#endif
 
     // clang-format off
 

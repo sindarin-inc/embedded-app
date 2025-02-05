@@ -17,6 +17,7 @@
 #include "Sensors/LightingController.hpp"
 #include "SimAutomation.hpp"
 #include "Storage/PreferencesStore.hpp"
+#include "UI/RootUI.hpp"
 #include "sindarin-debug.h"
 
 #if SIMULATOR_BLE
@@ -244,6 +245,12 @@ auto mainLoop() -> bool {
                 break;
             case 'i':
                 saveBookImages(myDisplay, window, renderer);
+                break;
+            case 'f':
+                testFootnoteMgrHTMLBatch();
+                break;
+            case 'g':
+                showCurrentChapterFootnotes(); // Not working yet
                 break;
             }
 

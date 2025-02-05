@@ -74,6 +74,12 @@ public:
 
     [[nodiscard]] inline auto isOpen() const -> bool { return fileOpen_; }
 
+    [[nodiscard]] auto getSpineRelativeFolderPath(SpineIdx spineIdx) const -> std::string {
+        std::string path;
+        opf_->extractPath(opf_->getSpine(spineIdx).item->href.c_str(), path);
+        return path;
+    }
+
     [[nodiscard]] auto getRelativeFilePath(const std::string &filename, SpineIdx spineIdx) const
         -> std::string {
         std::string mainFilePath =

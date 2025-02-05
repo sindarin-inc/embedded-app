@@ -4,6 +4,7 @@ project(simulator)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Path to the root of the repo
 set(REPO_ROOT_DIR "${PROJECT_SOURCE_DIR}/../..")
@@ -47,3 +48,4 @@ endif()
 if (DEFINED SIM_ONE_BIT)
     add_compile_definitions(SIM_ONE_BIT=${SIM_ONE_BIT})
 endif()
+
