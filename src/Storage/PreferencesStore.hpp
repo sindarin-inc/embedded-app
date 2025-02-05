@@ -8,16 +8,13 @@
 #include <optional>
 #include <string>
 #include <vector>
+#if CONFIG_USE_TURN_TOUCH_REMOTE
+#include <NimBLEDevice.h>
+#endif
 
 #include "Misc/StringUtil.hpp"
 #include "config.h"
 #include "sindarin-debug.h"
-
-#if CONFIG_USE_TURN_TOUCH_REMOTE
-#include <NimBLEDevice.h>
-#elif !defined(BLEAddress)
-typedef uint64_t BLEAddress;
-#endif
 
 #define MAX_KEY_LENGTH 15
 
@@ -55,7 +52,10 @@ auto GetFromStorage(uint32_t nvsHandle, const char *key, T &value) -> esp_err_t 
         std::disjunction_v<
             std::is_same<T, bool>, std::is_same<T, int>, std::is_same<T, int16_t>,
             std::is_same<T, uint16_t>, std::is_same<T, int32_t>, std::is_same<T, uint32_t>,
-            std::is_same<T, uint64_t>, std::is_same<T, std::string>, std::is_same<T, BLEAddress>,
+            std::is_same<T, uint64_t>, std::is_same<T, std::string>,
+#if CONFIG_USE_TURN_TOUCH_REMOTE
+            std::is_same<T, NimBLEAddress>,
+#endif
             std::is_same<T, std::vector<uint8_t>>, std::is_same<T, SpiramVector<uint8_t>>>,
         "Unsupported type for NVS storage");
     esp_err_t err;
@@ -71,10 +71,15 @@ auto GetFromStorage(uint32_t nvsHandle, const char *key, T &value) -> esp_err_t 
         err = nvs_get_u32(nvsHandle, key, &value);
     } else if constexpr (std::is_same_v<T, uint64_t>) {
         err = nvs_get_u64(nvsHandle, key, reinterpret_cast<uint64_t *>(&value));
-    } else if constexpr (std::is_same_v<T, BLEAddress>) {
-        uint64_t addr;
-        err = nvs_get_u64(nvsHandle, key, &addr);
-        value = BLEAddress(addr);
+#if CONFIG_USE_TURN_TOUCH_REMOTE
+    } else if constexpr (std::is_same_v<T, NimBLEAddress>) {
+        ble_addr_t addr;
+        size_t len = sizeof(ble_addr_t);
+        err = nvs_get_blob(nvsHandle, key, &addr, &len);
+        if (err == ESP_OK) {
+            value = NimBLEAddress(addr);
+        }
+#endif
     } else if constexpr (std::is_same_v<T, std::string>) {
         size_t len = 0;
         // NVS strings can be up to 4000 bytes long, so we need to get the length first
@@ -117,7 +122,10 @@ auto GetNVSType() -> nvs_type_t {
         std::disjunction_v<
             std::is_same<T, bool>, std::is_same<T, int>, std::is_same<T, int16_t>,
             std::is_same<T, uint16_t>, std::is_same<T, int32_t>, std::is_same<T, uint32_t>,
-            std::is_same<T, uint64_t>, std::is_same<T, std::string>, std::is_same<T, BLEAddress>,
+            std::is_same<T, uint64_t>, std::is_same<T, std::string>,
+#if CONFIG_USE_TURN_TOUCH_REMOTE
+            std::is_same<T, NimBLEAddress>,
+#endif
             std::is_same<T, std::vector<uint8_t>>, std::is_same<T, SpiramVector<uint8_t>>>,
         "Unsupported type for NVS storage");
     if constexpr (std::is_same_v<T, bool>) {
@@ -130,8 +138,12 @@ auto GetNVSType() -> nvs_type_t {
         return NVS_TYPE_I32;
     } else if constexpr (std::is_same_v<T, uint32_t>) {
         return NVS_TYPE_U32;
-    } else if constexpr (std::is_same_v<T, uint64_t> || std::is_same_v<T, BLEAddress>) {
+    } else if constexpr (std::is_same_v<T, uint64_t>) {
         return NVS_TYPE_U64;
+#if CONFIG_USE_TURN_TOUCH_REMOTE
+    } else if constexpr (std::is_same_v<T, NimBLEAddress>) {
+        return NVS_TYPE_BLOB;
+#endif
     } else if constexpr (std::is_same_v<T, std::string>) {
         return NVS_TYPE_STR;
     } else if constexpr (std::is_same_v<T, std::vector<uint8_t>> ||
@@ -164,7 +176,10 @@ auto WriteToStorage(uint32_t nvsHandle, const char *key, T &value) -> esp_err_t 
         std::disjunction_v<
             std::is_same<T, bool>, std::is_same<T, int>, std::is_same<T, int16_t>,
             std::is_same<T, uint16_t>, std::is_same<T, int32_t>, std::is_same<T, uint32_t>,
-            std::is_same<T, uint64_t>, std::is_same<T, std::string>, std::is_same<T, BLEAddress>,
+            std::is_same<T, uint64_t>, std::is_same<T, std::string>,
+#if CONFIG_USE_TURN_TOUCH_REMOTE
+            std::is_same<T, NimBLEAddress>,
+#endif
             std::is_same<T, std::vector<uint8_t>>, std::is_same<T, SpiramVector<uint8_t>>>,
         "Unsupported type for NVS storage");
     esp_err_t err;
@@ -186,9 +201,12 @@ auto WriteToStorage(uint32_t nvsHandle, const char *key, T &value) -> esp_err_t 
     } else if constexpr (std::is_same_v<T, uint64_t>) {
         err = nvs_set_u64(nvsHandle, key, value);
         PROFILE_NVS_WRITES_INCREMENT(key, 1);
-    } else if constexpr (std::is_same_v<T, BLEAddress>) {
-        err = nvs_set_u64(nvsHandle, key, static_cast<uint64_t>(value));
+#if CONFIG_USE_TURN_TOUCH_REMOTE
+    } else if constexpr (std::is_same_v<T, NimBLEAddress>) {
+        auto addr = value.getBase();
+        err = nvs_set_blob(nvsHandle, key, &addr, sizeof(ble_addr_t));
         PROFILE_NVS_WRITES_INCREMENT(key, 1);
+#endif
     } else if constexpr (std::is_same_v<T, std::string>) {
         err = nvs_set_str(nvsHandle, key, value.c_str());
         // String and blob writes have 8 bytes in the first block, then 32 bytes per block after
@@ -700,6 +718,22 @@ public:
                 nvs_erase_key(nvsHandle_, "word-count");
                 nvs_erase_key(nvsHandle_, "tot-rd-time");
                 break;
+            case 10: {
+#if CONFIG_USE_TURN_TOUCH_REMOTE
+                // Migrate the Turn Touch address from uint64_t to blob format
+                uint64_t oldAddr;
+                auto err = nvs_get_u64(nvsHandle_, "paired-tt", &oldAddr);
+                if (err == ESP_OK) {
+                    NimBLEAddress newAddr(oldAddr, BLE_ADDR_RANDOM);
+                    err = nvs_set_blob(nvsHandle_, "paired-tt", newAddr.getBase(),
+                                       sizeof(ble_addr_t));
+                    if (err != ESP_OK) {
+                        log_e("Failed to migrate Turn Touch address: %s", esp_err_to_name(err));
+                    }
+                }
+#endif
+                break;
+            }
             default:
                 log_e("Unknown migration version: %" PRIu32, migrationVersion);
                 return;
@@ -795,7 +829,7 @@ public:
     }
 
 #if CONFIG_USE_TURN_TOUCH_REMOTE
-    PrefsItem<BLEAddress> pairedTurnTouchAddress;
+    PrefsItem<NimBLEAddress> pairedTurnTouchAddress;
 #endif
     PrefsItem<std::string> cloudToken;
     PrefsItem<std::string> lastReadableId;
@@ -884,7 +918,7 @@ public:
     static PairedStatus paired;
 
 protected:
-    const uint32_t latestMigrationVersion_ = 10;
+    const uint32_t latestMigrationVersion_ = 11;
     uint32_t nvsHandle_{};
     bool started_{};
 
