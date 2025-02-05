@@ -10,8 +10,7 @@ public:
     PosixFileSystem(PosixFileSystem const &) = delete;
     ~PosixFileSystem() override = default;
 
-    auto open(const std::string &path, const char *mode = FILE_READ,
-              const bool create = false) const -> SFile override;
+    auto open(const std::string &path, const char *mode = FILE_READ) const -> SFile override;
     // NOTE: This calls `stat` under the hood and takes 4-8ms
     [[nodiscard]] auto exists(const std::string &path) const -> bool override;
     // NOTE: This calls `stat` under the hood and takes 4-8ms

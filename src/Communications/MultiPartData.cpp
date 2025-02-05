@@ -14,7 +14,7 @@ auto MultiPartData::addKeyValue(const std::string &key, const std::string &value
 auto MultiPartData::startKeyWrite() -> bool {
     if (!keyWritten_) {
         keyWritten_ = true;
-        tempFile_ = fileSystem_.open(fileName_, FILE_WRITE, true);
+        tempFile_ = fileSystem_.open(fileName_, FILE_WRITE);
         // write first boundary marker if this is the first key
         if (!SafeSnprintf(tmp_, sizeof(tmp_), "--%s--", boundary.c_str())) {
             return false;

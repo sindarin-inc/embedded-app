@@ -12,9 +12,9 @@ auto PosixFileSystem::createPath(const std::string &path) const -> std::string {
     return StringFormat("%s%s", prefix_.c_str(), path.c_str());
 }
 
-auto PosixFileSystem::open(const std::string &path, const char *mode, bool create) const -> SFile {
+auto PosixFileSystem::open(const std::string &path, const char *mode) const -> SFile {
     auto prefixedPath = createPath(path);
-    auto file = SFile(std::make_shared<VFSFile>(prefixedPath.c_str(), mode, create));
+    auto file = SFile(std::make_shared<VFSFile>(prefixedPath.c_str(), mode));
     return file;
 }
 
@@ -71,7 +71,7 @@ auto PosixFileSystem::listDirWithSubdirectories(const std::string &path, FileLis
         }
         return closedir(dp);
     } else {
-        perror("Couldn't open the directory");
+        log_e("Couldn't open directory %s", prefixedPath.c_str());
         return -1;
     }
 }
@@ -82,7 +82,7 @@ auto PosixFileSystem::createDir(const std::string &path, bool allowExists) -> bo
         if (errno == EEXIST && allowExists) {
             // Silently pass
         } else {
-            log_e("Failed to create dir %s", path.c_str());
+            log_e("Failed to create dir %s (errno=%d)", prefixedPath.c_str(), errno);
             return false;
         }
     }

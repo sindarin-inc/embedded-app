@@ -97,7 +97,7 @@ protected:
 
 class VFSFile : public SFileImpl {
 public:
-    VFSFile(const char *fname, const char *mode, bool create) {
+    VFSFile(const char *fname, const char *mode) {
         std::string modeStr(mode);
         std::string openMode;
         bool read = false;
