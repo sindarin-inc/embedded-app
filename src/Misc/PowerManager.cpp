@@ -794,11 +794,6 @@ void PowerManager::deepSleepInternal(SleepReason reason) {
         powerOffInternal();
         return;
     }
-#else
-    // With no magnetometer, just always power off for now
-    powerOffInternal();
-#endif
-
     // `ulp_riscv_load_binary` seems to reset all the ulp variables including `ulp_waitForClose`
     // which we only want to unset if the temples are closed.
     if (!ulpLoaded) {
@@ -809,6 +804,10 @@ void PowerManager::deepSleepInternal(SleepReason reason) {
         }
         ulpLoaded = true;
     }
+#else
+    // With no magnetometer, just always power off for now
+    powerOffInternal();
+#endif
 #endif
 
     // If we're sleeping and the temples are already open, tell the ULP to wait for them to be

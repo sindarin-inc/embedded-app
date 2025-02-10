@@ -184,6 +184,8 @@ auto HardwareDeinit() -> esp_err_t {
         log_e("Failed to deinit NVS: %d", err);
     }
 
+#if CONFIG_IDF_TARGET_ESP32S3 && CONFIG_BAT_VOLTAGE_LEFT_PIN != -1 &&                              \
+    CONFIG_BAT_VOLTAGE_RIGHT_PIN != -1
     // We need to shut down the ADC or else we consume ~1.6mA during deep sleep
     if (adcOneshotHandle != nullptr) {
         err = adc_oneshot_del_unit(adcOneshotHandle);
@@ -198,6 +200,7 @@ auto HardwareDeinit() -> esp_err_t {
             log_e("Failed to delete adc calibration scheme: %d", err);
         }
     }
+#endif
 
 #if USE_I2C
     err = i2c_driver_delete(I2C_NUM_0);
