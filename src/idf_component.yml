@@ -1,9 +1,21 @@
 ## IDF Component Manager Manifest File
 dependencies:
   esp_tinyusb:
-    version: "1.5.0"
-#  Should we do this here instead of in components?
-#  espressif/freetype: "^2.10.4"
+    version: 1.5.0
+  # Should we do this here instead of in components?
+  # espressif/freetype: "^2.10.4"
   ## Required IDF version
   idf:
     version: ">=5.1.5"
+  esp_lcd_ili9881c:
+    version: 1.*
+    rules:
+      - if: target == esp32p4
+  espressif/esp_wifi_remote:
+    version: "*"
+    rules:
+      - if: target == esp32p4
+  espressif/esp_hosted:
+    version: "*"
+    rules:
+      - if: target == esp32p4

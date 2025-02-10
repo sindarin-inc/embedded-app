@@ -70,6 +70,9 @@ DisplayWaveshare6inHD myDisplay;
 #elif CONFIG_DISPLAY_SHARP_27IN
 #include "Displays/DisplaySharp27in.hpp"
 DisplaySharp27in myDisplay;
+#elif CONFIG_DISPLAY_ESP32_P4_FUNCTION_EV || CONFIG_DISPLAY_ESP32_P4_FUNCTION_EV_R0
+#include "Displays/DisplayEsp32P4FunctionEv.hpp"
+DisplayEsp32P4FunctionEv myDisplay;
 #else
 #error "No display selected"
 #endif
@@ -219,6 +222,8 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     HEAP_PROFILE_START(usbSerial);
     usbSerial.begin();
     HEAP_PROFILE_END(usbSerial);
+
+    log_i("Starting app_main");
 
     directCommand.begin();
     if (usbSerial.isUsbLoggingEnabled()) {
