@@ -21,8 +21,10 @@
 #include "Misc/Telemetry.hpp"
 #include "Models/Readable.hpp"
 #include "Renderers/Renderer.hpp"
+#if CONFIG_INCLUDE_DEFAULT_CONTENT
 #include "Storage/EPubs/LastQuestion.epub.hpp"
 #include "Storage/EPubs/PsalmsAndProverbs.epub.hpp"
+#endif
 #include "Storage/LocalStore.hpp"
 #include "UI/AboutScreen.hpp"
 #include "UI/AlignmentScreen.hpp"
@@ -631,6 +633,7 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
 
         log_d("noContent in the books factory: %d", noContent);
         if (noContent) {
+#if CONFIG_INCLUDE_DEFAULT_CONTENT
             log_d("Got into noContent in the books factory: %d", noContent);
             std::shared_ptr<Readable> lastQuestion = std::make_shared<Readable>(
                 "d7570c42-18a9-4795-a44e-9cee09b9fe3e", "The Last Question", LASTQUESTION_EPUB,
@@ -643,6 +646,7 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                         handleReadableScreenCreation(lastQuestion);
                     }));
             }
+#endif
         }
         if (noBooks) {
             menuItems->emplace_back(makeContentSyncMenuItem("Sync Content"));
@@ -749,6 +753,7 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
         }
 
         if (noContent) {
+#if CONFIG_INCLUDE_DEFAULT_CONTENT
             std::shared_ptr<Readable> psalmsAndProverbs = std::make_shared<Readable>(
                 "6863fd3c-77a9-468e-93fa-f70d8b79029f", "Psalms and Proverbs",
                 PSALMSANDPROVERBS_EPUB, PSALMSANDPROVERBS_EPUB_SIZE);
@@ -761,6 +766,7 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                     handleReadableScreenCreation(psalmsAndProverbs);
                     }));
             }
+#endif
         }
 
         if ((!menuItems->empty()) &&

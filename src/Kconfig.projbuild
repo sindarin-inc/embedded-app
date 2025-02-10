@@ -283,4 +283,11 @@ menu "Sol Options"
         
     endmenu
 
+    menu "Content Settings"
+        config INCLUDE_DEFAULT_CONTENT
+            bool "Include Default Content"
+            default y
+
+    endmenu
+
 endmenu
