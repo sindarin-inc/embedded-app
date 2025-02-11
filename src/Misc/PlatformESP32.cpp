@@ -96,10 +96,14 @@ void HardwareInit() {
     PinMode(CONFIG_USB_CONNECTED_PIN, INPUT);
 #endif
 
+#if CONFIG_RED_LED != -1
     DigitalWrite(CONFIG_RED_LED, LED_OFF);
-    DigitalWrite(CONFIG_GREEN_LED, LED_OFF);
     PinMode(CONFIG_RED_LED, OUTPUT);
+#endif
+#if CONFIG_GREEN_LED != -1
+    DigitalWrite(CONFIG_GREEN_LED, LED_OFF);
     PinMode(CONFIG_GREEN_LED, OUTPUT);
+#endif
 #if CONFIG_BLUE_LED != -1
     DigitalWrite(CONFIG_BLUE_LED, LED_OFF);
     PinMode(CONFIG_BLUE_LED, OUTPUT);
