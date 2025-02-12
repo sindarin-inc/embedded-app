@@ -421,7 +421,7 @@ void DemoScreen::render(DisplaySystem &display) {
     lambdas_[currentScreen_](display);
 
     // Must stop the timer because ChangePeriod starts it.
-    xTimerStop(DisplaySystem::animationTimer, 0);
+    xTimerStopFromISR(DisplaySystem::animationTimer, 0);
 
     if (!awaitingButton_) {
         // Move to the next animation
