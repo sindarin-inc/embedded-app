@@ -62,6 +62,33 @@ auto Font::ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2, FIX16 *ker
     return res;
 }
 
+/**
+ * @brief Copies a bitmap from one buffer to another with pixel format conversion and inversion
+ * options
+ *
+ * This method copies a bitmap from a source buffer to a destination buffer, handling different
+ * pixel resolutions and format conversions. It supports:
+ * - Font pixel resolutions: 1-bit and 8-bit
+ * - Display pixel resolutions: 1-bit, 8-bit, and 16-bit
+ *
+ * @param to Destination bitmap buffer where the content will be copied
+ * @param from Source bitmap buffer containing the content to copy
+ * @param atPos Position coordinates where to place the bitmap in the destination buffer
+ * @param inverted If true, inverts the pixel values during copy (black becomes white and vice
+ * versa)
+ *
+ * For 1-bit font resolution:
+ * - With 16-bit display: Converts to RGB565 format (0 or 0xFFFF)
+ * - With 8-bit display: Converts to grayscale (0 or 0xFF)
+ * - With 1-bit display: Performs bit-by-bit copy with proper masking
+ *
+ * For 8-bit font resolution:
+ * - With 16-bit display: Converts grayscale to RGB565 format
+ * - With 8-bit display: Direct grayscale copy
+ *
+ * @note The method assumes that the destination buffer has enough space allocated
+ *       to accommodate the source bitmap at the specified position
+ */
 void Font::copyBitmap(Bitmap &to, const Bitmap &from, Pos atPos, bool inverted) {
     if (fontPixelResolution_ == font_defs::PixelResolution::ONE_BIT) {
 
