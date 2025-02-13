@@ -2,6 +2,8 @@
 
 #include <ArduinoJson.h>
 
+#include "Misc/SpiramArduinoJson.hpp"
+
 class JsonSerializable {
 public:
     virtual ~JsonSerializable() = default;
