@@ -11,7 +11,7 @@ jobs:
     runs-on:
       group: Beefy
     container:
-      image: espressif/idf:v5.1.5
+      image: espressif/idf:v5.3.2
 
     steps:
       - uses: actions/checkout@v4
@@ -45,12 +45,10 @@ jobs:
           PR_GITHUB_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: DoozyX/clang-format-lint-action@v0.17
-        with:
-          source: "./src"
-          extensions: "hpp,h,cpp,c"
-          clangFormatVersion: 15
-          inplace: True
+      - name: Run clang-format
+        run: |
+          . $IDF_PATH/export.sh
+          make clang-format
 
       - name: "Commit changes if necessary"
         if: github.event_name == 'pull_request'

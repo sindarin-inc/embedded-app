@@ -9,6 +9,9 @@
 # This is also a good check, but we also have a lot of narrowing conversions
 # especially related to display stuff since Adafruit GFX uses uint16_t a lot.
 #   -bugprone-narrowing-conversions,
+# This is busted in clang-tidy 16 and hangs forever
+# See: https://github.com/llvm/llvm-project/issues/63101
+#   -bugprone-unchecked-optional-access,
 
 # Enable Cert checks
 #   cert-*,
@@ -106,6 +109,7 @@ Checks: >-
   bugprone-*,
   -bugprone-easily-swappable-parameters,
   -bugprone-narrowing-conversions,
+  -bugprone-unchecked-optional-access,
   cert-*,
   -cert-dcl03-c,
   clang-analyzer-*,

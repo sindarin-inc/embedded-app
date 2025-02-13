@@ -212,14 +212,14 @@ auto GetHeapSize() -> size_t {
 }
 
 void EnableCore0Wdt() {
-    TaskHandle_t idle0 = xTaskGetIdleTaskHandleForCPU(0);
+    TaskHandle_t idle0 = xTaskGetIdleTaskHandleForCore(0);
     if (idle0 == nullptr || esp_task_wdt_add(idle0) != ESP_OK) {
         log_e("Failed to add Core 0 IDLE task to WDT");
     }
 }
 
 void DisableCore0Wdt() {
-    TaskHandle_t idle0 = xTaskGetIdleTaskHandleForCPU(0);
+    TaskHandle_t idle0 = xTaskGetIdleTaskHandleForCore(0);
     if (idle0 == nullptr || esp_task_wdt_delete(idle0) != ESP_OK) {
         log_e("Failed to remove Core 0 IDLE task from WDT");
     }
