@@ -75,13 +75,13 @@ float lerp(float a, float b, float t) { return a + t * (b - a); }
 void SimDrawScreen() {
     for (int x = 0; x < myDisplay.gfxClass()->width(); x++) {
         for (int y = 0; y < myDisplay.gfxClass()->height(); y++) {
-#ifdef CONFIG_DISPLAY_SIM_1BIT
+#if CONFIG_DISPLAY_SIM_1BIT
             SDL_SetRenderDrawColor(renderer, 240, 240, 240, 0xFF);
 
             if (myDisplay.getPixel(x, y)) {
                 SDL_RenderDrawPoint(renderer, x, y);
             }
-#elif CONFIG_DISPLAY_SIM_8BIT
+#elif CONFIG_DISPLAY_SIM_8BIT || CONFIG_DISPLAY_EINKET013TT1
             uint8_t color = myDisplay.buffer()[x + y * myDisplay.gfxClass()->width()];
             float colorF = color / 255.0;
             uint16_t brightnessOffset =
