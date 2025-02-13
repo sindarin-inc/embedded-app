@@ -80,7 +80,6 @@ if(DISPLAY_TYPE STREQUAL "DISPLAY_SIM_16BIT" OR DISPLAY_TYPE STREQUAL "DISPLAY_S
     add_subdirectory(${REPO_ROOT_DIR}/components/freetype/freetype ${CMAKE_CURRENT_BINARY_DIR}/freetype)
     target_link_libraries(${PROJECT_NAME} PUBLIC freetype)
     target_compile_definitions(${PROJECT_NAME} PUBLIC
-        CONFIG_DISPLAY_SIM_16BIT=1
         CONFIG_FONT_TTF=1
         CONFIG_FONT_IBMF=0
     )
