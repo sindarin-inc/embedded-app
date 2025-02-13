@@ -20,7 +20,7 @@
 
 using namespace std::placeholders;
 
-auto TTRemoteInput::connectToDevice(std::shared_ptr<NimBLEAdvertisedDevice> device) -> bool {
+auto TTRemoteInput::connectToDevice(const std::shared_ptr<NimBLEAdvertisedDevice> &device) -> bool {
     if (client_ == nullptr) {
         client_ = BLEDevice::createClient();
         client_->setClientCallbacks(&clientCallbacks_);
@@ -130,7 +130,7 @@ auto TTRemoteInput::connectToDevice(std::shared_ptr<NimBLEAdvertisedDevice> devi
     return true;
 }
 
-void TTRemoteInput::dispatchConnection(std::shared_ptr<NimBLEAdvertisedDevice> device) {
+void TTRemoteInput::dispatchConnection(const std::shared_ptr<NimBLEAdvertisedDevice> &device) {
     state_ = CONNECTING;
     auto dispatched = DispatchQueue::dispatchOneOff(
         [this, device] {

@@ -43,8 +43,8 @@ protected:
     long keepDisconnectedUntilMs_ = 0;
     BLEClient *client_ = nullptr;
 
-    auto connectToDevice(std::shared_ptr<NimBLEAdvertisedDevice> device) -> bool;
-    void dispatchConnection(std::shared_ptr<NimBLEAdvertisedDevice> device);
+    auto connectToDevice(const std::shared_ptr<NimBLEAdvertisedDevice> &device) -> bool;
+    void dispatchConnection(const std::shared_ptr<NimBLEAdvertisedDevice> &device);
     void scanForNewDevice();
     void scanForPairedDevice();
     void scanForDevice();
