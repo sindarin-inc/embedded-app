@@ -33,7 +33,7 @@ auto TTRemoteInput::connectToDevice(std::shared_ptr<NimBLEAdvertisedDevice> devi
     BLEAddress address = device->getAddress();
     log_d("Attempting to connect to PageTurner at address: %s", address.toString().c_str());
 
-    if (!client_->connect(&device)) {
+    if (!client_->connect(device.get())) {
         log_e("Failed to connect to PageTurner");
         return false;
     }
