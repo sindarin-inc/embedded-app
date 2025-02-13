@@ -1,5 +1,3 @@
-#include "config.h"
-
 #if CONFIG_FONT_IBMF
 
 #include "IBMFFace.hpp"

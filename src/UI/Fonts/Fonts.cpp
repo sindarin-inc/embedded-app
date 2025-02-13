@@ -4,7 +4,6 @@
 
 #include "FontEntry.hpp"
 #include "Storage/PreferencesStore.hpp"
-#include "config.h"
 
 #if CONFIG_FONT_IBMF
 

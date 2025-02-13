@@ -9,7 +9,6 @@
 #include "../TTFFonts/NotoSans-Light.h"
 #include "TTFCache.hpp"
 #include "TTFDefs.hpp"
-#include "config.h"
 
 using namespace ttf_defs;
 using namespace font_defs;
