@@ -65,7 +65,44 @@ auto Font::ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2, FIX16 *ker
 void Font::copyBitmap(Bitmap &to, const Bitmap &from, Pos atPos, bool inverted) {
     if (fontPixelResolution_ == font_defs::PixelResolution::ONE_BIT) {
 
-        if (displayPixelResolution_ == PixelResolution::EIGHT_BITS) {
+        if (displayPixelResolution_ == PixelResolution::SIXTEEN_BITS) {
+            uint16_t data;
+            auto fromPtr = from.pixels;
+            auto toPtr = reinterpret_cast<uint16_t *>(
+                to.pixels + static_cast<size_t>((atPos.y * to.pitch) << 1));
+
+            for (uint16_t fromRow = 0; fromRow < from.dim.height;
+                 fromRow++, toPtr += to.pitch, fromPtr += from.pitch) {
+                int toIdx = atPos.x;
+                int fromIdx = 0;
+                uint16_t fromMask = 0;
+                if (inverted) {
+                    for (uint16_t i = 0; i < from.dim.width; i++) {
+                        if (fromMask == 0) {
+                            fromMask = 0x8000;
+                            data = fromPtr[fromIdx++];
+                        }
+                        if (data & fromMask) {
+                            toPtr[toIdx] = 0xFFFF;
+                        }
+                        fromMask >>= 1;
+                        toIdx += 1;
+                    }
+                } else {
+                    for (uint16_t i = 0; i < from.dim.width; i++) {
+                        if (fromMask == 0) {
+                            fromMask = 0x8000;
+                            data = fromPtr[fromIdx++];
+                        }
+                        if (data & fromMask) {
+                            toPtr[toIdx] = 0;
+                        }
+                        fromMask >>= 1;
+                        toIdx += 1;
+                    }
+                }
+            }
+        } else if (displayPixelResolution_ == PixelResolution::EIGHT_BITS) {
             uint8_t data;
             auto fromPtr = from.pixels;
             auto toPtr = to.pixels + static_cast<size_t>(atPos.y * to.pitch);
@@ -148,25 +185,51 @@ void Font::copyBitmap(Bitmap &to, const Bitmap &from, Pos atPos, bool inverted) 
             }
         }
     } else { // Font Resolution EIGHT_BITS
-        auto rowCount = from.dim.height;
-        auto fromPtr = from.pixels;
-        auto toPtr = &to.pixels[to.pitch * atPos.y + atPos.x];
-        while (rowCount-- > 0) {
-            if (inverted) {
-                for (uint16_t i = 0; i < from.dim.width; i++) {
-                    if (fromPtr[i] != 0) {
-                        toPtr[i] = fromPtr[i];
+        if (displayPixelResolution_ == PixelResolution::SIXTEEN_BITS) {
+            auto rowCount = from.dim.height;
+            auto fromPtr = from.pixels;
+            uint16_t *toPtr =
+                reinterpret_cast<uint16_t *>(&to.pixels[(to.pitch * atPos.y + atPos.x) << 1]);
+            while (rowCount-- > 0) {
+                if (inverted) {
+                    for (uint16_t i = 0; i < from.dim.width; i++) {
+                        if (fromPtr[i] != 0) {
+                            toPtr[i] = ((fromPtr[i] & 0xF8) << 8) | ((fromPtr[i] & 0xFC) << 3) |
+                                       (fromPtr[i] >> 3);
+                        }
+                    }
+                } else {
+                    for (uint16_t i = 0; i < from.dim.width; i++) {
+                        if (fromPtr[i] != 0) {
+                            uint8_t val = 255 - fromPtr[i];
+                            toPtr[i] = ((val & 0xF8) << 8) | ((val & 0xFC) << 3) | (val >> 3);
+                        }
                     }
                 }
-            } else {
-                for (uint16_t i = 0; i < from.dim.width; i++) {
-                    if (fromPtr[i] != 0) {
-                        toPtr[i] = 255 - fromPtr[i];
-                    }
-                }
+                fromPtr += from.pitch;
+                toPtr += to.pitch;
             }
-            fromPtr += from.pitch;
-            toPtr += to.pitch;
+        } else if (displayPixelResolution_ == PixelResolution::EIGHT_BITS) {
+            auto rowCount = from.dim.height;
+            auto fromPtr = from.pixels;
+            auto toPtr = &to.pixels[to.pitch * atPos.y + atPos.x];
+            while (rowCount-- > 0) {
+                if (inverted) {
+                    for (uint16_t i = 0; i < from.dim.width; i++) {
+                        if (fromPtr[i] != 0) {
+                            toPtr[i] = fromPtr[i];
+                        }
+                    }
+                } else {
+                    for (uint16_t i = 0; i < from.dim.width; i++) {
+                        if (fromPtr[i] != 0) {
+                            toPtr[i] = 255 - fromPtr[i];
+                        }
+                    }
+                }
+                fromPtr += from.pitch;
+                toPtr += to.pitch;
+            }
         }
     }
 }
