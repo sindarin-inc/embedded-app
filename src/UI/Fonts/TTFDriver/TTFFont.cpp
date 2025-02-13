@@ -188,7 +188,7 @@ void Font::copyBitmap(Bitmap &to, const Bitmap &from, Pos atPos, bool inverted) 
         if (displayPixelResolution_ == PixelResolution::SIXTEEN_BITS) {
             auto rowCount = from.dim.height;
             auto fromPtr = from.pixels;
-            uint16_t *toPtr =
+            auto toPtr =
                 reinterpret_cast<uint16_t *>(&to.pixels[(to.pitch * atPos.y + atPos.x) << 1]);
             while (rowCount-- > 0) {
                 if (inverted) {
