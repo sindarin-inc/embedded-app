@@ -46,6 +46,9 @@
 #if CONFIG_DISPLAY_EINKET013TT1
 #include "Displays/DisplayEinkET013TT1.hpp"
 DisplayEinkET013TT1 myDisplay;
+#elif CONFIG_DISPLAY_SIM_16BIT
+#include "Displays/DisplaySim16Bit.hpp"
+DisplaySim16Bit myDisplay(CONFIG_DISPLAY_WIDTH, CONFIG_DISPLAY_HEIGHT);
 #elif CONFIG_DISPLAY_SIM_8BIT
 #include "Displays/DisplaySim8Bit.hpp"
 DisplaySim8Bit myDisplay(CONFIG_DISPLAY_WIDTH, CONFIG_DISPLAY_HEIGHT);

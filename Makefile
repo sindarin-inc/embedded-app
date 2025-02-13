@@ -56,6 +56,15 @@ sim8-build:
 sim8: sim8-build
 	./lib/Simulator/build8/simulator
 
+.PHONY: sim16-build
+sim16-build:
+	mkdir -p lib/Simulator/build16
+	cd lib/Simulator/build16 && cmake $(CMAKE_FLAGS) -DDISPLAY_TYPE=DISPLAY_SIM_16BIT -DDISPLAY_WIDTH=600 -DDISPLAY_HEIGHT=600 $(CMAKE_SIM_DISPLAY_OPTIONS) .. && $(MAKE)
+
+.PHONY: sim-run16
+sim16: sim16-build
+	./lib/Simulator/build16/simulator
+
 .PHONY: lldb
 lldb: sim-build
 	lldb lib/Simulator/build/simulator

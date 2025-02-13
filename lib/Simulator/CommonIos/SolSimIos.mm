@@ -18,7 +18,10 @@ extern int LightingSetting;
 extern PosixFileSystem fileSystem;
 extern PreferencesStore prefs;
 #define protected public
-#if CONFIG_DISPLAY_SIM_8BIT
+#if CONFIG_DISPLAY_SIM_16BIT
+#include "Displays/DisplaySim16Bit.hpp"
+extern DisplaySim16Bit myDisplay;
+#elif CONFIG_DISPLAY_SIM_8BIT
 #include "Displays/DisplaySim8Bit.hpp"
 extern DisplaySim8Bit myDisplay;
 #elif CONFIG_DISPLAY_SIM_1BIT

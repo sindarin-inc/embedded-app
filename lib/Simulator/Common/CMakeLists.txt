@@ -9,7 +9,7 @@ option(ENABLE_WIFI "Enable WiFi" ON)
 set(DISPLAY_WIDTH "256" CACHE STRING "Width of the simulator display")
 set(DISPLAY_HEIGHT "256" CACHE STRING "Height of the simulator display")
 option(SIM_LAYOUT_DEBUG "Enable layout debug" OFF)
-set(DISPLAY_TYPE "DISPLAY_EINKET013TT1" CACHE STRING "Select the display type (e.g., DISPLAY_SIM_8BIT, DISPLAY_SIM_1BIT, DISPLAY_EINKET013TT1)")
+set(DISPLAY_TYPE "DISPLAY_EINKET013TT1" CACHE STRING "Select the display type (e.g., DISPLAY_SIM_16BIT, DISPLAY_SIM_8BIT, DISPLAY_SIM_1BIT, DISPLAY_EINKET013TT1)")
 set(TTF_SCREEN_RES_PER_INCH "150" CACHE STRING "Screen resolution in DPI")
 
 file(GLOB_RECURSE SOURCES
@@ -71,8 +71,8 @@ target_include_directories(${PROJECT_NAME} PUBLIC
     "${REPO_ROOT_DIR}/lib/argparse"
 )
 
-# Set compile definitions based on the selected DISPLAY_TYPE
-if(DISPLAY_TYPE STREQUAL "DISPLAY_SIM_8BIT")
+# Conditionally link freetype if we're using 8-bit or 16-bit display
+if(DISPLAY_TYPE STREQUAL "DISPLAY_SIM_16BIT" OR DISPLAY_TYPE STREQUAL "DISPLAY_SIM_8BIT")
     # Set FreeType options before adding the subdirectory
     set(FT_DISABLE_PNG ON CACHE BOOL "Disable PNG support in FreeType" FORCE)
     set(FT_DISABLE_HARFBUZZ ON CACHE BOOL "Disable HarfBuzz support in FreeType" FORCE)
@@ -80,21 +80,33 @@ if(DISPLAY_TYPE STREQUAL "DISPLAY_SIM_8BIT")
     add_subdirectory(${REPO_ROOT_DIR}/components/freetype/freetype ${CMAKE_CURRENT_BINARY_DIR}/freetype)
     target_link_libraries(${PROJECT_NAME} PUBLIC freetype)
     target_compile_definitions(${PROJECT_NAME} PUBLIC
-        CONFIG_DISPLAY_SIM_8BIT=1
+        CONFIG_DISPLAY_SIM_16BIT=1
         CONFIG_FONT_TTF=1
         CONFIG_FONT_IBMF=0
+    )
+else()
+    target_compile_definitions(${PROJECT_NAME} PUBLIC
+        CONFIG_FONT_TTF=0
+        CONFIG_FONT_IBMF=1
+    )
+endif()
+
+# Set compile definitions based on the selected DISPLAY_TYPE
+if(DISPLAY_TYPE STREQUAL "DISPLAY_SIM_16BIT")
+    target_compile_definitions(${PROJECT_NAME} PUBLIC
+        CONFIG_DISPLAY_SIM_16BIT=1
+    )
+elseif(DISPLAY_TYPE STREQUAL "DISPLAY_SIM_8BIT")
+    target_compile_definitions(${PROJECT_NAME} PUBLIC
+        CONFIG_DISPLAY_SIM_8BIT=1
     )
 elseif(DISPLAY_TYPE STREQUAL "DISPLAY_SIM_1BIT")
     target_compile_definitions(${PROJECT_NAME} PUBLIC
         CONFIG_DISPLAY_SIM_1BIT=1
-        CONFIG_FONT_TTF=0
-        CONFIG_FONT_IBMF=1
     )
 elseif(DISPLAY_TYPE STREQUAL "DISPLAY_EINKET013TT1")
     target_compile_definitions(${PROJECT_NAME} PUBLIC
         CONFIG_DISPLAY_EINKET013TT1=1
-        CONFIG_FONT_TTF=0
-        CONFIG_FONT_IBMF=1
     )
 else()
     message(FATAL_ERROR "Invalid DISPLAY_TYPE: ${DISPLAY_TYPE}")

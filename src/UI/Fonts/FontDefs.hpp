@@ -21,7 +21,7 @@ struct Pos {
 };
 
 typedef uint8_t *MemoryPtr;
-enum class PixelResolution : uint8_t { ONE_BIT, EIGHT_BITS };
+enum class PixelResolution : uint8_t { ONE_BIT, EIGHT_BITS, SIXTEEN_BITS };
 
 // For 8-bit screen:
 //
@@ -35,7 +35,10 @@ enum class PixelResolution : uint8_t { ONE_BIT, EIGHT_BITS };
 // Font resolution, for both CONFIG_FONT_IBMF and CONFIG_FONT_TTF
 
 #if SIMULATOR
-#if CONFIG_DISPLAY_SIM_8BIT
+#if CONFIG_DISPLAY_SIM_16BIT
+const constexpr PixelResolution DEFAULT_DISPLAY_PIXEL_RESOLUTION = PixelResolution::SIXTEEN_BITS;
+const constexpr PixelResolution DEFAULT_FONT_PIXEL_RESOLUTION = PixelResolution::SIXTEEN_BITS;
+#elif CONFIG_DISPLAY_SIM_8BIT
 const constexpr PixelResolution DEFAULT_DISPLAY_PIXEL_RESOLUTION = PixelResolution::EIGHT_BITS;
 const constexpr PixelResolution DEFAULT_FONT_PIXEL_RESOLUTION = PixelResolution::EIGHT_BITS;
 #else
@@ -53,7 +56,8 @@ const constexpr PixelResolution DEFAULT_FONT_PIXEL_RESOLUTION = PixelResolution:
 #endif
 
 const constexpr bool PIXEL_RESOLUTION_OK =
-    ((DEFAULT_DISPLAY_PIXEL_RESOLUTION == PixelResolution::EIGHT_BITS) ||
+    ((DEFAULT_DISPLAY_PIXEL_RESOLUTION == PixelResolution::SIXTEEN_BITS) ||
+     (DEFAULT_DISPLAY_PIXEL_RESOLUTION == PixelResolution::EIGHT_BITS) ||
      (DEFAULT_FONT_PIXEL_RESOLUTION == PixelResolution::ONE_BIT));
 
 #if CONFIG_FONT_IBMF
