@@ -226,9 +226,8 @@ void DisableCore0Wdt() {
 }
 
 void InitializePlatform() {
-    auto hardwareRevision = GetHardwareRevision();
 #if CONFIG_USE_SYS_ON
-    if (hardwareRevision == 1) {
+    if (GetHardwareRevision() == 1) {
         sysOnPin = 5;
     } else {
         sysOnPin = 46;
@@ -244,7 +243,7 @@ void InitializePlatform() {
     PinMode(CONFIG_DISPLAY_POWER, OUTPUT);
 #endif
 #if CONFIG_LEDC_BACKLIGHT
-    if (hardwareRevision < 3) {
+    if (GetHardwareRevision() < 3) {
         minLightingDutyCycle = 5;
         maxLightingDutyCycle = 60;
     } else {
