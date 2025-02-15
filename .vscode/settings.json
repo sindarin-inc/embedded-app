@@ -114,7 +114,8 @@
         "*.xbm": "cpp",
         "format": "cpp",
         "span": "cpp",
-        "any": "cpp"
+        "any": "cpp",
+        "print": "cpp"
     },
     "editor.formatOnSave": true,
     "editor.defaultFormatter": "xaver.clang-format",

@@ -35,10 +35,6 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
         this->telemetry_);
     readablePlacemarkHistoryScreen_->setBackCallback([this]() { setCurrentScreen(nullptr); });
 
-    readableDictionaryScreen_ = std::make_shared<ReadableDictionaryScreen>(
-        this->prefs_, this->readable_, this->display_, this->renderer_);
-    readableDictionaryScreen_->setBackCallback([this]() { setCurrentScreen(nullptr); });
-
     auto onMainMenu = [this]() {
         hidePopupMenu();
         prefs_.lastReadableId.remove();
@@ -262,24 +258,18 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
             auto placeHref =
                 std::dynamic_pointer_cast<EPubPlace>(renderer_.getCurrentPlace())->getHRef();
 
-            if (stream->hasDictionary(placeHref)) {
-                menuItems->emplace_back(std::make_shared<MenuItemSingleLine>("Dictionary",
-                                                                             [this]() {
-                    auto epubPlace =
-                        std::dynamic_pointer_cast<EPubPlace>(renderer_.getCurrentPlace());
-
-                    readableDictionaryScreen_->setPlaceInReadable(epubPlace);
-                    readableDictionaryScreen_->setFirstLoad();
-                    setCurrentScreen(readableDictionaryScreen_);
-                }));
-            } else {
-                menuItems->emplace_back(std::make_shared<MenuItemSingleLine>("Dictionary",
-                                                                             [this]() {
-                    RootUI::getInstance().showTemporaryMessage(notExistMessage_,
-                                                               TEMP_MSG_DURATION_NO_CLOSE);
-                }));
-                log_d("No dictionary for spine %s", placeHref.c_str());
-            }
+            menuItems->emplace_back(std::make_shared<MenuItemSingleLine>("Ask AI", [this]() {
+                auto bookQuestionsScreen = std::make_shared<BookQuestionsScreen>(
+                    this->prefs_, this->fileSystem_, this->readable_, this->stream_, this->display_,
+                    this->telemetry_);
+                bookQuestionsScreen->loadQuestions();
+                bookQuestionsScreen->setFirstLoad();
+                bookQuestionsScreen->setBackCallback([this]() {
+                    this->setCurrentScreen(nullptr);
+                    setNeedsRerender();
+                });
+                setCurrentScreen(bookQuestionsScreen);
+            }));
 
             if (stream->hasSummary(placeHref)) {
                 menuItems->emplace_back(std::make_shared<MenuItemSingleLine>("Summary", [this]() {
@@ -310,7 +300,7 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
                 }));
             }
         } else {
-            menuItems->emplace_back(std::make_shared<MenuItemSingleLine>("Dictionary", [this]() {
+            menuItems->emplace_back(std::make_shared<MenuItemSingleLine>("Ask AI", [this]() {
                 RootUI::getInstance().showTemporaryMessage(notExistMessage_,
                                                            TEMP_MSG_DURATION_NO_CLOSE);
             }));
