@@ -203,8 +203,8 @@ auto WriteToStorage(uint32_t nvsHandle, const char *key, T &value) -> esp_err_t 
         PROFILE_NVS_WRITES_INCREMENT(key, 1);
 #if CONFIG_USE_TURN_TOUCH_REMOTE
     } else if constexpr (std::is_same_v<T, NimBLEAddress>) {
-        auto addr = value.getBase();
-        err = nvs_set_blob(nvsHandle, key, &addr, sizeof(ble_addr_t));
+        const ble_addr_t *addr = value.getBase();
+        err = nvs_set_blob(nvsHandle, key, addr, sizeof(ble_addr_t));
         PROFILE_NVS_WRITES_INCREMENT(key, 1);
 #endif
     } else if constexpr (std::is_same_v<T, std::string>) {
