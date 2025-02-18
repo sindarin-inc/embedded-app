@@ -14,7 +14,11 @@ public:
 
     DisplayEsp32P4FunctionEv(DisplayEsp32P4FunctionEv const &) = delete;
 
-    ~DisplayEsp32P4FunctionEv() override = default;
+    ~DisplayEsp32P4FunctionEv() override {
+        if (updateSemaphore_ != nullptr) {
+            vSemaphoreDelete(updateSemaphore_);
+        }
+    };
 
     [[nodiscard]] auto defaultTextInsets() const -> DisplayInset override {
         return {20, 20, 10, 10};
@@ -38,10 +42,17 @@ protected:
         return reinterpret_cast<uint8_t *>(gfxCanvas_.getBuffer());
     }
 
+    IRAM_ATTR static auto onColorTransDone(esp_lcd_panel_handle_t panel,
+                                           esp_lcd_dpi_panel_event_data_t *edata,
+                                           void *user_ctx) -> bool;
+
 private:
     GFXcanvas16 gfxCanvas_;
     esp_ldo_channel_handle_t ldoMipiPhy_ = nullptr;
     esp_lcd_dsi_bus_handle_t mipiDsiBus_ = nullptr;
     esp_lcd_panel_handle_t panelHandle_ = nullptr;
     esp_lcd_panel_io_handle_t mipiDbiIo_ = nullptr;
+
+    SemaphoreHandle_t updateSemaphore_ = nullptr;
+    bool clearFrameBuffer_ = true;
 };

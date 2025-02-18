@@ -6,9 +6,23 @@
 #include <esp_check.h>
 #include <esp_lcd_ili9881c.h>
 
+IRAM_ATTR bool DisplayEsp32P4FunctionEv::onColorTransDone(esp_lcd_panel_handle_t panel,
+                                                          esp_lcd_dpi_panel_event_data_t *edata,
+                                                          void *user_ctx) {
+    auto display = static_cast<DisplayEsp32P4FunctionEv *>(user_ctx);
+    // TODO: This isn't quite right either since it causes the screen to flash briefly
+    if (display->clearFrameBuffer_) {
+        display->fillScreen(display->bg);
+    }
+    xSemaphoreGiveFromISR(display->updateSemaphore_, nullptr);
+    return true;
+}
+
 auto DisplayEsp32P4FunctionEv::setup() -> bool {
     DisplaySystem::setup();
     invertDisplay(true);
+
+    updateSemaphore_ = xSemaphoreCreateBinary();
 
     // Turn on the power for MIPI DSI PHY, so it can go from "No Power" state to "Shutdown" state
     log_i("MIPI DSI PHY Powered on");
@@ -100,6 +114,13 @@ auto DisplayEsp32P4FunctionEv::setup() -> bool {
     log_i("DisplayEsp32P4FunctionEv::setup() done with size %d x %d", nativeWidth(),
           nativeHeight());
 
+    esp_lcd_dpi_panel_event_callbacks_t cbs = {
+        .on_color_trans_done = onColorTransDone,
+    };
+    ESP_ERROR_CHECK(esp_lcd_dpi_panel_register_event_callbacks(panelHandle_, &cbs, this));
+
+    xSemaphoreGive(updateSemaphore_);
+
     return true;
 }
 
@@ -108,12 +129,16 @@ void DisplayEsp32P4FunctionEv::updateDisplay(DisplaySystem::UpdateType updateTyp
                                              DisplaySystem::UpdateType altUpdateType,
                                              ScreenSide screen, SolRect altRect) {
 
+    // If we're not done rendering from last time yet, wait
+    if (xSemaphoreTake(updateSemaphore_, portMAX_DELAY) != pdPASS) {
+        log_e("Failed to take display update");
+        return;
+    }
+
     ESP_ERROR_CHECK(
         esp_lcd_panel_draw_bitmap(panelHandle_, 0, 0, nativeWidth(), nativeHeight(), getBuffer()));
 
-    if (clearFrameBuffer) {
-        // fillScreen(bg);
-    }
+    clearFrameBuffer_ = clearFrameBuffer;
 
     log_i("DisplayEsp32P4FunctionEv::updateDisplay()");
 }
