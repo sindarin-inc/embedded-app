@@ -26,14 +26,20 @@ auto BookQuestionsScreen::layout(LayoutContext &context, SolSize size) -> SolSiz
                                  LayoutOptionsSizeToFitVertical | LayoutOptionsAlignCenterVertical);
         return {size.width, insetRect.size.height + 2 * inset};
     } else {
-        // When showing contexts, position description below back label
-        auto descRect = context.setViewFrame(
-            descriptionView_, SolRect::fromSize(size).inset(inset, backLabelRect.bottom() + inset),
+        // When showing contexts, position question below back label with large gap
+        auto questionRect = context.setViewFrame(
+            questionView_, SolRect::fromSize(size).inset(inset, backLabelRect.bottom() + inset * 4),
             LayoutOptionsSizeToFitVertical);
 
-        // Position menu below description
+        // Position description closer to question
+        auto descRect = context.setViewFrame(
+            descriptionView_,
+            SolRect::fromSize(size).inset(inset, questionRect.bottom() + inset * 2),
+            LayoutOptionsSizeToFitVertical);
+
+        // Position menu below description with extra large gap
         auto menuRect = context.setViewFrame(
-            menuView_, SolRect::fromSize(size).inset(inset, descRect.bottom() + inset),
+            menuView_, SolRect::fromSize(size).inset(inset, descRect.bottom() + inset * 5),
             LayoutOptionsSizeToFitVertical);
 
         return {size.width, menuRect.bottom() + inset};
@@ -43,6 +49,7 @@ auto BookQuestionsScreen::layout(LayoutContext &context, SolSize size) -> SolSiz
 void BookQuestionsScreen::drawInRect(SolRect rect) {
     backLabelView_.draw();
     if (showingContexts_) {
+        questionView_.draw();
         descriptionView_.draw();
     }
     menuView_.draw();
@@ -128,6 +135,7 @@ void BookQuestionsScreen::loadMenuItems() {
                 std::make_shared<MenuItemSingleLine>(std::string(question.question), []() {}));
         }
     } else {
+        questionView_.setText(std::string(selectedQuestion_.question));
         descriptionView_.setText(std::string(selectedQuestion_.description));
 
         // Only show allowed contexts for this question

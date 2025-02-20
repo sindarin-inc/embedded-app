@@ -4,6 +4,7 @@
 #include "Models/BookQuestion.hpp"
 #include "Storage/FileSystem.hpp"
 #include "Storage/PreferencesStore.hpp"
+#include "UI/Components/ArrowLabelView.hpp"
 #include "UI/Components/EinkView.hpp"
 #include "UI/Components/MultiLineTextView.hpp"
 #include "UI/Components/SingleLineTextView.hpp"
@@ -19,9 +20,7 @@ public:
                         Telemetry &telemetry)
         : EinkView(display), display_(display), prefs_(prefs), fileSystem_(fileSystem),
           readable_(readable), stream_(stream), telemetry_(telemetry), menuView_(display),
-          backLabelView_(display, "Back"), descriptionView_(display, 2) {
-        backLabelView_.setFont(&fontFace0);
-        descriptionView_.setFont(&fontFace0);
+          backLabelView_(display, "Back"), questionView_(display), descriptionView_(display, 6) {
         menuView_.padding = 1;
         menuView_.itemsPerPage = 11;
         needsMenuItemsLoad_ = true;
@@ -46,7 +45,8 @@ protected:
     Telemetry &telemetry_;
     MenuView menuView_;
 
-    SingleLineTextView backLabelView_;
+    ArrowLabelView backLabelView_;
+    SingleLineTextView questionView_;
     MultiLineTextView descriptionView_;
 
     BookQuestions questions_;
