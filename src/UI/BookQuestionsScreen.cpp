@@ -87,6 +87,7 @@ void BookQuestionsScreen::processCommand(RemoteCommand command) {
         if (!showingContexts_) {
             auto selectedIndex = menuView_.getSelectedIndex();
             if (selectedIndex < questions_.questions.size()) {
+                selectedQuestionIndex_ = selectedIndex;
                 selectedQuestion_ = questions_.questions[selectedIndex];
                 showingContexts_ = true;
                 loadMenuItems();
@@ -103,6 +104,7 @@ void BookQuestionsScreen::processCommand(RemoteCommand command) {
         if (showingContexts_) {
             showingContexts_ = false;
             loadMenuItems();
+            menuView_.setSelectedIndex(selectedQuestionIndex_);
             setFirstLoad();
             setNeedsRerender();
         } else {

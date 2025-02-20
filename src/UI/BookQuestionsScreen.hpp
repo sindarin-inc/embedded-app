@@ -53,6 +53,7 @@ protected:
     bool showingContexts_ = false;
     BookQuestion selectedQuestion_;
     bool needsMenuItemsLoad_{true};
+    size_t selectedQuestionIndex_{0};
 
     void moveSelection(int delta);
     void executeQuestion();
