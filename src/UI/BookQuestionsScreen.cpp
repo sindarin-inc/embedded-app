@@ -161,11 +161,18 @@ void BookQuestionsScreen::executeQuestion(const BookQuestionContext &context) {
         return;
     }
 
+    log_d("Executing question: slug=%s, context=%s", selectedQuestion_.slug.c_str(),
+          context.context_type.c_str());
+    log_d("Book UUID: %s", readable_->uuid.c_str());
+    log_d("Chapter: %s, Offset: %u", placeInReadable_->getHRef().c_str(),
+          placeInReadable_->getOffset());
+
     BookQuestionRequest request = {};
     request.question_slug = selectedQuestion_.slug;
     request.context_type = context.context_type;
-    request.href = placeInReadable_->getHRef();
-    request.byte_offset = placeInReadable_->getOffset();
+    request.book_uuid = readable_->uuid;
+    request.chapter = placeInReadable_->getHRef();
+    request.chapter_offset = placeInReadable_->getOffset();
 
     auto resp = std::make_shared<BookQuestionResponse>();
 
@@ -173,11 +180,15 @@ void BookQuestionsScreen::executeQuestion(const BookQuestionContext &context) {
 
     // TODO: Consider moving this to a background task if needed
     int result = SindarinAPI::getInstance()->askQuestion(request, resp.get(), false, nullptr);
+    log_d("Question request result: %d (success=%d)", result, resp->success);
 
     if (result == 200 && resp->success) {
+        log_d("Got successful response, answer length: %zu", resp->answer.length());
         questionResponse_ = *resp;
         setState(State::ANSWER);
     } else {
+        log_e("Request failed: result=%d, success=%d, error='%s'", result, resp->success,
+              resp->error.c_str());
         questionResponse_.success = false;
         questionResponse_.error = "Failed to get answer from server";
         setState(State::ANSWER);

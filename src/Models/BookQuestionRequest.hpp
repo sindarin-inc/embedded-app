@@ -12,8 +12,9 @@ public:
 
     SpiramString question_slug;
     SpiramString context_type;
-    SpiramString href;
-    size_t byte_offset{0};
+    SpiramString book_uuid;
+    SpiramString chapter;
+    size_t chapter_offset{0};
 
     auto fromJson(const JsonObject &j) -> bool override {
         return true; // Not needed for request
@@ -22,8 +23,9 @@ public:
     auto toJson(JsonObject &j) const -> bool {
         j["question_slug"] = question_slug;
         j["context_type"] = context_type;
-        j["href"] = href;
-        j["byte_offset"] = byte_offset;
+        j["book_uuid"] = book_uuid;
+        j["chapter"] = chapter;
+        j["chapter_offset"] = chapter_offset;
         return true;
     }
 };
@@ -36,21 +38,27 @@ public:
     SpiramString answer;
     bool success{false};
     SpiramString error;
+    int tokens_used{0};
+    float cost{0.0f};
 
     auto fromJson(const JsonObject &j) -> bool override {
-        if (!j.containsKey("success")) {
-            return false;
-        }
-        success = j["success"].as<bool>();
-
-        if (success) {
-            if (!j.containsKey("answer")) {
-                return false;
-            }
+        // If we have an answer field, consider it a success
+        if (j.containsKey("answer")) {
+            success = true;
             answer = j["answer"].as<std::string>();
-        } else if (j.containsKey("error")) {
-            error = j["error"].as<std::string>();
+            tokens_used = j["tokens_used"] | 0;
+            cost = j["cost"] | 0.0f;
+            return true;
         }
-        return true;
+
+        // If we have an error field, it's a failure
+        if (j.containsKey("error")) {
+            success = false;
+            error = j["error"].as<std::string>();
+            return true;
+        }
+
+        // If we have neither answer nor error, it's invalid
+        return false;
     }
 };

@@ -460,15 +460,18 @@ auto SindarinAPI::getServerTime(time_t *time, bool useBle,
 
 auto SindarinAPI::askQuestion(const BookQuestionRequest &req, BookQuestionResponse *resp,
                               bool useBle, const std::shared_ptr<CancelFlag> &cancel) -> int {
-    auto url = StringFormat("%s/questions/", baseUrl_.c_str());
+    auto url = StringFormat("%s/questions/ask/", baseUrl_.c_str());
+    log_d("Sending question request to: %s", url.c_str());
 
     auto client = createClient(url, "application/json", HTTP_METHOD_POST, useBle, cancel);
     if (client == nullptr) {
+        log_e("Failed to create client");
         return ERR_CLIENT_OPEN;
     }
 
     auto err = setAuth(client);
     if (err != ESP_OK) {
+        log_e("Failed to set auth");
         return ERR_SET_AUTH;
     }
 
@@ -477,28 +480,36 @@ auto SindarinAPI::askQuestion(const BookQuestionRequest &req, BookQuestionRespon
     JsonObject body = doc->to<JsonObject>();
     req.toJson(body);
 
+    // Log request body
+    log_d("Request body: %s", DumpJson(*doc).c_str());
+
     size_t serializedMaxSize = (*doc).memoryUsage() * 2;
     auto reqBody = SpiRamArrayPtr<char>(serializedMaxSize);
     size_t bodyLength = serializeJson(*doc, reqBody.get(), serializedMaxSize);
 
     err = client->open(bodyLength);
     if (err != ESP_OK) {
+        log_e("Failed to open client connection");
         return ERR_CLIENT_OPEN;
     }
     defer { client->close(); };
 
     int writeLength = client->write(reqBody.get(), bodyLength);
     if (writeLength != bodyLength) {
+        log_e("Failed to write request body (wrote %d of %zu bytes)", writeLength, bodyLength);
         return ERR_CLIENT_WRITE;
     }
 
     int contentLength = client->fetchHeaders(cancel);
     if (contentLength <= 0) {
+        log_e("Failed to fetch headers or empty response");
         return ERR_CONTENT_LENGTH;
     }
 
     int httpCode = client->getStatusCode();
+    log_d("Response status code: %d", httpCode);
     if (httpCode != 200) {
+        log_e("Request failed with status code: %d", httpCode);
         return httpCode;
     }
 
@@ -506,13 +517,19 @@ auto SindarinAPI::askQuestion(const BookQuestionRequest &req, BookQuestionRespon
     auto respJson = std::make_unique<SpiRamJsonDocument>(1024 + contentLength * 3);
     auto error = ArduinoJson::deserializeJson(*respJson, *stream);
 
+    // Log full response
+    log_d("Response JSON: %s", DumpJson(*respJson).c_str());
+
     if (error.code() != DeserializationError::Ok) {
+        log_e("Failed to deserialize response: %s", error.c_str());
         return ERR_JSON_DESERIALIZE;
     }
 
     if (!resp->fromJson(respJson->as<JsonObject>())) {
+        log_e("Failed to parse response JSON into BookQuestionResponse");
         return ERR_JSON_OBJECT_PARSE;
     }
 
+    log_d("Successfully parsed response (success=%d)", resp->success);
     return httpCode;
 }
