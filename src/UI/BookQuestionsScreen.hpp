@@ -7,6 +7,7 @@
 #include "UI/Components/EinkView.hpp"
 #include "UI/Components/MultiLineTextView.hpp"
 #include "UI/Components/SingleLineTextView.hpp"
+#include "UI/Menu/MenuItemSingleLine.hpp"
 #include "UI/Menu/MenuView.hpp"
 #include "UI/Screen.hpp"
 
@@ -23,6 +24,7 @@ public:
         descriptionView_.setFont(&fontFace0);
         menuView_.padding = 1;
         menuView_.itemsPerPage = 11;
+        needsMenuItemsLoad_ = true;
     }
 
     void addMenuItem(const std::shared_ptr<MenuItem> &item) { menuView_.addMenuItem(item); }
@@ -50,6 +52,7 @@ protected:
     BookQuestions questions_;
     bool showingContexts_ = false;
     BookQuestion selectedQuestion_;
+    bool needsMenuItemsLoad_{true};
 
     void moveSelection(int delta);
     void executeQuestion();

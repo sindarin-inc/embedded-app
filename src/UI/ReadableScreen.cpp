@@ -9,6 +9,7 @@
 #include "Misc/Platform.hpp"
 #include "Models/UserReadablePartialChapterSummary.hpp"
 #include "UI/Bitmaps/Auto_Pilot_Icons.hpp"
+#include "UI/BookQuestionsScreen.hpp"
 #include "UI/ReadableHookScreens.hpp"
 #include "UI/RootUI.hpp"
 #include "sindarin-debug.h"
@@ -262,7 +263,6 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
                 auto bookQuestionsScreen = std::make_shared<BookQuestionsScreen>(
                     this->prefs_, this->fileSystem_, this->readable_, this->stream_, this->display_,
                     this->telemetry_);
-                bookQuestionsScreen->loadQuestions();
                 bookQuestionsScreen->setFirstLoad();
                 bookQuestionsScreen->setBackCallback([this]() {
                     this->setCurrentScreen(nullptr);
