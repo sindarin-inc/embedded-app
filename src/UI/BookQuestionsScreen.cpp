@@ -20,39 +20,45 @@ auto BookQuestionsScreen::layout(LayoutContext &context, SolSize size) -> SolSiz
                                               LayoutOptionsSizeToFit | LayoutOptionsAlignTop |
                                                   LayoutOptionsAlignLeft);
 
-    if (!showingContexts_) {
+    if (state_ == State::QUESTIONS_LIST) {
         auto insetRect =
             context.setViewFrame(menuView_, SolRect::fromSize(size).inset(inset),
                                  LayoutOptionsSizeToFitVertical | LayoutOptionsAlignCenterVertical);
         return {size.width, insetRect.size.height + 2 * inset};
     } else {
-        // When showing contexts, position question below back label with large gap
+        // Layout for contexts, answer, or loading screens
         auto questionRect = context.setViewFrame(
             questionView_, SolRect::fromSize(size).inset(inset, backLabelRect.bottom() + inset * 4),
             LayoutOptionsSizeToFitVertical);
 
-        // Position description closer to question
         auto descRect = context.setViewFrame(
             descriptionView_,
             SolRect::fromSize(size).inset(inset, questionRect.bottom() + inset * 2),
             LayoutOptionsSizeToFitVertical);
 
-        // Position menu below description with extra large gap
-        auto menuRect = context.setViewFrame(
-            menuView_, SolRect::fromSize(size).inset(inset, descRect.bottom() + inset * 5),
-            LayoutOptionsSizeToFitVertical);
+        if (state_ == State::CONTEXTS_LIST) {
+            auto menuRect = context.setViewFrame(
+                menuView_, SolRect::fromSize(size).inset(inset, descRect.bottom() + inset * 5),
+                LayoutOptionsSizeToFitVertical);
+            return {size.width, menuRect.bottom() + inset};
+        }
 
-        return {size.width, menuRect.bottom() + inset};
+        return {size.width, descRect.bottom() + inset};
     }
 }
 
 void BookQuestionsScreen::drawInRect(SolRect rect) {
     backLabelView_.draw();
-    if (showingContexts_) {
+
+    if (state_ != State::QUESTIONS_LIST) {
+        backgroundView_.draw();
         questionView_.draw();
         descriptionView_.draw();
     }
-    menuView_.draw();
+
+    if (state_ == State::QUESTIONS_LIST || state_ == State::CONTEXTS_LIST) {
+        menuView_.draw();
+    }
 }
 
 void BookQuestionsScreen::render(DisplaySystem &display) {
@@ -77,80 +83,54 @@ void BookQuestionsScreen::render(DisplaySystem &display) {
 void BookQuestionsScreen::processCommand(RemoteCommand command) {
     switch (command) {
     case RemoteCommand::UP:
-        moveSelection(-1);
+        if (state_ == State::QUESTIONS_LIST || state_ == State::CONTEXTS_LIST) {
+            moveSelection(-1);
+        }
         break;
     case RemoteCommand::DOWN:
-        moveSelection(1);
+        if (state_ == State::QUESTIONS_LIST || state_ == State::CONTEXTS_LIST) {
+            moveSelection(1);
+        }
         break;
     case RemoteCommand::ENTER:
     case RemoteCommand::RIGHT:
-        if (!showingContexts_) {
+        if (state_ == State::QUESTIONS_LIST) {
             auto selectedIndex = menuView_.getSelectedIndex();
             if (selectedIndex < questions_.questions.size()) {
                 selectedQuestionIndex_ = selectedIndex;
                 selectedQuestion_ = questions_.questions[selectedIndex];
-                showingContexts_ = true;
-                loadMenuItems();
-                setFirstLoad();
-                setNeedsRerender();
+                setState(State::CONTEXTS_LIST);
             }
-        } else {
-            // TODO: Execute question with selected context
-            back();
+        } else if (state_ == State::CONTEXTS_LIST) {
+            auto selectedIndex = menuView_.getSelectedIndex();
+            if (selectedIndex < questions_.contexts.size()) {
+                executeQuestion(questions_.contexts[selectedIndex]);
+            }
         }
         break;
     case RemoteCommand::BACK:
     case RemoteCommand::LEFT:
-        if (showingContexts_) {
-            showingContexts_ = false;
-            loadMenuItems();
+        switch (state_) {
+        case State::ANSWER:
+            setState(State::CONTEXTS_LIST);
+            break;
+        case State::CONTEXTS_LIST:
+            setState(State::QUESTIONS_LIST);
             menuView_.setSelectedIndex(selectedQuestionIndex_);
-            setFirstLoad();
-            setNeedsRerender();
-        } else {
+            break;
+        default:
             setFirstLoad();
             setNeedsRerender();
             back();
+            break;
         }
-        return;
+        break;
     default:
         break;
     }
 }
 
-void BookQuestionsScreen::loadMenuItems() {
-    menuView_.resetMenuItems();
-
-    if (!showingContexts_) {
-        // Load questions if they haven't been loaded yet
-        if (questions_.questions.empty()) {
-            loadQuestions();
-            if (questions_.questions.empty()) {
-                // If questions are still empty after loading, there was an error
-                return; // loadQuestions() will have called back() on error
-            }
-        }
-
-        // Add menu items
-        for (const auto &question : questions_.questions) {
-            menuView_.addMenuItem(
-                std::make_shared<MenuItemSingleLine>(std::string(question.question), []() {}));
-        }
-    } else {
-        questionView_.setText(std::string(selectedQuestion_.question));
-        descriptionView_.setText(std::string(selectedQuestion_.description));
-
-        // Only show allowed contexts for this question
-        for (const auto &context : questions_.contexts) {
-            if (std::find(selectedQuestion_.allowed_contexts.begin(),
-                          selectedQuestion_.allowed_contexts.end(),
-                          context.context_type) != selectedQuestion_.allowed_contexts.end()) {
-                menuView_.addMenuItem(std::make_shared<MenuItemSingleLine>(
-                    std::string(context.description), []() {}));
-            }
-        }
-    }
-}
+void BookQuestionsScreen::loadMenuItems() { updateUIForState(); }
 
 void BookQuestionsScreen::loadQuestions() {
     // Load and parse questions JSON
@@ -168,4 +148,92 @@ void BookQuestionsScreen::loadQuestions() {
     questionsFile.close();
 
     questions_ = BookQuestions::loadFromJson(jsonStr);
+}
+
+void BookQuestionsScreen::executeQuestion(const BookQuestionContext &context) {
+    setState(State::LOADING);
+
+    // Get current place from the stream directly
+    placeInReadable_ = std::dynamic_pointer_cast<EPubPlace>(renderer_.getCurrentPlace());
+    if (!placeInReadable_) {
+        log_e("Failed to get current place");
+        back();
+        return;
+    }
+
+    BookQuestionRequest request = {};
+    request.question_slug = selectedQuestion_.slug;
+    request.context_type = context.context_type;
+    request.href = placeInReadable_->getHRef();
+    request.byte_offset = placeInReadable_->getOffset();
+
+    auto resp = std::make_shared<BookQuestionResponse>();
+
+    SindarinAPI::getInstance()->setAccessToken(prefs_.cloudToken.get().value());
+
+    // TODO: Consider moving this to a background task if needed
+    int result = SindarinAPI::getInstance()->askQuestion(request, resp.get(), false, nullptr);
+
+    if (result == 200 && resp->success) {
+        questionResponse_ = *resp;
+        setState(State::ANSWER);
+    } else {
+        questionResponse_.success = false;
+        questionResponse_.error = "Failed to get answer from server";
+        setState(State::ANSWER);
+    }
+}
+
+void BookQuestionsScreen::setState(State newState) {
+    state_ = newState;
+    updateUIForState();
+    setFirstLoad();
+    setNeedsRerender();
+}
+
+void BookQuestionsScreen::updateUIForState() {
+    menuView_.resetMenuItems();
+
+    switch (state_) {
+    case State::QUESTIONS_LIST:
+        if (questions_.questions.empty()) {
+            loadQuestions();
+            if (questions_.questions.empty()) {
+                return; // loadQuestions() will have called back() on error
+            }
+        }
+        for (const auto &question : questions_.questions) {
+            menuView_.addMenuItem(
+                std::make_shared<MenuItemSingleLine>(std::string(question.question), []() {}));
+        }
+        break;
+
+    case State::CONTEXTS_LIST:
+        questionView_.setText(std::string(selectedQuestion_.question));
+        descriptionView_.setText(std::string(selectedQuestion_.description));
+        for (const auto &context : questions_.contexts) {
+            if (std::find(selectedQuestion_.allowed_contexts.begin(),
+                          selectedQuestion_.allowed_contexts.end(),
+                          context.context_type) != selectedQuestion_.allowed_contexts.end()) {
+                menuView_.addMenuItem(std::make_shared<MenuItemSingleLine>(
+                    std::string(context.description), []() {}));
+            }
+        }
+        break;
+
+    case State::LOADING:
+        questionView_.setText("Loading...");
+        descriptionView_.setText("Please wait while we process your question...");
+        break;
+
+    case State::ANSWER:
+        questionView_.setText(std::string(selectedQuestion_.question));
+        if (questionResponse_.success) {
+            descriptionView_.setText(std::string(questionResponse_.answer));
+        } else {
+            descriptionView_.setText(std::string(questionResponse_.error));
+        }
+        menuView_.addMenuItem(std::make_shared<MenuItemSingleLine>("Back", []() {}));
+        break;
+    }
 }

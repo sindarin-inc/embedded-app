@@ -1,10 +1,15 @@
 #pragma once
 
+#include "Communications/SindarinAPI.hpp"
+#include "EPub/EPubFile.hpp"
 #include "Misc/Telemetry.hpp"
 #include "Models/BookQuestion.hpp"
+#include "Renderers/Renderer.hpp"
+#include "Renderers/RendererStream.hpp"
 #include "Storage/FileSystem.hpp"
 #include "Storage/PreferencesStore.hpp"
 #include "UI/Components/ArrowLabelView.hpp"
+#include "UI/Components/BoxView.hpp"
 #include "UI/Components/EinkView.hpp"
 #include "UI/Components/MultiLineTextView.hpp"
 #include "UI/Components/SingleLineTextView.hpp"
@@ -14,13 +19,16 @@
 
 class BookQuestionsScreen : public Screen, public EinkView {
 public:
+    enum class State { QUESTIONS_LIST, CONTEXTS_LIST, LOADING, ANSWER };
+
     BookQuestionsScreen(PreferencesStore &prefs, FileSystem &fileSystem,
-                        const std::shared_ptr<Readable> &readable,
+                        const std::shared_ptr<Readable> &readable, Renderer &renderer,
                         const std::shared_ptr<RendererStream> &stream, DisplaySystem &display,
                         Telemetry &telemetry)
         : EinkView(display), display_(display), prefs_(prefs), fileSystem_(fileSystem),
-          readable_(readable), stream_(stream), telemetry_(telemetry), menuView_(display),
-          backLabelView_(display, "Back"), questionView_(display), descriptionView_(display, 6) {
+          readable_(readable), renderer_(renderer), stream_(stream), telemetry_(telemetry),
+          menuView_(display), backLabelView_(display, "Back"), questionView_(display),
+          descriptionView_(display, 6), backgroundView_(display, 5), state_(State::QUESTIONS_LIST) {
         menuView_.padding = 1;
         menuView_.itemsPerPage = 11;
         needsMenuItemsLoad_ = true;
@@ -41,6 +49,7 @@ protected:
     PreferencesStore &prefs_;
     FileSystem &fileSystem_;
     std::shared_ptr<Readable> readable_;
+    Renderer &renderer_;
     std::shared_ptr<RendererStream> stream_;
     Telemetry &telemetry_;
     MenuView menuView_;
@@ -48,13 +57,20 @@ protected:
     ArrowLabelView backLabelView_;
     SingleLineTextView questionView_;
     MultiLineTextView descriptionView_;
+    BoxView backgroundView_;
 
     BookQuestions questions_;
-    bool showingContexts_ = false;
     BookQuestion selectedQuestion_;
+    BookQuestionResponse questionResponse_;
+    std::shared_ptr<EPubPlace> placeInReadable_;
+
     bool needsMenuItemsLoad_{true};
     size_t selectedQuestionIndex_{0};
+    State state_{State::QUESTIONS_LIST};
 
     void moveSelection(int delta);
     void executeQuestion();
+    void executeQuestion(const BookQuestionContext &context);
+    void setState(State newState);
+    void updateUIForState();
 };

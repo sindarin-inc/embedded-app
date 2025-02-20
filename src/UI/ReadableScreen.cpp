@@ -261,8 +261,8 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
 
             menuItems->emplace_back(std::make_shared<MenuItemSingleLine>("Ask AI", [this]() {
                 auto bookQuestionsScreen = std::make_shared<BookQuestionsScreen>(
-                    this->prefs_, this->fileSystem_, this->readable_, this->stream_, this->display_,
-                    this->telemetry_);
+                    this->prefs_, this->fileSystem_, this->readable_, this->renderer_,
+                    this->stream_, this->display_, this->telemetry_);
                 bookQuestionsScreen->setFirstLoad();
                 bookQuestionsScreen->setBackCallback([this]() {
                     this->setCurrentScreen(nullptr);

@@ -457,3 +457,62 @@ auto SindarinAPI::getServerTime(time_t *time, bool useBle,
 
     return httpCode;
 }
+
+auto SindarinAPI::askQuestion(const BookQuestionRequest &req, BookQuestionResponse *resp,
+                              bool useBle, const std::shared_ptr<CancelFlag> &cancel) -> int {
+    auto url = StringFormat("%s/questions/", baseUrl_.c_str());
+
+    auto client = createClient(url, "application/json", HTTP_METHOD_POST, useBle, cancel);
+    if (client == nullptr) {
+        return ERR_CLIENT_OPEN;
+    }
+
+    auto err = setAuth(client);
+    if (err != ESP_OK) {
+        return ERR_SET_AUTH;
+    }
+
+    // Serialize request
+    auto doc = std::make_shared<SpiRamJsonDocument>(1024);
+    JsonObject body = doc->to<JsonObject>();
+    req.toJson(body);
+
+    size_t serializedMaxSize = (*doc).memoryUsage() * 2;
+    auto reqBody = SpiRamArrayPtr<char>(serializedMaxSize);
+    size_t bodyLength = serializeJson(*doc, reqBody.get(), serializedMaxSize);
+
+    err = client->open(bodyLength);
+    if (err != ESP_OK) {
+        return ERR_CLIENT_OPEN;
+    }
+    defer { client->close(); };
+
+    int writeLength = client->write(reqBody.get(), bodyLength);
+    if (writeLength != bodyLength) {
+        return ERR_CLIENT_WRITE;
+    }
+
+    int contentLength = client->fetchHeaders(cancel);
+    if (contentLength <= 0) {
+        return ERR_CONTENT_LENGTH;
+    }
+
+    int httpCode = client->getStatusCode();
+    if (httpCode != 200) {
+        return httpCode;
+    }
+
+    auto stream = client->makeReadStream();
+    auto respJson = std::make_unique<SpiRamJsonDocument>(1024 + contentLength * 3);
+    auto error = ArduinoJson::deserializeJson(*respJson, *stream);
+
+    if (error.code() != DeserializationError::Ok) {
+        return ERR_JSON_DESERIALIZE;
+    }
+
+    if (!resp->fromJson(respJson->as<JsonObject>())) {
+        return ERR_JSON_OBJECT_PARSE;
+    }
+
+    return httpCode;
+}

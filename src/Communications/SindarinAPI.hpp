@@ -7,6 +7,7 @@
 #include "Communications/HttpClient.hpp"
 #include "Misc/CancelFlag.hpp"
 #include "Misc/Telemetry.hpp"
+#include "Models/BookQuestionRequest.hpp"
 #include "Models/CheckSync.hpp"
 #include "Models/Firmware.hpp"
 #include "Models/FirmwareResponse.hpp"
@@ -77,6 +78,9 @@ public:
 
     auto getServerTime(time_t *time, bool useBle = false,
                        const std::shared_ptr<CancelFlag> &cancel = nullptr) -> int;
+
+    auto askQuestion(const BookQuestionRequest &req, BookQuestionResponse *resp, bool useBle,
+                     const std::shared_ptr<CancelFlag> &cancel) -> int;
 
 private:
     auto tryCheckFirmware(FirmwareResponse *resp, bool useHttp, bool useBle,
