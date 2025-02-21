@@ -27,7 +27,7 @@ public:
                         Telemetry &telemetry)
         : EinkView(display), display_(display), prefs_(prefs), fileSystem_(fileSystem),
           readable_(readable), renderer_(renderer), stream_(stream), telemetry_(telemetry),
-          menuView_(display), backLabelView_(display, "Back"), questionView_(display),
+          menuView_(display), backLabelView_(display, "Back", ArrowLeft), questionView_(display),
           descriptionView_(display, 6), backgroundView_(display, 5), state_(State::QUESTIONS_LIST) {
         menuView_.padding = 1;
         menuView_.itemsPerPage = 11;
@@ -79,4 +79,5 @@ protected:
     void executeQuestion(const BookQuestionContext &context);
     void setState(State newState);
     void updateUIForState();
+    void updateBackLabel();
 };

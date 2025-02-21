@@ -145,13 +145,15 @@ void BookQuestionsScreen::processCommand(RemoteCommand command) {
     case RemoteCommand::UP:
         if (state_ == State::QUESTIONS_LIST || state_ == State::CONTEXTS_LIST) {
             moveSelection(-1);
-        } else if (state_ == State::ANSWER) {
-            // Restore renderer stream and exit
+        } else if (state_ == State::LOADING || state_ == State::ANSWER) {
+            // Restore renderer stream and exit to original text
             if (rendererStream_ != nullptr) {
                 renderer_.setStream(rendererStream_);
                 rendererStream_ = nullptr;
             }
-            setState(State::CONTEXTS_LIST);
+            setFirstLoad();
+            setNeedsRerender();
+            back();
         }
         break;
     case RemoteCommand::DOWN:
@@ -182,14 +184,8 @@ void BookQuestionsScreen::processCommand(RemoteCommand command) {
     case RemoteCommand::LEFT:
         switch (state_) {
         case State::ANSWER:
-            // Try to page backward in answer, if at start go back to contexts
-            if (answerPlace_->getOffset() == 0) {
-                if (rendererStream_ != nullptr) {
-                    renderer_.setStream(rendererStream_);
-                    rendererStream_ = nullptr;
-                }
-                setState(State::CONTEXTS_LIST);
-            } else {
+            // Try to page backward in answer
+            if (answerPlace_->getOffset() > 0) {
                 answerPlace_ = std::dynamic_pointer_cast<TxtPlace>(renderer_.getPreviousPlace());
                 setNeedsRerender();
             }
@@ -277,6 +273,7 @@ void BookQuestionsScreen::executeQuestion(const BookQuestionContext &context) {
 
 void BookQuestionsScreen::setState(State newState) {
     state_ = newState;
+    updateBackLabel();
     updateUIForState();
     setFirstLoad();
     setNeedsRerender();
@@ -326,5 +323,15 @@ void BookQuestionsScreen::updateUIForState() {
         }
         menuView_.addMenuItem(std::make_shared<MenuItemSingleLine>("Back", []() {}));
         break;
+    }
+}
+
+void BookQuestionsScreen::updateBackLabel() {
+    if (state_ == State::LOADING || state_ == State::ANSWER) {
+        backLabelView_.setText("Dismiss");
+        backLabelView_.setArrowDirection(ArrowUp);
+    } else {
+        backLabelView_.setText("Back");
+        backLabelView_.setArrowDirection(ArrowLeft);
     }
 }
