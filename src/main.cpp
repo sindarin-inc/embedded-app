@@ -225,6 +225,8 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 
     log_i("Starting app_main");
 
+    esp_log_level_set("Sol", ESP_LOG_DEBUG);
+
     directCommand.begin();
     if (usbSerial.isUsbLoggingEnabled()) {
         // Wait a bit so we can get boot logs (mostly for the testers)

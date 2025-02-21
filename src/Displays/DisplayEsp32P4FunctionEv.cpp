@@ -135,8 +135,10 @@ void DisplayEsp32P4FunctionEv::updateDisplay(DisplaySystem::UpdateType updateTyp
         return;
     }
 
+    SHOW_WATERMARK();
     ESP_ERROR_CHECK(
         esp_lcd_panel_draw_bitmap(panelHandle_, 0, 0, nativeWidth(), nativeHeight(), getBuffer()));
+    SHOW_WATERMARK();
 
     clearFrameBuffer_ = clearFrameBuffer;
 

@@ -1,7 +1,7 @@
 #pragma once
 
 #ifndef DEBUG_MEMORY
-#define DEBUG_MEMORY 0
+#define DEBUG_MEMORY 1
 #endif
 
 #if SIMULATOR
@@ -213,7 +213,7 @@ inline auto GetCycleCount() -> uint64_t {
 #if DEBUG_MEMORY
 
 #define SHOW_HEAP()                                                                                \
-    log_d("Free heap: %zuk/%zuk Free PSRAM: %zuk/%zuk %s:%d ",                                     \
+    log_i("Free heap: %zuk/%zuk Free PSRAM: %zuk/%zuk %s:%d ",                                     \
           heap_caps_get_free_size(MALLOC_CAP_INTERNAL) / 1000, GetHeapSize() / 1000,               \
           heap_caps_get_free_size(MALLOC_CAP_8BIT) / 1000,                                         \
           heap_caps_get_total_size(MALLOC_CAP_8BIT) / 1000, __FILE__, __LINE__)
@@ -223,12 +223,12 @@ inline auto GetCycleCount() -> uint64_t {
 
 #define HEAP_PROFILE_END(identifier)                                                               \
     size_t heapEnd##identifier = heap_caps_get_free_size(MALLOC_CAP_INTERNAL);                     \
-    log_d("HEAP_PROFILE_END(" #identifier ") %d alloc'd (%zu-%zu) %s:%d",                          \
+    log_i("HEAP_PROFILE_END(" #identifier ") %d alloc'd (%zu-%zu) %s:%d",                          \
           static_cast<int>(heapStart##identifier) - static_cast<int>(heapEnd##identifier),         \
           heapEnd##identifier, heapStart##identifier, __FILE__, __LINE__);
 
 #define SHOW_WATERMARK()                                                                           \
-    log_d("SHOW_WATERMARK(%s) (min remaining stack): %zu %s:%d", pcTaskGetName(nullptr),           \
+    log_i("SHOW_WATERMARK(%s) (min remaining stack): %zu %s:%d", pcTaskGetName(nullptr),           \
           uxTaskGetStackHighWaterMark(NULL), __FILE__, __LINE__);
 
 #else

@@ -182,7 +182,9 @@ auto DownloadFileCommon(
 
     float percentProgress = static_cast<float>(totalReadLen) / contentLength * 100.0f;
     if (progressCallback != nullptr) {
+        SHOW_WATERMARK();
         progressCallback(totalReadLen, percentProgress);
+        SHOW_WATERMARK();
     }
 
     // verify we received enough bytes according to the content length header
@@ -317,10 +319,15 @@ auto DownloadFileToPath(const char *url, FileSystem &fileSystem, Telemetry &tele
     auto writer = [&file, ringbuf, progressCallback, downloadStart, &fileLength, &rl]() -> void {
         int written = 0;
 
+        log_i("Starting disk write task");
         while (true) {
             size_t blockSize = 0;
+            log_i("Waiting for ring buffer data");
+            SHOW_HEAP();
+            SHOW_WATERMARK();
             auto *block = reinterpret_cast<DataBlock *>(
                 xRingbufferReceive(ringbuf, &blockSize, portMAX_DELAY));
+            log_i("Received ring buffer data of size %zu", blockSize);
 
             if (block == nullptr || blockSize == 0) {
                 log_e("xRingbufferReceive failed");
@@ -386,8 +393,9 @@ auto DownloadFileToPath(const char *url, FileSystem &fileSystem, Telemetry &tele
     auto writeDispatched = DispatchQueue::dispatchOneOff([completeSemaphore, &writer]() {
         writer();
         xSemaphoreGive(completeSemaphore);
-    }, 4000, 2, 1, "FWrite");
+    }, 8192, 2, 1, "FWrite");
     if (!writeDispatched) {
+        log_e("Failed to dispatch disk write task");
         return ERR_ALLOCATION;
     }
 #endif
@@ -417,6 +425,8 @@ auto DownloadFileToPath(const char *url, FileSystem &fileSystem, Telemetry &tele
 #else
     // Wait for the writer task to finish
     xSemaphoreTake(completeSemaphore, portMAX_DELAY);
+    SHOW_WATERMARK();
+
 #endif
 
     file.close();
