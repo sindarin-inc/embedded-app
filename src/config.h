@@ -15,10 +15,11 @@
 
 #define Hastings20x40_3
 
-#define USE_BLE                                                                                    \
-    (CONFIG_USE_TURN_TOUCH_REMOTE || CONFIG_USE_BLE_SERVER_REMOTE ||                               \
-     CONFIG_USE_BLE_SERVER_SETTINGS || CONFIG_USE_BLE_SERVER_IMPROV ||                             \
-     CONFIG_USE_BLE_SERVER_PROXY)
+#define USE_BLE_SERVER                                                                             \
+    (CONFIG_USE_BLE_SERVER_REMOTE || CONFIG_USE_BLE_SERVER_SETTINGS ||                             \
+     CONFIG_USE_BLE_SERVER_IMPROV || CONFIG_USE_BLE_SERVER_PROXY)
+
+#define USE_BLE (CONFIG_USE_TURN_TOUCH_REMOTE || CONFIG_USE_BLE_SERVER)
 
 // #define DISABLE_SPIRAM
 

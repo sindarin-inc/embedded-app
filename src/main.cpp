@@ -336,6 +336,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     BLEDevice::init("Sol Reader");
     HEAP_PROFILE_END(BLEDeviceInit);
 
+#if USE_BLE && !CONFIG_ESP_HOSTED_ENABLE_BT_NIMBLE
     if (prefs.blePower.get().has_value()) {
         auto power = prefs.blePower.get().value_or(ESP_PWR_LVL_P3);
         log_d("Setting default BLE power to %" PRIu32, power);
@@ -351,8 +352,9 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         bootErrors.push_back({.type = BootError::Type::BLE});
     }
 #endif
+#endif
 
-#if USE_BLE
+#if USE_BLE_SERVER
     auto bleManager = BLEManager::getInstance();
     if (prefs.bleAdvertisingKey.get().has_value()) {
         bleManager->setManufacturerData(prefs.bleAdvertisingKey.get().value_or(""));

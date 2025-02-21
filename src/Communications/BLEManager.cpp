@@ -1,13 +1,13 @@
-#if CONFIG_USE_BLE_SERVER_REMOTE
+#include "config.h"
+
+#if USE_BLE_SERVER
 
 #include "BLEManager.hpp"
-
 #include "Communications/BLEImprov.hpp"
 #include "Communications/BLEProxy.hpp"
 #include "Communications/BLESyncService.hpp"
 #include "Inputs/BLERemoteInput.hpp"
 #include "Storage/PreferencesStore.hpp"
-#include "config.h"
 
 std::shared_ptr<BLEManager> BLEManager::instance = nullptr;
 

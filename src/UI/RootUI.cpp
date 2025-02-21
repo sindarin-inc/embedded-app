@@ -1694,7 +1694,7 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                         wifiPowerMenu->setBackCallback([this]() { this->popScreen(false); });
                     }));
 
-#if USE_BLE
+#if USE_BLE && !CONFIG_ESP_HOSTED_ENABLE_BT_NIMBLE
                 debugSettingsMenu->addMenuItem(std::make_shared<MenuItemSingleLine>("Set BLE Power",
                                                                                     [this]() {
                     static std::unordered_map<esp_power_level_t, std::string> blePowerOptions = {

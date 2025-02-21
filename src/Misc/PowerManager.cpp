@@ -553,12 +553,14 @@ void PowerManager::beginShutdown() {
 
     // Disconnect WiFi as a quick-and-dirty way to cancel long running syncs
     WiFi::getInstance().disconnectWiFi();
-#if USE_BLE
+#if USE_BLE_SERVER
     auto bleManager = BLEManager::getInstance(false);
     if (bleManager != nullptr) {
         bleManager->stopAdvertising();
         bleManager->disconnectAllClients();
+#if CONFIG_USE_BLE_SERVER_PROXY
         bleManager->disconnectProxy();
+#endif
     }
 #endif
 
