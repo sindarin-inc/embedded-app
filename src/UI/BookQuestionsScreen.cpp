@@ -48,6 +48,14 @@ auto BookQuestionsScreen::layout(LayoutContext &context, SolSize size) -> SolSiz
             return size;
         } else if (state_ == State::ANSWER) {
             return size;
+        } else if (state_ == State::LOADING) {
+            // Center the loading text vertically in the content area
+            auto loadingRect = contentFrame;
+            auto verticalSpace = contentFrame.size.height - questionRect.size.height;
+            loadingRect = loadingRect.inset(0, verticalSpace / 2);
+            context.setViewFrame(questionView_, loadingRect,
+                                 LayoutOptionsSizeToFit | LayoutOptionsAlignCenter);
+            return size;
         }
 
         context.setViewFrame(descriptionView_,
@@ -126,8 +134,11 @@ void BookQuestionsScreen::render(DisplaySystem &display) {
             firstLoad_ = false;
         }
 
-        menuView_.drawFastElements();
-        display.updateDisplay(DisplaySystem::UpdateType::FAST_INDICATOR);
+        // Only draw fast elements when in a state that shows the menu
+        if (state_ == State::QUESTIONS_LIST || state_ == State::CONTEXTS_LIST) {
+            menuView_.drawFastElements();
+            display.updateDisplay(DisplaySystem::UpdateType::FAST_INDICATOR);
+        }
     }
 }
 
@@ -243,21 +254,32 @@ void BookQuestionsScreen::executeQuestion(const BookQuestionContext &context) {
 
     SindarinAPI::getInstance()->setAccessToken(prefs_.cloudToken.get().value());
 
-    // TODO: Consider moving this to a background task if needed
-    int result = SindarinAPI::getInstance()->askQuestion(request, resp.get(), false, nullptr);
-    log_d("Question request result: %d (success=%d)", result, resp->success);
+    // Dispatch the API call to a background task
+    DispatchQueue::dispatchOneOff(
+        [this, request, resp]() {
+        // Execute API call in background
+        int result = SindarinAPI::getInstance()->askQuestion(request, resp.get(), false, nullptr);
 
-    if (result == 200 && resp->success) {
-        log_d("Got successful response, answer length: %zu", resp->answer.length());
-        questionResponse_ = *resp;
-        setState(State::ANSWER);
-    } else {
-        log_e("Request failed: result=%d, success=%d, error='%s'", result, resp->success,
-              resp->error.c_str());
-        questionResponse_.success = false;
-        questionResponse_.error = "Failed to get answer from server";
-        setState(State::ANSWER);
-    }
+        // Dispatch UI updates back to main thread
+        DispatchGetUiQueue()->dispatch([this, result, resp]() {
+            log_d("Question request result: %d (success=%d)", result, resp->success);
+
+            if (result == 200 && resp->success) {
+                log_d("Got successful response, answer length: %zu", resp->answer.length());
+                questionResponse_ = *resp;
+                setState(State::ANSWER);
+            } else {
+                log_e("Request failed: result=%d, success=%d, error='%s'", result, resp->success,
+                      resp->error.c_str());
+                questionResponse_.success = false;
+                questionResponse_.error = "Failed to get answer from server";
+                setState(State::ANSWER);
+            }
+        });
+        },
+        8192, 1, 1, "Question");
+
+    setNeedsRerender();
 }
 
 void BookQuestionsScreen::setState(State newState) {
@@ -300,7 +322,7 @@ void BookQuestionsScreen::updateUIForState() {
 
     case State::LOADING:
         questionView_.setText("Loading...");
-        descriptionView_.setText("Please wait while we process your question...");
+        descriptionView_.setText("");
         break;
 
     case State::ANSWER:
