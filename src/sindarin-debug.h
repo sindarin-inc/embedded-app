@@ -1,5 +1,4 @@
-#ifndef SINDARIN_DEBUG_H
-#define SINDARIN_DEBUG_H
+#pragma once
 
 #ifndef DEBUG_MEMORY
 #define DEBUG_MEMORY 0
@@ -118,7 +117,7 @@ extern "C" {
 #define log_e(format, ...) ESP_LOGE("Sol", format, ##__VA_ARGS__);
 #endif
 
-static inline uint64_t GetCycleCount(void) {
+inline auto GetCycleCount() -> uint64_t {
     volatile uint32_t cycle;
 #if __XTENSA__
     RSR(CCOUNT, cycle);
@@ -238,7 +237,5 @@ static inline uint64_t GetCycleCount(void) {
 #define HEAP_PROFILE_START(identifier)
 #define HEAP_PROFILE_END(identifier)
 #define SHOW_WATERMARK()
-
-#endif
 
 #endif
