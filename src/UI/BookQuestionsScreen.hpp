@@ -32,6 +32,9 @@ public:
         menuView_.padding = 1;
         menuView_.itemsPerPage = 11;
         needsMenuItemsLoad_ = true;
+
+        // Initialize renderer place for answer view
+        answerPlace_ = std::dynamic_pointer_cast<TxtPlace>(Place::factory(0));
     }
 
     void addMenuItem(const std::shared_ptr<MenuItem> &item) { menuView_.addMenuItem(item); }
@@ -67,6 +70,9 @@ protected:
     bool needsMenuItemsLoad_{true};
     size_t selectedQuestionIndex_{0};
     State state_{State::QUESTIONS_LIST};
+
+    std::shared_ptr<TxtPlace> answerPlace_;
+    std::shared_ptr<RendererStream> rendererStream_;
 
     void moveSelection(int delta);
     void executeQuestion();

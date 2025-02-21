@@ -14,44 +14,59 @@ void BookQuestionsScreen::moveSelection(int delta) {
 
 auto BookQuestionsScreen::layout(LayoutContext &context, SolSize size) -> SolSize {
     const auto inset = 2;
+    auto fullFrame = SolRect::fromSize(size);
 
-    // Position back label at top
-    auto backLabelRect = context.setViewFrame(backLabelView_, SolRect::fromSize(size),
+    // Set up the background frame first
+    auto backgroundFrame = fullFrame.inset(0);
+    context.setViewFrame(backgroundView_, backgroundFrame);
+
+    // Position back label at top inside the background
+    auto contentFrame = backgroundFrame.inset(10, 10, 2, 3);
+    auto backLabelRect = context.setViewFrame(backLabelView_, contentFrame,
                                               LayoutOptionsSizeToFit | LayoutOptionsAlignTop |
                                                   LayoutOptionsAlignLeft);
 
     if (state_ == State::QUESTIONS_LIST) {
-        auto insetRect =
-            context.setViewFrame(menuView_, SolRect::fromSize(size).inset(inset),
-                                 LayoutOptionsSizeToFitVertical | LayoutOptionsAlignCenterVertical);
-        return {size.width, insetRect.size.height + 2 * inset};
+        context.setViewFrame(menuView_, contentFrame.inset(inset),
+                             LayoutOptionsSizeToFitVertical | LayoutOptionsAlignCenterVertical);
+        return size;
     } else {
         // Layout for contexts, answer, or loading screens
+        // Start content below the back label with some padding
         auto questionRect = context.setViewFrame(
-            questionView_, SolRect::fromSize(size).inset(inset, backLabelRect.bottom() + inset * 4),
-            LayoutOptionsSizeToFitVertical);
-
-        auto descRect = context.setViewFrame(
-            descriptionView_,
-            SolRect::fromSize(size).inset(inset, questionRect.bottom() + inset * 2),
+            questionView_, contentFrame.inset(inset, backLabelRect.bottom() + inset * 4),
             LayoutOptionsSizeToFitVertical);
 
         if (state_ == State::CONTEXTS_LIST) {
-            auto menuRect = context.setViewFrame(
-                menuView_, SolRect::fromSize(size).inset(inset, descRect.bottom() + inset * 5),
+            auto descRect = context.setViewFrame(
+                descriptionView_, contentFrame.inset(inset, questionRect.bottom() + inset * 2),
                 LayoutOptionsSizeToFitVertical);
-            return {size.width, menuRect.bottom() + inset};
+
+            context.setViewFrame(menuView_,
+                                 contentFrame.inset(inset, descRect.bottom() + inset * 5),
+                                 LayoutOptionsSizeToFitVertical);
+            return size;
+        } else if (state_ == State::ANSWER) {
+            return size;
         }
 
-        return {size.width, descRect.bottom() + inset};
+        context.setViewFrame(descriptionView_,
+                             contentFrame.inset(inset, questionRect.bottom() + inset * 2),
+                             LayoutOptionsSizeToFitVertical);
+        return size;
     }
 }
 
 void BookQuestionsScreen::drawInRect(SolRect rect) {
+    // Always draw background first
+    backgroundView_.fillColor = display_.bg;
+    backgroundView_.strokeColor = display_.fg;
+    backgroundView_.draw();
+
+    // Then draw content
     backLabelView_.draw();
 
-    if (state_ != State::QUESTIONS_LIST) {
-        backgroundView_.draw();
+    if (state_ == State::CONTEXTS_LIST || state_ == State::LOADING) {
         questionView_.draw();
         descriptionView_.draw();
     }
@@ -69,15 +84,60 @@ void BookQuestionsScreen::render(DisplaySystem &display) {
 
     setNeedsLayout();
     setFrame(defaultFrameRect());
-    draw();
 
-    if (firstLoad_) {
-        display.updateDisplay(DisplaySystem::UpdateType::FULL, false);
-        firstLoad_ = false;
+    if (state_ == State::ANSWER) {
+        // Save the current renderer stream if needed
+        if (rendererStream_ == nullptr) {
+            rendererStream_ = renderer_.getStream();
+        }
+
+        // Create a stream with the answer text
+        auto stream = std::make_shared<StdStringStream>(questionResponse_.answer, DocType::TXT);
+        renderer_.setStream(stream);
+
+        // Draw the background frame first
+        draw();
+
+        // Double up on the vertical insets like ReadableDictionaryScreen/ReadableSummaryScreen
+        auto rect =
+            DisplayRect::fromSizeAndInsets(display_.width(), display_.height(), {30, 30, 30, 30});
+        rect = rect.inset(10, 10, 15, 15);
+        renderer_.setRect(rect);
+
+        // Render the page
+        uint8_t darkPicturePercent = 0;
+        std::shared_ptr<Place> newPlace;
+        std::tie(newPlace, darkPicturePercent) = renderer_.renderPage(answerPlace_);
+        answerPlace_ = std::dynamic_pointer_cast<TxtPlace>(newPlace);
+
+        // Update display
+        if (prefs_.fastTransitions.get().value_or(false)) {
+            display.updateDisplay(DisplaySystem::UpdateType::PARTIAL, true,
+                                  display.darkPictureVComAdj(darkPicturePercent));
+        } else {
+            display.updateDisplay(DisplaySystem::UpdateType::FULL, true,
+                                  display.darkPictureVComAdj(darkPicturePercent));
+        }
+
+        // Don't restore renderer state until we're done with the answer
+        if (state_ != State::ANSWER) {
+            renderer_.setRect(GetTextRectFromPrefs(display, prefs_));
+            if (rendererStream_ != nullptr) {
+                renderer_.setStream(rendererStream_);
+                rendererStream_ = nullptr;
+            }
+        }
+    } else {
+        draw();
+
+        if (firstLoad_) {
+            display.updateDisplay(DisplaySystem::UpdateType::FULL, false);
+            firstLoad_ = false;
+        }
+
+        menuView_.drawFastElements();
+        display.updateDisplay(DisplaySystem::UpdateType::FAST_INDICATOR);
     }
-
-    menuView_.drawFastElements();
-    display.updateDisplay(DisplaySystem::UpdateType::FAST_INDICATOR);
 }
 
 void BookQuestionsScreen::processCommand(RemoteCommand command) {
@@ -85,6 +145,13 @@ void BookQuestionsScreen::processCommand(RemoteCommand command) {
     case RemoteCommand::UP:
         if (state_ == State::QUESTIONS_LIST || state_ == State::CONTEXTS_LIST) {
             moveSelection(-1);
+        } else if (state_ == State::ANSWER) {
+            // Restore renderer stream and exit
+            if (rendererStream_ != nullptr) {
+                renderer_.setStream(rendererStream_);
+                rendererStream_ = nullptr;
+            }
+            setState(State::CONTEXTS_LIST);
         }
         break;
     case RemoteCommand::DOWN:
@@ -106,13 +173,26 @@ void BookQuestionsScreen::processCommand(RemoteCommand command) {
             if (selectedIndex < questions_.contexts.size()) {
                 executeQuestion(questions_.contexts[selectedIndex]);
             }
+        } else if (state_ == State::ANSWER) {
+            // Page forward in answer
+            setNeedsRerender();
         }
         break;
     case RemoteCommand::BACK:
     case RemoteCommand::LEFT:
         switch (state_) {
         case State::ANSWER:
-            setState(State::CONTEXTS_LIST);
+            // Try to page backward in answer, if at start go back to contexts
+            if (answerPlace_->getOffset() == 0) {
+                if (rendererStream_ != nullptr) {
+                    renderer_.setStream(rendererStream_);
+                    rendererStream_ = nullptr;
+                }
+                setState(State::CONTEXTS_LIST);
+            } else {
+                answerPlace_ = std::dynamic_pointer_cast<TxtPlace>(renderer_.getPreviousPlace());
+                setNeedsRerender();
+            }
             break;
         case State::CONTEXTS_LIST:
             setState(State::QUESTIONS_LIST);
