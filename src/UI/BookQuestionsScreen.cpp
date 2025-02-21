@@ -78,9 +78,15 @@ void BookQuestionsScreen::drawInRect(SolRect rect) {
     // Then draw content
     backLabelView_.draw();
 
-    if (state_ == State::CONTEXTS_LIST || state_ == State::LOADING || state_ == State::ANSWER) {
+    if (state_ == State::CONTEXTS_LIST || state_ == State::LOADING) {
         questionView_.draw();
         descriptionView_.draw();
+    } else if (state_ == State::ANSWER) {
+        if (!questionResponse_.success) {
+            // Only draw the views for error states
+            questionView_.draw();
+            descriptionView_.draw();
+        }
     }
 
     if (state_ == State::QUESTIONS_LIST || state_ == State::CONTEXTS_LIST) {
@@ -400,20 +406,21 @@ void BookQuestionsScreen::updateUIForState() {
         break;
 
     case State::LOADING:
-        questionView_.setText("Loading...");
-        descriptionView_.setText("");
         break;
 
     case State::ANSWER:
         if (questionResponse_.success) {
             questionView_.setText(std::string(selectedQuestion_.question));
-            descriptionView_.setText(std::string(questionResponse_.answer));
+            // The answer text will be rendered by the renderer in render(), don't set it here
+            descriptionView_.setText("");
         } else {
             // Make error messages more prominent
             questionView_.setText("Error");
             descriptionView_.setText(std::string(questionResponse_.error.c_str()));
         }
         menuView_.addMenuItem(std::make_shared<MenuItemSingleLine>("Back", []() {}));
+        setNeedsRerender();
+        render(display_);
         break;
     }
 }
@@ -437,6 +444,12 @@ void BookQuestionsScreen::restoreRendererStream() {
 }
 
 void BookQuestionsScreen::setLoadingMessage(const std::string &message) {
-    questionView_.setText(message);
-    setNeedsRerender();
+    if (state_ == State::LOADING) {
+        log_i("Setting loading message: %s", message.c_str());
+        questionView_.setText(message);
+        descriptionView_.setText("");
+        setNeedsRerender();
+        setFirstLoad();
+        render(display_);
+    }
 }
