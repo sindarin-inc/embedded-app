@@ -80,4 +80,5 @@ protected:
     void setState(State newState);
     void updateUIForState();
     void updateBackLabel();
+    void restoreRendererStream();
 };

@@ -118,15 +118,6 @@ void BookQuestionsScreen::render(DisplaySystem &display) {
             display.updateDisplay(DisplaySystem::UpdateType::FULL, true,
                                   display.darkPictureVComAdj(darkPicturePercent));
         }
-
-        // Don't restore renderer state until we're done with the answer
-        if (state_ != State::ANSWER) {
-            renderer_.setRect(GetTextRectFromPrefs(display, prefs_));
-            if (rendererStream_ != nullptr) {
-                renderer_.setStream(rendererStream_);
-                rendererStream_ = nullptr;
-            }
-        }
     } else {
         draw();
 
@@ -147,10 +138,7 @@ void BookQuestionsScreen::processCommand(RemoteCommand command) {
             moveSelection(-1);
         } else if (state_ == State::LOADING || state_ == State::ANSWER) {
             // Restore renderer stream and exit to original text
-            if (rendererStream_ != nullptr) {
-                renderer_.setStream(rendererStream_);
-                rendererStream_ = nullptr;
-            }
+            restoreRendererStream();
             setFirstLoad();
             setNeedsRerender();
             back();
@@ -195,6 +183,7 @@ void BookQuestionsScreen::processCommand(RemoteCommand command) {
             menuView_.setSelectedIndex(selectedQuestionIndex_);
             break;
         default:
+            restoreRendererStream();
             setFirstLoad();
             setNeedsRerender();
             back();
@@ -333,5 +322,13 @@ void BookQuestionsScreen::updateBackLabel() {
     } else {
         backLabelView_.setText("Back");
         backLabelView_.setArrowDirection(ArrowLeft);
+    }
+}
+
+void BookQuestionsScreen::restoreRendererStream() {
+    if (rendererStream_ != nullptr) {
+        renderer_.setRect(GetTextRectFromPrefs(display_, prefs_));
+        renderer_.setStream(rendererStream_);
+        rendererStream_ = nullptr;
     }
 }
