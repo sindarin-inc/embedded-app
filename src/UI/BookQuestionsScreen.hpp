@@ -81,4 +81,5 @@ protected:
     void updateUIForState();
     void updateBackLabel();
     void restoreRendererStream();
+    void setLoadingMessage(const std::string &message);
 };

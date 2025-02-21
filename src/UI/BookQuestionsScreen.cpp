@@ -1,5 +1,9 @@
 #include "UI/BookQuestionsScreen.hpp"
 
+#if CONFIG_USE_BLE_SERVER_PROXY
+#include "Communications/BLEManager.hpp"
+#endif
+#include "Communications/WiFi.hpp"
 #include "Misc/StringUtil.hpp"
 #include "UI/Fonts/Fonts.hpp"
 #include "sindarin-debug.h"
@@ -74,7 +78,7 @@ void BookQuestionsScreen::drawInRect(SolRect rect) {
     // Then draw content
     backLabelView_.draw();
 
-    if (state_ == State::CONTEXTS_LIST || state_ == State::LOADING) {
+    if (state_ == State::CONTEXTS_LIST || state_ == State::LOADING || state_ == State::ANSWER) {
         questionView_.draw();
         descriptionView_.draw();
     }
@@ -228,6 +232,7 @@ void BookQuestionsScreen::loadQuestions() {
 
 void BookQuestionsScreen::executeQuestion(const BookQuestionContext &context) {
     setState(State::LOADING);
+    setLoadingMessage("Connecting to WiFi...");
 
     // Get current place from the stream directly
     placeInReadable_ = std::dynamic_pointer_cast<EPubPlace>(renderer_.getCurrentPlace());
@@ -252,25 +257,99 @@ void BookQuestionsScreen::executeQuestion(const BookQuestionContext &context) {
 
     auto resp = std::make_shared<BookQuestionResponse>();
 
-    SindarinAPI::getInstance()->setAccessToken(prefs_.cloudToken.get().value());
-
     // Dispatch the API call to a background task
     DispatchQueue::dispatchOneOff(
         [this, request, resp]() {
+        log_i("Starting background task for question request");
+        // First try WiFi connection
+        bool wifiConnected = false;
+        bool bleConnected = false;
+
+        SindarinAPI::getInstance()->setAccessToken(prefs_.cloudToken.get().value());
+
+        if (!prefs_.wifiDisabled.get().value_or(false)) {
+            log_i("Attempting WiFi connection...");
+            if (!WiFi::getInstance().connectWiFiFromSettings()) {
+                log_w("WiFi connection failed, logging metric");
+                telemetry_.logMetric(TelemetryField::METRIC_WIFI, "sync-wifi-failed");
+                wifiConnected = false;
+            } else {
+                log_i("WiFi connection successful");
+                wifiConnected = true;
+            }
+        } else {
+            log_i("WiFi is disabled in preferences, skipping WiFi connection");
+        }
+
+// If WiFi failed, try BLE if available
+#if CONFIG_USE_BLE_SERVER_PROXY
+        if (!wifiConnected && !prefs_.bleDisabled.get().value_or(false)) {
+            log_i("Attempting BLE connection...");
+            DispatchGetUiQueue()->dispatch(
+                [this]() { setLoadingMessage("Connecting via Bluetooth..."); });
+
+            if (!BLEManager::getInstance()->connectProxy(nullptr)) {
+                log_w("BLE connection failed");
+                telemetry_.logMetric(TelemetryField::METRIC_WIFI, "sync-ble-failed");
+            } else {
+                log_i("BLE successfully connected");
+                bleConnected = true;
+                // Disconnect WiFi if we're using BLE
+                log_i("Disconnecting WiFi since BLE is connected");
+                WiFi::getInstance().disconnectWiFi(3000);
+            }
+        }
+#endif
+
+        if (!wifiConnected && !bleConnected) {
+            log_w("Failed to establish any network connection");
+            std::string errorMessage;
+            if (prefs_.wifiDisabled.get().value_or(false)) {
+                errorMessage =
+                    "WiFi is disabled in settings. Please enable WiFi to use this feature.";
+            } else if (prefs_.bleDisabled.get().value_or(false)) {
+                errorMessage = "Both WiFi and Bluetooth are disabled. Please enable one of them to "
+                               "use this feature.";
+            } else {
+                errorMessage =
+                    "Could not connect to WiFi. Please check your WiFi settings and try again.";
+            }
+            DispatchGetUiQueue()->dispatch([this, errorMessage]() {
+                questionResponse_.success = false;
+                questionResponse_.error = errorMessage;
+                log_e("Question request failed: error='%s'", errorMessage.c_str());
+                setState(State::ANSWER);
+                setNeedsRerender();
+                render(display_);
+            });
+            return;
+        }
+
+        // Update UI to show we're waiting for the answer
+        log_i("Network connected, sending question request to API");
+        DispatchGetUiQueue()->dispatch([this]() { setLoadingMessage("Waiting for answer..."); });
+
         // Execute API call in background
-        int result = SindarinAPI::getInstance()->askQuestion(request, resp.get(), false, nullptr);
+        log_i("Executing API request: question=%s, context=%s, book=%s, chapter=%s, offset=%zu",
+              request.question_slug.c_str(), request.context_type.c_str(),
+              request.book_uuid.c_str(), request.chapter.c_str(), request.chapter_offset);
+
+        int result =
+            SindarinAPI::getInstance()->askQuestion(request, resp.get(), bleConnected, nullptr);
 
         // Dispatch UI updates back to main thread
+        log_i("API request completed with result=%d, success=%d", result, resp->success);
+
         DispatchGetUiQueue()->dispatch([this, result, resp]() {
-            log_d("Question request result: %d (success=%d)", result, resp->success);
+            log_d("Processing API response: result=%d, success=%d", result, resp->success);
 
             if (result == 200 && resp->success) {
-                log_d("Got successful response, answer length: %zu", resp->answer.length());
+                log_i("Question request successful, answer length: %zu", resp->answer.length());
                 questionResponse_ = *resp;
                 setState(State::ANSWER);
             } else {
-                log_e("Request failed: result=%d, success=%d, error='%s'", result, resp->success,
-                      resp->error.c_str());
+                log_e("Question request failed: result=%d, success=%d, error='%s'", result,
+                      resp->success, resp->error.c_str());
                 questionResponse_.success = false;
                 questionResponse_.error = "Failed to get answer from server";
                 setState(State::ANSWER);
@@ -326,11 +405,13 @@ void BookQuestionsScreen::updateUIForState() {
         break;
 
     case State::ANSWER:
-        questionView_.setText(std::string(selectedQuestion_.question));
         if (questionResponse_.success) {
+            questionView_.setText(std::string(selectedQuestion_.question));
             descriptionView_.setText(std::string(questionResponse_.answer));
         } else {
-            descriptionView_.setText(std::string(questionResponse_.error));
+            // Make error messages more prominent
+            questionView_.setText("Error");
+            descriptionView_.setText(std::string(questionResponse_.error.c_str()));
         }
         menuView_.addMenuItem(std::make_shared<MenuItemSingleLine>("Back", []() {}));
         break;
@@ -353,4 +434,9 @@ void BookQuestionsScreen::restoreRendererStream() {
         renderer_.setStream(rendererStream_);
         rendererStream_ = nullptr;
     }
+}
+
+void BookQuestionsScreen::setLoadingMessage(const std::string &message) {
+    questionView_.setText(message);
+    setNeedsRerender();
 }
