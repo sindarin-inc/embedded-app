@@ -11,6 +11,7 @@
 #include "UI/Components/ArrowLabelView.hpp"
 #include "UI/Components/BoxView.hpp"
 #include "UI/Components/EinkView.hpp"
+#include "UI/Components/HorizontalPagingIndicatorView.hpp"
 #include "UI/Components/MultiLineTextView.hpp"
 #include "UI/Components/SingleLineTextView.hpp"
 #include "UI/Menu/MenuItemSingleLine.hpp"
@@ -28,7 +29,8 @@ public:
         : EinkView(display), display_(display), prefs_(prefs), fileSystem_(fileSystem),
           readable_(readable), renderer_(renderer), stream_(stream), telemetry_(telemetry),
           menuView_(display), backLabelView_(display, "Back", ArrowLeft), questionView_(display),
-          descriptionView_(display, 6), backgroundView_(display, 5), state_(State::QUESTIONS_LIST) {
+          descriptionView_(display, 6), backgroundView_(display, 5), pageIndicatorView_(display),
+          state_(State::QUESTIONS_LIST) {
         menuView_.padding = 1;
         menuView_.itemsPerPage = 11;
         needsMenuItemsLoad_ = true;
@@ -61,6 +63,7 @@ protected:
     SingleLineTextView questionView_;
     MultiLineTextView descriptionView_;
     BoxView backgroundView_;
+    HorizontalPagingIndicatorView pageIndicatorView_;
 
     BookQuestions questions_;
     BookQuestion selectedQuestion_;
@@ -74,6 +77,9 @@ protected:
     std::shared_ptr<TxtPlace> answerPlace_;
     std::shared_ptr<RendererStream> rendererStream_;
 
+    size_t precomputedTotalPages_{0};
+    std::vector<uint32_t> pageBreakOffsets_;
+
     void moveSelection(int delta);
     void executeQuestion();
     void executeQuestion(const BookQuestionContext &context);
@@ -82,4 +88,5 @@ protected:
     void updateBackLabel();
     void restoreRendererStream();
     void setLoadingMessage(const std::string &message);
+    void precomputeTotalPages();
 };

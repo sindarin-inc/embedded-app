@@ -51,6 +51,15 @@ auto BookQuestionsScreen::layout(LayoutContext &context, SolSize size) -> SolSiz
                                  LayoutOptionsSizeToFitVertical);
             return size;
         } else if (state_ == State::ANSWER) {
+            // Position page indicator at the bottom of the screen with some padding
+            auto indicatorSize = pageIndicatorView_.layout(context, {contentFrame.size.width, 0});
+            auto indicatorY = contentFrame.bottom() - indicatorSize.height - inset * 4;
+            context.setViewFrame(
+                pageIndicatorView_,
+                {{contentFrame.origin.x + (contentFrame.size.width - indicatorSize.width) / 2,
+                  indicatorY},
+                 {indicatorSize.width, indicatorSize.height}},
+                LayoutOptionsNone);
             return size;
         } else if (state_ == State::LOADING) {
             // Center the loading text vertically in the content area
@@ -87,11 +96,49 @@ void BookQuestionsScreen::drawInRect(SolRect rect) {
             questionView_.draw();
             descriptionView_.draw();
         }
+        // Draw page indicator in answer state
+        pageIndicatorView_.draw();
     }
 
     if (state_ == State::QUESTIONS_LIST || state_ == State::CONTEXTS_LIST) {
         menuView_.draw();
     }
+}
+
+void BookQuestionsScreen::precomputeTotalPages() {
+    // Save current renderer stream
+    auto originalStream = renderer_.getStream();
+
+    // Create a stream with the answer text
+    auto stream = std::make_shared<StdStringStream>(questionResponse_.answer, DocType::TXT);
+    renderer_.setStream(stream);
+
+    // Set up renderer with same dimensions as we'll use for actual rendering
+    auto rect =
+        DisplayRect::fromSizeAndInsets(display_.width(), display_.height(), {30, 30, 30, 30});
+    rect = rect.inset(10, 10, 15, 0);
+    renderer_.setRect(rect);
+
+    // Create a temporary place for counting pages
+    auto countPlace = std::dynamic_pointer_cast<TxtPlace>(Place::factory(0));
+    size_t pageCount = 0;
+    pageBreakOffsets_.clear();
+
+    // Keep rendering pages until we hit the end
+    do {
+        uint8_t darkPicturePercent = 0;
+        std::shared_ptr<Place> newPlace;
+        std::tie(newPlace, darkPicturePercent) = renderer_.renderPage(countPlace);
+        countPlace = std::dynamic_pointer_cast<TxtPlace>(newPlace);
+        pageCount++;
+        pageBreakOffsets_.push_back(countPlace->getOffset());
+    } while (!renderer_.atEndOfFile());
+
+    // Store the result
+    precomputedTotalPages_ = pageCount;
+
+    // Restore original stream
+    renderer_.setStream(originalStream);
 }
 
 void BookQuestionsScreen::render(DisplaySystem &display) {
@@ -113,20 +160,57 @@ void BookQuestionsScreen::render(DisplaySystem &display) {
         auto stream = std::make_shared<StdStringStream>(questionResponse_.answer, DocType::TXT);
         renderer_.setStream(stream);
 
-        // Draw the background frame first
+        // Draw the background first
         draw();
 
         // Double up on the vertical insets like ReadableDictionaryScreen/ReadableSummaryScreen
         auto rect =
             DisplayRect::fromSizeAndInsets(display_.width(), display_.height(), {30, 30, 30, 30});
-        rect = rect.inset(10, 10, 15, 15);
+        rect = rect.inset(10, 10, 15, 0);
         renderer_.setRect(rect);
+
+        // Make sure total pages are computed before first render
+        if (precomputedTotalPages_ == 0) {
+            precomputeTotalPages();
+        }
 
         // Render the page
         uint8_t darkPicturePercent = 0;
         std::shared_ptr<Place> newPlace;
         std::tie(newPlace, darkPicturePercent) = renderer_.renderPage(answerPlace_);
         answerPlace_ = std::dynamic_pointer_cast<TxtPlace>(newPlace);
+
+        // Get the current page number based on offset
+        auto currentOffset = answerPlace_->getOffset();
+
+        // Find which page we're on by comparing against page break offsets
+        size_t currentPage = 0;
+
+        // Special case: if we're at offset 0 and this is the first render,
+        // we're on page 0
+        if (currentOffset == 0 && pageBreakOffsets_.size() > 0 &&
+            currentOffset < pageBreakOffsets_[0]) {
+            currentPage = 0;
+        } else {
+            // Find the first page break offset that's greater than our current offset
+            bool found = false;
+            for (size_t i = 0; i < pageBreakOffsets_.size(); i++) {
+                if (pageBreakOffsets_[i] > currentOffset) {
+                    currentPage = i;
+                    found = true;
+                    break;
+                }
+            }
+
+            // If we didn't find a greater offset, we must be on the last page
+            if (!found) {
+                currentPage = precomputedTotalPages_ - 1;
+            }
+        }
+
+        // Update page indicator with precomputed total and current page
+        pageIndicatorView_.setTotalPages(precomputedTotalPages_);
+        pageIndicatorView_.setCurrentPage(currentPage);
 
         // Update display
         if (prefs_.fastTransitions.get().value_or(false)) {
@@ -369,6 +453,16 @@ void BookQuestionsScreen::executeQuestion(const BookQuestionContext &context) {
 
 void BookQuestionsScreen::setState(State newState) {
     state_ = newState;
+
+    // Precompute total pages when entering ANSWER state
+    if (state_ == State::ANSWER && questionResponse_.success) {
+        precomputeTotalPages();
+
+        // Explicitly set the page indicator values after precomputing
+        pageIndicatorView_.setTotalPages(precomputedTotalPages_);
+        pageIndicatorView_.setCurrentPage(0); // Start at the first page
+    }
+
     updateBackLabel();
     updateUIForState();
     setFirstLoad();
