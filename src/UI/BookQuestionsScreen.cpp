@@ -115,7 +115,7 @@ void BookQuestionsScreen::precomputeTotalPages() {
 
     // Set up renderer with same dimensions as we'll use for actual rendering
     auto rect =
-        DisplayRect::fromSizeAndInsets(display_.width(), display_.height(), {30, 30, 30, 30});
+        DisplayRect::fromSizeAndInsets(display_.width(), display_.height(), {30, 30, 30, 45});
     rect = rect.inset(10, 10, 15, 0);
     renderer_.setRect(rect);
 
@@ -165,7 +165,7 @@ void BookQuestionsScreen::render(DisplaySystem &display) {
 
         // Double up on the vertical insets like ReadableDictionaryScreen/ReadableSummaryScreen
         auto rect =
-            DisplayRect::fromSizeAndInsets(display_.width(), display_.height(), {30, 30, 30, 30});
+            DisplayRect::fromSizeAndInsets(display_.width(), display_.height(), {30, 30, 30, 45});
         rect = rect.inset(10, 10, 15, 0);
         renderer_.setRect(rect);
 
