@@ -1,5 +1,7 @@
 #include "Mmc5603.hpp"
 
+#if CONFIG_USE_MMC5603
+
 #include <driver/i2c.h>
 #include <esp_log.h>
 #include <freertos/FreeRTOS.h>
@@ -329,3 +331,5 @@ auto Mmc5603::readTemperature(int &temp) -> esp_err_t {
 
     return err;
 }
+
+#endif

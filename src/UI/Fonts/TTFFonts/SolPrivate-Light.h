@@ -13,8 +13,6 @@
 #include <cstdint>
 #include <utility>
 
-#include "config.h"
-
 #if CONFIG_FONT_TTF
 
 const struct {

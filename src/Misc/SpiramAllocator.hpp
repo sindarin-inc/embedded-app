@@ -1,6 +1,5 @@
 #pragma once
 
-#include <ArduinoJson.h>
 #include <cstdlib>
 #include <esp_heap_caps.h>
 #include <functional>
@@ -78,11 +77,6 @@ public:
         return {Base::substr(pos, len), SpiramAllocator<char>()};
     }
 };
-
-namespace ARDUINOJSON_NAMESPACE {
-template <>
-struct IsString<SpiramString> : true_type {};
-} // namespace ARDUINOJSON_NAMESPACE
 
 auto operator==(const std::string &stdStr, const SpiramString &spiramStr) -> bool;
 

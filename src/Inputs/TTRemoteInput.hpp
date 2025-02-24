@@ -68,7 +68,8 @@ protected:
                 std::optional<BLEAddress> address = enclosed->prefs_.pairedTurnTouchAddress.get();
                 if (advertisedDevice->isAdvertisingService(BLEUUID(TURNTOUCH_BUTTON_SVC_ID)) &&
                     (address.has_value() &&
-                     uint64_t(address.value()) == uint64_t(advertisedDevice->getAddress()))) {
+                     static_cast<uint64_t>(address.value()) ==
+                         static_cast<uint64_t>(advertisedDevice->getAddress()))) {
                     SHOW_HEAP();
                     log_i("%s PageTurner found; queueing for connect...",
                           address.has_value() ? "Paired" : "New");

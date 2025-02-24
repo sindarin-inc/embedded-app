@@ -435,8 +435,12 @@ void PowerManager::checkUsb() {
         // TODO: Should we take multiple measurements?
         battery.takeMeasurement();
         auto percentage = battery.getBatteryPercentage();
+#if CONFIG_GREEN_LED != -1
         gpio_hold_dis(static_cast<gpio_num_t>(CONFIG_GREEN_LED));
+#endif
+#if CONFIG_RED_LED != -1
         gpio_hold_dis(static_cast<gpio_num_t>(CONFIG_RED_LED));
+#endif
 
         if (percentage > 95) {
             PreferencesStore::isCharged = true;
@@ -452,47 +456,77 @@ void PowerManager::checkUsb() {
             if (PreferencesStore::ledChargeTime == 0 ||
                 currentTime >= PreferencesStore::ledChargeTime) {
                 // If the battery is fully charged and a half hour has passed, turn on the LED
+#if CONFIG_GREEN_LED != -1
                 DigitalWrite(CONFIG_GREEN_LED, LED_ON);
+#endif
+#if CONFIG_RED_LED != -1
                 DigitalWrite(CONFIG_RED_LED, LED_OFF);
+#endif
                 // log_i("Battery fully charged, turning on green LED");
             } else {
+#if CONFIG_GREEN_LED != -1
                 DigitalWrite(CONFIG_GREEN_LED, LED_OFF);
+#endif
+#if CONFIG_RED_LED != -1
                 DigitalWrite(CONFIG_RED_LED, LED_ON);
+#endif
                 // log_i("Battery fully charged, waiting for %" PRId64 " seconds",
                 //       PreferencesStore::ledChargeTime - currentTime);
             }
         } else if (percentage > 85 && PreferencesStore::isCharged) {
             // Keep the LED green if it's charged and between 85-95%
+#if CONFIG_GREEN_LED != -1
             DigitalWrite(CONFIG_GREEN_LED, LED_ON);
+#endif
+#if CONFIG_RED_LED != -1
             DigitalWrite(CONFIG_RED_LED, LED_OFF);
+#endif
             // log_i("Battery level is above 85%%, keeping green LED on.");
         } else {
             PreferencesStore::isCharged = false;
             PreferencesStore::ledChargeTime = -1;
+#if CONFIG_GREEN_LED != -1
             DigitalWrite(CONFIG_GREEN_LED, LED_OFF);
+#endif
+#if CONFIG_RED_LED != -1
             DigitalWrite(CONFIG_RED_LED, LED_ON);
+#endif
             // log_d("Battery not fully charged, turning on red LED. Percentage: %d%%",
             //       int(percentage));
         }
+#if CONFIG_GREEN_LED != -1
         gpio_hold_en(static_cast<gpio_num_t>(CONFIG_GREEN_LED));
+#endif
+#if CONFIG_RED_LED != -1
         gpio_hold_en(static_cast<gpio_num_t>(CONFIG_RED_LED));
+#endif
+#if !CONFIG_IDF_TARGET_ESP32P4
         gpio_deep_sleep_hold_en();
+#endif
     } else {
         // log_d("USB disconnected, resetting charged LED");
         PreferencesStore::ledChargeTime = 0; // reset the timer as the USB is disconnected
         PreferencesStore::isCharged = false; // reset the isCharged flag as the USB is disconnected
+#if CONFIG_GREEN_LED != -1
         DigitalWrite(CONFIG_GREEN_LED, LED_OFF);
-        DigitalWrite(CONFIG_RED_LED, LED_OFF);
         gpio_hold_dis(static_cast<gpio_num_t>(CONFIG_GREEN_LED));
+#endif
+#if CONFIG_RED_LED != -1
+        DigitalWrite(CONFIG_RED_LED, LED_OFF);
         gpio_hold_dis(static_cast<gpio_num_t>(CONFIG_RED_LED));
+#endif
     }
 }
 
 void PowerManager::releaseLED() {
+#if CONFIG_GREEN_LED != -1
     DigitalWrite(CONFIG_GREEN_LED, LED_OFF);
-    DigitalWrite(CONFIG_RED_LED, LED_OFF);
     gpio_hold_dis(static_cast<gpio_num_t>(CONFIG_GREEN_LED));
+#endif
+#if CONFIG_RED_LED != -1
+    DigitalWrite(CONFIG_RED_LED, LED_OFF);
     gpio_hold_dis(static_cast<gpio_num_t>(CONFIG_RED_LED));
+#endif
 }
 
 void PowerManager::beginShutdown() {
@@ -519,12 +553,14 @@ void PowerManager::beginShutdown() {
 
     // Disconnect WiFi as a quick-and-dirty way to cancel long running syncs
     WiFi::getInstance().disconnectWiFi();
-#if USE_BLE
+#if USE_BLE_SERVER
     auto bleManager = BLEManager::getInstance(false);
     if (bleManager != nullptr) {
         bleManager->stopAdvertising();
         bleManager->disconnectAllClients();
+#if CONFIG_USE_BLE_SERVER_PROXY
         bleManager->disconnectProxy();
+#endif
     }
 #endif
 
@@ -760,11 +796,6 @@ void PowerManager::deepSleepInternal(SleepReason reason) {
         powerOffInternal();
         return;
     }
-#else
-    // With no magnetometer, just always power off for now
-    powerOffInternal();
-#endif
-
     // `ulp_riscv_load_binary` seems to reset all the ulp variables including `ulp_waitForClose`
     // which we only want to unset if the temples are closed.
     if (!ulpLoaded) {
@@ -775,6 +806,10 @@ void PowerManager::deepSleepInternal(SleepReason reason) {
         }
         ulpLoaded = true;
     }
+#else
+    // With no magnetometer, just always power off for now
+    powerOffInternal();
+#endif
 #endif
 
     // If we're sleeping and the temples are already open, tell the ULP to wait for them to be

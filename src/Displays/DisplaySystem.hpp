@@ -1,14 +1,4 @@
-// Superclass for various display systems
-//
-// Specific display should be derived from this class and should
-// define their characteristics and use the underlying u8g2 libraries
-// for drawing text and other things. This will allow the Renderer
-// class to automatically use arbirary displays and optics systems
-// without having to rewrite the Rendering code.
-//
-
-#ifndef DISPLAY_SYSTEM_H
-#define DISPLAY_SYSTEM_H
+#pragma once
 
 #include <Adafruit_GFX.h>
 #include <array>
@@ -255,7 +245,7 @@ public:
     void clearScreen();
 
     // TODO: Just use `textcolor` and `textbgcolor` for these?
-    uint16_t bg = 0, fg = 0;
+    uint16_t bg = 0xFFFF, fg = 0x0000;
 
     [[nodiscard]] virtual auto darkPictureVComAdj(uint8_t darkPixelsPercent) const -> int {
         return 0;
@@ -310,5 +300,3 @@ protected:
 
     bool forceRefreshType_ = false;
 };
-
-#endif

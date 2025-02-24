@@ -140,14 +140,15 @@ auto GetNVSType() -> nvs_type_t {
         return NVS_TYPE_U32;
     } else if constexpr (std::is_same_v<T, uint64_t>) {
         return NVS_TYPE_U64;
-#if CONFIG_USE_TURN_TOUCH_REMOTE
-    } else if constexpr (std::is_same_v<T, NimBLEAddress>) {
-        return NVS_TYPE_BLOB;
-#endif
     } else if constexpr (std::is_same_v<T, std::string>) {
         return NVS_TYPE_STR;
     } else if constexpr (std::is_same_v<T, std::vector<uint8_t>> ||
-                         std::is_same_v<T, SpiramVector<uint8_t>>) {
+                         std::is_same_v<T, SpiramVector<uint8_t>>
+#if CONFIG_USE_TURN_TOUCH_REMOTE
+                         || std::is_same_v<T, NimBLEAddress>
+#endif
+    ) {
+
         return NVS_TYPE_BLOB;
     } else {
         // Should never happen because of the static_assert

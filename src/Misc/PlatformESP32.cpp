@@ -96,10 +96,14 @@ void HardwareInit() {
     PinMode(CONFIG_USB_CONNECTED_PIN, INPUT);
 #endif
 
+#if CONFIG_RED_LED != -1
     DigitalWrite(CONFIG_RED_LED, LED_OFF);
-    DigitalWrite(CONFIG_GREEN_LED, LED_OFF);
     PinMode(CONFIG_RED_LED, OUTPUT);
+#endif
+#if CONFIG_GREEN_LED != -1
+    DigitalWrite(CONFIG_GREEN_LED, LED_OFF);
     PinMode(CONFIG_GREEN_LED, OUTPUT);
+#endif
 #if CONFIG_BLUE_LED != -1
     DigitalWrite(CONFIG_BLUE_LED, LED_OFF);
     PinMode(CONFIG_BLUE_LED, OUTPUT);
@@ -180,6 +184,8 @@ auto HardwareDeinit() -> esp_err_t {
         log_e("Failed to deinit NVS: %d", err);
     }
 
+#if CONFIG_IDF_TARGET_ESP32S3 && CONFIG_BAT_VOLTAGE_LEFT_PIN != -1 &&                              \
+    CONFIG_BAT_VOLTAGE_RIGHT_PIN != -1
     // We need to shut down the ADC or else we consume ~1.6mA during deep sleep
     if (adcOneshotHandle != nullptr) {
         err = adc_oneshot_del_unit(adcOneshotHandle);
@@ -194,6 +200,7 @@ auto HardwareDeinit() -> esp_err_t {
             log_e("Failed to delete adc calibration scheme: %d", err);
         }
     }
+#endif
 
 #if USE_I2C
     err = i2c_driver_delete(I2C_NUM_0);
@@ -212,23 +219,26 @@ auto GetHeapSize() -> size_t {
 }
 
 void EnableCore0Wdt() {
+#if CONFIG_ESP_TASK_WDT_EN
     TaskHandle_t idle0 = xTaskGetIdleTaskHandleForCore(0);
     if (idle0 == nullptr || esp_task_wdt_add(idle0) != ESP_OK) {
         log_e("Failed to add Core 0 IDLE task to WDT");
     }
+#endif
 }
 
 void DisableCore0Wdt() {
+#if CONFIG_ESP_TASK_WDT_EN
     TaskHandle_t idle0 = xTaskGetIdleTaskHandleForCore(0);
     if (idle0 == nullptr || esp_task_wdt_delete(idle0) != ESP_OK) {
         log_e("Failed to remove Core 0 IDLE task from WDT");
     }
+#endif
 }
 
 void InitializePlatform() {
-    auto hardwareRevision = GetHardwareRevision();
 #if CONFIG_USE_SYS_ON
-    if (hardwareRevision == 1) {
+    if (GetHardwareRevision() == 1) {
         sysOnPin = 5;
     } else {
         sysOnPin = 46;
@@ -244,7 +254,7 @@ void InitializePlatform() {
     PinMode(CONFIG_DISPLAY_POWER, OUTPUT);
 #endif
 #if CONFIG_LEDC_BACKLIGHT
-    if (hardwareRevision < 3) {
+    if (GetHardwareRevision() < 3) {
         minLightingDutyCycle = 5;
         maxLightingDutyCycle = 60;
     } else {

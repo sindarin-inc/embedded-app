@@ -1,13 +1,11 @@
-#include "config.h"
-
 #if CONFIG_FONT_TTF
+
+#include "TTFFont.hpp"
 
 #include <algorithm>
 #include <esp_heap_caps.h>
 #include <execution>
 #include <optional>
-
-#include "TTFFont.hpp"
 
 /**
  * @brief Translate UTF32 codePoint to it's internal representation

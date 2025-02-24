@@ -1,10 +1,8 @@
-#include "config.h"
-
 #if CONFIG_FONT_TTF
 
-#include <optional>
-
 #include "TTFNotoSansLight.hpp"
+
+#include <optional>
 
 template <typename T, typename U, std::size_t N>
 auto BinarySearch(const std::array<std::pair<T, U>, N> &arr, const T &value) -> std::optional<U> {

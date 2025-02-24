@@ -1,10 +1,20 @@
-cmake_minimum_required(VERSION 3.5)
+idf_component_register()
 
-idf_component_register(INCLUDE_DIRS "./esp32s3/include/freetype2")
+# Override options defined in freetype/CMakeLists.txt.
+# We could have used normal set(...) here if freetype enabled CMake policy CMP0077.
+option(FT_DISABLE_HARFBUZZ "" ON)
+option(FT_DISABLE_BZIP2 "" ON)
+option(FT_DISABLE_BROTLI "" ON)
+option(FT_DISABLE_PNG "" ON)
+option(FT_DISABLE_ZLIB "" ON)
 
-add_prebuilt_library(libfreetype "./esp32s3/lib/libfreetype.a"
-             PRIV_REQUIRES spi_flash app_update log)
+# These are regular CMake variables, so we can set them directly.
+set(SKIP_INSTALL_ALL TRUE)
+set(BUILD_SHARED_LIBS OFF)
 
-target_link_libraries(${COMPONENT_LIB} INTERFACE libfreetype)
+add_subdirectory(freetype output)
 
-project(freetype)
+# https://gitlab.freedesktop.org/freetype/freetype/-/issues/1299
+target_compile_options(freetype PRIVATE "-Wno-dangling-pointer")
+
+target_link_libraries(${COMPONENT_LIB} INTERFACE freetype)
