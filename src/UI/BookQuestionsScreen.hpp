@@ -29,8 +29,8 @@ public:
         : EinkView(display), display_(display), prefs_(prefs), fileSystem_(fileSystem),
           readable_(readable), renderer_(renderer), stream_(stream), telemetry_(telemetry),
           menuView_(display), backLabelView_(display, "Back", ArrowLeft), questionView_(display),
-          descriptionView_(display, 6), backgroundView_(display, 5), pageIndicatorView_(display),
-          state_(State::QUESTIONS_LIST) {
+          descriptionView_(display, 6), contextHeadingView_(display), backgroundView_(display, 5),
+          pageIndicatorView_(display), state_(State::QUESTIONS_LIST) {
         menuView_.padding = 1;
         menuView_.itemsPerPage = 11;
         needsMenuItemsLoad_ = true;
@@ -62,6 +62,7 @@ protected:
     ArrowLabelView backLabelView_;
     SingleLineTextView questionView_;
     MultiLineTextView descriptionView_;
+    SingleLineTextView contextHeadingView_;
     BoxView backgroundView_;
     HorizontalPagingIndicatorView pageIndicatorView_;
 

@@ -25,7 +25,9 @@ auto BookQuestionsScreen::layout(LayoutContext &context, SolSize size) -> SolSiz
     context.setViewFrame(backgroundView_, backgroundFrame);
 
     // Position back label at top inside the background
-    auto contentFrame = backgroundFrame.inset(10, 10, 2, 3);
+    // Reduced horizontal insets to make the content area ~20 pixels wider
+    // Left inset: 10 → 5, Right inset: 2 → 0
+    auto contentFrame = backgroundFrame.inset(5, 5, 2, 3);
     auto backLabelRect = context.setViewFrame(backLabelView_, contentFrame,
                                               LayoutOptionsSizeToFit | LayoutOptionsAlignTop |
                                                   LayoutOptionsAlignLeft);
@@ -46,8 +48,13 @@ auto BookQuestionsScreen::layout(LayoutContext &context, SolSize size) -> SolSiz
                 descriptionView_, contentFrame.inset(inset, questionRect.bottom() + inset * 2),
                 LayoutOptionsSizeToFitVertical);
 
+            // Add the context heading view with double spacing after description
+            auto headingRect = context.setViewFrame(
+                contextHeadingView_, contentFrame.inset(inset, descRect.bottom() + inset * 4),
+                LayoutOptionsSizeToFitVertical);
+
             context.setViewFrame(menuView_,
-                                 contentFrame.inset(inset, descRect.bottom() + inset * 5),
+                                 contentFrame.inset(inset, headingRect.bottom() + inset * 2),
                                  LayoutOptionsSizeToFitVertical);
             return size;
         } else if (state_ == State::ANSWER) {
@@ -90,6 +97,9 @@ void BookQuestionsScreen::drawInRect(SolRect rect) {
     if (state_ == State::CONTEXTS_LIST || state_ == State::LOADING) {
         questionView_.draw();
         descriptionView_.draw();
+        if (state_ == State::CONTEXTS_LIST) {
+            contextHeadingView_.draw();
+        }
     } else if (state_ == State::ANSWER) {
         if (!questionResponse_.success) {
             // Only draw the views for error states
@@ -489,12 +499,13 @@ void BookQuestionsScreen::updateUIForState() {
     case State::CONTEXTS_LIST:
         questionView_.setText(std::string(selectedQuestion_.question));
         descriptionView_.setText(std::string(selectedQuestion_.description));
+        contextHeadingView_.setText("Answer using these pages as context:");
         for (const auto &context : questions_.contexts) {
             if (std::find(selectedQuestion_.allowed_contexts.begin(),
                           selectedQuestion_.allowed_contexts.end(),
                           context.context_type) != selectedQuestion_.allowed_contexts.end()) {
-                menuView_.addMenuItem(std::make_shared<MenuItemSingleLine>(
-                    std::string(context.description), []() {}));
+                menuView_.addMenuItem(
+                    std::make_shared<MenuItemSingleLine>(std::string(context.name), []() {}));
             }
         }
         break;
