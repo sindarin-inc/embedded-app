@@ -86,6 +86,8 @@ auto BookQuestionsScreen::layout(LayoutContext &context, SolSize size) -> SolSiz
 }
 
 void BookQuestionsScreen::drawInRect(SolRect rect) {
+    log_d("BookQuestionsScreen::drawInRect: state_=%d", state_);
+
     // Always draw background first
     backgroundView_.fillColor = display_.bg;
     backgroundView_.strokeColor = display_.fg;
@@ -106,8 +108,6 @@ void BookQuestionsScreen::drawInRect(SolRect rect) {
             questionView_.draw();
             descriptionView_.draw();
         }
-        // Draw page indicator in answer state
-        pageIndicatorView_.draw();
     }
 
     if (state_ == State::QUESTIONS_LIST || state_ == State::CONTEXTS_LIST) {
@@ -133,6 +133,9 @@ void BookQuestionsScreen::precomputeTotalPages() {
     auto countPlace = std::dynamic_pointer_cast<TxtPlace>(Place::factory(0));
     size_t pageCount = 0;
     pageBreakOffsets_.clear();
+    pageNumbers_.clear();
+
+    log_d("PRECOMPUTE: Starting page calculation");
 
     // Keep rendering pages until we hit the end
     do {
@@ -142,10 +145,26 @@ void BookQuestionsScreen::precomputeTotalPages() {
         countPlace = std::dynamic_pointer_cast<TxtPlace>(newPlace);
         pageCount++;
         pageBreakOffsets_.push_back(countPlace->getOffset());
+        pageNumbers_.push_back(pageCount);
+
+        log_d("PRECOMPUTE: Page %zu ends at offset %u", pageCount, countPlace->getOffset());
+
     } while (!renderer_.atEndOfFile());
 
     // Store the result
     precomputedTotalPages_ = pageCount;
+
+    log_d("PRECOMPUTE: Total pages calculated: %zu", precomputedTotalPages_);
+
+    // Log all page break offsets
+    std::string offsetsStr = "All page break offsets: ";
+    for (size_t i = 0; i < pageBreakOffsets_.size() && i < 10; i++) {
+        offsetsStr += std::to_string(pageBreakOffsets_[i]) + " ";
+    }
+    if (pageBreakOffsets_.size() > 10) {
+        offsetsStr += "...";
+    }
+    log_d("%s", offsetsStr.c_str());
 
     // Restore original stream
     renderer_.setStream(originalStream);
@@ -161,6 +180,7 @@ void BookQuestionsScreen::render(DisplaySystem &display) {
     setFrame(defaultFrameRect());
 
     if (state_ == State::ANSWER) {
+        log_d("RENDER: ANSWER state: current page=%zu", currentPage);
         // Save the current renderer stream if needed
         if (rendererStream_ == nullptr) {
             rendererStream_ = renderer_.getStream();
@@ -184,6 +204,17 @@ void BookQuestionsScreen::render(DisplaySystem &display) {
             precomputeTotalPages();
         }
 
+        // Set the place based on the current page
+        if (answerPlace_ == nullptr) {
+            // First time rendering, create a new place at the beginning
+            answerPlace_ = std::dynamic_pointer_cast<TxtPlace>(Place::factory(0));
+        } else if (currentPage < pageBreakOffsets_.size()) {
+            // For pages other than the first, set the offset based on the previous page's break
+            size_t offset = pageBreakOffsets_[currentPage - 1];
+            log_d("RENDER: Setting place to offset %zu for page %zu", offset, currentPage);
+            answerPlace_ = std::dynamic_pointer_cast<TxtPlace>(Place::factory(offset));
+        }
+
         // Render the page
         uint8_t darkPicturePercent = 0;
         std::shared_ptr<Place> newPlace;
@@ -192,35 +223,24 @@ void BookQuestionsScreen::render(DisplaySystem &display) {
 
         // Get the current page number based on offset
         auto currentOffset = answerPlace_->getOffset();
+        log_d("RENDER: Current offset=%u, Current page=%zu/%zu", currentOffset, currentPage,
+              precomputedTotalPages_);
 
-        // Find which page we're on by comparing against page break offsets
-        size_t currentPage = 0;
-
-        // Special case: if we're at offset 0 and this is the first render,
-        // we're on page 0
-        if (currentOffset == 0 && pageBreakOffsets_.size() > 0 &&
-            currentOffset < pageBreakOffsets_[0]) {
-            currentPage = 0;
-        } else {
-            // Find the first page break offset that's greater than our current offset
-            bool found = false;
-            for (size_t i = 0; i < pageBreakOffsets_.size(); i++) {
-                if (pageBreakOffsets_[i] > currentOffset) {
-                    currentPage = i;
-                    found = true;
-                    break;
-                }
-            }
-
-            // If we didn't find a greater offset, we must be on the last page
-            if (!found) {
-                currentPage = precomputedTotalPages_ - 1;
-            }
+        // Log page break offsets for debugging
+        std::string offsetsStr = "Page break offsets: ";
+        for (size_t i = 0; i < pageBreakOffsets_.size() && i < 5; i++) {
+            offsetsStr += std::to_string(pageBreakOffsets_[i]) + " ";
         }
+        if (pageBreakOffsets_.size() > 5) {
+            offsetsStr += "...";
+        }
+        log_d("%s", offsetsStr.c_str());
 
         // Update page indicator with precomputed total and current page
         pageIndicatorView_.setTotalPages(precomputedTotalPages_);
         pageIndicatorView_.setCurrentPage(currentPage);
+        // Draw page indicator in answer state
+        pageIndicatorView_.draw();
 
         // Update display
         if (prefs_.fastTransitions.get().value_or(false)) {
@@ -247,6 +267,7 @@ void BookQuestionsScreen::render(DisplaySystem &display) {
 }
 
 void BookQuestionsScreen::processCommand(RemoteCommand command) {
+    // DEBUG: Log the command being processed
     switch (command) {
     case RemoteCommand::UP:
         if (state_ == State::QUESTIONS_LIST || state_ == State::CONTEXTS_LIST) {
@@ -280,7 +301,14 @@ void BookQuestionsScreen::processCommand(RemoteCommand command) {
             }
         } else if (state_ == State::ANSWER) {
             // Page forward in answer
-            setNeedsRerender();
+            log_d("NAVIGATION: Paging forward in answer");
+            if (currentPage < precomputedTotalPages_ - 1) {
+                log_d("NAVIGATION: Paging forward in answer, current page=%zu", currentPage);
+                currentPage++;
+                setNeedsRerender();
+            } else {
+                log_d("NAVIGATION: Already at end of answer, can't page forward");
+            }
         }
         break;
     case RemoteCommand::BACK:
@@ -288,9 +316,12 @@ void BookQuestionsScreen::processCommand(RemoteCommand command) {
         switch (state_) {
         case State::ANSWER:
             // Try to page backward in answer
-            if (answerPlace_->getOffset() > 0) {
-                answerPlace_ = std::dynamic_pointer_cast<TxtPlace>(renderer_.getPreviousPlace());
+            if (currentPage > 0) {
+                log_d("NAVIGATION: Paging backward in answer, current page=%zu", currentPage);
+                currentPage--;
                 setNeedsRerender();
+            } else {
+                log_d("NAVIGATION: Already at beginning of answer, can't page backward");
             }
             break;
         case State::CONTEXTS_LIST:
@@ -467,6 +498,10 @@ void BookQuestionsScreen::setState(State newState) {
     // Precompute total pages when entering ANSWER state
     if (state_ == State::ANSWER && questionResponse_.success) {
         precomputeTotalPages();
+
+        // Reset page tracking
+        currentPage = 0;
+        answerPlace_ = nullptr;
 
         // Explicitly set the page indicator values after precomputing
         pageIndicatorView_.setTotalPages(precomputedTotalPages_);

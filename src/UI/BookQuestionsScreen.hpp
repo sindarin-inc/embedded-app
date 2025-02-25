@@ -80,6 +80,8 @@ protected:
 
     size_t precomputedTotalPages_{0};
     std::vector<uint32_t> pageBreakOffsets_;
+    std::vector<size_t> pageNumbers_;
+    size_t currentPage{0};
 
     void moveSelection(int delta);
     void executeQuestion();

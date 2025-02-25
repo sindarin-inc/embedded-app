@@ -8,6 +8,8 @@ void HorizontalPagingIndicatorView::setTotalPages(int totalPages) {
 }
 
 void HorizontalPagingIndicatorView::setCurrentPage(int currentPage) {
+    log_d("HorizontalPagingIndicatorView::setCurrentPage: currentPage=%d, totalPages_=%d",
+          currentPage, totalPages_);
     currentPage_ = std::clamp(currentPage, 0, totalPages_ - 1);
     setNeedsLayout();
 }
@@ -18,6 +20,8 @@ auto HorizontalPagingIndicatorView::layout(LayoutContext &context, SolSize size)
 }
 
 void HorizontalPagingIndicatorView::drawInRect(SolRect rect) {
+    log_d("HorizontalPagingIndicatorView::drawInRect: currentPage_=%d, totalPages_=%d",
+          currentPage_, totalPages_);
     int y = rect.origin.y;
     int startX = rect.origin.x;
 
