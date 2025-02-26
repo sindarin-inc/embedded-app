@@ -76,11 +76,13 @@ auto Font::ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2, FIX16 *ker
  * versa)
  *
  * For 1-bit font resolution:
+ * - With 24-bit display: Converts to RGB format (0 or 0xFF, 0xFF, 0xFF)
  * - With 16-bit display: Converts to RGB565 format (0 or 0xFFFF)
  * - With 8-bit display: Converts to grayscale (0 or 0xFF)
  * - With 1-bit display: Performs bit-by-bit copy with proper masking
  *
  * For 8-bit font resolution:
+ * - With 24-bit display: Converts grayscale to RGB format
  * - With 16-bit display: Converts grayscale to RGB565 format
  * - With 8-bit display: Direct grayscale copy
  *
@@ -124,6 +126,48 @@ void Font::copyBitmap(Bitmap &to, const Bitmap &from, Pos atPos, bool inverted) 
                         }
                         fromMask >>= 1;
                         toIdx += 1;
+                    }
+                }
+            }
+        } else if (displayPixelResolution_ == PixelResolution::TWENTYFOUR_BITS) {
+            uint8_t data;
+            auto fromPtr = from.pixels;
+            auto toPtr = to.pixels + static_cast<size_t>((atPos.y * to.pitch) * 3);
+
+            for (uint16_t fromRow = 0; fromRow < from.dim.height;
+                 fromRow++, toPtr += to.pitch * 3, fromPtr += from.pitch) {
+                int toIdx = atPos.x * 3;
+                int fromIdx = 0;
+                uint8_t fromMask = 0;
+                if (inverted) {
+                    for (uint16_t i = 0; i < from.dim.width; i++) {
+                        if (fromMask == 0) {
+                            fromMask = 0x80;
+                            data = fromPtr[fromIdx++];
+                        }
+                        if (data & fromMask) {
+                            // Set RGB to white (0xFF, 0xFF, 0xFF)
+                            toPtr[toIdx] = 0xFF;     // R
+                            toPtr[toIdx + 1] = 0xFF; // G
+                            toPtr[toIdx + 2] = 0xFF; // B
+                        }
+                        fromMask >>= 1;
+                        toIdx += 3;
+                    }
+                } else {
+                    for (uint16_t i = 0; i < from.dim.width; i++) {
+                        if (fromMask == 0) {
+                            fromMask = 0x80;
+                            data = fromPtr[fromIdx++];
+                        }
+                        if (data & fromMask) {
+                            // Set RGB to black (0, 0, 0)
+                            toPtr[toIdx] = 0;     // R
+                            toPtr[toIdx + 1] = 0; // G
+                            toPtr[toIdx + 2] = 0; // B
+                        }
+                        fromMask >>= 1;
+                        toIdx += 3;
                     }
                 }
             }
@@ -233,6 +277,35 @@ void Font::copyBitmap(Bitmap &to, const Bitmap &from, Pos atPos, bool inverted) 
                 }
                 fromPtr += from.pitch;
                 toPtr += to.pitch;
+            }
+        } else if (displayPixelResolution_ == PixelResolution::TWENTYFOUR_BITS) {
+            auto rowCount = from.dim.height;
+            auto fromPtr = from.pixels;
+            auto toPtr = &to.pixels[(to.pitch * atPos.y + atPos.x) * 3];
+            while (rowCount-- > 0) {
+                if (inverted) {
+                    for (uint16_t i = 0; i < from.dim.width; i++) {
+                        if (fromPtr[i] != 0) {
+                            // Convert grayscale to RGB
+                            uint8_t val = fromPtr[i];
+                            toPtr[i * 3] = val;     // R
+                            toPtr[i * 3 + 1] = val; // G
+                            toPtr[i * 3 + 2] = val; // B
+                        }
+                    }
+                } else {
+                    for (uint16_t i = 0; i < from.dim.width; i++) {
+                        if (fromPtr[i] != 0) {
+                            // Convert inverted grayscale to RGB
+                            uint8_t val = 255 - fromPtr[i];
+                            toPtr[i * 3] = val;     // R
+                            toPtr[i * 3 + 1] = val; // G
+                            toPtr[i * 3 + 2] = val; // B
+                        }
+                    }
+                }
+                fromPtr += from.pitch;
+                toPtr += to.pitch * 3;
             }
         } else if (displayPixelResolution_ == PixelResolution::EIGHT_BITS) {
             auto rowCount = from.dim.height;
