@@ -1,5 +1,7 @@
 #include "UI/BookQuestionsScreen.hpp"
 
+#include <inttypes.h>
+
 #if CONFIG_USE_BLE_SERVER_PROXY
 #include "Communications/BLEManager.hpp"
 #endif
@@ -216,8 +218,8 @@ void BookQuestionsScreen::render(DisplaySystem &display) {
 
         // Get the current page number based on offset
         auto currentOffset = answerPlace_->getOffset();
-        log_d("RENDER: Current offset=%u, Current page=%zu/%zu", currentOffset, currentPage_,
-              precomputedTotalPages_);
+        log_d("RENDER: Current offset=%" PRIu32 ", Current page=%zu/%zu", currentOffset,
+              currentPage_, precomputedTotalPages_);
 
         // Update page indicator with precomputed total and current page
         pageIndicatorView_.setTotalPages(precomputedTotalPages_);
@@ -360,7 +362,7 @@ void BookQuestionsScreen::executeQuestion(const BookQuestionContext &context) {
     log_d("Executing question: slug=%s, context=%s", selectedQuestion_.slug.c_str(),
           context.contextType.c_str());
     log_d("Book UUID: %s", readable_->uuid.c_str());
-    log_d("Chapter: %s, Offset: %u", placeInReadable_->getHRef().c_str(),
+    log_d("Chapter: %s, Offset: %" PRIu32, placeInReadable_->getHRef().c_str(),
           placeInReadable_->getOffset());
 
     BookQuestionRequest request = {};
