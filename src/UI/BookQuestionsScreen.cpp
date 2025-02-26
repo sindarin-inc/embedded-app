@@ -252,7 +252,6 @@ void BookQuestionsScreen::render(DisplaySystem &display) {
 }
 
 void BookQuestionsScreen::processCommand(RemoteCommand command) {
-    // DEBUG: Log the command being processed
     switch (command) {
     case RemoteCommand::UP:
         if (state_ == State::QUESTIONS_LIST || state_ == State::CONTEXTS_LIST) {
@@ -398,8 +397,8 @@ void BookQuestionsScreen::executeQuestion(const BookQuestionContext &context) {
             log_i("WiFi is disabled in preferences, skipping WiFi connection");
         }
 
-// If WiFi failed, try BLE if available
 #if CONFIG_USE_BLE_SERVER_PROXY
+        // If WiFi failed, try BLE if available
         if (!wifiConnected && !prefs_.bleDisabled.get().value_or(false)) {
             log_i("Attempting BLE connection...");
             DispatchGetUiQueue()->dispatch(
@@ -548,7 +547,6 @@ void BookQuestionsScreen::updateUIForState() {
             // The answer text will be rendered by the renderer in render(), don't set it here
             descriptionView_.setText("");
         } else {
-            // Make error messages more prominent
             questionView_.setText("Error");
             descriptionView_.setText(std::string(questionResponse_.error.c_str()));
         }
@@ -576,20 +574,24 @@ void BookQuestionsScreen::updateBackLabel() {
 }
 
 void BookQuestionsScreen::restoreRendererStream() {
-    if (rendererStream_ != nullptr) {
-        renderer_.setRect(GetTextRectFromPrefs(display_, prefs_));
-        renderer_.setStream(rendererStream_);
-        rendererStream_ = nullptr;
+    if (rendererStream_ == nullptr) {
+        return;
     }
+
+    renderer_.setRect(GetTextRectFromPrefs(display_, prefs_));
+    renderer_.setStream(rendererStream_);
+    rendererStream_ = nullptr;
 }
 
 void BookQuestionsScreen::setLoadingMessage(const std::string &message) {
-    if (state_ == State::LOADING) {
-        log_i("Setting loading message: %s", message.c_str());
-        questionView_.setText(message);
-        descriptionView_.setText("");
-        setNeedsRerender();
-        setFirstLoad();
-        render(display_);
+    if (state_ != State::LOADING) {
+        return;
     }
+
+    log_i("Setting loading message: %s", message.c_str());
+    questionView_.setText(message);
+    descriptionView_.setText("");
+    setNeedsRerender();
+    setFirstLoad();
+    render(display_);
 }

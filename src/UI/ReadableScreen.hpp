@@ -19,7 +19,6 @@
 #include "UI/Menu/ReadingSettingsMenuScreen.hpp"
 #include "UI/NewReadablePopupMenuScreen.hpp"
 #include "UI/OffsetAdjustScreen.hpp"
-#include "UI/ReadableDictionaryScreen.hpp"
 #include "UI/ReadablePlacemarkHistoryScreen.hpp"
 #include "UI/ReadableSummaryScreen.hpp"
 #include "UI/ResizeBoxScreen.hpp"
@@ -104,7 +103,6 @@ protected:
     std::shared_ptr<NewReadablePopupMenuScreen> popupMenuScreen_;
     std::shared_ptr<ReadableSummaryScreen> readableSummaryScreen_{nullptr};
     std::shared_ptr<ReadablePlacemarkHistoryScreen> readablePlacemarkHistoryScreen_{nullptr};
-    std::shared_ptr<ReadableDictionaryScreen> readableDictionaryScreen_{nullptr};
 
     std::vector<std::shared_ptr<Screen>> hookScreens_;
 

@@ -9,12 +9,7 @@
 
 auto ReadableSummaryScreen::layout(LayoutContext &context, SolSize size) -> SolSize {
     auto fullFrame = SolRect::fromSize(size);
-    log_d("ReadableSummaryScreen layout: %d x %d", size.width, size.height);
-    log_d("full frame is %d %d %d %d", fullFrame.origin.x, fullFrame.origin.y, fullFrame.size.width,
-          fullFrame.size.height);
     auto backgroundFrame = fullFrame.inset(0);
-    log_d("Summary background frame: x=%d, y=%d, w=%d, h=%d", backgroundFrame.origin.x,
-          backgroundFrame.origin.y, backgroundFrame.size.width, backgroundFrame.size.height);
 
     context.setViewFrame(backgroundView_, backgroundFrame);
 
@@ -64,7 +59,6 @@ void ReadableSummaryScreen::render(DisplaySystem &display) {
     auto rect =
         DisplayRect::fromSizeAndInsets(display_.width(), display_.height(), {30, 30, 30, 30});
     rect = rect.inset(10, 10, 15, 15);
-    log_d("Summary renderer rect: x=%d, y=%d, w=%d, h=%d", rect.x, rect.y, rect.width, rect.height);
     renderer_.setRect(rect);
 
     uint8_t darkPicturePercent = 0;

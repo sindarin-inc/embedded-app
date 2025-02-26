@@ -14,7 +14,7 @@ public:
     void drawInRect(SolRect rect) override;
 
     int indicatorSpacing = 5;
-    int indicatorSize = 4; // Size of each dot
+    int indicatorSize = 4;
 
 private:
     int totalPages_ = 1;
