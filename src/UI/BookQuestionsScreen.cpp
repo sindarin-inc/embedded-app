@@ -96,8 +96,6 @@ auto BookQuestionsScreen::layout(LayoutContext &context, SolSize size) -> SolSiz
 }
 
 void BookQuestionsScreen::drawInRect(SolRect rect) {
-    log_d("BookQuestionsScreen::drawInRect: state_=%d", state_);
-
     // Always draw background first
     backgroundView_.fillColor = display_.bg;
     backgroundView_.strokeColor = display_.fg;
@@ -145,8 +143,6 @@ void BookQuestionsScreen::precomputeTotalPages() {
     pageBreakOffsets_.clear();
     pageNumbers_.clear();
 
-    log_d("PRECOMPUTE: Starting page calculation");
-
     // Keep rendering pages until we hit the end
     do {
         uint8_t darkPicturePercent = 0;
@@ -156,25 +152,10 @@ void BookQuestionsScreen::precomputeTotalPages() {
         pageCount++;
         pageBreakOffsets_.push_back(countPlace->getOffset());
         pageNumbers_.push_back(pageCount);
-
-        log_d("PRECOMPUTE: Page %zu ends at offset %u", pageCount, countPlace->getOffset());
-
     } while (!renderer_.atEndOfFile());
 
     // Store the result
     precomputedTotalPages_ = pageCount;
-
-    log_d("PRECOMPUTE: Total pages calculated: %zu", precomputedTotalPages_);
-
-    // Log all page break offsets
-    std::string offsetsStr = "All page break offsets: ";
-    for (size_t i = 0; i < pageBreakOffsets_.size() && i < 10; i++) {
-        offsetsStr += std::to_string(pageBreakOffsets_[i]) + " ";
-    }
-    if (pageBreakOffsets_.size() > 10) {
-        offsetsStr += "...";
-    }
-    log_d("%s", offsetsStr.c_str());
 
     // Restore original stream
     renderer_.setStream(originalStream);
@@ -237,16 +218,6 @@ void BookQuestionsScreen::render(DisplaySystem &display) {
         auto currentOffset = answerPlace_->getOffset();
         log_d("RENDER: Current offset=%u, Current page=%zu/%zu", currentOffset, currentPage_,
               precomputedTotalPages_);
-
-        // Log page break offsets for debugging
-        std::string offsetsStr = "Page break offsets: ";
-        for (size_t i = 0; i < pageBreakOffsets_.size() && i < 5; i++) {
-            offsetsStr += std::to_string(pageBreakOffsets_[i]) + " ";
-        }
-        if (pageBreakOffsets_.size() > 5) {
-            offsetsStr += "...";
-        }
-        log_d("%s", offsetsStr.c_str());
 
         // Update page indicator with precomputed total and current page
         pageIndicatorView_.setTotalPages(precomputedTotalPages_);
