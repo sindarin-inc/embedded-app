@@ -30,7 +30,7 @@ public:
           readable_(readable), renderer_(renderer), stream_(stream), telemetry_(telemetry),
           menuView_(display), backLabelView_(display, "Back", ArrowLeft), questionView_(display),
           descriptionView_(display, 6), contextHeadingView_(display), backgroundView_(display, 5),
-          pageIndicatorView_(display), needsMenuItemsLoad_(true) {
+          pageIndicatorView_(display) {
         menuView_.padding = 1;
         menuView_.itemsPerPage = 11;
 

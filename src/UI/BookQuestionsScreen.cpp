@@ -1,6 +1,6 @@
 #include "UI/BookQuestionsScreen.hpp"
 
-#include <inttypes.h>
+#include <cinttypes>
 
 #if CONFIG_USE_BLE_SERVER_PROXY
 #include "Communications/BLEManager.hpp"
