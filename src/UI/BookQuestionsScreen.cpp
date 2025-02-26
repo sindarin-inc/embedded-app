@@ -72,9 +72,19 @@ auto BookQuestionsScreen::layout(LayoutContext &context, SolSize size) -> SolSiz
             // Center the loading text vertically in the content area
             auto loadingRect = contentFrame;
             auto verticalSpace = contentFrame.size.height - questionRect.size.height;
-            loadingRect = loadingRect.inset(0, verticalSpace / 2);
+
+            // Position the title at the top third of the screen
+            loadingRect = loadingRect.inset(0, verticalSpace / 6);
             context.setViewFrame(questionView_, loadingRect,
                                  LayoutOptionsSizeToFit | LayoutOptionsAlignCenter);
+
+            // Add description text in the bottom half with much more spacing
+            context.setViewFrame(descriptionView_,
+                                 // Make the description text narrower for better wrapping
+                                 contentFrame.inset(contentFrame.size.width / 6,
+                                                    loadingRect.bottom() + verticalSpace / 3),
+                                 LayoutOptionsSizeToFitVertical | LayoutOptionsAlignCenter);
+
             return size;
         }
 
@@ -213,6 +223,8 @@ void BookQuestionsScreen::render(DisplaySystem &display) {
             size_t offset = pageBreakOffsets_[currentPage - 1];
             log_d("RENDER: Setting place to offset %zu for page %zu", offset, currentPage);
             answerPlace_ = std::dynamic_pointer_cast<TxtPlace>(Place::factory(offset));
+        } else {
+            log_d("RENDER: Already at end of answer, can't page forward");
         }
 
         // Render the page
@@ -347,8 +359,9 @@ void BookQuestionsScreen::loadQuestions() {
     // Load and parse questions JSON
     SFile questionsFile = fileSystem_.open("/book_questions.json", FILE_READ);
     if (!questionsFile) {
-        log_e("Failed to open book questions file");
-        back();
+        log_w("Book questions file not found, sync required");
+        // Don't create default questions, leave the questions list empty
+        // This will be handled in updateUIForState
         return;
     }
 
@@ -522,7 +535,16 @@ void BookQuestionsScreen::updateUIForState() {
         if (questions_.questions.empty()) {
             loadQuestions();
             if (questions_.questions.empty()) {
-                return; // loadQuestions() will have called back() on error
+                // If we still have no questions after loading, show a centered message without a
+                // menu
+                log_w("No book questions available, sync required");
+                // Set state to LOADING to use the centered message layout
+                state_ = State::LOADING;
+                // Use all caps for the title to make it more prominent
+                descriptionView_.setText("Go to Settings > Content > Sync to load questions.");
+                // Update back label to show "Back" instead of "Dismiss"
+                updateBackLabel();
+                return;
             }
         }
         for (const auto &question : questions_.questions) {
@@ -567,8 +589,14 @@ void BookQuestionsScreen::updateUIForState() {
 
 void BookQuestionsScreen::updateBackLabel() {
     if (state_ == State::LOADING || state_ == State::ANSWER) {
-        backLabelView_.setText("Dismiss");
-        backLabelView_.setArrowDirection(ArrowUp);
+        // For the sync message screen (when questions are empty), use "Back" instead of "Dismiss"
+        if (state_ == State::LOADING && questions_.questions.empty()) {
+            backLabelView_.setText("Back");
+            backLabelView_.setArrowDirection(ArrowLeft);
+        } else {
+            backLabelView_.setText("Dismiss");
+            backLabelView_.setArrowDirection(ArrowUp);
+        }
     } else {
         backLabelView_.setText("Back");
         backLabelView_.setArrowDirection(ArrowLeft);
