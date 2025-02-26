@@ -35,7 +35,10 @@
 extern PreferencesStore prefs;
 extern void UIInnerLoop(RemoteCommand command);
 
-#if CONFIG_DISPLAY_SIM_16BIT
+#if CONFIG_DISPLAY_SIM_24BIT
+#include "Displays/DisplaySim24Bit.hpp"
+extern DisplaySim24Bit myDisplay;
+#elif CONFIG_DISPLAY_SIM_16BIT
 #include "Displays/DisplaySim16Bit.hpp"
 extern DisplaySim16Bit myDisplay;
 #elif CONFIG_DISPLAY_SIM_8BIT
@@ -99,6 +102,18 @@ void SimDrawScreen() {
             uint8_t r = ((pixel >> 11) & 0x1F) << 3; // 5 bits red
             uint8_t g = ((pixel >> 5) & 0x3F) << 2;  // 6 bits green
             uint8_t b = (pixel & 0x1F) << 3;         // 5 bits blue
+
+            SDL_SetRenderDrawColor(renderer, r, g, b, 0xFF);
+            SDL_RenderDrawPoint(renderer, x, y);
+#elif CONFIG_DISPLAY_SIM_24BIT
+            uint8_t *buffer = myDisplay.buffer().get();
+            // Calculate the starting index for this pixel (3 bytes per pixel)
+            size_t idx = (x + y * myDisplay.gfxClass()->width()) * 3;
+
+            // Read BGR values directly from the buffer (GFXcanvas24 stores as BGR)
+            uint8_t b = buffer[idx];     // Blue is first byte
+            uint8_t g = buffer[idx + 1]; // Green is second byte
+            uint8_t r = buffer[idx + 2]; // Red is third byte
 
             SDL_SetRenderDrawColor(renderer, r, g, b, 0xFF);
             SDL_RenderDrawPoint(renderer, x, y);

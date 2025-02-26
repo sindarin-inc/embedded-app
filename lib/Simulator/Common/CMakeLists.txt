@@ -72,7 +72,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 )
 
 # Conditionally link freetype if we're using 8-bit or 16-bit display
-if(DISPLAY_TYPE STREQUAL "DISPLAY_SIM_16BIT" OR DISPLAY_TYPE STREQUAL "DISPLAY_SIM_8BIT")
+if(DISPLAY_TYPE STREQUAL "DISPLAY_SIM_24BIT" OR DISPLAY_TYPE STREQUAL "DISPLAY_SIM_16BIT" OR DISPLAY_TYPE STREQUAL "DISPLAY_SIM_8BIT")
     # Set FreeType options before adding the subdirectory
     set(FT_DISABLE_PNG ON CACHE BOOL "Disable PNG support in FreeType" FORCE)
     set(FT_DISABLE_HARFBUZZ ON CACHE BOOL "Disable HarfBuzz support in FreeType" FORCE)
@@ -91,7 +91,11 @@ else()
 endif()
 
 # Set compile definitions based on the selected DISPLAY_TYPE
-if(DISPLAY_TYPE STREQUAL "DISPLAY_SIM_16BIT")
+if(DISPLAY_TYPE STREQUAL "DISPLAY_SIM_24BIT")
+    target_compile_definitions(${PROJECT_NAME} PUBLIC
+        CONFIG_DISPLAY_SIM_24BIT=1
+    )
+elseif(DISPLAY_TYPE STREQUAL "DISPLAY_SIM_16BIT")
     target_compile_definitions(${PROJECT_NAME} PUBLIC
         CONFIG_DISPLAY_SIM_16BIT=1
     )

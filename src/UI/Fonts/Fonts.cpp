@@ -102,6 +102,10 @@ TTFNotoSansLight mainFont;
 Font fontFace0 = Font(mainFont, 8);
 Font fontFace1 = Font(mainFont, 10);
 Font fontFace2 = Font(mainFont, 12);
+#elif CONFIG_DISPLAY_SIM_24BIT
+Font fontFace0 = Font(mainFont, 8);
+Font fontFace1 = Font(mainFont, 10);
+Font fontFace2 = Font(mainFont, 12);
 #elif CONFIG_DISPLAY_SIM_8BIT
 Font fontFace0 = Font(mainFont, 8);
 Font fontFace1 = Font(mainFont, 10);
