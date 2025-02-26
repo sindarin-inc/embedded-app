@@ -480,9 +480,6 @@ auto SindarinAPI::askQuestion(const BookQuestionRequest &req, BookQuestionRespon
     JsonObject body = doc->to<JsonObject>();
     req.toJson(body);
 
-    // Log request body
-    log_d("Request body: %s", DumpJson(*doc).c_str());
-
     size_t serializedMaxSize = (*doc).memoryUsage() * 2;
     auto reqBody = SpiRamArrayPtr<char>(serializedMaxSize);
     size_t bodyLength = serializeJson(*doc, reqBody.get(), serializedMaxSize);
@@ -516,9 +513,6 @@ auto SindarinAPI::askQuestion(const BookQuestionRequest &req, BookQuestionRespon
     auto stream = client->makeReadStream();
     auto respJson = std::make_unique<SpiRamJsonDocument>(1024 + contentLength * 3);
     auto error = ArduinoJson::deserializeJson(*respJson, *stream);
-
-    // Log full response
-    log_d("Response JSON: %s", DumpJson(*respJson).c_str());
 
     if (error.code() != DeserializationError::Ok) {
         log_e("Failed to deserialize response: %s", error.c_str());

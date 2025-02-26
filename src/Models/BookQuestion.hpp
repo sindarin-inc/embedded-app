@@ -65,11 +65,12 @@ public:
     int version{1};
 
     auto fromJson(const JsonObject &j) -> bool override {
-        if (!j.containsKey("questions") || !j.containsKey("contexts")) {
+        if (!j.containsKey("questions") || !j.containsKey("contexts") ||
+            !j.containsKey("version")) {
             return false;
         }
 
-        version = j["version"] | 1;
+        version = j["version"];
 
         JsonArray questionsArray = j["questions"].as<JsonArray>();
         questions.clear();

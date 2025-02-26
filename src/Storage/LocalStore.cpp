@@ -577,9 +577,6 @@ void LocalStore::computeRecentReadables() {
 void LocalStore::saveBookQuestions(const BookQuestions &bookQuestions) {
     log_i("Saving book questions (version %d) to file", bookQuestions.version);
 
-    // Save the updated book questions version to preferences
-    this->prefs_.bookQuestionsVersion.set(bookQuestions.version);
-
     // Convert book questions to JSON
     auto doc = std::make_unique<SpiRamJsonDocument>(32768);
     JsonObject root = doc->to<JsonObject>();
@@ -598,6 +595,9 @@ void LocalStore::saveBookQuestions(const BookQuestions &bookQuestions) {
         this->telemetry_.logMetric(TelemetryField::METRIC_SYNC_STATUS, "book-questions-updated",
                                    {{"version", bookQuestions.version}});
     }
+
+    // Finally, save the updated book questions version to preferences
+    this->prefs_.bookQuestionsVersion.set(bookQuestions.version);
 }
 
 auto LocalStore::syncFromRemote(bool wifiConnected, bool bleConnected, SyncReason syncReason,
@@ -834,8 +834,6 @@ auto LocalStore::syncFromRemote(bool wifiConnected, bool bleConnected, SyncReaso
             if (checkSyncResponse.hasBookQuestions) {
                 log_i("Received book questions (version %d) in sync response, saving to file",
                       checkSyncResponse.bookQuestions.version);
-
-                // Use the helper method to save book questions
                 saveBookQuestions(checkSyncResponse.bookQuestions);
             }
 
@@ -958,15 +956,6 @@ auto LocalStore::syncFromRemote(bool wifiConnected, bool bleConnected, SyncReaso
         SHOW_HEAP();
         SindarinAPI::getInstance()->checkSync(checkSyncRequest, &checkSyncResponse,
                                               this->telemetry_, bleConnected, cancel);
-
-        // Save book questions if they were returned in the response (for the second sync call)
-        if (checkSyncResponse.hasBookQuestions) {
-            log_i("Received book questions (version %d) in final sync response, saving to file",
-                  checkSyncResponse.bookQuestions.version);
-
-            // Use the helper method to save book questions
-            saveBookQuestions(checkSyncResponse.bookQuestions);
-        }
 
         // TODO: Force reload of rootUI instead of rebooting
         if (checkSyncResponse.synced) {
