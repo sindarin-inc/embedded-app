@@ -350,6 +350,7 @@ void BookQuestionsScreen::loadQuestions() {
 void BookQuestionsScreen::executeQuestion(const BookQuestionContext &context) {
     setState(State::LOADING);
     setLoadingMessage("Connecting to WiFi...");
+    cancelFlag_ = std::make_shared<CancelFlag>();
 
     // Get current place from the stream directly
     placeInReadable_ = std::dynamic_pointer_cast<EPubPlace>(renderer_.getCurrentPlace());
@@ -375,8 +376,7 @@ void BookQuestionsScreen::executeQuestion(const BookQuestionContext &context) {
     auto resp = std::make_shared<BookQuestionResponse>();
 
     // Dispatch the API call to a background task
-    DispatchQueue::dispatchOneOff(
-        [this, request, resp]() {
+    DispatchGetCore0BackgroundQueue()->dispatch([this, request, resp]() {
         log_i("Starting background task for question request");
         // First try WiFi connection
         bool wifiConnected = false;
@@ -405,7 +405,7 @@ void BookQuestionsScreen::executeQuestion(const BookQuestionContext &context) {
             DispatchGetUiQueue()->dispatch(
                 [this]() { setLoadingMessage("Connecting via Bluetooth..."); });
 
-            if (!BLEManager::getInstance()->connectProxy(nullptr)) {
+            if (!BLEManager::getInstance()->connectProxy(cancelFlag_)) {
                 log_w("BLE connection failed");
                 telemetry_.logMetric(TelemetryField::METRIC_WIFI, "sync-ble-failed");
             } else {
@@ -452,7 +452,7 @@ void BookQuestionsScreen::executeQuestion(const BookQuestionContext &context) {
               request.chapter.c_str(), request.chapterOffset);
 
         int result =
-            SindarinAPI::getInstance()->askQuestion(request, resp.get(), bleConnected, nullptr);
+            SindarinAPI::getInstance()->askQuestion(request, resp.get(), bleConnected, cancelFlag_);
 
         // Dispatch UI updates back to main thread
         log_i("API request completed with result=%d, success=%d", result, resp->success);
@@ -472,8 +472,7 @@ void BookQuestionsScreen::executeQuestion(const BookQuestionContext &context) {
                 setState(State::ANSWER);
             }
         });
-        },
-        8192, 1, 1, "Question");
+    });
 
     setNeedsRerender();
 }

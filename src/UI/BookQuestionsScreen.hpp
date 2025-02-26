@@ -2,6 +2,7 @@
 
 #include "Communications/SindarinAPI.hpp"
 #include "EPub/EPubFile.hpp"
+#include "Misc/CancelFlag.hpp"
 #include "Misc/Telemetry.hpp"
 #include "Models/BookQuestion.hpp"
 #include "Renderers/Renderer.hpp"
@@ -73,6 +74,7 @@ protected:
     bool needsMenuItemsLoad_{true};
     size_t selectedQuestionIndex_{0};
     State state_{State::QUESTIONS_LIST};
+    std::shared_ptr<CancelFlag> cancelFlag_;
 
     std::shared_ptr<TxtPlace> answerPlace_;
     std::shared_ptr<RendererStream> rendererStream_;
