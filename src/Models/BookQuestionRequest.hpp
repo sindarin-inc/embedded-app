@@ -10,22 +10,22 @@ public:
     BookQuestionRequest() = default;
     ~BookQuestionRequest() override = default;
 
-    SpiramString question_slug;
-    SpiramString context_type;
-    SpiramString book_uuid;
+    SpiramString questionSlug;
+    SpiramString contextType;
+    SpiramString bookUuid;
     SpiramString chapter;
-    size_t chapter_offset{0};
+    size_t chapterOffset{0};
 
     auto fromJson(const JsonObject &j) -> bool override {
         return true; // Not needed for request
     }
 
     auto toJson(JsonObject &j) const -> bool {
-        j["question_slug"] = question_slug;
-        j["context_type"] = context_type;
-        j["book_uuid"] = book_uuid;
+        j["question_slug"] = questionSlug;
+        j["context_type"] = contextType;
+        j["book_uuid"] = bookUuid;
         j["chapter"] = chapter;
-        j["chapter_offset"] = chapter_offset;
+        j["chapter_offset"] = chapterOffset;
         return true;
     }
 };
@@ -38,7 +38,7 @@ public:
     SpiramString answer;
     bool success{false};
     SpiramString error;
-    int tokens_used{0};
+    int tokensUsed{0};
     float cost{0.0f};
 
     auto fromJson(const JsonObject &j) -> bool override {
@@ -46,7 +46,7 @@ public:
         if (j.containsKey("answer")) {
             success = true;
             answer = j["answer"].as<std::string>();
-            tokens_used = j["tokens_used"] | 0;
+            tokensUsed = j["tokens_used"] | 0;
             cost = j["cost"] | 0.0f;
             return true;
         }

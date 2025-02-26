@@ -30,10 +30,9 @@ public:
           readable_(readable), renderer_(renderer), stream_(stream), telemetry_(telemetry),
           menuView_(display), backLabelView_(display, "Back", ArrowLeft), questionView_(display),
           descriptionView_(display, 6), contextHeadingView_(display), backgroundView_(display, 5),
-          pageIndicatorView_(display), state_(State::QUESTIONS_LIST) {
+          pageIndicatorView_(display), needsMenuItemsLoad_(true) {
         menuView_.padding = 1;
         menuView_.itemsPerPage = 11;
-        needsMenuItemsLoad_ = true;
 
         // Initialize renderer place for answer view
         answerPlace_ = std::dynamic_pointer_cast<TxtPlace>(Place::factory(0));
@@ -81,7 +80,7 @@ protected:
     size_t precomputedTotalPages_{0};
     std::vector<uint32_t> pageBreakOffsets_;
     std::vector<size_t> pageNumbers_;
-    size_t currentPage{0};
+    size_t currentPage_{0};
 
     void moveSelection(int delta);
     void executeQuestion();

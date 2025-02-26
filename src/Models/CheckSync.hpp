@@ -42,7 +42,7 @@ public:
     std::string build;
     std::string gitHash;
     std::string sn;
-    int bookQuestionsVersion;
+    int bookQuestionsVersion{};
 
     auto fromJson(const JsonObject &j) -> bool override { return true; }
 };

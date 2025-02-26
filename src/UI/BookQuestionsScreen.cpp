@@ -190,7 +190,7 @@ void BookQuestionsScreen::render(DisplaySystem &display) {
     setFrame(defaultFrameRect());
 
     if (state_ == State::ANSWER) {
-        log_d("RENDER: ANSWER state: current page=%zu", currentPage);
+        log_d("RENDER: ANSWER state: current page=%zu", currentPage_);
         // Save the current renderer stream if needed
         if (rendererStream_ == nullptr) {
             rendererStream_ = renderer_.getStream();
@@ -218,10 +218,10 @@ void BookQuestionsScreen::render(DisplaySystem &display) {
         if (answerPlace_ == nullptr) {
             // First time rendering, create a new place at the beginning
             answerPlace_ = std::dynamic_pointer_cast<TxtPlace>(Place::factory(0));
-        } else if (currentPage < pageBreakOffsets_.size()) {
+        } else if (currentPage_ < pageBreakOffsets_.size()) {
             // For pages other than the first, set the offset based on the previous page's break
-            size_t offset = pageBreakOffsets_[currentPage - 1];
-            log_d("RENDER: Setting place to offset %zu for page %zu", offset, currentPage);
+            size_t offset = pageBreakOffsets_[currentPage_ - 1];
+            log_d("RENDER: Setting place to offset %zu for page %zu", offset, currentPage_);
             answerPlace_ = std::dynamic_pointer_cast<TxtPlace>(Place::factory(offset));
         } else {
             log_d("RENDER: Already at end of answer, can't page forward");
@@ -235,7 +235,7 @@ void BookQuestionsScreen::render(DisplaySystem &display) {
 
         // Get the current page number based on offset
         auto currentOffset = answerPlace_->getOffset();
-        log_d("RENDER: Current offset=%u, Current page=%zu/%zu", currentOffset, currentPage,
+        log_d("RENDER: Current offset=%u, Current page=%zu/%zu", currentOffset, currentPage_,
               precomputedTotalPages_);
 
         // Log page break offsets for debugging
@@ -250,7 +250,7 @@ void BookQuestionsScreen::render(DisplaySystem &display) {
 
         // Update page indicator with precomputed total and current page
         pageIndicatorView_.setTotalPages(precomputedTotalPages_);
-        pageIndicatorView_.setCurrentPage(currentPage);
+        pageIndicatorView_.setCurrentPage(currentPage_);
         // Draw page indicator in answer state
         pageIndicatorView_.draw();
 
@@ -314,9 +314,9 @@ void BookQuestionsScreen::processCommand(RemoteCommand command) {
         } else if (state_ == State::ANSWER) {
             // Page forward in answer
             log_d("NAVIGATION: Paging forward in answer");
-            if (currentPage < precomputedTotalPages_ - 1) {
-                log_d("NAVIGATION: Paging forward in answer, current page=%zu", currentPage);
-                currentPage++;
+            if (currentPage_ < precomputedTotalPages_ - 1) {
+                log_d("NAVIGATION: Paging forward in answer, current page=%zu", currentPage_);
+                currentPage_++;
                 setNeedsRerender();
             } else {
                 log_d("NAVIGATION: Already at end of answer, can't page forward");
@@ -328,9 +328,9 @@ void BookQuestionsScreen::processCommand(RemoteCommand command) {
         switch (state_) {
         case State::ANSWER:
             // Try to page backward in answer
-            if (currentPage > 0) {
-                log_d("NAVIGATION: Paging backward in answer, current page=%zu", currentPage);
-                currentPage--;
+            if (currentPage_ > 0) {
+                log_d("NAVIGATION: Paging backward in answer, current page=%zu", currentPage_);
+                currentPage_--;
                 setNeedsRerender();
             } else {
                 log_d("NAVIGATION: Already at beginning of answer, can't page backward");
@@ -367,7 +367,7 @@ void BookQuestionsScreen::loadQuestions() {
 
     std::string jsonStr;
     while (questionsFile.available()) {
-        jsonStr += (char)questionsFile.read();
+        jsonStr += static_cast<char>(questionsFile.read());
     }
     questionsFile.close();
 
@@ -387,17 +387,17 @@ void BookQuestionsScreen::executeQuestion(const BookQuestionContext &context) {
     }
 
     log_d("Executing question: slug=%s, context=%s", selectedQuestion_.slug.c_str(),
-          context.context_type.c_str());
+          context.contextType.c_str());
     log_d("Book UUID: %s", readable_->uuid.c_str());
     log_d("Chapter: %s, Offset: %u", placeInReadable_->getHRef().c_str(),
           placeInReadable_->getOffset());
 
     BookQuestionRequest request = {};
-    request.question_slug = selectedQuestion_.slug;
-    request.context_type = context.context_type;
-    request.book_uuid = readable_->uuid;
+    request.questionSlug = selectedQuestion_.slug;
+    request.contextType = context.contextType;
+    request.bookUuid = readable_->uuid;
     request.chapter = placeInReadable_->getHRef();
-    request.chapter_offset = placeInReadable_->getOffset();
+    request.chapterOffset = placeInReadable_->getOffset();
 
     auto resp = std::make_shared<BookQuestionResponse>();
 
@@ -475,8 +475,8 @@ void BookQuestionsScreen::executeQuestion(const BookQuestionContext &context) {
 
         // Execute API call in background
         log_i("Executing API request: question=%s, context=%s, book=%s, chapter=%s, offset=%zu",
-              request.question_slug.c_str(), request.context_type.c_str(),
-              request.book_uuid.c_str(), request.chapter.c_str(), request.chapter_offset);
+              request.questionSlug.c_str(), request.contextType.c_str(), request.bookUuid.c_str(),
+              request.chapter.c_str(), request.chapterOffset);
 
         int result =
             SindarinAPI::getInstance()->askQuestion(request, resp.get(), bleConnected, nullptr);
@@ -513,7 +513,7 @@ void BookQuestionsScreen::setState(State newState) {
         precomputeTotalPages();
 
         // Reset page tracking
-        currentPage = 0;
+        currentPage_ = 0;
         answerPlace_ = nullptr;
 
         // Explicitly set the page indicator values after precomputing
@@ -558,9 +558,9 @@ void BookQuestionsScreen::updateUIForState() {
         descriptionView_.setText(std::string(selectedQuestion_.description));
         contextHeadingView_.setText("Answer using these pages as context:");
         for (const auto &context : questions_.contexts) {
-            if (std::find(selectedQuestion_.allowed_contexts.begin(),
-                          selectedQuestion_.allowed_contexts.end(),
-                          context.context_type) != selectedQuestion_.allowed_contexts.end()) {
+            if (std::find(selectedQuestion_.allowedContexts.begin(),
+                          selectedQuestion_.allowedContexts.end(),
+                          context.contextType) != selectedQuestion_.allowedContexts.end()) {
                 menuView_.addMenuItem(
                     std::make_shared<MenuItemSingleLine>(std::string(context.name), []() {}));
             }

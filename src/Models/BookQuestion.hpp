@@ -11,7 +11,7 @@ public:
     BookQuestionContext() = default;
     ~BookQuestionContext() override = default;
 
-    SpiramString context_type;
+    SpiramString contextType;
     SpiramString name;
     SpiramString description;
 
@@ -20,7 +20,7 @@ public:
             !j.containsKey("description")) {
             return false;
         }
-        context_type = j["context_type"].as<std::string>();
+        contextType = j["context_type"].as<std::string>();
         name = j["name"].as<std::string>();
         description = j["description"].as<std::string>();
         return true;
@@ -35,7 +35,7 @@ public:
     SpiramString slug;
     SpiramString question;
     SpiramString description;
-    std::vector<SpiramString> allowed_contexts;
+    std::vector<SpiramString> allowedContexts;
 
     auto fromJson(const JsonObject &j) -> bool override {
         if (!j.containsKey("slug") || !j.containsKey("question") || !j.containsKey("description") ||
@@ -47,9 +47,9 @@ public:
         description = j["description"].as<std::string>();
 
         JsonArray contexts = j["allowed_contexts"].as<JsonArray>();
-        allowed_contexts.clear();
+        allowedContexts.clear();
         for (const auto &context : contexts) {
-            allowed_contexts.emplace_back(context.as<std::string>());
+            allowedContexts.emplace_back(context.as<std::string>());
         }
         return true;
     }
@@ -92,7 +92,7 @@ public:
         return true;
     }
 
-    static BookQuestions loadFromJson(const std::string &jsonStr);
+    static auto loadFromJson(const std::string &jsonStr) -> BookQuestions;
 };
 
 // NOLINTNEXTLINE(readability-identifier-naming) - ArduinoJson requires this name

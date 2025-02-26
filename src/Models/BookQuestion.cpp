@@ -4,7 +4,7 @@
 
 // NOLINTNEXTLINE(readability-identifier-naming) - ArduinoJson requires this name
 auto convertToJson(const BookQuestionContext &src, JsonVariant dst) -> bool {
-    dst["context_type"] = src.context_type;
+    dst["context_type"] = src.contextType;
     dst["name"] = src.name;
     dst["description"] = src.description;
     return true;
@@ -16,7 +16,7 @@ auto convertToJson(const BookQuestion &src, JsonVariant dst) -> bool {
     dst["question"] = src.question;
     dst["description"] = src.description;
     JsonArray contexts = dst.createNestedArray("allowed_contexts");
-    for (const auto &context : src.allowed_contexts) {
+    for (const auto &context : src.allowedContexts) {
         contexts.add(context);
     }
     return true;
@@ -38,7 +38,7 @@ auto convertToJson(const BookQuestions &src, JsonVariant dst) -> bool {
     return true;
 }
 
-BookQuestions BookQuestions::loadFromJson(const std::string &jsonStr) {
+auto BookQuestions::loadFromJson(const std::string &jsonStr) -> BookQuestions {
     DynamicJsonDocument doc(32768); // Adjust size as needed
     deserializeJson(doc, jsonStr);
     BookQuestions questions;
