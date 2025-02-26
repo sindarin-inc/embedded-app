@@ -66,6 +66,9 @@ if(BUILD_TARGET MATCHES "p4-function-ev.*|sharp-27in|waveshare-6inhd")
     message(STATUS "Adding esp_lcd component for display")
     list(APPEND components
         esp_lcd
+        fatfs
+        sdmmc
+        esp_lcd_seeya049
     )
 endif()
 
