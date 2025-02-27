@@ -52,6 +52,7 @@ public:
     void loadMenuItems();
     void loadQuestions();
     void loadContexts(const BookQuestion &question);
+    void reset();
 
 protected:
     DisplaySystem &display_;

@@ -261,8 +261,8 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
 
             menuItems->emplace_back(std::make_shared<MenuItemSingleLine>("Ask AI", [this]() {
                 auto epubPlace = std::dynamic_pointer_cast<EPubPlace>(renderer_.getCurrentPlace());
+                bookQuestionsScreen_->reset();
                 bookQuestionsScreen_->setPlaceInReadable(epubPlace);
-                bookQuestionsScreen_->setFirstLoad();
                 setCurrentScreen(bookQuestionsScreen_);
             }));
 
@@ -472,6 +472,11 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
     bookQuestionsScreen_ = std::make_shared<BookQuestionsScreen>(
         prefs_, fileSystem_, readable_, renderer_, stream_, display_, telemetry_);
 
+    bookQuestionsScreen_->setBackCallback([this, &display]() {
+        display.clearDisplay();
+        this->setCurrentScreen(nullptr);
+    });
+
     renderer_.setStream(stream);
 
     std::string thePlace = prefs_.readablePlace.get(readable_->shortenedUuid.c_str());
@@ -499,11 +504,6 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
 
     readableSummaryScreen_->setBackCallback([this, &display]() {
         renderedPartialSummary_ = true;
-        display.clearDisplay();
-        this->setCurrentScreen(nullptr);
-    });
-
-    bookQuestionsScreen_->setBackCallback([this, &display]() {
         display.clearDisplay();
         this->setCurrentScreen(nullptr);
     });

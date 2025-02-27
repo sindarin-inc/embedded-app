@@ -527,7 +527,6 @@ void BookQuestionsScreen::executeQuestion(const BookQuestionContext &context) {
                      {"answer_length", static_cast<int>(resp->answer.length())}});
 
                 questionResponse_ = *resp;
-
                 setState(State::ANSWER);
             } else {
                 log_e("Question request failed: result=%d, success=%d, error='%s'", result,
@@ -671,4 +670,28 @@ void BookQuestionsScreen::setLoadingMessage(const std::string &message) {
     setNeedsRerender();
     setFirstLoad();
     render(display_);
+}
+
+void BookQuestionsScreen::reset() {
+    // Reset question response and pagination state
+    questionResponse_ = BookQuestionResponse();
+    currentPage_ = 0;
+    answerPlace_ = std::dynamic_pointer_cast<TxtPlace>(Place::factory(0));
+    precomputedTotalPages_ = 0;
+    pageBreakOffsets_.clear();
+    pageNumbers_.clear();
+
+    // Reset to questions list state
+    state_ = State::QUESTIONS_LIST;
+    updateBackLabel();
+    updateUIForState();
+
+    // Reset menu selection
+    menuView_.setSelectedIndex(0);
+
+    // Ensure we reload menu items
+    needsMenuItemsLoad_ = true;
+
+    // Set first load flag
+    setFirstLoad();
 }
