@@ -80,6 +80,7 @@ protected:
     size_t selectedQuestionIndex_{0};
     State state_{State::QUESTIONS_LIST};
     std::shared_ptr<CancelFlag> cancelFlag_;
+    bool dismissed_{false};
 
     std::shared_ptr<TxtPlace> answerPlace_;
     std::shared_ptr<RendererStream> rendererStream_;

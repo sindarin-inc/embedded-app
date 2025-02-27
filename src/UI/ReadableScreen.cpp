@@ -475,6 +475,7 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
     bookQuestionsScreen_->setBackCallback([this, &display]() {
         display.clearDisplay();
         this->setCurrentScreen(nullptr);
+        setNeedsRerender();
     });
 
     renderer_.setStream(stream);

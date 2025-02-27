@@ -277,6 +277,15 @@ void BookQuestionsScreen::processCommand(RemoteCommand command) {
             telemetry_.logMetricData(
                 TelemetryField::METRIC_DIALOG,
                 {{"dialog", std::string("book-questions")}, {"action", std::string("dismissed")}});
+            // Set dismissed flag to prevent background tasks from updating UI after dismissal
+            if (state_ == State::LOADING) {
+                log_d("Dismissing dialog while in loading state");
+                dismissed_ = true;
+                // Cancel any ongoing requests
+                if (cancelFlag_) {
+                    CancelFlag::cancel(cancelFlag_);
+                }
+            }
             back();
         }
         break;
@@ -311,6 +320,15 @@ void BookQuestionsScreen::processCommand(RemoteCommand command) {
                 restoreRendererStream();
                 setFirstLoad();
                 setNeedsRerender();
+                telemetry_.logMetricData(TelemetryField::METRIC_DIALOG,
+                                         {{"dialog", std::string("book-questions")},
+                                          {"action", std::string("dismissed")}});
+                // Set dismissed flag to prevent background tasks from updating UI after dismissal
+                dismissed_ = true;
+                // Cancel any ongoing requests
+                if (cancelFlag_) {
+                    CancelFlag::cancel(cancelFlag_);
+                }
                 back();
             } else {
                 log_d("NAVIGATION: Already at end of answer, can't page forward");
@@ -326,6 +344,15 @@ void BookQuestionsScreen::processCommand(RemoteCommand command) {
                 restoreRendererStream();
                 setFirstLoad();
                 setNeedsRerender();
+                telemetry_.logMetricData(TelemetryField::METRIC_DIALOG,
+                                         {{"dialog", std::string("book-questions")},
+                                          {"action", std::string("dismissed")}});
+                // Set dismissed flag to prevent background tasks from updating UI after dismissal
+                dismissed_ = true;
+                // Cancel any ongoing requests
+                if (cancelFlag_) {
+                    CancelFlag::cancel(cancelFlag_);
+                }
                 back();
             } else {
                 // Try to page backward in answer
@@ -346,6 +373,15 @@ void BookQuestionsScreen::processCommand(RemoteCommand command) {
             restoreRendererStream();
             setFirstLoad();
             setNeedsRerender();
+            // Set dismissed flag to prevent background tasks from updating UI after dismissal
+            dismissed_ = true;
+            // Cancel any ongoing requests
+            if (cancelFlag_) {
+                CancelFlag::cancel(cancelFlag_);
+            }
+            telemetry_.logMetricData(
+                TelemetryField::METRIC_DIALOG,
+                {{"dialog", std::string("book-questions")}, {"action", std::string("dismissed")}});
             back();
             break;
         }
@@ -382,6 +418,8 @@ void BookQuestionsScreen::loadQuestions() {
 void BookQuestionsScreen::executeQuestion(const BookQuestionContext &context) {
     setState(State::LOADING);
     setLoadingMessage("Connecting to WiFi...");
+    // Reset dismissed flag when starting a new question
+    dismissed_ = false;
     cancelFlag_ = std::make_shared<CancelFlag>();
 
     // Get current place from the stream directly
@@ -490,6 +528,12 @@ void BookQuestionsScreen::executeQuestion(const BookQuestionContext &context) {
                                           {"reason", std::string("wifi-connection-failed")}});
             }
             DispatchGetUiQueue()->dispatch([this, errorMessage]() {
+                // Check if screen has been dismissed before updating UI
+                if (dismissed_) {
+                    log_i("Screen was dismissed, ignoring error message");
+                    return;
+                }
+
                 questionResponse_.success = false;
                 questionResponse_.error = errorMessage;
                 log_e("Question request failed: error='%s'", errorMessage.c_str());
@@ -502,12 +546,26 @@ void BookQuestionsScreen::executeQuestion(const BookQuestionContext &context) {
 
         // Update UI to show we're waiting for the answer
         log_i("Network connected, sending question request to API");
-        DispatchGetUiQueue()->dispatch([this]() { setLoadingMessage("Waiting for answer..."); });
+        DispatchGetUiQueue()->dispatch([this]() {
+            // Check if screen has been dismissed before updating UI
+            if (dismissed_) {
+                log_i("Screen was dismissed, ignoring loading message update");
+                return;
+            }
+
+            setLoadingMessage("Waiting for answer...");
+        });
 
         // Execute API call in background
         log_i("Executing API request: question=%s, context=%s, book=%s, chapter=%s, offset=%zu",
               request.questionSlug.c_str(), request.contextType.c_str(), request.bookUuid.c_str(),
               request.chapter.c_str(), request.chapterOffset);
+
+        // Check if already dismissed before making API call
+        if (dismissed_) {
+            log_i("Screen was dismissed, skipping API request");
+            return;
+        }
 
         int result =
             SindarinAPI::getInstance()->askQuestion(request, resp.get(), bleConnected, cancelFlag_);
@@ -516,6 +574,12 @@ void BookQuestionsScreen::executeQuestion(const BookQuestionContext &context) {
         log_i("API request completed with result=%d, success=%d", result, resp->success);
 
         DispatchGetUiQueue()->dispatch([this, result, resp]() {
+            // Check if screen has been dismissed before updating UI
+            if (dismissed_) {
+                log_i("Screen was dismissed, ignoring API response");
+                return;
+            }
+
             log_d("Processing API response: result=%d, success=%d", result, resp->success);
 
             if (result == 200 && resp->success) {
@@ -654,13 +718,20 @@ void BookQuestionsScreen::restoreRendererStream() {
         return;
     }
 
+    // Clear the display before restoring the renderer stream
+    // This ensures no remnants of the BookQuestionsScreen remain visible
+    display_.clearDisplay();
+
     renderer_.setRect(GetTextRectFromPrefs(display_, prefs_));
     renderer_.setStream(rendererStream_);
     rendererStream_ = nullptr;
 }
 
 void BookQuestionsScreen::setLoadingMessage(const std::string &message) {
-    if (state_ != State::LOADING) {
+    // Don't update UI if screen has been dismissed
+    if (dismissed_ || state_ != State::LOADING) {
+        log_d("Ignoring loading message update: dismissed=%d, state=%d", dismissed_,
+              static_cast<int>(state_));
         return;
     }
 
@@ -680,6 +751,15 @@ void BookQuestionsScreen::reset() {
     precomputedTotalPages_ = 0;
     pageBreakOffsets_.clear();
     pageNumbers_.clear();
+
+    // Reset dismissed flag
+    dismissed_ = false;
+
+    // Clear any existing renderer stream
+    if (rendererStream_ != nullptr) {
+        renderer_.setStream(rendererStream_);
+        rendererStream_ = nullptr;
+    }
 
     // Reset to questions list state
     state_ = State::QUESTIONS_LIST;
