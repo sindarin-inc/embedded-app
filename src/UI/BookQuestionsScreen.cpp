@@ -60,6 +60,22 @@ auto BookQuestionsScreen::layout(LayoutContext &context, SolSize size) -> SolSiz
                                  LayoutOptionsSizeToFitVertical);
             return size;
         } else if (state_ == State::ANSWER) {
+            if (!questionResponse_.success) {
+                // For error messages, use the same layout as LOADING state
+                // Center the error text vertically in the content area
+                auto loadingRect = contentFrame;
+                auto verticalSpace = contentFrame.size.height - questionRect.size.height;
+
+                // Position the error message in the center of the screen
+                loadingRect = loadingRect.inset(0, verticalSpace / 6);
+                context.setViewFrame(descriptionView_,
+                                     // Make the description text narrower for better wrapping
+                                     contentFrame.inset(contentFrame.size.width / 6,
+                                                        loadingRect.bottom() + verticalSpace / 3),
+                                     LayoutOptionsSizeToFitVertical | LayoutOptionsAlignCenter);
+                return size;
+            }
+
             // Position page indicator at the bottom of the screen with some padding
             auto indicatorSize = pageIndicatorView_.layout(context, {contentFrame.size.width, 0});
             auto indicatorY = contentFrame.bottom() - indicatorSize.height - inset * 4;
@@ -106,18 +122,15 @@ void BookQuestionsScreen::drawInRect(SolRect rect) {
     // Then draw content
     backLabelView_.draw();
 
-    if (state_ == State::CONTEXTS_LIST || state_ == State::LOADING) {
+    if (state_ == State::CONTEXTS_LIST) {
         questionView_.draw();
         descriptionView_.draw();
-        if (state_ == State::CONTEXTS_LIST) {
-            contextHeadingView_.draw();
-        }
-    } else if (state_ == State::ANSWER) {
-        if (!questionResponse_.success) {
-            // Only draw the views for error states
-            questionView_.draw();
-            descriptionView_.draw();
-        }
+        contextHeadingView_.draw();
+    } else if (state_ == State::LOADING) {
+        questionView_.draw();
+        descriptionView_.draw();
+    } else if (state_ == State::ANSWER && !questionResponse_.success) {
+        descriptionView_.draw();
     }
 
     if (state_ == State::QUESTIONS_LIST || state_ == State::CONTEXTS_LIST) {
@@ -172,7 +185,7 @@ void BookQuestionsScreen::render(DisplaySystem &display) {
     setNeedsLayout();
     setFrame(defaultFrameRect());
 
-    if (state_ == State::ANSWER) {
+    if (state_ == State::ANSWER && questionResponse_.success) {
         log_d("RENDER: ANSWER state: current page=%zu", currentPage_);
         // Save the current renderer stream if needed
         if (rendererStream_ == nullptr) {
@@ -238,7 +251,7 @@ void BookQuestionsScreen::render(DisplaySystem &display) {
     } else {
         draw();
 
-        if (firstLoad_) {
+        if (firstLoad_ || state_ == State::ANSWER) {
             display.updateDisplay(DisplaySystem::UpdateType::FULL, false);
             firstLoad_ = false;
         }
@@ -261,6 +274,9 @@ void BookQuestionsScreen::processCommand(RemoteCommand command) {
             restoreRendererStream();
             setFirstLoad();
             setNeedsRerender();
+            telemetry_.logMetricData(
+                TelemetryField::METRIC_DIALOG,
+                {{"dialog", std::string("book-questions")}, {"action", std::string("dismissed")}});
             back();
         }
         break;
@@ -286,10 +302,16 @@ void BookQuestionsScreen::processCommand(RemoteCommand command) {
         } else if (state_ == State::ANSWER) {
             // Page forward in answer
             log_d("NAVIGATION: Paging forward in answer");
-            if (currentPage_ < precomputedTotalPages_ - 1) {
+            if (questionResponse_.success && currentPage_ < precomputedTotalPages_ - 1) {
                 log_d("NAVIGATION: Paging forward in answer, current page=%zu", currentPage_);
                 currentPage_++;
                 setNeedsRerender();
+            } else if (!questionResponse_.success) {
+                // For error states, treat ENTER as a back button
+                restoreRendererStream();
+                setFirstLoad();
+                setNeedsRerender();
+                back();
             } else {
                 log_d("NAVIGATION: Already at end of answer, can't page forward");
             }
@@ -299,13 +321,21 @@ void BookQuestionsScreen::processCommand(RemoteCommand command) {
     case RemoteCommand::LEFT:
         switch (state_) {
         case State::ANSWER:
-            // Try to page backward in answer
-            if (currentPage_ > 0) {
-                log_d("NAVIGATION: Paging backward in answer, current page=%zu", currentPage_);
-                currentPage_--;
+            if (!questionResponse_.success) {
+                // For error states, just go back
+                restoreRendererStream();
+                setFirstLoad();
                 setNeedsRerender();
+                back();
             } else {
-                log_d("NAVIGATION: Already at beginning of answer, can't page backward");
+                // Try to page backward in answer
+                if (currentPage_ > 0) {
+                    log_d("NAVIGATION: Paging backward in answer, current page=%zu", currentPage_);
+                    currentPage_--;
+                    setNeedsRerender();
+                } else {
+                    log_d("NAVIGATION: Already at beginning of answer, can't page backward");
+                }
             }
             break;
         case State::CONTEXTS_LIST:
@@ -334,6 +364,9 @@ void BookQuestionsScreen::loadQuestions() {
         log_w("Book questions file not found, sync required");
         // Don't create default questions, leave the questions list empty
         // This will be handled in updateUIForState
+        telemetry_.logMetricData(
+            TelemetryField::METRIC_DIALOG,
+            {{"dialog", std::string("book-questions")}, {"action", std::string("file-not-found")}});
         return;
     }
 
@@ -352,9 +385,11 @@ void BookQuestionsScreen::executeQuestion(const BookQuestionContext &context) {
     cancelFlag_ = std::make_shared<CancelFlag>();
 
     // Get current place from the stream directly
-    placeInReadable_ = std::dynamic_pointer_cast<EPubPlace>(renderer_.getCurrentPlace());
     if (!placeInReadable_) {
         log_e("Failed to get current place");
+        telemetry_.logMetricData(TelemetryField::METRIC_DIALOG,
+                                 {{"dialog", std::string("book-questions")},
+                                  {"action", std::string("failed-get-place")}});
         back();
         return;
     }
@@ -364,6 +399,16 @@ void BookQuestionsScreen::executeQuestion(const BookQuestionContext &context) {
     log_d("Book UUID: %s", readable_->uuid.c_str());
     log_d("Chapter: %s, Offset: %" PRIu32, placeInReadable_->getHRef().c_str(),
           placeInReadable_->getOffset());
+
+    // Log telemetry for question execution
+    telemetry_.logMetricData(TelemetryField::METRIC_DIALOG,
+                             {{"dialog", std::string("book-questions")},
+                              {"action", std::string("execute-question")},
+                              {"question_slug", selectedQuestion_.slug},
+                              {"context_type", context.contextType},
+                              {"book_uuid", readable_->shortenedUuid},
+                              {"chapter", placeInReadable_->getHRef()},
+                              {"chapter_offset", placeInReadable_->getOffset()}});
 
     BookQuestionRequest request = {};
     request.questionSlug = selectedQuestion_.slug;
@@ -387,10 +432,11 @@ void BookQuestionsScreen::executeQuestion(const BookQuestionContext &context) {
             log_i("Attempting WiFi connection...");
             if (!WiFi::getInstance().connectWiFiFromSettings()) {
                 log_w("WiFi connection failed, logging metric");
-                telemetry_.logMetric(TelemetryField::METRIC_WIFI, "sync-wifi-failed");
+                telemetry_.logMetric(TelemetryField::METRIC_WIFI, "book-questions-wifi-failed");
                 wifiConnected = false;
             } else {
                 log_i("WiFi connection successful");
+                telemetry_.logMetric(TelemetryField::METRIC_WIFI, "book-questions-wifi-connected");
                 wifiConnected = true;
             }
         } else {
@@ -406,9 +452,10 @@ void BookQuestionsScreen::executeQuestion(const BookQuestionContext &context) {
 
             if (!BLEManager::getInstance()->connectProxy(cancelFlag_)) {
                 log_w("BLE connection failed");
-                telemetry_.logMetric(TelemetryField::METRIC_WIFI, "sync-ble-failed");
+                telemetry_.logMetric(TelemetryField::METRIC_WIFI, "book-questions-ble-failed");
             } else {
                 log_i("BLE successfully connected");
+                telemetry_.logMetric(TelemetryField::METRIC_WIFI, "book-questions-ble-connected");
                 bleConnected = true;
                 // Disconnect WiFi if we're using BLE
                 log_i("Disconnecting WiFi since BLE is connected");
@@ -423,12 +470,24 @@ void BookQuestionsScreen::executeQuestion(const BookQuestionContext &context) {
             if (prefs_.wifiDisabled.get().value_or(false)) {
                 errorMessage =
                     "WiFi is disabled in settings. Please enable WiFi to use this feature.";
+                telemetry_.logMetricData(TelemetryField::METRIC_DIALOG,
+                                         {{"dialog", std::string("book-questions")},
+                                          {"action", std::string("book-questions-failed")},
+                                          {"reason", std::string("wifi-disabled")}});
             } else if (prefs_.bleDisabled.get().value_or(false)) {
                 errorMessage = "Both WiFi and Bluetooth are disabled. Please enable one of them to "
                                "use this feature.";
+                telemetry_.logMetricData(TelemetryField::METRIC_DIALOG,
+                                         {{"dialog", std::string("book-questions")},
+                                          {"action", std::string("book-questions-failed")},
+                                          {"reason", std::string("ble-disabled")}});
             } else {
                 errorMessage =
                     "Could not connect to WiFi. Please check your WiFi settings and try again.";
+                telemetry_.logMetricData(TelemetryField::METRIC_DIALOG,
+                                         {{"dialog", std::string("book-questions")},
+                                          {"action", std::string("book-questions-failed")},
+                                          {"reason", std::string("wifi-connection-failed")}});
             }
             DispatchGetUiQueue()->dispatch([this, errorMessage]() {
                 questionResponse_.success = false;
@@ -461,13 +520,26 @@ void BookQuestionsScreen::executeQuestion(const BookQuestionContext &context) {
 
             if (result == 200 && resp->success) {
                 log_i("Question request successful, answer length: %zu", resp->answer.length());
+                telemetry_.logMetricData(
+                    TelemetryField::METRIC_DIALOG,
+                    {{"dialog", std::string("book-questions")},
+                     {"action", std::string("question-success")},
+                     {"answer_length", static_cast<int>(resp->answer.length())}});
+
                 questionResponse_ = *resp;
+
                 setState(State::ANSWER);
             } else {
                 log_e("Question request failed: result=%d, success=%d, error='%s'", result,
                       resp->success, resp->error.c_str());
+                telemetry_.logMetricData(TelemetryField::METRIC_DIALOG,
+                                         {{"dialog", std::string("book-questions")},
+                                          {"action", std::string("question-failed")},
+                                          {"error", resp->error}});
+
                 questionResponse_.success = false;
-                questionResponse_.error = "Failed to get answer from server";
+                questionResponse_.error =
+                    resp->error.empty() ? "Failed to get answer from server" : resp->error;
                 setState(State::ANSWER);
             }
         });
@@ -490,6 +562,12 @@ void BookQuestionsScreen::setState(State newState) {
         // Explicitly set the page indicator values after precomputing
         pageIndicatorView_.setTotalPages(precomputedTotalPages_);
         pageIndicatorView_.setCurrentPage(0); // Start at the first page
+
+        // Log telemetry for answer display
+        telemetry_.logMetricData(TelemetryField::METRIC_DIALOG,
+                                 {{"dialog", std::string("book-questions")},
+                                  {"action", std::string("answer-displayed")},
+                                  {"total_pages", static_cast<int>(precomputedTotalPages_)}});
     }
 
     updateBackLabel();
@@ -547,10 +625,9 @@ void BookQuestionsScreen::updateUIForState() {
             // The answer text will be rendered by the renderer in render(), don't set it here
             descriptionView_.setText("");
         } else {
-            questionView_.setText("Error");
+            questionView_.setText("");
             descriptionView_.setText(std::string(questionResponse_.error.c_str()));
         }
-        menuView_.addMenuItem(std::make_shared<MenuItemSingleLine>("Back", []() {}));
         setNeedsRerender();
         render(display_);
         break;

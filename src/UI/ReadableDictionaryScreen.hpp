@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "Misc/SpiramAllocator.hpp"
+#include "Misc/Telemetry.hpp"
 #include "Models/Place.hpp"
 #include "Models/Readable.hpp"
 #include "Renderers/Renderer.hpp"
@@ -20,9 +21,9 @@
 class ReadableDictionaryScreen : public Screen, public EinkView {
 public:
     ReadableDictionaryScreen(PreferencesStore &prefs, std::shared_ptr<Readable> readable,
-                             DisplaySystem &display, Renderer &renderer)
+                             DisplaySystem &display, Renderer &renderer, Telemetry &telemetry)
         : EinkView(display), prefs_(prefs), readable_(std::move(readable)), renderer_(renderer),
-          display_(display), dismissLabelView_(display, "Dismiss", ArrowUp),
+          display_(display), telemetry_(telemetry), dismissLabelView_(display, "Dismiss", ArrowUp),
           backgroundView_(display, 5) {}
 
     auto layout(LayoutContext &context, SolSize size) -> SolSize override;
@@ -45,6 +46,7 @@ protected:
     std::shared_ptr<Readable> readable_;
     Renderer &renderer_;
     DisplaySystem &display_;
+    Telemetry &telemetry_;
 
     SpiramString loadedChapterHref_;
     std::shared_ptr<EPubPlace> placeInReadable_ = nullptr;

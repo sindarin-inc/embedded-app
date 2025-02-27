@@ -260,15 +260,10 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
                 std::dynamic_pointer_cast<EPubPlace>(renderer_.getCurrentPlace())->getHRef();
 
             menuItems->emplace_back(std::make_shared<MenuItemSingleLine>("Ask AI", [this]() {
-                auto bookQuestionsScreen = std::make_shared<BookQuestionsScreen>(
-                    this->prefs_, this->fileSystem_, this->readable_, this->renderer_,
-                    this->stream_, this->display_, this->telemetry_);
-                bookQuestionsScreen->setFirstLoad();
-                bookQuestionsScreen->setBackCallback([this]() {
-                    this->setCurrentScreen(nullptr);
-                    setNeedsRerender();
-                });
-                setCurrentScreen(bookQuestionsScreen);
+                auto epubPlace = std::dynamic_pointer_cast<EPubPlace>(renderer_.getCurrentPlace());
+                bookQuestionsScreen_->setPlaceInReadable(epubPlace);
+                bookQuestionsScreen_->setFirstLoad();
+                setCurrentScreen(bookQuestionsScreen_);
             }));
 
             if (stream->hasSummary(placeHref)) {
@@ -471,8 +466,11 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
 
     popupMenuScreen_->populateMenuView();
 
-    readableSummaryScreen_ =
-        std::make_shared<ReadableSummaryScreen>(prefs, fileSystem, readable, display, renderer_);
+    readableSummaryScreen_ = std::make_shared<ReadableSummaryScreen>(
+        prefs, fileSystem, readable, display, renderer_, telemetry_);
+
+    bookQuestionsScreen_ = std::make_shared<BookQuestionsScreen>(
+        prefs_, fileSystem_, readable_, renderer_, stream_, display_, telemetry_);
 
     renderer_.setStream(stream);
 
@@ -501,6 +499,11 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
 
     readableSummaryScreen_->setBackCallback([this, &display]() {
         renderedPartialSummary_ = true;
+        display.clearDisplay();
+        this->setCurrentScreen(nullptr);
+    });
+
+    bookQuestionsScreen_->setBackCallback([this, &display]() {
         display.clearDisplay();
         this->setCurrentScreen(nullptr);
     });

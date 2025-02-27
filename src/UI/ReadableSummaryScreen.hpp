@@ -4,6 +4,7 @@
 #include <utility>
 #include <vector>
 
+#include "Misc/Telemetry.hpp"
 #include "Models/Readable.hpp"
 #include "Renderers/Renderer.hpp"
 #include "Storage/PreferencesStore.hpp"
@@ -18,9 +19,10 @@ class ReadableSummaryScreen : public Screen, public EinkView {
 public:
     ReadableSummaryScreen(PreferencesStore &prefs, FileSystem &fileSystem,
                           std::shared_ptr<Readable> readable, DisplaySystem &display,
-                          Renderer &renderer)
+                          Renderer &renderer, Telemetry &telemetry)
         : EinkView(display), prefs_(prefs), fileSystem_(fileSystem), readable_(std::move(readable)),
-          renderer_(renderer), display_(display), dismissLabelView_(display, "Dismiss", ArrowUp),
+          renderer_(renderer), display_(display), telemetry_(telemetry),
+          dismissLabelView_(display, "Dismiss", ArrowUp),
           showUnreadLabelView_(display, "Show Unread", ArrowDown, ArrowSide::Right),
           backgroundView_(display, 5) {}
 
@@ -41,6 +43,7 @@ protected:
     std::shared_ptr<Readable> readable_;
     Renderer &renderer_;
     DisplaySystem &display_;
+    Telemetry &telemetry_;
 
     bool showUnread_ = false;
     std::shared_ptr<EPubPlace> placeInReadable_;

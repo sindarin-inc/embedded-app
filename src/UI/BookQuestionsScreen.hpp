@@ -41,6 +41,10 @@ public:
 
     void addMenuItem(const std::shared_ptr<MenuItem> &item) { menuView_.addMenuItem(item); }
 
+    void setPlaceInReadable(std::shared_ptr<EPubPlace> placeInReadable) {
+        placeInReadable_ = std::move(placeInReadable);
+    }
+
     auto layout(LayoutContext &context, SolSize size) -> SolSize override;
     void drawInRect(SolRect rect) override;
     void render(DisplaySystem &display) override;
