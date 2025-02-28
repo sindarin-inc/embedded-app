@@ -226,11 +226,8 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
         // Open the dictionary
         SendRemoteCommand(ENTER);
         WAIT_FOR_DRAW(display);
-        ASSERT_VIEW_UNCHANGED(display, "Dictionary1");
-        SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW(display);
-        ASSERT_VIEW_UNCHANGED(display, "Dictionary2");
-        SendRemoteCommand(ENTER);
+        ASSERT_VIEW_UNCHANGED(display, "AskAIMissing");
+        SendRemoteCommand(LEFT);
         WAIT_FOR_DRAW(display);
         ASSERT_VIEW_UNCHANGED(display, "Dawn1");
 
@@ -256,30 +253,11 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
 
         ASSERT_VIEW_UNCHANGED(display, "Dawn2");
 
-        // Render the popup menu
+        // Render the popup menu and go to the summary
         SendRemoteCommand(UP);
         WAIT_FOR_DRAW(display);
         WAIT_FOR_DRAW(display);
         SendRemoteCommand(RIGHT);
-        WAIT_FOR_DRAW(display);
-        WAIT_FOR_DRAW(display);
-
-        // Open the dictionary
-        SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW(display);
-        ASSERT_VIEW_UNCHANGED(display, "Dictionary3");
-        SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW(display);
-        ASSERT_VIEW_UNCHANGED(display, "Dictionary4");
-        SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW(display);
-        ASSERT_VIEW_UNCHANGED(display, "Dictionary5");
-        SendRemoteCommand(UP);
-        WAIT_FOR_DRAW(display);
-        ASSERT_VIEW_UNCHANGED(display, "Dawn3");
-
-        // Render the popup menu and go to the summary
-        SendRemoteCommand(UP);
         WAIT_FOR_DRAW(display);
         WAIT_FOR_DRAW(display);
         SendRemoteCommand(DOWN);
