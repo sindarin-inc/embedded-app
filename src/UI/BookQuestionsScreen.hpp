@@ -99,4 +99,6 @@ protected:
     void restoreRendererStream();
     void setLoadingMessage(const std::string &message);
     void precomputeTotalPages();
+    void disconnectNetworkConnections();
+    void dismissDialog();
 };

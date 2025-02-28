@@ -34,83 +34,88 @@ auto BookQuestionsScreen::layout(LayoutContext &context, SolSize size) -> SolSiz
                                               LayoutOptionsSizeToFit | LayoutOptionsAlignTop |
                                                   LayoutOptionsAlignLeft);
 
+    // Handle QUESTIONS_LIST state - simplest case
     if (state_ == State::QUESTIONS_LIST) {
         context.setViewFrame(menuView_, contentFrame.inset(inset),
                              LayoutOptionsSizeToFitVertical | LayoutOptionsAlignCenterVertical);
         return size;
-    } else {
-        // Layout for contexts, answer, or loading screens
-        // Start content below the back label with some padding
-        auto questionRect = context.setViewFrame(
-            questionView_, contentFrame.inset(inset, backLabelRect.bottom() + inset * 4),
+    }
+
+    // For all other states, position question view below back label
+    auto questionRect = context.setViewFrame(
+        questionView_, contentFrame.inset(inset, backLabelRect.bottom() + inset * 4),
+        LayoutOptionsSizeToFitVertical);
+
+    // Handle CONTEXTS_LIST state
+    if (state_ == State::CONTEXTS_LIST) {
+        auto descRect = context.setViewFrame(
+            descriptionView_, contentFrame.inset(inset, questionRect.bottom() + inset * 2),
             LayoutOptionsSizeToFitVertical);
 
-        if (state_ == State::CONTEXTS_LIST) {
-            auto descRect = context.setViewFrame(
-                descriptionView_, contentFrame.inset(inset, questionRect.bottom() + inset * 2),
-                LayoutOptionsSizeToFitVertical);
+        auto headingRect = context.setViewFrame(
+            contextHeadingView_, contentFrame.inset(inset, descRect.bottom() + inset * 4),
+            LayoutOptionsSizeToFitVertical);
 
-            // Add the context heading view with double spacing after description
-            auto headingRect = context.setViewFrame(
-                contextHeadingView_, contentFrame.inset(inset, descRect.bottom() + inset * 4),
-                LayoutOptionsSizeToFitVertical);
-
-            context.setViewFrame(menuView_,
-                                 contentFrame.inset(inset, headingRect.bottom() + inset * 2),
-                                 LayoutOptionsSizeToFitVertical);
-            return size;
-        } else if (state_ == State::ANSWER) {
-            if (!questionResponse_.success) {
-                // For error messages, use the same layout as LOADING state
-                // Center the error text vertically in the content area
-                auto loadingRect = contentFrame;
-                auto verticalSpace = contentFrame.size.height - questionRect.size.height;
-
-                // Position the error message in the center of the screen
-                loadingRect = loadingRect.inset(0, verticalSpace / 6);
-                context.setViewFrame(descriptionView_,
-                                     // Make the description text narrower for better wrapping
-                                     contentFrame.inset(contentFrame.size.width / 6,
-                                                        loadingRect.bottom() + verticalSpace / 3),
-                                     LayoutOptionsSizeToFitVertical | LayoutOptionsAlignCenter);
-                return size;
-            }
-
-            // Position page indicator at the bottom of the screen with some padding
-            auto indicatorSize = pageIndicatorView_.layout(context, {contentFrame.size.width, 0});
-            auto indicatorY = contentFrame.bottom() - indicatorSize.height - inset * 4;
-            context.setViewFrame(
-                pageIndicatorView_,
-                {{contentFrame.origin.x + (contentFrame.size.width - indicatorSize.width) / 2,
-                  indicatorY},
-                 {indicatorSize.width, indicatorSize.height}},
-                LayoutOptionsNone);
-            return size;
-        } else if (state_ == State::LOADING) {
-            // Center the loading text vertically in the content area
-            auto loadingRect = contentFrame;
-            auto verticalSpace = contentFrame.size.height - questionRect.size.height;
-
-            // Position the title at the top third of the screen
-            loadingRect = loadingRect.inset(0, verticalSpace / 6);
-            context.setViewFrame(questionView_, loadingRect,
-                                 LayoutOptionsSizeToFit | LayoutOptionsAlignCenter);
-
-            // Add description text in the bottom half with much more spacing
-            context.setViewFrame(descriptionView_,
-                                 // Make the description text narrower for better wrapping
-                                 contentFrame.inset(contentFrame.size.width / 6,
-                                                    loadingRect.bottom() + verticalSpace / 3),
-                                 LayoutOptionsSizeToFitVertical | LayoutOptionsAlignCenter);
-
-            return size;
-        }
-
-        context.setViewFrame(descriptionView_,
-                             contentFrame.inset(inset, questionRect.bottom() + inset * 2),
+        context.setViewFrame(menuView_, contentFrame.inset(inset, headingRect.bottom() + inset * 2),
                              LayoutOptionsSizeToFitVertical);
         return size;
     }
+
+    // Handle ANSWER state with error
+    if (state_ == State::ANSWER && !questionResponse_.success) {
+        // Center the error text vertically in the content area
+        auto loadingRect = contentFrame;
+        auto verticalSpace = contentFrame.size.height - questionRect.size.height;
+
+        // Position the error message in the center of the screen
+        loadingRect = loadingRect.inset(0, verticalSpace / 6);
+        context.setViewFrame(descriptionView_,
+                             // Make the description text narrower for better wrapping
+                             contentFrame.inset(contentFrame.size.width / 6,
+                                                loadingRect.bottom() + verticalSpace / 3),
+                             LayoutOptionsSizeToFitVertical | LayoutOptionsAlignCenter);
+        return size;
+    }
+
+    // Handle ANSWER state with success
+    if (state_ == State::ANSWER) {
+        // Position page indicator at the bottom of the screen with some padding
+        auto indicatorSize = pageIndicatorView_.layout(context, {contentFrame.size.width, 0});
+        auto indicatorY = contentFrame.bottom() - indicatorSize.height - inset * 4;
+        context.setViewFrame(
+            pageIndicatorView_,
+            {{contentFrame.origin.x + (contentFrame.size.width - indicatorSize.width) / 2,
+              indicatorY},
+             {indicatorSize.width, indicatorSize.height}},
+            LayoutOptionsNone);
+        return size;
+    }
+
+    // Handle LOADING state
+    if (state_ == State::LOADING) {
+        // Center the loading text vertically in the content area
+        auto loadingRect = contentFrame;
+        auto verticalSpace = contentFrame.size.height - questionRect.size.height;
+
+        // Position the title at the top third of the screen
+        loadingRect = loadingRect.inset(0, verticalSpace / 6);
+        context.setViewFrame(questionView_, loadingRect,
+                             LayoutOptionsSizeToFit | LayoutOptionsAlignCenter);
+
+        // Add description text in the bottom half with much more spacing
+        context.setViewFrame(descriptionView_,
+                             // Make the description text narrower for better wrapping
+                             contentFrame.inset(contentFrame.size.width / 6,
+                                                loadingRect.bottom() + verticalSpace / 3),
+                             LayoutOptionsSizeToFitVertical | LayoutOptionsAlignCenter);
+        return size;
+    }
+
+    // Default case - just position description view below question
+    context.setViewFrame(descriptionView_,
+                         contentFrame.inset(inset, questionRect.bottom() + inset * 2),
+                         LayoutOptionsSizeToFitVertical);
+    return size;
 }
 
 void BookQuestionsScreen::drawInRect(SolRect rect) {
@@ -188,7 +193,9 @@ void BookQuestionsScreen::render(DisplaySystem &display) {
     if (state_ == State::ANSWER && questionResponse_.success) {
         log_d("RENDER: ANSWER state: current page=%zu", currentPage_);
         // Save the current renderer stream if needed
+        // Note: We should already have saved it in executeQuestion, but check just in case
         if (rendererStream_ == nullptr) {
+            log_d("RENDER: Saving renderer stream in ANSWER state");
             rendererStream_ = renderer_.getStream();
         }
 
@@ -270,23 +277,8 @@ void BookQuestionsScreen::processCommand(RemoteCommand command) {
         if (state_ == State::QUESTIONS_LIST || state_ == State::CONTEXTS_LIST) {
             moveSelection(-1);
         } else if (state_ == State::LOADING || state_ == State::ANSWER) {
-            // Restore renderer stream and exit to original text
-            restoreRendererStream();
-            setFirstLoad();
-            setNeedsRerender();
-            telemetry_.logMetricData(
-                TelemetryField::METRIC_DIALOG,
-                {{"dialog", std::string("book-questions")}, {"action", std::string("dismissed")}});
-            // Set dismissed flag to prevent background tasks from updating UI after dismissal
-            if (state_ == State::LOADING) {
-                log_d("Dismissing dialog while in loading state");
-                dismissed_ = true;
-                // Cancel any ongoing requests
-                if (cancelFlag_) {
-                    CancelFlag::cancel(cancelFlag_);
-                }
-            }
-            back();
+            // Dismiss the dialog
+            dismissDialog();
         }
         break;
     case RemoteCommand::DOWN:
@@ -316,20 +308,8 @@ void BookQuestionsScreen::processCommand(RemoteCommand command) {
                 currentPage_++;
                 setNeedsRerender();
             } else if (!questionResponse_.success) {
-                // For error states, treat ENTER as a back button
-                restoreRendererStream();
-                setFirstLoad();
-                setNeedsRerender();
-                telemetry_.logMetricData(TelemetryField::METRIC_DIALOG,
-                                         {{"dialog", std::string("book-questions")},
-                                          {"action", std::string("dismissed")}});
-                // Set dismissed flag to prevent background tasks from updating UI after dismissal
-                dismissed_ = true;
-                // Cancel any ongoing requests
-                if (cancelFlag_) {
-                    CancelFlag::cancel(cancelFlag_);
-                }
-                back();
+                // For error states, just go back
+                dismissDialog();
             } else {
                 log_d("NAVIGATION: Already at end of answer, can't page forward");
             }
@@ -341,19 +321,7 @@ void BookQuestionsScreen::processCommand(RemoteCommand command) {
         case State::ANSWER:
             if (!questionResponse_.success) {
                 // For error states, just go back
-                restoreRendererStream();
-                setFirstLoad();
-                setNeedsRerender();
-                telemetry_.logMetricData(TelemetryField::METRIC_DIALOG,
-                                         {{"dialog", std::string("book-questions")},
-                                          {"action", std::string("dismissed")}});
-                // Set dismissed flag to prevent background tasks from updating UI after dismissal
-                dismissed_ = true;
-                // Cancel any ongoing requests
-                if (cancelFlag_) {
-                    CancelFlag::cancel(cancelFlag_);
-                }
-                back();
+                dismissDialog();
             } else {
                 // Try to page backward in answer
                 if (currentPage_ > 0) {
@@ -369,20 +337,12 @@ void BookQuestionsScreen::processCommand(RemoteCommand command) {
             setState(State::QUESTIONS_LIST);
             menuView_.setSelectedIndex(selectedQuestionIndex_);
             break;
+        case State::LOADING:
+            // Special handling for LOADING state to ensure proper cleanup
+            dismissDialog();
+            break;
         default:
-            restoreRendererStream();
-            setFirstLoad();
-            setNeedsRerender();
-            // Set dismissed flag to prevent background tasks from updating UI after dismissal
-            dismissed_ = true;
-            // Cancel any ongoing requests
-            if (cancelFlag_) {
-                CancelFlag::cancel(cancelFlag_);
-            }
-            telemetry_.logMetricData(
-                TelemetryField::METRIC_DIALOG,
-                {{"dialog", std::string("book-questions")}, {"action", std::string("dismissed")}});
-            back();
+            dismissDialog();
             break;
         }
         break;
@@ -416,11 +376,25 @@ void BookQuestionsScreen::loadQuestions() {
 }
 
 void BookQuestionsScreen::executeQuestion(const BookQuestionContext &context) {
+    log_d("Executing question, context=%s", context.contextType.c_str());
+
+    // Clear any previous state
+    display_.clearDisplay();
+
+    // Reset state
     setState(State::LOADING);
     setLoadingMessage("Connecting to WiFi...");
+
     // Reset dismissed flag when starting a new question
     dismissed_ = false;
     cancelFlag_ = std::make_shared<CancelFlag>();
+
+    // Save the current renderer stream as soon as we start executing a question
+    // This ensures we have it available for proper cleanup in any state
+    if (rendererStream_ == nullptr) {
+        log_d("Saving renderer stream in executeQuestion");
+        rendererStream_ = renderer_.getStream();
+    }
 
     // Get current place from the stream directly
     if (!placeInReadable_) {
@@ -539,7 +513,6 @@ void BookQuestionsScreen::executeQuestion(const BookQuestionContext &context) {
                 log_e("Question request failed: error='%s'", errorMessage.c_str());
                 setState(State::ANSWER);
                 setNeedsRerender();
-                render(display_);
             });
             return;
         }
@@ -714,17 +687,82 @@ void BookQuestionsScreen::updateBackLabel() {
 }
 
 void BookQuestionsScreen::restoreRendererStream() {
-    if (rendererStream_ == nullptr) {
-        return;
-    }
+    log_d("Restoring renderer stream, current state=%d", static_cast<int>(state_));
+
+    // First, make sure we're not in a state that would cause issues
+    // Note: This state reset is now handled in dismissDialog() for problematic states
+    // We keep it here for safety in case this method is called directly
 
     // Clear the display before restoring the renderer stream
     // This ensures no remnants of the BookQuestionsScreen remain visible
     display_.clearDisplay();
 
+    if (rendererStream_ == nullptr) {
+        log_w("Renderer stream is null, cannot restore. This may happen if the stream was never "
+              "saved.");
+        // Even without a stream to restore, we don't need to update the display here
+        // The ReadableScreen will handle the display update
+        return;
+    }
+
+    log_d("Setting renderer rect and restoring stream");
+    // Set the renderer rect to the full text area
     renderer_.setRect(GetTextRectFromPrefs(display_, prefs_));
-    renderer_.setStream(rendererStream_);
+
+    // Store the stream locally before clearing the member variable
+    auto streamToRestore = rendererStream_;
     rendererStream_ = nullptr;
+
+    // Now restore the stream
+    renderer_.setStream(streamToRestore);
+}
+
+void BookQuestionsScreen::disconnectNetworkConnections() {
+    // Disconnect WiFi if connected
+    if (WiFi::getInstance().connected()) {
+        log_i("Disconnecting WiFi on dismiss");
+        WiFi::getInstance().disconnectWiFi(3000);
+    }
+
+#if CONFIG_USE_BLE_SERVER_PROXY
+    // Disconnect BLE if connected
+    auto bleManager = BLEManager::getInstance(false);
+    if (bleManager != nullptr && bleManager->connectedProxy) {
+        log_i("Disconnecting BLE on dismiss");
+        bleManager->disconnectProxy();
+    }
+#endif
+
+    // Cancel any ongoing requests
+    if (cancelFlag_) {
+        log_i("Cancelling ongoing requests");
+        CancelFlag::cancel(cancelFlag_);
+    }
+}
+
+void BookQuestionsScreen::dismissDialog() {
+    log_d("Dismissing dialog, state=%d", static_cast<int>(state_));
+
+    // Always disconnect network connections first
+    disconnectNetworkConnections();
+
+    // Set dismissed flag to prevent background tasks from updating UI after dismissal
+    dismissed_ = true;
+
+    // Log telemetry
+    telemetry_.logMetricData(
+        TelemetryField::METRIC_DIALOG,
+        {{"dialog", std::string("book-questions")}, {"action", std::string("dismissed")}});
+
+    // Restore the renderer stream
+    restoreRendererStream();
+
+    // Set first load flag to ensure proper rendering when this screen is shown again
+    setFirstLoad();
+    setNeedsRerender();
+
+    // Go back to the previous screen
+    back();
 }
 
 void BookQuestionsScreen::setLoadingMessage(const std::string &message) {
@@ -739,11 +777,22 @@ void BookQuestionsScreen::setLoadingMessage(const std::string &message) {
     questionView_.setText(message);
     descriptionView_.setText("");
     setNeedsRerender();
-    setFirstLoad();
+
+    // Make sure we don't lose the renderer stream when updating the loading message
+    auto savedStream = rendererStream_;
+
     render(display_);
+
+    // Restore the saved stream if it was replaced during render
+    if (savedStream != nullptr && rendererStream_ == nullptr) {
+        log_d("Restoring renderer stream that was lost during loading message update");
+        rendererStream_ = savedStream;
+    }
 }
 
 void BookQuestionsScreen::reset() {
+    log_d("Resetting BookQuestionsScreen");
+
     // Reset question response and pagination state
     questionResponse_ = BookQuestionResponse();
     currentPage_ = 0;
@@ -757,8 +806,10 @@ void BookQuestionsScreen::reset() {
 
     // Clear any existing renderer stream
     if (rendererStream_ != nullptr) {
-        renderer_.setStream(rendererStream_);
+        log_d("Resetting renderer stream in reset()");
+        auto streamToRestore = rendererStream_;
         rendererStream_ = nullptr;
+        renderer_.setStream(streamToRestore);
     }
 
     // Reset to questions list state
@@ -774,4 +825,7 @@ void BookQuestionsScreen::reset() {
 
     // Set first load flag
     setFirstLoad();
+
+    // Clear the display to ensure no remnants remain
+    display_.clearDisplay();
 }
