@@ -258,13 +258,20 @@ void BookQuestionsScreen::render(DisplaySystem &display) {
     } else {
         draw();
 
-        if (firstLoad_ || state_ == State::ANSWER) {
+        if (firstLoad_) {
+            log_w("RENDER: Updating display to full on first load");
             display.updateDisplay(DisplaySystem::UpdateType::FULL, false);
             firstLoad_ = false;
+        } else if (state_ == State::ANSWER || state_ == State::LOADING) {
+            // Use the esp print traceback to show how we got here
+
+            log_w("RENDER: Updating display to full");
+            display.updateDisplay(DisplaySystem::UpdateType::FULL, true);
         }
 
         // Only draw fast elements when in a state that shows the menu
         if (state_ == State::QUESTIONS_LIST || state_ == State::CONTEXTS_LIST) {
+            log_w("RENDER: Drawing fast elements");
             menuView_.drawFastElements();
             display.updateDisplay(DisplaySystem::UpdateType::FAST_INDICATOR);
         }
@@ -527,6 +534,7 @@ void BookQuestionsScreen::executeQuestion(const BookQuestionContext &context) {
             }
 
             setLoadingMessage("Waiting for answer...");
+            render(display_);
         });
 
         // Execute API call in background
@@ -580,8 +588,6 @@ void BookQuestionsScreen::executeQuestion(const BookQuestionContext &context) {
             }
         });
     });
-
-    setNeedsRerender();
 }
 
 void BookQuestionsScreen::setState(State newState) {
@@ -609,7 +615,6 @@ void BookQuestionsScreen::setState(State newState) {
     updateBackLabel();
     updateUIForState();
     setFirstLoad();
-    setNeedsRerender();
 }
 
 void BookQuestionsScreen::updateUIForState() {
@@ -781,7 +786,7 @@ void BookQuestionsScreen::setLoadingMessage(const std::string &message) {
     // Make sure we don't lose the renderer stream when updating the loading message
     auto savedStream = rendererStream_;
 
-    render(display_);
+    // render(display_);
 
     // Restore the saved stream if it was replaced during render
     if (savedStream != nullptr && rendererStream_ == nullptr) {
