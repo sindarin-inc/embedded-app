@@ -343,9 +343,6 @@ void BookQuestionsScreen::processCommand(RemoteCommand command) {
             // Special handling for LOADING state to ensure proper cleanup
             dismissDialog();
             break;
-        default:
-            dismissDialog();
-            break;
         }
         break;
     default:
