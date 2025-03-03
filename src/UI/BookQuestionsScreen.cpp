@@ -309,6 +309,9 @@ void BookQuestionsScreen::processCommand(RemoteCommand command) {
     case RemoteCommand::BACK:
     case RemoteCommand::LEFT:
         switch (state_) {
+        case State::QUESTIONS_LIST:
+            dismissDialog();
+            break;
         case State::ANSWER:
             if (!questionResponse_.success) {
                 // For error states, just go back
