@@ -389,7 +389,7 @@ void EinkET013TT1::updateInternal(const EinkET013TT1Waveform &waveform, const ui
             uint8_t gb = gate >> 4;
             uint8_t x;
             // 0 on the gates is lower left, but we want to do everything based on upper left
-            uint8_t y = EinkET013TT1_PIXEL_WIDTH - gate % EinkET013TT1_PIXEL_WIDTH;
+            uint8_t y = CONFIG_DISPLAY_WIDTH - gate % CONFIG_DISPLAY_WIDTH;
             *gateBlockLow = GateBlockL(gb);
             *gateSelectLow = GateSelectL(gs);
             *gateSelectHigh = GateSelectH(gs);
@@ -398,21 +398,20 @@ void EinkET013TT1::updateInternal(const EinkET013TT1Waveform &waveform, const ui
             // Gate indices represent half-lines in this order (with connector down):
             // bottom left -> top left -> bottom right -> top right
             // Generate an index into our frame buffer that corresponds to this gate.
-            uint16_t bufferIndex =
-                (EinkET013TT1_PIXEL_WIDTH / 8) *
-                (EinkET013TT1_PIXEL_WIDTH - 1 - (gate % EinkET013TT1_PIXEL_WIDTH));
+            uint16_t bufferIndex = (CONFIG_DISPLAY_WIDTH / 8) *
+                                   (CONFIG_DISPLAY_WIDTH - 1 - (gate % CONFIG_DISPLAY_WIDTH));
             if (gate >= EinkET013TT1_GATE_COUNT / 2) {
                 // The latter gates are on the right half of the screen, so nudge the index
                 // to point to the right half of the line.
-                bufferIndex += EinkET013TT1_PIXEL_WIDTH / 2 / 8;
+                bufferIndex += CONFIG_DISPLAY_WIDTH / 2 / 8;
             }
 
             auto newBuffer = &(buffer[bufferIndex]);
             auto oldBuffer = &(previousBuffer_[bufferIndex]);
 
             // This for loop takes 4-16us at 240MHz
-            for (uint16_t pixel = 0; pixel < EinkET013TT1_PIXEL_WIDTH / 2; pixel += 8) {
-                x = pixel + (gate / EinkET013TT1_PIXEL_WIDTH) * EinkET013TT1_PIXEL_WIDTH / 2;
+            for (uint16_t pixel = 0; pixel < CONFIG_DISPLAY_WIDTH / 2; pixel += 8) {
+                x = pixel + (gate / CONFIG_DISPLAY_WIDTH) * CONFIG_DISPLAY_WIDTH / 2;
                 auto *lutToUse = box.contains(x, y) ? &altLut : &lut;
 
                 uint8_t index = pixel / 8;

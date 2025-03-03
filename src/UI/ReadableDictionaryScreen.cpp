@@ -4,8 +4,8 @@
 
 #include "Misc/SpiramAllocator.hpp"
 
-auto ReadableDictionaryScreen::layout(LayoutContext &context, Size size) -> Size {
-    auto fullFrame = Rect::fromSize(size);
+auto ReadableDictionaryScreen::layout(LayoutContext &context, SolSize size) -> SolSize {
+    auto fullFrame = SolRect::fromSize(size);
     auto backgroundFrame = fullFrame.inset(0);
 
     context.setViewFrame(backgroundView_, backgroundFrame);
@@ -18,7 +18,7 @@ auto ReadableDictionaryScreen::layout(LayoutContext &context, Size size) -> Size
     return {size.width, size.height};
 };
 
-void ReadableDictionaryScreen::drawInRect(Rect rect) {
+void ReadableDictionaryScreen::drawInRect(SolRect rect) {
     backgroundView_.fillColor = display_.bg;
     backgroundView_.strokeColor = display_.fg;
     backgroundView_.draw();

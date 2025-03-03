@@ -393,7 +393,7 @@ auto SolDrm::parseContentFileHeader(const uint8_t *data, size_t length)
 
     header.decompressedSize = (data[dataPtr] << 24) | (data[dataPtr + 1] << 16) |
                               (data[dataPtr + 2] << 8) | data[dataPtr + 3];
-    dataPtr += 4;
+    // dataPtr += 4;
 
     return header;
 }

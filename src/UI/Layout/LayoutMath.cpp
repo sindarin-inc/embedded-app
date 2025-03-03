@@ -2,8 +2,8 @@
 
 #include "LayoutContext.hpp"
 
-auto AlignSizeInRect(const Size &size, const Rect &rect, int options) -> Rect {
-    Point p = rect.origin;
+auto AlignSizeInRect(const SolSize &size, const SolRect &rect, int options) -> SolRect {
+    SolPoint p = rect.origin;
 
     if ((options & LayoutOptionsAlignCenterHorizontal) != 0) {
         p.x += (rect.size.width - size.width) / 2;
@@ -24,14 +24,16 @@ auto AlignSizeInRect(const Size &size, const Rect &rect, int options) -> Rect {
     return {{p.x, p.y}, {size.width, size.height}};
 }
 
-auto SizeThatFitsForLayout(const LayoutContext &layoutContext, Size size, int options) -> Size {
-    Size originalSize = size;
+auto SizeThatFitsForLayout(const LayoutContext &layoutContext, SolSize size, int options)
+    -> SolSize {
+    SolSize originalSize = size;
     bool sizeToFit = ((options & LayoutOptionsSizeToFitHorizontal) != 0) ||
                      ((options & LayoutOptionsSizeToFitVertical) != 0);
     if (sizeToFit) {
         // Dangerous cast to non-const LayoutContext because we are guaranteeing that when
         // sizing==true we are not going to modify anything
-        Size sizeThatFits = const_cast<LayoutContext &>(layoutContext).layoutIfNeeded(size, true);
+        SolSize sizeThatFits =
+            const_cast<LayoutContext &>(layoutContext).layoutIfNeeded(size, true);
 
         // If size that fits returns a larger width, then we'll need to constrain it.
         if (((options & LayoutOptionsConstrainWidth) != 0) && sizeThatFits.width > size.width) {
@@ -85,8 +87,8 @@ auto SizeThatFitsForLayout(const LayoutContext &layoutContext, Size size, int op
     return size;
 }
 
-auto FrameForLayout(const LayoutContext &layoutContext, Size size, Rect inRect, int options)
-    -> Rect {
+auto FrameForLayout(const LayoutContext &layoutContext, SolSize size, SolRect inRect, int options)
+    -> SolRect {
     size = SizeThatFitsForLayout(layoutContext, size, options);
     if (inRect.size.width == 0) {
         inRect.size.width = size.width;

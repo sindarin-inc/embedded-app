@@ -12,8 +12,6 @@
 #include "EinkTypes.hpp"
 #include "Misc/Dispatch.hpp"
 
-#define EinkET013TT1_PIXEL_WIDTH 256
-#define EinkET013TT1_PIXEL_HEIGHT 256
 #define EinkET013TT1_GATE_COUNT 512
 
 typedef union {
@@ -142,7 +140,7 @@ protected:
     BorderSetting previousBorder_ = BORDER_SETTING_NONE;
     BorderSetting border_ = BORDER_SETTING_NONE;
 
-    uint8_t previousBuffer_[EinkET013TT1_PIXEL_WIDTH * EinkET013TT1_PIXEL_HEIGHT / 8]{};
+    uint8_t previousBuffer_[CONFIG_DISPLAY_WIDTH * CONFIG_DISPLAY_HEIGHT / 8]{};
 
     uint32_t updateStartTime_ = 0;
     float timerDelayNs_ = 0;

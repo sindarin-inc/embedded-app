@@ -10,6 +10,7 @@
 #include "sindarin-debug.h"
 
 auto LightingController::checkSensorAvailable() -> bool {
+#if CONFIG_USE_LTR329
     // In case we're still operating from a software reset, attempt to disable the light sensor so
     // we can start fresh
     auto resetReason = esp_reset_reason();
@@ -29,6 +30,9 @@ auto LightingController::checkSensorAvailable() -> bool {
               manufacturerId);
         return true;
     }
+#else
+    return false;
+#endif
 }
 
 void LightingController::begin() {
@@ -38,7 +42,9 @@ void LightingController::begin() {
     // Not pictured here: all the LEDC configuration that happens in PlatformESP32.cpp. We keep that
     // code over there because the LEDC driver is configured globally and we'll probably also want
     // to configure the RGB LEDs with LEDC eventually
+#if CONFIG_USE_LTR329
     lightSensor_.enable();
+#endif
     enabled_ = true;
 }
 
@@ -47,7 +53,9 @@ void LightingController::shutdown(int fadeMs) {
         return;
     }
     enabled_ = false;
+#if CONFIG_USE_LTR329
     lightSensor_.disable();
+#endif
     setCurrentDutyCycle(0, fadeMs);
 }
 
@@ -101,11 +109,15 @@ void LightingController::setScreenMask(Screens screens, int fadeMs) {
 };
 
 auto LightingController::readAmbientLightData(uint16_t &channel1, uint16_t &channel0) -> bool {
+#if CONFIG_USE_LTR329
     if (!lightSensor_.readData(channel1, channel0)) {
         // Failed to read data, so just return false
         return false;
     }
     return true;
+#else
+    return false;
+#endif
 }
 
 auto LightingController::readPredictedDutyCycle() -> int {
@@ -144,6 +156,7 @@ void LightingController::checkAmbientLight(int fadeMs, int timeoutMs) {
         return;
     }
 
+#if CONFIG_USE_LTR329
     uint16_t channel1, channel0;
     if (!readAmbientLightData(channel1, channel0)) {
         // Failed to read data, so just give up and return (will be logged from the Ltr329Als
@@ -156,6 +169,10 @@ void LightingController::checkAmbientLight(int fadeMs, int timeoutMs) {
 
     // Clamp to a max value of 1000 to avoid the moving average getting too large
     movingAverage_.add(std::min(static_cast<uint16_t>(scaledLux), static_cast<uint16_t>(1000)));
+#else
+    // When no light sensor is available, use a default middle value
+    movingAverage_.add(500);
+#endif
 
     // Adjust based on the offset
     predictedDutyCycle_ =

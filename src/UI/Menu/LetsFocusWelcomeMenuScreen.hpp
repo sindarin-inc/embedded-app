@@ -17,8 +17,8 @@ public:
     void addMenuItem(const std::shared_ptr<MenuItem> &item);
     void processCommand(RemoteCommand command) override;
 
-    auto layout(LayoutContext &context, Size size) -> Size override;
-    void drawInRect(Rect rect) override;
+    auto layout(LayoutContext &context, SolSize size) -> SolSize override;
+    void drawInRect(SolRect rect) override;
     void render(DisplaySystem &display) override;
 
 private:
@@ -30,7 +30,7 @@ private:
     ArrowLabelView rightArrowView_;
     uint8_t textSelection_ = 0;
 
-    std::vector<std::tuple<std::string, Inset>> texts_ = {
+    std::vector<std::tuple<std::string, SolInset>> texts_ = {
         {"Twist each lens at the ridged edge like binoculars until this text is in focus.",
          {50, 42, 77, 53}},
         {"For some people, the distance between their eyes impacts focus. The knob on top of your "

@@ -1,13 +1,11 @@
-#include "config.h"
-
 #if CONFIG_FONT_TTF
+
+#include "TTFFont.hpp"
 
 #include <algorithm>
 #include <esp_heap_caps.h>
 #include <execution>
 #include <optional>
-
-#include "TTFFont.hpp"
 
 /**
  * @brief Translate UTF32 codePoint to it's internal representation
@@ -62,10 +60,118 @@ auto Font::ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2, FIX16 *ker
     return res;
 }
 
+/**
+ * @brief Copies a bitmap from one buffer to another with pixel format conversion and inversion
+ * options
+ *
+ * This method copies a bitmap from a source buffer to a destination buffer, handling different
+ * pixel resolutions and format conversions. It supports:
+ * - Font pixel resolutions: 1-bit and 8-bit
+ * - Display pixel resolutions: 1-bit, 8-bit, and 16-bit
+ *
+ * @param to Destination bitmap buffer where the content will be copied
+ * @param from Source bitmap buffer containing the content to copy
+ * @param atPos Position coordinates where to place the bitmap in the destination buffer
+ * @param inverted If true, inverts the pixel values during copy (black becomes white and vice
+ * versa)
+ *
+ * For 1-bit font resolution:
+ * - With 24-bit display: Converts to RGB format (0 or 0xFF, 0xFF, 0xFF)
+ * - With 16-bit display: Converts to RGB565 format (0 or 0xFFFF)
+ * - With 8-bit display: Converts to grayscale (0 or 0xFF)
+ * - With 1-bit display: Performs bit-by-bit copy with proper masking
+ *
+ * For 8-bit font resolution:
+ * - With 24-bit display: Converts grayscale to RGB format
+ * - With 16-bit display: Converts grayscale to RGB565 format
+ * - With 8-bit display: Direct grayscale copy
+ *
+ * @note The method assumes that the destination buffer has enough space allocated
+ *       to accommodate the source bitmap at the specified position
+ */
 void Font::copyBitmap(Bitmap &to, const Bitmap &from, Pos atPos, bool inverted) {
     if (fontPixelResolution_ == font_defs::PixelResolution::ONE_BIT) {
 
-        if (displayPixelResolution_ == PixelResolution::EIGHT_BITS) {
+        if (displayPixelResolution_ == PixelResolution::SIXTEEN_BITS) {
+            uint16_t data;
+            auto fromPtr = from.pixels;
+            auto toPtr = reinterpret_cast<uint16_t *>(
+                to.pixels + static_cast<size_t>((atPos.y * to.pitch) << 1));
+
+            for (uint16_t fromRow = 0; fromRow < from.dim.height;
+                 fromRow++, toPtr += to.pitch, fromPtr += from.pitch) {
+                int toIdx = atPos.x;
+                int fromIdx = 0;
+                uint16_t fromMask = 0;
+                if (inverted) {
+                    for (uint16_t i = 0; i < from.dim.width; i++) {
+                        if (fromMask == 0) {
+                            fromMask = 0x8000;
+                            data = fromPtr[fromIdx++];
+                        }
+                        if (data & fromMask) {
+                            toPtr[toIdx] = 0xFFFF;
+                        }
+                        fromMask >>= 1;
+                        toIdx += 1;
+                    }
+                } else {
+                    for (uint16_t i = 0; i < from.dim.width; i++) {
+                        if (fromMask == 0) {
+                            fromMask = 0x8000;
+                            data = fromPtr[fromIdx++];
+                        }
+                        if (data & fromMask) {
+                            toPtr[toIdx] = 0;
+                        }
+                        fromMask >>= 1;
+                        toIdx += 1;
+                    }
+                }
+            }
+        } else if (displayPixelResolution_ == PixelResolution::TWENTYFOUR_BITS) {
+            uint8_t data;
+            auto fromPtr = from.pixels;
+            auto toPtr = to.pixels + static_cast<size_t>((atPos.y * to.pitch) * 3);
+
+            for (uint16_t fromRow = 0; fromRow < from.dim.height;
+                 fromRow++, toPtr += to.pitch * 3, fromPtr += from.pitch) {
+                int toIdx = atPos.x * 3;
+                int fromIdx = 0;
+                uint8_t fromMask = 0;
+                if (inverted) {
+                    for (uint16_t i = 0; i < from.dim.width; i++) {
+                        if (fromMask == 0) {
+                            fromMask = 0x80;
+                            data = fromPtr[fromIdx++];
+                        }
+                        if (data & fromMask) {
+                            // Set RGB to white (0xFF, 0xFF, 0xFF)
+                            toPtr[toIdx] = 0xFF;     // R
+                            toPtr[toIdx + 1] = 0xFF; // G
+                            toPtr[toIdx + 2] = 0xFF; // B
+                        }
+                        fromMask >>= 1;
+                        toIdx += 3;
+                    }
+                } else {
+                    for (uint16_t i = 0; i < from.dim.width; i++) {
+                        if (fromMask == 0) {
+                            fromMask = 0x80;
+                            data = fromPtr[fromIdx++];
+                        }
+                        if (data & fromMask) {
+                            // Set RGB to black (0, 0, 0)
+                            toPtr[toIdx] = 0;     // R
+                            toPtr[toIdx + 1] = 0; // G
+                            toPtr[toIdx + 2] = 0; // B
+                        }
+                        fromMask >>= 1;
+                        toIdx += 3;
+                    }
+                }
+            }
+        } else if (displayPixelResolution_ == PixelResolution::EIGHT_BITS) {
             uint8_t data;
             auto fromPtr = from.pixels;
             auto toPtr = to.pixels + static_cast<size_t>(atPos.y * to.pitch);
@@ -148,25 +254,80 @@ void Font::copyBitmap(Bitmap &to, const Bitmap &from, Pos atPos, bool inverted) 
             }
         }
     } else { // Font Resolution EIGHT_BITS
-        auto rowCount = from.dim.height;
-        auto fromPtr = from.pixels;
-        auto toPtr = &to.pixels[to.pitch * atPos.y + atPos.x];
-        while (rowCount-- > 0) {
-            if (inverted) {
-                for (uint16_t i = 0; i < from.dim.width; i++) {
-                    if (fromPtr[i] != 0) {
-                        toPtr[i] = fromPtr[i];
+        if (displayPixelResolution_ == PixelResolution::SIXTEEN_BITS) {
+            auto rowCount = from.dim.height;
+            auto fromPtr = from.pixels;
+            auto toPtr =
+                reinterpret_cast<uint16_t *>(&to.pixels[(to.pitch * atPos.y + atPos.x) << 1]);
+            while (rowCount-- > 0) {
+                if (inverted) {
+                    for (uint16_t i = 0; i < from.dim.width; i++) {
+                        if (fromPtr[i] != 0) {
+                            toPtr[i] = ((fromPtr[i] & 0xF8) << 8) | ((fromPtr[i] & 0xFC) << 3) |
+                                       (fromPtr[i] >> 3);
+                        }
+                    }
+                } else {
+                    for (uint16_t i = 0; i < from.dim.width; i++) {
+                        if (fromPtr[i] != 0) {
+                            uint8_t val = 255 - fromPtr[i];
+                            toPtr[i] = ((val & 0xF8) << 8) | ((val & 0xFC) << 3) | (val >> 3);
+                        }
                     }
                 }
-            } else {
-                for (uint16_t i = 0; i < from.dim.width; i++) {
-                    if (fromPtr[i] != 0) {
-                        toPtr[i] = 255 - fromPtr[i];
-                    }
-                }
+                fromPtr += from.pitch;
+                toPtr += to.pitch;
             }
-            fromPtr += from.pitch;
-            toPtr += to.pitch;
+        } else if (displayPixelResolution_ == PixelResolution::TWENTYFOUR_BITS) {
+            auto rowCount = from.dim.height;
+            auto fromPtr = from.pixels;
+            auto toPtr = &to.pixels[(to.pitch * atPos.y + atPos.x) * 3];
+            while (rowCount-- > 0) {
+                if (inverted) {
+                    for (uint16_t i = 0; i < from.dim.width; i++) {
+                        if (fromPtr[i] != 0) {
+                            // Convert grayscale to RGB
+                            uint8_t val = fromPtr[i];
+                            toPtr[i * 3] = val;     // R
+                            toPtr[i * 3 + 1] = val; // G
+                            toPtr[i * 3 + 2] = val; // B
+                        }
+                    }
+                } else {
+                    for (uint16_t i = 0; i < from.dim.width; i++) {
+                        if (fromPtr[i] != 0) {
+                            // Convert inverted grayscale to RGB
+                            uint8_t val = 255 - fromPtr[i];
+                            toPtr[i * 3] = val;     // R
+                            toPtr[i * 3 + 1] = val; // G
+                            toPtr[i * 3 + 2] = val; // B
+                        }
+                    }
+                }
+                fromPtr += from.pitch;
+                toPtr += to.pitch * 3;
+            }
+        } else if (displayPixelResolution_ == PixelResolution::EIGHT_BITS) {
+            auto rowCount = from.dim.height;
+            auto fromPtr = from.pixels;
+            auto toPtr = &to.pixels[to.pitch * atPos.y + atPos.x];
+            while (rowCount-- > 0) {
+                if (inverted) {
+                    for (uint16_t i = 0; i < from.dim.width; i++) {
+                        if (fromPtr[i] != 0) {
+                            toPtr[i] = fromPtr[i];
+                        }
+                    }
+                } else {
+                    for (uint16_t i = 0; i < from.dim.width; i++) {
+                        if (fromPtr[i] != 0) {
+                            toPtr[i] = 255 - fromPtr[i];
+                        }
+                    }
+                }
+                fromPtr += from.pitch;
+                toPtr += to.pitch;
+            }
         }
     }
 }
@@ -308,6 +469,8 @@ auto Font::drawSingleLineOfText(font_defs::Bitmap &canvas, font_defs::Pos pos,
         // The following may require some modification as the next Sol Glasses version
         // may be using a different pitch than the one computed here.
 
+        atPos.y += lineHeight() + (face_->size->metrics.descender >> 6);
+
         canvas.pitch = (displayPixelResolution_ == PixelResolution::ONE_BIT)
                            ? (canvas.dim.width + 7) >> 3
                            : canvas.dim.width;
@@ -327,6 +490,8 @@ auto Font::drawSingleLineOfText(font_defs::Bitmap &canvas, font_defs::Pos pos,
 
                     if (glyph.value()->bitmap.dim.width > 0) {
                         lastGlyphWidth_ = glyph.value()->bitmap.dim.width;
+                        // TODO: Ask Guy about the right way to handle line height and keeping the
+                        // full text inside its box.
                         Pos outPos = Pos(atPos.x - glyph.value()->metrics.xoff,
                                          atPos.y + glyph.value()->metrics.yoff);
                         copyBitmap(canvas, glyph.value()->bitmap, outPos, inverted);

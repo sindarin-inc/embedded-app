@@ -37,8 +37,8 @@ public:
     ~NewReadablePopupMenuScreen() override = default;
 
     void render(DisplaySystem &display) override;
-    auto layout(LayoutContext &context, Size size) -> Size override;
-    void drawInRect(Rect rect) override;
+    auto layout(LayoutContext &context, SolSize size) -> SolSize override;
+    void drawInRect(SolRect rect) override;
 
     void setUpPopupMenu();
 

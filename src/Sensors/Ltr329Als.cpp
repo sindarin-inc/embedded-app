@@ -1,5 +1,7 @@
 #include "Ltr329Als.hpp"
 
+#if CONFIG_USE_LTR329
+
 #include <cstdio>
 #include <driver/i2c.h>
 #include <esp_log.h>
@@ -143,3 +145,5 @@ auto Ltr329Als::readData(uint16_t &channel1, uint16_t &channel0) -> bool {
     channel0 = out.value;
     return true;
 }
+
+#endif

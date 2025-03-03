@@ -36,12 +36,12 @@ else ifeq ($(TARGET),sharp-27in)
 endif
 
 # Optional variables for the Simulator builds
-CMAKE_SIM_DISPLAY_OPTIONS := $(if $(SIM_WIDTH),-DSIM_WIDTH=$(SIM_WIDTH)) $(if $(SIM_HEIGHT),-DSIM_HEIGHT=$(SIM_HEIGHT)) $(if $(SIM_SCALE),-DSIM_SCALE=$(SIM_SCALE)) $(if $(SIM_LAYOUT_DEBUG),-DSIM_LAYOUT_DEBUG=$(SIM_LAYOUT_DEBUG)) $(if $(SIM_ONE_BIT),-DSIM_ONE_BIT=$(SIM_ONE_BIT))
+CMAKE_SIM_DISPLAY_OPTIONS := $(if $(DISPLAY_WIDTH),-DDISPLAY_WIDTH=$(DISPLAY_WIDTH)) $(if $(DISPLAY_HEIGHT),-DDISPLAY_HEIGHT=$(DISPLAY_HEIGHT)) $(if $(DISPLAY_SCALE),-DDISPLAY_SCALE=$(DISPLAY_SCALE)) $(if $(SIM_LAYOUT_DEBUG),-DSIM_LAYOUT_DEBUG=$(SIM_LAYOUT_DEBUG)) $(if $(DISPLAY_TYPE),-DDISPLAY_TYPE=$(DISPLAY_TYPE)) $(if $(TTF_SCREEN_RES_PER_INCH),-DTTF_SCREEN_RES_PER_INCH=$(TTF_SCREEN_RES_PER_INCH))
 
 .PHONY: sim-build
 sim-build:
 	mkdir -p lib/Simulator/build
-	cd lib/Simulator/build && cmake $(CMAKE_FLAGS) $(CMAKE_SIM_DISPLAY_OPTIONS) .. && $(MAKE)
+	cd lib/Simulator/build && cmake $(CMAKE_FLAGS) -DSIM_SCALE=2 $(CMAKE_SIM_DISPLAY_OPTIONS) .. && $(MAKE)
 
 .PHONY: sim-run
 sim: sim-build
@@ -50,11 +50,29 @@ sim: sim-build
 .PHONY: sim8-build
 sim8-build:
 	mkdir -p lib/Simulator/build8
-	cd lib/Simulator/build8 && cmake $(CMAKE_FLAGS) -DENABLE_8BIT_DISPLAY=ON $(CMAKE_SIM_DISPLAY_OPTIONS) .. && $(MAKE)
+	cd lib/Simulator/build8 && cmake $(CMAKE_FLAGS) -DDISPLAY_TYPE=DISPLAY_SIM_8BIT -DDISPLAY_WIDTH=600 -DDISPLAY_HEIGHT=600 $(CMAKE_SIM_DISPLAY_OPTIONS) .. && $(MAKE)
 
 .PHONY: sim-run8
 sim8: sim8-build
 	./lib/Simulator/build8/simulator
+
+.PHONY: sim16-build
+sim16-build:
+	mkdir -p lib/Simulator/build16
+	cd lib/Simulator/build16 && cmake $(CMAKE_FLAGS) -DDISPLAY_TYPE=DISPLAY_SIM_16BIT -DDISPLAY_WIDTH=600 -DDISPLAY_HEIGHT=600 $(CMAKE_SIM_DISPLAY_OPTIONS) .. && $(MAKE)
+
+.PHONY: sim-run16
+sim16: sim16-build
+	./lib/Simulator/build16/simulator
+
+.PHONY: sim24-build
+sim24-build:
+	mkdir -p lib/Simulator/build24
+	cd lib/Simulator/build24 && cmake $(CMAKE_FLAGS) -DDISPLAY_TYPE=DISPLAY_SIM_24BIT -DDISPLAY_WIDTH=600 -DDISPLAY_HEIGHT=600 $(CMAKE_SIM_DISPLAY_OPTIONS) .. && $(MAKE)
+
+.PHONY: sim-run24
+sim24: sim24-build
+	./lib/Simulator/build24/simulator
 
 .PHONY: lldb
 lldb: sim-build
@@ -152,6 +170,10 @@ monitor-jtag: check_idf
 monitor-devboard: check_idf
 	idf.py $(IDF_PROFILE) monitor --no-reset --port $$(python3 scripts/port_tool.py find_port devboard)
 
+.PHONY: ios-framework
+ios-framework:
+	cd lib/Simulator/CommonIos && make build
+
 .PHONY: clean
 clean:
 	rm -fr build*
@@ -160,6 +182,7 @@ clean:
 	rm -fr test/CatchTests/build
 	rm -fr test/CatchTests/Images/TestRun/*diff.png
 	rm -fr test/CatchTests/Images/TestRun/GylphTests/*diff.png
+	rm -fr lib/Simulator/CommonIos/build*
 
 .PHONY: clang-tidy
 clang-tidy: check_idf
@@ -172,6 +195,10 @@ clang-tidy: check_idf
 		exit 1 ; \
 	fi
 	IDF_TOOLCHAIN=clang idf.py -B build-clang clang-check --run-clang-tidy-py scripts/run-clang-tidy.py --run-clang-tidy-options "-fix -header-filter=embedded-app/src/.*" --exclude-paths managed_components --exclude-paths components
+	find src -iname "*.hpp" -o -iname "*.h" -o -iname "*.cpp" -o -iname "*.c" | xargs clang-format -i
+
+.PHONY: clang-format
+clang-format: check_idf
 	find src -iname "*.hpp" -o -iname "*.h" -o -iname "*.cpp" -o -iname "*.c" | xargs clang-format -i
 
 program-mode:

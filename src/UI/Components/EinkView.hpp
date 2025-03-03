@@ -16,9 +16,9 @@ public:
         }
     }
 
-    auto defaultFrameRect() -> Rect {
+    auto defaultFrameRect() -> SolRect {
         auto defaultInset = display_.defaultUIInsets();
-        return Rect::fromSize({display_.width(), display_.height()})
+        return SolRect::fromSize({display_.width(), display_.height()})
             .inset(defaultInset.left, defaultInset.right, defaultInset.top, defaultInset.bottom);
     }
 #ifdef SIM_LAYOUT_DEBUG

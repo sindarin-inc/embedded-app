@@ -38,9 +38,9 @@ public:
         setNeedsLayout();
     }
 
-    auto layout(LayoutContext &context, Size size) -> Size override {
-        Rect clockRect = Rect::zero();
-        Rect batteryRect = Rect::zero();
+    auto layout(LayoutContext &context, SolSize size) -> SolSize override {
+        SolRect clockRect = SolRect::zero();
+        SolRect batteryRect = SolRect::zero();
 
         int x = 0;
         if (SolClock::getInstance().isValidTime()) {
@@ -68,7 +68,7 @@ public:
         return {x, std::max(clockRect.size.height, batteryRect.size.height)};
     }
 
-    void drawInRect(Rect rect) override {
+    void drawInRect(SolRect rect) override {
 
         auto percent = battery_.getBatteryPercentage();
 

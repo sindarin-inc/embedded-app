@@ -5,11 +5,7 @@
 #include <freertos/ringbuf.h>
 #include <utility>
 
-#if CONFIG_USE_BLE_SERVER_PROXY
-#include "Communications/BLEHttpClient.hpp"
-#endif
 #include "Communications/SindarinAPI.hpp"
-#include "Communications/WiFiHttpClient.hpp"
 #include "Misc/Defer.hpp"
 #include "Misc/GUnzipStream.hpp"
 #include "Misc/RateLimiter.hpp"

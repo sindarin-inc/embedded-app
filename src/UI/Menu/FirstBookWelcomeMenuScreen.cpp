@@ -44,18 +44,18 @@ void FirstBookWelcomeMenuScreen::processCommand(RemoteCommand command) {
     setNeedsLayout();
 }
 
-auto FirstBookWelcomeMenuScreen::layout(LayoutContext &context, Size size) -> Size {
-    context.setViewFrame(rendererView_, Rect::fromSize(size).inset(45, 35, 65, 65),
+auto FirstBookWelcomeMenuScreen::layout(LayoutContext &context, SolSize size) -> SolSize {
+    context.setViewFrame(rendererView_, SolRect::fromSize(size).inset(45, 35, 65, 65),
                          LayoutOptionsSizeToFit | LayoutOptionsAlignCenter);
 
-    context.setViewFrame(menuView_, Rect::fromSize(size),
+    context.setViewFrame(menuView_, SolRect::fromSize(size),
                          LayoutOptionsSizeToFit | LayoutOptionsAlignCenterHorizontal |
                              LayoutOptionsAlignBottom);
 
     return size;
 }
 
-void FirstBookWelcomeMenuScreen::drawInRect(Rect rect) {
+void FirstBookWelcomeMenuScreen::drawInRect(SolRect rect) {
     rendererView_.draw();
     menuView_.draw();
 }

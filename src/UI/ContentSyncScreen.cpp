@@ -48,10 +48,10 @@ ContentSyncScreen::ContentSyncScreen(DisplaySystem &display, LocalStore &localSt
 
 ContentSyncScreen::~ContentSyncScreen() { power_.removeStateChangeCallback(this); }
 
-auto ContentSyncScreen::layout(LayoutContext &context, Size size) -> Size {
+auto ContentSyncScreen::layout(LayoutContext &context, SolSize size) -> SolSize {
     context.setSublayoutFrame(
-        Rect::fromSize(size), LayoutOptionsSizeToFitVertical | LayoutOptionsAlignCenterVertical,
-        [this](LayoutContext &context, Size size) -> Size {
+        SolRect::fromSize(size), LayoutOptionsSizeToFitVertical | LayoutOptionsAlignCenterVertical,
+        [this](LayoutContext &context, SolSize size) -> SolSize {
             int x = 0;
             int y = 0;
 
@@ -79,19 +79,19 @@ auto ContentSyncScreen::layout(LayoutContext &context, Size size) -> Size {
 
     if (!popupView_->isHidden()) {
         auto popupTextRect =
-            context.setViewSizeInRect(*popupTextView_, {150, 150}, Rect::fromSize(size),
+            context.setViewSizeInRect(*popupTextView_, {150, 150}, SolRect::fromSize(size),
                                       LayoutOptionsSizeToFit | LayoutOptionsAlignCenter);
         context.setViewFrame(*popupView_, popupTextRect.inset(-10));
     }
 
-    context.setViewFrame(cancelView_, Rect::fromSize(size).inset(10),
+    context.setViewFrame(cancelView_, SolRect::fromSize(size).inset(10),
                          LayoutOptionsSizeToFit | LayoutOptionsAlignCenterHorizontal |
                              LayoutOptionsAlignBottom);
 
     return {size.width, size.height};
 }
 
-void ContentSyncScreen::drawInRect(Rect rect) {
+void ContentSyncScreen::drawInRect(SolRect rect) {
     for (const auto &textView : textViews_) {
         (*textView).draw();
     }
@@ -137,7 +137,7 @@ void ContentSyncScreen::cancel() {
 void ContentSyncScreen::render(DisplaySystem &display) {
     int xPadding = 42;
     int yPadding = 10;
-    setFrame(Rect::fromSize({display.width(), display.height()}).inset(xPadding, yPadding));
+    setFrame(SolRect::fromSize({display.width(), display.height()}).inset(xPadding, yPadding));
 
     // Re-render based on state
     switch (state_.state) {
@@ -261,7 +261,7 @@ void ContentSyncScreen::begin() {
         return;
     }
 
-#if USE_BLE
+#if USE_BLE_SERVER
     // Disable the BLE Peripheral. This seems to almost always crash the device with a
     // btdm_controller_task crash
     BLEManager::getInstance()->stopAdvertising();

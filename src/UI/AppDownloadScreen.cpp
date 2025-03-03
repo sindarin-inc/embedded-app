@@ -4,7 +4,7 @@
 #include "Storage/PreferencesStore.hpp"
 #include "sindarin-debug.h"
 
-auto AppDownloadScreen::layout(LayoutContext &context, Size size) -> Size {
+auto AppDownloadScreen::layout(LayoutContext &context, SolSize size) -> SolSize {
 
     // Center the QR code as the layout anchor
     auto iconViewRect = context.setViewFrame(iconView_, {{0, 0}, {size.width, size.height}},
@@ -24,7 +24,7 @@ auto AppDownloadScreen::layout(LayoutContext &context, Size size) -> Size {
     return size;
 }
 
-void AppDownloadScreen::drawInRect(Rect rect) {
+void AppDownloadScreen::drawInRect(SolRect rect) {
     topLineView_.draw();
     iconView_.draw();
     bottomLine_.draw();

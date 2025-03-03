@@ -46,10 +46,18 @@
 #if CONFIG_DISPLAY_EINKET013TT1
 #include "Displays/DisplayEinkET013TT1.hpp"
 DisplayEinkET013TT1 myDisplay;
-#elif DISPLAY_SIM_8BIT
-// Declared in native.cpp
+#elif CONFIG_DISPLAY_SIM_24BIT
+#include "Displays/DisplaySim24Bit.hpp"
+DisplaySim24Bit myDisplay(CONFIG_DISPLAY_WIDTH, CONFIG_DISPLAY_HEIGHT);
+#elif CONFIG_DISPLAY_SIM_16BIT
+#include "Displays/DisplaySim16Bit.hpp"
+DisplaySim16Bit myDisplay(CONFIG_DISPLAY_WIDTH, CONFIG_DISPLAY_HEIGHT);
+#elif CONFIG_DISPLAY_SIM_8BIT
+#include "Displays/DisplaySim8Bit.hpp"
+DisplaySim8Bit myDisplay(CONFIG_DISPLAY_WIDTH, CONFIG_DISPLAY_HEIGHT);
+#elif CONFIG_DISPLAY_SIM_1BIT
 #include "Displays/DisplaySim1Bit.hpp"
-extern DisplaySim1Bit myDisplay;
+DisplaySim1Bit myDisplay(CONFIG_DISPLAY_WIDTH, CONFIG_DISPLAY_HEIGHT);
 #elif CONFIG_DISPLAY_M5STACK_ATOM_DISPLAY
 #include "Displays/DisplayM5StackAtomDisplay.hpp"
 DisplayM5StackAtomDisplay myDisplay;
@@ -62,6 +70,8 @@ DisplayWaveshare6inHD myDisplay;
 #elif CONFIG_DISPLAY_SHARP_27IN
 #include "Displays/DisplaySharp27in.hpp"
 DisplaySharp27in myDisplay;
+#else
+#error "No display selected"
 #endif
 
 PreferencesStore prefs;
@@ -244,12 +254,16 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 
     if (esp_reset_reason() == ESP_RST_POWERON) {
         // Flash all the LEDs
+#if CONFIG_RED_LED != -1
         DigitalWrite(CONFIG_RED_LED, LED_ON);
         vTaskDelay(200 / portTICK_PERIOD_MS);
         DigitalWrite(CONFIG_RED_LED, LED_OFF);
+#endif
+#if CONFIG_GREEN_LED != -1
         DigitalWrite(CONFIG_GREEN_LED, LED_ON);
         vTaskDelay(200 / portTICK_PERIOD_MS);
         DigitalWrite(CONFIG_GREEN_LED, LED_OFF);
+#endif
 #if CONFIG_BLUE_LED != -1
         DigitalWrite(CONFIG_BLUE_LED, LED_ON);
         vTaskDelay(200 / portTICK_PERIOD_MS);
@@ -325,6 +339,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     BLEDevice::init("Sol Reader");
     HEAP_PROFILE_END(BLEDeviceInit);
 
+#if USE_BLE && !CONFIG_ESP_HOSTED_ENABLE_BT_NIMBLE
     if (prefs.blePower.get().has_value()) {
         auto power = prefs.blePower.get().value_or(ESP_PWR_LVL_P3);
         log_d("Setting default BLE power to %" PRIu32, power);
@@ -340,8 +355,9 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         bootErrors.push_back({.type = BootError::Type::BLE});
     }
 #endif
+#endif
 
-#if USE_BLE
+#if USE_BLE_SERVER
     auto bleManager = BLEManager::getInstance();
     if (prefs.bleAdvertisingKey.get().has_value()) {
         bleManager->setManufacturerData(prefs.bleAdvertisingKey.get().value_or(""));

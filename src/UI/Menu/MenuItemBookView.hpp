@@ -13,11 +13,11 @@ public:
         authorView_.setText(std::string(menuItem->author()), true);
     }
 
-    auto layout(LayoutContext &context, Size size) -> Size override {
+    auto layout(LayoutContext &context, SolSize size) -> SolSize override {
         auto titleRect =
-            context.setViewFrame(titleView_, Rect::fromSize(size), LayoutOptionsSizeToFit);
+            context.setViewFrame(titleView_, SolRect::fromSize(size), LayoutOptionsSizeToFit);
 
-        Rect authorRect = Rect::zero();
+        SolRect authorRect = SolRect::zero();
         if (!authorView_.getText().empty()) {
             // Yes, we are indenting the author view by the height of the title view. This looks
             // better and scales nicely to bigger displays. It looks funny I know.
@@ -30,7 +30,7 @@ public:
                 titleRect.size.height + authorRect.size.height};
     }
 
-    void drawInRect(Rect rect) override {
+    void drawInRect(SolRect rect) override {
         titleView_.draw();
         authorView_.draw();
     }

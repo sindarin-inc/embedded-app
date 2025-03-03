@@ -33,7 +33,7 @@ void MenuScreen::processCommand(RemoteCommand command) {
     setNeedsLayout();
 }
 
-auto MenuScreen::layout(LayoutContext &context, Size size) -> Size {
+auto MenuScreen::layout(LayoutContext &context, SolSize size) -> SolSize {
     int y = 0;
 
     // Layout title
@@ -41,13 +41,13 @@ auto MenuScreen::layout(LayoutContext &context, Size size) -> Size {
                          LayoutOptionsSizeToFit | LayoutOptionsAlignCenterHorizontal);
 
     // Layout menu
-    context.setViewFrame(menuView_, Rect::fromSize(size),
+    context.setViewFrame(menuView_, SolRect::fromSize(size),
                          LayoutOptionsSizeToFitVertical | LayoutOptionsAlignCenterVertical);
 
     return size;
 }
 
-void MenuScreen::drawInRect(Rect rect) {
+void MenuScreen::drawInRect(SolRect rect) {
     titleView_.draw();
     menuView_.draw();
 }

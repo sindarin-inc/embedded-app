@@ -2,7 +2,7 @@
 
 #include "sindarin-debug.h"
 
-auto AboutScreen::layout(LayoutContext &context, Size size) -> Size {
+auto AboutScreen::layout(LayoutContext &context, SolSize size) -> SolSize {
     uint8_t leftPadding = 20;
     uint8_t yAdvance = 17;
 
@@ -50,7 +50,7 @@ auto AboutScreen::layout(LayoutContext &context, Size size) -> Size {
     return size;
 }
 
-void AboutScreen::drawInRect(Rect rect) {
+void AboutScreen::drawInRect(SolRect rect) {
     solLogoView_.draw();
     productNameView_.draw();
     serialNumberView_.draw();

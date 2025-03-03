@@ -19,8 +19,8 @@ public:
 
     [[nodiscard]] auto getCurrentTextSelection() const -> uint8_t { return textSelection_; }
 
-    auto layout(LayoutContext &context, Size size) -> Size override;
-    void drawInRect(Rect rect) override;
+    auto layout(LayoutContext &context, SolSize size) -> SolSize override;
+    void drawInRect(SolRect rect) override;
     void render(DisplaySystem &display) override;
 
 private:
@@ -31,7 +31,7 @@ private:
     ArrowView rightArrowView_;
     uint8_t textSelection_ = 0;
 
-    std::vector<std::tuple<std::string, Inset>> texts_ = {
+    std::vector<std::tuple<std::string, SolInset>> texts_ = {
         {"These screens will show you three template views for text placement. You can select your "
          "preferred text placement now; don't worry, it can be changed anytime and customized even "
          "further in the Settings menu!\n\n\n"

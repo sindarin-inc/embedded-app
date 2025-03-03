@@ -18,8 +18,8 @@ public:
     void addMenuItem(const std::shared_ptr<MenuItem> &item);
     void processCommand(RemoteCommand command) override;
 
-    auto layout(LayoutContext &context, Size size) -> Size override;
-    void drawInRect(Rect rect) override;
+    auto layout(LayoutContext &context, SolSize size) -> SolSize override;
+    void drawInRect(SolRect rect) override;
 
     void render(DisplaySystem &display) override;
 

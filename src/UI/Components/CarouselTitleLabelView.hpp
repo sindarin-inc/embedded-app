@@ -10,7 +10,7 @@ public:
         : leftArrowView_(display, ArrowLeft), rightArrowView_(display, ArrowRight),
           textView_(display, text), display_(display) {}
 
-    auto layout(LayoutContext &context, Size size) -> Size override {
+    auto layout(LayoutContext &context, SolSize size) -> SolSize override {
         int arrowHeight;
 
         arrowHeight = textView_.getFont()->lineHeight() - 3;
@@ -34,7 +34,7 @@ public:
         return {boxWidth, arrowHeight};
     }
 
-    void drawInRect(Rect rect) override {
+    void drawInRect(SolRect rect) override {
         leftArrowView_.draw();
         textView_.draw();
         rightArrowView_.draw();

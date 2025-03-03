@@ -10,12 +10,12 @@ void MenuPagingIndicatorView::setCurrentPage(int currentPage) {
     setNeedsLayout();
 }
 
-auto MenuPagingIndicatorView::layout(LayoutContext &context, Size size) -> Size {
+auto MenuPagingIndicatorView::layout(LayoutContext &context, SolSize size) -> SolSize {
     int totalHeight = totalPages_ * size.width + (totalPages_ - 1) * indicatorSpacing;
     return {size.width, totalHeight};
 }
 
-void MenuPagingIndicatorView::drawInRect(Rect rect) {
+void MenuPagingIndicatorView::drawInRect(SolRect rect) {
     int x = rect.origin.x;
     int startY = rect.origin.y;
     int indicatorWidth = rect.size.width;

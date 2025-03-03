@@ -10,8 +10,8 @@ public:
     auto totalPages() const { return totalPages_; }
     void setCurrentPage(int currentPage);
 
-    auto layout(LayoutContext &context, Size size) -> Size override;
-    void drawInRect(Rect rect) override;
+    auto layout(LayoutContext &context, SolSize size) -> SolSize override;
+    void drawInRect(SolRect rect) override;
 
     int indicatorSpacing = 5;
 

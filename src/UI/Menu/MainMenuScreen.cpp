@@ -11,21 +11,21 @@ MainMenuScreen::MainMenuScreen(DisplaySystem &display, Battery &battery, Prefere
     menuView_.setIndicatorType(MenuView::IndicatorType::Line);
 }
 
-auto MainMenuScreen::layout(LayoutContext &context, Size size) -> Size {
+auto MainMenuScreen::layout(LayoutContext &context, SolSize size) -> SolSize {
     context.setViewFrame(titleView_, {{0, 0}, {size.width, 0}},
                          LayoutOptionsSizeToFit | LayoutOptionsAlignCenter);
 
-    context.setViewFrame(menuView_, Rect::fromSize(size),
+    context.setViewFrame(menuView_, SolRect::fromSize(size),
                          LayoutOptionsSizeToFitVertical | LayoutOptionsAlignCenterVertical);
 
-    context.setViewFrame(clockBatteryView_, Rect::fromSize(size),
+    context.setViewFrame(clockBatteryView_, SolRect::fromSize(size),
                          LayoutOptionsSizeToFit | LayoutOptionsAlignBottom |
                              LayoutOptionsAlignCenterHorizontal);
 
     return size;
 }
 
-void MainMenuScreen::drawInRect(Rect rect) {
+void MainMenuScreen::drawInRect(SolRect rect) {
     titleView_.draw();
     menuView_.draw();
     clockBatteryView_.draw();

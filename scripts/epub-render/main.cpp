@@ -131,7 +131,7 @@ int main(int argc, char **argv) {
 
     display->updateDisplay(DisplaySystem::UpdateType::FULL, true);
 
-    if (!stbi_write_png(outputPath.c_str(), EinkET013TT1_PIXEL_WIDTH, EinkET013TT1_PIXEL_HEIGHT, 1,
+    if (!stbi_write_png(outputPath.c_str(), CONFIG_DISPLAY_WIDTH, CONFIG_DISPLAY_HEIGHT, 1,
                         display->buffer().get(), 0)) {
         std::cerr << "Unable to save rendered image to " << outputPath << std::endl;
         return 1;

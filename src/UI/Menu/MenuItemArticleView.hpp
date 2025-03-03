@@ -13,9 +13,9 @@ public:
         // sourceView_.setText(menuItem->source(), true);
     }
 
-    auto layout(LayoutContext &context, Size size) -> Size override {
+    auto layout(LayoutContext &context, SolSize size) -> SolSize override {
         auto titleRect =
-            context.setViewFrame(titleView_, Rect::fromSize(size), LayoutOptionsSizeToFit);
+            context.setViewFrame(titleView_, SolRect::fromSize(size), LayoutOptionsSizeToFit);
         // Some day, we may want to include this, but before we do, we'll need to do some processing
         // on the source text to make it look right. Right now it's EMAIL_ARTICLE or POCKET_ARTICLE
         // and we'll need probably need give more interesting info.
@@ -30,7 +30,7 @@ public:
         return titleRect.size;
     }
 
-    void drawInRect(Rect rect) override {
+    void drawInRect(SolRect rect) override {
         titleView_.draw();
         // sourceView_.draw();
     }

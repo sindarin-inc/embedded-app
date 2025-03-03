@@ -1,42 +1,42 @@
 #pragma once
 
-struct Point {
+struct SolPoint {
     int x;
     int y;
-    static auto zero() -> Point { return {0, 0}; }
+    static auto zero() -> SolPoint { return {0, 0}; }
 
-    auto operator==(const Point &other) const -> bool { return x == other.x && y == other.y; }
-    auto operator!=(const Point &other) const -> bool { return x != other.x || y != other.y; }
+    auto operator==(const SolPoint &other) const -> bool { return x == other.x && y == other.y; }
+    auto operator!=(const SolPoint &other) const -> bool { return x != other.x || y != other.y; }
 };
 
-struct Size {
+struct SolSize {
     int width;
     int height;
-    static auto zero() -> Size { return {0, 0}; }
+    static auto zero() -> SolSize { return {0, 0}; }
 
-    auto operator==(const Size &other) const -> bool {
+    auto operator==(const SolSize &other) const -> bool {
         return width == other.width && height == other.height;
     }
-    auto operator!=(const Size &other) const -> bool {
+    auto operator!=(const SolSize &other) const -> bool {
         return width != other.width || height != other.height;
     }
 };
 
-struct Rect {
-    Point origin;
-    Size size;
-    static auto zero() -> Rect { return {{0, 0}, {0, 0}}; }
-    static auto fromSize(Size size) -> Rect { return {{0, 0}, size}; }
+struct SolRect {
+    SolPoint origin;
+    SolSize size;
+    static auto zero() -> SolRect { return {{0, 0}, {0, 0}}; }
+    static auto fromSize(SolSize size) -> SolRect { return {{0, 0}, size}; }
 
-    [[nodiscard]] auto inset(int left, int right, int top, int bottom) const -> Rect {
+    [[nodiscard]] auto inset(int left, int right, int top, int bottom) const -> SolRect {
         return {{origin.x + left, origin.y + top},
                 {size.width - left - right, size.height - top - bottom}};
     }
-    [[nodiscard]] auto inset(int xAmount, int yAmount) const -> Rect {
+    [[nodiscard]] auto inset(int xAmount, int yAmount) const -> SolRect {
         return inset(xAmount, xAmount, yAmount, yAmount);
     }
-    [[nodiscard]] auto inset(int amount) const -> Rect { return inset(amount, amount); }
-    [[nodiscard]] auto offset(const Point &offset) const -> Rect {
+    [[nodiscard]] auto inset(int amount) const -> SolRect { return inset(amount, amount); }
+    [[nodiscard]] auto offset(const SolPoint &offset) const -> SolRect {
         return {{origin.x + offset.x, origin.y + offset.y}, size};
     }
     [[nodiscard]] auto left() const -> int { return origin.x; }
@@ -44,25 +44,25 @@ struct Rect {
     [[nodiscard]] auto top() const -> int { return origin.y; }
     [[nodiscard]] auto bottom() const -> int { return origin.y + size.height; }
 
-    auto operator==(const Rect &other) const -> bool {
+    auto operator==(const SolRect &other) const -> bool {
         return origin == other.origin && size == other.size;
     }
-    auto operator!=(const Rect &other) const -> bool {
+    auto operator!=(const SolRect &other) const -> bool {
         return origin != other.origin || size != other.size;
     }
 };
 
-struct Inset {
+struct SolInset {
     int left;
     int right;
     int top;
     int bottom;
 
-    auto operator==(const Inset &other) const -> bool {
+    auto operator==(const SolInset &other) const -> bool {
         return left == other.left && right == other.right && top == other.top &&
                bottom == other.bottom;
     }
-    auto operator!=(const Inset &other) const -> bool {
+    auto operator!=(const SolInset &other) const -> bool {
         return left != other.left || right != other.right || top != other.top ||
                bottom != other.bottom;
     }

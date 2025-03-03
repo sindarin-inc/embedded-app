@@ -4,7 +4,6 @@
 
 #include "FontEntry.hpp"
 #include "Storage/PreferencesStore.hpp"
-#include "config.h"
 
 #if CONFIG_FONT_IBMF
 
@@ -99,7 +98,15 @@ TTFNotoSansLight mainFont;
 // application startup. The second parameter is the face point size.
 
 // Defaults for different targets
-#if DISPLAY_SIM_8BIT
+#if CONFIG_DISPLAY_SIM_16BIT
+Font fontFace0 = Font(mainFont, 8);
+Font fontFace1 = Font(mainFont, 10);
+Font fontFace2 = Font(mainFont, 12);
+#elif CONFIG_DISPLAY_SIM_24BIT
+Font fontFace0 = Font(mainFont, 8);
+Font fontFace1 = Font(mainFont, 10);
+Font fontFace2 = Font(mainFont, 12);
+#elif CONFIG_DISPLAY_SIM_8BIT
 Font fontFace0 = Font(mainFont, 8);
 Font fontFace1 = Font(mainFont, 10);
 Font fontFace2 = Font(mainFont, 12);

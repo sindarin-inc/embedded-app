@@ -24,8 +24,8 @@ public:
           showUnreadLabelView_(display, "Show Unread", ArrowDown, ArrowSide::Right),
           backgroundView_(display, 5) {}
 
-    auto layout(LayoutContext &context, Size size) -> Size override;
-    void drawInRect(Rect rect) override;
+    auto layout(LayoutContext &context, SolSize size) -> SolSize override;
+    void drawInRect(SolRect rect) override;
     auto checkAtEnd() -> bool;
     void render(DisplaySystem &display) override;
     void restoreRendererStream();

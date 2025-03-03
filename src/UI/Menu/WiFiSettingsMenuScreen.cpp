@@ -55,12 +55,12 @@ void WiFiSettingsMenuScreen::processCommand(RemoteCommand command) {
     setNeedsLayout();
 }
 
-auto WiFiSettingsMenuScreen::layout(LayoutContext &context, Size size) -> Size {
+auto WiFiSettingsMenuScreen::layout(LayoutContext &context, SolSize size) -> SolSize {
     context.setViewFrame(backLabelView_, {{0, 0}, {size.width, 0}},
                          LayoutOptionsSizeToFit | LayoutOptionsAlignLeft);
-    auto menuBox =
-        context.setViewFrame(menuView_, Rect::fromSize(size).inset(size.width / 8, size.height / 6),
-                             LayoutOptionsAlignCenterHorizontal | LayoutOptionsSizeToFit);
+    auto menuBox = context.setViewFrame(
+        menuView_, SolRect::fromSize(size).inset(size.width / 8, size.height / 6),
+        LayoutOptionsAlignCenterHorizontal | LayoutOptionsSizeToFit);
 
     auto configuredLabelBox = context.setViewFrame(
         configuredAccessView_,
@@ -78,7 +78,7 @@ auto WiFiSettingsMenuScreen::layout(LayoutContext &context, Size size) -> Size {
     return size;
 }
 
-void WiFiSettingsMenuScreen::drawInRect(Rect rect) {
+void WiFiSettingsMenuScreen::drawInRect(SolRect rect) {
     backLabelView_.draw();
     menuView_.draw();
     configuredAccessView_.draw();

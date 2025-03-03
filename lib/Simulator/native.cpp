@@ -35,30 +35,28 @@
 extern PreferencesStore prefs;
 extern void UIInnerLoop(RemoteCommand command);
 
-#if CONFIG_DISPLAY_EINKET013TT1
-#include "Displays/DisplayEinkET013TT1.hpp"
-#ifndef SIM_SCALE
-#define SIM_SCALE 2
-#endif // SIM_SCALE
-extern DisplayEinkET013TT1 myDisplay;
-#elif DISPLAY_SIM_8BIT
-#ifndef SIM_WIDTH
-#define SIM_WIDTH 600
-#endif // SIM_WIDTH
-#ifndef SIM_HEIGHT
-#define SIM_HEIGHT 600
-#endif // SIM_HEIGHT
-#ifdef SIM_ONE_BIT
-#include "Displays/DisplaySim1Bit.hpp"
-DisplaySim1Bit myDisplay(SIM_WIDTH, SIM_HEIGHT);
-#else
+#if CONFIG_DISPLAY_SIM_24BIT
+#include "Displays/DisplaySim24Bit.hpp"
+extern DisplaySim24Bit myDisplay;
+#elif CONFIG_DISPLAY_SIM_16BIT
+#include "Displays/DisplaySim16Bit.hpp"
+extern DisplaySim16Bit myDisplay;
+#elif CONFIG_DISPLAY_SIM_8BIT
 #include "Displays/DisplaySim8Bit.hpp"
-DisplaySim8Bit myDisplay(SIM_WIDTH, SIM_HEIGHT);
-#endif // SIM_ONE_BIT
+extern DisplaySim8Bit myDisplay;
+#elif CONFIG_DISPLAY_SIM_1BIT
+#include "Displays/DisplaySim1Bit.hpp"
+extern DisplaySim1Bit myDisplay;
+#elif CONFIG_DISPLAY_EINKET013TT1
+#include "Displays/DisplayEinkET013TT1.hpp"
+extern DisplayEinkET013TT1 myDisplay;
+#else
+#error "No display selected"
+#endif
+
 #ifndef SIM_SCALE
 #define SIM_SCALE 1
 #endif // SIM_SCALE
-#endif // CONFIG_DISPLAY_EINKET013TT1
 
 extern "C" void app_main(void); // NOLINT(readability-identifier-naming)
 
@@ -80,13 +78,13 @@ float lerp(float a, float b, float t) { return a + t * (b - a); }
 void SimDrawScreen() {
     for (int x = 0; x < myDisplay.gfxClass()->width(); x++) {
         for (int y = 0; y < myDisplay.gfxClass()->height(); y++) {
-#ifdef SIM_ONE_BIT
+#if CONFIG_DISPLAY_SIM_1BIT
             SDL_SetRenderDrawColor(renderer, 240, 240, 240, 0xFF);
 
             if (myDisplay.getPixel(x, y)) {
                 SDL_RenderDrawPoint(renderer, x, y);
             }
-#else
+#elif CONFIG_DISPLAY_SIM_8BIT || CONFIG_DISPLAY_EINKET013TT1
             uint8_t color = myDisplay.buffer()[x + y * myDisplay.gfxClass()->width()];
             float colorF = color / 255.0;
             uint16_t brightnessOffset =
@@ -97,9 +95,34 @@ void SimDrawScreen() {
                 lerp(40 + brightnessOffset, 240 - brightnessOffset, colorF),
                 lerp(40 + brightnessOffset, 227 - brightnessOffset, colorF), 0xFF);
             SDL_RenderDrawPoint(renderer, x, y);
+#elif CONFIG_DISPLAY_SIM_16BIT
+            uint16_t *buffer = reinterpret_cast<uint16_t *>(myDisplay.buffer().get());
+            uint16_t pixel = buffer[x + y * myDisplay.gfxClass()->width()];
+
+            uint8_t r = ((pixel >> 11) & 0x1F) << 3; // 5 bits red
+            uint8_t g = ((pixel >> 5) & 0x3F) << 2;  // 6 bits green
+            uint8_t b = (pixel & 0x1F) << 3;         // 5 bits blue
+
+            SDL_SetRenderDrawColor(renderer, r, g, b, 0xFF);
+            SDL_RenderDrawPoint(renderer, x, y);
+#elif CONFIG_DISPLAY_SIM_24BIT
+            uint8_t *buffer = myDisplay.buffer().get();
+            // Calculate the starting index for this pixel (3 bytes per pixel)
+            size_t idx = (x + y * myDisplay.gfxClass()->width()) * 3;
+
+            // Read BGR values directly from the buffer (GFXcanvas24 stores as BGR)
+            uint8_t b = buffer[idx];     // Blue is first byte
+            uint8_t g = buffer[idx + 1]; // Green is second byte
+            uint8_t r = buffer[idx + 2]; // Red is third byte
+
+            SDL_SetRenderDrawColor(renderer, r, g, b, 0xFF);
+            SDL_RenderDrawPoint(renderer, x, y);
+#else
+#error "No simulator display configured"
 #endif
         }
     }
+
     if (movieOn_) {
         totalFrames++;
         char filename[100];
@@ -311,16 +334,6 @@ auto main(int argc, char *argv[]) -> int {
 
     // Pre-initialize PreferencesStore to point to simprefs.ini
     prefs.begin("simprefs.ini");
-
-    // The FreeRTOS tick handler happens via SIGALRM, and it also kicks off preemptive task
-    // switching, which is not what we want on the main thread, since it's not a real FreeRTOS task.
-    // Just disable SIGALRM on this thread so that it only happens on FreeRTOS tasks.
-    sigset_t mask;
-    sigemptyset(&mask);
-    sigaddset(&mask, SIGALRM);
-    pthread_sigmask(SIG_BLOCK, &mask, NULL);
-
-    vPortSetExternalThread(pthread_self());
 
     // Start the FreeRTOS scheduler
     std::thread schedulerThread([]() {

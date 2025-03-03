@@ -46,7 +46,7 @@ public:
 
     auto getFont() -> const Font * { return font_; }
 
-    auto layout(LayoutContext &context, Size size) -> Size override {
+    auto layout(LayoutContext &context, SolSize size) -> SolSize override {
         uint16_t w, h;
         // Hard cap the size of the text to the no more than 1/3 the number of pixels (ie assume the
         // average glyph + space width is at least 3px wide)
@@ -73,7 +73,7 @@ public:
         return {w, font_->lineHeight()};
     }
 
-    void drawInRect(Rect rect) override {
+    void drawInRect(SolRect rect) override {
         display_.drawSingleLineOfText(text_, rect.origin.x, rect.origin.y, false, font_);
     }
 

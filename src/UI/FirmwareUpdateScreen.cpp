@@ -42,10 +42,10 @@ FirmwareUpdateScreen::FirmwareUpdateScreen(DisplaySystem &display, Telemetry &te
     popupTextView_->setHidden(true);
 }
 
-auto FirmwareUpdateScreen::layout(LayoutContext &context, Size size) -> Size {
+auto FirmwareUpdateScreen::layout(LayoutContext &context, SolSize size) -> SolSize {
     context.setSublayoutFrame(
-        Rect::fromSize(size), LayoutOptionsSizeToFitVertical | LayoutOptionsAlignCenterVertical,
-        [this](LayoutContext &context, Size size) -> Size {
+        SolRect::fromSize(size), LayoutOptionsSizeToFitVertical | LayoutOptionsAlignCenterVertical,
+        [this](LayoutContext &context, SolSize size) -> SolSize {
             int x = 0;
             int y = 0;
 
@@ -73,19 +73,19 @@ auto FirmwareUpdateScreen::layout(LayoutContext &context, Size size) -> Size {
 
     if (!popupView_->isHidden()) {
         auto popupTextRect =
-            context.setViewSizeInRect(*popupTextView_, {150, 150}, Rect::fromSize(size),
+            context.setViewSizeInRect(*popupTextView_, {150, 150}, SolRect::fromSize(size),
                                       LayoutOptionsSizeToFit | LayoutOptionsAlignCenter);
         context.setViewFrame(*popupView_, popupTextRect.inset(-10));
     }
 
-    context.setViewFrame(cancelView_, Rect::fromSize(size).inset(10),
+    context.setViewFrame(cancelView_, SolRect::fromSize(size).inset(10),
                          LayoutOptionsSizeToFit | LayoutOptionsAlignCenterHorizontal |
                              LayoutOptionsAlignBottom);
 
     return {size.width, size.height};
 }
 
-void FirmwareUpdateScreen::drawInRect(Rect rect) {
+void FirmwareUpdateScreen::drawInRect(SolRect rect) {
     for (const auto &textView : textViews_) {
         (*textView).draw();
     }
@@ -131,7 +131,7 @@ void FirmwareUpdateScreen::cancel() {
 void FirmwareUpdateScreen::render(DisplaySystem &display) {
     int xPadding = 42;
     int yPadding = 10;
-    setFrame(Rect::fromSize({display.width(), display.height()}).inset(xPadding, yPadding));
+    setFrame(SolRect::fromSize({display.width(), display.height()}).inset(xPadding, yPadding));
 
     // Re-render based on state
     switch (state_.state) {
@@ -243,7 +243,7 @@ void FirmwareUpdateScreen::begin() {
         return;
     }
 
-#if USE_BLE
+#if USE_BLE_SERVER
     // Stop BLE advertising and disconnect all connections to avoid interference.
     BLEManager::getInstance()->stopAdvertising();
     auto bleManager = BLEManager::getInstance();

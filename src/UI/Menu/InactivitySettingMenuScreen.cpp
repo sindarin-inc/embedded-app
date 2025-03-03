@@ -47,22 +47,22 @@ auto InactivitySettingMenuScreen::setSelectedIndex(size_t index) -> bool {
     return newPage;
 }
 
-auto InactivitySettingMenuScreen::layout(LayoutContext &context, Size size) -> Size {
+auto InactivitySettingMenuScreen::layout(LayoutContext &context, SolSize size) -> SolSize {
     // Layout back label
     context.setViewFrame(backLabelView_, {{0, 0}, {size.width, 0}},
                          LayoutOptionsSizeToFit | LayoutOptionsAlignLeft);
     // Layout menu
-    context.setViewFrame(menuView_, Rect::fromSize(size).inset(size.width / 7, 0),
+    context.setViewFrame(menuView_, SolRect::fromSize(size).inset(size.width / 7, 0),
                          LayoutOptionsSizeToFitVertical | LayoutOptionsAlignCenterVertical);
 
-    context.setViewFrame(extraTextView_, Rect::fromSize(size),
+    context.setViewFrame(extraTextView_, SolRect::fromSize(size),
                          LayoutOptionsSizeToFit | LayoutOptionsAlignBottom |
                              LayoutOptionsAlignCenterHorizontal);
 
     return size;
 }
 
-void InactivitySettingMenuScreen::drawInRect(Rect rect) {
+void InactivitySettingMenuScreen::drawInRect(SolRect rect) {
     backLabelView_.draw();
     menuView_.draw();
     extraTextView_.draw();

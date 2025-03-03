@@ -20,7 +20,7 @@
 
 using namespace std::placeholders;
 
-auto TTRemoteInput::connectToDevice(BLEAdvertisedDevice &device) -> bool {
+auto TTRemoteInput::connectToDevice(const std::shared_ptr<NimBLEAdvertisedDevice> &device) -> bool {
     if (client_ == nullptr) {
         client_ = BLEDevice::createClient();
         client_->setClientCallbacks(&clientCallbacks_);
@@ -30,10 +30,10 @@ auto TTRemoteInput::connectToDevice(BLEAdvertisedDevice &device) -> bool {
     client_->setConnectionParams(CONNECTION_INTERVAL_MIN, CONNECTION_INTERVAL_MAX,
                                  CONNECTION_LATENCY, CONNECTION_TIMEOUT);
 
-    BLEAddress address = device.getAddress();
+    BLEAddress address = device->getAddress();
     log_d("Attempting to connect to PageTurner at address: %s", address.toString().c_str());
 
-    if (!client_->connect(&device)) {
+    if (!client_->connect(device.get())) {
         log_e("Failed to connect to PageTurner");
         return false;
     }
@@ -130,10 +130,10 @@ auto TTRemoteInput::connectToDevice(BLEAdvertisedDevice &device) -> bool {
     return true;
 }
 
-void TTRemoteInput::dispatchConnection(BLEAdvertisedDevice &device) {
+void TTRemoteInput::dispatchConnection(const std::shared_ptr<NimBLEAdvertisedDevice> &device) {
     state_ = CONNECTING;
     auto dispatched = DispatchQueue::dispatchOneOff(
-        [this, &device] {
+        [this, device] {
         if (!connectToDevice(device)) {
             client_->disconnect();
             state_ = SCANNING;

@@ -90,7 +90,7 @@ public:
         cachedWidth_ = width;
     }
 
-    auto layout(LayoutContext &context, Size size) -> Size override {
+    auto layout(LayoutContext &context, SolSize size) -> SolSize override {
         splitMultiLine(display_, size.width, text_);
 
         lineWidths_.clear();
@@ -123,7 +123,7 @@ public:
         return {width, height};
     }
 
-    void drawInRect(Rect rect) override {
+    void drawInRect(SolRect rect) override {
         if (splitLines_.size() > maxLines_) {
             int i = 1;
             while ((splitLines_[maxLines_ - 1][splitLines_[maxLines_ - 1].size() - i] != ' ') &&

@@ -15,7 +15,7 @@ class View;
 class LayoutContext;
 
 // Lambda that contains layout operations for a view or sublayout
-typedef std::function<Size(LayoutContext &, Size)> LayoutLambda;
+typedef std::function<SolSize(LayoutContext &, SolSize)> LayoutLambda;
 
 // The LayoutContext object:
 // * Encapsulates the complexity of figuring out when a layout is needed
@@ -24,15 +24,15 @@ typedef std::function<Size(LayoutContext &, Size)> LayoutLambda;
 // * Provides helper methods for laying out sublayouts and views
 class LayoutContext {
 public:
-    LayoutContext(LayoutLambda layout) : layout_(std::move(layout)), frame_(Rect::zero()) {}
+    LayoutContext(LayoutLambda layout) : layout_(std::move(layout)), frame_(SolRect::zero()) {}
     // Convenience method that creates the layout lambda automatically from the view's layout method
     LayoutContext(View &view);
 
     // Getter for the frame in the screen's coordinate space. This is determined by walking back
     // through each parent and getting the origin of each layout all the way back to the root (which
     // has no parent)
-    [[nodiscard]] auto screenFrame() const -> Rect {
-        Point offset = {0, 0};
+    [[nodiscard]] auto screenFrame() const -> SolRect {
+        SolPoint offset = {0, 0};
         if (parentLayout_.has_value()) {
             offset = parentLayout_.value()->screenFrame().origin;
         }
@@ -41,10 +41,10 @@ public:
 
     // Getter for the frame in the local coordinate space. This is the frame that was set in the
     // parent layout's coordinate system
-    [[nodiscard]] auto frame() const -> Rect { return frame_; }
+    [[nodiscard]] auto frame() const -> SolRect { return frame_; }
 
     // Sets the frame in local coordinate space (relative to the parent layout's coordinate system)
-    void setFrame(const Rect &frame) {
+    void setFrame(const SolRect &frame) {
         // If we're changing the size, we'll need to trigger a re-layout
         if (frame_.size != frame.size) {
             needsLayout_ = true;
@@ -56,24 +56,26 @@ public:
     // SizeToFit* options) as well as a rect in which to draw the view. When using the Align*
     // options, the size will be positioned inside inRect in order to determine the
     // frame.
-    auto setViewSizeInRect(View &view, const Size &size, const Rect &inRect,
-                           int options = LayoutOptionsNone) -> Rect;
+    auto setViewSizeInRect(View &view, const SolSize &size, const SolRect &inRect,
+                           int options = LayoutOptionsNone) -> SolRect;
 
     // This is a convenience method that calls setLayoutSizeInRect with size=frame.size. This is
     // often used when using the SizeToFit* options to allow the layout to determine its own size
     // within the provided rect
-    auto setViewFrame(View &view, const Rect &frame, int options = LayoutOptionsNone) -> Rect {
+    auto setViewFrame(View &view, const SolRect &frame, int options = LayoutOptionsNone)
+        -> SolRect {
         return setViewSizeInRect(view, frame.size, frame, options);
     }
 
     // Similar to setViewSizeInRect except it accepts a layout lambda instead of a view. The layout
     // lambda can operate as if it were a view with its own layout method.
-    auto setSublayoutSizeInRect(const Size &size, const Rect &inRect, int options,
-                                const LayoutLambda &layout) -> Rect;
+    auto setSublayoutSizeInRect(const SolSize &size, const SolRect &inRect, int options,
+                                const LayoutLambda &layout) -> SolRect;
 
     // Similar to setViewFrame except it accepts a layout lambda instead of a view. The layout
     // lambda can operate as if it were a view with its own layout method.
-    auto setSublayoutFrame(const Rect &frame, int options, const LayoutLambda &layout) -> Rect {
+    auto setSublayoutFrame(const SolRect &frame, int options, const LayoutLambda &layout)
+        -> SolRect {
         return setSublayoutSizeInRect(frame.size, frame, options, layout);
     }
 
@@ -82,8 +84,8 @@ public:
     void setNeedsLayout() {
         needsLayout_ = true;
         needsSizing_ = true;
-        cachedSize_ = Size::zero();
-        cachedLayoutSize_ = Size::zero();
+        cachedSize_ = SolSize::zero();
+        cachedLayoutSize_ = SolSize::zero();
         // Invalidate sublayouts as well
         for (auto &sublayout : sublayouts_) {
             sublayout.second->setNeedsLayout();
@@ -92,7 +94,7 @@ public:
 
     // This runs the layout if necessary, or returns the cached size if layout is not
     // necessary
-    auto layoutIfNeeded(const Size &size, bool sizing) -> Size;
+    auto layoutIfNeeded(const SolSize &size, bool sizing) -> SolSize;
 
 protected:
     // Name of this layout for debugging. Will either reflect view_'s name or the parent layout's
@@ -101,10 +103,11 @@ protected:
 
     // The root layout method. This is called by setViewSizeInRect and setSublayoutSizeInRect to do
     // all the actual layout work.
-    auto setLayoutSizeInRect(LayoutContext &layoutContext, const Size &size, const Rect &inRect,
-                             int options) -> Rect;
+    auto setLayoutSizeInRect(LayoutContext &layoutContext, const SolSize &size,
+                             const SolRect &inRect, int options) -> SolRect;
 
-    auto setLayoutFrame(LayoutContext &layoutContext, const Rect &frame, int options) -> Rect {
+    auto setLayoutFrame(LayoutContext &layoutContext, const SolRect &frame, int options)
+        -> SolRect {
         return setLayoutSizeInRect(layoutContext, frame.size, frame, options);
     }
 
@@ -115,7 +118,7 @@ protected:
     LayoutLambda layout_;
 
     // The frame of the layout in the parent layout's coordinate space
-    Rect frame_{{0, 0}, {0, 0}};
+    SolRect frame_{{0, 0}, {0, 0}};
 
     // Whether this layout is currently sizing (doesn't change frames) or whether it's running for
     // real
@@ -129,11 +132,11 @@ protected:
 
     // Cached input size. Used as the cache key to determine if we need to re-layout to determine
     // the size.
-    Size cachedSize_{0, 0};
+    SolSize cachedSize_{0, 0};
 
     // Cached output size. This is the size that is returned by the layout method when passing in
     // cachedSize_.
-    Size cachedLayoutSize_{0, 0};
+    SolSize cachedLayoutSize_{0, 0};
 
     // Pointer to the parent layout that contains this layout. Used for figuring out the
     // global-coordinatine-space frame for this layout

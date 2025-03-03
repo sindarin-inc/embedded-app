@@ -68,7 +68,7 @@ void LetsFocusWelcomeMenuScreen::processCommand(RemoteCommand command) {
     }
 }
 
-auto LetsFocusWelcomeMenuScreen::layout(LayoutContext &context, Size size) -> Size {
+auto LetsFocusWelcomeMenuScreen::layout(LayoutContext &context, SolSize size) -> SolSize {
     // We need to push the left arrow view all the way to the left of the screen
     // and the right arrow view all the way to the right of the screen. That's why the -15 and + 30
     // to size.width below.
@@ -80,20 +80,20 @@ auto LetsFocusWelcomeMenuScreen::layout(LayoutContext &context, Size size) -> Si
                              LayoutOptionsAlignRight);
 
     context.setViewFrame(rendererView_,
-                         Rect::fromSize(size).inset(std::get<1>(texts_[textSelection_]).left,
-                                                    std::get<1>(texts_[textSelection_]).right,
-                                                    std::get<1>(texts_[textSelection_]).top,
-                                                    std::get<1>(texts_[textSelection_]).bottom),
+                         SolRect::fromSize(size).inset(std::get<1>(texts_[textSelection_]).left,
+                                                       std::get<1>(texts_[textSelection_]).right,
+                                                       std::get<1>(texts_[textSelection_]).top,
+                                                       std::get<1>(texts_[textSelection_]).bottom),
                          LayoutOptionsSizeToFit | LayoutOptionsAlignCenter);
 
-    context.setViewFrame(menuView_, Rect::fromSize(size),
+    context.setViewFrame(menuView_, SolRect::fromSize(size),
                          LayoutOptionsSizeToFit | LayoutOptionsAlignCenterHorizontal |
                              LayoutOptionsAlignBottom);
 
     return size;
 }
 
-void LetsFocusWelcomeMenuScreen::drawInRect(Rect rect) {
+void LetsFocusWelcomeMenuScreen::drawInRect(SolRect rect) {
     if (textSelection_ != 0) {
         leftArrowView_.draw();
     }

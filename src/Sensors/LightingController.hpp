@@ -3,14 +3,21 @@
 #include <functional>
 #include <utility>
 
+#if CONFIG_USE_LTR329
 #include "Ltr329Als.hpp"
+#endif
 #include "Misc/MovingAverage.hpp"
 #include "Storage/PreferencesStore.hpp"
 
 class LightingController {
 public:
     LightingController(PreferencesStore &prefs)
-        : prefs_(prefs), lightSensor_(0), movingAverage_(25) {}
+        : prefs_(prefs),
+#if CONFIG_USE_LTR329
+          lightSensor_(0),
+#endif
+          movingAverage_(25) {
+    }
     LightingController(LightingController const &) = delete;
 
     void pause() { paused_ = true; }
@@ -53,7 +60,9 @@ protected:
     auto luxify(uint16_t channel0, uint16_t channel1) -> float;
     auto scaleLux(float lux) -> float;
     PreferencesStore &prefs_;
+#if CONFIG_USE_LTR329
     Ltr329Als lightSensor_;
+#endif
     // Adjusting the number of samples here will change the responsiveness of the ambient light
     // adjustments
     MovingAverage<int, 5> movingAverage_;

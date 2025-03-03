@@ -22,7 +22,10 @@ public:
     };
 
     [[nodiscard]] auto defaultTextInsets() const -> DisplayInset override {
-        return {100, 100, 20, 20};
+        return {static_cast<uint16_t>(30 * nativeWidth() / 256),
+                static_cast<uint16_t>(30 * nativeHeight() / 256),
+                static_cast<uint16_t>(20 * nativeWidth() / 256),
+                static_cast<uint16_t>(20 * nativeHeight() / 256)};
     };
     [[nodiscard]] auto minTextInsets() const -> DisplayInset override { return {5, 5, 5, 5}; };
     [[nodiscard]] auto minTextBoxWidth() const -> int16_t override { return 125; };
@@ -34,7 +37,7 @@ public:
                        bool clearFrameBuffer = true, int vcomNudge = 0,
                        DisplaySystem::UpdateType altUpdateType = UNSPECIFIED,
                        ScreenSide screen = ScreenSide::Both,
-                       Rect altRect = {{0, 0}, {0, 0}}) override;
+                       SolRect altRect = {{0, 0}, {0, 0}}) override;
 
     // Simulator-specific methodds
     auto renderQueue() -> QueueHandle_t override { return renderQueue_; };

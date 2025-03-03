@@ -4,8 +4,6 @@
 #include <string>
 
 #include "FontDefs.hpp"
-#include "config.h"
-
 // A very simple UTF8 iterator.
 //
 // Added verification to insure that the next UTF8 character is well formed

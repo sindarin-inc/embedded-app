@@ -1,4 +1,5 @@
 #include <array>
+#include <cmath>
 #include <numeric>
 
 // ChatGPT wrote this on 12/13/2022

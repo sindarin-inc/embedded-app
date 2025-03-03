@@ -16,24 +16,24 @@ LightingAdjustScreen::LightingAdjustScreen(DisplaySystem &display, PreferencesSt
     fillView_.fillColor = display_.fg;
 }
 
-auto LightingAdjustScreen::layout(LayoutContext &context, Size size) -> Size {
+auto LightingAdjustScreen::layout(LayoutContext &context, SolSize size) -> SolSize {
     int spacing = 8;
 
     // Sublayout for centering all the main content in the view
     context.setSublayoutFrame(
         {{0, 0}, {size.width, size.height}}, LayoutOptionsSizeToFit | LayoutOptionsAlignCenter,
-        [this, spacing](LayoutContext &context, Size size) -> Size {
+        [this, spacing](LayoutContext &context, SolSize size) -> SolSize {
             // Sublayout for horizontally centering the lightbulb and bar
             auto bulbAndBarRect = context.setSublayoutFrame(
                 {{0, 0}, {size.width, size.height}},
                 LayoutOptionsSizeToFit | LayoutOptionsAlignCenterHorizontal,
-                [this, spacing](LayoutContext &context, Size size) -> Size {
+                [this, spacing](LayoutContext &context, SolSize size) -> SolSize {
                     int x = 0, y = 0;
                     auto lightbulbRect = context.setViewFrame(lightbulbView_, {{x, y}, {0, 0}},
                                                               LayoutOptionsSizeToFit);
                     x += lightbulbRect.size.width + spacing;
 
-                    Rect barRectFrame = {{x, y}, {10, lightbulbRect.size.height}};
+                    SolRect barRectFrame = {{x, y}, {10, lightbulbRect.size.height}};
 
                     auto barRect = context.setViewFrame(barView_, barRectFrame);
 
@@ -66,18 +66,18 @@ auto LightingAdjustScreen::layout(LayoutContext &context, Size size) -> Size {
     // Put the arrow on the right and left -- either is fine to exit the screen
     // TODO(256displayonly): Fix plz
     auto arrowWidth = 5;
-    context.setViewSizeInRect(leftArrowView_, {arrowWidth, 0}, Rect::fromSize(size),
+    context.setViewSizeInRect(leftArrowView_, {arrowWidth, 0}, SolRect::fromSize(size),
                               LayoutOptionsSizeToFit | LayoutOptionsAlignLeft |
                                   LayoutOptionsAlignCenterVertical);
 
-    context.setViewSizeInRect(rightArrowView_, {arrowWidth, 0}, Rect::fromSize(size),
+    context.setViewSizeInRect(rightArrowView_, {arrowWidth, 0}, SolRect::fromSize(size),
                               LayoutOptionsSizeToFit | LayoutOptionsAlignRight |
                                   LayoutOptionsAlignCenterVertical);
 
     return size;
 }
 
-void LightingAdjustScreen::drawInRect(Rect rect) {
+void LightingAdjustScreen::drawInRect(SolRect rect) {
     lightbulbView_.draw();
     barView_.draw();
     fillView_.draw();

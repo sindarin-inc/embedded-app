@@ -29,6 +29,22 @@ menu "Sol Options"
             int "Screen resolution per inch (for TTF sizing)"
             default 150
 
+        config DISPLAY_WIDTH
+            int "Display Width"
+            default 1440 if DISPLAY_WAVESHARE_6INHD
+            default 400 if DISPLAY_SHARP_27IN
+            default 1280 if DISPLAY_M5STACK_ATOM_DISPLAY
+            default 1920 if DISPLAY_M5STACK_MODULE_DISPLAY
+            default 256
+
+        config DISPLAY_HEIGHT
+            int "Display Height"
+            default 1072 if DISPLAY_WAVESHARE_6INHD
+            default 240 if DISPLAY_SHARP_27IN
+            default 720 if DISPLAY_M5STACK_ATOM_DISPLAY
+            default 1080 if DISPLAY_M5STACK_MODULE_DISPLAY
+            default 256
+
         menu "Display Pins"
             config DISPLAY_EINKET013TT1_CS_LEFT
                 depends on DISPLAY_EINKET013TT1
@@ -196,6 +212,10 @@ menu "Sol Options"
             int "Factory Reset Button Pin"
             default 0
 
+        config USE_WIFI
+            bool "Use WiFi"
+            default y
+
     endmenu
 
     menu "Pin Selection"
@@ -258,8 +278,16 @@ menu "Sol Options"
 
             config FONT_TTF
                 bool "TTF Font via FreeType"
+
         endchoice
         
+    endmenu
+
+    menu "Content Settings"
+        config INCLUDE_DEFAULT_CONTENT
+            bool "Include Default Content"
+            default y
+
     endmenu
 
 endmenu

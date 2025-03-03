@@ -11,16 +11,6 @@
 #include "CustomWaveforms.hpp"
 #include "EinkTypes.hpp"
 
-#ifndef SIM_WIDTH
-#define EinkET013TT1_PIXEL_WIDTH 256
-#else
-#define EinkET013TT1_PIXEL_WIDTH SIM_WIDTH
-#endif
-#ifndef SIM_HEIGHT
-#define EinkET013TT1_PIXEL_HEIGHT 256
-#else
-#define EinkET013TT1_PIXEL_HEIGHT SIM_HEIGHT
-#endif
 #define FRAMERATE_DEFAULT 24
 #define PARTICLE_MOVEMENT_DEFAULT 40
 
@@ -30,7 +20,7 @@ public:
     // Constructor. Nothing interesting happens here until init()
     EinkET013TT1() {
         particlePositions_ =
-            std::make_unique<uint8_t[]>(EinkET013TT1_PIXEL_WIDTH * EinkET013TT1_PIXEL_HEIGHT);
+            std::make_unique<uint8_t[]>(CONFIG_DISPLAY_WIDTH * CONFIG_DISPLAY_HEIGHT);
     };
     ~EinkET013TT1() {
         if (renderQueue_ != nullptr) {
@@ -93,7 +83,7 @@ protected:
     bool skipWaveform_ = false;
     bool skipSignalling_ = false;
 
-    uint8_t previousBuffer_[EinkET013TT1_PIXEL_WIDTH * EinkET013TT1_PIXEL_HEIGHT / 8];
+    uint8_t previousBuffer_[CONFIG_DISPLAY_WIDTH * CONFIG_DISPLAY_HEIGHT / 8];
     int framerate_ = FRAMERATE_DEFAULT;
 };
 

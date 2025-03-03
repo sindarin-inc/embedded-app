@@ -118,7 +118,7 @@ void MenuView::setIndicatorType(IndicatorType type) {
     }
 }
 
-auto MenuView::layout(LayoutContext &context, Size size) -> Size {
+auto MenuView::layout(LayoutContext &context, SolSize size) -> SolSize {
     int y = 0;
     int x = 0;
     int widthOfPagingIndicators = 0;
@@ -129,11 +129,11 @@ auto MenuView::layout(LayoutContext &context, Size size) -> Size {
     }
     int width = size.width - x;
 
-    auto pagingIndicatorRect = Rect::zero();
+    auto pagingIndicatorRect = SolRect::zero();
     // Layout paging indicator on the right
     if (!pagingIndicatorView_.isHidden()) {
         pagingIndicatorRect = context.setViewSizeInRect(
-            pagingIndicatorView_, {pagingIndicatorWidth, 0}, Rect::fromSize(size),
+            pagingIndicatorView_, {pagingIndicatorWidth, 0}, SolRect::fromSize(size),
             LayoutOptionsSizeToFitVertical | LayoutOptionsAlignCenterVertical |
                 LayoutOptionsAlignRight);
         width -= pagingIndicatorRect.size.width + pagingIndicatorPadding;
@@ -157,9 +157,9 @@ auto MenuView::layout(LayoutContext &context, Size size) -> Size {
         if (selected && indicatorType_ != IndicatorType::None) {
             // 1 px nudge downards to account for the fact that the center of gravity of text is
             // a little lower than its center
-            Rect indicatorRect = {{0, itemRect.origin.y + 1},
-                                  {indicatorWidth, itemRect.size.height}};
-            Size indicatorSize{};
+            SolRect indicatorRect = {{0, itemRect.origin.y + 1},
+                                     {indicatorWidth, itemRect.size.height}};
+            SolSize indicatorSize{};
             switch (indicatorType_) {
             case IndicatorType::None:
             case IndicatorType::Dot:
@@ -179,7 +179,7 @@ auto MenuView::layout(LayoutContext &context, Size size) -> Size {
     return {maxWidth + widthOfPagingIndicators, y};
 }
 
-void MenuView::drawInRect(Rect rect) {
+void MenuView::drawInRect(SolRect rect) {
     size_t startIndex = currentPage_ * itemsPerPage;
     size_t endIndex = std::min(startIndex + itemsPerPage, menuItemViews_.size());
 

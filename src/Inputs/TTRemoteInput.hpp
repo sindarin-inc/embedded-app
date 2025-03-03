@@ -43,8 +43,8 @@ protected:
     long keepDisconnectedUntilMs_ = 0;
     BLEClient *client_ = nullptr;
 
-    auto connectToDevice(BLEAdvertisedDevice &device) -> bool;
-    void dispatchConnection(BLEAdvertisedDevice &device);
+    auto connectToDevice(const std::shared_ptr<NimBLEAdvertisedDevice> &device) -> bool;
+    void dispatchConnection(const std::shared_ptr<NimBLEAdvertisedDevice> &device);
     void scanForNewDevice();
     void scanForPairedDevice();
     void scanForDevice();
@@ -55,7 +55,7 @@ protected:
 
         PairedDeviceScanCallbacks(TTRemoteInput *enclosure) : enclosed(enclosure) {}
 
-        void onResult(BLEAdvertisedDevice *advertisedDevice) override {
+        void onResult(const NimBLEAdvertisedDevice *advertisedDevice) override {
             if (advertisedDevice->haveServiceUUID()) {
 
                 // log_v("BLEAdvertisedDevice w/ services found: %s",
@@ -67,12 +67,16 @@ protected:
                 // Connect to device if this is the paired device
                 std::optional<BLEAddress> address = enclosed->prefs_.pairedTurnTouchAddress.get();
                 if (advertisedDevice->isAdvertisingService(BLEUUID(TURNTOUCH_BUTTON_SVC_ID)) &&
-                    (address.has_value() && address.value() == advertisedDevice->getAddress())) {
+                    (address.has_value() &&
+                     static_cast<uint64_t>(address.value()) ==
+                         static_cast<uint64_t>(advertisedDevice->getAddress()))) {
                     SHOW_HEAP();
                     log_i("%s PageTurner found; queueing for connect...",
                           address.has_value() ? "Paired" : "New");
                     BLEDevice::getScan()->stop();
-                    enclosed->dispatchConnection(*advertisedDevice);
+                    // Create a copy of the device
+                    auto deviceCopy = std::make_shared<NimBLEAdvertisedDevice>(*advertisedDevice);
+                    enclosed->dispatchConnection(deviceCopy);
                 }
             }
         }
@@ -86,7 +90,7 @@ protected:
 
         NewDeviceScanCallbacks(TTRemoteInput *enclosure) : enclosed(enclosure) {}
 
-        void onScanEnd(NimBLEScanResults results) override {
+        void onScanEnd(const NimBLEScanResults &results, int reason) override {
             if (results.getCount() == 0) {
                 log_w("Absolutely 0 BLE devices found.");
                 return;
@@ -122,7 +126,10 @@ protected:
                 log_d("PageTurner: %s, RSSI: %d", advertisedDevice->getAddress().toString().c_str(),
                       advertisedDevice->getRSSI());
             }
-            enclosed->dispatchConnection(*(filteredDevices[0]));
+
+            // Create a copy of the selected device
+            auto deviceCopy = std::make_shared<NimBLEAdvertisedDevice>(*filteredDevices[0]);
+            enclosed->dispatchConnection(deviceCopy);
         }
     };
 

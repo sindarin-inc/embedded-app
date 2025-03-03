@@ -19,8 +19,8 @@ public:
     LineSpacingScreen(DisplaySystem &display, PreferencesStore &prefs, Telemetry &telemetry,
                       Renderer &renderer, std::shared_ptr<Place> place);
 
-    auto layout(LayoutContext &context, Size size) -> Size override;
-    void drawInRect(Rect rect) override;
+    auto layout(LayoutContext &context, SolSize size) -> SolSize override;
+    void drawInRect(SolRect rect) override;
 
 protected:
     void render(DisplaySystem &display) override;

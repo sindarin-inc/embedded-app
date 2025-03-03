@@ -65,7 +65,7 @@ void TextPlacementWelcomeMenuScreen::processCommand(RemoteCommand command) {
     setNeedsLayout();
 }
 
-auto TextPlacementWelcomeMenuScreen::layout(LayoutContext &context, Size size) -> Size {
+auto TextPlacementWelcomeMenuScreen::layout(LayoutContext &context, SolSize size) -> SolSize {
     auto arrowHeight = 9;
 
     context.setViewSizeInRect(leftArrowView_, {0, arrowHeight},
@@ -76,19 +76,19 @@ auto TextPlacementWelcomeMenuScreen::layout(LayoutContext &context, Size size) -
         LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical | LayoutOptionsAlignRight);
 
     context.setViewFrame(rendererView_,
-                         Rect::fromSize(size).inset(std::get<1>(texts_[textSelection_]).left,
-                                                    std::get<1>(texts_[textSelection_]).right,
-                                                    std::get<1>(texts_[textSelection_]).top,
-                                                    std::get<1>(texts_[textSelection_]).bottom),
+                         SolRect::fromSize(size).inset(std::get<1>(texts_[textSelection_]).left,
+                                                       std::get<1>(texts_[textSelection_]).right,
+                                                       std::get<1>(texts_[textSelection_]).top,
+                                                       std::get<1>(texts_[textSelection_]).bottom),
                          LayoutOptionsSizeToFit | LayoutOptionsAlignCenter);
 
     if (textSelection_ == 0 || textSelection_ == 1) {
-        context.setViewFrame(menuView_, Rect::fromSize(size),
+        context.setViewFrame(menuView_, SolRect::fromSize(size),
                              LayoutOptionsSizeToFit | LayoutOptionsAlignCenterHorizontal |
                                  LayoutOptionsAlignBottom);
     } else {
         // We're going to put the menu at the top of the scren for the Bottom template
-        context.setViewFrame(menuView_, Rect::fromSize(size).inset(0, 15),
+        context.setViewFrame(menuView_, SolRect::fromSize(size).inset(0, 15),
                              LayoutOptionsSizeToFit | LayoutOptionsAlignCenterHorizontal |
                                  LayoutOptionsAlignTop);
     }
@@ -96,7 +96,7 @@ auto TextPlacementWelcomeMenuScreen::layout(LayoutContext &context, Size size) -
     return size;
 }
 
-void TextPlacementWelcomeMenuScreen::drawInRect(Rect rect) {
+void TextPlacementWelcomeMenuScreen::drawInRect(SolRect rect) {
     switch (textSelection_) {
     case 0:
         renderer_.setLineSpacing(0);

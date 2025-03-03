@@ -1,8 +1,7 @@
-#include "config.h"
-
 #if CONFIG_FONT_TTF
 
 #include "TTFCache.hpp"
+
 #include "TTFFont.hpp"
 
 auto TTFCache::doGetGlyph(Font &font, font_defs::GlyphCode glyphCode, uint32_t key)

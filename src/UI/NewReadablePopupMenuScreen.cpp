@@ -82,7 +82,7 @@ void NewReadablePopupMenuScreen::setUpPopupMenu() {
 
 void NewReadablePopupMenuScreen::preselectIndexAt(int index) { menuView_.setSelectedIndex(index); }
 
-void NewReadablePopupMenuScreen::drawInRect(Rect rect) {
+void NewReadablePopupMenuScreen::drawInRect(SolRect rect) {
     popupMenuBackground_.fillColor = display_.bg;
     popupMenuBackground_.strokeColor = display_.bg;
     popupMenuForeground_.strokeColor = display_.fg;
@@ -98,10 +98,10 @@ void NewReadablePopupMenuScreen::drawInRect(Rect rect) {
     footer3TextView_.draw();
 }
 
-auto NewReadablePopupMenuScreen::layout(LayoutContext &context, Size size) -> Size {
+auto NewReadablePopupMenuScreen::layout(LayoutContext &context, SolSize size) -> SolSize {
     auto contentFrame = context.setSublayoutFrame(
-        Rect::fromSize(size), LayoutOptionsSizeToFit | LayoutOptionsAlignCenter,
-        [this](LayoutContext &context, Size size) -> Size {
+        SolRect::fromSize(size), LayoutOptionsSizeToFit | LayoutOptionsAlignCenter,
+        [this](LayoutContext &context, SolSize size) -> SolSize {
             int y = 0;
             auto titleBox = context.setViewFrame(titleView_, {{0, y}, size},
                                                  LayoutOptionsSizeToFit | LayoutOptionsAlignTop |

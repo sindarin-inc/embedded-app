@@ -1,5 +1,4 @@
-#ifndef SINDARIN_DEBUG_H
-#define SINDARIN_DEBUG_H
+#pragma once
 
 #ifndef DEBUG_MEMORY
 #define DEBUG_MEMORY 0
@@ -99,8 +98,9 @@ extern "C" {
 }
 
 #include <esp_log.h>
+#if __XTENSA__
 #include <xt_instr_macros.h>
-
+#endif
 #include "Misc/Platform.hpp"
 
 // For IDF builds, use the ESP_LOGD macros since they work with power management.
@@ -117,14 +117,20 @@ extern "C" {
 #define log_e(format, ...) ESP_LOGE("Sol", format, ##__VA_ARGS__);
 #endif
 
-// NOTE: based on the uint32_t, this cannot profile anything longer than 17.89569707
-#define PROFILE_START(identifier)                                                                  \
-    volatile uint32_t profileStart##identifier = 0;                                                \
-    RSR(CCOUNT, profileStart##identifier);
+inline auto GetCycleCount() -> uint64_t {
+    volatile uint32_t cycle;
+#if __XTENSA__
+    RSR(CCOUNT, cycle);
+#else
+    asm volatile("rdcycle %0" : "=r"(cycle));
+#endif
+    return cycle;
+}
 
-#define PROFILE_END(identifier)                                                                    \
-    volatile uint32_t profileEnd##identifier = 0;                                                  \
-    RSR(CCOUNT, profileEnd##identifier);
+// NOTE: based on the uint32_t, this cannot profile anything longer than 17.89569707
+#define PROFILE_START(identifier) volatile uint32_t profileStart##identifier = GetCycleCount();
+
+#define PROFILE_END(identifier) volatile uint32_t profileEnd##identifier = GetCycleCount();
 
 #define CYCLES_TO_MS(cycles) (((cycles)*1000.0f) / (esp_clk_cpu_freq()))
 
@@ -166,12 +172,10 @@ extern "C" {
     uint32_t profileMinCycles##identifier = UINT32_MAX;
 
 #define PROFILE_MULTIPLE_START(identifier)                                                         \
-    volatile uint32_t profileStart##identifier = 0;                                                \
-    RSR(CCOUNT, profileStart##identifier);
+    volatile uint32_t profileStart##identifier = GetCycleCount();
 
 #define PROFILE_MULTIPLE_END(identifier)                                                           \
-    volatile uint32_t profileEnd##identifier = 0;                                                  \
-    RSR(CCOUNT, profileEnd##identifier);                                                           \
+    volatile uint32_t profileEnd##identifier = GetCycleCount();                                    \
     profileCount##identifier += 1;                                                                 \
     uint32_t profileCycles##identifier = profileEnd##identifier - profileStart##identifier;        \
     profileTotalCycles##identifier += profileCycles##identifier;                                   \
@@ -233,7 +237,5 @@ extern "C" {
 #define HEAP_PROFILE_START(identifier)
 #define HEAP_PROFILE_END(identifier)
 #define SHOW_WATERMARK()
-
-#endif
 
 #endif

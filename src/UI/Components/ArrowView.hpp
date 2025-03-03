@@ -19,7 +19,7 @@ public:
     ArrowDirection direction = ArrowLeft;
     uint16_t color;
 
-    auto layout(LayoutContext &context, Size size) -> Size override {
+    auto layout(LayoutContext &context, SolSize size) -> SolSize override {
         bool heightConstrained;
         bool horizontal = direction == ArrowLeft || direction == ArrowRight;
 
@@ -28,7 +28,7 @@ public:
         // If size and width aren't set, use a default size but raise a warning
         if (size.width == 0 && size.height == 0) {
             log_w("ArrowView has no size set, using default size");
-            return (horizontal ? Size({5, 9}) : Size({9, 5}));
+            return (horizontal ? SolSize({5, 9}) : SolSize({9, 5}));
         }
         // If both are set, then we are constrained based on the aspect ratio fitting in the box
         else if (size.width > 0 && size.height > 0) {
@@ -72,7 +72,7 @@ public:
         }
     }
 
-    void drawInRect(Rect rect) override {
+    void drawInRect(SolRect rect) override {
         // have to set it again here in case the color changed since the the constructor.
         color = display_.fg;
 

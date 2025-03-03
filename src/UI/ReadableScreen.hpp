@@ -47,8 +47,8 @@ public:
     ~ReadableScreen() override = default;
 
     // TODO: Someday we should update this layout method to use the new RendererView
-    auto layout(LayoutContext &context, Size size) -> Size override;
-    void drawInRect(Rect rect) override;
+    auto layout(LayoutContext &context, SolSize size) -> SolSize override;
+    void drawInRect(SolRect rect) override;
 
     void render(DisplaySystem &display) override;
     void processCommand(RemoteCommand command) override;
