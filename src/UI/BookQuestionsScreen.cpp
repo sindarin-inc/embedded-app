@@ -780,7 +780,6 @@ void BookQuestionsScreen::setLoadingMessage(const std::string &message) {
     // Make sure we don't lose the renderer stream when updating the loading message
     auto savedStream = rendererStream_;
 
-    // render(display_);
 
     // Restore the saved stream if it was replaced during render
     if (savedStream != nullptr && rendererStream_ == nullptr) {
