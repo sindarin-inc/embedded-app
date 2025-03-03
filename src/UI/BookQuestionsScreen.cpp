@@ -259,7 +259,6 @@ void BookQuestionsScreen::render(DisplaySystem &display) {
             display.updateDisplay(DisplaySystem::UpdateType::FULL, false);
             firstLoad_ = false;
         } else if (state_ == State::ANSWER || state_ == State::LOADING) {
-            // Use the esp print traceback to show how we got here
 
             log_w("RENDER: Updating display to full");
             display.updateDisplay(DisplaySystem::UpdateType::FULL, true);
