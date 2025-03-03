@@ -578,7 +578,9 @@ void LocalStore::saveBookQuestions(const BookQuestions &bookQuestions) {
     log_i("Saving book questions (version %d) to file", bookQuestions.version);
 
     // Convert book questions to JSON
-    auto doc = std::make_unique<SpiRamJsonDocument>(32768);
+    // Questions are roughly 500 bytes each, contexts are roughly 150 bytes each
+    auto doc = std::make_unique<SpiRamJsonDocument>(1000 * bookQuestions.questions.size() +
+                                                    500 * bookQuestions.contexts.size());
     JsonObject root = doc->to<JsonObject>();
     convertToJson(bookQuestions, root);
 

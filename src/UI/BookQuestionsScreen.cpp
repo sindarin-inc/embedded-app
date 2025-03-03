@@ -64,16 +64,11 @@ auto BookQuestionsScreen::layout(LayoutContext &context, SolSize size) -> SolSiz
     // Handle ANSWER state with error
     if (state_ == State::ANSWER && !questionResponse_.success) {
         // Center the error text vertically in the content area
-        auto loadingRect = contentFrame;
-        auto verticalSpace = contentFrame.size.height - questionRect.size.height;
-
-        // Position the error message in the center of the screen
-        loadingRect = loadingRect.inset(0, verticalSpace / 6);
         context.setViewFrame(descriptionView_,
                              // Make the description text narrower for better wrapping
-                             contentFrame.inset(contentFrame.size.width / 6,
-                                                loadingRect.bottom() + verticalSpace / 3),
-                             LayoutOptionsSizeToFitVertical | LayoutOptionsAlignCenter);
+                             contentFrame.inset(contentFrame.size.width / 6),
+                             LayoutOptionsSizeToFitVertical | LayoutOptionsAlignCenterVertical |
+                                 LayoutOptionsAlignCenter);
         return size;
     }
 
@@ -88,21 +83,14 @@ auto BookQuestionsScreen::layout(LayoutContext &context, SolSize size) -> SolSiz
 
     // Handle LOADING state
     if (state_ == State::LOADING) {
-        // Center the loading text vertically in the content area
-        auto loadingRect = contentFrame;
-        auto verticalSpace = contentFrame.size.height - questionRect.size.height;
-
-        // Position the title at the top third of the screen
-        loadingRect = loadingRect.inset(0, verticalSpace / 6);
-        context.setViewFrame(questionView_, loadingRect,
-                             LayoutOptionsSizeToFit | LayoutOptionsAlignCenter);
-
-        // Add description text in the bottom half with much more spacing
-        context.setViewFrame(descriptionView_,
-                             // Make the description text narrower for better wrapping
-                             contentFrame.inset(contentFrame.size.width / 6,
-                                                loadingRect.bottom() + verticalSpace / 3),
-                             LayoutOptionsSizeToFitVertical | LayoutOptionsAlignCenter);
+        auto questionRect = context.setViewFrame(questionView_, contentFrame,
+                                                 LayoutOptionsSizeToFit | LayoutOptionsAlignCenter |
+                                                     LayoutOptionsAlignCenterVertical);
+        context.setViewFrame(
+            descriptionView_,
+            // Make the description text narrower for better wrapping
+            contentFrame.inset(contentFrame.size.width / 6, questionRect.bottom() + inset * 4),
+            LayoutOptionsSizeToFitVertical | LayoutOptionsAlignCenter);
         return size;
     }
 
