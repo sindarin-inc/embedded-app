@@ -107,22 +107,33 @@ void BookQuestionsScreen::drawInRect(SolRect rect) {
     backgroundView_.strokeColor = display_.fg;
     backgroundView_.draw();
 
-    // Then draw content
+    // Always draw back label
     backLabelView_.draw();
 
-    if (state_ == State::CONTEXTS_LIST) {
+    switch (state_) {
+    case State::QUESTIONS_LIST:
+        menuView_.draw();
+        break;
+
+    case State::CONTEXTS_LIST:
         questionView_.draw();
         descriptionView_.draw();
         contextHeadingView_.draw();
-    } else if (state_ == State::LOADING) {
+        menuView_.draw();
+        break;
+
+    case State::LOADING:
         questionView_.draw();
         descriptionView_.draw();
-    } else if (state_ == State::ANSWER && !questionResponse_.success) {
-        descriptionView_.draw();
-    }
+        break;
 
-    if (state_ == State::QUESTIONS_LIST || state_ == State::CONTEXTS_LIST) {
-        menuView_.draw();
+    case State::ANSWER:
+        if (!questionResponse_.success) {
+            descriptionView_.draw();
+        }
+        // Note: For successful ANSWER state, the actual answer content
+        // is rendered directly in the render() method using the renderer
+        break;
     }
 }
 
@@ -166,7 +177,7 @@ void BookQuestionsScreen::precomputeTotalPages() {
 
 void BookQuestionsScreen::render(DisplaySystem &display) {
     if (needsMenuItemsLoad_) {
-        loadMenuItems();
+        updateUIForState();
         needsMenuItemsLoad_ = false;
     }
 
@@ -341,8 +352,6 @@ void BookQuestionsScreen::processCommand(RemoteCommand command) {
         break;
     }
 }
-
-void BookQuestionsScreen::loadMenuItems() { updateUIForState(); }
 
 void BookQuestionsScreen::loadQuestions() {
     // Load and parse questions JSON

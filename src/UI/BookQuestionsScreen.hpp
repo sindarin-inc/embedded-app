@@ -49,7 +49,6 @@ public:
     void drawInRect(SolRect rect) override;
     void render(DisplaySystem &display) override;
     void processCommand(RemoteCommand command) override;
-    void loadMenuItems();
     void loadQuestions();
     void loadContexts(const BookQuestion &question);
     void reset();
