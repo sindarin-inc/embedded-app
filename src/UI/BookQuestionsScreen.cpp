@@ -80,14 +80,10 @@ auto BookQuestionsScreen::layout(LayoutContext &context, SolSize size) -> SolSiz
     // Handle ANSWER state with success
     if (state_ == State::ANSWER) {
         // Position page indicator at the bottom of the screen with some padding
-        auto indicatorSize = pageIndicatorView_.layout(context, {contentFrame.size.width, 0});
-        auto indicatorY = contentFrame.bottom() - indicatorSize.height - inset * 4;
         context.setViewFrame(
             pageIndicatorView_,
-            {{contentFrame.origin.x + (contentFrame.size.width - indicatorSize.width) / 2,
-              indicatorY},
-             {indicatorSize.width, indicatorSize.height}},
-            LayoutOptionsNone);
+            contentFrame.inset(0, inset * 2), // Double inset at the bottom
+            LayoutOptionsSizeToFit | LayoutOptionsAlignBottom | LayoutOptionsAlignCenterHorizontal);
         return size;
     }
 
