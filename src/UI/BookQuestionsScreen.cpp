@@ -43,7 +43,7 @@ auto BookQuestionsScreen::layout(LayoutContext &context, SolSize size) -> SolSiz
 
     // For all other states, position question view below back label
     auto questionRect = context.setViewFrame(
-        questionView_, contentFrame.inset(inset, backLabelRect.bottom() + inset * 4),
+        questionView_, contentFrame.inset(inset, inset, backLabelRect.bottom() + inset * 4, 0),
         LayoutOptionsSizeToFitVertical);
 
     // Handle CONTEXTS_LIST state
