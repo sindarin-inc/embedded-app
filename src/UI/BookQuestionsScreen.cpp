@@ -269,6 +269,8 @@ void BookQuestionsScreen::render(DisplaySystem &display) {
             log_w("RENDER: Drawing fast elements");
             menuView_.drawFastElements();
             display.updateDisplay(DisplaySystem::UpdateType::FAST_INDICATOR);
+        } else {
+            display.clearFrameBuffer();
         }
     }
 }
