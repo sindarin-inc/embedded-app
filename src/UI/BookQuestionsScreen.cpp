@@ -206,11 +206,6 @@ void BookQuestionsScreen::render(DisplaySystem &display) {
         rect = rect.inset(10, 10, 15, 0);
         renderer_.setRect(rect);
 
-        // Make sure total pages are computed before first render
-        if (precomputedTotalPages_ == 0) {
-            precomputeTotalPages();
-        }
-
         // Set the place based on the current page
         if (answerPlace_ == nullptr) {
             // First time rendering, create a new place at the beginning
@@ -235,9 +230,6 @@ void BookQuestionsScreen::render(DisplaySystem &display) {
         log_d("RENDER: Current offset=%" PRIu32 ", Current page=%zu/%zu", currentOffset,
               currentPage_, precomputedTotalPages_);
 
-        // Update page indicator with precomputed total and current page
-        pageIndicatorView_.setTotalPages(precomputedTotalPages_);
-        pageIndicatorView_.setCurrentPage(currentPage_);
         // Draw page indicator in answer state
         pageIndicatorView_.draw();
 
