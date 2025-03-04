@@ -144,7 +144,7 @@
         "editor.defaultFormatter": "redhat.vscode-yaml"
     },
     "search.exclude": {
-        "**/build/**": true,
+        "**/build*/**": true,
         "build": true,
         "build-clang": true,
     },

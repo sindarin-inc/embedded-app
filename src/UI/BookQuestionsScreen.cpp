@@ -61,43 +61,38 @@ auto BookQuestionsScreen::layout(LayoutContext &context, SolSize size) -> SolSiz
         return size;
     }
 
-    // Handle ANSWER state with error
-    if (state_ == State::ANSWER && !questionResponse_.success) {
-        // Center the error text vertically in the content area
-        context.setViewFrame(descriptionView_,
-                             // Make the description text narrower for better wrapping
-                             contentFrame.inset(contentFrame.size.width / 6),
-                             LayoutOptionsSizeToFitVertical | LayoutOptionsAlignCenterVertical |
-                                 LayoutOptionsAlignCenter);
-        return size;
-    }
-
-    // Handle ANSWER state with success
-    if (state_ == State::ANSWER) {
-        // Position page indicator at the bottom of the screen with some padding
-        context.setViewFrame(
-            pageIndicatorView_, contentFrame.inset(0, inset * 2), // Double inset at the bottom
-            LayoutOptionsSizeToFit | LayoutOptionsAlignBottom | LayoutOptionsAlignCenterHorizontal);
-        return size;
-    }
-
     // Handle LOADING state
     if (state_ == State::LOADING) {
-        auto questionRect = context.setViewFrame(questionView_, contentFrame,
-                                                 LayoutOptionsSizeToFit | LayoutOptionsAlignCenter |
-                                                     LayoutOptionsAlignCenterVertical);
-        context.setViewFrame(
-            descriptionView_,
-            // Make the description text narrower for better wrapping
-            contentFrame.inset(contentFrame.size.width / 6, questionRect.bottom() + inset * 4),
-            LayoutOptionsSizeToFitVertical | LayoutOptionsAlignCenter);
+        context.setViewFrame(questionView_, contentFrame,
+                             LayoutOptionsSizeToFit | LayoutOptionsAlignCenter |
+                                 LayoutOptionsAlignCenterVertical);
+        context.setViewFrame(descriptionView_,
+                             // Make the description text narrower for better wrapping
+                             contentFrame.inset(contentFrame.size.width / 6, 0),
+                             LayoutOptionsSizeToFitVertical | LayoutOptionsAlignCenter);
         return size;
     }
 
-    // Default case - just position description view below question
-    context.setViewFrame(descriptionView_,
-                         contentFrame.inset(inset, questionRect.bottom() + inset * 2),
-                         LayoutOptionsSizeToFitVertical);
+    // Handle ANSWER state
+    if (state_ == State::ANSWER) {
+        if (!questionResponse_.success) {
+            // Center the error text vertically in the content area
+            context.setViewFrame(descriptionView_,
+                                 // Make the description text narrower for better wrapping
+                                 contentFrame.inset(contentFrame.size.width / 6),
+                                 LayoutOptionsSizeToFitVertical | LayoutOptionsAlignCenterVertical |
+                                     LayoutOptionsAlignCenter);
+        } else {
+            // Position page indicator at the bottom of the screen with some padding
+            context.setViewFrame(pageIndicatorView_,
+                                 contentFrame.inset(0, inset * 2), // Double inset at the bottom
+                                 LayoutOptionsSizeToFit | LayoutOptionsAlignBottom |
+                                     LayoutOptionsAlignCenterHorizontal);
+        }
+
+        return size;
+    }
+
     return size;
 }
 
