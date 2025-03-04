@@ -11,6 +11,12 @@ auto convertToJson(const BookQuestionContext &src, JsonVariant dst) -> bool {
 }
 
 // NOLINTNEXTLINE(readability-identifier-naming) - ArduinoJson requires this name
+auto convertToJson(const BookQuestionModel &src, JsonVariant dst) -> bool {
+    dst["id"] = src.id;
+    return true;
+}
+
+// NOLINTNEXTLINE(readability-identifier-naming) - ArduinoJson requires this name
 auto convertToJson(const BookQuestion &src, JsonVariant dst) -> bool {
     dst["slug"] = src.slug;
     dst["question"] = src.question;
@@ -34,6 +40,14 @@ auto convertToJson(const BookQuestions &src, JsonVariant dst) -> bool {
     for (const auto &context : src.contexts) {
         JsonObject c = contexts.createNestedObject();
         convertToJson(context, c);
+    }
+    // Add models array
+    if (!src.models.empty()) {
+        JsonArray models = dst.createNestedArray("models");
+        for (const auto &model : src.models) {
+            JsonObject m = models.createNestedObject();
+            convertToJson(model, m);
+        }
     }
     return true;
 }

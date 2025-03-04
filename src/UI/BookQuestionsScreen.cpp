@@ -61,6 +61,21 @@ auto BookQuestionsScreen::layout(LayoutContext &context, SolSize size) -> SolSiz
         return size;
     }
 
+    // Handle MODEL_LIST state
+    if (state_ == State::MODEL_LIST) {
+        auto descRect = context.setViewFrame(
+            descriptionView_, contentFrame.inset(inset, questionRect.bottom() + inset * 2),
+            LayoutOptionsSizeToFitVertical);
+
+        auto headingRect = context.setViewFrame(
+            contextHeadingView_, contentFrame.inset(inset, descRect.bottom() + inset * 4),
+            LayoutOptionsSizeToFitVertical);
+
+        context.setViewFrame(menuView_, contentFrame.inset(inset, headingRect.bottom() + inset * 2),
+                             LayoutOptionsSizeToFitVertical);
+        return size;
+    }
+
     // Handle LOADING state
     if (state_ == State::LOADING) {
         context.setViewFrame(questionView_, contentFrame,
@@ -111,6 +126,7 @@ void BookQuestionsScreen::drawInRect(SolRect rect) {
         break;
 
     case State::CONTEXTS_LIST:
+    case State::MODEL_LIST:
         questionView_.draw();
         descriptionView_.draw();
         contextHeadingView_.draw();
@@ -250,7 +266,8 @@ void BookQuestionsScreen::render(DisplaySystem &display) {
         }
 
         // Only draw fast elements when in a state that shows the menu
-        if (state_ == State::QUESTIONS_LIST || state_ == State::CONTEXTS_LIST) {
+        if (state_ == State::QUESTIONS_LIST || state_ == State::CONTEXTS_LIST ||
+            state_ == State::MODEL_LIST) {
             log_w("RENDER: Drawing fast elements");
             menuView_.drawFastElements();
             display.updateDisplay(DisplaySystem::UpdateType::FAST_INDICATOR);
@@ -263,7 +280,8 @@ void BookQuestionsScreen::render(DisplaySystem &display) {
 void BookQuestionsScreen::processCommand(RemoteCommand command) {
     switch (command) {
     case RemoteCommand::UP:
-        if (state_ == State::QUESTIONS_LIST || state_ == State::CONTEXTS_LIST) {
+        if (state_ == State::QUESTIONS_LIST || state_ == State::CONTEXTS_LIST ||
+            state_ == State::MODEL_LIST) {
             moveSelection(-1);
         } else if (state_ == State::LOADING || state_ == State::ANSWER) {
             // Dismiss the dialog
@@ -271,7 +289,8 @@ void BookQuestionsScreen::processCommand(RemoteCommand command) {
         }
         break;
     case RemoteCommand::DOWN:
-        if (state_ == State::QUESTIONS_LIST || state_ == State::CONTEXTS_LIST) {
+        if (state_ == State::QUESTIONS_LIST || state_ == State::CONTEXTS_LIST ||
+            state_ == State::MODEL_LIST) {
             moveSelection(1);
         }
         break;
@@ -287,7 +306,23 @@ void BookQuestionsScreen::processCommand(RemoteCommand command) {
         } else if (state_ == State::CONTEXTS_LIST) {
             auto selectedIndex = menuView_.getSelectedIndex();
             if (selectedIndex < questions_.contexts.size()) {
-                executeQuestion(questions_.contexts[selectedIndex]);
+                selectedContextIndex_ = selectedIndex;
+                selectedContext_ = questions_.contexts[selectedIndex];
+
+                // If debug menu is enabled and we have models, go to model selection
+                if (prefs_.showDebugMenu.get().value_or(false) && !questions_.models.empty()) {
+                    setState(State::MODEL_LIST);
+                } else {
+                    // Otherwise, execute the question directly
+                    executeQuestion(questions_.contexts[selectedIndex]);
+                }
+            }
+        } else if (state_ == State::MODEL_LIST) {
+            auto selectedIndex = menuView_.getSelectedIndex();
+            if (selectedIndex < questions_.models.size()) {
+                selectedModelIndex_ = selectedIndex;
+                selectedModelId_ = questions_.models[selectedIndex].id;
+                executeQuestion(selectedContext_, std::string(selectedModelId_));
             }
         } else if (state_ == State::ANSWER) {
             // Page forward in answer
@@ -329,6 +364,10 @@ void BookQuestionsScreen::processCommand(RemoteCommand command) {
             setState(State::QUESTIONS_LIST);
             menuView_.setSelectedIndex(selectedQuestionIndex_);
             break;
+        case State::MODEL_LIST:
+            setState(State::CONTEXTS_LIST);
+            menuView_.setSelectedIndex(selectedContextIndex_);
+            break;
         case State::LOADING:
             // Special handling for LOADING state to ensure proper cleanup
             dismissDialog();
@@ -363,7 +402,13 @@ void BookQuestionsScreen::loadQuestions() {
 }
 
 void BookQuestionsScreen::executeQuestion(const BookQuestionContext &context) {
-    log_d("Executing question, context=%s", context.contextType.c_str());
+    // Call the overloaded method with an empty model string
+    executeQuestion(context, "");
+}
+
+void BookQuestionsScreen::executeQuestion(const BookQuestionContext &context,
+                                          const std::string &modelId) {
+    log_d("Executing question, context=%s, model=%s", context.contextType.c_str(), modelId.c_str());
 
     // Clear any previous state
     display_.clearDisplay();
@@ -393,8 +438,8 @@ void BookQuestionsScreen::executeQuestion(const BookQuestionContext &context) {
         return;
     }
 
-    log_d("Executing question: slug=%s, context=%s", selectedQuestion_.slug.c_str(),
-          context.contextType.c_str());
+    log_d("Executing question: slug=%s, context=%s, model=%s", selectedQuestion_.slug.c_str(),
+          context.contextType.c_str(), modelId.c_str());
     log_d("Book UUID: %s", readable_->uuid.c_str());
     log_d("Chapter: %s, Offset: %" PRIu32, placeInReadable_->getHRef().c_str(),
           placeInReadable_->getOffset());
@@ -405,6 +450,7 @@ void BookQuestionsScreen::executeQuestion(const BookQuestionContext &context) {
                               {"action", std::string("execute-question")},
                               {"question_slug", selectedQuestion_.slug},
                               {"context_type", context.contextType},
+                              {"model", modelId},
                               {"book_uuid", readable_->shortenedUuid},
                               {"chapter", placeInReadable_->getHRef()},
                               {"chapter_offset", placeInReadable_->getOffset()}});
@@ -415,7 +461,7 @@ void BookQuestionsScreen::executeQuestion(const BookQuestionContext &context) {
     request.bookUuid = readable_->uuid;
     request.chapter = placeInReadable_->getHRef();
     request.chapterOffset = placeInReadable_->getOffset();
-
+    request.model = modelId;
     auto resp = std::make_shared<BookQuestionResponse>();
 
     // Dispatch the API call to a background task
@@ -518,9 +564,10 @@ void BookQuestionsScreen::executeQuestion(const BookQuestionContext &context) {
         });
 
         // Execute API call in background
-        log_i("Executing API request: question=%s, context=%s, book=%s, chapter=%s, offset=%zu",
-              request.questionSlug.c_str(), request.contextType.c_str(), request.bookUuid.c_str(),
-              request.chapter.c_str(), request.chapterOffset);
+        log_i("Executing API request: question=%s, context=%s, model=%s, book=%s, chapter=%s, "
+              "offset=%zu",
+              request.questionSlug.c_str(), request.contextType.c_str(), request.model.c_str(),
+              request.bookUuid.c_str(), request.chapter.c_str(), request.chapterOffset);
 
         // Check if already dismissed before making API call
         if (dismissed_) {
@@ -634,6 +681,16 @@ void BookQuestionsScreen::updateUIForState() {
                 menuView_.addMenuItem(
                     std::make_shared<MenuItemSingleLine>(std::string(context.name), []() {}));
             }
+        }
+        break;
+
+    case State::MODEL_LIST:
+        questionView_.setText(std::string(selectedQuestion_.question));
+        descriptionView_.setText(std::string(selectedContext_.description));
+        contextHeadingView_.setText("Select a model to use:");
+        for (const auto &model : questions_.models) {
+            menuView_.addMenuItem(
+                std::make_shared<MenuItemSingleLine>(std::string(model.id), []() {}));
         }
         break;
 
@@ -783,6 +840,10 @@ void BookQuestionsScreen::reset() {
     precomputedTotalPages_ = 0;
     pageBreakOffsets_.clear();
     pageNumbers_.clear();
+
+    // Reset selected model
+    selectedModelId_ = "";
+    selectedModelIndex_ = 0;
 
     // Reset dismissed flag
     dismissed_ = false;

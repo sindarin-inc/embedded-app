@@ -14,6 +14,7 @@ public:
     SpiramString contextType;
     SpiramString bookUuid;
     SpiramString chapter;
+    SpiramString model;
     size_t chapterOffset{0};
 
     auto fromJson(const JsonObject &j) -> bool override {
@@ -26,6 +27,9 @@ public:
         j["book_uuid"] = bookUuid;
         j["chapter"] = chapter;
         j["chapter_offset"] = chapterOffset;
+        if (!model.empty()) {
+            j["model"] = model;
+        }
         return true;
     }
 };

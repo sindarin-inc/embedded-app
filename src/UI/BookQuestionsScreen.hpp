@@ -21,7 +21,7 @@
 
 class BookQuestionsScreen : public Screen, public EinkView {
 public:
-    enum class State { QUESTIONS_LIST, CONTEXTS_LIST, LOADING, ANSWER };
+    enum class State { QUESTIONS_LIST, CONTEXTS_LIST, MODEL_LIST, LOADING, ANSWER };
 
     BookQuestionsScreen(PreferencesStore &prefs, FileSystem &fileSystem,
                         const std::shared_ptr<Readable> &readable, Renderer &renderer,
@@ -74,9 +74,13 @@ protected:
     BookQuestion selectedQuestion_;
     BookQuestionResponse questionResponse_;
     std::shared_ptr<EPubPlace> placeInReadable_;
+    SpiramString selectedModelId_;
+    BookQuestionContext selectedContext_;
 
     bool needsMenuItemsLoad_{true};
     size_t selectedQuestionIndex_{0};
+    size_t selectedContextIndex_{0};
+    size_t selectedModelIndex_{0};
     State state_{State::QUESTIONS_LIST};
     std::shared_ptr<CancelFlag> cancelFlag_;
     bool dismissed_{false};
@@ -92,6 +96,7 @@ protected:
     void moveSelection(int delta);
     void executeQuestion();
     void executeQuestion(const BookQuestionContext &context);
+    void executeQuestion(const BookQuestionContext &context, const std::string &modelId);
     void setState(State newState);
     void updateUIForState();
     void updateBackLabel();

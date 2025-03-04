@@ -27,6 +27,22 @@ public:
     }
 };
 
+class BookQuestionModel : public JsonSerializable {
+public:
+    BookQuestionModel() = default;
+    ~BookQuestionModel() override = default;
+
+    SpiramString id;
+
+    auto fromJson(const JsonObject &j) -> bool override {
+        if (!j.containsKey("id")) {
+            return false;
+        }
+        id = j["id"].as<std::string>();
+        return true;
+    }
+};
+
 class BookQuestion : public JsonSerializable {
 public:
     BookQuestion() = default;
@@ -62,6 +78,7 @@ public:
 
     std::vector<BookQuestion> questions;
     std::vector<BookQuestionContext> contexts;
+    std::vector<BookQuestionModel> models;
     int version{1};
 
     auto fromJson(const JsonObject &j) -> bool override {
@@ -90,6 +107,18 @@ public:
             }
         }
 
+        // Parse models array if it exists
+        models.clear();
+        if (j.containsKey("models")) {
+            JsonArray modelsArray = j["models"].as<JsonArray>();
+            for (JsonObject modelObj : modelsArray) {
+                BookQuestionModel model;
+                if (model.fromJson(modelObj)) {
+                    models.push_back(model);
+                }
+            }
+        }
+
         return true;
     }
 
@@ -98,6 +127,9 @@ public:
 
 // NOLINTNEXTLINE(readability-identifier-naming) - ArduinoJson requires this name
 auto convertToJson(const BookQuestionContext &src, JsonVariant dst) -> bool;
+
+// NOLINTNEXTLINE(readability-identifier-naming) - ArduinoJson requires this name
+auto convertToJson(const BookQuestionModel &src, JsonVariant dst) -> bool;
 
 // NOLINTNEXTLINE(readability-identifier-naming) - ArduinoJson requires this name
 auto convertToJson(const BookQuestion &src, JsonVariant dst) -> bool;
