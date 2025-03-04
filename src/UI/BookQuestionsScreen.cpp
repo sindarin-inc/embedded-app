@@ -241,6 +241,9 @@ void BookQuestionsScreen::render(DisplaySystem &display) {
         log_d("RENDER: Current offset=%" PRIu32 ", Current page=%zu/%zu", currentOffset,
               currentPage_, precomputedTotalPages_);
 
+        // Update page indicator with precomputed total and current page
+        pageIndicatorView_.setTotalPages(precomputedTotalPages_);
+        pageIndicatorView_.setCurrentPage(currentPage_);
         // Draw page indicator in answer state
         pageIndicatorView_.draw();
 
@@ -475,7 +478,7 @@ void BookQuestionsScreen::executeQuestion(const BookQuestionContext &context,
 
         if (!prefs_.wifiDisabled.get().value_or(false)) {
             log_i("Attempting WiFi connection...");
-            if (!WiFi::getInstance().connectWiFiFromSettings()) {
+            if (WiFi::getInstance().connectWiFiFromSettings() != ESP_OK) {
                 log_w("WiFi connection failed, logging metric");
                 telemetry_.logMetric(TelemetryField::METRIC_WIFI, "book-questions-wifi-failed");
                 wifiConnected = false;
@@ -492,6 +495,11 @@ void BookQuestionsScreen::executeQuestion(const BookQuestionContext &context,
         // If WiFi failed, try BLE if available
         if (!wifiConnected && !prefs_.bleDisabled.get().value_or(false)) {
             log_i("Attempting BLE connection...");
+
+            // Disconnect WiFi if we're using BLE
+            log_i("Disconnecting WiFi since BLE is connecting");
+            WiFi::getInstance().disconnectWiFi(3000);
+
             DispatchGetUiQueue()->dispatch(
                 [this]() { setLoadingMessage("Connecting via Bluetooth..."); });
 
@@ -502,9 +510,6 @@ void BookQuestionsScreen::executeQuestion(const BookQuestionContext &context,
                 log_i("BLE successfully connected");
                 telemetry_.logMetric(TelemetryField::METRIC_WIFI, "book-questions-ble-connected");
                 bleConnected = true;
-                // Disconnect WiFi if we're using BLE
-                log_i("Disconnecting WiFi since BLE is connected");
-                WiFi::getInstance().disconnectWiFi(3000);
             }
         }
 #endif
@@ -834,7 +839,14 @@ void BookQuestionsScreen::reset() {
     log_d("Resetting BookQuestionsScreen");
 
     // Reset question response and pagination state
-    questionResponse_ = BookQuestionResponse();
+    // Clear the answer string to free memory
+    questionResponse_.answer.clear();
+    questionResponse_.error.clear();
+    questionResponse_.success = false;
+    questionResponse_.tokensUsed = 0;
+    questionResponse_.cost = 0.0f;
+
+    // Reset pagination state
     currentPage_ = 0;
     answerPlace_ = std::dynamic_pointer_cast<TxtPlace>(Place::factory(0));
     precomputedTotalPages_ = 0;
@@ -842,7 +854,7 @@ void BookQuestionsScreen::reset() {
     pageNumbers_.clear();
 
     // Reset selected model
-    selectedModelId_ = "";
+    selectedModelId_.clear();
     selectedModelIndex_ = 0;
 
     // Reset dismissed flag

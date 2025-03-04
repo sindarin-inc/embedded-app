@@ -1,7 +1,7 @@
 #pragma once
 
 #ifndef DEBUG_MEMORY
-#define DEBUG_MEMORY 1
+#define DEBUG_MEMORY 0
 #endif
 
 #if SIMULATOR

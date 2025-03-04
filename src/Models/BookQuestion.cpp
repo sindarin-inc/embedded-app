@@ -54,7 +54,7 @@ auto convertToJson(const BookQuestions &src, JsonVariant dst) -> bool {
 
 auto BookQuestions::loadFromJson(const std::string &jsonStr) -> BookQuestions {
     size_t contentLength = jsonStr.length();
-    DynamicJsonDocument doc(contentLength * 2);
+    DynamicJsonDocument doc(contentLength * 1.1);
     deserializeJson(doc, jsonStr);
     BookQuestions questions;
     questions.fromJson(doc.as<JsonObject>());
