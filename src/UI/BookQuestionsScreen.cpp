@@ -308,25 +308,31 @@ void BookQuestionsScreen::processCommand(RemoteCommand command) {
             }
         } else if (state_ == State::CONTEXTS_LIST) {
             auto selectedIndex = menuView_.getSelectedIndex();
-            if (selectedIndex < questions_.contexts.size()) {
-                selectedContextIndex_ = selectedIndex;
-                selectedContext_ = questions_.contexts[selectedIndex];
+            if (selectedIndex >= questions_.contexts.size()) {
+                log_d("Invalid context index: %zu", selectedIndex);
+                return;
+            }
+            selectedContextIndex_ = selectedIndex;
+            selectedContext_ = questions_.contexts[selectedIndex];
 
-                // If debug menu is enabled and we have models, go to model selection
-                if (prefs_.showDebugMenu.get().value_or(false) && !questions_.models.empty()) {
-                    setState(State::MODEL_LIST);
-                } else {
-                    // Otherwise, execute the question directly
-                    executeQuestion(questions_.contexts[selectedIndex]);
-                }
+            // If debug menu is enabled and we have models, go to model selection
+            if (prefs_.showDebugMenu.get().value_or(false) && !questions_.models.empty()) {
+                setState(State::MODEL_LIST);
+            } else {
+                log_d("Not showing model list (debug: %d, models: %zu)",
+                      prefs_.showDebugMenu.get().value_or(false), questions_.models.size());
+                // Otherwise, execute the question directly
+                executeQuestion(questions_.contexts[selectedIndex]);
             }
         } else if (state_ == State::MODEL_LIST) {
             auto selectedIndex = menuView_.getSelectedIndex();
-            if (selectedIndex < questions_.models.size()) {
-                selectedModelIndex_ = selectedIndex;
-                selectedModelId_ = questions_.models[selectedIndex].id;
-                executeQuestion(selectedContext_, std::string(selectedModelId_));
+            if (selectedIndex >= questions_.models.size()) {
+                log_d("Invalid model index: %zu", selectedIndex);
+                return;
             }
+            selectedModelIndex_ = selectedIndex;
+            selectedModelId_ = questions_.models[selectedIndex].id;
+            executeQuestion(selectedContext_, std::string(selectedModelId_));
         } else if (state_ == State::ANSWER) {
             // Page forward in answer
             log_d("NAVIGATION: Paging forward in answer");
