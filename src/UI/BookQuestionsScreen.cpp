@@ -478,7 +478,8 @@ void BookQuestionsScreen::executeQuestion(const BookQuestionContext &context,
 
         if (!prefs_.wifiDisabled.get().value_or(false)) {
             log_i("Attempting WiFi connection...");
-            if (WiFi::getInstance().connectWiFiFromSettings() != ESP_OK) {
+            auto connected = WiFi::getInstance().connectWiFiFromSettings();
+            if (connected != ESP_OK && connected != true) {
                 log_w("WiFi connection failed, logging metric");
                 telemetry_.logMetric(TelemetryField::METRIC_WIFI, "book-questions-wifi-failed");
                 wifiConnected = false;
