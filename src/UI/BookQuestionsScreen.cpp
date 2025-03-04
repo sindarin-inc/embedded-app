@@ -81,8 +81,7 @@ auto BookQuestionsScreen::layout(LayoutContext &context, SolSize size) -> SolSiz
     if (state_ == State::ANSWER) {
         // Position page indicator at the bottom of the screen with some padding
         context.setViewFrame(
-            pageIndicatorView_,
-            contentFrame.inset(0, inset * 2), // Double inset at the bottom
+            pageIndicatorView_, contentFrame.inset(0, inset * 2), // Double inset at the bottom
             LayoutOptionsSizeToFit | LayoutOptionsAlignBottom | LayoutOptionsAlignCenterHorizontal);
         return size;
     }
@@ -779,7 +778,6 @@ void BookQuestionsScreen::setLoadingMessage(const std::string &message) {
 
     // Make sure we don't lose the renderer stream when updating the loading message
     auto savedStream = rendererStream_;
-
 
     // Restore the saved stream if it was replaced during render
     if (savedStream != nullptr && rendererStream_ == nullptr) {
