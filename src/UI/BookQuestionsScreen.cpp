@@ -2,6 +2,8 @@
 
 #include <cinttypes>
 
+#include "UI/Bitmaps/DefaultBookQuestions.hpp"
+
 #if CONFIG_USE_BLE_SERVER_PROXY
 #include "Communications/BLEManager.hpp"
 #endif
@@ -392,12 +394,12 @@ void BookQuestionsScreen::loadQuestions() {
     // Load and parse questions JSON
     SFile questionsFile = fileSystem_.open("/book_questions.json", FILE_READ);
     if (!questionsFile) {
-        log_w("Book questions file not found, sync required");
-        // Don't create default questions, leave the questions list empty
-        // This will be handled in updateUIForState
+        log_w("Book questions file not found, using default compiled version");
+        // Use the default compiled-in book questions JSON
+        questions_ = BookQuestions::loadFromJson(DEFAULT_BOOK_QUESTIONS_JSON);
         telemetry_.logMetricData(
             TelemetryField::METRIC_DIALOG,
-            {{"dialog", std::string("book-questions")}, {"action", std::string("file-not-found")}});
+            {{"dialog", std::string("book-questions")}, {"action", std::string("using-default")}});
         return;
     }
 
@@ -408,6 +410,10 @@ void BookQuestionsScreen::loadQuestions() {
     questionsFile.close();
 
     questions_ = BookQuestions::loadFromJson(jsonStr);
+    log_d("Loaded book questions from file: bytes: %zu, version: %d, number of questions: %zu, "
+          "number of contexts: %zu, number of models: %zu",
+          jsonStr.length(), questions_.version, questions_.questions.size(),
+          questions_.contexts.size(), questions_.models.size());
 }
 
 void BookQuestionsScreen::executeQuestion(const BookQuestionContext &context) {
@@ -710,10 +716,10 @@ void BookQuestionsScreen::updateUIForState() {
     case State::QUESTIONS_LIST:
         if (questions_.questions.empty()) {
             loadQuestions();
+            // With our default questions implementation, this should never happen
+            // but keeping as a safeguard
             if (questions_.questions.empty()) {
-                // If we still have no questions after loading, show a centered message without a
-                // menu
-                log_w("No book questions available, sync required");
+                log_e("Failed to load default book questions");
                 // Set state to LOADING to use the centered message layout
                 state_ = State::LOADING;
                 // Use all caps for the title to make it more prominent
@@ -773,7 +779,7 @@ void BookQuestionsScreen::updateUIForState() {
 
 void BookQuestionsScreen::updateBackLabel() {
     if (state_ == State::LOADING || state_ == State::ANSWER) {
-        // For the sync message screen (when questions are empty), use "Back" instead of "Dismiss"
+        // For error screens, use "Back" instead of "Dismiss"
         if (state_ == State::LOADING && questions_.questions.empty()) {
             backLabelView_.setText("Back");
             backLabelView_.setArrowDirection(ArrowLeft);
