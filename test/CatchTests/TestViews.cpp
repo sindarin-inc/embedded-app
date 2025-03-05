@@ -226,8 +226,9 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
         // Open the dictionary
         SendRemoteCommand(ENTER);
         WAIT_FOR_DRAW(display);
-        ASSERT_VIEW_UNCHANGED(display, "AskAIMissing");
+        ASSERT_VIEW_UNCHANGED(display, "AskAIDefault");
         SendRemoteCommand(LEFT);
+        WAIT_FOR_DRAW(display);
         WAIT_FOR_DRAW(display);
         ASSERT_VIEW_UNCHANGED(display, "Dawn1");
 
