@@ -471,161 +471,208 @@ void BookQuestionsScreen::executeQuestion(const BookQuestionContext &context,
     request.chapter = placeInReadable_->getHRef();
     request.chapterOffset = placeInReadable_->getOffset();
     request.model = modelId;
-    auto resp = std::make_shared<BookQuestionResponse>();
 
     // Dispatch the API call to a background task
-    DispatchGetCore0BackgroundQueue()->dispatch([this, request, resp]() {
-        log_i("Starting background task for question request");
-        // First try WiFi connection
-        bool wifiConnected = false;
-        bool bleConnected = false;
+    DispatchGetCore0BackgroundQueue()->dispatch(
+        [this, request]() { sendQuestionRequest(request, false); });
+}
 
-        SindarinAPI::getInstance()->setAccessToken(prefs_.cloudToken.get().value());
+bool BookQuestionsScreen::connectToNetwork(bool useBleOnly, std::string &errorMessage) {
+    bool wifiConnected = false;
+    bool bleConnected = false;
 
-        if (!prefs_.wifiDisabled.get().value_or(false)) {
-            log_i("Attempting WiFi connection...");
-            auto connected = WiFi::getInstance().connectWiFiFromSettings();
-            if (connected != ESP_OK && connected != true) {
-                log_w("WiFi connection failed, logging metric");
-                telemetry_.logMetric(TelemetryField::METRIC_WIFI, "book-questions-wifi-failed");
-                wifiConnected = false;
-            } else {
-                log_i("WiFi connection successful");
-                telemetry_.logMetric(TelemetryField::METRIC_WIFI, "book-questions-wifi-connected");
-                wifiConnected = true;
-            }
+    SindarinAPI::getInstance()->setAccessToken(prefs_.cloudToken.get().value());
+
+    // Try WiFi connection if not in BLE-only mode
+    if (!useBleOnly && !prefs_.wifiDisabled.get().value_or(false)) {
+        log_i("Attempting WiFi connection...");
+        auto connected = WiFi::getInstance().connectWiFiFromSettings();
+        if (connected != ESP_OK && connected != true) {
+            log_w("WiFi connection failed, logging metric");
+            telemetry_.logMetric(TelemetryField::METRIC_WIFI, "book-questions-wifi-failed");
+            wifiConnected = false;
         } else {
-            log_i("WiFi is disabled in preferences, skipping WiFi connection");
+            log_i("WiFi connection successful");
+            telemetry_.logMetric(TelemetryField::METRIC_WIFI, "book-questions-wifi-connected");
+            wifiConnected = true;
         }
+    } else if (useBleOnly) {
+        log_i("BLE-only mode, skipping WiFi connection");
+    } else {
+        log_i("WiFi is disabled in preferences, skipping WiFi connection");
+    }
 
 #if CONFIG_USE_BLE_SERVER_PROXY
-        // If WiFi failed, try BLE if available
-        if (!wifiConnected && !prefs_.bleDisabled.get().value_or(false)) {
-            log_i("Attempting BLE connection...");
+    // Try BLE if WiFi failed or in BLE-only mode
+    if ((!wifiConnected || useBleOnly) && !prefs_.bleDisabled.get().value_or(false)) {
+        log_i("Attempting BLE connection...");
 
-            // Disconnect WiFi if we're using BLE
+        // Disconnect WiFi if we're using BLE
+        if (WiFi::getInstance().connected()) {
             log_i("Disconnecting WiFi since BLE is connecting");
             WiFi::getInstance().disconnectWiFi(3000);
-
-            DispatchGetUiQueue()->dispatch(
-                [this]() { setLoadingMessage("Connecting via Bluetooth..."); });
-
-            if (!BLEManager::getInstance()->connectProxy(cancelFlag_)) {
-                log_w("BLE connection failed");
-                telemetry_.logMetric(TelemetryField::METRIC_WIFI, "book-questions-ble-failed");
-            } else {
-                log_i("BLE successfully connected");
-                telemetry_.logMetric(TelemetryField::METRIC_WIFI, "book-questions-ble-connected");
-                bleConnected = true;
-            }
         }
+
+        DispatchGetUiQueue()->dispatch([this]() {
+            if (!dismissed_) {
+                setLoadingMessage("Connecting via Bluetooth...");
+            }
+        });
+
+        if (!BLEManager::getInstance()->connectProxy(cancelFlag_)) {
+            log_w("BLE connection failed");
+            telemetry_.logMetric(TelemetryField::METRIC_WIFI, "book-questions-ble-failed");
+        } else {
+            log_i("BLE successfully connected");
+            telemetry_.logMetric(TelemetryField::METRIC_WIFI, "book-questions-ble-connected");
+            bleConnected = true;
+        }
+    }
 #endif
 
-        if (!wifiConnected && !bleConnected) {
-            log_w("Failed to establish any network connection");
-            std::string errorMessage;
-            if (prefs_.wifiDisabled.get().value_or(false)) {
-                errorMessage =
-                    "WiFi is disabled in settings. Please enable WiFi to use this feature.";
-                telemetry_.logMetricData(TelemetryField::METRIC_DIALOG,
-                                         {{"dialog", std::string("book-questions")},
-                                          {"action", std::string("book-questions-failed")},
-                                          {"reason", std::string("wifi-disabled")}});
-            } else if (prefs_.bleDisabled.get().value_or(false)) {
-                errorMessage = "Both WiFi and Bluetooth are disabled. Please enable one of them to "
-                               "use this feature.";
-                telemetry_.logMetricData(TelemetryField::METRIC_DIALOG,
-                                         {{"dialog", std::string("book-questions")},
-                                          {"action", std::string("book-questions-failed")},
-                                          {"reason", std::string("ble-disabled")}});
-            } else {
-                errorMessage =
-                    "Could not connect to WiFi. Please check your WiFi settings and try again.";
-                telemetry_.logMetricData(TelemetryField::METRIC_DIALOG,
-                                         {{"dialog", std::string("book-questions")},
-                                          {"action", std::string("book-questions-failed")},
-                                          {"reason", std::string("wifi-connection-failed")}});
-            }
-            DispatchGetUiQueue()->dispatch([this, errorMessage]() {
-                // Check if screen has been dismissed before updating UI
-                if (dismissed_) {
-                    log_i("Screen was dismissed, ignoring error message");
-                    return;
-                }
-
-                questionResponse_.success = false;
-                questionResponse_.error = errorMessage;
-                log_e("Question request failed: error='%s'", errorMessage.c_str());
-                setState(State::ANSWER);
-                setNeedsRerender();
-            });
-            return;
+    if (!wifiConnected && !bleConnected) {
+        log_w("Failed to establish any network connection");
+        if (prefs_.wifiDisabled.get().value_or(false)) {
+            errorMessage = "WiFi is disabled in settings. Please enable WiFi to use this feature.";
+            telemetry_.logMetricData(TelemetryField::METRIC_DIALOG,
+                                     {{"dialog", std::string("book-questions")},
+                                      {"action", std::string("book-questions-failed")},
+                                      {"reason", std::string("wifi-disabled")}});
+        } else if (prefs_.bleDisabled.get().value_or(false)) {
+            errorMessage = "Both WiFi and Bluetooth are disabled. Please enable one of them to "
+                           "use this feature.";
+            telemetry_.logMetricData(TelemetryField::METRIC_DIALOG,
+                                     {{"dialog", std::string("book-questions")},
+                                      {"action", std::string("book-questions-failed")},
+                                      {"reason", std::string("ble-disabled")}});
+        } else {
+            errorMessage =
+                "Could not connect to WiFi. Please check your WiFi settings and try again.";
+            telemetry_.logMetricData(TelemetryField::METRIC_DIALOG,
+                                     {{"dialog", std::string("book-questions")},
+                                      {"action", std::string("book-questions-failed")},
+                                      {"reason", std::string("wifi-connection-failed")}});
         }
+        return false;
+    }
 
-        // Update UI to show we're waiting for the answer
-        log_i("Network connected, sending question request to API");
-        DispatchGetUiQueue()->dispatch([this]() {
+    return true;
+}
+
+void BookQuestionsScreen::sendQuestionRequest(const BookQuestionRequest &request, bool useBleOnly) {
+    // Check if screen has been dismissed before proceeding
+    if (dismissed_) {
+        log_i("Screen was dismissed, skipping question request");
+        return;
+    }
+
+    std::string errorMessage;
+    bool connected = connectToNetwork(useBleOnly, errorMessage);
+
+    if (!connected) {
+        DispatchGetUiQueue()->dispatch([this, errorMessage]() {
             // Check if screen has been dismissed before updating UI
             if (dismissed_) {
-                log_i("Screen was dismissed, ignoring loading message update");
+                log_i("Screen was dismissed, ignoring error message");
                 return;
             }
 
-            setLoadingMessage("Waiting for answer...");
-            render(display_);
+            questionResponse_.success = false;
+            questionResponse_.error = errorMessage;
+            log_e("Question request failed: error='%s'", errorMessage.c_str());
+            setState(State::ANSWER);
+            setNeedsRerender();
         });
+        return;
+    }
 
-        // Execute API call in background
-        log_i("Executing API request: question=%s, context=%s, model=%s, book=%s, chapter=%s, "
-              "offset=%zu",
-              request.questionSlug.c_str(), request.contextType.c_str(), request.model.c_str(),
-              request.bookUuid.c_str(), request.chapter.c_str(), request.chapterOffset);
-
-        // Check if already dismissed before making API call
+    // Update UI to show we're waiting for the answer
+    log_i("Network connected, sending question request to API");
+    DispatchGetUiQueue()->dispatch([this]() {
+        // Check if screen has been dismissed before updating UI
         if (dismissed_) {
-            log_i("Screen was dismissed, skipping API request");
+            log_i("Screen was dismissed, ignoring loading message update");
             return;
         }
 
-        int result =
-            SindarinAPI::getInstance()->askQuestion(request, resp.get(), bleConnected, cancelFlag_);
+        setLoadingMessage("Waiting for answer...");
+        render(display_);
+    });
 
-        // Dispatch UI updates back to main thread
-        log_i("API request completed with result=%d, success=%d", result, resp->success);
+    // Execute API call in background
+    log_i("Executing API request: question=%s, context=%s, model=%s, book=%s, chapter=%s, "
+          "offset=%zu",
+          request.questionSlug.c_str(), request.contextType.c_str(), request.model.c_str(),
+          request.bookUuid.c_str(), request.chapter.c_str(), request.chapterOffset);
 
-        DispatchGetUiQueue()->dispatch([this, result, resp]() {
-            // Check if screen has been dismissed before updating UI
-            if (dismissed_) {
-                log_i("Screen was dismissed, ignoring API response");
+    // Check if already dismissed before making API call
+    if (dismissed_) {
+        log_i("Screen was dismissed, skipping API request");
+        return;
+    }
+
+    auto resp = std::make_shared<BookQuestionResponse>();
+
+    // Determine if we're using BLE based on connection state
+    bool usingBle = false;
+#if CONFIG_USE_BLE_SERVER_PROXY
+    auto bleManager = BLEManager::getInstance(false);
+    usingBle = (bleManager != nullptr && bleManager->connectedProxy);
+#endif
+
+    int result =
+        SindarinAPI::getInstance()->askQuestion(request, resp.get(), usingBle, cancelFlag_);
+
+    // Dispatch UI updates back to main thread
+    log_i("API request completed with result=%d, success=%d", result, resp->success);
+
+    DispatchGetUiQueue()->dispatch([this, result, resp, request, useBleOnly]() {
+        // Check if screen has been dismissed before updating UI
+        if (dismissed_) {
+            log_i("Screen was dismissed, ignoring API response");
+            return;
+        }
+
+        log_d("Processing API response: result=%d, success=%d", result, resp->success);
+
+        if (result == 200 && resp->success) {
+            log_i("Question request successful, answer length: %zu", resp->answer.length());
+            telemetry_.logMetricData(TelemetryField::METRIC_DIALOG,
+                                     {{"dialog", std::string("book-questions")},
+                                      {"action", std::string("question-success")},
+                                      {"answer_length", static_cast<int>(resp->answer.length())}});
+
+            questionResponse_ = *resp;
+            setState(State::ANSWER);
+        } else {
+            log_e("Question request failed: result=%d, success=%d, error='%s'", result,
+                  resp->success, resp->error.c_str());
+
+            // If WiFi failed and we haven't tried BLE-only yet, retry with BLE
+            if (!useBleOnly && !resp->success) {
+                log_i("Retrying with BLE-only connection");
+                telemetry_.logMetricData(TelemetryField::METRIC_DIALOG,
+                                         {{"dialog", std::string("book-questions")},
+                                          {"action", std::string("retry-with-ble")}});
+
+                setLoadingMessage("Retrying with Bluetooth...");
+
+                // Dispatch to background queue to retry with BLE-only
+                DispatchGetCore0BackgroundQueue()->dispatch(
+                    [this, request]() { sendQuestionRequest(request, true); });
                 return;
             }
 
-            log_d("Processing API response: result=%d, success=%d", result, resp->success);
+            telemetry_.logMetricData(TelemetryField::METRIC_DIALOG,
+                                     {{"dialog", std::string("book-questions")},
+                                      {"action", std::string("question-failed")},
+                                      {"error", resp->error}});
 
-            if (result == 200 && resp->success) {
-                log_i("Question request successful, answer length: %zu", resp->answer.length());
-                telemetry_.logMetricData(
-                    TelemetryField::METRIC_DIALOG,
-                    {{"dialog", std::string("book-questions")},
-                     {"action", std::string("question-success")},
-                     {"answer_length", static_cast<int>(resp->answer.length())}});
-
-                questionResponse_ = *resp;
-                setState(State::ANSWER);
-            } else {
-                log_e("Question request failed: result=%d, success=%d, error='%s'", result,
-                      resp->success, resp->error.c_str());
-                telemetry_.logMetricData(TelemetryField::METRIC_DIALOG,
-                                         {{"dialog", std::string("book-questions")},
-                                          {"action", std::string("question-failed")},
-                                          {"error", resp->error}});
-
-                questionResponse_.success = false;
-                questionResponse_.error =
-                    resp->error.empty() ? "Failed to get answer from server" : resp->error;
-                setState(State::ANSWER);
-            }
-        });
+            questionResponse_.success = false;
+            questionResponse_.error =
+                resp->error.empty() ? "Failed to get answer from server" : resp->error;
+            setState(State::ANSWER);
+        }
     });
 }
 
