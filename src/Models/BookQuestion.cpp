@@ -1,6 +1,6 @@
 #include "BookQuestion.hpp"
 
-#include <ArduinoJson.h>
+#include "Models/Json.hpp"
 
 // NOLINTNEXTLINE(readability-identifier-naming) - ArduinoJson requires this name
 auto convertToJson(const BookQuestionContext &src, JsonVariant dst) -> bool {
@@ -54,7 +54,7 @@ auto convertToJson(const BookQuestions &src, JsonVariant dst) -> bool {
 
 auto BookQuestions::loadFromJson(const std::string &jsonStr) -> BookQuestions {
     size_t contentLength = jsonStr.length();
-    DynamicJsonDocument doc(contentLength * 2);
+    SpiRamJsonDocument doc(contentLength * 2);
     deserializeJson(doc, jsonStr);
     BookQuestions questions;
     questions.fromJson(doc.as<JsonObject>());
