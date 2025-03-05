@@ -726,6 +726,11 @@ void BookQuestionsScreen::updateUIForState() {
                 descriptionView_.setText("Go to Settings > Content > Sync to load questions.");
                 // Update back label to show "Back" instead of "Dismiss"
                 updateBackLabel();
+
+                telemetry_.logMetricData(
+                    TelemetryField::METRIC_DIALOG,
+                    {{"dialog", std::string("book-questions")},
+                     {"action", std::string("failed-load-default-questions")}});
                 return;
             }
         }
