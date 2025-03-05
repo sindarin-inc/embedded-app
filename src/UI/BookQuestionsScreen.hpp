@@ -97,7 +97,7 @@ protected:
     void executeQuestion();
     void executeQuestion(const BookQuestionContext &context);
     void executeQuestion(const BookQuestionContext &context, const std::string &modelId);
-    bool connectToNetwork(bool useBleOnly, std::string &errorMessage);
+    auto connectToNetwork(bool useBleOnly, std::string &errorMessage) -> bool;
     void sendQuestionRequest(const BookQuestionRequest &request, bool useBleOnly);
     void setState(State newState);
     void updateUIForState();

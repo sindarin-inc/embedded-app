@@ -477,7 +477,7 @@ void BookQuestionsScreen::executeQuestion(const BookQuestionContext &context,
         [this, request]() { sendQuestionRequest(request, false); });
 }
 
-bool BookQuestionsScreen::connectToNetwork(bool useBleOnly, std::string &errorMessage) {
+auto BookQuestionsScreen::connectToNetwork(bool useBleOnly, std::string &errorMessage) -> bool {
     bool wifiConnected = false;
     bool bleConnected = false;
 
