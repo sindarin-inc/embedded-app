@@ -275,6 +275,65 @@ static const seeya049_lcd_init_cmd_t vendor_specific_init_default[] = {
     // {.cmd = 0xC0, .data = (uint8_t[]){0xFF}, .data_bytes = 1, .delay_ms = 0},
 };
 
+static const seeya049_lcd_init_cmd_t vendor_specific_init_selftest[] = {
+    // CMD1
+    {.cmd = SEEYA049_CMD_WRCTRLD, .data = (uint8_t[]){0x29}, .data_bytes = 1, .delay_ms = 0},
+    {.cmd = SEEYA049_CMD_WRDISBV, .data = (uint8_t[]){0xFF, 0x01}, .data_bytes = 2, .delay_ms = 0},
+    {.cmd = SEEYA049_CMD_CMODE, .data = (uint8_t[]){0x00}, .data_bytes = 1, .delay_ms = 0},
+    {.cmd = 0x80,
+     .data = (uint8_t[]){0x00, 0xE0, 0xE0, 0x0E, 0x00, 0x31},
+     .data_bytes = 6,
+     .delay_ms = 0},
+    {.cmd = 0x81,
+     .data = (uint8_t[]){0x03, 0x04, 0x00, 0x29, 0x00, 0x05, 0x00},
+     .data_bytes = 7,
+     .delay_ms = 0},
+    {.cmd = 0x82,
+     .data = (uint8_t[]){0x03, 0x04, 0x00, 0x29, 0x00, 0x05, 0x01},
+     .data_bytes = 7,
+     .delay_ms = 0},
+    {.cmd = 0x35, .data = (uint8_t[]){0x00}, .data_bytes = 1, .delay_ms = 0},
+    {.cmd = 0x26, .data = (uint8_t[]){0x20}, .data_bytes = 1, .delay_ms = 0},
+
+    // CMD2 P1
+    {.cmd = 0xF0, .data = (uint8_t[]){0xAA, 0x11}, .data_bytes = 2, .delay_ms = 0},
+    {.cmd = 0xC0, .data = (uint8_t[]){0x00}, .data_bytes = 1, .delay_ms = 0},
+    {.cmd = SEEYA049_CMD_BCCTR3,
+     .data = (uint8_t[]){0x03, 0xFF, 0x03, 0xFF, 0x03, 0xFF, 0x03, 0xFF},
+     .data_bytes = 8,
+     .delay_ms = 0},
+
+    // CMD2 P2
+    {.cmd = 0xF0, .data = (uint8_t[]){0xAA, 0x12}, .data_bytes = 2, .delay_ms = 0},
+    {.cmd = 0xBF, .data = (uint8_t[]){0x37, 0xA9}, .data_bytes = 2, .delay_ms = 0},
+
+    // CMD3 P0
+    {.cmd = 0xFF, .data = (uint8_t[]){0x5A, 0x80}, .data_bytes = 2, .delay_ms = 0},
+    {.cmd = 0x65, .data = (uint8_t[]){0x2F}, .data_bytes = 1, .delay_ms = 0},
+    {.cmd = 0xF2, .data = (uint8_t[]){0x01}, .data_bytes = 1, .delay_ms = 0},
+
+    // CMD3 P1
+    {.cmd = 0xFF, .data = (uint8_t[]){0x5A, 0x81}, .data_bytes = 2, .delay_ms = 0},
+    {.cmd = 0x65, .data = (uint8_t[]){0x05}, .data_bytes = 1, .delay_ms = 0},
+    {.cmd = 0xF2, .data = (uint8_t[]){0x22}, .data_bytes = 1, .delay_ms = 0},
+    {.cmd = 0x65, .data = (uint8_t[]){0x0A}, .data_bytes = 1, .delay_ms = 0},
+    {.cmd = 0xF2, .data = (uint8_t[]){0x00}, .data_bytes = 1, .delay_ms = 0},
+    {.cmd = 0x65, .data = (uint8_t[]){0x17}, .data_bytes = 1, .delay_ms = 0},
+    {.cmd = 0xF9,
+     .data =
+         (uint8_t[]){0x5E, 0x62, 0x66, 0x6A, 0x6F, 0x73, 0x77, 0x7B, 0x7F, 0x84, 0x88, 0x8C, 0x90},
+     .data_bytes = 13,
+     .delay_ms = 0},
+
+    // Final configuration
+    {.cmd = 0xF0, .data = (uint8_t[]){0xAA, 0x11}, .data_bytes = 2, .delay_ms = 0},
+    {.cmd = 0xC5,
+     .data = (uint8_t[]){0x01, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF},
+     .data_bytes = 6,
+     .delay_ms = 0},
+    {.cmd = 0xC4, .data = (uint8_t[]){0xAA, 0x55, 0x01, 0x80}, .data_bytes = 4, .delay_ms = 0},
+};
+
 static esp_err_t panel_seeya049_del(esp_lcd_panel_t *panel) {
     ESP_LOGI(TAG, "panel_seeya049_del");
     seeya049_panel_t *seeya049 = (seeya049_panel_t *)panel->user_data;
@@ -496,6 +555,38 @@ esp_err_t panel_seeya049_all_pixels_on_off(esp_lcd_panel_t *panel, bool on_off) 
     } else {
         ESP_RETURN_ON_ERROR(esp_lcd_panel_io_tx_param(io, SEEYA049_CMD_ALLPOFF, NULL, 0), TAG,
                             "send command failed");
+    }
+
+    return ESP_OK;
+}
+
+esp_err_t panel_seeya049_run_selftest(esp_lcd_panel_t *panel) {
+    ESP_RETURN_ON_FALSE(panel, ESP_ERR_INVALID_ARG, TAG, "parameter is invalid");
+
+    ESP_LOGI(TAG, "panel_seeya049_run_selftest");
+    seeya049_panel_t *seeya049 = (seeya049_panel_t *)panel->user_data;
+    esp_lcd_panel_io_handle_t io = seeya049->io;
+
+    // First reset the panel to ensure we're in a known state
+    ESP_RETURN_ON_ERROR(panel_seeya049_reset(panel), TAG, "reset display failed");
+
+    // Run through the self-test initialization sequence
+    const seeya049_lcd_init_cmd_t *init_cmds = vendor_specific_init_selftest;
+    uint16_t init_cmds_size =
+        sizeof(vendor_specific_init_selftest) / sizeof(seeya049_lcd_init_cmd_t);
+
+    for (int i = 0; i < init_cmds_size; i++) {
+        if (init_cmds[i].cmd != 0) {
+            ESP_LOGI(TAG, "send command %02Xh", init_cmds[i].cmd);
+            // Send command
+            ESP_RETURN_ON_ERROR(esp_lcd_panel_io_tx_param(io, init_cmds[i].cmd, init_cmds[i].data,
+                                                          init_cmds[i].data_bytes),
+                                TAG, "send command failed");
+        }
+        if (init_cmds[i].delay_ms > 0) {
+            ESP_LOGI(TAG, "delay %dms", init_cmds[i].delay_ms);
+            vTaskDelay(pdMS_TO_TICKS(init_cmds[i].delay_ms));
+        }
     }
 
     return ESP_OK;

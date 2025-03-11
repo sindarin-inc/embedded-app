@@ -64,8 +64,7 @@ IRAM_ATTR static bool test_notify_refresh_ready(esp_lcd_panel_handle_t panel,
     return (need_yield == pdTRUE);
 }
 
-static void test_init_lcd(void) {
-
+static void test_init_mipi_dsi_bus(void) {
     // Enable debug logging for lcd.dsi.dpi
     esp_log_level_set("lcd.dsi.dpi", ESP_LOG_DEBUG);
 
@@ -95,9 +94,13 @@ static void test_init_lcd(void) {
     esp_lcd_dbi_io_config_t dbi_config = {
         .virtual_channel = 0,
         .lcd_cmd_bits = 8,
-        .lcd_param_bits = 8,
+        .lcd_param_bits = 16,
     };
     TEST_ESP_OK(esp_lcd_new_panel_io_dbi(mipi_dsi_bus, &dbi_config, &mipi_dbi_io));
+}
+
+static void test_new_seeya_panel(void) {
+    test_init_mipi_dsi_bus();
 
     ESP_LOGI(TAG, "Install LCD driver of seeya049");
     esp_lcd_dpi_panel_config_t dpi_config = {
@@ -159,7 +162,13 @@ static void test_init_lcd(void) {
             },
         .vendor_config = &vendor_config,
     };
+
     TEST_ESP_OK(esp_lcd_new_panel_seeya049(mipi_dbi_io, &panel_config, &panel_handle));
+}
+
+static void test_init_enable_panel(void) {
+    test_new_seeya_panel();
+
     TEST_ESP_OK(esp_lcd_panel_reset(panel_handle));
     TEST_ESP_OK(esp_lcd_panel_init(panel_handle));
     TEST_ESP_OK(esp_lcd_panel_disp_on_off(panel_handle, true));
@@ -172,18 +181,25 @@ static void test_init_lcd(void) {
     TEST_ESP_OK(esp_lcd_dpi_panel_register_event_callbacks(panel_handle, &cbs, refresh_finish));
 }
 
-static void test_deinit_lcd(void) {
-    TEST_ESP_OK(esp_lcd_panel_del(panel_handle));
+static void test_deinit_mipi_dsi_bus(void) {
     TEST_ESP_OK(esp_lcd_panel_io_del(mipi_dbi_io));
     TEST_ESP_OK(esp_lcd_del_dsi_bus(mipi_dsi_bus));
-    panel_handle = NULL;
     mipi_dbi_io = NULL;
     mipi_dsi_bus = NULL;
-
     if (ldo_mipi_phy) {
         TEST_ESP_OK(esp_ldo_release_channel(ldo_mipi_phy));
         ldo_mipi_phy = NULL;
     }
+}
+
+static void test_deinit_seeya_panel(void) {
+    TEST_ESP_OK(esp_lcd_panel_del(panel_handle));
+    panel_handle = NULL;
+    test_deinit_mipi_dsi_bus();
+}
+
+static void test_deinit_panel(void) {
+    test_deinit_seeya_panel();
 
     vSemaphoreDelete(refresh_finish);
     refresh_finish = NULL;
@@ -243,7 +259,7 @@ static void test_draw_full_screen_colors(esp_lcd_panel_handle_t panel_handle, ui
 
 TEST_CASE("test seeya049 to draw pattern with MIPI interface", "[seeya049][draw_pattern]") {
     ESP_LOGI(TAG, "Initialize LCD device");
-    test_init_lcd();
+    test_init_enable_panel();
 
     ESP_LOGI(TAG, "Show color bar pattern drawn by hardware");
     ESP_LOGI(TAG, "Vertical");
@@ -261,24 +277,24 @@ TEST_CASE("test seeya049 to draw pattern with MIPI interface", "[seeya049][draw_
     TEST_ESP_OK(esp_lcd_dpi_panel_set_pattern(panel_handle, MIPI_DSI_PATTERN_NONE));
 
     ESP_LOGI(TAG, "Deinitialize LCD device");
-    test_deinit_lcd();
+    test_deinit_panel();
 }
 
 TEST_CASE("test seeya049 to draw color bar with MIPI interface", "[seeya049][draw_color_bar]") {
     ESP_LOGI(TAG, "Initialize LCD device");
-    test_init_lcd();
+    test_init_enable_panel();
 
     ESP_LOGI(TAG, "Show color bar drawn by software");
     test_draw_color_bar(panel_handle, TEST_LCD_H_RES, TEST_LCD_V_RES);
     vTaskDelay(pdMS_TO_TICKS(TEST_DELAY_TIME_MS));
 
     ESP_LOGI(TAG, "Deinitialize LCD device");
-    test_deinit_lcd();
+    test_deinit_panel();
 }
 
 TEST_CASE("test seeya049 to mirror with MIPI interface", "[seeya049][mirror]") {
     ESP_LOGI(TAG, "Initialize LCD device");
-    test_init_lcd();
+    test_init_enable_panel();
 
     ESP_LOGI(TAG, "Mirror the screen");
     for (size_t i = 0; i < 4; i++) {
@@ -290,13 +306,13 @@ TEST_CASE("test seeya049 to mirror with MIPI interface", "[seeya049][mirror]") {
     }
 
     ESP_LOGI(TAG, "Deinitialize LCD device");
-    test_deinit_lcd();
+    test_deinit_panel();
 }
 
 TEST_CASE("test seeya049 to draw full screen colors with MIPI interface",
           "[seeya049][draw_full_screen_colors]") {
     ESP_LOGI(TAG, "Initialize LCD device");
-    test_init_lcd();
+    test_init_enable_panel();
 
     uint8_t red[] = {0x00, 0x00, 0xff};
     uint8_t green[] = {0x00, 0xff, 0x00};
@@ -315,12 +331,12 @@ TEST_CASE("test seeya049 to draw full screen colors with MIPI interface",
     vTaskDelay(pdMS_TO_TICKS(TEST_DELAY_TIME_MS));
 
     ESP_LOGI(TAG, "Deinitialize LCD device");
-    test_deinit_lcd();
+    test_deinit_panel();
 }
 
 TEST_CASE("test seeya049 debug command to turn on all pixels", "[seeya049][all_pixels_on]") {
     ESP_LOGI(TAG, "Initialize LCD device");
-    test_init_lcd();
+    test_init_enable_panel();
 
     panel_seeya049_all_pixels_on_off(panel_handle, true);
     vTaskDelay(pdMS_TO_TICKS(TEST_DELAY_TIME_MS));
@@ -335,7 +351,19 @@ TEST_CASE("test seeya049 debug command to turn on all pixels", "[seeya049][all_p
     vTaskDelay(pdMS_TO_TICKS(TEST_DELAY_TIME_MS));
 
     ESP_LOGI(TAG, "Deinitialize LCD device");
-    test_deinit_lcd();
+    test_deinit_panel();
+}
+
+TEST_CASE("test seeya049 self test", "[seeya049][self_test]") {
+    ESP_LOGI(TAG, "Initialize LCD device");
+    test_new_seeya_panel();
+
+    panel_seeya049_run_selftest(panel_handle);
+    // Self-test cycles back to red at 39 seconds
+    vTaskDelay(pdMS_TO_TICKS(40000));
+
+    esp_lcd_panel_reset(panel_handle);
+    test_deinit_seeya_panel();
 }
 
 #endif
@@ -361,16 +389,18 @@ void tearDown(void) {
 
 void app_main(void) {
     /**
-     *  ___ _     ___ ___   ___   ___  _
-     * |_ _| |   |_ _/ _ \ ( _ ) ( _ )/ |
-     *  | || |    | | (_) |/ _ \ / _ \| |
-     *  | || |___ | |\__, | (_) | (_) | |
-     * |___|_____|___| /_/ \___/ \___/|_|
+     *    _____        __     __      ___  _  _   ___  _ _
+     *   / ____|       \ \   / /     / _ \| || | / _ \( | )
+     *  | (___   ___  __\ \_/ /_ _  | | | | || || (_) |V V
+     *   \___ \ / _ \/ _ \   / _` | | | | |__   _\__, |
+     *   ____) |  __/  __/| | (_| | | |_| |  | |   / /
+     *  |_____/ \___|\___||_|\__,_|  \___(_) |_|  /_/
      */
-    printf(" ___ _     ___ ___   ___   ___  _ \r\n");
-    printf("|_ _| |   |_ _/ _ \\ ( _ ) ( _ )/ |\r\n");
-    printf(" | || |    | | (_) |/ _ \\ / _ \\| |\r\n");
-    printf(" | || |___ | |\\__, | (_) | (_) | |\r\n");
-    printf("|___|_____|___| /_/ \\___/ \\___/|_| \r\n");
+    printf("   _____        __     __      ___  _  _   ___  _ _\r\n");
+    printf("  / ____|       \\ \\   / /     / _ \\| || | / _ \\( | )\r\n");
+    printf(" | (___   ___  __\\ \\_/ /_ _  | | | | || || (_) |V V\r\n");
+    printf("  \\___ \\ / _ \\/ _ \\   / _` | | | | |__   _\\__, |\r\n");
+    printf("  ____) |  __/  __/| | (_| | | |_| |  | |   / /\r\n");
+    printf(" |_____/ \\___|\\___||_|\\__,_|  \\___(_) |_|  /_/\r\n");
     unity_run_menu();
 }

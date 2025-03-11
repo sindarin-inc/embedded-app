@@ -69,6 +69,17 @@ esp_err_t esp_lcd_new_panel_seeya049(const esp_lcd_panel_io_handle_t io,
 
 esp_err_t panel_seeya049_all_pixels_on_off(esp_lcd_panel_t *panel, bool on_off);
 
+/**
+ * @brief Run the panel's built-in self test mode initialization sequence
+ *
+ * @param[in] panel LCD panel handle
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_ARG if parameter is invalid
+ *      - Otherwise on error
+ */
+esp_err_t panel_seeya049_run_selftest(esp_lcd_panel_t *panel);
+
 #ifdef __cplusplus
 }
 #endif
