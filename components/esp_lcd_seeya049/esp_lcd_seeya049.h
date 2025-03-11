@@ -10,6 +10,7 @@
 
 #if SOC_MIPI_DSI_SUPPORTED
 #include "esp_lcd_mipi_dsi.h"
+#include "esp_lcd_panel_interface.h"
 #include "esp_lcd_panel_vendor.h"
 
 #ifdef __cplusplus
@@ -65,6 +66,8 @@ typedef struct {
 esp_err_t esp_lcd_new_panel_seeya049(const esp_lcd_panel_io_handle_t io,
                                      const esp_lcd_panel_dev_config_t *panel_dev_config,
                                      esp_lcd_panel_handle_t *ret_panel);
+
+esp_err_t panel_seeya049_all_pixels_on_off(esp_lcd_panel_t *panel, bool on_off);
 
 #ifdef __cplusplus
 }

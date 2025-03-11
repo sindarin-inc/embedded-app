@@ -65,6 +65,10 @@ IRAM_ATTR static bool test_notify_refresh_ready(esp_lcd_panel_handle_t panel,
 }
 
 static void test_init_lcd(void) {
+
+    // Enable debug logging for lcd.dsi.dpi
+    esp_log_level_set("lcd.dsi.dpi", ESP_LOG_DEBUG);
+
     // Turn on the power for MIPI DSI PHY, so it can go from "No Power" state to "Shutdown" state
 #ifdef TEST_MIPI_DSI_PHY_PWR_LDO_CHAN
     ESP_LOGI(TAG, "MIPI DSI PHY Powered on");
@@ -80,8 +84,11 @@ static void test_init_lcd(void) {
         .bus_id = 0,
         .num_data_lanes = TEST_MIPI_DSI_LANE_NUM,
         .phy_clk_src = MIPI_DSI_PHY_CLK_SRC_DEFAULT,
+        // This doesn't seem to affect the size of what is drawn
+        // lane_bit_rate_mbps / 8 / 18 must be > 1 and < 256
         .lane_bit_rate_mbps = 1000,
     };
+
     TEST_ESP_OK(esp_lcd_new_dsi_bus(&bus_config, &mipi_dsi_bus));
 
     ESP_LOGI(TAG, "Install panel IO");
@@ -97,6 +104,8 @@ static void test_init_lcd(void) {
         .virtual_channel = 0,
         .dpi_clk_src = MIPI_DSI_DPI_CLK_SRC_DEFAULT,
         // This seems to affect the size and quality of what is drawn
+        // This can't keep up above 120MHz
+        // Below 35MHz the drawn screen area is reduced
         .dpi_clock_freq_mhz = 80,
         .pixel_format = TEST_MIPI_DPI_PX_FORMAT,
         .in_color_format = 0,
@@ -107,20 +116,20 @@ static void test_init_lcd(void) {
                 .h_size = TEST_LCD_H_RES,
                 .v_size = TEST_LCD_V_RES,
                 // From GPT
-                .hsync_pulse_width = 10,
-                .hsync_back_porch = 20,
-                .hsync_front_porch = 20,
-                .vsync_pulse_width = 4,
-                .vsync_back_porch = 16,
-                .vsync_front_porch = 16,
+                // .hsync_pulse_width = 10,
+                // .hsync_back_porch = 20,
+                // .hsync_front_porch = 20,
+                // .vsync_pulse_width = 4,
+                // .vsync_back_porch = 16,
+                // .vsync_front_porch = 16,
 
                 // From the NED init code spreadsheet
-                // .hsync_pulse_width = 44,
-                // .hsync_back_porch = 148,
-                // .hsync_front_porch = 88,
-                // .vsync_pulse_width = 5,
-                // .vsync_back_porch = 36,
-                // .vsync_front_porch = 5,
+                .hsync_pulse_width = 44,
+                .hsync_back_porch = 148,
+                .hsync_front_porch = 88,
+                .vsync_pulse_width = 5,
+                .vsync_back_porch = 36,
+                .vsync_front_porch = 5,
             },
         .flags =
             {
@@ -141,7 +150,7 @@ static void test_init_lcd(void) {
     const esp_lcd_panel_dev_config_t panel_config = {
         .reset_gpio_num = TEST_PIN_NUM_LCD_RST,
         // These don't have an effect on the test patterns
-        .rgb_ele_order = LCD_RGB_ELEMENT_ORDER_RGB,
+        .rgb_ele_order = LCD_RGB_ELEMENT_ORDER_BGR,
         .data_endian = LCD_RGB_DATA_ENDIAN_BIG,
         .bits_per_pixel = TEST_LCD_BIT_PER_PIXEL,
         .flags =
@@ -183,33 +192,32 @@ static void test_deinit_lcd(void) {
 static void test_draw_color_bar(esp_lcd_panel_handle_t panel_handle, uint16_t h_res,
                                 uint16_t v_res) {
     uint8_t byte_per_pixel = (TEST_LCD_BIT_PER_PIXEL + 7) / 8;
-    uint16_t row_line = v_res / byte_per_pixel / 8;
-    uint8_t *color =
-        (uint8_t *)heap_caps_calloc(1, row_line * h_res * byte_per_pixel, MALLOC_CAP_DMA);
+    uint8_t *color = (uint8_t *)malloc(h_res * v_res * byte_per_pixel);
+    ESP_LOGI(TAG, "Allocated color of size %d", h_res * v_res * byte_per_pixel);
     TEST_ASSERT_NOT_NULL(color);
 
-    for (int j = 0; j < byte_per_pixel * 8; j++) {
-        for (int i = 0; i < row_line * h_res; i++) {
-            for (int k = 0; k < byte_per_pixel; k++) {
-                color[i * byte_per_pixel + k] = (BIT(j) >> (k * 8)) & 0xff;
-            }
+    uint8_t red[] = {0x00, 0x00, 0xff};
+    uint8_t green[] = {0x00, 0xff, 0x00};
+    uint8_t blue[] = {0xff, 0x00, 0x00};
+    uint8_t *colors[3] = {red, green, blue};
+
+    uint8_t bar_count = 9;
+
+    // Draw vertical color bars
+    for (int bar = 0; bar < bar_count; bar++) {
+        int color_idx = bar % 3; // Cycle through red, green, blue
+        int start = (bar * h_res * v_res) / bar_count;
+        int end = ((bar + 1) * h_res * v_res) / bar_count;
+
+        for (int i = start; i < end; i++) {
+            color[i * byte_per_pixel + 0] = colors[color_idx][0];
+            color[i * byte_per_pixel + 1] = colors[color_idx][1];
+            color[i * byte_per_pixel + 2] = colors[color_idx][2];
         }
-        TEST_ESP_OK(esp_lcd_panel_draw_bitmap(panel_handle, 0, j * row_line, h_res,
-                                              (j + 1) * row_line, color));
-        xSemaphoreTake(refresh_finish, portMAX_DELAY);
     }
 
-    uint16_t color_line = row_line * byte_per_pixel * 8;
-    uint16_t res_line = v_res - color_line;
-    if (res_line) {
-        for (int i = 0; i < res_line * h_res; i++) {
-            for (int k = 0; k < byte_per_pixel; k++) {
-                color[i * byte_per_pixel + k] = 0xff;
-            }
-        }
-        TEST_ESP_OK(esp_lcd_panel_draw_bitmap(panel_handle, 0, color_line, h_res, v_res, color));
-        xSemaphoreTake(refresh_finish, portMAX_DELAY);
-    }
+    TEST_ESP_OK(esp_lcd_panel_draw_bitmap(panel_handle, 0, 0, h_res, v_res, color));
+    xSemaphoreTake(refresh_finish, portMAX_DELAY);
 
     free(color);
 }
@@ -268,14 +276,31 @@ TEST_CASE("test seeya049 to draw color bar with MIPI interface", "[seeya049][dra
     test_deinit_lcd();
 }
 
+TEST_CASE("test seeya049 to mirror with MIPI interface", "[seeya049][mirror]") {
+    ESP_LOGI(TAG, "Initialize LCD device");
+    test_init_lcd();
+
+    ESP_LOGI(TAG, "Mirror the screen");
+    for (size_t i = 0; i < 4; i++) {
+        TEST_ASSERT_NOT_EQUAL(esp_lcd_panel_mirror(panel_handle, i & 2, i & 1), ESP_FAIL);
+
+        ESP_LOGI(TAG, "Mirror: %d", i);
+        test_draw_color_bar(panel_handle, TEST_LCD_H_RES, TEST_LCD_V_RES);
+        vTaskDelay(pdMS_TO_TICKS(1000));
+    }
+
+    ESP_LOGI(TAG, "Deinitialize LCD device");
+    test_deinit_lcd();
+}
+
 TEST_CASE("test seeya049 to draw full screen colors with MIPI interface",
           "[seeya049][draw_full_screen_colors]") {
     ESP_LOGI(TAG, "Initialize LCD device");
     test_init_lcd();
 
-    uint8_t red[] = {0xff, 0x00, 0x00};
+    uint8_t red[] = {0x00, 0x00, 0xff};
     uint8_t green[] = {0x00, 0xff, 0x00};
-    uint8_t blue[] = {0x00, 0x00, 0xff};
+    uint8_t blue[] = {0xff, 0x00, 0x00};
 
     ESP_LOGI(TAG, "Show red screen drawn by software");
     test_draw_full_screen_colors(panel_handle, TEST_LCD_H_RES, TEST_LCD_V_RES, red);
@@ -293,22 +318,26 @@ TEST_CASE("test seeya049 to draw full screen colors with MIPI interface",
     test_deinit_lcd();
 }
 
-TEST_CASE("test seeya049 to mirror with MIPI interface", "[seeya049][mirror]") {
+TEST_CASE("test seeya049 debug command to turn on all pixels", "[seeya049][all_pixels_on]") {
     ESP_LOGI(TAG, "Initialize LCD device");
     test_init_lcd();
 
-    ESP_LOGI(TAG, "Mirror the screen");
-    for (size_t i = 0; i < 4; i++) {
-        TEST_ASSERT_NOT_EQUAL(esp_lcd_panel_mirror(panel_handle, i & 2, i & 1), ESP_FAIL);
+    panel_seeya049_all_pixels_on_off(panel_handle, true);
+    vTaskDelay(pdMS_TO_TICKS(TEST_DELAY_TIME_MS));
 
-        ESP_LOGI(TAG, "Mirror: %d", i);
-        test_draw_color_bar(panel_handle, TEST_LCD_H_RES, TEST_LCD_V_RES);
-        vTaskDelay(pdMS_TO_TICKS(1000));
-    }
+    panel_seeya049_all_pixels_on_off(panel_handle, false);
+    vTaskDelay(pdMS_TO_TICKS(TEST_DELAY_TIME_MS));
+
+    panel_seeya049_all_pixels_on_off(panel_handle, true);
+    vTaskDelay(pdMS_TO_TICKS(TEST_DELAY_TIME_MS));
+
+    panel_seeya049_all_pixels_on_off(panel_handle, false);
+    vTaskDelay(pdMS_TO_TICKS(TEST_DELAY_TIME_MS));
 
     ESP_LOGI(TAG, "Deinitialize LCD device");
     test_deinit_lcd();
 }
+
 #endif
 
 // Some resources are lazy allocated in the LCD driver, the threadhold is left for that case

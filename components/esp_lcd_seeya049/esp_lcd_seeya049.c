@@ -11,7 +11,6 @@
 #include "esp_check.h"
 #include "esp_lcd_mipi_dsi.h"
 #include "esp_lcd_panel_commands.h"
-#include "esp_lcd_panel_interface.h"
 #include "esp_lcd_panel_io.h"
 #include "esp_lcd_panel_ops.h"
 #include "esp_lcd_panel_vendor.h"
@@ -230,16 +229,20 @@ static const seeya049_lcd_init_cmd_t vendor_specific_init_default[] = {
     //  .data_bytes = 8,
     //  .delay_ms = 0},
 
+    // Scale up 2x
+    // Does not seem to have an effect for some reason
+    // {.cmd = SEEYA049_CMD_SCACTRL, .data = (uint8_t[]){0x03}, .data_bytes = 1, .delay_ms = 0},
+
     // CMD2 P2
-    // Background sometimes goes yellow when removing these
+    // No change removing these
     // {.cmd = 0xF0, .data = (uint8_t[]){0xAA, 0x12}, .data_bytes = 2, .delay_ms = 0},
     // {.cmd = 0xBF, .data = (uint8_t[]){0x37, 0xA9}, .data_bytes = 2, .delay_ms = 0},
 
     // CMD3 P0
-    // Background sometimes goes red when removing these
+    // No change removing these
     // {.cmd = 0xFF, .data = (uint8_t[]){0x5A, 0x80}, .data_bytes = 2, .delay_ms = 0},
     // {.cmd = 0x65, .data = (uint8_t[]){0x2F}, .data_bytes = 1, .delay_ms = 0},
-    // {.cmd = 0xF2, .data = (uint8_t[]){0x01}, .data_bytes = 1, .delay_ms = 20},
+    // {.cmd = 0xF2, .data = (uint8_t[]){0x01}, .data_bytes = 1, .delay_ms = 0},
 
     // CMD3 P1
     // No change removing these
@@ -254,9 +257,7 @@ static const seeya049_lcd_init_cmd_t vendor_specific_init_default[] = {
     //      (uint8_t[]){0x5E, 0x62, 0x66, 0x6A, 0x6F, 0x73, 0x77, 0x7B, 0x7F, 0x84, 0x88, 0x8C,
     //      0x90},
     //  .data_bytes = 13,
-    //  .delay_ms = 20},
-
-    // {.cmd = SEEYA049_CMD_ALLPON, .data = NULL, .data_bytes = 0, .delay_ms = 0},
+    //  .delay_ms = 0},
 
     // Delay and final commands
     // Make sure to wait 20ms
@@ -396,6 +397,8 @@ static esp_err_t panel_seeya049_init(esp_lcd_panel_t *panel) {
              SEEYA049_CMD_BCCTR3, bcctrl3_val[0], bcctrl3_val[1], bcctrl3_val[2], bcctrl3_val[3],
              bcctrl3_val[4], bcctrl3_val[5], bcctrl3_val[6], bcctrl3_val[7]);
 
+    // What happens in here? See:
+    // https://github.com/espressif/esp-idf/blob/0d6099ec533c4b647fb7a7b0b8942bc7aeb82f90/components/esp_lcd/dsi/esp_lcd_panel_dpi.c#L403
     ESP_RETURN_ON_ERROR(seeya049->init(panel), TAG, "init MIPI DPI panel failed");
 
     return ESP_OK;
@@ -477,6 +480,23 @@ static esp_err_t panel_seeya049_sleep(esp_lcd_panel_t *panel, bool sleep) {
                             "send command failed");
     }
     vTaskDelay(pdMS_TO_TICKS(100));
+
+    return ESP_OK;
+}
+
+esp_err_t panel_seeya049_all_pixels_on_off(esp_lcd_panel_t *panel, bool on_off) {
+    ESP_LOGI(TAG, "panel_seeya049_all_pixels_on_off %d", on_off);
+
+    seeya049_panel_t *seeya049 = (seeya049_panel_t *)panel->user_data;
+    esp_lcd_panel_io_handle_t io = seeya049->io;
+
+    if (on_off) {
+        ESP_RETURN_ON_ERROR(esp_lcd_panel_io_tx_param(io, SEEYA049_CMD_ALLPON, NULL, 0), TAG,
+                            "send command failed");
+    } else {
+        ESP_RETURN_ON_ERROR(esp_lcd_panel_io_tx_param(io, SEEYA049_CMD_ALLPOFF, NULL, 0), TAG,
+                            "send command failed");
+    }
 
     return ESP_OK;
 }
