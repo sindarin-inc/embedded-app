@@ -30,9 +30,6 @@
 #define TEST_LCD_V_RES (1080)
 #define TEST_LCD_BIT_PER_PIXEL (24)
 #define TEST_PIN_NUM_LCD_RST (23)
-#define TEST_PIN_NUM_BK_LIGHT (-1) // set to -1 if not used
-#define TEST_LCD_BK_LIGHT_ON_LEVEL (1)
-#define TEST_LCD_BK_LIGHT_OFF_LEVEL !TEST_LCD_BK_LIGHT_ON_LEVEL
 #define TEST_MIPI_DSI_LANE_NUM (2)
 
 #if TEST_LCD_BIT_PER_PIXEL == 24
@@ -45,6 +42,7 @@
 
 #define TEST_DELAY_TIME_MS (3000)
 
+// Required for the MIPI peripheral
 #define TEST_MIPI_DSI_PHY_PWR_LDO_CHAN (3)
 #define TEST_MIPI_DSI_PHY_PWR_LDO_VOLTAGE_MV (2500)
 
@@ -67,14 +65,6 @@ IRAM_ATTR static bool test_notify_refresh_ready(esp_lcd_panel_handle_t panel,
 }
 
 static void test_init_lcd(void) {
-#if TEST_PIN_NUM_BK_LIGHT >= 0
-    ESP_LOGI(TAG, "Turn on LCD backlight");
-    gpio_config_t bk_gpio_config = {.mode = GPIO_MODE_OUTPUT,
-                                    .pin_bit_mask = 1ULL << TEST_PIN_NUM_BK_LIGHT};
-    TEST_ESP_OK(gpio_config(&bk_gpio_config));
-    TEST_ESP_OK(gpio_set_level(TEST_PIN_NUM_BK_LIGHT, TEST_LCD_BK_LIGHT_ON_LEVEL));
-#endif
-
     // Turn on the power for MIPI DSI PHY, so it can go from "No Power" state to "Shutdown" state
 #ifdef TEST_MIPI_DSI_PHY_PWR_LDO_CHAN
     ESP_LOGI(TAG, "MIPI DSI PHY Powered on");
@@ -88,7 +78,7 @@ static void test_init_lcd(void) {
     ESP_LOGI(TAG, "Initialize MIPI DSI bus");
     esp_lcd_dsi_bus_config_t bus_config = {
         .bus_id = 0,
-        .num_data_lanes = 2,
+        .num_data_lanes = TEST_MIPI_DSI_LANE_NUM,
         .phy_clk_src = MIPI_DSI_PHY_CLK_SRC_DEFAULT,
         .lane_bit_rate_mbps = 1000,
     };
@@ -97,10 +87,8 @@ static void test_init_lcd(void) {
     ESP_LOGI(TAG, "Install panel IO");
     esp_lcd_dbi_io_config_t dbi_config = {
         .virtual_channel = 0,
-        // Both 8 and 16 on both of these seem to cause the power to turn on, but I'm not able to
-        // read params either way
         .lcd_cmd_bits = 8,
-        .lcd_param_bits = 16,
+        .lcd_param_bits = 8,
     };
     TEST_ESP_OK(esp_lcd_new_panel_io_dbi(mipi_dsi_bus, &dbi_config, &mipi_dbi_io));
 
@@ -108,21 +96,31 @@ static void test_init_lcd(void) {
     esp_lcd_dpi_panel_config_t dpi_config = {
         .virtual_channel = 0,
         .dpi_clk_src = MIPI_DSI_DPI_CLK_SRC_DEFAULT,
-        .dpi_clock_freq_mhz = 80, // TODO: Check if this is correct
-        .pixel_format = LCD_COLOR_PIXEL_FORMAT_RGB888,
-        .in_color_format = LCD_COLOR_FMT_RGB888,
-        .out_color_format = LCD_COLOR_FMT_RGB888,
+        // This seems to affect the size and quality of what is drawn
+        .dpi_clock_freq_mhz = 80,
+        .pixel_format = TEST_MIPI_DPI_PX_FORMAT,
+        .in_color_format = 0,
+        .out_color_format = 0,
         .num_fbs = 1,
         .video_timing =
             {
-                .h_size = 1920,
-                .v_size = 1080,
-                .hsync_pulse_width = 10, // Adjusted from datasheet
+                .h_size = TEST_LCD_H_RES,
+                .v_size = TEST_LCD_V_RES,
+                // From GPT
+                .hsync_pulse_width = 10,
                 .hsync_back_porch = 20,
                 .hsync_front_porch = 20,
                 .vsync_pulse_width = 4,
                 .vsync_back_porch = 16,
                 .vsync_front_porch = 16,
+
+                // From the NED init code spreadsheet
+                // .hsync_pulse_width = 44,
+                // .hsync_back_porch = 148,
+                // .hsync_front_porch = 88,
+                // .vsync_pulse_width = 5,
+                // .vsync_back_porch = 36,
+                // .vsync_front_porch = 5,
             },
         .flags =
             {
@@ -136,12 +134,13 @@ static void test_init_lcd(void) {
             {
                 .dsi_bus = mipi_dsi_bus,
                 .dpi_config = &dpi_config,
-                .lane_num = 2,
+                .lane_num = TEST_MIPI_DSI_LANE_NUM,
             },
     };
 
     const esp_lcd_panel_dev_config_t panel_config = {
         .reset_gpio_num = TEST_PIN_NUM_LCD_RST,
+        // These don't have an effect on the test patterns
         .rgb_ele_order = LCD_RGB_ELEMENT_ORDER_RGB,
         .data_endian = LCD_RGB_DATA_ENDIAN_BIG,
         .bits_per_pixel = TEST_LCD_BIT_PER_PIXEL,
@@ -179,10 +178,6 @@ static void test_deinit_lcd(void) {
 
     vSemaphoreDelete(refresh_finish);
     refresh_finish = NULL;
-
-#if TEST_PIN_NUM_BK_LIGHT >= 0
-    TEST_ESP_OK(gpio_reset_pin(TEST_PIN_NUM_BK_LIGHT));
-#endif
 }
 
 static void test_draw_color_bar(esp_lcd_panel_handle_t panel_handle, uint16_t h_res,
@@ -191,6 +186,7 @@ static void test_draw_color_bar(esp_lcd_panel_handle_t panel_handle, uint16_t h_
     uint16_t row_line = v_res / byte_per_pixel / 8;
     uint8_t *color =
         (uint8_t *)heap_caps_calloc(1, row_line * h_res * byte_per_pixel, MALLOC_CAP_DMA);
+    TEST_ASSERT_NOT_NULL(color);
 
     for (int j = 0; j < byte_per_pixel * 8; j++) {
         for (int i = 0; i < row_line * h_res; i++) {
@@ -218,15 +214,42 @@ static void test_draw_color_bar(esp_lcd_panel_handle_t panel_handle, uint16_t h_
     free(color);
 }
 
+static void test_draw_full_screen_colors(esp_lcd_panel_handle_t panel_handle, uint16_t h_res,
+                                         uint16_t v_res, uint8_t *fillColor) {
+    uint8_t byte_per_pixel = (TEST_LCD_BIT_PER_PIXEL + 7) / 8;
+    uint8_t *color = (uint8_t *)malloc(h_res * v_res * byte_per_pixel);
+    ESP_LOGI(TAG, "Allocated color of size %d", h_res * v_res * byte_per_pixel);
+    TEST_ASSERT_NOT_NULL(color);
+
+    for (int i = 0; i < h_res * v_res; i++) {
+        color[i * byte_per_pixel + 0] = fillColor[0];
+        color[i * byte_per_pixel + 1] = fillColor[1];
+        color[i * byte_per_pixel + 2] = fillColor[2];
+    }
+
+    TEST_ESP_OK(esp_lcd_panel_draw_bitmap(panel_handle, 0, 0, h_res, v_res, color));
+    xSemaphoreTake(refresh_finish, portMAX_DELAY);
+
+    free(color);
+}
+
 TEST_CASE("test seeya049 to draw pattern with MIPI interface", "[seeya049][draw_pattern]") {
     ESP_LOGI(TAG, "Initialize LCD device");
     test_init_lcd();
 
     ESP_LOGI(TAG, "Show color bar pattern drawn by hardware");
+    ESP_LOGI(TAG, "Vertical");
     TEST_ESP_OK(esp_lcd_dpi_panel_set_pattern(panel_handle, MIPI_DSI_PATTERN_BAR_VERTICAL));
     vTaskDelay(pdMS_TO_TICKS(TEST_DELAY_TIME_MS));
+
+    ESP_LOGI(TAG, "Horizontal");
     TEST_ESP_OK(esp_lcd_dpi_panel_set_pattern(panel_handle, MIPI_DSI_PATTERN_BAR_HORIZONTAL));
     vTaskDelay(pdMS_TO_TICKS(TEST_DELAY_TIME_MS));
+
+    ESP_LOGI(TAG, "Vertical BER");
+    TEST_ESP_OK(esp_lcd_dpi_panel_set_pattern(panel_handle, MIPI_DSI_PATTERN_BER_VERTICAL));
+    vTaskDelay(pdMS_TO_TICKS(TEST_DELAY_TIME_MS));
+
     TEST_ESP_OK(esp_lcd_dpi_panel_set_pattern(panel_handle, MIPI_DSI_PATTERN_NONE));
 
     ESP_LOGI(TAG, "Deinitialize LCD device");
@@ -239,6 +262,31 @@ TEST_CASE("test seeya049 to draw color bar with MIPI interface", "[seeya049][dra
 
     ESP_LOGI(TAG, "Show color bar drawn by software");
     test_draw_color_bar(panel_handle, TEST_LCD_H_RES, TEST_LCD_V_RES);
+    vTaskDelay(pdMS_TO_TICKS(TEST_DELAY_TIME_MS));
+
+    ESP_LOGI(TAG, "Deinitialize LCD device");
+    test_deinit_lcd();
+}
+
+TEST_CASE("test seeya049 to draw full screen colors with MIPI interface",
+          "[seeya049][draw_full_screen_colors]") {
+    ESP_LOGI(TAG, "Initialize LCD device");
+    test_init_lcd();
+
+    uint8_t red[] = {0xff, 0x00, 0x00};
+    uint8_t green[] = {0x00, 0xff, 0x00};
+    uint8_t blue[] = {0x00, 0x00, 0xff};
+
+    ESP_LOGI(TAG, "Show red screen drawn by software");
+    test_draw_full_screen_colors(panel_handle, TEST_LCD_H_RES, TEST_LCD_V_RES, red);
+    vTaskDelay(pdMS_TO_TICKS(TEST_DELAY_TIME_MS));
+
+    ESP_LOGI(TAG, "Show green screen drawn by software");
+    test_draw_full_screen_colors(panel_handle, TEST_LCD_H_RES, TEST_LCD_V_RES, green);
+    vTaskDelay(pdMS_TO_TICKS(TEST_DELAY_TIME_MS));
+
+    ESP_LOGI(TAG, "Show blue screen drawn by software");
+    test_draw_full_screen_colors(panel_handle, TEST_LCD_H_RES, TEST_LCD_V_RES, blue);
     vTaskDelay(pdMS_TO_TICKS(TEST_DELAY_TIME_MS));
 
     ESP_LOGI(TAG, "Deinitialize LCD device");
