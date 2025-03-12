@@ -6,6 +6,15 @@
 #include <esp_check.h>
 #include <esp_lcd_seeya049.h>
 
+#define TEST_MIPI_DSI_PHY_PWR_LDO_CHAN (3)
+#define TEST_MIPI_DSI_PHY_PWR_LDO_VOLTAGE_MV (2500)
+#define TEST_MIPI_DSI_LANE_NUM (2)
+#define TEST_LCD_H_RES (1920)
+#define TEST_LCD_V_RES (1080)
+#define TEST_LCD_BIT_PER_PIXEL (24)
+#define TEST_PIN_NUM_LCD_RST (23)
+#define TEST_MIPI_DPI_PX_FORMAT (LCD_COLOR_PIXEL_FORMAT_RGB888)
+
 IRAM_ATTR bool DisplayEsp32P4SeeYa049::onColorTransDone(esp_lcd_panel_handle_t panel,
                                                         esp_lcd_dpi_panel_event_data_t *edata,
                                                         void *user_ctx) {
@@ -24,98 +33,89 @@ auto DisplayEsp32P4SeeYa049::setup() -> bool {
 
     updateSemaphore_ = xSemaphoreCreateBinary();
 
-    // Turn on the power for MIPI DSI PHY, so it can go from "No Power" state to "Shutdown" state
-    log_i("MIPI DSI PHY Powered on");
-    esp_ldo_channel_config_t ldoChannelConfig = {
-        .chan_id = 3,
-        .voltage_mv = 2500,
-        .flags =
-            {
-                .adjustable = false,
-                .owned_by_hw = false,
-                .bypass = false,
-            },
-    };
-    auto err = esp_ldo_acquire_channel(&ldoChannelConfig, &ldoMipiPhy_);
-    if (err != ESP_OK) {
-        log_e("Failed to acquire MIPI DSI PHY channel");
-        return false;
-    }
+    // Enable debug logging for lcd.dsi.dpi
+    esp_log_level_set("lcd.dsi.dpi", ESP_LOG_DEBUG);
 
-    log_i("Initialize MIPI DSI bus");
-    esp_lcd_dsi_bus_config_t dsiBusConfig = {
+    // Turn on the power for MIPI DSI PHY, so it can go from "No Power" state to "Shutdown" state
+    log_d("MIPI DSI PHY Powered on");
+    esp_ldo_channel_config_t ldo_mipi_phy_config = {
+        .chan_id = TEST_MIPI_DSI_PHY_PWR_LDO_CHAN,
+        .voltage_mv = TEST_MIPI_DSI_PHY_PWR_LDO_VOLTAGE_MV,
+    };
+    ESP_ERROR_CHECK(esp_ldo_acquire_channel(&ldo_mipi_phy_config, &ldoMipiPhy_));
+
+    log_d("Initialize MIPI DSI bus");
+    esp_lcd_dsi_bus_config_t bus_config = {
         .bus_id = 0,
-        .num_data_lanes = 2,
+        .num_data_lanes = TEST_MIPI_DSI_LANE_NUM,
         .phy_clk_src = MIPI_DSI_PHY_CLK_SRC_DEFAULT,
+        // This doesn't seem to affect the size of what is drawn
+        // lane_bit_rate_mbps / 8 / 18 must be > 1 and < 256
         .lane_bit_rate_mbps = 1000,
     };
 
-    err = esp_lcd_new_dsi_bus(&dsiBusConfig, &mipiDsiBus_);
-    if (err != ESP_OK) {
-        log_e("Failed to create MIPI DSI bus");
-        return false;
-    }
+    ESP_ERROR_CHECK(esp_lcd_new_dsi_bus(&bus_config, &mipiDsiBus_));
 
-    log_i("Install panel IO");
-    esp_lcd_dbi_io_config_t dbiIoConfig = {
+    log_d("Install panel IO");
+    esp_lcd_dbi_io_config_t dbi_config = {
         .virtual_channel = 0,
         .lcd_cmd_bits = 8,
-        .lcd_param_bits = 8,
+        .lcd_param_bits = 16,
     };
-    err = esp_lcd_new_panel_io_dbi(mipiDsiBus_, &dbiIoConfig, &mipiDbiIo_);
-    if (err != ESP_OK) {
-        log_e("Failed to create MIPI DSI panel IO");
-        return false;
-    }
+    ESP_ERROR_CHECK(esp_lcd_new_panel_io_dbi(mipiDsiBus_, &dbi_config, &mipiDbiIo_));
 
-    // log_i("Install LCD driver of seeya049");
-    // esp_lcd_dpi_panel_config_t dpiPanelConfig = {
-    //     .virtual_channel = 0,
-    //     .dpi_clk_src = MIPI_DSI_DPI_CLK_SRC_DEFAULT,
-    //     .dpi_clock_freq_mhz = 80, // TODO: Check if this is correct
-    //     .pixel_format = LCD_COLOR_PIXEL_FORMAT_RGB888,
-    //     .in_color_format = LCD_COLOR_FMT_RGB888,
-    //     .out_color_format = LCD_COLOR_FMT_RGB888,
-    //     .num_fbs = 1,
-    //     .video_timing =
-    //         {
-    //             .h_size = CONFIG_DISPLAY_WIDTH,
-    //             .v_size = CONFIG_DISPLAY_HEIGHT,
-    //             .hsync_pulse_width = 10, // Adjusted from datasheet
-    //             .hsync_back_porch = 20,
-    //             .hsync_front_porch = 20,
-    //             .vsync_pulse_width = 4,
-    //             .vsync_back_porch = 16,
-    //             .vsync_front_porch = 16,
-    //         },
-    //     .flags =
-    //         {
-    //             .use_dma2d = true,
-    //             .disable_lp = false,
-    //         },
-    // };
-    // seeya049_vendor_config_t vendorConfig = {
-    //     .init_cmds = nullptr,
-    //     .init_cmds_size = 0,
-    //     .mipi_config =
-    //         {
-    //             .dsi_bus = mipiDsiBus_,
-    //             .dpi_config = &dpiPanelConfig,
-    //             .lane_num = 2,
-    //         },
-    // };
-    const esp_lcd_panel_dev_config_t panelDevConfig = {
-        .reset_gpio_num = GPIO_NUM_NC,
-        .rgb_ele_order = LCD_RGB_ELEMENT_ORDER_RGB,
+    log_d("Install LCD driver of seeya049");
+    esp_lcd_dpi_panel_config_t dpi_config = {
+        .virtual_channel = 0,
+        .dpi_clk_src = MIPI_DSI_DPI_CLK_SRC_DEFAULT,
+        .dpi_clock_freq_mhz = 80,
+        .pixel_format = TEST_MIPI_DPI_PX_FORMAT,
+        .in_color_format = static_cast<lcd_color_format_t>(0),
+        .out_color_format = static_cast<lcd_color_format_t>(0),
+        .num_fbs = 1,
+        .video_timing =
+            {
+                .h_size = TEST_LCD_H_RES,
+                .v_size = TEST_LCD_V_RES,
+                // From the NED init code spreadsheet
+                .hsync_pulse_width = 44,
+                .hsync_back_porch = 148,
+                .hsync_front_porch = 88,
+                .vsync_pulse_width = 5,
+                .vsync_back_porch = 36,
+                .vsync_front_porch = 5,
+            },
+        .flags =
+            {
+                .use_dma2d = true,
+                .disable_lp = false,
+            },
+    };
+
+    seeya049_vendor_config_t vendor_config = {
+        .mipi_config =
+            {
+                .dsi_bus = mipiDsiBus_,
+                .dpi_config = &dpi_config,
+                .lane_num = TEST_MIPI_DSI_LANE_NUM,
+            },
+    };
+
+    const esp_lcd_panel_dev_config_t panel_config = {
+        .reset_gpio_num = TEST_PIN_NUM_LCD_RST,
+        // These don't have an effect on the test patterns
+        .rgb_ele_order = LCD_RGB_ELEMENT_ORDER_BGR,
         .data_endian = LCD_RGB_DATA_ENDIAN_BIG,
-        .bits_per_pixel = 16,
+        .bits_per_pixel = TEST_LCD_BIT_PER_PIXEL,
         .flags =
             {
                 .reset_active_high = false,
             },
-        // .vendor_config = &vendorConfig,
+        .vendor_config = &vendor_config,
     };
-    ESP_ERROR_CHECK(esp_lcd_new_panel_seeya049(mipiDbiIo_, &panelDevConfig, &panelHandle_));
+
+    ESP_ERROR_CHECK(esp_lcd_new_panel_seeya049(mipiDbiIo_, &panel_config, &panelHandle_));
+
     ESP_ERROR_CHECK(esp_lcd_panel_reset(panelHandle_));
     ESP_ERROR_CHECK(esp_lcd_panel_init(panelHandle_));
     ESP_ERROR_CHECK(esp_lcd_panel_disp_on_off(panelHandle_, true));
