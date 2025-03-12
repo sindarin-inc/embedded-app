@@ -18,7 +18,13 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
-// SY103WAM01
+// Mysteries
+// 1. When flipping Y with MADCTL, the display colors get inverted
+// 2. The RGB bit in MADCTL doesn't seem to have an effect
+// 3. RAMWR doesn't seem to have an effect
+// 4. Rendered gradients aren't smooth
+
+// From the SY103WAM01 datasheet
 // #define SEEYA049_CMD_SWRESET 0x01 // Software Reset
 // #define SEEYA049_CMD_CMODE 0x03   // Compression Mode
 // #define SEEYA049_CMD_SLPIN 0x10   // Sleep In
@@ -35,7 +41,7 @@
 // #define SEEYA049_CMD_IDMOFF 0x38    // Idle Mode Off
 // #define SEEYA049_CMD_IDMON 0x39     // Idle Mode On
 // #define SEEYA049_CMD_COLMOD 0x3A    // Interface Pixel Format
-#define SEEYA049_CMD_WRDISBV 0x51 // Write Display Brightness
+// #define SEEYA049_CMD_WRDISBV 0x51 // Write Display Brightness
 #define SEEYA049_CMD_WRCTRLD 0x53 // Write CTRL Display
 // #define SEEYA049_CMD_SCACTRL 0x69   // Scaling Up Control
 // #define SEEYA049_CMD_IFCONFG 0x6B   // Interface Configure
@@ -44,33 +50,41 @@
 // #define SEEYA049_CMD_RESCTRL3 0x82  // Resolution Control3
 // #define SEEYA049_CMD_PORCH_EXT 0x83 // Porch CTRL
 
-// SY103WDM07 (TODO: Is it the same as SY049WDM01?)
+// From the SY103WDM07 datasheet
 #define SEEYA049_CMD_SWRESET 0x01 // Software Reset
 #define SEEYA049_CMD_CMODE 0x03   // Compression Mode
 #define SEEYA049_CMD_SLPIN 0x10   // Sleep In
 #define SEEYA049_CMD_SLPOUT 0x11  // Sleep Out
-#define SEEYA049_CMD_ALLPOFF 0x22 // All Display Off
-#define SEEYA049_CMD_ALLPON 0x23  // All Display On
+#define SEEYA049_CMD_ALLPOFF 0x22 // All Pixels Off
+#define SEEYA049_CMD_ALLPON 0x23  // All Pixels On
 #define SEEYA049_CMD_DISPOFF 0x28 // Display Off
 #define SEEYA049_CMD_DISPON 0x29  // Display On
 #define SEEYA049_CMD_CASET 0x2A   // Column Address Set
 #define SEEYA049_CMD_RASET 0x2B   // Row Address Set
 #define SEEYA049_CMD_RAMWR 0x2C   // Memory Write
 #define SEEYA049_CMD_RAMRD 0x2E   // Memory Read
-#define SEEYA049_CMD_MADCTL 0x36  // Memory Access Control
-#define SEEYA049_CMD_IDMOFF 0x38  // Idle Mode Off
-#define SEEYA049_CMD_IDMON 0x39   // Idle Mode On
+// Note: the RGB bit in MADCTL doesn't seem to have an effect
+#define SEEYA049_CMD_MADCTL 0x36        // Memory Access Control
+#define SEEYA049_CMD_MADCTL_MY (1 << 0) // Mirror Y
+#define SEEYA049_CMD_MADCTL_MX (1 << 1) // Mirror X
+#define SEEYA049_CMD_IDMOFF 0x38        // Idle Mode Off
+#define SEEYA049_CMD_IDMON 0x39         // Idle Mode On
+// Scaling seems to work but causes some flickering
 #define SEEYA049_CMD_SCACTRL 0x69 // Scaling Up Control
-#define SEEYA049_CMD_IFCONFG 0x6B // Interface Configure
+#define SEEYA049_CMD_IFCONFG 0x6B // Interface Configure (lane count)
 #define SEEYA049_CMD_ANCTRL1 0x90 // Display Anchor On/Off
 #define SEEYA049_CMD_ANCTRL2 0x91 // Display Anchor CTRL
 #define SEEYA049_CMD_BCCTR3 0xC2  // Brightness Control
 
+// From the SY103WDM01 datasheet (only the commands that are different from SY103WDM07)
+// COLMOD is only documented as valid as 0x77 and doesn't seem to have an effect
+#define SEEYA049_CMD_COLMOD 0x3A  // Interface Pixel Format
+#define SEEYA049_CMD_WRDISBV 0x51 // Write Display Brightness
+
 typedef struct {
     esp_lcd_panel_io_handle_t io;
     int reset_gpio_num;
-    // uint8_t madctl_val; // save current value of LCD_CMD_MADCTL register
-    // uint8_t colmod_val; // save surrent value of LCD_CMD_COLMOD register
+    uint8_t madctl_val; // save current value of SEEYA049_CMD_MADCTL register
     const seeya049_lcd_init_cmd_t *init_cmds;
     uint16_t init_cmds_size;
     uint8_t lane_num;
@@ -118,33 +132,6 @@ esp_err_t esp_lcd_new_panel_seeya049(const esp_lcd_panel_io_handle_t io,
         ESP_GOTO_ON_ERROR(gpio_config(&io_conf), err, TAG, "configure GPIO for RST line failed");
     }
 
-    // switch (panel_dev_config->rgb_ele_order) {
-    // case LCD_RGB_ELEMENT_ORDER_RGB:
-    //     seeya049->madctl_val = 0;
-    //     break;
-    // case LCD_RGB_ELEMENT_ORDER_BGR:
-    //     ili9881c->madctl_val |= LCD_CMD_BGR_BIT;
-    //     break;
-    // default:
-    //     ESP_GOTO_ON_FALSE(false, ESP_ERR_NOT_SUPPORTED, err, TAG, "unsupported color space");
-    //     break;
-    // }
-
-    // switch (panel_dev_config->bits_per_pixel) {
-    // case 16: // RGB565
-    //     ili9881c->colmod_val = 0x55;
-    //     break;
-    // case 18: // RGB666
-    //     ili9881c->colmod_val = 0x66;
-    //     break;
-    // case 24: // RGB888
-    //     ili9881c->colmod_val = 0x77;
-    //     break;
-    // default:
-    //     ESP_GOTO_ON_FALSE(false, ESP_ERR_NOT_SUPPORTED, err, TAG, "unsupported pixel width");
-    //     break;
-    // }
-
     seeya049->io = io;
     seeya049->init_cmds = vendor_config->init_cmds;
     seeya049->init_cmds_size = vendor_config->init_cmds_size;
@@ -183,98 +170,83 @@ err:
     return ret;
 }
 
+// NED-provided init sequence
+// The only critical command from NED seems to be SEEYA049_CMD_WRCTRLD. Then we add
+// SEEYA049_CMD_IFCONFG to make the display work in 2 lane mode.
 static const seeya049_lcd_init_cmd_t vendor_specific_init_default[] = {
     // CMD1
-    // Critical -- this must happen or nothing else works
-    // Based on the SEEYA_SY103WAM01_Pre-spec V0.4.pdf datasheet here's what the bits mean:
+    // WRCTRLD? Absolutely critical -- this must happen or nothing else works
+    // Based on the SEEYA_SY103WAM01_Pre-spec V0.4.pdf datasheet here's what the bits mean:
     // D5: Brightness control enable (must be on)
     // D3: Display dimming control enable
     // D2: Temperature index dimming control enable
     // D0: Display mode control (1=High brightness, low contrast, 0=Low brightness, high contrast)
-    {.cmd = SEEYA049_CMD_WRCTRLD, .data = (uint8_t[]){0x20}, .data_bytes = 1, .delay_ms = 0},
+    {.cmd = SEEYA049_CMD_WRCTRLD, .data = (uint8_t[]){0x29}, .data_bytes = 1, .delay_ms = 0},
 
     // WRDISBV? Display brightness control? No change when removing
-    // {.cmd = SEEYA049_CMD_WRDISBV, .data = (uint8_t[]){0x01, 0x00}, .data_bytes = 2, .delay_ms =
-    // 0},
-    // {.cmd = SEEYA049_CMD_CMODE, .data = (uint8_t[]){0x00}, .data_bytes = 1, .delay_ms = 0},
-    // RESCTL? Removing these gives some kinda funky color bars unless i change the porch settings
-    // away from NED's defaults (maybe timing related?)
-    // {.cmd = 0x80,
-    //  .data = (uint8_t[]){0x00, 0xE0, 0xE0, 0x0E, 0x00, 0x31},
-    //  .data_bytes = 6,
-    //  .delay_ms = 0},
-    // {.cmd = 0x81,
-    //  .data = (uint8_t[]){0x03, 0x04, 0x00, 0x29, 0x00, 0x05, 0x00},
-    //  .data_bytes = 7,
-    //  .delay_ms = 0},
-    // {.cmd = 0x82,
-    //  .data = (uint8_t[]){0x03, 0x04, 0x00, 0x29, 0x00, 0x05, 0x01},
-    //  .data_bytes = 7,
-    //  .delay_ms = 0},
+    {.cmd = SEEYA049_CMD_WRDISBV, .data = (uint8_t[]){0xFF, 0x01}, .data_bytes = 2, .delay_ms = 0},
+    {.cmd = SEEYA049_CMD_CMODE, .data = (uint8_t[]){0x00}, .data_bytes = 1, .delay_ms = 0},
+    // RESCTL?
+    {.cmd = 0x80,
+     .data = (uint8_t[]){0x00, 0xE0, 0xE0, 0x0E, 0x00, 0x31},
+     .data_bytes = 6,
+     .delay_ms = 0},
+    {.cmd = 0x81,
+     .data = (uint8_t[]){0x03, 0x04, 0x00, 0x29, 0x00, 0x05, 0x00},
+     .data_bytes = 7,
+     .delay_ms = 0},
+    {.cmd = 0x82,
+     .data = (uint8_t[]){0x03, 0x04, 0x00, 0x29, 0x00, 0x05, 0x01},
+     .data_bytes = 7,
+     .delay_ms = 0},
     // Tearing effect line on
-    // {.cmd = 0x35, .data = (uint8_t[]){0x00}, .data_bytes = 1, .delay_ms = 0},
+    {.cmd = 0x35, .data = (uint8_t[]){0x00}, .data_bytes = 1, .delay_ms = 0},
     // Gamma set
-    // {.cmd = 0x26, .data = (uint8_t[]){0x20}, .data_bytes = 1, .delay_ms = 0},
-    // Nothing on the screen if this is omitted, so I'm confident it's working
-    {.cmd = SEEYA049_CMD_IFCONFG, .data = (uint8_t[]){0x02}, .data_bytes = 1, .delay_ms = 0},
-    // Setting to RGB mode does not seem to have an effect
-    // {.cmd = SEEYA049_CMD_MADCTL, .data = (uint8_t[]){0x08}, .data_bytes = 1, .delay_ms = 0},
+    {.cmd = 0x26, .data = (uint8_t[]){0x20}, .data_bytes = 1, .delay_ms = 0},
 
     // CMD2 P1
     // No change in behavior removing these
-    // {.cmd = 0xF0, .data = (uint8_t[]){0xAA, 0x11}, .data_bytes = 2, .delay_ms = 0},
-    // {.cmd = 0xC0, .data = (uint8_t[]){0x00}, .data_bytes = 1, .delay_ms = 0},
-    // {.cmd = SEEYA049_CMD_BCCTR3,
-    //  .data = (uint8_t[]){0x03, 0xFF, 0x03, 0xFF, 0x03, 0xFF, 0x03, 0xFF},
-    //  .data_bytes = 8,
-    //  .delay_ms = 0},
-
-    // Scale up 2x
-    // Does not seem to have an effect for some reason
-    // {.cmd = SEEYA049_CMD_SCACTRL, .data = (uint8_t[]){0x03}, .data_bytes = 1, .delay_ms = 0},
+    {.cmd = 0xF0, .data = (uint8_t[]){0xAA, 0x11}, .data_bytes = 2, .delay_ms = 0},
+    {.cmd = 0xC0, .data = (uint8_t[]){0x00}, .data_bytes = 1, .delay_ms = 0},
+    {.cmd = SEEYA049_CMD_BCCTR3,
+     .data = (uint8_t[]){0x03, 0xFF, 0x03, 0xFF, 0x03, 0xFF, 0x03, 0xFF},
+     .data_bytes = 8,
+     .delay_ms = 0},
 
     // CMD2 P2
     // No change removing these
-    // {.cmd = 0xF0, .data = (uint8_t[]){0xAA, 0x12}, .data_bytes = 2, .delay_ms = 0},
-    // {.cmd = 0xBF, .data = (uint8_t[]){0x37, 0xA9}, .data_bytes = 2, .delay_ms = 0},
+    {.cmd = 0xF0, .data = (uint8_t[]){0xAA, 0x12}, .data_bytes = 2, .delay_ms = 0},
+    {.cmd = 0xBF, .data = (uint8_t[]){0x37, 0xA9}, .data_bytes = 2, .delay_ms = 0},
 
     // CMD3 P0
     // No change removing these
-    // {.cmd = 0xFF, .data = (uint8_t[]){0x5A, 0x80}, .data_bytes = 2, .delay_ms = 0},
-    // {.cmd = 0x65, .data = (uint8_t[]){0x2F}, .data_bytes = 1, .delay_ms = 0},
-    // {.cmd = 0xF2, .data = (uint8_t[]){0x01}, .data_bytes = 1, .delay_ms = 0},
+    {.cmd = 0xFF, .data = (uint8_t[]){0x5A, 0x80}, .data_bytes = 2, .delay_ms = 0},
+    {.cmd = 0x65, .data = (uint8_t[]){0x2F}, .data_bytes = 1, .delay_ms = 0},
+    {.cmd = 0xF2, .data = (uint8_t[]){0x01}, .data_bytes = 1, .delay_ms = 0},
 
     // CMD3 P1
     // No change removing these
-    // {.cmd = 0xFF, .data = (uint8_t[]){0x5A, 0x81}, .data_bytes = 2, .delay_ms = 0},
-    // {.cmd = 0x65, .data = (uint8_t[]){0x05}, .data_bytes = 1, .delay_ms = 0},
-    // {.cmd = 0xF2, .data = (uint8_t[]){0x22}, .data_bytes = 1, .delay_ms = 0},
-    // {.cmd = 0x65, .data = (uint8_t[]){0x0A}, .data_bytes = 1, .delay_ms = 0},
-    // {.cmd = 0xF2, .data = (uint8_t[]){0x00}, .data_bytes = 1, .delay_ms = 0},
-    // {.cmd = 0x65, .data = (uint8_t[]){0x17}, .data_bytes = 1, .delay_ms = 0},
-    // {.cmd = 0xF9,
-    //  .data =
-    //      (uint8_t[]){0x5E, 0x62, 0x66, 0x6A, 0x6F, 0x73, 0x77, 0x7B, 0x7F, 0x84, 0x88, 0x8C,
-    //      0x90},
-    //  .data_bytes = 13,
-    //  .delay_ms = 0},
+    {.cmd = 0xFF, .data = (uint8_t[]){0x5A, 0x81}, .data_bytes = 2, .delay_ms = 0},
+    {.cmd = 0x65, .data = (uint8_t[]){0x05}, .data_bytes = 1, .delay_ms = 0},
+    {.cmd = 0xF2, .data = (uint8_t[]){0x22}, .data_bytes = 1, .delay_ms = 0},
+    {.cmd = 0x65, .data = (uint8_t[]){0x0A}, .data_bytes = 1, .delay_ms = 0},
+    {.cmd = 0xF2, .data = (uint8_t[]){0x00}, .data_bytes = 1, .delay_ms = 0},
+    {.cmd = 0x65, .data = (uint8_t[]){0x17}, .data_bytes = 1, .delay_ms = 0},
+    {.cmd = 0xF9,
+     .data =
+         (uint8_t[]){0x5E, 0x62, 0x66, 0x6A, 0x6F, 0x73, 0x77, 0x7B, 0x7F, 0x84, 0x88, 0x8C, 0x90},
+     .data_bytes = 13,
+     .delay_ms = 0},
 
-    // Delay and final commands
-    // Make sure to wait 20ms
+    // Set to 2 lane MIPI mode
+    {.cmd = SEEYA049_CMD_IFCONFG, .data = (uint8_t[]){0x02}, .data_bytes = 1, .delay_ms = 0},
+
+    // Wake from sleep
     {.cmd = 0, .data = NULL, .data_bytes = 0, .delay_ms = 20},
     {.cmd = SEEYA049_CMD_SLPOUT, .data = NULL, .data_bytes = 0, .delay_ms = 100}, // Sleep Out
-    // {.cmd = SEEYA049_CMD_DISPON, .data = NULL, .data_bytes = 0, .delay_ms = 20},  // Display On
-
-    // // All pixels on
-    // {.cmd = SEEYA049_CMD_ALLPON, .data = NULL, .data_bytes = 0, .delay_ms = 2000},
-    // {.cmd = SEEYA049_CMD_ALLPOFF, .data = NULL, .data_bytes = 0, .delay_ms = 2000},
-
-    // Final configuration
-    // Seems to work without these set
-    // {.cmd = 0xF0, .data = (uint8_t[]){0xAA, 0x11}, .data_bytes = 2, .delay_ms = 0},
-    // {.cmd = 0xC0, .data = (uint8_t[]){0xFF}, .data_bytes = 1, .delay_ms = 0},
 };
 
+// Built-in self-test init sequence provided by NED
 static const seeya049_lcd_init_cmd_t vendor_specific_init_selftest[] = {
     // CMD1
     {.cmd = SEEYA049_CMD_WRCTRLD, .data = (uint8_t[]){0x29}, .data_bytes = 1, .delay_ms = 0},
@@ -352,35 +324,14 @@ static esp_err_t panel_seeya049_del(esp_lcd_panel_t *panel) {
     return ESP_OK;
 }
 
-static esp_err_t panel_seeya049_init(esp_lcd_panel_t *panel) {
+// WARNING: Reading registers seems to break MIPI. This seems likely to be a ESP32-P4 driver
+// issue. Perhaps here:
+// https://github.com/espressif/esp-idf/blob/0d6099ec533c4b647fb7a7b0b8942bc7aeb82f90/components/hal/mipi_dsi_hal.c#L202
+// since the MIPI driver exits video mode when reading registers.
+
+esp_err_t panel_seeya049_log_registers(esp_lcd_panel_t *panel) {
     seeya049_panel_t *seeya049 = (seeya049_panel_t *)panel->user_data;
     esp_lcd_panel_io_handle_t io = seeya049->io;
-    const seeya049_lcd_init_cmd_t *init_cmds = NULL;
-    uint16_t init_cmds_size = 0;
-
-    // vendor specific initialization, it can be different between manufacturers
-    // should consult the LCD supplier for initialization sequence code
-    if (seeya049->init_cmds) {
-        init_cmds = seeya049->init_cmds;
-        init_cmds_size = seeya049->init_cmds_size;
-    } else {
-        init_cmds = vendor_specific_init_default;
-        init_cmds_size = sizeof(vendor_specific_init_default) / sizeof(seeya049_lcd_init_cmd_t);
-    }
-
-    for (int i = 0; i < init_cmds_size; i++) {
-        if (init_cmds[i].cmd != 0) {
-            ESP_LOGI(TAG, "send command %02Xh", init_cmds[i].cmd);
-            // Send command
-            ESP_RETURN_ON_ERROR(esp_lcd_panel_io_tx_param(io, init_cmds[i].cmd, init_cmds[i].data,
-                                                          init_cmds[i].data_bytes),
-                                TAG, "send command failed");
-        }
-        if (init_cmds[i].delay_ms > 0) {
-            ESP_LOGI(TAG, "delay %dms", init_cmds[i].delay_ms);
-            vTaskDelay(pdMS_TO_TICKS(init_cmds[i].delay_ms));
-        }
-    }
 
     uint8_t out8;
     uint8_t out8Array[2];
@@ -456,6 +407,57 @@ static esp_err_t panel_seeya049_init(esp_lcd_panel_t *panel) {
              SEEYA049_CMD_BCCTR3, bcctrl3_val[0], bcctrl3_val[1], bcctrl3_val[2], bcctrl3_val[3],
              bcctrl3_val[4], bcctrl3_val[5], bcctrl3_val[6], bcctrl3_val[7]);
 
+    return ESP_OK;
+}
+
+esp_err_t panel_seeya049_send_init_cmds(esp_lcd_panel_t *panel) {
+    seeya049_panel_t *seeya049 = (seeya049_panel_t *)panel->user_data;
+    esp_lcd_panel_io_handle_t io = seeya049->io;
+    const seeya049_lcd_init_cmd_t *init_cmds = NULL;
+    uint16_t init_cmds_size = 0;
+
+    // vendor specific initialization, it can be different between manufacturers
+    // should consult the LCD supplier for initialization sequence code
+    if (seeya049->init_cmds) {
+        init_cmds = seeya049->init_cmds;
+        init_cmds_size = seeya049->init_cmds_size;
+    } else {
+        init_cmds = vendor_specific_init_default;
+        init_cmds_size = sizeof(vendor_specific_init_default) / sizeof(seeya049_lcd_init_cmd_t);
+    }
+
+    for (int i = 0; i < init_cmds_size; i++) {
+        if (init_cmds[i].cmd != 0) {
+            switch (init_cmds[i].cmd) {
+            case SEEYA049_CMD_MADCTL:
+                seeya049->madctl_val = ((uint8_t *)init_cmds[i].data)[0];
+                break;
+            default:
+                break;
+            }
+
+            ESP_LOGI(TAG, "esp_lcd_panel_io_tx_param %02Xh", init_cmds[i].cmd);
+            // Send command
+            ESP_RETURN_ON_ERROR(esp_lcd_panel_io_tx_param(io, init_cmds[i].cmd, init_cmds[i].data,
+                                                          init_cmds[i].data_bytes),
+                                TAG, "send command failed");
+        }
+        if (init_cmds[i].delay_ms > 0) {
+            ESP_LOGI(TAG, "delay %dms", init_cmds[i].delay_ms);
+            vTaskDelay(pdMS_TO_TICKS(init_cmds[i].delay_ms));
+        }
+    }
+
+    // WARNING: May break MIPI. See comment above this method
+    // panel_seeya049_log_registers(panel);
+
+    return ESP_OK;
+}
+
+static esp_err_t panel_seeya049_init(esp_lcd_panel_t *panel) {
+    seeya049_panel_t *seeya049 = (seeya049_panel_t *)panel->user_data;
+    ESP_RETURN_ON_ERROR(panel_seeya049_send_init_cmds(panel), TAG, "send init commands failed");
+
     // What happens in here? See:
     // https://github.com/espressif/esp-idf/blob/0d6099ec533c4b647fb7a7b0b8942bc7aeb82f90/components/esp_lcd/dsi/esp_lcd_panel_dpi.c#L403
     ESP_RETURN_ON_ERROR(seeya049->init(panel), TAG, "init MIPI DPI panel failed");
@@ -487,23 +489,27 @@ static esp_err_t panel_seeya049_mirror(esp_lcd_panel_t *panel, bool mirror_x, bo
     seeya049_panel_t *seeya049 = (seeya049_panel_t *)panel->user_data;
     esp_lcd_panel_io_handle_t io = seeya049->io;
 
-    uint8_t madctl_val = 0x00;
+    uint8_t madctl_val = seeya049->madctl_val;
 
     if (mirror_x) {
-        madctl_val |= 0x01;
+        madctl_val |= SEEYA049_CMD_MADCTL_MX;
+    } else {
+        madctl_val &= ~SEEYA049_CMD_MADCTL_MX;
     }
+    // NOTE: Mirroring the Y axis seems to mess with the pixel format so colors get all weird
+    // Red -> Yellow, Blue -> Cyan, Green -> Magenta
+    // These are inverted colors, but simply sending the inverse of the colors doesn't seem to work.
     if (mirror_y) {
-        madctl_val |= 0x02;
+        madctl_val |= SEEYA049_CMD_MADCTL_MY;
+    } else {
+        madctl_val &= ~SEEYA049_CMD_MADCTL_MY;
     }
 
+    ESP_LOGI(TAG, "Setting MADCTL to 0x%x", madctl_val);
     ESP_RETURN_ON_ERROR(esp_lcd_panel_io_tx_param(io, SEEYA049_CMD_MADCTL, &madctl_val, 1), TAG,
                         "send command failed");
 
-    // Read back the MADCTL register
-    uint8_t madctl_val_read;
-    ESP_RETURN_ON_ERROR(esp_lcd_panel_io_rx_param(io, SEEYA049_CMD_MADCTL, &madctl_val_read, 1),
-                        TAG, "read register MADCTL failed");
-    ESP_LOGI(TAG, "MADCTL register: 0x%x", madctl_val_read);
+    seeya049->madctl_val = madctl_val;
 
     return ESP_OK;
 }
@@ -518,6 +524,12 @@ static esp_err_t panel_seeya049_disp_on_off(esp_lcd_panel_t *panel, bool on_off)
         ESP_RETURN_ON_ERROR(esp_lcd_panel_io_tx_param(io, SEEYA049_CMD_DISPON, NULL, 0), TAG,
                             "send command failed");
         vTaskDelay(pdMS_TO_TICKS(20));
+        // In the NED sequence these happen after display on though they don't seem to be necessary
+        // Seems to work without these set
+        // ESP_RETURN_ON_ERROR(esp_lcd_panel_io_tx_param(io, 0xF0, (uint8_t[]){0xAA, 0x11}, 2), TAG,
+        //                     "send command failed");
+        // ESP_RETURN_ON_ERROR(esp_lcd_panel_io_tx_param(io, 0xC0, (uint8_t[]){0xFF}, 1), TAG,
+        //                     "send command failed");
     } else {
         ESP_RETURN_ON_ERROR(esp_lcd_panel_io_tx_param(io, SEEYA049_CMD_DISPOFF, NULL, 0), TAG,
                             "send command failed");
@@ -588,6 +600,41 @@ esp_err_t panel_seeya049_run_selftest(esp_lcd_panel_t *panel) {
             vTaskDelay(pdMS_TO_TICKS(init_cmds[i].delay_ms));
         }
     }
+
+    return ESP_OK;
+}
+
+esp_err_t panel_seeya049_write_ram(esp_lcd_panel_t *panel, const void *data, size_t length) {
+    ESP_RETURN_ON_FALSE(panel && data && length > 0, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+
+    seeya049_panel_t *seeya049 = (seeya049_panel_t *)panel->user_data;
+    esp_lcd_panel_io_handle_t io = seeya049->io;
+
+    // Send the RAM write command followed by the data
+    // NOTE: There might be a better way to do this
+    ESP_RETURN_ON_ERROR(esp_lcd_panel_io_tx_param(io, SEEYA049_CMD_RAMWR, data, length), TAG,
+                        "write display RAM failed");
+
+    // This needs to happen otherwise the screen is black
+    ESP_RETURN_ON_ERROR(esp_lcd_panel_io_tx_param(io, 0xF0, (uint8_t[]){0xAA, 0x11}, 2), TAG,
+                        "write 0xF0 failed");
+
+    // Turn on self-test. This seems to control which tests get run
+    // ESP_RETURN_ON_ERROR(
+    //     esp_lcd_panel_io_tx_param(io, 0xC5, (uint8_t[]){0x01, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}, 6),
+    //     TAG, "write 0xC5 failed");
+
+    // Turn on framebuffer display? Turns on screen full white but I can't get patterns to update
+    // Byte1: 0xAA -- if set to 0x22 I get a black/off screen
+    // Byte2: 0x55 -- if set to 0x11 I get a black/off screen
+    // Byte3: 0x01 -- if set to 0x00 i get a black/off screen
+    // Byte4: 0x80 -- if set to 0x00 or 0x02 i get black/off screen
+    // ESP_RETURN_ON_ERROR(esp_lcd_panel_io_tx_param(io, 0xC4, (uint8_t[]){0xAA, 0x55, 0x01, 0x80},
+    // 4), TAG, "write 0xC4 failed");
+
+    // Try to write again?
+    ESP_RETURN_ON_ERROR(esp_lcd_panel_io_tx_param(io, SEEYA049_CMD_RAMWR, data, length), TAG,
+                        "write display RAM failed");
 
     return ESP_OK;
 }

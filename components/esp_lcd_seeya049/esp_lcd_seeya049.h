@@ -67,6 +67,8 @@ esp_err_t esp_lcd_new_panel_seeya049(const esp_lcd_panel_io_handle_t io,
                                      const esp_lcd_panel_dev_config_t *panel_dev_config,
                                      esp_lcd_panel_handle_t *ret_panel);
 
+esp_err_t panel_seeya049_send_init_cmds(esp_lcd_panel_t *panel);
+
 esp_err_t panel_seeya049_all_pixels_on_off(esp_lcd_panel_t *panel, bool on_off);
 
 /**
@@ -79,6 +81,19 @@ esp_err_t panel_seeya049_all_pixels_on_off(esp_lcd_panel_t *panel, bool on_off);
  *      - Otherwise on error
  */
 esp_err_t panel_seeya049_run_selftest(esp_lcd_panel_t *panel);
+
+/**
+ * @brief Write raw data to the display RAM
+ *
+ * @param[in] panel LCD panel handle
+ * @param[in] data Pointer to the data buffer to write
+ * @param[in] length Length of data in bytes
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_ARG if parameter is invalid
+ *      - Otherwise on error
+ */
+esp_err_t panel_seeya049_write_ram(esp_lcd_panel_t *panel, const void *data, size_t length);
 
 #ifdef __cplusplus
 }
