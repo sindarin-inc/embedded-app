@@ -73,6 +73,7 @@ if(IDF_TARGET STREQUAL "esp32p4")
         esp_lcd
         fatfs
         sdmmc
+        esp_lcd_seeya049
     )
 elseif(IDF_TARGET STREQUAL "esp32s3")
     list(APPEND components

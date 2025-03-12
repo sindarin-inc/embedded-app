@@ -22,6 +22,9 @@ menu "Sol Options"
 
             config DISPLAY_ESP32_P4_FUNCTION_EV
                 bool "ESP32 P4 Function EV Display"
+
+            config DISPLAY_ESP32_P4_SEEYA_049
+                bool "ESP32 P4 SeeYA 0.49in Display"
         endchoice
 
         config DISPLAY_PIXEL_RESOLUTION_IS_FIX
@@ -39,7 +42,7 @@ menu "Sol Options"
             default 1280 if DISPLAY_M5STACK_ATOM_DISPLAY
             default 1920 if DISPLAY_M5STACK_MODULE_DISPLAY
             default 800 if DISPLAY_ESP32_P4_FUNCTION_EV
-            default 256
+            default 1920 if DISPLAY_ESP32_P4_SEEYA_049
 
         config DISPLAY_HEIGHT
             int "Display Height"
@@ -48,7 +51,7 @@ menu "Sol Options"
             default 720 if DISPLAY_M5STACK_ATOM_DISPLAY
             default 1080 if DISPLAY_M5STACK_MODULE_DISPLAY
             default 1280 if DISPLAY_ESP32_P4_FUNCTION_EV
-            default 256
+            default 1080 if DISPLAY_ESP32_P4_SEEYA_049
 
         menu "Display Pins"
             config DISPLAY_EINKET013TT1_CS_LEFT
