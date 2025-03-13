@@ -8,6 +8,7 @@
 
 #if SOC_MIPI_DSI_SUPPORTED
 #include "driver/gpio.h"
+#include "driver/i2c.h"
 #include "esp_check.h"
 #include "esp_lcd_mipi_dsi.h"
 #include "esp_lcd_panel_commands.h"
@@ -80,6 +81,15 @@
 // COLMOD is only documented as valid as 0x77 and doesn't seem to have an effect
 #define SEEYA049_CMD_COLMOD 0x3A  // Interface Pixel Format
 #define SEEYA049_CMD_WRDISBV 0x51 // Write Display Brightness
+
+// I2C configuration
+#define I2C_MASTER_SCL_IO 21 // SCL pin
+#define I2C_MASTER_SDA_IO 22 // SDA pin
+// #define I2C_DEVICE_ADDR 0x4C // I2C device address
+#define I2C_DEVICE_ADDR 0x4E      // I2C device address
+#define I2C_MASTER_NUM I2C_NUM_0  // I2C port number
+#define I2C_MASTER_FREQ_HZ 100000 // I2C master clock frequency
+#define I2C_TIMEOUT_MS 1000       // I2C timeout in milliseconds
 
 typedef struct {
     esp_lcd_panel_io_handle_t io;
@@ -635,6 +645,85 @@ esp_err_t panel_seeya049_write_ram(esp_lcd_panel_t *panel, const void *data, siz
     // Try to write again?
     ESP_RETURN_ON_ERROR(esp_lcd_panel_io_tx_param(io, SEEYA049_CMD_RAMWR, data, length), TAG,
                         "write display RAM failed");
+
+    return ESP_OK;
+}
+
+static esp_err_t i2c_master_init(void) {
+    i2c_config_t conf = {
+        .mode = I2C_MODE_MASTER,
+        .sda_io_num = I2C_MASTER_SDA_IO,
+        .scl_io_num = I2C_MASTER_SCL_IO,
+        .sda_pullup_en = GPIO_PULLUP_ENABLE,
+        .scl_pullup_en = GPIO_PULLUP_ENABLE,
+        .master.clk_speed = I2C_MASTER_FREQ_HZ,
+    };
+
+    esp_err_t err = i2c_param_config(I2C_MASTER_NUM, &conf);
+    if (err != ESP_OK) return err;
+
+    return i2c_driver_install(I2C_MASTER_NUM, conf.mode, 0, 0, 0);
+}
+
+static esp_err_t i2c_write_reg(uint16_t reg_addr, uint16_t data) {
+    uint8_t write_buf[4];
+    write_buf[0] = (reg_addr >> 8) & 0xFF; // Register address high byte
+    write_buf[1] = reg_addr & 0xFF;        // Register address low byte
+    write_buf[2] = (data >> 8) & 0xFF;     // Data high byte
+    write_buf[3] = data & 0xFF;            // Data low byte
+
+    i2c_cmd_handle_t cmd = i2c_cmd_link_create();
+    i2c_master_start(cmd);
+    i2c_master_write_byte(cmd, (I2C_DEVICE_ADDR << 1) | I2C_MASTER_WRITE, true);
+    i2c_master_write(cmd, write_buf, sizeof(write_buf), true);
+    i2c_master_stop(cmd);
+
+    esp_err_t ret = i2c_master_cmd_begin(I2C_MASTER_NUM, cmd, pdMS_TO_TICKS(I2C_TIMEOUT_MS));
+    i2c_cmd_link_delete(cmd);
+
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to write to register 0x%04X: %d", reg_addr, ret);
+    }
+
+    return ret;
+}
+
+esp_err_t panel_seeya049_run_selftest_i2c(void) {
+    ESP_LOGI(TAG, "Initializing I2C for SeeYa049 self-test");
+
+    // Initialize I2C
+    ESP_RETURN_ON_ERROR(i2c_master_init(), TAG, "I2C master initialization failed");
+
+    // Get the self-test initialization sequence
+    const seeya049_lcd_init_cmd_t *init_cmds = vendor_specific_init_selftest;
+    uint16_t init_cmds_size =
+        sizeof(vendor_specific_init_selftest) / sizeof(seeya049_lcd_init_cmd_t);
+
+    // Process each command in the sequence
+    for (int i = 0; i < init_cmds_size; i++) {
+        if (init_cmds[i].cmd != 0) {
+            ESP_LOGI(TAG, "Processing command 0x%02X", init_cmds[i].cmd);
+
+            // For each command, we need to write its data bytes to sequential registers
+            for (int j = 0; j < init_cmds[i].data_bytes; j++) {
+                uint16_t reg_addr = (init_cmds[i].cmd << 8) | j;
+                uint16_t data_byte = ((uint8_t *)init_cmds[i].data)[j];
+
+                ESP_RETURN_ON_ERROR(i2c_write_reg(reg_addr, data_byte), TAG,
+                                    "Failed to write command data");
+            }
+        }
+
+        if (init_cmds[i].delay_ms > 0) {
+            ESP_LOGI(TAG, "Delay %dms", init_cmds[i].delay_ms);
+            vTaskDelay(pdMS_TO_TICKS(init_cmds[i].delay_ms));
+        }
+    }
+
+    ESP_LOGI(TAG, "Self-test initialization sequence completed");
+
+    // Clean up I2C driver
+    i2c_driver_delete(I2C_MASTER_NUM);
 
     return ESP_OK;
 }

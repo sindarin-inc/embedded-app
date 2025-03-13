@@ -571,6 +571,30 @@ TEST_CASE("test seeya049 direct RAM write", "[seeya049][write_ram]") {
     test_deinit_seeya_panel();
 }
 
+TEST_CASE("test seeya049 I2C self-test", "[seeya049][i2c_self_test]") {
+    // Config the reset pin and pull it high
+    gpio_config_t io_conf = {
+        .mode = GPIO_MODE_OUTPUT_OD,
+        .pull_up_en = GPIO_PULLUP_DISABLE,
+        .pull_down_en = GPIO_PULLDOWN_DISABLE,
+        .intr_type = GPIO_INTR_DISABLE,
+        .pin_bit_mask = 1ULL << TEST_PIN_NUM_LCD_RST,
+    };
+    TEST_ESP_OK(gpio_config(&io_conf));
+    TEST_ESP_OK(gpio_set_level(TEST_PIN_NUM_LCD_RST, 1));
+    vTaskDelay(pdMS_TO_TICKS(1));
+    TEST_ESP_OK(gpio_set_level(TEST_PIN_NUM_LCD_RST, 0));
+    vTaskDelay(pdMS_TO_TICKS(1));
+    TEST_ESP_OK(gpio_set_level(TEST_PIN_NUM_LCD_RST, 1));
+    vTaskDelay(pdMS_TO_TICKS(120));
+
+    // Run the self-test
+    ESP_LOGI(TAG, "Running I2C self-test");
+    TEST_ESP_OK(panel_seeya049_run_selftest_i2c());
+
+    vTaskDelay(pdMS_TO_TICKS(TEST_DELAY_TIME_MS));
+}
+
 #endif
 
 // Some resources are lazy allocated in the LCD driver, the threadhold is left for that case

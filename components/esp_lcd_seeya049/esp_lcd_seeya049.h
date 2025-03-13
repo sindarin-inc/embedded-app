@@ -95,6 +95,18 @@ esp_err_t panel_seeya049_run_selftest(esp_lcd_panel_t *panel);
  */
 esp_err_t panel_seeya049_write_ram(esp_lcd_panel_t *panel, const void *data, size_t length);
 
+/**
+ * @brief Run the panel's built-in self test mode initialization sequence using I2C
+ *
+ * This variant uses I2C communication instead of MIPI DSI, with SCL on pin 21 and SDA on pin 22.
+ *
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_ARG if parameter is invalid
+ *      - Otherwise on error
+ */
+esp_err_t panel_seeya049_run_selftest_i2c(void);
+
 #ifdef __cplusplus
 }
 #endif
