@@ -6,11 +6,12 @@
 
 #include <string.h>
 
-#if SOC_MIPI_DSI_SUPPORTED
 #include "driver/gpio.h"
 #include "driver/i2c.h"
 #include "esp_check.h"
+#if SOC_MIPI_DSI_SUPPORTED
 #include "esp_lcd_mipi_dsi.h"
+#endif
 #include "esp_lcd_panel_commands.h"
 #include "esp_lcd_panel_io.h"
 #include "esp_lcd_panel_ops.h"
@@ -88,7 +89,7 @@
 // #define I2C_DEVICE_ADDR 0x4C // I2C device address
 #define I2C_DEVICE_ADDR 0x4E      // I2C device address
 #define I2C_MASTER_NUM I2C_NUM_0  // I2C port number
-#define I2C_MASTER_FREQ_HZ 100000 // I2C master clock frequency
+#define I2C_MASTER_FREQ_HZ 400000 // I2C master clock frequency
 #define I2C_TIMEOUT_MS 1000       // I2C timeout in milliseconds
 
 typedef struct {
@@ -107,78 +108,6 @@ typedef struct {
 } seeya049_panel_t;
 
 static const char *TAG = "seeya049";
-
-// Forward declaration of panel methods
-static esp_err_t panel_seeya049_del(esp_lcd_panel_t *panel);
-static esp_err_t panel_seeya049_init(esp_lcd_panel_t *panel);
-static esp_err_t panel_seeya049_reset(esp_lcd_panel_t *panel);
-static esp_err_t panel_seeya049_mirror(esp_lcd_panel_t *panel, bool mirror_x, bool mirror_y);
-static esp_err_t panel_seeya049_disp_on_off(esp_lcd_panel_t *panel, bool on_off);
-static esp_err_t panel_seeya049_sleep(esp_lcd_panel_t *panel, bool sleep);
-
-esp_err_t esp_lcd_new_panel_seeya049(const esp_lcd_panel_io_handle_t io,
-                                     const esp_lcd_panel_dev_config_t *panel_dev_config,
-                                     esp_lcd_panel_handle_t *ret_panel) {
-    ESP_RETURN_ON_FALSE(io && panel_dev_config && ret_panel, ESP_ERR_INVALID_ARG, TAG,
-                        "invalid arguments");
-    seeya049_vendor_config_t *vendor_config =
-        (seeya049_vendor_config_t *)panel_dev_config->vendor_config;
-    ESP_RETURN_ON_FALSE(vendor_config && vendor_config->mipi_config.dpi_config &&
-                            vendor_config->mipi_config.dsi_bus,
-                        ESP_ERR_INVALID_ARG, TAG, "invalid vendor config");
-
-    esp_err_t ret = ESP_OK;
-    seeya049_panel_t *seeya049 = (seeya049_panel_t *)calloc(1, sizeof(seeya049_panel_t));
-    ESP_RETURN_ON_FALSE(seeya049, ESP_ERR_NO_MEM, TAG, "no mem for seeya049 panel");
-
-    if (panel_dev_config->reset_gpio_num >= 0) {
-        gpio_config_t io_conf = {
-            .mode = GPIO_MODE_OUTPUT_OD,
-            .pull_up_en = GPIO_PULLUP_DISABLE,
-            .pull_down_en = GPIO_PULLDOWN_DISABLE,
-            .intr_type = GPIO_INTR_DISABLE,
-            .pin_bit_mask = 1ULL << panel_dev_config->reset_gpio_num,
-        };
-        ESP_GOTO_ON_ERROR(gpio_config(&io_conf), err, TAG, "configure GPIO for RST line failed");
-    }
-
-    seeya049->io = io;
-    seeya049->init_cmds = vendor_config->init_cmds;
-    seeya049->init_cmds_size = vendor_config->init_cmds_size;
-    seeya049->lane_num = vendor_config->mipi_config.lane_num;
-    seeya049->reset_gpio_num = panel_dev_config->reset_gpio_num;
-    seeya049->flags.reset_level = panel_dev_config->flags.reset_active_high;
-
-    // Create MIPI DPI panel
-    ESP_GOTO_ON_ERROR(esp_lcd_new_panel_dpi(vendor_config->mipi_config.dsi_bus,
-                                            vendor_config->mipi_config.dpi_config, ret_panel),
-                      err, TAG, "create MIPI DPI panel failed");
-    ESP_LOGD(TAG, "new MIPI DPI panel @%p", *ret_panel);
-
-    // Save the original functions of MIPI DPI panel
-    seeya049->del = (*ret_panel)->del;
-    seeya049->init = (*ret_panel)->init;
-    // Overwrite the functions of MIPI DPI panel
-    (*ret_panel)->del = panel_seeya049_del;
-    (*ret_panel)->init = panel_seeya049_init;
-    (*ret_panel)->reset = panel_seeya049_reset;
-    (*ret_panel)->mirror = panel_seeya049_mirror;
-    (*ret_panel)->disp_on_off = panel_seeya049_disp_on_off;
-    (*ret_panel)->disp_sleep = panel_seeya049_sleep;
-    (*ret_panel)->user_data = seeya049;
-    ESP_LOGD(TAG, "new seeya049 panel @%p", seeya049);
-
-    return ESP_OK;
-
-err:
-    if (seeya049) {
-        if (panel_dev_config->reset_gpio_num >= 0) {
-            gpio_reset_pin(panel_dev_config->reset_gpio_num);
-        }
-        free(seeya049);
-    }
-    return ret;
-}
 
 // NED-provided init sequence
 // The only critical command from NED seems to be SEEYA049_CMD_WRCTRLD. Then we add
@@ -315,6 +244,80 @@ static const seeya049_lcd_init_cmd_t vendor_specific_init_selftest[] = {
      .delay_ms = 0},
     {.cmd = 0xC4, .data = (uint8_t[]){0xAA, 0x55, 0x01, 0x80}, .data_bytes = 4, .delay_ms = 0},
 };
+
+#if SOC_MIPI_DSI_SUPPORTED
+
+// Forward declaration of panel methods
+static esp_err_t panel_seeya049_del(esp_lcd_panel_t *panel);
+static esp_err_t panel_seeya049_init(esp_lcd_panel_t *panel);
+static esp_err_t panel_seeya049_reset(esp_lcd_panel_t *panel);
+static esp_err_t panel_seeya049_mirror(esp_lcd_panel_t *panel, bool mirror_x, bool mirror_y);
+static esp_err_t panel_seeya049_disp_on_off(esp_lcd_panel_t *panel, bool on_off);
+static esp_err_t panel_seeya049_sleep(esp_lcd_panel_t *panel, bool sleep);
+
+esp_err_t esp_lcd_new_panel_seeya049(const esp_lcd_panel_io_handle_t io,
+                                     const esp_lcd_panel_dev_config_t *panel_dev_config,
+                                     esp_lcd_panel_handle_t *ret_panel) {
+    ESP_RETURN_ON_FALSE(io && panel_dev_config && ret_panel, ESP_ERR_INVALID_ARG, TAG,
+                        "invalid arguments");
+    seeya049_vendor_config_t *vendor_config =
+        (seeya049_vendor_config_t *)panel_dev_config->vendor_config;
+    ESP_RETURN_ON_FALSE(vendor_config && vendor_config->mipi_config.dpi_config &&
+                            vendor_config->mipi_config.dsi_bus,
+                        ESP_ERR_INVALID_ARG, TAG, "invalid vendor config");
+
+    esp_err_t ret = ESP_OK;
+    seeya049_panel_t *seeya049 = (seeya049_panel_t *)calloc(1, sizeof(seeya049_panel_t));
+    ESP_RETURN_ON_FALSE(seeya049, ESP_ERR_NO_MEM, TAG, "no mem for seeya049 panel");
+
+    if (panel_dev_config->reset_gpio_num >= 0) {
+        gpio_config_t io_conf = {
+            .mode = GPIO_MODE_OUTPUT_OD,
+            .pull_up_en = GPIO_PULLUP_DISABLE,
+            .pull_down_en = GPIO_PULLDOWN_DISABLE,
+            .intr_type = GPIO_INTR_DISABLE,
+            .pin_bit_mask = 1ULL << panel_dev_config->reset_gpio_num,
+        };
+        ESP_GOTO_ON_ERROR(gpio_config(&io_conf), err, TAG, "configure GPIO for RST line failed");
+    }
+
+    seeya049->io = io;
+    seeya049->init_cmds = vendor_config->init_cmds;
+    seeya049->init_cmds_size = vendor_config->init_cmds_size;
+    seeya049->lane_num = vendor_config->mipi_config.lane_num;
+    seeya049->reset_gpio_num = panel_dev_config->reset_gpio_num;
+    seeya049->flags.reset_level = panel_dev_config->flags.reset_active_high;
+
+    // Create MIPI DPI panel
+    ESP_GOTO_ON_ERROR(esp_lcd_new_panel_dpi(vendor_config->mipi_config.dsi_bus,
+                                            vendor_config->mipi_config.dpi_config, ret_panel),
+                      err, TAG, "create MIPI DPI panel failed");
+    ESP_LOGD(TAG, "new MIPI DPI panel @%p", *ret_panel);
+
+    // Save the original functions of MIPI DPI panel
+    seeya049->del = (*ret_panel)->del;
+    seeya049->init = (*ret_panel)->init;
+    // Overwrite the functions of MIPI DPI panel
+    (*ret_panel)->del = panel_seeya049_del;
+    (*ret_panel)->init = panel_seeya049_init;
+    (*ret_panel)->reset = panel_seeya049_reset;
+    (*ret_panel)->mirror = panel_seeya049_mirror;
+    (*ret_panel)->disp_on_off = panel_seeya049_disp_on_off;
+    (*ret_panel)->disp_sleep = panel_seeya049_sleep;
+    (*ret_panel)->user_data = seeya049;
+    ESP_LOGD(TAG, "new seeya049 panel @%p", seeya049);
+
+    return ESP_OK;
+
+err:
+    if (seeya049) {
+        if (panel_dev_config->reset_gpio_num >= 0) {
+            gpio_reset_pin(panel_dev_config->reset_gpio_num);
+        }
+        free(seeya049);
+    }
+    return ret;
+}
 
 static esp_err_t panel_seeya049_del(esp_lcd_panel_t *panel) {
     ESP_LOGI(TAG, "panel_seeya049_del");
@@ -649,7 +652,9 @@ esp_err_t panel_seeya049_write_ram(esp_lcd_panel_t *panel, const void *data, siz
     return ESP_OK;
 }
 
-static esp_err_t i2c_master_init(void) {
+#endif // SOC_MIPI_DSI_SUPPORTED
+
+static esp_err_t panel_seeya049_i2c_init(void) {
     i2c_config_t conf = {
         .mode = I2C_MODE_MASTER,
         .sda_io_num = I2C_MASTER_SDA_IO,
@@ -665,7 +670,9 @@ static esp_err_t i2c_master_init(void) {
     return i2c_driver_install(I2C_MASTER_NUM, conf.mode, 0, 0, 0);
 }
 
-static esp_err_t i2c_write_reg(uint16_t reg_addr, uint16_t data) {
+static esp_err_t panel_seeya049_i2c_deinit(void) { return i2c_driver_delete(I2C_MASTER_NUM); }
+
+static esp_err_t panel_seeya049_i2c_write_reg(uint16_t reg_addr, uint16_t data) {
     uint8_t write_buf[4];
     write_buf[0] = (reg_addr >> 8) & 0xFF; // Register address high byte
     write_buf[1] = reg_addr & 0xFF;        // Register address low byte
@@ -688,19 +695,48 @@ static esp_err_t i2c_write_reg(uint16_t reg_addr, uint16_t data) {
     return ret;
 }
 
-esp_err_t panel_seeya049_run_selftest_i2c(void) {
-    ESP_LOGI(TAG, "Initializing I2C for SeeYa049 self-test");
+static esp_err_t panel_seeya049_disp_on_off_i2c(bool on_off) {
+    if (on_off) {
+        ESP_RETURN_ON_ERROR(panel_seeya049_i2c_write_reg(SEEYA049_CMD_DISPON, 1), TAG,
+                            "Failed to write display on/off command");
 
-    // Initialize I2C
-    ESP_RETURN_ON_ERROR(i2c_master_init(), TAG, "I2C master initialization failed");
+        vTaskDelay(pdMS_TO_TICKS(20));
+    } else {
+        ESP_RETURN_ON_ERROR(panel_seeya049_i2c_write_reg(SEEYA049_CMD_DISPOFF, 0), TAG,
+                            "Failed to write display on/off command");
+    }
 
-    // Get the self-test initialization sequence
-    const seeya049_lcd_init_cmd_t *init_cmds = vendor_specific_init_selftest;
-    uint16_t init_cmds_size =
-        sizeof(vendor_specific_init_selftest) / sizeof(seeya049_lcd_init_cmd_t);
+    return ESP_OK;
+}
 
+static esp_err_t panel_seeya049_i2c_write_ram(uint8_t *data, size_t length) {
+    uint8_t write_buf[2];
+    const uint16_t reg_addr = 0x2C00;
+    write_buf[0] = (reg_addr >> 8) & 0xFF; // Register address high byte
+    write_buf[1] = reg_addr & 0xFF;        // Register address low byte
+
+    i2c_cmd_handle_t cmd = i2c_cmd_link_create();
+    i2c_master_start(cmd);
+    i2c_master_write_byte(cmd, (I2C_DEVICE_ADDR << 1) | I2C_MASTER_WRITE, true);
+    i2c_master_write(cmd, write_buf, sizeof(write_buf), false);
+    i2c_master_write(cmd, data, length, true);
+    i2c_master_stop(cmd);
+
+    esp_err_t ret = i2c_master_cmd_begin(
+        I2C_MASTER_NUM, cmd, pdMS_TO_TICKS((length + 3) * 10 / I2C_MASTER_FREQ_HZ * 1000));
+    i2c_cmd_link_delete(cmd);
+
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to write to ram 0x%04X: %s", reg_addr, esp_err_to_name(ret));
+    }
+
+    return ret;
+}
+
+esp_err_t panel_seeya049_send_init_cmds_i2c(const seeya049_lcd_init_cmd_t *init_cmds,
+                                            uint16_t size) {
     // Process each command in the sequence
-    for (int i = 0; i < init_cmds_size; i++) {
+    for (int i = 0; i < size; i++) {
         if (init_cmds[i].cmd != 0) {
             ESP_LOGI(TAG, "Processing command 0x%02X", init_cmds[i].cmd);
 
@@ -709,7 +745,7 @@ esp_err_t panel_seeya049_run_selftest_i2c(void) {
                 uint16_t reg_addr = (init_cmds[i].cmd << 8) | j;
                 uint16_t data_byte = ((uint8_t *)init_cmds[i].data)[j];
 
-                ESP_RETURN_ON_ERROR(i2c_write_reg(reg_addr, data_byte), TAG,
+                ESP_RETURN_ON_ERROR(panel_seeya049_i2c_write_reg(reg_addr, data_byte), TAG,
                                     "Failed to write command data");
             }
         }
@@ -720,12 +756,56 @@ esp_err_t panel_seeya049_run_selftest_i2c(void) {
         }
     }
 
-    ESP_LOGI(TAG, "Self-test initialization sequence completed");
+    return ESP_OK;
+}
+
+esp_err_t panel_seeya049_run_selftest_i2c(void) {
+    ESP_LOGI(TAG, "Initializing I2C for SeeYa049 self-test");
+
+    // Initialize I2C
+    ESP_RETURN_ON_ERROR(panel_seeya049_i2c_init(), TAG, "I2C master initialization failed");
+
+    // Get the self-test initialization sequence
+    ESP_RETURN_ON_ERROR(panel_seeya049_send_init_cmds_i2c(vendor_specific_init_selftest,
+                                                          sizeof(vendor_specific_init_selftest) /
+                                                              sizeof(seeya049_lcd_init_cmd_t)),
+                        TAG, "Failed to send init commands");
 
     // Clean up I2C driver
-    i2c_driver_delete(I2C_MASTER_NUM);
+    ESP_RETURN_ON_ERROR(panel_seeya049_i2c_deinit(), TAG, "I2C driver deletion failed");
 
     return ESP_OK;
 }
 
-#endif // SOC_MIPI_DSI_SUPPORTED
+esp_err_t panel_seeya049_run_framebuffer_test_i2c(uint8_t *data, size_t length) {
+
+    // Initialize I2C
+    ESP_RETURN_ON_ERROR(panel_seeya049_i2c_init(), TAG, "I2C master initialization failed");
+
+    // Init sequence
+    ESP_RETURN_ON_ERROR(panel_seeya049_send_init_cmds_i2c(vendor_specific_init_default,
+                                                          sizeof(vendor_specific_init_default) /
+                                                              sizeof(seeya049_lcd_init_cmd_t)),
+                        TAG, "Failed to send init commands");
+
+    ESP_RETURN_ON_ERROR(panel_seeya049_disp_on_off_i2c(true), TAG, "Failed to turn on display");
+
+    ESP_LOGI(TAG, "Writing test pattern to screen");
+
+    ESP_RETURN_ON_ERROR(panel_seeya049_i2c_write_ram(data, length), TAG,
+                        "Failed to write test pattern");
+
+    ESP_LOGI(TAG, "Write test pattern completed");
+
+    // Clean up I2C driver
+    ESP_RETURN_ON_ERROR(panel_seeya049_i2c_deinit(), TAG, "I2C driver deletion failed");
+
+    return ESP_OK;
+}
+
+// TODO:
+// Test disp/on/off to understand if i need to send any data with it (probably i don't?)
+// Try to send some of the self test commands after writing the framebuffer
+// Try to turn on self test then blast some stuff to the framebuffer
+// Try to send variations of 0xC4 to see if I can get the screen to turn on from i2c
+// Try to read some registers with i2c

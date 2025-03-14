@@ -571,7 +571,7 @@ TEST_CASE("test seeya049 direct RAM write", "[seeya049][write_ram]") {
     test_deinit_seeya_panel();
 }
 
-TEST_CASE("test seeya049 I2C self-test", "[seeya049][i2c_self_test]") {
+esp_err_t hardware_reset_seeya049(void) {
     // Config the reset pin and pull it high
     gpio_config_t io_conf = {
         .mode = GPIO_MODE_OUTPUT_OD,
@@ -588,11 +588,52 @@ TEST_CASE("test seeya049 I2C self-test", "[seeya049][i2c_self_test]") {
     TEST_ESP_OK(gpio_set_level(TEST_PIN_NUM_LCD_RST, 1));
     vTaskDelay(pdMS_TO_TICKS(120));
 
+    return ESP_OK;
+}
+
+TEST_CASE("test seeya049 I2C self-test", "[seeya049][i2c_self_test]") {
+    hardware_reset_seeya049();
+
     // Run the self-test
     ESP_LOGI(TAG, "Running I2C self-test");
     TEST_ESP_OK(panel_seeya049_run_selftest_i2c());
 
     vTaskDelay(pdMS_TO_TICKS(TEST_DELAY_TIME_MS));
+}
+
+TEST_CASE("test seeya049 I2C framebuffer test", "[seeya049][i2c_framebuffer_test]") {
+    hardware_reset_seeya049();
+
+    // Run the framebuffer test
+    ESP_LOGI(TAG, "Running I2C framebuffer test");
+
+    const uint16_t pattern_width = 1920;
+    const uint16_t pattern_height = 1080;
+    const uint8_t bytes_per_pixel = 3; // RGB888
+    uint8_t *pattern = malloc(pattern_width * pattern_height * bytes_per_pixel);
+
+    // Fill pattern with alternating red and blue pixels
+    for (int y = 0; y < pattern_height; y++) {
+        for (int x = 0; x < pattern_width; x++) {
+            int pixel_idx = (y * pattern_width + x) * bytes_per_pixel;
+            if ((x + y) % 2 == 0) {
+                // Red pixel
+                pattern[pixel_idx + 0] = 0x00; // B
+                pattern[pixel_idx + 1] = 0x00; // G
+                pattern[pixel_idx + 2] = 0xFF; // R
+            } else {
+                // Blue pixel
+                pattern[pixel_idx + 0] = 0xFF; // B
+                pattern[pixel_idx + 1] = 0x00; // G
+                pattern[pixel_idx + 2] = 0x00; // R
+            }
+        }
+    }
+
+    TEST_ESP_OK(panel_seeya049_run_framebuffer_test_i2c(pattern, pattern_width * pattern_height *
+                                                                     bytes_per_pixel));
+
+    free(pattern);
 }
 
 #endif

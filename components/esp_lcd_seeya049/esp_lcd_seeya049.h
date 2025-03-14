@@ -8,14 +8,14 @@
 
 #include "soc/soc_caps.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #if SOC_MIPI_DSI_SUPPORTED
 #include "esp_lcd_mipi_dsi.h"
 #include "esp_lcd_panel_interface.h"
 #include "esp_lcd_panel_vendor.h"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 /**
  * @brief LCD panel initialization commands.
@@ -95,6 +95,8 @@ esp_err_t panel_seeya049_run_selftest(esp_lcd_panel_t *panel);
  */
 esp_err_t panel_seeya049_write_ram(esp_lcd_panel_t *panel, const void *data, size_t length);
 
+#endif // SOC_MIPI_DSI_SUPPORTED
+
 /**
  * @brief Run the panel's built-in self test mode initialization sequence using I2C
  *
@@ -107,7 +109,20 @@ esp_err_t panel_seeya049_write_ram(esp_lcd_panel_t *panel, const void *data, siz
  */
 esp_err_t panel_seeya049_run_selftest_i2c(void);
 
+/**
+ * @brief Run the panel's framebuffer test using I2C
+ *
+ * This variant uses I2C communication instead of MIPI DSI, with SCL on pin 21 and SDA on pin 22.
+ *
+ * @param[in] data Pointer to the data buffer to write
+ * @param[in] length Length of data in bytes
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_ARG if parameter is invalid
+ *      - Otherwise on error
+ */
+esp_err_t panel_seeya049_run_framebuffer_test_i2c(uint8_t *data, size_t length);
+
 #ifdef __cplusplus
 }
 #endif
-#endif // SOC_MIPI_DSI_SUPPORTED
