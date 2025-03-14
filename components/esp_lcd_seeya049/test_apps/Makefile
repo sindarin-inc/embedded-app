@@ -6,5 +6,11 @@ build:
 run: build
 	idf.py $(IDF_PROFILE) flash monitor
 
+monitor:
+	idf.py $(IDF_PROFILE) monitor
+
+menuconfig:
+	idf.py $(IDF_PROFILE) menuconfig
+
 clean:
 	rm -rf build

@@ -803,9 +803,130 @@ esp_err_t panel_seeya049_run_framebuffer_test_i2c(uint8_t *data, size_t length) 
     return ESP_OK;
 }
 
+static esp_err_t panel_seeya049_i2c_read_reg(uint16_t reg_addr, uint16_t *data) {
+    uint8_t write_buf[2];
+    uint8_t read_buf[2];
+    write_buf[0] = (reg_addr >> 8) & 0xFF; // Register address high byte
+    write_buf[1] = reg_addr & 0xFF;        // Register address low byte
+
+    i2c_cmd_handle_t cmd = i2c_cmd_link_create();
+    // Write register address
+    i2c_master_start(cmd);
+    i2c_master_write_byte(cmd, (I2C_DEVICE_ADDR << 1) | I2C_MASTER_WRITE, true);
+    i2c_master_write(cmd, write_buf, sizeof(write_buf), true);
+
+    // Read data
+    i2c_master_start(cmd);
+    i2c_master_write_byte(cmd, (I2C_DEVICE_ADDR << 1) | I2C_MASTER_READ, true);
+    i2c_master_read(cmd, read_buf, sizeof(read_buf), I2C_MASTER_LAST_NACK);
+    i2c_master_stop(cmd);
+
+    esp_err_t ret = i2c_master_cmd_begin(I2C_MASTER_NUM, cmd, pdMS_TO_TICKS(I2C_TIMEOUT_MS));
+    i2c_cmd_link_delete(cmd);
+
+    if (ret == ESP_OK) {
+        *data = (read_buf[0] << 8) | read_buf[1];
+    } else {
+        ESP_LOGE(TAG, "Failed to read from register 0x%04X: %d", reg_addr, ret);
+    }
+
+    return ret;
+}
+
+esp_err_t panel_seeya049_i2c_read_ram(uint8_t *data, size_t length) {
+    ESP_RETURN_ON_FALSE(data && length > 0, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+
+    const uint16_t reg_addr = SEEYA049_CMD_RAMRD << 8; // RAMRD command in high byte
+    uint8_t write_buf[2];
+    write_buf[0] = (reg_addr >> 8) & 0xFF; // Register address high byte (RAMRD command)
+    write_buf[1] = reg_addr & 0xFF;        // Register address low byte (0)
+
+    // First write the RAMRD command
+    i2c_cmd_handle_t cmd = i2c_cmd_link_create();
+    i2c_master_start(cmd);
+    i2c_master_write_byte(cmd, (I2C_DEVICE_ADDR << 1) | I2C_MASTER_WRITE, true);
+    i2c_master_write(cmd, write_buf, sizeof(write_buf), true);
+
+    // Then read the data in chunks to avoid buffer overflow
+    const size_t chunk_size = 1024; // Read 1KB at a time
+    size_t bytes_read = 0;
+
+    while (bytes_read < length) {
+        size_t current_chunk =
+            (length - bytes_read) < chunk_size ? (length - bytes_read) : chunk_size;
+
+        // Start a new read transaction
+        i2c_master_start(cmd);
+        i2c_master_write_byte(cmd, (I2C_DEVICE_ADDR << 1) | I2C_MASTER_READ, true);
+
+        // Read all but last byte with ACK
+        if (current_chunk > 1) {
+            i2c_master_read(cmd, &data[bytes_read], current_chunk - 1, I2C_MASTER_ACK);
+        }
+        // Read last byte with NACK
+        i2c_master_read_byte(cmd, &data[bytes_read + current_chunk - 1], I2C_MASTER_NACK);
+        i2c_master_stop(cmd);
+
+        esp_err_t ret = i2c_master_cmd_begin(
+            I2C_MASTER_NUM, cmd,
+            pdMS_TO_TICKS((current_chunk + 3) * 10 / I2C_MASTER_FREQ_HZ * 1000));
+
+        if (ret != ESP_OK) {
+            i2c_cmd_link_delete(cmd);
+            ESP_LOGE(TAG, "Failed to read RAM at offset %d: %s", bytes_read, esp_err_to_name(ret));
+            return ret;
+        }
+
+        bytes_read += current_chunk;
+        ESP_LOGI(TAG, "Read %d bytes of RAM (%d%%)", bytes_read, (bytes_read * 100) / length);
+    }
+
+    i2c_cmd_link_delete(cmd);
+    return ESP_OK;
+}
+
+// Add function declaration at the top of the file with other declarations
+esp_err_t panel_seeya049_dump_framebuffer_i2c(void) {
+    ESP_LOGI(TAG, "Initializing I2C for SeeYa049 framebuffer dump");
+
+    // Initialize I2C
+    ESP_RETURN_ON_ERROR(panel_seeya049_i2c_init(), TAG, "I2C master initialization failed");
+
+    // Calculate buffer size (1920x1080x3 bytes for 24-bit color)
+    const size_t buffer_size = 1920 * 1080 * 3;
+    uint8_t *buffer = heap_caps_malloc(buffer_size, MALLOC_CAP_DMA);
+    if (!buffer) {
+        panel_seeya049_i2c_deinit();
+        return ESP_ERR_NO_MEM;
+    }
+
+    ESP_LOGI(TAG, "Reading framebuffer (%d bytes)...", buffer_size);
+    esp_err_t ret = panel_seeya049_i2c_read_ram(buffer, buffer_size);
+
+    if (ret == ESP_OK) {
+        // Log first few bytes for debugging
+        ESP_LOGI(TAG, "First 16 bytes of framebuffer:");
+        for (int i = 0; i < 16; i++) {
+            printf("%02x ", buffer[i]);
+            if ((i + 1) % 8 == 0) printf("\n");
+        }
+    }
+
+    // Free buffer
+    heap_caps_free(buffer);
+
+    // Clean up I2C driver
+    ESP_RETURN_ON_ERROR(panel_seeya049_i2c_deinit(), TAG, "I2C driver deletion failed");
+
+    return ret;
+}
+
 // TODO:
 // Test disp/on/off to understand if i need to send any data with it (probably i don't?)
 // Try to send some of the self test commands after writing the framebuffer
 // Try to turn on self test then blast some stuff to the framebuffer
 // Try to send variations of 0xC4 to see if I can get the screen to turn on from i2c
 // Try to read some registers with i2c
+// Try different combinations of ack when writing ram
+// Try to read the framebuffer with i2c
+// Try to read the framebuffer while self-test is running
