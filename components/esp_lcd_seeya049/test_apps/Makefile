@@ -13,4 +13,4 @@ menuconfig:
 	idf.py $(IDF_PROFILE) menuconfig
 
 clean:
-	rm -rf build
+	rm -rf build*

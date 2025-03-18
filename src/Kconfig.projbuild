@@ -20,6 +20,9 @@ menu "Sol Options"
             config DISPLAY_SHARP_27IN
                 bool "Sharpmem 2.7in Display"
 
+            config DISPLAY_ESP32_P4_FUNCTION_EV_R0
+                bool "ESP32 P4 Function EV Revision 0 Display"
+
             config DISPLAY_ESP32_P4_FUNCTION_EV
                 bool "ESP32 P4 Function EV Display"
 
@@ -41,7 +44,8 @@ menu "Sol Options"
             default 400 if DISPLAY_SHARP_27IN
             default 1280 if DISPLAY_M5STACK_ATOM_DISPLAY
             default 1920 if DISPLAY_M5STACK_MODULE_DISPLAY
-            default 800 if DISPLAY_ESP32_P4_FUNCTION_EV
+            default 800 if DISPLAY_ESP32_P4_FUNCTION_EV_R0
+            default 1024 if DISPLAY_ESP32_P4_FUNCTION_EV
             default 1920 if DISPLAY_ESP32_P4_SEEYA_049
 
         config DISPLAY_HEIGHT
@@ -50,7 +54,8 @@ menu "Sol Options"
             default 240 if DISPLAY_SHARP_27IN
             default 720 if DISPLAY_M5STACK_ATOM_DISPLAY
             default 1080 if DISPLAY_M5STACK_MODULE_DISPLAY
-            default 1280 if DISPLAY_ESP32_P4_FUNCTION_EV
+            default 1280 if DISPLAY_ESP32_P4_FUNCTION_EV_R0
+            default 600 if DISPLAY_ESP32_P4_FUNCTION_EV
             default 1080 if DISPLAY_ESP32_P4_SEEYA_049
 
         menu "Display Pins"
@@ -133,6 +138,14 @@ menu "Sol Options"
                 depends on DISPLAY_SHARP_27IN
                 int "DISP Pin"
                 default 6
+
+            config DISPLAY_RST_PIN
+                depends on DISPLAY_ESP32_P4_FUNCTION_EV || DISPLAY_ESP32_P4_FUNCTION_EV_R0
+                int "RST Pin"
+                default -1 if DISPLAY_ESP32_P4_FUNCTION_EV_R0
+                default 27 if DISPLAY_ESP32_P4_FUNCTION_EV
+                default -1
+
         endmenu
     endmenu
 

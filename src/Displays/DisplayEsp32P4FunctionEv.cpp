@@ -1,4 +1,4 @@
-#if CONFIG_DISPLAY_ESP32_P4_FUNCTION_EV
+#if CONFIG_DISPLAY_ESP32_P4_FUNCTION_EV || CONFIG_DISPLAY_ESP32_P4_FUNCTION_EV_R0
 
 #include "DisplayEsp32P4FunctionEv.hpp"
 
@@ -97,7 +97,7 @@ auto DisplayEsp32P4FunctionEv::setup() -> bool {
             },
     };
     const esp_lcd_panel_dev_config_t panelDevConfig = {
-        .reset_gpio_num = GPIO_NUM_NC,
+        .reset_gpio_num = CONFIG_DISPLAY_RST_PIN,
         .rgb_ele_order = LCD_RGB_ELEMENT_ORDER_RGB,
         .data_endian = LCD_RGB_DATA_ENDIAN_BIG,
         .bits_per_pixel = 16,
