@@ -1,0 +1,22 @@
+# Sol Reader Embedded App - Development Guide
+
+## Build Commands
+- Build: `make build`
+- Flash: `make flash`
+- Monitor logs: `make monitor`
+- Run simulator: `make sim` (or `make sim8`, `make sim16`, `make sim24` for different display modes)
+- Run tests: `make test`
+- Run single test: `./test/CatchTests/build/tests '[test-tag]'` (e.g. `'[epub]'`, `'[content-sync]'`)
+- Format code: `make clang-format`
+- Static analysis: `make clang-tidy`
+
+## Code Style Guidelines
+- Format: Use clang-format with LLVM-based style (ColumnLimit: 100, IndentWidth: 4)
+- Includes: Grouped with angle brackets (<>) first, then quotes
+- Error handling: Use assertions for programming errors (e.g., `assert(notifyFlags_ != nullptr)`)
+- Logging: Use log_d/log_i/log_w/log_e with descriptive messages
+- Memory: Manage heap allocations carefully, use HEAP_PROFILE macros to track
+- Naming: camelCase for variables/methods, PascalCase for classes, ALL_CAPS for constants/macros
+- Comments: Use `//` for line comments, `/* */` for block comments
+- Stack usage: Monitor stack usage with watermarks (SHOW_WATERMARK macro)
+- Threading: Use DispatchQueue for most async operations

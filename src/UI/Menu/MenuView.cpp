@@ -4,6 +4,7 @@
 #include "MenuItemArticleView.hpp"
 #include "MenuItemBookView.hpp"
 #include "MenuItemCheckableView.hpp"
+#include "MenuItemKindleBookView.hpp"
 #include "MenuItemMultiLineView.hpp"
 #include "MenuItemSingleLineView.hpp"
 #include "MenuItemTOCView.hpp"
@@ -26,7 +27,10 @@ void MenuView::addMenuItem(const std::shared_ptr<MenuItem> &menuItem) {
     if (auto item = std::dynamic_pointer_cast<MenuItemMultiLine>(menuItem)) {
         menuItemViews_.push_back(std::make_unique<MenuItemMultiLineView>(display_, item));
     }
-    if (auto item = std::dynamic_pointer_cast<MenuItemBook>(menuItem)) {
+    if (auto item = std::dynamic_pointer_cast<MenuItemKindleBook>(menuItem)) {
+        menuItemViews_.push_back(std::make_unique<MenuItemKindleBookView>(display_, item));
+    }
+    else if (auto item = std::dynamic_pointer_cast<MenuItemBook>(menuItem)) {
         menuItemViews_.push_back(std::make_unique<MenuItemBookView>(display_, item));
     }
     if (auto item = std::dynamic_pointer_cast<MenuItemArticle>(menuItem)) {

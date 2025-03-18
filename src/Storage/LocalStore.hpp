@@ -7,6 +7,7 @@
 #include "Misc/Battery.hpp"
 #include "Misc/Telemetry.hpp"
 #include "Models/CheckSync.hpp"
+#include "Models/KindleBook.hpp"
 #include "Models/Place.hpp"
 #include "Models/Readable.hpp"
 #include "Models/UserReadable.hpp"
@@ -90,10 +91,12 @@ public:
 
     auto begin() -> bool;
     auto loadReadablesFromFile(ReadablesVector &readables, const std::string &path) -> bool;
+    auto loadKindleBooksFromFile(KindleBooksVector &kindleBooks, const std::string &path) -> bool;
 
     // Convenience methods
     auto books() -> ReadablesVector & { return books_; };
     auto articles() -> ReadablesVector & { return articles_; };
+    auto kindle() -> KindleBooksVector & { return kindle_; };
     auto recents() -> ReadablesVector & { return recents_; };
 
     auto readablesModelType(const ReadablesVector &readables) -> ReadablesModelType;
@@ -188,6 +191,7 @@ private:
 
     ReadablesVector books_;
     ReadablesVector articles_;
+    KindleBooksVector kindle_;
 
     ReadablesVector recents_;
 };

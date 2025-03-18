@@ -725,6 +725,57 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
         return menuItems;
     };
 
+    auto kindleMenuFactory = [this, &localStore, createTutorialScreen,
+                              makeReleaseNotesMenuItem]() -> MenuItemSharedPtrVector {
+        auto &kindle = localStore.kindle();
+        auto menuItems = std::make_shared<MenuItemVector>();
+
+        if (this->prefs_.firmwareLoaded.get().has_value()) {
+            Firmware firmware;
+            auto upgradeAvailable = localStore.getPendingFirmwareUpdate(firmware);
+            if (upgradeAvailable) {
+                menuItems->emplace_back(makeReleaseNotesMenuItem(firmware));
+            }
+        }
+
+        for (const auto &book : kindle) {
+            // Using shortened ID as the key for archive status
+            bool archived = prefs_.readableArchivedChanged.get(book.shortenedId().c_str());
+            menuItems->emplace_back(std::make_shared<MenuItemKindleBook>(
+                book,
+                [this, createTutorialScreen]() { 
+                    // TODO: Implement Kindle book view handler
+                    // For now, show a dialog saying this is coming soon
+                    SpiramString message = SpiRamStringFormat(
+                        "Kindle book reading is coming soon.\n\n"
+                        "This feature is currently under development.\n\n"
+                        "Press \ue000 (center) to continue.");
+                    auto tutorialScreen = createTutorialScreen(message, TUTORIAL_SCREEN_KINDLE);
+                    this->pushScreen(tutorialScreen);
+                },
+                archived));
+        }
+
+        bool noKindleContent = kindle.empty();
+        if (noKindleContent) {
+            menuItems->emplace_back(
+                std::make_shared<MenuItemSingleLine>("\ue000 Connect your Kindle",
+                                                     [this, createTutorialScreen]() {
+                SpiramString message = SpiRamStringFormat(
+                    "To add your Kindle books, connect your Amazon Kindle account in the Sol app."
+                    "\n\n"
+                    "After connecting your Kindle account, your books will appear here for easy "
+                    "reading."
+                    "\n\n"
+                    " Press \ue000 (center) to continue.");
+                auto tutorialScreen = createTutorialScreen(message, TUTORIAL_SCREEN_KINDLE);
+                this->pushScreen(tutorialScreen);
+                }));
+        }
+
+        return menuItems;
+    };
+
     auto bibleMenuFactory = [this, &localStore, handleReadableScreenCreation, isBible,
                              makeReleaseNotesMenuItem, createTutorialScreen,
                              noContent]() -> MenuItemSharedPtrVector {
@@ -1804,6 +1855,9 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
     }
     if (!booksMenuFactory()->empty()) {
         newMainMenu->addTab("Books", booksMenuFactory, 4);
+    }
+    if (!kindleMenuFactory()->empty()) {
+        newMainMenu->addTab("Kindle", kindleMenuFactory, 4);
     }
     if (!articlesMenuFactory()->empty()) {
         newMainMenu->addTab("Articles", articlesMenuFactory, 4);

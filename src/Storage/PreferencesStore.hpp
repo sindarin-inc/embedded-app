@@ -36,6 +36,7 @@ enum class SyncReason {
     // iOS = 4,
     // Android = 5,
     UsbConnected = 6,
+    KindleSync = 7,
 };
 
 auto ToString(SyncReason reason) -> const char *;
@@ -489,6 +490,7 @@ public:
           lastPageTurnerBuild(*this, "pt-build"),
           lastArticlesSince(*this, "articles-since"),
           lastBooksSince(*this, "readables-since"),
+          lastKindleSince(*this, "kindle-since"),
           bookSortCriteria(*this, "sort-c"),
           bookSortDirection(*this, "sort-d"),
           articleSortCriteria(*this, "sort-a-c"),
@@ -838,6 +840,7 @@ public:
     PrefsItem<std::string> lastPageTurnerBuild;
     PrefsItem<std::string> lastArticlesSince;
     PrefsItem<std::string> lastBooksSince;
+    PrefsItem<std::string> lastKindleSince;
     PrefsItem<int> bookSortCriteria;  // Stored as int, used as LocalStore::SortCriteria
     PrefsItem<int> bookSortDirection; // Stored as int, used as LocalStore::SortDirection
     PrefsItem<int> articleSortCriteria;

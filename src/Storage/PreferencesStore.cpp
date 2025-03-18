@@ -32,6 +32,8 @@ auto ToString(SyncReason reason) -> const char * {
         return "Periodic";
     case SyncReason::UsbConnected:
         return "UsbConnected";
+    case SyncReason::KindleSync:
+        return "KindleSync";
     default:
         log_e("Unknown SyncReason: %d", static_cast<int>(reason));
         return "Unknown";

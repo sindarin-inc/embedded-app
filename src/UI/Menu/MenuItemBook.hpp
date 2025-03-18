@@ -6,6 +6,8 @@
 
 #include "MenuItem.hpp"
 #include "Models/Readable.hpp"
+#include "Models/KindleBook.hpp"
+#include "Misc/StringUtil.hpp"
 
 class MenuItemBook : public MenuItem {
 public:
@@ -27,5 +29,34 @@ public:
 
 private:
     std::shared_ptr<Readable> readable_;
+    bool archived_;
+};
+
+// Special menu item for Kindle books
+class MenuItemKindleBook : public MenuItem {
+public:
+    ~MenuItemKindleBook() override = default;
+    MenuItemKindleBook(const KindleBook& kindleBook, std::function<void()> callback,
+                     bool archived = false)
+        : MenuItem(std::move(callback)), kindleBook_(kindleBook),
+          archived_(archived) {}
+
+    [[nodiscard]] auto id() const -> std::string override {
+        // Use the shortened ID for a unique but compact identifier
+        return kindleBook_.shortenedId();
+    }
+
+    [[nodiscard]] auto title() const -> std::string {
+        return StringFormat("%s%s", archived_ ? "Archived: " : "", kindleBook_.title.c_str());
+    }
+
+    [[nodiscard]] auto author() const -> SpiramString { return SpiramString(kindleBook_.author.c_str()); };
+    
+    // For displaying progress information
+    [[nodiscard]] auto progress() const -> const std::string& { return kindleBook_.progress; }
+    [[nodiscard]] auto progressPercent() const -> int { return kindleBook_.progressPercent; }
+
+private:
+    KindleBook kindleBook_;
     bool archived_;
 };

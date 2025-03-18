@@ -5,6 +5,7 @@
 #include <esp_timer.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
+#include <functional> // For std::hash
 #include <limits>
 #include <memory>
 #include <set>
@@ -33,6 +34,7 @@
 
 #define BOOKS_PATH "/readables.json"
 #define ARTICLES_PATH "/articles.json"
+#define KINDLE_PATH "/kindle.json"
 
 enum { NUMBER_OF_READABLE_DOWNLOAD_TRIES = 3 };
 enum { MAX_NUMBER_OF_PAGES_TO_BACKFILL = 10 };
@@ -40,6 +42,7 @@ enum { MAX_NUMBER_OF_PAGES_TO_BACKFILL = 10 };
 auto LocalStore::begin() -> bool {
     auto loadedBooks = loadReadablesFromFile(books_, BOOKS_PATH);
     auto loadedArticles = loadReadablesFromFile(articles_, ARTICLES_PATH);
+    auto loadedKindle = loadKindleBooksFromFile(kindle_, KINDLE_PATH);
 
     migrateIfNeeded();
 
@@ -47,7 +50,7 @@ auto LocalStore::begin() -> bool {
     computeRecentReadables();
     PROFILE_END_LOG_US(computeRecentReadables);
 
-    return loadedBooks && loadedArticles;
+    return loadedBooks && loadedArticles && loadedKindle;
 }
 
 auto LocalStore::loadReadablesFromFile(ReadablesVector &readables, const std::string &path)
@@ -98,8 +101,88 @@ auto LocalStore::loadReadablesFromFile(ReadablesVector &readables, const std::st
     return true;
 }
 
+// Helper method to load KindleBook objects from JSON
+auto LocalStore::loadKindleBooksFromFile(KindleBooksVector &kindleBooks, const std::string &path)
+    -> bool {
+    log_d("Loading Kindle books JSON from %s", path.c_str());
+
+    bool foundActualBooks = false;
+
+    // Try to load the actual Kindle books from the JSON file
+    SFile readablesFile = fileSystem.open(path);
+    if (!readablesFile || static_cast<int>(readablesFile.size()) == 0) {
+        log_w("Failed to open Kindle JSON file: %s", path.c_str());
+        return foundActualBooks;
+    }
+
+    log_d("Successfully opened Kindle JSON file, size: %d bytes",
+          static_cast<int>(readablesFile.size()));
+
+    // Grab a minimum amount of ram, even if the readables file is empty
+    auto docSize = static_cast<int>(readablesFile.size()) * 2;
+    auto doc = std::make_unique<SpiRamJsonDocument>(docSize);
+    auto error = deserializeJson(*doc, readablesFile);
+    readablesFile.close();
+
+    if (error.code() != DeserializationError::Ok) {
+        log_e("Failed to deserialize Kindle JSON: %s", error.c_str());
+        return foundActualBooks;
+    }
+
+    if (!(*doc).containsKey("books")) {
+        log_w("No 'books' array found in Kindle JSON");
+        return foundActualBooks;
+    }
+
+    auto booksJson = (*doc)["books"].as<JsonArray>();
+    if (booksJson.size() == 0) {
+        log_w("Empty 'books' array in Kindle JSON");
+        return foundActualBooks;
+    }
+
+    log_i("Found %zu Kindle books in JSON", booksJson.size());
+
+    // Limit to 20 books for testing - remove this limitation in production
+    int maxBooks = 20;
+    int bookCount = 0;
+    int booksLoaded = 0;
+
+    for (JsonVariant v : booksJson) {
+        if (bookCount >= maxBooks) break;
+        bookCount++;
+
+        if (!v.is<JsonObject>()) {
+            log_w("Kindle book entry is not a valid JSON object");
+            continue;
+        }
+
+        // Parse book data
+        auto kindleBookObj = v.as<JsonObject>();
+        KindleBook kindleBook;
+        if (!kindleBook.fromJson(kindleBookObj)) {
+            log_w("Failed to parse Kindle book from JSON");
+            continue;
+        }
+
+        kindleBooks.push_back(kindleBook);
+        booksLoaded++;
+        foundActualBooks = true;
+    }
+
+    log_i("Successfully loaded %d Kindle books (from %d available in JSON)", booksLoaded,
+          bookCount);
+    return foundActualBooks;
+}
+
 auto LocalStore::readablesModelType(const ReadablesVector &readables) -> ReadablesModelType {
-    return &readables == &articles_ ? ReadablesModelType::Article : ReadablesModelType::Book;
+    if (&readables == &articles_) {
+        return ReadablesModelType::Article;
+    } else if (&readables == &books_) {
+        return ReadablesModelType::Book;
+    } else {
+        // Default case if vector doesn't match articles or books
+        return ReadablesModelType::Book;
+    }
 }
 
 auto LocalStore::isReadableUnchanged(const ReadablesVector &readables,
@@ -170,6 +253,8 @@ auto LocalStore::readablesSince(ReadablesModelType modelType) -> std::string {
         return prefs_.lastArticlesSince.get().value_or("");
     case ReadablesModelType::Book:
         return prefs_.lastBooksSince.get().value_or("");
+    case ReadablesModelType::Kindle:
+        return prefs_.lastKindleSince.get().value_or("");
     default:
         return "";
     }

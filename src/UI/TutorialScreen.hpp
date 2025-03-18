@@ -10,7 +10,8 @@ enum TutorialScreenBitsDeleted {
     TUTORIAL_SCREEN_BIBLE = 1 << 2,
     TUTORIAL_SCREEN_SETTINGS = 1 << 3,
     TUTORIAL_SCREEN_READING_SETTINGS = 1 << 4,
-    TUTORIAL_SCREEN_SYSTEM_SETTINGS = 1 << 5
+    TUTORIAL_SCREEN_SYSTEM_SETTINGS = 1 << 5,
+    TUTORIAL_SCREEN_KINDLE = 1 << 6
 };
 
 class TutorialScreen : public Screen {
