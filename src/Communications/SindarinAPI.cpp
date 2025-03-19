@@ -16,7 +16,7 @@
 #include "Misc/StringUtil.hpp"
 #include "Models/Json.hpp"
 #include "Models/UserReadable.hpp"
-#include "UrlEncode.hpp"
+#include "Communications/UrlEncode.hpp"
 #include "Version.hpp"
 #include "sindarin-debug.h"
 
@@ -526,4 +526,86 @@ auto SindarinAPI::askQuestion(const BookQuestionRequest &req, BookQuestionRespon
 
     log_d("Successfully parsed response (success=%d)", resp->success);
     return httpCode;
+}
+
+auto SindarinAPI::makeKindleRequest(const std::string &path, KindlePageResponse *resp,
+                                    const std::shared_ptr<CancelFlag> &cancelFlag) -> int {
+    std::string url = StringFormat("%s%s", SINDARIN_SERVER_URL, path.c_str());
+    log_i("Making Kindle request to URL: %s", url.c_str());
+
+    auto client = createClient(url, "application/json", HTTP_METHOD_GET, false, cancelFlag);
+    if (!client) {
+        log_e("Failed to create HTTP client");
+        return ERR_CLIENT_OPEN;
+    }
+
+    // Set authentication
+    auto err = setAuth(client);
+    if (err != ESP_OK) {
+        log_e("Failed to set authentication: %d", err);
+        return ERR_SET_AUTH;
+    }
+
+    // Open the client
+    err = client->open();
+    if (err != ESP_OK) {
+        log_e("Failed to open HTTP client: %d", err);
+        return ERR_CLIENT_OPEN;
+    }
+    defer { client->close(); };
+
+    // Fetch headers - this returns content length, not an error code
+    int contentLength = client->fetchHeaders();
+    if (contentLength <= 0) {
+        log_e("Failed to fetch HTTP headers or empty response: %d", contentLength);
+        return ERR_CONTENT_LENGTH;
+    }
+
+    int httpCode = client->getStatusCode();
+    if (httpCode != 200) {
+        log_e("HTTP request failed with status code: %d", httpCode);
+        return httpCode;
+    }
+
+    // Read the response using stream
+    auto stream = client->makeReadStream();
+    if (!stream) {
+        log_e("Failed to create read stream");
+        return ERR_CLIENT_READ;
+    }
+
+    // Use SpiRamJsonDocument like other methods
+    auto respJson = std::make_unique<SpiRamJsonDocument>(1024 + contentLength * 3);
+    auto error = ArduinoJson::deserializeJson(*respJson, *stream);
+
+    if (error.code() != DeserializationError::Ok) {
+        log_e("Failed to deserialize Kindle response: %s (length=%d)", error.c_str(), contentLength);
+        return ERR_JSON_DESERIALIZE;
+    }
+
+    if (!resp->fromJson(respJson->as<JsonObject>())) {
+        log_e("Failed to parse Kindle page response");
+        return ERR_JSON_OBJECT_PARSE;
+    }
+
+    log_d("Successfully parsed Kindle page response (success=%d)", resp->success);
+    return httpCode;
+}
+
+auto SindarinAPI::openKindleBook(const std::string &title, KindlePageResponse *resp,
+                                 const std::shared_ptr<CancelFlag> &cancelFlag) -> int {
+    // URL encode the title to handle spaces and special characters
+    std::string encodedTitle = Urlencode(title);
+    std::string path = StringFormat("/kindle/open-book?title=%s", encodedTitle.c_str());
+    return makeKindleRequest(path, resp, cancelFlag);
+}
+
+auto SindarinAPI::navigateKindleNext(KindlePageResponse *resp,
+                                   const std::shared_ptr<CancelFlag> &cancelFlag) -> int {
+    return makeKindleRequest("/kindle/navigate-next", resp, cancelFlag);
+}
+
+auto SindarinAPI::navigateKindlePrevious(KindlePageResponse *resp,
+                                       const std::shared_ptr<CancelFlag> &cancelFlag) -> int {
+    return makeKindleRequest("/kindle/navigate-previous", resp, cancelFlag);
 }

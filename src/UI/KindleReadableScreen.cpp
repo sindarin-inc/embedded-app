@@ -295,131 +295,68 @@ void KindleReadableScreen::loadKindleBookPage() {
         return;
     }
 
-    // Construct the URL based on whether this is initial load or navigation
-    std::string url;
-    if (firstKindleLoad_) {
-        url = "/kindle/open_book?title=" + kindleBook_->title;
-    } else {
-        url = "/kindle/navigate-next";
-    }
+    // Get the SindarinAPI instance
+    auto sindarinApi = SindarinAPI::getInstance();
 
-    log_i("Making request to URL: %s", url.c_str());
+    // Create a response object
+    auto response = std::make_shared<KindlePageResponse>();
 
-    // Create HTTP client
-    auto client =
-        SindarinAPI::createClient(url, "application/json", HTTP_METHOD_GET, false, cancelFlag_);
-    if (!client) {
-        log_e("Failed to create HTTP client");
+    // For initial load, always open the book with its title
+    int httpCode = sindarinApi->openKindleBook(kindleBook_->title, response.get(), cancelFlag_);
+
+    if (httpCode != 200 || !response->success) {
         DispatchGetUiQueue()->dispatch([this]() {
             if (dismissed_) return;
 
-            errorMessageView_.setText("Failed to create network client");
+            errorMessageView_.setText("Failed to load Kindle book content");
             setState(State::ERROR);
             setNeedsRerender();
         });
         return;
     }
-
-    // Set authentication
-    auto err = SindarinAPI::getInstance()->setAuth(client);
-    if (err != ESP_OK) {
-        log_e("Failed to set authentication: %d", err);
-        DispatchGetUiQueue()->dispatch([this]() {
-            if (dismissed_) return;
-
-            errorMessageView_.setText("Authentication error");
-            setState(State::ERROR);
-            setNeedsRerender();
-        });
-        return;
-    }
-
-    // Open the client
-    err = client->open();
-    if (err != ESP_OK) {
-        log_e("Failed to open HTTP client: %d", err);
-        DispatchGetUiQueue()->dispatch([this]() {
-            if (dismissed_) return;
-
-            errorMessageView_.setText("Connection error");
-            setState(State::ERROR);
-            setNeedsRerender();
-        });
-        return;
-    }
-
-    // Fetch headers
-    err = client->fetchHeaders();
-    if (err != ESP_OK) {
-        log_e("Failed to fetch HTTP headers: %d", err);
-        DispatchGetUiQueue()->dispatch([this]() {
-            if (dismissed_) return;
-
-            errorMessageView_.setText("Network error");
-            setState(State::ERROR);
-            setNeedsRerender();
-        });
-        return;
-    }
-
-    int status = client->getStatusCode();
-    if (status != 200) {
-        log_e("HTTP request failed with status code: %d", status);
-        DispatchGetUiQueue()->dispatch([this, status]() {
-            if (dismissed_) return;
-
-            errorMessageView_.setText(StringFormat("Server error (%d)", status));
-            setState(State::ERROR);
-            setNeedsRerender();
-        });
-        return;
-    }
-
-    // Read the response
-    auto stream = client->makeReadStream();
-    if (!stream) {
-        log_e("Failed to create read stream");
-        DispatchGetUiQueue()->dispatch([this]() {
-            if (dismissed_) return;
-
-            errorMessageView_.setText("Failed to read server response");
-            setState(State::ERROR);
-            setNeedsRerender();
-        });
-        return;
-    }
-
-    // Buffer to read the JSON response
-    std::string responseJson;
-    char buf[1024];
-    while (stream->read(buf, sizeof(buf) - 1)) {
-        int bytesRead = stream->gcount();
-        if (bytesRead <= 0) {
-            break;
-        }
-        buf[bytesRead] = 0;
-        responseJson += buf;
-    }
-
-    if (responseJson.empty()) {
-        log_e("No response data received from server");
-        DispatchGetUiQueue()->dispatch([this]() {
-            if (dismissed_) return;
-
-            errorMessageView_.setText("No response from server");
-            setState(State::ERROR);
-            setNeedsRerender();
-        });
-        return;
-    }
-
-    log_i("Received response: %s", responseJson.c_str());
 
     // Process the response on the UI thread
-    DispatchGetUiQueue()->dispatch([this, responseJson]() {
+    DispatchGetUiQueue()->dispatch([this, response]() {
         if (dismissed_) return;
 
-        processPageResponse(responseJson);
+        log_i("Processing Kindle book page response (success=%d, text length=%d)", 
+              response->success, response->ocrText.length());
+
+        // Update current page information
+        currentPage_ = response->progress.currentPage;
+        totalPages_ = response->progress.totalPages;
+        currentPageText_ = response->ocrText;
+        currentPageImageUrl_ = response->screenshotUrl;
+
+        // Update the book progress in the KindleBook object
+        kindleBook_->progressPercent = response->progress.percentage;
+        kindleBook_->progress = StringFormat("%d%%", response->progress.percentage);
+
+        // Create a stream with the text content
+        auto stream = std::make_shared<StdStringStream>(currentPageText_, DocType::TXT);
+        renderer_.setStream(stream);
+
+        // Create a place for the content
+        auto place = std::dynamic_pointer_cast<TxtPlace>(Place::factory(0));
+
+        log_i("Kindle page loaded: %d/%d (%d%%)", 
+              currentPage_, totalPages_, response->progress.percentage);
+
+        // Set up display content state
+        setState(State::DISPLAY_CONTENT);
+
+        // Render the page
+        uint8_t darkPicturePercent = 0;
+        std::shared_ptr<Place> newPlace;
+        std::tie(newPlace, darkPicturePercent) = renderer_.renderPage(place);
+
+        log_i("Kindle page rendered, forcing rerender and display update");
+        
+        // Force a full display update to ensure content is visible
+        display_.updateDisplay(DisplaySystem::UpdateType::FULL, true);
+        
+        // Update state for future renders
+        firstKindleLoad_ = false;
     });
 }
 
@@ -432,101 +369,55 @@ void KindleReadableScreen::navigateNext() {
     setLoadingMessage("Loading next page...");
     setNeedsRerender();
 
-    // Create HTTP client
-    auto client = SindarinAPI::createClient("/kindle/navigate-next", "application/json",
-                                            HTTP_METHOD_GET, false, cancelFlag_);
-    if (!client) {
+    // Create a response object
+    auto response = std::make_shared<KindlePageResponse>();
+
+    // Make the request
+    auto sindarinApi = SindarinAPI::getInstance();
+    int httpCode = sindarinApi->navigateKindleNext(response.get(), cancelFlag_);
+
+    if (httpCode != 200 || !response->success) {
         DispatchGetUiQueue()->dispatch([this]() {
             if (dismissed_) return;
 
-            errorMessageView_.setText("Failed to create network client");
+            errorMessageView_.setText("Failed to load next page");
             setState(State::ERROR);
             setNeedsRerender();
         });
         return;
-    }
-
-    // Set authentication
-    auto err = SindarinAPI::getInstance()->setAuth(client);
-    if (err != ESP_OK) {
-        DispatchGetUiQueue()->dispatch([this]() {
-            if (dismissed_) return;
-
-            errorMessageView_.setText("Authentication error");
-            setState(State::ERROR);
-            setNeedsRerender();
-        });
-        return;
-    }
-
-    // Open the client
-    err = client->open();
-    if (err != ESP_OK) {
-        DispatchGetUiQueue()->dispatch([this]() {
-            if (dismissed_) return;
-
-            errorMessageView_.setText("Connection error");
-            setState(State::ERROR);
-            setNeedsRerender();
-        });
-        return;
-    }
-
-    // Fetch headers
-    err = client->fetchHeaders();
-    if (err != ESP_OK) {
-        DispatchGetUiQueue()->dispatch([this]() {
-            if (dismissed_) return;
-
-            errorMessageView_.setText("Network error");
-            setState(State::ERROR);
-            setNeedsRerender();
-        });
-        return;
-    }
-
-    int status = client->getStatusCode();
-    if (status != 200) {
-        DispatchGetUiQueue()->dispatch([this, status]() {
-            if (dismissed_) return;
-
-            errorMessageView_.setText(StringFormat("Server error (%d)", status));
-            setState(State::ERROR);
-            setNeedsRerender();
-        });
-        return;
-    }
-
-    // Read the response
-    auto stream = client->makeReadStream();
-    if (!stream) {
-        DispatchGetUiQueue()->dispatch([this]() {
-            if (dismissed_) return;
-
-            errorMessageView_.setText("Failed to read server response");
-            setState(State::ERROR);
-            setNeedsRerender();
-        });
-        return;
-    }
-
-    // Buffer to read the JSON response
-    std::string responseJson;
-    char buf[1024];
-    while (stream->read(buf, sizeof(buf) - 1)) {
-        int bytesRead = stream->gcount();
-        if (bytesRead <= 0) {
-            break;
-        }
-        buf[bytesRead] = 0;
-        responseJson += buf;
     }
 
     // Process the response on the UI thread
-    DispatchGetUiQueue()->dispatch([this, responseJson]() {
+    DispatchGetUiQueue()->dispatch([this, response]() {
         if (dismissed_) return;
 
-        processPageResponse(responseJson);
+        // Update current page information
+        currentPage_ = response->progress.currentPage;
+        totalPages_ = response->progress.totalPages;
+        currentPageText_ = response->ocrText;
+        currentPageImageUrl_ = response->screenshotUrl;
+
+        // Update the book progress in the KindleBook object
+        kindleBook_->progressPercent = response->progress.percentage;
+        kindleBook_->progress = StringFormat("%d%%", response->progress.percentage);
+
+        // Create a stream with the text content
+        auto stream = std::make_shared<StdStringStream>(currentPageText_, DocType::TXT);
+        renderer_.setStream(stream);
+
+        // Create a place for the content
+        auto place = std::dynamic_pointer_cast<TxtPlace>(Place::factory(0));
+
+        // Set up display content state
+        setState(State::DISPLAY_CONTENT);
+
+        // Render the page
+        uint8_t darkPicturePercent = 0;
+        std::shared_ptr<Place> newPlace;
+        std::tie(newPlace, darkPicturePercent) = renderer_.renderPage(place);
+
+        // Update state and trigger render
+        setNeedsRerender();
     });
 }
 
@@ -539,162 +430,59 @@ void KindleReadableScreen::navigatePrevious() {
     setLoadingMessage("Loading previous page...");
     setNeedsRerender();
 
-    // Create HTTP client
-    auto client = SindarinAPI::createClient("/kindle/navigate-previous", "application/json",
-                                            HTTP_METHOD_GET, false, cancelFlag_);
-    if (!client) {
+    // Create a response object
+    auto response = std::make_shared<KindlePageResponse>();
+
+    // Make the request
+    auto sindarinApi = SindarinAPI::getInstance();
+    int httpCode = sindarinApi->navigateKindlePrevious(response.get(), cancelFlag_);
+
+    if (httpCode != 200 || !response->success) {
         DispatchGetUiQueue()->dispatch([this]() {
             if (dismissed_) return;
 
-            errorMessageView_.setText("Failed to create network client");
+            errorMessageView_.setText("Failed to load previous page");
             setState(State::ERROR);
             setNeedsRerender();
         });
         return;
-    }
-
-    // Set authentication
-    auto err = SindarinAPI::getInstance()->setAuth(client);
-    if (err != ESP_OK) {
-        DispatchGetUiQueue()->dispatch([this]() {
-            if (dismissed_) return;
-
-            errorMessageView_.setText("Authentication error");
-            setState(State::ERROR);
-            setNeedsRerender();
-        });
-        return;
-    }
-
-    // Open the client
-    err = client->open();
-    if (err != ESP_OK) {
-        DispatchGetUiQueue()->dispatch([this]() {
-            if (dismissed_) return;
-
-            errorMessageView_.setText("Connection error");
-            setState(State::ERROR);
-            setNeedsRerender();
-        });
-        return;
-    }
-
-    // Fetch headers
-    err = client->fetchHeaders();
-    if (err != ESP_OK) {
-        DispatchGetUiQueue()->dispatch([this]() {
-            if (dismissed_) return;
-
-            errorMessageView_.setText("Network error");
-            setState(State::ERROR);
-            setNeedsRerender();
-        });
-        return;
-    }
-
-    int status = client->getStatusCode();
-    if (status != 200) {
-        DispatchGetUiQueue()->dispatch([this, status]() {
-            if (dismissed_) return;
-
-            errorMessageView_.setText(StringFormat("Server error (%d)", status));
-            setState(State::ERROR);
-            setNeedsRerender();
-        });
-        return;
-    }
-
-    // Read the response
-    auto stream = client->makeReadStream();
-    if (!stream) {
-        DispatchGetUiQueue()->dispatch([this]() {
-            if (dismissed_) return;
-
-            errorMessageView_.setText("Failed to read server response");
-            setState(State::ERROR);
-            setNeedsRerender();
-        });
-        return;
-    }
-
-    // Buffer to read the JSON response
-    std::string responseJson;
-    char buf[1024];
-    while (stream->read(buf, sizeof(buf) - 1)) {
-        int bytesRead = stream->gcount();
-        if (bytesRead <= 0) {
-            break;
-        }
-        buf[bytesRead] = 0;
-        responseJson += buf;
     }
 
     // Process the response on the UI thread
-    DispatchGetUiQueue()->dispatch([this, responseJson]() {
+    DispatchGetUiQueue()->dispatch([this, response]() {
         if (dismissed_) return;
 
-        processPageResponse(responseJson);
+        // Update current page information
+        currentPage_ = response->progress.currentPage;
+        totalPages_ = response->progress.totalPages;
+        currentPageText_ = response->ocrText;
+        currentPageImageUrl_ = response->screenshotUrl;
+
+        // Update the book progress in the KindleBook object
+        kindleBook_->progressPercent = response->progress.percentage;
+        kindleBook_->progress = StringFormat("%d%%", response->progress.percentage);
+
+        // Create a stream with the text content
+        auto stream = std::make_shared<StdStringStream>(currentPageText_, DocType::TXT);
+        renderer_.setStream(stream);
+
+        // Create a place for the content
+        auto place = std::dynamic_pointer_cast<TxtPlace>(Place::factory(0));
+
+        // Set up display content state
+        setState(State::DISPLAY_CONTENT);
+
+        // Render the page
+        uint8_t darkPicturePercent = 0;
+        std::shared_ptr<Place> newPlace;
+        std::tie(newPlace, darkPicturePercent) = renderer_.renderPage(place);
+
+        // Update state and trigger render
+        setNeedsRerender();
     });
 }
 
-void KindleReadableScreen::processPageResponse(const std::string &response) {
-    // Parse the JSON response
-    StaticJsonDocument<4096> doc;
-    DeserializationError error = deserializeJson(doc, response);
-
-    if (error) {
-        log_e("Failed to parse Kindle page response: %s", error.c_str());
-        errorMessageView_.setText("Failed to parse server response");
-        setState(State::ERROR);
-        setNeedsRerender();
-        return;
-    }
-
-    // Check for success
-    bool success = doc["success"];
-    if (!success) {
-        log_e("Kindle book request failed: %s", response.c_str());
-        errorMessageView_.setText("Failed to load Kindle book content");
-        setState(State::ERROR);
-        setNeedsRerender();
-        return;
-    }
-
-    // Get progress information
-    JsonObject progress = doc["progress"];
-    currentPage_ = progress["current_page"];
-    totalPages_ = progress["total_pages"];
-    int progressPercentage = progress["percentage"];
-
-    // Get page content
-    currentPageText_ = doc["ocr_text"].as<std::string>();
-    currentPageImageUrl_ = doc["screenshot_url"].as<std::string>();
-
-    log_i("Kindle page loaded: %d/%d (%d%%)", currentPage_, totalPages_, progressPercentage);
-
-    // Update the book progress in the KindleBook object
-    kindleBook_->progressPercent = progressPercentage;
-    kindleBook_->progress = StringFormat("%d%%", progressPercentage);
-
-    // Create a stream with the text content
-    auto stream = std::make_shared<StdStringStream>(currentPageText_, DocType::TXT);
-    renderer_.setStream(stream);
-
-    // Create a place for the content
-    auto place = std::dynamic_pointer_cast<TxtPlace>(Place::factory(0));
-
-    // Set up display content state
-    setState(State::DISPLAY_CONTENT);
-
-    // Render the page
-    uint8_t darkPicturePercent = 0;
-    std::shared_ptr<Place> newPlace;
-    std::tie(newPlace, darkPicturePercent) = renderer_.renderPage(place);
-
-    // Update state and trigger render
-    firstKindleLoad_ = false;
-    setNeedsRerender();
-}
+// This method is no longer needed since we handle the response directly in each method
 
 void KindleReadableScreen::disconnectNetworkConnections() {
     // Cancel any ongoing network operations

@@ -7,6 +7,7 @@
 #include "Misc/PowerManager.hpp"
 #include "Misc/Telemetry.hpp"
 #include "Models/KindleBook.hpp"
+#include "Models/KindlePageResponse.hpp"
 #include "Models/Place.hpp"
 #include "Renderers/Renderer.hpp"
 #include "Renderers/RendererStream.hpp"
@@ -52,9 +53,6 @@ protected:
     // Handle page navigation
     void navigateNext();
     void navigatePrevious();
-
-    // Process server response
-    void processPageResponse(const std::string &response);
 
 private:
     std::shared_ptr<KindleBook> kindleBook_;

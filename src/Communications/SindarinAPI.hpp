@@ -12,6 +12,7 @@
 #include "Models/Firmware.hpp"
 #include "Models/FirmwareResponse.hpp"
 #include "Models/Json.hpp"
+#include "Models/KindlePageResponse.hpp"
 #include "Models/ReadableArchive.hpp"
 #include "Models/ReadableBookmark.hpp"
 #include "Models/ReadablePlacemark.hpp"
@@ -39,6 +40,7 @@ enum SindarinError {
     ERR_BLE_NOT_CONNECTED = -15,
     ERR_BLE_TIMED_OUT = -16,
     ERR_CREATE_DIR = -17,
+    ERR_CLIENT_READ = -18,
 };
 
 class SindarinAPI {
@@ -82,9 +84,19 @@ public:
     auto askQuestion(const BookQuestionRequest &req, BookQuestionResponse *resp, bool useBle,
                      const std::shared_ptr<CancelFlag> &cancel) -> int;
 
+    // Kindle book operations
+    auto openKindleBook(const std::string &title, KindlePageResponse *resp, 
+                       const std::shared_ptr<CancelFlag> &cancelFlag) -> int;
+    auto navigateKindleNext(KindlePageResponse *resp, 
+                           const std::shared_ptr<CancelFlag> &cancelFlag) -> int;
+    auto navigateKindlePrevious(KindlePageResponse *resp, 
+                               const std::shared_ptr<CancelFlag> &cancelFlag) -> int;
+
 private:
     auto tryCheckFirmware(FirmwareResponse *resp, bool useHttp, bool useBle,
                           const std::shared_ptr<CancelFlag> &cancel) -> int;
+    auto makeKindleRequest(const std::string &path, KindlePageResponse *resp,
+                        const std::shared_ptr<CancelFlag> &cancelFlag) -> int;
 
 protected:
     static std::shared_ptr<SindarinAPI> instance;
