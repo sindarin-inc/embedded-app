@@ -95,6 +95,7 @@ private:
     bool atEnd_ = false;
     const int bufferThreshold_ = 1000;  // Characters threshold to preload more content
     uint32_t lastRenderedPageSize_ = 0; // Size of the last rendered page in bytes
+    bool hasNavigatedForward_{false};   // Tracks if user has navigated forward at least once
 
     MultiLineTextView loadingMessageView_;
     MultiLineTextView errorMessageView_;

@@ -23,7 +23,7 @@ KindleReadableScreen::KindleReadableScreen(const std::shared_ptr<RendererStream>
       renderer_(display, GetTextRectFromPrefs(display, prefs), font), prefs_(prefs),
       telemetry_(telemetry), fileSystem_(fileSystem), lightingController_(lightingController),
       localStore_(localStore), kindleBook_(kindleBook), loadingMessageView_(display, 5),
-      errorMessageView_(display, 5) {
+      errorMessageView_(display, 5), hasNavigatedForward_(false) {
     log_i("Created KindleReadableScreen for book: %s by %s", kindleBook->title.c_str(),
           kindleBook->author.c_str());
 
@@ -494,8 +494,9 @@ void KindleReadableScreen::loadKindleBookPage() {
         // Now change state after we've rendered everything
         setState(State::DISPLAY_CONTENT);
 
-        // Update flag for future renders
+        // Update flags for future renders
         firstKindleLoad_ = false;
+        hasNavigatedForward_ = false; // Reset navigation tracking for fresh book load
 
         // Proactively check if we need to start loading the next page in the background
         if (checkNearEndOfBuffer()) {
@@ -568,6 +569,9 @@ void KindleReadableScreen::loadNextKindlePage() {
 
             log_i("Processing Kindle navigation next response (success=%d, text length=%zu)",
                   response->success, response->ocrText.length());
+                  
+            // Mark that we've successfully made a remote forward navigation call
+            hasNavigatedForward_ = true;
 
             // Update current page information
             currentPage_ = response->progress.currentPage;
@@ -867,6 +871,9 @@ void KindleReadableScreen::loadPreviousKindlePage() {
 
             // Save the place
             turnPage();
+            
+            // Reset navigation tracking since we're loading a new page from the beginning
+            hasNavigatedForward_ = false;
 
             // Now change state after we've rendered everything
             setState(State::DISPLAY_CONTENT);
@@ -887,7 +894,12 @@ void KindleReadableScreen::navigatePrevious() {
 
     // If at the beginning, we need to fetch from the API
     if (currentOffset == 0) {
-        loadPreviousKindlePage();
+        // Only allow going to previous Kindle page if user hasn't navigated forward yet
+        if (!hasNavigatedForward_) {
+            loadPreviousKindlePage();
+        } else {
+            log_i("Preventing navigation to previous Kindle page after forward navigation");
+        }
         return;
     }
 
