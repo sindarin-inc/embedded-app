@@ -23,7 +23,7 @@ KindleReadableScreen::KindleReadableScreen(const std::shared_ptr<RendererStream>
       renderer_(display, GetTextRectFromPrefs(display, prefs), font), prefs_(prefs),
       telemetry_(telemetry), fileSystem_(fileSystem), lightingController_(lightingController),
       localStore_(localStore), kindleBook_(kindleBook), loadingMessageView_(display, 5),
-      errorMessageView_(display, 5), hasNavigatedForward_(false) {
+      errorMessageView_(display, 5) {
     log_i("Created KindleReadableScreen for book: %s by %s", kindleBook->title.c_str(),
           kindleBook->author.c_str());
 
@@ -569,7 +569,7 @@ void KindleReadableScreen::loadNextKindlePage() {
 
             log_i("Processing Kindle navigation next response (success=%d, text length=%zu)",
                   response->success, response->ocrText.length());
-                  
+
             // Mark that we've successfully made a remote forward navigation call
             hasNavigatedForward_ = true;
 
@@ -871,7 +871,7 @@ void KindleReadableScreen::loadPreviousKindlePage() {
 
             // Save the place
             turnPage();
-            
+
             // Reset navigation tracking since we're loading a new page from the beginning
             hasNavigatedForward_ = false;
 
