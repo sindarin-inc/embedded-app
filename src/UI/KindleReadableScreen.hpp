@@ -19,7 +19,7 @@
 
 class KindleReadableScreen : public EinkView, public Screen {
 public:
-    enum class State { IDLE, CONNECTING, LOADING_CONTENT, DISPLAY_CONTENT, ERROR };
+    enum class State { IDLE, CONNECTING, LOADING_CONTENT, DISPLAY_CONTENT, LOADING_BACKGROUND, ERROR };
 
     KindleReadableScreen(const std::shared_ptr<RendererStream> &stream, DisplaySystem &display,
                          const std::shared_ptr<KindleBook> &kindleBook, PreferencesStore &prefs,
@@ -51,11 +51,19 @@ protected:
     void disconnectNetworkConnections();
 
     // Handle page navigation
+    // Load the next kindle page from API
+    void loadNextKindlePage();
+    // Load the previous kindle page from API
+    void loadPreviousKindlePage();
+    // Navigate locally within the current renderer buffer
     void navigateNext();
     void navigatePrevious();
-    
     // Clear screen and prepare for rendering content
     void clearScreenForContent();
+    // Turn to the next page in the renderer buffer
+    void turnPage();
+    // Check if we're at the end of the currently loaded content
+    bool checkNearEndOfBuffer();
 
 private:
     std::shared_ptr<KindleBook> kindleBook_;
@@ -63,13 +71,20 @@ private:
     bool firstKindleLoad_{true};
     bool dismissed_{false};
     std::shared_ptr<CancelFlag> cancelFlag_;
+    bool nextPageLoading_{false}; // Flag to track if we're already loading the next page
 
     // Current page information
     int currentPage_{0};
     int totalPages_{0};
     std::string currentPageText_;
     std::string currentPageImageUrl_;
-
+    
+    // Local paging information
+    std::shared_ptr<Place> currentPlace_ = nullptr; // Current place in the renderer
+    std::shared_ptr<Place> newPlace_ = nullptr;     // Next place to render
+    bool atEnd_ = false;
+    const int BUFFER_THRESHOLD = 1000; // Characters threshold to preload more content
+    
     MultiLineTextView loadingMessageView_;
     MultiLineTextView errorMessageView_;
 };

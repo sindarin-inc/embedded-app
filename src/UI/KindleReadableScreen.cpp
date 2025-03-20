@@ -44,7 +44,7 @@ KindleReadableScreen::KindleReadableScreen(const std::shared_ptr<RendererStream>
 }
 
 void KindleReadableScreen::render(DisplaySystem &display) {
-    if (state_ == State::DISPLAY_CONTENT) {
+    if (state_ == State::DISPLAY_CONTENT || state_ == State::LOADING_BACKGROUND) {
         // Set up the frame and layout
         setFrame(defaultFrameRect());
         setNeedsLayout();
@@ -54,8 +54,52 @@ void KindleReadableScreen::render(DisplaySystem &display) {
 
         // Render the current page content
         uint8_t darkPicturePercent = 0;
-        std::shared_ptr<Place> newPlace;
-        std::tie(newPlace, darkPicturePercent) = renderer_.renderPage(renderer_.getCurrentPlace());
+        
+        // Make sure we have a current place
+        if (!currentPlace_) {
+            currentPlace_ = renderer_.getCurrentPlace();
+            if (!currentPlace_) {
+                // Initialize with a starting place if needed
+                currentPlace_ = std::dynamic_pointer_cast<TxtPlace>(Place::factory(0));
+                log_i("Initialized currentPlace_ in render since it was null");
+            }
+        }
+        
+        // Render using our current place and get the next place
+        std::tie(newPlace_, darkPicturePercent) = renderer_.renderPage(currentPlace_);
+        
+        // Log the current and next place offsets for debugging
+        if (currentPlace_ && newPlace_) {
+            uint32_t currentOffset = currentPlace_->getOffset();
+            uint32_t nextOffset = newPlace_->getOffset();
+            uint32_t totalSize = renderer_.size();
+            uint32_t remainingBytes = (currentOffset < totalSize) ? (totalSize - currentOffset) : 0;
+            
+            log_i("BUFFER INFO - Reading at offset: %u/%u (%.1f%%), remaining: %u bytes, next offset: %u", 
+                 currentOffset, totalSize, 
+                 (totalSize > 0) ? (currentOffset * 100.0f / totalSize) : 0,
+                 remainingBytes, nextOffset);
+        }
+
+        // For background loading, we might need to show a message if we're at the end
+        uint32_t remainingBytes = 0;
+        if (currentPlace_) {
+            uint32_t currentOffset = currentPlace_->getOffset();
+            uint32_t totalSize = renderer_.size();
+            remainingBytes = (currentOffset < totalSize) ? (totalSize - currentOffset) : 0;
+        }
+        
+        // Be careful about how we detect the end for Kindle books
+        bool showLoadingMessage = false;
+        if (state_ == State::LOADING_BACKGROUND) {
+            // For Kindle books, decide based on actual buffer space
+            showLoadingMessage = (remainingBytes < BUFFER_THRESHOLD) || 
+                                 (renderer_.atEndOfFile() && remainingBytes < BUFFER_THRESHOLD * 2);
+            
+            if (showLoadingMessage) {
+                loadingMessageView_.draw();
+            }
+        }
 
         // Update the display
         if (firstKindleLoad_) {
@@ -112,7 +156,7 @@ void KindleReadableScreen::processCommand(RemoteCommand command) {
         }
     }
 
-    // If connecting or loading, allow cancellation
+    // If connecting or foreground loading, allow cancellation
     if (state_ == State::CONNECTING || state_ == State::LOADING_CONTENT) {
         if (command == RemoteCommand::BACK) {
             dismissScreen();
@@ -122,10 +166,12 @@ void KindleReadableScreen::processCommand(RemoteCommand command) {
         return;
     }
 
-    if (state_ == State::DISPLAY_CONTENT) {
+    // For both display content and background loading states
+    if (state_ == State::DISPLAY_CONTENT || state_ == State::LOADING_BACKGROUND) {
         // Handle navigation commands specially for Kindle content
         switch (command) {
         case RemoteCommand::RIGHT:
+            // Just call navigateNext which handles all the buffer checking internally
             navigateNext();
             break;
         case RemoteCommand::LEFT:
@@ -137,7 +183,8 @@ void KindleReadableScreen::processCommand(RemoteCommand command) {
             dismissScreen();
             break;
         case RemoteCommand::ENTER:
-            // No-op for now, could be used for future features
+            // Use this for page turn same as right
+            navigateNext();
             break;
         case RemoteCommand::DOWN:
             // No-op for now, could be used for future features
@@ -185,8 +232,10 @@ void KindleReadableScreen::setState(State newState) {
                 setLoadingMessage("Loading Kindle book...");
                 setNeedsRerender();
 
-                // Now load the content
-                loadKindleBookPage();
+                // Now load the content in the background queue
+                DispatchGetCore0BackgroundQueue()->dispatch([this]() {
+                    loadKindleBookPage();
+                });
             });
         });
     }
@@ -301,10 +350,11 @@ void KindleReadableScreen::loadKindleBookPage() {
     // Create a response object
     auto response = std::make_shared<KindlePageResponse>();
 
-    // For initial load, always open the book with its title
+    // For initial load, always open the book with its title - this API call runs in background thread
     int httpCode = sindarinApi->openKindleBook(kindleBook_->title, response.get(), cancelFlag_);
 
     if (httpCode != 200 || !response->success) {
+        // Handle error on the UI thread
         DispatchGetUiQueue()->dispatch([this]() {
             if (dismissed_) return;
 
@@ -332,8 +382,9 @@ void KindleReadableScreen::loadKindleBookPage() {
         kindleBook_->progressPercent = response->progress.percentage;
         kindleBook_->progress = StringFormat("%d%%", response->progress.percentage);
 
-        log_i("Kindle page loaded: %d/%d (%d%%)", 
-              currentPage_, totalPages_, response->progress.percentage);
+        log_i("API RESPONSE - Initial page: %d/%d (%d%%), new text size: %zu bytes", 
+              currentPage_, totalPages_, response->progress.percentage, 
+              currentPageText_.length());
 
         // Create a stream with the text content
         auto stream = std::make_shared<StdStringStream>(currentPageText_, DocType::TXT);
@@ -347,10 +398,19 @@ void KindleReadableScreen::loadKindleBookPage() {
         
         // Render the page
         uint8_t darkPicturePercent = 0;
-        std::shared_ptr<Place> newPlace;
-        std::tie(newPlace, darkPicturePercent) = renderer_.renderPage(place);
+        
+        // Set initial place
+        newPlace_ = place;
+        
+        // Initialize current place
+        currentPlace_ = place;
+        
+        // Render with the place
+        std::tie(newPlace_, darkPicturePercent) = renderer_.renderPage(currentPlace_);
         
         log_i("Kindle page rendered, forcing display update");
+        
+        // No need to call turnPage() here since we've already set currentPlace_
         
         // Explicitly force a full display update
         display_.updateDisplay(DisplaySystem::UpdateType::FULL, true);
@@ -360,82 +420,248 @@ void KindleReadableScreen::loadKindleBookPage() {
         
         // Update flag for future renders
         firstKindleLoad_ = false;
+        
+        // Proactively check if we need to start loading the next page in the background
+        if (checkNearEndOfBuffer()) {
+            log_i("Near buffer end after initial load, proactively loading more content");
+            loadNextKindlePage();
+        }
+    });
+}
+
+void KindleReadableScreen::loadNextKindlePage() {
+    if (dismissed_ || nextPageLoading_) {
+        return;
+    }
+
+    // Set flag to prevent multiple concurrent load requests
+    nextPageLoading_ = true;
+
+    // Determine if we're loading in foreground or background
+    bool isBackgroundLoading = (state_ == State::DISPLAY_CONTENT);
+    
+    if (!isBackgroundLoading) {
+        // Only show loading UI if this is not background loading
+        setState(State::LOADING_CONTENT);
+        setLoadingMessage("Loading next page...");
+        setNeedsRerender();
+    } else {
+        // Just mark the state for internal tracking
+        setState(State::LOADING_BACKGROUND);
+        log_i("Starting background load of next Kindle page");
+    }
+
+    // Execute the API call on the background thread
+    DispatchGetCore0BackgroundQueue()->dispatch([this, isBackgroundLoading]() {
+        // Create a response object
+        auto response = std::make_shared<KindlePageResponse>();
+
+        // Make the request
+        auto sindarinApi = SindarinAPI::getInstance();
+        int httpCode = sindarinApi->navigateKindleNext(response.get(), cancelFlag_);
+
+        if (httpCode != 200 || !response->success) {
+            DispatchGetUiQueue()->dispatch([this, isBackgroundLoading]() {
+                if (dismissed_) return;
+
+                nextPageLoading_ = false;
+                
+                if (isBackgroundLoading) {
+                    // For background loads, just log the error and restore state
+                    log_w("Background loading of next Kindle page failed");
+                    setState(State::DISPLAY_CONTENT);
+                } else {
+                    // For foreground loads, show the error
+                    errorMessageView_.setText("Failed to load next page");
+                    setState(State::ERROR);
+                    setNeedsRerender();
+                }
+            });
+            return;
+        }
+
+        // Process the response on the UI thread
+        DispatchGetUiQueue()->dispatch([this, response, isBackgroundLoading]() {
+            if (dismissed_) return;
+
+            nextPageLoading_ = false;
+
+            log_i("Processing Kindle navigation next response (success=%d, text length=%zu)", 
+                  response->success, response->ocrText.length());
+
+            // Update current page information
+            currentPage_ = response->progress.currentPage;
+            totalPages_ = response->progress.totalPages;
+            
+            // Append the new text to the existing buffer
+            if (!currentPageText_.empty()) {
+                currentPageText_ += "\n\n";  // Add some spacing between pages
+            }
+            currentPageText_ += response->ocrText;
+            currentPageImageUrl_ = response->screenshotUrl;
+
+            // Update the book progress in the KindleBook object
+            kindleBook_->progressPercent = response->progress.percentage;
+            kindleBook_->progress = StringFormat("%d%%", response->progress.percentage);
+
+            log_i("API RESPONSE - Next page: %d/%d (%d%%), new text size: %zu bytes, total buffer size now: %zu bytes", 
+                  currentPage_, totalPages_, response->progress.percentage, 
+                  response->ocrText.length(), currentPageText_.length());
+
+            // Create a stream with the text content
+            auto stream = std::make_shared<StdStringStream>(currentPageText_, DocType::TXT);
+            renderer_.setStream(stream);
+
+            if (isBackgroundLoading) {
+                // For background loading, just update the stream and restore state
+                log_i("Background loading complete, updated text buffer");
+                setState(State::DISPLAY_CONTENT);
+                
+                // Check if we're still low on content and need to load more
+                if (checkNearEndOfBuffer()) {
+                    log_i("Still near buffer end after background load, loading more content");
+                    loadNextKindlePage();
+                }
+            } else {
+                // For foreground loading, render the page immediately
+                // Create a place for the content
+                auto place = std::dynamic_pointer_cast<TxtPlace>(Place::factory(0));
+                
+                // Clear the screen and prepare for content
+                clearScreenForContent();
+                
+                // Render the page
+                uint8_t darkPicturePercent = 0;
+                std::tie(newPlace_, darkPicturePercent) = renderer_.renderPage(place);
+                
+                log_i("Kindle next page rendered, forcing display update");
+                
+                // Explicitly force a full display update
+                display_.updateDisplay(DisplaySystem::UpdateType::FULL, true);
+                
+                // Save the place
+                turnPage();
+                
+                // Now change state after we've rendered everything
+                setState(State::DISPLAY_CONTENT);
+                
+                // Proactively check if we need to start loading the next page
+                if (checkNearEndOfBuffer()) {
+                    log_i("Near buffer end after load, proactively loading more content");
+                    loadNextKindlePage();
+                }
+            }
+        });
     });
 }
 
 void KindleReadableScreen::navigateNext() {
-    if (state_ != State::DISPLAY_CONTENT || dismissed_) {
+    // Allow navigation from DISPLAY_CONTENT or LOADING_BACKGROUND states
+    if ((state_ != State::DISPLAY_CONTENT && state_ != State::LOADING_BACKGROUND) || dismissed_) {
         return;
     }
-
-    setState(State::LOADING_CONTENT);
-    setLoadingMessage("Loading next page...");
-    setNeedsRerender();
-
-    // Create a response object
-    auto response = std::make_shared<KindlePageResponse>();
-
-    // Make the request
-    auto sindarinApi = SindarinAPI::getInstance();
-    int httpCode = sindarinApi->navigateKindleNext(response.get(), cancelFlag_);
-
-    if (httpCode != 200 || !response->success) {
-        DispatchGetUiQueue()->dispatch([this]() {
-            if (dismissed_) return;
-
-            errorMessageView_.setText("Failed to load next page");
-            setState(State::ERROR);
+    
+    // Get current buffer info
+    uint32_t currentOffset = 0;
+    if (currentPlace_) {
+        currentOffset = currentPlace_->getOffset();
+    }
+    
+    uint32_t totalSize = renderer_.size();
+    uint32_t remainingBytes = (currentOffset < totalSize) ? (totalSize - currentOffset) : 0;
+    
+    // For Kindle books, we need special handling for EOF
+    // Check if we're physically near the end of the buffer
+    bool isAtEndOfBuffer = (remainingBytes < BUFFER_THRESHOLD) || (
+        renderer_.atEndOfFile() && totalSize > 0 && 
+        remainingBytes < BUFFER_THRESHOLD * 2 // Be more conservative for user interactions
+    );
+    
+    // Check if we're at the end of the buffer and waiting for more content
+    if (isAtEndOfBuffer) {
+        log_i("End of buffer detected - remaining bytes: %u, buffer size: %u", remainingBytes, totalSize);
+        
+        if (state_ == State::LOADING_BACKGROUND) {
+            // We're already loading more content, show a temporary message
+            setLoadingMessage("Loading more content...");
+            // Don't change state, just show the message
             setNeedsRerender();
-        });
+            return;
+        } else if (nextPageLoading_) {
+            // We're loading in background but not tracked in state yet
+            // Start showing loading UI since user has reached the end
+            setLoadingMessage("Loading more content...");
+            setState(State::LOADING_BACKGROUND);
+            setNeedsRerender();
+            return;
+        } else {
+            // We've reached the end but aren't loading more - start loading
+            loadNextKindlePage();
+            return;
+        }
+    }
+    
+    // For proper navigation, we should use the next place that was returned
+    // from the previous render operation, which represents exactly how much
+    // text was rendered on the current screen
+    
+    // We've already got currentOffset and totalSize from above, 
+    // no need to redefine them
+    
+    // If newPlace_ is null or somehow invalid, create a reasonable fallback
+    uint32_t nextOffset = currentOffset;
+    if (newPlace_) {
+        nextOffset = newPlace_->getOffset();
+    } else {
+        // If we don't have a valid next place, this is a fallback
+        log_w("No valid next place found, using fallback navigation");
+        nextOffset = currentOffset + 500; // Fallback: approximate screen of text
+    }
+    
+    // Check if we'd go past the end of the buffer
+    if (totalSize > 0 && nextOffset >= totalSize) {
+        // We'd go past the end, so we need more content
+        log_i("Next offset %u would go past buffer size %u", nextOffset, totalSize);
+        if (!nextPageLoading_) {
+            loadNextKindlePage();
+        }
         return;
     }
-
-    // Process the response on the UI thread
-    DispatchGetUiQueue()->dispatch([this, response]() {
-        if (dismissed_) return;
-
-        log_i("Processing Kindle navigation next response (success=%d, text length=%zu)", 
-              response->success, response->ocrText.length());
-
-        // Update current page information
-        currentPage_ = response->progress.currentPage;
-        totalPages_ = response->progress.totalPages;
-        currentPageText_ = response->ocrText;
-        currentPageImageUrl_ = response->screenshotUrl;
-
-        // Update the book progress in the KindleBook object
-        kindleBook_->progressPercent = response->progress.percentage;
-        kindleBook_->progress = StringFormat("%d%%", response->progress.percentage);
-
-        log_i("Kindle page navigation next: %d/%d (%d%%)", 
-              currentPage_, totalPages_, response->progress.percentage);
-
-        // Create a stream with the text content
-        auto stream = std::make_shared<StdStringStream>(currentPageText_, DocType::TXT);
-        renderer_.setStream(stream);
-
-        // Create a place for the content
-        auto place = std::dynamic_pointer_cast<TxtPlace>(Place::factory(0));
-        
-        // Clear the screen and prepare for content
-        clearScreenForContent();
-        
-        // Render the page
-        uint8_t darkPicturePercent = 0;
-        std::shared_ptr<Place> newPlace;
-        std::tie(newPlace, darkPicturePercent) = renderer_.renderPage(place);
-        
-        log_i("Kindle next page rendered, forcing display update");
-        
-        // Explicitly force a full display update
-        display_.updateDisplay(DisplaySystem::UpdateType::FULL, true);
-        
-        // Now change state after we've rendered everything
-        setState(State::DISPLAY_CONTENT);
-    });
+    
+    // Log navigation info with buffer details
+    uint32_t remainingBeforeNav = (currentOffset < totalSize) ? (totalSize - currentOffset) : 0;
+    uint32_t remainingAfterNav = (nextOffset < totalSize) ? (totalSize - nextOffset) : 0;
+    uint32_t pageSize = nextOffset - currentOffset;
+    
+    log_i("NAVIGATION - Moving from offset %u to %u (page size: %u bytes), buffer size: %u, remaining before: %u, after: %u bytes", 
+          currentOffset, nextOffset, pageSize, totalSize, remainingBeforeNav, remainingAfterNav);
+    
+    // Create a new place if needed
+    if (!newPlace_) {
+        newPlace_ = Place::factory(nextOffset);
+    }
+    
+    // Turn to the next page in the renderer buffer
+    turnPage();
+    
+    // Render the content from the new position
+    uint8_t darkPicturePercent = 0;
+    std::tie(newPlace_, darkPicturePercent) = renderer_.renderPage(currentPlace_);
+    
+    // Update the display
+    display_.updateDisplay(DisplaySystem::UpdateType::PARTIAL, true,
+                          display_.darkPictureVComAdj(darkPicturePercent));
+                          
+    log_i("Navigated to next page within current buffer");
+    
+    // Check if we need to load more content preemptively
+    if (checkNearEndOfBuffer() && !nextPageLoading_) {
+        log_i("Preemptively loading next content after navigation");
+        loadNextKindlePage();
+    }
 }
 
-void KindleReadableScreen::navigatePrevious() {
+void KindleReadableScreen::loadPreviousKindlePage() {
     if (state_ != State::DISPLAY_CONTENT || dismissed_) {
         return;
     }
@@ -444,67 +670,230 @@ void KindleReadableScreen::navigatePrevious() {
     setLoadingMessage("Loading previous page...");
     setNeedsRerender();
 
-    // Create a response object
-    auto response = std::make_shared<KindlePageResponse>();
+    // Execute the API call on the background thread
+    DispatchGetCore0BackgroundQueue()->dispatch([this]() {
+        // Create a response object
+        auto response = std::make_shared<KindlePageResponse>();
 
-    // Make the request
-    auto sindarinApi = SindarinAPI::getInstance();
-    int httpCode = sindarinApi->navigateKindlePrevious(response.get(), cancelFlag_);
+        // Make the request
+        auto sindarinApi = SindarinAPI::getInstance();
+        int httpCode = sindarinApi->navigateKindlePrevious(response.get(), cancelFlag_);
 
-    if (httpCode != 200 || !response->success) {
-        DispatchGetUiQueue()->dispatch([this]() {
+        if (httpCode != 200 || !response->success) {
+            DispatchGetUiQueue()->dispatch([this]() {
+                if (dismissed_) return;
+
+                errorMessageView_.setText("Failed to load previous page");
+                setState(State::ERROR);
+                setNeedsRerender();
+            });
+            return;
+        }
+
+        // Process the response on the UI thread
+        DispatchGetUiQueue()->dispatch([this, response]() {
             if (dismissed_) return;
 
-            errorMessageView_.setText("Failed to load previous page");
-            setState(State::ERROR);
-            setNeedsRerender();
+            log_i("Processing Kindle navigation previous response (success=%d, text length=%zu)", 
+                  response->success, response->ocrText.length());
+
+            // Update current page information
+            currentPage_ = response->progress.currentPage;
+            totalPages_ = response->progress.totalPages;
+            
+            // For previous page, we replace the current buffer
+            currentPageText_ = response->ocrText;
+            currentPageImageUrl_ = response->screenshotUrl;
+
+            // Update the book progress in the KindleBook object
+            kindleBook_->progressPercent = response->progress.percentage;
+            kindleBook_->progress = StringFormat("%d%%", response->progress.percentage);
+
+            log_i("API RESPONSE - Previous page: %d/%d (%d%%), new text size: %zu bytes", 
+                  currentPage_, totalPages_, response->progress.percentage, 
+                  currentPageText_.length());
+
+            // Create a stream with the text content
+            auto stream = std::make_shared<StdStringStream>(currentPageText_, DocType::TXT);
+            renderer_.setStream(stream);
+
+            // Create a place for the content
+            auto place = std::dynamic_pointer_cast<TxtPlace>(Place::factory(0));
+            
+            // Clear the screen and prepare for content
+            clearScreenForContent();
+            
+            // Render the page
+            uint8_t darkPicturePercent = 0;
+            std::tie(newPlace_, darkPicturePercent) = renderer_.renderPage(place);
+            
+            log_i("Kindle previous page rendered, forcing display update");
+            
+            // Explicitly force a full display update
+            display_.updateDisplay(DisplaySystem::UpdateType::FULL, true);
+            
+            // Save the place
+            turnPage();
+            
+            // Now change state after we've rendered everything
+            setState(State::DISPLAY_CONTENT);
         });
+    });
+}
+
+void KindleReadableScreen::navigatePrevious() {
+    if (state_ != State::DISPLAY_CONTENT || dismissed_) {
         return;
     }
-
-    // Process the response on the UI thread
-    DispatchGetUiQueue()->dispatch([this, response]() {
-        if (dismissed_) return;
-
-        log_i("Processing Kindle navigation previous response (success=%d, text length=%zu)", 
-              response->success, response->ocrText.length());
-
-        // Update current page information
-        currentPage_ = response->progress.currentPage;
-        totalPages_ = response->progress.totalPages;
-        currentPageText_ = response->ocrText;
-        currentPageImageUrl_ = response->screenshotUrl;
-
-        // Update the book progress in the KindleBook object
-        kindleBook_->progressPercent = response->progress.percentage;
-        kindleBook_->progress = StringFormat("%d%%", response->progress.percentage);
-
-        log_i("Kindle page navigation previous: %d/%d (%d%%)", 
-              currentPage_, totalPages_, response->progress.percentage);
-
-        // Create a stream with the text content
-        auto stream = std::make_shared<StdStringStream>(currentPageText_, DocType::TXT);
-        renderer_.setStream(stream);
-
-        // Create a place for the content
-        auto place = std::dynamic_pointer_cast<TxtPlace>(Place::factory(0));
+    
+    // Get the current place offset
+    uint32_t currentOffset = 0;
+    if (currentPlace_) {
+        currentOffset = currentPlace_->getOffset();
+    }
+    
+    // If at the beginning, we need to fetch from the API
+    if (currentOffset == 0) {
+        loadPreviousKindlePage();
+        return;
+    }
+    
+    // Try to get the previous place from the renderer
+    auto prevPlace = renderer_.getPreviousPlace();
+    
+    // If it's null, we need to compute a reasonable fallback
+    if (!prevPlace) {
+        // Calculate a reasonable page size - from logs we can see the rendered page size
+        // If available, use the page size from the last navigation
+        uint32_t lastPageSize = 0;
+        if (newPlace_ && currentPlace_) {
+            lastPageSize = currentPlace_->getOffset() - (newPlace_->getOffset() > currentPlace_->getOffset() ? 0 : newPlace_->getOffset());
+        }
         
-        // Clear the screen and prepare for content
-        clearScreenForContent();
+        // Use a default if we couldn't determine page size
+        uint32_t pageSize = (lastPageSize > 0) ? lastPageSize : 500;
         
-        // Render the page
-        uint8_t darkPicturePercent = 0;
-        std::shared_ptr<Place> newPlace;
-        std::tie(newPlace, darkPicturePercent) = renderer_.renderPage(place);
+        // Ensure we don't go before start of buffer
+        uint32_t prevOffset = (currentOffset > pageSize) ? (currentOffset - pageSize) : 0;
         
-        log_i("Kindle previous page rendered, forcing display update");
+        log_w("No valid previous place found, using fallback navigation offset %u (pageSize: %u)", 
+              prevOffset, pageSize);
         
-        // Explicitly force a full display update
-        display_.updateDisplay(DisplaySystem::UpdateType::FULL, true);
+        prevPlace = Place::factory(prevOffset);
+    }
+    
+    // Get the offset for logging
+    uint32_t prevOffset = prevPlace->getOffset();
+    uint32_t totalSize = renderer_.size();
+    uint32_t pageSize = currentOffset - prevOffset;
+    
+    log_i("NAVIGATION - Moving backward from offset %u to %u (page size: %u bytes), buffer size: %u", 
+          currentOffset, prevOffset, pageSize, totalSize);
+    
+    // Set this as our new place
+    newPlace_ = prevPlace;
+    
+    // Update current place and renderer state
+    turnPage();
+    
+    // Render the content from the new position
+    uint8_t darkPicturePercent = 0;
+    std::tie(newPlace_, darkPicturePercent) = renderer_.renderPage(currentPlace_);
+    
+    // Update the display
+    display_.updateDisplay(DisplaySystem::UpdateType::PARTIAL, true,
+                         display_.darkPictureVComAdj(darkPicturePercent));
+                         
+    log_i("Navigated to previous page within current buffer");
+}
+
+bool KindleReadableScreen::checkNearEndOfBuffer() {
+    if (!renderer_.getStream()) {
+        return true;
+    }
+    
+    uint32_t currentOffset = 0;
+    if (renderer_.getCurrentPlace()) {
+        currentOffset = renderer_.getCurrentPlace()->getOffset();
+    }
+    
+    uint32_t totalSize = renderer_.size();
+    
+    // Calculate remaining bytes
+    uint32_t remainingBytes = (currentOffset < totalSize) ? (totalSize - currentOffset) : 0;
+    float percentThrough = (totalSize > 0) ? (currentOffset * 100.0f / totalSize) : 0;
+    
+    // Check if we're close to the end of the buffer
+    if (totalSize > 0 && remainingBytes < BUFFER_THRESHOLD) {
+        log_i("BUFFER CHECK - Near end: offset=%u/%u (%.1f%%), remaining=%u bytes, threshold=%d bytes", 
+             currentOffset, totalSize, percentThrough, remainingBytes, BUFFER_THRESHOLD);
+        return true;
+    }
+    
+    // For Kindle books, be careful about the EOF detection
+    if (renderer_.atEndOfFile()) {
+        // We're loading content dynamically, so check if we're
+        // near the physical end of the buffer instead of relying on EOF flag
+        if (remainingBytes < BUFFER_THRESHOLD) {
+            log_i("BUFFER CHECK - Treating EOF as 'near end' at offset %u/%u (%.1f%%)", 
+                  currentOffset, totalSize, percentThrough);
+            return true;
+        } else {
+            // If we have enough buffer space left, don't trigger loading yet
+            log_i("BUFFER CHECK - Ignoring EOF flag because buffer still has %u bytes", 
+                  remainingBytes);
+            return false;
+        }
+    }
+    
+    // Not near end, log status for debugging
+    log_i("BUFFER CHECK - Not near end: offset=%u/%u (%.1f%%), remaining=%u bytes, threshold=%d bytes",
+          currentOffset, totalSize, percentThrough, remainingBytes, BUFFER_THRESHOLD);
+    
+    return false;
+}
+
+void KindleReadableScreen::turnPage() {
+    if (atEnd_) {
+        // If at end, don't advance (similar to ReadableScreen)
+        log_i("At the end of content, not advancing page");
+        return;
+    }
+    
+    // Save previous offset for logging
+    uint32_t prevOffset = 0;
+    if (currentPlace_) {
+        prevOffset = currentPlace_->getOffset();
+    }
+    
+    // Save current place
+    if (newPlace_) {
+        // Update the current place with the new place
+        currentPlace_ = newPlace_;
+        // Set the renderer's current place to the new place
+        renderer_.setCurrentPlace(currentPlace_);
         
-        // Now change state after we've rendered everything
-        setState(State::DISPLAY_CONTENT);
-    });
+        // Get buffer info for logging
+        uint32_t newOffset = currentPlace_->getOffset();
+        uint32_t totalSize = renderer_.size();
+        uint32_t remainingBytes = (newOffset < totalSize) ? (totalSize - newOffset) : 0;
+        float percentThrough = (totalSize > 0) ? (newOffset * 100.0f / totalSize) : 0;
+        
+        // Log the page turn with detailed buffer information
+        log_i("PAGE TURN - Updated place from offset %u to %u (%.1f%% of buffer), remaining: %u bytes", 
+             prevOffset, newOffset, percentThrough, remainingBytes);
+    } else {
+        // This shouldn't happen, but handle it gracefully
+        currentPlace_ = renderer_.getCurrentPlace();
+        log_i("turnPage - NO NEW PLACE, using current place offset: %u", 
+             currentPlace_ ? currentPlace_->getOffset() : 0);
+    }
+    
+    // Check if we're at the end
+    atEnd_ = renderer_.atEndOfFile();
+    
+    // For debug
+    log_i("turnPage - at end of content: %s", atEnd_ ? "yes" : "no");
 }
 
 // This method is no longer needed since we handle the response directly in each method
