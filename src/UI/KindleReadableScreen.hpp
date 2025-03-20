@@ -93,12 +93,12 @@ private:
     std::shared_ptr<Place> currentPlace_ = nullptr; // Current place in the renderer
     std::shared_ptr<Place> newPlace_ = nullptr;     // Next place to render
     bool atEnd_ = false;
-    const int bufferThreshold_ = 1000; // Characters threshold to preload more content
+    const int bufferThreshold_ = 1000;  // Characters threshold to preload more content
     uint32_t lastRenderedPageSize_ = 0; // Size of the last rendered page in bytes
 
     MultiLineTextView loadingMessageView_;
     MultiLineTextView errorMessageView_;
-    
+
     void showPopupMenu();
-    void setCurrentScreen(std::shared_ptr<Screen> screen) { currentScreen_ = screen; }
+    void setCurrentScreen(std::shared_ptr<Screen> screen) { currentScreen_ = std::move(screen); }
 };

@@ -1,7 +1,6 @@
 #include "UI/KindleReadableScreen.hpp"
 
 #include <cinttypes>
-#include <inttypes.h>
 
 #include "Communications/SindarinAPI.hpp"
 #include "Communications/WiFi.hpp"
@@ -43,18 +42,17 @@ KindleReadableScreen::KindleReadableScreen(const std::shared_ptr<RendererStream>
 
     // Initialize network connection
     setState(State::CONNECTING);
-    
+
     // Initialize the popup menu
     auto popupNavigationFactory = [this]() {
-        std::shared_ptr<std::vector<std::shared_ptr<MenuItem>>> menuItems = 
+        std::shared_ptr<std::vector<std::shared_ptr<MenuItem>>> menuItems =
             std::make_shared<std::vector<std::shared_ptr<MenuItem>>>();
 
-        menuItems->emplace_back(std::make_shared<MenuItemSingleLine>(
-            "Back to Text", [this]() {
-                display_.clearDisplay();
-                this->setCurrentScreen(nullptr);
-                setNeedsRerender();
-            }));
+        menuItems->emplace_back(std::make_shared<MenuItemSingleLine>("Back to Text", [this]() {
+            display_.clearDisplay();
+            this->setCurrentScreen(nullptr);
+            setNeedsRerender();
+        }));
 
         return menuItems;
     };
@@ -62,14 +60,15 @@ KindleReadableScreen::KindleReadableScreen(const std::shared_ptr<RendererStream>
     // Create a readable-like object for the popup menu to use
     auto readablePlaceholder = std::make_shared<Readable>();
     readablePlaceholder->title = kindleBook_->title;
-    
+
     // Add authors from kindle book to readable
     Author author;
     author.name = kindleBook_->author;
     readablePlaceholder->authors.push_back(author);
-    
+
     popupMenuScreen_ = std::make_shared<NewReadablePopupMenuScreen>(
-        display, prefs_, fileSystem_, readablePlaceholder, lightingController_, renderer_, telemetry_, localStore_, stream_);
+        display, prefs_, fileSystem_, readablePlaceholder, lightingController_, renderer_,
+        telemetry_, localStore_, stream_);
 
     popupMenuScreen_->addTab("Popup", popupNavigationFactory, 8);
     popupMenuScreen_->populateMenuView();
@@ -112,11 +111,12 @@ void KindleReadableScreen::render(DisplaySystem &display) {
             uint32_t nextOffset = newPlace_->getOffset();
             uint32_t totalSize = renderer_.size();
             uint32_t remainingBytes = (currentOffset < totalSize) ? (totalSize - currentOffset) : 0;
-            
+
             // Calculate and store the page size
             lastRenderedPageSize_ = (nextOffset > currentOffset) ? (nextOffset - currentOffset) : 0;
 
-            log_i("BUFFER INFO - Reading at offset: %" PRIu32 "/%" PRIu32 " (%.1f%%), remaining: %" PRIu32 " bytes, next "
+            log_i("BUFFER INFO - Reading at offset: %" PRIu32 "/%" PRIu32
+                  " (%.1f%%), remaining: %" PRIu32 " bytes, next "
                   "offset: %" PRIu32 ", page size: %" PRIu32 " bytes",
                   currentOffset, totalSize,
                   (totalSize > 0) ? (currentOffset * 100.0f / totalSize) : 0, remainingBytes,
@@ -467,7 +467,7 @@ void KindleReadableScreen::loadKindleBookPage() {
 
         // Render with the place
         std::tie(newPlace_, darkPicturePercent) = renderer_.renderPage(currentPlace_);
-        
+
         // Calculate initial page size
         if (newPlace_ && currentPlace_) {
             uint32_t newOffset = newPlace_->getOffset();
@@ -589,45 +589,50 @@ void KindleReadableScreen::loadNextKindlePage() {
                 // For background loading, update the stream and restore state
                 log_i("Background loading complete, updated text buffer");
                 setState(State::DISPLAY_CONTENT);
-                
+
                 // Get current offset and check if the current page is incomplete
                 uint32_t currentOffset = currentPlace_ ? currentPlace_->getOffset() : 0;
                 uint32_t totalSize = renderer_.size();
-                uint32_t remainingBytes = (currentOffset < totalSize) ? (totalSize - currentOffset) : 0;
-                
+                uint32_t remainingBytes =
+                    (currentOffset < totalSize) ? (totalSize - currentOffset) : 0;
+
                 bool shouldRefreshPage = false;
-                
+
                 // Only refresh the page if:
                 // 1. We were previously showing an incomplete page (near end of buffer)
                 // 2. The page size is less than what's typically rendered (meaning it was cut off)
                 // 3. We have more content available now
                 if (remainingBytes > 0 && lastRenderedPageSize_ > 0) {
-                    // If the last page was smaller than typical pages (potentially cut off at buffer end)
-                    // AND we now have more content, refresh to show the full page
+                    // If the last page was smaller than typical pages (potentially cut off at
+                    // buffer end) AND we now have more content, refresh to show the full page
                     if (remainingBytes < bufferThreshold_ * 2) {
-                        log_i("Refreshing page after background load - current page may be incomplete (remaining: %" PRIu32 ", lastPageSize: %" PRIu32 ")", 
+                        log_i("Refreshing page after background load - current page may be "
+                              "incomplete (remaining: %" PRIu32 ", lastPageSize: %" PRIu32 ")",
                               remainingBytes, lastRenderedPageSize_);
-                        
+
                         // Re-render the current page with the new content
                         uint8_t darkPicturePercent = 0;
-                        std::tie(newPlace_, darkPicturePercent) = renderer_.renderPage(currentPlace_);
-                        
+                        std::tie(newPlace_, darkPicturePercent) =
+                            renderer_.renderPage(currentPlace_);
+
                         // Update the display
                         display_.updateDisplay(DisplaySystem::UpdateType::PARTIAL, true,
-                                              display_.darkPictureVComAdj(darkPicturePercent));
-                        
+                                               display_.darkPictureVComAdj(darkPicturePercent));
+
                         // Calculate new page size
                         if (newPlace_ && currentPlace_) {
                             uint32_t newOffset = newPlace_->getOffset();
                             uint32_t currOffset = currentPlace_->getOffset();
-                            lastRenderedPageSize_ = (newOffset > currOffset) ? (newOffset - currOffset) : 0;
-                            log_i("New page size after refresh: %" PRIu32 " bytes", lastRenderedPageSize_);
+                            lastRenderedPageSize_ =
+                                (newOffset > currOffset) ? (newOffset - currOffset) : 0;
+                            log_i("New page size after refresh: %" PRIu32 " bytes",
+                                  lastRenderedPageSize_);
                         }
-                        
+
                         shouldRefreshPage = true;
                     }
                 }
-                
+
                 // Check if we're still low on content and need to load more
                 if (!shouldRefreshPage && checkNearEndOfBuffer()) {
                     log_i("Still near buffer end after background load, loading more content");
@@ -691,8 +696,8 @@ void KindleReadableScreen::navigateNext() {
 
     // Check if we're at the end of the buffer and waiting for more content
     if (isAtEndOfBuffer) {
-        log_i("End of buffer detected - remaining bytes: %" PRIu32 ", buffer size: %" PRIu32 "", remainingBytes,
-              totalSize);
+        log_i("End of buffer detected - remaining bytes: %" PRIu32 ", buffer size: %" PRIu32 "",
+              remainingBytes, totalSize);
 
         if (state_ == State::LOADING_BACKGROUND) {
             // We're already loading more content, show a temporary message
@@ -734,7 +739,8 @@ void KindleReadableScreen::navigateNext() {
     // Check if we'd go past the end of the buffer
     if (totalSize > 0 && nextOffset >= totalSize) {
         // We'd go past the end, so we need more content
-        log_i("Next offset %" PRIu32 " would go past buffer size %" PRIu32 "", nextOffset, totalSize);
+        log_i("Next offset %" PRIu32 " would go past buffer size %" PRIu32 "", nextOffset,
+              totalSize);
         if (!nextPageLoading_) {
             loadNextKindlePage();
         }
@@ -746,7 +752,8 @@ void KindleReadableScreen::navigateNext() {
     uint32_t remainingAfterNav = (nextOffset < totalSize) ? (totalSize - nextOffset) : 0;
     uint32_t pageSize = nextOffset - currentOffset;
 
-    log_i("NAVIGATION - Moving from offset %" PRIu32 " to %" PRIu32 " (page size: %" PRIu32 " bytes), buffer size: %" PRIu32 ", "
+    log_i("NAVIGATION - Moving from offset %" PRIu32 " to %" PRIu32 " (page size: %" PRIu32
+          " bytes), buffer size: %" PRIu32 ", "
           "remaining before: %" PRIu32 ", after: %" PRIu32 " bytes",
           currentOffset, nextOffset, pageSize, totalSize, remainingBeforeNav, remainingAfterNav);
 
@@ -896,7 +903,8 @@ void KindleReadableScreen::navigatePrevious() {
         // Ensure we don't go before start of buffer
         uint32_t prevOffset = (currentOffset > pageSize) ? (currentOffset - pageSize) : 0;
 
-        log_w("No valid previous place found, using fallback navigation offset %" PRIu32 " (pageSize: %" PRIu32 ")",
+        log_w("No valid previous place found, using fallback navigation offset %" PRIu32
+              " (pageSize: %" PRIu32 ")",
               prevOffset, pageSize);
 
         prevPlace = Place::factory(prevOffset);
@@ -907,9 +915,9 @@ void KindleReadableScreen::navigatePrevious() {
     uint32_t totalSize = renderer_.size();
     uint32_t pageSize = currentOffset - prevOffset;
 
-    log_i(
-        "NAVIGATION - Moving backward from offset %" PRIu32 " to %" PRIu32 " (page size: %" PRIu32 " bytes), buffer size: %" PRIu32,
-        currentOffset, prevOffset, pageSize, totalSize);
+    log_i("NAVIGATION - Moving backward from offset %" PRIu32 " to %" PRIu32 " (page size: %" PRIu32
+          " bytes), buffer size: %" PRIu32,
+          currentOffset, prevOffset, pageSize, totalSize);
 
     // Set this as our new place
     newPlace_ = prevPlace;
@@ -946,7 +954,8 @@ auto KindleReadableScreen::checkNearEndOfBuffer() -> bool {
 
     // Check if we're close to the end of the buffer
     if (totalSize > 0 && remainingBytes < bufferThreshold_) {
-        log_i("BUFFER CHECK - Near end: offset=%" PRIu32 "/%" PRIu32 " (%.1f%%), remaining=%" PRIu32 " bytes, threshold=%d "
+        log_i("BUFFER CHECK - Near end: offset=%" PRIu32 "/%" PRIu32 " (%.1f%%), remaining=%" PRIu32
+              " bytes, threshold=%d "
               "bytes",
               currentOffset, totalSize, percentThrough, remainingBytes, bufferThreshold_);
         return true;
@@ -957,7 +966,8 @@ auto KindleReadableScreen::checkNearEndOfBuffer() -> bool {
         // We're loading content dynamically, so check if we're
         // near the physical end of the buffer instead of relying on EOF flag
         if (remainingBytes < bufferThreshold_) {
-            log_i("BUFFER CHECK - Treating EOF as 'near end' at offset %" PRIu32 "/%" PRIu32 " (%.1f%%)",
+            log_i("BUFFER CHECK - Treating EOF as 'near end' at offset %" PRIu32 "/%" PRIu32
+                  " (%.1f%%)",
                   currentOffset, totalSize, percentThrough);
             return true;
         } else {
@@ -969,7 +979,8 @@ auto KindleReadableScreen::checkNearEndOfBuffer() -> bool {
     }
 
     // Not near end, log status for debugging
-    log_i("BUFFER CHECK - Not near end: offset=%" PRIu32 "/%" PRIu32 " (%.1f%%), remaining=%" PRIu32 " bytes, threshold=%d "
+    log_i("BUFFER CHECK - Not near end: offset=%" PRIu32 "/%" PRIu32 " (%.1f%%), remaining=%" PRIu32
+          " bytes, threshold=%d "
           "bytes",
           currentOffset, totalSize, percentThrough, remainingBytes, bufferThreshold_);
 
@@ -1004,9 +1015,10 @@ void KindleReadableScreen::turnPage() {
 
         // Calculate and store the page size
         lastRenderedPageSize_ = (newOffset > prevOffset) ? (newOffset - prevOffset) : 0;
-              
+
         // Log the page turn with detailed buffer information
-        log_i("PAGE TURN - Updated place from offset %" PRIu32 " to %" PRIu32 " (%.1f%% of buffer), remaining: %" PRIu32 " "
+        log_i("PAGE TURN - Updated place from offset %" PRIu32 " to %" PRIu32
+              " (%.1f%% of buffer), remaining: %" PRIu32 " "
               "bytes, page size: %" PRIu32 " bytes",
               prevOffset, newOffset, percentThrough, remainingBytes, lastRenderedPageSize_);
     } else {
@@ -1136,14 +1148,14 @@ void KindleReadableScreen::showPopupMenu() {
     // Create a readable-like object for the popup menu to use
     auto readablePlaceholder = std::make_shared<Readable>();
     readablePlaceholder->title = kindleBook_->title;
-    
+
     // Add authors from kindle book to readable
     Author author;
     author.name = kindleBook_->author;
     readablePlaceholder->authors.push_back(author);
-    
-    readablePlaceholder->place = currentPlace_;  // Use current reading position
-    
+
+    readablePlaceholder->place = currentPlace_; // Use current reading position
+
     // Show the popup menu - no need to set readable since that's only needed for some features
     setCurrentScreen(popupMenuScreen_);
     setNeedsRerender();

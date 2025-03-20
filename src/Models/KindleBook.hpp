@@ -56,9 +56,9 @@ public:
             if (progressStr.back() == '%') {
                 progressStr.pop_back();
             }
-            
+
             // Safe conversion without exceptions
-            char* end;
+            char *end;
             long val = strtol(progressStr.c_str(), &end, 10);
             if (end == progressStr.c_str() || *end != '\0' || val < 0 || val > 100) {
                 // Conversion failed or value out of range
@@ -72,25 +72,25 @@ public:
         if (!size.empty()) {
             // Check if size is in MB or KB
             float sizeValue = 0.0f;
-            
+
             // Extract the numeric part
             size_t pos;
             if (size.find("MB") != std::string::npos) {
                 // Try to parse the numeric part safely
-                char* end;
+                char *end;
                 double val = strtod(size.c_str(), &end);
                 pos = end - size.c_str();
-                
+
                 if (pos > 0 && val >= 0) {
                     sizeValue = static_cast<float>(val);
                     sizeBytes = static_cast<size_t>(sizeValue * 1024 * 1024);
                 }
             } else if (size.find("KB") != std::string::npos) {
                 // Try to parse the numeric part safely
-                char* end;
+                char *end;
                 double val = strtod(size.c_str(), &end);
                 pos = end - size.c_str();
-                
+
                 if (pos > 0 && val >= 0) {
                     sizeValue = static_cast<float>(val);
                     sizeBytes = static_cast<size_t>(sizeValue * 1024);
