@@ -22,8 +22,8 @@ KindleReadableScreen::KindleReadableScreen(const std::shared_ptr<RendererStream>
     : EinkView(display), stream_(stream),
       renderer_(display, GetTextRectFromPrefs(display, prefs), font), prefs_(prefs),
       telemetry_(telemetry), fileSystem_(fileSystem), lightingController_(lightingController),
-      localStore_(localStore), kindleBook_(kindleBook), loadingMessageView_(display, 5),
-      errorMessageView_(display, 5) {
+      localStore_(localStore), kindleBook_(kindleBook), hasNavigatedForward_(false),
+      loadingMessageView_(display, 5), errorMessageView_(display, 5) {
     log_i("Created KindleReadableScreen for book: %s by %s", kindleBook->title.c_str(),
           kindleBook->author.c_str());
 
