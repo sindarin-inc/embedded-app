@@ -2,6 +2,8 @@
 #include <cmath>
 #include <numeric>
 
+#include "sindarin-debug.h"
+
 // ChatGPT wrote this on 12/13/2022
 template <typename T, std::size_t N>
 class MovingAverage {
