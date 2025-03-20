@@ -102,8 +102,8 @@ auto LocalStore::loadReadablesFromFile(ReadablesVector &readables, const std::st
 }
 
 // Helper method to load KindleBook objects from JSON
-auto LocalStore::loadKindleBooksFromFile(KindleBooksVector &kindleBooks, const std::string &path)
-    -> bool {
+auto LocalStore::loadKindleBooksFromFile(KindleBooksVector &kindleBooks,
+                                         const std::string &path) const -> bool {
     log_d("Loading Kindle books JSON from %s", path.c_str());
 
     bool foundActualBooks = false;
@@ -148,7 +148,9 @@ auto LocalStore::loadKindleBooksFromFile(KindleBooksVector &kindleBooks, const s
     int booksLoaded = 0;
 
     for (JsonVariant v : booksJson) {
-        if (bookCount >= maxBooks) break;
+        if (bookCount >= maxBooks) {
+            break;
+        }
         bookCount++;
 
         if (!v.is<JsonObject>()) {

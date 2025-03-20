@@ -91,7 +91,8 @@ public:
 
     auto begin() -> bool;
     auto loadReadablesFromFile(ReadablesVector &readables, const std::string &path) -> bool;
-    auto loadKindleBooksFromFile(KindleBooksVector &kindleBooks, const std::string &path) -> bool;
+    auto loadKindleBooksFromFile(KindleBooksVector &kindleBooks, const std::string &path) const
+        -> bool;
 
     // Convenience methods
     auto books() -> ReadablesVector & { return books_; };

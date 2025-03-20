@@ -6,12 +6,13 @@
 
 class MenuItemKindleBookView : public MenuItemView {
 public:
-    MenuItemKindleBookView(DisplaySystem &display, const std::shared_ptr<MenuItemKindleBook> &menuItem)
+    MenuItemKindleBookView(DisplaySystem &display,
+                           const std::shared_ptr<MenuItemKindleBook> &menuItem)
         : MenuItemView(display), titleView_(display), authorView_(display), progressView_(display) {
         titleView_.setText(menuItem->title());
         // Make the author text all caps
         authorView_.setText(std::string(menuItem->author()), true);
-        
+
         // Add progress if available
         if (menuItem->progressPercent() > 0) {
             progressView_.setText(StringFormat("%d%%", menuItem->progressPercent()));
@@ -33,16 +34,15 @@ public:
                 {{titleRect.size.height * 2 / 3, titleRect.size.height}, {size.width, size.height}},
                 LayoutOptionsSizeToFit);
         }
-        
+
         SolRect progressRect = SolRect::zero();
         if (!progressView_.getText().empty()) {
             // Place progress info on the right side
             progressRect = context.setViewFrame(
-                progressView_,
-                {{size.width - 50, titleRect.origin.y}, {50, titleRect.size.height}},
+                progressView_, {{size.width - 50, titleRect.origin.y}, {50, titleRect.size.height}},
                 LayoutOptionsSizeToFit | LayoutOptionsAlignRight);
         }
-        
+
         return {std::max(titleRect.size.width, authorRect.size.width),
                 titleRect.size.height + authorRect.size.height};
     }
