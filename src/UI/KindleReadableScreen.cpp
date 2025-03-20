@@ -312,35 +312,9 @@ auto KindleReadableScreen::connectToNetwork(bool useBleOnly, std::string &errorM
 
     SindarinAPI::getInstance()->setAccessToken(prefs_.cloudToken.get().value());
 
-    // Try WiFi connection if not in BLE-only mode
-    if (!useBleOnly && !prefs_.wifiDisabled.get().value_or(false)) {
-        log_i("Attempting WiFi connection for Kindle book...");
-
-        DispatchGetUiQueue()->dispatch([this]() {
-            if (!dismissed_) {
-                setLoadingMessage("Connecting to WiFi...");
-            }
-        });
-
-        auto connected = WiFi::getInstance().connectWiFiFromSettings();
-        if (connected != ESP_OK && connected != true) {
-            log_w("WiFi connection failed for Kindle book");
-            telemetry_.logMetric(TelemetryField::METRIC_WIFI, "kindle-wifi-failed");
-            wifiConnected = false;
-        } else {
-            log_i("WiFi connection successful for Kindle book");
-            telemetry_.logMetric(TelemetryField::METRIC_WIFI, "kindle-wifi-connected");
-            wifiConnected = true;
-        }
-    } else if (useBleOnly) {
-        log_i("BLE-only mode for Kindle book, skipping WiFi connection");
-    } else {
-        log_i("WiFi is disabled in preferences, skipping WiFi connection");
-    }
-
 #if CONFIG_USE_BLE_SERVER_PROXY
-    // Try BLE if WiFi failed or in BLE-only mode
-    if ((!wifiConnected || useBleOnly) && !prefs_.bleDisabled.get().value_or(false)) {
+    // Try BLE first if not disabled
+    if (!prefs_.bleDisabled.get().value_or(false)) {
         log_i("Attempting BLE connection for Kindle book...");
 
         // Disconnect WiFi if we're using BLE
@@ -366,28 +340,60 @@ auto KindleReadableScreen::connectToNetwork(bool useBleOnly, std::string &errorM
     }
 #endif
 
+    // Try WiFi if BLE failed and not in BLE-only mode
+    if (!bleConnected && !useBleOnly && !prefs_.wifiDisabled.get().value_or(false)) {
+        log_i("Attempting WiFi connection for Kindle book...");
+
+        DispatchGetUiQueue()->dispatch([this]() {
+            if (!dismissed_) {
+                setLoadingMessage("Connecting to WiFi...");
+            }
+        });
+
+        auto connected = WiFi::getInstance().connectWiFiFromSettings();
+        if (connected != ESP_OK && connected != true) {
+            log_w("WiFi connection failed for Kindle book");
+            telemetry_.logMetric(TelemetryField::METRIC_WIFI, "kindle-wifi-failed");
+            wifiConnected = false;
+        } else {
+            log_i("WiFi connection successful for Kindle book");
+            telemetry_.logMetric(TelemetryField::METRIC_WIFI, "kindle-wifi-connected");
+            wifiConnected = true;
+        }
+    } else if (useBleOnly) {
+        log_i("BLE-only mode for Kindle book, skipping WiFi connection");
+    } else if (!bleConnected) {
+        log_i("WiFi is disabled in preferences, skipping WiFi connection");
+    }
+
     if (!wifiConnected && !bleConnected) {
         log_w("Failed to establish any network connection for Kindle book");
-        if (prefs_.wifiDisabled.get().value_or(false)) {
-            errorMessage = "WiFi is disabled in settings. Please enable WiFi to use Kindle books.";
-            telemetry_.logMetricData(TelemetryField::METRIC_DIALOG,
-                                     {{"dialog", std::string("kindle-books")},
-                                      {"action", std::string("kindle-connection-failed")},
-                                      {"reason", std::string("wifi-disabled")}});
-        } else if (prefs_.bleDisabled.get().value_or(false)) {
+        if (prefs_.wifiDisabled.get().value_or(false) && prefs_.bleDisabled.get().value_or(false)) {
             errorMessage = "Both WiFi and Bluetooth are disabled. Please enable one of them to "
                            "use Kindle books.";
             telemetry_.logMetricData(TelemetryField::METRIC_DIALOG,
                                      {{"dialog", std::string("kindle-books")},
                                       {"action", std::string("kindle-connection-failed")},
-                                      {"reason", std::string("ble-disabled")}});
-        } else {
-            errorMessage =
-                "Could not connect to WiFi. Please check your WiFi settings and try again.";
+                                      {"reason", std::string("all-disabled")}});
+        } else if (prefs_.wifiDisabled.get().value_or(false)) {
+            errorMessage = "WiFi is disabled in settings and BLE connection failed. Please check your BLE connection or enable WiFi to use Kindle books.";
             telemetry_.logMetricData(TelemetryField::METRIC_DIALOG,
                                      {{"dialog", std::string("kindle-books")},
                                       {"action", std::string("kindle-connection-failed")},
-                                      {"reason", std::string("wifi-connection-failed")}});
+                                      {"reason", std::string("wifi-disabled-ble-failed")}});
+        } else if (prefs_.bleDisabled.get().value_or(false)) {
+            errorMessage = "Bluetooth is disabled in settings and WiFi connection failed. Please check your WiFi connection or enable Bluetooth to use Kindle books.";
+            telemetry_.logMetricData(TelemetryField::METRIC_DIALOG,
+                                     {{"dialog", std::string("kindle-books")},
+                                      {"action", std::string("kindle-connection-failed")},
+                                      {"reason", std::string("ble-disabled-wifi-failed")}});
+        } else {
+            errorMessage =
+                "Could not connect to network. Please check your WiFi and Bluetooth settings and try again.";
+            telemetry_.logMetricData(TelemetryField::METRIC_DIALOG,
+                                     {{"dialog", std::string("kindle-books")},
+                                      {"action", std::string("kindle-connection-failed")},
+                                      {"reason", std::string("connection-failed")}});
         }
         return false;
     }
