@@ -15,6 +15,7 @@
 #include "Storage/PreferencesStore.hpp"
 #include "UI/Components/MultiLineTextView.hpp"
 #include "UI/Menu/MenuItemSingleLine.hpp"
+#include "UI/NewReadablePopupMenuScreen.hpp"
 #include "UI/Screen.hpp"
 
 class KindleReadableScreen : public EinkView, public Screen {
@@ -79,6 +80,8 @@ private:
     bool dismissed_{false};
     std::shared_ptr<CancelFlag> cancelFlag_;
     bool nextPageLoading_{false}; // Flag to track if we're already loading the next page
+    std::shared_ptr<NewReadablePopupMenuScreen> popupMenuScreen_;
+    std::shared_ptr<Screen> currentScreen_;
 
     // Current page information
     int currentPage_{0};
@@ -91,7 +94,11 @@ private:
     std::shared_ptr<Place> newPlace_ = nullptr;     // Next place to render
     bool atEnd_ = false;
     const int bufferThreshold_ = 1000; // Characters threshold to preload more content
+    uint32_t lastRenderedPageSize_ = 0; // Size of the last rendered page in bytes
 
     MultiLineTextView loadingMessageView_;
     MultiLineTextView errorMessageView_;
+    
+    void showPopupMenu();
+    void setCurrentScreen(std::shared_ptr<Screen> screen) { currentScreen_ = screen; }
 };

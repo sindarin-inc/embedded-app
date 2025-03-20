@@ -1,6 +1,7 @@
 # Sol Reader Embedded App - Development Guide
 
 ## Build Commands
+- Set up ESP-IDF environment: `. ~/projects/sindarin/esp-idf/export.sh`
 - Build: `make build`
 - Flash: `make flash`
 - Monitor logs: `make monitor`
