@@ -376,20 +376,22 @@ auto KindleReadableScreen::connectToNetwork(bool useBleOnly, std::string &errorM
                                       {"action", std::string("kindle-connection-failed")},
                                       {"reason", std::string("all-disabled")}});
         } else if (prefs_.wifiDisabled.get().value_or(false)) {
-            errorMessage = "WiFi is disabled in settings and BLE connection failed. Please check your BLE connection or enable WiFi to use Kindle books.";
+            errorMessage = "WiFi is disabled in settings and BLE connection failed. Please check "
+                           "your BLE connection or enable WiFi to use Kindle books.";
             telemetry_.logMetricData(TelemetryField::METRIC_DIALOG,
                                      {{"dialog", std::string("kindle-books")},
                                       {"action", std::string("kindle-connection-failed")},
                                       {"reason", std::string("wifi-disabled-ble-failed")}});
         } else if (prefs_.bleDisabled.get().value_or(false)) {
-            errorMessage = "Bluetooth is disabled in settings and WiFi connection failed. Please check your WiFi connection or enable Bluetooth to use Kindle books.";
+            errorMessage = "Bluetooth is disabled in settings and WiFi connection failed. Please "
+                           "check your WiFi connection or enable Bluetooth to use Kindle books.";
             telemetry_.logMetricData(TelemetryField::METRIC_DIALOG,
                                      {{"dialog", std::string("kindle-books")},
                                       {"action", std::string("kindle-connection-failed")},
                                       {"reason", std::string("ble-disabled-wifi-failed")}});
         } else {
-            errorMessage =
-                "Could not connect to network. Please check your WiFi and Bluetooth settings and try again.";
+            errorMessage = "Could not connect to network. Please check your WiFi and Bluetooth "
+                           "settings and try again.";
             telemetry_.logMetricData(TelemetryField::METRIC_DIALOG,
                                      {{"dialog", std::string("kindle-books")},
                                       {"action", std::string("kindle-connection-failed")},
