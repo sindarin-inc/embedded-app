@@ -8,6 +8,7 @@
 #include "Communications/BLEProxy.hpp"
 #include "Communications/BLESyncService.hpp"
 #endif
+#include "Communications/UrlEncode.hpp"
 #include "Communications/WiFiHttpClient.hpp"
 #include "FileDownload.hpp"
 #include "Misc/Battery.hpp"
@@ -16,7 +17,6 @@
 #include "Misc/StringUtil.hpp"
 #include "Models/Json.hpp"
 #include "Models/UserReadable.hpp"
-#include "Communications/UrlEncode.hpp"
 #include "Version.hpp"
 #include "sindarin-debug.h"
 
@@ -579,7 +579,8 @@ auto SindarinAPI::makeKindleRequest(const std::string &path, KindlePageResponse 
     auto error = ArduinoJson::deserializeJson(*respJson, *stream);
 
     if (error.code() != DeserializationError::Ok) {
-        log_e("Failed to deserialize Kindle response: %s (length=%d)", error.c_str(), contentLength);
+        log_e("Failed to deserialize Kindle response: %s (length=%d)", error.c_str(),
+              contentLength);
         return ERR_JSON_DESERIALIZE;
     }
 
@@ -596,16 +597,16 @@ auto SindarinAPI::openKindleBook(const std::string &title, KindlePageResponse *r
                                  const std::shared_ptr<CancelFlag> &cancelFlag) -> int {
     // URL encode the title to handle spaces and special characters
     std::string encodedTitle = Urlencode(title);
-    std::string path = StringFormat("/kindle/open-book?title=%s", encodedTitle.c_str());
+    std::string path = StringFormat("/kindle/open-book?ocr=1&title=%s", encodedTitle.c_str());
     return makeKindleRequest(path, resp, cancelFlag);
 }
 
 auto SindarinAPI::navigateKindleNext(KindlePageResponse *resp,
-                                   const std::shared_ptr<CancelFlag> &cancelFlag) -> int {
-    return makeKindleRequest("/kindle/navigate-next", resp, cancelFlag);
+                                     const std::shared_ptr<CancelFlag> &cancelFlag) -> int {
+    return makeKindleRequest("/kindle/navigate-next?ocr=1", resp, cancelFlag);
 }
 
 auto SindarinAPI::navigateKindlePrevious(KindlePageResponse *resp,
-                                       const std::shared_ptr<CancelFlag> &cancelFlag) -> int {
-    return makeKindleRequest("/kindle/navigate-previous", resp, cancelFlag);
+                                         const std::shared_ptr<CancelFlag> &cancelFlag) -> int {
+    return makeKindleRequest("/kindle/navigate-previous?ocr=1", resp, cancelFlag);
 }

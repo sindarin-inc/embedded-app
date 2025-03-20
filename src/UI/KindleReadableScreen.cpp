@@ -319,7 +319,7 @@ void KindleReadableScreen::loadKindleBookPage() {
     DispatchGetUiQueue()->dispatch([this, response]() {
         if (dismissed_) return;
 
-        log_i("Processing Kindle book page response (success=%d, text length=%d)", 
+        log_i("Processing Kindle book page response (success=%d, text length=%zu)", 
               response->success, response->ocrText.length());
 
         // Update current page information
@@ -332,30 +332,33 @@ void KindleReadableScreen::loadKindleBookPage() {
         kindleBook_->progressPercent = response->progress.percentage;
         kindleBook_->progress = StringFormat("%d%%", response->progress.percentage);
 
+        log_i("Kindle page loaded: %d/%d (%d%%)", 
+              currentPage_, totalPages_, response->progress.percentage);
+
         // Create a stream with the text content
         auto stream = std::make_shared<StdStringStream>(currentPageText_, DocType::TXT);
         renderer_.setStream(stream);
 
         // Create a place for the content
         auto place = std::dynamic_pointer_cast<TxtPlace>(Place::factory(0));
-
-        log_i("Kindle page loaded: %d/%d (%d%%)", 
-              currentPage_, totalPages_, response->progress.percentage);
-
-        // Set up display content state
-        setState(State::DISPLAY_CONTENT);
-
+        
+        // Clear the screen and prepare for content
+        clearScreenForContent();
+        
         // Render the page
         uint8_t darkPicturePercent = 0;
         std::shared_ptr<Place> newPlace;
         std::tie(newPlace, darkPicturePercent) = renderer_.renderPage(place);
-
-        log_i("Kindle page rendered, forcing rerender and display update");
         
-        // Force a full display update to ensure content is visible
+        log_i("Kindle page rendered, forcing display update");
+        
+        // Explicitly force a full display update
         display_.updateDisplay(DisplaySystem::UpdateType::FULL, true);
         
-        // Update state for future renders
+        // Now change state after we've rendered everything
+        setState(State::DISPLAY_CONTENT);
+        
+        // Update flag for future renders
         firstKindleLoad_ = false;
     });
 }
@@ -391,6 +394,9 @@ void KindleReadableScreen::navigateNext() {
     DispatchGetUiQueue()->dispatch([this, response]() {
         if (dismissed_) return;
 
+        log_i("Processing Kindle navigation next response (success=%d, text length=%zu)", 
+              response->success, response->ocrText.length());
+
         // Update current page information
         currentPage_ = response->progress.currentPage;
         totalPages_ = response->progress.totalPages;
@@ -401,23 +407,31 @@ void KindleReadableScreen::navigateNext() {
         kindleBook_->progressPercent = response->progress.percentage;
         kindleBook_->progress = StringFormat("%d%%", response->progress.percentage);
 
+        log_i("Kindle page navigation next: %d/%d (%d%%)", 
+              currentPage_, totalPages_, response->progress.percentage);
+
         // Create a stream with the text content
         auto stream = std::make_shared<StdStringStream>(currentPageText_, DocType::TXT);
         renderer_.setStream(stream);
 
         // Create a place for the content
         auto place = std::dynamic_pointer_cast<TxtPlace>(Place::factory(0));
-
-        // Set up display content state
-        setState(State::DISPLAY_CONTENT);
-
+        
+        // Clear the screen and prepare for content
+        clearScreenForContent();
+        
         // Render the page
         uint8_t darkPicturePercent = 0;
         std::shared_ptr<Place> newPlace;
         std::tie(newPlace, darkPicturePercent) = renderer_.renderPage(place);
-
-        // Update state and trigger render
-        setNeedsRerender();
+        
+        log_i("Kindle next page rendered, forcing display update");
+        
+        // Explicitly force a full display update
+        display_.updateDisplay(DisplaySystem::UpdateType::FULL, true);
+        
+        // Now change state after we've rendered everything
+        setState(State::DISPLAY_CONTENT);
     });
 }
 
@@ -452,6 +466,9 @@ void KindleReadableScreen::navigatePrevious() {
     DispatchGetUiQueue()->dispatch([this, response]() {
         if (dismissed_) return;
 
+        log_i("Processing Kindle navigation previous response (success=%d, text length=%zu)", 
+              response->success, response->ocrText.length());
+
         // Update current page information
         currentPage_ = response->progress.currentPage;
         totalPages_ = response->progress.totalPages;
@@ -462,27 +479,53 @@ void KindleReadableScreen::navigatePrevious() {
         kindleBook_->progressPercent = response->progress.percentage;
         kindleBook_->progress = StringFormat("%d%%", response->progress.percentage);
 
+        log_i("Kindle page navigation previous: %d/%d (%d%%)", 
+              currentPage_, totalPages_, response->progress.percentage);
+
         // Create a stream with the text content
         auto stream = std::make_shared<StdStringStream>(currentPageText_, DocType::TXT);
         renderer_.setStream(stream);
 
         // Create a place for the content
         auto place = std::dynamic_pointer_cast<TxtPlace>(Place::factory(0));
-
-        // Set up display content state
-        setState(State::DISPLAY_CONTENT);
-
+        
+        // Clear the screen and prepare for content
+        clearScreenForContent();
+        
         // Render the page
         uint8_t darkPicturePercent = 0;
         std::shared_ptr<Place> newPlace;
         std::tie(newPlace, darkPicturePercent) = renderer_.renderPage(place);
-
-        // Update state and trigger render
-        setNeedsRerender();
+        
+        log_i("Kindle previous page rendered, forcing display update");
+        
+        // Explicitly force a full display update
+        display_.updateDisplay(DisplaySystem::UpdateType::FULL, true);
+        
+        // Now change state after we've rendered everything
+        setState(State::DISPLAY_CONTENT);
     });
 }
 
 // This method is no longer needed since we handle the response directly in each method
+
+void KindleReadableScreen::clearScreenForContent() {
+    // Clear any message views
+    loadingMessageView_.setText("");
+    errorMessageView_.setText("");
+    
+    // Set frame and layout for rendering
+    setFrame(defaultFrameRect());
+    setNeedsLayout();
+    
+    // First clear the display
+    display_.clearDisplay();
+    
+    // Draw a clean background
+    draw();
+    
+    log_i("Screen cleared for rendering Kindle content");
+}
 
 void KindleReadableScreen::disconnectNetworkConnections() {
     // Cancel any ongoing network operations

@@ -53,6 +53,9 @@ protected:
     // Handle page navigation
     void navigateNext();
     void navigatePrevious();
+    
+    // Clear screen and prepare for rendering content
+    void clearScreenForContent();
 
 private:
     std::shared_ptr<KindleBook> kindleBook_;
