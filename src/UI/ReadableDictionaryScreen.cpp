@@ -78,6 +78,11 @@ void ReadableDictionaryScreen::render(DisplaySystem &display) {
         log_d("Place in readable: %s, place in dictionary: %s. Next place: %" PRIu32,
               placeInReadable_->str().c_str(), placeInDictionary->str().c_str(),
               newPlace_ != nullptr ? newPlace_->getOffset() : -1);
+
+        // Log telemetry for dictionary screen opening
+        telemetry_.logMetricData(
+            TelemetryField::METRIC_DIALOG,
+            {{"dialog", std::string("dictionary")}, {"action", std::string("opened")}});
     } else {
         prevPlace_ = newPlace_;
         std::shared_ptr<Place> newPlace;
@@ -109,6 +114,9 @@ void ReadableDictionaryScreen::processCommand(RemoteCommand command) {
     case RemoteCommand::UP:
         restoreRendererStream();
         setNeedsRerender();
+        telemetry_.logMetricData(
+            TelemetryField::METRIC_DIALOG,
+            {{"dialog", std::string("dictionary")}, {"action", std::string("dismissed")}});
         back();
         return;
     case RemoteCommand::ENTER:
@@ -116,14 +124,23 @@ void ReadableDictionaryScreen::processCommand(RemoteCommand command) {
         if (atEnd_) {
             restoreRendererStream();
             setNeedsRerender();
+            telemetry_.logMetricData(TelemetryField::METRIC_DIALOG,
+                                     {{"dialog", std::string("dictionary")},
+                                      {"action", std::string("dismissed-at-end")}});
             back();
             return;
         }
+        telemetry_.logMetricData(
+            TelemetryField::METRIC_DIALOG,
+            {{"dialog", std::string("dictionary")}, {"action", std::string("page-forward")}});
         setNeedsRerender();
         break;
     case RemoteCommand::BACK:
     case RemoteCommand::LEFT: {
         newPlace_ = std::dynamic_pointer_cast<TxtPlace>(renderer_.getPreviousPlace());
+        telemetry_.logMetricData(
+            TelemetryField::METRIC_DIALOG,
+            {{"dialog", std::string("dictionary")}, {"action", std::string("page-backward")}});
         setNeedsRerender();
         break;
     }

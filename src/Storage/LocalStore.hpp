@@ -146,6 +146,7 @@ public:
     void sortReadables(ReadablesVector &readables);
     void purgeReadableToc(const std::shared_ptr<Readable> &readable);
     auto saveReadables(ReadablesVector &readables) -> bool;
+    void saveBookQuestions(const BookQuestions &bookQuestions);
 
     // Methods for interacting with readable files on disk
     [[nodiscard]] auto readableFilePathForWriting(const std::shared_ptr<Readable> &readable,

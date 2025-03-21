@@ -4,6 +4,7 @@
 #include <string>
 
 #include "Misc/SpiramAllocator.hpp"
+#include "Models/BookQuestion.hpp"
 #include "Models/JsonSerializable.hpp"
 #include "Models/Readable.hpp"
 #include "Models/ReadableArchive.hpp"
@@ -41,6 +42,7 @@ public:
     std::string build;
     std::string gitHash;
     std::string sn;
+    int bookQuestionsVersion{};
 
     auto fromJson(const JsonObject &j) -> bool override { return true; }
 };
@@ -62,6 +64,8 @@ public:
     SpiramString nextPageUrl;
     int totalCount{};
     std::string timezone;
+    BookQuestions bookQuestions;
+    bool hasBookQuestions{false};
 
     auto fromJson(const JsonObject &j) -> bool override {
         message = j["message"].as<std::string>();
@@ -95,6 +99,16 @@ public:
 
         if (results.containsKey("timezone")) {
             timezone = results["timezone"].as<std::string>();
+        }
+
+        // Parse book_questions if present
+        hasBookQuestions = false;
+        if (results.containsKey("book_questions")) {
+            hasBookQuestions = true;
+            bookQuestions.fromJson(results["book_questions"].as<JsonObject>());
+            log_d("Parsed book questions: version=%d, questions=%zu, contexts=%zu",
+                  bookQuestions.version, bookQuestions.questions.size(),
+                  bookQuestions.contexts.size());
         }
 
         if (j.containsKey("next")) {

@@ -8,6 +8,7 @@
 #include "Sensors/LightingController.hpp"
 #include "Storage/LocalStore.hpp"
 #include "Storage/PreferencesStore.hpp"
+#include "UI/BookQuestionsScreen.hpp"
 #include "UI/Components/ArrowView.hpp"
 #include "UI/ContrastAdjustScreen.hpp"
 #include "UI/FirstHookTestScreen.hpp"
@@ -19,7 +20,6 @@
 #include "UI/Menu/ReadingSettingsMenuScreen.hpp"
 #include "UI/NewReadablePopupMenuScreen.hpp"
 #include "UI/OffsetAdjustScreen.hpp"
-#include "UI/ReadableDictionaryScreen.hpp"
 #include "UI/ReadablePlacemarkHistoryScreen.hpp"
 #include "UI/ReadableSummaryScreen.hpp"
 #include "UI/ResizeBoxScreen.hpp"
@@ -104,7 +104,7 @@ protected:
     std::shared_ptr<NewReadablePopupMenuScreen> popupMenuScreen_;
     std::shared_ptr<ReadableSummaryScreen> readableSummaryScreen_{nullptr};
     std::shared_ptr<ReadablePlacemarkHistoryScreen> readablePlacemarkHistoryScreen_{nullptr};
-    std::shared_ptr<ReadableDictionaryScreen> readableDictionaryScreen_{nullptr};
+    std::shared_ptr<BookQuestionsScreen> bookQuestionsScreen_{nullptr};
 
     std::vector<std::shared_ptr<Screen>> hookScreens_;
 

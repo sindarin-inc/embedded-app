@@ -30,6 +30,7 @@ enum TelemetryField {
     METRIC_STYLE,
     METRIC_FIRMWARE_UPDATE,
     METRIC_BLE,
+    METRIC_DIALOG,
 };
 auto TelemetryFieldToString(TelemetryField field) -> const char *;
 

@@ -23,6 +23,7 @@
 #include "Misc/PowerManager.hpp"
 #include "Misc/SemVer.hpp"
 #include "Misc/StringUtil.hpp"
+#include "Models/BookQuestion.hpp"
 #include "Models/Json.hpp"
 #include "Models/Place.hpp"
 #include "Models/ReadableBookmark.hpp"
@@ -573,6 +574,34 @@ void LocalStore::computeRecentReadables() {
     }
 }
 
+void LocalStore::saveBookQuestions(const BookQuestions &bookQuestions) {
+    log_i("Saving book questions (version %d) to file", bookQuestions.version);
+
+    // Convert book questions to JSON
+    // Questions are roughly 500 bytes each, contexts are roughly 150 bytes each
+    auto doc = std::make_unique<SpiRamJsonDocument>(1000 * bookQuestions.questions.size() +
+                                                    500 * bookQuestions.contexts.size());
+    JsonObject root = doc->to<JsonObject>();
+    convertToJson(bookQuestions, root);
+
+    // Save to file
+    SFile questionsFile = fileSystem.open("/book_questions.json", FILE_WRITE);
+    if (!questionsFile) {
+        log_e("Failed to open book_questions.json for writing");
+    } else {
+        size_t bytesWritten = serializeJson(*doc, questionsFile);
+        questionsFile.close();
+        log_i("Saved book questions to file (%zu bytes written)", bytesWritten);
+
+        // Log telemetry
+        this->telemetry_.logMetric(TelemetryField::METRIC_SYNC_STATUS, "book-questions-updated",
+                                   {{"version", bookQuestions.version}});
+    }
+
+    // Finally, save the updated book questions version to preferences
+    this->prefs_.bookQuestionsVersion.set(bookQuestions.version);
+}
+
 auto LocalStore::syncFromRemote(bool wifiConnected, bool bleConnected, SyncReason syncReason,
                                 const std::shared_ptr<CancelFlag> &cancel,
                                 const std::function<void(ContentSyncState state)> &progressCallback)
@@ -718,6 +747,7 @@ auto LocalStore::syncFromRemote(bool wifiConnected, bool bleConnected, SyncReaso
         checkSyncRequest.build = SemanticVersionString();
         checkSyncRequest.gitHash = GitVersionString();
         checkSyncRequest.sn = GetSerialNumber();
+        checkSyncRequest.bookQuestionsVersion = this->prefs_.bookQuestionsVersion.get().value_or(0);
 
         auto nextPageCounter = 0;
         auto nextPageUrl = std::string();
@@ -802,6 +832,13 @@ auto LocalStore::syncFromRemote(bool wifiConnected, bool bleConnected, SyncReaso
                 return false;
             }
 
+            // Save book questions if they were returned in the response
+            if (checkSyncResponse.hasBookQuestions) {
+                log_i("Received book questions (version %d) in sync response, saving to file",
+                      checkSyncResponse.bookQuestions.version);
+                saveBookQuestions(checkSyncResponse.bookQuestions);
+            }
+
             // Look through all the books and articles and download any that we don't have
             // already We also process readables before checking if we're synced before we
             // need to reset the local changed flags
@@ -835,6 +872,15 @@ auto LocalStore::syncFromRemote(bool wifiConnected, bool bleConnected, SyncReaso
                     TelemetryField::METRIC_SYNC_STATUS,
                     StringFormat("already-synced-%ss", ReadableModelTypeToString(modelType).c_str())
                         .c_str());
+
+                // Even if books are already in sync, we still need to save book questions if they
+                // were returned
+                if (checkSyncResponse.hasBookQuestions) {
+                    log_i("Books already in sync, but saving book questions (version %d)",
+                          checkSyncResponse.bookQuestions.version);
+                    saveBookQuestions(checkSyncResponse.bookQuestions);
+                }
+
                 break;
             }
 
@@ -1491,6 +1537,7 @@ void LocalStore::readableFilePurge(const std::shared_ptr<Readable> &readable) {
     prefs_.readablePlaceChanged.remove(readable->shortenedUuid.c_str());
     prefs_.readableArchivedChanged.remove(readable->shortenedUuid.c_str());
     prefs_.readableBookmarksChanged.remove(readable->shortenedUuid.c_str());
+    prefs_.lastReadTime.remove(readable->shortenedUuid.c_str());
 
     if (readable->shortenedUuid == prefs_.lastReadableId.get()) {
         prefs_.lastReadableId.remove();

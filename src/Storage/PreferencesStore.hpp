@@ -548,6 +548,7 @@ public:
           seenAutoDarkModeOverview(boolFlags_, 22),
           seenBatteryWhenLowOverview(boolFlags_, 23),
           alwaysShowBattery(boolFlags_, 24),
+          bookQuestionsVersion(*this, "book-q-ver"),
 
           privateKey(*this, "private-key"),
           // only touch the lines above this when deleting those prefs. Do not renumber. Add below 
@@ -903,6 +904,7 @@ public:
     BooleanFlag seenAutoDarkModeOverview;
     BooleanFlag seenBatteryWhenLowOverview;
     BooleanFlag alwaysShowBattery;
+    PrefsItem<uint32_t> bookQuestionsVersion;
     PrefsItem<SpiramVector<uint8_t>> privateKey;
 
     // These are RTC_SLOW_MEM variables that persist across deep sleep / wake cycles but will be

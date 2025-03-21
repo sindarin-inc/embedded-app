@@ -9,9 +9,6 @@
 
 auto ReadableSummaryScreen::layout(LayoutContext &context, SolSize size) -> SolSize {
     auto fullFrame = SolRect::fromSize(size);
-    log_d("ReadableSummaryScreen layout: %d x %d", size.width, size.height);
-    log_d("full frame is %d %d %d %d", fullFrame.origin.x, fullFrame.origin.y, fullFrame.size.width,
-          fullFrame.size.height);
     auto backgroundFrame = fullFrame.inset(0);
 
     context.setViewFrame(backgroundView_, backgroundFrame);
@@ -92,6 +89,11 @@ void ReadableSummaryScreen::render(DisplaySystem &display) {
             log_d("Place in readable: %s, place in summary: %s", placeInReadable_->str().c_str(),
                   placeInSummary->str().c_str());
         }
+
+        // Log telemetry for summary screen opening
+        telemetry_.logMetricData(
+            TelemetryField::METRIC_DIALOG,
+            {{"dialog", std::string("summary")}, {"action", std::string("opened")}});
     } else {
         prevPlace_ = newPlace_;
         std::shared_ptr<Place> newPlace;
@@ -125,12 +127,18 @@ void ReadableSummaryScreen::processCommand(RemoteCommand command) {
     case RemoteCommand::UP:
         restoreRendererStream();
         setNeedsRerender();
+        telemetry_.logMetricData(
+            TelemetryField::METRIC_DIALOG,
+            {{"dialog", std::string("summary")}, {"action", std::string("dismissed")}});
         back();
         return;
     case RemoteCommand::DOWN:
         showUnread_ = !showUnread_;
         preservePlace_ = prevPlace_;
         setFirstLoad();
+        telemetry_.logMetricData(
+            TelemetryField::METRIC_DIALOG,
+            {{"dialog", std::string("summary")}, {"action", std::string("dismissed-at-end")}});
         setNeedsRerender();
         break;
     case RemoteCommand::ENTER:
@@ -138,15 +146,24 @@ void ReadableSummaryScreen::processCommand(RemoteCommand command) {
         if (atEnd_) {
             restoreRendererStream();
             setNeedsRerender();
+            telemetry_.logMetricData(
+                TelemetryField::METRIC_DIALOG,
+                {{"dialog", std::string("summary")}, {"action", std::string("dismissed-at-end")}});
             back();
             return;
         }
 
+        telemetry_.logMetricData(
+            TelemetryField::METRIC_DIALOG,
+            {{"dialog", std::string("summary")}, {"action", std::string("page-forward")}});
         setNeedsRerender();
         break;
     case RemoteCommand::BACK:
     case RemoteCommand::LEFT: {
         newPlace_ = std::dynamic_pointer_cast<TxtPlace>(renderer_.getPreviousPlace());
+        telemetry_.logMetricData(
+            TelemetryField::METRIC_DIALOG,
+            {{"dialog", std::string("summary")}, {"action", std::string("page-backward")}});
         setNeedsRerender();
         break;
     }

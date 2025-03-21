@@ -114,7 +114,9 @@
         "*.xbm": "cpp",
         "format": "cpp",
         "span": "cpp",
-        "any": "cpp"
+        "any": "cpp",
+        "print": "cpp",
+        "execution": "cpp"
     },
     "editor.formatOnSave": true,
     "editor.defaultFormatter": "xaver.clang-format",
@@ -142,7 +144,7 @@
         "editor.defaultFormatter": "redhat.vscode-yaml"
     },
     "search.exclude": {
-        "**/build/**": true,
+        "**/build*/**": true,
         "build": true,
         "build-clang": true,
     },

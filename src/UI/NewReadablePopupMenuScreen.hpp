@@ -7,7 +7,6 @@
 #include "UI/LightingAdjustScreen.hpp"
 #include "UI/LineMenuScreen.hpp"
 #include "UI/Menu/CarouselMenuScreen.hpp"
-#include "UI/ReadableDictionaryScreen.hpp"
 #include "UI/ReadablePlacemarkHistoryScreen.hpp"
 #include "UI/ReadableSeekScreen.hpp"
 #include "UI/ReadableSummaryScreen.hpp"
