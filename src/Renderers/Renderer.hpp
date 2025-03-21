@@ -117,9 +117,11 @@ public:
 
     // Set whether to temporarily ignore EOF (for streaming content like Kindle books)
     void setIgnoreEOF(bool ignore) { ignoreEOF_ = ignore; }
-    
+
     // Check if we're at EOF, considering the ignoreEOF flag
-    [[nodiscard]] inline auto shouldRespectEOF() const -> bool { return !ignoreEOF_ && pager_.atEndOfFile(); }
+    [[nodiscard]] inline auto shouldRespectEOF() const -> bool {
+        return !ignoreEOF_ && pager_.atEndOfFile();
+    }
 
     [[nodiscard]] inline auto getMenuParameters() const -> const MenuParameters & {
         return pager_.getMenuParameters();
