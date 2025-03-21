@@ -1227,7 +1227,7 @@ void KindleReadableScreen::dismissScreen() {
     // Check if the tokenizer is initialized before trying to reset it
     if (renderer_.getStream()) {
         // Create an empty string for the stream
-        std::string emptyStr = "";
+        std::string emptyStr;
         auto emptyStream = std::make_shared<StdStringStream>(emptyStr, DocType::TXT);
         renderer_.setStream(emptyStream);
     }
