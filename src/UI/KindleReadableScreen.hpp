@@ -73,6 +73,10 @@ protected:
     void turnPage();
     // Check if we're at the end of the currently loaded content
     auto checkNearEndOfBuffer() -> bool;
+    // Schedule a delayed loading message after 10 seconds
+    void scheduleDelayedLoadingMessage();
+    // Cancel any pending delayed message
+    void cancelDelayedLoadingMessage();
 
 private:
     std::shared_ptr<KindleBook> kindleBook_;
@@ -99,11 +103,13 @@ private:
     bool hasNavigatedForward_{false};   // Tracks if user has navigated forward at least once
     bool needsRedrawAfterLoad_{false};  // Tracks if we need to redraw after content loads
 
-    // Timer handle to track auto-dismiss task so we can cancel it if needed
+    // Timer handles for UI tasks
     std::shared_ptr<CancelFlag> autoDismissCancelFlag_;
+    std::shared_ptr<CancelFlag> delayedMessageCancelFlag_;
 
     MultiLineTextView loadingMessageView_;
     MultiLineTextView errorMessageView_;
+    MultiLineTextView delayedMessageView_;
 
     void showPopupMenu();
     void setCurrentScreen(std::shared_ptr<Screen> screen) { currentScreen_ = std::move(screen); }

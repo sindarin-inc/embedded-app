@@ -23,7 +23,7 @@ KindleReadableScreen::KindleReadableScreen(const std::shared_ptr<RendererStream>
       renderer_(display, GetTextRectFromPrefs(display, prefs), font), prefs_(prefs),
       telemetry_(telemetry), fileSystem_(fileSystem), lightingController_(lightingController),
       localStore_(localStore), kindleBook_(kindleBook), loadingMessageView_(display, 5),
-      errorMessageView_(display, 5) {
+      errorMessageView_(display, 5), delayedMessageView_(display, 5) {
     log_i("Created KindleReadableScreen for book: %s by %s", kindleBook->title.c_str(),
           kindleBook->author.c_str());
 
@@ -44,6 +44,12 @@ KindleReadableScreen::KindleReadableScreen(const std::shared_ptr<RendererStream>
     errorMessageView_.setText(""); // Initialize with empty text
     errorMessageView_.alignCenter = true;
     errorMessageView_.setHidden(true); // Start hidden until needed
+
+    // Set up delayed message view (for "This can take up to 30 seconds")
+    delayedMessageView_.setFont(font);
+    delayedMessageView_.setText("");
+    delayedMessageView_.alignCenter = true;
+    delayedMessageView_.setHidden(true); // Start hidden until needed
 
     // Initialize network connection
     setState(State::CONNECTING);
@@ -300,6 +306,9 @@ void KindleReadableScreen::setState(State newState) {
                 setLoadingMessage("Opening your Kindle book...");
                 setState(State::LOADING_CONTENT);
 
+                // Schedule a delayed message after 10 seconds if loading takes too long
+                scheduleDelayedLoadingMessage();
+
                 // Now load the content in the background queue
                 DispatchGetCore0BackgroundQueue()->dispatch([this]() { loadKindleBookPage(); });
             });
@@ -439,6 +448,10 @@ void KindleReadableScreen::loadKindleBookPage() {
             }
 
             log_i("HTTP error %d when loading book content", httpCode);
+
+            // Cancel the delayed message since we're showing an error
+            cancelDelayedLoadingMessage();
+
             setErrorMessage(errorMessage);
         });
         return;
@@ -452,6 +465,9 @@ void KindleReadableScreen::loadKindleBookPage() {
 
         log_i("Processing Kindle book page response (success=%d, text length=%zu)",
               response->success, response->ocrText.length());
+
+        // Cancel the delayed message since content loaded successfully
+        cancelDelayedLoadingMessage();
 
         // Update current page information
         currentPage_ = response->progress.currentPage;
@@ -1241,6 +1257,9 @@ void KindleReadableScreen::dismissScreen() {
         autoDismissCancelFlag_ = nullptr;
     }
 
+    // Cancel any pending delayed message
+    cancelDelayedLoadingMessage();
+
     // Disconnect network connections
     disconnectNetworkConnections();
 
@@ -1286,10 +1305,21 @@ auto KindleReadableScreen::layout(LayoutContext &context, SolSize size) -> SolSi
                                  LayoutOptionsSizeToFit | LayoutOptionsAlignCenter |
                                      LayoutOptionsAlignCenterVertical);
         } else {
+            // Position the main loading message in the center
             context.setViewFrame(loadingMessageView_, contentFrame,
                                  LayoutOptionsSizeToFit | LayoutOptionsAlignCenter |
-
                                      LayoutOptionsAlignCenterVertical);
+
+            // Position the delayed message below the main message if it's visible
+            if (!delayedMessageView_.isHidden()) {
+                // Place the delayed message in the same content frame
+                // but offset it towards the bottom half
+                SolRect delayedFrame = contentFrame;
+                // Just use a fixed position in the lower portion of the screen
+                context.setViewFrame(delayedMessageView_, delayedFrame,
+                                     LayoutOptionsSizeToFit | LayoutOptionsAlignCenter |
+                                         LayoutOptionsAlignBottom);
+            }
         }
     } else {
         log_d("Layouting KindleReadableScreen in content state");
@@ -1305,6 +1335,10 @@ void KindleReadableScreen::drawInRect(SolRect rect) {
         case State::CONNECTING:
         case State::LOADING_CONTENT:
             loadingMessageView_.draw();
+            // Also draw the delayed message if it's visible
+            if (!delayedMessageView_.isHidden()) {
+                delayedMessageView_.draw();
+            }
             break;
 
         case State::ERROR:
@@ -1336,4 +1370,62 @@ void KindleReadableScreen::showPopupMenu() {
     // Show the popup menu - no need to set readable since that's only needed for some features
     setCurrentScreen(popupMenuScreen_);
     setNeedsRerender();
+}
+
+void KindleReadableScreen::scheduleDelayedLoadingMessage() {
+    // Cancel any existing delayed message
+    cancelDelayedLoadingMessage();
+
+    // Create a new cancel flag for this delayed message
+    delayedMessageCancelFlag_ = std::make_shared<CancelFlag>();
+
+    // Capture a copy of the flag for the lambda
+    std::shared_ptr<CancelFlag> localFlag = delayedMessageCancelFlag_;
+
+    // Schedule a message to appear after 10 seconds if content is still loading
+    DispatchGetCore0BackgroundQueue()->dispatch([this, localFlag]() {
+        // Wait for 5 seconds
+        vTaskDelay(pdMS_TO_TICKS(5 * 1000));
+
+        // Check if the task was cancelled
+        if (!localFlag || CancelFlag::isCancelled(localFlag)) {
+            log_i("Delayed loading message was cancelled");
+            return;
+        }
+
+        // Display the message on the UI thread
+        DispatchGetUiQueue()->dispatch([this]() {
+            if (dismissed_ || state_ != State::LOADING_CONTENT) {
+                return; // Don't show if we're no longer loading or screen was dismissed
+            }
+
+            // Set and show the delayed message
+            delayedMessageView_.setText("This can take up to 30 seconds.");
+            delayedMessageView_.setHidden(false);
+
+            // Call setNeedsLayout to recalculate positions of all views
+            setNeedsLayout();
+
+            display_.clearDisplay();
+            delayedMessageView_.draw();
+            draw();
+            display_.updateDisplay(DisplaySystem::UpdateType::PARTIAL, true);
+
+            log_i("Showing delayed loading message after 10 seconds");
+        });
+    });
+}
+
+void KindleReadableScreen::cancelDelayedLoadingMessage() {
+    // Cancel any pending delayed message
+    if (delayedMessageCancelFlag_) {
+        CancelFlag::cancel(delayedMessageCancelFlag_);
+        delayedMessageCancelFlag_ = nullptr;
+
+        // Hide the delayed message view if it's visible
+        if (!delayedMessageView_.isHidden()) {
+            delayedMessageView_.setHidden(true);
+            log_i("Cancelled and hid delayed loading message");
+        }
+    }
 }
