@@ -679,9 +679,22 @@ void KindleReadableScreen::loadNextKindlePage() {
                   currentPage_, totalPages_, response->progress.percentage,
                   response->ocrText.length(), currentPageText_.length());
 
+            // Save the current position before updating the stream
+            uint32_t savedOffset = currentPlace_ ? currentPlace_->getOffset() : 0;
+            
             // Create a stream with the text content
             auto stream = std::make_shared<StdStringStream>(currentPageText_, DocType::TXT);
             renderer_.setStream(stream);
+            
+            // Restore the place after setting the stream - this is critical to prevent
+            // jumping back to the beginning when new content is loaded
+            if (currentPlace_ && savedOffset > 0) {
+                // Create a place at the same offset as before
+                auto restoredPlace = std::dynamic_pointer_cast<TxtPlace>(Place::factory(savedOffset));
+                currentPlace_ = restoredPlace;
+                renderer_.setCurrentPlace(currentPlace_);
+                log_i("Restored place to offset %" PRIu32 " after loading new content", savedOffset);
+            }
 
             if (isBackgroundLoading) {
                 // For background loading, update the stream and restore state
