@@ -32,13 +32,15 @@ KindleReadableScreen::KindleReadableScreen(const std::shared_ptr<RendererStream>
     firstKindleLoad_ = true;
 
     // Set up loading message
-    loadingMessageView_.setText("Loading...");
+    loadingMessageView_.setText("Connecting to your Kindle...");
     loadingMessageView_.setFont(font);
     loadingMessageView_.alignCenter = true;
 
-    // Set up error message
+    // Set up error message view
     errorMessageView_.setFont(font);
+    errorMessageView_.setText(""); // Initialize with empty text
     errorMessageView_.alignCenter = true;
+    errorMessageView_.setHidden(true); // Start hidden until needed
 
     // Initialize network connection
     setState(State::CONNECTING);
@@ -77,11 +79,14 @@ KindleReadableScreen::KindleReadableScreen(const std::shared_ptr<RendererStream>
 void KindleReadableScreen::render(DisplaySystem &display) {
     // If we have a popup menu or other screen, let it handle rendering
     if (currentScreen_) {
+        log_d("Letting current screen (a popup menu) render KindleReadableScreen, state: %d",
+              static_cast<int>(state_));
         currentScreen_->render(display);
         return;
     }
 
     if (state_ == State::DISPLAY_CONTENT || state_ == State::LOADING_BACKGROUND) {
+        log_d("Rendering KindleReadableScreen, state: %d", static_cast<int>(state_));
         // Set up the frame and layout
         setFrame(defaultFrameRect());
         setNeedsLayout();
@@ -170,7 +175,18 @@ void KindleReadableScreen::render(DisplaySystem &display) {
         break;
 
     case State::ERROR:
+        // Ensure display is clear before showing error message
+        display_.clearFrameBuffer();
+
+        // Keep the loading message visible as it contains our error text
+        loadingMessageView_.setHidden(false);
+        loadingMessageView_.draw();
+
+        // Also draw error message as backup
+        errorMessageView_.setHidden(false);
         errorMessageView_.draw();
+
+        log_i("Drawing both loading message and error message views for error state");
         break;
 
     default:
@@ -180,7 +196,7 @@ void KindleReadableScreen::render(DisplaySystem &display) {
     // Handle display updates
     if (firstKindleLoad_) {
         log_w("RENDER: Updating display to full on first Kindle book load");
-        display.updateDisplay(DisplaySystem::UpdateType::FULL, false);
+        display.updateDisplay(DisplaySystem::UpdateType::FULL, true);
         firstKindleLoad_ = false;
     } else if (state_ == State::CONNECTING || state_ == State::LOADING_CONTENT ||
                state_ == State::ERROR) {
@@ -202,12 +218,13 @@ void KindleReadableScreen::processCommand(RemoteCommand command) {
         return;
     }
 
-    // If in an error state, any button press dismisses
+    // If in an error state, ANY button press dismisses immediately
     if (state_ == State::ERROR) {
-        if (command == RemoteCommand::ENTER || command == RemoteCommand::BACK) {
-            dismissScreen();
-            return;
-        }
+        log_i("Button pressed while in ERROR state, immediately dismissing screen and cancelling "
+              "auto-dismiss");
+        // The dismissScreen method will handle cancelling the auto-dismiss task
+        dismissScreen();
+        return;
     }
 
     // If connecting or foreground loading, allow cancellation
@@ -257,8 +274,6 @@ void KindleReadableScreen::setState(State newState) {
 
     if (newState == State::CONNECTING) {
         // Start connection process
-        setLoadingMessage("Connecting to network...");
-
         // Launch the connection in the background
         cancelFlag_ = std::make_shared<CancelFlag>();
 
@@ -267,16 +282,8 @@ void KindleReadableScreen::setState(State newState) {
             bool connected = connectToNetwork(false, errorMessage);
 
             if (!connected) {
-                DispatchGetUiQueue()->dispatch([this, errorMessage]() {
-                    // Show error in UI
-                    if (dismissed_) {
-                        return;
-                    }
-
-                    errorMessageView_.setText(errorMessage);
-                    setState(State::ERROR);
-                    setNeedsRerender();
-                });
+                DispatchGetUiQueue()->dispatch(
+                    [this, errorMessage]() { setErrorMessage(errorMessage); });
                 return;
             }
 
@@ -286,9 +293,9 @@ void KindleReadableScreen::setState(State newState) {
                     return;
                 }
 
+                log_d("Setting loading message to \"Opening your Kindle book...\"");
+                setLoadingMessage("Opening your Kindle book...");
                 setState(State::LOADING_CONTENT);
-                setLoadingMessage("Loading Kindle book...");
-                setNeedsRerender();
 
                 // Now load the content in the background queue
                 DispatchGetCore0BackgroundQueue()->dispatch([this]() { loadKindleBookPage(); });
@@ -304,6 +311,8 @@ void KindleReadableScreen::setLoadingMessage(const std::string &message) {
 
     loadingMessageView_.setText(message);
     setNeedsRerender();
+    display_.clearDisplay();
+    render(display_);
 }
 
 auto KindleReadableScreen::connectToNetwork(bool useBleOnly, std::string &errorMessage) -> bool {
@@ -323,12 +332,6 @@ auto KindleReadableScreen::connectToNetwork(bool useBleOnly, std::string &errorM
             WiFi::getInstance().disconnectWiFi(3000);
         }
 
-        DispatchGetUiQueue()->dispatch([this]() {
-            if (!dismissed_) {
-                setLoadingMessage("Connecting via Bluetooth...");
-            }
-        });
-
         if (!BLEManager::getInstance()->connectProxy(cancelFlag_)) {
             log_w("BLE connection failed for Kindle book");
             telemetry_.logMetric(TelemetryField::METRIC_WIFI, "kindle-ble-failed");
@@ -343,12 +346,6 @@ auto KindleReadableScreen::connectToNetwork(bool useBleOnly, std::string &errorM
     // Try WiFi if BLE failed and not in BLE-only mode
     if (!bleConnected && !useBleOnly && !prefs_.wifiDisabled.get().value_or(false)) {
         log_i("Attempting WiFi connection for Kindle book...");
-
-        DispatchGetUiQueue()->dispatch([this]() {
-            if (!dismissed_) {
-                setLoadingMessage("Connecting to WiFi...");
-            }
-        });
 
         auto connected = WiFi::getInstance().connectWiFiFromSettings();
         if (connected != ESP_OK && connected != true) {
@@ -419,15 +416,27 @@ void KindleReadableScreen::loadKindleBookPage() {
     int httpCode = sindarinApi->openKindleBook(kindleBook_->title, response.get(), cancelFlag_);
 
     if (httpCode != 200 || !response->success) {
-        // Handle error on the UI thread
-        DispatchGetUiQueue()->dispatch([this]() {
-            if (dismissed_) {
-                return;
+        // Handle error on the UI thread with specific error message based on HTTP code
+        DispatchGetUiQueue()->dispatch([this, httpCode]() {
+            std::string errorMessage;
+
+            // Customize error message based on HTTP code
+            if (httpCode == 500) {
+                errorMessage = "Server error. Please try again later.";
+            } else if (httpCode == 401 || httpCode == 403) {
+                errorMessage = "Authentication error. Please try signing in again.";
+            } else if (httpCode == 404) {
+                errorMessage = "Book not found in your Kindle library.";
+            } else if (httpCode >= 400 && httpCode < 500) {
+                errorMessage = "Request error. Try syncing your Kindle library.";
+            } else if (httpCode >= 500) {
+                errorMessage = "Server error. Please try again later.";
+            } else {
+                errorMessage = "Failed to load book content.";
             }
 
-            errorMessageView_.setText("Failed to load Kindle book content");
-            setState(State::ERROR);
-            setNeedsRerender();
+            log_i("HTTP error %d when loading book content", httpCode);
+            setErrorMessage(errorMessage);
         });
         return;
     }
@@ -506,6 +515,63 @@ void KindleReadableScreen::loadKindleBookPage() {
     });
 }
 
+void KindleReadableScreen::setErrorMessage(const std::string &errorMessage) {
+    if (dismissed_) {
+        return;
+    }
+
+    // Clear any previous auto-dismiss flag/task
+    if (autoDismissCancelFlag_) {
+        CancelFlag::cancel(autoDismissCancelFlag_);
+        autoDismissCancelFlag_ = nullptr;
+    }
+
+    loadingMessageView_.setHidden(true);
+    errorMessageView_.setText(errorMessage);
+    errorMessageView_.setHidden(false);
+    errorMessageView_.draw();
+
+    log_i("Showing error message: %s", errorMessage.c_str());
+
+    // Update state and trigger a redraw
+    setState(State::ERROR);
+    setNeedsLayout();
+    setNeedsRerender();
+
+    // Clear the display to remove any previous content or loading messages
+    display_.clearDisplay();
+
+    draw();
+
+    display_.updateDisplay(DisplaySystem::UpdateType::FULL, true);
+
+    // Create a new cancel flag for this auto-dismiss task
+    autoDismissCancelFlag_ = std::make_shared<CancelFlag>();
+    std::shared_ptr<CancelFlag> localFlag = autoDismissCancelFlag_; // Capture for lambda
+
+    // Automatically dismiss after 5 seconds
+    DispatchGetCore0BackgroundQueue()->dispatch([this, localFlag]() {
+        // Wait for 5 seconds
+        vTaskDelay(pdMS_TO_TICKS(5000));
+
+        // Check if the task was cancelled before dismissing
+        if (!localFlag || CancelFlag::isCancelled(localFlag)) {
+            log_i("Auto-dismiss task was cancelled");
+            return;
+        }
+
+        // Then dismiss on the UI thread
+        DispatchGetUiQueue()->dispatch([this]() {
+            if (!dismissed_) {
+                log_i("Auto-dismissing error screen after delay");
+                dismissScreen();
+            } else {
+                log_i("Screen already dismissed, not auto-dismissing");
+            }
+        });
+    });
+}
+
 void KindleReadableScreen::loadNextKindlePage() {
     if (dismissed_ || nextPageLoading_) {
         return;
@@ -538,7 +604,7 @@ void KindleReadableScreen::loadNextKindlePage() {
         int httpCode = sindarinApi->navigateKindleNext(response.get(), cancelFlag_);
 
         if (httpCode != 200 || !response->success) {
-            DispatchGetUiQueue()->dispatch([this, isBackgroundLoading]() {
+            DispatchGetUiQueue()->dispatch([this, isBackgroundLoading, httpCode]() {
                 if (dismissed_) {
                     return;
                 }
@@ -547,13 +613,30 @@ void KindleReadableScreen::loadNextKindlePage() {
 
                 if (isBackgroundLoading) {
                     // For background loads, just log the error and restore state
-                    log_w("Background loading of next Kindle page failed");
+                    log_w("Background loading of next Kindle page failed with HTTP code %d",
+                          httpCode);
                     setState(State::DISPLAY_CONTENT);
                 } else {
                     // For foreground loads, show the error
-                    errorMessageView_.setText("Failed to load next page");
-                    setState(State::ERROR);
-                    setNeedsRerender();
+                    // Customize error message based on HTTP code
+                    std::string errorMessage;
+
+                    if (httpCode == 500) {
+                        errorMessage = "Server error. Please try again later.";
+                    } else if (httpCode == 401 || httpCode == 403) {
+                        errorMessage = "Authentication error. Please try signing in again.";
+                    } else if (httpCode == 404) {
+                        errorMessage = "Page not found in your Kindle book.";
+                    } else if (httpCode >= 400 && httpCode < 500) {
+                        errorMessage = "Request error. Please check your settings.";
+                    } else if (httpCode >= 500) {
+                        errorMessage = "Server error. Please try again later.";
+                    } else {
+                        errorMessage = "Failed to load next page.";
+                    }
+
+                    log_i("HTTP error %d when loading next page", httpCode);
+                    setErrorMessage(errorMessage);
                 }
             });
             return;
@@ -813,14 +896,26 @@ void KindleReadableScreen::loadPreviousKindlePage() {
         int httpCode = sindarinApi->navigateKindlePrevious(response.get(), cancelFlag_);
 
         if (httpCode != 200 || !response->success) {
-            DispatchGetUiQueue()->dispatch([this]() {
-                if (dismissed_) {
-                    return;
+            DispatchGetUiQueue()->dispatch([this, httpCode]() {
+                std::string errorMessage;
+
+                // Customize error message based on HTTP code
+                if (httpCode == 500) {
+                    errorMessage = "Server error. Please try again later.";
+                } else if (httpCode == 401 || httpCode == 403) {
+                    errorMessage = "Authentication error. Please try signing in again.";
+                } else if (httpCode == 404) {
+                    errorMessage = "Previous page not found in your Kindle book.";
+                } else if (httpCode >= 400 && httpCode < 500) {
+                    errorMessage = "Request error. Please check your settings.";
+                } else if (httpCode >= 500) {
+                    errorMessage = "Server error. Please try again later.";
+                } else {
+                    errorMessage = "Failed to load previous page.";
                 }
 
-                errorMessageView_.setText("Failed to load previous page");
-                setState(State::ERROR);
-                setNeedsRerender();
+                log_i("HTTP error %d when loading previous page", httpCode);
+                setErrorMessage(errorMessage);
             });
             return;
         }
@@ -1097,10 +1192,19 @@ void KindleReadableScreen::disconnectNetworkConnections() {
 
 void KindleReadableScreen::dismissScreen() {
     if (dismissed_) {
+        log_i("KindleReadableScreen already dismissed, ignoring dismissScreen call");
         return;
     }
 
+    log_i("KindleReadableScreen being dismissed");
     dismissed_ = true;
+
+    // Cancel any pending auto-dismiss task
+    if (autoDismissCancelFlag_) {
+        log_i("Cancelling pending auto-dismiss task");
+        CancelFlag::cancel(autoDismissCancelFlag_);
+        autoDismissCancelFlag_ = nullptr;
+    }
 
     // Disconnect network connections
     disconnectNetworkConnections();
@@ -1115,27 +1219,42 @@ void KindleReadableScreen::dismissScreen() {
     // Clear message views
     loadingMessageView_.setText("");
     errorMessageView_.setText("");
+    setNeedsRerender();
 
-    // Reset renderer
-    renderer_.setStream(nullptr);
+    // We can't directly set the stream to nullptr because it causes issues with the tokenizer
+    // Instead, we'll use a safer approach when clearing the renderer
 
-    // Trigger a full display update
-    display_.updateDisplay(DisplaySystem::UpdateType::FULL, true);
+    // Check if the tokenizer is initialized before trying to reset it
+    if (renderer_.getStream()) {
+        // Create an empty string for the stream
+        std::string emptyStr = "";
+        auto emptyStream = std::make_shared<StdStringStream>(emptyStr, DocType::TXT);
+        renderer_.setStream(emptyStream);
+    }
+
+    back();
 }
 
 auto KindleReadableScreen::layout(LayoutContext &context, SolSize size) -> SolSize {
     // For non-content states, center the message views
     if (state_ != State::DISPLAY_CONTENT) {
+        log_d("Layouting KindleReadableScreen in non-content state");
         const auto inset = 2;
         auto contentFrame = SolRect::fromSize(size).inset(inset);
 
         // Center the message views vertically and horizontally
-        context.setViewFrame(loadingMessageView_, contentFrame,
-                             LayoutOptionsSizeToFit | LayoutOptionsAlignCenter |
-                                 LayoutOptionsAlignCenterVertical);
-        context.setViewFrame(errorMessageView_, contentFrame,
-                             LayoutOptionsSizeToFit | LayoutOptionsAlignCenter |
-                                 LayoutOptionsAlignCenterVertical);
+        if (state_ == State::ERROR) {
+            context.setViewFrame(errorMessageView_, contentFrame,
+                                 LayoutOptionsSizeToFit | LayoutOptionsAlignCenter |
+                                     LayoutOptionsAlignCenterVertical);
+        } else {
+            context.setViewFrame(loadingMessageView_, contentFrame,
+                                 LayoutOptionsSizeToFit | LayoutOptionsAlignCenter |
+
+                                     LayoutOptionsAlignCenterVertical);
+        }
+    } else {
+        log_d("Layouting KindleReadableScreen in content state");
     }
 
     return size;

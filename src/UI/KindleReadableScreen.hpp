@@ -55,6 +55,7 @@ protected:
 
     void setLoadingMessage(const std::string &message);
     auto connectToNetwork(bool useBleOnly, std::string &errorMessage) -> bool;
+    void setErrorMessage(const std::string &errorMessage);
     void loadKindleBookPage();
     void disconnectNetworkConnections();
 
@@ -96,6 +97,9 @@ private:
     const int bufferThreshold_ = 1000;  // Characters threshold to preload more content
     uint32_t lastRenderedPageSize_ = 0; // Size of the last rendered page in bytes
     bool hasNavigatedForward_{false};   // Tracks if user has navigated forward at least once
+
+    // Timer handle to track auto-dismiss task so we can cancel it if needed
+    std::shared_ptr<CancelFlag> autoDismissCancelFlag_;
 
     MultiLineTextView loadingMessageView_;
     MultiLineTextView errorMessageView_;

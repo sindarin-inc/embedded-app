@@ -143,7 +143,7 @@ auto LocalStore::loadKindleBooksFromFile(KindleBooksVector &kindleBooks,
     log_i("Found %zu Kindle books in JSON", booksJson.size());
 
     // Limit to 20 books for testing - remove this limitation in production
-    int maxBooks = 20;
+    int maxBooks = 40;
     int bookCount = 0;
     int booksLoaded = 0;
 
