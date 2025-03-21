@@ -115,6 +115,12 @@ public:
 
     [[nodiscard]] inline auto atEndOfFile() const -> bool { return pager_.atEndOfFile(); }
 
+    // Set whether to temporarily ignore EOF (for streaming content like Kindle books)
+    void setIgnoreEOF(bool ignore) { ignoreEOF_ = ignore; }
+    
+    // Check if we're at EOF, considering the ignoreEOF flag
+    [[nodiscard]] inline auto shouldRespectEOF() const -> bool { return !ignoreEOF_ && pager_.atEndOfFile(); }
+
     [[nodiscard]] inline auto getMenuParameters() const -> const MenuParameters & {
         return pager_.getMenuParameters();
     }
@@ -131,6 +137,7 @@ private:
     StreamPlace currentPlace_{};
     StreamPlace previousPlace_{};
     StreamPlace nextPlace_{};
+    bool ignoreEOF_{false}; // Flag to ignore EOF for streaming content
 
     auto goBackwardsOnePage(StreamPlace endPlace) -> StreamPlace;
 };

@@ -30,6 +30,9 @@ KindleReadableScreen::KindleReadableScreen(const std::shared_ptr<RendererStream>
     // Since we don't have a standard Readable for Kindle books,
     // we need to set up some of our state differently
     firstKindleLoad_ = true;
+    
+    // Configure the renderer to ignore EOF for streaming Kindle content
+    renderer_.setIgnoreEOF(true);
 
     // Set up loading message
     loadingMessageView_.setText("Connecting to your Kindle...");
@@ -687,45 +690,56 @@ void KindleReadableScreen::loadNextKindlePage() {
 
                 // Get current offset and check if the current page is incomplete
                 uint32_t currentOffset = currentPlace_ ? currentPlace_->getOffset() : 0;
+                
+                // Calculate how much content we had before the new load and how much we have now
                 uint32_t totalSize = renderer_.size();
-                uint32_t remainingBytes =
-                    (currentOffset < totalSize) ? (totalSize - currentOffset) : 0;
-
+                uint32_t loadedSize = response->ocrText.length();
+                uint32_t previousSize = totalSize - loadedSize;
+                
+                // Calculate remaining bytes before and after new content was loaded
+                uint32_t remainingBytesBefore = (currentOffset < previousSize) ? (previousSize - currentOffset) : 0;
+                uint32_t remainingBytesNow = (currentOffset < totalSize) ? (totalSize - currentOffset) : 0;
+                
+                // Flag if we were near the end of the buffer before new content was loaded
+                bool wasNearEndOfBuffer = remainingBytesBefore < bufferThreshold_;
                 bool shouldRefreshPage = false;
 
-                // Only refresh the page if:
-                // 1. We were previously showing an incomplete page (near end of buffer)
-                // 2. The page size is less than what's typically rendered (meaning it was cut off)
-                // 3. We have more content available now
-                if (remainingBytes > 0 && lastRenderedPageSize_ > 0) {
-                    // If the last page was smaller than typical pages (potentially cut off at
-                    // buffer end) AND we now have more content, refresh to show the full page
-                    if (remainingBytes < bufferThreshold_ * 2) {
-                        log_i("Refreshing page after background load - current page may be "
-                              "incomplete (remaining: %" PRIu32 ", lastPageSize: %" PRIu32 ")",
-                              remainingBytes, lastRenderedPageSize_);
+                // Log detailed buffer information for debugging
+                log_i("Buffer status - Before load: offset=%" PRIu32 "/%" PRIu32 " (remaining: %" PRIu32 " bytes), After load: size=%" PRIu32 " (remaining: %" PRIu32 " bytes), Added: %" PRIu32 " bytes, needsRedraw: %s", 
+                      currentOffset, previousSize, remainingBytesBefore, totalSize, remainingBytesNow, loadedSize, needsRedrawAfterLoad_ ? "yes" : "no");
 
-                        // Re-render the current page with the new content
-                        uint8_t darkPicturePercent = 0;
-                        std::tie(newPlace_, darkPicturePercent) =
-                            renderer_.renderPage(currentPlace_);
+                // We should refresh the page if:
+                // 1. We were near the end of the buffer before new content was loaded (or marked for redraw)
+                // 2. We now have more content available in the buffer
+                if ((wasNearEndOfBuffer || needsRedrawAfterLoad_) && remainingBytesNow > remainingBytesBefore) {
+                    log_i("Refreshing page after background load - %s "
+                          "(before: remaining=%" PRIu32 " bytes, now: remaining=%" PRIu32 " bytes)",
+                          needsRedrawAfterLoad_ ? "explicitly marked for redraw" : "near the end of buffer",
+                          remainingBytesBefore, remainingBytesNow);
 
-                        // Update the display
-                        display_.updateDisplay(DisplaySystem::UpdateType::PARTIAL, true,
-                                               display_.darkPictureVComAdj(darkPicturePercent));
+                    // Re-render the current page with the new content
+                    uint8_t darkPicturePercent = 0;
+                    std::tie(newPlace_, darkPicturePercent) =
+                        renderer_.renderPage(currentPlace_);
 
-                        // Calculate new page size
-                        if (newPlace_ && currentPlace_) {
-                            uint32_t newOffset = newPlace_->getOffset();
-                            uint32_t currOffset = currentPlace_->getOffset();
-                            lastRenderedPageSize_ =
-                                (newOffset > currOffset) ? (newOffset - currOffset) : 0;
-                            log_i("New page size after refresh: %" PRIu32 " bytes",
-                                  lastRenderedPageSize_);
-                        }
+                    // Update the display
+                    display_.updateDisplay(DisplaySystem::UpdateType::PARTIAL, true,
+                                           display_.darkPictureVComAdj(darkPicturePercent));
 
-                        shouldRefreshPage = true;
+                    // Calculate new page size
+                    if (newPlace_ && currentPlace_) {
+                        uint32_t newOffset = newPlace_->getOffset();
+                        uint32_t currOffset = currentPlace_->getOffset();
+                        lastRenderedPageSize_ =
+                            (newOffset > currOffset) ? (newOffset - currOffset) : 0;
+                        log_i("New page size after refresh: %" PRIu32 " bytes",
+                              lastRenderedPageSize_);
                     }
+
+                    shouldRefreshPage = true;
+                    
+                    // Reset the redraw flag since we've now handled it
+                    needsRedrawAfterLoad_ = false;
                 }
 
                 // Check if we're still low on content and need to load more
@@ -785,7 +799,7 @@ void KindleReadableScreen::navigateNext() {
     // Check if we're physically near the end of the buffer
     bool isAtEndOfBuffer =
         (remainingBytes < bufferThreshold_) ||
-        (renderer_.atEndOfFile() && totalSize > 0 &&
+        (renderer_.shouldRespectEOF() && totalSize > 0 &&
          remainingBytes < bufferThreshold_ * 2 // Be more conservative for user interactions
         );
 
@@ -793,7 +807,10 @@ void KindleReadableScreen::navigateNext() {
     if (isAtEndOfBuffer) {
         log_i("End of buffer detected - remaining bytes: %" PRIu32 ", buffer size: %" PRIu32 "",
               remainingBytes, totalSize);
-
+              
+        // Mark that we need to redraw after load since we're navigating near the end
+        needsRedrawAfterLoad_ = true;
+        
         if (state_ == State::LOADING_BACKGROUND) {
             // We're already loading more content, show a temporary message
             setLoadingMessage("Loading more content...");
@@ -812,6 +829,9 @@ void KindleReadableScreen::navigateNext() {
             loadNextKindlePage();
             return;
         }
+    } else {
+        // We're not at the end of the buffer, so we don't need to redraw after load
+        needsRedrawAfterLoad_ = false;
     }
 
     // For proper navigation, we should use the next place that was returned
@@ -1076,21 +1096,13 @@ auto KindleReadableScreen::checkNearEndOfBuffer() -> bool {
         return true;
     }
 
-    // For Kindle books, be careful about the EOF detection
-    if (renderer_.atEndOfFile()) {
-        // We're loading content dynamically, so check if we're
-        // near the physical end of the buffer instead of relying on EOF flag
-        if (remainingBytes < bufferThreshold_) {
-            log_i("BUFFER CHECK - Treating EOF as 'near end' at offset %" PRIu32 "/%" PRIu32
-                  " (%.1f%%)",
-                  currentOffset, totalSize, percentThrough);
-            return true;
-        } else {
-            // If we have enough buffer space left, don't trigger loading yet
-            log_i("BUFFER CHECK - Ignoring EOF flag because buffer still has %" PRIu32 " bytes",
-                  remainingBytes);
-            return false;
-        }
+    // For Kindle books, be careful about the EOF detection - we're ignoring the actual EOF flag
+    // and only checking the buffer size remaining, since the EOF flag is unreliable for streaming content
+    if (remainingBytes < bufferThreshold_) {
+        log_i("BUFFER CHECK - Near buffer end at offset %" PRIu32 "/%" PRIu32
+              " (%.1f%%)",
+              currentOffset, totalSize, percentThrough);
+        return true;
     }
 
     // Not near end, log status for debugging
@@ -1143,8 +1155,9 @@ void KindleReadableScreen::turnPage() {
               (uint32_t)(currentPlace_ ? currentPlace_->getOffset() : 0));
     }
 
-    // Check if we're at the end
-    atEnd_ = renderer_.atEndOfFile();
+    // Check if we're at the end - for Kindle books we respect EOF only when we really want to
+    // (the renderer is configured to ignore EOF during initialization)
+    atEnd_ = renderer_.shouldRespectEOF();
 
     // For debug
     log_i("turnPage - at end of content: %s", atEnd_ ? "yes" : "no");
@@ -1226,6 +1239,9 @@ void KindleReadableScreen::dismissScreen() {
 
     // Check if the tokenizer is initialized before trying to reset it
     if (renderer_.getStream()) {
+        // Reset the renderer's ignore EOF setting
+        renderer_.setIgnoreEOF(false);
+        
         // Create an empty string for the stream
         std::string emptyStr;
         auto emptyStream = std::make_shared<StdStringStream>(emptyStr, DocType::TXT);

@@ -94,9 +94,10 @@ private:
     std::shared_ptr<Place> currentPlace_ = nullptr; // Current place in the renderer
     std::shared_ptr<Place> newPlace_ = nullptr;     // Next place to render
     bool atEnd_ = false;
-    const int bufferThreshold_ = 1000;  // Characters threshold to preload more content
+    const int bufferThreshold_ = 2000;  // Characters threshold to preload more content
     uint32_t lastRenderedPageSize_ = 0; // Size of the last rendered page in bytes
     bool hasNavigatedForward_{false};   // Tracks if user has navigated forward at least once
+    bool needsRedrawAfterLoad_{false};  // Tracks if we need to redraw after content loads
 
     // Timer handle to track auto-dismiss task so we can cancel it if needed
     std::shared_ptr<CancelFlag> autoDismissCancelFlag_;
