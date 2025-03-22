@@ -53,7 +53,7 @@ protected:
     LightingController &lightingController_;
     LocalStore &localStore_;
 
-    void setLoadingMessage(const std::string &message);
+    void setLoadingMessage(const std::string &message, bool showRoundedRect = false);
     auto connectToNetwork(bool useBleOnly, std::string &errorMessage) -> bool;
     void setErrorMessage(const std::string &errorMessage);
     void loadKindleBookPage();
@@ -110,6 +110,7 @@ private:
     MultiLineTextView loadingMessageView_;
     MultiLineTextView errorMessageView_;
     MultiLineTextView delayedMessageView_;
+    bool showLoadingWithRoundedRect_ = false;
 
     void showPopupMenu();
     void setCurrentScreen(std::shared_ptr<Screen> screen) { currentScreen_ = std::move(screen); }

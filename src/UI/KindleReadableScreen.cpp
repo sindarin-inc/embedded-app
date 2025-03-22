@@ -38,6 +38,7 @@ KindleReadableScreen::KindleReadableScreen(const std::shared_ptr<RendererStream>
     loadingMessageView_.setText("Connecting to your Kindle...");
     loadingMessageView_.setFont(font);
     loadingMessageView_.alignCenter = true;
+    loadingMessageView_.dynamicWidth = false; // Ensure we use the full width of our frame
 
     // Set up error message view
     errorMessageView_.setFont(font);
@@ -153,7 +154,86 @@ void KindleReadableScreen::render(DisplaySystem &display) {
                                  (renderer_.atEndOfFile() && remainingBytes < bufferThreshold_ * 2);
 
             if (showLoadingMessage) {
-                loadingMessageView_.draw();
+                // If we need to show the loading message with a rounded rect
+                if (showLoadingWithRoundedRect_ && !loadingMessageView_.isHidden()) {
+                    // Calculate the bounds of the loading message text
+                    int maxWidth = 0;
+                    const auto& text = loadingMessageView_.getText();
+                    if (!text.empty()) {
+                        maxWidth = display_.getTextWidth(text, loadingMessageView_.getFont());
+                    }
+                    
+                    // Add padding around the text
+                    const int padding = 12;
+                    int lineHeight = loadingMessageView_.getFont()->lineHeight();
+                    
+                    // Get the position from the parent's layout context
+                    SolRect screenRect = layoutContext_.screenFrame();
+                    
+                    // Calculate perfect center position in the screen
+                    int centerY = screenRect.origin.y + screenRect.size.height / 2;
+                    
+                    // Create rectangle for the background with enough padding for good looks
+                    SolRect bgRect = SolRect::zero();
+                    if (loadingMessageView_.alignCenter) {
+                        bgRect.origin.x = screenRect.origin.x + (screenRect.size.width - maxWidth) / 2 - padding;
+                        bgRect.size.width = maxWidth + padding * 2;
+                    } else {
+                        bgRect.origin.x = screenRect.origin.x - padding;
+                        bgRect.size.width = maxWidth + padding * 2;
+                    }
+                    
+                    // Make sure we have enough vertical space in the rectangle
+                    // (lineHeight + padding on top and bottom)
+                    bgRect.size.height = lineHeight + padding * 2;
+                    
+                    // Position background rect vertically centered on the screen
+                    bgRect.origin.y = centerY - bgRect.size.height / 2;
+                    
+                    // Now position the loadingMessageView at a precise position that's centered inside the bgRect
+                    // The loading frame should be centered inside the background rectangle
+                    SolRect loadingFrame = SolRect::zero();
+                    loadingFrame.origin.x = screenRect.origin.x;
+                    loadingFrame.origin.y = bgRect.origin.y + (bgRect.size.height - lineHeight) / 2;
+                    loadingFrame.size.width = screenRect.size.width;
+                    loadingFrame.size.height = lineHeight;
+                    
+                    // Reposition the loading message view to be exactly centered
+                    loadingMessageView_.setFrame(loadingFrame);
+                    
+                    // Draw filled rounded rectangle with a white fill and black outline
+                    // First fill with white background
+                    display_.fillRoundRect(bgRect.origin.x, bgRect.origin.y, 
+                                        bgRect.size.width, bgRect.size.height, 
+                                        10, display_.bg); // Corner radius 10, white background
+                    
+                    // Then draw black outline
+                    display_.drawRoundRect(bgRect.origin.x, bgRect.origin.y, 
+                                        bgRect.size.width, bgRect.size.height, 
+                                        10, display_.fg); // Corner radius 10, black outline
+                    
+                    // Use normal text colors (black text) with white background
+                    // No need to save or swap colors
+                    
+                    // Draw the loading message with normal colors
+                    // Log pre-draw state
+                    log_i("Drawing message: '%s'", loadingMessageView_.getText().c_str());
+                    
+                    // Now manually draw the text in the exact center of the rounded rect
+                    int textWidth = display_.getTextWidth(loadingMessageView_.getText(), loadingMessageView_.getFont());
+                    int x = bgRect.origin.x + (bgRect.size.width - textWidth) / 2;
+                    int y = bgRect.origin.y + (bgRect.size.height - loadingMessageView_.getFont()->lineHeight()) / 2;
+                    
+                    // Log the exact drawing position
+                    log_i("Drawing text manually at x=%d, y=%d (text width=%d, rect width=%d)",
+                          x, y, textWidth, bgRect.size.width);
+                    
+                    // Draw the text manually at the calculated center position
+                    display_.drawSingleLineOfText(text, x, y, false, loadingMessageView_.getFont());
+                } else {
+                    // Draw normally without rounded rect
+                    loadingMessageView_.draw();
+                }
             }
         }
 
@@ -316,12 +396,14 @@ void KindleReadableScreen::setState(State newState) {
     }
 }
 
-void KindleReadableScreen::setLoadingMessage(const std::string &message) {
+void KindleReadableScreen::setLoadingMessage(const std::string &message, bool showRoundedRect) {
     if (dismissed_) {
         return;
     }
 
     loadingMessageView_.setText(message);
+    showLoadingWithRoundedRect_ = showRoundedRect;
+    loadingMessageView_.alignCenter = true; // Always ensure text is centered
     setNeedsRerender();
     display_.clearDisplay();
     render(display_);
@@ -849,16 +931,30 @@ void KindleReadableScreen::navigateNext() {
         // Mark that we need to redraw after load since we're navigating near the end
         needsRedrawAfterLoad_ = true;
 
+        // Even if we're at the end of the buffer, render what we have
+        if (newPlace_ && currentPlace_ && newPlace_->getOffset() > currentPlace_->getOffset()) {
+            // Set up the new place and render what we have
+            turnPage();
+            uint8_t darkPicturePercent = 0;
+            std::tie(newPlace_, darkPicturePercent) = renderer_.renderPage(currentPlace_);
+            
+            // Update the display with what we have
+            display_.updateDisplay(DisplaySystem::UpdateType::PARTIAL, true,
+                                display_.darkPictureVComAdj(darkPicturePercent));
+            
+            log_i("Rendering partial content at buffer end, then loading more");
+        }
+        
         if (state_ == State::LOADING_BACKGROUND) {
-            // We're already loading more content, show a temporary message
-            setLoadingMessage("Loading more content...");
+            // We're already loading more content, show a temporary message with rounded rect
+            setLoadingMessage("Loading more...", true);
             // Don't change state, just show the message
             setNeedsRerender();
             return;
         } else if (nextPageLoading_) {
             // We're loading in background but not tracked in state yet
-            // Start showing loading UI since user has reached the end
-            setLoadingMessage("Loading more content...");
+            // Start showing loading UI since user has reached the end with rounded rect
+            setLoadingMessage("Loading more...", true);
             setState(State::LOADING_BACKGROUND);
             setNeedsRerender();
             return;
@@ -1273,6 +1369,7 @@ void KindleReadableScreen::dismissScreen() {
     // Clear message views
     loadingMessageView_.setText("");
     errorMessageView_.setText("");
+    showLoadingWithRoundedRect_ = false;
     setNeedsRerender();
 
     // We can't directly set the stream to nullptr because it causes issues with the tokenizer
@@ -1334,7 +1431,74 @@ void KindleReadableScreen::drawInRect(SolRect rect) {
         switch (state_) {
         case State::CONNECTING:
         case State::LOADING_CONTENT:
-            loadingMessageView_.draw();
+            // If we're showing the rounded rect for loading
+            if (showLoadingWithRoundedRect_ && !loadingMessageView_.isHidden()) {
+                // Calculate the bounds of the loading message text
+                int maxWidth = 0;
+                const auto& text = loadingMessageView_.getText();
+                if (!text.empty()) {
+                    maxWidth = display_.getTextWidth(text, loadingMessageView_.getFont());
+                }
+                
+                // Add padding around the text
+                const int padding = 12;
+                int lineHeight = loadingMessageView_.getFont()->lineHeight();
+                
+                // Get the position from the parent's layout context
+                SolRect screenRect = layoutContext_.screenFrame();
+                
+                // Calculate perfect center position in the screen
+                int centerY = screenRect.origin.y + screenRect.size.height / 2;
+                
+                // Create rectangle for the background with enough padding for good looks
+                SolRect bgRect = SolRect::zero();
+                if (loadingMessageView_.alignCenter) {
+                    bgRect.origin.x = screenRect.origin.x + (screenRect.size.width - maxWidth) / 2 - padding;
+                    bgRect.size.width = maxWidth + padding * 2;
+                } else {
+                    bgRect.origin.x = screenRect.origin.x - padding;
+                    bgRect.size.width = maxWidth + padding * 2;
+                }
+                
+                // Make sure we have enough vertical space in the rectangle
+                // (lineHeight + padding on top and bottom)
+                bgRect.size.height = lineHeight + padding * 2;
+                
+                // Position background rect vertically centered on the screen
+                bgRect.origin.y = centerY - bgRect.size.height / 2;
+                
+                // Add debug logging to help diagnose centering issues
+                log_i("Loading text: '%s', text width: %d, bgRect: x=%d, y=%d, w=%d, h=%d", 
+                      loadingMessageView_.getText().c_str(), maxWidth,
+                      bgRect.origin.x, bgRect.origin.y, bgRect.size.width, bgRect.size.height);
+                
+                // Create a completely new approach - set frame to the size of the rect
+                SolRect loadingFrame = bgRect;
+                
+                // Ensure alignment is centered
+                loadingMessageView_.alignCenter = true;
+                
+                // Reposition the loading message view to be exactly centered in the rect
+                loadingMessageView_.setFrame(loadingFrame);
+                
+                // Draw filled rounded rectangle with a white fill and black outline
+                // First fill with white background
+                display_.fillRoundRect(bgRect.origin.x, bgRect.origin.y, 
+                                    bgRect.size.width, bgRect.size.height, 
+                                    10, display_.bg); // Corner radius 10, white background
+                
+                // Then draw black outline
+                display_.drawRoundRect(bgRect.origin.x, bgRect.origin.y, 
+                                    bgRect.size.width, bgRect.size.height, 
+                                    10, display_.fg); // Corner radius 10, black outline
+                
+                // Draw the loading message with normal colors (black text on white background)
+                loadingMessageView_.draw();
+            } else {
+                // Draw normally without rounded rect
+                loadingMessageView_.draw();
+            }
+            
             // Also draw the delayed message if it's visible
             if (!delayedMessageView_.isHidden()) {
                 delayedMessageView_.draw();
@@ -1428,4 +1592,7 @@ void KindleReadableScreen::cancelDelayedLoadingMessage() {
             log_i("Cancelled and hid delayed loading message");
         }
     }
+    
+    // Reset the rounded rect flag when canceling messages
+    showLoadingWithRoundedRect_ = false;
 }
