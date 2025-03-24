@@ -109,6 +109,15 @@ esp_err_t panel_seeya049_write_ram(esp_lcd_panel_t *panel, const void *data, siz
  */
 esp_err_t panel_seeya049_dump_framebuffer_i2c(void);
 
+/**
+ * @brief Move the display area of the panel
+ *
+ * @param[in] panel LCD panel handle
+ * @param[in] dx Delta x
+ * @param[in] dy Delta y
+ */
+esp_err_t panel_seeya049_move_display_area(esp_lcd_panel_t *panel, int16_t dx, int16_t dy);
+
 #endif // SOC_MIPI_DSI_SUPPORTED
 
 /**

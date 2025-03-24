@@ -652,6 +652,31 @@ esp_err_t panel_seeya049_write_ram(esp_lcd_panel_t *panel, const void *data, siz
     return ESP_OK;
 }
 
+esp_err_t panel_seeya049_move_display_area(esp_lcd_panel_t *panel, int16_t dx, int16_t dy) {
+    ESP_LOGI(TAG, "panel_seeya049_move_display_area %d %d", dx, dy);
+
+    seeya049_panel_t *seeya049 = (seeya049_panel_t *)panel->user_data;
+    esp_lcd_panel_io_handle_t io = seeya049->io;
+
+    // Send the move display area command
+    if (dx != -1) {
+        uint8_t cmd_data[2];
+        cmd_data[0] = (dx >> 8) & 0xFF; // High byte of dx
+        cmd_data[1] = dx & 0xFF;        // Low byte of dx
+        ESP_RETURN_ON_ERROR(esp_lcd_panel_io_tx_param(io, SEEYA049_CMD_CASET, cmd_data, 4), TAG,
+                            "Failed to send move display area command");
+    }
+    // Send the move display area command
+    if (dy != -1) {
+        uint8_t cmd_data[2];
+        cmd_data[0] = (dy >> 8) & 0xFF; // High byte of dy
+        cmd_data[1] = dy & 0xFF;        // Low byte of dy
+        ESP_RETURN_ON_ERROR(esp_lcd_panel_io_tx_param(io, SEEYA049_CMD_RASET, cmd_data, 2), TAG,
+                            "Failed to send move display area command");
+    }
+    return ESP_OK;
+}
+
 #endif // SOC_MIPI_DSI_SUPPORTED
 
 static esp_err_t panel_seeya049_i2c_init(void) {

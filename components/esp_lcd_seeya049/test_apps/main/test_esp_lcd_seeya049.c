@@ -571,6 +571,31 @@ TEST_CASE("test seeya049 direct RAM write", "[seeya049][write_ram]") {
     test_deinit_seeya_panel();
 }
 
+TEST_CASE("test seeya049 moving display area", "[seeya049][moving_display_area]") {
+    ESP_LOGI(TAG, "Initialize LCD device");
+    test_init_enable_panel();
+
+    // Create a small test pattern (10x10 pixels, RGB888 format)
+    const uint16_t pattern_width = 100;
+    const uint16_t pattern_height = 100;
+
+    TEST_ESP_OK(esp_lcd_dpi_panel_set_pattern(panel_handle, MIPI_DSI_PATTERN_BAR_VERTICAL));
+
+    // test_draw_box(panel_handle, 0, 0, pattern_width, pattern_height, red);
+    vTaskDelay(pdMS_TO_TICKS(TEST_DELAY_TIME_MS));
+
+    // Move the display area to the right
+    TEST_ESP_OK(panel_seeya049_move_display_area(panel_handle, pattern_width, pattern_height));
+    vTaskDelay(pdMS_TO_TICKS(TEST_DELAY_TIME_MS));
+
+    // Move the display area to the left
+    TEST_ESP_OK(
+        panel_seeya049_move_display_area(panel_handle, 2 * pattern_width, 2 * pattern_height));
+    vTaskDelay(pdMS_TO_TICKS(TEST_DELAY_TIME_MS));
+
+    test_deinit_disable_panel();
+}
+
 esp_err_t hardware_reset_seeya049(void) {
     // Config the reset pin and pull it high
     gpio_config_t io_conf = {
