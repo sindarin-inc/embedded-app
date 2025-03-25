@@ -595,9 +595,9 @@ auto SindarinAPI::makeKindleRequest(const std::string &path, KindlePageResponse 
 
 auto SindarinAPI::openKindleBook(const std::string &title, KindlePageResponse *resp,
                                  const std::shared_ptr<CancelFlag> &cancelFlag) -> int {
-    // URL encode the title to handle spaces and special characters
-    std::string encodedTitle = Urlencode(title);
-    std::string path = StringFormat("/kindle/open-book?ocr=1&title=%s", encodedTitle.c_str());
+    // Use the title as-is, it may already be URL-encoded when it arrives here
+    std::string path = "/kindle/open-book?ocr=1&title=" + title;
+    log_i("Kindle open book path: %s", path.c_str());
     return makeKindleRequest(path, resp, cancelFlag);
 }
 

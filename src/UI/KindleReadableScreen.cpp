@@ -509,9 +509,21 @@ void KindleReadableScreen::loadKindleBookPage() {
     // Create a response object
     auto response = std::make_shared<KindlePageResponse>();
 
-    // For initial load, always open the book with its title - this API call runs in background
-    // thread
-    int httpCode = sindarinApi->openKindleBook(kindleBook_->title, response.get(), cancelFlag_);
+    // For initial load, always open the book with its title - this API call runs in background thread
+    // First check if the title contains '+' characters which might indicate it's already URL encoded
+    std::string cleanTitle = kindleBook_->title;
+    if (cleanTitle.find('+') != std::string::npos) {
+        log_i("Title appears to be URL encoded, contains '+' characters: %s", cleanTitle.c_str());
+        // Replace '+' with spaces to prevent double encoding
+        std::string::size_type pos = 0;
+        while ((pos = cleanTitle.find('+', pos)) != std::string::npos) {
+            cleanTitle.replace(pos, 1, " ");
+            pos++;
+        }
+        log_i("Cleaned title for API call: %s", cleanTitle.c_str());
+    }
+    
+    int httpCode = sindarinApi->openKindleBook(cleanTitle, response.get(), cancelFlag_);
 
     if (httpCode != 200 || !response->success) {
         // Handle error on the UI thread with specific error message based on HTTP code

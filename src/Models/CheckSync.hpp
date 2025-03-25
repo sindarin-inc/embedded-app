@@ -6,6 +6,7 @@
 #include "Misc/SpiramAllocator.hpp"
 #include "Models/BookQuestion.hpp"
 #include "Models/JsonSerializable.hpp"
+#include "Models/KindleBook.hpp"
 #include "Models/Readable.hpp"
 #include "Models/ReadableArchive.hpp"
 #include "Models/ReadableBookmark.hpp"
@@ -43,6 +44,7 @@ public:
     std::string gitHash;
     std::string sn;
     int bookQuestionsVersion{};
+    std::string kindleLastSynced; // Added to support kindle_last_synced parameter
 
     auto fromJson(const JsonObject &j) -> bool override { return true; }
 };
@@ -61,22 +63,28 @@ public:
     SpiramVector<UserReadable> userArticles;
     SpiramString booksSince;
     SpiramString articlesSince;
+    SpiramString kindleLastSynced;
     SpiramString nextPageUrl;
     int totalCount{};
     std::string timezone;
     BookQuestions bookQuestions;
     bool hasBookQuestions{false};
+    KindleBooksVector kindleBooks;
+    bool hasKindleBooks{false};
 
     auto fromJson(const JsonObject &j) -> bool override {
         message = j["message"].as<std::string>();
         userBooks.clear();
         userArticles.clear();
+        kindleBooks.clear();
+
         if (!j.containsKey("results")) {
             log_w("Failed to parse CheckSyncResponse %s", DumpJson(j).c_str());
             return false;
         }
         auto results = j["results"].as<JsonObject>();
         synced = results["synced"].as<bool>();
+        
         if (results.containsKey("books_since")) {
             booksSince = results["books_since"].as<std::string>();
             for (const auto &userReadable : results["books"].as<JsonArray>()) {
@@ -95,6 +103,30 @@ public:
             }
         } else {
             articlesSince = "";
+        }
+
+        // Parse Kindle books if present
+        hasKindleBooks = false;
+        if (results.containsKey("kindle_books")) {
+            // Handle kindle_last_synced field
+            if (results.containsKey("kindle_last_synced")) {
+                kindleLastSynced = results["kindle_last_synced"].as<std::string>();
+            } else {
+                kindleLastSynced = "";
+            }
+            
+            hasKindleBooks = true;
+            
+            for (const auto &kindleBookJson : results["kindle_books"].as<JsonArray>()) {
+                KindleBook kindleBook;
+                if (kindleBook.fromJson(kindleBookJson.as<JsonObject>())) {
+                    kindleBooks.push_back(kindleBook);
+                }
+            }
+            
+            log_d("Parsed %zu Kindle books from sync response", kindleBooks.size());
+        } else {
+            kindleLastSynced = "";
         }
 
         if (results.containsKey("timezone")) {
