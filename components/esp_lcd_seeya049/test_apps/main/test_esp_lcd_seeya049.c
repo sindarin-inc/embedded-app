@@ -29,16 +29,10 @@
 #define TEST_LCD_H_RES (1920)
 #define TEST_LCD_V_RES (1080)
 #define TEST_LCD_BIT_PER_PIXEL (24)
-#define TEST_PIN_NUM_LCD_RST (23)
-#define TEST_MIPI_DSI_LANE_NUM (2)
 
-#if TEST_LCD_BIT_PER_PIXEL == 24
-#define TEST_MIPI_DPI_PX_FORMAT (LCD_COLOR_PIXEL_FORMAT_RGB888)
-#elif TEST_LCD_BIT_PER_PIXEL == 18
-#define TEST_MIPI_DPI_PX_FORMAT (LCD_COLOR_PIXEL_FORMAT_RGB666)
-#elif TEST_LCD_BIT_PER_PIXEL == 16
-#define TEST_MIPI_DPI_PX_FORMAT (LCD_COLOR_PIXEL_FORMAT_RGB565)
-#endif
+#define TEST_PIN_NUM_LCD_RST (23)
+#define TEST_PIN_NUM_I2C_SDA (22)
+#define TEST_PIN_NUM_I2C_SCL (21)
 
 #define TEST_DELAY_TIME_MS (3000)
 
@@ -65,9 +59,6 @@ IRAM_ATTR static bool test_notify_refresh_ready(esp_lcd_panel_handle_t panel,
 }
 
 static void test_init_mipi_dsi_bus(void) {
-    // Enable debug logging for lcd.dsi.dpi
-    esp_log_level_set("lcd.dsi.dpi", ESP_LOG_DEBUG);
-
     // Turn on the power for MIPI DSI PHY, so it can go from "No Power" state to "Shutdown" state
 #ifdef TEST_MIPI_DSI_PHY_PWR_LDO_CHAN
     ESP_LOGI(TAG, "MIPI DSI PHY Powered on");
@@ -79,94 +70,31 @@ static void test_init_mipi_dsi_bus(void) {
 #endif
 
     ESP_LOGI(TAG, "Initialize MIPI DSI bus");
-    esp_lcd_dsi_bus_config_t bus_config = {
-        .bus_id = 0,
-        .num_data_lanes = TEST_MIPI_DSI_LANE_NUM,
-        .phy_clk_src = MIPI_DSI_PHY_CLK_SRC_DEFAULT,
-        // This doesn't seem to affect the size of what is drawn
-        // lane_bit_rate_mbps / 8 / 18 must be > 1 and < 256
-        .lane_bit_rate_mbps = 1000,
-    };
+    esp_lcd_dsi_bus_config_t bus_config = panel_seeya049_dsi_bus_config();
 
     TEST_ESP_OK(esp_lcd_new_dsi_bus(&bus_config, &mipi_dsi_bus));
 
     ESP_LOGI(TAG, "Install panel IO");
-    esp_lcd_dbi_io_config_t dbi_config = {
-        .virtual_channel = 0,
-        .lcd_cmd_bits = 8,
-        .lcd_param_bits = 16,
-    };
+    esp_lcd_dbi_io_config_t dbi_config = panel_seeya049_io_dbi_config();
     TEST_ESP_OK(esp_lcd_new_panel_io_dbi(mipi_dsi_bus, &dbi_config, &mipi_dbi_io));
 }
 
-static void test_new_seeya_panel(void) {
+static void test_new_seeya_panel() {
     test_init_mipi_dsi_bus();
 
     ESP_LOGI(TAG, "Install LCD driver of seeya049");
-    esp_lcd_dpi_panel_config_t dpi_config = {
-        .virtual_channel = 0,
-        .dpi_clk_src = MIPI_DSI_DPI_CLK_SRC_DEFAULT,
-        // This seems to affect the size and quality of what is drawn
-        // This can't keep up above 120MHz
-        // Below 35MHz the drawn screen area is reduced
-        .dpi_clock_freq_mhz = 80,
-        .pixel_format = TEST_MIPI_DPI_PX_FORMAT,
-        .in_color_format = 0,
-        .out_color_format = 0,
-        .num_fbs = 1,
-        .video_timing =
-            {
-                .h_size = TEST_LCD_H_RES,
-                .v_size = TEST_LCD_V_RES,
-                // From GPT
-                // .hsync_pulse_width = 10,
-                // .hsync_back_porch = 20,
-                // .hsync_front_porch = 20,
-                // .vsync_pulse_width = 4,
-                // .vsync_back_porch = 16,
-                // .vsync_front_porch = 16,
+    esp_lcd_dpi_panel_config_t dpi_config = panel_seeya049_1920_1080_dpi_config();
 
-                // From the NED init code spreadsheet
-                .hsync_pulse_width = 44,
-                .hsync_back_porch = 148,
-                .hsync_front_porch = 88,
-                .vsync_pulse_width = 5,
-                .vsync_back_porch = 36,
-                .vsync_front_porch = 5,
-            },
-        .flags =
-            {
-                .use_dma2d = true,
-                .disable_lp = false,
-            },
-    };
+    seeya049_vendor_config_t vendor_config =
+        panel_seeya049_vendor_config(mipi_dsi_bus, &dpi_config);
 
-    seeya049_vendor_config_t vendor_config = {
-        .mipi_config =
-            {
-                .dsi_bus = mipi_dsi_bus,
-                .dpi_config = &dpi_config,
-                .lane_num = TEST_MIPI_DSI_LANE_NUM,
-            },
-    };
-
-    const esp_lcd_panel_dev_config_t panel_config = {
-        .reset_gpio_num = TEST_PIN_NUM_LCD_RST,
-        // These don't have an effect on the test patterns
-        .rgb_ele_order = LCD_RGB_ELEMENT_ORDER_BGR,
-        .data_endian = LCD_RGB_DATA_ENDIAN_BIG,
-        .bits_per_pixel = TEST_LCD_BIT_PER_PIXEL,
-        .flags =
-            {
-                .reset_active_high = false,
-            },
-        .vendor_config = &vendor_config,
-    };
+    const esp_lcd_panel_dev_config_t panel_config =
+        panel_seeya049_panel_config(TEST_PIN_NUM_LCD_RST, &vendor_config);
 
     TEST_ESP_OK(esp_lcd_new_panel_seeya049(mipi_dbi_io, &panel_config, &panel_handle));
 }
 
-static void test_init_enable_panel(void) {
+static void test_init_enable_panel() {
     test_new_seeya_panel();
 
     TEST_ESP_OK(esp_lcd_panel_reset(panel_handle));
@@ -369,7 +297,6 @@ TEST_CASE("test seeya049 debug command to turn on all pixels", "[seeya049][all_p
     vTaskDelay(pdMS_TO_TICKS(TEST_DELAY_TIME_MS));
 
     panel_seeya049_all_pixels_on_off(panel_handle, false);
-    vTaskDelay(pdMS_TO_TICKS(TEST_DELAY_TIME_MS));
 
     ESP_LOGI(TAG, "Deinitialize LCD device");
     test_deinit_disable_panel();
@@ -523,54 +450,6 @@ TEST_CASE("test seeya049 draw gradients", "[seeya049][draw_gradients]") {
     test_deinit_disable_panel();
 }
 
-TEST_CASE("test seeya049 direct RAM write", "[seeya049][write_ram]") {
-    ESP_LOGI(TAG, "Initialize LCD device");
-    test_new_seeya_panel();
-    TEST_ESP_OK(esp_lcd_panel_reset(panel_handle));
-    TEST_ESP_OK(panel_seeya049_send_init_cmds(panel_handle));
-    // TEST_ESP_OK(esp_lcd_panel_disp_on_off(panel_handle, true));
-
-    // Create a small test pattern (10x10 pixels, RGB888 format)
-    // NOTE: We get stuck if we try to send more than 1000 bytes. I suspect it has something to do
-    // with the MIPI driver since I'm not seeing anything come out from the logic analyzer.
-    const uint16_t pattern_width = 30;
-    uint16_t pattern_height = 11;
-    const uint8_t bytes_per_pixel = 3; // RGB888
-    uint8_t *pattern =
-        heap_caps_malloc(pattern_width * pattern_height * bytes_per_pixel, MALLOC_CAP_DMA);
-    TEST_ASSERT_NOT_NULL(pattern);
-
-    // Fill pattern with alternating red and blue pixels
-    for (int y = 0; y < pattern_height; y++) {
-        for (int x = 0; x < pattern_width; x++) {
-            int pixel_idx = (y * pattern_width + x) * bytes_per_pixel;
-            if ((x + y) % 2 == 0) {
-                // Red pixel
-                pattern[pixel_idx + 0] = 0x00; // B
-                pattern[pixel_idx + 1] = 0x00; // G
-                pattern[pixel_idx + 2] = 0xFF; // R
-            } else {
-                // Blue pixel
-                pattern[pixel_idx + 0] = 0xFF; // B
-                pattern[pixel_idx + 1] = 0x00; // G
-                pattern[pixel_idx + 2] = 0x00; // R
-            }
-        }
-    }
-
-    // Write pattern to display RAM
-    ESP_LOGI(TAG, "Writing test pattern directly to display RAM");
-    TEST_ESP_OK(panel_seeya049_write_ram(panel_handle, pattern,
-                                         pattern_width * pattern_height * bytes_per_pixel));
-
-    vTaskDelay(pdMS_TO_TICKS(TEST_DELAY_TIME_MS));
-
-    free(pattern);
-
-    ESP_LOGI(TAG, "Deinitialize LCD device");
-    test_deinit_seeya_panel();
-}
-
 TEST_CASE("test seeya049 moving display area", "[seeya049][moving_display_area]") {
     ESP_LOGI(TAG, "Initialize LCD device");
     test_init_enable_panel();
@@ -617,48 +496,140 @@ esp_err_t hardware_reset_seeya049(void) {
 }
 
 TEST_CASE("test seeya049 I2C self-test", "[seeya049][i2c_self_test]") {
-    hardware_reset_seeya049();
-
+    TEST_ESP_OK(panel_seeya049_i2c_init(TEST_PIN_NUM_I2C_SDA, TEST_PIN_NUM_I2C_SCL));
     // Run the self-test
     ESP_LOGI(TAG, "Running I2C self-test");
-    TEST_ESP_OK(panel_seeya049_run_selftest_i2c());
+    TEST_ESP_OK(panel_seeya049_send_cmds_i2c(SEEYA049_I2C_SHARED_ADDR, seeya049_init_cmds_selftest,
+                                             sizeof(seeya049_init_cmds_selftest) /
+                                                 sizeof(seeya049_lcd_init_cmd_t)));
 
-    vTaskDelay(pdMS_TO_TICKS(TEST_DELAY_TIME_MS));
-}
-
-TEST_CASE("test seeya049 I2C framebuffer test", "[seeya049][i2c_framebuffer_test]") {
+    // Self-test cycles back to red at 39 seconds
+    vTaskDelay(pdMS_TO_TICKS(40000));
     hardware_reset_seeya049();
 
-    // Run the framebuffer test
-    ESP_LOGI(TAG, "Running I2C framebuffer test");
+    TEST_ESP_OK(panel_seeya049_i2c_deinit());
+}
 
-    const uint16_t pattern_width = 1920;
-    const uint16_t pattern_height = 1080;
-    const uint8_t bytes_per_pixel = 3; // RGB888
-    uint8_t *pattern = malloc(pattern_width * pattern_height * bytes_per_pixel);
+TEST_CASE("test seeya049 dual-screen config test", "[seeya049][dual_screen_config]") {
+    hardware_reset_seeya049();
+    panel_seeya049_i2c_init(TEST_PIN_NUM_I2C_SDA, TEST_PIN_NUM_I2C_SCL);
 
-    // Fill pattern with alternating red and blue pixels
-    for (int y = 0; y < pattern_height; y++) {
-        for (int x = 0; x < pattern_width; x++) {
-            int pixel_idx = (y * pattern_width + x) * bytes_per_pixel;
-            if ((x + y) % 2 == 0) {
-                // Red pixel
-                pattern[pixel_idx + 0] = 0x00; // B
-                pattern[pixel_idx + 1] = 0x00; // G
-                pattern[pixel_idx + 2] = 0xFF; // R
-            } else {
-                // Blue pixel
-                pattern[pixel_idx + 0] = 0xFF; // B
-                pattern[pixel_idx + 1] = 0x00; // G
-                pattern[pixel_idx + 2] = 0x00; // R
-            }
-        }
-    }
+    // Start in the bottom right
+    panel_seeya049_send_init_cmds_i2c(SEEYA049_I2C_PRIMARY_ADDR, 960, 540, 1920 - 960, 1080 - 540);
+    panel_seeya049_send_init_cmds_i2c(SEEYA049_I2C_SECONDARY_ADDR, 960, 540, 1920 - 960,
+                                      1080 - 540);
 
-    TEST_ESP_OK(panel_seeya049_run_framebuffer_test_i2c(pattern, pattern_width * pattern_height *
-                                                                     bytes_per_pixel));
+    // Init the MIPI driver but with no INIT commands via the MIPI driver
+    test_init_mipi_dsi_bus();
+    esp_lcd_dpi_panel_config_t dpi_config = panel_seeya049_1920_1080_dpi_config();
+    int width = 960;
+    int height = 540;
+    dpi_config.video_timing.h_size = width;
+    dpi_config.video_timing.v_size = height;
+    seeya049_vendor_config_t vendor_config =
+        panel_seeya049_vendor_config(mipi_dsi_bus, &dpi_config);
+    vendor_config.init_cmds = NULL;
+    vendor_config.init_cmds_size = 0;
+    vendor_config.x_offset = 1920 / 4;
+    vendor_config.y_offset = 1080 / 4;
+    const esp_lcd_panel_dev_config_t panel_config =
+        panel_seeya049_panel_config(TEST_PIN_NUM_LCD_RST, &vendor_config);
+    TEST_ESP_OK(esp_lcd_new_panel_seeya049(mipi_dbi_io, &panel_config, &panel_handle));
+    TEST_ESP_OK(esp_lcd_panel_init(panel_handle));
+    refresh_finish = xSemaphoreCreateBinary();
+    TEST_ASSERT_NOT_NULL(refresh_finish);
+    esp_lcd_dpi_panel_event_callbacks_t cbs = {
+        .on_color_trans_done = test_notify_refresh_ready,
+    };
+    TEST_ESP_OK(esp_lcd_dpi_panel_register_event_callbacks(panel_handle, &cbs, refresh_finish));
 
-    free(pattern);
+    // Original position
+    TEST_ESP_OK(esp_lcd_dpi_panel_set_pattern(panel_handle, MIPI_DSI_PATTERN_BAR_VERTICAL));
+
+    vTaskDelay(pdMS_TO_TICKS(TEST_DELAY_TIME_MS));
+
+    TEST_ESP_OK(esp_lcd_dpi_panel_set_pattern(panel_handle, MIPI_DSI_PATTERN_BAR_HORIZONTAL));
+
+    vTaskDelay(pdMS_TO_TICKS(TEST_DELAY_TIME_MS));
+
+    // Move primary screen to the top left
+    panel_seeya049_move_display_area_i2c(SEEYA049_I2C_PRIMARY_ADDR, width, height, 0, 0);
+    vTaskDelay(pdMS_TO_TICKS(TEST_DELAY_TIME_MS / 2));
+
+    // Move secondary screen to the top left
+    panel_seeya049_move_display_area_i2c(SEEYA049_I2C_SECONDARY_ADDR, width, height, 0, 0);
+    vTaskDelay(pdMS_TO_TICKS(TEST_DELAY_TIME_MS / 2));
+
+    // Move primary screen to the top right
+    panel_seeya049_move_display_area_i2c(SEEYA049_I2C_PRIMARY_ADDR, width, height, 1920 - width, 0);
+    vTaskDelay(pdMS_TO_TICKS(TEST_DELAY_TIME_MS / 2));
+
+    // Move secondary screen to the top right
+    panel_seeya049_move_display_area_i2c(SEEYA049_I2C_SECONDARY_ADDR, width, height, 1920 - width,
+                                         0);
+    vTaskDelay(pdMS_TO_TICKS(TEST_DELAY_TIME_MS / 2));
+
+    // Move primary screen to the bottom right
+    panel_seeya049_move_display_area_i2c(SEEYA049_I2C_PRIMARY_ADDR, width, height, 1920 - width,
+                                         1080 - height);
+    vTaskDelay(pdMS_TO_TICKS(TEST_DELAY_TIME_MS / 2));
+
+    // Move secondary screen to the bottom right
+    panel_seeya049_move_display_area_i2c(SEEYA049_I2C_SECONDARY_ADDR, width, height, 1920 - width,
+                                         1080 - height);
+    vTaskDelay(pdMS_TO_TICKS(TEST_DELAY_TIME_MS / 2));
+
+    // Move primary screen to the bottom left
+    panel_seeya049_move_display_area_i2c(SEEYA049_I2C_PRIMARY_ADDR, width, height, 0,
+                                         1080 - height);
+    vTaskDelay(pdMS_TO_TICKS(TEST_DELAY_TIME_MS / 2));
+
+    // Move secondary screen to the bottom left
+    panel_seeya049_move_display_area_i2c(SEEYA049_I2C_SECONDARY_ADDR, width, height, 0,
+                                         1080 - height);
+    vTaskDelay(pdMS_TO_TICKS(TEST_DELAY_TIME_MS / 2));
+
+    // Center both screens
+    panel_seeya049_move_display_area_i2c(SEEYA049_I2C_PRIMARY_ADDR, width, height,
+                                         1920 / 2 - width / 2, 1080 / 2 - height / 2);
+    panel_seeya049_move_display_area_i2c(SEEYA049_I2C_SECONDARY_ADDR, width, height,
+                                         1920 / 2 - width / 2, 1080 / 2 - height / 2);
+    vTaskDelay(pdMS_TO_TICKS(TEST_DELAY_TIME_MS));
+
+    panel_seeya049_i2c_deinit();
+    test_deinit_disable_panel();
+}
+
+TEST_CASE("test reduced resolution", "[seeya049][reduced_resolution]") {
+    test_init_mipi_dsi_bus();
+    esp_lcd_dpi_panel_config_t dpi_config = panel_seeya049_1920_1080_dpi_config();
+    dpi_config.video_timing.h_size = 960;
+    dpi_config.video_timing.v_size = 540;
+    seeya049_vendor_config_t vendor_config =
+        panel_seeya049_vendor_config(mipi_dsi_bus, &dpi_config);
+    vendor_config.x_offset = 1920 / 4;
+    vendor_config.y_offset = 1080 / 4;
+    const esp_lcd_panel_dev_config_t panel_config =
+        panel_seeya049_panel_config(TEST_PIN_NUM_LCD_RST, &vendor_config);
+    TEST_ESP_OK(esp_lcd_new_panel_seeya049(mipi_dbi_io, &panel_config, &panel_handle));
+    TEST_ESP_OK(esp_lcd_panel_reset(panel_handle));
+    TEST_ESP_OK(esp_lcd_panel_init(panel_handle));
+    TEST_ESP_OK(esp_lcd_panel_disp_on_off(panel_handle, true));
+    refresh_finish = xSemaphoreCreateBinary();
+    TEST_ASSERT_NOT_NULL(refresh_finish);
+    esp_lcd_dpi_panel_event_callbacks_t cbs = {
+        .on_color_trans_done = test_notify_refresh_ready,
+    };
+    TEST_ESP_OK(esp_lcd_dpi_panel_register_event_callbacks(panel_handle, &cbs, refresh_finish));
+
+    // Original position
+    TEST_ESP_OK(esp_lcd_dpi_panel_set_pattern(panel_handle, MIPI_DSI_PATTERN_BAR_VERTICAL));
+    vTaskDelay(pdMS_TO_TICKS(TEST_DELAY_TIME_MS));
+
+    TEST_ESP_OK(esp_lcd_dpi_panel_set_pattern(panel_handle, MIPI_DSI_PATTERN_BAR_HORIZONTAL));
+    vTaskDelay(pdMS_TO_TICKS(TEST_DELAY_TIME_MS));
+
+    test_deinit_disable_panel();
 }
 
 #endif
@@ -672,6 +643,8 @@ static size_t before_free_32bit;
 void setUp(void) {
     before_free_8bit = heap_caps_get_free_size(MALLOC_CAP_8BIT);
     before_free_32bit = heap_caps_get_free_size(MALLOC_CAP_32BIT);
+    esp_log_level_set("lcd.dsi.dpi", ESP_LOG_DEBUG);
+    esp_log_level_set("seeya049", ESP_LOG_DEBUG);
 }
 
 void tearDown(void) {
