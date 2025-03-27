@@ -1077,19 +1077,20 @@ auto LocalStore::syncFromRemote(bool wifiConnected, bool bleConnected, SyncReaso
 
     // Handle Kindle book syncing
     bool kindleSyncSuccess = true;
-    
+
     // Now sync Kindle books since we've already synced books and articles
     CheckSyncRequest kindleRequest;
     CheckSyncResponse kindleResponse;
-    
+
     kindleRequest.syncReason = syncReason;
     kindleRequest.modelType = ReadablesModelType::Book; // Use Book model type for proper endpoint
-    
+
     // Use lastKindleSince for the kindle_last_synced field in the request
-    std::string kindleLastFetch = prefs_.lastKindleSince.get().value_or("1"); // Default to 1 if not set yet
+    std::string kindleLastFetch =
+        prefs_.lastKindleSince.get().value_or("1");                 // Default to 1 if not set yet
     kindleRequest.since = prefs_.lastBooksSince.get().value_or(""); // Regular books since timestamp
-    kindleRequest.kindleLastSynced = kindleLastFetch; // Add the Kindle timestamp
-    
+    kindleRequest.kindleLastSynced = kindleLastFetch;               // Add the Kindle timestamp
+
     // Set standard request parameters
     kindleRequest.skipContent = true;
     kindleRequest.skipSummary = true;
@@ -1101,40 +1102,42 @@ auto LocalStore::syncFromRemote(bool wifiConnected, bool bleConnected, SyncReaso
     kindleRequest.gitHash = GitVersionString();
     kindleRequest.sn = GetSerialNumber();
     kindleRequest.bookQuestionsVersion = this->prefs_.bookQuestionsVersion.get().value_or(0);
-    
+
     log_i("Syncing Kindle books with kindle_last_synced=%s...", kindleLastFetch.c_str());
-    
+
     // Make the API call to fetch Kindle books
-    int httpCode = SindarinAPI::getInstance()->checkSync(
-        kindleRequest, &kindleResponse, this->telemetry_, bleConnected, cancel);
-    
+    int httpCode = SindarinAPI::getInstance()->checkSync(kindleRequest, &kindleResponse,
+                                                         this->telemetry_, bleConnected, cancel);
+
     if (CancelFlag::isCancelled(cancel)) {
         return false;
     }
-    
+
     if (httpCode != 200) {
         log_e("Failed to check Kindle books sync (HTTP %d)", httpCode);
         kindleSyncSuccess = false;
-        this->telemetry_.logMetric(TelemetryField::METRIC_SYNC_STATUS, "failed-sync-kindle", 
+        this->telemetry_.logMetric(TelemetryField::METRIC_SYNC_STATUS, "failed-sync-kindle",
                                    {{"http-code", httpCode}});
     } else {
         // Check for Kindle books in the response
         if (kindleResponse.hasKindleBooks) {
             log_i("Received %zu Kindle books from server", kindleResponse.kindleBooks.size());
-            
+
             // Replace the local Kindle books with those from the server
             kindle_ = kindleResponse.kindleBooks;
-            
+
             // Save the Kindle books to the local JSON file
             if (!saveKindleBooks(kindle_)) {
                 log_e("Failed to save Kindle books to file");
                 kindleSyncSuccess = false;
-                this->telemetry_.logMetric(TelemetryField::METRIC_SYNC_STATUS, "failed-save-kindle");
+                this->telemetry_.logMetric(TelemetryField::METRIC_SYNC_STATUS,
+                                           "failed-save-kindle");
             } else {
                 log_i("Successfully saved %zu Kindle books to file", kindle_.size());
-                this->telemetry_.logMetric(TelemetryField::METRIC_SYNC_STATUS, "success-sync-kindle", 
-                                          {{"book-count", static_cast<int>(kindle_.size())}});
-                
+                this->telemetry_.logMetric(TelemetryField::METRIC_SYNC_STATUS,
+                                           "success-sync-kindle",
+                                           {{"book-count", static_cast<int>(kindle_.size())}});
+
                 // Store the kindle_last_synced date for the next sync
                 if (!kindleResponse.kindleLastSynced.empty()) {
                     log_i("Setting lastKindleSince to %s", kindleResponse.kindleLastSynced.c_str());
@@ -1145,7 +1148,7 @@ auto LocalStore::syncFromRemote(bool wifiConnected, bool bleConnected, SyncReaso
             log_i("No Kindle books returned from server");
         }
     }
-    
+
     // Return based on the sync status of books, articles, and Kindle books
     if (booksAlreadySynced && articlesAlreadySynced) {
         progressCallback(ContentSyncState{.state = ContentSyncState::State::AlreadySynced});
@@ -1535,13 +1538,13 @@ auto LocalStore::saveReadables(ReadablesVector &readables) -> bool {
     return true;
 }
 
-auto LocalStore::saveKindleBooks(KindleBooksVector &kindleBooks) -> bool {
+auto LocalStore::saveKindleBooks(KindleBooksVector &kindleBooks) const -> bool {
     SHOW_HEAP();
 
     // Each Kindle book entry is relatively small compared to readables
     auto doc = std::make_unique<SpiRamJsonDocument>(
         2000 * std::max(1, static_cast<int>(kindleBooks.size())));
-    
+
     // Create a key named books of type array
     JsonArray booksJson = doc->createNestedArray("books");
 

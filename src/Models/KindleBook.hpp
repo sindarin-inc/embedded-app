@@ -17,12 +17,12 @@ public:
     std::string uuid; // Unique identifier for the book
     std::string title;
     std::string author;
-    std::string progress;    // Progress as a string like "5%"
-    std::string size;        // Size as a string like "1.8 MB" or "592.1 KB"
-    int progressPercent = 0; // Parsed numeric progress (0-100)
-    size_t sizeBytes = 0;    // Parsed size in bytes
+    std::string progress;            // Progress as a string like "5%"
+    std::string size;                // Size as a string like "1.8 MB" or "592.1 KB"
+    int progressPercent = 0;         // Parsed numeric progress (0-100)
+    size_t sizeBytes = 0;            // Parsed size in bytes
     bool isApprovedForDevice = true; // Whether the book is approved for this device
-    std::string lastModified; // Last modified timestamp
+    std::string lastModified;        // Last modified timestamp
 
     // Generate a shortened UUID for preferences
     [[nodiscard]] auto shortenedId() const -> std::string {
@@ -50,16 +50,16 @@ public:
         author = j["author"].isNull() ? "" : j["author"].as<std::string>();
         progress = j["progress"].isNull() ? "" : j["progress"].as<std::string>();
         size = j["size"].isNull() ? "" : j["size"].as<std::string>();
-        
+
         // Parse the new fields
         if (j.containsKey("is_approved_for_device")) {
-            isApprovedForDevice = j["is_approved_for_device"].isNull() ? 
-                                  true : j["is_approved_for_device"].as<bool>();
+            isApprovedForDevice = j["is_approved_for_device"].isNull()
+                                      ? true
+                                      : j["is_approved_for_device"].as<bool>();
         }
-        
+
         if (j.containsKey("last_modified")) {
-            lastModified = j["last_modified"].isNull() ? 
-                           "" : j["last_modified"].as<std::string>();
+            lastModified = j["last_modified"].isNull() ? "" : j["last_modified"].as<std::string>();
         }
 
         // Parse progress percentage

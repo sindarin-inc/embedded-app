@@ -84,7 +84,7 @@ public:
         }
         auto results = j["results"].as<JsonObject>();
         synced = results["synced"].as<bool>();
-        
+
         if (results.containsKey("books_since")) {
             booksSince = results["books_since"].as<std::string>();
             for (const auto &userReadable : results["books"].as<JsonArray>()) {
@@ -114,16 +114,16 @@ public:
             } else {
                 kindleLastSynced = "";
             }
-            
+
             hasKindleBooks = true;
-            
+
             for (const auto &kindleBookJson : results["kindle_books"].as<JsonArray>()) {
                 KindleBook kindleBook;
                 if (kindleBook.fromJson(kindleBookJson.as<JsonObject>())) {
                     kindleBooks.push_back(kindleBook);
                 }
             }
-            
+
             log_d("Parsed %zu Kindle books from sync response", kindleBooks.size());
         } else {
             kindleLastSynced = "";
