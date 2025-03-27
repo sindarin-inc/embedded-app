@@ -255,8 +255,6 @@ auto LocalStore::readablesSince(ReadablesModelType modelType) -> std::string {
         return prefs_.lastArticlesSince.get().value_or("");
     case ReadablesModelType::Book:
         return prefs_.lastBooksSince.get().value_or("");
-    case ReadablesModelType::Kindle:
-        return prefs_.lastKindleSince.get().value_or("");
     default:
         return "";
     }

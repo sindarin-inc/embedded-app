@@ -6,8 +6,6 @@ auto ReadableModelTypeToString(ReadablesModelType type) -> std::string {
         return "article";
     case ReadablesModelType::Book:
         return "book";
-    case ReadablesModelType::Kindle:
-        return "kindle";
     default:
         return "unknown";
     }
@@ -18,8 +16,6 @@ auto ConvertToJson(const CheckSyncRequest &src, JsonVariant dst) -> bool {
         dst["books_since"] = src.since;
     } else if (src.modelType == ReadablesModelType::Article) {
         dst["articles_since"] = src.since;
-    } else if (src.modelType == ReadablesModelType::Kindle) {
-        dst["kindle_since"] = src.since;
     }
 
     auto bookmarksJson = dst.createNestedArray("bookmarks");

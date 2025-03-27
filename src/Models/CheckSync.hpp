@@ -14,7 +14,7 @@
 #include "Models/UserReadable.hpp"
 #include "Storage/PreferencesStore.hpp"
 
-enum class ReadablesModelType { Article, Book, Kindle };
+enum class ReadablesModelType { Article, Book };
 
 auto ReadableModelTypeToString(ReadablesModelType type) -> std::string;
 
