@@ -120,6 +120,7 @@ static const seeya049_lcd_init_cmd_t seeya049_init_cmds_i2c[] = {
     {.cmd = SEEYA049_CMD_CASET, .data = (uint8_t[]){0x00, 0x00}, .data_bytes = 2, .delay_ms = 0},
     {.cmd = SEEYA049_CMD_RASET, .data = (uint8_t[]){0x00, 0x00}, .data_bytes = 2, .delay_ms = 0},
     {.cmd = SEEYA049_CMD_MADCTL, .data = (uint8_t[]){0x00}, .data_bytes = 1, .delay_ms = 0},
+    {.cmd = SEEYA049_CMD_SCACTRL, .data = (uint8_t[]){0x00}, .data_bytes = 1, .delay_ms = 0},
     {.cmd = 0x35, .data = (uint8_t[]){0x00}, .data_bytes = 1, .delay_ms = 0},
     {.cmd = 0x26, .data = (uint8_t[]){0x20}, .data_bytes = 1, .delay_ms = 0},
 
@@ -214,6 +215,8 @@ static const seeya049_lcd_init_cmd_t seeya049_init_cmds_mipi[] = {
      .delay_ms = 0},
     {.cmd = SEEYA049_CMD_CASET, .data = (uint8_t[]){0x00, 0x00}, .data_bytes = 2, .delay_ms = 0},
     {.cmd = SEEYA049_CMD_RASET, .data = (uint8_t[]){0x00, 0x00}, .data_bytes = 2, .delay_ms = 0},
+    {.cmd = SEEYA049_CMD_MADCTL, .data = (uint8_t[]){0x00}, .data_bytes = 1, .delay_ms = 0},
+    {.cmd = SEEYA049_CMD_SCACTRL, .data = (uint8_t[]){0x00}, .data_bytes = 1, .delay_ms = 0},
 
     // Tearing effect line on
     {.cmd = 0x35, .data = (uint8_t[]){0x00}, .data_bytes = 1, .delay_ms = 0},
@@ -271,7 +274,7 @@ static const seeya049_lcd_init_cmd_t seeya049_init_cmds_selftest[] = {
     {.cmd = SEEYA049_CMD_RESCTRL1,
      .data = (uint8_t[]){0x00, 0xE0, 0xE0, 0x0E, 0x00, 0x31},
      // Half-resolution 960x540 (0xF0*4 = 960, 0x87*4 = 540)
-     //  .data = (uint8_t[]){0x00, 0xF0, 0xE0, 0x87, 0x00, 0x10},
+     //  .data = (uint8_t[]){0x00, 0xF0, 0xF0, 0x87, 0x00, 0x10},
      .data_bytes = 6,
      .delay_ms = 0},
     {.cmd = SEEYA049_CMD_RESCTRL2,
@@ -336,6 +339,14 @@ static const seeya049_lcd_init_cmd_t seeya049_init_cmds_selftest[] = {
  * `esp_lcd_panel_dev_config_t::vendor_config`.
  *
  */
+
+typedef enum {
+    SEEYA049_SCALING_NONE = 0,
+    SEEYA049_SCALING_1_33X = 1,
+    SEEYA049_SCALING_1_5X = 2,
+    SEEYA049_SCALING_2X = 3,
+} seeya049_scaling_t;
+
 typedef struct {
     const seeya049_lcd_init_cmd_t
         *init_cmds;          /*!< Pointer to initialization commands array. Set to NULL if using
@@ -346,6 +357,7 @@ typedef struct {
     uint16_t init_cmds_size; /*!< Number of commands in above array */
     uint16_t x_offset;       /*!< X offset of the display */
     uint16_t y_offset;       /*!< Y offset of the display */
+    seeya049_scaling_t scaling;
     struct {
         esp_lcd_dsi_bus_handle_t dsi_bus;             /*!< MIPI-DSI bus configuration */
         const esp_lcd_dpi_panel_config_t *dpi_config; /*!< MIPI-DPI panel configuration */

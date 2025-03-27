@@ -632,6 +632,49 @@ TEST_CASE("test reduced resolution", "[seeya049][reduced_resolution]") {
     test_deinit_disable_panel();
 }
 
+static void run_scaling_test(seeya049_scaling_t scaling) {
+    ESP_LOGI(TAG, "Testing with %s scaling",
+             scaling == SEEYA049_SCALING_NONE    ? "no"
+             : scaling == SEEYA049_SCALING_1_33X ? "1.33x"
+             : scaling == SEEYA049_SCALING_1_5X  ? "1.5x"
+                                                 : "2x");
+
+    test_init_mipi_dsi_bus();
+    esp_lcd_dpi_panel_config_t dpi_config = panel_seeya049_1920_1080_dpi_config();
+    dpi_config.video_timing.h_size = 960;
+    dpi_config.video_timing.v_size = 540;
+    seeya049_vendor_config_t vendor_config =
+        panel_seeya049_vendor_config(mipi_dsi_bus, &dpi_config);
+    vendor_config.scaling = scaling;
+    const esp_lcd_panel_dev_config_t panel_config =
+        panel_seeya049_panel_config(TEST_PIN_NUM_LCD_RST, &vendor_config);
+    TEST_ESP_OK(esp_lcd_new_panel_seeya049(mipi_dbi_io, &panel_config, &panel_handle));
+    TEST_ESP_OK(esp_lcd_panel_reset(panel_handle));
+    TEST_ESP_OK(esp_lcd_panel_init(panel_handle));
+    TEST_ESP_OK(esp_lcd_panel_disp_on_off(panel_handle, true));
+    refresh_finish = xSemaphoreCreateBinary();
+    TEST_ASSERT_NOT_NULL(refresh_finish);
+    esp_lcd_dpi_panel_event_callbacks_t cbs = {
+        .on_color_trans_done = test_notify_refresh_ready,
+    };
+    TEST_ESP_OK(esp_lcd_dpi_panel_register_event_callbacks(panel_handle, &cbs, refresh_finish));
+    TEST_ESP_OK(esp_lcd_dpi_panel_set_pattern(panel_handle, MIPI_DSI_PATTERN_BAR_HORIZONTAL));
+    vTaskDelay(pdMS_TO_TICKS(TEST_DELAY_TIME_MS / 2));
+    // Show vertical pattern
+    TEST_ESP_OK(esp_lcd_dpi_panel_set_pattern(panel_handle, MIPI_DSI_PATTERN_BAR_VERTICAL));
+    vTaskDelay(pdMS_TO_TICKS(TEST_DELAY_TIME_MS / 2));
+
+    test_deinit_disable_panel();
+}
+
+TEST_CASE("test reduced resolution with scaling", "[seeya049][reduced_resolution_with_scaling]") {
+    // Test all scaling factors
+    run_scaling_test(SEEYA049_SCALING_NONE);
+    run_scaling_test(SEEYA049_SCALING_1_33X);
+    run_scaling_test(SEEYA049_SCALING_1_5X);
+    run_scaling_test(SEEYA049_SCALING_2X);
+}
+
 #endif
 
 // Some resources are lazy allocated in the LCD driver, the threadhold is left for that case

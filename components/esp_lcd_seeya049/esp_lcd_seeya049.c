@@ -40,6 +40,7 @@ typedef struct {
     int height;
     uint16_t x_offset;
     uint16_t y_offset;
+    seeya049_scaling_t scaling;
     uint8_t madctl_val; // save current value of SEEYA049_CMD_MADCTL register
     const seeya049_lcd_init_cmd_t *init_cmds;
     uint16_t init_cmds_size;
@@ -97,6 +98,7 @@ esp_err_t esp_lcd_new_panel_seeya049(const esp_lcd_panel_io_handle_t io,
     seeya049->height = vendor_config->mipi_config.dpi_config->video_timing.v_size;
     seeya049->x_offset = vendor_config->x_offset;
     seeya049->y_offset = vendor_config->y_offset;
+    seeya049->scaling = vendor_config->scaling;
     seeya049->flags.reset_level = panel_dev_config->flags.reset_active_high;
 
     // Create MIPI DPI panel
@@ -253,9 +255,8 @@ esp_err_t panel_seeya049_send_init_cmds(esp_lcd_panel_t *panel) {
 
             // Override the width and height if we're using a non-standard resolution
             case SEEYA049_CMD_RESCTRL1:
-                if (seeya049->width != 1920 || seeya049->height != 1080) {
-                    ESP_LOGD(TAG, "Overriding resolution to %d x %d", seeya049->width,
-                             seeya049->height);
+                if (seeya049->width != 1920 || seeya049->height != 1080 ||
+                    seeya049->scaling != SEEYA049_SCALING_NONE) {
                     // This is undocumented in the 0.49" datasheet, but the 1.03" gives us enough
                     // clues to use it.
                     // Full resolution 1920x1080 (0x1E0*4 = 1920, 0x10E*4 = 1080)
@@ -264,19 +265,56 @@ esp_err_t panel_seeya049_send_init_cmds(esp_lcd_panel_t *panel) {
                     // (uint8_t[]){0x00, 0xF0, 0xF0, 0x87, 0x00, 0x10},
                     // Doom resolution 320x200 (0x50*4 = 320, 0x32*4 = 200)
                     // (uint8_t[]){0x00, 0x50, 0x50, 0x32, 0x00, 0x00},
-                    int width_div = seeya049->width / 4;
-                    int height_div = seeya049->height / 4;
+
+                    // X-axis resolution for input image size
+                    int input_width = seeya049->width / 4;
+
+                    // Display resolution for display image size
+                    int display_width = seeya049->width;
+                    int display_height = seeya049->height;
+
+                    switch (seeya049->scaling) {
+                    case SEEYA049_SCALING_1_33X:
+                        // Multiply by 4/3 then divide by 4
+                        display_width = display_width / 3;
+                        display_height = display_height / 3;
+                        break;
+                    case SEEYA049_SCALING_1_5X:
+                        // Multiply by 3/2 then divide by 4
+                        display_width = display_width * 3 / 8;
+                        display_height = display_height * 3 / 8;
+                        break;
+                    case SEEYA049_SCALING_2X:
+                        // Multiply by 2 then divide by 4
+                        display_width = display_width / 2;
+                        display_height = display_height / 2;
+                        break;
+                    case SEEYA049_SCALING_NONE:
+                    default:
+                        // Default to 1/4 resolution
+                        display_width = seeya049->width / 4;
+                        display_height = seeya049->height / 4;
+                        break;
+                    }
 
                     data[0] = 0x00;
-                    data[1] = width_div & 0xFF;
-                    data[2] = width_div & 0xFF;
-                    data[3] = height_div & 0xFF;
+                    data[1] = input_width & 0xFF;
+                    data[2] = display_width & 0xFF;
+                    data[3] = display_height & 0xFF;
                     data[4] = 0x00;
-                    data[5] = 0x10;
-                    if (width_div > 0xFF) {
+                    data[5] = 0x00;
+
+                    ESP_LOGD(TAG,
+                             "Overriding resolution to: input_width=%d, display_width=%d, "
+                             "display_height=%d",
+                             input_width * 4, display_width * 4, display_height * 4);
+                    if (input_width > 0xFF) {
+                        data[5] |= 0x10;
+                    }
+                    if (display_width > 0xFF) {
                         data[5] |= 0x20;
                     }
-                    if (height_div > 0xFF) {
+                    if (display_height > 0xFF) {
                         data[5] |= 0x01;
                     }
                     cmd.data = &data;
@@ -305,11 +343,24 @@ esp_err_t panel_seeya049_send_init_cmds(esp_lcd_panel_t *panel) {
             case SEEYA049_CMD_MADCTL:
                 seeya049->madctl_val = ((uint8_t *)cmd.data)[0];
                 break;
+            case SEEYA049_CMD_SCACTRL:
+                if (seeya049->scaling != SEEYA049_SCALING_NONE) {
+                    ESP_LOGD(TAG, "Setting scaling to %d", seeya049->scaling);
+                    data[0] = (uint8_t)seeya049->scaling;
+                    cmd.data = &data;
+                }
+                break;
             default:
                 break;
             }
-
-            ESP_LOGI(TAG, "esp_lcd_panel_io_tx_param %02Xh", cmd.cmd);
+            char data_str[64] = "";
+            if (cmd.data && cmd.data_bytes > 0) {
+                strcat(data_str, "data: ");
+                for (int i = 0; i < cmd.data_bytes && i < 16; i++) {
+                    sprintf(data_str + strlen(data_str), "0x%02X ", ((uint8_t *)cmd.data)[i]);
+                }
+            }
+            ESP_LOGI(TAG, "MIPI TX: %02Xh %s", cmd.cmd, data_str);
             ESP_RETURN_ON_ERROR(esp_lcd_panel_io_tx_param(io, cmd.cmd, cmd.data, cmd.data_bytes),
                                 TAG, "send command failed");
         }
@@ -394,6 +445,7 @@ static esp_err_t panel_seeya049_disp_on_off(esp_lcd_panel_t *panel, bool on_off)
     esp_lcd_panel_io_handle_t io = seeya049->io;
 
     if (on_off) {
+        ESP_LOGI(TAG, "MIPI TX: %02Xh", SEEYA049_CMD_DISPON);
         ESP_RETURN_ON_ERROR(esp_lcd_panel_io_tx_param(io, SEEYA049_CMD_DISPON, NULL, 0), TAG,
                             "send command failed");
         vTaskDelay(pdMS_TO_TICKS(20));
