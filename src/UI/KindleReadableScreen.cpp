@@ -65,6 +65,10 @@ KindleReadableScreen::KindleReadableScreen(const std::shared_ptr<RendererStream>
             this->setCurrentScreen(nullptr);
             setNeedsRerender();
         }));
+        
+        menuItems->emplace_back(std::make_shared<MenuItemSingleLine>("Main Menu", [this]() {
+            dismissScreen();
+        }));
 
         return menuItems;
     };
