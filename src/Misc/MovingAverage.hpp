@@ -2,6 +2,8 @@
 #include <cmath>
 #include <numeric>
 
+#include "sindarin-debug.h"
+
 // ChatGPT wrote this on 12/13/2022
 template <typename T, std::size_t N>
 class MovingAverage {
@@ -22,6 +24,10 @@ public:
     }
 
     [[nodiscard]] auto average() -> T {
+        if (!count_) {
+            log_w("MovingAverage::average - count_ is 0, returning 0");
+            return 0;
+        }
         T currentAverage = sum_ / count_;
         // Apply inertia: only update the last_valid_average if the difference exceeds the threshold
         if (std::abs(currentAverage - lastValidAverage_) >= inertiaThreshold_) {
