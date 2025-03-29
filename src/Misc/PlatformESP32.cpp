@@ -269,6 +269,9 @@ void InitializePlatform() {
         log_e("Error configuring esp_sleep_pd_config: %s", esp_err_to_name(err));
     }
 
+    gpio_hold_dis(static_cast<gpio_num_t>(CONFIG_BACKLIGHT_LEFT));
+    gpio_hold_dis(static_cast<gpio_num_t>(CONFIG_BACKLIGHT_RIGHT));
+
     // Backlight configs
     ledc_timer_config_t ledcTimer = {.speed_mode = LEDC_LOW_SPEED_MODE,
                                      .duty_resolution = LEDC_TIMER_8_BIT,
@@ -367,6 +370,19 @@ auto DeinitializePlatform() -> esp_err_t {
     if (err != ESP_OK) {
         log_e("Failed to stop right LEDC: %d", err);
     }
+
+    // Force the LEDs off (don't float)
+    gpio_reset_pin(static_cast<gpio_num_t>(CONFIG_BACKLIGHT_LEFT));
+    gpio_reset_pin(static_cast<gpio_num_t>(CONFIG_BACKLIGHT_RIGHT));
+    gpio_set_direction(static_cast<gpio_num_t>(CONFIG_BACKLIGHT_LEFT), GPIO_MODE_OUTPUT);
+    gpio_set_direction(static_cast<gpio_num_t>(CONFIG_BACKLIGHT_RIGHT), GPIO_MODE_OUTPUT);
+    gpio_set_pull_mode(static_cast<gpio_num_t>(CONFIG_BACKLIGHT_LEFT), GPIO_PULLDOWN_ONLY);
+    gpio_set_pull_mode(static_cast<gpio_num_t>(CONFIG_BACKLIGHT_RIGHT), GPIO_PULLDOWN_ONLY);
+    gpio_set_level(static_cast<gpio_num_t>(CONFIG_BACKLIGHT_LEFT), 0);
+    gpio_set_level(static_cast<gpio_num_t>(CONFIG_BACKLIGHT_RIGHT), 0);
+    gpio_hold_en(static_cast<gpio_num_t>(CONFIG_BACKLIGHT_LEFT));
+    gpio_hold_en(static_cast<gpio_num_t>(CONFIG_BACKLIGHT_RIGHT));
+    gpio_deep_sleep_hold_en();
 #endif
     return err;
 }
