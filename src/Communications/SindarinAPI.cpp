@@ -595,10 +595,36 @@ auto SindarinAPI::makeKindleRequest(const std::string &path, KindlePageResponse 
 
 auto SindarinAPI::openKindleBook(const std::string &title, KindlePageResponse *resp,
                                  const std::shared_ptr<CancelFlag> &cancelFlag) -> int {
-    // Use the title as-is, it may already be URL-encoded when it arrives here
-    std::string path = "/kindle/open-book?ocr=1&title=" + title;
+    // Validate parameters
+    if (title.empty()) {
+        log_e("Empty title provided to openKindleBook");
+        return ERR_INVALID_PARAM;
+    }
+    
+    if (!resp) {
+        log_e("Null response pointer provided to openKindleBook");
+        return ERR_INVALID_PARAM;
+    }
+    
+    // Properly URL encode the title
+    std::string encodedTitle = Urlencode(title);
+    log_i("Encoded title for Kindle API: %s", encodedTitle.c_str());
+    
+    // Construct the path with URL-encoded title
+    std::string path = "/kindle/open-book?ocr=1&title=" + encodedTitle;
     log_i("Kindle open book path: %s", path.c_str());
-    return makeKindleRequest(path, resp, cancelFlag);
+    
+    // Make the request (no try-catch since exceptions are disabled)
+    int result = makeKindleRequest(path, resp, cancelFlag);
+    
+    // Log the result
+    if (result == 200) {
+        log_i("Successfully opened Kindle book '%s'", title.c_str());
+    } else {
+        log_e("Failed to open Kindle book '%s', HTTP code: %d", title.c_str(), result);
+    }
+    
+    return result;
 }
 
 auto SindarinAPI::navigateKindleNext(KindlePageResponse *resp,

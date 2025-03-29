@@ -41,6 +41,8 @@ enum SindarinError {
     ERR_BLE_TIMED_OUT = -16,
     ERR_CREATE_DIR = -17,
     ERR_CLIENT_READ = -18,
+    ERR_INVALID_PARAM = -19,
+    ERR_EXCEPTION = -20,
 };
 
 class SindarinAPI {

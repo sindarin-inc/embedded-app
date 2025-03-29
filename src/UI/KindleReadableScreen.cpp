@@ -509,9 +509,23 @@ void KindleReadableScreen::loadKindleBookPage() {
 
     // Get the SindarinAPI instance
     auto sindarinApi = SindarinAPI::getInstance();
+    if (!sindarinApi) {
+        log_e("Failed to get SindarinAPI instance");
+        DispatchGetUiQueue()->dispatch([this]() {
+            setErrorMessage("Internal error. Please try again later.");
+        });
+        return;
+    }
 
     // Create a response object
     auto response = std::make_shared<KindlePageResponse>();
+    if (!response) {
+        log_e("Failed to create KindlePageResponse object");
+        DispatchGetUiQueue()->dispatch([this]() {
+            setErrorMessage("Internal error. Please try again later.");
+        });
+        return;
+    }
 
     // For initial load, always open the book with its title - this API call runs in background
     // thread First check if the title contains '+' characters which might indicate it's already URL
@@ -528,9 +542,22 @@ void KindleReadableScreen::loadKindleBookPage() {
         log_i("Cleaned title for API call: %s", cleanTitle.c_str());
     }
 
-    int httpCode = sindarinApi->openKindleBook(cleanTitle, response.get(), cancelFlag_);
+    // Ensure we have a valid title to prevent crashes
+    if (cleanTitle.empty()) {
+        log_e("Book title is empty, cannot load Kindle book");
+        DispatchGetUiQueue()->dispatch([this]() {
+            setErrorMessage("Book title is missing. Please try another book.");
+        });
+        return;
+    }
 
-    if (httpCode != 200 || !response->success) {
+    log_i("Calling openKindleBook API with title: %s", cleanTitle.c_str());
+    
+    // Call the API (no try-catch as exceptions are disabled)
+    int httpCode = sindarinApi->openKindleBook(cleanTitle, response.get(), cancelFlag_);
+    log_i("openKindleBook returned HTTP code: %d", httpCode);
+
+    if (httpCode != 200 || (response && !response->success)) {
         // Handle error on the UI thread with specific error message based on HTTP code
         DispatchGetUiQueue()->dispatch([this, httpCode]() {
             std::string errorMessage;
@@ -556,6 +583,16 @@ void KindleReadableScreen::loadKindleBookPage() {
             cancelDelayedLoadingMessage();
 
             setErrorMessage(errorMessage);
+        });
+        return;
+    }
+
+    // Verify response data to avoid crashes
+    if (!response || response->ocrText.empty()) {
+        log_e("Empty or invalid response data from Kindle API");
+        DispatchGetUiQueue()->dispatch([this]() {
+            cancelDelayedLoadingMessage();
+            setErrorMessage("Received empty content from Kindle. Please try again later.");
         });
         return;
     }

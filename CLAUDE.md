@@ -10,6 +10,8 @@
 - Run single test: `./test/CatchTests/build/tests '[test-tag]'` (e.g. `'[epub]'`, `'[content-sync]'`)
 - Format code: `make clang-format`
 - Static analysis: `make clang-tidy`
+- There's no need to run the idef export.sh script only if running `make sim`. It's only for `make build`
+- You only need to run the export.sh idf script once per session. It's slow but necessary to `make build` but only the first time in the terminal
 
 ## Code Style Guidelines
 - Format: Use clang-format with LLVM-based style (ColumnLimit: 100, IndentWidth: 4)
