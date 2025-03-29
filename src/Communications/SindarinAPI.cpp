@@ -600,30 +600,30 @@ auto SindarinAPI::openKindleBook(const std::string &title, KindlePageResponse *r
         log_e("Empty title provided to openKindleBook");
         return ERR_INVALID_PARAM;
     }
-    
+
     if (!resp) {
         log_e("Null response pointer provided to openKindleBook");
         return ERR_INVALID_PARAM;
     }
-    
+
     // Properly URL encode the title
     std::string encodedTitle = Urlencode(title);
     log_i("Encoded title for Kindle API: %s", encodedTitle.c_str());
-    
+
     // Construct the path with URL-encoded title
     std::string path = "/kindle/open-book?ocr=1&title=" + encodedTitle;
     log_i("Kindle open book path: %s", path.c_str());
-    
+
     // Make the request (no try-catch since exceptions are disabled)
     int result = makeKindleRequest(path, resp, cancelFlag);
-    
+
     // Log the result
     if (result == 200) {
         log_i("Successfully opened Kindle book '%s'", title.c_str());
     } else {
         log_e("Failed to open Kindle book '%s', HTTP code: %d", title.c_str(), result);
     }
-    
+
     return result;
 }
 

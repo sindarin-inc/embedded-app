@@ -65,10 +65,9 @@ KindleReadableScreen::KindleReadableScreen(const std::shared_ptr<RendererStream>
             this->setCurrentScreen(nullptr);
             setNeedsRerender();
         }));
-        
-        menuItems->emplace_back(std::make_shared<MenuItemSingleLine>("Main Menu", [this]() {
-            dismissScreen();
-        }));
+
+        menuItems->emplace_back(
+            std::make_shared<MenuItemSingleLine>("Main Menu", [this]() { dismissScreen(); }));
 
         return menuItems;
     };
@@ -511,9 +510,8 @@ void KindleReadableScreen::loadKindleBookPage() {
     auto sindarinApi = SindarinAPI::getInstance();
     if (!sindarinApi) {
         log_e("Failed to get SindarinAPI instance");
-        DispatchGetUiQueue()->dispatch([this]() {
-            setErrorMessage("Internal error. Please try again later.");
-        });
+        DispatchGetUiQueue()->dispatch(
+            [this]() { setErrorMessage("Internal error. Please try again later."); });
         return;
     }
 
@@ -521,9 +519,8 @@ void KindleReadableScreen::loadKindleBookPage() {
     auto response = std::make_shared<KindlePageResponse>();
     if (!response) {
         log_e("Failed to create KindlePageResponse object");
-        DispatchGetUiQueue()->dispatch([this]() {
-            setErrorMessage("Internal error. Please try again later.");
-        });
+        DispatchGetUiQueue()->dispatch(
+            [this]() { setErrorMessage("Internal error. Please try again later."); });
         return;
     }
 
@@ -545,14 +542,13 @@ void KindleReadableScreen::loadKindleBookPage() {
     // Ensure we have a valid title to prevent crashes
     if (cleanTitle.empty()) {
         log_e("Book title is empty, cannot load Kindle book");
-        DispatchGetUiQueue()->dispatch([this]() {
-            setErrorMessage("Book title is missing. Please try another book.");
-        });
+        DispatchGetUiQueue()->dispatch(
+            [this]() { setErrorMessage("Book title is missing. Please try another book."); });
         return;
     }
 
     log_i("Calling openKindleBook API with title: %s", cleanTitle.c_str());
-    
+
     // Call the API (no try-catch as exceptions are disabled)
     int httpCode = sindarinApi->openKindleBook(cleanTitle, response.get(), cancelFlag_);
     log_i("openKindleBook returned HTTP code: %d", httpCode);
