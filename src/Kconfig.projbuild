@@ -192,6 +192,16 @@ menu "Sol Options"
             bool "Disable Power Management"
             default n
 
+        config SLEEP_WAKE_PIN
+            int "GPIO pin for sleep/wake functionality"
+            default -1
+            range -1 48
+            help
+                If set to a valid GPIO pin number (0-48), this pin will be configured as a
+                sleep/wake pin. Pressing this button will put the device to sleep when awake,
+                and wake it up when in deep sleep. The pin will trigger on LOW (pulled down).
+                Set to -1 to disable this feature.
+
         config BAT_VOLTAGE_RIGHT_PIN
             int "Battery Voltage Right Pin"
             default 10

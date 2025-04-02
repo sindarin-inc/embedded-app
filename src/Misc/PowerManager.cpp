@@ -5,6 +5,9 @@
 #include <driver/rtc_io.h>
 #include <esp_idf_version.h>
 #include <hal/gpio_types.h>
+#if defined(CONFIG_SLEEP_WAKE_PIN) && CONFIG_SLEEP_WAKE_PIN != -1
+#include <soc/gpio_reg.h>
+#endif
 #ifdef CONFIG_ULP_COPROC_ENABLED
 #include <ulp_riscv.h>
 #include <ulp_riscv_i2c.h>
@@ -149,6 +152,21 @@ void PowerManager::wakeupCheck(SolClock &clock) {
             // Back to sleep
             deepSleep(SleepReason::UlpCrashed);
             break;
+#if defined(CONFIG_SLEEP_WAKE_PIN) && CONFIG_SLEEP_WAKE_PIN != -1
+        case ESP_SLEEP_WAKEUP_EXT1: {
+            // Check if it was our configured wake pin that triggered the wake-up
+            uint64_t wakeup_pin_mask = esp_sleep_get_ext1_wakeup_status();
+            if (wakeup_pin_mask & (1ULL << CONFIG_SLEEP_WAKE_PIN)) {
+                bootInfo_.reason = BootInfo::Reason::ButtonWake;
+                log_i("Woke up from button press on pin %d", CONFIG_SLEEP_WAKE_PIN);
+                // Set the state to Active since we're waking up from a button press
+                state_ = PowerState::Active;
+            } else {
+                bootInfo_.reason = BootInfo::Reason::Unknown;
+                log_w("Woke up from unknown EXT1 pin: 0x%llx", wakeup_pin_mask);
+            }
+        } break;
+#endif
         default:
             bootInfo_.reason = BootInfo::Reason::Unknown;
             break;
@@ -266,6 +284,46 @@ auto PowerManager::begin() -> esp_err_t {
 #endif
 
     esp_err_t err = ESP_OK;
+#if defined(CONFIG_SLEEP_WAKE_PIN) && CONFIG_SLEEP_WAKE_PIN != -1
+    // Initialize the configured pin as an input with pull-up for sleep/wake functionality
+    gpio_config_t io_conf = {};
+    io_conf.pin_bit_mask = (1ULL << CONFIG_SLEEP_WAKE_PIN);
+    io_conf.mode = GPIO_MODE_INPUT;
+    io_conf.pull_up_en = GPIO_PULLUP_ENABLE;
+    io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
+    io_conf.intr_type = GPIO_INTR_NEGEDGE; // Trigger interrupt on falling edge (button press)
+    err = gpio_config(&io_conf);
+    if (err != ESP_OK) {
+        log_e("Failed to configure pin %d as sleep/wake pin: %s", CONFIG_SLEEP_WAKE_PIN,
+              esp_err_to_name(err));
+    } else {
+        log_i("Pin %d configured as sleep/wake pin", CONFIG_SLEEP_WAKE_PIN);
+
+        // Add an interrupt handler for the sleep/wake pin
+        attachInterrupt(
+            digitalPinToInterrupt(CONFIG_SLEEP_WAKE_PIN),
+            [this]() {
+            // Use a short debounce delay
+            static unsigned long lastInterruptTime = 0;
+            unsigned long interruptTime = Millis();
+
+            // If interrupts come in faster than 200ms, assume it's a bounce and ignore
+            if (interruptTime - lastInterruptTime > 200) {
+                DispatchGetCore1BackgroundQueue()->dispatchFromISR([this]() {
+                    // Only go to deep sleep if we're in an active state (not already sleeping)
+                    if (state_ == PowerState::Active || state_ == PowerState::ActiveForcedOn ||
+                        state_ == PowerState::ActiveUSBCharging) {
+                        log_i("Button pressed on pin %d, going to deep sleep",
+                              CONFIG_SLEEP_WAKE_PIN);
+                        deepSleep(SleepReason::ButtonPress);
+                    }
+                });
+            }
+            lastInterruptTime = interruptTime;
+            },
+            FALLING);
+    }
+#endif
 #if !CONFIG_DISABLE_POWER_MANAGEMENT
     pmConfig_.max_freq_mhz = CPU_FREQ_MHZ_HIGH;
     pmConfig_.min_freq_mhz = CPU_FREQ_MHZ_LOW;
@@ -675,6 +733,12 @@ void PowerManager::deepSleep(SleepReason reason) {
     case SleepReason::SyncDone:
         scheduleSync(SyncReason::Periodic, SolClock::getInstance().calculateNextSyncTime(now));
         break;
+#if defined(CONFIG_SLEEP_WAKE_PIN) && CONFIG_SLEEP_WAKE_PIN != -1
+    case SleepReason::ButtonPress:
+        // Treat button press similar to temples closed
+        scheduleSync(SyncReason::OnClose, now + 30);
+        break;
+#endif
     case SleepReason::Unspecified:
     case SleepReason::TempleClosedAtBoot:
     case SleepReason::UlpCrashed:
@@ -724,6 +788,10 @@ auto ToString(SleepReason reason) -> const char * {
         return "UpdateUSBState";
     case SleepReason::WaitingForSync:
         return "WaitingForSync";
+#if defined(CONFIG_SLEEP_WAKE_PIN) && CONFIG_SLEEP_WAKE_PIN != -1
+    case SleepReason::ButtonPress:
+        return "ButtonPress";
+#endif
     default:
         log_e("Unknown SleepReason: %d", static_cast<int>(reason));
         return "Unknown";
@@ -749,6 +817,53 @@ auto PowerManager::enableUsbWakeup() -> esp_err_t {
 #endif
     return ESP_OK;
 }
+
+#if defined(CONFIG_SLEEP_WAKE_PIN) && CONFIG_SLEEP_WAKE_PIN != -1
+auto PowerManager::enableSleepWakePinWakeup() -> esp_err_t {
+    // First, configure sleep/wake pin as an RTC GPIO
+    const gpio_num_t sleepWakePin = static_cast<gpio_num_t>(CONFIG_SLEEP_WAKE_PIN);
+    esp_err_t err = rtc_gpio_init(sleepWakePin);
+    if (err != ESP_OK) {
+        log_e("error initializing pin %d as RTC GPIO: %s", CONFIG_SLEEP_WAKE_PIN,
+              esp_err_to_name(err));
+        return err;
+    }
+
+    // Set direction as input
+    err = rtc_gpio_set_direction(sleepWakePin, RTC_GPIO_MODE_INPUT_ONLY);
+    if (err != ESP_OK) {
+        log_e("error setting pin %d as input: %s", CONFIG_SLEEP_WAKE_PIN, esp_err_to_name(err));
+        return err;
+    }
+
+    // Enable pull-up
+    err = rtc_gpio_pullup_en(sleepWakePin);
+    if (err != ESP_OK) {
+        log_e("error enabling pin %d pull-up: %s", CONFIG_SLEEP_WAKE_PIN, esp_err_to_name(err));
+        return err;
+    }
+
+    // Disable pull-down
+    err = rtc_gpio_pulldown_dis(sleepWakePin);
+    if (err != ESP_OK) {
+        log_e("error disabling pin %d pull-down: %s", CONFIG_SLEEP_WAKE_PIN, esp_err_to_name(err));
+        return err;
+    }
+
+    // Use the configured pin as a wake-up source. The device will wake up when the pin is pulled
+    // LOW Note: This uses ext1_wakeup since ext0_wakeup is already used for USB detection
+    const uint64_t pin_mask = (1ULL << CONFIG_SLEEP_WAKE_PIN);
+    err = esp_sleep_enable_ext1_wakeup(pin_mask, ESP_EXT1_WAKEUP_ANY_LOW);
+    if (err != ESP_OK) {
+        log_e("error enabling pin %d wakeup from deep sleep: %s", CONFIG_SLEEP_WAKE_PIN,
+              esp_err_to_name(err));
+        return err;
+    }
+
+    log_i("Pin %d configured as sleep/wake pin (active LOW)", CONFIG_SLEEP_WAKE_PIN);
+    return ESP_OK;
+}
+#endif
 
 void PowerManager::deepSleepInternal(SleepReason reason) {
     log_d("deepSleepInternal with reason %s", ToString(reason));
@@ -851,6 +966,15 @@ void PowerManager::deepSleepInternal(SleepReason reason) {
         powerOffInternal();
         return;
     }
+
+#if defined(CONFIG_SLEEP_WAKE_PIN) && CONFIG_SLEEP_WAKE_PIN != -1
+    // Enable the configured pin as a wake-up pin
+    err = enableSleepWakePinWakeup();
+    if (err != ESP_OK) {
+        log_w("Failed to enable pin %d wake-up: %s", CONFIG_SLEEP_WAKE_PIN, esp_err_to_name(err));
+        // Continue even if this fails - not critical
+    }
+#endif
 
     uint64_t sleepTime = UINT64_MAX;
 
