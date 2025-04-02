@@ -13,6 +13,8 @@ git submodule update --init --recursive
 The primary way to build the firmware itself is with Espressif's official [esp-idf toolchain](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/linux-macos-setup.html). In some other directory (not in this repo), run:
 
 ```sh
+mkdir ~/esp
+cd ~/esp
 git clone -b v5.3.2 --recursive https://github.com/espressif/esp-idf.git
 cd esp-idf
 ./install.sh esp32s3
@@ -23,13 +25,21 @@ If you get errors about `cmake` you might need to install `cmake` first (`brew i
 Now from the root of this repo, you can run (replace `/YOUR/PATH/TO` with the path where you put `esp-idf`):
 
 ```sh
-. /YOUR/PATH/TO/esp-idf/export.sh
+. ~/esp/esp-idf/export.sh
 make build flash monitor
 ```
 
 This will build the latest firmware, flash it to the device, and open a serial monitor. You can also use `idf.py menuconfig` to configure the build if you need to change build options.
 
 See also the official [esp-idf installation instructions](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/get-started/index.html) for more details.
+
+## Note on multiple esp-idf installs
+
+If you have multiple versions of esp-idf installed, you may want to symlink them to ~/esp/esp-idf. This allows AI tools (like Claude Code) to know how to set up your IDF.
+
+```sh
+ln -s /YOUR/PATH/TO/esp-idf ~/esp/esp-idf
+```
 
 ## Building alternate targets
 
