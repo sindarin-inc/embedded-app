@@ -73,19 +73,19 @@ void LightingController::setOverrideValuePercent(int percent, bool userInitiated
         dutyCycle *= dutyCycle;
     }
 
-#if CONFIG_USE_LTR329
-    // When light sensor is available, store offset from predicted value
     if (userInitiated) {
+#if CONFIG_USE_LTR329
+        // When light sensor is available, store offset from predicted value
         // Note the difference in the predicted value and the override value
         int diff = dutyCycle - readPredictedDutyCycle();
         // Limit diff to +/- 60
         diff = std::clamp(diff, -60, 60);
         prefs_.brightnessOffset.set(diff);
-    }
 #else
-    // When no light sensor is available, store the absolute percentage for future sessions
-    prefs_.manualBrightnessValue.set(percent);
+        // When no light sensor is available, store the absolute percentage for future sessions
+        prefs_.manualBrightnessValue.set(percent);
 #endif
+    }
 
     log_d("Override duty cycle: %d (%d%%)", dutyCycle, percent);
     overrideDutyCycle_ = dutyCycle;
