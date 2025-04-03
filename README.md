@@ -33,9 +33,11 @@ This will build the latest firmware, flash it to the device, and open a serial m
 
 See also the official [esp-idf installation instructions](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/get-started/index.html) for more details.
 
-## Note on multiple esp-idf installs
+## Claude and esp-idf
 
-If you have multiple versions of esp-idf installed, you may want to symlink them to ~/esp/esp-idf. This allows AI tools (like Claude Code) to know how to set up your IDF.
+You have two ways of working with Claude Code and IDF. One is to already have IDF set up when running `claude`. Just source your `export.sh` script before running `claude`.
+
+The other option is to only set `IDF_PATH` in your `.zshrc`/`.bashrc`. Then Claude can use the instructions in `CLAUDE.md` to be able to find/run the `export.sh` script itself.
 
 ```sh
 ln -s /YOUR/PATH/TO/esp-idf ~/esp/esp-idf
