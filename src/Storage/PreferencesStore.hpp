@@ -531,6 +531,7 @@ public:
           bleAuthKey(*this, "ble-auth-key"),
           blePower(*this, "ble-power"),
           brightnessOffset(*this, "brightness-off"),
+          manualBrightnessValue(*this, "man-bright"),
           textInsetLeft(*this, "text-inset-l"),
           textInsetRight(*this, "text-inset-r"),
           textInsetTop(*this, "text-inset-t"),
@@ -887,6 +888,7 @@ public:
     // battery power. But there might be some tweaking we could do to improve BLE reliability.
     PrefsItem<uint32_t> blePower;
     PrefsItem<int> brightnessOffset;
+    PrefsItem<int> manualBrightnessValue;
     PrefsItem<uint16_t> textInsetLeft;
     PrefsItem<uint16_t> textInsetRight;
     PrefsItem<uint16_t> textInsetTop;
