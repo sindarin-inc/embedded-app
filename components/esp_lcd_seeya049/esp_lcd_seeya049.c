@@ -346,11 +346,11 @@ esp_err_t panel_seeya049_send_init_cmds(esp_lcd_panel_t *panel) {
                         break;
                     }
 
-                    data[0] = 0x00;
+                    data[0] = ((uint8_t *)cmd.data)[0];
                     data[1] = input_width & 0xFF;
                     data[2] = display_width & 0xFF;
                     data[3] = display_height & 0xFF;
-                    data[4] = 0x00;
+                    data[4] = ((uint8_t *)cmd.data)[4];
                     data[5] = 0x00;
 
                     ESP_LOGD(TAG,

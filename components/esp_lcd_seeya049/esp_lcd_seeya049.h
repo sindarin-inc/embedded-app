@@ -202,9 +202,12 @@ static const seeya049_lcd_init_cmd_t seeya049_init_cmds_mipi[] = {
     {.cmd = SEEYA049_CMD_RESCTRL1,
      // If this is like the 1.03" datasheet, this command can affect the screen resolution
      //  Full resolution 1920x1080 (0x1E0*4 = 1920, 0x10E*4 = 1080)
-     .data = (uint8_t[]){0x00, 0xE0, 0xE0, 0x0E, 0x00, 0x31},
+     //  .data = (uint8_t[]){0x00, 0xE0, 0xE0, 0x0E, 0x00, 0x31},
      // Half resolution 960x540 (0xF0*4 = 960, 0x87*4 = 540)
      //  .data = (uint8_t[]){0x00, 0xF0, 0xE0, 0x87, 0x00, 0x10},
+     // The first byte selects the faster internal oscillator frequency and was necessary to set
+     // for 90Hz refresh with 2x scaling.
+     .data = (uint8_t[]){0x00, 0xE0, 0xE0, 0x0E, 0x00, 0x31},
      .data_bytes = 6,
      .delay_ms = 0},
     {.cmd = SEEYA049_CMD_RESCTRL2,
@@ -239,6 +242,8 @@ static const seeya049_lcd_init_cmd_t seeya049_init_cmds_mipi[] = {
 
     // CMD3 P0
     // No change removing these
+    // Darin suggested moving these to get 90Hz refresh rate with 2x scaling, but they didn't seem
+    // to make a difference
     {.cmd = 0xFF, .data = (uint8_t[]){0x5A, 0x80}, .data_bytes = 2, .delay_ms = 0},
     {.cmd = 0x65, .data = (uint8_t[]){0x2F}, .data_bytes = 1, .delay_ms = 0},
     {.cmd = 0xF2, .data = (uint8_t[]){0x01}, .data_bytes = 1, .delay_ms = 0},
