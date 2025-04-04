@@ -13,6 +13,20 @@
             "cStandard": "c17",
             "cppStandard": "c++17",
             "compileCommands": "${workspaceFolder}/build-glasses-debug/compile_commands.json"
+        },
+        {
+            "name": "V2 Pod",
+            "includePath": [
+                "${default}"
+            ],
+            "defines": [
+                "_DEBUG",
+                "UNICODE",
+                "_UNICODE"
+            ],
+            "cStandard": "c17",
+            "cppStandard": "c++17",
+            "compileCommands": "${workspaceFolder}/build-v2pod-release/compile_commands.json"
         }
     ],
     "version": 4

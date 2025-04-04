@@ -44,6 +44,10 @@ void LightingController::begin() {
     // to configure the RGB LEDs with LEDC eventually
 #if CONFIG_USE_LTR329
     lightSensor_.enable();
+#else
+    // When no light sensor is available, use the last saved manual brightness value if available
+    auto savedBrightness = prefs_.manualBrightnessValue.get().value_or(60);
+    setOverrideValuePercent(savedBrightness, false);
 #endif
     enabled_ = true;
 }
@@ -70,11 +74,17 @@ void LightingController::setOverrideValuePercent(int percent, bool userInitiated
     }
 
     if (userInitiated) {
+#if CONFIG_USE_LTR329
+        // When light sensor is available, store offset from predicted value
         // Note the difference in the predicted value and the override value
         int diff = dutyCycle - readPredictedDutyCycle();
         // Limit diff to +/- 60
         diff = std::clamp(diff, -60, 60);
         prefs_.brightnessOffset.set(diff);
+#else
+        // When no light sensor is available, store the absolute percentage for future sessions
+        prefs_.manualBrightnessValue.set(percent);
+#endif
     }
 
     log_d("Override duty cycle: %d (%d%%)", dutyCycle, percent);

@@ -13,6 +13,8 @@ git submodule update --init --recursive
 The primary way to build the firmware itself is with Espressif's official [esp-idf toolchain](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/linux-macos-setup.html). In some other directory (not in this repo), run:
 
 ```sh
+mkdir ~/esp
+cd ~/esp
 git clone -b v5.3.2 --recursive https://github.com/espressif/esp-idf.git
 cd esp-idf
 ./install.sh esp32s3
@@ -23,13 +25,23 @@ If you get errors about `cmake` you might need to install `cmake` first (`brew i
 Now from the root of this repo, you can run (replace `/YOUR/PATH/TO` with the path where you put `esp-idf`):
 
 ```sh
-. /YOUR/PATH/TO/esp-idf/export.sh
+. ~/esp/esp-idf/export.sh
 make build flash monitor
 ```
 
 This will build the latest firmware, flash it to the device, and open a serial monitor. You can also use `idf.py menuconfig` to configure the build if you need to change build options.
 
 See also the official [esp-idf installation instructions](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/get-started/index.html) for more details.
+
+## Claude and esp-idf
+
+You have two ways of working with Claude Code and IDF. One is to already have IDF set up when running `claude`. Just source your `export.sh` script before running `claude`.
+
+The other option is to only set `IDF_PATH` in your `.zshrc`/`.bashrc`. Then Claude can use the instructions in `CLAUDE.md` to be able to find/run the `export.sh` script itself.
+
+```sh
+ln -s /YOUR/PATH/TO/esp-idf ~/esp/esp-idf
+```
 
 ## Building alternate targets
 

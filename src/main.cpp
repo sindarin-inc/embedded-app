@@ -409,12 +409,9 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 #if CONFIG_USE_LTR329
     if (!lightingController.checkSensorAvailable()) {
         bootErrors.push_back({.type = BootError::Type::AmbientLight});
-    } else {
-        lightingController.begin();
     }
-#else
-    lightingController.setOverrideValuePercent(100);
 #endif
+    lightingController.begin();
 
 #if CONFIG_USE_MMC5603
     if (!powerManager.checkMagnetometerProductId()) {

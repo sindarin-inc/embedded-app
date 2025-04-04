@@ -60,6 +60,9 @@ enum class SleepReason {
     UlpCrashed,
     UpdateUSBState,
     WaitingForSync,
+#if defined(CONFIG_SLEEP_WAKE_PIN) && CONFIG_SLEEP_WAKE_PIN != -1
+    ButtonPress,
+#endif
 };
 
 auto ToString(SleepReason reason) -> const char *;
@@ -90,6 +93,9 @@ struct BootInfo {
         Timer,
         UlpMag,
         CoCpuTrap,
+#if defined(CONFIG_SLEEP_WAKE_PIN) && CONFIG_SLEEP_WAKE_PIN != -1
+        ButtonWake,
+#endif
     };
 
     Reason reason = Reason::Unknown;
@@ -121,6 +127,10 @@ struct BootInfo {
             return "USB Plugged/Unplugged";
         case Reason::CoCpuTrap:
             return "ULP Crashed";
+#if defined(CONFIG_SLEEP_WAKE_PIN) && CONFIG_SLEEP_WAKE_PIN != -1
+        case Reason::ButtonWake:
+            return "Button Wake";
+#endif
         case Reason::Brownout:
             return "Brownout";
         case Reason::Wdt:
@@ -164,6 +174,10 @@ struct BootInfo {
             return "UsbPlug";
         case Reason::CoCpuTrap:
             return "CoCpuTrap";
+#if defined(CONFIG_SLEEP_WAKE_PIN) && CONFIG_SLEEP_WAKE_PIN != -1
+        case Reason::ButtonWake:
+            return "ButtonWake";
+#endif
         case Reason::Brownout:
             return "Brownout";
         case Reason::Wdt:
@@ -309,6 +323,10 @@ protected:
     void powerOffInternal();
 
     auto enableUsbWakeup() -> esp_err_t;
+
+#if defined(CONFIG_SLEEP_WAKE_PIN) && CONFIG_SLEEP_WAKE_PIN != -1
+    auto enableSleepWakePinWakeup() -> esp_err_t;
+#endif
 
     auto inactivityTimeoutMs() -> int;
 };
