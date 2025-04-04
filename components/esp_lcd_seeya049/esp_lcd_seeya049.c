@@ -90,21 +90,58 @@ esp_err_t esp_lcd_new_panel_seeya049(const esp_lcd_panel_io_handle_t io,
         ESP_GOTO_ON_ERROR(gpio_config(&io_conf), err, TAG, "configure GPIO for RST line failed");
     }
 
+    esp_lcd_dpi_panel_config_t dpi_config = *(vendor_config->mipi_config.dpi_config);
     seeya049->io = io;
     seeya049->init_cmds = vendor_config->init_cmds;
     seeya049->init_cmds_size = vendor_config->init_cmds_size;
     seeya049->reset_gpio_num = panel_dev_config->reset_gpio_num;
-    seeya049->width = vendor_config->mipi_config.dpi_config->video_timing.h_size;
-    seeya049->height = vendor_config->mipi_config.dpi_config->video_timing.v_size;
+    seeya049->width = dpi_config.video_timing.h_size;
+    seeya049->height = dpi_config.video_timing.v_size;
     seeya049->x_offset = vendor_config->x_offset;
     seeya049->y_offset = vendor_config->y_offset;
     seeya049->scaling = vendor_config->scaling;
     seeya049->flags.reset_level = panel_dev_config->flags.reset_active_high;
 
+    // Derive the DPI clock frequency from the refresh rate if dpi_clock_freq_mhz is unset
+    if (vendor_config->refresh_rate != 0 && dpi_config.dpi_clock_freq_mhz == 0) {
+        uint32_t h_pixels =
+            dpi_config.video_timing.h_size + dpi_config.video_timing.hsync_pulse_width +
+            dpi_config.video_timing.hsync_back_porch + dpi_config.video_timing.hsync_front_porch;
+        uint32_t v_pixels =
+            dpi_config.video_timing.v_size + dpi_config.video_timing.vsync_pulse_width +
+            dpi_config.video_timing.vsync_back_porch + dpi_config.video_timing.vsync_front_porch;
+        uint32_t ideal_dpi_clock_hz = vendor_config->refresh_rate * h_pixels * v_pixels;
+
+        // Max bandwidth for 2 lanes at 1000 mbps, accounting for MIPI overhead (GPT says this is up
+        // to 30% but experimentally I'm getting success with 4%). This ends up to ~80MHz so we just
+        // hardcode that.
+        // uint32_t max_bandwidth = vendor_config->mipi_config.lane_num * 1000000000;
+        // max_bandwidth = max_bandwidth - max_bandwidth * 0.04;
+        // // 24 bits per pixel
+        // uint32_t bits_per_pixel = 24;
+        // uint32_t max_ideal_dpi_clock_hz = max_bandwidth / bits_per_pixel;
+        if (ideal_dpi_clock_hz <= 80000000) {
+            dpi_config.dpi_clock_freq_mhz = (ideal_dpi_clock_hz + 999999) / 1000000;
+            ESP_LOGD(TAG,
+                     "Overriding DPI clock to %" PRIu32 " MHz for refresh rate %" PRIu16
+                     " Hz (ideal: %.2f MHz MIPI bandwidth: %" PRIu32 " mbps)",
+                     dpi_config.dpi_clock_freq_mhz, vendor_config->refresh_rate,
+                     ideal_dpi_clock_hz / 1000000.0, dpi_config.dpi_clock_freq_mhz * 24);
+        } else {
+            // Above 80 MHz, the ESP32-P4 can't keep up with the refresh rate
+            dpi_config.dpi_clock_freq_mhz = 80;
+            ESP_LOGD(TAG,
+                     "Limiting DPI clock to %" PRIu32 " MHz for reduced refresh rate of %" PRIu16
+                     " Hz (ideal: %.2f MHz MIPI bandwidth: %" PRIu32 " mbps)",
+                     dpi_config.dpi_clock_freq_mhz, vendor_config->refresh_rate,
+                     ideal_dpi_clock_hz / 1000000.0, dpi_config.dpi_clock_freq_mhz * 24);
+        }
+    }
+
     // Create MIPI DPI panel
-    ESP_GOTO_ON_ERROR(esp_lcd_new_panel_dpi(vendor_config->mipi_config.dsi_bus,
-                                            vendor_config->mipi_config.dpi_config, ret_panel),
-                      err, TAG, "create MIPI DPI panel failed");
+    ESP_GOTO_ON_ERROR(
+        esp_lcd_new_panel_dpi(vendor_config->mipi_config.dsi_bus, &dpi_config, ret_panel), err, TAG,
+        "create MIPI DPI panel failed");
     ESP_LOGD(TAG, "new MIPI DPI panel @%p", *ret_panel);
 
     // Save the original functions of MIPI DPI panel
@@ -119,6 +156,18 @@ esp_err_t esp_lcd_new_panel_seeya049(const esp_lcd_panel_io_handle_t io,
     (*ret_panel)->disp_sleep = panel_seeya049_sleep;
     (*ret_panel)->user_data = seeya049;
     ESP_LOGD(TAG, "new seeya049 panel @%p", seeya049);
+
+    // Log porch settings
+    ESP_LOGD(TAG,
+             "h_size: %" PRIu32 " hsync_pulse_width: %" PRIu32 " hsync_back_porch: %" PRIu32
+             " hsync_front_porch: %" PRIu32,
+             dpi_config.video_timing.h_size, dpi_config.video_timing.hsync_pulse_width,
+             dpi_config.video_timing.hsync_back_porch, dpi_config.video_timing.hsync_front_porch);
+    ESP_LOGD(TAG,
+             "v_size: %" PRIu32 " vsync_pulse_width: %" PRIu32 " vsync_back_porch: %" PRIu32
+             " vsync_front_porch: %" PRIu32,
+             dpi_config.video_timing.v_size, dpi_config.video_timing.vsync_pulse_width,
+             dpi_config.video_timing.vsync_back_porch, dpi_config.video_timing.vsync_front_porch);
 
     return ESP_OK;
 
@@ -395,8 +444,10 @@ static esp_err_t panel_seeya049_reset(esp_lcd_panel_t *panel) {
 
     // Perform hardware reset
     if (seeya049->reset_gpio_num >= 0) {
+        ESP_LOGD(TAG, "Reset pin %d to %d", seeya049->reset_gpio_num, seeya049->flags.reset_level);
         gpio_set_level(seeya049->reset_gpio_num, seeya049->flags.reset_level);
         vTaskDelay(pdMS_TO_TICKS(1));
+        ESP_LOGD(TAG, "Reset pin %d to %d", seeya049->reset_gpio_num, !seeya049->flags.reset_level);
         gpio_set_level(seeya049->reset_gpio_num, !seeya049->flags.reset_level);
         vTaskDelay(pdMS_TO_TICKS(120));
     } else if (io) { // Perform software reset
@@ -451,11 +502,12 @@ static esp_err_t panel_seeya049_disp_on_off(esp_lcd_panel_t *panel, bool on_off)
         vTaskDelay(pdMS_TO_TICKS(20));
         // In the NED sequence these happen after display on though they don't seem to be
         // necessary Seems to work without these set
-        // ESP_RETURN_ON_ERROR(esp_lcd_panel_io_tx_param(io, 0xF0, (uint8_t[]){0xAA, 0x11}, 2),
-        // TAG,
-        //                     "send command failed");
-        // ESP_RETURN_ON_ERROR(esp_lcd_panel_io_tx_param(io, 0xC0, (uint8_t[]){0xFF}, 1), TAG,
-        //                     "send command failed");
+        ESP_LOGI(TAG, "MIPI TX: 0xF0 data: 0xAA 0x11");
+        ESP_RETURN_ON_ERROR(esp_lcd_panel_io_tx_param(io, 0xF0, (uint8_t[]){0xAA, 0x11}, 2), TAG,
+                            "send command failed");
+        ESP_LOGI(TAG, "MIPI TX: 0xC0 data: 0xFF");
+        ESP_RETURN_ON_ERROR(esp_lcd_panel_io_tx_param(io, 0xC0, (uint8_t[]){0xFF}, 1), TAG,
+                            "send command failed");
     } else {
         ESP_RETURN_ON_ERROR(esp_lcd_panel_io_tx_param(io, SEEYA049_CMD_DISPOFF, NULL, 0), TAG,
                             "send command failed");

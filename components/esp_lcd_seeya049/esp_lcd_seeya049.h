@@ -97,6 +97,8 @@ static const seeya049_lcd_init_cmd_t seeya049_init_cmds_i2c[] = {
     {.cmd = SEEYA049_CMD_WRCTRLD, .data = (uint8_t[]){0x29}, .data_bytes = 1, .delay_ms = 0},
     {.cmd = SEEYA049_CMD_WRDISBV, .data = (uint8_t[]){0xFF, 0x01}, .data_bytes = 2, .delay_ms = 0},
     {.cmd = SEEYA049_CMD_CMODE, .data = (uint8_t[]){0x00}, .data_bytes = 1, .delay_ms = 0},
+    {.cmd = SEEYA049_CMD_SCACTRL, .data = (uint8_t[]){0x00}, .data_bytes = 1, .delay_ms = 0},
+    {.cmd = SEEYA049_CMD_IFCONFG, .data = (uint8_t[]){0x02}, .data_bytes = 1, .delay_ms = 0},
     // RESCTL1
     {.cmd = SEEYA049_CMD_RESCTRL1,
      // If this is like the 1.03" datasheet, this command can affect the screen resolution
@@ -111,7 +113,7 @@ static const seeya049_lcd_init_cmd_t seeya049_init_cmds_i2c[] = {
      .data_bytes = 7,
      .delay_ms = 0},
     {.cmd = SEEYA049_CMD_RESCTRL3,
-     .data = (uint8_t[]){0x03, 0x04, 0x00, 0x29, 0x00, 0x05, 0x01},
+     .data = (uint8_t[]){0x03, 0x04, 0x00, 0x29, 0x00, 0x05, 0x00},
      .data_bytes = 7,
      .delay_ms = 0},
     // NOTE(john): I've added these three commands, though I'm not entirely sure this is the
@@ -120,7 +122,6 @@ static const seeya049_lcd_init_cmd_t seeya049_init_cmds_i2c[] = {
     {.cmd = SEEYA049_CMD_CASET, .data = (uint8_t[]){0x00, 0x00}, .data_bytes = 2, .delay_ms = 0},
     {.cmd = SEEYA049_CMD_RASET, .data = (uint8_t[]){0x00, 0x00}, .data_bytes = 2, .delay_ms = 0},
     {.cmd = SEEYA049_CMD_MADCTL, .data = (uint8_t[]){0x00}, .data_bytes = 1, .delay_ms = 0},
-    {.cmd = SEEYA049_CMD_SCACTRL, .data = (uint8_t[]){0x00}, .data_bytes = 1, .delay_ms = 0},
     {.cmd = 0x35, .data = (uint8_t[]){0x00}, .data_bytes = 1, .delay_ms = 0},
     {.cmd = 0x26, .data = (uint8_t[]){0x20}, .data_bytes = 1, .delay_ms = 0},
 
@@ -150,7 +151,6 @@ static const seeya049_lcd_init_cmd_t seeya049_init_cmds_i2c[] = {
          (uint8_t[]){0x5E, 0x62, 0x66, 0x6A, 0x6F, 0x73, 0x77, 0x7B, 0x7F, 0x84, 0x88, 0x8C, 0x90},
      .data_bytes = 13,
      .delay_ms = 0},
-    {.cmd = SEEYA049_CMD_IFCONFG, .data = (uint8_t[]){0x02}, .data_bytes = 1, .delay_ms = 0},
 
     {.cmd = 0xF0, .data = (uint8_t[]){0xAA, 0x11}, .data_bytes = 2, .delay_ms = 0},
     {.cmd = 0xC0, .data = (uint8_t[]){0x00}, .data_bytes = 1, .delay_ms = 20},
@@ -196,6 +196,8 @@ static const seeya049_lcd_init_cmd_t seeya049_init_cmds_mipi[] = {
     // WRDISBV? Display brightness control? No change when removing
     {.cmd = SEEYA049_CMD_WRDISBV, .data = (uint8_t[]){0xFF, 0x01}, .data_bytes = 2, .delay_ms = 0},
     {.cmd = SEEYA049_CMD_CMODE, .data = (uint8_t[]){0x00}, .data_bytes = 1, .delay_ms = 0},
+    {.cmd = SEEYA049_CMD_SCACTRL, .data = (uint8_t[]){0x00}, .data_bytes = 1, .delay_ms = 0},
+    {.cmd = SEEYA049_CMD_IFCONFG, .data = (uint8_t[]){0x02}, .data_bytes = 1, .delay_ms = 0},
     // RESCTL1
     {.cmd = SEEYA049_CMD_RESCTRL1,
      // If this is like the 1.03" datasheet, this command can affect the screen resolution
@@ -210,14 +212,12 @@ static const seeya049_lcd_init_cmd_t seeya049_init_cmds_mipi[] = {
      .data_bytes = 7,
      .delay_ms = 0},
     {.cmd = SEEYA049_CMD_RESCTRL3,
-     .data = (uint8_t[]){0x03, 0x04, 0x00, 0x29, 0x00, 0x05, 0x01},
+     .data = (uint8_t[]){0x03, 0x04, 0x00, 0x29, 0x00, 0x05, 0x00},
      .data_bytes = 7,
      .delay_ms = 0},
     {.cmd = SEEYA049_CMD_CASET, .data = (uint8_t[]){0x00, 0x00}, .data_bytes = 2, .delay_ms = 0},
     {.cmd = SEEYA049_CMD_RASET, .data = (uint8_t[]){0x00, 0x00}, .data_bytes = 2, .delay_ms = 0},
     {.cmd = SEEYA049_CMD_MADCTL, .data = (uint8_t[]){0x00}, .data_bytes = 1, .delay_ms = 0},
-    {.cmd = SEEYA049_CMD_SCACTRL, .data = (uint8_t[]){0x00}, .data_bytes = 1, .delay_ms = 0},
-
     // Tearing effect line on
     {.cmd = 0x35, .data = (uint8_t[]){0x00}, .data_bytes = 1, .delay_ms = 0},
     // Gamma set
@@ -257,8 +257,9 @@ static const seeya049_lcd_init_cmd_t seeya049_init_cmds_mipi[] = {
      .data_bytes = 13,
      .delay_ms = 0},
 
-    // Set to 2 lane MIPI mode
-    {.cmd = SEEYA049_CMD_IFCONFG, .data = (uint8_t[]){0x02}, .data_bytes = 1, .delay_ms = 0},
+    // Final configuration
+    {.cmd = 0xF0, .data = (uint8_t[]){0xAA, 0x11}, .data_bytes = 2, .delay_ms = 0},
+    {.cmd = 0xC5, .data = (uint8_t[]){0x00, 0x08}, .data_bytes = 2, .delay_ms = 0},
 
     // Wake from sleep
     {.cmd = 0, .data = NULL, .data_bytes = 0, .delay_ms = 20},
@@ -355,8 +356,10 @@ typedef struct {
                               * `seeya049_init_cmds_mipi` in source file.
                               */
     uint16_t init_cmds_size; /*!< Number of commands in above array */
-    uint16_t x_offset;       /*!< X offset of the display */
-    uint16_t y_offset;       /*!< Y offset of the display */
+    uint16_t refresh_rate; /*!< Target refresh rate of the display. If set this will be used to help
+                              calculate the dpi_clock_freq_mhz */
+    uint16_t x_offset;     /*!< X offset of the display */
+    uint16_t y_offset;     /*!< Y offset of the display */
     seeya049_scaling_t scaling;
     struct {
         esp_lcd_dsi_bus_handle_t dsi_bus;             /*!< MIPI-DSI bus configuration */
@@ -459,10 +462,7 @@ static inline esp_lcd_dpi_panel_config_t panel_seeya049_1920_1080_dpi_config(voi
     esp_lcd_dpi_panel_config_t dpi_config = {
         .virtual_channel = 0,
         .dpi_clk_src = MIPI_DSI_DPI_CLK_SRC_DEFAULT,
-        // This seems to affect the size and quality of what is drawn
-        // This can't keep up above 120MHz
-        // Below 35MHz the drawn screen area is reduced
-        .dpi_clock_freq_mhz = 80,
+        .dpi_clock_freq_mhz = 0, // Set by the refresh rate
         .pixel_format = LCD_COLOR_PIXEL_FORMAT_RGB888,
         .in_color_format = 0,
         .out_color_format = 0,
@@ -494,6 +494,7 @@ panel_seeya049_vendor_config(esp_lcd_dsi_bus_handle_t mipi_dsi_bus,
     seeya049_vendor_config_t vendor_config = {
         .init_cmds = seeya049_init_cmds_mipi,
         .init_cmds_size = sizeof(seeya049_init_cmds_mipi) / sizeof(seeya049_lcd_init_cmd_t),
+        .refresh_rate = 60,
         .x_offset = 0,
         .y_offset = 0,
         .mipi_config =
