@@ -59,14 +59,10 @@ public:
     void updateBookmarkStatus();
     auto checkAtEnd() -> bool;
     auto getScreenCurrentCharOffset() -> uint32_t;
-    
-    void pushScreen(const std::shared_ptr<Screen> &screen) {
-        setCurrentScreen(screen);
-    }
-    
-    void popScreen() {
-        setCurrentScreen(nullptr);
-    }
+
+    void pushScreen(const std::shared_ptr<Screen> &screen) { setCurrentScreen(screen); }
+
+    void popScreen() { setCurrentScreen(nullptr); }
 
     // Used to retrieve the current spine idx and offset in the corresponding file.
     // See test/CatchTests/TestEPub.cpp
