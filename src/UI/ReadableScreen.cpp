@@ -259,11 +259,20 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
             auto placeHref =
                 std::dynamic_pointer_cast<EPubPlace>(renderer_.getCurrentPlace())->getHRef();
 
+            // Always show "Ask AI" option, but show pairing message if no cloud token
             menuItems->emplace_back(std::make_shared<MenuItemSingleLine>("Ask AI", [this]() {
-                auto epubPlace = std::dynamic_pointer_cast<EPubPlace>(renderer_.getCurrentPlace());
-                bookQuestionsScreen_->reset();
-                bookQuestionsScreen_->setPlaceInReadable(epubPlace);
-                setCurrentScreen(bookQuestionsScreen_);
+                if (prefs_.cloudToken.get().has_value()) {
+                    auto epubPlace =
+                        std::dynamic_pointer_cast<EPubPlace>(renderer_.getCurrentPlace());
+                    bookQuestionsScreen_->reset();
+                    bookQuestionsScreen_->setPlaceInReadable(epubPlace);
+                    setCurrentScreen(bookQuestionsScreen_);
+                } else {
+                    RootUI::getInstance().showTemporaryMessage(
+                        "Please pair with the Sol Reader mobile app first. "
+                        "Go to Settings > Content > Sync to get started.",
+                        TEMP_MSG_DURATION_NO_CLOSE);
+                }
             }));
 
             if (stream->hasSummary(placeHref)) {
@@ -295,11 +304,6 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
                 }));
             }
         } else {
-            menuItems->emplace_back(std::make_shared<MenuItemSingleLine>("Ask AI", [this]() {
-                RootUI::getInstance().showTemporaryMessage(notExistMessage_,
-                                                           TEMP_MSG_DURATION_NO_CLOSE);
-            }));
-
             menuItems->emplace_back(std::make_shared<MenuItemSingleLine>("Summary", [this]() {
                 RootUI::getInstance().showTemporaryMessage(notExistMessage_,
                                                            TEMP_MSG_DURATION_NO_CLOSE);
