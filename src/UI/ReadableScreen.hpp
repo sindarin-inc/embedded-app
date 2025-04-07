@@ -39,6 +39,9 @@ enum LastArrowPress {
 // TODO: make the readable copy here in Spiram
 class ReadableScreen : public Screen, public EinkView {
 public:
+    using PushScreenFunc = std::function<void(const std::shared_ptr<Screen> &)>;
+    using PopScreenFunc = std::function<void()>;
+
     ReadableScreen(const std::shared_ptr<RendererStream> &stream, DisplaySystem &display,
                    const std::shared_ptr<Readable> &readable, PreferencesStore &prefs,
                    Telemetry &telemetry, FileSystem &fileSystem,
@@ -56,6 +59,14 @@ public:
     void updateBookmarkStatus();
     auto checkAtEnd() -> bool;
     auto getScreenCurrentCharOffset() -> uint32_t;
+    
+    void pushScreen(const std::shared_ptr<Screen> &screen) {
+        setCurrentScreen(screen);
+    }
+    
+    void popScreen() {
+        setCurrentScreen(nullptr);
+    }
 
     // Used to retrieve the current spine idx and offset in the corresponding file.
     // See test/CatchTests/TestEPub.cpp

@@ -8,6 +8,7 @@
 
 #include "Misc/Platform.hpp"
 #include "Models/UserReadablePartialChapterSummary.hpp"
+#include "UI/AppDownloadScreen.hpp"
 #include "UI/Bitmaps/Auto_Pilot_Icons.hpp"
 #include "UI/BookQuestionsScreen.hpp"
 #include "UI/ReadableHookScreens.hpp"
@@ -261,18 +262,30 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
 
             // Always show "Ask AI" option, but show pairing message if no cloud token
             menuItems->emplace_back(std::make_shared<MenuItemSingleLine>("Ask AI", [this]() {
-                if (prefs_.cloudToken.get().has_value()) {
-                    auto epubPlace =
-                        std::dynamic_pointer_cast<EPubPlace>(renderer_.getCurrentPlace());
-                    bookQuestionsScreen_->reset();
-                    bookQuestionsScreen_->setPlaceInReadable(epubPlace);
-                    setCurrentScreen(bookQuestionsScreen_);
-                } else {
-                    RootUI::getInstance().showTemporaryMessage(
-                        "Please pair with the Sol Reader mobile app first. "
-                        "Go to Settings > Content > Sync to get started.",
-                        TEMP_MSG_DURATION_NO_CLOSE);
+                // If we're not yet paired, show the app screen instead
+                if (PreferencesStore::paired == PairedStatus::Unpaired) {
+                    auto appDownloadScreen = std::make_shared<AppDownloadScreen>(display_);
+                    this->pushScreen(appDownloadScreen);
+                    appDownloadScreen->setBackCallback([this]() { this->popScreen(); });
+                    return;
                 }
+
+                // If wifi & ble have been disabled, show a popup encouraging the user to
+                // turn on wifi or BLE to perform the content sync.
+                if (prefs_.wifiDisabled.get().value_or(false) &&
+                    prefs_.bleDisabled.get().value_or(false)) {
+                    RootUI::getInstance().showTemporaryMessage(
+                        "Enable WiFi or BLE to perform a Content Sync.");
+                    if (currentScreen_) {
+                        currentScreen_->setFirstLoad();
+                    }
+                    return;
+                }
+
+                auto epubPlace = std::dynamic_pointer_cast<EPubPlace>(renderer_.getCurrentPlace());
+                bookQuestionsScreen_->reset();
+                bookQuestionsScreen_->setPlaceInReadable(epubPlace);
+                setCurrentScreen(bookQuestionsScreen_);
             }));
 
             if (stream->hasSummary(placeHref)) {
