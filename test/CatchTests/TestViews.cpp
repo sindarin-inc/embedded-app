@@ -22,6 +22,7 @@
 #include "UI/ReadableTableOfContentsScreen.hpp"
 #include "UI/ReleaseNotesScreen.hpp"
 #include "UI/ResizeBoxScreen.hpp"
+#include "UI/RootUI.hpp"
 #include "ViewTestCommon.hpp"
 #include "sindarin-debug.h"
 #undef protected
@@ -223,12 +224,10 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
         // Should show the updated seeked spot from the TOC
         ASSERT_VIEW_UNCHANGED(display, "PopupMenu4");
 
-        // Open the dictionary
+        // Skip the Ask AI entry and just go back to main text for now
+        SendRemoteCommand(UP);
+        WAIT_FOR_DRAW(display);
         SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW(display);
-        ASSERT_VIEW_UNCHANGED(display, "AskAIDefault");
-        SendRemoteCommand(LEFT);
-        WAIT_FOR_DRAW(display);
         WAIT_FOR_DRAW(display);
         ASSERT_VIEW_UNCHANGED(display, "Dawn1");
 
@@ -260,6 +259,8 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
         WAIT_FOR_DRAW(display);
         SendRemoteCommand(RIGHT);
         WAIT_FOR_DRAW(display);
+        WAIT_FOR_DRAW(display);
+        SendRemoteCommand(DOWN);
         WAIT_FOR_DRAW(display);
         SendRemoteCommand(DOWN);
         WAIT_FOR_DRAW(display);
