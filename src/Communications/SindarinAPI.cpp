@@ -529,11 +529,12 @@ auto SindarinAPI::askQuestion(const BookQuestionRequest &req, BookQuestionRespon
 }
 
 auto SindarinAPI::makeKindleRequest(const std::string &path, KindlePageResponse *resp,
-                                    const std::shared_ptr<CancelFlag> &cancelFlag) -> int {
+                                    const std::shared_ptr<CancelFlag> &cancelFlag, bool useBle)
+    -> int {
     std::string url = StringFormat("%s%s", SINDARIN_SERVER_URL, path.c_str());
     log_i("Making Kindle request to URL: %s", url.c_str());
 
-    auto client = createClient(url, "application/json", HTTP_METHOD_GET, false, cancelFlag);
+    auto client = createClient(url, "application/json", HTTP_METHOD_GET, useBle, cancelFlag);
     if (!client) {
         log_e("Failed to create HTTP client");
         return ERR_CLIENT_OPEN;
@@ -594,7 +595,8 @@ auto SindarinAPI::makeKindleRequest(const std::string &path, KindlePageResponse 
 }
 
 auto SindarinAPI::openKindleBook(const std::string &title, KindlePageResponse *resp,
-                                 const std::shared_ptr<CancelFlag> &cancelFlag) -> int {
+                                 const std::shared_ptr<CancelFlag> &cancelFlag, bool useBle)
+    -> int {
     // Validate parameters
     if (title.empty()) {
         log_e("Empty title provided to openKindleBook");
@@ -615,7 +617,7 @@ auto SindarinAPI::openKindleBook(const std::string &title, KindlePageResponse *r
     log_i("Kindle open book path: %s", path.c_str());
 
     // Make the request (no try-catch since exceptions are disabled)
-    int result = makeKindleRequest(path, resp, cancelFlag);
+    int result = makeKindleRequest(path, resp, cancelFlag, useBle);
 
     // Log the result
     if (result == 200) {
@@ -628,11 +630,13 @@ auto SindarinAPI::openKindleBook(const std::string &title, KindlePageResponse *r
 }
 
 auto SindarinAPI::navigateKindleNext(KindlePageResponse *resp,
-                                     const std::shared_ptr<CancelFlag> &cancelFlag) -> int {
-    return makeKindleRequest("/kindle/navigate-next?ocr=1", resp, cancelFlag);
+                                     const std::shared_ptr<CancelFlag> &cancelFlag, bool useBle)
+    -> int {
+    return makeKindleRequest("/kindle/navigate-next?ocr=1", resp, cancelFlag, useBle);
 }
 
 auto SindarinAPI::navigateKindlePrevious(KindlePageResponse *resp,
-                                         const std::shared_ptr<CancelFlag> &cancelFlag) -> int {
-    return makeKindleRequest("/kindle/navigate-previous?ocr=1", resp, cancelFlag);
+                                         const std::shared_ptr<CancelFlag> &cancelFlag, bool useBle)
+    -> int {
+    return makeKindleRequest("/kindle/navigate-previous?ocr=1", resp, cancelFlag, useBle);
 }

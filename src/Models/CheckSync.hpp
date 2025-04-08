@@ -44,7 +44,7 @@ public:
     std::string gitHash;
     std::string sn;
     int bookQuestionsVersion{};
-    std::string kindleLastSynced; // Added to support kindle_last_synced parameter
+    std::string kindleLastSynced;
 
     auto fromJson(const JsonObject &j) -> bool override { return true; }
 };
@@ -127,6 +127,7 @@ public:
             log_d("Parsed %zu Kindle books from sync response", kindleBooks.size());
         } else {
             kindleLastSynced = "";
+            log_d("No Kindle books returned from sync response");
         }
 
         if (results.containsKey("timezone")) {

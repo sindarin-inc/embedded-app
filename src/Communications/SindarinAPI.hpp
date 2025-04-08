@@ -88,17 +88,17 @@ public:
 
     // Kindle book operations
     auto openKindleBook(const std::string &title, KindlePageResponse *resp,
-                        const std::shared_ptr<CancelFlag> &cancelFlag) -> int;
-    auto navigateKindleNext(KindlePageResponse *resp, const std::shared_ptr<CancelFlag> &cancelFlag)
-        -> int;
+                        const std::shared_ptr<CancelFlag> &cancelFlag, bool useBle) -> int;
+    auto navigateKindleNext(KindlePageResponse *resp, const std::shared_ptr<CancelFlag> &cancelFlag,
+                            bool useBle) -> int;
     auto navigateKindlePrevious(KindlePageResponse *resp,
-                                const std::shared_ptr<CancelFlag> &cancelFlag) -> int;
+                                const std::shared_ptr<CancelFlag> &cancelFlag, bool useBle) -> int;
 
 private:
     auto tryCheckFirmware(FirmwareResponse *resp, bool useHttp, bool useBle,
                           const std::shared_ptr<CancelFlag> &cancel) -> int;
     auto makeKindleRequest(const std::string &path, KindlePageResponse *resp,
-                           const std::shared_ptr<CancelFlag> &cancelFlag) -> int;
+                           const std::shared_ptr<CancelFlag> &cancelFlag, bool useBle) -> int;
 
 protected:
     static std::shared_ptr<SindarinAPI> instance;

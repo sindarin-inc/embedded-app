@@ -87,6 +87,7 @@ private:
     bool nextPageLoading_{false}; // Flag to track if we're already loading the next page
     std::shared_ptr<NewReadablePopupMenuScreen> popupMenuScreen_;
     std::shared_ptr<Screen> currentScreen_;
+    bool useBle_{false};
 
     // Current page information
     int currentPage_{0};

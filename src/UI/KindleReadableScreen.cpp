@@ -440,6 +440,7 @@ auto KindleReadableScreen::connectToNetwork(bool useBleOnly, std::string &errorM
             log_i("BLE successfully connected for Kindle book");
             telemetry_.logMetric(TelemetryField::METRIC_WIFI, "kindle-ble-connected");
             bleConnected = true;
+            useBle_ = true;
         }
     }
 #endif
@@ -550,7 +551,7 @@ void KindleReadableScreen::loadKindleBookPage() {
     log_i("Calling openKindleBook API with title: %s", cleanTitle.c_str());
 
     // Call the API (no try-catch as exceptions are disabled)
-    int httpCode = sindarinApi->openKindleBook(cleanTitle, response.get(), cancelFlag_);
+    int httpCode = sindarinApi->openKindleBook(cleanTitle, response.get(), cancelFlag_, useBle_);
     log_i("openKindleBook returned HTTP code: %d", httpCode);
 
     if (httpCode != 200 || (response && !response->success)) {
@@ -756,7 +757,7 @@ void KindleReadableScreen::loadNextKindlePage() {
 
         // Make the request
         auto sindarinApi = SindarinAPI::getInstance();
-        int httpCode = sindarinApi->navigateKindleNext(response.get(), cancelFlag_);
+        int httpCode = sindarinApi->navigateKindleNext(response.get(), cancelFlag_, useBle_);
 
         if (httpCode != 200 || !response->success) {
             DispatchGetUiQueue()->dispatch([this, isBackgroundLoading, httpCode]() {
@@ -1101,7 +1102,7 @@ void KindleReadableScreen::loadPreviousKindlePage() {
 
         // Make the request
         auto sindarinApi = SindarinAPI::getInstance();
-        int httpCode = sindarinApi->navigateKindlePrevious(response.get(), cancelFlag_);
+        int httpCode = sindarinApi->navigateKindlePrevious(response.get(), cancelFlag_, useBle_);
 
         if (httpCode != 200 || !response->success) {
             DispatchGetUiQueue()->dispatch([this, httpCode]() {
