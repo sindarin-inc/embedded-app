@@ -42,7 +42,7 @@ enum { MAX_NUMBER_OF_PAGES_TO_BACKFILL = 10 };
 auto LocalStore::begin() -> bool {
     auto loadedBooks = loadReadablesFromFile(books_, BOOKS_PATH);
     auto loadedArticles = loadReadablesFromFile(articles_, ARTICLES_PATH);
-    auto loadedKindle = loadKindleBooksFromFile(kindle_, KINDLE_PATH);
+    loadKindleBooksFromFile(kindle_, KINDLE_PATH);
 
     migrateIfNeeded();
 
@@ -50,7 +50,8 @@ auto LocalStore::begin() -> bool {
     computeRecentReadables();
     PROFILE_END_LOG_US(computeRecentReadables);
 
-    return loadedBooks && loadedArticles && loadedKindle;
+    // loadedKindle is not critical, so we don't return false if it fails
+    return loadedBooks && loadedArticles;
 }
 
 auto LocalStore::loadReadablesFromFile(ReadablesVector &readables, const std::string &path)
