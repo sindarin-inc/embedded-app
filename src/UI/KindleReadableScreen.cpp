@@ -745,7 +745,7 @@ void KindleReadableScreen::loadNextKindlePreview() {
     log_i("Starting background load of Kindle page preview");
 
     // Execute the API call on the background thread
-    DispatchGetCore0BackgroundQueue()->dispatch([this, isBackgroundLoading]() {
+    DispatchGetCore0BackgroundQueue()->dispatch([this]() {
         // Create a response object
         auto response = std::make_shared<KindlePageResponse>();
 
@@ -1663,13 +1663,13 @@ void KindleReadableScreen::dismissScreen() {
         // Create an empty string for the stream
         std::string emptyStr;
         auto emptyStream = std::make_shared<StdStringStream>(emptyStr, DocType::TXT);
-        
+
         // Set the stream - if this fails, we just continue
         // We don't use try/catch since exceptions are disabled
         renderer_.setStream(emptyStream);
         log_i("Reset renderer stream to empty");
     }
-    
+
     // Always attempt to go back to the previous screen, even if there were errors
     back();
 }
