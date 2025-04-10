@@ -1603,9 +1603,18 @@ void KindleReadableScreen::disconnectNetworkConnections() {
     }
 
 #if CONFIG_USE_BLE_SERVER_PROXY
-    // Disconnect BLE if connected
-    if (BLEManager::getInstance()) {
-        BLEManager::getInstance()->disconnectProxy();
+    // Check if BLE manager exists
+    auto bleManager = BLEManager::getInstance(false); // Don't create it if it doesn't exist
+    if (bleManager) {
+        // Add a safety check to see if it's connected first
+        if (bleManager->connected()) {
+            log_i("Disconnecting BLE proxy");
+            bleManager->disconnectProxy();
+        } else {
+            log_i("BLE proxy not connected, skipping disconnection");
+        }
+    } else {
+        log_i("BLE manager not available, skipping disconnection");
     }
 #endif
 }
@@ -1629,7 +1638,7 @@ void KindleReadableScreen::dismissScreen() {
     // Cancel any pending delayed message
     cancelDelayedLoadingMessage();
 
-    // Disconnect network connections
+    // Disconnect network connections - already has defensive error handling
     disconnectNetworkConnections();
 
     // Clear any ongoing state
@@ -1645,9 +1654,7 @@ void KindleReadableScreen::dismissScreen() {
     showLoadingWithRoundedRect_ = false;
     setNeedsRerender();
 
-    // We can't directly set the stream to nullptr because it causes issues with the tokenizer
-    // Instead, we'll use a safer approach when clearing the renderer
-
+    // Reset renderer safely without exceptions
     // Check if the tokenizer is initialized before trying to reset it
     if (renderer_.getStream()) {
         // Reset the renderer's ignore EOF setting
@@ -1656,9 +1663,14 @@ void KindleReadableScreen::dismissScreen() {
         // Create an empty string for the stream
         std::string emptyStr;
         auto emptyStream = std::make_shared<StdStringStream>(emptyStr, DocType::TXT);
+        
+        // Set the stream - if this fails, we just continue
+        // We don't use try/catch since exceptions are disabled
         renderer_.setStream(emptyStream);
+        log_i("Reset renderer stream to empty");
     }
-
+    
+    // Always attempt to go back to the previous screen, even if there were errors
     back();
 }
 
