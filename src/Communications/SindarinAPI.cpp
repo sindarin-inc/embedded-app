@@ -186,7 +186,7 @@ auto SindarinAPI::tryCheckFirmware(FirmwareResponse *resp, bool useHttp, bool us
     }
     defer { client->close(); };
 
-    auto contentLength = client->fetchHeaders();
+    auto contentLength = client->fetchHeaders(cancel);
     if (contentLength <= 0) {
         log_e("Failed to fetch headers");
         return ERR_CONTENT_LENGTH;
@@ -262,7 +262,7 @@ auto SindarinAPI::downloadReadable(const std::shared_ptr<Readable> &readable,
 
 auto SindarinAPI::createClient(const std::string &url, const std::string &contentType,
                                esp_http_client_method_t method, bool useBle,
-                               const std::shared_ptr<CancelFlag> &cancel)
+                               const std::shared_ptr<CancelFlag> &cancel, int timeoutMs)
     -> std::shared_ptr<HttpClient> {
     HEAP_PROFILE_START(createClient);
     defer { HEAP_PROFILE_END(createClient); };
@@ -275,7 +275,8 @@ auto SindarinAPI::createClient(const std::string &url, const std::string &conten
     } else {
 #if CONFIG_USE_WIFI
         // Return an instance of WiFiHttpClient
-        return std::make_shared<WiFiHttpClient>(url.c_str(), contentType.c_str(), method);
+        return std::make_shared<WiFiHttpClient>(url.c_str(), contentType.c_str(), method, false,
+                                                timeoutMs);
 #else
         return nullptr;
 #endif
@@ -463,7 +464,7 @@ auto SindarinAPI::askQuestion(const BookQuestionRequest &req, BookQuestionRespon
     auto url = StringFormat("%s/questions/ask/", baseUrl_.c_str());
     log_d("Sending question request to: %s", url.c_str());
 
-    auto client = createClient(url, "application/json", HTTP_METHOD_POST, useBle, cancel);
+    auto client = createClient(url, "application/json", HTTP_METHOD_POST, useBle, cancel, 120000);
     if (client == nullptr) {
         log_e("Failed to create client");
         return ERR_CLIENT_OPEN;
@@ -532,9 +533,10 @@ auto SindarinAPI::makeKindleRequest(const std::string &path, KindlePageResponse 
                                     const std::shared_ptr<CancelFlag> &cancelFlag, bool useBle)
     -> int {
     std::string url = StringFormat("%s%s", SINDARIN_SERVER_URL, path.c_str());
-    log_i("Making Kindle request to URL: %s", url.c_str());
+    log_i("Making Kindle request to URL: %s (cancelFlag=%p)", url.c_str(), cancelFlag.get());
 
-    auto client = createClient(url, "application/json", HTTP_METHOD_GET, useBle, cancelFlag);
+    auto client =
+        createClient(url, "application/json", HTTP_METHOD_GET, useBle, cancelFlag, 120000);
     if (!client) {
         log_e("Failed to create HTTP client");
         return ERR_CLIENT_OPEN;
@@ -556,7 +558,7 @@ auto SindarinAPI::makeKindleRequest(const std::string &path, KindlePageResponse 
     defer { client->close(); };
 
     // Fetch headers - this returns content length, not an error code
-    int contentLength = client->fetchHeaders();
+    int contentLength = client->fetchHeaders(cancelFlag);
     if (contentLength <= 0) {
         log_e("Failed to fetch HTTP headers or empty response: %d", contentLength);
         return ERR_CONTENT_LENGTH;
@@ -630,9 +632,16 @@ auto SindarinAPI::openKindleBook(const std::string &title, KindlePageResponse *r
 }
 
 auto SindarinAPI::navigateKindleNext(KindlePageResponse *resp,
-                                     const std::shared_ptr<CancelFlag> &cancelFlag, bool useBle)
+                                     const std::shared_ptr<CancelFlag> &cancelFlag, bool useBle,
+                                     bool ocr) -> int {
+    std::string path = StringFormat("/kindle/navigate-next?ocr=%d", ocr ? 1 : 0);
+    return makeKindleRequest(path, resp, cancelFlag, useBle);
+}
+
+auto SindarinAPI::previewKindleNext(KindlePageResponse *resp,
+                                    const std::shared_ptr<CancelFlag> &cancelFlag, bool useBle)
     -> int {
-    return makeKindleRequest("/kindle/navigate-next?ocr=1", resp, cancelFlag, useBle);
+    return makeKindleRequest("/kindle/preview-next", resp, cancelFlag, useBle);
 }
 
 auto SindarinAPI::navigateKindlePrevious(KindlePageResponse *resp,

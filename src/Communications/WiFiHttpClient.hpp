@@ -12,7 +12,8 @@
 class WiFiHttpClient : public HttpClient {
 public:
     WiFiHttpClient(const char *url, const char *contentType = "",
-                   esp_http_client_method_t method = HTTP_METHOD_GET, bool gzip = false);
+                   esp_http_client_method_t method = HTTP_METHOD_GET, bool gzip = false,
+                   int timeoutMs = 30000);
     WiFiHttpClient(const WiFiHttpClient &) = delete;
 
     ~WiFiHttpClient() override;

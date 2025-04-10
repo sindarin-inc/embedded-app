@@ -14,7 +14,7 @@
 #include "sindarin-debug.h"
 
 WiFiHttpClient::WiFiHttpClient(const char *url, const char *contentType,
-                               esp_http_client_method_t method, bool gzip)
+                               esp_http_client_method_t method, bool gzip, int timeoutMs)
     : HttpClient(url, contentType, method, gzip) {
 
     userAgent_ = StringFormat("SolReader/%s (%s)", SemanticVersionString(), GitVersionString());
@@ -23,7 +23,7 @@ WiFiHttpClient::WiFiHttpClient(const char *url, const char *contentType,
         .url = url_,
         .user_agent = userAgent_.c_str(),
         .method = method,
-        .timeout_ms = 30000,
+        .timeout_ms = timeoutMs,
         .event_handler = [](esp_http_client_event_t *event) -> esp_err_t {
             auto thisPtr = static_cast<WiFiHttpClient *>(event->user_data);
             switch (event->event_id) {

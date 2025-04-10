@@ -71,7 +71,7 @@ public:
                           const std::function<void(int percentage)> &progressCallback) -> int;
     static auto createClient(const std::string &url, const std::string &contentType,
                              esp_http_client_method_t method, bool useBle,
-                             const std::shared_ptr<CancelFlag> &cancel)
+                             const std::shared_ptr<CancelFlag> &cancel, int timeoutMs = 30000)
         -> std::shared_ptr<HttpClient>;
     auto uploadTelemetryFile(SFile &telemetryFile, const std::string &localPath,
                              FileSystem &fileSystem, bool useBle = false,
@@ -90,7 +90,9 @@ public:
     auto openKindleBook(const std::string &title, KindlePageResponse *resp,
                         const std::shared_ptr<CancelFlag> &cancelFlag, bool useBle) -> int;
     auto navigateKindleNext(KindlePageResponse *resp, const std::shared_ptr<CancelFlag> &cancelFlag,
-                            bool useBle) -> int;
+                            bool useBle, bool ocr = true) -> int;
+    auto previewKindleNext(KindlePageResponse *resp, const std::shared_ptr<CancelFlag> &cancelFlag,
+                           bool useBle) -> int;
     auto navigateKindlePrevious(KindlePageResponse *resp,
                                 const std::shared_ptr<CancelFlag> &cancelFlag, bool useBle) -> int;
 

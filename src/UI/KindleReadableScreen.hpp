@@ -62,6 +62,8 @@ protected:
     // Handle page navigation
     // Load the next kindle page from API
     void loadNextKindlePage();
+    // Load the next kindle page preview for pre-caching
+    void loadNextKindlePreview();
     // Load the previous kindle page from API
     void loadPreviousKindlePage();
     // Navigate locally within the current renderer buffer
