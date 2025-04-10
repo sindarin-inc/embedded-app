@@ -754,7 +754,7 @@ void KindleReadableScreen::loadNextKindlePreview() {
         int httpCode = sindarinApi->previewKindleNext(response.get(), cancelFlag_, useBle_);
 
         if (httpCode != 200 || !response->success) {
-            DispatchGetUiQueue()->dispatch([this, isBackgroundLoading, httpCode]() {
+            DispatchGetUiQueue()->dispatch([this, httpCode]() {
                 if (dismissed_) {
                     return;
                 }
@@ -770,7 +770,7 @@ void KindleReadableScreen::loadNextKindlePreview() {
         }
 
         // Process the response on the UI thread
-        DispatchGetUiQueue()->dispatch([this, response, isBackgroundLoading]() {
+        DispatchGetUiQueue()->dispatch([this, response]() {
             if (dismissed_) {
                 return;
             }
@@ -798,8 +798,9 @@ void KindleReadableScreen::loadNextKindlePreview() {
             }
             currentPageText_ += response->ocrText;
 
-            log_i("PREVIEW RESPONSE - Preview text size: %zu bytes, total buffer size now: %zu bytes",
-                  response->ocrText.length(), currentPageText_.length());
+            log_i(
+                "PREVIEW RESPONSE - Preview text size: %zu bytes, total buffer size now: %zu bytes",
+                response->ocrText.length(), currentPageText_.length());
 
             // Save the current position before updating the stream
             uint32_t savedOffset = currentPlace_ ? currentPlace_->getOffset() : 0;
@@ -979,14 +980,14 @@ void KindleReadableScreen::loadNextKindlePage() {
             currentPage_ = response->progress.currentPage;
             totalPages_ = response->progress.totalPages;
             currentPageImageUrl_ = response->screenshotUrl;
-            
+
             // Update the book progress in the KindleBook object
             kindleBook_->progressPercent = response->progress.percentage;
             kindleBook_->progress = StringFormat("%d%%", response->progress.percentage);
 
-            log_i("Updated book progress metadata: page %d/%d (%d%%)",
-                  currentPage_, totalPages_, response->progress.percentage);
-             
+            log_i("Updated book progress metadata: page %d/%d (%d%%)", currentPage_, totalPages_,
+                  response->progress.percentage);
+
             // Note: we don't append text because we're using ocr=0 since
             // we should already have the content from the preview call
             log_i("Skipping text append since OCR was not requested (using previewed content)");
@@ -1273,27 +1274,27 @@ void KindleReadableScreen::navigateNext() {
                               httpCode);
                     } else {
                         log_i("Successfully synced server state with navigate-next");
-                        
-                        // Important: Update book metadata but NOT the text content since we already 
+
+                        // Important: Update book metadata but NOT the text content since we already
                         // have the content from the preview request
                         if (response && response->success) {
                             // Update current page information
                             currentPage_ = response->progress.currentPage;
                             totalPages_ = response->progress.totalPages;
                             currentPageImageUrl_ = response->screenshotUrl;
-                            
+
                             // Update the book progress in the KindleBook object
                             kindleBook_->progressPercent = response->progress.percentage;
-                            kindleBook_->progress = StringFormat("%d%%", response->progress.percentage);
-                            
-                            log_i("Updated book progress metadata: page %d/%d (%d%%)",
-                                  currentPage_, totalPages_, response->progress.percentage);
+                            kindleBook_->progress =
+                                StringFormat("%d%%", response->progress.percentage);
+
+                            log_i("Updated book progress metadata: page %d/%d (%d%%)", currentPage_,
+                                  totalPages_, response->progress.percentage);
                         }
                     }
                 });
             });
         }
-
     }
 
     // Check if we need to load more content preemptively
