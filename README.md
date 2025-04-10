@@ -15,7 +15,7 @@ The primary way to build the firmware itself is with Espressif's official [esp-i
 ```sh
 mkdir ~/esp
 cd ~/esp
-git clone -b v5.3.3 --recursive https://github.com/espressif/esp-idf.git
+git clone -b v5.3.2 --recursive https://github.com/espressif/esp-idf.git
 cd esp-idf
 ./install.sh esp32s3
 ```
