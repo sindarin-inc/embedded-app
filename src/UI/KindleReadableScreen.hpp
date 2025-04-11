@@ -108,9 +108,9 @@ private:
     bool hasNavigatedForward_{false};      // Tracks if user has navigated forward at least once
     bool needsRedrawAfterLoad_{false};     // Tracks if we need to redraw after content loads
     bool previewRequestInProgress_{false}; // Tracks if a preview request is currently in progress
-    bool needsNavigateSync_{false};        // Tracks if we need to sync server position after page turn
-    uint32_t lastPreviewOffset_{0};        // Tracks the offset where preview content was added
-    bool justNavigatedToServer_{false};    // Tracks if we just made a navigateNext request
+    bool needsNavigateSync_{false};     // Tracks if we need to sync server position after page turn
+    uint32_t lastPreviewOffset_{0};     // Tracks the offset where preview content was added
+    bool justNavigatedToServer_{false}; // Tracks if we just made a navigateNext request
 
     // Timer handles for UI tasks
     std::shared_ptr<CancelFlag> autoDismissCancelFlag_;
