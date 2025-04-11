@@ -1175,27 +1175,13 @@ void KindleReadableScreen::navigateNext() {
     // Check if we're physically near the end of the buffer - use just one threshold for consistency
     bool isNearEndOfBuffer = remainingBytes < bufferThreshold_;
 
-    // CASE 1: We're near the end of the buffer and need more content
-    if (isNearEndOfBuffer) {
-        log_i("NAVIGATE: Near end of buffer, remaining bytes: %u", remainingBytes);
+    // Before checking buffer, see if we can turn the page within the current content
+    bool canTurnPage = newPlace_ && currentPlace_ && newPlace_->getOffset() > currentPlace_->getOffset();
+    
+    // CASE 1: We're near the end of the buffer and can't turn the page anymore (true end of content)
+    if (isNearEndOfBuffer && !canTurnPage) {
+        log_i("NAVIGATE: At true end of buffer, remaining bytes: %u, can't render next page", remainingBytes);
         
-        // Even if we're at the end of the buffer, render what we have
-        if (newPlace_ && currentPlace_ && newPlace_->getOffset() > currentPlace_->getOffset()) {
-            // Set up the new place and render what we have
-            turnPage();
-            uint8_t darkPicturePercent = 0;
-            std::tie(newPlace_, darkPicturePercent) = renderer_.renderPage(currentPlace_);
-
-            // Update the display with what we have
-            display_.updateDisplay(DisplaySystem::UpdateType::PARTIAL, true,
-                                   display_.darkPictureVComAdj(darkPicturePercent));
-            
-            // We've moved forward, so we'll need to sync with server later
-            needsNavigateSync_ = true;
-            
-            log_i("NAVIGATE: Rendering partial content at buffer end, need to load more");
-        }
-
         // If we're already loading or a preview is in progress, show loading message
         if (nextPageLoading_ || previewRequestInProgress_) {
             // Show loading message with rounded rect
@@ -1208,9 +1194,39 @@ void KindleReadableScreen::navigateNext() {
             setNeedsRerender();
             return;
         }
+    }
+    // CASE 2: We're near the end of buffer but still have a page to render
+    else if (isNearEndOfBuffer && canTurnPage) {
+        log_i("NAVIGATE: Near end of buffer but can still turn page, remaining bytes: %u", remainingBytes);
         
-        // We need more content and we're not already fetching it
+        // Set up the new place and render what we have
+        turnPage();
+        uint8_t darkPicturePercent = 0;
+        std::tie(newPlace_, darkPicturePercent) = renderer_.renderPage(currentPlace_);
+
+        // Update the display with what we have
+        display_.updateDisplay(DisplaySystem::UpdateType::PARTIAL, true,
+                               display_.darkPictureVComAdj(darkPicturePercent));
         
+        // We've moved forward, so we'll need to sync with server later
+        needsNavigateSync_ = true;
+        
+        log_i("NAVIGATE: Rendering page content at buffer end, need to load more in background");
+        
+        // Start loading more content in the background without showing a message
+        if (!nextPageLoading_ && !previewRequestInProgress_ && !justNavigatedToServer_) {
+            log_i("NAVIGATE: Loading preview content in background");
+            loadNextKindlePreview();
+        } else if (justNavigatedToServer_) {
+            // If we just navigated to server, reset the flag
+            justNavigatedToServer_ = false;
+        }
+        
+        return;
+    }
+    
+    // CASE 3: We need more content and we're at true end
+    if (isNearEndOfBuffer) {
         // If we don't need to sync first, then we can load more preview content
         if (!justNavigatedToServer_) {
             log_i("NAVIGATE: Loading preview content at buffer end");
@@ -1224,7 +1240,7 @@ void KindleReadableScreen::navigateNext() {
         return;
     }
     
-    // CASE 2: We have enough content in buffer to turn the page
+    // CASE 4: We have enough content in buffer to turn the page normally
     
     // For proper navigation, we should use the next place that was returned
     // from the previous render operation
