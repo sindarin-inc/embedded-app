@@ -664,6 +664,9 @@ void KindleReadableScreen::loadKindleBookPage() {
         firstKindleLoad_ = false;
         hasNavigatedForward_ = false; // Reset navigation tracking for fresh book load
 
+        // Reset any preview-related flags on initial load
+        previewRequestInProgress_ = false;
+        
         // Proactively check if we need to start loading the next page in the background
         if (checkNearEndOfBuffer()) {
             log_i("Near buffer end after initial load, proactively loading preview content");
@@ -730,12 +733,16 @@ void KindleReadableScreen::setErrorMessage(const std::string &errorMessage) {
 }
 
 void KindleReadableScreen::loadNextKindlePreview() {
-    if (dismissed_ || nextPageLoading_) {
+    if (dismissed_ || nextPageLoading_ || previewRequestInProgress_) {
+        // Don't initiate a preview if we're already loading something or if a preview is in progress
+        log_i("Skipping preview request - dismissed: %d, nextPageLoading: %d, previewRequestInProgress: %d",
+              dismissed_, nextPageLoading_, previewRequestInProgress_);
         return;
     }
 
-    // Set flag to prevent multiple concurrent load requests
+    // Set flags to prevent multiple concurrent load requests
     nextPageLoading_ = true;
+    previewRequestInProgress_ = true;
 
     // For preview loading, we always do it in background
     bool isBackgroundLoading = true;
@@ -760,6 +767,7 @@ void KindleReadableScreen::loadNextKindlePreview() {
                 }
 
                 nextPageLoading_ = false;
+                previewRequestInProgress_ = false;
 
                 // For preview loads, just log the error and restore state
                 log_w("Background loading of Kindle page preview failed with HTTP code %d",
@@ -824,6 +832,10 @@ void KindleReadableScreen::loadNextKindlePreview() {
             // For background loading, update the stream and restore state
             log_i("Preview loading complete, updated text buffer");
             setState(State::DISPLAY_CONTENT);
+            
+            // Mark that the preview request is no longer in progress
+            previewRequestInProgress_ = false;
+            log_i("Preview request completed successfully");
 
             // Calculate buffer information
             uint32_t currentOffset = currentPlace_ ? currentPlace_->getOffset() : 0;
@@ -1249,10 +1261,21 @@ void KindleReadableScreen::navigateNext() {
     // This ensures the server state matches our current position
     log_i("Syncing server state after navigation");
 
-    // The following code always executes, not just when crossing into preview content
+    // Check if we're near the end of the buffer - if so, ensure we have more content
+    bool isNearEnd = checkNearEndOfBuffer();
+    
+    // If we're near the end of content, load more preview content first
+    if (isNearEnd && !previewRequestInProgress_ && !nextPageLoading_) {
+        log_i("Near the end of buffer - loading more preview content first");
+        loadNextKindlePreview();
+        // The `loadNextKindlePreview` will set `nextPageLoading_` to true
+        // We'll continue with the rest of this method since we want to render what we have
+    }
+    
+    // The following code executes to sync position with the server
     {
         // Sync with server to ensure server state matches our current position
-
+        
         // Set a flag to prevent multiple concurrent sync operations
         bool alreadySyncing = nextPageLoading_;
         if (!alreadySyncing) {
@@ -1290,6 +1313,15 @@ void KindleReadableScreen::navigateNext() {
 
                             log_i("Updated book progress metadata: page %d/%d (%d%%)", currentPage_,
                                   totalPages_, response->progress.percentage);
+                                  
+                            // Always queue a preview load task to run after navigation completion
+                            // This ensures we always have the next content ready for subsequent page turns
+                            DispatchGetUiQueue()->dispatch([this]() {
+                                if (!dismissed_) {
+                                    log_i("Proactively loading preview content after navigate-next completion");
+                                    loadNextKindlePreview();
+                                }
+                            });
                         }
                     }
                 });
@@ -1297,11 +1329,10 @@ void KindleReadableScreen::navigateNext() {
         }
     }
 
-    // Check if we need to load more content preemptively
-    if (checkNearEndOfBuffer() && !nextPageLoading_) {
-        log_i("Preemptively loading preview content after navigation");
-        loadNextKindlePreview();
-    }
+    // We don't need to preemptively load content here since:
+    // 1. If we were near the end, we already loaded it above
+    // 2. If not, we'll load it after the navigate-next request completes
+    // This avoids redundant preview requests
 }
 
 void KindleReadableScreen::loadPreviousKindlePage() {
@@ -1527,6 +1558,8 @@ void KindleReadableScreen::turnPage() {
         log_i("At the end of content, not advancing page");
         return;
     }
+
+    // No need to reset any flags here with our new approach
 
     // Save previous offset for logging
     uint32_t prevOffset = 0;
