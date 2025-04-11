@@ -24,6 +24,11 @@ KindleReadableScreen::KindleReadableScreen(const std::shared_ptr<RendererStream>
       telemetry_(telemetry), fileSystem_(fileSystem), lightingController_(lightingController),
       localStore_(localStore), kindleBook_(kindleBook), loadingMessageView_(display, 5),
       errorMessageView_(display, 5), delayedMessageView_(display, 5) {
+          
+    // Initialize state variables 
+    needsNavigateSync_ = false;
+    lastPreviewOffset_ = 0;
+    justNavigatedToServer_ = false;
     log_i("Created KindleReadableScreen for book: %s by %s", kindleBook->title.c_str(),
           kindleBook->author.c_str());
 
@@ -666,12 +671,14 @@ void KindleReadableScreen::loadKindleBookPage() {
 
         // Reset any preview-related flags on initial load
         previewRequestInProgress_ = false;
+        needsNavigateSync_ = false;
+        lastPreviewOffset_ = 0;
+        justNavigatedToServer_ = false;
 
-        // Proactively check if we need to start loading the next page in the background
-        if (checkNearEndOfBuffer()) {
-            log_i("Near buffer end after initial load, proactively loading preview content");
-            loadNextKindlePreview();
-        }
+        // Always load the first preview after initial load, but don't check the buffer size
+        // This ensures we always have the next page ready
+        log_i("Loading first preview after initial load");
+        loadNextKindlePreview();
     });
 }
 
@@ -736,7 +743,7 @@ void KindleReadableScreen::loadNextKindlePreview() {
     if (dismissed_ || nextPageLoading_ || previewRequestInProgress_) {
         // Don't initiate a preview if we're already loading something or if a preview is in
         // progress
-        log_i("Skipping preview request - dismissed: %d, nextPageLoading: %d, "
+        log_i("PREVIEW: Skipping request - dismissed: %d, nextPageLoading: %d, "
               "previewRequestInProgress: %d",
               dismissed_, nextPageLoading_, previewRequestInProgress_);
         return;
@@ -746,12 +753,9 @@ void KindleReadableScreen::loadNextKindlePreview() {
     nextPageLoading_ = true;
     previewRequestInProgress_ = true;
 
-    // For preview loading, we always do it in background
-    bool isBackgroundLoading = true;
-
     // Mark the state for internal tracking
     setState(State::LOADING_BACKGROUND);
-    log_i("Starting background load of Kindle page preview");
+    log_i("PREVIEW: Starting background load of next page");
 
     // Execute the API call on the background thread
     DispatchGetCore0BackgroundQueue()->dispatch([this]() {
@@ -772,8 +776,7 @@ void KindleReadableScreen::loadNextKindlePreview() {
                 previewRequestInProgress_ = false;
 
                 // For preview loads, just log the error and restore state
-                log_w("Background loading of Kindle page preview failed with HTTP code %d",
-                      httpCode);
+                log_w("PREVIEW: Loading failed with HTTP code %d", httpCode);
                 setState(State::DISPLAY_CONTENT);
             });
             return;
@@ -787,11 +790,22 @@ void KindleReadableScreen::loadNextKindlePreview() {
 
             nextPageLoading_ = false;
 
-            log_i("Processing Kindle preview-next response (success=%d, text length=%zu)",
+            log_i("PREVIEW: Processing response (success=%d, text length=%zu)",
                   response->success, response->ocrText.length());
 
-            // Update current page information (but don't advance the actual page counter)
-            // These remain unchanged until user actually navigates with navigateKindleNext
+            // NEVER set a new preview boundary if one already exists and hasn't been processed
+            if (lastPreviewOffset_ == 0) {
+                // Store the current buffer size before adding new content - this will be our preview boundary
+                uint32_t previousSize = currentPageText_.length();
+                
+                // Store the preview boundary - this marks where navigate should happen
+                // We subtract one character to account for potential off-by-one issues
+                // when checking if we've passed this boundary
+                lastPreviewOffset_ = previousSize > 0 ? previousSize - 1 : 0;
+                log_i("PREVIEW: Setting preview boundary to offset %u", lastPreviewOffset_);
+            } else {
+                log_i("PREVIEW: Keeping existing preview boundary at offset %u", lastPreviewOffset_);
+            }
 
             // Append the new text to the existing buffer
             if (!currentPageText_.empty()) {
@@ -808,9 +822,8 @@ void KindleReadableScreen::loadNextKindlePreview() {
             }
             currentPageText_ += response->ocrText;
 
-            log_i(
-                "PREVIEW RESPONSE - Preview text size: %zu bytes, total buffer size now: %zu bytes",
-                response->ocrText.length(), currentPageText_.length());
+            log_i("PREVIEW: Added %zu bytes, buffer size now: %zu bytes",
+                  response->ocrText.length(), currentPageText_.length());
 
             // Save the current position before updating the stream
             uint32_t savedOffset = currentPlace_ ? currentPlace_->getOffset() : 0;
@@ -827,24 +840,27 @@ void KindleReadableScreen::loadNextKindlePreview() {
                     std::dynamic_pointer_cast<TxtPlace>(Place::factory(savedOffset));
                 currentPlace_ = restoredPlace;
                 renderer_.setCurrentPlace(currentPlace_);
-                log_i("Restored place to offset %" PRIu32 " after loading preview content",
-                      savedOffset);
+                log_i("PREVIEW: Restored place to offset %u", savedOffset);
             }
 
-            // For background loading, update the stream and restore state
-            log_i("Preview loading complete, updated text buffer");
+            // Update state
             setState(State::DISPLAY_CONTENT);
-
-            // Mark that the preview request is no longer in progress
             previewRequestInProgress_ = false;
-            log_i("Preview request completed successfully");
+            
+            // Flag that we've added preview content, need to call navigate when user reaches this point
+            if (savedOffset < lastPreviewOffset_) {
+                log_i("PREVIEW: Current position %u is before preview boundary %u, will need navigate later",
+                      savedOffset, lastPreviewOffset_);
+            } else {
+                log_i("PREVIEW: Current position %u is already past preview boundary %u",
+                      savedOffset, lastPreviewOffset_);
+            }
 
             // Calculate buffer information
             uint32_t currentOffset = currentPlace_ ? currentPlace_->getOffset() : 0;
             uint32_t totalSize = renderer_.size();
-            uint32_t loadedSize = response->ocrText.length();
-            uint32_t previousSize = totalSize - loadedSize - 2; // account for spacing characters
-
+            uint32_t previousSize = totalSize - response->ocrText.length(); // Calculate size before adding new content
+            
             // Calculate remaining bytes before and after new content was loaded
             uint32_t remainingBytesBefore =
                 (currentOffset < previousSize) ? (previousSize - currentOffset) : 0;
@@ -855,24 +871,16 @@ void KindleReadableScreen::loadNextKindlePreview() {
             bool wasNearEndOfBuffer = remainingBytesBefore < bufferThreshold_;
             bool shouldRefreshPage = false;
 
-            // Log detailed buffer information for debugging
-            log_i("Buffer status - Before preview: offset=%" PRIu32 "/%" PRIu32
-                  " (remaining: %" PRIu32 " bytes), After preview: size=%" PRIu32
-                  " (remaining: %" PRIu32 " bytes), Added: %" PRIu32 " bytes, needsRedraw: %s",
-                  currentOffset, previousSize, remainingBytesBefore, totalSize, remainingBytesNow,
-                  loadedSize, needsRedrawAfterLoad_ ? "yes" : "no");
+            log_i("PREVIEW: Buffer status - Before: offset=%u/%u (remaining: %u bytes), "
+                  "After: size=%u (remaining: %u bytes), needsRedraw: %s",
+                  currentOffset, previousSize, remainingBytesBefore, 
+                  totalSize, remainingBytesNow, needsRedrawAfterLoad_ ? "yes" : "no");
 
-            // We should refresh the page if:
-            // 1. We were near the end of the buffer before new content was loaded (or marked for
-            // redraw)
-            // 2. We now have more content available in the buffer
+            // We should refresh the page if we were near the end of the buffer before new content was loaded
+            // or explicitly marked for redraw, and we now have more content available
             if ((wasNearEndOfBuffer || needsRedrawAfterLoad_) &&
                 remainingBytesNow > remainingBytesBefore) {
-                log_i("Refreshing page after preview load - %s "
-                      "(before: remaining=%" PRIu32 " bytes, now: remaining=%" PRIu32 " bytes)",
-                      needsRedrawAfterLoad_ ? "explicitly marked for redraw"
-                                            : "near the end of buffer",
-                      remainingBytesBefore, remainingBytesNow);
+                log_i("PREVIEW: Refreshing page after load");
 
                 // Re-render the current page with the new content
                 uint8_t darkPicturePercent = 0;
@@ -887,18 +895,16 @@ void KindleReadableScreen::loadNextKindlePreview() {
                     uint32_t newOffset = newPlace_->getOffset();
                     uint32_t currOffset = currentPlace_->getOffset();
                     lastRenderedPageSize_ = (newOffset > currOffset) ? (newOffset - currOffset) : 0;
-                    log_i("New page size after refresh: %" PRIu32 " bytes", lastRenderedPageSize_);
+                    log_i("PREVIEW: New page size after refresh: %u bytes", lastRenderedPageSize_);
                 }
 
                 shouldRefreshPage = true;
-
-                // Reset the redraw flag since we've now handled it
                 needsRedrawAfterLoad_ = false;
             }
 
             // Check if we're still low on content and need to load more
             if (!shouldRefreshPage && checkNearEndOfBuffer()) {
-                log_i("Still near buffer end after preview load, loading more preview content");
+                log_i("PREVIEW: Still near buffer end, loading more content");
                 loadNextKindlePreview();
             }
         });
@@ -1142,30 +1148,37 @@ void KindleReadableScreen::navigateNext() {
     }
 
     // Get current buffer info
-    uint32_t currentOffset = 0;
-    if (currentPlace_) {
-        currentOffset = currentPlace_->getOffset();
-    }
-
+    uint32_t currentOffset = currentPlace_ ? currentPlace_->getOffset() : 0;
     uint32_t totalSize = renderer_.size();
     uint32_t remainingBytes = (currentOffset < totalSize) ? (totalSize - currentOffset) : 0;
 
-    // For Kindle books, we need special handling for EOF
-    // Check if we're physically near the end of the buffer
-    bool isAtEndOfBuffer =
-        (remainingBytes < bufferThreshold_) ||
-        (renderer_.shouldRespectEOF() && totalSize > 0 &&
-         remainingBytes < bufferThreshold_ * 2 // Be more conservative for user interactions
-        );
+    log_i("NAVIGATE: current offset=%u, total size=%u, remaining=%u, threshold=%d", 
+          currentOffset, totalSize, remainingBytes, bufferThreshold_);
+          
+    // ALWAYS CHECK THIS FIRST: Has the user crossed a preview boundary? If so, we MUST sync
+    // This check needs to happen before ANY other navigation logic
+    if (currentOffset >= lastPreviewOffset_ && lastPreviewOffset_ > 0) {
+        log_i("NAVIGATE: Current offset %u crossed preview boundary %u, MUST sync with server", 
+              currentOffset, lastPreviewOffset_);
+        
+        // If we're not already loading, immediately sync with server
+        if (!nextPageLoading_) {
+            log_i("NAVIGATE: Immediately syncing with server after crossing preview boundary");
+            syncWithServer();
+            return; // Don't proceed with local navigation until server is synced
+        } else {
+            needsNavigateSync_ = true;
+            log_i("NAVIGATE: Cannot sync now (loading in progress), but marked for sync");
+        }
+    }
 
-    // Check if we're at the end of the buffer and waiting for more content
-    if (isAtEndOfBuffer) {
-        log_i("End of buffer detected - remaining bytes: %" PRIu32 ", buffer size: %" PRIu32 "",
-              remainingBytes, totalSize);
+    // Check if we're physically near the end of the buffer - use just one threshold for consistency
+    bool isNearEndOfBuffer = remainingBytes < bufferThreshold_;
 
-        // Mark that we need to redraw after load since we're navigating near the end
-        needsRedrawAfterLoad_ = true;
-
+    // CASE 1: We're near the end of the buffer and need more content
+    if (isNearEndOfBuffer) {
+        log_i("NAVIGATE: Near end of buffer, remaining bytes: %u", remainingBytes);
+        
         // Even if we're at the end of the buffer, render what we have
         if (newPlace_ && currentPlace_ && newPlace_->getOffset() > currentPlace_->getOffset()) {
             // Set up the new place and render what we have
@@ -1176,78 +1189,74 @@ void KindleReadableScreen::navigateNext() {
             // Update the display with what we have
             display_.updateDisplay(DisplaySystem::UpdateType::PARTIAL, true,
                                    display_.darkPictureVComAdj(darkPicturePercent));
-
-            log_i("Rendering partial content at buffer end, then loading more");
+            
+            // We've moved forward, so we'll need to sync with server later
+            needsNavigateSync_ = true;
+            
+            log_i("NAVIGATE: Rendering partial content at buffer end, need to load more");
         }
 
-        if (state_ == State::LOADING_BACKGROUND) {
-            // We're already loading more content, show a temporary message with rounded rect
+        // If we're already loading or a preview is in progress, show loading message
+        if (nextPageLoading_ || previewRequestInProgress_) {
+            // Show loading message with rounded rect
             setLoadingMessage("Loading more...", true);
-            // Don't change state, just show the message
+            
+            if (state_ != State::LOADING_BACKGROUND) {
+                setState(State::LOADING_BACKGROUND);
+            }
+            
             setNeedsRerender();
             return;
-        } else if (nextPageLoading_) {
-            // We're loading in background but not tracked in state yet
-            // Start showing loading UI since user has reached the end with rounded rect
-            setLoadingMessage("Loading more...", true);
-            setState(State::LOADING_BACKGROUND);
-            setNeedsRerender();
+        }
+        
+        // We need more content and we're not already fetching it
+        
+        // If we don't need to sync first, then we can load more preview content
+        if (!justNavigatedToServer_) {
+            log_i("NAVIGATE: Loading preview content at buffer end");
+            loadNextKindlePreview();
             return;
         } else {
-            // We've reached the end but aren't loading more - start loading
-            loadNextKindlePage();
-            return;
+            // If we just navigated to server, reset the flag and don't request again immediately
+            justNavigatedToServer_ = false;
         }
-    } else {
-        // We're not at the end of the buffer, so we don't need to redraw after load
-        needsRedrawAfterLoad_ = false;
-    }
-
-    // For proper navigation, we should use the next place that was returned
-    // from the previous render operation, which represents exactly how much
-    // text was rendered on the current screen
-
-    // We've already got currentOffset and totalSize from above,
-    // no need to redefine them
-
-    // If newPlace_ is null or somehow invalid, create a reasonable fallback
-    uint32_t nextOffset = currentOffset;
-    if (newPlace_) {
-        nextOffset = newPlace_->getOffset();
-    } else {
-        // If we don't have a valid next place, this is a fallback
-        log_w("No valid next place found, using fallback navigation");
-        nextOffset = currentOffset + 500; // Fallback: approximate screen of text
-    }
-
-    // Check if we'd go past the end of the buffer
-    if (totalSize > 0 && nextOffset >= totalSize) {
-        // We'd go past the end, so we need more content
-        log_i("Next offset %" PRIu32 " would go past buffer size %" PRIu32 "", nextOffset,
-              totalSize);
-        if (!nextPageLoading_) {
-            loadNextKindlePage();
-        }
+        
         return;
     }
+    
+    // CASE 2: We have enough content in buffer to turn the page
+    
+    // For proper navigation, we should use the next place that was returned
+    // from the previous render operation
+    uint32_t nextOffset = newPlace_ ? newPlace_->getOffset() : (currentOffset + 500);
 
-    // Log navigation info with buffer details
-    uint32_t remainingBeforeNav = (currentOffset < totalSize) ? (totalSize - currentOffset) : 0;
-    uint32_t remainingAfterNav = (nextOffset < totalSize) ? (totalSize - nextOffset) : 0;
-    uint32_t pageSize = nextOffset - currentOffset;
-
-    log_i("NAVIGATION - Moving from offset %" PRIu32 " to %" PRIu32 " (page size: %" PRIu32
-          " bytes), buffer size: %" PRIu32 ", "
-          "remaining before: %" PRIu32 ", after: %" PRIu32 " bytes",
-          currentOffset, nextOffset, pageSize, totalSize, remainingBeforeNav, remainingAfterNav);
-
-    // Create a new place if needed
-    if (!newPlace_) {
-        newPlace_ = Place::factory(nextOffset);
-    }
+    // Log navigation info
+    log_i("NAVIGATE: Moving from offset %u to %u (page size: %u bytes)", 
+          currentOffset, nextOffset, nextOffset - currentOffset);
 
     // Turn to the next page in the renderer buffer
     turnPage();
+    
+    // CRITICAL: Check again if we've crossed preview boundary AFTER turning the page
+    // This check is vital because turnPage() updates our currentPlace_
+    uint32_t newPosition = currentPlace_ ? currentPlace_->getOffset() : 0;
+    if (newPosition >= lastPreviewOffset_ && lastPreviewOffset_ > 0) {
+        log_i("NAVIGATE: After page turn, position %u crossed preview boundary %u, MUST sync now", 
+              newPosition, lastPreviewOffset_);
+        
+        // We must sync immediately - this is the most important check in the whole system
+        if (!nextPageLoading_) {
+            // Render the page before syncing for a smooth user experience
+            uint8_t darkPicturePercent = 0;
+            std::tie(newPlace_, darkPicturePercent) = renderer_.renderPage(currentPlace_);
+            display_.updateDisplay(DisplaySystem::UpdateType::PARTIAL, true,
+                                   display_.darkPictureVComAdj(darkPicturePercent));
+            
+            // Now sync with server
+            syncWithServer();
+            return;
+        }
+    }
 
     // Render the content from the new position
     uint8_t darkPicturePercent = 0;
@@ -1257,86 +1266,13 @@ void KindleReadableScreen::navigateNext() {
     display_.updateDisplay(DisplaySystem::UpdateType::PARTIAL, true,
                            display_.darkPictureVComAdj(darkPicturePercent));
 
-    log_i("Navigated to next page within current buffer");
-
-    // For every page turn, we need to sync with the server
-    // This ensures the server state matches our current position
-    log_i("Syncing server state after navigation");
-
-    // Check if we're near the end of the buffer - if so, ensure we have more content
-    bool isNearEnd = checkNearEndOfBuffer();
-
-    // If we're near the end of content, load more preview content first
-    if (isNearEnd && !previewRequestInProgress_ && !nextPageLoading_) {
-        log_i("Near the end of buffer - loading more preview content first");
-        loadNextKindlePreview();
-        // The `loadNextKindlePreview` will set `nextPageLoading_` to true
-        // We'll continue with the rest of this method since we want to render what we have
+    // Sync with server if needed
+    if (needsNavigateSync_ && !nextPageLoading_) {
+        log_i("NAVIGATE: Syncing with server after page turn");
+        syncWithServer();
     }
-
-    // The following code executes to sync position with the server
-    {
-        // Sync with server to ensure server state matches our current position
-
-        // Set a flag to prevent multiple concurrent sync operations
-        bool alreadySyncing = nextPageLoading_;
-        if (!alreadySyncing) {
-            // Call navigateKindleNext with ocr=0 to sync the server state
-            nextPageLoading_ = true;
-            DispatchGetCore0BackgroundQueue()->dispatch([this]() {
-                auto response = std::make_shared<KindlePageResponse>();
-                auto sindarinApi = SindarinAPI::getInstance();
-
-                // Call navigateKindleNext with ocr=false to sync server state without getting
-                // content
-                int httpCode =
-                    sindarinApi->navigateKindleNext(response.get(), cancelFlag_, useBle_, false);
-
-                DispatchGetUiQueue()->dispatch([this, httpCode, response]() {
-                    nextPageLoading_ = false;
-                    if (httpCode != 200) {
-                        log_w("Failed to sync server state with navigate-next (HTTP code %d)",
-                              httpCode);
-                    } else {
-                        log_i("Successfully synced server state with navigate-next");
-
-                        // Important: Update book metadata but NOT the text content since we already
-                        // have the content from the preview request
-                        if (response && response->success) {
-                            // Update current page information
-                            currentPage_ = response->progress.currentPage;
-                            totalPages_ = response->progress.totalPages;
-                            currentPageImageUrl_ = response->screenshotUrl;
-
-                            // Update the book progress in the KindleBook object
-                            kindleBook_->progressPercent = response->progress.percentage;
-                            kindleBook_->progress =
-                                StringFormat("%d%%", response->progress.percentage);
-
-                            log_i("Updated book progress metadata: page %d/%d (%d%%)", currentPage_,
-                                  totalPages_, response->progress.percentage);
-
-                            // Always queue a preview load task to run after navigation completion
-                            // This ensures we always have the next content ready for subsequent
-                            // page turns
-                            DispatchGetUiQueue()->dispatch([this]() {
-                                if (!dismissed_) {
-                                    log_i("Proactively loading preview content after navigate-next "
-                                          "completion");
-                                    loadNextKindlePreview();
-                                }
-                            });
-                        }
-                    }
-                });
-            });
-        }
-    }
-
-    // We don't need to preemptively load content here since:
-    // 1. If we were near the end, we already loaded it above
-    // 2. If not, we'll load it after the navigate-next request completes
-    // This avoids redundant preview requests
+    // Don't proactively load preview content - only load after navigation sync
+    // This prevents loading too many previews consecutively without navigating
 }
 
 void KindleReadableScreen::loadPreviousKindlePage() {
@@ -1918,4 +1854,62 @@ void KindleReadableScreen::cancelDelayedLoadingMessage() {
 
     // Reset the rounded rect flag when canceling messages
     showLoadingWithRoundedRect_ = false;
+}
+
+void KindleReadableScreen::syncWithServer() {
+    // Only initiate one navigate request at a time
+    if (nextPageLoading_) {
+        log_i("SYNC: Already syncing with server, skipping duplicate request");
+        return;
+    }
+    
+    nextPageLoading_ = true;
+    
+    DispatchGetCore0BackgroundQueue()->dispatch([this]() {
+        auto response = std::make_shared<KindlePageResponse>();
+        auto sindarinApi = SindarinAPI::getInstance();
+
+        // Call navigateKindleNext with ocr=false to sync server state without getting content
+        int httpCode = sindarinApi->navigateKindleNext(response.get(), cancelFlag_, useBle_, false);
+
+        DispatchGetUiQueue()->dispatch([this, httpCode, response]() {
+            nextPageLoading_ = false;
+            justNavigatedToServer_ = true;
+            
+            if (httpCode != 200) {
+                log_w("SYNC: Failed to sync server state (HTTP code %d)", httpCode);
+            } else {
+                log_i("SYNC: Successfully synced server state");
+                needsNavigateSync_ = false;
+                
+                // CRITICAL: Reset the preview boundary to 0 after syncing
+                // This prevents us from re-syncing against the same boundary
+                lastPreviewOffset_ = 0;
+                log_i("SYNC: Reset preview boundary to 0");
+
+                // Update book metadata but NOT the text content
+                if (response && response->success) {
+                    // Update current page information
+                    currentPage_ = response->progress.currentPage;
+                    totalPages_ = response->progress.totalPages;
+                    currentPageImageUrl_ = response->screenshotUrl;
+
+                    // Update the book progress in the KindleBook object
+                    kindleBook_->progressPercent = response->progress.percentage;
+                    kindleBook_->progress = StringFormat("%d%%", response->progress.percentage);
+
+                    log_i("SYNC: Updated book progress: page %d/%d (%d%%)", 
+                          currentPage_, totalPages_, response->progress.percentage);
+                    
+                    // After navigation, always load the next preview
+                    DispatchGetUiQueue()->dispatch([this]() {
+                        if (!dismissed_ && !previewRequestInProgress_) {
+                            log_i("SYNC: Loading next preview after sync");
+                            loadNextKindlePreview();
+                        }
+                    });
+                }
+            }
+        });
+    });
 }
