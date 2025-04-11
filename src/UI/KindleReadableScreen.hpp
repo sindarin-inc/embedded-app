@@ -18,6 +18,33 @@
 #include "UI/NewReadablePopupMenuScreen.hpp"
 #include "UI/Screen.hpp"
 
+/*
+* Kindle Book Navigation Algorithm:
+* 
+* 1. Loading a Book:
+*    - /open-book: Returns current screen text from headless Kindle app in the cloud
+*    - /preview-next: Returns next page's text without changing server position
+*    - /navigate-next: Changes server position but doesn't return text
+*
+* 2. API Call Alternation:
+*    - Calls to /preview and /navigate must strictly alternate
+*    - After any /preview call, the next API call must be /navigate
+*    - After any /navigate call, the next API call must be /preview
+*    - We track this with lastCallWasPreview_ flag
+*
+* 3. Content Buffering:
+*    - When /preview-next returns text, it's appended to the pager's buffer
+*    - The position where this preview text begins is stored as lastPreviewOffset_
+*    - When user reaches lastPreviewOffset_ in local pager, we MUST sync server position
+*    - This is done by calling /navigate-next, which aligns server with our local position
+*
+* 4. User Navigation:
+*    - As user pages forward with remote, they advance through the pager's buffer
+*    - When approaching buffer end, we load more content with /preview-next
+*    - When crossing a preview boundary, we immediately sync with server via /navigate-next
+*    - This ensures the server always stays in sync with the local reading position
+*/
+
 class KindleReadableScreen : public EinkView, public Screen {
 public:
     enum class State {
