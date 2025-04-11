@@ -81,7 +81,7 @@ protected:
     void cancelDelayedLoadingMessage();
     // Sync the local position with the server using navigate-next
     void syncWithServer();
-    
+
     // Load just one more page of content, respecting the alternating pattern
     void loadNextContent();
 
@@ -111,10 +111,11 @@ private:
     bool hasNavigatedForward_{false};      // Tracks if user has navigated forward at least once
     bool needsRedrawAfterLoad_{false};     // Tracks if we need to redraw after content loads
     bool previewRequestInProgress_{false}; // Tracks if a preview request is currently in progress
-    bool needsNavigateSync_{false};        // Tracks if we need to sync server position after page turn
-    uint32_t lastPreviewOffset_{0};        // Tracks the offset where preview content was added
-    bool justNavigatedToServer_{false};    // Tracks if we just made a navigateNext request
-    bool lastCallWasPreview_{false};       // CRITICAL: Tracks if the last API call was a preview to enforce strict alternation
+    bool needsNavigateSync_{false};     // Tracks if we need to sync server position after page turn
+    uint32_t lastPreviewOffset_{0};     // Tracks the offset where preview content was added
+    bool justNavigatedToServer_{false}; // Tracks if we just made a navigateNext request
+    bool lastCallWasPreview_{
+        false}; // CRITICAL: Tracks if the last API call was a preview to enforce strict alternation
 
     // Timer handles for UI tasks
     std::shared_ptr<CancelFlag> autoDismissCancelFlag_;
