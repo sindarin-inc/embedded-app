@@ -38,7 +38,26 @@
 *    - When user reaches lastPreviewOffset_ in local pager, we MUST sync server position
 *    - This is done by calling /navigate-next, which aligns server with our local position
 *
-* 4. User Navigation:
+* 4. Boundary Detection:
+*    - CRITICAL: We must detect when user is about to cross or has crossed a preview boundary
+*    - Four boundary detection methods work together:
+*      a) Direct position check: currentOffset >= lastPreviewOffset_
+*      b) Next page prediction: nextOffset >= lastPreviewOffset_
+*      c) Page size projection: currentOffset + pageSize >= lastPreviewOffset_
+*      d) Two-step lookahead: For the future page after this one: futureOffset >= lastPreviewOffset_
+*    - The page size projection is vital for catching boundaries that would be crossed within
+*      a single page turn
+*    - The two-step lookahead is necessary to catch cases where a single page turn wouldn't cross
+*      the boundary, but the next one would
+*    - When any detection method indicates crossing, we call /navigate-next if permitted
+*    - CRUCIAL OVERRIDE: In some cases we MUST call /navigate-next even after a preview call
+*      to ensure server sync. This temporarily breaks alternation but is necessary ONLY when:
+*      1. We're EXACTLY ONE page turn away from crossing the boundary (distance <= pageSize)
+*      2. The next page turn would DEFINITELY cross the boundary
+*      We calculate pages-to-boundary = ceiling(distance-to-boundary / pageSize) and only
+*      force a sync when pages-to-boundary <= 1, to minimize unnecessary API calls
+*
+* 5. User Navigation:
 *    - As user pages forward with remote, they advance through the pager's buffer
 *    - When approaching buffer end, we load more content with /preview-next
 *    - When crossing a preview boundary, we immediately sync with server via /navigate-next
