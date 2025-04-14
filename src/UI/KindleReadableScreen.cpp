@@ -22,8 +22,8 @@ KindleReadableScreen::KindleReadableScreen(const std::shared_ptr<RendererStream>
     : EinkView(display), stream_(stream),
       renderer_(display, GetTextRectFromPrefs(display, prefs), font), prefs_(prefs),
       telemetry_(telemetry), fileSystem_(fileSystem), lightingController_(lightingController),
-      localStore_(localStore), kindleBook_(kindleBook), justNavigatedToServer_(false),
-      lastPreviewOffset_(0), needsNavigateSync_(false), loadingMessageView_(display, 5),
+      localStore_(localStore), kindleBook_(kindleBook), needsNavigateSync_(false),
+      lastPreviewOffset_(0), justNavigatedToServer_(false), loadingMessageView_(display, 5),
       errorMessageView_(display, 5), delayedMessageView_(display, 5) {
 
     // Initialize state variables
