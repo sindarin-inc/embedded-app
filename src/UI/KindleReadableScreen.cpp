@@ -16,7 +16,7 @@
 #include "sindarin-debug.h"
 
 // Helper function to get N words
-std::string getNWords(const std::string &text, int n, bool fromStart) {
+auto GetNWords(const std::string &text, int n, bool fromStart) -> std::string {
     std::string result;
     std::istringstream iss(text);
     std::string word;
@@ -30,11 +30,11 @@ std::string getNWords(const std::string &text, int n, bool fromStart) {
     }
 
     if (fromStart) {
-        for (int i = 0; i < std::min((int)words.size(), n); ++i) {
+        for (int i = 0; i < std::min(static_cast<int>(words.size()), n); ++i) {
             result += words[i] + " ";
         }
     } else {
-        for (int i = std::max(0, (int)words.size() - n); i < words.size(); ++i) {
+        for (int i = std::max(0, static_cast<int>(words.size()) - n); i < words.size(); ++i) {
             result += words[i] + " ";
         }
     }
@@ -55,8 +55,7 @@ KindleReadableScreen::KindleReadableScreen(const std::shared_ptr<RendererStream>
     : EinkView(display), stream_(stream),
       renderer_(display, GetTextRectFromPrefs(display, prefs), font), prefs_(prefs),
       telemetry_(telemetry), fileSystem_(fileSystem), lightingController_(lightingController),
-      localStore_(localStore), kindleBook_(kindleBook), needsNavigateSync_(false),
-      lastPreviewOffset_(0), justNavigatedToServer_(false), loadingMessageView_(display, 5),
+      localStore_(localStore), kindleBook_(kindleBook), loadingMessageView_(display, 5),
       errorMessageView_(display, 5), delayedMessageView_(display, 5) {
 
     // Initialize state variables
@@ -1285,7 +1284,9 @@ void KindleReadableScreen::navigateNext() {
             } else {
                 log_i("NAVIGATE: Load already in progress, showing loading message.");
                 setLoadingMessage("Loading more...", true); // Show loading indicator
-                if (state_ != State::LOADING_BACKGROUND) setState(State::LOADING_BACKGROUND);
+                if (state_ != State::LOADING_BACKGROUND) {
+                    setState(State::LOADING_BACKGROUND);
+                }
                 setNeedsRerender();
             }
         } else {
@@ -2277,12 +2278,13 @@ void KindleReadableScreen::logPageContext(uint32_t offsetBeforeTurn, uint32_t of
 
             // Read current page content
             size_t readStart = offsetBeforeTurn;
-            size_t readEnd = std::min((size_t)offsetAfterTurn,
+            size_t readEnd = std::min(static_cast<size_t>(offsetAfterTurn),
                                       streamSize); // Read up to the end of the turned page
             if (readEnd > readStart) {
                 currentPageContent.resize(readEnd - readStart);
                 stream->seek(readStart);
-                stream->readBytes((uint8_t *)currentPageContent.data(), readEnd - readStart);
+                stream->readBytes(reinterpret_cast<uint8_t *>(currentPageContent.data()),
+                                  readEnd - readStart);
             }
 
             // Read start of preview content if boundary exists
@@ -2293,18 +2295,18 @@ void KindleReadableScreen::logPageContext(uint32_t offsetBeforeTurn, uint32_t of
                 if (previewReadEnd > previewReadStart) {
                     previewContent.resize(previewReadEnd - previewReadStart);
                     stream->seek(previewReadStart);
-                    stream->readBytes((uint8_t *)previewContent.data(),
+                    stream->readBytes(reinterpret_cast<uint8_t *>(previewContent.data()),
                                       previewReadEnd - previewReadStart);
                 }
             }
 
             log_i("[TEXT DEBUG] Page Start (Offset %" PRIu32 "): '%s...'", offsetBeforeTurn,
-                  getNWords(currentPageContent, 10, true).c_str());
+                  GetNWords(currentPageContent, 10, true).c_str());
             log_i("[TEXT DEBUG] Page End   (Offset %" PRIu32 "): '...%s'", offsetAfterTurn,
-                  getNWords(currentPageContent, 10, false).c_str());
+                  GetNWords(currentPageContent, 10, false).c_str());
             if (lastPreviewOffset_ > 0) {
                 log_i("[TEXT DEBUG] Preview Start (Boundary %" PRIu32 "): '%s...'",
-                      lastPreviewOffset_, getNWords(previewContent, 10, true).c_str());
+                      lastPreviewOffset_, GetNWords(previewContent, 10, true).c_str());
             }
         }
         // Restore stream position (important!)
