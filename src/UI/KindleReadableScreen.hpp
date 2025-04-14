@@ -50,13 +50,16 @@
  *      a single page turn
  *    - The two-step lookahead is necessary to catch cases where a single page turn wouldn't cross
  *      the boundary, but the next one would
- *    - When any detection method indicates crossing, we call /navigate-next if permitted
- *    - CRUCIAL OVERRIDE: In some cases we MUST call /navigate-next even after a preview call
- *      to ensure server sync. This temporarily breaks alternation but is necessary ONLY when:
- *      1. We're EXACTLY ONE page turn away from crossing the boundary (distance <= pageSize)
- *      2. The next page turn would DEFINITELY cross the boundary
- *      We calculate pages-to-boundary = ceiling(distance-to-boundary / pageSize) and only
- *      force a sync when pages-to-boundary <= 1, to minimize unnecessary API calls
+ *    - When any detection method indicates crossing, we normally mark for sync (`needsNavigateSync_
+ * = true`)
+ *    - SYNC EXECUTION: Sync (`/navigate-next`) usually happens *after* the user sees the page turn,
+ *      but only if the last API call was *not* a preview (`!lastCallWasPreview_`). This maintains
+ * alternation.
+ *    - CRUCIAL OVERRIDE: If the *next* page turn is predicted to cross the boundary (using methods
+ * b, c, or d) AND the last API call *was* a preview (`lastCallWasPreview_ = true`), we *must* sync
+ * immediately *after* turning the page locally. This ensures the server position catches up
+ * promptly, even though it temporarily breaks the strict API call alternation. This override
+ * prioritizes server sync when a boundary crossing is imminent after a preview.
  *
  * 5. User Navigation:
  *    - As user pages forward with remote, they advance through the pager's buffer
@@ -163,6 +166,9 @@ private:
     bool justNavigatedToServer_{false}; // Tracks if we just made a navigateNext request
     bool lastCallWasPreview_{
         false}; // CRITICAL: Tracks if the last API call was a preview to enforce strict alternation
+
+    // Debugging helper
+    void logPageContext(uint32_t offsetBeforeTurn, uint32_t offsetAfterTurn);
 
     // Timer handles for UI tasks
     std::shared_ptr<CancelFlag> autoDismissCancelFlag_;

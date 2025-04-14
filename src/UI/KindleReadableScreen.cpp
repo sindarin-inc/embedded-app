@@ -1,6 +1,9 @@
 #include "UI/KindleReadableScreen.hpp"
 
+#include <algorithm> // Required for std::min/max
 #include <cinttypes>
+#include <sstream> // Required for std::istringstream
+#include <vector>  // Required for std::vector
 
 #include "Communications/SindarinAPI.hpp"
 #include "Communications/WiFi.hpp"
@@ -11,6 +14,36 @@
 #include "Models/Readable.hpp"
 #include "UI/Fonts/Fonts.hpp"
 #include "sindarin-debug.h"
+
+// Helper function to get N words
+std::string getNWords(const std::string &text, int n, bool fromStart) {
+    std::string result;
+    std::istringstream iss(text);
+    std::string word;
+    std::vector<std::string> words;
+    while (iss >> word) {
+        words.push_back(word);
+    }
+
+    if (words.empty()) {
+        return "";
+    }
+
+    if (fromStart) {
+        for (int i = 0; i < std::min((int)words.size(), n); ++i) {
+            result += words[i] + " ";
+        }
+    } else {
+        for (int i = std::max(0, (int)words.size() - n); i < words.size(); ++i) {
+            result += words[i] + " ";
+        }
+    }
+    // Trim trailing space
+    if (!result.empty()) {
+        result.pop_back();
+    }
+    return result;
+}
 
 KindleReadableScreen::KindleReadableScreen(const std::shared_ptr<RendererStream> &stream,
                                            DisplaySystem &display,
@@ -1225,388 +1258,147 @@ void KindleReadableScreen::navigateNext() {
         return;
     }
 
-    // Get current buffer info
+    // --- Local Navigation First ---
+
+    // Get current buffer info before the turn
     uint32_t currentOffset = currentPlace_ ? currentPlace_->getOffset() : 0;
     uint32_t totalSize = renderer_.size();
     uint32_t remainingBytes = (currentOffset < totalSize) ? (totalSize - currentOffset) : 0;
+    uint32_t pageSize = lastRenderedPageSize_ > 0 ? lastRenderedPageSize_ : 400;
 
-    // Let's add more detailed logging to track what's happening
-    log_i("[DEBUG] NavigateNext - current offset: %" PRIu32 ", lastPreviewOffset: %" PRIu32
-          ", lastCallWasPreview: %d, needsNavigateSync: %d, total buffer: %" PRIu32
-          ", remaining: %" PRIu32,
-          currentOffset, lastPreviewOffset_, lastCallWasPreview_, needsNavigateSync_, totalSize,
-          remainingBytes);
-
-    log_i("[BOUNDARY] Checking if crossed preview boundary: currentOffset (%" PRIu32
-          ") >= lastPreviewOffset (%" PRIu32 ") = %d",
-          currentOffset, lastPreviewOffset_, (currentOffset >= lastPreviewOffset_));
-
-    // ALWAYS CHECK THIS FIRST: Has the user crossed a preview boundary? If so, we MUST sync
-    // This check needs to happen before ANY other navigation logic
-    if (currentOffset >= lastPreviewOffset_ && lastPreviewOffset_ > 0) {
-        // Check if we crossed the preview boundary
-        log_i("CRITICAL: Crossed preview boundary at offset %" PRIu32, lastPreviewOffset_);
-
-        // If we're not already loading and last call wasn't a preview, immediately sync with server
-        if (!nextPageLoading_ && !lastCallWasPreview_) {
-            log_i("BOUNDARY ACTION: Immediately syncing with server (!nextPageLoading_ && "
-                  "!lastCallWasPreview_)");
-
-            // Store the boundary we're syncing for
-            uint32_t syncBoundary = lastPreviewOffset_;
-
-            // Sync with server - this should reset lastPreviewOffset_ to 0 when complete
-            syncWithServer();
-
-            // Double check that we don't need to check for this boundary again
-            if (lastPreviewOffset_ == syncBoundary) {
-                log_w("Preview boundary was not reset after sync, forcing reset");
-                lastPreviewOffset_ = 0;
-            }
-
-            return; // Don't proceed with local navigation until server is synced
-        } else if (lastCallWasPreview_) {
-            // If last call was preview, we MUST mark for sync but we CANNOT sync now
-            // This is critical to maintain the alternation pattern
-            needsNavigateSync_ = true;
-            log_i("BOUNDARY ACTION: Boundary crossed but last call was preview - marking for sync "
-                  "on next action");
-
-            // Continue with normal page turning, we'll sync later
-        } else if (nextPageLoading_) {
-            // We're loading, mark for later sync
-            log_i("BOUNDARY ACTION: Loading in progress, marking for sync later");
-            needsNavigateSync_ = true;
-        }
-    } else if (lastPreviewOffset_ > 0) {
-        // We're approaching a preview boundary but haven't crossed it yet
-        log_i("Not yet at preview boundary: currentOffset (%" PRIu32
-              ") < lastPreviewOffset (%" PRIu32 ")",
-              currentOffset, lastPreviewOffset_);
-    }
-
-    // CRITICAL SECTION: We need to check if this page turn would cross the preview boundary
-    // Three ways to detect a boundary crossing:
-    // 1. Direct check if next render position is beyond boundary
-    // 2. Check if current position plus rendered page size would cross boundary
-    // 3. Check if the next place offset would cross boundary
-
-    // Get the next place offset (where we'll be after turning the page)
-    uint32_t nextOffset = newPlace_ ? newPlace_->getOffset() : 0;
-
-    // Check if current position plus page size crosses the boundary
-    uint32_t pageSize = lastRenderedPageSize_ > 0 ? lastRenderedPageSize_
-                                                  : 400; // Use reasonable default if unknown
-    bool willCrossBySize =
-        (currentOffset + pageSize >= lastPreviewOffset_ && lastPreviewOffset_ > 0);
-
-    // Check if next place offset crosses boundary directly
-    bool willCrossByNextPlace = (lastPreviewOffset_ > 0 && nextOffset >= lastPreviewOffset_ &&
-                                 currentOffset < lastPreviewOffset_);
-
-    // Check if we're currently within one page of the boundary (approaching)
-    bool isApproachingBoundary =
-        (lastPreviewOffset_ > 0 && lastPreviewOffset_ - currentOffset <= pageSize &&
-         currentOffset < lastPreviewOffset_);
-
-    // CRITICAL FIX: We need to look ahead one more step to catch preview boundary crossings
-    // If we have a newPlace_, compute where the next page would likely end based on page size
-    uint32_t nextNextOffset = 0;
-    bool nextPageWillCrossBoundary = false;
-    if (newPlace_) {
-        // Estimate the next page position by adding the current page size to the next offset
-        // This gives us an approximate location of where we'd be after two page turns
-        nextNextOffset = nextOffset + pageSize;
-
-        // Check if the estimated future position would cross boundary
-        nextPageWillCrossBoundary =
-            (lastPreviewOffset_ > 0 && nextNextOffset >= lastPreviewOffset_ &&
-             nextOffset < lastPreviewOffset_);
-
-        // Extra safety: if we're within one page size of the boundary, that's close enough to sync
-        if (lastPreviewOffset_ > 0 && (lastPreviewOffset_ - nextOffset) <= pageSize) {
-            nextPageWillCrossBoundary = true;
-        }
-    }
-
-    // Log comprehensive boundary information
-    log_i("[BOUNDARY ANALYSIS] currentOffset: %" PRIu32 ", nextOffset: %" PRIu32
-          ", nextNextOffset: %" PRIu32 ", boundary: %" PRIu32 ", pageSize: %" PRIu32
-          ", willCrossBySize: %d, willCrossByNextPlace: %d, approaching: %d, nextPageWillCross: %d",
-          currentOffset, nextOffset, nextNextOffset, lastPreviewOffset_, pageSize, willCrossBySize,
-          willCrossByNextPlace, isApproachingBoundary, nextPageWillCrossBoundary);
-
-    // If ANY of our checks indicate we'll cross the boundary, take action
-    if (willCrossBySize || willCrossByNextPlace || nextPageWillCrossBoundary ||
-        (isApproachingBoundary && nextOffset >= lastPreviewOffset_)) {
-
-        log_i(
-            "[BOUNDARY CRITICAL] Will cross preview boundary on this turn! currentOffset: %" PRIu32
-            ", nextOffset: %" PRIu32 ", nextNextOffset: %" PRIu32 ", boundary: %" PRIu32
-            ", pageSize: %" PRIu32,
-            currentOffset, nextOffset, nextNextOffset, lastPreviewOffset_, pageSize);
-
-        // If we aren't in the middle of a preview operation, we should sync now
-        // This handles the case where we're crossing from initial content to preview content
-        if (!lastCallWasPreview_ && !nextPageLoading_) {
-            log_i("[BOUNDARY FIX] Pre-emptively syncing with server before crossing");
-            syncWithServer();
-            return; // Stop here since syncWithServer() will reset our boundaries
-        } else if (lastCallWasPreview_) {
-            log_i("[BOUNDARY FIX] Last call was preview, marking for sync after next navigation");
-            // Mark the need for sync
-            needsNavigateSync_ = true;
-
-            // CRITICAL FIX: Never intercept the user's navigation request to force a sync
-            // Instead, we'll mark for sync and let the page turn happen first
-            int32_t distanceToBoundary = lastPreviewOffset_ - currentOffset;
-            int32_t pagesToBoundary =
-                distanceToBoundary > 0 ? (distanceToBoundary + pageSize - 1) / pageSize : 0;
-
-            if (nextPageWillCrossBoundary && !nextPageLoading_) {
-                // IMPORTANT CHANGE: Instead of forcing a sync immediately, let the page turn
-                // complete first This ensures the user always sees a page turn when they press the
-                // button
-                log_i("[BOUNDARY APPROACH] Next turn will likely cross boundary (%" PRId32
-                      " pages away)",
-                      pagesToBoundary);
-                log_i("[BOUNDARY APPROACH] Marking for sync but allowing navigation to proceed "
-                      "first");
-
-                // Mark for sync but don't intercept the navigation command
-                needsNavigateSync_ = true;
-            }
-        }
-    }
-
-    // Check if we're physically near the end of the buffer - use just one threshold for consistency
-    bool isNearEndOfBuffer = remainingBytes < bufferThreshold_;
-
-    // Before checking buffer, see if we can turn the page within the current content
-    bool canTurnPage =
+    // Check if we can turn the page locally
+    bool canTurnPageLocally =
         newPlace_ && currentPlace_ && newPlace_->getOffset() > currentPlace_->getOffset();
 
-    // CASE 1: We're near the end of the buffer and can't turn the page anymore (true end of
-    // content)
-    if (isNearEndOfBuffer && !canTurnPage) {
-        log_i("NAVIGATE: At end of buffer, need to load more content");
+    // If we cannot turn the page locally, we might need to load content
+    if (!canTurnPageLocally) {
+        log_i("NAVIGATE: Cannot turn page locally (current: %" PRIu32 ", next: %s)", currentOffset,
+              newPlace_ ? std::to_string(newPlace_->getOffset()).c_str() : "null");
 
-        // If we're already loading or a preview is in progress, show loading message
-        if (nextPageLoading_ || previewRequestInProgress_) {
-            // Show loading message with rounded rect
-            setLoadingMessage("Loading more...", true);
-
-            if (state_ != State::LOADING_BACKGROUND) {
-                setState(State::LOADING_BACKGROUND);
+        // If we are near the end, try loading more content
+        if (remainingBytes < bufferThreshold_) {
+            log_i("NAVIGATE: At end of local buffer (remaining: %" PRIu32
+                  "), attempting to load more.",
+                  remainingBytes);
+            if (!nextPageLoading_ && !previewRequestInProgress_) {
+                loadNextContent(); // Handles preview/navigate alternation
+            } else {
+                log_i("NAVIGATE: Load already in progress, showing loading message.");
+                setLoadingMessage("Loading more...", true); // Show loading indicator
+                if (state_ != State::LOADING_BACKGROUND) setState(State::LOADING_BACKGROUND);
+                setNeedsRerender();
             }
-
-            setNeedsRerender();
-            return;
-        }
-    }
-    // CASE 2: We're near the end of buffer but still have a page to render
-    else if (isNearEndOfBuffer && canTurnPage) {
-        log_i("NAVIGATE: Near end of buffer, turning page and loading more in background");
-
-        // Set up the new place and render what we have
-        turnPage();
-        uint8_t darkPicturePercent = 0;
-        std::tie(newPlace_, darkPicturePercent) = renderer_.renderPage(currentPlace_);
-
-        // Update the display with what we have
-        display_.updateDisplay(DisplaySystem::UpdateType::PARTIAL, true,
-                               display_.darkPictureVComAdj(darkPicturePercent));
-
-        // We've moved forward, so we'll need to sync with server later
-        needsNavigateSync_ = true;
-
-        // Start loading more content in the background without showing a message
-        if (!nextPageLoading_ && !previewRequestInProgress_ && !justNavigatedToServer_) {
-            loadNextKindlePreview();
-        } else if (justNavigatedToServer_) {
-            // If we just navigated to server, reset the flag
-            justNavigatedToServer_ = false;
-        }
-
-        return;
-    }
-
-    // CASE 3: We need more content and we're at true end
-    if (isNearEndOfBuffer) {
-        // Only load more when we can't turn the page AND we're critically low on buffer
-        bool isCriticallyLow = remainingBytes < (bufferThreshold_ / 3);
-
-        if (isCriticallyLow && !canTurnPage) {
-            log_i("NAVIGATE: Critically low buffer, loading more content");
-            loadNextContent();
-            return;
-        }
-
-        // Normal case - load one preview
-        if (!justNavigatedToServer_) {
-            loadNextKindlePreview();
-            return;
         } else {
-            // If we just navigated to server, reset the flag and don't request again immediately
-            justNavigatedToServer_ = false;
+            log_w("NAVIGATE: Cannot turn page locally, but not near end of buffer? (remaining: "
+                  "%" PRIu32 ")",
+                  remainingBytes);
+            // This state shouldn't ideally happen unless buffer is full but renderPage failed?
         }
-
-        return;
+        return; // Stop processing navigateNext if we can't turn locally
     }
 
-    // CASE 4: We have enough content in buffer to turn the page normally
+    // --- Perform Local Page Turn ---
+    uint32_t offsetBeforeTurn = currentPlace_ ? currentPlace_->getOffset() : 0;
+    turnPage(); // This updates currentPlace_ and lastRenderedPageSize_
+    uint32_t offsetAfterTurn = currentPlace_ ? currentPlace_->getOffset() : 0;
 
-    // For proper navigation, we should use the next place that was returned
-    // from the previous render operation
-
-    // Turn to the next page in the renderer buffer
-    turnPage();
-
-    // CRITICAL: Check again if we've crossed preview boundary AFTER turning the page
-    // This check is vital because turnPage() updates our currentPlace_
-    uint32_t newPosition = currentPlace_ ? currentPlace_->getOffset() : 0;
-
-    // Add detailed logging to see exactly what's happening during boundary checks
-    uint32_t newTotalSize = renderer_.size();
-    uint32_t newRemainingBytes = (newPosition < newTotalSize) ? (newTotalSize - newPosition) : 0;
-
-    log_i("[DEBUG] After turn - new position: %" PRIu32 ", lastPreviewOffset: %" PRIu32
-          ", lastCallWasPreview: %d, needsNavigateSync: %d, total buffer: %" PRIu32
-          ", remaining: %" PRIu32,
-          newPosition, lastPreviewOffset_, lastCallWasPreview_, needsNavigateSync_, newTotalSize,
-          newRemainingBytes);
-
-    log_i("[POST-TURN BOUNDARY] Checking if crossed preview boundary: newPosition (%" PRIu32
-          ") >= lastPreviewOffset (%" PRIu32 ") = %d",
-          newPosition, lastPreviewOffset_, (newPosition >= lastPreviewOffset_));
-
-    // Check if we crossed the boundary after turning the page
-    bool didCrossBoundary = (newPosition >= lastPreviewOffset_ && lastPreviewOffset_ > 0);
-
-    // Also check if we're very close to crossing (within one page)
-    uint32_t lastPageSize = lastRenderedPageSize_ > 0
-                                ? lastRenderedPageSize_
-                                : 400; // Default to a reasonable size if unknown
-    bool isApproachingBoundaryAfterTurn =
-        (lastPreviewOffset_ > 0 && newPosition + lastPageSize >= lastPreviewOffset_ &&
-         newPosition < lastPreviewOffset_);
-
-    if (didCrossBoundary) {
-        log_i("CRITICAL: After page turn crossed preview boundary at offset %" PRIu32
-              " (position: %" PRIu32 ")",
-              lastPreviewOffset_, newPosition);
-
-        // We must sync immediately - this is the most important check in the whole system
-        if (!nextPageLoading_ && !lastCallWasPreview_) {
-            log_i(
-                "POST-TURN BOUNDARY ACTION: Immediately syncing with server after rendering page");
-
-            // Render the page before syncing for a smooth user experience
-            uint8_t darkPicturePercent = 0;
-            std::tie(newPlace_, darkPicturePercent) = renderer_.renderPage(currentPlace_);
-            display_.updateDisplay(DisplaySystem::UpdateType::PARTIAL, true,
-                                   display_.darkPictureVComAdj(darkPicturePercent));
-
-            // Store the boundary we're syncing for
-            uint32_t syncBoundary = lastPreviewOffset_;
-
-            // Now sync with server
-            syncWithServer();
-
-            // Double check that the boundary was reset
-            if (lastPreviewOffset_ == syncBoundary) {
-                log_w("Preview boundary was not reset after post-turn sync, forcing reset");
-                lastPreviewOffset_ = 0;
-            }
-
-            return;
-        } else if (lastCallWasPreview_) {
-            // If the last call was a preview, we MUST mark for sync but CANNOT sync now
-            // This is critical to maintain the alternation pattern
-            needsNavigateSync_ = true;
-            log_i("POST-TURN BOUNDARY ACTION: Boundary crossed after turn but last call was "
-                  "preview - marking for next action");
-
-            // Let's record the boundary to sync for, so we can verify it was reset later
-            if (!nextPageLoading_) {
-                log_i("Will sync with server on next page turn");
-            }
-        } else if (nextPageLoading_) {
-            // Mark for later sync if loading
-            log_i("POST-TURN BOUNDARY ACTION: Loading in progress, marking for sync later");
-            needsNavigateSync_ = true;
-        }
-    } else if (isApproachingBoundaryAfterTurn) {
-        // We're getting very close to the boundary
-        log_i("POST-TURN BOUNDARY: Approaching preview boundary - position: %" PRIu32
-              ", boundary: %" PRIu32 ", distance: %" PRIu32 " bytes",
-              newPosition, lastPreviewOffset_, lastPreviewOffset_ - newPosition);
-
-        // Special case: If we're just one page away from boundary and we're showing final page,
-        // we should mark for sync to ensure we don't miss the boundary
-        if (newPlace_ && newPlace_->getOffset() >= lastPreviewOffset_) {
-            log_i("POST-TURN BOUNDARY: Next render will cross boundary - marking for sync");
-            needsNavigateSync_ = true;
-        }
-    }
-
-    // Render the content from the new position
+    // Render the new page content locally
     uint8_t darkPicturePercent = 0;
     std::tie(newPlace_, darkPicturePercent) = renderer_.renderPage(currentPlace_);
-
-    // Update the display
     display_.updateDisplay(DisplaySystem::UpdateType::PARTIAL, true,
                            display_.darkPictureVComAdj(darkPicturePercent));
+    hasNavigatedForward_ = true; // Mark that user has moved forward
 
-    // VERY IMPORTANT: Check one more time if our current position is now over the preview boundary
-    // This handles cases where the first check and post-turn check might have missed it
-    uint32_t finalPosition = currentPlace_ ? currentPlace_->getOffset() : 0;
-    if (lastPreviewOffset_ > 0 && finalPosition >= lastPreviewOffset_) {
-        log_i("[FINAL BOUNDARY CHECK] Current position (%" PRIu32
-              ") is now at or beyond preview boundary (%" PRIu32 ")",
-              finalPosition, lastPreviewOffset_);
+    // --- Debug Logging: Show context around page turn ---
+    logPageContext(offsetBeforeTurn, offsetAfterTurn);
+    // --- End Debug Logging ---
 
-        // ENHANCEMENT: Instead of syncing immediately after the user sees content,
-        // always mark for sync and handle it on the next page turn.
-        // This avoids surprising the user with a sync immediately after they've seen content.
-        log_i("[FINAL BOUNDARY ACTION] Marking for sync - lastCallWasPreview_: %d, "
-              "nextPageLoading_: %d",
-              lastCallWasPreview_, nextPageLoading_);
-        // Mark for later sync in all cases - we'll sync on next navigation
+    log_i("[NAVIGATE LOCAL] Turned page: %" PRIu32 " -> %" PRIu32 ", Preview Boundary: %" PRIu32
+          ", LastCallPreview: %d",
+          offsetBeforeTurn, offsetAfterTurn, lastPreviewOffset_, lastCallWasPreview_);
+
+    // --- Boundary Detection & Sync Decision --- PREDICTIVE CHECK FOR *NEXT* TURN
+
+    // Predict if the *next* page turn (after the one we just did) will cross the boundary
+    uint32_t nextPotentialOffset =
+        newPlace_ ? newPlace_->getOffset() : offsetAfterTurn; // Where the *next* turn would land
+    uint32_t nextPotentialPageEnd = nextPotentialOffset + pageSize; // Estimate end of *next* page
+
+    bool nextTurnWillCrossBoundary =
+        (lastPreviewOffset_ > 0 &&
+         (nextPotentialOffset >= lastPreviewOffset_ ||
+          nextPotentialPageEnd >= lastPreviewOffset_) &&
+         offsetAfterTurn < lastPreviewOffset_); // Ensure we haven't already crossed
+
+    log_i("[NAVIGATE PREDICT] Next Turn Prediction - current: %" PRIu32 ", next: %" PRIu32
+          ", next+size: %" PRIu32 ", boundary: %" PRIu32 ", nextWillCross: %d",
+          offsetAfterTurn, nextPotentialOffset, nextPotentialPageEnd, lastPreviewOffset_,
+          nextTurnWillCrossBoundary);
+
+    // --- Sync Logic ---
+
+    // Condition 1: Have we *already* crossed the boundary with the turn we just made?
+    bool justCrossedBoundary = (lastPreviewOffset_ > 0 && offsetAfterTurn >= lastPreviewOffset_ &&
+                                offsetBeforeTurn < lastPreviewOffset_);
+
+    if (justCrossedBoundary) {
+        log_i("[SYNC DECISION] Just crossed boundary (Offset %" PRIu32 " >= %" PRIu32
+              "). Marking for sync.",
+              offsetAfterTurn, lastPreviewOffset_);
         needsNavigateSync_ = true;
-
-        // If conditions allow for an immediate sync and we're not in the middle of loading,
-        // log that we're ready to sync on next action but DON'T sync now
-        if (!lastCallWasPreview_ && !nextPageLoading_) {
-            log_i("[FINAL BOUNDARY ACTION] Ready to sync on next page turn - current position is "
-                  "past boundary");
-        }
-    } else if (lastPreviewOffset_ > 0) {
-        log_i("[FINAL BOUNDARY CHECK] Still not at preview boundary: position (%" PRIu32
-              ") < boundary (%" PRIu32 ")",
-              finalPosition, lastPreviewOffset_);
     }
 
-    // Sync with server if needed - but only if we're respecting the alternation pattern
-    if (needsNavigateSync_ && !nextPageLoading_ && !lastCallWasPreview_) {
-        log_i("[SYNC ACTION] Syncing with server after page turn (needsNavigateSync_=true)");
+    // Now, decide whether to sync immediately or defer
+    bool shouldSyncNow = false;
 
-        // Store the current boundary for verification
-        uint32_t syncBoundary = lastPreviewOffset_;
-
-        syncWithServer();
-
-        // If we were syncing for a specific boundary, ensure it was reset
-        if (syncBoundary > 0 && lastPreviewOffset_ == syncBoundary) {
-            log_w("Preview boundary was not reset during deferred sync, forcing reset");
-            lastPreviewOffset_ = 0;
-        }
-
-        // Clear the sync flag
-        needsNavigateSync_ = false;
+    // A. Normal Sync: If marked for sync and the last call wasn't preview.
+    if (needsNavigateSync_ && !lastCallWasPreview_) {
+        log_i("[SYNC ACTION] Condition Met: needsNavigateSync_ is true AND lastCallWasPreview_ is "
+              "false. Syncing now.");
+        shouldSyncNow = true;
     }
-    // Don't proactively load preview content - only load after navigation sync
-    // This prevents loading too many previews consecutively without navigating
+    // B. Override Sync 1: If we JUST crossed the boundary during this turn, sync now even if last
+    // call was preview.
+    else if (justCrossedBoundary && lastCallWasPreview_) {
+        log_i("[SYNC ACTION] Override Condition Met (Post-Crossing): Just crossed boundary AND "
+              "lastCallWasPreview_ is true. Syncing now (breaking alternation).");
+        shouldSyncNow = true;
+    }
+    // C. Override Sync 2: If the *next* turn is predicted to cross the boundary AND the last call
+    // *was* preview.
+    else if (nextTurnWillCrossBoundary && lastCallWasPreview_) {
+        log_i("[SYNC ACTION] Override Condition Met (Predictive): Next turn will cross boundary "
+              "AND lastCallWasPreview_ is true. Syncing now (breaking alternation).");
+        shouldSyncNow = true;
+        // Ensure sync is still marked needed in case sync fails or boundary persists
+        // syncWithServer will handle resetting lastCallWasPreview_ and potentially
+        // lastPreviewOffset_.
+        needsNavigateSync_ = true;
+    }
+
+    if (shouldSyncNow && !nextPageLoading_) {
+        syncWithServer(); // Calls /navigate-next, resets lastCallWasPreview_, clears
+                          // lastPreviewOffset_
+        needsNavigateSync_ =
+            false; // Sync initiated, clear the flag (syncWithServer might reset boundary)
+    } else if (needsNavigateSync_) {
+        log_i("[SYNC DEFERRED] Marked for sync (needsNavigateSync_=true) but conditions not met "
+              "for immediate sync (lastCallWasPreview=%d, nextTurnWillCross=%d). Will sync later.",
+              lastCallWasPreview_, nextTurnWillCrossBoundary);
+    }
+
+    // --- Background Loading Check ---
+
+    // Check if we need to load more content in the background after the turn
+    uint32_t remainingBytesAfterTurn =
+        (offsetAfterTurn < totalSize) ? (totalSize - offsetAfterTurn) : 0;
+    if (remainingBytesAfterTurn < bufferThreshold_ && !nextPageLoading_ &&
+        !previewRequestInProgress_ && !lastCallWasPreview_) {
+        log_i("[NAVIGATE LOAD] Near end of buffer after turn (remaining: %" PRIu32
+              "), loading preview in background.",
+              remainingBytesAfterTurn);
+        loadNextKindlePreview(); // Load more content if needed and allowed
+    }
 }
 
 void KindleReadableScreen::loadPreviousKindlePage() {
@@ -2473,3 +2265,50 @@ void KindleReadableScreen::syncWithServer() {
         });
     });
 }
+
+// --- Add the new method definition here ---
+void KindleReadableScreen::logPageContext(uint32_t offsetBeforeTurn, uint32_t offsetAfterTurn) {
+    if (currentPlace_ && renderer_.getStream()) {
+        auto stream = renderer_.getStream();
+        size_t streamSize = stream->size();
+        if (streamSize > 0) {
+            std::string currentPageContent;
+            std::string previewContent;
+
+            // Read current page content
+            size_t readStart = offsetBeforeTurn;
+            size_t readEnd = std::min((size_t)offsetAfterTurn,
+                                      streamSize); // Read up to the end of the turned page
+            if (readEnd > readStart) {
+                currentPageContent.resize(readEnd - readStart);
+                stream->seek(readStart);
+                stream->readBytes((uint8_t *)currentPageContent.data(), readEnd - readStart);
+            }
+
+            // Read start of preview content if boundary exists
+            if (lastPreviewOffset_ > 0 && lastPreviewOffset_ < streamSize) {
+                size_t previewReadStart = lastPreviewOffset_;
+                size_t previewReadEnd =
+                    std::min(streamSize, previewReadStart + 200); // Read ~200 chars for 10 words
+                if (previewReadEnd > previewReadStart) {
+                    previewContent.resize(previewReadEnd - previewReadStart);
+                    stream->seek(previewReadStart);
+                    stream->readBytes((uint8_t *)previewContent.data(),
+                                      previewReadEnd - previewReadStart);
+                }
+            }
+
+            log_i("[TEXT DEBUG] Page Start (Offset %" PRIu32 "): '%s...'", offsetBeforeTurn,
+                  getNWords(currentPageContent, 10, true).c_str());
+            log_i("[TEXT DEBUG] Page End   (Offset %" PRIu32 "): '...%s'", offsetAfterTurn,
+                  getNWords(currentPageContent, 10, false).c_str());
+            if (lastPreviewOffset_ > 0) {
+                log_i("[TEXT DEBUG] Preview Start (Boundary %" PRIu32 "): '%s...'",
+                      lastPreviewOffset_, getNWords(previewContent, 10, true).c_str());
+            }
+        }
+        // Restore stream position (important!)
+        stream->seek(offsetAfterTurn);
+    }
+}
+// --- End of new method definition ---
