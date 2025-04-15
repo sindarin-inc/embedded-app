@@ -20,9 +20,8 @@ KindlePageManager::KindlePageManager(const std::shared_ptr<KindleBook> &kindleBo
 
 void KindlePageManager::loadInitialPage(
     const std::shared_ptr<CancelFlag> &cancelFlag, bool useBle,
-    std::function<void(bool success, const std::shared_ptr<KindlePageResponse> &,
-                       const std::string &)>
-        callback) {
+    const std::function<void(bool success, const std::shared_ptr<KindlePageResponse> &,
+                             const std::string &)> &callback) {
 
     log_i("Loading initial page for Kindle book: %s", kindleBook_->title.c_str());
 
@@ -55,9 +54,8 @@ void KindlePageManager::loadInitialPage(
 void KindlePageManager::loadNextPreview(
     const std::shared_ptr<Place> &currentPlace, const std::shared_ptr<CancelFlag> &cancelFlag,
     bool useBle,
-    std::function<void(bool success, const std::shared_ptr<KindlePageResponse> &,
-                       const std::string &)>
-        callback) {
+    const std::function<void(bool success, const std::shared_ptr<KindlePageResponse> &,
+                             const std::string &)> &callback) {
 
     if (previewRequestInProgress_) {
         log_w("Preview request already in progress, ignoring new request");
@@ -126,15 +124,18 @@ void KindlePageManager::loadNextPreview(
                 // Count newlines and calculate content lines
                 int newlineCount = 0;
                 for (char c : response->ocrText) {
-                    if (c == '\n') newlineCount++;
+                    if (c == '\n') {
+                        newlineCount++;
+                    }
                 }
 
                 // Get a larger sample of the start of content
-                std::string previewStart =
-                    response->ocrText.substr(0, std::min(size_t(50), response->ocrText.length()));
-                for (size_t i = 0; i < previewStart.length(); i++) {
-                    if (previewStart[i] == '\n')
-                        previewStart[i] = ' '; // Replace newlines for cleaner logging
+                std::string previewStart = response->ocrText.substr(
+                    0, std::min(static_cast<size_t>(50), response->ocrText.length()));
+                for (char &i : previewStart) {
+                    if (i == '\n') {
+                        i = ' '; // Replace newlines for cleaner logging
+                    }
                 }
 
                 // Get exact line numbers if present at the start
@@ -160,7 +161,8 @@ void KindlePageManager::loadNextPreview(
 
                 // Log the exact bytes at the start
                 log_i("[PREVIEW CONTENT] First 10 bytes of preview content:");
-                for (int i = 0; i < std::min(size_t(10), response->ocrText.size()); i++) {
+                for (int i = 0; i < std::min(static_cast<size_t>(10), response->ocrText.size());
+                     i++) {
                     char c = response->ocrText[i];
                     log_i("  Byte %d: '%c' (ASCII %d)", i, (c >= 32 && c < 127) ? c : '.',
                           static_cast<int>(c) & 0xFF);
@@ -178,9 +180,8 @@ void KindlePageManager::loadNextPreview(
 
 void KindlePageManager::syncWithServer(
     const std::shared_ptr<CancelFlag> &cancelFlag, bool useBle,
-    std::function<void(bool success, const std::shared_ptr<KindlePageResponse> &,
-                       const std::string &)>
-        callback) {
+    const std::function<void(bool success, const std::shared_ptr<KindlePageResponse> &,
+                             const std::string &)> &callback) {
 
     if (previewRequestInProgress_) {
         log_w("Preview request in progress, cannot sync with server yet");
@@ -217,8 +218,8 @@ void KindlePageManager::syncWithServer(
     });
 }
 
-bool KindlePageManager::hasCrossedPreviewBoundary(uint32_t currentOffset,
-                                                  uint32_t pageEndOffset) const {
+auto KindlePageManager::hasCrossedPreviewBoundary(uint32_t currentOffset,
+                                                  uint32_t pageEndOffset) const -> bool {
     // Use pageEndOffset if specified, otherwise use currentOffset
     uint32_t effectiveOffset = pageEndOffset > 0 ? pageEndOffset : currentOffset;
 
@@ -250,8 +251,8 @@ bool KindlePageManager::hasCrossedPreviewBoundary(uint32_t currentOffset,
     return hasCrossed;
 }
 
-bool KindlePageManager::wouldNextTurnCrossBoundary(uint32_t currentOffset,
-                                                   uint32_t pageSize) const {
+auto KindlePageManager::wouldNextTurnCrossBoundary(uint32_t currentOffset, uint32_t pageSize) const
+    -> bool {
     if (lastPreviewOffset_ <= 0) {
         return false; // No boundary to cross
     }
@@ -275,7 +276,8 @@ bool KindlePageManager::wouldNextTurnCrossBoundary(uint32_t currentOffset,
     return wouldCross;
 }
 
-bool KindlePageManager::needsNavigateCall(uint32_t currentOffset, uint32_t pageEndOffset) const {
+auto KindlePageManager::needsNavigateCall(uint32_t currentOffset, uint32_t pageEndOffset) const
+    -> bool {
     // If either the current position or page end has crossed a boundary, we MUST sync with server
     if (hasCrossedPreviewBoundary(currentOffset, pageEndOffset)) {
         log_i("[PAGE MANAGER] Need navigate: CRITICAL - current position or page end has crossed "
@@ -329,11 +331,13 @@ void KindlePageManager::resetPreviewBoundary() { lastPreviewOffset_ = 0; }
 
 void KindlePageManager::setPreviewBoundary(uint32_t offset) { lastPreviewOffset_ = offset; }
 
-uint32_t KindlePageManager::getPreviewBoundary() const { return lastPreviewOffset_; }
+auto KindlePageManager::getPreviewBoundary() const -> uint32_t { return lastPreviewOffset_; }
 
-bool KindlePageManager::isPreviewRequestInProgress() const { return previewRequestInProgress_; }
+auto KindlePageManager::isPreviewRequestInProgress() const -> bool {
+    return previewRequestInProgress_;
+}
 
-bool KindlePageManager::wasLastCallPreview() const { return lastCallWasPreview_; }
+auto KindlePageManager::wasLastCallPreview() const -> bool { return lastCallWasPreview_; }
 
 void KindlePageManager::resetLastCallWasPreview() {
     log_i("Resetting lastCallWasPreview_ from %d to false", lastCallWasPreview_);
@@ -357,9 +361,8 @@ void KindlePageManager::makeRequest(
     const std::function<int(SindarinAPI *, KindlePageResponse *,
                             const std::shared_ptr<CancelFlag> &, bool, bool)> &requestFunc,
     const std::shared_ptr<CancelFlag> &cancelFlag, bool useBle,
-    std::function<void(bool success, const std::shared_ptr<KindlePageResponse> &,
-                       const std::string &)>
-        callback) {
+    const std::function<void(bool success, const std::shared_ptr<KindlePageResponse> &,
+                             const std::string &)> &callback) {
 
     // Execute the API call on the background thread
     DispatchGetCore0BackgroundQueue()->dispatch([requestFunc, cancelFlag, useBle, callback]() {

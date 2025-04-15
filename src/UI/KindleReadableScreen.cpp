@@ -2365,7 +2365,9 @@ void KindleReadableScreen::logPageContext(uint32_t offsetBeforeTurn, uint32_t of
             // Count exact newlines in the current page content
             int newlineCount = 0;
             for (char c : currentPageContent) {
-                if (c == '\n') newlineCount++;
+                if (c == '\n') {
+                    newlineCount++;
+                }
             }
 
             // Examine line numbers at the start and end of page
@@ -2432,7 +2434,8 @@ void KindleReadableScreen::logPageContext(uint32_t offsetBeforeTurn, uint32_t of
                 // Check for specific characters at boundary
                 if (!afterBoundaryContent.empty()) {
                     log_i("[TEXT DEBUG] First 10 bytes after boundary: ");
-                    for (int i = 0; i < std::min(size_t(10), afterBoundaryContent.size()); i++) {
+                    for (int i = 0;
+                         i < std::min(static_cast<size_t>(10), afterBoundaryContent.size()); i++) {
                         char c = afterBoundaryContent[i];
                         log_i("  Byte %d: '%c' (ASCII %d)", i, (c >= 32 && c < 127) ? c : '.',
                               static_cast<int>(c) & 0xFF);

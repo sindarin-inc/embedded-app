@@ -43,11 +43,10 @@ public:
      * @param useBle Whether to use BLE for the request
      * @param callback Callback function for when the request completes
      */
-    void
-    loadInitialPage(const std::shared_ptr<CancelFlag> &cancelFlag, bool useBle,
-                    std::function<void(bool success, const std::shared_ptr<KindlePageResponse> &,
-                                       const std::string &)>
-                        callback);
+    void loadInitialPage(
+        const std::shared_ptr<CancelFlag> &cancelFlag, bool useBle,
+        const std::function<void(bool success, const std::shared_ptr<KindlePageResponse> &,
+                                 const std::string &)> &callback);
 
     /**
      * Loads the next preview page for a Kindle book
@@ -57,12 +56,11 @@ public:
      * @param useBle Whether to use BLE for the request
      * @param callback Callback function for when the request completes
      */
-    void
-    loadNextPreview(const std::shared_ptr<Place> &currentPlace,
-                    const std::shared_ptr<CancelFlag> &cancelFlag, bool useBle,
-                    std::function<void(bool success, const std::shared_ptr<KindlePageResponse> &,
-                                       const std::string &)>
-                        callback);
+    void loadNextPreview(
+        const std::shared_ptr<Place> &currentPlace, const std::shared_ptr<CancelFlag> &cancelFlag,
+        bool useBle,
+        const std::function<void(bool success, const std::shared_ptr<KindlePageResponse> &,
+                                 const std::string &)> &callback);
 
     /**
      * Syncs the local position with the server using navigate-next
@@ -71,11 +69,10 @@ public:
      * @param useBle Whether to use BLE for the request
      * @param callback Callback function for when the request completes
      */
-    void
-    syncWithServer(const std::shared_ptr<CancelFlag> &cancelFlag, bool useBle,
-                   std::function<void(bool success, const std::shared_ptr<KindlePageResponse> &,
-                                      const std::string &)>
-                       callback);
+    void syncWithServer(
+        const std::shared_ptr<CancelFlag> &cancelFlag, bool useBle,
+        const std::function<void(bool success, const std::shared_ptr<KindlePageResponse> &,
+                                 const std::string &)> &callback);
 
     /**
      * Checks if the current position is at or has crossed the preview boundary
@@ -91,7 +88,8 @@ public:
      * currentOffset)
      * @return True if either position has crossed the preview boundary
      */
-    bool hasCrossedPreviewBoundary(uint32_t currentOffset, uint32_t pageEndOffset = 0) const;
+    [[nodiscard]] auto hasCrossedPreviewBoundary(uint32_t currentOffset,
+                                                 uint32_t pageEndOffset = 0) const -> bool;
 
     /**
      * Checks if the next turn would cross the preview boundary
@@ -100,7 +98,8 @@ public:
      * @param pageSize Size of the current page in bytes
      * @return True if the next turn would cross the preview boundary
      */
-    bool wouldNextTurnCrossBoundary(uint32_t currentOffset, uint32_t pageSize) const;
+    [[nodiscard]] auto wouldNextTurnCrossBoundary(uint32_t currentOffset, uint32_t pageSize) const
+        -> bool;
 
     /**
      * Gets the next content to load, respecting the alternation pattern
@@ -115,7 +114,8 @@ public:
      * @param pageEndOffset Optional offset of the end of the current page
      * @return True if a navigate call is needed, false if preview is needed
      */
-    bool needsNavigateCall(uint32_t currentOffset, uint32_t pageEndOffset = 0) const;
+    [[nodiscard]] auto needsNavigateCall(uint32_t currentOffset, uint32_t pageEndOffset = 0) const
+        -> bool;
 
     /**
      * Resets the preview boundary
@@ -134,21 +134,21 @@ public:
      *
      * @return Offset where the preview content begins
      */
-    uint32_t getPreviewBoundary() const;
+    [[nodiscard]] auto getPreviewBoundary() const -> uint32_t;
 
     /**
      * Checks if a preview request is in progress
      *
      * @return True if a preview request is in progress
      */
-    bool isPreviewRequestInProgress() const;
+    [[nodiscard]] auto isPreviewRequestInProgress() const -> bool;
 
     /**
      * Gets whether the last API call was a preview
      *
      * @return True if the last API call was a preview
      */
-    bool wasLastCallPreview() const;
+    [[nodiscard]] auto wasLastCallPreview() const -> bool;
 
     /**
      * Resets the lastCallWasPreview flag to false
@@ -175,7 +175,6 @@ private:
         const std::function<int(SindarinAPI *, KindlePageResponse *,
                                 const std::shared_ptr<CancelFlag> &, bool, bool)> &requestFunc,
         const std::shared_ptr<CancelFlag> &cancelFlag, bool useBle,
-        std::function<void(bool success, const std::shared_ptr<KindlePageResponse> &,
-                           const std::string &)>
-            callback);
+        const std::function<void(bool success, const std::shared_ptr<KindlePageResponse> &,
+                                 const std::string &)> &callback);
 };
