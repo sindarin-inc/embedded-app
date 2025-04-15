@@ -2085,10 +2085,10 @@ void KindleReadableScreen::logPageContext(uint32_t offsetBeforeTurn, uint32_t of
             log_i("[TEXT DEBUG] Page Start (Offset %" PRIu32 "): '%s...'", offsetBeforeTurn,
                   GetNWords(currentPageContent, 10, true).c_str());
             log_i("[TEXT DEBUG] Page End   (Offset %" PRIu32 "): '...%s'", offsetAfterTurn,
-                  getNWords(currentPageContent, 10, false).c_str());
+                  GetNWords(currentPageContent, 10, false).c_str());
             if (previewBoundary > 0) {
                 log_i("[TEXT DEBUG] Preview Start (Boundary %" PRIu32 "): '%s...'", previewBoundary,
-                      getNWords(previewContent, 10, true).c_str());
+                      GetNWords(previewContent, 10, true).c_str());
             }
         }
         // Restore stream position (important!)
