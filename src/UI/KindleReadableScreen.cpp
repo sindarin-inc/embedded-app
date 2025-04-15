@@ -822,8 +822,60 @@ void KindleReadableScreen::loadNextKindlePreview() {
 
         // log_i("Preview loaded successfully, text size: %zu bytes", response->ocrText.length());
 
-        // Append the preview text to the current text
-        currentPageText_ += response->ocrText;
+        // CRITICAL FIX: Record the current buffer size BEFORE we append
+        // This will be our correct boundary position
+        uint32_t currentBufferSize = currentPageText_.size();
+        
+        // Record original size for accurate boundary calculation
+        size_t originalResponseSize = response->ocrText.length();
+        std::string modifiedText;
+        
+        // Extract the first line number from the preview content for debugging
+        std::string firstLineNumber;
+        std::istringstream numIss(response->ocrText);
+        std::string numWord;
+        while (numIss >> numWord) {
+            if (std::all_of(numWord.begin(), numWord.end(), ::isdigit) && numWord.length() < 5) {
+                firstLineNumber = numWord;
+                break;
+            }
+        }
+        
+        // Check if the first character of the next page is uppercase
+        if (!response->ocrText.empty() &&
+            (isupper(response->ocrText[0]) || isdigit(response->ocrText[0])) &&
+            !currentPageText_.empty()) {
+            // For uppercase first character, use a new paragraph
+            modifiedText = "\n\n" + response->ocrText;
+            currentPageText_ += modifiedText;
+            log_i("[BOUNDARY CALCULATION] Added \\n\\n to preview text. Original size: %zu, Modified size: %zu", 
+                  originalResponseSize, modifiedText.length());
+        } else if (!response->ocrText.empty() && !currentPageText_.empty() &&
+                   currentPageText_.back() != ' ' && currentPageText_.back() != '\n') {
+            // Otherwise, add a space if needed (when not already ending with space or newline)
+            modifiedText = " " + response->ocrText;
+            currentPageText_ += modifiedText;
+            log_i("[BOUNDARY CALCULATION] Added space to preview text. Original size: %zu, Modified size: %zu", 
+                  originalResponseSize, modifiedText.length());
+        } else {
+            // Just append directly if already has proper spacing or is empty
+            modifiedText = response->ocrText;
+            currentPageText_ += modifiedText;
+            log_i("[BOUNDARY CALCULATION] Directly appended preview text. Size: %zu", originalResponseSize);
+        }
+        
+        // CRITICAL FIX: Use the original buffer size as our boundary point
+        // This ensures we know exactly where the new content begins
+        if (!firstLineNumber.empty()) {
+            log_i("[BOUNDARY VERIFICATION] First line number in preview: %s, setting boundary to buffer size %u", 
+                  firstLineNumber.c_str(), currentBufferSize);
+        }
+        
+        // Set the boundary using the exact buffer size before appending 
+        pageManager_->setPreviewBoundary(currentBufferSize);
+        
+        log_i("[BOUNDARY CORRECTION] Set preview boundary to exact buffer size %u before append", 
+              currentBufferSize);
 
         // Create a stream with the updated text content
         auto stream = std::make_shared<StdStringStream>(currentPageText_, DocType::TXT);
@@ -1126,20 +1178,21 @@ void KindleReadableScreen::navigateNext() {
         hasNavigatedForward_ = true;
         log_i("[NAVIGATE DIRECTION] First forward navigation after backward movement - resetting "
               "boundary predictions");
-        
+
         // When we change direction from backward to forward after significant backward movement
         // check if we should reset the preview/navigate alternation requirement
         uint32_t previewBoundary = pageManager_->getPreviewBoundary();
         if (previewBoundary > 0) {
-            uint32_t distanceToBoundary = 
+            uint32_t distanceToBoundary =
                 (currentOffset < previewBoundary) ? (previewBoundary - currentOffset) : 0;
             uint32_t pageSize = lastRenderedPageSize_ > 0 ? lastRenderedPageSize_ : 400;
             uint32_t pagesToBoundary = (distanceToBoundary + pageSize - 1) / pageSize;
-            
+
             // If we're more than 5 pages from the boundary, consider resetting state
             if (pagesToBoundary > 5 && pageManager_->wasLastCallPreview()) {
                 log_i("[NAVIGATE DIRECTION] Far from boundary (%u pages) when going forward, "
-                      "resetting API state", pagesToBoundary);
+                      "resetting API state",
+                      pagesToBoundary);
                 pageManager_->resetLastCallWasPreview();
             }
         }
@@ -1192,6 +1245,91 @@ void KindleReadableScreen::navigateNext() {
 
     // --- Debug Logging: Show context around page turn ---
     logPageContext(offsetBeforeTurn, offsetAfterTurn);
+    
+    // Additional logging to show actual displayed content line numbers
+    std::string firstLineNumber, lastLineNumber;
+    std::string visibleText;
+    
+    // Check preview boundary status for debugging
+    uint32_t previewBoundary = pageManager_->getPreviewBoundary();
+    if (previewBoundary > 0) {
+        int32_t distanceToBoundary = previewBoundary - offsetAfterTurn;
+        log_i("[TURN PAGE DEBUG] Distance to preview boundary: %" PRId32 " bytes (boundary at %" PRIu32 ")", 
+              distanceToBoundary, previewBoundary);
+    }
+    
+    // Get about 500 bytes of content at the current position to analyze
+    if (renderer_.getStream()) {
+        auto stream = renderer_.getStream();
+        size_t streamSize = stream->size();
+        uint32_t curOffset = offsetAfterTurn;
+        
+        if (curOffset < streamSize) {
+            size_t readLen = std::min(static_cast<size_t>(500), streamSize - curOffset);
+            visibleText.resize(readLen);
+            stream->seek(curOffset);
+            stream->readBytes(reinterpret_cast<uint8_t*>(visibleText.data()), readLen);
+            
+            // Parse the visible text to find line numbers
+            std::istringstream iss(visibleText);
+            std::string word;
+            std::vector<std::string> lineNumbers;
+            
+            while (iss >> word) {
+                if (std::all_of(word.begin(), word.end(), ::isdigit) && word.length() < 5) {
+                    lineNumbers.push_back(word);
+                }
+            }
+            
+            // Get first and last found line numbers
+            if (!lineNumbers.empty()) {
+                firstLineNumber = lineNumbers.front();
+                lastLineNumber = lineNumbers.back();
+                
+                log_i("[PAGE DISPLAY] Visible text contains line numbers: first=%s, last=%s", 
+                      firstLineNumber.c_str(), lastLineNumber.c_str());
+                
+                // CRITICAL: Check if we're far from the boundary but the last line is much less
+                // than the first line number in the preview
+                if (previewBoundary > 0 && !lastLineNumber.empty()) {
+                    // Get the first line number of the preview content
+                    std::string previewLineNumber;
+                    std::string previewContent;
+                    if (previewBoundary < streamSize) {
+                        size_t previewReadLen = std::min(static_cast<size_t>(100), streamSize - previewBoundary);
+                        previewContent.resize(previewReadLen);
+                        stream->seek(previewBoundary);
+                        stream->readBytes(reinterpret_cast<uint8_t*>(previewContent.data()), previewReadLen);
+                        
+                        std::istringstream previewIss(previewContent);
+                        while (previewIss >> word) {
+                            if (std::all_of(word.begin(), word.end(), ::isdigit) && word.length() < 5) {
+                                previewLineNumber = word;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    if (!previewLineNumber.empty()) {
+                        int lastLine = std::stoi(lastLineNumber);
+                        int previewFirstLine = std::stoi(previewLineNumber);
+                        
+                        // Calculate how many lines we still have before hitting the preview
+                        int lineDifference = previewFirstLine - lastLine;
+                        
+                        log_i("[PAGE BOUNDARY CHECK] Current last line: %d, Preview first line: %d, "
+                              "Line difference: %d, Distance to boundary: %" PRIu32 " bytes",
+                              lastLine, previewFirstLine, lineDifference,
+                              (offsetAfterTurn < previewBoundary) ? 
+                              (previewBoundary - offsetAfterTurn) : 0);
+                    }
+                }
+            }
+            
+            // Restore stream position
+            stream->seek(offsetAfterTurn);
+        }
+    }
     // --- End Debug Logging ---
 
     log_i("[NAVIGATE LOCAL] Turned page: %" PRIu32 " -> %" PRIu32, offsetBeforeTurn,
@@ -1219,7 +1357,6 @@ void KindleReadableScreen::navigateNext() {
     }
 
     // Log boundary status
-    uint32_t previewBoundary = pageManager_->getPreviewBoundary();
     log_i("[NAVIGATE PREDICT] Current: %" PRIu32 ", boundary: %" PRIu32
           ", justCrossed: %d, nextWillCross: %d",
           offsetAfterTurn, previewBoundary, justCrossedBoundary, nextTurnWillCrossBoundary);
@@ -1376,37 +1513,40 @@ void KindleReadableScreen::navigatePrevious() {
 
     // Track navigation direction changes
     static uint32_t backwardNavigations = 0;
-    
+
     // Reset navigation flags when going backward
     if (justNavigatedForward_) {
         justNavigatedForward_ = false;
-        log_i("[NAVIGATE DIRECTION] Changing to backward movement, will reset boundary predictions");
-        
+        log_i(
+            "[NAVIGATE DIRECTION] Changing to backward movement, will reset boundary predictions");
+
         // If we've gone backward several times (at least 2 page turns)
         // Reset the page manager state to avoid unnecessary API calls
         backwardNavigations++;
-        
+
         if (backwardNavigations >= 2) {
-            log_i("[NAVIGATE DIRECTION] Multiple backward moves detected (%u), resetting preview state",
+            log_i("[NAVIGATE DIRECTION] Multiple backward moves detected (%u), resetting preview "
+                  "state",
                   backwardNavigations);
-            
+
             // If we're VERY far from preview boundary (e.g., 5+ pages), reset lastCallWasPreview
             // This prevents unnecessary server syncs when going forward again
             uint32_t previewBoundary = pageManager_->getPreviewBoundary();
             if (previewBoundary > 0) {
-                uint32_t distanceToBoundary = (currentOffset < previewBoundary) ? 
-                    (previewBoundary - currentOffset) : 0;
-                    
+                uint32_t distanceToBoundary =
+                    (currentOffset < previewBoundary) ? (previewBoundary - currentOffset) : 0;
+
                 uint32_t pageSize = lastRenderedPageSize_ > 0 ? lastRenderedPageSize_ : 400;
                 uint32_t pagesToBoundary = (distanceToBoundary + pageSize - 1) / pageSize;
-                
+
                 if (pagesToBoundary > 5) {
                     // Reset for significant backward navigation
                     // This prevents unnecessary API calls when we go forward again
                     pageManager_->resetPreviewBoundary();
                     pageManager_->resetLastCallWasPreview();
                     log_i("[NAVIGATE DIRECTION] Far from boundary (~%" PRIu32
-                          " pages), resetting preview boundary and API state", pagesToBoundary);
+                          " pages), resetting preview boundary and API state",
+                          pagesToBoundary);
                 }
             }
         }
@@ -2133,6 +2273,10 @@ void KindleReadableScreen::logPageContext(uint32_t offsetBeforeTurn, uint32_t of
         if (streamSize > 0) {
             std::string currentPageContent;
             std::string previewContent;
+            std::string beforeBoundaryContent;
+            std::string afterBoundaryContent;
+            
+            // Skip any complex scanning - simple logging is sufficient
 
             // Read current page content
             size_t readStart = offsetBeforeTurn;
@@ -2148,28 +2292,127 @@ void KindleReadableScreen::logPageContext(uint32_t offsetBeforeTurn, uint32_t of
             // Read start of preview content if boundary exists
             uint32_t previewBoundary = pageManager_->getPreviewBoundary();
             if (previewBoundary > 0 && previewBoundary < streamSize) {
-                size_t previewReadStart = previewBoundary;
-                size_t previewReadEnd =
-                    std::min(streamSize, previewReadStart + 200); // Read ~200 chars for 10 words
-                if (previewReadEnd > previewReadStart) {
-                    previewContent.resize(previewReadEnd - previewReadStart);
-                    stream->seek(previewReadStart);
-                    stream->readBytes(reinterpret_cast<uint8_t *>(previewContent.data()),
-                                      previewReadEnd - previewReadStart);
+                // Read content right before the boundary (50 bytes max)
+                size_t beforeStart = previewBoundary > 50 ? previewBoundary - 50 : 0;
+                size_t beforeSize = previewBoundary - beforeStart;
+                beforeBoundaryContent.resize(beforeSize);
+                stream->seek(beforeStart);
+                stream->readBytes(reinterpret_cast<uint8_t *>(beforeBoundaryContent.data()),
+                                  beforeSize);
+
+                // Read content right after the boundary (200 bytes max)
+                size_t afterStart = previewBoundary;
+                size_t afterEnd = std::min(streamSize, afterStart + 200);
+                size_t afterSize = afterEnd - afterStart;
+                afterBoundaryContent.resize(afterSize);
+                stream->seek(afterStart);
+                stream->readBytes(reinterpret_cast<uint8_t *>(afterBoundaryContent.data()),
+                                  afterSize);
+                
+                // Extract the first line number from the boundary content
+                std::istringstream boundaryStream(afterBoundaryContent);
+                std::string boundaryWord;
+                std::string firstLineNumber;
+                
+                while (boundaryStream >> boundaryWord) {
+                    if (std::all_of(boundaryWord.begin(), boundaryWord.end(), ::isdigit) && 
+                        boundaryWord.length() < 5) {
+                        firstLineNumber = boundaryWord;
+                        break;
+                    }
+                }
+                
+                if (!firstLineNumber.empty()) {
+                    log_i("[BOUNDARY LINE NUMBER] First line number at preview boundary (%" PRIu32 "): %s", 
+                          previewBoundary, firstLineNumber.c_str());
+                }
+
+                // Also read more content for display (same as before)
+                previewContent = afterBoundaryContent;
+            }
+
+            // Count exact newlines in the current page content
+            int newlineCount = 0;
+            for (char c : currentPageContent) {
+                if (c == '\n') newlineCount++;
+            }
+
+            // Examine line numbers at the start and end of page
+            std::string startLineNumber, endLineNumber;
+            std::istringstream startStream(GetNWords(currentPageContent, 15, true));
+            std::istringstream endStream(GetNWords(currentPageContent, 15, false));
+            std::string word;
+
+            // Extract potential line numbers from start
+            while (startStream >> word) {
+                if (std::all_of(word.begin(), word.end(), ::isdigit)) {
+                    startLineNumber = word;
+                    break;
                 }
             }
 
+            // Extract potential line numbers from end
+            while (endStream >> word) {
+                if (std::all_of(word.begin(), word.end(), ::isdigit)) {
+                    endLineNumber = word;
+                    break;
+                }
+            }
+
+            // Log byte-level details for current page
+            log_i("[TEXT DEBUG] Page content: %" PRIu32 " -> %" PRIu32 " (%" PRIu32
+                  " bytes, ~%d newlines)",
+                  offsetBeforeTurn, offsetAfterTurn, offsetAfterTurn - offsetBeforeTurn,
+                  newlineCount);
+
+            // Log line numbers if found
+            if (!startLineNumber.empty() || !endLineNumber.empty()) {
+                log_i("[TEXT DEBUG] Detected line numbers: start~%s, end~%s",
+                      startLineNumber.c_str(), endLineNumber.c_str());
+            }
+
+            // Log content snippets
             log_i("[TEXT DEBUG] Page Start (Offset %" PRIu32 "): '%s...'", offsetBeforeTurn,
                   GetNWords(currentPageContent, 10, true).c_str());
             log_i("[TEXT DEBUG] Page End   (Offset %" PRIu32 "): '...%s'", offsetAfterTurn,
                   GetNWords(currentPageContent, 10, false).c_str());
+
+            // Log boundary information if available
             if (previewBoundary > 0) {
-                log_i("[TEXT DEBUG] Preview Start (Boundary %" PRIu32 "): '%s...'", previewBoundary,
-                      GetNWords(previewContent, 10, true).c_str());
+                // Log distance information
+                uint32_t distanceToBoundary = 0;
+                if (offsetAfterTurn < previewBoundary) {
+                    distanceToBoundary = previewBoundary - offsetAfterTurn;
+                    log_i("[TEXT DEBUG] Distance to boundary: %" PRIu32
+                          " bytes after current page end",
+                          distanceToBoundary);
+                } else {
+                    distanceToBoundary = offsetAfterTurn - previewBoundary;
+                    log_i("[TEXT DEBUG] Current page extends %" PRIu32 " bytes beyond boundary",
+                          distanceToBoundary);
+                }
+
+                // Log content around boundary
+                log_i("[TEXT DEBUG] Content BEFORE boundary (%" PRIu32 "): '...%s'",
+                      previewBoundary, GetNWords(beforeBoundaryContent, 10, false).c_str());
+                log_i("[TEXT DEBUG] Content AFTER boundary (%" PRIu32 "): '%s...'", previewBoundary,
+                      GetNWords(afterBoundaryContent, 10, true).c_str());
+
+                // Check for specific characters at boundary
+                if (!afterBoundaryContent.empty()) {
+                    log_i("[TEXT DEBUG] First 10 bytes after boundary: ");
+                    for (int i = 0; i < std::min(size_t(10), afterBoundaryContent.size()); i++) {
+                        char c = afterBoundaryContent[i];
+                        log_i("  Byte %d: '%c' (ASCII %d)", i, (c >= 32 && c < 127) ? c : '.',
+                              static_cast<int>(c) & 0xFF);
+                    }
+                }
             }
         }
         // Restore stream position (important!)
         stream->seek(offsetAfterTurn);
     }
 }
+
+// Removed complex buffer scanning method as it's not appropriate for normal EPUBs
 // --- End of new method definition ---

@@ -75,7 +75,18 @@ void KindlePageManager::loadNextPreview(
 
     uint32_t currentOffset = currentPlace ? currentPlace->getOffset() : 0;
 
-    log_i("Loading next preview for Kindle book at offset %" PRIu32, currentOffset);
+    // Log the current offset and preview boundary for debugging
+    if (lastPreviewOffset_ > 0) {
+        uint32_t distanceToBoundary = (currentOffset < lastPreviewOffset_) ? 
+                                      (lastPreviewOffset_ - currentOffset) : 0;
+        log_i("[PREVIEW BOUNDARY] Loading preview at offset %" PRIu32 
+              ", previous boundary: %" PRIu32 
+              ", distance to boundary: %" PRIu32 " bytes", 
+              currentOffset, lastPreviewOffset_, distanceToBoundary);
+    } else {
+        log_i("Loading next preview for Kindle book at offset %" PRIu32 " (no boundary set)", 
+              currentOffset);
+    }
 
     auto requestFunc = [](SindarinAPI *api, KindlePageResponse *response,
                           const std::shared_ptr<CancelFlag> &cancelFlag, bool useBle,
@@ -93,11 +104,65 @@ void KindlePageManager::loadNextPreview(
 
             // Set the preview boundary to be the current position + text size
             // This marks where the new preview content begins in the buffer
-            lastPreviewOffset_ = currentOffset + response->ocrText.length();
+            uint32_t previousBoundary = lastPreviewOffset_;
+            
+            // IMPORTANT: We need to be careful with the boundary calculation, since the content
+            // may be modified when appended (e.g., by adding newlines or spaces).
+            // The KindleReadableScreen will correct this if needed using setPreviewBoundary()
+            // but we log both the original and computed values for debugging
+            uint32_t calculatedBoundary = currentOffset + response->ocrText.length();
+            lastPreviewOffset_ = calculatedBoundary;
+            
+            log_i("[PREVIEW BOUNDARY INITIAL] Setting preview boundary at: %" PRIu32 
+                  " (offset %" PRIu32 " + content size %zu)", 
+                  calculatedBoundary, currentOffset, response->ocrText.length());
 
-            // log_i("Preview loaded successfully. New text size: %zu bytes, Preview boundary set
-            // at: %" PRIu32,
-            //       response->ocrText.length(), lastPreviewOffset_);
+            // Log detailed information about the preview boundary
+            log_i("[PREVIEW BOUNDARY] Preview loaded successfully: %zu bytes. "
+                  "Previous boundary: %" PRIu32 ", New boundary: %" PRIu32,
+                  response->ocrText.length(), previousBoundary, lastPreviewOffset_);
+
+            // Log the first few characters of the new content to verify boundary
+            if (!response->ocrText.empty()) {
+                // Count newlines and calculate content lines
+                int newlineCount = 0;
+                for (char c : response->ocrText) {
+                    if (c == '\n') newlineCount++;
+                }
+                
+                // Get a larger sample of the start of content
+                std::string previewStart = response->ocrText.substr(0, std::min(size_t(50), response->ocrText.length()));
+                for (size_t i = 0; i < previewStart.length(); i++) {
+                    if (previewStart[i] == '\n') previewStart[i] = ' ';  // Replace newlines for cleaner logging
+                }
+                
+                // Get exact line numbers if present at the start
+                std::string firstLineNumber;
+                std::istringstream iss(previewStart);
+                std::string word;
+                while (iss >> word) {
+                    if (std::all_of(word.begin(), word.end(), ::isdigit)) {
+                        firstLineNumber = word;
+                        break;
+                    }
+                }
+                
+                // Log content summary
+                log_i("[PREVIEW CONTENT] Preview content (%zu bytes, ~%d newlines) begins with: '%s...'", 
+                      response->ocrText.length(), newlineCount, previewStart.c_str());
+                
+                if (!firstLineNumber.empty()) {
+                    log_i("[PREVIEW CONTENT] First line number detected: %s", firstLineNumber.c_str());
+                }
+                
+                // Log the exact bytes at the start
+                log_i("[PREVIEW CONTENT] First 10 bytes of preview content:");
+                for (int i = 0; i < std::min(size_t(10), response->ocrText.size()); i++) {
+                    char c = response->ocrText[i];
+                    log_i("  Byte %d: '%c' (ASCII %d)", i, 
+                          (c >= 32 && c < 127) ? c : '.', static_cast<int>(c) & 0xFF);
+                }
+            }
 
             updateBookMetadata(response);
         } else {
@@ -150,7 +215,23 @@ void KindlePageManager::syncWithServer(
 }
 
 bool KindlePageManager::hasCrossedPreviewBoundary(uint32_t currentOffset) const {
-    return (lastPreviewOffset_ > 0 && currentOffset >= lastPreviewOffset_);
+    bool hasCrossed = (lastPreviewOffset_ > 0 && currentOffset >= lastPreviewOffset_);
+    
+    if (lastPreviewOffset_ > 0) {
+        // Calculate how far we are beyond the boundary (or how far before it)
+        int32_t distanceToBoundary = lastPreviewOffset_ - currentOffset;
+        if (hasCrossed) {
+            log_i("[BOUNDARY CROSSED] Current position %" PRIu32 " has crossed boundary at %" PRIu32 
+                  " (%" PRId32 " bytes beyond boundary)",
+                  currentOffset, lastPreviewOffset_, -distanceToBoundary);
+        } else {
+            log_i("[BOUNDARY NOT CROSSED] Current position %" PRIu32 " has not crossed boundary at %"
+                  PRIu32 " (%" PRId32 " bytes before boundary)",
+                  currentOffset, lastPreviewOffset_, distanceToBoundary);
+        }
+    }
+    
+    return hasCrossed;
 }
 
 bool KindlePageManager::wouldNextTurnCrossBoundary(uint32_t currentOffset,
@@ -160,7 +241,22 @@ bool KindlePageManager::wouldNextTurnCrossBoundary(uint32_t currentOffset,
     }
 
     uint32_t nextTurnOffset = currentOffset + pageSize;
-    return (nextTurnOffset >= lastPreviewOffset_);
+    bool wouldCross = (nextTurnOffset >= lastPreviewOffset_);
+    
+    // Calculate distance to boundary in bytes and pages
+    uint32_t distanceToBoundary = (currentOffset < lastPreviewOffset_) ? 
+                                 (lastPreviewOffset_ - currentOffset) : 0;
+    uint32_t pagesToBoundary = (pageSize > 0) ? 
+                              ((distanceToBoundary + pageSize - 1) / pageSize) : 0;
+                              
+    // Log detailed boundary prediction information
+    log_i("[BOUNDARY PREDICTION] Current: %" PRIu32 ", next turn would reach: %" PRIu32 
+          ", boundary: %" PRIu32 ", distance: %" PRIu32 " bytes (~%" PRIu32 " pages), "
+          "would cross: %d", 
+          currentOffset, nextTurnOffset, lastPreviewOffset_, 
+          distanceToBoundary, pagesToBoundary, wouldCross);
+    
+    return wouldCross;
 }
 
 bool KindlePageManager::needsNavigateCall(uint32_t currentOffset) const {
@@ -178,7 +274,7 @@ bool KindlePageManager::needsNavigateCall(uint32_t currentOffset) const {
         // Check if we're within reasonable distance of the boundary
         // This prevents unnecessary syncs when going backward then forward
         if (lastPreviewOffset_ > 0) {
-            // Check if we're within 3 pages of the boundary before strict alternation
+            // More conservative approach - only require sync when we're VERY close to boundary
             uint32_t pageSize = 400; // Reasonable approximation
             uint32_t distanceToBoundary = 
                 (currentOffset < lastPreviewOffset_) ? 
@@ -187,16 +283,17 @@ bool KindlePageManager::needsNavigateCall(uint32_t currentOffset) const {
             // Calculate pages to boundary for logging
             uint32_t pagesToBoundary = (distanceToBoundary + pageSize - 1) / pageSize;
             
-            // Only enforce alternation if we're close to the boundary
-            if (distanceToBoundary < pageSize * 3) {
-                log_i("[PAGE MANAGER] Need navigate: Yes - lastCallWasPreview=true and close to boundary "
-                      "(%" PRIu32 " bytes, ~%" PRIu32 " pages from boundary)", 
-                      distanceToBoundary, pagesToBoundary);
+            // FIXED: Only enforce alternation if we're within half a page of the boundary
+            // This prevents premature syncing and ensures we see more content before syncing
+            if (distanceToBoundary < pageSize / 2) {
+                log_i("[PAGE MANAGER] Need navigate: Yes - lastCallWasPreview=true and VERY close to boundary "
+                      "(%" PRIu32 " bytes, <1 page from boundary)", distanceToBoundary);
                 return true;
             }
             
-            // If we're far from boundary, don't force alternation
-            log_i("[PAGE MANAGER] Need navigate: No - too far from boundary "
+            // If we're not in immediate danger of crossing the boundary in the current page,
+            // don't force a sync. This should prevent the issue of skipping content.
+            log_i("[PAGE MANAGER] Need navigate: No - not close enough to boundary "
                   "(%" PRIu32 " bytes, ~%" PRIu32 " pages) despite lastCallWasPreview=true", 
                   distanceToBoundary, pagesToBoundary);
             return false;
