@@ -119,7 +119,10 @@ private:
     uint32_t lastRenderedPageSize_ = 0;    // Size of the last rendered page in bytes
     bool hasNavigatedForward_{false};      // Tracks if user has navigated forward at least once
     bool needsRedrawAfterLoad_{false};     // Tracks if we need to redraw after content loads
-    bool justNavigatedToServer_{false};     // Tracks if we just made a server navigation call
+    bool justNavigatedToServer_{false};    // Tracks if we just made a server navigation call
+    // Tracks if the last navigation was forward (for direction changes)
+    // Used to prevent premature boundary crossing detection after changing navigation direction
+    bool justNavigatedForward_{false};
 
     // Debugging helper
     void logPageContext(uint32_t offsetBeforeTurn, uint32_t offsetAfterTurn);

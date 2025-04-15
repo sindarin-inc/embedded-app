@@ -839,7 +839,7 @@ void KindleReadableScreen::loadNextKindlePreview() {
             auto restoredPlace = std::dynamic_pointer_cast<TxtPlace>(Place::factory(savedOffset));
             currentPlace_ = restoredPlace;
             renderer_.setCurrentPlace(currentPlace_);
-            log_i("Restored place to offset %" PRIu32 " after loading preview", savedOffset);
+            // log_i("Restored place to offset %" PRIu32 " after loading preview", savedOffset);
         }
 
         // Update the UI state
@@ -1120,6 +1120,31 @@ void KindleReadableScreen::navigateNext() {
     uint32_t remainingBytes = (currentOffset < totalSize) ? (totalSize - currentOffset) : 0;
     uint32_t pageSize = lastRenderedPageSize_ > 0 ? lastRenderedPageSize_ : 400;
 
+    // Reset any boundary-crossing prediction state when we start moving forward again
+    // after moving backward
+    if (!hasNavigatedForward_) {
+        hasNavigatedForward_ = true;
+        log_i("[NAVIGATE DIRECTION] First forward navigation after backward movement - resetting "
+              "boundary predictions");
+        
+        // When we change direction from backward to forward after significant backward movement
+        // check if we should reset the preview/navigate alternation requirement
+        uint32_t previewBoundary = pageManager_->getPreviewBoundary();
+        if (previewBoundary > 0) {
+            uint32_t distanceToBoundary = 
+                (currentOffset < previewBoundary) ? (previewBoundary - currentOffset) : 0;
+            uint32_t pageSize = lastRenderedPageSize_ > 0 ? lastRenderedPageSize_ : 400;
+            uint32_t pagesToBoundary = (distanceToBoundary + pageSize - 1) / pageSize;
+            
+            // If we're more than 5 pages from the boundary, consider resetting state
+            if (pagesToBoundary > 5 && pageManager_->wasLastCallPreview()) {
+                log_i("[NAVIGATE DIRECTION] Far from boundary (%u pages) when going forward, "
+                      "resetting API state", pagesToBoundary);
+                pageManager_->resetLastCallWasPreview();
+            }
+        }
+    }
+
     // Check if we can turn the page locally
     bool canTurnPageLocally =
         newPlace_ && currentPlace_ && newPlace_->getOffset() > currentPlace_->getOffset();
@@ -1179,8 +1204,19 @@ void KindleReadableScreen::navigateNext() {
                                !pageManager_->hasCrossedPreviewBoundary(offsetBeforeTurn);
 
     // Check if the next turn would cross a boundary
-    bool nextTurnWillCrossBoundary =
-        pageManager_->wouldNextTurnCrossBoundary(offsetAfterTurn, pageSize);
+    // Skip boundary prediction on first forward navigation after changing direction
+    bool nextTurnWillCrossBoundary = false;
+    if (justNavigatedForward_) {
+        // Normal boundary prediction
+        nextTurnWillCrossBoundary =
+            pageManager_->wouldNextTurnCrossBoundary(offsetAfterTurn, pageSize);
+    } else {
+        // First forward after backward: more conservative boundary prediction
+        // We need at least one page turn to "settle" after direction change
+        justNavigatedForward_ = true;
+        log_i(
+            "[BOUNDARY DECISION] First page after direction change - skipping boundary prediction");
+    }
 
     // Log boundary status
     uint32_t previewBoundary = pageManager_->getPreviewBoundary();
@@ -1336,6 +1372,47 @@ void KindleReadableScreen::navigatePrevious() {
     uint32_t currentOffset = 0;
     if (currentPlace_) {
         currentOffset = currentPlace_->getOffset();
+    }
+
+    // Track navigation direction changes
+    static uint32_t backwardNavigations = 0;
+    
+    // Reset navigation flags when going backward
+    if (justNavigatedForward_) {
+        justNavigatedForward_ = false;
+        log_i("[NAVIGATE DIRECTION] Changing to backward movement, will reset boundary predictions");
+        
+        // If we've gone backward several times (at least 2 page turns)
+        // Reset the page manager state to avoid unnecessary API calls
+        backwardNavigations++;
+        
+        if (backwardNavigations >= 2) {
+            log_i("[NAVIGATE DIRECTION] Multiple backward moves detected (%u), resetting preview state",
+                  backwardNavigations);
+            
+            // If we're VERY far from preview boundary (e.g., 5+ pages), reset lastCallWasPreview
+            // This prevents unnecessary server syncs when going forward again
+            uint32_t previewBoundary = pageManager_->getPreviewBoundary();
+            if (previewBoundary > 0) {
+                uint32_t distanceToBoundary = (currentOffset < previewBoundary) ? 
+                    (previewBoundary - currentOffset) : 0;
+                    
+                uint32_t pageSize = lastRenderedPageSize_ > 0 ? lastRenderedPageSize_ : 400;
+                uint32_t pagesToBoundary = (distanceToBoundary + pageSize - 1) / pageSize;
+                
+                if (pagesToBoundary > 5) {
+                    // Reset for significant backward navigation
+                    // This prevents unnecessary API calls when we go forward again
+                    pageManager_->resetPreviewBoundary();
+                    pageManager_->resetLastCallWasPreview();
+                    log_i("[NAVIGATE DIRECTION] Far from boundary (~%" PRIu32
+                          " pages), resetting preview boundary and API state", pagesToBoundary);
+                }
+            }
+        }
+    } else {
+        // Reset counter when starting to navigate forward
+        backwardNavigations = 0;
     }
 
     // If at the beginning, we need to fetch from the API

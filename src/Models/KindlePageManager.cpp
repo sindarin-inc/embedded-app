@@ -166,11 +166,48 @@ bool KindlePageManager::wouldNextTurnCrossBoundary(uint32_t currentOffset,
 bool KindlePageManager::needsNavigateCall(uint32_t currentOffset) const {
     // If we've crossed a boundary, we MUST sync with server
     if (hasCrossedPreviewBoundary(currentOffset)) {
+        log_i("[PAGE MANAGER] Need navigate: CRITICAL - crossed boundary at %" PRIu32, 
+              lastPreviewOffset_);
         return true;
     }
 
     // Otherwise, follow strict alternation
-    return lastCallWasPreview_;
+    // BUT: Only require alternation if we're close to the preview boundary
+    // This prevents forcing a sync when we're nowhere near the boundary
+    if (lastCallWasPreview_) {
+        // Check if we're within reasonable distance of the boundary
+        // This prevents unnecessary syncs when going backward then forward
+        if (lastPreviewOffset_ > 0) {
+            // Check if we're within 3 pages of the boundary before strict alternation
+            uint32_t pageSize = 400; // Reasonable approximation
+            uint32_t distanceToBoundary = 
+                (currentOffset < lastPreviewOffset_) ? 
+                lastPreviewOffset_ - currentOffset : 0;
+            
+            // Calculate pages to boundary for logging
+            uint32_t pagesToBoundary = (distanceToBoundary + pageSize - 1) / pageSize;
+            
+            // Only enforce alternation if we're close to the boundary
+            if (distanceToBoundary < pageSize * 3) {
+                log_i("[PAGE MANAGER] Need navigate: Yes - lastCallWasPreview=true and close to boundary "
+                      "(%" PRIu32 " bytes, ~%" PRIu32 " pages from boundary)", 
+                      distanceToBoundary, pagesToBoundary);
+                return true;
+            }
+            
+            // If we're far from boundary, don't force alternation
+            log_i("[PAGE MANAGER] Need navigate: No - too far from boundary "
+                  "(%" PRIu32 " bytes, ~%" PRIu32 " pages) despite lastCallWasPreview=true", 
+                  distanceToBoundary, pagesToBoundary);
+            return false;
+        }
+        
+        log_i("[PAGE MANAGER] Need navigate: Yes - lastCallWasPreview=true (no boundary set)");
+        return true; // Default if no boundary
+    }
+    
+    log_i("[PAGE MANAGER] Need navigate: No - lastCallWasPreview=false");
+    return false; // Not after a preview
 }
 
 void KindlePageManager::resetPreviewBoundary() { lastPreviewOffset_ = 0; }
@@ -182,6 +219,11 @@ uint32_t KindlePageManager::getPreviewBoundary() const { return lastPreviewOffse
 bool KindlePageManager::isPreviewRequestInProgress() const { return previewRequestInProgress_; }
 
 bool KindlePageManager::wasLastCallPreview() const { return lastCallWasPreview_; }
+
+void KindlePageManager::resetLastCallWasPreview() { 
+    log_i("Resetting lastCallWasPreview_ from %d to false", lastCallWasPreview_);
+    lastCallWasPreview_ = false; 
+}
 
 void KindlePageManager::updateBookMetadata(const std::shared_ptr<KindlePageResponse> &response) {
     if (!response || !kindleBook_) {

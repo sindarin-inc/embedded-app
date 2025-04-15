@@ -127,6 +127,12 @@ public:
     bool wasLastCallPreview() const;
     
     /**
+     * Resets the lastCallWasPreview flag to false
+     * Used when changing direction from backward to forward to avoid unnecessary API calls
+     */
+    void resetLastCallWasPreview();
+    
+    /**
      * Updates the Kindle book metadata from a page response
      * 
      * @param response The page response
