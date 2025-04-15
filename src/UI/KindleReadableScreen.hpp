@@ -7,6 +7,7 @@
 #include "Misc/PowerManager.hpp"
 #include "Misc/Telemetry.hpp"
 #include "Models/KindleBook.hpp"
+#include "Models/KindlePageManager.hpp"
 #include "Models/KindlePageResponse.hpp"
 #include "Models/Place.hpp"
 #include "Renderers/Renderer.hpp"
@@ -18,54 +19,11 @@
 #include "UI/NewReadablePopupMenuScreen.hpp"
 #include "UI/Screen.hpp"
 
-/*
- * Kindle Book Navigation Algorithm:
- *
- * 1. Loading a Book:
- *    - /open-book: Returns current screen text from headless Kindle app in the cloud
- *    - /preview-next: Returns next page's text without changing server position
- *    - /navigate-next: Changes server position but doesn't return text
- *
- * 2. API Call Alternation:
- *    - Calls to /preview and /navigate must strictly alternate
- *    - After any /preview call, the next API call must be /navigate
- *    - After any /navigate call, the next API call must be /preview
- *    - We track this with lastCallWasPreview_ flag
- *
- * 3. Content Buffering:
- *    - When /preview-next returns text, it's appended to the pager's buffer
- *    - The position where this preview text begins is stored as lastPreviewOffset_
- *    - When user reaches lastPreviewOffset_ in local pager, we MUST sync server position
- *    - This is done by calling /navigate-next, which aligns server with our local position
- *
- * 4. Boundary Detection:
- *    - CRITICAL: We must detect when user is about to cross or has crossed a preview boundary
- *    - Four boundary detection methods work together:
- *      a) Direct position check: currentOffset >= lastPreviewOffset_
- *      b) Next page prediction: nextOffset >= lastPreviewOffset_
- *      c) Page size projection: currentOffset + pageSize >= lastPreviewOffset_
- *      d) Two-step lookahead: For the future page after this one: futureOffset >=
- * lastPreviewOffset_
- *    - The page size projection is vital for catching boundaries that would be crossed within
- *      a single page turn
- *    - The two-step lookahead is necessary to catch cases where a single page turn wouldn't cross
- *      the boundary, but the next one would
- *    - When any detection method indicates crossing, we normally mark for sync (`needsNavigateSync_
- * = true`)
- *    - SYNC EXECUTION: Sync (`/navigate-next`) usually happens *after* the user sees the page turn,
- *      but only if the last API call was *not* a preview (`!lastCallWasPreview_`). This maintains
- * alternation.
- *    - CRUCIAL OVERRIDE: If the *next* page turn is predicted to cross the boundary (using methods
- * b, c, or d) AND the last API call *was* a preview (`lastCallWasPreview_ = true`), we *must* sync
- * immediately *after* turning the page locally. This ensures the server position catches up
- * promptly, even though it temporarily breaks the strict API call alternation. This override
- * prioritizes server sync when a boundary crossing is imminent after a preview.
- *
- * 5. User Navigation:
- *    - As user pages forward with remote, they advance through the pager's buffer
- *    - When approaching buffer end, we load more content with /preview-next
- *    - When crossing a preview boundary, we immediately sync with server via /navigate-next
- *    - This ensures the server always stays in sync with the local reading position
+/**
+ * KindleReadableScreen
+ * 
+ * Displays Kindle book content and handles user interaction.
+ * Delegates page management to KindlePageManager for API calls.
  */
 
 class KindleReadableScreen : public EinkView, public Screen {
@@ -137,6 +95,7 @@ protected:
 
 private:
     std::shared_ptr<KindleBook> kindleBook_;
+    std::shared_ptr<KindlePageManager> pageManager_; // Manages Kindle page loading and synchronization
     State state_{State::CONNECTING};
     bool firstKindleLoad_{true};
     bool dismissed_{false};
@@ -160,12 +119,7 @@ private:
     uint32_t lastRenderedPageSize_ = 0;    // Size of the last rendered page in bytes
     bool hasNavigatedForward_{false};      // Tracks if user has navigated forward at least once
     bool needsRedrawAfterLoad_{false};     // Tracks if we need to redraw after content loads
-    bool previewRequestInProgress_{false}; // Tracks if a preview request is currently in progress
-    bool needsNavigateSync_{false};     // Tracks if we need to sync server position after page turn
-    uint32_t lastPreviewOffset_{0};     // Tracks the offset where preview content was added
-    bool justNavigatedToServer_{false}; // Tracks if we just made a navigateNext request
-    bool lastCallWasPreview_{
-        false}; // CRITICAL: Tracks if the last API call was a preview to enforce strict alternation
+    bool justNavigatedToServer_{false};     // Tracks if we just made a server navigation call
 
     // Debugging helper
     void logPageContext(uint32_t offsetBeforeTurn, uint32_t offsetAfterTurn);
