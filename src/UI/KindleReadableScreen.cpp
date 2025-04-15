@@ -825,11 +825,11 @@ void KindleReadableScreen::loadNextKindlePreview() {
         // CRITICAL FIX: Record the current buffer size BEFORE we append
         // This will be our correct boundary position
         uint32_t currentBufferSize = currentPageText_.size();
-        
+
         // Record original size for accurate boundary calculation
         size_t originalResponseSize = response->ocrText.length();
         std::string modifiedText;
-        
+
         // Extract the first line number from the preview content for debugging
         std::string firstLineNumber;
         std::istringstream numIss(response->ocrText);
@@ -840,7 +840,7 @@ void KindleReadableScreen::loadNextKindlePreview() {
                 break;
             }
         }
-        
+
         // Check if the first character of the next page is uppercase
         if (!response->ocrText.empty() &&
             (isupper(response->ocrText[0]) || isdigit(response->ocrText[0])) &&
@@ -848,33 +848,37 @@ void KindleReadableScreen::loadNextKindlePreview() {
             // For uppercase first character, use a new paragraph
             modifiedText = "\n\n" + response->ocrText;
             currentPageText_ += modifiedText;
-            log_i("[BOUNDARY CALCULATION] Added \\n\\n to preview text. Original size: %zu, Modified size: %zu", 
+            log_i("[BOUNDARY CALCULATION] Added \\n\\n to preview text. Original size: %zu, "
+                  "Modified size: %zu",
                   originalResponseSize, modifiedText.length());
         } else if (!response->ocrText.empty() && !currentPageText_.empty() &&
                    currentPageText_.back() != ' ' && currentPageText_.back() != '\n') {
             // Otherwise, add a space if needed (when not already ending with space or newline)
             modifiedText = " " + response->ocrText;
             currentPageText_ += modifiedText;
-            log_i("[BOUNDARY CALCULATION] Added space to preview text. Original size: %zu, Modified size: %zu", 
+            log_i("[BOUNDARY CALCULATION] Added space to preview text. Original size: %zu, "
+                  "Modified size: %zu",
                   originalResponseSize, modifiedText.length());
         } else {
             // Just append directly if already has proper spacing or is empty
             modifiedText = response->ocrText;
             currentPageText_ += modifiedText;
-            log_i("[BOUNDARY CALCULATION] Directly appended preview text. Size: %zu", originalResponseSize);
+            log_i("[BOUNDARY CALCULATION] Directly appended preview text. Size: %zu",
+                  originalResponseSize);
         }
-        
+
         // CRITICAL FIX: Use the original buffer size as our boundary point
         // This ensures we know exactly where the new content begins
         if (!firstLineNumber.empty()) {
-            log_i("[BOUNDARY VERIFICATION] First line number in preview: %s, setting boundary to buffer size %u", 
+            log_i("[BOUNDARY VERIFICATION] First line number in preview: %s, setting boundary to "
+                  "buffer size %u",
                   firstLineNumber.c_str(), currentBufferSize);
         }
-        
-        // Set the boundary using the exact buffer size before appending 
+
+        // Set the boundary using the exact buffer size before appending
         pageManager_->setPreviewBoundary(currentBufferSize);
-        
-        log_i("[BOUNDARY CORRECTION] Set preview boundary to exact buffer size %u before append", 
+
+        log_i("[BOUNDARY CORRECTION] Set preview boundary to exact buffer size %u before append",
               currentBufferSize);
 
         // Create a stream with the updated text content
@@ -1245,50 +1249,51 @@ void KindleReadableScreen::navigateNext() {
 
     // --- Debug Logging: Show context around page turn ---
     logPageContext(offsetBeforeTurn, offsetAfterTurn);
-    
+
     // Additional logging to show actual displayed content line numbers
     std::string firstLineNumber, lastLineNumber;
     std::string visibleText;
-    
+
     // Check preview boundary status for debugging
     uint32_t previewBoundary = pageManager_->getPreviewBoundary();
     if (previewBoundary > 0) {
         int32_t distanceToBoundary = previewBoundary - offsetAfterTurn;
-        log_i("[TURN PAGE DEBUG] Distance to preview boundary: %" PRId32 " bytes (boundary at %" PRIu32 ")", 
+        log_i("[TURN PAGE DEBUG] Distance to preview boundary: %" PRId32
+              " bytes (boundary at %" PRIu32 ")",
               distanceToBoundary, previewBoundary);
     }
-    
+
     // Get about 500 bytes of content at the current position to analyze
     if (renderer_.getStream()) {
         auto stream = renderer_.getStream();
         size_t streamSize = stream->size();
         uint32_t curOffset = offsetAfterTurn;
-        
+
         if (curOffset < streamSize) {
             size_t readLen = std::min(static_cast<size_t>(500), streamSize - curOffset);
             visibleText.resize(readLen);
             stream->seek(curOffset);
-            stream->readBytes(reinterpret_cast<uint8_t*>(visibleText.data()), readLen);
-            
+            stream->readBytes(reinterpret_cast<uint8_t *>(visibleText.data()), readLen);
+
             // Parse the visible text to find line numbers
             std::istringstream iss(visibleText);
             std::string word;
             std::vector<std::string> lineNumbers;
-            
+
             while (iss >> word) {
                 if (std::all_of(word.begin(), word.end(), ::isdigit) && word.length() < 5) {
                     lineNumbers.push_back(word);
                 }
             }
-            
+
             // Get first and last found line numbers
             if (!lineNumbers.empty()) {
                 firstLineNumber = lineNumbers.front();
                 lastLineNumber = lineNumbers.back();
-                
-                log_i("[PAGE DISPLAY] Visible text contains line numbers: first=%s, last=%s", 
+
+                log_i("[PAGE DISPLAY] Visible text contains line numbers: first=%s, last=%s",
                       firstLineNumber.c_str(), lastLineNumber.c_str());
-                
+
                 // CRITICAL: Check if we're far from the boundary but the last line is much less
                 // than the first line number in the preview
                 if (previewBoundary > 0 && !lastLineNumber.empty()) {
@@ -1296,36 +1301,41 @@ void KindleReadableScreen::navigateNext() {
                     std::string previewLineNumber;
                     std::string previewContent;
                     if (previewBoundary < streamSize) {
-                        size_t previewReadLen = std::min(static_cast<size_t>(100), streamSize - previewBoundary);
+                        size_t previewReadLen =
+                            std::min(static_cast<size_t>(100), streamSize - previewBoundary);
                         previewContent.resize(previewReadLen);
                         stream->seek(previewBoundary);
-                        stream->readBytes(reinterpret_cast<uint8_t*>(previewContent.data()), previewReadLen);
-                        
+                        stream->readBytes(reinterpret_cast<uint8_t *>(previewContent.data()),
+                                          previewReadLen);
+
                         std::istringstream previewIss(previewContent);
                         while (previewIss >> word) {
-                            if (std::all_of(word.begin(), word.end(), ::isdigit) && word.length() < 5) {
+                            if (std::all_of(word.begin(), word.end(), ::isdigit) &&
+                                word.length() < 5) {
                                 previewLineNumber = word;
                                 break;
                             }
                         }
                     }
-                    
+
                     if (!previewLineNumber.empty()) {
                         int lastLine = std::stoi(lastLineNumber);
                         int previewFirstLine = std::stoi(previewLineNumber);
-                        
+
                         // Calculate how many lines we still have before hitting the preview
                         int lineDifference = previewFirstLine - lastLine;
-                        
-                        log_i("[PAGE BOUNDARY CHECK] Current last line: %d, Preview first line: %d, "
-                              "Line difference: %d, Distance to boundary: %" PRIu32 " bytes",
-                              lastLine, previewFirstLine, lineDifference,
-                              (offsetAfterTurn < previewBoundary) ? 
-                              (previewBoundary - offsetAfterTurn) : 0);
+
+                        log_i(
+                            "[PAGE BOUNDARY CHECK] Current last line: %d, Preview first line: %d, "
+                            "Line difference: %d, Distance to boundary: %" PRIu32 " bytes",
+                            lastLine, previewFirstLine, lineDifference,
+                            (offsetAfterTurn < previewBoundary)
+                                ? (previewBoundary - offsetAfterTurn)
+                                : 0);
                     }
                 }
             }
-            
+
             // Restore stream position
             stream->seek(offsetAfterTurn);
         }
@@ -1337,9 +1347,19 @@ void KindleReadableScreen::navigateNext() {
 
     // --- Boundary Detection & Sync Decision ---
 
-    // Check if we've crossed a boundary
-    bool justCrossedBoundary = pageManager_->hasCrossedPreviewBoundary(offsetAfterTurn) &&
-                               !pageManager_->hasCrossedPreviewBoundary(offsetBeforeTurn);
+    // Get the end of the current page for boundary check
+    uint32_t pageEndOffset = 0;
+    if (newPlace_ && newPlace_->getOffset() > offsetAfterTurn) {
+        pageEndOffset = newPlace_->getOffset() - 1; // End is just before the start of next page
+    } else {
+        // If we don't have a next place, estimate the page end based on size
+        pageEndOffset = offsetAfterTurn + (lastRenderedPageSize_ > 0 ? lastRenderedPageSize_ : 400);
+    }
+
+    // CRITICAL FIX: Check if either the current position or the page end has crossed the boundary
+    bool justCrossedBoundary =
+        pageManager_->hasCrossedPreviewBoundary(offsetAfterTurn, pageEndOffset) &&
+        !pageManager_->hasCrossedPreviewBoundary(offsetBeforeTurn);
 
     // Check if the next turn would cross a boundary
     // Skip boundary prediction on first forward navigation after changing direction
@@ -1356,10 +1376,11 @@ void KindleReadableScreen::navigateNext() {
             "[BOUNDARY DECISION] First page after direction change - skipping boundary prediction");
     }
 
-    // Log boundary status
-    log_i("[NAVIGATE PREDICT] Current: %" PRIu32 ", boundary: %" PRIu32
+    // Log boundary status with page end information
+    log_i("[NAVIGATE PREDICT] Current: %" PRIu32 ", Page end: %" PRIu32 ", boundary: %" PRIu32
           ", justCrossed: %d, nextWillCross: %d",
-          offsetAfterTurn, previewBoundary, justCrossedBoundary, nextTurnWillCrossBoundary);
+          offsetAfterTurn, pageEndOffset, previewBoundary, justCrossedBoundary,
+          nextTurnWillCrossBoundary);
 
     // Determine if we need to sync with the server now
     bool shouldSyncNow = false;
@@ -1375,7 +1396,7 @@ void KindleReadableScreen::navigateNext() {
         shouldSyncNow = true;
     }
     // Otherwise, check if we need to sync based on alternation pattern
-    else if (pageManager_->needsNavigateCall(offsetAfterTurn) && !nextPageLoading_) {
+    else if (pageManager_->needsNavigateCall(offsetAfterTurn, pageEndOffset) && !nextPageLoading_) {
         log_i("[SYNC DECISION] Need to navigate based on alternation pattern.");
         shouldSyncNow = true;
     }
@@ -2177,13 +2198,22 @@ void KindleReadableScreen::loadNextContent() {
         return;
     }
 
-    // Get current position
+    // Get current position and estimate page end
     uint32_t currentOffset = currentPlace_ ? currentPlace_->getOffset() : 0;
+    uint32_t pageEndOffset = 0;
 
-    // Use the page manager to decide what to load next
-    if (pageManager_->needsNavigateCall(currentOffset)) {
+    if (newPlace_ && newPlace_->getOffset() > currentOffset) {
+        pageEndOffset = newPlace_->getOffset() - 1;
+    } else {
+        // If no newPlace_ available, estimate from last page size
+        pageEndOffset = currentOffset + (lastRenderedPageSize_ > 0 ? lastRenderedPageSize_ : 400);
+    }
+
+    // Use the page manager to decide what to load next, considering page end
+    if (pageManager_->needsNavigateCall(currentOffset, pageEndOffset)) {
         // We need to sync with the server
-        log_i("Loading content: Syncing with server");
+        log_i("Loading content: Syncing with server (current pos: %u, page end: %u)", currentOffset,
+              pageEndOffset);
         syncWithServer();
     } else {
         // Load the next preview
@@ -2275,7 +2305,7 @@ void KindleReadableScreen::logPageContext(uint32_t offsetBeforeTurn, uint32_t of
             std::string previewContent;
             std::string beforeBoundaryContent;
             std::string afterBoundaryContent;
-            
+
             // Skip any complex scanning - simple logging is sufficient
 
             // Read current page content
@@ -2308,22 +2338,23 @@ void KindleReadableScreen::logPageContext(uint32_t offsetBeforeTurn, uint32_t of
                 stream->seek(afterStart);
                 stream->readBytes(reinterpret_cast<uint8_t *>(afterBoundaryContent.data()),
                                   afterSize);
-                
+
                 // Extract the first line number from the boundary content
                 std::istringstream boundaryStream(afterBoundaryContent);
                 std::string boundaryWord;
                 std::string firstLineNumber;
-                
+
                 while (boundaryStream >> boundaryWord) {
-                    if (std::all_of(boundaryWord.begin(), boundaryWord.end(), ::isdigit) && 
+                    if (std::all_of(boundaryWord.begin(), boundaryWord.end(), ::isdigit) &&
                         boundaryWord.length() < 5) {
                         firstLineNumber = boundaryWord;
                         break;
                     }
                 }
-                
+
                 if (!firstLineNumber.empty()) {
-                    log_i("[BOUNDARY LINE NUMBER] First line number at preview boundary (%" PRIu32 "): %s", 
+                    log_i("[BOUNDARY LINE NUMBER] First line number at preview boundary (%" PRIu32
+                          "): %s",
                           previewBoundary, firstLineNumber.c_str());
                 }
 

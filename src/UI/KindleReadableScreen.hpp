@@ -21,7 +21,7 @@
 
 /**
  * KindleReadableScreen
- * 
+ *
  * Displays Kindle book content and handles user interaction.
  * Delegates page management to KindlePageManager for API calls.
  */
@@ -95,7 +95,8 @@ protected:
 
 private:
     std::shared_ptr<KindleBook> kindleBook_;
-    std::shared_ptr<KindlePageManager> pageManager_; // Manages Kindle page loading and synchronization
+    std::shared_ptr<KindlePageManager>
+        pageManager_; // Manages Kindle page loading and synchronization
     State state_{State::CONNECTING};
     bool firstKindleLoad_{true};
     bool dismissed_{false};
@@ -115,11 +116,11 @@ private:
     std::shared_ptr<Place> currentPlace_ = nullptr; // Current place in the renderer
     std::shared_ptr<Place> newPlace_ = nullptr;     // Next place to render
     bool atEnd_ = false;
-    const int bufferThreshold_ = 2000;     // Characters threshold to preload more content
-    uint32_t lastRenderedPageSize_ = 0;    // Size of the last rendered page in bytes
-    bool hasNavigatedForward_{false};      // Tracks if user has navigated forward at least once
-    bool needsRedrawAfterLoad_{false};     // Tracks if we need to redraw after content loads
-    bool justNavigatedToServer_{false};    // Tracks if we just made a server navigation call
+    const int bufferThreshold_ = 2000;  // Characters threshold to preload more content
+    uint32_t lastRenderedPageSize_ = 0; // Size of the last rendered page in bytes
+    bool hasNavigatedForward_{false};   // Tracks if user has navigated forward at least once
+    bool needsRedrawAfterLoad_{false};  // Tracks if we need to redraw after content loads
+    bool justNavigatedToServer_{false}; // Tracks if we just made a server navigation call
     // Tracks if the last navigation was forward (for direction changes)
     // Used to prevent premature boundary crossing detection after changing navigation direction
     bool justNavigatedForward_{false};
