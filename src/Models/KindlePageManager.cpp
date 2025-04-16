@@ -78,10 +78,12 @@ void KindlePageManager::loadNextPreview(
         // Generate a string with all boundaries
         std::string boundaryList;
         for (uint32_t boundary : previewBoundaries_) {
-            if (!boundaryList.empty()) boundaryList += ", ";
+            if (!boundaryList.empty()) {
+                boundaryList += ", ";
+            }
             boundaryList += std::to_string(boundary);
         }
-        
+
         // Find the next boundary ahead of current position, if any
         uint32_t nextBoundary = 0;
         for (uint32_t boundary : previewBoundaries_) {
@@ -91,11 +93,12 @@ void KindlePageManager::loadNextPreview(
                 }
             }
         }
-        
+
         if (nextBoundary > 0) {
             uint32_t distanceToBoundary = nextBoundary - currentOffset;
             log_i("[PREVIEW BOUNDARY] Loading preview at offset %" PRIu32
-                  ", next boundary ahead: %" PRIu32 ", distance: %" PRIu32 " bytes, all boundaries: [%s]",
+                  ", next boundary ahead: %" PRIu32 ", distance: %" PRIu32
+                  " bytes, all boundaries: [%s]",
                   currentOffset, nextBoundary, distanceToBoundary, boundaryList.c_str());
         } else {
             log_i("[PREVIEW BOUNDARY] Loading preview at offset %" PRIu32
@@ -103,7 +106,8 @@ void KindlePageManager::loadNextPreview(
                   currentOffset, boundaryList.c_str());
         }
     } else {
-        log_i("[PREVIEW BOUNDARY] Loading next preview for Kindle book at offset %" PRIu32 " (no boundaries set)",
+        log_i("[PREVIEW BOUNDARY] Loading next preview for Kindle book at offset %" PRIu32
+              " (no boundaries set)",
               currentOffset);
     }
 
@@ -202,8 +206,8 @@ void KindlePageManager::loadNextPreview(
 
 void KindlePageManager::syncWithServer(
     const std::shared_ptr<CancelFlag> &cancelFlag, bool useBle,
-    std::function<void(bool success, const std::shared_ptr<KindlePageResponse> &,
-                       const std::string &)> callback) {
+    const std::function<void(bool success, const std::shared_ptr<KindlePageResponse> &,
+                             const std::string &)> &callback) {
 
     if (previewRequestInProgress_) {
         log_w("Preview request in progress, cannot sync with server yet");
@@ -227,19 +231,21 @@ void KindlePageManager::syncWithServer(
             // Mark that the last API call was a navigate
             lastCallWasPreview_ = false;
 
-                    // We've synced with the server at this position, so all previous
+            // We've synced with the server at this position, so all previous
             // boundaries are no longer relevant, but we shouldn't just throw away
             // the boundary information since we still have the content in our buffer.
             // Keep the boundaries but log the sync point for debugging.
-            
+
             if (!previewBoundaries_.empty()) {
                 std::string boundaryList;
                 for (uint32_t boundary : previewBoundaries_) {
-                    if (!boundaryList.empty()) boundaryList += ", ";
+                    if (!boundaryList.empty()) {
+                        boundaryList += ", ";
+                    }
                     boundaryList += std::to_string(boundary);
                 }
-                log_i("[SYNC BOUNDARIES] Synced at position, preserving boundaries: [%s]", 
-                     boundaryList.c_str());
+                log_i("[SYNC BOUNDARIES] Synced at position, preserving boundaries: [%s]",
+                      boundaryList.c_str());
             } else {
                 // For legacy support, still log the old format
                 log_i("Reset preview boundary from %" PRIu32 " to 0 after successful sync",
@@ -256,9 +262,8 @@ void KindlePageManager::syncWithServer(
 
 void KindlePageManager::navigatePrevious(
     const std::shared_ptr<CancelFlag> &cancelFlag, bool useBle,
-    std::function<void(bool success, const std::shared_ptr<KindlePageResponse> &,
-                       const std::string &)>
-        callback) {
+    const std::function<void(bool success, const std::shared_ptr<KindlePageResponse> &,
+                             const std::string &)> &callback) {
 
     if (previewRequestInProgress_) {
         log_w("Preview request in progress, cannot navigate previous yet");
@@ -287,10 +292,12 @@ void KindlePageManager::navigatePrevious(
             if (!previewBoundaries_.empty()) {
                 std::string boundaryList;
                 for (uint32_t boundary : previewBoundaries_) {
-                    if (!boundaryList.empty()) boundaryList += ", ";
+                    if (!boundaryList.empty()) {
+                        boundaryList += ", ";
+                    }
                     boundaryList += std::to_string(boundary);
                 }
-                log_i("[NAVIGATE BACKWARDS] Preserving boundaries after navigate-previous: [%s]", 
+                log_i("[NAVIGATE BACKWARDS] Preserving boundaries after navigate-previous: [%s]",
                       boundaryList.c_str());
             } else {
                 // Legacy support for old format
@@ -306,28 +313,30 @@ void KindlePageManager::navigatePrevious(
     });
 }
 
-bool KindlePageManager::hasCrossedPreviewBoundary(uint32_t currentOffset,
-                                                  uint32_t pageEndOffset) const {
+auto KindlePageManager::hasCrossedPreviewBoundary(uint32_t currentOffset,
+                                                  uint32_t pageEndOffset) const -> bool {
     // Use pageEndOffset if specified, otherwise use currentOffset
     uint32_t effectiveOffset = pageEndOffset > 0 ? pageEndOffset : currentOffset;
-    
+
     // First check the vector of preview boundaries
     bool hasCrossed = false;
     uint32_t crossedBoundary = 0;
-    
+
     // Generate a boundary report for logging
     std::string boundaryList;
     for (uint32_t boundary : previewBoundaries_) {
-        if (!boundaryList.empty()) boundaryList += ", ";
+        if (!boundaryList.empty()) {
+            boundaryList += ", ";
+        }
         boundaryList += std::to_string(boundary);
-        
+
         // Check if we crossed this boundary
         if (boundary > 0 && effectiveOffset >= boundary) {
             hasCrossed = true;
             crossedBoundary = boundary;
         }
     }
-    
+
     // If using the vector approach didn't find a crossed boundary, fall back to legacy approach
     if (!hasCrossed) {
         // Check if either the current position or the page end has crossed the boundary
@@ -341,9 +350,9 @@ bool KindlePageManager::hasCrossedPreviewBoundary(uint32_t currentOffset,
     if (hasCrossed) {
         // Calculate how far we are beyond the boundary
         int32_t distanceBeyondBoundary = effectiveOffset - crossedBoundary;
-        
-        log_i("[BOUNDARY MAP] Position %" PRIu32 " has crossed boundary at %" PRIu32
-              " (%" PRId32 " bytes beyond). All boundaries: [%s]",
+
+        log_i("[BOUNDARY MAP] Position %" PRIu32 " has crossed boundary at %" PRIu32 " (%" PRId32
+              " bytes beyond). All boundaries: [%s]",
               effectiveOffset, crossedBoundary, distanceBeyondBoundary, boundaryList.c_str());
     } else if (!previewBoundaries_.empty() || lastPreviewOffset_ > 0) {
         // Calculate distance to the nearest boundary ahead
@@ -355,12 +364,12 @@ bool KindlePageManager::hasCrossedPreviewBoundary(uint32_t currentOffset,
                 }
             }
         }
-        
+
         // If no boundary found in vector, use the legacy one
         if (nearestBoundary == 0 && lastPreviewOffset_ > effectiveOffset) {
             nearestBoundary = lastPreviewOffset_;
         }
-        
+
         if (nearestBoundary > 0) {
             uint32_t distanceToBoundary = nearestBoundary - effectiveOffset;
             log_i("[BOUNDARY MAP] Position %" PRIu32 " has not crossed boundary at %" PRIu32
@@ -379,7 +388,7 @@ auto KindlePageManager::wouldNextTurnCrossBoundary(uint32_t currentOffset, uint3
     -> bool {
     // Find the nearest boundary ahead
     uint32_t nearestBoundary = 0;
-    
+
     // First check the vector of boundaries
     for (uint32_t boundary : previewBoundaries_) {
         if (boundary > currentOffset) {
@@ -388,12 +397,12 @@ auto KindlePageManager::wouldNextTurnCrossBoundary(uint32_t currentOffset, uint3
             }
         }
     }
-    
+
     // If no boundary found in vector, fall back to legacy approach
     if (nearestBoundary == 0 && lastPreviewOffset_ > currentOffset) {
         nearestBoundary = lastPreviewOffset_;
     }
-    
+
     // If no boundary ahead, we won't cross one
     if (nearestBoundary == 0) {
         log_i("[BOUNDARY PREDICTION] No boundary ahead to cross");
@@ -412,7 +421,9 @@ auto KindlePageManager::wouldNextTurnCrossBoundary(uint32_t currentOffset, uint3
     // Generate boundary list for logging
     std::string boundaryList;
     for (uint32_t boundary : previewBoundaries_) {
-        if (!boundaryList.empty()) boundaryList += ", ";
+        if (!boundaryList.empty()) {
+            boundaryList += ", ";
+        }
         boundaryList += std::to_string(boundary);
     }
 
@@ -422,13 +433,14 @@ auto KindlePageManager::wouldNextTurnCrossBoundary(uint32_t currentOffset, uint3
           "would cross: %d",
           currentOffset, nextTurnOffset, nearestBoundary, distanceToBoundary, pagesToBoundary,
           wouldCross);
-          
+
     log_i("[BOUNDARY MAP] All boundaries: [%s]", boundaryList.c_str());
 
     return wouldCross;
 }
 
-bool KindlePageManager::needsNavigateCall(uint32_t currentOffset, uint32_t pageEndOffset) const {
+auto KindlePageManager::needsNavigateCall(uint32_t currentOffset, uint32_t pageEndOffset) const
+    -> bool {
     // Get total stream size to determine if we're navigating through cached content
     uint32_t distanceToEnd = 0;
     uint32_t totalSize = 0; // Will be set by hasPrecachedContentAhead
@@ -446,25 +458,24 @@ bool KindlePageManager::needsNavigateCall(uint32_t currentOffset, uint32_t pageE
     // This happens when we've gone forward, then backward, then forward again
     if (hasCachedContent) {
         // Calculate how much content we have before we need to make API calls
-        uint32_t distanceToBoundary = 
-            (lastPreviewOffset_ > 0 && currentOffset < lastPreviewOffset_) 
-                ? (lastPreviewOffset_ - currentOffset) 
-                : 0;
-        
+        uint32_t distanceToBoundary = (lastPreviewOffset_ > 0 && currentOffset < lastPreviewOffset_)
+                                          ? (lastPreviewOffset_ - currentOffset)
+                                          : 0;
+
         // We have two thresholds:
         // 1. Far from boundary: We definitely don't need any API calls
         // 2. Close to boundary but still have enough content: We might need to prepare for loading
-        
+
         // Definitely have enough cached content (multiple pages ahead)
         if (distanceToEnd > 2000) {
-            log_i("[PAGE MANAGER] Need navigate: No - plenty of cached content (%" PRIu32 
+            log_i("[PAGE MANAGER] Need navigate: No - plenty of cached content (%" PRIu32
                   " bytes ahead, boundary at %" PRIu32 ")",
                   distanceToEnd, lastPreviewOffset_);
             log_i("[PAGE DECISION] Using cached content for forward navigation after "
                   "going backward - already visited these pages");
             return false;
         }
-        
+
         // Getting close to boundary, but still have some content
         if (distanceToEnd > 1000 || distanceToBoundary > 500) {
             log_i("[PAGE MANAGER] Need navigate: No - still have some cached content "
@@ -472,7 +483,7 @@ bool KindlePageManager::needsNavigateCall(uint32_t currentOffset, uint32_t pageE
                   distanceToEnd, distanceToBoundary, lastPreviewOffset_);
             return false;
         }
-        
+
         // Very close to the boundary, may need to consider the alternation pattern
         log_i("[PAGE MANAGER] Getting close to end of cached content "
               "(%" PRIu32 " bytes ahead, %" PRIu32 " bytes to boundary)",
@@ -518,41 +529,45 @@ bool KindlePageManager::needsNavigateCall(uint32_t currentOffset, uint32_t pageE
     return false; // Not after a preview
 }
 
-void KindlePageManager::resetPreviewBoundary() { 
+void KindlePageManager::resetPreviewBoundary() {
     // Log the boundaries being reset
     if (!previewBoundaries_.empty()) {
         std::string boundaryList;
         for (uint32_t boundary : previewBoundaries_) {
-            if (!boundaryList.empty()) boundaryList += ", ";
+            if (!boundaryList.empty()) {
+                boundaryList += ", ";
+            }
             boundaryList += std::to_string(boundary);
         }
         log_i("[PREVIEW BOUNDARIES] Resetting all preview boundaries: [%s]", boundaryList.c_str());
     } else {
         log_i("[PREVIEW BOUNDARIES] No boundaries to reset");
     }
-    
+
     // Clear the vector of boundaries
     previewBoundaries_.clear();
-    lastPreviewOffset_ = 0; 
+    lastPreviewOffset_ = 0;
 }
 
-void KindlePageManager::setPreviewBoundary(uint32_t offset) { 
+void KindlePageManager::setPreviewBoundary(uint32_t offset) {
     // Don't add duplicate boundaries
     if (!previewBoundaries_.empty() && previewBoundaries_.back() == offset) {
         log_i("[PREVIEW BOUNDARIES] Skipping duplicate boundary at %" PRIu32, offset);
         return;
     }
-    
+
     // Add to the vector of boundaries
     previewBoundaries_.push_back(offset);
-    
+
     // Update the legacy field for backward compatibility
     lastPreviewOffset_ = offset;
-    
+
     // Log the current state of boundaries
     std::string boundaryList;
     for (uint32_t boundary : previewBoundaries_) {
-        if (!boundaryList.empty()) boundaryList += ", ";
+        if (!boundaryList.empty()) {
+            boundaryList += ", ";
+        }
         boundaryList += std::to_string(boundary);
     }
     log_i("[PREVIEW BOUNDARIES] Current boundaries: [%s]", boundaryList.c_str());
@@ -560,21 +575,21 @@ void KindlePageManager::setPreviewBoundary(uint32_t offset) {
 
 auto KindlePageManager::getPreviewBoundary() const -> uint32_t { return lastPreviewOffset_; }
 
-bool KindlePageManager::hasPrecachedContentAhead(uint32_t currentOffset, uint32_t &distanceToEnd,
-                                                 uint32_t &totalSize) const {
+auto KindlePageManager::hasPrecachedContentAhead(uint32_t currentOffset, uint32_t &distanceToEnd,
+                                                 uint32_t &totalSize) const -> bool {
     // This method determines if we've already loaded content ahead of the current position
     // This typically happens in forward-backward-forward navigation patterns
-    
+
     // Initialize with defaults
     totalSize = 0;
     distanceToEnd = 0;
-    
+
     // CASE 1: Using the vector of preview boundaries for precise tracking
     if (!previewBoundaries_.empty()) {
         // Find the next boundary ahead of our current position
         uint32_t nextBoundary = 0;
         bool foundNextBoundary = false;
-        
+
         for (uint32_t boundary : previewBoundaries_) {
             if (boundary > currentOffset) {
                 nextBoundary = boundary;
@@ -582,34 +597,38 @@ bool KindlePageManager::hasPrecachedContentAhead(uint32_t currentOffset, uint32_
                 break;
             }
         }
-        
+
         // Log the relationship between current position and boundaries
         std::string boundaryList;
         for (uint32_t boundary : previewBoundaries_) {
-            if (!boundaryList.empty()) boundaryList += ", ";
+            if (!boundaryList.empty()) {
+                boundaryList += ", ";
+            }
             boundaryList += std::to_string(boundary);
         }
-        
+
         if (foundNextBoundary) {
             // We have a next boundary ahead, so we definitely have cached content
             uint32_t distanceToBoundary = nextBoundary - currentOffset;
-            
+
             // Assume total size includes at least the next boundary plus some margin
-            totalSize = nextBoundary + 1000;  // Conservative estimate
-            
+            totalSize = nextBoundary + 1000; // Conservative estimate
+
             // Calculate total distance to end of cached content
             distanceToEnd = (currentOffset < totalSize) ? (totalSize - currentOffset) : 0;
-            
+
             // Check if we have meaningful content ahead (at least a page worth)
             if (distanceToEnd > 500) {
-                log_i("[BOUNDARY MAP] Position %" PRIu32 " → Next boundary %" PRIu32 " (%" PRIu32 " bytes ahead)",
+                log_i("[BOUNDARY MAP] Position %" PRIu32 " → Next boundary %" PRIu32 " (%" PRIu32
+                      " bytes ahead)",
                       currentOffset, nextBoundary, distanceToBoundary);
-                
+
                 log_i("[BOUNDARY MAP] All boundaries: [%s]", boundaryList.c_str());
-                
-                log_i("[CACHED CONTENT] Using cached content between position %" PRIu32 " and boundary %" PRIu32,
+
+                log_i("[CACHED CONTENT] Using cached content between position %" PRIu32
+                      " and boundary %" PRIu32,
                       currentOffset, nextBoundary);
-                
+
                 return true;
             }
         } else {
@@ -618,72 +637,76 @@ bool KindlePageManager::hasPrecachedContentAhead(uint32_t currentOffset, uint32_
                   currentOffset, boundaryList.c_str());
         }
     }
-    
+
     // CASE 2: Legacy single boundary check (for backward compatibility)
     if (lastPreviewOffset_ > 0 && currentOffset < lastPreviewOffset_) {
         // Distance to boundary (how far we are from content we've already loaded)
         uint32_t distanceToBoundary = lastPreviewOffset_ - currentOffset;
-        
+
         // Assume total size is at least boundary plus some margin
-        totalSize = lastPreviewOffset_ + 1000;  // Conservative estimate
-        
+        totalSize = lastPreviewOffset_ + 1000; // Conservative estimate
+
         // Calculate total distance to end of cached content
         distanceToEnd = (currentOffset < totalSize) ? (totalSize - currentOffset) : 0;
-        
+
         // Check if we have meaningful content ahead (at least a page worth)
         if (distanceToEnd > 500) {
             uint32_t cachedContentAfterBoundary = distanceToEnd - distanceToBoundary;
-            
-            log_i("[CACHED CONTENT] Position %" PRIu32 " has %" PRIu32 
-                  " bytes ahead (%" PRIu32 " bytes to boundary at %" PRIu32 ", ~%" PRIu32 
+
+            log_i("[CACHED CONTENT] Position %" PRIu32 " has %" PRIu32 " bytes ahead (%" PRIu32
+                  " bytes to boundary at %" PRIu32 ", ~%" PRIu32
                   " bytes of cached content after boundary)",
-                  currentOffset, distanceToEnd, distanceToBoundary, 
-                  lastPreviewOffset_, cachedContentAfterBoundary);
-                  
+                  currentOffset, distanceToEnd, distanceToBoundary, lastPreviewOffset_,
+                  cachedContentAfterBoundary);
+
             // Additional logging to help debug why we're not making API calls
             log_i("[API DECISION] Using cached content instead of making API call - "
                   "we already visited these pages and have content in buffer");
-            
+
             return true;
         }
     }
-    
+
     // CASE 3: No boundaries but we're likely still navigating through cached content
     // This happens after navigate-previous resets the boundaries but we still have the content
-    
+
     // Check if buffer looks large enough to assume we have cached content ahead
     // This is a heuristic based on the RendererStream's current size - anything over ~1000 bytes
     // suggests we've previously loaded content ahead that we can reuse
-    const uint32_t MIN_ASSUMED_BUFFER_SIZE = 1000;
-    
+    const uint32_t minAssumedBufferSize = 1000;
+
     // In the absence of boundary markers, use heuristics:
     // 1. We've just done navigate-previous (lastCallWasPreview_=false)
     // 2. We're at a position that suggests we have forward content available
-    if (previewBoundaries_.empty() && !lastCallWasPreview_ && currentOffset < MIN_ASSUMED_BUFFER_SIZE) {
+    if (previewBoundaries_.empty() && !lastCallWasPreview_ &&
+        currentOffset < minAssumedBufferSize) {
         // Make a conservative assumption about how much content we might have
         // This should be tuned based on actual buffer sizes observed in the field
-        totalSize = 3000;  // Conservative estimate after navigate-previous
+        totalSize = 3000; // Conservative estimate after navigate-previous
         distanceToEnd = (currentOffset < totalSize) ? (totalSize - currentOffset) : 0;
-        
+
         log_i("[CACHED CONTENT] Position %" PRIu32 " likely has cached content ahead - "
               "after navigate-previous (estimated %" PRIu32 " bytes ahead)",
               currentOffset, distanceToEnd);
-        
+
         // In this scenario, we shouldn't immediately make API calls since we're likely to have
         // enough content for at least a few page turns after navigating backward
         log_i("[API DECISION] Using assumed cached content after navigate-previous - "
               "deferring API calls until definitely needed");
-        
+
         return true;
     }
-    
+
     // Default case - we don't have evidence of precached content
-    log_i("[CACHED CONTENT CHECK] No definitive evidence of cached content ahead of position %" PRIu32,
+    log_i("[CACHED CONTENT CHECK] No definitive evidence of cached content ahead of position "
+          "%" PRIu32,
           currentOffset);
     return false;
 }
 
-bool KindlePageManager::isPreviewRequestInProgress() const { return previewRequestInProgress_; }
+auto KindlePageManager::isPreviewRequestInProgress() const -> bool {
+    return previewRequestInProgress_;
+}
 
 auto KindlePageManager::wasLastCallPreview() const -> bool { return lastCallWasPreview_; }
 

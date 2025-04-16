@@ -646,8 +646,7 @@ auto SindarinAPI::previewKindleNext(KindlePageResponse *resp,
 
 auto SindarinAPI::navigateKindlePrevious(KindlePageResponse *resp,
                                          const std::shared_ptr<CancelFlag> &cancelFlag, bool useBle,
-                                         bool ocr)
-    -> int {
+                                         bool ocr) -> int {
     std::string url = ocr ? "/kindle/navigate-previous?ocr=1" : "/kindle/navigate-previous?ocr=0";
     return makeKindleRequest(url, resp, cancelFlag, useBle);
 }

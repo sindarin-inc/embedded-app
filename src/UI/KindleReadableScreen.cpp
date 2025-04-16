@@ -812,19 +812,17 @@ void KindleReadableScreen::loadNextKindlePreview() {
                                          const std::string &errorMessage) {
         // Check if we need to sync after this preview request completes
         bool needsSync = needSyncAfterPreview_;
-        
+
         if (dismissed_) {
             return;
         }
-        
+
         // If we need to sync after the preview, do it now
         if (needsSync) {
             log_i("[PREVIEW COMPLETE] Now syncing with server as requested previously");
             needSyncAfterPreview_ = false;
             // Small delay to ensure state is updated correctly
-            DispatchGetUiQueue()->dispatch([this]() {
-                syncWithServer();
-            });
+            DispatchGetUiQueue()->dispatch([this]() { syncWithServer(); });
         }
 
         if (!success) {
@@ -1216,15 +1214,15 @@ void KindleReadableScreen::navigateNext() {
                 // This is a key case: we've gone forward, downloaded content, gone backward,
                 // and now we're going forward again - we should be using cached content
                 log_i("[FORWARD-BACK-FORWARD] We already have this content in buffer - "
-                      "at position %" PRIu32 " with preview boundary at %" PRIu32 
-                      " (%" PRIu32 " bytes, ~%u pages ahead)",
+                      "at position %" PRIu32 " with preview boundary at %" PRIu32 " (%" PRIu32
+                      " bytes, ~%u pages ahead)",
                       currentOffset, previewBoundary, distanceToBoundary, pagesToBoundary);
-                
+
                 if (pagesToBoundary > 3 && pageManager_->wasLastCallPreview()) {
                     log_i("[NAVIGATE DECISION] Not making API call for content we already have "
                           "(%u pages to boundary) - using local buffer content",
                           pagesToBoundary);
-    
+
                     // This avoids unnecessary API calls when we're just paging through
                     // content we've already seen
                     justNavigatedForward_ = true;
@@ -1438,7 +1436,8 @@ void KindleReadableScreen::navigateNext() {
             log_i("[SYNC DECISION] Initiating server sync - no preview request in progress");
             syncWithServer();
         } else {
-            log_i("[SYNC DECISION] Need to sync but preview request in progress - will sync after preview completes");
+            log_i("[SYNC DECISION] Need to sync but preview request in progress - will sync after "
+                  "preview completes");
             // Set a flag so we know to sync as soon as the preview completes
             needSyncAfterPreview_ = true;
         }
@@ -1449,15 +1448,18 @@ void KindleReadableScreen::navigateNext() {
     // Check if we need to load more content in the background after the turn
     uint32_t remainingBytesAfterTurn =
         (offsetAfterTurn < totalSize) ? (totalSize - offsetAfterTurn) : 0;
-        
+
     // Log the detailed buffer state before making any loading decisions
-    log_i("[BUFFER STATE] Current offset: %" PRIu32 ", total size: %" PRIu32 ", remaining bytes: %" PRIu32,
+    log_i("[BUFFER STATE] Current offset: %" PRIu32 ", total size: %" PRIu32
+          ", remaining bytes: %" PRIu32,
           offsetAfterTurn, totalSize, remainingBytesAfterTurn);
-          
+
     // Log threshold settings for better debugging
-    log_i("[BUFFER THRESHOLDS] Buffer threshold: %d, crossing boundary? %d, preview in progress? %d",
-          bufferThreshold_, justCrossedBoundary ? 1 : 0, pageManager_->isPreviewRequestInProgress() ? 1 : 0);
-    
+    log_i(
+        "[BUFFER THRESHOLDS] Buffer threshold: %d, crossing boundary? %d, preview in progress? %d",
+        bufferThreshold_, justCrossedBoundary ? 1 : 0,
+        pageManager_->isPreviewRequestInProgress() ? 1 : 0);
+
     // Log all preview boundaries we have
     std::vector<uint32_t> allBoundaries;
     uint32_t currentBoundary = pageManager_->getPreviewBoundary();
@@ -1467,59 +1469,63 @@ void KindleReadableScreen::navigateNext() {
     if (!allBoundaries.empty()) {
         std::string boundaryList;
         for (uint32_t boundary : allBoundaries) {
-            if (!boundaryList.empty()) boundaryList += ", ";
+            if (!boundaryList.empty()) {
+                boundaryList += ", ";
+            }
             boundaryList += std::to_string(boundary);
         }
         log_i("[BUFFER STATE] All preview boundaries: [%s]", boundaryList.c_str());
     } else {
         log_i("[BUFFER STATE] No preview boundaries tracked");
     }
-        
+
     // Check if we have cached content ahead (we've already visited these pages)
     uint32_t distanceToEnd = 0;
     uint32_t totalBufferSize = 0;
-    bool hasCachedContent = pageManager_->hasPrecachedContentAhead(offsetAfterTurn, 
-                                                                  distanceToEnd, 
-                                                                  totalBufferSize);
-                                                                  
+    bool hasCachedContent =
+        pageManager_->hasPrecachedContentAhead(offsetAfterTurn, distanceToEnd, totalBufferSize);
+
     // Check if the page end has crossed a boundary - in that case we should NEVER
     // request a preview until we sync with the server
-    bool crossedBoundaryNow = pageManager_->hasCrossedPreviewBoundary(offsetAfterTurn, pageEndOffset);
+    bool crossedBoundaryNow =
+        pageManager_->hasCrossedPreviewBoundary(offsetAfterTurn, pageEndOffset);
     bool needsNavigateCall = pageManager_->needsNavigateCall(offsetAfterTurn, pageEndOffset);
-    
+
     if (crossedBoundaryNow || needsNavigateCall) {
         // We've crossed a boundary or need to navigate - DO NOT request a preview
         log_i("[NAVIGATE DECISION] Skipping preview request because %s",
               crossedBoundaryNow ? "we've crossed a boundary" : "we need to navigate first");
-        
+
         // Make sure we sync with the server as soon as possible
         if (!pageManager_->isPreviewRequestInProgress() && !nextPageLoading_) {
-            log_i("[NAVIGATE CRITICAL] Immediately syncing with server after detecting boundary crossing");
+            log_i("[NAVIGATE CRITICAL] Immediately syncing with server after detecting boundary "
+                  "crossing");
             syncWithServer();
         } else {
-            log_i("[NAVIGATE CRITICAL] Waiting for in-progress request to complete before syncing with server");
+            log_i("[NAVIGATE CRITICAL] Waiting for in-progress request to complete before syncing "
+                  "with server");
         }
-    }
-    else if (hasCachedContent && distanceToEnd > bufferThreshold_) {
+    } else if (hasCachedContent && distanceToEnd > bufferThreshold_) {
         // We already have content ahead from previous navigation
         // No need to make any API calls until we get closer to the boundary
         log_i("[NAVIGATE DECISION] Using cached content from previous navigation "
               "(%" PRIu32 " bytes ahead)",
               distanceToEnd);
-              
+
     } else if (remainingBytesAfterTurn < bufferThreshold_ && !nextPageLoading_ &&
                !pageManager_->isPreviewRequestInProgress()) {
-        
+
         // Log detailed reasoning for potentially loading more content
-        log_i("[LOAD DECISION] Considering preview load: remaining=%" PRIu32 " < threshold=%d, nextPageLoading=%d, previewInProgress=%d",
-              remainingBytesAfterTurn, bufferThreshold_, nextPageLoading_ ? 1 : 0, 
+        log_i("[LOAD DECISION] Considering preview load: remaining=%" PRIu32
+              " < threshold=%d, nextPageLoading=%d, previewInProgress=%d",
+              remainingBytesAfterTurn, bufferThreshold_, nextPageLoading_ ? 1 : 0,
               pageManager_->isPreviewRequestInProgress() ? 1 : 0);
-        
+
         // Check if we already have boundary information to know if we have content ahead
         bool hasValidBoundaryAhead = false;
         uint32_t nextBoundary = 0;
         uint32_t distanceToBoundary = 0;
-        
+
         // Find the next boundary ahead if any
         uint32_t boundary = pageManager_->getPreviewBoundary();
         if (boundary > offsetAfterTurn) {
@@ -1529,44 +1535,51 @@ void KindleReadableScreen::navigateNext() {
                 distanceToBoundary = nextBoundary - offsetAfterTurn;
             }
         }
-        
+
         if (hasValidBoundaryAhead) {
-            // We already have preview content ahead, no need to load more until we cross the boundary
-            log_i("[NAVIGATE DECISION] Have valid preview boundary ahead at %" PRIu32 
-                 ", current position %" PRIu32 ", using existing content (%" PRIu32 " bytes to boundary)",
-                 nextBoundary, offsetAfterTurn, distanceToBoundary);
+            // We already have preview content ahead, no need to load more until we cross the
+            // boundary
+            log_i("[NAVIGATE DECISION] Have valid preview boundary ahead at %" PRIu32
+                  ", current position %" PRIu32 ", using existing content (%" PRIu32
+                  " bytes to boundary)",
+                  nextBoundary, offsetAfterTurn, distanceToBoundary);
         } else if (!pageManager_->wasLastCallPreview()) {
-            // No preview boundary ahead and last call wasn't preview, so we need to load more content
+            // No preview boundary ahead and last call wasn't preview, so we need to load more
+            // content
             log_i("[NAVIGATE LOAD] Near end of buffer (remaining: %" PRIu32
                   "), loading preview in background. Last call was preview? %d",
                   remainingBytesAfterTurn, pageManager_->wasLastCallPreview() ? 1 : 0);
-                  
+
             // Check if the remainder is sufficient for another turn or not
             uint32_t lastPageSize = lastRenderedPageSize_ > 0 ? lastRenderedPageSize_ : 400;
             uint32_t estimatedPagesTilEnd = remainingBytesAfterTurn / lastPageSize;
-            log_i("[LOAD ANALYSIS] Last page size: %" PRIu32 ", estimated pages remaining: %" PRIu32,
+            log_i("[LOAD ANALYSIS] Last page size: %" PRIu32
+                  ", estimated pages remaining: %" PRIu32,
                   lastPageSize, estimatedPagesTilEnd);
-                  
+
             // Let's say if we have at least 4 pages left, we don't really need to load more yet
             bool shouldActuallyLoad = estimatedPagesTilEnd < 4;
-            
+
             // One more check: do we have boundaries ahead that indicate more content?
             bool hasBoundariesAhead = false;
             uint32_t boundary = pageManager_->getPreviewBoundary();
             if (boundary > offsetAfterTurn) {
                 hasBoundariesAhead = true;
             }
-            
+
             if (hasBoundariesAhead) {
                 // We have boundaries ahead, so we likely have content already
-                log_i("[LOAD DECISION] Skipping preview load - we have boundaries ahead with content");
+                log_i("[LOAD DECISION] Skipping preview load - we have boundaries ahead with "
+                      "content");
             } else if (shouldActuallyLoad) {
                 // We're low on content and don't have boundaries ahead
-                log_i("[LOAD DECISION] Loading preview - we have less than 4 pages of content left and no boundaries ahead");
+                log_i("[LOAD DECISION] Loading preview - we have less than 4 pages of content left "
+                      "and no boundaries ahead");
                 loadNextKindlePreview(); // Load more content if needed and allowed
             } else {
                 // We have enough content for now
-                log_i("[LOAD DECISION] Skipping preview load - we still have ~%" PRIu32 " pages of content left",
+                log_i("[LOAD DECISION] Skipping preview load - we still have ~%" PRIu32
+                      " pages of content left",
                       estimatedPagesTilEnd);
             }
         } else {
@@ -1578,7 +1591,7 @@ void KindleReadableScreen::navigateNext() {
         log_i("[NAVIGATE STATUS] Buffer state: %" PRIu32 " bytes remaining, hasCachedContent=%d, "
               "nextPageLoading=%d, previewRequestInProgress=%d, lastCallWasPreview=%d",
               remainingBytesAfterTurn, hasCachedContent ? 1 : 0, nextPageLoading_ ? 1 : 0,
-              pageManager_->isPreviewRequestInProgress() ? 1 : 0, 
+              pageManager_->isPreviewRequestInProgress() ? 1 : 0,
               pageManager_->wasLastCallPreview() ? 1 : 0);
     }
 }
@@ -2575,21 +2588,23 @@ void KindleReadableScreen::syncWithServer() {
         if (boundary > currentOffset) {
             hasBoundariesAhead = true;
         }
-        
+
         // Log detailed buffer state for debugging
         std::string boundaryList;
         if (boundary > 0) {
             boundaryList = std::to_string(boundary);
         }
-        
+
         if (hasBoundariesAhead) {
             // We have boundaries ahead, so we already have content - no need to load more
-            log_i("[AFTER SYNC] Skipping preview load - we have boundaries ahead with content: [%s]",
-                  boundaryList.c_str());
+            log_i(
+                "[AFTER SYNC] Skipping preview load - we have boundaries ahead with content: [%s]",
+                boundaryList.c_str());
         }
         // Only load more if we're critically low on buffer space AND don't have boundaries ahead
         else if (remainingBytes < bufferThreshold_ / 2) {
-            log_i("[AFTER SYNC] Low buffer after sync and no boundaries ahead, loading more content");
+            log_i(
+                "[AFTER SYNC] Low buffer after sync and no boundaries ahead, loading more content");
             // Small delay to ensure server state is fully processed
             DispatchGetUiQueue()->dispatch([this]() {
                 if (!dismissed_) {
@@ -2600,10 +2615,12 @@ void KindleReadableScreen::syncWithServer() {
                 }
             });
         } else {
-            // We have enough buffer and no boundaries, we might want to load more eventually but not now
-            log_i("[AFTER SYNC] Sufficient buffer (%" PRIu32 " bytes remaining) and no boundaries ahead [%s]",
+            // We have enough buffer and no boundaries, we might want to load more eventually but
+            // not now
+            log_i("[AFTER SYNC] Sufficient buffer (%" PRIu32
+                  " bytes remaining) and no boundaries ahead [%s]",
                   remainingBytes, boundaryList.c_str());
-            
+
             // Only load if we're far enough from having full pages
             if (remainingBytes < bufferThreshold_ * 0.75) {
                 // After navigation, we can queue up the next preview with a short delay
@@ -2611,18 +2628,18 @@ void KindleReadableScreen::syncWithServer() {
                     if (!dismissed_) {
                         // Short delay to ensure server state is fully processed
                         vTaskDelay(pdMS_TO_TICKS(50));
-                        
+
                         // Double-check boundaries again after the delay
                         uint32_t currentPos = currentPlace_ ? currentPlace_->getOffset() : 0;
                         bool stillNoBoundariesAhead = true;
-                        
+
                         for (uint32_t boundary : pageManager_->getPreviewBoundaries()) {
                             if (boundary > currentPos) {
                                 stillNoBoundariesAhead = false;
                                 break;
                             }
                         }
-                        
+
                         if (stillNoBoundariesAhead) {
                             log_i("[AFTER SYNC DELAY] Loading preview - still no boundaries ahead");
                             // Load the next preview
