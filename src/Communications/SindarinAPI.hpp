@@ -94,7 +94,8 @@ public:
     auto previewKindleNext(KindlePageResponse *resp, const std::shared_ptr<CancelFlag> &cancelFlag,
                            bool useBle) -> int;
     auto navigateKindlePrevious(KindlePageResponse *resp,
-                                const std::shared_ptr<CancelFlag> &cancelFlag, bool useBle) -> int;
+                                const std::shared_ptr<CancelFlag> &cancelFlag, bool useBle,
+                                bool ocr = true) -> int;
 
 private:
     auto tryCheckFirmware(FirmwareResponse *resp, bool useHttp, bool useBle,

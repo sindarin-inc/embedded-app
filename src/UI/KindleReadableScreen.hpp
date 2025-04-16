@@ -124,6 +124,8 @@ private:
     // Tracks if the last navigation was forward (for direction changes)
     // Used to prevent premature boundary crossing detection after changing navigation direction
     bool justNavigatedForward_{false};
+    // Flag to track if we need to sync with server after a preview request completes
+    bool needSyncAfterPreview_{false};
 
     // Debugging helper
     void logPageContext(uint32_t offsetBeforeTurn, uint32_t offsetAfterTurn);
