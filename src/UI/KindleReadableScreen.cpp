@@ -2,8 +2,9 @@
 
 #include <algorithm> // Required for std::min/max
 #include <cinttypes>
-#include <sstream> // Required for std::istringstream
-#include <vector>  // Required for std::vector
+#include <inttypes.h> // Required for std::istringstream
+#include <sstream>
+#include <vector> // Required for std::vector
 
 #include "Communications/SindarinAPI.hpp"
 #include "Communications/WiFi.hpp"
@@ -882,14 +883,15 @@ void KindleReadableScreen::loadNextKindlePreview() {
         // This ensures we know exactly where the new content begins
         if (!firstLineNumber.empty()) {
             log_i("[BOUNDARY VERIFICATION] First line number in preview: %s, setting boundary to "
-                  "buffer size %u",
+                  "buffer size %" PRIu32,
                   firstLineNumber.c_str(), currentBufferSize);
         }
 
         // Set the boundary using the exact buffer size before appending
         pageManager_->setPreviewBoundary(currentBufferSize);
 
-        log_i("[BOUNDARY CORRECTION] Set preview boundary to exact buffer size %u before append",
+        log_i("[BOUNDARY CORRECTION] Set preview boundary to exact buffer size %" PRIu32
+              " before append",
               currentBufferSize);
 
         // Create a stream with the updated text content
@@ -1215,12 +1217,12 @@ void KindleReadableScreen::navigateNext() {
                 // and now we're going forward again - we should be using cached content
                 log_i("[FORWARD-BACK-FORWARD] We already have this content in buffer - "
                       "at position %" PRIu32 " with preview boundary at %" PRIu32 " (%" PRIu32
-                      " bytes, ~%u pages ahead)",
+                      " bytes, ~%" PRIu32 " pages ahead)",
                       currentOffset, previewBoundary, distanceToBoundary, pagesToBoundary);
 
                 if (pagesToBoundary > 3 && pageManager_->wasLastCallPreview()) {
                     log_i("[NAVIGATE DECISION] Not making API call for content we already have "
-                          "(%u pages to boundary) - using local buffer content",
+                          "(%" PRIu32 " pages to boundary) - using local buffer content",
                           pagesToBoundary);
 
                     // This avoids unnecessary API calls when we're just paging through
@@ -1299,7 +1301,8 @@ void KindleReadableScreen::navigateNext() {
         uint32_t curOffset = offsetAfterTurn;
 
         if (curOffset < streamSize) {
-            size_t readLen = std::min(static_cast<size_t>(500), streamSize - curOffset);
+            size_t readLen =
+                std::min(static_cast<size_t>(500), static_cast<size_t>(streamSize - curOffset));
             visibleText.resize(readLen);
             stream->seek(curOffset);
             stream->readBytes(reinterpret_cast<uint8_t *>(visibleText.data()), readLen);
@@ -1331,7 +1334,8 @@ void KindleReadableScreen::navigateNext() {
                     std::string previewContent;
                     if (previewBoundary < streamSize) {
                         size_t previewReadLen =
-                            std::min(static_cast<size_t>(100), streamSize - previewBoundary);
+                            std::min(static_cast<size_t>(100),
+                                     static_cast<size_t>(streamSize - previewBoundary));
                         previewContent.resize(previewReadLen);
                         stream->seek(previewBoundary);
                         stream->readBytes(reinterpret_cast<uint8_t *>(previewContent.data()),
@@ -1734,7 +1738,8 @@ void KindleReadableScreen::navigatePrevious() {
         backwardNavigations++;
 
         if (backwardNavigations >= 2) {
-            log_i("[NAVIGATE DIRECTION] Multiple backward moves detected (%u), resetting preview "
+            log_i("[NAVIGATE DIRECTION] Multiple backward moves detected (%" PRIu32
+                  "), resetting preview "
                   "state",
                   backwardNavigations);
 
@@ -1764,7 +1769,8 @@ void KindleReadableScreen::navigatePrevious() {
         backwardNavigations++;
 
         // Log that we're continuing in backward navigation mode
-        log_i("[NAVIGATE DIRECTION] Continuing backward movement (%u times)", backwardNavigations);
+        log_i("[NAVIGATE DIRECTION] Continuing backward movement (%" PRIu32 " times)",
+              backwardNavigations);
     }
 
     // If at the beginning, we need to fetch from the API
@@ -2512,7 +2518,8 @@ void KindleReadableScreen::loadNextContent() {
         // Check if we need to sync first (alternation pattern)
         if (pageManager_->needsNavigateCall(currentOffset, pageEndOffset)) {
             // We need to sync with the server
-            log_i("[LOAD CONTENT] Near end of buffer and need sync (current pos: %u, end: %u)",
+            log_i("[LOAD CONTENT] Near end of buffer and need sync (current pos: %" PRIu32
+                  ", end: %" PRIu32 ")",
                   currentOffset, pageEndOffset);
             syncWithServer();
         } else {
@@ -2524,8 +2531,9 @@ void KindleReadableScreen::loadNextContent() {
         // We're in an ambiguous state - follow the regular decision pattern
         if (pageManager_->needsNavigateCall(currentOffset, pageEndOffset)) {
             // We need to sync with the server
-            log_i("[LOAD CONTENT] Need server sync (current pos: %u, page end: %u)", currentOffset,
-                  pageEndOffset);
+            log_i("[LOAD CONTENT] Need server sync (current pos: %" PRIu32 ", page end: %" PRIu32
+                  ")",
+                  currentOffset, pageEndOffset);
             syncWithServer();
         } else {
             // Load the next preview
