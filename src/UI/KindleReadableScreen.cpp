@@ -2,7 +2,7 @@
 
 #include <algorithm> // Required for std::min/max
 #include <cinttypes>
-#include <inttypes.h> // Required for std::istringstream
+#include <cinttypes> // Required for std::istringstream
 #include <sstream>
 #include <vector> // Required for std::vector
 
