@@ -30,6 +30,38 @@ public:
         if (!client->is_valid()) {
             log_e("Invalid client");
         }
+
+        // Check for HTTP_PROXY environment variable to enable Charles.app or other proxies
+        const char *httpProxy = std::getenv("HTTP_PROXY");
+        if (httpProxy != nullptr) {
+            // Disable SSL certificate verification when using a proxy (allow MITM)
+            client->enable_server_certificate_verification(false);
+
+            // Parse proxy URL: http://host:port or host:port or just host (with default port 8888)
+            std::string proxyStr(httpProxy);
+            std::string proxyHost;
+            int proxyPort = 8888; // Default proxy port
+
+            // Remove http:// or https:// prefix if present
+            if (proxyStr.substr(0, 7) == "http://") {
+                proxyStr = proxyStr.substr(7);
+            }
+            if (proxyStr.substr(0, 8) == "https://") {
+                proxyStr = proxyStr.substr(8);
+            }
+
+            // Parse host:port
+            size_t colonPos = proxyStr.find_first_of(":");
+            if (colonPos != std::string::npos) {
+                proxyHost = proxyStr.substr(0, colonPos);
+                proxyPort = std::stoi(proxyStr.substr(colonPos + 1));
+            } else {
+                proxyHost = proxyStr;
+            }
+
+            log_i("Using HTTP proxy: %s:%d", proxyHost.c_str(), proxyPort);
+            client->set_proxy(proxyHost, proxyPort);
+        }
     }
 
     ~FakeClient() {

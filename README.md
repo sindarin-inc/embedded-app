@@ -99,6 +99,15 @@ cloud-token=<TOKEN>
 
 You can get your access token by monitoring logs on the dev board or glasses when pairing with the app. Then you can run "Sync Content" from the simulator just like you would on the glasses.
 
+### Using a debugging proxy with the Simulator
+
+You can use a debugging proxy (like Charles.app with the Simulator). Just set the `HTTP_PROXY` environment variable before running `make sim`:
+
+```sh
+export HTTP_PROXY=http://localhost:8888
+make sim
+```
+
 ## Run automated unit tests
 
 This repo has unit tests using [Catch2](https://github.com/catchorg/Catch2). Run them with
