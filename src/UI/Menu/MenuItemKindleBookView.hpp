@@ -22,29 +22,29 @@ public:
     }
 
     auto layout(LayoutContext &context, SolSize size) -> SolSize override {
-        auto titleRect =
-            context.setViewFrame(titleView_, SolRect::fromSize(size), LayoutOptionsSizeToFit);
+        SolRect titleRect = SolRect::fromSize(size);
+
+        // Place progress info on the right side
+        if (!progressView_.getText().empty()) {
+            auto progressRect =
+                context.setViewFrame(progressView_, SolRect::fromSize(size),
+                                     LayoutOptionsSizeToFit | LayoutOptionsAlignRight |
+                                         LayoutOptionsAlignCenterVertical);
+            titleRect.size.width -= progressRect.size.width + 5;
+        }
+
+        titleRect = context.setViewFrame(titleView_, titleRect, LayoutOptionsSizeToFitVertical);
 
         SolRect authorRect = SolRect::zero();
         if (!authorView_.getText().empty()) {
             // Yes, we are indenting the author view by the height of the title view. This looks
             // better and scales nicely to bigger displays. It looks funny I know.
             authorRect = context.setViewFrame(
-                authorView_,
-                {{titleRect.size.height * 2 / 3, titleRect.size.height}, {size.width, size.height}},
-                LayoutOptionsSizeToFit);
+                authorView_, {{0, titleRect.size.height}, {size.width, size.height}},
+                LayoutOptionsSizeToFitVertical);
         }
 
-        SolRect progressRect = SolRect::zero();
-        if (!progressView_.getText().empty()) {
-            // Place progress info on the right side
-            progressRect = context.setViewFrame(
-                progressView_, {{size.width - 50, titleRect.origin.y}, {50, titleRect.size.height}},
-                LayoutOptionsSizeToFit | LayoutOptionsAlignRight);
-        }
-
-        return {std::max(titleRect.size.width, authorRect.size.width),
-                titleRect.size.height + authorRect.size.height};
+        return {size.width, titleRect.size.height + authorRect.size.height};
     }
 
     void drawInRect(SolRect rect) override {

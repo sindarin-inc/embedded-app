@@ -1,77 +1,64 @@
 #include "UI/KindleReadableScreen.hpp"
 
-#include <algorithm> // Required for std::min/max
-#include <cinttypes>
-#include <cinttypes> // Required for std::istringstream
-#include <sstream>
-#include <vector> // Required for std::vector
-
-#include "Communications/SindarinAPI.hpp"
-#include "Communications/WiFi.hpp"
 #if CONFIG_USE_BLE_SERVER_PROXY
 #include "Communications/BLEManager.hpp"
 #endif
-#include "Misc/StringUtil.hpp"
+#include "Communications/SindarinAPI.hpp"
+#include "Communications/WiFi.hpp"
 #include "Models/Readable.hpp"
 #include "UI/Fonts/Fonts.hpp"
+#include "UI/Menu/MenuItemSingleLine.hpp"
 #include "sindarin-debug.h"
 
-// Helper function to get N words
-auto GetNWords(const std::string &text, int n, bool fromStart) -> std::string {
-    std::string result;
-    std::istringstream iss(text);
-    std::string word;
-    std::vector<std::string> words;
-    while (iss >> word) {
-        words.push_back(word);
-    }
-
-    if (words.empty()) {
-        return "";
-    }
-
-    if (fromStart) {
-        for (int i = 0; i < std::min(static_cast<int>(words.size()), n); ++i) {
-            result += words[i] + " ";
-        }
-    } else {
-        for (int i = std::max(0, static_cast<int>(words.size()) - n); i < words.size(); ++i) {
-            result += words[i] + " ";
-        }
-    }
-    // Trim trailing space
-    if (!result.empty()) {
-        result.pop_back();
-    }
-    return result;
-}
-
-KindleReadableScreen::KindleReadableScreen(const std::shared_ptr<RendererStream> &stream,
-                                           DisplaySystem &display,
+KindleReadableScreen::KindleReadableScreen(DisplaySystem &display,
                                            const std::shared_ptr<KindleBook> &kindleBook,
                                            PreferencesStore &prefs, Telemetry &telemetry,
                                            FileSystem &fileSystem,
                                            LightingController &lightingController,
                                            LocalStore &localStore, Font *font)
-    : EinkView(display), stream_(stream),
-      renderer_(display, GetTextRectFromPrefs(display, prefs), font), prefs_(prefs),
-      telemetry_(telemetry), fileSystem_(fileSystem), lightingController_(lightingController),
-      localStore_(localStore), kindleBook_(kindleBook), loadingMessageView_(display, 5),
-      errorMessageView_(display, 5), delayedMessageView_(display, 5) {
+    : EinkView(display), renderer_(display, GetTextRectFromPrefs(display, prefs), font),
+      prefs_(prefs), telemetry_(telemetry), fileSystem_(fileSystem),
+      lightingController_(lightingController), localStore_(localStore), kindleBook_(kindleBook),
+      cancelFlag_(std::make_shared<CancelFlag>()), pageFlipper_(kindleBook, cancelFlag_),
+      loadingMessageView_(display, 5), delayedMessageView_(display, 5),
+      errorMessageView_(display, 5) {
 
-    // Initialize state variables
     log_i("Created KindleReadableScreen for book: %s by %s", kindleBook->title.c_str(),
           kindleBook->author.c_str());
 
-    // Initialize the page manager
-    pageManager_ = std::make_shared<KindlePageManager>(kindleBook);
+    currentPlace_ = std::dynamic_pointer_cast<TxtPlace>(Place::factory(0));
 
-    // Since we don't have a standard Readable for Kindle books,
-    // we need to set up some of our state differently
-    firstKindleLoad_ = true;
+    auto cancelFlag = cancelFlag_;
+    pageFlipper_.setGotContentFunction([this, cancelFlag]() {
+        if (CancelFlag::isCancelled(cancelFlag)) {
+            return;
+        }
+        if (state_ == State::LOADING_CONTENT || state_ == State::DISPLAY_PARTIAL_CONTENT) {
+            DispatchGetUiQueue()->dispatch([this, cancelFlag]() {
+                if (CancelFlag::isCancelled(cancelFlag)) {
+                    return;
+                }
+                setState(State::DISPLAY_CONTENT);
+                setNeedsLayout();
+                setNeedsRerender();
+                render(display_);
+            });
+        }
+    });
 
-    // Configure the renderer to ignore EOF for streaming Kindle content
-    renderer_.setIgnoreEOF(true);
+    pageFlipper_.setOnErrorFunction([this, cancelFlag](const std::string &error) {
+        if (CancelFlag::isCancelled(cancelFlag)) {
+            return;
+        }
+        DispatchGetUiQueue()->dispatch([this, error, cancelFlag]() {
+            if (CancelFlag::isCancelled(cancelFlag)) {
+                return;
+            }
+            setErrorMessage(error);
+        });
+    });
+
+    renderer_.setStream(pageFlipper_.getStream());
 
     // Set up loading message
     loadingMessageView_.setText("Connecting to your Kindle...");
@@ -112,6 +99,7 @@ KindleReadableScreen::KindleReadableScreen(const std::shared_ptr<RendererStream>
     };
 
     // Create a readable-like object for the popup menu to use
+    // TODO(john): We should make a KindleReadable object that can be used for Kindle books
     auto readablePlaceholder = std::make_shared<Readable>();
     readablePlaceholder->title = kindleBook_->title;
 
@@ -120,12 +108,90 @@ KindleReadableScreen::KindleReadableScreen(const std::shared_ptr<RendererStream>
     author.name = kindleBook_->author;
     readablePlaceholder->authors.push_back(author);
 
+    auto stream = pageFlipper_.getStream();
     popupMenuScreen_ = std::make_shared<NewReadablePopupMenuScreen>(
         display, prefs_, fileSystem_, readablePlaceholder, lightingController_, renderer_,
-        telemetry_, localStore_, stream_);
+        telemetry_, localStore_, stream);
 
     popupMenuScreen_->addTab("Popup", popupNavigationFactory, 8);
     popupMenuScreen_->populateMenuView();
+}
+
+void KindleReadableScreen::begin() {
+    // Start connection process
+    DispatchGetCore0BackgroundQueue()->dispatch([this]() {
+        std::string errorMessage;
+        bool connected = connectToNetwork(false, errorMessage);
+
+        if (!connected) {
+            DispatchGetUiQueue()->dispatch(
+                [this, errorMessage]() { setErrorMessage(errorMessage); });
+            return;
+        }
+
+        // Successfully connected, now load the book content
+        auto cancelFlag = cancelFlag_;
+        DispatchGetUiQueue()->dispatch([this, cancelFlag]() {
+            if (CancelFlag::isCancelled(cancelFlag)) {
+                return;
+            }
+
+            log_d("Setting loading message to \"Opening your Kindle book...\"");
+
+            loadingMessageView_.setText("Opening your Kindle book...");
+            setNeedsLayout();
+            setState(State::LOADING_CONTENT);
+            render(display_);
+
+            // Schedule a delayed message after 10 seconds if loading takes too long
+            scheduleDelayedLoadingMessage();
+        });
+
+        // Now load the content in the background queue
+        pageFlipper_.loadInitialPage();
+    });
+}
+
+auto KindleReadableScreen::layout(LayoutContext &context, SolSize size) -> SolSize {
+    context.setViewFrame(errorMessageView_, SolRect::fromSize(size),
+                         LayoutOptionsSizeToFit | LayoutOptionsAlignCenter);
+
+    context.setViewFrame(loadingMessageView_, SolRect::fromSize(size),
+                         LayoutOptionsSizeToFit | LayoutOptionsAlignCenter);
+
+    context.setViewFrame(delayedMessageView_, SolRect::fromSize(size),
+                         LayoutOptionsSizeToFit | LayoutOptionsAlignCenterHorizontal |
+                             LayoutOptionsAlignBottom);
+
+    return size;
+}
+
+void KindleReadableScreen::drawInRect(SolRect rect) {
+    loadingMessageView_.draw();
+    errorMessageView_.draw();
+    delayedMessageView_.draw();
+
+    if (state_ == State::DISPLAY_CONTENT || state_ == State::DISPLAY_PARTIAL_CONTENT) {
+        // Render the current page content
+        uint8_t darkPicturePercent = 0;
+
+        // Render using our current place and get the next place
+        std::tie(newPlace_, darkPicturePercent) = renderer_.renderPage(currentPlace_);
+
+        // If we're at the end of loaded content
+        // TODO(john): Differentiate between end of loaded content and end of book
+        if (renderer_.atEndOfFile()) {
+            setState(State::DISPLAY_PARTIAL_CONTENT);
+        }
+        pageFlipper_.updatePlace(currentPlace_);
+
+        // Log the current and next place offsets for debugging
+        uint32_t currentOffset = currentPlace_->getOffset();
+        uint32_t nextOffset = newPlace_->getOffset();
+        uint32_t totalSize = renderer_.size();
+        log_i("Reading at offset: %" PRIu32 "-%" PRIu32 ", total size: %" PRIu32 " bytes",
+              currentOffset, nextOffset, totalSize);
+    }
 }
 
 void KindleReadableScreen::render(DisplaySystem &display) {
@@ -136,205 +202,12 @@ void KindleReadableScreen::render(DisplaySystem &display) {
         currentScreen_->render(display);
         return;
     }
+    log_d("Rendering KindleReadableScreen, state: %d", static_cast<int>(state_));
 
-    if (state_ == State::DISPLAY_CONTENT || state_ == State::LOADING_BACKGROUND) {
-        log_d("Rendering KindleReadableScreen, state: %d", static_cast<int>(state_));
-        // Set up the frame and layout
-        setFrame(defaultFrameRect());
-        setNeedsLayout();
-
-        // Draw the basic screen (background, etc.)
-        draw();
-
-        // Render the current page content
-        uint8_t darkPicturePercent = 0;
-
-        // Make sure we have a current place
-        if (!currentPlace_) {
-            currentPlace_ = renderer_.getCurrentPlace();
-            if (!currentPlace_) {
-                // Initialize with a starting place if needed
-                currentPlace_ = std::dynamic_pointer_cast<TxtPlace>(Place::factory(0));
-                log_i("Initialized currentPlace_ in render since it was null");
-            }
-        }
-
-        // Render using our current place and get the next place
-        std::tie(newPlace_, darkPicturePercent) = renderer_.renderPage(currentPlace_);
-
-        // Log the current and next place offsets for debugging
-        if (currentPlace_ && newPlace_) {
-            uint32_t currentOffset = currentPlace_->getOffset();
-            uint32_t nextOffset = newPlace_->getOffset();
-            uint32_t totalSize = renderer_.size();
-
-            // We're logging the position but don't need to use remainingBytes here
-
-            // Calculate and store the page size
-            lastRenderedPageSize_ = (nextOffset > currentOffset) ? (nextOffset - currentOffset) : 0;
-
-            log_i("Reading at offset: %" PRIu32 "/%" PRIu32 ", page size: %" PRIu32 " bytes",
-                  currentOffset, totalSize, lastRenderedPageSize_);
-        }
-
-        // For background loading, we might need to show a message if we're at the end
-        uint32_t remainingBytes = 0;
-        if (currentPlace_) {
-            uint32_t currentOffset = currentPlace_->getOffset();
-            uint32_t totalSize = renderer_.size();
-            remainingBytes = (currentOffset < totalSize) ? (totalSize - currentOffset) : 0;
-        }
-
-        // Be careful about how we detect the end for Kindle books
-        bool showLoadingMessage = false;
-        if (state_ == State::LOADING_BACKGROUND) {
-            // For Kindle books, decide based on actual buffer space
-            showLoadingMessage = (remainingBytes < bufferThreshold_) ||
-                                 (renderer_.atEndOfFile() && remainingBytes < bufferThreshold_ * 2);
-
-            if (showLoadingMessage) {
-                // If we need to show the loading message with a rounded rect
-                if (showLoadingWithRoundedRect_ && !loadingMessageView_.isHidden()) {
-                    // Calculate the bounds of the loading message text
-                    int maxWidth = 0;
-                    const auto &text = loadingMessageView_.getText();
-                    if (!text.empty()) {
-                        maxWidth = display_.getTextWidth(text, loadingMessageView_.getFont());
-                    }
-
-                    // Add padding around the text
-                    const int padding = 12;
-                    int lineHeight = loadingMessageView_.getFont()->lineHeight();
-
-                    // Get the position from the parent's layout context
-                    SolRect screenRect = layoutContext_.screenFrame();
-
-                    // Calculate perfect center position in the screen
-                    int centerY = screenRect.origin.y + screenRect.size.height / 2;
-
-                    // Create rectangle for the background with enough padding for good looks
-                    SolRect bgRect = SolRect::zero();
-                    if (loadingMessageView_.alignCenter) {
-                        bgRect.origin.x =
-                            screenRect.origin.x + (screenRect.size.width - maxWidth) / 2 - padding;
-                        bgRect.size.width = maxWidth + padding * 2;
-                    } else {
-                        bgRect.origin.x = screenRect.origin.x - padding;
-                        bgRect.size.width = maxWidth + padding * 2;
-                    }
-
-                    // Make sure we have enough vertical space in the rectangle
-                    // (lineHeight + padding on top and bottom)
-                    bgRect.size.height = lineHeight + padding * 2;
-
-                    // Position background rect vertically centered on the screen
-                    bgRect.origin.y = centerY - bgRect.size.height / 2;
-
-                    // Now position the loadingMessageView at a precise position that's centered
-                    // inside the bgRect The loading frame should be centered inside the background
-                    // rectangle
-                    SolRect loadingFrame = SolRect::zero();
-                    loadingFrame.origin.x = screenRect.origin.x;
-                    loadingFrame.origin.y = bgRect.origin.y + (bgRect.size.height - lineHeight) / 2;
-                    loadingFrame.size.width = screenRect.size.width;
-                    loadingFrame.size.height = lineHeight;
-
-                    // Reposition the loading message view to be exactly centered
-                    loadingMessageView_.setFrame(loadingFrame);
-
-                    // Draw filled rounded rectangle with a white fill and black outline
-                    // First fill with white background
-                    display_.fillRoundRect(bgRect.origin.x, bgRect.origin.y, bgRect.size.width,
-                                           bgRect.size.height, 10,
-                                           display_.bg); // Corner radius 10, white background
-
-                    // Then draw black outline
-                    display_.drawRoundRect(bgRect.origin.x, bgRect.origin.y, bgRect.size.width,
-                                           bgRect.size.height, 10,
-                                           display_.fg); // Corner radius 10, black outline
-
-                    // Use normal text colors (black text) with white background
-                    // No need to save or swap colors
-
-                    // Draw the loading message with normal colors
-                    // Log pre-draw state
-                    log_i("Drawing message: '%s'", loadingMessageView_.getText().c_str());
-
-                    // Now manually draw the text in the exact center of the rounded rect
-                    int textWidth = display_.getTextWidth(loadingMessageView_.getText(),
-                                                          loadingMessageView_.getFont());
-                    int x = bgRect.origin.x + (bgRect.size.width - textWidth) / 2;
-                    int y = bgRect.origin.y +
-                            (bgRect.size.height - loadingMessageView_.getFont()->lineHeight()) / 2;
-
-                    // Log the exact drawing position
-                    log_i("Drawing text manually at x=%d, y=%d (text width=%d, rect width=%d)", x,
-                          y, textWidth, bgRect.size.width);
-
-                    // Draw the text manually at the calculated center position
-                    display_.drawSingleLineOfText(text, x, y, false, loadingMessageView_.getFont());
-                } else {
-                    // Draw normally without rounded rect
-                    loadingMessageView_.draw();
-                }
-            }
-        }
-
-        // Update the display
-        if (firstKindleLoad_) {
-            log_w("RENDER: Updating display to full on first Kindle book load");
-            display.updateDisplay(DisplaySystem::UpdateType::FULL, false);
-            firstKindleLoad_ = false;
-        } else {
-            display.updateDisplay(DisplaySystem::UpdateType::PARTIAL, true,
-                                  display.darkPictureVComAdj(darkPicturePercent));
-        }
-        return;
-    }
-
-    // For other states (connecting, loading, error), we handle custom rendering
-    setNeedsLayout();
     setFrame(defaultFrameRect());
-
-    // Draw the basic screen (background, etc.)
     draw();
 
-    // Additional rendering based on state
-    switch (state_) {
-    case State::CONNECTING:
-    case State::LOADING_CONTENT:
-        loadingMessageView_.draw();
-        break;
-
-    case State::ERROR:
-        // Ensure display is clear before showing error message
-        display_.clearFrameBuffer();
-
-        // Keep the loading message visible as it contains our error text
-        loadingMessageView_.setHidden(false);
-        loadingMessageView_.draw();
-
-        // Also draw error message as backup
-        errorMessageView_.setHidden(false);
-        errorMessageView_.draw();
-
-        log_i("Drawing both loading message and error message views for error state");
-        break;
-
-    default:
-        break;
-    }
-
-    // Handle display updates
-    if (firstKindleLoad_) {
-        log_w("RENDER: Updating display to full on first Kindle book load");
-        display.updateDisplay(DisplaySystem::UpdateType::FULL, true);
-        firstKindleLoad_ = false;
-    } else if (state_ == State::CONNECTING || state_ == State::LOADING_CONTENT ||
-               state_ == State::ERROR) {
-        log_w("RENDER: Updating display to full");
-        display.updateDisplay(DisplaySystem::UpdateType::FULL, true);
-    }
+    display.updateDisplay(updateType_, true);
 }
 
 void KindleReadableScreen::processCommand(RemoteCommand command) {
@@ -350,109 +223,97 @@ void KindleReadableScreen::processCommand(RemoteCommand command) {
         return;
     }
 
-    // If in an error state, ANY button press dismisses immediately
-    if (state_ == State::ERROR) {
-        log_i("Button pressed while in ERROR state, immediately dismissing screen and cancelling "
-              "auto-dismiss");
-        // The dismissScreen method will handle cancelling the auto-dismiss task
-        dismissScreen();
-        return;
-    }
-
-    // If connecting or foreground loading, allow cancellation
-    if (state_ == State::CONNECTING || state_ == State::LOADING_CONTENT) {
-        if (command == RemoteCommand::BACK) {
-            dismissScreen();
-            return;
-        }
-        // Ignore other commands while loading
-        return;
-    }
-
-    // For both display content and background loading states
-    if (state_ == State::DISPLAY_CONTENT || state_ == State::LOADING_BACKGROUND) {
-        // Handle navigation commands specially for Kindle content
-        switch (command) {
-        case RemoteCommand::RIGHT:
-            // Just call navigateNext which handles all the buffer checking internally
+    // Handle navigation commands specially for Kindle content
+    switch (command) {
+    case RemoteCommand::RIGHT:
+    case RemoteCommand::ENTER:
+        if (state_ == State::DISPLAY_CONTENT || state_ == State::DISPLAY_PARTIAL_CONTENT) {
             navigateNext();
-            break;
-        case RemoteCommand::LEFT:
+        }
+        break;
+    case RemoteCommand::LEFT:
+        if (state_ == State::DISPLAY_CONTENT || state_ == State::DISPLAY_PARTIAL_CONTENT) {
             navigatePrevious();
-            break;
-        case RemoteCommand::BACK:
-        case RemoteCommand::UP:
-            showPopupMenu();
-            break;
-        case RemoteCommand::ENTER:
-            // Use this for page turn same as right
-            navigateNext();
-            break;
-        case RemoteCommand::DOWN:
-            // Show the popup menu here too for consistency with ReadableScreen
-            showPopupMenu();
-            break;
-        case RemoteCommand::ANIMATION:
-        default:
-            break;
         }
+        break;
+    case RemoteCommand::BACK:
+    case RemoteCommand::UP:
+    case RemoteCommand::DOWN:
+        showPopupMenu();
+        break;
+    case RemoteCommand::ANIMATION:
+    default:
+        break;
+    }
+}
+
+auto KindleReadableScreen::stateToString(State state) -> const char * {
+    switch (state) {
+    case State::CONNECTING:
+        return "CONNECTING";
+    case State::LOADING_CONTENT:
+        return "LOADING_CONTENT";
+    case State::ERROR:
+        return "ERROR";
+    case State::DISPLAY_CONTENT:
+        return "DISPLAY_CONTENT";
+    case State::DISPLAY_PARTIAL_CONTENT:
+        return "DISPLAY_PARTIAL_CONTENT";
+    default:
+        return "UNKNOWN";
     }
 }
 
 void KindleReadableScreen::setState(State newState) {
-    // log_d("KindleReadableScreen state change: %d -> %d", static_cast<int>(state_),
-    //       static_cast<int>(newState));
-    state_ = newState;
+    updateType_ = DisplaySystem::UpdateType::FULL;
 
-    if (newState == State::CONNECTING) {
-        // Start connection process
-        // Launch the connection in the background
-        cancelFlag_ = std::make_shared<CancelFlag>();
-
-        DispatchGetCore0BackgroundQueue()->dispatch([this]() {
-            std::string errorMessage;
-            bool connected = connectToNetwork(false, errorMessage);
-
-            if (!connected) {
-                DispatchGetUiQueue()->dispatch(
-                    [this, errorMessage]() { setErrorMessage(errorMessage); });
-                return;
-            }
-
-            // Successfully connected, now load the book content
-            DispatchGetUiQueue()->dispatch([this]() {
-                if (dismissed_) {
-                    return;
-                }
-
-                log_d("Setting loading message to \"Opening your Kindle book...\"");
-                setLoadingMessage("Opening your Kindle book...");
-                setState(State::LOADING_CONTENT);
-
-                // Schedule a delayed message after 10 seconds if loading takes too long
-                scheduleDelayedLoadingMessage();
-
-                // Now load the content in the background queue
-                DispatchGetCore0BackgroundQueue()->dispatch([this]() { loadKindleBookPage(); });
-            });
-        });
+    switch (newState) {
+    case State::CONNECTING:
+    case State::LOADING_CONTENT:
+        loadingMessageView_.setHidden(false);
+        delayedMessageView_.setHidden(true);
+        errorMessageView_.setHidden(true);
+        break;
+    case State::ERROR:
+        loadingMessageView_.setHidden(true);
+        delayedMessageView_.setHidden(true);
+        errorMessageView_.setHidden(false);
+        break;
+    case State::DISPLAY_CONTENT:
+    case State::DISPLAY_PARTIAL_CONTENT:
+        loadingMessageView_.setHidden(true);
+        delayedMessageView_.setHidden(true);
+        errorMessageView_.setHidden(true);
+        // When going from partial content to full page content, always only do a partial
+        // refresh
+        if (state_ == State::DISPLAY_PARTIAL_CONTENT) {
+            updateType_ = DisplaySystem::UpdateType::PARTIAL;
+        }
+        break;
     }
+
+    log_d("KindleReadableScreen state change: %s -> %s", stateToString(state_),
+          stateToString(newState));
+    state_ = newState;
+    firstLoad_ = true;
 }
 
-void KindleReadableScreen::setLoadingMessage(const std::string &message, bool showRoundedRect) {
-    if (dismissed_) {
+void KindleReadableScreen::setErrorMessage(const std::string &message) {
+    if (CancelFlag::isCancelled(cancelFlag_)) {
         return;
     }
-
-    loadingMessageView_.setText(message);
-    showLoadingWithRoundedRect_ = showRoundedRect;
-    loadingMessageView_.alignCenter = true; // Always ensure text is centered
+    log_i("Showing error message: %s", message.c_str());
+    errorMessageView_.setText(message);
+    setState(State::ERROR);
+    setNeedsLayout();
     setNeedsRerender();
-    display_.clearDisplay();
     render(display_);
+
+    // TODO: Re-add auto-dismiss?
 }
 
 auto KindleReadableScreen::connectToNetwork(bool useBleOnly, std::string &errorMessage) -> bool {
+    log_d("Connecting to network for Kindle book");
     bool wifiConnected = false;
     bool bleConnected = false;
 
@@ -476,7 +337,6 @@ auto KindleReadableScreen::connectToNetwork(bool useBleOnly, std::string &errorM
             log_i("BLE successfully connected for Kindle book");
             telemetry_.logMetric(TelemetryField::METRIC_WIFI, "kindle-ble-connected");
             bleConnected = true;
-            useBle_ = true;
         }
     }
 #endif
@@ -538,1637 +398,6 @@ auto KindleReadableScreen::connectToNetwork(bool useBleOnly, std::string &errorM
     return true;
 }
 
-void KindleReadableScreen::loadKindleBookPage() {
-    if (dismissed_) {
-        return;
-    }
-
-    // Get the SindarinAPI instance
-    auto sindarinApi = SindarinAPI::getInstance();
-    if (!sindarinApi) {
-        log_e("Failed to get SindarinAPI instance");
-        DispatchGetUiQueue()->dispatch(
-            [this]() { setErrorMessage("Internal error. Please try again later."); });
-        return;
-    }
-
-    // Create a response object
-    auto response = std::make_shared<KindlePageResponse>();
-    if (!response) {
-        log_e("Failed to create KindlePageResponse object");
-        DispatchGetUiQueue()->dispatch(
-            [this]() { setErrorMessage("Internal error. Please try again later."); });
-        return;
-    }
-
-    // For initial load, always open the book with its title - this API call runs in background
-    // thread First check if the title contains '+' characters which might indicate it's already URL
-    // encoded
-    std::string cleanTitle = kindleBook_->title;
-    if (cleanTitle.find('+') != std::string::npos) {
-        log_i("Title appears to be URL encoded, contains '+' characters: %s", cleanTitle.c_str());
-        // Replace '+' with spaces to prevent double encoding
-        std::string::size_type pos = 0;
-        while ((pos = cleanTitle.find('+', pos)) != std::string::npos) {
-            cleanTitle.replace(pos, 1, " ");
-            pos++;
-        }
-        log_i("Cleaned title for API call: %s", cleanTitle.c_str());
-    }
-
-    // Ensure we have a valid title to prevent crashes
-    if (cleanTitle.empty()) {
-        log_e("Book title is empty, cannot load Kindle book");
-        DispatchGetUiQueue()->dispatch(
-            [this]() { setErrorMessage("Book title is missing. Please try another book."); });
-        return;
-    }
-
-    log_i("Calling openKindleBook API with title: %s (%s cancel flag)", cleanTitle.c_str(),
-          cancelFlag_ ? "valid" : "invalid");
-
-    // Call the API (no try-catch as exceptions are disabled)
-    int httpCode = sindarinApi->openKindleBook(cleanTitle, response.get(), cancelFlag_, useBle_);
-    log_i("openKindleBook returned HTTP code: %d", httpCode);
-
-    if (httpCode != 200 || (response && !response->success)) {
-        // Handle error on the UI thread with specific error message based on HTTP code
-        DispatchGetUiQueue()->dispatch([this, httpCode]() {
-            std::string errorMessage;
-
-            // Customize error message based on HTTP code
-            if (httpCode == 500) {
-                errorMessage = "Server error. Please try again later.";
-            } else if (httpCode == 401 || httpCode == 403) {
-                errorMessage = "Authentication error. Please try signing in again.";
-            } else if (httpCode == 404) {
-                errorMessage = "Book not found in your Kindle library.";
-            } else if (httpCode >= 400 && httpCode < 500) {
-                errorMessage = "Request error. Try syncing your Kindle library.";
-            } else if (httpCode >= 500) {
-                errorMessage = "Server error. Please try again later.";
-            } else {
-                errorMessage = "Failed to load book content.";
-            }
-
-            log_i("HTTP error %d when loading book content", httpCode);
-
-            // Cancel the delayed message since we're showing an error
-            cancelDelayedLoadingMessage();
-
-            setErrorMessage(errorMessage);
-        });
-        return;
-    }
-
-    // Verify response data to avoid crashes
-    if (!response || response->ocrText.empty()) {
-        log_e("Empty or invalid response data from Kindle API");
-        DispatchGetUiQueue()->dispatch([this]() {
-            cancelDelayedLoadingMessage();
-            setErrorMessage("Received empty content from Kindle. Please try again later.");
-        });
-        return;
-    }
-
-    // Process the response on the UI thread
-    DispatchGetUiQueue()->dispatch([this, response]() {
-        if (dismissed_) {
-            return;
-        }
-
-        log_i("Processing Kindle book page response (success=%d, text length=%zu)",
-              response->success, response->ocrText.length());
-
-        // Cancel the delayed message since content loaded successfully
-        cancelDelayedLoadingMessage();
-
-        // Update current page information
-        currentPage_ = response->progress.currentPage;
-        totalPages_ = response->progress.totalPages;
-        currentPageText_ = response->ocrText;
-        currentPageImageUrl_ = response->screenshotUrl;
-
-        // Update the book progress in the KindleBook object
-        kindleBook_->progressPercent = response->progress.percentage;
-        kindleBook_->progress = StringFormat("%d%%", response->progress.percentage);
-
-        // Initial open book call is handled by pageManager_
-        log_i("API RESPONSE - Initial page: %d/%d (%d%%), new text size: %zu bytes", currentPage_,
-              totalPages_, response->progress.percentage, currentPageText_.length());
-
-        // Create a stream with the text content
-        auto stream = std::make_shared<StdStringStream>(currentPageText_, DocType::TXT);
-        renderer_.setStream(stream);
-
-        // Create a place for the content
-        auto place = std::dynamic_pointer_cast<TxtPlace>(Place::factory(0));
-
-        // Clear the screen and prepare for content
-        clearScreenForContent();
-
-        // Render the page
-        uint8_t darkPicturePercent = 0;
-
-        // Set initial place
-        newPlace_ = place;
-
-        // Initialize current place
-        currentPlace_ = place;
-
-        // Render with the place
-        std::tie(newPlace_, darkPicturePercent) = renderer_.renderPage(currentPlace_);
-
-        // Calculate initial page size
-        if (newPlace_ && currentPlace_) {
-            uint32_t newOffset = newPlace_->getOffset();
-            uint32_t currOffset = currentPlace_->getOffset();
-            lastRenderedPageSize_ = (newOffset > currOffset) ? (newOffset - currOffset) : 0;
-            log_i("Initial page size: %" PRIu32 " bytes", lastRenderedPageSize_);
-        }
-
-        log_i("Kindle page rendered, forcing display update");
-
-        // No need to call turnPage() here since we've already set currentPlace_
-
-        // Explicitly force a full display update
-        display_.updateDisplay(DisplaySystem::UpdateType::FULL, true);
-
-        // Now change state after we've rendered everything
-        setState(State::DISPLAY_CONTENT);
-
-        // Update flags for future renders
-        firstKindleLoad_ = false;
-        hasNavigatedForward_ = false; // Reset navigation tracking for fresh book load
-
-        // Reset any preview-related flags on initial load
-        justNavigatedToServer_ = false;
-        // KindlePageManager handles the API state tracking
-
-        // Log clear debug info about the initial state
-        uint32_t currentOffset = currentPlace_ ? currentPlace_->getOffset() : 0;
-        uint32_t totalSize = renderer_.size();
-        log_i("[INITIAL LOAD] Current position: %" PRIu32 ", buffer size: %" PRIu32
-              ", preview boundary: %" PRIu32 ", lastCallWasPreview: %d",
-              currentOffset, totalSize, pageManager_->getPreviewBoundary(),
-              pageManager_->wasLastCallPreview());
-
-        // Load just one page of content after initial load
-        // We don't need to check buffer size for the very first preview
-        log_i("[INITIAL LOAD] Loading first preview after initial load");
-
-        // Add a small delay to ensure UI is fully updated before loading more content
-        // This helps with stability and prevents race conditions
-        DispatchGetUiQueue()->dispatch([this]() {
-            if (!dismissed_) {
-                // Small delay to ensure initial rendering is complete
-                vTaskDelay(pdMS_TO_TICKS(100));
-
-                // Double-check conditions haven't changed during delay
-                if (!dismissed_ && !pageManager_->isPreviewRequestInProgress() &&
-                    !pageManager_->wasLastCallPreview()) {
-                    log_i("[INITIAL LOAD] Starting first preview request after delay");
-                    // The pageManager will handle tracking the API call state
-                    loadNextKindlePreview();
-                }
-            }
-        });
-    });
-}
-
-void KindleReadableScreen::setErrorMessage(const std::string &errorMessage) {
-    if (dismissed_) {
-        return;
-    }
-
-    // Clear any previous auto-dismiss flag/task
-    if (autoDismissCancelFlag_) {
-        CancelFlag::cancel(autoDismissCancelFlag_);
-        autoDismissCancelFlag_ = nullptr;
-    }
-
-    loadingMessageView_.setHidden(true);
-    errorMessageView_.setText(errorMessage);
-    errorMessageView_.setHidden(false);
-    errorMessageView_.draw();
-
-    log_i("Showing error message: %s", errorMessage.c_str());
-
-    // Update state and trigger a redraw
-    setState(State::ERROR);
-    setNeedsLayout();
-    setNeedsRerender();
-
-    // Clear the display to remove any previous content or loading messages
-    display_.clearDisplay();
-
-    draw();
-
-    display_.updateDisplay(DisplaySystem::UpdateType::FULL, true);
-
-    // Create a new cancel flag for this auto-dismiss task
-    autoDismissCancelFlag_ = std::make_shared<CancelFlag>();
-    std::shared_ptr<CancelFlag> localFlag = autoDismissCancelFlag_; // Capture for lambda
-
-    // Automatically dismiss after 5 seconds
-    DispatchGetCore0BackgroundQueue()->dispatch([this, localFlag]() {
-        // Wait for 5 seconds
-        vTaskDelay(pdMS_TO_TICKS(5000));
-
-        // Check if the task was cancelled before dismissing
-        if (!localFlag || CancelFlag::isCancelled(localFlag)) {
-            log_i("Auto-dismiss task was cancelled");
-            return;
-        }
-
-        // Then dismiss on the UI thread
-        DispatchGetUiQueue()->dispatch([this]() {
-            if (!dismissed_) {
-                log_i("Auto-dismissing error screen after delay");
-                dismissScreen();
-            } else {
-                log_i("Screen already dismissed, not auto-dismissing");
-            }
-        });
-    });
-}
-
-void KindleReadableScreen::loadNextKindlePreview() {
-    if (dismissed_) {
-        return;
-    }
-
-    // Update UI state
-    setState(State::LOADING_BACKGROUND);
-
-    // Create a cancel flag if needed
-    if (!cancelFlag_) {
-        cancelFlag_ = std::make_shared<CancelFlag>();
-    }
-
-    // Load the preview using the page manager
-    pageManager_->loadNextPreview(currentPlace_, cancelFlag_, useBle_,
-                                  [this](bool success,
-                                         const std::shared_ptr<KindlePageResponse> &response,
-                                         const std::string &errorMessage) {
-        // Check if we need to sync after this preview request completes
-        bool needsSync = needSyncAfterPreview_;
-
-        if (dismissed_) {
-            return;
-        }
-
-        // If we need to sync after the preview, do it now
-        if (needsSync) {
-            log_i("[PREVIEW COMPLETE] Now syncing with server as requested previously");
-            needSyncAfterPreview_ = false;
-            // Small delay to ensure state is updated correctly
-            DispatchGetUiQueue()->dispatch([this]() { syncWithServer(); });
-        }
-
-        if (!success) {
-            log_w("Failed to load preview: %s", errorMessage.c_str());
-            setState(State::DISPLAY_CONTENT);
-            return;
-        }
-
-        // log_i("Preview loaded successfully, text size: %zu bytes", response->ocrText.length());
-
-        // CRITICAL FIX: Record the current buffer size BEFORE we append
-        // This will be our correct boundary position
-        uint32_t currentBufferSize = currentPageText_.size();
-
-        // Record original size for accurate boundary calculation
-        size_t originalResponseSize = response->ocrText.length();
-        std::string modifiedText;
-
-        // Extract the first line number from the preview content for debugging
-        std::string firstLineNumber;
-        std::istringstream numIss(response->ocrText);
-        std::string numWord;
-        while (numIss >> numWord) {
-            if (std::all_of(numWord.begin(), numWord.end(), ::isdigit) && numWord.length() < 5) {
-                firstLineNumber = numWord;
-                break;
-            }
-        }
-
-        // Check if the first character of the next page is uppercase
-        if (!response->ocrText.empty() &&
-            (isupper(response->ocrText[0]) || isdigit(response->ocrText[0])) &&
-            !currentPageText_.empty()) {
-            // For uppercase first character, use a new paragraph
-            modifiedText = "\n\n" + response->ocrText;
-            currentPageText_ += modifiedText;
-            log_i("[BOUNDARY CALCULATION] Added \\n\\n to preview text. Original size: %zu, "
-                  "Modified size: %zu",
-                  originalResponseSize, modifiedText.length());
-        } else if (!response->ocrText.empty() && !currentPageText_.empty() &&
-                   currentPageText_.back() != ' ' && currentPageText_.back() != '\n') {
-            // Otherwise, add a space if needed (when not already ending with space or newline)
-            modifiedText = " " + response->ocrText;
-            currentPageText_ += modifiedText;
-            log_i("[BOUNDARY CALCULATION] Added space to preview text. Original size: %zu, "
-                  "Modified size: %zu",
-                  originalResponseSize, modifiedText.length());
-        } else {
-            // Just append directly if already has proper spacing or is empty
-            modifiedText = response->ocrText;
-            currentPageText_ += modifiedText;
-            log_i("[BOUNDARY CALCULATION] Directly appended preview text. Size: %zu",
-                  originalResponseSize);
-        }
-
-        // CRITICAL FIX: Use the original buffer size as our boundary point
-        // This ensures we know exactly where the new content begins
-        if (!firstLineNumber.empty()) {
-            log_i("[BOUNDARY VERIFICATION] First line number in preview: %s, setting boundary to "
-                  "buffer size %" PRIu32,
-                  firstLineNumber.c_str(), currentBufferSize);
-        }
-
-        // Set the boundary using the exact buffer size before appending
-        pageManager_->setPreviewBoundary(currentBufferSize);
-
-        log_i("[BOUNDARY CORRECTION] Set preview boundary to exact buffer size %" PRIu32
-              " before append",
-              currentBufferSize);
-
-        // Create a stream with the updated text content
-        auto stream = std::make_shared<StdStringStream>(currentPageText_, DocType::TXT);
-
-        // Save the current position before updating the stream
-        uint32_t savedOffset = currentPlace_ ? currentPlace_->getOffset() : 0;
-
-        // Update the renderer with the new stream
-        renderer_.setStream(stream);
-
-        // Restore the place after setting the stream
-        if (currentPlace_ && savedOffset > 0) {
-            auto restoredPlace = std::dynamic_pointer_cast<TxtPlace>(Place::factory(savedOffset));
-            currentPlace_ = restoredPlace;
-            renderer_.setCurrentPlace(currentPlace_);
-            // log_i("Restored place to offset %" PRIu32 " after loading preview", savedOffset);
-        }
-
-        // Update the UI state
-        setState(State::DISPLAY_CONTENT);
-
-        // Check if we need to redraw the current page
-        uint32_t currentOffset = currentPlace_ ? currentPlace_->getOffset() : 0;
-        uint32_t totalSize = renderer_.size();
-        uint32_t remainingBytes = (currentOffset < totalSize) ? (totalSize - currentOffset) : 0;
-        bool wasNearEndOfBuffer = remainingBytes < bufferThreshold_;
-
-        if (wasNearEndOfBuffer || needsRedrawAfterLoad_) {
-            // log_i("Refreshing page after preview load");
-
-            // Re-render the current page with the new content
-            uint8_t darkPicturePercent = 0;
-            std::tie(newPlace_, darkPicturePercent) = renderer_.renderPage(currentPlace_);
-
-            // Update the display
-            display_.updateDisplay(DisplaySystem::UpdateType::PARTIAL, true,
-                                   display_.darkPictureVComAdj(darkPicturePercent));
-
-            // Calculate new page size
-            if (newPlace_ && currentPlace_) {
-                uint32_t newOffset = newPlace_->getOffset();
-                uint32_t currOffset = currentPlace_->getOffset();
-                lastRenderedPageSize_ = (newOffset > currOffset) ? (newOffset - currOffset) : 0;
-                log_i("New page size after refresh: %" PRIu32 " bytes", lastRenderedPageSize_);
-            }
-
-            // Reset the redraw flag
-            needsRedrawAfterLoad_ = false;
-        }
-    });
-}
-
-void KindleReadableScreen::loadNextKindlePage() {
-    if (dismissed_ || nextPageLoading_) {
-        return;
-    }
-
-    // Set flag to prevent multiple concurrent load requests
-    nextPageLoading_ = true;
-
-    // Determine if we're loading in foreground or background
-    bool isBackgroundLoading = (state_ == State::DISPLAY_CONTENT);
-
-    if (!isBackgroundLoading) {
-        // Only show loading UI if this is not background loading
-        setState(State::LOADING_CONTENT);
-        setLoadingMessage("Loading next page...");
-        setNeedsRerender();
-    } else {
-        // Just mark the state for internal tracking
-        setState(State::LOADING_BACKGROUND);
-        log_i("Starting background load of next Kindle page");
-    }
-
-    // Execute the API call on the background thread
-    DispatchGetCore0BackgroundQueue()->dispatch([this, isBackgroundLoading]() {
-        // Create a response object
-        auto response = std::make_shared<KindlePageResponse>();
-
-        // Make the request - for explicit navigation, we always use ocr=0
-        // We should have already pre-cached content with preview-next
-        auto sindarinApi = SindarinAPI::getInstance();
-        int httpCode = sindarinApi->navigateKindleNext(response.get(), cancelFlag_, useBle_, false);
-
-        if (httpCode != 200 || !response->success) {
-            DispatchGetUiQueue()->dispatch([this, isBackgroundLoading, httpCode]() {
-                if (dismissed_) {
-                    return;
-                }
-
-                nextPageLoading_ = false;
-
-                if (isBackgroundLoading) {
-                    // For background loads, just log the error and restore state
-                    log_w("Background loading of next Kindle page failed with HTTP code %d",
-                          httpCode);
-                    setState(State::DISPLAY_CONTENT);
-                } else {
-                    // For foreground loads, show the error
-                    // Customize error message based on HTTP code
-                    std::string errorMessage;
-
-                    if (httpCode == 500) {
-                        errorMessage = "Server error. Please try again later.";
-                    } else if (httpCode == 401 || httpCode == 403) {
-                        errorMessage = "Authentication error. Please try signing in again.";
-                    } else if (httpCode == 404) {
-                        errorMessage = "Page not found in your Kindle book.";
-                    } else if (httpCode >= 400 && httpCode < 500) {
-                        errorMessage = "Request error. Please check your settings.";
-                    } else if (httpCode >= 500) {
-                        errorMessage = "Server error. Please try again later.";
-                    } else {
-                        errorMessage = "Failed to load next page.";
-                    }
-
-                    log_i("HTTP error %d when loading next page", httpCode);
-                    setErrorMessage(errorMessage);
-                }
-            });
-            return;
-        }
-
-        // Process the response on the UI thread
-        DispatchGetUiQueue()->dispatch([this, response, isBackgroundLoading]() {
-            if (dismissed_) {
-                return;
-            }
-
-            nextPageLoading_ = false;
-
-            log_i("Processing Kindle navigation next response (success=%d, ocr=false)",
-                  response->success);
-
-            // Mark that we've successfully made a remote forward navigation call
-            hasNavigatedForward_ = true;
-
-            // Update current page information
-            currentPage_ = response->progress.currentPage;
-            totalPages_ = response->progress.totalPages;
-            currentPageImageUrl_ = response->screenshotUrl;
-
-            // Update the book progress in the KindleBook object
-            kindleBook_->progressPercent = response->progress.percentage;
-            kindleBook_->progress = StringFormat("%d%%", response->progress.percentage);
-
-            log_i("Updated book progress metadata: page %d/%d (%d%%)", currentPage_, totalPages_,
-                  response->progress.percentage);
-
-            // Note: we don't append text because we're using ocr=0 since
-            // we should already have the content from the preview call
-            log_i("Skipping text append since OCR was not requested (using previewed content)");
-
-            log_i("API RESPONSE - Next page: %d/%d (%d%%), new text size: %zu bytes, total buffer "
-                  "size now: %zu bytes",
-                  currentPage_, totalPages_, response->progress.percentage,
-                  response->ocrText.length(), currentPageText_.length());
-
-            // Save the current position before updating the stream
-            uint32_t savedOffset = currentPlace_ ? currentPlace_->getOffset() : 0;
-
-            // Create a stream with the text content
-            auto stream = std::make_shared<StdStringStream>(currentPageText_, DocType::TXT);
-            renderer_.setStream(stream);
-
-            // Restore the place after setting the stream - this is critical to prevent
-            // jumping back to the beginning when new content is loaded
-            if (currentPlace_ && savedOffset > 0) {
-                // Create a place at the same offset as before
-                auto restoredPlace =
-                    std::dynamic_pointer_cast<TxtPlace>(Place::factory(savedOffset));
-                currentPlace_ = restoredPlace;
-                renderer_.setCurrentPlace(currentPlace_);
-                log_i("Restored place to offset %" PRIu32 " after loading new content",
-                      savedOffset);
-            }
-
-            if (isBackgroundLoading) {
-                // For background loading, update the stream and restore state
-                log_i("Background loading complete, updated text buffer");
-                setState(State::DISPLAY_CONTENT);
-
-                // Get current offset and check if the current page is incomplete
-                uint32_t currentOffset = currentPlace_ ? currentPlace_->getOffset() : 0;
-
-                // Calculate how much content we had before the new load and how much we have now
-                uint32_t totalSize = renderer_.size();
-                uint32_t loadedSize = response->ocrText.length();
-                uint32_t previousSize = totalSize - loadedSize;
-
-                // Calculate remaining bytes before and after new content was loaded
-                uint32_t remainingBytesBefore =
-                    (currentOffset < previousSize) ? (previousSize - currentOffset) : 0;
-                uint32_t remainingBytesNow =
-                    (currentOffset < totalSize) ? (totalSize - currentOffset) : 0;
-
-                // Flag if we were near the end of the buffer before new content was loaded
-                bool wasNearEndOfBuffer = remainingBytesBefore < bufferThreshold_;
-                bool shouldRefreshPage = false;
-
-                // Log detailed buffer information for debugging
-                log_i("Buffer status - Before load: offset=%" PRIu32 "/%" PRIu32
-                      " (remaining: %" PRIu32 " bytes), After load: size=%" PRIu32
-                      " (remaining: %" PRIu32 " bytes), Added: %" PRIu32 " bytes, needsRedraw: %s",
-                      currentOffset, previousSize, remainingBytesBefore, totalSize,
-                      remainingBytesNow, loadedSize, needsRedrawAfterLoad_ ? "yes" : "no");
-
-                // We should refresh the page if:
-                // 1. We were near the end of the buffer before new content was loaded (or marked
-                // for redraw)
-                // 2. We now have more content available in the buffer
-                if ((wasNearEndOfBuffer || needsRedrawAfterLoad_) &&
-                    remainingBytesNow > remainingBytesBefore) {
-                    log_i("Refreshing page after background load - %s "
-                          "(before: remaining=%" PRIu32 " bytes, now: remaining=%" PRIu32 " bytes)",
-                          needsRedrawAfterLoad_ ? "explicitly marked for redraw"
-                                                : "near the end of buffer",
-                          remainingBytesBefore, remainingBytesNow);
-
-                    // Re-render the current page with the new content
-                    uint8_t darkPicturePercent = 0;
-                    std::tie(newPlace_, darkPicturePercent) = renderer_.renderPage(currentPlace_);
-
-                    // Update the display
-                    display_.updateDisplay(DisplaySystem::UpdateType::PARTIAL, true,
-                                           display_.darkPictureVComAdj(darkPicturePercent));
-
-                    // Calculate new page size
-                    if (newPlace_ && currentPlace_) {
-                        uint32_t newOffset = newPlace_->getOffset();
-                        uint32_t currOffset = currentPlace_->getOffset();
-                        lastRenderedPageSize_ =
-                            (newOffset > currOffset) ? (newOffset - currOffset) : 0;
-                        log_i("New page size after refresh: %" PRIu32 " bytes",
-                              lastRenderedPageSize_);
-                    }
-
-                    shouldRefreshPage = true;
-
-                    // Reset the redraw flag since we've now handled it
-                    needsRedrawAfterLoad_ = false;
-                }
-
-                // Check if we're still low on content and need to load more
-                if (!shouldRefreshPage && checkNearEndOfBuffer()) {
-                    log_i("Still near buffer end after background load, loading more preview "
-                          "content");
-                    loadNextKindlePreview();
-                }
-            } else {
-                // For foreground loading, render the page immediately
-                // Create a place for the content
-                auto place = std::dynamic_pointer_cast<TxtPlace>(Place::factory(0));
-
-                // Clear the screen and prepare for content
-                clearScreenForContent();
-
-                // Render the page
-                uint8_t darkPicturePercent = 0;
-                std::tie(newPlace_, darkPicturePercent) = renderer_.renderPage(place);
-
-                log_i("Kindle next page rendered, forcing display update");
-
-                // Explicitly force a full display update
-                display_.updateDisplay(DisplaySystem::UpdateType::FULL, true);
-
-                // Save the place
-                turnPage();
-
-                // Now change state after we've rendered everything
-                setState(State::DISPLAY_CONTENT);
-
-                // Proactively check if we need to start loading the next page
-                if (checkNearEndOfBuffer()) {
-                    log_i("Near buffer end after load, proactively loading preview content");
-                    loadNextKindlePreview();
-                }
-            }
-        });
-    });
-}
-
-void KindleReadableScreen::navigateNext() {
-    // Allow navigation from DISPLAY_CONTENT or LOADING_BACKGROUND states
-    if ((state_ != State::DISPLAY_CONTENT && state_ != State::LOADING_BACKGROUND) || dismissed_) {
-        return;
-    }
-
-    // --- Local Navigation First ---
-
-    // Get current buffer info before the turn
-    uint32_t currentOffset = currentPlace_ ? currentPlace_->getOffset() : 0;
-    uint32_t totalSize = renderer_.size();
-    uint32_t remainingBytes = (currentOffset < totalSize) ? (totalSize - currentOffset) : 0;
-    uint32_t pageSize = lastRenderedPageSize_ > 0 ? lastRenderedPageSize_ : 400;
-
-    // Reset any boundary-crossing prediction state when we start moving forward again
-    // after moving backward
-    if (!hasNavigatedForward_) {
-        hasNavigatedForward_ = true;
-        log_i("[NAVIGATE DIRECTION] First forward navigation after backward movement - resetting "
-              "boundary predictions");
-
-        // When we change direction from backward to forward after significant backward movement
-        // check if we should reset the preview/navigate alternation requirement
-        uint32_t previewBoundary = pageManager_->getPreviewBoundary();
-        if (previewBoundary > 0) {
-            uint32_t distanceToBoundary =
-                (currentOffset < previewBoundary) ? (previewBoundary - currentOffset) : 0;
-            uint32_t pageSize = lastRenderedPageSize_ > 0 ? lastRenderedPageSize_ : 400;
-            uint32_t pagesToBoundary = (distanceToBoundary + pageSize - 1) / pageSize;
-
-            // In the forward-backward-forward navigation case, we're in an unusual state
-            // where we might have lastCallWasPreview=true but we're far from the boundary.
-            // Only make a server call if we're close to the boundary.
-            bool hasCachedContent = distanceToBoundary > 0 && currentOffset < previewBoundary;
-
-            // If we're moving forward after going backward, and we're more than 3 pages from
-            // the boundary, don't worry too much about server sync until we get closer
-            if (hasCachedContent) {
-                // This is a key case: we've gone forward, downloaded content, gone backward,
-                // and now we're going forward again - we should be using cached content
-                log_i("[FORWARD-BACK-FORWARD] We already have this content in buffer - "
-                      "at position %" PRIu32 " with preview boundary at %" PRIu32 " (%" PRIu32
-                      " bytes, ~%" PRIu32 " pages ahead)",
-                      currentOffset, previewBoundary, distanceToBoundary, pagesToBoundary);
-
-                if (pagesToBoundary > 3 && pageManager_->wasLastCallPreview()) {
-                    log_i("[NAVIGATE DECISION] Not making API call for content we already have "
-                          "(%" PRIu32 " pages to boundary) - using local buffer content",
-                          pagesToBoundary);
-
-                    // This avoids unnecessary API calls when we're just paging through
-                    // content we've already seen
-                    justNavigatedForward_ = true;
-                }
-            }
-        }
-    }
-
-    // Check if we can turn the page locally
-    bool canTurnPageLocally =
-        newPlace_ && currentPlace_ && newPlace_->getOffset() > currentPlace_->getOffset();
-
-    // If we cannot turn the page locally, we might need to load content
-    if (!canTurnPageLocally) {
-        log_i("NAVIGATE: Cannot turn page locally (current: %" PRIu32 ", next: %s)", currentOffset,
-              newPlace_ ? std::to_string(newPlace_->getOffset()).c_str() : "null");
-
-        // If we are near the end, try loading more content
-        if (remainingBytes < bufferThreshold_) {
-            log_i("NAVIGATE: At end of local buffer (remaining: %" PRIu32
-                  "), attempting to load more.",
-                  remainingBytes);
-            if (!nextPageLoading_) {
-                loadNextContent(); // Handles content loading using the page manager
-            } else {
-                log_i("NAVIGATE: Load already in progress, showing loading message.");
-                setLoadingMessage("Loading more...", true); // Show loading indicator
-                if (state_ != State::LOADING_BACKGROUND) {
-                    setState(State::LOADING_BACKGROUND);
-                }
-                setNeedsRerender();
-            }
-        } else {
-            log_w("NAVIGATE: Cannot turn page locally, but not near end of buffer? (remaining: "
-                  "%" PRIu32 ")",
-                  remainingBytes);
-            // This state shouldn't ideally happen unless buffer is full but renderPage failed?
-        }
-        return; // Stop processing navigateNext if we can't turn locally
-    }
-
-    // --- Perform Local Page Turn ---
-    uint32_t offsetBeforeTurn = currentPlace_ ? currentPlace_->getOffset() : 0;
-    turnPage(); // This updates currentPlace_ and lastRenderedPageSize_
-    uint32_t offsetAfterTurn = currentPlace_ ? currentPlace_->getOffset() : 0;
-
-    // Render the new page content locally
-    uint8_t darkPicturePercent = 0;
-    std::tie(newPlace_, darkPicturePercent) = renderer_.renderPage(currentPlace_);
-    display_.updateDisplay(DisplaySystem::UpdateType::PARTIAL, true,
-                           display_.darkPictureVComAdj(darkPicturePercent));
-    hasNavigatedForward_ = true; // Mark that user has moved forward
-
-    // --- Debug Logging: Show context around page turn ---
-    logPageContext(offsetBeforeTurn, offsetAfterTurn);
-
-    // Additional logging to show actual displayed content line numbers
-    std::string firstLineNumber, lastLineNumber;
-    std::string visibleText;
-
-    // Check preview boundary status for debugging
-    uint32_t previewBoundary = pageManager_->getPreviewBoundary();
-    if (previewBoundary > 0) {
-        int32_t distanceToBoundary = previewBoundary - offsetAfterTurn;
-        log_i("[TURN PAGE DEBUG] Distance to preview boundary: %" PRId32
-              " bytes (boundary at %" PRIu32 ")",
-              distanceToBoundary, previewBoundary);
-    }
-
-    // Get about 500 bytes of content at the current position to analyze
-    if (renderer_.getStream()) {
-        auto stream = renderer_.getStream();
-        size_t streamSize = stream->size();
-        uint32_t curOffset = offsetAfterTurn;
-
-        if (curOffset < streamSize) {
-            size_t readLen =
-                std::min(static_cast<size_t>(500), static_cast<size_t>(streamSize - curOffset));
-            visibleText.resize(readLen);
-            stream->seek(curOffset);
-            stream->readBytes(reinterpret_cast<uint8_t *>(visibleText.data()), readLen);
-
-            // Parse the visible text to find line numbers
-            std::istringstream iss(visibleText);
-            std::string word;
-            std::vector<std::string> lineNumbers;
-
-            while (iss >> word) {
-                if (std::all_of(word.begin(), word.end(), ::isdigit) && word.length() < 5) {
-                    lineNumbers.push_back(word);
-                }
-            }
-
-            // Get first and last found line numbers
-            if (!lineNumbers.empty()) {
-                firstLineNumber = lineNumbers.front();
-                lastLineNumber = lineNumbers.back();
-
-                log_i("[PAGE DISPLAY] Visible text contains line numbers: first=%s, last=%s",
-                      firstLineNumber.c_str(), lastLineNumber.c_str());
-
-                // CRITICAL: Check if we're far from the boundary but the last line is much less
-                // than the first line number in the preview
-                if (previewBoundary > 0 && !lastLineNumber.empty()) {
-                    // Get the first line number of the preview content
-                    std::string previewLineNumber;
-                    std::string previewContent;
-                    if (previewBoundary < streamSize) {
-                        size_t previewReadLen =
-                            std::min(static_cast<size_t>(100),
-                                     static_cast<size_t>(streamSize - previewBoundary));
-                        previewContent.resize(previewReadLen);
-                        stream->seek(previewBoundary);
-                        stream->readBytes(reinterpret_cast<uint8_t *>(previewContent.data()),
-                                          previewReadLen);
-
-                        std::istringstream previewIss(previewContent);
-                        while (previewIss >> word) {
-                            if (std::all_of(word.begin(), word.end(), ::isdigit) &&
-                                word.length() < 5) {
-                                previewLineNumber = word;
-                                break;
-                            }
-                        }
-                    }
-
-                    if (!previewLineNumber.empty()) {
-                        int lastLine = std::stoi(lastLineNumber);
-                        int previewFirstLine = std::stoi(previewLineNumber);
-
-                        // Calculate how many lines we still have before hitting the preview
-                        int lineDifference = previewFirstLine - lastLine;
-
-                        log_i(
-                            "[PAGE BOUNDARY CHECK] Current last line: %d, Preview first line: %d, "
-                            "Line difference: %d, Distance to boundary: %" PRIu32 " bytes",
-                            lastLine, previewFirstLine, lineDifference,
-                            (offsetAfterTurn < previewBoundary)
-                                ? (previewBoundary - offsetAfterTurn)
-                                : 0);
-                    }
-                }
-            }
-
-            // Restore stream position
-            stream->seek(offsetAfterTurn);
-        }
-    }
-    // --- End Debug Logging ---
-
-    log_i("[NAVIGATE LOCAL] Turned page: %" PRIu32 " -> %" PRIu32, offsetBeforeTurn,
-          offsetAfterTurn);
-
-    // --- Boundary Detection & Sync Decision ---
-
-    // Get the end of the current page for boundary check
-    uint32_t pageEndOffset = 0;
-    if (newPlace_ && newPlace_->getOffset() > offsetAfterTurn) {
-        pageEndOffset = newPlace_->getOffset() - 1; // End is just before the start of next page
-    } else {
-        // If we don't have a next place, estimate the page end based on size
-        pageEndOffset = offsetAfterTurn + (lastRenderedPageSize_ > 0 ? lastRenderedPageSize_ : 400);
-    }
-
-    // CRITICAL FIX: Check if either the current position or the page end has crossed the boundary
-    bool justCrossedBoundary =
-        pageManager_->hasCrossedPreviewBoundary(offsetAfterTurn, pageEndOffset) &&
-        !pageManager_->hasCrossedPreviewBoundary(offsetBeforeTurn);
-
-    // Check if the next turn would cross a boundary
-    // Skip boundary prediction on first forward navigation after changing direction
-    bool nextTurnWillCrossBoundary = false;
-    if (justNavigatedForward_) {
-        // Normal boundary prediction
-        nextTurnWillCrossBoundary =
-            pageManager_->wouldNextTurnCrossBoundary(offsetAfterTurn, pageSize);
-    } else {
-        // First forward after backward: more conservative boundary prediction
-        // We need at least one page turn to "settle" after direction change
-        justNavigatedForward_ = true;
-        log_i(
-            "[BOUNDARY DECISION] First page after direction change - skipping boundary prediction");
-    }
-
-    // Log boundary status with page end information
-    log_i("[NAVIGATE PREDICT] Current: %" PRIu32 ", Page end: %" PRIu32 ", boundary: %" PRIu32
-          ", justCrossed: %d, nextWillCross: %d",
-          offsetAfterTurn, pageEndOffset, previewBoundary, justCrossedBoundary,
-          nextTurnWillCrossBoundary);
-
-    // Determine if we need to sync with the server now
-    bool shouldSyncNow = false;
-
-    // If we just crossed a boundary, we need to sync immediately
-    if (justCrossedBoundary) {
-        log_i("[SYNC DECISION] Just crossed boundary. Syncing immediately.");
-        shouldSyncNow = true;
-    }
-    // If the next turn will cross a boundary and we just loaded a preview, sync now
-    else if (nextTurnWillCrossBoundary && pageManager_->wasLastCallPreview()) {
-        log_i("[SYNC DECISION] Next turn will cross boundary. Syncing proactively.");
-        shouldSyncNow = true;
-    }
-    // Otherwise, check if we need to sync based on alternation pattern
-    else if (pageManager_->needsNavigateCall(offsetAfterTurn, pageEndOffset) && !nextPageLoading_) {
-        log_i("[SYNC DECISION] Need to navigate based on alternation pattern.");
-        shouldSyncNow = true;
-    }
-
-    // Sync with the server if needed but handle the case where a preview is in progress
-    if (shouldSyncNow && !nextPageLoading_) {
-        if (!pageManager_->isPreviewRequestInProgress()) {
-            log_i("[SYNC DECISION] Initiating server sync - no preview request in progress");
-            syncWithServer();
-        } else {
-            log_i("[SYNC DECISION] Need to sync but preview request in progress - will sync after "
-                  "preview completes");
-            // Set a flag so we know to sync as soon as the preview completes
-            needSyncAfterPreview_ = true;
-        }
-    }
-
-    // --- Background Loading Check ---
-
-    // Check if we need to load more content in the background after the turn
-    uint32_t remainingBytesAfterTurn =
-        (offsetAfterTurn < totalSize) ? (totalSize - offsetAfterTurn) : 0;
-
-    // Log the detailed buffer state before making any loading decisions
-    log_i("[BUFFER STATE] Current offset: %" PRIu32 ", total size: %" PRIu32
-          ", remaining bytes: %" PRIu32,
-          offsetAfterTurn, totalSize, remainingBytesAfterTurn);
-
-    // Log threshold settings for better debugging
-    log_i(
-        "[BUFFER THRESHOLDS] Buffer threshold: %d, crossing boundary? %d, preview in progress? %d",
-        bufferThreshold_, justCrossedBoundary ? 1 : 0,
-        pageManager_->isPreviewRequestInProgress() ? 1 : 0);
-
-    // Log all preview boundaries we have
-    std::vector<uint32_t> allBoundaries;
-    uint32_t currentBoundary = pageManager_->getPreviewBoundary();
-    if (currentBoundary > 0) {
-        allBoundaries.push_back(currentBoundary);
-    }
-    if (!allBoundaries.empty()) {
-        std::string boundaryList;
-        for (uint32_t boundary : allBoundaries) {
-            if (!boundaryList.empty()) {
-                boundaryList += ", ";
-            }
-            boundaryList += std::to_string(boundary);
-        }
-        log_i("[BUFFER STATE] All preview boundaries: [%s]", boundaryList.c_str());
-    } else {
-        log_i("[BUFFER STATE] No preview boundaries tracked");
-    }
-
-    // Check if we have cached content ahead (we've already visited these pages)
-    uint32_t distanceToEnd = 0;
-    uint32_t totalBufferSize = 0;
-    bool hasCachedContent =
-        pageManager_->hasPrecachedContentAhead(offsetAfterTurn, distanceToEnd, totalBufferSize);
-
-    // Check if the page end has crossed a boundary - in that case we should NEVER
-    // request a preview until we sync with the server
-    bool crossedBoundaryNow =
-        pageManager_->hasCrossedPreviewBoundary(offsetAfterTurn, pageEndOffset);
-    bool needsNavigateCall = pageManager_->needsNavigateCall(offsetAfterTurn, pageEndOffset);
-
-    if (crossedBoundaryNow || needsNavigateCall) {
-        // We've crossed a boundary or need to navigate - DO NOT request a preview
-        log_i("[NAVIGATE DECISION] Skipping preview request because %s",
-              crossedBoundaryNow ? "we've crossed a boundary" : "we need to navigate first");
-
-        // Make sure we sync with the server as soon as possible
-        if (!pageManager_->isPreviewRequestInProgress() && !nextPageLoading_) {
-            log_i("[NAVIGATE CRITICAL] Immediately syncing with server after detecting boundary "
-                  "crossing");
-            syncWithServer();
-        } else {
-            log_i("[NAVIGATE CRITICAL] Waiting for in-progress request to complete before syncing "
-                  "with server");
-        }
-    } else if (hasCachedContent && distanceToEnd > bufferThreshold_) {
-        // We already have content ahead from previous navigation
-        // No need to make any API calls until we get closer to the boundary
-        log_i("[NAVIGATE DECISION] Using cached content from previous navigation "
-              "(%" PRIu32 " bytes ahead)",
-              distanceToEnd);
-
-    } else if (remainingBytesAfterTurn < bufferThreshold_ && !nextPageLoading_ &&
-               !pageManager_->isPreviewRequestInProgress()) {
-
-        // Log detailed reasoning for potentially loading more content
-        log_i("[LOAD DECISION] Considering preview load: remaining=%" PRIu32
-              " < threshold=%d, nextPageLoading=%d, previewInProgress=%d",
-              remainingBytesAfterTurn, bufferThreshold_, nextPageLoading_ ? 1 : 0,
-              pageManager_->isPreviewRequestInProgress() ? 1 : 0);
-
-        // Check if we already have boundary information to know if we have content ahead
-        bool hasValidBoundaryAhead = false;
-        uint32_t nextBoundary = 0;
-        uint32_t distanceToBoundary = 0;
-
-        // Find the next boundary ahead if any
-        uint32_t boundary = pageManager_->getPreviewBoundary();
-        if (boundary > offsetAfterTurn) {
-            if (nextBoundary == 0 || boundary < nextBoundary) {
-                nextBoundary = boundary;
-                hasValidBoundaryAhead = true;
-                distanceToBoundary = nextBoundary - offsetAfterTurn;
-            }
-        }
-
-        if (hasValidBoundaryAhead) {
-            // We already have preview content ahead, no need to load more until we cross the
-            // boundary
-            log_i("[NAVIGATE DECISION] Have valid preview boundary ahead at %" PRIu32
-                  ", current position %" PRIu32 ", using existing content (%" PRIu32
-                  " bytes to boundary)",
-                  nextBoundary, offsetAfterTurn, distanceToBoundary);
-        } else if (!pageManager_->wasLastCallPreview()) {
-            // No preview boundary ahead and last call wasn't preview, so we need to load more
-            // content
-            log_i("[NAVIGATE LOAD] Near end of buffer (remaining: %" PRIu32
-                  "), loading preview in background. Last call was preview? %d",
-                  remainingBytesAfterTurn, pageManager_->wasLastCallPreview() ? 1 : 0);
-
-            // Check if the remainder is sufficient for another turn or not
-            uint32_t lastPageSize = lastRenderedPageSize_ > 0 ? lastRenderedPageSize_ : 400;
-            uint32_t estimatedPagesTilEnd = remainingBytesAfterTurn / lastPageSize;
-            log_i("[LOAD ANALYSIS] Last page size: %" PRIu32
-                  ", estimated pages remaining: %" PRIu32,
-                  lastPageSize, estimatedPagesTilEnd);
-
-            // Let's say if we have at least 4 pages left, we don't really need to load more yet
-            bool shouldActuallyLoad = estimatedPagesTilEnd < 4;
-
-            // One more check: do we have boundaries ahead that indicate more content?
-            bool hasBoundariesAhead = false;
-            uint32_t boundary = pageManager_->getPreviewBoundary();
-            if (boundary > offsetAfterTurn) {
-                hasBoundariesAhead = true;
-            }
-
-            if (hasBoundariesAhead) {
-                // We have boundaries ahead, so we likely have content already
-                log_i("[LOAD DECISION] Skipping preview load - we have boundaries ahead with "
-                      "content");
-            } else if (shouldActuallyLoad) {
-                // We're low on content and don't have boundaries ahead
-                log_i("[LOAD DECISION] Loading preview - we have less than 4 pages of content left "
-                      "and no boundaries ahead");
-                loadNextKindlePreview(); // Load more content if needed and allowed
-            } else {
-                // We have enough content for now
-                log_i("[LOAD DECISION] Skipping preview load - we still have ~%" PRIu32
-                      " pages of content left",
-                      estimatedPagesTilEnd);
-            }
-        } else {
-            log_i("[NAVIGATE DECISION] Near end of buffer but last call was preview, "
-                  "must wait for navigate before loading more");
-        }
-    } else {
-        // We have enough content in buffer already, or we're not in a position to load more
-        log_i("[NAVIGATE STATUS] Buffer state: %" PRIu32 " bytes remaining, hasCachedContent=%d, "
-              "nextPageLoading=%d, previewRequestInProgress=%d, lastCallWasPreview=%d",
-              remainingBytesAfterTurn, hasCachedContent ? 1 : 0, nextPageLoading_ ? 1 : 0,
-              pageManager_->isPreviewRequestInProgress() ? 1 : 0,
-              pageManager_->wasLastCallPreview() ? 1 : 0);
-    }
-}
-
-void KindleReadableScreen::loadPreviousKindlePage() {
-    if (state_ != State::DISPLAY_CONTENT || dismissed_ || nextPageLoading_) {
-        log_i("Not loading previous Kindle page - state=%d, dismissed=%d, loading=%d",
-              static_cast<int>(state_), dismissed_, nextPageLoading_);
-        return;
-    }
-
-    // Mark that we're loading a page to prevent duplicate requests
-    nextPageLoading_ = true;
-
-    // In the case of navigatePrevious, we might already have rendered the page
-    // and just need to sync the server state, so we only show loading message
-    // for direct API calls, not for boundary sync calls
-    bool isVisibleLoad = (state_ != State::LOADING_BACKGROUND);
-    if (isVisibleLoad) {
-        setState(State::LOADING_CONTENT);
-        setLoadingMessage("Loading previous page...");
-        setNeedsRerender();
-    }
-
-    // Create a cancel flag if needed
-    if (!cancelFlag_) {
-        cancelFlag_ = std::make_shared<CancelFlag>();
-    }
-
-    // Use the page manager to navigate to previous page
-    pageManager_->navigatePrevious(cancelFlag_, useBle_,
-                                   [this](bool success,
-                                          const std::shared_ptr<KindlePageResponse> &response,
-                                          const std::string &errorMessage) {
-        if (!success) {
-            std::string displayError =
-                errorMessage.empty() ? "Failed to load previous page." : errorMessage;
-            log_i("Error loading previous page: %s", displayError.c_str());
-            setErrorMessage(displayError);
-            return;
-        }
-
-        if (dismissed_) {
-            return;
-        }
-
-        log_i("Processing Kindle navigation previous response (success=%d, text length=%zu)",
-              response->success, response->ocrText.length());
-
-        // Update current page information
-        currentPage_ = response->progress.currentPage;
-        totalPages_ = response->progress.totalPages;
-
-        // Check if we're doing a server-sync (no OCR text) or a full page load
-        if (response->ocrText.empty()) {
-            log_i("API RESPONSE - Server sync only (ocr=false), using existing buffer");
-
-            // Just update metadata but keep existing buffer
-            // We don't need to refresh the screen since we're not changing content
-
-            // Since we're just syncing the server position and not loading new content,
-            // we'll just resume local navigation from current position
-
-            // Reset state back to display content
-            setState(State::DISPLAY_CONTENT);
-
-            // Ensure nextPageLoading_ flag is reset
-            nextPageLoading_ = false;
-        } else {
-            // This is a full page load with new content
-
-            // For previous page, we replace the current buffer
-            currentPageText_ = response->ocrText;
-            currentPageImageUrl_ = response->screenshotUrl;
-
-            log_i("API RESPONSE - Previous page: %d/%d (%d%%), new text size: %zu bytes",
-                  currentPage_, totalPages_, response->progress.percentage,
-                  currentPageText_.length());
-
-            // Create a stream with the text content
-            auto stream = std::make_shared<StdStringStream>(currentPageText_, DocType::TXT);
-            renderer_.setStream(stream);
-
-            // Create a place for the content
-            auto place = std::dynamic_pointer_cast<TxtPlace>(Place::factory(0));
-
-            // Clear the screen and prepare for content
-            clearScreenForContent();
-
-            // Render the page
-            uint8_t darkPicturePercent = 0;
-            std::tie(newPlace_, darkPicturePercent) = renderer_.renderPage(place);
-
-            log_i("Kindle previous page rendered, forcing display update");
-
-            // Explicitly force a full display update
-            display_.updateDisplay(DisplaySystem::UpdateType::FULL, true);
-
-            // Turn the page to update currentPlace_
-            turnPage();
-        }
-
-        // Reset navigation tracking since we're loading a new page from the beginning
-        hasNavigatedForward_ = false;
-
-        // Schedule loading next preview with a short delay
-        DispatchGetUiQueue()->dispatch([this]() {
-            if (!dismissed_) {
-                // Short delay to ensure server state is fully processed
-                vTaskDelay(pdMS_TO_TICKS(50));
-                // Load the next preview
-                loadNextKindlePreview();
-            }
-        });
-    });
-}
-
-void KindleReadableScreen::navigatePrevious() {
-    if (state_ != State::DISPLAY_CONTENT || dismissed_) {
-        return;
-    }
-
-    // Get the current place offset
-    uint32_t currentOffset = 0;
-    if (currentPlace_) {
-        currentOffset = currentPlace_->getOffset();
-    }
-
-    // Track navigation direction changes
-    static uint32_t backwardNavigations = 0;
-
-    // Reset navigation flags when going backward
-    if (justNavigatedForward_) {
-        justNavigatedForward_ = false;
-        log_i(
-            "[NAVIGATE DIRECTION] Changing to backward movement, will reset boundary predictions");
-
-        // If we've gone backward several times (at least 2 page turns)
-        // Reset the page manager state to avoid unnecessary API calls
-        backwardNavigations++;
-
-        if (backwardNavigations >= 2) {
-            log_i("[NAVIGATE DIRECTION] Multiple backward moves detected (%" PRIu32
-                  "), resetting preview "
-                  "state",
-                  backwardNavigations);
-
-            // If we're VERY far from preview boundary (e.g., 5+ pages), reset lastCallWasPreview
-            // This prevents unnecessary server syncs when going forward again
-            uint32_t previewBoundary = pageManager_->getPreviewBoundary();
-            if (previewBoundary > 0) {
-                uint32_t distanceToBoundary =
-                    (currentOffset < previewBoundary) ? (previewBoundary - currentOffset) : 0;
-
-                uint32_t pageSize = lastRenderedPageSize_ > 0 ? lastRenderedPageSize_ : 400;
-                uint32_t pagesToBoundary = (distanceToBoundary + pageSize - 1) / pageSize;
-
-                if (pagesToBoundary > 5) {
-                    // Reset for significant backward navigation
-                    // This prevents unnecessary API calls when we go forward again
-                    pageManager_->resetPreviewBoundary();
-                    pageManager_->resetLastCallWasPreview();
-                    log_i("[NAVIGATE DIRECTION] Far from boundary (~%" PRIu32
-                          " pages), resetting preview boundary and API state",
-                          pagesToBoundary);
-                }
-            }
-        }
-    } else {
-        // Increment counter when continuing to navigate backward
-        backwardNavigations++;
-
-        // Log that we're continuing in backward navigation mode
-        log_i("[NAVIGATE DIRECTION] Continuing backward movement (%" PRIu32 " times)",
-              backwardNavigations);
-    }
-
-    // If at the beginning, we need to fetch from the API
-    if (currentOffset == 0) {
-        // Only allow going to previous Kindle page if user hasn't navigated forward yet
-        if (!hasNavigatedForward_) {
-            loadPreviousKindlePage();
-        } else {
-            log_i("Preventing navigation to previous Kindle page after forward navigation");
-        }
-        return;
-    }
-
-    // Try to get the previous place from the renderer
-    auto prevPlace = renderer_.getPreviousPlace();
-
-    // If it's null, we need to compute a reasonable fallback
-    if (!prevPlace) {
-        // Calculate a reasonable page size - from logs we can see the rendered page size
-        // If available, use the page size from the last navigation
-        uint32_t lastPageSize = 0;
-        if (newPlace_ && currentPlace_) {
-            lastPageSize =
-                currentPlace_->getOffset() -
-                (newPlace_->getOffset() > currentPlace_->getOffset() ? 0 : newPlace_->getOffset());
-        }
-
-        // Use a default if we couldn't determine page size
-        uint32_t pageSize = (lastPageSize > 0) ? lastPageSize : 500;
-
-        // Ensure we don't go before start of buffer
-        uint32_t prevOffset = (currentOffset > pageSize) ? (currentOffset - pageSize) : 0;
-
-        log_w("No valid previous place found, using fallback navigation offset %" PRIu32
-              " (pageSize: %" PRIu32 ")",
-              prevOffset, pageSize);
-
-        prevPlace = Place::factory(prevOffset);
-    }
-
-    // Get the offset for logging
-    uint32_t prevOffset = prevPlace->getOffset();
-    uint32_t totalSize = renderer_.size();
-    uint32_t pageSize = currentOffset - prevOffset;
-    uint32_t previewBoundary = pageManager_->getPreviewBoundary();
-
-    log_i("NAVIGATION - Moving backward from offset %" PRIu32 " to %" PRIu32 " (page size: %" PRIu32
-          " bytes), buffer size: %" PRIu32 ", preview boundary: %" PRIu32,
-          currentOffset, prevOffset, pageSize, totalSize, previewBoundary);
-
-    // Check if we're crossing the preview boundary while going backwards
-    bool crossingBoundaryBackwards = false;
-    if (previewBoundary > 0) {
-        // We consider it a backward crossing in ANY of these situations:
-        // 1. We're directly crossing a boundary (current >= boundary, prev < boundary)
-        // 2. We changed direction and are now before a boundary we've previously crossed
-        // 3. The lastCallWasPreview flag is set (meaning we were beyond a boundary but moved back)
-
-        if (currentOffset >= previewBoundary && prevOffset < previewBoundary) {
-            // Classic case: directly crossing from beyond boundary to before it
-            crossingBoundaryBackwards = true;
-            log_i("[BACKWARDS BOUNDARY CROSSED] Moving from %" PRIu32
-                  " (beyond boundary) to %" PRIu32 " (before boundary %" PRIu32 ")",
-                  currentOffset, prevOffset, previewBoundary);
-        } else if (justNavigatedForward_ == false &&     // We're in backward movement mode
-                   prevOffset < previewBoundary &&       // We're moving to position before boundary
-                   pageManager_->wasLastCallPreview()) { // Last API call was a preview
-            // This is the key case we were missing: we've previously crossed the boundary,
-            // gone back, and are now moving to another position before the boundary
-            crossingBoundaryBackwards = true;
-            log_i("[BACKWARDS BOUNDARY LOGIC] Moving backwards with lastCallWasPreview=true "
-                  "from %" PRIu32 " to %" PRIu32 " (before boundary %" PRIu32 ")",
-                  currentOffset, prevOffset, previewBoundary);
-        }
-    }
-
-    // If we're crossing a preview boundary going backwards, we need to sync with server
-    if (crossingBoundaryBackwards && !nextPageLoading_) {
-        log_i("[BACKWARDS SYNC] Need to call navigate-previous API to sync with server");
-
-        // Set this as our new place first so we have the right position
-        newPlace_ = prevPlace;
-
-        // Update current place and renderer state
-        turnPage();
-
-        // First render the page before syncing with server, so the user sees immediate feedback
-        uint8_t darkPicturePercent = 0;
-        std::tie(newPlace_, darkPicturePercent) = renderer_.renderPage(currentPlace_);
-        display_.updateDisplay(DisplaySystem::UpdateType::PARTIAL, true,
-                               display_.darkPictureVComAdj(darkPicturePercent));
-
-        // Call navigate-previous to sync with server, but without showing loading message
-        // Mark that we're loading a page to prevent duplicate requests
-        nextPageLoading_ = true;
-
-        // Use the page manager to navigate to previous page (with ocr=false for lightweight sync)
-        pageManager_->navigatePrevious(cancelFlag_, useBle_,
-                                       [this](bool success,
-                                              const std::shared_ptr<KindlePageResponse> &response,
-                                              const std::string &errorMessage) {
-            // Reset loading flag
-            nextPageLoading_ = false;
-
-            if (!success) {
-                // Just log the error, don't show to user since we've already rendered the page
-                log_i("Error syncing with server (navigate-previous): %s",
-                      errorMessage.empty() ? "Unknown error" : errorMessage.c_str());
-                return;
-            }
-
-            // Update metadata silently
-            currentPage_ = response->progress.currentPage;
-            totalPages_ = response->progress.totalPages;
-
-            log_i("API SYNC - Previous page: %d/%d (%d%%)", currentPage_, totalPages_,
-                  response->progress.percentage);
-        });
-
-        return;
-    }
-
-    // Set this as our new place
-    newPlace_ = prevPlace;
-
-    // Update current place and renderer state
-    turnPage();
-
-    // Render the content from the new position
-    uint8_t darkPicturePercent = 0;
-    std::tie(newPlace_, darkPicturePercent) = renderer_.renderPage(currentPlace_);
-
-    // Update the display
-    display_.updateDisplay(DisplaySystem::UpdateType::PARTIAL, true,
-                           display_.darkPictureVComAdj(darkPicturePercent));
-
-    log_i("Navigated to previous page within current buffer");
-}
-
-auto KindleReadableScreen::checkNearEndOfBuffer() -> bool {
-    if (!renderer_.getStream()) {
-        return true;
-    }
-
-    uint32_t currentOffset = 0;
-    if (renderer_.getCurrentPlace()) {
-        currentOffset = renderer_.getCurrentPlace()->getOffset();
-    }
-
-    uint32_t totalSize = renderer_.size();
-
-    // Calculate remaining bytes
-    uint32_t remainingBytes = (currentOffset < totalSize) ? (totalSize - currentOffset) : 0;
-
-    // Check if we're close to the end of the buffer
-    if (totalSize > 0 && remainingBytes < bufferThreshold_) {
-        log_i("Near end of buffer: remaining=%" PRIu32 " bytes", remainingBytes);
-        return true;
-    }
-
-    // For Kindle books, be careful about the EOF detection - we're ignoring the actual EOF flag
-    // and only checking the buffer size remaining, since the EOF flag is unreliable for streaming
-    // content
-    if (remainingBytes < bufferThreshold_) {
-        log_i("Near end of buffer: remaining=%" PRIu32 " bytes", remainingBytes);
-        return true;
-    }
-
-    return false;
-}
-
-void KindleReadableScreen::turnPage() {
-    if (atEnd_) {
-        // If at end, don't advance (similar to ReadableScreen)
-        log_i("At the end of content, not advancing page");
-        return;
-    }
-
-    // No need to reset any flags here with our new approach
-
-    // Save previous offset for logging
-    uint32_t prevOffset = 0;
-    if (currentPlace_) {
-        prevOffset = currentPlace_->getOffset();
-    }
-
-    // CRITICAL EARLY CHECK: Check if we're about to cross a boundary when turning the page
-    // This is done BEFORE we update currentPlace_
-    if (newPlace_ && pageManager_->getPreviewBoundary() > 0) {
-        uint32_t newOffset = newPlace_->getOffset();
-        uint32_t previewBoundary = pageManager_->getPreviewBoundary();
-
-        // Multiple ways to detect a boundary crossing:
-        // 1. Direct check if new position crosses boundary
-        bool willCrossDirect = (prevOffset < previewBoundary && newOffset >= previewBoundary);
-
-        // 2. Check if current position plus page size would cross the boundary
-        uint32_t pageSize =
-            lastRenderedPageSize_ > 0 ? lastRenderedPageSize_ : 400; // Default if unknown
-        bool willCrossBySize = (prevOffset + pageSize >= previewBoundary);
-
-        // 3. Check if next place would show content past the boundary
-        bool willShowContentPastBoundary = (newOffset >= previewBoundary);
-
-        // 4. CRITICAL FIX: Look ahead one more page to see if that would cross boundary
-        uint32_t nextNextOffset = 0;
-        bool nextPageWillCrossBoundary = false;
-
-        // Estimate the next page position by adding the page size to the new offset
-        // This gives us an approximate location of where we'd be after another page turn
-        nextNextOffset = newOffset + pageSize;
-
-        // Check if the estimated future position would cross boundary
-        nextPageWillCrossBoundary = (previewBoundary > 0 && nextNextOffset >= previewBoundary &&
-                                     newOffset < previewBoundary);
-
-        // Extra safety: if we're within one page size of the boundary, that's close enough to sync
-        if (previewBoundary > 0 && (previewBoundary - newOffset) <= pageSize) {
-            nextPageWillCrossBoundary = true;
-        }
-
-        log_i("[TURN PAGE ANALYSIS] prevOffset: %" PRIu32 ", newOffset: %" PRIu32
-              ", nextNextOffset: %" PRIu32 ", boundary: %" PRIu32 ", pageSize: %" PRIu32
-              ", willCrossDirect: %d, willCrossBySize: %d, willShowPastBoundary: %d, "
-              "nextPageWillCross: %d",
-              prevOffset, newOffset, nextNextOffset, previewBoundary, pageSize, willCrossDirect,
-              willCrossBySize, willShowContentPastBoundary, nextPageWillCrossBoundary);
-
-        // If ANY method indicates boundary crossing, mark for sync
-        if (willCrossDirect || willCrossBySize || nextPageWillCrossBoundary ||
-            (willShowContentPastBoundary && prevOffset < previewBoundary)) {
-            log_i("[TURN PAGE CRITICAL] Turn WILL cross preview boundary - pre-emptively marking "
-                  "for sync");
-            // The KindlePageManager will track whether we need to sync
-
-            // If this is not after a preview and we're not already loading, sync immediately
-            if (!pageManager_->wasLastCallPreview() && !nextPageLoading_) {
-                log_i("[TURN PAGE BOUNDARY FIX] Must sync immediately before completing turn");
-
-                // Important: Keep current position before sync
-                uint32_t currentPos = prevOffset;
-
-                // Sync with server
-                syncWithServer();
-
-                // Don't continue with the turn if we've already synced
-                if (currentPos < previewBoundary) {
-                    log_i("[TURN PAGE BOUNDARY FIX] Already synced, can continue with turn");
-                    // We can continue with the turn because we've already synced
-                } else {
-                    // No need to continue with the turn, nextPageLoading_ was already set
-                    return;
-                }
-            }
-            // CRITICAL FIX: Handle the case where we need to sync even after a preview
-            // This fixes the scenario where we detect the page after the next will cross boundary
-            else if (pageManager_->wasLastCallPreview() && nextPageWillCrossBoundary &&
-                     !nextPageLoading_) {
-                // Calculate distance to boundary in pages
-                int32_t distanceToBoundary = previewBoundary - newOffset;
-                int32_t pagesToBoundary =
-                    distanceToBoundary > 0 ? (distanceToBoundary + pageSize - 1) / pageSize : 0;
-
-                // FIXED: Never force sync here - we only want to force sync if we've ACTUALLY
-                // crossed the boundary We'll just mark for sync instead, and it'll happen after the
-                // user sees content
-                log_i("[TURN PAGE DECISION] Marking for sync but not forcing it - %" PRId32
-                      " pages from boundary",
-                      pagesToBoundary);
-                // No need to set a flag now, we'll check with pageManager_ when needed
-
-                // Log what we're doing differently
-                if (pagesToBoundary <= 1) {
-                    log_i("[TURN PAGE IMPROVEMENT] Previously would have forced sync when %" PRId32
-                          " pages from boundary,"
-                          " now allowing page turn to complete first",
-                          pagesToBoundary);
-                }
-            }
-        }
-    }
-
-    // Save current place
-    if (newPlace_) {
-        // Update the current place with the new place
-        currentPlace_ = newPlace_;
-        // Set the renderer's current place to the new place
-        renderer_.setCurrentPlace(currentPlace_);
-
-        // Get basic info for logging
-        uint32_t newOffset = currentPlace_->getOffset();
-
-        // Calculate and store the page size
-        lastRenderedPageSize_ = (newOffset > prevOffset) ? (newOffset - prevOffset) : 0;
-
-        // Log basic page turn information including boundary status
-        log_i("[TURN PAGE] Turned page: offset %" PRIu32 " -> %" PRIu32 ", page size: %" PRIu32
-              " bytes, preview boundary: %" PRIu32,
-              prevOffset, newOffset, lastRenderedPageSize_, pageManager_->getPreviewBoundary());
-
-        // Add detailed WARNING logs to visualize proximity to boundary and decision logic
-        uint32_t previewBoundary = pageManager_->getPreviewBoundary();
-        if (previewBoundary > 0) {
-            int32_t distanceToBoundary = previewBoundary - newOffset;
-            int32_t pagesToBoundary =
-                distanceToBoundary > 0
-                    ? (distanceToBoundary + lastRenderedPageSize_ - 1) / lastRenderedPageSize_
-                    : 0;
-
-            // CRITICAL: Show how close we are to the boundary and why we would call /navigate-next
-            log_w("[BOUNDARY PROXIMITY] Current offset: %" PRIu32 ", boundary: %" PRIu32
-                  ", distance: %" PRId32 " bytes (~%" PRId32 " pages), lastCallWasPreview: %d",
-                  newOffset, previewBoundary, distanceToBoundary, pagesToBoundary,
-                  pageManager_->wasLastCallPreview());
-
-            // Show next page prediction
-            uint32_t nextTurnOffset = newOffset + lastRenderedPageSize_;
-            bool wouldCrossNextTurn = nextTurnOffset >= previewBoundary;
-            bool needsNavigate = pageManager_->needsNavigateCall(newOffset);
-            log_w("[BOUNDARY PREDICTION] Next turn would reach: %" PRIu32 " (boundary: %" PRIu32
-                  "), "
-                  "would cross boundary: %d, needs sync: %d",
-                  nextTurnOffset, previewBoundary, wouldCrossNextTurn, needsNavigate);
-
-            // Critical decision rule explanation
-            if (needsNavigate) {
-                log_w("[BOUNDARY DECISION] Need to call /navigate-next before any more "
-                      "/preview-next calls");
-            } else if (wouldCrossNextTurn) {
-                log_w("[BOUNDARY DECISION] Next turn would cross boundary, should call "
-                      "/navigate-next now");
-            } else if (pagesToBoundary <= 2) {
-                log_w("[BOUNDARY DECISION] Very close to boundary (%" PRId32
-                      " pages), consider calling /navigate-next",
-                      pagesToBoundary);
-            }
-        }
-
-        // Double-check if we've crossed a boundary now that we've updated our position
-        if (previewBoundary > 0 && newOffset >= previewBoundary && prevOffset < previewBoundary) {
-            log_i("[TURN PAGE] Just crossed preview boundary at %" PRIu32
-                  " during this turn! (lastCallWasPreview_=%d)",
-                  previewBoundary, pageManager_->wasLastCallPreview());
-
-            // CRITICAL CHANGE: If we've ACTUALLY crossed the boundary during this turn,
-            // we MUST sync with the server regardless of lastCallWasPreview_
-            if (!nextPageLoading_) {
-                log_i("[BOUNDARY CRITICAL OVERRIDE] Just crossed boundary during turn - MUST sync "
-                      "now");
-
-                // This is a special case where we MUST potentially break alternation
-                // to maintain server sync when we've definitely crossed a boundary
-                syncWithServer();
-                return;
-            } else {
-                // If we're already loading, just log the situation
-                log_i("[BOUNDARY OVERRIDE] Loading in progress, will need future sync");
-            }
-        }
-    } else {
-        // This shouldn't happen, but handle it gracefully
-        currentPlace_ = renderer_.getCurrentPlace();
-        uint32_t newOffset = currentPlace_ ? currentPlace_->getOffset() : 0;
-        log_i("[TURN PAGE] No new place available, using current position: %" PRIu32
-              ", preview boundary: %" PRIu32,
-              newOffset, pageManager_->getPreviewBoundary());
-    }
-
-    // Check if we're at the end - for Kindle books we respect EOF only when we really want to
-    // (the renderer is configured to ignore EOF during initialization)
-    atEnd_ = renderer_.shouldRespectEOF();
-
-    // Only log if we've reached the end
-    if (atEnd_) {
-        log_i("Reached end of content");
-    }
-}
-
-// This method is no longer needed since we handle the response directly in each method
-
-void KindleReadableScreen::clearScreenForContent() {
-    // Clear any message views
-    loadingMessageView_.setText("");
-    errorMessageView_.setText("");
-
-    // Set frame and layout for rendering
-    setFrame(defaultFrameRect());
-    setNeedsLayout();
-
-    // First clear the display
-    display_.clearDisplay();
-
-    // Draw a clean background
-    draw();
-
-    log_i("Screen cleared for rendering Kindle content");
-}
-
 void KindleReadableScreen::disconnectNetworkConnections() {
     // Cancel any ongoing network operations
     if (cancelFlag_) {
@@ -2198,194 +427,40 @@ void KindleReadableScreen::disconnectNetworkConnections() {
 #endif
 }
 
-void KindleReadableScreen::dismissScreen() {
-    if (dismissed_) {
-        log_i("KindleReadableScreen already dismissed, ignoring dismissScreen call");
+void KindleReadableScreen::navigateNext() {
+    // Transition to loading state if we're showing partial content
+    if (state_ == State::DISPLAY_PARTIAL_CONTENT) {
+        setState(State::LOADING_CONTENT);
+        loadingMessageView_.setText("Loading next page...");
+        setNeedsLayout();
+        setNeedsRerender();
         return;
     }
 
-    log_i("KindleReadableScreen being dismissed");
-    dismissed_ = true;
-
-    // Cancel any pending auto-dismiss task
-    if (autoDismissCancelFlag_) {
-        log_i("Cancelling pending auto-dismiss task");
-        CancelFlag::cancel(autoDismissCancelFlag_);
-        autoDismissCancelFlag_ = nullptr;
-    }
-
-    // Cancel any pending delayed message
-    cancelDelayedLoadingMessage();
-
-    // Disconnect network connections - already has defensive error handling
-    disconnectNetworkConnections();
-
-    // Clear any ongoing state
-    state_ = State::IDLE;
-    currentPage_ = 0;
-    totalPages_ = 0;
-    currentPageText_.clear();
-    currentPageImageUrl_.clear();
-
-    // Clear message views
-    loadingMessageView_.setText("");
-    errorMessageView_.setText("");
-    showLoadingWithRoundedRect_ = false;
+    currentPlace_ = newPlace_;
+    updateType_ = prefs_.fastTransitions.get().value_or(false) ? DisplaySystem::UpdateType::PARTIAL
+                                                               : DisplaySystem::UpdateType::FULL;
     setNeedsRerender();
+}
 
-    // Reset renderer safely without exceptions
-    // Check if the tokenizer is initialized before trying to reset it
-    if (renderer_.getStream()) {
-        // Reset the renderer's ignore EOF setting
-        renderer_.setIgnoreEOF(false);
+void KindleReadableScreen::navigatePrevious() {
+    currentPlace_ = renderer_.getPreviousPlace();
+    updateType_ = prefs_.fastTransitions.get().value_or(false) ? DisplaySystem::UpdateType::PARTIAL
+                                                               : DisplaySystem::UpdateType::FULL;
+    setNeedsRerender();
+}
 
-        // Create an empty string for the stream
-        std::string emptyStr;
-        auto emptyStream = std::make_shared<StdStringStream>(emptyStr, DocType::TXT);
-
-        // Set the stream - if this fails, we just continue
-        // We don't use try/catch since exceptions are disabled
-        renderer_.setStream(emptyStream);
-        log_i("Reset renderer stream to empty");
-    }
-
-    // Always attempt to go back to the previous screen, even if there were errors
+void KindleReadableScreen::dismissScreen() {
+    log_d("Dismissing KindleReadableScreen");
+    CancelFlag::cancel(cancelFlag_);
+    cancelDelayedLoadingMessage();
+    disconnectNetworkConnections();
     back();
 }
 
-auto KindleReadableScreen::layout(LayoutContext &context, SolSize size) -> SolSize {
-    // For non-content states, center the message views
-    if (state_ != State::DISPLAY_CONTENT) {
-        // log_d("Layouting KindleReadableScreen in non-content state");
-        const auto inset = 2;
-        auto contentFrame = SolRect::fromSize(size).inset(inset);
-
-        // Center the message views vertically and horizontally
-        if (state_ == State::ERROR) {
-            context.setViewFrame(errorMessageView_, contentFrame,
-                                 LayoutOptionsSizeToFit | LayoutOptionsAlignCenter |
-                                     LayoutOptionsAlignCenterVertical);
-        } else {
-            // Position the main loading message in the center
-            context.setViewFrame(loadingMessageView_, contentFrame,
-                                 LayoutOptionsSizeToFit | LayoutOptionsAlignCenter |
-                                     LayoutOptionsAlignCenterVertical);
-
-            // Position the delayed message below the main message if it's visible
-            if (!delayedMessageView_.isHidden()) {
-                // Place the delayed message in the same content frame
-                // but offset it towards the bottom half
-                SolRect delayedFrame = contentFrame;
-                // Just use a fixed position in the lower portion of the screen
-                context.setViewFrame(delayedMessageView_, delayedFrame,
-                                     LayoutOptionsSizeToFit | LayoutOptionsAlignCenter |
-                                         LayoutOptionsAlignBottom);
-            }
-        }
-    } else {
-        // log_d("Layouting KindleReadableScreen in content state");
-    }
-
-    return size;
-}
-
-void KindleReadableScreen::drawInRect(SolRect rect) {
-    // For non-content states, draw the appropriate message view
-    if (state_ != State::DISPLAY_CONTENT) {
-        switch (state_) {
-        case State::CONNECTING:
-        case State::LOADING_CONTENT:
-            // If we're showing the rounded rect for loading
-            if (showLoadingWithRoundedRect_ && !loadingMessageView_.isHidden()) {
-                // Calculate the bounds of the loading message text
-                int maxWidth = 0;
-                const auto &text = loadingMessageView_.getText();
-                if (!text.empty()) {
-                    maxWidth = display_.getTextWidth(text, loadingMessageView_.getFont());
-                }
-
-                // Add padding around the text
-                const int padding = 12;
-                int lineHeight = loadingMessageView_.getFont()->lineHeight();
-
-                // Get the position from the parent's layout context
-                SolRect screenRect = layoutContext_.screenFrame();
-
-                // Calculate perfect center position in the screen
-                int centerY = screenRect.origin.y + screenRect.size.height / 2;
-
-                // Create rectangle for the background with enough padding for good looks
-                SolRect bgRect = SolRect::zero();
-                if (loadingMessageView_.alignCenter) {
-                    bgRect.origin.x =
-                        screenRect.origin.x + (screenRect.size.width - maxWidth) / 2 - padding;
-                    bgRect.size.width = maxWidth + padding * 2;
-                } else {
-                    bgRect.origin.x = screenRect.origin.x - padding;
-                    bgRect.size.width = maxWidth + padding * 2;
-                }
-
-                // Make sure we have enough vertical space in the rectangle
-                // (lineHeight + padding on top and bottom)
-                bgRect.size.height = lineHeight + padding * 2;
-
-                // Position background rect vertically centered on the screen
-                bgRect.origin.y = centerY - bgRect.size.height / 2;
-
-                // Add debug logging to help diagnose centering issues
-                log_i("Loading text: '%s', text width: %d, bgRect: x=%d, y=%d, w=%d, h=%d",
-                      loadingMessageView_.getText().c_str(), maxWidth, bgRect.origin.x,
-                      bgRect.origin.y, bgRect.size.width, bgRect.size.height);
-
-                // Create a completely new approach - set frame to the size of the rect
-                SolRect loadingFrame = bgRect;
-
-                // Ensure alignment is centered
-                loadingMessageView_.alignCenter = true;
-
-                // Reposition the loading message view to be exactly centered in the rect
-                loadingMessageView_.setFrame(loadingFrame);
-
-                // Draw filled rounded rectangle with a white fill and black outline
-                // First fill with white background
-                display_.fillRoundRect(bgRect.origin.x, bgRect.origin.y, bgRect.size.width,
-                                       bgRect.size.height, 10,
-                                       display_.bg); // Corner radius 10, white background
-
-                // Then draw black outline
-                display_.drawRoundRect(bgRect.origin.x, bgRect.origin.y, bgRect.size.width,
-                                       bgRect.size.height, 10,
-                                       display_.fg); // Corner radius 10, black outline
-
-                // Draw the loading message with normal colors (black text on white background)
-                loadingMessageView_.draw();
-            } else {
-                // Draw normally without rounded rect
-                loadingMessageView_.draw();
-            }
-
-            // Also draw the delayed message if it's visible
-            if (!delayedMessageView_.isHidden()) {
-                delayedMessageView_.draw();
-            }
-            break;
-
-        case State::ERROR:
-            errorMessageView_.draw();
-            break;
-
-        default:
-            break;
-        }
-    }
-}
-
 void KindleReadableScreen::showPopupMenu() {
-    if (currentScreen_ == popupMenuScreen_) {
-        return;
-    }
-
     // Create a readable-like object for the popup menu to use
+    // TODO(john): Don't we already do this?
     auto readablePlaceholder = std::make_shared<Readable>();
     readablePlaceholder->title = kindleBook_->title;
 
@@ -2407,36 +482,31 @@ void KindleReadableScreen::scheduleDelayedLoadingMessage() {
 
     // Create a new cancel flag for this delayed message
     delayedMessageCancelFlag_ = std::make_shared<CancelFlag>();
-
     // Capture a copy of the flag for the lambda
-    std::shared_ptr<CancelFlag> localFlag = delayedMessageCancelFlag_;
+    auto localFlag = delayedMessageCancelFlag_;
 
-    // Schedule a message to appear after 10 seconds if content is still loading
+    // TODO(john): Timers would be better here. Maybe we could make a DispatchAfter method
     DispatchGetCore0BackgroundQueue()->dispatch([this, localFlag]() {
         // Wait for 5 seconds
         vTaskDelay(pdMS_TO_TICKS(5 * 1000));
 
         // Check if the task was cancelled
-        if (!localFlag || CancelFlag::isCancelled(localFlag)) {
-            log_i("Delayed loading message was cancelled");
+        if (CancelFlag::isCancelled(localFlag)) {
             return;
         }
 
         // Display the message on the UI thread
         DispatchGetUiQueue()->dispatch([this]() {
-            if (dismissed_ || state_ != State::LOADING_CONTENT) {
+            if (state_ != State::LOADING_CONTENT) {
                 return; // Don't show if we're no longer loading or screen was dismissed
             }
 
             // Set and show the delayed message
             delayedMessageView_.setText("This can take up to 30 seconds.");
             delayedMessageView_.setHidden(false);
-
-            // Call setNeedsLayout to recalculate positions of all views
             setNeedsLayout();
 
-            display_.clearDisplay();
-            delayedMessageView_.draw();
+            // Call setNeedsLayout to recalculate positions of all views
             draw();
             display_.updateDisplay(DisplaySystem::UpdateType::PARTIAL, true);
 
@@ -2446,374 +516,11 @@ void KindleReadableScreen::scheduleDelayedLoadingMessage() {
 }
 
 void KindleReadableScreen::cancelDelayedLoadingMessage() {
-    // Cancel any pending delayed message
-    if (delayedMessageCancelFlag_) {
-        CancelFlag::cancel(delayedMessageCancelFlag_);
-        delayedMessageCancelFlag_ = nullptr;
-
-        // Hide the delayed message view if it's visible
-        if (!delayedMessageView_.isHidden()) {
-            delayedMessageView_.setHidden(true);
-            log_i("Cancelled and hid delayed loading message");
-        }
-    }
-
-    // Reset the rounded rect flag when canceling messages
-    showLoadingWithRoundedRect_ = false;
-}
-
-void KindleReadableScreen::loadNextContent() {
-    // Only load more if we're below buffer threshold
-    if (!checkNearEndOfBuffer()) {
+    if (delayedMessageCancelFlag_ == nullptr ||
+        CancelFlag::isCancelled(delayedMessageCancelFlag_)) {
         return;
     }
 
-    // Get current position and estimate page end
-    uint32_t currentOffset = currentPlace_ ? currentPlace_->getOffset() : 0;
-    uint32_t totalSize = renderer_.size();
-    uint32_t remainingBytes = (currentOffset < totalSize) ? (totalSize - currentOffset) : 0;
-    uint32_t pageEndOffset = 0;
-
-    if (newPlace_ && newPlace_->getOffset() > currentOffset) {
-        pageEndOffset = newPlace_->getOffset() - 1;
-    } else {
-        // If no newPlace_ available, estimate from last page size
-        pageEndOffset = currentOffset + (lastRenderedPageSize_ > 0 ? lastRenderedPageSize_ : 400);
-    }
-
-    // Check if we've already seen and cached the content ahead (means we previously went forward,
-    // then backward, and now forward again)
-    bool alreadyHavePageAhead = false;
-    uint32_t previewBoundary = pageManager_->getPreviewBoundary();
-    uint32_t distanceToBoundary = 0;
-
-    // Case 1: We're before the boundary but have content beyond it
-    if (previewBoundary > 0 && currentOffset < previewBoundary) {
-        distanceToBoundary = previewBoundary - currentOffset;
-
-        // If we have sufficient content ahead (at least 2 pages worth)
-        if (previewBoundary < totalSize && remainingBytes > bufferThreshold_ &&
-            remainingBytes > distanceToBoundary) {
-
-            // We're before the preview boundary but have content beyond it
-            alreadyHavePageAhead = true;
-            log_i("[LOAD CONTENT] Already have content ahead (%" PRIu32
-                  " bytes after boundary %" PRIu32 "), at least %" PRIu32 " bytes remaining",
-                  totalSize - previewBoundary, previewBoundary, remainingBytes);
-        }
-    }
-
-    // Case 2: We're near the end of the buffer and need to load more
-    bool nearEndOfBuffer = remainingBytes < bufferThreshold_;
-
-    // Use the page manager to decide what to load next, considering page end
-    if (alreadyHavePageAhead && !nearEndOfBuffer) {
-        // We already have the content ahead, no need to make an API call
-        log_i("[LOAD CONTENT] Using existing content already in buffer (%" PRIu32 " bytes ahead)",
-              remainingBytes);
-        // No need to do anything, just continue with local navigation
-    } else if (nearEndOfBuffer) {
-        // We're genuinely near the end of the buffer and need more content
-
-        // Check if we need to sync first (alternation pattern)
-        if (pageManager_->needsNavigateCall(currentOffset, pageEndOffset)) {
-            // We need to sync with the server
-            log_i("[LOAD CONTENT] Near end of buffer and need sync (current pos: %" PRIu32
-                  ", end: %" PRIu32 ")",
-                  currentOffset, pageEndOffset);
-            syncWithServer();
-        } else {
-            // Load the next preview
-            log_i("[LOAD CONTENT] Near end of buffer, fetching next preview");
-            loadNextKindlePreview();
-        }
-    } else {
-        // We're in an ambiguous state - follow the regular decision pattern
-        if (pageManager_->needsNavigateCall(currentOffset, pageEndOffset)) {
-            // We need to sync with the server
-            log_i("[LOAD CONTENT] Need server sync (current pos: %" PRIu32 ", page end: %" PRIu32
-                  ")",
-                  currentOffset, pageEndOffset);
-            syncWithServer();
-        } else {
-            // Load the next preview
-            log_i("[LOAD CONTENT] Fetching next preview");
-            loadNextKindlePreview();
-        }
-    }
+    CancelFlag::cancel(delayedMessageCancelFlag_);
+    delayedMessageCancelFlag_ = nullptr;
 }
-
-void KindleReadableScreen::syncWithServer() {
-    // Only initiate one navigate request at a time
-    if (nextPageLoading_) {
-        log_i("Already syncing with server, skipping duplicate request");
-        return;
-    }
-
-    uint32_t currentOffset = currentPlace_ ? currentPlace_->getOffset() : 0;
-
-    log_i("[SYNC] Starting server sync - current position: %" PRIu32, currentOffset);
-
-    nextPageLoading_ = true;
-
-    // Create a cancel flag if needed
-    if (!cancelFlag_) {
-        cancelFlag_ = std::make_shared<CancelFlag>();
-    }
-
-    // Use the page manager to sync with the server
-    pageManager_->syncWithServer(cancelFlag_, useBle_,
-                                 [this](bool success,
-                                        const std::shared_ptr<KindlePageResponse> &response,
-                                        const std::string &errorMessage) {
-        nextPageLoading_ = false;
-
-        if (!success) {
-            log_w("[SYNC ERROR] Failed to sync server state: %s", errorMessage.c_str());
-            return;
-        }
-
-        log_i("[SYNC SUCCESS] Server sync completed successfully");
-
-        // Check if we need to proactively load more content due to short pages
-        uint32_t currentOffset = currentPlace_ ? currentPlace_->getOffset() : 0;
-        uint32_t totalSize = renderer_.size();
-        uint32_t remainingBytes = (currentOffset < totalSize) ? (totalSize - currentOffset) : 0;
-
-        // Update current page information
-        if (response) {
-            currentPage_ = response->progress.currentPage;
-            totalPages_ = response->progress.totalPages;
-            currentPageImageUrl_ = response->screenshotUrl;
-
-            log_i("Updated book progress: page %d/%d (%d%%)", currentPage_, totalPages_,
-                  response->progress.percentage);
-        }
-
-        // Check if we have boundaries ahead that indicate more content
-        bool hasBoundariesAhead = false;
-        uint32_t boundary = pageManager_->getPreviewBoundary();
-        if (boundary > currentOffset) {
-            hasBoundariesAhead = true;
-        }
-
-        // Log detailed buffer state for debugging
-        std::string boundaryList;
-        if (boundary > 0) {
-            boundaryList = std::to_string(boundary);
-        }
-
-        if (hasBoundariesAhead) {
-            // We have boundaries ahead, so we already have content - no need to load more
-            log_i(
-                "[AFTER SYNC] Skipping preview load - we have boundaries ahead with content: [%s]",
-                boundaryList.c_str());
-        }
-        // Only load more if we're critically low on buffer space AND don't have boundaries ahead
-        else if (remainingBytes < bufferThreshold_ / 2) {
-            log_i(
-                "[AFTER SYNC] Low buffer after sync and no boundaries ahead, loading more content");
-            // Small delay to ensure server state is fully processed
-            DispatchGetUiQueue()->dispatch([this]() {
-                if (!dismissed_) {
-                    // Small delay to avoid immediate execution
-                    vTaskDelay(pdMS_TO_TICKS(100));
-                    // Load the next preview
-                    loadNextKindlePreview();
-                }
-            });
-        } else {
-            // We have enough buffer and no boundaries, we might want to load more eventually but
-            // not now
-            log_i("[AFTER SYNC] Sufficient buffer (%" PRIu32
-                  " bytes remaining) and no boundaries ahead [%s]",
-                  remainingBytes, boundaryList.c_str());
-
-            // Only load if we're far enough from having full pages
-            if (remainingBytes < bufferThreshold_ * 0.75) {
-                // After navigation, we can queue up the next preview with a short delay
-                DispatchGetUiQueue()->dispatch([this]() {
-                    if (!dismissed_) {
-                        // Short delay to ensure server state is fully processed
-                        vTaskDelay(pdMS_TO_TICKS(50));
-
-                        // Double-check boundaries again after the delay
-                        uint32_t currentPos = currentPlace_ ? currentPlace_->getOffset() : 0;
-                        bool stillNoBoundariesAhead = true;
-
-                        for (uint32_t boundary : pageManager_->getPreviewBoundaries()) {
-                            if (boundary > currentPos) {
-                                stillNoBoundariesAhead = false;
-                                break;
-                            }
-                        }
-
-                        if (stillNoBoundariesAhead) {
-                            log_i("[AFTER SYNC DELAY] Loading preview - still no boundaries ahead");
-                            // Load the next preview
-                            loadNextKindlePreview();
-                        } else {
-                            log_i("[AFTER SYNC DELAY] Skipping preview - found boundaries ahead");
-                        }
-                    }
-                });
-            }
-        }
-    });
-}
-
-// --- Add the new method definition here ---
-void KindleReadableScreen::logPageContext(uint32_t offsetBeforeTurn, uint32_t offsetAfterTurn) {
-    if (currentPlace_ && renderer_.getStream()) {
-        auto stream = renderer_.getStream();
-        size_t streamSize = stream->size();
-        if (streamSize > 0) {
-            std::string currentPageContent;
-            std::string previewContent;
-            std::string beforeBoundaryContent;
-            std::string afterBoundaryContent;
-
-            // Skip any complex scanning - simple logging is sufficient
-
-            // Read current page content
-            size_t readStart = offsetBeforeTurn;
-            size_t readEnd = std::min(static_cast<size_t>(offsetAfterTurn),
-                                      streamSize); // Read up to the end of the turned page
-            if (readEnd > readStart) {
-                currentPageContent.resize(readEnd - readStart);
-                stream->seek(readStart);
-                stream->readBytes(reinterpret_cast<uint8_t *>(currentPageContent.data()),
-                                  readEnd - readStart);
-            }
-
-            // Read start of preview content if boundary exists
-            uint32_t previewBoundary = pageManager_->getPreviewBoundary();
-            if (previewBoundary > 0 && previewBoundary < streamSize) {
-                // Read content right before the boundary (50 bytes max)
-                size_t beforeStart = previewBoundary > 50 ? previewBoundary - 50 : 0;
-                size_t beforeSize = previewBoundary - beforeStart;
-                beforeBoundaryContent.resize(beforeSize);
-                stream->seek(beforeStart);
-                stream->readBytes(reinterpret_cast<uint8_t *>(beforeBoundaryContent.data()),
-                                  beforeSize);
-
-                // Read content right after the boundary (200 bytes max)
-                size_t afterStart = previewBoundary;
-                size_t afterEnd = std::min(streamSize, afterStart + 200);
-                size_t afterSize = afterEnd - afterStart;
-                afterBoundaryContent.resize(afterSize);
-                stream->seek(afterStart);
-                stream->readBytes(reinterpret_cast<uint8_t *>(afterBoundaryContent.data()),
-                                  afterSize);
-
-                // Extract the first line number from the boundary content
-                std::istringstream boundaryStream(afterBoundaryContent);
-                std::string boundaryWord;
-                std::string firstLineNumber;
-
-                while (boundaryStream >> boundaryWord) {
-                    if (std::all_of(boundaryWord.begin(), boundaryWord.end(), ::isdigit) &&
-                        boundaryWord.length() < 5) {
-                        firstLineNumber = boundaryWord;
-                        break;
-                    }
-                }
-
-                if (!firstLineNumber.empty()) {
-                    log_i("[BOUNDARY LINE NUMBER] First line number at preview boundary (%" PRIu32
-                          "): %s",
-                          previewBoundary, firstLineNumber.c_str());
-                }
-
-                // Also read more content for display (same as before)
-                previewContent = afterBoundaryContent;
-            }
-
-            // Count exact newlines in the current page content
-            int newlineCount = 0;
-            for (char c : currentPageContent) {
-                if (c == '\n') {
-                    newlineCount++;
-                }
-            }
-
-            // Examine line numbers at the start and end of page
-            std::string startLineNumber, endLineNumber;
-            std::istringstream startStream(GetNWords(currentPageContent, 15, true));
-            std::istringstream endStream(GetNWords(currentPageContent, 15, false));
-            std::string word;
-
-            // Extract potential line numbers from start
-            while (startStream >> word) {
-                if (std::all_of(word.begin(), word.end(), ::isdigit)) {
-                    startLineNumber = word;
-                    break;
-                }
-            }
-
-            // Extract potential line numbers from end
-            while (endStream >> word) {
-                if (std::all_of(word.begin(), word.end(), ::isdigit)) {
-                    endLineNumber = word;
-                    break;
-                }
-            }
-
-            // Log byte-level details for current page
-            log_i("[TEXT DEBUG] Page content: %" PRIu32 " -> %" PRIu32 " (%" PRIu32
-                  " bytes, ~%d newlines)",
-                  offsetBeforeTurn, offsetAfterTurn, offsetAfterTurn - offsetBeforeTurn,
-                  newlineCount);
-
-            // Log line numbers if found
-            if (!startLineNumber.empty() || !endLineNumber.empty()) {
-                log_i("[TEXT DEBUG] Detected line numbers: start~%s, end~%s",
-                      startLineNumber.c_str(), endLineNumber.c_str());
-            }
-
-            // Log content snippets
-            log_i("[TEXT DEBUG] Page Start (Offset %" PRIu32 "): '%s...'", offsetBeforeTurn,
-                  GetNWords(currentPageContent, 10, true).c_str());
-            log_i("[TEXT DEBUG] Page End   (Offset %" PRIu32 "): '...%s'", offsetAfterTurn,
-                  GetNWords(currentPageContent, 10, false).c_str());
-
-            // Log boundary information if available
-            if (previewBoundary > 0) {
-                // Log distance information
-                uint32_t distanceToBoundary = 0;
-                if (offsetAfterTurn < previewBoundary) {
-                    distanceToBoundary = previewBoundary - offsetAfterTurn;
-                    log_i("[TEXT DEBUG] Distance to boundary: %" PRIu32
-                          " bytes after current page end",
-                          distanceToBoundary);
-                } else {
-                    distanceToBoundary = offsetAfterTurn - previewBoundary;
-                    log_i("[TEXT DEBUG] Current page extends %" PRIu32 " bytes beyond boundary",
-                          distanceToBoundary);
-                }
-
-                // Log content around boundary
-                log_i("[TEXT DEBUG] Content BEFORE boundary (%" PRIu32 "): '...%s'",
-                      previewBoundary, GetNWords(beforeBoundaryContent, 10, false).c_str());
-                log_i("[TEXT DEBUG] Content AFTER boundary (%" PRIu32 "): '%s...'", previewBoundary,
-                      GetNWords(afterBoundaryContent, 10, true).c_str());
-
-                // Check for specific characters at boundary
-                if (!afterBoundaryContent.empty()) {
-                    log_i("[TEXT DEBUG] First 10 bytes after boundary: ");
-                    for (int i = 0;
-                         i < std::min(static_cast<size_t>(10), afterBoundaryContent.size()); i++) {
-                        char c = afterBoundaryContent[i];
-                        log_i("  Byte %d: '%c' (ASCII %d)", i, (c >= 32 && c < 127) ? c : '.',
-                              static_cast<int>(c) & 0xFF);
-                    }
-                }
-            }
-        }
-        // Restore stream position (important!)
-        stream->seek(offsetAfterTurn);
-    }
-}
-
-// Removed complex buffer scanning method as it's not appropriate for normal EPUBs
-// --- End of new method definition ---

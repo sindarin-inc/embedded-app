@@ -30,7 +30,7 @@ struct KindlePageProgress {
 struct KindlePageResponse : public JsonSerializable {
     bool success = false;
     KindlePageProgress progress;
-    std::string ocrText;
+    SpiramString ocrText;
     std::string screenshotUrl;
     float timeTaken = 0.0f;
 

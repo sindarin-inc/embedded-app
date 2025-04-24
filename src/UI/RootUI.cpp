@@ -750,7 +750,6 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                 [this, book, &fileSystem, &lightingController, &localStore]() {
                 // Create a new KindleReadableScreen for the selected book
                 auto kindleReadableScreen = std::make_shared<KindleReadableScreen>(
-                    nullptr, // stream will be created by the screen
                     display_, std::make_shared<KindleBook>(book), prefs_, telemetry_, fileSystem,
                     lightingController, localStore,
                     FontFromPrefs(prefs_.font.get().value_or(PREFS_SOL_SMALL)));
@@ -758,6 +757,7 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                 // Push the screen and set up back callback
                 this->pushScreen(kindleReadableScreen);
                 kindleReadableScreen->setBackCallback([this]() { this->popScreen(); });
+                kindleReadableScreen->begin();
                 },
                 archived));
         }

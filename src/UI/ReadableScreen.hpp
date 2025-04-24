@@ -63,7 +63,7 @@ public:
         return renderer_.getStreamPlace(readable_->place);
     }
 
-    auto getStream() { return stream_; }
+    auto getStream() -> std::shared_ptr<RendererStream> { return stream_; }
 
 protected:
     void setCurrentScreen(const std::shared_ptr<Screen> &screen);
