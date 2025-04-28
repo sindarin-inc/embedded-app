@@ -33,17 +33,17 @@ KindleReadableScreen::KindleReadableScreen(DisplaySystem &display,
         if (CancelFlag::isCancelled(cancelFlag)) {
             return;
         }
-        if (state_ == State::LOADING_CONTENT || state_ == State::DISPLAY_PARTIAL_CONTENT) {
-            DispatchGetUiQueue()->dispatch([this, cancelFlag]() {
-                if (CancelFlag::isCancelled(cancelFlag)) {
-                    return;
-                }
+        DispatchGetUiQueue()->dispatch([this, cancelFlag]() {
+            if (CancelFlag::isCancelled(cancelFlag)) {
+                return;
+            }
+            if (state_ == State::LOADING_CONTENT || state_ == State::DISPLAY_PARTIAL_CONTENT) {
                 setState(State::DISPLAY_CONTENT);
                 setNeedsLayout();
                 setNeedsRerender();
                 render(display_);
-            });
-        }
+            }
+        });
     });
 
     pageFlipper_.setOnErrorFunction([this, cancelFlag](const std::string &error) {
