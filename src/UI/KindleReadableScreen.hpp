@@ -91,5 +91,6 @@ private:
 
     auto stateToString(State state) -> const char *;
     void showPopupMenu();
-    void setCurrentScreen(std::shared_ptr<Screen> screen) { currentScreen_ = std::move(screen); }
+    void setCurrentScreen(const std::shared_ptr<Screen> &screen);
+    auto getCurrentScreen() -> std::shared_ptr<Screen> { return currentScreen_; }
 };

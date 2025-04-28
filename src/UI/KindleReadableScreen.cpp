@@ -5,6 +5,7 @@
 #endif
 #include "Communications/SindarinAPI.hpp"
 #include "Communications/WiFi.hpp"
+#include "Menu/ReadingSettingsMenuScreen.hpp"
 #include "Models/Readable.hpp"
 #include "UI/Fonts/Fonts.hpp"
 #include "UI/Menu/MenuItemSingleLine.hpp"
@@ -86,14 +87,149 @@ KindleReadableScreen::KindleReadableScreen(DisplaySystem &display,
         std::shared_ptr<std::vector<std::shared_ptr<MenuItem>>> menuItems =
             std::make_shared<std::vector<std::shared_ptr<MenuItem>>>();
 
+        menuItems->emplace_back(
+            std::make_shared<MenuItemSingleLine>("Main Menu", [this]() { dismissScreen(); }));
+
+        menuItems->emplace_back(std::make_shared<MenuItemSingleLine>("Brightness", [this]() {
+            auto brightness = std::make_shared<LightingAdjustScreen>(
+                display_, prefs_, lightingController_, telemetry_);
+
+            brightness->setBackCallback([this]() {
+                setCurrentScreen(nullptr);
+                setNeedsRerender();
+            });
+            setCurrentScreen(brightness);
+        }));
+
         menuItems->emplace_back(std::make_shared<MenuItemSingleLine>("Back to Text", [this]() {
             display_.clearDisplay();
-            this->setCurrentScreen(nullptr);
+            setCurrentScreen(nullptr);
             setNeedsRerender();
         }));
 
-        menuItems->emplace_back(
-            std::make_shared<MenuItemSingleLine>("Main Menu", [this]() { dismissScreen(); }));
+        return menuItems;
+    };
+
+    auto popupStyleFactory = [this]() -> MenuItemSharedPtrVector {
+        auto menuItems = std::make_shared<MenuItemVector>();
+
+        auto menuItem = std::make_shared<MenuItemSingleLine>("Text Size", [this]() {
+            auto fontMenu = std::make_shared<ReadingSettingsMenuScreen>(
+                display_, "Back to Text", prefs_, telemetry_,
+                [this](const std::shared_ptr<Screen> &screen) { setCurrentScreen(screen); },
+                [this]() { setCurrentScreen(nullptr); });
+            fontMenu->addMenuItem(std::make_shared<MenuItemSingleLine>("Small", [this]() {
+                display_.clearDisplay();
+                prefs_.font.set(PREFS_SOL_SMALL);
+                telemetry_.logMetricData(TelemetryField::METRIC_STYLE,
+                                         {{"text_size", std::string("small")}});
+                getCurrentScreen()->setNeedsRerender();
+            }));
+            fontMenu->addMenuItem(std::make_shared<MenuItemSingleLine>("Medium", [this]() {
+                display_.clearDisplay();
+                prefs_.font.set(PREFS_SOL_MEDIUM);
+                telemetry_.logMetricData(TelemetryField::METRIC_STYLE,
+                                         {{"text_size", std::string("medium")}});
+                getCurrentScreen()->setNeedsRerender();
+            }));
+            fontMenu->addMenuItem(std::make_shared<MenuItemSingleLine>("Large", [this]() {
+                display_.clearDisplay();
+                prefs_.font.set(PREFS_SOL_LARGE);
+                telemetry_.logMetricData(TelemetryField::METRIC_STYLE,
+                                         {{"text_size", std::string("large")}});
+                getCurrentScreen()->setNeedsRerender();
+            }));
+            int menuIndex = 0;
+            if (prefs_.font.get().value_or(PREFS_SOL_SMALL) == PREFS_SOL_SMALL) {
+                menuIndex = 0;
+            } else if (prefs_.font.get().value_or(PREFS_SOL_SMALL) == PREFS_SOL_MEDIUM) {
+                menuIndex = 1;
+            } else if (prefs_.font.get().value_or(PREFS_SOL_SMALL) == PREFS_SOL_LARGE) {
+                menuIndex = 2;
+            }
+            fontMenu->setSelectedIndex(menuIndex);
+
+            setCurrentScreen(fontMenu);
+            fontMenu->setBackCallback([this]() {
+                Font *font = FontFromPrefs(prefs_.font.get().value_or(PREFS_SOL_SMALL));
+                if (font) {
+                    renderer_.setFont(font);
+                }
+                setCurrentScreen(nullptr);
+            });
+        });
+
+        menuItems->emplace_back(menuItem);
+
+        menuItem = std::make_shared<MenuItemSingleLine>("Move Text", [this]() {
+            log_d("Loading adjust offset");
+            auto offsetAdjust = std::make_shared<OffsetAdjustScreen>(display_, prefs_, telemetry_,
+                                                                     renderer_, currentPlace_);
+            setCurrentScreen(offsetAdjust);
+            log_d("setting up callback");
+            offsetAdjust->setBackCallback([this]() {
+                renderer_.setRect(GetTextRectFromPrefs(display_, prefs_));
+                setCurrentScreen(nullptr);
+            });
+            log_d("set up callback");
+        });
+
+        menuItems->emplace_back(menuItem);
+
+        menuItem = std::make_shared<MenuItemSingleLine>("Resize Page", [this]() {
+            log_d("Loading resize box");
+            auto resizeBox = std::make_shared<ResizeBoxScreen>(display_, prefs_, telemetry_,
+                                                               renderer_, currentPlace_);
+            setCurrentScreen(resizeBox);
+            log_d("setting up callback");
+            resizeBox->setBackCallback([this]() {
+                renderer_.setRect(GetTextRectFromPrefs(display_, prefs_));
+                setCurrentScreen(nullptr);
+            });
+            log_d("set up callback");
+        });
+
+        menuItems->emplace_back(menuItem);
+
+        menuItem = std::make_shared<MenuItemSingleLine>("Line Spacing", [this]() {
+            auto lineSpacingScreen = std::make_shared<LineSpacingScreen>(
+                display_, prefs_, telemetry_, renderer_, currentPlace_);
+            setCurrentScreen(lineSpacingScreen);
+            lineSpacingScreen->setBackCallback([this]() {
+                setCurrentScreen(nullptr);
+                // Update the renderer with the new line spacing -- needed here, otherwise we'd have
+                // to do it in the render() method and that'd be reading from NVS a lot...
+                renderer_.setLineSpacing(prefs_.lineSpacing.get().value_or(0));
+            });
+        });
+
+        menuItems->emplace_back(menuItem);
+
+        auto menuItemCheckable = std::make_shared<MenuItemCheckable>(
+            "Dark Mode",
+            [this]() {
+            prefs_.darkMode.set(!prefs_.darkMode.get().value_or(false));
+            // Reserved for future use? Potentially lighting up and down?
+            display_.flipInversion();
+            // When we invert, we should do a full clear of the display to make sure
+            // the blacks are really gone.
+            display_.clearDisplay();
+            prefs_.invertSetting.set(display_.getInversion());
+            display_.clearDisplay();
+            setNeedsRerender();
+            setFirstLoad();
+            },
+            [this]() -> bool { return prefs_.darkMode.get().value_or(false); });
+
+        menuItems->emplace_back(menuItemCheckable);
+
+        menuItem = std::make_shared<MenuItemSingleLine>("Back to Text", [this]() {
+            display_.clearDisplay();
+            setCurrentScreen(nullptr);
+            setNeedsRerender();
+        });
+
+        menuItems->emplace_back(menuItem);
 
         return menuItems;
     };
@@ -114,6 +250,7 @@ KindleReadableScreen::KindleReadableScreen(DisplaySystem &display,
         telemetry_, localStore_, stream);
 
     popupMenuScreen_->addTab("Popup", popupNavigationFactory, 8);
+    popupMenuScreen_->addTab("Style", popupStyleFactory, 8);
     popupMenuScreen_->populateMenuView();
 }
 
@@ -473,6 +610,7 @@ void KindleReadableScreen::showPopupMenu() {
 
     // Show the popup menu - no need to set readable since that's only needed for some features
     setCurrentScreen(popupMenuScreen_);
+    updateType_ = DisplaySystem::UpdateType::PARTIAL;
     setNeedsRerender();
 }
 
@@ -523,4 +661,17 @@ void KindleReadableScreen::cancelDelayedLoadingMessage() {
 
     CancelFlag::cancel(delayedMessageCancelFlag_);
     delayedMessageCancelFlag_ = nullptr;
+}
+
+void KindleReadableScreen::setCurrentScreen(const std::shared_ptr<Screen> &screen) {
+    if (currentScreen_) {
+        currentScreen_->setFirstLoad();
+    }
+    if (screen) {
+        screen->setNeedsRerender();
+    } else {
+        updateType_ = DisplaySystem::UpdateType::PARTIAL;
+        setNeedsRerender();
+    }
+    currentScreen_ = screen;
 }
