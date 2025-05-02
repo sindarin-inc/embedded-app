@@ -43,8 +43,8 @@ protected:
     }
 
     IRAM_ATTR static auto onColorTransDone(esp_lcd_panel_handle_t panel,
-                                           esp_lcd_dpi_panel_event_data_t *edata,
-                                           void *user_ctx) -> bool;
+                                           esp_lcd_dpi_panel_event_data_t *edata, void *user_ctx)
+        -> bool;
 
 private:
     GFXcanvas16 gfxCanvas_;
