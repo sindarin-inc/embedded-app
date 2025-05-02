@@ -35,11 +35,9 @@ else ifeq ($(TARGET),waveshare-6inhd)
 	IDF_PROFILE = -B build-$(TARGET) -DSDKCONFIG_DEFAULTS="sdkconfig.defaults.$(TARGET)"
 else ifeq ($(TARGET),sharp-27in)
 	IDF_PROFILE = -B build-$(TARGET) -DSDKCONFIG_DEFAULTS="sdkconfig.defaults.$(TARGET)"
-else ifeq ($(TARGET),p4-function-ev-r0)
-	IDF_PROFILE = -B build-$(TARGET) -DSDKCONFIG_DEFAULTS="sdkconfig.defaults.esp32-p4;sdkconfig.defaults.$(TARGET)"
 else ifeq ($(TARGET),p4-function-ev)
 	IDF_PROFILE = -B build-$(TARGET) -DSDKCONFIG_DEFAULTS="sdkconfig.defaults.esp32-p4;sdkconfig.defaults.$(TARGET)"
-else ifeq ($(TARGET),p4-seeya049)
+else ifeq ($(TARGET),p4-function-ev-r0)
 	IDF_PROFILE = -B build-$(TARGET) -DSDKCONFIG_DEFAULTS="sdkconfig.defaults.esp32-p4;sdkconfig.defaults.$(TARGET)"
 endif
 
@@ -168,8 +166,6 @@ ifeq ($(TARGET),p4-function-ev)
 	idf.py $(IDF_PROFILE) flash
 else ifeq ($(TARGET),p4-function-ev-r0)
 	idf.py $(IDF_PROFILE) flash
-else ifeq ($(TARGET),p4-seeya049)
-	idf.py $(IDF_PROFILE) flash
 else
 	idf.py $(IDF_PROFILE) flash --port $$(python3 scripts/port_tool.py find_port programming)
 endif
@@ -179,8 +175,6 @@ monitor: check_idf
 ifeq ($(TARGET),p4-function-ev)
 	idf.py $(IDF_PROFILE) monitor
 else ifeq ($(TARGET),p4-function-ev-r0)
-	idf.py $(IDF_PROFILE) monitor
-else ifeq ($(TARGET),p4-seeya049)
 	idf.py $(IDF_PROFILE) monitor
 else
 	idf.py $(IDF_PROFILE) monitor --no-reset --port $$(python3 scripts/port_tool.py find_port logging)
