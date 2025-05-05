@@ -54,5 +54,4 @@ private:
     esp_lcd_panel_io_handle_t mipiDbiIo_ = nullptr;
 
     SemaphoreHandle_t updateSemaphore_ = nullptr;
-    bool clearFrameBuffer_ = true;
 };
