@@ -223,8 +223,6 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     usbSerial.begin();
     HEAP_PROFILE_END(usbSerial);
 
-    log_i("Starting app_main");
-
     directCommand.begin();
     if (usbSerial.isUsbLoggingEnabled()) {
         // Wait a bit so we can get boot logs (mostly for the testers)

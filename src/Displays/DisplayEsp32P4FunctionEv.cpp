@@ -23,9 +23,9 @@ auto DisplayEsp32P4FunctionEv::setup() -> bool {
     invertDisplay(true);
 
     updateSemaphore_ = xSemaphoreCreateBinary();
+    log_i("Initialize MIPI DSI bus");
 
     // Turn on the power for MIPI DSI PHY, so it can go from "No Power" state to "Shutdown" state
-    log_i("MIPI DSI PHY Powered on");
     esp_ldo_channel_config_t ldoChannelConfig = {
         .chan_id = 3,
         .voltage_mv = 2500,
@@ -42,7 +42,6 @@ auto DisplayEsp32P4FunctionEv::setup() -> bool {
         return false;
     }
 
-    log_i("Initialize MIPI DSI bus");
     esp_lcd_dsi_bus_config_t dsiBusConfig = ILI9881C_PANEL_BUS_DSI_2CH_CONFIG();
     err = esp_lcd_new_dsi_bus(&dsiBusConfig, &mipiDsiBus_);
     if (err != ESP_OK) {
@@ -50,7 +49,6 @@ auto DisplayEsp32P4FunctionEv::setup() -> bool {
         return false;
     }
 
-    log_i("Install panel IO");
     esp_lcd_dbi_io_config_t dbiIoConfig = ILI9881C_PANEL_IO_DBI_CONFIG();
     err = esp_lcd_new_panel_io_dbi(mipiDsiBus_, &dbiIoConfig, &mipiDbiIo_);
     if (err != ESP_OK) {
@@ -58,7 +56,6 @@ auto DisplayEsp32P4FunctionEv::setup() -> bool {
         return false;
     }
 
-    log_i("Install LCD driver of ili9881c");
     // esp_lcd_dpi_panel_config_t dpiPanelConfig =
     // ILI9881C_800_1280_PANEL_60HZ_DPI_CONFIG(LCD_COLOR_PIXEL_FORMAT_RGB565);
     esp_lcd_dpi_panel_config_t dpiPanelConfig = {
@@ -111,8 +108,6 @@ auto DisplayEsp32P4FunctionEv::setup() -> bool {
     ESP_ERROR_CHECK(esp_lcd_panel_reset(panelHandle_));
     ESP_ERROR_CHECK(esp_lcd_panel_init(panelHandle_));
     ESP_ERROR_CHECK(esp_lcd_panel_disp_on_off(panelHandle_, true));
-    log_i("DisplayEsp32P4FunctionEv::setup() done with size %d x %d", nativeWidth(),
-          nativeHeight());
 
     esp_lcd_dpi_panel_event_callbacks_t cbs = {
         .on_color_trans_done = onColorTransDone,
@@ -139,8 +134,6 @@ void DisplayEsp32P4FunctionEv::updateDisplay(DisplaySystem::UpdateType updateTyp
         esp_lcd_panel_draw_bitmap(panelHandle_, 0, 0, nativeWidth(), nativeHeight(), getBuffer()));
 
     clearFrameBuffer_ = clearFrameBuffer;
-
-    log_i("DisplayEsp32P4FunctionEv::updateDisplay()");
 }
 
 #endif
