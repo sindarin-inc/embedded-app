@@ -18,30 +18,28 @@ TARGET ?= glasses-debug
 #   clone -b john/atom-display git@github.com:sindarin-inc/M5GFX.git components/M5GFX
 # If we end up wanting to use these targets more, we could add M5GFX as a submodule.
 
-# Check for TARGET environment variable or profile make command line argument
-ifeq ($(TARGET),glasses-release)
-	IDF_PROFILE = -B build-$(TARGET) -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.$(TARGET)"
-else ifeq ($(TARGET),glasses-debug)
-	IDF_PROFILE = -B build-$(TARGET) -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.$(TARGET)"
-else ifeq ($(TARGET),v2pod-release)
-	IDF_PROFILE = -B build-$(TARGET) -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.$(TARGET)"
-else ifeq ($(TARGET),tester)
-	IDF_PROFILE = -B build-$(TARGET) -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.$(TARGET)"
-else ifeq ($(TARGET),m5stack-atom-display)
-	IDF_PROFILE = -B build-$(TARGET) -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.$(TARGET)"
-else ifeq ($(TARGET),m5stack-module-display)
-	IDF_PROFILE = -B build-$(TARGET) -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.$(TARGET)"
-else ifeq ($(TARGET),waveshare-6inhd)
-	IDF_PROFILE = -B build-$(TARGET) -DSDKCONFIG_DEFAULTS="sdkconfig.defaults.$(TARGET)"
-else ifeq ($(TARGET),sharp-27in)
-	IDF_PROFILE = -B build-$(TARGET) -DSDKCONFIG_DEFAULTS="sdkconfig.defaults.$(TARGET)"
-else ifeq ($(TARGET),p4-function-ev)
-	IDF_PROFILE = -B build-$(TARGET) -DSDKCONFIG_DEFAULTS="sdkconfig.defaults.esp32-p4;sdkconfig.defaults.$(TARGET)"
-else ifeq ($(TARGET),p4-function-ev-r0)
-	IDF_PROFILE = -B build-$(TARGET) -DSDKCONFIG_DEFAULTS="sdkconfig.defaults.esp32-p4;sdkconfig.defaults.$(TARGET)"
-else
-    $(error Unsupported TARGET: $(TARGET). See Makefile for supported targets.)
+# List of valid targets
+VALID_TARGETS := glasses-release glasses-debug v2pod-release tester m5stack-atom-display m5stack-module-display waveshare-6inhd sharp-27in p4-function-ev p4-function-ev-r0
+
+# Verify TARGET is valid
+ifeq ($(filter $(TARGET),$(VALID_TARGETS)),)
+    $(error Unsupported TARGET: $(TARGET). Supported targets are: $(VALID_TARGETS))
 endif
+
+# Special handling for P4 targets that need additional sdkconfig defaults
+P4_TARGETS := p4-function-ev p4-function-ev-r0
+ifneq ($(filter $(TARGET),$(P4_TARGETS)),)
+    SDKCONFIG_DEFAULTS := sdkconfig.defaults.esp32-p4;sdkconfig.defaults.$(TARGET)
+else ifeq ($(TARGET),waveshare-6inhd)
+    SDKCONFIG_DEFAULTS := sdkconfig.defaults.$(TARGET)
+else ifeq ($(TARGET),sharp-27in)
+    SDKCONFIG_DEFAULTS := sdkconfig.defaults.$(TARGET)
+else
+    SDKCONFIG_DEFAULTS := sdkconfig.defaults;sdkconfig.defaults.$(TARGET)
+endif
+
+# Set build profile
+IDF_PROFILE = -B build-$(TARGET) -DSDKCONFIG_DEFAULTS="$(SDKCONFIG_DEFAULTS)" -DBUILD_TARGET="$(TARGET)"
 
 # Optional variables for the Simulator builds
 CMAKE_SIM_DISPLAY_OPTIONS := $(if $(DISPLAY_WIDTH),-DDISPLAY_WIDTH=$(DISPLAY_WIDTH)) $(if $(DISPLAY_HEIGHT),-DDISPLAY_HEIGHT=$(DISPLAY_HEIGHT)) $(if $(DISPLAY_SCALE),-DDISPLAY_SCALE=$(DISPLAY_SCALE)) $(if $(SIM_LAYOUT_DEBUG),-DSIM_LAYOUT_DEBUG=$(SIM_LAYOUT_DEBUG)) $(if $(DISPLAY_TYPE),-DDISPLAY_TYPE=$(DISPLAY_TYPE)) $(if $(TTF_SCREEN_RES_PER_INCH),-DTTF_SCREEN_RES_PER_INCH=$(TTF_SCREEN_RES_PER_INCH))
