@@ -39,6 +39,8 @@ else ifeq ($(TARGET),p4-function-ev)
 	IDF_PROFILE = -B build-$(TARGET) -DSDKCONFIG_DEFAULTS="sdkconfig.defaults.esp32-p4;sdkconfig.defaults.$(TARGET)"
 else ifeq ($(TARGET),p4-function-ev-r0)
 	IDF_PROFILE = -B build-$(TARGET) -DSDKCONFIG_DEFAULTS="sdkconfig.defaults.esp32-p4;sdkconfig.defaults.$(TARGET)"
+else
+    $(error Unsupported TARGET: $(TARGET). See Makefile for supported targets.)
 endif
 
 # Optional variables for the Simulator builds
