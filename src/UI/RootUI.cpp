@@ -763,7 +763,7 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
         }
 
         bool noKindleContent = kindle.empty();
-        if (noKindleContent) {
+        if (noKindleContent && !(prefs_.tutorialsDeleted.get().value_or(0) & TUTORIAL_SCREEN_KINDLE)) {
             menuItems->emplace_back(
                 std::make_shared<MenuItemSingleLine>("\ue000 Connect your Kindle",
                                                      [this, createTutorialScreen]() {
