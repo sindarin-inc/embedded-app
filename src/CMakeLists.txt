@@ -27,7 +27,6 @@ set(components
     nvs_flash
     esp_system
     esp_event
-    xtensa
     wpa_supplicant
     esp_hw_support
     freertos
@@ -42,33 +41,60 @@ set(components
     app_update
     usb
     freetype
-
-    # Uncomment for M5Stack displays
-    # M5GFX
 )
 
-# It would be nice if we could add components conditionally based on the configuration, but
-# it seems that the REQUIRES and PRIV_REQUIRES variables can't depend on configuration choices.
-# There might be a workaround by passing in variables straight through CMAKE. Thankfully it seems
-# that unused components are stripped out by the linker so it's not a huge deal.
+# Note on conditional components:
+# We cannot add components conditionally based on sdkconfig CONFIG_ values
+# because component requirements are expanded before the configuration is loaded.
+# Instead, we're using BUILD_TARGET passed from the Makefile to determine which
+# components to include.
+#
 # See: https://docs.espressif.com/projects/esp-idf/en/v5.2.2/esp32/api-guides/build-system.html#when-writing-a-component
 # > The values of REQUIRES and PRIV_REQUIRES should not depend on any configuration choices
 # > (CONFIG_xxx macros). This is because requirements are expanded before the configuration
 # > is loaded. Other component variables (like include paths or source files) can depend on
 # > configuration choices.
 
-# if(CONFIG_USE_TINYUSB_SERIAL)
-# message(STATUS "Using TinyUSB serial")
-# list(APPEND components usb)
-# endif()
+# Extract the target from the build directory path
+# The CMAKE_BINARY_DIR will be something like "/path/to/build-${TARGET}"
+string(REGEX MATCH "build-([a-zA-Z0-9_-]+)" _ "${CMAKE_BINARY_DIR}")
+set(DETECTED_TARGET ${CMAKE_MATCH_1})
+message(STATUS "Detected build target from directory: ${DETECTED_TARGET}")
 
-# if(CONFIG_DISPLAY_M5STACK_ATOM_DISPLAY)
-# message(STATUS "Using M5Stack Atom display")
-# list(APPEND components M5GFX)
-# elseif(CONFIG_DISPLAY_M5STACK_MODULE_DISPLAY)
-# message(STATUS "Using M5Stack Module display")
-# list(APPEND components M5GFX)
-# endif()
+# Use DETECTED_TARGET for component selection
+# Add components based on display types used by different targets
+if(DETECTED_TARGET MATCHES "p4-function-ev.*|sharp-27in|waveshare-6inhd|p4-seeya049")
+    message(STATUS "Adding esp_lcd component for display")
+    list(APPEND components
+        esp_lcd
+        fatfs
+        sdmmc
+    )
+endif()
+
+if(DETECTED_TARGET MATCHES "p4-seeya049")
+    message(STATUS "Adding esp_lcd_seeya049 component")
+    list(APPEND components
+        esp_lcd_seeya049
+    )
+else()
+    message(STATUS "NOT USING esp_lcd_seeya049")
+endif()
+
+# Add M5GFX for M5Stack display targets
+if(DETECTED_TARGET MATCHES "m5stack-(atom|module)-display")
+    message(STATUS "Adding M5GFX component for M5Stack display")
+    list(APPEND components
+        M5GFX
+    )
+endif()
+
+# Add architecture-specific components
+if(IDF_TARGET STREQUAL "esp32s3")
+    list(APPEND components
+        xtensa
+    )
+endif()
 
 # Set compile options
 set(compile_options
@@ -91,9 +117,11 @@ idf_component_register(
 )
 
 # ULP setup
-set(ulp_app_name ulp_${COMPONENT_NAME})
-set(ulp_riscv_sources "Ulp/main.c" "Ulp/UlpTableLookup.c")
-set(ulp_exp_dep_srcs "Misc/PowerManager.cpp")
-ulp_embed_binary(${ulp_app_name} "${ulp_riscv_sources}" "${ulp_exp_dep_srcs}")
+if(IDF_TARGET STREQUAL "esp32s3")
+    set(ulp_app_name ulp_${COMPONENT_NAME})
+    set(ulp_riscv_sources "Ulp/main.c" "Ulp/UlpTableLookup.c")
+    set(ulp_exp_dep_srcs "Misc/PowerManager.cpp")
+    ulp_embed_binary(${ulp_app_name} "${ulp_riscv_sources}" "${ulp_exp_dep_srcs}")
+endif()
 
 target_compile_options(${COMPONENT_TARGET} PUBLIC ${compile_options})

@@ -71,7 +71,7 @@ auto PosixFileSystem::listDirWithSubdirectories(const std::string &path, FileLis
         }
         return closedir(dp);
     } else {
-        perror("Couldn't open the directory");
+        log_e("Couldn't open directory %s", prefixedPath.c_str());
         return -1;
     }
 }
@@ -82,7 +82,7 @@ auto PosixFileSystem::createDir(const std::string &path, bool allowExists) -> bo
         if (errno == EEXIST && allowExists) {
             // Silently pass
         } else {
-            log_e("Failed to create dir %s", path.c_str());
+            log_e("Failed to create dir %s (errno=%d)", prefixedPath.c_str(), errno);
             return false;
         }
     }
