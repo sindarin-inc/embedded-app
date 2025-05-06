@@ -19,10 +19,6 @@ IRAM_ATTR bool DisplayEsp32P4SeeYa049::onColorTransDone(esp_lcd_panel_handle_t p
                                                         esp_lcd_dpi_panel_event_data_t *edata,
                                                         void *user_ctx) {
     auto display = static_cast<DisplayEsp32P4SeeYa049 *>(user_ctx);
-    // TODO: This isn't quite right either since it causes the screen to flash briefly
-    if (display->clearFrameBuffer_) {
-        display->fillScreen(display->bg);
-    }
     xSemaphoreGiveFromISR(display->updateSemaphore_, nullptr);
     return true;
 }
@@ -126,30 +122,28 @@ auto DisplayEsp32P4SeeYa049::setup() -> bool {
     };
     ESP_ERROR_CHECK(esp_lcd_dpi_panel_register_event_callbacks(panelHandle_, &cbs, this));
 
-    xSemaphoreGive(updateSemaphore_);
-
     return true;
 }
 
-void DisplayEsp32P4SeeYa049::updateDisplay(DisplaySystem::UpdateType updateType,
-                                           bool clearFrameBuffer, int vcomNudge,
-                                           DisplaySystem::UpdateType altUpdateType,
-                                           ScreenSide screen, SolRect altRect) {
+void DisplayEsp32P4FunctionEv::updateDisplay(DisplaySystem::UpdateType updateType,
+                                             bool clearFrameBuffer, int vcomNudge,
+                                             DisplaySystem::UpdateType altUpdateType,
+                                             ScreenSide screen, SolRect altRect) {
 
-    // If we're not done rendering from last time yet, wait
+    ESP_ERROR_CHECK(
+        esp_lcd_panel_draw_bitmap(panelHandle_, 0, 0, nativeWidth(), nativeHeight(), getBuffer()));
+
+    // Wait until the color transfer is done (so we don't overwrite the buffer while it's being
+    // drawn). If we need more performance we could also do double buffering here so we could start
+    // drawing the next frame while the current one is getting copied.
     if (xSemaphoreTake(updateSemaphore_, portMAX_DELAY) != pdPASS) {
         log_e("Failed to take display update");
         return;
     }
 
-    SHOW_WATERMARK();
-    ESP_ERROR_CHECK(
-        esp_lcd_panel_draw_bitmap(panelHandle_, 0, 0, nativeWidth(), nativeHeight(), getBuffer()));
-    SHOW_WATERMARK();
-
-    clearFrameBuffer_ = clearFrameBuffer;
-
-    log_i("DisplayEsp32P4SeeYa049::updateDisplay()");
+    if (clearFrameBuffer) {
+        fillScreen(bg);
+    }
 }
 
 #endif

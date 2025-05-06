@@ -29,7 +29,7 @@ menu "Sol Options"
             config DISPLAY_ESP32_P4_SEEYA_049
                 bool "ESP32 P4 SeeYA 0.49in Display"
 
-            endchoice
+        endchoice
 
         config DISPLAY_PIXEL_RESOLUTION_IS_FIX
             bool "Display pixel resolution is unchangeable at runtime."
