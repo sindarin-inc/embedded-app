@@ -125,10 +125,10 @@ auto DisplayEsp32P4SeeYa049::setup() -> bool {
     return true;
 }
 
-void DisplayEsp32P4FunctionEv::updateDisplay(DisplaySystem::UpdateType updateType,
-                                             bool clearFrameBuffer, int vcomNudge,
-                                             DisplaySystem::UpdateType altUpdateType,
-                                             ScreenSide screen, SolRect altRect) {
+void DisplayEsp32P4SeeYa049::updateDisplay(DisplaySystem::UpdateType updateType,
+                                           bool clearFrameBuffer, int vcomNudge,
+                                           DisplaySystem::UpdateType altUpdateType,
+                                           ScreenSide screen, SolRect altRect) {
 
     ESP_ERROR_CHECK(
         esp_lcd_panel_draw_bitmap(panelHandle_, 0, 0, nativeWidth(), nativeHeight(), getBuffer()));

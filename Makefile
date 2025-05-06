@@ -162,11 +162,7 @@ build: check_idf
 
 .PHONY: flash
 flash: build
-ifeq ($(TARGET),p4-function-ev)
-	idf.py $(IDF_PROFILE) flash
-else ifeq ($(TARGET),p4-function-ev-r0)
-	idf.py $(IDF_PROFILE) flash
-else ifeq ($(TARGET),p4-seeya049)
+ifneq ($(filter $(TARGET),$(P4_TARGETS)),)
 	idf.py $(IDF_PROFILE) flash
 else
 	idf.py $(IDF_PROFILE) flash --port $$(python3 scripts/port_tool.py find_port programming)
@@ -174,12 +170,8 @@ endif
 
 .PHONY: monitor
 monitor: check_idf
-ifeq ($(TARGET),p4-function-ev)
+ifneq ($(filter $(TARGET),$(P4_TARGETS)),)
 	idf.py $(IDF_PROFILE) monitor
-else ifeq ($(TARGET),p4-function-ev-r0)
-	idf.py $(IDF_PROFILE) monitor
-else ifeq ($(TARGET),p4-seeya049)
-	idf.py $(IDF_PROFILE) flash
 else
 	idf.py $(IDF_PROFILE) monitor --no-reset --port $$(python3 scripts/port_tool.py find_port logging)
 endif
