@@ -265,8 +265,9 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
                 // If we're not yet paired, show the app screen instead
                 if (PreferencesStore::paired == PairedStatus::Unpaired) {
                     auto appDownloadScreen = std::make_shared<AppDownloadScreen>(display_);
-                    this->pushScreen(appDownloadScreen);
-                    appDownloadScreen->setBackCallback([this]() { this->popScreen(); });
+                    setCurrentScreen(appDownloadScreen);
+                    appDownloadScreen->setBackCallback(
+                        [this]() { this->setCurrentScreen(nullptr); });
                     return;
                 }
 
@@ -274,8 +275,7 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
                 // turn on wifi or BLE to perform the content sync.
                 if (prefs_.wifiDisabled.get().value_or(false) &&
                     prefs_.bleDisabled.get().value_or(false)) {
-                    RootUI::getInstance().showTemporaryMessage(
-                        "Enable WiFi or BLE to perform a Content Sync.");
+                    RootUI::getInstance().showTemporaryMessage("Enable WiFi or BLE to use Ask AI.");
                     if (currentScreen_) {
                         currentScreen_->setFirstLoad();
                     }
