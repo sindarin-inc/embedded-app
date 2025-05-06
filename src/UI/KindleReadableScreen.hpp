@@ -58,7 +58,8 @@ protected:
 
     void setErrorMessage(const std::string &message);
     using ConnectionCallback = std::function<void(bool connected)>;
-    auto connectToNetwork(bool useBleOnly, std::string &errorMessage, ConnectionCallback callback = nullptr) -> bool;
+    auto connectToNetwork(bool useBleOnly, std::string &errorMessage,
+                          const ConnectionCallback &callback = nullptr) -> bool;
     void disconnectNetworkConnections();
 
     void navigateNext();
@@ -100,7 +101,7 @@ private:
     void showPopupMenu();
     void setCurrentScreen(const std::shared_ptr<Screen> &screen);
     auto getCurrentScreen() -> std::shared_ptr<Screen> { return currentScreen_; }
-    
+
     // Attempt to reconnect once after connection loss
     void attemptReconnection();
     // Cancel any pending reconnection attempt

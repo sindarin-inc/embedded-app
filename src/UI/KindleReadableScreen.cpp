@@ -55,7 +55,7 @@ KindleReadableScreen::KindleReadableScreen(DisplaySystem &display,
             if (CancelFlag::isCancelled(cancelFlag)) {
                 return;
             }
-            
+
             // Only show error message for non-connection errors
             // CONNECTION_ERROR is handled by the onConnectionErrorFunction below
             if (error != "CONNECTION_ERROR") {
@@ -63,7 +63,7 @@ KindleReadableScreen::KindleReadableScreen(DisplaySystem &display,
             }
         });
     });
-    
+
     // Set a separate callback specifically for network connectivity issues
     pageFlipper_.setOnConnectionErrorFunction([this, cancelFlag]() {
         if (CancelFlag::isCancelled(cancelFlag)) {
@@ -73,7 +73,7 @@ KindleReadableScreen::KindleReadableScreen(DisplaySystem &display,
             if (CancelFlag::isCancelled(cancelFlag)) {
                 return;
             }
-            
+
             // If we have a connection error, silently try to reconnect
             log_i("Network connection issue detected, attempting reconnection");
             attemptReconnection();
@@ -279,17 +279,17 @@ KindleReadableScreen::KindleReadableScreen(DisplaySystem &display,
 void KindleReadableScreen::begin() {
     // Reset reconnection attempts counter
     reconnectionAttempts_ = 0;
-    
+
     // Define the callback for initial connection - load the book content
     auto initialConnectionCallback = [this](bool connected) {
         if (!connected) {
             // Connection failed - error message is handled by connectToNetwork
             return;
         }
-        
+
         // Successfully connected, now load the book content
         auto cancelFlag = cancelFlag_;
-        
+
         DispatchGetUiQueue()->dispatch([this, cancelFlag]() {
             if (CancelFlag::isCancelled(cancelFlag)) {
                 return;
@@ -309,7 +309,7 @@ void KindleReadableScreen::begin() {
         // Now load the content in the background queue
         pageFlipper_.loadInitialPage();
     };
-    
+
     // Start connection process
     DispatchGetCore0BackgroundQueue()->dispatch([this, initialConnectionCallback]() {
         std::string errorMessage;
@@ -477,7 +477,8 @@ void KindleReadableScreen::setErrorMessage(const std::string &message) {
     // TODO: Re-add auto-dismiss?
 }
 
-auto KindleReadableScreen::connectToNetwork(bool useBleOnly, std::string &errorMessage, ConnectionCallback callback) -> bool {
+auto KindleReadableScreen::connectToNetwork(bool useBleOnly, std::string &errorMessage,
+                                            const ConnectionCallback &callback) -> bool {
     log_d("Connecting to network for Kindle book");
     bool wifiConnected = false;
     bool bleConnected = false;
@@ -503,7 +504,7 @@ auto KindleReadableScreen::connectToNetwork(bool useBleOnly, std::string &errorM
         if (bleManager->connected()) {
             log_i("Disconnecting existing BLE connection first");
             bleManager->disconnectProxy();
-            
+
             // Give it a moment to disconnect
             vTaskDelay(pdMS_TO_TICKS(1000));
         }
@@ -542,7 +543,7 @@ auto KindleReadableScreen::connectToNetwork(bool useBleOnly, std::string &errorM
     }
 
     bool connected = wifiConnected || bleConnected;
-    
+
     if (!connected) {
         log_w("Failed to establish any network connection for Kindle book");
         if (prefs_.wifiDisabled.get().value_or(false) && prefs_.bleDisabled.get().value_or(false)) {
@@ -575,11 +576,11 @@ auto KindleReadableScreen::connectToNetwork(bool useBleOnly, std::string &errorM
                                       {"reason", std::string("connection-failed")}});
         }
     }
-    
+
     // Update page flipper with the connection type
     pageFlipper_.setUseBle(isUsingBleConnection_);
     log_i("Setting KindlePageFlipper to use BLE: %s", isUsingBleConnection_ ? "true" : "false");
-    
+
     // Call the callback if provided
     if (callback) {
         callback(connected);
@@ -645,10 +646,10 @@ void KindleReadableScreen::dismissScreen() {
     CancelFlag::cancel(cancelFlag_);
     cancelDelayedLoadingMessage();
     cancelReconnectionAttempt();
-    
+
     // Reset reconnection attempts counter
     reconnectionAttempts_ = 0;
-    
+
     disconnectNetworkConnections();
     back();
 }
@@ -724,7 +725,7 @@ void KindleReadableScreen::cancelDelayedLoadingMessage() {
 void KindleReadableScreen::attemptReconnection() {
     // Increment the reconnection attempts counter
     reconnectionAttempts_++;
-    
+
     // If we've exceeded the maximum number of attempts, show an error and stop trying
     if (reconnectionAttempts_ > MAX_RECONNECTION_ATTEMPTS) {
         log_w("Exceeded maximum reconnection attempts (%d). Giving up.", MAX_RECONNECTION_ATTEMPTS);
@@ -737,12 +738,12 @@ void KindleReadableScreen::attemptReconnection() {
         });
         return;
     }
-    
+
     log_i("Reconnection attempt %d/%d", reconnectionAttempts_, MAX_RECONNECTION_ATTEMPTS);
-    
+
     // Cancel any existing reconnection attempt
     cancelReconnectionAttempt();
-    
+
     // Don't show an error message immediately - wait and see if we can reconnect
     // But we should show the loading state to indicate we're trying to reconnect
     DispatchGetUiQueue()->dispatch([this]() {
@@ -755,12 +756,12 @@ void KindleReadableScreen::attemptReconnection() {
             render(display_);
         }
     });
-    
+
     // Create a new cancel flag for this attempt
     reconnectionAttemptCancelFlag_ = std::make_shared<CancelFlag>();
     // Capture a copy of the flag for the lambda
     auto localFlag = reconnectionAttemptCancelFlag_;
-    
+
     // Define the callback for reconnection
     auto reconnectionCallback = [this, localFlag](bool connected) {
         // Check if we've been cancelled
@@ -768,42 +769,44 @@ void KindleReadableScreen::attemptReconnection() {
             log_i("Reconnection attempt cancelled");
             return;
         }
-        
+
         if (connected) {
             log_i("Network reconnected successfully");
-            
+
             // Successfully reconnected, retry the operation
             pageFlipper_.retryNetworkOperation();
-            
+
             // Reset reconnection attempts on successful connection
             reconnectionAttempts_ = 0;
         } else {
             log_w("Failed to reconnect");
-            
+
             // Only show error message if reconnection failed and we've exceeded max attempts
             if (reconnectionAttempts_ >= MAX_RECONNECTION_ATTEMPTS) {
                 DispatchGetUiQueue()->dispatch([this]() {
                     if (isUsingBleConnection_) {
                         setErrorMessage("Bluetooth connection lost. Please reconnect your phone.");
                     } else {
-                        setErrorMessage("Failed to load content. Please check your network connection.");
+                        setErrorMessage(
+                            "Failed to load content. Please check your network connection.");
                     }
                 });
             }
         }
     };
-    
+
     // Use a short delay to allow the connection to potentially recover
     DispatchGetCore0BackgroundQueue()->dispatch([this, localFlag, reconnectionCallback]() {
         // Wait a moment before attempting reconnection
-        vTaskDelay(pdMS_TO_TICKS(3000)); // 3 second delay - give more time for the network stack to reset
-        
+        vTaskDelay(
+            pdMS_TO_TICKS(3000)); // 3 second delay - give more time for the network stack to reset
+
         // Check if we've been cancelled
         if (CancelFlag::isCancelled(localFlag)) {
             log_i("Reconnection attempt cancelled");
             return;
         }
-        
+
         std::string errorMessage;
         bool useBleOnly = isUsingBleConnection_; // Only use BLE if we were using it before
         connectToNetwork(useBleOnly, errorMessage, reconnectionCallback);
@@ -815,7 +818,7 @@ void KindleReadableScreen::cancelReconnectionAttempt() {
         CancelFlag::isCancelled(reconnectionAttemptCancelFlag_)) {
         return;
     }
-    
+
     CancelFlag::cancel(reconnectionAttemptCancelFlag_);
     reconnectionAttemptCancelFlag_ = nullptr;
 }

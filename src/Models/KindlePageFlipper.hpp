@@ -141,11 +141,11 @@ public:
     void setOnErrorFunction(std::function<void(std::string &errorMessage)> onErrorFunction) {
         onErrorFunction_ = std::move(onErrorFunction);
     }
-    
+
     void setOnConnectionErrorFunction(std::function<void(void)> onConnectionErrorFunction) {
         onConnectionErrorFunction_ = std::move(onConnectionErrorFunction);
     }
-    
+
     void retryNetworkOperation() {
         // Retry loading the initial page if we're at the beginning
         if (pageStream_->size() == 0) {
@@ -155,7 +155,7 @@ public:
             updatePlace(place_);
         }
     }
-    
+
     void setUseBle(bool useBle) {
         useBle_ = useBle;
         log_i("KindlePageFlipper now using BLE: %s", useBle_ ? "true" : "false");

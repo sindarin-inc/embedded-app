@@ -140,7 +140,8 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place) {
             if (errorMessage != "CONNECTION_ERROR") {
                 onErrorFunction_(errorMessage);
             } else {
-                log_i("Network connection issue detected while navigating, initiating reconnection");
+                log_i(
+                    "Network connection issue detected while navigating, initiating reconnection");
                 if (onConnectionErrorFunction_) {
                     onConnectionErrorFunction_();
                 }
