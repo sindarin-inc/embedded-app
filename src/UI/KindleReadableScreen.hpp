@@ -57,7 +57,8 @@ protected:
     LocalStore &localStore_;
 
     void setErrorMessage(const std::string &message);
-    auto connectToNetwork(bool useBleOnly, std::string &errorMessage) -> bool;
+    using ConnectionCallback = std::function<void(bool connected)>;
+    auto connectToNetwork(bool useBleOnly, std::string &errorMessage, ConnectionCallback callback = nullptr) -> bool;
     void disconnectNetworkConnections();
 
     void navigateNext();
