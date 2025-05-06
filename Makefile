@@ -18,16 +18,16 @@ TARGET ?= glasses-debug
 #   clone -b john/atom-display git@github.com:sindarin-inc/M5GFX.git components/M5GFX
 # If we end up wanting to use these targets more, we could add M5GFX as a submodule.
 
-# List of valid targets
-VALID_TARGETS := glasses-release glasses-debug v2pod-release tester m5stack-atom-display m5stack-module-display waveshare-6inhd sharp-27in p4-function-ev p4-function-ev-r0
+# Special handling for P4 targets that need additional sdkconfig defaults
+P4_TARGETS := p4-function-ev p4-function-ev-r0 p4-seeya049
+# List of all valid targets
+VALID_TARGETS := glasses-release glasses-debug v2pod-release tester m5stack-atom-display m5stack-module-display waveshare-6inhd sharp-27in $(P4_TARGETS)
 
 # Verify TARGET is valid
 ifeq ($(filter $(TARGET),$(VALID_TARGETS)),)
     $(error Unsupported TARGET: $(TARGET). Supported targets are: $(VALID_TARGETS))
 endif
 
-# Special handling for P4 targets that need additional sdkconfig defaults
-P4_TARGETS := p4-function-ev p4-function-ev-r0 p4-seeya049
 ifneq ($(filter $(TARGET),$(P4_TARGETS)),)
     SDKCONFIG_DEFAULTS := sdkconfig.defaults.esp32-p4;sdkconfig.defaults.$(TARGET)
 else ifeq ($(TARGET),waveshare-6inhd)
@@ -167,7 +167,7 @@ ifeq ($(TARGET),p4-function-ev)
 else ifeq ($(TARGET),p4-function-ev-r0)
 	idf.py $(IDF_PROFILE) flash
 else ifeq ($(TARGET),p4-seeya049)
-    idf.py $(IDF_PROFILE) flash
+	idf.py $(IDF_PROFILE) flash
 else
 	idf.py $(IDF_PROFILE) flash --port $$(python3 scripts/port_tool.py find_port programming)
 endif
@@ -179,7 +179,7 @@ ifeq ($(TARGET),p4-function-ev)
 else ifeq ($(TARGET),p4-function-ev-r0)
 	idf.py $(IDF_PROFILE) monitor
 else ifeq ($(TARGET),p4-seeya049)
-    idf.py $(IDF_PROFILE) flash
+	idf.py $(IDF_PROFILE) flash
 else
 	idf.py $(IDF_PROFILE) monitor --no-reset --port $$(python3 scripts/port_tool.py find_port logging)
 endif
