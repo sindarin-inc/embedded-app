@@ -469,8 +469,8 @@ static inline esp_lcd_dpi_panel_config_t panel_seeya049_1920_1080_dpi_config(voi
         .dpi_clk_src = MIPI_DSI_DPI_CLK_SRC_DEFAULT,
         .dpi_clock_freq_mhz = 0, // Set by the refresh rate
         .pixel_format = LCD_COLOR_PIXEL_FORMAT_RGB888,
-        .in_color_format = 0,
-        .out_color_format = 0,
+        .in_color_format = (lcd_color_format_t)0,
+        .out_color_format = (lcd_color_format_t)0,
         .num_fbs = 1,
         .video_timing =
             {
