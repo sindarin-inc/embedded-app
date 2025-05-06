@@ -60,6 +60,7 @@ KindleReadableScreen::KindleReadableScreen(DisplaySystem &display,
     });
 
     renderer_.setStream(pageFlipper_.getStream());
+    renderer_.setLineSpacing(prefs_.lineSpacing.get().value_or(0));
 
     // Set up loading message
     loadingMessageView_.setText("Connecting to your Kindle...");
