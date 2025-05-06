@@ -82,8 +82,14 @@ private:
     std::shared_ptr<Place> currentPlace_ = nullptr; // Current place in the renderer
     std::shared_ptr<Place> newPlace_ = nullptr;     // Next place to render
 
+    // Connection tracking
+    bool isUsingBleConnection_ = false;
+    int reconnectionAttempts_ = 0;
+    static const int MAX_RECONNECTION_ATTEMPTS = 2;
+
     // Timer handles for UI tasks
     std::shared_ptr<CancelFlag> delayedMessageCancelFlag_;
+    std::shared_ptr<CancelFlag> reconnectionAttemptCancelFlag_;
 
     MultiLineTextView loadingMessageView_;
     MultiLineTextView delayedMessageView_;
@@ -93,4 +99,9 @@ private:
     void showPopupMenu();
     void setCurrentScreen(const std::shared_ptr<Screen> &screen);
     auto getCurrentScreen() -> std::shared_ptr<Screen> { return currentScreen_; }
+    
+    // Attempt to reconnect once after connection loss
+    void attemptReconnection();
+    // Cancel any pending reconnection attempt
+    void cancelReconnectionAttempt();
 };

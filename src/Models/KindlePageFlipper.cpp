@@ -23,7 +23,10 @@ auto KindlePageFlipper::checkForError(int httpCode, std::shared_ptr<KindlePageRe
         return "";
     }
 
-    if (httpCode == 500) {
+    // Check for connection issues
+    if (httpCode <= 0) {
+        return "CONNECTION_ERROR"; // Special marker for connection issues that should be retried
+    } else if (httpCode == 500) {
         return "Server error. Please try again later.";
     } else if (httpCode == 401 || httpCode == 403) {
         return "Authentication error. Please try signing in again.";
@@ -56,7 +59,15 @@ void KindlePageFlipper::loadInitialPage() {
         auto errorMessage = checkForError(httpCode, response);
         if (!errorMessage.empty()) {
             log_w("Error loading initial page: %s", errorMessage.c_str());
-            onErrorFunction_(errorMessage);
+            // Only propagate non-connection errors
+            if (errorMessage != "CONNECTION_ERROR") {
+                onErrorFunction_(errorMessage);
+            } else {
+                log_i("Network connection issue detected, initiating reconnection");
+                if (onConnectionErrorFunction_) {
+                    onConnectionErrorFunction_();
+                }
+            }
             return;
         }
 
@@ -72,11 +83,18 @@ void KindlePageFlipper::loadInitialPage() {
         pageStream_->appendPageFromResponse(*response);
         gotContentFunction_();
 
-        // TODO(john): Automatically retry
         errorMessage = checkForError(httpCode, response);
         if (!errorMessage.empty()) {
             log_w("Error loading preview after initial page: %s", errorMessage.c_str());
-            onErrorFunction_(errorMessage);
+            // Only propagate non-connection errors
+            if (errorMessage != "CONNECTION_ERROR") {
+                onErrorFunction_(errorMessage);
+            } else {
+                log_i("Network connection issue detected during preview, initiating reconnection");
+                if (onConnectionErrorFunction_) {
+                    onConnectionErrorFunction_();
+                }
+            }
             return;
         }
     });
@@ -118,7 +136,15 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place) {
         auto errorMessage = checkForError(httpCode, response);
         if (!errorMessage.empty()) {
             log_w("Error moving to next page: %s", errorMessage.c_str());
-            onErrorFunction_(errorMessage);
+            // Only propagate non-connection errors
+            if (errorMessage != "CONNECTION_ERROR") {
+                onErrorFunction_(errorMessage);
+            } else {
+                log_i("Network connection issue detected while navigating, initiating reconnection");
+                if (onConnectionErrorFunction_) {
+                    onConnectionErrorFunction_();
+                }
+            }
             return;
         }
 
@@ -131,7 +157,15 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place) {
         errorMessage = checkForError(httpCode, response);
         if (!errorMessage.empty()) {
             log_w("Error loading preview after navigating to next page: %s", errorMessage.c_str());
-            onErrorFunction_(errorMessage);
+            // Only propagate non-connection errors
+            if (errorMessage != "CONNECTION_ERROR") {
+                onErrorFunction_(errorMessage);
+            } else {
+                log_i("Network connection issue detected during preview, initiating reconnection");
+                if (onConnectionErrorFunction_) {
+                    onConnectionErrorFunction_();
+                }
+            }
             return;
         }
 

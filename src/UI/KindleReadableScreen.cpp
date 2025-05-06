@@ -55,7 +55,28 @@ KindleReadableScreen::KindleReadableScreen(DisplaySystem &display,
             if (CancelFlag::isCancelled(cancelFlag)) {
                 return;
             }
-            setErrorMessage(error);
+            
+            // Only show error message for non-connection errors
+            // CONNECTION_ERROR is handled by the onConnectionErrorFunction below
+            if (error != "CONNECTION_ERROR") {
+                setErrorMessage(error);
+            }
+        });
+    });
+    
+    // Set a separate callback specifically for network connectivity issues
+    pageFlipper_.setOnConnectionErrorFunction([this, cancelFlag]() {
+        if (CancelFlag::isCancelled(cancelFlag)) {
+            return;
+        }
+        DispatchGetUiQueue()->dispatch([this, cancelFlag]() {
+            if (CancelFlag::isCancelled(cancelFlag)) {
+                return;
+            }
+            
+            // If we have a connection error, silently try to reconnect
+            log_i("Network connection issue detected, attempting reconnection");
+            attemptReconnection();
         });
     });
 
@@ -256,6 +277,9 @@ KindleReadableScreen::KindleReadableScreen(DisplaySystem &display,
 }
 
 void KindleReadableScreen::begin() {
+    // Reset reconnection attempts counter
+    reconnectionAttempts_ = 0;
+    
     // Start connection process
     DispatchGetCore0BackgroundQueue()->dispatch([this]() {
         std::string errorMessage;
@@ -269,6 +293,12 @@ void KindleReadableScreen::begin() {
 
         // Successfully connected, now load the book content
         auto cancelFlag = cancelFlag_;
+        
+        // Update pageFlipper_ with the correct connection type before loading
+        // This happens in the background thread to avoid thread safety issues
+        pageFlipper_.setUseBle(isUsingBleConnection_);
+        log_i("Setting KindlePageFlipper to use BLE: %s", isUsingBleConnection_ ? "true" : "false");
+        
         DispatchGetUiQueue()->dispatch([this, cancelFlag]() {
             if (CancelFlag::isCancelled(cancelFlag)) {
                 return;
@@ -455,6 +485,9 @@ auto KindleReadableScreen::connectToNetwork(bool useBleOnly, std::string &errorM
     bool wifiConnected = false;
     bool bleConnected = false;
 
+    // Reset connection tracking
+    isUsingBleConnection_ = false;
+
     SindarinAPI::getInstance()->setAccessToken(prefs_.cloudToken.get().value());
 
 #if CONFIG_USE_BLE_SERVER_PROXY
@@ -475,6 +508,7 @@ auto KindleReadableScreen::connectToNetwork(bool useBleOnly, std::string &errorM
             log_i("BLE successfully connected for Kindle book");
             telemetry_.logMetric(TelemetryField::METRIC_WIFI, "kindle-ble-connected");
             bleConnected = true;
+            isUsingBleConnection_ = true;
         }
     }
 #endif
@@ -492,6 +526,7 @@ auto KindleReadableScreen::connectToNetwork(bool useBleOnly, std::string &errorM
             log_i("WiFi connection successful for Kindle book");
             telemetry_.logMetric(TelemetryField::METRIC_WIFI, "kindle-wifi-connected");
             wifiConnected = true;
+            isUsingBleConnection_ = false;
         }
     } else if (useBleOnly) {
         log_i("BLE-only mode for Kindle book, skipping WiFi connection");
@@ -592,6 +627,11 @@ void KindleReadableScreen::dismissScreen() {
     log_d("Dismissing KindleReadableScreen");
     CancelFlag::cancel(cancelFlag_);
     cancelDelayedLoadingMessage();
+    cancelReconnectionAttempt();
+    
+    // Reset reconnection attempts counter
+    reconnectionAttempts_ = 0;
+    
     disconnectNetworkConnections();
     back();
 }
@@ -662,6 +702,139 @@ void KindleReadableScreen::cancelDelayedLoadingMessage() {
 
     CancelFlag::cancel(delayedMessageCancelFlag_);
     delayedMessageCancelFlag_ = nullptr;
+}
+
+void KindleReadableScreen::attemptReconnection() {
+    // Increment the reconnection attempts counter
+    reconnectionAttempts_++;
+    
+    // If we've exceeded the maximum number of attempts, show an error and stop trying
+    if (reconnectionAttempts_ > MAX_RECONNECTION_ATTEMPTS) {
+        log_w("Exceeded maximum reconnection attempts (%d). Giving up.", MAX_RECONNECTION_ATTEMPTS);
+        DispatchGetUiQueue()->dispatch([this]() {
+            setErrorMessage("Failed to load content. Please check your network connection.");
+        });
+        return;
+    }
+    
+    log_i("Reconnection attempt %d/%d", reconnectionAttempts_, MAX_RECONNECTION_ATTEMPTS);
+    
+    // Cancel any existing reconnection attempt
+    cancelReconnectionAttempt();
+    
+    // Don't show an error message immediately - wait and see if we can reconnect
+    // But we should show the loading state to indicate we're trying to reconnect
+    DispatchGetUiQueue()->dispatch([this]() {
+        if (state_ != State::LOADING_CONTENT) {
+            // If we're not already in LOADING_CONTENT state, switch to it
+            setState(State::LOADING_CONTENT);
+            loadingMessageView_.setText("Reconnecting...");
+            setNeedsLayout();
+            setNeedsRerender();
+            render(display_);
+        }
+    });
+    
+    // Create a new cancel flag for this attempt
+    reconnectionAttemptCancelFlag_ = std::make_shared<CancelFlag>();
+    // Capture a copy of the flag for the lambda
+    auto localFlag = reconnectionAttemptCancelFlag_;
+    
+    // Use a short delay to allow the connection to potentially recover
+    DispatchGetCore0BackgroundQueue()->dispatch([this, localFlag]() {
+        // Wait a moment before attempting reconnection
+        vTaskDelay(pdMS_TO_TICKS(3000)); // 3 second delay - give more time for the network stack to reset
+        
+        // Check if we've been cancelled
+        if (CancelFlag::isCancelled(localFlag)) {
+            log_i("Reconnection attempt cancelled");
+            return;
+        }
+        
+        // Check if we were using BLE
+        if (isUsingBleConnection_) {
+            log_i("BLE connection was active, checking BLE availability");
+            
+            // Attempt to reconnect BLE
+            #if CONFIG_USE_BLE_SERVER_PROXY
+            log_i("Attempting to reconnect BLE...");
+            auto bleManager = BLEManager::getInstance(); // Get or create BLE manager
+            
+            // First, disconnect if there's any stale connection
+            if (bleManager->connected()) {
+                log_i("Disconnecting existing BLE connection first");
+                bleManager->disconnectProxy();
+                
+                // Give it a moment to disconnect
+                vTaskDelay(pdMS_TO_TICKS(1000));
+            }
+            
+            // Now try to connect
+            if (bleManager->connectProxy(cancelFlag_)) {
+                log_i("BLE reconnected successfully, retrying operation");
+                pageFlipper_.setUseBle(true);
+                pageFlipper_.retryNetworkOperation();
+                
+                // Reset reconnection attempts since we're now connected
+                reconnectionAttempts_ = 0;
+                return;
+            } else {
+                // We failed to reconnect this attempt, but we might try again if under max attempts
+                log_i("Failed to reconnect BLE this attempt");
+                if (reconnectionAttempts_ >= MAX_RECONNECTION_ATTEMPTS) {
+                    // Only show error if we've hit max attempts
+                    log_i("Exceeded maximum reconnection attempts, showing error message");
+                    DispatchGetUiQueue()->dispatch([this]() {
+                        setErrorMessage("Bluetooth connection lost. Please reconnect your phone.");
+                    });
+                }
+                return;
+            }
+            #else
+            // If BLE is not enabled in config, show error
+            DispatchGetUiQueue()->dispatch([this]() {
+                setErrorMessage("Bluetooth connection lost. Please reconnect your phone.");
+            });
+            return;
+            #endif
+        }
+        
+        // For WiFi connections, attempt to reconnect
+        log_i("Attempting to reconnect WiFi after connection loss");
+        
+        std::string errorMessage;
+        bool connected = connectToNetwork(false, errorMessage);
+        
+        if (connected) {
+            log_i("WiFi reconnected successfully");
+            
+            // Successfully reconnected, update the connection type and retry
+            pageFlipper_.setUseBle(isUsingBleConnection_);
+            pageFlipper_.retryNetworkOperation();
+            
+            // Reset reconnection attempts on successful connection
+            reconnectionAttempts_ = 0;
+        } else {
+            log_w("Failed to reconnect: %s", errorMessage.c_str());
+            
+            // Only show error message if reconnection failed and we've exceeded max attempts
+            if (reconnectionAttempts_ >= MAX_RECONNECTION_ATTEMPTS) {
+                DispatchGetUiQueue()->dispatch([this]() {
+                    setErrorMessage("Failed to load content. Please check your network connection.");
+                });
+            }
+        }
+    });
+}
+
+void KindleReadableScreen::cancelReconnectionAttempt() {
+    if (reconnectionAttemptCancelFlag_ == nullptr ||
+        CancelFlag::isCancelled(reconnectionAttemptCancelFlag_)) {
+        return;
+    }
+    
+    CancelFlag::cancel(reconnectionAttemptCancelFlag_);
+    reconnectionAttemptCancelFlag_ = nullptr;
 }
 
 void KindleReadableScreen::setCurrentScreen(const std::shared_ptr<Screen> &screen) {

@@ -141,6 +141,25 @@ public:
     void setOnErrorFunction(std::function<void(std::string &errorMessage)> onErrorFunction) {
         onErrorFunction_ = std::move(onErrorFunction);
     }
+    
+    void setOnConnectionErrorFunction(std::function<void(void)> onConnectionErrorFunction) {
+        onConnectionErrorFunction_ = std::move(onConnectionErrorFunction);
+    }
+    
+    void retryNetworkOperation() {
+        // Retry loading the initial page if we're at the beginning
+        if (pageStream_->size() == 0) {
+            loadInitialPage();
+        } else if (place_ != nullptr) {
+            // Otherwise retry from the current place
+            updatePlace(place_);
+        }
+    }
+    
+    void setUseBle(bool useBle) {
+        useBle_ = useBle;
+        log_i("KindlePageFlipper now using BLE: %s", useBle_ ? "true" : "false");
+    }
 
 private:
     // const int bufferThreshold_ = 2000; // Byte threshold to preload more content
@@ -153,6 +172,7 @@ private:
     std::shared_ptr<TxtPlace> place_;
     std::function<void(void)> gotContentFunction_;
     std::function<void(std::string &errorMessage)> onErrorFunction_;
+    std::function<void(void)> onConnectionErrorFunction_;
 
     auto checkForError(int httpCode, std::shared_ptr<KindlePageResponse> &response) -> std::string;
 };
