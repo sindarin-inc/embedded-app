@@ -22,7 +22,11 @@ void USBSerial::initJtag() {
     phyConf.controller = USB_PHY_CTRL_SERIAL_JTAG;
 
     usb_phy_handle_t jtagPhy;
-    usb_new_phy(&phyConf, &jtagPhy);
+    auto err = usb_new_phy(&phyConf, &jtagPhy);
+    if (err != ESP_OK) {
+        log_e("Failed to create JTAG PHY: %s", esp_err_to_name(err));
+    }
+
 #endif
 }
 
@@ -30,8 +34,14 @@ void USBSerial::disableLogging() {
     if (USBSerial::usbLoggingEnabled) {
         log_i("Disabling logging");
 #if CONFIG_USE_TINYUSB_SERIAL
-        esp_tusb_deinit_console(TINYUSB_CDC_ACM_1); // turn off log to usb
-        tusb_cdc_acm_deinit(TINYUSB_CDC_ACM_1);
+        auto err = esp_tusb_deinit_console(TINYUSB_CDC_ACM_1); // turn off log to usb
+        if (err != ESP_OK) {
+            log_e("Failed to disable logging: %s", esp_err_to_name(err));
+        }
+        err = tusb_cdc_acm_deinit(TINYUSB_CDC_ACM_1);
+        if (err != ESP_OK) {
+            log_e("Failed to disable logging: %s", esp_err_to_name(err));
+        }
 #endif
         USBSerial::usbLoggingEnabled = false;
     }
@@ -177,8 +187,14 @@ void USBSerial::begin() {
 
 void USBSerial::end() {
 #if CONFIG_USE_TINYUSB_SERIAL
-    tusb_cdc_acm_deinit(TINYUSB_CDC_ACM_0);
-    tusb_cdc_acm_deinit(TINYUSB_CDC_ACM_1);
+    auto err = tusb_cdc_acm_deinit(TINYUSB_CDC_ACM_0);
+    if (err != ESP_OK) {
+        log_e("tusb_cdc_acm_deinit(TINYUSB_CDC_ACM_0): %s", esp_err_to_name(err));
+    }
+    err = tusb_cdc_acm_deinit(TINYUSB_CDC_ACM_1);
+    if (err != ESP_OK) {
+        log_e("tusb_cdc_acm_deinit(TINYUSB_CDC_ACM_1): %s", esp_err_to_name(err));
+    }
     tinyusb_driver_uninstall();
 #endif
 }
