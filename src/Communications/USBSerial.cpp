@@ -3,6 +3,9 @@
 #include <esp_system.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
+#if SOC_USB_SERIAL_JTAG_SUPPORTED
+#include <hal/usb_serial_jtag_hal.h>
+#endif
 
 #include "Misc/SpiramAllocator.hpp"
 
@@ -26,6 +29,14 @@ void USBSerial::initJtag() {
     if (err != ESP_OK) {
         log_e("Failed to create JTAG PHY: %s", esp_err_to_name(err));
     }
+    // This is a workaround for the bug discussed in
+    // https://github.com/espressif/esp-idf/issues/15912 which breaks the ability to switch back to
+    // the USB/JTAG peripheral. We may be able to remove this after the fix in this PR
+    // https://github.com/espressif/esp-idf/pull/15932
+    // makes it into IDF
+#if SOC_USB_SERIAL_JTAG_SUPPORTED
+    usb_serial_jtag_hal_phy_set_external(nullptr, false);
+#endif
 
 #endif
 }
