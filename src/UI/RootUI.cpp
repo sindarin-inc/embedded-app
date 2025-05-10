@@ -744,7 +744,7 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
 
         for (const auto &book : kindle) {
             // Using shortened ID as the key for archive status
-            bool archived = prefs_.readableArchivedChanged.get(book.shortenedId().c_str());
+            bool archived = prefs_.readableArchivedChanged.get(book.shortenedUuid.c_str());
             menuItems->emplace_back(std::make_shared<MenuItemKindleBook>(
                 book,
                 [this, book, &fileSystem, &lightingController, &localStore]() {

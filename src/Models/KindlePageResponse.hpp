@@ -31,7 +31,7 @@ struct KindlePageResponse : public JsonSerializable {
     bool success = false;
     KindlePageProgress progress;
     SpiramString ocrText;
-    std::string screenshotUrl;
+    SpiramString screenshotUrl;
     float timeTaken = 0.0f;
 
     auto fromJson(const JsonObject &json) -> bool override {
@@ -56,18 +56,5 @@ struct KindlePageResponse : public JsonSerializable {
         }
 
         return true;
-    }
-
-    void toJson(JsonObject &json) const {
-        json["success"] = success;
-
-        JsonObject progressObj = json.createNestedObject("progress");
-        progressObj["percentage"] = progress.percentage;
-        progressObj["current_page"] = progress.currentPage;
-        progressObj["total_pages"] = progress.totalPages;
-
-        json["ocr_text"] = ocrText;
-        json["screenshot_url"] = screenshotUrl;
-        json["time_taken"] = timeTaken;
     }
 };

@@ -5,7 +5,6 @@
 #include <esp_timer.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
-#include <functional> // For std::hash
 #include <limits>
 #include <memory>
 #include <set>
@@ -1518,13 +1517,7 @@ auto LocalStore::saveKindleBooks(KindleBooksVector &kindleBooks) const -> bool {
     log_d("Saving %zu Kindle books in %s", kindleBooks.size(), KINDLE_PATH);
     for (const auto &book : kindleBooks) {
         JsonObject bookObj = booksJson.createNestedObject();
-        bookObj["uuid"] = book.uuid;
-        bookObj["title"] = book.title;
-        bookObj["author"] = book.author;
-        bookObj["progress"] = book.progress;
-        bookObj["size"] = book.size;
-        bookObj["is_approved_for_device"] = book.isApprovedForDevice;
-        bookObj["last_modified"] = book.lastModified;
+        convertToJson(book, bookObj);
     }
 
     if (doc->overflowed()) {

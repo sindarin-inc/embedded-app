@@ -577,7 +577,6 @@ auto SindarinAPI::makeKindleRequest(const std::string &path, KindlePageResponse 
         return ERR_CLIENT_READ;
     }
 
-    // Use SpiRamJsonDocument like other methods
     auto respJson = std::make_unique<SpiRamJsonDocument>(1024 + contentLength * 3);
     auto error = ArduinoJson::deserializeJson(*respJson, *stream);
 
@@ -596,22 +595,21 @@ auto SindarinAPI::makeKindleRequest(const std::string &path, KindlePageResponse 
     return httpCode;
 }
 
-auto SindarinAPI::openKindleBook(const std::string &title, KindlePageResponse *resp,
+auto SindarinAPI::openKindleBook(const SpiramString &title, KindlePageResponse *resp,
                                  const std::shared_ptr<CancelFlag> &cancelFlag, bool useBle)
     -> int {
+    if (!resp) {
+        assert(false && "Null KindlePageResponse");
+    }
+
     // Validate parameters
     if (title.empty()) {
         log_e("Empty title provided to openKindleBook");
         return ERR_INVALID_PARAM;
     }
 
-    if (!resp) {
-        log_e("Null response pointer provided to openKindleBook");
-        return ERR_INVALID_PARAM;
-    }
-
     // Properly URL encode the title
-    std::string encodedTitle = Urlencode(title);
+    std::string encodedTitle = Urlencode(std::string(title));
     log_i("Encoded title for Kindle API: %s", encodedTitle.c_str());
 
     // Construct the path with URL-encoded title

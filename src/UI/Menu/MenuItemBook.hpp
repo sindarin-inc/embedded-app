@@ -41,17 +41,15 @@ public:
 
     [[nodiscard]] auto id() const -> std::string override {
         // Use the shortened ID for a unique but compact identifier
-        return kindleBook_.shortenedId();
+        return std::string(kindleBook_.shortenedUuid.c_str());
     }
 
     [[nodiscard]] auto title() const -> std::string {
         return StringFormat("%s%s", archived_ ? "Archived: " : "", kindleBook_.title.c_str());
     }
 
-    [[nodiscard]] auto author() const -> SpiramString { return SpiramString(kindleBook_.author); };
+    [[nodiscard]] auto author() const -> SpiramString { return kindleBook_.author; };
 
-    // For displaying progress information
-    [[nodiscard]] auto progress() const -> const std::string & { return kindleBook_.progress; }
     [[nodiscard]] auto progressPercent() const -> int { return kindleBook_.progressPercent; }
 
 private:

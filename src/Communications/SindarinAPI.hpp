@@ -59,8 +59,8 @@ public:
     auto checkSync(CheckSyncRequest &req, CheckSyncResponse *resp, Telemetry &telemetry,
                    bool useBle, const std::shared_ptr<CancelFlag> &cancel) -> int;
     auto checkSync(const std::string &url, CheckSyncRequest &req, CheckSyncResponse *resp,
-                   Telemetry &telemetry, bool useBle, const std::shared_ptr<CancelFlag> &cancel)
-        -> int;
+                   Telemetry &telemetry, bool useBle,
+                   const std::shared_ptr<CancelFlag> &cancel) -> int;
     auto checkFirmware(FirmwareResponse *resp, bool useBle,
                        const std::shared_ptr<CancelFlag> &cancel) -> int;
 
@@ -71,8 +71,8 @@ public:
                           const std::function<void(int percentage)> &progressCallback) -> int;
     static auto createClient(const std::string &url, const std::string &contentType,
                              esp_http_client_method_t method, bool useBle,
-                             const std::shared_ptr<CancelFlag> &cancel, int timeoutMs = 30000)
-        -> std::shared_ptr<HttpClient>;
+                             const std::shared_ptr<CancelFlag> &cancel,
+                             int timeoutMs = 30000) -> std::shared_ptr<HttpClient>;
     auto uploadTelemetryFile(SFile &telemetryFile, const std::string &localPath,
                              FileSystem &fileSystem, bool useBle = false,
                              const std::shared_ptr<CancelFlag> &cancel = nullptr) -> int;
@@ -87,7 +87,7 @@ public:
                      const std::shared_ptr<CancelFlag> &cancel) -> int;
 
     // Kindle book operations
-    auto openKindleBook(const std::string &title, KindlePageResponse *resp,
+    auto openKindleBook(const SpiramString &title, KindlePageResponse *resp,
                         const std::shared_ptr<CancelFlag> &cancelFlag, bool useBle) -> int;
     auto navigateKindleNext(KindlePageResponse *resp, const std::shared_ptr<CancelFlag> &cancelFlag,
                             bool useBle, bool ocr = true) -> int;
