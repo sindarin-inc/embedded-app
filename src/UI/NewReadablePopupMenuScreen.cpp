@@ -166,7 +166,6 @@ void NewReadablePopupMenuScreen::render(DisplaySystem &display) {
         // Redraw but this time without the text (since updateDsplay will clear the screen)
         draw();
     }
-
     menuView_.drawFastElements();
     display.updateDisplay(DisplaySystem::UpdateType::FAST_INDICATOR);
 };
