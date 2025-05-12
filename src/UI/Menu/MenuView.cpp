@@ -11,8 +11,7 @@
 MenuView::MenuView(DisplaySystem &display)
     : EinkView(display),
       // 5px on 256x256, scales up for larger displays
-      indicatorWidth(std::max(5, std::min(display.width(), display.height()) / 51)),
-      indicatorPadding(indicatorWidth), pagingIndicatorWidth(indicatorWidth),
+      indicatorWidth(8), indicatorPadding(indicatorWidth + 2), pagingIndicatorWidth(indicatorWidth),
       pagingIndicatorPadding(2 * indicatorWidth), pagingIndicatorView_(display),
       indicatorView_(display, 0) {}
 

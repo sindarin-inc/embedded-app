@@ -11,11 +11,11 @@
 class SingleLineTextView : public EinkView {
 public:
     SingleLineTextView(DisplaySystem &display)
-        : EinkView(display), font_(static_cast<Font *>(&fontFace0)) {}
+        : EinkView(display), font_(static_cast<Font *>(&fontFace1)) {}
 
     //! Convenience method to initialize and then set text and font
     SingleLineTextView(DisplaySystem &display, std::string text,
-                       Font *font = static_cast<Font *>(&fontFace0), bool allCaps = false)
+                       Font *font = static_cast<Font *>(&fontFace1), bool allCaps = false)
         : SingleLineTextView(display) {
         setText(std::move(text), allCaps);
     }

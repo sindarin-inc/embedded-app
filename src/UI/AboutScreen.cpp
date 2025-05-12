@@ -4,7 +4,7 @@
 
 auto AboutScreen::layout(LayoutContext &context, SolSize size) -> SolSize {
     uint8_t leftPadding = 20;
-    uint8_t yAdvance = 17;
+    uint8_t yAdvance = 30;
 
     int x = 0;
     int y = 10;
