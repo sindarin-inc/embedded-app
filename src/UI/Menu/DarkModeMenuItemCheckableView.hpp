@@ -12,7 +12,7 @@ public:
     DarkModeMenuItemCheckableView(DisplaySystem &display,
                                   const std::shared_ptr<DarkModeMenuItemCheckable> &menuItem)
         : MenuItemView(display), titleView_(display),
-          checkmarkView_(display, CHECK_MARK_BITS, CheckMark_width, CheckMark_height),
+          checkmarkView_(display, checkMarkBits, CheckMark_width, CheckMark_height),
           arrowView_(display, "", ArrowRight), menuItem_(menuItem) {
         titleView_.setText(menuItem->title());
         checkmarkView_.setHidden(false);
