@@ -8,6 +8,7 @@
 
 #include <assert.h>
 #include <chrono>
+#include <inttypes.h>
 #include <stdio.h>
 
 #define PROFILE_START(identifier)                                                                  \
@@ -86,7 +87,7 @@ const char *pathToFileName(const char *path);
             1000;                                                                                  \
         char log_time_str[32];                                                                     \
         strftime(log_time_str, sizeof(log_time_str), "%H:%M:%S", localtime(&log_now_time_t));      \
-        fprintf(stdout, "[%s.%03lld] ", log_time_str, log_now_ms.count());                         \
+        fprintf(stdout, "[%s.%03" PRIu64 "] ", log_time_str, log_now_ms.count());                  \
         fprintf(stdout, fmt, ##__VA_ARGS__);                                                       \
         fflush(stdout);                                                                            \
     } while (0)
