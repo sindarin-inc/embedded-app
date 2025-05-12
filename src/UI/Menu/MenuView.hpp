@@ -48,9 +48,9 @@ public:
         }
     }
 
-    void drawFastElements() {
-        indicatorView_.fillColor = display_.fg;
-        indicatorView_.strokeColor = display_.fg;
+    void drawFastElements(bool flipColors = false) {
+        indicatorView_.fillColor = flipColors ? display_.bg : display_.fg;
+        indicatorView_.strokeColor = flipColors ? display_.bg : display_.fg;
         if (indicatorType_ != IndicatorType::None) {
             indicatorView_.draw();
         }

@@ -4,10 +4,10 @@ MainMenuScreen::MainMenuScreen(DisplaySystem &display, Battery &battery, Prefere
     : CarouselMenuScreen(display), clockBatteryView_(battery, display, prefs) {
     menuView_.padding = 5;
     menuView_.itemsPerPage = 4;
-    menuView_.indicatorWidth = 5;
-    menuView_.indicatorPadding = 5;
-    menuView_.pagingIndicatorWidth = 5;
-    menuView_.pagingIndicatorPadding = 5;
+    menuView_.indicatorWidth = 7;
+    menuView_.indicatorPadding = 10;
+    menuView_.pagingIndicatorWidth = 10;
+    menuView_.pagingIndicatorPadding = 10;
     menuView_.setIndicatorType(MenuView::IndicatorType::Line);
 }
 
