@@ -78,8 +78,18 @@ const char *pathToFileName(const char *path);
 #define SIM_LOG_COLOR_V SIM_LOG_COLOR(SIM_LOG_COLOR_GRAY)
 
 #define log_printf(fmt, ...)                                                                       \
-    fprintf(stdout, fmt, ##__VA_ARGS__);                                                           \
-    fflush(stdout)
+    do {                                                                                           \
+        auto log_now = std::chrono::system_clock::now();                                           \
+        auto log_now_time_t = std::chrono::system_clock::to_time_t(log_now);                       \
+        auto log_now_ms =                                                                          \
+            std::chrono::duration_cast<std::chrono::milliseconds>(log_now.time_since_epoch()) %    \
+            1000;                                                                                  \
+        char log_time_str[32];                                                                     \
+        strftime(log_time_str, sizeof(log_time_str), "%H:%M:%S", localtime(&log_now_time_t));      \
+        fprintf(stdout, "[%s.%03lld] ", log_time_str, log_now_ms.count());                         \
+        fprintf(stdout, fmt, ##__VA_ARGS__);                                                       \
+        fflush(stdout);                                                                            \
+    } while (0)
 #define SIM_LOG_FORMAT(letter, format)                                                             \
     SIM_LOG_COLOR_##letter "[" #letter "][%s:%u] %s(): " format SIM_LOG_RESET_COLOR "\r\n",        \
         pathToFileName(__FILE__), __LINE__, __FUNCTION__
