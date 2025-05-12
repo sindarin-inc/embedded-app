@@ -130,7 +130,13 @@ public:
      */
     void loadInitialPage();
 
-    void updatePlace(const std::shared_ptr<Place> &place);
+    /**
+     * Contains all the logic to decide when to navigate pages and preview upcoming pages.
+     *
+     * @param place The place to update to
+     * @param atEndOfContent Whether we're at the end of the content
+     */
+    void updatePlace(const std::shared_ptr<Place> &place, bool atEndOfContent);
 
     auto getStream() -> std::shared_ptr<RendererStream> { return pageStream_; }
 
@@ -146,13 +152,13 @@ public:
         onConnectionErrorFunction_ = std::move(onConnectionErrorFunction);
     }
 
-    void retryNetworkOperation() {
+    void retryNetworkOperation(bool atEndOfContent) {
         // Retry loading the initial page if we're at the beginning
         if (pageStream_->size() == 0) {
             loadInitialPage();
         } else if (place_ != nullptr) {
             // Otherwise retry from the current place
-            updatePlace(place_);
+            updatePlace(place_, atEndOfContent);
         }
     }
 

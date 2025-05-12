@@ -89,13 +89,8 @@ public:
     // Kindle book operations
     auto openKindleBook(const SpiramString &title, KindlePageResponse *resp,
                         const std::shared_ptr<CancelFlag> &cancelFlag, bool useBle) -> int;
-    auto navigateKindleNext(KindlePageResponse *resp, const std::shared_ptr<CancelFlag> &cancelFlag,
-                            bool useBle, bool ocr = true) -> int;
-    auto previewKindleNext(KindlePageResponse *resp, const std::shared_ptr<CancelFlag> &cancelFlag,
-                           bool useBle) -> int;
-    auto navigateKindlePrevious(KindlePageResponse *resp,
-                                const std::shared_ptr<CancelFlag> &cancelFlag, bool useBle,
-                                bool ocr = true) -> int;
+    auto navigateKindle(KindlePageResponse *resp, const std::shared_ptr<CancelFlag> &cancelFlag,
+                        bool useBle, int navigate, int preview) -> int;
 
 private:
     auto tryCheckFirmware(FirmwareResponse *resp, bool useHttp, bool useBle,

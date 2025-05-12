@@ -95,7 +95,7 @@ KindleReadableScreen::KindleReadableScreen(DisplaySystem &display,
     errorMessageView_.alignCenter = true;
     errorMessageView_.setHidden(true); // Start hidden until needed
 
-    // Set up delayed message view (for "This can take up to 30 seconds")
+    // Set up delayed message view (for "This can take up to 60 seconds")
     delayedMessageView_.setFont(font);
     delayedMessageView_.setText("");
     delayedMessageView_.alignCenter = true;
@@ -345,10 +345,11 @@ void KindleReadableScreen::drawInRect(SolRect rect) {
 
         // If we're at the end of loaded content
         // TODO(john): Differentiate between end of loaded content and end of book
-        if (renderer_.atEndOfFile()) {
+        bool atEndOfContent = renderer_.atEndOfFile();
+        if (atEndOfContent) {
             setState(State::DISPLAY_PARTIAL_CONTENT);
         }
-        pageFlipper_.updatePlace(currentPlace_);
+        pageFlipper_.updatePlace(currentPlace_, atEndOfContent);
 
         // Log the current and next place offsets for debugging
         uint32_t currentOffset = currentPlace_->getOffset();
@@ -699,7 +700,7 @@ void KindleReadableScreen::scheduleDelayedLoadingMessage() {
             }
 
             // Set and show the delayed message
-            delayedMessageView_.setText("This can take up to 30 seconds.");
+            delayedMessageView_.setText("This can take up to 60 seconds.");
             delayedMessageView_.setHidden(false);
             setNeedsLayout();
 
@@ -774,7 +775,7 @@ void KindleReadableScreen::attemptReconnection() {
             log_i("Network reconnected successfully");
 
             // Successfully reconnected, retry the operation
-            pageFlipper_.retryNetworkOperation();
+            pageFlipper_.retryNetworkOperation(renderer_.atEndOfFile());
 
             // Reset reconnection attempts on successful connection
             reconnectionAttempts_ = 0;

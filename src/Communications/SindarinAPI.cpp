@@ -629,22 +629,9 @@ auto SindarinAPI::openKindleBook(const SpiramString &title, KindlePageResponse *
     return result;
 }
 
-auto SindarinAPI::navigateKindleNext(KindlePageResponse *resp,
-                                     const std::shared_ptr<CancelFlag> &cancelFlag, bool useBle,
-                                     bool ocr) -> int {
-    std::string path = StringFormat("/kindle/navigate-next?ocr=%d", ocr ? 1 : 0);
+auto SindarinAPI::navigateKindle(KindlePageResponse *resp,
+                                 const std::shared_ptr<CancelFlag> &cancelFlag, bool useBle,
+                                 int navigate, int preview) -> int {
+    std::string path = StringFormat("/kindle/navigate?navigate=%d&preview=%d", navigate, preview);
     return makeKindleRequest(path, resp, cancelFlag, useBle);
-}
-
-auto SindarinAPI::previewKindleNext(KindlePageResponse *resp,
-                                    const std::shared_ptr<CancelFlag> &cancelFlag, bool useBle)
-    -> int {
-    return makeKindleRequest("/kindle/preview-next", resp, cancelFlag, useBle);
-}
-
-auto SindarinAPI::navigateKindlePrevious(KindlePageResponse *resp,
-                                         const std::shared_ptr<CancelFlag> &cancelFlag, bool useBle,
-                                         bool ocr) -> int {
-    std::string url = ocr ? "/kindle/navigate-previous?ocr=1" : "/kindle/navigate-previous?ocr=0";
-    return makeKindleRequest(url, resp, cancelFlag, useBle);
 }

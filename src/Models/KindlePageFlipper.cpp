@@ -26,8 +26,6 @@ auto KindlePageFlipper::checkForError(int httpCode, std::shared_ptr<KindlePageRe
     // Check for connection issues
     if (httpCode <= 0) {
         return "CONNECTION_ERROR"; // Special marker for connection issues that should be retried
-    } else if (httpCode == 500) {
-        return "Server error. Please try again later.";
     } else if (httpCode == 401 || httpCode == 403) {
         return "Authentication error. Please try signing in again.";
     } else if (httpCode == 404) {
@@ -73,107 +71,77 @@ void KindlePageFlipper::loadInitialPage() {
 
         pageStream_->appendPageFromResponse(*response);
         gotContentFunction_();
-
-        // Preload the next page
-        httpCode =
-            SindarinAPI::getInstance()->previewKindleNext(response.get(), cancelFlag, useBle_);
-        if (CancelFlag::isCancelled(cancelFlag)) {
-            return;
-        }
-        pageStream_->appendPageFromResponse(*response);
-        gotContentFunction_();
-
-        errorMessage = checkForError(httpCode, response);
-        if (!errorMessage.empty()) {
-            log_w("Error loading preview after initial page: %s", errorMessage.c_str());
-            // Only propagate non-connection errors
-            if (errorMessage != "CONNECTION_ERROR") {
-                onErrorFunction_(errorMessage);
-            } else {
-                log_i("Network connection issue detected during preview, initiating reconnection");
-                if (onConnectionErrorFunction_) {
-                    onConnectionErrorFunction_();
-                }
-            }
-            return;
-        }
     });
 }
 
-void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place) {
-    if (place_ == nullptr) {
-        // First time we're setting the place
-        place_ = std::dynamic_pointer_cast<TxtPlace>(place);
-        return;
-    }
-
-    // Log the places
-    log_i("Updating place from %s to %s", place_->str().c_str(), place->str().c_str());
-
+void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool atEndOfContent) {
     auto cancelFlag = cancelFlag_;
-    DispatchGetCore0BackgroundQueue()->dispatch([this, place, cancelFlag]() {
-        // Perform the logic in the same queue as the requests, so we always have the latest data
-        // when we need to make decisions
+
+    // Perform the logic in a queue so we always have the latest data before making API calls
+    DispatchGetCore0BackgroundQueue()->dispatch([this, place, cancelFlag, atEndOfContent]() {
+        if (CancelFlag::isCancelled(cancelFlag)) {
+            log_i("Cancelled while updating place");
+            return;
+        }
+
+        if (place_ == nullptr) {
+            // First time we're setting the place
+            place_ = std::dynamic_pointer_cast<TxtPlace>(place);
+        }
+
+        log_i("Updating place from %s to %s %s", place_->str().c_str(), place->str().c_str(),
+              atEndOfContent ? "(at end of content)" : "");
+
+        auto previousPageIndex = pageStream_->pageIndexForOffset(place_->getOffset());
         auto currentPageIndex = pageStream_->pageIndexForOffset(place->getOffset());
-        // If the start of this page is in the last loaded page, then go ahead and load the next
-        // page
-        if (currentPageIndex < pageStream_->lastPageIndex()) {
-            log_d("On page %d/%d, no need to preload next page", currentPageIndex,
-                  pageStream_->lastPageIndex());
-            return;
-        }
-        log_d("Now on page %d/%d, preloading next page", currentPageIndex,
-              pageStream_->lastPageIndex());
-        auto response = std::make_shared<KindlePageResponse>();
+        auto lastPageIndex = pageStream_->lastPageIndex();
 
-        // TODO(john): Would be better to combine these into a single request
-        int httpCode =
-            SindarinAPI::getInstance()->navigateKindleNext(response.get(), cancelFlag, useBle_);
-        if (CancelFlag::isCancelled(cancelFlag)) {
-            return;
+        auto pagesToAdvance = currentPageIndex - previousPageIndex;
+        // Cases:
+        // 1. We don't have a full page of content ahead (load one preview page)
+        // 2. We have a full page of content but it is too short and we're at the end of the content
+        // (load another page into the preview)
+        auto pageToPreview = 0;
+        if (currentPageIndex == lastPageIndex || atEndOfContent) {
+            pageToPreview = lastPageIndex - currentPageIndex + 1;
         }
 
-        auto errorMessage = checkForError(httpCode, response);
-        if (!errorMessage.empty()) {
-            log_w("Error moving to next page: %s", errorMessage.c_str());
-            // Only propagate non-connection errors
-            if (errorMessage != "CONNECTION_ERROR") {
-                onErrorFunction_(errorMessage);
-            } else {
-                log_i(
-                    "Network connection issue detected while navigating, initiating reconnection");
-                if (onConnectionErrorFunction_) {
-                    onConnectionErrorFunction_();
-                }
+        log_d("Now on page %d/%d, previously on page %d/%d, advancing %d pages and previewing page "
+              "%d (atEndOfContent=%d)",
+              currentPageIndex, lastPageIndex, previousPageIndex, lastPageIndex, pagesToAdvance,
+              pageToPreview, atEndOfContent);
+
+        if (pagesToAdvance > 0 || pageToPreview > 0) {
+            auto response = std::make_shared<KindlePageResponse>();
+
+            int httpCode = SindarinAPI::getInstance()->navigateKindle(
+                response.get(), cancelFlag, useBle_, pagesToAdvance, pageToPreview);
+            if (CancelFlag::isCancelled(cancelFlag)) {
+                return;
             }
-            return;
-        }
-
-        httpCode =
-            SindarinAPI::getInstance()->previewKindleNext(response.get(), cancelFlag, useBle_);
-        if (CancelFlag::isCancelled(cancelFlag)) {
-            return;
-        }
-
-        errorMessage = checkForError(httpCode, response);
-        if (!errorMessage.empty()) {
-            log_w("Error loading preview after navigating to next page: %s", errorMessage.c_str());
-            // Only propagate non-connection errors
-            if (errorMessage != "CONNECTION_ERROR") {
-                onErrorFunction_(errorMessage);
-            } else {
-                log_i("Network connection issue detected during preview, initiating reconnection");
-                if (onConnectionErrorFunction_) {
-                    onConnectionErrorFunction_();
+            auto errorMessage = checkForError(httpCode, response);
+            if (!errorMessage.empty()) {
+                log_e("Error moving to next page: %s", errorMessage.c_str());
+                // Only propagate non-connection errors
+                if (errorMessage != "CONNECTION_ERROR") {
+                    onErrorFunction_(errorMessage);
+                } else {
+                    log_e("Network connection issue detected while navigating, initiating "
+                          "reconnection");
+                    if (onConnectionErrorFunction_) {
+                        onConnectionErrorFunction_();
+                    }
                 }
+                return;
             }
-            return;
+
+            // If we're navigating only, don't expect a page
+            if (pageToPreview > 0) {
+                pageStream_->appendPageFromResponse(*response);
+            }
+            gotContentFunction_();
         }
 
-        pageStream_->appendPageFromResponse(*response);
-        gotContentFunction_();
+        place_ = std::dynamic_pointer_cast<TxtPlace>(place);
     });
-
-    // Update the place
-    place_ = std::dynamic_pointer_cast<TxtPlace>(place);
 }
