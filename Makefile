@@ -108,6 +108,9 @@ test-lldb: test-build
 test-epub-lldb: test-build
 	lldb ./test/CatchTests/build/tests '[epub]'
 
+test-kindle: test-build
+	./test/CatchTests/build/tests '[kindle]'
+
 .PHONY: epub-render-build
 epub-render-build:
 	mkdir -p scripts/epub-render/build
