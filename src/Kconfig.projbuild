@@ -380,6 +380,36 @@ menu "Sol Options"
         config DEBUG_MEMORY
             bool "Enable Memory Debugging"
             default n
+
+        choice SOL_LOG_LEVEL
+            bool "Sol log verbosity"
+            default SOL_LOG_LEVEL_INFO
+            help
+                Specify how much output to see in Sol logs.
+
+            config SOL_LOG_LEVEL_NONE
+                bool "No output"
+            config SOL_LOG_LEVEL_ERROR
+                bool "Error"
+            config SOL_LOG_LEVEL_WARN
+                bool "Warning"
+            config SOL_LOG_LEVEL_INFO
+                bool "Info"
+            config SOL_LOG_LEVEL_DEBUG
+                bool "Debug"
+            config SOL_LOG_LEVEL_VERBOSE
+                bool "Verbose"
+        endchoice
+
+        config SOL_LOG_LEVEL
+            int
+            default 0 if SOL_LOG_LEVEL_NONE
+            default 1 if SOL_LOG_LEVEL_ERROR
+            default 2 if SOL_LOG_LEVEL_WARN
+            default 3 if SOL_LOG_LEVEL_INFO
+            default 4 if SOL_LOG_LEVEL_DEBUG
+            default 5 if SOL_LOG_LEVEL_VERBOSE
+
     endmenu
 
 endmenu
