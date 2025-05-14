@@ -98,7 +98,7 @@ void USBDeviceInit();
 
 #if !SIMULATOR
 void PinMode(int pin, int mode);
-auto GetHeapSize() -> size_t;
+auto GetHeapSize(uint32_t caps) -> size_t;
 void EnableCore0Wdt();
 void DisableCore0Wdt();
 #else

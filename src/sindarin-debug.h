@@ -220,10 +220,13 @@ inline auto GetCycleCount() -> uint64_t {
 #if defined(CONFIG_DEBUG_MEMORY) && CONFIG_DEBUG_MEMORY
 
 #define SHOW_HEAP()                                                                                \
-    log_d("Free heap: %zuk/%zuk Free PSRAM: %zuk/%zuk %s:%d ",                                     \
-          heap_caps_get_free_size(MALLOC_CAP_INTERNAL) / 1000, GetHeapSize() / 1000,               \
-          heap_caps_get_free_size(MALLOC_CAP_8BIT) / 1000,                                         \
-          heap_caps_get_total_size(MALLOC_CAP_8BIT) / 1000, __FILE__, __LINE__)
+    log_d("SHOW_HEAP() %zuk/%zuk SPIRAM:%zuk/%zuk DMA:%zuk/%zuk 8BIT:%zuk/%zuk %s:%d ",            \
+          heap_caps_get_free_size(MALLOC_CAP_INTERNAL) / 1000,                                     \
+          GetHeapSize(MALLOC_CAP_INTERNAL) / 1000,                                                 \
+          heap_caps_get_free_size(MALLOC_CAP_SPIRAM) / 1000,                                       \
+          GetHeapSize(MALLOC_CAP_SPIRAM) / 1000, heap_caps_get_free_size(MALLOC_CAP_DMA) / 1000,   \
+          GetHeapSize(MALLOC_CAP_DMA) / 1000, heap_caps_get_free_size(MALLOC_CAP_8BIT) / 1000,     \
+          GetHeapSize(MALLOC_CAP_8BIT) / 1000, __FILE__, __LINE__)
 
 #define HEAP_PROFILE_START(identifier)                                                             \
     size_t heapStart##identifier = heap_caps_get_free_size(MALLOC_CAP_INTERNAL);
