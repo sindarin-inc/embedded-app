@@ -133,7 +133,7 @@ void USBSerial::begin() {
     // Since we don't otherwise init this variable, we do it here on power on
     if (esp_reset_reason() == ESP_RST_POWERON) {
         USBSerial::usbLoggingEnabled = false;
-        USBSerial::logLevel = ESP_LOG_INFO;
+        setLogLevel(static_cast<esp_log_level_t>(CONFIG_SOL_LOG_LEVEL));
     }
 
 #if CONFIG_USE_TINYUSB_SERIAL
