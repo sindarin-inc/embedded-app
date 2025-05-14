@@ -212,9 +212,9 @@ auto HardwareDeinit() -> esp_err_t {
     return err;
 }
 
-auto GetHeapSize() -> size_t {
+auto GetHeapSize(uint32_t caps) -> size_t {
     multi_heap_info_t info;
-    heap_caps_get_info(&info, MALLOC_CAP_INTERNAL);
+    heap_caps_get_info(&info, caps);
     return info.total_free_bytes + info.total_allocated_bytes;
 }
 
