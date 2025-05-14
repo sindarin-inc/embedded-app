@@ -15,6 +15,7 @@
 #include "UI/Components/MultiLineTextView.hpp"
 #include "UI/NewReadablePopupMenuScreen.hpp"
 #include "UI/Screen.hpp"
+#include "Version.hpp"
 
 /**
  * KindleReadableScreen
@@ -101,6 +102,18 @@ private:
     void showPopupMenu();
     void setCurrentScreen(const std::shared_ptr<Screen> &screen);
     auto getCurrentScreen() -> std::shared_ptr<Screen> { return currentScreen_; }
+
+    // Get telemetry metrics for the current state (matching Readable::telemetryPlacemarkMetrics)
+    auto getTelemetryMetrics() -> std::unordered_map<std::string, TelemetryVariant> {
+        std::unordered_map<std::string, TelemetryVariant> metrics;
+        if (currentPlace_) {
+            // Kindle books use TXT format, so we only need po (position offset)
+            metrics["po"] = currentPlace_->getOffset();
+        } else {
+            metrics["po"] = 0U;
+        }
+        return metrics;
+    }
 
     // Attempt to reconnect once after connection loss
     void attemptReconnection();
