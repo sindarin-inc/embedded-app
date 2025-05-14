@@ -1,9 +1,5 @@
 #pragma once
 
-#ifndef DEBUG_MEMORY
-#define DEBUG_MEMORY 0
-#endif
-
 #if SIMULATOR
 
 #include <assert.h>
@@ -221,7 +217,7 @@ inline auto GetCycleCount() -> uint64_t {
 
 #define SIZE_OF(obj) log_d("SIZE_OF(%s): %zu", #obj, sizeof(obj))
 
-#if DEBUG_MEMORY
+#if defined(CONFIG_DEBUG_MEMORY) && CONFIG_DEBUG_MEMORY
 
 #define SHOW_HEAP()                                                                                \
     log_d("Free heap: %zuk/%zuk Free PSRAM: %zuk/%zuk %s:%d ",                                     \
