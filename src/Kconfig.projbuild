@@ -376,4 +376,10 @@ menu "Sol Options"
 
     endmenu
 
+    menu "Debug Settings"
+        config DEBUG_MEMORY
+            bool "Enable Memory Debugging"
+            default n
+    endmenu
+
 endmenu
