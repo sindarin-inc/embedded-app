@@ -420,20 +420,6 @@ esp_err_t panel_seeya049_run_selftest(esp_lcd_panel_t *panel);
 esp_err_t panel_seeya049_write_ram(esp_lcd_panel_t *panel, const void *data, size_t length);
 
 /**
- * @brief Dump the display's framebuffer over I2C using the RAMRD command
- *
- * This function will read the entire framebuffer (1920x1080x3 bytes) and print
- * the first 16 bytes for debugging purposes.
- *
- * @return
- *      - ESP_OK on success
- *      - ESP_ERR_NO_MEM if memory allocation fails
- *      - ESP_ERR_INVALID_ARG if parameter is invalid
- *      - Otherwise on error
- */
-esp_err_t panel_seeya049_dump_framebuffer_i2c(void);
-
-/**
  * @brief Move the display area of the panel
  *
  * @param[in] panel LCD panel handle

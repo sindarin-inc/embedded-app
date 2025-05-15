@@ -57,6 +57,22 @@
             "cStandard": "c17",
             "cppStandard": "c++17",
             "compileCommands": "${workspaceFolder}/components/esp_lcd_seeya049/test_apps/build-esp32p4/compile_commands.json"
+        },
+        {
+            "name": "seeya103_test_app",
+            "includePath": [
+                "${default}",
+                "${workspaceFolder}/components/esp_lcd_seeya103/test_apps",
+                "${workspaceFolder}/components/esp_lcd_seeya103"
+            ],
+            "defines": [
+                "_DEBUG",
+                "UNICODE",
+                "_UNICODE"
+            ],
+            "cStandard": "c17",
+            "cppStandard": "c++17",
+            "compileCommands": "${workspaceFolder}/components/esp_lcd_seeya103/test_apps/build-esp32p4/compile_commands.json"
         }
     ],
     "version": 4

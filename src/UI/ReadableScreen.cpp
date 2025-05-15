@@ -8,6 +8,7 @@
 
 #include "Misc/Platform.hpp"
 #include "Models/UserReadablePartialChapterSummary.hpp"
+#include "UI/AppDownloadScreen.hpp"
 #include "UI/Bitmaps/Auto_Pilot_Icons.hpp"
 #include "UI/BookQuestionsScreen.hpp"
 #include "UI/ReadableHookScreens.hpp"
@@ -259,7 +260,28 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
             auto placeHref =
                 std::dynamic_pointer_cast<EPubPlace>(renderer_.getCurrentPlace())->getHRef();
 
+            // Always show "Ask AI" option, but show pairing message if no cloud token
             menuItems->emplace_back(std::make_shared<MenuItemSingleLine>("Ask AI", [this]() {
+                // If we're not yet paired, show the app screen instead
+                if (PreferencesStore::paired == PairedStatus::Unpaired) {
+                    auto appDownloadScreen = std::make_shared<AppDownloadScreen>(display_);
+                    setCurrentScreen(appDownloadScreen);
+                    appDownloadScreen->setBackCallback(
+                        [this]() { this->setCurrentScreen(nullptr); });
+                    return;
+                }
+
+                // If wifi & ble have been disabled, show a popup encouraging the user to
+                // turn on wifi or BLE to perform the content sync.
+                if (prefs_.wifiDisabled.get().value_or(false) &&
+                    prefs_.bleDisabled.get().value_or(false)) {
+                    RootUI::getInstance().showTemporaryMessage("Enable WiFi or BLE to use Ask AI.");
+                    if (currentScreen_) {
+                        currentScreen_->setFirstLoad();
+                    }
+                    return;
+                }
+
                 auto epubPlace = std::dynamic_pointer_cast<EPubPlace>(renderer_.getCurrentPlace());
                 bookQuestionsScreen_->reset();
                 bookQuestionsScreen_->setPlaceInReadable(epubPlace);
@@ -295,11 +317,6 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
                 }));
             }
         } else {
-            menuItems->emplace_back(std::make_shared<MenuItemSingleLine>("Ask AI", [this]() {
-                RootUI::getInstance().showTemporaryMessage(notExistMessage_,
-                                                           TEMP_MSG_DURATION_NO_CLOSE);
-            }));
-
             menuItems->emplace_back(std::make_shared<MenuItemSingleLine>("Summary", [this]() {
                 RootUI::getInstance().showTemporaryMessage(notExistMessage_,
                                                            TEMP_MSG_DURATION_NO_CLOSE);
