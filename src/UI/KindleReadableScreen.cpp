@@ -280,6 +280,10 @@ void KindleReadableScreen::begin() {
     // Reset reconnection attempts counter
     reconnectionAttempts_ = 0;
 
+    // Log telemetry for opening a Kindle book
+    telemetry_.logMetric(TelemetryField::METRIC_READABLE_OPEN, kindleBook_->uuid,
+                         getTelemetryMetrics());
+
     // Define the callback for initial connection - load the book content
     auto initialConnectionCallback = [this](bool connected) {
         if (!connected) {
@@ -630,6 +634,11 @@ void KindleReadableScreen::navigateNext() {
     }
 
     currentPlace_ = newPlace_;
+
+    // Log telemetry for navigating to next page
+    telemetry_.logMetric(TelemetryField::METRIC_READABLE_PLACE, kindleBook_->uuid.c_str(),
+                         getTelemetryMetrics());
+
     updateType_ = prefs_.fastTransitions.get().value_or(false) ? DisplaySystem::UpdateType::PARTIAL
                                                                : DisplaySystem::UpdateType::FULL;
     setNeedsRerender();
@@ -637,6 +646,11 @@ void KindleReadableScreen::navigateNext() {
 
 void KindleReadableScreen::navigatePrevious() {
     currentPlace_ = renderer_.getPreviousPlace();
+
+    // Log telemetry for navigating to previous page
+    telemetry_.logMetric(TelemetryField::METRIC_READABLE_PLACE, kindleBook_->uuid.c_str(),
+                         getTelemetryMetrics());
+
     updateType_ = prefs_.fastTransitions.get().value_or(false) ? DisplaySystem::UpdateType::PARTIAL
                                                                : DisplaySystem::UpdateType::FULL;
     setNeedsRerender();
@@ -644,6 +658,7 @@ void KindleReadableScreen::navigatePrevious() {
 
 void KindleReadableScreen::dismissScreen() {
     log_d("Dismissing KindleReadableScreen");
+
     CancelFlag::cancel(cancelFlag_);
     cancelDelayedLoadingMessage();
     cancelReconnectionAttempt();
