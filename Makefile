@@ -18,16 +18,16 @@ TARGET ?= glasses-debug
 #   clone -b john/atom-display git@github.com:sindarin-inc/M5GFX.git components/M5GFX
 # If we end up wanting to use these targets more, we could add M5GFX as a submodule.
 
-# List of valid targets
-VALID_TARGETS := glasses-release glasses-debug v2pod-release tester m5stack-atom-display m5stack-module-display waveshare-6inhd sharp-27in p4-function-ev p4-function-ev-r0
+# Special handling for P4 targets that need additional sdkconfig defaults
+P4_TARGETS := p4-function-ev p4-function-ev-r0 p4-seeya049
+# List of all valid targets
+VALID_TARGETS := glasses-release glasses-debug v2pod-release tester m5stack-atom-display m5stack-module-display waveshare-6inhd sharp-27in $(P4_TARGETS)
 
 # Verify TARGET is valid
 ifeq ($(filter $(TARGET),$(VALID_TARGETS)),)
     $(error Unsupported TARGET: $(TARGET). Supported targets are: $(VALID_TARGETS))
 endif
 
-# Special handling for P4 targets that need additional sdkconfig defaults
-P4_TARGETS := p4-function-ev p4-function-ev-r0
 ifneq ($(filter $(TARGET),$(P4_TARGETS)),)
     SDKCONFIG_DEFAULTS := sdkconfig.defaults.esp32-p4;sdkconfig.defaults.$(TARGET)
 else ifeq ($(TARGET),waveshare-6inhd)
@@ -39,7 +39,7 @@ else
 endif
 
 # Set build profile
-IDF_PROFILE = -B build-$(TARGET) -DSDKCONFIG_DEFAULTS="$(SDKCONFIG_DEFAULTS)" -DBUILD_TARGET="$(TARGET)"
+IDF_PROFILE = -B build-$(TARGET) -DSDKCONFIG_DEFAULTS="$(SDKCONFIG_DEFAULTS)"
 
 # Optional variables for the Simulator builds
 CMAKE_SIM_DISPLAY_OPTIONS := $(if $(DISPLAY_WIDTH),-DDISPLAY_WIDTH=$(DISPLAY_WIDTH)) $(if $(DISPLAY_HEIGHT),-DDISPLAY_HEIGHT=$(DISPLAY_HEIGHT)) $(if $(DISPLAY_SCALE),-DDISPLAY_SCALE=$(DISPLAY_SCALE)) $(if $(SIM_LAYOUT_DEBUG),-DSIM_LAYOUT_DEBUG=$(SIM_LAYOUT_DEBUG)) $(if $(DISPLAY_TYPE),-DDISPLAY_TYPE=$(DISPLAY_TYPE)) $(if $(TTF_SCREEN_RES_PER_INCH),-DTTF_SCREEN_RES_PER_INCH=$(TTF_SCREEN_RES_PER_INCH))
@@ -165,9 +165,7 @@ build: check_idf
 
 .PHONY: flash
 flash: build
-ifeq ($(TARGET),p4-function-ev)
-	idf.py $(IDF_PROFILE) flash
-else ifeq ($(TARGET),p4-function-ev-r0)
+ifneq ($(filter $(TARGET),$(P4_TARGETS)),)
 	idf.py $(IDF_PROFILE) flash
 else
 	idf.py $(IDF_PROFILE) flash --port $$(python3 scripts/port_tool.py find_port programming)
@@ -175,9 +173,7 @@ endif
 
 .PHONY: monitor
 monitor: check_idf
-ifeq ($(TARGET),p4-function-ev)
-	idf.py $(IDF_PROFILE) monitor
-else ifeq ($(TARGET),p4-function-ev-r0)
+ifneq ($(filter $(TARGET),$(P4_TARGETS)),)
 	idf.py $(IDF_PROFILE) monitor
 else
 	idf.py $(IDF_PROFILE) monitor --no-reset --port $$(python3 scripts/port_tool.py find_port logging)

@@ -41,9 +41,6 @@ set(components
     app_update
     usb
     freetype
-
-    # Uncomment for M5Stack displays
-    # M5GFX
 )
 
 # Note on conditional components:
@@ -58,19 +55,34 @@ set(components
 # > is loaded. Other component variables (like include paths or source files) can depend on
 # > configuration choices.
 
-# Add components based on BUILD_TARGET passed from the Makefile
-message(STATUS "Building for target: ${BUILD_TARGET}")
+# Extract the target from the build directory path
+# The CMAKE_BINARY_DIR will be something like "/path/to/build-${TARGET}"
+string(REGEX MATCH "build-([a-zA-Z0-9_-]+)" _ "${CMAKE_BINARY_DIR}")
+set(DETECTED_TARGET ${CMAKE_MATCH_1})
+message(STATUS "Detected build target from directory: ${DETECTED_TARGET}")
 
+# Use DETECTED_TARGET for component selection
 # Add components based on display types used by different targets
-if(BUILD_TARGET MATCHES "p4-function-ev.*|sharp-27in|waveshare-6inhd")
+if(DETECTED_TARGET MATCHES "p4-function-ev.*|sharp-27in|waveshare-6inhd|p4-seeya049")
     message(STATUS "Adding esp_lcd component for display")
     list(APPEND components
         esp_lcd
+        fatfs
+        sdmmc
     )
 endif()
 
+if(DETECTED_TARGET MATCHES "p4-seeya049")
+    message(STATUS "Adding esp_lcd_seeya049 component")
+    list(APPEND components
+        esp_lcd_seeya049
+    )
+else()
+    message(STATUS "NOT USING esp_lcd_seeya049")
+endif()
+
 # Add M5GFX for M5Stack display targets
-if(BUILD_TARGET MATCHES "m5stack-(atom|module)-display")
+if(DETECTED_TARGET MATCHES "m5stack-(atom|module)-display")
     message(STATUS "Adding M5GFX component for M5Stack display")
     list(APPEND components
         M5GFX
