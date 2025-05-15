@@ -61,6 +61,7 @@ jobs:
           - glasses-release
           - waveshare-6inhd
           - sharp-27in
+          # - p4-function-ev
           # - m5stack-atom-display
           # - m5stack-module-display
 

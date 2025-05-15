@@ -70,6 +70,9 @@ DisplayWaveshare6inHD myDisplay;
 #elif CONFIG_DISPLAY_SHARP_27IN
 #include "Displays/DisplaySharp27in.hpp"
 DisplaySharp27in myDisplay;
+#elif CONFIG_DISPLAY_ESP32_P4_FUNCTION_EV || CONFIG_DISPLAY_ESP32_P4_FUNCTION_EV_R0
+#include "Displays/DisplayEsp32P4FunctionEv.hpp"
+DisplayEsp32P4FunctionEv myDisplay;
 #else
 #error "No display selected"
 #endif
@@ -108,6 +111,9 @@ LightingController lightingController(prefs);
 #if SIMULATOR
 #include "Storage/PosixFileSystem.hpp"
 PosixFileSystem fileSystem;
+#elif CONFIG_FILESYSTEM_SDFAT
+#include "Storage/SDFatFileSystem.hpp"
+SDFatFileSystem fileSystem;
 #else
 #include "Storage/LittleFSFileSystem.hpp"
 LittleFSFileSystem fileSystem;

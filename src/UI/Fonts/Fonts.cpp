@@ -98,7 +98,8 @@ TTFNotoSansLight mainFont;
 // application startup. The second parameter is the face point size.
 
 // Defaults for different targets
-#if CONFIG_DISPLAY_SIM_16BIT
+#if CONFIG_DISPLAY_SIM_16BIT || CONFIG_DISPLAY_ESP32_P4_FUNCTION_EV ||                             \
+    CONFIG_DISPLAY_ESP32_P4_FUNCTION_EV_R0
 Font fontFace0 = Font(mainFont, 8);
 Font fontFace1 = Font(mainFont, 10);
 Font fontFace2 = Font(mainFont, 12);

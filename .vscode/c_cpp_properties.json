@@ -27,6 +27,20 @@
             "cStandard": "c17",
             "cppStandard": "c++17",
             "compileCommands": "${workspaceFolder}/build-v2pod-release/compile_commands.json"
+        },
+        {
+            "name": "ESP32-P4",
+            "includePath": [
+                "${default}"
+            ],
+            "defines": [
+                "_DEBUG",
+                "UNICODE",
+                "_UNICODE"
+            ],
+            "cStandard": "c17",
+            "cppStandard": "c++17",
+            "compileCommands": "${workspaceFolder}/build-p4-function-ev/compile_commands.json"
         }
     ],
     "version": 4
