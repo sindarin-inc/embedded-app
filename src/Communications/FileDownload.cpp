@@ -363,10 +363,10 @@ auto DownloadFileToPath(const char *url, FileSystem &fileSystem, Telemetry &tele
         httpCode = DownloadFileCommon(url, openedConnection, reader, cancel, useBle, nullptr, gzip,
                                       requestBodyJson);
 
-        DataBlock *block;
+        DataBlock *block = nullptr;
         auto err = xRingbufferSendAcquire(ringbuf, reinterpret_cast<void **>(&block),
                                           sizeof(DataBlock), portMAX_DELAY);
-        if (err != pdTRUE) {
+        if (err != pdTRUE || block == nullptr) {
             log_e("xRingbufferSendAcquire error");
             return;
         }

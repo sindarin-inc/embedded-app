@@ -34,7 +34,7 @@ void USBSerial::initJtag() {
     // the USB/JTAG peripheral. We may be able to remove this after the fix in this PR
     // https://github.com/espressif/esp-idf/pull/15932
     // makes it into IDF
-#if SOC_USB_SERIAL_JTAG_SUPPORTED
+#if SOC_USB_SERIAL_JTAG_SUPPORTED && USB_SERIAL_JTAG_LL_EXT_PHY_SUPPORTED
     usb_serial_jtag_hal_phy_set_external(nullptr, false);
 #endif
 

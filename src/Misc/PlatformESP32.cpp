@@ -350,12 +350,12 @@ auto DeinitializePlatform() -> esp_err_t {
 
     esp_err_t err;
 
+#if CONFIG_LEDC_BACKLIGHT
     err = esp_sleep_pd_config(ESP_PD_DOMAIN_RC_FAST, ESP_PD_OPTION_OFF);
     if (err != ESP_OK) {
         log_e("Failed to disable fast RC oscillator: %d", err);
     }
 
-#if CONFIG_LEDC_BACKLIGHT
     ledc_fade_func_uninstall();
 
     err = ledc_stop(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, 0);
