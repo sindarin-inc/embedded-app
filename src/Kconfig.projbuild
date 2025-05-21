@@ -324,6 +324,11 @@ menu "Sol Options"
         config INCLUDE_DEFAULT_CONTENT
             bool "Include Default Content"
             default y
+
+        config HIDE_WELCOME_MENU
+            bool "Hide Welcome Menu"
+            default y
+
     endmenu
 
     menu "File Storage"

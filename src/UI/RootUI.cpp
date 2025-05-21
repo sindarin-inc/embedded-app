@@ -1852,10 +1852,12 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
         this->prefs_.dontShowWelcome.set(true);
     }
 
+#if !defined(CONFIG_HIDE_WELCOME_MENU) || !CONFIG_HIDE_WELCOME_MENU
     if (!prefs_.dontShowWelcome.get().value_or(false) ||
         prefs_.forceShowWelcome.get().value_or(false)) {
         newMainMenu->addTab("Welcome", welcomeMenuFactory, 6);
     }
+#endif
 
     if (!localStore.recents().empty()) {
         newMainMenu->addTab("Recent", recentMenuFactory, 4);
@@ -2009,6 +2011,7 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
 
     bool showWelcomeVideo = false;
 
+#if !defined(CONFIG_HIDE_WELCOME_MENU) || !CONFIG_HIDE_WELCOME_MENU
     // If we are in onboarding mode, show the entry bumper first
     if (!prefs_.dontShowWelcome.get().value_or(false)) {
         showWelcomeVideo = true;
@@ -2043,6 +2046,7 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
             });
         }
     }
+#endif
 
     if (!showWelcomeVideo && power_.battery.batteryVeryLow()) {
         showTemporaryMessage("Your battery is very low. Please charge your Sol Reader soon!", 4000);
