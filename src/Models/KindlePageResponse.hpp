@@ -57,16 +57,16 @@ struct KindlePageResponse : public JsonSerializable {
         if (json.containsKey("time_taken")) {
             timeTaken = json["time_taken"];
         }
-        
+
         // Handle last read dialog fields
         if (json.containsKey("last_read_dialog")) {
             lastReadDialog = json["last_read_dialog"];
         }
-        
+
         if (json.containsKey("dialog_text")) {
             dialogText = json["dialog_text"].as<std::string>();
         }
-        
+
         if (json.containsKey("already_open")) {
             alreadyOpen = json["already_open"];
         }

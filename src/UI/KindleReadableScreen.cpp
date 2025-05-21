@@ -63,7 +63,7 @@ KindleReadableScreen::KindleReadableScreen(DisplaySystem &display,
             }
         });
     });
-    
+
     // Set up the callback for last read dialog
     pageFlipper_.setOnLastReadDialogFunction([this, cancelFlag](const std::string &dialogText) {
         if (CancelFlag::isCancelled(cancelFlag)) {
@@ -73,10 +73,10 @@ KindleReadableScreen::KindleReadableScreen(DisplaySystem &display,
             if (CancelFlag::isCancelled(cancelFlag)) {
                 return;
             }
-            
+
             // Cancel loading message and clear loading state before showing dialog
             cancelDelayedLoadingMessage();
-            
+
             // Show the last read dialog
             showLastReadDialog(dialogText);
         });
@@ -709,44 +709,42 @@ void KindleReadableScreen::showPopupMenu() {
 
 void KindleReadableScreen::showLastReadDialog(const std::string &dialogText) {
     log_i("Showing last read dialog: %s", dialogText.c_str());
-    
+
     // First ensure we're out of loading state
     loadingMessageView_.setHidden(true);
     delayedMessageView_.setHidden(true);
-    
+
     // Create the last read dialog screen
     auto lastReadDialog = std::make_shared<KindleLastReadDialogScreen>(display_, dialogText);
-    
+
     // Set the callback for when the user makes a selection
-    lastReadDialog->setResponseCallback([this](bool gotoLastReadPage) {
-        handleLastReadDialogResponse(gotoLastReadPage);
-    });
-    
+    lastReadDialog->setResponseCallback(
+        [this](bool gotoLastReadPage) { handleLastReadDialogResponse(gotoLastReadPage); });
+
     // Show the dialog
     setCurrentScreen(lastReadDialog);
     updateType_ = DisplaySystem::UpdateType::PARTIAL;
     setNeedsRerender();
     render(display_); // Force render to make dialog visible immediately
-    
+
     // Log that we showed the last read dialog
     telemetry_.logMetricData(TelemetryField::METRIC_DIALOG,
-                           {{"dialog", std::string("kindle-books")},
-                            {"action", std::string("last-read-dialog-shown")}});
+                             {{"dialog", std::string("kindle-books")},
+                              {"action", std::string("last-read-dialog-shown")}});
 }
 
 void KindleReadableScreen::handleLastReadDialogResponse(bool gotoLastReadPage) {
-    log_i("User selected to %s to the last read page", 
-          gotoLastReadPage ? "go" : "not go");
-    
+    log_i("User selected to %s to the last read page", gotoLastReadPage ? "go" : "not go");
+
     // Log the user's choice
     telemetry_.logMetricData(TelemetryField::METRIC_DIALOG,
-                           {{"dialog", std::string("kindle-books")},
-                            {"action", std::string("last-read-dialog-response")},
-                            {"goto_last_read", gotoLastReadPage}});
-    
+                             {{"dialog", std::string("kindle-books")},
+                              {"action", std::string("last-read-dialog-response")},
+                              {"goto_last_read", gotoLastReadPage}});
+
     // Close the dialog
     setCurrentScreen(nullptr);
-    
+
     // If we canceled, we still need to tell the server about our choice
     // so it doesn't keep showing the dialog
     if (!gotoLastReadPage) {
@@ -756,41 +754,43 @@ void KindleReadableScreen::handleLastReadDialogResponse(bool gotoLastReadPage) {
         setNeedsLayout();
         setNeedsRerender();
         render(display_);
-        
+
         // Make the API request in the background to tell server user chose "No"
         auto cancelFlag = cancelFlag_;
         DispatchGetCore0BackgroundQueue()->dispatch([this, cancelFlag]() {
             // Submit the choice (don't sync to latest)
-            SindarinAPI::getInstance()->submitLastReadPageChoice(false, cancelFlag, isUsingBleConnection_);
-            
+            SindarinAPI::getInstance()->submitLastReadPageChoice(false, cancelFlag,
+                                                                 isUsingBleConnection_);
+
             if (CancelFlag::isCancelled(cancelFlag)) {
                 return;
             }
-            
+
             // Regardless of API result, continue loading the book from current position
             // This should now not show the dialog again since we told the server our choice
             pageFlipper_.loadInitialPage();
         });
         return;
     }
-    
+
     // If we chose to sync, show the loading screen while we wait for response
     setState(State::LOADING_CONTENT);
     loadingMessageView_.setText("Syncing to last read page...");
     setNeedsLayout();
     setNeedsRerender();
     render(display_);
-    
+
     // Make the API request in the background
     auto cancelFlag = cancelFlag_;
     DispatchGetCore0BackgroundQueue()->dispatch([this, cancelFlag]() {
         // Submit the choice (sync to latest)
-        auto result = SindarinAPI::getInstance()->submitLastReadPageChoice(true, cancelFlag, isUsingBleConnection_);
-        
+        auto result = SindarinAPI::getInstance()->submitLastReadPageChoice(true, cancelFlag,
+                                                                           isUsingBleConnection_);
+
         if (CancelFlag::isCancelled(cancelFlag)) {
             return;
         }
-        
+
         // Handle possible errors
         if (result != 200) {
             // If there was an error, show error message
@@ -799,7 +799,7 @@ void KindleReadableScreen::handleLastReadDialogResponse(bool gotoLastReadPage) {
             });
             return;
         }
-        
+
         // If successful, load the content
         // This should now return the latest page since we've told the server to sync
         pageFlipper_.loadInitialPage();

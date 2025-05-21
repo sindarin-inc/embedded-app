@@ -39,7 +39,8 @@ auto KindlePageFlipper::checkForError(int httpCode, std::shared_ptr<KindlePageRe
     }
 }
 
-void KindlePageFlipper::checkForLastReadDialog(const std::shared_ptr<KindlePageResponse> &response) {
+void KindlePageFlipper::checkForLastReadDialog(
+    const std::shared_ptr<KindlePageResponse> &response) {
     // Check if this response contains a last read dialog
     if (response->lastReadDialog && !response->dialogText.empty() && onLastReadDialogFunction_) {
         // Call the dialog callback with the dialog text
@@ -78,10 +79,10 @@ void KindlePageFlipper::loadInitialPage() {
             }
             return;
         }
-        
+
         // Check if this response contains a last read dialog
         checkForLastReadDialog(response);
-        
+
         // If this is a last read dialog, don't append the page (which would be empty)
         // Only append and notify if it's not a dialog
         if (!response->lastReadDialog) {
@@ -154,10 +155,10 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
                 }
                 return;
             }
-            
+
             // Check if this response contains a last read dialog
             checkForLastReadDialog(response);
-            
+
             // If this is a last read dialog, don't append the page
             // Only append if it's not a dialog
             if (!response->lastReadDialog) {

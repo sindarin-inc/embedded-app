@@ -151,9 +151,10 @@ public:
     void setOnConnectionErrorFunction(std::function<void(void)> onConnectionErrorFunction) {
         onConnectionErrorFunction_ = std::move(onConnectionErrorFunction);
     }
-    
+
     // Set callback for when a last read dialog is detected
-    void setOnLastReadDialogFunction(std::function<void(const std::string &dialogText)> onLastReadDialogFunction) {
+    void setOnLastReadDialogFunction(
+        std::function<void(const std::string &dialogText)> onLastReadDialogFunction) {
         onLastReadDialogFunction_ = std::move(onLastReadDialogFunction);
     }
 

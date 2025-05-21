@@ -91,10 +91,11 @@ public:
                         const std::shared_ptr<CancelFlag> &cancelFlag, bool useBle) -> int;
     auto navigateKindle(KindlePageResponse *resp, const std::shared_ptr<CancelFlag> &cancelFlag,
                         bool useBle, int navigate, int preview) -> int;
-                        
+
     // Submit user's choice for last read page dialog
-    auto submitLastReadPageChoice(bool gotoLastReadPage, const std::shared_ptr<CancelFlag> &cancelFlag, 
-                                 bool useBle) -> int;
+    auto submitLastReadPageChoice(bool gotoLastReadPage,
+                                  const std::shared_ptr<CancelFlag> &cancelFlag, bool useBle)
+        -> int;
 
 private:
     auto tryCheckFirmware(FirmwareResponse *resp, bool useHttp, bool useBle,
