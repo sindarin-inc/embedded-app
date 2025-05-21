@@ -29,6 +29,9 @@ menu "Sol Options"
             config DISPLAY_ESP32_P4_SEEYA_049
                 bool "ESP32 P4 SeeYA 0.49in Display"
 
+            config DISPLAY_NULL
+                bool "No Display (for testing)"
+
         endchoice
 
         config DISPLAY_PIXEL_RESOLUTION_IS_FIX

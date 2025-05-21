@@ -76,6 +76,9 @@ DisplayEsp32P4FunctionEv myDisplay;
 #elif CONFIG_DISPLAY_ESP32_P4_SEEYA_049
 #include "Displays/DisplayEsp32P4SeeYa049.hpp"
 DisplayEsp32P4SeeYa049 myDisplay;
+#elif CONFIG_DISPLAY_NULL
+#include "Displays/DisplayNull.hpp"
+DisplayNull myDisplay;
 #else
 #error "No display selected"
 #endif
