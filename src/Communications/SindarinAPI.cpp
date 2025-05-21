@@ -699,36 +699,6 @@ auto SindarinAPI::submitLastReadPageChoice(bool gotoLastReadPage,
 
     // Get response status code
     int httpCode = client->getStatusCode();
-    if (httpCode != 200) {
-        log_e("HTTP request failed with status code: %d", httpCode);
-        return httpCode;
-    }
-
-    // Read and parse the response
-    auto stream = client->makeReadStream();
-    if (!stream) {
-        log_e("Failed to create read stream");
-        return ERR_CLIENT_READ;
-    }
-
-    // Create a response object to capture the result
-    auto response = std::make_shared<KindlePageResponse>();
-
-    // Only try to parse response if there's content
-    if (contentLength > 0) {
-        auto respJson = std::make_unique<SpiRamJsonDocument>(1024 + contentLength * 3);
-        auto error = ArduinoJson::deserializeJson(*respJson, *stream);
-
-        if (error.code() != DeserializationError::Ok) {
-            log_e("Failed to deserialize response: %s (length=%d)", error.c_str(), contentLength);
-            return ERR_JSON_DESERIALIZE;
-        }
-
-        if (!response->fromJson(respJson->as<JsonObject>())) {
-            log_e("Failed to parse response");
-            return ERR_JSON_OBJECT_PARSE;
-        }
-    }
 
     // Log the result
     if (httpCode == 200) {

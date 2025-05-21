@@ -84,14 +84,13 @@ void KindlePageFlipper::loadInitialPage() {
         checkForLastReadDialog(response);
 
         // If this is a last read dialog, don't append the page (which would be empty)
-        // Only append and notify if it's not a dialog
+        // Only append if it's not a dialog
         if (!response->lastReadDialog) {
             pageStream_->appendPageFromResponse(*response);
-            gotContentFunction_();
-        } else {
-            // Even for a dialog, we need to signal that we got content (to dismiss loading)
-            gotContentFunction_();
         }
+        
+        // Always signal that we got content (to dismiss loading)
+        gotContentFunction_();
     });
 }
 
@@ -166,11 +165,10 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
                 if (pageToPreview > 0) {
                     pageStream_->appendPageFromResponse(*response);
                 }
-                gotContentFunction_();
-            } else {
-                // Even for a dialog, we need to signal that we got content (to dismiss loading)
-                gotContentFunction_();
             }
+            
+            // Always signal that we got content (to dismiss loading)
+            gotContentFunction_();
         }
 
         place_ = std::dynamic_pointer_cast<TxtPlace>(place);
