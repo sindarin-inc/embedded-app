@@ -88,7 +88,7 @@ void KindlePageFlipper::loadInitialPage() {
         if (!response->lastReadDialog) {
             pageStream_->appendPageFromResponse(*response);
         }
-        
+
         // Always signal that we got content (to dismiss loading)
         gotContentFunction_();
     });
@@ -166,7 +166,7 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
                     pageStream_->appendPageFromResponse(*response);
                 }
             }
-            
+
             // Always signal that we got content (to dismiss loading)
             gotContentFunction_();
         }
