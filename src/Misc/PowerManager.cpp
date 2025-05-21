@@ -944,7 +944,6 @@ void PowerManager::deepSleepInternal(SleepReason reason) {
         powerOffInternal();
         return;
     }
-#endif
 
     err = esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_ON);
     if (err != ESP_OK) {
@@ -966,6 +965,7 @@ void PowerManager::deepSleepInternal(SleepReason reason) {
         powerOffInternal();
         return;
     }
+#endif
 
 #if defined(CONFIG_SLEEP_WAKE_PIN) && CONFIG_SLEEP_WAKE_PIN != -1
     // Enable the configured pin as a wake-up pin
