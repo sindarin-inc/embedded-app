@@ -13,6 +13,7 @@
 #include "Storage/LocalStore.hpp"
 #include "Storage/PreferencesStore.hpp"
 #include "UI/Components/MultiLineTextView.hpp"
+#include "UI/KindleLastReadDialogScreen.hpp"
 #include "UI/NewReadablePopupMenuScreen.hpp"
 #include "UI/Screen.hpp"
 #include "Version.hpp"
@@ -100,6 +101,8 @@ private:
 
     auto stateToString(State state) -> const char *;
     void showPopupMenu();
+    void showLastReadDialog(const std::string &dialogText);
+    void handleLastReadDialogResponse(bool gotoLastReadPage);
     void setCurrentScreen(const std::shared_ptr<Screen> &screen);
     auto getCurrentScreen() -> std::shared_ptr<Screen> { return currentScreen_; }
 

@@ -39,6 +39,16 @@ auto KindlePageFlipper::checkForError(int httpCode, std::shared_ptr<KindlePageRe
     }
 }
 
+void KindlePageFlipper::checkForLastReadDialog(const std::shared_ptr<KindlePageResponse> &response) {
+    // Check if this response contains a last read dialog
+    if (response->lastReadDialog && !response->dialogText.empty() && onLastReadDialogFunction_) {
+        // Call the dialog callback with the dialog text
+        // Convert SpiramString to std::string
+        std::string dialogText(response->dialogText.c_str());
+        onLastReadDialogFunction_(dialogText);
+    }
+}
+
 void KindlePageFlipper::loadInitialPage() {
     log_i("Loading initial page for Kindle book: %s", kindleBook_->title.c_str());
 
@@ -68,9 +78,19 @@ void KindlePageFlipper::loadInitialPage() {
             }
             return;
         }
-
-        pageStream_->appendPageFromResponse(*response);
-        gotContentFunction_();
+        
+        // Check if this response contains a last read dialog
+        checkForLastReadDialog(response);
+        
+        // If this is a last read dialog, don't append the page (which would be empty)
+        // Only append and notify if it's not a dialog
+        if (!response->lastReadDialog) {
+            pageStream_->appendPageFromResponse(*response);
+            gotContentFunction_();
+        } else {
+            // Even for a dialog, we need to signal that we got content (to dismiss loading)
+            gotContentFunction_();
+        }
     });
 }
 
@@ -134,12 +154,22 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
                 }
                 return;
             }
-
-            // If we're navigating only, don't expect a page
-            if (pageToPreview > 0) {
-                pageStream_->appendPageFromResponse(*response);
+            
+            // Check if this response contains a last read dialog
+            checkForLastReadDialog(response);
+            
+            // If this is a last read dialog, don't append the page
+            // Only append if it's not a dialog
+            if (!response->lastReadDialog) {
+                // If we're navigating only, don't expect a page
+                if (pageToPreview > 0) {
+                    pageStream_->appendPageFromResponse(*response);
+                }
+                gotContentFunction_();
+            } else {
+                // Even for a dialog, we need to signal that we got content (to dismiss loading)
+                gotContentFunction_();
             }
-            gotContentFunction_();
         }
 
         place_ = std::dynamic_pointer_cast<TxtPlace>(place);
