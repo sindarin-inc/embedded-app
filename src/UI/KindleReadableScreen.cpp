@@ -747,13 +747,30 @@ void KindleReadableScreen::handleLastReadDialogResponse(bool gotoLastReadPage) {
     // Close the dialog
     setCurrentScreen(nullptr);
     
-    // If we canceled, dismiss the dialog and continue reading from current page
+    // If we canceled, we still need to tell the server about our choice
+    // so it doesn't keep showing the dialog
     if (!gotoLastReadPage) {
-        updateType_ = DisplaySystem::UpdateType::PARTIAL;
+        // Show loading while we submit the "No" choice
+        setState(State::LOADING_CONTENT);
+        loadingMessageView_.setText("Loading content...");
+        setNeedsLayout();
         setNeedsRerender();
+        render(display_);
         
-        // Continue loading the book from the current position
-        pageFlipper_.loadInitialPage();
+        // Make the API request in the background to tell server user chose "No"
+        auto cancelFlag = cancelFlag_;
+        DispatchGetCore0BackgroundQueue()->dispatch([this, cancelFlag]() {
+            // Submit the choice (don't sync to latest)
+            SindarinAPI::getInstance()->submitLastReadPageChoice(false, cancelFlag, isUsingBleConnection_);
+            
+            if (CancelFlag::isCancelled(cancelFlag)) {
+                return;
+            }
+            
+            // Regardless of API result, continue loading the book from current position
+            // This should now not show the dialog again since we told the server our choice
+            pageFlipper_.loadInitialPage();
+        });
         return;
     }
     
