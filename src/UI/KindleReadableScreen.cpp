@@ -764,8 +764,8 @@ void KindleReadableScreen::submitLastReadDialogChoice(bool gotoLastReadPage,
     render(display_);
 
     DispatchGetCore0BackgroundQueue()->dispatch([this, gotoLastReadPage]() {
-        auto result = SindarinAPI::getInstance()->submitLastReadPageChoice(
-            gotoLastReadPage, isUsingBleConnection_);
+        auto result = SindarinAPI::getInstance()->submitLastReadPageChoice(gotoLastReadPage,
+                                                                           isUsingBleConnection_);
 
         if (gotoLastReadPage && result != 200) {
             DispatchGetUiQueue()->dispatch([this]() {
@@ -803,7 +803,11 @@ void KindleReadableScreen::scheduleDelayedLoadingMessage() {
         }
 
         // Display the message on the UI thread
-        DispatchGetUiQueue()->dispatch([this]() {
+        DispatchGetUiQueue()->dispatch([this, localFlag]() {
+            if (CancelFlag::isCancelled(localFlag)) {
+                return;
+            }
+
             if (state_ != State::LOADING_CONTENT) {
                 return; // Don't show if we're no longer loading or screen was dismissed
             }
