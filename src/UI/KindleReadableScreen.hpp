@@ -32,6 +32,7 @@ public:
         LOADING_CONTENT,
         ERROR,
         DISPLAY_CONTENT,
+        SHOWING_DIALOG,
         DISPLAY_PARTIAL_CONTENT,
     };
 
@@ -101,8 +102,9 @@ private:
 
     auto stateToString(State state) -> const char *;
     void showPopupMenu();
-    void showLastReadDialog(const std::string &dialogText);
+    void showLastReadDialog(const SpiramString &dialogText);
     void handleLastReadDialogResponse(bool gotoLastReadPage);
+    void submitLastReadDialogChoice(bool gotoLastReadPage, const std::string &loadingMessage);
     void setCurrentScreen(const std::shared_ptr<Screen> &screen);
     auto getCurrentScreen() -> std::shared_ptr<Screen> { return currentScreen_; }
 

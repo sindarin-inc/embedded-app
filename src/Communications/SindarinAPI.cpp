@@ -639,18 +639,14 @@ auto SindarinAPI::navigateKindle(KindlePageResponse *resp,
 auto SindarinAPI::submitLastReadPageChoice(bool gotoLastReadPage,
                                            const std::shared_ptr<CancelFlag> &cancelFlag,
                                            bool useBle) -> int {
-    // Create the path for the POST request
     std::string path = "/kindle/last-read-page-dialog";
 
-    // Log what we're doing
     log_i("Submitting user's choice for last read page dialog: %s",
           gotoLastReadPage ? "sync to latest" : "stay on current page");
 
-    // Create the full URL
     std::string url = StringFormat("%s%s", SINDARIN_SERVER_URL, path.c_str());
-    log_i("Making POST request to URL: %s (cancelFlag=%p)", url.c_str(), cancelFlag.get());
+    log_d("Making POST request to URL: %s (cancelFlag=%p)", url.c_str(), cancelFlag.get());
 
-    // Create HTTP client for POST request
     auto client =
         createClient(url, "application/json", HTTP_METHOD_POST, useBle, cancelFlag, 120000);
     if (!client) {
@@ -658,24 +654,20 @@ auto SindarinAPI::submitLastReadPageChoice(bool gotoLastReadPage,
         return ERR_CLIENT_OPEN;
     }
 
-    // Set authentication
     auto err = setAuth(client);
     if (err != ESP_OK) {
         log_e("Failed to set authentication: %d", err);
         return ERR_SET_AUTH;
     }
 
-    // Create JSON document for request body
     auto doc = std::make_shared<SpiRamJsonDocument>(128);
     JsonObject body = doc->to<JsonObject>();
     body["goto_last_read_page"] = gotoLastReadPage;
 
-    // Serialize the JSON
     size_t serializedMaxSize = (*doc).memoryUsage() * 2;
     auto reqBody = SpiRamArrayPtr<char>(serializedMaxSize);
     size_t bodyLength = serializeJson(*doc, reqBody.get(), serializedMaxSize);
 
-    // Open the client with the body length
     err = client->open(bodyLength);
     if (err != ESP_OK) {
         log_e("Failed to open HTTP client: %d", err);
@@ -683,7 +675,6 @@ auto SindarinAPI::submitLastReadPageChoice(bool gotoLastReadPage,
     }
     defer { client->close(); };
 
-    // Write the request body
     int writeLength = client->write(reqBody.get(), bodyLength);
     if (writeLength != bodyLength) {
         log_e("Failed to write request body: expected=%zu, actual=%d", bodyLength, writeLength);
@@ -697,10 +688,8 @@ auto SindarinAPI::submitLastReadPageChoice(bool gotoLastReadPage,
         return ERR_CONTENT_LENGTH;
     }
 
-    // Get response status code
     int httpCode = client->getStatusCode();
 
-    // Log the result
     if (httpCode == 200) {
         log_i("Successfully submitted last read page choice");
     } else {

@@ -13,39 +13,27 @@
 
 class KindleLastReadDialogScreen : public EinkView, public Screen {
 public:
-    KindleLastReadDialogScreen(DisplaySystem &display, const std::string &dialogText)
+    KindleLastReadDialogScreen(DisplaySystem &display, const SpiramString &dialogText)
         : EinkView(display), dialogBoxBackground_(display, 5), dialogBoxForeground_(display, 5),
           dialogTextView_(display, 5), menuView_(display) {
 
         // Set up the dialog text
-        dialogTextView_.setText(dialogText);
+        dialogTextView_.setText(std::string(dialogText.c_str()));
         dialogTextView_.alignCenter = true;
 
         // Set up menu items for the two options
-        auto menuItems = std::make_shared<std::vector<std::shared_ptr<MenuItem>>>();
-
-        // "Yes, sync to latest" option
-        menuItems->emplace_back(std::make_shared<MenuItemSingleLine>(
+        menuView_.addMenuItem(std::make_shared<MenuItemSingleLine>(
             "Yes, go to latest page", [this]() { handleResponse(true); }));
 
-        // "No, stay on current page" option
-        menuItems->emplace_back(std::make_shared<MenuItemSingleLine>(
+        menuView_.addMenuItem(std::make_shared<MenuItemSingleLine>(
             "No, stay on current page", [this]() { handleResponse(false); }));
-
-        // Set up menu view
-        // Add menu items to the view
-        for (const auto &item : *menuItems) {
-            menuView_.addMenuItem(item);
-        }
 
         menuView_.padding = 0;
         menuView_.itemsPerPage = 2;
         menuView_.setIndicatorType(MenuView::IndicatorType::Dot);
 
-        // Set first option as default (but allowing user to navigate)
         menuView_.setSelectedIndex(0);
 
-        // Set first load flag to true
         setFirstLoad();
     }
 
@@ -55,7 +43,6 @@ public:
         setFrame(defaultFrameRect());
         layoutIfNeeded();
 
-        // Draw the dialog components
         draw();
 
         if (firstLoad_) {
@@ -72,29 +59,24 @@ public:
         auto contentFrame = context.setSublayoutFrame(
             SolRect::fromSize(size), LayoutOptionsSizeToFit | LayoutOptionsAlignCenter,
             [this](LayoutContext &context, SolSize size) -> SolSize {
-                int y = 15; // Reduced padding at the top
+                int y = 15;
 
-                // Layout dialog text
                 auto textBox =
                     context.setViewFrame(dialogTextView_, {{10, y}, {size.width - 20, 0}},
                                          LayoutOptionsSizeToFit | LayoutOptionsAlignTop |
                                              LayoutOptionsAlignCenterHorizontal);
 
-                y += textBox.size.height + 15; // Reduced spacing after the text
+                y += textBox.size.height + 15;
 
-                // Layout menu items
                 auto menuBox = context.setViewFrame(
                     menuView_, {{10, y}, {size.width - 20, size.height - y - 10}},
                     LayoutOptionsSizeToFit | LayoutOptionsAlignTop |
                         LayoutOptionsAlignCenterHorizontal);
 
-                y += menuBox.size.height + 15; // Reduced padding at the bottom
+                y += menuBox.size.height + 15;
 
-                // Return the size needed for the content
                 return {size.width * 5 / 6, y};
             });
-
-        // Create frames for the box backgrounds
         auto foregroundFrame =
             context.setViewFrame(dialogBoxForeground_, contentFrame.inset(-5, -5));
         auto backgroundFrame =
@@ -104,12 +86,10 @@ public:
     }
 
     void drawInRect(SolRect rect) override {
-        // Set colors for the dialog box
         dialogBoxBackground_.fillColor = display_.bg;
         dialogBoxBackground_.strokeColor = display_.bg;
         dialogBoxForeground_.strokeColor = display_.fg;
 
-        // Draw the components
         dialogBoxBackground_.draw();
         dialogBoxForeground_.draw();
         dialogTextView_.draw();

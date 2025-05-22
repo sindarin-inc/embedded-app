@@ -65,7 +65,7 @@ KindleReadableScreen::KindleReadableScreen(DisplaySystem &display,
     });
 
     // Set up the callback for last read dialog
-    pageFlipper_.setOnLastReadDialogFunction([this, cancelFlag](const std::string &dialogText) {
+    pageFlipper_.setOnLastReadDialogFunction([this, cancelFlag](const SpiramString &dialogText) {
         if (CancelFlag::isCancelled(cancelFlag)) {
             return;
         }
@@ -445,6 +445,8 @@ auto KindleReadableScreen::stateToString(State state) -> const char * {
         return "ERROR";
     case State::DISPLAY_CONTENT:
         return "DISPLAY_CONTENT";
+    case State::SHOWING_DIALOG:
+        return "SHOWING_DIALOG";
     case State::DISPLAY_PARTIAL_CONTENT:
         return "DISPLAY_PARTIAL_CONTENT";
     default:
@@ -477,6 +479,11 @@ void KindleReadableScreen::setState(State newState) {
         if (state_ == State::DISPLAY_PARTIAL_CONTENT) {
             updateType_ = DisplaySystem::UpdateType::PARTIAL;
         }
+        break;
+    case State::SHOWING_DIALOG:
+        loadingMessageView_.setHidden(true);
+        delayedMessageView_.setHidden(true);
+        errorMessageView_.setHidden(true);
         break;
     }
 
@@ -707,12 +714,10 @@ void KindleReadableScreen::showPopupMenu() {
     setNeedsRerender();
 }
 
-void KindleReadableScreen::showLastReadDialog(const std::string &dialogText) {
+void KindleReadableScreen::showLastReadDialog(const SpiramString &dialogText) {
     log_i("Showing last read dialog: %s", dialogText.c_str());
 
-    // First ensure we're out of loading state
-    loadingMessageView_.setHidden(true);
-    delayedMessageView_.setHidden(true);
+    setState(State::SHOWING_DIALOG);
 
     // Create the last read dialog screen
     auto lastReadDialog = std::make_shared<KindleLastReadDialogScreen>(display_, dialogText);
@@ -725,7 +730,7 @@ void KindleReadableScreen::showLastReadDialog(const std::string &dialogText) {
     setCurrentScreen(lastReadDialog);
     updateType_ = DisplaySystem::UpdateType::PARTIAL;
     setNeedsRerender();
-    render(display_); // Force render to make dialog visible immediately
+    render(display_);
 
     // Log that we showed the last read dialog
     telemetry_.logMetricData(TelemetryField::METRIC_DIALOG,
@@ -736,72 +741,47 @@ void KindleReadableScreen::showLastReadDialog(const std::string &dialogText) {
 void KindleReadableScreen::handleLastReadDialogResponse(bool gotoLastReadPage) {
     log_i("User selected to %s to the last read page", gotoLastReadPage ? "go" : "not go");
 
-    // Log the user's choice
     telemetry_.logMetricData(TelemetryField::METRIC_DIALOG,
                              {{"dialog", std::string("kindle-books")},
                               {"action", std::string("last-read-dialog-response")},
                               {"goto_last_read", gotoLastReadPage}});
 
-    // Close the dialog
     setCurrentScreen(nullptr);
 
-    // If we canceled, we still need to tell the server about our choice
-    // so it doesn't keep showing the dialog
-    if (!gotoLastReadPage) {
-        // Show loading while we submit the "No" choice
-        setState(State::LOADING_CONTENT);
-        loadingMessageView_.setText("Loading content...");
-        setNeedsLayout();
-        setNeedsRerender();
-        render(display_);
-
-        // Make the API request in the background to tell server user chose "No"
-        auto cancelFlag = cancelFlag_;
-        DispatchGetCore0BackgroundQueue()->dispatch([this, cancelFlag]() {
-            // Submit the choice (don't sync to latest)
-            SindarinAPI::getInstance()->submitLastReadPageChoice(false, cancelFlag,
-                                                                 isUsingBleConnection_);
-
-            if (CancelFlag::isCancelled(cancelFlag)) {
-                return;
-            }
-
-            // Regardless of API result, continue loading the book from current position
-            // This should now not show the dialog again since we told the server our choice
-            pageFlipper_.loadInitialPage();
-        });
-        return;
+    if (gotoLastReadPage) {
+        submitLastReadDialogChoice(true, "Syncing to last read page...");
+    } else {
+        submitLastReadDialogChoice(false, "Loading content...");
     }
+}
 
-    // If we chose to sync, show the loading screen while we wait for response
+void KindleReadableScreen::submitLastReadDialogChoice(bool gotoLastReadPage, const std::string &loadingMessage) {
     setState(State::LOADING_CONTENT);
-    loadingMessageView_.setText("Syncing to last read page...");
+    loadingMessageView_.setText(loadingMessage);
     setNeedsLayout();
     setNeedsRerender();
     render(display_);
 
-    // Make the API request in the background
     auto cancelFlag = cancelFlag_;
-    DispatchGetCore0BackgroundQueue()->dispatch([this, cancelFlag]() {
-        // Submit the choice (sync to latest)
-        auto result = SindarinAPI::getInstance()->submitLastReadPageChoice(true, cancelFlag,
-                                                                           isUsingBleConnection_);
+    DispatchGetCore0BackgroundQueue()->dispatch([this, gotoLastReadPage, cancelFlag]() {
+        auto result = SindarinAPI::getInstance()->submitLastReadPageChoice(gotoLastReadPage, cancelFlag, isUsingBleConnection_);
 
         if (CancelFlag::isCancelled(cancelFlag)) {
             return;
         }
 
-        // Handle possible errors
-        if (result != 200) {
-            // If there was an error, show error message
+        if (gotoLastReadPage && result != 200) {
             DispatchGetUiQueue()->dispatch([this]() {
                 setErrorMessage("Failed to sync to the last read page. Please try again.");
             });
             return;
         }
 
-        // If successful, load the content
-        // This should now return the latest page since we've told the server to sync
+        // If syncing to latest page, clear the buffer since we're jumping to a new location
+        if (gotoLastReadPage) {
+            pageFlipper_.clearBuffer();
+        }
+
         pageFlipper_.loadInitialPage();
     });
 }

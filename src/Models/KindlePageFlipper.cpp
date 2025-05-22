@@ -39,15 +39,13 @@ auto KindlePageFlipper::checkForError(int httpCode, std::shared_ptr<KindlePageRe
     }
 }
 
-void KindlePageFlipper::checkForLastReadDialog(
-    const std::shared_ptr<KindlePageResponse> &response) {
-    // Check if this response contains a last read dialog
+auto KindlePageFlipper::checkForLastReadDialog(
+    const std::shared_ptr<KindlePageResponse> &response) -> bool {
     if (response->lastReadDialog && !response->dialogText.empty() && onLastReadDialogFunction_) {
-        // Call the dialog callback with the dialog text
-        // Convert SpiramString to std::string
-        std::string dialogText(response->dialogText.c_str());
-        onLastReadDialogFunction_(dialogText);
+        onLastReadDialogFunction_(response->dialogText);
+        return true;
     }
+    return false;
 }
 
 void KindlePageFlipper::loadInitialPage() {
@@ -80,12 +78,10 @@ void KindlePageFlipper::loadInitialPage() {
             return;
         }
 
-        // Check if this response contains a last read dialog
-        checkForLastReadDialog(response);
+        auto hasDialog = checkForLastReadDialog(response);
 
         // If this is a last read dialog, don't append the page (which would be empty)
-        // Only append if it's not a dialog
-        if (!response->lastReadDialog) {
+        if (!hasDialog) {
             pageStream_->appendPageFromResponse(*response);
         }
 
@@ -155,12 +151,10 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
                 return;
             }
 
-            // Check if this response contains a last read dialog
-            checkForLastReadDialog(response);
+            auto hasDialog = checkForLastReadDialog(response);
 
             // If this is a last read dialog, don't append the page
-            // Only append if it's not a dialog
-            if (!response->lastReadDialog) {
+            if (!hasDialog) {
                 // If we're navigating only, don't expect a page
                 if (pageToPreview > 0) {
                     pageStream_->appendPageFromResponse(*response);

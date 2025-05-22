@@ -108,6 +108,12 @@ public:
 
     auto lastPageIndex() -> int { return pages_.size() - 1; }
 
+    void clear() {
+        pages_.clear();
+        currentPageIndex_ = 0;
+        currentPageOffset_ = 0;
+    }
+
 protected:
     SpiramVector<KindlePage> pages_;
 
@@ -154,7 +160,7 @@ public:
 
     // Set callback for when a last read dialog is detected
     void setOnLastReadDialogFunction(
-        std::function<void(const std::string &dialogText)> onLastReadDialogFunction) {
+        std::function<void(const SpiramString &dialogText)> onLastReadDialogFunction) {
         onLastReadDialogFunction_ = std::move(onLastReadDialogFunction);
     }
 
@@ -173,6 +179,13 @@ public:
         log_i("KindlePageFlipper now using BLE: %s", useBle_ ? "true" : "false");
     }
 
+    void clearBuffer() {
+        if (pageStream_) {
+            pageStream_->clear();
+        }
+        place_ = nullptr;
+    }
+
 private:
     // const int bufferThreshold_ = 2000; // Byte threshold to preload more content
 
@@ -185,8 +198,8 @@ private:
     std::function<void(void)> gotContentFunction_;
     std::function<void(const std::string &errorMessage)> onErrorFunction_;
     std::function<void(void)> onConnectionErrorFunction_;
-    std::function<void(const std::string &dialogText)> onLastReadDialogFunction_;
+    std::function<void(const SpiramString &dialogText)> onLastReadDialogFunction_;
 
     auto checkForError(int httpCode, std::shared_ptr<KindlePageResponse> &response) -> std::string;
-    void checkForLastReadDialog(const std::shared_ptr<KindlePageResponse> &response);
+    auto checkForLastReadDialog(const std::shared_ptr<KindlePageResponse> &response) -> bool;
 };
