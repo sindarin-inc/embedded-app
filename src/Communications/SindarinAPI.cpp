@@ -636,19 +636,17 @@ auto SindarinAPI::navigateKindle(KindlePageResponse *resp,
     return makeKindleRequest(path, resp, cancelFlag, useBle);
 }
 
-auto SindarinAPI::submitLastReadPageChoice(bool gotoLastReadPage,
-                                           const std::shared_ptr<CancelFlag> &cancelFlag,
-                                           bool useBle) -> int {
+auto SindarinAPI::submitLastReadPageChoice(bool gotoLastReadPage, bool useBle) -> int {
     std::string path = "/kindle/last-read-page-dialog";
 
     log_i("Submitting user's choice for last read page dialog: %s",
           gotoLastReadPage ? "sync to latest" : "stay on current page");
 
     std::string url = StringFormat("%s%s", SINDARIN_SERVER_URL, path.c_str());
-    log_d("Making POST request to URL: %s (cancelFlag=%p)", url.c_str(), cancelFlag.get());
+    log_i("Making POST request to URL: %s", url.c_str());
 
     auto client =
-        createClient(url, "application/json", HTTP_METHOD_POST, useBle, cancelFlag, 120000);
+        createClient(url, "application/json", HTTP_METHOD_POST, useBle, nullptr, 120000);
     if (!client) {
         log_e("Failed to create HTTP client");
         return ERR_CLIENT_OPEN;
@@ -682,7 +680,7 @@ auto SindarinAPI::submitLastReadPageChoice(bool gotoLastReadPage,
     }
 
     // Fetch headers
-    int contentLength = client->fetchHeaders(cancelFlag);
+    int contentLength = client->fetchHeaders(nullptr);
     if (contentLength <= 0) {
         log_e("Failed to fetch HTTP headers or empty response: %d", contentLength);
         return ERR_CONTENT_LENGTH;

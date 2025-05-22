@@ -755,20 +755,17 @@ void KindleReadableScreen::handleLastReadDialogResponse(bool gotoLastReadPage) {
     }
 }
 
-void KindleReadableScreen::submitLastReadDialogChoice(bool gotoLastReadPage, const std::string &loadingMessage) {
+void KindleReadableScreen::submitLastReadDialogChoice(bool gotoLastReadPage,
+                                                      const std::string &loadingMessage) {
     setState(State::LOADING_CONTENT);
     loadingMessageView_.setText(loadingMessage);
     setNeedsLayout();
     setNeedsRerender();
     render(display_);
 
-    auto cancelFlag = cancelFlag_;
-    DispatchGetCore0BackgroundQueue()->dispatch([this, gotoLastReadPage, cancelFlag]() {
-        auto result = SindarinAPI::getInstance()->submitLastReadPageChoice(gotoLastReadPage, cancelFlag, isUsingBleConnection_);
-
-        if (CancelFlag::isCancelled(cancelFlag)) {
-            return;
-        }
+    DispatchGetCore0BackgroundQueue()->dispatch([this, gotoLastReadPage]() {
+        auto result = SindarinAPI::getInstance()->submitLastReadPageChoice(
+            gotoLastReadPage, isUsingBleConnection_);
 
         if (gotoLastReadPage && result != 200) {
             DispatchGetUiQueue()->dispatch([this]() {
