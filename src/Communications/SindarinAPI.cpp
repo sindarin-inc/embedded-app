@@ -645,8 +645,7 @@ auto SindarinAPI::submitLastReadPageChoice(bool gotoLastReadPage, bool useBle) -
     std::string url = StringFormat("%s%s", SINDARIN_SERVER_URL, path.c_str());
     log_i("Making POST request to URL: %s", url.c_str());
 
-    auto client =
-        createClient(url, "application/json", HTTP_METHOD_POST, useBle, nullptr, 120000);
+    auto client = createClient(url, "application/json", HTTP_METHOD_POST, useBle, nullptr, 120000);
     if (!client) {
         log_e("Failed to create HTTP client");
         return ERR_CLIENT_OPEN;

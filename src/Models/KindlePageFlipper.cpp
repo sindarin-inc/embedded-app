@@ -39,8 +39,8 @@ auto KindlePageFlipper::checkForError(int httpCode, std::shared_ptr<KindlePageRe
     }
 }
 
-auto KindlePageFlipper::checkForLastReadDialog(
-    const std::shared_ptr<KindlePageResponse> &response) -> bool {
+auto KindlePageFlipper::checkForLastReadDialog(const std::shared_ptr<KindlePageResponse> &response)
+    -> bool {
     if (response->lastReadDialog && !response->dialogText.empty() && onLastReadDialogFunction_) {
         onLastReadDialogFunction_(response->dialogText);
         return true;
