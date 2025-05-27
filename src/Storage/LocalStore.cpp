@@ -987,7 +987,8 @@ auto LocalStore::syncFromRemote(bool wifiConnected, bool bleConnected, SyncReaso
             if (!checkSyncResponse.email.empty()) {
                 auto currentEmail = prefs_.userEmail.get();
                 if (!currentEmail.has_value() || currentEmail.value() != checkSyncResponse.email) {
-                    log_i("Setting user email from sync response: %s", checkSyncResponse.email.c_str());
+                    log_i("Setting user email from sync response: %s",
+                          checkSyncResponse.email.c_str());
                     prefs_.userEmail.set(checkSyncResponse.email);
                 }
             }
