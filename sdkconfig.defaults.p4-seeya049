@@ -1,4 +1,10 @@
 # This file was generated using idf.py save-defconfig. It can be edited manually.
 # Espressif IoT Development Framework (ESP-IDF) 5.5.0 Project Minimal Configuration
 #
-CONFIG_DISPLAY_ESP32_P4_SEEYA_049=y
+CONFIG_BAT_VOLTAGE_LEFT_PIN=-1
+CONFIG_FACTORY_RESET_BUTTON_PIN=-1
+CONFIG_RED_LED=-1
+CONFIG_GREEN_LED=-1
+CONFIG_BLUE_LED=-1
+CONFIG_USB_CONNECTED_PIN=-1
+CONFIG_DISPLAY_SEEYA_049=y

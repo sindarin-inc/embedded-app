@@ -871,6 +871,7 @@ public:
     PrefsItem<std::string> tzPosix;
     // Firmware that's been loaded to the other flash slot but not yet installed
     PrefsItem<std::string> firmwareLoaded;
+    // TODO(john): This is likely a duplicate of invertSetting. Investigate!
     BooleanFlag darkMode;
     BooleanFlag autoPilot;
     BooleanFlag fastTransitions;

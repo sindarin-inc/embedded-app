@@ -81,6 +81,16 @@ else()
     message(STATUS "NOT USING esp_lcd_seeya049")
 endif()
 
+if(DETECTED_TARGET MATCHES "sol-focus")
+    message(STATUS "Adding esp_lcd_seeya103 component")
+    list(APPEND components
+        esp_lcd_seeya103
+        esp_driver_ppa
+    )
+else()
+    message(STATUS "NOT USING esp_lcd_seeya103")
+endif()
+
 # Add M5GFX for M5Stack display targets
 if(DETECTED_TARGET MATCHES "m5stack-(atom|module)-display")
     message(STATUS "Adding M5GFX component for M5Stack display")

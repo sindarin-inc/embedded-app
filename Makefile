@@ -19,7 +19,7 @@ TARGET ?= glasses-debug
 # If we end up wanting to use these targets more, we could add M5GFX as a submodule.
 
 # Special handling for P4 targets that need additional sdkconfig defaults
-P4_TARGETS := p4-function-ev p4-function-ev-r0 p4-seeya049
+P4_TARGETS := p4-function-ev p4-function-ev-r0 p4-seeya049 sol-focus
 # List of all valid targets
 VALID_TARGETS := glasses-release glasses-debug v2pod-release tester m5stack-atom-display m5stack-module-display waveshare-6inhd sharp-27in $(P4_TARGETS)
 

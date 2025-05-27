@@ -14,8 +14,6 @@
 extern "C" {
 #endif
 
-#define SEEYA103_I2C_ADDR 0x4C
-
 // From the SY103WAM01 datasheet
 #define SEEYA103_CMD_SWRESET 0x01        // Software Reset
 #define SEEYA103_CMD_CMODE 0x03          // Compression Mode
@@ -70,7 +68,7 @@ typedef enum {
 #define SEEYA103_HRES_DEFAULT 1280
 #define SEEYA103_VRES_DEFAULT 1280
 
-static const seeya103_lcd_init_cmd_t seeya103_init_cmds[] = {
+static const seeya103_lcd_init_cmd_t SEEYA103_INIT_CMDS[] = {
     // CMD1
     {.cmd = SEEYA103_CMD_CMODE, .data = (uint8_t[]){0x80}, .data_bytes = 1, .delay_ms = 0},
     {.cmd = SEEYA103_CMD_WRCTRLD, .data = (uint8_t[]){0x29}, .data_bytes = 1, .delay_ms = 0},
@@ -94,6 +92,7 @@ static const seeya103_lcd_init_cmd_t seeya103_init_cmds[] = {
     {.cmd = SEEYA103_CMD_TCON, .data = (uint8_t[]){0x01}, .data_bytes = 1, .delay_ms = 0},
     {.cmd = SEEYA103_CMD_CASET, .data = (uint8_t[]){0x00, 0x00}, .data_bytes = 2, .delay_ms = 0},
     {.cmd = SEEYA103_CMD_RASET, .data = (uint8_t[]){0x00, 0x00}, .data_bytes = 2, .delay_ms = 0},
+    {.cmd = SEEYA103_CMD_MADCTL, .data = (uint8_t[]){0x00}, .data_bytes = 1, .delay_ms = 0},
 
     // CMD2 P0
     // Not in the I2C commands
@@ -128,7 +127,7 @@ static const seeya103_lcd_init_cmd_t seeya103_init_cmds[] = {
     {.cmd = SEEYA103_CMD_SLPOUT, .data = NULL, .data_bytes = 0, .delay_ms = 100},
 };
 
-static const seeya103_lcd_init_cmd_t seeya103_init_cmds_selftest[] = {
+static const seeya103_lcd_init_cmd_t SEEYA103_INIT_CMDS_SELFTEST[] = {
     // CMD1
     {.cmd = SEEYA103_CMD_CMODE, .data = (uint8_t[]){0x80}, .data_bytes = 1, .delay_ms = 0},
     {.cmd = SEEYA103_CMD_WRCTRLD, .data = (uint8_t[]){0x29}, .data_bytes = 1, .delay_ms = 0},
@@ -199,7 +198,6 @@ static const seeya103_lcd_init_cmd_t seeya103_init_cmds_selftest[] = {
  * `esp_lcd_panel_dev_config_t::vendor_config`.
  *
  */
-
 typedef struct {
     int reset_gpio_num;
     const seeya103_lcd_init_cmd_t
@@ -243,12 +241,10 @@ esp_err_t esp_lcd_new_panel_seeya103(const esp_lcd_panel_io_handle_t io,
 typedef esp_err_t (*seeya103_send_cmd_fn_t)(seeya103_lcd_init_cmd_t cmd, void *user_data);
 
 esp_err_t panel_seeya103_send_init_cmds(esp_lcd_panel_t *panel);
-esp_err_t panel_seeya103_send_init_cmds_with_fn(const seeya103_lcd_init_cmd_t *init_cmds,
-                                                uint16_t init_cmds_size, uint16_t width,
-                                                uint16_t height, uint16_t x_offset,
-                                                uint16_t y_offset, seeya103_scaling_t scaling,
-                                                seeya103_send_cmd_fn_t send_cmd_fn,
-                                                void *user_data);
+esp_err_t panel_seeya103_send_init_cmds_with_fn(
+    const seeya103_lcd_init_cmd_t *init_cmds, uint16_t init_cmds_size, uint16_t width,
+    uint16_t height, uint16_t x_offset, uint16_t y_offset, seeya103_scaling_t scaling,
+    bool mirror_x, bool mirror_y, seeya103_send_cmd_fn_t send_cmd_fn, void *user_data);
 
 esp_err_t panel_seeya103_all_pixels_on_off(esp_lcd_panel_t *panel, bool on_off);
 
@@ -302,8 +298,8 @@ static inline esp_lcd_dpi_panel_config_t panel_seeya103_1280_1280_dpi_config(voi
         .dpi_clk_src = MIPI_DSI_DPI_CLK_SRC_DEFAULT,
         .dpi_clock_freq_mhz = 0, // Set by the refresh rate
         .pixel_format = LCD_COLOR_PIXEL_FORMAT_RGB888,
-        .in_color_format = 0,
-        .out_color_format = 0,
+        .in_color_format = LCD_COLOR_FMT_RGB888,
+        .out_color_format = LCD_COLOR_FMT_RGB888,
         .num_fbs = 1,
         .video_timing =
             {
@@ -330,8 +326,8 @@ panel_seeya103_vendor_config(esp_lcd_dsi_bus_handle_t mipi_dsi_bus,
                              esp_lcd_dpi_panel_config_t *dpi_config, int reset_gpio_num) {
     seeya103_vendor_config_t vendor_config = {
         .reset_gpio_num = reset_gpio_num,
-        .init_cmds = seeya103_init_cmds,
-        .init_cmds_size = sizeof(seeya103_init_cmds) / sizeof(seeya103_lcd_init_cmd_t),
+        .init_cmds = SEEYA103_INIT_CMDS,
+        .init_cmds_size = sizeof(SEEYA103_INIT_CMDS) / sizeof(seeya103_lcd_init_cmd_t),
         .refresh_rate = 60,
         .x_offset = 0,
         .y_offset = 0,
@@ -364,74 +360,6 @@ panel_seeya103_panel_config(seeya103_vendor_config_t *vendor_config) {
 }
 
 #endif // SOC_MIPI_DSI_SUPPORTED
-
-/**
- * @brief Initialize the I2C bus for the panel
- *
- * @return
- *      - ESP_OK on success
- *      - Otherwise on error
- */
-esp_err_t panel_seeya103_i2c_init(int sda_gpio_num, int scl_gpio_num);
-
-/**
- * @brief Deinitialize the I2C bus for the panel
- *
- * @return
- *      - ESP_OK on success
- *      - Otherwise on error
- */
-esp_err_t panel_seeya103_i2c_deinit(void);
-
-/**
- * @brief Write a register to the panel using I2C
- *
- * @param[in] reg_addr Register address
- * @param[in] data Data to write
- * @return
- */
-esp_err_t panel_seeya103_i2c_write_reg(uint16_t reg_addr, uint16_t data);
-
-/**
- * @brief Read a register from the panel using I2C
- *
- * @param[in] reg_addr Register address
- */
-esp_err_t panel_seeya103_i2c_read_reg(uint16_t reg_addr, uint16_t *data);
-
-/**
- * @brief Send initialization commands to the panel using I2C
- *
- * @param[in] width Width of the display
- * @param[in] height Height of the display
- * @param[in] x_offset X offset of the display
- * @param[in] y_offset Y offset of the display
- * @param[in] scaling Scaling factor
- * @param[in] init_cmds Pointer to the initialization commands array
- * @param[in] init_cmds_size Size of the initialization commands array
- * @return
- *      - ESP_OK on success
- *      - Otherwise on error
- */
-esp_err_t panel_seeya103_send_cmds_i2c(uint16_t width, uint16_t height, uint16_t x_offset,
-                                       uint16_t y_offset, seeya103_scaling_t scaling,
-                                       const seeya103_lcd_init_cmd_t *init_cmds,
-                                       uint16_t init_cmds_size);
-/**
- * @brief
- *
- * @param on_off
- * @return esp_err_t
- */
-esp_err_t panel_seeya103_disp_on_off_i2c(bool on_off);
-
-/**
- * @brief Move the display area of the panel using I2C
- *
- * @param[in] x_offset X offset of the display
- * @param[in] y_offset Y offset of the display
- */
-esp_err_t panel_seeya103_move_display_area_i2c(int16_t x_offset, int16_t y_offset);
 
 #ifdef __cplusplus
 }

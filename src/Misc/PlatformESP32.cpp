@@ -109,8 +109,7 @@ void HardwareInit() {
     PinMode(CONFIG_BLUE_LED, OUTPUT);
 #endif
 
-#if CONFIG_IDF_TARGET_ESP32S3 && CONFIG_BAT_VOLTAGE_LEFT_PIN != -1 &&                              \
-    CONFIG_BAT_VOLTAGE_RIGHT_PIN != -1
+#if (CONFIG_BAT_VOLTAGE_LEFT_PIN != -1 || CONFIG_BAT_VOLTAGE_RIGHT_PIN != -1)
     // Attenuation of 2.5db gets us up to a max of 1250mV
     // Using our 442k/160k divider, that's 4.7V max
     adc_cali_curve_fitting_config_t adcConfig;
@@ -184,8 +183,7 @@ auto HardwareDeinit() -> esp_err_t {
         log_e("Failed to deinit NVS: %d", err);
     }
 
-#if CONFIG_IDF_TARGET_ESP32S3 && CONFIG_BAT_VOLTAGE_LEFT_PIN != -1 &&                              \
-    CONFIG_BAT_VOLTAGE_RIGHT_PIN != -1
+#if CONFIG_BAT_VOLTAGE_LEFT_PIN != -1 || CONFIG_BAT_VOLTAGE_RIGHT_PIN != -1
     // We need to shut down the ADC or else we consume ~1.6mA during deep sleep
     if (adcOneshotHandle != nullptr) {
         err = adc_oneshot_del_unit(adcOneshotHandle);

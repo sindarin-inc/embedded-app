@@ -1,4 +1,4 @@
-#if CONFIG_DISPLAY_ESP32_P4_SEEYA_049
+#if CONFIG_DISPLAY_SEEYA_049
 
 #include "DisplayEsp32P4SeeYa049.hpp"
 

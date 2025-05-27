@@ -1,4 +1,6 @@
 /*
+ * SPDX-FileCopyrightText: 2025 Sindarin Inc.
+ *
  * Driver for SeeYA SY103WAM01 (1.03" micro-OLED, 2560x2560) via MIPI DSI
  */
 
@@ -7,7 +9,6 @@
 #include <string.h>
 
 #include "driver/gpio.h"
-#include "driver/i2c.h"
 #include "esp_check.h"
 #if SOC_MIPI_DSI_SUPPORTED
 #include "esp_lcd_mipi_dsi.h"
@@ -27,11 +28,6 @@
 // 4. When setting RL_SEL high, it seems to cause that display to not render blues correctly. I
 // think this is a bug in the hardware.
 // When moving the display area, I can't draw outside the original draw box
-
-// I2C configuration
-#define I2C_MASTER_NUM I2C_NUM_0  // I2C port number
-#define I2C_MASTER_FREQ_HZ 400000 // I2C master clock frequency
-#define I2C_TIMEOUT_MS 1000       // I2C timeout in milliseconds
 
 typedef struct {
     esp_lcd_panel_io_handle_t io;
@@ -53,12 +49,10 @@ typedef struct {
 
 static const char *TAG = "seeya103";
 
-esp_err_t panel_seeya103_send_init_cmds_with_fn(const seeya103_lcd_init_cmd_t *init_cmds,
-                                                uint16_t init_cmds_size, uint16_t width,
-                                                uint16_t height, uint16_t x_offset,
-                                                uint16_t y_offset, seeya103_scaling_t scaling,
-                                                seeya103_send_cmd_fn_t send_cmd_fn,
-                                                void *user_data) {
+esp_err_t panel_seeya103_send_init_cmds_with_fn(
+    const seeya103_lcd_init_cmd_t *init_cmds, uint16_t init_cmds_size, uint16_t width,
+    uint16_t height, uint16_t x_offset, uint16_t y_offset, seeya103_scaling_t scaling,
+    bool mirror_x, bool mirror_y, seeya103_send_cmd_fn_t send_cmd_fn, void *user_data) {
     if (init_cmds == NULL || init_cmds_size == 0) {
         ESP_LOGW(TAG, "No init commands provided");
         return ESP_OK;
@@ -158,6 +152,19 @@ esp_err_t panel_seeya103_send_init_cmds_with_fn(const seeya103_lcd_init_cmd_t *i
                     cmd.data = &data;
                 }
                 break;
+            case SEEYA103_CMD_MADCTL: {
+                uint8_t madctl_val = ((uint8_t *)cmd.data)[0];
+                if (mirror_x) {
+                    madctl_val |= SEEYA103_CMD_MADCTL_MX;
+                }
+                if (mirror_y) {
+                    madctl_val |= SEEYA103_CMD_MADCTL_MY;
+                }
+                ESP_LOGD(TAG, "Setting MADCTL to 0x%02X (mirror_x=%d, mirror_y=%d)", madctl_val,
+                         mirror_x, mirror_y);
+                data[0] = madctl_val;
+                cmd.data = &data;
+            } break;
             default:
                 break;
             }
@@ -290,7 +297,7 @@ esp_err_t esp_lcd_new_panel_seeya103(const esp_lcd_panel_io_handle_t io,
              seeya103->width, seeya103->x_offset, dpi_config.video_timing.hsync_pulse_width,
              dpi_config.video_timing.hsync_back_porch, dpi_config.video_timing.hsync_front_porch);
     ESP_LOGD(TAG,
-             "v_size: %d y_offset: %" PRIu16 " vsync_pulse_width: %" PRIu32
+             "height: %d y_offset: %" PRIu16 " vsync_pulse_width: %" PRIu32
              " vsync_back_porch: %" PRIu32 " vsync_front_porch: %" PRIu32,
              seeya103->height, seeya103->y_offset, dpi_config.video_timing.vsync_pulse_width,
              dpi_config.video_timing.vsync_back_porch, dpi_config.video_timing.vsync_front_porch);
@@ -324,7 +331,6 @@ static esp_err_t panel_seeya103_del(esp_lcd_panel_t *panel) {
     return ESP_OK;
 }
 
-// Helper function for MIPI interface
 static esp_err_t panel_seeya103_send_cmd_mipi(seeya103_lcd_init_cmd_t cmd, void *user_data) {
     seeya103_panel_t *seeya103 = (seeya103_panel_t *)user_data;
     esp_lcd_panel_io_handle_t io = seeya103->io;
@@ -341,14 +347,13 @@ static esp_err_t panel_seeya103_send_cmd_mipi(seeya103_lcd_init_cmd_t cmd, void 
     return esp_lcd_panel_io_tx_param(io, cmd.cmd, cmd.data, cmd.data_bytes);
 }
 
-// Wrapper function for MIPI interface
 esp_err_t panel_seeya103_send_init_cmds(esp_lcd_panel_t *panel) {
     seeya103_panel_t *seeya103 = (seeya103_panel_t *)panel->user_data;
 
     return panel_seeya103_send_init_cmds_with_fn(
         seeya103->init_cmds, seeya103->init_cmds_size, seeya103->width, seeya103->height,
-        seeya103->x_offset, seeya103->y_offset, seeya103->scaling, panel_seeya103_send_cmd_mipi,
-        seeya103);
+        seeya103->x_offset, seeya103->y_offset, seeya103->scaling, false, false,
+        panel_seeya103_send_cmd_mipi, seeya103);
 }
 
 static esp_err_t panel_seeya103_init(esp_lcd_panel_t *panel) {
@@ -410,6 +415,7 @@ static esp_err_t panel_seeya103_mirror(esp_lcd_panel_t *panel, bool mirror_x, bo
     return ESP_OK;
 }
 
+// TODO: It would be nice to unify these methods and the very similar I2C versions.
 static esp_err_t panel_seeya103_disp_on_off(esp_lcd_panel_t *panel, bool on_off) {
     ESP_LOGI(TAG, "panel_seeya103_disp_on_off %d", on_off);
 
@@ -481,9 +487,9 @@ esp_err_t panel_seeya103_run_selftest(esp_lcd_panel_t *panel) {
 
     ESP_LOGI(TAG, "panel_seeya103_run_selftest");
     seeya103_panel_t *seeya103 = (seeya103_panel_t *)panel->user_data;
-    seeya103->init_cmds = seeya103_init_cmds_selftest;
+    seeya103->init_cmds = SEEYA103_INIT_CMDS_SELFTEST;
     seeya103->init_cmds_size =
-        sizeof(seeya103_init_cmds_selftest) / sizeof(seeya103_lcd_init_cmd_t);
+        sizeof(SEEYA103_INIT_CMDS_SELFTEST) / sizeof(seeya103_lcd_init_cmd_t);
 
     // First reset the panel to ensure we're in a known state
     ESP_RETURN_ON_ERROR(panel_seeya103_reset(panel), TAG, "reset display failed");
@@ -522,173 +528,3 @@ esp_err_t panel_seeya103_move_display_area(esp_lcd_panel_t *panel, int16_t x_off
 }
 
 #endif // SOC_MIPI_DSI_SUPPORTED
-
-esp_err_t panel_seeya103_i2c_init(int sda_io_num, int scl_io_num) {
-    i2c_config_t conf = {
-        .mode = I2C_MODE_MASTER,
-        .sda_io_num = sda_io_num,
-        .scl_io_num = scl_io_num,
-        .sda_pullup_en = GPIO_PULLUP_ENABLE,
-        .scl_pullup_en = GPIO_PULLUP_ENABLE,
-        .master.clk_speed = I2C_MASTER_FREQ_HZ,
-    };
-
-    esp_err_t err = i2c_param_config(I2C_MASTER_NUM, &conf);
-    if (err != ESP_OK) return err;
-
-    return i2c_driver_install(I2C_MASTER_NUM, conf.mode, 0, 0, 0);
-}
-
-esp_err_t panel_seeya103_i2c_deinit(void) { return i2c_driver_delete(I2C_MASTER_NUM); }
-
-esp_err_t panel_seeya103_i2c_write_reg(uint16_t reg_addr, uint16_t data) {
-    uint8_t write_buf[4];
-    write_buf[0] = (reg_addr >> 8) & 0xFF; // Register address high byte
-    write_buf[1] = reg_addr & 0xFF;        // Register address low byte
-    write_buf[2] = (data >> 8) & 0xFF;     // Data high byte
-    write_buf[3] = data & 0xFF;            // Data low byte
-
-    ESP_LOGI(TAG, "I2C TX %04Xh: %04Xh", reg_addr, data);
-
-    i2c_cmd_handle_t cmd = i2c_cmd_link_create();
-    i2c_master_start(cmd);
-    i2c_master_write_byte(cmd, (SEEYA103_I2C_ADDR << 1) | I2C_MASTER_WRITE, true);
-    i2c_master_write(cmd, write_buf, sizeof(write_buf), true);
-    i2c_master_stop(cmd);
-
-    esp_err_t ret = i2c_master_cmd_begin(I2C_MASTER_NUM, cmd, pdMS_TO_TICKS(I2C_TIMEOUT_MS));
-    i2c_cmd_link_delete(cmd);
-
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to write to register 0x%04X: %d", reg_addr, ret);
-    }
-
-    return ret;
-}
-
-esp_err_t panel_seeya103_i2c_read_reg(uint16_t reg_addr, uint16_t *data) {
-    uint8_t write_buf[2];
-    uint8_t read_buf[2];
-    write_buf[0] = (reg_addr >> 8) & 0xFF; // Register address high byte
-    write_buf[1] = reg_addr & 0xFF;        // Register address low byte
-
-    i2c_cmd_handle_t cmd = i2c_cmd_link_create();
-    // Write register address
-    i2c_master_start(cmd);
-    i2c_master_write_byte(cmd, (SEEYA103_I2C_ADDR << 1) | I2C_MASTER_WRITE, true);
-    i2c_master_write(cmd, write_buf, sizeof(write_buf), true);
-
-    // Read data
-    i2c_master_start(cmd);
-    i2c_master_write_byte(cmd, (SEEYA103_I2C_ADDR << 1) | I2C_MASTER_READ, true);
-    i2c_master_read(cmd, read_buf, sizeof(read_buf), I2C_MASTER_LAST_NACK);
-    i2c_master_stop(cmd);
-
-    esp_err_t ret = i2c_master_cmd_begin(I2C_MASTER_NUM, cmd, pdMS_TO_TICKS(I2C_TIMEOUT_MS));
-    i2c_cmd_link_delete(cmd);
-
-    if (ret == ESP_OK) {
-        *data = (read_buf[0] << 8) | read_buf[1];
-    } else {
-        ESP_LOGE(TAG, "Failed to read from register 0x%04X: %d", reg_addr, ret);
-    }
-
-    return ret;
-}
-
-esp_err_t panel_seeya103_disp_on_off_i2c(bool on_off) {
-    ESP_LOGI(TAG, "panel_seeya103_disp_on_off_i2c %d", on_off);
-    if (on_off) {
-        ESP_RETURN_ON_ERROR(panel_seeya103_i2c_write_reg(SEEYA103_CMD_DISPON << 8, 0), TAG,
-                            "Failed to write display on/off command");
-        ESP_LOGI(TAG, "Delay 20ms");
-        vTaskDelay(pdMS_TO_TICKS(20));
-        ESP_RETURN_ON_ERROR(panel_seeya103_i2c_write_reg(0xF000, 0xAA), TAG,
-                            "Failed to write display on/off command");
-        ESP_RETURN_ON_ERROR(panel_seeya103_i2c_write_reg(0xF001, 0x11), TAG,
-                            "Failed to write display on/off command");
-        ESP_RETURN_ON_ERROR(panel_seeya103_i2c_write_reg(0xC000, 0xFF), TAG,
-                            "Failed to write display on/off command");
-    } else {
-        ESP_RETURN_ON_ERROR(panel_seeya103_i2c_write_reg(SEEYA103_CMD_DISPOFF, 0), TAG,
-                            "Failed to write display on/off command");
-    }
-
-    return ESP_OK;
-}
-
-esp_err_t panel_seeya103_move_display_area_i2c(int16_t x_offset, int16_t y_offset) {
-    ESP_LOGI(TAG, "panel_seeya103_move_display_area_i2c for device 0x%02X: %d %d",
-             SEEYA103_I2C_ADDR, x_offset, y_offset);
-
-    // Send the move display area command
-    if (x_offset != -1) {
-        uint8_t cmd_data[2];
-        cmd_data[0] = (x_offset >> 8) & 0xFF; // High byte of dx
-        cmd_data[1] = x_offset & 0xFF;        // Low byte of dx
-        ESP_RETURN_ON_ERROR(
-            panel_seeya103_i2c_write_reg((SEEYA103_CMD_CASET << 8) + 0, (uint8_t)cmd_data[0]), TAG,
-            "Failed to send move display area command");
-        ESP_RETURN_ON_ERROR(
-            panel_seeya103_i2c_write_reg((SEEYA103_CMD_CASET << 8) + 1, (uint8_t)cmd_data[1]), TAG,
-            "Failed to send move display area command");
-    }
-    // Send the move display area command
-    if (y_offset != -1) {
-        uint8_t cmd_data[2];
-        cmd_data[0] = (y_offset >> 8) & 0xFF; // High byte of dy
-        cmd_data[1] = y_offset & 0xFF;        // Low byte of dy
-        ESP_RETURN_ON_ERROR(
-            panel_seeya103_i2c_write_reg((SEEYA103_CMD_RASET << 8) + 0, (uint8_t)cmd_data[0]), TAG,
-            "Failed to send move display area command");
-        ESP_RETURN_ON_ERROR(
-            panel_seeya103_i2c_write_reg((SEEYA103_CMD_RASET << 8) + 1, (uint8_t)cmd_data[1]), TAG,
-            "Failed to send move display area command");
-    }
-    return ESP_OK;
-}
-
-// Helper function for I2C interface
-static esp_err_t panel_seeya103_i2c_send_cmd(seeya103_lcd_init_cmd_t cmd, void *user_data) {
-    static int data_pointer = 0;
-    // MIPI commands use this special register to offset the data pointer on the following command
-    if (cmd.cmd == SEEYA103_CMD_POINTER) {
-        data_pointer = *(int *)cmd.data;
-        return ESP_OK;
-    }
-
-    // For each command, we need to write its data bytes to sequential registers
-    uint16_t reg_addr;
-    if (cmd.cmd > 0xFF) {
-        reg_addr = cmd.cmd;
-    } else {
-        reg_addr = (cmd.cmd << 8);
-    }
-    if (data_pointer > 0) {
-        reg_addr += data_pointer;
-    }
-    if (cmd.data_bytes > 0) {
-        for (int j = 0; j < cmd.data_bytes; j++) {
-            uint16_t data_byte = ((uint8_t *)cmd.data)[j];
-            ESP_RETURN_ON_ERROR(panel_seeya103_i2c_write_reg(reg_addr, data_byte), TAG,
-                                "Failed to write command data");
-            reg_addr += 1;
-        }
-    } else {
-        ESP_RETURN_ON_ERROR(panel_seeya103_i2c_write_reg(reg_addr, 0), TAG,
-                            "Failed to write command");
-    }
-    data_pointer = 0;
-    return ESP_OK;
-}
-
-esp_err_t panel_seeya103_send_cmds_i2c(uint16_t width, uint16_t height, uint16_t x_offset,
-                                       uint16_t y_offset, seeya103_scaling_t scaling,
-                                       const seeya103_lcd_init_cmd_t *init_cmds,
-                                       uint16_t init_cmds_size) {
-    ESP_LOGD(TAG, "panel_seeya103_send_cmds_i2c for device 0x%02X", SEEYA103_I2C_ADDR);
-
-    return panel_seeya103_send_init_cmds_with_fn(init_cmds, init_cmds_size, width, height, x_offset,
-                                                 y_offset, scaling, panel_seeya103_i2c_send_cmd,
-                                                 NULL);
-}

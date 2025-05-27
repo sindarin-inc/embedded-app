@@ -10,6 +10,7 @@
 
 #include "driver/gpio.h"
 #include "driver/i2c.h"
+#include "driver/i2c_master.h"
 #include "driver/spi_master.h"
 #include "esp_dma_utils.h"
 #include "esp_heap_caps.h"
@@ -17,6 +18,7 @@
 #include "esp_lcd_panel_io.h"
 #include "esp_lcd_panel_ops.h"
 #include "esp_lcd_seeya103.h"
+#include "esp_lcd_seeya103_i2c.h"
 #include "esp_ldo_regulator.h"
 #include "esp_log.h"
 #include "esp_timer.h"
@@ -30,9 +32,11 @@
 #define TEST_LCD_V_RES (1280)
 #define TEST_LCD_BIT_PER_PIXEL (24)
 
-#define TEST_PIN_NUM_LCD_RST (23)
-#define TEST_PIN_NUM_I2C_SDA (22)
-#define TEST_PIN_NUM_I2C_SCL (21)
+// Sol Focus board pins
+#define TEST_PIN_NUM_LCD_RST (53)
+// Left Screen I2C pins
+#define TEST_PIN_NUM_I2C_SDA (52)
+#define TEST_PIN_NUM_I2C_SCL (51)
 
 #define TEST_DELAY_TIME_MS (3000)
 
@@ -58,7 +62,33 @@ IRAM_ATTR static bool test_notify_refresh_ready(esp_lcd_panel_handle_t panel,
     return (need_yield == pdTRUE);
 }
 
-static void test_init_mipi_dsi_bus(void) {
+static void test_power_on(void) {
+    // Power pins specific to the Sol Focus board. Remove if we ever open source this.
+    // 33: 3V3_ON
+    // 32: 1V8_ON
+    // 31: PS_ENP
+    // 30: PS_PSP // Power save Positive
+    // 29: PS_ENN
+    // 28: PS_PSN // Power save Negative
+    // Turn on pins 31, 29, 33, 32, 30, 28
+    gpio_config_t config = {
+        .pin_bit_mask =
+            GPIO_NUM_31 | GPIO_NUM_29 | GPIO_NUM_33 | GPIO_NUM_32 | GPIO_NUM_30 | GPIO_NUM_28,
+        .mode = GPIO_MODE_OUTPUT,
+        .pull_up_en = GPIO_PULLUP_DISABLE,
+        .pull_down_en = GPIO_PULLDOWN_DISABLE,
+        .intr_type = GPIO_INTR_DISABLE,
+    };
+    gpio_config(&config);
+    gpio_set_level(31, 1);
+    gpio_set_level(29, 1);
+    gpio_set_level(33, 1);
+    gpio_set_level(32, 1);
+    gpio_set_level(30, 0);
+    gpio_set_level(28, 0);
+
+    vTaskDelay(pdMS_TO_TICKS(1000));
+
     // Turn on the power for MIPI DSI PHY, so it can go from "No Power" state to "Shutdown" state
 #ifdef TEST_MIPI_DSI_PHY_PWR_LDO_CHAN
     ESP_LOGI(TAG, "MIPI DSI PHY Powered on");
@@ -68,6 +98,10 @@ static void test_init_mipi_dsi_bus(void) {
     };
     TEST_ESP_OK(esp_ldo_acquire_channel(&ldo_mipi_phy_config, &ldo_mipi_phy));
 #endif
+}
+
+static void test_init_mipi_dsi_bus(void) {
+    test_power_on();
 
     ESP_LOGI(TAG, "Initialize MIPI DSI bus");
     esp_lcd_dsi_bus_config_t bus_config = panel_seeya103_dsi_bus_config();
@@ -446,20 +480,35 @@ TEST_CASE("test seeya103 moving display area", "[seeya103][moving_display_area]"
     TEST_ESP_OK(esp_lcd_dpi_panel_set_pattern(panel_handle, MIPI_DSI_PATTERN_BAR_VERTICAL));
     vTaskDelay(pdMS_TO_TICKS(TEST_DELAY_TIME_MS));
 
-    TEST_ESP_OK(panel_seeya103_i2c_init(TEST_PIN_NUM_I2C_SDA, TEST_PIN_NUM_I2C_SCL));
+    // Create I2C bus
+    i2c_master_bus_handle_t bus_handle;
+    const i2c_master_bus_config_t bus_config = {
+        .i2c_port = I2C_NUM_0,
+        .sda_io_num = TEST_PIN_NUM_I2C_SDA,
+        .scl_io_num = TEST_PIN_NUM_I2C_SCL,
+        .clk_source = I2C_CLK_SRC_DEFAULT,
+        .glitch_ignore_cnt = 7,
+        .flags.enable_internal_pullup = true,
+    };
+    TEST_ESP_OK(i2c_new_master_bus(&bus_config, &bus_handle));
 
-    // Move the display area to the right
-    TEST_ESP_OK(panel_seeya103_move_display_area(panel_handle, pattern_width, pattern_height));
-    // TEST_ESP_OK(panel_seeya103_move_display_area_i2c(pattern_width, pattern_height));
+    // Add device to the bus
+    i2c_master_dev_handle_t dev_handle;
+    TEST_ESP_OK(seeya103_i2c_init(bus_handle, &dev_handle));
+
+    // Move the display area some
+    // TEST_ESP_OK(panel_seeya103_move_display_area(panel_handle, pattern_width, pattern_height));
+    TEST_ESP_OK(seeya103_i2c_move_display_area(dev_handle, pattern_width, pattern_height));
     vTaskDelay(pdMS_TO_TICKS(TEST_DELAY_TIME_MS));
 
-    // Move the display area to the left
-    TEST_ESP_OK(
-        panel_seeya103_move_display_area(panel_handle, 2 * pattern_width, 2 * pattern_height));
-    // TEST_ESP_OK(panel_seeya103_move_display_area_i2c(2 * pattern_width, 2 * pattern_height));
+    // Move the display area more
+    // TEST_ESP_OK(
+    //     panel_seeya103_move_display_area(panel_handle, 2 * pattern_width, 2 * pattern_height));
+    TEST_ESP_OK(seeya103_i2c_move_display_area(dev_handle, 2 * pattern_width, 2 * pattern_height));
     vTaskDelay(pdMS_TO_TICKS(TEST_DELAY_TIME_MS));
 
-    TEST_ESP_OK(panel_seeya103_i2c_deinit());
+    TEST_ESP_OK(seeya103_i2c_deinit(dev_handle));
+    TEST_ESP_OK(i2c_del_master_bus(bus_handle));
 
     test_deinit_disable_panel();
 }
@@ -485,29 +534,61 @@ esp_err_t hardware_reset_seeya103(void) {
 }
 
 TEST_CASE("test seeya103 I2C self-test", "[seeya103][i2c_self_test]") {
-    TEST_ESP_OK(panel_seeya103_i2c_init(TEST_PIN_NUM_I2C_SDA, TEST_PIN_NUM_I2C_SCL));
+    // Create I2C bus
+    i2c_master_bus_handle_t bus_handle;
+    const i2c_master_bus_config_t bus_config = {
+        .i2c_port = I2C_NUM_0,
+        .sda_io_num = TEST_PIN_NUM_I2C_SDA,
+        .scl_io_num = TEST_PIN_NUM_I2C_SCL,
+        .clk_source = I2C_CLK_SRC_DEFAULT,
+        .glitch_ignore_cnt = 7,
+        .flags.enable_internal_pullup = true,
+    };
+    TEST_ESP_OK(i2c_new_master_bus(&bus_config, &bus_handle));
+
+    // Add device to the bus
+    i2c_master_dev_handle_t dev_handle;
+    TEST_ESP_OK(seeya103_i2c_init(bus_handle, &dev_handle));
+
     // Run the self-test
     ESP_LOGI(TAG, "Running I2C self-test");
-    TEST_ESP_OK(panel_seeya103_send_cmds_i2c(
-        TEST_LCD_H_RES, TEST_LCD_V_RES, 0, 0, SEEYA103_SCALING_2X, seeya103_init_cmds_selftest,
-        sizeof(seeya103_init_cmds_selftest) / sizeof(seeya103_lcd_init_cmd_t)));
+    TEST_ESP_OK(seeya103_i2c_send_cmds(dev_handle, TEST_LCD_H_RES, TEST_LCD_V_RES, 0, 0,
+                                       SEEYA103_SCALING_2X, seeya103_init_cmds_selftest,
+                                       sizeof(seeya103_init_cmds_selftest) /
+                                           sizeof(seeya103_lcd_init_cmd_t)));
 
     vTaskDelay(pdMS_TO_TICKS(TEST_DELAY_TIME_MS));
     hardware_reset_seeya103();
 
-    TEST_ESP_OK(panel_seeya103_i2c_deinit());
+    TEST_ESP_OK(seeya103_i2c_deinit(dev_handle));
+    TEST_ESP_OK(i2c_del_master_bus(bus_handle));
 }
 
 TEST_CASE("test seeya103 I2C config with MIPI display", "[seeya103][i2c_config]") {
     hardware_reset_seeya103();
-    panel_seeya103_i2c_init(TEST_PIN_NUM_I2C_SDA, TEST_PIN_NUM_I2C_SCL);
+
+    // Create I2C bus
+    i2c_master_bus_handle_t bus_handle;
+    const i2c_master_bus_config_t bus_config = {
+        .i2c_port = I2C_NUM_0,
+        .sda_io_num = TEST_PIN_NUM_I2C_SDA,
+        .scl_io_num = TEST_PIN_NUM_I2C_SCL,
+        .clk_source = I2C_CLK_SRC_DEFAULT,
+        .glitch_ignore_cnt = 7,
+        .flags.enable_internal_pullup = true,
+    };
+    TEST_ESP_OK(i2c_new_master_bus(&bus_config, &bus_handle));
+
+    // Add device to the bus
+    i2c_master_dev_handle_t dev_handle;
+    TEST_ESP_OK(seeya103_i2c_init(bus_handle, &dev_handle));
 
     uint16_t x_offset = (2560 - TEST_LCD_H_RES) / 2;
     uint16_t y_offset = (2560 - TEST_LCD_V_RES) / 2;
-    panel_seeya103_send_cmds_i2c(TEST_LCD_H_RES, TEST_LCD_V_RES, x_offset, y_offset,
-                                 SEEYA103_SCALING_NONE, seeya103_init_cmds,
-                                 sizeof(seeya103_init_cmds) / sizeof(seeya103_lcd_init_cmd_t));
-    panel_seeya103_disp_on_off_i2c(true);
+    TEST_ESP_OK(seeya103_i2c_send_cmds(
+        dev_handle, TEST_LCD_H_RES, TEST_LCD_V_RES, x_offset, y_offset, SEEYA103_SCALING_NONE,
+        seeya103_init_cmds, sizeof(seeya103_init_cmds) / sizeof(seeya103_lcd_init_cmd_t)));
+    TEST_ESP_OK(seeya103_i2c_disp_on_off(dev_handle, true));
 
     // Init the MIPI driver but with no INIT commands via the MIPI driver
     esp_lcd_dpi_panel_config_t dpi_config = panel_seeya103_1280_1280_dpi_config();
@@ -525,7 +606,8 @@ TEST_CASE("test seeya103 I2C config with MIPI display", "[seeya103][i2c_config]"
 
     hardware_reset_seeya103();
     test_deinit_disable_panel();
-    panel_seeya103_i2c_deinit();
+    TEST_ESP_OK(seeya103_i2c_deinit(dev_handle));
+    TEST_ESP_OK(i2c_del_master_bus(bus_handle));
 }
 
 TEST_CASE("test centered with no scaling", "[seeya103][centered_no_scaling]") {

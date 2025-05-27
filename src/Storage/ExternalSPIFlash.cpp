@@ -1,4 +1,4 @@
-#if !CONFIG_INTERNAL_SPIFFS_FLASH
+#if CONFIG_EXTERNAL_SPIFFS_FLASH
 
 #include "Storage/ExternalSPIFlash.hpp"
 

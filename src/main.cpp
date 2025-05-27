@@ -73,9 +73,13 @@ DisplaySharp27in myDisplay;
 #elif CONFIG_DISPLAY_ESP32_P4_FUNCTION_EV || CONFIG_DISPLAY_ESP32_P4_FUNCTION_EV_R0
 #include "Displays/DisplayEsp32P4FunctionEv.hpp"
 DisplayEsp32P4FunctionEv myDisplay;
-#elif CONFIG_DISPLAY_ESP32_P4_SEEYA_049
+#elif CONFIG_DISPLAY_SEEYA_049
 #include "Displays/DisplayEsp32P4SeeYa049.hpp"
 DisplayEsp32P4SeeYa049 myDisplay;
+#elif CONFIG_DISPLAY_SEEYA103
+#include "Displays/DisplaySeeYa103.hpp"
+DisplaySeeYa103 myDisplay(CONFIG_DISPLAY_LEFT_I2C_SDA, CONFIG_DISPLAY_LEFT_I2C_SCL,
+                          CONFIG_DISPLAY_RIGHT_I2C_SDA, CONFIG_DISPLAY_RIGHT_I2C_SCL);
 #elif CONFIG_DISPLAY_NULL
 #include "Displays/DisplayNull.hpp"
 DisplayNull myDisplay;
@@ -441,6 +445,16 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         bootErrors.push_back({.type = BootError::Type::Display});
     }
     HEAP_PROFILE_END(displaySetup);
+
+    // Dark mode by default on OLED displays
+#if CONFIG_DISPLAY_SEEYA103
+    if (!prefs.darkMode.get().has_value() || !prefs.invertSetting.get().has_value()) {
+        prefs.darkMode.set(true);
+        prefs.invertSetting.set(true);
+        log_i("Defaulting to dark mode for OLED display %d %d",
+              prefs.darkMode.get().value_or(false), prefs.invertSetting.get().value_or(false));
+    }
+#endif
 
     // This setting must happen *before* the below vcom set from
     // preferences. Otherwise, when in dark mode, the vcom
