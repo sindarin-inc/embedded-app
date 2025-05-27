@@ -799,7 +799,7 @@ auto ToString(SleepReason reason) -> const char * {
 }
 
 auto PowerManager::enableUsbWakeup() -> esp_err_t {
-#if CONFIG_USB_CONNECTED_PIN != -1
+#if CONFIG_USB_CONNECTED_PIN != -1 && SOC_PM_SUPPORT_EXT0_WAKEUP
     esp_err_t err;
     if (USBConnected()) {
         err = esp_sleep_enable_ext0_wakeup(static_cast<gpio_num_t>(CONFIG_USB_CONNECTED_PIN), 0);

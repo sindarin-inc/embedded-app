@@ -26,8 +26,11 @@ menu "Sol Options"
             config DISPLAY_ESP32_P4_FUNCTION_EV_R0
                 bool "ESP32 P4 Function EV Revision 0 Display"
 
-            config DISPLAY_ESP32_P4_SEEYA_049
+            config DISPLAY_SEEYA_049
                 bool "ESP32 P4 SeeYA 0.49in Display"
+
+            config DISPLAY_SEEYA103
+                bool "ESP32 P4 SeeYA 1.03in Display"
 
             config DISPLAY_NULL
                 bool "No Display (for testing)"
@@ -50,7 +53,8 @@ menu "Sol Options"
             default 1920 if DISPLAY_M5STACK_MODULE_DISPLAY
             default 1024 if DISPLAY_ESP32_P4_FUNCTION_EV
             default 800 if DISPLAY_ESP32_P4_FUNCTION_EV_R0
-            default 1920 if DISPLAY_ESP32_P4_SEEYA_049
+            default 1920 if DISPLAY_SEEYA_049
+            default 1280 if DISPLAY_SEEYA103
             default 256
 
         config DISPLAY_HEIGHT
@@ -61,7 +65,8 @@ menu "Sol Options"
             default 1080 if DISPLAY_M5STACK_MODULE_DISPLAY
             default 600 if DISPLAY_ESP32_P4_FUNCTION_EV
             default 1280 if DISPLAY_ESP32_P4_FUNCTION_EV_R0
-            default 1080 if DISPLAY_ESP32_P4_SEEYA_049
+            default 1080 if DISPLAY_SEEYA_049
+            default 1280 if DISPLAY_SEEYA103
             default 256
 
         menu "Display Pins"
@@ -146,11 +151,31 @@ menu "Sol Options"
                 default 6
 
             config DISPLAY_RST_PIN
-                depends on DISPLAY_ESP32_P4_FUNCTION_EV || DISPLAY_ESP32_P4_FUNCTION_EV_R0
+                depends on DISPLAY_ESP32_P4_FUNCTION_EV || DISPLAY_ESP32_P4_FUNCTION_EV_R0 || DISPLAY_SEEYA_049 || DISPLAY_SEEYA103
                 int "RST Pin"
                 default 27 if DISPLAY_ESP32_P4_FUNCTION_EV
                 default -1 if DISPLAY_ESP32_P4_FUNCTION_EV_R0
                 default -1
+
+            config DISPLAY_LEFT_I2C_SDA
+                int "Left Screen SDA GPIO"
+                depends on DISPLAY_SEEYA103
+                default 52
+
+            config DISPLAY_LEFT_I2C_SCL
+                int "Left Screen SCL GPIO"
+                depends on DISPLAY_SEEYA103
+                default 51
+
+            config DISPLAY_RIGHT_I2C_SDA
+                int "Right Screen SDA GPIO"
+                depends on DISPLAY_SEEYA103
+                default 50
+
+            config DISPLAY_RIGHT_I2C_SCL
+                int "Right Screen SCL GPIO"
+                depends on DISPLAY_SEEYA103
+                default 49
 
         endmenu
     endmenu
@@ -182,9 +207,9 @@ menu "Sol Options"
             bool "Board has PSRAM"
             default y
 
-        config INTERNAL_SPIFFS_FLASH
-            bool "Internal SPIFFS Flash"
-            default y
+        config EXTERNAL_SPIFFS_FLASH
+            bool "Internal SPIFFS Flash (separate NOR flash)"
+            default n
 
         config LEDC_BACKLIGHT
             bool "LEDC Backlight"

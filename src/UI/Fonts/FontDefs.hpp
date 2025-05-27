@@ -49,7 +49,7 @@ const constexpr PixelResolution DEFAULT_DISPLAY_PIXEL_RESOLUTION = PixelResoluti
 const constexpr PixelResolution DEFAULT_FONT_PIXEL_RESOLUTION = PixelResolution::ONE_BIT;
 #endif
 #else
-#if CONFIG_DISPLAY_ESP32_P4_SEEYA_049
+#if CONFIG_DISPLAY_SEEYA_049 || CONFIG_DISPLAY_SEEYA103
 const constexpr PixelResolution DEFAULT_DISPLAY_PIXEL_RESOLUTION = PixelResolution::TWENTYFOUR_BITS;
 const constexpr PixelResolution DEFAULT_FONT_PIXEL_RESOLUTION = PixelResolution::TWENTYFOUR_BITS;
 #elif CONFIG_DISPLAY_ESP32_P4_FUNCTION_EV || CONFIG_DISPLAY_ESP32_P4_FUNCTION_EV_R0
@@ -76,7 +76,8 @@ static_assert(DEFAULT_FONT_PIXEL_RESOLUTION == PixelResolution::ONE_BIT,
 #endif
 
 #if !SIMULATOR && !CONFIG_WAVESHARE_8BIT && !CONFIG_DISPLAY_ESP32_P4_FUNCTION_EV &&                \
-    !CONFIG_DISPLAY_ESP32_P4_FUNCTION_EV_R0 && !CONFIG_DISPLAY_ESP32_P4_SEEYA_049
+    !CONFIG_DISPLAY_ESP32_P4_FUNCTION_EV_R0 && !CONFIG_DISPLAY_SEEYA_049 &&                        \
+    !CONFIG_DISPLAY_SEEYA103
 static_assert(DEFAULT_DISPLAY_PIXEL_RESOLUTION == PixelResolution::ONE_BIT,
               "The first version of Sol Reader only supports an ONE_BIT display!");
 static_assert(DEFAULT_FONT_PIXEL_RESOLUTION == PixelResolution::ONE_BIT,
