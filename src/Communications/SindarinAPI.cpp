@@ -635,3 +635,63 @@ auto SindarinAPI::navigateKindle(KindlePageResponse *resp,
     std::string path = StringFormat("/kindle/navigate?navigate=%d&preview=%d", navigate, preview);
     return makeKindleRequest(path, resp, cancelFlag, useBle);
 }
+
+auto SindarinAPI::submitLastReadPageChoice(bool gotoLastReadPage, bool useBle) -> int {
+    std::string path = "/kindle/last-read-page-dialog";
+
+    log_i("Submitting user's choice for last read page dialog: %s",
+          gotoLastReadPage ? "sync to latest" : "stay on current page");
+
+    std::string url = StringFormat("%s%s", SINDARIN_SERVER_URL, path.c_str());
+    log_i("Making POST request to URL: %s", url.c_str());
+
+    auto client = createClient(url, "application/json", HTTP_METHOD_POST, useBle, nullptr, 120000);
+    if (!client) {
+        log_e("Failed to create HTTP client");
+        return ERR_CLIENT_OPEN;
+    }
+
+    auto err = setAuth(client);
+    if (err != ESP_OK) {
+        log_e("Failed to set authentication: %d", err);
+        return ERR_SET_AUTH;
+    }
+
+    auto doc = std::make_shared<SpiRamJsonDocument>(128);
+    JsonObject body = doc->to<JsonObject>();
+    body["goto_last_read_page"] = gotoLastReadPage;
+
+    size_t serializedMaxSize = (*doc).memoryUsage() * 2;
+    auto reqBody = SpiRamArrayPtr<char>(serializedMaxSize);
+    size_t bodyLength = serializeJson(*doc, reqBody.get(), serializedMaxSize);
+
+    err = client->open(bodyLength);
+    if (err != ESP_OK) {
+        log_e("Failed to open HTTP client: %d", err);
+        return ERR_CLIENT_OPEN;
+    }
+    defer { client->close(); };
+
+    int writeLength = client->write(reqBody.get(), bodyLength);
+    if (writeLength != bodyLength) {
+        log_e("Failed to write request body: expected=%zu, actual=%d", bodyLength, writeLength);
+        return ERR_CLIENT_WRITE;
+    }
+
+    // Fetch headers
+    int contentLength = client->fetchHeaders(nullptr);
+    if (contentLength <= 0) {
+        log_e("Failed to fetch HTTP headers or empty response: %d", contentLength);
+        return ERR_CONTENT_LENGTH;
+    }
+
+    int httpCode = client->getStatusCode();
+
+    if (httpCode == 200) {
+        log_i("Successfully submitted last read page choice");
+    } else {
+        log_w("Failed to submit last read page choice, HTTP code: %d", httpCode);
+    }
+
+    return httpCode;
+}

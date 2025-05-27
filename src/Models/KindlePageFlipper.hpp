@@ -108,6 +108,12 @@ public:
 
     auto lastPageIndex() -> int { return pages_.size() - 1; }
 
+    void clear() {
+        pages_.clear();
+        currentPageIndex_ = 0;
+        currentPageOffset_ = 0;
+    }
+
 protected:
     SpiramVector<KindlePage> pages_;
 
@@ -144,12 +150,18 @@ public:
         gotContentFunction_ = std::move(gotContentFunction);
     }
 
-    void setOnErrorFunction(std::function<void(std::string &errorMessage)> onErrorFunction) {
+    void setOnErrorFunction(std::function<void(const std::string &errorMessage)> onErrorFunction) {
         onErrorFunction_ = std::move(onErrorFunction);
     }
 
     void setOnConnectionErrorFunction(std::function<void(void)> onConnectionErrorFunction) {
         onConnectionErrorFunction_ = std::move(onConnectionErrorFunction);
+    }
+
+    // Set callback for when a last read dialog is detected
+    void setOnLastReadDialogFunction(
+        std::function<void(const SpiramString &dialogText)> onLastReadDialogFunction) {
+        onLastReadDialogFunction_ = std::move(onLastReadDialogFunction);
     }
 
     void retryNetworkOperation(bool atEndOfContent) {
@@ -167,6 +179,13 @@ public:
         log_i("KindlePageFlipper now using BLE: %s", useBle_ ? "true" : "false");
     }
 
+    void clearBuffer() {
+        if (pageStream_) {
+            pageStream_->clear();
+        }
+        place_ = nullptr;
+    }
+
 private:
     // const int bufferThreshold_ = 2000; // Byte threshold to preload more content
 
@@ -177,8 +196,10 @@ private:
 
     std::shared_ptr<TxtPlace> place_;
     std::function<void(void)> gotContentFunction_;
-    std::function<void(std::string &errorMessage)> onErrorFunction_;
+    std::function<void(const std::string &errorMessage)> onErrorFunction_;
     std::function<void(void)> onConnectionErrorFunction_;
+    std::function<void(const SpiramString &dialogText)> onLastReadDialogFunction_;
 
     auto checkForError(int httpCode, std::shared_ptr<KindlePageResponse> &response) -> std::string;
+    auto checkForLastReadDialog(const std::shared_ptr<KindlePageResponse> &response) -> bool;
 };

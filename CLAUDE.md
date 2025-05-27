@@ -23,3 +23,5 @@
 - Comments: Use `//` for line comments, `/* */` for block comments
 - Stack usage: Monitor stack usage with watermarks (SHOW_WATERMARK macro)
 - Threading: Use DispatchQueue for most async operations
+- Comments: Only include comments if they add context that's not readily apparent in the next line of code or if the code block has some complexity
+- Comments: Don't add comments that are simply addressing the prompt, only add them if the comments clear up confusion

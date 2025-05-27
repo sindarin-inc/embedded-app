@@ -64,6 +64,24 @@ KindleReadableScreen::KindleReadableScreen(DisplaySystem &display,
         });
     });
 
+    // Set up the callback for last read dialog
+    pageFlipper_.setOnLastReadDialogFunction([this, cancelFlag](const SpiramString &dialogText) {
+        if (CancelFlag::isCancelled(cancelFlag)) {
+            return;
+        }
+        DispatchGetUiQueue()->dispatch([this, dialogText, cancelFlag]() {
+            if (CancelFlag::isCancelled(cancelFlag)) {
+                return;
+            }
+
+            // Cancel loading message and clear loading state before showing dialog
+            cancelDelayedLoadingMessage();
+
+            // Show the last read dialog
+            showLastReadDialog(dialogText);
+        });
+    });
+
     // Set a separate callback specifically for network connectivity issues
     pageFlipper_.setOnConnectionErrorFunction([this, cancelFlag]() {
         if (CancelFlag::isCancelled(cancelFlag)) {
@@ -427,6 +445,8 @@ auto KindleReadableScreen::stateToString(State state) -> const char * {
         return "ERROR";
     case State::DISPLAY_CONTENT:
         return "DISPLAY_CONTENT";
+    case State::SHOWING_DIALOG:
+        return "SHOWING_DIALOG";
     case State::DISPLAY_PARTIAL_CONTENT:
         return "DISPLAY_PARTIAL_CONTENT";
     default:
@@ -459,6 +479,11 @@ void KindleReadableScreen::setState(State newState) {
         if (state_ == State::DISPLAY_PARTIAL_CONTENT) {
             updateType_ = DisplaySystem::UpdateType::PARTIAL;
         }
+        break;
+    case State::SHOWING_DIALOG:
+        loadingMessageView_.setHidden(true);
+        delayedMessageView_.setHidden(true);
+        errorMessageView_.setHidden(true);
         break;
     }
 
@@ -689,6 +714,75 @@ void KindleReadableScreen::showPopupMenu() {
     setNeedsRerender();
 }
 
+void KindleReadableScreen::showLastReadDialog(const SpiramString &dialogText) {
+    log_i("Showing last read dialog: %s", dialogText.c_str());
+
+    setState(State::SHOWING_DIALOG);
+
+    // Create the last read dialog screen
+    auto lastReadDialog = std::make_shared<KindleLastReadDialogScreen>(display_, dialogText);
+
+    // Set the callback for when the user makes a selection
+    lastReadDialog->setResponseCallback(
+        [this](bool gotoLastReadPage) { handleLastReadDialogResponse(gotoLastReadPage); });
+
+    // Show the dialog
+    setCurrentScreen(lastReadDialog);
+    updateType_ = DisplaySystem::UpdateType::PARTIAL;
+    setNeedsRerender();
+    render(display_);
+
+    // Log that we showed the last read dialog
+    telemetry_.logMetricData(TelemetryField::METRIC_DIALOG,
+                             {{"dialog", std::string("kindle-books")},
+                              {"action", std::string("last-read-dialog-shown")}});
+}
+
+void KindleReadableScreen::handleLastReadDialogResponse(bool gotoLastReadPage) {
+    log_i("User selected to %s to the last read page", gotoLastReadPage ? "go" : "not go");
+
+    telemetry_.logMetricData(TelemetryField::METRIC_DIALOG,
+                             {{"dialog", std::string("kindle-books")},
+                              {"action", std::string("last-read-dialog-response")},
+                              {"goto_last_read", gotoLastReadPage}});
+
+    setCurrentScreen(nullptr);
+
+    if (gotoLastReadPage) {
+        submitLastReadDialogChoice(true, "Syncing to last read page...");
+    } else {
+        submitLastReadDialogChoice(false, "Loading content...");
+    }
+}
+
+void KindleReadableScreen::submitLastReadDialogChoice(bool gotoLastReadPage,
+                                                      const std::string &loadingMessage) {
+    setState(State::LOADING_CONTENT);
+    loadingMessageView_.setText(loadingMessage);
+    setNeedsLayout();
+    setNeedsRerender();
+    render(display_);
+
+    DispatchGetCore0BackgroundQueue()->dispatch([this, gotoLastReadPage]() {
+        auto result = SindarinAPI::getInstance()->submitLastReadPageChoice(gotoLastReadPage,
+                                                                           isUsingBleConnection_);
+
+        if (gotoLastReadPage && result != 200) {
+            DispatchGetUiQueue()->dispatch([this]() {
+                setErrorMessage("Failed to sync to the last read page. Please try again.");
+            });
+            return;
+        }
+
+        // If syncing to latest page, clear the buffer since we're jumping to a new location
+        if (gotoLastReadPage) {
+            pageFlipper_.clearBuffer();
+        }
+
+        pageFlipper_.loadInitialPage();
+    });
+}
+
 void KindleReadableScreen::scheduleDelayedLoadingMessage() {
     // Cancel any existing delayed message
     cancelDelayedLoadingMessage();
@@ -709,7 +803,11 @@ void KindleReadableScreen::scheduleDelayedLoadingMessage() {
         }
 
         // Display the message on the UI thread
-        DispatchGetUiQueue()->dispatch([this]() {
+        DispatchGetUiQueue()->dispatch([this, localFlag]() {
+            if (CancelFlag::isCancelled(localFlag)) {
+                return;
+            }
+
             if (state_ != State::LOADING_CONTENT) {
                 return; // Don't show if we're no longer loading or screen was dismissed
             }

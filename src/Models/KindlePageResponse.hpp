@@ -33,6 +33,9 @@ struct KindlePageResponse : public JsonSerializable {
     SpiramString ocrText;
     SpiramString screenshotUrl;
     float timeTaken = 0.0f;
+    bool lastReadDialog = false;
+    SpiramString dialogText;
+    bool alreadyOpen = false;
 
     auto fromJson(const JsonObject &json) -> bool override {
         if (json.containsKey("success")) {
@@ -53,6 +56,19 @@ struct KindlePageResponse : public JsonSerializable {
 
         if (json.containsKey("time_taken")) {
             timeTaken = json["time_taken"];
+        }
+
+        // Handle last read dialog fields
+        if (json.containsKey("last_read_dialog")) {
+            lastReadDialog = json["last_read_dialog"];
+        }
+
+        if (json.containsKey("dialog_text")) {
+            dialogText = json["dialog_text"].as<std::string>();
+        }
+
+        if (json.containsKey("already_open")) {
+            alreadyOpen = json["already_open"];
         }
 
         return true;

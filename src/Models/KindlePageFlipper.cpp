@@ -39,6 +39,15 @@ auto KindlePageFlipper::checkForError(int httpCode, std::shared_ptr<KindlePageRe
     }
 }
 
+auto KindlePageFlipper::checkForLastReadDialog(const std::shared_ptr<KindlePageResponse> &response)
+    -> bool {
+    if (response->lastReadDialog && !response->dialogText.empty() && onLastReadDialogFunction_) {
+        onLastReadDialogFunction_(response->dialogText);
+        return true;
+    }
+    return false;
+}
+
 void KindlePageFlipper::loadInitialPage() {
     log_i("Loading initial page for Kindle book: %s", kindleBook_->title.c_str());
 
@@ -69,7 +78,14 @@ void KindlePageFlipper::loadInitialPage() {
             return;
         }
 
-        pageStream_->appendPageFromResponse(*response);
+        auto hasDialog = checkForLastReadDialog(response);
+
+        // If this is a last read dialog, don't append the page (which would be empty)
+        if (!hasDialog) {
+            pageStream_->appendPageFromResponse(*response);
+        }
+
+        // Always signal that we got content (to dismiss loading)
         gotContentFunction_();
     });
 }
@@ -135,10 +151,17 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
                 return;
             }
 
-            // If we're navigating only, don't expect a page
-            if (pageToPreview > 0) {
-                pageStream_->appendPageFromResponse(*response);
+            auto hasDialog = checkForLastReadDialog(response);
+
+            // If this is a last read dialog, don't append the page
+            if (!hasDialog) {
+                // If we're navigating only, don't expect a page
+                if (pageToPreview > 0) {
+                    pageStream_->appendPageFromResponse(*response);
+                }
             }
+
+            // Always signal that we got content (to dismiss loading)
             gotContentFunction_();
         }
 
