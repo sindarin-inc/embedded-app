@@ -44,6 +44,11 @@ auto AboutScreen::layout(LayoutContext &context, SolSize size) -> SolSize {
     context.setViewFrame(remoteBatteryView_, {{x, y}, size},
                          LayoutOptionsSizeToFit | LayoutOptionsAlignLeft);
 
+    y += yAdvance;
+
+    context.setViewFrame(userEmailView_, {{x, y}, size},
+                         LayoutOptionsSizeToFit | LayoutOptionsAlignLeft);
+
     context.setViewFrame(returnToMenuView_, {{0, 0}, size},
                          LayoutOptionsSizeToFit | LayoutOptionsAlignCenterHorizontal |
                              LayoutOptionsAlignBottom);
@@ -58,6 +63,7 @@ void AboutScreen::drawInRect(SolRect rect) {
     wifiMacView_.draw();
     remoteFirmwareVersionView_.draw();
     remoteBatteryView_.draw();
+    userEmailView_.draw();
     returnToMenuView_.draw();
 }
 

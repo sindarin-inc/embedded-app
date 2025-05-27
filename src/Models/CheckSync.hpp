@@ -67,6 +67,7 @@ public:
     SpiramString nextPageUrl;
     int totalCount{};
     std::string timezone;
+    std::string email;
     BookQuestions bookQuestions;
     bool hasBookQuestions{false};
     KindleBooksVector kindleBooks;
@@ -130,6 +131,10 @@ public:
 
         if (results.containsKey("timezone")) {
             timezone = results["timezone"].as<std::string>();
+        }
+
+        if (results.containsKey("email")) {
+            email = results["email"].as<std::string>();
         }
 
         // Parse book_questions if present

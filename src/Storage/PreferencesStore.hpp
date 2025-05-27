@@ -554,6 +554,7 @@ public:
           bookQuestionsVersion(*this, "book-q-ver"),
 
           privateKey(*this, "private-key"),
+          userEmail(*this, "user-email"),
           // only touch the lines above this when deleting those prefs. Do not renumber. Add below 
           // to add a new boolFlag with incrementing value.
           preferencesStoreMigrationVersion_(*this, "ps-version"),
@@ -911,6 +912,7 @@ public:
     BooleanFlag alwaysShowBattery;
     PrefsItem<uint32_t> bookQuestionsVersion;
     PrefsItem<SpiramVector<uint8_t>> privateKey;
+    PrefsItem<std::string> userEmail;
 
     // These are RTC_SLOW_MEM variables that persist across deep sleep / wake cycles but will be
     // reset on power cycles

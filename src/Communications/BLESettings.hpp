@@ -133,6 +133,9 @@ protected:
                     this->enclosed->disconnectPageTurnerForSeconds(std::stoi(settingValue));
                 } else if (settingKey == "unpair-page-turner") {
                     this->enclosed->unpairPageTurner(characteristic, settingKey);
+                } else if (settingKey == "user-email") {
+                    log_i("Setting user email to %s", settingValue.c_str());
+                    this->enclosed->prefs_->userEmail.set(settingValue);
                 } else {
                     log_w("GATT client asking to write unknown setting: %s=%s", settingKey.c_str(),
                           settingValue.c_str());
