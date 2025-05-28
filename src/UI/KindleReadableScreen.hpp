@@ -61,7 +61,7 @@ protected:
 
     void setErrorMessage(const std::string &message);
     using ConnectionCallback = std::function<void(bool connected)>;
-    auto connectToNetwork(bool useBleOnly, std::string &errorMessage,
+    auto connectToNetwork(std::string &errorMessage,
                           const ConnectionCallback &callback = nullptr, int bleTimeoutMs = 30000)
         -> bool;
     void disconnectNetworkConnections();

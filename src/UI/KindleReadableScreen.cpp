@@ -335,7 +335,14 @@ void KindleReadableScreen::begin() {
     // Start connection process
     DispatchGetCore0BackgroundQueue()->dispatch([this, initialConnectionCallback]() {
         std::string errorMessage;
-        connectToNetwork(false, errorMessage, initialConnectionCallback);
+        bool connected = connectToNetwork(errorMessage, initialConnectionCallback);
+        
+        // Show error if initial connection failed completely
+        if (!connected && !errorMessage.empty()) {
+            DispatchGetUiQueue()->dispatch([this, errorMessage]() {
+                setErrorMessage(errorMessage);
+            });
+        }
     });
 }
 
@@ -507,7 +514,7 @@ void KindleReadableScreen::setErrorMessage(const std::string &message) {
     // TODO: Re-add auto-dismiss?
 }
 
-auto KindleReadableScreen::connectToNetwork(bool useBleOnly, std::string &errorMessage,
+auto KindleReadableScreen::connectToNetwork(std::string &errorMessage,
                                             const ConnectionCallback &callback, int bleTimeoutMs)
     -> bool {
     log_d("Connecting to network for Kindle book");
@@ -574,8 +581,8 @@ auto KindleReadableScreen::connectToNetwork(bool useBleOnly, std::string &errorM
     }
 #endif
 
-    // Try WiFi if BLE failed and not in BLE-only mode
-    if (!bleConnected && !useBleOnly && !prefs_.wifiDisabled.get().value_or(false)) {
+    // Try WiFi if BLE failed
+    if (!bleConnected && !prefs_.wifiDisabled.get().value_or(false)) {
         log_i("Attempting WiFi connection for Kindle book...");
 
         auto connected = WiFi::getInstance().connectWiFiFromSettings();
@@ -596,9 +603,7 @@ auto KindleReadableScreen::connectToNetwork(bool useBleOnly, std::string &errorM
                                           {"book_uuid", kindleBook_->uuid}});
             }
         }
-    } else if (useBleOnly) {
-        log_i("BLE-only mode for Kindle book, skipping WiFi connection");
-    } else if (!bleConnected) {
+    } else {
         log_i("WiFi is disabled in preferences, skipping WiFi connection");
     }
 
@@ -963,10 +968,8 @@ void KindleReadableScreen::attemptReconnection() {
         }
 
         std::string errorMessage;
-        // Always try both BLE and WiFi during reconnection to maximize success
-        bool useBleOnly = false;
         int bleReconnectTimeoutMs = 10000; // Shorter timeout for reconnection
-        connectToNetwork(useBleOnly, errorMessage, reconnectionCallback, bleReconnectTimeoutMs);
+        connectToNetwork(errorMessage, reconnectionCallback, bleReconnectTimeoutMs);
     });
 }
 
