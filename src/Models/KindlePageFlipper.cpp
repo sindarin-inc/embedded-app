@@ -131,7 +131,8 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
             auto response = std::make_shared<KindlePageResponse>();
 
             int httpCode = SindarinAPI::getInstance()->navigateKindle(
-                response.get(), cancelFlag, useBle_, pagesToAdvance, pageToPreview);
+                kindleBook_->title, response.get(), cancelFlag, useBle_, pagesToAdvance,
+                pageToPreview);
             if (CancelFlag::isCancelled(cancelFlag)) {
                 return;
             }

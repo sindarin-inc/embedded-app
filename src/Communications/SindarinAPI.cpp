@@ -629,14 +629,19 @@ auto SindarinAPI::openKindleBook(const SpiramString &title, KindlePageResponse *
     return result;
 }
 
-auto SindarinAPI::navigateKindle(KindlePageResponse *resp,
+auto SindarinAPI::navigateKindle(const SpiramString &title, KindlePageResponse *resp,
                                  const std::shared_ptr<CancelFlag> &cancelFlag, bool useBle,
                                  int navigate, int preview) -> int {
-    std::string path = StringFormat("/kindle/navigate?navigate=%d&preview=%d", navigate, preview);
+    // Properly URL encode the title
+    std::string encodedTitle = Urlencode(std::string(title));
+
+    std::string path = StringFormat("/kindle/navigate?navigate=%d&preview=%d&title=%s", navigate,
+                                    preview, encodedTitle.c_str());
     return makeKindleRequest(path, resp, cancelFlag, useBle);
 }
 
-auto SindarinAPI::submitLastReadPageChoice(bool gotoLastReadPage, bool useBle) -> int {
+auto SindarinAPI::submitLastReadPageChoice(bool gotoLastReadPage, bool useBle,
+                                           const std::shared_ptr<CancelFlag> &cancel) -> int {
     std::string path = "/kindle/last-read-page-dialog";
 
     log_i("Submitting user's choice for last read page dialog: %s",
@@ -645,7 +650,7 @@ auto SindarinAPI::submitLastReadPageChoice(bool gotoLastReadPage, bool useBle) -
     std::string url = StringFormat("%s%s", SINDARIN_SERVER_URL, path.c_str());
     log_i("Making POST request to URL: %s", url.c_str());
 
-    auto client = createClient(url, "application/json", HTTP_METHOD_POST, useBle, nullptr, 120000);
+    auto client = createClient(url, "application/json", HTTP_METHOD_POST, useBle, cancel, 120000);
     if (!client) {
         log_e("Failed to create HTTP client");
         return ERR_CLIENT_OPEN;

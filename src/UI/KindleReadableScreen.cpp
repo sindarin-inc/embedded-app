@@ -508,7 +508,8 @@ void KindleReadableScreen::setErrorMessage(const std::string &message) {
 }
 
 auto KindleReadableScreen::connectToNetwork(bool useBleOnly, std::string &errorMessage,
-                                            const ConnectionCallback &callback) -> bool {
+                                            const ConnectionCallback &callback, int bleTimeoutMs)
+    -> bool {
     log_d("Connecting to network for Kindle book");
     bool wifiConnected = false;
     bool bleConnected = false;
@@ -539,7 +540,7 @@ auto KindleReadableScreen::connectToNetwork(bool useBleOnly, std::string &errorM
             vTaskDelay(pdMS_TO_TICKS(1000));
         }
 
-        if (!bleManager->connectProxy(cancelFlag_)) {
+        if (!bleManager->connectProxy(cancelFlag_, bleTimeoutMs)) {
             log_w("BLE connection failed for Kindle book");
             telemetry_.logMetric(TelemetryField::METRIC_WIFI, "kindle-ble-failed");
         } else {
@@ -547,6 +548,28 @@ auto KindleReadableScreen::connectToNetwork(bool useBleOnly, std::string &errorM
             telemetry_.logMetric(TelemetryField::METRIC_WIFI, "kindle-ble-connected");
             bleConnected = true;
             isUsingBleConnection_ = true;
+
+            // Register for BLE disconnection events
+            auto localCancelFlag = cancelFlag_;
+            bleManager->setDisconnectionCallback([this, localCancelFlag]() {
+                if (CancelFlag::isCancelled(localCancelFlag)) {
+                    return;
+                }
+                log_i("BLE disconnected, canceling ongoing operations and initiating reconnection");
+
+                // Cancel any pending BLE requests and create new cancel flag
+                if (cancelFlag_) {
+                    CancelFlag::cancel(cancelFlag_);
+                }
+                cancelFlag_ = std::make_shared<CancelFlag>();
+                pageFlipper_.setCancelFlag(cancelFlag_);
+
+                // Dispatch reconnection attempt - don't check the old cancel flag here
+                // since we just cancelled it
+                DispatchGetUiQueue()->dispatch([this]() {
+                    attemptReconnection();
+                });
+            });
         }
     }
 #endif
@@ -564,7 +587,14 @@ auto KindleReadableScreen::connectToNetwork(bool useBleOnly, std::string &errorM
             log_i("WiFi connection successful for Kindle book");
             telemetry_.logMetric(TelemetryField::METRIC_WIFI, "kindle-wifi-connected");
             wifiConnected = true;
+            bool wasPreviouslyUsingBle = isUsingBleConnection_;
             isUsingBleConnection_ = false;
+            if (wasPreviouslyUsingBle && reconnectionAttempts_ > 0) {
+                log_i("Successfully switched from BLE to Wi-Fi during reconnection");
+                telemetry_.logMetricData(TelemetryField::METRIC_WIFI,
+                                         {{"event", std::string("kindle-ble-to-wifi-fallback")},
+                                          {"book_uuid", kindleBook_->uuid}});
+            }
         }
     } else if (useBleOnly) {
         log_i("BLE-only mode for Kindle book, skipping WiFi connection");
@@ -635,6 +665,9 @@ void KindleReadableScreen::disconnectNetworkConnections() {
     // Check if BLE manager exists
     auto bleManager = BLEManager::getInstance(false); // Don't create it if it doesn't exist
     if (bleManager) {
+        // Clear the disconnection callback to avoid dangling references
+        bleManager->setDisconnectionCallback(nullptr);
+
         // Add a safety check to see if it's connected first
         if (bleManager->connected()) {
             log_i("Disconnecting BLE proxy");
@@ -764,8 +797,8 @@ void KindleReadableScreen::submitLastReadDialogChoice(bool gotoLastReadPage,
     render(display_);
 
     DispatchGetCore0BackgroundQueue()->dispatch([this, gotoLastReadPage]() {
-        auto result = SindarinAPI::getInstance()->submitLastReadPageChoice(gotoLastReadPage,
-                                                                           isUsingBleConnection_);
+        auto result = SindarinAPI::getInstance()->submitLastReadPageChoice(
+            gotoLastReadPage, isUsingBleConnection_, cancelFlag_);
 
         if (gotoLastReadPage && result != 200) {
             DispatchGetUiQueue()->dispatch([this]() {
@@ -892,18 +925,26 @@ void KindleReadableScreen::attemptReconnection() {
 
             // Reset reconnection attempts on successful connection
             reconnectionAttempts_ = 0;
+
+            // If we have content already (were just reconnecting), restore display state
+            if (pageFlipper_.hasContent()) {
+                DispatchGetUiQueue()->dispatch([this]() {
+                    if (state_ == State::LOADING_CONTENT) {
+                        setState(State::DISPLAY_CONTENT);
+                        setNeedsLayout();
+                        setNeedsRerender();
+                        render(display_);
+                    }
+                });
+            }
         } else {
             log_w("Failed to reconnect");
 
-            // Only show error message if reconnection failed and we've exceeded max attempts
+            // If we've reached max attempts, show appropriate error
             if (reconnectionAttempts_ >= MAX_RECONNECTION_ATTEMPTS) {
                 DispatchGetUiQueue()->dispatch([this]() {
-                    if (isUsingBleConnection_) {
-                        setErrorMessage("Bluetooth connection lost. Please reconnect your phone.");
-                    } else {
-                        setErrorMessage(
-                            "Failed to load content. Please check your network connection.");
-                    }
+                    setErrorMessage(
+                        "Failed to load content. Please check your network connection.");
                 });
             }
         }
@@ -922,8 +963,10 @@ void KindleReadableScreen::attemptReconnection() {
         }
 
         std::string errorMessage;
-        bool useBleOnly = isUsingBleConnection_; // Only use BLE if we were using it before
-        connectToNetwork(useBleOnly, errorMessage, reconnectionCallback);
+        // Always try both BLE and WiFi during reconnection to maximize success
+        bool useBleOnly = false;
+        int bleReconnectTimeoutMs = 10000; // Shorter timeout for reconnection
+        connectToNetwork(useBleOnly, errorMessage, reconnectionCallback, bleReconnectTimeoutMs);
     });
 }
 
