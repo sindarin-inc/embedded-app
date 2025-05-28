@@ -502,7 +502,7 @@ auto KindleReadableScreen::connectToNetwork(std::string &errorMessage,
                 }
                 cancelFlag_ = std::make_shared<CancelFlag>();
                 pageFlipper_.setCancelFlag(cancelFlag_);
-                
+
                 // Re-register callbacks with the new cancel flag
                 updatePageFlipperCallbacks();
 
@@ -931,7 +931,7 @@ void KindleReadableScreen::setCurrentScreen(const std::shared_ptr<Screen> &scree
 
 void KindleReadableScreen::updatePageFlipperCallbacks() {
     auto cancelFlag = cancelFlag_;
-    
+
     pageFlipper_.setGotContentFunction([this, cancelFlag]() {
         if (CancelFlag::isCancelled(cancelFlag)) {
             return;
