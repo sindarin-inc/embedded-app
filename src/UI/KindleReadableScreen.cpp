@@ -29,74 +29,7 @@ KindleReadableScreen::KindleReadableScreen(DisplaySystem &display,
 
     currentPlace_ = std::dynamic_pointer_cast<TxtPlace>(Place::factory(0));
 
-    auto cancelFlag = cancelFlag_;
-    pageFlipper_.setGotContentFunction([this, cancelFlag]() {
-        if (CancelFlag::isCancelled(cancelFlag)) {
-            return;
-        }
-        DispatchGetUiQueue()->dispatch([this, cancelFlag]() {
-            if (CancelFlag::isCancelled(cancelFlag)) {
-                return;
-            }
-            if (state_ == State::LOADING_CONTENT || state_ == State::DISPLAY_PARTIAL_CONTENT) {
-                setState(State::DISPLAY_CONTENT);
-                setNeedsLayout();
-                setNeedsRerender();
-                render(display_);
-            }
-        });
-    });
-
-    pageFlipper_.setOnErrorFunction([this, cancelFlag](const std::string &error) {
-        if (CancelFlag::isCancelled(cancelFlag)) {
-            return;
-        }
-        DispatchGetUiQueue()->dispatch([this, error, cancelFlag]() {
-            if (CancelFlag::isCancelled(cancelFlag)) {
-                return;
-            }
-
-            // Only show error message for non-connection errors
-            // CONNECTION_ERROR is handled by the onConnectionErrorFunction below
-            if (error != "CONNECTION_ERROR") {
-                setErrorMessage(error);
-            }
-        });
-    });
-
-    // Set up the callback for last read dialog
-    pageFlipper_.setOnLastReadDialogFunction([this, cancelFlag](const SpiramString &dialogText) {
-        if (CancelFlag::isCancelled(cancelFlag)) {
-            return;
-        }
-        DispatchGetUiQueue()->dispatch([this, dialogText, cancelFlag]() {
-            if (CancelFlag::isCancelled(cancelFlag)) {
-                return;
-            }
-
-            // Cancel loading message and clear loading state before showing dialog
-            cancelDelayedLoadingMessage();
-
-            // Show the last read dialog
-            showLastReadDialog(dialogText);
-        });
-    });
-
-    // Set a separate callback specifically for network connectivity issues
-    pageFlipper_.setOnConnectionErrorFunction([this, cancelFlag]() {
-        if (CancelFlag::isCancelled(cancelFlag)) {
-            return;
-        }
-        DispatchGetUiQueue()->dispatch([this, cancelFlag]() {
-            if (CancelFlag::isCancelled(cancelFlag)) {
-                return;
-            }
-
-            // If we have a connection error, silently try to reconnect
-            log_i("Network connection issue detected, attempting reconnection");
-            attemptReconnection();
-        });
-    });
+    updatePageFlipperCallbacks();
 
     renderer_.setStream(pageFlipper_.getStream());
     renderer_.setLineSpacing(prefs_.lineSpacing.get().value_or(0));
@@ -569,6 +502,9 @@ auto KindleReadableScreen::connectToNetwork(std::string &errorMessage,
                 }
                 cancelFlag_ = std::make_shared<CancelFlag>();
                 pageFlipper_.setCancelFlag(cancelFlag_);
+                
+                // Re-register callbacks with the new cancel flag
+                updatePageFlipperCallbacks();
 
                 // Dispatch reconnection attempt - don't check the old cancel flag here
                 // since we just cancelled it
@@ -991,4 +927,76 @@ void KindleReadableScreen::setCurrentScreen(const std::shared_ptr<Screen> &scree
         setNeedsRerender();
     }
     currentScreen_ = screen;
+}
+
+void KindleReadableScreen::updatePageFlipperCallbacks() {
+    auto cancelFlag = cancelFlag_;
+    
+    pageFlipper_.setGotContentFunction([this, cancelFlag]() {
+        if (CancelFlag::isCancelled(cancelFlag)) {
+            return;
+        }
+        DispatchGetUiQueue()->dispatch([this, cancelFlag]() {
+            if (CancelFlag::isCancelled(cancelFlag)) {
+                return;
+            }
+            if (state_ == State::LOADING_CONTENT || state_ == State::DISPLAY_PARTIAL_CONTENT) {
+                setState(State::DISPLAY_CONTENT);
+                setNeedsLayout();
+                setNeedsRerender();
+                render(display_);
+            }
+        });
+    });
+
+    pageFlipper_.setOnErrorFunction([this, cancelFlag](const std::string &error) {
+        if (CancelFlag::isCancelled(cancelFlag)) {
+            return;
+        }
+        DispatchGetUiQueue()->dispatch([this, error, cancelFlag]() {
+            if (CancelFlag::isCancelled(cancelFlag)) {
+                return;
+            }
+
+            // Only show error message for non-connection errors
+            // CONNECTION_ERROR is handled by the onConnectionErrorFunction below
+            if (error != "CONNECTION_ERROR") {
+                setErrorMessage(error);
+            }
+        });
+    });
+
+    // Set up the callback for last read dialog
+    pageFlipper_.setOnLastReadDialogFunction([this, cancelFlag](const SpiramString &dialogText) {
+        if (CancelFlag::isCancelled(cancelFlag)) {
+            return;
+        }
+        DispatchGetUiQueue()->dispatch([this, dialogText, cancelFlag]() {
+            if (CancelFlag::isCancelled(cancelFlag)) {
+                return;
+            }
+
+            // Cancel loading message and clear loading state before showing dialog
+            cancelDelayedLoadingMessage();
+
+            // Show the last read dialog
+            showLastReadDialog(dialogText);
+        });
+    });
+
+    // Set a separate callback specifically for network connectivity issues
+    pageFlipper_.setOnConnectionErrorFunction([this, cancelFlag]() {
+        if (CancelFlag::isCancelled(cancelFlag)) {
+            return;
+        }
+        DispatchGetUiQueue()->dispatch([this, cancelFlag]() {
+            if (CancelFlag::isCancelled(cancelFlag)) {
+                return;
+            }
+
+            // If we have a connection error, silently try to reconnect
+            log_i("Network connection issue detected, attempting reconnection");
+            attemptReconnection();
+        });
+    });
 }

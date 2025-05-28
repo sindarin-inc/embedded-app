@@ -124,4 +124,6 @@ private:
     void attemptReconnection();
     // Cancel any pending reconnection attempt
     void cancelReconnectionAttempt();
+    // Re-register page flipper callbacks with new cancel flag
+    void updatePageFlipperCallbacks();
 };
