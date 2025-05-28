@@ -336,12 +336,11 @@ void KindleReadableScreen::begin() {
     DispatchGetCore0BackgroundQueue()->dispatch([this, initialConnectionCallback]() {
         std::string errorMessage;
         bool connected = connectToNetwork(errorMessage, initialConnectionCallback);
-        
+
         // Show error if initial connection failed completely
         if (!connected && !errorMessage.empty()) {
-            DispatchGetUiQueue()->dispatch([this, errorMessage]() {
-                setErrorMessage(errorMessage);
-            });
+            DispatchGetUiQueue()->dispatch(
+                [this, errorMessage]() { setErrorMessage(errorMessage); });
         }
     });
 }
@@ -573,9 +572,7 @@ auto KindleReadableScreen::connectToNetwork(std::string &errorMessage,
 
                 // Dispatch reconnection attempt - don't check the old cancel flag here
                 // since we just cancelled it
-                DispatchGetUiQueue()->dispatch([this]() {
-                    attemptReconnection();
-                });
+                DispatchGetUiQueue()->dispatch([this]() { attemptReconnection(); });
             });
         }
     }
