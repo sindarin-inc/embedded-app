@@ -61,7 +61,7 @@ public:
 
 protected:
     static std::shared_ptr<BLEManager> instance;
-    DisconnectionCallback disconnectionCallback_;
+    DisconnectionCallback disconnectionCallback_ = nullptr;
 
     BLEServer *server_ = nullptr;
     bool authed_ = false;
