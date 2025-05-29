@@ -532,7 +532,7 @@ auto SindarinAPI::askQuestion(const BookQuestionRequest &req, BookQuestionRespon
 auto SindarinAPI::makeKindleRequest(const std::string &path, KindlePageResponse *resp,
                                     const std::shared_ptr<CancelFlag> &cancelFlag, bool useBle)
     -> int {
-    std::string url = StringFormat("%s%s", SINDARIN_SERVER_URL, path.c_str());
+    std::string url = StringFormat("%s%s", baseUrl_.c_str(), path.c_str());
     log_i("Making Kindle request to URL: %s (cancelFlag=%p)", url.c_str(), cancelFlag.get());
 
     auto client =
@@ -642,7 +642,7 @@ auto SindarinAPI::submitLastReadPageChoice(bool gotoLastReadPage, bool useBle) -
     log_i("Submitting user's choice for last read page dialog: %s",
           gotoLastReadPage ? "sync to latest" : "stay on current page");
 
-    std::string url = StringFormat("%s%s", SINDARIN_SERVER_URL, path.c_str());
+    std::string url = StringFormat("%s%s", baseUrl_.c_str(), path.c_str());
     log_i("Making POST request to URL: %s", url.c_str());
 
     auto client = createClient(url, "application/json", HTTP_METHOD_POST, useBle, nullptr, 120000);
