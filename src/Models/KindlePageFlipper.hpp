@@ -179,6 +179,10 @@ public:
         log_i("KindlePageFlipper now using BLE: %s", useBle_ ? "true" : "false");
     }
 
+    [[nodiscard]] auto hasContent() const -> bool { return pageStream_ && pageStream_->size() > 0; }
+
+    void setCancelFlag(const std::shared_ptr<CancelFlag> &cancelFlag) { cancelFlag_ = cancelFlag; }
+
     void clearBuffer() {
         if (pageStream_) {
             pageStream_->clear();

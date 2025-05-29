@@ -13,7 +13,8 @@ public:
     BLEManager(BLEManager const &) = delete;
     static auto getInstance(bool create = true) -> std::shared_ptr<BLEManager>;
 #if CONFIG_USE_BLE_SERVER_PROXY
-    auto connectProxy(const std::shared_ptr<CancelFlag> &cancel = nullptr) -> bool;
+    auto connectProxy(const std::shared_ptr<CancelFlag> &cancel = nullptr, int timeoutMs = 30000)
+        -> bool;
     void disconnectProxy();
 #endif
     auto startAdvertisingIfNecessary() -> bool;
@@ -53,8 +54,14 @@ public:
     [[nodiscard]] auto connected() const -> bool { return connectedProxy; }
     bool connectedProxy{false};
 
+    using DisconnectionCallback = std::function<void()>;
+    void setDisconnectionCallback(const DisconnectionCallback &callback) {
+        disconnectionCallback_ = callback;
+    }
+
 protected:
     static std::shared_ptr<BLEManager> instance;
+    DisconnectionCallback disconnectionCallback_ = nullptr;
 
     BLEServer *server_ = nullptr;
     bool authed_ = false;
@@ -92,6 +99,11 @@ protected:
             enclosed->authed_ = false;
             enclosed->connectedProxy = false;
             enclosed->setConnId(BLE_HS_CONN_HANDLE_NONE);
+
+            // Notify any registered callbacks about the disconnection
+            if (enclosed->disconnectionCallback_) {
+                enclosed->disconnectionCallback_();
+            }
         }
     };
 };

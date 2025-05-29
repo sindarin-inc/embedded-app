@@ -984,6 +984,15 @@ auto LocalStore::syncFromRemote(bool wifiConnected, bool bleConnected, SyncReaso
                 SolClock::getInstance().setTimezone(checkSyncResponse.timezone);
             }
 
+            if (!checkSyncResponse.email.empty()) {
+                auto currentEmail = prefs_.userEmail.get();
+                if (!currentEmail.has_value() || currentEmail.value() != checkSyncResponse.email) {
+                    log_i("Setting user email from sync response: %s",
+                          checkSyncResponse.email.c_str());
+                    prefs_.userEmail.set(checkSyncResponse.email);
+                }
+            }
+
             if (checkSyncResponse.synced) {
                 log_i("%ss are already in sync, no need to download anything",
                       ReadableModelTypeToString(modelType).c_str());
