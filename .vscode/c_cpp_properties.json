@@ -1,7 +1,7 @@
 {
     "configurations": [
         {
-            "name": "ESP32-S3",
+            "name": "glasses-debug",
             "includePath": [
                 "${default}"
             ],
