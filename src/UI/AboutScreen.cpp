@@ -7,13 +7,13 @@ auto AboutScreen::layout(LayoutContext &context, SolSize size) -> SolSize {
     uint8_t yAdvance = 17;
 
     int x = 0;
-    int y = 10;
+    int y = 5;
 
     context.setViewFrame(solLogoView_, {{x, y}, size},
                          LayoutOptionsSizeToFit | LayoutOptionsAlignTop |
                              LayoutOptionsAlignCenterHorizontal);
 
-    y += sol_logo_height + 22;
+    y += sol_logo_height + 18;
     x += leftPadding;
 
     context.setViewFrame(productNameView_, {{x, y}, size},
@@ -44,6 +44,11 @@ auto AboutScreen::layout(LayoutContext &context, SolSize size) -> SolSize {
     context.setViewFrame(remoteBatteryView_, {{x, y}, size},
                          LayoutOptionsSizeToFit | LayoutOptionsAlignLeft);
 
+    y += yAdvance;
+
+    context.setViewFrame(userEmailView_, {{x, y}, size},
+                         LayoutOptionsSizeToFit | LayoutOptionsAlignLeft);
+
     context.setViewFrame(returnToMenuView_, {{0, 0}, size},
                          LayoutOptionsSizeToFit | LayoutOptionsAlignCenterHorizontal |
                              LayoutOptionsAlignBottom);
@@ -58,6 +63,7 @@ void AboutScreen::drawInRect(SolRect rect) {
     wifiMacView_.draw();
     remoteFirmwareVersionView_.draw();
     remoteBatteryView_.draw();
+    userEmailView_.draw();
     returnToMenuView_.draw();
 }
 

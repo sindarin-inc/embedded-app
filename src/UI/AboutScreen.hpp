@@ -22,7 +22,7 @@ public:
           serialNumberView_(display, "", &fontFace0), firmwareVersionView_(display, "", &fontFace0),
           wifiMacView_(display, "", &fontFace0),
           remoteFirmwareVersionView_(display, "", &fontFace0),
-          remoteBatteryView_(display, "", &fontFace0),
+          remoteBatteryView_(display, "", &fontFace0), userEmailView_(display, "", &fontFace0),
           returnToMenuView_(display, "Press  \ue000  to return to System Settings", &fontFace0) {
         productNameView_.setText("Product Name: Sol Reader");
 
@@ -47,6 +47,14 @@ public:
 
         remoteFirmwareVersionView_.setText(ptBattery);
         remoteBatteryView_.setText(ptBuildString);
+
+        auto userEmail = prefs_.userEmail.get();
+        if (userEmail.has_value() && !userEmail.value().empty()) {
+            auto emailStr = StringFormat("User Email: %s", userEmail.value().c_str());
+            userEmailView_.setText(emailStr);
+        } else {
+            userEmailView_.setText("User Email: Not set");
+        }
 
         secretCode_.setCallback([this]() {
             log_d("Got the right secret code -- toggling Debug Screen and rebooting!");
@@ -75,5 +83,6 @@ protected:
     SingleLineTextView wifiMacView_;
     SingleLineTextView remoteFirmwareVersionView_;
     SingleLineTextView remoteBatteryView_;
+    SingleLineTextView userEmailView_;
     SingleLineTextView returnToMenuView_;
 };
