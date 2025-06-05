@@ -1,5 +1,7 @@
 #include "MenuPagingIndicatorView.hpp"
 
+#include <algorithm>
+
 void MenuPagingIndicatorView::setTotalPages(int totalPages) {
     totalPages_ = std::max(1, totalPages);
     setNeedsLayout();

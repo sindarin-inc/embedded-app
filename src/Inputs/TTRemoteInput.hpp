@@ -1,6 +1,7 @@
 #pragma once
 
 #include <NimBLEDevice.h>
+#include <algorithm>
 #include <memory>
 
 #include "Communications/BLEManager.hpp"

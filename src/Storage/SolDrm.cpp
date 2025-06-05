@@ -1,5 +1,6 @@
 #include "SolDrm.hpp"
 
+#include <algorithm>
 #include <cstdio>
 #include <mbedtls/error.h>
 #include <mbedtls/gcm.h>
