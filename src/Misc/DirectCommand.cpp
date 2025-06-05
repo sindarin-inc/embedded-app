@@ -1,6 +1,7 @@
 
 #include "DirectCommand.hpp"
 
+#include <algorithm>
 #if !SIMULATOR
 #include <driver/uart.h>
 #endif

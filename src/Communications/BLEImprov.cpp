@@ -2,6 +2,7 @@
 
 #include "BLEImprov.hpp"
 
+#include <algorithm>
 #include <esp_wifi.h>
 
 #include "Communications/BLEManager.hpp"
