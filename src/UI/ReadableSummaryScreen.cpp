@@ -57,7 +57,7 @@ void ReadableSummaryScreen::render(DisplaySystem &display) {
 
     // Double up on the vertical insets
     auto rect =
-        DisplayRect::fromSizeAndInsets(display_.width(), display_.height(), {30, 30, 30, 30});
+        DisplayRect::fromSizeAndInsets(display_.width(), display_.height(), {75, 75, 75, 75});
     rect = rect.inset(10, 10, 15, 15);
     renderer_.setRect(rect);
 

@@ -144,7 +144,7 @@ auto NewReadablePopupMenuScreen::layout(LayoutContext &context, SolSize size) ->
             // differnt width so doing it dynamically would make the bounding box width jump around
             // when you go left and right bewteen tabs. And the y+1 is to give just a bit more space
             // in the bottom for weighting visually.
-            return {size.width * 5 / 9 - 18, y + 1};
+            return {size.width * 5 / 12 - 18, y + 1};
         });
 
     auto foregroundFrame = context.setViewFrame(popupMenuForeground_, contentFrame.inset(-5, -10));

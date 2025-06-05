@@ -31,8 +31,8 @@ public:
 
         menuView_.padding = 0;
         menuView_.itemsPerPage = 8;
-        menuView_.indicatorWidth = 5;
-        menuView_.indicatorPadding = 5;
+        menuView_.indicatorWidth = 8;
+        menuView_.indicatorPadding = 10;
         menuView_.setIndicatorType(MenuView::IndicatorType::Dot);
     };
     ~NewReadablePopupMenuScreen() override = default;
