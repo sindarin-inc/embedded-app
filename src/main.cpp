@@ -495,7 +495,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
             SHOW_WATERMARK();
             vTaskDelete(nullptr);
             },
-            "BackgroundSync", 8192, nullptr, 1, nullptr, 0);
+            "BackgroundSync", 16384, nullptr, 1, nullptr, 0);
     }
 
 #if CONFIG_USE_TURN_TOUCH_REMOTE || CONFIG_USE_BLE_SERVER_REMOTE

@@ -219,7 +219,7 @@ DispatchQueue *einkQueue = nullptr;
 auto DispatchGetCore0BackgroundQueue(bool create) -> DispatchQueue * {
     if (core0BackgroundQueue == nullptr && create) {
         HEAP_PROFILE_START(Core0BGQueue);
-        core0BackgroundQueue = new DispatchQueue("Core0BG", 1, 10000, 0, 0);
+        core0BackgroundQueue = new DispatchQueue("Core0BG", 1, 20000, 0, 0);
         HEAP_PROFILE_END(Core0BGQueue);
     }
     return core0BackgroundQueue;
@@ -228,7 +228,7 @@ auto DispatchGetCore0BackgroundQueue(bool create) -> DispatchQueue * {
 auto DispatchGetCore1BackgroundQueue(bool create) -> DispatchQueue * {
     if (core1BackgroundQueue == nullptr && create) {
         HEAP_PROFILE_START(Core1BGQueue);
-        core1BackgroundQueue = new DispatchQueue("Core1BG", 1, 10000, 0, 1);
+        core1BackgroundQueue = new DispatchQueue("Core1BG", 1, 16000, 0, 1);
         HEAP_PROFILE_END(Core1BGQueue);
     }
     return core1BackgroundQueue;

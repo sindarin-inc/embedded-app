@@ -23,6 +23,11 @@ public:
     std::shared_ptr<Readable> readable = nullptr;
 
     auto fromJson(const JsonObject &j) -> bool override {
+        log_i("Parsing UserReadable: free_heap=%d, free_spiram=%d, stack_watermark=%d",
+              heap_caps_get_free_size(MALLOC_CAP_8BIT),
+              heap_caps_get_free_size(MALLOC_CAP_SPIRAM),
+              uxTaskGetStackHighWaterMark(nullptr));
+        
         if (!j.containsKey("uuid") || !j.containsKey("readable")) {
             log_w("Failed to parse UserReadable with JSON %s", DumpJson(j).c_str());
             return false;

@@ -66,6 +66,11 @@ auto LocalStore::loadReadablesFromFile(ReadablesVector &readables, const std::st
 
     // Grab a minimum amount of ram, even if the readables file is empty
     auto docSize = static_cast<int>(readablesFile.size()) * 2;
+    log_i("Parsing readables JSON: file_size=%d, doc_size=%d, free_heap=%d, free_spiram=%d, stack_watermark=%d", 
+          (int)readablesFile.size(), docSize,
+          heap_caps_get_free_size(MALLOC_CAP_8BIT),
+          heap_caps_get_free_size(MALLOC_CAP_SPIRAM),
+          uxTaskGetStackHighWaterMark(nullptr));
     auto doc = std::make_unique<SpiRamJsonDocument>(docSize);
     auto error = deserializeJson(*doc, readablesFile);
     readablesFile.close();
@@ -120,6 +125,11 @@ auto LocalStore::loadKindleBooksFromFile(KindleBooksVector &kindleBooks,
 
     // Grab a minimum amount of ram, even if the readables file is empty
     auto docSize = static_cast<int>(readablesFile.size()) * 2;
+    log_i("Parsing Kindle books JSON: file_size=%d, doc_size=%d, free_heap=%d, free_spiram=%d, stack_watermark=%d", 
+          (int)readablesFile.size(), docSize,
+          heap_caps_get_free_size(MALLOC_CAP_8BIT),
+          heap_caps_get_free_size(MALLOC_CAP_SPIRAM),
+          uxTaskGetStackHighWaterMark(nullptr));
     auto doc = std::make_unique<SpiRamJsonDocument>(docSize);
     auto error = deserializeJson(*doc, readablesFile);
     readablesFile.close();
@@ -1549,8 +1559,13 @@ auto LocalStore::saveReadables(ReadablesVector &readables) -> bool {
 
     // Readables take up to 20KB of RAM each since the JSON can be large (includes cover
     // images, file metadata, etc.)
-    auto doc = std::make_unique<SpiRamJsonDocument>(
-        20000 * std::max(1, static_cast<int>(readables.size())));
+    auto docSize = 20000 * std::max(1, static_cast<int>(readables.size()));
+    log_i("Saving readables JSON: count=%zu, doc_size=%d, free_heap=%d, free_spiram=%d, stack_watermark=%d", 
+          readables.size(), docSize,
+          heap_caps_get_free_size(MALLOC_CAP_8BIT),
+          heap_caps_get_free_size(MALLOC_CAP_SPIRAM),
+          uxTaskGetStackHighWaterMark(nullptr));
+    auto doc = std::make_unique<SpiRamJsonDocument>(docSize);
     auto modelType = readablesModelType(const_cast<ReadablesVector &>(readables));
     std::string path = modelType == ReadablesModelType::Book ? BOOKS_PATH : ARTICLES_PATH;
     SHOW_HEAP();
