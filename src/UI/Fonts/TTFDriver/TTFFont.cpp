@@ -110,7 +110,7 @@ void Font::copyBitmap(Bitmap &to, const Bitmap &from, Pos atPos, bool inverted) 
                             data = fromPtr[fromIdx++];
                         }
                         if (data & fromMask) {
-                            toPtr[toIdx] = 0xFFFF;
+                            toPtr[toIdx] = 0xB780; // Dark amber in RGB565 instead of 0xFFFF
                         }
                         fromMask >>= 1;
                         toIdx += 1;
@@ -146,10 +146,10 @@ void Font::copyBitmap(Bitmap &to, const Bitmap &from, Pos atPos, bool inverted) 
                             data = fromPtr[fromIdx++];
                         }
                         if (data & fromMask) {
-                            // Set RGB to white (0xFF, 0xFF, 0xFF)
-                            toPtr[toIdx] = 0xFF;     // R
-                            toPtr[toIdx + 1] = 0xFF; // G
-                            toPtr[toIdx + 2] = 0xFF; // B
+                            // Set RGB to dark amber instead of white
+                            toPtr[toIdx] = 180;     // R - amber red component
+                            toPtr[toIdx + 1] = 120; // G - amber green component
+                            toPtr[toIdx + 2] = 0;   // B - no blue for amber
                         }
                         fromMask >>= 1;
                         toIdx += 3;
@@ -188,7 +188,7 @@ void Font::copyBitmap(Bitmap &to, const Bitmap &from, Pos atPos, bool inverted) 
                             data = fromPtr[fromIdx++];
                         }
                         if (data & fromMask) {
-                            toPtr[toIdx] = 0xFF;
+                            toPtr[toIdx] = 150; // Dark amber grayscale value instead of 0xFF
                         }
                         fromMask >>= 1;
                         toIdx += 1;
@@ -263,8 +263,12 @@ void Font::copyBitmap(Bitmap &to, const Bitmap &from, Pos atPos, bool inverted) 
                 if (inverted) {
                     for (uint16_t i = 0; i < from.dim.width; i++) {
                         if (fromPtr[i] != 0) {
-                            toPtr[i] = ((fromPtr[i] & 0xF8) << 8) | ((fromPtr[i] & 0xFC) << 3) |
-                                       (fromPtr[i] >> 3);
+                            // Convert grayscale to dark amber RGB565
+                            uint8_t grayVal = fromPtr[i];
+                            uint8_t r = (grayVal * 180) / 255; // Scale to amber red
+                            uint8_t g = (grayVal * 120) / 255; // Scale to amber green
+                            uint8_t b = 0;                     // No blue for amber
+                            toPtr[i] = ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3);
                         }
                     }
                 } else {
@@ -286,11 +290,11 @@ void Font::copyBitmap(Bitmap &to, const Bitmap &from, Pos atPos, bool inverted) 
                 if (inverted) {
                     for (uint16_t i = 0; i < from.dim.width; i++) {
                         if (fromPtr[i] != 0) {
-                            // Convert grayscale to RGB
+                            // Convert grayscale to dark amber RGB
                             uint8_t val = fromPtr[i];
-                            toPtr[i * 3] = val;     // R
-                            toPtr[i * 3 + 1] = val; // G
-                            toPtr[i * 3 + 2] = val; // B
+                            toPtr[i * 3] = 0;                     //  - amber red component
+                            toPtr[i * 3 + 1] = (val * 120) / 255; // G - amber green component
+                            toPtr[i * 3 + 2] = (val * 180) / 255; // B - no blue for amber
                         }
                     }
                 } else {
@@ -298,9 +302,9 @@ void Font::copyBitmap(Bitmap &to, const Bitmap &from, Pos atPos, bool inverted) 
                         if (fromPtr[i] != 0) {
                             // Convert inverted grayscale to RGB
                             uint8_t val = 255 - fromPtr[i];
-                            toPtr[i * 3] = val;     // R
-                            toPtr[i * 3 + 1] = val; // G
-                            toPtr[i * 3 + 2] = val; // B
+                            toPtr[i * 3] = 0;                     // R
+                            toPtr[i * 3 + 1] = (val * 120) / 255; // G
+                            toPtr[i * 3 + 2] = (val * 180) / 255;
                         }
                     }
                 }
@@ -315,7 +319,9 @@ void Font::copyBitmap(Bitmap &to, const Bitmap &from, Pos atPos, bool inverted) 
                 if (inverted) {
                     for (uint16_t i = 0; i < from.dim.width; i++) {
                         if (fromPtr[i] != 0) {
-                            toPtr[i] = fromPtr[i];
+                            // Convert grayscale to amber grayscale equivalent
+                            uint8_t grayVal = fromPtr[i];
+                            toPtr[i] = (grayVal * 150) / 255; // Scale to amber brightness
                         }
                     }
                 } else {

@@ -1,5 +1,6 @@
 #include "HorizontalPagingIndicatorView.hpp"
 
+#include <algorithm>
 #include "sindarin-debug.h"
 
 void HorizontalPagingIndicatorView::setTotalPages(int totalPages) {
