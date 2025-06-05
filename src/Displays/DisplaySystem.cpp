@@ -54,7 +54,7 @@ void DisplaySystem::invertDisplay(bool newInvert) {
     invertedDisplay_ = newInvert;
     if (invertedDisplay_) {
         bg = 0x0000;
-        fg = 0xFFFF;
+        fg = 0xB3C0; // Dark amber in RGB565: R=180, G=120, B=0
     } else {
         bg = 0xFFFF;
         fg = 0x0000;
