@@ -117,11 +117,6 @@ auto SindarinAPI::checkSync(const std::string &url, CheckSyncRequest &req, Check
 
     log_d("Check Sync read stream, contentLength=%d", contentLength);
     auto docSize = 1024 + contentLength * 3;
-    log_i("Parsing sync response JSON: content_length=%d, doc_size=%d, free_heap=%d, free_spiram=%d, stack_watermark=%d", 
-          contentLength, docSize,
-          heap_caps_get_free_size(MALLOC_CAP_8BIT),
-          heap_caps_get_free_size(MALLOC_CAP_SPIRAM),
-          uxTaskGetStackHighWaterMark(nullptr));
     auto respJson = std::make_unique<SpiRamJsonDocument>(docSize);
     auto error = ArduinoJson::deserializeJson(*respJson, *stream);
     // log_w("Resp JSON: %s", DumpJson(*respJson).c_str());
