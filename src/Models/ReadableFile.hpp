@@ -21,6 +21,10 @@ public:
     SpiramString readableType;
 
     auto fromJson(const JsonObject &j) -> bool override {
+        log_i("Parsing ReadableFile: free_heap=%d, free_spiram=%d, stack_watermark=%d",
+              heap_caps_get_free_size(MALLOC_CAP_8BIT),
+              heap_caps_get_free_size(MALLOC_CAP_SPIRAM),
+              uxTaskGetStackHighWaterMark(nullptr));
 
         readableType = j["readable_type"].as<std::string>();
         if (readableType == "pocket_article" || readableType == "email_article") {
