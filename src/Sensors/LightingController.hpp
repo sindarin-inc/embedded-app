@@ -6,15 +6,26 @@
 #if CONFIG_USE_LTR329
 #include "Ltr329Als.hpp"
 #endif
+#if CONFIG_DISPLAY_SEEYA103
+#include "Displays/DisplaySeeYa103.hpp"
+#endif
 #include "Misc/MovingAverage.hpp"
 #include "Storage/PreferencesStore.hpp"
 
 class LightingController {
 public:
-    LightingController(PreferencesStore &prefs)
+    LightingController(PreferencesStore &prefs
+#if CONFIG_DISPLAY_SEEYA103
+                       ,
+                       DisplaySeeYa103 &display
+#endif
+                       )
         : prefs_(prefs),
 #if CONFIG_USE_LTR329
           lightSensor_(0),
+#endif
+#if CONFIG_DISPLAY_SEEYA103
+          display_(display),
 #endif
           movingAverage_(25) {
     }
@@ -63,6 +74,10 @@ protected:
 #if CONFIG_USE_LTR329
     Ltr329Als lightSensor_;
 #endif
+#if CONFIG_DISPLAY_SEEYA103
+    DisplaySeeYa103 &display_;
+#endif
+
     // Adjusting the number of samples here will change the responsiveness of the ambient light
     // adjustments
     MovingAverage<int, 5> movingAverage_;

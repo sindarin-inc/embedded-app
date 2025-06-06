@@ -68,6 +68,17 @@ esp_err_t seeya103_i2c_read_reg(i2c_master_dev_handle_t dev_handle, uint16_t reg
                                 uint16_t *data);
 
 /**
+ * @brief Send a command to the SeeYA display via I2C
+ *
+ * @param[in] dev_handle I2C device handle
+ * @param[in] cmd Command to send
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_ARG if parameter is invalid
+ */
+esp_err_t seeya103_i2c_send_cmd(i2c_master_dev_handle_t dev_handle, seeya103_lcd_init_cmd_t cmd);
+
+/**
  * @brief Send initialization commands to the SeeYA display via I2C
  *
  * @param[in] dev_handle I2C device handle

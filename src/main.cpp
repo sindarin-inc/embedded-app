@@ -116,7 +116,12 @@ BLESyncService bleSyncService;
 #endif
 
 #include "Sensors/LightingController.hpp"
-LightingController lightingController(prefs);
+LightingController lightingController(prefs
+#if CONFIG_DISPLAY_SEEYA103
+                                      ,
+                                      myDisplay
+#endif
+);
 
 #if SIMULATOR
 #include "Storage/PosixFileSystem.hpp"

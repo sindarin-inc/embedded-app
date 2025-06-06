@@ -202,6 +202,9 @@ void LightingController::checkAmbientLight(int fadeMs, int timeoutMs) {
 }
 
 void LightingController::setCurrentDutyCycle(int dutyCycle, int fadeMs) {
+#if CONFIG_DISPLAY_SEEYA103
+    display_.setBrightness(dutyCycle * 2);
+#else
     int leftDutyCycle = (screens_ & LEFT) ? dutyCycle : 0;
     int rightDutyCycle = (screens_ & RIGHT) ? dutyCycle : 0;
     // log_d("Setting screen light to l=%d/255 r=%d/255 (fadeMs=%d) screens_=%x", leftDutyCycle,
@@ -222,4 +225,5 @@ void LightingController::setCurrentDutyCycle(int dutyCycle, int fadeMs) {
         SetLeftScreenLight(leftDutyCycle);
         SetRightScreenLight(rightDutyCycle);
     }
+#endif
 }

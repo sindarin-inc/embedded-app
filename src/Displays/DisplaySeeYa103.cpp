@@ -279,4 +279,33 @@ auto DisplaySeeYa103::executeI2C(std::function<esp_err_t(i2c_master_dev_handle_t
     return err;
 }
 
+auto DisplaySeeYa103::setBrightness(uint16_t brightness) -> esp_err_t {
+    return executeI2C([brightness](i2c_master_dev_handle_t device) -> esp_err_t {
+        ESP_RETURN_ON_ERROR(seeya103_i2c_send_cmd(device,
+                                                  {
+                                                      .cmd = 0xF0,
+                                                      .data = (uint8_t[]){0xAA, 0x11},
+                                                      .data_bytes = 2,
+                                                      .delay_ms = 0,
+                                                  }),
+                            TAG, "Failed to send command");
+        ESP_RETURN_ON_ERROR(
+            seeya103_i2c_send_cmd(
+                device,
+                {
+                    .cmd = SEEYA103_CMD_BCCTR3,
+                    .data = (uint8_t[]){static_cast<uint8_t>((brightness >> 8) & 0xFF),
+                                        static_cast<uint8_t>(brightness & 0xFF),
+                                        static_cast<uint8_t>((brightness >> 8) & 0xFF),
+                                        static_cast<uint8_t>(brightness & 0xFF),
+                                        static_cast<uint8_t>((brightness >> 8) & 0xFF),
+                                        static_cast<uint8_t>(brightness & 0xFF), 0x00, 0x90, 0x82},
+                    .data_bytes = 9,
+                    .delay_ms = 0,
+                }),
+            TAG, "Failed to send command");
+        return ESP_OK;
+    });
+}
+
 #endif

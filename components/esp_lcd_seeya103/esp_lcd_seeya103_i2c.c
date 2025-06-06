@@ -75,9 +75,7 @@ esp_err_t seeya103_i2c_read_reg(i2c_master_dev_handle_t dev_handle, uint16_t reg
     return ESP_OK;
 }
 
-static esp_err_t seeya103_i2c_send_cmd(seeya103_lcd_init_cmd_t cmd, void *user_data) {
-    i2c_master_dev_handle_t dev_handle = (i2c_master_dev_handle_t)user_data;
-
+esp_err_t seeya103_i2c_send_cmd(i2c_master_dev_handle_t dev_handle, seeya103_lcd_init_cmd_t cmd) {
     static int data_pointer = 0;
     // MIPI commands use this special register to offset the data pointer on the following command
     if (cmd.cmd == SEEYA103_CMD_POINTER) {
@@ -110,6 +108,11 @@ static esp_err_t seeya103_i2c_send_cmd(seeya103_lcd_init_cmd_t cmd, void *user_d
     return ESP_OK;
 }
 
+static esp_err_t seeya103_i2c_send_cmd_user_data(seeya103_lcd_init_cmd_t cmd, void *user_data) {
+    i2c_master_dev_handle_t dev_handle = (i2c_master_dev_handle_t)user_data;
+    return seeya103_i2c_send_cmd(dev_handle, cmd);
+}
+
 esp_err_t seeya103_i2c_send_cmds(i2c_master_dev_handle_t dev_handle, uint16_t width,
                                  uint16_t height, uint16_t x_offset, uint16_t y_offset,
                                  seeya103_scaling_t scaling, bool mirror_x, bool mirror_y,
@@ -117,22 +120,9 @@ esp_err_t seeya103_i2c_send_cmds(i2c_master_dev_handle_t dev_handle, uint16_t wi
                                  uint16_t init_cmds_size) {
     ESP_RETURN_ON_FALSE(dev_handle && init_cmds, ESP_ERR_INVALID_ARG, TAG, "invalid arguments");
 
-    return panel_seeya103_send_init_cmds_with_fn(init_cmds, init_cmds_size, width, height, x_offset,
-                                                 y_offset, scaling, mirror_x, mirror_y,
-                                                 seeya103_i2c_send_cmd, (void *)dev_handle);
-}
-
-esp_err_t seeya103_i2c_send_cmds_with_mirror(i2c_master_dev_handle_t dev_handle, uint16_t width,
-                                             uint16_t height, uint16_t x_offset, uint16_t y_offset,
-                                             seeya103_scaling_t scaling, bool mirror_x,
-                                             bool mirror_y,
-                                             const seeya103_lcd_init_cmd_t *init_cmds,
-                                             uint16_t init_cmds_size) {
-    ESP_RETURN_ON_FALSE(dev_handle && init_cmds, ESP_ERR_INVALID_ARG, TAG, "invalid arguments");
-
-    return panel_seeya103_send_init_cmds_with_fn(init_cmds, init_cmds_size, width, height, x_offset,
-                                                 y_offset, scaling, mirror_x, mirror_y,
-                                                 seeya103_i2c_send_cmd, (void *)dev_handle);
+    return panel_seeya103_send_init_cmds_with_fn(
+        init_cmds, init_cmds_size, width, height, x_offset, y_offset, scaling, mirror_x, mirror_y,
+        seeya103_i2c_send_cmd_user_data, (void *)dev_handle);
 }
 
 esp_err_t seeya103_i2c_disp_on_off(i2c_master_dev_handle_t dev_handle, bool on_off) {
