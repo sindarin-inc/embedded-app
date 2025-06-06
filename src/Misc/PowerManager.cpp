@@ -649,11 +649,7 @@ void PowerManager::beginShutdown() {
     }
     DispatchShutdown();
 
-#if CONFIG_DISPLAY_EINKET013TT1
-    // Force shutdown the screen
-    auto *driver = (dynamic_cast<DisplayEinkET013TT1 *>(&display_))->getDriver();
-    driver->shutdown();
-#endif
+    display_.shutdown();
 
     // Make sure the ambient light sensor is off so it's not using power while in deep sleep
     lightingController_.shutdown(0);

@@ -28,6 +28,7 @@ public:
     [[nodiscard]] auto minTextBoxHeight() const -> int16_t override { return 45; };
 
     auto setup() -> bool override;
+    void shutdown() override { driver_.shutdown(); }
 
     // TODO: Probably this is a good candidate for a struct for params since there are a lot of
     // values that can be passed and some may be unset defaults.
