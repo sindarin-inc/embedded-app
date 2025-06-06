@@ -90,6 +90,7 @@ public:
     }
 
     virtual auto setup() -> bool;
+    virtual void shutdown() {}
 
     static void animationTimerCallback(TimerHandle_t timer);
 
@@ -186,7 +187,7 @@ public:
     void flipInversion();
     [[nodiscard]] auto getInversion() const -> bool { return invertedDisplay_; }
 
-    virtual void clearDisplay(){};
+    virtual void clearDisplay() {};
     virtual void clearFrameBuffer() { fillScreen(bg); };
 
     void forceDontChangeRefreshType() { forceRefreshType_ = true; }

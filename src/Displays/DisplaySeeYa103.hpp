@@ -28,6 +28,7 @@ public:
     [[nodiscard]] auto minTextBoxHeight() const -> int16_t override { return 45; };
 
     auto setup() -> bool override;
+    void shutdown() override;
 
     void updateDisplay(DisplaySystem::UpdateType updateType = UNSPECIFIED,
                        bool clearFrameBuffer = true, int vcomNudge = 0,

@@ -19,25 +19,7 @@ IRAM_ATTR bool DisplaySeeYa103::onColorTransDone(esp_lcd_panel_handle_t panel,
 }
 
 DisplaySeeYa103::~DisplaySeeYa103() {
-    if (updateSemaphore_ != nullptr) {
-        vSemaphoreDelete(updateSemaphore_);
-    }
-    if (panelHandle_ != nullptr) {
-        esp_lcd_panel_del(panelHandle_);
-        panelHandle_ = nullptr;
-    }
-    if (mipiDbiIo_ != nullptr) {
-        esp_lcd_panel_io_del(mipiDbiIo_);
-        mipiDbiIo_ = nullptr;
-    }
-    if (mipiDsiBus_ != nullptr) {
-        esp_lcd_del_dsi_bus(mipiDsiBus_);
-        mipiDsiBus_ = nullptr;
-    }
-    if (ldoMipiPhy_ != nullptr) {
-        esp_ldo_release_channel(ldoMipiPhy_);
-        ldoMipiPhy_ = nullptr;
-    }
+
 };
 
 auto DisplaySeeYa103::setup() -> bool {
@@ -73,16 +55,31 @@ auto DisplaySeeYa103::setup() -> bool {
         .pull_down_en = GPIO_PULLDOWN_DISABLE,
         .intr_type = GPIO_INTR_DISABLE,
     };
-    gpio_config(&config);
-    gpio_set_level(gpio_num_t(31), 1);
-    gpio_set_level(gpio_num_t(29), 1);
-    gpio_set_level(gpio_num_t(33), 1);
-    gpio_set_level(gpio_num_t(32), 1);
-    // Power save pins
+
+    // Start fully off
+    gpio_set_level(gpio_num_t(33), 0);
+    gpio_set_level(gpio_num_t(32), 0);
     gpio_set_level(gpio_num_t(30), 0);
     gpio_set_level(gpio_num_t(28), 0);
-
+    gpio_set_level(gpio_num_t(31), 0);
+    gpio_set_level(gpio_num_t(29), 0);
     vTaskDelay(pdMS_TO_TICKS(100));
+
+    gpio_config(&config);
+    // 3V3_ON (powers the split-rail supply)
+    gpio_set_level(gpio_num_t(33), 1);
+    // 1V8_ON (VDDI)
+    gpio_set_level(gpio_num_t(32), 1);
+    vTaskDelay(pdMS_TO_TICKS(1));
+    // Power save pins
+    gpio_set_level(gpio_num_t(30), 1);
+    gpio_set_level(gpio_num_t(28), 1);
+    // ENP (AVDD)
+    gpio_set_level(gpio_num_t(31), 1);
+    vTaskDelay(pdMS_TO_TICKS(2));
+    // ENN (AVEE)
+    gpio_set_level(gpio_num_t(29), 1);
+    vTaskDelay(pdMS_TO_TICKS(1));
 
     // Turn on the power for MIPI DSI PHY, so it can go from "No Power" state to "Shutdown" state
     log_d("MIPI DSI PHY Powered on");
@@ -151,6 +148,41 @@ auto DisplaySeeYa103::setup() -> bool {
     ESP_ERROR_CHECK(esp_lcd_dpi_panel_register_event_callbacks(panelHandle_, &cbs, this));
 
     return true;
+}
+
+void DisplaySeeYa103::shutdown() {
+    // Turn off the display
+    executeI2C(
+        [](i2c_master_dev_handle_t device) { return seeya103_i2c_disp_on_off(device, false); });
+
+    if (updateSemaphore_ != nullptr) {
+        vSemaphoreDelete(updateSemaphore_);
+    }
+    if (panelHandle_ != nullptr) {
+        esp_lcd_panel_del(panelHandle_);
+        panelHandle_ = nullptr;
+    }
+    if (mipiDbiIo_ != nullptr) {
+        esp_lcd_panel_io_del(mipiDbiIo_);
+        mipiDbiIo_ = nullptr;
+    }
+    if (mipiDsiBus_ != nullptr) {
+        esp_lcd_del_dsi_bus(mipiDsiBus_);
+        mipiDsiBus_ = nullptr;
+    }
+    if (ldoMipiPhy_ != nullptr) {
+        esp_ldo_release_channel(ldoMipiPhy_);
+        ldoMipiPhy_ = nullptr;
+    }
+
+    gpio_set_level(gpio_num_t(29), 0);
+    vTaskDelay(pdMS_TO_TICKS(2));
+    gpio_set_level(gpio_num_t(31), 0);
+    vTaskDelay(pdMS_TO_TICKS(1));
+    gpio_set_level(gpio_num_t(32), 0);
+    gpio_set_level(gpio_num_t(33), 0);
+    gpio_set_level(gpio_num_t(30), 0);
+    gpio_set_level(gpio_num_t(28), 0);
 }
 
 void DisplaySeeYa103::updateDisplay(DisplaySystem::UpdateType updateType, bool clearFrameBuffer,
