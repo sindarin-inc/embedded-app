@@ -35,6 +35,9 @@ public:
                        ScreenSide screen = ScreenSide::Both,
                        SolRect altRect = {0, 0, 0, 0}) override;
 
+    // Brightness control 0-1024
+    auto setBrightness(uint16_t brightness) -> esp_err_t;
+
 protected:
     [[nodiscard]] auto nativeWidth() const -> uint16_t override { return CONFIG_DISPLAY_WIDTH; }
     [[nodiscard]] auto nativeHeight() const -> uint16_t override { return CONFIG_DISPLAY_HEIGHT; }

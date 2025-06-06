@@ -104,7 +104,7 @@ static const seeya103_lcd_init_cmd_t SEEYA103_INIT_CMDS[] = {
     {.cmd = 0xF0, .data = (uint8_t[]){0xAA, 0x11}, .data_bytes = 2, .delay_ms = 0},
     {.cmd = 0xC0, .data = (uint8_t[]){0x00, 0x04, 0x00}, .data_bytes = 3, .delay_ms = 0},
     {.cmd = SEEYA103_CMD_BCCTR3,
-     .data = (uint8_t[]){0x03, 0xFF, 0x03, 0xFF, 0x03, 0xFF, 0x00, 0x90, 0x82},
+     .data = (uint8_t[]){0x01, 0x90, 0x01, 0x90, 0x01, 0x90, 0x00, 0x90, 0x82},
      .data_bytes = 9,
      .delay_ms = 0},
 
@@ -153,7 +153,7 @@ static const seeya103_lcd_init_cmd_t SEEYA103_INIT_CMDS_SELFTEST[] = {
     {.cmd = 0xF0, .data = (uint8_t[]){0xAA, 0x11}, .data_bytes = 2, .delay_ms = 0},
     {.cmd = 0xC0, .data = (uint8_t[]){0x00, 0x04, 0x00}, .data_bytes = 3, .delay_ms = 0},
     {.cmd = SEEYA103_CMD_BCCTR3,
-     .data = (uint8_t[]){0x03, 0xFF, 0x03, 0xFF, 0x03, 0xFF, 0x00, 0x90, 0x82},
+     .data = (uint8_t[]){0x01, 0x90, 0x01, 0x90, 0x01, 0x90, 0x00, 0x90, 0x82},
      .data_bytes = 9,
      .delay_ms = 0},
 
