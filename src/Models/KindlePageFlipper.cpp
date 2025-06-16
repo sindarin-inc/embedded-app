@@ -19,15 +19,24 @@ KindlePageFlipper::KindlePageFlipper(const std::shared_ptr<KindleBook> &kindleBo
 
 auto KindlePageFlipper::checkForError(int httpCode, std::shared_ptr<KindlePageResponse> &response)
     -> std::string {
-    if (httpCode == 200 && response->success) {
+    if (httpCode == 200 && response->success && response->authenticated) {
         return "";
+    }
+
+    // Check for authentication failure in response
+    if (httpCode == 200 && !response->authenticated) {
+        // When authenticated: false and we have kindle.json, use the message from response
+        if (!response->message.empty()) {
+            return std::string(response->message);
+        }
+        return "Your Kindle session has expired. Please try signing in on the mobile app again.";
     }
 
     // Check for connection issues
     if (httpCode <= 0) {
         return "CONNECTION_ERROR"; // Special marker for connection issues that should be retried
     } else if (httpCode == 401 || httpCode == 403) {
-        return "Authentication error. Please try signing in again.";
+        return "Your Kindle session has expired. Please try signing in on the mobile app again.";
     } else if (httpCode == 404) {
         return "Book or page not found in your Kindle library.";
     } else if (httpCode >= 400 && httpCode < 500) {

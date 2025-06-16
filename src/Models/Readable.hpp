@@ -102,6 +102,11 @@ public:
             }
         }
 
+        static const ReadableFile emptyFile;
+        if (files.empty()) {
+            log_e("Readable %s has no files", uuid.c_str());
+            return emptyFile;
+        }
         return files[0];
     }
 
