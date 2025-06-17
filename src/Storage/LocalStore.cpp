@@ -1233,14 +1233,14 @@ auto LocalStore::processReadableDownload(
 
         float currPercentage = static_cast<float>(downloadIndex) * pctPerReadable;
         const auto &readable = userReadable.readable;
-        
+
         // Skip readables with no files
         if (readable->files.empty()) {
             log_w("Skipping download for readable '%s' with no files", readable->title.c_str());
             downloadIndex += 1;
             continue;
         }
-        
+
         auto path = readableFilePathForWriting(readable, !useBle);
         auto expectedSize = readable->file(path).size;
         log_i("Downloading %s (file=%s, url=%s, size=%d)", readable->title.c_str(), path.c_str(),
