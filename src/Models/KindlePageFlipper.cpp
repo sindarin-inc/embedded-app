@@ -24,7 +24,7 @@ auto KindlePageFlipper::checkForError(int httpCode, std::shared_ptr<KindlePageRe
     }
 
     // Check for authentication failure in response
-    if (httpCode == 200 && !response->authenticated) {
+    if ((httpCode == 200 || httpCode == 401) && !response->authenticated) {
         // When authenticated: false and we have kindle.json, use the message from response
         if (!response->message.empty()) {
             return std::string(response->message);
