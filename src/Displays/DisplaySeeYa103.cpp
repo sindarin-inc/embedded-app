@@ -48,24 +48,16 @@ auto DisplaySeeYa103::setup() -> bool {
     // 28: PS_PSN // Power save Negative
     // Turn on pins 31, 29, 33, 32, 30, 28
     gpio_config_t config = {
-        .pin_bit_mask =
-            GPIO_NUM_31 | GPIO_NUM_29 | GPIO_NUM_33 | GPIO_NUM_32 | GPIO_NUM_30 | GPIO_NUM_28,
+        .pin_bit_mask = 1ULL << GPIO_NUM_31 | 1ULL << GPIO_NUM_29 | 1ULL << GPIO_NUM_33 |
+                        1ULL << GPIO_NUM_32 | 1ULL << GPIO_NUM_30 | 1ULL << GPIO_NUM_28,
         .mode = GPIO_MODE_OUTPUT,
         .pull_up_en = GPIO_PULLUP_DISABLE,
         .pull_down_en = GPIO_PULLDOWN_DISABLE,
         .intr_type = GPIO_INTR_DISABLE,
     };
 
-    // Start fully off
-    gpio_set_level(gpio_num_t(33), 0);
-    gpio_set_level(gpio_num_t(32), 0);
-    gpio_set_level(gpio_num_t(30), 0);
-    gpio_set_level(gpio_num_t(28), 0);
-    gpio_set_level(gpio_num_t(31), 0);
-    gpio_set_level(gpio_num_t(29), 0);
-    vTaskDelay(pdMS_TO_TICKS(100));
-
     gpio_config(&config);
+
     // 3V3_ON (powers the split-rail supply)
     gpio_set_level(gpio_num_t(33), 1);
     // 1V8_ON (VDDI)
