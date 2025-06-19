@@ -223,6 +223,10 @@ menu "Sol Options"
             bool "Use MMC5603 Magnetometer"
             default y
 
+        config USE_ICM42670
+            bool "Use ICM42670 Accelerometer"
+            default n
+
         config USE_SYS_ON
             bool "Use SYS_ON Pin"
             default y if DISPLAY_EINKET013TT1
@@ -307,6 +311,16 @@ menu "Sol Options"
 
         config DISPLAY_POWER
             int "Display Power Pin"
+            default -1
+
+        config LP_I2C_SDA
+            int "Low-power I2C SDA"
+            depends on USE_ICM42670
+            default -1
+
+        config LP_I2C_SCL
+            int "Low-power I2C SCL"
+            depends on USE_ICM42670
             default -1
     endmenu
 

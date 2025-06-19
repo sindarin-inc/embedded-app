@@ -153,6 +153,12 @@ WiFi wiFi(telemetry, prefs);
 DirectCommand directCommand(usbSerial, fileSystem, powerManager);
 FileTransfer fileTransferListener(fileSystem, localStore, usbSerial, directCommand);
 
+#if CONFIG_USE_ICM42670
+#include "Sensors/Icm42670.hpp"
+static std::shared_ptr<i2c_master_bus_handle_t> i2cBusHandle;
+static std::shared_ptr<Icm42670> icm42670;
+#endif
+
 bool bootCompleted = false;
 
 void UIInnerLoop(RemoteCommand command) {
@@ -169,6 +175,10 @@ void UIInnerLoop(RemoteCommand command) {
 // they all complete in a tight loop, thus maximizing sleep time.
 void PollingLoopTask(void *parameter) {
     int factoryResetStartTimeMs = 0;
+    int shutdownCounter = 0;
+    constexpr int SHUTDOWN_THRESHOLD_SECONDS = 5;
+    constexpr float Y_ACCEL_THRESHOLD = -0.8f;
+
     while (powerManager.state() != PowerState::ShuttingDown) {
         if (CONFIG_FACTORY_RESET_BUTTON_PIN != GPIO_NUM_NC &&
             DigitalRead(CONFIG_FACTORY_RESET_BUTTON_PIN) == 0) {
@@ -211,6 +221,30 @@ void PollingLoopTask(void *parameter) {
         // This happens after the delay, so that the first check can run with a faster fade.
         lightingController.checkAmbientLight();
 #endif
+
+#if CONFIG_USE_ICM42670
+        icm42670_value_t accel_value;
+        esp_err_t err = icm42670->readAccelerometer(&accel_value);
+        if (err != ESP_OK) {
+            log_e("Error reading accelerometer %d, ignoring.", err);
+        } else {
+            log_i("Accelerometer - X: %.3f g, Y: %.3f g, Z: %.3f g", accel_value.x, accel_value.y,
+                  accel_value.z);
+        }
+
+        if (accel_value.y < Y_ACCEL_THRESHOLD) {
+            shutdownCounter++;
+        } else {
+            shutdownCounter = 0;
+        }
+
+        if (shutdownCounter > SHUTDOWN_THRESHOLD_SECONDS) {
+            log_i("Shutting down due to accelerometer");
+            icm42670->configureInterupts();
+            powerManager.deepSleep(SleepReason::TempleClosed);
+        }
+#endif
+
         SHOW_HEAP();
         SHOW_WATERMARK();
     }
@@ -438,6 +472,29 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     if (!powerManager.checkMagnetometerProductId()) {
         bootErrors.push_back({.type = BootError::Type::Magnetometer});
     }
+#endif
+
+#if CONFIG_USE_ICM42670
+    i2cBusHandle = std::make_shared<i2c_master_bus_handle_t>();
+
+    i2c_master_bus_config_t busConfig = {
+        .i2c_port = I2C_NUM_1,
+        .sda_io_num = static_cast<gpio_num_t>(CONFIG_LP_I2C_SDA),
+        .scl_io_num = static_cast<gpio_num_t>(CONFIG_LP_I2C_SCL),
+        .clk_source = I2C_CLK_SRC_DEFAULT,
+        .glitch_ignore_cnt = 7,
+        .intr_priority = 0,
+        .trans_queue_depth = 0,
+        .flags =
+            {
+                .enable_internal_pullup = true,
+                .allow_pd = false,
+            },
+    };
+    ESP_ERROR_CHECK(i2c_new_master_bus(&busConfig, i2cBusHandle.get()));
+
+    icm42670 = std::make_shared<Icm42670>();
+    icm42670->begin(*i2cBusHandle.get());
 #endif
 
 #if CONFIG_DISPLAY_POWER != -1

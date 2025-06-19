@@ -52,7 +52,7 @@ auto DisplaySeeYa103::setup() -> bool {
                         1ULL << GPIO_NUM_32 | 1ULL << GPIO_NUM_30 | 1ULL << GPIO_NUM_28,
         .mode = GPIO_MODE_OUTPUT,
         .pull_up_en = GPIO_PULLUP_DISABLE,
-        .pull_down_en = GPIO_PULLDOWN_DISABLE,
+        .pull_down_en = GPIO_PULLDOWN_ENABLE,
         .intr_type = GPIO_INTR_DISABLE,
     };
 
