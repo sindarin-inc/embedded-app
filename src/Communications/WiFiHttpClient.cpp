@@ -17,7 +17,8 @@ WiFiHttpClient::WiFiHttpClient(const char *url, const char *contentType,
                                esp_http_client_method_t method, bool gzip, int timeoutMs)
     : HttpClient(url, contentType, method, gzip) {
 
-    userAgent_ = StringFormat("SolReader/%s (%s)", SemanticVersionString(), GitVersionString());
+    userAgent_ = StringFormat("%s/%s (%s)", CONFIG_USER_AGENT_STRING, SemanticVersionString(),
+                              GitVersionString());
 
     esp_http_client_config_t config{
         .url = url_,

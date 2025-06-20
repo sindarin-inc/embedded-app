@@ -180,7 +180,7 @@ menu "Sol Options"
         endmenu
     endmenu
 
-    menu "BLE Settings"
+    menu "Communication Settings"
         config USE_BLE_SERVER_REMOTE
             bool "Enable BLE Server Remote"
             default y
@@ -200,6 +200,12 @@ menu "Sol Options"
         config USE_TURN_TOUCH_REMOTE
             bool "Enable Turn Touch Remote"
             default y
+
+        config USER_AGENT_STRING
+            string "User Agent String"
+            default "SolReader"
+            help
+                User agent string to use for HTTP requests and network communications.
     endmenu
 
     menu "Peripheral Settings"
@@ -456,7 +462,6 @@ menu "Sol Options"
             default 3 if SOL_LOG_LEVEL_INFO
             default 4 if SOL_LOG_LEVEL_DEBUG
             default 5 if SOL_LOG_LEVEL_VERBOSE
-
     endmenu
 
 endmenu
