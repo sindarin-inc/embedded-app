@@ -203,7 +203,7 @@ void BackgroundSyncAndSleep(PowerManager &powerManager, PreferencesStore &prefs,
             BackgroundSync(powerManager, prefs, localStore, telemetry, fileSystem, false, true);
         }
         },
-        8192, 1, 0, "Sync", pdMS_TO_TICKS(15 * 60 * 1000));
+        13000, 1, 0, "Sync", pdMS_TO_TICKS(15 * 60 * 1000));
 
     BackgroundSyncCancel();
 
