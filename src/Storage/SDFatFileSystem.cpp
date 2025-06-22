@@ -8,6 +8,8 @@
 #include <sd_pwr_ctrl_by_on_chip_ldo.h>
 #include <sdmmc_cmd.h>
 
+constexpr const char *TAG = "SDFatFileSystem";
+
 auto SDFatFileSystem::format() -> bool {
     log_i("Formatting SDFat...");
     DisableCore0Wdt();
@@ -37,6 +39,7 @@ auto SDFatFileSystem::begin() -> bool {
         return false;
     }
 #endif
+#if defined(CONFIG_SDCARD_PWR_PIN) && CONFIG_SDCARD_PWR_PIN != -1
     // Initialize and enable SD card power pin
     gpio_config_t pwrPinConfig = {
         .pin_bit_mask = (1ULL << CONFIG_SDCARD_PWR_PIN),
@@ -48,6 +51,7 @@ auto SDFatFileSystem::begin() -> bool {
     gpio_config(&pwrPinConfig);
     gpio_set_level(static_cast<gpio_num_t>(CONFIG_SDCARD_PWR_PIN), 0);
     vTaskDelay(pdMS_TO_TICKS(100)); // Wait for power to stabilize
+#endif
 
     // Options for mounting the filesystem
     esp_vfs_fat_sdmmc_mount_config_t mount_config = {
@@ -85,8 +89,19 @@ auto SDFatFileSystem::begin() -> bool {
 
 void SDFatFileSystem::close() {
     esp_vfs_fat_sdcard_unmount(getPrefix().c_str(), card_);
+
+#if defined(CONFIG_SDCARD_LDO_CHANNEL) && CONFIG_SDCARD_LDO_CHANNEL != -1
+    if (pwrCtrlHandle_ != nullptr) {
+        sd_pwr_ctrl_del_on_chip_ldo(pwrCtrlHandle_);
+        pwrCtrlHandle_ = nullptr;
+    }
+#endif
+
     // Turn off SD card power
+#if defined(CONFIG_SDCARD_PWR_PIN) && CONFIG_SDCARD_PWR_PIN != -1
     gpio_set_level(static_cast<gpio_num_t>(CONFIG_SDCARD_PWR_PIN), 1);
+#endif
+
     log_i("SD card unmounted and powered down");
 }
 
