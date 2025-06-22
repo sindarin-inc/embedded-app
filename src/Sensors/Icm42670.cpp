@@ -26,6 +26,13 @@ auto Icm42670::begin(i2c_master_bus_handle_t i2cBusHandle) -> esp_err_t {
     return ESP_OK;
 }
 
+auto Icm42670::end() -> esp_err_t {
+    ESP_RETURN_ON_ERROR(icm42670_acce_set_pwr(icm42670_, ACCE_PWR_OFF), TAG,
+                        "Failed to set accelerometer power mode");
+    icm42670_delete(icm42670_);
+    return ESP_OK;
+}
+
 auto Icm42670::readDeviceId(uint8_t *deviceIdOut) -> esp_err_t {
     return icm42670_get_deviceid(icm42670_, deviceIdOut);
 }

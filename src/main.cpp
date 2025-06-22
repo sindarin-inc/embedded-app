@@ -241,7 +241,6 @@ void PollingLoopTask(void *parameter) {
 
         if (shutdownCounter > SHUTDOWN_THRESHOLD_SECONDS) {
             log_i("Shutting down due to accelerometer");
-            icm42670->configureInterupts();
             powerManager.deepSleep(SleepReason::TempleClosed);
         }
 #endif
@@ -564,6 +563,25 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 
     icm42670 = std::make_shared<Icm42670>();
     icm42670->begin(*i2cBusHandle.get());
+
+    powerManager.addShutdownCallback([]() {
+        esp_err_t err;
+
+        err = icm42670->configureInterupts();
+        if (err != ESP_OK) {
+            log_e("Error configuring ICM42670 interupts: %s", esp_err_to_name(err));
+        }
+
+        err = icm42670->end();
+        if (err != ESP_OK) {
+            log_e("Error ending ICM42670: %s", esp_err_to_name(err));
+        }
+
+        err = i2c_del_master_bus(*i2cBusHandle.get());
+        if (err != ESP_OK) {
+            log_e("Error deleting I2C bus: %s", esp_err_to_name(err));
+        }
+    });
 #endif
 
 #if CONFIG_DISPLAY_POWER != -1

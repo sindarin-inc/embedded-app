@@ -7,6 +7,7 @@ public:
     Icm42670() {}
 
     auto begin(i2c_master_bus_handle_t i2cBusHandle) -> esp_err_t;
+    auto end() -> esp_err_t;
 
     auto readDeviceId(uint8_t *deviceIdOut) -> esp_err_t;
     auto clearInterruptStatus() -> esp_err_t;
