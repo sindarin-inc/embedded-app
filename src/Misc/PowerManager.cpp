@@ -795,16 +795,26 @@ auto ToString(SleepReason reason) -> const char * {
 }
 
 auto PowerManager::enableUsbWakeup() -> esp_err_t {
-#if CONFIG_USB_CONNECTED_PIN != -1 && SOC_PM_SUPPORT_EXT0_WAKEUP
+#if CONFIG_USB_CONNECTED_PIN != -1
     esp_err_t err;
     if (USBConnected()) {
+#if SOC_PM_SUPPORT_EXT0_WAKEUP
         err = esp_sleep_enable_ext0_wakeup(static_cast<gpio_num_t>(CONFIG_USB_CONNECTED_PIN), 0);
+#else
+        err = esp_sleep_enable_ext1_wakeup_io(1ULL << CONFIG_USB_CONNECTED_PIN,
+                                              ESP_EXT1_WAKEUP_ANY_LOW);
+#endif
         if (err != ESP_OK) {
             log_e("error enabling CONFIG_USB_CONNECTED_PIN low wakeup from deep sleep %d", err);
             return err;
         }
     } else {
+#if SOC_PM_SUPPORT_EXT0_WAKEUP
         err = esp_sleep_enable_ext0_wakeup(static_cast<gpio_num_t>(CONFIG_USB_CONNECTED_PIN), 1);
+#else
+        err = esp_sleep_enable_ext1_wakeup_io(1ULL << CONFIG_USB_CONNECTED_PIN,
+                                              ESP_EXT1_WAKEUP_ANY_HIGH);
+#endif
         if (err != ESP_OK) {
             log_e("error enabling CONFIG_USB_CONNECTED_PIN high wakeup from deep sleep %d", err);
             return err;
@@ -849,7 +859,7 @@ auto PowerManager::enableSleepWakePinWakeup() -> esp_err_t {
     // Use the configured pin as a wake-up source. The device will wake up when the pin is pulled
     // LOW Note: This uses ext1_wakeup since ext0_wakeup is already used for USB detection
     const uint64_t pin_mask = (1ULL << CONFIG_SLEEP_WAKE_PIN);
-    err = esp_sleep_enable_ext1_wakeup(pin_mask, ESP_EXT1_WAKEUP_ANY_LOW);
+    err = esp_sleep_enable_ext1_wakeup_io(pin_mask, ESP_EXT1_WAKEUP_ANY_LOW);
     if (err != ESP_OK) {
         log_e("error enabling pin %d wakeup from deep sleep: %s", CONFIG_SLEEP_WAKE_PIN,
               esp_err_to_name(err));
@@ -954,6 +964,7 @@ void PowerManager::deepSleepInternal(SleepReason reason) {
         powerOffInternal();
         return;
     }
+#endif
 
     // Enable a wakeup on the CONFIG_USB_CONNECTED_PIN
     err = enableUsbWakeup();
@@ -961,7 +972,6 @@ void PowerManager::deepSleepInternal(SleepReason reason) {
         powerOffInternal();
         return;
     }
-#endif
 
 #if defined(CONFIG_SLEEP_WAKE_PIN) && CONFIG_SLEEP_WAKE_PIN != -1
     // Enable the configured pin as a wake-up pin
