@@ -4,6 +4,7 @@
 #include <esp_system.h>
 #include <rom/rtc.h>
 #include <utility>
+#include <vector>
 
 #include "Communications/USBSerial.hpp"
 #include "Displays/DisplaySystem.hpp"
@@ -232,8 +233,8 @@ public:
     }
     void removeStateChangeCallback(void *key) { stateChangeCallbacks_.erase(key); }
 
-    void setBeginShutdownCallback(const std::function<void()> &callback) {
-        beginShutdownCallback_ = callback;
+    void addShutdownCallback(std::function<void()> callback) {
+        shutdownCallbacks_.push_back(std::move(callback));
     }
 
     // Power lifecycle functions
@@ -284,7 +285,7 @@ protected:
     PreferencesStore &prefs_;
     PowerState state_ = PowerState::Booting;
     std::unordered_map<void *, std::function<void(PowerState)>> stateChangeCallbacks_;
-    std::function<void()> beginShutdownCallback_;
+    std::vector<std::function<void()>> shutdownCallbacks_;
     LightingController &lightingController_;
     DisplaySystem &display_;
     InactivityTimer inactivityTimer_;

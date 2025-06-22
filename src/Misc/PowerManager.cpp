@@ -622,10 +622,6 @@ void PowerManager::beginShutdown() {
     }
 #endif
 
-    if (beginShutdownCallback_ != nullptr) {
-        beginShutdownCallback_();
-    }
-
     if (previousState == PowerState::Active || previousState == PowerState::ActiveOverTemp ||
         previousState == PowerState::ActiveUSBCharging ||
         previousState == PowerState::ActiveForcedOn ||
@@ -649,21 +645,9 @@ void PowerManager::beginShutdown() {
     }
     DispatchShutdown();
 
-    display_.shutdown();
-
-    // Make sure the ambient light sensor is off so it's not using power while in deep sleep
-    lightingController_.shutdown(0);
-
-    prefs_.end();
-
-    esp_err_t err = DeinitializePlatform();
-    if (err != ESP_OK) {
-        log_e("Failed to deinit platform with err %s", esp_err_to_name(err));
-    }
-
-    err = HardwareDeinit();
-    if (err != ESP_OK) {
-        log_e("Failed to deinit hardware with err %s", esp_err_to_name(err));
+    // Call shutdown callbacks in reverse order (LIFO - last in, first out)
+    for (auto it = shutdownCallbacks_.rbegin(); it != shutdownCallbacks_.rend(); ++it) {
+        (*it)();
     }
 
     // At the end of the function, stop and delete the timer

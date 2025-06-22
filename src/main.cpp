@@ -280,6 +280,12 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 
     HEAP_PROFILE_START(HardwareInit);
     HardwareInit();
+    powerManager.addShutdownCallback([]() {
+        esp_err_t err = HardwareDeinit();
+        if (err != ESP_OK) {
+            log_e("HardwareDeinit failed with err %s", esp_err_to_name(err));
+        }
+    });
     HEAP_PROFILE_END(HardwareInit);
 
     powerManager.wakeupCheck(solClock);
@@ -297,11 +303,18 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 
     HEAP_PROFILE_START(InitializePlatform);
     InitializePlatform();
+    powerManager.addShutdownCallback([]() {
+        esp_err_t err = DeinitializePlatform();
+        if (err != ESP_OK) {
+            log_e("DeinitializePlatform failed with err %s", esp_err_to_name(err));
+        }
+    });
     HEAP_PROFILE_END(InitializePlatform);
 
     if (!prefs.begin()) {
         bootErrors.push_back({.type = BootError::Type::Preferences});
     }
+    powerManager.addShutdownCallback([]() { prefs.end(); });
 
     solClock.begin();
 
@@ -370,6 +383,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     } else {
         log_i("Filesystem ready!");
     }
+    powerManager.addShutdownCallback([]() { fileSystem.close(); });
     HEAP_PROFILE_END(fileSystemBegin);
 
     // Set current boot id
@@ -467,6 +481,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     }
 #endif
     lightingController.begin();
+    powerManager.addShutdownCallback([]() { lightingController.shutdown(0); });
 
 #if CONFIG_USE_MMC5603
     if (!powerManager.checkMagnetometerProductId()) {
@@ -506,6 +521,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     if (!myDisplay.setup()) {
         bootErrors.push_back({.type = BootError::Type::Display});
     }
+    powerManager.addShutdownCallback([]() { myDisplay.shutdown(); });
     HEAP_PROFILE_END(displaySetup);
 
     // Dark mode by default on OLED displays
@@ -571,7 +587,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 
 #if CONFIG_USE_TURN_TOUCH_REMOTE
     ttRemoteInput.setCallback(remoteCallback);
-    powerManager.setBeginShutdownCallback([]() { ttRemoteInput.disconnectTemporarily(60); });
+    powerManager.addShutdownCallback([]() { ttRemoteInput.disconnectTemporarily(60); });
 #endif
 
 #if CONFIG_USE_BLE_SERVER_REMOTE || CONFIG_USE_BLE_SERVER_SETTINGS
