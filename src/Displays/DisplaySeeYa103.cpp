@@ -39,17 +39,9 @@ auto DisplaySeeYa103::setup() -> bool {
     esp_log_level_set("lcd.dsi.dpi", ESP_LOG_DEBUG);
     esp_log_level_set("seeya103", ESP_LOG_DEBUG);
 
-    // Power pins specific to the Sol Focus board. Remove if we ever open source this.
-    // 33: 3V3_ON
-    // 32: 1V8_ON
-    // 31: PS_ENP
-    // 30: PS_PSP // Power save Positive
-    // 29: PS_ENN
-    // 28: PS_PSN // Power save Negative
-    // Turn on pins 31, 29, 33, 32, 30, 28
     gpio_config_t config = {
-        .pin_bit_mask = 1ULL << GPIO_NUM_31 | 1ULL << GPIO_NUM_29 | 1ULL << GPIO_NUM_33 |
-                        1ULL << GPIO_NUM_32 | 1ULL << GPIO_NUM_30 | 1ULL << GPIO_NUM_28,
+        .pin_bit_mask = 1ULL << CONFIG_DISPLAY_PS_ENP_PIN | 1ULL << CONFIG_DISPLAY_PS_ENN_PIN |
+                        1ULL << CONFIG_DISPLAY_PS_PSP_PIN | 1ULL << CONFIG_DISPLAY_PS_PSN_PIN,
         .mode = GPIO_MODE_OUTPUT,
         .pull_up_en = GPIO_PULLUP_DISABLE,
         .pull_down_en = GPIO_PULLDOWN_ENABLE,
@@ -58,19 +50,13 @@ auto DisplaySeeYa103::setup() -> bool {
 
     gpio_config(&config);
 
-    // 3V3_ON (powers the split-rail supply)
-    gpio_set_level(gpio_num_t(33), 1);
-    // 1V8_ON (VDDI)
-    gpio_set_level(gpio_num_t(32), 1);
-    vTaskDelay(pdMS_TO_TICKS(1));
-    // Power save pins
-    gpio_set_level(gpio_num_t(30), 1);
-    gpio_set_level(gpio_num_t(28), 1);
     // ENP (AVDD)
-    gpio_set_level(gpio_num_t(31), 1);
+    gpio_set_level(gpio_num_t(CONFIG_DISPLAY_PS_ENP_PIN), 1);
+    gpio_set_level(gpio_num_t(CONFIG_DISPLAY_PS_PSP_PIN), 1);
     vTaskDelay(pdMS_TO_TICKS(2));
     // ENN (AVEE)
-    gpio_set_level(gpio_num_t(29), 1);
+    gpio_set_level(gpio_num_t(CONFIG_DISPLAY_PS_ENN_PIN), 1);
+    gpio_set_level(gpio_num_t(CONFIG_DISPLAY_PS_PSN_PIN), 1);
     vTaskDelay(pdMS_TO_TICKS(1));
 
     // Turn on the power for MIPI DSI PHY, so it can go from "No Power" state to "Shutdown" state
@@ -167,14 +153,12 @@ void DisplaySeeYa103::shutdown() {
         ldoMipiPhy_ = nullptr;
     }
 
-    gpio_set_level(gpio_num_t(29), 0);
+    gpio_set_level(gpio_num_t(CONFIG_DISPLAY_PS_ENN_PIN), 0);
+    gpio_set_level(gpio_num_t(CONFIG_DISPLAY_PS_PSN_PIN), 0);
     vTaskDelay(pdMS_TO_TICKS(2));
-    gpio_set_level(gpio_num_t(31), 0);
+    gpio_set_level(gpio_num_t(CONFIG_DISPLAY_PS_ENP_PIN), 0);
+    gpio_set_level(gpio_num_t(CONFIG_DISPLAY_PS_PSP_PIN), 0);
     vTaskDelay(pdMS_TO_TICKS(1));
-    gpio_set_level(gpio_num_t(32), 0);
-    gpio_set_level(gpio_num_t(33), 0);
-    gpio_set_level(gpio_num_t(30), 0);
-    gpio_set_level(gpio_num_t(28), 0);
 }
 
 void DisplaySeeYa103::updateDisplay(DisplaySystem::UpdateType updateType, bool clearFrameBuffer,

@@ -1,3 +1,4 @@
+#include <driver/gpio.h>
 #include <esp_err.h>
 #include <esp_log.h>
 #include <esp_sleep.h>
@@ -273,10 +274,12 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     HEAP_PROFILE_END(usbSerial);
 
     directCommand.begin();
+#if CONFIG_USE_TINYUSB_SERIAL
     if (usbSerial.isUsbLoggingEnabled()) {
         // Wait a bit so we can get boot logs (mostly for the testers)
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
+#endif
 
     HEAP_PROFILE_START(HardwareInit);
     HardwareInit();
@@ -288,7 +291,58 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     });
     HEAP_PROFILE_END(HardwareInit);
 
+#if !CONFIG_USE_TINYUSB_SERIAL
+    if (USBConnected()) {
+        // If USB is connected, wait a bit so we can get boot logs
+        vTaskDelay(pdMS_TO_TICKS(1000));
+    }
+#endif
+
     powerManager.wakeupCheck(solClock);
+
+#if CONFIG_3V3_PERIPHERAL_POWER_PIN != -1
+    // Power up the 3V3 rail for the screens and the ESP32-C6
+    gpio_config_t config_3v3 = {
+        .pin_bit_mask = 1ULL << CONFIG_3V3_PERIPHERAL_POWER_PIN,
+        .mode = GPIO_MODE_OUTPUT,
+        .pull_up_en = GPIO_PULLUP_DISABLE,
+        .pull_down_en = GPIO_PULLDOWN_ENABLE,
+        .intr_type = GPIO_INTR_DISABLE,
+    };
+    gpio_config(&config_3v3);
+    gpio_set_level(gpio_num_t(CONFIG_3V3_PERIPHERAL_POWER_PIN), 1);
+
+    powerManager.addShutdownCallback([]() {
+        ESP_ERROR_CHECK(
+            gpio_set_pull_mode(gpio_num_t(CONFIG_3V3_PERIPHERAL_POWER_PIN), GPIO_PULLDOWN_ONLY));
+        ESP_ERROR_CHECK(
+            gpio_set_direction(gpio_num_t(CONFIG_3V3_PERIPHERAL_POWER_PIN), GPIO_MODE_OUTPUT));
+        ESP_ERROR_CHECK(gpio_set_level(gpio_num_t(CONFIG_3V3_PERIPHERAL_POWER_PIN), 0));
+        ESP_ERROR_CHECK(gpio_hold_en(gpio_num_t(CONFIG_3V3_PERIPHERAL_POWER_PIN)));
+    });
+#endif
+
+#if CONFIG_1V8_PERIPHERAL_POWER_PIN != -1
+    // Power up the 1.8V rail for the SeeYa103 display digital logic
+    gpio_config_t config_1v8 = {
+        .pin_bit_mask = 1ULL << CONFIG_1V8_PERIPHERAL_POWER_PIN,
+        .mode = GPIO_MODE_OUTPUT,
+        .pull_up_en = GPIO_PULLUP_DISABLE,
+        .pull_down_en = GPIO_PULLDOWN_ENABLE,
+        .intr_type = GPIO_INTR_DISABLE,
+    };
+    gpio_config(&config_1v8);
+    gpio_set_level(gpio_num_t(CONFIG_1V8_PERIPHERAL_POWER_PIN), 1);
+
+    powerManager.addShutdownCallback([]() {
+        ESP_ERROR_CHECK(
+            gpio_set_pull_mode(gpio_num_t(CONFIG_1V8_PERIPHERAL_POWER_PIN), GPIO_PULLDOWN_ONLY));
+        ESP_ERROR_CHECK(
+            gpio_set_direction(gpio_num_t(CONFIG_1V8_PERIPHERAL_POWER_PIN), GPIO_MODE_OUTPUT));
+        ESP_ERROR_CHECK(gpio_set_level(gpio_num_t(CONFIG_1V8_PERIPHERAL_POWER_PIN), 0));
+        ESP_ERROR_CHECK(gpio_hold_en(gpio_num_t(CONFIG_1V8_PERIPHERAL_POWER_PIN)));
+    });
+#endif
 
     BootLoopCheck(fileSystem, powerManager);
     std::vector<BootError> bootErrors;

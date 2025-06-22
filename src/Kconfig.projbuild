@@ -177,6 +177,25 @@ menu "Sol Options"
                 depends on DISPLAY_SEEYA103
                 default 49
 
+            config DISPLAY_PS_ENP_PIN
+                int "Enable positive AVDD power supply pin"
+                depends on DISPLAY_SEEYA103
+                default 31
+
+            config DISPLAY_PS_PSP_PIN
+                int "Positive AVDD power supply power-save mode pin"
+                depends on DISPLAY_SEEYA103
+                default 30
+
+            config DISPLAY_PS_ENN_PIN
+                int "Enable negative AVEE power supply pin"
+                depends on DISPLAY_SEEYA103
+                default 29
+
+            config DISPLAY_PS_PSN_PIN
+                int "Negative AVDD power supply power-save mode pin"
+                depends on DISPLAY_SEEYA103
+                default 28
         endmenu
     endmenu
 
@@ -327,6 +346,14 @@ menu "Sol Options"
         config LP_I2C_SCL
             int "Low-power I2C SCL"
             depends on USE_ICM42670
+            default -1
+
+        config 3V3_PERIPHERAL_POWER_PIN
+            int "Enable pin for 3.3V peripheral supply"
+            default -1
+
+        config 1V8_PERIPHERAL_POWER_PIN
+            int "Enable pin for 1.8V peripheral supply"
             default -1
     endmenu
 
