@@ -129,13 +129,6 @@ check_idf:
 		exit 1 ; \
 	fi
 
-# Only runs if build/compile_commands.json isn't available
-.PHONY: configure
-configure: check_idf
-	@if [[ ! -f build/compile_commands.json ]]; then \
-		idf.py $(IDF_PROFILE) set-target esp32s3 ; \
-	fi
-
 .PHONY: menuconfig
 menuconfig: check_idf
 	idf.py $(IDF_PROFILE) menuconfig
