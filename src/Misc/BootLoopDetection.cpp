@@ -87,6 +87,7 @@ void BootLoopCheck(FileSystem &fs, PowerManager &pm) {
 
     log_e("%d bad boots!", badBootCount);
 
+#if !CONFIG_DISABLE_BOOT_LOOP_RECOVERY
     if (badBootCount >= 18) {
         Rollback();
     } else if (badBootCount >= 15) {
@@ -106,6 +107,7 @@ void BootLoopCheck(FileSystem &fs, PowerManager &pm) {
         // Unset the current readable
         EraseCurrentReadable();
     }
+#endif
 }
 
 // timed function which resets panic-count back to 0
