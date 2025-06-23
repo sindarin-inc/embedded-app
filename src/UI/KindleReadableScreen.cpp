@@ -971,6 +971,13 @@ void KindleReadableScreen::updatePageFlipperCallbacks() {
                 return;
             }
             if (state_ == State::LOADING_CONTENT || state_ == State::DISPLAY_PARTIAL_CONTENT) {
+                // Log telemetry for successfully opening and loading Kindle book content
+                telemetry_.logMetricData(TelemetryField::METRIC_DIALOG,
+                                         {{"dialog", std::string("kindle-books")},
+                                          {"action", std::string("open-success")},
+                                          {"kindle", true},
+                                          {"book_uuid", kindleBook_->uuid}});
+                
                 setState(State::DISPLAY_CONTENT);
                 setNeedsLayout();
                 setNeedsRerender();
