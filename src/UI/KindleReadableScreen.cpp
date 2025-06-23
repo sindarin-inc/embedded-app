@@ -232,8 +232,9 @@ void KindleReadableScreen::begin() {
     reconnectionAttempts_ = 0;
 
     // Log telemetry for opening a Kindle book
-    telemetry_.logMetric(TelemetryField::METRIC_READABLE_OPEN, kindleBook_->uuid,
-                         getTelemetryMetrics());
+    auto metrics = getTelemetryMetrics();
+    metrics["kindle"] = true;
+    telemetry_.logMetric(TelemetryField::METRIC_READABLE_OPEN, kindleBook_->uuid, metrics);
 
     // Define the callback for initial connection - load the book content
     auto initialConnectionCallback = [this](bool connected) {
@@ -437,6 +438,15 @@ void KindleReadableScreen::setErrorMessage(const std::string &message) {
         return;
     }
     log_i("Showing error message: %s", message.c_str());
+    
+    // Log telemetry for Kindle book open failure
+    telemetry_.logMetricData(TelemetryField::METRIC_DIALOG,
+                             {{"dialog", std::string("kindle-books")},
+                              {"action", std::string("open-failed")},
+                              {"kindle", true},
+                              {"error", message},
+                              {"book_uuid", kindleBook_->uuid}});
+    
     errorMessageView_.setText(message);
     setState(State::ERROR);
     setNeedsLayout();
@@ -481,10 +491,10 @@ auto KindleReadableScreen::connectToNetwork(std::string &errorMessage,
 
         if (!bleManager->connectProxy(cancelFlag_, bleTimeoutMs)) {
             log_w("BLE connection failed for Kindle book");
-            telemetry_.logMetric(TelemetryField::METRIC_WIFI, "kindle-ble-failed");
+            telemetry_.logMetricData(TelemetryField::METRIC_WIFI, {{"event", std::string("ble-failed")}, {"kindle", true}});
         } else {
             log_i("BLE successfully connected for Kindle book");
-            telemetry_.logMetric(TelemetryField::METRIC_WIFI, "kindle-ble-connected");
+            telemetry_.logMetricData(TelemetryField::METRIC_WIFI, {{"event", std::string("ble-connected")}, {"kindle", true}});
             bleConnected = true;
             isUsingBleConnection_ = true;
 
@@ -521,18 +531,18 @@ auto KindleReadableScreen::connectToNetwork(std::string &errorMessage,
         auto connected = WiFi::getInstance().connectWiFiFromSettings();
         if (connected != ESP_OK && connected != true) {
             log_w("WiFi connection failed for Kindle book");
-            telemetry_.logMetric(TelemetryField::METRIC_WIFI, "kindle-wifi-failed");
+            telemetry_.logMetricData(TelemetryField::METRIC_WIFI, {{"event", std::string("wifi-failed")}, {"kindle", true}});
             wifiConnected = false;
         } else {
             log_i("WiFi connection successful for Kindle book");
-            telemetry_.logMetric(TelemetryField::METRIC_WIFI, "kindle-wifi-connected");
+            telemetry_.logMetricData(TelemetryField::METRIC_WIFI, {{"event", std::string("wifi-connected")}, {"kindle", true}});
             wifiConnected = true;
             bool wasPreviouslyUsingBle = isUsingBleConnection_;
             isUsingBleConnection_ = false;
             if (wasPreviouslyUsingBle && reconnectionAttempts_ > 0) {
                 log_i("Successfully switched from BLE to Wi-Fi during reconnection");
                 telemetry_.logMetricData(TelemetryField::METRIC_WIFI,
-                                         {{"event", std::string("kindle-ble-to-wifi-fallback")},
+                                         {{"event", std::string("ble-to-wifi-fallback")}, {"kindle", true},
                                           {"book_uuid", kindleBook_->uuid}});
             }
         }
@@ -549,28 +559,28 @@ auto KindleReadableScreen::connectToNetwork(std::string &errorMessage,
                            "use Kindle books.";
             telemetry_.logMetricData(TelemetryField::METRIC_DIALOG,
                                      {{"dialog", std::string("kindle-books")},
-                                      {"action", std::string("kindle-connection-failed")},
+                                      {"action", std::string("connection-failed")}, {"kindle", true},
                                       {"reason", std::string("all-disabled")}});
         } else if (prefs_.wifiDisabled.get().value_or(false)) {
             errorMessage = "WiFi is disabled in settings and BLE connection failed. Please check "
                            "your BLE connection or enable WiFi to use Kindle books.";
             telemetry_.logMetricData(TelemetryField::METRIC_DIALOG,
                                      {{"dialog", std::string("kindle-books")},
-                                      {"action", std::string("kindle-connection-failed")},
+                                      {"action", std::string("connection-failed")}, {"kindle", true},
                                       {"reason", std::string("wifi-disabled-ble-failed")}});
         } else if (prefs_.bleDisabled.get().value_or(false)) {
             errorMessage = "Bluetooth is disabled in settings and WiFi connection failed. Please "
                            "check your WiFi connection or enable Bluetooth to use Kindle books.";
             telemetry_.logMetricData(TelemetryField::METRIC_DIALOG,
                                      {{"dialog", std::string("kindle-books")},
-                                      {"action", std::string("kindle-connection-failed")},
+                                      {"action", std::string("connection-failed")}, {"kindle", true},
                                       {"reason", std::string("ble-disabled-wifi-failed")}});
         } else {
             errorMessage = "Could not connect to network. Please check your WiFi and Bluetooth "
                            "settings and try again.";
             telemetry_.logMetricData(TelemetryField::METRIC_DIALOG,
                                      {{"dialog", std::string("kindle-books")},
-                                      {"action", std::string("kindle-connection-failed")},
+                                      {"action", std::string("connection-failed")}, {"kindle", true},
                                       {"reason", std::string("connection-failed")}});
         }
     }
@@ -632,8 +642,9 @@ void KindleReadableScreen::navigateNext() {
     currentPlace_ = newPlace_;
 
     // Log telemetry for navigating to next page
-    telemetry_.logMetric(TelemetryField::METRIC_READABLE_PLACE, kindleBook_->uuid.c_str(),
-                         getTelemetryMetrics());
+    auto metrics = getTelemetryMetrics();
+    metrics["kindle"] = true;
+    telemetry_.logMetric(TelemetryField::METRIC_READABLE_PLACE, kindleBook_->uuid, metrics);
 
     updateType_ = prefs_.fastTransitions.get().value_or(false) ? DisplaySystem::UpdateType::PARTIAL
                                                                : DisplaySystem::UpdateType::FULL;
@@ -644,8 +655,9 @@ void KindleReadableScreen::navigatePrevious() {
     currentPlace_ = renderer_.getPreviousPlace();
 
     // Log telemetry for navigating to previous page
-    telemetry_.logMetric(TelemetryField::METRIC_READABLE_PLACE, kindleBook_->uuid.c_str(),
-                         getTelemetryMetrics());
+    auto metrics = getTelemetryMetrics();
+    metrics["kindle"] = true;
+    telemetry_.logMetric(TelemetryField::METRIC_READABLE_PLACE, kindleBook_->uuid, metrics);
 
     updateType_ = prefs_.fastTransitions.get().value_or(false) ? DisplaySystem::UpdateType::PARTIAL
                                                                : DisplaySystem::UpdateType::FULL;
@@ -654,6 +666,14 @@ void KindleReadableScreen::navigatePrevious() {
 
 void KindleReadableScreen::dismissScreen() {
     log_d("Dismissing KindleReadableScreen");
+
+    // Log telemetry for closing a Kindle book
+    telemetry_.logMetricData(TelemetryField::METRIC_DIALOG,
+                             {{"dialog", std::string("kindle-books")},
+                              {"action", std::string("book-closed")},
+                              {"kindle", true},
+                              {"book_uuid", kindleBook_->uuid},
+                              {"final_position", currentPlace_ ? static_cast<int>(currentPlace_->getOffset()) : 0}});
 
     CancelFlag::cancel(cancelFlag_);
     cancelDelayedLoadingMessage();
