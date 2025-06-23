@@ -387,9 +387,10 @@ void PowerManager::powerOff() {
 void PowerManager::powerOffInternal() {
     log_i("Powering off");
 
+#if CONFIG_USE_SYS_ON
     AllowPowerOff();
-
     esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_ALL);
+#endif
 
     // If USB is disconnected, still allow a wakeup if the USB is plugged in
     enableUsbWakeup();
@@ -862,8 +863,10 @@ void PowerManager::deepSleepInternal(SleepReason reason) {
     // state their in), then allow them to power back off.
     if (PreferencesStore::paired == PairedStatus::Unpaired ||
         PreferencesStore::paired == PairedStatus::Unknown) {
+#if CONFIG_USE_SYS_ON
         log_w("Unpaired glasses, allowing power off");
         AllowPowerOff();
+#endif
     }
 
 #if SIMULATOR

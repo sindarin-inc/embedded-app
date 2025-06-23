@@ -244,8 +244,6 @@ void InitializePlatform() {
     // The MCU will keep itself on until the digital magnetometer detects the temples are closed, or
     // there are 5 mins of inactivity
     ForcePowerOn();
-#else
-    log_w("CONFIG_USE_SYS_ON is not set, MCU will not keep itself on");
 #endif
 
 #if CONFIG_DISPLAY_POWER != -1
