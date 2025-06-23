@@ -36,7 +36,7 @@ auto ConvertToJson(const CheckSyncRequest &src, JsonVariant dst) -> bool {
     }
 
     if (!src.kindleUuids.empty()) {
-        auto kindleUuidsJson = dst.createNestedArray("kindle_book_uuids");
+        auto kindleUuidsJson = dst.createNestedArray("kindle_uuids");
         for (const auto &uuid : src.kindleUuids) {
             kindleUuidsJson.add(uuid);
         }
