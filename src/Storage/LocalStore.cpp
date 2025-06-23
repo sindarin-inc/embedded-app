@@ -249,14 +249,15 @@ void LocalStore::removeReadable(ReadablesVector &readables,
     }
 }
 
-void LocalStore::addOrUpdateKindleBook(const KindleBook &kindleBook) {
+auto LocalStore::addOrUpdateKindleBook(const KindleBook &kindleBook) -> bool {
     for (auto &existingBook : kindle_) {
         if (existingBook.uuid == kindleBook.uuid) {
             existingBook = kindleBook;
-            return;
+            return false;  // Book was updated, not new
         }
     }
     kindle_.push_back(kindleBook);
+    return true;  // Book was new
 }
 
 void LocalStore::removeKindleBook(const std::string &uuid) {
@@ -283,23 +284,16 @@ void LocalStore::processKindleBookSync(const KindleBooksVector &serverKindleBook
             this->telemetry_.logMetric(TelemetryField::METRIC_SYNC_STATUS, "ki-book-removed",
                                        {{"uuid", serverBook.uuid}, {"title", serverBook.title}});
         } else {
-            log_i("Adding/updating Kindle book \"%s\"", serverBook.title.c_str());
-
-            bool isNewBook = true;
-            for (const auto &existingBook : kindle_) {
-                if (existingBook.uuid == serverBook.uuid) {
-                    isNewBook = false;
-                    break;
-                }
-            }
-
-            addOrUpdateKindleBook(serverBook);
+            bool isNewBook = addOrUpdateKindleBook(serverBook);
 
             if (isNewBook) {
+                log_i("Adding new Kindle book \"%s\"", serverBook.title.c_str());
                 booksAdded++;
                 this->telemetry_.logMetric(
                     TelemetryField::METRIC_SYNC_STATUS, "ki-book-added",
                     {{"uuid", serverBook.uuid}, {"title", serverBook.title}});
+            } else {
+                log_i("Updating existing Kindle book \"%s\"", serverBook.title.c_str());
             }
         }
     }
