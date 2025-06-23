@@ -348,6 +348,11 @@ auto DeinitializePlatform() -> esp_err_t {
 
     esp_err_t err;
 
+    err = uart_driver_delete(UART_NUM_0);
+    if (err != ESP_OK) {
+        log_e("Failed to delete UART driver: %d", err);
+    }
+
 #if CONFIG_LEDC_BACKLIGHT
     err = esp_sleep_pd_config(ESP_PD_DOMAIN_RC_FAST, ESP_PD_OPTION_OFF);
     if (err != ESP_OK) {
