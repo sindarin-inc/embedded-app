@@ -35,7 +35,6 @@ auto ConvertToJson(const CheckSyncRequest &src, JsonVariant dst) -> bool {
         storedUuidsJson.add(uuid);
     }
 
-    // Add kindle_book_uuids array if not empty
     if (!src.kindleUuids.empty()) {
         auto kindleUuidsJson = dst.createNestedArray("kindle_book_uuids");
         for (const auto &uuid : src.kindleUuids) {
@@ -55,7 +54,6 @@ auto ConvertToJson(const CheckSyncRequest &src, JsonVariant dst) -> bool {
     dst["skip_summary"] = src.skipSummary;
     dst["book_questions_version"] = src.bookQuestionsVersion;
 
-    // Add kindle_last_synced if it exists
     if (!src.kindleLastSynced.empty()) {
         dst["kindle_last_synced"] = src.kindleLastSynced;
     }

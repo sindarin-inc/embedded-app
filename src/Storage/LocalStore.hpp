@@ -107,7 +107,7 @@ public:
     void addReadable(ReadablesVector &readables, const std::shared_ptr<Readable> &readable);
     void removeReadable(ReadablesVector &readables, const std::shared_ptr<Readable> &readable);
     auto readablesSince(ReadablesModelType modelType) -> std::string;
-    
+
     void addOrUpdateKindleBook(const KindleBook &kindleBook);
     void removeKindleBook(const std::string &uuid);
     void processKindleBookSync(const KindleBooksVector &serverKindleBooks);
