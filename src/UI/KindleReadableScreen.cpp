@@ -977,7 +977,7 @@ void KindleReadableScreen::updatePageFlipperCallbacks() {
                                           {"action", std::string("open-success")},
                                           {"kindle", true},
                                           {"book_uuid", kindleBook_->uuid}});
-                
+
                 setState(State::DISPLAY_CONTENT);
                 setNeedsLayout();
                 setNeedsRerender();
