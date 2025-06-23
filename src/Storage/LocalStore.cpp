@@ -253,11 +253,11 @@ auto LocalStore::addOrUpdateKindleBook(const KindleBook &kindleBook) -> bool {
     for (auto &existingBook : kindle_) {
         if (existingBook.uuid == kindleBook.uuid) {
             existingBook = kindleBook;
-            return false;  // Book was updated, not new
+            return false; // Book was updated, not new
         }
     }
     kindle_.push_back(kindleBook);
-    return true;  // Book was new
+    return true; // Book was new
 }
 
 void LocalStore::removeKindleBook(const std::string &uuid) {
