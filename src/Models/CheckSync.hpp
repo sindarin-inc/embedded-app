@@ -27,6 +27,7 @@ public:
     ~CheckSyncRequest() override = default;
 
     StoredUuidsVector storedUuids;
+    StoredUuidsVector kindleUuids;
     ReadableBookmarksVector bookmarks;
     ReadableArchivesVector archives;
     ReadablePlacemarksVector placemarks;

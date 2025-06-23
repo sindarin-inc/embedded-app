@@ -249,6 +249,41 @@ void LocalStore::removeReadable(ReadablesVector &readables,
     }
 }
 
+void LocalStore::addOrUpdateKindleBook(const KindleBook &kindleBook) {
+    for (auto &existingBook : kindle_) {
+        if (existingBook.uuid == kindleBook.uuid) {
+            existingBook = kindleBook;
+            return;
+        }
+    }
+    kindle_.push_back(kindleBook);
+}
+
+void LocalStore::removeKindleBook(const std::string &uuid) {
+    for (auto it = kindle_.begin(); it != kindle_.end(); ++it) {
+        if (it->uuid == uuid) {
+            kindle_.erase(it);
+            return;
+        }
+    }
+}
+
+void LocalStore::processKindleBookSync(const KindleBooksVector &serverKindleBooks) {
+    log_d("Processing %zu Kindle books from sync response", serverKindleBooks.size());
+    
+    for (const auto &serverBook : serverKindleBooks) {
+        if (!serverBook.isApprovedForDevice) {
+            log_i("Removing Kindle book \"%s\" (not approved for device)", serverBook.title.c_str());
+            removeKindleBook(std::string(serverBook.uuid));
+        } else {
+            log_i("Adding/updating Kindle book \"%s\"", serverBook.title.c_str());
+            addOrUpdateKindleBook(serverBook);
+        }
+    }
+    
+    log_d("After sync: %zu Kindle books in library", kindle_.size());
+}
+
 auto LocalStore::readablesSince(ReadablesModelType modelType) -> std::string {
     switch (modelType) {
     case ReadablesModelType::Article:
@@ -799,6 +834,12 @@ auto LocalStore::syncFromRemote(bool wifiConnected, bool bleConnected, SyncReaso
 
     std::string publicKey = solDrm_.publicKeyPem();
 
+    // Collect Kindle book UUIDs for sync
+    StoredUuidsVector kindleUuids;
+    for (const auto &kindleBook : kindle_) {
+        kindleUuids.emplace_back(kindleBook.uuid);
+    }
+
     std::vector<ReadablesVector *> readablesList = {&books_, &articles_};
     for (auto &readables : readablesList) {
         if (CancelFlag::isCancelled(cancel)) {
@@ -825,6 +866,7 @@ auto LocalStore::syncFromRemote(bool wifiConnected, bool bleConnected, SyncReaso
         checkSyncRequest.placemarks = placemarks;
         checkSyncRequest.bookmarks = bookmarks;
         checkSyncRequest.storedUuids = storedUuids;
+        checkSyncRequest.kindleUuids = kindleUuids;
         checkSyncRequest.skipContent = true;
         checkSyncRequest.skipSummary = true;
         checkSyncRequest.skipToc = true;
@@ -932,10 +974,10 @@ auto LocalStore::syncFromRemote(bool wifiConnected, bool bleConnected, SyncReaso
                 log_i("Received %zu Kindle books from server",
                       checkSyncResponse.kindleBooks.size());
 
-                // Replace the local Kindle books with those from the server
-                kindle_ = checkSyncResponse.kindleBooks;
+                // Process the Kindle books from the server (add/update/remove as needed)
+                processKindleBookSync(checkSyncResponse.kindleBooks);
 
-                // Save the Kindle books to the local JSON file
+                // Save the updated Kindle books to the local JSON file
                 if (!saveKindleBooks(kindle_)) {
                     log_e("Failed to save Kindle books to file");
                     kindleAlreadySynced = false;

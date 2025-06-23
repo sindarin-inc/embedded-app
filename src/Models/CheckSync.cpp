@@ -35,6 +35,14 @@ auto ConvertToJson(const CheckSyncRequest &src, JsonVariant dst) -> bool {
         storedUuidsJson.add(uuid);
     }
 
+    // Add kindle_book_uuids array if not empty
+    if (!src.kindleUuids.empty()) {
+        auto kindleUuidsJson = dst.createNestedArray("kindle_book_uuids");
+        for (const auto &uuid : src.kindleUuids) {
+            kindleUuidsJson.add(uuid);
+        }
+    }
+
     dst["sync_reason"] = static_cast<int>(src.syncReason);
     dst["battery"] = src.battery;
     dst["pt_battery"] = src.ptBattery;
