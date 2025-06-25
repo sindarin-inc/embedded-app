@@ -1046,8 +1046,10 @@ void KindleReadableScreen::updatePageFlipperCallbacks() {
             if (error != "CONNECTION_ERROR") {
                 telemetry_.logMetric(
                     TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
-                    {{"event", isOpenError ? std::string("book-open") : std::string("book-navigate")},
-                     {"action", isOpenError ? std::string("open-failed-server") : std::string("navigate-failed-server")},
+                    {{"event",
+                      isOpenError ? std::string("book-open") : std::string("book-navigate")},
+                     {"action", isOpenError ? std::string("open-failed-server")
+                                            : std::string("navigate-failed-server")},
                      {"kindle", true},
                      {"error", error},
                      {"po", currentPlace_ ? static_cast<int>(currentPlace_->getOffset()) : 0},
@@ -1090,7 +1092,8 @@ void KindleReadableScreen::updatePageFlipperCallbacks() {
             telemetry_.logMetric(
                 TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
                 {{"event", isOpenError ? std::string("book-open") : std::string("book-navigate")},
-                 {"action", isOpenError ? std::string("open-failed-connection") : std::string("navigate-failed-connection")},
+                 {"action", isOpenError ? std::string("open-failed-connection")
+                                        : std::string("navigate-failed-connection")},
                  {"kindle", true},
                  {"error", std::string("connection-error")},
                  {"po", currentPlace_ ? static_cast<int>(currentPlace_->getOffset()) : 0},

@@ -154,11 +154,13 @@ public:
         gotContentFunction_ = std::move(gotContentFunction);
     }
 
-    void setOnErrorFunction(std::function<void(const std::string &errorMessage, bool isOpenError)> onErrorFunction) {
+    void setOnErrorFunction(
+        std::function<void(const std::string &errorMessage, bool isOpenError)> onErrorFunction) {
         onErrorFunction_ = std::move(onErrorFunction);
     }
 
-    void setOnConnectionErrorFunction(std::function<void(bool isOpenError)> onConnectionErrorFunction) {
+    void
+    setOnConnectionErrorFunction(std::function<void(bool isOpenError)> onConnectionErrorFunction) {
         onConnectionErrorFunction_ = std::move(onConnectionErrorFunction);
     }
 
