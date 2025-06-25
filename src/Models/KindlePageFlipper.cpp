@@ -63,6 +63,11 @@ auto KindlePageFlipper::checkForLastReadDialog(const std::shared_ptr<KindlePageR
 void KindlePageFlipper::loadInitialPage() {
     log_i("Loading initial page for Kindle book: %s", kindleBook_->title.c_str());
 
+    telemetry_.logMetric(TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
+                         {{"event", std::string("book-open")},
+                          {"action", std::string("open-begin")},
+                          {"kindle", true}});
+
     auto cancelFlag = cancelFlag_;
     // Execute the API call on the background thread
     DispatchGetCore0BackgroundQueue()->dispatch([this, cancelFlag]() {
@@ -80,11 +85,11 @@ void KindlePageFlipper::loadInitialPage() {
             log_w("Error loading initial page: %s", errorMessage.c_str());
             // Only propagate non-connection errors
             if (errorMessage != "CONNECTION_ERROR") {
-                onErrorFunction_(errorMessage);
+                onErrorFunction_(errorMessage, true);
             } else {
                 log_i("Network connection issue detected, initiating reconnection");
                 if (onConnectionErrorFunction_) {
-                    onConnectionErrorFunction_();
+                    onConnectionErrorFunction_(true);
                 }
             }
             return;
@@ -169,12 +174,12 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
 
                 // Only propagate non-connection errors
                 if (errorMessage != "CONNECTION_ERROR") {
-                    onErrorFunction_(errorMessage);
+                    onErrorFunction_(errorMessage, false);
                 } else {
                     log_e("Network connection issue detected while navigating, initiating "
                           "reconnection");
                     if (onConnectionErrorFunction_) {
-                        onConnectionErrorFunction_();
+                        onConnectionErrorFunction_(false);
                     }
                 }
                 return;

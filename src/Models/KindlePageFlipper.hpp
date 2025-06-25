@@ -154,11 +154,11 @@ public:
         gotContentFunction_ = std::move(gotContentFunction);
     }
 
-    void setOnErrorFunction(std::function<void(const std::string &errorMessage)> onErrorFunction) {
+    void setOnErrorFunction(std::function<void(const std::string &errorMessage, bool isOpenError)> onErrorFunction) {
         onErrorFunction_ = std::move(onErrorFunction);
     }
 
-    void setOnConnectionErrorFunction(std::function<void(void)> onConnectionErrorFunction) {
+    void setOnConnectionErrorFunction(std::function<void(bool isOpenError)> onConnectionErrorFunction) {
         onConnectionErrorFunction_ = std::move(onConnectionErrorFunction);
     }
 
@@ -205,8 +205,8 @@ private:
 
     std::shared_ptr<TxtPlace> place_;
     std::function<void(void)> gotContentFunction_;
-    std::function<void(const std::string &errorMessage)> onErrorFunction_;
-    std::function<void(void)> onConnectionErrorFunction_;
+    std::function<void(const std::string &errorMessage, bool isOpenError)> onErrorFunction_;
+    std::function<void(bool isOpenError)> onConnectionErrorFunction_;
     std::function<void(const SpiramString &dialogText)> onLastReadDialogFunction_;
 
     auto checkForError(int httpCode, std::shared_ptr<KindlePageResponse> &response) -> std::string;

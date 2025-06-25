@@ -1032,11 +1032,11 @@ void KindleReadableScreen::updatePageFlipperCallbacks() {
         });
     });
 
-    pageFlipper_.setOnErrorFunction([this, cancelFlag](const std::string &error) {
+    pageFlipper_.setOnErrorFunction([this, cancelFlag](const std::string &error, bool isOpenError) {
         if (CancelFlag::isCancelled(cancelFlag)) {
             return;
         }
-        DispatchGetUiQueue()->dispatch([this, error, cancelFlag]() {
+        DispatchGetUiQueue()->dispatch([this, error, isOpenError, cancelFlag]() {
             if (CancelFlag::isCancelled(cancelFlag)) {
                 return;
             }
@@ -1046,8 +1046,8 @@ void KindleReadableScreen::updatePageFlipperCallbacks() {
             if (error != "CONNECTION_ERROR") {
                 telemetry_.logMetric(
                     TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
-                    {{"event", std::string("book-navigate")},
-                     {"action", std::string("open-error")},
+                    {{"event", isOpenError ? std::string("book-open") : std::string("book-navigate")},
+                     {"action", isOpenError ? std::string("open-failed-server") : std::string("navigate-failed-server")},
                      {"kindle", true},
                      {"error", error},
                      {"po", currentPlace_ ? static_cast<int>(currentPlace_->getOffset()) : 0},
@@ -1077,14 +1077,24 @@ void KindleReadableScreen::updatePageFlipperCallbacks() {
     });
 
     // Set a separate callback specifically for network connectivity issues
-    pageFlipper_.setOnConnectionErrorFunction([this, cancelFlag]() {
+    pageFlipper_.setOnConnectionErrorFunction([this, cancelFlag](bool isOpenError) {
         if (CancelFlag::isCancelled(cancelFlag)) {
             return;
         }
-        DispatchGetUiQueue()->dispatch([this, cancelFlag]() {
+        DispatchGetUiQueue()->dispatch([this, isOpenError, cancelFlag]() {
             if (CancelFlag::isCancelled(cancelFlag)) {
                 return;
             }
+
+            // Log telemetry for connection errors
+            telemetry_.logMetric(
+                TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
+                {{"event", isOpenError ? std::string("book-open") : std::string("book-navigate")},
+                 {"action", isOpenError ? std::string("open-failed-connection") : std::string("navigate-failed-connection")},
+                 {"kindle", true},
+                 {"error", std::string("connection-error")},
+                 {"po", currentPlace_ ? static_cast<int>(currentPlace_->getOffset()) : 0},
+                 {"ble", isUsingBleConnection_}});
 
             // If we have a connection error, silently try to reconnect
             log_i("Network connection issue detected, attempting reconnection");
