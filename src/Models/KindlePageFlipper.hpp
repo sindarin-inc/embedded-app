@@ -4,13 +4,13 @@
 #include <string>
 #include <utility>
 
+#include "Communications/SindarinAPI.hpp"
 #include "Misc/CancelFlag.hpp"
+#include "Misc/Telemetry.hpp"
 #include "Models/KindleBook.hpp"
 #include "Models/KindlePageResponse.hpp"
 #include "Models/Place.hpp"
 #include "Renderers/RendererStream.hpp"
-
-class SindarinAPI;
 
 class KindlePage {
 public:
@@ -127,9 +127,13 @@ public:
      * Constructor
      *
      * @param kindleBook The Kindle book to manage pages for
+     * @param cancelFlag Cancel flag for async operations
+     * @param telemetry Telemetry instance for logging metrics
+     * @param useBle Whether to use BLE connection
      */
     explicit KindlePageFlipper(const std::shared_ptr<KindleBook> &kindleBook,
-                               std::shared_ptr<CancelFlag> cancelFlag, bool useBle = false);
+                               std::shared_ptr<CancelFlag> cancelFlag, Telemetry &telemetry,
+                               bool useBle = false);
 
     /**
      * Loads the initial page of a Kindle book
@@ -197,6 +201,7 @@ private:
     bool useBle_ = false;
     std::shared_ptr<CancelFlag> cancelFlag_;
     std::shared_ptr<KindlePageStream> pageStream_;
+    Telemetry &telemetry_;
 
     std::shared_ptr<TxtPlace> place_;
     std::function<void(void)> gotContentFunction_;

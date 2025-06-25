@@ -6,11 +6,14 @@
 #include "Communications/SindarinAPI.hpp"
 #include "Misc/Dispatch.hpp"
 #include "Misc/StringUtil.hpp"
+#include "Misc/Telemetry.hpp"
 #include "sindarin-debug.h"
 
 KindlePageFlipper::KindlePageFlipper(const std::shared_ptr<KindleBook> &kindleBook,
-                                     std::shared_ptr<CancelFlag> cancelFlag, bool useBle)
-    : kindleBook_(kindleBook), useBle_(useBle), cancelFlag_(std::move(cancelFlag)) {
+                                     std::shared_ptr<CancelFlag> cancelFlag, Telemetry &telemetry,
+                                     bool useBle)
+    : kindleBook_(kindleBook), useBle_(useBle), cancelFlag_(std::move(cancelFlag)),
+      telemetry_(telemetry) {
     log_i("Created KindlePageFlipper for book: %s by %s", kindleBook->title.c_str(),
           kindleBook->author.c_str());
 
@@ -137,6 +140,13 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
               pageToPreview, atEndOfContent);
 
         if (pagesToAdvance > 0 || pageToPreview > 0) {
+            telemetry_.logMetric(TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
+                                 {{"event", std::string("book-navigate")},
+                                  {"action", std::string("navigate-begin")},
+                                  {"kindle", true},
+                                  {"direction", pagesToAdvance},
+                                  {"po", static_cast<int>(place->getOffset())}});
+
             auto response = std::make_shared<KindlePageResponse>();
 
             int httpCode = SindarinAPI::getInstance()->navigateKindle(
@@ -148,6 +158,15 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
             auto errorMessage = checkForError(httpCode, response);
             if (!errorMessage.empty()) {
                 log_e("Error moving to next page: %s", errorMessage.c_str());
+
+                telemetry_.logMetric(TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
+                                     {{"event", std::string("book-navigate")},
+                                      {"action", std::string("navigate-failed")},
+                                      {"kindle", true},
+                                      {"direction", pagesToAdvance},
+                                      {"po", static_cast<int>(place->getOffset())},
+                                      {"error", errorMessage}});
+
                 // Only propagate non-connection errors
                 if (errorMessage != "CONNECTION_ERROR") {
                     onErrorFunction_(errorMessage);
@@ -170,6 +189,13 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
                     pageStream_->appendPageFromResponse(*response);
                 }
             }
+
+            telemetry_.logMetric(TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
+                                 {{"event", std::string("book-navigate")},
+                                  {"action", std::string("navigate-success")},
+                                  {"kindle", true},
+                                  {"direction", pagesToAdvance},
+                                  {"po", static_cast<int>(place->getOffset())}});
 
             // Always signal that we got content (to dismiss loading)
             gotContentFunction_();
