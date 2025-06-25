@@ -232,7 +232,7 @@ KindleReadableScreen::KindleReadableScreen(DisplaySystem &display,
 void KindleReadableScreen::begin() {
     // Reset reconnection attempts counter
     reconnectionAttempts_ = 0;
-    
+
     // Record book open start time
     bookOpenStartTime_ = esp_timer_get_time();
 
@@ -677,14 +677,13 @@ void KindleReadableScreen::dismissScreen() {
     log_d("Dismissing KindleReadableScreen");
 
     // Log telemetry for closing a Kindle book
-    int64_t elapsed_ms = (esp_timer_get_time() - bookOpenStartTime_) / 1000;
-    telemetry_.logMetric(
-        TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
-        {{"event", std::string("book-close")},
-         {"action", std::string("book-closed")},
-         {"kindle", true},
-         {"po", currentPlace_ ? static_cast<int>(currentPlace_->getOffset()) : 0},
-         {"elapsed_ms", static_cast<int>(elapsed_ms)}});
+    int64_t elapsedMs = (esp_timer_get_time() - bookOpenStartTime_) / 1000;
+    telemetry_.logMetric(TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
+                         {{"event", std::string("book-close")},
+                          {"action", std::string("book-closed")},
+                          {"kindle", true},
+                          {"po", currentPlace_ ? static_cast<int>(currentPlace_->getOffset()) : 0},
+                          {"elapsed_ms", static_cast<int>(elapsedMs)}});
 
     CancelFlag::cancel(cancelFlag_);
     cancelDelayedLoadingMessage();
@@ -1026,14 +1025,14 @@ void KindleReadableScreen::updatePageFlipperCallbacks() {
             if (state_ == State::LOADING_CONTENT || state_ == State::DISPLAY_PARTIAL_CONTENT) {
                 // Only log open-success telemetry for the initial content load
                 if (!hasReceivedInitialContent_) {
-                    int64_t elapsed_ms = (esp_timer_get_time() - bookOpenStartTime_) / 1000;
+                    int64_t elapsedMs = (esp_timer_get_time() - bookOpenStartTime_) / 1000;
                     telemetry_.logMetric(
                         TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
                         {{"event", std::string("book-open")},
                          {"action", std::string("open-success")},
                          {"kindle", true},
                          {"po", currentPlace_ ? std::to_string(currentPlace_->getOffset()) : "0"},
-                         {"elapsed_ms", static_cast<int>(elapsed_ms)}});
+                         {"elapsed_ms", static_cast<int>(elapsedMs)}});
                     hasReceivedInitialContent_ = true;
                 }
 
@@ -1057,7 +1056,7 @@ void KindleReadableScreen::updatePageFlipperCallbacks() {
             // Only show error message for non-connection errors
             // CONNECTION_ERROR is handled by the onConnectionErrorFunction below
             if (error != "CONNECTION_ERROR") {
-                int64_t elapsed_ms = (esp_timer_get_time() - bookOpenStartTime_) / 1000;
+                int64_t elapsedMs = (esp_timer_get_time() - bookOpenStartTime_) / 1000;
                 telemetry_.logMetric(
                     TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
                     {{"event",
@@ -1068,7 +1067,7 @@ void KindleReadableScreen::updatePageFlipperCallbacks() {
                      {"error", error},
                      {"po", currentPlace_ ? static_cast<int>(currentPlace_->getOffset()) : 0},
                      {"ble", isUsingBleConnection_},
-                     {"elapsed_ms", static_cast<int>(elapsed_ms)}});
+                     {"elapsed_ms", static_cast<int>(elapsedMs)}});
 
                 setErrorMessage(error);
             }
@@ -1104,7 +1103,7 @@ void KindleReadableScreen::updatePageFlipperCallbacks() {
             }
 
             // Log telemetry for connection errors
-            int64_t elapsed_ms = (esp_timer_get_time() - bookOpenStartTime_) / 1000;
+            int64_t elapsedMs = (esp_timer_get_time() - bookOpenStartTime_) / 1000;
             telemetry_.logMetric(
                 TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
                 {{"event", isOpenError ? std::string("book-open") : std::string("book-navigate")},
@@ -1114,7 +1113,7 @@ void KindleReadableScreen::updatePageFlipperCallbacks() {
                  {"error", std::string("connection-error")},
                  {"po", currentPlace_ ? static_cast<int>(currentPlace_->getOffset()) : 0},
                  {"ble", isUsingBleConnection_},
-                 {"elapsed_ms", static_cast<int>(elapsed_ms)}});
+                 {"elapsed_ms", static_cast<int>(elapsedMs)}});
 
             // If we have a connection error, silently try to reconnect
             log_i("Network connection issue detected, attempting reconnection");

@@ -92,7 +92,7 @@ private:
     int reconnectionAttempts_ = 0;
     static const int MAX_RECONNECTION_ATTEMPTS = 2;
     bool hasReceivedInitialContent_ = false;
-    
+
     // Timing tracking
     int64_t bookOpenStartTime_ = 0;
 
