@@ -83,6 +83,13 @@ void KindlePageFlipper::loadInitialPage() {
         auto errorMessage = checkForError(httpCode, response);
         if (!errorMessage.empty()) {
             log_w("Error loading initial page: %s", errorMessage.c_str());
+            
+            telemetry_.logMetric(TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
+                                 {{"event", std::string("book-open")},
+                                  {"action", std::string("open-failed")},
+                                  {"kindle", true},
+                                  {"error", errorMessage}});
+            
             // Only propagate non-connection errors
             if (errorMessage != "CONNECTION_ERROR") {
                 onErrorFunction_(errorMessage, true);
