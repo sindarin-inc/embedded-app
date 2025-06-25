@@ -281,8 +281,9 @@ void LocalStore::processKindleBookSync(const KindleBooksVector &serverKindleBook
                   serverBook.title.c_str());
             removeKindleBook(std::string(serverBook.uuid));
             booksRemoved++;
-            this->telemetry_.logMetric(TelemetryField::METRIC_SYNC_STATUS, "ki-book-removed",
-                                       {{"uuid", serverBook.uuid}, {"title", serverBook.title}});
+            this->telemetry_.logMetric(
+                TelemetryField::METRIC_SYNC_STATUS, "ki-book-removed",
+                {{"uuid", serverBook.uuid}, {"title", serverBook.title}, {"kindle", true}});
         } else {
             bool isNewBook = addOrUpdateKindleBook(serverBook);
 
@@ -291,7 +292,7 @@ void LocalStore::processKindleBookSync(const KindleBooksVector &serverKindleBook
                 booksAdded++;
                 this->telemetry_.logMetric(
                     TelemetryField::METRIC_SYNC_STATUS, "ki-book-added",
-                    {{"uuid", serverBook.uuid}, {"title", serverBook.title}});
+                    {{"uuid", serverBook.uuid}, {"title", serverBook.title}, {"kindle", true}});
             } else {
                 log_i("Updating existing Kindle book \"%s\"", serverBook.title.c_str());
             }
@@ -299,8 +300,9 @@ void LocalStore::processKindleBookSync(const KindleBooksVector &serverKindleBook
     }
 
     if (booksAdded > 0 || booksRemoved > 0) {
-        this->telemetry_.logMetric(TelemetryField::METRIC_SYNC_STATUS, "ki-sync-changes",
-                                   {{"added", booksAdded}, {"removed", booksRemoved}});
+        this->telemetry_.logMetric(
+            TelemetryField::METRIC_SYNC_STATUS, "ki-sync-changes",
+            {{"added", booksAdded}, {"removed", booksRemoved}, {"kindle", true}});
     }
 
     log_d("After sync: %zu Kindle books in library", kindle_.size());
