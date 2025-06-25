@@ -1014,11 +1014,11 @@ void KindleReadableScreen::setCurrentScreen(const std::shared_ptr<Screen> &scree
 void KindleReadableScreen::updatePageFlipperCallbacks() {
     auto cancelFlag = cancelFlag_;
 
-    pageFlipper_.setGotContentFunction([this, cancelFlag]() {
+    pageFlipper_.setGotContentFunction([this, cancelFlag](size_t ocrTextLength) {
         if (CancelFlag::isCancelled(cancelFlag)) {
             return;
         }
-        DispatchGetUiQueue()->dispatch([this, cancelFlag]() {
+        DispatchGetUiQueue()->dispatch([this, cancelFlag, ocrTextLength]() {
             if (CancelFlag::isCancelled(cancelFlag)) {
                 return;
             }
@@ -1032,7 +1032,8 @@ void KindleReadableScreen::updatePageFlipperCallbacks() {
                          {"action", std::string("open-success")},
                          {"kindle", true},
                          {"po", currentPlace_ ? std::to_string(currentPlace_->getOffset()) : "0"},
-                         {"elapsed_ms", static_cast<int>(elapsedMs)}});
+                         {"elapsed_ms", static_cast<int>(elapsedMs)},
+                         {"ocr_text_length", static_cast<int>(ocrTextLength)}});
                     hasReceivedInitialContent_ = true;
                 }
 

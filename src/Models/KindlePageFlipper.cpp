@@ -103,14 +103,16 @@ void KindlePageFlipper::loadInitialPage() {
         }
 
         auto hasDialog = checkForLastReadDialog(response);
-
+        
+        size_t ocrTextLength = 0;
         // If this is a last read dialog, don't append the page (which would be empty)
         if (!hasDialog) {
+            ocrTextLength = response->ocrText.size();
             pageStream_->appendPageFromResponse(*response);
         }
 
         // Always signal that we got content (to dismiss loading)
-        gotContentFunction_();
+        gotContentFunction_(ocrTextLength);
     });
 }
 
@@ -193,11 +195,13 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
             }
 
             auto hasDialog = checkForLastReadDialog(response);
-
+            
+            size_t ocrTextLength = 0;
             // If this is a last read dialog, don't append the page
             if (!hasDialog) {
                 // If we're navigating only, don't expect a page
                 if (pageToPreview > 0) {
+                    ocrTextLength = response->ocrText.size();
                     pageStream_->appendPageFromResponse(*response);
                 }
             }
@@ -207,10 +211,11 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
                                   {"action", std::string("navigate-success")},
                                   {"kindle", true},
                                   {"direction", pagesToAdvance},
-                                  {"po", static_cast<int>(place->getOffset())}});
+                                  {"po", static_cast<int>(place->getOffset())},
+                                  {"ocr_text_length", static_cast<int>(ocrTextLength)}});
 
             // Always signal that we got content (to dismiss loading)
-            gotContentFunction_();
+            gotContentFunction_(ocrTextLength);
         }
 
         place_ = std::dynamic_pointer_cast<TxtPlace>(place);

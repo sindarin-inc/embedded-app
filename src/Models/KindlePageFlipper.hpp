@@ -150,7 +150,7 @@ public:
 
     auto getStream() -> std::shared_ptr<RendererStream> { return pageStream_; }
 
-    void setGotContentFunction(std::function<void(void)> gotContentFunction) {
+    void setGotContentFunction(std::function<void(size_t ocrTextLength)> gotContentFunction) {
         gotContentFunction_ = std::move(gotContentFunction);
     }
 
@@ -206,7 +206,7 @@ private:
     Telemetry &telemetry_;
 
     std::shared_ptr<TxtPlace> place_;
-    std::function<void(void)> gotContentFunction_;
+    std::function<void(size_t ocrTextLength)> gotContentFunction_;
     std::function<void(const std::string &errorMessage, bool isOpenError)> onErrorFunction_;
     std::function<void(bool isOpenError)> onConnectionErrorFunction_;
     std::function<void(const SpiramString &dialogText)> onLastReadDialogFunction_;
