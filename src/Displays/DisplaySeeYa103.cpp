@@ -53,7 +53,7 @@ auto DisplaySeeYa103::setup() -> bool {
     // ENP (AVDD)
     gpio_set_level(gpio_num_t(CONFIG_DISPLAY_PS_ENP_PIN), 1);
     gpio_set_level(gpio_num_t(CONFIG_DISPLAY_PS_PSP_PIN), 1);
-    vTaskDelay(pdMS_TO_TICKS(2));
+    vTaskDelay(pdMS_TO_TICKS(1));
     // ENN (AVEE)
     gpio_set_level(gpio_num_t(CONFIG_DISPLAY_PS_ENN_PIN), 1);
     gpio_set_level(gpio_num_t(CONFIG_DISPLAY_PS_PSN_PIN), 1);
@@ -155,7 +155,7 @@ void DisplaySeeYa103::shutdown() {
 
     gpio_set_level(gpio_num_t(CONFIG_DISPLAY_PS_ENN_PIN), 0);
     gpio_set_level(gpio_num_t(CONFIG_DISPLAY_PS_PSN_PIN), 0);
-    vTaskDelay(pdMS_TO_TICKS(2));
+    vTaskDelay(pdMS_TO_TICKS(1));
     gpio_set_level(gpio_num_t(CONFIG_DISPLAY_PS_ENP_PIN), 0);
     gpio_set_level(gpio_num_t(CONFIG_DISPLAY_PS_PSP_PIN), 0);
     vTaskDelay(pdMS_TO_TICKS(1));

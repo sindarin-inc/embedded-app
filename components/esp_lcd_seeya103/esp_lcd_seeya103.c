@@ -171,7 +171,7 @@ esp_err_t panel_seeya103_send_init_cmds_with_fn(
             ESP_RETURN_ON_ERROR(send_cmd_fn(cmd, user_data), TAG, "send command failed");
         }
         if (cmd.delay_ms > 0) {
-            ESP_LOGI(TAG, "Delay %dms", cmd.delay_ms);
+            ESP_LOGD(TAG, "Delay %dms", cmd.delay_ms);
             vTaskDelay(pdMS_TO_TICKS(cmd.delay_ms));
         }
     }
@@ -319,9 +319,8 @@ static esp_err_t panel_seeya103_del(esp_lcd_panel_t *panel) {
     seeya103_panel_t *seeya103 = (seeya103_panel_t *)panel->user_data;
 
     if (seeya103->reset_gpio_num >= 0) {
-        // Reset display
-        ESP_RETURN_ON_ERROR(panel_seeya103_reset(panel), TAG, "reset display failed");
-        gpio_reset_pin(seeya103->reset_gpio_num);
+        // From the datasheet, the reset pin goes low before power goes off
+        gpio_set_level(seeya103->reset_gpio_num, seeya103->flags.reset_level);
     }
     // Delete MIPI DPI panel
     seeya103->del(panel);
@@ -380,12 +379,13 @@ static esp_err_t panel_seeya103_reset(esp_lcd_panel_t *panel) {
         vTaskDelay(pdMS_TO_TICKS(1));
         ESP_LOGD(TAG, "Reset pin %d to %d", seeya103->reset_gpio_num, !seeya103->flags.reset_level);
         gpio_set_level(seeya103->reset_gpio_num, !seeya103->flags.reset_level);
-        vTaskDelay(pdMS_TO_TICKS(120));
+        // From the datasheet: "OTP reload time"
+        vTaskDelay(pdMS_TO_TICKS(20));
     } else if (io) { // Perform software reset
         ESP_LOGI(TAG, "MIPI TX: %02Xh", SEEYA103_CMD_SWRESET);
         ESP_RETURN_ON_ERROR(esp_lcd_panel_io_tx_param(io, SEEYA103_CMD_SWRESET, NULL, 0), TAG,
                             "send command failed");
-        vTaskDelay(pdMS_TO_TICKS(120));
+        vTaskDelay(pdMS_TO_TICKS(20));
     }
 
     return ESP_OK;
@@ -426,16 +426,15 @@ static esp_err_t panel_seeya103_disp_on_off(esp_lcd_panel_t *panel, bool on_off)
         ESP_LOGI(TAG, "MIPI TX: %02Xh", SEEYA103_CMD_DISPON);
         ESP_RETURN_ON_ERROR(esp_lcd_panel_io_tx_param(io, SEEYA103_CMD_DISPON, NULL, 0), TAG,
                             "send command failed");
-        ESP_LOGI(TAG, "Delay 20ms");
-        vTaskDelay(pdMS_TO_TICKS(20));
         // In the NED sequence these happen after display on though they don't seem to be
         // necessary Seems to work without these set
-        ESP_LOGI(TAG, "MIPI TX: 0xF0 data: 0xAA 0x11");
-        ESP_RETURN_ON_ERROR(esp_lcd_panel_io_tx_param(io, 0xF0, (uint8_t[]){0xAA, 0x11}, 2), TAG,
-                            "send command failed");
-        ESP_LOGI(TAG, "MIPI TX: 0xC0 data: 0xFF");
-        ESP_RETURN_ON_ERROR(esp_lcd_panel_io_tx_param(io, 0xC0, (uint8_t[]){0xFF}, 1), TAG,
-                            "send command failed");
+        // vTaskDelay(pdMS_TO_TICKS(20));
+        // ESP_LOGD(TAG, "MIPI TX: 0xF0 data: 0xAA 0x11");
+        // ESP_RETURN_ON_ERROR(esp_lcd_panel_io_tx_param(io, 0xF0, (uint8_t[]){0xAA, 0x11}, 2), TAG,
+        //                     "send command failed");
+        // ESP_LOGD(TAG, "MIPI TX: 0xC0 data: 0xFF");
+        // ESP_RETURN_ON_ERROR(esp_lcd_panel_io_tx_param(io, 0xC0, (uint8_t[]){0xFF}, 1), TAG,
+        //                     "send command failed");
     } else {
         ESP_RETURN_ON_ERROR(esp_lcd_panel_io_tx_param(io, SEEYA103_CMD_DISPOFF, NULL, 0), TAG,
                             "send command failed");
@@ -458,7 +457,6 @@ static esp_err_t panel_seeya103_sleep(esp_lcd_panel_t *panel, bool sleep) {
         ESP_RETURN_ON_ERROR(esp_lcd_panel_io_tx_param(io, SEEYA103_CMD_SLPOUT, NULL, 0), TAG,
                             "send command failed");
     }
-    vTaskDelay(pdMS_TO_TICKS(100));
 
     return ESP_OK;
 }
