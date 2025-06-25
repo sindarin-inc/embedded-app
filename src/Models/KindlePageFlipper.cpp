@@ -103,7 +103,7 @@ void KindlePageFlipper::loadInitialPage() {
         }
 
         auto hasDialog = checkForLastReadDialog(response);
-        
+
         size_t ocrTextLength = 0;
         // If this is a last read dialog, don't append the page (which would be empty)
         if (!hasDialog) {
@@ -195,7 +195,7 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
             }
 
             auto hasDialog = checkForLastReadDialog(response);
-            
+
             size_t ocrTextLength = 0;
             // If this is a last read dialog, don't append the page
             if (!hasDialog) {
