@@ -1,0 +1,164 @@
+---
+# See also: https://releases.llvm.org/13.0.0/tools/clang/tools/extra/docs/clang-tidy
+
+# Enable Bugprone checks
+#   bugprone-*,
+# This check is kinda dumb IMO -- it means you can't have two arguments of the
+# same type in a function call, which happens a lot
+#   -bugprone-easily-swappable-parameters,
+
+# Enable Cert checks
+#   cert-*,
+# static_assert(0) instead of assert(0) doesn't seem to compile
+#   -cert-dcl03-c,
+
+# Enable Clang static analysis
+#   clang-analyzer-*,
+
+# Enable CPP Core Guidelines checks
+#   cppcoreguidelines-*,
+# But we like c arrays
+#   -cppcoreguidelines-avoid-c-arrays,
+# Sure, magic number are bad
+#   -cppcoreguidelines-avoid-magic-numbers,
+# We have a lot of global variables that aren't const
+#   -cppcoreguidelines-avoid-non-const-global-variables,
+# C'mon macros are fine
+#   -cppcoreguidelines-macro-usage,
+# This would be good to cleanup probably. Malloc/free are used in the bmp class
+#   -cppcoreguidelines-no-malloc,
+# We use protected a lot. Is that bad?
+#   -cppcoreguidelines-non-private-member-variables-in-classes,
+# Yeah yeah we shouldn't const_cast, but sometimes it's practical
+#   -cppcoreguidelines-pro-type-const-cast,
+# reinterpret-cast is fine IMO
+#   -cppcoreguidelines-pro-type-reinterpret-cast,
+# I don't understand why unions are bad
+#   -cppcoreguidelines-pro-type-union-access,
+# But sometimes we want to vararg
+#   -cppcoreguidelines-pro-type-vararg,
+# I don't want to have to always define all special member functions
+#   -cppcoreguidelines-special-member-functions,
+# I don't think there's a better way to do macros than do-while
+#   -cppcoreguidelines-avoid-do-while,
+# I don't get this at all. Seems like reference data members are good, actually
+#   -cppcoreguidelines-avoid-const-or-ref-data-members,
+# This means you can't use arrays (even std::array) by indexing into it
+#   -cppcoreguidelines-pro-bounds-constant-array-index,
+# Don't turn all my macros into enums please
+#   -cppcoreguidelines-macro-to-enum
+
+# This does a decent job of replacing c-style casts and is the only google check that made sense as of clang-tidy 15
+#   google-readability-casting,
+
+# Enable Misc checks
+#   misc-*,
+#   -misc-const-correctness,
+#   -misc-no-recursion,
+#   -misc-non-private-member-variables-in-classes,
+#   -misc-static-assert,
+#   -misc-unused-parameters,
+# I really want the include cleaner but its too annoying without MissingIncludes
+#   -misc-include-cleaner,
+# This seems to give false positives
+#   -misc-header-include-cycle,
+# Idk I don't think I like this
+#   -misc-use-anonymous-namespace,
+
+# Enable modernize checks
+#   modernize-*,
+#   -modernize-macro-to-enum,
+# Except for replacing `typedef` with `using`. It doesn't compile.
+#   -modernize-use-using,
+# Not doing auto for C libraries
+#   -modernize-use-trailing-return-type
+
+# Enable performance checks
+#   performance-*,
+
+# Enable Readability checks
+#   readability-*,
+#   -readability-avoid-const-params-in-decls,
+#   -readability-convert-member-functions-to-static,
+#   -readability-else-after-return,
+#   -readability-function-cognitive-complexity,
+#   -readability-identifier-length,
+#   -readability-implicit-bool-conversion,
+#   -readability-isolate-declaration,
+#   -readability-magic-numbers,
+#   -readability-named-parameter,
+#   -readability-non-const-parameter,
+#   -readability-qualified-auto,
+#   -readability-simplify-boolean-expr,
+#   -readability-string-compare,
+#   -readability-uppercase-literal-suffix,
+#   -readability-use-anyofallof,
+
+Checks: >-
+  bugprone-*,
+  -bugprone-easily-swappable-parameters,
+  cert-*,
+  -cert-dcl03-c,
+  clang-analyzer-*,
+  cppcoreguidelines-*,
+  -cppcoreguidelines-avoid-c-arrays,
+  -cppcoreguidelines-avoid-magic-numbers,
+  -cppcoreguidelines-avoid-non-const-global-variables,
+  -cppcoreguidelines-macro-usage,
+  -cppcoreguidelines-no-malloc,
+  -cppcoreguidelines-non-private-member-variables-in-classes,
+  -cppcoreguidelines-pro-type-const-cast,
+  -cppcoreguidelines-pro-type-reinterpret-cast,
+  -cppcoreguidelines-pro-type-union-access,
+  -cppcoreguidelines-pro-type-vararg,
+  -cppcoreguidelines-special-member-functions,
+  -cppcoreguidelines-avoid-do-while,
+  -cppcoreguidelines-avoid-const-or-ref-data-members,
+  -cppcoreguidelines-pro-bounds-constant-array-index,
+  -cppcoreguidelines-macro-to-enum,
+  google-readability-casting,
+  misc-*,
+  -misc-const-correctness,
+  -misc-no-recursion,
+  -misc-non-private-member-variables-in-classes,
+  -misc-static-assert,
+  -misc-unused-parameters,
+  -misc-include-cleaner,
+  -misc-header-include-cycle,
+  -misc-use-anonymous-namespace,
+  modernize-*,
+  -modernize-macro-to-enum,
+  -modernize-use-using,
+  -modernize-use-trailing-return-type,
+  performance-*,
+  readability-*,
+  -readability-avoid-const-params-in-decls,
+  -readability-convert-member-functions-to-static,
+  -readability-else-after-return,
+  -readability-function-cognitive-complexity,
+  -readability-identifier-length,
+  -readability-implicit-bool-conversion,
+  -readability-isolate-declaration,
+  -readability-magic-numbers,
+  -readability-named-parameter,
+  -readability-non-const-parameter,
+  -readability-qualified-auto,
+  -readability-simplify-boolean-expr,
+  -readability-string-compare,
+  -readability-uppercase-literal-suffix,
+  -readability-use-anyofallof,
+
+FormatStyle: file
+UseColor: true
+# WarningsAsErrors: '*'
+CheckOptions:
+  - { key: readability-identifier-naming.NamespaceCase, value: lower_case }
+  - { key: readability-identifier-naming.StructCase, value: lower_case }
+  - { key: readability-identifier-naming.FunctionCase, value: lower_case }
+  - { key: readability-identifier-naming.GlobalFunctionCase, value: lower_case }
+  - { key: readability-identifier-naming.VariableCase, value: lower_case }
+  - { key: readability-identifier-naming.ParameterCase, value: lower_case }
+  - { key: readability-identifier-naming.GlobalConstantCase, value: UPPER_CASE }
+  - { key: readability-identifier-naming.GlobalVariableCase, value: UPPER_CASE }
+  # Needs clang-tidy 21 :(
+  - { key: misc-include-cleaner.MissingIncludes, value: false }

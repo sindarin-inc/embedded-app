@@ -1,0 +1,37 @@
+menu "STHS34PF80 Test Configuration"
+
+    config TEST_I2C_PORT_NUM
+        int "I2C port number"
+        default 0
+        help
+            I2C port number to use for the test
+
+    config TEST_I2C_SCL_GPIO
+        int "I2C SCL GPIO number"
+        default 19 if IDF_TARGET_ESP32
+        default 9 if IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32C6 || IDF_TARGET_ESP32H2
+        default 2 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
+        default 52 if IDF_TARGET_ESP32P4
+        help
+            GPIO number for I2C SCL line
+
+    config TEST_I2C_SDA_GPIO
+        int "I2C SDA GPIO number"
+        default 18 if IDF_TARGET_ESP32
+        default 8 if IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32C6 || IDF_TARGET_ESP32H2
+        default 1 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
+        default 53 if IDF_TARGET_ESP32P4
+        help
+            GPIO number for I2C SDA line
+
+    config TEST_I2C_DEVICE_ADDR
+        hex "STHS34PF80 I2C device address"
+        default 0x5A
+        help
+            I2C device address of STHS34PF80 sensor (0x5A)
+
+    config TEST_INTERRUPT_GPIO
+        int "GPIO connected to interrupt pin"
+        default 9
+
+endmenu
