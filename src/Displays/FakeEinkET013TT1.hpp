@@ -55,7 +55,7 @@ public:
 
     auto errored() -> bool { return false; }
 
-    void beginPowerOn(){};
+    void beginPowerOn() {};
 
     // Simulator-specific methods below
     auto renderQueue() -> QueueHandle_t { return renderQueue_; }

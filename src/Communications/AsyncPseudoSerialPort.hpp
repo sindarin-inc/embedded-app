@@ -27,13 +27,11 @@ public:
         log_i("Pseudo-terminal created. Slave device: %s", slaveName);
 
         // Start the read thread
-        xTaskCreate(
-            [](void *param) {
+        xTaskCreate([](void *param) {
             auto *self = static_cast<AsyncPseudoSerialPort *>(param);
             self->readLoop();
             vTaskDelete(nullptr);
-            },
-            "AsyncPseudoSerialPort", 4096, this, 1, nullptr);
+        }, "AsyncPseudoSerialPort", 4096, this, 1, nullptr);
     }
 
     ~AsyncPseudoSerialPort() {

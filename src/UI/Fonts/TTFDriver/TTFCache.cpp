@@ -4,8 +4,8 @@
 
 #include "TTFFont.hpp"
 
-auto TTFCache::doGetGlyph(Font &font, font_defs::GlyphCode glyphCode, uint32_t key)
-    -> std::optional<const font_defs::Glyph *> {
+auto TTFCache::doGetGlyph(Font &font, font_defs::GlyphCode glyphCode,
+                          uint32_t key) -> std::optional<const font_defs::Glyph *> {
 
     // auto glyph = new font_defs::Glyph();
     auto allocator = SpiramAllocator<font_defs::Glyph>();

@@ -32,8 +32,8 @@ public:
 protected:
     auto write(uint8_t *dataToCompress, int dataToCompressLength, bool flush) -> bool;
     auto compressBlock(uint8_t *inputBuffer, int blockSize, uint8_t *outputBuffer,
-                       int *outputBufferLength, int outputBufferSize, bool flush, bool &done)
-        -> bool;
+                       int *outputBufferLength, int outputBufferSize, bool flush,
+                       bool &done) -> bool;
 
     int outputAvailable_{0};
     std::shared_ptr<uint8_t[]> outputBuffer_;

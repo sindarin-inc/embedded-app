@@ -35,8 +35,8 @@ public:
     // in the epub that matches one of the names in the vector.
     //
     static auto getNewHookScreen(const std::string &name, DisplaySystem &display,
-                                 PreferencesStore &prefs, Telemetry &telemetry)
-        -> std::shared_ptr<Screen> {
+                                 PreferencesStore &prefs,
+                                 Telemetry &telemetry) -> std::shared_ptr<Screen> {
         if (name == FIRST_HOOK_TEST_SCREEN_TAG) {
             return std::make_shared<FirstHookTestScreen>(display, prefs, telemetry);
         } else if (name == OFFSET_ADJUST_SCREEN_TAG) {

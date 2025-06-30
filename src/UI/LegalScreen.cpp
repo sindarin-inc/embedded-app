@@ -62,45 +62,45 @@ auto LegalScreen::layout(LayoutContext &context, SolSize size) -> SolSize {
 
     context.setViewFrame(relativeHumidity2_, {{x, y}, size}, LayoutOptionsSizeToFitVertical);
 
-    context.setSublayoutFrame(
-        {{0, 0}, size}, LayoutOptionsSizeToFitVertical | LayoutOptionsAlignBottom,
-        [this](LayoutContext &context, SolSize size) -> SolSize {
-            int y = 0;
-            auto leftRightRect =
-                context.setViewFrame(leftRightView_, {{0, y}, {size.width, 0}},
-                                     LayoutOptionsSizeToFit | LayoutOptionsAlignCenterHorizontal);
-            y += leftRightRect.size.height + 2;
-            auto returnToMenuRect =
-                context.setViewFrame(returnToMenuView_, {{0, y}, {size.width, 0}},
-                                     LayoutOptionsSizeToFit | LayoutOptionsAlignCenterHorizontal);
-            y += returnToMenuRect.size.height;
-            return {size.width, y};
-        });
+    context.setSublayoutFrame({{0, 0}, size},
+                              LayoutOptionsSizeToFitVertical | LayoutOptionsAlignBottom,
+                              [this](LayoutContext &context, SolSize size) -> SolSize {
+        int y = 0;
+        auto leftRightRect =
+            context.setViewFrame(leftRightView_, {{0, y}, {size.width, 0}},
+                                 LayoutOptionsSizeToFit | LayoutOptionsAlignCenterHorizontal);
+        y += leftRightRect.size.height + 2;
+        auto returnToMenuRect =
+            context.setViewFrame(returnToMenuView_, {{0, y}, {size.width, 0}},
+                                 LayoutOptionsSizeToFit | LayoutOptionsAlignCenterHorizontal);
+        y += returnToMenuRect.size.height;
+        return {size.width, y};
+    });
 
-    context.setSublayoutFrame(
-        {{0, -15}, size}, LayoutOptionsSizeToFitVertical | LayoutOptionsAlignCenterVertical,
-        [this](LayoutContext &context, SolSize size) -> SolSize {
-            int ukcaPadding = 22;
-            int y = 0;
-            auto baclRect =
-                context.setViewFrame(baclView_, {{0, y}, {size.width, 0}},
-                                     LayoutOptionsSizeToFit | LayoutOptionsAlignCenterHorizontal);
-            y += baclRect.size.height + 5;
-            auto fccRect =
-                context.setViewFrame(fccView_, {{0, y}, {size.width, 0}},
-                                     LayoutOptionsSizeToFit | LayoutOptionsAlignCenterHorizontal);
-            y += fccRect.size.height + 5;
-            context.setViewFrame(ceView_, {{ukcaPadding, y}, {size.width - ukcaPadding * 2, 0}},
-                                 LayoutOptionsSizeToFit | LayoutOptionsAlignLeft);
+    context.setSublayoutFrame({{0, -15}, size},
+                              LayoutOptionsSizeToFitVertical | LayoutOptionsAlignCenterVertical,
+                              [this](LayoutContext &context, SolSize size) -> SolSize {
+        int ukcaPadding = 22;
+        int y = 0;
+        auto baclRect =
+            context.setViewFrame(baclView_, {{0, y}, {size.width, 0}},
+                                 LayoutOptionsSizeToFit | LayoutOptionsAlignCenterHorizontal);
+        y += baclRect.size.height + 5;
+        auto fccRect =
+            context.setViewFrame(fccView_, {{0, y}, {size.width, 0}},
+                                 LayoutOptionsSizeToFit | LayoutOptionsAlignCenterHorizontal);
+        y += fccRect.size.height + 5;
+        context.setViewFrame(ceView_, {{ukcaPadding, y}, {size.width - ukcaPadding * 2, 0}},
+                             LayoutOptionsSizeToFit | LayoutOptionsAlignLeft);
 
-            auto ukcaRect = context.setViewFrame(
-                ukcaView_, {{ukcaPadding, y}, {size.width - ukcaPadding * 2, 0}},
-                LayoutOptionsSizeToFit | LayoutOptionsAlignRight);
+        auto ukcaRect =
+            context.setViewFrame(ukcaView_, {{ukcaPadding, y}, {size.width - ukcaPadding * 2, 0}},
+                                 LayoutOptionsSizeToFit | LayoutOptionsAlignRight);
 
-            y += ukcaRect.size.height;
+        y += ukcaRect.size.height;
 
-            return {size.width, y};
-        });
+        return {size.width, y};
+    });
 
     return size;
 }

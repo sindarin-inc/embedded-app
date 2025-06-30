@@ -279,9 +279,7 @@ void ReadingSettingsMenuScreen::populateMenuItems() {
                          .c_str()),
         centerCallback, isDarkModeChecked));
 
-    addMenuItem(std::make_shared<MenuItemCheckable>(
-        "Autopilot",
-        [this]() {
+    addMenuItem(std::make_shared<MenuItemCheckable>("Autopilot", [this]() {
         this->prefs_.autoPilot.set(!this->prefs_.autoPilot.get().value_or(false));
         if (this->prefs_.autoPilot.get().value_or(false)) {
             prefs_.autoPilotSpeed.set(10000);
@@ -292,6 +290,5 @@ void ReadingSettingsMenuScreen::populateMenuItems() {
         }
         setNeedsRerender();
         setFirstLoad();
-        },
-        [this]() -> bool { return this->prefs_.autoPilot.get().value_or(false); }));
+    }, [this]() -> bool { return this->prefs_.autoPilot.get().value_or(false); }));
 }

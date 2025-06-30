@@ -123,8 +123,8 @@ auto BLEHttpClient::fetchHeaders(const std::shared_ptr<CancelFlag> &cancel) -> i
     return contentLength_;
 }
 
-auto BLEHttpClient::handleWebRequest(const SpiramString &key, const char *body, size_t bodySize)
-    -> bool {
+auto BLEHttpClient::handleWebRequest(const SpiramString &key, const char *body,
+                                     size_t bodySize) -> bool {
     // If the key contains more than a single character, it's re-requesting a chunk of the body
     if (key != "B") {
         log_d("BLE Sync handleWebRequest: %s %.*s", key.c_str(), bodySize, body);
@@ -295,11 +295,11 @@ auto BLEHttpClient::open(int contentLength) -> esp_err_t {
     // Register web request handler which receives the response from the mobile app
     bleProxy_->registerWebRequestHandler(
         [this](const SpiramString &key, const char *body, size_t bodySize) -> void {
-            bool completed = this->handleWebRequest(key, body, bodySize);
-            if (completed) {
-                log_d("BLE HTTP request completed");
-            }
-        });
+        bool completed = this->handleWebRequest(key, body, bodySize);
+        if (completed) {
+            log_d("BLE HTTP request completed");
+        }
+    });
 
     bleProxy_->registerSubscriptionStatusCallback([this](bool connected) -> void {
         log_d("BLE HTTP subscription status: %d", connected);

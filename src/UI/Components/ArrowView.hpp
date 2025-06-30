@@ -7,7 +7,7 @@
 
 enum ArrowDirection { ArrowLeft, ArrowRight, ArrowUp, ArrowDown };
 
-#define MAKE_ODD(x) ((((x) % 2 == 1) ? (x) : ((x)-1)))
+#define MAKE_ODD(x) ((((x) % 2 == 1) ? (x) : ((x) - 1)))
 
 // A view that draws an arrow
 class ArrowView : public EinkView {

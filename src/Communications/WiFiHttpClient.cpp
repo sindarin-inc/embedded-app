@@ -25,41 +25,41 @@ WiFiHttpClient::WiFiHttpClient(const char *url, const char *contentType,
         .method = method,
         .timeout_ms = timeoutMs,
         .event_handler = [](esp_http_client_event_t *event) -> esp_err_t {
-            auto thisPtr = static_cast<WiFiHttpClient *>(event->user_data);
-            switch (event->event_id) {
-            case HTTP_EVENT_ERROR:
-                log_e("HTTP_EVENT_ERROR");
-                thisPtr->connected = false;
-                break;
-            case HTTP_EVENT_ON_CONNECTED:
-                log_d("HTTP_EVENT_ON_CONNECTED");
-                thisPtr->connected = true;
-                break;
-            case HTTP_EVENT_HEADERS_SENT:
-                log_d("HTTP_EVENT_HEADERS_SENT");
-                break;
-            case HTTP_EVENT_ON_HEADER:
-                thisPtr->responseHeaders_.insert(
-                    std::pair<std::string, std::string>(event->header_key, event->header_value));
-                // log_d("HTTP_EVENT_ON_HEADER %s %s", event->header_key, event->header_value);
-                break;
-            case HTTP_EVENT_ON_DATA:
-                break;
-            case HTTP_EVENT_ON_FINISH:
-                log_d("HTTP_EVENT_ON_FINISH");
-                thisPtr->connected = false;
-                break;
-            case HTTP_EVENT_DISCONNECTED:
-                log_d("HTTP_EVENT_DISCONNECTED");
-                thisPtr->connected = false;
-                break;
-            case HTTP_EVENT_REDIRECT:
-                // should not happen, because disable_auto_redirect in the client is not set
-                log_d("HTTP_EVENT_REDIRECT");
-                break;
-            }
-            return ESP_OK;
-        },
+        auto thisPtr = static_cast<WiFiHttpClient *>(event->user_data);
+        switch (event->event_id) {
+        case HTTP_EVENT_ERROR:
+            log_e("HTTP_EVENT_ERROR");
+            thisPtr->connected = false;
+            break;
+        case HTTP_EVENT_ON_CONNECTED:
+            log_d("HTTP_EVENT_ON_CONNECTED");
+            thisPtr->connected = true;
+            break;
+        case HTTP_EVENT_HEADERS_SENT:
+            log_d("HTTP_EVENT_HEADERS_SENT");
+            break;
+        case HTTP_EVENT_ON_HEADER:
+            thisPtr->responseHeaders_.insert(
+                std::pair<std::string, std::string>(event->header_key, event->header_value));
+            // log_d("HTTP_EVENT_ON_HEADER %s %s", event->header_key, event->header_value);
+            break;
+        case HTTP_EVENT_ON_DATA:
+            break;
+        case HTTP_EVENT_ON_FINISH:
+            log_d("HTTP_EVENT_ON_FINISH");
+            thisPtr->connected = false;
+            break;
+        case HTTP_EVENT_DISCONNECTED:
+            log_d("HTTP_EVENT_DISCONNECTED");
+            thisPtr->connected = false;
+            break;
+        case HTTP_EVENT_REDIRECT:
+            // should not happen, because disable_auto_redirect in the client is not set
+            log_d("HTTP_EVENT_REDIRECT");
+            break;
+        }
+        return ESP_OK;
+    },
         .user_data = reinterpret_cast<void *>(this),
         .crt_bundle_attach = esp_crt_bundle_attach,
     };

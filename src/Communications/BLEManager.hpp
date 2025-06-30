@@ -13,8 +13,8 @@ public:
     BLEManager(BLEManager const &) = delete;
     static auto getInstance(bool create = true) -> std::shared_ptr<BLEManager>;
 #if CONFIG_USE_BLE_SERVER_PROXY
-    auto connectProxy(const std::shared_ptr<CancelFlag> &cancel = nullptr, int timeoutMs = 30000)
-        -> bool;
+    auto connectProxy(const std::shared_ptr<CancelFlag> &cancel = nullptr,
+                      int timeoutMs = 30000) -> bool;
     void disconnectProxy();
 #endif
     auto startAdvertisingIfNecessary() -> bool;

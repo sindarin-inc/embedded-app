@@ -102,50 +102,50 @@ auto NewReadablePopupMenuScreen::layout(LayoutContext &context, SolSize size) ->
     auto contentFrame = context.setSublayoutFrame(
         SolRect::fromSize(size), LayoutOptionsSizeToFit | LayoutOptionsAlignCenter,
         [this](LayoutContext &context, SolSize size) -> SolSize {
-            int y = 0;
-            auto titleBox = context.setViewFrame(titleView_, {{0, y}, size},
-                                                 LayoutOptionsSizeToFit | LayoutOptionsAlignTop |
-                                                     LayoutOptionsAlignCenterHorizontal);
+        int y = 0;
+        auto titleBox = context.setViewFrame(titleView_, {{0, y}, size},
+                                             LayoutOptionsSizeToFit | LayoutOptionsAlignTop |
+                                                 LayoutOptionsAlignCenterHorizontal);
 
-            y += titleBox.size.height + 12;
+        y += titleBox.size.height + 12;
 
-            auto menuBox = context.setViewFrame(
-                menuView_, {{10, y}, {size.width - 10, size.height - y}},
-                LayoutOptionsSizeToFit | LayoutOptionsAlignTop | LayoutOptionsAlignLeft);
+        auto menuBox = context.setViewFrame(
+            menuView_, {{10, y}, {size.width - 10, size.height - y}},
+            LayoutOptionsSizeToFit | LayoutOptionsAlignTop | LayoutOptionsAlignLeft);
 
-            y += menuBox.size.height;
+        y += menuBox.size.height;
 
-            // If there is at least one footer, advance the y
-            if (!footer1TextView_.getText().empty() || !footer2TextView_.getText().empty() ||
-                !footer3TextView_.getText().empty()) {
-                y += 10;
-            }
+        // If there is at least one footer, advance the y
+        if (!footer1TextView_.getText().empty() || !footer2TextView_.getText().empty() ||
+            !footer3TextView_.getText().empty()) {
+            y += 10;
+        }
 
-            if (!footer1TextView_.getText().empty()) {
-                auto footer1Rect = context.setViewFrame(footer1TextView_, {{0, y}, size},
-                                                        LayoutOptionsSizeToFit |
-                                                            LayoutOptionsAlignCenterHorizontal);
-                y += footer1Rect.size.height;
-            }
-            if (!footer2TextView_.getText().empty()) {
-                auto footer2Rect = context.setViewFrame(footer2TextView_, {{0, y}, size},
-                                                        LayoutOptionsSizeToFit |
-                                                            LayoutOptionsAlignCenterHorizontal);
-                y += footer2Rect.size.height;
-            }
-            if (!footer3TextView_.getText().empty()) {
-                auto footer3Rect = context.setViewFrame(footer3TextView_, {{0, y}, size},
-                                                        LayoutOptionsSizeToFit |
-                                                            LayoutOptionsAlignCenterHorizontal);
-                y += footer3Rect.size.height;
-            }
+        if (!footer1TextView_.getText().empty()) {
+            auto footer1Rect =
+                context.setViewFrame(footer1TextView_, {{0, y}, size},
+                                     LayoutOptionsSizeToFit | LayoutOptionsAlignCenterHorizontal);
+            y += footer1Rect.size.height;
+        }
+        if (!footer2TextView_.getText().empty()) {
+            auto footer2Rect =
+                context.setViewFrame(footer2TextView_, {{0, y}, size},
+                                     LayoutOptionsSizeToFit | LayoutOptionsAlignCenterHorizontal);
+            y += footer2Rect.size.height;
+        }
+        if (!footer3TextView_.getText().empty()) {
+            auto footer3Rect =
+                context.setViewFrame(footer3TextView_, {{0, y}, size},
+                                     LayoutOptionsSizeToFit | LayoutOptionsAlignCenterHorizontal);
+            y += footer3Rect.size.height;
+        }
 
-            // We are hardcoding a width here because we have 3 different tabs and each has a
-            // differnt width so doing it dynamically would make the bounding box width jump around
-            // when you go left and right bewteen tabs. And the y+1 is to give just a bit more space
-            // in the bottom for weighting visually.
-            return {size.width * 5 / 9 - 18, y + 1};
-        });
+        // We are hardcoding a width here because we have 3 different tabs and each has a
+        // differnt width so doing it dynamically would make the bounding box width jump around
+        // when you go left and right bewteen tabs. And the y+1 is to give just a bit more space
+        // in the bottom for weighting visually.
+        return {size.width * 5 / 9 - 18, y + 1};
+    });
 
     auto foregroundFrame = context.setViewFrame(popupMenuForeground_, contentFrame.inset(-5, -10));
 

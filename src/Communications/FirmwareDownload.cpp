@@ -106,41 +106,37 @@ void FirmwareDownloader::downloadFirmware(
 
     log_d("Downloading firmware from %s", response.latestGlassesFirmware.url.c_str());
     std::string failMessage;
-    httpCode = DownloadFileWithWriteBytes(
-        response.latestGlassesFirmware.url.c_str(),
-        [this, &failMessage](int httpCode, int contentLength) -> bool {
-            if (httpCode != 200) {
-                log_e("HTTP GET to %s failed, error: %d",
-                      response.latestGlassesFirmware.url.c_str(), httpCode);
-                failMessage = StringFormat("Download failed (%d)", httpCode);
-                return false;
-            }
+    httpCode =
+        DownloadFileWithWriteBytes(response.latestGlassesFirmware.url.c_str(),
+                                   [this, &failMessage](int httpCode, int contentLength) -> bool {
+        if (httpCode != 200) {
+            log_e("HTTP GET to %s failed, error: %d", response.latestGlassesFirmware.url.c_str(),
+                  httpCode);
+            failMessage = StringFormat("Download failed (%d)", httpCode);
+            return false;
+        }
 
-            if (!Update.begin(contentLength, U_FLASH)) {
-                auto error = Update.getError();
-                log_e("Failed to Update.begin (err=%d contentLength=%d)", error, contentLength);
-                failMessage = StringFormat("Failed to begin update (%d)", error);
-                return false;
-            }
+        if (!Update.begin(contentLength, U_FLASH)) {
+            auto error = Update.getError();
+            log_e("Failed to Update.begin (err=%d contentLength=%d)", error, contentLength);
+            failMessage = StringFormat("Failed to begin update (%d)", error);
+            return false;
+        }
 
-            if (!Update.setMD5(response.latestGlassesFirmware.md5.c_str())) {
-                auto error = Update.getError();
-                log_e("Failed to Update.setMD5 (err=%d)", error);
-                failMessage = StringFormat("Failed to begin update (%d)", error);
-                return false;
-            }
+        if (!Update.setMD5(response.latestGlassesFirmware.md5.c_str())) {
+            auto error = Update.getError();
+            log_e("Failed to Update.setMD5 (err=%d)", error);
+            failMessage = StringFormat("Failed to begin update (%d)", error);
+            return false;
+        }
 
-            return true;
-        },
-        [](const uint8_t *buf, size_t size) {
+        return true;
+    }, [](const uint8_t *buf, size_t size) {
         return Update.write(const_cast<uint8_t *>(buf), size);
-        },
-        cancel_, bleConnected,
-        [setState](int bytesWritten, float percentage) {
+    }, cancel_, bleConnected, [setState](int bytesWritten, float percentage) {
         setState(FirmwareDownloadState{.state = FirmwareDownloadState::State::Downloading,
                                        .percentage = static_cast<int>(percentage)});
-    },
-    false);
+    }, false);
 
     if (httpCode != 200) {
         log_e("Failed to download firmware with code %d", httpCode);

@@ -20,8 +20,8 @@ auto DownloadFileWithWriteBytes(
     const char *url, const std::function<bool(int httpCode, int contentLength)> &openedConnection,
     const std::function<size_t(const uint8_t *buf, size_t size)> &writeBytes,
     const std::shared_ptr<CancelFlag> &cancel, bool useBle,
-    const std::function<void(int bytesWritten, float percentage)> &progressCallback, bool gzip)
-    -> int;
+    const std::function<void(int bytesWritten, float percentage)> &progressCallback,
+    bool gzip) -> int;
 
 auto DownloadFileToPath(const char *url, FileSystem &fileSystem, Telemetry &telemetry,
                         const char *path, int expectedSize,

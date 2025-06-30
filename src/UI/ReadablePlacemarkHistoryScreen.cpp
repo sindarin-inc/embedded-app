@@ -117,7 +117,7 @@ void ReadablePlacemarkHistoryScreen::loadMenuItems() {
             // Set readable's placemark to selected placemark history
             setPlacemark(placemark.ePubPlace);
             back();
-            }));
+        }));
         recentPlacemark = &placemark;
     }
 }

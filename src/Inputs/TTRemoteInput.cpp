@@ -132,14 +132,12 @@ auto TTRemoteInput::connectToDevice(const std::shared_ptr<NimBLEAdvertisedDevice
 
 void TTRemoteInput::dispatchConnection(const std::shared_ptr<NimBLEAdvertisedDevice> &device) {
     state_ = CONNECTING;
-    auto dispatched = DispatchQueue::dispatchOneOff(
-        [this, device] {
+    auto dispatched = DispatchQueue::dispatchOneOff([this, device] {
         if (!connectToDevice(device)) {
             client_->disconnect();
             state_ = SCANNING;
         }
-        },
-        4000, 3, 0, "TTRemote");
+    }, 4000, 3, 0, "TTRemote");
     if (!dispatched) {
         log_e("dispatchConnection failed");
         client_->disconnect();

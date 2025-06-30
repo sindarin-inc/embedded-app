@@ -128,8 +128,8 @@ public:
         return readableType == "pocket_article" || readableType == "email_article";
     }
 
-    [[nodiscard]] auto telemetryPlacemarkMetrics() const
-        -> std::unordered_map<std::string, TelemetryVariant>;
+    [[nodiscard]] auto
+    telemetryPlacemarkMetrics() const -> std::unordered_map<std::string, TelemetryVariant>;
 
     [[nodiscard]] auto authorString() const -> SpiramString {
         if (authors.empty()) {

@@ -200,8 +200,8 @@ auto DownloadFileWithWriteBytes(
     const char *url, const std::function<bool(int httpCode, int contentLength)> &openedConnection,
     const std::function<size_t(const uint8_t *buf, size_t size)> &writeBytes,
     const std::shared_ptr<CancelFlag> &cancel, bool useBle,
-    const std::function<void(int bytesWritten, float percentage)> &progressCallback, bool gzip)
-    -> int {
+    const std::function<void(int bytesWritten, float percentage)> &progressCallback,
+    bool gzip) -> int {
 
     constexpr int bufferSize = 4096;
     auto buffer = SpiRamArrayPtr<uint8_t>(bufferSize);
@@ -219,7 +219,7 @@ auto DownloadFileWithWriteBytes(
         }
 
         return readLen;
-        },
+    },
         cancel, useBle, progressCallback, gzip);
 }
 
@@ -383,12 +383,10 @@ auto DownloadFileToPath(const char *url, FileSystem &fileSystem, Telemetry &tele
     // configuration, presumably since it allows the WiFi driver to have free reign over core 0
     SemaphoreHandle_t completeSemaphore = xSemaphoreCreateBinary();
     defer { vSemaphoreDelete(completeSemaphore); };
-    auto writeDispatched = DispatchQueue::dispatchOneOff(
-        [completeSemaphore, &writer]() {
+    auto writeDispatched = DispatchQueue::dispatchOneOff([completeSemaphore, &writer]() {
         writer();
         xSemaphoreGive(completeSemaphore);
-        },
-        4000, 2, 1, "FWrite");
+    }, 4000, 2, 1, "FWrite");
     if (!writeDispatched) {
         return ERR_ALLOCATION;
     }

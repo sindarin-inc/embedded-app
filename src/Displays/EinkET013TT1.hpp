@@ -41,7 +41,7 @@ enum Register {
 };
 
 // 0x70 is the command prefix
-#define REGISTER_TO_CMD(index) (static_cast<uint16_t>((0x70 << 8) | ((index)&0x0F)))
+#define REGISTER_TO_CMD(index) (static_cast<uint16_t>((0x70 << 8) | ((index) & 0x0F)))
 
 enum OSC_FREQ {
     OSC_250KHZ = (0 << 5),
@@ -119,8 +119,8 @@ protected:
     [[nodiscard]] inline auto timerRunning() const -> bool;
     inline void waitForTimer();
     inline void waitForNotBusy();
-    auto checkScreenStatus(ScreenSide screen, const PumpStatus &pumpStatus, uint16_t temperature)
-        -> bool;
+    auto checkScreenStatus(ScreenSide screen, const PumpStatus &pumpStatus,
+                           uint16_t temperature) -> bool;
     void updateInternal(const EinkET013TT1Waveform &waveform, const uint8_t *buffer,
                         int32_t overrideVcom, const EinkET013TT1Waveform &altWaveform,
                         ScreenSide screen, EinkBox box);
