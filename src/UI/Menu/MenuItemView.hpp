@@ -13,5 +13,5 @@ public:
 
     // This can be overridden to draw things that should only be drawn like the indicator is
     // (e.g., the checkmark)
-    virtual void drawFastOnlyElements(){};
+    virtual void drawFastOnlyElements() {};
 };

@@ -31,10 +31,9 @@ void WiFiScanScreen::begin() {
         for (auto &pair : uniqueNetworks) {
             sortedNetworks.push_back(pair.second);
         }
-        std::sort(sortedNetworks.begin(), sortedNetworks.end(),
-                  [](const wifi_ap_record_t &a, const wifi_ap_record_t &b) {
-            return a.rssi > b.rssi;
-        });
+        std::sort(
+            sortedNetworks.begin(), sortedNetworks.end(),
+            [](const wifi_ap_record_t &a, const wifi_ap_record_t &b) { return a.rssi > b.rssi; });
 
         DispatchGetUiQueue()->dispatch([this, sortedNetworks]() {
             networkViews_.clear();

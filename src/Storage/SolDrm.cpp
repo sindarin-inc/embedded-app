@@ -313,8 +313,8 @@ auto SolDrm::decryptInPlaceIfNecessary(const std::vector<uint8_t> &aesKey,
     return {decompressedData, stream.total_out};
 }
 
-auto SolDrm::parseKeyfile(const uint8_t *data, size_t length)
-    -> std::optional<std::vector<uint8_t>> {
+auto SolDrm::parseKeyfile(const uint8_t *data,
+                          size_t length) -> std::optional<std::vector<uint8_t>> {
     // DRM'd files must start with SOLDRMv1
     if (!HasPrefix(reinterpret_cast<const char *>(data), FileHeader::magicHeader(),
                    std::min(length, FileHeader::magicHeaderSize()))) {
@@ -360,8 +360,8 @@ auto SolDrm::parseKeyfile(const uint8_t *data, size_t length)
     return aesKey;
 }
 
-auto SolDrm::parseContentFileHeader(const uint8_t *data, size_t length)
-    -> std::optional<ContentFileHeader> {
+auto SolDrm::parseContentFileHeader(const uint8_t *data,
+                                    size_t length) -> std::optional<ContentFileHeader> {
     // DRM'd files must start with SOLDRMv1
     if (!HasPrefix(reinterpret_cast<const char *>(data), FileHeader::magicHeader(),
                    std::min(length, FileHeader::magicHeaderSize()))) {

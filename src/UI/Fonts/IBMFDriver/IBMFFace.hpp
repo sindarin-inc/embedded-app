@@ -104,8 +104,8 @@ public:
     auto showLigKerns() const -> void;
     auto showFace() const -> void;
 
-    inline auto getGlyphHorizontalMetrics(GlyphCode glyphCode, int16_t *xoff, FIX16 *advance)
-        -> bool {
+    inline auto getGlyphHorizontalMetrics(GlyphCode glyphCode, int16_t *xoff,
+                                          FIX16 *advance) -> bool {
 
         if ((glyphCode == SPACE_CODE) ||
             ((*glyphsInfo_)[glyphCode].bitmapWidth == 0)) { // send as a space character

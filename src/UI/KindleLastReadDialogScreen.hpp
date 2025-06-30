@@ -59,24 +59,23 @@ public:
         auto contentFrame = context.setSublayoutFrame(
             SolRect::fromSize(size), LayoutOptionsSizeToFit | LayoutOptionsAlignCenter,
             [this](LayoutContext &context, SolSize size) -> SolSize {
-                int y = 15;
+            int y = 15;
 
-                auto textBox =
-                    context.setViewFrame(dialogTextView_, {{10, y}, {size.width - 20, 0}},
-                                         LayoutOptionsSizeToFit | LayoutOptionsAlignTop |
-                                             LayoutOptionsAlignCenterHorizontal);
+            auto textBox = context.setViewFrame(dialogTextView_, {{10, y}, {size.width - 20, 0}},
+                                                LayoutOptionsSizeToFit | LayoutOptionsAlignTop |
+                                                    LayoutOptionsAlignCenterHorizontal);
 
-                y += textBox.size.height + 15;
+            y += textBox.size.height + 15;
 
-                auto menuBox = context.setViewFrame(
-                    menuView_, {{10, y}, {size.width - 20, size.height - y - 10}},
-                    LayoutOptionsSizeToFit | LayoutOptionsAlignTop |
-                        LayoutOptionsAlignCenterHorizontal);
+            auto menuBox =
+                context.setViewFrame(menuView_, {{10, y}, {size.width - 20, size.height - y - 10}},
+                                     LayoutOptionsSizeToFit | LayoutOptionsAlignTop |
+                                         LayoutOptionsAlignCenterHorizontal);
 
-                y += menuBox.size.height + 15;
+            y += menuBox.size.height + 15;
 
-                return {size.width * 5 / 6, y};
-            });
+            return {size.width * 5 / 6, y};
+        });
         auto foregroundFrame =
             context.setViewFrame(dialogBoxForeground_, contentFrame.inset(-5, -5));
         auto backgroundFrame =

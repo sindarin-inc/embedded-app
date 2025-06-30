@@ -9,14 +9,13 @@ public:
         : Tokenizer(font, rect, tokens, pager) {}
     ~TxtTokenizer() override = default;
 
-    [[nodiscard]] auto loadAndTokenizePage(StreamPlace fromPlace, bool backwards = false,
-                                           StreamPlace *toPlace = nullptr,
-                                           bool retrieveMenuParameters = false)
-        -> std::pair<StreamPlace, StreamPlace> override;
+    [[nodiscard]] auto loadAndTokenizePage(
+        StreamPlace fromPlace, bool backwards = false, StreamPlace *toPlace = nullptr,
+        bool retrieveMenuParameters = false) -> std::pair<StreamPlace, StreamPlace> override;
 
     // ToDo: May have to be adjusted related to the upcoming Place definition
-    [[nodiscard]] auto toStreamPlace(const std::shared_ptr<Place> place) const
-        -> StreamPlace override {
+    [[nodiscard]] auto
+    toStreamPlace(const std::shared_ptr<Place> place) const -> StreamPlace override {
         if (place->isFor(DocType::TXT)) {
             return {place->getOffset(), 0};
         } else {
@@ -27,8 +26,8 @@ public:
         return {};
     }
 
-    [[nodiscard]] inline auto toPlace(const StreamPlace &streamPlace) const
-        -> std::shared_ptr<Place> override {
+    [[nodiscard]] inline auto
+    toPlace(const StreamPlace &streamPlace) const -> std::shared_ptr<Place> override {
         return std::make_shared<TxtPlace>(streamPlace.getOffset());
     }
 

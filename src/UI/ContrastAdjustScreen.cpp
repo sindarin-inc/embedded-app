@@ -26,51 +26,50 @@ auto ContrastAdjustScreen::layout(LayoutContext &context, SolSize size) -> SolSi
     int spacing = 8;
 
     // Sublayout for centering all the main content in the view
-    context.setSublayoutFrame(
-        {{0, 0}, {size.width, size.height}}, LayoutOptionsSizeToFit | LayoutOptionsAlignCenter,
-        [this, spacing](LayoutContext &context, SolSize size) -> SolSize {
-            // Sublayout for horizontally centering the contrast icon and bar
-            auto contrastAndBarRect = context.setSublayoutFrame(
-                {{0, 0}, {size.width, size.height}},
-                LayoutOptionsSizeToFit | LayoutOptionsAlignCenterHorizontal,
-                [this, spacing](LayoutContext &context, SolSize size) -> SolSize {
-                    int x = 0, y = 0;
-                    auto contrastIconRect = context.setViewFrame(
-                        contrastIconView_, {{x, y}, {0, 0}}, LayoutOptionsSizeToFit);
-                    x += contrastIconRect.size.width + spacing;
+    context.setSublayoutFrame({{0, 0}, {size.width, size.height}},
+                              LayoutOptionsSizeToFit | LayoutOptionsAlignCenter,
+                              [this, spacing](LayoutContext &context, SolSize size) -> SolSize {
+        // Sublayout for horizontally centering the contrast icon and bar
+        auto contrastAndBarRect = context.setSublayoutFrame(
+            {{0, 0}, {size.width, size.height}},
+            LayoutOptionsSizeToFit | LayoutOptionsAlignCenterHorizontal,
+            [this, spacing](LayoutContext &context, SolSize size) -> SolSize {
+            int x = 0, y = 0;
+            auto contrastIconRect =
+                context.setViewFrame(contrastIconView_, {{x, y}, {0, 0}}, LayoutOptionsSizeToFit);
+            x += contrastIconRect.size.width + spacing;
 
-                    SolRect barRectFrame = {{x, y}, {10, contrastIconRect.size.height}};
+            SolRect barRectFrame = {{x, y}, {10, contrastIconRect.size.height}};
 
-                    auto barRect = context.setViewFrame(barView_, barRectFrame);
+            auto barRect = context.setViewFrame(barView_, barRectFrame);
 
-                    auto *driver = (dynamic_cast<DisplayEinkET013TT1 *>(&display_))->getDriver();
-                    auto vcom = -1 * (driver->getVcom() - driver->getVcomNudge());
-                    float vcomPct = (vcom - VCOM_MIN) / static_cast<float>(VCOM_MAX - VCOM_MIN);
-                    auto fillHeight = vcomPct * barRect.size.height;
-                    int fillTop = barRect.origin.y + barRect.size.height - fillHeight;
+            auto *driver = (dynamic_cast<DisplayEinkET013TT1 *>(&display_))->getDriver();
+            auto vcom = -1 * (driver->getVcom() - driver->getVcomNudge());
+            float vcomPct = (vcom - VCOM_MIN) / static_cast<float>(VCOM_MAX - VCOM_MIN);
+            auto fillHeight = vcomPct * barRect.size.height;
+            int fillTop = barRect.origin.y + barRect.size.height - fillHeight;
 
-                    context.setViewFrame(fillView_,
-                                         {{x, fillTop}, {10, static_cast<int>(fillHeight)}});
+            context.setViewFrame(fillView_, {{x, fillTop}, {10, static_cast<int>(fillHeight)}});
 
-                    y += contrastIconRect.size.height;
-                    return {barRect.right(), y};
-                });
-
-            int y = 0;
-            y += contrastAndBarRect.size.height + spacing;
-
-            auto firstLineRect =
-                context.setViewFrame(firstLine_, {{0, y}, {size.width, 0}},
-                                     LayoutOptionsSizeToFit | LayoutOptionsAlignCenter);
-            y += firstLineRect.size.height;
-
-            auto secondLineRect =
-                context.setViewFrame(secondLine_, {{0, y}, {size.width, 0}},
-                                     LayoutOptionsSizeToFit | LayoutOptionsAlignCenter);
-            y += secondLineRect.size.height;
-
-            return {size.width, y};
+            y += contrastIconRect.size.height;
+            return {barRect.right(), y};
         });
+
+        int y = 0;
+        y += contrastAndBarRect.size.height + spacing;
+
+        auto firstLineRect =
+            context.setViewFrame(firstLine_, {{0, y}, {size.width, 0}},
+                                 LayoutOptionsSizeToFit | LayoutOptionsAlignCenter);
+        y += firstLineRect.size.height;
+
+        auto secondLineRect =
+            context.setViewFrame(secondLine_, {{0, y}, {size.width, 0}},
+                                 LayoutOptionsSizeToFit | LayoutOptionsAlignCenter);
+        y += secondLineRect.size.height;
+
+        return {size.width, y};
+    });
 
     // Put the arrow on the right and left -- either is fine to exit the screen
     // TODO(256displayonly): Fix plz

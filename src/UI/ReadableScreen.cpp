@@ -115,9 +115,7 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
 
         menuItems->emplace_back(menuItem);
 
-        auto menuItemCheckable = std::make_shared<MenuItemCheckable>(
-            "Autopilot",
-            [this]() {
+        auto menuItemCheckable = std::make_shared<MenuItemCheckable>("Autopilot", [this]() {
             this->prefs_.autoPilot.set(!this->prefs_.autoPilot.get().value_or(false));
             if (this->prefs_.autoPilot.get().value_or(false)) {
                 // Get the speed from the prefs if its there, but if it's 0 or not there,
@@ -135,8 +133,7 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
             display_.clearDisplay();
             this->setCurrentScreen(nullptr);
             setNeedsRerender();
-            },
-            [this]() -> bool { return this->prefs_.autoPilot.get().value_or(false); });
+        }, [this]() -> bool { return this->prefs_.autoPilot.get().value_or(false); });
 
         menuItems->emplace_back(menuItemCheckable);
 
@@ -149,8 +146,8 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
                 setCurrentScreen(nullptr);
                 back();
             }));
-            lineMenuScreen->addMenuItem(std::make_shared<MenuItemSingleLine>("Delete: I'm sure!",
-                                                                             [this]() {
+            lineMenuScreen->addMenuItem(
+                std::make_shared<MenuItemSingleLine>("Delete: I'm sure!", [this]() {
                 UserReadablesVector readablesToDelete = {};
                 // Create a UserReadable from the readable_ and add it to the
                 // readablesToDelete dynamic_pointer_cast the stream_ to an EPubFile and
@@ -174,25 +171,25 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
 
         auto archiveMenuItem =
             std::make_shared<MenuItemSingleLine>("Archive", [this, onMainMenu]() {
-                std::string bookOrArticle = (readable_->isArticle()) ? "article" : "book";
-                this->prefs_.readableArchivedChanged.set(readable_->shortenedUuid.c_str(), true);
-                if (!prefs_.didFirstArchive.get().value_or(false)) {
-                    auto message =
-                        "You've just archived your first " + bookOrArticle +
-                        "! It will be removed from your Sol Reader the next time you close the "
-                        "device. To retrieve this " +
-                        bookOrArticle +
-                        " later, you can fetch it from your archives using the Sol App on your "
-                        "mobile device.";
+            std::string bookOrArticle = (readable_->isArticle()) ? "article" : "book";
+            this->prefs_.readableArchivedChanged.set(readable_->shortenedUuid.c_str(), true);
+            if (!prefs_.didFirstArchive.get().value_or(false)) {
+                auto message =
+                    "You've just archived your first " + bookOrArticle +
+                    "! It will be removed from your Sol Reader the next time you close the "
+                    "device. To retrieve this " +
+                    bookOrArticle +
+                    " later, you can fetch it from your archives using the Sol App on your "
+                    "mobile device.";
 
-                    RootUI::getInstance().showTemporaryMessage(message, onMainMenu,
-                                                               TEMP_MSG_DURATION_NO_CLOSE);
+                RootUI::getInstance().showTemporaryMessage(message, onMainMenu,
+                                                           TEMP_MSG_DURATION_NO_CLOSE);
 
-                    prefs_.didFirstArchive.set(true);
-                } else {
-                    onMainMenu();
-                }
-            });
+                prefs_.didFirstArchive.set(true);
+            } else {
+                onMainMenu();
+            }
+        });
 
         auto unarchiveMenuItem = std::make_shared<MenuItemSingleLine>("Unarchive", [this]() {
             this->prefs_.readableArchivedChanged.remove(readable_->shortenedUuid.c_str());
@@ -247,11 +244,11 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
 
         auto menuItem =
             std::make_shared<MenuItemSingleLine>("Bookmark", [this, onBookmarkToggle]() {
-                onBookmarkToggle();
-                display_.clearDisplay();
-                this->setCurrentScreen(nullptr);
-                setNeedsRerender();
-            });
+            onBookmarkToggle();
+            display_.clearDisplay();
+            this->setCurrentScreen(nullptr);
+            setNeedsRerender();
+        });
 
         menuItems->emplace_back(menuItem);
 
@@ -442,9 +439,7 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
 
         menuItems->emplace_back(menuItem);
 
-        auto menuItemCheckable = std::make_shared<MenuItemCheckable>(
-            "Dark Mode",
-            [this]() {
+        auto menuItemCheckable = std::make_shared<MenuItemCheckable>("Dark Mode", [this]() {
             this->prefs_.darkMode.set(!this->prefs_.darkMode.get().value_or(false));
             // Reserved for future use? Potentially lighting up and down?
             this->display_.flipInversion();
@@ -455,8 +450,7 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
             display_.clearDisplay();
             setNeedsRerender();
             setFirstLoad();
-            },
-            [this]() -> bool { return this->prefs_.darkMode.get().value_or(false); });
+        }, [this]() -> bool { return this->prefs_.darkMode.get().value_or(false); });
 
         menuItems->emplace_back(menuItemCheckable);
 

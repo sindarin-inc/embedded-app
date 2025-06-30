@@ -62,8 +62,8 @@ public:
     // This is a convenience method that calls setLayoutSizeInRect with size=frame.size. This is
     // often used when using the SizeToFit* options to allow the layout to determine its own size
     // within the provided rect
-    auto setViewFrame(View &view, const SolRect &frame, int options = LayoutOptionsNone)
-        -> SolRect {
+    auto setViewFrame(View &view, const SolRect &frame,
+                      int options = LayoutOptionsNone) -> SolRect {
         return setViewSizeInRect(view, frame.size, frame, options);
     }
 
@@ -74,8 +74,8 @@ public:
 
     // Similar to setViewFrame except it accepts a layout lambda instead of a view. The layout
     // lambda can operate as if it were a view with its own layout method.
-    auto setSublayoutFrame(const SolRect &frame, int options, const LayoutLambda &layout)
-        -> SolRect {
+    auto setSublayoutFrame(const SolRect &frame, int options,
+                           const LayoutLambda &layout) -> SolRect {
         return setSublayoutSizeInRect(frame.size, frame, options, layout);
     }
 
@@ -106,8 +106,8 @@ protected:
     auto setLayoutSizeInRect(LayoutContext &layoutContext, const SolSize &size,
                              const SolRect &inRect, int options) -> SolRect;
 
-    auto setLayoutFrame(LayoutContext &layoutContext, const SolRect &frame, int options)
-        -> SolRect {
+    auto setLayoutFrame(LayoutContext &layoutContext, const SolRect &frame,
+                        int options) -> SolRect {
         return setLayoutSizeInRect(layoutContext, frame.size, frame, options);
     }
 

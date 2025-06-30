@@ -110,7 +110,7 @@ auto IBMFFace::ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2, FIX16 
 #define FRACT_BITS 10
 #define FIXED_POINT_ONE (1 << FRACT_BITS)
 #define MAKE_INT_FIXED(x) (static_cast<FIX32>((x) << FRACT_BITS))
-#define MAKE_FLOAT_FIXED(x) (static_cast<FIX32>((x)*FIXED_POINT_ONE))
+#define MAKE_FLOAT_FIXED(x) (static_cast<FIX32>((x) * FIXED_POINT_ONE))
 #define MAKE_FIXED_INT(x) ((x) >> FRACT_BITS)
 #define MAKE_FIXED_FLOAT(x) ((static_cast<float>(x)) / FIXED_POINT_ONE)
 
@@ -669,8 +669,8 @@ auto IBMFFace::showBitmap(const Bitmap &bitmap) const -> void {
     }
 }
 
-auto IBMFFace::showGlyph(const Glyph &glyph, GlyphCode glyphCode, char32_t codePoint) const
-    -> void {
+auto IBMFFace::showGlyph(const Glyph &glyph, GlyphCode glyphCode,
+                         char32_t codePoint) const -> void {
     if constexpr (IBMF_DEBUG) {
         std::cout << "Glyph Base Code: 0x" << std::hex << glyphCode << std::dec << "(" << +codePoint
                   << ")" << std::endl
@@ -711,12 +711,10 @@ auto IBMFFace::showLigKerns() const -> void {
         for (i = 0; i < faceHeader_->ligKernStepCount; i++) {
             LigKernStep *entry = &(*ligKernSteps_)[i];
             if (entry->b.goTo.isAKern && entry->b.goTo.isAGoTo) {
-                std::cout << "  [" << i << "]:  "
-                          << "Goto: " << entry->b.goTo.displacement;
+                std::cout << "  [" << i << "]:  " << "Goto: " << entry->b.goTo.displacement;
             } else {
-                std::cout << "  [" << i << "]:  "
-                          << "Stop: " << (entry->a.stop ? "Yes" : "No") << ", "
-                          << "NxtGlyphCode: " << +entry->a.nextGlyphCode << ", "
+                std::cout << "  [" << i << "]:  " << "Stop: " << (entry->a.stop ? "Yes" : "No")
+                          << ", " << "NxtGlyphCode: " << +entry->a.nextGlyphCode << ", "
                           << "IsKern: " << (entry->b.kern.isAKern ? "Yes" : "No") << ", "
                           << (entry->b.kern.isAKern ? "Kern Value: " : "Lig char: ");
                 if (entry->b.kern.isAKern) {

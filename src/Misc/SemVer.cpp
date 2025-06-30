@@ -2,8 +2,8 @@
 
 #include <vector>
 
-auto SemVerCompareVersions(const std::string &version1, const std::string &version2)
-    -> SemVerComparison {
+auto SemVerCompareVersions(const std::string &version1,
+                           const std::string &version2) -> SemVerComparison {
     // If either version is empty, it is considered invalid
     if (version1.empty() || version2.empty()) {
         return SemVerComparison::Invalid;

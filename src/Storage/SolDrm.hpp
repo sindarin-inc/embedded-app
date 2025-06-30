@@ -19,8 +19,8 @@ public:
     auto publicKeyPem() -> std::string;
     auto parseKeyfile(const uint8_t *data, size_t length) -> std::optional<std::vector<uint8_t>>;
     auto decryptInPlaceIfNecessary(const std::vector<uint8_t> &aesKey,
-                                   const std::shared_ptr<uint8_t[]> &data, size_t length)
-        -> std::pair<std::shared_ptr<uint8_t[]>, size_t>;
+                                   const std::shared_ptr<uint8_t[]> &data,
+                                   size_t length) -> std::pair<std::shared_ptr<uint8_t[]>, size_t>;
 
 private:
     class FileHeader {
@@ -54,8 +54,8 @@ private:
     void mbedtlsPrintError(const char *func, int ret);
     void initIfNecessary();
     auto generateKeypair(unsigned int keySize = 1024) -> int;
-    auto parseContentFileHeader(const uint8_t *data, size_t length)
-        -> std::optional<ContentFileHeader>;
+    auto parseContentFileHeader(const uint8_t *data,
+                                size_t length) -> std::optional<ContentFileHeader>;
     auto decryptRSA(const uint8_t *data, size_t length) -> std::vector<uint8_t>;
     auto decryptAESInPlace(uint8_t *encryptedData, size_t encryptedLength,
                            const std::vector<uint8_t> &key, const std::array<uint8_t, 16> &iv,

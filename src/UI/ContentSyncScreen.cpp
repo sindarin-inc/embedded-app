@@ -49,33 +49,33 @@ ContentSyncScreen::ContentSyncScreen(DisplaySystem &display, LocalStore &localSt
 ContentSyncScreen::~ContentSyncScreen() { power_.removeStateChangeCallback(this); }
 
 auto ContentSyncScreen::layout(LayoutContext &context, SolSize size) -> SolSize {
-    context.setSublayoutFrame(
-        SolRect::fromSize(size), LayoutOptionsSizeToFitVertical | LayoutOptionsAlignCenterVertical,
-        [this](LayoutContext &context, SolSize size) -> SolSize {
-            int x = 0;
-            int y = 0;
+    context.setSublayoutFrame(SolRect::fromSize(size),
+                              LayoutOptionsSizeToFitVertical | LayoutOptionsAlignCenterVertical,
+                              [this](LayoutContext &context, SolSize size) -> SolSize {
+        int x = 0;
+        int y = 0;
 
-            for (int i = 0; i < 4; i++) {
-                auto textView = textViews_[i];
-                auto checkmarkView = checkmarkViews_[i];
-                auto progressBarView = progressBarsViews_[i];
-                auto rect = context.setViewFrame(*textView, {{x, y}, {size.width, size.height}},
-                                                 LayoutOptionsSizeToFitVertical);
-                context.setViewFrame(*checkmarkView, rect,
-                                     LayoutOptionsSizeToFit | LayoutOptionsAlignRight |
-                                         LayoutOptionsAlignCenterVertical);
-                y += rect.size.height;
-                y += 5;
+        for (int i = 0; i < 4; i++) {
+            auto textView = textViews_[i];
+            auto checkmarkView = checkmarkViews_[i];
+            auto progressBarView = progressBarsViews_[i];
+            auto rect = context.setViewFrame(*textView, {{x, y}, {size.width, size.height}},
+                                             LayoutOptionsSizeToFitVertical);
+            context.setViewFrame(*checkmarkView, rect,
+                                 LayoutOptionsSizeToFit | LayoutOptionsAlignRight |
+                                     LayoutOptionsAlignCenterVertical);
+            y += rect.size.height;
+            y += 5;
 
-                context.setViewFrame(*progressBarView, {{x, y}, {size.width, size.height}},
-                                     LayoutOptionsSizeToFitVertical);
-                y += rect.size.height;
-                y += 10;
-            }
-            y -= 10;
+            context.setViewFrame(*progressBarView, {{x, y}, {size.width, size.height}},
+                                 LayoutOptionsSizeToFitVertical);
+            y += rect.size.height;
+            y += 10;
+        }
+        y -= 10;
 
-            return {size.width, y};
-        });
+        return {size.width, y};
+    });
 
     if (!popupView_->isHidden()) {
         auto popupTextRect =

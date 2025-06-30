@@ -18,13 +18,12 @@ public:
     Tokenizer(const Tokenizer &) = delete;
 
     [[nodiscard]] static auto factory(const std::shared_ptr<RendererStream> &stream, Font *font,
-                                      DisplayRect &rect, Tokens &tokens, Pager &pager)
-        -> std::shared_ptr<Tokenizer>;
+                                      DisplayRect &rect, Tokens &tokens,
+                                      Pager &pager) -> std::shared_ptr<Tokenizer>;
 
-    virtual auto loadAndTokenizePage(StreamPlace fromPlace, bool backwards = false,
-                                     StreamPlace *toPlace = nullptr,
-                                     bool retrieveMenuParameters = false)
-        -> std::pair<StreamPlace, StreamPlace> = 0;
+    virtual auto loadAndTokenizePage(
+        StreamPlace fromPlace, bool backwards = false, StreamPlace *toPlace = nullptr,
+        bool retrieveMenuParameters = false) -> std::pair<StreamPlace, StreamPlace> = 0;
 
     [[nodiscard]] virtual auto isFor(DocType docType) const -> bool = 0;
 
@@ -54,11 +53,11 @@ public:
                 streamPlace.getSpineIdx()};
     }
 
-    [[nodiscard]] virtual auto toStreamPlace(const std::shared_ptr<Place> place) const
-        -> StreamPlace = 0;
+    [[nodiscard]] virtual auto
+    toStreamPlace(const std::shared_ptr<Place> place) const -> StreamPlace = 0;
 
-    [[nodiscard]] virtual auto toPlace(const StreamPlace &streamPlace) const
-        -> std::shared_ptr<Place> = 0;
+    [[nodiscard]] virtual auto
+    toPlace(const StreamPlace &streamPlace) const -> std::shared_ptr<Place> = 0;
 
     [[nodiscard]] virtual auto streamSize() const -> size_t = 0;
 

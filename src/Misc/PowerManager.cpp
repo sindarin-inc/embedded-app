@@ -274,12 +274,10 @@ auto PowerManager::begin() -> esp_err_t {
     }
     // Disable inactivity timer in emc testing mode
     if (!prefs_.emcMode.get().value_or(false)) {
-        inactivityTimer_.start(
-            [this]() {
+        inactivityTimer_.start([this]() {
             log_i("Inactive! Close and open temple to wake");
             deepSleep(SleepReason::Inactivity);
-            },
-            inactivityTimeoutMs());
+        }, inactivityTimeoutMs());
     }
 #endif
 
@@ -300,9 +298,7 @@ auto PowerManager::begin() -> esp_err_t {
         log_i("Pin %d configured as sleep/wake pin", CONFIG_SLEEP_WAKE_PIN);
 
         // Add an interrupt handler for the sleep/wake pin
-        attachInterrupt(
-            digitalPinToInterrupt(CONFIG_SLEEP_WAKE_PIN),
-            [this]() {
+        attachInterrupt(digitalPinToInterrupt(CONFIG_SLEEP_WAKE_PIN), [this]() {
             // Use a short debounce delay
             static unsigned long lastInterruptTime = 0;
             unsigned long interruptTime = Millis();
@@ -320,8 +316,7 @@ auto PowerManager::begin() -> esp_err_t {
                 });
             }
             lastInterruptTime = interruptTime;
-            },
-            FALLING);
+        }, FALLING);
     }
 #endif
 #if !CONFIG_DISABLE_POWER_MANAGEMENT
@@ -335,9 +330,7 @@ auto PowerManager::begin() -> esp_err_t {
     err = esp_pm_configure(&pmConfig_);
 
 #if CONFIG_USB_CONNECTED_PIN != -1
-    attachInterrupt(
-        digitalPinToInterrupt(CONFIG_USB_CONNECTED_PIN),
-        [this]() {
+    attachInterrupt(digitalPinToInterrupt(CONFIG_USB_CONNECTED_PIN), [this]() {
         DispatchGetCore1BackgroundQueue()->dispatchFromISR([this]() {
             if (USBConnected()) {
                 // If USB is connected, disable operation unless we've disabled this behavior
@@ -362,8 +355,7 @@ auto PowerManager::begin() -> esp_err_t {
                 }
             }
         });
-        },
-        CHANGE);
+    }, CHANGE);
 #endif
 #endif
 

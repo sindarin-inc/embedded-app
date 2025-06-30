@@ -24,8 +24,8 @@ auto AlignSizeInRect(const SolSize &size, const SolRect &rect, int options) -> S
     return {{p.x, p.y}, {size.width, size.height}};
 }
 
-auto SizeThatFitsForLayout(const LayoutContext &layoutContext, SolSize size, int options)
-    -> SolSize {
+auto SizeThatFitsForLayout(const LayoutContext &layoutContext, SolSize size,
+                           int options) -> SolSize {
     SolSize originalSize = size;
     bool sizeToFit = ((options & LayoutOptionsSizeToFitHorizontal) != 0) ||
                      ((options & LayoutOptionsSizeToFitVertical) != 0);
@@ -87,8 +87,8 @@ auto SizeThatFitsForLayout(const LayoutContext &layoutContext, SolSize size, int
     return size;
 }
 
-auto FrameForLayout(const LayoutContext &layoutContext, SolSize size, SolRect inRect, int options)
-    -> SolRect {
+auto FrameForLayout(const LayoutContext &layoutContext, SolSize size, SolRect inRect,
+                    int options) -> SolRect {
     size = SizeThatFitsForLayout(layoutContext, size, options);
     if (inRect.size.width == 0) {
         inRect.size.width = size.width;

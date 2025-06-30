@@ -86,10 +86,9 @@ auto Commify(uint32_t n) -> std::string {
 }
 
 auto CaseInsensitiveCompare(const std::string &str1, const std::string &str2) -> bool {
-    return std::lexicographical_compare(str1.begin(), str1.end(), str2.begin(), str2.end(),
-                                        [](char c1, char c2) {
-        return std::tolower(c1) < std::tolower(c2);
-    });
+    return std::lexicographical_compare(
+        str1.begin(), str1.end(), str2.begin(), str2.end(),
+        [](char c1, char c2) { return std::tolower(c1) < std::tolower(c2); });
 };
 
 auto ReplaceAll(std::string str, const std::string &from, const std::string &to) -> std::string {

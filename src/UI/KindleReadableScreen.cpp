@@ -178,9 +178,7 @@ KindleReadableScreen::KindleReadableScreen(DisplaySystem &display,
 
         menuItems->emplace_back(menuItem);
 
-        auto menuItemCheckable = std::make_shared<MenuItemCheckable>(
-            "Dark Mode",
-            [this]() {
+        auto menuItemCheckable = std::make_shared<MenuItemCheckable>("Dark Mode", [this]() {
             prefs_.darkMode.set(!prefs_.darkMode.get().value_or(false));
             // Reserved for future use? Potentially lighting up and down?
             display_.flipInversion();
@@ -191,8 +189,7 @@ KindleReadableScreen::KindleReadableScreen(DisplaySystem &display,
             display_.clearDisplay();
             setNeedsRerender();
             setFirstLoad();
-            },
-            [this]() -> bool { return prefs_.darkMode.get().value_or(false); });
+        }, [this]() -> bool { return prefs_.darkMode.get().value_or(false); });
 
         menuItems->emplace_back(menuItemCheckable);
 
@@ -447,8 +444,8 @@ void KindleReadableScreen::setErrorMessage(const std::string &message) {
 }
 
 auto KindleReadableScreen::connectToNetwork(std::string &errorMessage,
-                                            const ConnectionCallback &callback, int bleTimeoutMs)
-    -> bool {
+                                            const ConnectionCallback &callback,
+                                            int bleTimeoutMs) -> bool {
     log_d("Connecting to network for Kindle book");
     bool wifiConnected = false;
     bool bleConnected = false;

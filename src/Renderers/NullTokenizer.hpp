@@ -10,23 +10,22 @@ public:
         : Tokenizer(font, rect, tokens, pager) {}
     ~NullTokenizer() override = default;
 
-    [[nodiscard]] auto loadAndTokenizePage(StreamPlace fromPlace, bool backwards = false,
-                                           StreamPlace *toPlace = nullptr,
-                                           bool retrieveMenuParameters = false)
-        -> std::pair<StreamPlace, StreamPlace> override {
+    [[nodiscard]] auto loadAndTokenizePage(
+        StreamPlace fromPlace, bool backwards = false, StreamPlace *toPlace = nullptr,
+        bool retrieveMenuParameters = false) -> std::pair<StreamPlace, StreamPlace> override {
         error();
         return {};
     };
 
     // ToDo: To be adjusted related to the upcoming Place definition
-    [[nodiscard]] auto toStreamPlace(const std::shared_ptr<Place> place) const
-        -> StreamPlace override {
+    [[nodiscard]] auto
+    toStreamPlace(const std::shared_ptr<Place> place) const -> StreamPlace override {
         error();
         return {};
     }
 
-    [[nodiscard]] inline auto toPlace(const StreamPlace &streamPlace) const
-        -> std::shared_ptr<Place> override {
+    [[nodiscard]] inline auto
+    toPlace(const StreamPlace &streamPlace) const -> std::shared_ptr<Place> override {
         error();
         return std::make_shared<NonePlace>();
     }

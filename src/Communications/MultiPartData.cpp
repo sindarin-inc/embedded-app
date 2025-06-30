@@ -65,8 +65,8 @@ auto MultiPartData::writeFooter() -> bool {
     return true;
 }
 
-auto MultiPartData::addKeyValue(const std::string &key, const uint8_t *value, int len, bool isFile)
-    -> bool {
+auto MultiPartData::addKeyValue(const std::string &key, const uint8_t *value, int len,
+                                bool isFile) -> bool {
     if (!startKeyWrite()) {
         return false;
     }

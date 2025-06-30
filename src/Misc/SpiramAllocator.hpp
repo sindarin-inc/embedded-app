@@ -117,8 +117,8 @@ auto inline SpiRamRealloc(void *ptr, size_t size) -> void * {
 }
 
 template <typename T>
-auto CustomArrayPtr(size_t len, void *(*mallocFunc)(size_t), void (*freeFunc)(void *))
-    -> std::shared_ptr<T[]> {
+auto CustomArrayPtr(size_t len, void *(*mallocFunc)(size_t),
+                    void (*freeFunc)(void *)) -> std::shared_ptr<T[]> {
     return std::shared_ptr<T[]>(static_cast<T *>(mallocFunc(len * sizeof(T))),
                                 CustomDeleter<T>(freeFunc));
 }
@@ -147,8 +147,8 @@ public:
     }
 
 protected:
-    auto seekoff(off_type off, std::ios_base::seekdir dir, std::ios_base::openmode which)
-        -> pos_type override {
+    auto seekoff(off_type off, std::ios_base::seekdir dir,
+                 std::ios_base::openmode which) -> pos_type override {
         if (dir == std::ios_base::beg) {
             setg(eback(), eback() + off, egptr());
         } else if (dir == std::ios_base::cur) {
