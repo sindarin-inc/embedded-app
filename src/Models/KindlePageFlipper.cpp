@@ -1,6 +1,7 @@
 #include "Models/KindlePageFlipper.hpp"
 
 #include <cinttypes>
+#include <esp_timer.h>
 #include <utility>
 
 #include "Communications/SindarinAPI.hpp"
@@ -71,6 +72,8 @@ void KindlePageFlipper::loadInitialPage() {
     auto cancelFlag = cancelFlag_;
     // Execute the API call on the background thread
     DispatchGetCore0BackgroundQueue()->dispatch([this, cancelFlag]() {
+        // Track book open start time
+        int64_t bookOpenStartTime = esp_timer_get_time();
         // Create a response object
         auto response = std::make_shared<KindlePageResponse>();
 
@@ -84,11 +87,13 @@ void KindlePageFlipper::loadInitialPage() {
         if (!errorMessage.empty()) {
             log_w("Error loading initial page: %s", errorMessage.c_str());
 
+            int64_t elapsedMs = (esp_timer_get_time() - bookOpenStartTime) / 1000;
             telemetry_.logMetric(TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
                                  {{"event", std::string("book-open")},
                                   {"action", std::string("open-failed")},
                                   {"kindle", true},
-                                  {"error", errorMessage}});
+                                  {"error", errorMessage},
+                                  {"elapsed_ms", static_cast<int>(elapsedMs)}});
 
             // Only propagate non-connection errors
             if (errorMessage != "CONNECTION_ERROR") {
@@ -154,6 +159,9 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
               pageToPreview, atEndOfContent);
 
         if (pagesToAdvance > 0 || pageToPreview > 0) {
+            // Track navigation start time
+            int64_t navigationStartTime = esp_timer_get_time();
+            
             telemetry_.logMetric(TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
                                  {{"event", std::string("book-navigate")},
                                   {"action", std::string("navigate-begin")},
@@ -173,13 +181,15 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
             if (!errorMessage.empty()) {
                 log_e("Error moving to next page: %s", errorMessage.c_str());
 
+                int64_t elapsedMs = (esp_timer_get_time() - navigationStartTime) / 1000;
                 telemetry_.logMetric(TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
                                      {{"event", std::string("book-navigate")},
                                       {"action", std::string("navigate-failed")},
                                       {"kindle", true},
                                       {"direction", pagesToAdvance},
                                       {"po", static_cast<int>(place->getOffset())},
-                                      {"error", errorMessage}});
+                                      {"error", errorMessage},
+                                      {"elapsed_ms", static_cast<int>(elapsedMs)}});
 
                 // Only propagate non-connection errors
                 if (errorMessage != "CONNECTION_ERROR") {
@@ -206,13 +216,15 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
                 }
             }
 
+            int64_t elapsedMs = (esp_timer_get_time() - navigationStartTime) / 1000;
             telemetry_.logMetric(TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
                                  {{"event", std::string("book-navigate")},
                                   {"action", std::string("navigate-success")},
                                   {"kindle", true},
                                   {"direction", pagesToAdvance},
                                   {"po", static_cast<int>(place->getOffset())},
-                                  {"ocr_text_length", static_cast<int>(ocrTextLength)}});
+                                  {"ocr_text_length", static_cast<int>(ocrTextLength)},
+                                  {"elapsed_ms", static_cast<int>(elapsedMs)}});
 
             // Always signal that we got content (to dismiss loading)
             gotContentFunction_(ocrTextLength);
