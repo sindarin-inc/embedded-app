@@ -161,7 +161,7 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
         if (pagesToAdvance > 0 || pageToPreview > 0) {
             // Track navigation start time
             int64_t navigationStartTime = esp_timer_get_time();
-            
+
             telemetry_.logMetric(TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
                                  {{"event", std::string("book-navigate")},
                                   {"action", std::string("navigate-begin")},
