@@ -11,6 +11,7 @@
 #include "Communications/SindarinAPI.hpp"
 #include "Misc/Defer.hpp"
 #include "Misc/RateLimiter.hpp"
+#include "Misc/Telemetry.hpp"
 
 BLEHttpClient::BLEHttpClient(const char *url, std::shared_ptr<CancelFlag> cancelFlag,
                              const char *contentType, esp_http_client_method_t method)
@@ -109,8 +110,19 @@ auto BLEHttpClient::fetchHeaders(const std::shared_ptr<CancelFlag> &cancel) -> i
             if (xSemaphoreTake(statusCheckSemaphore_, pdMS_TO_TICKS(2000)) == pdTRUE) {
                 // Parse response
                 if (statusCheckResponse_.empty()) {
-                    // "U." response - proxy is not waiting for any request
+                    // "U=" response - proxy is not waiting for any request
                     log_w("BLE proxy is not waiting for any request - re-sending");
+                    
+                    // Log telemetry for retry
+                    if (SindarinAPI::getInstance() && SindarinAPI::getInstance()->getTelemetry()) {
+                        SindarinAPI::getInstance()->getTelemetry()->logMetric(
+                            TelemetryField::METRIC_READABLE_REQUEST, "",
+                            {{"event", std::string("ble-request")},
+                             {"action", std::string("retry-lost-request")},
+                             {"url", std::string(url_)},
+                             {"elapsed_ms", static_cast<int>(elapsedMs)}});
+                    }
+                    
                     SpiramString method =
                         SpiramString(requestMethod_ == HTTP_METHOD_GET ? "GET" : "POST");
                     bleProxy_->writeUrl(url_, method);
@@ -132,6 +144,18 @@ auto BLEHttpClient::fetchHeaders(const std::shared_ptr<CancelFlag> &cancel) -> i
                         if (proxyUrl != SpiramString(url_)) {
                             log_w("BLE proxy is waiting for different URL. Expected: %s, Got: %s",
                                   url_, proxyUrl.c_str());
+                            
+                            // Log telemetry for URL mismatch retry
+                            if (SindarinAPI::getInstance() && SindarinAPI::getInstance()->getTelemetry()) {
+                                SindarinAPI::getInstance()->getTelemetry()->logMetric(
+                                    TelemetryField::METRIC_READABLE_REQUEST, "",
+                                    {{"event", std::string("ble-request")},
+                                     {"action", std::string("retry-url-mismatch")},
+                                     {"expected_url", std::string(url_)},
+                                     {"proxy_url", proxyUrl.c_str()},
+                                     {"elapsed_ms", static_cast<int>(elapsedMs)}});
+                            }
+                            
                             // Re-send the request
                             log_i("Re-sending BLE request");
                             SpiramString method =
@@ -188,7 +212,7 @@ auto BLEHttpClient::fetchHeaders(const std::shared_ptr<CancelFlag> &cancel) -> i
 auto BLEHttpClient::handleWebRequest(const SpiramString &key, const char *body, size_t bodySize)
     -> bool {
     // Handle status check response
-    if ((key == "U?" || key == "U") && waitingForStatusCheck_) {
+    if (key == "U" && waitingForStatusCheck_) {
         log_d("Received status check response: %s %.*s", key.c_str(), bodySize, body);
         statusCheckResponse_ = SpiramString(body, bodySize);
         waitingForStatusCheck_ = false;
