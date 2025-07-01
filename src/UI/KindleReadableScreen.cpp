@@ -893,17 +893,8 @@ void KindleReadableScreen::scheduleDelayedLoadingMessage() {
     delayedMessageTimer_ = xTimerCreate("KindleDelayedMsg", pdMS_TO_TICKS(30 * 1000), pdFALSE, this,
                                         delayedMessageTimerCallback);
 
-    if (delayedMessageTimer_ != nullptr) {
-        if (xTimerStart(delayedMessageTimer_, 0) != pdPASS) {
-            log_e("Failed to start delayed message timer");
-            xTimerDelete(delayedMessageTimer_, 0);
-            delayedMessageTimer_ = nullptr;
-        } else {
-            log_i("Scheduled delayed loading message for 30 seconds");
-        }
-    } else {
-        log_e("Failed to create delayed message timer");
-    }
+    xTimerStart(delayedMessageTimer_, 0);
+    log_i("Scheduled delayed loading message for 30 seconds");
 }
 
 void KindleReadableScreen::cancelDelayedLoadingMessage() {
