@@ -123,15 +123,15 @@ auto BLEHttpClient::fetchHeaders(const std::shared_ptr<CancelFlag> &cancel) -> i
                     // Parse format: "1/1:METHOD:URL"
                     size_t methodStart = statusCheckResponse_.find(':', 0) + 1;
                     size_t urlStart = statusCheckResponse_.find(':', methodStart) + 1;
-                    
+
                     if (urlStart != std::string::npos && urlStart < statusCheckResponse_.length()) {
                         SpiramString proxyUrl = statusCheckResponse_.substr(urlStart);
                         log_i("BLE proxy is waiting for URL: %s", proxyUrl.c_str());
 
                         // Check if it matches our URL
                         if (proxyUrl != SpiramString(url_)) {
-                            log_w("BLE proxy is waiting for different URL. Expected: %s, Got: %s", url_,
-                                  proxyUrl.c_str());
+                            log_w("BLE proxy is waiting for different URL. Expected: %s, Got: %s",
+                                  url_, proxyUrl.c_str());
                             // Re-send the request
                             log_i("Re-sending BLE request");
                             SpiramString method =

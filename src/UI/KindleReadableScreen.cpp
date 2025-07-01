@@ -648,16 +648,15 @@ auto KindleReadableScreen::connectToNetwork(std::string &errorMessage,
     } else {
         resultAction = "failed";
     }
-    
-    telemetry_.logMetric(
-        TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
-        {{"event", std::string("kindle-connect")},
-         {"action", resultAction},
-         {"kindle", true},
-         {"ble_attempted", connectionMethod == "ble"},
-         {"ble_connected", bleConnected},
-         {"wifi_connected", wifiConnected},
-         {"state", std::string(stateToString(state_))}});
+
+    telemetry_.logMetric(TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
+                         {{"event", std::string("kindle-connect")},
+                          {"action", resultAction},
+                          {"kindle", true},
+                          {"ble_attempted", connectionMethod == "ble"},
+                          {"ble_connected", bleConnected},
+                          {"wifi_connected", wifiConnected},
+                          {"state", std::string(stateToString(state_))}});
 
     // Call the callback if provided
     if (callback) {
