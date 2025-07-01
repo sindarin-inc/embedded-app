@@ -212,9 +212,11 @@ auto BLEHttpClient::handleWebRequest(const SpiramString &key, const char *body, 
 
         xSemaphoreGive(dataSemaphore_);
 
+        // Always acknowledge body chunks
+        bleProxy_->acknowledgeKey(key);
+
         if (chunkNumber == totalChunks) {
             state_ = BLE_HTTP_CLIENT_WAITING_FOR_END_OF_REQUEST;
-            bleProxy_->acknowledgeKey(key);
         }
     } else if (key == "E") {
         // End of request

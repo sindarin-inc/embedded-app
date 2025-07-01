@@ -260,7 +260,7 @@ void KindleReadableScreen::begin() {
 
             loadingMessageView_.setText("Opening your Kindle book...");
             setNeedsLayout();
-            setState(State::LOADING_CONTENT);
+            setState(State::LOADING_INITIAL_CONTENT);
             render(display_);
 
             // Schedule a delayed message after 10 seconds if loading takes too long
@@ -314,6 +314,14 @@ void KindleReadableScreen::drawInRect(SolRect rect) {
         // TODO(john): Differentiate between end of loaded content and end of book
         bool atEndOfContent = renderer_.atEndOfFile();
         if (atEndOfContent) {
+            // Log telemetry for showing partial content
+            telemetry_.logMetric(
+                TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
+                {{"event", std::string("page-turn")},
+                 {"action", std::string("partial-content-shown")},
+                 {"kindle", true},
+                 {"po", currentPlace_ ? static_cast<int>(currentPlace_->getOffset()) : 0}});
+
             setState(State::DISPLAY_PARTIAL_CONTENT);
         }
         pageFlipper_.updatePlace(currentPlace_, atEndOfContent);
@@ -384,6 +392,8 @@ auto KindleReadableScreen::stateToString(State state) -> const char * {
     switch (state) {
     case State::CONNECTING:
         return "CONNECTING";
+    case State::LOADING_INITIAL_CONTENT:
+        return "LOADING_INITIAL_CONTENT";
     case State::LOADING_CONTENT:
         return "LOADING_CONTENT";
     case State::ERROR:
@@ -404,6 +414,7 @@ void KindleReadableScreen::setState(State newState) {
 
     switch (newState) {
     case State::CONNECTING:
+    case State::LOADING_INITIAL_CONTENT:
     case State::LOADING_CONTENT:
         loadingMessageView_.setHidden(false);
         delayedMessageView_.setHidden(true);
@@ -641,6 +652,17 @@ void KindleReadableScreen::disconnectNetworkConnections() {
 void KindleReadableScreen::navigateNext() {
     // Transition to loading state if we're showing partial content
     if (state_ == State::DISPLAY_PARTIAL_CONTENT) {
+        // Record navigation start time
+        navigationStartTime_ = esp_timer_get_time();
+
+        // Log telemetry for showing loading screen during page turn
+        telemetry_.logMetric(
+            TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
+            {{"event", std::string("page-turn")},
+             {"action", std::string("loading-screen-shown")},
+             {"kindle", true},
+             {"po", currentPlace_ ? static_cast<int>(currentPlace_->getOffset()) : 0}});
+
         setState(State::LOADING_CONTENT);
         loadingMessageView_.setText("Loading next page...");
         setNeedsLayout();
@@ -763,7 +785,7 @@ void KindleReadableScreen::handleLastReadDialogResponse(bool gotoLastReadPage) {
 
 void KindleReadableScreen::submitLastReadDialogChoice(bool gotoLastReadPage,
                                                       const std::string &loadingMessage) {
-    setState(State::LOADING_CONTENT);
+    setState(State::LOADING_INITIAL_CONTENT);
     loadingMessageView_.setText(loadingMessage);
     setNeedsLayout();
     setNeedsRerender();
@@ -791,7 +813,7 @@ void KindleReadableScreen::submitLastReadDialogChoice(bool gotoLastReadPage,
         // If syncing to latest page, clear the buffer since we're jumping to a new location
         if (gotoLastReadPage) {
             pageFlipper_.clearBuffer();
-            hasReceivedInitialContent_ = false;
+            setState(State::LOADING_INITIAL_CONTENT);
         }
 
         pageFlipper_.loadInitialPage();
@@ -823,7 +845,7 @@ void KindleReadableScreen::scheduleDelayedLoadingMessage() {
                 return;
             }
 
-            if (state_ != State::LOADING_CONTENT) {
+            if (state_ != State::LOADING_INITIAL_CONTENT && state_ != State::LOADING_CONTENT) {
                 return; // Don't show if we're no longer loading or screen was dismissed
             }
 
@@ -1022,9 +1044,10 @@ void KindleReadableScreen::updatePageFlipperCallbacks() {
             if (CancelFlag::isCancelled(cancelFlag)) {
                 return;
             }
-            if (state_ == State::LOADING_CONTENT || state_ == State::DISPLAY_PARTIAL_CONTENT) {
+            if (state_ == State::LOADING_INITIAL_CONTENT || state_ == State::LOADING_CONTENT ||
+                state_ == State::DISPLAY_PARTIAL_CONTENT) {
                 // Only log open-success telemetry for the initial content load
-                if (!hasReceivedInitialContent_) {
+                if (state_ == State::LOADING_INITIAL_CONTENT) {
                     int64_t elapsedMs = (esp_timer_get_time() - bookOpenStartTime_) / 1000;
                     telemetry_.logMetric(
                         TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
@@ -1034,7 +1057,6 @@ void KindleReadableScreen::updatePageFlipperCallbacks() {
                          {"po", currentPlace_ ? std::to_string(currentPlace_->getOffset()) : "0"},
                          {"elapsed_ms", static_cast<int>(elapsedMs)},
                          {"ocr_text_length", static_cast<int>(ocrTextLength)}});
-                    hasReceivedInitialContent_ = true;
                 }
 
                 setState(State::DISPLAY_CONTENT);
@@ -1057,7 +1079,9 @@ void KindleReadableScreen::updatePageFlipperCallbacks() {
             // Only show error message for non-connection errors
             // CONNECTION_ERROR is handled by the onConnectionErrorFunction below
             if (error != "CONNECTION_ERROR") {
-                int64_t elapsedMs = (esp_timer_get_time() - bookOpenStartTime_) / 1000;
+                // Use appropriate timing based on whether we're opening or navigating
+                int64_t startTime = isOpenError ? bookOpenStartTime_ : navigationStartTime_;
+                int64_t elapsedMs = (esp_timer_get_time() - startTime) / 1000;
                 telemetry_.logMetric(
                     TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
                     {{"event",
@@ -1104,7 +1128,9 @@ void KindleReadableScreen::updatePageFlipperCallbacks() {
             }
 
             // Log telemetry for connection errors
-            int64_t elapsedMs = (esp_timer_get_time() - bookOpenStartTime_) / 1000;
+            // Use appropriate timing based on whether we're opening or navigating
+            int64_t startTime = isOpenError ? bookOpenStartTime_ : navigationStartTime_;
+            int64_t elapsedMs = (esp_timer_get_time() - startTime) / 1000;
             telemetry_.logMetric(
                 TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
                 {{"event", isOpenError ? std::string("book-open") : std::string("book-navigate")},

@@ -44,10 +44,22 @@ auto KindlePageFlipper::checkForError(int httpCode, std::shared_ptr<KindlePageRe
     } else if (httpCode == 404) {
         return "Book or page not found in your Kindle library.";
     } else if (httpCode >= 400 && httpCode < 500) {
+        // Use server's error message if available
+        if (!response->message.empty()) {
+            return std::string(response->message);
+        }
         return "Request error. Please check your settings.";
     } else if (httpCode >= 500) {
+        // Use server's error message if available
+        if (!response->message.empty()) {
+            return std::string(response->message);
+        }
         return "Server error. Please try again later.";
     } else {
+        // Use server's error message if available
+        if (!response->message.empty()) {
+            return std::string(response->message);
+        }
         return "Failed to load book content.";
     }
 }
@@ -162,12 +174,17 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
             // Track navigation start time
             int64_t navigationStartTime = esp_timer_get_time();
 
+            auto beginTelemetryData = std::unordered_map<std::string, TelemetryVariant>{
+                {"event", std::string("book-navigate")},
+                {"action", std::string("navigate-begin")},
+                {"kindle", true},
+                {"direction", pagesToAdvance},
+                {"po", static_cast<int>(place->getOffset())}};
+            if (pageToPreview > 0) {
+                beginTelemetryData["preview"] = pageToPreview;
+            }
             telemetry_.logMetric(TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
-                                 {{"event", std::string("book-navigate")},
-                                  {"action", std::string("navigate-begin")},
-                                  {"kindle", true},
-                                  {"direction", pagesToAdvance},
-                                  {"po", static_cast<int>(place->getOffset())}});
+                                 beginTelemetryData);
 
             auto response = std::make_shared<KindlePageResponse>();
 
@@ -182,14 +199,19 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
                 log_e("Error moving to next page: %s", errorMessage.c_str());
 
                 int64_t elapsedMs = (esp_timer_get_time() - navigationStartTime) / 1000;
+                auto failedTelemetryData = std::unordered_map<std::string, TelemetryVariant>{
+                    {"event", std::string("book-navigate")},
+                    {"action", std::string("navigate-failed")},
+                    {"kindle", true},
+                    {"direction", pagesToAdvance},
+                    {"po", static_cast<int>(place->getOffset())},
+                    {"error", errorMessage},
+                    {"elapsed_ms", static_cast<int>(elapsedMs)}};
+                if (pageToPreview > 0) {
+                    failedTelemetryData["preview"] = pageToPreview;
+                }
                 telemetry_.logMetric(TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
-                                     {{"event", std::string("book-navigate")},
-                                      {"action", std::string("navigate-failed")},
-                                      {"kindle", true},
-                                      {"direction", pagesToAdvance},
-                                      {"po", static_cast<int>(place->getOffset())},
-                                      {"error", errorMessage},
-                                      {"elapsed_ms", static_cast<int>(elapsedMs)}});
+                                     failedTelemetryData);
 
                 // Only propagate non-connection errors
                 if (errorMessage != "CONNECTION_ERROR") {
@@ -217,14 +239,19 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
             }
 
             int64_t elapsedMs = (esp_timer_get_time() - navigationStartTime) / 1000;
+            auto successTelemetryData = std::unordered_map<std::string, TelemetryVariant>{
+                {"event", std::string("book-navigate")},
+                {"action", std::string("navigate-success")},
+                {"kindle", true},
+                {"direction", pagesToAdvance},
+                {"po", static_cast<int>(place->getOffset())},
+                {"ocr_text_length", static_cast<int>(ocrTextLength)},
+                {"elapsed_ms", static_cast<int>(elapsedMs)}};
+            if (pageToPreview > 0) {
+                successTelemetryData["preview"] = pageToPreview;
+            }
             telemetry_.logMetric(TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
-                                 {{"event", std::string("book-navigate")},
-                                  {"action", std::string("navigate-success")},
-                                  {"kindle", true},
-                                  {"direction", pagesToAdvance},
-                                  {"po", static_cast<int>(place->getOffset())},
-                                  {"ocr_text_length", static_cast<int>(ocrTextLength)},
-                                  {"elapsed_ms", static_cast<int>(elapsedMs)}});
+                                 successTelemetryData);
 
             // Always signal that we got content (to dismiss loading)
             gotContentFunction_(ocrTextLength);
