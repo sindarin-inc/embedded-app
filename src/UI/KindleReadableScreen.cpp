@@ -271,6 +271,14 @@ void KindleReadableScreen::begin() {
         pageFlipper_.loadInitialPage();
     };
 
+    // Set initial state and UI
+    DispatchGetUiQueue()->dispatch([this]() {
+        setState(State::CONNECTING);
+        loadingMessageView_.setText("Connecting to your Kindle...");
+        setNeedsLayout();
+        render(display_);
+    });
+
     // Start connection process
     DispatchGetCore0BackgroundQueue()->dispatch([this, initialConnectionCallback]() {
         std::string errorMessage;
@@ -484,9 +492,40 @@ auto KindleReadableScreen::connectToNetwork(std::string &errorMessage,
 
     SindarinAPI::getInstance()->setAccessToken(prefs_.cloudToken.get().value());
 
+    // Determine which connection method we'll try
+    std::string connectionMethod;
+    bool bleDisabled = prefs_.bleDisabled.get().value_or(false);
+    bool wifiDisabled = prefs_.wifiDisabled.get().value_or(false);
+
+#if CONFIG_USE_BLE_SERVER_PROXY
+    if (!bleDisabled) {
+        connectionMethod = "ble";
+    } else if (!wifiDisabled) {
+        connectionMethod = "wifi";
+    } else {
+        connectionMethod = "none";
+    }
+#else
+    if (!wifiDisabled) {
+        connectionMethod = "wifi";
+    } else {
+        connectionMethod = "none";
+    }
+#endif
+
+    // Log single comprehensive connection attempt telemetry
+    telemetry_.logMetric(TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
+                         {{"event", std::string("kindle-connect")},
+                          {"action", std::string("attempt")},
+                          {"kindle", true},
+                          {"wifi_disabled", wifiDisabled},
+                          {"ble_disabled", bleDisabled},
+                          {"connection_method", connectionMethod},
+                          {"state", std::string(stateToString(state_))}});
+
 #if CONFIG_USE_BLE_SERVER_PROXY
     // Try BLE first if not disabled
-    if (!prefs_.bleDisabled.get().value_or(false)) {
+    if (!bleDisabled) {
         log_i("Attempting BLE connection for Kindle book...");
 
         // Disconnect WiFi if we're using BLE
@@ -507,12 +546,8 @@ auto KindleReadableScreen::connectToNetwork(std::string &errorMessage,
 
         if (!bleManager->connectProxy(cancelFlag_, bleTimeoutMs)) {
             log_w("BLE connection failed for Kindle book");
-            telemetry_.logMetric(TelemetryField::METRIC_WIFI, kindleBook_->uuid,
-                                 {{"event", std::string("ble-connect-failed")}, {"kindle", true}});
         } else {
             log_i("BLE successfully connected for Kindle book");
-            telemetry_.logMetric(TelemetryField::METRIC_WIFI, kindleBook_->uuid,
-                                 {{"event", std::string("ble-connect-success")}, {"kindle", true}});
             bleConnected = true;
             isUsingBleConnection_ = true;
 
@@ -543,27 +578,25 @@ auto KindleReadableScreen::connectToNetwork(std::string &errorMessage,
 #endif
 
     // Try WiFi if BLE failed
-    if (!bleConnected && !prefs_.wifiDisabled.get().value_or(false)) {
+    if (!bleConnected && !wifiDisabled) {
         log_i("Attempting WiFi connection for Kindle book...");
 
         auto connected = WiFi::getInstance().connectWiFiFromSettings();
         if (connected != ESP_OK && connected != true) {
             log_w("WiFi connection failed for Kindle book");
-            telemetry_.logMetric(TelemetryField::METRIC_WIFI, kindleBook_->uuid,
-                                 {{"event", std::string("wifi-failed")}, {"kindle", true}});
             wifiConnected = false;
         } else {
             log_i("WiFi connection successful for Kindle book");
-            telemetry_.logMetric(TelemetryField::METRIC_WIFI, kindleBook_->uuid,
-                                 {{"event", std::string("wifi-connected")}, {"kindle", true}});
             wifiConnected = true;
             bool wasPreviouslyUsingBle = isUsingBleConnection_;
             isUsingBleConnection_ = false;
             if (wasPreviouslyUsingBle && reconnectionAttempts_ > 0) {
                 log_i("Successfully switched from BLE to Wi-Fi during reconnection");
-                telemetry_.logMetric(
-                    TelemetryField::METRIC_WIFI, kindleBook_->uuid,
-                    {{"event", std::string("ble-to-wifi-fallback")}, {"kindle", true}});
+                telemetry_.logMetric(TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
+                                     {{"event", std::string("kindle-connect")},
+                                      {"action", std::string("ble-to-wifi-fallback")},
+                                      {"kindle", true},
+                                      {"state", std::string(stateToString(state_))}});
             }
         }
     } else {
@@ -574,21 +607,21 @@ auto KindleReadableScreen::connectToNetwork(std::string &errorMessage,
 
     if (!connected) {
         log_w("Failed to establish any network connection for Kindle book");
-        if (prefs_.wifiDisabled.get().value_or(false) && prefs_.bleDisabled.get().value_or(false)) {
+        if (wifiDisabled && bleDisabled) {
             errorMessage = "Both WiFi and Bluetooth are disabled. Please enable one of them to "
                            "use Kindle books.";
             telemetry_.logMetric(TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
                                  {{"event", std::string("book-open-failed-network")},
                                   {"action", std::string("both-wifi-ble-disabled")},
                                   {"kindle", true}});
-        } else if (prefs_.wifiDisabled.get().value_or(false)) {
+        } else if (wifiDisabled) {
             errorMessage = "WiFi is disabled in settings and BLE connection failed. Please check "
                            "your BLE connection or enable WiFi to use Kindle books.";
             telemetry_.logMetric(TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
                                  {{"event", std::string("book-open-failed-network")},
                                   {"action", std::string("wifi-disabled-ble-failed")},
                                   {"kindle", true}});
-        } else if (prefs_.bleDisabled.get().value_or(false)) {
+        } else if (bleDisabled) {
             errorMessage = "Bluetooth is disabled in settings and WiFi connection failed. Please "
                            "check your WiFi connection or enable Bluetooth to use Kindle books.";
             telemetry_.logMetric(TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
@@ -608,6 +641,19 @@ auto KindleReadableScreen::connectToNetwork(std::string &errorMessage,
     // Update page flipper with the connection type
     pageFlipper_.setUseBle(isUsingBleConnection_);
     log_i("Setting KindlePageFlipper to use BLE: %s", isUsingBleConnection_ ? "true" : "false");
+
+    telemetry_.logMetric(
+        TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
+        {{"event", std::string("kindle-connect")},
+         {"action", connected ? std::string("success") : std::string("failed")},
+         {"kindle", true},
+         {"connection_type",
+          connected ? (isUsingBleConnection_ ? std::string("ble") : std::string("wifi"))
+                    : std::string("none")},
+         {"ble_attempted", connectionMethod == "ble"},
+         {"ble_connected", bleConnected},
+         {"wifi_connected", wifiConnected},
+         {"state", std::string(stateToString(state_))}});
 
     // Call the callback if provided
     if (callback) {
@@ -1082,7 +1128,7 @@ void KindleReadableScreen::updatePageFlipperCallbacks() {
             if (error != "CONNECTION_ERROR") {
                 // Determine if this is an open or navigate error based on current state
                 bool isInitialLoad = (state_ == State::LOADING_INITIAL_CONTENT);
-                
+
                 // Use appropriate timing based on whether we're opening or navigating
                 int64_t startTime = isInitialLoad ? bookOpenStartTime_ : navigationStartTime_;
                 int64_t elapsedMs = (esp_timer_get_time() - startTime) / 1000;
@@ -1091,7 +1137,7 @@ void KindleReadableScreen::updatePageFlipperCallbacks() {
                     {{"event",
                       isInitialLoad ? std::string("book-open") : std::string("book-navigate")},
                      {"action", isInitialLoad ? std::string("open-failed-server")
-                                               : std::string("navigate-failed-server")},
+                                              : std::string("navigate-failed-server")},
                      {"kindle", true},
                      {"error", error},
                      {"po", currentPlace_ ? static_cast<int>(currentPlace_->getOffset()) : 0},
@@ -1135,7 +1181,7 @@ void KindleReadableScreen::updatePageFlipperCallbacks() {
             // Log telemetry for connection errors
             // Determine if this is an open or navigate error based on current state
             bool isInitialLoad = (state_ == State::LOADING_INITIAL_CONTENT);
-            
+
             // Use appropriate timing based on whether we're opening or navigating
             int64_t startTime = isInitialLoad ? bookOpenStartTime_ : navigationStartTime_;
             int64_t elapsedMs = (esp_timer_get_time() - startTime) / 1000;
@@ -1143,7 +1189,7 @@ void KindleReadableScreen::updatePageFlipperCallbacks() {
                 TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
                 {{"event", isInitialLoad ? std::string("book-open") : std::string("book-navigate")},
                  {"action", isInitialLoad ? std::string("open-failed-connection")
-                                           : std::string("navigate-failed-connection")},
+                                          : std::string("navigate-failed-connection")},
                  {"kindle", true},
                  {"error", std::string("connection-error")},
                  {"po", currentPlace_ ? static_cast<int>(currentPlace_->getOffset()) : 0},
