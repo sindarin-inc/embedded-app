@@ -71,4 +71,9 @@ private:
 
     SemaphoreHandle_t dataSemaphore_{};
     std::shared_ptr<CancelFlag> cancel_;
+
+    // Status check tracking
+    bool waitingForStatusCheck_{false};
+    SpiramString statusCheckResponse_;
+    SemaphoreHandle_t statusCheckSemaphore_{nullptr};
 };

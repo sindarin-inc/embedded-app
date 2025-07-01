@@ -40,6 +40,7 @@ public:
 
     void writeResponseBody(const SpiramString &key, const SpiramString &body);
     void acknowledgeKey(const SpiramString &key);
+    void writeStatusCheck();
 
     void registerWebRequestHandler(const WebRequestHandler &handler);
     void registerSubscriptionStatusCallback(const SubscriptionStatusCallback &callback);
