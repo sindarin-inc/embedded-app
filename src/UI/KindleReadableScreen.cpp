@@ -546,7 +546,7 @@ auto KindleReadableScreen::connectToNetwork(std::string &errorMessage,
 
         if (!bleManager->connectProxy(cancelFlag_, bleTimeoutMs)) {
             log_w("BLE connection failed for Kindle book");
-            
+
             // Log BLE failure telemetry
             telemetry_.logMetric(TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
                                  {{"event", std::string("kindle-connect")},
@@ -587,7 +587,7 @@ auto KindleReadableScreen::connectToNetwork(std::string &errorMessage,
     // Try WiFi if BLE failed
     if (!bleConnected && !wifiDisabled) {
         log_i("Attempting WiFi connection for Kindle book...");
-        
+
         // Log WiFi attempt telemetry
         telemetry_.logMetric(TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
                              {{"event", std::string("kindle-connect")},
