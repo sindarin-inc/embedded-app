@@ -263,7 +263,7 @@ void KindleReadableScreen::begin() {
             setState(State::LOADING_INITIAL_CONTENT);
             render(display_);
 
-            // Schedule a delayed message after 10 seconds if loading takes too long
+            // Schedule a delayed message after 30 seconds if loading takes too long
             scheduleDelayedLoadingMessage();
         });
 
@@ -514,13 +514,13 @@ auto KindleReadableScreen::connectToNetwork(std::string &errorMessage,
 #endif
 
     // Log single comprehensive connection attempt telemetry
+    std::string attemptAction = "attempt-" + connectionMethod;
     telemetry_.logMetric(TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
                          {{"event", std::string("kindle-connect")},
-                          {"action", std::string("attempt")},
+                          {"action", attemptAction},
                           {"kindle", true},
                           {"wifi_disabled", wifiDisabled},
                           {"ble_disabled", bleDisabled},
-                          {"connection_method", connectionMethod},
                           {"state", std::string(stateToString(state_))}});
 
 #if CONFIG_USE_BLE_SERVER_PROXY
@@ -642,14 +642,18 @@ auto KindleReadableScreen::connectToNetwork(std::string &errorMessage,
     pageFlipper_.setUseBle(isUsingBleConnection_);
     log_i("Setting KindlePageFlipper to use BLE: %s", isUsingBleConnection_ ? "true" : "false");
 
+    std::string resultAction;
+    if (connected) {
+        resultAction = isUsingBleConnection_ ? "success-ble" : "success-wifi";
+    } else {
+        resultAction = "failed";
+    }
+    
     telemetry_.logMetric(
         TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
         {{"event", std::string("kindle-connect")},
-         {"action", connected ? std::string("success") : std::string("failed")},
+         {"action", resultAction},
          {"kindle", true},
-         {"connection_type",
-          connected ? (isUsingBleConnection_ ? std::string("ble") : std::string("wifi"))
-                    : std::string("none")},
          {"ble_attempted", connectionMethod == "ble"},
          {"ble_connected", bleConnected},
          {"wifi_connected", wifiConnected},
@@ -867,56 +871,54 @@ void KindleReadableScreen::submitLastReadDialogChoice(bool gotoLastReadPage,
 }
 
 void KindleReadableScreen::scheduleDelayedLoadingMessage() {
-    // Cancel any existing delayed message
+    // Cancel any existing delayed message timer
     cancelDelayedLoadingMessage();
 
-    // Create a new cancel flag for this delayed message
-    delayedMessageCancelFlag_ = std::make_shared<CancelFlag>();
-    // Capture a copy of the flag for the lambda
-    auto localFlag = delayedMessageCancelFlag_;
+    // Create a one-shot timer that fires after 30 seconds
+    delayedMessageTimer_ = xTimerCreate("KindleDelayedMsg", pdMS_TO_TICKS(30 * 1000), pdFALSE, this,
+                                        delayedMessageTimerCallback);
 
-    // TODO(john): Timers would be better here. Maybe we could make a DispatchAfter method
-    DispatchGetCore0BackgroundQueue()->dispatch([this, localFlag]() {
-        // Wait for 5 seconds
-        vTaskDelay(pdMS_TO_TICKS(5 * 1000));
-
-        // Check if the task was cancelled
-        if (CancelFlag::isCancelled(localFlag)) {
-            return;
+    if (delayedMessageTimer_ != nullptr) {
+        if (xTimerStart(delayedMessageTimer_, 0) != pdPASS) {
+            log_e("Failed to start delayed message timer");
+            xTimerDelete(delayedMessageTimer_, 0);
+            delayedMessageTimer_ = nullptr;
+        } else {
+            log_i("Scheduled delayed loading message for 30 seconds");
         }
-
-        // Display the message on the UI thread
-        DispatchGetUiQueue()->dispatch([this, localFlag]() {
-            if (CancelFlag::isCancelled(localFlag)) {
-                return;
-            }
-
-            if (state_ != State::LOADING_INITIAL_CONTENT && state_ != State::LOADING_CONTENT) {
-                return; // Don't show if we're no longer loading or screen was dismissed
-            }
-
-            // Set and show the delayed message
-            delayedMessageView_.setText("This can take up to 60 seconds.");
-            delayedMessageView_.setHidden(false);
-            setNeedsLayout();
-
-            // Call setNeedsLayout to recalculate positions of all views
-            draw();
-            display_.updateDisplay(DisplaySystem::UpdateType::PARTIAL, true);
-
-            log_i("Showing delayed loading message after 10 seconds");
-        });
-    });
+    } else {
+        log_e("Failed to create delayed message timer");
+    }
 }
 
 void KindleReadableScreen::cancelDelayedLoadingMessage() {
-    if (delayedMessageCancelFlag_ == nullptr ||
-        CancelFlag::isCancelled(delayedMessageCancelFlag_)) {
-        return;
+    if (delayedMessageTimer_ != nullptr) {
+        xTimerStop(delayedMessageTimer_, 0);
+        xTimerDelete(delayedMessageTimer_, 0);
+        delayedMessageTimer_ = nullptr;
+        log_d("Cancelled delayed loading message timer");
     }
+}
 
-    CancelFlag::cancel(delayedMessageCancelFlag_);
-    delayedMessageCancelFlag_ = nullptr;
+void KindleReadableScreen::delayedMessageTimerCallback(TimerHandle_t timer) {
+    auto *instance = static_cast<KindleReadableScreen *>(pvTimerGetTimerID(timer));
+
+    // Execute on UI thread
+    DispatchGetUiQueue()->dispatch([instance]() {
+        if (instance->state_ != State::LOADING_INITIAL_CONTENT &&
+            instance->state_ != State::LOADING_CONTENT) {
+            return; // Don't show if we're no longer loading
+        }
+
+        // Set and show the delayed message
+        instance->delayedMessageView_.setText("This can take up to 60 seconds.");
+        instance->delayedMessageView_.setHidden(false);
+        instance->setNeedsLayout();
+        instance->draw();
+        instance->display_.updateDisplay(DisplaySystem::UpdateType::PARTIAL, true);
+
+        log_i("Showing delayed loading message after 30 seconds");
+    });
 }
 
 void KindleReadableScreen::attemptReconnection() {

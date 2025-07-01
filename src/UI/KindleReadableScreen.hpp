@@ -1,5 +1,7 @@
 #pragma once
 
+#include <freertos/FreeRTOS.h>
+#include <freertos/timers.h>
 #include <utility>
 
 #include "Misc/CancelFlag.hpp"
@@ -98,7 +100,7 @@ private:
     int64_t navigationStartTime_ = 0;
 
     // Timer handles for UI tasks
-    std::shared_ptr<CancelFlag> delayedMessageCancelFlag_;
+    TimerHandle_t delayedMessageTimer_ = nullptr;
     std::shared_ptr<CancelFlag> reconnectionAttemptCancelFlag_;
 
     MultiLineTextView loadingMessageView_;
@@ -131,4 +133,6 @@ private:
     void cancelReconnectionAttempt();
     // Re-register page flipper callbacks with new cancel flag
     void updatePageFlipperCallbacks();
+    // Timer callback for delayed message
+    static void delayedMessageTimerCallback(TimerHandle_t timer);
 };
