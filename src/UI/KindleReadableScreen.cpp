@@ -1056,7 +1056,8 @@ void KindleReadableScreen::updatePageFlipperCallbacks() {
                          {"kindle", true},
                          {"po", currentPlace_ ? std::to_string(currentPlace_->getOffset()) : "0"},
                          {"elapsed_ms", static_cast<int>(elapsedMs)},
-                         {"ocr_text_length", static_cast<int>(ocrTextLength)}});
+                         {"ocr_text_length", static_cast<int>(ocrTextLength)},
+                         {"state", std::string(stateToString(state_))}});
                 }
 
                 setState(State::DISPLAY_CONTENT);
@@ -1071,7 +1072,7 @@ void KindleReadableScreen::updatePageFlipperCallbacks() {
         if (CancelFlag::isCancelled(cancelFlag)) {
             return;
         }
-        DispatchGetUiQueue()->dispatch([this, error, isOpenError, cancelFlag]() {
+        DispatchGetUiQueue()->dispatch([this, error, cancelFlag]() {
             if (CancelFlag::isCancelled(cancelFlag)) {
                 return;
             }
@@ -1079,20 +1080,24 @@ void KindleReadableScreen::updatePageFlipperCallbacks() {
             // Only show error message for non-connection errors
             // CONNECTION_ERROR is handled by the onConnectionErrorFunction below
             if (error != "CONNECTION_ERROR") {
+                // Determine if this is an open or navigate error based on current state
+                bool isInitialLoad = (state_ == State::LOADING_INITIAL_CONTENT);
+                
                 // Use appropriate timing based on whether we're opening or navigating
-                int64_t startTime = isOpenError ? bookOpenStartTime_ : navigationStartTime_;
+                int64_t startTime = isInitialLoad ? bookOpenStartTime_ : navigationStartTime_;
                 int64_t elapsedMs = (esp_timer_get_time() - startTime) / 1000;
                 telemetry_.logMetric(
                     TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
                     {{"event",
-                      isOpenError ? std::string("book-open") : std::string("book-navigate")},
-                     {"action", isOpenError ? std::string("open-failed-server")
-                                            : std::string("navigate-failed-server")},
+                      isInitialLoad ? std::string("book-open") : std::string("book-navigate")},
+                     {"action", isInitialLoad ? std::string("open-failed-server")
+                                               : std::string("navigate-failed-server")},
                      {"kindle", true},
                      {"error", error},
                      {"po", currentPlace_ ? static_cast<int>(currentPlace_->getOffset()) : 0},
                      {"ble", isUsingBleConnection_},
-                     {"elapsed_ms", static_cast<int>(elapsedMs)}});
+                     {"elapsed_ms", static_cast<int>(elapsedMs)},
+                     {"state", std::string(stateToString(state_))}});
 
                 setErrorMessage(error);
             }
@@ -1122,25 +1127,29 @@ void KindleReadableScreen::updatePageFlipperCallbacks() {
         if (CancelFlag::isCancelled(cancelFlag)) {
             return;
         }
-        DispatchGetUiQueue()->dispatch([this, isOpenError, cancelFlag]() {
+        DispatchGetUiQueue()->dispatch([this, cancelFlag]() {
             if (CancelFlag::isCancelled(cancelFlag)) {
                 return;
             }
 
             // Log telemetry for connection errors
+            // Determine if this is an open or navigate error based on current state
+            bool isInitialLoad = (state_ == State::LOADING_INITIAL_CONTENT);
+            
             // Use appropriate timing based on whether we're opening or navigating
-            int64_t startTime = isOpenError ? bookOpenStartTime_ : navigationStartTime_;
+            int64_t startTime = isInitialLoad ? bookOpenStartTime_ : navigationStartTime_;
             int64_t elapsedMs = (esp_timer_get_time() - startTime) / 1000;
             telemetry_.logMetric(
                 TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
-                {{"event", isOpenError ? std::string("book-open") : std::string("book-navigate")},
-                 {"action", isOpenError ? std::string("open-failed-connection")
-                                        : std::string("navigate-failed-connection")},
+                {{"event", isInitialLoad ? std::string("book-open") : std::string("book-navigate")},
+                 {"action", isInitialLoad ? std::string("open-failed-connection")
+                                           : std::string("navigate-failed-connection")},
                  {"kindle", true},
                  {"error", std::string("connection-error")},
                  {"po", currentPlace_ ? static_cast<int>(currentPlace_->getOffset()) : 0},
                  {"ble", isUsingBleConnection_},
-                 {"elapsed_ms", static_cast<int>(elapsedMs)}});
+                 {"elapsed_ms", static_cast<int>(elapsedMs)},
+                 {"state", std::string(stateToString(state_))}});
 
             // If we have a connection error, silently try to reconnect
             log_i("Network connection issue detected, attempting reconnection");
