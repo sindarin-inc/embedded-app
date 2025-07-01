@@ -41,6 +41,13 @@ BLEHttpClient::~BLEHttpClient() {
     vSemaphoreDelete(statusCheckSemaphore_);
 }
 
+void BLEHttpClient::sendRequest() {
+    SpiramString method = SpiramString(requestMethod_ == HTTP_METHOD_GET ? "GET" : "POST");
+    bleProxy_->writeUrl(url_, method);
+    bleProxy_->writeHeaders(requestHeaders_);
+    bleProxy_->writeBody(requestBody_);
+}
+
 auto BLEHttpClient::setHeader(const char *key, const char *value) -> esp_err_t {
     // Ignore Accept-Encoding header
     if (strcmp(key, "Accept-Encoding") == 0) {
@@ -74,15 +81,8 @@ auto BLEHttpClient::fetchHeaders(const std::shared_ptr<CancelFlag> &cancel) -> i
         return ERR_BLE_NOT_CONNECTED;
     }
 
-    // Write URL
-    SpiramString method = SpiramString(requestMethod_ == HTTP_METHOD_GET ? "GET" : "POST");
-    bleProxy_->writeUrl(url_, method);
-
-    // Write headers
-    bleProxy_->writeHeaders(requestHeaders_);
-
-    // Write body
-    bleProxy_->writeBody(requestBody_);
+    // Send the initial request
+    sendRequest();
 
     // Wait for response up to 30s
     RateLimiter rl(10, 10);
@@ -113,11 +113,7 @@ auto BLEHttpClient::fetchHeaders(const std::shared_ptr<CancelFlag> &cancel) -> i
                     log_w("BLE proxy is not waiting for any request - re-sending");
                     log_i("BLE proxy retry: lost request after %lld ms", totalElapsedMs);
 
-                    SpiramString method =
-                        SpiramString(requestMethod_ == HTTP_METHOD_GET ? "GET" : "POST");
-                    bleProxy_->writeUrl(url_, method);
-                    bleProxy_->writeHeaders(requestHeaders_);
-                    bleProxy_->writeBody(requestBody_);
+                    sendRequest();
                     // Reset the timer
                     startTime = esp_timer_get_time();
                 } else if (statusCheckResponse_.find("1/1:") == 0) {
@@ -137,11 +133,7 @@ auto BLEHttpClient::fetchHeaders(const std::shared_ptr<CancelFlag> &cancel) -> i
 
                             // Re-send the request
                             log_i("Re-sending BLE request");
-                            SpiramString method =
-                                SpiramString(requestMethod_ == HTTP_METHOD_GET ? "GET" : "POST");
-                            bleProxy_->writeUrl(url_, method);
-                            bleProxy_->writeHeaders(requestHeaders_);
-                            bleProxy_->writeBody(requestBody_);
+                            sendRequest();
                             // Reset the timer
                             startTime = esp_timer_get_time();
                         }

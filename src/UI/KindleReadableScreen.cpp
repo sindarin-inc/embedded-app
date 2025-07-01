@@ -1131,7 +1131,7 @@ void KindleReadableScreen::updatePageFlipperCallbacks() {
         });
     });
 
-    pageFlipper_.setOnErrorFunction([this, cancelFlag](const std::string &error, bool isOpenError) {
+    pageFlipper_.setOnErrorFunction([this, cancelFlag](const std::string &error) {
         if (CancelFlag::isCancelled(cancelFlag)) {
             return;
         }
@@ -1186,7 +1186,7 @@ void KindleReadableScreen::updatePageFlipperCallbacks() {
     });
 
     // Set a separate callback specifically for network connectivity issues
-    pageFlipper_.setOnConnectionErrorFunction([this, cancelFlag](bool isOpenError) {
+    pageFlipper_.setOnConnectionErrorFunction([this, cancelFlag]() {
         if (CancelFlag::isCancelled(cancelFlag)) {
             return;
         }

@@ -56,6 +56,8 @@ public:
     void cancel();
 
 private:
+    void sendRequest();
+
     std::shared_ptr<BLEManager> bleManager_;
     std::shared_ptr<BLEProxy> bleProxy_;
     int statusCode_{};

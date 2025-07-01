@@ -109,11 +109,11 @@ void KindlePageFlipper::loadInitialPage() {
 
             // Only propagate non-connection errors
             if (errorMessage != "CONNECTION_ERROR") {
-                onErrorFunction_(errorMessage, true);
+                onErrorFunction_(errorMessage);
             } else {
                 log_i("Network connection issue detected, initiating reconnection");
                 if (onConnectionErrorFunction_) {
-                    onConnectionErrorFunction_(true);
+                    onConnectionErrorFunction_();
                 }
             }
             return;
@@ -215,12 +215,12 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
 
                 // Only propagate non-connection errors
                 if (errorMessage != "CONNECTION_ERROR") {
-                    onErrorFunction_(errorMessage, false);
+                    onErrorFunction_(errorMessage);
                 } else {
                     log_e("Network connection issue detected while navigating, initiating "
                           "reconnection");
                     if (onConnectionErrorFunction_) {
-                        onConnectionErrorFunction_(false);
+                        onConnectionErrorFunction_();
                     }
                 }
                 return;
