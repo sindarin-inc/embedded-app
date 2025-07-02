@@ -143,26 +143,31 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
             return;
         }
 
-        if (place_ == nullptr) {
-            // First time we're setting the place
-            place_ = std::dynamic_pointer_cast<TxtPlace>(place);
-        }
-
-        if (place_ != nullptr) {
-            log_i("Updating place from %s to %s %s", place_->str().c_str(), place->str().c_str(),
-                  atEndOfContent ? "(at end of content)" : "");
-        } else {
-            log_i("Updating place to %s %s (place_ is null)", place->str().c_str(),
-                  atEndOfContent ? "(at end of content)" : "");
-        }
-
-        if (place_ == nullptr) {
-            log_w("Cannot update place: place_ is null (not a TxtPlace?)");
+        // Check if the incoming place is valid
+        if (!place) {
+            log_w("Cannot update place: incoming place is null");
             return;
         }
 
+        // Try to cast the incoming place to TxtPlace
+        auto txtPlace = std::dynamic_pointer_cast<TxtPlace>(place);
+        if (!txtPlace) {
+            log_w("Cannot update place: place is not a TxtPlace (type: %s)", place->str().c_str());
+            return;
+        }
+
+        if (place_ == nullptr) {
+            // First time we're setting the place
+            place_ = txtPlace;
+            log_i("Setting initial place to %s %s", place_->str().c_str(),
+                  atEndOfContent ? "(at end of content)" : "");
+        } else {
+            log_i("Updating place from %s to %s %s", place_->str().c_str(), txtPlace->str().c_str(),
+                  atEndOfContent ? "(at end of content)" : "");
+        }
+
         auto previousPageIndex = pageStream_->pageIndexForOffset(place_->getOffset());
-        auto currentPageIndex = pageStream_->pageIndexForOffset(place->getOffset());
+        auto currentPageIndex = pageStream_->pageIndexForOffset(txtPlace->getOffset());
         auto lastPageIndex = pageStream_->lastPageIndex();
 
         auto pagesToAdvance = currentPageIndex - previousPageIndex;
@@ -267,6 +272,6 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
             gotContentFunction_(ocrTextLength);
         }
 
-        place_ = std::dynamic_pointer_cast<TxtPlace>(place);
+        place_ = txtPlace;
     });
 }

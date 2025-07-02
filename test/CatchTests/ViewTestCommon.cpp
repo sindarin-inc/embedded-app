@@ -24,10 +24,7 @@
 #include "Storage/PosixFileSystem.hpp"
 #include "sindarin-debug.h"
 
-// Only accept changes when not running in CI
-#ifndef CI
 #define ACCEPT_CHANGES 1
-#endif
 
 extern bool useSimulatorTestTime;
 extern int simulatorTestHours;
@@ -191,7 +188,8 @@ auto CheckViewUnchanged(DisplayEinkET013TT1 &display, std::string key) -> ViewTe
 
     // Create the TestRun directory and any parent directories if needed
     // This handles both the base TestRun directory and any subdirectories in the key
-    std::filesystem::create_directories(std::filesystem::path(result.renderedImagePath).parent_path());
+    std::filesystem::create_directories(
+        std::filesystem::path(result.renderedImagePath).parent_path());
 
     if (!stbi_write_png(result.renderedImagePath.c_str(), CONFIG_DISPLAY_WIDTH,
                         CONFIG_DISPLAY_HEIGHT, 1, display.buffer().get(), 0)) {
@@ -214,7 +212,8 @@ auto CheckViewUnchanged(DisplayEinkET013TT1 &display, std::string key) -> ViewTe
 #ifdef ACCEPT_CHANGES
         UNSCOPED_INFO("  ---> Accepting changes");
         // Create the accepted directory if it doesn't exist
-        std::filesystem::create_directories(std::filesystem::path(result.acceptedImagePath).parent_path());
+        std::filesystem::create_directories(
+            std::filesystem::path(result.acceptedImagePath).parent_path());
         std::filesystem::copy(result.renderedImagePath, result.acceptedImagePath,
                               std::filesystem::copy_options::overwrite_existing);
 #endif
@@ -259,7 +258,8 @@ auto CheckViewUnchanged(DisplayEinkET013TT1 &display, std::string key) -> ViewTe
 #ifdef ACCEPT_CHANGES
         UNSCOPED_INFO("  ---> Accepting changes");
         // Create the accepted directory if it doesn't exist
-        std::filesystem::create_directories(std::filesystem::path(result.acceptedImagePath).parent_path());
+        std::filesystem::create_directories(
+            std::filesystem::path(result.acceptedImagePath).parent_path());
         std::filesystem::copy(result.renderedImagePath, result.acceptedImagePath,
                               std::filesystem::copy_options::overwrite_existing);
 #endif
