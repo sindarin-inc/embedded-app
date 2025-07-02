@@ -1,5 +1,7 @@
 #include "UI/KindleReadableScreen.hpp"
 
+#include <esp_timer.h>
+
 #if CONFIG_USE_BLE_SERVER_PROXY
 #include "Communications/BLEManager.hpp"
 #endif
@@ -20,9 +22,9 @@ KindleReadableScreen::KindleReadableScreen(DisplaySystem &display,
     : EinkView(display), renderer_(display, GetTextRectFromPrefs(display, prefs), font),
       prefs_(prefs), telemetry_(telemetry), fileSystem_(fileSystem),
       lightingController_(lightingController), localStore_(localStore), kindleBook_(kindleBook),
-      cancelFlag_(std::make_shared<CancelFlag>()), pageFlipper_(kindleBook, cancelFlag_),
-      loadingMessageView_(display, 5), delayedMessageView_(display, 5),
-      errorMessageView_(display, 5) {
+      cancelFlag_(std::make_shared<CancelFlag>()),
+      pageFlipper_(kindleBook, cancelFlag_, telemetry_), loadingMessageView_(display, 5),
+      delayedMessageView_(display, 5), errorMessageView_(display, 5) {
 
     log_i("Created KindleReadableScreen for book: %s by %s", kindleBook->title.c_str(),
           kindleBook->author.c_str());
@@ -231,9 +233,13 @@ void KindleReadableScreen::begin() {
     // Reset reconnection attempts counter
     reconnectionAttempts_ = 0;
 
+    // Record book open start time
+    bookOpenStartTime_ = esp_timer_get_time();
+
     // Log telemetry for opening a Kindle book
-    telemetry_.logMetric(TelemetryField::METRIC_READABLE_OPEN, kindleBook_->uuid,
-                         getTelemetryMetrics());
+    auto metrics = getTelemetryMetrics();
+    metrics["kindle"] = true;
+    telemetry_.logMetric(TelemetryField::METRIC_READABLE_OPEN, kindleBook_->uuid, metrics);
 
     // Define the callback for initial connection - load the book content
     auto initialConnectionCallback = [this](bool connected) {
@@ -254,16 +260,24 @@ void KindleReadableScreen::begin() {
 
             loadingMessageView_.setText("Opening your Kindle book...");
             setNeedsLayout();
-            setState(State::LOADING_CONTENT);
+            setState(State::LOADING_INITIAL_CONTENT);
             render(display_);
 
-            // Schedule a delayed message after 10 seconds if loading takes too long
+            // Schedule a delayed message after 30 seconds if loading takes too long
             scheduleDelayedLoadingMessage();
         });
 
         // Now load the content in the background queue
         pageFlipper_.loadInitialPage();
     };
+
+    // Set initial state and UI
+    DispatchGetUiQueue()->dispatch([this]() {
+        setState(State::CONNECTING);
+        loadingMessageView_.setText("Connecting to your Kindle...");
+        setNeedsLayout();
+        render(display_);
+    });
 
     // Start connection process
     DispatchGetCore0BackgroundQueue()->dispatch([this, initialConnectionCallback]() {
@@ -308,6 +322,14 @@ void KindleReadableScreen::drawInRect(SolRect rect) {
         // TODO(john): Differentiate between end of loaded content and end of book
         bool atEndOfContent = renderer_.atEndOfFile();
         if (atEndOfContent) {
+            // Log telemetry for showing partial content
+            telemetry_.logMetric(
+                TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
+                {{"event", std::string("page-turn")},
+                 {"action", std::string("partial-content-shown")},
+                 {"kindle", true},
+                 {"po", currentPlace_ ? static_cast<int>(currentPlace_->getOffset()) : 0}});
+
             setState(State::DISPLAY_PARTIAL_CONTENT);
         }
         pageFlipper_.updatePlace(currentPlace_, atEndOfContent);
@@ -378,6 +400,8 @@ auto KindleReadableScreen::stateToString(State state) -> const char * {
     switch (state) {
     case State::CONNECTING:
         return "CONNECTING";
+    case State::LOADING_INITIAL_CONTENT:
+        return "LOADING_INITIAL_CONTENT";
     case State::LOADING_CONTENT:
         return "LOADING_CONTENT";
     case State::ERROR:
@@ -398,6 +422,7 @@ void KindleReadableScreen::setState(State newState) {
 
     switch (newState) {
     case State::CONNECTING:
+    case State::LOADING_INITIAL_CONTENT:
     case State::LOADING_CONTENT:
         loadingMessageView_.setHidden(false);
         delayedMessageView_.setHidden(true);
@@ -437,6 +462,15 @@ void KindleReadableScreen::setErrorMessage(const std::string &message) {
         return;
     }
     log_i("Showing error message: %s", message.c_str());
+
+    telemetry_.logMetric(
+        TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
+        {{"event", std::string("book-error")},
+         {"action", std::string("error")},
+         {"kindle", true},
+         {"error", message},
+         {"po", currentPlace_ ? static_cast<int>(currentPlace_->getOffset()) : 0}});
+
     errorMessageView_.setText(message);
     setState(State::ERROR);
     setNeedsLayout();
@@ -458,9 +492,40 @@ auto KindleReadableScreen::connectToNetwork(std::string &errorMessage,
 
     SindarinAPI::getInstance()->setAccessToken(prefs_.cloudToken.get().value());
 
+    // Determine which connection method we'll try
+    std::string connectionMethod;
+    bool bleDisabled = prefs_.bleDisabled.get().value_or(false);
+    bool wifiDisabled = prefs_.wifiDisabled.get().value_or(false);
+
+#if CONFIG_USE_BLE_SERVER_PROXY
+    if (!bleDisabled) {
+        connectionMethod = "ble";
+    } else if (!wifiDisabled) {
+        connectionMethod = "wifi";
+    } else {
+        connectionMethod = "none";
+    }
+#else
+    if (!wifiDisabled) {
+        connectionMethod = "wifi";
+    } else {
+        connectionMethod = "none";
+    }
+#endif
+
+    // Log single comprehensive connection attempt telemetry
+    std::string attemptAction = "attempt-" + connectionMethod;
+    telemetry_.logMetric(TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
+                         {{"event", std::string("kindle-connect")},
+                          {"action", attemptAction},
+                          {"kindle", true},
+                          {"wifi_disabled", wifiDisabled},
+                          {"ble_disabled", bleDisabled},
+                          {"state", std::string(stateToString(state_))}});
+
 #if CONFIG_USE_BLE_SERVER_PROXY
     // Try BLE first if not disabled
-    if (!prefs_.bleDisabled.get().value_or(false)) {
+    if (!bleDisabled) {
         log_i("Attempting BLE connection for Kindle book...");
 
         // Disconnect WiFi if we're using BLE
@@ -481,10 +546,15 @@ auto KindleReadableScreen::connectToNetwork(std::string &errorMessage,
 
         if (!bleManager->connectProxy(cancelFlag_, bleTimeoutMs)) {
             log_w("BLE connection failed for Kindle book");
-            telemetry_.logMetric(TelemetryField::METRIC_WIFI, "kindle-ble-failed");
+
+            // Log BLE failure telemetry
+            telemetry_.logMetric(TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
+                                 {{"event", std::string("kindle-connect")},
+                                  {"action", std::string("failed-ble")},
+                                  {"kindle", true},
+                                  {"state", std::string(stateToString(state_))}});
         } else {
             log_i("BLE successfully connected for Kindle book");
-            telemetry_.logMetric(TelemetryField::METRIC_WIFI, "kindle-ble-connected");
             bleConnected = true;
             isUsingBleConnection_ = true;
 
@@ -515,25 +585,34 @@ auto KindleReadableScreen::connectToNetwork(std::string &errorMessage,
 #endif
 
     // Try WiFi if BLE failed
-    if (!bleConnected && !prefs_.wifiDisabled.get().value_or(false)) {
+    if (!bleConnected && !wifiDisabled) {
         log_i("Attempting WiFi connection for Kindle book...");
+
+        // Log WiFi attempt telemetry
+        telemetry_.logMetric(TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
+                             {{"event", std::string("kindle-connect")},
+                              {"action", std::string("attempt-wifi")},
+                              {"kindle", true},
+                              {"wifi_disabled", wifiDisabled},
+                              {"ble_disabled", bleDisabled},
+                              {"state", std::string(stateToString(state_))}});
 
         auto connected = WiFi::getInstance().connectWiFiFromSettings();
         if (connected != ESP_OK && connected != true) {
             log_w("WiFi connection failed for Kindle book");
-            telemetry_.logMetric(TelemetryField::METRIC_WIFI, "kindle-wifi-failed");
             wifiConnected = false;
         } else {
             log_i("WiFi connection successful for Kindle book");
-            telemetry_.logMetric(TelemetryField::METRIC_WIFI, "kindle-wifi-connected");
             wifiConnected = true;
             bool wasPreviouslyUsingBle = isUsingBleConnection_;
             isUsingBleConnection_ = false;
             if (wasPreviouslyUsingBle && reconnectionAttempts_ > 0) {
                 log_i("Successfully switched from BLE to Wi-Fi during reconnection");
-                telemetry_.logMetricData(TelemetryField::METRIC_WIFI,
-                                         {{"event", std::string("kindle-ble-to-wifi-fallback")},
-                                          {"book_uuid", kindleBook_->uuid}});
+                telemetry_.logMetric(TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
+                                     {{"event", std::string("kindle-connect")},
+                                      {"action", std::string("ble-to-wifi-fallback")},
+                                      {"kindle", true},
+                                      {"state", std::string(stateToString(state_))}});
             }
         }
     } else {
@@ -544,40 +623,56 @@ auto KindleReadableScreen::connectToNetwork(std::string &errorMessage,
 
     if (!connected) {
         log_w("Failed to establish any network connection for Kindle book");
-        if (prefs_.wifiDisabled.get().value_or(false) && prefs_.bleDisabled.get().value_or(false)) {
+        if (wifiDisabled && bleDisabled) {
             errorMessage = "Both WiFi and Bluetooth are disabled. Please enable one of them to "
                            "use Kindle books.";
-            telemetry_.logMetricData(TelemetryField::METRIC_DIALOG,
-                                     {{"dialog", std::string("kindle-books")},
-                                      {"action", std::string("kindle-connection-failed")},
-                                      {"reason", std::string("all-disabled")}});
-        } else if (prefs_.wifiDisabled.get().value_or(false)) {
+            telemetry_.logMetric(TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
+                                 {{"event", std::string("book-open-failed-network")},
+                                  {"action", std::string("both-wifi-ble-disabled")},
+                                  {"kindle", true}});
+        } else if (wifiDisabled) {
             errorMessage = "WiFi is disabled in settings and BLE connection failed. Please check "
                            "your BLE connection or enable WiFi to use Kindle books.";
-            telemetry_.logMetricData(TelemetryField::METRIC_DIALOG,
-                                     {{"dialog", std::string("kindle-books")},
-                                      {"action", std::string("kindle-connection-failed")},
-                                      {"reason", std::string("wifi-disabled-ble-failed")}});
-        } else if (prefs_.bleDisabled.get().value_or(false)) {
+            telemetry_.logMetric(TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
+                                 {{"event", std::string("book-open-failed-network")},
+                                  {"action", std::string("wifi-disabled-ble-failed")},
+                                  {"kindle", true}});
+        } else if (bleDisabled) {
             errorMessage = "Bluetooth is disabled in settings and WiFi connection failed. Please "
                            "check your WiFi connection or enable Bluetooth to use Kindle books.";
-            telemetry_.logMetricData(TelemetryField::METRIC_DIALOG,
-                                     {{"dialog", std::string("kindle-books")},
-                                      {"action", std::string("kindle-connection-failed")},
-                                      {"reason", std::string("ble-disabled-wifi-failed")}});
+            telemetry_.logMetric(TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
+                                 {{"event", std::string("book-open-failed-network")},
+                                  {"action", std::string("ble-disabled-wifi-failed")},
+                                  {"kindle", true}});
         } else {
             errorMessage = "Could not connect to network. Please check your WiFi and Bluetooth "
                            "settings and try again.";
-            telemetry_.logMetricData(TelemetryField::METRIC_DIALOG,
-                                     {{"dialog", std::string("kindle-books")},
-                                      {"action", std::string("kindle-connection-failed")},
-                                      {"reason", std::string("connection-failed")}});
+            telemetry_.logMetric(TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
+                                 {{"event", std::string("book-open-failed-network")},
+                                  {"action", std::string("connection-failed")},
+                                  {"kindle", true}});
         }
     }
 
     // Update page flipper with the connection type
     pageFlipper_.setUseBle(isUsingBleConnection_);
     log_i("Setting KindlePageFlipper to use BLE: %s", isUsingBleConnection_ ? "true" : "false");
+
+    std::string resultAction;
+    if (connected) {
+        resultAction = isUsingBleConnection_ ? "success-ble" : "success-wifi";
+    } else {
+        resultAction = "failed";
+    }
+
+    telemetry_.logMetric(TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
+                         {{"event", std::string("kindle-connect")},
+                          {"action", resultAction},
+                          {"kindle", true},
+                          {"ble_attempted", connectionMethod == "ble"},
+                          {"ble_connected", bleConnected},
+                          {"wifi_connected", wifiConnected},
+                          {"state", std::string(stateToString(state_))}});
 
     // Call the callback if provided
     if (callback) {
@@ -622,6 +717,17 @@ void KindleReadableScreen::disconnectNetworkConnections() {
 void KindleReadableScreen::navigateNext() {
     // Transition to loading state if we're showing partial content
     if (state_ == State::DISPLAY_PARTIAL_CONTENT) {
+        // Record navigation start time
+        navigationStartTime_ = esp_timer_get_time();
+
+        // Log telemetry for showing loading screen during page turn
+        telemetry_.logMetric(
+            TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
+            {{"event", std::string("page-turn")},
+             {"action", std::string("loading-screen-shown")},
+             {"kindle", true},
+             {"po", currentPlace_ ? static_cast<int>(currentPlace_->getOffset()) : 0}});
+
         setState(State::LOADING_CONTENT);
         loadingMessageView_.setText("Loading next page...");
         setNeedsLayout();
@@ -632,8 +738,9 @@ void KindleReadableScreen::navigateNext() {
     currentPlace_ = newPlace_;
 
     // Log telemetry for navigating to next page
-    telemetry_.logMetric(TelemetryField::METRIC_READABLE_PLACE, kindleBook_->uuid.c_str(),
-                         getTelemetryMetrics());
+    auto metrics = getTelemetryMetrics();
+    metrics["kindle"] = true;
+    telemetry_.logMetric(TelemetryField::METRIC_READABLE_PLACE, kindleBook_->uuid, metrics);
 
     updateType_ = prefs_.fastTransitions.get().value_or(false) ? DisplaySystem::UpdateType::PARTIAL
                                                                : DisplaySystem::UpdateType::FULL;
@@ -644,8 +751,9 @@ void KindleReadableScreen::navigatePrevious() {
     currentPlace_ = renderer_.getPreviousPlace();
 
     // Log telemetry for navigating to previous page
-    telemetry_.logMetric(TelemetryField::METRIC_READABLE_PLACE, kindleBook_->uuid.c_str(),
-                         getTelemetryMetrics());
+    auto metrics = getTelemetryMetrics();
+    metrics["kindle"] = true;
+    telemetry_.logMetric(TelemetryField::METRIC_READABLE_PLACE, kindleBook_->uuid, metrics);
 
     updateType_ = prefs_.fastTransitions.get().value_or(false) ? DisplaySystem::UpdateType::PARTIAL
                                                                : DisplaySystem::UpdateType::FULL;
@@ -654,6 +762,15 @@ void KindleReadableScreen::navigatePrevious() {
 
 void KindleReadableScreen::dismissScreen() {
     log_d("Dismissing KindleReadableScreen");
+
+    // Log telemetry for closing a Kindle book
+    int64_t elapsedMs = (esp_timer_get_time() - bookOpenStartTime_) / 1000;
+    telemetry_.logMetric(TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
+                         {{"event", std::string("book-close")},
+                          {"action", std::string("book-closed")},
+                          {"kindle", true},
+                          {"po", currentPlace_ ? static_cast<int>(currentPlace_->getOffset()) : 0},
+                          {"elapsed_ms", static_cast<int>(elapsedMs)}});
 
     CancelFlag::cancel(cancelFlag_);
     cancelDelayedLoadingMessage();
@@ -704,18 +821,23 @@ void KindleReadableScreen::showLastReadDialog(const SpiramString &dialogText) {
     render(display_);
 
     // Log that we showed the last read dialog
-    telemetry_.logMetricData(TelemetryField::METRIC_DIALOG,
-                             {{"dialog", std::string("kindle-books")},
-                              {"action", std::string("last-read-dialog-shown")}});
+    telemetry_.logMetric(TelemetryField::METRIC_DIALOG, kindleBook_->uuid,
+                         {{"dialog", std::string("kindle-last-read")},
+                          {"action", std::string("last-read-dialog-shown")},
+                          {"kindle", true}});
 }
 
 void KindleReadableScreen::handleLastReadDialogResponse(bool gotoLastReadPage) {
     log_i("User selected to %s to the last read page", gotoLastReadPage ? "go" : "not go");
 
-    telemetry_.logMetricData(TelemetryField::METRIC_DIALOG,
-                             {{"dialog", std::string("kindle-books")},
-                              {"action", std::string("last-read-dialog-response")},
-                              {"goto_last_read", gotoLastReadPage}});
+    telemetry_.logMetric(TelemetryField::METRIC_DIALOG, kindleBook_->uuid,
+                         {{"dialog", std::string("kindle-last-read")},
+                          {
+                              "action",
+                              std::string("last-read-dialog-response"),
+                          },
+                          {"goto_last_read", gotoLastReadPage},
+                          {"kindle", true}});
 
     setCurrentScreen(nullptr);
 
@@ -728,7 +850,7 @@ void KindleReadableScreen::handleLastReadDialogResponse(bool gotoLastReadPage) {
 
 void KindleReadableScreen::submitLastReadDialogChoice(bool gotoLastReadPage,
                                                       const std::string &loadingMessage) {
-    setState(State::LOADING_CONTENT);
+    setState(State::LOADING_INITIAL_CONTENT);
     loadingMessageView_.setText(loadingMessage);
     setNeedsLayout();
     setNeedsRerender();
@@ -740,6 +862,14 @@ void KindleReadableScreen::submitLastReadDialogChoice(bool gotoLastReadPage,
 
         if (gotoLastReadPage && result != 200) {
             DispatchGetUiQueue()->dispatch([this]() {
+                telemetry_.logMetric(
+                    TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
+                    {{"event", std::string("dialog-last-read-error")},
+                     {"action", std::string("error")},
+                     {"kindle", true},
+                     {"error", std::string("Failed to sync to last read page")},
+                     {"po", currentPlace_ ? static_cast<int>(currentPlace_->getOffset()) : 0}});
+
                 setErrorMessage("Failed to sync to the last read page. Please try again.");
             });
             return;
@@ -748,6 +878,7 @@ void KindleReadableScreen::submitLastReadDialogChoice(bool gotoLastReadPage,
         // If syncing to latest page, clear the buffer since we're jumping to a new location
         if (gotoLastReadPage) {
             pageFlipper_.clearBuffer();
+            setState(State::LOADING_INITIAL_CONTENT);
         }
 
         pageFlipper_.loadInitialPage();
@@ -755,56 +886,45 @@ void KindleReadableScreen::submitLastReadDialogChoice(bool gotoLastReadPage,
 }
 
 void KindleReadableScreen::scheduleDelayedLoadingMessage() {
-    // Cancel any existing delayed message
+    // Cancel any existing delayed message timer
     cancelDelayedLoadingMessage();
 
-    // Create a new cancel flag for this delayed message
-    delayedMessageCancelFlag_ = std::make_shared<CancelFlag>();
-    // Capture a copy of the flag for the lambda
-    auto localFlag = delayedMessageCancelFlag_;
+    // Create a one-shot timer that fires after 30 seconds
+    delayedMessageTimer_ = xTimerCreate("KindleDelayedMsg", pdMS_TO_TICKS(30 * 1000), pdFALSE, this,
+                                        delayedMessageTimerCallback);
 
-    // TODO(john): Timers would be better here. Maybe we could make a DispatchAfter method
-    DispatchGetCore0BackgroundQueue()->dispatch([this, localFlag]() {
-        // Wait for 5 seconds
-        vTaskDelay(pdMS_TO_TICKS(5 * 1000));
-
-        // Check if the task was cancelled
-        if (CancelFlag::isCancelled(localFlag)) {
-            return;
-        }
-
-        // Display the message on the UI thread
-        DispatchGetUiQueue()->dispatch([this, localFlag]() {
-            if (CancelFlag::isCancelled(localFlag)) {
-                return;
-            }
-
-            if (state_ != State::LOADING_CONTENT) {
-                return; // Don't show if we're no longer loading or screen was dismissed
-            }
-
-            // Set and show the delayed message
-            delayedMessageView_.setText("This can take up to 60 seconds.");
-            delayedMessageView_.setHidden(false);
-            setNeedsLayout();
-
-            // Call setNeedsLayout to recalculate positions of all views
-            draw();
-            display_.updateDisplay(DisplaySystem::UpdateType::PARTIAL, true);
-
-            log_i("Showing delayed loading message after 10 seconds");
-        });
-    });
+    xTimerStart(delayedMessageTimer_, 0);
+    log_i("Scheduled delayed loading message for 30 seconds");
 }
 
 void KindleReadableScreen::cancelDelayedLoadingMessage() {
-    if (delayedMessageCancelFlag_ == nullptr ||
-        CancelFlag::isCancelled(delayedMessageCancelFlag_)) {
-        return;
+    if (delayedMessageTimer_ != nullptr) {
+        xTimerStop(delayedMessageTimer_, 0);
+        xTimerDelete(delayedMessageTimer_, 0);
+        delayedMessageTimer_ = nullptr;
+        log_d("Cancelled delayed loading message timer");
     }
+}
 
-    CancelFlag::cancel(delayedMessageCancelFlag_);
-    delayedMessageCancelFlag_ = nullptr;
+void KindleReadableScreen::delayedMessageTimerCallback(TimerHandle_t timer) {
+    auto *instance = static_cast<KindleReadableScreen *>(pvTimerGetTimerID(timer));
+
+    // Execute on UI thread
+    DispatchGetUiQueue()->dispatch([instance]() {
+        if (instance->state_ != State::LOADING_INITIAL_CONTENT &&
+            instance->state_ != State::LOADING_CONTENT) {
+            return; // Don't show if we're no longer loading
+        }
+
+        // Set and show the delayed message
+        instance->delayedMessageView_.setText("This can take up to 60 seconds.");
+        instance->delayedMessageView_.setHidden(false);
+        instance->setNeedsLayout();
+        instance->draw();
+        instance->display_.updateDisplay(DisplaySystem::UpdateType::PARTIAL, true);
+
+        log_i("Showing delayed loading message after 30 seconds");
+    });
 }
 
 void KindleReadableScreen::attemptReconnection() {
@@ -815,6 +935,15 @@ void KindleReadableScreen::attemptReconnection() {
     if (reconnectionAttempts_ > MAX_RECONNECTION_ATTEMPTS) {
         log_w("Exceeded maximum reconnection attempts (%d). Giving up.", MAX_RECONNECTION_ATTEMPTS);
         DispatchGetUiQueue()->dispatch([this]() {
+            telemetry_.logMetric(
+                TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
+                {{"event", std::string("reconnection")},
+                 {"action", std::string("error")},
+                 {"kindle", true},
+                 {"error", std::string("Exceeded maximum reconnection attempts")},
+                 {"po", currentPlace_ ? static_cast<int>(currentPlace_->getOffset()) : 0},
+                 {"ble", isUsingBleConnection_}});
+
             if (isUsingBleConnection_) {
                 setErrorMessage("Bluetooth connection lost. Please reconnect your phone.");
             } else {
@@ -858,6 +987,14 @@ void KindleReadableScreen::attemptReconnection() {
         if (connected) {
             log_i("Network reconnected successfully");
 
+            telemetry_.logMetric(
+                TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
+                {{"event", std::string("reconnection")},
+                 {"action", std::string("success")},
+                 {"kindle", true},
+                 {"po", currentPlace_ ? static_cast<int>(currentPlace_->getOffset()) : 0},
+                 {"ble", isUsingBleConnection_}});
+
             // Successfully reconnected, retry the operation
             pageFlipper_.retryNetworkOperation(renderer_.atEndOfFile());
 
@@ -877,6 +1014,18 @@ void KindleReadableScreen::attemptReconnection() {
             }
         } else {
             log_w("Failed to reconnect");
+
+            telemetry_.logMetric(
+                TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
+                {{"event", std::string("reconnection")},
+                 {"action", std::string("error")},
+                 {"kindle", true},
+                 {"error", reconnectionAttempts_ >= MAX_RECONNECTION_ATTEMPTS
+                               ? std::string("Reconnect failed, out of attempts")
+                               : std::string("Reconnect failed")},
+                 {"po", currentPlace_ ? static_cast<int>(currentPlace_->getOffset()) : 0},
+                 {"ble", isUsingBleConnection_},
+                 {"attempt", reconnectionAttempts_}});
 
             // If we've reached max attempts, show appropriate error
             if (reconnectionAttempts_ >= MAX_RECONNECTION_ATTEMPTS) {
@@ -899,6 +1048,15 @@ void KindleReadableScreen::attemptReconnection() {
             log_i("Reconnection attempt cancelled");
             return;
         }
+
+        telemetry_.logMetric(
+            TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
+            {{"event", std::string("reconnection")},
+             {"action", std::string("begin")},
+             {"kindle", true},
+             {"attempts", reconnectionAttempts_},
+             {"po", currentPlace_ ? static_cast<int>(currentPlace_->getOffset()) : 0},
+             {"ble", isUsingBleConnection_}});
 
         std::string errorMessage;
         int bleReconnectTimeoutMs = 10000; // Shorter timeout for reconnection
@@ -932,15 +1090,30 @@ void KindleReadableScreen::setCurrentScreen(const std::shared_ptr<Screen> &scree
 void KindleReadableScreen::updatePageFlipperCallbacks() {
     auto cancelFlag = cancelFlag_;
 
-    pageFlipper_.setGotContentFunction([this, cancelFlag]() {
+    pageFlipper_.setGotContentFunction([this, cancelFlag](size_t ocrTextLength) {
         if (CancelFlag::isCancelled(cancelFlag)) {
             return;
         }
-        DispatchGetUiQueue()->dispatch([this, cancelFlag]() {
+        DispatchGetUiQueue()->dispatch([this, cancelFlag, ocrTextLength]() {
             if (CancelFlag::isCancelled(cancelFlag)) {
                 return;
             }
-            if (state_ == State::LOADING_CONTENT || state_ == State::DISPLAY_PARTIAL_CONTENT) {
+            if (state_ == State::LOADING_INITIAL_CONTENT || state_ == State::LOADING_CONTENT ||
+                state_ == State::DISPLAY_PARTIAL_CONTENT) {
+                // Only log open-success telemetry for the initial content load
+                if (state_ == State::LOADING_INITIAL_CONTENT) {
+                    int64_t elapsedMs = (esp_timer_get_time() - bookOpenStartTime_) / 1000;
+                    telemetry_.logMetric(
+                        TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
+                        {{"event", std::string("book-open")},
+                         {"action", std::string("open-success")},
+                         {"kindle", true},
+                         {"po", currentPlace_ ? std::to_string(currentPlace_->getOffset()) : "0"},
+                         {"elapsed_ms", static_cast<int>(elapsedMs)},
+                         {"ocr_text_length", static_cast<int>(ocrTextLength)},
+                         {"state", std::string(stateToString(state_))}});
+                }
+
                 setState(State::DISPLAY_CONTENT);
                 setNeedsLayout();
                 setNeedsRerender();
@@ -961,6 +1134,25 @@ void KindleReadableScreen::updatePageFlipperCallbacks() {
             // Only show error message for non-connection errors
             // CONNECTION_ERROR is handled by the onConnectionErrorFunction below
             if (error != "CONNECTION_ERROR") {
+                // Determine if this is an open or navigate error based on current state
+                bool isInitialLoad = (state_ == State::LOADING_INITIAL_CONTENT);
+
+                // Use appropriate timing based on whether we're opening or navigating
+                int64_t startTime = isInitialLoad ? bookOpenStartTime_ : navigationStartTime_;
+                int64_t elapsedMs = (esp_timer_get_time() - startTime) / 1000;
+                telemetry_.logMetric(
+                    TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
+                    {{"event",
+                      isInitialLoad ? std::string("book-open") : std::string("book-navigate")},
+                     {"action", isInitialLoad ? std::string("open-failed-server")
+                                              : std::string("navigate-failed-server")},
+                     {"kindle", true},
+                     {"error", error},
+                     {"po", currentPlace_ ? static_cast<int>(currentPlace_->getOffset()) : 0},
+                     {"ble", isUsingBleConnection_},
+                     {"elapsed_ms", static_cast<int>(elapsedMs)},
+                     {"state", std::string(stateToString(state_))}});
+
                 setErrorMessage(error);
             }
         });
@@ -994,8 +1186,28 @@ void KindleReadableScreen::updatePageFlipperCallbacks() {
                 return;
             }
 
+            // Log telemetry for connection errors
+            // Determine if this is an open or navigate error based on current state
+            bool isInitialLoad = (state_ == State::LOADING_INITIAL_CONTENT);
+
+            // Use appropriate timing based on whether we're opening or navigating
+            int64_t startTime = isInitialLoad ? bookOpenStartTime_ : navigationStartTime_;
+            int64_t elapsedMs = (esp_timer_get_time() - startTime) / 1000;
+            telemetry_.logMetric(
+                TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
+                {{"event", isInitialLoad ? std::string("book-open") : std::string("book-navigate")},
+                 {"action", isInitialLoad ? std::string("open-failed-connection")
+                                          : std::string("navigate-failed-connection")},
+                 {"kindle", true},
+                 {"error", std::string("connection-error")},
+                 {"po", currentPlace_ ? static_cast<int>(currentPlace_->getOffset()) : 0},
+                 {"ble", isUsingBleConnection_},
+                 {"elapsed_ms", static_cast<int>(elapsedMs)},
+                 {"state", std::string(stateToString(state_))}});
+
             // If we have a connection error, silently try to reconnect
             log_i("Network connection issue detected, attempting reconnection");
+
             attemptReconnection();
         });
     });

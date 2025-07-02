@@ -16,6 +16,8 @@ auto TelemetryFieldToString(TelemetryField field) -> const char * {
         return "rp";
     case METRIC_READABLE_OPEN:
         return "ro";
+    case METRIC_READABLE_REQUEST:
+        return "rq";
     case METRIC_SET_PLACEMARK:
         return "sp";
     case METRIC_EVENT:

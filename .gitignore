@@ -31,3 +31,6 @@ warnings.txt
 test/CatchTests/*/metrics/
 test/CatchTests/*/coredumps/
 build-log.txt
+
+# Claude makes docs for sharing with other repos
+docs/* 

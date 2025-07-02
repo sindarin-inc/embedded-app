@@ -29,6 +29,8 @@ struct KindlePageProgress {
 
 struct KindlePageResponse : public JsonSerializable {
     bool success = false;
+    bool authenticated = true;
+    SpiramString message;
     KindlePageProgress progress;
     SpiramString ocrText;
     SpiramString screenshotUrl;
@@ -40,6 +42,14 @@ struct KindlePageResponse : public JsonSerializable {
     auto fromJson(const JsonObject &json) -> bool override {
         if (json.containsKey("success")) {
             success = json["success"];
+        }
+
+        if (json.containsKey("authenticated")) {
+            authenticated = json["authenticated"];
+        }
+
+        if (json.containsKey("message")) {
+            message = json["message"].as<std::string>();
         }
 
         if (json.containsKey("progress") && json["progress"].is<JsonObject>()) {

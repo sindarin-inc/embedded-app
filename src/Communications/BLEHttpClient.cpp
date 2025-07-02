@@ -15,7 +15,8 @@
 BLEHttpClient::BLEHttpClient(const char *url, std::shared_ptr<CancelFlag> cancelFlag,
                              const char *contentType, esp_http_client_method_t method)
     : HttpClient(url, contentType, method), requestMethod_(method), responseBody_(MAX_BUFFER_SIZE),
-      dataSemaphore_(xSemaphoreCreateBinary()), cancel_(std::move(cancelFlag)) {
+      dataSemaphore_(xSemaphoreCreateBinary()), cancel_(std::move(cancelFlag)),
+      statusCheckSemaphore_(xSemaphoreCreateBinary()) {
 
     requestHeaders_.clear();
 
@@ -37,6 +38,14 @@ BLEHttpClient::~BLEHttpClient() {
     cancel_->removeObserver(this);
 
     vSemaphoreDelete(dataSemaphore_);
+    vSemaphoreDelete(statusCheckSemaphore_);
+}
+
+void BLEHttpClient::sendRequest() {
+    SpiramString method = SpiramString(requestMethod_ == HTTP_METHOD_GET ? "GET" : "POST");
+    bleProxy_->writeUrl(url_, method);
+    bleProxy_->writeHeaders(requestHeaders_);
+    bleProxy_->writeBody(requestBody_);
 }
 
 auto BLEHttpClient::setHeader(const char *key, const char *value) -> esp_err_t {
@@ -57,7 +66,7 @@ auto BLEHttpClient::write(const char *body, int length) -> int {
 }
 
 auto BLEHttpClient::fetchHeaders(const std::shared_ptr<CancelFlag> &cancel) -> int {
-    constexpr auto fetchingTimeoutMs = 3 * 60 * 1000; // 1 minute of downloading headers per book
+    constexpr auto fetchingTimeoutMs = 2 * 60 * 1000; // 2 minutes timeout for headers
     statusCode_ = 0;
     contentLength_ = 0;
     readLength_ = 0;
@@ -72,19 +81,13 @@ auto BLEHttpClient::fetchHeaders(const std::shared_ptr<CancelFlag> &cancel) -> i
         return ERR_BLE_NOT_CONNECTED;
     }
 
-    // Write URL
-    SpiramString method = SpiramString(requestMethod_ == HTTP_METHOD_GET ? "GET" : "POST");
-    bleProxy_->writeUrl(url_, method);
-
-    // Write headers
-    bleProxy_->writeHeaders(requestHeaders_);
-
-    // Write body
-    bleProxy_->writeBody(requestBody_);
+    // Send the initial request
+    sendRequest();
 
     // Wait for response up to 30s
     RateLimiter rl(10, 10);
     auto startTime = esp_timer_get_time();
+    auto lastStatusCheckTime = startTime;
     while (state_ == BLE_HTTP_CLIENT_FETCHING_RESPONSE_HEADERS) {
         if (CancelFlag::isCancelled(cancel)) {
             log_d("Cancelled BLE connection");
@@ -92,6 +95,60 @@ auto BLEHttpClient::fetchHeaders(const std::shared_ptr<CancelFlag> &cancel) -> i
         }
 
         auto currentTime = esp_timer_get_time();
+        auto elapsedSinceLastCheck = (currentTime - lastStatusCheckTime) / 1000;
+
+        // Send status check every 10 seconds
+        if (elapsedSinceLastCheck > 10000) {
+            auto totalElapsedMs = (currentTime - startTime) / 1000;
+            log_i("Sending BLE proxy status check after %lld ms", totalElapsedMs);
+            waitingForStatusCheck_ = true;
+            statusCheckResponse_.clear();
+            bleProxy_->writeStatusCheck();
+
+            // Wait for status check response (up to 2 seconds)
+            if (xSemaphoreTake(statusCheckSemaphore_, pdMS_TO_TICKS(2000)) == pdTRUE) {
+                // Parse response
+                if (statusCheckResponse_.empty()) {
+                    // "U=" response - proxy is not waiting for any request
+                    log_w("BLE proxy is not waiting for any request - re-sending");
+                    log_i("BLE proxy retry: lost request after %lld ms", totalElapsedMs);
+
+                    sendRequest();
+                    // Reset the timer
+                    startTime = esp_timer_get_time();
+                } else if (statusCheckResponse_.find("1/1:") == 0) {
+                    // "U=1/1:METHOD:URL" response - proxy is waiting for a URL
+                    // Parse format: "1/1:METHOD:URL"
+                    size_t methodStart = statusCheckResponse_.find(':', 0) + 1;
+                    size_t urlStart = statusCheckResponse_.find(':', methodStart) + 1;
+
+                    if (urlStart != std::string::npos && urlStart < statusCheckResponse_.length()) {
+                        SpiramString proxyUrl = statusCheckResponse_.substr(urlStart);
+                        log_i("BLE proxy is waiting for URL: %s", proxyUrl.c_str());
+
+                        // Check if it matches our URL
+                        if (proxyUrl != SpiramString(url_)) {
+                            log_w("BLE proxy is waiting for different URL. Expected: %s, Got: %s",
+                                  url_, proxyUrl.c_str());
+
+                            // Re-send the request
+                            log_i("Re-sending BLE request");
+                            sendRequest();
+                            // Reset the timer
+                            startTime = esp_timer_get_time();
+                        }
+                    }
+                } else {
+                    log_w("Unexpected status check response format: %s",
+                          statusCheckResponse_.c_str());
+                }
+            } else {
+                log_i("No status check response - likely older BLE proxy version");
+            }
+            waitingForStatusCheck_ = false;
+            lastStatusCheckTime = currentTime;
+        }
+
         auto timedOut =
             (currentTime - startTime) > (static_cast<long long>(fetchingTimeoutMs) * 1000);
         if (timedOut) {
@@ -125,6 +182,15 @@ auto BLEHttpClient::fetchHeaders(const std::shared_ptr<CancelFlag> &cancel) -> i
 
 auto BLEHttpClient::handleWebRequest(const SpiramString &key, const char *body, size_t bodySize)
     -> bool {
+    // Handle status check response
+    if (key == "U" && waitingForStatusCheck_) {
+        log_d("Received status check response: %s %.*s", key.c_str(), bodySize, body);
+        statusCheckResponse_ = SpiramString(body, bodySize);
+        waitingForStatusCheck_ = false;
+        xSemaphoreGive(statusCheckSemaphore_);
+        return false;
+    }
+
     // If the key contains more than a single character, it's re-requesting a chunk of the body
     if (key != "B") {
         log_d("BLE Sync handleWebRequest: %s %.*s", key.c_str(), bodySize, body);
@@ -212,9 +278,11 @@ auto BLEHttpClient::handleWebRequest(const SpiramString &key, const char *body, 
 
         xSemaphoreGive(dataSemaphore_);
 
+        // Always acknowledge body chunks
+        bleProxy_->acknowledgeKey(key);
+
         if (chunkNumber == totalChunks) {
             state_ = BLE_HTTP_CLIENT_WAITING_FOR_END_OF_REQUEST;
-            bleProxy_->acknowledgeKey(key);
         }
     } else if (key == "E") {
         // End of request
@@ -321,9 +389,12 @@ auto BLEHttpClient::writeChunkedData(const char *data, int length) -> bool { ret
 auto BLEHttpClient::endChunkedData() -> bool { return true; }
 
 void BLEHttpClient::cancel() {
-    // Free the semaphore if it exists so it doesn't block shutdown/cancellation
+    // Free the semaphores if they exist so they don't block shutdown/cancellation
     if (dataSemaphore_ != nullptr) {
         xSemaphoreGive(dataSemaphore_);
+    }
+    if (statusCheckSemaphore_ != nullptr) {
+        xSemaphoreGive(statusCheckSemaphore_);
     }
 }
 #endif

@@ -1,16 +1,20 @@
 #include "Models/KindlePageFlipper.hpp"
 
 #include <cinttypes>
+#include <esp_timer.h>
 #include <utility>
 
 #include "Communications/SindarinAPI.hpp"
 #include "Misc/Dispatch.hpp"
 #include "Misc/StringUtil.hpp"
+#include "Misc/Telemetry.hpp"
 #include "sindarin-debug.h"
 
 KindlePageFlipper::KindlePageFlipper(const std::shared_ptr<KindleBook> &kindleBook,
-                                     std::shared_ptr<CancelFlag> cancelFlag, bool useBle)
-    : kindleBook_(kindleBook), useBle_(useBle), cancelFlag_(std::move(cancelFlag)) {
+                                     std::shared_ptr<CancelFlag> cancelFlag, Telemetry &telemetry,
+                                     bool useBle)
+    : kindleBook_(kindleBook), useBle_(useBle), cancelFlag_(std::move(cancelFlag)),
+      telemetry_(telemetry) {
     log_i("Created KindlePageFlipper for book: %s by %s", kindleBook->title.c_str(),
           kindleBook->author.c_str());
 
@@ -19,22 +23,43 @@ KindlePageFlipper::KindlePageFlipper(const std::shared_ptr<KindleBook> &kindleBo
 
 auto KindlePageFlipper::checkForError(int httpCode, std::shared_ptr<KindlePageResponse> &response)
     -> std::string {
-    if (httpCode == 200 && response->success) {
+    if (httpCode == 200 && response->success && response->authenticated) {
         return "";
+    }
+
+    // Check for authentication failure in response
+    if ((httpCode == 200 || httpCode == 401) && !response->authenticated) {
+        // When authenticated: false and we have kindle.json, use the message from response
+        if (!response->message.empty()) {
+            return std::string(response->message);
+        }
+        return "Your Kindle session has expired. Please try signing in on the mobile app again.";
     }
 
     // Check for connection issues
     if (httpCode <= 0) {
         return "CONNECTION_ERROR"; // Special marker for connection issues that should be retried
     } else if (httpCode == 401 || httpCode == 403) {
-        return "Authentication error. Please try signing in again.";
+        return "Your Kindle session has expired. Please try signing in on the mobile app again.";
     } else if (httpCode == 404) {
         return "Book or page not found in your Kindle library.";
     } else if (httpCode >= 400 && httpCode < 500) {
+        // Use server's error message if available
+        if (!response->message.empty()) {
+            return std::string(response->message);
+        }
         return "Request error. Please check your settings.";
     } else if (httpCode >= 500) {
+        // Use server's error message if available
+        if (!response->message.empty()) {
+            return std::string(response->message);
+        }
         return "Server error. Please try again later.";
     } else {
+        // Use server's error message if available
+        if (!response->message.empty()) {
+            return std::string(response->message);
+        }
         return "Failed to load book content.";
     }
 }
@@ -51,9 +76,16 @@ auto KindlePageFlipper::checkForLastReadDialog(const std::shared_ptr<KindlePageR
 void KindlePageFlipper::loadInitialPage() {
     log_i("Loading initial page for Kindle book: %s", kindleBook_->title.c_str());
 
+    telemetry_.logMetric(TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
+                         {{"event", std::string("book-open")},
+                          {"action", std::string("open-begin")},
+                          {"kindle", true}});
+
     auto cancelFlag = cancelFlag_;
     // Execute the API call on the background thread
     DispatchGetCore0BackgroundQueue()->dispatch([this, cancelFlag]() {
+        // Track book open start time
+        int64_t bookOpenStartTime = esp_timer_get_time();
         // Create a response object
         auto response = std::make_shared<KindlePageResponse>();
 
@@ -66,6 +98,15 @@ void KindlePageFlipper::loadInitialPage() {
         auto errorMessage = checkForError(httpCode, response);
         if (!errorMessage.empty()) {
             log_w("Error loading initial page: %s", errorMessage.c_str());
+
+            int64_t elapsedMs = (esp_timer_get_time() - bookOpenStartTime) / 1000;
+            telemetry_.logMetric(TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
+                                 {{"event", std::string("book-open")},
+                                  {"action", std::string("open-failed")},
+                                  {"kindle", true},
+                                  {"error", errorMessage},
+                                  {"elapsed_ms", static_cast<int>(elapsedMs)}});
+
             // Only propagate non-connection errors
             if (errorMessage != "CONNECTION_ERROR") {
                 onErrorFunction_(errorMessage);
@@ -80,13 +121,15 @@ void KindlePageFlipper::loadInitialPage() {
 
         auto hasDialog = checkForLastReadDialog(response);
 
+        size_t ocrTextLength = 0;
         // If this is a last read dialog, don't append the page (which would be empty)
         if (!hasDialog) {
+            ocrTextLength = response->ocrText.size();
             pageStream_->appendPageFromResponse(*response);
         }
 
         // Always signal that we got content (to dismiss loading)
-        gotContentFunction_();
+        gotContentFunction_(ocrTextLength);
     });
 }
 
@@ -128,6 +171,21 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
               pageToPreview, atEndOfContent);
 
         if (pagesToAdvance > 0 || pageToPreview > 0) {
+            // Track navigation start time
+            int64_t navigationStartTime = esp_timer_get_time();
+
+            auto beginTelemetryData = std::unordered_map<std::string, TelemetryVariant>{
+                {"event", std::string("book-navigate")},
+                {"action", std::string("navigate-begin")},
+                {"kindle", true},
+                {"direction", pagesToAdvance},
+                {"po", static_cast<int>(place->getOffset())}};
+            if (pageToPreview > 0) {
+                beginTelemetryData["preview"] = pageToPreview;
+            }
+            telemetry_.logMetric(TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
+                                 beginTelemetryData);
+
             auto response = std::make_shared<KindlePageResponse>();
 
             int httpCode = SindarinAPI::getInstance()->navigateKindle(
@@ -139,6 +197,22 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
             auto errorMessage = checkForError(httpCode, response);
             if (!errorMessage.empty()) {
                 log_e("Error moving to next page: %s", errorMessage.c_str());
+
+                int64_t elapsedMs = (esp_timer_get_time() - navigationStartTime) / 1000;
+                auto failedTelemetryData = std::unordered_map<std::string, TelemetryVariant>{
+                    {"event", std::string("book-navigate")},
+                    {"action", std::string("navigate-failed")},
+                    {"kindle", true},
+                    {"direction", pagesToAdvance},
+                    {"po", static_cast<int>(place->getOffset())},
+                    {"error", errorMessage},
+                    {"elapsed_ms", static_cast<int>(elapsedMs)}};
+                if (pageToPreview > 0) {
+                    failedTelemetryData["preview"] = pageToPreview;
+                }
+                telemetry_.logMetric(TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
+                                     failedTelemetryData);
+
                 // Only propagate non-connection errors
                 if (errorMessage != "CONNECTION_ERROR") {
                     onErrorFunction_(errorMessage);
@@ -154,16 +228,33 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
 
             auto hasDialog = checkForLastReadDialog(response);
 
+            size_t ocrTextLength = 0;
             // If this is a last read dialog, don't append the page
             if (!hasDialog) {
                 // If we're navigating only, don't expect a page
                 if (pageToPreview > 0) {
+                    ocrTextLength = response->ocrText.size();
                     pageStream_->appendPageFromResponse(*response);
                 }
             }
 
+            int64_t elapsedMs = (esp_timer_get_time() - navigationStartTime) / 1000;
+            auto successTelemetryData = std::unordered_map<std::string, TelemetryVariant>{
+                {"event", std::string("book-navigate")},
+                {"action", std::string("navigate-success")},
+                {"kindle", true},
+                {"direction", pagesToAdvance},
+                {"po", static_cast<int>(place->getOffset())},
+                {"ocr_text_length", static_cast<int>(ocrTextLength)},
+                {"elapsed_ms", static_cast<int>(elapsedMs)}};
+            if (pageToPreview > 0) {
+                successTelemetryData["preview"] = pageToPreview;
+            }
+            telemetry_.logMetric(TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
+                                 successTelemetryData);
+
             // Always signal that we got content (to dismiss loading)
-            gotContentFunction_();
+            gotContentFunction_(ocrTextLength);
         }
 
         place_ = std::dynamic_pointer_cast<TxtPlace>(place);

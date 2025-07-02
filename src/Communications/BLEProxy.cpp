@@ -138,4 +138,10 @@ void BLEProxy::acknowledgeKey(const SpiramString &key) {
     proxyCharacteristic_->notify();
 }
 
+void BLEProxy::writeStatusCheck() {
+    log_i("GATT client writing status check");
+    proxyCharacteristic_->setValue(SpiramString("U?"));
+    proxyCharacteristic_->notify();
+}
+
 #endif // CONFIG_USE_BLE_SERVER_PROXY

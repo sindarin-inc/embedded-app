@@ -565,12 +565,9 @@ auto SindarinAPI::makeKindleRequest(const std::string &path, KindlePageResponse 
     }
 
     int httpCode = client->getStatusCode();
-    if (httpCode != 200) {
-        log_e("HTTP request failed with status code: %d", httpCode);
-        return httpCode;
-    }
 
-    // Read the response using stream
+    // Always try to read the response body, even for error status codes
+    // This allows us to get the error message from the server
     auto stream = client->makeReadStream();
     if (!stream) {
         log_e("Failed to create read stream");

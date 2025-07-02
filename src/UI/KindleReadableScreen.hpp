@@ -1,5 +1,7 @@
 #pragma once
 
+#include <freertos/FreeRTOS.h>
+#include <freertos/timers.h>
 #include <utility>
 
 #include "Misc/CancelFlag.hpp"
@@ -29,6 +31,7 @@ class KindleReadableScreen : public EinkView, public Screen {
 public:
     enum class State {
         CONNECTING,
+        LOADING_INITIAL_CONTENT,
         LOADING_CONTENT,
         ERROR,
         DISPLAY_CONTENT,
@@ -62,7 +65,7 @@ protected:
     void setErrorMessage(const std::string &message);
     using ConnectionCallback = std::function<void(bool connected)>;
     auto connectToNetwork(std::string &errorMessage, const ConnectionCallback &callback = nullptr,
-                          int bleTimeoutMs = 30000) -> bool;
+                          int bleTimeoutMs = 10000) -> bool;
     void disconnectNetworkConnections();
 
     void navigateNext();
@@ -92,8 +95,12 @@ private:
     int reconnectionAttempts_ = 0;
     static const int MAX_RECONNECTION_ATTEMPTS = 2;
 
+    // Timing tracking
+    int64_t bookOpenStartTime_ = 0;
+    int64_t navigationStartTime_ = 0;
+
     // Timer handles for UI tasks
-    std::shared_ptr<CancelFlag> delayedMessageCancelFlag_;
+    TimerHandle_t delayedMessageTimer_ = nullptr;
     std::shared_ptr<CancelFlag> reconnectionAttemptCancelFlag_;
 
     MultiLineTextView loadingMessageView_;
@@ -126,4 +133,6 @@ private:
     void cancelReconnectionAttempt();
     // Re-register page flipper callbacks with new cancel flag
     void updatePageFlipperCallbacks();
+    // Timer callback for delayed message
+    static void delayedMessageTimerCallback(TimerHandle_t timer);
 };

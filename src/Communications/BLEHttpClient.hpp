@@ -56,6 +56,8 @@ public:
     void cancel();
 
 private:
+    void sendRequest();
+
     std::shared_ptr<BLEManager> bleManager_;
     std::shared_ptr<BLEProxy> bleProxy_;
     int statusCode_{};
@@ -71,4 +73,9 @@ private:
 
     SemaphoreHandle_t dataSemaphore_{};
     std::shared_ptr<CancelFlag> cancel_;
+
+    // Status check tracking
+    bool waitingForStatusCheck_{false};
+    SpiramString statusCheckResponse_;
+    SemaphoreHandle_t statusCheckSemaphore_{nullptr};
 };
