@@ -55,6 +55,10 @@ jobs:
         run: |
           ./scripts/test_watchdog.sh './test/CatchTests/build/tests [telemetry] --reporter console --reporter junit::out=catch-results-telemetry.xml' 60
 
+      - name: Run kindle tests
+        run: |
+          ./scripts/test_watchdog.sh './test/CatchTests/build/tests [kindle] --reporter console --reporter junit::out=catch-results-kindle.xml' 60
+
       - name: Test Report
         uses: dorny/test-reporter@v1
         # run this step even if previous step failed

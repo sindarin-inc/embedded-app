@@ -12,9 +12,9 @@
 
 #include "Communications/SindarinAPI.hpp"
 #include "DisplayUtil.hpp"
-#include "Misc/Defer.hpp"
 #include "Displays/DisplayEinkET013TT1.hpp"
 #include "Misc/Battery.hpp"
+#include "Misc/Defer.hpp"
 #include "Misc/Dispatch.hpp"
 #include "Misc/Platform.hpp"
 #include "Misc/Telemetry.hpp"
@@ -50,15 +50,15 @@ static std::atomic<int> mockDelayMs(0);
 static std::atomic<int> mockErrorCode(500);
 
 // State tracking for sequential content delivery
-static std::atomic<int> mockCurrentLine(0);  // Track which line we're serving next
-static const int LINES_PER_PAGE = 20;        // Each "page" contains 20 lines
+static std::atomic<int> mockCurrentLine(0); // Track which line we're serving next
+static const int LINES_PER_PAGE = 20;       // Each "page" contains 20 lines
 
 // Helper function to generate sequential content
 std::string generateSequentialContent(int startLine, int numLines) {
     std::string content;
     for (int i = 0; i < numLines; i++) {
         int lineNum = startLine + i;
-        content += "Line " + std::to_string(lineNum) + ": This is test content for line " + 
+        content += "Line " + std::to_string(lineNum) + ": This is test content for line " +
                    std::to_string(lineNum) + " with some words to make it realistic.\n";
     }
     return content;
@@ -110,12 +110,14 @@ void setupHttpServer(std::unique_ptr<httplib::Server> &httpServer,
         }
 
         // Normal response - simplified content for testing
-        std::string simpleContent = "Line 1 test content. Line 2 test content. Line 3 test content.";
+        std::string simpleContent =
+            "Line 1 test content. Line 2 test content. Line 3 test content.";
         mockCurrentLine = 21; // Update state to next chunk
-        
+
         std::string jsonResponse = R"({
             "success": true,
-            "ocr_text": ")" + simpleContent + R"(",
+            "ocr_text": ")" + simpleContent +
+                                   R"(",
             "progress": {
                 "percentage": 5,
                 "current_page": 1,
@@ -172,8 +174,8 @@ void setupHttpServer(std::unique_ptr<httplib::Server> &httpServer,
             preview = std::stoi(req.get_param_value("preview"));
         }
 
-        log_i("Mock server navigate: navigate=%d, preview=%d, currentLine=%d", 
-              navigate, preview, mockCurrentLine.load());
+        log_i("Mock server navigate: navigate=%d, preview=%d, currentLine=%d", navigate, preview,
+              mockCurrentLine.load());
 
         // Advance position by navigate pages (each page is LINES_PER_PAGE lines)
         // But only if we're actually navigating forward
@@ -200,10 +202,13 @@ void setupHttpServer(std::unique_ptr<httplib::Server> &httpServer,
 
         std::string jsonResponse = R"({
             "success": true,
-            "ocr_text": ")" + escapedContent + R"(",
+            "ocr_text": ")" + escapedContent +
+                                   R"(",
             "progress": {
-                "percentage": )" + std::to_string(std::min(95, mockNavigateCallCount.load() * 10)) + R"(,
-                "current_page": )" + std::to_string(mockNavigateCallCount.load() + 1) + R"(,
+                "percentage": )" + std::to_string(std::min(95, mockNavigateCallCount.load() * 10)) +
+                                   R"(,
+                "current_page": )" +
+                                   std::to_string(mockNavigateCallCount.load() + 1) + R"(,
                 "total_pages": 100
             }
         })";
@@ -245,9 +250,9 @@ void teardownHttpServer(std::unique_ptr<httplib::Server> &httpServer,
     httpServer = nullptr;
 }
 
-TEST_CASE("Test KindleReadableScreen views independently", "[kindle]") {
+TEST_CASE("Test KindleReadableScreen views independently", "[.][kindle]") {
     SetImagesFolder("KindleTestImages");
-    defer { SetImagesFolder("Images"); };  // Reset to default after test
+    defer { SetImagesFolder("Images"); }; // Reset to default after test
 
     auto display = createDisplay();
 
@@ -559,9 +564,9 @@ TEST_CASE("Test KindleReadableScreen views independently", "[kindle]") {
     }
 }
 
-TEST_CASE("Test mock server URL override", "[kindle]") {
+TEST_CASE("Test mock server URL override", "[.][kindle]") {
     SetImagesFolder("KindleTestImages");
-    defer { SetImagesFolder("Images"); };  // Reset to default after test
+    defer { SetImagesFolder("Images"); }; // Reset to default after test
 
     // Set up mock server first
     auto httpServer = std::make_unique<httplib::Server>();
@@ -569,14 +574,14 @@ TEST_CASE("Test mock server URL override", "[kindle]") {
     std::atomic<bool> serverRunning(false);
     int port = 8080;
     setupHttpServer(httpServer, httpServerThread, serverRunning, port);
-    
+
     // CRITICAL: Override SindarinAPI URL BEFORE creating any other objects
     auto api = SindarinAPI::getInstance();
     log_i("TEST: SindarinAPI instance retrieved, about to override URL");
     api->overrideBaseUrl("http://127.0.0.1:8080");
     api->setAccessToken("test-token");
     log_i("TEST: SindarinAPI URL overridden to mock server and auth token set");
-    
+
     // Create required dependencies
     PosixFileSystem fileSystem;
     PreferencesStore prefs;
@@ -585,7 +590,7 @@ TEST_CASE("Test mock server URL override", "[kindle]") {
     prefs.wifiDisabled.set(false);
     prefs.bleDisabled.set(true);
     prefs.cloudToken.set("test-token");
-    
+
     Telemetry telemetry(fileSystem, prefs);
     Battery battery(fileSystem, prefs, telemetry);
     SolDrm solDrm(prefs);
@@ -601,13 +606,13 @@ TEST_CASE("Test mock server URL override", "[kindle]") {
 
     // Simple test to verify our mock server is working - direct call without FreeRTOS
     auto response = std::make_shared<KindlePageResponse>();
-    
+
     log_i("Mock server test: Making direct API call...");
-    int httpCode = api->openKindleBook("Test Book for Integration", response.get(), 
-                                     std::make_shared<CancelFlag>(), false);
-    log_i("Mock server test: Direct API call completed - HTTP code: %d, success: %s", 
-          httpCode, response->success ? "true" : "false");
-    
+    int httpCode = api->openKindleBook("Test Book for Integration", response.get(),
+                                       std::make_shared<CancelFlag>(), false);
+    log_i("Mock server test: Direct API call completed - HTTP code: %d, success: %s", httpCode,
+          response->success ? "true" : "false");
+
     if (response->success) {
         log_i("Mock server test: OCR text length: %zu", response->ocrText.length());
         log_i("Mock server test: OCR text preview: %.100s", response->ocrText.c_str());
@@ -624,7 +629,7 @@ TEST_CASE("Test mock server URL override", "[kindle]") {
     teardownHttpServer(httpServer, httpServerThread);
 }
 
-TEST_CASE("Test KindlePageFlipper with mock server", "[kindle]") {
+TEST_CASE("Test KindlePageFlipper with mock server", "[.][kindle]") {
     // This test will come later once URL override works
     REQUIRE(true); // Placeholder
 }
