@@ -27,6 +27,8 @@
 extern auto UIGetCurrentScreen() -> std::shared_ptr<Screen>;
 
 TEST_CASE("Test some individual EPub formatting edge cases", "[epub-format]") {
+    SetImagesFolder("EPubFormatting");
+    
     auto display = createDisplay();
 
     PosixFileSystem fs("./test/CatchTests");
@@ -67,6 +69,8 @@ TEST_CASE("Test some individual EPub formatting edge cases", "[epub-format]") {
     }
 
     SECTION("Test that all glyphs render inside the EPUB") {
+        SetImagesFolder("EPubGlyphTest");
+        
         auto readable = std::make_shared<Readable>();
         readable->readableType = "book";
 
@@ -86,7 +90,7 @@ TEST_CASE("Test some individual EPub formatting edge cases", "[epub-format]") {
             auto [newPlace, _] = renderer.renderPage(place);
             place = std::dynamic_pointer_cast<EPubPlace>(newPlace);
             display->updateDisplay(DisplaySystem::UpdateType::FULL, true);
-            ASSERT_VIEW_UNCHANGED(display, "EPubGlyphTest/" + std::to_string(i) + "-" +
+            ASSERT_VIEW_UNCHANGED(display, std::to_string(i) + "-" +
                                                std::string(chapter.title));
             i++;
         }

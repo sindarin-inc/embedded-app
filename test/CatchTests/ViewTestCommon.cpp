@@ -188,7 +188,8 @@ auto CheckViewUnchanged(DisplayEinkET013TT1 &display, std::string key) -> ViewTe
 
     // Create the TestRun directory if needed
     std::filesystem::create_directory(GetDirectory(directory + testRunPrefix));
-    std::filesystem::create_directory(GetDirectory(directory + testRunPrefix + key));
+    // Create parent directories for the key if it contains subdirectories
+    std::filesystem::create_directories(std::filesystem::path(result.renderedImagePath).parent_path());
 
     if (!stbi_write_png(result.renderedImagePath.c_str(), CONFIG_DISPLAY_WIDTH,
                         CONFIG_DISPLAY_HEIGHT, 1, display.buffer().get(), 0)) {
