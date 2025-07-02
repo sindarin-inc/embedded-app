@@ -28,6 +28,7 @@ TEST_CASE("Test generateKeypair", "[SolDrm]") {
 }
 
 TEST_CASE("Test DRM'd EPub", "[SolDrm]") {
+    SetImagesFolder("Images");  // Ensure we're using the default folder
     auto display = createDisplay();
 
     PosixFileSystem fs("./test/CatchTests");
