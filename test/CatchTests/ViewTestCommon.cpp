@@ -24,7 +24,10 @@
 #include "Storage/PosixFileSystem.hpp"
 #include "sindarin-debug.h"
 
+// Only accept changes when not running in CI
+#ifndef CI
 #define ACCEPT_CHANGES 1
+#endif
 
 extern bool useSimulatorTestTime;
 extern int simulatorTestHours;
@@ -210,6 +213,8 @@ auto CheckViewUnchanged(DisplayEinkET013TT1 &display, std::string key) -> ViewTe
         // If ACCEPT_CHANGES is defined, automatically accept the changes
 #ifdef ACCEPT_CHANGES
         UNSCOPED_INFO("  ---> Accepting changes");
+        // Create the accepted directory if it doesn't exist
+        std::filesystem::create_directories(std::filesystem::path(result.acceptedImagePath).parent_path());
         std::filesystem::copy(result.renderedImagePath, result.acceptedImagePath,
                               std::filesystem::copy_options::overwrite_existing);
 #endif
@@ -253,6 +258,8 @@ auto CheckViewUnchanged(DisplayEinkET013TT1 &display, std::string key) -> ViewTe
         // If ACCEPT_CHANGES is defined, automatically accept the changes
 #ifdef ACCEPT_CHANGES
         UNSCOPED_INFO("  ---> Accepting changes");
+        // Create the accepted directory if it doesn't exist
+        std::filesystem::create_directories(std::filesystem::path(result.acceptedImagePath).parent_path());
         std::filesystem::copy(result.renderedImagePath, result.acceptedImagePath,
                               std::filesystem::copy_options::overwrite_existing);
 #endif

@@ -27,7 +27,7 @@ jobs:
 
       - name: Build unit tests binary
         run: |
-          make test-build
+          CMAKE_FLAGS="-DCMAKE_CXX_FLAGS=-DCI" make test-build
 
       - name: Run timeout test
         run: |
