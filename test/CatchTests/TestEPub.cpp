@@ -27,9 +27,8 @@
 extern auto UIGetCurrentScreen() -> std::shared_ptr<Screen>;
 
 TEST_CASE("Test some individual EPub formatting edge cases", "[epub-format]") {
-    SetImagesFolder("EPubFormatting");
-    defer { SetImagesFolder("Images"); };  // Reset to default after test
-    
+    SetImagesFolder("Images");
+
     auto display = createDisplay();
 
     PosixFileSystem fs("./test/CatchTests");
@@ -70,8 +69,9 @@ TEST_CASE("Test some individual EPub formatting edge cases", "[epub-format]") {
     }
 
     SECTION("Test that all glyphs render inside the EPUB") {
-        SetImagesFolder("Images");  // Use default folder, images are in Images/Accepted/EPubGlyphTest/
-        
+        SetImagesFolder(
+            "Images"); // Use default folder, images are in Images/Accepted/EPubGlyphTest/
+
         auto readable = std::make_shared<Readable>();
         readable->readableType = "book";
 
@@ -102,7 +102,7 @@ TEST_CASE("Test EPub Books Rendering", "[.][epub]") {
 
     SetupFileSystemMock("EPubTestData");
     SetImagesFolder("EPubImages");
-    defer { SetImagesFolder("Images"); };  // Reset to default after test
+    defer { SetImagesFolder("Images"); }; // Reset to default after test
 
     StartAppMain(FONT_CHOICES::PREFS_SOL_SMALL, 10, 10, -2);
     defer { StopFreeRtos(); };
