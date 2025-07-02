@@ -1,7 +1,3 @@
-// Define this before including headers to access protected members in tests
-#define protected public
-#define private public
-
 #include <atomic>
 #include <catch_amalgamated.hpp>
 #include <chrono>
@@ -9,6 +5,10 @@
 #include <memory>
 #include <sstream>
 #include <thread>
+
+// Define this before including project headers to access protected members in tests
+#define protected public
+#define private public
 
 #include "Communications/SindarinAPI.hpp"
 #include "DisplayUtil.hpp"
