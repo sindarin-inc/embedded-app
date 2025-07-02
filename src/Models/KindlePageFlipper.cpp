@@ -148,8 +148,18 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
             place_ = std::dynamic_pointer_cast<TxtPlace>(place);
         }
 
-        log_i("Updating place from %s to %s %s", place_->str().c_str(), place->str().c_str(),
-              atEndOfContent ? "(at end of content)" : "");
+        if (place_ != nullptr) {
+            log_i("Updating place from %s to %s %s", place_->str().c_str(), place->str().c_str(),
+                  atEndOfContent ? "(at end of content)" : "");
+        } else {
+            log_i("Updating place to %s %s (place_ is null)", place->str().c_str(),
+                  atEndOfContent ? "(at end of content)" : "");
+        }
+
+        if (place_ == nullptr) {
+            log_w("Cannot update place: place_ is null (not a TxtPlace?)");
+            return;
+        }
 
         auto previousPageIndex = pageStream_->pageIndexForOffset(place_->getOffset());
         auto currentPageIndex = pageStream_->pageIndexForOffset(place->getOffset());
