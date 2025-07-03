@@ -252,7 +252,6 @@ void teardownHttpServer(std::unique_ptr<httplib::Server> &httpServer,
 
 TEST_CASE("Test KindleReadableScreen views independently", "[.][kindle]") {
     SetImagesFolder("KindleTestImages");
-    defer { SetImagesFolder("Images"); }; // Reset to default after test
 
     auto display = createDisplay();
 
@@ -566,7 +565,6 @@ TEST_CASE("Test KindleReadableScreen views independently", "[.][kindle]") {
 
 TEST_CASE("Test mock server URL override", "[.][kindle]") {
     SetImagesFolder("KindleTestImages");
-    defer { SetImagesFolder("Images"); }; // Reset to default after test
 
     // Set up mock server first
     auto httpServer = std::make_unique<httplib::Server>();
