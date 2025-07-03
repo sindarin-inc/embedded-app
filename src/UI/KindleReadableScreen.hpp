@@ -98,6 +98,7 @@ private:
     // Timing tracking
     int64_t bookOpenStartTime_ = 0;
     int64_t navigationStartTime_ = 0;
+    int64_t connectionStartTime_ = 0;
 
     // Timer handles for UI tasks
     TimerHandle_t delayedMessageTimer_ = nullptr;

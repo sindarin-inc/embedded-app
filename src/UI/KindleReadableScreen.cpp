@@ -274,6 +274,8 @@ void KindleReadableScreen::begin() {
     // Start connection process
     DispatchGetCore0BackgroundQueue()->dispatch([this, initialConnectionCallback]() {
         std::string errorMessage;
+        // Record connection start time for kindle-connect elapsed_ms tracking
+        connectionStartTime_ = esp_timer_get_time();
         bool connected = connectToNetwork(errorMessage, initialConnectionCallback);
 
         // Show error if initial connection failed completely
@@ -540,11 +542,13 @@ auto KindleReadableScreen::connectToNetwork(std::string &errorMessage,
             log_w("BLE connection failed for Kindle book");
 
             // Log BLE failure telemetry
+            int64_t bleElapsedMs = (esp_timer_get_time() - connectionStartTime_) / 1000;
             telemetry_.logMetric(TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
                                  {{"event", std::string("kindle-connect")},
                                   {"action", std::string("failed-ble")},
                                   {"kindle", true},
-                                  {"state", std::string(stateToString(state_))}});
+                                  {"state", std::string(stateToString(state_))},
+                                  {"elapsed_ms", static_cast<int>(bleElapsedMs)}});
         } else {
             log_i("BLE successfully connected for Kindle book");
             bleConnected = true;
@@ -600,11 +604,13 @@ auto KindleReadableScreen::connectToNetwork(std::string &errorMessage,
             isUsingBleConnection_ = false;
             if (wasPreviouslyUsingBle && reconnectionAttempts_ > 0) {
                 log_i("Successfully switched from BLE to Wi-Fi during reconnection");
+                int64_t fallbackElapsedMs = (esp_timer_get_time() - connectionStartTime_) / 1000;
                 telemetry_.logMetric(TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
                                      {{"event", std::string("kindle-connect")},
                                       {"action", std::string("ble-to-wifi-fallback")},
                                       {"kindle", true},
-                                      {"state", std::string(stateToString(state_))}});
+                                      {"state", std::string(stateToString(state_))},
+                                      {"elapsed_ms", static_cast<int>(fallbackElapsedMs)}});
             }
         }
     } else {
@@ -657,6 +663,7 @@ auto KindleReadableScreen::connectToNetwork(std::string &errorMessage,
         resultAction = "failed";
     }
 
+    int64_t finalElapsedMs = (esp_timer_get_time() - connectionStartTime_) / 1000;
     telemetry_.logMetric(TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
                          {{"event", std::string("kindle-connect")},
                           {"action", resultAction},
@@ -664,7 +671,8 @@ auto KindleReadableScreen::connectToNetwork(std::string &errorMessage,
                           {"ble_attempted", connectionMethod == "ble"},
                           {"ble_connected", bleConnected},
                           {"wifi_connected", wifiConnected},
-                          {"state", std::string(stateToString(state_))}});
+                          {"state", std::string(stateToString(state_))},
+                          {"elapsed_ms", static_cast<int>(finalElapsedMs)}});}
 
     // Call the callback if provided
     if (callback) {
