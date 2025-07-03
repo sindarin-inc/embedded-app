@@ -626,8 +626,3 @@ TEST_CASE("Test mock server URL override", "[.][kindle]") {
     // Clean up server
     teardownHttpServer(httpServer, httpServerThread);
 }
-
-TEST_CASE("Test KindlePageFlipper with mock server", "[.][kindle]") {
-    // This test will come later once URL override works
-    REQUIRE(true); // Placeholder
-}

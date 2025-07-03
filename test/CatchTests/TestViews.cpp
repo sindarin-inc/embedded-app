@@ -35,6 +35,7 @@ extern Font fontFace2;
 TEST_CASE("First few screens render correctly and handle remote commands") {
 
     SetupFileSystemMock("TestData");
+    SetImagesFolder("Images");
 
     StartAppMain();
     defer { StopFreeRtos(); };
