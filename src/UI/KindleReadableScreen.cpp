@@ -271,14 +271,6 @@ void KindleReadableScreen::begin() {
         pageFlipper_.loadInitialPage();
     };
 
-    // Set initial state and UI
-    DispatchGetUiQueue()->dispatch([this]() {
-        setState(State::CONNECTING);
-        loadingMessageView_.setText("Connecting to your Kindle...");
-        setNeedsLayout();
-        render(display_);
-    });
-
     // Start connection process
     DispatchGetCore0BackgroundQueue()->dispatch([this, initialConnectionCallback]() {
         std::string errorMessage;
