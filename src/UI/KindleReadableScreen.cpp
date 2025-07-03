@@ -673,14 +673,13 @@ auto KindleReadableScreen::connectToNetwork(std::string &errorMessage,
                           {"wifi_connected", wifiConnected},
                           {"state", std::string(stateToString(state_))},
                           {"elapsed_ms", static_cast<int>(finalElapsedMs)}});
-}
 
-// Call the callback if provided
-if (callback) {
-    callback(connected);
-}
+    // Call the callback if provided
+    if (callback) {
+        callback(connected);
+    }
 
-return connected;
+    return connected;
 }
 
 void KindleReadableScreen::disconnectNetworkConnections() {
