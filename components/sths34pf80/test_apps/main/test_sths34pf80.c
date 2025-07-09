@@ -10,7 +10,9 @@
 #include "driver/gpio.h"
 #include "driver/i2c_master.h"
 #include "esp_log.h"
+#include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
+#include "freertos/queue.h"
 #include "freertos/task.h"
 #include "sths34pf80.h"
 #include "unity.h"
@@ -19,9 +21,16 @@
 
 #define TEST_DELAY_TIME_MS (60000)
 
+// Structure to hold interrupt event data
+typedef struct {
+    uint32_t gpio_level;
+    uint32_t timestamp;
+} interrupt_event_t;
+
 static const char *TAG = "sths34pf80_test";
 static i2c_master_bus_handle_t bus_handle = NULL;
 static i2c_master_dev_handle_t dev_handle = NULL;
+static QueueHandle_t interrupt_queue = NULL;
 
 static void test_i2c_init(void) {
     // Initialize I2C bus
@@ -204,15 +213,52 @@ TEST_CASE("test sths34pf80 presence detection", "[sths34pf80][presence]") {
     test_i2c_deinit();
 }
 
-static bool interrupt_triggered = false;
-static void IRAM_ATTR interrupt_handler(void *arg) { interrupt_triggered = true; }
+static void IRAM_ATTR interrupt_handler(void *arg) {
+    // Read the GPIO level
+    uint32_t gpio_level = gpio_get_level(CONFIG_TEST_INTERRUPT_GPIO);
+
+    // Create interrupt event
+    interrupt_event_t event = {
+        .gpio_level = gpio_level,
+        .timestamp = esp_timer_get_time() / 1000 // Convert to milliseconds
+    };
+
+    // Send to queue from ISR
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+    xQueueSendFromISR(interrupt_queue, &event, &xHigherPriorityTaskWoken);
+
+    // Yield if a higher priority task was woken
+    if (xHigherPriorityTaskWoken) {
+        portYIELD_FROM_ISR();
+    }
+}
 
 TEST_CASE("test sths34pf80 presence detection interrupt", "[sths34pf80][presence_int]") {
     ESP_LOGI(TAG, "Testing presence detection interrupt");
     test_i2c_init();
 
+    // Create interrupt queue
+    interrupt_queue = xQueueCreate(10, sizeof(interrupt_event_t));
+    TEST_ASSERT_NOT_NULL(interrupt_queue);
+
     // Reboot
     TEST_ESP_OK(sths34pf80_reboot_and_wait(dev_handle));
+
+    // Wait for DRDY to be high
+    uint8_t status;
+    do {
+        TEST_ESP_OK(sths34pf80_read_reg(dev_handle, STHS34PF80_STATUS, &status));
+    } while (!(status & STHS34PF80_STATUS_DRDY_MASK));
+
+    // Power-down mode
+    TEST_ESP_OK(sths34pf80_write_reg(dev_handle, STHS34PF80_CTRL1, 0x00));
+
+    // uint8_t lpf1 = 0x04;
+    // TEST_ESP_OK(sths34pf80_write_reg(dev_handle, STHS34PF80_LPF1, lpf1));
+    // uint8_t lpf2 = 0x3A;
+    // TEST_ESP_OK(sths34pf80_write_reg(dev_handle, STHS34PF80_LPF2, lpf2));
+    // uint8_t avg_trim = 0x00;
+    // TEST_ESP_OK(sths34pf80_write_reg(dev_handle, STHS34PF80_AVG_TRIM, avg_trim));
 
     uint16_t presence_threshold = 1000;
     TEST_ESP_OK(sths34pf80_write_embedded_register(dev_handle, STHS34PF80_PRESENCE_THS_L,
@@ -220,14 +266,23 @@ TEST_CASE("test sths34pf80 presence detection interrupt", "[sths34pf80][presence
     TEST_ESP_OK(sths34pf80_write_embedded_register(dev_handle, STHS34PF80_PRESENCE_THS_H,
                                                    presence_threshold >> 8));
 
-    uint16_t motion_threshold = 1000;
-    TEST_ESP_OK(sths34pf80_write_embedded_register(dev_handle, STHS34PF80_MOTION_THS_L,
-                                                   motion_threshold & 0xFF));
-    TEST_ESP_OK(sths34pf80_write_embedded_register(dev_handle, STHS34PF80_MOTION_THS_H,
-                                                   motion_threshold >> 8));
+    // uint8_t algo_config = 0x04;
+    // TEST_ESP_OK(
+    //     sths34pf80_write_embedded_register(dev_handle, STHS34PF80_ALGO_CONFIG, algo_config));
+    // ESP_LOGI(TAG, "Algo Config: 0x%02X", algo_config);
 
-    TEST_ESP_OK(sths34pf80_write_reg(dev_handle, STHS34PF80_CTRL1,
-                                     STHS34PF80_CTRL1_BDU_MASK | STHS34PF80_ODR_2_HZ));
+    TEST_ESP_OK(sths34pf80_reset_algorithms(dev_handle));
+
+    // Potentially tweakable:
+    // LPF1
+    // LPF2
+    // AVG_TRIM - averaged samples for ambient temperature + object temperature
+    // CTRL0 - Enables the device to cover a wide operating temperature range
+    // SENS_DATA - Compensate for cover material
+    //
+    // Potentially readable:
+    // TOBJECT - Object temperature
+    // TOBJ_COMP - Compensated object temperature
 
     // INT_H_L[7] Active low/high (1 = active low)
     // PP_OD [6] Push-pull/open-drain (1 = open drain)
@@ -236,42 +291,83 @@ TEST_CASE("test sths34pf80 presence detection interrupt", "[sths34pf80][presence
     // INT_MSK0[3] Ambient temperature interrupt mask (1 = enabled)
     // INT_LATCHED[2] Latch interrupt (1 = latched, 0 = pulsed)
     // IEN[1:0] Configures the signal routed to the INT pin (0 = high Z, 1 = DRDY, 2 = INT_OR)
+    // 11100010
     uint8_t ctrl3 = 0xE2;
     TEST_ESP_OK(sths34pf80_write_reg(dev_handle, STHS34PF80_CTRL3, ctrl3));
+
+    TEST_ESP_OK(sths34pf80_write_reg(dev_handle, STHS34PF80_CTRL1,
+                                     STHS34PF80_CTRL1_BDU_MASK | STHS34PF80_ODR_2_HZ));
+
+    // uint8_t status;
+    TEST_ESP_OK(sths34pf80_read_reg(dev_handle, STHS34PF80_STATUS, &status));
+    ESP_LOGI(TAG, "Status: 0x%02X", status);
+
+    uint8_t func_status;
+    TEST_ESP_OK(sths34pf80_read_reg(dev_handle, STHS34PF80_FUNC_STATUS, &func_status));
+    ESP_LOGI(TAG, "Func Status: 0x%02X", func_status);
 
     gpio_config_t io_conf = {
         .pin_bit_mask = 1ULL << CONFIG_TEST_INTERRUPT_GPIO,
         .mode = GPIO_MODE_INPUT,
         .pull_up_en = GPIO_PULLUP_ENABLE,
         .pull_down_en = GPIO_PULLDOWN_DISABLE,
-        .intr_type = GPIO_INTR_NEGEDGE,
+        .intr_type = GPIO_INTR_ANYEDGE,
     };
     gpio_config(&io_conf);
 
     gpio_install_isr_service(0);
     gpio_isr_handler_add(CONFIG_TEST_INTERRUPT_GPIO, interrupt_handler, NULL);
 
-    ESP_LOGI(TAG, "Wating for interrupt for %d seconds...", TEST_DELAY_TIME_MS / 1000);
+    ESP_LOGI(TAG, "Waiting for interrupt for %d seconds...", TEST_DELAY_TIME_MS / 1000);
 
     int timeout_ms = TEST_DELAY_TIME_MS;
-    while (!interrupt_triggered && timeout_ms > 0) {
-        vTaskDelay(pdMS_TO_TICKS(100));
-        timeout_ms -= 100;
+    int interrupt_count = 0;
+
+    while (timeout_ms > 0) {
+        interrupt_event_t event;
+
+        // Check for interrupt events from queue
+        if (xQueueReceive(interrupt_queue, &event, pdMS_TO_TICKS(500)) == pdTRUE) {
+            interrupt_count++;
+            ESP_LOGI(TAG, "Interrupt #%d triggered at %lu ms - GPIO level: %s", interrupt_count,
+                     event.timestamp, event.gpio_level ? "HIGH" : "LOW");
+        }
+
+        timeout_ms -= 500;
+        TEST_ESP_OK(sths34pf80_read_reg(dev_handle, STHS34PF80_STATUS, &status));
+        TEST_ESP_OK(sths34pf80_read_reg(dev_handle, STHS34PF80_FUNC_STATUS, &func_status));
+        uint8_t presence_data[2];
+        TEST_ESP_OK(sths34pf80_read_bytes(dev_handle, STHS34PF80_TPRESENCE_L, presence_data, 2));
+        int16_t presence_value = (int16_t)(presence_data[1] << 8 | presence_data[0]);
+        uint8_t object_data[2];
+        TEST_ESP_OK(sths34pf80_read_bytes(dev_handle, STHS34PF80_TOBJECT_L, object_data, 2));
+        int16_t object_value = (int16_t)(object_data[1] << 8 | object_data[0]);
+        uint8_t object_comp_data[2];
+        TEST_ESP_OK(sths34pf80_read_bytes(dev_handle, STHS34PF80_TOBJ_COMP_L, object_comp_data, 2));
+        int16_t object_comp_value = (int16_t)(object_comp_data[1] << 8 | object_comp_data[0]);
+        uint8_t ambient_data[2];
+        TEST_ESP_OK(sths34pf80_read_bytes(dev_handle, STHS34PF80_TAMBIENT_L, ambient_data, 2));
+        int16_t ambient_value = (int16_t)(ambient_data[1] << 8 | ambient_data[0]);
+        ESP_LOGI(TAG, "Presence: %d (flag=%d), Object: %d, Object Comp: %d, Ambient: %d",
+                 presence_value, (func_status & 0x04) ? 1 : 0, object_value, object_comp_value,
+                 ambient_value);
     }
 
-    if (interrupt_triggered) {
-        ESP_LOGI(TAG, "Interrupt triggered");
-    }
+    ESP_LOGI(TAG, "Interrupt test completed. Total interrupts: %d", interrupt_count);
 
     gpio_isr_handler_remove(CONFIG_TEST_INTERRUPT_GPIO);
     gpio_uninstall_isr_service();
     gpio_reset_pin(CONFIG_TEST_INTERRUPT_GPIO);
 
+    // Clean up queue
+    vQueueDelete(interrupt_queue);
+    interrupt_queue = NULL;
+
     TEST_ESP_OK(sths34pf80_write_reg(dev_handle, STHS34PF80_CTRL1, STHS34PF80_ODR_POWER_DOWN));
     test_i2c_deinit();
 
-    if (!interrupt_triggered) {
-        ESP_LOGE(TAG, "Interrupt not triggered");
+    if (interrupt_count == 0) {
+        ESP_LOGE(TAG, "No interrupts were triggered");
         TEST_FAIL();
     }
 }
