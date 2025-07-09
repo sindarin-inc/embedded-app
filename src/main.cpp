@@ -176,9 +176,6 @@ void UIInnerLoop(RemoteCommand command) {
 // they all complete in a tight loop, thus maximizing sleep time.
 void PollingLoopTask(void *parameter) {
     int factoryResetStartTimeMs = 0;
-    int shutdownCounter = 0;
-    constexpr int SHUTDOWN_THRESHOLD_SECONDS = 5;
-    constexpr float Y_ACCEL_THRESHOLD = -0.8f;
 
     while (powerManager.state() != PowerState::ShuttingDown) {
         if (CONFIG_FACTORY_RESET_BUTTON_PIN != GPIO_NUM_NC &&
@@ -224,6 +221,10 @@ void PollingLoopTask(void *parameter) {
 #endif
 
 #if CONFIG_USE_ICM42670
+        constexpr int SHUTDOWN_THRESHOLD_SECONDS = 5;
+        constexpr float Y_ACCEL_THRESHOLD = -0.8f;
+        static int shutdownCounter = 0;
+
         icm42670_value_t accel_value;
         esp_err_t err = icm42670->readAccelerometer(&accel_value);
         if (err != ESP_OK) {
@@ -299,7 +300,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 
     powerManager.wakeupCheck(solClock);
 
-#if CONFIG_3V3_PERIPHERAL_POWER_PIN != -1
+#if defined(CONFIG_3V3_PERIPHERAL_POWER_PIN) && CONFIG_3V3_PERIPHERAL_POWER_PIN != -1
     // Power up the 3V3 rail for the screens and the ESP32-C6
     gpio_config_t config_3v3 = {
         .pin_bit_mask = 1ULL << CONFIG_3V3_PERIPHERAL_POWER_PIN,
@@ -321,7 +322,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     });
 #endif
 
-#if CONFIG_1V8_PERIPHERAL_POWER_PIN != -1
+#if defined(CONFIG_1V8_PERIPHERAL_POWER_PIN) && CONFIG_1V8_PERIPHERAL_POWER_PIN != -1
     // Power up the 1.8V rail for the SeeYa103 display digital logic
     gpio_config_t config_1v8 = {
         .pin_bit_mask = 1ULL << CONFIG_1V8_PERIPHERAL_POWER_PIN,

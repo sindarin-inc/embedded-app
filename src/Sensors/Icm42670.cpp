@@ -1,6 +1,6 @@
-#include "Icm42670.hpp"
-
 #if CONFIG_USE_ICM42670
+
+#include "Icm42670.hpp"
 
 #include <esp_check.h>
 #include <esp_log.h>
