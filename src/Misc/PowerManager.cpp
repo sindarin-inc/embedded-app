@@ -155,6 +155,7 @@ void PowerManager::wakeupCheck(SolClock &clock) {
 #if defined(CONFIG_SLEEP_WAKE_PIN) && CONFIG_SLEEP_WAKE_PIN != -1
         case ESP_SLEEP_WAKEUP_EXT1: {
             // Check if it was our configured wake pin that triggered the wake-up
+            // NOTE: This doesn't seem to work on the P4 -- it always returns 0
             uint64_t wakeup_pin_mask = esp_sleep_get_ext1_wakeup_status();
             if (wakeup_pin_mask & (1ULL << CONFIG_SLEEP_WAKE_PIN)) {
                 bootInfo_.reason = BootInfo::Reason::ButtonWake;
@@ -714,6 +715,9 @@ void PowerManager::deepSleep(SleepReason reason) {
     case SleepReason::SyncDone:
         scheduleSync(SyncReason::Periodic, SolClock::getInstance().calculateNextSyncTime(now));
         break;
+    case SleepReason::NoPresence:
+        scheduleSync(SyncReason::OnClose, now + 30);
+        break;
 #if defined(CONFIG_SLEEP_WAKE_PIN) && CONFIG_SLEEP_WAKE_PIN != -1
     case SleepReason::ButtonPress:
         // Treat button press similar to temples closed
@@ -769,6 +773,8 @@ auto ToString(SleepReason reason) -> const char * {
         return "UpdateUSBState";
     case SleepReason::WaitingForSync:
         return "WaitingForSync";
+    case SleepReason::NoPresence:
+        return "NoPresence";
 #if defined(CONFIG_SLEEP_WAKE_PIN) && CONFIG_SLEEP_WAKE_PIN != -1
     case SleepReason::ButtonPress:
         return "ButtonPress";
@@ -852,6 +858,56 @@ auto PowerManager::enableSleepWakePinWakeup() -> esp_err_t {
     }
 
     log_i("Pin %d configured as sleep/wake pin (active LOW)", CONFIG_SLEEP_WAKE_PIN);
+    return ESP_OK;
+}
+#endif
+
+#if CONFIG_USE_STHS34PF80
+auto PowerManager::enableSths34pf80Wakeup() -> esp_err_t {
+    // Configure STHS34PF80 interrupt pin as an RTC GPIO
+    const gpio_num_t interruptPin = static_cast<gpio_num_t>(CONFIG_STHS34PF80_INTERRUPT_GPIO);
+    esp_err_t err = rtc_gpio_init(interruptPin);
+    if (err != ESP_OK) {
+        log_e("error initializing STHS34PF80 interrupt pin %d as RTC GPIO: %s",
+              CONFIG_STHS34PF80_INTERRUPT_GPIO, esp_err_to_name(err));
+        return err;
+    }
+
+    // Set direction as input
+    err = rtc_gpio_set_direction(interruptPin, RTC_GPIO_MODE_INPUT_ONLY);
+    if (err != ESP_OK) {
+        log_e("error setting STHS34PF80 interrupt pin %d as input: %s",
+              CONFIG_STHS34PF80_INTERRUPT_GPIO, esp_err_to_name(err));
+        return err;
+    }
+
+    // Enable pull-up (since interrupt is active low)
+    err = rtc_gpio_pullup_en(interruptPin);
+    if (err != ESP_OK) {
+        log_e("error enabling STHS34PF80 interrupt pin %d pull-up: %s",
+              CONFIG_STHS34PF80_INTERRUPT_GPIO, esp_err_to_name(err));
+        return err;
+    }
+
+    // Disable pull-down
+    err = rtc_gpio_pulldown_dis(interruptPin);
+    if (err != ESP_OK) {
+        log_e("error disabling STHS34PF80 interrupt pin %d pull-down: %s",
+              CONFIG_STHS34PF80_INTERRUPT_GPIO, esp_err_to_name(err));
+        return err;
+    }
+
+    // Use ext1_wakeup for STHS34PF80 interrupt (active low)
+    const uint64_t pin_mask = (1ULL << CONFIG_STHS34PF80_INTERRUPT_GPIO);
+    err = esp_sleep_enable_ext1_wakeup_io(pin_mask, ESP_EXT1_WAKEUP_ANY_LOW);
+    if (err != ESP_OK) {
+        log_e("error enabling STHS34PF80 interrupt pin %d wakeup from deep sleep: %s",
+              CONFIG_STHS34PF80_INTERRUPT_GPIO, esp_err_to_name(err));
+        return err;
+    }
+
+    log_i("STHS34PF80 interrupt pin %d configured as wake-up source (active LOW)",
+          CONFIG_STHS34PF80_INTERRUPT_GPIO);
     return ESP_OK;
 }
 #endif
@@ -965,6 +1021,15 @@ void PowerManager::deepSleepInternal(SleepReason reason) {
     err = enableSleepWakePinWakeup();
     if (err != ESP_OK) {
         log_w("Failed to enable pin %d wake-up: %s", CONFIG_SLEEP_WAKE_PIN, esp_err_to_name(err));
+        // Continue even if this fails - not critical
+    }
+#endif
+
+#if CONFIG_USE_STHS34PF80
+    // Enable STHS34PF80 interrupt as a wake-up source
+    err = enableSths34pf80Wakeup();
+    if (err != ESP_OK) {
+        log_w("Failed to enable STHS34PF80 interrupt wake-up: %s", esp_err_to_name(err));
         // Continue even if this fails - not critical
     }
 #endif

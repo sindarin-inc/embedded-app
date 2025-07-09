@@ -86,6 +86,7 @@ if(DETECTED_TARGET MATCHES "sol-focus")
     list(APPEND components
         esp_lcd_seeya103
         esp_driver_ppa
+        sths34pf80
     )
 else()
     message(STATUS "NOT USING esp_lcd_seeya103")

@@ -252,6 +252,23 @@ menu "Sol Options"
             bool "Use ICM42670 Accelerometer"
             default n
 
+        config USE_STHS34PF80
+            bool "Use STHS34PF80 Proximity Sensor"
+            default n
+            help
+                Enable STHS34PF80 human presence and motion detection sensor.
+                This sensor can detect when someone is wearing the glasses and
+                automatically put the device into deep sleep when no presence is detected.
+
+        config STHS34PF80_INTERRUPT_GPIO
+            int "STHS34PF80 Interrupt GPIO Pin"
+            depends on USE_STHS34PF80
+            default 9
+            range 0 48
+            help
+                GPIO pin connected to the STHS34PF80 interrupt pin.
+                This pin is used to wake up the device from deep sleep when presence is detected.
+
         config USE_SYS_ON
             bool "Use SYS_ON Pin"
             default y if DISPLAY_EINKET013TT1
@@ -340,12 +357,12 @@ menu "Sol Options"
 
         config LP_I2C_SDA
             int "Low-power I2C SDA"
-            depends on USE_ICM42670
+            depends on USE_ICM42670 || USE_STHS34PF80
             default -1
 
         config LP_I2C_SCL
             int "Low-power I2C SCL"
-            depends on USE_ICM42670
+            depends on USE_ICM42670 || USE_STHS34PF80
             default -1
 
         config 3V3_PERIPHERAL_POWER_PIN

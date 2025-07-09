@@ -21,6 +21,8 @@ struct BootError {
         Magnetometer = 14,
         LocalStore = 15,
         BLESync = 16,
+        IMU = 17,
+        ProximitySensor = 18,
     };
     Type type;
 
@@ -56,6 +58,10 @@ struct BootError {
             return "Magnetometer";
         case LocalStore:
             return "Local Store";
+        case IMU:
+            return "IMU";
+        case ProximitySensor:
+            return "Proximity Sensor";
         };
         return "Unhandled";
     }

@@ -52,7 +52,7 @@ auto Icm42670::clearInterruptStatus() -> esp_err_t {
     return ESP_OK;
 }
 
-auto Icm42670::configureInterupts() -> esp_err_t {
+auto Icm42670::configureInterrupts() -> esp_err_t {
     // Reset
     // err = icm42670_write_register(icm42670, ICM42670_SIGNAL_PATH_RESET, 0x10);
     // if (err != ESP_OK) {

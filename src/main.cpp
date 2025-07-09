@@ -160,6 +160,13 @@ static std::shared_ptr<i2c_master_bus_handle_t> i2cBusHandle;
 static std::shared_ptr<Icm42670> icm42670;
 #endif
 
+#if CONFIG_USE_STHS34PF80
+#include "Sensors/Sths34pf80.hpp"
+static std::shared_ptr<Sths34pf80> sths34pf80;
+static int sths34pf80NoPresenceCounter = 0;
+constexpr int STHS34PF80_NO_PRESENCE_THRESHOLD_SECONDS = 15;
+#endif
+
 bool bootCompleted = false;
 
 void UIInnerLoop(RemoteCommand command) {
@@ -220,13 +227,14 @@ void PollingLoopTask(void *parameter) {
         lightingController.checkAmbientLight();
 #endif
 
+        esp_err_t err;
 #if CONFIG_USE_ICM42670
         constexpr int SHUTDOWN_THRESHOLD_SECONDS = 5;
         constexpr float Y_ACCEL_THRESHOLD = -0.8f;
         static int shutdownCounter = 0;
 
         icm42670_value_t accel_value;
-        esp_err_t err = icm42670->readAccelerometer(&accel_value);
+        err = icm42670->readAccelerometer(&accel_value);
         if (err != ESP_OK) {
             log_e("Error reading accelerometer %d, ignoring.", err);
         } else {
@@ -243,6 +251,30 @@ void PollingLoopTask(void *parameter) {
         if (shutdownCounter > SHUTDOWN_THRESHOLD_SECONDS) {
             log_i("Shutting down due to accelerometer");
             powerManager.deepSleep(SleepReason::TempleClosed);
+        }
+#endif
+
+#if CONFIG_USE_STHS34PF80
+        bool presenceDetected = false;
+        err = sths34pf80->checkPresence(&presenceDetected);
+        if (err != ESP_OK) {
+            log_e("Error reading STHS34PF80 presence %d, ignoring.", err);
+        } else {
+            log_i("STHS34PF80 presence detected: %s", presenceDetected ? "true" : "false");
+        }
+
+        if (!presenceDetected) {
+            sths34pf80NoPresenceCounter++;
+            // DigitalWrite(CONFIG_BLUE_LED, LED_OFF);
+        } else {
+            sths34pf80NoPresenceCounter = 0;
+            // DigitalWrite(CONFIG_BLUE_LED, LED_ON);
+        }
+
+        if (sths34pf80NoPresenceCounter > STHS34PF80_NO_PRESENCE_THRESHOLD_SECONDS) {
+            log_i("Shutting down due to no presence detected for %d seconds",
+                  STHS34PF80_NO_PRESENCE_THRESHOLD_SECONDS);
+            powerManager.deepSleep(SleepReason::NoPresence);
         }
 #endif
 
@@ -543,7 +575,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     }
 #endif
 
-#if CONFIG_USE_ICM42670
+#if CONFIG_USE_ICM42670 || CONFIG_USE_STHS34PF80
     i2cBusHandle = std::make_shared<i2c_master_bus_handle_t>();
 
     i2c_master_bus_config_t busConfig = {
@@ -561,14 +593,21 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
             },
     };
     ESP_ERROR_CHECK(i2c_new_master_bus(&busConfig, i2cBusHandle.get()));
+#endif
 
+    esp_err_t err;
+#if CONFIG_USE_ICM42670
     icm42670 = std::make_shared<Icm42670>();
-    icm42670->begin(*i2cBusHandle.get());
+    err = icm42670->begin(*i2cBusHandle.get());
+    if (err != ESP_OK) {
+        log_e("Error initializing ICM42670: %s", esp_err_to_name(err));
+        bootErrors.push_back({.type = BootError::Type::IMU});
+    }
 
     powerManager.addShutdownCallback([]() {
         esp_err_t err;
 
-        err = icm42670->configureInterupts();
+        err = icm42670->configureInterrupts();
         if (err != ESP_OK) {
             log_e("Error configuring ICM42670 interupts: %s", esp_err_to_name(err));
         }
@@ -581,6 +620,27 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         err = i2c_del_master_bus(*i2cBusHandle.get());
         if (err != ESP_OK) {
             log_e("Error deleting I2C bus: %s", esp_err_to_name(err));
+        }
+    });
+#endif
+
+#if CONFIG_USE_STHS34PF80
+    sths34pf80 = std::make_shared<Sths34pf80>();
+    err = sths34pf80->begin(*i2cBusHandle.get());
+    if (err != ESP_OK) {
+        log_e("Error initializing STHS34PF80: %s", esp_err_to_name(err));
+        bootErrors.push_back({.type = BootError::Type::ProximitySensor});
+    }
+
+    powerManager.addShutdownCallback([]() {
+        esp_err_t err = sths34pf80->configureInterrupts();
+        if (err != ESP_OK) {
+            log_e("Error configuring STHS34PF80 interrupts: %s", esp_err_to_name(err));
+        }
+
+        err = sths34pf80->end();
+        if (err != ESP_OK) {
+            log_e("Error ending STHS34PF80: %s", esp_err_to_name(err));
         }
     });
 #endif

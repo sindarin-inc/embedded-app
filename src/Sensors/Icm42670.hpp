@@ -11,7 +11,7 @@ public:
 
     auto readDeviceId(uint8_t *deviceIdOut) -> esp_err_t;
     auto clearInterruptStatus() -> esp_err_t;
-    auto configureInterupts() -> esp_err_t;
+    auto configureInterrupts() -> esp_err_t;
 
     auto readAccelerometer(icm42670_value_t *value) -> esp_err_t;
 

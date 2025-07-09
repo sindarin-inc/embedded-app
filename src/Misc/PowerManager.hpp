@@ -61,6 +61,7 @@ enum class SleepReason {
     UlpCrashed,
     UpdateUSBState,
     WaitingForSync,
+    NoPresence,
 #if defined(CONFIG_SLEEP_WAKE_PIN) && CONFIG_SLEEP_WAKE_PIN != -1
     ButtonPress,
 #endif
@@ -327,6 +328,10 @@ protected:
 
 #if defined(CONFIG_SLEEP_WAKE_PIN) && CONFIG_SLEEP_WAKE_PIN != -1
     auto enableSleepWakePinWakeup() -> esp_err_t;
+#endif
+
+#if CONFIG_USE_STHS34PF80
+    auto enableSths34pf80Wakeup() -> esp_err_t;
 #endif
 
     auto inactivityTimeoutMs() -> int;
