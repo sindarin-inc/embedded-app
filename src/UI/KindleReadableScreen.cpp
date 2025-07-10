@@ -29,8 +29,9 @@ KindleReadableScreen::KindleReadableScreen(DisplaySystem &display,
       pageFlipper_(kindleBook, cancelFlag_, telemetry_), loadingMessageView_(display, 5),
       delayedMessageView_(display, 5), errorMessageView_(display, 5) {
 
-    log_i("Created KindleReadableScreen for book: %s by %s", kindleBook->title.c_str(),
-          kindleBook->author.c_str());
+    log_i("Created KindleReadableScreen for book: %s by %s", 
+          kindleBook ? kindleBook->title.c_str() : "Unknown",
+          kindleBook ? kindleBook->author.c_str() : "Unknown");
 
     currentPlace_ = std::dynamic_pointer_cast<TxtPlace>(Place::factory(0));
 
