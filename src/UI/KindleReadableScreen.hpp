@@ -94,6 +94,7 @@ private:
     bool isUsingBleConnection_ = false;
     int reconnectionAttempts_ = 0;
     static const int MAX_RECONNECTION_ATTEMPTS = 2;
+    bool isReconnecting_ = false; // Prevents recursive reconnection attempts
 
     // Timing tracking
     int64_t bookOpenStartTime_ = 0;
@@ -103,6 +104,12 @@ private:
     // Timer handles for UI tasks
     TimerHandle_t delayedMessageTimer_ = nullptr;
     std::shared_ptr<CancelFlag> reconnectionAttemptCancelFlag_;
+
+#ifdef DEBUG_KINDLE_RECONNECTION
+    // Timer for forced disconnect testing
+    TimerHandle_t testDisconnectTimer_ = nullptr;
+    bool testDisconnectExecuted_ = false;
+#endif
 
     MultiLineTextView loadingMessageView_;
     MultiLineTextView delayedMessageView_;
@@ -136,4 +143,11 @@ private:
     void updatePageFlipperCallbacks();
     // Timer callback for delayed message
     static void delayedMessageTimerCallback(TimerHandle_t timer);
+
+#ifdef DEBUG_KINDLE_RECONNECTION
+    // Methods for forced disconnect testing
+    void scheduleTestDisconnect();
+    void cancelTestDisconnect();
+    static void testDisconnectTimerCallback(TimerHandle_t timer);
+#endif
 };
