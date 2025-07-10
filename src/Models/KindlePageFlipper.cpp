@@ -18,9 +18,8 @@ KindlePageFlipper::KindlePageFlipper(const std::shared_ptr<KindleBook> &kindleBo
     // Capture string copies to avoid use-after-free
     std::string bookTitle = kindleBook ? std::string(kindleBook->title) : "Unknown";
     std::string bookAuthor = kindleBook ? std::string(kindleBook->author) : "Unknown";
-    
-    log_i("Created KindlePageFlipper for book: %s by %s", bookTitle.c_str(),
-          bookAuthor.c_str());
+
+    log_i("Created KindlePageFlipper for book: %s by %s", bookTitle.c_str(), bookAuthor.c_str());
 
     pageStream_ = std::make_shared<KindlePageStream>();
 }
@@ -81,7 +80,7 @@ void KindlePageFlipper::loadInitialPage() {
     // Capture string copies to avoid use-after-free
     SpiramString bookTitle = kindleBook_ ? kindleBook_->title : SpiramString("Unknown");
     std::string bookUuid = kindleBook_ ? std::string(kindleBook_->uuid) : "";
-    
+
     log_i("Loading initial page for Kindle book: %s", bookTitle.c_str());
 
     telemetry_.logMetric(TelemetryField::METRIC_READABLE_REQUEST, bookUuid,
@@ -97,8 +96,8 @@ void KindlePageFlipper::loadInitialPage() {
         // Create a response object
         auto response = std::make_shared<KindlePageResponse>();
 
-        int httpCode = SindarinAPI::getInstance()->openKindleBook(
-            bookTitle, response.get(), cancelFlag, useBle_);
+        int httpCode = SindarinAPI::getInstance()->openKindleBook(bookTitle, response.get(),
+                                                                  cancelFlag, useBle_);
         if (CancelFlag::isCancelled(cancelFlag)) {
             return;
         }
@@ -145,11 +144,12 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
     // Capture needed values to avoid use-after-free
     SpiramString bookTitle = kindleBook_ ? kindleBook_->title : SpiramString("Unknown");
     std::string bookUuid = kindleBook_ ? std::string(kindleBook_->uuid) : "";
-    
+
     auto cancelFlag = cancelFlag_;
 
     // Perform the logic in a queue so we always have the latest data before making API calls
-    DispatchGetCore0BackgroundQueue()->dispatch([this, place, cancelFlag, atEndOfContent, bookTitle, bookUuid]() {
+    DispatchGetCore0BackgroundQueue()->dispatch(
+        [this, place, cancelFlag, atEndOfContent, bookTitle, bookUuid]() {
         if (CancelFlag::isCancelled(cancelFlag)) {
             log_i("Cancelled while updating place");
             return;
@@ -201,8 +201,7 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
             auto response = std::make_shared<KindlePageResponse>();
 
             int httpCode = SindarinAPI::getInstance()->navigateKindle(
-                bookTitle, response.get(), cancelFlag, useBle_, pagesToAdvance,
-                pageToPreview);
+                bookTitle, response.get(), cancelFlag, useBle_, pagesToAdvance, pageToPreview);
             if (CancelFlag::isCancelled(cancelFlag)) {
                 return;
             }
