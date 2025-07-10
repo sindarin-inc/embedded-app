@@ -944,24 +944,24 @@ void KindleReadableScreen::delayedMessageTimerCallback(TimerHandle_t timer) {
 /*
  * DEBUG: Connection Loss Simulation for Testing Reconnection Behavior
  * ===================================================================
- * 
+ *
  * To enable simulated connection loss for debugging reconnection issues:
- * 
+ *
  * 1. At the top of this file, uncomment:
  *    #define DEBUG_KINDLE_RECONNECTION
- * 
+ *
  * 2. How it works:
  *    - 15 seconds after Kindle content is displayed, it simulates a connection error
  *    - This triggers attemptReconnection() just like a real connection loss would
  *    - Helps debug reconnection loops and retry logic
  *    - Only executes once per session (testDisconnectExecuted_ flag)
- * 
+ *
  * 3. What to look for in logs:
  *    - "TEST ONLY: Simulating connection loss" messages
  *    - "attemptReconnection called" with attempt counts
  *    - Whether reconnection succeeds or fails
  *    - Any recursive reconnection attempts
- * 
+ *
  * IMPORTANT: This is DEBUG CODE ONLY - DO NOT SHIP WITH THIS ENABLED!
  */
 
@@ -999,15 +999,16 @@ void KindleReadableScreen::testDisconnectTimerCallback(TimerHandle_t timer) {
         log_e("TEST ONLY: Current state: %s", instance->stateToString(instance->state_));
         log_e("TEST ONLY: Using BLE: %s", instance->isUsingBleConnection_ ? "yes" : "no");
         log_e("TEST ONLY: Reconnection attempts before: %d", instance->reconnectionAttempts_);
-        
+
         instance->telemetry_.logMetric(
             TelemetryField::METRIC_READABLE_REQUEST, instance->kindleBook_->uuid,
             {{"event", std::string("test-simulated-connection-loss")},
              {"action", std::string("connection-loss-triggered")},
              {"kindle", true},
-             {"po", instance->currentPlace_ ? static_cast<int>(instance->currentPlace_->getOffset()) : 0},
+             {"po",
+              instance->currentPlace_ ? static_cast<int>(instance->currentPlace_->getOffset()) : 0},
              {"ble", instance->isUsingBleConnection_}});
-        
+
         // Trigger reconnection just like the page flipper's error handler does
         instance->attemptReconnection();
         log_e("TEST ONLY: Connection error handler triggered - reconnection should begin");
