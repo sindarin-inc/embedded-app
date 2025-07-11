@@ -665,6 +665,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         log_i("Defaulting to dark mode for OLED display %d %d",
               prefs.darkMode.get().value_or(false), prefs.invertSetting.get().value_or(false));
     }
+    myDisplay.setBrightness(lightingController.getCurrentDutyCycle());
 #endif
 
     // This setting must happen *before* the below vcom set from
