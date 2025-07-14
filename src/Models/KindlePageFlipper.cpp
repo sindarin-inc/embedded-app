@@ -155,15 +155,15 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
             return;
         }
 
-        if (place_ == nullptr) {
+        if (serverSyncPlace_ == nullptr) {
             // First time we're setting the place
-            place_ = std::dynamic_pointer_cast<TxtPlace>(place);
+            serverSyncPlace_ = std::dynamic_pointer_cast<TxtPlace>(place);
         }
 
-        log_i("Updating place from %s to %s %s", place_->str().c_str(), place->str().c_str(),
-              atEndOfContent ? "(at end of content)" : "");
+        log_i("Updating place from %s to %s %s", serverSyncPlace_->str().c_str(),
+              place->str().c_str(), atEndOfContent ? "(at end of content)" : "");
 
-        auto previousPageIndex = pageStream_->pageIndexForOffset(place_->getOffset());
+        auto previousPageIndex = pageStream_->pageIndexForOffset(serverSyncPlace_->getOffset());
         auto currentPageIndex = pageStream_->pageIndexForOffset(place->getOffset());
         auto lastPageIndex = pageStream_->lastPageIndex();
 
@@ -266,8 +266,13 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
 
             // Always signal that we got content (to dismiss loading)
             gotContentFunction_(ocrTextLength);
-        }
 
-        place_ = std::dynamic_pointer_cast<TxtPlace>(place);
+            // Update server sync position only after successful navigation
+            serverSyncPlace_ = std::dynamic_pointer_cast<TxtPlace>(place);
+        } else {
+            log_d("Skipping navigation request - already have buffered content (currentPage=%d, "
+                  "lastPage=%d, pagesToAdvance=%d)",
+                  currentPageIndex, lastPageIndex, pagesToAdvance);
+        }
     });
 }
