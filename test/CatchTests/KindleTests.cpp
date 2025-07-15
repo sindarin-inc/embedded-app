@@ -35,6 +35,7 @@
 #undef private
 
 extern Font fontFace0;
+extern PreferencesStore prefs;
 
 extern auto UIGetCurrentScreen() -> std::shared_ptr<Screen>;
 
@@ -641,8 +642,29 @@ TEST_CASE("Test mock server URL override", "[.][no-kindle]") {
 TEST_CASE("Test Kindle navigation visual traversal", "[.][kindle]") {
     SetupFileSystemMock("KindleTestData");
     SetImagesFolder("KindleTestImages");
+
+    // Set up mock server first
+    auto httpServer = std::make_unique<httplib::Server>();
+    auto httpServerThread = std::make_shared<std::thread>();
+    std::atomic<bool> serverRunning(false);
+    int port = 8080;
+    setupHttpServer(httpServer, httpServerThread, serverRunning, port);
+    defer { teardownHttpServer(httpServer, httpServerThread); };
+
+    // Override SindarinAPI URL before starting the app
+    auto api = SindarinAPI::getInstance();
+    api->overrideBaseUrl("http://127.0.0.1:8080");
+    api->setAccessToken("test-token");
+    log_i("TEST: SindarinAPI URL overridden to mock server");
+
     log_i("TEST: Starting FreeRTOS");
     StartAppMain(FONT_CHOICES::PREFS_SOL_SMALL, 10, 10, -2, "test/CatchTests/KindleTestData");
+
+    // Set cloud token and disable BLE after preferences are initialized
+    prefs.cloudToken.set("test-token");
+    prefs.bleDisabled.set(true);
+    log_i("TEST: Set cloud token and disabled BLE");
+
     defer { StopFreeRtos(); };
     log_i("TEST: FreeRTOS started");
 
@@ -656,6 +678,7 @@ TEST_CASE("Test Kindle navigation visual traversal", "[.][kindle]") {
     SECTION("Visual test of forward-backward-forward navigation") {
         // 0. Open Kindle book
         SendRemoteCommand(RIGHT);
+        WAIT_FOR_DRAW(display);
         WAIT_FOR_DRAW(display);
         ASSERT_VIEW_UNCHANGED(display, "KindleNavTestBookMenu1");
 
@@ -675,7 +698,7 @@ TEST_CASE("Test Kindle navigation visual traversal", "[.][kindle]") {
         // 2. Navigate backward through 3 pages (screenshots 4-6)
         // Going from page 3 back to page 1
         log_i("TEST: Starting backward navigation from page 3 to page 1");
-        for (int page = 2; page >= 0; page--) {
+        for (int page = 0; page < 3; page++) {
             SendRemoteCommand(LEFT);
             WAIT_FOR_DRAW(display);
             ASSERT_VIEW_UNCHANGED(display, "KindleNavTestBookPage2-" + std::to_string(page + 1));
@@ -693,4 +716,7 @@ TEST_CASE("Test Kindle navigation visual traversal", "[.][kindle]") {
         REQUIRE(mockNavigateCallCount == 3);
     }
     log_i("TEST: Exiting visual navigation test");
+
+    // Reset SindarinAPI to default URL to avoid affecting other tests
+    api->overrideBaseUrl("");
 }
