@@ -1,0 +1,84 @@
+{
+  "books": [
+    {
+      "uuid": "36dbd3f2-c6d1-437e-b912-d940e23016f5",
+      "title": "The Magic of Code: How Digital Language Created and Connects Our World—and Shapes Our Future",
+      "author": "ARBESMAN, SAMUEL",
+      "progress": "",
+      "is_approved_for_device": true,
+      "last_modified": "1751905811"
+    },
+    {
+      "uuid": "d32f2033-c711-437c-bc28-feb34f3e0331",
+      "title": "The Singularity Is Nearer: When We Merge with AI",
+      "author": "KURZWEIL, RAY",
+      "progress": "",
+      "is_approved_for_device": true,
+      "last_modified": "1751905807"
+    },
+    {
+      "uuid": "0e0b3a68-ee02-406d-9dee-e504f8ba9d3a",
+      "title": "Boom: Bubbles and the End of Stagnation",
+      "author": "HOBART, BYRNE; HUBER, TOBIAS",
+      "progress": "",
+      "is_approved_for_device": true,
+      "last_modified": "1750888882"
+    },
+    {
+      "uuid": "b59a0630-ccb1-44fa-b96d-d5a295580376",
+      "title": "How Proust Can Change Your Life (Vintage International)",
+      "author": "DE BOTTON, ALAIN",
+      "progress": "",
+      "is_approved_for_device": true,
+      "last_modified": "1750879467"
+    },
+    {
+      "uuid": "2618af04-2800-49a2-a470-d875ff2e52c6",
+      "title": "Thinking in Systems: International Bestseller",
+      "author": "MEADOWS, DONELLA H.",
+      "progress": "",
+      "is_approved_for_device": true,
+      "last_modified": "1750878837"
+    },
+    {
+      "uuid": "10ef7f4c-fccf-466e-a1db-9fe39c60b335",
+      "title": "The Cyberiad: Stories",
+      "author": "LEM, STANISLAW",
+      "progress": "",
+      "is_approved_for_device": true,
+      "last_modified": "1750878826"
+    },
+    {
+      "uuid": "831c5b75-471e-4fcc-ab94-7c3a00352ed6",
+      "title": "Talking to Strangers: What We Should Know about the People We Don't Know",
+      "author": "GLADWELL, MALCOLM",
+      "progress": "",
+      "is_approved_for_device": true,
+      "last_modified": "1750774851"
+    },
+    {
+      "uuid": "e7efbb73-d234-47cb-9f68-a95380e441b6",
+      "title": "The Big Nine: How the Tech Titans and Their Thinking Machines Could Warp Humanity",
+      "author": "WEBB, AMY",
+      "progress": "",
+      "is_approved_for_device": true,
+      "last_modified": "1750694886"
+    },
+    {
+      "uuid": "415908fc-a79f-4df0-bde1-c1bee346b44c",
+      "title": "How to Change Your Mind: What the New Science of Psychedelics Teaches Us About Consciousness, Dying, Addiction, Depression, and Transcendence",
+      "author": "POLLAN, MICHAEL",
+      "progress": "",
+      "is_approved_for_device": true,
+      "last_modified": "1750301408"
+    },
+    {
+      "uuid": "17b4071e-5070-4f29-b13f-50e85e25df95",
+      "title": "The Wandering Earth: Classic Science Fiction Collection by Liu Cixin (Short Stories by Liu Cixin Book 1)",
+      "author": "LIU, CIXIN",
+      "progress": "",
+      "is_approved_for_device": true,
+      "last_modified": "1749851372"
+    }
+  ]
+}

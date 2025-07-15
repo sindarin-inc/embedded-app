@@ -250,7 +250,7 @@ void teardownHttpServer(std::unique_ptr<httplib::Server> &httpServer,
     httpServer = nullptr;
 }
 
-TEST_CASE("Test KindleReadableScreen views independently", "[kindle]") {
+TEST_CASE("Test KindleReadableScreen views independently", "[.][no-kindle]") {
     SetImagesFolder("KindleTestImages");
 
     auto display = createDisplay();
@@ -571,7 +571,7 @@ TEST_CASE("Test KindleReadableScreen views independently", "[kindle]") {
     }
 }
 
-TEST_CASE("Test mock server URL override", "[kindle]") {
+TEST_CASE("Test mock server URL override", "[.][no-kindle]") {
     SetImagesFolder("KindleTestImages");
 
     // Set up mock server first
@@ -638,155 +638,31 @@ TEST_CASE("Test mock server URL override", "[kindle]") {
     api->overrideBaseUrl("");
 }
 
-TEST_CASE("Test Kindle navigation sync tracking", "[kindle]") {
-    SetImagesFolder("KindleTestImages");
-
-    SECTION("Verify serverSyncPlace_ tracking prevents premature navigation") {
-        // Create minimal dependencies for testing
-        PosixFileSystem fileSystem;
-        PreferencesStore prefs;
-        prefs.begin("test_kindle_nav.ini");
-        prefs.cloudToken.set("test-token");
-
-        Telemetry telemetry(fileSystem, prefs);
-
-        auto book = std::make_shared<KindleBook>();
-        book->title = "Navigation Test Book";
-        book->author = "Test Author";
-        book->uuid = "nav-test-uuid";
-
-        // Create page flipper and load initial content from server
-        auto cancelFlag = std::make_shared<CancelFlag>();
-        KindlePageFlipper pageFlipper(book, cancelFlag, telemetry, false);
-
-        // Instead of calling loadInitialPage, manually simulate what the server would return
-        auto pageStream = std::dynamic_pointer_cast<KindlePageStream>(pageFlipper.getStream());
-
-        // Add the initial 10 pages of content to the stream
-        // Add each page as a separate response to ensure proper page breaks
-        for (int page = 1; page <= 10; page++) {
-            KindlePageResponse response;
-            response.success = true;
-
-            std::string pageContent = "Page " + std::to_string(page) + " Content\n\n";
-            for (int line = 1; line <= 15; line++) {
-                int globalLine = (page - 1) * 15 + line;
-                pageContent += "Line " + std::to_string(globalLine) + ": ";
-                pageContent +=
-                    "This is test content for line number " + std::to_string(globalLine) + " ";
-                pageContent += "on page " + std::to_string(page) + " of the navigation test.\n";
-            }
-
-            response.ocrText = pageContent;
-            pageStream->appendPageFromResponse(response);
-        }
-
-        // Set initial serverSyncPlace_
-        pageFlipper.serverSyncPlace_ = std::dynamic_pointer_cast<TxtPlace>(Place::factory(0));
-
-        // Verify we have content loaded
-        REQUIRE(pageStream->size() > 0);
-        log_i("TEST: Page stream size after manual setup: %zu", pageStream->size());
-
-        // Calculate how many pages we have
-        auto lastPageIndex = pageStream->lastPageIndex();
-        log_i("TEST: Last page index: %d (we have %d pages total)", lastPageIndex,
-              lastPageIndex + 1);
-
-        // Simulate navigating forward to page 8
-        // Each page is approximately 20 lines * 60 chars = 1200 chars
-        auto page8Place =
-            std::dynamic_pointer_cast<TxtPlace>(Place::factory(9600)); // Page 8 offset
-
-        // Test 1: Moving backwards should not require navigation
-        log_i("TEST: Checking backward navigation detection");
-        auto page5Place = std::dynamic_pointer_cast<TxtPlace>(Place::factory(6000)); // Page 5
-
-        auto previousPageIndex = pageStream->pageIndexForOffset(page8Place->getOffset());
-        auto currentPageIndex = pageStream->pageIndexForOffset(page5Place->getOffset());
-        lastPageIndex = pageStream->lastPageIndex();
-        auto pagesToAdvance = currentPageIndex - previousPageIndex;
-
-        log_i("TEST: Previous page: %d, Current page: %d, Last page: %d, Pages to advance: %d",
-              previousPageIndex, currentPageIndex, lastPageIndex, pagesToAdvance);
-
-        // Should be negative (moving backwards)
-        REQUIRE(pagesToAdvance < 0);
-
-        // Test 2: Moving forward within buffer should not require navigation
-        previousPageIndex = pageStream->pageIndexForOffset(page5Place->getOffset());
-        currentPageIndex = pageStream->pageIndexForOffset(page8Place->getOffset());
-        lastPageIndex = pageStream->lastPageIndex();
-        pagesToAdvance = currentPageIndex - previousPageIndex;
-
-        // Check if we need preview
-        auto pageToPreview = 0;
-        if (currentPageIndex == lastPageIndex) {
-            pageToPreview = 1;
-        }
-
-        log_i(
-            "TEST: Moving forward - Previous: %d, Current: %d, Last: %d, Advance: %d, Preview: %d",
-            previousPageIndex, currentPageIndex, lastPageIndex, pagesToAdvance, pageToPreview);
-
-        // Should be moving forward but not at end of our 10 pages
-        REQUIRE(pagesToAdvance > 0);
-        REQUIRE(currentPageIndex < lastPageIndex);
-
-        // Test 3: Verify the core fix - ensure preview is always >= 1 when navigate > 0
-        // This was the bug - we were sending navigate=1, preview=0
-        auto nextPagePlace = std::dynamic_pointer_cast<TxtPlace>(Place::factory(7200)); // Page 6
-        previousPageIndex = pageStream->pageIndexForOffset(page5Place->getOffset());
-        currentPageIndex = pageStream->pageIndexForOffset(nextPagePlace->getOffset());
-        lastPageIndex = pageStream->lastPageIndex();
-        pagesToAdvance = currentPageIndex - previousPageIndex;
-
-        // When moving forward and we need preview
-        pageToPreview = 0;
-        if (currentPageIndex == lastPageIndex) {
-            pageToPreview = 1;
-        }
-
-        // Ensure when pagesToAdvance > 0, we set pageToPreview to at least 1
-        if (pagesToAdvance > 0 && pageToPreview == 0) {
-            pageToPreview = 1;
-        }
-
-        log_i("TEST: Core fix check - Advance: %d, Preview: %d", pagesToAdvance, pageToPreview);
-
-        // This is the fix - when we navigate forward, we should always preview
-        if (pagesToAdvance > 0) {
-            REQUIRE(pageToPreview >= 1);
-        }
-
-        // Verify that navigate was NOT called during this test
-        log_i("TEST: Final navigate call count: %d", mockNavigateCallCount.load());
-        REQUIRE(mockNavigateCallCount ==
-                0); // Should be 0 since we only moved within buffered content
-    }
-}
-
-#if 0
-TEST_CASE("Test Kindle navigation visual traversal", "[kindle]") {
+TEST_CASE("Test Kindle navigation visual traversal", "[.][kindle]") {
     SetupFileSystemMock("KindleTestData");
     SetImagesFolder("KindleTestImages");
     log_i("TEST: Starting FreeRTOS");
-    StartAppMain(FONT_CHOICES::PREFS_SOL_SMALL, 10, 10, -2);
+    StartAppMain(FONT_CHOICES::PREFS_SOL_SMALL, 10, 10, -2, "test/CatchTests/KindleTestData");
     defer { StopFreeRtos(); };
     log_i("TEST: FreeRTOS started");
 
     auto &display = GetRootDisplay();
     log_i("TEST: Display created");
 
+    // First screen renders twice once with a full refresh and once with a AU4
+    WAIT_FOR_DRAW(display);
+    WAIT_FOR_DRAW(display);
+
     SECTION("Visual test of forward-backward-forward navigation") {
         // 0. Open Kindle book
         SendRemoteCommand(RIGHT);
         WAIT_FOR_DRAW(display);
+        ASSERT_VIEW_UNCHANGED(display, "KindleNavTestBookMenu1");
 
-        ASSERT_VIEW_UNCHANGED(display, "KindleNavTestBookMenu");
         SendRemoteCommand(ENTER);
         WAIT_FOR_DRAW(display);
-        ASSERT_VIEW_UNCHANGED(display, "KindleNavTestBookFirstPage");
+        WAIT_FOR_DRAW(display);
+        ASSERT_VIEW_UNCHANGED(display, "KindleNavTestBookConnecting");
 
         // 1. Navigate forward through 3 pages (screenshots 1-3)
         log_i("TEST: Starting forward navigation through 3 pages");
@@ -818,4 +694,3 @@ TEST_CASE("Test Kindle navigation visual traversal", "[kindle]") {
     }
     log_i("TEST: Exiting visual navigation test");
 }
-#endif

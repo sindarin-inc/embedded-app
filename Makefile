@@ -99,6 +99,7 @@ test: test-build
 	./test/CatchTests/build/tests '[epub]'
 	./test/CatchTests/build/tests '[content-sync]'
 	./test/CatchTests/build/tests '[telemetry]'
+	./test/CatchTests/build/tests '[kindle]'
 
 .PHONY: test-content-sync
 test-content-sync: test-build
@@ -114,6 +115,9 @@ test-epub-lldb: test-build
 
 test-kindle: test-build
 	./test/CatchTests/build/tests '[kindle]'
+
+test-kindle-lldb: test-build
+	lldb ./test/CatchTests/build/tests '[kindle]'
 
 .PHONY: epub-render-build
 epub-render-build:

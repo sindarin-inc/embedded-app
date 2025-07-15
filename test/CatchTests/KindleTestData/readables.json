@@ -1,0 +1,953 @@
+{
+  "readables": [
+    {
+      "uuid": "1b8ac471-bd51-4dc7-b508-1586306fa72b",
+      "title": "30 Days to Nlp",
+      "date_created": "2024-11-04T15:11:17.833223-08:00",
+      "date_modified": "2024-11-13T13:46:25.063115-08:00",
+      "date_published": "2016-07-20T00:00:00-07:00",
+      "readable_type": "book",
+      "processed_by": "null",
+      "authors": [
+        {
+          "uuid": "42e0f7aa-fbf0-4aeb-8cda-5b5a1d7963b3",
+          "name": "Laureli Blyth, Dr. Heidi Heron PSY.D.",
+          "description": "null"
+        }
+      ],
+      "files": [
+        {
+          "uuid": "e16d22e3-b1b3-4d77-be05-bb267f4bbdcc",
+          "name": "1b8ac471-bd51-4dc7-b508-1586306fa72b.epub.txt",
+          "size": 522031,
+          "filetype": "txt",
+          "sha_hash": "70c446e76de91f5350fb3fe13d066c7721950541a93a819a0b9e8ce5c9046083",
+          "file": "https://api.sindarin.com/user/books/1b8ac471-bd51-4dc7-b508-1586306fa72b/30-days-to-nlp.txt",
+          "readable_type": "book"
+        },
+        {
+          "uuid": "65f562c4-2809-4963-b47f-735caaf92ef1",
+          "name": "1b8ac471-bd51-4dc7-b508-1586306fa72b.epub",
+          "size": 562692,
+          "filetype": "epub",
+          "sha_hash": "9b92c23734f190962c7f6254a70097cb5941d6545ce8a032dfae998af18deb53",
+          "file": "https://api.sindarin.com/user/books/1b8ac471-bd51-4dc7-b508-1586306fa72b/30-days-to-nlp.epub",
+          "readable_type": "book"
+        },
+        {
+          "uuid": "6dce15f0-e418-4f15-a330-eaa1c73f39ce",
+          "name": "1b8ac471-bd51-4dc7-b508-1586306fa72b.epub-original",
+          "size": 1049033,
+          "filetype": "epub-original",
+          "sha_hash": "991017bfade716192d7e3e151de848f7df9d65bcccae26030564efb4904dccf2",
+          "file": "https://api.sindarin.com/user/books/1b8ac471-bd51-4dc7-b508-1586306fa72b/30-days-to-nlp.original.epub",
+          "readable_type": "book"
+        },
+        {
+          "uuid": "bca5291a-6a39-4b20-9997-fb150d217cb2",
+          "name": "1b8ac471-bd51-4dc7-b508-1586306fa72b.epub.utf8_txt",
+          "size": 526900,
+          "filetype": "utf8_txt",
+          "sha_hash": "10b008c9e7bd7610c58a6de6cab3d3d0f4e77139973ddafb232a63f5db9b87c8",
+          "file": "https://api.sindarin.com/user/books/1b8ac471-bd51-4dc7-b508-1586306fa72b/30-days-to-nlp.utf8_txt",
+          "readable_type": "book"
+        }
+      ],
+      "toc": []
+    },
+    {
+      "uuid": "ab769612-a61a-451f-b704-03037c6a8776",
+      "title": "33 Place Brugmann",
+      "date_created": "2025-05-29T18:59:02.349537-07:00",
+      "date_modified": "2025-05-30T11:57:59.997892-07:00",
+      "date_published": "2025-03-11T00:00:00-07:00",
+      "readable_type": "book",
+      "processed_by": "null",
+      "authors": [
+        {
+          "uuid": "7a1885fd-f91a-4548-a0af-7bd1f55371c6",
+          "name": "Alice Austen",
+          "description": "null"
+        }
+      ],
+      "files": [
+        {
+          "uuid": "79fc6f3b-b25a-46ba-8e49-972f3c58a6f2",
+          "name": "ab769612-a61a-451f-b704-03037c6a8776.epub.txt",
+          "size": 527723,
+          "filetype": "txt",
+          "sha_hash": "0e5be4efe2998accef9db83ee6f47e05c878ab971d220770c81fd53336323aee",
+          "file": "https://api.sindarin.com/user/books/ab769612-a61a-451f-b704-03037c6a8776/33-place-brugmann.txt",
+          "readable_type": "book"
+        },
+        {
+          "uuid": "cbb0af9e-5597-4d47-ad06-c5bf8179c373",
+          "name": "ab769612-a61a-451f-b704-03037c6a8776.epub",
+          "size": 442238,
+          "filetype": "epub",
+          "sha_hash": "ed36a5d0e5f215169990f6a86d8f46e6b4e6750fa98770c25c4dee75cd6b723a",
+          "file": "https://api.sindarin.com/user/books/ab769612-a61a-451f-b704-03037c6a8776/33-place-brugmann.epub",
+          "readable_type": "book"
+        },
+        {
+          "uuid": "e6b6c6f7-754a-4afe-a40d-ae2a04f935e8",
+          "name": "ab769612-a61a-451f-b704-03037c6a8776.epub-original",
+          "size": 1002526,
+          "filetype": "epub-original",
+          "sha_hash": "4b050d6c1d2d1261c13d7c1b9d1f0a3ad8dad6967954045b6b572e77b2c42070",
+          "file": "https://api.sindarin.com/user/books/ab769612-a61a-451f-b704-03037c6a8776/33-place-brugmann.original.epub",
+          "readable_type": "book"
+        },
+        {
+          "uuid": "3b2d37d5-df89-4977-ad80-59131eb4c3d1",
+          "name": "ab769612-a61a-451f-b704-03037c6a8776.epub.utf8_txt",
+          "size": 544050,
+          "filetype": "utf8_txt",
+          "sha_hash": "efad7d843c06b1af322db5286244cab3a3e59a397191c2a7bf8bc3b8a2a604a9",
+          "file": "https://api.sindarin.com/user/books/ab769612-a61a-451f-b704-03037c6a8776/33-place-brugmann.utf8_txt",
+          "readable_type": "book"
+        }
+      ],
+      "toc": []
+    },
+    {
+      "uuid": "9b634958-4b0e-439c-9188-07d3fbc81910",
+      "title": "The Adventures of Sherlock Holmes",
+      "date_created": "2023-05-19T10:35:07.079474-07:00",
+      "date_modified": "2024-03-14T12:48:07.889919-07:00",
+      "date_published": "null",
+      "readable_type": "book",
+      "processed_by": "null",
+      "authors": [
+        {
+          "uuid": "ad4dc292-a83d-4fe0-95cf-037a1ba728d7",
+          "name": "Arthur Conan Doyle",
+          "description": "null"
+        }
+      ],
+      "files": [
+        {
+          "uuid": "e8b76426-ab50-46d1-8a27-44905a2e78c8",
+          "name": "9b634958-4b0e-439c-9188-07d3fbc81910.epub.txt",
+          "size": 581277,
+          "filetype": "txt",
+          "sha_hash": "5a40f8508af98fc24811a2e1fca66b0b01724a1b384fad84523d89ec867400e5",
+          "file": "https://api.sindarin.com/user/books/9b634958-4b0e-439c-9188-07d3fbc81910/the-adventures-of-sherlock-holmes.txt",
+          "readable_type": "book"
+        },
+        {
+          "uuid": "4ceed1b0-95d9-4f90-9c0b-9d507e35f152",
+          "name": "9b634958-4b0e-439c-9188-07d3fbc81910.epub",
+          "size": 300772,
+          "filetype": "epub",
+          "sha_hash": "65f9818095f22752fbe80a413a28fc53156b0b052d35c78be4809a4b6c278f43",
+          "file": "https://api.sindarin.com/user/books/9b634958-4b0e-439c-9188-07d3fbc81910/the-adventures-of-sherlock-holmes.epub",
+          "readable_type": "book"
+        },
+        {
+          "uuid": "41128a76-d253-4bbb-9820-6e345cf0b1f1",
+          "name": "9b634958-4b0e-439c-9188-07d3fbc81910.epub-original",
+          "size": 284691,
+          "filetype": "epub-original",
+          "sha_hash": "a68c91dfe91ca436e65ca7ad4da1edd66293de7aa892df89291c36a2a8832b16",
+          "file": "https://api.sindarin.com/user/books/9b634958-4b0e-439c-9188-07d3fbc81910/the-adventures-of-sherlock-holmes.original.epub",
+          "readable_type": "book"
+        },
+        {
+          "uuid": "db63e85c-d8c2-4dac-a7b3-2b84be0414f7",
+          "name": "9b634958-4b0e-439c-9188-07d3fbc81910.epub.utf8_txt",
+          "size": 594643,
+          "filetype": "utf8_txt",
+          "sha_hash": "b5c8899bc5389f95e8867fe09847de444e7aab9fabbac98ae8cd8d0b0000520f",
+          "file": "https://api.sindarin.com/user/books/9b634958-4b0e-439c-9188-07d3fbc81910/the-adventures-of-sherlock-holmes.utf8_txt",
+          "readable_type": "book"
+        }
+      ],
+      "toc": []
+    },
+    {
+      "uuid": "8e61d71c-9b14-4e55-b298-e190faef6919",
+      "title": "Another Roadside Attraction",
+      "date_created": "2025-02-10T10:00:24.790708-08:00",
+      "date_modified": "2025-02-10T10:03:34.793510-08:00",
+      "date_published": "null",
+      "readable_type": "book",
+      "processed_by": "null",
+      "authors": [
+        {
+          "uuid": "196b0c06-be4f-4ecf-ae79-9f0659d5b8dc",
+          "name": "Tom Robbins",
+          "description": "null"
+        }
+      ],
+      "files": [
+        {
+          "uuid": "1b7a1826-5f6c-4655-ad00-c4c771bfc024",
+          "name": "8e61d71c-9b14-4e55-b298-e190faef6919.epub.txt",
+          "size": 680109,
+          "filetype": "txt",
+          "sha_hash": "1c13a1933e2f6d7a7390e14aa30f37934793c999ccf7b84246db4aa483325fe1",
+          "file": "https://api.sindarin.com/user/books/8e61d71c-9b14-4e55-b298-e190faef6919/another-roadside-attraction.txt",
+          "readable_type": "book"
+        },
+        {
+          "uuid": "e7a8ac99-1a3e-4ea7-bc6e-307db254d4af",
+          "name": "8e61d71c-9b14-4e55-b298-e190faef6919.epub",
+          "size": 361538,
+          "filetype": "epub",
+          "sha_hash": "2a49c7bfd05361cc34553b3371e9c4352d7330047cd5aec3315299ad41308caf",
+          "file": "https://api.sindarin.com/user/books/8e61d71c-9b14-4e55-b298-e190faef6919/another-roadside-attraction.epub",
+          "readable_type": "book"
+        },
+        {
+          "uuid": "04247c49-3e73-40a2-855d-b587a194c8f6",
+          "name": "8e61d71c-9b14-4e55-b298-e190faef6919.epub-original",
+          "size": 924593,
+          "filetype": "epub-original",
+          "sha_hash": "ab796ac8bbfc332ad41ee097337656e968c61e6cdf77d3122805ac0981a14ae8",
+          "file": "https://api.sindarin.com/user/books/8e61d71c-9b14-4e55-b298-e190faef6919/another-roadside-attraction.original.epub",
+          "readable_type": "book"
+        },
+        {
+          "uuid": "a89281b2-aaa6-4309-a626-8fd699cde1b0",
+          "name": "8e61d71c-9b14-4e55-b298-e190faef6919.epub.utf8_txt",
+          "size": 686192,
+          "filetype": "utf8_txt",
+          "sha_hash": "1648a9163c7899dc6b8f91113dc473bff537dfba37f996f2130e928a69241d48",
+          "file": "https://api.sindarin.com/user/books/8e61d71c-9b14-4e55-b298-e190faef6919/another-roadside-attraction.utf8_txt",
+          "readable_type": "book"
+        }
+      ],
+      "toc": []
+    },
+    {
+      "uuid": "3de1dc6a-fd48-48fa-add2-253a023b62a6",
+      "title": "Autobiography of Benjamin Franklin",
+      "date_created": "2024-06-10T13:31:43.935590-07:00",
+      "date_modified": "2024-08-07T10:00:47.799319-07:00",
+      "date_published": "null",
+      "readable_type": "book",
+      "processed_by": "null",
+      "authors": [
+        {
+          "uuid": "56acbdee-e7fc-46e9-9cba-d05aabf52a9b",
+          "name": "Benjamin Franklin",
+          "description": "null"
+        }
+      ],
+      "files": [
+        {
+          "uuid": "91c7c744-b9fb-484a-940d-3e2de5d05cb1",
+          "name": "3de1dc6a-fd48-48fa-add2-253a023b62a6.epub.txt",
+          "size": 386966,
+          "filetype": "txt",
+          "sha_hash": "063f5f350006e1b4ff194feca653dfd43d6cecc54ca7dcb7be65b289f6d98eae",
+          "file": "https://api.sindarin.com/user/books/3de1dc6a-fd48-48fa-add2-253a023b62a6/autobiography-of-benjamin-franklin.txt",
+          "readable_type": "book"
+        },
+        {
+          "uuid": "6aad207a-54fe-400a-9198-213e1a3cb035",
+          "name": "3de1dc6a-fd48-48fa-add2-253a023b62a6.epub",
+          "size": 330563,
+          "filetype": "epub",
+          "sha_hash": "35540e01cc62748339bbe356358686cd5ae623b7ad70ed080e0c39ebbf6f7773",
+          "file": "https://api.sindarin.com/user/books/3de1dc6a-fd48-48fa-add2-253a023b62a6/autobiography-of-benjamin-franklin.epub",
+          "readable_type": "book"
+        },
+        {
+          "uuid": "29e1aaac-3cd2-43db-881c-a5689369fbb3",
+          "name": "3de1dc6a-fd48-48fa-add2-253a023b62a6.epub-original",
+          "size": 3129723,
+          "filetype": "epub-original",
+          "sha_hash": "d0d8cf0c262bad6d4acf95e061dc09fa4e31eba9cdf8ff8669b8845e29df07d5",
+          "file": "https://api.sindarin.com/user/books/3de1dc6a-fd48-48fa-add2-253a023b62a6/autobiography-of-benjamin-franklin.original.epub",
+          "readable_type": "book"
+        },
+        {
+          "uuid": "c5d826cb-b680-40e4-82dd-a44e74d94aed",
+          "name": "3de1dc6a-fd48-48fa-add2-253a023b62a6.epub.utf8_txt",
+          "size": 390745,
+          "filetype": "utf8_txt",
+          "sha_hash": "d6f8b1e9ceac8ebf3aee553e3db550e57d1cd423e83bd5c2561f9b72a63863b6",
+          "file": "https://api.sindarin.com/user/books/3de1dc6a-fd48-48fa-add2-253a023b62a6/autobiography-of-benjamin-franklin.utf8_txt",
+          "readable_type": "book"
+        }
+      ],
+      "toc": []
+    },
+    {
+      "uuid": "1fab2044-de39-4b3a-947c-f544fa05c93f",
+      "title": "Blindsight",
+      "date_created": "2024-06-19T13:34:11.245505-07:00",
+      "date_modified": "2024-10-29T20:13:42.418642-07:00",
+      "date_published": "null",
+      "readable_type": "book",
+      "processed_by": "null",
+      "authors": [
+        {
+          "uuid": "3fcc87fa-424f-452e-a765-126670b25723",
+          "name": "Peter Watts",
+          "description": "null"
+        }
+      ],
+      "files": [
+        {
+          "uuid": "c0768bb6-a3e8-4295-88fb-ec0d9f57813f",
+          "name": "1fab2044-de39-4b3a-947c-f544fa05c93f.epub.txt",
+          "size": 611171,
+          "filetype": "txt",
+          "sha_hash": "8f19994ab5c0878e0c824acf8015b8982b3e5bf0c13f9b5233a38014de434f21",
+          "file": "https://api.sindarin.com/user/books/1fab2044-de39-4b3a-947c-f544fa05c93f/blindsight.txt",
+          "readable_type": "book"
+        },
+        {
+          "uuid": "2a143f57-fbcb-49c4-95f3-a7e1f5cefc95",
+          "name": "1fab2044-de39-4b3a-947c-f544fa05c93f.epub",
+          "size": 507485,
+          "filetype": "epub",
+          "sha_hash": "07656ea98adf9b9dfc85db8ee7d8359f6046fc23ba417ae11a1f0f0769d32708",
+          "file": "https://api.sindarin.com/user/books/1fab2044-de39-4b3a-947c-f544fa05c93f/blindsight.epub",
+          "readable_type": "book"
+        },
+        {
+          "uuid": "33a7e5d5-7956-443d-8a13-3612979bb42f",
+          "name": "1fab2044-de39-4b3a-947c-f544fa05c93f.epub-original",
+          "size": 1894752,
+          "filetype": "epub-original",
+          "sha_hash": "556cc05d356deef2e8608a31c18ece2fc3d3e68b5820c85ff8c58c6681ee1b22",
+          "file": "https://api.sindarin.com/user/books/1fab2044-de39-4b3a-947c-f544fa05c93f/blindsight.original.epub",
+          "readable_type": "book"
+        },
+        {
+          "uuid": "e6597915-2961-4594-8c4e-9bd6b260c227",
+          "name": "1fab2044-de39-4b3a-947c-f544fa05c93f.epub.utf8_txt",
+          "size": 629500,
+          "filetype": "utf8_txt",
+          "sha_hash": "045fff766d01ab97efb42fc3bc8b4bda6fc52fa6dfec4f41352f2a8120567eab",
+          "file": "https://api.sindarin.com/user/books/1fab2044-de39-4b3a-947c-f544fa05c93f/blindsight.utf8_txt",
+          "readable_type": "book"
+        }
+      ],
+      "toc": []
+    },
+    {
+      "uuid": "8d4c34dd-9e89-4c3b-9d4a-d4c7c70f50e1",
+      "title": "Braiding Sweetgrass",
+      "date_created": "2024-12-09T10:57:56.281221-08:00",
+      "date_modified": "2024-12-09T11:16:34.455428-08:00",
+      "date_published": "2013-09-16T00:00:00-07:00",
+      "readable_type": "book",
+      "processed_by": "null",
+      "authors": [
+        {
+          "uuid": "0a3da44a-9c34-4f9e-8a36-2162cce2177e",
+          "name": "Robin Wall Kimmerer",
+          "description": "null"
+        }
+      ],
+      "files": [
+        {
+          "uuid": "77624803-137e-4f72-9e4a-4408d92847c1",
+          "name": "8d4c34dd-9e89-4c3b-9d4a-d4c7c70f50e1.epub.txt",
+          "size": 782118,
+          "filetype": "txt",
+          "sha_hash": "f534cfea3a24ce09636a14a42d8bc40752da492c05a64b0d4b7d60a9d3891cc0",
+          "file": "https://api.sindarin.com/user/books/8d4c34dd-9e89-4c3b-9d4a-d4c7c70f50e1/braiding-sweetgrass.txt",
+          "readable_type": "book"
+        },
+        {
+          "uuid": "c4a19d0b-3928-454b-b809-27f2c748ace3",
+          "name": "8d4c34dd-9e89-4c3b-9d4a-d4c7c70f50e1.epub",
+          "size": 469995,
+          "filetype": "epub",
+          "sha_hash": "d69af6c98cd7944c09df7882f3dbc26ab6ffc71e2d6f69bc7925ed8eb097b87e",
+          "file": "https://api.sindarin.com/user/books/8d4c34dd-9e89-4c3b-9d4a-d4c7c70f50e1/braiding-sweetgrass.epub",
+          "readable_type": "book"
+        },
+        {
+          "uuid": "3bd54804-3639-4a6b-bbe5-18b9dcb7c889",
+          "name": "8d4c34dd-9e89-4c3b-9d4a-d4c7c70f50e1.epub-original",
+          "size": 946135,
+          "filetype": "epub-original",
+          "sha_hash": "7b8fec16080f9ad627efb3a3978facc8d7172cd4b75945d61e531425b2e0b787",
+          "file": "https://api.sindarin.com/user/books/8d4c34dd-9e89-4c3b-9d4a-d4c7c70f50e1/braiding-sweetgrass.original.epub",
+          "readable_type": "book"
+        },
+        {
+          "uuid": "b86c1a6d-6da5-4a7e-8517-d12141bef637",
+          "name": "8d4c34dd-9e89-4c3b-9d4a-d4c7c70f50e1.epub.utf8_txt",
+          "size": 788029,
+          "filetype": "utf8_txt",
+          "sha_hash": "b717040c56ef452e2f900bed90fed8f4c62e116c2f3b7190e02c813d36dfcacd",
+          "file": "https://api.sindarin.com/user/books/8d4c34dd-9e89-4c3b-9d4a-d4c7c70f50e1/braiding-sweetgrass.utf8_txt",
+          "readable_type": "book"
+        }
+      ],
+      "toc": []
+    },
+    {
+      "uuid": "19201adc-8d62-4b4c-b8b3-b41855fb9ad1",
+      "title": "Chesterton's Gateway: 14 Essays To Get You Hooked On Chesterton",
+      "date_created": "2024-07-15T07:22:30.072455-07:00",
+      "date_modified": "2024-11-20T11:56:28.472333-08:00",
+      "date_published": "null",
+      "readable_type": "book",
+      "processed_by": "null",
+      "authors": [
+        {
+          "uuid": "d804de0e-8299-43f5-8a6c-8f259cdc96bd",
+          "name": "Ethan Nicolle",
+          "description": "null"
+        },
+        {
+          "uuid": "2775b721-688a-4e40-bc0c-f350a2d2d795",
+          "name": "G.K. Chesterton",
+          "description": "null"
+        }
+      ],
+      "files": [
+        {
+          "uuid": "056316cf-cabf-43b4-94d2-271b785c52f7",
+          "name": "19201adc-8d62-4b4c-b8b3-b41855fb9ad1.epub.txt",
+          "size": 356299,
+          "filetype": "txt",
+          "sha_hash": "8e6cee30c6104d72c48e9896d629740e2ee592b69b14174e69ea4e1cd4424d6e",
+          "file": "https://api.sindarin.com/user/books/19201adc-8d62-4b4c-b8b3-b41855fb9ad1/chestertons-gateway-14-essays-to-get-you-hooked-on-chesterton.txt",
+          "readable_type": "book"
+        },
+        {
+          "uuid": "5a090029-a5e8-4fa2-823b-70725b6e5ae8",
+          "name": "19201adc-8d62-4b4c-b8b3-b41855fb9ad1.azw3",
+          "size": 973680,
+          "filetype": "azw3",
+          "sha_hash": "69bf4ac1b738bab470842397dd9481281f3def18b26d36c1eeb1d955093775ec",
+          "file": "null",
+          "readable_type": "book"
+        },
+        {
+          "uuid": "48b925b1-4d8e-44fc-83d8-b81e341b73e2",
+          "name": "19201adc-8d62-4b4c-b8b3-b41855fb9ad1.epub",
+          "size": 519702,
+          "filetype": "epub",
+          "sha_hash": "a9732161709ab4509130978fbb2e1f88b952d649565e8c0ec3907365a30edcd3",
+          "file": "https://api.sindarin.com/user/books/19201adc-8d62-4b4c-b8b3-b41855fb9ad1/chestertons-gateway-14-essays-to-get-you-hooked-on-chesterton.epub",
+          "readable_type": "book"
+        },
+        {
+          "uuid": "504c7454-c726-4421-b27b-188d1f06bc40",
+          "name": "19201adc-8d62-4b4c-b8b3-b41855fb9ad1.epub-original",
+          "size": 802372,
+          "filetype": "epub-original",
+          "sha_hash": "47bacc07426581f6020d54561c01dc5ce74b8eadf4e04d9d3b69dca7f0f0695b",
+          "file": "https://api.sindarin.com/user/books/19201adc-8d62-4b4c-b8b3-b41855fb9ad1/chestertons-gateway-14-essays-to-get-you-hooked-on-chesterton.original.epub",
+          "readable_type": "book"
+        },
+        {
+          "uuid": "dfc8cfe0-158c-4572-8005-70b091bc4aba",
+          "name": "19201adc-8d62-4b4c-b8b3-b41855fb9ad1.epub.utf8_txt",
+          "size": 357916,
+          "filetype": "utf8_txt",
+          "sha_hash": "f3bb181eb871436f9994dfa31c3a02657291ea7def76cd87a8f0621901931928",
+          "file": "https://api.sindarin.com/user/books/19201adc-8d62-4b4c-b8b3-b41855fb9ad1/chestertons-gateway-14-essays-to-get-you-hooked-on-chesterton.utf8_txt",
+          "readable_type": "book"
+        }
+      ],
+      "toc": []
+    },
+    {
+      "uuid": "a765c452-9e31-46b2-9785-24e423674f40",
+      "title": "Claes Oldenburg and Coosje van Bruggen, Cleveland’s Free Stamp",
+      "date_created": "2024-10-18T13:40:59.667087-07:00",
+      "date_modified": "2024-10-18T13:44:43.969638-07:00",
+      "date_published": "2017-08-04T00:00:00-07:00",
+      "readable_type": "book",
+      "processed_by": "null",
+      "authors": [
+        {
+          "uuid": "04267e4d-29f3-4d18-9f3b-5d7014229795",
+          "name": "Edward J. Olszewski",
+          "description": "null"
+        }
+      ],
+      "files": [
+        {
+          "uuid": "33271beb-f30b-4838-a2d6-2080ed6a7b43",
+          "name": "a765c452-9e31-46b2-9785-24e423674f40.epub.txt",
+          "size": 340637,
+          "filetype": "txt",
+          "sha_hash": "9a22b4027060367ea9d8b0d766bdd046a55313b745a81e44854dcc943cc2c3bf",
+          "file": "https://api.sindarin.com/user/books/a765c452-9e31-46b2-9785-24e423674f40/claes-oldenburg-and-coosje-van-bruggen-clevelands-free-stamp.txt",
+          "readable_type": "book"
+        },
+        {
+          "uuid": "5b5118cc-cc97-47fb-a3ee-63bdd78256ff",
+          "name": "a765c452-9e31-46b2-9785-24e423674f40.epub",
+          "size": 3066743,
+          "filetype": "epub",
+          "sha_hash": "359f21a90e5e2d88e2c98387018f9cfa473ba3eb25320ad3514ad06fe2b73cad",
+          "file": "https://api.sindarin.com/user/books/a765c452-9e31-46b2-9785-24e423674f40/claes-oldenburg-and-coosje-van-bruggen-clevelands-free-stamp.epub",
+          "readable_type": "book"
+        },
+        {
+          "uuid": "8727d334-3634-46e7-a047-ccbd42f3e3d1",
+          "name": "a765c452-9e31-46b2-9785-24e423674f40.epub-original",
+          "size": 40359797,
+          "filetype": "epub-original",
+          "sha_hash": "e21491aec7e7499b5bb02eb1d56767c6d16822995a719156b832765797945c2b",
+          "file": "https://api.sindarin.com/user/books/a765c452-9e31-46b2-9785-24e423674f40/claes-oldenburg-and-coosje-van-bruggen-clevelands-free-stamp.original.epub",
+          "readable_type": "book"
+        },
+        {
+          "uuid": "987314ff-aa8d-4f53-aa36-bb8f07457903",
+          "name": "a765c452-9e31-46b2-9785-24e423674f40.epub.utf8_txt",
+          "size": 344402,
+          "filetype": "utf8_txt",
+          "sha_hash": "21537fea763393a94ce78def93478b0aa0b7a6291983785a8086a53391708313",
+          "file": "https://api.sindarin.com/user/books/a765c452-9e31-46b2-9785-24e423674f40/claes-oldenburg-and-coosje-van-bruggen-clevelands-free-stamp.utf8_txt",
+          "readable_type": "book"
+        }
+      ],
+      "toc": []
+    },
+    {
+      "uuid": "3bced54c-c558-4003-afe7-a2c8b1c81d23",
+      "title": "How to Design Stained Glass",
+      "date_created": "2024-10-18T12:55:04.808144-07:00",
+      "date_modified": "2024-10-23T17:41:52.783529-07:00",
+      "date_published": "2012-09-06T00:00:00-07:00",
+      "readable_type": "book",
+      "processed_by": "null",
+      "authors": [
+        {
+          "uuid": "b2209ade-d097-455d-9721-42a770a0aaac",
+          "name": "Jennie French",
+          "description": "null"
+        }
+      ],
+      "files": [
+        {
+          "uuid": "3e7530a9-75f6-48f5-8614-248d0569ac9a",
+          "name": "3bced54c-c558-4003-afe7-a2c8b1c81d23.epub.txt",
+          "size": 169067,
+          "filetype": "txt",
+          "sha_hash": "d19e6cb5f7c2188f32b316bf745a9713f8be8941992ed9511365dc3be8344512",
+          "file": "https://api.sindarin.com/user/books/3bced54c-c558-4003-afe7-a2c8b1c81d23/how-to-design-stained-glass.txt",
+          "readable_type": "book"
+        },
+        {
+          "uuid": "4651500b-95c1-4a4e-9fb5-9bb493e54dc0",
+          "name": "3bced54c-c558-4003-afe7-a2c8b1c81d23.epub",
+          "size": 4199080,
+          "filetype": "epub",
+          "sha_hash": "44966563bb0f65cd779760618cef91af3256bea6ba2e332d3c629dbe9d144765",
+          "file": "https://api.sindarin.com/user/books/3bced54c-c558-4003-afe7-a2c8b1c81d23/how-to-design-stained-glass.epub",
+          "readable_type": "book"
+        },
+        {
+          "uuid": "ba6863d9-9547-49f5-9919-dc87b2c3c4ea",
+          "name": "3bced54c-c558-4003-afe7-a2c8b1c81d23.epub-original",
+          "size": 22283996,
+          "filetype": "epub-original",
+          "sha_hash": "b045bfa25cd1690c5604436fce5a9484858634186953f94704c042d6883ab0ec",
+          "file": "https://api.sindarin.com/user/books/3bced54c-c558-4003-afe7-a2c8b1c81d23/how-to-design-stained-glass.original.epub",
+          "readable_type": "book"
+        },
+        {
+          "uuid": "e9cfbc3e-7d85-4f3e-9981-1195606b30de",
+          "name": "3bced54c-c558-4003-afe7-a2c8b1c81d23.epub.utf8_txt",
+          "size": 169797,
+          "filetype": "utf8_txt",
+          "sha_hash": "88588e64468b98871647a5d0a92ed98f1eea8f46eecdeca4957d7bb648d58801",
+          "file": "https://api.sindarin.com/user/books/3bced54c-c558-4003-afe7-a2c8b1c81d23/how-to-design-stained-glass.utf8_txt",
+          "readable_type": "book"
+        }
+      ],
+      "toc": []
+    },
+    {
+      "uuid": "49f9712c-4f3d-4bcf-8265-d48e3768d474",
+      "title": "How to Mark a Book By Mortimer J. Adler, Ph.D. From The Saturday Review of Literature, July 6, 1941 You know you have to read \"between the l",
+      "date_created": "2025-05-19T10:09:58.708524-07:00",
+      "date_modified": "2025-05-19T10:10:01.616167-07:00",
+      "date_published": "null",
+      "readable_type": "book",
+      "processed_by": "null",
+      "authors": [
+        {
+          "uuid": "441ea161-3e4b-430b-a026-6b66e03dc6ab",
+          "name": "how-to-mark-a-book-1.pdf",
+          "description": "null"
+        }
+      ],
+      "files": [
+        {
+          "uuid": "35ba678a-dd3b-40a8-ac66-bd20b24859ad",
+          "name": "49f9712c-4f3d-4bcf-8265-d48e3768d474.pdf",
+          "size": 138438,
+          "filetype": "pdf",
+          "sha_hash": "bc659c54f5a128a2445f3dff93ccf2cba62ba06b573078d0bcd345824e9f2f75",
+          "file": "null",
+          "readable_type": "book"
+        },
+        {
+          "uuid": "2e541c7a-350b-4928-9500-66b6c411c939",
+          "name": "49f9712c-4f3d-4bcf-8265-d48e3768d474.pdf.utf8_txt",
+          "size": 11194,
+          "filetype": "utf8_txt",
+          "sha_hash": "21c76cdf280d60359f7fc7a7777c4bcde940311772cf6160c501115c9299a533",
+          "file": "https://api.sindarin.com/user/books/49f9712c-4f3d-4bcf-8265-d48e3768d474/how-to-mark-a-book-by-mortimer-j-adler-phd-from-the-saturday-review-of-literature-july-6-1941-you-know-you-have-to-read-between-the-l.utf8_txt",
+          "readable_type": "book"
+        },
+        {
+          "uuid": "f58672e0-8187-4101-a613-40f010d7c690",
+          "name": "49f9712c-4f3d-4bcf-8265-d48e3768d474.epub",
+          "size": 7239,
+          "filetype": "epub",
+          "sha_hash": "0b3193202f43a277ac359141b3552cdb84eba6fc41471db9c3513b9caa789892",
+          "file": "https://api.sindarin.com/user/books/49f9712c-4f3d-4bcf-8265-d48e3768d474/how-to-mark-a-book-by-mortimer-j-adler-phd-from-the-saturday-review-of-literature-july-6-1941-you-know-you-have-to-read-between-the-l.epub",
+          "readable_type": "book"
+        }
+      ],
+      "toc": []
+    },
+    {
+      "uuid": "16312485-ab55-4c46-abaa-3dedbdb9f57a",
+      "title": "Last and First Men: A Story of the Near and Far Future",
+      "date_created": "2025-03-25T21:56:01.218171-07:00",
+      "date_modified": "2025-03-25T22:00:55.394864-07:00",
+      "date_published": "null",
+      "readable_type": "book",
+      "processed_by": "null",
+      "authors": [
+        {
+          "uuid": "a1e10ee5-d6f2-4a06-97c7-17497e430e96",
+          "name": "Olaf Stapledon",
+          "description": "null"
+        }
+      ],
+      "files": [
+        {
+          "uuid": "fb54f1e1-b28b-4c9e-82cd-d0197ec25dac",
+          "name": "16312485-ab55-4c46-abaa-3dedbdb9f57a.epub.txt",
+          "size": 701625,
+          "filetype": "txt",
+          "sha_hash": "0bf7bf1a3b20f1b8d57a69dac42d1225d073d222c12ae86e40c46166bbe0050f",
+          "file": "https://api.sindarin.com/user/books/16312485-ab55-4c46-abaa-3dedbdb9f57a/last-and-first-men-a-story-of-the-near-and-far-future.txt",
+          "readable_type": "book"
+        },
+        {
+          "uuid": "211d0c2e-36e6-4616-b7ea-d746bb1e5e93",
+          "name": "16312485-ab55-4c46-abaa-3dedbdb9f57a.epub",
+          "size": 466051,
+          "filetype": "epub",
+          "sha_hash": "3ff8da0d430360c0583a3938d7fd6bc22f4bcbbdfb9070a408b6aaaa548af538",
+          "file": "https://api.sindarin.com/user/books/16312485-ab55-4c46-abaa-3dedbdb9f57a/last-and-first-men-a-story-of-the-near-and-far-future.epub",
+          "readable_type": "book"
+        },
+        {
+          "uuid": "9ab1239c-e4d2-465c-aea4-4478097cd89c",
+          "name": "16312485-ab55-4c46-abaa-3dedbdb9f57a.epub-original",
+          "size": 453308,
+          "filetype": "epub-original",
+          "sha_hash": "4dea0cebc3925df070e3179b1a241563171d61f8ac9636ad3b960506ad292c01",
+          "file": "https://api.sindarin.com/user/books/16312485-ab55-4c46-abaa-3dedbdb9f57a/last-and-first-men-a-story-of-the-near-and-far-future.original.epub",
+          "readable_type": "book"
+        },
+        {
+          "uuid": "ef9774ca-0f43-45ea-b136-9ddd8895f270",
+          "name": "16312485-ab55-4c46-abaa-3dedbdb9f57a.epub.utf8_txt",
+          "size": 703310,
+          "filetype": "utf8_txt",
+          "sha_hash": "861b59d302351dd239f2f79ff32259ae5c6f713a6fc8de062599530bae458968",
+          "file": "https://api.sindarin.com/user/books/16312485-ab55-4c46-abaa-3dedbdb9f57a/last-and-first-men-a-story-of-the-near-and-far-future.utf8_txt",
+          "readable_type": "book"
+        }
+      ],
+      "toc": []
+    },
+    {
+      "uuid": "c05f8577-35cb-4333-96a2-ec9e592c3c7a",
+      "title": "Luminous",
+      "date_created": "2024-07-29T21:30:04.917558-07:00",
+      "date_modified": "2024-07-29T21:32:31.013940-07:00",
+      "date_published": "null",
+      "readable_type": "book",
+      "processed_by": "null",
+      "authors": [
+        {
+          "uuid": "68f1fb0c-6ec3-4a0a-ba92-fbd68a749fa8",
+          "name": "Greg Egan",
+          "description": "null"
+        }
+      ],
+      "files": [
+        {
+          "uuid": "697e997b-b7ba-4adc-b061-9fa0eb4b0b06",
+          "name": "c05f8577-35cb-4333-96a2-ec9e592c3c7a.epub.txt",
+          "size": 606487,
+          "filetype": "txt",
+          "sha_hash": "7cef70e9c082c4144cd6f227f59641f221003d6f4e60c1bf37d2ed983ec1280e",
+          "file": "https://api.sindarin.com/user/books/c05f8577-35cb-4333-96a2-ec9e592c3c7a/luminous.txt",
+          "readable_type": "book"
+        },
+        {
+          "uuid": "ff442eee-a1a9-4d77-987a-7c09b52a4155",
+          "name": "c05f8577-35cb-4333-96a2-ec9e592c3c7a.azw3",
+          "size": 476396,
+          "filetype": "azw3",
+          "sha_hash": "7c8ed8c49f38d198c98b830ee3d95d053036a01e6a9f1a9fc67c9dbc0069e9cc",
+          "file": "null",
+          "readable_type": "book"
+        },
+        {
+          "uuid": "f1358918-8360-42c0-8123-a78a0b775485",
+          "name": "c05f8577-35cb-4333-96a2-ec9e592c3c7a.epub",
+          "size": 318439,
+          "filetype": "epub",
+          "sha_hash": "843ddc05c3d1d9443f11b3f2e392ca19de268a31797386154d8dea4a672af10f",
+          "file": "https://api.sindarin.com/user/books/c05f8577-35cb-4333-96a2-ec9e592c3c7a/luminous.epub",
+          "readable_type": "book"
+        },
+        {
+          "uuid": "cb4f6a79-373e-4528-8cb0-a872e8cba105",
+          "name": "c05f8577-35cb-4333-96a2-ec9e592c3c7a.epub-original",
+          "size": 353428,
+          "filetype": "epub-original",
+          "sha_hash": "520ddfc94ec9db24067b4336ac741dd97024dbae67cbb47e41c5229e8e0eaa60",
+          "file": "https://api.sindarin.com/user/books/c05f8577-35cb-4333-96a2-ec9e592c3c7a/luminous.original.epub",
+          "readable_type": "book"
+        },
+        {
+          "uuid": "64278a55-6e44-449a-bfae-582a6901ed2d",
+          "name": "c05f8577-35cb-4333-96a2-ec9e592c3c7a.epub.utf8_txt",
+          "size": 620828,
+          "filetype": "utf8_txt",
+          "sha_hash": "fbfd3f3da770ad1924903f3626c7726bf79ca6ed280668095cca3ed7b6c5bdb9",
+          "file": "https://api.sindarin.com/user/books/c05f8577-35cb-4333-96a2-ec9e592c3c7a/luminous.utf8_txt",
+          "readable_type": "book"
+        }
+      ],
+      "toc": []
+    },
+    {
+      "uuid": "b09f9d0e-d111-42f9-b255-7f2e4473a698",
+      "title": "Make Something Wonderful",
+      "date_created": "2023-04-18T14:29:04.169391-07:00",
+      "date_modified": "2024-03-14T12:32:19.497741-07:00",
+      "date_published": "null",
+      "readable_type": "book",
+      "processed_by": "null",
+      "authors": [
+        {
+          "uuid": "b6a11ae5-c967-4da1-9372-65fdc06f376f",
+          "name": "Steve Jobs",
+          "description": "null"
+        }
+      ],
+      "files": [
+        {
+          "uuid": "7a882f58-ad28-44ff-834e-feca8df30d0e",
+          "name": "b09f9d0e-d111-42f9-b255-7f2e4473a698.epub.txt",
+          "size": 276048,
+          "filetype": "txt",
+          "sha_hash": "5359f07822fd83b144823fae2ffc19598ba2a1dbc4f1f949e00ec0f4b5489ef9",
+          "file": "https://api.sindarin.com/user/books/b09f9d0e-d111-42f9-b255-7f2e4473a698/make-something-wonderful.txt",
+          "readable_type": "book"
+        },
+        {
+          "uuid": "b12d456a-57a3-4356-a282-02cdb220e15d",
+          "name": "b09f9d0e-d111-42f9-b255-7f2e4473a698.epub",
+          "size": 2535616,
+          "filetype": "epub",
+          "sha_hash": "6a38985aa26ce23e11d80742010f1d211b798a02c53da81a8704ab4d01a2e075",
+          "file": "https://api.sindarin.com/user/books/b09f9d0e-d111-42f9-b255-7f2e4473a698/make-something-wonderful.epub",
+          "readable_type": "book"
+        },
+        {
+          "uuid": "f57993fe-177c-467e-a8e7-499cc59cee85",
+          "name": "b09f9d0e-d111-42f9-b255-7f2e4473a698.epub-original",
+          "size": 32925041,
+          "filetype": "epub-original",
+          "sha_hash": "c2b2ad856e1b4a56cf98b67738fec480c0d18e70830fa758656b6c409f677c5b",
+          "file": "https://api.sindarin.com/user/books/b09f9d0e-d111-42f9-b255-7f2e4473a698/make-something-wonderful.original.epub",
+          "readable_type": "book"
+        },
+        {
+          "uuid": "d5b034d4-165e-46b4-a2ec-53fb4ebf8e6b",
+          "name": "b09f9d0e-d111-42f9-b255-7f2e4473a698.epub.utf8_txt",
+          "size": 280550,
+          "filetype": "utf8_txt",
+          "sha_hash": "e143debc15446f731ac9834acfeab396ba0b9dfe50768127480c23ccd02213d0",
+          "file": "https://api.sindarin.com/user/books/b09f9d0e-d111-42f9-b255-7f2e4473a698/make-something-wonderful.utf8_txt",
+          "readable_type": "book"
+        }
+      ],
+      "toc": []
+    },
+    {
+      "uuid": "58fa5eb3-fe28-4030-8a14-a956c2197410",
+      "title": "Modelling and Sculpture",
+      "date_created": "2024-10-18T13:25:08.107277-07:00",
+      "date_modified": "2024-10-18T13:28:12.017145-07:00",
+      "date_published": "2012-12-04T00:00:00-08:00",
+      "readable_type": "book",
+      "processed_by": "null",
+      "authors": [
+        {
+          "uuid": "fcfe6026-890e-49d1-b12a-cd8009ea18c1",
+          "name": "Albert Toft",
+          "description": "null"
+        }
+      ],
+      "files": [
+        {
+          "uuid": "26d37238-dcb4-4d23-b4e8-ba413590d507",
+          "name": "58fa5eb3-fe28-4030-8a14-a956c2197410.epub.txt",
+          "size": 367498,
+          "filetype": "txt",
+          "sha_hash": "f82fe3eee0b17daec23acba0609f4ec5a32d4380774521f49f533168046b46a1",
+          "file": "https://api.sindarin.com/user/books/58fa5eb3-fe28-4030-8a14-a956c2197410/modelling-and-sculpture.txt",
+          "readable_type": "book"
+        },
+        {
+          "uuid": "00ee74cb-c911-4130-bc70-87c478408ecd",
+          "name": "58fa5eb3-fe28-4030-8a14-a956c2197410.epub",
+          "size": 4031886,
+          "filetype": "epub",
+          "sha_hash": "e07376dca5fef0d536ab240b59c8a14bfba3c7dd2f68214a1ed64f8d215ec1ec",
+          "file": "https://api.sindarin.com/user/books/58fa5eb3-fe28-4030-8a14-a956c2197410/modelling-and-sculpture.epub",
+          "readable_type": "book"
+        },
+        {
+          "uuid": "7824a5a8-2a6e-4280-8cfd-b26efdefefa1",
+          "name": "58fa5eb3-fe28-4030-8a14-a956c2197410.epub-original",
+          "size": 23088253,
+          "filetype": "epub-original",
+          "sha_hash": "417e88e758b9a39666425915221d2b51e61aedbcd35a4698bfdcbc234d587991",
+          "file": "https://api.sindarin.com/user/books/58fa5eb3-fe28-4030-8a14-a956c2197410/modelling-and-sculpture.original.epub",
+          "readable_type": "book"
+        },
+        {
+          "uuid": "70979711-ca54-4f78-a198-007b435dded1",
+          "name": "58fa5eb3-fe28-4030-8a14-a956c2197410.epub.utf8_txt",
+          "size": 368660,
+          "filetype": "utf8_txt",
+          "sha_hash": "8413fc6fcb88fb1cbc8458151feee901a791014e27468437027c14c6a21782ab",
+          "file": "https://api.sindarin.com/user/books/58fa5eb3-fe28-4030-8a14-a956c2197410/modelling-and-sculpture.utf8_txt",
+          "readable_type": "book"
+        }
+      ],
+      "toc": []
+    },
+    {
+      "uuid": "f43d7f65-93d1-4f60-8234-fab723456fa8",
+      "title": "Principles",
+      "date_created": "2024-05-08T13:47:42.114533-07:00",
+      "date_modified": "2024-11-20T11:56:41.030923-08:00",
+      "date_published": "null",
+      "readable_type": "book",
+      "processed_by": "null",
+      "authors": [
+        {
+          "uuid": "a52acc52-ca1a-4566-b2ed-de16ce8464a9",
+          "name": "Ray Dalio",
+          "description": "null"
+        }
+      ],
+      "files": [
+        {
+          "uuid": "6c1ed477-e9e7-4e33-a0e7-81772d28d859",
+          "name": "f43d7f65-93d1-4f60-8234-fab723456fa8.epub.txt",
+          "size": 924082,
+          "filetype": "txt",
+          "sha_hash": "18ecd96cda282ac76791e624dd15f7acd5690522b5641d5151ab17a2e368ec7b",
+          "file": "https://api.sindarin.com/user/books/f43d7f65-93d1-4f60-8234-fab723456fa8/principles.txt",
+          "readable_type": "book"
+        },
+        {
+          "uuid": "cf882cd9-eaf0-4ccf-a1e7-ede5a5f55188",
+          "name": "f43d7f65-93d1-4f60-8234-fab723456fa8.epub",
+          "size": 889304,
+          "filetype": "epub",
+          "sha_hash": "165ac8299308325949c79045ed0ee45a3e83710323993e593eabd77961b27dcd",
+          "file": "https://api.sindarin.com/user/books/f43d7f65-93d1-4f60-8234-fab723456fa8/principles.epub",
+          "readable_type": "book"
+        },
+        {
+          "uuid": "746b734e-0e68-4506-afa5-1f690759c57a",
+          "name": "f43d7f65-93d1-4f60-8234-fab723456fa8.epub-original",
+          "size": 8980939,
+          "filetype": "epub-original",
+          "sha_hash": "db2a6b148c67f51e9991367c1c297e8d83c9e0f8ddaa813ba457b7a9740eceb5",
+          "file": "https://api.sindarin.com/user/books/f43d7f65-93d1-4f60-8234-fab723456fa8/principles.original.epub",
+          "readable_type": "book"
+        },
+        {
+          "uuid": "7e853934-8dc5-4239-9edf-229e797a558c",
+          "name": "f43d7f65-93d1-4f60-8234-fab723456fa8.epub.utf8_txt",
+          "size": 933295,
+          "filetype": "utf8_txt",
+          "sha_hash": "f87c7cce09c451dbf30aff85a2f0afb3a9bb7bab9e8716b02edf41fba2593217",
+          "file": "https://api.sindarin.com/user/books/f43d7f65-93d1-4f60-8234-fab723456fa8/principles.utf8_txt",
+          "readable_type": "book"
+        }
+      ],
+      "toc": []
+    },
+    {
+      "uuid": "8127fbe6-a7be-45d1-b2c5-e50a974d5875",
+      "title": "Test Book (4 Chapters)",
+      "date_created": "2025-01-08T12:15:32.798682-08:00",
+      "date_modified": "2025-01-08T12:18:09.885746-08:00",
+      "date_published": "null",
+      "readable_type": "book",
+      "processed_by": "null",
+      "authors": [
+        {
+          "uuid": "bf0fa663-6d70-4bfc-9f5c-f07b29625a27",
+          "name": "The Team",
+          "description": "null"
+        }
+      ],
+      "files": [
+        {
+          "uuid": "f663cdf7-101e-46e0-ade4-941dec9f3b0a",
+          "name": "8127fbe6-a7be-45d1-b2c5-e50a974d5875.epub.txt",
+          "size": 1134932,
+          "filetype": "txt",
+          "sha_hash": "995ae0c32262a7b6fb235a04a9c84ba732c2a4530ebd74dcf839cdbbc8184c71",
+          "file": "https://api.sindarin.com/user/books/8127fbe6-a7be-45d1-b2c5-e50a974d5875/test-book-4-chapters.txt",
+          "readable_type": "book"
+        },
+        {
+          "uuid": "fbadf8d9-834a-4e89-a3fa-b4b5b488a34e",
+          "name": "8127fbe6-a7be-45d1-b2c5-e50a974d5875.epub",
+          "size": 658834,
+          "filetype": "epub",
+          "sha_hash": "c7c21bf47c4fe6c83156810bc2abb9f9e178d750f0e181ed701d2c44ab72e76b",
+          "file": "https://api.sindarin.com/user/books/8127fbe6-a7be-45d1-b2c5-e50a974d5875/test-book-4-chapters.epub",
+          "readable_type": "book"
+        },
+        {
+          "uuid": "45b69fee-c5b5-432a-9269-1e2bfd71564c",
+          "name": "8127fbe6-a7be-45d1-b2c5-e50a974d5875.epub-original",
+          "size": 680369,
+          "filetype": "epub-original",
+          "sha_hash": "e70d59df147215f1660154fa6e0dc8780febf34bb6cb5e55e4f00dd74b88da96",
+          "file": "https://api.sindarin.com/user/books/8127fbe6-a7be-45d1-b2c5-e50a974d5875/test-book-4-chapters.original.epub",
+          "readable_type": "book"
+        },
+        {
+          "uuid": "8c8ee3c3-2aa7-4a10-99d8-093e113d56e1",
+          "name": "8127fbe6-a7be-45d1-b2c5-e50a974d5875.epub.utf8_txt",
+          "size": 1134932,
+          "filetype": "utf8_txt",
+          "sha_hash": "995ae0c32262a7b6fb235a04a9c84ba732c2a4530ebd74dcf839cdbbc8184c71",
+          "file": "https://api.sindarin.com/user/books/8127fbe6-a7be-45d1-b2c5-e50a974d5875/test-book-4-chapters.utf8_txt",
+          "readable_type": "book"
+        }
+      ],
+      "toc": []
+    }
+  ]
+}

@@ -1,0 +1,1456 @@
+{
+  "readables": [
+    {
+      "uuid": "3206b370-6d3d-4913-b3cc-94f4122475c3",
+      "title": "Daily Summary, 1 article: 2025-07-07",
+      "date_created": "2025-07-07T05:08:31.070392-07:00",
+      "date_modified": "2025-07-07T05:08:31.070437-07:00",
+      "date_published": "null",
+      "readable_type": "email_article",
+      "processed_by": "null",
+      "authors": [
+        {
+          "uuid": "null",
+          "name": "null",
+          "description": "null"
+        }
+      ],
+      "files": [
+        {
+          "uuid": "null",
+          "name": "null",
+          "size": 1836,
+          "filetype": "txt",
+          "sha_hash": "null",
+          "file": "https://api.sindarin.com/user/articles/3206b370-6d3d-4913-b3cc-94f4122475c3/content",
+          "readable_type": "email_article"
+        },
+        {
+          "uuid": "null",
+          "name": "null",
+          "size": 1838,
+          "filetype": "utf8_txt",
+          "sha_hash": "null",
+          "file": "https://api.sindarin.com/user/articles/3206b370-6d3d-4913-b3cc-94f4122475c3/utf8_content",
+          "readable_type": "email_article"
+        },
+        {
+          "uuid": "bce2df2e-d4da-4c46-a44f-655db45db3d8",
+          "name": "3206b370-6d3d-4913-b3cc-94f4122475c3.epub",
+          "size": 3104,
+          "filetype": "epub",
+          "sha_hash": "0df6953448d33a620e67ce44aa285a420f93a5cc70d48f0e1c7db61b06c6d497",
+          "file": "https://api.sindarin.com/user/articles/3206b370-6d3d-4913-b3cc-94f4122475c3/daily-summary-1-article-2025-07-07.epub",
+          "readable_type": "email_article"
+        }
+      ],
+      "toc": []
+    },
+    {
+      "uuid": "16dec945-d342-4f37-8968-e79d9916faa5",
+      "title": "The Scope of My Work",
+      "date_created": "2025-07-07T04:34:45.787125-07:00",
+      "date_modified": "2025-07-07T04:34:58.148548-07:00",
+      "date_published": "null",
+      "readable_type": "email_article",
+      "processed_by": "null",
+      "authors": [
+        {
+          "uuid": "null",
+          "name": "Scope of Work",
+          "description": "team@scopeofwork.net"
+        }
+      ],
+      "files": [
+        {
+          "uuid": "null",
+          "name": "null",
+          "size": 18185,
+          "filetype": "txt",
+          "sha_hash": "null",
+          "file": "https://api.sindarin.com/user/articles/16dec945-d342-4f37-8968-e79d9916faa5/content",
+          "readable_type": "email_article"
+        },
+        {
+          "uuid": "null",
+          "name": "null",
+          "size": 18385,
+          "filetype": "utf8_txt",
+          "sha_hash": "null",
+          "file": "https://api.sindarin.com/user/articles/16dec945-d342-4f37-8968-e79d9916faa5/utf8_content",
+          "readable_type": "email_article"
+        },
+        {
+          "uuid": "a9bb1010-d72b-4903-b6d1-9392b0ecca0d",
+          "name": "16dec945-d342-4f37-8968-e79d9916faa5.epub",
+          "size": 180595,
+          "filetype": "epub",
+          "sha_hash": "6a7cb778d3f146f3f6e108f4d12219205edce881c12dcc15617c7bc4c4fde870",
+          "file": "https://api.sindarin.com/user/articles/16dec945-d342-4f37-8968-e79d9916faa5/the-scope-of-my-work.epub",
+          "readable_type": "email_article"
+        }
+      ],
+      "toc": []
+    },
+    {
+      "uuid": "d537b8b4-118b-46dc-8de6-9554c8a8eaaf",
+      "title": "Daily Summary, 1 article: 2025-06-30",
+      "date_created": "2025-06-30T13:06:16.712687-07:00",
+      "date_modified": "2025-06-30T13:06:16.712722-07:00",
+      "date_published": "null",
+      "readable_type": "email_article",
+      "processed_by": "null",
+      "authors": [
+        {
+          "uuid": "null",
+          "name": "null",
+          "description": "null"
+        }
+      ],
+      "files": [
+        {
+          "uuid": "null",
+          "name": "null",
+          "size": 1773,
+          "filetype": "txt",
+          "sha_hash": "null",
+          "file": "https://api.sindarin.com/user/articles/d537b8b4-118b-46dc-8de6-9554c8a8eaaf/content",
+          "readable_type": "email_article"
+        },
+        {
+          "uuid": "null",
+          "name": "null",
+          "size": 1773,
+          "filetype": "utf8_txt",
+          "sha_hash": "null",
+          "file": "https://api.sindarin.com/user/articles/d537b8b4-118b-46dc-8de6-9554c8a8eaaf/utf8_content",
+          "readable_type": "email_article"
+        },
+        {
+          "uuid": "6a959dbf-0d9b-40ab-81ea-3e4f51f3256e",
+          "name": "d537b8b4-118b-46dc-8de6-9554c8a8eaaf.epub",
+          "size": 3089,
+          "filetype": "epub",
+          "sha_hash": "888f7f94b7aaebade71d5f79288bf1954b6557f0a1dfbe1d40001ea500d9569b",
+          "file": "https://api.sindarin.com/user/articles/d537b8b4-118b-46dc-8de6-9554c8a8eaaf/daily-summary-1-article-2025-06-30.epub",
+          "readable_type": "email_article"
+        }
+      ],
+      "toc": []
+    },
+    {
+      "uuid": "196e604e-250a-4881-8d33-4cc9e2d1951f",
+      "title": "Notes, 2025-06-30",
+      "date_created": "2025-06-30T05:05:11.703481-07:00",
+      "date_modified": "2025-06-30T05:05:17.458236-07:00",
+      "date_published": "null",
+      "readable_type": "email_article",
+      "processed_by": "null",
+      "authors": [
+        {
+          "uuid": "null",
+          "name": "Scope of Work",
+          "description": "team@scopeofwork.net"
+        }
+      ],
+      "files": [
+        {
+          "uuid": "null",
+          "name": "null",
+          "size": 9223,
+          "filetype": "txt",
+          "sha_hash": "null",
+          "file": "https://api.sindarin.com/user/articles/196e604e-250a-4881-8d33-4cc9e2d1951f/content",
+          "readable_type": "email_article"
+        },
+        {
+          "uuid": "null",
+          "name": "null",
+          "size": 9285,
+          "filetype": "utf8_txt",
+          "sha_hash": "null",
+          "file": "https://api.sindarin.com/user/articles/196e604e-250a-4881-8d33-4cc9e2d1951f/utf8_content",
+          "readable_type": "email_article"
+        },
+        {
+          "uuid": "fbb3da6c-238b-4e1c-8d52-e797674c0473",
+          "name": "196e604e-250a-4881-8d33-4cc9e2d1951f.epub",
+          "size": 189376,
+          "filetype": "epub",
+          "sha_hash": "eec255b7c2d82d61791f04fafa2850b6feb47312f90e3cd872f8d5de2d4452b0",
+          "file": "https://api.sindarin.com/user/articles/196e604e-250a-4881-8d33-4cc9e2d1951f/notes-2025-06-30.epub",
+          "readable_type": "email_article"
+        }
+      ],
+      "toc": []
+    },
+    {
+      "uuid": "79c7a747-8f10-4748-be94-14d1b3469d2f",
+      "title": "Daily Summary, 1 article: 2025-06-23",
+      "date_created": "2025-06-23T08:33:38.970211-07:00",
+      "date_modified": "2025-06-23T08:33:38.970335-07:00",
+      "date_published": "null",
+      "readable_type": "email_article",
+      "processed_by": "null",
+      "authors": [
+        {
+          "uuid": "null",
+          "name": "null",
+          "description": "null"
+        }
+      ],
+      "files": [
+        {
+          "uuid": "null",
+          "name": "null",
+          "size": 1879,
+          "filetype": "txt",
+          "sha_hash": "null",
+          "file": "https://api.sindarin.com/user/articles/79c7a747-8f10-4748-be94-14d1b3469d2f/content",
+          "readable_type": "email_article"
+        },
+        {
+          "uuid": "null",
+          "name": "null",
+          "size": 1879,
+          "filetype": "utf8_txt",
+          "sha_hash": "null",
+          "file": "https://api.sindarin.com/user/articles/79c7a747-8f10-4748-be94-14d1b3469d2f/utf8_content",
+          "readable_type": "email_article"
+        },
+        {
+          "uuid": "7ec76c73-de52-4cc8-b113-3f406ae99901",
+          "name": "79c7a747-8f10-4748-be94-14d1b3469d2f.epub",
+          "size": 3173,
+          "filetype": "epub",
+          "sha_hash": "bd9892e913eab73cca565e2a6d9e854c9757de8092f5f7c14b9854baf47f6d30",
+          "file": "https://api.sindarin.com/user/articles/79c7a747-8f10-4748-be94-14d1b3469d2f/daily-summary-1-article-2025-06-23.epub",
+          "readable_type": "email_article"
+        }
+      ],
+      "toc": []
+    },
+    {
+      "uuid": "8d59bc16-0791-46fd-90f1-b2d0ec8c75e1",
+      "title": "Scope Creep, 2025-06-23",
+      "date_created": "2025-06-23T06:20:45.491432-07:00",
+      "date_modified": "2025-06-23T06:20:55.432500-07:00",
+      "date_published": "null",
+      "readable_type": "email_article",
+      "processed_by": "null",
+      "authors": [
+        {
+          "uuid": "null",
+          "name": "Scope of Work",
+          "description": "team@scopeofwork.net"
+        }
+      ],
+      "files": [
+        {
+          "uuid": "null",
+          "name": "null",
+          "size": 13082,
+          "filetype": "txt",
+          "sha_hash": "null",
+          "file": "https://api.sindarin.com/user/articles/8d59bc16-0791-46fd-90f1-b2d0ec8c75e1/content",
+          "readable_type": "email_article"
+        },
+        {
+          "uuid": "null",
+          "name": "null",
+          "size": 13234,
+          "filetype": "utf8_txt",
+          "sha_hash": "null",
+          "file": "https://api.sindarin.com/user/articles/8d59bc16-0791-46fd-90f1-b2d0ec8c75e1/utf8_content",
+          "readable_type": "email_article"
+        },
+        {
+          "uuid": "88ce1de1-889c-4f60-9815-a009d94eff7b",
+          "name": "8d59bc16-0791-46fd-90f1-b2d0ec8c75e1.epub",
+          "size": 215934,
+          "filetype": "epub",
+          "sha_hash": "3f8625b244064c99886c1540c27c33b9f32a7599c4065a8c28a326f6eaa8c867",
+          "file": "https://api.sindarin.com/user/articles/8d59bc16-0791-46fd-90f1-b2d0ec8c75e1/scope-creep-2025-06-23.epub",
+          "readable_type": "email_article"
+        }
+      ],
+      "toc": []
+    },
+    {
+      "uuid": "e1232428-c6da-4e98-b269-25fc5f7d0406",
+      "title": "Daily Summary, 1 article: 2025-06-16",
+      "date_created": "2025-06-16T13:06:03.328239-07:00",
+      "date_modified": "2025-06-16T13:06:03.328334-07:00",
+      "date_published": "null",
+      "readable_type": "email_article",
+      "processed_by": "null",
+      "authors": [
+        {
+          "uuid": "null",
+          "name": "null",
+          "description": "null"
+        }
+      ],
+      "files": [
+        {
+          "uuid": "null",
+          "name": "null",
+          "size": 2244,
+          "filetype": "txt",
+          "sha_hash": "null",
+          "file": "https://api.sindarin.com/user/articles/e1232428-c6da-4e98-b269-25fc5f7d0406/content",
+          "readable_type": "email_article"
+        },
+        {
+          "uuid": "null",
+          "name": "null",
+          "size": 2249,
+          "filetype": "utf8_txt",
+          "sha_hash": "null",
+          "file": "https://api.sindarin.com/user/articles/e1232428-c6da-4e98-b269-25fc5f7d0406/utf8_content",
+          "readable_type": "email_article"
+        },
+        {
+          "uuid": "331d31e9-5008-4c2f-bc2d-3884b4dab003",
+          "name": "e1232428-c6da-4e98-b269-25fc5f7d0406.epub",
+          "size": 3230,
+          "filetype": "epub",
+          "sha_hash": "1405c7bdf56519ae0a5d268f5d3dc4351f72c1b8bb20023d0e980a3bab9ca107",
+          "file": "https://api.sindarin.com/user/articles/e1232428-c6da-4e98-b269-25fc5f7d0406/daily-summary-1-article-2025-06-16.epub",
+          "readable_type": "email_article"
+        }
+      ],
+      "toc": []
+    },
+    {
+      "uuid": "be9b9737-cb26-4c2b-bfc3-528b32cf28ac",
+      "title": "The Coffee Warehouse",
+      "date_created": "2025-06-16T07:05:19.304468-07:00",
+      "date_modified": "2025-06-16T07:05:31.669773-07:00",
+      "date_published": "null",
+      "readable_type": "email_article",
+      "processed_by": "null",
+      "authors": [
+        {
+          "uuid": "null",
+          "name": "Scope of Work",
+          "description": "team@scopeofwork.net"
+        }
+      ],
+      "files": [
+        {
+          "uuid": "null",
+          "name": "null",
+          "size": 12886,
+          "filetype": "txt",
+          "sha_hash": "null",
+          "file": "https://api.sindarin.com/user/articles/be9b9737-cb26-4c2b-bfc3-528b32cf28ac/content",
+          "readable_type": "email_article"
+        },
+        {
+          "uuid": "null",
+          "name": "null",
+          "size": 12952,
+          "filetype": "utf8_txt",
+          "sha_hash": "null",
+          "file": "https://api.sindarin.com/user/articles/be9b9737-cb26-4c2b-bfc3-528b32cf28ac/utf8_content",
+          "readable_type": "email_article"
+        },
+        {
+          "uuid": "85e8675e-49df-4e70-8fe0-05f411fd270d",
+          "name": "be9b9737-cb26-4c2b-bfc3-528b32cf28ac.epub",
+          "size": 116972,
+          "filetype": "epub",
+          "sha_hash": "af012b16721e7bafabc2df04f29aabbf51031ef6fc11c6bfb6ab5949e1efa9f7",
+          "file": "https://api.sindarin.com/user/articles/be9b9737-cb26-4c2b-bfc3-528b32cf28ac/the-coffee-warehouse.epub",
+          "readable_type": "email_article"
+        }
+      ],
+      "toc": []
+    },
+    {
+      "uuid": "24ace033-1a8b-46bd-83a5-f3a5bc744a75",
+      "title": "Daily Summary, 1 article: 2025-06-11",
+      "date_created": "2025-06-11T07:36:37.186324-07:00",
+      "date_modified": "2025-06-11T07:36:37.186378-07:00",
+      "date_published": "null",
+      "readable_type": "email_article",
+      "processed_by": "null",
+      "authors": [
+        {
+          "uuid": "null",
+          "name": "null",
+          "description": "null"
+        }
+      ],
+      "files": [
+        {
+          "uuid": "null",
+          "name": "null",
+          "size": 1801,
+          "filetype": "txt",
+          "sha_hash": "null",
+          "file": "https://api.sindarin.com/user/articles/24ace033-1a8b-46bd-83a5-f3a5bc744a75/content",
+          "readable_type": "email_article"
+        },
+        {
+          "uuid": "null",
+          "name": "null",
+          "size": 1805,
+          "filetype": "utf8_txt",
+          "sha_hash": "null",
+          "file": "https://api.sindarin.com/user/articles/24ace033-1a8b-46bd-83a5-f3a5bc744a75/utf8_content",
+          "readable_type": "email_article"
+        },
+        {
+          "uuid": "014547cd-45dc-40e4-812f-732e0224c42a",
+          "name": "24ace033-1a8b-46bd-83a5-f3a5bc744a75.epub",
+          "size": 3146,
+          "filetype": "epub",
+          "sha_hash": "281b3798c4e8d7e3bcaa103b265cbec3fa1bfa5080a234d69a7780ca1e395028",
+          "file": "https://api.sindarin.com/user/articles/24ace033-1a8b-46bd-83a5-f3a5bc744a75/daily-summary-1-article-2025-06-11.epub",
+          "readable_type": "email_article"
+        }
+      ],
+      "toc": []
+    },
+    {
+      "uuid": "924425c9-6389-49db-bf4c-81bc062b4619",
+      "title": "Notes, 2025-06-10",
+      "date_created": "2025-06-11T05:05:42.186820-07:00",
+      "date_modified": "2025-06-11T05:05:54.229687-07:00",
+      "date_published": "null",
+      "readable_type": "email_article",
+      "processed_by": "null",
+      "authors": [
+        {
+          "uuid": "null",
+          "name": "Scope of Work",
+          "description": "team@scopeofwork.net"
+        }
+      ],
+      "files": [
+        {
+          "uuid": "null",
+          "name": "null",
+          "size": 7175,
+          "filetype": "txt",
+          "sha_hash": "null",
+          "file": "https://api.sindarin.com/user/articles/924425c9-6389-49db-bf4c-81bc062b4619/content",
+          "readable_type": "email_article"
+        },
+        {
+          "uuid": "null",
+          "name": "null",
+          "size": 7276,
+          "filetype": "utf8_txt",
+          "sha_hash": "null",
+          "file": "https://api.sindarin.com/user/articles/924425c9-6389-49db-bf4c-81bc062b4619/utf8_content",
+          "readable_type": "email_article"
+        },
+        {
+          "uuid": "81fc38cd-2011-41f2-b33b-996aae8cd92a",
+          "name": "924425c9-6389-49db-bf4c-81bc062b4619.epub",
+          "size": 103930,
+          "filetype": "epub",
+          "sha_hash": "16e7b91134dc653a9254fc9ef8e2881cd937413545a84f36d7c616a8d69d898f",
+          "file": "https://api.sindarin.com/user/articles/924425c9-6389-49db-bf4c-81bc062b4619/notes-2025-06-10.epub",
+          "readable_type": "email_article"
+        }
+      ],
+      "toc": []
+    },
+    {
+      "uuid": "04de8b7e-cd2b-4907-988d-2dd3b9186cf9",
+      "title": "Daily Summary, 1 article: 2025-06-02",
+      "date_created": "2025-06-02T13:04:33.842895-07:00",
+      "date_modified": "2025-06-02T13:04:33.842946-07:00",
+      "date_published": "null",
+      "readable_type": "email_article",
+      "processed_by": "null",
+      "authors": [
+        {
+          "uuid": "null",
+          "name": "null",
+          "description": "null"
+        }
+      ],
+      "files": [
+        {
+          "uuid": "null",
+          "name": "null",
+          "size": 2049,
+          "filetype": "txt",
+          "sha_hash": "null",
+          "file": "https://api.sindarin.com/user/articles/04de8b7e-cd2b-4907-988d-2dd3b9186cf9/content",
+          "readable_type": "email_article"
+        },
+        {
+          "uuid": "null",
+          "name": "null",
+          "size": 2053,
+          "filetype": "utf8_txt",
+          "sha_hash": "null",
+          "file": "https://api.sindarin.com/user/articles/04de8b7e-cd2b-4907-988d-2dd3b9186cf9/utf8_content",
+          "readable_type": "email_article"
+        },
+        {
+          "uuid": "15c50505-780b-4f82-b016-ffd59347503a",
+          "name": "04de8b7e-cd2b-4907-988d-2dd3b9186cf9.epub",
+          "size": 3157,
+          "filetype": "epub",
+          "sha_hash": "53fcdf12deab3ee3286be02cdc2fa47c882b78a8067511003391e50110b6c1ff",
+          "file": "https://api.sindarin.com/user/articles/04de8b7e-cd2b-4907-988d-2dd3b9186cf9/daily-summary-1-article-2025-06-02.epub",
+          "readable_type": "email_article"
+        }
+      ],
+      "toc": []
+    },
+    {
+      "uuid": "75c736a2-c34c-4809-a17f-0ebb0cb90854",
+      "title": "Progress Unraveled",
+      "date_created": "2025-06-02T05:04:56.632937-07:00",
+      "date_modified": "2025-06-02T05:05:06.887115-07:00",
+      "date_published": "null",
+      "readable_type": "email_article",
+      "processed_by": "null",
+      "authors": [
+        {
+          "uuid": "null",
+          "name": "Scope of Work",
+          "description": "team@scopeofwork.net"
+        }
+      ],
+      "files": [
+        {
+          "uuid": "null",
+          "name": "null",
+          "size": 26059,
+          "filetype": "txt",
+          "sha_hash": "null",
+          "file": "https://api.sindarin.com/user/articles/75c736a2-c34c-4809-a17f-0ebb0cb90854/content",
+          "readable_type": "email_article"
+        },
+        {
+          "uuid": "null",
+          "name": "null",
+          "size": 26397,
+          "filetype": "utf8_txt",
+          "sha_hash": "null",
+          "file": "https://api.sindarin.com/user/articles/75c736a2-c34c-4809-a17f-0ebb0cb90854/utf8_content",
+          "readable_type": "email_article"
+        },
+        {
+          "uuid": "f72cb25c-5d39-4601-8c6c-8a3ee422384f",
+          "name": "75c736a2-c34c-4809-a17f-0ebb0cb90854.epub",
+          "size": 376865,
+          "filetype": "epub",
+          "sha_hash": "d5b31f3fa837b68bf6a6d0ac43088ed7fbd8707a0a123c2c44f2b9c5b953eee7",
+          "file": "https://api.sindarin.com/user/articles/75c736a2-c34c-4809-a17f-0ebb0cb90854/progress-unraveled.epub",
+          "readable_type": "email_article"
+        }
+      ],
+      "toc": []
+    },
+    {
+      "uuid": "eb5e6d3b-7c70-4342-ac9b-5d1afa57fcf8",
+      "title": "Daily Summary, 1 article: 2025-05-20",
+      "date_created": "2025-05-19T20:01:06.080432-07:00",
+      "date_modified": "2025-05-19T20:01:06.080502-07:00",
+      "date_published": "null",
+      "readable_type": "email_article",
+      "processed_by": "null",
+      "authors": [
+        {
+          "uuid": "null",
+          "name": "null",
+          "description": "null"
+        }
+      ],
+      "files": [
+        {
+          "uuid": "null",
+          "name": "null",
+          "size": 1402,
+          "filetype": "txt",
+          "sha_hash": "null",
+          "file": "https://api.sindarin.com/user/articles/eb5e6d3b-7c70-4342-ac9b-5d1afa57fcf8/content",
+          "readable_type": "email_article"
+        },
+        {
+          "uuid": "null",
+          "name": "null",
+          "size": 1402,
+          "filetype": "utf8_txt",
+          "sha_hash": "null",
+          "file": "https://api.sindarin.com/user/articles/eb5e6d3b-7c70-4342-ac9b-5d1afa57fcf8/utf8_content",
+          "readable_type": "email_article"
+        },
+        {
+          "uuid": "a015cdec-4981-4bdd-a7aa-ccad01929a25",
+          "name": "eb5e6d3b-7c70-4342-ac9b-5d1afa57fcf8.epub",
+          "size": 2954,
+          "filetype": "epub",
+          "sha_hash": "a0dc9678aaabb2632c4e8b7376659e9a680fd7deeae6e5c1bac9682a386830b7",
+          "file": "https://api.sindarin.com/user/articles/eb5e6d3b-7c70-4342-ac9b-5d1afa57fcf8/daily-summary-1-article-2025-05-20.epub",
+          "readable_type": "email_article"
+        }
+      ],
+      "toc": []
+    },
+    {
+      "uuid": "475eb3a6-295a-4e76-bef4-6988b082805b",
+      "title": "Notes, 2025-05-19",
+      "date_created": "2025-05-19T08:06:00.497875-07:00",
+      "date_modified": "2025-05-19T08:06:08.786276-07:00",
+      "date_published": "null",
+      "readable_type": "email_article",
+      "processed_by": "null",
+      "authors": [
+        {
+          "uuid": "null",
+          "name": "Scope of Work",
+          "description": "team@scopeofwork.net"
+        }
+      ],
+      "files": [
+        {
+          "uuid": "null",
+          "name": "null",
+          "size": 3053,
+          "filetype": "txt",
+          "sha_hash": "null",
+          "file": "https://api.sindarin.com/user/articles/475eb3a6-295a-4e76-bef4-6988b082805b/content",
+          "readable_type": "email_article"
+        },
+        {
+          "uuid": "null",
+          "name": "null",
+          "size": 3066,
+          "filetype": "utf8_txt",
+          "sha_hash": "null",
+          "file": "https://api.sindarin.com/user/articles/475eb3a6-295a-4e76-bef4-6988b082805b/utf8_content",
+          "readable_type": "email_article"
+        },
+        {
+          "uuid": "3af354f2-0773-4b4d-91c3-42f59f2a0a7c",
+          "name": "475eb3a6-295a-4e76-bef4-6988b082805b.epub",
+          "size": 516548,
+          "filetype": "epub",
+          "sha_hash": "9c9531880da6c5e6898b1a6d95bd4355324f2ddf607989112a15711e71197d70",
+          "file": "https://api.sindarin.com/user/articles/475eb3a6-295a-4e76-bef4-6988b082805b/notes-2025-05-19.epub",
+          "readable_type": "email_article"
+        }
+      ],
+      "toc": []
+    },
+    {
+      "uuid": "2c8bfac4-7c38-49b2-9c6d-3e445024e336",
+      "title": "Daily Summary, 1 article: 2025-05-12",
+      "date_created": "2025-05-12T15:37:12.927296-07:00",
+      "date_modified": "2025-05-12T15:37:12.927337-07:00",
+      "date_published": "null",
+      "readable_type": "email_article",
+      "processed_by": "null",
+      "authors": [
+        {
+          "uuid": "null",
+          "name": "null",
+          "description": "null"
+        }
+      ],
+      "files": [
+        {
+          "uuid": "null",
+          "name": "null",
+          "size": 1657,
+          "filetype": "txt",
+          "sha_hash": "null",
+          "file": "https://api.sindarin.com/user/articles/2c8bfac4-7c38-49b2-9c6d-3e445024e336/content",
+          "readable_type": "email_article"
+        },
+        {
+          "uuid": "null",
+          "name": "null",
+          "size": 1659,
+          "filetype": "utf8_txt",
+          "sha_hash": "null",
+          "file": "https://api.sindarin.com/user/articles/2c8bfac4-7c38-49b2-9c6d-3e445024e336/utf8_content",
+          "readable_type": "email_article"
+        },
+        {
+          "uuid": "a5546b98-a7f9-4226-a20b-d490e5ac0069",
+          "name": "2c8bfac4-7c38-49b2-9c6d-3e445024e336.epub",
+          "size": 3082,
+          "filetype": "epub",
+          "sha_hash": "4432c8c53db511131446f26beb3be30a71e1d5cf0a593702e80422e050def75a",
+          "file": "https://api.sindarin.com/user/articles/2c8bfac4-7c38-49b2-9c6d-3e445024e336/daily-summary-1-article-2025-05-12.epub",
+          "readable_type": "email_article"
+        }
+      ],
+      "toc": []
+    },
+    {
+      "uuid": "031f563f-18c1-4d8b-a96a-d85b3acce6bc",
+      "title": "Notes, 2025-05-12.",
+      "date_created": "2025-05-12T08:09:17.358537-07:00",
+      "date_modified": "2025-05-12T08:09:27.252353-07:00",
+      "date_published": "null",
+      "readable_type": "email_article",
+      "processed_by": "null",
+      "authors": [
+        {
+          "uuid": "null",
+          "name": "Scope of Work",
+          "description": "team@scopeofwork.net"
+        }
+      ],
+      "files": [
+        {
+          "uuid": "null",
+          "name": "null",
+          "size": 5893,
+          "filetype": "txt",
+          "sha_hash": "null",
+          "file": "https://api.sindarin.com/user/articles/031f563f-18c1-4d8b-a96a-d85b3acce6bc/content",
+          "readable_type": "email_article"
+        },
+        {
+          "uuid": "null",
+          "name": "null",
+          "size": 5904,
+          "filetype": "utf8_txt",
+          "sha_hash": "null",
+          "file": "https://api.sindarin.com/user/articles/031f563f-18c1-4d8b-a96a-d85b3acce6bc/utf8_content",
+          "readable_type": "email_article"
+        },
+        {
+          "uuid": "5aa3f524-6a70-40fc-a301-aaf1b60bb7b9",
+          "name": "031f563f-18c1-4d8b-a96a-d85b3acce6bc.epub",
+          "size": 168256,
+          "filetype": "epub",
+          "sha_hash": "9fbb2d410f58cd3494c7fa90c743b1d22f8b876a35ecefb66651fbd1a1457527",
+          "file": "https://api.sindarin.com/user/articles/031f563f-18c1-4d8b-a96a-d85b3acce6bc/notes-2025-05-12.epub",
+          "readable_type": "email_article"
+        }
+      ],
+      "toc": []
+    },
+    {
+      "uuid": "4f4623d0-e96c-458b-ab1f-723ad8bf4a08",
+      "title": "Daily Summary, 1 article: 2025-05-05",
+      "date_created": "2025-05-05T09:47:22.952967-07:00",
+      "date_modified": "2025-05-05T09:47:22.953007-07:00",
+      "date_published": "null",
+      "readable_type": "email_article",
+      "processed_by": "null",
+      "authors": [
+        {
+          "uuid": "null",
+          "name": "null",
+          "description": "null"
+        }
+      ],
+      "files": [
+        {
+          "uuid": "null",
+          "name": "null",
+          "size": 1908,
+          "filetype": "txt",
+          "sha_hash": "null",
+          "file": "https://api.sindarin.com/user/articles/4f4623d0-e96c-458b-ab1f-723ad8bf4a08/content",
+          "readable_type": "email_article"
+        },
+        {
+          "uuid": "null",
+          "name": "null",
+          "size": 1912,
+          "filetype": "utf8_txt",
+          "sha_hash": "null",
+          "file": "https://api.sindarin.com/user/articles/4f4623d0-e96c-458b-ab1f-723ad8bf4a08/utf8_content",
+          "readable_type": "email_article"
+        },
+        {
+          "uuid": "9d114405-8e88-4c23-8f90-f273c453e788",
+          "name": "4f4623d0-e96c-458b-ab1f-723ad8bf4a08.epub",
+          "size": 3115,
+          "filetype": "epub",
+          "sha_hash": "f7b7af6fc31dfd26af682978f76adde80f58ba16c494efa26778114511c357e5",
+          "file": "https://api.sindarin.com/user/articles/4f4623d0-e96c-458b-ab1f-723ad8bf4a08/daily-summary-1-article-2025-05-05.epub",
+          "readable_type": "email_article"
+        }
+      ],
+      "toc": []
+    },
+    {
+      "uuid": "0498307d-e53a-40bb-bd20-c8fb4ff458a1",
+      "title": "Clean Living Under Planetary Circumstances",
+      "date_created": "2025-05-05T06:35:16.750600-07:00",
+      "date_modified": "2025-05-05T06:35:24.689884-07:00",
+      "date_published": "null",
+      "readable_type": "email_article",
+      "processed_by": "null",
+      "authors": [
+        {
+          "uuid": "null",
+          "name": "Scope of Work",
+          "description": "team@scopeofwork.net"
+        }
+      ],
+      "files": [
+        {
+          "uuid": "null",
+          "name": "null",
+          "size": 9031,
+          "filetype": "txt",
+          "sha_hash": "null",
+          "file": "https://api.sindarin.com/user/articles/0498307d-e53a-40bb-bd20-c8fb4ff458a1/content",
+          "readable_type": "email_article"
+        },
+        {
+          "uuid": "null",
+          "name": "null",
+          "size": 9098,
+          "filetype": "utf8_txt",
+          "sha_hash": "null",
+          "file": "https://api.sindarin.com/user/articles/0498307d-e53a-40bb-bd20-c8fb4ff458a1/utf8_content",
+          "readable_type": "email_article"
+        },
+        {
+          "uuid": "d0c4d956-eab3-4e4f-80f8-69a996e97df7",
+          "name": "0498307d-e53a-40bb-bd20-c8fb4ff458a1.epub",
+          "size": 194733,
+          "filetype": "epub",
+          "sha_hash": "486584e556c37f39899b4976347ad1a8ac54f6b9ecf806aa7a672a5079bce312",
+          "file": "https://api.sindarin.com/user/articles/0498307d-e53a-40bb-bd20-c8fb4ff458a1/clean-living-under-planetary-circumstances.epub",
+          "readable_type": "email_article"
+        }
+      ],
+      "toc": []
+    },
+    {
+      "uuid": "6ea50e73-ad74-4ddd-8299-422f58999e94",
+      "title": "Daily Summary, 1 article: 2025-04-28",
+      "date_created": "2025-04-28T06:02:39.901744-07:00",
+      "date_modified": "2025-04-28T06:02:39.901802-07:00",
+      "date_published": "null",
+      "readable_type": "email_article",
+      "processed_by": "null",
+      "authors": [
+        {
+          "uuid": "null",
+          "name": "null",
+          "description": "null"
+        }
+      ],
+      "files": [
+        {
+          "uuid": "null",
+          "name": "null",
+          "size": 1765,
+          "filetype": "txt",
+          "sha_hash": "null",
+          "file": "https://api.sindarin.com/user/articles/6ea50e73-ad74-4ddd-8299-422f58999e94/content",
+          "readable_type": "email_article"
+        },
+        {
+          "uuid": "null",
+          "name": "null",
+          "size": 1767,
+          "filetype": "utf8_txt",
+          "sha_hash": "null",
+          "file": "https://api.sindarin.com/user/articles/6ea50e73-ad74-4ddd-8299-422f58999e94/utf8_content",
+          "readable_type": "email_article"
+        },
+        {
+          "uuid": "6e013363-058f-40e7-b18d-82a72767c3b0",
+          "name": "6ea50e73-ad74-4ddd-8299-422f58999e94.epub",
+          "size": 3054,
+          "filetype": "epub",
+          "sha_hash": "dd7463b14a81066b9af849691c3107e51577ff1b5749f408276ba00775a0189b",
+          "file": "https://api.sindarin.com/user/articles/6ea50e73-ad74-4ddd-8299-422f58999e94/daily-summary-1-article-2025-04-28.epub",
+          "readable_type": "email_article"
+        }
+      ],
+      "toc": []
+    },
+    {
+      "uuid": "27232fef-462e-48a2-b07a-b81ed373e537",
+      "title": "Import, Immature.",
+      "date_created": "2025-04-28T05:04:59.284815-07:00",
+      "date_modified": "2025-04-28T05:05:10.367374-07:00",
+      "date_published": "null",
+      "readable_type": "email_article",
+      "processed_by": "null",
+      "authors": [
+        {
+          "uuid": "null",
+          "name": "Scope of Work",
+          "description": "team@scopeofwork.net"
+        }
+      ],
+      "files": [
+        {
+          "uuid": "null",
+          "name": "null",
+          "size": 24873,
+          "filetype": "txt",
+          "sha_hash": "null",
+          "file": "https://api.sindarin.com/user/articles/27232fef-462e-48a2-b07a-b81ed373e537/content",
+          "readable_type": "email_article"
+        },
+        {
+          "uuid": "null",
+          "name": "null",
+          "size": 25245,
+          "filetype": "utf8_txt",
+          "sha_hash": "null",
+          "file": "https://api.sindarin.com/user/articles/27232fef-462e-48a2-b07a-b81ed373e537/utf8_content",
+          "readable_type": "email_article"
+        },
+        {
+          "uuid": "0c09129e-4547-48bc-905e-1703415894e8",
+          "name": "27232fef-462e-48a2-b07a-b81ed373e537.epub",
+          "size": 277123,
+          "filetype": "epub",
+          "sha_hash": "0294bbb270679d54317e9827f0042b3c483842612953278c85a57b35db3be74c",
+          "file": "https://api.sindarin.com/user/articles/27232fef-462e-48a2-b07a-b81ed373e537/import-immature.epub",
+          "readable_type": "email_article"
+        }
+      ],
+      "toc": []
+    },
+    {
+      "uuid": "d97f5a85-cce0-43f5-bbeb-8ecaf7ff1bd6",
+      "title": "Daily Summary, 1 article: 2025-04-22",
+      "date_created": "2025-04-21T20:04:40.932825-07:00",
+      "date_modified": "2025-04-21T20:04:40.932868-07:00",
+      "date_published": "null",
+      "readable_type": "email_article",
+      "processed_by": "null",
+      "authors": [
+        {
+          "uuid": "null",
+          "name": "null",
+          "description": "null"
+        }
+      ],
+      "files": [
+        {
+          "uuid": "null",
+          "name": "null",
+          "size": 2142,
+          "filetype": "txt",
+          "sha_hash": "null",
+          "file": "https://api.sindarin.com/user/articles/d97f5a85-cce0-43f5-bbeb-8ecaf7ff1bd6/content",
+          "readable_type": "email_article"
+        },
+        {
+          "uuid": "null",
+          "name": "null",
+          "size": 2144,
+          "filetype": "utf8_txt",
+          "sha_hash": "null",
+          "file": "https://api.sindarin.com/user/articles/d97f5a85-cce0-43f5-bbeb-8ecaf7ff1bd6/utf8_content",
+          "readable_type": "email_article"
+        },
+        {
+          "uuid": "6a3fd9c3-bf72-4187-acff-495a45b41ac8",
+          "name": "d97f5a85-cce0-43f5-bbeb-8ecaf7ff1bd6.epub",
+          "size": 3280,
+          "filetype": "epub",
+          "sha_hash": "1548569b55cc5bab79d713d63517467d77a569d7fc9cdcfc1867861502edf203",
+          "file": "https://api.sindarin.com/user/articles/d97f5a85-cce0-43f5-bbeb-8ecaf7ff1bd6/daily-summary-1-article-2025-04-22.epub",
+          "readable_type": "email_article"
+        }
+      ],
+      "toc": []
+    },
+    {
+      "uuid": "cfaef742-900b-4885-ae9f-ab67ce1c20e6",
+      "title": "When A Business Outgrows Its Customers.",
+      "date_created": "2025-04-21T06:26:02.513019-07:00",
+      "date_modified": "2025-04-21T06:26:11.784510-07:00",
+      "date_published": "null",
+      "readable_type": "email_article",
+      "processed_by": "null",
+      "authors": [
+        {
+          "uuid": "null",
+          "name": "Scope of Work",
+          "description": "team@scopeofwork.net"
+        }
+      ],
+      "files": [
+        {
+          "uuid": "null",
+          "name": "null",
+          "size": 11750,
+          "filetype": "txt",
+          "sha_hash": "null",
+          "file": "https://api.sindarin.com/user/articles/cfaef742-900b-4885-ae9f-ab67ce1c20e6/content",
+          "readable_type": "email_article"
+        },
+        {
+          "uuid": "null",
+          "name": "null",
+          "size": 11821,
+          "filetype": "utf8_txt",
+          "sha_hash": "null",
+          "file": "https://api.sindarin.com/user/articles/cfaef742-900b-4885-ae9f-ab67ce1c20e6/utf8_content",
+          "readable_type": "email_article"
+        },
+        {
+          "uuid": "aec22907-5bed-4b27-86f1-e1a5b38d251c",
+          "name": "cfaef742-900b-4885-ae9f-ab67ce1c20e6.epub",
+          "size": 182972,
+          "filetype": "epub",
+          "sha_hash": "3874ff3e60c403e8fab352f776f2f5dd182ce22d97cafa5f6e792436496d9066",
+          "file": "https://api.sindarin.com/user/articles/cfaef742-900b-4885-ae9f-ab67ce1c20e6/when-a-business-outgrows-its-customers.epub",
+          "readable_type": "email_article"
+        }
+      ],
+      "toc": []
+    },
+    {
+      "uuid": "9f7ae427-bed2-484c-9c38-bd63e6e7ae3e",
+      "title": "Principles for Building One-Shot AI Agents for Automated Code Maintenance",
+      "date_created": "2025-04-18T20:01:30.675451-07:00",
+      "date_modified": "2025-04-18T20:01:48.949742-07:00",
+      "date_published": "2025-04-18T16:35:24-07:00",
+      "readable_type": "pocket_article",
+      "processed_by": "null",
+      "authors": [],
+      "files": [
+        {
+          "uuid": "null",
+          "name": "null",
+          "size": 14210,
+          "filetype": "txt",
+          "sha_hash": "null",
+          "file": "https://api.sindarin.com/user/articles/9f7ae427-bed2-484c-9c38-bd63e6e7ae3e/content",
+          "readable_type": "pocket_article"
+        },
+        {
+          "uuid": "null",
+          "name": "null",
+          "size": 14292,
+          "filetype": "utf8_txt",
+          "sha_hash": "null",
+          "file": "https://api.sindarin.com/user/articles/9f7ae427-bed2-484c-9c38-bd63e6e7ae3e/utf8_content",
+          "readable_type": "pocket_article"
+        },
+        {
+          "uuid": "3bc044c5-d3b0-4e81-86f9-6814c2770c36",
+          "name": "9f7ae427-bed2-484c-9c38-bd63e6e7ae3e.epub",
+          "size": 15196,
+          "filetype": "epub",
+          "sha_hash": "a641fe6a193d8406845a8769637d83759cec07adde157aa28a57400b6607e3d4",
+          "file": "https://api.sindarin.com/user/articles/9f7ae427-bed2-484c-9c38-bd63e6e7ae3e/principles-for-building-one-shot-ai-agents-for-automated-code-maintenance.epub",
+          "readable_type": "pocket_article"
+        }
+      ],
+      "toc": []
+    },
+    {
+      "uuid": "a3402bc6-9b6b-47e2-a3d3-b957efb6c3aa",
+      "title": "https://www.anthropic.com/engineering/claude-code-best-practices",
+      "date_created": "2025-04-18T20:01:33.057335-07:00",
+      "date_modified": "2025-04-18T20:01:39.999976-07:00",
+      "date_published": "2025-04-18T17:36:20-07:00",
+      "readable_type": "pocket_article",
+      "processed_by": "null",
+      "authors": [],
+      "files": [
+        {
+          "uuid": "null",
+          "name": "null",
+          "size": 1,
+          "filetype": "txt",
+          "sha_hash": "null",
+          "file": "https://api.sindarin.com/user/articles/a3402bc6-9b6b-47e2-a3d3-b957efb6c3aa/content",
+          "readable_type": "pocket_article"
+        },
+        {
+          "uuid": "null",
+          "name": "null",
+          "size": 1,
+          "filetype": "utf8_txt",
+          "sha_hash": "null",
+          "file": "https://api.sindarin.com/user/articles/a3402bc6-9b6b-47e2-a3d3-b957efb6c3aa/utf8_content",
+          "readable_type": "pocket_article"
+        },
+        {
+          "uuid": "b95ed50c-d49e-44fd-b438-9f42cb5a1fff",
+          "name": "a3402bc6-9b6b-47e2-a3d3-b957efb6c3aa.epub",
+          "size": 2214,
+          "filetype": "epub",
+          "sha_hash": "8f3f718f43dffc0be2d0e08413217b0bfdd029aa145319e49417bf3611e38995",
+          "file": "https://api.sindarin.com/user/articles/a3402bc6-9b6b-47e2-a3d3-b957efb6c3aa/httpswwwanthropiccomengineeringclaude-code-best-practices.epub",
+          "readable_type": "pocket_article"
+        }
+      ],
+      "toc": []
+    },
+    {
+      "uuid": "4ed7184b-a41f-4387-ae62-3136c2394461",
+      "title": "Daily Summary, 1 article: 2025-04-14",
+      "date_created": "2025-04-14T06:05:34.695548-07:00",
+      "date_modified": "2025-04-14T06:05:34.695589-07:00",
+      "date_published": "null",
+      "readable_type": "email_article",
+      "processed_by": "null",
+      "authors": [
+        {
+          "uuid": "null",
+          "name": "null",
+          "description": "null"
+        }
+      ],
+      "files": [
+        {
+          "uuid": "null",
+          "name": "null",
+          "size": 1950,
+          "filetype": "txt",
+          "sha_hash": "null",
+          "file": "https://api.sindarin.com/user/articles/4ed7184b-a41f-4387-ae62-3136c2394461/content",
+          "readable_type": "email_article"
+        },
+        {
+          "uuid": "null",
+          "name": "null",
+          "size": 1950,
+          "filetype": "utf8_txt",
+          "sha_hash": "null",
+          "file": "https://api.sindarin.com/user/articles/4ed7184b-a41f-4387-ae62-3136c2394461/utf8_content",
+          "readable_type": "email_article"
+        },
+        {
+          "uuid": "0904b8eb-e8bb-4d76-b64c-655f0e01679e",
+          "name": "4ed7184b-a41f-4387-ae62-3136c2394461.epub",
+          "size": 3227,
+          "filetype": "epub",
+          "sha_hash": "82e8288bf37a95d7a3a77a4362876220a029e8b8bebfe14e8a7a6417e4cf8861",
+          "file": "https://api.sindarin.com/user/articles/4ed7184b-a41f-4387-ae62-3136c2394461/daily-summary-1-article-2025-04-14.epub",
+          "readable_type": "email_article"
+        }
+      ],
+      "toc": []
+    },
+    {
+      "uuid": "47b0f93b-14dc-449b-b97b-1af07893869e",
+      "title": "Moving House.",
+      "date_created": "2025-04-14T06:05:24.220178-07:00",
+      "date_modified": "2025-04-14T06:05:32.086386-07:00",
+      "date_published": "null",
+      "readable_type": "email_article",
+      "processed_by": "null",
+      "authors": [
+        {
+          "uuid": "null",
+          "name": "Scope of Work",
+          "description": "team@scopeofwork.net"
+        }
+      ],
+      "files": [
+        {
+          "uuid": "null",
+          "name": "null",
+          "size": 11457,
+          "filetype": "txt",
+          "sha_hash": "null",
+          "file": "https://api.sindarin.com/user/articles/47b0f93b-14dc-449b-b97b-1af07893869e/content",
+          "readable_type": "email_article"
+        },
+        {
+          "uuid": "null",
+          "name": "null",
+          "size": 11550,
+          "filetype": "utf8_txt",
+          "sha_hash": "null",
+          "file": "https://api.sindarin.com/user/articles/47b0f93b-14dc-449b-b97b-1af07893869e/utf8_content",
+          "readable_type": "email_article"
+        },
+        {
+          "uuid": "882e9e75-1e54-4e92-b6b2-de463cc2579d",
+          "name": "47b0f93b-14dc-449b-b97b-1af07893869e.epub",
+          "size": 168421,
+          "filetype": "epub",
+          "sha_hash": "398538329a24052390339150df300c22ab087db3ec486f5ec1afb5e916ea6f25",
+          "file": "https://api.sindarin.com/user/articles/47b0f93b-14dc-449b-b97b-1af07893869e/moving-house.epub",
+          "readable_type": "email_article"
+        }
+      ],
+      "toc": []
+    },
+    {
+      "uuid": "22d638b0-e031-448b-84c8-91e866d90260",
+      "title": "https://www.outdoorsy.com/trips",
+      "date_created": "2025-04-02T14:54:06.381825-07:00",
+      "date_modified": "2025-04-02T14:54:11.539114-07:00",
+      "date_published": "2025-04-02T10:03:20-07:00",
+      "readable_type": "pocket_article",
+      "processed_by": "null",
+      "authors": [],
+      "files": [
+        {
+          "uuid": "null",
+          "name": "null",
+          "size": 1,
+          "filetype": "txt",
+          "sha_hash": "null",
+          "file": "https://api.sindarin.com/user/articles/22d638b0-e031-448b-84c8-91e866d90260/content",
+          "readable_type": "pocket_article"
+        },
+        {
+          "uuid": "null",
+          "name": "null",
+          "size": 1,
+          "filetype": "utf8_txt",
+          "sha_hash": "null",
+          "file": "https://api.sindarin.com/user/articles/22d638b0-e031-448b-84c8-91e866d90260/utf8_content",
+          "readable_type": "pocket_article"
+        },
+        {
+          "uuid": "f26e5caa-4ce0-4378-ba9f-9570fe90e4db",
+          "name": "22d638b0-e031-448b-84c8-91e866d90260.epub",
+          "size": 2125,
+          "filetype": "epub",
+          "sha_hash": "1170e58d038a0310af3fb4fc41fddbdb581c7282c0080eae504cba23614c5099",
+          "file": "https://api.sindarin.com/user/articles/22d638b0-e031-448b-84c8-91e866d90260/httpswwwoutdoorsycomtrips.epub",
+          "readable_type": "pocket_article"
+        }
+      ],
+      "toc": []
+    },
+    {
+      "uuid": "e7bb67e0-b3dd-48d1-941c-3f157e80e69d",
+      "title": "How to be a wise optimist about science and technology?",
+      "date_created": "2024-12-07T14:07:38.687449-08:00",
+      "date_modified": "2024-12-07T14:07:52.999375-08:00",
+      "date_published": "2024-12-07T08:23:58-08:00",
+      "readable_type": "pocket_article",
+      "processed_by": "null",
+      "authors": [],
+      "files": [
+        {
+          "uuid": "null",
+          "name": "null",
+          "size": 215546,
+          "filetype": "txt",
+          "sha_hash": "null",
+          "file": "https://api.sindarin.com/user/articles/e7bb67e0-b3dd-48d1-941c-3f157e80e69d/content",
+          "readable_type": "pocket_article"
+        },
+        {
+          "uuid": "null",
+          "name": "null",
+          "size": 216066,
+          "filetype": "utf8_txt",
+          "sha_hash": "null",
+          "file": "https://api.sindarin.com/user/articles/e7bb67e0-b3dd-48d1-941c-3f157e80e69d/utf8_content",
+          "readable_type": "pocket_article"
+        },
+        {
+          "uuid": "f68ea4eb-26f4-4838-b441-3b2592e0e343",
+          "name": "e7bb67e0-b3dd-48d1-941c-3f157e80e69d.epub",
+          "size": 97396,
+          "filetype": "epub",
+          "sha_hash": "de3d0d87fdd1d75b6dd5a9368b7a9694bf26a4442da158f32fddbd98f5f781f8",
+          "file": "https://api.sindarin.com/user/articles/e7bb67e0-b3dd-48d1-941c-3f157e80e69d/how-to-be-a-wise-optimist-about-science-and-technology.epub",
+          "readable_type": "pocket_article"
+        }
+      ],
+      "toc": []
+    },
+    {
+      "uuid": "b38c7c20-9717-4f14-b01b-e88e811eafe4",
+      "title": "Founder Mode",
+      "date_created": "2024-09-01T17:02:43.889591-07:00",
+      "date_modified": "2024-09-01T17:02:48.234937-07:00",
+      "date_published": "2024-09-01T15:56:38-07:00",
+      "readable_type": "pocket_article",
+      "processed_by": "null",
+      "authors": [],
+      "files": [
+        {
+          "uuid": "null",
+          "name": "null",
+          "size": 6904,
+          "filetype": "txt",
+          "sha_hash": "null",
+          "file": "https://api.sindarin.com/user/articles/b38c7c20-9717-4f14-b01b-e88e811eafe4/content",
+          "readable_type": "pocket_article"
+        },
+        {
+          "uuid": "null",
+          "name": "null",
+          "size": 6907,
+          "filetype": "utf8_txt",
+          "sha_hash": "null",
+          "file": "https://api.sindarin.com/user/articles/b38c7c20-9717-4f14-b01b-e88e811eafe4/utf8_content",
+          "readable_type": "pocket_article"
+        },
+        {
+          "uuid": "8842d927-088f-42cf-9546-7d1c691844e8",
+          "name": "b38c7c20-9717-4f14-b01b-e88e811eafe4.epub",
+          "size": 10245,
+          "filetype": "epub",
+          "sha_hash": "7f4cc71d5a755532dc837d017de8a2b7c93755da24e6fa354cde578433664b18",
+          "file": "https://api.sindarin.com/user/articles/b38c7c20-9717-4f14-b01b-e88e811eafe4/founder-mode.epub",
+          "readable_type": "pocket_article"
+        }
+      ],
+      "toc": []
+    },
+    {
+      "uuid": "6f7927d2-ac19-47b4-b332-58f0f2bb440f",
+      "title": "Why A.I. Isn’t Going to Make Art",
+      "date_created": "2024-09-01T06:05:49.368590-07:00",
+      "date_modified": "2024-09-01T06:05:53.718985-07:00",
+      "date_published": "2024-09-01T02:11:18-07:00",
+      "readable_type": "pocket_article",
+      "processed_by": "null",
+      "authors": [
+        {
+          "uuid": "null",
+          "name": "Ted Chiang",
+          "description": "null"
+        }
+      ],
+      "files": [
+        {
+          "uuid": "null",
+          "name": "null",
+          "size": 20685,
+          "filetype": "txt",
+          "sha_hash": "null",
+          "file": "https://api.sindarin.com/user/articles/6f7927d2-ac19-47b4-b332-58f0f2bb440f/content",
+          "readable_type": "pocket_article"
+        },
+        {
+          "uuid": "null",
+          "name": "null",
+          "size": 20914,
+          "filetype": "utf8_txt",
+          "sha_hash": "null",
+          "file": "https://api.sindarin.com/user/articles/6f7927d2-ac19-47b4-b332-58f0f2bb440f/utf8_content",
+          "readable_type": "pocket_article"
+        }
+      ],
+      "toc": []
+    },
+    {
+      "uuid": "e09c09c5-1c40-4235-adda-8fdc8dba056d",
+      "title": "Exit the supersensorium",
+      "date_created": "2024-08-21T10:43:43.575188-07:00",
+      "date_modified": "2024-08-21T10:43:48.065671-07:00",
+      "date_published": "2024-08-21T06:00:22-07:00",
+      "readable_type": "pocket_article",
+      "processed_by": "null",
+      "authors": [
+        {
+          "uuid": "null",
+          "name": "Erik Hoel",
+          "description": "null"
+        }
+      ],
+      "files": [
+        {
+          "uuid": "null",
+          "name": "null",
+          "size": 34901,
+          "filetype": "txt",
+          "sha_hash": "null",
+          "file": "https://api.sindarin.com/user/articles/e09c09c5-1c40-4235-adda-8fdc8dba056d/content",
+          "readable_type": "pocket_article"
+        },
+        {
+          "uuid": "null",
+          "name": "null",
+          "size": 35173,
+          "filetype": "utf8_txt",
+          "sha_hash": "null",
+          "file": "https://api.sindarin.com/user/articles/e09c09c5-1c40-4235-adda-8fdc8dba056d/utf8_content",
+          "readable_type": "pocket_article"
+        }
+      ],
+      "toc": []
+    },
+    {
+      "uuid": "8c93c5ad-6894-470c-b403-a7ce9b4bd2ef",
+      "title": "An Interview With Robert Caro and Kurt Vonnegut",
+      "date_created": "2024-07-28T21:09:09.559457-07:00",
+      "date_modified": "2024-07-28T21:09:14.179998-07:00",
+      "date_published": "2024-07-28T04:49:23-07:00",
+      "readable_type": "pocket_article",
+      "processed_by": "null",
+      "authors": [
+        {
+          "uuid": "null",
+          "name": "Robert A. Caro",
+          "description": "null"
+        }
+      ],
+      "files": [
+        {
+          "uuid": "null",
+          "name": "null",
+          "size": 60015,
+          "filetype": "txt",
+          "sha_hash": "null",
+          "file": "https://api.sindarin.com/user/articles/8c93c5ad-6894-470c-b403-a7ce9b4bd2ef/content",
+          "readable_type": "pocket_article"
+        },
+        {
+          "uuid": "null",
+          "name": "null",
+          "size": 60958,
+          "filetype": "utf8_txt",
+          "sha_hash": "null",
+          "file": "https://api.sindarin.com/user/articles/8c93c5ad-6894-470c-b403-a7ce9b4bd2ef/utf8_content",
+          "readable_type": "pocket_article"
+        }
+      ],
+      "toc": []
+    },
+    {
+      "uuid": "2de5c9c6-d922-4452-a312-f62d67ef4ca5",
+      "title": "Meditations On Moloch",
+      "date_created": "2024-03-05T03:04:37.362958-08:00",
+      "date_modified": "2024-03-05T03:04:37.806696-08:00",
+      "date_published": "2024-03-04T11:25:48-08:00",
+      "readable_type": "pocket_article",
+      "processed_by": "null",
+      "authors": [
+        {
+          "uuid": "null",
+          "name": "Scott Alexander",
+          "description": "null"
+        }
+      ],
+      "files": [
+        {
+          "uuid": "null",
+          "name": "null",
+          "size": 85496,
+          "filetype": "txt",
+          "sha_hash": "null",
+          "file": "https://api.sindarin.com/user/articles/2de5c9c6-d922-4452-a312-f62d67ef4ca5/content",
+          "readable_type": "pocket_article"
+        },
+        {
+          "uuid": "null",
+          "name": "null",
+          "size": 86563,
+          "filetype": "utf8_txt",
+          "sha_hash": "null",
+          "file": "https://api.sindarin.com/user/articles/2de5c9c6-d922-4452-a312-f62d67ef4ca5/utf8_content",
+          "readable_type": "pocket_article"
+        }
+      ],
+      "toc": []
+    }
+  ]
+}

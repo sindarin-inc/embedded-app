@@ -59,6 +59,13 @@ void appMainTask(void *parameters) {
 pthread_t mainThread;
 
 void StartFreeRtos(bool runAppMain) {
+    static bool started = false;
+    if (started) {
+        assert(false && "FreeRTOS scheduler already started");
+        return;
+    }
+    started = true;
+
     std::binary_semaphore semaphore(0);
 
     // Start the FreeRTOS scheduler
@@ -87,12 +94,13 @@ void StartFreeRtos(bool runAppMain) {
     semaphore.try_acquire_for(std::chrono::seconds(5));
 }
 
-void StartAppMain(FONT_CHOICES font, int x, int y, int lineSpacing) {
+void StartAppMain(FONT_CHOICES font, int x, int y, int lineSpacing, std::string prefsDir) {
     // Skip waveform processing. Technically not a FreeRTOS thing but this is a convenient spot to
     // do it
     GetRootDisplay().setSkipWaveform(true);
 
-    auto prefsFile = "test/CatchTests/TestData/simprefs.ini";
+    char prefsFile[PATH_MAX];
+    snprintf(prefsFile, sizeof(prefsFile), "%s/simprefs.ini", prefsDir.c_str());
     // Delete the prefs file and start fresh
     std::filesystem::remove(prefsFile);
     prefs.begin(prefsFile);
