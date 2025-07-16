@@ -108,6 +108,14 @@ public:
 
     auto lastPageIndex() -> int { return pages_.size() - 1; }
 
+    auto getOcrTextLength() -> size_t {
+        size_t totalLength = 0;
+        for (const auto &page : pages_) {
+            totalLength += page.content.size();
+        }
+        return totalLength;
+    }
+
     void clear() {
         pages_.clear();
         currentPageIndex_ = 0;

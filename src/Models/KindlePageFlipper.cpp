@@ -273,6 +273,15 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
             log_d("Skipping navigation request - already have buffered content (currentPage=%d, "
                   "lastPage=%d, pagesToAdvance=%d)",
                   currentPageIndex, lastPageIndex, pagesToAdvance);
+
+            // For cached content, still call the gotContentFunction to maintain consistent behavior
+            if (gotContentFunction_) {
+                // Get the current content length from the page stream
+                size_t contentLength = pageStream_->getOcrTextLength();
+                log_d("Calling gotContentFunction for cached content with length=%zu",
+                      contentLength);
+                gotContentFunction_(contentLength);
+            }
         }
     });
 }

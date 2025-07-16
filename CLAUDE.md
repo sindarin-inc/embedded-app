@@ -1,5 +1,9 @@
 # Sol Reader Embedded App - Development Guide
 
+## Test Screenshots
+- Never copy TestRun images to Accepted folder - the test runner auto-accepts them when tests fail
+- The test framework automatically updates accepted screenshots when they change
+
 ## Build Commands
 - Build for device: `. $IDF_PATH/export.sh && make build`
   - Always run these together in a single command
