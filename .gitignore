@@ -23,7 +23,7 @@ nextnext.png
 nextprev.png
 test/CatchTests/Images/TestRun
 test/CatchTests/EPubImages/TestRun
-test/CatchTests/KindleTestImages/TestRun
+test/CatchTests/KindleImages/TestRun
 reports
 managed_components
 venv
