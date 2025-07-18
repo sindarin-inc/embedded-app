@@ -27,7 +27,7 @@
 extern auto UIGetCurrentScreen() -> std::shared_ptr<Screen>;
 
 TEST_CASE("Test some individual EPub formatting edge cases", "[epub-format]") {
-    SetImagesFolder("Images");
+    SetImagesFolder("EPubImages");
 
     auto display = createDisplay();
 
