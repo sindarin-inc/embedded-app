@@ -492,8 +492,7 @@ auto BookQuestionsScreen::connectToNetwork(bool useBleOnly, std::string &errorMe
     // Try WiFi connection if not in BLE-only mode
     if (!useBleOnly && !prefs_.wifiDisabled.get().value_or(false)) {
         log_i("Attempting WiFi connection...");
-        auto connected = WiFi::getInstance().connectWiFiFromSettings();
-        if (connected != ESP_OK && connected != true) {
+        if (!WiFi::getInstance().connectWiFiFromSettings()) {
             log_w("WiFi connection failed, logging metric");
             telemetry_.logMetric(TelemetryField::METRIC_WIFI, "book-questions-wifi-failed");
             wifiConnected = false;

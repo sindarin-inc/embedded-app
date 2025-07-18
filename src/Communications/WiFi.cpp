@@ -317,7 +317,7 @@ auto WiFi::connectWiFiFromSettings() -> bool {
     esp_err_t err = begin();
     if (err != ESP_OK) {
         log_e("begin failed with error %s", esp_err_to_name(err));
-        return err;
+        return false;
     }
 
     if (settings_.count() == 0) {

@@ -29,9 +29,8 @@ KindleReadableScreen::KindleReadableScreen(DisplaySystem &display,
       pageFlipper_(kindleBook, cancelFlag_, telemetry_), loadingMessageView_(display, 5),
       delayedMessageView_(display, 5), errorMessageView_(display, 5) {
 
-    log_i("Created KindleReadableScreen for book: %s by %s",
-          kindleBook ? kindleBook->title.c_str() : "Unknown",
-          kindleBook ? kindleBook->author.c_str() : "Unknown");
+    log_i("Created KindleReadableScreen for book: %s by %s", kindleBook_->title.c_str(),
+          kindleBook_->author.c_str());
 
     currentPlace_ = std::dynamic_pointer_cast<TxtPlace>(Place::factory(0));
 
@@ -607,8 +606,7 @@ auto KindleReadableScreen::connectToNetwork(std::string &errorMessage,
                               {"ble_disabled", bleDisabled},
                               {"state", std::string(stateToString(state_))}});
 
-        auto connected = WiFi::getInstance().connectWiFiFromSettings();
-        if (!connected) {
+        if (!WiFi::getInstance().connectWiFiFromSettings()) {
             log_w("WiFi connection failed for Kindle book");
             wifiConnected = false;
         } else {
