@@ -94,7 +94,6 @@ private:
     bool isUsingBleConnection_ = false;
     int reconnectionAttempts_ = 0;
     static const int MAX_RECONNECTION_ATTEMPTS = 2;
-    bool isReconnecting_ = false; // Prevents recursive reconnection attempts
 
     // Timing tracking
     int64_t bookOpenStartTime_ = 0;
