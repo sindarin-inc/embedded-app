@@ -15,11 +15,9 @@ KindlePageFlipper::KindlePageFlipper(const std::shared_ptr<KindleBook> &kindleBo
                                      bool useBle)
     : kindleBook_(kindleBook), useBle_(useBle), cancelFlag_(std::move(cancelFlag)),
       telemetry_(telemetry) {
-    // Capture string copies to avoid use-after-free
-    std::string bookTitle = kindleBook ? std::string(kindleBook->title) : "Unknown";
-    std::string bookAuthor = kindleBook ? std::string(kindleBook->author) : "Unknown";
 
-    log_i("Created KindlePageFlipper for book: %s by %s", bookTitle.c_str(), bookAuthor.c_str());
+    log_i("Created KindlePageFlipper for book: %s by %s", kindleBook_->title.c_str(),
+          kindleBook_->author.c_str());
 
     pageStream_ = std::make_shared<KindlePageStream>();
 }
