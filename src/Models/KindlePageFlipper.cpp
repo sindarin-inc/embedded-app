@@ -86,6 +86,11 @@ void KindlePageFlipper::loadInitialPage() {
     auto cancelFlag = cancelFlag_;
     // Execute the API call on the background thread
     DispatchGetCore0BackgroundQueue()->dispatch([this, cancelFlag]() {
+        if (CancelFlag::isCancelled(cancelFlag)) {
+            log_i("Cancelled while loading initial page");
+            return;
+        }
+
         // Track book open start time
         int64_t bookOpenStartTime = esp_timer_get_time();
         // Create a response object

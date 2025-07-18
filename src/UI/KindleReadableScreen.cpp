@@ -255,6 +255,10 @@ void KindleReadableScreen::begin() {
         // Successfully connected, now load the book content
         auto cancelFlag = cancelFlag_;
 
+        if (CancelFlag::isCancelled(cancelFlag)) {
+            return;
+        }
+
         DispatchGetUiQueue()->dispatch([this, cancelFlag]() {
             if (CancelFlag::isCancelled(cancelFlag)) {
                 return;
