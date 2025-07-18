@@ -237,9 +237,6 @@ void KindleReadableScreen::begin() {
     // Reset reconnection attempts counter
     reconnectionAttempts_ = 0;
 
-    // Record book open start time
-    bookOpenStartTime_ = esp_timer_get_time();
-
     // Log telemetry for opening a Kindle book
     auto metrics = getTelemetryMetrics();
     metrics["kindle"] = true;
@@ -254,6 +251,9 @@ void KindleReadableScreen::begin() {
 
         // Successfully connected, now load the book content
         auto cancelFlag = cancelFlag_;
+
+        // Record book open start time (content loading phase)
+        bookOpenStartTime_ = esp_timer_get_time();
 
         DispatchGetUiQueue()->dispatch([this, cancelFlag]() {
             if (CancelFlag::isCancelled(cancelFlag)) {
@@ -513,13 +513,15 @@ auto KindleReadableScreen::connectToNetwork(std::string &errorMessage,
 
     // Log single comprehensive connection attempt telemetry
     std::string attemptAction = "attempt-" + connectionMethod;
+    int64_t initialElapsedMs = (esp_timer_get_time() - connectionStartTime_) / 1000;
     telemetry_.logMetric(TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
                          {{"event", std::string("kindle-connect")},
                           {"action", attemptAction},
                           {"kindle", true},
                           {"wifi_disabled", wifiDisabled},
                           {"ble_disabled", bleDisabled},
-                          {"state", std::string(stateToString(state_))}});
+                          {"state", std::string(stateToString(state_))},
+                          {"elapsed_ms", static_cast<int>(initialElapsedMs)}});
 
 #if CONFIG_USE_BLE_SERVER_PROXY
     // Try BLE first if not disabled
@@ -595,13 +597,15 @@ auto KindleReadableScreen::connectToNetwork(std::string &errorMessage,
         log_i("Attempting WiFi connection for Kindle book...");
 
         // Log WiFi attempt telemetry
+        int64_t wifiAttemptElapsedMs = (esp_timer_get_time() - connectionStartTime_) / 1000;
         telemetry_.logMetric(TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
                              {{"event", std::string("kindle-connect")},
                               {"action", std::string("attempt-wifi")},
                               {"kindle", true},
                               {"wifi_disabled", wifiDisabled},
                               {"ble_disabled", bleDisabled},
-                              {"state", std::string(stateToString(state_))}});
+                              {"state", std::string(stateToString(state_))},
+                              {"elapsed_ms", static_cast<int>(wifiAttemptElapsedMs)}});
 
         auto connected = WiFi::getInstance().connectWiFiFromSettings();
         if (!connected) {

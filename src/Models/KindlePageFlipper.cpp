@@ -86,7 +86,8 @@ void KindlePageFlipper::loadInitialPage() {
     telemetry_.logMetric(TelemetryField::METRIC_READABLE_REQUEST, bookUuid,
                          {{"event", std::string("book-open")},
                           {"action", std::string("open-begin")},
-                          {"kindle", true}});
+                          {"kindle", true},
+                          {"elapsed_ms", 0}});
 
     auto cancelFlag = cancelFlag_;
     // Execute the API call on the background thread
@@ -191,7 +192,8 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
                 {"action", std::string("navigate-begin")},
                 {"kindle", true},
                 {"direction", pagesToAdvance},
-                {"po", static_cast<int>(place->getOffset())}};
+                {"po", static_cast<int>(place->getOffset())},
+                {"elapsed_ms", 0}};
             if (pageToPreview > 0) {
                 beginTelemetryData["preview"] = pageToPreview;
             }
