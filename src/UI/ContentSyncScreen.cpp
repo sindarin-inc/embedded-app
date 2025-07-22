@@ -280,7 +280,8 @@ void ContentSyncScreen::begin() {
     // Rate limit to not update more than every 1s, and only if the percentage has changed
     auto rl = std::make_shared<RateLimiter>(1, 20, 1);
     cancel_ = std::make_shared<CancelFlag>();
-    DispatchGetCore0BackgroundQueue()->dispatch([this, rl, resumeBLE]() {
+    DispatchGetCore0BackgroundQueue()->dispatch(
+        [this, rl, resumeBLE]() {
         auto progressCallback = [this, rl, resumeBLE](const ContentSyncState &state) {
             log_d("Progress callback: %d, %d%%", state.state, state.percentage);
 
@@ -392,5 +393,6 @@ void ContentSyncScreen::begin() {
                                        progressCallback);
         }
 #endif
-    });
+        },
+        cancel_);
 }

@@ -248,20 +248,12 @@ void KindleReadableScreen::begin() {
             return;
         }
 
-        // Successfully connected, now load the book content
-        auto cancelFlag = cancelFlag_;
-        if (CancelFlag::isCancelled(cancelFlag)) {
-            return;
-        }
-
         // Record book open start time (content loading phase)
         bookOpenStartTime_ = esp_timer_get_time();
 
-        DispatchGetUiQueue()->dispatch([this, cancelFlag]() {
-            if (CancelFlag::isCancelled(cancelFlag)) {
-                return;
-            }
-
+        // Successfully connected, now load the book content
+        DispatchGetUiQueue()->dispatch(
+            [this]() {
             log_d("Setting loading message to \"Opening your Kindle book...\"");
 
             loadingMessageView_.setText("Opening your Kindle book...");
@@ -271,7 +263,8 @@ void KindleReadableScreen::begin() {
 
             // Schedule a delayed message after 30 seconds if loading takes too long
             scheduleDelayedLoadingMessage();
-        });
+            },
+            cancelFlag_);
 
         // Now load the content in the background queue
         pageFlipper_.loadInitialPage();
@@ -1148,7 +1141,8 @@ void KindleReadableScreen::attemptReconnection() {
     };
 
     // Use a short delay to allow the connection to potentially recover
-    DispatchGetCore0BackgroundQueue()->dispatch([this, localFlag, reconnectionCallback]() {
+    DispatchGetCore0BackgroundQueue()->dispatch(
+        [this, localFlag, reconnectionCallback]() {
         // Wait a moment before attempting reconnection
         vTaskDelay(
             pdMS_TO_TICKS(3000)); // 3 second delay - give more time for the network stack to reset
@@ -1171,7 +1165,8 @@ void KindleReadableScreen::attemptReconnection() {
         std::string errorMessage;
         int bleReconnectTimeoutMs = 10000; // Shorter timeout for reconnection
         connectToNetwork(errorMessage, reconnectionCallback, bleReconnectTimeoutMs);
-    });
+        },
+        localFlag);
 }
 
 void KindleReadableScreen::cancelReconnectionAttempt() {
@@ -1204,10 +1199,8 @@ void KindleReadableScreen::updatePageFlipperCallbacks() {
         if (CancelFlag::isCancelled(cancelFlag)) {
             return;
         }
-        DispatchGetUiQueue()->dispatch([this, cancelFlag, ocrTextLength]() {
-            if (CancelFlag::isCancelled(cancelFlag)) {
-                return;
-            }
+        DispatchGetUiQueue()->dispatch(
+            [this, cancelFlag, ocrTextLength]() {
             if (state_ == State::LOADING_INITIAL_CONTENT || state_ == State::LOADING_CONTENT ||
                 state_ == State::DISPLAY_PARTIAL_CONTENT) {
                 // Only log open-success telemetry for the initial content load
@@ -1233,18 +1226,16 @@ void KindleReadableScreen::updatePageFlipperCallbacks() {
                 scheduleTestDisconnect();
 #endif
             }
-        });
+            },
+            cancelFlag);
     });
 
     pageFlipper_.setOnErrorFunction([this, cancelFlag](const std::string &error) {
         if (CancelFlag::isCancelled(cancelFlag)) {
             return;
         }
-        DispatchGetUiQueue()->dispatch([this, error, cancelFlag]() {
-            if (CancelFlag::isCancelled(cancelFlag)) {
-                return;
-            }
-
+        DispatchGetUiQueue()->dispatch(
+            [this, error]() {
             // Only show error message for non-connection errors
             // CONNECTION_ERROR is handled by the onConnectionErrorFunction below
             if (error != "CONNECTION_ERROR") {
@@ -1269,7 +1260,8 @@ void KindleReadableScreen::updatePageFlipperCallbacks() {
 
                 setErrorMessage(error);
             }
-        });
+            },
+            cancelFlag);
     });
 
     // Set up the callback for last read dialog
@@ -1277,17 +1269,15 @@ void KindleReadableScreen::updatePageFlipperCallbacks() {
         if (CancelFlag::isCancelled(cancelFlag)) {
             return;
         }
-        DispatchGetUiQueue()->dispatch([this, dialogText, cancelFlag]() {
-            if (CancelFlag::isCancelled(cancelFlag)) {
-                return;
-            }
-
+        DispatchGetUiQueue()->dispatch(
+            [this, dialogText]() {
             // Cancel loading message and clear loading state before showing dialog
             cancelDelayedLoadingMessage();
 
             // Show the last read dialog
             showLastReadDialog(dialogText);
-        });
+            },
+            cancelFlag);
     });
 
     // Set a separate callback specifically for network connectivity issues
@@ -1295,11 +1285,8 @@ void KindleReadableScreen::updatePageFlipperCallbacks() {
         if (CancelFlag::isCancelled(cancelFlag)) {
             return;
         }
-        DispatchGetUiQueue()->dispatch([this, cancelFlag]() {
-            if (CancelFlag::isCancelled(cancelFlag)) {
-                return;
-            }
-
+        DispatchGetUiQueue()->dispatch(
+            [this]() {
             // Log telemetry for connection errors
             // Determine if this is an open or navigate error based on current state
             bool isInitialLoad = (state_ == State::LOADING_INITIAL_CONTENT);
@@ -1323,6 +1310,7 @@ void KindleReadableScreen::updatePageFlipperCallbacks() {
             log_i("Network connection issue detected, attempting reconnection");
 
             attemptReconnection();
-        });
+            },
+            cancelFlag);
     });
 }

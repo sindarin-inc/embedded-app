@@ -9,6 +9,8 @@
 #include <string>
 #include <vector>
 
+#include "Misc/CancelFlag.hpp"
+
 // Based on
 // https://embeddedartistry.com/blog/2018/01/29/implementing-an-asynchronous-dispatch-queue-with-freertos/
 
@@ -22,6 +24,7 @@ class DispatchQueue {
     struct WorkItem {
         fp_t op;
         bool quit;
+        std::shared_ptr<CancelFlag> cancelFlag;
     };
 
 public:
@@ -36,14 +39,15 @@ public:
     auto waitForShutdown(int timeoutMs = 10) -> bool;
 
     // dispatch and copy
-    void dispatch(const fp_t &op);
-    void dispatchFromISR(const fp_t &op);
+    void dispatch(const fp_t &op, const std::shared_ptr<CancelFlag> &cancelFlag = nullptr);
+    void dispatchFromISR(const fp_t &op, const std::shared_ptr<CancelFlag> &cancelFlag = nullptr);
     // dispatch and move
-    void dispatch(fp_t &&op);
-    void dispatchFromISR(fp_t &&op);
+    void dispatch(fp_t &&op, const std::shared_ptr<CancelFlag> &cancelFlag = nullptr);
+    void dispatchFromISR(fp_t &&op, const std::shared_ptr<CancelFlag> &cancelFlag = nullptr);
 
     // dispatch and wait for completion
-    void dispatchSync(fp_t &&op, TickType_t timeout = portMAX_DELAY);
+    void dispatchSync(fp_t &&op, TickType_t timeout = portMAX_DELAY,
+                      const std::shared_ptr<CancelFlag> &cancelFlag = nullptr);
 
     // Returns true if were' currently executing inside this queue
     auto isInQueue() -> bool;
@@ -76,12 +80,14 @@ public:
     // Fires up a task for only the purpose of running a single function.
     // Handy since you can use lambda captures with it.
     static auto dispatchOneOff(const fp_t &op, size_t threadStack, UBaseType_t priority,
-                               BaseType_t core, const char *name) -> bool;
+                               BaseType_t core, const char *name,
+                               const std::shared_ptr<CancelFlag> &cancelFlag = nullptr) -> bool;
     // Like dispatchOneOff, but waits for the function to complete before returning. Useful for
     // synchronously running things on other cores.
     static auto dispatchOneOffSync(const fp_t &op, size_t threadStack, UBaseType_t priority,
                                    BaseType_t core, const char *name,
-                                   TickType_t timeout = portMAX_DELAY) -> bool;
+                                   TickType_t timeout = portMAX_DELAY,
+                                   const std::shared_ptr<CancelFlag> &cancelFlag = nullptr) -> bool;
 
 private:
     std::string name_;
