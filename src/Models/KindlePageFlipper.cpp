@@ -86,12 +86,8 @@ void KindlePageFlipper::loadInitialPage() {
 
     auto cancelFlag = cancelFlag_;
     // Execute the API call on the background thread
-    DispatchGetCore0BackgroundQueue()->dispatch([this, cancelFlag]() {
-        if (CancelFlag::isCancelled(cancelFlag)) {
-            log_i("Cancelled while loading initial page");
-            return;
-        }
-
+    DispatchGetCore0BackgroundQueue()->dispatch(
+        [this, cancelFlag]() {
         // Track book open start time
         int64_t bookOpenStartTime = esp_timer_get_time();
         // Create a response object
@@ -138,19 +134,16 @@ void KindlePageFlipper::loadInitialPage() {
 
         // Always signal that we got content (to dismiss loading)
         gotContentFunction_(ocrTextLength);
-    });
+        },
+        cancelFlag);
 }
 
 void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool atEndOfContent) {
     auto cancelFlag = cancelFlag_;
 
     // Perform the logic in a queue so we always have the latest data before making API calls
-    DispatchGetCore0BackgroundQueue()->dispatch([this, place, cancelFlag, atEndOfContent]() {
-        if (CancelFlag::isCancelled(cancelFlag)) {
-            log_i("Cancelled while updating place");
-            return;
-        }
-
+    DispatchGetCore0BackgroundQueue()->dispatch(
+        [this, place, cancelFlag, atEndOfContent]() {
         if (serverSyncPlace_ == nullptr) {
             // First time we're setting the place
             serverSyncPlace_ = std::dynamic_pointer_cast<TxtPlace>(place);
@@ -281,5 +274,6 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
                 gotContentFunction_(contentLength);
             }
         }
-    });
+        },
+        cancelFlag);
 }

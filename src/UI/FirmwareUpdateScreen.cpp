@@ -336,10 +336,8 @@ void FirmwareUpdateScreen::begin() {
                 rl->resetPercentage();
             }
 
-            DispatchGetUiQueue()->dispatch([this, state, resumeBLE, cancelCopy]() {
-                if (CancelFlag::isCancelled(cancelCopy)) {
-                    return;
-                }
+            DispatchGetUiQueue()->dispatch(
+                [this, state, resumeBLE]() {
                 updateState(state); // Update the internal state with the new state.
                 render(display_);   // Render the UI with the updated state.
 
@@ -352,7 +350,8 @@ void FirmwareUpdateScreen::begin() {
                     vTaskDelay(pdMS_TO_TICKS(3000));
                     PowerManager::getInstance().reboot();
                 }
-            });
+                },
+                cancelCopy);
         });
     };
 

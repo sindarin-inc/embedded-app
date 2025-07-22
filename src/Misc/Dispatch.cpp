@@ -66,7 +66,7 @@ void DispatchQueue::beginShutdown(bool graceful) {
 
     for (int i = 0; i < threads_.size(); i++) {
         // Queue one quit signal for each thread
-        auto quit = new WorkItem{.op = nullptr, .quit = true};
+        auto quit = new WorkItem{.op = nullptr, .quit = true, .cancelFlag = nullptr};
         xQueueSendFromISR(q_, (void *)&quit, NULL);
     }
 }
@@ -89,40 +89,43 @@ auto DispatchQueue::waitForShutdown(int timeoutMs) -> bool {
     }
 }
 
-void DispatchQueue::dispatch(const fp_t &op) {
+void DispatchQueue::dispatch(const fp_t &op, const std::shared_ptr<CancelFlag> &cancelFlag) {
     if (shutdownType_ == ShutdownType::None) {
-        auto work = new WorkItem{.op = op, .quit = false};
+        auto work = new WorkItem{.op = op, .quit = false, .cancelFlag = cancelFlag};
         xQueueSend(q_, (void *)&work, portMAX_DELAY);
     }
 }
 
-void DispatchQueue::dispatch(fp_t &&op) {
+void DispatchQueue::dispatch(fp_t &&op, const std::shared_ptr<CancelFlag> &cancelFlag) {
     if (shutdownType_ == ShutdownType::None) {
-        auto work = new WorkItem{.op = std::move(op), .quit = false};
+        auto work = new WorkItem{.op = std::move(op), .quit = false, .cancelFlag = cancelFlag};
         xQueueSend(q_, (void *)&work, portMAX_DELAY);
     }
 }
 
-void DispatchQueue::dispatchSync(fp_t &&op, TickType_t timeout) {
+void DispatchQueue::dispatchSync(fp_t &&op, TickType_t timeout,
+                                 const std::shared_ptr<CancelFlag> &cancelFlag) {
     SemaphoreHandle_t completeSemaphore = xSemaphoreCreateBinary();
     defer { vSemaphoreDelete(completeSemaphore); };
-    dispatch([&op, completeSemaphore]() {
+    dispatch(
+        [&op, completeSemaphore]() {
         op();
         xSemaphoreGive(completeSemaphore);
-    });
+        },
+        cancelFlag);
     xSemaphoreTake(completeSemaphore, timeout);
 }
 
-void DispatchQueue::dispatchFromISR(const fp_t &op) {
+void DispatchQueue::dispatchFromISR(const fp_t &op, const std::shared_ptr<CancelFlag> &cancelFlag) {
     if (shutdownType_ == ShutdownType::None) {
-        auto work = new WorkItem{.op = op, .quit = false};
+        auto work = new WorkItem{.op = op, .quit = false, .cancelFlag = cancelFlag};
         xQueueSendFromISR(q_, (void *)&work, NULL);
     }
 }
 
-void DispatchQueue::dispatchFromISR(fp_t &&op) {
+void DispatchQueue::dispatchFromISR(fp_t &&op, const std::shared_ptr<CancelFlag> &cancelFlag) {
     if (shutdownType_ == ShutdownType::None) {
-        auto work = new WorkItem{.op = std::move(op), .quit = false};
+        auto work = new WorkItem{.op = std::move(op), .quit = false, .cancelFlag = cancelFlag};
         xQueueSendFromISR(q_, (void *)&work, NULL);
     }
 }
@@ -142,6 +145,9 @@ void DispatchQueue::dispatchThreadHandler() {
     do {
         xQueueReceive(q_, &(work), portMAX_DELAY);
         if (work->quit) {
+            delete work;
+            break;
+        } else if (work->cancelFlag != nullptr && CancelFlag::isCancelled(work->cancelFlag)) {
             delete work;
             break;
         } else if (shutdownType_ != ShutdownType::Immediate) {
@@ -167,13 +173,18 @@ void DispatchQueue::dispatchThreadHandler() {
 }
 
 auto DispatchQueue::dispatchOneOff(const fp_t &op, size_t threadStack, UBaseType_t priority,
-                                   BaseType_t core, const char *name) -> bool {
-    auto work = new WorkItem{.op = op, .quit = false};
+                                   BaseType_t core, const char *name,
+                                   const std::shared_ptr<CancelFlag> &cancelFlag) -> bool {
+    auto work = new WorkItem{.op = op, .quit = false, .cancelFlag = cancelFlag};
     char nameBuf[16];
     SafeSnprintf(nameBuf, sizeof(nameBuf), "D:%s", name);
     auto res = xTaskCreatePinnedToCore(
         [](void *param) {
         auto work = reinterpret_cast<WorkItem *>(param);
+        if (work->cancelFlag != nullptr && CancelFlag::isCancelled(work->cancelFlag)) {
+            delete work;
+            vTaskDelete(nullptr);
+        }
         work->op();
         delete work;
         auto watermark = uxTaskGetStackHighWaterMark(nullptr);
@@ -194,8 +205,8 @@ auto DispatchQueue::dispatchOneOff(const fp_t &op, size_t threadStack, UBaseType
 }
 
 auto DispatchQueue::dispatchOneOffSync(const fp_t &op, size_t threadStack, UBaseType_t priority,
-                                       BaseType_t core, const char *name, TickType_t timeout)
-    -> bool {
+                                       BaseType_t core, const char *name, TickType_t timeout,
+                                       const std::shared_ptr<CancelFlag> &cancelFlag) -> bool {
     SemaphoreHandle_t completeSemaphore = xSemaphoreCreateBinary();
     defer { vSemaphoreDelete(completeSemaphore); };
     auto dispatched = dispatchOneOff(
@@ -203,7 +214,7 @@ auto DispatchQueue::dispatchOneOffSync(const fp_t &op, size_t threadStack, UBase
         op();
         xSemaphoreGive(completeSemaphore);
         },
-        threadStack, priority, core, name);
+        threadStack, priority, core, name, cancelFlag);
     if (!dispatched) {
         return false;
     }
