@@ -582,8 +582,7 @@ auto KindleReadableScreen::connectToNetwork(std::string &errorMessage,
                 // Dispatch reconnection attempt - don't check the old cancel flag here
                 // since we just cancelled it
                 DispatchGetUiQueue()->dispatch([this]() {
-                    if (reconnectionAttempts_ == 0 ||
-                        reconnectionAttempts_ > MAX_RECONNECTION_ATTEMPTS) {
+                    if (!isReconnecting_) {
                         attemptReconnection();
                     } else {
                         log_i("BLE disconnected during reconnection attempt, ignoring");
@@ -792,8 +791,9 @@ void KindleReadableScreen::dismissScreen() {
     cancelTestDisconnect();
 #endif
 
-    // Reset reconnection attempts counter
+    // Reset reconnection attempts counter and flags
     reconnectionAttempts_ = 0;
+    isReconnecting_ = false;
 
     disconnectNetworkConnections();
     back();
@@ -1021,10 +1021,13 @@ void KindleReadableScreen::testDisconnectTimerCallback(TimerHandle_t timer) {
 
 void KindleReadableScreen::attemptReconnection() {
     // Check if we're already in the middle of a reconnection attempt
-    if (reconnectionAttempts_ > 0 && reconnectionAttempts_ <= MAX_RECONNECTION_ATTEMPTS) {
+    if (isReconnecting_) {
         log_i("Already attempting reconnection, ignoring duplicate request");
         return;
     }
+
+    // Set the flag to prevent recursive calls
+    isReconnecting_ = true;
 
     // Increment the reconnection attempts counter
     reconnectionAttempts_++;
@@ -1034,6 +1037,7 @@ void KindleReadableScreen::attemptReconnection() {
     // If we've exceeded the maximum number of attempts, show an error and stop trying
     if (reconnectionAttempts_ > MAX_RECONNECTION_ATTEMPTS) {
         log_w("Exceeded maximum reconnection attempts (%d). Giving up.", MAX_RECONNECTION_ATTEMPTS);
+        isReconnecting_ = false;
         DispatchGetUiQueue()->dispatch([this]() {
             telemetry_.logMetric(
                 TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
@@ -1081,7 +1085,7 @@ void KindleReadableScreen::attemptReconnection() {
         // Check if we've been cancelled
         if (CancelFlag::isCancelled(localFlag)) {
             log_i("Reconnection attempt cancelled");
-            reconnectionAttempts_ = 0; // Reset attempts on cancellation
+            isReconnecting_ = false;
             return;
         }
 
@@ -1101,6 +1105,7 @@ void KindleReadableScreen::attemptReconnection() {
 
             // Reset reconnection attempts on successful connection
             reconnectionAttempts_ = 0;
+            isReconnecting_ = false;
 
             // If we have content already (were just reconnecting), restore display state
             if (pageFlipper_.hasContent()) {
@@ -1130,6 +1135,7 @@ void KindleReadableScreen::attemptReconnection() {
 
             // If we've reached max attempts, show appropriate error
             if (reconnectionAttempts_ >= MAX_RECONNECTION_ATTEMPTS) {
+                isReconnecting_ = false;
                 DispatchGetUiQueue()->dispatch([this]() {
                     setErrorMessage(
                         "Failed to load content. Please check your network connection.");
