@@ -69,6 +69,11 @@ if(DETECTED_TARGET MATCHES "p4-function-ev.*|sharp-27in|waveshare-6inhd|p4-seeya
         esp_lcd
         fatfs
         sdmmc
+        codec_board
+        av_render
+        esp_webrtc
+        esp_peer
+        esp_audio_codec
     )
 endif()
 
