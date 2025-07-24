@@ -7,5 +7,7 @@ message("Using ${SDKCONFIG}")
 
 list(APPEND EXTRA_COMPONENT_DIRS src)
 
+list(APPEND EXTRA_COMPONENT_DIRS "../../espressif/esp-webrtc-solution/components")
+
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 project(embedded-app)
