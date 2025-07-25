@@ -243,7 +243,7 @@ void KindleReadableScreen::begin() {
 
     // Capture cancel flag before the callback to avoid use-after-free
     auto cancelFlag = cancelFlag_;
-    
+
     // Define the callback for initial connection - load the book content
     auto initialConnectionCallback = [this, cancelFlag](bool connected) {
         if (!connected) {
@@ -288,13 +288,12 @@ void KindleReadableScreen::begin() {
 
         // Show error if initial connection failed completely
         if (!connected && !errorMessage.empty()) {
-            DispatchGetUiQueue()->dispatch(
-                [this, errorMessage, cancelFlag]() { 
-                    if (CancelFlag::isCancelled(cancelFlag)) {
-                        return;
-                    }
-                    setErrorMessage(errorMessage); 
-                });
+            DispatchGetUiQueue()->dispatch([this, errorMessage, cancelFlag]() {
+                if (CancelFlag::isCancelled(cancelFlag)) {
+                    return;
+                }
+                setErrorMessage(errorMessage);
+            });
         }
     });
 }
@@ -1333,4 +1332,3 @@ void KindleReadableScreen::updatePageFlipperCallbacks() {
         });
     });
 }
-
