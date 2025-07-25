@@ -3,6 +3,9 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 
+#include "WebRTC/OpenAI.hpp"
+#include "sindarin-debug.h"
+
 // ----------------------------------------------------------------------------
 TestWebRTCScreen::TestWebRTCScreen(DisplaySystem &display, PreferencesStore &prefs)
     : EinkView(display), prefs_(prefs) {
@@ -22,7 +25,11 @@ void TestWebRTCScreen::updateStatus(const std::string &msg) {
 }
 
 static void beginWebRtcTask(void * /*param*/) {
-    begin_webrtc();
+    OpenAI openai;
+    openai.init();
+    openai.start();
+    // openai.sendText("Hello, how are you?");
+    // openai.stop();
     vTaskDelete(nullptr);
 }
 
@@ -33,6 +40,7 @@ void TestWebRTCScreen::launchWebRtcTasks() {
 
 // MARK: - Public API ---------------------------------------------------------
 void TestWebRTCScreen::begin() {
+    SHOW_HEAP();
     if (!WiFi::getInstance().hasWiFiCredentials()) {
         updateStatus("No Wi-Fi credentials.\nUse the Sol app → Settings → Wi-Fi setup.");
         render(display_);
@@ -55,6 +63,8 @@ void TestWebRTCScreen::begin() {
 
     updateStatus("Wi-Fi connected.\nStarting WebRTC…");
     render(display_);
+
+    SHOW_HEAP();
 
     launchWebRtcTasks();
 
