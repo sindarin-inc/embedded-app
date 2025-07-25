@@ -1,23 +1,12 @@
-/* OpenAI realtime communication Demo code
-
-   This example code is in the Public Domain (or CC0 licensed, at your option.)
-
-   Unless required by applicable law or agreed to in writing, this
-   software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-   CONDITIONS OF ANY KIND, either express or implied.
-*/
+#include "OpenAI.hpp"
 
 #include <cJSON.h>
+#include <esp_log.h>
+#include <esp_peer_default.h>
 
-#include "common.h"
-#include "driver/gpio.h"
-#include "esp_log.h"
-#include "esp_peer_default.h"
-#include "esp_webrtc.h"
-#include "esp_webrtc_defaults.h"
-#include "media_lib_os.h"
+#include "WebRTC/OpenAISignaling.hpp"
 
-#define TAG "OPENAI_APP"
+constexpr const char *TAG = "OpenAI";
 
 #define OPENAI_API_KEY                                                                             \
     "sk-proj-hl26OTzd32-M_qo2vc6KoCFYA8iJBXTN2npOark9yyjjumE7nJcnEKuLZwUFj-"                       \
@@ -100,8 +89,8 @@ static class_t *build_volume_class(void) {
             .name = "volume",
             .desc = "Speaker volume range 0-100",
             .type = ATTRIBUTE_TYPE_INT,
-            .control = set_speaker_volume,
             .required = true,
+            .control = set_speaker_volume,
         },
     };
     vol->name = "SetVolume";
@@ -121,8 +110,8 @@ static class_t *build_door_class(void) {
             .name = "open",
             .desc = "Open or close the door",
             .type = ATTRIBUTE_TYPE_BOOL,
-            .control = set_door_state,
             .required = true,
+            .control = set_door_state,
         },
     };
     vol->name = "OpenDoor";
@@ -142,22 +131,22 @@ static class_t *build_light_class(void) {
             .name = "red",
             .desc = "Red value in the range of 0-255",
             .type = ATTRIBUTE_TYPE_INT,
-            .control = set_light_color_red,
             .required = true,
+            .control = set_light_color_red,
         },
         {
             .name = "green",
             .desc = "Green value in the range of 0-255",
             .type = ATTRIBUTE_TYPE_INT,
-            .control = set_light_color_green,
             .required = true,
+            .control = set_light_color_green,
         },
         {
             .name = "blue",
             .desc = "Blue value in the range of 0-255",
-            .control = set_light_color_blue,
             .type = ATTRIBUTE_TYPE_INT,
             .required = true,
+            .control = set_light_color_blue,
         },
     };
     static attribute_t light_attrs[] = {
@@ -165,8 +154,8 @@ static class_t *build_light_class(void) {
             .name = "LightState",
             .desc = "New light state (true or false is expected)",
             .type = ATTRIBUTE_TYPE_BOOL,
-            .control = set_light_on_off,
             .required = true,
+            .control = set_light_on_off,
         },
         {
             .name = "LightColor",
@@ -234,16 +223,14 @@ static int add_parent_attribute(cJSON *parent, attribute_t *attr) {
         }
     }
     if (require_num) {
-        cJSON *
-            requires
-        = cJSON_CreateArray();
+        cJSON *requiresArray = cJSON_CreateArray();
         for (int i = 0; i < attr->attr_num; i++) {
             attribute_t *sub_attr = &attr->attr_list[i];
             if (sub_attr->required) {
-                cJSON_AddItemToArray(requires, cJSON_CreateString(sub_attr->name));
+                cJSON_AddItemToArray(requiresArray, cJSON_CreateString(sub_attr->name));
             }
         }
-        cJSON_AddItemToObject(parent, "required", requires);
+        cJSON_AddItemToObject(parent, "required", requiresArray);
     }
     return 0;
 }
@@ -293,16 +280,14 @@ static int send_function_desc(void) {
             }
         }
         if (require_num) {
-            cJSON *
-                requires
-            = cJSON_CreateArray();
+            cJSON *requiresArray = cJSON_CreateArray();
             for (int i = 0; i < iter->attr_num; i++) {
                 attribute_t *attr = &iter->attr_list[i];
                 if (attr->required) {
-                    cJSON_AddItemToArray(requires, cJSON_CreateString(attr->name));
+                    cJSON_AddItemToArray(requiresArray, cJSON_CreateString(attr->name));
                 }
             }
-            cJSON_AddItemToObject(parameters, "required", requires);
+            cJSON_AddItemToObject(parameters, "required", requiresArray);
         }
         iter = iter->next;
     }
@@ -477,7 +462,7 @@ static int webrtc_event_handler(esp_webrtc_event_t *event, void *ctx) {
     return 0;
 }
 
-int openai_send_text(char *text) {
+int openai_send_text(const char *text) {
     if (webrtc == NULL) {
         ESP_LOGE(TAG, "WebRTC not started yet");
         return -1;
@@ -513,7 +498,35 @@ int openai_send_text(char *text) {
     return 0;
 }
 
-int start_webrtc(void) {
+int stop_webrtc(void) {
+    if (webrtc) {
+        esp_webrtc_handle_t handle = webrtc;
+        webrtc = NULL;
+        esp_webrtc_close(handle);
+    }
+    return 0;
+}
+
+auto OpenAI::init() -> int {
+    // Build media pipelines
+    mediaSystem_.build();
+
+    // // start_webrtc();
+
+    // TODO: Is this necessary?
+    // while (1) {
+    //     // TODO: Is any of this needed or does media lib create its own thread?
+    //     media_lib_thread_sleep(2000);
+    //     // Query WebRTC status
+    //     // TODO: is this just for logging? Can we skip it?
+    //     if (webrtc) {
+    //         esp_webrtc_query(webrtc);
+    //     }
+    // }
+    return 0;
+}
+
+auto OpenAI::start() -> int {
     build_classes();
     // if (network_is_connected() == false) {
     //     ESP_LOGE(TAG, "Wifi not connected yet");
@@ -530,6 +543,13 @@ int start_webrtc(void) {
         .token = OPENAI_API_KEY,
     };
     esp_webrtc_cfg_t cfg = {
+        .signaling_impl = esp_signaling_get_openai_signaling(),
+        .signaling_cfg =
+            {
+                .extra_cfg = &openai_cfg,
+                .extra_size = sizeof(openai_cfg),
+            },
+        .peer_impl = esp_peer_get_default_impl(),
         .peer_cfg =
             {
                 .audio_info =
@@ -540,19 +560,16 @@ int start_webrtc(void) {
                         .channel = 1,
 #else
                         .codec = ESP_PEER_AUDIO_CODEC_G711A,
+                        .sample_rate = 16000,
 #endif
                     },
                 .audio_dir = ESP_PEER_MEDIA_DIR_SEND_RECV,
-                .enable_data_channel = DATA_CHANNEL_ENABLED,
-                .on_custom_data = webrtc_data_handler,
+                .enable_data_channel = true,
                 .manual_ch_create = true, // Disable esp_peer create data channel automatically
                 .extra_cfg = &peer_cfg,
                 .extra_size = sizeof(peer_cfg),
+                .on_custom_data = webrtc_data_handler,
             },
-        .signaling_cfg.extra_cfg = &openai_cfg,
-        .signaling_cfg.extra_size = sizeof(openai_cfg),
-        .peer_impl = esp_peer_get_default_impl(),
-        .signaling_impl = esp_signaling_get_openai_signaling(),
     };
     int ret = esp_webrtc_open(&cfg, &webrtc);
     if (ret != 0) {
@@ -561,7 +578,7 @@ int start_webrtc(void) {
     }
     // Set media provider
     esp_webrtc_media_provider_t media_provider = {};
-    media_sys_get_provider(&media_provider);
+    mediaSystem_.getWebRTCMediaProvider(&media_provider);
     esp_webrtc_set_media_provider(webrtc, &media_provider);
 
     // Set event handler
@@ -575,11 +592,6 @@ int start_webrtc(void) {
     return ret;
 }
 
-int stop_webrtc(void) {
-    if (webrtc) {
-        esp_webrtc_handle_t handle = webrtc;
-        webrtc = NULL;
-        esp_webrtc_close(handle);
-    }
-    return 0;
-}
+auto OpenAI::stop() -> int { return stop_webrtc(); }
+
+auto OpenAI::sendText(const char *text) -> int { return openai_send_text(text); }

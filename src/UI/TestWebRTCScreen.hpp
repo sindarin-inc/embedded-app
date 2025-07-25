@@ -10,12 +10,6 @@
 #include "UI/Components/MultiLineTextView.hpp"
 #include "UI/Screen.hpp"
 
-// Forward declarations for C functions implemented in C sources
-extern "C" {
-#include "WebRTC/WebRTC.h" // begin_webrtc()
-#include "WebRTC/common.h" // start_webrtc()
-}
-
 /*!
  * A very small utility screen that connects to Wi-Fi and then kicks off the
  * WebRTC demo (begin_webrtc() followed by start_webrtc()).  All user-interface
