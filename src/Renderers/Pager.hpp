@@ -2,6 +2,7 @@
 
 #include <array>
 #include <memory>
+#include <string>
 #include <utility>
 
 #include "EPub/EPubFile.hpp"
@@ -233,4 +234,7 @@ public:
         return "UNKNOWN";
     }
 #endif
+
+    // Returns the plain text of the lines currently stored for the last rendered page.
+    [[nodiscard]] auto getCurrentPageText() const -> std::string;
 };

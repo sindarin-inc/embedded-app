@@ -1,5 +1,6 @@
 #pragma once
 
+#include <string>
 #include <utility>
 
 #include "Displays/TextInsets.hpp"
@@ -117,6 +118,10 @@ public:
 
     [[nodiscard]] inline auto getMenuParameters() const -> const MenuParameters & {
         return pager_.getMenuParameters();
+    }
+
+    [[nodiscard]] inline auto getCurrentPageText() const -> std::string {
+        return pager_.getCurrentPageText();
     }
 
 private:

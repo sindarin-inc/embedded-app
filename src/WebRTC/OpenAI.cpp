@@ -101,6 +101,7 @@ static int webrtc_event_handler(esp_webrtc_event_t *event, void *ctx) {
         }
         char *json_string = cJSON_Print(root);
         if (json_string) {
+            printf("Sending tool call description: %s\n", json_string);
             esp_webrtc_send_custom_data(webrtc, ESP_WEBRTC_CUSTOM_DATA_VIA_DATA_CHANNEL,
                                         (uint8_t *)json_string, strlen(json_string));
             free(json_string);

@@ -653,3 +653,45 @@ void Pager::show() const {
         std::cout << "Page Word Count: " << wordCount_ << std::endl;
     }
 }
+
+// -----------------------------------------------------------------------------
+// Return plain text for the current rendered page
+// -----------------------------------------------------------------------------
+auto Pager::getCurrentPageText() const -> std::string {
+    std::string text;
+    uint16_t lineCount = getPageLineCount();
+    Idx idx = firstPageLineIdx_;
+    for (uint16_t i = 0; i < lineCount; ++i) {
+        const LineInfo &line = lines_[idx];
+        Idx tokenIdx = line.tokenIdx;
+        for (uint16_t t = 0; t < line.tokenCount; ++t) {
+            const Token &tok = tokens_[tokenIdx];
+            switch (tok.tokenId) {
+            case TokenId::TEXT:
+            case TokenId::ITEXT:
+            case TokenId::HTEXT:
+            case TokenId::NTEXT:
+#if CONFIG_FONT_TTF
+            case TokenId::SUBTEXT:
+            case TokenId::SUPTEXT:
+#endif
+                text.append(tok.cStr, tok.length);
+                break;
+            case TokenId::HYPHEN:
+            case TokenId::ENDASH:
+            case TokenId::EMDASH:
+                text.push_back('-');
+                break;
+            default:
+                break;
+            }
+            if (t < line.tokenCount - 1) {
+                text.push_back(' ');
+            }
+            tokenIdx = tokens_.addToTokenIdx(tokenIdx, 1);
+        }
+        text.push_back('\n');
+        idx = (idx + 1) % LINES_SIZE;
+    }
+    return text;
+}
