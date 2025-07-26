@@ -1,6 +1,7 @@
 #include <esp_webrtc.h>
 
 #include "WebRTC/MediaSystem.hpp"
+#include "WebRTC/ToolCalling.hpp"
 
 class OpenAI {
 public:
@@ -13,7 +14,11 @@ public:
 
     auto sendText(const char *text) -> int;
 
+    // Expose ToolCalling so callers can register their own tools
+    ToolCalling &toolCalling() { return toolCalling_; }
+
 private:
     MediaSystem mediaSystem_;
     esp_webrtc_handle_t webrtc_ = NULL;
+    ToolCalling toolCalling_;
 };

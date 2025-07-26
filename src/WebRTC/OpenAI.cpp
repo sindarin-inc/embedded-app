@@ -1,6 +1,7 @@
 #include "OpenAI.hpp"
 
 #include <cJSON.h>
+#include <cstring>
 #include <esp_log.h>
 #include <esp_peer_default.h>
 
@@ -16,9 +17,13 @@ constexpr const char *TAG = "OpenAI";
 
 esp_webrtc_handle_t webrtc = NULL;
 
+static ToolCalling *g_toolCalling = nullptr; // Global pointer used by C callbacks
+
 static int webrtc_data_handler(esp_webrtc_custom_data_via_t via, uint8_t *data, int size,
                                void *ctx) {
-    handle_received_json((const char *)data);
+    if (g_toolCalling) {
+        g_toolCalling->handleReceivedJson((const char *)data);
+    }
 
     cJSON *root = cJSON_Parse((const char *)data);
     if (!root) {
@@ -91,7 +96,9 @@ static int webrtc_event_handler(esp_webrtc_event_t *event, void *ctx) {
 
         // TODO: Configure tool calling here
         cJSON *root = cJSON_CreateObject();
-        generate_toolcall_description_json(root);
+        if (g_toolCalling) {
+            g_toolCalling->generateDescriptionJson(root);
+        }
         char *json_string = cJSON_Print(root);
         if (json_string) {
             esp_webrtc_send_custom_data(webrtc, ESP_WEBRTC_CUSTOM_DATA_VIA_DATA_CHANNEL,
@@ -169,7 +176,8 @@ auto OpenAI::init() -> int {
 }
 
 auto OpenAI::start() -> int {
-    build_toolcalls();
+    // Set global pointer for callbacks
+    g_toolCalling = &toolCalling_;
     // if (network_is_connected() == false) {
     //     ESP_LOGE(TAG, "Wifi not connected yet");
     //     return -1;

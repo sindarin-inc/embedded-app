@@ -1,9 +1,12 @@
 #include "TestWebRTCScreen.hpp"
 
+#include <cstdio>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
+#include <vector>
 
 #include "WebRTC/OpenAI.hpp"
+#include "WebRTC/ToolCalling.hpp"
 #include "sindarin-debug.h"
 
 // ----------------------------------------------------------------------------
@@ -26,6 +29,53 @@ void TestWebRTCScreen::updateStatus(const std::string &msg) {
 
 static void beginWebRtcTask(void * /*param*/) {
     OpenAI openai;
+
+    // Register demonstration tool calls ----------------------------------
+    auto &tool = openai.toolCalling();
+
+    // Light tool ---------------------------------------------------------
+    auto redAttr = tool.createIntAttribute("red", "Red value in the range of 0-255", true,
+                                           [](attribute_t *attr) {
+        printf("Red set to %d\n", attr->i_value);
+        return 0;
+    });
+    auto greenAttr = tool.createIntAttribute("green", "Green value in the range of 0-255", true,
+                                             [](attribute_t *attr) {
+        printf("Green set to %d\n", attr->i_value);
+        return 0;
+    });
+    auto blueAttr = tool.createIntAttribute("blue", "Blue value in the range of 0-255", true,
+                                            [](attribute_t *attr) {
+        printf("Blue set to %d\n", attr->i_value);
+        return 0;
+    });
+    auto colorParent = tool.createParentAttribute(
+        "LightColor", "Set light color of red, green and blue", {redAttr, greenAttr, blueAttr});
+
+    auto stateAttr = tool.createBoolAttribute("LightState", "New light state (true or false)", true,
+                                              [](attribute_t *attr) {
+        printf("Light set to %s\n", attr->b_state ? "ON" : "OFF");
+        return 0;
+    });
+    tool.registerTool("SetLightState", "Changes the state of the light", {stateAttr, colorParent});
+
+    // Speaker volume tool ------------------------------------------------
+    auto volumeAttr = tool.createIntAttribute("volume", "Speaker volume range 0-100", true,
+                                              [](attribute_t *attr) {
+        printf("Volume set to %d\n", attr->i_value);
+        return 0;
+    });
+    tool.registerTool("SetVolume", "Changes speaker volume", {volumeAttr});
+
+    // Door tool ----------------------------------------------------------
+    auto doorAttr =
+        tool.createBoolAttribute("open", "Open or close the door", true, [](attribute_t *attr) {
+        printf("Door is %s\n", attr->b_state ? "Opened" : "Closed");
+        return 0;
+    });
+    tool.registerTool("OpenDoor", "Toggle the door state to open or close", {doorAttr});
+
+    // Now init and start WebRTC -----------------------------------------
     openai.init();
     openai.start();
     // openai.sendText("Hello, how are you?");
