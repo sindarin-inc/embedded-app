@@ -1,3 +1,5 @@
+#pragma once
+
 #include <esp_webrtc.h>
 
 #include "WebRTC/MediaSystem.hpp"

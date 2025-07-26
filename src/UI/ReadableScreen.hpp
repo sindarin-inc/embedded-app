@@ -25,6 +25,8 @@
 #include "UI/ResizeBoxScreen.hpp"
 #include "UI/Screen.hpp"
 #include "Version.hpp"
+#include "WebRTC/OpenAI.hpp"
+#include "WebRTC/ToolCalling.hpp"
 #include "config.h"
 
 enum LastArrowPress {
@@ -126,4 +128,9 @@ private:
         "This content doesn't have that feature.\nPress any button to continue.";
 
     int numUps_ = 0;
+
+    // OpenAI tool calling task
+    static void beginOpenAITask(void *param);
+
+    bool openaiTaskStarted_ = false;
 };

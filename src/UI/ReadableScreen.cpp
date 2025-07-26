@@ -2,10 +2,13 @@
 
 #include <freertos/FreeRTOS.h>
 #include <freertos/queue.h>
+#include <freertos/task.h>
 #include <freertos/timers.h>
 #include <functional>
 #include <utility>
 
+#include "Communications/WiFi.hpp"
+#include "Inputs/RemoteInput.hpp"
 #include "Misc/Platform.hpp"
 #include "Models/UserReadablePartialChapterSummary.hpp"
 #include "UI/AppDownloadScreen.hpp"
@@ -13,13 +16,50 @@
 #include "UI/BookQuestionsScreen.hpp"
 #include "UI/ReadableHookScreens.hpp"
 #include "UI/RootUI.hpp"
-#include "UI/TestWebRTCScreen.hpp"
+#include "WebRTC/OpenAI.hpp"
+#include "WebRTC/ToolCalling.hpp"
 #include "sindarin-debug.h"
 
 // Two minutes per page currently
 #define SLOWEST_PAGE_SPEED 120000
 // Change speed of speed reading in increments of 2 seconds
 #define PAGE_SPEED_INCREMENT 2000
+
+// Static task to spin up OpenAI and register page turning tools
+void ReadableScreen::beginOpenAITask(void *param) {
+    auto *screen = static_cast<ReadableScreen *>(param);
+
+    // Allocate on heap so it lives beyond this function scope
+    auto *openai = new OpenAI();
+
+    // Register tool calls -------------------------------------------------
+    auto &tool = openai->toolCalling();
+
+    // Forward page tool
+    auto fwdAttr =
+        tool.createBoolAttribute("go", "Turn page forward", true, [screen](attribute_t *) {
+        screen->processCommand(RemoteCommand::RIGHT);
+        screen->render(screen->display_);
+        return 0;
+    });
+    tool.registerTool("PageForward", "Turn page forward one page", {fwdAttr});
+
+    // Backward page tool
+    auto backAttr =
+        tool.createBoolAttribute("go", "Turn page backward", true, [screen](attribute_t *) {
+        screen->processCommand(RemoteCommand::LEFT);
+        screen->render(screen->display_);
+        return 0;
+    });
+    tool.registerTool("PageBackward", "Turn page backward one page", {backAttr});
+
+    // Initialise and start WebRTC/OpenAI
+    openai->init();
+    openai->start();
+
+    // Task ends but OpenAI continues to run.
+    vTaskDelete(nullptr);
+}
 
 ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
                                DisplaySystem &display, const std::shared_ptr<Readable> &readable,
@@ -280,8 +320,32 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
                     return;
                 }
 
-                auto testWebRTCScreen = std::make_shared<TestWebRTCScreen>(display_, prefs_);
-                setCurrentScreen(testWebRTCScreen);
+                // Connect to Wi-Fi if not already connected
+                if (!WiFi::getInstance().hasWiFiCredentials()) {
+                    RootUI::getInstance().showTemporaryMessage(
+                        "No Wi-Fi credentials.\nUse the Sol app → Settings → Wi-Fi setup.");
+                    return;
+                }
+
+                if (!WiFi::getInstance().connected()) {
+                    RootUI::getInstance().showTemporaryMessage("Connecting to Wi-Fi…");
+                    auto connected = WiFi::getInstance().connectWiFiFromSettings();
+                    if (connected != ESP_OK && connected != true) {
+                        RootUI::getInstance().showTemporaryMessage("Failed to connect to Wi-Fi.");
+                        return;
+                    }
+                }
+
+                // Launch OpenAI WebRTC task only once
+                if (!openaiTaskStarted_) {
+                    openaiTaskStarted_ = true;
+                    xTaskCreatePinnedToCore(ReadableScreen::beginOpenAITask, "openai_task",
+                                            8 * 1024, this, 5, nullptr, 1);
+                }
+
+                // Hide popup and return to reading view
+                this->setCurrentScreen(nullptr);
+                setNeedsRerender();
 
                 // auto epubPlace =
                 // std::dynamic_pointer_cast<EPubPlace>(renderer_.getCurrentPlace());
