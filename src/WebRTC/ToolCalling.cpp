@@ -1,202 +1,134 @@
 #include "ToolCalling.hpp"
 
-#include <cJSON.h>
-#include <esp_log.h>
-#include <esp_webrtc.h>
-#include <string.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <unordered_map>
+#include <vector>
 
 #define ELEMS(a) (sizeof(a) / sizeof(a[0]))
 
-typedef struct attribute_t attribute_t;
-typedef struct class_t class_t;
-typedef enum {
-    ATTRIBUTE_TYPE_NONE,
-    ATTRIBUTE_TYPE_BOOL,
-    ATTRIBUTE_TYPE_INT,
-    ATTRIBUTE_TYPE_PARENT,
-} attribute_type_t;
+// Static member definition --------------------------------------------------
+std::unordered_map<attribute_t *, ToolCalling::ControlLambda> ToolCalling::lambdaMap_;
 
-struct attribute_t {
-    char *name;
-    char *desc;
-    attribute_type_t type;
-    union {
-        bool b_state;
-        int i_value;
-        attribute_t *attr_list;
-    };
-    int attr_num;
-    bool required;
-    int (*control)(attribute_t *attr);
-};
-
-struct class_t {
-    char *name;
-    char *desc;
-    attribute_t *attr_list;
-    int attr_num;
-    class_t *next;
-};
-
-static class_t *classes = NULL;
-
-static int set_light_on_off(attribute_t *attr) {
-    printf("Light set to %s\n", attr->b_state ? "ON" : "OFF");
-    return 0;
-}
-
-static int set_light_color_red(attribute_t *attr) {
-    printf("Red set to %d\n", attr->i_value);
-    return 0;
-}
-
-static int set_light_color_blue(attribute_t *attr) {
-    printf("Blue set to %d\n", attr->i_value);
-    return 0;
-}
-
-static int set_light_color_green(attribute_t *attr) {
-    printf("Green set to %d\n", attr->i_value);
-    return 0;
-}
-
-static int set_speaker_volume(attribute_t *attr) {
-    printf("Volume set to %d\n", attr->i_value);
-    return 0;
-}
-
-static int set_door_state(attribute_t *attr) {
-    printf("Door is %s\n", attr->b_state ? "Opened" : "Closed");
-    return 0;
-}
-
-static class_t *build_volume_class(void) {
-    class_t *vol = (class_t *)calloc(1, sizeof(class_t));
-    if (vol == NULL) {
-        return NULL;
+// Utility helpers -----------------------------------------------------------
+char *ToolCalling::strdupSafe(const char *str) {
+    if (!str) {
+        return nullptr;
     }
-    static attribute_t vol_attrs[] = {
-        {
-            .name = "volume",
-            .desc = "Speaker volume range 0-100",
-            .type = ATTRIBUTE_TYPE_INT,
-            .required = true,
-            .control = set_speaker_volume,
-        },
-    };
-    vol->name = "SetVolume";
-    vol->desc = "Changes speaker volume";
-    vol->attr_list = vol_attrs;
-    vol->attr_num = ELEMS(vol_attrs);
-    return vol;
-}
-
-static class_t *build_door_class(void) {
-    class_t *vol = (class_t *)calloc(1, sizeof(class_t));
-    if (vol == NULL) {
-        return NULL;
+    size_t len = strlen(str) + 1;
+    char *dup = static_cast<char *>(malloc(len));
+    if (dup) {
+        memcpy(dup, str, len);
     }
-    static attribute_t vol_attrs[] = {
-        {
-            .name = "open",
-            .desc = "Open or close the door",
-            .type = ATTRIBUTE_TYPE_BOOL,
-            .required = true,
-            .control = set_door_state,
-        },
-    };
-    vol->name = "OpenDoor";
-    vol->desc = "Toggle the door state to open or close";
-    vol->attr_list = vol_attrs;
-    vol->attr_num = ELEMS(vol_attrs);
-    return vol;
+    return dup;
 }
 
-static class_t *build_light_class(void) {
-    class_t *light = (class_t *)calloc(1, sizeof(class_t));
-    if (light == NULL) {
-        return NULL;
+char *ToolCalling::getAttrType(attribute_type_t type) {
+    switch (type) {
+    case ATTRIBUTE_TYPE_BOOL:
+        return (char *)"boolean";
+    case ATTRIBUTE_TYPE_INT:
+        return (char *)"integer";
+    case ATTRIBUTE_TYPE_PARENT:
+        return (char *)"object";
+    default:
+        return (char *)"";
     }
-    static attribute_t light_color[] = {
-        {
-            .name = "red",
-            .desc = "Red value in the range of 0-255",
-            .type = ATTRIBUTE_TYPE_INT,
-            .required = true,
-            .control = set_light_color_red,
-        },
-        {
-            .name = "green",
-            .desc = "Green value in the range of 0-255",
-            .type = ATTRIBUTE_TYPE_INT,
-            .required = true,
-            .control = set_light_color_green,
-        },
-        {
-            .name = "blue",
-            .desc = "Blue value in the range of 0-255",
-            .type = ATTRIBUTE_TYPE_INT,
-            .required = true,
-            .control = set_light_color_blue,
-        },
-    };
-    static attribute_t light_attrs[] = {
-        {
-            .name = "LightState",
-            .desc = "New light state (true or false is expected)",
-            .type = ATTRIBUTE_TYPE_BOOL,
-            .required = true,
-            .control = set_light_on_off,
-        },
-        {
-            .name = "LightColor",
-            .desc = "Set light color of red, green and blue",
-            .type = ATTRIBUTE_TYPE_PARENT,
-            .attr_list = light_color,
-            .attr_num = ELEMS(light_color),
-        },
-    };
-    light->name = "SetLightState";
-    light->desc = "Changes the state of the light";
-    light->attr_list = light_attrs;
-    light->attr_num = ELEMS(light_attrs);
-    return light;
 }
 
-static void add_class(class_t *cls) {
-    if (classes == NULL) {
-        classes = cls;
+int ToolCalling::dispatch(attribute_t *attr) {
+    auto it = lambdaMap_.find(attr);
+    if (it != lambdaMap_.end()) {
+        return it->second(attr);
+    }
+    return 0;
+}
+
+// Attribute creation --------------------------------------------------------
+attribute_t *ToolCalling::createBoolAttribute(const char *name, const char *desc, bool required,
+                                              ControlLambda cb) {
+    attribute_t *attr = new attribute_t{};
+    attr->name = strdupSafe(name);
+    attr->desc = strdupSafe(desc);
+    attr->type = ATTRIBUTE_TYPE_BOOL;
+    attr->required = required;
+    attr->control = dispatch;
+    lambdaMap_[attr] = std::move(cb);
+    return attr;
+}
+
+attribute_t *ToolCalling::createIntAttribute(const char *name, const char *desc, bool required,
+                                             ControlLambda cb) {
+    attribute_t *attr = new attribute_t{};
+    attr->name = strdupSafe(name);
+    attr->desc = strdupSafe(desc);
+    attr->type = ATTRIBUTE_TYPE_INT;
+    attr->required = required;
+    attr->control = dispatch;
+    lambdaMap_[attr] = std::move(cb);
+    return attr;
+}
+
+attribute_t *ToolCalling::createParentAttribute(const char *name, const char *desc,
+                                                const std::vector<attribute_t *> &children,
+                                                bool required) {
+    attribute_t *attr = new attribute_t{};
+    attr->name = strdupSafe(name);
+    attr->desc = strdupSafe(desc);
+    attr->type = ATTRIBUTE_TYPE_PARENT;
+    attr->required = required;
+    attr->attr_num = static_cast<int>(children.size());
+    if (attr->attr_num > 0) {
+        attribute_t *arr = new attribute_t[attr->attr_num];
+        for (int i = 0; i < attr->attr_num; ++i) {
+            arr[i] = *children[i]; // copy
+            // Propagate lambda mapping to the copied instance if present
+            auto it = lambdaMap_.find(children[i]);
+            if (it != lambdaMap_.end()) {
+                lambdaMap_[&arr[i]] = it->second;
+            }
+        }
+        attr->attr_list = arr;
     } else {
-        classes->next = cls;
+        attr->attr_list = nullptr;
+    }
+    // Parent attributes don't get a control callback directly.
+    return attr;
+}
+
+// Tool registration ---------------------------------------------------------
+void ToolCalling::registerTool(const char *name, const char *desc,
+                               const std::vector<attribute_t *> &attributes) {
+    class_t *cls = new class_t{};
+    cls->name = strdupSafe(name);
+    cls->desc = strdupSafe(desc);
+    cls->attr_num = static_cast<int>(attributes.size());
+    if (cls->attr_num > 0) {
+        attribute_t *arr = new attribute_t[cls->attr_num];
+        for (int i = 0; i < cls->attr_num; ++i) {
+            arr[i] = *attributes[i]; // copy value
+            auto it = lambdaMap_.find(attributes[i]);
+            if (it != lambdaMap_.end()) {
+                lambdaMap_[&arr[i]] = it->second;
+            }
+        }
+        cls->attr_list = arr;
+    } else {
+        cls->attr_list = nullptr;
+    }
+
+    // Append to linked list
+    if (classesHead_ == nullptr) {
+        classesHead_ = classesTail_ = cls;
+    } else {
+        classesTail_->next = cls;
+        classesTail_ = cls;
     }
 }
 
-int build_toolcalls(void) {
-    static bool build_once = false;
-    if (build_once) {
-        return 0;
-    }
-    add_class(build_light_class());
-    add_class(build_volume_class());
-    add_class(build_door_class());
-    build_once = true;
-    return 0;
-}
-
-static char *get_attr_type(attribute_type_t type) {
-    if (type == ATTRIBUTE_TYPE_BOOL) {
-        return "boolean";
-    }
-    if (type == ATTRIBUTE_TYPE_INT) {
-        return "integer";
-    }
-    if (type == ATTRIBUTE_TYPE_PARENT) {
-        return "object";
-    }
-    return "";
-}
-
-static int add_parent_attribute(cJSON *parent, attribute_t *attr) {
+// JSON helpers --------------------------------------------------------------
+int ToolCalling::addParentAttributeToJson(cJSON *parent, attribute_t *attr) {
     cJSON *properties = cJSON_CreateObject();
     cJSON_AddItemToObject(parent, "properties", properties);
     int require_num = 0;
@@ -204,10 +136,10 @@ static int add_parent_attribute(cJSON *parent, attribute_t *attr) {
         attribute_t *sub_attr = &attr->attr_list[i];
         cJSON *prop = cJSON_CreateObject();
         cJSON_AddItemToObject(properties, sub_attr->name, prop);
-        cJSON_AddStringToObject(prop, "type", get_attr_type(sub_attr->type));
+        cJSON_AddStringToObject(prop, "type", getAttrType(sub_attr->type));
         cJSON_AddStringToObject(prop, "description", sub_attr->desc);
         if (sub_attr->type == ATTRIBUTE_TYPE_PARENT) {
-            add_parent_attribute(prop, sub_attr);
+            addParentAttributeToJson(prop, sub_attr);
         }
         if (sub_attr->required) {
             require_num++;
@@ -226,8 +158,8 @@ static int add_parent_attribute(cJSON *parent, attribute_t *attr) {
     return 0;
 }
 
-int generate_toolcall_description_json(cJSON *root) {
-    if (classes == NULL) {
+int ToolCalling::generateDescriptionJson(cJSON *root) const {
+    if (classesHead_ == nullptr) {
         return 0;
     }
     cJSON_AddStringToObject(root, "type", "session.update");
@@ -243,8 +175,7 @@ int generate_toolcall_description_json(cJSON *root) {
     cJSON *tools = cJSON_CreateArray();
     cJSON_AddItemToObject(session, "tools", tools);
 
-    class_t *iter = classes;
-    while (iter) {
+    for (class_t *iter = classesHead_; iter; iter = iter->next) {
         cJSON *tool = cJSON_CreateObject();
         cJSON_AddItemToArray(tools, tool);
         cJSON_AddStringToObject(tool, "type", "function");
@@ -260,10 +191,10 @@ int generate_toolcall_description_json(cJSON *root) {
             attribute_t *attr = &iter->attr_list[i];
             cJSON *prop = cJSON_CreateObject();
             cJSON_AddItemToObject(properties, attr->name, prop);
-            cJSON_AddStringToObject(prop, "type", get_attr_type(attr->type));
+            cJSON_AddStringToObject(prop, "type", getAttrType(attr->type));
             cJSON_AddStringToObject(prop, "description", attr->desc);
             if (attr->type == ATTRIBUTE_TYPE_PARENT) {
-                add_parent_attribute(prop, attr);
+                addParentAttributeToJson(prop, attr);
             }
             if (attr->required) {
                 require_num++;
@@ -279,12 +210,12 @@ int generate_toolcall_description_json(cJSON *root) {
             }
             cJSON_AddItemToObject(parameters, "required", requiresArray);
         }
-        iter = iter->next;
     }
     return 0;
 }
 
-static int match_and_execute(cJSON *cur, attribute_t *attr) {
+// Execution helpers ---------------------------------------------------------
+static int matchAndExecute(cJSON *cur, attribute_t *attr) {
     cJSON *attr_value = cJSON_GetObjectItemCaseSensitive(cur, attr->name);
     if (!attr_value) {
         if (attr->required) {
@@ -308,7 +239,7 @@ static int match_and_execute(cJSON *cur, attribute_t *attr) {
         // Process nested attributes
         for (int j = 0; j < attr->attr_num; j++) {
             attribute_t *sub_attr = &attr->attr_list[j];
-            match_and_execute(attr_value, sub_attr);
+            matchAndExecute(attr_value, sub_attr);
         }
     } else {
         printf("Unhandled attribute type or invalid value for: %s\n", attr->name);
@@ -317,7 +248,7 @@ static int match_and_execute(cJSON *cur, attribute_t *attr) {
     return 1; // Success
 }
 
-int handle_received_json(const char *json_data) {
+int ToolCalling::handleReceivedJson(const char *json_data) const {
     cJSON *root = cJSON_Parse(json_data);
     if (!root) {
         printf("Error parsing JSON data\n");
@@ -353,18 +284,37 @@ int handle_received_json(const char *json_data) {
     }
 
     // Find the corresponding class and attributes
-    class_t *iter = classes;
-    while (iter) {
+    for (class_t *iter = classesHead_; iter; iter = iter->next) {
         if (strcmp(iter->name, name->valuestring) == 0) {
             for (int i = 0; i < iter->attr_num; i++) {
                 attribute_t *attr = &iter->attr_list[i];
-                match_and_execute(args_root, attr);
+                matchAndExecute(args_root, attr);
             }
         }
-        iter = iter->next;
     }
 
     cJSON_Delete(args_root);
     cJSON_Delete(root);
     return 0;
+}
+
+// Destructor ----------------------------------------------------------------
+ToolCalling::~ToolCalling() {
+    // Free all allocated memory for classes and attributes
+    for (class_t *cls = classesHead_; cls != nullptr;) {
+        for (int i = 0; i < cls->attr_num; ++i) {
+            attribute_t *attr = &cls->attr_list[i];
+            free(attr->name);
+            free(attr->desc);
+            if (attr->type == ATTRIBUTE_TYPE_PARENT && attr->attr_list) {
+                delete[] attr->attr_list; // Children were deep copied
+            }
+        }
+        delete[] cls->attr_list;
+        free(cls->name);
+        free(cls->desc);
+        class_t *next = cls->next;
+        delete cls;
+        cls = next;
+    }
 }
