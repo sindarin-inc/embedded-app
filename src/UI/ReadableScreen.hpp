@@ -67,6 +67,8 @@ public:
 
     auto getStream() -> std::shared_ptr<RendererStream> { return stream_; }
 
+    std::string getCurrentPageText() const { return renderer_.getCurrentPageText(); }
+
 protected:
     void setCurrentScreen(const std::shared_ptr<Screen> &screen);
 

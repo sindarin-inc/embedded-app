@@ -37,18 +37,20 @@ void ReadableScreen::beginOpenAITask(void *param) {
 
     // Forward page tool
     auto fwdAttr =
-        tool.createBoolAttribute("go", "Turn page forward", true, [screen](attribute_t *) {
+        tool.createBoolAttribute("go", "Turn page forward", true, [screen, openai](attribute_t *) {
         screen->processCommand(RemoteCommand::RIGHT);
         screen->render(screen->display_);
+        openai->sendText(screen->getCurrentPageText().c_str());
         return 0;
     });
     tool.registerTool("PageForward", "Turn page forward one page", {fwdAttr});
 
     // Backward page tool
     auto backAttr =
-        tool.createBoolAttribute("go", "Turn page backward", true, [screen](attribute_t *) {
+        tool.createBoolAttribute("go", "Turn page backward", true, [screen, openai](attribute_t *) {
         screen->processCommand(RemoteCommand::LEFT);
         screen->render(screen->display_);
+        openai->sendText(screen->getCurrentPageText().c_str());
         return 0;
     });
     tool.registerTool("PageBackward", "Turn page backward one page", {backAttr});
