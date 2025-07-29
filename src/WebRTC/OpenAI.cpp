@@ -25,30 +25,10 @@ static int webrtc_data_handler(esp_webrtc_custom_data_via_t via, uint8_t *data, 
                                void *ctx) {
     std::string jsonStr(reinterpret_cast<char *>(data), size);
 
-    ESP_LOGI(TAG, "Received json: %s", jsonStr.c_str());
+    ESP_LOGI(TAG, "<-- %s", jsonStr.c_str());
     if (g_toolCalling) {
         g_toolCalling->handleReceivedJson(jsonStr.c_str());
     }
-
-    cJSON *root = cJSON_Parse(jsonStr.c_str());
-    if (!root) {
-        return -1;
-    }
-    char *payload = cJSON_PrintUnformatted(root);
-    if (payload) {
-        char *text = strstr(payload, "transcript\":");
-        if (text) {
-            text += strlen("transcript\":");
-            char *start = strchr(text, '"');
-            char *end = start ? strchr(start + 1, '"') : NULL;
-            if (end) {
-                start++;
-                printf("Transcript: %.*s\n", (int)(end - start), start);
-            }
-        }
-        free(payload);
-    }
-    cJSON_Delete(root);
     return 0;
 }
 
@@ -125,25 +105,21 @@ int openai_send_text(const char *text) {
     return 0;
 }
 
-int openai_send_tool_output(const char *tool_call_id, const char *page_text) {
+auto OpenAI::sendToolOutput(const char *tool_call_id, const char *page_text,
+                            const char *original_json) -> int {
     if (webrtc == NULL) {
         ESP_LOGE(TAG, "WebRTC not started yet");
         return -1;
     }
-    cJSON *root = OpenAIAPI::buildFunctionCallOutput(tool_call_id, page_text);
+    std::string originalJsonStr = original_json ? original_json : "";
+    cJSON *root = OpenAIAPI::buildFunctionCallOutput(originalJsonStr, tool_call_id, page_text);
     char *send_text = cJSON_Print(root);
     if (send_text) {
-        printf("Sending tool output: %s\n", send_text);
-        esp_webrtc_send_custom_data(webrtc, ESP_WEBRTC_CUSTOM_DATA_VIA_DATA_CHANNEL,
-                                    (uint8_t *)send_text, strlen(send_text));
+        sendCustomData(send_text);
         free(send_text);
     }
     cJSON_Delete(root);
     return 0;
-}
-
-auto OpenAI::sendToolOutput(const char *tool_call_id, const char *page_text) -> int {
-    return openai_send_tool_output(tool_call_id, page_text);
 }
 
 int stop_webrtc(void) {
@@ -244,7 +220,24 @@ auto OpenAI::start() -> int {
 
 auto OpenAI::stop() -> int { return stop_webrtc(); }
 
-auto OpenAI::sendText(const char *text) -> int { return openai_send_text(text); }
+auto OpenAI::sendText(const char *text) -> int {
+    if (webrtc == NULL) {
+        ESP_LOGE(TAG, "WebRTC not started yet");
+        return -1;
+    }
+
+    cJSON *root = OpenAIAPI::buildConversationItemCreate(text);
+    int ret = 0;
+    char *send_text = cJSON_Print(root);
+    if (send_text) {
+        ret = sendCustomData(send_text);
+        free(send_text);
+    } else {
+        ret = -1;
+    }
+    cJSON_Delete(root);
+    return ret;
+}
 
 int openai_send_raw_json(const char *json) {
     if (webrtc == NULL) {
@@ -256,4 +249,24 @@ int openai_send_raw_json(const char *json) {
     return 0;
 }
 
-auto OpenAI::sendRawJson(const char *json) -> int { return openai_send_raw_json(json); }
+auto OpenAI::sendRawJson(const char *json) -> int { return sendCustomData(json); }
+
+// -------------------------------------------------------------------------
+//  Private helpers
+// -------------------------------------------------------------------------
+
+auto OpenAI::sendCustomData(const char *json) -> int {
+    if (webrtc == NULL) {
+        ESP_LOGE(TAG, "WebRTC not started yet");
+        return -1;
+    }
+    if (json == nullptr) {
+        ESP_LOGE(TAG, "Attempted to send null JSON");
+        return -1;
+    }
+
+    ESP_LOGI(TAG, "--> \n%s", json);
+    esp_webrtc_send_custom_data(webrtc, ESP_WEBRTC_CUSTOM_DATA_VIA_DATA_CHANNEL, (uint8_t *)json,
+                                strlen(json));
+    return 0;
+}
