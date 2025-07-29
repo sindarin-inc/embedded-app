@@ -72,8 +72,7 @@ cJSON *buildConversationItemCreate(const std::string &text, const std::string &p
 //     }
 //   }
 
-cJSON *buildFunctionCallOutput(const std::string &originalToolJson, const std::string &callId,
-                               const std::string &output,
+cJSON *buildFunctionCallOutput(const std::string &callId, const std::string &output,
                                const std::vector<std::string> &modalities) {
     cJSON *root = cJSON_CreateObject();
     if (!root) {

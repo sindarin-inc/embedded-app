@@ -47,7 +47,7 @@ struct class_t {
 
 class ToolCalling {
 public:
-    using ControlLambda = std::function<int(attribute_t *, const char *, const char *)>;
+    using ControlLambda = std::function<int(attribute_t *, const char *)>;
 
     ToolCalling() = default;
     ~ToolCalling();
@@ -79,7 +79,7 @@ public:
 
 private:
     static std::unordered_map<attribute_t *, ControlLambda> lambdaMap_;
-    friend int matchAndExecute(cJSON *, attribute_t *, const char *, const char *);
+    friend int matchAndExecute(cJSON *, attribute_t *, const char *);
 
     class_t *classesHead_ = nullptr;
     class_t *classesTail_ = nullptr;

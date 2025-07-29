@@ -22,10 +22,8 @@ cJSON *buildConversationItemCreate(const std::string &text, const std::string &p
 
 // Build a `response.create` payload that contains both the original tool call
 // JSON (as the first element of the input array) and a single
-// `function_call_output` entry. `originalToolJson` **must** contain a valid
-// JSON string representing the original function call request.
-cJSON *buildFunctionCallOutput(const std::string &originalToolJson, const std::string &callId,
-                               const std::string &output,
+// `function_call_output` entry.
+cJSON *buildFunctionCallOutput(const std::string &callId, const std::string &output,
                                const std::vector<std::string> &modalities = {"text", "audio"});
 
 // Build the request body used when creating a realtime session via
