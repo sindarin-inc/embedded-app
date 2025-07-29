@@ -16,6 +16,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "WebRTC/OpenAIAPI.hpp"
+
 constexpr const char *TAG = "OpenAISignaling";
 
 // Prefer to use mini model currently
@@ -76,13 +78,7 @@ static void get_ephemeral_token(openai_signaling_t *sig, const char *token, cons
         auth,
         NULL,
     };
-    cJSON *root = cJSON_CreateObject();
-    cJSON_AddStringToObject(root, "model", OPENAI_REALTIME_MODEL);
-    cJSON *modalities = cJSON_CreateArray();
-    cJSON_AddItemToArray(modalities, cJSON_CreateString("text"));
-    cJSON_AddItemToArray(modalities, cJSON_CreateString("audio"));
-    cJSON_AddItemToObject(root, "modalities", modalities);
-    cJSON_AddStringToObject(root, "voice", voice);
+    cJSON *root = OpenAIAPI::buildRealtimeSessionRequest(OPENAI_REALTIME_MODEL, voice);
     char *json_string = cJSON_Print(root);
     if (json_string) {
         https_post("https://api.openai.com/v1/realtime/sessions", header, json_string, NULL,
