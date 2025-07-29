@@ -15,18 +15,18 @@ public:
     auto stop() -> int;
 
     auto sendText(const char *text) -> int;
-    auto sendToolOutput(const char *tool_call_id, const char *page_text, const char *original_json)
-        -> int;
-    auto sendRawJson(const char *json) -> int;
+    auto sendToolOutput(const char *tool_call_id, const char *page_text) -> int;
+    auto sendCustomData(const char *json) -> int;
 
     // Expose ToolCalling so callers can register their own tools
     ToolCalling &toolCalling() { return toolCalling_; }
 
 private:
+    esp_webrtc_handle_t webrtc_ = nullptr;
     MediaSystem mediaSystem_;
-    esp_webrtc_handle_t webrtc_ = NULL;
     ToolCalling toolCalling_;
 
-    // Internal helper that logs and sends JSON over the data channel.
-    auto sendCustomData(const char *json) -> int;
+    static auto webRTCDataHandler(esp_webrtc_custom_data_via_t via, uint8_t *data, int size,
+                                  void *ctx) -> int;
+    static auto webRTCEventHandler(esp_webrtc_event_t *event, void *ctx) -> int;
 };

@@ -36,45 +36,32 @@ void ReadableScreen::beginOpenAITask(void *param) {
     auto &tool = openai->toolCalling();
 
     // Forward page tool
-    auto fwdAttr = tool.createBoolAttribute(
-        "go", "Turn page forward and retrieve the page text", true,
-        [screen, openai](attribute_t * /*attr*/, const char *callId, const char *json) {
+    auto fwdAttr =
+        tool.createBoolAttribute("go", "Turn page forward and retrieve the page text", true,
+                                 [screen, openai](attribute_t * /*attr*/, const char *callId) {
         screen->processCommand(RemoteCommand::RIGHT);
         screen->render(screen->display_);
-        // if (json) {
-        //     openai->sendRawJson(json);
-        // }
-        openai->sendToolOutput(callId ? callId : "", screen->getCurrentPageText().c_str(),
-                               json ? json : "");
+        openai->sendToolOutput(callId ? callId : "", screen->getCurrentPageText().c_str());
         return 0;
     });
     tool.registerTool("PageForward", "Turn page forward one page", {fwdAttr});
 
     // Backward page tool
-    auto backAttr = tool.createBoolAttribute(
-        "go", "Turn page backward and retrieve the page text", true,
-        [screen, openai](attribute_t * /*attr*/, const char *callId, const char *json) {
+    auto backAttr =
+        tool.createBoolAttribute("go", "Turn page backward and retrieve the page text", true,
+                                 [screen, openai](attribute_t * /*attr*/, const char *callId) {
         screen->processCommand(RemoteCommand::LEFT);
         screen->render(screen->display_);
-        // if (json) {
-        //     openai->sendRawJson(json);
-        // }
-        openai->sendToolOutput(callId ? callId : "", screen->getCurrentPageText().c_str(),
-                               json ? json : "");
+        openai->sendToolOutput(callId ? callId : "", screen->getCurrentPageText().c_str());
         return 0;
     });
     tool.registerTool("PageBackward", "Turn page backward one page", {backAttr});
 
     // Get current page text tool
-    auto getPageAttr = tool.createBoolAttribute(
-        "go", "Get the current page text without turning pages", true,
-        [screen, openai](attribute_t * /*attr*/, const char *callId, const char *json) {
-        // Simply return current page text
-        // if (json) {
-        //     openai->sendRawJson(json);
-        // }
-        openai->sendToolOutput(callId ? callId : "", screen->getCurrentPageText().c_str(),
-                               json ? json : "");
+    auto getPageAttr =
+        tool.createBoolAttribute("go", "Get the current page text without turning pages", true,
+                                 [screen, openai](attribute_t * /*attr*/, const char *callId) {
+        openai->sendToolOutput(callId ? callId : "", screen->getCurrentPageText().c_str());
         return 0;
     });
     tool.registerTool("GetCurrentPage", "Retrieve the current page text", {getPageAttr});

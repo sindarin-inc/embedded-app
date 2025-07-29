@@ -208,7 +208,7 @@ int ToolCalling::generateDescriptionJson(cJSON *root) const {
 }
 
 // Execution helpers ---------------------------------------------------------
-int matchAndExecute(cJSON *cur, attribute_t *attr, const char *callId, const char *json_data) {
+int matchAndExecute(cJSON *cur, attribute_t *attr, const char *callId) {
     cJSON *attr_value = cJSON_GetObjectItemCaseSensitive(cur, attr->name);
     if (!attr_value) {
         if (attr->required) {
@@ -222,19 +222,19 @@ int matchAndExecute(cJSON *cur, attribute_t *attr, const char *callId, const cha
         attr->b_state = cJSON_IsTrue(attr_value);
         if (ToolCalling::lambdaMap_.count(attr) > 0) {
             ESP_LOGI(TAG, "Calling lambda for %s", attr->name);
-            ToolCalling::lambdaMap_[attr](attr, callId, json_data);
+            ToolCalling::lambdaMap_[attr](attr, callId);
         }
     } else if (attr->type == ATTRIBUTE_TYPE_INT && cJSON_IsNumber(attr_value)) {
         attr->i_value = attr_value->valueint;
         if (ToolCalling::lambdaMap_.count(attr) > 0) {
             ESP_LOGI(TAG, "Calling lambda for %s", attr->name);
-            ToolCalling::lambdaMap_[attr](attr, callId, json_data);
+            ToolCalling::lambdaMap_[attr](attr, callId);
         }
     } else if (attr->type == ATTRIBUTE_TYPE_PARENT && cJSON_IsObject(attr_value)) {
         // Process nested attributes
         for (int j = 0; j < attr->attr_num; j++) {
             attribute_t *sub_attr = &attr->attr_list[j];
-            matchAndExecute(attr_value, sub_attr, callId, json_data);
+            matchAndExecute(attr_value, sub_attr, callId);
         }
     } else {
         printf("Unhandled attribute type or invalid value for: %s\n", attr->name);
@@ -282,7 +282,7 @@ int ToolCalling::handleReceivedJson(const char *json_data) const {
         if (strcmp(iter->name, name->valuestring) == 0) {
             for (int i = 0; i < iter->attr_num; i++) {
                 attribute_t *attr = &iter->attr_list[i];
-                matchAndExecute(args_root, attr, callIdStr.c_str(), json_data);
+                matchAndExecute(args_root, attr, callIdStr.c_str());
             }
         }
     }
