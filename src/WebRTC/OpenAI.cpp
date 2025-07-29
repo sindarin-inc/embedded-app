@@ -6,6 +6,7 @@
 #include <esp_peer_default.h>
 #include <string>
 
+#include "WebRTC/OpenAIAPI.hpp"
 #include "WebRTC/OpenAISignaling.hpp"
 #include "WebRTC/ToolCalling.hpp"
 
@@ -56,17 +57,7 @@ static int send_response(char *text) {
         ESP_LOGE(TAG, "WebRTC not started yet");
         return -1;
     }
-    cJSON *root = cJSON_CreateObject();
-    if (root) {
-        cJSON_AddStringToObject(root, "type", "response.create");
-        cJSON *response = cJSON_CreateObject();
-        cJSON *modalities = cJSON_CreateArray();
-        cJSON_AddItemToArray(modalities, cJSON_CreateString("text"));
-        cJSON_AddItemToArray(modalities, cJSON_CreateString("audio"));
-        cJSON_AddItemToObject(response, "modalities", modalities);
-        cJSON_AddStringToObject(response, "instructions", text);
-        cJSON_AddItemToObject(root, "response", response);
-    }
+    cJSON *root = OpenAIAPI::buildResponseCreate(text);
     // Print the initial JSON structure
     char *send_text = cJSON_Print(root);
     if (send_text) {
@@ -120,24 +111,7 @@ int openai_send_text(const char *text) {
         ESP_LOGE(TAG, "WebRTC not started yet");
         return -1;
     }
-    cJSON *root = cJSON_CreateObject();
-    if (root) {
-        cJSON_AddStringToObject(root, "type", "conversation.item.create");
-        cJSON_AddNullToObject(root, "previous_item_id");
-        cJSON *item = cJSON_CreateObject();
-        if (item) {
-            cJSON_AddStringToObject(item, "type", "message");
-            cJSON_AddStringToObject(item, "role", "user");
-        }
-        cJSON *contentArray = cJSON_CreateArray();
-        cJSON *contentItem = cJSON_CreateObject();
-        cJSON_AddStringToObject(contentItem, "type", "input_text");
-        cJSON_AddStringToObject(contentItem, "text", text);
-        cJSON_AddItemToArray(contentArray, contentItem);
-        cJSON_AddItemToObject(item, "content", contentArray);
-        // Add the item to the root object
-        cJSON_AddItemToObject(root, "item", item);
-    }
+    cJSON *root = OpenAIAPI::buildConversationItemCreate(text);
     // Print the initial JSON structure
     char *send_text = cJSON_Print(root);
     if (send_text) {
@@ -156,37 +130,7 @@ int openai_send_tool_output(const char *tool_call_id, const char *page_text) {
         ESP_LOGE(TAG, "WebRTC not started yet");
         return -1;
     }
-    cJSON *root = cJSON_CreateObject();
-    if (root) {
-        // Top-level type indicating a response
-        cJSON_AddStringToObject(root, "type", "response.create");
-
-        // Build the response object
-        cJSON *response = cJSON_CreateObject();
-
-        cJSON *modalities = cJSON_CreateArray();
-        cJSON_AddItemToArray(modalities, cJSON_CreateString("text"));
-        cJSON_AddItemToArray(modalities, cJSON_CreateString("audio"));
-        cJSON_AddItemToObject(response, "modalities", modalities);
-
-        // Build the inputs array which will contain the tool output message
-        cJSON *inputs = cJSON_CreateArray();
-
-        // Build the tool_output entry
-        cJSON *tool_output = cJSON_CreateObject();
-        cJSON_AddStringToObject(tool_output, "type", "function_call_output");
-        cJSON_AddStringToObject(tool_output, "call_id", tool_call_id);
-        cJSON_AddStringToObject(tool_output, "output", page_text);
-
-        // Add tool_output to inputs array
-        cJSON_AddItemToArray(inputs, tool_output);
-
-        // Attach inputs array to response object
-        cJSON_AddItemToObject(response, "input", inputs);
-
-        // Attach response to root
-        cJSON_AddItemToObject(root, "response", response);
-    }
+    cJSON *root = OpenAIAPI::buildFunctionCallOutput(tool_call_id, page_text);
     char *send_text = cJSON_Print(root);
     if (send_text) {
         printf("Sending tool output: %s\n", send_text);
