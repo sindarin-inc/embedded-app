@@ -2,6 +2,7 @@
 
 #include <cJSON.h>
 #include <functional>
+#include <string>
 #include <unordered_map>
 #include <vector>
 
@@ -46,7 +47,7 @@ struct class_t {
 
 class ToolCalling {
 public:
-    using ControlLambda = std::function<int(attribute_t *)>;
+    using ControlLambda = std::function<int(attribute_t *, const char *, const char *)>;
 
     ToolCalling() = default;
     ~ToolCalling();
@@ -67,6 +68,10 @@ public:
     // Register a full tool (function) composed of attributes
     void registerTool(const char *name, const char *desc,
                       const std::vector<attribute_t *> &attributes);
+    void registerTool(const char *name, const char *desc,
+                      std::initializer_list<attribute_t *> attributes) {
+        registerTool(name, desc, std::vector<attribute_t *>{attributes});
+    }
 
     // Runtime helpers ---------------------------------------------------
     int generateDescriptionJson(cJSON *root) const;
@@ -74,7 +79,7 @@ public:
 
 private:
     static std::unordered_map<attribute_t *, ControlLambda> lambdaMap_;
-    static int dispatch(attribute_t *attr);
+    friend int matchAndExecute(cJSON *, attribute_t *, const char *, const char *);
 
     class_t *classesHead_ = nullptr;
     class_t *classesTail_ = nullptr;

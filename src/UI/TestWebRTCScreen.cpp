@@ -35,17 +35,17 @@ static void beginWebRtcTask(void * /*param*/) {
 
     // Light tool ---------------------------------------------------------
     auto redAttr = tool.createIntAttribute("red", "Red value in the range of 0-255", true,
-                                           [](attribute_t *attr) {
+                                           [](attribute_t *attr, const char *, const char *) {
         printf("Red set to %d\n", attr->i_value);
         return 0;
     });
     auto greenAttr = tool.createIntAttribute("green", "Green value in the range of 0-255", true,
-                                             [](attribute_t *attr) {
+                                             [](attribute_t *attr, const char *, const char *) {
         printf("Green set to %d\n", attr->i_value);
         return 0;
     });
     auto blueAttr = tool.createIntAttribute("blue", "Blue value in the range of 0-255", true,
-                                            [](attribute_t *attr) {
+                                            [](attribute_t *attr, const char *, const char *) {
         printf("Blue set to %d\n", attr->i_value);
         return 0;
     });
@@ -53,7 +53,7 @@ static void beginWebRtcTask(void * /*param*/) {
         "LightColor", "Set light color of red, green and blue", {redAttr, greenAttr, blueAttr});
 
     auto stateAttr = tool.createBoolAttribute("LightState", "New light state (true or false)", true,
-                                              [](attribute_t *attr) {
+                                              [](attribute_t *attr, const char *, const char *) {
         printf("Light set to %s\n", attr->b_state ? "ON" : "OFF");
         return 0;
     });
@@ -61,15 +61,15 @@ static void beginWebRtcTask(void * /*param*/) {
 
     // Speaker volume tool ------------------------------------------------
     auto volumeAttr = tool.createIntAttribute("volume", "Speaker volume range 0-100", true,
-                                              [](attribute_t *attr) {
+                                              [](attribute_t *attr, const char *, const char *) {
         printf("Volume set to %d\n", attr->i_value);
         return 0;
     });
     tool.registerTool("SetVolume", "Changes speaker volume", {volumeAttr});
 
     // Door tool ----------------------------------------------------------
-    auto doorAttr =
-        tool.createBoolAttribute("open", "Open or close the door", true, [](attribute_t *attr) {
+    auto doorAttr = tool.createBoolAttribute("open", "Open or close the door", true,
+                                             [](attribute_t *attr, const char *, const char *) {
         printf("Door is %s\n", attr->b_state ? "Opened" : "Closed");
         return 0;
     });
