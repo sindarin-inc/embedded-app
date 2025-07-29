@@ -63,31 +63,30 @@ cJSON *buildConversationItemCreate(const std::string &text, const std::string &p
     return root;
 }
 
-cJSON *buildFunctionCallOutput(const std::string &callId, const std::string &output,
+// {
+//     "type": "conversation.item.create",
+//     "item": {
+//       "type": "function_call_output",
+//       "call_id": "call_sHlR7iaFwQ2YQOqm",
+//       "output": "{\"horoscope\": \"You will soon meet a new friend.\"}"
+//     }
+//   }
+
+cJSON *buildFunctionCallOutput(const std::string &originalToolJson, const std::string &callId,
+                               const std::string &output,
                                const std::vector<std::string> &modalities) {
     cJSON *root = cJSON_CreateObject();
     if (!root) {
         return nullptr;
     }
-    cJSON_AddStringToObject(root, "type", "response.create");
+    cJSON_AddStringToObject(root, "type", "conversation.item.create");
 
-    cJSON *response = cJSON_CreateObject();
-    cJSON_AddItemToObject(root, "response", response);
+    cJSON *item = cJSON_CreateObject();
+    cJSON_AddItemToObject(root, "item", item);
 
-    // modalities
-    cJSON_AddItemToObject(response, "modalities", createModalitiesArray(modalities));
-
-    // input array
-    cJSON *inputArr = cJSON_CreateArray();
-    cJSON_AddItemToObject(response, "input", inputArr);
-
-    // function_call_output object
-    cJSON *toolOutput = cJSON_CreateObject();
-    cJSON_AddStringToObject(toolOutput, "type", "function_call_output");
-    cJSON_AddStringToObject(toolOutput, "call_id", callId.c_str());
-    cJSON_AddStringToObject(toolOutput, "output", output.c_str());
-
-    cJSON_AddItemToArray(inputArr, toolOutput);
+    cJSON_AddStringToObject(item, "type", "function_call_output");
+    cJSON_AddStringToObject(item, "call_id", callId.c_str());
+    cJSON_AddStringToObject(item, "output", output.c_str());
 
     return root;
 }

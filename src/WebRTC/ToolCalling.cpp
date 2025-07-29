@@ -3,8 +3,11 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <esp_log.h>
 #include <unordered_map>
 #include <vector>
+
+constexpr const char *TAG = "OpenAI";
 
 #define ELEMS(a) (sizeof(a) / sizeof(a[0]))
 
@@ -218,11 +221,13 @@ int matchAndExecute(cJSON *cur, attribute_t *attr, const char *callId, const cha
     if (attr->type == ATTRIBUTE_TYPE_BOOL && cJSON_IsBool(attr_value)) {
         attr->b_state = cJSON_IsTrue(attr_value);
         if (ToolCalling::lambdaMap_.count(attr) > 0) {
+            ESP_LOGI(TAG, "Calling lambda for %s", attr->name);
             ToolCalling::lambdaMap_[attr](attr, callId, json_data);
         }
     } else if (attr->type == ATTRIBUTE_TYPE_INT && cJSON_IsNumber(attr_value)) {
         attr->i_value = attr_value->valueint;
         if (ToolCalling::lambdaMap_.count(attr) > 0) {
+            ESP_LOGI(TAG, "Calling lambda for %s", attr->name);
             ToolCalling::lambdaMap_[attr](attr, callId, json_data);
         }
     } else if (attr->type == ATTRIBUTE_TYPE_PARENT && cJSON_IsObject(attr_value)) {
@@ -251,12 +256,6 @@ int ToolCalling::handleReceivedJson(const char *json_data) const {
         cJSON_Delete(root);
         return 0;
     }
-    char *payload = cJSON_PrintUnformatted(root);
-    if (payload) {
-        printf("Function Call %s\n", payload);
-        free(payload);
-    }
-
     const cJSON *name = cJSON_GetObjectItemCaseSensitive(root, "name");
     const cJSON *arguments = cJSON_GetObjectItemCaseSensitive(root, "arguments");
     const cJSON *tool_call_id = cJSON_GetObjectItemCaseSensitive(root, "call_id");

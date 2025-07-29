@@ -44,7 +44,8 @@ void ReadableScreen::beginOpenAITask(void *param) {
         // if (json) {
         //     openai->sendRawJson(json);
         // }
-        openai->sendToolOutput(callId ? callId : "", screen->getCurrentPageText().c_str());
+        openai->sendToolOutput(callId ? callId : "", screen->getCurrentPageText().c_str(),
+                               json ? json : "");
         return 0;
     });
     tool.registerTool("PageForward", "Turn page forward one page", {fwdAttr});
@@ -58,7 +59,8 @@ void ReadableScreen::beginOpenAITask(void *param) {
         // if (json) {
         //     openai->sendRawJson(json);
         // }
-        openai->sendToolOutput(callId ? callId : "", screen->getCurrentPageText().c_str());
+        openai->sendToolOutput(callId ? callId : "", screen->getCurrentPageText().c_str(),
+                               json ? json : "");
         return 0;
     });
     tool.registerTool("PageBackward", "Turn page backward one page", {backAttr});
@@ -71,7 +73,8 @@ void ReadableScreen::beginOpenAITask(void *param) {
         // if (json) {
         //     openai->sendRawJson(json);
         // }
-        openai->sendToolOutput(callId ? callId : "", screen->getCurrentPageText().c_str());
+        openai->sendToolOutput(callId ? callId : "", screen->getCurrentPageText().c_str(),
+                               json ? json : "");
         return 0;
     });
     tool.registerTool("GetCurrentPage", "Retrieve the current page text", {getPageAttr});
