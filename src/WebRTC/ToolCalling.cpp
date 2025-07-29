@@ -37,14 +37,6 @@ char *ToolCalling::getAttrType(attribute_type_t type) {
     }
 }
 
-int ToolCalling::dispatch(attribute_t *attr) {
-    auto it = lambdaMap_.find(attr);
-    if (it != lambdaMap_.end()) {
-        return it->second(attr);
-    }
-    return 0;
-}
-
 // Attribute creation --------------------------------------------------------
 attribute_t *ToolCalling::createBoolAttribute(const char *name, const char *desc, bool required,
                                               ControlLambda cb) {
@@ -53,7 +45,6 @@ attribute_t *ToolCalling::createBoolAttribute(const char *name, const char *desc
     attr->desc = strdupSafe(desc);
     attr->type = ATTRIBUTE_TYPE_BOOL;
     attr->required = required;
-    attr->control = dispatch;
     lambdaMap_[attr] = std::move(cb);
     return attr;
 }
@@ -65,7 +56,6 @@ attribute_t *ToolCalling::createIntAttribute(const char *name, const char *desc,
     attr->desc = strdupSafe(desc);
     attr->type = ATTRIBUTE_TYPE_INT;
     attr->required = required;
-    attr->control = dispatch;
     lambdaMap_[attr] = std::move(cb);
     return attr;
 }
@@ -215,7 +205,7 @@ int ToolCalling::generateDescriptionJson(cJSON *root) const {
 }
 
 // Execution helpers ---------------------------------------------------------
-static int matchAndExecute(cJSON *cur, attribute_t *attr) {
+int matchAndExecute(cJSON *cur, attribute_t *attr, const char *callId, const char *json_data) {
     cJSON *attr_value = cJSON_GetObjectItemCaseSensitive(cur, attr->name);
     if (!attr_value) {
         if (attr->required) {
@@ -227,19 +217,19 @@ static int matchAndExecute(cJSON *cur, attribute_t *attr) {
     // Process based on attribute type
     if (attr->type == ATTRIBUTE_TYPE_BOOL && cJSON_IsBool(attr_value)) {
         attr->b_state = cJSON_IsTrue(attr_value);
-        if (attr->control) {
-            attr->control(attr);
+        if (ToolCalling::lambdaMap_.count(attr) > 0) {
+            ToolCalling::lambdaMap_[attr](attr, callId, json_data);
         }
     } else if (attr->type == ATTRIBUTE_TYPE_INT && cJSON_IsNumber(attr_value)) {
         attr->i_value = attr_value->valueint;
-        if (attr->control) {
-            attr->control(attr);
+        if (ToolCalling::lambdaMap_.count(attr) > 0) {
+            ToolCalling::lambdaMap_[attr](attr, callId, json_data);
         }
     } else if (attr->type == ATTRIBUTE_TYPE_PARENT && cJSON_IsObject(attr_value)) {
         // Process nested attributes
         for (int j = 0; j < attr->attr_num; j++) {
             attribute_t *sub_attr = &attr->attr_list[j];
-            matchAndExecute(attr_value, sub_attr);
+            matchAndExecute(attr_value, sub_attr, callId, json_data);
         }
     } else {
         printf("Unhandled attribute type or invalid value for: %s\n", attr->name);
@@ -269,6 +259,11 @@ int ToolCalling::handleReceivedJson(const char *json_data) const {
 
     const cJSON *name = cJSON_GetObjectItemCaseSensitive(root, "name");
     const cJSON *arguments = cJSON_GetObjectItemCaseSensitive(root, "arguments");
+    const cJSON *tool_call_id = cJSON_GetObjectItemCaseSensitive(root, "call_id");
+    std::string callIdStr;
+    if (cJSON_IsString(tool_call_id) && tool_call_id->valuestring) {
+        callIdStr = tool_call_id->valuestring;
+    }
     if (!cJSON_IsString(name) || !name->valuestring || !cJSON_IsString(arguments) ||
         !arguments->valuestring) {
         printf("Invalid JSON format\n");
@@ -288,7 +283,7 @@ int ToolCalling::handleReceivedJson(const char *json_data) const {
         if (strcmp(iter->name, name->valuestring) == 0) {
             for (int i = 0; i < iter->attr_num; i++) {
                 attribute_t *attr = &iter->attr_list[i];
-                matchAndExecute(args_root, attr);
+                matchAndExecute(args_root, attr, callIdStr.c_str(), json_data);
             }
         }
     }

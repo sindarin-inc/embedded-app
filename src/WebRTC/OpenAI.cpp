@@ -4,6 +4,7 @@
 #include <cstring>
 #include <esp_log.h>
 #include <esp_peer_default.h>
+#include <string>
 
 #include "WebRTC/OpenAISignaling.hpp"
 #include "WebRTC/ToolCalling.hpp"
@@ -21,11 +22,14 @@ static ToolCalling *g_toolCalling = nullptr; // Global pointer used by C callbac
 
 static int webrtc_data_handler(esp_webrtc_custom_data_via_t via, uint8_t *data, int size,
                                void *ctx) {
+    std::string jsonStr(reinterpret_cast<char *>(data), size);
+
+    ESP_LOGI(TAG, "Received json: %s", jsonStr.c_str());
     if (g_toolCalling) {
-        g_toolCalling->handleReceivedJson((const char *)data);
+        g_toolCalling->handleReceivedJson(jsonStr.c_str());
     }
 
-    cJSON *root = cJSON_Parse((const char *)data);
+    cJSON *root = cJSON_Parse(jsonStr.c_str());
     if (!root) {
         return -1;
     }
@@ -147,6 +151,57 @@ int openai_send_text(const char *text) {
     return 0;
 }
 
+int openai_send_tool_output(const char *tool_call_id, const char *page_text) {
+    if (webrtc == NULL) {
+        ESP_LOGE(TAG, "WebRTC not started yet");
+        return -1;
+    }
+    cJSON *root = cJSON_CreateObject();
+    if (root) {
+        // Top-level type indicating a response
+        cJSON_AddStringToObject(root, "type", "response.create");
+
+        // Build the response object
+        cJSON *response = cJSON_CreateObject();
+
+        cJSON *modalities = cJSON_CreateArray();
+        cJSON_AddItemToArray(modalities, cJSON_CreateString("text"));
+        cJSON_AddItemToArray(modalities, cJSON_CreateString("audio"));
+        cJSON_AddItemToObject(response, "modalities", modalities);
+
+        // Build the inputs array which will contain the tool output message
+        cJSON *inputs = cJSON_CreateArray();
+
+        // Build the tool_output entry
+        cJSON *tool_output = cJSON_CreateObject();
+        cJSON_AddStringToObject(tool_output, "type", "function_call_output");
+        cJSON_AddStringToObject(tool_output, "call_id", tool_call_id);
+        cJSON_AddStringToObject(tool_output, "output", page_text);
+
+        // Add tool_output to inputs array
+        cJSON_AddItemToArray(inputs, tool_output);
+
+        // Attach inputs array to response object
+        cJSON_AddItemToObject(response, "input", inputs);
+
+        // Attach response to root
+        cJSON_AddItemToObject(root, "response", response);
+    }
+    char *send_text = cJSON_Print(root);
+    if (send_text) {
+        printf("Sending tool output: %s\n", send_text);
+        esp_webrtc_send_custom_data(webrtc, ESP_WEBRTC_CUSTOM_DATA_VIA_DATA_CHANNEL,
+                                    (uint8_t *)send_text, strlen(send_text));
+        free(send_text);
+    }
+    cJSON_Delete(root);
+    return 0;
+}
+
+auto OpenAI::sendToolOutput(const char *tool_call_id, const char *page_text) -> int {
+    return openai_send_tool_output(tool_call_id, page_text);
+}
+
 int stop_webrtc(void) {
     if (webrtc) {
         esp_webrtc_handle_t handle = webrtc;
@@ -246,3 +301,15 @@ auto OpenAI::start() -> int {
 auto OpenAI::stop() -> int { return stop_webrtc(); }
 
 auto OpenAI::sendText(const char *text) -> int { return openai_send_text(text); }
+
+int openai_send_raw_json(const char *json) {
+    if (webrtc == NULL) {
+        return -1;
+    }
+    printf("Sending raw json: %s\n", json);
+    esp_webrtc_send_custom_data(webrtc, ESP_WEBRTC_CUSTOM_DATA_VIA_DATA_CHANNEL, (uint8_t *)json,
+                                strlen(json));
+    return 0;
+}
+
+auto OpenAI::sendRawJson(const char *json) -> int { return openai_send_raw_json(json); }

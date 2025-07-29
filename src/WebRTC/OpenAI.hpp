@@ -15,6 +15,8 @@ public:
     auto stop() -> int;
 
     auto sendText(const char *text) -> int;
+    auto sendToolOutput(const char *tool_call_id, const char *page_text) -> int;
+    auto sendRawJson(const char *json) -> int;
 
     // Expose ToolCalling so callers can register their own tools
     ToolCalling &toolCalling() { return toolCalling_; }
