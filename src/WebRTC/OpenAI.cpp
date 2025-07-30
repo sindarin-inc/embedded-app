@@ -43,10 +43,18 @@ int OpenAI::webRTCEventHandler(esp_webrtc_event_t *event, void *ctx) {
     }
     if (event->type == ESP_WEBRTC_EVENT_DATA_CHANNEL_OPENED) {
         // Send initial prompt
-        cJSON *root = OpenAIAPI::buildResponseCreate(
-            "You are helpful and have some tools installed. In the tools you have the ability to "
-            "control a light bulb and change speaker volume. Say 'How can I help?");
-        char *send_text = cJSON_Print(root);
+        auto event = OpenAIAPI::ResponseCreateEvent{
+            .response =
+                {
+                    .modalities = {"text", "audio"},
+                    .instructions =
+                        "You are helpful and have some tools installed. In the tools you have the "
+                        "ability to control a light bulb and change speaker volume. Say 'How can I "
+                        "help?'",
+                },
+        };
+        cJSON *root = event.toJson();
+        char *send_text = cJSON_PrintUnformatted(root);
         if (send_text) {
             openai->sendCustomData(send_text);
             free(send_text);
@@ -56,7 +64,7 @@ int OpenAI::webRTCEventHandler(esp_webrtc_event_t *event, void *ctx) {
         // TODO: Configure tool calling here
         root = cJSON_CreateObject();
         openai->toolCalling_.generateDescriptionJson(root);
-        char *json_string = cJSON_Print(root);
+        char *json_string = cJSON_PrintUnformatted(root);
         if (json_string) {
             openai->sendCustomData(json_string);
             free(json_string);
@@ -71,7 +79,16 @@ auto OpenAI::sendToolOutput(const char *tool_call_id, const char *page_text) -> 
         ESP_LOGE(TAG, "WebRTC not started yet");
         return -1;
     }
-    cJSON *root = OpenAIAPI::buildFunctionCallOutput(tool_call_id, page_text);
+
+    OpenAIAPI::ConversationItemCreateEvent event = {
+        .item =
+            {
+                .type = "function_call_output",
+                .callId = tool_call_id,
+                .output = page_text,
+            },
+    };
+    cJSON *root = event.toJson();
     char *send_text = cJSON_Print(root);
     if (send_text) {
         sendCustomData(send_text);
@@ -178,8 +195,16 @@ auto OpenAI::sendText(const char *text) -> int {
         return -1;
     }
 
-    cJSON *root = OpenAIAPI::buildConversationItemCreate(text);
+    OpenAIAPI::ConversationItemCreateEvent event = {
+        .item =
+            {
+                .type = "message",
+                .role = "user",
+                .content = {{.type = "input_text", .text = text}},
+            },
+    };
     int ret = 0;
+    cJSON *root = event.toJson();
     char *send_text = cJSON_Print(root);
     if (send_text) {
         ret = sendCustomData(send_text);

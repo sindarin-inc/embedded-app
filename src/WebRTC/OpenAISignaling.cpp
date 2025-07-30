@@ -78,7 +78,12 @@ static void get_ephemeral_token(openai_signaling_t *sig, const char *token, cons
         auth,
         NULL,
     };
-    cJSON *root = OpenAIAPI::buildRealtimeSessionRequest(OPENAI_REALTIME_MODEL, voice);
+    OpenAIAPI::RealtimeSessionRequest request = {
+        .model = OPENAI_REALTIME_MODEL,
+        .voice = voice,
+        .modalities = {"text", "audio"},
+    };
+    cJSON *root = request.toJson();
     char *json_string = cJSON_Print(root);
     if (json_string) {
         https_post("https://api.openai.com/v1/realtime/sessions", header, json_string, NULL,
