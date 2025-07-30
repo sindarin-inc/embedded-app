@@ -147,11 +147,10 @@ struct Tool {
         cJSON_AddStringToObject(tool, "type", "function");
         cJSON_AddStringToObject(tool, "name", name);
         cJSON_AddStringToObject(tool, "description", description);
-        cJSON *parametersArray = cJSON_CreateArray();
-        for (const auto &parameter : parameters) {
-            cJSON_AddItemToArray(parametersArray, parameter.toJson());
-        }
-        cJSON_AddItemToObject(tool, "parameters", parametersArray);
+        // Use a single parameters object instead of an array (per OpenAI spec)
+        cJSON *parametersObj =
+            parameters.empty() ? cJSON_CreateObject() : parameters.front().toJson();
+        cJSON_AddItemToObject(tool, "parameters", parametersObj);
         return tool;
     }
 };
@@ -159,17 +158,36 @@ struct Tool {
 // https://platform.openai.com/docs/api-reference/realtime-client-events/session/update
 struct SessionUpdateEvent {
     struct Session {
-        const std::vector<Tool> tools;
+        std::vector<const char *> modalities;
+        // If nullptr, this will be serialized as JSON null
+        const char *inputAudioTranscription;
+        std::vector<Tool> tools;
         const char *toolChoice;
 
         cJSON *toJson() const {
             cJSON *json = cJSON_CreateObject();
+            // Modalities --------------------------------------------------
+            cJSON *modalitiesArray = cJSON_CreateArray();
+            for (const auto &m : modalities) {
+                cJSON_AddItemToArray(modalitiesArray, cJSON_CreateString(m));
+            }
+            cJSON_AddItemToObject(json, "modalities", modalitiesArray);
+            // input_audio_transcription -----------------------------------
+            if (inputAudioTranscription == nullptr) {
+                cJSON_AddNullToObject(json, "input_audio_transcription");
+            } else {
+                cJSON_AddStringToObject(json, "input_audio_transcription", inputAudioTranscription);
+            }
+            // Tools -------------------------------------------------------
             cJSON *toolsArray = cJSON_CreateArray();
             for (const auto &tool : tools) {
                 cJSON_AddItemToArray(toolsArray, tool.toJson());
             }
             cJSON_AddItemToObject(json, "tools", toolsArray);
-            cJSON_AddStringToObject(json, "tool_choice", toolChoice);
+            // Tool choice -------------------------------------------------
+            if (toolChoice) {
+                cJSON_AddStringToObject(json, "tool_choice", toolChoice);
+            }
             return json;
         }
     };
@@ -178,6 +196,7 @@ struct SessionUpdateEvent {
 
     cJSON *toJson() const {
         cJSON *json = cJSON_CreateObject();
+        cJSON_AddStringToObject(json, "type", "session.update");
         cJSON_AddItemToObject(json, "session", session.toJson());
         return json;
     }

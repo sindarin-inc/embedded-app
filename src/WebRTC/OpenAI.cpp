@@ -62,14 +62,13 @@ int OpenAI::webRTCEventHandler(esp_webrtc_event_t *event, void *ctx) {
         cJSON_Delete(root);
 
         // TODO: Configure tool calling here
-        root = cJSON_CreateObject();
-        openai->toolCalling_.generateDescriptionJson(root);
-        char *json_string = cJSON_PrintUnformatted(root);
+        cJSON *tool_json = openai->toolCalling_.generateDescriptionJson();
+        char *json_string = cJSON_PrintUnformatted(tool_json);
         if (json_string) {
             openai->sendCustomData(json_string);
             free(json_string);
         }
-        cJSON_Delete(root);
+        cJSON_Delete(tool_json);
     }
     return 0;
 }
