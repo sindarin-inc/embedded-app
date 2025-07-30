@@ -7,6 +7,8 @@
 #include <unordered_map>
 #include <vector>
 
+#include "WebRTC/OpenAIAPI.hpp"
+
 constexpr const char *TAG = "OpenAI";
 
 #define ELEMS(a) (sizeof(a) / sizeof(a[0]))
@@ -120,91 +122,60 @@ void ToolCalling::registerTool(const char *name, const char *desc,
     }
 }
 
-// JSON helpers --------------------------------------------------------------
-int ToolCalling::addParentAttributeToJson(cJSON *parent, attribute_t *attr) {
-    cJSON *properties = cJSON_CreateObject();
-    cJSON_AddItemToObject(parent, "properties", properties);
-    int require_num = 0;
-    for (int i = 0; i < attr->attr_num; i++) {
-        attribute_t *sub_attr = &attr->attr_list[i];
-        cJSON *prop = cJSON_CreateObject();
-        cJSON_AddItemToObject(properties, sub_attr->name, prop);
-        cJSON_AddStringToObject(prop, "type", getAttrType(sub_attr->type));
-        cJSON_AddStringToObject(prop, "description", sub_attr->desc);
-        if (sub_attr->type == ATTRIBUTE_TYPE_PARENT) {
-            addParentAttributeToJson(prop, sub_attr);
-        }
-        if (sub_attr->required) {
-            require_num++;
-        }
-    }
-    if (require_num) {
-        cJSON *requiresArray = cJSON_CreateArray();
-        for (int i = 0; i < attr->attr_num; i++) {
-            attribute_t *sub_attr = &attr->attr_list[i];
-            if (sub_attr->required) {
-                cJSON_AddItemToArray(requiresArray, cJSON_CreateString(sub_attr->name));
-            }
-        }
-        cJSON_AddItemToObject(parent, "required", requiresArray);
-    }
-    return 0;
-}
+// ----------------------------------------------------------------------
+//  OpenAIAPI-based JSON generation
+// ----------------------------------------------------------------------
 
-int ToolCalling::generateDescriptionJson(cJSON *root) const {
-    if (classesHead_ == nullptr) {
-        return 0;
-    }
-    cJSON_AddStringToObject(root, "type", "session.update");
-    cJSON *session = cJSON_CreateObject();
-    cJSON_AddItemToObject(root, "session", session);
+cJSON *ToolCalling::generateDescriptionJson() const {
+    using namespace OpenAIAPI;
 
-    cJSON *modalities = cJSON_CreateArray();
-    cJSON_AddItemToArray(modalities, cJSON_CreateString("text"));
-    cJSON_AddItemToArray(modalities, cJSON_CreateString("audio"));
+    // Convert internal tool definitions to OpenAIAPI structures --------
+    std::vector<Tool> tools;
 
-    cJSON_AddItemToObject(session, "modalities", modalities);
-    cJSON_AddNullToObject(session, "input_audio_transcription");
-    cJSON *tools = cJSON_CreateArray();
-    cJSON_AddItemToObject(session, "tools", tools);
+    for (class_t *cls = classesHead_; cls; cls = cls->next) {
+        // Build property list for this tool ----------------------------
+        std::vector<Tool::ToolParameter::ToolParameterProperties::ToolParameterProperty>
+            propertyList;
+        std::vector<char *> requiredNames;
 
-    for (class_t *iter = classesHead_; iter; iter = iter->next) {
-        cJSON *tool = cJSON_CreateObject();
-        cJSON_AddItemToArray(tools, tool);
-        cJSON_AddStringToObject(tool, "type", "function");
-        cJSON_AddStringToObject(tool, "name", iter->name);
-        cJSON_AddStringToObject(tool, "description", iter->desc);
-        cJSON *parameters = cJSON_CreateObject();
-        cJSON_AddItemToObject(tool, "parameters", parameters);
-        cJSON_AddStringToObject(parameters, "type", "object");
-        cJSON *properties = cJSON_CreateObject();
-        cJSON_AddItemToObject(parameters, "properties", properties);
-        int require_num = 0;
-        for (int i = 0; i < iter->attr_num; i++) {
-            attribute_t *attr = &iter->attr_list[i];
-            cJSON *prop = cJSON_CreateObject();
-            cJSON_AddItemToObject(properties, attr->name, prop);
-            cJSON_AddStringToObject(prop, "type", getAttrType(attr->type));
-            cJSON_AddStringToObject(prop, "description", attr->desc);
-            if (attr->type == ATTRIBUTE_TYPE_PARENT) {
-                addParentAttributeToJson(prop, attr);
-            }
+        for (int i = 0; i < cls->attr_num; ++i) {
+            attribute_t *attr = &cls->attr_list[i];
+
+            propertyList.push_back({attr->name, getAttrType(attr->type), attr->desc});
+
             if (attr->required) {
-                require_num++;
+                requiredNames.push_back(attr->name);
             }
         }
-        if (require_num) {
-            cJSON *requiresArray = cJSON_CreateArray();
-            for (int i = 0; i < iter->attr_num; i++) {
-                attribute_t *attr = &iter->attr_list[i];
-                if (attr->required) {
-                    cJSON_AddItemToArray(requiresArray, cJSON_CreateString(attr->name));
-                }
-            }
-            cJSON_AddItemToObject(parameters, "required", requiresArray);
-        }
+
+        // Compose parameter object ------------------------------------
+
+        // Compose tool -------------------------------------------------
+        Tool tool = {
+            .name = cls->name,
+            .description = cls->desc,
+            .parameters = {{
+                .type = "object",
+                .properties = propertyList,
+                .required = requiredNames,
+            }},
+        };
+
+        tools.push_back(tool);
     }
-    return 0;
+
+    SessionUpdateEvent event = {
+        .session =
+            {
+                .modalities = {"text", "audio"},
+                .inputAudioTranscription = nullptr,
+                .tools = tools,
+                .toolChoice = "auto",
+            },
+    };
+
+    // Caller takes ownership of returned JSON object.
+    return event.toJson();
 }
 
 // Execution helpers ---------------------------------------------------------

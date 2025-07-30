@@ -74,7 +74,7 @@ public:
     }
 
     // Runtime helpers ---------------------------------------------------
-    int generateDescriptionJson(cJSON *root) const;
+    cJSON *generateDescriptionJson() const;
     int handleReceivedJson(const char *json_data) const;
 
 private:
@@ -87,5 +87,4 @@ private:
     // Utility -----------------------------------------------------------
     static char *strdupSafe(const char *str);
     static char *getAttrType(attribute_type_t type);
-    static int addParentAttributeToJson(cJSON *parent, attribute_t *attr);
 };
