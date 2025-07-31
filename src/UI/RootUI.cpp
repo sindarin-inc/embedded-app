@@ -88,8 +88,6 @@
 #include <NimBLEDevice.h>
 #endif
 
-#include "UI/TestWebRTCScreen.hpp"
-
 #define LAST_READABLE_ID "rui-readable"
 
 extern RootUI rootUi;
@@ -678,14 +676,6 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                 this->pushScreen(tutorialScreen);
                 }));
         }
-
-        // --- Experimental: WebRTC OpenAI integration test screen ---
-        menuItems->emplace_back(std::make_shared<MenuItemSingleLine>("WebRTC Test", [this]() {
-            auto testScreen = std::make_shared<TestWebRTCScreen>(display_, this->prefs_);
-            this->pushScreen(testScreen);
-            testScreen->setBackCallback([this]() { this->popScreen(false); });
-            testScreen->begin();
-        }));
 
         return menuItems;
     };
