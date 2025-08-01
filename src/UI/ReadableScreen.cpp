@@ -17,7 +17,6 @@
 #include "UI/ReadableHookScreens.hpp"
 #include "UI/RootUI.hpp"
 #include "WebRTC/OpenAI.hpp"
-#include "WebRTC/ToolCalling.hpp"
 #include "sindarin-debug.h"
 
 // Two minutes per page currently
@@ -32,39 +31,37 @@ void ReadableScreen::beginOpenAITask(void *param) {
     // Allocate on heap so it lives beyond this function scope
     auto *openai = new OpenAI();
 
-    // Register tool calls -------------------------------------------------
-    auto &tool = openai->toolCalling();
-
-    // Forward page tool
-    auto fwdAttr =
-        tool.createBoolAttribute("go", "Turn page forward and retrieve the page text", true,
-                                 [screen, openai](attribute_t * /*attr*/, const char *callId) {
+    openai->registerTool(
+        {
+            .name = "PageForward",
+            .description = "Turn page forward one page and retreive the page text",
+        },
+        [screen, openai](OpenAIAPI::Tool &tool, const char *callId, const char *output) {
         screen->processCommand(RemoteCommand::RIGHT);
         screen->render(screen->display_);
-        openai->sendToolOutput(callId ? callId : "", screen->getCurrentPageText().c_str());
-        return 0;
+        openai->sendToolOutput(callId, screen->getCurrentPageText().c_str());
     });
-    tool.registerTool("PageForward", "Turn page forward one page", {fwdAttr});
 
-    // Backward page tool
-    auto backAttr =
-        tool.createBoolAttribute("go", "Turn page backward and retrieve the page text", true,
-                                 [screen, openai](attribute_t * /*attr*/, const char *callId) {
+    openai->registerTool(
+        {
+            .name = "PageBackward",
+            .description = "Turn page backward one page and retreive the page text",
+        },
+        [screen, openai](OpenAIAPI::Tool &tool, const char *callId, const char *output) {
         screen->processCommand(RemoteCommand::LEFT);
         screen->render(screen->display_);
-        openai->sendToolOutput(callId ? callId : "", screen->getCurrentPageText().c_str());
-        return 0;
+        openai->sendToolOutput(callId, screen->getCurrentPageText().c_str());
     });
-    tool.registerTool("PageBackward", "Turn page backward one page", {backAttr});
 
-    // Get current page text tool
-    auto getPageAttr =
-        tool.createBoolAttribute("go", "Get the current page text without turning pages", true,
-                                 [screen, openai](attribute_t * /*attr*/, const char *callId) {
-        openai->sendToolOutput(callId ? callId : "", screen->getCurrentPageText().c_str());
-        return 0;
+    openai->registerTool(
+
+        {
+            .name = "GetCurrentPage",
+            .description = "Retrieve the current page text",
+        },
+        [screen, openai](OpenAIAPI::Tool &tool, const char *callId, const char *output) {
+        openai->sendToolOutput(callId, screen->getCurrentPageText().c_str());
     });
-    tool.registerTool("GetCurrentPage", "Retrieve the current page text", {getPageAttr});
 
     // Initialise and start WebRTC/OpenAI
     openai->init();

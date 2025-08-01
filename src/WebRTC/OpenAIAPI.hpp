@@ -70,7 +70,7 @@ public:
 
 struct ResponseCreateEvent {
     struct Response {
-        const std::vector<char *> modalities;
+        const std::vector<const char *> modalities;
         const char *instructions;
 
         cJSON *toJson() const {
@@ -261,7 +261,7 @@ struct ConversationItemCreateEvent {
 struct RealtimeSessionRequest {
     const char *model;
     const char *voice;
-    const std::vector<char *> modalities;
+    const std::vector<const char *> modalities;
 
     cJSON *toJson() const {
         cJSON *json = cJSON_CreateObject();
