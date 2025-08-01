@@ -26,7 +26,6 @@
 #include "UI/Screen.hpp"
 #include "Version.hpp"
 #include "WebRTC/OpenAI.hpp"
-#include "WebRTC/ToolCalling.hpp"
 #include "config.h"
 
 enum LastArrowPress {

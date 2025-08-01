@@ -8,7 +8,6 @@
 
 #include "WebRTC/OpenAIAPI.hpp"
 #include "WebRTC/OpenAISignaling.hpp"
-#include "WebRTC/ToolCalling.hpp"
 
 constexpr const char *TAG = "OpenAI";
 
@@ -21,10 +20,30 @@ int OpenAI::webRTCDataHandler(esp_webrtc_custom_data_via_t via, uint8_t *data, i
                               void *ctx) {
     OpenAI *openai = static_cast<OpenAI *>(ctx);
 
-    std::string jsonStr(reinterpret_cast<char *>(data), size);
+    ESP_LOGI(TAG, "<-- %.*s", size, data);
 
-    ESP_LOGI(TAG, "<-- %s", jsonStr.c_str());
-    openai->toolCalling_.handleReceivedJson(jsonStr.c_str());
+    cJSON *root = cJSON_ParseWithLength(reinterpret_cast<char *>(data), size);
+    if (!root) {
+        ESP_LOGE(TAG, "Error parsing JSON data");
+        return -1;
+    }
+
+    const cJSON *type = cJSON_GetObjectItemCaseSensitive(root, "type");
+    if (!cJSON_IsString(type)) {
+        ESP_LOGE(TAG, "Invalid JSON format");
+        cJSON_Delete(root);
+        return -1;
+    }
+    if (strcmp(type->valuestring, "response.function_call_arguments.done") != 0) {
+        OpenAIAPI::ResponseFunctionCallArgumentsDoneEvent event(root);
+        auto it = openai->toolRecords_.find(event.name);
+        if (it != openai->toolRecords_.end()) {
+            it->second.callback(it->second.tool, event.callId, event.arguments);
+        }
+    } else {
+        cJSON_Delete(root);
+    }
+
     return 0;
 }
 
@@ -61,8 +80,16 @@ int OpenAI::webRTCEventHandler(esp_webrtc_event_t *event, void *ctx) {
         }
         cJSON_Delete(root);
 
-        // TODO: Configure tool calling here
-        cJSON *tool_json = openai->toolCalling_.generateDescriptionJson();
+        OpenAIAPI::SessionUpdateEvent sessionUpdateEvent = {
+            .session =
+                {
+                    .modalities = {"text", "audio"},
+                    .inputAudioTranscription = nullptr,
+                    .tools = openai->getTools(),
+                    .toolChoice = "auto",
+                },
+        };
+        cJSON *tool_json = sessionUpdateEvent.toJson();
         char *json_string = cJSON_PrintUnformatted(tool_json);
         if (json_string) {
             openai->sendCustomData(json_string);
@@ -97,23 +124,17 @@ auto OpenAI::sendToolOutput(const char *tool_call_id, const char *page_text) -> 
     return 0;
 }
 
+auto OpenAI::getTools() -> std::vector<OpenAIAPI::Tool> {
+    std::vector<OpenAIAPI::Tool> tools;
+    for (const auto &record : toolRecords_) {
+        tools.push_back(record.second.tool);
+    }
+    return tools;
+}
+
 auto OpenAI::init() -> int {
     // Build media pipelines
     mediaSystem_.build();
-
-    // // start_webrtc();
-
-    // TODO: Is this necessary?
-    // Apparently not! Just for debugging
-    // while (1) {
-    //     // TODO: Is any of this needed or does media lib create its own thread?
-    //     media_lib_thread_sleep(2000);
-    //     // Query WebRTC status
-    //     // TODO: is this just for logging? Can we skip it?
-    //     if (webrtc) {
-    //         esp_webrtc_query(webrtc);
-    //     }
-    // }
     return 0;
 }
 
@@ -186,6 +207,13 @@ auto OpenAI::stop() -> int {
         esp_webrtc_close(handle);
     }
     return 0;
+}
+
+void OpenAI::registerTool(OpenAIAPI::Tool tool, ToolCallback callback) {
+    toolRecords_.emplace(tool.name, ToolRecord{
+                                        .tool = std::move(tool),
+                                        .callback = std::move(callback),
+                                    });
 }
 
 auto OpenAI::sendText(const char *text) -> int {
