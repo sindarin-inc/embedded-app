@@ -113,7 +113,9 @@ public:
         stream_ = std::static_pointer_cast<EPubFile>(stream);
     }
 
-    [[nodiscard]] auto getStream() -> std::shared_ptr<RendererStream> override { return stream_; }
+    [[nodiscard]] auto getStream() const -> std::shared_ptr<RendererStream> override {
+        return stream_;
+    }
 
     [[nodiscard]] auto computeStartingOffset(StreamPlace streamPlace) -> uint32_t;
 

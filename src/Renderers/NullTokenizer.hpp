@@ -43,7 +43,9 @@ public:
 
     void setStream(std::shared_ptr<RendererStream> stream) override { error(); }
 
-    [[nodiscard]] auto getStream() -> std::shared_ptr<RendererStream> override { return nullptr; }
+    [[nodiscard]] auto getStream() const -> std::shared_ptr<RendererStream> override {
+        return nullptr;
+    }
 
 private:
     void error() const {

@@ -68,6 +68,9 @@ public:
 
     std::string getCurrentPageText() const { return renderer_.getCurrentPageText(); }
 
+    // Retrieve text from the start of the current chapter up to the current reading position
+    std::string getCurrentChapterText() const;
+
 protected:
     void setCurrentScreen(const std::shared_ptr<Screen> &screen);
 
