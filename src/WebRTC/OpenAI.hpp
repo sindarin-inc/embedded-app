@@ -12,7 +12,7 @@ public:
     ~OpenAI() = default;
 
     auto init() -> int;
-    auto start() -> int;
+    auto start(const std::string &prompt) -> int;
     auto stop() -> int;
 
     using ToolCallback =
@@ -28,6 +28,7 @@ public:
     auto sendCustomData(const char *json) -> int;
 
 private:
+    std::string prompt_;
     esp_webrtc_handle_t webrtc_ = nullptr;
     MediaSystem mediaSystem_;
     std::unordered_map<std::string, ToolRecord> toolRecords_;

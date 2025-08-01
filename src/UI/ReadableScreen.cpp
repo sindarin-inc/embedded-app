@@ -65,8 +65,12 @@ void ReadableScreen::beginOpenAITask(void *param) {
 
     // Initialise and start WebRTC/OpenAI
     openai->init();
-    openai->start();
-
+    std::string prompt = StringFormat(
+        "You are an AI assistant to help with reading, understanding, and answering "
+        "questions about a book. The user is currently reading %s by %s. You have some "
+        "tool calls available to get content from the book as well as to turn the page.",
+        screen->readable_->title.c_str(), screen->readable_->authorString().c_str());
+    openai->start(prompt);
     // Task ends but OpenAI continues to run.
     vTaskDelete(nullptr);
 }
