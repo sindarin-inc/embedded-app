@@ -48,7 +48,7 @@ public:
         tokenizer_ = Tokenizer::factory(stream, font_, rect_, tokens_, pager_);
     }
 
-    [[nodiscard]] inline auto getStream() -> std::shared_ptr<RendererStream> {
+    [[nodiscard]] inline auto getStream() const -> std::shared_ptr<RendererStream> {
         return tokenizer_->getStream();
     }
 
@@ -57,7 +57,7 @@ public:
         currentPlace_ = tokenizer_->toStreamPlace(std::move(newPlace));
     }
 
-    [[nodiscard]] auto getStreamPlace(std::shared_ptr<Place> place) -> StreamPlace {
+    [[nodiscard]] auto getStreamPlace(std::shared_ptr<Place> place) const -> StreamPlace {
         // log_w("setCurrentPlace...");
         return tokenizer_->toStreamPlace(std::move(place));
     }

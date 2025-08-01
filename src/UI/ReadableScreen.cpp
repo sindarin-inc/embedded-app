@@ -63,6 +63,16 @@ void ReadableScreen::beginOpenAITask(void *param) {
         openai->sendToolOutput(callId, screen->getCurrentPageText().c_str());
     });
 
+    openai->registerTool(
+        {
+            .name = "GetCurrentChapter",
+            .description =
+                "Retrieve the text content of the current chapter up to the current point",
+        },
+        [screen, openai](OpenAIAPI::Tool &tool, const char *callId, const char *output) {
+        openai->sendToolOutput(callId, screen->getCurrentChapterText().c_str());
+    });
+
     // Initialise and start WebRTC/OpenAI
     openai->init();
     std::string prompt = StringFormat(
