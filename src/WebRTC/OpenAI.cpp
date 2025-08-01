@@ -66,10 +66,7 @@ int OpenAI::webRTCEventHandler(esp_webrtc_event_t *event, void *ctx) {
             .response =
                 {
                     .modalities = {"text", "audio"},
-                    .instructions =
-                        "You are helpful and have some tools installed. In the tools you have the "
-                        "ability to control a light bulb and change speaker volume. Say 'How can I "
-                        "help?'",
+                    .instructions = openai->prompt_.c_str(),
                 },
         };
         cJSON *root = event.toJson();
@@ -138,11 +135,12 @@ auto OpenAI::init() -> int {
     return 0;
 }
 
-auto OpenAI::start() -> int {
+auto OpenAI::start(const std::string &prompt) -> int {
     if (webrtc_ != nullptr) {
         esp_webrtc_close(webrtc_);
         webrtc_ = nullptr;
     }
+    prompt_ = prompt;
     esp_peer_default_cfg_t peer_cfg = {
         .agent_recv_timeout = 500,
     };
