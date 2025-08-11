@@ -97,6 +97,7 @@ public:
     // Convenience methods
     auto books() -> ReadablesVector & { return books_; };
     auto articles() -> ReadablesVector & { return articles_; };
+    auto comics() -> ReadablesVector & { return comics_; };
     auto kindle() -> KindleBooksVector & { return kindle_; };
     auto recents() -> ReadablesVector & { return recents_; };
 
@@ -197,6 +198,7 @@ private:
 
     ReadablesVector books_;
     ReadablesVector articles_;
+    ReadablesVector comics_;
     KindleBooksVector kindle_;
 
     ReadablesVector recents_;

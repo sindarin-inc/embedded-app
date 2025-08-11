@@ -200,9 +200,11 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
     HEAP_PROFILE_START(rootUIContent);
     auto &readables = localStore.books();
     auto &articles = localStore.articles();
+    auto &comics = localStore.comics();
     auto noBooks = readables.empty();
     auto noArticles = articles.empty();
-    auto noContent = noBooks && noArticles;
+    auto noComics = comics.empty();
+    auto noContent = noBooks && noArticles && noComics;
 
     // If prefs_.bookSortCriteria isn't selected, sort the readables by last update and store them
     if (!prefs_.bookSortCriteria.get().has_value()) {
@@ -845,6 +847,47 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                         "will disappear.\n\n"
                         " Press \ue000 (center) to continue.");
                     auto tutorialScreen = createTutorialScreen(message, TUTORIAL_SCREEN_BIBLE);
+                    this->pushScreen(tutorialScreen);
+                }));
+        }
+        return menuItems;
+    };
+
+    auto comicsMenuFactory = [this, &localStore, handleReadableScreenCreation,
+                              makeReleaseNotesMenuItem, makeContentSyncMenuItem,
+                              createTutorialScreen, noComics]() -> MenuItemSharedPtrVector {
+        auto &comics = localStore.comics();
+        auto menuItems = std::make_shared<MenuItemVector>();
+        if (this->prefs_.firmwareLoaded.get().has_value()) {
+            Firmware firmware;
+            auto upgradeAvailable = localStore.getPendingFirmwareUpdate(firmware);
+            if (upgradeAvailable) {
+                menuItems->emplace_back(makeReleaseNotesMenuItem(firmware));
+            }
+        }
+        for (const auto &comic : comics) {
+            bool archived = prefs_.readableArchivedChanged.get(comic->shortenedUuid.c_str());
+            auto title = StringFormat("%s%s", archived ? "Archived: " : "", comic->title.c_str());
+            menuItems->emplace_back(std::make_shared<MenuItemSingleLine>(
+                std::string(title), [comic, handleReadableScreenCreation]() {
+                    handleReadableScreenCreation(comic);
+                }));
+        }
+        if (noComics) {
+            menuItems->emplace_back(makeContentSyncMenuItem("Sync Content"));
+        }
+        if (!(prefs_.tutorialsDeleted.get().value_or(0) & TUTORIAL_SCREEN_COMICS)) {
+            menuItems->emplace_back(std::make_shared<MenuItemSingleLine>(
+                "\ue000 Comics Tutorial", [this, createTutorialScreen]() {
+                    SpiramString message = SpiRamStringFormat(
+                        "Welcome to the Comics menu. This tab "
+                        "shows you the comics currently synced to your Sol "
+                        "Reader.\n\n"
+                        "Comics will appear here once you sync them "
+                        "from the Sol app.\n\n"
+                        "Press \ue000 (center) to "
+                        "continue.\n");
+                    auto tutorialScreen = createTutorialScreen(message, TUTORIAL_SCREEN_COMICS);
                     this->pushScreen(tutorialScreen);
                 }));
         }
@@ -1874,6 +1917,10 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
 
     if (!bibleMenuFactory()->empty()) {
         newMainMenu->addTab("Bible", bibleMenuFactory, 4);
+    }
+
+    if (!comicsMenuFactory()->empty()) {
+        newMainMenu->addTab("Comics", comicsMenuFactory, 4);
     }
 
     newMainMenu->addTab("Settings", settingsMenuFactory, 5);

@@ -33,6 +33,7 @@
 
 #define BOOKS_PATH "/readables.json"
 #define ARTICLES_PATH "/articles.json"
+#define COMICS_PATH "/comics.json"
 #define KINDLE_PATH "/kindle.json"
 
 enum { NUMBER_OF_READABLE_DOWNLOAD_TRIES = 3 };
@@ -41,6 +42,7 @@ enum { MAX_NUMBER_OF_PAGES_TO_BACKFILL = 10 };
 auto LocalStore::begin() -> bool {
     auto loadedBooks = loadReadablesFromFile(books_, BOOKS_PATH);
     auto loadedArticles = loadReadablesFromFile(articles_, ARTICLES_PATH);
+    auto loadedComics = loadReadablesFromFile(comics_, COMICS_PATH);
     loadKindleBooksFromFile(kindle_, KINDLE_PATH);
 
     migrateIfNeeded();
@@ -50,7 +52,7 @@ auto LocalStore::begin() -> bool {
     PROFILE_END_LOG_US(computeRecentReadables);
 
     // loadedKindle is not critical, so we don't return false if it fails
-    return loadedBooks && loadedArticles;
+    return loadedBooks && loadedArticles && loadedComics;
 }
 
 auto LocalStore::loadReadablesFromFile(ReadablesVector &readables, const std::string &path)
