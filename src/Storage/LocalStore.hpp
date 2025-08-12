@@ -15,6 +15,7 @@
 #include "Storage/FileSystem.hpp"
 #include "Storage/PreferencesStore.hpp"
 #include "Storage/SolDrm.hpp"
+#include "Storage/ComicStore.hpp"
 
 struct SortCriteria {
     enum Type { DateModified, Alphabetical, LastRead, Random } type = DateModified;
@@ -86,7 +87,7 @@ public:
     LocalStore(FileSystem &fileSystem, PreferencesStore &prefs, Battery &battery,
                Telemetry &telemetry, SolDrm &solDrm)
         : fileSystem(fileSystem), prefs_(prefs), battery_(battery), telemetry_(telemetry),
-          solDrm_(solDrm){};
+          solDrm_(solDrm), comicStore_(prefs){};
     LocalStore(LocalStore const &) = delete;
 
     auto begin() -> bool;
@@ -100,6 +101,9 @@ public:
     auto comics() -> ReadablesVector & { return comics_; };
     auto kindle() -> KindleBooksVector & { return kindle_; };
     auto recents() -> ReadablesVector & { return recents_; };
+    
+    // Comic store access
+    auto comicStore() -> ComicStore & { return comicStore_; };
 
     auto readablesModelType(const ReadablesVector &readables) -> ReadablesModelType;
     [[nodiscard]] auto isReadableUnchanged(const ReadablesVector &readables,
@@ -202,4 +206,6 @@ private:
     KindleBooksVector kindle_;
 
     ReadablesVector recents_;
+    
+    ComicStore comicStore_;
 };

@@ -239,6 +239,9 @@ public:
     void drawPBM(int16_t x, int16_t y, const uint8_t *pbmBytes, int size);
     void drawPBM(int16_t x, int16_t y, RendererStream &stream);
 
+    // Draw a bitmap using the same method as PBM
+    void drawBitmap(int16_t x, int16_t y, const uint8_t *bitmap, int16_t w, int16_t h);
+
     // override for subclass, need access to raw drawing buffer
     virtual void drawFullscreenBitmapFromFile(RendererStream &stream) { log_i("not supported"); }
 

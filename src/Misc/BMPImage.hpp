@@ -3,6 +3,10 @@
 #include "Misc/SpiramAllocator.hpp"
 #include "Renderers/RendererStream.hpp"
 
+// Forward declarations
+class FileSystem;
+class DisplaySystem;
+
 class BMPImage {
 public:
     BMPImage() : outputBuffer_(nullptr) { createLUT(); }
@@ -10,6 +14,8 @@ public:
 
     auto readFromBytes(uint8_t *bmpbytes, int size) -> bool;
     auto readFromStream(RendererStream &stream) -> bool;
+    auto load(const std::string &filePath, FileSystem &fs) -> bool;
+    void draw(DisplaySystem &display, int x, int y);
     [[nodiscard]] auto getWidth() const -> int;
     [[nodiscard]] auto getHeight() const -> int;
     [[nodiscard]] auto getBitsPerPixel() const -> int;

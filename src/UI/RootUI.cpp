@@ -32,6 +32,7 @@
 #include "UI/AppDownloadScreen.hpp"
 #include "UI/BatteryScreen.hpp"
 #include "UI/CalibrationScreen.hpp"
+#include "UI/ComicViewerScreen.hpp"
 #include "UI/ContentSyncScreen.hpp"
 #include "UI/ContrastAdjustScreen.hpp"
 #include "UI/CrashReportScreen.hpp"
@@ -853,10 +854,9 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
         return menuItems;
     };
 
-    auto comicsMenuFactory = [this, &localStore, handleReadableScreenCreation,
+    auto comicsMenuFactory = [this, &localStore, &fileSystem,
                               makeReleaseNotesMenuItem, makeContentSyncMenuItem,
-                              createTutorialScreen, noComics]() -> MenuItemSharedPtrVector {
-        auto &comics = localStore.comics();
+                              createTutorialScreen]() -> MenuItemSharedPtrVector {
         auto menuItems = std::make_shared<MenuItemVector>();
         if (this->prefs_.firmwareLoaded.get().has_value()) {
             Firmware firmware;
@@ -865,26 +865,32 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                 menuItems->emplace_back(makeReleaseNotesMenuItem(firmware));
             }
         }
+        
+        // Scan SD card for comics
+        auto comics = localStore.comicStore().scanSDCardForComics();
         for (const auto &comic : comics) {
-            bool archived = prefs_.readableArchivedChanged.get(comic->shortenedUuid.c_str());
-            auto title = StringFormat("%s%s", archived ? "Archived: " : "", comic->title.c_str());
             menuItems->emplace_back(std::make_shared<MenuItemSingleLine>(
-                std::string(title), [comic, handleReadableScreenCreation]() {
-                    handleReadableScreenCreation(comic);
+                comic->getName(), [this, comic, &localStore, &fileSystem]() {
+                    auto comicViewerScreen = std::make_shared<ComicViewerScreen>(
+                        display_, comic, localStore.comicStore(), fileSystem);
+                    comicViewerScreen->setBackCallback([this]() { this->popScreen(); });
+                    this->pushScreen(comicViewerScreen);
                 }));
         }
-        if (noComics) {
-            menuItems->emplace_back(makeContentSyncMenuItem("Sync Content"));
+        
+        if (comics.empty()) {
+            menuItems->emplace_back(makeContentSyncMenuItem("No Comics Found"));
         }
         if (!(prefs_.tutorialsDeleted.get().value_or(0) & TUTORIAL_SCREEN_COMICS)) {
             menuItems->emplace_back(std::make_shared<MenuItemSingleLine>(
                 "\ue000 Comics Tutorial", [this, createTutorialScreen]() {
                     SpiramString message = SpiRamStringFormat(
                         "Welcome to the Comics menu. This tab "
-                        "shows you the comics currently synced to your Sol "
-                        "Reader.\n\n"
-                        "Comics will appear here once you sync them "
-                        "from the Sol app.\n\n"
+                        "shows you the comics from your SD card.\n\n"
+                        "Create a 'comics' folder on your SD card "
+                        "and add subdirectories for each comic. "
+                        "Each comic subdirectory should contain "
+                        "image files (JPG, PNG, BMP).\n\n"
                         "Press \ue000 (center) to "
                         "continue.\n");
                     auto tutorialScreen = createTutorialScreen(message, TUTORIAL_SCREEN_COMICS);

@@ -2,6 +2,8 @@
 
 #include "Misc/Ditherer.hpp"
 #include "Renderers/RendererStream.hpp"
+#include "Storage/FileSystem.hpp"
+#include "Displays/DisplaySystem.hpp"
 #include "bmp.h"
 
 std::shared_ptr<uint8_t[]> bmpConversionLUT = nullptr;
@@ -96,3 +98,33 @@ auto BMPImage::getBuffer() -> uint8_t * { return outputBuffer_.get(); }
 auto BMPImage::getWidth() const -> int { return width_; }
 
 auto BMPImage::getHeight() const -> int { return height_; }
+
+auto BMPImage::load(const std::string &filePath, FileSystem &fs) -> bool {
+    if (!fs.exists(filePath)) {
+        log_e("BMP file not found: %s", filePath.c_str());
+        return false;
+    }
+    
+    SFile file = fs.open(filePath);
+    if (!file) {
+        log_e("Failed to open BMP file: %s", filePath.c_str());
+        return false;
+    }
+    
+    ContainerStream<SFile> stream(file);
+    return readFromStream(stream);
+}
+
+void BMPImage::draw(DisplaySystem &display, int x, int y) {
+    if (outputBuffer_ == nullptr) {
+        log_e("BMP not loaded, cannot draw");
+        return;
+    }
+    
+    if (getBitsPerPixel() == 1) {
+        // Use the same drawBitmap method as PBM and JPG
+        display.drawBitmap(x, y, getBuffer(), getWidth(), getHeight());
+    } else {
+        log_w("BMP draw: Only 1-bit BMPs are supported for drawing, got %d bits", getBitsPerPixel());
+    }
+}
