@@ -163,20 +163,54 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
         auto currentPageIndex = pageStream_->pageIndexForOffset(place->getOffset());
         auto lastPageIndex = pageStream_->lastPageIndex();
 
+        // Calculate buffer state
+        uint32_t currentOffset = place->getOffset();
+        size_t bytesRemaining = pageStream_->getBytesRemainingFrom(currentOffset);
+        int pagesRemaining = pageStream_->getPagesRemainingFrom(currentOffset);
+
+        log_i("Buffer analysis: %" PRIu32 " bytes from offset %" PRIu32
+              ", %zu bytes remaining, %d pages remaining",
+              static_cast<uint32_t>(pageStream_->size()), currentOffset, bytesRemaining,
+              pagesRemaining);
+
         auto pagesToAdvance = currentPageIndex - previousPageIndex;
-        // Cases:
-        // 1. We don't have a full page of content ahead (load one preview page)
-        // 2. We have a full page of content but it is too short and we're at the end of the content
-        // (load another page into the preview)
+
+        // Proactive preloading: Check if we need to load more content
+        // Load if:
+        // 1. We have less than BUFFER_THRESHOLD_BYTES bytes remaining
+        // 2. We have less than BUFFER_THRESHOLD_PAGES pages remaining
+        // 3. We're at the end of content
         auto pageToPreview = 0;
-        if (currentPageIndex == lastPageIndex || atEndOfContent) {
-            pageToPreview = lastPageIndex - currentPageIndex + 1;
+        bool shouldPreload = false;
+        std::string preloadReason;
+
+        if (bytesRemaining < BUFFER_THRESHOLD_BYTES) {
+            shouldPreload = true;
+            preloadReason = "low-bytes";
+            log_i("Preloading triggered: Only %zu bytes remaining (threshold: %zu)", bytesRemaining,
+                  BUFFER_THRESHOLD_BYTES);
+        } else if (pagesRemaining < BUFFER_THRESHOLD_PAGES) {
+            shouldPreload = true;
+            preloadReason = "low-pages";
+            log_i("Preloading triggered: Only %d pages remaining (threshold: %d)", pagesRemaining,
+                  BUFFER_THRESHOLD_PAGES);
+        } else if (currentPageIndex == lastPageIndex || atEndOfContent) {
+            shouldPreload = true;
+            preloadReason = atEndOfContent ? "end-content" : "last-page";
+            log_i("Preloading triggered: At last page or end of content");
         }
 
-        log_d("Now on page %d/%d, previously on page %d/%d, advancing %d pages and previewing page "
-              "%d (atEndOfContent=%d)",
-              currentPageIndex, lastPageIndex, previousPageIndex, lastPageIndex, pagesToAdvance,
-              pageToPreview, atEndOfContent);
+        if (shouldPreload) {
+            // Calculate how many pages to preview to maintain buffer
+            // Load enough to have at least BUFFER_THRESHOLD_PAGES ahead
+            pageToPreview = std::max(1, BUFFER_THRESHOLD_PAGES - pagesRemaining + 1);
+            log_i("Will preview %d page(s) to maintain buffer", pageToPreview);
+        }
+
+        log_d("Navigation: page %d/%d -> %d/%d, advancing %d pages, previewing %d pages "
+              "(atEndOfContent=%d, shouldPreload=%d)",
+              previousPageIndex, lastPageIndex, currentPageIndex, lastPageIndex, pagesToAdvance,
+              pageToPreview, atEndOfContent, shouldPreload);
 
         if (pagesToAdvance > 0 || pageToPreview > 0) {
             // Track navigation start time
@@ -191,6 +225,9 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
                 {"elapsed_ms", 0}};
             if (pageToPreview > 0) {
                 beginTelemetryData["preview"] = pageToPreview;
+                if (!preloadReason.empty()) {
+                    beginTelemetryData["preload_reason"] = preloadReason;
+                }
             }
             telemetry_.logMetric(TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
                                  beginTelemetryData);
@@ -218,6 +255,9 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
                     {"elapsed_ms", static_cast<int>(elapsedMs)}};
                 if (pageToPreview > 0) {
                     failedTelemetryData["preview"] = pageToPreview;
+                    if (!preloadReason.empty()) {
+                        failedTelemetryData["preload_reason"] = preloadReason;
+                    }
                 }
                 telemetry_.logMetric(TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
                                      failedTelemetryData);
@@ -258,6 +298,9 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
                 {"elapsed_ms", static_cast<int>(elapsedMs)}};
             if (pageToPreview > 0) {
                 successTelemetryData["preview"] = pageToPreview;
+                if (!preloadReason.empty()) {
+                    successTelemetryData["preload_reason"] = preloadReason;
+                }
             }
             telemetry_.logMetric(TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
                                  successTelemetryData);
@@ -268,9 +311,9 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
             // Update server sync position only after successful navigation
             serverSyncPlace_ = std::dynamic_pointer_cast<TxtPlace>(place);
         } else {
-            log_d("Skipping navigation request - already have buffered content (currentPage=%d, "
-                  "lastPage=%d, pagesToAdvance=%d)",
-                  currentPageIndex, lastPageIndex, pagesToAdvance);
+            log_d("Skipping navigation request - sufficient buffer available");
+            log_d("Buffer details: currentPage=%d/%d, %zu bytes remaining, %d pages remaining",
+                  currentPageIndex, lastPageIndex, bytesRemaining, pagesRemaining);
 
             // For cached content, still call the gotContentFunction to maintain consistent behavior
             if (gotContentFunction_) {

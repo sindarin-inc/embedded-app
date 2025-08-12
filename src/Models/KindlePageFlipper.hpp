@@ -122,6 +122,17 @@ public:
         currentPageOffset_ = 0;
     }
 
+    auto getBytesRemainingFrom(uint32_t offset) -> size_t {
+        size_t totalSize = size();
+        return offset < totalSize ? totalSize - offset : 0;
+    }
+
+    auto getPagesRemainingFrom(uint32_t offset) -> int {
+        int pageIndex = pageIndexForOffset(offset);
+        if (pageIndex < 0) return 0;
+        return pages_.size() - pageIndex;
+    }
+
 protected:
     SpiramVector<KindlePage> pages_;
 
@@ -202,8 +213,16 @@ public:
         serverSyncPlace_ = nullptr;
     }
 
+    [[nodiscard]] auto getPagesRemainingFromOffset(uint32_t offset) const -> int {
+        if (pageStream_) {
+            return pageStream_->getPagesRemainingFrom(offset);
+        }
+        return 0;
+    }
+
 private:
-    // const int bufferThreshold_ = 2000; // Byte threshold to preload more content
+    static constexpr size_t BUFFER_THRESHOLD_BYTES = 2000; // Preload when less than this many bytes remain
+    static constexpr int BUFFER_THRESHOLD_PAGES = 1; // Preload when less than this many pages remain
 
     std::shared_ptr<KindleBook> kindleBook_;
     bool useBle_ = false;

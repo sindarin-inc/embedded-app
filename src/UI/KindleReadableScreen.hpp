@@ -1,5 +1,8 @@
 #pragma once
 
+// Uncomment to enable simulated connection loss for debugging reconnection issues
+// #define DEBUG_KINDLE_RECONNECTION
+
 #include <freertos/FreeRTOS.h>
 #include <freertos/timers.h>
 #include <utility>

@@ -2,9 +2,6 @@
 
 #include <esp_timer.h>
 
-// Uncomment to enable simulated connection loss for debugging reconnection issues
-// #define DEBUG_KINDLE_RECONNECTION
-
 #if CONFIG_USE_BLE_SERVER_PROXY
 #include "Communications/BLEManager.hpp"
 #endif
@@ -340,12 +337,18 @@ void KindleReadableScreen::drawInRect(SolRect rect) {
         }
         pageFlipper_.updatePlace(currentPlace_, atEndOfContent);
 
-        // Log the current and next place offsets for debugging
+        // Log comprehensive buffer state for debugging
         uint32_t currentOffset = currentPlace_->getOffset();
         uint32_t nextOffset = newPlace_->getOffset();
         uint32_t totalSize = renderer_.size();
-        log_i("Reading at offset: %" PRIu32 "-%" PRIu32 ", total size: %" PRIu32 " bytes",
+        uint32_t bytesRemaining = totalSize > nextOffset ? totalSize - nextOffset : 0;
+        uint32_t bytesRenderedThisPage = nextOffset - currentOffset;
+
+        log_i("Buffer state: current offset: %" PRIu32 ", next offset: %" PRIu32
+              ", total buffered: %" PRIu32 " bytes",
               currentOffset, nextOffset, totalSize);
+        log_i("Page rendered %" PRIu32 " bytes, %" PRIu32 " bytes remaining in buffer",
+              bytesRenderedThisPage, bytesRemaining);
     }
 }
 
@@ -761,6 +764,14 @@ void KindleReadableScreen::navigateNext() {
     // Log telemetry for navigating to next page
     auto metrics = getTelemetryMetrics();
     metrics["kindle"] = true;
+
+    // Add buffer state to telemetry
+    uint32_t nextOffset = newPlace_->getOffset();
+    uint32_t totalSize = renderer_.size();
+    uint32_t bytesRemaining = totalSize > nextOffset ? totalSize - nextOffset : 0;
+    metrics["br"] = static_cast<int>(bytesRemaining);                     // bytes remaining
+    metrics["pr"] = pageFlipper_.getPagesRemainingFromOffset(nextOffset); // pages remaining
+
     telemetry_.logMetric(TelemetryField::METRIC_READABLE_PLACE, kindleBook_->uuid, metrics);
 
     updateType_ = prefs_.fastTransitions.get().value_or(false) ? DisplaySystem::UpdateType::PARTIAL
@@ -774,6 +785,14 @@ void KindleReadableScreen::navigatePrevious() {
     // Log telemetry for navigating to previous page
     auto metrics = getTelemetryMetrics();
     metrics["kindle"] = true;
+
+    // Add buffer state to telemetry
+    uint32_t currentOffset = currentPlace_->getOffset();
+    uint32_t totalSize = renderer_.size();
+    uint32_t bytesRemaining = totalSize > currentOffset ? totalSize - currentOffset : 0;
+    metrics["br"] = static_cast<int>(bytesRemaining);                        // bytes remaining
+    metrics["pr"] = pageFlipper_.getPagesRemainingFromOffset(currentOffset); // pages remaining
+
     telemetry_.logMetric(TelemetryField::METRIC_READABLE_PLACE, kindleBook_->uuid, metrics);
 
     updateType_ = prefs_.fastTransitions.get().value_or(false) ? DisplaySystem::UpdateType::PARTIAL
@@ -1149,6 +1168,10 @@ void KindleReadableScreen::attemptReconnection() {
                     setErrorMessage(
                         "Failed to load content. Please check your network connection.");
                 });
+            } else {
+                // Reset the flag even if we haven't reached max attempts
+                // to allow future reconnection attempts
+                isReconnecting_ = false;
             }
         }
     };
