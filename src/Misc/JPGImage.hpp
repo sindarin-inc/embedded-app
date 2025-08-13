@@ -1,4 +1,4 @@
-#if USE_JPG_DECODER
+#if CONFIG_SOC_JPEG_DECODE_SUPPORTED
 #pragma once
 
 #include "Misc/SpiramAllocator.hpp"
@@ -26,4 +26,4 @@ private:
     int height_ = 0;
     int bitsPerPixel_ = 24;
 };
-#endif
+#endif // CONFIG_SOC_JPEG_DECODE_SUPPORTED

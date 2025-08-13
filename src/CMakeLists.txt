@@ -72,6 +72,14 @@ if(DETECTED_TARGET MATCHES "p4-function-ev.*|sharp-27in|waveshare-6inhd|p4-seeya
     )
 endif()
 
+# Add JPEG decoder for ESP32-P4 targets (hardware JPEG decoder support)
+if(IDF_TARGET STREQUAL "esp32p4")
+    message(STATUS "Adding esp_driver_jpeg component for ESP32-P4 hardware JPEG decoder")
+    list(APPEND components
+        esp_driver_jpeg
+    )
+endif()
+
 if(DETECTED_TARGET MATCHES "p4-seeya049")
     message(STATUS "Adding esp_lcd_seeya049 component")
     list(APPEND components

@@ -1,4 +1,4 @@
-#if USE_JPG_DECODER
+#if CONFIG_SOC_JPEG_DECODE_SUPPORTED
 #include "JPGImage.hpp"
 
 #include <cstring>
@@ -6,13 +6,16 @@
 #include "Displays/DisplaySystem.hpp"
 #include "Renderers/RendererStream.hpp"
 
-#if !SIMULATOR
+#if !SIMULATOR && CONFIG_SOC_JPEG_DECODE_SUPPORTED
 #include "driver/jpeg_decode.h"
-#endif
+#endif // CONFIG_SOC_JPEG_DECODE_SUPPORTED
 
 auto JPGImage::load(const std::string &filePath, FileSystem &fs) -> bool {
+    log_d("JPGImage::load attempting to load: %s", filePath.c_str());
+    
     if (!fs.exists(filePath)) {
         log_e("JPG file not found: %s", filePath.c_str());
+        log_d("FileSystem type: %s", typeid(fs).name());
         return false;
     }
     
@@ -41,7 +44,7 @@ auto JPGImage::load(const std::string &filePath, FileSystem &fs) -> bool {
 }
 
 auto JPGImage::readFromBytes(uint8_t *jpgbytes, int size) -> bool {
-#if !SIMULATOR
+#if !SIMULATOR && CONFIG_SOC_JPEG_DECODE_SUPPORTED
     // Use modern ESP-IDF JPEG decoder API like focus-firmware
     jpeg_decode_engine_cfg_t engine_cfg = {
         .intr_priority = 0,
@@ -68,14 +71,30 @@ auto JPGImage::readFromBytes(uint8_t *jpgbytes, int size) -> bool {
     height_ = picture_info.height;
     log_d("JPEG info: %dx%d", width_, height_);
     
-    // Allocate output buffer (RGB888 format)
-    size_t output_size = width_ * height_ * 3;
-    outputBuffer_ = std::shared_ptr<uint8_t[]>((uint8_t *)SpiRamMalloc(output_size), free);
-    if (!outputBuffer_) {
-        log_e("Failed to allocate output buffer");
+    // Check if image is too large and needs scaling down for memory constraints
+    const int MAX_DIMENSION = 800; // Reasonable limit for device memory
+    if (width_ > MAX_DIMENSION || height_ > MAX_DIMENSION) {
+        log_w("Image %dx%d is too large, may cause memory issues. Consider scaling down.", width_, height_);
+        // For now, continue but be aware this might fail
+    }
+    
+    // Calculate aligned dimensions (decoder aligns to 16 bytes automatically) 
+    int aligned_width = (width_ + 15) & ~15;   // Round up to nearest 16
+    int aligned_height = (height_ + 15) & ~15; // Round up to nearest 16
+    size_t output_size = aligned_width * aligned_height * 3;
+    log_d("Aligned dimensions: %dx%d, buffer size: %zu", aligned_width, aligned_height, output_size);
+    jpeg_decode_memory_alloc_cfg_t mem_cfg = { JPEG_DEC_ALLOC_OUTPUT_BUFFER };
+    size_t allocated_size;
+    uint8_t* aligned_buffer = (uint8_t*)jpeg_alloc_decoder_mem(output_size, &mem_cfg, &allocated_size);
+    if (!aligned_buffer) {
+        log_e("Failed to allocate aligned output buffer");
         jpeg_del_decoder_engine(decoder_engine);
         return false;
     }
+    
+    // Wrap in shared_ptr with custom deleter
+    outputBuffer_ = std::shared_ptr<uint8_t[]>(aligned_buffer, [](uint8_t* ptr) { free(ptr); });
+    log_d("Allocated %zu bytes (requested %zu) for aligned JPEG output buffer", allocated_size, output_size);
     
     // Decode the image
     jpeg_decode_cfg_t decode_cfg = {
@@ -85,7 +104,7 @@ auto JPGImage::readFromBytes(uint8_t *jpgbytes, int size) -> bool {
     
     uint32_t out_size;
     ret = jpeg_decoder_process(decoder_engine, &decode_cfg, jpgbytes, size, 
-                              outputBuffer_.get(), output_size, &out_size);
+                              outputBuffer_.get(), allocated_size, &out_size);
     
     jpeg_del_decoder_engine(decoder_engine);
     
@@ -100,7 +119,7 @@ auto JPGImage::readFromBytes(uint8_t *jpgbytes, int size) -> bool {
 #else
     log_i("JPG decoding not implemented for simulator (use JPGImageSTB instead)");
     return false;
-#endif
+#endif // CONFIG_SOC_JPEG_DECODE_SUPPORTED
 }
 
 void JPGImage::draw(DisplaySystem &display, int x, int y) {
@@ -136,4 +155,4 @@ void JPGImage::draw(DisplaySystem &display, int x, int y) {
 auto JPGImage::getBitsPerPixel() -> int { return bitsPerPixel_; }
 
 auto JPGImage::getBuffer() -> uint8_t * { return outputBuffer_.get(); }
-#endif
+#endif // CONFIG_SOC_JPEG_DECODE_SUPPORTED

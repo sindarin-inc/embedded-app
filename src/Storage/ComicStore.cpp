@@ -9,8 +9,8 @@
 constexpr const char* COMICS_SD_PATH = "./data/comics";  // For opendir() calls
 constexpr const char* COMICS_FILE_PREFIX = "/comics";    // For SFile paths (starts with /)
 #else
-constexpr const char* COMICS_SD_PATH = "/sdcard/comics";
-constexpr const char* COMICS_FILE_PREFIX = "/sdcard/comics";
+constexpr const char* COMICS_SD_PATH = "/sdcard/comics"; // For opendir() calls (absolute path)
+constexpr const char* COMICS_FILE_PREFIX = "/comics";    // For SFile paths (relative to /sdcard prefix)
 #endif
 
 auto ComicStore::scanSDCardForComics() -> ComicsVector {
