@@ -129,7 +129,9 @@ public:
 
     auto getPagesRemainingFrom(uint32_t offset) -> int {
         int pageIndex = pageIndexForOffset(offset);
-        if (pageIndex < 0) return 0;
+        if (pageIndex < 0) {
+            return 0;
+        }
         return pages_.size() - pageIndex;
     }
 
@@ -221,8 +223,10 @@ public:
     }
 
 private:
-    static constexpr size_t BUFFER_THRESHOLD_BYTES = 2000; // Preload when less than this many bytes remain
-    static constexpr int BUFFER_THRESHOLD_PAGES = 1; // Preload when less than this many pages remain
+    static constexpr size_t BUFFER_THRESHOLD_BYTES =
+        2000; // Preload when less than this many bytes remain
+    static constexpr int BUFFER_THRESHOLD_PAGES =
+        1; // Preload when less than this many pages remain
 
     std::shared_ptr<KindleBook> kindleBook_;
     bool useBle_ = false;
