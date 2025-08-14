@@ -7,7 +7,7 @@
 #include <chrono>
 #include "sindarin-debug.h"
 
-#define AUTOMATION_SOCKET_PATH "/tmp/sol_simulator_automation.sock"
+#define AUTOMATION_SOCKET_PATH "./sol_simulator_automation.sock"
 
 void SimulatorAutomation::start() {
     if (running_) return;
@@ -171,9 +171,25 @@ void SimulatorAutomation::listenForCommands() {
                     std::string command(buffer);
                     
                     if (command.substr(0, 4) == "KEY:") {
-                        char key = command[4];
-                        sendKey(static_cast<SDL_Keycode>(key));
-                        write(client, "OK\n", 3);
+                        std::string keyStr = command.substr(4);
+                        SDL_Keycode keycode = SDLK_UNKNOWN;
+                        
+                        if (keyStr == "UP") keycode = SDLK_UP;
+                        else if (keyStr == "DOWN") keycode = SDLK_DOWN;
+                        else if (keyStr == "LEFT") keycode = SDLK_LEFT;
+                        else if (keyStr == "RIGHT") keycode = SDLK_RIGHT;
+                        else if (keyStr == "ENTER") keycode = SDLK_RETURN;
+                        else if (keyStr == "ESCAPE") keycode = SDLK_ESCAPE;
+                        else if (keyStr.length() == 1) {
+                            keycode = static_cast<SDL_Keycode>(keyStr[0]);
+                        }
+                        
+                        if (keycode != SDLK_UNKNOWN) {
+                            sendKey(keycode);
+                            write(client, "OK\n", 3);
+                        } else {
+                            write(client, "ERROR: Unknown key\n", 19);
+                        }
                     } else if (command.substr(0, 8) == "KEYSEQ:") {
                         sendKeySequence(command.substr(8));
                         write(client, "OK\n", 3);

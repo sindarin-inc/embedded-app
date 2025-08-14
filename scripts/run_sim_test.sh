@@ -16,7 +16,7 @@ echo "Waiting for simulator to start..."
 sleep 3
 
 # Check if automation socket is available
-SOCKET_PATH="/tmp/sol_simulator_automation.sock"
+SOCKET_PATH="./sol_simulator_automation.sock"
 MAX_WAIT=10
 WAIT_COUNT=0
 

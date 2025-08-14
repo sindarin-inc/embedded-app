@@ -37,4 +37,7 @@ build-log.txt
 test_kindle_*.ini
 
 # Claude makes docs for sharing with other repos
-docs/* 
+docs/*
+
+# Simulator automation socket
+sol_simulator_automation.sock 

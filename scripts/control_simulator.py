@@ -16,7 +16,7 @@ import argparse
 import time
 import os
 
-SOCKET_PATH = "/tmp/sol_simulator_automation.sock"
+SOCKET_PATH = "./sol_simulator_automation.sock"
 
 def send_command(command):
     """Send a command to the simulator and get response."""
@@ -34,20 +34,23 @@ def send_command(command):
 def send_key(key):
     """Send a single key press."""
     key_map = {
-        'up': 'u',
-        'down': 'd', 
-        'left': 'l',
-        'right': 'r',
-        'enter': '\n',
-        'escape': '\e',
-        'back': '\e'
+        'up': 'UP',
+        'down': 'DOWN', 
+        'left': 'LEFT',
+        'right': 'RIGHT',
+        'enter': 'ENTER',
+        'escape': 'ESCAPE',
+        'back': 'ESCAPE'
     }
     
     if key.lower() in key_map:
         key = key_map[key.lower()]
-    elif len(key) > 1:
-        print(f"Unknown key: {key}")
-        return False
+    elif len(key) == 1:
+        # Single character - send as is
+        pass
+    else:
+        # Try uppercase version for special keys
+        key = key.upper()
     
     response = send_command(f"KEY:{key}")
     return response and "OK" in response
