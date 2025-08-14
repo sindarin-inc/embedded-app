@@ -176,28 +176,28 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
         auto pagesToAdvance = currentPageIndex - previousPageIndex;
 
         // Proactive preloading: Check if we need to load more content
-        // Load if:
-        // 1. We have less than BUFFER_THRESHOLD_BYTES bytes remaining
-        // 2. We have less than BUFFER_THRESHOLD_PAGES pages remaining
-        // 3. We're at the end of content
+        // Priority order (highest to lowest):
+        // 1. At last page or end of content (most critical)
+        // 2. Less than threshold pages remaining
+        // 3. Less than threshold bytes remaining
         auto pageToPreview = 0;
         bool shouldPreload = false;
         std::string preloadReason;
 
-        if (bytesRemaining < BUFFER_THRESHOLD_BYTES) {
+        if (currentPageIndex == lastPageIndex || atEndOfContent) {
             shouldPreload = true;
-            preloadReason = "low-bytes";
-            log_i("Preloading triggered: Only %zu bytes remaining (threshold: %zu)", bytesRemaining,
-                  BUFFER_THRESHOLD_BYTES);
+            preloadReason = atEndOfContent ? "end-content" : "last-page";
+            log_i("Preloading triggered: At last page or end of content");
         } else if (pagesRemaining < BUFFER_THRESHOLD_PAGES) {
             shouldPreload = true;
             preloadReason = "low-pages";
             log_i("Preloading triggered: Only %d pages remaining (threshold: %d)", pagesRemaining,
                   BUFFER_THRESHOLD_PAGES);
-        } else if (currentPageIndex == lastPageIndex || atEndOfContent) {
+        } else if (bytesRemaining < BUFFER_THRESHOLD_BYTES) {
             shouldPreload = true;
-            preloadReason = atEndOfContent ? "end-content" : "last-page";
-            log_i("Preloading triggered: At last page or end of content");
+            preloadReason = "low-bytes";
+            log_i("Preloading triggered: Only %zu bytes remaining (threshold: %zu)", bytesRemaining,
+                  BUFFER_THRESHOLD_BYTES);
         }
 
         if (shouldPreload) {
