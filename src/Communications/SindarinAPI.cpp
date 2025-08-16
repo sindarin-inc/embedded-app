@@ -628,12 +628,11 @@ auto SindarinAPI::openKindleBook(const SpiramString &title, KindlePageResponse *
 
 auto SindarinAPI::navigateKindle(const SpiramString &title, KindlePageResponse *resp,
                                  const std::shared_ptr<CancelFlag> &cancelFlag, bool useBle,
-                                 int navigate, int preview) -> int {
-    // Properly URL encode the title
+                                 int navigateTo, int previewTo) -> int {
     std::string encodedTitle = Urlencode(std::string(title));
 
-    std::string path = StringFormat("/kindle/navigate?navigate=%d&preview=%d&title=%s", navigate,
-                                    preview, encodedTitle.c_str());
+    std::string path = StringFormat("/kindle/navigate?navigate_to=%d&preview_to=%d&title=%s", 
+                                    navigateTo, previewTo, encodedTitle.c_str());
     return makeKindleRequest(path, resp, cancelFlag, useBle);
 }
 

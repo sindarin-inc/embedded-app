@@ -54,6 +54,9 @@ static std::atomic<int> mockErrorCode(500);
 static std::atomic<int> mockCurrentLine(0); // Track which line we're serving next
 static const int LINES_PER_PAGE = 20;       // Each "page" contains 20 lines
 
+// State tracking for absolute navigation
+static std::atomic<int> mockBookOpenPosition(0); // Track the position when book was opened (always 0)
+
 // Synchronization for content rendering
 static std::atomic<bool> contentRendered(false);
 static std::atomic<int> contentRenderCount(0);
@@ -82,6 +85,7 @@ void resetMockState() {
     mockDelayMs = 0;
     mockErrorCode = 500;
     mockCurrentLine = 1;
+    mockBookOpenPosition = 0;
     contentRendered = false;
     contentRenderCount = 0;
 }
@@ -204,18 +208,15 @@ void setupHttpServer(std::unique_ptr<httplib::Server> &httpServer,
         }
     });
 
-    // Handle Kindle navigate endpoint
     httpServer->Get("/kindle/navigate", [](const httplib::Request &req, httplib::Response &res) {
         mockNavigateCallCount++;
         log_i("Mock server: ---> Received GET /kindle/navigate request #%d",
               mockNavigateCallCount.load());
 
-        // Simulate delay if requested
         if (mockDelayMs > 0) {
             std::this_thread::sleep_for(std::chrono::milliseconds(mockDelayMs.load()));
         }
 
-        // Simulate timeout/disconnect
         if (mockShouldTimeout) {
             std::this_thread::sleep_for(std::chrono::seconds(30));
             return;
@@ -225,7 +226,6 @@ void setupHttpServer(std::unique_ptr<httplib::Server> &httpServer,
             return;
         }
 
-        // Simulate server errors
         if (mockShouldReturnError) {
             res.set_content("{\"success\": false, \"error\": \"Server error\"}",
                             "application/json");
@@ -233,52 +233,36 @@ void setupHttpServer(std::unique_ptr<httplib::Server> &httpServer,
             return;
         }
 
-        // Extract navigate and preview parameters
-        int navigate = 0;
-        int preview = 0;
-        if (req.has_param("navigate")) {
-            navigate = std::stoi(req.get_param_value("navigate"));
+        int navigateTo = 0;
+        int previewTo = 0;
+        
+        if (req.has_param("navigate_to")) {
+            navigateTo = std::stoi(req.get_param_value("navigate_to"));
         }
-        if (req.has_param("preview")) {
-            preview = std::stoi(req.get_param_value("preview"));
+        if (req.has_param("preview_to")) {
+            previewTo = std::stoi(req.get_param_value("preview_to"));
         }
-
-        log_i("Mock server: Request params - navigate=%d, preview=%d", navigate, preview);
-        log_i("Mock server: Full query string: %s", req.target.c_str());
-
-        // For consistent test results, always serve the same content based on the request count
-        // This ensures screenshots are stable even if the test reruns
-        int requestNumber = mockNavigateCallCount.load();
-        int startLine = 1;
-
-        // Determine content based on request pattern:
-        // Initial book has lines 1-20
-        // Request 1: Preview next page (lines 21-40)
-        // Request 2: Navigate forward to page 2 (lines 41-60)
-        // Request 3: Navigate forward to page 3 (lines 61-80)
-        // Backward navigation uses cached content, no new requests
-        // Second forward navigation also uses cached content
-
-        if (requestNumber == 1) {
-            startLine = 21; // First preview request after initial content
-        } else if (requestNumber == 2) {
-            startLine = 41; // First forward navigation (page 2)
-        } else if (requestNumber == 3) {
-            startLine = 61; // Second forward navigation (page 3)
-        } else {
-            // For any additional requests, continue the sequence
-            startLine = 21 + (requestNumber - 1) * LINES_PER_PAGE;
+        
+        log_i("Mock server: ABSOLUTE navigation - navigate_to=%d, preview_to=%d", navigateTo, previewTo);
+        
+        int currentPageNumber = navigateTo + 1;
+        int startLine = 1 + (navigateTo * LINES_PER_PAGE);
+        
+        int previewPages = 0;
+        if (previewTo > navigateTo) {
+            previewPages = previewTo - navigateTo;
         }
+        
+        log_i("Mock server: Absolute nav - serving page %d (lines %d-%d), preview %d pages ahead",
+              currentPageNumber, startLine, startLine + LINES_PER_PAGE - 1, previewPages);
 
-        // Return preview pages worth of content
         std::string content = "";
-        if (preview > 0) {
-            content = generateSequentialContent(startLine, preview * LINES_PER_PAGE);
-            log_i("Mock server: Generating content for request #%d - Lines %d-%d", requestNumber,
-                  startLine, startLine + preview * LINES_PER_PAGE - 1);
+        if (previewPages > 0) {
+            content = generateSequentialContent(startLine, previewPages * LINES_PER_PAGE);
+            log_i("Mock server: Generating content - Lines %d-%d", startLine,
+                  startLine + previewPages * LINES_PER_PAGE - 1);
         }
 
-        // Escape newlines for JSON
         std::string escapedContent = content;
         size_t pos = 0;
         while ((pos = escapedContent.find('\n', pos)) != std::string::npos) {
@@ -286,8 +270,7 @@ void setupHttpServer(std::unique_ptr<httplib::Server> &httpServer,
             pos += 2;
         }
 
-        int percentage = std::min(95, mockNavigateCallCount.load() * 10);
-        int currentPage = mockNavigateCallCount.load() + 1;
+        int percentage = std::min(95, currentPageNumber * 10);
 
         std::string jsonResponse = R"({
             "success": true,
@@ -297,14 +280,13 @@ void setupHttpServer(std::unique_ptr<httplib::Server> &httpServer,
                 "percentage": )" + std::to_string(percentage) +
                                    R"(,
                 "current_page": )" +
-                                   std::to_string(currentPage) + R"(,
+                                   std::to_string(currentPageNumber) + R"(,
                 "total_pages": 100
             }
         })";
 
         log_i("Mock server: Sending navigate response with %zu chars, page %d/%d, %d%%",
-              escapedContent.length(), currentPage, 100, percentage);
-        log_i("Mock server: First 100 chars of content: %.100s", escapedContent.c_str());
+              escapedContent.length(), currentPageNumber, 100, percentage);
         res.set_content(jsonResponse, "application/json");
         res.status = 200;
     });
@@ -855,5 +837,291 @@ TEST_CASE("Test Kindle navigation visual traversal", "[.][kindle]") {
     log_i("TEST: Exiting visual navigation test");
 
     // Reset SindarinAPI to default URL to avoid affecting other tests
+    api->overrideBaseUrl("");
+}
+
+TEST_CASE("Test Kindle absolute navigation idempotency", "[kindle]") {
+    SetImagesFolder("KindleImages");
+    
+    auto httpServer = std::make_unique<httplib::Server>();
+    auto httpServerThread = std::make_shared<std::thread>();
+    std::atomic<bool> serverRunning(false);
+    int port = 8081;
+    
+    std::map<std::string, int> navigationRequestCounts;
+    
+    httpServer = std::make_unique<httplib::Server>();
+    
+    httpServer->Get("/kindle/open-book", [](const httplib::Request &req, httplib::Response &res) {
+        log_i("Mock server: Received /kindle/open-book - returning page 0 (lines 1-20)");
+        
+        std::string content = generateSequentialContent(1, LINES_PER_PAGE);
+        std::string escapedContent = content;
+        size_t pos = 0;
+        while ((pos = escapedContent.find('\n', pos)) != std::string::npos) {
+            escapedContent.replace(pos, 1, "\\n");
+            pos += 2;
+        }
+        
+        std::string jsonResponse = R"({
+            "success": true,
+            "ocr_text": ")" + escapedContent + R"(",
+            "progress": {
+                "percentage": 0,
+                "current_page": 1,
+                "total_pages": 100
+            }
+        })";
+        
+        res.set_content(jsonResponse, "application/json");
+        res.status = 200;
+    });
+    
+    httpServer->Get("/kindle/navigate", [&navigationRequestCounts](const httplib::Request &req, httplib::Response &res) {
+        int navigateTo = req.has_param("navigate_to") ? std::stoi(req.get_param_value("navigate_to")) : 0;
+        int previewTo = req.has_param("preview_to") ? std::stoi(req.get_param_value("preview_to")) : 0;
+        
+        std::string navKey = "nav_" + std::to_string(navigateTo) + "_prev_" + std::to_string(previewTo);
+        navigationRequestCounts[navKey]++;
+        
+        log_i("Mock server: Idempotent nav - navigate_to=%d, preview_to=%d (request #%d for this combo)",
+              navigateTo, previewTo, navigationRequestCounts[navKey]);
+        
+        int startLine = 1 + (navigateTo * LINES_PER_PAGE);
+        int previewPages = (previewTo > navigateTo) ? (previewTo - navigateTo) : 0;
+        
+        std::string content = "";
+        if (previewPages > 0) {
+            content = generateSequentialContent(startLine, previewPages * LINES_PER_PAGE);
+            log_i("Mock server: Returning lines %d-%d (idempotent)",
+                  startLine, startLine + previewPages * LINES_PER_PAGE - 1);
+        }
+        
+        std::string escapedContent = content;
+        size_t pos = 0;
+        while ((pos = escapedContent.find('\n', pos)) != std::string::npos) {
+            escapedContent.replace(pos, 1, "\\n");
+            pos += 2;
+        }
+        
+        int currentPageNumber = navigateTo + 1;
+        int percentage = std::min(95, currentPageNumber * 10);
+        
+        std::string jsonResponse = R"({
+            "success": true,
+            "ocr_text": ")" + escapedContent + R"(",
+            "progress": {
+                "percentage": )" + std::to_string(percentage) + R"(,
+                "current_page": )" + std::to_string(currentPageNumber) + R"(,
+                "total_pages": 100
+            }
+        })";
+        
+        res.set_content(jsonResponse, "application/json");
+        res.status = 200;
+    });
+    
+    // Start server
+    httpServerThread = std::make_shared<std::thread>([port, &httpServer, &serverRunning]() {
+        log_i("Starting idempotent test server on port %d", port);
+        serverRunning = true;
+        httpServer->listen("127.0.0.1", port);
+        serverRunning = false;
+    });
+    
+    std::this_thread::sleep_for(std::chrono::milliseconds(200));
+    defer { teardownHttpServer(httpServer, httpServerThread); };
+    
+    // Test direct API calls (without FreeRTOS)
+    auto api = SindarinAPI::getInstance();
+    api->overrideBaseUrl("http://127.0.0.1:8081");
+    api->setAccessToken("test-token");
+    
+    SECTION("Idempotent navigation requests") {
+        auto cancelFlag = std::make_shared<CancelFlag>();
+        
+        log_i("TEST: Testing idempotency of navigate_to=0, preview_to=2");
+        std::vector<std::string> responses;
+        
+        for (int i = 0; i < 3; i++) {
+            auto response = std::make_shared<KindlePageResponse>();
+            std::string url = "/kindle/navigate?navigate_to=0&preview_to=2&title=TestBook";
+            
+            httplib::Client client("127.0.0.1", port);
+            auto res = client.Get(url.c_str());
+            
+            REQUIRE(res);
+            REQUIRE(res->status == 200);
+            responses.push_back(res->body);
+            
+            log_i("TEST: Request %d response length: %zu", i+1, res->body.length());
+        }
+        
+        for (size_t i = 1; i < responses.size(); i++) {
+            REQUIRE(responses[i] == responses[0]);
+        }
+        
+        REQUIRE(navigationRequestCounts["nav_0_prev_2"] == 3);
+        
+        log_i("TEST: Testing different navigation positions");
+        
+        httplib::Client client("127.0.0.1", port);
+        auto res1 = client.Get("/kindle/navigate?navigate_to=5&preview_to=6&title=TestBook");
+        REQUIRE(res1);
+        REQUIRE(res1->status == 200);
+        
+        auto res2 = client.Get("/kindle/navigate?navigate_to=5&preview_to=8&title=TestBook");
+        REQUIRE(res2);
+        REQUIRE(res2->status == 200);
+        
+        REQUIRE(res1->body != res2->body);
+        
+        auto res3 = client.Get("/kindle/navigate?navigate_to=5&preview_to=6&title=TestBook");
+        REQUIRE(res3);
+        REQUIRE(res3->body == res1->body);
+        
+        REQUIRE(navigationRequestCounts["nav_5_prev_6"] == 2);
+        REQUIRE(navigationRequestCounts["nav_5_prev_8"] == 1);
+    }
+    
+    SECTION("Negative navigation scenarios") {
+        httplib::Client client("127.0.0.1", port);
+        
+        log_i("TEST: Testing negative navigation (navigate_to=-1)");
+        auto res = client.Get("/kindle/navigate?navigate_to=-1&preview_to=0&title=TestBook");
+        REQUIRE(res);
+        REQUIRE(res->status == 200);
+        
+        log_i("TEST: Testing preview_to < navigate_to");
+        auto res2 = client.Get("/kindle/navigate?navigate_to=5&preview_to=3&title=TestBook");
+        REQUIRE(res2);
+        REQUIRE(res2->status == 200);
+    }
+    
+    SECTION("Partial content scenarios") {
+        httplib::Client client("127.0.0.1", port);
+        
+        log_i("TEST: Testing partial preview (navigate_to=0, preview_to=1)");
+        auto res1 = client.Get("/kindle/navigate?navigate_to=0&preview_to=1&title=TestBook");
+        REQUIRE(res1);
+        REQUIRE(res1->status == 200);
+        
+        auto res2 = client.Get("/kindle/navigate?navigate_to=0&preview_to=3&title=TestBook");
+        REQUIRE(res2);
+        REQUIRE(res2->status == 200);
+        
+        std::string body1 = res1->body;
+        std::string body2 = res2->body;
+        
+        size_t pos1 = body1.find("\"ocr_text\": \"") + 13;
+        size_t end1 = body1.find("\",", pos1);
+        std::string content1 = body1.substr(pos1, end1 - pos1);
+        
+        size_t pos2 = body2.find("\"ocr_text\": \"") + 13;
+        size_t end2 = body2.find("\",", pos2);
+        std::string content2 = body2.substr(pos2, end2 - pos2);
+        
+        REQUIRE(content2.length() > content1.length());
+        REQUIRE(content2.substr(0, content1.length()) == content1);
+    }
+    
+    // Reset API
+    api->overrideBaseUrl("");
+}
+
+TEST_CASE("Test Kindle sync tracking", "[kindle]") {
+    SetImagesFolder("KindleImages");
+    
+    auto display = createDisplay();
+    
+    auto httpServer = std::make_unique<httplib::Server>();
+    auto httpServerThread = std::make_shared<std::thread>();
+    std::atomic<bool> serverRunning(false);
+    int port = 8082;
+    
+    std::atomic<int> lastNavigateTo(-1);
+    
+    httpServer = std::make_unique<httplib::Server>();
+    
+    httpServer->Get("/kindle/open-book", [](const httplib::Request &req, httplib::Response &res) {
+        std::string content = generateSequentialContent(1, LINES_PER_PAGE);
+        std::string escapedContent = content;
+        size_t pos = 0;
+        while ((pos = escapedContent.find('\n', pos)) != std::string::npos) {
+            escapedContent.replace(pos, 1, "\\n");
+            pos += 2;
+        }
+        
+        res.set_content(R"({"success": true, "ocr_text": ")" + escapedContent + 
+                       R"(", "progress": {"percentage": 0, "current_page": 1, "total_pages": 100}})",
+                       "application/json");
+        res.status = 200;
+    });
+    
+    httpServer->Get("/kindle/navigate", [&lastNavigateTo](const httplib::Request &req, httplib::Response &res) {
+        int navigateTo = req.has_param("navigate_to") ? std::stoi(req.get_param_value("navigate_to")) : 0;
+        int previewTo = req.has_param("preview_to") ? std::stoi(req.get_param_value("preview_to")) : 0;
+        
+        lastNavigateTo = navigateTo;
+        log_i("Mock server: Sync test - navigate_to=%d, preview_to=%d", navigateTo, previewTo);
+        
+        int startLine = 1 + (navigateTo * LINES_PER_PAGE);
+        int previewPages = (previewTo > navigateTo) ? (previewTo - navigateTo) : 0;
+        
+        std::string content = "";
+        if (previewPages > 0) {
+            content = generateSequentialContent(startLine, previewPages * LINES_PER_PAGE);
+        }
+        
+        std::string escapedContent = content;
+        size_t pos = 0;
+        while ((pos = escapedContent.find('\n', pos)) != std::string::npos) {
+            escapedContent.replace(pos, 1, "\\n");
+            pos += 2;
+        }
+        
+        res.set_content(R"({"success": true, "ocr_text": ")" + escapedContent + 
+                       R"(", "progress": {"percentage": )" + std::to_string(navigateTo * 10) +
+                       R"(, "current_page": )" + std::to_string(navigateTo + 1) +
+                       R"(, "total_pages": 100}})", "application/json");
+        res.status = 200;
+    });
+    
+    // Start server
+    httpServerThread = std::make_shared<std::thread>([port, &httpServer, &serverRunning]() {
+        serverRunning = true;
+        httpServer->listen("127.0.0.1", port);
+        serverRunning = false;
+    });
+    
+    std::this_thread::sleep_for(std::chrono::milliseconds(200));
+    defer { teardownHttpServer(httpServer, httpServerThread); };
+    
+    auto api = SindarinAPI::getInstance();
+    api->overrideBaseUrl("http://127.0.0.1:8082");
+    api->setAccessToken("test-token");
+    
+    SECTION("Verify sync position tracking") {
+        httplib::Client client("127.0.0.1", port);
+        
+        auto res1 = client.Get("/kindle/navigate?navigate_to=0&preview_to=2&title=TestBook");
+        REQUIRE(res1);
+        REQUIRE(lastNavigateTo == 0);
+        
+        auto res2 = client.Get("/kindle/navigate?navigate_to=2&preview_to=4&title=TestBook");
+        REQUIRE(res2);
+        REQUIRE(lastNavigateTo == 2);
+        
+        auto res3 = client.Get("/kindle/navigate?navigate_to=1&preview_to=3&title=TestBook");
+        REQUIRE(res3);
+        REQUIRE(lastNavigateTo == 1);
+        
+        auto res4 = client.Get("/kindle/navigate?navigate_to=5&preview_to=7&title=TestBook");
+        REQUIRE(res4);
+        REQUIRE(lastNavigateTo == 5);
+        
+        log_i("TEST: Verified sync tracking through navigation sequence");
+    }
+    
     api->overrideBaseUrl("");
 }

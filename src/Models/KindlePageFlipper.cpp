@@ -163,22 +163,18 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
         auto currentPageIndex = pageStream_->pageIndexForOffset(place->getOffset());
         auto lastPageIndex = pageStream_->lastPageIndex();
 
-        auto pagesToAdvance = currentPageIndex - previousPageIndex;
-        // Cases:
-        // 1. We don't have a full page of content ahead (load one preview page)
-        // 2. We have a full page of content but it is too short and we're at the end of the content
-        // (load another page into the preview)
-        auto pageToPreview = 0;
+        auto navigateTo = currentPageIndex;
+        auto previewTo = navigateTo;
         if (currentPageIndex == lastPageIndex || atEndOfContent) {
-            pageToPreview = lastPageIndex - currentPageIndex + 1;
+            previewTo = navigateTo + 1;
         }
 
-        log_d("Now on page %d/%d, previously on page %d/%d, advancing %d pages and previewing page "
-              "%d (atEndOfContent=%d)",
-              currentPageIndex, lastPageIndex, previousPageIndex, lastPageIndex, pagesToAdvance,
-              pageToPreview, atEndOfContent);
+        log_d("Absolute navigation: navigateTo=%d, previewTo=%d (current=%d/%d, previous=%d/%d, "
+              "atEndOfContent=%d)",
+              navigateTo, previewTo, currentPageIndex, lastPageIndex, previousPageIndex, 
+              lastPageIndex, atEndOfContent);
 
-        if (pagesToAdvance > 0 || pageToPreview > 0) {
+        if (navigateTo != previousPageIndex || previewTo > lastPageIndex) {
             // Track navigation start time
             int64_t navigationStartTime = esp_timer_get_time();
 
@@ -186,20 +182,18 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
                 {"event", std::string("book-navigate")},
                 {"action", std::string("navigate-begin")},
                 {"kindle", true},
-                {"direction", pagesToAdvance},
+                {"navigate_to", navigateTo},
+                {"preview_to", previewTo},
                 {"po", static_cast<int>(place->getOffset())},
                 {"elapsed_ms", 0}};
-            if (pageToPreview > 0) {
-                beginTelemetryData["preview"] = pageToPreview;
-            }
             telemetry_.logMetric(TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
                                  beginTelemetryData);
 
             auto response = std::make_shared<KindlePageResponse>();
 
             int httpCode = SindarinAPI::getInstance()->navigateKindle(
-                kindleBook_->title, response.get(), cancelFlag, useBle_, pagesToAdvance,
-                pageToPreview);
+                kindleBook_->title, response.get(), cancelFlag, useBle_, navigateTo,
+                previewTo);
             if (CancelFlag::isCancelled(cancelFlag)) {
                 return;
             }
@@ -212,13 +206,11 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
                     {"event", std::string("book-navigate")},
                     {"action", std::string("navigate-failed")},
                     {"kindle", true},
-                    {"direction", pagesToAdvance},
+                    {"navigate_to", navigateTo},
+                    {"preview_to", previewTo},
                     {"po", static_cast<int>(place->getOffset())},
                     {"error", errorMessage},
                     {"elapsed_ms", static_cast<int>(elapsedMs)}};
-                if (pageToPreview > 0) {
-                    failedTelemetryData["preview"] = pageToPreview;
-                }
                 telemetry_.logMetric(TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
                                      failedTelemetryData);
 
@@ -238,10 +230,8 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
             auto hasDialog = checkForLastReadDialog(response);
 
             size_t ocrTextLength = 0;
-            // If this is a last read dialog, don't append the page
             if (!hasDialog) {
-                // If we're navigating only, don't expect a page
-                if (pageToPreview > 0) {
+                if (previewTo > navigateTo) {
                     ocrTextLength = response->ocrText.size();
                     pageStream_->appendPageFromResponse(*response);
                 }
@@ -252,13 +242,11 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
                 {"event", std::string("book-navigate")},
                 {"action", std::string("navigate-success")},
                 {"kindle", true},
-                {"direction", pagesToAdvance},
+                {"navigate_to", navigateTo},
+                {"preview_to", previewTo},
                 {"po", static_cast<int>(place->getOffset())},
                 {"ocr_text_length", static_cast<int>(ocrTextLength)},
                 {"elapsed_ms", static_cast<int>(elapsedMs)}};
-            if (pageToPreview > 0) {
-                successTelemetryData["preview"] = pageToPreview;
-            }
             telemetry_.logMetric(TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
                                  successTelemetryData);
 
@@ -269,8 +257,8 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
             serverSyncPlace_ = std::dynamic_pointer_cast<TxtPlace>(place);
         } else {
             log_d("Skipping navigation request - already have buffered content (currentPage=%d, "
-                  "lastPage=%d, pagesToAdvance=%d)",
-                  currentPageIndex, lastPageIndex, pagesToAdvance);
+                  "lastPage=%d, navigateTo=%d, previewTo=%d)",
+                  currentPageIndex, lastPageIndex, navigateTo, previewTo);
 
             // For cached content, still call the gotContentFunction to maintain consistent behavior
             if (gotContentFunction_) {
