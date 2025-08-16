@@ -631,7 +631,7 @@ auto SindarinAPI::navigateKindle(const SpiramString &title, KindlePageResponse *
                                  int navigateTo, int previewTo) -> int {
     std::string encodedTitle = Urlencode(std::string(title));
 
-    std::string path = StringFormat("/kindle/navigate?navigate_to=%d&preview_to=%d&title=%s", 
+    std::string path = StringFormat("/kindle/navigate?navigate_to=%d&preview_to=%d&title=%s",
                                     navigateTo, previewTo, encodedTitle.c_str());
     return makeKindleRequest(path, resp, cancelFlag, useBle);
 }

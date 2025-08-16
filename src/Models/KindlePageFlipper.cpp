@@ -171,7 +171,7 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
 
         log_d("Absolute navigation: navigateTo=%d, previewTo=%d (current=%d/%d, previous=%d/%d, "
               "atEndOfContent=%d)",
-              navigateTo, previewTo, currentPageIndex, lastPageIndex, previousPageIndex, 
+              navigateTo, previewTo, currentPageIndex, lastPageIndex, previousPageIndex,
               lastPageIndex, atEndOfContent);
 
         if (navigateTo != previousPageIndex || previewTo > lastPageIndex) {
@@ -192,8 +192,7 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
             auto response = std::make_shared<KindlePageResponse>();
 
             int httpCode = SindarinAPI::getInstance()->navigateKindle(
-                kindleBook_->title, response.get(), cancelFlag, useBle_, navigateTo,
-                previewTo);
+                kindleBook_->title, response.get(), cancelFlag, useBle_, navigateTo, previewTo);
             if (CancelFlag::isCancelled(cancelFlag)) {
                 return;
             }
