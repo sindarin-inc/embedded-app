@@ -427,8 +427,8 @@ void LocalStore::changedReadablesBookmarksJson(ReadableBookmarksVector &bookmark
                 log_e("Failed to open bookmark file: %s", bookmarkPath.c_str());
                 this->telemetry_.logMetric(TelemetryField::METRIC_SYNC_STATUS,
                                            "bookmark-file-open-failed",
-                                           {{"uuid", readable->shortenedUuid},
-                                            {"title", readable->title},
+                                           {{"uuid", std::string(readable->shortenedUuid)},
+                                            {"title", std::string(readable->title)},
                                             {"type", ReadableModelTypeToString(modelType)}});
                 continue;
             }
@@ -457,10 +457,10 @@ void LocalStore::changedReadablesBookmarksJson(ReadableBookmarksVector &bookmark
                             readable->title.c_str(), readable->uuid.c_str());
                         this->telemetry_.logMetric(
                             TelemetryField::METRIC_EVENT, "bookmark_invalid",
-                            {{"uuid", readable->shortenedUuid},
-                             {"title", readable->title},
+                            {{"uuid", std::string(readable->shortenedUuid)},
+                             {"title", std::string(readable->title)},
                              {"type", ReadableModelTypeToString(modelType)},
-                             {"reason", "invalid_range"},
+                             {"reason", std::string("invalid_range")},
                              {"start_offset", static_cast<int>(bookmark.firstPlace->getOffset())},
                              {"end_offset", static_cast<int>(bookmark.lastPlace->getOffset())}});
                     }
