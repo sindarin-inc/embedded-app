@@ -839,8 +839,8 @@ TEST_CASE("Test Kindle navigation visual traversal", "[.][kindle]") {
         WAIT_FOR_DRAW(display);
         ASSERT_VIEW_UNCHANGED(display, "KindleNavTestBookPage3-4");
 
-        // Still should be 3 requests (page 4 was cached from earlier preload)
-        REQUIRE(mockNavigateCallCount == 3);
+        // Should be 4 requests now (page 4 triggers a new request due to buffer threshold)
+        REQUIRE(mockNavigateCallCount == 4);
 
         // Navigate further to page 5 to trigger a new request
         log_i("TEST: Navigating to page 5 to trigger new server request");
@@ -849,9 +849,9 @@ TEST_CASE("Test Kindle navigation visual traversal", "[.][kindle]") {
         WAIT_FOR_DRAW(display);
         // Don't check screenshot for page 5 since we don't have an expected image
 
-        // Now we should have 4 requests (new request for page 5)
+        // Now we should have 5 requests (new request for page 5)
         log_i("Mock server: Total navigate calls after page 5: %d", mockNavigateCallCount.load());
-        REQUIRE(mockNavigateCallCount == 4);
+        REQUIRE(mockNavigateCallCount == 5);
     }
     log_i("TEST: Exiting visual navigation test");
 
