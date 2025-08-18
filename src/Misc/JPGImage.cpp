@@ -1,6 +1,8 @@
 #if CONFIG_SOC_JPEG_DECODE_SUPPORTED
 #include "JPGImage.hpp"
 
+#include <algorithm>
+#include <cstdlib>
 #include <cstring>
 
 #include "Displays/DisplaySystem.hpp"
@@ -9,6 +11,10 @@
 
 #if !SIMULATOR && CONFIG_SOC_JPEG_DECODE_SUPPORTED
 #include "driver/jpeg_decode.h"
+// For esp_jpeg software decoder component (if available)
+#ifdef CONFIG_ESP_JPEG_COMPONENT
+#include "esp_jpeg_dec.h"
+#endif
 #endif // CONFIG_SOC_JPEG_DECODE_SUPPORTED
 
 auto JPGImage::load(const std::string &filePath, FileSystem &fs) -> bool {
@@ -42,10 +48,22 @@ auto JPGImage::load(const std::string &filePath, FileSystem &fs) -> bool {
     }
 
     file.close();
-    return readFromBytes(fileBuffer.get(), static_cast<int>(fileSize));
+    return readFromBytes(fileBuffer.get(), static_cast<int>(fileSize), JPGDecodeMode::SOFTWARE);
 }
 
-auto JPGImage::readFromBytes(uint8_t *jpgbytes, int size) -> bool {
+auto JPGImage::readFromBytes(uint8_t *jpgbytes, int size, JPGDecodeMode mode) -> bool {
+    switch (mode) {
+    case JPGDecodeMode::HARDWARE:
+        return readFromBytesHardware(jpgbytes, size);
+    case JPGDecodeMode::SOFTWARE:
+        return readFromBytesSoftware(jpgbytes, size);
+    default:
+        log_e("Unknown JPEG decode mode");
+        return false;
+    }
+}
+
+auto JPGImage::readFromBytesHardware(uint8_t *jpgbytes, int size) -> bool {
 #if !SIMULATOR && CONFIG_SOC_JPEG_DECODE_SUPPORTED
     // Use modern ESP-IDF JPEG decoder API like focus-firmware
     jpeg_decode_engine_cfg_t engine_cfg = {
@@ -136,6 +154,102 @@ void JPGImage::draw(DisplaySystem &display, int x, int y) {
     memcpy(display.getBuffer(), outputBuffer_.get(), width_ * height_ * 3);
 
     log_d("Drew JPG image: %dx%d", width_, height_);
+}
+
+// New software decoding implementation
+auto JPGImage::readFromBytesSoftware(uint8_t *jpgbytes, int size) -> bool {
+#if !SIMULATOR && CONFIG_SOC_JPEG_DECODE_SUPPORTED
+
+#ifdef CONFIG_ESP_JPEG_COMPONENT
+    // Use esp_jpeg component for software decode (if available)
+    log_d("JPGImage::readFromBytesSoftware using esp_jpeg component, size: %d bytes", size);
+
+    // First pass: get image info without allocating output buffer
+    esp_jpeg_image_cfg_t info_cfg = {.indata = jpgbytes,
+                                     .indata_size = size,
+                                     .outbuf = nullptr, // No output buffer for info-only decode
+                                     .outbuf_size = 0,
+                                     .out_format = JPEG_IMAGE_FORMAT_RGB888,
+                                     .out_scale = JPEG_IMAGE_SCALE_0,
+                                     .flags = {
+                                         .swap_color_bytes = 0,
+                                     }};
+
+    esp_jpeg_image_output_t outimg_info;
+    esp_err_t ret = esp_jpeg_decode(&info_cfg, &outimg_info);
+
+    if (ret != ESP_OK) {
+        log_e("esp_jpeg_decode info pass failed: %s", esp_err_to_name(ret));
+        return false;
+    }
+
+    width_ = outimg_info.width;
+    height_ = outimg_info.height;
+    log_d("JPEG info: %dx%d", width_, height_);
+
+    // Calculate output buffer size
+    size_t output_size = width_ * height_ * 3; // RGB888
+
+    // Allocate output buffer with 16-byte alignment
+    uint8_t *aligned_buffer = (uint8_t *)aligned_alloc(16, output_size);
+    if (!aligned_buffer) {
+        // Fallback to regular malloc if aligned_alloc not available
+        aligned_buffer = (uint8_t *)malloc(output_size);
+    }
+
+    if (!aligned_buffer) {
+        log_e("Failed to allocate output buffer for software decode");
+        return false;
+    }
+
+    outputBuffer_ = std::shared_ptr<uint8_t[]>(aligned_buffer, [](uint8_t *ptr) { free(ptr); });
+
+    // Second pass: actual decode with output buffer
+    esp_jpeg_image_cfg_t decode_cfg = {.indata = jpgbytes,
+                                       .indata_size = size,
+                                       .outbuf = aligned_buffer,
+                                       .outbuf_size = output_size,
+                                       .out_format = JPEG_IMAGE_FORMAT_RGB888,
+                                       .out_scale = JPEG_IMAGE_SCALE_0,
+                                       .flags = {
+                                           .swap_color_bytes = 0,
+                                       }};
+
+    esp_jpeg_image_output_t outimg;
+    ret = esp_jpeg_decode(&decode_cfg, &outimg);
+
+    if (ret != ESP_OK) {
+        log_e("esp_jpeg_decode failed: %s", esp_err_to_name(ret));
+        return false;
+    }
+
+    log_d("JPEG software decoded successfully: %dx%d, total size: %zu bytes", width_, height_,
+          output_size);
+    return true;
+
+#else
+    // Fallback: Use hardware decode with yielding for DSI underflow prevention
+    log_d("JPGImage::readFromBytesSoftware using hardware decode with yielding, size: %d bytes",
+          size);
+
+    // Add small delay before hardware decode to prevent DSI underflow
+    vTaskDelay(pdMS_TO_TICKS(2));
+
+    bool result = readFromBytesHardware(jpgbytes, size);
+
+    // Add small delay after decode to allow DSI to catch up
+    if (result) {
+        vTaskDelay(pdMS_TO_TICKS(2));
+        log_d("Hardware decode with yielding completed successfully");
+    }
+
+    return result;
+#endif
+
+#else
+    log_i("JPG software decoding not available (use JPGImageSTB for simulator)");
+    return false;
+#endif // CONFIG_SOC_JPEG_DECODE_SUPPORTED
 }
 
 auto JPGImage::getBitsPerPixel() -> int { return bitsPerPixel_; }
