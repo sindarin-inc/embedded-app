@@ -632,6 +632,13 @@ void ReadableScreen::writeOutBookmarkUpdate() {
     bookmarkFile.flush();
     bookmarkFile.close();
 
+    // Log bookmark telemetry event
+    std::string bookmarkEvent = inBookmark_ ? "bookmark_add" : "bookmark_remove";
+    telemetry_.logMetric(TelemetryField::METRIC_EVENT, bookmarkEvent,
+                         {{"uuid", readable_->shortenedUuid},
+                          {"starting_position", readable_->place->str()},
+                          {"ending_position", newPlace_->str()}});
+
     prefs_.readableBookmarksChanged.set(readable_->shortenedUuid.c_str(), true);
 }
 
