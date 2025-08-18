@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <functional>
 #include <sys/stat.h>
 #include "sindarin-debug.h"
 
@@ -149,12 +150,31 @@ auto ComicStore::isImageFile(const std::string& filename) -> bool {
 }
 
 void ComicStore::saveComicProgress(const std::string& comicName, int currentPage) {
-    comicProgress_.set(comicName.c_str(), currentPage);
-    log_d("Saved comic progress: %s -> page %d", comicName.c_str(), currentPage);
+    std::string key = createShortKey(comicName);
+    comicProgress_.set(key.c_str(), currentPage);
+    log_d("Saved comic progress: %s (%s) -> page %d", comicName.c_str(), key.c_str(), currentPage);
 }
 
 auto ComicStore::loadComicProgress(const std::string& comicName) -> int {
-    return comicProgress_.get(comicName.c_str());
+    std::string key = createShortKey(comicName);
+    return comicProgress_.get(key.c_str());
+}
+
+auto ComicStore::createShortKey(const std::string& comicName) -> std::string {
+    // Create a short key that fits NVS limitations (15 char max)
+    // Use a simple hash approach to avoid collisions
+    std::hash<std::string> hasher;
+    size_t hash = hasher(comicName);
+    
+    // Convert hash to a short string (use base 36 for compactness)
+    std::string key = "c" + std::to_string(hash % 100000000); // Limit to 8 digits + prefix
+    
+    // Ensure key is within NVS limits (15 chars max)
+    if (key.length() > 12) {
+        key = key.substr(0, 12);
+    }
+    
+    return key;
 }
 
 auto ComicStore::getComicProgressKey(const std::string& comicName) -> std::string {

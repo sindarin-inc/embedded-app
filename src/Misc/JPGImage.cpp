@@ -105,7 +105,7 @@ auto JPGImage::readFromBytes(uint8_t *jpgbytes, int size) -> bool {
     // Decode the image
     jpeg_decode_cfg_t decode_cfg = {
         .output_format = JPEG_DECODE_OUT_FORMAT_RGB888,
-        .rgb_order = JPEG_DEC_RGB_ELEMENT_ORDER_RGB,
+        .rgb_order = JPEG_DEC_RGB_ELEMENT_ORDER_BGR,
     };
 
     uint32_t out_size;
@@ -134,6 +134,8 @@ void JPGImage::draw(DisplaySystem &display, int x, int y) {
         return;
     }
 
+    memcpy(display.getBuffer(), outputBuffer_.get(), width_ * height_ * 3);
+#if 0
     // For device, the display driver should handle the RGB888 data directly
     // Just like focus-firmware does with drawBitmap
     display.gfxClass()->startWrite();
@@ -155,6 +157,7 @@ void JPGImage::draw(DisplaySystem &display, int x, int y) {
     }
 
     display.gfxClass()->endWrite();
+#endif
     log_d("Drew JPG image: %dx%d", width_, height_);
 }
 

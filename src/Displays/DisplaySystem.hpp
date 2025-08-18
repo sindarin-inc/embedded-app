@@ -187,7 +187,7 @@ public:
     void flipInversion();
     [[nodiscard]] auto getInversion() const -> bool { return invertedDisplay_; }
 
-    virtual void clearDisplay() {};
+    virtual void clearDisplay(){};
     virtual void clearFrameBuffer() { fillScreen(bg); };
 
     void forceDontChangeRefreshType() { forceRefreshType_ = true; }
@@ -272,6 +272,8 @@ public:
     virtual void setSkipSignalling(bool skip) {}
 #endif
 
+    [[nodiscard]] virtual auto getBuffer() -> uint8_t * = 0;
+
 protected:
     [[nodiscard]] virtual auto nativeWidth() const -> uint16_t = 0;
     [[nodiscard]] virtual auto nativeHeight() const -> uint16_t = 0;
@@ -291,8 +293,6 @@ protected:
     void rotate(uint16_t &x, uint16_t &y, uint16_t &w, uint16_t &h);
 
     void computeMinMax();
-
-    [[nodiscard]] virtual auto getBuffer() -> uint8_t * = 0;
 
     // Must be set in the constructor of subclasses
     Adafruit_GFX *gfxClass_ = nullptr;

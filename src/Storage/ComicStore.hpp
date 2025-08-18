@@ -21,5 +21,6 @@ private:
     
     auto isImageFile(const std::string& filename) -> bool;
     auto scanDirectoryForImages(const std::string& scanPath, const std::string& filePath) -> std::vector<std::string>;
+    auto createShortKey(const std::string& comicName) -> std::string;
     auto getComicProgressKey(const std::string& comicName) -> std::string;
 };
