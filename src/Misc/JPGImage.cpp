@@ -49,7 +49,7 @@ auto JPGImage::readFromBytes(uint8_t *jpgbytes, int size) -> bool {
 #if !SIMULATOR && CONFIG_SOC_JPEG_DECODE_SUPPORTED
     // Use modern ESP-IDF JPEG decoder API like focus-firmware
     jpeg_decode_engine_cfg_t engine_cfg = {
-        .intr_priority = 0,
+        .intr_priority = 3,
         .timeout_ms = 40,
     };
 
@@ -111,7 +111,6 @@ auto JPGImage::readFromBytes(uint8_t *jpgbytes, int size) -> bool {
     uint32_t out_size;
     ret = jpeg_decoder_process(decoder_engine, &decode_cfg, jpgbytes, size, outputBuffer_.get(),
                                allocated_size, &out_size);
-
     jpeg_del_decoder_engine(decoder_engine);
 
     if (ret != ESP_OK) {

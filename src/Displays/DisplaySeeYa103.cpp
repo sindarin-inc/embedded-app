@@ -18,7 +18,7 @@ IRAM_ATTR bool DisplaySeeYa103::onColorTransDone(esp_lcd_panel_handle_t panel,
     return true;
 }
 
-DisplaySeeYa103::~DisplaySeeYa103() {
+DisplaySeeYa103::~DisplaySeeYa103(){
 
 };
 
@@ -82,7 +82,7 @@ auto DisplaySeeYa103::setup() -> bool {
 
     seeya103_vendor_config_t vendor_config =
         panel_seeya103_vendor_config(mipiDsiBus_, &dpi_config, CONFIG_DISPLAY_RST_PIN);
-    vendor_config.scaling = SEEYA103_SCALING_NONE;
+    vendor_config.scaling = SEEYA103_SCALING_2X;
     vendor_config.init_cmds = nullptr;
     vendor_config.init_cmds_size = 0;
 
@@ -92,12 +92,12 @@ auto DisplaySeeYa103::setup() -> bool {
 
     ESP_ERROR_CHECK(esp_lcd_panel_reset(panelHandle_));
 
-    uint16_t x_offset = (2560 - CONFIG_DISPLAY_WIDTH) / 2;
-    uint16_t y_offset = (2560 - CONFIG_DISPLAY_HEIGHT) / 2;
+    uint16_t x_offset = 0; //(2560 - CONFIG_DISPLAY_WIDTH) / 2;
+    uint16_t y_offset = 0; //(2560 - CONFIG_DISPLAY_HEIGHT) / 2;
 
     err = executeI2C(true, [this, x_offset, y_offset](i2c_master_dev_handle_t device) {
         return seeya103_i2c_send_cmds(device, width(), height(), x_offset, y_offset,
-                                      SEEYA103_SCALING_NONE, false, false, SEEYA103_INIT_CMDS,
+                                      SEEYA103_SCALING_2X, false, false, SEEYA103_INIT_CMDS,
                                       sizeof(SEEYA103_INIT_CMDS) / sizeof(seeya103_lcd_init_cmd_t));
     });
     if (err != ESP_OK) {
@@ -106,7 +106,7 @@ auto DisplaySeeYa103::setup() -> bool {
 
     err = executeI2C(false, [this, x_offset, y_offset](i2c_master_dev_handle_t device) {
         return seeya103_i2c_send_cmds(device, width(), height(), x_offset, y_offset,
-                                      SEEYA103_SCALING_NONE, true, true, SEEYA103_INIT_CMDS,
+                                      SEEYA103_SCALING_2X, true, true, SEEYA103_INIT_CMDS,
                                       sizeof(SEEYA103_INIT_CMDS) / sizeof(seeya103_lcd_init_cmd_t));
     });
     if (err != ESP_OK) {
