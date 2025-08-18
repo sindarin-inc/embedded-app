@@ -135,29 +135,7 @@ void JPGImage::draw(DisplaySystem &display, int x, int y) {
     }
 
     memcpy(display.getBuffer(), outputBuffer_.get(), width_ * height_ * 3);
-#if 0
-    // For device, the display driver should handle the RGB888 data directly
-    // Just like focus-firmware does with drawBitmap
-    display.gfxClass()->startWrite();
 
-    // Draw RGB888 data pixel by pixel (similar to focus-firmware approach)
-    uint8_t *rgb = outputBuffer_.get();
-    for (int py = 0; py < height_; py++) {
-        for (int px = 0; px < width_; px++) {
-            uint8_t r = rgb[0];
-            uint8_t g = rgb[1];
-            uint8_t b = rgb[2];
-
-            // Convert RGB888 to RGB565 for the display
-            uint16_t color = ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3);
-            display.gfxClass()->writePixel(x + px, y + py, color);
-
-            rgb += 3;
-        }
-    }
-
-    display.gfxClass()->endWrite();
-#endif
     log_d("Drew JPG image: %dx%d", width_, height_);
 }
 
