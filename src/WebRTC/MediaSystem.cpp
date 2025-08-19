@@ -151,7 +151,8 @@ int MediaSystem::build(void) {
     build_media_os();
 
     // TODO: I wonder how to configure this directly without the board config file
-    set_codec_board_type("ESP32_P4_DEV_V14");
+    // set_codec_board_type("ESP32_P4_DEV_V14");
+    set_codec_board_type("ESP32_P4_SOL_FOCUS");
     // Notes when use playback and record at same time, must set reuse_dev = false
     codec_init_cfg_t cfg = {
 #if CONFIG_IDF_TARGET_ESP32S3

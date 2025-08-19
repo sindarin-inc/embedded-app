@@ -100,6 +100,11 @@ if(DETECTED_TARGET MATCHES "sol-focus")
         esp_lcd_seeya103
         esp_driver_ppa
         sths34pf80
+        codec_board
+        av_render
+        esp_webrtc
+        esp_peer
+        esp_audio_codec
     )
 else()
     message(STATUS "NOT USING esp_lcd_seeya103")
