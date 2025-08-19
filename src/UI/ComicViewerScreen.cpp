@@ -256,7 +256,7 @@ void ComicViewerScreen::renderPopupMenu(DisplaySystem &display) {
     int menuY = (display.height() - menuHeight) / 2;
 
     // Draw background
-    display.fillRect(menuX, menuY, menuWidth, menuHeight, display.fg);
+    display.fillRoundRect(menuX, menuY, menuWidth, menuHeight, 3, display.fg);
     display.fillRect(menuX + 2, menuY + 2, menuWidth - 4, menuHeight - 4, display.bg);
 
     // Manually layout and draw menu items
@@ -267,12 +267,12 @@ void ComicViewerScreen::renderPopupMenu(DisplaySystem &display) {
 
     for (const auto &itemText : menuItems) {
         bool isSelected = (index == selectedIndex);
-        int currentItemY = menuY + 15 + (index * itemHeight); // Start closer to menu top
+        int currentItemY = menuY + 7 + (index * (itemHeight + 8)); // Start closer to menu top
 
         if (isSelected) {
             // Draw selection indicator (dot)
             int dotX = menuX + 15;
-            int dotY = currentItemY + 15; // Center dot with text
+            int dotY = currentItemY + 21; // Center dot with text
             display.fillCircle(dotX, dotY, 4, display.fg);
         }
 
