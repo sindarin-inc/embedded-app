@@ -854,8 +854,8 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
         return menuItems;
     };
 
-    auto comicsMenuFactory = [this, &localStore, &fileSystem,
-                              makeReleaseNotesMenuItem, makeContentSyncMenuItem,
+    auto comicsMenuFactory = [this, &localStore, &fileSystem, makeReleaseNotesMenuItem,
+                              makeContentSyncMenuItem,
                               createTutorialScreen]() -> MenuItemSharedPtrVector {
         auto menuItems = std::make_shared<MenuItemVector>();
         if (this->prefs_.firmwareLoaded.get().has_value()) {
@@ -865,7 +865,7 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                 menuItems->emplace_back(makeReleaseNotesMenuItem(firmware));
             }
         }
-        
+
         // Scan SD card for comics
         auto comics = localStore.comicStore().scanSDCardForComics();
         for (const auto &comic : comics) {
@@ -877,22 +877,22 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                     this->pushScreen(comicViewerScreen);
                 }));
         }
-        
+
         if (comics.empty()) {
             menuItems->emplace_back(makeContentSyncMenuItem("No Comics Found"));
         }
         if (!(prefs_.tutorialsDeleted.get().value_or(0) & TUTORIAL_SCREEN_COMICS)) {
             menuItems->emplace_back(std::make_shared<MenuItemSingleLine>(
                 "\ue000 Comics Tutorial", [this, createTutorialScreen]() {
-                    SpiramString message = SpiRamStringFormat(
-                        "Welcome to the Comics menu. This tab "
-                        "shows you the comics from your SD card.\n\n"
-                        "Create a 'comics' folder on your SD card "
-                        "and add subdirectories for each comic. "
-                        "Each comic subdirectory should contain "
-                        "image files (JPG, PNG, BMP).\n\n"
-                        "Press \ue000 (center) to "
-                        "continue.\n");
+                    SpiramString message =
+                        SpiRamStringFormat("Welcome to the Comics menu. This tab "
+                                           "shows you the comics from your SD card.\n\n"
+                                           "Create a 'comics' folder on your SD card "
+                                           "and add subdirectories for each comic. "
+                                           "Each comic subdirectory should contain "
+                                           "image files (JPG, PNG, BMP).\n\n"
+                                           "Press \ue000 (center) to "
+                                           "continue.\n");
                     auto tutorialScreen = createTutorialScreen(message, TUTORIAL_SCREEN_COMICS);
                     this->pushScreen(tutorialScreen);
                 }));
@@ -1907,13 +1907,15 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
         newMainMenu->addTab("Welcome", welcomeMenuFactory, 6);
     }
 #endif
-
+#if 0
     if (!localStore.recents().empty()) {
         newMainMenu->addTab("Recent", recentMenuFactory, 4);
     }
+#endif
     if (!booksMenuFactory()->empty()) {
         newMainMenu->addTab("Books", booksMenuFactory, 4);
     }
+#if 0
     if (!kindleMenuFactory()->empty()) {
         newMainMenu->addTab("Kindle", kindleMenuFactory, 4);
     }
@@ -1924,13 +1926,13 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
     if (!bibleMenuFactory()->empty()) {
         newMainMenu->addTab("Bible", bibleMenuFactory, 4);
     }
-
+#endif
     if (!comicsMenuFactory()->empty()) {
         newMainMenu->addTab("Comics", comicsMenuFactory, 4);
     }
-
+#if 0
     newMainMenu->addTab("Settings", settingsMenuFactory, 5);
-
+#endif
     newMainMenu->populateMenuView();
 
     SHOW_HEAP();
