@@ -11,10 +11,8 @@
 
 #if !SIMULATOR && CONFIG_SOC_JPEG_DECODE_SUPPORTED
 #include "driver/jpeg_decode.h"
-// For esp_jpeg software decoder component (if available)
-#ifdef CONFIG_ESP_JPEG_COMPONENT
+// For esp_new_jpeg software decoder component
 #include "esp_jpeg_dec.h"
-#endif
 #endif // CONFIG_SOC_JPEG_DECODE_SUPPORTED
 
 auto JPGImage::load(const std::string &filePath, FileSystem &fs) -> bool {
@@ -156,95 +154,110 @@ void JPGImage::draw(DisplaySystem &display, int x, int y) {
     log_d("Drew JPG image: %dx%d", width_, height_);
 }
 
-// New software decoding implementation
+// Helper function for aligned allocation (16-byte alignment required for esp_new_jpeg)
+static void* jpeg_calloc_align(size_t n, size_t size, size_t align) {
+    void* ptr = aligned_alloc(align, n * size);
+    if (ptr) {
+        memset(ptr, 0, n * size);
+    }
+    return ptr;
+}
+
+// New software decoding implementation using esp_new_jpeg
 auto JPGImage::readFromBytesSoftware(uint8_t *jpgbytes, int size) -> bool {
 #if !SIMULATOR && CONFIG_SOC_JPEG_DECODE_SUPPORTED
+    log_d("JPGImage::readFromBytesSoftware using esp_new_jpeg decoder with DSI protection, size: %d bytes", size);
 
-#ifdef CONFIG_ESP_JPEG_COMPONENT
-    // Use esp_jpeg component for software decode (if available)
-    log_d("JPGImage::readFromBytesSoftware using esp_jpeg component, size: %d bytes", size);
+    // Configure decoder for BGR output (to match display expectations)
+    jpeg_dec_config_t config;
+    config.output_type = JPEG_PIXEL_FORMAT_RGB888;  // Still RGB888 format
+    config.scale = {0, 0};  // No scaling (width=0, height=0 means no scaling)
+    config.clipper = {0, 0}; // No clipping  
+    config.rotate = JPEG_ROTATE_0D;
+    config.block_enable = false;  // Single decode call
 
-    // First pass: get image info without allocating output buffer
-    esp_jpeg_image_cfg_t info_cfg = {.indata = jpgbytes,
-                                     .indata_size = size,
-                                     .outbuf = nullptr, // No output buffer for info-only decode
-                                     .outbuf_size = 0,
-                                     .out_format = JPEG_IMAGE_FORMAT_RGB888,
-                                     .out_scale = JPEG_IMAGE_SCALE_0,
-                                     .flags = {
-                                         .swap_color_bytes = 0,
-                                     }};
-
-    esp_jpeg_image_output_t outimg_info;
-    esp_err_t ret = esp_jpeg_decode(&info_cfg, &outimg_info);
-
-    if (ret != ESP_OK) {
-        log_e("esp_jpeg_decode info pass failed: %s", esp_err_to_name(ret));
+    jpeg_dec_handle_t decoder;
+    jpeg_error_t ret = jpeg_dec_open(&config, &decoder);
+    if (ret != JPEG_ERR_OK) {
+        log_e("jpeg_dec_open failed: %d", ret);
         return false;
     }
 
-    width_ = outimg_info.width;
-    height_ = outimg_info.height;
-    log_d("JPEG info: %dx%d", width_, height_);
+    // Setup input I/O structure
+    jpeg_dec_io_t io;
+    io.inbuf = jpgbytes;
+    io.inbuf_len = size;
+    io.inbuf_remain = size;
+    io.outbuf = nullptr;  // Will be set after header parsing
+    io.out_size = 0;      // Will be calculated after header parsing
 
-    // Calculate output buffer size
-    size_t output_size = width_ * height_ * 3; // RGB888
+    // Parse JPEG header to get image dimensions
+    jpeg_dec_header_info_t header_info;
+    ret = jpeg_dec_parse_header(decoder, &io, &header_info);
+    if (ret != JPEG_ERR_OK) {
+        log_e("jpeg_dec_parse_header failed: %d", ret);
+        jpeg_dec_close(decoder);
+        return false;
+    }
 
-    // Allocate output buffer with 16-byte alignment
-    uint8_t *aligned_buffer = (uint8_t *)aligned_alloc(16, output_size);
+    width_ = header_info.width;
+    height_ = header_info.height;
+    log_d("JPEG header parsed: %dx%d", width_, height_);
+
+    // Calculate output buffer size (RGB888 = 3 bytes per pixel)
+    size_t output_size = width_ * height_ * 3;
+    
+    // Allocate 16-byte aligned buffer using helper function
+    uint8_t* aligned_buffer = (uint8_t*)jpeg_calloc_align(1, output_size, 16);
     if (!aligned_buffer) {
-        // Fallback to regular malloc if aligned_alloc not available
-        aligned_buffer = (uint8_t *)malloc(output_size);
-    }
-
-    if (!aligned_buffer) {
-        log_e("Failed to allocate output buffer for software decode");
+        log_e("Failed to allocate aligned output buffer for esp_new_jpeg decode");
+        jpeg_dec_close(decoder);
         return false;
     }
 
-    outputBuffer_ = std::shared_ptr<uint8_t[]>(aligned_buffer, [](uint8_t *ptr) { free(ptr); });
+    outputBuffer_ = std::shared_ptr<uint8_t[]>(aligned_buffer, [](uint8_t *ptr) { 
+        free(ptr); 
+    });
 
-    // Second pass: actual decode with output buffer
-    esp_jpeg_image_cfg_t decode_cfg = {.indata = jpgbytes,
-                                       .indata_size = size,
-                                       .outbuf = aligned_buffer,
-                                       .outbuf_size = output_size,
-                                       .out_format = JPEG_IMAGE_FORMAT_RGB888,
-                                       .out_scale = JPEG_IMAGE_SCALE_0,
-                                       .flags = {
-                                           .swap_color_bytes = 0,
-                                       }};
+    // Update I/O structure with output buffer
+    io.outbuf = aligned_buffer;
+    io.out_size = output_size;
 
-    esp_jpeg_image_output_t outimg;
-    ret = esp_jpeg_decode(&decode_cfg, &outimg);
-
-    if (ret != ESP_OK) {
-        log_e("esp_jpeg_decode failed: %s", esp_err_to_name(ret));
+    // Process JPEG decode with yielding for DSI underflow prevention
+    log_d("Starting JPEG decode with DSI protection...");
+    
+    // Add small delay before decode
+    vTaskDelay(pdMS_TO_TICKS(2));
+    
+    // Single decode call (block mode disabled for debugging)
+    ret = jpeg_dec_process(decoder, &io);
+    
+    if (ret != JPEG_ERR_OK) {
+        log_e("jpeg_dec_process failed: %d", ret);
+        jpeg_dec_close(decoder);
         return false;
     }
-
-    log_d("JPEG software decoded successfully: %dx%d, total size: %zu bytes", width_, height_,
-          output_size);
-    return true;
-
-#else
-    // Fallback: Use hardware decode with yielding for DSI underflow prevention
-    log_d("JPGImage::readFromBytesSoftware using hardware decode with yielding, size: %d bytes",
-          size);
-
-    // Add small delay before hardware decode to prevent DSI underflow
+    
+    // Add delay after decode to let DSI catch up
     vTaskDelay(pdMS_TO_TICKS(2));
 
-    bool result = readFromBytesHardware(jpgbytes, size);
-
-    // Add small delay after decode to allow DSI to catch up
-    if (result) {
-        vTaskDelay(pdMS_TO_TICKS(2));
-        log_d("Hardware decode with yielding completed successfully");
+    // Convert RGB to BGR to match display expectations
+    log_d("Converting RGB to BGR for display compatibility...");
+    uint8_t* rgb_data = aligned_buffer;
+    for (size_t i = 0; i < output_size; i += 3) {
+        // Swap R and B channels: RGB -> BGR
+        uint8_t temp = rgb_data[i];     // Save R
+        rgb_data[i] = rgb_data[i + 2];  // R = B
+        rgb_data[i + 2] = temp;         // B = R
+        // G channel (i + 1) stays in place
     }
 
-    return result;
-#endif
+    // Cleanup
+    jpeg_dec_close(decoder);
+
+    log_d("JPEG software decoded successfully via esp_new_jpeg: %dx%d, total size: %zu bytes (BGR)", 
+          width_, height_, output_size);
+    return true;
 
 #else
     log_i("JPG software decoding not available (use JPGImageSTB for simulator)");
