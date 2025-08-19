@@ -90,7 +90,7 @@ auto JPGImage::readFromBytesHardware(uint8_t *jpgbytes, int size) -> bool {
     log_d("JPEG info: %dx%d", width_, height_);
 
     // Check if image is too large and needs scaling down for memory constraints
-    const int MAX_DIMENSION = 800; // Reasonable limit for device memory
+    const int MAX_DIMENSION = 1280; // Reasonable limit for device memory
     if (width_ > MAX_DIMENSION || height_ > MAX_DIMENSION) {
         log_w("Image %dx%d is too large, may cause memory issues. Consider scaling down.", width_,
               height_);
