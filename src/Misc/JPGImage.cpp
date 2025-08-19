@@ -46,7 +46,7 @@ auto JPGImage::load(const std::string &filePath, FileSystem &fs) -> bool {
     }
 
     file.close();
-    return readFromBytes(fileBuffer.get(), static_cast<int>(fileSize), JPGDecodeMode::SOFTWARE);
+    return readFromBytes(fileBuffer.get(), static_cast<int>(fileSize), JPGDecodeMode::HARDWARE);
 }
 
 auto JPGImage::readFromBytes(uint8_t *jpgbytes, int size, JPGDecodeMode mode) -> bool {
@@ -149,14 +149,27 @@ void JPGImage::draw(DisplaySystem &display, int x, int y) {
         return;
     }
 
-    memcpy(display.getBuffer(), outputBuffer_.get(), width_ * height_ * 3);
+    // Copy only actual image data, handling aligned buffer stride
+    uint8_t *src_buffer = outputBuffer_.get();
+    uint8_t *dst_buffer = display.getBuffer();
+
+    int aligned_width = ((width_ + 15) & ~15);
+    int aligned_row_bytes = aligned_width * 3;
+    int actual_row_bytes = width_ * 3;
+
+    // Copy row by row to skip padding bytes
+    for (int row = 0; row < height_; row++) {
+        uint8_t *src_row = src_buffer + (row * aligned_row_bytes);
+        uint8_t *dst_row = dst_buffer + (row * actual_row_bytes);
+        memcpy(dst_row, src_row, actual_row_bytes);
+    }
 
     log_d("Drew JPG image: %dx%d", width_, height_);
 }
 
 // Helper function for aligned allocation (16-byte alignment required for esp_new_jpeg)
-static void* jpeg_calloc_align(size_t n, size_t size, size_t align) {
-    void* ptr = aligned_alloc(align, n * size);
+static void *jpeg_calloc_align(size_t n, size_t size, size_t align) {
+    void *ptr = aligned_alloc(align, n * size);
     if (ptr) {
         memset(ptr, 0, n * size);
     }
@@ -166,15 +179,17 @@ static void* jpeg_calloc_align(size_t n, size_t size, size_t align) {
 // New software decoding implementation using esp_new_jpeg
 auto JPGImage::readFromBytesSoftware(uint8_t *jpgbytes, int size) -> bool {
 #if !SIMULATOR && CONFIG_SOC_JPEG_DECODE_SUPPORTED
-    log_d("JPGImage::readFromBytesSoftware using esp_new_jpeg decoder with DSI protection, size: %d bytes", size);
+    log_d("JPGImage::readFromBytesSoftware using esp_new_jpeg decoder with DSI protection, size: "
+          "%d bytes",
+          size);
 
     // Configure decoder for BGR output (to match display expectations)
     jpeg_dec_config_t config;
-    config.output_type = JPEG_PIXEL_FORMAT_RGB888;  // Still RGB888 format
-    config.scale = {0, 0};  // No scaling (width=0, height=0 means no scaling)
-    config.clipper = {0, 0}; // No clipping  
+    config.output_type = JPEG_PIXEL_FORMAT_RGB888; // Still RGB888 format
+    config.scale = {0, 0};   // No scaling (width=0, height=0 means no scaling)
+    config.clipper = {0, 0}; // No clipping
     config.rotate = JPEG_ROTATE_0D;
-    config.block_enable = false;  // Single decode call
+    config.block_enable = false; // Single decode call
 
     jpeg_dec_handle_t decoder;
     jpeg_error_t ret = jpeg_dec_open(&config, &decoder);
@@ -188,8 +203,8 @@ auto JPGImage::readFromBytesSoftware(uint8_t *jpgbytes, int size) -> bool {
     io.inbuf = jpgbytes;
     io.inbuf_len = size;
     io.inbuf_remain = size;
-    io.outbuf = nullptr;  // Will be set after header parsing
-    io.out_size = 0;      // Will be calculated after header parsing
+    io.outbuf = nullptr; // Will be set after header parsing
+    io.out_size = 0;     // Will be calculated after header parsing
 
     // Parse JPEG header to get image dimensions
     jpeg_dec_header_info_t header_info;
@@ -204,20 +219,23 @@ auto JPGImage::readFromBytesSoftware(uint8_t *jpgbytes, int size) -> bool {
     height_ = header_info.height;
     log_d("JPEG header parsed: %dx%d", width_, height_);
 
-    // Calculate output buffer size (RGB888 = 3 bytes per pixel)
-    size_t output_size = width_ * height_ * 3;
-    
+    // Calculate aligned dimensions for decoder requirements
+    int aligned_width = ((width_ + 15) & ~15);               // Round up to 16-byte boundary
+    int aligned_height = ((height_ + 15) & ~15);             // Round up to 16-byte boundary
+    size_t output_size = aligned_width * aligned_height * 3; // RGB888 = 3 bytes per pixel
+
+    log_d("Aligned dimensions: %dx%d -> %dx%d, buffer: %zu bytes", width_, height_, aligned_width,
+          aligned_height, output_size);
+
     // Allocate 16-byte aligned buffer using helper function
-    uint8_t* aligned_buffer = (uint8_t*)jpeg_calloc_align(1, output_size, 16);
+    uint8_t *aligned_buffer = (uint8_t *)jpeg_calloc_align(1, output_size, 16);
     if (!aligned_buffer) {
         log_e("Failed to allocate aligned output buffer for esp_new_jpeg decode");
         jpeg_dec_close(decoder);
         return false;
     }
 
-    outputBuffer_ = std::shared_ptr<uint8_t[]>(aligned_buffer, [](uint8_t *ptr) { 
-        free(ptr); 
-    });
+    outputBuffer_ = std::shared_ptr<uint8_t[]>(aligned_buffer, [](uint8_t *ptr) { free(ptr); });
 
     // Update I/O structure with output buffer
     io.outbuf = aligned_buffer;
@@ -225,37 +243,48 @@ auto JPGImage::readFromBytesSoftware(uint8_t *jpgbytes, int size) -> bool {
 
     // Process JPEG decode with yielding for DSI underflow prevention
     log_d("Starting JPEG decode with DSI protection...");
-    
+
     // Add small delay before decode
     vTaskDelay(pdMS_TO_TICKS(2));
-    
+
     // Single decode call (block mode disabled for debugging)
     ret = jpeg_dec_process(decoder, &io);
-    
+
     if (ret != JPEG_ERR_OK) {
         log_e("jpeg_dec_process failed: %d", ret);
         jpeg_dec_close(decoder);
         return false;
     }
-    
+
     // Add delay after decode to let DSI catch up
     vTaskDelay(pdMS_TO_TICKS(2));
 
     // Convert RGB to BGR to match display expectations
     log_d("Converting RGB to BGR for display compatibility...");
-    uint8_t* rgb_data = aligned_buffer;
-    for (size_t i = 0; i < output_size; i += 3) {
-        // Swap R and B channels: RGB -> BGR
-        uint8_t temp = rgb_data[i];     // Save R
-        rgb_data[i] = rgb_data[i + 2];  // R = B
-        rgb_data[i + 2] = temp;         // B = R
-        // G channel (i + 1) stays in place
+    uint8_t *rgb_data = aligned_buffer;
+
+    // Process only actual image data, respecting aligned row stride
+    int aligned_row_bytes = aligned_width * 3;
+    int actual_row_bytes = width_ * 3;
+
+    for (int row = 0; row < height_; row++) {
+        uint8_t *row_start = rgb_data + (row * aligned_row_bytes);
+
+        // Convert only actual pixels in this row (not padding)
+        for (int col = 0; col < width_; col++) {
+            int pixel_offset = col * 3;
+            // Swap R and B channels: RGB -> BGR
+            uint8_t temp = row_start[pixel_offset];                // Save R
+            row_start[pixel_offset] = row_start[pixel_offset + 2]; // R = B
+            row_start[pixel_offset + 2] = temp;                    // B = R
+            // G channel stays in place
+        }
     }
 
     // Cleanup
     jpeg_dec_close(decoder);
 
-    log_d("JPEG software decoded successfully via esp_new_jpeg: %dx%d, total size: %zu bytes (BGR)", 
+    log_d("JPEG software decoded successfully via esp_new_jpeg: %dx%d, total size: %zu bytes (BGR)",
           width_, height_, output_size);
     return true;
 
