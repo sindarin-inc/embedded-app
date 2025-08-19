@@ -34,7 +34,7 @@ int OpenAI::webRTCDataHandler(esp_webrtc_custom_data_via_t via, uint8_t *data, i
         cJSON_Delete(root);
         return -1;
     }
-    if (strcmp(type->valuestring, "response.function_call_arguments.done") != 0) {
+    if (strcmp(type->valuestring, "response.function_call_arguments.done") == 0) {
         OpenAIAPI::ResponseFunctionCallArgumentsDoneEvent event(root);
         auto it = openai->toolRecords_.find(event.name);
         if (it != openai->toolRecords_.end()) {
