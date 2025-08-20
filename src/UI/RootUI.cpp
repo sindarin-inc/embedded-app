@@ -621,7 +621,9 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
             Firmware firmware;
             auto upgradeAvailable = localStore.getPendingFirmwareUpdate(firmware);
             if (upgradeAvailable) {
+#if !CONFIG_DEMO_MODE_NO_SYNC
                 menuItems->emplace_back(makeReleaseNotesMenuItem(firmware));
+#endif
             }
         }
 
@@ -862,7 +864,9 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
             Firmware firmware;
             auto upgradeAvailable = localStore.getPendingFirmwareUpdate(firmware);
             if (upgradeAvailable) {
+#if !CONFIG_DEMO_MODE_NO_SYNC
                 menuItems->emplace_back(makeReleaseNotesMenuItem(firmware));
+#endif
             }
         }
 

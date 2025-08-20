@@ -116,7 +116,8 @@
         "span": "cpp",
         "any": "cpp",
         "print": "cpp",
-        "execution": "cpp"
+        "execution": "cpp",
+        "text_encoding": "cpp"
     },
     "editor.formatOnSave": true,
     "editor.defaultFormatter": "xaver.clang-format",
