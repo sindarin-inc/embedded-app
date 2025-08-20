@@ -674,7 +674,11 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     // happens in this method. Clunky, for sure. But when
     // we better understand vcom and don't need to have such fine-tuned
     // settings for dark mode and vcom, we can probably clean it up then.
+#if !CONFIG_DEMO_MODE_NO_SYNC
     myDisplay.invertDisplay(prefs.invertSetting.get().value_or(false));
+#else
+    myDisplay.invertDisplay(true);
+#endif
 
 #if CONFIG_DISPLAY_EINKET013TT1
     // If the saved prefs indicated a vcom, set it here.
