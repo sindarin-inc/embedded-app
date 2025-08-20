@@ -31,17 +31,17 @@ dependencies:
       - if: target == esp32p4
   # Required for WebRTC
   capture_audio_src:
-    path: ../../../espressif/esp-webrtc-solution/components/esp_capture/src/impl/capture_audio_src
+    path: ../components/esp-webrtc-solution/components/esp_capture/src/impl/capture_audio_src
     rules:
       - if: target == esp32p4
   capture_audio_enc:
-    path: ../../../espressif/esp-webrtc-solution/components/esp_capture/src/impl/capture_audio_enc
+    path: ../components/esp-webrtc-solution/components/esp_capture/src/impl/capture_audio_enc
     rules:
       - if: target == esp32p4
   esp_audio_codec:
     rules:
       - if: target == esp32p4
   render_impl:
-    path: ../../../espressif/esp-webrtc-solution/components/av_render/render_impl
+    path: ../components/esp-webrtc-solution/components/av_render/render_impl
     rules:
       - if: target == esp32p4

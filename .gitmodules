@@ -22,3 +22,6 @@
 [submodule "lib/mbedtls"]
 	path = lib/mbedtls
 	url = https://github.com/Mbed-TLS/mbedtls.git
+[submodule "components/esp-webrtc-solution"]
+	path = components/esp-webrtc-solution
+	url = git@github.com:sindarin-inc/esp-webrtc-solution.git
