@@ -1050,6 +1050,7 @@ void PowerManager::deepSleepInternal(SleepReason reason) {
                                             static_cast<uint64_t>(1000000));
     }
 
+#if !CONFIG_DEMO_MODE_NO_SYNC
     if (sleepTime != UINT64_MAX) {
         err = esp_sleep_enable_timer_wakeup(sleepTime);
         if (err != ESP_OK) {
@@ -1061,7 +1062,7 @@ void PowerManager::deepSleepInternal(SleepReason reason) {
         log_w("No scheduled wakeup (nextSyncTime=%" PRIu64 ", now=%" PRIu64 ")",
               PreferencesStore::nextSyncTime, uint64_t(now));
     }
-
+#endif
     usbSerial_.end();
     esp_deep_sleep_start();
 #endif

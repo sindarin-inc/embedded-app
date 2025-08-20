@@ -418,6 +418,9 @@ menu "Sol Options"
             bool "Hide Welcome Menu"
             default y
 
+        config DEMO_MODE_NO_SYNC
+            bool "Never do a sync"
+            default y
     endmenu
 
     menu "File Storage"
