@@ -6,8 +6,8 @@ MainMenuScreen::MainMenuScreen(DisplaySystem &display, Battery &battery, Prefere
     menuView_.itemsPerPage = 4;
     menuView_.indicatorWidth = 7;
     menuView_.indicatorPadding = 10;
-    menuView_.pagingIndicatorWidth = 10;
-    menuView_.pagingIndicatorPadding = 10;
+    menuView_.pagingIndicatorWidth = 20;
+    menuView_.pagingIndicatorPadding = 20;
     menuView_.setIndicatorType(MenuView::IndicatorType::Line);
 }
 

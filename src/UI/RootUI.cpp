@@ -1932,7 +1932,7 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
     }
 #endif
     if (!comicsMenuFactory()->empty()) {
-        newMainMenu->addTab("And Everything Else", comicsMenuFactory, 4);
+        newMainMenu->addTab("All the Rest", comicsMenuFactory, 6);
     }
 #if 0
     newMainMenu->addTab("Settings", settingsMenuFactory, 5);

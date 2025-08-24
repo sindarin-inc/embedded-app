@@ -158,7 +158,7 @@ void ComicViewerScreen::processCommand(RemoteCommand command) {
             std::string selectedID = menuView_.getSelectedMenuItemID();
             if (selectedID == "Main Menu") {
                 back();
-            } else if (selectedID == "Back to Comic") {
+            } else if (selectedID == "Back") {
                 hidePopupMenu();
             }
             break;
@@ -235,7 +235,7 @@ void ComicViewerScreen::setupPopupMenu() {
 
     // Add menu items with callbacks
     auto mainMenuItem = std::make_shared<MenuItemSingleLine>("Main Menu", []() {});
-    auto backMenuItem = std::make_shared<MenuItemSingleLine>("Back to Comic", []() {});
+    auto backMenuItem = std::make_shared<MenuItemSingleLine>("Back", []() {});
 
     menuView_.addMenuItem(mainMenuItem);
     menuView_.addMenuItem(backMenuItem);
@@ -260,7 +260,7 @@ void ComicViewerScreen::renderPopupMenu(DisplaySystem &display) {
     display.fillRect(menuX + 2, menuY + 2, menuWidth - 4, menuHeight - 4, display.bg);
 
     // Manually layout and draw menu items
-    auto menuItems = {"Main Menu", "Back to Comic"};
+    auto menuItems = {"Main Menu", "Back"};
     int itemHeight = 30;
     int selectedIndex = menuView_.getSelectedIndex();
     int index = 0;
