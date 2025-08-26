@@ -1163,17 +1163,15 @@ void KindleReadableScreen::attemptReconnection() {
                  {"ble", isUsingBleConnection_},
                  {"attempt", reconnectionAttempts_}});
 
+            // Reset the flag to allow future reconnection attempts
+            isReconnecting_ = false;
+            
             // If we've reached max attempts, show appropriate error
             if (reconnectionAttempts_ >= MAX_RECONNECTION_ATTEMPTS) {
-                isReconnecting_ = false;
                 DispatchGetUiQueue()->dispatch([this]() {
                     setErrorMessage(
                         "Failed to load content. Please check your network connection.");
                 });
-            } else {
-                // Reset the flag even if we haven't reached max attempts
-                // to allow future reconnection attempts
-                isReconnecting_ = false;
             }
         }
     };
