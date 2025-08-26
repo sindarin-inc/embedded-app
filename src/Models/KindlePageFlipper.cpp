@@ -168,7 +168,7 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
         size_t bytesRemaining = pageStream_->getBytesRemainingFrom(currentOffset);
         int pagesRemaining = pageStream_->getPagesRemainingFrom(currentOffset);
 
-        log_i("Buffer analysis: %" PRIu32 " bytes from offset %" PRIu32
+        log_d("Buffer analysis: %" PRIu32 " bytes from offset %" PRIu32
               ", %zu bytes remaining, %d pages remaining",
               static_cast<uint32_t>(pageStream_->size()), currentOffset, bytesRemaining,
               pagesRemaining);
