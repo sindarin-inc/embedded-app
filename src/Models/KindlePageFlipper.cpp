@@ -312,8 +312,6 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
             serverSyncPlace_ = std::dynamic_pointer_cast<TxtPlace>(place);
         } else {
             log_d("Skipping navigation request - sufficient buffer available");
-            log_d("Buffer details: currentPage=%d/%d, %zu bytes remaining, %d pages remaining",
-                  currentPageIndex, lastPageIndex, bytesRemaining, pagesRemaining);
 
             // For cached content, still call the gotContentFunction to maintain consistent behavior
             if (gotContentFunction_) {

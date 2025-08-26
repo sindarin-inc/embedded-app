@@ -346,10 +346,10 @@ void KindleReadableScreen::drawInRect(SolRect rect) {
         uint32_t bytesRemaining = totalSize > nextOffset ? totalSize - nextOffset : 0;
         uint32_t bytesRenderedThisPage = nextOffset - currentOffset;
 
-        log_i("Buffer state: current offset: %" PRIu32 ", next offset: %" PRIu32
+        log_d("Buffer state: current offset: %" PRIu32 ", next offset: %" PRIu32
               ", total buffered: %" PRIu32 " bytes",
               currentOffset, nextOffset, totalSize);
-        log_i("Page rendered %" PRIu32 " bytes, %" PRIu32 " bytes remaining in buffer",
+        log_d("Page rendered %" PRIu32 " bytes, %" PRIu32 " bytes remaining in buffer",
               bytesRenderedThisPage, bytesRemaining);
     }
 }
