@@ -174,35 +174,19 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
               pagesRemaining);
 
         auto pagesToAdvance = currentPageIndex - previousPageIndex;
-
-        // Proactive preloading: Check if we need to load more content based on bytes remaining
+        // Cases:
+        // 1. We don't have a full page of content ahead (load one preview page)
+        // 2. We have a full page of content but it is too short and we're at the end of the content
+        // (load another page into the preview)
         auto pageToPreview = 0;
-        bool shouldPreload = false;
-        std::string preloadReason;
-
         if (currentPageIndex == lastPageIndex || atEndOfContent) {
-            shouldPreload = true;
-            preloadReason = atEndOfContent ? "end-content" : "last-page";
-            log_i("Preloading triggered: At last page or end of content");
-        } else if (bytesRemaining < BUFFER_THRESHOLD_BYTES) {
-            shouldPreload = true;
-            preloadReason = "low-bytes";
-            log_i("Preloading triggered: Only %zu bytes remaining (threshold: %zu), %d pages "
-                  "remaining",
-                  bytesRemaining, BUFFER_THRESHOLD_BYTES, pagesRemaining);
+            pageToPreview = lastPageIndex - currentPageIndex + 1;
         }
 
-        if (shouldPreload) {
-            // Calculate how many pages to preview to maintain buffer
-            // Load enough to have at least BUFFER_THRESHOLD_PAGES ahead
-            pageToPreview = std::max(1, BUFFER_THRESHOLD_PAGES - pagesRemaining + 1);
-            log_i("Will preview %d page(s) to maintain buffer", pageToPreview);
-        }
-
-        log_d("Navigation: page %d/%d -> %d/%d, advancing %d pages, previewing %d pages "
-              "(atEndOfContent=%d, shouldPreload=%d)",
-              previousPageIndex, lastPageIndex, currentPageIndex, lastPageIndex, pagesToAdvance,
-              pageToPreview, atEndOfContent, shouldPreload);
+        log_d("Now on page %d/%d, previously on page %d/%d, advancing %d pages and previewing page "
+              "%d (atEndOfContent=%d)",
+              currentPageIndex, lastPageIndex, previousPageIndex, lastPageIndex, pagesToAdvance,
+              pageToPreview, atEndOfContent);
 
         if (pagesToAdvance > 0 || pageToPreview > 0) {
             // Track navigation start time
@@ -217,9 +201,6 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
                 {"elapsed_ms", 0}};
             if (pageToPreview > 0) {
                 beginTelemetryData["preview"] = pageToPreview;
-                if (!preloadReason.empty()) {
-                    beginTelemetryData["preload_reason"] = preloadReason;
-                }
             }
             telemetry_.logMetric(TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
                                  beginTelemetryData);
@@ -247,9 +228,6 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
                     {"elapsed_ms", static_cast<int>(elapsedMs)}};
                 if (pageToPreview > 0) {
                     failedTelemetryData["preview"] = pageToPreview;
-                    if (!preloadReason.empty()) {
-                        failedTelemetryData["preload_reason"] = preloadReason;
-                    }
                 }
                 telemetry_.logMetric(TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
                                      failedTelemetryData);
@@ -290,9 +268,6 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
                 {"elapsed_ms", static_cast<int>(elapsedMs)}};
             if (pageToPreview > 0) {
                 successTelemetryData["preview"] = pageToPreview;
-                if (!preloadReason.empty()) {
-                    successTelemetryData["preload_reason"] = preloadReason;
-                }
             }
             telemetry_.logMetric(TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
                                  successTelemetryData);

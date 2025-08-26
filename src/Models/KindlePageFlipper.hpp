@@ -223,11 +223,6 @@ public:
     }
 
 private:
-    static constexpr size_t BUFFER_THRESHOLD_BYTES =
-        2000; // Preload when less than this many bytes remain
-    static constexpr int BUFFER_THRESHOLD_PAGES =
-        1; // Preload when less than this many pages remain
-
     std::shared_ptr<KindleBook> kindleBook_;
     bool useBle_ = false;
     std::shared_ptr<CancelFlag> cancelFlag_;
