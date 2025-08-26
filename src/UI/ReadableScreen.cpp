@@ -452,6 +452,9 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
             // the blacks are really gone.
             this->display_.clearDisplay();
             prefs_.invertSetting.set(this->display_.getInversion());
+            this->telemetry_.logMetricData(
+                TelemetryField::METRIC_STYLE,
+                {{"dark_mode", this->prefs_.darkMode.get().value_or(false)}});
             display_.clearDisplay();
             setNeedsRerender();
             setFirstLoad();

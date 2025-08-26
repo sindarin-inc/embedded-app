@@ -193,6 +193,8 @@ KindleReadableScreen::KindleReadableScreen(DisplaySystem &display,
             // the blacks are really gone.
             display_.clearDisplay();
             prefs_.invertSetting.set(display_.getInversion());
+            telemetry_.logMetricData(TelemetryField::METRIC_STYLE,
+                                     {{"dark_mode", prefs_.darkMode.get().value_or(false)}});
             display_.clearDisplay();
             setNeedsRerender();
             setFirstLoad();
