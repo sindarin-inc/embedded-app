@@ -1165,7 +1165,7 @@ void KindleReadableScreen::attemptReconnection() {
 
             // Reset the flag to allow future reconnection attempts
             isReconnecting_ = false;
-            
+
             // If we've reached max attempts, show appropriate error
             if (reconnectionAttempts_ >= MAX_RECONNECTION_ATTEMPTS) {
                 DispatchGetUiQueue()->dispatch([this]() {

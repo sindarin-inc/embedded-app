@@ -187,7 +187,8 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
         } else if (bytesRemaining < BUFFER_THRESHOLD_BYTES) {
             shouldPreload = true;
             preloadReason = "low-bytes";
-            log_i("Preloading triggered: Only %zu bytes remaining (threshold: %zu), %d pages remaining", 
+            log_i("Preloading triggered: Only %zu bytes remaining (threshold: %zu), %d pages "
+                  "remaining",
                   bytesRemaining, BUFFER_THRESHOLD_BYTES, pagesRemaining);
         }
 
