@@ -827,10 +827,10 @@ TEST_CASE("Test Kindle navigation visual traversal", "[.][kindle]") {
         // Verify mock server was called the expected number of times
         // Request 1: Initial forward navigation to page 2
         // Request 2: Forward navigation to page 3
-        // Request 3: Proactive preload when on page 3 (due to low pages remaining)
-        // (page 1 already loaded, backward and second forward use cached content)
+        // With simplified logic, we only preload at last page/end of content
+        // So we expect 2 calls: initial load and page 2 forward navigation
         log_i("Mock server: Total navigate calls: %d", mockNavigateCallCount.load());
-        REQUIRE(mockNavigateCallCount == 3);
+        REQUIRE(mockNavigateCallCount == 2);
 
         // 4. Navigate to page 4 and beyond to trigger new server request
         log_i("TEST: Navigating to page 4");
@@ -839,19 +839,20 @@ TEST_CASE("Test Kindle navigation visual traversal", "[.][kindle]") {
         WAIT_FOR_DRAW(display);
         ASSERT_VIEW_UNCHANGED(display, "KindleNavTestBookPage3-4");
 
-        // Should be 4 requests now (page 4 triggers a new request due to buffer threshold)
-        REQUIRE(mockNavigateCallCount == 4);
+        // With simplified logic, we still have only 2 navigate calls 
+        // (no preload triggered at page 4 since we have sufficient buffer)
+        REQUIRE(mockNavigateCallCount == 2);
 
-        // Navigate further to page 5 to trigger a new request
+        // Navigate further to page 5
         log_i("TEST: Navigating to page 5 to trigger new server request");
         SendRemoteCommand(ENTER);
         WAIT_FOR_CONTENT_RENDER(); // Wait for content to be rendered
         WAIT_FOR_DRAW(display);
         // Don't check screenshot for page 5 since we don't have an expected image
 
-        // Now we should have 5 requests (new request for page 5)
+        // With simplified logic: initial load + page 2 navigation + page 5 navigation = 3 calls
         log_i("Mock server: Total navigate calls after page 5: %d", mockNavigateCallCount.load());
-        REQUIRE(mockNavigateCallCount == 5);
+        REQUIRE(mockNavigateCallCount == 3);
     }
     log_i("TEST: Exiting visual navigation test");
 
