@@ -175,11 +175,7 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
 
         auto pagesToAdvance = currentPageIndex - previousPageIndex;
 
-        // Proactive preloading: Check if we need to load more content
-        // Priority order (highest to lowest):
-        // 1. At last page or end of content (most critical)
-        // 2. Less than threshold pages remaining
-        // 3. Less than threshold bytes remaining
+        // Proactive preloading: Check if we need to load more content based on bytes remaining
         auto pageToPreview = 0;
         bool shouldPreload = false;
         std::string preloadReason;
@@ -188,16 +184,11 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
             shouldPreload = true;
             preloadReason = atEndOfContent ? "end-content" : "last-page";
             log_i("Preloading triggered: At last page or end of content");
-        } else if (pagesRemaining < BUFFER_THRESHOLD_PAGES) {
-            shouldPreload = true;
-            preloadReason = "low-pages";
-            log_i("Preloading triggered: Only %d pages remaining (threshold: %d)", pagesRemaining,
-                  BUFFER_THRESHOLD_PAGES);
         } else if (bytesRemaining < BUFFER_THRESHOLD_BYTES) {
             shouldPreload = true;
             preloadReason = "low-bytes";
-            log_i("Preloading triggered: Only %zu bytes remaining (threshold: %zu)", bytesRemaining,
-                  BUFFER_THRESHOLD_BYTES);
+            log_i("Preloading triggered: Only %zu bytes remaining (threshold: %zu), %d pages remaining", 
+                  bytesRemaining, BUFFER_THRESHOLD_BYTES, pagesRemaining);
         }
 
         if (shouldPreload) {
