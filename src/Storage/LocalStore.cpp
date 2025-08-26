@@ -424,12 +424,7 @@ void LocalStore::changedReadablesBookmarksJson(ReadableBookmarksVector &bookmark
             std::string bookmarkPath = readable->bookmarkFilePath();
             SFile bookmarkFile = fileSystem.open(bookmarkPath, FILE_READ, false);
             if (!bookmarkFile) {
-                log_e("Failed to open bookmark file: %s", bookmarkPath.c_str());
-                this->telemetry_.logMetric(TelemetryField::METRIC_SYNC_STATUS,
-                                           "bookmark-file-open-failed",
-                                           {{"uuid", std::string(readable->shortenedUuid)},
-                                            {"title", std::string(readable->title)},
-                                            {"type", ReadableModelTypeToString(modelType)}});
+                log_d("No bookmark file found: %s", bookmarkPath.c_str());
                 continue;
             }
 
@@ -442,11 +437,7 @@ void LocalStore::changedReadablesBookmarksJson(ReadableBookmarksVector &bookmark
                       bookmark.lastPlace->str().c_str(), bookmark.status);
 
                 if (bookmark.status == BOOKMARK_ON) {
-                    // Check if email article and skip offset validation
-                    bool isEmailArticle = (readable->readableType == "email_article");
-
-                    if (isEmailArticle ||
-                        bookmark.firstPlace->getOffset() < bookmark.lastPlace->getOffset()) {
+                    if (bookmark.firstPlace->getOffset() < bookmark.lastPlace->getOffset()) {
                         bookmarksToAdd[bookmark.firstPlace->str()] = bookmark.lastPlace->str();
                         bookmarksToDelete.erase(bookmark.firstPlace->str());
                     } else {
