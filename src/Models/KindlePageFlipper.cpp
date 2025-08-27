@@ -176,13 +176,13 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
         // Use absolute navigation with navigate_to and preview_to
         auto navigateTo = currentPageIndex;
         auto previewTo = navigateTo;
-        
+
         // Check if we need to load preview pages:
         // 1. We don't have a full page of content ahead (load one preview page)
         // 2. We have a full page of content but it is too short and we're at the end of the content
         // 3. We have less than 1250 bytes remaining in buffer
         constexpr size_t bufferThresholdBytes = 1250;
-        
+
         if (currentPageIndex == lastPageIndex || atEndOfContent ||
             bytesRemaining < bufferThresholdBytes) {
             previewTo = navigateTo + 1;
