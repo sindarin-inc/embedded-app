@@ -827,7 +827,8 @@ TEST_CASE("Test Kindle navigation visual traversal", "[.][kindle]") {
         // Verify mock server was called the expected number of times
         // Request 1: Initial forward navigation to page 2
         // Request 2: Forward navigation to page 3
-        // (page 1 already loaded, backward and second forward use cached content)
+        // With simplified logic, we only preload at last page/end of content
+        // So we expect 2 calls: initial load and page 2 forward navigation
         log_i("Mock server: Total navigate calls: %d", mockNavigateCallCount.load());
         REQUIRE(mockNavigateCallCount == 2);
 
@@ -838,17 +839,18 @@ TEST_CASE("Test Kindle navigation visual traversal", "[.][kindle]") {
         WAIT_FOR_DRAW(display);
         ASSERT_VIEW_UNCHANGED(display, "KindleNavTestBookPage3-4");
 
-        // Still should be 2 requests (page 4 was cached from earlier)
+        // With simplified logic, we still have only 2 navigate calls 
+        // (no preload triggered at page 4 since we have sufficient buffer)
         REQUIRE(mockNavigateCallCount == 2);
 
-        // Navigate further to page 5 to trigger a new request
+        // Navigate further to page 5
         log_i("TEST: Navigating to page 5 to trigger new server request");
         SendRemoteCommand(ENTER);
         WAIT_FOR_CONTENT_RENDER(); // Wait for content to be rendered
         WAIT_FOR_DRAW(display);
         // Don't check screenshot for page 5 since we don't have an expected image
 
-        // Now we should have 3 requests
+        // With simplified logic: initial load + page 2 navigation + page 5 navigation = 3 calls
         log_i("Mock server: Total navigate calls after page 5: %d", mockNavigateCallCount.load());
         REQUIRE(mockNavigateCallCount == 3);
     }

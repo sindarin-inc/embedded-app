@@ -452,6 +452,9 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
             // the blacks are really gone.
             this->display_.clearDisplay();
             prefs_.invertSetting.set(this->display_.getInversion());
+            this->telemetry_.logMetricData(
+                TelemetryField::METRIC_STYLE,
+                {{"dark_mode", this->prefs_.darkMode.get().value_or(false)}});
             display_.clearDisplay();
             setNeedsRerender();
             setFirstLoad();
@@ -631,6 +634,13 @@ void ReadableScreen::writeOutBookmarkUpdate() {
                        plusOrMinus.length());
     bookmarkFile.flush();
     bookmarkFile.close();
+
+    // Log bookmark telemetry event
+    std::string bookmarkEvent = inBookmark_ ? "bookmark_add" : "bookmark_remove";
+    telemetry_.logMetric(TelemetryField::METRIC_EVENT, bookmarkEvent,
+                         {{"uuid", readable_->shortenedUuid},
+                          {"starting_position", readable_->place->str()},
+                          {"ending_position", newPlace_->str()}});
 
     prefs_.readableBookmarksChanged.set(readable_->shortenedUuid.c_str(), true);
 }
