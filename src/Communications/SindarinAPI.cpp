@@ -588,7 +588,6 @@ auto SindarinAPI::makeKindleRequest(const std::string &path, KindlePageResponse 
         return ERR_JSON_OBJECT_PARSE;
     }
 
-    log_d("Successfully parsed Kindle page response (success=%d)", resp->success);
     return httpCode;
 }
 
