@@ -163,9 +163,28 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
         auto currentPageIndex = pageStream_->pageIndexForOffset(place->getOffset());
         auto lastPageIndex = pageStream_->lastPageIndex();
 
+        // Calculate buffer state
+        uint32_t currentOffset = place->getOffset();
+        size_t bytesRemaining = pageStream_->getBytesRemainingFrom(currentOffset);
+        int pagesRemaining = pageStream_->getPagesRemainingFrom(currentOffset);
+
+        log_d("Buffer analysis: %" PRIu32 " bytes from offset %" PRIu32
+              ", %zu bytes remaining, %d pages remaining",
+              static_cast<uint32_t>(pageStream_->size()), currentOffset, bytesRemaining,
+              pagesRemaining);
+
+        // Use absolute navigation with navigate_to and preview_to
         auto navigateTo = currentPageIndex;
         auto previewTo = navigateTo;
-        if (currentPageIndex == lastPageIndex || atEndOfContent) {
+        
+        // Check if we need to load preview pages:
+        // 1. We don't have a full page of content ahead (load one preview page)
+        // 2. We have a full page of content but it is too short and we're at the end of the content
+        // 3. We have less than 1250 bytes remaining in buffer
+        constexpr size_t bufferThresholdBytes = 1250;
+        
+        if (currentPageIndex == lastPageIndex || atEndOfContent ||
+            bytesRemaining < bufferThresholdBytes) {
             previewTo = navigateTo + 1;
         }
 
@@ -255,9 +274,9 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
             // Update server sync position only after successful navigation
             serverSyncPlace_ = std::dynamic_pointer_cast<TxtPlace>(place);
         } else {
-            log_d("Skipping navigation request - already have buffered content (currentPage=%d, "
-                  "lastPage=%d, navigateTo=%d, previewTo=%d)",
-                  currentPageIndex, lastPageIndex, navigateTo, previewTo);
+            log_d("Skipping navigation request - sufficient buffer available (currentPage=%d, "
+                  "lastPage=%d, navigateTo=%d, previewTo=%d, bytesRemaining=%zu)",
+                  currentPageIndex, lastPageIndex, navigateTo, previewTo, bytesRemaining);
 
             // For cached content, still call the gotContentFunction to maintain consistent behavior
             if (gotContentFunction_) {

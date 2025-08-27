@@ -264,6 +264,9 @@ void ReadingSettingsMenuScreen::populateMenuItems() {
         display_.flipInversion();
         display_.clearDisplay();
         prefs_.invertSetting.set(display_.getInversion());
+        this->telemetry_.logMetricData(
+            TelemetryField::METRIC_STYLE,
+            {{"dark_mode", this->prefs_.darkMode.get().value_or(false)}});
         setNeedsRerender();
         setFirstLoad();
     };
