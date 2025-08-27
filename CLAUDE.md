@@ -7,12 +7,9 @@
 # Kill any existing simulator instances
 pkill -f "simulator" || true
 
-# Build and start simulator with automation enabled
+# Build and start simulator (automation is always enabled)
 make sim-build
-SOL_SIMULATOR_AUTOMATION=1 ./lib/Simulator/build/simulator &
-
-# Wait for socket to be created (takes ~3-4 seconds)
-sleep 4
+./lib/Simulator/build/simulator &
 ```
 
 ### Controlling the Simulator
@@ -30,16 +27,16 @@ python3 scripts/control_simulator.py --key p       # Take screenshot (saves to .
 
 # Send key sequences
 python3 scripts/control_simulator.py --sequence "rrll"  # right, right, left, left
-
-# Wait between actions
-python3 scripts/control_simulator.py --wait 1000  # Wait 1000ms
 ```
 
 ### Navigation Structure
-The main menu has three sections that you navigate between using LEFT/RIGHT:
-1. **Books** - Local EPUB and PDF books
-2. **Kindle** - Kindle books (require network connection)
-3. **Articles** - Pocket articles and daily summaries
+The main menu has five sections that you navigate between using LEFT/RIGHT, in this order:
+1. **Recent** - Recent EPUBs
+2. **Books** - Local EPUB and PDF books
+3. **Kindle** - Kindle books (require network connection)
+4. **Articles** - Pocket articles and daily summaries
+5. **Settings** - Preferences and system
+Most of the time, you'll be on the Recent screen when you start the simulator.
 
 ### Reading Screenshots
 Always take a screenshot with `--key p` and read it using the Read tool on `./screenshot.png` to understand the current UI state. The simulator displays:
