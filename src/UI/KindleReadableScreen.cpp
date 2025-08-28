@@ -337,7 +337,14 @@ void KindleReadableScreen::drawInRect(SolRect rect) {
 
             setState(State::DISPLAY_PARTIAL_CONTENT);
         }
-        pageFlipper_.updatePlace(currentPlace_, atEndOfContent);
+        // Only update the page flipper if we're not in a loading state
+        // (loading states will handle their own updatePlace calls)
+        if (state_ != State::LOADING_CONTENT && state_ != State::LOADING_INITIAL_CONTENT) {
+            // Use newPlace_ (the position we just rendered to) for updatePlace when we have it
+            // This ensures we're telling the page flipper about the actual position we're displaying
+            auto placeForUpdate = newPlace_ ? newPlace_ : currentPlace_;
+            pageFlipper_.updatePlace(placeForUpdate, atEndOfContent);
+        }
 
         // Log comprehensive buffer state for debugging
         uint32_t currentOffset = currentPlace_->getOffset();
@@ -746,6 +753,10 @@ void KindleReadableScreen::navigateNext() {
         // Record navigation start time
         navigationStartTime_ = esp_timer_get_time();
 
+        // Update current place to the position we just rendered to
+        // This ensures the page flipper knows our actual position
+        currentPlace_ = newPlace_;
+
         // Log telemetry for showing loading screen during page turn
         telemetry_.logMetric(
             TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
@@ -758,6 +769,12 @@ void KindleReadableScreen::navigateNext() {
         loadingMessageView_.setText("Loading next page...");
         setNeedsLayout();
         setNeedsRerender();
+        
+        // Trigger the page flipper to load more content from the current position
+        // We need to force a request even if we're at the same position since we need more content
+        // Pass true for atEndOfContent to indicate we need more pages
+        pageFlipper_.updatePlace(currentPlace_, true);
+        
         return;
     }
 

@@ -78,6 +78,10 @@ void KindlePageFlipper::loadInitialPage() {
     // Capture string copies to avoid use-after-free
     log_i("Loading initial page for Kindle book: %s", kindleBook_->title.c_str());
 
+    // Reset navigation tracking when loading initial page
+    lastNavigatedPage_ = -1;
+    lastPreviewedPage_ = -1;
+
     telemetry_.logMetric(TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
                          {{"event", std::string("book-open")},
                           {"action", std::string("open-begin")},
@@ -133,7 +137,17 @@ void KindlePageFlipper::loadInitialPage() {
         // If this is a last read dialog, don't append the page (which would be empty)
         if (!hasDialog) {
             ocrTextLength = response->ocrText.size();
-            pageStream_->appendPageFromResponse(*response);
+            
+            // Log first 50 chars of initial content to see what page it really is
+            std::string fullText = std::string(response->ocrText);
+            std::string preview = fullText.substr(0, std::min(size_t(50), fullText.size()));
+            log_i("\033[1;36m>>> INITIAL PAGE: storing_as_page=0, content_preview='%s...'\033[0m", preview.c_str());
+            
+            // For initial page, it's always page 0
+            pageStream_->appendPageFromResponse(*response, 0);
+            // Initialize the last previewed page to 0 on initial load
+            lastPreviewedPage_ = 0;
+            pageStream_->debugDumpPageMappings();
         }
 
         // Always signal that we got content (to dismiss loading)
@@ -173,27 +187,51 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
               static_cast<uint32_t>(pageStream_->size()), currentOffset, bytesRemaining,
               pagesRemaining);
 
-        // Use absolute navigation with navigate_to and preview_to
-        auto navigateTo = currentPageIndex;
-        auto previewTo = navigateTo;
-
-        // Check if we need to load preview pages:
-        // 1. We don't have a full page of content ahead (load one preview page)
-        // 2. We have a full page of content but it is too short and we're at the end of the content
-        // 3. We have less than 1250 bytes remaining in buffer
+        // Define buffer threshold
         constexpr size_t bufferThresholdBytes = 1250;
 
-        if (currentPageIndex == lastPageIndex || atEndOfContent ||
-            bytesRemaining < bufferThresholdBytes) {
-            previewTo = navigateTo + 1;
+        // Get the server page number for our current reading position
+        auto serverPageForCurrentOffset = pageStream_->getServerPageNumberForOffset(place->getOffset());
+        
+        // Debug: Show the mapping
+        log_i("\033[1;33m>>> OFFSET MAPPING: offset=%" PRIu32 " -> page_index=%d -> server_page=%d\033[0m",
+              place->getOffset(), currentPageIndex, serverPageForCurrentOffset);
+        
+        // Use absolute navigation with navigate_to and preview_to
+        // Navigate to the server page that corresponds to our current reading position
+        auto navigateTo = serverPageForCurrentOffset >= 0 ? serverPageForCurrentOffset : 0;
+        
+        // For preview, we want to load the next page after what we already have
+        // lastPreviewedPage_ represents the highest page number we have (e.g., 0, 1, 2...)
+        // So the next page to preview is lastPreviewedPage_ + 1
+        auto previewTo = lastPreviewedPage_ + 1;
+        
+        // If buffer is low or we're at the end of content, ensure we preview ahead
+        if (bytesRemaining < bufferThresholdBytes || atEndOfContent) {
+            // Make sure we're always previewing at least one page ahead of navigation
+            previewTo = std::max(previewTo, navigateTo + 1);
         }
 
-        log_d("Absolute navigation: navigateTo=%d, previewTo=%d (current=%d/%d, previous=%d/%d, "
-              "atEndOfContent=%d)",
-              navigateTo, previewTo, currentPageIndex, lastPageIndex, previousPageIndex,
-              lastPageIndex, atEndOfContent);
+        // Check if we already have the preview page
+        // lastPreviewedPage_ is the highest server page number we have
+        // We want to preview previewTo, so check if we already have it
+        bool alreadyHavePreviewPage = (lastPreviewedPage_ >= previewTo);
 
-        if (navigateTo != previousPageIndex || previewTo > lastPageIndex) {
+        log_d("Absolute navigation: navigateTo=%d, previewTo=%d (current=%d/%d, previous=%d/%d, "
+              "lastNavigated=%d, lastPreviewed=%d, alreadyHave=%d, atEndOfContent=%d, serverPage=%d)",
+              navigateTo, previewTo, currentPageIndex, lastPageIndex, previousPageIndex,
+              lastPageIndex, lastNavigatedPage_, lastPreviewedPage_, alreadyHavePreviewPage, atEndOfContent,
+              serverPageForCurrentOffset);
+
+        // Send navigation request if:
+        // 1. We're navigating to a different page than we last told the server
+        // 2. We need to preview more pages that we don't already have
+        bool needsNavigation = (navigateTo != lastNavigatedPage_) || 
+                               (!alreadyHavePreviewPage);
+        
+        if (needsNavigation) {
+            log_i("\033[1;35m>>> NAVIGATION REQUEST: navigate_to=%d, preview_to=%d (bytes remaining: %zu, threshold: %zu)\033[0m", 
+                  navigateTo, previewTo, bytesRemaining, bufferThresholdBytes);
             // Track navigation start time
             int64_t navigationStartTime = esp_timer_get_time();
 
@@ -251,8 +289,27 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
             if (!hasDialog) {
                 if (previewTo > navigateTo) {
                     ocrTextLength = response->ocrText.size();
-                    pageStream_->appendPageFromResponse(*response);
+                    // When we navigate with preview, the response contains content for the preview page
+                    // preview_to=1 means we're getting content for page 1 (not page 0)
+                    int serverPageNumber = previewTo;
+                    
+                    // Log first 50 chars of content to see what page it really is
+                    std::string fullText = std::string(response->ocrText);
+                    std::string preview = fullText.substr(0, std::min(size_t(50), fullText.size()));
+                    log_i("\033[1;36m>>> PREVIEW RESPONSE: navigate_to=%d, preview_to=%d, storing_as_page=%d, content_preview='%s...'\033[0m", 
+                          navigateTo, previewTo, serverPageNumber, preview.c_str());
+                    
+                    pageStream_->appendPageFromResponse(*response, serverPageNumber);
+                    // Update the last previewed page to match the server page we just stored
+                    lastPreviewedPage_ = serverPageNumber;
+                    log_i("\033[1;36m>>> APPENDED PAGE: server_page=%d, content_length=%zu, buffer_size_now=%zu\033[0m", 
+                          serverPageNumber, ocrTextLength, pageStream_->size());
+                    // Debug: show full buffer state
+                    pageStream_->debugDumpPageMappings();
                 }
+                // Update the last navigated page to reflect what we told the server
+                lastNavigatedPage_ = navigateTo;
+                log_d("Updated lastNavigatedPage_ to %d after successful navigation", lastNavigatedPage_);
             }
 
             int64_t elapsedMs = (esp_timer_get_time() - navigationStartTime) / 1000;
@@ -271,12 +328,24 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
             // Always signal that we got content (to dismiss loading)
             gotContentFunction_(ocrTextLength);
 
-            // Update server sync position only after successful navigation
+            // Update server sync position after successful navigation
+            // We track the actual navigation position, not the preview position
+            // This ensures we properly track what page the server thinks we're on
             serverSyncPlace_ = std::dynamic_pointer_cast<TxtPlace>(place);
         } else {
-            log_d("Skipping navigation request - sufficient buffer available (currentPage=%d, "
-                  "lastPage=%d, navigateTo=%d, previewTo=%d, bytesRemaining=%zu)",
-                  currentPageIndex, lastPageIndex, navigateTo, previewTo, bytesRemaining);
+            if (alreadyHavePreviewPage) {
+                log_d("Skipping navigation request - already have preview page %d (currentPage=%d, "
+                      "lastPage=%d, navigateTo=%d, bytesRemaining=%zu)",
+                      previewTo, currentPageIndex, lastPageIndex, navigateTo, bytesRemaining);
+                log_i("\033[1;33m>>> NAVIGATION SKIPPED: Already have preview_to=%d (navigate_to=%d, bytes: %zu)\033[0m",
+                      previewTo, navigateTo, bytesRemaining);
+            } else {
+                log_d("Skipping navigation request - no change needed (currentPage=%d, "
+                      "lastPage=%d, navigateTo=%d, previewTo=%d, bytesRemaining=%zu)",
+                      currentPageIndex, lastPageIndex, navigateTo, previewTo, bytesRemaining);
+                log_i("\033[1;33m>>> NAVIGATION SKIPPED: No change needed (navigate_to=%d, preview_to=%d)\033[0m",
+                      navigateTo, previewTo);
+            }
 
             // Only call gotContentFunction if we've actually changed position
             // This prevents infinite loops when repeatedly at the same position

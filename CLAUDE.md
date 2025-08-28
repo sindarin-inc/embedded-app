@@ -12,6 +12,9 @@
 - Monitor serial logs: `make monitor`
 - Run simulator: `make sim` (or `make sim8`, `make sim16`, `make sim24` for different display modes)
   - No need to run export.sh for simulator
+  - Simulator output is logged to `logs/sim.log` (or `logs/sim8.log`, `logs/sim16.log`, `logs/sim24.log`)
+  - Watch logs in real-time: `tail -f logs/sim.log`
+  - Log file is cleared on each run
 - Run tests: `make test`
 - Run single test: `./test/CatchTests/build/tests '[test-tag]'` (e.g. `'[epub]'`, `'[content-sync]'`)
 - Format code: `make clang-format`

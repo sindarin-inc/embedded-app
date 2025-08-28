@@ -15,6 +15,7 @@
 class KindlePage {
 public:
     SpiramString content;
+    int serverPageNumber = -1;  // The page number on the server that this content came from
 };
 
 // TODO: Maybe it would be more exact (albeit more complex) to instead have a KindleTokenizer and a
@@ -100,10 +101,18 @@ public:
         return -1;
     }
 
-    void appendPageFromResponse(KindlePageResponse &response) {
+    void appendPageFromResponse(KindlePageResponse &response, int serverPageNumber) {
         // Add a space to the end of the page so that they concatenate cleanly
         response.ocrText += " ";
-        pages_.push_back({response.ocrText});
+        pages_.push_back({response.ocrText, serverPageNumber});
+    }
+    
+    auto getServerPageNumberForOffset(uint32_t offset) -> int {
+        int pageIndex = pageIndexForOffset(offset);
+        if (pageIndex >= 0 && pageIndex < pages_.size()) {
+            return pages_[pageIndex].serverPageNumber;
+        }
+        return -1;
     }
 
     auto lastPageIndex() -> int { return pages_.size() - 1; }
@@ -133,6 +142,19 @@ public:
             return 0;
         }
         return pages_.size() - pageIndex;
+    }
+    
+    void debugDumpPageMappings() {
+        size_t cumulativeOffset = 0;
+        log_i("=== Buffer Page Mappings ===");
+        for (size_t i = 0; i < pages_.size(); i++) {
+            size_t pageSize = pages_[i].content.size();
+            log_i("  Page %zu: offset_range=[%zu-%zu], size=%zu, server_page=%d",
+                  i, cumulativeOffset, cumulativeOffset + pageSize - 1, 
+                  pageSize, pages_[i].serverPageNumber);
+            cumulativeOffset += pageSize;
+        }
+        log_i("  Total buffer size: %zu bytes", cumulativeOffset);
     }
 
 protected:
@@ -213,6 +235,8 @@ public:
             pageStream_->clear();
         }
         serverSyncPlace_ = nullptr;
+        lastPreviewedPage_ = -1;
+        lastNavigatedPage_ = -1;
     }
 
     [[nodiscard]] auto getPagesRemainingFromOffset(uint32_t offset) const -> int {
@@ -230,6 +254,8 @@ private:
     Telemetry &telemetry_;
 
     std::shared_ptr<TxtPlace> serverSyncPlace_; // Last position synced with server
+    int lastPreviewedPage_ = -1; // Track the last page we successfully previewed from server
+    int lastNavigatedPage_ = -1; // Track the last page we sent navigate_to for
     std::function<void(size_t ocrTextLength)> gotContentFunction_;
     std::function<void(const std::string &errorMessage)> onErrorFunction_;
     std::function<void()> onConnectionErrorFunction_;

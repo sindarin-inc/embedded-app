@@ -51,7 +51,10 @@ sim-build:
 
 .PHONY: sim-run
 sim: sim-build
-	./lib/Simulator/build/simulator
+	@echo "Starting simulator with logging to logs/sim.log"
+	@echo "You can watch the log with: tail -f logs/sim.log"
+	@> logs/sim.log
+	@./lib/Simulator/build/simulator 2>&1 | tee logs/sim.log
 
 .PHONY: sim8-build
 sim8-build:
@@ -60,7 +63,10 @@ sim8-build:
 
 .PHONY: sim-run8
 sim8: sim8-build
-	./lib/Simulator/build8/simulator
+	@echo "Starting simulator with logging to logs/sim8.log"
+	@echo "You can watch the log with: tail -f logs/sim8.log"
+	@> logs/sim8.log
+	@./lib/Simulator/build8/simulator 2>&1 | tee logs/sim8.log
 
 .PHONY: sim16-build
 sim16-build:
@@ -69,7 +75,10 @@ sim16-build:
 
 .PHONY: sim-run16
 sim16: sim16-build
-	./lib/Simulator/build16/simulator
+	@echo "Starting simulator with logging to logs/sim16.log"
+	@echo "You can watch the log with: tail -f logs/sim16.log"
+	@> logs/sim16.log
+	@./lib/Simulator/build16/simulator 2>&1 | tee logs/sim16.log
 
 .PHONY: sim24-build
 sim24-build:
@@ -78,7 +87,10 @@ sim24-build:
 
 .PHONY: sim-run24
 sim24: sim24-build
-	./lib/Simulator/build24/simulator
+	@echo "Starting simulator with logging to logs/sim24.log"
+	@echo "You can watch the log with: tail -f logs/sim24.log"
+	@> logs/sim24.log
+	@./lib/Simulator/build24/simulator 2>&1 | tee logs/sim24.log
 
 .PHONY: lldb
 lldb: sim-build
