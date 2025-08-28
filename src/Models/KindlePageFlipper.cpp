@@ -282,7 +282,8 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
             // This prevents infinite loops when repeatedly at the same position
             if (navigateTo != previousPageIndex && gotContentFunction_) {
                 size_t contentLength = pageStream_->getOcrTextLength();
-                log_d("Calling gotContentFunction for position change with cached content (length=%zu)",
+                log_d("Calling gotContentFunction for position change with cached content "
+                      "(length=%zu)",
                       contentLength);
                 gotContentFunction_(contentLength);
             }
