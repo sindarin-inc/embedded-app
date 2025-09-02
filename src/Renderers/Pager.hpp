@@ -164,7 +164,7 @@ public:
     [[nodiscard]] inline auto getNextPageStreamPlace() const -> StreamPlace {
         log_d("getNextPageStreamPlace: (%s) next: %s", atEOF_ ? "at EOF" : "not at eof",
               nextPagePlace_.str().c_str());
-        return atEOF_ ? StreamPlace() : nextPagePlace_;
+        return nextPagePlace_;
     }
 
     inline void setNextPagePlace(StreamPlace place) { nextPagePlace_ = place; }

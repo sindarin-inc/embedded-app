@@ -424,7 +424,7 @@ void LocalStore::changedReadablesBookmarksJson(ReadableBookmarksVector &bookmark
             std::string bookmarkPath = readable->bookmarkFilePath();
             SFile bookmarkFile = fileSystem.open(bookmarkPath, FILE_READ, false);
             if (!bookmarkFile) {
-                log_i("Failed to open bookmark file: %s", bookmarkPath.c_str());
+                log_d("No bookmark file found: %s", bookmarkPath.c_str());
                 continue;
             }
 
@@ -436,10 +436,25 @@ void LocalStore::changedReadablesBookmarksJson(ReadableBookmarksVector &bookmark
                 log_d("Bookmark: %s %s %d", bookmark.firstPlace->str().c_str(),
                       bookmark.lastPlace->str().c_str(), bookmark.status);
 
-                if (bookmark.status == BOOKMARK_ON &&
-                    (bookmark.firstPlace->getOffset() < bookmark.lastPlace->getOffset())) {
-                    bookmarksToAdd[bookmark.firstPlace->str()] = bookmark.lastPlace->str();
-                    bookmarksToDelete.erase(bookmark.firstPlace->str());
+                if (bookmark.status == BOOKMARK_ON) {
+                    if (bookmark.firstPlace->getOffset() < bookmark.lastPlace->getOffset()) {
+                        bookmarksToAdd[bookmark.firstPlace->str()] = bookmark.lastPlace->str();
+                        bookmarksToDelete.erase(bookmark.firstPlace->str());
+                    } else {
+                        // Log invalid bookmark that was filtered out
+                        log_w(
+                            "Skipping invalid bookmark (start >= end): start=%s end=%s for %s (%s)",
+                            bookmark.firstPlace->str().c_str(), bookmark.lastPlace->str().c_str(),
+                            readable->title.c_str(), readable->uuid.c_str());
+                        this->telemetry_.logMetric(
+                            TelemetryField::METRIC_EVENT, "bookmark_invalid",
+                            {{"uuid", std::string(readable->shortenedUuid)},
+                             {"title", std::string(readable->title)},
+                             {"type", ReadableModelTypeToString(modelType)},
+                             {"reason", std::string("invalid_range")},
+                             {"start_offset", static_cast<int>(bookmark.firstPlace->getOffset())},
+                             {"end_offset", static_cast<int>(bookmark.lastPlace->getOffset())}});
+                    }
                 } else if (bookmark.status == BOOKMARK_OFF) {
                     bookmarksToAdd.erase(bookmark.firstPlace->str());
                     bookmarksToDelete[bookmark.firstPlace->str()] = bookmark.lastPlace->str();
@@ -462,6 +477,8 @@ void LocalStore::changedReadablesBookmarksJson(ReadableBookmarksVector &bookmark
                     bookmark.chapterOffset = ePubPlace->getOffset();
                 }
                 bookmarks.emplace_back(bookmark);
+                log_i("Adding bookmark to sync: %s [%s -> %s]", readable->title.c_str(),
+                      startingPosition.c_str(), endingPosition.c_str());
             }
 
             // Add bookmarks to delete to the JSON array
@@ -480,6 +497,8 @@ void LocalStore::changedReadablesBookmarksJson(ReadableBookmarksVector &bookmark
                 }
                 bookmark.willDelete = true;
                 bookmarks.emplace_back(bookmark);
+                log_i("Removing bookmark from sync: %s [%s -> %s]", readable->title.c_str(),
+                      startingPosition.c_str(), endingPosition.c_str());
             }
         }
     }

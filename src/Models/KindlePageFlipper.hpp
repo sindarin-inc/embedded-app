@@ -122,6 +122,19 @@ public:
         currentPageOffset_ = 0;
     }
 
+    auto getBytesRemainingFrom(uint32_t offset) -> size_t {
+        size_t totalSize = size();
+        return offset < totalSize ? totalSize - offset : 0;
+    }
+
+    auto getPagesRemainingFrom(uint32_t offset) -> int {
+        int pageIndex = pageIndexForOffset(offset);
+        if (pageIndex < 0) {
+            return 0;
+        }
+        return pages_.size() - pageIndex;
+    }
+
 protected:
     SpiramVector<KindlePage> pages_;
 
@@ -202,9 +215,14 @@ public:
         serverSyncPlace_ = nullptr;
     }
 
-private:
-    // const int bufferThreshold_ = 2000; // Byte threshold to preload more content
+    [[nodiscard]] auto getPagesRemainingFromOffset(uint32_t offset) const -> int {
+        if (pageStream_) {
+            return pageStream_->getPagesRemainingFrom(offset);
+        }
+        return 0;
+    }
 
+private:
     std::shared_ptr<KindleBook> kindleBook_;
     bool useBle_ = false;
     std::shared_ptr<CancelFlag> cancelFlag_;
