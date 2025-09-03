@@ -153,7 +153,13 @@ void KindlePageFlipper::loadInitialPage() {
         }
 
         // Always signal that we got content (to dismiss loading)
-        gotContentFunction_(ocrTextLength);
+        if (gotContentFunction_) {
+            log_i("Calling gotContentFunction after initial page load (ocrTextLength=%zu)",
+                  ocrTextLength);
+            gotContentFunction_(ocrTextLength);
+        } else {
+            log_w("gotContentFunction_ is null after initial page load");
+        }
     });
 }
 
@@ -519,7 +525,13 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
                                  successTelemetryData);
 
             // Always signal that we got content (to dismiss loading)
-            gotContentFunction_(ocrTextLength);
+            if (gotContentFunction_) {
+                log_i("Calling gotContentFunction after successful navigation (ocrTextLength=%zu)",
+                      ocrTextLength);
+                gotContentFunction_(ocrTextLength);
+            } else {
+                log_w("gotContentFunction_ is null after successful navigation");
+            }
 
             // Update server sync position after successful navigation
             // We track the actual navigation position, not the preview position
@@ -535,14 +547,28 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
                       navigateTo, previewTo, bytesRemaining);
             }
 
-            // Only call gotContentFunction if we've actually changed position
-            // This prevents infinite loops when repeatedly at the same position
-            if (navigateTo != previousPageIndex && gotContentFunction_) {
-                size_t contentLength = pageStream_->getOcrTextLength();
-                log_d("Calling gotContentFunction for position change with cached content "
-                      "(length=%zu)",
-                      contentLength);
-                gotContentFunction_(contentLength);
+            // Update sync position and call callback when navigating with cached content
+            auto currentOffset = place->getOffset();
+            auto previousOffset = serverSyncPlace_ ? serverSyncPlace_->getOffset() : 0;
+            
+            log_d("Checking cached navigation callback: currentOffset=%u, previousOffset=%u, "
+                  "gotContentFunction_=%p", currentOffset, previousOffset, 
+                  gotContentFunction_ ? (void*)1 : nullptr);
+            
+            if (currentOffset != previousOffset) {
+                // Update server sync position even when using cached content
+                serverSyncPlace_ = std::dynamic_pointer_cast<TxtPlace>(place);
+                
+                // Call gotContentFunction for UI updates and tests
+                if (gotContentFunction_) {
+                    size_t contentLength = pageStream_->getOcrTextLength();
+                    log_i("Calling gotContentFunction for position change with cached content "
+                          "(offset %u -> %u, length=%zu)",
+                          previousOffset, currentOffset, contentLength);
+                    gotContentFunction_(contentLength);
+                } else {
+                    log_w("gotContentFunction_ is null when navigating with cached content");
+                }
             }
         }
     });
