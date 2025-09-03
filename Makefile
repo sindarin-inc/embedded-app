@@ -1,7 +1,7 @@
 all: build
 
 # Use all but 1 core for building
-NUM_CORES := $(shell nproc)
+NUM_CORES := $(shell nproc 2>/dev/null || sysctl -n hw.ncpu)
 NUM_CORES := $(shell echo $$(( $(NUM_CORES) - 1 )))
 NUM_CORES := $(shell [ $(NUM_CORES) -lt 1 ] && echo 1 || echo $(NUM_CORES))
 
@@ -237,6 +237,12 @@ clang-tidy: check_idf
 .PHONY: clang-format
 clang-format: check_idf
 	find src -iname "*.hpp" -o -iname "*.h" -o -iname "*.cpp" -o -iname "*.c" | xargs clang-format -i
+
+.PHONY: lint
+lint: clang-format
+
+.PHONY: tidy
+tidy: clang-tidy clang-format
 
 program-mode:
 	python3 scripts/port_tool.py find_port programming

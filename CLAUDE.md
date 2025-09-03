@@ -17,8 +17,10 @@
   - Log file is cleared on each run
 - Run tests: `make test`
 - Run single test: `./test/CatchTests/build/tests '[test-tag]'` (e.g. `'[epub]'`, `'[content-sync]'`)
-- Format code: `make clang-format`
+- Format code: `make lint` (or `make clang-format`)
+  - **IMPORTANT**: Always run `. $IDF_PATH/export.sh && make lint` after making code changes
 - Static analysis: `make clang-tidy`
+- Full linting (format + static analysis): `make tidy` (can be slow)
 
 ## Code Style Guidelines
 - Format: Use clang-format with LLVM-based style (ColumnLimit: 100, IndentWidth: 4)
