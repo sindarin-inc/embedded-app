@@ -553,8 +553,8 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
 
             log_d("Checking cached navigation callback: currentOffset=%u, previousOffset=%u, "
                   "gotContentFunction_=%p",
-                  currentOffset, previousOffset, gotContentFunction_ ? (void *)1 : nullptr);
-
+                  (unsigned int)currentOffset, (unsigned int)previousOffset,
+                  gotContentFunction_ ? (void *)1 : nullptr);
             if (currentOffset != previousOffset) {
                 // Update server sync position even when using cached content
                 serverSyncPlace_ = std::dynamic_pointer_cast<TxtPlace>(place);
@@ -563,8 +563,8 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
                 if (gotContentFunction_) {
                     size_t contentLength = pageStream_->getOcrTextLength();
                     log_i("Calling gotContentFunction for position change with cached content "
-                          "(offset %u -> %u, length=%zu)",
-                          previousOffset, currentOffset, contentLength);
+                          "(offset %u -> %u, length=%u)",
+                          (unsigned int)previousOffset, (unsigned int)currentOffset, (unsigned int)contentLength);
                     gotContentFunction_(contentLength);
                 } else {
                     log_w("gotContentFunction_ is null when navigating with cached content");
