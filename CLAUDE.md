@@ -1,5 +1,8 @@
 # Sol Reader Embedded App - Development Guide
 
+## Tips
+- **Visual Test Generation**: When tests use `ASSERT_VIEW_UNCHANGED`, they automatically generate accepted images on first run if they don't exist. The test will fail initially and show you the copy command to create the accepted image from the generated TestRun image.
+
 ## Test Screenshots
 - Never copy TestRun images to Accepted folder - the test runner auto-accepts them when tests fail
 - The test framework automatically updates accepted screenshots when they change

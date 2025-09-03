@@ -713,7 +713,7 @@ TEST_CASE("Test mock server URL override", "[.][no-kindle]") {
     api->overrideBaseUrl("");
 }
 
-TEST_CASE("Test Kindle navigation visual traversal", "[.][kindle]") {
+TEST_CASE("Test Kindle navigation visual traversal", "[kindle]") {
     // Reset all mock state at the beginning of the test
     resetMockState();
 

@@ -199,6 +199,9 @@ auto CheckViewUnchanged(DisplayEinkET013TT1 &display, std::string key) -> ViewTe
     std::filesystem::create_directories(
         std::filesystem::path(result.renderedImagePath).parent_path());
 
+    log_i("Saving image to %s (width=%d, height=%d)", result.renderedImagePath.c_str(),
+          CONFIG_DISPLAY_WIDTH, CONFIG_DISPLAY_HEIGHT);
+    
     if (!stbi_write_png(result.renderedImagePath.c_str(), CONFIG_DISPLAY_WIDTH,
                         CONFIG_DISPLAY_HEIGHT, 1, display.buffer().get(), 0)) {
         log_e("Unable to save rendered image to %s", result.renderedImagePath.c_str());
