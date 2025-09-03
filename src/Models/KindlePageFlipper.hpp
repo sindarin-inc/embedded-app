@@ -15,7 +15,7 @@
 class KindlePage {
 public:
     SpiramString content;
-    int serverPageNumber = -1;  // The page number on the server that this content came from
+    int serverPageNumber = -1; // The page number on the server that this content came from
 };
 
 // TODO: Maybe it would be more exact (albeit more complex) to instead have a KindleTokenizer and a
@@ -106,7 +106,7 @@ public:
         response.ocrText += " ";
         pages_.push_back({response.ocrText, serverPageNumber});
     }
-    
+
     auto getServerPageNumberForOffset(uint32_t offset) -> int {
         int pageIndex = pageIndexForOffset(offset);
         if (pageIndex >= 0 && pageIndex < pages_.size()) {
@@ -143,15 +143,15 @@ public:
         }
         return pages_.size() - pageIndex;
     }
-    
+
     void debugDumpPageMappings() {
         size_t cumulativeOffset = 0;
         log_i("=== Buffer Page Mappings ===");
         for (size_t i = 0; i < pages_.size(); i++) {
             size_t pageSize = pages_[i].content.size();
-            log_i("  Page %zu: offset_range=[%zu-%zu], size=%zu, server_page=%d",
-                  i, cumulativeOffset, cumulativeOffset + pageSize - 1, 
-                  pageSize, pages_[i].serverPageNumber);
+            log_i("  Page %zu: offset_range=[%zu-%zu], size=%zu, server_page=%d", i,
+                  cumulativeOffset, cumulativeOffset + pageSize - 1, pageSize,
+                  pages_[i].serverPageNumber);
             cumulativeOffset += pageSize;
         }
         log_i("  Total buffer size: %zu bytes", cumulativeOffset);

@@ -341,7 +341,8 @@ void KindleReadableScreen::drawInRect(SolRect rect) {
         // (loading states will handle their own updatePlace calls)
         if (state_ != State::LOADING_CONTENT && state_ != State::LOADING_INITIAL_CONTENT) {
             // Use newPlace_ (the position we just rendered to) for updatePlace when we have it
-            // This ensures we're telling the page flipper about the actual position we're displaying
+            // This ensures we're telling the page flipper about the actual position we're
+            // displaying
             auto placeForUpdate = newPlace_ ? newPlace_ : currentPlace_;
             pageFlipper_.updatePlace(placeForUpdate, atEndOfContent);
         }
@@ -769,12 +770,12 @@ void KindleReadableScreen::navigateNext() {
         loadingMessageView_.setText("Loading next page...");
         setNeedsLayout();
         setNeedsRerender();
-        
+
         // Trigger the page flipper to load more content from the current position
         // We need to force a request even if we're at the same position since we need more content
         // Pass true for atEndOfContent to indicate we need more pages
         pageFlipper_.updatePlace(currentPlace_, true);
-        
+
         return;
     }
 
