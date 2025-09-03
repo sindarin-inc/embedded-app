@@ -42,4 +42,4 @@ test_kindle_*.ini
 docs/*
 
 # Log files
-logs/ 
+logs/* 

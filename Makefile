@@ -51,6 +51,7 @@ sim-build:
 
 .PHONY: sim-run
 sim: sim-build
+	@mkdir -p logs
 	@echo "Starting simulator with logging to logs/sim.log"
 	@echo "You can watch the log with: tail -f logs/sim.log"
 	@> logs/sim.log
@@ -63,6 +64,7 @@ sim8-build:
 
 .PHONY: sim-run8
 sim8: sim8-build
+	@mkdir -p logs
 	@echo "Starting simulator with logging to logs/sim8.log"
 	@echo "You can watch the log with: tail -f logs/sim8.log"
 	@> logs/sim8.log
@@ -75,6 +77,7 @@ sim16-build:
 
 .PHONY: sim-run16
 sim16: sim16-build
+	@mkdir -p logs
 	@echo "Starting simulator with logging to logs/sim16.log"
 	@echo "You can watch the log with: tail -f logs/sim16.log"
 	@> logs/sim16.log
@@ -87,6 +90,7 @@ sim24-build:
 
 .PHONY: sim-run24
 sim24: sim24-build
+	@mkdir -p logs
 	@echo "Starting simulator with logging to logs/sim24.log"
 	@echo "You can watch the log with: tail -f logs/sim24.log"
 	@> logs/sim24.log

@@ -205,43 +205,56 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
         // Navigate to the server page that corresponds to our current reading position
         auto navigateTo = serverPageForCurrentOffset >= 0 ? serverPageForCurrentOffset : 0;
 
-        // When making preview requests, we should advance navigate_to to stay close to preview_to
-        // We can skip intermediate navigation pages, but we want to minimize the gap
-        // Use the highest contiguous server page we have as our navigation position
-        if (lastPreviewedPage_ > navigateTo && lastPreviewedPage_ > lastNavigatedPage_) {
-            // We have pages beyond our current position, advance navigation to catch up
-            // This prevents large gaps between navigate_to and preview_to
-            navigateTo =
-                std::min(lastPreviewedPage_, navigateTo + 3); // Don't jump too far ahead at once
-        }
-
         // For preview, we must load sequentially - always the next page after what we have
         // preview_to must be sequential: 1, 2, 3, 4... can't skip
         auto previewTo = lastPreviewedPage_ + 1;
 
         // Check if we need to send a navigation request
         // We need to navigate if:
-        // 1. User has moved to a different page (navigate_to changed) - can skip intermediate pages
-        // 2. We need more preview pages (low buffer, at end, or user jumped ahead of our previews)
+        // 1. User has moved to a different page (navigate_to changed from last reported position)
+        // 2. We need more preview pages (low buffer or at end of content)
+        // 3. User jumped ahead past our previews
         bool navigationChanged = (navigateTo != lastNavigatedPage_);
-        bool needMorePreviews =
-            (bytesRemaining < bufferThresholdBytes) || atEndOfContent ||
-            (navigateTo >= lastPreviewedPage_); // User is at or past our last preview
+        bool userJumpedAhead = (navigateTo >= lastPreviewedPage_); // User is at or past our last preview
+        bool needMorePreviews = (bytesRemaining < bufferThresholdBytes) || atEndOfContent;
+        
+        // Determine what kind of request to make
+        bool needsNavigation = false;
+        bool includePreview = false;
+        
+        if (userJumpedAhead) {
+            // User jumped ahead - need to navigate and get preview
+            needsNavigation = true;
+            includePreview = true;
+        } else if (navigationChanged && needMorePreviews) {
+            // User moved and we need more content - navigate with preview
+            needsNavigation = true;
+            includePreview = true;
+        } else if (navigationChanged && !needMorePreviews) {
+            // User moved but we have enough buffer - just update position, no preview needed
+            needsNavigation = true;
+            includePreview = false;
+        } else if (!navigationChanged && needMorePreviews) {
+            // Same position but need more buffer - skip the request entirely
+            // The additional preview logic after page load will handle this
+            needsNavigation = false;
+        }
 
-        log_d("Absolute navigation: navigateTo=%d, previewTo=%d (current=%d/%d, previous=%d/%d, "
-              "lastNavigated=%d, lastPreviewed=%d, navChanged=%d, needPreviews=%d, "
+        log_d("Navigation analysis: navigateTo=%d, previewTo=%d (current=%d/%d, previous=%d/%d, "
+              "lastNavigated=%d, lastPreviewed=%d, navChanged=%d, userJumped=%d, needPreviews=%d, "
               "atEndOfContent=%d, serverPage=%d)",
               navigateTo, previewTo, currentPageIndex, lastPageIndex, previousPageIndex,
               lastPageIndex, lastNavigatedPage_, lastPreviewedPage_, navigationChanged,
-              needMorePreviews, atEndOfContent, serverPageForCurrentOffset);
-
-        // Send navigation request if we need to update navigation position OR load more previews
-        bool needsNavigation = navigationChanged || needMorePreviews;
+              userJumpedAhead, needMorePreviews, atEndOfContent, serverPageForCurrentOffset);
 
         if (needsNavigation) {
+            // Determine the actual preview_to value to send
+            int actualPreviewTo = includePreview ? previewTo : navigateTo;
+            
             log_i("\033[1;35m>>> NAVIGATION REQUEST: navigate_to=%d, preview_to=%d (bytes "
-                  "remaining: %zu, threshold: %zu)\033[0m",
-                  navigateTo, previewTo, bytesRemaining, bufferThresholdBytes);
+                  "remaining: %zu, threshold: %zu, includePreview=%d)\033[0m",
+                  navigateTo, actualPreviewTo, bytesRemaining, bufferThresholdBytes, includePreview);
+            
             // Track navigation start time
             int64_t navigationStartTime = esp_timer_get_time();
 
@@ -250,22 +263,80 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
                 {"action", std::string("navigate-begin")},
                 {"kindle", true},
                 {"navigate_to", navigateTo},
-                {"preview_to", previewTo},
+                {"preview_to", actualPreviewTo},
                 {"po", static_cast<int>(place->getOffset())},
                 {"elapsed_ms", 0}};
             telemetry_.logMetric(TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
                                  beginTelemetryData);
 
             auto response = std::make_shared<KindlePageResponse>();
-
-            int httpCode = SindarinAPI::getInstance()->navigateKindle(
-                kindleBook_->title, response.get(), cancelFlag, useBle_, navigateTo, previewTo);
-            if (CancelFlag::isCancelled(cancelFlag)) {
-                return;
+            
+            // Retry logic for failed requests - since navigation is idempotent, we can safely retry
+            constexpr int maxRetries = 3;
+            int retryCount = 0;
+            std::string errorMessage;
+            int httpCode = 0;
+            
+            while (retryCount < maxRetries) {
+                if (retryCount > 0) {
+                    log_w("Retrying navigation request (attempt %d/%d): navigate_to=%d, preview_to=%d",
+                          retryCount + 1, maxRetries, navigateTo, actualPreviewTo);
+                    
+                    // Log retry telemetry
+                    auto retryTelemetryData = std::unordered_map<std::string, TelemetryVariant>{
+                        {"event", std::string("book-navigate")},
+                        {"action", std::string("navigate-retry")},
+                        {"kindle", true},
+                        {"navigate_to", navigateTo},
+                        {"preview_to", actualPreviewTo},
+                        {"po", static_cast<int>(place->getOffset())},
+                        {"retry_attempt", retryCount + 1},
+                        {"max_retries", maxRetries}};
+                    telemetry_.logMetric(TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
+                                       retryTelemetryData);
+                }
+                
+                httpCode = SindarinAPI::getInstance()->navigateKindle(
+                    kindleBook_->title, response.get(), cancelFlag, useBle_, navigateTo, actualPreviewTo);
+                    
+                if (CancelFlag::isCancelled(cancelFlag)) {
+                    return;
+                }
+                
+                errorMessage = checkForError(httpCode, response);
+                
+                // If successful or non-retryable error, break out
+                if (errorMessage.empty()) {
+                    if (retryCount > 0) {
+                        log_i("Navigation request succeeded after %d retries", retryCount);
+                    }
+                    break;
+                }
+                
+                // Check if this is a retryable error (network/timeout issues)
+                bool isRetryable = (errorMessage == "CONNECTION_ERROR" || 
+                                   errorMessage == "TIMEOUT" ||
+                                   httpCode == 0 || // No response
+                                   httpCode >= 500); // Server errors
+                
+                if (!isRetryable) {
+                    log_e("Non-retryable error: %s (HTTP %d)", errorMessage.c_str(), httpCode);
+                    break;
+                }
+                
+                retryCount++;
+                if (retryCount < maxRetries) {
+                    // Wait before retry (exponential backoff)
+                    int delayMs = 1000 * retryCount; // 1s, 2s, 3s
+                    log_w("Retryable error: %s (HTTP %d). Waiting %dms before retry...", 
+                          errorMessage.c_str(), httpCode, delayMs);
+                    vTaskDelay(pdMS_TO_TICKS(delayMs));
+                }
             }
-            auto errorMessage = checkForError(httpCode, response);
+            
             if (!errorMessage.empty()) {
-                log_e("Error moving to next page: %s", errorMessage.c_str());
+                log_e("Navigation request failed after %d attempts: %s", 
+                      retryCount > 0 ? retryCount : 1, errorMessage.c_str());
 
                 int64_t elapsedMs = (esp_timer_get_time() - navigationStartTime) / 1000;
                 auto failedTelemetryData = std::unordered_map<std::string, TelemetryVariant>{
@@ -273,10 +344,12 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
                     {"action", std::string("navigate-failed")},
                     {"kindle", true},
                     {"navigate_to", navigateTo},
-                    {"preview_to", previewTo},
+                    {"preview_to", actualPreviewTo},
                     {"po", static_cast<int>(place->getOffset())},
                     {"error", errorMessage},
-                    {"elapsed_ms", static_cast<int>(elapsedMs)}};
+                    {"elapsed_ms", static_cast<int>(elapsedMs)},
+                    {"retry_count", retryCount > 0 ? retryCount : 0},
+                    {"all_retries_failed", true}};
                 telemetry_.logMetric(TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
                                      failedTelemetryData);
 
@@ -297,11 +370,11 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
 
             size_t ocrTextLength = 0;
             if (!hasDialog) {
-                if (previewTo > navigateTo) {
+                if (actualPreviewTo > navigateTo) {
                     ocrTextLength = response->ocrText.size();
                     // When we navigate with preview, the response contains content for the preview
                     // page preview_to=1 means we're getting content for page 1 (not page 0)
-                    int serverPageNumber = previewTo;
+                    int serverPageNumber = actualPreviewTo;
 
                     // Log first 50 chars of content to see what page it really is
                     std::string fullText = std::string(response->ocrText);
@@ -309,7 +382,7 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
                         fullText.substr(0, std::min(static_cast<size_t>(50), fullText.size()));
                     log_i("\033[1;36m>>> PREVIEW RESPONSE: navigate_to=%d, preview_to=%d, "
                           "storing_as_page=%d, content_preview='%s...'\033[0m",
-                          navigateTo, previewTo, serverPageNumber, preview.c_str());
+                          navigateTo, actualPreviewTo, serverPageNumber, preview.c_str());
 
                     pageStream_->appendPageFromResponse(*response, serverPageNumber);
                     // Update the last previewed page to match the server page we just stored
@@ -319,6 +392,100 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
                           serverPageNumber, ocrTextLength, pageStream_->size());
                     // Debug: show full buffer state
                     pageStream_->debugDumpPageMappings();
+                    
+                    // Check if we need one more preview page after successfully appending this one
+                    // Only request one additional page at a time to avoid complexity
+                    constexpr size_t bufferThresholdBytes = 1250;
+                    size_t bytesRemainingNow = pageStream_->getBytesRemainingFrom(currentOffset);
+                    
+                    if (bytesRemainingNow < bufferThresholdBytes && !atEndOfContent) {
+                        // We need one more preview page - request the next page
+                        int nextPreviewPage = lastPreviewedPage_ + 1;
+                        log_i("\033[1;35m>>> BUFFER LOW: %zu bytes remaining < %zu threshold, "
+                              "requesting one more preview page: preview_to=%d\033[0m", 
+                              bytesRemainingNow, bufferThresholdBytes, nextPreviewPage);
+                        
+                        // Make one additional preview request (navigate_to stays the same)
+                        auto nextResponse = std::make_shared<KindlePageResponse>();
+                        
+                        // Retry logic for additional preview request
+                        constexpr int maxPreviewRetries = 2;
+                        int previewRetryCount = 0;
+                        std::string nextErrorMessage;
+                        int nextHttpCode = 0;
+                        
+                        while (previewRetryCount < maxPreviewRetries) {
+                            if (previewRetryCount > 0) {
+                                log_w("Retrying additional preview request (attempt %d/%d): preview_to=%d",
+                                      previewRetryCount + 1, maxPreviewRetries, nextPreviewPage);
+                            }
+                            
+                            nextHttpCode = SindarinAPI::getInstance()->navigateKindle(
+                                kindleBook_->title, nextResponse.get(), cancelFlag, useBle_, 
+                                navigateTo, nextPreviewPage);
+                                
+                            if (CancelFlag::isCancelled(cancelFlag)) {
+                                break;
+                            }
+                            
+                            nextErrorMessage = checkForError(nextHttpCode, nextResponse);
+                            
+                            if (nextErrorMessage.empty()) {
+                                if (previewRetryCount > 0) {
+                                    log_i("Additional preview request succeeded after %d retries", previewRetryCount);
+                                }
+                                break;
+                            }
+                            
+                            // Check if retryable
+                            bool isRetryable = (nextErrorMessage == "CONNECTION_ERROR" || 
+                                              nextErrorMessage == "TIMEOUT" ||
+                                              nextHttpCode == 0 || nextHttpCode >= 500);
+                            
+                            if (!isRetryable) {
+                                break;
+                            }
+                            
+                            previewRetryCount++;
+                            if (previewRetryCount < maxPreviewRetries) {
+                                int delayMs = 1000 * previewRetryCount;
+                                log_w("Preview request failed: %s. Waiting %dms before retry...", 
+                                      nextErrorMessage.c_str(), delayMs);
+                                vTaskDelay(pdMS_TO_TICKS(delayMs));
+                            }
+                        }
+                            
+                        if (!CancelFlag::isCancelled(cancelFlag)) {
+                            if (nextErrorMessage.empty() && !checkForLastReadDialog(nextResponse)) {
+                                size_t nextOcrTextLength = nextResponse->ocrText.size();
+                                
+                                if (nextOcrTextLength > 0) {
+                                    // Log preview of next page content
+                                    std::string nextFullText = std::string(nextResponse->ocrText);
+                                    std::string nextPreview = nextFullText.substr(0, 
+                                        std::min(static_cast<size_t>(50), nextFullText.size()));
+                                    log_i("\033[1;36m>>> ADDITIONAL PREVIEW LOADED: preview_to=%d, "
+                                          "content_preview='%s...'\033[0m",
+                                          nextPreviewPage, nextPreview.c_str());
+                                          
+                                    pageStream_->appendPageFromResponse(*nextResponse, nextPreviewPage);
+                                    lastPreviewedPage_ = nextPreviewPage;
+                                    ocrTextLength += nextOcrTextLength; // Add to total loaded
+                                    
+                                    log_i("\033[1;36m>>> APPENDED ADDITIONAL PAGE: server_page=%d, "
+                                          "content_length=%zu, buffer_size_now=%zu\033[0m",
+                                          nextPreviewPage, nextOcrTextLength, pageStream_->size());
+                                    pageStream_->debugDumpPageMappings();
+                                } else {
+                                    log_i("Received empty preview page %d - may be at end of book", 
+                                          nextPreviewPage);
+                                }
+                            } else if (!nextErrorMessage.empty()) {
+                                log_w("Failed to load additional preview page %d: %s", 
+                                      nextPreviewPage, nextErrorMessage.c_str());
+                            }
+                        }
+                    }
                 }
                 // Update the last navigated page to reflect what we told the server
                 lastNavigatedPage_ = navigateTo;
@@ -332,10 +499,16 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
                 {"action", std::string("navigate-success")},
                 {"kindle", true},
                 {"navigate_to", navigateTo},
-                {"preview_to", previewTo},
+                {"preview_to", actualPreviewTo},
                 {"po", static_cast<int>(place->getOffset())},
                 {"ocr_text_length", static_cast<int>(ocrTextLength)},
                 {"elapsed_ms", static_cast<int>(elapsedMs)}};
+            
+            // Add retry count if there were retries
+            if (retryCount > 0) {
+                successTelemetryData["retry_count"] = retryCount;
+            }
+            
             telemetry_.logMetric(TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
                                  successTelemetryData);
 
