@@ -564,7 +564,8 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
                     size_t contentLength = pageStream_->getOcrTextLength();
                     log_i("Calling gotContentFunction for position change with cached content "
                           "(offset %u -> %u, length=%u)",
-                          (unsigned int)previousOffset, (unsigned int)currentOffset, (unsigned int)contentLength);
+                          (unsigned int)previousOffset, (unsigned int)currentOffset,
+                          (unsigned int)contentLength);
                     gotContentFunction_(contentLength);
                 } else {
                     log_w("gotContentFunction_ is null when navigating with cached content");
