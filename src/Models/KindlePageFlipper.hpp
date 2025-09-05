@@ -146,15 +146,15 @@ public:
 
     void debugDumpPageMappings() {
         size_t cumulativeOffset = 0;
-        log_i("=== Buffer Page Mappings ===");
+        log_d("=== Buffer Page Mappings ===");
         for (size_t i = 0; i < pages_.size(); i++) {
             size_t pageSize = pages_[i].content.size();
-            log_i("  Page %zu: offset_range=[%zu-%zu], size=%zu, server_page=%d", i,
+            log_d("  Page %zu: offset_range=[%zu-%zu], size=%zu, server_page=%d", i,
                   cumulativeOffset, cumulativeOffset + pageSize - 1, pageSize,
                   pages_[i].serverPageNumber);
             cumulativeOffset += pageSize;
         }
-        log_i("  Total buffer size: %zu bytes", cumulativeOffset);
+        log_d("  Total buffer size: %zu bytes", cumulativeOffset);
     }
 
 protected:

@@ -75,7 +75,6 @@ auto KindlePageFlipper::checkForLastReadDialog(const std::shared_ptr<KindlePageR
 }
 
 void KindlePageFlipper::loadInitialPage() {
-    // Capture string copies to avoid use-after-free
     log_i("Loading initial page for Kindle book: %s", kindleBook_->title.c_str());
 
     // Reset navigation tracking when loading initial page
@@ -138,27 +137,12 @@ void KindlePageFlipper::loadInitialPage() {
         if (!hasDialog) {
             ocrTextLength = response->ocrText.size();
 
-            // Log first 50 chars of initial content to see what page it really is
-            std::string fullText = std::string(response->ocrText);
-            std::string preview =
-                fullText.substr(0, std::min(static_cast<size_t>(50), fullText.size()));
-            log_i("\033[1;36m>>> INITIAL PAGE: storing_as_page=0, content_preview='%s...'\033[0m",
-                  preview.c_str());
-
-            // For initial page, it's always page 0
             pageStream_->appendPageFromResponse(*response, 0);
-            // Initialize the last previewed page to 0 on initial load
             lastPreviewedPage_ = 0;
-            pageStream_->debugDumpPageMappings();
         }
 
-        // Always signal that we got content (to dismiss loading)
         if (gotContentFunction_) {
-            log_i("Calling gotContentFunction after initial page load (ocrTextLength=%zu)",
-                  ocrTextLength);
             gotContentFunction_(ocrTextLength);
-        } else {
-            log_w("gotContentFunction_ is null after initial page load");
         }
     });
 }
@@ -201,11 +185,6 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
         // Get the server page number for our current reading position
         auto serverPageForCurrentOffset =
             pageStream_->getServerPageNumberForOffset(place->getOffset());
-
-        // Debug: Show the mapping
-        log_i("\033[1;33m>>> OFFSET MAPPING: offset=%" PRIu32
-              " -> page_index=%d -> server_page=%d\033[0m",
-              place->getOffset(), currentPageIndex, serverPageForCurrentOffset);
 
         // Use absolute navigation with navigate_to and preview_to
         // Navigate to the server page that corresponds to our current reading position
@@ -258,10 +237,8 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
             // Determine the actual preview_to value to send
             int actualPreviewTo = includePreview ? previewTo : navigateTo;
 
-            log_i("\033[1;35m>>> NAVIGATION REQUEST: navigate_to=%d, preview_to=%d (bytes "
-                  "remaining: %zu, threshold: %zu, includePreview=%d)\033[0m",
-                  navigateTo, actualPreviewTo, bytesRemaining, bufferThresholdBytes,
-                  includePreview);
+            log_d("Navigation request: navigate_to=%d, preview_to=%d (bytes remaining: %zu)",
+                  navigateTo, actualPreviewTo, bytesRemaining);
 
             // Track navigation start time
             int64_t navigationStartTime = esp_timer_get_time();
@@ -385,22 +362,8 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
                     // page preview_to=1 means we're getting content for page 1 (not page 0)
                     int serverPageNumber = actualPreviewTo;
 
-                    // Log first 50 chars of content to see what page it really is
-                    std::string fullText = std::string(response->ocrText);
-                    std::string preview =
-                        fullText.substr(0, std::min(static_cast<size_t>(50), fullText.size()));
-                    log_i("\033[1;36m>>> PREVIEW RESPONSE: navigate_to=%d, preview_to=%d, "
-                          "storing_as_page=%d, content_preview='%s...'\033[0m",
-                          navigateTo, actualPreviewTo, serverPageNumber, preview.c_str());
-
                     pageStream_->appendPageFromResponse(*response, serverPageNumber);
-                    // Update the last previewed page to match the server page we just stored
                     lastPreviewedPage_ = serverPageNumber;
-                    log_i("\033[1;36m>>> APPENDED PAGE: server_page=%d, content_length=%zu, "
-                          "buffer_size_now=%zu\033[0m",
-                          serverPageNumber, ocrTextLength, pageStream_->size());
-                    // Debug: show full buffer state
-                    pageStream_->debugDumpPageMappings();
 
                     // Check if we need one more preview page after successfully appending this one
                     // Only request one additional page at a time to avoid complexity
@@ -410,9 +373,8 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
                     if (bytesRemainingNow < bufferThresholdBytes && !atEndOfContent) {
                         // We need one more preview page - request the next page
                         int nextPreviewPage = lastPreviewedPage_ + 1;
-                        log_i("\033[1;35m>>> BUFFER LOW: %zu bytes remaining < %zu threshold, "
-                              "requesting one more preview page: preview_to=%d\033[0m",
-                              bytesRemainingNow, bufferThresholdBytes, nextPreviewPage);
+                        log_d("Buffer low: %zu bytes remaining, requesting preview page %d",
+                              bytesRemainingNow, nextPreviewPage);
 
                         // Make one additional preview request (navigate_to stays the same)
                         auto nextResponse = std::make_shared<KindlePageResponse>();
@@ -471,23 +433,11 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
                                 size_t nextOcrTextLength = nextResponse->ocrText.size();
 
                                 if (nextOcrTextLength > 0) {
-                                    // Log preview of next page content
-                                    std::string nextFullText = std::string(nextResponse->ocrText);
-                                    std::string nextPreview = nextFullText.substr(
-                                        0, std::min(static_cast<size_t>(50), nextFullText.size()));
-                                    log_i("\033[1;36m>>> ADDITIONAL PREVIEW LOADED: preview_to=%d, "
-                                          "content_preview='%s...'\033[0m",
-                                          nextPreviewPage, nextPreview.c_str());
-
                                     pageStream_->appendPageFromResponse(*nextResponse,
                                                                         nextPreviewPage);
                                     lastPreviewedPage_ = nextPreviewPage;
                                     ocrTextLength += nextOcrTextLength; // Add to total loaded
 
-                                    log_i("\033[1;36m>>> APPENDED ADDITIONAL PAGE: server_page=%d, "
-                                          "content_length=%zu, buffer_size_now=%zu\033[0m",
-                                          nextPreviewPage, nextOcrTextLength, pageStream_->size());
-                                    pageStream_->debugDumpPageMappings();
                                 } else {
                                     log_i("Received empty preview page %d - may be at end of book",
                                           nextPreviewPage);
@@ -524,13 +474,8 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
             telemetry_.logMetric(TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
                                  successTelemetryData);
 
-            // Always signal that we got content (to dismiss loading)
             if (gotContentFunction_) {
-                log_i("Calling gotContentFunction after successful navigation (ocrTextLength=%zu)",
-                      ocrTextLength);
                 gotContentFunction_(ocrTextLength);
-            } else {
-                log_w("gotContentFunction_ is null after successful navigation");
             }
 
             // Update server sync position after successful navigation
@@ -542,9 +487,6 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
                 log_d("Skipping navigation request - no change needed (currentPage=%d, "
                       "lastPage=%d, navigateTo=%d, previewTo=%d, bytesRemaining=%zu)",
                       currentPageIndex, lastPageIndex, navigateTo, previewTo, bytesRemaining);
-                log_i("\033[1;33m>>> NAVIGATION SKIPPED: No change needed (navigate_to=%d, "
-                      "preview_to=%d, bytes: %zu)\033[0m",
-                      navigateTo, previewTo, bytesRemaining);
             }
 
             // Update sync position and call callback when navigating with cached content
@@ -559,16 +501,9 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
                 // Update server sync position even when using cached content
                 serverSyncPlace_ = std::dynamic_pointer_cast<TxtPlace>(place);
 
-                // Call gotContentFunction for UI updates and tests
                 if (gotContentFunction_) {
                     size_t contentLength = pageStream_->getOcrTextLength();
-                    log_i("Calling gotContentFunction for position change with cached content "
-                          "(offset %u -> %u, length=%u)",
-                          (unsigned int)previousOffset, (unsigned int)currentOffset,
-                          (unsigned int)contentLength);
                     gotContentFunction_(contentLength);
-                } else {
-                    log_w("gotContentFunction_ is null when navigating with cached content");
                 }
             }
         }
