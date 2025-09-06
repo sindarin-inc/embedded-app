@@ -96,9 +96,8 @@ auto KindlePageFlipper::navigateWithRetry(int navigateTo, int previewTo,
         }
 
         // Check if this is a retryable error
-        bool isRetryable = (errorMessage == "CONNECTION_ERROR" || 
-                           errorMessage == "TIMEOUT" || 
-                           httpCode == 0 || httpCode >= 500);
+        bool isRetryable = (errorMessage == "CONNECTION_ERROR" || errorMessage == "TIMEOUT" ||
+                            httpCode == 0 || httpCode >= 500);
 
         if (!isRetryable) {
             log_e("Non-retryable error: %s (HTTP %d)", errorMessage.c_str(), httpCode);
@@ -278,14 +277,16 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
         }
 
         log_d("Navigation analysis: navigateTo=%d, previewTo=%d (current=%d/%d, previous=%d/%d, "
-              "lastNavigated=%d, lastPreviewed=%d, navChanged=%d, navigateReachedPreview=%d, needPreviews=%d, "
+              "lastNavigated=%d, lastPreviewed=%d, navChanged=%d, navigateReachedPreview=%d, "
+              "needPreviews=%d, "
               "atEndOfContent=%d, serverPage=%d)",
               navigateTo, previewTo, currentPageIndex, lastPageIndex, previousPageIndex,
               lastPageIndex, lastNavigatedPage_, lastPreviewedPage_, navigationChanged,
               navigateReachedPreview, needMorePreviews, atEndOfContent, serverPageForCurrentOffset);
 
         if (needsNavigation) {
-            // When not including preview, we send preview_to=navigate_to to indicate position update only
+            // When not including preview, we send preview_to=navigate_to to indicate position
+            // update only
             int previewToSend = includePreview ? previewTo : navigateTo;
 
             log_d("Navigation request: navigate_to=%d, preview_to=%d (bytes remaining: %zu)",
@@ -306,14 +307,13 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
                                  beginTelemetryData);
 
             auto response = std::make_shared<KindlePageResponse>();
-            
+
             // Use the helper for navigation with retry logic
             auto errorMessage = navigateWithRetry(navigateTo, previewToSend, response, cancelFlag);
-            
+
             if (CancelFlag::isCancelled(cancelFlag)) {
                 return;
             }
-
 
             if (!errorMessage.empty()) {
 
@@ -349,7 +349,8 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
             if (!hasDialog) {
                 if (includePreview) {
                     ocrTextLength = response->ocrText.size();
-                    // When we navigate with preview, the response contains content for the preview page
+                    // When we navigate with preview, the response contains content for the preview
+                    // page
                     int serverPageNumber = previewToSend;
 
                     pageStream_->appendPageFromResponse(*response, serverPageNumber);
@@ -368,10 +369,10 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
 
                         // Make one additional preview request (navigate_to stays the same)
                         auto nextResponse = std::make_shared<KindlePageResponse>();
-                        
+
                         // Use helper for additional preview with fewer retries
-                        auto nextErrorMessage = navigateWithRetry(
-                            navigateTo, nextPreviewPage, nextResponse, cancelFlag, 2);
+                        auto nextErrorMessage = navigateWithRetry(navigateTo, nextPreviewPage,
+                                                                  nextResponse, cancelFlag, 2);
 
                         if (!CancelFlag::isCancelled(cancelFlag)) {
                             if (nextErrorMessage.empty() && !checkForLastReadDialog(nextResponse)) {

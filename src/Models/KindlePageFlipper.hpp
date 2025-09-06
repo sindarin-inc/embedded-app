@@ -263,11 +263,11 @@ private:
 
     auto checkForError(int httpCode, std::shared_ptr<KindlePageResponse> &response) -> std::string;
     auto checkForLastReadDialog(const std::shared_ptr<KindlePageResponse> &response) -> bool;
-    
+
     // Helper to perform navigation with retry logic
     // Returns error message (empty string for success)
-    auto navigateWithRetry(int navigateTo, int previewTo, 
+    auto navigateWithRetry(int navigateTo, int previewTo,
                            std::shared_ptr<KindlePageResponse> &response,
-                           const std::shared_ptr<CancelFlag> &cancelFlag,
-                           int maxRetries = 3) -> std::string;
+                           const std::shared_ptr<CancelFlag> &cancelFlag, int maxRetries = 3)
+        -> std::string;
 };
