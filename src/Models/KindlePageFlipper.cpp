@@ -238,51 +238,31 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
         auto serverPageForCurrentOffset =
             pageStream_->getServerPageNumberForOffset(place->getOffset());
 
-        // Use absolute navigation with navigate_to and preview_to
-        // Navigate to the server page that corresponds to our current reading position
+        // Absolute navigation with navigate_to and preview_to. Navigate to the server page that
+        // corresponds to our current reading position, which is between the page boundaries set
+        // by the preview_to=<page number> parameter earlier.
         auto navigateTo = serverPageForCurrentOffset >= 0 ? serverPageForCurrentOffset : 0;
 
         // For preview, we must load sequentially - always the next page after what we have
         // preview_to must be sequential: 1, 2, 3, 4... can't skip
         auto previewTo = lastPreviewedPage_ + 1;
 
-        // Check if we need to send a navigation request
-        // We need to navigate if:
-        // 1. User has moved to a different page (navigate_to changed from last reported position)
-        // 2. We need more preview pages (low buffer or at end of content)
-        // 3. User jumped ahead past our previews
+        // Core state checks:
         bool navigationChanged = (navigateTo != lastNavigatedPage_);
-        bool navigateReachedPreview = (navigateTo >= lastPreviewedPage_);
-        bool needMorePreviews = (bytesRemaining < bufferThresholdBytes) || atEndOfContent;
+        bool atPreviewBoundary =
+            (navigateTo >= lastPreviewedPage_); // Critical: at/past buffered content
+        bool needMoreBuffer = (bytesRemaining < bufferThresholdBytes) || atEndOfContent;
 
-        // Determine what kind of request to make
-        bool needsNavigation = false;
-        bool includePreview = false;
-
-        if (navigateReachedPreview) {
-            needsNavigation = true;
-            includePreview = true;
-        } else if (navigationChanged && needMorePreviews) {
-            // User moved and we need more content - navigate with preview
-            needsNavigation = true;
-            includePreview = true;
-        } else if (navigationChanged && !needMorePreviews) {
-            // User moved but we have enough buffer - just update position, no preview needed
-            needsNavigation = true;
-            includePreview = false;
-        } else if (!navigationChanged && needMorePreviews) {
-            // Same position but need more buffer - skip the request entirely
-            // The additional preview logic after page load will handle this
-            needsNavigation = false;
-        }
+        bool needsNavigation = atPreviewBoundary || navigationChanged;
+        bool includePreview = atPreviewBoundary || (navigationChanged && needMoreBuffer);
 
         log_d("Navigation analysis: navigateTo=%d, previewTo=%d (current=%d/%d, previous=%d/%d, "
-              "lastNavigated=%d, lastPreviewed=%d, navChanged=%d, navigateReachedPreview=%d, "
-              "needPreviews=%d, "
+              "lastNavigated=%d, lastPreviewed=%d, navChanged=%d, atBoundary=%d, "
+              "needBuffer=%d, "
               "atEndOfContent=%d, serverPage=%d)",
               navigateTo, previewTo, currentPageIndex, lastPageIndex, previousPageIndex,
               lastPageIndex, lastNavigatedPage_, lastPreviewedPage_, navigationChanged,
-              navigateReachedPreview, needMorePreviews, atEndOfContent, serverPageForCurrentOffset);
+              atPreviewBoundary, needMoreBuffer, atEndOfContent, serverPageForCurrentOffset);
 
         if (needsNavigation) {
             // When not including preview, we send preview_to=navigate_to to indicate position
@@ -424,7 +404,7 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place, bool at
             // This ensures we properly track what page the server thinks we're on
             serverSyncPlace_ = std::dynamic_pointer_cast<TxtPlace>(place);
         } else {
-            if (!navigationChanged && !needMorePreviews) {
+            if (!navigationChanged && !needMoreBuffer) {
                 log_d("Skipping navigation request - no change needed (currentPage=%d, "
                       "lastPage=%d, navigateTo=%d, previewTo=%d, bytesRemaining=%zu)",
                       currentPageIndex, lastPageIndex, navigateTo, previewTo, bytesRemaining);
