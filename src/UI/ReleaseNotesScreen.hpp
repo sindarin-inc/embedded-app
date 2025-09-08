@@ -27,7 +27,7 @@ protected:
 
     std::shared_ptr<Place> place_, newPlace_;
 
-    auto atEnd() -> bool { return newPlace_->getOffset() == 0; };
+    auto atEnd() -> bool { return renderer_.atEndOfFile(); };
 
     void updateError(const std::string &logMessage);
     void runUpdate();

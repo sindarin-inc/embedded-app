@@ -383,7 +383,22 @@ TEST_CASE("Test some views independently") {
                 auto screen = std::make_shared<ReleaseNotesScreen>(*display, prefs, power,
                                                                    localStore, firmware);
                 screen->render(*display);
-                ASSERT_VIEW_UNCHANGED(display, "ReleaseNotesScreen");
+                ASSERT_VIEW_UNCHANGED(display, "ReleaseNotesScreen1");
+
+                for (int i = 2; i <= 6; i++) {
+                    screen->processCommand(RemoteCommand::ENTER);
+                    screen->render(*display);
+                    ASSERT_VIEW_UNCHANGED(display, "ReleaseNotesScreen" + std::to_string(i));
+                }
+
+                screen->processCommand(RemoteCommand::ENTER);
+                screen->render(*display);
+                ASSERT_VIEW_UNCHANGED(display, "ReleaseNotesScreenAtEnd");
+
+                // Test that ENTER at the end shows the menu
+                screen->processCommand(RemoteCommand::ENTER);
+                screen->render(*display);
+                ASSERT_VIEW_UNCHANGED(display, "ReleaseNotesScreenMenu");
             }
 
             SECTION("Test ContentSyncScreen") {
