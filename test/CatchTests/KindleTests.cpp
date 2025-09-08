@@ -283,7 +283,8 @@ void setupHttpServer(std::unique_ptr<httplib::Server> &httpServer,
                 "current_page": )" +
                                    std::to_string(currentPageNumber) + R"(,
                 "total_pages": 100
-            }
+            },
+            "book_session_key": "test_session_123"
         })";
 
         log_i("Mock server: Sending navigate response with %zu chars, page %d/%d, %d%%",
@@ -903,7 +904,8 @@ TEST_CASE("Test Kindle absolute navigation idempotency", "[kindle]") {
                 "percentage": 0,
                 "current_page": 1,
                 "total_pages": 100
-            }
+            },
+            "book_session_key": "test_session_123"
         })";
         
         res.set_content(jsonResponse, "application/json");
@@ -947,7 +949,8 @@ TEST_CASE("Test Kindle absolute navigation idempotency", "[kindle]") {
                 "percentage": )" + std::to_string(percentage) + R"(,
                 "current_page": )" + std::to_string(currentPageNumber) + R"(,
                 "total_pages": 100
-            }
+            },
+            "book_session_key": "test_session_123"
         })";
         
         res.set_content(jsonResponse, "application/json");
@@ -1086,7 +1089,7 @@ TEST_CASE("Test Kindle sync tracking", "[kindle]") {
         }
         
         res.set_content(R"({"success": true, "ocr_text": ")" + escapedContent + 
-                       R"(", "progress": {"percentage": 0, "current_page": 1, "total_pages": 100}})",
+                       R"(", "progress": {"percentage": 0, "current_page": 1, "total_pages": 100}, "book_session_key": "test_session_123"})",
                        "application/json");
         res.status = 200;
     });
@@ -1116,7 +1119,7 @@ TEST_CASE("Test Kindle sync tracking", "[kindle]") {
         res.set_content(R"({"success": true, "ocr_text": ")" + escapedContent + 
                        R"(", "progress": {"percentage": )" + std::to_string(navigateTo * 10) +
                        R"(, "current_page": )" + std::to_string(navigateTo + 1) +
-                       R"(, "total_pages": 100}})", "application/json");
+                       R"(, "total_pages": 100}, "book_session_key": "test_session_123"})", "application/json");
         res.status = 200;
     });
     

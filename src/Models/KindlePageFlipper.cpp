@@ -79,11 +79,18 @@ auto KindlePageFlipper::navigateWithRetry(int navigateTo, int previewTo,
                   retryCount + 1, maxRetries, navigateTo, previewTo);
         }
 
-        httpCode = SindarinAPI::getInstance()->navigateKindle(
-            kindleBook_->title, response.get(), cancelFlag, useBle_, navigateTo, previewTo);
+        httpCode = SindarinAPI::getInstance()->navigateKindle(kindleBook_->title, response.get(),
+                                                              cancelFlag, useBle_, navigateTo,
+                                                              previewTo, bookSessionKey_);
 
         if (CancelFlag::isCancelled(cancelFlag)) {
             return ""; // Caller must check cancelFlag separately
+        }
+
+        // Update the book session key if we got a new one
+        if (!response->bookSessionKey.empty() && response->bookSessionKey != bookSessionKey_) {
+            bookSessionKey_ = response->bookSessionKey;
+            log_i("Updated book_session_key: %s", bookSessionKey_.c_str());
         }
 
         errorMessage = checkForError(httpCode, response);
@@ -132,6 +139,7 @@ void KindlePageFlipper::loadInitialPage() {
     // Reset navigation tracking when loading initial page
     lastNavigatedPage_ = -1;
     lastPreviewedPage_ = -1;
+    bookSessionKey_.clear(); // Clear any existing session key
 
     telemetry_.logMetric(TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
                          {{"event", std::string("book-open")},
@@ -180,6 +188,12 @@ void KindlePageFlipper::loadInitialPage() {
                 }
             }
             return;
+        }
+
+        // Store the new book session key
+        if (!response->bookSessionKey.empty()) {
+            bookSessionKey_ = response->bookSessionKey;
+            log_i("Received new book_session_key: %s", bookSessionKey_.c_str());
         }
 
         auto hasDialog = checkForLastReadDialog(response);

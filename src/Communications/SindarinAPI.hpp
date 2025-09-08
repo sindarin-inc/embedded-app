@@ -91,7 +91,7 @@ public:
                         const std::shared_ptr<CancelFlag> &cancelFlag, bool useBle) -> int;
     auto navigateKindle(const SpiramString &title, KindlePageResponse *resp,
                         const std::shared_ptr<CancelFlag> &cancelFlag, bool useBle, int navigateTo,
-                        int previewTo) -> int;
+                        int previewTo, const SpiramString &bookSessionKey = "") -> int;
 
     // Submit user's choice for last read page dialog
     auto submitLastReadPageChoice(bool gotoLastReadPage, bool useBle,

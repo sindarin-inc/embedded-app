@@ -237,6 +237,7 @@ public:
         serverSyncPlace_ = nullptr;
         lastPreviewedPage_ = -1;
         lastNavigatedPage_ = -1;
+        bookSessionKey_.clear();
     }
 
     [[nodiscard]] auto getPagesRemainingFromOffset(uint32_t offset) const -> int {
@@ -254,8 +255,9 @@ private:
     Telemetry &telemetry_;
 
     std::shared_ptr<TxtPlace> serverSyncPlace_; // Last position synced with server
-    int lastPreviewedPage_ = -1; // Track the last page we successfully previewed from server
-    int lastNavigatedPage_ = -1; // Track the last page we sent navigate_to for
+    int lastPreviewedPage_ = -1;  // Track the last page we successfully previewed from server
+    int lastNavigatedPage_ = -1;  // Track the last page we sent navigate_to for
+    SpiramString bookSessionKey_; // Session key from server denoting navigation zero point
     std::function<void(size_t ocrTextLength)> gotContentFunction_;
     std::function<void(const std::string &errorMessage)> onErrorFunction_;
     std::function<void()> onConnectionErrorFunction_;

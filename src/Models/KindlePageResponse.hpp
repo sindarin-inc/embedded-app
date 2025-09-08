@@ -38,6 +38,7 @@ struct KindlePageResponse : public JsonSerializable {
     bool lastReadDialog = false;
     SpiramString dialogText;
     bool alreadyOpen = false;
+    SpiramString bookSessionKey;
 
     auto fromJson(const JsonObject &json) -> bool override {
         if (json.containsKey("success")) {
@@ -79,6 +80,10 @@ struct KindlePageResponse : public JsonSerializable {
 
         if (json.containsKey("already_open")) {
             alreadyOpen = json["already_open"];
+        }
+
+        if (json.containsKey("book_session_key")) {
+            bookSessionKey = json["book_session_key"].as<std::string>();
         }
 
         return true;
