@@ -533,7 +533,7 @@ auto SindarinAPI::makeKindleRequest(const std::string &path, KindlePageResponse 
                                     const std::shared_ptr<CancelFlag> &cancelFlag, bool useBle)
     -> int {
     std::string url = StringFormat("%s%s", baseUrl_.c_str(), path.c_str());
-    log_i("Making Kindle request to URL: %s (cancelFlag=%p)", url.c_str(), cancelFlag.get());
+    log_i("Making Kindle request to URL: %s", url.c_str());
 
     auto client =
         createClient(url, "application/json", HTTP_METHOD_GET, useBle, cancelFlag, 120000);
@@ -631,8 +631,11 @@ auto SindarinAPI::navigateKindle(const SpiramString &title, KindlePageResponse *
     -> int {
     std::string encodedTitle = Urlencode(std::string(title));
 
-    std::string path = StringFormat("/kindle/navigate?navigate_to=%d&preview_to=%d&title=%s",
-                                    navigateTo, previewTo, encodedTitle.c_str());
+    std::string path = StringFormat("/kindle/navigate?navigate_to=%d", navigateTo);
+    if (previewTo >= 0) {
+        path += StringFormat("&preview_to=%d", previewTo);
+    }
+    path += StringFormat("&title=%s", encodedTitle.c_str());
 
     // Add book_session_key if provided
     if (!bookSessionKey.empty()) {

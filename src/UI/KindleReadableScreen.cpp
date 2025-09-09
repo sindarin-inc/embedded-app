@@ -337,15 +337,6 @@ void KindleReadableScreen::drawInRect(SolRect rect) {
 
             setState(State::DISPLAY_PARTIAL_CONTENT);
         }
-        // Only update the page flipper if we're not in a loading state
-        // (loading states will handle their own updatePlace calls)
-        if (state_ != State::LOADING_CONTENT && state_ != State::LOADING_INITIAL_CONTENT) {
-            // Use newPlace_ (the position we just rendered to) for updatePlace when we have it
-            // This ensures we're telling the page flipper about the actual position we're
-            // displaying
-            auto placeForUpdate = newPlace_ ? newPlace_ : currentPlace_;
-            pageFlipper_.updatePlace(placeForUpdate, atEndOfContent);
-        }
 
         // Log comprehensive buffer state for debugging
         uint32_t currentOffset = currentPlace_->getOffset();
@@ -772,9 +763,7 @@ void KindleReadableScreen::navigateNext() {
         setNeedsRerender();
 
         // Trigger the page flipper to load more content from the current position
-        // We need to force a request even if we're at the same position since we need more content
-        // Pass true for atEndOfContent to indicate we need more pages
-        pageFlipper_.updatePlace(currentPlace_, true);
+        pageFlipper_.updatePlace(currentPlace_);
 
         return;
     }
@@ -797,6 +786,9 @@ void KindleReadableScreen::navigateNext() {
     updateType_ = prefs_.fastTransitions.get().value_or(false) ? DisplaySystem::UpdateType::PARTIAL
                                                                : DisplaySystem::UpdateType::FULL;
     setNeedsRerender();
+
+    // Notify page flipper of our new position after successful local navigation
+    onPositionChanged();
 }
 
 void KindleReadableScreen::navigatePrevious() {
@@ -818,6 +810,9 @@ void KindleReadableScreen::navigatePrevious() {
     updateType_ = prefs_.fastTransitions.get().value_or(false) ? DisplaySystem::UpdateType::PARTIAL
                                                                : DisplaySystem::UpdateType::FULL;
     setNeedsRerender();
+
+    // Notify page flipper of our new position after successful local navigation
+    onPositionChanged();
 }
 
 void KindleReadableScreen::dismissScreen() {
@@ -959,6 +954,20 @@ void KindleReadableScreen::scheduleDelayedLoadingMessage() {
 
     xTimerStart(delayedMessageTimer_, 0);
     log_i("Scheduled delayed loading message for 30 seconds");
+}
+
+void KindleReadableScreen::onPositionChanged() {
+    // Only update the page flipper if we're not in a loading state
+    // (loading states will handle their own updatePlace calls)
+    if (state_ != State::LOADING_CONTENT && state_ != State::LOADING_INITIAL_CONTENT) {
+        // We should always use currentPlace_ here since this is called after navigation
+        // when currentPlace_ has been updated to the new position
+        if (!currentPlace_) {
+            return;
+        }
+        
+        pageFlipper_.updatePlace(currentPlace_);
+    }
 }
 
 void KindleReadableScreen::cancelDelayedLoadingMessage() {
@@ -1149,7 +1158,7 @@ void KindleReadableScreen::attemptReconnection() {
                  {"ble", isUsingBleConnection_}});
 
             // Successfully reconnected, retry the operation
-            pageFlipper_.retryNetworkOperation(renderer_.atEndOfFile());
+            pageFlipper_.retryNetworkOperation();
 
             // Reset reconnection attempts on successful connection
             reconnectionAttempts_ = 0;
@@ -1163,6 +1172,9 @@ void KindleReadableScreen::attemptReconnection() {
                         setNeedsLayout();
                         setNeedsRerender();
                         render(display_);
+
+                        // Notify page flipper of position after reconnection
+                        onPositionChanged();
                     }
                 });
             }
@@ -1275,6 +1287,9 @@ void KindleReadableScreen::updatePageFlipperCallbacks() {
                 setNeedsLayout();
                 setNeedsRerender();
                 render(display_);
+
+                // Notify page flipper of initial position after content loads
+                onPositionChanged();
 
 #ifdef DEBUG_KINDLE_RECONNECTION
                 scheduleTestDisconnect();

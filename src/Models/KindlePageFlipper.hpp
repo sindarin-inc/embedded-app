@@ -189,7 +189,7 @@ public:
      * @param place The place to update to
      * @param atEndOfContent Whether we're at the end of the content
      */
-    void updatePlace(const std::shared_ptr<Place> &place, bool atEndOfContent);
+    void updatePlace(const std::shared_ptr<Place> &place);
 
     auto getStream() -> std::shared_ptr<RendererStream> { return pageStream_; }
 
@@ -211,13 +211,13 @@ public:
         onLastReadDialogFunction_ = std::move(onLastReadDialogFunction);
     }
 
-    void retryNetworkOperation(bool atEndOfContent) {
+    void retryNetworkOperation() {
         // Retry loading the initial page if we're at the beginning
         if (pageStream_->size() == 0) {
             loadInitialPage();
         } else if (serverSyncPlace_ != nullptr) {
             // Otherwise retry from the current place
-            updatePlace(serverSyncPlace_, atEndOfContent);
+            updatePlace(serverSyncPlace_);
         }
     }
 

@@ -179,9 +179,12 @@ auto LocalStore::loadKindleBooksFromFile(KindleBooksVector &kindleBooks,
 auto LocalStore::readablesModelType(const ReadablesVector &readables) -> ReadablesModelType {
     if (&readables == &articles_) {
         return ReadablesModelType::Article;
+    } else if (&readables == &books_) {
+        return ReadablesModelType::Book;
+    } else {
+        // Default case if vector doesn't match articles or books
+        return ReadablesModelType::Book;
     }
-    // Default to Book for books vector or any other case
-    return ReadablesModelType::Book;
 }
 
 auto LocalStore::isReadableUnchanged(const ReadablesVector &readables,
