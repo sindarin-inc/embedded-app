@@ -272,156 +272,7 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place) {
               atPreviewBoundary, needMoreBuffer, bytesRemaining, KINDLE_BUFFER_THRESHOLD_BYTES,
               serverPageForCurrentOffset);
 
-        if (shouldMakeRequest) {
-            if (includePreview) {
-                log_i("→ Request: navigate_to=%d, preview_to=%d (buffer: %zu bytes)", navigateTo,
-                      previewTo, bytesRemaining);
-            } else {
-                log_i("→ Request: navigate_to=%d (buffer: %zu bytes, no preview)", navigateTo,
-                      bytesRemaining);
-            }
-
-            // Track navigation start time
-            int64_t navigationStartTime = esp_timer_get_time();
-
-            auto beginTelemetryData = std::unordered_map<std::string, TelemetryVariant>{
-                {"event", std::string("book-navigate")},
-                {"action", std::string("navigate-begin")},
-                {"kindle", true},
-                {"navigate_to", navigateTo},
-                {"po", static_cast<int>(place->getOffset())},
-                {"elapsed_ms", 0}};
-            if (includePreview) {
-                beginTelemetryData["preview_to"] = previewTo;
-            }
-            telemetry_.logMetric(TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
-                                 beginTelemetryData);
-
-            auto response = std::make_shared<KindlePageResponse>();
-
-            // Use the helper for navigation with retry logic
-            auto errorMessage = navigateWithRetry(navigateTo, includePreview ? previewTo : -1,
-                                                  response, cancelFlag);
-
-            if (CancelFlag::isCancelled(cancelFlag)) {
-                return;
-            }
-
-            if (!errorMessage.empty()) {
-
-                int64_t elapsedMs = (esp_timer_get_time() - navigationStartTime) / 1000;
-                auto failedTelemetryData = std::unordered_map<std::string, TelemetryVariant>{
-                    {"event", std::string("book-navigate")},
-                    {"action", std::string("navigate-failed")},
-                    {"kindle", true},
-                    {"navigate_to", navigateTo},
-                    {"po", static_cast<int>(place->getOffset())},
-                    {"error", errorMessage},
-                    {"elapsed_ms", static_cast<int>(elapsedMs)}};
-                if (previewTo >= 0) {
-                    failedTelemetryData["preview_to"] = previewTo;
-                }
-                telemetry_.logMetric(TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
-                                     failedTelemetryData);
-
-                // Only propagate non-connection errors
-                if (errorMessage != "CONNECTION_ERROR") {
-                    onErrorFunction_(errorMessage);
-                } else {
-                    log_e("Network connection issue detected while navigating, initiating "
-                          "reconnection");
-                    if (onConnectionErrorFunction_) {
-                        onConnectionErrorFunction_();
-                    }
-                }
-                return;
-            }
-
-            auto hasDialog = checkForLastReadDialog(response);
-
-            size_t ocrTextLength = 0;
-            if (!hasDialog) {
-                if (includePreview) {
-                    ocrTextLength = response->ocrText.size();
-                    // When we navigate with preview, the response contains content for the preview
-                    // page
-                    int serverPageNumber = previewTo;
-
-                    pageStream_->appendPageFromResponse(*response, serverPageNumber);
-                    lastPreviewedPage_ = serverPageNumber;
-                    log_i("← Added page %d: +%zu bytes (buffer now: %zu bytes)", serverPageNumber,
-                          ocrTextLength, pageStream_->getBytesRemainingFrom(currentOffset));
-
-                    // Check if we need one more preview page after successfully appending this one
-                    // Only request one additional page at a time to avoid complexity
-                    size_t bytesRemainingNow = pageStream_->getBytesRemainingFrom(currentOffset);
-
-                    if (bytesRemainingNow < KINDLE_BUFFER_THRESHOLD_BYTES) {
-                        // We need one more preview page - request the next page
-                        int nextPreviewPage = lastPreviewedPage_ + 1;
-                        log_i("→ Buffer low (%zu bytes), requesting page %d", bytesRemainingNow,
-                              nextPreviewPage);
-
-                        // Make one additional preview request (navigate_to stays the same)
-                        auto nextResponse = std::make_shared<KindlePageResponse>();
-
-                        // Use helper for additional preview with fewer retries
-                        auto nextErrorMessage = navigateWithRetry(navigateTo, nextPreviewPage,
-                                                                  nextResponse, cancelFlag, 2);
-
-                        if (!CancelFlag::isCancelled(cancelFlag)) {
-                            if (nextErrorMessage.empty() && !checkForLastReadDialog(nextResponse)) {
-                                size_t nextOcrTextLength = nextResponse->ocrText.size();
-
-                                if (nextOcrTextLength > 0) {
-                                    pageStream_->appendPageFromResponse(*nextResponse,
-                                                                        nextPreviewPage);
-                                    lastPreviewedPage_ = nextPreviewPage;
-                                    ocrTextLength += nextOcrTextLength; // Add to total loaded
-                                    log_i("← Added page %d: +%zu bytes (buffer now: %zu bytes)",
-                                          nextPreviewPage, nextOcrTextLength,
-                                          pageStream_->getBytesRemainingFrom(currentOffset));
-                                } else {
-                                    log_i("Received empty preview page %d - may be at end of book",
-                                          nextPreviewPage);
-                                }
-                            } else if (!nextErrorMessage.empty()) {
-                                log_w("Failed to load additional preview page %d: %s",
-                                      nextPreviewPage, nextErrorMessage.c_str());
-                            }
-                        }
-                    }
-                }
-                // Update the last navigated page to reflect what we told the server
-                lastNavigatedPage_ = navigateTo;
-            }
-
-            int64_t elapsedMs = (esp_timer_get_time() - navigationStartTime) / 1000;
-            auto successTelemetryData = std::unordered_map<std::string, TelemetryVariant>{
-                {"event", std::string("book-navigate")},
-                {"action", std::string("navigate-success")},
-                {"kindle", true},
-                {"navigate_to", navigateTo},
-                {"po", static_cast<int>(place->getOffset())},
-                {"ocr_text_length", static_cast<int>(ocrTextLength)},
-                {"elapsed_ms", static_cast<int>(elapsedMs)}};
-            if (previewTo >= 0) {
-                successTelemetryData["preview_to"] = previewTo;
-            }
-
-            telemetry_.logMetric(TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
-                                 successTelemetryData);
-
-            if (gotContentFunction_) {
-                gotContentFunction_(ocrTextLength);
-            }
-
-            // Update server sync position after successful navigation
-            // We track the actual navigation position, not the preview position
-            // This ensures we properly track what page the server thinks we're on
-            serverSyncPlace_ = std::dynamic_pointer_cast<TxtPlace>(place);
-        } else {
-
+        if (!shouldMakeRequest) {
             // Update sync position and call callback when navigating with cached content
             auto currentOffset = place->getOffset();
             auto previousOffset = serverSyncPlace_ ? serverSyncPlace_->getOffset() : 0;
@@ -439,6 +290,155 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place) {
                     gotContentFunction_(contentLength);
                 }
             }
+
+            return;
         }
+
+        if (includePreview) {
+            log_i("→ Request: navigate_to=%d, preview_to=%d (buffer: %zu bytes)", navigateTo,
+                  previewTo, bytesRemaining);
+        } else {
+            log_i("→ Request: navigate_to=%d (buffer: %zu bytes, no preview)", navigateTo,
+                  bytesRemaining);
+        }
+
+        // Track navigation start time
+        int64_t navigationStartTime = esp_timer_get_time();
+
+        auto beginTelemetryData = std::unordered_map<std::string, TelemetryVariant>{
+            {"event", std::string("book-navigate")},
+            {"action", std::string("navigate-begin")},
+            {"kindle", true},
+            {"navigate_to", navigateTo},
+            {"po", static_cast<int>(place->getOffset())},
+            {"elapsed_ms", 0}};
+        if (includePreview) {
+            beginTelemetryData["preview_to"] = previewTo;
+        }
+        telemetry_.logMetric(TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
+                             beginTelemetryData);
+
+        auto response = std::make_shared<KindlePageResponse>();
+
+        // Use the helper for navigation with retry logic
+        auto errorMessage =
+            navigateWithRetry(navigateTo, includePreview ? previewTo : -1, response, cancelFlag);
+
+        if (CancelFlag::isCancelled(cancelFlag)) {
+            return;
+        }
+
+        if (!errorMessage.empty()) {
+
+            int64_t elapsedMs = (esp_timer_get_time() - navigationStartTime) / 1000;
+            auto failedTelemetryData = std::unordered_map<std::string, TelemetryVariant>{
+                {"event", std::string("book-navigate")},
+                {"action", std::string("navigate-failed")},
+                {"kindle", true},
+                {"navigate_to", navigateTo},
+                {"po", static_cast<int>(place->getOffset())},
+                {"error", errorMessage},
+                {"elapsed_ms", static_cast<int>(elapsedMs)}};
+            if (includePreview) {
+                failedTelemetryData["preview_to"] = previewTo;
+            }
+            telemetry_.logMetric(TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
+                                 failedTelemetryData);
+
+            // Only propagate non-connection errors
+            if (errorMessage != "CONNECTION_ERROR") {
+                onErrorFunction_(errorMessage);
+            } else {
+                log_e("Network connection issue detected while navigating, initiating "
+                      "reconnection");
+                if (onConnectionErrorFunction_) {
+                    onConnectionErrorFunction_();
+                }
+            }
+            return;
+        }
+
+        auto hasDialog = checkForLastReadDialog(response);
+
+        size_t ocrTextLength = 0;
+        if (!hasDialog) {
+            if (includePreview) {
+                ocrTextLength = response->ocrText.size();
+                // When we navigate with preview, the response contains content for the preview
+                // page
+                int serverPageNumber = previewTo;
+
+                pageStream_->appendPageFromResponse(*response, serverPageNumber);
+                lastPreviewedPage_ = serverPageNumber;
+                log_i("← Added page %d: +%zu bytes (buffer now: %zu bytes)", serverPageNumber,
+                      ocrTextLength, pageStream_->getBytesRemainingFrom(currentOffset));
+
+                // Check if we need one more preview page after successfully appending this one
+                // Only request one additional page at a time to avoid complexity
+                size_t bytesRemainingNow = pageStream_->getBytesRemainingFrom(currentOffset);
+
+                if (bytesRemainingNow < KINDLE_BUFFER_THRESHOLD_BYTES) {
+                    // We need one more preview page - request the next page
+                    int nextPreviewPage = lastPreviewedPage_ + 1;
+                    log_i("→ Buffer low (%zu bytes), requesting page %d", bytesRemainingNow,
+                          nextPreviewPage);
+
+                    // Make one additional preview request (navigate_to stays the same)
+                    auto nextResponse = std::make_shared<KindlePageResponse>();
+
+                    // Use helper for additional preview with fewer retries
+                    auto nextErrorMessage =
+                        navigateWithRetry(navigateTo, nextPreviewPage, nextResponse, cancelFlag, 2);
+
+                    if (!CancelFlag::isCancelled(cancelFlag)) {
+                        if (nextErrorMessage.empty() && !checkForLastReadDialog(nextResponse)) {
+                            size_t nextOcrTextLength = nextResponse->ocrText.size();
+
+                            if (nextOcrTextLength > 0) {
+                                pageStream_->appendPageFromResponse(*nextResponse, nextPreviewPage);
+                                lastPreviewedPage_ = nextPreviewPage;
+                                ocrTextLength += nextOcrTextLength; // Add to total loaded
+                                log_i("← Added page %d: +%zu bytes (buffer now: %zu bytes)",
+                                      nextPreviewPage, nextOcrTextLength,
+                                      pageStream_->getBytesRemainingFrom(currentOffset));
+                            } else {
+                                log_i("Received empty preview page %d - may be at end of book",
+                                      nextPreviewPage);
+                            }
+                        } else if (!nextErrorMessage.empty()) {
+                            log_w("Failed to load additional preview page %d: %s", nextPreviewPage,
+                                  nextErrorMessage.c_str());
+                        }
+                    }
+                }
+            }
+            // Update the last navigated page to reflect what we told the server
+            lastNavigatedPage_ = navigateTo;
+        }
+
+        int64_t elapsedMs = (esp_timer_get_time() - navigationStartTime) / 1000;
+        auto successTelemetryData = std::unordered_map<std::string, TelemetryVariant>{
+            {"event", std::string("book-navigate")},
+            {"action", std::string("navigate-success")},
+            {"kindle", true},
+            {"navigate_to", navigateTo},
+            {"po", static_cast<int>(place->getOffset())},
+            {"ocr_text_length", static_cast<int>(ocrTextLength)},
+            {"elapsed_ms", static_cast<int>(elapsedMs)}};
+        if (includePreview) {
+            successTelemetryData["preview_to"] = previewTo;
+        }
+
+        telemetry_.logMetric(TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
+                             successTelemetryData);
+
+        if (gotContentFunction_) {
+            gotContentFunction_(ocrTextLength);
+        }
+
+        // Update server sync position after successful navigation
+        // We track the actual navigation position, not the preview position
+        // This ensures we properly track what page the server thinks we're on
+        serverSyncPlace_ = std::dynamic_pointer_cast<TxtPlace>(place);
     });
 }
