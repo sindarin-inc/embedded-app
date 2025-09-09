@@ -965,7 +965,7 @@ void KindleReadableScreen::onPositionChanged() {
         if (!currentPlace_) {
             return;
         }
-        
+
         pageFlipper_.updatePlace(currentPlace_);
     }
 }

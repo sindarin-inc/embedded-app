@@ -318,8 +318,8 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place) {
                     {"po", static_cast<int>(place->getOffset())},
                     {"error", errorMessage},
                     {"elapsed_ms", static_cast<int>(elapsedMs)}};
-                if (previewToSend >= 0) {
-                    failedTelemetryData["preview_to"] = previewToSend;
+                if (previewTo >= 0) {
+                    failedTelemetryData["preview_to"] = previewTo;
                 }
                 telemetry_.logMetric(TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
                                      failedTelemetryData);
@@ -345,7 +345,7 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place) {
                     ocrTextLength = response->ocrText.size();
                     // When we navigate with preview, the response contains content for the preview
                     // page
-                    int serverPageNumber = previewToSend;
+                    int serverPageNumber = previewTo;
 
                     pageStream_->appendPageFromResponse(*response, serverPageNumber);
                     lastPreviewedPage_ = serverPageNumber;
@@ -405,8 +405,8 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place) {
                 {"po", static_cast<int>(place->getOffset())},
                 {"ocr_text_length", static_cast<int>(ocrTextLength)},
                 {"elapsed_ms", static_cast<int>(elapsedMs)}};
-            if (previewToSend >= 0) {
-                successTelemetryData["preview_to"] = previewToSend;
+            if (previewTo >= 0) {
+                successTelemetryData["preview_to"] = previewTo;
             }
 
             telemetry_.logMetric(TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
