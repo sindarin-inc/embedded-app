@@ -423,7 +423,7 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place) {
             log_d("Checking cached navigation callback: currentOffset=%u, previousOffset=%u, "
                   "gotContentFunction_=%p",
                   (unsigned int)currentOffset, (unsigned int)previousOffset,
-                  gotContentFunction_ ? (void *)1 : nullptr);
+                  gotContentFunction_);
             if (currentOffset != previousOffset) {
                 // Update server sync position even when using cached content
                 serverSyncPlace_ = std::dynamic_pointer_cast<TxtPlace>(place);
