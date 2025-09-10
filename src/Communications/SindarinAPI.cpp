@@ -637,11 +637,8 @@ auto SindarinAPI::navigateKindle(const SpiramString &title, KindlePageResponse *
     }
     path += StringFormat("&title=%s", encodedTitle.c_str());
 
-    // Add book_session_key if provided
-    if (!bookSessionKey.empty()) {
-        std::string encodedSessionKey = Urlencode(std::string(bookSessionKey));
-        path += "&book_session_key=" + encodedSessionKey;
-    }
+    std::string encodedSessionKey = Urlencode(std::string(bookSessionKey));
+    path += "&book_session_key=" + encodedSessionKey;
 
     return makeKindleRequest(path, resp, cancelFlag, useBle);
 }
