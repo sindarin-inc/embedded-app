@@ -272,4 +272,9 @@ private:
                            std::shared_ptr<KindlePageResponse> &response,
                            const std::shared_ptr<CancelFlag> &cancelFlag, int maxRetries = 3)
         -> std::string;
+
+    // Returns error message (empty string for success)
+    auto openBookWithRetry(std::shared_ptr<KindlePageResponse> &response,
+                           const std::shared_ptr<CancelFlag> &cancelFlag, int maxRetries = 2)
+        -> std::string;
 };
