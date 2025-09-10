@@ -10,6 +10,7 @@
 #include "Menu/ReadingSettingsMenuScreen.hpp"
 #include "Models/Readable.hpp"
 #include "UI/Fonts/Fonts.hpp"
+#include "UI/KindleTableOfContentsScreen.hpp"
 #include "UI/Menu/MenuItemSingleLine.hpp"
 #include "sindarin-debug.h"
 
@@ -65,6 +66,9 @@ KindleReadableScreen::KindleReadableScreen(DisplaySystem &display,
         menuItems->emplace_back(
             std::make_shared<MenuItemSingleLine>("Main Menu", [this]() { dismissScreen(); }));
 
+        menuItems->emplace_back(
+            std::make_shared<MenuItemSingleLine>("Contents", [this]() { showTableOfContents(); }));
+
         menuItems->emplace_back(std::make_shared<MenuItemSingleLine>("Brightness", [this]() {
             auto brightness = std::make_shared<LightingAdjustScreen>(
                 display_, prefs_, lightingController_, telemetry_);
@@ -79,6 +83,11 @@ KindleReadableScreen::KindleReadableScreen(DisplaySystem &display,
         menuItems->emplace_back(std::make_shared<MenuItemSingleLine>("Back to Text", [this]() {
             display_.clearDisplay();
             setCurrentScreen(nullptr);
+            // Make sure we're in the right state to display content
+            if (state_ == State::ERROR || state_ == State::LOADING_CONTENT) {
+                setState(State::DISPLAY_CONTENT);
+            }
+            updateType_ = DisplaySystem::UpdateType::FULL;
             setNeedsRerender();
         }));
 
@@ -377,6 +386,18 @@ void KindleReadableScreen::processCommand(RemoteCommand command) {
         screen->processCommand(command);
         // Check if we need to rerender after the command
         if (currentScreen_ && currentScreen_->needsRerender()) {
+            setNeedsRerender();
+        }
+        return;
+    }
+
+    // If in error state, any button press should return to content
+    if (state_ == State::ERROR) {
+        if (command == RemoteCommand::ENTER || command == RemoteCommand::LEFT ||
+            command == RemoteCommand::RIGHT || command == RemoteCommand::BACK) {
+            // Return to displaying content
+            setState(State::DISPLAY_CONTENT);
+            updateType_ = DisplaySystem::UpdateType::FULL;
             setNeedsRerender();
         }
         return;
@@ -857,6 +878,138 @@ void KindleReadableScreen::showPopupMenu() {
 
     // Show the popup menu - no need to set readable since that's only needed for some features
     setCurrentScreen(popupMenuScreen_);
+    updateType_ = DisplaySystem::UpdateType::PARTIAL;
+    setNeedsRerender();
+}
+
+void KindleReadableScreen::showTableOfContents() {
+    log_i("Showing table of contents for book: %s", kindleBook_->title.c_str());
+
+    // Close the popup menu first
+    setCurrentScreen(nullptr);
+
+    // Get current page from the current place
+    int currentPage = currentPlace_ ? currentPlace_->getOffset() : 0;
+
+    // Create the table of contents screen
+    auto tocScreen = std::make_shared<KindleTableOfContentsScreen>(
+        display_, kindleBook_, prefs_, telemetry_, pageFlipper_, currentPage, cancelFlag_);
+
+    // Set the callback for when a chapter is selected
+    tocScreen->setChapterSelectedCallback([this](const std::string &chapterUuid, int currentPage) {
+        log_i("Chapter selected with UUID: %s, navigating from page %d", chapterUuid.c_str(),
+              currentPage);
+
+        // Dismiss the TOC screen
+        setCurrentScreen(nullptr);
+
+        // Show loading state
+        setState(State::LOADING_CONTENT);
+        loadingMessageView_.setText("Navigating to chapter...");
+        setNeedsLayout();
+        setNeedsRerender();
+        render(display_);
+
+        // Navigate to the chapter
+        DispatchGetCore0BackgroundQueue()->dispatch([this, chapterUuid, currentPage]() {
+            if (CancelFlag::isCancelled(cancelFlag_)) {
+                return;
+            }
+
+            // Make the API request to navigate to the chapter
+            KindlePageResponse resp;
+            auto api = SindarinAPI::getInstance();
+            int result = api->navigateKindleToChapter(
+                std::string(kindleBook_->uuid), chapterUuid, currentPage, &resp,
+                pageFlipper_.isUsingBleConnection(), cancelFlag_);
+
+            if (CancelFlag::isCancelled(cancelFlag_)) {
+                return;
+            }
+
+            DispatchGetUiQueue()->dispatch([this, result, resp, chapterUuid]() {
+                if (result == 200 && resp.success && !resp.text.empty()) {
+                    log_i("Successfully navigated to chapter UUID: %s", chapterUuid.c_str());
+
+                    // Reset the book session key since we're starting fresh at this chapter
+                    pageFlipper_.resetBookSessionKey();
+
+                    // Clear the buffer and set new content
+                    pageFlipper_.clearBuffer();
+
+                    // Create a new stream with the chapter text
+                    auto stream =
+                        std::dynamic_pointer_cast<KindlePageStream>(pageFlipper_.getStream());
+                    if (stream && !resp.text.empty()) {
+                        stream->clearAndSetContent(resp.text);
+                    }
+
+                    // Reset navigation state
+                    currentPlace_ = std::dynamic_pointer_cast<TxtPlace>(Place::factory(0));
+                    newPlace_ = nullptr;
+
+                    // Update renderer with new content
+                    renderer_.setStream(stream);
+                    renderer_.setCurrentPlace(currentPlace_);
+
+                    // Update page flipper state with new navigation values
+                    if (resp.navigateTo >= 0) {
+                        pageFlipper_.setNavigateTo(resp.navigateTo);
+                    }
+                    if (resp.previewTo >= 0) {
+                        pageFlipper_.setPreviewTo(resp.previewTo);
+                    }
+                    if (!resp.bookSessionKey.empty()) {
+                        pageFlipper_.setBookSessionKey(resp.bookSessionKey);
+                    }
+
+                    // Switch to display state
+                    setState(State::DISPLAY_CONTENT);
+                    updateType_ = DisplaySystem::UpdateType::FULL;
+                    setNeedsRerender();
+                    render(display_);
+
+                    // Log telemetry for successful navigation
+                    telemetry_.logMetric(
+                        TelemetryField::METRIC_EVENT, kindleBook_->uuid,
+                        {{"event", std::string("table_of_contents_navigate_success")},
+                         {"kindle", true},
+                         {"chapter_uuid", chapterUuid}});
+                } else {
+                    log_e("Failed to navigate to chapter UUID: %s (result: %d)",
+                          chapterUuid.c_str(), result);
+
+                    // Show error message but keep content available
+                    std::string errorMsg = "Failed to navigate to chapter";
+                    if (result >= 500) {
+                        errorMsg = "Server error. Please try again.";
+                    } else if (result == 404) {
+                        errorMsg = "Chapter not found";
+                    } else if (result < 0) {
+                        errorMsg = "Connection error. Please check network.";
+                    }
+
+                    errorMessageView_.setText(errorMsg);
+                    setState(State::ERROR);
+                    updateType_ = DisplaySystem::UpdateType::FULL;
+                    setNeedsRerender();
+                    render(display_);
+
+                    // Log telemetry for failed navigation
+                    telemetry_.logMetric(
+                        TelemetryField::METRIC_EVENT, kindleBook_->uuid,
+                        {{"event", std::string("table_of_contents_navigate_error")},
+                         {"kindle", true},
+                         {"chapter_uuid", chapterUuid},
+                         {"error_code", result}});
+                }
+            });
+        });
+    });
+
+    // Show the TOC screen
+    setCurrentScreen(tocScreen);
+    tocScreen->begin();
     updateType_ = DisplaySystem::UpdateType::PARTIAL;
     setNeedsRerender();
 }

@@ -90,6 +90,14 @@ public:
         return size;
     }
 
+    void clearAndSetContent(const SpiramString &content) {
+        clear();
+        pages_.push_back({content, 0});
+        currentPageIndex_ = 0;
+        currentPageOffset_ = 0;
+        log_i("Set new content of size %zu", content.size());
+    }
+
     auto pageIndexForOffset(uint32_t offset) -> int {
         for (int i = 0; i < pages_.size(); i++) {
             if (offset < pages_[i].content.size()) {
@@ -246,6 +254,20 @@ public:
         }
         return 0;
     }
+
+    // Table of contents support methods
+    [[nodiscard]] auto isUsingBleConnection() const -> bool { return useBle_; }
+
+    void resetBookSessionKey() {
+        bookSessionKey_.clear();
+        lastNavigatedPage_ = -1;
+        lastPreviewedPage_ = -1;
+        log_i("Reset book session key and navigation state");
+    }
+
+    void setNavigateTo(int navigateTo) { lastNavigatedPage_ = navigateTo; }
+    void setPreviewTo(int previewTo) { lastPreviewedPage_ = previewTo; }
+    void setBookSessionKey(const SpiramString &key) { bookSessionKey_ = key; }
 
 private:
     std::shared_ptr<KindleBook> kindleBook_;

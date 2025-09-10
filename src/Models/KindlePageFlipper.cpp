@@ -335,7 +335,6 @@ void KindlePageFlipper::loadInitialPage() {
             return;
         }
 
-        // Store the new book session key
         if (!response->bookSessionKey.empty()) {
             bookSessionKey_ = response->bookSessionKey;
         }

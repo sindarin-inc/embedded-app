@@ -39,6 +39,10 @@ struct KindlePageResponse : public JsonSerializable {
     SpiramString dialogText;
     bool alreadyOpen = false;
     SpiramString bookSessionKey;
+    // For table of contents navigation
+    SpiramString text;
+    int navigateTo = -1;
+    int previewTo = -1;
 
     auto fromJson(const JsonObject &json) -> bool override {
         if (json.containsKey("success")) {

@@ -121,6 +121,7 @@ private:
 
     auto stateToString(State state) -> const char *;
     void showPopupMenu();
+    void showTableOfContents();
     void showLastReadDialog(const SpiramString &dialogText);
     void handleLastReadDialogResponse(bool gotoLastReadPage);
     void submitLastReadDialogChoice(bool gotoLastReadPage, const std::string &loadingMessage);

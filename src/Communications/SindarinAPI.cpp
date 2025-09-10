@@ -706,3 +706,279 @@ auto SindarinAPI::submitLastReadPageChoice(bool gotoLastReadPage, bool useBle,
 
     return httpCode;
 }
+
+auto SindarinAPI::makeKindleTableOfContentsRequest(const std::string &params, bool useBle,
+                                                   const std::shared_ptr<CancelFlag> &cancel)
+    -> std::string {
+    std::string path = "/kindle/table-of-contents";
+    if (!params.empty()) {
+        path += "?" + params;
+    }
+
+    log_i("Making table of contents request: %s", path.c_str());
+
+    std::string url = StringFormat("%s%s", baseUrl_.c_str(), path.c_str());
+
+    auto client = createClient(url, "application/json", HTTP_METHOD_GET, useBle, cancel, 120000);
+    if (!client) {
+        log_e("Failed to create HTTP client");
+        return "";
+    }
+
+    auto err = setAuth(client);
+    if (err != ESP_OK) {
+        log_e("Failed to set authentication: %d", err);
+        return "";
+    }
+
+    err = client->open();
+    if (err != ESP_OK) {
+        log_e("Failed to open HTTP client: %d", err);
+        return "";
+    }
+    defer { client->close(); };
+
+    int contentLength = client->fetchHeaders(cancel);
+    if (contentLength <= 0) {
+        log_e("Failed to fetch headers or no content");
+        return "";
+    }
+
+    int httpCode = client->getStatusCode();
+    log_i("HTTP response code: %d", httpCode);
+
+    if (httpCode != 200) {
+        log_e("HTTP error: %d", httpCode);
+        return "";
+    }
+
+    // Read the response body
+    auto buffer = SpiRamArrayPtr<char>(contentLength + 1);
+    int totalRead = 0;
+    while (totalRead < contentLength) {
+        int bytesRead = client->read(buffer.get() + totalRead, contentLength - totalRead);
+        if (bytesRead <= 0) {
+            log_e("Failed to read response body");
+            return "";
+        }
+        totalRead += bytesRead;
+    }
+
+    buffer[totalRead] = '\0';
+    std::string response(buffer.get());
+
+    log_i("Successfully received table of contents response");
+    return response;
+}
+
+auto SindarinAPI::fetchKindleChaptersWithUuids(const std::string &kindleUuid, int currentPage,
+                                               bool useBle,
+                                               const std::shared_ptr<CancelFlag> &cancel)
+    -> std::string {
+    log_i("Fetching chapters with UUIDs for Kindle book UUID '%s' from page %d", kindleUuid.c_str(),
+          currentPage);
+
+    std::string url = StringFormat("%s/kindle/table-of-contents", baseUrl_.c_str());
+
+    auto client = createClient(url, "application/json", HTTP_METHOD_POST, useBle, cancel, 120000);
+    if (!client) {
+        log_e("Failed to create HTTP client");
+        return "";
+    }
+
+    auto err = setAuth(client);
+    if (err != ESP_OK) {
+        log_e("Failed to set authentication: %d", err);
+        return "";
+    }
+
+    // Build JSON request body with empty chapter_uuid to get chapters with UUIDs
+    auto doc = std::make_shared<SpiRamJsonDocument>(512);
+    JsonObject body = doc->to<JsonObject>();
+    body["kindle_uuid"] = kindleUuid;
+    body["chapter_uuid"] = ""; // Empty UUID to get chapter list
+    body["page"] = currentPage;
+
+    size_t serializedMaxSize = (*doc).memoryUsage() * 2;
+    auto reqBody = SpiRamArrayPtr<char>(serializedMaxSize);
+    size_t serializedSize = serializeJson(*doc, reqBody.get(), serializedMaxSize);
+    reqBody[serializedSize] = '\0';
+
+    log_i("Request body: %s", reqBody.get());
+
+    err = client->open(serializedSize);
+    if (err != ESP_OK) {
+        log_e("Failed to open HTTP client: %d", err);
+        return "";
+    }
+    defer { client->close(); };
+
+    // Write the POST data
+    int written = client->write(reqBody.get(), serializedSize);
+    if (written != serializedSize) {
+        log_e("Failed to write POST data");
+        return "";
+    }
+
+    int contentLength = client->fetchHeaders(cancel);
+    if (contentLength <= 0) {
+        log_e("Failed to fetch headers or no content");
+        return "";
+    }
+
+    auto buffer = std::make_unique<char[]>(contentLength + 1);
+    int totalRead = 0;
+
+    while (totalRead < contentLength) {
+        if (CancelFlag::isCancelled(cancel)) {
+            log_w("Request cancelled");
+            return "";
+        }
+
+        int bytesRead = client->read(buffer.get() + totalRead, contentLength - totalRead);
+        if (bytesRead <= 0) {
+            log_e("Failed to read response body");
+            break;
+        }
+        totalRead += bytesRead;
+    }
+
+    buffer[totalRead] = '\0';
+
+    int httpCode = client->getStatusCode();
+    log_i("HTTP response code: %d", httpCode);
+
+    if (httpCode != 200) {
+        log_e("HTTP request failed with code %d", httpCode);
+        return "";
+    }
+
+    std::string response(buffer.get(), totalRead);
+    log_i("Successfully received chapters with UUIDs response");
+    return response;
+}
+
+auto SindarinAPI::navigateKindleToChapter(const std::string &kindleUuid,
+                                          const std::string &chapterUuid, int currentPage,
+                                          KindlePageResponse *resp, bool useBle,
+                                          const std::shared_ptr<CancelFlag> &cancel) -> int {
+    log_i("Navigating to chapter UUID '%s' for Kindle book UUID '%s' from page %d",
+          chapterUuid.c_str(), kindleUuid.c_str(), currentPage);
+
+    std::string url = StringFormat("%s/kindle/table-of-contents", baseUrl_.c_str());
+
+    auto client = createClient(url, "application/json", HTTP_METHOD_POST, useBle, cancel, 120000);
+    if (!client) {
+        log_e("Failed to create HTTP client");
+        return ERR_CLIENT_OPEN;
+    }
+
+    auto err = setAuth(client);
+    if (err != ESP_OK) {
+        log_e("Failed to set authentication: %d", err);
+        return ERR_SET_AUTH;
+    }
+
+    // Build JSON request body
+    auto doc = std::make_shared<SpiRamJsonDocument>(512);
+    JsonObject body = doc->to<JsonObject>();
+    body["kindle_uuid"] = kindleUuid;
+    body["chapter_uuid"] = chapterUuid;
+    body["page"] = currentPage;
+
+    size_t serializedMaxSize = (*doc).memoryUsage() * 2;
+    auto reqBody = SpiRamArrayPtr<char>(serializedMaxSize);
+    size_t serializedSize = serializeJson(*doc, reqBody.get(), serializedMaxSize);
+    reqBody[serializedSize] = '\0';
+
+    log_i("Request body: %s", reqBody.get());
+
+    err = client->open(serializedSize);
+    if (err != ESP_OK) {
+        log_e("Failed to open HTTP client: %d", err);
+        return ERR_CLIENT_OPEN;
+    }
+    defer { client->close(); };
+
+    // Write the POST data
+    int written = client->write(reqBody.get(), serializedSize);
+    if (written != serializedSize) {
+        log_e("Failed to write POST data");
+        return ERR_CLIENT_WRITE;
+    }
+
+    int contentLength = client->fetchHeaders(cancel);
+    if (contentLength <= 0) {
+        log_e("Failed to fetch headers or no content");
+        return ERR_CONTENT_LENGTH;
+    }
+
+    int httpCode = client->getStatusCode();
+    log_i("HTTP response code: %d", httpCode);
+
+    if (httpCode != 200) {
+        log_e("HTTP error: %d", httpCode);
+        return httpCode;
+    }
+
+    // Read and parse response
+    auto buffer = SpiRamArrayPtr<char>(contentLength + 1);
+    int totalRead = 0;
+    while (totalRead < contentLength) {
+        int bytesRead = client->read(buffer.get() + totalRead, contentLength - totalRead);
+        if (bytesRead <= 0) {
+            log_e("Failed to read response body");
+            return ERR_CLIENT_READ;
+        }
+        totalRead += bytesRead;
+    }
+
+    buffer[totalRead] = '\0';
+
+    log_d("Navigate to chapter response: %s", buffer.get());
+
+    // Parse the response into KindlePageResponse
+    if (resp) {
+        auto respDoc = std::make_shared<SpiRamJsonDocument>(contentLength * 2);
+        DeserializationError error = deserializeJson(*respDoc, buffer.get());
+
+        if (error) {
+            log_e("Failed to parse response JSON: %s", error.c_str());
+            return ERR_JSON_DESERIALIZE;
+        }
+
+        JsonObject root = (*respDoc).as<JsonObject>();
+        resp->success = root["success"] | false;
+
+        // Check if we got chapters instead of text (happens when UUID is empty or invalid)
+        if (root.containsKey("chapters")) {
+            log_e("Server returned chapter list instead of chapter text - UUID may be empty or "
+                  "invalid");
+            log_d("Navigate to chapter response: %s", buffer.get());
+            resp->success = false;
+            return ERR_JSON_DESERIALIZE;
+        }
+
+        // Server returns "ocr_text" for chapter navigation
+        if (root.containsKey("ocr_text")) {
+            const char *text = root["ocr_text"];
+            resp->text = SpiramString(text);
+        }
+
+        if (root.containsKey("navigate_to")) {
+            resp->navigateTo = root["navigate_to"];
+        }
+
+        if (root.containsKey("preview_to")) {
+            resp->previewTo = root["preview_to"];
+        }
+
+        if (root.containsKey("book_session_key")) {
+            const char *sessionKey = root["book_session_key"];
+            resp->bookSessionKey = SpiramString(sessionKey);
+        }
+    }
+
+    log_i("Successfully navigated to chapter (response text length: %zu)", resp->text.size());
+    return httpCode;
+}
