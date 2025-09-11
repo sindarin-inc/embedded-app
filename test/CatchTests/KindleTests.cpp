@@ -779,7 +779,6 @@ TEST_CASE("Test Kindle navigation visual traversal", "[.][kindle]") {
 
     log_i("TEST: Starting FreeRTOS");
     StartAppMain(FONT_CHOICES::PREFS_SOL_SMALL, 10, 10, -2, "KindleTestData");
-    // Note: StopFreeRtos removed to avoid hanging - FreeRTOS cleanup happens at exit
 
     // Set cloud token and disable BLE after preferences are initialized
     prefs.cloudToken.set("test-token");
@@ -957,6 +956,9 @@ TEST_CASE("Test Kindle navigation visual traversal", "[.][kindle]") {
 
     // Reset SindarinAPI to default URL to avoid affecting other tests
     api->overrideBaseUrl("");
+    
+    // Properly stop FreeRTOS to avoid thread cleanup issues in CI
+    StopFreeRtos();
 }
 
 TEST_CASE("Test Kindle absolute navigation idempotency", "[kindle]") {
