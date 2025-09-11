@@ -757,10 +757,6 @@ void KindleReadableScreen::navigateNext() {
         // Record navigation start time
         navigationStartTime_ = esp_timer_get_time();
 
-        // Update current place to the position we just rendered to
-        // This ensures the page flipper knows our actual position
-        currentPlace_ = newPlace_;
-
         // Log telemetry for showing loading screen during page turn
         telemetry_.logMetric(
             TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
