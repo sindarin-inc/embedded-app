@@ -79,6 +79,14 @@
       "progress": "",
       "is_approved_for_device": true,
       "last_modified": "1749851372"
+    },
+    {
+      "uuid": "test-short-pages-book-uuid",
+      "title": "SHORT_PAGES_TEST: A Book With Very Short Pages",
+      "author": "TEST AUTHOR",
+      "progress": "",
+      "is_approved_for_device": true,
+      "last_modified": "1751905900"
     }
   ]
 }

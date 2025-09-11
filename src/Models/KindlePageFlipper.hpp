@@ -304,4 +304,8 @@ private:
     auto openBookWithRetry(std::shared_ptr<KindlePageResponse> &response,
                            const std::shared_ptr<CancelFlag> &cancelFlag, int maxRetries = 2)
         -> KindleError;
+    
+    // Helper to fetch additional pages if buffer is low
+    void fetchAdditionalPagesIfNeeded(uint32_t currentOffset, int navigateTo,
+                                       const std::shared_ptr<CancelFlag> &cancelFlag);
 };

@@ -147,6 +147,11 @@ void setupHttpServer(std::unique_ptr<httplib::Server> &httpServer,
     // Handle Kindle open book endpoint
     httpServer->Get("/kindle/open-book", [](const httplib::Request &req, httplib::Response &res) {
         log_i("Mock server: ---> Received GET /kindle/open-book request");
+
+        // Check the book title to determine what content to serve
+        std::string bookTitle = req.has_param("title") ? req.get_param_value("title") : "";
+        bool useShortPages = (bookTitle.find("SHORT_PAGES_TEST") != std::string::npos);
+
         // Simulate delay if requested
         if (mockDelayMs > 0) {
             std::this_thread::sleep_for(std::chrono::milliseconds(mockDelayMs.load()));
@@ -172,9 +177,21 @@ void setupHttpServer(std::unique_ptr<httplib::Server> &httpServer,
             return;
         }
 
-        // Normal response - always return lines 1-20 for the initial request
-        std::string simpleContent = generateSequentialContent(1, LINES_PER_PAGE);
-        log_i("Mock server: Generated initial content - Lines 1-%d", LINES_PER_PAGE);
+        // Generate content based on book title
+        std::string simpleContent;
+        if (useShortPages) {
+            // Generate SHORT content (about 200-250 chars) for short pages test
+            simpleContent = "=== PAGE 0 ===\n";
+            for (int i = 1; i <= 10; i++) {
+                simpleContent += "Line " + std::to_string(i) + ": Short content.\n";
+            }
+            simpleContent += "=== END PAGE 0 ===\n";
+            log_i("Mock server: Generated SHORT initial content - 10 short lines");
+        } else {
+            // Normal response - return lines 1-20 for the initial request
+            simpleContent = generateSequentialContent(1, LINES_PER_PAGE);
+            log_i("Mock server: Generated initial content - Lines 1-%d", LINES_PER_PAGE);
+        }
 
         // Escape newlines for JSON
         std::string escapedContent = simpleContent;
@@ -214,6 +231,10 @@ void setupHttpServer(std::unique_ptr<httplib::Server> &httpServer,
         log_i("Mock server: ---> Received GET /kindle/navigate request #%d",
               mockNavigateCallCount.load());
 
+        // Check the book title to determine what content to serve
+        std::string bookTitle = req.has_param("title") ? req.get_param_value("title") : "";
+        bool useShortPages = (bookTitle.find("SHORT_PAGES_TEST") != std::string::npos);
+
         if (mockDelayMs > 0) {
             std::this_thread::sleep_for(std::chrono::milliseconds(mockDelayMs.load()));
         }
@@ -244,26 +265,45 @@ void setupHttpServer(std::unique_ptr<httplib::Server> &httpServer,
             previewTo = std::stoi(req.get_param_value("preview_to"));
         }
 
-        log_i("Mock server: ABSOLUTE navigation - navigate_to=%d, preview_to=%d", navigateTo,
-              previewTo);
+        if (useShortPages) {
+            log_i("Mock server: SHORT PAGES navigation - navigate_to=%d, preview_to=%d", navigateTo,
+                  previewTo);
+        } else {
+            log_i("Mock server: ABSOLUTE navigation - navigate_to=%d, preview_to=%d", navigateTo,
+                  previewTo);
+        }
 
         int currentPageNumber = navigateTo + 1;
 
         // The server should return only the preview page content when preview_to > navigate_to
         // This is because the client already has the navigate_to page
         std::string content = "";
-        if (previewTo > navigateTo) {
-            // Send only the preview page content (the page at preview_to)
-            int previewStartLine = 1 + (previewTo * LINES_PER_PAGE);
-            content = generateSequentialContent(previewStartLine, LINES_PER_PAGE);
-            log_i("Mock server: Sending PREVIEW page %d only - Lines %d-%d", previewTo,
-                  previewStartLine, previewStartLine + LINES_PER_PAGE - 1);
-        } else if (previewTo == navigateTo) {
-            // Send the navigate_to page content
-            int startLine = 1 + (navigateTo * LINES_PER_PAGE);
-            content = generateSequentialContent(startLine, LINES_PER_PAGE);
-            log_i("Mock server: Sending NAVIGATE page %d only - Lines %d-%d", navigateTo, startLine,
-                  startLine + LINES_PER_PAGE - 1);
+        if (useShortPages) {
+            // Generate SHORT content for the requested page
+            int pageToReturn = (previewTo > navigateTo) ? previewTo : navigateTo;
+            content = "=== PAGE " + std::to_string(pageToReturn) + " ===\n";
+            for (int i = 1; i <= 10; i++) {
+                int lineNum = pageToReturn * 10 + i;
+                content += "Line " + std::to_string(lineNum) + ": Short content.\n";
+            }
+            content += "=== END PAGE " + std::to_string(pageToReturn) + " ===\n";
+            log_i("Mock server: Sending SHORT page %d - Lines %d-%d", pageToReturn,
+                  pageToReturn * 10 + 1, pageToReturn * 10 + 10);
+        } else {
+            // Normal long content
+            if (previewTo > navigateTo) {
+                // Send only the preview page content (the page at preview_to)
+                int previewStartLine = 1 + (previewTo * LINES_PER_PAGE);
+                content = generateSequentialContent(previewStartLine, LINES_PER_PAGE);
+                log_i("Mock server: Sending PREVIEW page %d only - Lines %d-%d", previewTo,
+                      previewStartLine, previewStartLine + LINES_PER_PAGE - 1);
+            } else if (previewTo == navigateTo) {
+                // Send the navigate_to page content
+                int startLine = 1 + (navigateTo * LINES_PER_PAGE);
+                content = generateSequentialContent(startLine, LINES_PER_PAGE);
+                log_i("Mock server: Sending NAVIGATE page %d only - Lines %d-%d", navigateTo,
+                      startLine, startLine + LINES_PER_PAGE - 1);
+            }
         }
 
         std::string escapedContent = content;
@@ -427,10 +467,10 @@ TEST_CASE("Test KindleReadableScreen views independently", "[.][no-kindle]") {
             // Set display content state
             kindleScreen->setState(KindleReadableScreen::State::DISPLAY_CONTENT);
 
-            // Initialize serverSyncPlace_ manually since we're not running FreeRTOS in this test.
-            // Normally this happens inside KindlePageFlipper::updatePlace() via dispatch queue,
-            // but dispatch() requires a FreeRTOS thread context.
-            kindleScreen->pageFlipper_.serverSyncPlace_ =
+            // Initialize lastServerSyncPlace_ manually since we're not running FreeRTOS in this
+            // test. Normally this happens inside KindlePageFlipper::updatePlace() via dispatch
+            // queue, but dispatch() requires a FreeRTOS thread context.
+            kindleScreen->pageFlipper_.lastServerSyncPlace_ =
                 std::dynamic_pointer_cast<TxtPlace>(Place::factory(0));
 
             // Force a render update
@@ -1218,5 +1258,121 @@ TEST_CASE("Test Kindle sync tracking", "[kindle]") {
         log_i("TEST: Verified sync tracking through navigation sequence");
     }
 
+    api->overrideBaseUrl("");
+}
+
+TEST_CASE("Test Kindle multi-page fetching with short pages", "[kindle]") {
+    // Reset all mock state at the beginning of the test
+    resetMockState();
+
+    SetupFileSystemMock("KindleTestData");
+    SetImagesFolder("KindleImages");
+
+    // Set up mock server using the standard setup
+    auto httpServer = std::make_unique<httplib::Server>();
+    auto httpServerThread = std::make_shared<std::thread>();
+    std::atomic<bool> serverRunning(false);
+    int port = 8080;
+    setupHttpServer(httpServer, httpServerThread, serverRunning, port);
+    defer { teardownHttpServer(httpServer, httpServerThread); };
+
+    // Override SindarinAPI URL before starting the app
+    auto api = SindarinAPI::getInstance();
+    api->overrideBaseUrl("http://127.0.0.1:8080");
+    api->setAccessToken("test-token");
+    log_i("TEST: SindarinAPI URL overridden to mock server");
+
+    log_i("TEST: Starting FreeRTOS for short pages test");
+    StartAppMain(FONT_CHOICES::PREFS_SOL_SMALL, 10, 10, -2, "KindleTestData");
+
+    // Set cloud token and disable BLE after preferences are initialized
+    prefs.cloudToken.set("test-token");
+    prefs.bleDisabled.set(true);
+    log_i("TEST: Set cloud token and disabled BLE for short pages test");
+
+    defer { StopFreeRtos(); };
+    log_i("TEST: FreeRTOS started for short pages test");
+
+    auto &display = GetRootDisplay();
+    log_i("TEST: Display created for short pages test");
+
+    WAIT_FOR_DRAW(display);
+    WAIT_FOR_DRAW(display);
+
+    SECTION("Test automatic multi-page fetching with short pages") {
+        // Navigate to the SHORT_PAGES_TEST book (it's the last one in the list)
+        // We have 11 books total, so navigate right to get to Kindle section
+        SendRemoteCommand(RIGHT);
+        WAIT_FOR_DRAW(display);
+        WAIT_FOR_DRAW(display);
+
+        // Now navigate down to the last book (SHORT_PAGES_TEST)
+        for (int i = 0; i < 10; i++) { // Navigate to the 11th book
+            SendRemoteCommand(DOWN);
+            WAIT_FOR_DRAW(display);
+        }
+
+        // Open the book
+        SendRemoteCommand(ENTER);
+        WAIT_FOR_DRAW(display);
+        WAIT_FOR_DRAW(display);
+
+        setupContentRenderingCallback();
+        WAIT_FOR_DRAW(display);
+
+        // Capture initial state with short content
+        ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest01-InitialShortPage");
+
+        log_i("TEST: Initial short page loaded, now navigating forward");
+
+        // Navigate forward - this should trigger multi-page fetching
+        SendRemoteCommand(ENTER);
+        WAIT_FOR_CONTENT_RENDER();
+        WAIT_FOR_DRAW(display);
+
+        // Check how many requests were made (should be multiple due to short pages)
+        log_i("TEST: After first navigation, total requests made: %d",
+              mockNavigateCallCount.load());
+        ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest02-AfterMultiFetch");
+
+        // Navigate forward again
+        SendRemoteCommand(ENTER);
+        WAIT_FOR_CONTENT_RENDER();
+        WAIT_FOR_DRAW(display);
+
+        log_i("TEST: After second navigation, total requests made: %d",
+              mockNavigateCallCount.load());
+        ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest03-SecondPage");
+
+        // Navigate backward to test cached content
+        SendRemoteCommand(LEFT);
+        WAIT_FOR_CONTENT_RENDER();
+        WAIT_FOR_DRAW(display);
+
+        log_i("TEST: After backward navigation, total requests made: %d",
+              mockNavigateCallCount.load());
+        ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest04-BackToPrevious");
+
+        // Navigate forward multiple times quickly
+        for (int i = 0; i < 5; i++) {
+            SendRemoteCommand(ENTER);
+            WAIT_FOR_CONTENT_RENDER();
+            WAIT_FOR_DRAW(display);
+        }
+
+        log_i("TEST: After 5 rapid forward navigations, total requests made: %d",
+              mockNavigateCallCount.load());
+        ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest05-AfterRapidNav");
+
+        log_i("TEST: Multi-page fetching test complete. Total navigation requests: %d",
+              mockNavigateCallCount.load());
+
+        // We expect MORE requests than normal due to automatic multi-page fetching
+        // With short pages, the system should fetch multiple pages automatically
+        REQUIRE(mockNavigateCallCount.load() > 10); // Should have made many requests
+    }
+
+    log_i("TEST: Exiting short pages test");
+    StopFreeRtos();
     api->overrideBaseUrl("");
 }

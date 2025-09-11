@@ -265,6 +265,58 @@ auto KindlePageFlipper::openBookWithRetry(std::shared_ptr<KindlePageResponse> &r
     return error;
 }
 
+void KindlePageFlipper::fetchAdditionalPagesIfNeeded(uint32_t currentOffset, int navigateTo,
+                                                     const std::shared_ptr<CancelFlag> &cancelFlag) {
+    // Continue fetching additional pages while buffer is low, up to 6 additional pages
+    const int maxAdditionalPages = 6;
+    int additionalPagesFetched = 0;
+    size_t bytesRemainingNow = pageStream_->getBytesRemainingFrom(currentOffset);
+
+    while (bytesRemainingNow < KINDLE_BUFFER_THRESHOLD_BYTES &&
+           additionalPagesFetched < maxAdditionalPages &&
+           !CancelFlag::isCancelled(cancelFlag)) {
+
+        int nextPreviewPage = lastPreviewedPage_ + 1;
+        log_i("→ Buffer low (%zu bytes), requesting page %d (additional page %d/%d)",
+              bytesRemainingNow, nextPreviewPage, additionalPagesFetched + 1,
+              maxAdditionalPages);
+
+        auto nextResponse = std::make_shared<KindlePageResponse>();
+        auto nextError =
+            navigateWithRetry(navigateTo, nextPreviewPage, nextResponse, cancelFlag, 2);
+
+        if (CancelFlag::isCancelled(cancelFlag)) {
+            break;
+        }
+
+        if (!nextError.hasError() && !checkForLastReadDialog(nextResponse)) {
+            size_t nextOcrTextLength = nextResponse->ocrText.size();
+
+            if (nextOcrTextLength > 0) {
+                pageStream_->appendPageFromResponse(*nextResponse, nextPreviewPage);
+                lastPreviewedPage_ = nextPreviewPage;
+                bytesRemainingNow = pageStream_->getBytesRemainingFrom(currentOffset);
+                log_i("← Added page %d: +%zu bytes (buffer now: %zu bytes)",
+                      nextPreviewPage, nextOcrTextLength, bytesRemainingNow);
+                additionalPagesFetched++;
+            } else {
+                log_i("Received empty preview page %d - may be at end of book",
+                      nextPreviewPage);
+                break; // Stop fetching if we get an empty page
+            }
+        } else if (nextError.hasError()) {
+            log_w("Failed to load additional preview page %d: %s", nextPreviewPage,
+                  nextError.message.c_str());
+            break; // Stop fetching on error
+        }
+    }
+
+    if (additionalPagesFetched > 0) {
+        log_i("Fetched %d additional pages, buffer now: %zu bytes",
+              additionalPagesFetched, bytesRemainingNow);
+    }
+}
+
 auto KindlePageFlipper::checkForLastReadDialog(const std::shared_ptr<KindlePageResponse> &response)
     -> bool {
     if (response->lastReadDialog && !response->dialogText.empty() && onLastReadDialogFunction_) {
@@ -512,41 +564,54 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place) {
                 log_i("← Added page %d: +%zu bytes (buffer now: %zu bytes)", serverPageNumber,
                       ocrTextLength, pageStream_->getBytesRemainingFrom(currentOffset));
 
-                // Check if we need one more preview page after successfully appending this one
-                // Only request one additional page at a time to avoid complexity
+                // Continue fetching additional pages while buffer is low, up to 6 additional pages
+                const int maxAdditionalPages = 6;
+                int additionalPagesFetched = 0;
                 size_t bytesRemainingNow = pageStream_->getBytesRemainingFrom(currentOffset);
 
-                if (bytesRemainingNow < KINDLE_BUFFER_THRESHOLD_BYTES) {
-                    // We need one more preview page - request the next page
-                    int nextPreviewPage = lastPreviewedPage_ + 1;
-                    log_i("→ Buffer low (%zu bytes), requesting page %d", bytesRemainingNow,
-                          nextPreviewPage);
+                while (bytesRemainingNow < KINDLE_BUFFER_THRESHOLD_BYTES &&
+                       additionalPagesFetched < maxAdditionalPages &&
+                       !CancelFlag::isCancelled(cancelFlag)) {
 
-                    // Make one additional preview request (navigate_to stays the same)
+                    int nextPreviewPage = lastPreviewedPage_ + 1;
+                    log_i("→ Buffer low (%zu bytes), requesting page %d (additional page %d/%d)",
+                          bytesRemainingNow, nextPreviewPage, additionalPagesFetched + 1,
+                          maxAdditionalPages);
+
                     auto nextResponse = std::make_shared<KindlePageResponse>();
                     auto nextError =
                         navigateWithRetry(navigateTo, nextPreviewPage, nextResponse, cancelFlag, 2);
 
-                    if (!CancelFlag::isCancelled(cancelFlag)) {
-                        if (!nextError.hasError() && !checkForLastReadDialog(nextResponse)) {
-                            size_t nextOcrTextLength = nextResponse->ocrText.size();
-
-                            if (nextOcrTextLength > 0) {
-                                pageStream_->appendPageFromResponse(*nextResponse, nextPreviewPage);
-                                lastPreviewedPage_ = nextPreviewPage;
-                                ocrTextLength += nextOcrTextLength; // Add to total loaded
-                                log_i("← Added page %d: +%zu bytes (buffer now: %zu bytes)",
-                                      nextPreviewPage, nextOcrTextLength,
-                                      pageStream_->getBytesRemainingFrom(currentOffset));
-                            } else {
-                                log_i("Received empty preview page %d - may be at end of book",
-                                      nextPreviewPage);
-                            }
-                        } else if (nextError.hasError()) {
-                            log_w("Failed to load additional preview page %d: %s", nextPreviewPage,
-                                  nextError.message.c_str());
-                        }
+                    if (CancelFlag::isCancelled(cancelFlag)) {
+                        break;
                     }
+
+                    if (!nextError.hasError() && !checkForLastReadDialog(nextResponse)) {
+                        size_t nextOcrTextLength = nextResponse->ocrText.size();
+
+                        if (nextOcrTextLength > 0) {
+                            pageStream_->appendPageFromResponse(*nextResponse, nextPreviewPage);
+                            lastPreviewedPage_ = nextPreviewPage;
+                            ocrTextLength += nextOcrTextLength; // Add to total loaded
+                            bytesRemainingNow = pageStream_->getBytesRemainingFrom(currentOffset);
+                            log_i("← Added page %d: +%zu bytes (buffer now: %zu bytes)",
+                                  nextPreviewPage, nextOcrTextLength, bytesRemainingNow);
+                            additionalPagesFetched++;
+                        } else {
+                            log_i("Received empty preview page %d - may be at end of book",
+                                  nextPreviewPage);
+                            break; // Stop fetching if we get an empty page
+                        }
+                    } else if (nextError.hasError()) {
+                        log_w("Failed to load additional preview page %d: %s", nextPreviewPage,
+                              nextError.message.c_str());
+                        break; // Stop fetching on error
+                    }
+                }
+
+                if (additionalPagesFetched > 0) {
+                    log_i("Fetched %d additional pages, buffer now: %zu bytes",
+                          additionalPagesFetched, bytesRemainingNow);
                 }
             }
             // Update the last navigated page to reflect what we told the server
