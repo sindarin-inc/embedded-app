@@ -107,13 +107,50 @@ auto KindlePageFlipper::navigateWithRetry(int navigateTo, int previewTo,
             return {KindleErrorType::None, ""}; // Caller must check cancelFlag separately
         }
 
-        // Update the book session key if we got a new one
-        if (!response->bookSessionKey.empty() && response->bookSessionKey != bookSessionKey_) {
-            bookSessionKey_ = response->bookSessionKey;
-            log_i("Updated book_session_key: %s", bookSessionKey_.c_str());
-        }
+        // Check for session key mismatch error BEFORE general error checking
+        if (httpCode == 400 && response->error == "session_key_mismatch") {
+            // Create a SessionKeyMismatch error
+            error = {KindleErrorType::SessionKeyMismatch, std::string(response->message)};
 
-        error = checkForError(httpCode, response);
+            // Handle the session key update and position reset
+            // The server provides the correct session key in the current_session_key field
+            if (!response->currentSessionKey.empty()) {
+                log_w("Session key mismatch detected. Resetting position and retrying with new "
+                      "session key");
+                bookSessionKey_ = response->currentSessionKey;
+                log_i("Updated book_session_key from mismatch response: %s",
+                      bookSessionKey_.c_str());
+
+                // Reset our tracking since server has reset to position 0
+                lastNavigatedPage_ = 0;
+                lastPreviewedPage_ = 0;
+
+                // Clear the page stream to reflect the reset
+                pageStream_->clear();
+
+                // Log telemetry for session key mismatch
+                telemetry_.logMetric(TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
+                                     {{"event", std::string("book-navigate")},
+                                      {"action", std::string("session-key-mismatch")},
+                                      {"kindle", true},
+                                      {"navigate_to", navigateTo},
+                                      {"retry_attempt", retryCount + 1}});
+
+                // Since this is a retryable error, let the retry logic below handle it
+            } else {
+                log_e("Session key mismatch but no new session key provided");
+                return {KindleErrorType::ClientError, "Session out of sync with server"};
+            }
+        } else {
+            // Update the book session key if we got a new one (normal case)
+            if (!response->bookSessionKey.empty() && response->bookSessionKey != bookSessionKey_) {
+                bookSessionKey_ = response->bookSessionKey;
+                log_i("Updated book_session_key: %s", bookSessionKey_.c_str());
+            }
+
+            // Check for other errors
+            error = checkForError(httpCode, response);
+        }
 
         if (!error.hasError()) {
             if (retryCount > 0) {
@@ -297,6 +334,11 @@ void KindlePageFlipper::fetchAdditionalPagesIfNeeded(
                 log_i("← Added page %d: +%zu bytes (buffer now: %zu bytes)", nextPreviewPage,
                       nextOcrTextLength, bytesRemainingNow);
                 additionalPagesFetched++;
+
+                // Notify UI that we have more content available after each page fetch
+                if (gotContentFunction_) {
+                    gotContentFunction_(pageStream_->getOcrTextLength());
+                }
             } else {
                 log_i("Received empty preview page %d - may be at end of book", nextPreviewPage);
                 break; // Stop fetching if we get an empty page
@@ -396,11 +438,6 @@ void KindlePageFlipper::loadInitialPage() {
             lastPreviewedPage_ = 0;
         }
 
-        // Check if we need to fetch additional pages for short content
-        if (!hasDialog && ocrTextLength > 0) {
-            fetchAdditionalPagesIfNeeded(0, 0, cancelFlag);
-        }
-
         // Log successful book open
         int64_t elapsedMs = (esp_timer_get_time() - bookOpenStartTime) / 1000;
         telemetry_.logMetric(TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
@@ -411,8 +448,14 @@ void KindlePageFlipper::loadInitialPage() {
                               {"has_dialog", hasDialog},
                               {"elapsed_ms", static_cast<int>(elapsedMs)}});
 
+        // Notify UI that initial content is ready to display
         if (gotContentFunction_) {
             gotContentFunction_(ocrTextLength);
+        }
+
+        // Now fetch additional pages in the background if needed
+        if (!hasDialog && ocrTextLength > 0) {
+            fetchAdditionalPagesIfNeeded(0, 0, cancelFlag);
         }
     });
 }

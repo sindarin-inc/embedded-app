@@ -17,6 +17,7 @@ enum class KindleErrorType {
     ConnectionError,     // Network connection issue (retryable)
     Timeout,             // Request timeout (retryable)
     ServerError,         // Server error (potentially retryable)
+    SessionKeyMismatch,  // Session key out of sync (retryable - resets to position 0)
     AuthenticationError, // Authentication failure
     NotFoundError,       // Resource not found
     ClientError,         // Other client errors
@@ -30,7 +31,7 @@ struct KindleError {
     [[nodiscard]] auto hasError() const -> bool { return type != KindleErrorType::None; }
     [[nodiscard]] auto isRetryable() const -> bool {
         return type == KindleErrorType::ConnectionError || type == KindleErrorType::Timeout ||
-               type == KindleErrorType::ServerError;
+               type == KindleErrorType::ServerError || type == KindleErrorType::SessionKeyMismatch;
     }
     [[nodiscard]] auto isConnectionError() const -> bool {
         return type == KindleErrorType::ConnectionError;
