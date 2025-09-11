@@ -285,7 +285,7 @@ void KindleReadableScreen::begin() {
     std::string errorMessage;
     connectionStartTime_ = esp_timer_get_time();
     bool connected = connectToNetwork(errorMessage, initialConnectionCallback);
-    
+
     if (!connected && !errorMessage.empty()) {
         setErrorMessage(errorMessage);
     }
