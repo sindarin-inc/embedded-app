@@ -151,7 +151,7 @@ static void teardownHttpServer(std::unique_ptr<httplib::Server> &httpServer,
 
 extern PreferencesStore prefs;
 
-TEST_CASE("Test Kindle multi-page fetching with short pages visual", "[kindle-short-pages]") {
+TEST_CASE("Test Kindle multi-page fetching with short pages visual", "[.][kindle-short-pages]") {
     resetMockState();
     SetupFileSystemMock("KindleTestData");
     SetImagesFolder("KindleImages");
