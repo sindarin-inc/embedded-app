@@ -12,6 +12,31 @@
 #include "Models/Place.hpp"
 #include "Renderers/RendererStream.hpp"
 
+enum class KindleErrorType {
+    None,                // No error
+    ConnectionError,     // Network connection issue (retryable)
+    Timeout,             // Request timeout (retryable)
+    ServerError,         // Server error (potentially retryable)
+    AuthenticationError, // Authentication failure
+    NotFoundError,       // Resource not found
+    ClientError,         // Other client errors
+    UnknownError         // Unknown error
+};
+
+struct KindleError {
+    KindleErrorType type = KindleErrorType::None;
+    std::string message;
+
+    [[nodiscard]] auto hasError() const -> bool { return type != KindleErrorType::None; }
+    [[nodiscard]] auto isRetryable() const -> bool {
+        return type == KindleErrorType::ConnectionError || type == KindleErrorType::Timeout ||
+               type == KindleErrorType::ServerError;
+    }
+    [[nodiscard]] auto isConnectionError() const -> bool {
+        return type == KindleErrorType::ConnectionError;
+    }
+};
+
 class KindlePage {
 public:
     SpiramString content;
@@ -263,18 +288,18 @@ private:
     std::function<void()> onConnectionErrorFunction_;
     std::function<void(const SpiramString &dialogText)> onLastReadDialogFunction_;
 
-    auto checkForError(int httpCode, std::shared_ptr<KindlePageResponse> &response) -> std::string;
+    auto checkForError(int httpCode, std::shared_ptr<KindlePageResponse> &response) -> KindleError;
     auto checkForLastReadDialog(const std::shared_ptr<KindlePageResponse> &response) -> bool;
 
     // Helper to perform navigation with retry logic
-    // Returns error message (empty string for success)
+    // Returns error (check hasError() for success)
     auto navigateWithRetry(int navigateTo, int previewTo,
                            std::shared_ptr<KindlePageResponse> &response,
                            const std::shared_ptr<CancelFlag> &cancelFlag, int maxRetries = 3)
-        -> std::string;
+        -> KindleError;
 
-    // Returns error message (empty string for success)
+    // Returns error (check hasError() for success)
     auto openBookWithRetry(std::shared_ptr<KindlePageResponse> &response,
                            const std::shared_ptr<CancelFlag> &cancelFlag, int maxRetries = 2)
-        -> std::string;
+        -> KindleError;
 };
