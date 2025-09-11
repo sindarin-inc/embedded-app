@@ -342,6 +342,8 @@ void KindlePageFlipper::loadInitialPage() {
             ocrTextLength = response->ocrText.size();
 
             pageStream_->appendPageFromResponse(*response, 0);
+            // Update both navigation and preview state since open-book gives us page 0
+            lastNavigatedPage_ = 0;
             lastPreviewedPage_ = 0;
         }
 
@@ -416,7 +418,7 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place) {
 
             log_d("Checking cached navigation callback: currentOffset=%u, previousOffset=%u, "
                   "gotContentFunction_=%s",
-                  (unsigned int)currentOffset, (unsigned int)previousOffset, 
+                  (unsigned int)currentOffset, (unsigned int)previousOffset,
                   gotContentFunction_ ? "set" : "null");
             if (currentOffset != previousOffset) {
                 // Update server sync position even when using cached content
