@@ -373,12 +373,14 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place) {
             return;
         }
 
-        if (serverSyncPlace_ == nullptr) {
-            // First time we're setting the place
-            serverSyncPlace_ = std::dynamic_pointer_cast<TxtPlace>(place);
+        if (lastServerSyncPlace_ == nullptr) {
+            lastServerSyncPlace_ = std::dynamic_pointer_cast<TxtPlace>(place);
+        }
+        if (lastRenderedPlace_ == nullptr) {
+            lastRenderedPlace_ = std::dynamic_pointer_cast<TxtPlace>(place);
         }
 
-        log_i("Updating place from %s to %s", serverSyncPlace_->str().c_str(),
+        log_i("Updating place from %s to %s", lastServerSyncPlace_->str().c_str(),
               place->str().c_str());
 
         // Calculate buffer state
@@ -412,17 +414,17 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place) {
               serverPageForCurrentOffset);
 
         if (!shouldMakeRequest) {
-            // Update sync position and call callback when navigating with cached content
+            // Update rendered position and call callback when navigating with cached content
             auto currentOffset = place->getOffset();
-            auto previousOffset = serverSyncPlace_ ? serverSyncPlace_->getOffset() : 0;
+            auto previousOffset = lastRenderedPlace_ ? lastRenderedPlace_->getOffset() : 0;
 
             log_d("Checking cached navigation callback: currentOffset=%u, previousOffset=%u, "
                   "gotContentFunction_=%s",
                   (unsigned int)currentOffset, (unsigned int)previousOffset,
                   gotContentFunction_ ? "set" : "null");
             if (currentOffset != previousOffset) {
-                // Update server sync position even when using cached content
-                serverSyncPlace_ = std::dynamic_pointer_cast<TxtPlace>(place);
+                // Update rendered position when using cached content
+                lastRenderedPlace_ = std::dynamic_pointer_cast<TxtPlace>(place);
 
                 if (gotContentFunction_) {
                     size_t contentLength = pageStream_->getOcrTextLength();
@@ -571,9 +573,10 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place) {
             gotContentFunction_(ocrTextLength);
         }
 
-        // Update server sync position after successful navigation
-        // We track the actual navigation position, not the preview position
-        // This ensures we properly track what page the server thinks we're on
-        serverSyncPlace_ = std::dynamic_pointer_cast<TxtPlace>(place);
+        // Update both positions after successful navigation
+        // lastServerSyncPlace_ tracks what the server knows
+        // lastRenderedPlace_ tracks what we've displayed to the user
+        lastServerSyncPlace_ = std::dynamic_pointer_cast<TxtPlace>(place);
+        lastRenderedPlace_ = std::dynamic_pointer_cast<TxtPlace>(place);
     });
 }

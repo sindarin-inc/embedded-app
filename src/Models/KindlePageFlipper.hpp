@@ -240,9 +240,9 @@ public:
         // Retry loading the initial page if we're at the beginning
         if (pageStream_->size() == 0) {
             loadInitialPage();
-        } else if (serverSyncPlace_ != nullptr) {
+        } else if (lastServerSyncPlace_ != nullptr) {
             // Otherwise retry from the current place
-            updatePlace(serverSyncPlace_);
+            updatePlace(lastServerSyncPlace_);
         }
     }
 
@@ -259,7 +259,8 @@ public:
         if (pageStream_) {
             pageStream_->clear();
         }
-        serverSyncPlace_ = nullptr;
+        lastServerSyncPlace_ = nullptr;
+        lastRenderedPlace_ = nullptr;
         lastPreviewedPage_ = -1;
         lastNavigatedPage_ = -1;
         bookSessionKey_.clear();
@@ -279,7 +280,8 @@ private:
     std::shared_ptr<KindlePageStream> pageStream_;
     Telemetry &telemetry_;
 
-    std::shared_ptr<TxtPlace> serverSyncPlace_; // Last position synced with server
+    std::shared_ptr<TxtPlace> lastServerSyncPlace_; // Last position synced with server
+    std::shared_ptr<TxtPlace> lastRenderedPlace_;   // Last position rendered to the user
     int lastPreviewedPage_ = -1;  // Track the last page we successfully previewed from server
     int lastNavigatedPage_ = -1;  // Track the last page we sent navigate_to for
     SpiramString bookSessionKey_; // Session key from server denoting navigation zero point
