@@ -19,7 +19,9 @@
   - Watch logs in real-time: `tail -f logs/sim.log`
   - Log file is cleared on each run
 - Run tests: `make test`
-- Run single test: `./test/CatchTests/build/tests '[test-tag]'` (e.g. `'[epub]'`, `'[content-sync]'`)
+- Build tests: `make test-build`
+- Run single test: `make test-build && ./test/CatchTests/build/tests '[test-tag]'` (e.g. `'[epub]'`, `'[content-sync]'`)
+  - Always rebuild before running tests to ensure changes are included
 - Format code: `make lint` (or `make clang-format`)
   - **IMPORTANT**: Always run `. $IDF_PATH/export.sh && make lint` after making code changes
 - Static analysis: `make clang-tidy`
