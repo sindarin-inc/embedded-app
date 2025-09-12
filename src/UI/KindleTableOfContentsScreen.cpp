@@ -84,7 +84,8 @@ void KindleTableOfContentsScreen::handleTableOfContentsResponse(const std::strin
     log_d("TOC Response: %s", response.c_str());
 
     // Allocate more memory for JSON parsing - response might have nested objects
-    auto doc = std::make_shared<SpiRamJsonDocument>(std::max(size_t(4096), response.size() * 3));
+    auto doc = std::make_shared<SpiRamJsonDocument>(
+        std::max(static_cast<size_t>(4096), response.size() * 3));
     DeserializationError error = deserializeJson(*doc, response);
 
     if (error) {
@@ -96,7 +97,7 @@ void KindleTableOfContentsScreen::handleTableOfContentsResponse(const std::strin
         return;
     }
 
-    JsonObject root = (*doc).as<JsonObject>();
+    auto root = (*doc).as<JsonObject>();
 
     if (!root["success"] || !root["success"].as<bool>()) {
         const char *errorText = root["error"] | "Unknown error";

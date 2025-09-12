@@ -944,7 +944,7 @@ auto SindarinAPI::navigateKindleToChapter(const std::string &kindleUuid,
             return ERR_JSON_DESERIALIZE;
         }
 
-        JsonObject root = (*respDoc).as<JsonObject>();
+        auto root = (*respDoc).as<JsonObject>();
         resp->success = root["success"] | false;
 
         // Check if we got chapters instead of text (happens when UUID is empty or invalid)
