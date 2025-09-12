@@ -143,11 +143,11 @@ public:
 
     auto getOffsetForServerPageNumber(int serverPageNumber) -> int {
         size_t cumulativeOffset = 0;
-        for (size_t i = 0; i < pages_.size(); i++) {
-            if (pages_[i].serverPageNumber == serverPageNumber) {
+        for (auto &page : pages_) {
+            if (page.serverPageNumber == serverPageNumber) {
                 return cumulativeOffset;
             }
-            cumulativeOffset += pages_[i].content.size();
+            cumulativeOffset += page.content.size();
         }
         return -1;
     }
