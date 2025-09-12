@@ -313,12 +313,19 @@ void KindlePageFlipper::fetchAdditionalPagesIfNeeded(
            additionalPagesFetched < maxAdditionalPages && !CancelFlag::isCancelled(cancelFlag)) {
 
         int nextPreviewPage = lastPreviewedPage_ + 1;
+
+        // Always use the current reading position for navigate_to, not the stale value
+        auto currentNavigateTo = pageStream_->getServerPageNumberForOffset(currentOffset);
+        if (currentNavigateTo < 0) {
+            currentNavigateTo = navigateTo; // Fallback to passed value if lookup fails
+        }
+
         log_i("→ Buffer low (%zu bytes), requesting page %d (additional page %d/%d)",
               bytesRemainingNow, nextPreviewPage, additionalPagesFetched + 1, maxAdditionalPages);
 
         auto nextResponse = std::make_shared<KindlePageResponse>();
         auto nextError =
-            navigateWithRetry(navigateTo, nextPreviewPage, nextResponse, cancelFlag, 2);
+            navigateWithRetry(currentNavigateTo, nextPreviewPage, nextResponse, cancelFlag, 2);
 
         if (CancelFlag::isCancelled(cancelFlag)) {
             break;
@@ -452,9 +459,10 @@ void KindlePageFlipper::loadInitialPage() {
             gotContentFunction_(ocrTextLength);
         }
 
-        // Now fetch additional pages in the background if needed
+        // Fetch additional pages in the background if needed
         if (!hasDialog && ocrTextLength > 0) {
-            fetchAdditionalPagesIfNeeded(0, 0, cancelFlag);
+            DispatchGetCore0BackgroundQueue()->dispatch(
+                [this, cancelFlag]() { fetchAdditionalPagesIfNeeded(0, 0, cancelFlag); });
         }
     });
 }
@@ -499,6 +507,22 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place) {
         // Core state checks:
         bool navigationChanged = (navigateTo != lastNavigatedPage_);
         bool needMoreBuffer = (bytesRemaining < KINDLE_BUFFER_THRESHOLD_BYTES);
+
+        // When navigation changes without preview, we get no new content,
+        // so check if we'll need buffer after the navigation-only response
+        if (navigationChanged && !needMoreBuffer) {
+            // Calculate how many bytes will remain after we move to navigateTo position
+            int navigateToOffset = pageStream_->getOffsetForServerPageNumber(navigateTo);
+
+            // If we found the offset, calculate remaining bytes from that position
+            if (navigateToOffset >= 0) {
+                size_t bytesFromNavigateTo = pageStream_->getBytesRemainingFrom(navigateToOffset);
+                needMoreBuffer = (bytesFromNavigateTo < KINDLE_BUFFER_THRESHOLD_BYTES);
+                log_d(
+                    "Navigation would leave %zu bytes from navigate_to=%d position, needBuffer=%d",
+                    bytesFromNavigateTo, navigateTo, needMoreBuffer);
+            }
+        }
 
         // Make a request if we changed pages or need more buffer
         bool shouldMakeRequest = navigationChanged || needMoreBuffer;
@@ -608,8 +632,11 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place) {
                 log_i("← Added page %d: +%zu bytes (buffer now: %zu bytes)", serverPageNumber,
                       ocrTextLength, pageStream_->getBytesRemainingFrom(currentOffset));
 
-                // Check if we need to fetch additional pages for short content
-                fetchAdditionalPagesIfNeeded(currentOffset, navigateTo, cancelFlag);
+                // Fetch additional pages in the background so UI can update immediately
+                DispatchGetCore0BackgroundQueue()->dispatch(
+                    [this, currentOffset, navigateTo, cancelFlag]() {
+                    fetchAdditionalPagesIfNeeded(currentOffset, navigateTo, cancelFlag);
+                });
             }
             // Update the last navigated page to reflect what we told the server
             lastNavigatedPage_ = navigateTo;

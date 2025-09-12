@@ -149,6 +149,17 @@ public:
         return -1;
     }
 
+    auto getOffsetForServerPageNumber(int serverPageNumber) -> int {
+        size_t cumulativeOffset = 0;
+        for (size_t i = 0; i < pages_.size(); i++) {
+            if (pages_[i].serverPageNumber == serverPageNumber) {
+                return cumulativeOffset;
+            }
+            cumulativeOffset += pages_[i].content.size();
+        }
+        return -1;
+    }
+
     auto lastPageIndex() -> int { return pages_.size() - 1; }
 
     auto getOcrTextLength() -> size_t {
