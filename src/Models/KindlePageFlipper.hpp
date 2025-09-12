@@ -12,6 +12,32 @@
 #include "Models/Place.hpp"
 #include "Renderers/RendererStream.hpp"
 
+enum class KindleErrorType {
+    None,                // No error
+    ConnectionError,     // Network connection issue (retryable)
+    Timeout,             // Request timeout (retryable)
+    ServerError,         // Server error (potentially retryable)
+    SessionKeyMismatch,  // Session key out of sync (retryable - resets to position 0)
+    AuthenticationError, // Authentication failure
+    NotFoundError,       // Resource not found
+    ClientError,         // Other client errors
+    UnknownError         // Unknown error
+};
+
+struct KindleError {
+    KindleErrorType type = KindleErrorType::None;
+    std::string message;
+
+    [[nodiscard]] auto hasError() const -> bool { return type != KindleErrorType::None; }
+    [[nodiscard]] auto isRetryable() const -> bool {
+        return type == KindleErrorType::ConnectionError || type == KindleErrorType::Timeout ||
+               type == KindleErrorType::ServerError || type == KindleErrorType::SessionKeyMismatch;
+    }
+    [[nodiscard]] auto isConnectionError() const -> bool {
+        return type == KindleErrorType::ConnectionError;
+    }
+};
+
 class KindlePage {
 public:
     SpiramString content;
@@ -223,9 +249,9 @@ public:
         // Retry loading the initial page if we're at the beginning
         if (pageStream_->size() == 0) {
             loadInitialPage();
-        } else if (serverSyncPlace_ != nullptr) {
+        } else if (lastServerSyncPlace_ != nullptr) {
             // Otherwise retry from the current place
-            updatePlace(serverSyncPlace_);
+            updatePlace(lastServerSyncPlace_);
         }
     }
 
@@ -242,7 +268,8 @@ public:
         if (pageStream_) {
             pageStream_->clear();
         }
-        serverSyncPlace_ = nullptr;
+        lastServerSyncPlace_ = nullptr;
+        lastRenderedPlace_ = nullptr;
         lastPreviewedPage_ = -1;
         lastNavigatedPage_ = -1;
         bookSessionKey_.clear();
@@ -276,7 +303,8 @@ private:
     std::shared_ptr<KindlePageStream> pageStream_;
     Telemetry &telemetry_;
 
-    std::shared_ptr<TxtPlace> serverSyncPlace_; // Last position synced with server
+    std::shared_ptr<TxtPlace> lastServerSyncPlace_; // Last position synced with server
+    std::shared_ptr<TxtPlace> lastRenderedPlace_;   // Last position rendered to the user
     int lastPreviewedPage_ = -1;  // Track the last page we successfully previewed from server
     int lastNavigatedPage_ = -1;  // Track the last page we sent navigate_to for
     SpiramString bookSessionKey_; // Session key from server denoting navigation zero point
@@ -285,18 +313,22 @@ private:
     std::function<void()> onConnectionErrorFunction_;
     std::function<void(const SpiramString &dialogText)> onLastReadDialogFunction_;
 
-    auto checkForError(int httpCode, std::shared_ptr<KindlePageResponse> &response) -> std::string;
+    auto checkForError(int httpCode, std::shared_ptr<KindlePageResponse> &response) -> KindleError;
     auto checkForLastReadDialog(const std::shared_ptr<KindlePageResponse> &response) -> bool;
 
     // Helper to perform navigation with retry logic
-    // Returns error message (empty string for success)
+    // Returns error (check hasError() for success)
     auto navigateWithRetry(int navigateTo, int previewTo,
                            std::shared_ptr<KindlePageResponse> &response,
                            const std::shared_ptr<CancelFlag> &cancelFlag, int maxRetries = 3)
-        -> std::string;
+        -> KindleError;
 
-    // Returns error message (empty string for success)
+    // Returns error (check hasError() for success)
     auto openBookWithRetry(std::shared_ptr<KindlePageResponse> &response,
                            const std::shared_ptr<CancelFlag> &cancelFlag, int maxRetries = 2)
-        -> std::string;
+        -> KindleError;
+
+    // Helper to fetch additional pages if buffer is low
+    void fetchAdditionalPagesIfNeeded(uint32_t currentOffset, int navigateTo,
+                                      const std::shared_ptr<CancelFlag> &cancelFlag);
 };

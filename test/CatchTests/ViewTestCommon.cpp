@@ -227,6 +227,7 @@ auto CheckViewUnchanged(DisplayEinkET013TT1 &display, std::string key) -> ViewTe
             std::filesystem::path(result.acceptedImagePath).parent_path());
         std::filesystem::copy(result.renderedImagePath, result.acceptedImagePath,
                               std::filesystem::copy_options::overwrite_existing);
+        result.passed = true; // Mark as passed after accepting
 #endif
         return result;
     };
@@ -273,6 +274,7 @@ auto CheckViewUnchanged(DisplayEinkET013TT1 &display, std::string key) -> ViewTe
             std::filesystem::path(result.acceptedImagePath).parent_path());
         std::filesystem::copy(result.renderedImagePath, result.acceptedImagePath,
                               std::filesystem::copy_options::overwrite_existing);
+        result.passed = true; // Mark as passed after accepting
 #endif
     } else {
         // Delete generated image files for passing tests

@@ -39,10 +39,9 @@ struct KindlePageResponse : public JsonSerializable {
     SpiramString dialogText;
     bool alreadyOpen = false;
     SpiramString bookSessionKey;
-    // For table of contents navigation
-    SpiramString text;
-    int navigateTo = -1;
-    int previewTo = -1;
+    SpiramString error;             // Error type (e.g., "session_key_mismatch")
+    SpiramString currentSessionKey; // New session key from server on mismatch
+    int currentPosition = 0;        // Current position from server on mismatch
 
     auto fromJson(const JsonObject &json) -> bool override {
         if (json.containsKey("success")) {
@@ -88,6 +87,18 @@ struct KindlePageResponse : public JsonSerializable {
 
         if (json.containsKey("book_session_key")) {
             bookSessionKey = json["book_session_key"].as<std::string>();
+        }
+
+        if (json.containsKey("error")) {
+            error = json["error"].as<std::string>();
+        }
+
+        if (json.containsKey("current_session_key")) {
+            currentSessionKey = json["current_session_key"].as<std::string>();
+        }
+
+        if (json.containsKey("current_position")) {
+            currentPosition = json["current_position"];
         }
 
         return true;

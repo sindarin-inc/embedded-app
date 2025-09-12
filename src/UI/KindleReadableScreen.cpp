@@ -288,6 +288,17 @@ void KindleReadableScreen::begin() {
     };
 
     // Start connection process
+#if TESTS
+    // In test mode, run connection synchronously to avoid race conditions
+    log_d("TEST MODE: Running connection synchronously");
+    std::string errorMessage;
+    connectionStartTime_ = esp_timer_get_time();
+    bool connected = connectToNetwork(errorMessage, initialConnectionCallback);
+
+    if (!connected && !errorMessage.empty()) {
+        setErrorMessage(errorMessage);
+    }
+#else
     DispatchGetCore0BackgroundQueue()->dispatch([this, initialConnectionCallback, cancelFlag]() {
         std::string errorMessage;
         // Record connection start time for kindle-connect elapsed_ms tracking
@@ -304,6 +315,7 @@ void KindleReadableScreen::begin() {
             });
         }
     });
+#endif
 }
 
 auto KindleReadableScreen::layout(LayoutContext &context, SolSize size) -> SolSize {
@@ -766,10 +778,6 @@ void KindleReadableScreen::navigateNext() {
         // Record navigation start time
         navigationStartTime_ = esp_timer_get_time();
 
-        // Update current place to the position we just rendered to
-        // This ensures the page flipper knows our actual position
-        currentPlace_ = newPlace_;
-
         // Log telemetry for showing loading screen during page turn
         telemetry_.logMetric(
             TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
@@ -809,7 +817,7 @@ void KindleReadableScreen::navigateNext() {
     setNeedsRerender();
 
     // Notify page flipper of our new position after successful local navigation
-    onPositionChanged();
+    pageFlipper_.updatePlace(currentPlace_);
 }
 
 void KindleReadableScreen::navigatePrevious() {
@@ -833,7 +841,7 @@ void KindleReadableScreen::navigatePrevious() {
     setNeedsRerender();
 
     // Notify page flipper of our new position after successful local navigation
-    onPositionChanged();
+    pageFlipper_.updatePlace(currentPlace_);
 }
 
 void KindleReadableScreen::dismissScreen() {
@@ -1109,20 +1117,6 @@ void KindleReadableScreen::scheduleDelayedLoadingMessage() {
     log_i("Scheduled delayed loading message for 30 seconds");
 }
 
-void KindleReadableScreen::onPositionChanged() {
-    // Only update the page flipper if we're not in a loading state
-    // (loading states will handle their own updatePlace calls)
-    if (state_ != State::LOADING_CONTENT && state_ != State::LOADING_INITIAL_CONTENT) {
-        // We should always use currentPlace_ here since this is called after navigation
-        // when currentPlace_ has been updated to the new position
-        if (!currentPlace_) {
-            return;
-        }
-
-        pageFlipper_.updatePlace(currentPlace_);
-    }
-}
-
 void KindleReadableScreen::cancelDelayedLoadingMessage() {
     if (delayedMessageTimer_ != nullptr) {
         xTimerStop(delayedMessageTimer_, 0);
@@ -1327,7 +1321,7 @@ void KindleReadableScreen::attemptReconnection() {
                         render(display_);
 
                         // Notify page flipper of position after reconnection
-                        onPositionChanged();
+                        pageFlipper_.updatePlace(currentPlace_);
                     }
                 });
             }
@@ -1442,7 +1436,7 @@ void KindleReadableScreen::updatePageFlipperCallbacks() {
                 render(display_);
 
                 // Notify page flipper of initial position after content loads
-                onPositionChanged();
+                pageFlipper_.updatePlace(currentPlace_);
 
 #ifdef DEBUG_KINDLE_RECONNECTION
                 scheduleTestDisconnect();

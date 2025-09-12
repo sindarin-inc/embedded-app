@@ -26,54 +26,54 @@ KindlePageFlipper::KindlePageFlipper(const std::shared_ptr<KindleBook> &kindleBo
 }
 
 auto KindlePageFlipper::checkForError(int httpCode, std::shared_ptr<KindlePageResponse> &response)
-    -> std::string {
+    -> KindleError {
     if (httpCode == 200 && response->success && response->authenticated) {
-        return "";
+        return {KindleErrorType::None, ""};
     }
 
     // Check for authentication failure in response
     if ((httpCode == 200 || httpCode == 401) && !response->authenticated) {
         // When authenticated: false and we have kindle.json, use the message from response
-        if (!response->message.empty()) {
-            return std::string(response->message);
-        }
-        return "Your Kindle session has expired. Please try signing in on the mobile app again.";
+        std::string message =
+            !response->message.empty()
+                ? std::string(response->message)
+                : "Your Kindle session has expired. Please try signing in on the mobile app again.";
+        return {KindleErrorType::AuthenticationError, message};
     }
 
     // Check for connection issues
     if (httpCode <= 0) {
-        return "CONNECTION_ERROR"; // Special marker for connection issues that should be retried
+        return {KindleErrorType::ConnectionError, "Network connection error"};
     } else if (httpCode == 401 || httpCode == 403) {
-        return "Your Kindle session has expired. Please try signing in on the mobile app again.";
+        return {KindleErrorType::AuthenticationError,
+                "Your Kindle session has expired. Please try signing in on the mobile app again."};
     } else if (httpCode == 404) {
-        return "Book or page not found in your Kindle library.";
+        return {KindleErrorType::NotFoundError, "Book or page not found in your Kindle library."};
     } else if (httpCode >= 400 && httpCode < 500) {
         // Use server's error message if available
-        if (!response->message.empty()) {
-            return std::string(response->message);
-        }
-        return "Request error. Please check your settings.";
+        std::string message = !response->message.empty()
+                                  ? std::string(response->message)
+                                  : "Request error. Please check your settings.";
+        return {KindleErrorType::ClientError, message};
     } else if (httpCode >= 500) {
         // Use server's error message if available
-        if (!response->message.empty()) {
-            return std::string(response->message);
-        }
-        return "Server error. Please try again later.";
+        std::string message = !response->message.empty() ? std::string(response->message)
+                                                         : "Server error. Please try again later.";
+        return {KindleErrorType::ServerError, message};
     } else {
         // Use server's error message if available
-        if (!response->message.empty()) {
-            return std::string(response->message);
-        }
-        return "Failed to load book content.";
+        std::string message = !response->message.empty() ? std::string(response->message)
+                                                         : "Failed to load book content.";
+        return {KindleErrorType::UnknownError, message};
     }
 }
 
 auto KindlePageFlipper::navigateWithRetry(int navigateTo, int previewTo,
                                           std::shared_ptr<KindlePageResponse> &response,
                                           const std::shared_ptr<CancelFlag> &cancelFlag,
-                                          int maxRetries) -> std::string {
+                                          int maxRetries) -> KindleError {
     int retryCount = 0;
-    std::string errorMessage;
+    KindleError error;
     int httpCode = 0;
     int64_t startTime = esp_timer_get_time();
 
@@ -104,18 +104,55 @@ auto KindlePageFlipper::navigateWithRetry(int navigateTo, int previewTo,
                                                               previewTo, bookSessionKey_);
 
         if (CancelFlag::isCancelled(cancelFlag)) {
-            return ""; // Caller must check cancelFlag separately
+            return {KindleErrorType::None, ""}; // Caller must check cancelFlag separately
         }
 
-        // Update the book session key if we got a new one
-        if (!response->bookSessionKey.empty() && response->bookSessionKey != bookSessionKey_) {
-            bookSessionKey_ = response->bookSessionKey;
-            log_i("Updated book_session_key: %s", bookSessionKey_.c_str());
+        // Check for session key mismatch error BEFORE general error checking
+        if (httpCode == 400 && response->error == "session_key_mismatch") {
+            // Create a SessionKeyMismatch error
+            error = {KindleErrorType::SessionKeyMismatch, std::string(response->message)};
+
+            // Handle the session key update and position reset
+            // The server provides the correct session key in the current_session_key field
+            if (!response->currentSessionKey.empty()) {
+                log_w("Session key mismatch detected. Resetting position and retrying with new "
+                      "session key");
+                bookSessionKey_ = response->currentSessionKey;
+                log_i("Updated book_session_key from mismatch response: %s",
+                      bookSessionKey_.c_str());
+
+                // Reset our tracking since server has reset to position 0
+                lastNavigatedPage_ = 0;
+                lastPreviewedPage_ = 0;
+
+                // Clear the page stream to reflect the reset
+                pageStream_->clear();
+
+                // Log telemetry for session key mismatch
+                telemetry_.logMetric(TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
+                                     {{"event", std::string("book-navigate")},
+                                      {"action", std::string("session-key-mismatch")},
+                                      {"kindle", true},
+                                      {"navigate_to", navigateTo},
+                                      {"retry_attempt", retryCount + 1}});
+
+                // Since this is a retryable error, let the retry logic below handle it
+            } else {
+                log_e("Session key mismatch but no new session key provided");
+                return {KindleErrorType::ClientError, "Session out of sync with server"};
+            }
+        } else {
+            // Update the book session key if we got a new one (normal case)
+            if (!response->bookSessionKey.empty() && response->bookSessionKey != bookSessionKey_) {
+                bookSessionKey_ = response->bookSessionKey;
+                log_i("Updated book_session_key: %s", bookSessionKey_.c_str());
+            }
+
+            // Check for other errors
+            error = checkForError(httpCode, response);
         }
 
-        errorMessage = checkForError(httpCode, response);
-
-        if (errorMessage.empty()) {
+        if (!error.hasError()) {
             if (retryCount > 0) {
                 log_i("Navigation request succeeded after %d retries", retryCount);
                 // Log success after retry
@@ -135,16 +172,13 @@ auto KindlePageFlipper::navigateWithRetry(int navigateTo, int previewTo,
                 telemetry_.logMetric(TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
                                      successTelemetryData);
             }
-            return ""; // Success
+            return error; // Success
         }
 
         // Check if this is a retryable error
-        bool isRetryable = (errorMessage == "CONNECTION_ERROR" || errorMessage == "TIMEOUT" ||
-                            httpCode == 0 || httpCode >= 500);
-
-        if (!isRetryable) {
-            log_e("Non-retryable error: %s (HTTP %d)", errorMessage.c_str(), httpCode);
-            return errorMessage;
+        if (!error.isRetryable()) {
+            log_e("Non-retryable error: %s (HTTP %d)", error.message.c_str(), httpCode);
+            return error;
         }
 
         // Log telemetry for retryable error
@@ -155,7 +189,7 @@ auto KindlePageFlipper::navigateWithRetry(int navigateTo, int previewTo,
             {"navigate_to", navigateTo},
             {"retry_attempt", retryCount + 1},
             {"http_code", httpCode},
-            {"error", errorMessage},
+            {"error", error.message},
             {"will_retry", retryCount + 1 < maxRetries},
             {"attempt_elapsed_ms",
              static_cast<int>((esp_timer_get_time() - attemptStartTime) / 1000)}};
@@ -169,20 +203,20 @@ auto KindlePageFlipper::navigateWithRetry(int navigateTo, int previewTo,
         if (retryCount < maxRetries) {
             int delayMs = 1000 * retryCount; // Exponential backoff
             log_w("Retryable error: %s (HTTP %d). Waiting %dms before retry...",
-                  errorMessage.c_str(), httpCode, delayMs);
+                  error.message.c_str(), httpCode, delayMs);
             vTaskDelay(pdMS_TO_TICKS(delayMs));
         }
     }
 
-    log_e("Navigation request failed after %d attempts: %s", maxRetries, errorMessage.c_str());
-    return errorMessage;
+    log_e("Navigation request failed after %d attempts: %s", maxRetries, error.message.c_str());
+    return error;
 }
 
 auto KindlePageFlipper::openBookWithRetry(std::shared_ptr<KindlePageResponse> &response,
                                           const std::shared_ptr<CancelFlag> &cancelFlag,
-                                          int maxRetries) -> std::string {
+                                          int maxRetries) -> KindleError {
     int retryCount = 0;
-    std::string errorMessage;
+    KindleError error;
     int httpCode = 0;
     int64_t startTime = esp_timer_get_time();
 
@@ -207,7 +241,7 @@ auto KindlePageFlipper::openBookWithRetry(std::shared_ptr<KindlePageResponse> &r
                                                               cancelFlag, useBle_);
 
         if (CancelFlag::isCancelled(cancelFlag)) {
-            return ""; // Caller must check cancelFlag separately
+            return {KindleErrorType::None, ""}; // Caller must check cancelFlag separately
         }
 
         // Update the book session key if we got a new one
@@ -216,9 +250,9 @@ auto KindlePageFlipper::openBookWithRetry(std::shared_ptr<KindlePageResponse> &r
             log_i("Updated book_session_key: %s", bookSessionKey_.c_str());
         }
 
-        errorMessage = checkForError(httpCode, response);
+        error = checkForError(httpCode, response);
 
-        if (errorMessage.empty()) {
+        if (!error.hasError()) {
             if (retryCount > 0) {
                 log_i("Open book request succeeded after %d retries", retryCount);
                 // Log success after retry
@@ -233,16 +267,13 @@ auto KindlePageFlipper::openBookWithRetry(std::shared_ptr<KindlePageResponse> &r
                      {"total_elapsed_ms",
                       static_cast<int>((esp_timer_get_time() - startTime) / 1000)}});
             }
-            return ""; // Success
+            return error; // Success
         }
 
         // Check if this is a retryable error
-        bool isRetryable = (errorMessage == "CONNECTION_ERROR" || errorMessage == "TIMEOUT" ||
-                            httpCode == 0 || httpCode >= 500);
-
-        if (!isRetryable) {
-            log_e("Non-retryable error: %s (HTTP %d)", errorMessage.c_str(), httpCode);
-            return errorMessage;
+        if (!error.isRetryable()) {
+            log_e("Non-retryable error: %s (HTTP %d)", error.message.c_str(), httpCode);
+            return error;
         }
 
         // Log telemetry for retryable error
@@ -253,7 +284,7 @@ auto KindlePageFlipper::openBookWithRetry(std::shared_ptr<KindlePageResponse> &r
              {"kindle", true},
              {"retry_attempt", retryCount + 1},
              {"http_code", httpCode},
-             {"error", errorMessage},
+             {"error", error.message},
              {"will_retry", retryCount + 1 < maxRetries},
              {"attempt_elapsed_ms",
               static_cast<int>((esp_timer_get_time() - attemptStartTime) / 1000)}});
@@ -262,13 +293,67 @@ auto KindlePageFlipper::openBookWithRetry(std::shared_ptr<KindlePageResponse> &r
         if (retryCount < maxRetries) {
             int delayMs = 1000 * retryCount; // Exponential backoff
             log_w("Retryable error: %s (HTTP %d). Waiting %dms before retry...",
-                  errorMessage.c_str(), httpCode, delayMs);
+                  error.message.c_str(), httpCode, delayMs);
             vTaskDelay(pdMS_TO_TICKS(delayMs));
         }
     }
 
-    log_e("Open book request failed after %d attempts: %s", maxRetries, errorMessage.c_str());
-    return errorMessage;
+    log_e("Open book request failed after %d attempts: %s", maxRetries, error.message.c_str());
+    return error;
+}
+
+void KindlePageFlipper::fetchAdditionalPagesIfNeeded(
+    uint32_t currentOffset, int navigateTo, const std::shared_ptr<CancelFlag> &cancelFlag) {
+    // Continue fetching additional pages while buffer is low, up to 6 additional pages
+    const int maxAdditionalPages = 6;
+    int additionalPagesFetched = 0;
+    size_t bytesRemainingNow = pageStream_->getBytesRemainingFrom(currentOffset);
+
+    while (bytesRemainingNow < KINDLE_BUFFER_THRESHOLD_BYTES &&
+           additionalPagesFetched < maxAdditionalPages && !CancelFlag::isCancelled(cancelFlag)) {
+
+        int nextPreviewPage = lastPreviewedPage_ + 1;
+        log_i("→ Buffer low (%zu bytes), requesting page %d (additional page %d/%d)",
+              bytesRemainingNow, nextPreviewPage, additionalPagesFetched + 1, maxAdditionalPages);
+
+        auto nextResponse = std::make_shared<KindlePageResponse>();
+        auto nextError =
+            navigateWithRetry(navigateTo, nextPreviewPage, nextResponse, cancelFlag, 2);
+
+        if (CancelFlag::isCancelled(cancelFlag)) {
+            break;
+        }
+
+        if (!nextError.hasError() && !checkForLastReadDialog(nextResponse)) {
+            size_t nextOcrTextLength = nextResponse->ocrText.size();
+
+            if (nextOcrTextLength > 0) {
+                pageStream_->appendPageFromResponse(*nextResponse, nextPreviewPage);
+                lastPreviewedPage_ = nextPreviewPage;
+                bytesRemainingNow = pageStream_->getBytesRemainingFrom(currentOffset);
+                log_i("← Added page %d: +%zu bytes (buffer now: %zu bytes)", nextPreviewPage,
+                      nextOcrTextLength, bytesRemainingNow);
+                additionalPagesFetched++;
+
+                // Notify UI that we have more content available after each page fetch
+                if (gotContentFunction_) {
+                    gotContentFunction_(pageStream_->getOcrTextLength());
+                }
+            } else {
+                log_i("Received empty preview page %d - may be at end of book", nextPreviewPage);
+                break; // Stop fetching if we get an empty page
+            }
+        } else if (nextError.hasError()) {
+            log_w("Failed to load additional preview page %d: %s", nextPreviewPage,
+                  nextError.message.c_str());
+            break; // Stop fetching on error
+        }
+    }
+
+    if (additionalPagesFetched > 0) {
+        log_i("Fetched %d additional pages, buffer now: %zu bytes", additionalPagesFetched,
+              bytesRemainingNow);
+    }
 }
 
 auto KindlePageFlipper::checkForLastReadDialog(const std::shared_ptr<KindlePageResponse> &response)
@@ -307,25 +392,25 @@ void KindlePageFlipper::loadInitialPage() {
         // Create a response object
         auto response = std::make_shared<KindlePageResponse>();
 
-        auto errorMessage = openBookWithRetry(response, cancelFlag, 2);
+        auto error = openBookWithRetry(response, cancelFlag, 2);
         if (CancelFlag::isCancelled(cancelFlag)) {
             return;
         }
 
-        if (!errorMessage.empty()) {
-            log_w("Error loading initial page: %s", errorMessage.c_str());
+        if (error.hasError()) {
+            log_w("Error loading initial page: %s", error.message.c_str());
 
             int64_t elapsedMs = (esp_timer_get_time() - bookOpenStartTime) / 1000;
             telemetry_.logMetric(TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
                                  {{"event", std::string("book-open")},
                                   {"action", std::string("open-failed")},
                                   {"kindle", true},
-                                  {"error", errorMessage},
+                                  {"error", error.message},
                                   {"elapsed_ms", static_cast<int>(elapsedMs)}});
 
             // Only propagate non-connection errors
-            if (errorMessage != "CONNECTION_ERROR") {
-                onErrorFunction_(errorMessage);
+            if (!error.isConnectionError()) {
+                onErrorFunction_(error.message);
             } else {
                 log_i("Network connection issue detected, initiating reconnection");
                 if (onConnectionErrorFunction_) {
@@ -347,6 +432,8 @@ void KindlePageFlipper::loadInitialPage() {
             ocrTextLength = response->ocrText.size();
 
             pageStream_->appendPageFromResponse(*response, 0);
+            // Update both navigation and preview state since open-book gives us page 0
+            lastNavigatedPage_ = 0;
             lastPreviewedPage_ = 0;
         }
 
@@ -360,8 +447,14 @@ void KindlePageFlipper::loadInitialPage() {
                               {"has_dialog", hasDialog},
                               {"elapsed_ms", static_cast<int>(elapsedMs)}});
 
+        // Notify UI that initial content is ready to display
         if (gotContentFunction_) {
             gotContentFunction_(ocrTextLength);
+        }
+
+        // Now fetch additional pages in the background if needed
+        if (!hasDialog && ocrTextLength > 0) {
+            fetchAdditionalPagesIfNeeded(0, 0, cancelFlag);
         }
     });
 }
@@ -376,12 +469,14 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place) {
             return;
         }
 
-        if (serverSyncPlace_ == nullptr) {
-            // First time we're setting the place
-            serverSyncPlace_ = std::dynamic_pointer_cast<TxtPlace>(place);
+        if (lastServerSyncPlace_ == nullptr) {
+            lastServerSyncPlace_ = std::dynamic_pointer_cast<TxtPlace>(place);
+        }
+        if (lastRenderedPlace_ == nullptr) {
+            lastRenderedPlace_ = std::dynamic_pointer_cast<TxtPlace>(place);
         }
 
-        log_i("Updating place from %s to %s", serverSyncPlace_->str().c_str(),
+        log_i("Updating place from %s to %s", lastServerSyncPlace_->str().c_str(),
               place->str().c_str());
 
         // Calculate buffer state
@@ -415,17 +510,17 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place) {
               serverPageForCurrentOffset);
 
         if (!shouldMakeRequest) {
-            // Update sync position and call callback when navigating with cached content
+            // Update rendered position and call callback when navigating with cached content
             auto currentOffset = place->getOffset();
-            auto previousOffset = serverSyncPlace_ ? serverSyncPlace_->getOffset() : 0;
+            auto previousOffset = lastRenderedPlace_ ? lastRenderedPlace_->getOffset() : 0;
 
             log_d("Checking cached navigation callback: currentOffset=%u, previousOffset=%u, "
-                  "gotContentFunction_=%p",
+                  "gotContentFunction_=%s",
                   (unsigned int)currentOffset, (unsigned int)previousOffset,
-                  gotContentFunction_ ? (void *)1 : nullptr);
+                  gotContentFunction_ ? "set" : "null");
             if (currentOffset != previousOffset) {
-                // Update server sync position even when using cached content
-                serverSyncPlace_ = std::dynamic_pointer_cast<TxtPlace>(place);
+                // Update rendered position when using cached content
+                lastRenderedPlace_ = std::dynamic_pointer_cast<TxtPlace>(place);
 
                 if (gotContentFunction_) {
                     size_t contentLength = pageStream_->getOcrTextLength();
@@ -461,14 +556,14 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place) {
                              beginTelemetryData);
 
         auto response = std::make_shared<KindlePageResponse>();
-        auto errorMessage =
+        auto error =
             navigateWithRetry(navigateTo, needMoreBuffer ? previewTo : -1, response, cancelFlag);
 
         if (CancelFlag::isCancelled(cancelFlag)) {
             return;
         }
 
-        if (!errorMessage.empty()) {
+        if (error.hasError()) {
 
             int64_t elapsedMs = (esp_timer_get_time() - navigationStartTime) / 1000;
             auto failedTelemetryData = std::unordered_map<std::string, TelemetryVariant>{
@@ -477,7 +572,7 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place) {
                 {"kindle", true},
                 {"navigate_to", navigateTo},
                 {"po", static_cast<int>(place->getOffset())},
-                {"error", errorMessage},
+                {"error", error.message},
                 {"elapsed_ms", static_cast<int>(elapsedMs)}};
             if (needMoreBuffer) {
                 failedTelemetryData["preview_to"] = previewTo;
@@ -486,8 +581,8 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place) {
                                  failedTelemetryData);
 
             // Only propagate non-connection errors
-            if (errorMessage != "CONNECTION_ERROR") {
-                onErrorFunction_(errorMessage);
+            if (!error.isConnectionError()) {
+                onErrorFunction_(error.message);
             } else {
                 log_e("Network connection issue detected while navigating, initiating "
                       "reconnection");
@@ -513,42 +608,8 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place) {
                 log_i("← Added page %d: +%zu bytes (buffer now: %zu bytes)", serverPageNumber,
                       ocrTextLength, pageStream_->getBytesRemainingFrom(currentOffset));
 
-                // Check if we need one more preview page after successfully appending this one
-                // Only request one additional page at a time to avoid complexity
-                size_t bytesRemainingNow = pageStream_->getBytesRemainingFrom(currentOffset);
-
-                if (bytesRemainingNow < KINDLE_BUFFER_THRESHOLD_BYTES) {
-                    // We need one more preview page - request the next page
-                    int nextPreviewPage = lastPreviewedPage_ + 1;
-                    log_i("→ Buffer low (%zu bytes), requesting page %d", bytesRemainingNow,
-                          nextPreviewPage);
-
-                    // Make one additional preview request (navigate_to stays the same)
-                    auto nextResponse = std::make_shared<KindlePageResponse>();
-                    auto nextErrorMessage =
-                        navigateWithRetry(navigateTo, nextPreviewPage, nextResponse, cancelFlag, 2);
-
-                    if (!CancelFlag::isCancelled(cancelFlag)) {
-                        if (nextErrorMessage.empty() && !checkForLastReadDialog(nextResponse)) {
-                            size_t nextOcrTextLength = nextResponse->ocrText.size();
-
-                            if (nextOcrTextLength > 0) {
-                                pageStream_->appendPageFromResponse(*nextResponse, nextPreviewPage);
-                                lastPreviewedPage_ = nextPreviewPage;
-                                ocrTextLength += nextOcrTextLength; // Add to total loaded
-                                log_i("← Added page %d: +%zu bytes (buffer now: %zu bytes)",
-                                      nextPreviewPage, nextOcrTextLength,
-                                      pageStream_->getBytesRemainingFrom(currentOffset));
-                            } else {
-                                log_i("Received empty preview page %d - may be at end of book",
-                                      nextPreviewPage);
-                            }
-                        } else if (!nextErrorMessage.empty()) {
-                            log_w("Failed to load additional preview page %d: %s", nextPreviewPage,
-                                  nextErrorMessage.c_str());
-                        }
-                    }
-                }
+                // Check if we need to fetch additional pages for short content
+                fetchAdditionalPagesIfNeeded(currentOffset, navigateTo, cancelFlag);
             }
             // Update the last navigated page to reflect what we told the server
             lastNavigatedPage_ = navigateTo;
@@ -574,9 +635,10 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place) {
             gotContentFunction_(ocrTextLength);
         }
 
-        // Update server sync position after successful navigation
-        // We track the actual navigation position, not the preview position
-        // This ensures we properly track what page the server thinks we're on
-        serverSyncPlace_ = std::dynamic_pointer_cast<TxtPlace>(place);
+        // Update both positions after successful navigation
+        // lastServerSyncPlace_ tracks what the server knows
+        // lastRenderedPlace_ tracks what we've displayed to the user
+        lastServerSyncPlace_ = std::dynamic_pointer_cast<TxtPlace>(place);
+        lastRenderedPlace_ = std::dynamic_pointer_cast<TxtPlace>(place);
     });
 }
