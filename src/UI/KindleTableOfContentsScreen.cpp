@@ -173,7 +173,7 @@ void KindleTableOfContentsScreen::populateMenuItems() {
 
     for (const auto &chapter : chapters_) {
         std::string displayText = chapter.title;
-        if (chapter.page > 0) {
+        if (chapter.page >= 0) {
             displayText += StringFormat(" (p. %d)", chapter.page);
         }
 
@@ -257,13 +257,14 @@ void KindleTableOfContentsScreen::drawInRect(SolRect rect) {
 }
 
 void KindleTableOfContentsScreen::render(DisplaySystem &display) {
+    setNeedsLayout();
+    setFrame(defaultFrameRect());
+
     // Clear display when transitioning from loading to displaying
     if (state_ == State::DISPLAYING && firstLoad_) {
         display.clearDisplay();
     }
 
-    setNeedsLayout();
-    setFrame(defaultFrameRect());
     draw();
 
     if (firstLoad_ || state_ != State::DISPLAYING) {
@@ -298,8 +299,6 @@ void KindleTableOfContentsScreen::processCommand(RemoteCommand command) {
         break;
     case RemoteCommand::BACK:
     case RemoteCommand::LEFT:
-        firstLoad_ = true;
-        setNeedsRerender();
         back();
         break;
     default:

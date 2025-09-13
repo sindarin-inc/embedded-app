@@ -916,7 +916,6 @@ void KindleReadableScreen::showTableOfContents() {
         loadingMessageView_.setText("Navigating to chapter...");
         setNeedsLayout();
         setNeedsRerender();
-        render(display_);
 
         // Navigate to the chapter
         DispatchGetCore0BackgroundQueue()->dispatch([this, chapterUuid, currentPage]() {
@@ -952,7 +951,7 @@ void KindleReadableScreen::showTableOfContents() {
                         stream->clearAndSetContent(resp.text);
                     }
 
-                    // Reset navigation state
+                    // Reset navigation state to beginning of chapter
                     currentPlace_ = std::dynamic_pointer_cast<TxtPlace>(Place::factory(0));
                     newPlace_ = nullptr;
 
@@ -961,6 +960,10 @@ void KindleReadableScreen::showTableOfContents() {
                     renderer_.setCurrentPlace(currentPlace_);
 
                     // Update page flipper state with new navigation values
+                    // Reset to page 0 since we're at the beginning of the chapter
+                    pageFlipper_.setNavigateTo(0);
+                    pageFlipper_.setPreviewTo(0);
+
                     if (resp.navigateTo >= 0) {
                         pageFlipper_.setNavigateTo(resp.navigateTo);
                     }
@@ -976,6 +979,18 @@ void KindleReadableScreen::showTableOfContents() {
                     updateType_ = DisplaySystem::UpdateType::FULL;
                     setNeedsRerender();
                     render(display_);
+
+                    // Trigger the page flipper to check buffer and fetch additional pages
+                    if (stream) {
+                        size_t bytesRemaining = stream->getBytesRemainingFrom(0);
+                        if (bytesRemaining < 1500) {
+                            log_i("Buffer low after chapter navigation (%zu bytes), triggering "
+                                  "buffer fill",
+                                  bytesRemaining);
+                        }
+                        // Update the page flipper with current position to trigger buffer check
+                        pageFlipper_.updatePlace(currentPlace_);
+                    }
 
                     // Log telemetry for successful navigation
                     telemetry_.logMetric(
@@ -1013,6 +1028,13 @@ void KindleReadableScreen::showTableOfContents() {
                 }
             });
         });
+    });
+
+    // Set the back callback to dismiss the TOC screen
+    tocScreen->setBackCallback([this]() {
+        setCurrentScreen(nullptr);
+        updateType_ = DisplaySystem::UpdateType::PARTIAL;
+        setNeedsRerender();
     });
 
     // Show the TOC screen
