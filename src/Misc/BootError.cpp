@@ -23,13 +23,6 @@ void BlinkBootErrors(const std::vector<BootError> &bootErrors) {
     // TODO: How to cross-platfomr this?
     if (bootErrors.empty()) {
         log_i("Error-free boot!");
-        DispatchGetCore0BackgroundQueue()->dispatch([]() {
-#if CONFIG_GREEN_LED != -1
-            DigitalWrite(CONFIG_GREEN_LED, LED_ON);
-            Delay(100);
-            DigitalWrite(CONFIG_GREEN_LED, LED_OFF);
-#endif
-        });
     } else {
         for (BootError error : bootErrors) {
             log_e("Blinking error code %d for %s", error.type, error.string().c_str());
