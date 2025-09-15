@@ -3,6 +3,7 @@
 #if CONFIG_USE_WIFI
 
 #include "sindarin-debug.h"
+#include "Version.hpp"
 
 // Ignore warnings about deprecated OpenSSL stuff
 #pragma clang diagnostic push
@@ -30,6 +31,10 @@ public:
         if (!client->is_valid()) {
             log_e("Invalid client");
         }
+
+        // Set User-Agent header to include SolReader and firmware version
+        std::string userAgent = std::string("SolReader/") + SemanticVersionString() + " (cpp-httplib/0.13.3)";
+        headers.insert(std::pair<std::string, std::string>("User-Agent", userAgent));
 
         // Check for HTTP_PROXY environment variable to enable Charles.app or other proxies
         const char *httpProxy = std::getenv("HTTP_PROXY");
