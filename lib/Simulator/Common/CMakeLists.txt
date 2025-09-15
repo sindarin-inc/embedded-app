@@ -121,20 +121,6 @@ if(ENABLE_WIFI)
     )
 endif()
 
-# Get Git version dynamically
-execute_process(
-    COMMAND git describe --tags --long --dirty --always
-    WORKING_DIRECTORY ${REPO_ROOT_DIR}
-    OUTPUT_VARIABLE GIT_VERSION_OUTPUT
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-    ERROR_QUIET
-)
-
-# Fallback if git command fails
-if(NOT GIT_VERSION_OUTPUT)
-    set(GIT_VERSION_OUTPUT "release/v1.0.0-3-geea60cbf-dirt")
-endif()
-
 target_compile_definitions(${PROJECT_NAME} PUBLIC
     SIMULATOR=1
     CONFIG_USE_TURN_TOUCH_REMOTE=0
@@ -154,7 +140,7 @@ target_compile_definitions(${PROJECT_NAME} PUBLIC
     CONFIG_LINES_SIZE=36
     CONFIG_FACTORY_RESET_BUTTON_PIN=-1
     ENABLE_OTA=0
-    GIT_VERSION=\"${GIT_VERSION_OUTPUT}\"
+    GIT_VERSION=\"release/v1.0.0-3-geea60cbf-dirt\"
     DISABLE_LOW_VOLTAGE_HALT=1
     CONFIG_DISABLE_POWER_MANAGEMENT=1
     RTC_SLOW_ATTR=
