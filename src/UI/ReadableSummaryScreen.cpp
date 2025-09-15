@@ -40,7 +40,7 @@ void ReadableSummaryScreen::setPlaceInReadable(std::shared_ptr<EPubPlace> placeI
 }
 
 auto ReadableSummaryScreen::checkAtEnd() -> bool {
-    return (newPlace_ == nullptr) || newPlace_->getOffset() == 0;
+    return (newPlace_ == nullptr) || renderer_.atEndOfFile();
 }
 
 void ReadableSummaryScreen::render(DisplaySystem &display) {

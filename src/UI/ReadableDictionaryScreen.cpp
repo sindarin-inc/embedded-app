@@ -32,7 +32,7 @@ void ReadableDictionaryScreen::setPlaceInReadable(std::shared_ptr<EPubPlace> pla
 }
 
 auto ReadableDictionaryScreen::checkAtEnd() -> bool {
-    return (newPlace_ == nullptr) || newPlace_->getOffset() == 0;
+    return (newPlace_ == nullptr) || renderer_.atEndOfFile();
 }
 
 void ReadableDictionaryScreen::render(DisplaySystem &display) {
