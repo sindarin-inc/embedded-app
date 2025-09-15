@@ -46,22 +46,7 @@ target_include_directories(${PROJECT_NAME}
     "${REPO_ROOT_DIR}/src"
 )
 
-# Get Git version dynamically
-execute_process(
-    COMMAND git describe --tags --long --dirty --always
-    WORKING_DIRECTORY ${REPO_ROOT_DIR}
-    OUTPUT_VARIABLE GIT_VERSION_OUTPUT
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-    ERROR_QUIET
-)
-
-# Fallback if git command fails
-if(NOT GIT_VERSION_OUTPUT)
-    set(GIT_VERSION_OUTPUT "release/v1.0.0-3-geea60cbf-dirt")
-endif()
-
 target_compile_definitions(${PROJECT_NAME}
     PRIVATE
     SIMULATOR=1
-    GIT_VERSION=\"${GIT_VERSION_OUTPUT}\"
 )
