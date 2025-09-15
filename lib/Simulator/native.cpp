@@ -336,9 +336,8 @@ auto main(int argc, char *argv[]) -> int {
     // Pre-initialize PreferencesStore to point to simprefs.ini
     prefs.begin("simprefs.ini");
 
-    // Start simulator automation (always enabled)
+    // Start simulator automation
     SimulatorAutomation::getInstance().start();
-    log_i("Simulator automation enabled");
 
     // Start the FreeRTOS scheduler
     std::thread schedulerThread([]() {

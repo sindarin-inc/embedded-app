@@ -85,6 +85,7 @@ When a book is open:
 - The test framework automatically updates accepted screenshots when they change
 
 ## Build Commands
+- Run simulator: `make sim` (automation socket is automatically created at `./sol_simulator_automation.sock`)
 - Build for device: `. $IDF_PATH/export.sh && make build`
   - Always run these together in a single command
   - The export.sh sets up the ESP-IDF environment which is required for building
