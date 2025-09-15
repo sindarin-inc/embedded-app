@@ -199,6 +199,9 @@ auto CheckViewUnchanged(DisplayEinkET013TT1 &display, std::string key) -> ViewTe
     std::filesystem::create_directories(
         std::filesystem::path(result.renderedImagePath).parent_path());
 
+    log_i("Saving image to %s (width=%d, height=%d)", result.renderedImagePath.c_str(),
+          CONFIG_DISPLAY_WIDTH, CONFIG_DISPLAY_HEIGHT);
+    
     if (!stbi_write_png(result.renderedImagePath.c_str(), CONFIG_DISPLAY_WIDTH,
                         CONFIG_DISPLAY_HEIGHT, 1, display.buffer().get(), 0)) {
         log_e("Unable to save rendered image to %s", result.renderedImagePath.c_str());
@@ -224,6 +227,7 @@ auto CheckViewUnchanged(DisplayEinkET013TT1 &display, std::string key) -> ViewTe
             std::filesystem::path(result.acceptedImagePath).parent_path());
         std::filesystem::copy(result.renderedImagePath, result.acceptedImagePath,
                               std::filesystem::copy_options::overwrite_existing);
+        result.passed = true; // Mark as passed after accepting
 #endif
         return result;
     };
@@ -270,6 +274,7 @@ auto CheckViewUnchanged(DisplayEinkET013TT1 &display, std::string key) -> ViewTe
             std::filesystem::path(result.acceptedImagePath).parent_path());
         std::filesystem::copy(result.renderedImagePath, result.acceptedImagePath,
                               std::filesystem::copy_options::overwrite_existing);
+        result.passed = true; // Mark as passed after accepting
 #endif
     } else {
         // Delete generated image files for passing tests

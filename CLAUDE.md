@@ -1,5 +1,8 @@
 # Sol Reader Embedded App - Development Guide
 
+## Tips
+- **Visual Test Generation**: When tests use `ASSERT_VIEW_UNCHANGED`, they automatically generate accepted images on first run if they don't exist. The test will fail initially and show you the copy command to create the accepted image from the generated TestRun image.
+
 ## Test Screenshots
 - Never copy TestRun images to Accepted folder - the test runner auto-accepts them when tests fail
 - The test framework automatically updates accepted screenshots when they change
@@ -12,10 +15,17 @@
 - Monitor serial logs: `make monitor`
 - Run simulator: `make sim` (or `make sim8`, `make sim16`, `make sim24` for different display modes)
   - No need to run export.sh for simulator
+  - Simulator output is logged to `logs/sim.log` (or `logs/sim8.log`, `logs/sim16.log`, `logs/sim24.log`)
+  - Watch logs in real-time: `tail -f logs/sim.log`
+  - Log file is cleared on each run
 - Run tests: `make test`
-- Run single test: `./test/CatchTests/build/tests '[test-tag]'` (e.g. `'[epub]'`, `'[content-sync]'`)
-- Format code: `make clang-format`
+- Build tests: `make test-build`
+- Run single test: `make test-build && ./test/CatchTests/build/tests '[test-tag]'` (e.g. `'[epub]'`, `'[content-sync]'`)
+  - Always rebuild before running tests to ensure changes are included
+- Format code: `make lint` (or `make clang-format`)
+  - **IMPORTANT**: Always run `. $IDF_PATH/export.sh && make lint` after making code changes
 - Static analysis: `make clang-tidy`
+- Full linting (format + static analysis): `make tidy` (can be slow)
 
 ## Code Style Guidelines
 - Format: Use clang-format with LLVM-based style (ColumnLimit: 100, IndentWidth: 4)

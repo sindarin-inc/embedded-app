@@ -279,6 +279,17 @@ void KindleReadableScreen::begin() {
     };
 
     // Start connection process
+#if TESTS
+    // In test mode, run connection synchronously to avoid race conditions
+    log_d("TEST MODE: Running connection synchronously");
+    std::string errorMessage;
+    connectionStartTime_ = esp_timer_get_time();
+    bool connected = connectToNetwork(errorMessage, initialConnectionCallback);
+
+    if (!connected && !errorMessage.empty()) {
+        setErrorMessage(errorMessage);
+    }
+#else
     DispatchGetCore0BackgroundQueue()->dispatch([this, initialConnectionCallback, cancelFlag]() {
         std::string errorMessage;
         // Record connection start time for kindle-connect elapsed_ms tracking
@@ -295,6 +306,7 @@ void KindleReadableScreen::begin() {
             });
         }
     });
+#endif
 }
 
 auto KindleReadableScreen::layout(LayoutContext &context, SolSize size) -> SolSize {
@@ -337,7 +349,6 @@ void KindleReadableScreen::drawInRect(SolRect rect) {
 
             setState(State::DISPLAY_PARTIAL_CONTENT);
         }
-        pageFlipper_.updatePlace(currentPlace_, atEndOfContent);
 
         // Log comprehensive buffer state for debugging
         uint32_t currentOffset = currentPlace_->getOffset();
@@ -758,6 +769,10 @@ void KindleReadableScreen::navigateNext() {
         loadingMessageView_.setText("Loading next page...");
         setNeedsLayout();
         setNeedsRerender();
+
+        // Trigger the page flipper to load more content from the current position
+        pageFlipper_.updatePlace(currentPlace_);
+
         return;
     }
 
@@ -779,6 +794,9 @@ void KindleReadableScreen::navigateNext() {
     updateType_ = prefs_.fastTransitions.get().value_or(false) ? DisplaySystem::UpdateType::PARTIAL
                                                                : DisplaySystem::UpdateType::FULL;
     setNeedsRerender();
+
+    // Notify page flipper of our new position after successful local navigation
+    pageFlipper_.updatePlace(currentPlace_);
 }
 
 void KindleReadableScreen::navigatePrevious() {
@@ -800,6 +818,9 @@ void KindleReadableScreen::navigatePrevious() {
     updateType_ = prefs_.fastTransitions.get().value_or(false) ? DisplaySystem::UpdateType::PARTIAL
                                                                : DisplaySystem::UpdateType::FULL;
     setNeedsRerender();
+
+    // Notify page flipper of our new position after successful local navigation
+    pageFlipper_.updatePlace(currentPlace_);
 }
 
 void KindleReadableScreen::dismissScreen() {
@@ -1131,7 +1152,7 @@ void KindleReadableScreen::attemptReconnection() {
                  {"ble", isUsingBleConnection_}});
 
             // Successfully reconnected, retry the operation
-            pageFlipper_.retryNetworkOperation(renderer_.atEndOfFile());
+            pageFlipper_.retryNetworkOperation();
 
             // Reset reconnection attempts on successful connection
             reconnectionAttempts_ = 0;
@@ -1145,6 +1166,9 @@ void KindleReadableScreen::attemptReconnection() {
                         setNeedsLayout();
                         setNeedsRerender();
                         render(display_);
+
+                        // Notify page flipper of position after reconnection
+                        pageFlipper_.updatePlace(currentPlace_);
                     }
                 });
             }
@@ -1257,6 +1281,9 @@ void KindleReadableScreen::updatePageFlipperCallbacks() {
                 setNeedsLayout();
                 setNeedsRerender();
                 render(display_);
+
+                // Notify page flipper of initial position after content loads
+                pageFlipper_.updatePlace(currentPlace_);
 
 #ifdef DEBUG_KINDLE_RECONNECTION
                 scheduleTestDisconnect();
