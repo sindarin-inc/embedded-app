@@ -6,6 +6,7 @@
 #include "Misc/Dispatch.hpp"
 #include "Misc/StringUtil.hpp"
 #include "Models/Json.hpp"
+#include "UI/Menu/MenuItemTOC.hpp"
 #include "sindarin-debug.h"
 
 KindleTableOfContentsScreen::KindleTableOfContentsScreen(
@@ -23,6 +24,7 @@ KindleTableOfContentsScreen::KindleTableOfContentsScreen(
     loadingMessageView_.setText("Loading table of contents...");
     loadingMessageView_.alignCenter = true;
     loadingMessageView_.dynamicWidth = false;
+    loadingMessageView_.setHidden(false); // Initially visible when loading
 
     errorMessageView_.setText("");
     errorMessageView_.alignCenter = true;
@@ -35,7 +37,25 @@ void KindleTableOfContentsScreen::begin() {
 }
 
 void KindleTableOfContentsScreen::setState(State newState) {
+    State oldState = state_;
     state_ = newState;
+
+    // Update visibility based on state
+    if (newState == State::DISPLAYING) {
+        loadingMessageView_.setHidden(true);
+        errorMessageView_.setHidden(true);
+        // Force full redraw when transitioning to DISPLAYING to clear any previous text
+        if (oldState != State::DISPLAYING) {
+            firstLoad_ = true;
+        }
+    } else if (newState == State::LOADING) {
+        loadingMessageView_.setHidden(false);
+        errorMessageView_.setHidden(true);
+    } else if (newState == State::ERROR) {
+        loadingMessageView_.setHidden(true);
+        errorMessageView_.setHidden(false);
+    }
+
     setNeedsLayout();
     setNeedsRerender();
 }
@@ -163,7 +183,6 @@ void KindleTableOfContentsScreen::handleTableOfContentsResponse(const std::strin
     } else {
         populateMenuItems();
         setState(State::DISPLAYING);
-        firstLoad_ = true; // Force full redraw to clear loading message
         render(display_);
     }
 }
@@ -172,19 +191,25 @@ void KindleTableOfContentsScreen::populateMenuItems() {
     menuView_.resetMenuItems();
 
     for (const auto &chapter : chapters_) {
-        std::string displayText = chapter.title;
-        if (chapter.page >= 0) {
-            displayText += StringFormat(" (p. %d)", chapter.page);
+        std::string pageText;
+        // Only show page numbers if they're valid (not -1)
+        if (chapter.page > 0) {
+            pageText = std::to_string(chapter.page);
         }
 
         auto chapterTitle = chapter.title; // Capture for lambda
         auto chapterUuid = chapter.uuid;
 
-        menuView_.addMenuItem(
-            std::make_shared<MenuItemSingleLine>(displayText, [this, chapterTitle, chapterUuid]() {
-                log_i("Selected chapter: %s (UUID: %s)", chapterTitle.c_str(), chapterUuid.c_str());
-                selectChapter();
-            }));
+        menuView_.addMenuItem(std::make_shared<MenuItemTOC>(chapter.title, pageText,
+                                                            [this, chapterTitle, chapterUuid]() {
+            log_i("Selected chapter: %s (UUID: %s)", chapterTitle.c_str(), chapterUuid.c_str());
+            selectChapter();
+        }));
+    }
+
+    // Ensure menu has a selected item
+    if (menuView_.getSelectedIndex() < 0 && !chapters_.empty()) {
+        menuView_.setSelectedIndex(0);
     }
 }
 
@@ -260,21 +285,26 @@ void KindleTableOfContentsScreen::render(DisplaySystem &display) {
     setNeedsLayout();
     setFrame(defaultFrameRect());
 
-    // Clear display when transitioning from loading to displaying
-    if (state_ == State::DISPLAYING && firstLoad_) {
+    // Clear and redraw completely when transitioning states or first load
+    if (firstLoad_) {
         display.clearDisplay();
-    }
-
-    draw();
-
-    if (firstLoad_ || state_ != State::DISPLAYING) {
+        draw();
         display.updateDisplay(DisplaySystem::UpdateType::FULL, false);
         firstLoad_ = false;
-    }
 
-    if (state_ == State::DISPLAYING) {
+        // For DISPLAYING state, immediately draw the selection indicator
+        if (state_ == State::DISPLAYING) {
+            menuView_.drawFastElements();
+            display.updateDisplay(DisplaySystem::UpdateType::FAST_INDICATOR);
+        }
+    } else if (state_ == State::DISPLAYING) {
+        // Subsequent updates - just update indicator
         menuView_.drawFastElements();
         display.updateDisplay(DisplaySystem::UpdateType::FAST_INDICATOR);
+    } else {
+        // Loading or error states
+        draw();
+        display.updateDisplay(DisplaySystem::UpdateType::FULL, false);
     }
 }
 
