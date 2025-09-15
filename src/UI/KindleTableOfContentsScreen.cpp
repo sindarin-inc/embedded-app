@@ -13,8 +13,8 @@ KindleTableOfContentsScreen::KindleTableOfContentsScreen(
     Telemetry &telemetry, KindlePageFlipper &pageFlipper, int currentPage,
     const std::shared_ptr<CancelFlag> &cancelFlag)
     : EinkView(display), kindleBook_(kindleBook), telemetry_(telemetry), pageFlipper_(pageFlipper),
-      currentPage_(currentPage), cancelFlag_(cancelFlag), menuView_(display),
-      backLabelView_(display, "Back"), loadingMessageView_(display, 5),
+      currentPage_(currentPage), cancelFlag_(cancelFlag), backgroundView_(display, 5),
+      menuView_(display), backLabelView_(display, "Back"), loadingMessageView_(display, 5),
       errorMessageView_(display, 5) {
 
     menuView_.padding = 1;
@@ -26,7 +26,6 @@ KindleTableOfContentsScreen::KindleTableOfContentsScreen(
 
     errorMessageView_.setText("");
     errorMessageView_.alignCenter = true;
-    errorMessageView_.setHidden(true);
 }
 
 void KindleTableOfContentsScreen::begin() {
@@ -70,7 +69,6 @@ void KindleTableOfContentsScreen::loadTableOfContents() {
             if (response.empty()) {
                 log_e("Failed to get table of contents");
                 errorMessageView_.setText("Failed to load table of contents");
-                errorMessageView_.setHidden(false);
                 setState(State::ERROR);
                 render(display_);
             } else {
@@ -91,7 +89,6 @@ void KindleTableOfContentsScreen::handleTableOfContentsResponse(const std::strin
     if (error) {
         log_e("Failed to parse table of contents response: %s", error.c_str());
         errorMessageView_.setText("Failed to parse table of contents");
-        errorMessageView_.setHidden(false);
         setState(State::ERROR);
         render(display_);
         return;
@@ -103,7 +100,6 @@ void KindleTableOfContentsScreen::handleTableOfContentsResponse(const std::strin
         const char *errorText = root["error"] | "Unknown error";
         log_e("Table of contents request failed: %s", errorText);
         errorMessageView_.setText(StringFormat("Error: %s", errorText));
-        errorMessageView_.setHidden(false);
         setState(State::ERROR);
         render(display_);
         return;
@@ -122,7 +118,6 @@ void KindleTableOfContentsScreen::handleTableOfContentsResponse(const std::strin
     if (!root.containsKey("chapters") || !root["chapters"].is<JsonArray>()) {
         log_e("No chapters array in response");
         errorMessageView_.setText("No chapters found");
-        errorMessageView_.setHidden(false);
         setState(State::ERROR);
         render(display_);
         return;
@@ -157,11 +152,11 @@ void KindleTableOfContentsScreen::handleTableOfContentsResponse(const std::strin
 
     if (chapters_.empty()) {
         errorMessageView_.setText("No chapters found");
-        errorMessageView_.setHidden(false);
         setState(State::ERROR);
         render(display_);
     } else {
         populateMenuItems();
+        // Don't use setHidden - just change state and let drawInRect handle what to draw
         setState(State::DISPLAYING);
         firstLoad_ = true; // Force full redraw to clear loading message
         render(display_);
@@ -222,6 +217,10 @@ void KindleTableOfContentsScreen::moveSelection(int delta) {
 
 auto KindleTableOfContentsScreen::layout(LayoutContext &context, SolSize size) -> SolSize {
     const auto inset = 2;
+    auto fullFrame = SolRect::fromSize(size);
+
+    // Always layout the background first to cover everything
+    context.setViewFrame(backgroundView_, fullFrame);
 
     if (state_ == State::LOADING || state_ == State::ERROR) {
         // Center the loading or error message
@@ -246,6 +245,11 @@ auto KindleTableOfContentsScreen::layout(LayoutContext &context, SolSize size) -
 }
 
 void KindleTableOfContentsScreen::drawInRect(SolRect rect) {
+    // Always draw background first to clear any previous content
+    backgroundView_.fillColor = display_.bg;
+    backgroundView_.strokeColor = display_.bg; // No visible border
+    backgroundView_.draw();
+
     if (state_ == State::LOADING) {
         loadingMessageView_.draw();
     } else if (state_ == State::ERROR) {
@@ -260,11 +264,6 @@ void KindleTableOfContentsScreen::render(DisplaySystem &display) {
     setNeedsLayout();
     setFrame(defaultFrameRect());
 
-    // Clear display when transitioning from loading to displaying
-    if (state_ == State::DISPLAYING && firstLoad_) {
-        display.clearDisplay();
-    }
-
     draw();
 
     if (firstLoad_ || state_ != State::DISPLAYING) {
@@ -272,6 +271,7 @@ void KindleTableOfContentsScreen::render(DisplaySystem &display) {
         firstLoad_ = false;
     }
 
+    // Always draw fast elements when displaying the menu
     if (state_ == State::DISPLAYING) {
         menuView_.drawFastElements();
         display.updateDisplay(DisplaySystem::UpdateType::FAST_INDICATOR);

@@ -1033,14 +1033,14 @@ void KindleReadableScreen::showTableOfContents() {
     // Set the back callback to dismiss the TOC screen
     tocScreen->setBackCallback([this]() {
         setCurrentScreen(nullptr);
-        updateType_ = DisplaySystem::UpdateType::PARTIAL;
+        updateType_ = DisplaySystem::UpdateType::FULL;
         setNeedsRerender();
     });
 
     // Show the TOC screen
     setCurrentScreen(tocScreen);
     tocScreen->begin();
-    updateType_ = DisplaySystem::UpdateType::PARTIAL;
+    updateType_ = DisplaySystem::UpdateType::FULL;
     setNeedsRerender();
 }
 

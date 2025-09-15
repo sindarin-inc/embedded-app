@@ -11,6 +11,7 @@
 #include "Models/KindlePageFlipper.hpp"
 #include "Storage/PreferencesStore.hpp"
 #include "UI/Components/ArrowLabelView.hpp"
+#include "UI/Components/BoxView.hpp"
 #include "UI/Components/EinkView.hpp"
 #include "UI/Components/MultiLineTextView.hpp"
 #include "UI/Layout/View.hpp"
@@ -67,6 +68,7 @@ private:
     std::vector<ChapterInfo> chapters_;
     int currentPosition_ = -1;
 
+    BoxView backgroundView_;
     MenuView menuView_;
     ArrowLabelView backLabelView_;
     MultiLineTextView loadingMessageView_;
