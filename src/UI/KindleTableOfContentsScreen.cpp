@@ -6,6 +6,7 @@
 #include "Misc/Dispatch.hpp"
 #include "Misc/StringUtil.hpp"
 #include "Models/Json.hpp"
+#include "UI/Menu/MenuItemTOC.hpp"
 #include "sindarin-debug.h"
 
 KindleTableOfContentsScreen::KindleTableOfContentsScreen(
@@ -167,19 +168,17 @@ void KindleTableOfContentsScreen::populateMenuItems() {
     menuView_.resetMenuItems();
 
     for (const auto &chapter : chapters_) {
-        std::string displayText = chapter.title;
-        if (chapter.page >= 0) {
-            displayText += StringFormat(" (p. %d)", chapter.page);
-        }
-
         auto chapterTitle = chapter.title; // Capture for lambda
         auto chapterUuid = chapter.uuid;
 
-        menuView_.addMenuItem(
-            std::make_shared<MenuItemSingleLine>(displayText, [this, chapterTitle, chapterUuid]() {
-                log_i("Selected chapter: %s (UUID: %s)", chapterTitle.c_str(), chapterUuid.c_str());
-                selectChapter();
-            }));
+        // Use page number as second column, or empty string if no page
+        std::string pageStr = chapter.page >= 0 ? Commify(chapter.page) : "";
+
+        menuView_.addMenuItem(std::make_shared<MenuItemTOC>(chapter.title, pageStr,
+                                                            [this, chapterTitle, chapterUuid]() {
+            log_i("Selected chapter: %s (UUID: %s)", chapterTitle.c_str(), chapterUuid.c_str());
+            selectChapter();
+        }));
     }
 }
 
