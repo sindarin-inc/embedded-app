@@ -33,7 +33,7 @@ public:
         }
 
         // Set User-Agent header to include SolReader and firmware version
-        std::string userAgent = std::string("SolReader/") + SemanticVersionString() + " (cpp-httplib/0.13.3)";
+        std::string userAgent = std::string("SolReader/") + SemanticVersionString() + " (cpp-httplib/" + CPPHTTPLIB_VERSION + ")";
         headers.insert(std::pair<std::string, std::string>("User-Agent", userAgent));
 
         // Check for HTTP_PROXY environment variable to enable Charles.app or other proxies
