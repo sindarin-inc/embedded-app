@@ -319,7 +319,7 @@ private:
                            const std::shared_ptr<CancelFlag> &cancelFlag, int maxRetries = 2)
         -> std::shared_ptr<KindleError>;
 
-    // Helper to fetch additional pages if buffer is low
-    void fetchAdditionalPagesIfNeeded(uint32_t currentOffset, int navigateTo,
-                                      const std::shared_ptr<CancelFlag> &cancelFlag);
+    // Unified method to sync pages with server - handles both navigation changes and buffer refills
+    void syncPagesWithServer(uint32_t currentOffset, bool navigationChanged,
+                            const std::shared_ptr<CancelFlag> &cancelFlag);
 };
