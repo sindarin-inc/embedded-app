@@ -172,7 +172,6 @@ TEST_CASE("Test Kindle multi-page fetching with short pages visual", "[.][kindle
 
     log_i("TEST: Starting FreeRTOS for short pages test");
     StartAppMain(FONT_CHOICES::PREFS_SOL_SMALL, 10, 10, -2, "KindleTestData");
-    // Note: StopFreeRtos removed to avoid hanging - FreeRTOS cleanup happens at exit
 
     // Set cloud token and disable BLE after preferences are initialized
     prefs.cloudToken.set("test-token");
@@ -265,4 +264,7 @@ TEST_CASE("Test Kindle multi-page fetching with short pages visual", "[.][kindle
 
     log_i("TEST: Exiting short pages visual test");
     api->overrideBaseUrl("");
+
+    // Properly stop FreeRTOS to avoid thread cleanup issues in CI
+    StopFreeRtos();
 }
