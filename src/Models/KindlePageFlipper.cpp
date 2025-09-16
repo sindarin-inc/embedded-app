@@ -348,29 +348,33 @@ void KindlePageFlipper::fetchAdditionalPagesIfNeeded(
             break;
         }
 
-        if (!nextError && !checkForLastReadDialog(nextResponse)) {
-            size_t nextOcrTextLength = nextResponse->ocrText.size();
-
-            if (nextOcrTextLength > 0) {
-                pageStream_->appendPageFromResponse(*nextResponse, nextPreviewPage);
-                lastPreviewedPage_ = nextPreviewPage;
-                bytesRemainingNow = pageStream_->getBytesRemainingFrom(currentOffset);
-                log_i("← Added page %d: +%zu bytes (buffer now: %zu bytes)", nextPreviewPage,
-                      nextOcrTextLength, bytesRemainingNow);
-                additionalPagesFetched++;
-
-                // Notify UI that we have more content available after each page fetch
-                if (gotContentFunction_) {
-                    gotContentFunction_(pageStream_->getOcrTextLength());
-                }
-            } else {
-                log_i("Received empty preview page %d - may be at end of book", nextPreviewPage);
-                break; // Stop fetching if we get an empty page
-            }
-        } else if (nextError) {
+        if (nextError) {
             log_w("Failed to load additional preview page %d: %s", nextPreviewPage,
                   nextError->message.c_str());
             break; // Stop fetching on error
+        }
+
+        if (checkForLastReadDialog(nextResponse)) {
+            continue;
+        }
+
+        size_t nextOcrTextLength = nextResponse->ocrText.size();
+
+        if (nextOcrTextLength == 0) {
+            log_i("Received empty preview page %d - may be at end of book", nextPreviewPage);
+            break; // Stop fetching if we get an empty page
+        }
+
+        pageStream_->appendPageFromResponse(*nextResponse, nextPreviewPage);
+        lastPreviewedPage_ = nextPreviewPage;
+        bytesRemainingNow = pageStream_->getBytesRemainingFrom(currentOffset);
+        log_i("← Added page %d: +%zu bytes (buffer now: %zu bytes)", nextPreviewPage,
+              nextOcrTextLength, bytesRemainingNow);
+        additionalPagesFetched++;
+
+        // Notify UI that we have more content available after each page fetch
+        if (gotContentFunction_) {
+            gotContentFunction_(pageStream_->getOcrTextLength());
         }
     }
 
