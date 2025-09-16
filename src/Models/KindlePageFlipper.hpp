@@ -12,30 +12,28 @@
 #include "Models/Place.hpp"
 #include "Renderers/RendererStream.hpp"
 
-enum class KindleErrorType {
-    None,                // No error
-    ConnectionError,     // Network connection issue (retryable)
-    Timeout,             // Request timeout (retryable)
-    ServerError,         // Server error (potentially retryable)
-    SessionKeyMismatch,  // Session key out of sync (retryable - resets to position 0)
-    AuthenticationError, // Authentication failure
-    NotFoundError,       // Resource not found
-    ClientError,         // Other client errors
-    UnknownError         // Unknown error
-};
-
 struct KindleError {
-    KindleErrorType type = KindleErrorType::None;
+    enum class Type {
+        None,                // No error
+        ConnectionError,     // Network connection issue (retryable)
+        Timeout,             // Request timeout (retryable)
+        ServerError,         // Server error (potentially retryable)
+        SessionKeyMismatch,  // Session key out of sync (retryable - resets to position 0)
+        AuthenticationError, // Authentication failure
+        NotFoundError,       // Resource not found
+        ClientError,         // Other client errors
+        UnknownError         // Unknown error
+    };
+
+    Type type = Type::None;
     std::string message;
 
-    [[nodiscard]] auto hasError() const -> bool { return type != KindleErrorType::None; }
+    [[nodiscard]] auto hasError() const -> bool { return type != Type::None; }
     [[nodiscard]] auto isRetryable() const -> bool {
-        return type == KindleErrorType::ConnectionError || type == KindleErrorType::Timeout ||
-               type == KindleErrorType::ServerError || type == KindleErrorType::SessionKeyMismatch;
+        return type == Type::ConnectionError || type == Type::Timeout ||
+               type == Type::ServerError || type == Type::SessionKeyMismatch;
     }
-    [[nodiscard]] auto isConnectionError() const -> bool {
-        return type == KindleErrorType::ConnectionError;
-    }
+    [[nodiscard]] auto isConnectionError() const -> bool { return type == Type::ConnectionError; }
 };
 
 class KindlePage {

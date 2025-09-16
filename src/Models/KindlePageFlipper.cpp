@@ -35,7 +35,7 @@ auto KindlePageFlipper::checkForError(int httpCode, std::shared_ptr<KindlePageRe
     // Check for session key mismatch error
     if (httpCode == 400 && response->error == KINDLE_ERROR_SESSION_KEY_MISMATCH) {
         return std::make_shared<KindleError>(
-            KindleError{KindleErrorType::SessionKeyMismatch, std::string(response->message)});
+            KindleError{KindleError::Type::SessionKeyMismatch, std::string(response->message)});
     }
 
     // Check for authentication failure in response
@@ -46,36 +46,36 @@ auto KindlePageFlipper::checkForError(int httpCode, std::shared_ptr<KindlePageRe
                 ? std::string(response->message)
                 : "Your Kindle session has expired. Please try signing in on the mobile app again.";
         return std::make_shared<KindleError>(
-            KindleError{KindleErrorType::AuthenticationError, message});
+            KindleError{KindleError::Type::AuthenticationError, message});
     }
 
     // Check for connection issues
     if (httpCode <= 0) {
         return std::make_shared<KindleError>(
-            KindleError{KindleErrorType::ConnectionError, "Network connection error"});
+            KindleError{KindleError::Type::ConnectionError, "Network connection error"});
     } else if (httpCode == 401 || httpCode == 403) {
         return std::make_shared<KindleError>(KindleError{
-            KindleErrorType::AuthenticationError,
+            KindleError::Type::AuthenticationError,
             "Your Kindle session has expired. Please try signing in on the mobile app again."});
     } else if (httpCode == 404) {
         return std::make_shared<KindleError>(KindleError{
-            KindleErrorType::NotFoundError, "Book or page not found in your Kindle library."});
+            KindleError::Type::NotFoundError, "Book or page not found in your Kindle library."});
     } else if (httpCode >= 400 && httpCode < 500) {
         // Use server's error message if available
         std::string message = !response->message.empty()
                                   ? std::string(response->message)
                                   : "Request error. Please check your settings.";
-        return std::make_shared<KindleError>(KindleError{KindleErrorType::ClientError, message});
+        return std::make_shared<KindleError>(KindleError{KindleError::Type::ClientError, message});
     } else if (httpCode >= 500) {
         // Use server's error message if available
         std::string message = !response->message.empty() ? std::string(response->message)
                                                          : "Server error. Please try again later.";
-        return std::make_shared<KindleError>(KindleError{KindleErrorType::ServerError, message});
+        return std::make_shared<KindleError>(KindleError{KindleError::Type::ServerError, message});
     } else {
         // Use server's error message if available
         std::string message = !response->message.empty() ? std::string(response->message)
                                                          : "Failed to load book content.";
-        return std::make_shared<KindleError>(KindleError{KindleErrorType::UnknownError, message});
+        return std::make_shared<KindleError>(KindleError{KindleError::Type::UnknownError, message});
     }
 }
 
@@ -150,7 +150,7 @@ auto KindlePageFlipper::navigateWithRetry(int navigateTo, int previewTo,
         }
 
         // Handle session key mismatch specially
-        if (error->type == KindleErrorType::SessionKeyMismatch) {
+        if (error->type == KindleError::Type::SessionKeyMismatch) {
             // The server provides the correct session key in the current_session_key field
             if (!response->currentSessionKey.empty()) {
                 log_w("Session key mismatch detected. Resetting position and retrying with new "
@@ -178,7 +178,7 @@ auto KindlePageFlipper::navigateWithRetry(int navigateTo, int previewTo,
             } else {
                 log_e("Session key mismatch but no new session key provided");
                 return std::make_shared<KindleError>(
-                    KindleError{KindleErrorType::ClientError, "Session out of sync with server"});
+                    KindleError{KindleError::Type::ClientError, "Session out of sync with server"});
             }
         }
 
@@ -326,15 +326,16 @@ void KindlePageFlipper::fetchAdditionalPagesIfNeeded(
         auto currentNavigateTo = pageStream_->getServerPageNumberForOffset(currentOffset);
         if (currentNavigateTo < 0) {
             if (pageStream_->size() == 0 || lastPreviewedPage_ < 0) {
-                log_w("Cannot determine server page for offset %u, buffer empty; skipping",
+                log_w("Cannot determine server page for offset %" PRIu32
+                      ", buffer empty; skipping",
                       currentOffset);
                 break; // No local context to base a request on
             }
 
             // We're at the end of the buffered content—fall back to the last page we added.
             currentNavigateTo = lastPreviewedPage_;
-            log_i("Using last previewed page %d for boundary offset %u", currentNavigateTo,
-                  currentOffset);
+            log_i("Using last previewed page %d for boundary offset %" PRIu32,
+                  currentNavigateTo, currentOffset);
         }
 
         log_i("→ Buffer low (%zu bytes), requesting page %d (additional page %d/%d)",
