@@ -449,10 +449,27 @@ void KindlePageFlipper::loadInitialPage() {
             return;
         }
 
-        // Store the new book session key
-        if (!response->bookSessionKey.empty()) {
-            bookSessionKey_ = response->bookSessionKey;
+        // Validate that the server gave us a session key – navigating without one will fail.
+        if (response->bookSessionKey.empty()) {
+            auto message = std::string("Failed to open book. Missing session key from server.");
+            log_e("Open book response missing session key; treating as fatal error");
+
+            int64_t elapsedMs = (esp_timer_get_time() - bookOpenStartTime) / 1000;
+            telemetry_.logMetric(TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
+                                 {{"event", std::string("book-open")},
+                                  {"action", std::string("open-failed")},
+                                  {"kindle", true},
+                                  {"error", message},
+                                  {"elapsed_ms", static_cast<int>(elapsedMs)}});
+
+            if (onErrorFunction_) {
+                onErrorFunction_(message);
+            }
+            return;
         }
+
+        // Store the new book session key
+        bookSessionKey_ = response->bookSessionKey;
 
         auto hasDialog = checkForLastReadDialog(response);
 
