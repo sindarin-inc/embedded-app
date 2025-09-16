@@ -162,7 +162,6 @@ TEST_CASE("Test Kindle multi-page fetching with short pages visual", "[.][kindle
     std::atomic<bool> serverRunning(false);
     int port = 8083; // Use port 8083 to avoid conflicts with other tests
     setupHttpServer(httpServer, httpServerThread, serverRunning, port);
-    defer { teardownHttpServer(httpServer, httpServerThread); };
 
     // Override SindarinAPI URL
     auto api = SindarinAPI::getInstance();
@@ -264,6 +263,9 @@ TEST_CASE("Test Kindle multi-page fetching with short pages visual", "[.][kindle
 
     log_i("TEST: Exiting short pages visual test");
     api->overrideBaseUrl("");
+
+    // Stop HTTP server before stopping FreeRTOS to avoid deadlock
+    teardownHttpServer(httpServer, httpServerThread);
 
     // Properly stop FreeRTOS to avoid thread cleanup issues in CI
     StopFreeRtos();
