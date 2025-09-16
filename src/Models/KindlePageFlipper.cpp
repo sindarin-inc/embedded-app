@@ -675,7 +675,8 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place) {
 #ifdef TESTS
                 // TODO: This callback shouldn't be called for cached navigation.
                 // Tests should hook into the renderer's callbacks to know when a page is displayed.
-                // Currently tests rely on this callback for synchronization via WAIT_FOR_CONTENT_RENDER()
+                // Currently tests rely on this callback for synchronization via
+                // WAIT_FOR_CONTENT_RENDER()
                 if (onNavigationComplete_) {
                     size_t contentLength = pageStream_->getOcrTextLength();
                     onNavigationComplete_(contentLength);
