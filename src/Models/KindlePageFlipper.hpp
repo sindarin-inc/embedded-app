@@ -302,20 +302,21 @@ private:
     std::function<void()> onConnectionErrorFunction_;
     std::function<void(const SpiramString &dialogText)> onLastReadDialogFunction_;
 
-    auto checkForError(int httpCode, std::shared_ptr<KindlePageResponse> &response) -> KindleError;
+    auto checkForError(int httpCode, std::shared_ptr<KindlePageResponse> &response)
+        -> std::shared_ptr<KindleError>;
     auto checkForLastReadDialog(const std::shared_ptr<KindlePageResponse> &response) -> bool;
 
     // Helper to perform navigation with retry logic
-    // Returns error (check hasError() for success)
+    // Returns error (nullptr for success)
     auto navigateWithRetry(int navigateTo, int previewTo,
                            std::shared_ptr<KindlePageResponse> &response,
                            const std::shared_ptr<CancelFlag> &cancelFlag, int maxRetries = 3)
-        -> KindleError;
+        -> std::shared_ptr<KindleError>;
 
-    // Returns error (check hasError() for success)
+    // Returns error (nullptr for success)
     auto openBookWithRetry(std::shared_ptr<KindlePageResponse> &response,
                            const std::shared_ptr<CancelFlag> &cancelFlag, int maxRetries = 2)
-        -> KindleError;
+        -> std::shared_ptr<KindleError>;
 
     // Helper to fetch additional pages if buffer is low
     void fetchAdditionalPagesIfNeeded(uint32_t currentOffset, int navigateTo,
