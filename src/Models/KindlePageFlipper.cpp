@@ -112,7 +112,7 @@ auto KindlePageFlipper::navigateWithRetry(int navigateTo, int previewTo,
         }
 
         // Check for session key mismatch error BEFORE general error checking
-        if (httpCode == 400 && response->error == "session_key_mismatch") {
+        if (httpCode == 400 && response->error == KINDLE_ERROR_SESSION_KEY_MISMATCH) {
             // Create a SessionKeyMismatch error
             error = std::make_shared<KindleError>(
                 KindleError{KindleErrorType::SessionKeyMismatch, std::string(response->message)});
