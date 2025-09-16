@@ -132,6 +132,10 @@ void setupContentRenderingCallback() {
     });
 }
 
+namespace {
+constexpr const char *MOCK_BOOK_SESSION_KEY = "test_session_123";
+}
+
 void setupHttpServer(std::unique_ptr<httplib::Server> &httpServer,
                      std::shared_ptr<std::thread> &httpServerThread,
                      std::atomic<bool> &serverRunning, int port) {
@@ -201,16 +205,14 @@ void setupHttpServer(std::unique_ptr<httplib::Server> &httpServer,
             pos += 2;
         }
 
-        std::string jsonResponse = R"({
-            "success": true,
-            "ocr_text": ")" + escapedContent +
-                                   R"(",
-            "progress": {
-                "percentage": 5,
-                "current_page": 1,
-                "total_pages": 100
-            }
-        })";
+        std::ostringstream response;
+        response << "{";
+        response << "\"success\": true,";
+        response << "\"ocr_text\": \"" << escapedContent << "\",";
+        response << "\"progress\": {\"percentage\": 5,\"current_page\": 1,\"total_pages\": 100},";
+        response << "\"book_session_key\": \"" << MOCK_BOOK_SESSION_KEY << "\"";
+        response << "}";
+        std::string jsonResponse = response.str();
 
         log_i("Mock server: Sending open-book response with %zu chars of content",
               escapedContent.length());
@@ -265,6 +267,20 @@ void setupHttpServer(std::unique_ptr<httplib::Server> &httpServer,
             previewTo = std::stoi(req.get_param_value("preview_to"));
         }
 
+        std::string sessionKey;
+        if (req.has_param("book_session_key")) {
+            sessionKey = req.get_param_value("book_session_key");
+        }
+
+        if (sessionKey != MOCK_BOOK_SESSION_KEY) {
+            log_e("Mock server: Missing or invalid book_session_key. Got: %s",
+                  sessionKey.empty() ? "<empty>" : sessionKey.c_str());
+            res.set_content("{\"success\": false, \"error\": \"invalid_session_key\"}",
+                            "application/json");
+            res.status = 400;
+            return;
+        }
+
         if (useShortPages) {
             log_i("Mock server: SHORT PAGES navigation - navigate_to=%d, preview_to=%d", navigateTo,
                   previewTo);
@@ -315,19 +331,16 @@ void setupHttpServer(std::unique_ptr<httplib::Server> &httpServer,
 
         int percentage = std::min(95, currentPageNumber * 10);
 
-        std::string jsonResponse = R"({
-            "success": true,
-            "ocr_text": ")" + escapedContent +
-                                   R"(",
-            "progress": {
-                "percentage": )" + std::to_string(percentage) +
-                                   R"(,
-                "current_page": )" +
-                                   std::to_string(currentPageNumber) + R"(,
-                "total_pages": 100
-            },
-            "book_session_key": "test_session_123"
-        })";
+        std::ostringstream response;
+        response << "{";
+        response << "\"success\": true,";
+        response << "\"ocr_text\": \"" << escapedContent << "\",";
+        response << "\"progress\": {\"percentage\": " << percentage
+                 << ",\"current_page\": " << currentPageNumber
+                 << ",\"total_pages\": 100},";
+        response << "\"book_session_key\": \"" << MOCK_BOOK_SESSION_KEY << "\"";
+        response << "}";
+        std::string jsonResponse = response.str();
 
         log_i("Mock server: Sending navigate response with %zu chars, page %d/%d, %d%%",
               escapedContent.length(), currentPageNumber, 100, percentage);
