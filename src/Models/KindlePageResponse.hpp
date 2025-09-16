@@ -5,6 +5,9 @@
 
 #include "Models/JsonSerializable.hpp"
 
+// Error type constants from server responses
+static constexpr const char *KINDLE_ERROR_SESSION_KEY_MISMATCH = "session_key_mismatch";
+
 struct KindlePageProgress {
     int percentage = 0;
     int currentPage = 0;
@@ -42,7 +45,7 @@ struct KindlePageResponse : public JsonSerializable {
     SpiramString text;
     int navigateTo = -1;
     int previewTo = -1;
-    SpiramString error;             // Error type (e.g., "session_key_mismatch")
+    SpiramString error; // Error type from server (e.g., KINDLE_ERROR_SESSION_KEY_MISMATCH)
     SpiramString currentSessionKey; // New session key from server on mismatch
     int currentPosition = 0;        // Current position from server on mismatch
 

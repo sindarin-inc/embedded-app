@@ -288,17 +288,6 @@ void KindleReadableScreen::begin() {
     };
 
     // Start connection process
-#if TESTS
-    // In test mode, run connection synchronously to avoid race conditions
-    log_d("TEST MODE: Running connection synchronously");
-    std::string errorMessage;
-    connectionStartTime_ = esp_timer_get_time();
-    bool connected = connectToNetwork(errorMessage, initialConnectionCallback);
-
-    if (!connected && !errorMessage.empty()) {
-        setErrorMessage(errorMessage);
-    }
-#else
     DispatchGetCore0BackgroundQueue()->dispatch([this, initialConnectionCallback, cancelFlag]() {
         std::string errorMessage;
         // Record connection start time for kindle-connect elapsed_ms tracking
@@ -315,7 +304,6 @@ void KindleReadableScreen::begin() {
             });
         }
     });
-#endif
 }
 
 auto KindleReadableScreen::layout(LayoutContext &context, SolSize size) -> SolSize {
@@ -1428,7 +1416,7 @@ void KindleReadableScreen::setCurrentScreen(const std::shared_ptr<Screen> &scree
 void KindleReadableScreen::updatePageFlipperCallbacks() {
     auto cancelFlag = cancelFlag_;
 
-    pageFlipper_.setGotContentFunction([this, cancelFlag](size_t ocrTextLength) {
+    pageFlipper_.setOnNavigationComplete([this, cancelFlag](size_t ocrTextLength) {
         if (CancelFlag::isCancelled(cancelFlag)) {
             return;
         }

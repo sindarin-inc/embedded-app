@@ -22,10 +22,9 @@
 - Build tests: `make test-build`
 - Run single test: `make test-build && ./test/CatchTests/build/tests '[test-tag]'` (e.g. `'[epub]'`, `'[content-sync]'`)
   - Always rebuild before running tests to ensure changes are included
-- Format code: `make lint` (or `make clang-format`)
-  - **IMPORTANT**: Always run `. $IDF_PATH/export.sh && make lint` after making code changes
-- Static analysis: `make clang-tidy`
-- Full linting (format + static analysis): `make tidy` (can be slow)
+- Format code: `make clang-tidy`
+  - **IMPORTANT**: Always run `. $IDF_PATH/export.sh && make clang-tidy` after making code changes
+- Full linting (format + static analysis): `make clang-format` (can be slow)
 
 ## Code Style Guidelines
 - Format: Use clang-format with LLVM-based style (ColumnLimit: 100, IndentWidth: 4)

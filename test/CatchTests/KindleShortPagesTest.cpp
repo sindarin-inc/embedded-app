@@ -162,7 +162,6 @@ TEST_CASE("Test Kindle multi-page fetching with short pages visual", "[.][kindle
     std::atomic<bool> serverRunning(false);
     int port = 8083; // Use port 8083 to avoid conflicts with other tests
     setupHttpServer(httpServer, httpServerThread, serverRunning, port);
-    defer { teardownHttpServer(httpServer, httpServerThread); };
 
     // Override SindarinAPI URL
     auto api = SindarinAPI::getInstance();
@@ -172,7 +171,6 @@ TEST_CASE("Test Kindle multi-page fetching with short pages visual", "[.][kindle
 
     log_i("TEST: Starting FreeRTOS for short pages test");
     StartAppMain(FONT_CHOICES::PREFS_SOL_SMALL, 10, 10, -2, "KindleTestData");
-    // Note: StopFreeRtos removed to avoid hanging - FreeRTOS cleanup happens at exit
 
     // Set cloud token and disable BLE after preferences are initialized
     prefs.cloudToken.set("test-token");
@@ -265,4 +263,10 @@ TEST_CASE("Test Kindle multi-page fetching with short pages visual", "[.][kindle
 
     log_i("TEST: Exiting short pages visual test");
     api->overrideBaseUrl("");
+
+    // Stop HTTP server before stopping FreeRTOS to avoid deadlock
+    teardownHttpServer(httpServer, httpServerThread);
+
+    // Properly stop FreeRTOS to avoid thread cleanup issues in CI
+    StopFreeRtos();
 }

@@ -132,12 +132,10 @@ test-epub-lldb: test-build
 
 test-kindle: test-build
 	./test/CatchTests/build/tests '[kindle]'
+	./test/CatchTests/build/tests '[kindle-short-pages]'
 
 test-kindle-short: test-build
 	./test/CatchTests/build/tests '[kindle-short-pages]'
-
-test-kindle-short-lldb: test-build
-	lldb ./test/CatchTests/build/tests '[kindle-short-pages]'
 
 test-kindle-lldb: test-build
 	lldb ./test/CatchTests/build/tests '[kindle]'
@@ -244,12 +242,6 @@ clang-tidy: check_idf
 .PHONY: clang-format
 clang-format: check_idf
 	find src -iname "*.hpp" -o -iname "*.h" -o -iname "*.cpp" -o -iname "*.c" | xargs clang-format -i
-
-.PHONY: lint
-lint: clang-format
-
-.PHONY: tidy
-tidy: clang-tidy clang-format
 
 program-mode:
 	python3 scripts/port_tool.py find_port programming

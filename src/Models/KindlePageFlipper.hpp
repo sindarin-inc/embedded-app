@@ -12,30 +12,30 @@
 #include "Models/Place.hpp"
 #include "Renderers/RendererStream.hpp"
 
-enum class KindleErrorType {
-    None,                // No error
-    ConnectionError,     // Network connection issue (retryable)
-    Timeout,             // Request timeout (retryable)
-    ServerError,         // Server error (potentially retryable)
-    SessionKeyMismatch,  // Session key out of sync (retryable - resets to position 0)
-    AuthenticationError, // Authentication failure
-    NotFoundError,       // Resource not found
-    ClientError,         // Other client errors
-    UnknownError         // Unknown error
-};
+class DispatchQueue;
 
 struct KindleError {
-    KindleErrorType type = KindleErrorType::None;
+    enum class Type {
+        None,                // No error
+        ConnectionError,     // Network connection issue (retryable)
+        Timeout,             // Request timeout (retryable)
+        ServerError,         // Server error (potentially retryable)
+        SessionKeyMismatch,  // Session key out of sync (retryable - resets to position 0)
+        AuthenticationError, // Authentication failure
+        NotFoundError,       // Resource not found
+        ClientError,         // Other client errors
+        UnknownError         // Unknown error
+    };
+
+    Type type = Type::None;
     std::string message;
 
-    [[nodiscard]] auto hasError() const -> bool { return type != KindleErrorType::None; }
+    [[nodiscard]] auto hasError() const -> bool { return type != Type::None; }
     [[nodiscard]] auto isRetryable() const -> bool {
-        return type == KindleErrorType::ConnectionError || type == KindleErrorType::Timeout ||
-               type == KindleErrorType::ServerError || type == KindleErrorType::SessionKeyMismatch;
+        return type == Type::ConnectionError || type == Type::Timeout ||
+               type == Type::ServerError || type == Type::SessionKeyMismatch;
     }
-    [[nodiscard]] auto isConnectionError() const -> bool {
-        return type == KindleErrorType::ConnectionError;
-    }
+    [[nodiscard]] auto isConnectionError() const -> bool { return type == Type::ConnectionError; }
 };
 
 class KindlePage {
@@ -238,8 +238,8 @@ public:
 
     auto getStream() -> std::shared_ptr<RendererStream> { return pageStream_; }
 
-    void setGotContentFunction(std::function<void(size_t ocrTextLength)> gotContentFunction) {
-        gotContentFunction_ = std::move(gotContentFunction);
+    void setOnNavigationComplete(std::function<void(size_t ocrTextLength)> onNavigationComplete) {
+        onNavigationComplete_ = std::move(onNavigationComplete);
     }
 
     void setOnErrorFunction(std::function<void(const std::string &errorMessage)> onErrorFunction) {
@@ -319,27 +319,29 @@ private:
     int lastPreviewedPage_ = -1;  // Track the last page we successfully previewed from server
     int lastNavigatedPage_ = -1;  // Track the last page we sent navigate_to for
     SpiramString bookSessionKey_; // Session key from server denoting navigation zero point
-    std::function<void(size_t ocrTextLength)> gotContentFunction_;
+    std::function<void(size_t ocrTextLength)> onNavigationComplete_;
     std::function<void(const std::string &errorMessage)> onErrorFunction_;
     std::function<void()> onConnectionErrorFunction_;
     std::function<void(const SpiramString &dialogText)> onLastReadDialogFunction_;
 
-    auto checkForError(int httpCode, std::shared_ptr<KindlePageResponse> &response) -> KindleError;
+    [[nodiscard]] auto dispatchQueue() const -> DispatchQueue *;
+    auto checkForError(int httpCode, std::shared_ptr<KindlePageResponse> &response)
+        -> std::shared_ptr<KindleError>;
     auto checkForLastReadDialog(const std::shared_ptr<KindlePageResponse> &response) -> bool;
 
     // Helper to perform navigation with retry logic
-    // Returns error (check hasError() for success)
+    // Returns error (nullptr for success)
     auto navigateWithRetry(int navigateTo, int previewTo,
                            std::shared_ptr<KindlePageResponse> &response,
                            const std::shared_ptr<CancelFlag> &cancelFlag, int maxRetries = 3)
-        -> KindleError;
+        -> std::shared_ptr<KindleError>;
 
-    // Returns error (check hasError() for success)
+    // Returns error (nullptr for success)
     auto openBookWithRetry(std::shared_ptr<KindlePageResponse> &response,
                            const std::shared_ptr<CancelFlag> &cancelFlag, int maxRetries = 2)
-        -> KindleError;
+        -> std::shared_ptr<KindleError>;
 
-    // Helper to fetch additional pages if buffer is low
-    void fetchAdditionalPagesIfNeeded(uint32_t currentOffset, int navigateTo,
-                                      const std::shared_ptr<CancelFlag> &cancelFlag);
+    // Unified method to sync pages with server - handles both navigation changes and buffer refills
+    void syncPagesWithServer(uint32_t currentOffset, bool navigationChanged,
+                             const std::shared_ptr<CancelFlag> &cancelFlag);
 };
