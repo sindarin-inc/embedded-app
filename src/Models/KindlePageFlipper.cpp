@@ -27,8 +27,15 @@ KindlePageFlipper::KindlePageFlipper(const std::shared_ptr<KindleBook> &kindleBo
 
 auto KindlePageFlipper::checkForError(int httpCode, std::shared_ptr<KindlePageResponse> &response)
     -> std::shared_ptr<KindleError> {
+    // First assume all is well
     if (httpCode == 200 && response->success && response->authenticated) {
         return nullptr;
+    }
+
+    // Check for session key mismatch error
+    if (httpCode == 400 && response->error == KINDLE_ERROR_SESSION_KEY_MISMATCH) {
+        return std::make_shared<KindleError>(
+            KindleError{KindleErrorType::SessionKeyMismatch, std::string(response->message)});
     }
 
     // Check for authentication failure in response
@@ -111,13 +118,39 @@ auto KindlePageFlipper::navigateWithRetry(int navigateTo, int previewTo,
             return nullptr; // Caller must check cancelFlag separately
         }
 
-        // Check for session key mismatch error BEFORE general error checking
-        if (httpCode == 400 && response->error == KINDLE_ERROR_SESSION_KEY_MISMATCH) {
-            // Create a SessionKeyMismatch error
-            error = std::make_shared<KindleError>(
-                KindleError{KindleErrorType::SessionKeyMismatch, std::string(response->message)});
+        error = checkForError(httpCode, response);
 
-            // Handle the session key update and position reset
+        if (!error) {
+            // Update the book session key if we got a new one (happy path)
+            if (!response->bookSessionKey.empty() && response->bookSessionKey != bookSessionKey_) {
+                bookSessionKey_ = response->bookSessionKey;
+                log_i("Updated book_session_key: %s", bookSessionKey_.c_str());
+            }
+
+            if (retryCount > 0) {
+                log_i("Navigation request succeeded after %d retries", retryCount);
+                // Log success after retry
+                auto successTelemetryData = std::unordered_map<std::string, TelemetryVariant>{
+                    {"event", std::string("book-navigate")},
+                    {"action", std::string("navigate-retry-success")},
+                    {"kindle", true},
+                    {"navigate_to", navigateTo},
+                    {"retry_attempt", retryCount + 1},
+                    {"attempt_elapsed_ms",
+                     static_cast<int>((esp_timer_get_time() - attemptStartTime) / 1000)},
+                    {"total_elapsed_ms",
+                     static_cast<int>((esp_timer_get_time() - startTime) / 1000)}};
+                if (previewTo >= 0) {
+                    successTelemetryData["preview_to"] = previewTo;
+                }
+                telemetry_.logMetric(TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
+                                     successTelemetryData);
+            }
+            return error; // Success
+        }
+
+        // Handle session key mismatch specially
+        if (error->type == KindleErrorType::SessionKeyMismatch) {
             // The server provides the correct session key in the current_session_key field
             if (!response->currentSessionKey.empty()) {
                 log_w("Session key mismatch detected. Resetting position and retrying with new "
@@ -141,44 +174,12 @@ auto KindlePageFlipper::navigateWithRetry(int navigateTo, int previewTo,
                                       {"navigate_to", navigateTo},
                                       {"retry_attempt", retryCount + 1}});
 
-                // Since this is a retryable error, let the retry logic below handle it
+                // This is a retryable error, so continue with retry logic below
             } else {
                 log_e("Session key mismatch but no new session key provided");
                 return std::make_shared<KindleError>(
                     KindleError{KindleErrorType::ClientError, "Session out of sync with server"});
             }
-        } else {
-            // Update the book session key if we got a new one (normal case)
-            if (!response->bookSessionKey.empty() && response->bookSessionKey != bookSessionKey_) {
-                bookSessionKey_ = response->bookSessionKey;
-                log_i("Updated book_session_key: %s", bookSessionKey_.c_str());
-            }
-
-            // Check for other errors
-            error = checkForError(httpCode, response);
-        }
-
-        if (!error) {
-            if (retryCount > 0) {
-                log_i("Navigation request succeeded after %d retries", retryCount);
-                // Log success after retry
-                auto successTelemetryData = std::unordered_map<std::string, TelemetryVariant>{
-                    {"event", std::string("book-navigate")},
-                    {"action", std::string("navigate-retry-success")},
-                    {"kindle", true},
-                    {"navigate_to", navigateTo},
-                    {"retry_attempt", retryCount + 1},
-                    {"attempt_elapsed_ms",
-                     static_cast<int>((esp_timer_get_time() - attemptStartTime) / 1000)},
-                    {"total_elapsed_ms",
-                     static_cast<int>((esp_timer_get_time() - startTime) / 1000)}};
-                if (previewTo >= 0) {
-                    successTelemetryData["preview_to"] = previewTo;
-                }
-                telemetry_.logMetric(TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
-                                     successTelemetryData);
-            }
-            return error; // Success
         }
 
         // Check if this is a retryable error
@@ -214,8 +215,7 @@ auto KindlePageFlipper::navigateWithRetry(int navigateTo, int previewTo,
         }
     }
 
-    log_e("Navigation request failed after %d attempts: %s", maxRetries,
-          error ? error->message.c_str() : "unknown");
+    log_e("Navigation request failed after %d attempts: %s", maxRetries, error->message.c_str());
     return error;
 }
 
