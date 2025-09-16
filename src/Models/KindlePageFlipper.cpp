@@ -330,16 +330,15 @@ void KindlePageFlipper::fetchAdditionalPagesIfNeeded(
         auto currentNavigateTo = pageStream_->getServerPageNumberForOffset(currentOffset);
         if (currentNavigateTo < 0) {
             if (pageStream_->size() == 0 || lastPreviewedPage_ < 0) {
-                log_w("Cannot determine server page for offset %" PRIu32
-                      ", buffer empty; skipping",
+                log_w("Cannot determine server page for offset %" PRIu32 ", buffer empty; skipping",
                       currentOffset);
                 break; // No local context to base a request on
             }
 
             // We're at the end of the buffered content—fall back to the last page we added.
             currentNavigateTo = lastPreviewedPage_;
-            log_i("Using last previewed page %d for boundary offset %" PRIu32,
-                  currentNavigateTo, currentOffset);
+            log_i("Using last previewed page %d for boundary offset %" PRIu32, currentNavigateTo,
+                  currentOffset);
         }
 
         log_i("→ Buffer low (%zu bytes), requesting page %d (additional page %d/%d)",
@@ -677,8 +676,7 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place) {
                       ocrTextLength, pageStream_->getBytesRemainingFrom(currentOffset));
 
                 // Fetch additional pages in the background so UI can update immediately
-                dispatchQueue()->dispatch(
-                    [this, currentOffset, navigateTo, cancelFlag]() {
+                dispatchQueue()->dispatch([this, currentOffset, navigateTo, cancelFlag]() {
                     fetchAdditionalPagesIfNeeded(currentOffset, navigateTo, cancelFlag);
                 });
             }
