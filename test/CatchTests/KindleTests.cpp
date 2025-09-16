@@ -118,10 +118,10 @@ void setupContentRenderingCallback() {
 
     log_i("TEST: Setting up content rendering callback");
 
-    // Override the gotContentFunction to track when content is rendered
-    kindleScreen->pageFlipper_.setGotContentFunction(
-        [oldCallback = kindleScreen->pageFlipper_.gotContentFunction_](size_t ocrTextLength) {
-        log_i("TEST: gotContentFunction called with ocrTextLength=%zu", ocrTextLength);
+    // Override the onNavigationComplete to track when content is rendered
+    kindleScreen->pageFlipper_.setOnNavigationComplete(
+        [oldCallback = kindleScreen->pageFlipper_.onNavigationComplete_](size_t ocrTextLength) {
+        log_i("TEST: onNavigationComplete called with ocrTextLength=%zu", ocrTextLength);
         contentRendered = true;
         contentRenderCount++;
 

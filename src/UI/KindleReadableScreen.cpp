@@ -1241,7 +1241,7 @@ void KindleReadableScreen::setCurrentScreen(const std::shared_ptr<Screen> &scree
 void KindleReadableScreen::updatePageFlipperCallbacks() {
     auto cancelFlag = cancelFlag_;
 
-    pageFlipper_.setGotContentFunction([this, cancelFlag](size_t ocrTextLength) {
+    pageFlipper_.setOnNavigationComplete([this, cancelFlag](size_t ocrTextLength) {
         if (CancelFlag::isCancelled(cancelFlag)) {
             return;
         }

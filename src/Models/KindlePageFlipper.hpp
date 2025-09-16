@@ -230,8 +230,8 @@ public:
 
     auto getStream() -> std::shared_ptr<RendererStream> { return pageStream_; }
 
-    void setGotContentFunction(std::function<void(size_t ocrTextLength)> gotContentFunction) {
-        gotContentFunction_ = std::move(gotContentFunction);
+    void setOnNavigationComplete(std::function<void(size_t ocrTextLength)> onNavigationComplete) {
+        onNavigationComplete_ = std::move(onNavigationComplete);
     }
 
     void setOnErrorFunction(std::function<void(const std::string &errorMessage)> onErrorFunction) {
@@ -297,7 +297,7 @@ private:
     int lastPreviewedPage_ = -1;  // Track the last page we successfully previewed from server
     int lastNavigatedPage_ = -1;  // Track the last page we sent navigate_to for
     SpiramString bookSessionKey_; // Session key from server denoting navigation zero point
-    std::function<void(size_t ocrTextLength)> gotContentFunction_;
+    std::function<void(size_t ocrTextLength)> onNavigationComplete_;
     std::function<void(const std::string &errorMessage)> onErrorFunction_;
     std::function<void()> onConnectionErrorFunction_;
     std::function<void(const SpiramString &dialogText)> onLastReadDialogFunction_;

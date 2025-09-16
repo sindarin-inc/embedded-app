@@ -132,12 +132,10 @@ test-epub-lldb: test-build
 
 test-kindle: test-build
 	./test/CatchTests/build/tests '[kindle]'
+	./test/CatchTests/build/tests '[kindle-short-pages]'
 
 test-kindle-short: test-build
 	./test/CatchTests/build/tests '[kindle-short-pages]'
-
-test-kindle-short-lldb: test-build
-	lldb ./test/CatchTests/build/tests '[kindle-short-pages]'
 
 test-kindle-lldb: test-build
 	lldb ./test/CatchTests/build/tests '[kindle]'
