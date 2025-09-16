@@ -322,10 +322,19 @@ void KindlePageFlipper::fetchAdditionalPagesIfNeeded(
 
         int nextPreviewPage = lastPreviewedPage_ + 1;
 
-        // Always use the current reading position for navigate_to, not the stale value
+        // Always use the current reading position for navigate_to
         auto currentNavigateTo = pageStream_->getServerPageNumberForOffset(currentOffset);
         if (currentNavigateTo < 0) {
-            currentNavigateTo = navigateTo; // Fallback to passed value if lookup fails
+            if (pageStream_->size() == 0 || lastPreviewedPage_ < 0) {
+                log_w("Cannot determine server page for offset %u, buffer empty; skipping",
+                      currentOffset);
+                break; // No local context to base a request on
+            }
+
+            // We're at the end of the buffered content—fall back to the last page we added.
+            currentNavigateTo = lastPreviewedPage_;
+            log_i("Using last previewed page %d for boundary offset %u", currentNavigateTo,
+                  currentOffset);
         }
 
         log_i("→ Buffer low (%zu bytes), requesting page %d (additional page %d/%d)",
