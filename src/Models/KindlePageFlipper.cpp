@@ -409,7 +409,7 @@ void KindlePageFlipper::syncPagesWithServer(uint32_t currentOffset, bool navigat
 
         auto hasDialog = checkForLastReadDialog(response);
 
-        if (!hasDialog && needMoreBuffer && response->ocrText.size() > 0) {
+        if (!hasDialog && needMoreBuffer && !response->ocrText.empty()) {
             pageStream_->appendPageFromResponse(*response, previewTo);
             lastPreviewedPage_ = previewTo;
             bytesRemaining = pageStream_->getBytesRemainingFrom(currentOffset);

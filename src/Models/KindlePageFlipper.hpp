@@ -321,5 +321,5 @@ private:
 
     // Unified method to sync pages with server - handles both navigation changes and buffer refills
     void syncPagesWithServer(uint32_t currentOffset, bool navigationChanged,
-                            const std::shared_ptr<CancelFlag> &cancelFlag);
+                             const std::shared_ptr<CancelFlag> &cancelFlag);
 };
