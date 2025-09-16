@@ -25,6 +25,10 @@ KindlePageFlipper::KindlePageFlipper(const std::shared_ptr<KindleBook> &kindleBo
     pageStream_ = std::make_shared<KindlePageStream>();
 }
 
+auto KindlePageFlipper::dispatchQueue() const -> DispatchQueue * {
+    return DispatchGetCore0BackgroundQueue();
+}
+
 auto KindlePageFlipper::checkForError(int httpCode, std::shared_ptr<KindlePageResponse> &response)
     -> std::shared_ptr<KindleError> {
     // First assume all is well
@@ -410,7 +414,7 @@ void KindlePageFlipper::loadInitialPage() {
 
     auto cancelFlag = cancelFlag_;
     // Execute the API call on the background thread
-    DispatchGetCore0BackgroundQueue()->dispatch([this, cancelFlag]() {
+    dispatchQueue()->dispatch([this, cancelFlag]() {
         if (CancelFlag::isCancelled(cancelFlag)) {
             log_i("Cancelled while loading initial page");
             return;
@@ -501,7 +505,7 @@ void KindlePageFlipper::loadInitialPage() {
 
         // Fetch additional pages in the background if needed
         if (!hasDialog && ocrTextLength > 0) {
-            DispatchGetCore0BackgroundQueue()->dispatch(
+            dispatchQueue()->dispatch(
                 [this, cancelFlag]() { fetchAdditionalPagesIfNeeded(0, 0, cancelFlag); });
         }
     });
@@ -511,7 +515,7 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place) {
     auto cancelFlag = cancelFlag_;
 
     // Perform the logic in a queue so we always have the latest data before making API calls
-    DispatchGetCore0BackgroundQueue()->dispatch([this, place, cancelFlag]() {
+    dispatchQueue()->dispatch([this, place, cancelFlag]() {
         if (CancelFlag::isCancelled(cancelFlag)) {
             log_i("Cancelled while updating place");
             return;
@@ -673,7 +677,7 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place) {
                       ocrTextLength, pageStream_->getBytesRemainingFrom(currentOffset));
 
                 // Fetch additional pages in the background so UI can update immediately
-                DispatchGetCore0BackgroundQueue()->dispatch(
+                dispatchQueue()->dispatch(
                     [this, currentOffset, navigateTo, cancelFlag]() {
                     fetchAdditionalPagesIfNeeded(currentOffset, navigateTo, cancelFlag);
                 });

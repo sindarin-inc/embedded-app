@@ -12,6 +12,8 @@
 #include "Models/Place.hpp"
 #include "Renderers/RendererStream.hpp"
 
+class DispatchQueue;
+
 struct KindleError {
     enum class Type {
         None,                // No error
@@ -300,6 +302,7 @@ private:
     std::function<void()> onConnectionErrorFunction_;
     std::function<void(const SpiramString &dialogText)> onLastReadDialogFunction_;
 
+    [[nodiscard]] auto dispatchQueue() const -> DispatchQueue *;
     auto checkForError(int httpCode, std::shared_ptr<KindlePageResponse> &response)
         -> std::shared_ptr<KindleError>;
     auto checkForLastReadDialog(const std::shared_ptr<KindlePageResponse> &response) -> bool;
