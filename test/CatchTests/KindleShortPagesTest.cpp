@@ -258,6 +258,9 @@ TEST_CASE("Test Kindle multi-page fetching with short pages visual", "[.][kindle
         log_i("TEST: After backward nav, total requests: %d", afterBackNav);
         REQUIRE(afterBackNav >= afterRapidNav); // May fetch additional pages to maintain buffer
 
+        // Wait for any background navigation requests to complete
+        std::this_thread::sleep_for(std::chrono::milliseconds(300));
+
         log_i("TEST: Multi-page fetching visual test complete");
     }
 
