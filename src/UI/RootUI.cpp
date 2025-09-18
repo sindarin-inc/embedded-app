@@ -758,7 +758,8 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                 this->pushScreen(kindleReadableScreen);
                 kindleReadableScreen->setBackCallback([this]() {
                     this->popScreen();
-                    std::static_pointer_cast<MainMenuScreen>(currentScreen())->regenerateCurrentTab();
+                    std::static_pointer_cast<MainMenuScreen>(currentScreen())
+                        ->regenerateCurrentTab();
                 });
                 kindleReadableScreen->begin();
                 },
