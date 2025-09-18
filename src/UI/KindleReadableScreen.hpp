@@ -23,6 +23,8 @@
 #include "UI/Screen.hpp"
 #include "Version.hpp"
 
+class Readable;
+
 /**
  * KindleReadableScreen
  *
@@ -87,6 +89,7 @@ private:
     State state_{State::CONNECTING};
 
     std::shared_ptr<NewReadablePopupMenuScreen> popupMenuScreen_;
+    std::shared_ptr<Readable> popupMenuReadable_;
     std::shared_ptr<Screen> currentScreen_;
     DisplaySystem::UpdateType updateType_ = DisplaySystem::UpdateType::FULL;
 

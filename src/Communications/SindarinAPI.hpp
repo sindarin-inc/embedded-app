@@ -92,14 +92,8 @@ public:
     auto navigateKindle(const SpiramString &title, KindlePageResponse *resp,
                         const std::shared_ptr<CancelFlag> &cancelFlag, bool useBle, int navigateTo,
                         int previewTo, const SpiramString &bookSessionKey) -> int;
-
-    // Submit user's choice for last read page dialog
     auto submitLastReadPageChoice(bool gotoLastReadPage, bool useBle,
                                   const std::shared_ptr<CancelFlag> &cancel) -> int;
-
-    // Table of contents operations
-    auto makeKindleTableOfContentsRequest(const std::string &params, bool useBle,
-                                          const std::shared_ptr<CancelFlag> &cancel) -> std::string;
     auto fetchKindleChaptersWithUuids(const std::string &kindleUuid, int currentPage, bool useBle,
                                       const std::shared_ptr<CancelFlag> &cancel) -> std::string;
     auto navigateKindleToChapter(const std::string &kindleUuid, const std::string &chapterUuid,

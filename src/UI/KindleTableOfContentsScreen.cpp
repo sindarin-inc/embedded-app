@@ -274,16 +274,29 @@ void KindleTableOfContentsScreen::selectChapter() {
             pageFlipper_.updateProgressFromServer(progress);
         }
 
+        int selectedPage = chapter.page;
+        if (selectedPage < 0) {
+            if (currentPosition_ >= 0) {
+                selectedPage = currentPosition_;
+            } else {
+                selectedPage = currentPage_;
+            }
+        }
+
+        if (selectedPage < 0) {
+            selectedPage = 0;
+        }
+
         // Log telemetry for chapter selection
         telemetry_.logMetric(TelemetryField::METRIC_EVENT, kindleBook_->uuid,
                              {{"event", std::string("table_of_contents_chapter_selected")},
                               {"kindle", true},
                               {"chapter", chapter.title},
-                              {"current_page", currentPage_}});
+                              {"page", selectedPage}});
 
         // Call the callback to navigate to the chapter with UUID
         if (chapterSelectedCallback_) {
-            chapterSelectedCallback_(chapter.uuid, currentPage_);
+            chapterSelectedCallback_(chapter.uuid, selectedPage);
         }
 
         // Dismiss this screen

@@ -265,6 +265,13 @@ public:
         onProgressUpdated_ = std::move(onProgressUpdated);
     }
 
+    [[nodiscard]] auto getServerPageNumberForOffset(uint32_t offset) const -> int {
+        if (!pageStream_) {
+            return -1;
+        }
+        return pageStream_->getServerPageNumberForOffset(offset);
+    }
+
     void retryNetworkOperation() {
         // Retry loading the initial page if we're at the beginning
         if (pageStream_->size() == 0) {

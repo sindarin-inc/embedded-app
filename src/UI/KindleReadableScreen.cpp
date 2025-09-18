@@ -222,18 +222,21 @@ KindleReadableScreen::KindleReadableScreen(DisplaySystem &display,
 
     // Create a readable-like object for the popup menu to use
     // TODO(john): We should make a KindleReadable object that can be used for Kindle books
-    auto readablePlaceholder = std::make_shared<Readable>();
-    readablePlaceholder->title = kindleBook_->title;
+    popupMenuReadable_ = std::make_shared<Readable>();
+    popupMenuReadable_->title = kindleBook_->title;
 
     // Add authors from kindle book to readable
     Author author;
     author.name = kindleBook_->author;
-    readablePlaceholder->authors.push_back(author);
+    popupMenuReadable_->authors.clear();
+    popupMenuReadable_->authors.push_back(author);
+    popupMenuReadable_->place = currentPlace_;
 
     auto stream = pageFlipper_.getStream();
     popupMenuScreen_ = std::make_shared<NewReadablePopupMenuScreen>(
-        display, prefs_, fileSystem_, readablePlaceholder, lightingController_, renderer_,
+        display, prefs_, fileSystem_, popupMenuReadable_, lightingController_, renderer_,
         telemetry_, localStore_, stream);
+    popupMenuScreen_->setShowPageIndicators(false);
 
     popupMenuScreen_->addTab("Popup", popupNavigationFactory, 8);
     popupMenuScreen_->addTab("Style", popupStyleFactory, 8);
@@ -860,17 +863,14 @@ void KindleReadableScreen::dismissScreen() {
 }
 
 void KindleReadableScreen::showPopupMenu() {
-    // Create a readable-like object for the popup menu to use
-    // TODO(john): Don't we already do this?
-    auto readablePlaceholder = std::make_shared<Readable>();
-    readablePlaceholder->title = kindleBook_->title;
+    if (popupMenuReadable_) {
+        popupMenuReadable_->place = currentPlace_;
+    }
 
-    // Add authors from kindle book to readable
-    Author author;
-    author.name = kindleBook_->author;
-    readablePlaceholder->authors.push_back(author);
-
-    readablePlaceholder->place = currentPlace_; // Use current reading position
+    if (popupMenuScreen_) {
+        popupMenuScreen_->setUpPopupMenu();
+        popupMenuScreen_->regenerateCurrentTab();
+    }
 
     // Show the popup menu - no need to set readable since that's only needed for some features
     setCurrentScreen(popupMenuScreen_);
@@ -884,17 +884,43 @@ void KindleReadableScreen::showTableOfContents() {
     // Close the popup menu first
     setCurrentScreen(nullptr);
 
-    // Get current page from the current place
-    int currentPage = currentPlace_ ? currentPlace_->getOffset() : 0;
+    // Determine the current server page for highlighting and navigation
+    int currentPage = -1;
+    if (currentPlace_) {
+        currentPage = pageFlipper_.getServerPageNumberForOffset(currentPlace_->getOffset());
+    }
+
+    if (currentPage < 0 && kindleBook_->progressCurrentPage >= 0) {
+        currentPage = kindleBook_->progressCurrentPage;
+    }
+
+    if (currentPage < 0) {
+        currentPage = 0;
+    }
 
     // Create the table of contents screen
     auto tocScreen = std::make_shared<KindleTableOfContentsScreen>(
         display_, kindleBook_, prefs_, telemetry_, pageFlipper_, currentPage, cancelFlag_);
 
     // Set the callback for when a chapter is selected
-    tocScreen->setChapterSelectedCallback([this](const std::string &chapterUuid, int currentPage) {
-        log_i("Chapter selected with UUID: %s, navigating from page %d", chapterUuid.c_str(),
-              currentPage);
+    tocScreen->setChapterSelectedCallback([this](const std::string &chapterUuid, int chapterPage) {
+        log_i("Chapter selected with UUID: %s, navigating to page %d", chapterUuid.c_str(),
+              chapterPage);
+
+        int requestPage = chapterPage;
+        if (requestPage < 0) {
+            if (currentPlace_) {
+                requestPage = pageFlipper_.getServerPageNumberForOffset(currentPlace_->getOffset());
+            }
+
+            if (requestPage < 0 && kindleBook_->progressCurrentPage >= 0) {
+                requestPage = kindleBook_->progressCurrentPage;
+            }
+
+            if (requestPage < 0) {
+                requestPage = 0;
+            }
+        }
 
         // Dismiss the TOC screen
         setCurrentScreen(nullptr);
@@ -906,7 +932,7 @@ void KindleReadableScreen::showTableOfContents() {
         setNeedsRerender();
 
         // Navigate to the chapter
-        DispatchGetCore0BackgroundQueue()->dispatch([this, chapterUuid, currentPage]() {
+        DispatchGetCore0BackgroundQueue()->dispatch([this, chapterUuid, requestPage]() {
             if (CancelFlag::isCancelled(cancelFlag_)) {
                 return;
             }
@@ -915,14 +941,14 @@ void KindleReadableScreen::showTableOfContents() {
             KindlePageResponse resp;
             auto api = SindarinAPI::getInstance();
             int result = api->navigateKindleToChapter(
-                std::string(kindleBook_->uuid), chapterUuid, currentPage, &resp,
+                std::string(kindleBook_->uuid), chapterUuid, requestPage, &resp,
                 pageFlipper_.isUsingBleConnection(), cancelFlag_);
 
             if (CancelFlag::isCancelled(cancelFlag_)) {
                 return;
             }
 
-            DispatchGetUiQueue()->dispatch([this, result, resp, chapterUuid]() {
+            DispatchGetUiQueue()->dispatch([this, result, resp, chapterUuid, requestPage]() {
                 if (result == 200 && resp.success && !resp.text.empty()) {
                     log_i("Successfully navigated to chapter UUID: %s", chapterUuid.c_str());
 
@@ -985,7 +1011,8 @@ void KindleReadableScreen::showTableOfContents() {
                         TelemetryField::METRIC_EVENT, kindleBook_->uuid,
                         {{"event", std::string("table_of_contents_navigate_success")},
                          {"kindle", true},
-                         {"chapter_uuid", chapterUuid}});
+                         {"chapter_uuid", chapterUuid},
+                         {"page", requestPage}});
                 } else {
                     log_e("Failed to navigate to chapter UUID: %s (result: %d)",
                           chapterUuid.c_str(), result);
