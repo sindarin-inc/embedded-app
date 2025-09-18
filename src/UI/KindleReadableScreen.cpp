@@ -394,15 +394,11 @@ void KindleReadableScreen::processCommand(RemoteCommand command) {
         return;
     }
 
-    // If in error state, any button press should return to content
+    // Any button press should return to content
     if (state_ == State::ERROR) {
-        if (command == RemoteCommand::ENTER || command == RemoteCommand::LEFT ||
-            command == RemoteCommand::RIGHT || command == RemoteCommand::BACK) {
-            // Return to displaying content
-            setState(State::DISPLAY_CONTENT);
-            updateType_ = DisplaySystem::UpdateType::FULL;
-            setNeedsRerender();
-        }
+        setState(State::DISPLAY_CONTENT);
+        updateType_ = DisplaySystem::UpdateType::FULL;
+        setNeedsRerender();
         return;
     }
 

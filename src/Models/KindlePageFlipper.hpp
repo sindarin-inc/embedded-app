@@ -309,9 +309,10 @@ public:
         return 0;
     }
 
-    // Table of contents support methods
     [[nodiscard]] auto isUsingBleConnection() const -> bool { return useBle_; }
 
+    // When navigating to a new chapter, we need to reset the book session key
+    // and navigation state so that we can start fresh at the beginning of the chapter
     void resetBookSessionKey() {
         bookSessionKey_.clear();
         lastNavigatedPage_ = -1;

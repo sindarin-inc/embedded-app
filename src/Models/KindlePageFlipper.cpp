@@ -27,11 +27,14 @@ KindlePageFlipper::KindlePageFlipper(const std::shared_ptr<KindleBook> &kindleBo
     pageStream_ = std::make_shared<KindlePageStream>();
 }
 
+// Update local KindleBook state with progress reported by the service, deriving
+// missing fields (percentage/current page) and persisting changes for listeners
 void KindlePageFlipper::applyProgressUpdate(const KindlePageProgress &progress) {
     if (!kindleBook_) {
         return;
     }
 
+    // Ignore empty updates, we don't always get all fields from the server
     if (!progress.hasPercentage && !progress.hasCurrentPage && !progress.hasTotalPages) {
         return;
     }
@@ -55,6 +58,7 @@ void KindlePageFlipper::applyProgressUpdate(const KindlePageProgress &progress) 
         }
     }
 
+    // Derive a percentage when the server only supplied page counts
     if (!progress.hasPercentage) {
         int current =
             sanitized.hasCurrentPage ? sanitized.currentPage : kindleBook_->progressCurrentPage;

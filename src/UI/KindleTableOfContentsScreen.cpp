@@ -85,9 +85,10 @@ void KindleTableOfContentsScreen::loadTableOfContents() {
 void KindleTableOfContentsScreen::handleTableOfContentsResponse(const std::string &response) {
     log_d("TOC Response: %s", response.c_str());
 
-    // Allocate more memory for JSON parsing - response might have nested objects
-    auto doc = std::make_shared<SpiRamJsonDocument>(
-        std::max(static_cast<size_t>(4096), response.size() * 3));
+    // Most TOC payloads are a couple of kilobytes; size the document based on the
+    // response length with a little structural headroom
+    const size_t capacity = response.size() + JSON_OBJECT_SIZE(12) + JSON_ARRAY_SIZE(32) + 512;
+    auto doc = std::make_shared<SpiRamJsonDocument>(capacity);
     DeserializationError error = deserializeJson(*doc, response);
 
     if (error) {
@@ -117,24 +118,14 @@ void KindleTableOfContentsScreen::handleTableOfContentsResponse(const std::strin
 
         if (progressUpdate.hasCurrentPage) {
             currentPosition_ = progressUpdate.currentPage;
-            log_i("Current progress position: page %d", currentPosition_);
+            log_d("Current progress position: page %d", currentPosition_);
         }
 
         pageFlipper_.updateProgressFromServer(progressUpdate);
     }
 
-    // Parse position if available (legacy fallback)
-    if (root.containsKey("position") && root["position"].is<JsonObject>()) {
-        JsonObject position = root["position"];
-        if (position.containsKey("page")) {
-            currentPosition_ = position["page"];
-            log_i("Current position: page %d", currentPosition_);
-        }
-    }
-
-    if (currentPosition_ >= 0) {
-        currentPage_ = currentPosition_;
-    }
+    // Use the book's reported progress when available; otherwise keep the caller-provided default
+    currentPage_ = currentPosition_ >= 0 ? currentPosition_ : currentPage_;
 
     // Parse chapters
     if (!root.containsKey("chapters") || !root["chapters"].is<JsonArray>()) {
@@ -170,7 +161,7 @@ void KindleTableOfContentsScreen::handleTableOfContentsResponse(const std::strin
         }
     }
 
-    log_i("Loaded %zu chapters", chapters_.size());
+    log_d("Loaded %zu chapters", chapters_.size());
 
     if (chapters_.empty()) {
         errorMessageView_.setText("No chapters found");
@@ -198,7 +189,7 @@ void KindleTableOfContentsScreen::populateMenuItems() {
 
         menuView_.addMenuItem(std::make_shared<MenuItemTOC>(chapter.title, pageStr,
                                                             [this, chapterTitle, chapterUuid]() {
-            log_i("Selected chapter: %s (UUID: %s)", chapterTitle.c_str(), chapterUuid.c_str());
+            log_d("Selected chapter: %s (UUID: %s)", chapterTitle.c_str(), chapterUuid.c_str());
             selectChapter();
         }));
     }
@@ -247,7 +238,7 @@ void KindleTableOfContentsScreen::selectChapter() {
     if (menuView_.getSelectedIndex() >= 0 && menuView_.getSelectedIndex() < chapters_.size()) {
         const auto &chapter = chapters_[menuView_.getSelectedIndex()];
 
-        log_i("Selected chapter index %zu: title='%s', uuid='%s', page=%d",
+        log_d("Selected chapter index %zu: title='%s', uuid='%s', page=%d",
               menuView_.getSelectedIndex(), chapter.title.c_str(), chapter.uuid.c_str(),
               chapter.page);
 
@@ -267,7 +258,7 @@ void KindleTableOfContentsScreen::selectChapter() {
             progress.percentage = std::clamp(percentage, 0, 100);
             progress.hasPercentage = true;
 
-            log_i("Optimistically updating progress to page %d of %d (%d%%)", chapter.page,
+            log_d("Optimistically updating progress to page %d of %d (%d%%)", chapter.page,
                   kindleBook_->progressTotalPages, progress.percentage);
 
             // Apply the progress update which will also save to disk
@@ -368,7 +359,6 @@ void KindleTableOfContentsScreen::render(DisplaySystem &display) {
         firstLoad_ = false;
     }
 
-    // Always draw fast elements when displaying the menu
     if (state_ == State::DISPLAYING) {
         menuView_.drawFastElements();
         display.updateDisplay(DisplaySystem::UpdateType::FAST_INDICATOR);
