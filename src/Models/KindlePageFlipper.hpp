@@ -256,6 +256,13 @@ public:
         onLastReadDialogFunction_ = std::move(onLastReadDialogFunction);
     }
 
+    void updateProgressFromServer(const KindlePageProgress &progress) { applyProgressUpdate(progress); }
+
+    void setOnProgressUpdated(
+        std::function<void(const KindlePageProgress &progress)> onProgressUpdated) {
+        onProgressUpdated_ = std::move(onProgressUpdated);
+    }
+
     void retryNetworkOperation() {
         // Retry loading the initial page if we're at the beginning
         if (pageStream_->size() == 0) {
@@ -323,6 +330,7 @@ private:
     std::function<void(const std::string &errorMessage)> onErrorFunction_;
     std::function<void()> onConnectionErrorFunction_;
     std::function<void(const SpiramString &dialogText)> onLastReadDialogFunction_;
+    std::function<void(const KindlePageProgress &progress)> onProgressUpdated_;
 
     [[nodiscard]] auto dispatchQueue() const -> DispatchQueue *;
     auto checkForError(int httpCode, std::shared_ptr<KindlePageResponse> &response)
@@ -344,4 +352,6 @@ private:
     // Unified method to sync pages with server - handles both navigation changes and buffer refills
     void syncPagesWithServer(uint32_t currentOffset, bool navigationChanged,
                              const std::shared_ptr<CancelFlag> &cancelFlag);
+
+    void applyProgressUpdate(const KindlePageProgress &progress);
 };

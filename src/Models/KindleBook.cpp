@@ -5,6 +5,13 @@ auto convertToJson(const KindleBook &src, JsonVariant dst) -> bool {
     dst["title"] = src.title;
     dst["author"] = src.author;
     dst["progress"] = src.progress;
+    dst["progress_percent"] = src.progressPercent;
+    if (src.progressCurrentPage >= 0) {
+        dst["progress_current_page"] = src.progressCurrentPage;
+    }
+    if (src.progressTotalPages >= 0) {
+        dst["progress_total_pages"] = src.progressTotalPages;
+    }
     dst["is_approved_for_device"] = src.isApprovedForDevice;
     dst["last_modified"] = src.lastModified;
     return true;

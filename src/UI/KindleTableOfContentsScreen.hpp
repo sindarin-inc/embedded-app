@@ -54,6 +54,7 @@ protected:
     void loadTableOfContents();
     void handleTableOfContentsResponse(const std::string &response);
     void populateMenuItems();
+    void highlightCurrentChapter();
     void selectChapter();
     void moveSelection(int delta);
 

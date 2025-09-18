@@ -1455,6 +1455,61 @@ void KindleReadableScreen::updatePageFlipperCallbacks() {
         });
     });
 
+    pageFlipper_.setOnProgressUpdated([this, cancelFlag](const KindlePageProgress &progress) {
+        if (CancelFlag::isCancelled(cancelFlag)) {
+            return;
+        }
+
+        DispatchGetUiQueue()->dispatch([this, cancelFlag, progress]() {
+            if (CancelFlag::isCancelled(cancelFlag)) {
+                return;
+            }
+
+            auto &books = localStore_.kindle();
+            bool found = false;
+            bool updated = false;
+
+            for (auto &book : books) {
+                if (book.uuid == kindleBook_->uuid) {
+                    found = true;
+                    if (book.progressPercent != kindleBook_->progressPercent ||
+                        book.progress != kindleBook_->progress ||
+                        book.progressCurrentPage != kindleBook_->progressCurrentPage ||
+                        book.progressTotalPages != kindleBook_->progressTotalPages) {
+                        book = *kindleBook_;
+                        updated = true;
+                    }
+                    break;
+                }
+            }
+
+            if (!found) {
+                books.push_back(*kindleBook_);
+                updated = true;
+            }
+
+            if (updated) {
+                int percentForLog = progress.hasPercentage ? progress.percentage
+                                                            : kindleBook_->progressPercent;
+                int currentPageForLog = progress.hasCurrentPage
+                                             ? progress.currentPage
+                                             : kindleBook_->progressCurrentPage;
+                int totalPagesForLog = progress.hasTotalPages
+                                            ? progress.totalPages
+                                            : kindleBook_->progressTotalPages;
+
+                log_i("Updating Kindle progress for %s: %d%% (page %d of %d)",
+                      kindleBook_->title.c_str(), percentForLog, currentPageForLog,
+                      totalPagesForLog);
+
+                if (!localStore_.saveKindleBooks(books)) {
+                    log_e("Failed to save Kindle progress to disk for %s",
+                          kindleBook_->title.c_str());
+                }
+            }
+        });
+    });
+
     pageFlipper_.setOnErrorFunction([this, cancelFlag](const std::string &error) {
         if (CancelFlag::isCancelled(cancelFlag)) {
             return;

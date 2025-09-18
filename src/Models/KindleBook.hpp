@@ -21,10 +21,15 @@ public:
     SpiramString author;
     SpiramString progress;           // Progress as a string like "5%"
     int progressPercent = 0;         // Parsed numeric progress (0-100)
+    int progressCurrentPage = -1;    // Current page index from Kindle progress
+    int progressTotalPages = -1;     // Total pages reported by Kindle progress
     bool isApprovedForDevice = true; // Whether the book is approved for this device
     SpiramString lastModified;       // Last modified timestamp
 
     auto fromJson(const JsonObject &j) -> bool override {
+        progressPercent = 0;
+        progressCurrentPage = -1;
+        progressTotalPages = -1;
         uuid = j["uuid"].isNull() ? "" : j["uuid"].as<std::string>();
         shortenedUuid = uuid;
         shortenedUuid.resize(TRUNCATE_READABLE_UUID_FOR_PLACEMARK_BYTES);
@@ -58,6 +63,18 @@ public:
             } else {
                 progressPercent = static_cast<int>(val);
             }
+        }
+
+        if (j.containsKey("progress_percent") && !j["progress_percent"].isNull()) {
+            progressPercent = j["progress_percent"];
+        }
+
+        if (j.containsKey("progress_current_page") && !j["progress_current_page"].isNull()) {
+            progressCurrentPage = j["progress_current_page"];
+        }
+
+        if (j.containsKey("progress_total_pages") && !j["progress_total_pages"].isNull()) {
+            progressTotalPages = j["progress_total_pages"];
         }
 
         return true;

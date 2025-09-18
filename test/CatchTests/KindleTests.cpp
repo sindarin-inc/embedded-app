@@ -27,6 +27,7 @@
 #include "Storage/SolDrm.hpp"
 #include "UI/KindleLastReadDialogScreen.hpp"
 #include "UI/KindleReadableScreen.hpp"
+#include "UI/KindleTableOfContentsScreen.hpp"
 #include "ViewTestCommon.hpp"
 #include "httplib.h"
 #include "sindarin-debug.h"
@@ -381,6 +382,33 @@ void teardownHttpServer(std::unique_ptr<httplib::Server> &httpServer,
     httpServer = nullptr;
 }
 
+TEST_CASE("KindleBook serializes progress fields", "[.][no-kindle]") {
+    DynamicJsonDocument doc(512);
+    JsonObject obj = doc.to<JsonObject>();
+
+    KindleBook book;
+    book.uuid = "uuid";
+    book.title = "Title";
+    book.author = "Author";
+    book.progress = "42%";
+    book.progressPercent = 42;
+    book.progressCurrentPage = 120;
+    book.progressTotalPages = 250;
+
+    REQUIRE(convertToJson(book, obj));
+    REQUIRE(obj["progress"].as<std::string>() == "42%");
+    REQUIRE(obj["progress_percent"].as<int>() == 42);
+    REQUIRE(obj["progress_current_page"].as<int>() == 120);
+    REQUIRE(obj["progress_total_pages"].as<int>() == 250);
+
+    KindleBook parsed;
+    REQUIRE(parsed.fromJson(obj));
+    REQUIRE(parsed.progress == "42%");
+    REQUIRE(parsed.progressPercent == 42);
+    REQUIRE(parsed.progressCurrentPage == 120);
+    REQUIRE(parsed.progressTotalPages == 250);
+}
+
 TEST_CASE("Test KindleReadableScreen views independently", "[.][no-kindle]") {
     SetImagesFolder("KindleImages");
 
@@ -700,6 +728,92 @@ TEST_CASE("Test KindleReadableScreen views independently", "[.][no-kindle]") {
             ASSERT_VIEW_UNCHANGED(*display, "Kindle_State_EndOfBook");
         }
     }
+}
+
+TEST_CASE("Kindle table of contents highlights current chapter", "[.][no-kindle]") {
+    SetImagesFolder("KindleImages");
+
+    auto display = createDisplay();
+
+    PosixFileSystem fileSystem;
+    PreferencesStore prefs;
+    prefs.begin("test_kindle_prefs.ini");
+
+    Telemetry telemetry(fileSystem, prefs);
+    auto book = std::make_shared<KindleBook>();
+    book->uuid = "kindle-toc-uuid";
+    book->title = "Kindle TOC";
+    book->author = "Tester";
+
+    auto cancelFlag = std::make_shared<CancelFlag>();
+    KindlePageFlipper pageFlipper(book, cancelFlag, telemetry);
+
+    KindleTableOfContentsScreen tocScreen(*display, book, prefs, telemetry, pageFlipper, 0,
+                                         cancelFlag);
+
+    const std::string midChapter =
+        R"({"success":true,"progress":{"current_page":35,"total_pages":1000},"chapters":[{"title":"Intro","uuid":"c1","page":1},{"title":"Middle","uuid":"c2","page":20},{"title":"Later","uuid":"c3","page":40}]})";
+    tocScreen.handleTableOfContentsResponse(midChapter);
+    REQUIRE(tocScreen.menuView_.getSelectedIndex() == 1);
+    REQUIRE(book->progressPercent == 4);
+
+    const std::string earlyChapter =
+        R"({"success":true,"progress":{"current_page":0,"total_pages":1000},"chapters":[{"title":"Intro","uuid":"c1","page":5},{"title":"Next","uuid":"c2","page":15}]})";
+    tocScreen.handleTableOfContentsResponse(earlyChapter);
+    REQUIRE(tocScreen.menuView_.getSelectedIndex() == 0);
+    REQUIRE(book->progressPercent == 0);
+
+    const std::string lateChapter =
+        R"({"success":true,"progress":{"current_page":200,"total_pages":1000},"chapters":[{"title":"Intro","uuid":"c1","page":5},{"title":"Next","uuid":"c2","page":115},{"title":"Last","uuid":"c3","page":190}]})";
+    tocScreen.handleTableOfContentsResponse(lateChapter);
+    REQUIRE(tocScreen.menuView_.getSelectedIndex() == 2);
+    REQUIRE(book->progressPercent == 20);
+}
+
+TEST_CASE("Kindle progress updates derive percentages", "[.][no-kindle]") {
+    PosixFileSystem fileSystem;
+    PreferencesStore prefs;
+    prefs.begin("test_kindle_prefs.ini");
+    Telemetry telemetry(fileSystem, prefs);
+
+    auto book = std::make_shared<KindleBook>();
+    book->uuid = "progress-uuid";
+    book->title = "Progress Test";
+    book->author = "Tester";
+
+    auto cancelFlag = std::make_shared<CancelFlag>();
+    KindlePageFlipper flipper(book, cancelFlag, telemetry);
+
+    KindlePageProgress progress;
+    progress.currentPage = 350;
+    progress.totalPages = 1000;
+    progress.hasCurrentPage = true;
+    progress.hasTotalPages = true;
+
+    flipper.applyProgressUpdate(progress);
+
+    REQUIRE(book->progressPercent == 35);
+    REQUIRE(std::string(book->progress.c_str()) == "35%");
+    REQUIRE(book->progressCurrentPage == 350);
+    REQUIRE(book->progressTotalPages == 1000);
+
+    KindlePageProgress lastPage;
+    lastPage.currentPage = 999;
+    lastPage.totalPages = 1000;
+    lastPage.hasCurrentPage = true;
+    lastPage.hasTotalPages = true;
+
+    flipper.applyProgressUpdate(lastPage);
+    REQUIRE(book->progressPercent == 100);
+    REQUIRE(std::string(book->progress.c_str()) == "100%");
+
+    KindlePageProgress explicitPercent;
+    explicitPercent.percentage = 12;
+    explicitPercent.hasPercentage = true;
+
+    flipper.applyProgressUpdate(explicitPercent);
+    REQUIRE(book->progressPercent == 12);
+    REQUIRE(std::string(book->progress.c_str()) == "12%");
 }
 
 TEST_CASE("Test mock server URL override", "[.][no-kindle]") {

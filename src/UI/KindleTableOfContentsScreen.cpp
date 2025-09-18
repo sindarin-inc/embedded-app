@@ -1,6 +1,7 @@
 #include "KindleTableOfContentsScreen.hpp"
 
 #include <ArduinoJson.h>
+#include <climits>
 
 #include "Communications/SindarinAPI.hpp"
 #include "Misc/Dispatch.hpp"
@@ -106,13 +107,31 @@ void KindleTableOfContentsScreen::handleTableOfContentsResponse(const std::strin
         return;
     }
 
-    // Parse position if available
+    // Parse progress information if available (preferred source for current page)
+    if (root.containsKey("progress") && root["progress"].is<JsonObject>()) {
+        JsonObject progress = root["progress"];
+        KindlePageProgress progressUpdate;
+        progressUpdate.fromJson(progress);
+
+        if (progressUpdate.hasCurrentPage) {
+            currentPosition_ = progressUpdate.currentPage;
+            log_i("Current progress position: page %d", currentPosition_);
+        }
+
+        pageFlipper_.updateProgressFromServer(progressUpdate);
+    }
+
+    // Parse position if available (legacy fallback)
     if (root.containsKey("position") && root["position"].is<JsonObject>()) {
         JsonObject position = root["position"];
         if (position.containsKey("page")) {
             currentPosition_ = position["page"];
             log_i("Current position: page %d", currentPosition_);
         }
+    }
+
+    if (currentPosition_ >= 0) {
+        currentPage_ = currentPosition_;
     }
 
     // Parse chapters
@@ -157,6 +176,7 @@ void KindleTableOfContentsScreen::handleTableOfContentsResponse(const std::strin
         render(display_);
     } else {
         populateMenuItems();
+        highlightCurrentChapter();
         // Don't use setHidden - just change state and let drawInRect handle what to draw
         setState(State::DISPLAYING);
         firstLoad_ = true; // Force full redraw to clear loading message
@@ -180,6 +200,45 @@ void KindleTableOfContentsScreen::populateMenuItems() {
             selectChapter();
         }));
     }
+}
+
+void KindleTableOfContentsScreen::highlightCurrentChapter() {
+    if (chapters_.empty()) {
+        return;
+    }
+
+    int targetPage = currentPosition_ >= 0 ? currentPosition_ : currentPage_;
+    if (targetPage < 0) {
+        targetPage = 0;
+    }
+
+    int selectedIndex = -1;
+    int selectedPage = -1;
+    int nextIndex = -1;
+    int nextPage = INT_MAX;
+
+    for (size_t i = 0; i < chapters_.size(); ++i) {
+        const auto &chapter = chapters_[i];
+        if (chapter.page < 0) {
+            continue;
+        }
+
+        if (chapter.page <= targetPage) {
+            if (chapter.page >= selectedPage) {
+                selectedIndex = static_cast<int>(i);
+                selectedPage = chapter.page;
+            }
+        } else if (chapter.page < nextPage) {
+            nextIndex = static_cast<int>(i);
+            nextPage = chapter.page;
+        }
+    }
+
+    if (selectedIndex == -1) {
+        selectedIndex = (nextIndex != -1) ? nextIndex : 0;
+    }
+
+    menuView_.setSelectedIndex(static_cast<size_t>(selectedIndex));
 }
 
 void KindleTableOfContentsScreen::selectChapter() {

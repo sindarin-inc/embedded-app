@@ -12,18 +12,24 @@ struct KindlePageProgress {
     int percentage = 0;
     int currentPage = 0;
     int totalPages = 0;
+    bool hasPercentage = false;
+    bool hasCurrentPage = false;
+    bool hasTotalPages = false;
 
     auto fromJson(const JsonObject &json) -> bool {
-        if (json.containsKey("percentage")) {
+        if (json.containsKey("percentage") && !json["percentage"].isNull()) {
             percentage = json["percentage"];
+            hasPercentage = true;
         }
 
         if (json.containsKey("current_page") && !json["current_page"].isNull()) {
             currentPage = json["current_page"];
+            hasCurrentPage = true;
         }
 
         if (json.containsKey("total_pages") && !json["total_pages"].isNull()) {
             totalPages = json["total_pages"];
+            hasTotalPages = true;
         }
 
         return true;

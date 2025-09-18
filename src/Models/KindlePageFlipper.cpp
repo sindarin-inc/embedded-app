@@ -1,5 +1,7 @@
 #include "Models/KindlePageFlipper.hpp"
 
+#include <algorithm>
+#include <cmath>
 #include <cinttypes>
 #include <esp_timer.h>
 #include <utility>
@@ -23,6 +25,68 @@ KindlePageFlipper::KindlePageFlipper(const std::shared_ptr<KindleBook> &kindleBo
           kindleBook_->author.c_str());
 
     pageStream_ = std::make_shared<KindlePageStream>();
+}
+
+void KindlePageFlipper::applyProgressUpdate(const KindlePageProgress &progress) {
+    if (!kindleBook_) {
+        return;
+    }
+
+    if (!progress.hasPercentage && !progress.hasCurrentPage && !progress.hasTotalPages) {
+        return;
+    }
+
+    KindlePageProgress sanitized = progress;
+    bool updated = false;
+
+    if (progress.hasCurrentPage) {
+        sanitized.currentPage = std::max(progress.currentPage, 0);
+        if (kindleBook_->progressCurrentPage != sanitized.currentPage) {
+            kindleBook_->progressCurrentPage = sanitized.currentPage;
+            updated = true;
+        }
+    }
+
+    if (progress.hasTotalPages) {
+        sanitized.totalPages = std::max(progress.totalPages, 0);
+        if (kindleBook_->progressTotalPages != sanitized.totalPages) {
+            kindleBook_->progressTotalPages = sanitized.totalPages;
+            updated = true;
+        }
+    }
+
+    if (!progress.hasPercentage) {
+        int current = sanitized.hasCurrentPage ? sanitized.currentPage
+                                               : kindleBook_->progressCurrentPage;
+        int total = sanitized.hasTotalPages ? sanitized.totalPages
+                                            : kindleBook_->progressTotalPages;
+        if (total > 0 && current >= 0) {
+            int computed = static_cast<int>(std::lround(((static_cast<double>(current) + 1.0) * 100.0) /
+                                                       static_cast<double>(total)));
+            sanitized.percentage = std::clamp(computed, 0, 100);
+            sanitized.hasPercentage = true;
+        }
+    } else {
+        sanitized.percentage = std::clamp(progress.percentage, 0, 100);
+    }
+
+    if (sanitized.hasPercentage) {
+        std::string progressString = StringFormat("%d%%", sanitized.percentage);
+
+        if (kindleBook_->progressPercent != sanitized.percentage) {
+            kindleBook_->progressPercent = sanitized.percentage;
+            updated = true;
+        }
+
+        if (progressString != kindleBook_->progress.c_str()) {
+            kindleBook_->progress = progressString.c_str();
+            updated = true;
+        }
+    }
+
+    if (updated && onProgressUpdated_) {
+        onProgressUpdated_(sanitized);
+    }
 }
 
 auto KindlePageFlipper::dispatchQueue() const -> DispatchQueue * {
@@ -130,6 +194,8 @@ auto KindlePageFlipper::navigateWithRetry(int navigateTo, int previewTo,
                 bookSessionKey_ = response->bookSessionKey;
                 log_i("Updated book_session_key: %s", bookSessionKey_.c_str());
             }
+
+            applyProgressUpdate(response->progress);
 
             if (retryCount > 0) {
                 log_i("Navigation request succeeded after %d retries", retryCount);
@@ -264,6 +330,7 @@ auto KindlePageFlipper::openBookWithRetry(std::shared_ptr<KindlePageResponse> &r
         error = checkForError(httpCode, response);
 
         if (!error) {
+            applyProgressUpdate(response->progress);
             if (retryCount > 0) {
                 log_i("Open book request succeeded after %d retries", retryCount);
                 // Log success after retry
