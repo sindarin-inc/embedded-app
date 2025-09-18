@@ -1,5 +1,7 @@
 #include "KindleTableOfContentsScreen.hpp"
 
+#include <algorithm>
+#include <cmath>
 #include <ArduinoJson.h>
 #include <climits>
 
@@ -245,8 +247,32 @@ void KindleTableOfContentsScreen::selectChapter() {
     if (menuView_.getSelectedIndex() >= 0 && menuView_.getSelectedIndex() < chapters_.size()) {
         const auto &chapter = chapters_[menuView_.getSelectedIndex()];
 
-        log_i("Selected chapter index %zu: title='%s', uuid='%s'", menuView_.getSelectedIndex(),
-              chapter.title.c_str(), chapter.uuid.c_str());
+        log_i("Selected chapter index %zu: title='%s', uuid='%s', page=%d",
+              menuView_.getSelectedIndex(), chapter.title.c_str(), chapter.uuid.c_str(),
+              chapter.page);
+
+        // Optimistically update progress based on the selected chapter's page
+        if (chapter.page >= 0 && kindleBook_->progressTotalPages > 0) {
+            KindlePageProgress progress;
+            progress.currentPage = chapter.page;
+            progress.hasCurrentPage = true;
+            progress.totalPages = kindleBook_->progressTotalPages;
+            progress.hasTotalPages = true;
+
+            // Calculate percentage: (currentPage + 1) / totalPages * 100
+            // Adding 1 because page indices are 0-based but we want 1-based for percentage
+            int percentage = static_cast<int>(
+                std::lround(((static_cast<double>(chapter.page) + 1.0) * 100.0) /
+                           static_cast<double>(kindleBook_->progressTotalPages)));
+            progress.percentage = std::clamp(percentage, 0, 100);
+            progress.hasPercentage = true;
+
+            log_i("Optimistically updating progress to page %d of %d (%d%%)",
+                  chapter.page, kindleBook_->progressTotalPages, progress.percentage);
+
+            // Apply the progress update which will also save to disk
+            pageFlipper_.updateProgressFromServer(progress);
+        }
 
         // Log telemetry for chapter selection
         telemetry_.logMetric(TelemetryField::METRIC_EVENT, kindleBook_->uuid,
