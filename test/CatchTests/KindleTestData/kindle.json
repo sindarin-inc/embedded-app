@@ -4,7 +4,10 @@
       "uuid": "36dbd3f2-c6d1-437e-b912-d940e23016f5",
       "title": "The Magic of Code: How Digital Language Created and Connects Our World—and Shapes Our Future",
       "author": "ARBESMAN, SAMUEL",
-      "progress": "",
+      "progress": "70%",
+      "progress_percent": 70,
+      "progress_current_page": 7,
+      "progress_total_pages": 100,
       "is_approved_for_device": true,
       "last_modified": "1751905811"
     },
@@ -13,6 +16,7 @@
       "title": "The Singularity Is Nearer: When We Merge with AI",
       "author": "KURZWEIL, RAY",
       "progress": "",
+      "progress_percent": 0,
       "is_approved_for_device": true,
       "last_modified": "1751905807"
     },
@@ -21,6 +25,7 @@
       "title": "Boom: Bubbles and the End of Stagnation",
       "author": "HOBART, BYRNE; HUBER, TOBIAS",
       "progress": "",
+      "progress_percent": 0,
       "is_approved_for_device": true,
       "last_modified": "1750888882"
     },
@@ -29,6 +34,7 @@
       "title": "How Proust Can Change Your Life (Vintage International)",
       "author": "DE BOTTON, ALAIN",
       "progress": "",
+      "progress_percent": 0,
       "is_approved_for_device": true,
       "last_modified": "1750879467"
     },
@@ -37,6 +43,7 @@
       "title": "Thinking in Systems: International Bestseller",
       "author": "MEADOWS, DONELLA H.",
       "progress": "",
+      "progress_percent": 0,
       "is_approved_for_device": true,
       "last_modified": "1750878837"
     },
@@ -45,6 +52,7 @@
       "title": "The Cyberiad: Stories",
       "author": "LEM, STANISLAW",
       "progress": "",
+      "progress_percent": 0,
       "is_approved_for_device": true,
       "last_modified": "1750878826"
     },
@@ -53,6 +61,7 @@
       "title": "Talking to Strangers: What We Should Know about the People We Don't Know",
       "author": "GLADWELL, MALCOLM",
       "progress": "",
+      "progress_percent": 0,
       "is_approved_for_device": true,
       "last_modified": "1750774851"
     },
@@ -61,6 +70,7 @@
       "title": "The Big Nine: How the Tech Titans and Their Thinking Machines Could Warp Humanity",
       "author": "WEBB, AMY",
       "progress": "",
+      "progress_percent": 0,
       "is_approved_for_device": true,
       "last_modified": "1750694886"
     },
@@ -69,6 +79,7 @@
       "title": "How to Change Your Mind: What the New Science of Psychedelics Teaches Us About Consciousness, Dying, Addiction, Depression, and Transcendence",
       "author": "POLLAN, MICHAEL",
       "progress": "",
+      "progress_percent": 0,
       "is_approved_for_device": true,
       "last_modified": "1750301408"
     },
@@ -77,6 +88,7 @@
       "title": "The Wandering Earth: Classic Science Fiction Collection by Liu Cixin (Short Stories by Liu Cixin Book 1)",
       "author": "LIU, CIXIN",
       "progress": "",
+      "progress_percent": 0,
       "is_approved_for_device": true,
       "last_modified": "1749851372"
     },
@@ -84,7 +96,10 @@
       "uuid": "test-short-pages-book-uuid",
       "title": "SHORT_PAGES_TEST: A Book With Very Short Pages",
       "author": "TEST AUTHOR",
-      "progress": "",
+      "progress": "9%",
+      "progress_percent": 9,
+      "progress_current_page": 10,
+      "progress_total_pages": 100,
       "is_approved_for_device": true,
       "last_modified": "1751905900"
     }
