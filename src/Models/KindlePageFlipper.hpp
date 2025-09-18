@@ -256,7 +256,9 @@ public:
         onLastReadDialogFunction_ = std::move(onLastReadDialogFunction);
     }
 
-    void updateProgressFromServer(const KindlePageProgress &progress) { applyProgressUpdate(progress); }
+    void updateProgressFromServer(const KindlePageProgress &progress) {
+        applyProgressUpdate(progress);
+    }
 
     void setOnProgressUpdated(
         std::function<void(const KindlePageProgress &progress)> onProgressUpdated) {

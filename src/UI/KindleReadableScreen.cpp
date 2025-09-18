@@ -1489,14 +1489,12 @@ void KindleReadableScreen::updatePageFlipperCallbacks() {
             }
 
             if (updated) {
-                int percentForLog = progress.hasPercentage ? progress.percentage
-                                                            : kindleBook_->progressPercent;
-                int currentPageForLog = progress.hasCurrentPage
-                                             ? progress.currentPage
-                                             : kindleBook_->progressCurrentPage;
-                int totalPagesForLog = progress.hasTotalPages
-                                            ? progress.totalPages
-                                            : kindleBook_->progressTotalPages;
+                int percentForLog =
+                    progress.hasPercentage ? progress.percentage : kindleBook_->progressPercent;
+                int currentPageForLog = progress.hasCurrentPage ? progress.currentPage
+                                                                : kindleBook_->progressCurrentPage;
+                int totalPagesForLog =
+                    progress.hasTotalPages ? progress.totalPages : kindleBook_->progressTotalPages;
 
                 log_i("Updating Kindle progress for %s: %d%% (page %d of %d)",
                       kindleBook_->title.c_str(), percentForLog, currentPageForLog,

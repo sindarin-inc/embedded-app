@@ -1,8 +1,8 @@
 #include "Models/KindlePageFlipper.hpp"
 
 #include <algorithm>
-#include <cmath>
 #include <cinttypes>
+#include <cmath>
 #include <esp_timer.h>
 #include <utility>
 
@@ -56,13 +56,13 @@ void KindlePageFlipper::applyProgressUpdate(const KindlePageProgress &progress) 
     }
 
     if (!progress.hasPercentage) {
-        int current = sanitized.hasCurrentPage ? sanitized.currentPage
-                                               : kindleBook_->progressCurrentPage;
-        int total = sanitized.hasTotalPages ? sanitized.totalPages
-                                            : kindleBook_->progressTotalPages;
+        int current =
+            sanitized.hasCurrentPage ? sanitized.currentPage : kindleBook_->progressCurrentPage;
+        int total =
+            sanitized.hasTotalPages ? sanitized.totalPages : kindleBook_->progressTotalPages;
         if (total > 0 && current >= 0) {
-            int computed = static_cast<int>(std::lround(((static_cast<double>(current) + 1.0) * 100.0) /
-                                                       static_cast<double>(total)));
+            int computed = static_cast<int>(std::lround(
+                ((static_cast<double>(current) + 1.0) * 100.0) / static_cast<double>(total)));
             sanitized.percentage = std::clamp(computed, 0, 100);
             sanitized.hasPercentage = true;
         }
