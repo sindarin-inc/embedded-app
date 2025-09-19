@@ -434,8 +434,8 @@ void KindlePageFlipper::syncPagesWithServer(uint32_t currentOffset, bool navigat
         telemetry_.logMetric(TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
                              successTelemetryData);
 
-        if (onNavigationComplete_) {
-            onNavigationComplete_(response->ocrText.size());
+        if (onContentReady_) {
+            onContentReady_(response->ocrText.size());
         }
     }
 
@@ -485,8 +485,8 @@ void KindlePageFlipper::syncPagesWithServer(uint32_t currentOffset, bool navigat
               nextOcrTextLength, bytesRemaining);
         additionalPagesFetched++;
 
-        if (onNavigationComplete_) {
-            onNavigationComplete_(pageStream_->getOcrTextLength());
+        if (onContentReady_) {
+            onContentReady_(pageStream_->getOcrTextLength());
         }
     }
 
@@ -606,8 +606,8 @@ void KindlePageFlipper::loadInitialPage() {
                               {"elapsed_ms", static_cast<int>(elapsedMs)}});
 
         // Notify UI that initial content is ready to display
-        if (onNavigationComplete_) {
-            onNavigationComplete_(ocrTextLength);
+        if (onContentReady_) {
+            onContentReady_(ocrTextLength);
         }
 
         // Fetch additional pages in the background if needed
@@ -677,9 +677,9 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place) {
                 // Tests should hook into the renderer's callbacks to know when a page is displayed.
                 // Currently tests rely on this callback for synchronization via
                 // WAIT_FOR_CONTENT_RENDER()
-                if (onNavigationComplete_) {
+                if (onContentReady_) {
                     size_t contentLength = pageStream_->getOcrTextLength();
-                    onNavigationComplete_(contentLength);
+                    onContentReady_(contentLength);
                 }
 #endif
             }
