@@ -758,8 +758,9 @@ void KindleReadableScreen::navigateNext() {
         setNeedsLayout();
         setNeedsRerender();
 
-        // Trigger the page flipper to load more content from the current position
-        pageFlipper_.updatePlace(currentPlace_);
+#ifdef TESTS
+        pageFlipper_.notifyTestContentReady();
+#endif
 
         return;
     }
@@ -1154,9 +1155,9 @@ void KindleReadableScreen::attemptReconnection() {
                         setNeedsLayout();
                         setNeedsRerender();
                         render(display_);
-
-                        // Notify page flipper of position after reconnection
-                        pageFlipper_.updatePlace(currentPlace_);
+#ifdef TESTS
+                        pageFlipper_.notifyTestContentReady()
+#endif
                     }
                 });
             }
@@ -1269,9 +1270,9 @@ void KindleReadableScreen::updatePageFlipperCallbacks() {
                 setNeedsLayout();
                 setNeedsRerender();
                 render(display_);
-
-                // Notify page flipper of initial position after content loads
-                pageFlipper_.updatePlace(currentPlace_);
+#ifdef TESTS
+                pageFlipper_.notifyTestContentReady();
+#endif
 
 #ifdef DEBUG_KINDLE_RECONNECTION
                 scheduleTestDisconnect();
