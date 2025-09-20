@@ -480,7 +480,13 @@ void KindlePageFlipper::syncPagesWithServer(uint32_t currentOffset, bool navigat
 
         auto hasDialog = checkForLastReadDialog(response);
 
-        if (!hasDialog && needMoreBuffer && !response->ocrText.empty()) {
+        if (hasDialog) {
+            log_i("Last read dialog received during navigate_to=%d; deferring buffer updates",
+                  navigateTo);
+            return;
+        }
+
+        if (needMoreBuffer && !response->ocrText.empty()) {
             pageStream_->appendPageFromResponse(*response, previewTo);
             lastPreviewedPage_ = previewTo;
             bytesRemaining = pageStream_->getBytesRemainingFrom(currentOffset);
@@ -505,9 +511,12 @@ void KindlePageFlipper::syncPagesWithServer(uint32_t currentOffset, bool navigat
         telemetry_.logMetric(TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
                              successTelemetryData);
 
-        if (onNavigationComplete_) {
-            onNavigationComplete_(response->ocrText.size());
+        if (onContentReady_) {
+            onContentReady_(response->ocrText.size());
         }
+#ifdef TESTS
+        notifyTestContentReady();
+#endif
     }
 
     // Continue fetching additional pages while buffer is low
@@ -539,7 +548,9 @@ void KindlePageFlipper::syncPagesWithServer(uint32_t currentOffset, bool navigat
         }
 
         if (checkForLastReadDialog(nextResponse)) {
-            continue;
+            log_i("Last read dialog received while prefetching page %d; stopping prefetch",
+                  nextPreviewPage);
+            break;
         }
 
         size_t nextOcrTextLength = nextResponse->ocrText.size();
@@ -556,9 +567,12 @@ void KindlePageFlipper::syncPagesWithServer(uint32_t currentOffset, bool navigat
               nextOcrTextLength, bytesRemaining);
         additionalPagesFetched++;
 
-        if (onNavigationComplete_) {
-            onNavigationComplete_(pageStream_->getOcrTextLength());
+        if (onContentReady_) {
+            onContentReady_(pageStream_->getOcrTextLength());
         }
+#ifdef TESTS
+        notifyTestContentReady();
+#endif
     }
 
     if (additionalPagesFetched > 0) {
@@ -631,6 +645,13 @@ void KindlePageFlipper::loadInitialPage() {
             return;
         }
 
+        auto hasDialog = checkForLastReadDialog(response);
+
+        if (hasDialog) {
+            log_i("Last read dialog received while opening book; waiting for user response");
+            return;
+        }
+
         // Validate that the server gave us a session key – navigating without one will fail.
         if (response->bookSessionKey.empty()) {
             auto message = std::string("Failed to open book. Missing session key from server.");
@@ -653,18 +674,12 @@ void KindlePageFlipper::loadInitialPage() {
         // Store the new book session key
         bookSessionKey_ = response->bookSessionKey;
 
-        auto hasDialog = checkForLastReadDialog(response);
+        size_t ocrTextLength = response->ocrText.size();
 
-        size_t ocrTextLength = 0;
-        // If this is a last read dialog, don't append the page (which would be empty)
-        if (!hasDialog) {
-            ocrTextLength = response->ocrText.size();
-
-            pageStream_->appendPageFromResponse(*response, 0);
-            // Update both navigation and preview state since open-book gives us page 0
-            lastNavigatedPage_ = 0;
-            lastPreviewedPage_ = 0;
-        }
+        pageStream_->appendPageFromResponse(*response, 0);
+        // Update both navigation and preview state since open-book gives us page 0
+        lastNavigatedPage_ = 0;
+        lastPreviewedPage_ = 0;
 
         // Log successful book open
         int64_t elapsedMs = (esp_timer_get_time() - bookOpenStartTime) / 1000;
@@ -677,9 +692,12 @@ void KindlePageFlipper::loadInitialPage() {
                               {"elapsed_ms", static_cast<int>(elapsedMs)}});
 
         // Notify UI that initial content is ready to display
-        if (onNavigationComplete_) {
-            onNavigationComplete_(ocrTextLength);
+        if (onContentReady_) {
+            onContentReady_(ocrTextLength);
         }
+#ifdef TESTS
+        notifyTestContentReady();
+#endif
 
         // Fetch additional pages in the background if needed
         if (!hasDialog && ocrTextLength > 0) {
@@ -748,10 +766,13 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place) {
                 // Tests should hook into the renderer's callbacks to know when a page is displayed.
                 // Currently tests rely on this callback for synchronization via
                 // WAIT_FOR_CONTENT_RENDER()
-                if (onNavigationComplete_) {
+                if (onContentReady_) {
                     size_t contentLength = pageStream_->getOcrTextLength();
-                    onNavigationComplete_(contentLength);
+                    onContentReady_(contentLength);
                 }
+#ifdef TESTS
+                notifyTestContentReady();
+#endif
 #endif
             }
             return;

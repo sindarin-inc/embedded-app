@@ -778,8 +778,9 @@ void KindleReadableScreen::navigateNext() {
         setNeedsLayout();
         setNeedsRerender();
 
-        // Trigger the page flipper to load more content from the current position
-        pageFlipper_.updatePlace(currentPlace_);
+#ifdef TESTS
+        pageFlipper_.notifyTestContentReady();
+#endif
 
         return;
     }
@@ -1131,6 +1132,11 @@ void KindleReadableScreen::submitLastReadDialogChoice(bool gotoLastReadPage,
         // If syncing to latest page, clear the buffer since we're jumping to a new location
         if (gotoLastReadPage) {
             pageFlipper_.clearBuffer();
+            DispatchGetUiQueue()->dispatch([this]() {
+                currentPlace_ = Place::factory(0);
+                newPlace_ = currentPlace_;
+                renderer_.setCurrentPlace(currentPlace_);
+            });
             setState(State::LOADING_INITIAL_CONTENT);
         }
 
@@ -1352,9 +1358,9 @@ void KindleReadableScreen::attemptReconnection() {
                         setNeedsLayout();
                         setNeedsRerender();
                         render(display_);
-
-                        // Notify page flipper of position after reconnection
-                        pageFlipper_.updatePlace(currentPlace_);
+#ifdef TESTS
+                        pageFlipper_.notifyTestContentReady();
+#endif
                     }
                 });
             }
@@ -1439,7 +1445,7 @@ void KindleReadableScreen::setCurrentScreen(const std::shared_ptr<Screen> &scree
 void KindleReadableScreen::updatePageFlipperCallbacks() {
     auto cancelFlag = cancelFlag_;
 
-    pageFlipper_.setOnNavigationComplete([this, cancelFlag](size_t ocrTextLength) {
+    pageFlipper_.setOnContentReady([this, cancelFlag](size_t ocrTextLength) {
         if (CancelFlag::isCancelled(cancelFlag)) {
             return;
         }
@@ -1467,9 +1473,9 @@ void KindleReadableScreen::updatePageFlipperCallbacks() {
                 setNeedsLayout();
                 setNeedsRerender();
                 render(display_);
-
-                // Notify page flipper of initial position after content loads
-                pageFlipper_.updatePlace(currentPlace_);
+#ifdef TESTS
+                pageFlipper_.notifyTestContentReady();
+#endif
 
 #ifdef DEBUG_KINDLE_RECONNECTION
                 scheduleTestDisconnect();
