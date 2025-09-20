@@ -409,7 +409,13 @@ void KindlePageFlipper::syncPagesWithServer(uint32_t currentOffset, bool navigat
 
         auto hasDialog = checkForLastReadDialog(response);
 
-        if (!hasDialog && needMoreBuffer && !response->ocrText.empty()) {
+        if (hasDialog) {
+            log_i("Last read dialog received during navigate_to=%d; deferring buffer updates",
+                  navigateTo);
+            return;
+        }
+
+        if (needMoreBuffer && !response->ocrText.empty()) {
             pageStream_->appendPageFromResponse(*response, previewTo);
             lastPreviewedPage_ = previewTo;
             bytesRemaining = pageStream_->getBytesRemainingFrom(currentOffset);
@@ -471,7 +477,9 @@ void KindlePageFlipper::syncPagesWithServer(uint32_t currentOffset, bool navigat
         }
 
         if (checkForLastReadDialog(nextResponse)) {
-            continue;
+            log_i("Last read dialog received while prefetching page %d; stopping prefetch",
+                  nextPreviewPage);
+            break;
         }
 
         size_t nextOcrTextLength = nextResponse->ocrText.size();
@@ -590,16 +598,17 @@ void KindlePageFlipper::loadInitialPage() {
 
         auto hasDialog = checkForLastReadDialog(response);
 
-        size_t ocrTextLength = 0;
-        // If this is a last read dialog, don't append the page (which would be empty)
-        if (!hasDialog) {
-            ocrTextLength = response->ocrText.size();
-
-            pageStream_->appendPageFromResponse(*response, 0);
-            // Update both navigation and preview state since open-book gives us page 0
-            lastNavigatedPage_ = 0;
-            lastPreviewedPage_ = 0;
+        if (hasDialog) {
+            log_i("Last read dialog received while opening book; waiting for user response");
+            return;
         }
+
+        size_t ocrTextLength = response->ocrText.size();
+
+        pageStream_->appendPageFromResponse(*response, 0);
+        // Update both navigation and preview state since open-book gives us page 0
+        lastNavigatedPage_ = 0;
+        lastPreviewedPage_ = 0;
 
         // Log successful book open
         int64_t elapsedMs = (esp_timer_get_time() - bookOpenStartTime) / 1000;

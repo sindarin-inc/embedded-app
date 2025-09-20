@@ -934,6 +934,11 @@ void KindleReadableScreen::submitLastReadDialogChoice(bool gotoLastReadPage,
         // If syncing to latest page, clear the buffer since we're jumping to a new location
         if (gotoLastReadPage) {
             pageFlipper_.clearBuffer();
+            DispatchGetUiQueue()->dispatch([this]() {
+                currentPlace_ = Place::factory(0);
+                newPlace_ = currentPlace_;
+                renderer_.setCurrentPlace(currentPlace_);
+            });
             setState(State::LOADING_INITIAL_CONTENT);
         }
 
@@ -1156,7 +1161,7 @@ void KindleReadableScreen::attemptReconnection() {
                         setNeedsRerender();
                         render(display_);
 #ifdef TESTS
-                        pageFlipper_.notifyTestContentReady()
+                        pageFlipper_.notifyTestContentReady();
 #endif
                     }
                 });
