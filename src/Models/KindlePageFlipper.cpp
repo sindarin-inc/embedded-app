@@ -574,6 +574,13 @@ void KindlePageFlipper::loadInitialPage() {
             return;
         }
 
+        auto hasDialog = checkForLastReadDialog(response);
+
+        if (hasDialog) {
+            log_i("Last read dialog received while opening book; waiting for user response");
+            return;
+        }
+
         // Validate that the server gave us a session key – navigating without one will fail.
         if (response->bookSessionKey.empty()) {
             auto message = std::string("Failed to open book. Missing session key from server.");
@@ -595,13 +602,6 @@ void KindlePageFlipper::loadInitialPage() {
 
         // Store the new book session key
         bookSessionKey_ = response->bookSessionKey;
-
-        auto hasDialog = checkForLastReadDialog(response);
-
-        if (hasDialog) {
-            log_i("Last read dialog received while opening book; waiting for user response");
-            return;
-        }
 
         size_t ocrTextLength = response->ocrText.size();
 
