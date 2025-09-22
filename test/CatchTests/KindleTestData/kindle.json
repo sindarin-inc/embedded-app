@@ -96,9 +96,9 @@
       "uuid": "test-short-pages-book-uuid",
       "title": "SHORT_PAGES_TEST: A Book With Very Short Pages",
       "author": "TEST AUTHOR",
-      "progress": "9%",
-      "progress_percent": 9,
-      "progress_current_page": 10,
+      "progress": "1%",
+      "progress_percent": 1,
+      "progress_current_page": 2,
       "progress_total_pages": 100,
       "is_approved_for_device": true,
       "last_modified": "1751905900"

@@ -770,7 +770,9 @@ auto SindarinAPI::fetchKindleChaptersWithUuids(const std::string &kindleUuid, in
         return "";
     }
 
-    std::string response(buffer.get(), totalRead);
+    // Convert JSON response to string
+    std::string response;
+    serializeJson(*respJson, response);
     log_i("Successfully received chapters with UUIDs response");
     return response;
 }
@@ -841,8 +843,6 @@ auto SindarinAPI::navigateKindleToChapter(const std::string &kindleUuid,
     // Read and parse response
     auto stream = client->makeReadStream();
     auto respJson = std::make_unique<SpiRamJsonDocument>(1024 + contentLength * 3);
-    auto error = ArduinoJson::deserializeJson(*respJson, *stream);
-
     auto error = ArduinoJson::deserializeJson(*respJson, *stream);
     if (error.code() != DeserializationError::Ok) {
         log_e("Failed to deserialize response: %s", error.c_str());
