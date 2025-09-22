@@ -736,7 +736,7 @@ auto SindarinAPI::fetchKindleChaptersWithUuids(const std::string &kindleUuid, in
     auto reqBody = SpiRamArrayPtr<char>(serializedMaxSize);
     size_t serializedSize = serializeJson(*doc, reqBody.get(), serializedMaxSize);
 
-    log_i("Request body: %s", reqBody.get());
+    log_d("Request body: %s", reqBody.get());
 
     err = client->open(serializedSize);
     if (err != ESP_OK) {
