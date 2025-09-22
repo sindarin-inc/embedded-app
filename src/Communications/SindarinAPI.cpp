@@ -758,24 +758,9 @@ auto SindarinAPI::fetchKindleChaptersWithUuids(const std::string &kindleUuid, in
         return "";
     }
 
-    auto buffer = std::make_unique<char[]>(contentLength + 1);
-    int totalRead = 0;
-
-    while (totalRead < contentLength) {
-        if (CancelFlag::isCancelled(cancel)) {
-            log_w("Request cancelled");
-            return "";
-        }
-
-        int bytesRead = client->read(buffer.get() + totalRead, contentLength - totalRead);
-        if (bytesRead <= 0) {
-            log_e("Failed to read response body");
-            break;
-        }
-        totalRead += bytesRead;
-    }
-
-    buffer[totalRead] = '\0';
+    auto stream = client->makeReadStream();
+    auto respJson = std::make_unique<SpiRamJsonDocument>(1024 + contentLength * 3);
+    auto error = ArduinoJson::deserializeJson(*respJson, *stream);
 
     int httpCode = client->getStatusCode();
     log_i("HTTP response code: %d", httpCode);
