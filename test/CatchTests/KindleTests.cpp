@@ -1,8 +1,10 @@
 #include <atomic>
 #include <catch_amalgamated.hpp>
 #include <chrono>
+#include <condition_variable>
 #include <iostream>
 #include <memory>
+#include <mutex>
 #include <sstream>
 #include <thread>
 
@@ -60,22 +62,9 @@ static std::atomic<int>
     mockBookOpenPosition(0); // Track the position when book was opened (always 0)
 
 // Synchronization for content rendering
-static std::atomic<bool> contentRendered(false);
-static std::atomic<int> contentRenderCount(0);
-
-// Macro to wait for content to be rendered
-#define WAIT_FOR_CONTENT_RENDER()                                                                  \
-    do {                                                                                           \
-        contentRendered = false;                                                                   \
-        auto start = std::chrono::steady_clock::now();                                             \
-        while (!contentRendered) {                                                                 \
-            if (std::chrono::steady_clock::now() - start > std::chrono::seconds(5)) {              \
-                log_e("Timeout waiting for content render");                                       \
-                break;                                                                             \
-            }                                                                                      \
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));                            \
-        }                                                                                          \
-    } while (0)
+static std::mutex contentRenderMutex;
+static std::condition_variable contentRenderCv;
+static int contentRenderCount = 0;
 
 // Function to reset all mock state
 void resetMockState() {
@@ -88,8 +77,10 @@ void resetMockState() {
     mockErrorCode = 500;
     mockCurrentLine = 1;
     mockBookOpenPosition = 0;
-    contentRendered = false;
-    contentRenderCount = 0;
+    {
+        std::lock_guard<std::mutex> lock(contentRenderMutex);
+        contentRenderCount = 0;
+    }
 }
 
 // Helper function to generate sequential content
@@ -122,9 +113,45 @@ void setupContentRenderingCallback() {
     // Register a test-only callback to track when content is rendered
     kindleScreen->pageFlipper_.setOnTestContentReady([](size_t ocrTextLength) {
         log_i("TEST: onContentReady called with ocrTextLength=%zu", ocrTextLength);
-        contentRendered = true;
-        contentRenderCount++;
+        {
+            std::lock_guard<std::mutex> lock(contentRenderMutex);
+            contentRenderCount++;
+        }
+        contentRenderCv.notify_all();
     });
+}
+
+class ContentRenderWaiter {
+public:
+    explicit ContentRenderWaiter(int expectedIncrements = 1) {
+        std::lock_guard<std::mutex> lock(contentRenderMutex);
+        targetCount_ = contentRenderCount + expectedIncrements;
+    }
+
+    auto wait(std::chrono::milliseconds timeout = std::chrono::seconds(5)) const -> bool {
+        std::unique_lock<std::mutex> lock(contentRenderMutex);
+        bool success = contentRenderCv.wait_for(lock, timeout, [&]() {
+            return contentRenderCount >= targetCount_;
+        });
+
+        if (!success) {
+            log_e("Timeout waiting for content render (target=%d, actual=%d)", targetCount_,
+                  contentRenderCount);
+        }
+
+        return success;
+    }
+
+private:
+    int targetCount_;
+};
+
+auto sendRemoteCommandAndWaitForContent(RemoteCommand command,
+                                        std::chrono::milliseconds timeout =
+                                            std::chrono::seconds(5)) -> bool {
+    ContentRenderWaiter waiter;
+    SendRemoteCommand(command);
+    return waiter.wait(timeout);
 }
 
 namespace {
@@ -939,33 +966,27 @@ TEST_CASE("Test Kindle navigation visual traversal", "[.][kindle]") {
 
         // 1. Navigate forward through 6 pages to pages 1-6 (clears buffer)
         log_i("TEST: Starting forward navigation through 6 pages");
-        SendRemoteCommand(ENTER);
-        WAIT_FOR_CONTENT_RENDER();
+        sendRemoteCommandAndWaitForContent(ENTER);
         WAIT_FOR_DRAW(display);
         ASSERT_VIEW_UNCHANGED(display, "KindleNavTest02-ForwardToPage1");
 
-        SendRemoteCommand(ENTER);
-        WAIT_FOR_CONTENT_RENDER();
+        sendRemoteCommandAndWaitForContent(ENTER);
         WAIT_FOR_DRAW(display);
         ASSERT_VIEW_UNCHANGED(display, "KindleNavTest03-ForwardToPage2");
 
-        SendRemoteCommand(ENTER);
-        WAIT_FOR_CONTENT_RENDER();
+        sendRemoteCommandAndWaitForContent(ENTER);
         WAIT_FOR_DRAW(display);
         ASSERT_VIEW_UNCHANGED(display, "KindleNavTest04-ForwardToPage3");
 
-        SendRemoteCommand(ENTER);
-        WAIT_FOR_CONTENT_RENDER();
+        sendRemoteCommandAndWaitForContent(ENTER);
         WAIT_FOR_DRAW(display);
         ASSERT_VIEW_UNCHANGED(display, "KindleNavTest05-ForwardToPage4");
 
-        SendRemoteCommand(ENTER);
-        WAIT_FOR_CONTENT_RENDER();
+        sendRemoteCommandAndWaitForContent(ENTER);
         WAIT_FOR_DRAW(display);
         ASSERT_VIEW_UNCHANGED(display, "KindleNavTest06-ForwardToPage5");
 
-        SendRemoteCommand(ENTER);
-        WAIT_FOR_CONTENT_RENDER();
+        sendRemoteCommandAndWaitForContent(ENTER);
         WAIT_FOR_DRAW(display);
         ASSERT_VIEW_UNCHANGED(display, "KindleNavTest07-ForwardToPage6");
 
@@ -974,65 +995,53 @@ TEST_CASE("Test Kindle navigation visual traversal", "[.][kindle]") {
         log_i("TEST: Starting backward navigation from page 6 to page 0");
 
         // Navigate back 6 pages: 6 -> 5 -> 4 -> 3 -> 2 -> 1 -> 0
-        SendRemoteCommand(LEFT);
-        WAIT_FOR_CONTENT_RENDER();
+        sendRemoteCommandAndWaitForContent(LEFT);
         WAIT_FOR_DRAW(display);
         ASSERT_VIEW_UNCHANGED(display, "KindleNavTest08-BackToPage5");
 
-        SendRemoteCommand(LEFT);
-        WAIT_FOR_CONTENT_RENDER();
+        sendRemoteCommandAndWaitForContent(LEFT);
         WAIT_FOR_DRAW(display);
         ASSERT_VIEW_UNCHANGED(display, "KindleNavTest09-BackToPage4");
 
-        SendRemoteCommand(LEFT);
-        WAIT_FOR_CONTENT_RENDER();
+        sendRemoteCommandAndWaitForContent(LEFT);
         WAIT_FOR_DRAW(display);
         ASSERT_VIEW_UNCHANGED(display, "KindleNavTest10-BackToPage3");
 
-        SendRemoteCommand(LEFT);
-        WAIT_FOR_CONTENT_RENDER();
+        sendRemoteCommandAndWaitForContent(LEFT);
         WAIT_FOR_DRAW(display);
         ASSERT_VIEW_UNCHANGED(display, "KindleNavTest11-BackToPage2");
 
-        SendRemoteCommand(LEFT);
-        WAIT_FOR_CONTENT_RENDER();
+        sendRemoteCommandAndWaitForContent(LEFT);
         WAIT_FOR_DRAW(display);
         ASSERT_VIEW_UNCHANGED(display, "KindleNavTest12-BackToPage1");
 
-        SendRemoteCommand(LEFT);
-        WAIT_FOR_CONTENT_RENDER();
+        sendRemoteCommandAndWaitForContent(LEFT);
         WAIT_FOR_DRAW(display);
         ASSERT_VIEW_UNCHANGED(display, "KindleNavTest13-BackToPage0");
 
         // 3. Navigate forward again through 6 pages from page 0 to page 6
         log_i("TEST: Starting forward navigation again from page 0 to page 6");
-        SendRemoteCommand(ENTER);
-        WAIT_FOR_CONTENT_RENDER();
+        sendRemoteCommandAndWaitForContent(ENTER);
         WAIT_FOR_DRAW(display);
         ASSERT_VIEW_UNCHANGED(display, "KindleNavTest14-ForwardAgainToPage1");
 
-        SendRemoteCommand(ENTER);
-        WAIT_FOR_CONTENT_RENDER();
+        sendRemoteCommandAndWaitForContent(ENTER);
         WAIT_FOR_DRAW(display);
         ASSERT_VIEW_UNCHANGED(display, "KindleNavTest15-ForwardAgainToPage2");
 
-        SendRemoteCommand(ENTER);
-        WAIT_FOR_CONTENT_RENDER();
+        sendRemoteCommandAndWaitForContent(ENTER);
         WAIT_FOR_DRAW(display);
         ASSERT_VIEW_UNCHANGED(display, "KindleNavTest16-ForwardAgainToPage3");
 
-        SendRemoteCommand(ENTER);
-        WAIT_FOR_CONTENT_RENDER();
+        sendRemoteCommandAndWaitForContent(ENTER);
         WAIT_FOR_DRAW(display);
         ASSERT_VIEW_UNCHANGED(display, "KindleNavTest17-ForwardAgainToPage4");
 
-        SendRemoteCommand(ENTER);
-        WAIT_FOR_CONTENT_RENDER();
+        sendRemoteCommandAndWaitForContent(ENTER);
         WAIT_FOR_DRAW(display);
         ASSERT_VIEW_UNCHANGED(display, "KindleNavTest18-ForwardAgainToPage5");
 
-        SendRemoteCommand(ENTER);
-        WAIT_FOR_CONTENT_RENDER();
+        sendRemoteCommandAndWaitForContent(ENTER);
         WAIT_FOR_DRAW(display);
         ASSERT_VIEW_UNCHANGED(display, "KindleNavTest19-ForwardAgainToPage6");
 
@@ -1051,8 +1060,7 @@ TEST_CASE("Test Kindle navigation visual traversal", "[.][kindle]") {
 
         // 4. Navigate to page 7 and beyond to trigger new server request
         log_i("TEST: Navigating to page 7");
-        SendRemoteCommand(ENTER);
-        WAIT_FOR_CONTENT_RENDER();
+        sendRemoteCommandAndWaitForContent(ENTER);
         WAIT_FOR_DRAW(display);
         ASSERT_VIEW_UNCHANGED(display, "KindleNavTest20-ForwardToPage7");
 
@@ -1063,8 +1071,7 @@ TEST_CASE("Test Kindle navigation visual traversal", "[.][kindle]") {
 
         // Navigate further to page 5
         log_i("TEST: Navigating to page 5 to trigger new server request");
-        SendRemoteCommand(ENTER);
-        WAIT_FOR_CONTENT_RENDER(); // Wait for content to be rendered
+        sendRemoteCommandAndWaitForContent(ENTER); // Wait for content to be rendered
         WAIT_FOR_DRAW(display);
         // Don't check screenshot for page 5 since we don't have an expected image
 
