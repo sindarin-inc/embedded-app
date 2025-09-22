@@ -876,6 +876,15 @@ void KindleReadableScreen::showLastReadDialog(const SpiramString &dialogText) {
     setNeedsRerender();
     render(display_);
 
+#ifdef TESTS
+    if (onTestLastReadDialogShown_) {
+        log_i("TEST: last-read dialog shown callback invoked");
+        onTestLastReadDialogShown_();
+    } else {
+        log_w("TEST: last-read dialog shown callback not set");
+    }
+#endif
+
     // Log that we showed the last read dialog
     telemetry_.logMetric(TelemetryField::METRIC_DIALOG, kindleBook_->uuid,
                          {{"dialog", std::string("kindle-last-read")},
@@ -894,6 +903,15 @@ void KindleReadableScreen::handleLastReadDialogResponse(bool gotoLastReadPage) {
                           },
                           {"goto_last_read", gotoLastReadPage},
                           {"kindle", true}});
+
+#ifdef TESTS
+    if (onTestLastReadDialogChoice_) {
+        log_i("TEST: last-read dialog choice callback invoked (goto=%d)", gotoLastReadPage);
+        onTestLastReadDialogChoice_(gotoLastReadPage);
+    } else {
+        log_w("TEST: last-read dialog choice callback not set");
+    }
+#endif
 
     setCurrentScreen(nullptr);
 

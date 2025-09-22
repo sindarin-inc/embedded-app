@@ -703,13 +703,13 @@ TEST_CASE("Test mock server URL override", "[.][no-kindle]") {
     auto httpServer = std::make_unique<httplib::Server>();
     auto httpServerThread = std::make_shared<std::thread>();
     std::atomic<bool> serverRunning(false);
-    int port = 18981;
+    int port = 8080;
     setupHttpServer(httpServer, httpServerThread, serverRunning, port);
 
     // CRITICAL: Override SindarinAPI URL BEFORE creating any other objects
     auto api = SindarinAPI::getInstance();
     log_i("TEST: SindarinAPI instance retrieved, about to override URL");
-    api->overrideBaseUrl("http://127.0.0.1:18981");
+    api->overrideBaseUrl("http://127.0.0.1:8080");
     api->setAccessToken("test-token");
     log_i("TEST: SindarinAPI URL overridden to mock server and auth token set");
 
@@ -774,13 +774,13 @@ TEST_CASE("Test Kindle navigation visual traversal", "[.][kindle]") {
     auto httpServer = std::make_unique<httplib::Server>();
     auto httpServerThread = std::make_shared<std::thread>();
     std::atomic<bool> serverRunning(false);
-    int port = 18981;
+    int port = 8080;
     setupHttpServer(httpServer, httpServerThread, serverRunning, port);
     defer { teardownHttpServer(httpServer, httpServerThread); };
 
     // Override SindarinAPI URL before starting the app
     auto api = SindarinAPI::getInstance();
-    api->overrideBaseUrl("http://127.0.0.1:18981");
+    api->overrideBaseUrl("http://127.0.0.1:8080");
     api->setAccessToken("test-token");
     log_i("TEST: SindarinAPI URL overridden to mock server");
 
