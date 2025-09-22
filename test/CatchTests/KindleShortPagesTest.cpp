@@ -61,17 +61,43 @@ static auto generateSyncedChapterContent(int pageNumber) -> std::string {
 
 // Track when content flushes for tests
 static std::atomic<bool> shortContentRendered{false};
+static std::mutex shortContentMutex;
+static std::condition_variable shortContentCv;
+static int shortContentEventCount = 0;
 
-static void resetShortContentRenderFlag() { shortContentRendered = false; }
+static void signalShortContentEvent() {
+    shortContentRendered = true;
+    {
+        std::lock_guard<std::mutex> lock(shortContentMutex);
+        shortContentEventCount++;
+    }
+    shortContentCv.notify_all();
+}
+
+static void resetShortContentRenderFlag() {
+    shortContentRendered = false;
+    // Don't reset event counter - it's cumulative
+}
 
 static void waitForShortContentRender() {
-    auto start = std::chrono::steady_clock::now();
-    while (!shortContentRendered.load()) {
-        if (std::chrono::steady_clock::now() - start > std::chrono::seconds(10)) {
-            log_e("Timeout waiting for short pages content render");
-            FAIL("Timeout waiting for content render");
-        }
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    if (shortContentRendered.load()) {
+        return;
+    }
+
+    int target;
+    {
+        std::lock_guard<std::mutex> lock(shortContentMutex);
+        target = shortContentEventCount + 1;
+    }
+
+    std::unique_lock<std::mutex> lock(shortContentMutex);
+    bool success = shortContentCv.wait_for(lock, std::chrono::seconds(10), [&]() {
+        return shortContentEventCount >= target;
+    });
+
+    if (!success) {
+        log_e("Timeout waiting for short pages content render event");
+        FAIL("Timeout waiting for content render");
     }
 }
 
@@ -108,11 +134,12 @@ static auto setupShortPagesContentCallback() -> std::shared_ptr<KindleReadableSc
                       static_cast<void *>(kindleScreen.get()));
                 kindleScreen->pageFlipper_.setOnTestContentReady([](size_t ocrTextLength) {
                     log_i("TEST: short-pages content ready, length=%zu", ocrTextLength);
-                    shortContentRendered = true;
+                    signalShortContentEvent();
                 });
                 kindleScreen->setOnTestLastReadDialogShown([]() {
                     log_i("TEST: last-read dialog shown callback");
                     mockLastReadDialogShownCount++;
+                    signalShortContentEvent(); // unblock waits tied to dialog display
                 });
                 return kindleScreen;
             }
@@ -465,12 +492,37 @@ TEST_CASE("Test Kindle multi-page fetching with short pages visual", "[.][kindle
 
         // Close the book to simulate reopening with a last-read dialog from /open-book
         log_i("TEST: Closing Kindle book before reopen");
-        SendRemoteCommand(BACK);
+
+        // Clear the callbacks before closing to prevent race conditions
+        if (kindleScreen) {
+            kindleScreen->pageFlipper_.setOnTestContentReady(nullptr);
+            kindleScreen->setOnTestLastReadDialogShown(nullptr);
+        }
+
+        SendRemoteCommand(BACK);  // Opens popup menu
         WAIT_FOR_DRAW(display);
         WAIT_FOR_DRAW(display);
-        SendRemoteCommand(ENTER);
+        SendRemoteCommand(ENTER);  // Select first option to close
         WAIT_FOR_DRAW(display);
         WAIT_FOR_DRAW(display);
+
+        // Wait for the screen to actually close
+        auto waitStart = std::chrono::steady_clock::now();
+        bool screenClosed = false;
+        while (std::chrono::steady_clock::now() - waitStart < std::chrono::seconds(2)) {
+            auto currentScreen = UIGetCurrentScreen();
+            if (currentScreen && !std::dynamic_pointer_cast<KindleReadableScreen>(currentScreen)) {
+                log_i("TEST: Screen closed, current screen type: %s", typeid(*currentScreen).name());
+                screenClosed = true;
+                break;
+            }
+            std::this_thread::sleep_for(std::chrono::milliseconds(50));
+            WAIT_FOR_DRAW(display);
+        }
+
+        if (!screenClosed) {
+            log_e("TEST: Screen did not close after 2 seconds");
+        }
 
         auto currentScreen = UIGetCurrentScreen();
         REQUIRE(currentScreen);
@@ -480,24 +532,32 @@ TEST_CASE("Test Kindle multi-page fetching with short pages visual", "[.][kindle
         mockOpenBookLastReadDialogTriggered = false;
         mockOpenBookLastReadDialogEnabled = true;
 
+        int dialogShownBefore = mockLastReadDialogShownCount.load();
+
         log_i("TEST: Re-opening Kindle book expecting /open-book last read dialog");
+        resetShortContentRenderFlag();
         SendRemoteCommand(ENTER);
         WAIT_FOR_DRAW(display);
         WAIT_FOR_DRAW(display);
         kindleScreen = setupShortPagesContentCallback();
         REQUIRE(kindleScreen);
 
-        int dialogShownBefore = mockLastReadDialogShownCount.load();
+        // Wait for either content or dialog to show
         auto waitForDialogStart = std::chrono::steady_clock::now();
-        while (true) {
+        bool dialogShown = false;
+        while (!dialogShown && !shortContentRendered.load()) {
             if (kindleScreen->state_ == KindleReadableScreen::State::SHOWING_DIALOG) {
+                dialogShown = true;
                 break;
             }
             if (std::chrono::steady_clock::now() - waitForDialogStart > std::chrono::seconds(5)) {
-                FAIL("Timed out waiting for last-read dialog after re-opening book");
+                FAIL("Timed out waiting for last-read dialog or content after re-opening book");
             }
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
         }
+
+        // Verify the dialog was shown
+        REQUIRE(dialogShown);
         REQUIRE(mockOpenBookLastReadDialogTriggered.load());
         WAIT_FOR_DRAW(display);
         ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest11-ReopenLastReadDialog");
