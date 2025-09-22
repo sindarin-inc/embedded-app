@@ -839,61 +839,19 @@ auto SindarinAPI::navigateKindleToChapter(const std::string &kindleUuid,
     }
 
     // Read and parse response
-    auto buffer = SpiRamArrayPtr<char>(contentLength + 1);
-    int totalRead = 0;
-    while (totalRead < contentLength) {
-        int bytesRead = client->read(buffer.get() + totalRead, contentLength - totalRead);
-        if (bytesRead <= 0) {
-            log_e("Failed to read response body");
-            return ERR_CLIENT_READ;
-        }
-        totalRead += bytesRead;
+    auto stream = client->makeReadStream();
+    auto respJson = std::make_unique<SpiRamJsonDocument>(1024 + contentLength * 3);
+    auto error = ArduinoJson::deserializeJson(*respJson, *stream);
+
+    auto error = ArduinoJson::deserializeJson(*respJson, *stream);
+    if (error.code() != DeserializationError::Ok) {
+        log_e("Failed to deserialize response: %s", error.c_str());
+        return ERR_JSON_DESERIALIZE;
     }
 
-    buffer[totalRead] = '\0';
-
-    log_d("Navigate to chapter response: %s", buffer.get());
-
-    // Parse the response into KindlePageResponse
-    if (resp) {
-        auto respDoc = std::make_shared<SpiRamJsonDocument>(contentLength * 2);
-        DeserializationError error = deserializeJson(*respDoc, buffer.get());
-
-        if (error) {
-            log_e("Failed to parse response JSON: %s", error.c_str());
-            return ERR_JSON_DESERIALIZE;
-        }
-
-        auto root = (*respDoc).as<JsonObject>();
-        resp->success = root["success"] | false;
-
-        // Check if we got chapters instead of text (happens when UUID is empty or invalid)
-        if (root.containsKey("chapters")) {
-            log_e("Server returned chapter list instead of chapter text - UUID may be empty or "
-                  "invalid");
-            log_d("Navigate to chapter response: %s", buffer.get());
-            resp->success = false;
-            return ERR_JSON_DESERIALIZE;
-        }
-
-        // Server returns "ocr_text" for chapter navigation
-        if (root.containsKey("ocr_text")) {
-            const char *text = root["ocr_text"];
-            resp->text = SpiramString(text);
-        }
-
-        if (root.containsKey("navigate_to")) {
-            resp->navigateTo = root["navigate_to"];
-        }
-
-        if (root.containsKey("preview_to")) {
-            resp->previewTo = root["preview_to"];
-        }
-
-        if (root.containsKey("book_session_key")) {
-            const char *sessionKey = root["book_session_key"];
-            resp->bookSessionKey = SpiramString(sessionKey);
-        }
+    if (!resp->fromJson(respJson->as<JsonObject>())) {
+        log_e("Failed to parse response JSON into KindlePageResponse");
+        return ERR_JSON_OBJECT_PARSE;
     }
 
     log_i("Successfully navigated to chapter (response text length: %zu)", resp->text.size());
