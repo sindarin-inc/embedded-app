@@ -32,6 +32,9 @@ static std::atomic<int> mockOpenBookCallCount{0};
 static std::atomic<bool> mockLastReadDialogTriggered{false};
 static std::atomic<int> mockLastReadChoiceCallCount{0};
 static std::atomic<bool> mockEnableLastReadDialog{false};
+static std::atomic<bool> mockOpenBookLastReadDialogEnabled{false};
+static std::atomic<bool> mockOpenBookLastReadDialogTriggered{false};
+static std::atomic<int> mockLastReadDialogShownCount{0};
 
 static constexpr const char *SYNCED_CHAPTER_TITLE = "=== CHAPTER 42: A New Chapter Begins ===\n";
 static constexpr const char *SYNCED_CHAPTER_FOOTER = "=== END CHAPTER 42 ===\n";
@@ -89,21 +92,29 @@ static void resetMockState() {
     mockLastReadDialogTriggered = false;
     mockLastReadChoiceCallCount = 0;
     mockEnableLastReadDialog = false;
+    mockOpenBookLastReadDialogEnabled = false;
+    mockOpenBookLastReadDialogTriggered = false;
+    mockLastReadDialogShownCount = 0;
 }
 
-static void setupShortPagesContentCallback() {
+static auto setupShortPagesContentCallback() -> std::shared_ptr<KindleReadableScreen> {
     auto start = std::chrono::steady_clock::now();
     while (true) {
         auto screen = UIGetCurrentScreen();
         if (screen) {
             auto kindleScreen = std::dynamic_pointer_cast<KindleReadableScreen>(screen);
             if (kindleScreen) {
-                log_i("TEST: Installing short-pages content callback");
+                log_i("TEST: Installing short-pages content callback on screen %p",
+                      static_cast<void *>(kindleScreen.get()));
                 kindleScreen->pageFlipper_.setOnTestContentReady([](size_t ocrTextLength) {
                     log_i("TEST: short-pages content ready, length=%zu", ocrTextLength);
                     shortContentRendered = true;
                 });
-                return;
+                kindleScreen->setOnTestLastReadDialogShown([]() {
+                    log_i("TEST: last-read dialog shown callback");
+                    mockLastReadDialogShownCount++;
+                });
+                return kindleScreen;
             }
         }
 
@@ -113,6 +124,8 @@ static void setupShortPagesContentCallback() {
 
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
+
+    return nullptr;
 }
 
 static void setupHttpServer(std::unique_ptr<httplib::Server> &httpServer,
@@ -127,6 +140,36 @@ static void setupHttpServer(std::unique_ptr<httplib::Server> &httpServer,
 
         log_i("Mock server: open-book request - title='%s', useShortPages=%s", bookTitle.c_str(),
               useShortPages ? "true" : "false");
+
+        if (mockOpenBookLastReadDialogEnabled.load()) {
+            mockOpenBookLastReadDialogEnabled = false;
+            mockOpenBookLastReadDialogTriggered = true;
+
+            std::string dialogText =
+                "You are currently on page 376. The most recent page read is 383 from "
+                "Samuel's 5th iPhone at 2:34 AM today.\n\nGo to that page?";
+
+            std::string escapedDialog = dialogText;
+            size_t dialogPos = 0;
+            while ((dialogPos = escapedDialog.find('\n', dialogPos)) != std::string::npos) {
+                escapedDialog.replace(dialogPos, 1, "\\n");
+                dialogPos += 2;
+            }
+
+            std::ostringstream dialogResponse;
+            dialogResponse << "{";
+            dialogResponse << "\"success\": true,";
+            dialogResponse << "\"last_read_dialog\": true,";
+            dialogResponse << "\"dialog_text\": \"" << escapedDialog << "\",";
+            dialogResponse << "\"message\": \"Last read page dialog detected\",";
+            dialogResponse << "\"already_open\": true,";
+            dialogResponse << "\"authenticated\": true";
+            dialogResponse << "}";
+
+            res.set_content(dialogResponse.str(), "application/json");
+            res.status = 200;
+            return;
+        }
 
         std::string content;
         if (useShortPages) {
@@ -325,7 +368,7 @@ TEST_CASE("Test Kindle multi-page fetching with short pages visual", "[.][kindle
         // Wait for the state changes and HTTP request to complete
         log_i("TEST: Waiting for connection and initial load");
         WAIT_FOR_DRAW(display); // Draw for CONNECTING state
-        setupShortPagesContentCallback();
+        auto kindleScreen = setupShortPagesContentCallback();
         resetShortContentRenderFlag();
         WAIT_FOR_DRAW(display); // Draw for LOADING_INITIAL_CONTENT state
         ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest01-Connecting");
@@ -400,7 +443,7 @@ TEST_CASE("Test Kindle multi-page fetching with short pages visual", "[.][kindle
         resetShortContentRenderFlag();
         SendRemoteCommand(ENTER);
         WAIT_FOR_DRAW(display);
-        waitForShortContentRender();
+
         WAIT_FOR_DRAW(display);
         ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest09-AfterLastRead");
 
@@ -408,8 +451,79 @@ TEST_CASE("Test Kindle multi-page fetching with short pages visual", "[.][kindle
         WAIT_FOR_DRAW(display);
         ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest10-LastReadText");
 
-        REQUIRE(mockLastReadChoiceCallCount.load() == 1);
+        auto waitForPostFirst = std::chrono::steady_clock::now();
+        while (mockLastReadChoiceCallCount.load() < 1) {
+            if (std::chrono::steady_clock::now() - waitForPostFirst > std::chrono::seconds(5)) {
+                FAIL("Timed out waiting for last-read dialog POST after first acceptance");
+            }
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        }
         mockEnableLastReadDialog = false;
+        mockLastReadDialogTriggered = false;
+
+        int expectedChoiceCount = mockLastReadChoiceCallCount.load();
+
+        // Close the book to simulate reopening with a last-read dialog from /open-book
+        log_i("TEST: Closing Kindle book before reopen");
+        SendRemoteCommand(BACK);
+        WAIT_FOR_DRAW(display);
+        WAIT_FOR_DRAW(display);
+        SendRemoteCommand(ENTER);
+        WAIT_FOR_DRAW(display);
+        WAIT_FOR_DRAW(display);
+
+        auto currentScreen = UIGetCurrentScreen();
+        REQUIRE(currentScreen);
+        REQUIRE(!std::dynamic_pointer_cast<KindleReadableScreen>(currentScreen));
+
+        // Prepare server to emit last-read dialog on the next open-book request
+        mockOpenBookLastReadDialogTriggered = false;
+        mockOpenBookLastReadDialogEnabled = true;
+
+        log_i("TEST: Re-opening Kindle book expecting /open-book last read dialog");
+        SendRemoteCommand(ENTER);
+        WAIT_FOR_DRAW(display);
+        WAIT_FOR_DRAW(display);
+        kindleScreen = setupShortPagesContentCallback();
+        REQUIRE(kindleScreen);
+
+        int dialogShownBefore = mockLastReadDialogShownCount.load();
+        auto waitForDialogStart = std::chrono::steady_clock::now();
+        while (true) {
+            if (kindleScreen->state_ == KindleReadableScreen::State::SHOWING_DIALOG) {
+                break;
+            }
+            if (std::chrono::steady_clock::now() - waitForDialogStart > std::chrono::seconds(5)) {
+                FAIL("Timed out waiting for last-read dialog after re-opening book");
+            }
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        }
+        REQUIRE(mockOpenBookLastReadDialogTriggered.load());
+        WAIT_FOR_DRAW(display);
+        ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest11-ReopenLastReadDialog");
+
+        // Accept the dialog to confirm the flow loads synced content again
+        log_i("TEST: Accepting last read dialog returned from /open-book");
+        resetShortContentRenderFlag();
+        int lastReadBeforeReopen = mockLastReadChoiceCallCount.load();
+        SendRemoteCommand(ENTER);
+        WAIT_FOR_DRAW(display);
+
+        for (int i = 0; i < 3; i++) {
+            WAIT_FOR_DRAW(display);
+        }
+
+        ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest12-ReopenLastReadText");
+
+        auto waitForPostSecond = std::chrono::steady_clock::now();
+        while (mockLastReadChoiceCallCount.load() <= lastReadBeforeReopen) {
+            if (std::chrono::steady_clock::now() - waitForPostSecond > std::chrono::seconds(5)) {
+                FAIL("Timed out waiting for last-read dialog POST after reopen");
+            }
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        }
+
+        REQUIRE(mockLastReadChoiceCallCount.load() == expectedChoiceCount + 1);
 
         // Wait for any background navigation requests to complete
         std::this_thread::sleep_for(std::chrono::milliseconds(300));
