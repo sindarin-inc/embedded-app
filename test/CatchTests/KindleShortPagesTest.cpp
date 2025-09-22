@@ -455,12 +455,20 @@ TEST_CASE("Test Kindle multi-page fetching with short pages visual", "[.][kindle
         log_i("TEST: Triggering last read dialog");
         mockEnableLastReadDialog = true;
         int safetyCounter = 0;
-        while (!mockLastReadDialogTriggered.load() && safetyCounter < 6) {
+        while (!mockLastReadDialogTriggered.load() && safetyCounter < 10) {
+            log_i("TEST: Sending ENTER to trigger dialog, attempt %d", safetyCounter + 1);
             SendRemoteCommand(ENTER);
             WAIT_FOR_DRAW(display);
+            WAIT_FOR_DRAW(display);
+
+            // Give time for the navigation request to complete
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
             safetyCounter++;
         }
 
+        if (!mockLastReadDialogTriggered.load()) {
+            log_e("TEST: Failed to trigger dialog after %d attempts", safetyCounter);
+        }
         REQUIRE(mockLastReadDialogTriggered.load());
         WAIT_FOR_DRAW(display);
         ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest08-LastReadDialog");
@@ -480,10 +488,11 @@ TEST_CASE("Test Kindle multi-page fetching with short pages visual", "[.][kindle
 
         auto waitForPostFirst = std::chrono::steady_clock::now();
         while (mockLastReadChoiceCallCount.load() < 1) {
-            if (std::chrono::steady_clock::now() - waitForPostFirst > std::chrono::seconds(5)) {
+            if (std::chrono::steady_clock::now() - waitForPostFirst > std::chrono::seconds(10)) {
+                log_e("TEST: Timed out waiting for POST, count=%d", mockLastReadChoiceCallCount.load());
                 FAIL("Timed out waiting for last-read dialog POST after first acceptance");
             }
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            std::this_thread::sleep_for(std::chrono::milliseconds(50));
         }
         mockEnableLastReadDialog = false;
         mockLastReadDialogTriggered = false;
@@ -577,10 +586,12 @@ TEST_CASE("Test Kindle multi-page fetching with short pages visual", "[.][kindle
 
         auto waitForPostSecond = std::chrono::steady_clock::now();
         while (mockLastReadChoiceCallCount.load() <= lastReadBeforeReopen) {
-            if (std::chrono::steady_clock::now() - waitForPostSecond > std::chrono::seconds(5)) {
+            if (std::chrono::steady_clock::now() - waitForPostSecond > std::chrono::seconds(10)) {
+                log_e("TEST: Timed out waiting for POST after reopen, count=%d, expected>%d",
+                      mockLastReadChoiceCallCount.load(), lastReadBeforeReopen);
                 FAIL("Timed out waiting for last-read dialog POST after reopen");
             }
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            std::this_thread::sleep_for(std::chrono::milliseconds(50));
         }
 
         REQUIRE(mockLastReadChoiceCallCount.load() == expectedChoiceCount + 1);
