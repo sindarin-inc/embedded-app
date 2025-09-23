@@ -85,9 +85,9 @@ void KindleTableOfContentsScreen::loadTableOfContents() {
 void KindleTableOfContentsScreen::handleTableOfContentsResponse(const std::string &response) {
     log_d("TOC Response: %s", response.c_str());
 
-    // Most TOC payloads are a couple of kilobytes; size the document based on the
-    // response length with a little structural headroom
-    const size_t capacity = response.size() + JSON_OBJECT_SIZE(12) + JSON_ARRAY_SIZE(32) + 512;
+    // Allocate enough space for the JSON document
+    // The response can have many chapters (100+), so we need substantial headroom
+    const size_t capacity = response.size() * 2 + JSON_OBJECT_SIZE(20) + JSON_ARRAY_SIZE(100) + 2048;
     auto doc = std::make_shared<SpiRamJsonDocument>(capacity);
     DeserializationError error = deserializeJson(*doc, response);
 

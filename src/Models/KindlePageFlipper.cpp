@@ -349,16 +349,16 @@ auto KindlePageFlipper::navigateToChapter(const std::string &chapterUuid, int cu
     // Use latest page number
     applyProgressUpdate(response->progress);
 
-    // Set the new content in the stream
-    if (!response->text.empty()) {
-        pageStream_->clearAndSetContent(response->text);
+    // Set the new content in the stream (chapter navigation returns content in ocrText field)
+    if (!response->ocrText.empty()) {
+        pageStream_->clearAndSetContent(response->ocrText);
 
         if (onContentReady_) {
-            size_t ocrTextLength = response->ocrText.empty() ? 0 : response->ocrText.size();
+            size_t ocrTextLength = response->ocrText.size();
             onContentReady_(ocrTextLength);
         }
 
-        log_i("Chapter content loaded: %zu bytes", response->text.size());
+        log_i("Chapter content loaded: %zu bytes", response->ocrText.size());
     } else {
         log_w("Chapter navigation succeeded but no content received");
     }
