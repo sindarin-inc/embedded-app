@@ -87,7 +87,8 @@ void KindleTableOfContentsScreen::handleTableOfContentsResponse(const std::strin
 
     // Allocate enough space for the JSON document
     // The response can have many chapters (100+), so we need substantial headroom
-    const size_t capacity = response.size() * 2 + JSON_OBJECT_SIZE(20) + JSON_ARRAY_SIZE(100) + 2048;
+    const size_t capacity =
+        response.size() * 2 + JSON_OBJECT_SIZE(20) + JSON_ARRAY_SIZE(100) + 2048;
     auto doc = std::make_shared<SpiRamJsonDocument>(capacity);
     DeserializationError error = deserializeJson(*doc, response);
 
