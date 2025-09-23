@@ -174,8 +174,16 @@ public:
         onTestLastReadDialogChoice_ = std::move(callback);
     }
 
+    // TEST-only: Force show the last read dialog for testing
+
+    void setOnTestLastReadDialogPostComplete(std::function<void(bool)> callback) {
+        onTestLastReadDialogPostComplete_ = std::move(callback);
+    }
+
+
 private:
     std::function<void()> onTestLastReadDialogShown_;
     std::function<void(bool)> onTestLastReadDialogChoice_;
+    std::function<void(bool)> onTestLastReadDialogPostComplete_;
 #endif
 };

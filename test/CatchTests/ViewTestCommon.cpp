@@ -214,21 +214,23 @@ auto CheckViewUnchanged(DisplayEinkET013TT1 &display, std::string key) -> ViewTe
 
     // Check if the image was successfully loaded
     if (data == nullptr) {
-        UNSCOPED_INFO("Failed to load accepted image.");
-        UNSCOPED_INFO("This is expected when testing the first time.");
-        UNSCOPED_INFO("Run the following command to create an accepted test image:");
-        UNSCOPED_INFO("  cp " << result.renderedImagePath << " \\\n  " << result.acceptedImagePath);
-        CHECK(data != nullptr);
-        // If ACCEPT_CHANGES is defined, automatically accept the changes
 #ifdef ACCEPT_CHANGES
-        UNSCOPED_INFO("  ---> Accepting changes");
+        UNSCOPED_INFO("Accepted image not found. Auto-accepting new image.");
         // Create the accepted directory if it doesn't exist
         std::filesystem::create_directories(
             std::filesystem::path(result.acceptedImagePath).parent_path());
         std::filesystem::copy(result.renderedImagePath, result.acceptedImagePath,
                               std::filesystem::copy_options::overwrite_existing);
-#endif
+        result.passed = true;
         return result;
+#else
+        UNSCOPED_INFO("Failed to load accepted image.");
+        UNSCOPED_INFO("This is expected when testing the first time.");
+        UNSCOPED_INFO("Run the following command to create an accepted test image:");
+        UNSCOPED_INFO("  cp " << result.renderedImagePath << " \\\n  " << result.acceptedImagePath);
+        CHECK(data != nullptr);
+        return result;
+#endif
     };
 
     // Bonus: Render a pixel-by-pixel diff image, save to png
