@@ -293,6 +293,79 @@ auto KindlePageFlipper::navigateWithRetry(int navigateTo, int previewTo,
     return error;
 }
 
+auto KindlePageFlipper::navigateToChapter(const std::string &chapterUuid, int currentPage)
+    -> std::shared_ptr<KindleError> {
+
+    if (!kindleBook_) {
+        return std::make_shared<KindleError>(
+            KindleError{KindleError::Type::UnknownError, "No book loaded"});
+    }
+
+    log_i("Navigating to chapter UUID: %s from page %d", chapterUuid.c_str(), currentPage);
+
+    // Reset state for chapter navigation
+    resetBookSessionKey();
+    clearBuffer();
+    lastServerSyncPlace_ = nullptr;
+    lastRenderedPlace_ = nullptr;
+
+    // Make the API call to navigate to the chapter
+    auto api = SindarinAPI::getInstance();
+    auto response = std::make_shared<KindlePageResponse>();
+
+    int httpCode = api->navigateKindleToChapter(std::string(kindleBook_->uuid), chapterUuid,
+                                                currentPage, response.get(), useBle_, cancelFlag_);
+
+    if (CancelFlag::isCancelled(cancelFlag_)) {
+        return nullptr; // Caller must check cancelFlag separately
+    }
+
+    // Check for errors
+    auto error = checkForError(httpCode, response);
+    if (error) {
+        log_e("Failed to navigate to chapter: %s", error->message.c_str());
+        return error;
+    }
+
+    // Update book session key if provided
+    if (!response->bookSessionKey.empty()) {
+        bookSessionKey_ = response->bookSessionKey;
+        log_i("Updated book_session_key from chapter navigation: %s", bookSessionKey_.c_str());
+    }
+
+    // Update navigation state
+    if (response->navigateTo >= 0) {
+        lastNavigatedPage_ = response->navigateTo;
+    } else {
+        lastNavigatedPage_ = 0; // Start at beginning of chapter
+    }
+
+    if (response->previewTo >= 0) {
+        lastPreviewedPage_ = response->previewTo;
+    } else {
+        lastPreviewedPage_ = 0;
+    }
+
+    // Use latest page number
+    applyProgressUpdate(response->progress);
+
+    // Set the new content in the stream
+    if (!response->text.empty()) {
+        pageStream_->clearAndSetContent(response->text);
+
+        if (onContentReady_) {
+            size_t ocrTextLength = response->ocrText.empty() ? 0 : response->ocrText.size();
+            onContentReady_(ocrTextLength);
+        }
+
+        log_i("Chapter content loaded: %zu bytes", response->text.size());
+    } else {
+        log_w("Chapter navigation succeeded but no content received");
+    }
+
+    return nullptr; // Success
+}
+
 auto KindlePageFlipper::openBookWithRetry(std::shared_ptr<KindlePageResponse> &response,
                                           const std::shared_ptr<CancelFlag> &cancelFlag,
                                           int maxRetries) -> std::shared_ptr<KindleError> {

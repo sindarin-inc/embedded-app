@@ -770,6 +770,11 @@ auto SindarinAPI::fetchKindleChaptersWithUuids(const std::string &kindleUuid, in
         return "";
     }
 
+    if (error.code() != DeserializationError::Ok) {
+        log_e("Failed to deserialize response: %s", error.c_str());
+        return "";
+    }
+
     // Convert JSON response to string
     std::string response;
     serializeJson(*respJson, response);
@@ -808,7 +813,6 @@ auto SindarinAPI::navigateKindleToChapter(const std::string &kindleUuid,
     size_t serializedMaxSize = (*doc).memoryUsage() * 2;
     auto reqBody = SpiRamArrayPtr<char>(serializedMaxSize);
     size_t serializedSize = serializeJson(*doc, reqBody.get(), serializedMaxSize);
-    reqBody[serializedSize] = '\0';
 
     log_i("Request body: %s", reqBody.get());
 

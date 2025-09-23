@@ -337,6 +337,9 @@ public:
     void setPreviewTo(int previewTo) { lastPreviewedPage_ = previewTo; }
     void setBookSessionKey(const SpiramString &key) { bookSessionKey_ = key; }
 
+    auto navigateToChapter(const std::string &chapterUuid, int currentPage)
+        -> std::shared_ptr<KindleError>;
+
 private:
     std::shared_ptr<KindleBook> kindleBook_;
     bool useBle_ = false;

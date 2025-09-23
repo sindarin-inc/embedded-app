@@ -934,56 +934,24 @@ void KindleReadableScreen::showTableOfContents() {
                 return;
             }
 
-            // Make the API request to navigate to the chapter
-            KindlePageResponse resp;
-            auto api = SindarinAPI::getInstance();
-            int result = api->navigateKindleToChapter(
-                std::string(kindleBook_->uuid), chapterUuid, requestPage, &resp,
-                pageFlipper_.isUsingBleConnection(), cancelFlag_);
+            auto error = pageFlipper_.navigateToChapter(chapterUuid, requestPage);
 
             if (CancelFlag::isCancelled(cancelFlag_)) {
                 return;
             }
 
-            DispatchGetUiQueue()->dispatch([this, result, resp, chapterUuid, requestPage]() {
-                if (result == 200 && resp.success && !resp.text.empty()) {
+            DispatchGetUiQueue()->dispatch([this, error, chapterUuid, requestPage]() {
+                if (!error) {
                     log_i("Successfully navigated to chapter UUID: %s", chapterUuid.c_str());
-
-                    // Reset the book session key since we're starting fresh at this chapter
-                    pageFlipper_.resetBookSessionKey();
-
-                    // Clear the buffer and set new content
-                    pageFlipper_.clearBuffer();
-
-                    // Create a new stream with the chapter text
-                    auto stream =
-                        std::dynamic_pointer_cast<KindlePageStream>(pageFlipper_.getStream());
-                    if (stream && !resp.text.empty()) {
-                        stream->clearAndSetContent(resp.text);
-                    }
 
                     // Reset navigation state to beginning of chapter
                     currentPlace_ = std::dynamic_pointer_cast<TxtPlace>(Place::factory(0));
                     newPlace_ = nullptr;
 
                     // Update renderer with new content
+                    auto stream = pageFlipper_.getStream();
                     renderer_.setStream(stream);
                     renderer_.setCurrentPlace(currentPlace_);
-
-                    // Update page flipper state with new navigation values
-                    // Reset to page 0 since we're at the beginning of the chapter
-                    pageFlipper_.setNavigateTo(0);
-                    pageFlipper_.setPreviewTo(0);
-
-                    if (resp.navigateTo >= 0) {
-                        pageFlipper_.setNavigateTo(resp.navigateTo);
-                    }
-                    if (resp.previewTo >= 0) {
-                        pageFlipper_.setPreviewTo(resp.previewTo);
-                    }
-                    if (!resp.bookSessionKey.empty()) {
-                        pageFlipper_.setBookSessionKey(resp.bookSessionKey);
-                    }
 
                     // Switch to display state
                     setState(State::DISPLAY_CONTENT);
@@ -992,16 +960,7 @@ void KindleReadableScreen::showTableOfContents() {
                     render(display_);
 
                     // Trigger the page flipper to check buffer and fetch additional pages
-                    if (stream) {
-                        size_t bytesRemaining = stream->getBytesRemainingFrom(0);
-                        if (bytesRemaining < 1500) {
-                            log_i("Buffer low after chapter navigation (%zu bytes), triggering "
-                                  "buffer fill",
-                                  bytesRemaining);
-                        }
-                        // Update the page flipper with current position to trigger buffer check
-                        pageFlipper_.updatePlace(currentPlace_);
-                    }
+                    pageFlipper_.updatePlace(currentPlace_);
 
                     // Log telemetry for successful navigation
                     telemetry_.logMetric(
@@ -1011,17 +970,19 @@ void KindleReadableScreen::showTableOfContents() {
                          {"chapter_uuid", chapterUuid},
                          {"page", requestPage}});
                 } else {
-                    log_e("Failed to navigate to chapter UUID: %s (result: %d)",
-                          chapterUuid.c_str(), result);
+                    log_e("Failed to navigate to chapter UUID: %s (error: %s)", chapterUuid.c_str(),
+                          error ? error->message.c_str() : "unknown");
 
                     // Show error message but keep content available
                     std::string errorMsg = "Failed to navigate to chapter";
-                    if (result >= 500) {
-                        errorMsg = "Server error. Please try again.";
-                    } else if (result == 404) {
-                        errorMsg = "Chapter not found";
-                    } else if (result < 0) {
-                        errorMsg = "Connection error. Please check network.";
+                    if (error) {
+                        if (error->type == KindleError::Type::ServerError) {
+                            errorMsg = "Server error. Please try again.";
+                        } else if (error->type == KindleError::Type::NotFoundError) {
+                            errorMsg = "Chapter not found";
+                        } else if (error->type == KindleError::Type::ConnectionError) {
+                            errorMsg = "Connection error. Please check network.";
+                        }
                     }
 
                     errorMessageView_.setText(errorMsg);
@@ -1036,7 +997,7 @@ void KindleReadableScreen::showTableOfContents() {
                         {{"event", std::string("table_of_contents_navigate_error")},
                          {"kindle", true},
                          {"chapter_uuid", chapterUuid},
-                         {"error_code", result}});
+                         {"error", error ? error->message : std::string("unknown")}});
                 }
             });
         });
