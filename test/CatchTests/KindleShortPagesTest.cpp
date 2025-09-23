@@ -32,6 +32,7 @@ static std::atomic<int> mockOpenBookCallCount{0};
 static std::atomic<int> mockLastReadChoiceCallCount{0};
 static std::atomic<int> mockLastReadDialogShownCount{0};
 static std::atomic<int> mockNavigateDialogTriggerCount{0};
+static std::atomic<bool> mockEnableLastReadDialog{false};
 
 static constexpr const char *SYNCED_CHAPTER_TITLE = "=== CHAPTER 42: A New Chapter Begins ===\n";
 static constexpr const char *SYNCED_CHAPTER_FOOTER = "=== END CHAPTER 42 ===\n";
@@ -115,6 +116,7 @@ static void resetMockState() {
     mockLastReadChoiceCallCount = 0;
     mockLastReadDialogShownCount = 0;
     mockNavigateDialogTriggerCount = 0;
+    mockEnableLastReadDialog = false;
 }
 
 static auto setupShortPagesContentCallback() -> std::shared_ptr<KindleReadableScreen> {
@@ -244,6 +246,7 @@ static void setupHttpServer(std::unique_ptr<httplib::Server> &httpServer,
               mockNavigateDialogTriggerCount.load());
 
         // Trigger second dialog when navigating to page 4, only once
+        // This should happen after the first dialog choice (from reopen /open-book)
         if (useShortPages && pageToReturn == 4 &&
             mockLastReadChoiceCallCount.load() == 1 &&
             mockNavigateDialogTriggerCount.load() == 0) {
@@ -280,8 +283,8 @@ static void setupHttpServer(std::unique_ptr<httplib::Server> &httpServer,
 
         std::string content;
         if (useShortPages) {
-            // After first dialog choice, show chapter 42
-            // After second dialog choice, show page 10 content
+            // After first dialog choice (from /open-book), show chapter 42
+            // After second dialog choice (from /navigate), show page 10+ content
             if (mockLastReadChoiceCallCount.load() == 1) {
                 content = generateSyncedChapterContent(pageToReturn);
             } else if (mockLastReadChoiceCallCount.load() >= 2) {
@@ -449,6 +452,7 @@ TEST_CASE("Test Kindle multi-page fetching with short pages visual", "[.][kindle
             firstDialogShown = true;
         });
 
+        resetShortContentRenderFlag();
         WAIT_FOR_DRAW(display); // Draw for LOADING_INITIAL_CONTENT state
         ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest04-LoadingInitialContent");
 

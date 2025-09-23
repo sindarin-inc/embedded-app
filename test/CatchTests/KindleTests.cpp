@@ -194,6 +194,7 @@ auto sendRemoteCommandAndWaitForContent(RemoteCommand command,
     return waiter.wait(timeout);
 }
 
+
 namespace {
 constexpr const char *MOCK_BOOK_SESSION_KEY = "test_session_123";
 }

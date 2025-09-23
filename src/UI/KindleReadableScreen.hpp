@@ -25,8 +25,6 @@
 #include "Version.hpp"
 #include "sindarin-debug.h"
 
-class Readable;
-
 /**
  * KindleReadableScreen
  *
@@ -82,7 +80,6 @@ protected:
     void scheduleDelayedLoadingMessage();
     // Cancel any pending delayed message
     void cancelDelayedLoadingMessage();
-    void onPositionChanged();
 
 private:
     std::shared_ptr<KindleBook> kindleBook_;
@@ -174,12 +171,9 @@ public:
         onTestLastReadDialogChoice_ = std::move(callback);
     }
 
-    // TEST-only: Force show the last read dialog for testing
-
     void setOnTestLastReadDialogPostComplete(std::function<void(bool)> callback) {
         onTestLastReadDialogPostComplete_ = std::move(callback);
     }
-
 
 private:
     std::function<void()> onTestLastReadDialogShown_;
