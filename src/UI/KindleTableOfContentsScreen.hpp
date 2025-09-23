@@ -67,7 +67,6 @@ private:
 
     State state_{State::LOADING};
     std::vector<ChapterInfo> chapters_;
-    int currentPosition_ = -1;
 
     BoxView backgroundView_;
     MenuView menuView_;

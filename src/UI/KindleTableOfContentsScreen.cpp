@@ -117,15 +117,12 @@ void KindleTableOfContentsScreen::handleTableOfContentsResponse(const std::strin
         progressUpdate.fromJson(progress);
 
         if (progressUpdate.hasCurrentPage) {
-            currentPosition_ = progressUpdate.currentPage;
-            log_d("Current progress position: page %d", currentPosition_);
+            currentPage_ = progressUpdate.currentPage;
+            log_d("Updated current page from server progress: %d", currentPage_);
         }
 
         pageFlipper_.updateProgressFromServer(progressUpdate);
     }
-
-    // Use the book's reported progress when available; otherwise keep the caller-provided default
-    currentPage_ = currentPosition_ >= 0 ? currentPosition_ : currentPage_;
 
     // Parse chapters
     if (!root.containsKey("chapters") || !root["chapters"].is<JsonArray>()) {
@@ -200,10 +197,7 @@ void KindleTableOfContentsScreen::highlightCurrentChapter() {
         return;
     }
 
-    int targetPage = currentPosition_ >= 0 ? currentPosition_ : currentPage_;
-    if (targetPage < 0) {
-        targetPage = 0;
-    }
+    int targetPage = currentPage_ >= 0 ? currentPage_ : 0;
 
     int selectedIndex = -1;
     int selectedPage = -1;
@@ -267,15 +261,7 @@ void KindleTableOfContentsScreen::selectChapter() {
 
         int selectedPage = chapter.page;
         if (selectedPage < 0) {
-            if (currentPosition_ >= 0) {
-                selectedPage = currentPosition_;
-            } else {
-                selectedPage = currentPage_;
-            }
-        }
-
-        if (selectedPage < 0) {
-            selectedPage = 0;
+            selectedPage = currentPage_ >= 0 ? currentPage_ : 0;
         }
 
         // Log telemetry for chapter selection
