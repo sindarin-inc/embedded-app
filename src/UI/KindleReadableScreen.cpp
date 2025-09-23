@@ -1652,4 +1652,3 @@ void KindleReadableScreen::updatePageFlipperCallbacks() {
         });
     });
 }
-
