@@ -4,11 +4,8 @@ auto convertToJson(const KindleBook &src, JsonVariant dst) -> bool {
     dst["uuid"] = src.uuid;
     dst["title"] = src.title;
     dst["author"] = src.author;
-    dst["progress"] = src.progress;
-    dst["progress_percent"] = src.progressPercent;
-    if (src.progressCurrentPage >= 1) {
-        dst["progress_current_page"] = src.progressCurrentPage;
-    }
+    // Don't store progress, percentage, or current page in JSON anymore
+    // Only store total pages as it rarely changes
     if (src.progressTotalPages >= 1) {
         dst["progress_total_pages"] = src.progressTotalPages;
     }

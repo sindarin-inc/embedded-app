@@ -1487,46 +1487,52 @@ void KindleReadableScreen::updatePageFlipperCallbacks() {
                 return;
             }
 
-            auto &books = localStore_.kindle();
-            bool found = false;
-            bool updated = false;
+            // Save only current page to NVS (totalPages stays in kindle.json)
+            if (progress.hasCurrentPage) {
+                prefs_.kindleCurrentPage.set(kindleBook_->shortenedUuid.c_str(),
+                                              progress.currentPage);
+            }
 
-            for (auto &book : books) {
-                if (book.uuid == kindleBook_->uuid) {
-                    found = true;
-                    if (book.progressPercent != kindleBook_->progressPercent ||
-                        book.progress != kindleBook_->progress ||
-                        book.progressCurrentPage != kindleBook_->progressCurrentPage ||
-                        book.progressTotalPages != kindleBook_->progressTotalPages) {
-                        book = *kindleBook_;
-                        updated = true;
+            // Save total pages to kindle.json when it changes (typically only on first book open)
+            if (progress.hasTotalPages) {
+                log_d("Progress has total pages: %d for book %s", progress.totalPages,
+                      kindleBook_->title.c_str());
+                auto &books = localStore_.kindle();
+                bool found = false;
+                for (auto &book : books) {
+                    if (book.uuid == kindleBook_->uuid) {
+                        found = true;
+                        log_d("Found book in localStore, current totalPages: %d, new: %d",
+                              book.progressTotalPages, progress.totalPages);
+                        if (book.progressTotalPages != progress.totalPages) {
+                            log_i("Updating total pages for %s: %d -> %d",
+                                  kindleBook_->title.c_str(), book.progressTotalPages,
+                                  progress.totalPages);
+                            book.progressTotalPages = progress.totalPages;
+                            localStore_.saveKindleBooks(books);
+                        }
+                        break;
                     }
-                    break;
                 }
-            }
-
-            if (!found) {
-                books.push_back(*kindleBook_);
-                updated = true;
-            }
-
-            if (updated) {
-                int percentForLog =
-                    progress.hasPercentage ? progress.percentage : kindleBook_->progressPercent;
-                int currentPageForLog = progress.hasCurrentPage ? progress.currentPage
-                                                                : kindleBook_->progressCurrentPage;
-                int totalPagesForLog =
-                    progress.hasTotalPages ? progress.totalPages : kindleBook_->progressTotalPages;
-
-                log_i("Updating Kindle progress for %s: %d%% (page %d of %d)",
-                      kindleBook_->title.c_str(), percentForLog, currentPageForLog,
-                      totalPagesForLog);
-
-                if (!localStore_.saveKindleBooks(books)) {
-                    log_e("Failed to save Kindle progress to disk for %s",
-                          kindleBook_->title.c_str());
+                if (!found) {
+                    log_w("Book %s (uuid: %s) not found in localStore, cannot save total pages",
+                          kindleBook_->title.c_str(), kindleBook_->uuid.c_str());
                 }
+            } else {
+                log_d("Progress update does not have total pages for %s",
+                      kindleBook_->title.c_str());
             }
+
+            // Calculate percentage on demand for logging
+            int currentPageForLog = progress.hasCurrentPage ? progress.currentPage
+                                                            : kindleBook_->progressCurrentPage;
+            int totalPagesForLog =
+                progress.hasTotalPages ? progress.totalPages : kindleBook_->progressTotalPages;
+            int percentForLog =
+                (totalPagesForLog > 0) ? (currentPageForLog * 100 / totalPagesForLog) : 0;
+
+            log_i("Updating Kindle progress for %s: %d%% (page %d of %d)",
+                  kindleBook_->title.c_str(), percentForLog, currentPageForLog, totalPagesForLog);
         });
     });
 

@@ -166,6 +166,20 @@ auto LocalStore::loadKindleBooksFromFile(KindleBooksVector &kindleBooks,
             continue;
         }
 
+        // Load current page from NVS instead of JSON
+        int currentPage = prefs_.kindleCurrentPage.get(kindleBook.shortenedUuid.c_str());
+        if (currentPage > 0) {
+            kindleBook.progressCurrentPage = currentPage;
+            // Calculate percentage on demand if we have total pages
+            if (kindleBook.progressTotalPages > 0) {
+                kindleBook.progressPercent = (currentPage * 100) / kindleBook.progressTotalPages;
+                // Update the progress string for display
+                char progressStr[16];
+                snprintf(progressStr, sizeof(progressStr), "%d%%", kindleBook.progressPercent);
+                kindleBook.progress = progressStr;
+            }
+        }
+
         kindleBooks.push_back(kindleBook);
         booksLoaded++;
         foundActualBooks = true;

@@ -23,6 +23,8 @@
 #define SINDARIN_SERVER_URL "https://api.sindarin.com"
 // #define SINDARIN_SERVER_URL "https://staging.sindarin.com"
 
+#define KINDLE_USE_STAGING 0
+
 std::shared_ptr<SindarinAPI> SindarinAPI::instance = nullptr;
 
 auto SindarinAPI::getInstance() -> std::shared_ptr<SindarinAPI> {
@@ -533,6 +535,9 @@ auto SindarinAPI::makeKindleRequest(const std::string &path, KindlePageResponse 
                                     const std::shared_ptr<CancelFlag> &cancelFlag, bool useBle)
     -> int {
     std::string url = StringFormat("%s%s", baseUrl_.c_str(), path.c_str());
+#if KINDLE_USE_STAGING
+    url += (url.find('?') != std::string::npos) ? "&staging=1" : "?staging=1";
+#endif
     log_i("Making Kindle request to URL: %s", url.c_str());
 
     auto client =
@@ -668,6 +673,9 @@ auto SindarinAPI::submitLastReadPageChoice(bool gotoLastReadPage, bool useBle,
     auto doc = std::make_shared<SpiRamJsonDocument>(128);
     JsonObject body = doc->to<JsonObject>();
     body["goto_last_read_page"] = gotoLastReadPage;
+#if KINDLE_USE_STAGING
+    body["staging"] = 1;
+#endif
 
     size_t serializedMaxSize = (*doc).memoryUsage() * 2;
     auto reqBody = SpiRamArrayPtr<char>(serializedMaxSize);
@@ -731,6 +739,9 @@ auto SindarinAPI::fetchKindleChaptersWithUuids(const std::string &kindleUuid, in
     body["kindle_uuid"] = kindleUuid;
     body["chapter_uuid"] = ""; // Empty UUID to get chapter list
     body["page"] = currentPage;
+#if KINDLE_USE_STAGING
+    body["staging"] = 1;
+#endif
 
     size_t serializedMaxSize = (*doc).memoryUsage() * 2;
     auto reqBody = SpiRamArrayPtr<char>(serializedMaxSize);
@@ -809,6 +820,9 @@ auto SindarinAPI::navigateKindleToChapter(const std::string &kindleUuid,
     body["kindle_uuid"] = kindleUuid;
     body["chapter_uuid"] = chapterUuid;
     body["page"] = currentPage;
+#if KINDLE_USE_STAGING
+    body["staging"] = 1;
+#endif
 
     size_t serializedMaxSize = (*doc).memoryUsage() * 2;
     auto reqBody = SpiRamArrayPtr<char>(serializedMaxSize);

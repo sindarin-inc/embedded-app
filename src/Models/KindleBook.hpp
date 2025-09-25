@@ -27,15 +27,17 @@ public:
     SpiramString lastModified;       // Last modified timestamp
 
     auto fromJson(const JsonObject &j) -> bool override {
+        // Initialize progress fields (current page will be loaded from NVS)
         progressPercent = 0;
         progressCurrentPage = -1;
         progressTotalPages = -1;
+        progress = "";
+
         uuid = j["uuid"].isNull() ? "" : j["uuid"].as<std::string>();
         shortenedUuid = uuid;
         shortenedUuid.resize(TRUNCATE_READABLE_UUID_FOR_PLACEMARK_BYTES);
         title = j["title"].isNull() ? "" : j["title"].as<std::string>();
         author = j["author"].isNull() ? "" : j["author"].as<std::string>();
-        progress = j["progress"].isNull() ? "" : j["progress"].as<std::string>();
 
         // Parse the new fields
         if (j.containsKey("is_approved_for_device")) {
@@ -48,31 +50,7 @@ public:
             lastModified = j["last_modified"].isNull() ? "" : j["last_modified"].as<std::string>();
         }
 
-        // Parse progress percentage
-        if (!progress.empty()) {
-            // Remove the '%' character and convert to int
-            auto progressStr = progress;
-            if (progressStr.back() == '%') {
-                progressStr.pop_back();
-            }
-            char *end;
-            long val = strtol(progressStr.c_str(), &end, 10);
-            if (end == progressStr.c_str() || *end != '\0' || val < 0 || val > 100) {
-                // Conversion failed or value out of range
-                progressPercent = 0;
-            } else {
-                progressPercent = static_cast<int>(val);
-            }
-        }
-
-        if (j.containsKey("progress_percent") && !j["progress_percent"].isNull()) {
-            progressPercent = j["progress_percent"];
-        }
-
-        if (j.containsKey("progress_current_page") && !j["progress_current_page"].isNull()) {
-            progressCurrentPage = j["progress_current_page"];
-        }
-
+        // Only load total pages from JSON (current page is in NVS)
         if (j.containsKey("progress_total_pages") && !j["progress_total_pages"].isNull()) {
             progressTotalPages = j["progress_total_pages"];
         }

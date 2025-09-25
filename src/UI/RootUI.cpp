@@ -745,6 +745,8 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
         for (const auto &book : kindle) {
             // Using shortened ID as the key for archive status
             bool archived = prefs_.readableArchivedChanged.get(book.shortenedUuid.c_str());
+            // Get current page from NVS for this Kindle book
+            int currentPage = prefs_.kindleCurrentPage.get(book.shortenedUuid.c_str());
             menuItems->emplace_back(std::make_shared<MenuItemKindleBook>(
                 book,
                 [this, book, &fileSystem, &lightingController, &localStore]() {
@@ -763,7 +765,7 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
                 });
                 kindleReadableScreen->begin();
                 },
-                archived));
+                archived, currentPage));
         }
 
         bool noKindleContent = kindle.empty();
