@@ -1490,7 +1490,7 @@ void KindleReadableScreen::updatePageFlipperCallbacks() {
             // Save only current page to NVS (totalPages stays in kindle.json)
             if (progress.hasCurrentPage) {
                 prefs_.kindleCurrentPage.set(kindleBook_->shortenedUuid.c_str(),
-                                              progress.currentPage);
+                                             progress.currentPage);
             }
 
             // Save total pages to kindle.json when it changes (typically only on first book open)
@@ -1524,8 +1524,8 @@ void KindleReadableScreen::updatePageFlipperCallbacks() {
             }
 
             // Calculate percentage on demand for logging
-            int currentPageForLog = progress.hasCurrentPage ? progress.currentPage
-                                                            : kindleBook_->progressCurrentPage;
+            int currentPageForLog =
+                progress.hasCurrentPage ? progress.currentPage : kindleBook_->progressCurrentPage;
             int totalPagesForLog =
                 progress.hasTotalPages ? progress.totalPages : kindleBook_->progressTotalPages;
             int percentForLog =
