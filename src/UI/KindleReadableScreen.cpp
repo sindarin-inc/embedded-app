@@ -394,12 +394,20 @@ void KindleReadableScreen::processCommand(RemoteCommand command) {
         return;
     }
 
-    // Any button press should return to content
+    // Any button press should return to content or show menu if no content
     if (state_ == State::ERROR) {
-        setState(State::DISPLAY_CONTENT);
-        updateType_ = DisplaySystem::UpdateType::FULL;
-        setNeedsRerender();
-        return;
+        // Check if we have content to display
+        if (pageFlipper_.hasContent()) {
+            // We have content, return to displaying it
+            setState(State::DISPLAY_CONTENT);
+            updateType_ = DisplaySystem::UpdateType::FULL;
+            setNeedsRerender();
+            return;
+        } else {
+            // No content (e.g., /open-book failed), show popup menu
+            showPopupMenu();
+            return;
+        }
     }
 
     // Handle navigation commands specially for Kindle content
@@ -1317,39 +1325,7 @@ void KindleReadableScreen::attemptReconnection() {
             return;
         }
 
-        if (connected) {
-            log_i("Network reconnected successfully");
-
-            telemetry_.logMetric(
-                TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
-                {{"event", std::string("reconnection")},
-                 {"action", std::string("success")},
-                 {"kindle", true},
-                 {"po", currentPlace_ ? static_cast<int>(currentPlace_->getOffset()) : 0},
-                 {"ble", isUsingBleConnection_}});
-
-            // Successfully reconnected, retry the operation
-            pageFlipper_.retryNetworkOperation();
-
-            // Reset reconnection attempts on successful connection
-            reconnectionAttempts_ = 0;
-            isReconnecting_ = false;
-
-            // If we have content already (were just reconnecting), restore display state
-            if (pageFlipper_.hasContent()) {
-                DispatchGetUiQueue()->dispatch([this]() {
-                    if (state_ == State::LOADING_CONTENT) {
-                        setState(State::DISPLAY_CONTENT);
-                        setNeedsLayout();
-                        setNeedsRerender();
-                        render(display_);
-#ifdef TESTS
-                        pageFlipper_.notifyTestContentReady();
-#endif
-                    }
-                });
-            }
-        } else {
+        if (!connected) {
             log_w("Failed to reconnect");
 
             telemetry_.logMetric(
@@ -1374,6 +1350,39 @@ void KindleReadableScreen::attemptReconnection() {
                         "Failed to load content. Please check your network connection.");
                 });
             }
+            return;
+        }
+
+        log_i("Network reconnected successfully");
+
+        telemetry_.logMetric(
+            TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
+            {{"event", std::string("reconnection")},
+             {"action", std::string("success")},
+             {"kindle", true},
+             {"po", currentPlace_ ? static_cast<int>(currentPlace_->getOffset()) : 0},
+             {"ble", isUsingBleConnection_}});
+
+        // Successfully reconnected, retry the operation
+        pageFlipper_.retryNetworkOperation();
+
+        // Reset reconnection attempts on successful connection
+        reconnectionAttempts_ = 0;
+        isReconnecting_ = false;
+
+        // If we have content already (were just reconnecting), restore display state
+        if (pageFlipper_.hasContent()) {
+            DispatchGetUiQueue()->dispatch([this]() {
+                if (state_ == State::LOADING_CONTENT) {
+                    setState(State::DISPLAY_CONTENT);
+                    setNeedsLayout();
+                    setNeedsRerender();
+                    render(display_);
+#ifdef TESTS
+                    pageFlipper_.notifyTestContentReady();
+#endif
+                }
+            });
         }
     };
 

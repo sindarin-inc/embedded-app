@@ -608,7 +608,7 @@ void KindlePageFlipper::syncPagesWithServer(uint32_t currentOffset, bool navigat
 
         auto nextResponse = std::make_shared<KindlePageResponse>();
         auto nextError =
-            navigateWithRetry(navigateTo, nextPreviewPage, nextResponse, cancelFlag, 2);
+            navigateWithRetry(navigateTo, nextPreviewPage, nextResponse, cancelFlag, 3);
 
         if (CancelFlag::isCancelled(cancelFlag)) {
             break;
@@ -617,6 +617,21 @@ void KindlePageFlipper::syncPagesWithServer(uint32_t currentOffset, bool navigat
         if (nextError) {
             log_w("Failed to load additional preview page %d: %s", nextPreviewPage,
                   nextError->message.c_str());
+
+            // If we're in a state where the user is waiting for content and we failed to load it,
+            // propagate the error to the UI
+            if (additionalPagesFetched == 0 && bytesRemaining < KINDLE_BUFFER_THRESHOLD_BYTES) {
+                log_e("Failed to load any additional pages when buffer was low - showing error to user");
+                if (!nextError->isConnectionError()) {
+                    if (onErrorFunction_) {
+                        onErrorFunction_(nextError->message);
+                    }
+                } else {
+                    if (onConnectionErrorFunction_) {
+                        onConnectionErrorFunction_();
+                    }
+                }
+            }
             break;
         }
 
@@ -690,7 +705,7 @@ void KindlePageFlipper::loadInitialPage() {
         // Create a response object
         auto response = std::make_shared<KindlePageResponse>();
 
-        auto error = openBookWithRetry(response, cancelFlag, 2);
+        auto error = openBookWithRetry(response, cancelFlag, 3);
         if (CancelFlag::isCancelled(cancelFlag)) {
             return;
         }
