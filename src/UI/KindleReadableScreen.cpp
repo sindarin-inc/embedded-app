@@ -941,48 +941,18 @@ void KindleReadableScreen::showTableOfContents() {
             }
 
             DispatchGetUiQueue()->dispatch([this, error, chapterUuid, requestPage]() {
-                if (!error) {
-                    log_i("Successfully navigated to chapter UUID: %s", chapterUuid.c_str());
-
-                    // Reset navigation state to beginning of chapter
-                    currentPlace_ = std::dynamic_pointer_cast<TxtPlace>(Place::factory(0));
-                    newPlace_ = nullptr;
-
-                    // Update renderer with new content
-                    auto stream = pageFlipper_.getStream();
-                    renderer_.setStream(stream);
-                    renderer_.setCurrentPlace(currentPlace_);
-
-                    // Switch to display state
-                    setState(State::DISPLAY_CONTENT);
-                    updateType_ = DisplaySystem::UpdateType::FULL;
-                    setNeedsRerender();
-                    render(display_);
-
-                    // Trigger the page flipper to check buffer and fetch additional pages
-                    pageFlipper_.updatePlace(currentPlace_);
-
-                    // Log telemetry for successful navigation
-                    telemetry_.logMetric(
-                        TelemetryField::METRIC_EVENT, kindleBook_->uuid,
-                        {{"event", std::string("table_of_contents_navigate_success")},
-                         {"kindle", true},
-                         {"chapter_uuid", chapterUuid},
-                         {"page", requestPage}});
-                } else {
+                if (error) {
                     log_e("Failed to navigate to chapter UUID: %s (error: %s)", chapterUuid.c_str(),
                           error ? error->message.c_str() : "unknown");
 
                     // Show error message but keep content available
                     std::string errorMsg = "Failed to navigate to chapter";
-                    if (error) {
-                        if (error->type == KindleError::Type::ServerError) {
-                            errorMsg = "Server error. Please try again.";
-                        } else if (error->type == KindleError::Type::NotFoundError) {
-                            errorMsg = "Chapter not found";
-                        } else if (error->type == KindleError::Type::ConnectionError) {
-                            errorMsg = "Connection error. Please check network.";
-                        }
+                    if (error->type == KindleError::Type::ServerError) {
+                        errorMsg = "Server error. Please try again.";
+                    } else if (error->type == KindleError::Type::NotFoundError) {
+                        errorMsg = "Chapter not found";
+                    } else if (error->type == KindleError::Type::ConnectionError) {
+                        errorMsg = "Connection error. Please check network.";
                     }
 
                     errorMessageView_.setText(errorMsg);
@@ -998,7 +968,36 @@ void KindleReadableScreen::showTableOfContents() {
                          {"kindle", true},
                          {"chapter_uuid", chapterUuid},
                          {"error", error ? error->message : std::string("unknown")}});
+                    return;
                 }
+
+                log_i("Successfully navigated to chapter UUID: %s", chapterUuid.c_str());
+
+                // Reset navigation state to beginning of chapter
+                currentPlace_ = std::dynamic_pointer_cast<TxtPlace>(Place::factory(0));
+                newPlace_ = nullptr;
+
+                // Update renderer with new content
+                auto stream = pageFlipper_.getStream();
+                renderer_.setStream(stream);
+                renderer_.setCurrentPlace(currentPlace_);
+
+                // Switch to display state
+                setState(State::DISPLAY_CONTENT);
+                updateType_ = DisplaySystem::UpdateType::FULL;
+                setNeedsRerender();
+                render(display_);
+
+                // Trigger the page flipper to check buffer and fetch additional pages
+                pageFlipper_.updatePlace(currentPlace_);
+
+                // Log telemetry for successful navigation
+                telemetry_.logMetric(
+                    TelemetryField::METRIC_EVENT, kindleBook_->uuid,
+                    {{"event", std::string("table_of_contents_navigate_success")},
+                     {"kindle", true},
+                     {"chapter_uuid", chapterUuid},
+                     {"page", requestPage}});
             });
         });
     });
