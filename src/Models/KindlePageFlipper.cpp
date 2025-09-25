@@ -621,7 +621,8 @@ void KindlePageFlipper::syncPagesWithServer(uint32_t currentOffset, bool navigat
             // If we're in a state where the user is waiting for content and we failed to load it,
             // propagate the error to the UI
             if (additionalPagesFetched == 0 && bytesRemaining < KINDLE_BUFFER_THRESHOLD_BYTES) {
-                log_e("Failed to load any additional pages when buffer was low - showing error to user");
+                log_e("Failed to load any additional pages when buffer was low - showing error to "
+                      "user");
                 if (!nextError->isConnectionError()) {
                     if (onErrorFunction_) {
                         onErrorFunction_(nextError->message);

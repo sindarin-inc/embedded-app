@@ -1000,12 +1000,11 @@ void KindleReadableScreen::showTableOfContents() {
                 pageFlipper_.updatePlace(currentPlace_);
 
                 // Log telemetry for successful navigation
-                telemetry_.logMetric(
-                    TelemetryField::METRIC_EVENT, kindleBook_->uuid,
-                    {{"event", std::string("table_of_contents_navigate_success")},
-                     {"kindle", true},
-                     {"chapter_uuid", chapterUuid},
-                     {"page", requestPage}});
+                telemetry_.logMetric(TelemetryField::METRIC_EVENT, kindleBook_->uuid,
+                                     {{"event", std::string("table_of_contents_navigate_success")},
+                                      {"kindle", true},
+                                      {"chapter_uuid", chapterUuid},
+                                      {"page", requestPage}});
             });
         });
     });
