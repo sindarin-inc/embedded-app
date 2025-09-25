@@ -847,34 +847,37 @@ TEST_CASE("Kindle progress updates derive percentages", "[.][no-kindle]") {
     KindlePageFlipper flipper(book, cancelFlag, telemetry);
 
     KindlePageProgress progress;
-    progress.currentPage = 350;
+    progress.currentPage = 350;  // Human-readable page 350
     progress.totalPages = 1000;
     progress.hasCurrentPage = true;
     progress.hasTotalPages = true;
 
     flipper.applyProgressUpdate(progress);
 
-    REQUIRE(book->progressPercent == 35);
+    REQUIRE(book->progressPercent == 35);  // 350/1000 = 35%
     REQUIRE(std::string(book->progress.c_str()) == "35%");
     REQUIRE(book->progressCurrentPage == 350);
     REQUIRE(book->progressTotalPages == 1000);
 
     KindlePageProgress lastPage;
-    lastPage.currentPage = 999;
+    lastPage.currentPage = 1000;  // Human-readable page 1000 (last page)
     lastPage.totalPages = 1000;
     lastPage.hasCurrentPage = true;
     lastPage.hasTotalPages = true;
 
     flipper.applyProgressUpdate(lastPage);
-    REQUIRE(book->progressPercent == 100);
+    REQUIRE(book->progressPercent == 100);  // 1000/1000 = 100%
     REQUIRE(std::string(book->progress.c_str()) == "100%");
 
-    KindlePageProgress explicitPercent;
-    explicitPercent.percentage = 12;
-    explicitPercent.hasPercentage = true;
+    // Test that percentage is calculated from page numbers
+    KindlePageProgress pageUpdate;
+    pageUpdate.currentPage = 12;  // Human-readable page 12
+    pageUpdate.totalPages = 100;
+    pageUpdate.hasCurrentPage = true;
+    pageUpdate.hasTotalPages = true;
 
-    flipper.applyProgressUpdate(explicitPercent);
-    REQUIRE(book->progressPercent == 12);
+    flipper.applyProgressUpdate(pageUpdate);
+    REQUIRE(book->progressPercent == 12);  // 12/100 = 12%
     REQUIRE(std::string(book->progress.c_str()) == "12%");
 }
 

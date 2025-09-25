@@ -29,11 +29,11 @@ public:
     SpiramString lastModified;       // Last modified timestamp
 
     static auto calculateProgressPercent(int currentPage, int totalPages) -> int {
-        if (totalPages <= 0 || currentPage < 0) {
+        if (totalPages <= 0 || currentPage <= 0) {
             return 0;
         }
         int percentage = static_cast<int>(std::lround(
-            ((static_cast<double>(currentPage) + 1.0) * 100.0) / static_cast<double>(totalPages)));
+            (static_cast<double>(currentPage) * 100.0) / static_cast<double>(totalPages)));
         return std::clamp(percentage, 0, 100);
     }
 
