@@ -50,9 +50,7 @@ public:
 
     [[nodiscard]] auto author() const -> SpiramString { return kindleBook_.author; };
 
-    [[nodiscard]] auto progressPercent() const -> int {
-        return kindleBook_.progressPercent;
-    }
+    [[nodiscard]] auto progressPercent() const -> int { return kindleBook_.progressPercent; }
 
 private:
     KindleBook kindleBook_;

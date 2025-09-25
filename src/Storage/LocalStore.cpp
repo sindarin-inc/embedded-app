@@ -171,8 +171,8 @@ auto LocalStore::loadKindleBooksFromFile(KindleBooksVector &kindleBooks,
         int currentPage = prefs_.kindleCurrentPage.get(kindleBook.shortenedUuid.c_str());
         if (currentPage > 0) {
             kindleBook.progressCurrentPage = currentPage;
-            kindleBook.progressPercent = KindleBook::calculateProgressPercent(
-                currentPage, kindleBook.progressTotalPages);
+            kindleBook.progressPercent =
+                KindleBook::calculateProgressPercent(currentPage, kindleBook.progressTotalPages);
             if (kindleBook.progressPercent > 0) {
                 char progressStr[16];
                 snprintf(progressStr, sizeof(progressStr), "%d%%", kindleBook.progressPercent);

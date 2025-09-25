@@ -59,8 +59,10 @@ void KindlePageFlipper::applyProgressUpdate(const KindlePageProgress &progress) 
     }
 
     // Calculate percentage when we have the data
-    int currentForCalc = sanitized.hasCurrentPage ? sanitized.currentPage : kindleBook_->progressCurrentPage;
-    int totalForCalc = sanitized.hasTotalPages ? sanitized.totalPages : kindleBook_->progressTotalPages;
+    int currentForCalc =
+        sanitized.hasCurrentPage ? sanitized.currentPage : kindleBook_->progressCurrentPage;
+    int totalForCalc =
+        sanitized.hasTotalPages ? sanitized.totalPages : kindleBook_->progressTotalPages;
 
     int newPercent = KindleBook::calculateProgressPercent(currentForCalc, totalForCalc);
     if (kindleBook_->progressPercent != newPercent) {
