@@ -89,9 +89,8 @@ static void waitForShortContentRender() {
     }
 
     std::unique_lock<std::mutex> lock(shortContentMutex);
-    bool success = shortContentCv.wait_for(lock, std::chrono::seconds(10), [&]() {
-        return shortContentEventCount >= target;
-    });
+    bool success = shortContentCv.wait_for(lock, std::chrono::seconds(10),
+                                           [&]() { return shortContentEventCount >= target; });
 
     if (!success) {
         log_e("Timeout waiting for short pages content render event");
@@ -162,17 +161,19 @@ static void setupHttpServer(std::unique_ptr<httplib::Server> &httpServer,
         std::string bookTitle = req.has_param("title") ? req.get_param_value("title") : "";
         bool useShortPages = (bookTitle.find("SHORT_PAGES_TEST") != std::string::npos);
 
-        log_i("Mock server: open-book request #%d - title='%s', useShortPages=%s, lastReadChoices=%d",
-              mockOpenBookCallCount.load(), bookTitle.c_str(),
-              useShortPages ? "true" : "false", mockLastReadChoiceCallCount.load());
+        log_i(
+            "Mock server: open-book request #%d - title='%s', useShortPages=%s, lastReadChoices=%d",
+            mockOpenBookCallCount.load(), bookTitle.c_str(), useShortPages ? "true" : "false",
+            mockLastReadChoiceCallCount.load());
 
         // First open-book for short pages test returns a last-read dialog
-        if (useShortPages && mockOpenBookCallCount.load() == 1 && mockLastReadChoiceCallCount.load() == 0) {
+        if (useShortPages && mockOpenBookCallCount.load() == 1 &&
+            mockLastReadChoiceCallCount.load() == 0) {
             log_i("Mock server: Returning last-read dialog from /open-book");
 
-            std::string dialogText =
-                "You are currently on page 1. The most recent page read is page 42 (Chapter 42) from "
-                "Samuel's Kindle at 11:45 PM yesterday.\n\nGo to that page?";
+            std::string dialogText = "You are currently on page 1. The most recent page read is "
+                                     "page 42 (Chapter 42) from "
+                                     "Samuel's Kindle at 11:45 PM yesterday.\n\nGo to that page?";
 
             std::string escapedDialog = dialogText;
             size_t dialogPos = 0;
@@ -221,7 +222,7 @@ static void setupHttpServer(std::unique_ptr<httplib::Server> &httpServer,
 
         std::string jsonResponse =
             R"({"success": true, "ocr_text": ")" + content +
-            R"(", "progress": {"percentage": 0, "current_page": 1, "total_pages": 100}, "book_session_key": "test_session_123", "authenticated": true})";
+            R"(", "progress": {"current_page": 1, "total_pages": 100}, "book_session_key": "test_session_123", "authenticated": true})";
         res.set_content(jsonResponse, "application/json");
         res.status = 200;
     });
@@ -233,8 +234,7 @@ static void setupHttpServer(std::unique_ptr<httplib::Server> &httpServer,
             req.has_param("navigate_to") ? std::stoi(req.get_param_value("navigate_to")) : 0;
         int previewTo =
             req.has_param("preview_to") ? std::stoi(req.get_param_value("preview_to")) : 0;
-        std::string bookTitle = req.has_param("title") ? req.get_param_value("title")
-                                                       : "";
+        std::string bookTitle = req.has_param("title") ? req.get_param_value("title") : "";
 
         bool useShortPages = (bookTitle.find("SHORT_PAGES_TEST") != std::string::npos);
         int pageToReturn = (previewTo > navigateTo) ? previewTo : navigateTo;
@@ -247,8 +247,7 @@ static void setupHttpServer(std::unique_ptr<httplib::Server> &httpServer,
 
         // Trigger second dialog when navigating to page 4, only once
         // This should happen after the first dialog choice (from reopen /open-book)
-        if (useShortPages && pageToReturn == 4 &&
-            mockLastReadChoiceCallCount.load() == 1 &&
+        if (useShortPages && pageToReturn == 4 && mockLastReadChoiceCallCount.load() == 1 &&
             mockNavigateDialogTriggerCount.load() == 0) {
             mockNavigateDialogTriggerCount++;
             log_i("Mock server: Triggering second last-read dialog at page 4");
@@ -298,17 +297,20 @@ static void setupHttpServer(std::unique_ptr<httplib::Server> &httpServer,
                 // pageToReturn is max(navigate_to, preview_to)
                 actualPage = 10 + pageToReturn;
 
-                log_i("Mock server: After second sync - returning PAGE %d content (navigate_to=%d, preview_to=%d)",
+                log_i("Mock server: After second sync - returning PAGE %d content (navigate_to=%d, "
+                      "preview_to=%d)",
                       actualPage, navigateTo, previewTo);
                 content = "=== PAGE " + std::to_string(actualPage) + " ===\n";
                 content += "This is page " + std::to_string(actualPage) + " after second sync.\n";
                 // Make pages longer to ensure they're treated as separate pages
                 for (int i = 0; i < 12; i++) {
-                    content += "Page " + std::to_string(actualPage) + ", line " + std::to_string(i + 1) + ": Content after sync to page 10.\n";
+                    content += "Page " + std::to_string(actualPage) + ", line " +
+                               std::to_string(i + 1) + ": Content after sync to page 10.\n";
                 }
-                content += "Page " + std::to_string(actualPage) + ", line 13: Content after sync to page 10.\n";
+                content += "Page " + std::to_string(actualPage) +
+                           ", line 13: Content after sync to page 10.\n";
                 content += "=== END PAGE " + std::to_string(actualPage) + " ===\n";
-                content += "\n";  // Extra newline to separate pages
+                content += "\n"; // Extra newline to separate pages
             } else {
                 // Generate very short pages (200-300 chars each)
                 content = "=== PAGE " + std::to_string(pageToReturn) + " ===\n";
@@ -333,8 +335,7 @@ static void setupHttpServer(std::unique_ptr<httplib::Server> &httpServer,
         }
 
         std::string jsonResponse = R"({"success": true, "ocr_text": ")" + content +
-                                   R"(", "progress": {"percentage": )" +
-                                   std::to_string(pageToReturn) + R"(, "current_page": )" +
+                                   R"(", "progress": {"current_page": )" +
                                    std::to_string(pageToReturn + 1) + R"(, "total_pages": 100}})";
         res.set_content(jsonResponse, "application/json");
         res.status = 200;
@@ -508,7 +509,8 @@ TEST_CASE("Test Kindle multi-page fetching with short pages visual", "[.][kindle
         for (int i = 0; i < 3; i++) {
             SendRemoteCommand(RIGHT);
             WAIT_FOR_DRAW(display);
-            ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest09-Chapter42Forward" + std::to_string(i + 1));
+            ASSERT_VIEW_UNCHANGED(display,
+                                  "ShortPagesTest09-Chapter42Forward" + std::to_string(i + 1));
         }
 
         // Navigate to page 4 - should trigger second last-read dialog

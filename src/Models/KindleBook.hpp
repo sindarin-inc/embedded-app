@@ -1,6 +1,8 @@
 #pragma once
 
 #include <ArduinoJson.h>
+#include <algorithm>
+#include <cmath>
 #include <ctime>
 #include <functional>
 #include <string>
@@ -25,6 +27,15 @@ public:
     int progressTotalPages = -1;     // Total pages reported by Kindle progress
     bool isApprovedForDevice = true; // Whether the book is approved for this device
     SpiramString lastModified;       // Last modified timestamp
+
+    static auto calculateProgressPercent(int currentPage, int totalPages) -> int {
+        if (totalPages <= 0 || currentPage < 0) {
+            return 0;
+        }
+        int percentage = static_cast<int>(std::lround(
+            ((static_cast<double>(currentPage) + 1.0) * 100.0) / static_cast<double>(totalPages)));
+        return std::clamp(percentage, 0, 100);
+    }
 
     auto fromJson(const JsonObject &j) -> bool override {
         // Initialize progress fields (current page will be loaded from NVS)

@@ -1523,16 +1523,9 @@ void KindleReadableScreen::updatePageFlipperCallbacks() {
                       kindleBook_->title.c_str());
             }
 
-            // Calculate percentage on demand for logging
-            int currentPageForLog =
-                progress.hasCurrentPage ? progress.currentPage : kindleBook_->progressCurrentPage;
-            int totalPagesForLog =
-                progress.hasTotalPages ? progress.totalPages : kindleBook_->progressTotalPages;
-            int percentForLog =
-                (totalPagesForLog > 0) ? (currentPageForLog * 100 / totalPagesForLog) : 0;
-
             log_i("Updating Kindle progress for %s: %d%% (page %d of %d)",
-                  kindleBook_->title.c_str(), percentForLog, currentPageForLog, totalPagesForLog);
+                  kindleBook_->title.c_str(), kindleBook_->progressPercent,
+                  kindleBook_->progressCurrentPage, kindleBook_->progressTotalPages);
         });
     });
 

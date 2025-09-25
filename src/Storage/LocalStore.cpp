@@ -1,6 +1,7 @@
 #include "LocalStore.hpp"
 
 #include <algorithm>
+#include <cmath>
 #include <esp_system.h>
 #include <esp_timer.h>
 #include <freertos/FreeRTOS.h>
@@ -170,10 +171,9 @@ auto LocalStore::loadKindleBooksFromFile(KindleBooksVector &kindleBooks,
         int currentPage = prefs_.kindleCurrentPage.get(kindleBook.shortenedUuid.c_str());
         if (currentPage > 0) {
             kindleBook.progressCurrentPage = currentPage;
-            // Calculate percentage on demand if we have total pages
-            if (kindleBook.progressTotalPages > 0) {
-                kindleBook.progressPercent = (currentPage * 100) / kindleBook.progressTotalPages;
-                // Update the progress string for display
+            kindleBook.progressPercent = KindleBook::calculateProgressPercent(
+                currentPage, kindleBook.progressTotalPages);
+            if (kindleBook.progressPercent > 0) {
                 char progressStr[16];
                 snprintf(progressStr, sizeof(progressStr), "%d%%", kindleBook.progressPercent);
                 kindleBook.progress = progressStr;

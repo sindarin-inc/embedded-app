@@ -1158,7 +1158,6 @@ TEST_CASE("Test Kindle absolute navigation idempotency", "[kindle]") {
             "ocr_text": ")" + escapedContent +
                                    R"(",
             "progress": {
-                "percentage": 0,
                 "current_page": 1,
                 "total_pages": 100
             },
@@ -1202,15 +1201,12 @@ TEST_CASE("Test Kindle absolute navigation idempotency", "[kindle]") {
         }
 
         int currentPageNumber = navigateTo + 1;
-        int percentage = std::min(95, currentPageNumber * 10);
 
         std::string jsonResponse = R"({
             "success": true,
             "ocr_text": ")" + escapedContent +
                                    R"(",
             "progress": {
-                "percentage": )" + std::to_string(percentage) +
-                                   R"(,
                 "current_page": )" +
                                    std::to_string(currentPageNumber) + R"(,
                 "total_pages": 100
@@ -1355,7 +1351,7 @@ TEST_CASE("Test Kindle sync tracking", "[kindle]") {
 
         res.set_content(
             R"({"success": true, "ocr_text": ")" + escapedContent +
-                R"(", "progress": {"percentage": 0, "current_page": 1, "total_pages": 100}, "book_session_key": "test_session_123"})",
+                R"(", "progress": {"current_page": 1, "total_pages": 100}, "book_session_key": "test_session_123"})",
             "application/json");
         res.status = 200;
     });
@@ -1386,8 +1382,7 @@ TEST_CASE("Test Kindle sync tracking", "[kindle]") {
         }
 
         res.set_content(R"({"success": true, "ocr_text": ")" + escapedContent +
-                            R"(", "progress": {"percentage": )" + std::to_string(navigateTo * 10) +
-                            R"(, "current_page": )" + std::to_string(navigateTo + 1) +
+                            R"(", "progress": {"current_page": )" + std::to_string(navigateTo + 1) +
                             R"(, "total_pages": 100}, "book_session_key": "test_session_123"})",
                         "application/json");
         res.status = 200;

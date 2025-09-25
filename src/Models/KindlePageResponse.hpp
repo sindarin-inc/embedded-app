@@ -9,19 +9,12 @@
 static constexpr const char *KINDLE_ERROR_SESSION_KEY_MISMATCH = "session_key_mismatch";
 
 struct KindlePageProgress {
-    int percentage = 0;
     int currentPage = 0;
     int totalPages = 0;
-    bool hasPercentage = false;
     bool hasCurrentPage = false;
     bool hasTotalPages = false;
 
     auto fromJson(const JsonObject &json) -> bool {
-        if (json.containsKey("percentage") && !json["percentage"].isNull()) {
-            percentage = json["percentage"];
-            hasPercentage = true;
-        }
-
         if (json.containsKey("current_page") && !json["current_page"].isNull()) {
             currentPage = json["current_page"];
             hasCurrentPage = true;

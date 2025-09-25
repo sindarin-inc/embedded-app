@@ -35,7 +35,7 @@ void KindlePageFlipper::applyProgressUpdate(const KindlePageProgress &progress) 
     }
 
     // Ignore empty updates, we don't always get all fields from the server
-    if (!progress.hasPercentage && !progress.hasCurrentPage && !progress.hasTotalPages) {
+    if (!progress.hasCurrentPage && !progress.hasTotalPages) {
         return;
     }
 
@@ -58,30 +58,18 @@ void KindlePageFlipper::applyProgressUpdate(const KindlePageProgress &progress) 
         }
     }
 
-    // Derive a percentage when the server only supplied page counts
-    if (!progress.hasPercentage) {
-        int current =
-            sanitized.hasCurrentPage ? sanitized.currentPage : kindleBook_->progressCurrentPage;
-        int total =
-            sanitized.hasTotalPages ? sanitized.totalPages : kindleBook_->progressTotalPages;
-        if (total > 0 && current >= 0) {
-            int computed = static_cast<int>(std::lround(
-                ((static_cast<double>(current) + 1.0) * 100.0) / static_cast<double>(total)));
-            sanitized.percentage = std::clamp(computed, 0, 100);
-            sanitized.hasPercentage = true;
-        }
-    } else {
-        sanitized.percentage = std::clamp(progress.percentage, 0, 100);
+    // Calculate percentage when we have the data
+    int currentForCalc = sanitized.hasCurrentPage ? sanitized.currentPage : kindleBook_->progressCurrentPage;
+    int totalForCalc = sanitized.hasTotalPages ? sanitized.totalPages : kindleBook_->progressTotalPages;
+
+    int newPercent = KindleBook::calculateProgressPercent(currentForCalc, totalForCalc);
+    if (kindleBook_->progressPercent != newPercent) {
+        kindleBook_->progressPercent = newPercent;
+        updated = true;
     }
 
-    if (sanitized.hasPercentage) {
-        std::string progressString = StringFormat("%d%%", sanitized.percentage);
-
-        if (kindleBook_->progressPercent != sanitized.percentage) {
-            kindleBook_->progressPercent = sanitized.percentage;
-            updated = true;
-        }
-
+    if (newPercent > 0) {
+        std::string progressString = StringFormat("%d%%", newPercent);
         if (progressString != kindleBook_->progress.c_str()) {
             kindleBook_->progress = progressString.c_str();
             updated = true;
