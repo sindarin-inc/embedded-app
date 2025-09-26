@@ -880,7 +880,7 @@ void KindleReadableScreen::showPopupMenu() {
         // Note: -1 means the server hasn't provided page numbers (only locations)
         if (kindleBook_->progressCurrentPage > 0 && kindleBook_->progressTotalPages > 0) {
             popupMenuScreen_->setExplicitPageNumbers(kindleBook_->progressCurrentPage,
-                                                    kindleBook_->progressTotalPages);
+                                                     kindleBook_->progressTotalPages);
         } else {
             // Clear any previous page info when we don't have valid server page numbers
             popupMenuScreen_->setExplicitPageNumbers(-1, -1);

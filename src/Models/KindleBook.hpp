@@ -32,8 +32,8 @@ public:
         if (totalPages <= 0 || currentPage <= 0) {
             return 0;
         }
-        int percentage = static_cast<int>(std::lround(
-            (static_cast<double>(currentPage) * 100.0) / static_cast<double>(totalPages)));
+        int percentage = static_cast<int>(std::lround((static_cast<double>(currentPage) * 100.0) /
+                                                      static_cast<double>(totalPages)));
         return std::clamp(percentage, 0, 100);
     }
 
