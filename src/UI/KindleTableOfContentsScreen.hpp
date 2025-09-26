@@ -8,6 +8,7 @@
 #include "Misc/CancelFlag.hpp"
 #include "Misc/Telemetry.hpp"
 #include "Models/KindleBook.hpp"
+#include "Models/KindleChaptersResponse.hpp"
 #include "Models/KindlePageFlipper.hpp"
 #include "Storage/PreferencesStore.hpp"
 #include "UI/Components/ArrowLabelView.hpp"
@@ -52,7 +53,7 @@ public:
 protected:
     void setState(State newState);
     void loadTableOfContents();
-    void handleTableOfContentsResponse(const std::string &response);
+    void handleTableOfContentsResponse(const std::shared_ptr<KindleChaptersResponse> &response);
     void populateMenuItems();
     void highlightCurrentChapter();
     void selectChapter();
