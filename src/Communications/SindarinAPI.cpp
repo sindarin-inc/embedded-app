@@ -23,7 +23,7 @@
 #define SINDARIN_SERVER_URL "https://api.sindarin.com"
 // #define SINDARIN_SERVER_URL "https://staging.sindarin.com"
 
-#define KINDLE_USE_STAGING 0
+#define KINDLE_USE_STAGING 1
 
 std::shared_ptr<SindarinAPI> SindarinAPI::instance = nullptr;
 

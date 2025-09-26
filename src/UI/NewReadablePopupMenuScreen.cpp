@@ -63,9 +63,16 @@ void NewReadablePopupMenuScreen::setUpPopupMenu() {
                   chapterHref.c_str());
         }
     } else {
-        size_t lengthOfFile = renderer_.size();
-        placeStringForBottom = StringFormat("%d of %d", SOL_PAGE_NUMBER(renderer_.getTxtOffset()),
-                                            SOL_PAGE_NUMBER(lengthOfFile));
+        // Use explicit page numbers if provided
+        if (hasExplicitPageNumbers_) {
+            placeStringForBottom = StringFormat("%d of %d", explicitCurrentPage_, explicitTotalPages_);
+        } else if (!suppressFallbackPageNumbers_) {
+            // Calculate page numbers from offset if not suppressed
+            size_t lengthOfFile = renderer_.size();
+            placeStringForBottom = StringFormat("%d of %d", SOL_PAGE_NUMBER(renderer_.getTxtOffset()),
+                                                SOL_PAGE_NUMBER(lengthOfFile));
+        }
+        // If fallback is suppressed and no explicit pages, don't show anything
     }
 
     if (showPageIndicators_) {

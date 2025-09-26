@@ -236,7 +236,7 @@ KindleReadableScreen::KindleReadableScreen(DisplaySystem &display,
     popupMenuScreen_ = std::make_shared<NewReadablePopupMenuScreen>(
         display, prefs_, fileSystem_, popupMenuReadable_, lightingController_, renderer_,
         telemetry_, localStore_, stream);
-    popupMenuScreen_->setShowPageIndicators(false);
+    popupMenuScreen_->setShowPageIndicators(true);
 
     popupMenuScreen_->addTab("Popup", popupNavigationFactory, 8);
     popupMenuScreen_->addTab("Style", popupStyleFactory, 8);
@@ -873,6 +873,19 @@ void KindleReadableScreen::showPopupMenu() {
     }
 
     if (popupMenuScreen_) {
+        // Always mark this as Kindle content to suppress fallback page calculation
+        popupMenuScreen_->setIsKindleContent(true);
+
+        // Only set Kindle page numbers if we have valid ones from the server
+        // Note: -1 means the server hasn't provided page numbers (only locations)
+        if (kindleBook_->progressCurrentPage > 0 && kindleBook_->progressTotalPages > 0) {
+            popupMenuScreen_->setKindlePageInfo(kindleBook_->progressCurrentPage,
+                                               kindleBook_->progressTotalPages);
+        } else {
+            // Clear any previous page info when we don't have valid server page numbers
+            popupMenuScreen_->setKindlePageInfo(-1, -1);
+        }
+
         popupMenuScreen_->setUpPopupMenu();
         popupMenuScreen_->regenerateCurrentTab();
     }
