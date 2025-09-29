@@ -598,7 +598,7 @@ void KindlePageFlipper::syncPagesWithServer(uint32_t currentOffset, bool navigat
 
         auto nextResponse = std::make_shared<KindlePageResponse>();
         auto nextError =
-            navigateWithRetry(navigateTo, nextPreviewPage, nextResponse, cancelFlag, 3);
+            navigateWithRetry(navigateTo, nextPreviewPage, nextResponse, cancelFlag, 2);
 
         if (CancelFlag::isCancelled(cancelFlag)) {
             break;
@@ -696,7 +696,7 @@ void KindlePageFlipper::loadInitialPage() {
         // Create a response object
         auto response = std::make_shared<KindlePageResponse>();
 
-        auto error = openBookWithRetry(response, cancelFlag, 3);
+        auto error = openBookWithRetry(response, cancelFlag, 2);
         if (CancelFlag::isCancelled(cancelFlag)) {
             return;
         }

@@ -80,6 +80,7 @@ protected:
     void scheduleDelayedLoadingMessage();
     // Cancel any pending delayed message
     void cancelDelayedLoadingMessage();
+    void onPositionChanged();
 
 private:
     std::shared_ptr<KindleBook> kindleBook_;

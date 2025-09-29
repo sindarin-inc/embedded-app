@@ -10,7 +10,6 @@
 #include "Menu/ReadingSettingsMenuScreen.hpp"
 #include "Models/Readable.hpp"
 #include "UI/Fonts/Fonts.hpp"
-#include "UI/KindleTableOfContentsScreen.hpp"
 #include "UI/Menu/MenuItemSingleLine.hpp"
 #include "sindarin-debug.h"
 
@@ -66,9 +65,6 @@ KindleReadableScreen::KindleReadableScreen(DisplaySystem &display,
         menuItems->emplace_back(
             std::make_shared<MenuItemSingleLine>("Main Menu", [this]() { dismissScreen(); }));
 
-        menuItems->emplace_back(
-            std::make_shared<MenuItemSingleLine>("Contents", [this]() { showTableOfContents(); }));
-
         menuItems->emplace_back(std::make_shared<MenuItemSingleLine>("Brightness", [this]() {
             auto brightness = std::make_shared<LightingAdjustScreen>(
                 display_, prefs_, lightingController_, telemetry_);
@@ -83,11 +79,6 @@ KindleReadableScreen::KindleReadableScreen(DisplaySystem &display,
         menuItems->emplace_back(std::make_shared<MenuItemSingleLine>("Back to Text", [this]() {
             display_.clearDisplay();
             setCurrentScreen(nullptr);
-            // Make sure we're in the right state to display content
-            if (state_ == State::ERROR || state_ == State::LOADING_CONTENT) {
-                setState(State::DISPLAY_CONTENT);
-            }
-            updateType_ = DisplaySystem::UpdateType::FULL;
             setNeedsRerender();
         }));
 
@@ -222,21 +213,18 @@ KindleReadableScreen::KindleReadableScreen(DisplaySystem &display,
 
     // Create a readable-like object for the popup menu to use
     // TODO(john): We should make a KindleReadable object that can be used for Kindle books
-    popupMenuReadable_ = std::make_shared<Readable>();
-    popupMenuReadable_->title = kindleBook_->title;
+    auto readablePlaceholder = std::make_shared<Readable>();
+    readablePlaceholder->title = kindleBook_->title;
 
     // Add authors from kindle book to readable
     Author author;
     author.name = kindleBook_->author;
-    popupMenuReadable_->authors.clear();
-    popupMenuReadable_->authors.push_back(author);
-    popupMenuReadable_->place = currentPlace_;
+    readablePlaceholder->authors.push_back(author);
 
     auto stream = pageFlipper_.getStream();
     popupMenuScreen_ = std::make_shared<NewReadablePopupMenuScreen>(
-        display, prefs_, fileSystem_, popupMenuReadable_, lightingController_, renderer_,
+        display, prefs_, fileSystem_, readablePlaceholder, lightingController_, renderer_,
         telemetry_, localStore_, stream);
-    popupMenuScreen_->setShowPageIndicators(false);
 
     popupMenuScreen_->addTab("Popup", popupNavigationFactory, 8);
     popupMenuScreen_->addTab("Style", popupStyleFactory, 8);
@@ -392,22 +380,6 @@ void KindleReadableScreen::processCommand(RemoteCommand command) {
             setNeedsRerender();
         }
         return;
-    }
-
-    // Any button press should return to content or show menu if no content
-    if (state_ == State::ERROR) {
-        // Check if we have content to display
-        if (pageFlipper_.hasContent()) {
-            // We have content, return to displaying it
-            setState(State::DISPLAY_CONTENT);
-            updateType_ = DisplaySystem::UpdateType::FULL;
-            setNeedsRerender();
-            return;
-        } else {
-            // No content (e.g., /open-book failed), show popup menu
-            showPopupMenu();
-            return;
-        }
     }
 
     // Handle navigation commands specially for Kindle content
@@ -868,158 +840,21 @@ void KindleReadableScreen::dismissScreen() {
 }
 
 void KindleReadableScreen::showPopupMenu() {
-    if (popupMenuReadable_) {
-        popupMenuReadable_->place = currentPlace_;
-    }
+    // Create a readable-like object for the popup menu to use
+    // TODO(john): Don't we already do this?
+    auto readablePlaceholder = std::make_shared<Readable>();
+    readablePlaceholder->title = kindleBook_->title;
 
-    if (popupMenuScreen_) {
-        popupMenuScreen_->setUpPopupMenu();
-        popupMenuScreen_->regenerateCurrentTab();
-    }
+    // Add authors from kindle book to readable
+    Author author;
+    author.name = kindleBook_->author;
+    readablePlaceholder->authors.push_back(author);
+
+    readablePlaceholder->place = currentPlace_; // Use current reading position
 
     // Show the popup menu - no need to set readable since that's only needed for some features
     setCurrentScreen(popupMenuScreen_);
     updateType_ = DisplaySystem::UpdateType::PARTIAL;
-    setNeedsRerender();
-}
-
-void KindleReadableScreen::showTableOfContents() {
-    log_i("Showing table of contents for book: %s", kindleBook_->title.c_str());
-
-    // Close the popup menu first
-    setCurrentScreen(nullptr);
-
-    // Determine the current server page for highlighting and navigation
-    int currentPage = -1;
-    if (currentPlace_) {
-        currentPage = pageFlipper_.getServerPageNumberForOffset(currentPlace_->getOffset());
-    }
-
-    if (currentPage < 0 && kindleBook_->progressCurrentPage >= 0) {
-        currentPage = kindleBook_->progressCurrentPage;
-    }
-
-    if (currentPage < 0) {
-        currentPage = 0;
-    }
-
-    // Create the table of contents screen
-    auto tocScreen = std::make_shared<KindleTableOfContentsScreen>(
-        display_, kindleBook_, prefs_, telemetry_, pageFlipper_, currentPage, cancelFlag_);
-
-    // Set the callback for when a chapter is selected
-    tocScreen->setChapterSelectedCallback([this](const std::string &chapterUuid, int chapterPage) {
-        log_i("Chapter selected with UUID: %s, navigating to page %d", chapterUuid.c_str(),
-              chapterPage);
-
-        int requestPage = chapterPage;
-        if (requestPage < 0) {
-            if (currentPlace_) {
-                requestPage = pageFlipper_.getServerPageNumberForOffset(currentPlace_->getOffset());
-            }
-
-            if (requestPage < 0 && kindleBook_->progressCurrentPage >= 0) {
-                requestPage = kindleBook_->progressCurrentPage;
-            }
-
-            if (requestPage < 0) {
-                requestPage = 0;
-            }
-        }
-
-        // Dismiss the TOC screen
-        setCurrentScreen(nullptr);
-
-        // Show loading state
-        setState(State::LOADING_CONTENT);
-        loadingMessageView_.setText("Navigating to chapter...");
-        setNeedsLayout();
-        setNeedsRerender();
-
-        // Navigate to the chapter
-        DispatchGetCore0BackgroundQueue()->dispatch([this, chapterUuid, requestPage]() {
-            if (CancelFlag::isCancelled(cancelFlag_)) {
-                return;
-            }
-
-            auto error = pageFlipper_.navigateToChapter(chapterUuid, requestPage);
-
-            if (CancelFlag::isCancelled(cancelFlag_)) {
-                return;
-            }
-
-            DispatchGetUiQueue()->dispatch([this, error, chapterUuid, requestPage]() {
-                if (error) {
-                    log_e("Failed to navigate to chapter UUID: %s (error: %s)", chapterUuid.c_str(),
-                          error ? error->message.c_str() : "unknown");
-
-                    // Show error message but keep content available
-                    std::string errorMsg = "Failed to navigate to chapter";
-                    if (error->type == KindleError::Type::ServerError) {
-                        errorMsg = "Server error. Please try again.";
-                    } else if (error->type == KindleError::Type::NotFoundError) {
-                        errorMsg = "Chapter not found";
-                    } else if (error->type == KindleError::Type::ConnectionError) {
-                        errorMsg = "Connection error. Please check network.";
-                    }
-
-                    errorMessageView_.setText(errorMsg);
-                    setState(State::ERROR);
-                    updateType_ = DisplaySystem::UpdateType::FULL;
-                    setNeedsRerender();
-                    render(display_);
-
-                    // Log telemetry for failed navigation
-                    telemetry_.logMetric(
-                        TelemetryField::METRIC_EVENT, kindleBook_->uuid,
-                        {{"event", std::string("table_of_contents_navigate_error")},
-                         {"kindle", true},
-                         {"chapter_uuid", chapterUuid},
-                         {"error", error ? error->message : std::string("unknown")}});
-                    return;
-                }
-
-                log_i("Successfully navigated to chapter UUID: %s", chapterUuid.c_str());
-
-                // Reset navigation state to beginning of chapter
-                currentPlace_ = std::dynamic_pointer_cast<TxtPlace>(Place::factory(0));
-                newPlace_ = nullptr;
-
-                // Update renderer with new content
-                auto stream = pageFlipper_.getStream();
-                renderer_.setStream(stream);
-                renderer_.setCurrentPlace(currentPlace_);
-
-                // Switch to display state
-                setState(State::DISPLAY_CONTENT);
-                updateType_ = DisplaySystem::UpdateType::FULL;
-                setNeedsRerender();
-                render(display_);
-
-                // Trigger the page flipper to check buffer and fetch additional pages
-                pageFlipper_.updatePlace(currentPlace_);
-
-                // Log telemetry for successful navigation
-                telemetry_.logMetric(TelemetryField::METRIC_EVENT, kindleBook_->uuid,
-                                     {{"event", std::string("table_of_contents_navigate_success")},
-                                      {"kindle", true},
-                                      {"chapter_uuid", chapterUuid},
-                                      {"page", requestPage}});
-            });
-        });
-    });
-
-    // Set the back callback to dismiss the TOC screen
-    tocScreen->setBackCallback([this]() {
-        setCurrentScreen(nullptr);
-        updateType_ = DisplaySystem::UpdateType::FULL;
-        setNeedsRerender();
-    });
-
-    // Show the TOC screen
-    setCurrentScreen(tocScreen);
-    tocScreen->begin();
-    updateType_ = DisplaySystem::UpdateType::FULL;
     setNeedsRerender();
 }
 
@@ -1098,13 +933,6 @@ void KindleReadableScreen::submitLastReadDialogChoice(bool gotoLastReadPage,
     DispatchGetCore0BackgroundQueue()->dispatch([this, gotoLastReadPage]() {
         auto result = SindarinAPI::getInstance()->submitLastReadPageChoice(
             gotoLastReadPage, isUsingBleConnection_, cancelFlag_);
-
-#ifdef TESTS
-        // Notify test that the POST request completed
-        if (onTestLastReadDialogPostComplete_) {
-            onTestLastReadDialogPostComplete_(result == 200);
-        }
-#endif
 
         if (gotoLastReadPage && result != 200) {
             DispatchGetUiQueue()->dispatch([this]() {
@@ -1324,7 +1152,39 @@ void KindleReadableScreen::attemptReconnection() {
             return;
         }
 
-        if (!connected) {
+        if (connected) {
+            log_i("Network reconnected successfully");
+
+            telemetry_.logMetric(
+                TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
+                {{"event", std::string("reconnection")},
+                 {"action", std::string("success")},
+                 {"kindle", true},
+                 {"po", currentPlace_ ? static_cast<int>(currentPlace_->getOffset()) : 0},
+                 {"ble", isUsingBleConnection_}});
+
+            // Successfully reconnected, retry the operation
+            pageFlipper_.retryNetworkOperation();
+
+            // Reset reconnection attempts on successful connection
+            reconnectionAttempts_ = 0;
+            isReconnecting_ = false;
+
+            // If we have content already (were just reconnecting), restore display state
+            if (pageFlipper_.hasContent()) {
+                DispatchGetUiQueue()->dispatch([this]() {
+                    if (state_ == State::LOADING_CONTENT) {
+                        setState(State::DISPLAY_CONTENT);
+                        setNeedsLayout();
+                        setNeedsRerender();
+                        render(display_);
+#ifdef TESTS
+                        pageFlipper_.notifyTestContentReady();
+#endif
+                    }
+                });
+            }
+        } else {
             log_w("Failed to reconnect");
 
             telemetry_.logMetric(
@@ -1349,39 +1209,6 @@ void KindleReadableScreen::attemptReconnection() {
                         "Failed to load content. Please check your network connection.");
                 });
             }
-            return;
-        }
-
-        log_i("Network reconnected successfully");
-
-        telemetry_.logMetric(
-            TelemetryField::METRIC_READABLE_REQUEST, kindleBook_->uuid,
-            {{"event", std::string("reconnection")},
-             {"action", std::string("success")},
-             {"kindle", true},
-             {"po", currentPlace_ ? static_cast<int>(currentPlace_->getOffset()) : 0},
-             {"ble", isUsingBleConnection_}});
-
-        // Successfully reconnected, retry the operation
-        pageFlipper_.retryNetworkOperation();
-
-        // Reset reconnection attempts on successful connection
-        reconnectionAttempts_ = 0;
-        isReconnecting_ = false;
-
-        // If we have content already (were just reconnecting), restore display state
-        if (pageFlipper_.hasContent()) {
-            DispatchGetUiQueue()->dispatch([this]() {
-                if (state_ == State::LOADING_CONTENT) {
-                    setState(State::DISPLAY_CONTENT);
-                    setNeedsLayout();
-                    setNeedsRerender();
-                    render(display_);
-#ifdef TESTS
-                    pageFlipper_.notifyTestContentReady();
-#endif
-                }
-            });
         }
     };
 
@@ -1474,58 +1301,6 @@ void KindleReadableScreen::updatePageFlipperCallbacks() {
                 scheduleTestDisconnect();
 #endif
             }
-        });
-    });
-
-    pageFlipper_.setOnProgressUpdated([this, cancelFlag](const KindlePageProgress &progress) {
-        if (CancelFlag::isCancelled(cancelFlag)) {
-            return;
-        }
-
-        DispatchGetUiQueue()->dispatch([this, cancelFlag, progress]() {
-            if (CancelFlag::isCancelled(cancelFlag)) {
-                return;
-            }
-
-            // Save only current page to NVS (totalPages stays in kindle.json)
-            if (progress.hasCurrentPage) {
-                prefs_.kindleCurrentPage.set(kindleBook_->shortenedUuid.c_str(),
-                                             progress.currentPage);
-            }
-
-            // Save total pages to kindle.json when it changes (typically only on first book open)
-            if (progress.hasTotalPages) {
-                log_d("Progress has total pages: %d for book %s", progress.totalPages,
-                      kindleBook_->title.c_str());
-                auto &books = localStore_.kindle();
-                bool found = false;
-                for (auto &book : books) {
-                    if (book.uuid == kindleBook_->uuid) {
-                        found = true;
-                        log_d("Found book in localStore, current totalPages: %d, new: %d",
-                              book.progressTotalPages, progress.totalPages);
-                        if (book.progressTotalPages != progress.totalPages) {
-                            log_i("Updating total pages for %s: %d -> %d",
-                                  kindleBook_->title.c_str(), book.progressTotalPages,
-                                  progress.totalPages);
-                            book.progressTotalPages = progress.totalPages;
-                            localStore_.saveKindleBooks(books);
-                        }
-                        break;
-                    }
-                }
-                if (!found) {
-                    log_w("Book %s (uuid: %s) not found in localStore, cannot save total pages",
-                          kindleBook_->title.c_str(), kindleBook_->uuid.c_str());
-                }
-            } else {
-                log_d("Progress update does not have total pages for %s",
-                      kindleBook_->title.c_str());
-            }
-
-            log_i("Updating Kindle progress for %s: %d%% (page %d of %d)",
-                  kindleBook_->title.c_str(), kindleBook_->progressPercent,
-                  kindleBook_->progressCurrentPage, kindleBook_->progressTotalPages);
         });
     });
 
