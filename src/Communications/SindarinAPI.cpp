@@ -23,8 +23,6 @@
 #define SINDARIN_SERVER_URL "https://api.sindarin.com"
 // #define SINDARIN_SERVER_URL "https://staging.sindarin.com"
 
-#define KINDLE_USE_STAGING 0
-
 std::shared_ptr<SindarinAPI> SindarinAPI::instance = nullptr;
 
 auto SindarinAPI::getInstance() -> std::shared_ptr<SindarinAPI> {
@@ -535,9 +533,6 @@ auto SindarinAPI::makeKindleRequest(const std::string &path, KindlePageResponse 
                                     const std::shared_ptr<CancelFlag> &cancelFlag, bool useBle)
     -> int {
     std::string url = StringFormat("%s%s", baseUrl_.c_str(), path.c_str());
-#if KINDLE_USE_STAGING
-    url += (url.find('?') != std::string::npos) ? "&staging=1" : "?staging=1";
-#endif
     log_i("Making Kindle request to URL: %s", url.c_str());
 
     auto client =
@@ -656,9 +651,6 @@ auto SindarinAPI::submitLastReadPageChoice(bool gotoLastReadPage, bool useBle,
           gotoLastReadPage ? "sync to latest" : "stay on current page");
 
     std::string url = StringFormat("%s%s", baseUrl_.c_str(), path.c_str());
-#if KINDLE_USE_STAGING
-    url += "?staging=1";
-#endif
     log_i("Making POST request to URL: %s", url.c_str());
 
     auto client = createClient(url, "application/json", HTTP_METHOD_POST, useBle, cancel, 120000);
@@ -709,170 +701,5 @@ auto SindarinAPI::submitLastReadPageChoice(bool gotoLastReadPage, bool useBle,
         log_w("Failed to submit last read page choice, HTTP code: %d", httpCode);
     }
 
-    return httpCode;
-}
-
-auto SindarinAPI::fetchKindleChaptersWithUuids(const std::string &kindleUuid, int currentPage,
-                                               KindleChaptersResponse *resp, bool useBle,
-                                               const std::shared_ptr<CancelFlag> &cancel) -> int {
-    log_i("Fetching chapters with UUIDs for Kindle book UUID '%s' from page %d", kindleUuid.c_str(),
-          currentPage);
-
-    std::string url = StringFormat("%s/kindle/table-of-contents", baseUrl_.c_str());
-#if KINDLE_USE_STAGING
-    url += "?staging=1";
-#endif
-
-    auto client = createClient(url, "application/json", HTTP_METHOD_POST, useBle, cancel, 120000);
-    if (!client) {
-        log_e("Failed to create HTTP client");
-        return ERR_CLIENT_OPEN;
-    }
-
-    auto err = setAuth(client);
-    if (err != ESP_OK) {
-        log_e("Failed to set authentication: %d", err);
-        return ERR_SET_AUTH;
-    }
-
-    // Build JSON request body with empty chapter_uuid to get chapters with UUIDs
-    auto doc = std::make_shared<SpiRamJsonDocument>(512);
-    JsonObject body = doc->to<JsonObject>();
-    body["kindle_uuid"] = kindleUuid;
-    body["chapter_uuid"] = ""; // Empty UUID to get chapter list
-    body["page"] = currentPage;
-
-    size_t serializedMaxSize = (*doc).memoryUsage() * 2;
-    auto reqBody = SpiRamArrayPtr<char>(serializedMaxSize);
-    size_t serializedSize = serializeJson(*doc, reqBody.get(), serializedMaxSize);
-
-    log_d("Request body: %s", reqBody.get());
-
-    err = client->open(serializedSize);
-    if (err != ESP_OK) {
-        log_e("Failed to open HTTP client: %d", err);
-        return ERR_CLIENT_OPEN;
-    }
-    defer { client->close(); };
-
-    // Write the POST data
-    int written = client->write(reqBody.get(), serializedSize);
-    if (written != serializedSize) {
-        log_e("Failed to write POST data");
-        return ERR_CLIENT_WRITE;
-    }
-
-    int contentLength = client->fetchHeaders(cancel);
-    if (contentLength <= 0) {
-        log_e("Failed to fetch headers or no content");
-        return ERR_CONTENT_LENGTH;
-    }
-
-    auto stream = client->makeReadStream();
-    auto respJson = std::make_unique<SpiRamJsonDocument>(1024 + contentLength * 3);
-    auto error = ArduinoJson::deserializeJson(*respJson, *stream);
-
-    int httpCode = client->getStatusCode();
-    log_i("HTTP response code: %d", httpCode);
-
-    if (httpCode != 200) {
-        log_e("HTTP request failed with code %d", httpCode);
-        return httpCode;
-    }
-
-    if (error.code() != DeserializationError::Ok) {
-        log_e("Failed to deserialize response: %s", error.c_str());
-        return ERR_JSON_DESERIALIZE;
-    }
-
-    if (!resp->fromJson(respJson->as<JsonObject>())) {
-        log_e("Failed to parse response JSON into KindleChaptersResponse");
-        return ERR_JSON_OBJECT_PARSE;
-    }
-
-    log_i("Successfully received chapters with UUIDs response");
-    return httpCode;
-}
-
-auto SindarinAPI::navigateKindleToChapter(const std::string &kindleUuid,
-                                          const std::string &chapterUuid, int currentPage,
-                                          KindlePageResponse *resp, bool useBle,
-                                          const std::shared_ptr<CancelFlag> &cancel) -> int {
-    log_i("Navigating to chapter UUID '%s' for Kindle book UUID '%s' from page %d",
-          chapterUuid.c_str(), kindleUuid.c_str(), currentPage);
-
-    std::string url = StringFormat("%s/kindle/table-of-contents", baseUrl_.c_str());
-#if KINDLE_USE_STAGING
-    url += "?staging=1";
-#endif
-
-    auto client = createClient(url, "application/json", HTTP_METHOD_POST, useBle, cancel, 120000);
-    if (!client) {
-        log_e("Failed to create HTTP client");
-        return ERR_CLIENT_OPEN;
-    }
-
-    auto err = setAuth(client);
-    if (err != ESP_OK) {
-        log_e("Failed to set authentication: %d", err);
-        return ERR_SET_AUTH;
-    }
-
-    // Build JSON request body
-    auto doc = std::make_shared<SpiRamJsonDocument>(512);
-    JsonObject body = doc->to<JsonObject>();
-    body["kindle_uuid"] = kindleUuid;
-    body["chapter_uuid"] = chapterUuid;
-    body["page"] = currentPage;
-
-    size_t serializedMaxSize = (*doc).memoryUsage() * 2;
-    auto reqBody = SpiRamArrayPtr<char>(serializedMaxSize);
-    size_t serializedSize = serializeJson(*doc, reqBody.get(), serializedMaxSize);
-
-    log_d("Request body: %s", reqBody.get());
-
-    err = client->open(serializedSize);
-    if (err != ESP_OK) {
-        log_e("Failed to open HTTP client: %d", err);
-        return ERR_CLIENT_OPEN;
-    }
-    defer { client->close(); };
-
-    // Write the POST data
-    int written = client->write(reqBody.get(), serializedSize);
-    if (written != serializedSize) {
-        log_e("Failed to write POST data");
-        return ERR_CLIENT_WRITE;
-    }
-
-    int contentLength = client->fetchHeaders(cancel);
-    if (contentLength <= 0) {
-        log_e("Failed to fetch headers or no content");
-        return ERR_CONTENT_LENGTH;
-    }
-
-    int httpCode = client->getStatusCode();
-    log_i("HTTP response code: %d", httpCode);
-
-    if (httpCode != 200) {
-        log_e("HTTP error: %d", httpCode);
-        return httpCode;
-    }
-
-    // Read and parse response
-    auto stream = client->makeReadStream();
-    auto respJson = std::make_unique<SpiRamJsonDocument>(1024 + contentLength * 3);
-    auto error = ArduinoJson::deserializeJson(*respJson, *stream);
-    if (error.code() != DeserializationError::Ok) {
-        log_e("Failed to deserialize response: %s", error.c_str());
-        return ERR_JSON_DESERIALIZE;
-    }
-
-    if (!resp->fromJson(respJson->as<JsonObject>())) {
-        log_e("Failed to parse response JSON into KindlePageResponse");
-        return ERR_JSON_OBJECT_PARSE;
-    }
-
-    log_i("Successfully navigated to chapter (response text length: %zu)", resp->text.size());
     return httpCode;
 }

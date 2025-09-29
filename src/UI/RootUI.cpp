@@ -756,11 +756,7 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
 
                 // Push the screen and set up back callback
                 this->pushScreen(kindleReadableScreen);
-                kindleReadableScreen->setBackCallback([this]() {
-                    this->popScreen();
-                    std::static_pointer_cast<MainMenuScreen>(currentScreen())
-                        ->regenerateCurrentTab();
-                });
+                kindleReadableScreen->setBackCallback([this]() { this->popScreen(); });
                 kindleReadableScreen->begin();
                 },
                 archived));

@@ -116,14 +116,6 @@ public:
         return size;
     }
 
-    void clearAndSetContent(const SpiramString &content) {
-        clear();
-        pages_.push_back({content, 0});
-        currentPageIndex_ = 0;
-        currentPageOffset_ = 0;
-        log_i("Set new content of size %zu", content.size());
-    }
-
     auto pageIndexForOffset(uint32_t offset) -> int {
         for (int i = 0; i < pages_.size(); i++) {
             if (offset < pages_[i].content.size()) {
@@ -269,22 +261,6 @@ public:
         onLastReadDialogFunction_ = std::move(onLastReadDialogFunction);
     }
 
-    void updateProgressFromServer(const KindlePageProgress &progress) {
-        applyProgressUpdate(progress);
-    }
-
-    void setOnProgressUpdated(
-        std::function<void(const KindlePageProgress &progress)> onProgressUpdated) {
-        onProgressUpdated_ = std::move(onProgressUpdated);
-    }
-
-    [[nodiscard]] auto getServerPageNumberForOffset(uint32_t offset) const -> int {
-        if (!pageStream_) {
-            return -1;
-        }
-        return pageStream_->getServerPageNumberForOffset(offset);
-    }
-
     void retryNetworkOperation() {
         // Retry loading the initial page if we're at the beginning
         if (pageStream_->size() == 0) {
@@ -322,24 +298,6 @@ public:
         return 0;
     }
 
-    [[nodiscard]] auto isUsingBleConnection() const -> bool { return useBle_; }
-
-    // When navigating to a new chapter, we need to reset the book session key
-    // and navigation state so that we can start fresh at the beginning of the chapter
-    void resetBookSessionKey() {
-        bookSessionKey_.clear();
-        lastNavigatedPage_ = -1;
-        lastPreviewedPage_ = -1;
-        log_i("Reset book session key and navigation state");
-    }
-
-    void setNavigateTo(int navigateTo) { lastNavigatedPage_ = navigateTo; }
-    void setPreviewTo(int previewTo) { lastPreviewedPage_ = previewTo; }
-    void setBookSessionKey(const SpiramString &key) { bookSessionKey_ = key; }
-
-    auto navigateToChapter(const std::string &chapterUuid, int currentPage)
-        -> std::shared_ptr<KindleError>;
-
 private:
     std::shared_ptr<KindleBook> kindleBook_;
     bool useBle_ = false;
@@ -359,7 +317,6 @@ private:
     std::function<void(const std::string &errorMessage)> onErrorFunction_;
     std::function<void()> onConnectionErrorFunction_;
     std::function<void(const SpiramString &dialogText)> onLastReadDialogFunction_;
-    std::function<void(const KindlePageProgress &progress)> onProgressUpdated_;
 
     [[nodiscard]] auto dispatchQueue() const -> DispatchQueue *;
     auto checkForError(int httpCode, std::shared_ptr<KindlePageResponse> &response)
@@ -381,6 +338,4 @@ private:
     // Unified method to sync pages with server - handles both navigation changes and buffer refills
     void syncPagesWithServer(uint32_t currentOffset, bool navigationChanged,
                              const std::shared_ptr<CancelFlag> &cancelFlag);
-
-    void applyProgressUpdate(const KindlePageProgress &progress);
 };

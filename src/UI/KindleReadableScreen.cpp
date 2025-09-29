@@ -934,14 +934,6 @@ void KindleReadableScreen::submitLastReadDialogChoice(bool gotoLastReadPage,
         auto result = SindarinAPI::getInstance()->submitLastReadPageChoice(
             gotoLastReadPage, isUsingBleConnection_, cancelFlag_);
 
-#ifdef TESTS
-        if (onTestLastReadDialogPostComplete_) {
-            bool success = !gotoLastReadPage || result == 200;
-            log_i("TEST: last-read dialog POST complete callback invoked (success=%d)", success);
-            onTestLastReadDialogPostComplete_(success);
-        }
-#endif
-
         if (gotoLastReadPage && result != 200) {
             DispatchGetUiQueue()->dispatch([this]() {
                 telemetry_.logMetric(

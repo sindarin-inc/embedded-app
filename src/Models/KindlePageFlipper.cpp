@@ -1,8 +1,6 @@
 #include "Models/KindlePageFlipper.hpp"
 
-#include <algorithm>
 #include <cinttypes>
-#include <cmath>
 #include <esp_timer.h>
 #include <utility>
 
@@ -25,62 +23,6 @@ KindlePageFlipper::KindlePageFlipper(const std::shared_ptr<KindleBook> &kindleBo
           kindleBook_->author.c_str());
 
     pageStream_ = std::make_shared<KindlePageStream>();
-}
-
-// Update local KindleBook state with progress reported by the service, deriving
-// missing fields (percentage/current page) and persisting changes for listeners
-void KindlePageFlipper::applyProgressUpdate(const KindlePageProgress &progress) {
-    if (!kindleBook_) {
-        return;
-    }
-
-    // Ignore empty updates, we don't always get all fields from the server
-    if (!progress.hasCurrentPage && !progress.hasTotalPages) {
-        return;
-    }
-
-    KindlePageProgress sanitized = progress;
-    bool updated = false;
-
-    if (progress.hasCurrentPage) {
-        sanitized.currentPage = std::max(progress.currentPage, 0);
-        if (kindleBook_->progressCurrentPage != sanitized.currentPage) {
-            kindleBook_->progressCurrentPage = sanitized.currentPage;
-            updated = true;
-        }
-    }
-
-    if (progress.hasTotalPages) {
-        sanitized.totalPages = std::max(progress.totalPages, 0);
-        if (kindleBook_->progressTotalPages != sanitized.totalPages) {
-            kindleBook_->progressTotalPages = sanitized.totalPages;
-            updated = true;
-        }
-    }
-
-    // Calculate percentage when we have the data
-    int currentForCalc =
-        sanitized.hasCurrentPage ? sanitized.currentPage : kindleBook_->progressCurrentPage;
-    int totalForCalc =
-        sanitized.hasTotalPages ? sanitized.totalPages : kindleBook_->progressTotalPages;
-
-    int newPercent = KindleBook::calculateProgressPercent(currentForCalc, totalForCalc);
-    if (kindleBook_->progressPercent != newPercent) {
-        kindleBook_->progressPercent = newPercent;
-        updated = true;
-    }
-
-    if (newPercent > 0) {
-        std::string progressString = StringFormat("%d%%", newPercent);
-        if (progressString != kindleBook_->progress.c_str()) {
-            kindleBook_->progress = progressString.c_str();
-            updated = true;
-        }
-    }
-
-    if (updated && onProgressUpdated_) {
-        onProgressUpdated_(sanitized);
-    }
 }
 
 auto KindlePageFlipper::dispatchQueue() const -> DispatchQueue * {
@@ -189,8 +131,6 @@ auto KindlePageFlipper::navigateWithRetry(int navigateTo, int previewTo,
                 log_i("Updated book_session_key: %s", bookSessionKey_.c_str());
             }
 
-            applyProgressUpdate(response->progress);
-
             if (retryCount > 0) {
                 log_i("Navigation request succeeded after %d retries", retryCount);
                 // Log success after retry
@@ -283,79 +223,6 @@ auto KindlePageFlipper::navigateWithRetry(int navigateTo, int previewTo,
     return error;
 }
 
-auto KindlePageFlipper::navigateToChapter(const std::string &chapterUuid, int currentPage)
-    -> std::shared_ptr<KindleError> {
-
-    if (!kindleBook_) {
-        return std::make_shared<KindleError>(
-            KindleError{KindleError::Type::UnknownError, "No book loaded"});
-    }
-
-    log_i("Navigating to chapter UUID: %s from page %d", chapterUuid.c_str(), currentPage);
-
-    // Reset state for chapter navigation
-    resetBookSessionKey();
-    clearBuffer();
-    lastServerSyncPlace_ = nullptr;
-    lastRenderedPlace_ = nullptr;
-
-    // Make the API call to navigate to the chapter
-    auto api = SindarinAPI::getInstance();
-    auto response = std::make_shared<KindlePageResponse>();
-
-    int httpCode = api->navigateKindleToChapter(std::string(kindleBook_->uuid), chapterUuid,
-                                                currentPage, response.get(), useBle_, cancelFlag_);
-
-    if (CancelFlag::isCancelled(cancelFlag_)) {
-        return nullptr; // Caller must check cancelFlag separately
-    }
-
-    // Check for errors
-    auto error = checkForError(httpCode, response);
-    if (error) {
-        log_e("Failed to navigate to chapter: %s", error->message.c_str());
-        return error;
-    }
-
-    // Update book session key if provided
-    if (!response->bookSessionKey.empty()) {
-        bookSessionKey_ = response->bookSessionKey;
-        log_i("Updated book_session_key from chapter navigation: %s", bookSessionKey_.c_str());
-    }
-
-    // Update navigation state
-    if (response->navigateTo >= 0) {
-        lastNavigatedPage_ = response->navigateTo;
-    } else {
-        lastNavigatedPage_ = 0; // Start at beginning of chapter
-    }
-
-    if (response->previewTo >= 0) {
-        lastPreviewedPage_ = response->previewTo;
-    } else {
-        lastPreviewedPage_ = 0;
-    }
-
-    // Use latest page number
-    applyProgressUpdate(response->progress);
-
-    // Set the new content in the stream (chapter navigation returns content in ocrText field)
-    if (!response->ocrText.empty()) {
-        pageStream_->clearAndSetContent(response->ocrText);
-
-        if (onContentReady_) {
-            size_t ocrTextLength = response->ocrText.size();
-            onContentReady_(ocrTextLength);
-        }
-
-        log_i("Chapter content loaded: %zu bytes", response->ocrText.size());
-    } else {
-        log_w("Chapter navigation succeeded but no content received");
-    }
-
-    return nullptr; // Success
-}
-
 auto KindlePageFlipper::openBookWithRetry(std::shared_ptr<KindlePageResponse> &response,
                                           const std::shared_ptr<CancelFlag> &cancelFlag,
                                           int maxRetries) -> std::shared_ptr<KindleError> {
@@ -397,7 +264,6 @@ auto KindlePageFlipper::openBookWithRetry(std::shared_ptr<KindlePageResponse> &r
         error = checkForError(httpCode, response);
 
         if (!error) {
-            applyProgressUpdate(response->progress);
             if (retryCount > 0) {
                 log_i("Open book request succeeded after %d retries", retryCount);
                 // Log success after retry
@@ -607,22 +473,6 @@ void KindlePageFlipper::syncPagesWithServer(uint32_t currentOffset, bool navigat
         if (nextError) {
             log_w("Failed to load additional preview page %d: %s", nextPreviewPage,
                   nextError->message.c_str());
-
-            // If we're in a state where the user is waiting for content and we failed to load it,
-            // propagate the error to the UI
-            if (additionalPagesFetched == 0 && bytesRemaining < KINDLE_BUFFER_THRESHOLD_BYTES) {
-                log_e("Failed to load any additional pages when buffer was low - showing error to "
-                      "user");
-                if (!nextError->isConnectionError()) {
-                    if (onErrorFunction_) {
-                        onErrorFunction_(nextError->message);
-                    }
-                } else {
-                    if (onConnectionErrorFunction_) {
-                        onConnectionErrorFunction_();
-                    }
-                }
-            }
             break;
         }
 

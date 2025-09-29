@@ -6,10 +6,6 @@ void NewReadablePopupMenuScreen::setUpPopupMenu() {
     std::string placeStringForBottom;
     std::string chapterPagesRemainingString;
 
-    footer1TextView_.setText("");
-    footer2TextView_.setText("");
-    footer3TextView_.setText("");
-
     if (place->isFor(DocType::EPUB)) {
         auto stream = std::dynamic_pointer_cast<EPubFile>(renderer_.getStream());
         auto ePubPlace = std::dynamic_pointer_cast<EPubPlace>(place);
@@ -68,13 +64,11 @@ void NewReadablePopupMenuScreen::setUpPopupMenu() {
                                             SOL_PAGE_NUMBER(lengthOfFile));
     }
 
-    if (showPageIndicators_) {
-        if (!chapterPagesRemainingString.empty()) {
-            footer1TextView_.setText(chapterPagesRemainingString);
-        }
-        if (!placeStringForBottom.empty()) {
-            footer2TextView_.setText(placeStringForBottom);
-        }
+    if (!chapterPagesRemainingString.empty()) {
+        footer1TextView_.setText(chapterPagesRemainingString);
+    }
+    if (!placeStringForBottom.empty()) {
+        footer2TextView_.setText(placeStringForBottom);
     }
 
     SolClock &theClock = SolClock::getInstance();

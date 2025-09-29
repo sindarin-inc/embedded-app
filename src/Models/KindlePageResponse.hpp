@@ -9,20 +9,21 @@
 static constexpr const char *KINDLE_ERROR_SESSION_KEY_MISMATCH = "session_key_mismatch";
 
 struct KindlePageProgress {
+    int percentage = 0;
     int currentPage = 0;
     int totalPages = 0;
-    bool hasCurrentPage = false;
-    bool hasTotalPages = false;
 
     auto fromJson(const JsonObject &json) -> bool {
+        if (json.containsKey("percentage")) {
+            percentage = json["percentage"];
+        }
+
         if (json.containsKey("current_page") && !json["current_page"].isNull()) {
             currentPage = json["current_page"];
-            hasCurrentPage = true;
         }
 
         if (json.containsKey("total_pages") && !json["total_pages"].isNull()) {
             totalPages = json["total_pages"];
-            hasTotalPages = true;
         }
 
         return true;
@@ -41,9 +42,6 @@ struct KindlePageResponse : public JsonSerializable {
     SpiramString dialogText;
     bool alreadyOpen = false;
     SpiramString bookSessionKey;
-    SpiramString text;
-    int navigateTo = -1;
-    int previewTo = -1;
     SpiramString error; // Error type from server (e.g., KINDLE_ERROR_SESSION_KEY_MISMATCH)
     SpiramString currentSessionKey; // New session key from server on mismatch
     int currentPosition = 0;        // Current position from server on mismatch
@@ -92,18 +90,6 @@ struct KindlePageResponse : public JsonSerializable {
 
         if (json.containsKey("book_session_key")) {
             bookSessionKey = json["book_session_key"].as<std::string>();
-        }
-
-        if (json.containsKey("text")) {
-            text = json["text"].as<std::string>();
-        }
-
-        if (json.containsKey("navigate_to")) {
-            navigateTo = json["navigate_to"];
-        }
-
-        if (json.containsKey("preview_to")) {
-            previewTo = json["preview_to"];
         }
 
         if (json.containsKey("error")) {

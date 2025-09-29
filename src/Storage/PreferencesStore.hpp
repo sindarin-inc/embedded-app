@@ -501,7 +501,6 @@ public:
           readablePlaceChanged(*this, "-pc"),
           readableArchivedChanged(*this, "-ar"),
           readableBookmarksChanged(*this, "-bm"),
-          kindleCurrentPage(*this, "-kcp"),
           invertSetting(boolFlags_, 0),
           invertStartHour(*this, "invert-start"),
           invertEndHour(*this, "invert-end"),
@@ -854,7 +853,6 @@ public:
     KeyedPrefsItem<bool> readablePlaceChanged;
     KeyedPrefsItem<bool> readableArchivedChanged;
     KeyedPrefsItem<bool> readableBookmarksChanged;
-    KeyedPrefsItem<int> kindleCurrentPage;
     BooleanFlag invertSetting;
     PrefsItem<int> invertStartHour;
     PrefsItem<int> invertEndHour;

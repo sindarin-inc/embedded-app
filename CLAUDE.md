@@ -33,17 +33,8 @@
 - Logging: Use log_d/log_i/log_w/log_e with descriptive messages
 - Memory: Manage heap allocations carefully, use HEAP_PROFILE macros to track
 - Naming: camelCase for variables/methods, PascalCase for classes, ALL_CAPS for constants/macros
-- Comments: Use `//` for line comments and for block comments
+- Comments: Use `//` for line comments, `/* */` for block comments
 - Stack usage: Monitor stack usage with watermarks (SHOW_WATERMARK macro)
 - Threading: Use DispatchQueue for most async operations
 - Comments: Only include comments if they add context that's not readily apparent in the next line of code or if the code block has some complexity
 - Comments: Don't add comments that are simply addressing the prompt, only add them if the comments clear up confusion
-
-## Architecture Conventions
-- **Network/API requests**: All network requests must go through SindarinAPI (never direct HTTP calls from UI screens). All SindarinAPI methods should return `int` error codes and use output parameters for data (e.g., `int fetchData(Response *resp, ...)`) rather than returning data directly
-- **Kindle navigation**: Kindle-specific logic and state management should be delegated to KindlePageFlipper, not handled in UI screens
-- **Async operations**: Use DispatchQueue for background operations; UI screens coordinate but don't implement async logic directly
-- **State management**: Business logic classes (like KindlePageFlipper) encapsulate state changes; UI screens handle callbacks and visual updates
-- **Error handling**: Use assertions (`assert()`) for programming errors; return structured error types for recoverable operations
-- **Data persistence**: UI screens use LocalStore and PreferencesStore for data access; avoid direct file system operations in UI
-- **Telemetry**: Use centralized Telemetry class with structured fields; log meaningful events at appropriate levels (log_d/log_i/log_w/log_e)
