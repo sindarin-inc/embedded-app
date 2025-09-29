@@ -1,6 +1,8 @@
 #pragma once
 
 #include <ArduinoJson.h>
+#include <algorithm>
+#include <cmath>
 #include <ctime>
 #include <functional>
 #include <string>
@@ -21,16 +23,32 @@ public:
     SpiramString author;
     SpiramString progress;           // Progress as a string like "5%"
     int progressPercent = 0;         // Parsed numeric progress (0-100)
+    int progressCurrentPage = -1;    // Current page index from Kindle progress
+    int progressTotalPages = -1;     // Total pages reported by Kindle progress
     bool isApprovedForDevice = true; // Whether the book is approved for this device
     SpiramString lastModified;       // Last modified timestamp
 
+    static auto calculateProgressPercent(int currentPage, int totalPages) -> int {
+        if (totalPages <= 0 || currentPage <= 0) {
+            return 0;
+        }
+        int percentage = static_cast<int>(std::lround((static_cast<double>(currentPage) * 100.0) /
+                                                      static_cast<double>(totalPages)));
+        return std::clamp(percentage, 0, 100);
+    }
+
     auto fromJson(const JsonObject &j) -> bool override {
+        // Initialize progress fields (current page will be loaded from NVS)
+        progressPercent = 0;
+        progressCurrentPage = -1;
+        progressTotalPages = -1;
+        progress = "";
+
         uuid = j["uuid"].isNull() ? "" : j["uuid"].as<std::string>();
         shortenedUuid = uuid;
         shortenedUuid.resize(TRUNCATE_READABLE_UUID_FOR_PLACEMARK_BYTES);
         title = j["title"].isNull() ? "" : j["title"].as<std::string>();
         author = j["author"].isNull() ? "" : j["author"].as<std::string>();
-        progress = j["progress"].isNull() ? "" : j["progress"].as<std::string>();
 
         // Parse the new fields
         if (j.containsKey("is_approved_for_device")) {
@@ -43,21 +61,9 @@ public:
             lastModified = j["last_modified"].isNull() ? "" : j["last_modified"].as<std::string>();
         }
 
-        // Parse progress percentage
-        if (!progress.empty()) {
-            // Remove the '%' character and convert to int
-            auto progressStr = progress;
-            if (progressStr.back() == '%') {
-                progressStr.pop_back();
-            }
-            char *end;
-            long val = strtol(progressStr.c_str(), &end, 10);
-            if (end == progressStr.c_str() || *end != '\0' || val < 0 || val > 100) {
-                // Conversion failed or value out of range
-                progressPercent = 0;
-            } else {
-                progressPercent = static_cast<int>(val);
-            }
+        // Only load total pages from JSON (current page is in NVS)
+        if (j.containsKey("progress_total_pages") && !j["progress_total_pages"].isNull()) {
+            progressTotalPages = j["progress_total_pages"];
         }
 
         return true;

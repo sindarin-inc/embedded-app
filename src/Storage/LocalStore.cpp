@@ -1,6 +1,7 @@
 #include "LocalStore.hpp"
 
 #include <algorithm>
+#include <cmath>
 #include <esp_system.h>
 #include <esp_timer.h>
 #include <freertos/FreeRTOS.h>
@@ -164,6 +165,19 @@ auto LocalStore::loadKindleBooksFromFile(KindleBooksVector &kindleBooks,
         if (!kindleBook.fromJson(kindleBookObj)) {
             log_w("Failed to parse Kindle book from JSON");
             continue;
+        }
+
+        // Load current page from NVS instead of JSON
+        int currentPage = prefs_.kindleCurrentPage.get(kindleBook.shortenedUuid.c_str());
+        if (currentPage > 0) {
+            kindleBook.progressCurrentPage = currentPage;
+            kindleBook.progressPercent =
+                KindleBook::calculateProgressPercent(currentPage, kindleBook.progressTotalPages);
+            if (kindleBook.progressPercent > 0) {
+                char progressStr[16];
+                snprintf(progressStr, sizeof(progressStr), "%d%%", kindleBook.progressPercent);
+                kindleBook.progress = progressStr;
+            }
         }
 
         kindleBooks.push_back(kindleBook);

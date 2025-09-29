@@ -337,7 +337,6 @@ void KindleReadableScreen::drawInRect(SolRect rect) {
 
             setState(State::DISPLAY_PARTIAL_CONTENT);
         }
-        pageFlipper_.updatePlace(currentPlace_, atEndOfContent);
 
         // Log comprehensive buffer state for debugging
         uint32_t currentOffset = currentPlace_->getOffset();
@@ -758,6 +757,11 @@ void KindleReadableScreen::navigateNext() {
         loadingMessageView_.setText("Loading next page...");
         setNeedsLayout();
         setNeedsRerender();
+
+#ifdef TESTS
+        pageFlipper_.notifyTestContentReady();
+#endif
+
         return;
     }
 
@@ -779,6 +783,9 @@ void KindleReadableScreen::navigateNext() {
     updateType_ = prefs_.fastTransitions.get().value_or(false) ? DisplaySystem::UpdateType::PARTIAL
                                                                : DisplaySystem::UpdateType::FULL;
     setNeedsRerender();
+
+    // Notify page flipper of our new position after successful local navigation
+    pageFlipper_.updatePlace(currentPlace_);
 }
 
 void KindleReadableScreen::navigatePrevious() {
@@ -800,6 +807,9 @@ void KindleReadableScreen::navigatePrevious() {
     updateType_ = prefs_.fastTransitions.get().value_or(false) ? DisplaySystem::UpdateType::PARTIAL
                                                                : DisplaySystem::UpdateType::FULL;
     setNeedsRerender();
+
+    // Notify page flipper of our new position after successful local navigation
+    pageFlipper_.updatePlace(currentPlace_);
 }
 
 void KindleReadableScreen::dismissScreen() {
@@ -866,6 +876,15 @@ void KindleReadableScreen::showLastReadDialog(const SpiramString &dialogText) {
     setNeedsRerender();
     render(display_);
 
+#ifdef TESTS
+    if (onTestLastReadDialogShown_) {
+        log_i("TEST: last-read dialog shown callback invoked");
+        onTestLastReadDialogShown_();
+    } else {
+        log_w("TEST: last-read dialog shown callback not set");
+    }
+#endif
+
     // Log that we showed the last read dialog
     telemetry_.logMetric(TelemetryField::METRIC_DIALOG, kindleBook_->uuid,
                          {{"dialog", std::string("kindle-last-read")},
@@ -884,6 +903,15 @@ void KindleReadableScreen::handleLastReadDialogResponse(bool gotoLastReadPage) {
                           },
                           {"goto_last_read", gotoLastReadPage},
                           {"kindle", true}});
+
+#ifdef TESTS
+    if (onTestLastReadDialogChoice_) {
+        log_i("TEST: last-read dialog choice callback invoked (goto=%d)", gotoLastReadPage);
+        onTestLastReadDialogChoice_(gotoLastReadPage);
+    } else {
+        log_w("TEST: last-read dialog choice callback not set");
+    }
+#endif
 
     setCurrentScreen(nullptr);
 
@@ -906,6 +934,14 @@ void KindleReadableScreen::submitLastReadDialogChoice(bool gotoLastReadPage,
         auto result = SindarinAPI::getInstance()->submitLastReadPageChoice(
             gotoLastReadPage, isUsingBleConnection_, cancelFlag_);
 
+#ifdef TESTS
+        if (onTestLastReadDialogPostComplete_) {
+            bool success = !gotoLastReadPage || result == 200;
+            log_i("TEST: last-read dialog POST complete callback invoked (success=%d)", success);
+            onTestLastReadDialogPostComplete_(success);
+        }
+#endif
+
         if (gotoLastReadPage && result != 200) {
             DispatchGetUiQueue()->dispatch([this]() {
                 telemetry_.logMetric(
@@ -924,6 +960,11 @@ void KindleReadableScreen::submitLastReadDialogChoice(bool gotoLastReadPage,
         // If syncing to latest page, clear the buffer since we're jumping to a new location
         if (gotoLastReadPage) {
             pageFlipper_.clearBuffer();
+            DispatchGetUiQueue()->dispatch([this]() {
+                currentPlace_ = Place::factory(0);
+                newPlace_ = currentPlace_;
+                renderer_.setCurrentPlace(currentPlace_);
+            });
             setState(State::LOADING_INITIAL_CONTENT);
         }
 
@@ -1131,7 +1172,7 @@ void KindleReadableScreen::attemptReconnection() {
                  {"ble", isUsingBleConnection_}});
 
             // Successfully reconnected, retry the operation
-            pageFlipper_.retryNetworkOperation(renderer_.atEndOfFile());
+            pageFlipper_.retryNetworkOperation();
 
             // Reset reconnection attempts on successful connection
             reconnectionAttempts_ = 0;
@@ -1145,6 +1186,9 @@ void KindleReadableScreen::attemptReconnection() {
                         setNeedsLayout();
                         setNeedsRerender();
                         render(display_);
+#ifdef TESTS
+                        pageFlipper_.notifyTestContentReady();
+#endif
                     }
                 });
             }
@@ -1229,7 +1273,7 @@ void KindleReadableScreen::setCurrentScreen(const std::shared_ptr<Screen> &scree
 void KindleReadableScreen::updatePageFlipperCallbacks() {
     auto cancelFlag = cancelFlag_;
 
-    pageFlipper_.setGotContentFunction([this, cancelFlag](size_t ocrTextLength) {
+    pageFlipper_.setOnContentReady([this, cancelFlag](size_t ocrTextLength) {
         if (CancelFlag::isCancelled(cancelFlag)) {
             return;
         }
@@ -1257,6 +1301,9 @@ void KindleReadableScreen::updatePageFlipperCallbacks() {
                 setNeedsLayout();
                 setNeedsRerender();
                 render(display_);
+#ifdef TESTS
+                pageFlipper_.notifyTestContentReady();
+#endif
 
 #ifdef DEBUG_KINDLE_RECONNECTION
                 scheduleTestDisconnect();

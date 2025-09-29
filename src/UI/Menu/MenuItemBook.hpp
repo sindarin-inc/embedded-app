@@ -41,7 +41,7 @@ public:
 
     [[nodiscard]] auto id() const -> std::string override {
         // Use the shortened ID for a unique but compact identifier
-        return std::string(kindleBook_.shortenedUuid.c_str());
+        return {kindleBook_.shortenedUuid.c_str()};
     }
 
     [[nodiscard]] auto title() const -> std::string {

@@ -12,9 +12,36 @@
 #include "Models/Place.hpp"
 #include "Renderers/RendererStream.hpp"
 
+class DispatchQueue;
+
+struct KindleError {
+    enum class Type {
+        None,                // No error
+        ConnectionError,     // Network connection issue (retryable)
+        Timeout,             // Request timeout (retryable)
+        ServerError,         // Server error (potentially retryable)
+        SessionKeyMismatch,  // Session key out of sync (retryable - resets to position 0)
+        AuthenticationError, // Authentication failure
+        NotFoundError,       // Resource not found
+        ClientError,         // Other client errors
+        UnknownError         // Unknown error
+    };
+
+    Type type = Type::None;
+    std::string message;
+
+    [[nodiscard]] auto hasError() const -> bool { return type != Type::None; }
+    [[nodiscard]] auto isRetryable() const -> bool {
+        return type == Type::ConnectionError || type == Type::Timeout ||
+               type == Type::ServerError || type == Type::SessionKeyMismatch;
+    }
+    [[nodiscard]] auto isConnectionError() const -> bool { return type == Type::ConnectionError; }
+};
+
 class KindlePage {
 public:
     SpiramString content;
+    int serverPageNumber = -1; // The page number on the server that this content came from
 };
 
 // TODO: Maybe it would be more exact (albeit more complex) to instead have a KindleTokenizer and a
@@ -89,6 +116,14 @@ public:
         return size;
     }
 
+    void clearAndSetContent(const SpiramString &content) {
+        clear();
+        pages_.push_back({content, 0});
+        currentPageIndex_ = 0;
+        currentPageOffset_ = 0;
+        log_i("Set new content of size %zu", content.size());
+    }
+
     auto pageIndexForOffset(uint32_t offset) -> int {
         for (int i = 0; i < pages_.size(); i++) {
             if (offset < pages_[i].content.size()) {
@@ -100,10 +135,29 @@ public:
         return -1;
     }
 
-    void appendPageFromResponse(KindlePageResponse &response) {
+    void appendPageFromResponse(KindlePageResponse &response, int serverPageNumber) {
         // Add a space to the end of the page so that they concatenate cleanly
         response.ocrText += " ";
-        pages_.push_back({response.ocrText});
+        pages_.push_back({response.ocrText, serverPageNumber});
+    }
+
+    auto getServerPageNumberForOffset(uint32_t offset) -> int {
+        int pageIndex = pageIndexForOffset(offset);
+        if (pageIndex >= 0 && pageIndex < pages_.size()) {
+            return pages_[pageIndex].serverPageNumber;
+        }
+        return -1;
+    }
+
+    auto getOffsetForServerPageNumber(int serverPageNumber) -> int {
+        size_t cumulativeOffset = 0;
+        for (auto &page : pages_) {
+            if (page.serverPageNumber == serverPageNumber) {
+                return cumulativeOffset;
+            }
+            cumulativeOffset += page.content.size();
+        }
+        return -1;
     }
 
     auto lastPageIndex() -> int { return pages_.size() - 1; }
@@ -133,6 +187,19 @@ public:
             return 0;
         }
         return pages_.size() - pageIndex;
+    }
+
+    void debugDumpPageMappings() {
+        size_t cumulativeOffset = 0;
+        log_d("=== Buffer Page Mappings ===");
+        for (size_t i = 0; i < pages_.size(); i++) {
+            size_t pageSize = pages_[i].content.size();
+            log_d("  Page %zu: offset_range=[%zu-%zu], size=%zu, server_page=%d", i,
+                  cumulativeOffset, cumulativeOffset + pageSize - 1, pageSize,
+                  pages_[i].serverPageNumber);
+            cumulativeOffset += pageSize;
+        }
+        log_d("  Total buffer size: %zu bytes", cumulativeOffset);
     }
 
 protected:
@@ -167,13 +234,26 @@ public:
      * @param place The place to update to
      * @param atEndOfContent Whether we're at the end of the content
      */
-    void updatePlace(const std::shared_ptr<Place> &place, bool atEndOfContent);
+    void updatePlace(const std::shared_ptr<Place> &place);
 
     auto getStream() -> std::shared_ptr<RendererStream> { return pageStream_; }
 
-    void setGotContentFunction(std::function<void(size_t ocrTextLength)> gotContentFunction) {
-        gotContentFunction_ = std::move(gotContentFunction);
+    void setOnContentReady(std::function<void(size_t ocrTextLength)> onContentReady) {
+        onContentReady_ = std::move(onContentReady);
     }
+
+#ifdef TESTS
+    void setOnTestContentReady(std::function<void(size_t ocrTextLength)> onTestContentReady) {
+        onTestContentReady_ = std::move(onTestContentReady);
+    }
+
+    void notifyTestContentReady() {
+        if (onTestContentReady_) {
+            size_t ocrTextLength = pageStream_ ? pageStream_->getOcrTextLength() : 0;
+            onTestContentReady_(ocrTextLength);
+        }
+    }
+#endif
 
     void setOnErrorFunction(std::function<void(const std::string &errorMessage)> onErrorFunction) {
         onErrorFunction_ = std::move(onErrorFunction);
@@ -189,13 +269,29 @@ public:
         onLastReadDialogFunction_ = std::move(onLastReadDialogFunction);
     }
 
-    void retryNetworkOperation(bool atEndOfContent) {
+    void updateProgressFromServer(const KindlePageProgress &progress) {
+        applyProgressUpdate(progress);
+    }
+
+    void setOnProgressUpdated(
+        std::function<void(const KindlePageProgress &progress)> onProgressUpdated) {
+        onProgressUpdated_ = std::move(onProgressUpdated);
+    }
+
+    [[nodiscard]] auto getServerPageNumberForOffset(uint32_t offset) const -> int {
+        if (!pageStream_) {
+            return -1;
+        }
+        return pageStream_->getServerPageNumberForOffset(offset);
+    }
+
+    void retryNetworkOperation() {
         // Retry loading the initial page if we're at the beginning
         if (pageStream_->size() == 0) {
             loadInitialPage();
-        } else if (serverSyncPlace_ != nullptr) {
+        } else if (lastServerSyncPlace_ != nullptr) {
             // Otherwise retry from the current place
-            updatePlace(serverSyncPlace_, atEndOfContent);
+            updatePlace(lastServerSyncPlace_);
         }
     }
 
@@ -212,7 +308,11 @@ public:
         if (pageStream_) {
             pageStream_->clear();
         }
-        serverSyncPlace_ = nullptr;
+        lastServerSyncPlace_ = nullptr;
+        lastRenderedPlace_ = nullptr;
+        lastPreviewedPage_ = -1;
+        lastNavigatedPage_ = -1;
+        bookSessionKey_.clear();
     }
 
     [[nodiscard]] auto getPagesRemainingFromOffset(uint32_t offset) const -> int {
@@ -222,6 +322,24 @@ public:
         return 0;
     }
 
+    [[nodiscard]] auto isUsingBleConnection() const -> bool { return useBle_; }
+
+    // When navigating to a new chapter, we need to reset the book session key
+    // and navigation state so that we can start fresh at the beginning of the chapter
+    void resetBookSessionKey() {
+        bookSessionKey_.clear();
+        lastNavigatedPage_ = -1;
+        lastPreviewedPage_ = -1;
+        log_i("Reset book session key and navigation state");
+    }
+
+    void setNavigateTo(int navigateTo) { lastNavigatedPage_ = navigateTo; }
+    void setPreviewTo(int previewTo) { lastPreviewedPage_ = previewTo; }
+    void setBookSessionKey(const SpiramString &key) { bookSessionKey_ = key; }
+
+    auto navigateToChapter(const std::string &chapterUuid, int currentPage)
+        -> std::shared_ptr<KindleError>;
+
 private:
     std::shared_ptr<KindleBook> kindleBook_;
     bool useBle_ = false;
@@ -229,12 +347,40 @@ private:
     std::shared_ptr<KindlePageStream> pageStream_;
     Telemetry &telemetry_;
 
-    std::shared_ptr<TxtPlace> serverSyncPlace_; // Last position synced with server
-    std::function<void(size_t ocrTextLength)> gotContentFunction_;
+    std::shared_ptr<TxtPlace> lastServerSyncPlace_; // Last position synced with server
+    std::shared_ptr<TxtPlace> lastRenderedPlace_;   // Last position rendered to the user
+    int lastPreviewedPage_ = -1;  // Track the last page we successfully previewed from server
+    int lastNavigatedPage_ = -1;  // Track the last page we sent navigate_to for
+    SpiramString bookSessionKey_; // Session key from server denoting navigation zero point
+    std::function<void(size_t ocrTextLength)> onContentReady_;
+#ifdef TESTS
+    std::function<void(size_t ocrTextLength)> onTestContentReady_;
+#endif
     std::function<void(const std::string &errorMessage)> onErrorFunction_;
     std::function<void()> onConnectionErrorFunction_;
     std::function<void(const SpiramString &dialogText)> onLastReadDialogFunction_;
+    std::function<void(const KindlePageProgress &progress)> onProgressUpdated_;
 
-    auto checkForError(int httpCode, std::shared_ptr<KindlePageResponse> &response) -> std::string;
+    [[nodiscard]] auto dispatchQueue() const -> DispatchQueue *;
+    auto checkForError(int httpCode, std::shared_ptr<KindlePageResponse> &response)
+        -> std::shared_ptr<KindleError>;
     auto checkForLastReadDialog(const std::shared_ptr<KindlePageResponse> &response) -> bool;
+
+    // Helper to perform navigation with retry logic
+    // Returns error (nullptr for success)
+    auto navigateWithRetry(int navigateTo, int previewTo,
+                           std::shared_ptr<KindlePageResponse> &response,
+                           const std::shared_ptr<CancelFlag> &cancelFlag, int maxRetries = 3)
+        -> std::shared_ptr<KindleError>;
+
+    // Returns error (nullptr for success)
+    auto openBookWithRetry(std::shared_ptr<KindlePageResponse> &response,
+                           const std::shared_ptr<CancelFlag> &cancelFlag, int maxRetries = 2)
+        -> std::shared_ptr<KindleError>;
+
+    // Unified method to sync pages with server - handles both navigation changes and buffer refills
+    void syncPagesWithServer(uint32_t currentOffset, bool navigationChanged,
+                             const std::shared_ptr<CancelFlag> &cancelFlag);
+
+    void applyProgressUpdate(const KindlePageProgress &progress);
 };

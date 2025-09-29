@@ -115,7 +115,7 @@ void Telemetry::logMetricImpl(TelemetryField field, const std::string &valueForm
     std::string logString =
         StringFormat(R"({"ts":%lld,"k":"%s"%s%s})", timestamp, TelemetryFieldToString(field),
                      valueFormat.c_str(), dataJsonFormat.c_str());
-    log_i("Logging metric: %s %s", TelemetryFieldToString(field), logString.c_str());
+    log_d("Logging metric: %s %s", TelemetryFieldToString(field), logString.c_str());
 
     // create log directory in filesystem if it doesn't exist
     if (!fileSystem_.createDir("/metrics")) {

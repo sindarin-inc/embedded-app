@@ -45,6 +45,8 @@ public:
 
     void preselectIndexAt(int index);
 
+    void setShowPageIndicators(bool show) { showPageIndicators_ = show; }
+
 protected:
     DisplaySystem &display_;
     PreferencesStore &prefs_;
@@ -66,4 +68,5 @@ protected:
     LineMenuScreen lineMenuScreen_;
 
     ChapterIdx currentChapterIdx_ = -1;
+    bool showPageIndicators_ = true;
 };
