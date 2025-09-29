@@ -577,7 +577,7 @@ void KindlePageFlipper::syncPagesWithServer(uint32_t currentOffset, bool navigat
         if (onContentReady_) {
             onContentReady_(response->ocrText.size());
         }
-#ifdef TESTS
+#if TESTS
         notifyTestContentReady();
 #endif
     }
@@ -649,7 +649,7 @@ void KindlePageFlipper::syncPagesWithServer(uint32_t currentOffset, bool navigat
         if (onContentReady_) {
             onContentReady_(pageStream_->getOcrTextLength());
         }
-#ifdef TESTS
+#if TESTS
         notifyTestContentReady();
 #endif
     }
@@ -774,7 +774,7 @@ void KindlePageFlipper::loadInitialPage() {
         if (onContentReady_) {
             onContentReady_(ocrTextLength);
         }
-#ifdef TESTS
+#if TESTS
         notifyTestContentReady();
 #endif
 
@@ -840,7 +840,7 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place) {
             if (currentOffset != previousOffset) {
                 lastRenderedPlace_ = std::dynamic_pointer_cast<TxtPlace>(place);
 
-#ifdef TESTS
+#if TESTS
                 // TODO: This callback shouldn't be called for cached navigation.
                 // Tests should hook into the renderer's callbacks to know when a page is displayed.
                 // Currently tests rely on this callback for synchronization via
@@ -849,9 +849,7 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place) {
                     size_t contentLength = pageStream_->getOcrTextLength();
                     onContentReady_(contentLength);
                 }
-#ifdef TESTS
                 notifyTestContentReady();
-#endif
 #endif
             }
             return;
