@@ -40,7 +40,7 @@
 - Comments: Don't add comments that are simply addressing the prompt, only add them if the comments clear up confusion
 
 ## Architecture Conventions
-- **Network/API requests**: All network requests must go through SindarinAPI (never direct HTTP calls from UI screens)
+- **Network/API requests**: All network requests must go through SindarinAPI (never direct HTTP calls from UI screens). All SindarinAPI methods should return `int` error codes and use output parameters for data (e.g., `int fetchData(Response *resp, ...)`) rather than returning data directly
 - **Kindle navigation**: Kindle-specific logic and state management should be delegated to KindlePageFlipper, not handled in UI screens
 - **Async operations**: Use DispatchQueue for background operations; UI screens coordinate but don't implement async logic directly
 - **State management**: Business logic classes (like KindlePageFlipper) encapsulate state changes; UI screens handle callbacks and visual updates

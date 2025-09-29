@@ -9,6 +9,7 @@
 #include "Misc/Dispatch.hpp"
 #include "Misc/StringUtil.hpp"
 #include "Models/Json.hpp"
+#include "Models/KindleChaptersResponse.hpp"
 #include "UI/Menu/MenuItemTOC.hpp"
 #include "sindarin-debug.h"
 
@@ -62,17 +63,20 @@ void KindleTableOfContentsScreen::loadTableOfContents() {
         bool isUsingBle = pageFlipper_.isUsingBleConnection();
 
         // Use POST with empty chapter_uuid to get chapters WITH UUIDs
-        auto response = api->fetchKindleChaptersWithUuids(std::string(kindleBook_->uuid),
-                                                          currentPage_, isUsingBle, cancelFlag_);
+        auto response = std::make_shared<KindleChaptersResponse>();
+        int httpCode = api->fetchKindleChaptersWithUuids(
+            std::string(kindleBook_->uuid), currentPage_, response.get(), isUsingBle, cancelFlag_);
 
         if (CancelFlag::isCancelled(cancelFlag_)) {
             return;
         }
 
-        DispatchGetUiQueue()->dispatch([this, response]() {
-            if (response.empty()) {
-                log_e("Failed to get table of contents");
-                errorMessageView_.setText("Failed to load table of contents");
+        DispatchGetUiQueue()->dispatch([this, response, httpCode]() {
+            if (httpCode != 200 || !response->success) {
+                log_e("Failed to get table of contents: %s", response->error.c_str());
+                errorMessageView_.setText(response->error.empty()
+                                              ? "Failed to load table of contents"
+                                              : std::string(response->error));
                 setState(State::ERROR);
                 render(display_);
             } else {
@@ -82,82 +86,27 @@ void KindleTableOfContentsScreen::loadTableOfContents() {
     });
 }
 
-void KindleTableOfContentsScreen::handleTableOfContentsResponse(const std::string &response) {
-    log_d("TOC Response: %s", response.c_str());
+void KindleTableOfContentsScreen::handleTableOfContentsResponse(
+    const std::shared_ptr<KindleChaptersResponse> &response) {
+    log_d("Processing table of contents response with %zu chapters", response->chapters.size());
 
-    // Allocate enough space for the JSON document
-    // The response can have many chapters (100+), so we need substantial headroom
-    const size_t capacity =
-        response.size() * 2 + JSON_OBJECT_SIZE(20) + JSON_ARRAY_SIZE(100) + 2048;
-    auto doc = std::make_shared<SpiRamJsonDocument>(capacity);
-    DeserializationError error = deserializeJson(*doc, response);
-
-    if (error) {
-        log_e("Failed to parse table of contents response: %s", error.c_str());
-        errorMessageView_.setText("Failed to parse table of contents");
-        setState(State::ERROR);
-        render(display_);
-        return;
-    }
-
-    auto root = (*doc).as<JsonObject>();
-
-    if (!root["success"] || !root["success"].as<bool>()) {
-        const char *errorText = root["error"] | "Unknown error";
-        log_e("Table of contents request failed: %s", errorText);
-        errorMessageView_.setText(StringFormat("Error: %s", errorText));
-        setState(State::ERROR);
-        render(display_);
-        return;
-    }
-
-    // Parse progress information if available (preferred source for current page)
-    if (root.containsKey("progress") && root["progress"].is<JsonObject>()) {
-        JsonObject progress = root["progress"];
-        KindlePageProgress progressUpdate;
-        progressUpdate.fromJson(progress);
-
-        if (progressUpdate.hasCurrentPage) {
-            currentPage_ = progressUpdate.currentPage;
-            log_d("Updated current page from server progress: %d", currentPage_);
-        }
-
-        pageFlipper_.updateProgressFromServer(progressUpdate);
+    // Update progress if available
+    if (response->progress.hasCurrentPage) {
+        currentPage_ = response->progress.currentPage;
+        log_d("Updated current page from server progress: %d", currentPage_);
+        pageFlipper_.updateProgressFromServer(response->progress);
     }
 
     // Parse chapters
-    if (!root.containsKey("chapters") || !root["chapters"].is<JsonArray>()) {
-        log_e("No chapters array in response");
+    if (response->chapters.empty()) {
+        log_e("No chapters in response");
         errorMessageView_.setText("No chapters found");
         setState(State::ERROR);
         render(display_);
         return;
     }
 
-    chapters_.clear();
-    JsonArray chaptersArray = root["chapters"];
-
-    for (JsonVariant value : chaptersArray) {
-        ChapterInfo chapter;
-
-        if (value.containsKey("title")) {
-            chapter.title = value["title"].as<std::string>();
-        }
-
-        if (value.containsKey("uuid")) {
-            chapter.uuid = value["uuid"].as<std::string>();
-        }
-
-        if (value.containsKey("page")) {
-            chapter.page = value["page"];
-        }
-
-        if (!chapter.title.empty()) {
-            log_d("Chapter: title='%s', uuid='%s', page=%d", chapter.title.c_str(),
-                  chapter.uuid.c_str(), chapter.page);
-            chapters_.push_back(chapter);
-        }
-    }
+    chapters_ = response->chapters;
 
     log_d("Loaded %zu chapters", chapters_.size());
 
@@ -179,13 +128,12 @@ void KindleTableOfContentsScreen::populateMenuItems() {
     menuView_.resetMenuItems();
 
     for (const auto &chapter : chapters_) {
-        auto chapterTitle = chapter.title; // Capture for lambda
-        auto chapterUuid = chapter.uuid;
+        auto chapterTitle = std::string(chapter.title);
+        auto chapterUuid = std::string(chapter.uuid);
 
-        // Use page number as second column, or empty string if no page
-        std::string pageStr = chapter.page >= 0 ? Commify(chapter.page) : "";
+        std::string pageStr = chapter.page > 0 ? Commify(chapter.page) : "";
 
-        menuView_.addMenuItem(std::make_shared<MenuItemTOC>(chapter.title, pageStr,
+        menuView_.addMenuItem(std::make_shared<MenuItemTOC>(chapterTitle, pageStr,
                                                             [this, chapterTitle, chapterUuid]() {
             log_d("Selected chapter: %s (UUID: %s)", chapterTitle.c_str(), chapterUuid.c_str());
             selectChapter();
@@ -204,12 +152,15 @@ void KindleTableOfContentsScreen::highlightCurrentChapter() {
     int selectedPage = -1;
     int nextIndex = -1;
     int nextPage = INT_MAX;
+    bool hasAnyPageNumbers = false;
 
     for (size_t i = 0; i < chapters_.size(); ++i) {
         const auto &chapter = chapters_[i];
-        if (chapter.page < 0) {
+        if (chapter.page <= 0) {
             continue;
         }
+
+        hasAnyPageNumbers = true;
 
         if (chapter.page <= targetPage) {
             if (chapter.page >= selectedPage) {
@@ -222,11 +173,14 @@ void KindleTableOfContentsScreen::highlightCurrentChapter() {
         }
     }
 
-    if (selectedIndex == -1) {
-        selectedIndex = (nextIndex != -1) ? nextIndex : 0;
+    // Only auto-select a chapter if we have page numbers to work with
+    if (hasAnyPageNumbers) {
+        if (selectedIndex == -1) {
+            selectedIndex = (nextIndex != -1) ? nextIndex : 0;
+        }
+        menuView_.setSelectedIndex(static_cast<size_t>(selectedIndex));
     }
-
-    menuView_.setSelectedIndex(static_cast<size_t>(selectedIndex));
+    // If no page numbers are available, don't auto-select any chapter
 }
 
 void KindleTableOfContentsScreen::selectChapter() {
@@ -238,7 +192,7 @@ void KindleTableOfContentsScreen::selectChapter() {
               chapter.page);
 
         // Optimistically update progress based on the selected chapter's page
-        if (chapter.page >= 0 && kindleBook_->progressTotalPages > 0) {
+        if (chapter.page > 0 && kindleBook_->progressTotalPages > 0) {
             KindlePageProgress progress;
             progress.currentPage = chapter.page;
             progress.hasCurrentPage = true;
@@ -266,7 +220,7 @@ void KindleTableOfContentsScreen::selectChapter() {
 
         // Call the callback to navigate to the chapter with UUID
         if (chapterSelectedCallback_) {
-            chapterSelectedCallback_(chapter.uuid, selectedPage);
+            chapterSelectedCallback_(std::string(chapter.uuid), selectedPage);
         }
 
         // Dismiss this screen
