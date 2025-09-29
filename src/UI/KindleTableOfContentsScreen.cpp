@@ -106,18 +106,7 @@ void KindleTableOfContentsScreen::handleTableOfContentsResponse(
         return;
     }
 
-    chapters_.clear();
-    for (const auto &chapterResp : response->chapters) {
-        ChapterInfo chapter;
-        chapter.title = std::string(chapterResp.title);
-        chapter.uuid = std::string(chapterResp.uuid);
-        chapter.page = chapterResp.page;
-        if (!chapter.title.empty()) {
-            log_d("Chapter: title='%s', uuid='%s', page=%d", chapter.title.c_str(),
-                  chapter.uuid.c_str(), chapter.page);
-            chapters_.push_back(chapter);
-        }
-    }
+    chapters_ = response->chapters;
 
     log_d("Loaded %zu chapters", chapters_.size());
 
@@ -139,13 +128,12 @@ void KindleTableOfContentsScreen::populateMenuItems() {
     menuView_.resetMenuItems();
 
     for (const auto &chapter : chapters_) {
-        auto chapterTitle = chapter.title; // Capture for lambda
-        auto chapterUuid = chapter.uuid;
+        auto chapterTitle = std::string(chapter.title);
+        auto chapterUuid = std::string(chapter.uuid);
 
-        // Use page number as second column, or empty string if no page
         std::string pageStr = chapter.page > 0 ? Commify(chapter.page) : "";
 
-        menuView_.addMenuItem(std::make_shared<MenuItemTOC>(chapter.title, pageStr,
+        menuView_.addMenuItem(std::make_shared<MenuItemTOC>(chapterTitle, pageStr,
                                                             [this, chapterTitle, chapterUuid]() {
             log_d("Selected chapter: %s (UUID: %s)", chapterTitle.c_str(), chapterUuid.c_str());
             selectChapter();
@@ -232,7 +220,7 @@ void KindleTableOfContentsScreen::selectChapter() {
 
         // Call the callback to navigate to the chapter with UUID
         if (chapterSelectedCallback_) {
-            chapterSelectedCallback_(chapter.uuid, selectedPage);
+            chapterSelectedCallback_(std::string(chapter.uuid), selectedPage);
         }
 
         // Dismiss this screen

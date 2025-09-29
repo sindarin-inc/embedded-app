@@ -22,12 +22,6 @@
 
 class KindleTableOfContentsScreen : public Screen, public EinkView {
 public:
-    struct ChapterInfo {
-        std::string title;
-        std::string uuid;
-        int page = -1; // Optional page number
-    };
-
     enum class State { LOADING, DISPLAYING, NAVIGATING, ERROR };
 
     KindleTableOfContentsScreen(DisplaySystem &display,
@@ -67,7 +61,7 @@ private:
     std::shared_ptr<CancelFlag> cancelFlag_;
 
     State state_{State::LOADING};
-    std::vector<ChapterInfo> chapters_;
+    std::vector<KindleChapterInfo> chapters_;
 
     BoxView backgroundView_;
     MenuView menuView_;

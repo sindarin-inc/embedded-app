@@ -20,7 +20,9 @@
 #include "Misc/Dispatch.hpp"
 #include "Misc/Platform.hpp"
 #include "Misc/Telemetry.hpp"
+#include "Models/Json.hpp"
 #include "Models/KindleBook.hpp"
+#include "Models/KindleChaptersResponse.hpp"
 #include "Models/KindlePageFlipper.hpp"
 #include "Sensors/LightingController.hpp"
 #include "Storage/LocalStore.hpp"
@@ -815,19 +817,31 @@ TEST_CASE("Kindle table of contents highlights current chapter", "[.][no-kindle]
 
     const std::string midChapter =
         R"({"success":true,"progress":{"current_page":35,"total_pages":1000},"chapters":[{"title":"Intro","uuid":"c1","page":1},{"title":"Middle","uuid":"c2","page":20},{"title":"Later","uuid":"c3","page":40}]})";
-    tocScreen.handleTableOfContentsResponse(midChapter);
+    auto midChapterResponse = std::make_shared<KindleChaptersResponse>();
+    JsonDocument doc;
+    deserializeJson(doc, midChapter);
+    midChapterResponse->fromJson(doc.as<JsonObject>());
+    tocScreen.handleTableOfContentsResponse(midChapterResponse);
     REQUIRE(tocScreen.menuView_.getSelectedIndex() == 1);
     REQUIRE(book->progressPercent == 4);
 
     const std::string earlyChapter =
         R"({"success":true,"progress":{"current_page":0,"total_pages":1000},"chapters":[{"title":"Intro","uuid":"c1","page":5},{"title":"Next","uuid":"c2","page":15}]})";
-    tocScreen.handleTableOfContentsResponse(earlyChapter);
+    auto earlyChapterResponse = std::make_shared<KindleChaptersResponse>();
+    JsonDocument doc2;
+    deserializeJson(doc2, earlyChapter);
+    earlyChapterResponse->fromJson(doc2.as<JsonObject>());
+    tocScreen.handleTableOfContentsResponse(earlyChapterResponse);
     REQUIRE(tocScreen.menuView_.getSelectedIndex() == 0);
     REQUIRE(book->progressPercent == 0);
 
     const std::string lateChapter =
         R"({"success":true,"progress":{"current_page":200,"total_pages":1000},"chapters":[{"title":"Intro","uuid":"c1","page":5},{"title":"Next","uuid":"c2","page":115},{"title":"Last","uuid":"c3","page":190}]})";
-    tocScreen.handleTableOfContentsResponse(lateChapter);
+    auto lateChapterResponse = std::make_shared<KindleChaptersResponse>();
+    JsonDocument doc3;
+    deserializeJson(doc3, lateChapter);
+    lateChapterResponse->fromJson(doc3.as<JsonObject>());
+    tocScreen.handleTableOfContentsResponse(lateChapterResponse);
     REQUIRE(tocScreen.menuView_.getSelectedIndex() == 2);
     REQUIRE(book->progressPercent == 20);
 }
