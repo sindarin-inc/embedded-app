@@ -84,7 +84,7 @@ protected:
     int explicitTotalPages_ = -1;
     bool suppressFallbackPageNumbers_ = false;
 
-    auto hasExplicitPageNumbers() -> bool {
+    auto hasExplicitPageNumbers() const -> bool {
         return explicitCurrentPage_ > 0 && explicitTotalPages_ > 0;
     }
 };
