@@ -64,7 +64,7 @@ void NewReadablePopupMenuScreen::setUpPopupMenu() {
         }
     } else {
         // Use explicit page numbers if provided
-        if (hasExplicitPageNumbers_) {
+        if (hasExplicitPageNumbers()) {
             placeStringForBottom =
                 StringFormat("%d of %d", explicitCurrentPage_, explicitTotalPages_);
         } else if (!suppressFallbackPageNumbers_) {

@@ -51,7 +51,6 @@ public:
     void setExplicitPageNumbers(int currentPage, int totalPages) {
         explicitCurrentPage_ = currentPage;
         explicitTotalPages_ = totalPages;
-        hasExplicitPageNumbers_ = (currentPage > 0 && totalPages > 0);
     }
 
     // When true, don't show calculated page numbers as fallback
@@ -83,6 +82,9 @@ protected:
     // Generic page number overrides (not Kindle-specific)
     int explicitCurrentPage_ = -1;
     int explicitTotalPages_ = -1;
-    bool hasExplicitPageNumbers_ = false;
     bool suppressFallbackPageNumbers_ = false;
+
+    auto hasExplicitPageNumbers() -> bool {
+        return explicitCurrentPage_ > 0 && explicitTotalPages_ > 0;
+    }
 };
