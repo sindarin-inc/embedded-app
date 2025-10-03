@@ -1,9 +1,10 @@
 #include "UI/OffsetAdjustScreen.hpp"
 
+#include <Fonts.hpp>
 #include <memory>
 #include <utility>
 
-#include "UI/Fonts/Fonts.hpp"
+#include "UI/FontFromPrefs.hpp"
 #include "sindarin-debug.h"
 
 #define OFFSET_ADJUST_AMOUNT 5

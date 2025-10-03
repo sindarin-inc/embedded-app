@@ -1,5 +1,6 @@
 #include "UI/KindleReadableScreen.hpp"
 
+#include <Fonts.hpp>
 #include <esp_timer.h>
 
 #if CONFIG_USE_BLE_SERVER_PROXY
@@ -9,7 +10,7 @@
 #include "Communications/WiFi.hpp"
 #include "Menu/ReadingSettingsMenuScreen.hpp"
 #include "Models/Readable.hpp"
-#include "UI/Fonts/Fonts.hpp"
+#include "UI/FontFromPrefs.hpp"
 #include "UI/KindleTableOfContentsScreen.hpp"
 #include "UI/Menu/MenuItemSingleLine.hpp"
 #include "sindarin-debug.h"

@@ -16,9 +16,9 @@
 [submodule "components/astubs"]
 	path = components/astubs
 	url = git@github.com:sindarin-inc/astubs.git
-[submodule "components/freetype/freetype"]
-	path = components/freetype/freetype
-	url = git@github.com:sindarin-inc/freetype.git
 [submodule "lib/mbedtls"]
 	path = lib/mbedtls
 	url = https://github.com/Mbed-TLS/mbedtls.git
+[submodule "components/tiny-font"]
+	path = components/tiny-font
+	url = git@github.com:sindarin-inc/tiny-font.git

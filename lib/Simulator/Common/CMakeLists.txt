@@ -43,6 +43,28 @@ add_subdirectory(${REPO_ROOT_DIR}/components/miniz ${CMAKE_CURRENT_BINARY_DIR}/m
 
 add_subdirectory(${REPO_ROOT_DIR}/components/Adafruit-GFX-Library ${CMAKE_CURRENT_BINARY_DIR}/Adafruit-GFX-Library)
 
+add_subdirectory(${REPO_ROOT_DIR}/components/tiny-font ${CMAKE_CURRENT_BINARY_DIR}/tiny-font)
+
+# Conditionally link freetype if we're using 8-bit or 16-bit display
+if(DISPLAY_TYPE STREQUAL "DISPLAY_SIM_24BIT" OR DISPLAY_TYPE STREQUAL "DISPLAY_SIM_16BIT" OR DISPLAY_TYPE STREQUAL "DISPLAY_SIM_8BIT")
+    # Set FreeType options before adding the subdirectory
+    set(FT_DISABLE_PNG ON CACHE BOOL "Disable PNG support in FreeType" FORCE)
+    set(FT_DISABLE_HARFBUZZ ON CACHE BOOL "Disable HarfBuzz support in FreeType" FORCE)
+    set(FT_DISABLE_BROTLI ON CACHE BOOL "Disable Brotli support in FreeType" FORCE)
+    add_subdirectory(${REPO_ROOT_DIR}/components/tiny-font/freetype/freetype ${CMAKE_CURRENT_BINARY_DIR}/freetype)
+    target_link_libraries(tiny-font PUBLIC freetype)
+    target_compile_definitions(tiny-font PUBLIC
+        CONFIG_FONT_TTF=1
+        CONFIG_FONT_IBMF=0
+        CONFIG_TTF_SCREEN_RES_PER_INCH=${TTF_SCREEN_RES_PER_INCH}
+    )
+else()
+    target_compile_definitions(tiny-font PUBLIC
+        CONFIG_FONT_TTF=0
+        CONFIG_FONT_IBMF=1
+    )
+endif()
+
 add_subdirectory(${REPO_ROOT_DIR}/lib/esp_ringbuf ${CMAKE_CURRENT_BINARY_DIR}/esp_ringbuf)
 
 # Before adding mbedtls, set options to disable tests and programs
@@ -59,7 +81,7 @@ endif()
 
 add_library(${PROJECT_NAME} STATIC ${SOURCES} ${HTTP_CLIENT_SOURCE})
 
-target_link_libraries(${PROJECT_NAME} PUBLIC pugixml ArduinoJson miniz astubs esp-idf-stubs nvs_flash Adafruit-GFX-Library mbedtls mbedx509 mbedcrypto esp_ringbuf)
+target_link_libraries(${PROJECT_NAME} PUBLIC pugixml ArduinoJson miniz astubs esp-idf-stubs nvs_flash Adafruit-GFX-Library tiny-font mbedtls mbedx509 mbedcrypto esp_ringbuf)
 
 target_include_directories(${PROJECT_NAME} PUBLIC
     "${REPO_ROOT_DIR}/src"
@@ -70,25 +92,6 @@ target_include_directories(${PROJECT_NAME} PUBLIC
     "${REPO_ROOT_DIR}/lib/stb_image"
     "${REPO_ROOT_DIR}/lib/argparse"
 )
-
-# Conditionally link freetype if we're using 8-bit or 16-bit display
-if(DISPLAY_TYPE STREQUAL "DISPLAY_SIM_24BIT" OR DISPLAY_TYPE STREQUAL "DISPLAY_SIM_16BIT" OR DISPLAY_TYPE STREQUAL "DISPLAY_SIM_8BIT")
-    # Set FreeType options before adding the subdirectory
-    set(FT_DISABLE_PNG ON CACHE BOOL "Disable PNG support in FreeType" FORCE)
-    set(FT_DISABLE_HARFBUZZ ON CACHE BOOL "Disable HarfBuzz support in FreeType" FORCE)
-    set(FT_DISABLE_BROTLI ON CACHE BOOL "Disable Brotli support in FreeType" FORCE)
-    add_subdirectory(${REPO_ROOT_DIR}/components/freetype/freetype ${CMAKE_CURRENT_BINARY_DIR}/freetype)
-    target_link_libraries(${PROJECT_NAME} PUBLIC freetype)
-    target_compile_definitions(${PROJECT_NAME} PUBLIC
-        CONFIG_FONT_TTF=1
-        CONFIG_FONT_IBMF=0
-    )
-else()
-    target_compile_definitions(${PROJECT_NAME} PUBLIC
-        CONFIG_FONT_TTF=0
-        CONFIG_FONT_IBMF=1
-    )
-endif()
 
 # Set compile definitions based on the selected DISPLAY_TYPE
 if(DISPLAY_TYPE STREQUAL "DISPLAY_SIM_24BIT")
@@ -145,7 +148,6 @@ target_compile_definitions(${PROJECT_NAME} PUBLIC
     CONFIG_DISABLE_POWER_MANAGEMENT=1
     RTC_SLOW_ATTR=
     RTC_NOINIT_ATTR=
-    CONFIG_TTF_SCREEN_RES_PER_INCH=${TTF_SCREEN_RES_PER_INCH}
     CONFIG_DEFAULT_INACTIVITY_MINUTES=10
     CONFIG_DISPLAY_POWER=-1
     CONFIG_DISPLAY_WIDTH=${DISPLAY_WIDTH}

@@ -1,9 +1,8 @@
+#include <FontDefs.hpp>
+#include <UTF8Iterator.hpp>
 #include <catch_amalgamated.hpp>
 #include <string>
 #include <vector>
-
-#include "UI/Fonts/FontDefs.hpp"
-#include "UI/Fonts/UTF8Iterator.hpp"
 
 #define GOOD_1 "\x24"
 #define GOOD_2 "\xD0\x98"

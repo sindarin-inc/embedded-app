@@ -11,6 +11,7 @@
 #include "UI/AppDownloadScreen.hpp"
 #include "UI/Bitmaps/Auto_Pilot_Icons.hpp"
 #include "UI/BookQuestionsScreen.hpp"
+#include "UI/FontFromPrefs.hpp"
 #include "UI/ReadableHookScreens.hpp"
 #include "UI/RootUI.hpp"
 #include "sindarin-debug.h"

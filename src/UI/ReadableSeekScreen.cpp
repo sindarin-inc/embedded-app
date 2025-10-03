@@ -1,9 +1,10 @@
 #include "ReadableSeekScreen.hpp"
 
+#include <Fonts.hpp>
+
 #include "Misc/SolClock.hpp"
 #include "Misc/StringUtil.hpp"
 #include "UI/Bitmaps/SeekBook.hpp"
-#include "UI/Fonts/Fonts.hpp"
 #include "UI/ReadableHookScreens.hpp"
 
 // TODO: This is a mess - should be in the new layout system

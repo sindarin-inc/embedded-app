@@ -1,7 +1,9 @@
 #include "ExperimentalMenuScreen.hpp"
 
+#include <Fonts.hpp>
+
 #include "Misc/Platform.hpp"
-#include "UI/Fonts/Fonts.hpp"
+#include "UI/FontFromPrefs.hpp"
 
 ExperimentalMenuScreen::ExperimentalMenuScreen(DisplaySystem &display, const std::string &backTitle,
                                                PreferencesStore &prefs, Telemetry &telemetry,

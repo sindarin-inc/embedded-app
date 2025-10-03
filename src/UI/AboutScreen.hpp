@@ -1,5 +1,7 @@
 #pragma once
 
+#include <Fonts.hpp>
+
 #include "Misc/Platform.hpp"
 #include "Misc/PowerManager.hpp"
 #include "Misc/SecretCode.hpp"
@@ -9,7 +11,6 @@
 #include "UI/Components/EinkView.hpp"
 #include "UI/Components/IconView.hpp"
 #include "UI/Components/SingleLineTextView.hpp"
-#include "UI/Fonts/Fonts.hpp"
 #include "UI/Screen.hpp"
 #include "Version.hpp"
 

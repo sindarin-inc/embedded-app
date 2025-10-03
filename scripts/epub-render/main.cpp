@@ -9,11 +9,11 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 #pragma clang diagnostic pop
+#include <Fonts.hpp>
 
 #include "DisplayUtil.hpp"
 #include "EPub/EPubFile.hpp"
 #include "Renderers/Renderer.hpp"
-#include "UI/Fonts/Fonts.hpp"
 
 int main(int argc, char **argv) {
     argparse::ArgumentParser program("epub-render");

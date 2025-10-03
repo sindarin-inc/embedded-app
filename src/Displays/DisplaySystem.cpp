@@ -1,5 +1,7 @@
 #include "DisplaySystem.hpp"
 
+#include <Font.hpp>
+#include <Fonts.hpp>
 #include <algorithm>
 #include <freertos/FreeRTOS.h>
 #include <freertos/timers.h>
@@ -9,8 +11,6 @@
 #include "Misc/Dispatch.hpp"
 #include "Misc/PBMImage.hpp"
 #include "Misc/StringUtil.hpp"
-#include "UI/Fonts/Font.hpp"
-#include "UI/Fonts/Fonts.hpp"
 #include "sindarin-debug.h"
 
 DisplaySystem::DisplaySystem() = default;
