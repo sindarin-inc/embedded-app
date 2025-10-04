@@ -104,7 +104,7 @@ static constexpr uint32_t END_OFFSET = 999999999U;
 
 using Idx = int;
 
-#if CONFIG_FONT_TTF
+#if CONFIG_TINYFONT_TTF
 // These are the different tokens so as we parse a buffer, we more easily know what to do with the
 // text. Bits are assigned to each such that they can be combined in a mask for comparisons.
 enum class TokenId : uint16_t {
@@ -165,7 +165,7 @@ static const char *TokenIdStr[] = {"TEXT",         "ITEXT",  "HTEXT",  "NTEXT", 
 static const uint16_t POOL_TOKENS =
     static_cast<uint16_t>(TokenId::TEXT) | static_cast<uint16_t>(TokenId::ITEXT) |
     static_cast<uint16_t>(TokenId::HTEXT)
-#if CONFIG_FONT_TTF
+#if CONFIG_TINYFONT_TTF
     | static_cast<uint16_t>(TokenId::SUBTEXT) | static_cast<uint16_t>(TokenId::SUPTEXT)
 #endif
     | static_cast<uint16_t>(TokenId::PICTURE) | static_cast<uint16_t>(TokenId::EPICTURE);

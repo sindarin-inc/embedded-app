@@ -237,7 +237,7 @@ auto DispatchGetCore1BackgroundQueue(bool create) -> DispatchQueue * {
 auto DispatchGetUiQueue(bool create) -> DispatchQueue * {
     if (uiQueue == nullptr && create) {
         HEAP_PROFILE_START(UIQueue);
-#ifdef CONFIG_FONT_TTF
+#ifdef CONFIG_TINYFONT_TTF
         // 10000 wasn't enough with TTF font rendering, neither was 20000
         // 22500 had enough for booting up, but not for the popup menu
         uiQueue = new DispatchQueue("UI", 1, 25000, 10, 1);

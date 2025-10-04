@@ -54,14 +54,14 @@ if(DISPLAY_TYPE STREQUAL "DISPLAY_SIM_24BIT" OR DISPLAY_TYPE STREQUAL "DISPLAY_S
     add_subdirectory(${REPO_ROOT_DIR}/components/tiny-font/freetype/freetype ${CMAKE_CURRENT_BINARY_DIR}/freetype)
     target_link_libraries(tiny-font PUBLIC freetype)
     target_compile_definitions(tiny-font PUBLIC
-        CONFIG_FONT_TTF=1
-        CONFIG_FONT_IBMF=0
-        CONFIG_TTF_SCREEN_RES_PER_INCH=${TTF_SCREEN_RES_PER_INCH}
+        CONFIG_TINYFONT_TTF=1
+        CONFIG_TINYFONT_IBMF=0
+        CONFIG_TINYFONT_DISPLAY_DPI=${TTF_SCREEN_RES_PER_INCH}
     )
 else()
     target_compile_definitions(tiny-font PUBLIC
-        CONFIG_FONT_TTF=0
-        CONFIG_FONT_IBMF=1
+        CONFIG_TINYFONT_TTF=0
+        CONFIG_TINYFONT_IBMF=1
     )
 endif()
 
@@ -98,21 +98,36 @@ if(DISPLAY_TYPE STREQUAL "DISPLAY_SIM_24BIT")
     target_compile_definitions(${PROJECT_NAME} PUBLIC
         CONFIG_DISPLAY_SIM_24BIT=1
     )
+    target_compile_definitions(tiny-font PUBLIC
+        CONFIG_TINYFONT_PIXEL_RESOLUTION_TWENTY_FOUR_BIT=1
+    )
 elseif(DISPLAY_TYPE STREQUAL "DISPLAY_SIM_16BIT")
     target_compile_definitions(${PROJECT_NAME} PUBLIC
         CONFIG_DISPLAY_SIM_16BIT=1
+    )
+    target_compile_definitions(tiny-font PUBLIC
+        CONFIG_TINYFONT_PIXEL_RESOLUTION_SIXTEEN_BIT=1
     )
 elseif(DISPLAY_TYPE STREQUAL "DISPLAY_SIM_8BIT")
     target_compile_definitions(${PROJECT_NAME} PUBLIC
         CONFIG_DISPLAY_SIM_8BIT=1
     )
+    target_compile_definitions(tiny-font PUBLIC
+        CONFIG_TINYFONT_PIXEL_RESOLUTION_EIGHT_BIT=1
+    )
 elseif(DISPLAY_TYPE STREQUAL "DISPLAY_SIM_1BIT")
     target_compile_definitions(${PROJECT_NAME} PUBLIC
         CONFIG_DISPLAY_SIM_1BIT=1
     )
+    target_compile_definitions(tiny-font PUBLIC
+        CONFIG_TINYFONT_PIXEL_RESOLUTION_ONE_BIT=1
+    )
 elseif(DISPLAY_TYPE STREQUAL "DISPLAY_EINKET013TT1")
     target_compile_definitions(${PROJECT_NAME} PUBLIC
         CONFIG_DISPLAY_EINKET013TT1=1
+    )
+    target_compile_definitions(tiny-font PUBLIC
+        CONFIG_TINYFONT_PIXEL_RESOLUTION_ONE_BIT=1
     )
 else()
     message(FATAL_ERROR "Invalid DISPLAY_TYPE: ${DISPLAY_TYPE}")

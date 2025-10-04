@@ -1,10 +1,10 @@
 #pragma once
 
-#include <Fonts.hpp>
 #include <algorithm>
 #include <utility>
 
 #include "EinkView.hpp"
+#include "UI/Fonts.hpp"
 #include "UI/TextTruncation.hpp"
 
 // A view that draws a line of text

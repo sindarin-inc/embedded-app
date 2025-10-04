@@ -4,8 +4,7 @@
 #include "Displays/DisplayEinkET013TT1.hpp"
 #endif
 
-#include <Fonts.hpp>
-
+#include "UI/Fonts.hpp"
 #include "sindarin-debug.h"
 
 BatteryScreen::BatteryScreen(DisplaySystem &display, PreferencesStore &prefs, Battery &battery)

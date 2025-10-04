@@ -1,6 +1,5 @@
 #include "RootUI.hpp"
 
-#include <Fonts.hpp>
 #include <esp_sleep.h>
 #include <esp_system.h>
 #include <esp_timer.h>
@@ -39,7 +38,7 @@
 #include "UI/DebugAboutScreen.hpp"
 #include "UI/DemoScreen.hpp"
 #include "UI/FirmwareUpdateScreen.hpp"
-#include "UI/FontFromPrefs.hpp"
+#include "UI/Fonts.hpp"
 #include "UI/KindleReadableScreen.hpp"
 #include "UI/LayoutTestScreen.hpp"
 #include "UI/LegalScreen.hpp"

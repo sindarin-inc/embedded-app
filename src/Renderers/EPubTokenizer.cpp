@@ -156,7 +156,7 @@ EPubTokenizer::Entities EPubTokenizer::entities
     {"euro",   "\xE2\x80\xAC"}, // euro sign, U+20AC NEW
 };
 
-#if CONFIG_FONT_IBMF
+#if CONFIG_TINYFONT_IBMF
 EPubTokenizer::Characters EPubTokenizer::superscriptCharacters
 {
     {"0", "\xE2\x81\xB0"},
@@ -1671,7 +1671,7 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint32_t len) -> bool 
         // REND_WLOG("Current Character: %c (%02" PRIX8 "H)",
         //       (((curChar >= ' ') && (curChar < 127)) ? curChar : ' '), curChar);
 
-#if CONFIG_FONT_IBMF
+#if CONFIG_TINYFONT_IBMF
         if (superscript_) {
             superscript_ = false;
             Token &newToken = tokens_.getNextAvailable();
@@ -1735,7 +1735,7 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint32_t len) -> bool 
         } else
 #endif
             if (curChar > ' ') {
-#if CONFIG_FONT_TTF
+#if CONFIG_TINYFONT_TTF
             if (superscript_) {
                 superscript_ = false;
                 closeTextToken();

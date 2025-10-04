@@ -1,8 +1,8 @@
 #include "UI/FirstHookTestScreen.hpp"
 
-#include <Fonts.hpp>
 #include <memory>
 
+#include "UI/Fonts.hpp"
 #include "sindarin-debug.h"
 
 #define OFFSET_ADJUST_AMOUNT 5

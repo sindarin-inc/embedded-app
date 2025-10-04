@@ -1,9 +1,7 @@
 #include "ReadingSettingsMenuScreen.hpp"
 
-#include <Fonts.hpp>
-
 #include "Misc/Platform.hpp"
-#include "UI/FontFromPrefs.hpp"
+#include "UI/Fonts.hpp"
 
 ReadingSettingsMenuScreen::ReadingSettingsMenuScreen(DisplaySystem &display,
                                                      const std::string &backTitle,

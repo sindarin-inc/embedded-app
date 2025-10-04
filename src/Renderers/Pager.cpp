@@ -25,7 +25,7 @@ auto Pager::addLastTokenToPage(bool dontStop) -> bool {
     case TokenId::HTEXT:
     case TokenId::NTEXT:
 
-#if CONFIG_FONT_TTF
+#if CONFIG_TINYFONT_TTF
     case TokenId::SUPTEXT:
     case TokenId::SUBTEXT:
 #endif
@@ -81,7 +81,7 @@ auto Pager::addLastTokenToPage(bool dontStop) -> bool {
         if (static_cast<uint16_t>(token.tokenId) &
             (static_cast<uint16_t>(TokenId::TEXT) | static_cast<uint16_t>(TokenId::ITEXT) |
              static_cast<uint16_t>(TokenId::HTEXT) | static_cast<uint16_t>(TokenId::NTEXT)
-#if CONFIG_FONT_TTF
+#if CONFIG_TINYFONT_TTF
              | static_cast<uint16_t>(TokenId::SUBTEXT) | static_cast<uint16_t>(TokenId::SUPTEXT)
 #endif
                  )) {
@@ -261,7 +261,7 @@ auto Pager::computeWordCount() const -> uint16_t {
             if (static_cast<uint16_t>(tokens_[tokenIdx].tokenId) &
                 (static_cast<uint16_t>(TokenId::TEXT) | static_cast<uint16_t>(TokenId::ITEXT) |
                  static_cast<uint16_t>(TokenId::HTEXT) | static_cast<uint16_t>(TokenId::NTEXT)
-#if CONFIG_FONT_TTF
+#if CONFIG_TINYFONT_TTF
                  | static_cast<uint16_t>(TokenId::SUBTEXT) | static_cast<uint16_t>(TokenId::SUPTEXT)
 #endif
                      )) {
@@ -280,7 +280,7 @@ auto Pager::getPageLength() const -> uint16_t {
     return length;
 }
 
-#if CONFIG_FONT_TTF
+#if CONFIG_TINYFONT_TTF
 
 // Retrieve a single segment from the linsinfo. superscript and subscripts are cutting lines in
 // multiple segments.
@@ -540,7 +540,7 @@ auto Pager::displayPage(int16_t numSkipLines) -> uint8_t {
                 deciY += ENDPARAGRAPH_DECI_LINE_HEIGHT;
             }
 
-#if CONFIG_FONT_TTF
+#if CONFIG_TINYFONT_TTF
             drawSingleLine(lines_[lineIdx], deciToPix(deciY));
 #else
             Line line;
@@ -558,7 +558,7 @@ auto Pager::displayPage(int16_t numSkipLines) -> uint8_t {
                               display_.fg);
             deciY += HRULE_DECI_LINE_HEIGHT;
 
-#if CONFIG_FONT_TTF
+#if CONFIG_TINYFONT_TTF
             drawSingleLine(lines_[lineIdx], deciToPix(deciY));
 #else
             Line line;
@@ -572,7 +572,7 @@ auto Pager::displayPage(int16_t numSkipLines) -> uint8_t {
         default:
             // Only draw the lines if it's not skipped from the caller.
             if (lineNbr >= numSkipLines) {
-#if CONFIG_FONT_TTF
+#if CONFIG_TINYFONT_TTF
                 drawSingleLine(lines_[lineIdx], deciToPix(deciY));
 #else
                 Line line;

@@ -1,10 +1,9 @@
 #if CONFIG_DISPLAY_EINKET013TT1
 #include "UI/VcomAdjustScreen.hpp"
 
-#include <Fonts.hpp>
-
 #include "Displays/DisplayEinkET013TT1.hpp"
 #include "Misc/StringUtil.hpp"
+#include "UI/Fonts.hpp"
 #include "sindarin-debug.h"
 
 #define STEP_IN_MV 50

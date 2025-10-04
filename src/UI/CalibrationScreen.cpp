@@ -1,7 +1,8 @@
 #include "CalibrationScreen.hpp"
 
-#include <Fonts.hpp>
 #include <cmath>
+
+#include "UI/Fonts.hpp"
 
 #define NUM_SPIKES 24
 

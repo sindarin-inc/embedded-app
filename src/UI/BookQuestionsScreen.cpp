@@ -1,9 +1,9 @@
 #include "UI/BookQuestionsScreen.hpp"
 
-#include <Fonts.hpp>
 #include <cinttypes>
 
 #include "UI/Bitmaps/DefaultBookQuestions.hpp"
+#include "UI/Fonts.hpp"
 #if CONFIG_USE_BLE_SERVER_PROXY
 #include "Communications/BLEManager.hpp"
 #endif

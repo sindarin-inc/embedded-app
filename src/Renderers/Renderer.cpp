@@ -1,8 +1,9 @@
 #include "Renderer.hpp"
 
-#include <Fonts.hpp>
 #include <algorithm>
 #include <utility>
+
+#include "UI/Fonts.hpp"
 
 // Retrieve and show the page at fromPlace location.
 auto Renderer::renderPage(std::shared_ptr<Place> fromPlace, int16_t numSkipLines, bool forceRefresh,

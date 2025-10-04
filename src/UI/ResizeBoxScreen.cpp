@@ -1,8 +1,6 @@
 #include "UI/ResizeBoxScreen.hpp"
 
-#include <Fonts.hpp>
-
-#include "UI/FontFromPrefs.hpp"
+#include "UI/Fonts.hpp"
 #include "sindarin-debug.h"
 
 #define BOX_OFFSET_ADJUST_AMOUNT 10

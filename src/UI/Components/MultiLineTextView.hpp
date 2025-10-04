@@ -1,12 +1,12 @@
 #pragma once
 
-#include <Fonts.hpp>
 #include <algorithm>
 #include <string>
 #include <vector>
 
 #include "EinkView.hpp"
 #include "SingleLineTextView.hpp"
+#include "UI/Fonts.hpp"
 
 // A view that draws multiple lines of text
 class MultiLineTextView : public EinkView {
