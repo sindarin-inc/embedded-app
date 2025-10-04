@@ -1,9 +1,6 @@
 #pragma once
 
 #include "Font.hpp"
-#include "FontEntry.hpp"
-
-extern std::array<FontEntry, 1> fontsList;
 
 #if CONFIG_TINYFONT_IBMF
 #include "IBMFDriver/IBMFFont.hpp"

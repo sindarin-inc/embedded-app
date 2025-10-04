@@ -1,5 +1,4 @@
 #include <Font.hpp>
-#include <FontEntry.hpp>
 #include <array>
 #include <cinttypes>
 
@@ -13,27 +12,7 @@
 #include "IBMFDriver/IBMFFontData.hpp"
 #include "IBMFFonts/SolSans_75.h"
 
-// clang-format on
-
-// Here is the list of all fonts that can be selected through a menu in the application.
-//
-// At boot time, the first entry in the list is loaded by default. If one of the other entries must
-// be used to initialixe the font instance defined above, through a call to the font.load() method.
-// For example:
-//
-//   result = font.load((fonts_defs::MemoryPtr)fontsList[0].content, fontsList[0].length,
-//                fontsList[0].kerns, fontsList[0].ligatures);
-//   if (result) {
-//       ... was successfull
-//   } else {
-//       ... was not successfull
-//   }
-//
-// The same approach can be used to change the current font through a selection menu
-
-std::array<FontEntry, 1> fontsList{{{"SolSans", SOLSANS_75_IBMF, SOLSANS_75_IBMF_LEN}}};
-
-FontData mainFont = FontData(fontsList[0].content, fontsList[0].length);
+FontData mainFont = FontData(SOLSANS_75_IBMF, SOLSANS_75_IBMF_LEN);
 
 // The following definitions identifie three pre-defined empty font faces that are expected
 // to be initialized through a call to font.load() method at application startup. It is expected
@@ -57,23 +36,6 @@ Font fontFace2 = Font(mainFont, 2);
 
 #include "TTFDriver/TTFFont.hpp"
 #include "TTFDriver/TTFNotoSansLight.hpp"
-
-// clang-format on
-
-// Here is the list of all fonts that can be selected through a menu in the application.
-//
-// At boot time, the first entry in the list is loaded by default. If one of the other entries must
-// be used to initialixe the font instance defined above, through a call to the font.load() method.
-// For example:
-//
-//   result = font.load((ibmf_defs::MemoryPtr)fontsList[0].content, fontsList[0].length,
-//                fontsList[0].kerns, fontsList[0].ligatures); if (result) {
-//       ... was successfull
-//   } else {
-//       ... was not successfull
-//   }
-//
-// The same approach can be used to change the current font through a selection menu
 
 // The following defines the instance of a font that is containing all faces related to that font.
 // The parameters are used to initialize the font at boot time to one of the fonts that is part of

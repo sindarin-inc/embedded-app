@@ -3,12 +3,12 @@
 #include <cinttypes>
 
 #include "UI/Bitmaps/DefaultBookQuestions.hpp"
-#include "UI/Fonts.hpp"
 #if CONFIG_USE_BLE_SERVER_PROXY
 #include "Communications/BLEManager.hpp"
 #endif
 #include "Communications/WiFi.hpp"
 #include "Misc/StringUtil.hpp"
+#include "UI/Fonts.hpp"
 #include "sindarin-debug.h"
 
 void BookQuestionsScreen::moveSelection(int delta) {
