@@ -1,12 +1,12 @@
 #pragma once
 
+#include <Spiram/String.hpp>
 #include <cinttypes>
 #include <memory>
 #include <string>
 #include <utility>
 
 #include "DocType.hpp"
-#include "Misc/SpiramAllocator.hpp"
 #include "sindarin-debug.h"
 
 class Place {

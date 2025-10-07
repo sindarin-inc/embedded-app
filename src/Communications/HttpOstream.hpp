@@ -17,7 +17,7 @@ public:
 
     ~HttpOstreambuf() override {
         sync();
-        SpiRamFree(buffer_);
+        SpiramFree(buffer_);
     }
 
 private:

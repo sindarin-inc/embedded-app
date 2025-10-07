@@ -1,10 +1,9 @@
 #include "Communications/USBSerial.hpp"
 
+#include <Spiram/Memory.hpp>
 #include <esp_system.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
-
-#include "Misc/SpiramAllocator.hpp"
 
 RTC_NOINIT_ATTR bool USBSerial::usbLoggingEnabled;
 RTC_NOINIT_ATTR esp_log_level_t USBSerial::logLevel;
@@ -59,7 +58,7 @@ void USBSerial::enableLogging() {
 void USBSerial::rxCommandCallback(int itf, cdcacm_event_t *event) {
     size_t rxSize = 0;
 
-    auto buffer = SpiRamArrayPtr<uint8_t>(CONFIG_TINYUSB_CDC_RX_BUFSIZE + 1);
+    auto buffer = SpiramArrayPtr<uint8_t>(CONFIG_TINYUSB_CDC_RX_BUFSIZE + 1);
 
     esp_err_t ret = tinyusb_cdcacm_read(static_cast<tinyusb_cdcacm_itf_t>(itf), buffer.get(),
                                         CONFIG_TINYUSB_CDC_RX_BUFSIZE, &rxSize);

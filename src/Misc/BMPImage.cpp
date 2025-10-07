@@ -11,7 +11,7 @@ void BMPImage::createLUT() {
         return;
     }
 
-    bmpConversionLUT = SpiRamArrayPtr<uint8_t>(256);
+    bmpConversionLUT = SpiramArrayPtr<uint8_t>(256);
 
     // store bit-reversed and value flipped version of each byte
     // converts from bmp 1 bit to xbm format
@@ -58,7 +58,7 @@ auto BMPImage::readFromStream(RendererStream &stream) -> bool {
     int outputTotalBytes = outputBytesPerLine * height_;
 
     // allocate output buffer
-    outputBuffer_ = SpiRamArrayPtr<uint8_t>(outputTotalBytes);
+    outputBuffer_ = SpiramArrayPtr<uint8_t>(outputTotalBytes);
 
     // if the bmp already has 1 bit per pixel, it can be displayed directly
     // convert to xbm format

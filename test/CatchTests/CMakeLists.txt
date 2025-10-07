@@ -29,6 +29,16 @@ add_executable(${PROJECT_NAME} ${SOURCES})
 
 target_link_libraries(${PROJECT_NAME} simulator-common catch2)
 
+# Build and link spiram-cpp for simulator/tests
+include(FetchContent)
+FetchContent_Declare(
+    spiram_cpp
+    GIT_REPOSITORY https://github.com/sindarin-inc/spiram-cpp.git
+    GIT_TAG main
+)
+FetchContent_MakeAvailable(spiram_cpp)
+target_link_libraries(simulator-common PUBLIC spiram-cpp)
+
 target_compile_definitions(simulator-common PUBLIC TESTS=1)
 
 target_compile_definitions(${PROJECT_NAME}

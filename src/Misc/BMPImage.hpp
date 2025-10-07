@@ -1,6 +1,7 @@
 #pragma once
 
-#include "Misc/SpiramAllocator.hpp"
+#include <Spiram/Memory.hpp>
+
 #include "Renderers/RendererStream.hpp"
 
 class BMPImage {

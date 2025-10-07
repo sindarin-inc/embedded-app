@@ -1,9 +1,9 @@
 #include "Place.hpp"
 
+#include <Spiram/Allocator.hpp>
 #include <cstring>
 #include <iostream>
 
-#include "Misc/SpiramAllocator.hpp"
 #include "sindarin-debug.h"
 
 auto Place::factory(const std::string &placeStr, DocType docType) -> std::shared_ptr<Place> {
@@ -22,7 +22,7 @@ auto Place::factory(const std::string &placeStr, DocType docType) -> std::shared
             }
             if (*e == ']') {
                 offset = strtol(s, nullptr, 10);
-                return SpiRamPtr<TxtPlace>(offset);
+                return SpiramPtr<TxtPlace>(offset);
             }
         } else if (strncmp(s, "EPUB;offset:", 12) == 0) {
             s += 12;
@@ -38,33 +38,33 @@ auto Place::factory(const std::string &placeStr, DocType docType) -> std::shared
                     e = placeStr.c_str() + placeStr.length() - 1;
                     if ((*e == ']') && (e > s)) {
                         href.assign(s, e - s);
-                        return SpiRamPtr<EPubPlace>(offset, href);
+                        return SpiramPtr<EPubPlace>(offset, href);
                     }
                 }
             }
         }
     } else if (placeStr.length() > 0) {
         offset = strtol(placeStr.c_str(), nullptr, 10);
-        return SpiRamPtr<TxtPlace>(offset);
+        return SpiramPtr<TxtPlace>(offset);
     }
 
     if (docType == DocType::TXT) {
-        return SpiRamPtr<TxtPlace>(0);
+        return SpiramPtr<TxtPlace>(0);
     } else if (docType == DocType::EPUB) {
-        return SpiRamPtr<EPubPlace>(0, "");
+        return SpiramPtr<EPubPlace>(0, "");
     } else {
         log_e("Unable to parse place string properly: \"%s\"", placeStr.c_str());
         if constexpr (REND_ON_ERROR_EXIT) {
             assert(false && "Unable to parse place string properly");
         }
-        return SpiRamPtr<NonePlace>();
+        return SpiramPtr<NonePlace>();
     }
 }
 
 auto Place::factory(uint32_t offset, const std::string &href) -> std::shared_ptr<Place> {
-    return SpiRamPtr<EPubPlace>(offset, href);
+    return SpiramPtr<EPubPlace>(offset, href);
 }
 
 auto Place::factory(uint32_t offset) -> std::shared_ptr<Place> {
-    return SpiRamPtr<TxtPlace>(offset);
+    return SpiramPtr<TxtPlace>(offset);
 }

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Spiram/Memory.hpp>
 #include <cstring>
 #include <miniz/miniz.h>
 #include <stdint.h>
@@ -7,7 +8,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "SpiramAllocator.hpp"
 #include "Storage/SFile.hpp"
 
 class GZipStream {

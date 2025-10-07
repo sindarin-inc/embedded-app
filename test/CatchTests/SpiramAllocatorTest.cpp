@@ -1,5 +1,5 @@
-#include "Misc/SpiramAllocator.hpp"
-
+#include <Spiram/Memory.hpp>
+#include <Spiram/String.hpp>
 #include <catch_amalgamated.hpp>
 
 #include "Misc/StringUtil.hpp"

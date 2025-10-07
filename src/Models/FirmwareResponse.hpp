@@ -1,6 +1,6 @@
+#include <Spiram/String.hpp>
 #include <string>
 
-#include "Misc/SpiramAllocator.hpp"
 #include "Models/Firmware.hpp"
 
 class FirmwareResponse : JsonSerializable {

@@ -1,15 +1,14 @@
 #pragma once
 
+#include <Spiram/Memory.hpp>
 #include <cstdint>
 #include <memory>
-
-#include "Misc/SpiramAllocator.hpp"
 
 class CircBuffer {
 public:
     CircBuffer(int size, bool useSpiram = false) : capacity_(size) {
         if (useSpiram) {
-            buf_ = SpiRamArrayPtr<uint8_t>(size);
+            buf_ = SpiramArrayPtr<uint8_t>(size);
         } else {
             buf_ = std::shared_ptr<uint8_t[]>(new uint8_t[size]);
         }

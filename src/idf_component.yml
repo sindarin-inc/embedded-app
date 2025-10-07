@@ -19,3 +19,5 @@ dependencies:
     version: "*"
     rules:
       - if: target == esp32p4
+  spiram-cpp:
+    git: https://github.com/sindarin-inc/spiram-cpp.git

@@ -4,7 +4,8 @@
 
 class EPubFile;
 
-#include "Misc/SpiramAllocator.hpp"
+#include <Spiram/Vector.hpp>
+
 #include "Models/Readable.hpp"
 #include "Renderers/RendererStream.hpp"
 #include "Storage/SFile.hpp"

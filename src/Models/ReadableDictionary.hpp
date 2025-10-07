@@ -1,8 +1,9 @@
 #pragma once
 
+#include <Spiram/Map.hpp>
+#include <Spiram/String.hpp>
 #include <string>
 
-#include "Misc/SpiramAllocator.hpp"
 #include "Models/JsonSerializable.hpp"
 
 class ReadableDictionary : public JsonSerializable {

@@ -1,10 +1,11 @@
 #pragma once
 
+#include <Spiram/Map.hpp>
+#include <Spiram/String.hpp>
 #include <array>
 #include <unordered_map>
 
 #include "EPub/EPubFile.hpp"
-#include "Misc/SpiramAllocator.hpp"
 #include "Tokenizer.hpp"
 
 // EPubTokenizer

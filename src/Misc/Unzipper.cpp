@@ -1,9 +1,10 @@
 #include "Unzipper.hpp"
 
+#include <Spiram/Map.hpp>
+#include <Spiram/Memory.hpp>
+#include <Spiram/String.hpp>
 #include <iomanip>
 #include <iostream>
-
-#include "Misc/SpiramAllocator.hpp"
 
 auto Unzipper::open() -> bool {
     if (!file_) {
@@ -103,7 +104,7 @@ auto Unzipper::open() -> bool {
             if (count == 0) ERR(8);
 
             if (!file_.seek(startOffset, SSeekSet)) ERR(9);
-            auto entries = SpiRamArrayPtr<uint8_t>(length);
+            auto entries = SpiramArrayPtr<uint8_t>(length);
             if ((entries == nullptr) || (entries == nullptr)) ERR(10);
             if (file_.read(entries.get(), length) != length) ERR(11);
 

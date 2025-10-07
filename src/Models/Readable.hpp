@@ -1,5 +1,7 @@
 #pragma once
 
+#include <Spiram/String.hpp>
+#include <Spiram/Vector.hpp>
 #include <cstdint>
 #include <deque>
 #include <iomanip>
@@ -8,7 +10,6 @@
 #include <variant>
 #include <vector>
 
-#include "Misc/SpiramAllocator.hpp"
 #include "Misc/StringUtil.hpp"
 #include "Misc/TelemetryVariant.hpp"
 #include "Models/Author.hpp"

@@ -1,8 +1,8 @@
 #pragma once
 
+#include <Spiram/String.hpp>
 #include <utility>
 
-#include "Misc/SpiramAllocator.hpp"
 #include "Models/Json.hpp"
 #include "Models/JsonSerializable.hpp"
 #include "Storage/PreferencesStore.hpp"

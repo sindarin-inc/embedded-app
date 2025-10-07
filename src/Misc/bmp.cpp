@@ -10,9 +10,9 @@
 
 #include "bmp.h"
 
-#include "Misc/SpiramAllocator.hpp"
+#include <Spiram/Memory.hpp>
 
-auto BmpMalloc(size_t size) -> void * { return SpiRamMalloc(size); }
+auto BmpMalloc(size_t size) -> void * { return SpiramMalloc(size); }
 
 auto BmpRead(RendererStream &stream) -> bmp_image * {
     bmp_image *img = nullptr;

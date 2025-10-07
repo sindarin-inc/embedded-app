@@ -67,6 +67,19 @@ endif()
 
 add_subdirectory(${REPO_ROOT_DIR}/lib/esp_ringbuf ${CMAKE_CURRENT_BINARY_DIR}/esp_ringbuf)
 
+# Add spiram-cpp library for simulator (via FetchContent)
+include(FetchContent)
+FetchContent_Declare(
+    spiram_cpp
+    GIT_REPOSITORY https://github.com/sindarin-inc/spiram-cpp.git
+    GIT_TAG main
+)
+FetchContent_MakeAvailable(spiram_cpp)
+
+# Use this repo's esp_heap_caps stubs instead of the ones from spiram-cpp
+target_include_directories(spiram-cpp PUBLIC ${REPO_ROOT_DIR}/lib/Simulator/stubs/esp-idf)
+target_compile_definitions(spiram-cpp PUBLIC ESP_PLATFORM=1)
+
 # Before adding mbedtls, set options to disable tests and programs
 set(ENABLE_TESTING OFF CACHE BOOL "Disable mbedtls tests" FORCE)
 set(ENABLE_PROGRAMS OFF CACHE BOOL "Disable mbedtls programs" FORCE)
@@ -81,7 +94,7 @@ endif()
 
 add_library(${PROJECT_NAME} STATIC ${SOURCES} ${HTTP_CLIENT_SOURCE})
 
-target_link_libraries(${PROJECT_NAME} PUBLIC pugixml ArduinoJson miniz astubs esp-idf-stubs nvs_flash Adafruit-GFX-Library tiny-font mbedtls mbedx509 mbedcrypto esp_ringbuf)
+target_link_libraries(${PROJECT_NAME} PUBLIC pugixml ArduinoJson miniz astubs esp-idf-stubs nvs_flash Adafruit-GFX-Library tiny-font mbedtls mbedx509 mbedcrypto esp_ringbuf spiram-cpp)
 
 target_include_directories(${PROJECT_NAME} PUBLIC
     "${REPO_ROOT_DIR}/src"

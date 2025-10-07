@@ -267,7 +267,7 @@ void DisplaySystem::drawPBM(int16_t x, int16_t y, RendererStream &stream) {
     } else {
         // not fullscreen
         // load bitmap into memory
-        auto bitmap = SpiRamArrayPtr<uint8_t>(byteSize);
+        auto bitmap = SpiramArrayPtr<uint8_t>(byteSize);
         if (stream.readBytes(bitmap.get(), byteSize) != byteSize) {
             log_e("failed to read bitmap");
             return;

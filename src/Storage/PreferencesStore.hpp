@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Spiram/Vector.hpp>
 #include <cinttypes>
 #include <cstring>
 #include <freertos/FreeRTOS.h>

@@ -1,11 +1,12 @@
 #pragma once
 
+#include <Spiram/Memory.hpp>
+#include <Spiram/String.hpp>
 #include <pugixml.hpp>
 #include <utility>
 
 #include "EPubDefs.hpp"
 #include "EPubOpf.hpp"
-#include "Misc/SpiramAllocator.hpp"
 #include "Misc/Unzipper.hpp"
 #include "Models/DocType.hpp"
 #include "Models/Readable.hpp"

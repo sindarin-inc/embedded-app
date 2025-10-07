@@ -1,8 +1,8 @@
 #include "ReadableSummaryScreen.hpp"
 
+#include <Spiram/String.hpp>
 #include <utility>
 
-#include "Misc/SpiramAllocator.hpp"
 #include "Models/UserReadablePartialChapterSummary.hpp"
 
 #define HEIGHT_EVEN(x) ((((x) % 2 == 0) ? (x) : ((x) + 1)))

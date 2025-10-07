@@ -1,8 +1,7 @@
 #include "ReadableDictionaryScreen.hpp"
 
+#include <Spiram/String.hpp>
 #include <pugixml.hpp>
-
-#include "Misc/SpiramAllocator.hpp"
 
 auto ReadableDictionaryScreen::layout(LayoutContext &context, SolSize size) -> SolSize {
     auto fullFrame = SolRect::fromSize(size);

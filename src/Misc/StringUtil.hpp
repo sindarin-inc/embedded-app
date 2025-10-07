@@ -1,10 +1,10 @@
 #pragma once
 
+#include <Spiram/String.hpp>
 #include <memory>
 #include <stdexcept>
 #include <string>
 
-#include "Misc/SpiramAllocator.hpp"
 #include "sindarin-debug.h"
 
 // C++20 has std::format which could replace this

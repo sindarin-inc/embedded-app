@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Spiram/Memory.hpp>
 #include <algorithm>
 #include <esp_http_client.h>
 #include <functional>
@@ -8,7 +9,6 @@
 #include <utility>
 #include <vector>
 
-#include "Misc/SpiramAllocator.hpp"
 #include "sindarin-debug.h"
 
 template <std::size_t BUFFER_SIZE = BUFSIZ>
@@ -17,11 +17,11 @@ public:
     HttpIStreambuf(std::function<size_t(char *, size_t)> readFunc)
         : readFunc_(std::move(readFunc)) {
         buffer_ =
-            static_cast<char *>(SpiRamMalloc(std::max(static_cast<int>(BUFFER_SIZE), BUFSIZ)));
+            static_cast<char *>(SpiramMalloc(std::max(static_cast<int>(BUFFER_SIZE), BUFSIZ)));
         setg(buffer_, buffer_, buffer_);
     }
 
-    ~HttpIStreambuf() override { SpiRamFree(buffer_); }
+    ~HttpIStreambuf() override { SpiramFree(buffer_); }
 
 private:
     char *buffer_;

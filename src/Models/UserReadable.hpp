@@ -1,6 +1,8 @@
 #pragma once
 
-#include "Misc/SpiramAllocator.hpp"
+#include <Spiram/String.hpp>
+#include <Spiram/Vector.hpp>
+
 #include "Models/Json.hpp"
 #include "Models/JsonSerializable.hpp"
 #include "Models/Place.hpp"
@@ -48,7 +50,7 @@ public:
         }
 
         if (j.containsKey("partial_chapter_summary")) {
-            partialChapterSummary = SpiRamPtr<UserReadablePartialChapterSummary>();
+            partialChapterSummary = SpiramPtr<UserReadablePartialChapterSummary>();
             if (!partialChapterSummary->fromJson(j["partial_chapter_summary"])) {
                 partialChapterSummary = nullptr;
             }
@@ -65,7 +67,7 @@ public:
         }
 
         isArchived = j["is_archived"].as<bool>();
-        readable = SpiRamPtr<Readable>();
+        readable = SpiramPtr<Readable>();
 
         return readable->fromJson(j["readable"]);
     }

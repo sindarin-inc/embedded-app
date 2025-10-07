@@ -1,14 +1,13 @@
 #pragma once
 
+#include <Spiram/Memory.hpp>
 #include <stdint.h>
-
-#include "Misc/SpiramAllocator.hpp"
 
 class Ditherer {
 public:
     static auto getInstance() -> Ditherer &;
 
-    Ditherer() { ditherBuffer_ = SpiRamArrayPtr<float>(256 * 256); }
+    Ditherer() { ditherBuffer_ = SpiramArrayPtr<float>(256 * 256); }
     void ditherToBitmap(uint8_t *image, uint8_t *bitmap, int width, int height, int bytesPerLine,
                         bool reversed = false);
 
