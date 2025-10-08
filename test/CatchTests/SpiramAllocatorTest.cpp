@@ -1,8 +1,8 @@
 #include <Spiram/Memory.hpp>
 #include <Spiram/String.hpp>
+#include <StringUtil/StringUtil.hpp>
 #include <catch_amalgamated.hpp>
 
-#include "Misc/StringUtil.hpp"
 #include "Renderers/RendererStream.hpp"
 #include "sindarin-debug.h"
 

@@ -1,8 +1,9 @@
 #pragma once
 
+#include <StringUtil/StringUtil.hpp>
+
 #include "Displays/DisplaySystem.hpp"
 #include "Inputs/RemoteInput.hpp"
-#include "Misc/StringUtil.hpp"
 #include "Misc/Telemetry.hpp"
 #include "Storage/PreferencesStore.hpp"
 #include "UI/Components/ArrowLabelView.hpp"

@@ -1,6 +1,5 @@
+#include <StringUtil/StringUtil.hpp>
 #include <catch_amalgamated.hpp>
-
-#include "Misc/StringUtil.hpp"
 
 TEST_CASE("Test HasSuffix") {
     REQUIRE(HasSuffix("this/is-thefile.txt.gz", ".gz"));

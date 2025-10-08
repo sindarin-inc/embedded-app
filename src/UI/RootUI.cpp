@@ -1,5 +1,6 @@
 #include "RootUI.hpp"
 
+#include <StringUtil/StringUtil.hpp>
 #include <esp_sleep.h>
 #include <esp_system.h>
 #include <esp_timer.h>
@@ -17,7 +18,6 @@
 #include "Misc/Platform.hpp"
 #include "Misc/PowerManager.hpp"
 #include "Misc/SolClock.hpp"
-#include "Misc/StringUtil.hpp"
 #include "Misc/Telemetry.hpp"
 #include "Models/KindleBook.hpp"
 #include "Models/Readable.hpp"

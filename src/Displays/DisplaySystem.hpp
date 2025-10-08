@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Adafruit_GFX.h>
+#include <StringUtil/StringUtil.hpp>
 #include <array>
 #include <freertos/FreeRTOS.h>
 #include <freertos/queue.h>
@@ -8,7 +9,6 @@
 #include <string>
 
 #include "Displays/EinkTypes.hpp"
-#include "Misc/StringUtil.hpp"
 #include "Storage/FileSystem.hpp"
 #include "UI/Fonts.hpp"
 #include "UI/Layout/Types.hpp"

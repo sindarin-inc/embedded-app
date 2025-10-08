@@ -1,5 +1,6 @@
 #include "DisplaySystem.hpp"
 
+#include <StringUtil/StringUtil.hpp>
 #include <algorithm>
 #include <freertos/FreeRTOS.h>
 #include <freertos/timers.h>
@@ -8,7 +9,6 @@
 #include "Inputs/RemoteInput.hpp"
 #include "Misc/Dispatch.hpp"
 #include "Misc/PBMImage.hpp"
-#include "Misc/StringUtil.hpp"
 #include "UI/Fonts.hpp"
 #include "sindarin-debug.h"
 

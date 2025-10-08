@@ -1,5 +1,6 @@
 #include "Models/KindlePageFlipper.hpp"
 
+#include <StringUtil/StringUtil.hpp>
 #include <algorithm>
 #include <cinttypes>
 #include <cmath>
@@ -8,7 +9,6 @@
 
 #include "Communications/SindarinAPI.hpp"
 #include "Misc/Dispatch.hpp"
-#include "Misc/StringUtil.hpp"
 #include "Misc/Telemetry.hpp"
 #include "sindarin-debug.h"
 

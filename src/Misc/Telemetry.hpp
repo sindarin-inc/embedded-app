@@ -1,12 +1,12 @@
 #pragma once
 
+#include <StringUtil/StringUtil.hpp>
 #include <unordered_map>
 
 #include "Misc/CancelFlag.hpp"
 #include "Misc/Dispatch.hpp"
 #include "Misc/Platform.hpp"
 #include "Misc/SolClock.hpp"
-#include "Misc/StringUtil.hpp"
 #include "Misc/TelemetryVariant.hpp"
 #include "Storage/FileSystem.hpp"
 #include "Storage/PreferencesStore.hpp"

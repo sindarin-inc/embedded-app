@@ -1,6 +1,6 @@
 #include "UI/ReadablePlacemarkHistoryScreen.hpp"
 
-#include "Misc/StringUtil.hpp"
+#include <StringUtil/StringUtil.hpp>
 
 void ReadablePlacemarkHistoryScreen::moveSelection(int delta) {
     auto newPage = menuView_.moveSelection(delta);

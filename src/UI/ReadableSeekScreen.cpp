@@ -1,7 +1,8 @@
 #include "ReadableSeekScreen.hpp"
 
+#include <StringUtil/StringUtil.hpp>
+
 #include "Misc/SolClock.hpp"
-#include "Misc/StringUtil.hpp"
 #include "UI/Bitmaps/SeekBook.hpp"
 #include "UI/Fonts.hpp"
 #include "UI/ReadableHookScreens.hpp"

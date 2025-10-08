@@ -10,6 +10,7 @@
 #include <tusb.h>
 #endif
 
+#include <StringUtil/StringUtil.hpp>
 #include <freertos/FreeRTOS.h>
 #include <freertos/queue.h>
 
@@ -26,7 +27,6 @@
 #include "Misc/PowerManager.hpp"
 #include "Misc/SolClock.hpp"
 #include "Misc/SolMorse.hpp"
-#include "Misc/StringUtil.hpp"
 #include "Models/Readable.hpp"
 #include "Storage/CrashReportWriter.hpp"
 #include "Storage/LocalStore.hpp"

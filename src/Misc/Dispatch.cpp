@@ -1,10 +1,11 @@
 #include "Dispatch.hpp"
 
+#include <StringUtil/StringUtil.hpp>
 #include <cassert>
 
 #include "Misc/Defer.hpp"
 #include "Misc/Platform.hpp"
-#include "Misc/StringUtil.hpp"
+#include "sindarin-debug.h"
 
 // Definitions for dispatch event flags
 #define DISPATCH_EXIT_EVT (0x2)

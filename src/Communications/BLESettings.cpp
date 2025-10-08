@@ -2,12 +2,12 @@
 
 #include "BLESettings.hpp"
 
+#include <StringUtil/StringUtil.hpp>
 #include <driver/gpio.h>
 #include <utility>
 
 #include "Misc/Dispatch.hpp"
 #include "Misc/Platform.hpp"
-#include "Misc/StringUtil.hpp"
 #include "Version.hpp"
 #include "WiFi.hpp"
 #include "sindarin-debug.h"

@@ -1,5 +1,6 @@
 #include "LocalStore.hpp"
 
+#include <StringUtil/StringUtil.hpp>
 #include <algorithm>
 #include <cmath>
 #include <esp_system.h>
@@ -15,6 +16,7 @@
 #if USE_BLE
 #include "Communications/BLEManager.hpp"
 #endif
+
 #include "Communications/HtmlCleaner.hpp"
 #include "Communications/WiFi.hpp"
 #include "Misc/Crypto.hpp"
@@ -23,7 +25,6 @@
 #include "Misc/Platform.hpp"
 #include "Misc/PowerManager.hpp"
 #include "Misc/SemVer.hpp"
-#include "Misc/StringUtil.hpp"
 #include "Models/BookQuestion.hpp"
 #include "Models/Json.hpp"
 #include "Models/Place.hpp"

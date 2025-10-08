@@ -2,6 +2,7 @@
 
 #include <Spiram/String.hpp>
 #include <Spiram/Vector.hpp>
+#include <StringUtil/StringUtil.hpp>
 #include <cstdint>
 #include <deque>
 #include <iomanip>
@@ -10,7 +11,6 @@
 #include <variant>
 #include <vector>
 
-#include "Misc/StringUtil.hpp"
 #include "Misc/TelemetryVariant.hpp"
 #include "Models/Author.hpp"
 #include "Models/Json.hpp"

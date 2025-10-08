@@ -1,5 +1,6 @@
 #include "SindarinAPI.hpp"
 
+#include <StringUtil/StringUtil.hpp>
 #include <utility>
 
 #if CONFIG_USE_BLE_SERVER_PROXY
@@ -8,13 +9,13 @@
 #include "Communications/BLEProxy.hpp"
 #include "Communications/BLESyncService.hpp"
 #endif
+
 #include "Communications/UrlEncode.hpp"
 #include "Communications/WiFiHttpClient.hpp"
 #include "FileDownload.hpp"
 #include "Misc/Battery.hpp"
 #include "Misc/Defer.hpp"
 #include "Misc/Platform.hpp"
-#include "Misc/StringUtil.hpp"
 #include "Models/Json.hpp"
 #include "Models/UserReadable.hpp"
 #include "Version.hpp"

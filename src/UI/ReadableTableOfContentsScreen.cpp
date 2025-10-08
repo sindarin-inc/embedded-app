@@ -1,6 +1,6 @@
 #include "ReadableTableOfContentsScreen.hpp"
 
-#include "Misc/StringUtil.hpp"
+#include <StringUtil/StringUtil.hpp>
 
 void ReadableTableOfContentsScreen::moveSelection(int delta) {
     auto newPage = menuView_.moveSelection(delta);

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Spiram/String.hpp>
+#include <StringUtil/StringUtil.hpp>
 #include <cinttypes>
 #include <cstddef>
 #include <cstdint>
@@ -11,7 +12,6 @@
 #include <string>
 #include <utility>
 
-#include "Misc/StringUtil.hpp"
 #include "Models/DocType.hpp"
 #include "sindarin-debug.h"
 

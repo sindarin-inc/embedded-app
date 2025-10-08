@@ -1,11 +1,11 @@
 #pragma once
 
+#include <StringUtil/StringUtil.hpp>
 #include <functional>
 #include <string>
 #include <utility>
 
 #include "MenuItem.hpp"
-#include "Misc/StringUtil.hpp"
 #include "Models/KindleBook.hpp"
 #include "Models/Readable.hpp"
 

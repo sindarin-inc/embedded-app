@@ -1,5 +1,6 @@
 #include "CrashReportUploader.hpp"
 
+#include <StringUtil/StringUtil.hpp>
 #include <cstdio>
 #include <esp_core_dump.h>
 #include <esp_flash.h>
@@ -10,7 +11,6 @@
 #include "Communications/SindarinAPI.hpp"
 #include "Communications/WiFi.hpp"
 #include "Misc/Platform.hpp"
-#include "Misc/StringUtil.hpp"
 #include "Version.hpp"
 #include "sindarin-debug.h"
 

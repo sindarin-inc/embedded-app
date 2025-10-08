@@ -1,8 +1,8 @@
+#include <StringUtil/StringUtil.hpp>
 #include <mbedtls/md.h>
 
 #include "Crypto.hpp"
 #include "Storage/FileSystem.hpp"
-#include "StringUtil.hpp"
 #include "sindarin-debug.h"
 
 auto CalculateFileHash(const FileSystem &fileSystem, const char *path) -> std::string {

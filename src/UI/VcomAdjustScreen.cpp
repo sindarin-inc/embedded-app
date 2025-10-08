@@ -1,8 +1,9 @@
 #if CONFIG_DISPLAY_EINKET013TT1
 #include "UI/VcomAdjustScreen.hpp"
 
+#include <StringUtil/StringUtil.hpp>
+
 #include "Displays/DisplayEinkET013TT1.hpp"
-#include "Misc/StringUtil.hpp"
 #include "UI/Fonts.hpp"
 #include "sindarin-debug.h"
 
