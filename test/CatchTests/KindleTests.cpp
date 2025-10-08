@@ -110,9 +110,13 @@ void setupContentRenderingCallback() {
 
     log_i("TEST: Setting up content rendering callback");
 
-    // Register a test-only callback to track when content is rendered
-    kindleScreen->pageFlipper_.setOnTestContentReady([](size_t ocrTextLength) {
+    // Wrap the existing onContentReady callback
+    auto originalCallback = kindleScreen->pageFlipper_.getOnContentReady();
+    kindleScreen->pageFlipper_.setOnContentReady([originalCallback](size_t ocrTextLength) {
         log_i("TEST: onContentReady called with ocrTextLength=%zu", ocrTextLength);
+        if (originalCallback) {
+            originalCallback(ocrTextLength);
+        }
         {
             std::lock_guard<std::mutex> lock(contentRenderMutex);
             contentRenderCount++;

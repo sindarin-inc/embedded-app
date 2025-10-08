@@ -242,18 +242,9 @@ public:
         onContentReady_ = std::move(onContentReady);
     }
 
-#ifdef TESTS
-    void setOnTestContentReady(std::function<void(size_t ocrTextLength)> onTestContentReady) {
-        onTestContentReady_ = std::move(onTestContentReady);
+    auto getOnContentReady() -> std::function<void(size_t ocrTextLength)> {
+        return onContentReady_;
     }
-
-    void notifyTestContentReady() {
-        if (onTestContentReady_) {
-            size_t ocrTextLength = pageStream_ ? pageStream_->getOcrTextLength() : 0;
-            onTestContentReady_(ocrTextLength);
-        }
-    }
-#endif
 
     void setOnErrorFunction(std::function<void(const std::string &errorMessage)> onErrorFunction) {
         onErrorFunction_ = std::move(onErrorFunction);
@@ -353,9 +344,6 @@ private:
     int lastNavigatedPage_ = -1;  // Track the last page we sent navigate_to for
     SpiramString bookSessionKey_; // Session key from server denoting navigation zero point
     std::function<void(size_t ocrTextLength)> onContentReady_;
-#ifdef TESTS
-    std::function<void(size_t ocrTextLength)> onTestContentReady_;
-#endif
     std::function<void(const std::string &errorMessage)> onErrorFunction_;
     std::function<void()> onConnectionErrorFunction_;
     std::function<void(const SpiramString &dialogText)> onLastReadDialogFunction_;

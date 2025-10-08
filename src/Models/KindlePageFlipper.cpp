@@ -577,9 +577,6 @@ void KindlePageFlipper::syncPagesWithServer(uint32_t currentOffset, bool navigat
         if (onContentReady_) {
             onContentReady_(response->ocrText.size());
         }
-#if TESTS
-        notifyTestContentReady();
-#endif
     }
 
     // Continue fetching additional pages while buffer is low
@@ -649,9 +646,6 @@ void KindlePageFlipper::syncPagesWithServer(uint32_t currentOffset, bool navigat
         if (onContentReady_) {
             onContentReady_(pageStream_->getOcrTextLength());
         }
-#if TESTS
-        notifyTestContentReady();
-#endif
     }
 
     if (additionalPagesFetched > 0) {
@@ -774,9 +768,6 @@ void KindlePageFlipper::loadInitialPage() {
         if (onContentReady_) {
             onContentReady_(ocrTextLength);
         }
-#if TESTS
-        notifyTestContentReady();
-#endif
 
         // Fetch additional pages in the background if needed
         if (!hasDialog && ocrTextLength > 0) {
@@ -849,7 +840,6 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place) {
                     size_t contentLength = pageStream_->getOcrTextLength();
                     onContentReady_(contentLength);
                 }
-                notifyTestContentReady();
 #endif
             }
             return;

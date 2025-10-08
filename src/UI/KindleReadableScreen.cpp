@@ -791,10 +791,6 @@ void KindleReadableScreen::navigateNext() {
         setNeedsLayout();
         setNeedsRerender();
 
-#ifdef TESTS
-        pageFlipper_.notifyTestContentReady();
-#endif
-
         return;
     }
 
@@ -1395,9 +1391,6 @@ void KindleReadableScreen::attemptReconnection() {
                     setNeedsLayout();
                     setNeedsRerender();
                     render(display_);
-#ifdef TESTS
-                    pageFlipper_.notifyTestContentReady();
-#endif
                 }
             });
         }
@@ -1484,9 +1477,6 @@ void KindleReadableScreen::updatePageFlipperCallbacks() {
                 setNeedsLayout();
                 setNeedsRerender();
                 render(display_);
-#ifdef TESTS
-                pageFlipper_.notifyTestContentReady();
-#endif
 
 #ifdef DEBUG_KINDLE_RECONNECTION
                 scheduleTestDisconnect();

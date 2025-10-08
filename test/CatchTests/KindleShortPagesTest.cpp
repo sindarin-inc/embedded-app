@@ -153,10 +153,18 @@ static auto setupShortPagesContentCallback() -> std::shared_ptr<KindleReadableSc
             if (kindleScreen) {
                 log_i("TEST: Installing short-pages content callback on screen %p",
                       static_cast<void *>(kindleScreen.get()));
-                kindleScreen->pageFlipper_.setOnTestContentReady([](size_t ocrTextLength) {
+
+                // Wrap the existing onContentReady callback
+                auto originalCallback = kindleScreen->pageFlipper_.getOnContentReady();
+                kindleScreen->pageFlipper_.setOnContentReady(
+                    [originalCallback](size_t ocrTextLength) {
                     log_i("TEST: short-pages content ready, length=%zu", ocrTextLength);
+                    if (originalCallback) {
+                        originalCallback(ocrTextLength);
+                    }
                     signalShortContentEvent();
                 });
+
                 kindleScreen->setOnTestLastReadDialogShown(
                     []() { log_i("TEST: last-read dialog shown callback"); });
                 kindleScreen->setOnTestLastReadDialogPostComplete([](bool success) {
@@ -574,13 +582,13 @@ TEST_CASE("Test Kindle multi-page fetching with short pages visual", "[.][kindle
         // Wait for the "Sync to last read page" message
         WAIT_FOR_DRAW(display);
         WAIT_FOR_DRAW(display);
-        ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest13-SyncingToPage20");
-
         // Wait for content to render - this will be Page 20
         REQUIRE(secondDialogChoiceEvent.waitFor(std::chrono::seconds(1)));
         CHECK(secondDialogChoiceValue);
+        ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest13-SyncingToPage20");
 
         waitForShortContentRender();
+        WAIT_FOR_DRAW(display);
         WAIT_FOR_DRAW(display);
         ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest14-Page20Initial");
 
@@ -617,7 +625,8 @@ TEST_CASE("Test Kindle multi-page fetching with short pages visual", "[.][kindle
         for (int i = 0; i < 2; i++) {
             SendRemoteCommand(LEFT);
             WAIT_FOR_DRAW(display);
-            ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest19-Backward" + std::to_string(i + 1));
+            ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest" + std::to_string(i + 19) + "-Backward" +
+                                               std::to_string(i + 1));
         }
 
         log_i("TEST: Final screenshot after backward navigation");
@@ -628,7 +637,6 @@ TEST_CASE("Test Kindle multi-page fetching with short pages visual", "[.][kindle
             kindleScreen->setOnTestLastReadDialogShown(nullptr);
             kindleScreen->setOnTestLastReadDialogChoice(nullptr);
             kindleScreen->setOnTestLastReadDialogPostComplete(nullptr);
-            kindleScreen->pageFlipper_.setOnTestContentReady(nullptr);
             kindleScreen->setOnTestStateChanged(nullptr);
         }
 
