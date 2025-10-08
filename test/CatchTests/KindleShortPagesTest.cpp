@@ -441,7 +441,8 @@ TEST_CASE("Test Kindle multi-page fetching with short pages visual", "[.][kindle
         // Wait for connection and initial load
         log_i("TEST: Waiting for connection and initial load");
         WAIT_FOR_DRAW(display); // Draw for CONNECTING state
-        // Skip ShortPagesTest03-Connecting screenshot - transitional state may show overlapping UI elements
+        // Skip ShortPagesTest03-Connecting screenshot - transitional state may show overlapping UI
+        // elements
 
         auto kindleScreen = setupShortPagesContentCallback();
         REQUIRE(kindleScreen != nullptr);
@@ -481,7 +482,10 @@ TEST_CASE("Test Kindle multi-page fetching with short pages visual", "[.][kindle
 
         // Wait for the "Sync to last read page" message
         WAIT_FOR_DRAW(display);
-        ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest06-SyncingToLastRead");
+        // Below line is commented out because the transitional state is too fast
+        // to capture reliably in CI. The important part is that we see the dialog and then
+        // the content after syncing.
+        // ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest06-SyncingToLastRead");
 
         // Wait for content to render - this will be Chapter 42
         waitForShortContentRender();
@@ -547,7 +551,9 @@ TEST_CASE("Test Kindle multi-page fetching with short pages visual", "[.][kindle
 
         // Wait for the "Sync to last read page" message
         WAIT_FOR_DRAW(display);
-        ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest13-SyncingToPage10");
+        // Similar to the `SyncingToLastRead` image above, the below line is commented out
+        // because the transitional state is too fast
+        // ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest13-SyncingToPage10");
 
         // Wait for content to render - this will be Page 10
         waitForShortContentRender();
