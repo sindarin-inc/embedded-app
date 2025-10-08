@@ -90,7 +90,7 @@ static void waitForShortContentRender() {
     }
 
     std::unique_lock<std::mutex> lock(shortContentMutex);
-    bool success = shortContentCv.wait_for(lock, std::chrono::seconds(10),
+    bool success = shortContentCv.wait_for(lock, std::chrono::seconds(1),
                                            [&]() { return shortContentEventCount >= target; });
 
     if (!success) {
@@ -157,10 +157,8 @@ static auto setupShortPagesContentCallback() -> std::shared_ptr<KindleReadableSc
                     log_i("TEST: short-pages content ready, length=%zu", ocrTextLength);
                     signalShortContentEvent();
                 });
-                kindleScreen->setOnTestLastReadDialogShown([]() {
-                    log_i("TEST: last-read dialog shown callback");
-                    shortContentRendered = true;
-                });
+                kindleScreen->setOnTestLastReadDialogShown(
+                    []() { log_i("TEST: last-read dialog shown callback"); });
                 kindleScreen->setOnTestLastReadDialogPostComplete([](bool success) {
                     log_i("TEST: last-read dialog POST complete callback, success=%d", success);
                 });
@@ -168,7 +166,7 @@ static auto setupShortPagesContentCallback() -> std::shared_ptr<KindleReadableSc
             }
         }
 
-        if (std::chrono::steady_clock::now() - start > std::chrono::seconds(10)) {
+        if (std::chrono::steady_clock::now() - start > std::chrono::seconds(1)) {
             FAIL("Timed out waiting for KindleReadableScreen to install callback");
         }
 
@@ -518,7 +516,7 @@ TEST_CASE("Test Kindle multi-page fetching with short pages visual", "[.][kindle
 
         // Wait for the first last-read dialog from /open-book
         log_i("Waiting for first last-read dialog state transition");
-        REQUIRE(firstDialogStateEvent.waitFor(std::chrono::seconds(5)));
+        REQUIRE(firstDialogStateEvent.waitFor(std::chrono::seconds(1)));
         WAIT_FOR_DRAW(display);
         WAIT_FOR_DRAW(display);
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -534,7 +532,7 @@ TEST_CASE("Test Kindle multi-page fetching with short pages visual", "[.][kindle
         WAIT_FOR_DRAW(display);
 
         // Wait for content to render - this will be Chapter 42
-        REQUIRE(firstDialogChoiceEvent.waitFor(std::chrono::seconds(5)));
+        REQUIRE(firstDialogChoiceEvent.waitFor(std::chrono::seconds(1)));
         CHECK(firstDialogChoiceValue);
         ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest06-SyncingToLastRead");
 
@@ -564,7 +562,8 @@ TEST_CASE("Test Kindle multi-page fetching with short pages visual", "[.][kindle
         // Wait for second dialog
         log_i("Waiting for second last-read dialog state transition");
 
-        REQUIRE(secondDialogStateEvent.waitFor(std::chrono::seconds(5)));
+        REQUIRE(secondDialogStateEvent.waitFor(std::chrono::seconds(1)));
+        WAIT_FOR_DRAW(display);
         ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest12-SecondLastReadDialog");
 
         // Accept the second dialog - should go to page 20
@@ -578,8 +577,9 @@ TEST_CASE("Test Kindle multi-page fetching with short pages visual", "[.][kindle
         ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest13-SyncingToPage20");
 
         // Wait for content to render - this will be Page 20
-        REQUIRE(secondDialogChoiceEvent.waitFor(std::chrono::seconds(5)));
+        REQUIRE(secondDialogChoiceEvent.waitFor(std::chrono::seconds(1)));
         CHECK(secondDialogChoiceValue);
+
         waitForShortContentRender();
         WAIT_FOR_DRAW(display);
         ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest14-Page20Initial");
