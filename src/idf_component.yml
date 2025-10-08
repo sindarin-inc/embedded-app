@@ -19,5 +19,9 @@ dependencies:
     version: "*"
     rules:
       - if: target == esp32p4
+  defer:
+    path: ../components/cpp-misc/defer
   spiram-cpp:
-    git: https://github.com/sindarin-inc/spiram-cpp.git
+    path: ../components/cpp-misc/spiram-cpp
+  stringutil:
+    path: ../components/cpp-misc/stringutil

@@ -22,3 +22,6 @@
 [submodule "components/tiny-font"]
 	path = components/tiny-font
 	url = git@github.com:sindarin-inc/tiny-font.git
+[submodule "components/cpp-misc"]
+	path = components/cpp-misc
+	url = git@github.com:sindarin-inc/cpp-misc.git
