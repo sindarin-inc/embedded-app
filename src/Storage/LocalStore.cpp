@@ -1,5 +1,6 @@
 #include "LocalStore.hpp"
 
+#include <Defer/Defer.hpp>
 #include <StringUtil/StringUtil.hpp>
 #include <algorithm>
 #include <cmath>
@@ -20,7 +21,6 @@
 #include "Communications/HtmlCleaner.hpp"
 #include "Communications/WiFi.hpp"
 #include "Misc/Crypto.hpp"
-#include "Misc/Defer.hpp"
 #include "Misc/GUnzipStream.hpp"
 #include "Misc/Platform.hpp"
 #include "Misc/PowerManager.hpp"

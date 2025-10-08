@@ -1,10 +1,10 @@
 #include "Communications/WiFi.hpp"
 
+#include <Defer/Defer.hpp>
 #include <Spiram/Memory.hpp>
 #include <cstring>
 #include <string>
 
-#include "Misc/Defer.hpp"
 #include "config.h"
 #include "sindarin-debug.h"
 

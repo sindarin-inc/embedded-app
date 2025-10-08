@@ -1,11 +1,12 @@
+#include <Defer/Defer.hpp>
 #include <catch_amalgamated.hpp>
 
 // Allow access to protected methods from tests
 #define protected public
 #define private public
+
 #include "Communications/USBSerial.hpp"
 #include "Misc/BMPImage.hpp"
-#include "Misc/Defer.hpp"
 #include "Misc/Telemetry.hpp"
 #include "Renderers/RendererStream.hpp"
 #include "Storage/PosixFileSystem.hpp"

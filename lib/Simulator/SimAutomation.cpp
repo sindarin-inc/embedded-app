@@ -7,10 +7,10 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 #pragma clang diagnostic pop
+#include <Defer/Defer.hpp>
 #include <unistd.h>
 
 #include "Inputs/RemoteInput.hpp"
-#include "Misc/Defer.hpp"
 #include "Misc/Dispatch.hpp"
 #include "UI/ReadableScreen.hpp"
 #include "UI/Screen.hpp"

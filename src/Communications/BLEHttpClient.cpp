@@ -2,6 +2,7 @@
 
 #include "Communications/BLEHttpClient.hpp"
 
+#include <Defer/Defer.hpp>
 #include <cstddef>
 #include <cstdlib>
 #include <esp_debug_helpers.h>
@@ -9,7 +10,6 @@
 #include <utility>
 
 #include "Communications/SindarinAPI.hpp"
-#include "Misc/Defer.hpp"
 #include "Misc/RateLimiter.hpp"
 
 BLEHttpClient::BLEHttpClient(const char *url, std::shared_ptr<CancelFlag> cancelFlag,

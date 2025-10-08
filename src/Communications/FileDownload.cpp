@@ -1,5 +1,6 @@
 #include "FileDownload.hpp"
 
+#include <Defer/Defer.hpp>
 #include <Spiram/Memory.hpp>
 #include <esp_heap_caps.h>
 #include <esp_timer.h>
@@ -7,7 +8,6 @@
 #include <utility>
 
 #include "Communications/SindarinAPI.hpp"
-#include "Misc/Defer.hpp"
 #include "Misc/GUnzipStream.hpp"
 #include "Misc/RateLimiter.hpp"
 #include "sindarin-debug.h"

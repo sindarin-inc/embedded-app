@@ -1,3 +1,4 @@
+#include <Defer/Defer.hpp>
 #include <catch_amalgamated.hpp>
 #include <chrono>
 #include <filesystem>
@@ -8,7 +9,6 @@
 
 #include "Communications/WiFi.hpp"
 #include "Misc/Battery.hpp"
-#include "Misc/Defer.hpp"
 #include "Storage/LocalStore.hpp"
 #include "Storage/PosixFileSystem.hpp"
 #include "Storage/SolDrm.hpp"

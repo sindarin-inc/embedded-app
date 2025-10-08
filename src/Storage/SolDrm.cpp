@@ -1,5 +1,6 @@
 #include "SolDrm.hpp"
 
+#include <Defer/Defer.hpp>
 #include <Spiram/Memory.hpp>
 #include <cstdio>
 #include <mbedtls/error.h>
@@ -7,7 +8,6 @@
 #include <mbedtls/rsa.h>
 #include <miniz/miniz.h>
 
-#include "Misc/Defer.hpp"
 #include "sindarin-debug.h"
 
 SolDrm::~SolDrm() {

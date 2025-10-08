@@ -1,5 +1,6 @@
 #include "ViewTestCommon.hpp"
 
+#include <Defer/Defer.hpp>
 #include <catch_amalgamated.hpp>
 #include <cctype>
 #include <cstdlib>
@@ -22,7 +23,6 @@
 #pragma clang diagnostic pop
 
 #include "Displays/FakeEinkET013TT1.hpp"
-#include "Misc/Defer.hpp"
 #include "Misc/Dispatch.hpp"
 #include "Storage/PosixFileSystem.hpp"
 #include "sindarin-debug.h"

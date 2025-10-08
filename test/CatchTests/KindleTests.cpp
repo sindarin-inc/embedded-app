@@ -1,3 +1,4 @@
+#include <Defer/Defer.hpp>
 #include <atomic>
 #include <catch_amalgamated.hpp>
 #include <chrono>
@@ -16,7 +17,6 @@
 #include "DisplayUtil.hpp"
 #include "Displays/DisplayEinkET013TT1.hpp"
 #include "Misc/Battery.hpp"
-#include "Misc/Defer.hpp"
 #include "Misc/Dispatch.hpp"
 #include "Misc/Platform.hpp"
 #include "Misc/Telemetry.hpp"

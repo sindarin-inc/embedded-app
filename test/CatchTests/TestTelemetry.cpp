@@ -1,9 +1,9 @@
+#include <Defer/Defer.hpp>
 #include <catch_amalgamated.hpp>
 
 // Allow access to protected methods from tests
 #define protected public
 #define private public
-#include "Misc/Defer.hpp"
 #include "Misc/Telemetry.hpp"
 #include "Storage/PosixFileSystem.hpp"
 #include "Storage/PreferencesStore.hpp"

@@ -1,3 +1,4 @@
+#include <Defer/Defer.hpp>
 #include <atomic>
 #include <catch_amalgamated.hpp>
 #include <chrono>
@@ -15,7 +16,6 @@
 #include "Communications/SindarinAPI.hpp"
 #include "DisplayUtil.hpp"
 #include "Displays/DisplayEinkET013TT1.hpp"
-#include "Misc/Defer.hpp"
 #include "Misc/Dispatch.hpp"
 #include "Models/KindleBook.hpp"
 #include "Models/KindlePageFlipper.hpp"

@@ -1,10 +1,9 @@
 #include "PreferencesStore.hpp"
 
+#include <Defer/Defer.hpp>
 #include <esp_attr.h>
 #include <memory>
 #include <unordered_map>
-
-#include "Misc/Defer.hpp"
 
 #if PROFILE_NVS_WRITES
 RTC_SLOW_ATTR uint32_t nvsBlocksWritten;

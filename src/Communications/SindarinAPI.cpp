@@ -1,5 +1,6 @@
 #include "SindarinAPI.hpp"
 
+#include <Defer/Defer.hpp>
 #include <StringUtil/StringUtil.hpp>
 #include <utility>
 
@@ -14,7 +15,6 @@
 #include "Communications/WiFiHttpClient.hpp"
 #include "FileDownload.hpp"
 #include "Misc/Battery.hpp"
-#include "Misc/Defer.hpp"
 #include "Misc/Platform.hpp"
 #include "Models/Json.hpp"
 #include "Models/UserReadable.hpp"
