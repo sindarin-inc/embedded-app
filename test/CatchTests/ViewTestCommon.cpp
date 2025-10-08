@@ -11,6 +11,7 @@
 #include <signal.h>
 #include <thread>
 #include <unistd.h>
+#include <vector>
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #define STB_IMAGE_WRITE_IMPLEMENTATION
@@ -202,8 +203,12 @@ auto CheckViewUnchanged(DisplayEinkET013TT1 &display, std::string key) -> ViewTe
     log_i("Saving image to %s (width=%d, height=%d)", result.renderedImagePath.c_str(),
           CONFIG_DISPLAY_WIDTH, CONFIG_DISPLAY_HEIGHT);
 
+    const size_t bufferSize = CONFIG_DISPLAY_WIDTH * CONFIG_DISPLAY_HEIGHT;
+    std::vector<uint8_t> bufferSnapshot(bufferSize);
+    std::memcpy(bufferSnapshot.data(), display.buffer().get(), bufferSize);
+
     if (!stbi_write_png(result.renderedImagePath.c_str(), CONFIG_DISPLAY_WIDTH,
-                        CONFIG_DISPLAY_HEIGHT, 1, display.buffer().get(), 0)) {
+                        CONFIG_DISPLAY_HEIGHT, 1, bufferSnapshot.data(), 0)) {
         log_e("Unable to save rendered image to %s", result.renderedImagePath.c_str());
     }
 
@@ -241,8 +246,8 @@ auto CheckViewUnchanged(DisplayEinkET013TT1 &display, std::string key) -> ViewTe
     for (int x = 0; x < width; x++) {
         for (int y = 0; y < height; y++) {
             int index = (y * width) + x;
-            diffData[index] = abs(data[index] - display.buffer()[index]);
-            if (data[index] != display.buffer()[index]) {
+            diffData[index] = abs(data[index] - bufferSnapshot[index]);
+            if (data[index] != bufferSnapshot[index]) {
                 result.passed = false;
             }
         }

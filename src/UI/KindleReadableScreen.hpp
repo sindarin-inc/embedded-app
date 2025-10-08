@@ -175,9 +175,14 @@ public:
         onTestLastReadDialogPostComplete_ = std::move(callback);
     }
 
+    void setOnTestStateChanged(std::function<void(State)> callback) {
+        onTestStateChanged_ = std::move(callback);
+    }
+
 private:
     std::function<void()> onTestLastReadDialogShown_;
     std::function<void(bool)> onTestLastReadDialogChoice_;
     std::function<void(bool)> onTestLastReadDialogPostComplete_;
+    std::function<void(State)> onTestStateChanged_;
 #endif
 };

@@ -493,6 +493,11 @@ void KindleReadableScreen::setState(State newState) {
           stateToString(newState));
     state_ = newState;
     firstLoad_ = true;
+#ifdef TESTS
+    if (onTestStateChanged_) {
+        onTestStateChanged_(state_);
+    }
+#endif
 }
 
 void KindleReadableScreen::setErrorMessage(const std::string &message) {
