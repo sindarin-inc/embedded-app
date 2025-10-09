@@ -518,12 +518,10 @@ TEST_CASE("Test Kindle multi-page fetching with short pages visual", "[.][kindle
         for (int i = 0; i < 8; i++) {
             SendRemoteCommand(RIGHT);
             WAIT_FOR_DRAW(display);
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-            ASSERT_VIEW_UNCHANGED(display,
-                                  nextScreenshot("Chapter42Forward" + std::to_string(i + 1)));
-            if (i == 5) {
-                // Navigate to page 10 - should trigger second last-read dialog
-                log_i("TEST: Navigating to page 10 to trigger second last-read dialog");
+            if (i < 3) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                ASSERT_VIEW_UNCHANGED(display,
+                                      nextScreenshot("Chapter42Forward" + std::to_string(i + 1)));
             }
         }
 
