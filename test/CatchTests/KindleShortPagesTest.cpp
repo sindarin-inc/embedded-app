@@ -336,23 +336,16 @@ TEST_CASE("Test Kindle multi-page fetching with short pages visual", "[.][kindle
     auto api = SindarinAPI::getInstance();
     api->overrideBaseUrl("http://127.0.0.1:18982"); // Match the port we're using
     api->setAccessToken("test-token");
-    log_i("TEST: SindarinAPI URL overridden to mock server");
 
-    log_i("TEST: Starting FreeRTOS for short pages test");
     StartAppMain(FONT_CHOICES::PREFS_SOL_SMALL, 10, 10, -2, "KindleTestData");
-    log_i("TEST: FreeRTOS started successfully");
 
     // Set cloud token and disable BLE after preferences are initialized
     prefs.cloudToken.set("test-token");
     prefs.bleDisabled.set(true);
-    log_i("TEST: Set cloud token and disabled BLE");
 
     auto &display = GetRootDisplay();
-    log_i("TEST: Display created");
 
     SECTION("Visual test of multi-page fetching with short pages and last-read dialogs") {
-        log_i("TEST: Inside SECTION");
-
         // Take initial screenshot of main menu
         // First screen renders twice
         WAIT_FOR_DRAW(display);
@@ -405,13 +398,6 @@ TEST_CASE("Test Kindle multi-page fetching with short pages visual", "[.][kindle
         }
 
         // Navigate to page 4 - should trigger second last-read dialog
-        log_i("TEST: Navigating to page 4 to trigger second last-read dialog");
-        std::atomic<bool> secondDialogShown{false};
-        kindleScreen->setOnTestLastReadDialogShown([&secondDialogShown]() {
-            log_i("TEST: Second last-read dialog shown");
-            secondDialogShown = true;
-        });
-
         SendRemoteCommand(RIGHT);
 
         // Three: one to render the page, then two to render the menu
@@ -457,22 +443,9 @@ TEST_CASE("Test Kindle multi-page fetching with short pages visual", "[.][kindle
             ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest19-Backward" + std::to_string(i + 1),
                                   true);
         }
-
-        // Clear any test callbacks to avoid dangling references
-        if (kindleScreen) {
-            kindleScreen->setOnTestLastReadDialogShown(nullptr);
-            kindleScreen->setOnTestLastReadDialogChoice(nullptr);
-            kindleScreen->pageFlipper_.setOnTestContentReady(nullptr);
-        }
-
-        log_i("TEST: Kindle short pages test with last-read dialogs complete");
     }
 
-    log_i("TEST: Exiting short pages visual test");
     api->overrideBaseUrl("");
 
-    // Properly stop FreeRTOS to avoid thread cleanup issues in CI
     StopFreeRtos();
-
-    // HTTP server will be cleaned up by defer
 }

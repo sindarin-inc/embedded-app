@@ -63,11 +63,6 @@ static const int LINES_PER_PAGE = 12;       // Each "page" contains 12 lines (~1
 static std::atomic<int>
     mockBookOpenPosition(0); // Track the position when book was opened (always 0)
 
-// Synchronization for content rendering
-static std::mutex contentRenderMutex;
-static std::condition_variable contentRenderCv;
-static int contentRenderCount = 0;
-
 // Function to reset all mock state
 void resetMockState() {
     mockShouldTimeout = false;
@@ -79,10 +74,6 @@ void resetMockState() {
     mockErrorCode = 500;
     mockCurrentLine = 1;
     mockBookOpenPosition = 0;
-    {
-        std::lock_guard<std::mutex> lock(contentRenderMutex);
-        contentRenderCount = 0;
-    }
 }
 
 // Helper function to generate sequential content
@@ -95,107 +86,6 @@ std::string generateSequentialContent(int startLine, int numLines) {
     }
     return content;
 }
-
-// Helper function to setup content rendering callback for testing
-void setupContentRenderingCallback() {
-    auto screen = UIGetCurrentScreen();
-    if (!screen) {
-        log_e("TEST: No current screen found");
-        return;
-    }
-
-    auto kindleScreen = std::dynamic_pointer_cast<KindleReadableScreen>(screen);
-    if (!kindleScreen) {
-        log_e("TEST: Current screen is not a KindleReadableScreen");
-        return;
-    }
-
-    log_i("TEST: Setting up content rendering callback");
-
-    // Register a test-only callback to track when content is rendered
-    kindleScreen->pageFlipper_.setOnTestContentReady([](size_t ocrTextLength) {
-        log_i("TEST: onContentReady called with ocrTextLength=%zu", ocrTextLength);
-        {
-            std::lock_guard<std::mutex> lock(contentRenderMutex);
-            contentRenderCount++;
-        }
-        contentRenderCv.notify_all();
-    });
-
-    kindleScreen->setOnTestLastReadDialogShown([]() {
-        log_i("TEST: last-read dialog shown; notifying content render waiter");
-        {
-            std::lock_guard<std::mutex> lock(contentRenderMutex);
-            contentRenderCount++;
-        }
-        contentRenderCv.notify_all();
-    });
-}
-
-class ContentRenderWaiter {
-public:
-    explicit ContentRenderWaiter(int expectedIncrements = 1) {
-        std::lock_guard<std::mutex> lock(contentRenderMutex);
-        targetCount_ = contentRenderCount + expectedIncrements;
-    }
-
-    auto wait(std::chrono::milliseconds timeout = std::chrono::seconds(5)) const -> bool {
-        auto deadline = std::chrono::steady_clock::now() + timeout;
-        std::unique_lock<std::mutex> lock(contentRenderMutex);
-
-        while (contentRenderCount < targetCount_) {
-            auto remaining = deadline - std::chrono::steady_clock::now();
-            if (remaining <= std::chrono::milliseconds::zero()) {
-                break;
-            }
-
-            if (contentRenderCv.wait_for(lock, remaining, [&]() {
-                    return contentRenderCount >= targetCount_;
-                })) {
-                return true;
-            }
-
-            // Fallback: if the Kindle screen is already showing content/dialog or we left it,
-            // treat this as success so tests don't hang on cached navigation.
-            lock.unlock();
-            auto screen = UIGetCurrentScreen();
-            auto kindleScreen = std::dynamic_pointer_cast<KindleReadableScreen>(screen);
-            if (!kindleScreen) {
-                log_w("TEST: Content waiter fallback success - Kindle screen no longer active");
-                return true;
-            }
-
-            auto state = kindleScreen->state_;
-            if (state == KindleReadableScreen::State::DISPLAY_CONTENT ||
-                state == KindleReadableScreen::State::DISPLAY_PARTIAL_CONTENT ||
-                state == KindleReadableScreen::State::SHOWING_DIALOG) {
-                log_w("TEST: Content waiter fallback success - state=%d", static_cast<int>(state));
-                return true;
-            }
-            lock.lock();
-        }
-
-        if (contentRenderCount < targetCount_) {
-            log_e("Timeout waiting for content render (target=%d, actual=%d)", targetCount_,
-                  contentRenderCount);
-            return false;
-        }
-
-        return true;
-    }
-
-private:
-    int targetCount_;
-};
-
-auto sendRemoteCommandAndWaitForContent(RemoteCommand command,
-                                        std::chrono::milliseconds timeout =
-                                            std::chrono::seconds(5)) -> bool {
-    ContentRenderWaiter waiter;
-    SendRemoteCommand(command);
-    return waiter.wait(timeout);
-}
-
 
 namespace {
 constexpr const char *MOCK_BOOK_SESSION_KEY = "test_session_123";
@@ -401,8 +291,7 @@ void setupHttpServer(std::unique_ptr<httplib::Server> &httpServer,
         response << "\"success\": true,";
         response << "\"ocr_text\": \"" << escapedContent << "\",";
         response << "\"progress\": {\"percentage\": " << percentage
-                 << ",\"current_page\": " << currentPageNumber
-                 << ",\"total_pages\": 100},";
+                 << ",\"current_page\": " << currentPageNumber << ",\"total_pages\": 100},";
         response << "\"book_session_key\": \"" << MOCK_BOOK_SESSION_KEY << "\"";
         response << "}";
         std::string jsonResponse = response.str();
@@ -813,7 +702,7 @@ TEST_CASE("Kindle table of contents highlights current chapter", "[.][no-kindle]
     KindlePageFlipper pageFlipper(book, cancelFlag, telemetry);
 
     KindleTableOfContentsScreen tocScreen(*display, book, prefs, telemetry, pageFlipper, 0,
-                                         cancelFlag);
+                                          cancelFlag);
 
     const std::string midChapter =
         R"({"success":true,"progress":{"current_page":35,"total_pages":1000},"chapters":[{"title":"Intro","uuid":"c1","page":1},{"title":"Middle","uuid":"c2","page":20},{"title":"Later","uuid":"c3","page":40}]})";
@@ -861,37 +750,37 @@ TEST_CASE("Kindle progress updates derive percentages", "[.][no-kindle]") {
     KindlePageFlipper flipper(book, cancelFlag, telemetry);
 
     KindlePageProgress progress;
-    progress.currentPage = 350;  // Human-readable page 350
+    progress.currentPage = 350; // Human-readable page 350
     progress.totalPages = 1000;
     progress.hasCurrentPage = true;
     progress.hasTotalPages = true;
 
     flipper.applyProgressUpdate(progress);
 
-    REQUIRE(book->progressPercent == 35);  // 350/1000 = 35%
+    REQUIRE(book->progressPercent == 35); // 350/1000 = 35%
     REQUIRE(std::string(book->progress.c_str()) == "35%");
     REQUIRE(book->progressCurrentPage == 350);
     REQUIRE(book->progressTotalPages == 1000);
 
     KindlePageProgress lastPage;
-    lastPage.currentPage = 1000;  // Human-readable page 1000 (last page)
+    lastPage.currentPage = 1000; // Human-readable page 1000 (last page)
     lastPage.totalPages = 1000;
     lastPage.hasCurrentPage = true;
     lastPage.hasTotalPages = true;
 
     flipper.applyProgressUpdate(lastPage);
-    REQUIRE(book->progressPercent == 100);  // 1000/1000 = 100%
+    REQUIRE(book->progressPercent == 100); // 1000/1000 = 100%
     REQUIRE(std::string(book->progress.c_str()) == "100%");
 
     // Test that percentage is calculated from page numbers
     KindlePageProgress pageUpdate;
-    pageUpdate.currentPage = 12;  // Human-readable page 12
+    pageUpdate.currentPage = 12; // Human-readable page 12
     pageUpdate.totalPages = 100;
     pageUpdate.hasCurrentPage = true;
     pageUpdate.hasTotalPages = true;
 
     flipper.applyProgressUpdate(pageUpdate);
-    REQUIRE(book->progressPercent == 12);  // 12/100 = 12%
+    REQUIRE(book->progressPercent == 12); // 12/100 = 12%
     REQUIRE(std::string(book->progress.c_str()) == "12%");
 }
 
@@ -981,31 +870,24 @@ TEST_CASE("Test Kindle navigation visual traversal", "[.][kindle]") {
     auto api = SindarinAPI::getInstance();
     api->overrideBaseUrl("http://127.0.0.1:8080");
     api->setAccessToken("test-token");
-    log_i("TEST: SindarinAPI URL overridden to mock server");
 
-    log_i("TEST: Starting FreeRTOS");
     StartAppMain(FONT_CHOICES::PREFS_SOL_SMALL, 10, 10, -2, "KindleTestData");
 
     // Set cloud token and disable BLE after preferences are initialized
     prefs.cloudToken.set("test-token");
     prefs.bleDisabled.set(true);
-    log_i("TEST: Set cloud token and disabled BLE");
-
-    log_i("TEST: FreeRTOS started");
 
     auto &display = GetRootDisplay();
-    log_i("TEST: Display created");
-
-    // First screen renders twice once with a full refresh and once with a AU4
-    WAIT_FOR_DRAW(display);
-    WAIT_FOR_DRAW(display);
 
     SECTION("Visual test of forward-backward-forward navigation") {
+        // First screen renders twice once with a full refresh and once with a AU4
+        WAIT_FOR_DRAW(display);
+        WAIT_FOR_DRAW(display);
+
         // 0. Open Kindle book
         SendRemoteCommand(RIGHT);
         WAIT_FOR_DRAW(display);
-        WAIT_FOR_DRAW(display);
-        ASSERT_VIEW_UNCHANGED(display, "KindleNavTest00-BookMenu");
+        ASSERT_VIEW_UNCHANGED(display, "KindleNavTest00-BookMenu", true);
 
         SendRemoteCommand(ENTER);
 
@@ -1013,95 +895,73 @@ TEST_CASE("Test Kindle navigation visual traversal", "[.][kindle]") {
         WAIT_FOR_DRAW(display);
         WAIT_FOR_DRAW(display);
 
-        // Setup content rendering callback after the Kindle screen is created
-        setupContentRenderingCallback();
+        auto screen = UIGetCurrentScreen();
+        auto kindleScreen = std::dynamic_pointer_cast<KindleReadableScreen>(screen);
+        REQUIRE(kindleScreen != nullptr);
 
         // Capture the initial page 0 (Lines 1-20)
         // Note: Initial content is already rendered before we can set up the callback,
         // so we just wait for the draw
-        WAIT_FOR_DRAW(display);
-        ASSERT_VIEW_UNCHANGED(display, "KindleNavTest01-InitialPage0");
+        ASSERT_VIEW_UNCHANGED(display, "KindleNavTest01-InitialPage0", true);
 
         // 1. Navigate forward through 6 pages to pages 1-6 (clears buffer)
-        log_i("TEST: Starting forward navigation through 6 pages");
-        sendRemoteCommandAndWaitForContent(ENTER);
-        WAIT_FOR_DRAW(display);
-        ASSERT_VIEW_UNCHANGED(display, "KindleNavTest02-ForwardToPage1");
+        SendRemoteCommand(ENTER);
+        ASSERT_VIEW_UNCHANGED(display, "KindleNavTest02-ForwardToPage1", true);
 
-        sendRemoteCommandAndWaitForContent(ENTER);
-        WAIT_FOR_DRAW(display);
-        ASSERT_VIEW_UNCHANGED(display, "KindleNavTest03-ForwardToPage2");
+        SendRemoteCommand(ENTER);
+        ASSERT_VIEW_UNCHANGED(display, "KindleNavTest03-ForwardToPage2", true);
 
-        sendRemoteCommandAndWaitForContent(ENTER);
-        WAIT_FOR_DRAW(display);
-        ASSERT_VIEW_UNCHANGED(display, "KindleNavTest04-ForwardToPage3");
+        SendRemoteCommand(ENTER);
+        ASSERT_VIEW_UNCHANGED(display, "KindleNavTest04-ForwardToPage3", true);
 
-        sendRemoteCommandAndWaitForContent(ENTER);
-        WAIT_FOR_DRAW(display);
-        ASSERT_VIEW_UNCHANGED(display, "KindleNavTest05-ForwardToPage4");
+        SendRemoteCommand(ENTER);
+        ASSERT_VIEW_UNCHANGED(display, "KindleNavTest05-ForwardToPage4", true);
 
-        sendRemoteCommandAndWaitForContent(ENTER);
-        WAIT_FOR_DRAW(display);
-        ASSERT_VIEW_UNCHANGED(display, "KindleNavTest06-ForwardToPage5");
+        SendRemoteCommand(ENTER);
+        ASSERT_VIEW_UNCHANGED(display, "KindleNavTest06-ForwardToPage5", true);
 
-        sendRemoteCommandAndWaitForContent(ENTER);
-        WAIT_FOR_DRAW(display);
-        ASSERT_VIEW_UNCHANGED(display, "KindleNavTest07-ForwardToPage6");
+        SendRemoteCommand(ENTER);
+        ASSERT_VIEW_UNCHANGED(display, "KindleNavTest07-ForwardToPage6", true);
 
         // 2. Navigate backward through 6 pages
         // We're now on page 6, navigate back to page 0
-        log_i("TEST: Starting backward navigation from page 6 to page 0");
-
         // Navigate back 6 pages: 6 -> 5 -> 4 -> 3 -> 2 -> 1 -> 0
-        sendRemoteCommandAndWaitForContent(LEFT);
-        WAIT_FOR_DRAW(display);
-        ASSERT_VIEW_UNCHANGED(display, "KindleNavTest08-BackToPage5");
+        SendRemoteCommand(LEFT);
+        ASSERT_VIEW_UNCHANGED(display, "KindleNavTest08-BackToPage5", true);
 
-        sendRemoteCommandAndWaitForContent(LEFT);
-        WAIT_FOR_DRAW(display);
-        ASSERT_VIEW_UNCHANGED(display, "KindleNavTest09-BackToPage4");
+        SendRemoteCommand(LEFT);
+        ASSERT_VIEW_UNCHANGED(display, "KindleNavTest09-BackToPage4", true);
 
-        sendRemoteCommandAndWaitForContent(LEFT);
-        WAIT_FOR_DRAW(display);
-        ASSERT_VIEW_UNCHANGED(display, "KindleNavTest10-BackToPage3");
+        SendRemoteCommand(LEFT);
+        ASSERT_VIEW_UNCHANGED(display, "KindleNavTest10-BackToPage3", true);
 
-        sendRemoteCommandAndWaitForContent(LEFT);
-        WAIT_FOR_DRAW(display);
-        ASSERT_VIEW_UNCHANGED(display, "KindleNavTest11-BackToPage2");
+        SendRemoteCommand(LEFT);
+        ASSERT_VIEW_UNCHANGED(display, "KindleNavTest11-BackToPage2", true);
 
-        sendRemoteCommandAndWaitForContent(LEFT);
-        WAIT_FOR_DRAW(display);
-        ASSERT_VIEW_UNCHANGED(display, "KindleNavTest12-BackToPage1");
+        SendRemoteCommand(LEFT);
+        ASSERT_VIEW_UNCHANGED(display, "KindleNavTest12-BackToPage1", true);
 
-        sendRemoteCommandAndWaitForContent(LEFT);
-        WAIT_FOR_DRAW(display);
-        ASSERT_VIEW_UNCHANGED(display, "KindleNavTest13-BackToPage0");
+        SendRemoteCommand(LEFT);
+        ASSERT_VIEW_UNCHANGED(display, "KindleNavTest13-BackToPage0", true);
 
         // 3. Navigate forward again through 6 pages from page 0 to page 6
-        log_i("TEST: Starting forward navigation again from page 0 to page 6");
-        sendRemoteCommandAndWaitForContent(ENTER);
-        WAIT_FOR_DRAW(display);
-        ASSERT_VIEW_UNCHANGED(display, "KindleNavTest14-ForwardAgainToPage1");
+        SendRemoteCommand(ENTER);
+        ASSERT_VIEW_UNCHANGED(display, "KindleNavTest14-ForwardAgainToPage1", true);
 
-        sendRemoteCommandAndWaitForContent(ENTER);
-        WAIT_FOR_DRAW(display);
-        ASSERT_VIEW_UNCHANGED(display, "KindleNavTest15-ForwardAgainToPage2");
+        SendRemoteCommand(ENTER);
+        ASSERT_VIEW_UNCHANGED(display, "KindleNavTest15-ForwardAgainToPage2", true);
 
-        sendRemoteCommandAndWaitForContent(ENTER);
-        WAIT_FOR_DRAW(display);
-        ASSERT_VIEW_UNCHANGED(display, "KindleNavTest16-ForwardAgainToPage3");
+        SendRemoteCommand(ENTER);
+        ASSERT_VIEW_UNCHANGED(display, "KindleNavTest16-ForwardAgainToPage3", true);
 
-        sendRemoteCommandAndWaitForContent(ENTER);
-        WAIT_FOR_DRAW(display);
-        ASSERT_VIEW_UNCHANGED(display, "KindleNavTest17-ForwardAgainToPage4");
+        SendRemoteCommand(ENTER);
+        ASSERT_VIEW_UNCHANGED(display, "KindleNavTest17-ForwardAgainToPage4", true);
 
-        sendRemoteCommandAndWaitForContent(ENTER);
-        WAIT_FOR_DRAW(display);
-        ASSERT_VIEW_UNCHANGED(display, "KindleNavTest18-ForwardAgainToPage5");
+        SendRemoteCommand(ENTER);
+        ASSERT_VIEW_UNCHANGED(display, "KindleNavTest18-ForwardAgainToPage5", true);
 
-        sendRemoteCommandAndWaitForContent(ENTER);
-        WAIT_FOR_DRAW(display);
-        ASSERT_VIEW_UNCHANGED(display, "KindleNavTest19-ForwardAgainToPage6");
+        SendRemoteCommand(ENTER);
+        ASSERT_VIEW_UNCHANGED(display, "KindleNavTest19-ForwardAgainToPage6", true);
 
         // Verify mock server was called the expected number of times
         // With the buffer filling logic and 6-page navigation, we expect more calls:
@@ -1117,10 +977,8 @@ TEST_CASE("Test Kindle navigation visual traversal", "[.][kindle]") {
         REQUIRE(mockNavigateCallCount <= 20);
 
         // 4. Navigate to page 7 and beyond to trigger new server request
-        log_i("TEST: Navigating to page 7");
-        sendRemoteCommandAndWaitForContent(ENTER);
-        WAIT_FOR_DRAW(display);
-        ASSERT_VIEW_UNCHANGED(display, "KindleNavTest20-ForwardToPage7");
+        SendRemoteCommand(ENTER);
+        ASSERT_VIEW_UNCHANGED(display, "KindleNavTest20-ForwardToPage7", true);
 
         // After navigating to page 4, we should have more calls
         log_i("Mock server: Total navigate calls after page 4: %d", mockNavigateCallCount.load());
@@ -1128,8 +986,7 @@ TEST_CASE("Test Kindle navigation visual traversal", "[.][kindle]") {
         REQUIRE(mockNavigateCallCount <= 16);
 
         // Navigate further to page 5
-        log_i("TEST: Navigating to page 5 to trigger new server request");
-        sendRemoteCommandAndWaitForContent(ENTER); // Wait for content to be rendered
+        SendRemoteCommand(ENTER); // Wait for content to be rendered
         WAIT_FOR_DRAW(display);
         // Don't check screenshot for page 5 since we don't have an expected image
 
@@ -1138,11 +995,10 @@ TEST_CASE("Test Kindle navigation visual traversal", "[.][kindle]") {
         REQUIRE(mockNavigateCallCount >= 10);
         REQUIRE(mockNavigateCallCount <= 18);
     }
-    log_i("TEST: Exiting visual navigation test");
 
     // Reset SindarinAPI to default URL to avoid affecting other tests
     api->overrideBaseUrl("");
-    
+
     // Properly stop FreeRTOS to avoid thread cleanup issues in CI
     StopFreeRtos();
 }
