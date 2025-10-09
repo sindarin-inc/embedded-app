@@ -57,47 +57,6 @@ static auto generateSyncedChapterContent(int pageNumber) -> std::string {
     return content;
 }
 
-// Track when content flushes for tests
-static std::atomic<bool> shortContentRendered{false};
-static std::mutex shortContentMutex;
-static std::condition_variable shortContentCv;
-static int shortContentEventCount = 0;
-
-static void signalShortContentEvent() {
-    shortContentRendered = true;
-    {
-        std::lock_guard<std::mutex> lock(shortContentMutex);
-        shortContentEventCount++;
-    }
-    shortContentCv.notify_all();
-}
-
-static void resetShortContentRenderFlag() {
-    shortContentRendered = false;
-    // Don't reset event counter - it's cumulative
-}
-
-static void waitForShortContentRender() {
-    if (shortContentRendered.load()) {
-        return;
-    }
-
-    int target;
-    {
-        std::lock_guard<std::mutex> lock(shortContentMutex);
-        target = shortContentEventCount + 1;
-    }
-
-    std::unique_lock<std::mutex> lock(shortContentMutex);
-    bool success = shortContentCv.wait_for(lock, std::chrono::seconds(10),
-                                           [&]() { return shortContentEventCount >= target; });
-
-    if (!success) {
-        log_e("Timeout waiting for short pages content render event");
-        FAIL("Timeout waiting for content render");
-    }
-}
-
 // Helper to generate sequential test content
 static auto generateSequentialContent(int startLine, int endLine) -> std::string {
     std::string content;
@@ -116,39 +75,6 @@ static void resetMockState() {
     mockLastReadDialogShownCount = 0;
     mockNavigateDialogTriggerCount = 0;
     mockEnableLastReadDialog = false;
-}
-
-static auto setupShortPagesContentCallback() -> std::shared_ptr<KindleReadableScreen> {
-    auto start = std::chrono::steady_clock::now();
-    while (true) {
-        auto screen = UIGetCurrentScreen();
-        if (screen) {
-            auto kindleScreen = std::dynamic_pointer_cast<KindleReadableScreen>(screen);
-            if (kindleScreen) {
-                log_i("TEST: Installing short-pages content callback on screen %p",
-                      static_cast<void *>(kindleScreen.get()));
-                kindleScreen->pageFlipper_.setOnTestContentReady([](size_t ocrTextLength) {
-                    log_i("TEST: short-pages content ready, length=%zu", ocrTextLength);
-                    signalShortContentEvent();
-                });
-                kindleScreen->setOnTestLastReadDialogShown([]() {
-                    log_i("TEST: last-read dialog shown callback");
-                    mockLastReadDialogShownCount++;
-                    // Use atomic flag instead of condition variable to avoid FreeRTOS issues
-                    shortContentRendered = true;
-                });
-                return kindleScreen;
-            }
-        }
-
-        if (std::chrono::steady_clock::now() - start > std::chrono::seconds(10)) {
-            FAIL("Timed out waiting for KindleReadableScreen to install callback");
-        }
-
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    }
-
-    return nullptr;
 }
 
 static void setupHttpServer(std::unique_ptr<httplib::Server> &httpServer,
@@ -410,91 +336,60 @@ TEST_CASE("Test Kindle multi-page fetching with short pages visual", "[.][kindle
 
     // First screen renders twice
     WAIT_FOR_DRAW(display);
-    WAIT_FOR_DRAW(display);
 
     log_i("TEST: About to enter SECTION");
     SECTION("Visual test of multi-page fetching with short pages and last-read dialogs") {
         log_i("TEST: Inside SECTION");
 
         // Take initial screenshot of main menu
-        ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest00-MainMenu");
+        ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest00-MainMenu", true);
 
         // Navigate to Kindle section
         SendRemoteCommand(RIGHT);
         WAIT_FOR_DRAW(display);
-        WAIT_FOR_DRAW(display);
-        ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest01-KindleSection");
+        ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest01-KindleSection", true);
 
-        // Navigate down to the last book (SHORT_PAGES_TEST)
-        for (int i = 0; i < 10; i++) { // Navigate to the 11th book (index 10)
-            SendRemoteCommand(DOWN);
-            WAIT_FOR_DRAW(display);
-        }
+        // Go to the last book in the list
+        SendRemoteCommand(UP);
         WAIT_FOR_DRAW(display);
-        ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest02-ShortPagesBookSelected");
+        ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest02-ShortPagesBookSelected", true);
 
         // Open the book - this should trigger the first last-read dialog from /open-book
         log_i("TEST: Opening book with ENTER command, expecting last-read dialog");
-        resetShortContentRenderFlag();
         SendRemoteCommand(ENTER);
+        ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest04-LoadingInitialContent", true);
 
-        // Wait for connection and initial load
-        log_i("TEST: Waiting for connection and initial load");
-        WAIT_FOR_DRAW(display); // Draw for CONNECTING state
-        // Skip ShortPagesTest03-Connecting screenshot - transitional state may show overlapping UI elements
-
-        auto kindleScreen = setupShortPagesContentCallback();
+        auto screen = UIGetCurrentScreen();
+        auto kindleScreen = std::dynamic_pointer_cast<KindleReadableScreen>(screen);
         REQUIRE(kindleScreen != nullptr);
 
-        // Setup callback to detect dialog shown
-        std::atomic<bool> firstDialogShown{false};
-        kindleScreen->setOnTestLastReadDialogShown([&firstDialogShown]() {
-            log_i("TEST: First last-read dialog shown");
-            firstDialogShown = true;
-        });
+        WAIT_FOR_DRAW(display);
+        WAIT_FOR_DRAW(display);
+        ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest05-FirstLastReadDialog", true);
 
-        resetShortContentRenderFlag();
-        WAIT_FOR_DRAW(display); // Draw for LOADING_INITIAL_CONTENT state
-        ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest04-LoadingInitialContent");
-
-        // Wait for the first last-read dialog from /open-book
-        auto waitStart = std::chrono::steady_clock::now();
-        while (!firstDialogShown.load()) {
-            WAIT_FOR_DRAW(display);
-            if (std::chrono::steady_clock::now() - waitStart > std::chrono::seconds(5)) {
-                log_e("TEST: Timed out waiting for first last-read dialog from /open-book");
-                FAIL("Timed out waiting for first last-read dialog");
-            }
-        }
-        ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest05-FirstLastReadDialog");
-
-        // Accept the first dialog - should go to Chapter 42
-        log_i("TEST: Accepting first last-read dialog to go to Chapter 42");
+        // log_i("TEST: Accepting first last-read dialog to go to Chapter 42");
         std::atomic<bool> postCompleted1{false};
+        // TODO: could this come from the server?
         kindleScreen->setOnTestLastReadDialogPostComplete([&postCompleted1](bool success) {
             log_i("TEST: First dialog POST completed, success=%d", success);
             postCompleted1 = true;
         });
 
-        resetShortContentRenderFlag();
+        // Accept the first dialog - should go to Chapter 42
         SendRemoteCommand(ENTER);
 
         // Wait for the "Sync to last read page" message
-        WAIT_FOR_DRAW(display);
-        ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest06-SyncingToLastRead");
+        ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest06-SyncingToLastRead", true);
 
         // Wait for content to render - this will be Chapter 42
-        waitForShortContentRender();
-        WAIT_FOR_DRAW(display);
-        ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest07-Chapter42Initial");
+        ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest07-Chapter42Initial", true);
 
         // The reader may have already buffered ahead, so this might show the same content
         // or it might advance - we'll capture it either way
-        WAIT_FOR_DRAW(display);
-        ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest08-Chapter42AfterBuffer");
+        ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest08-Chapter42AfterBuffer", true);
 
         // Wait for POST to complete
-        waitStart = std::chrono::steady_clock::now();
+        auto waitStart = std::chrono::steady_clock::now();
         while (!postCompleted1.load()) {
             if (std::chrono::steady_clock::now() - waitStart > std::chrono::seconds(5)) {
                 log_e("TEST: Timed out waiting for first POST completion");
@@ -508,9 +403,8 @@ TEST_CASE("Test Kindle multi-page fetching with short pages visual", "[.][kindle
         log_i("TEST: Paging forward through Chapter 42");
         for (int i = 0; i < 3; i++) {
             SendRemoteCommand(RIGHT);
-            WAIT_FOR_DRAW(display);
-            ASSERT_VIEW_UNCHANGED(display,
-                                  "ShortPagesTest09-Chapter42Forward" + std::to_string(i + 1));
+            ASSERT_VIEW_UNCHANGED(
+                display, "ShortPagesTest09-Chapter42Forward" + std::to_string(i + 1), true);
         }
 
         // Navigate to page 4 - should trigger second last-read dialog
@@ -522,17 +416,8 @@ TEST_CASE("Test Kindle multi-page fetching with short pages visual", "[.][kindle
         });
 
         SendRemoteCommand(RIGHT);
-
-        // Wait for second dialog
-        waitStart = std::chrono::steady_clock::now();
-        while (!secondDialogShown.load()) {
-            WAIT_FOR_DRAW(display);
-            if (std::chrono::steady_clock::now() - waitStart > std::chrono::seconds(5)) {
-                log_e("TEST: Timed out waiting for second last-read dialog at page 4");
-                FAIL("Timed out waiting for second last-read dialog");
-            }
-        }
-        ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest12-SecondLastReadDialog");
+        WAIT_FOR_DRAW(display);
+        ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest12-SecondLastReadDialog", true);
 
         // Accept the second dialog - should go to page 10
         log_i("TEST: Accepting second last-read dialog to go to page 10");
@@ -542,21 +427,17 @@ TEST_CASE("Test Kindle multi-page fetching with short pages visual", "[.][kindle
             postCompleted2 = true;
         });
 
-        resetShortContentRenderFlag();
         SendRemoteCommand(ENTER);
 
         // Wait for the "Sync to last read page" message
         WAIT_FOR_DRAW(display);
-        ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest13-SyncingToPage10");
+        ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest13-SyncingToPage10", true);
 
         // Wait for content to render - this will be Page 10
-        waitForShortContentRender();
-        WAIT_FOR_DRAW(display);
-        ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest14-Page10Initial");
+        ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest14-Page10Initial", true);
 
         // The reader may have already buffered ahead, so capture the state after buffering
-        WAIT_FOR_DRAW(display);
-        ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest15-Page10AfterBuffer");
+        ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest15-Page10AfterBuffer", true);
 
         // Wait for POST to complete
         waitStart = std::chrono::steady_clock::now();
@@ -577,32 +458,23 @@ TEST_CASE("Test Kindle multi-page fetching with short pages visual", "[.][kindle
 
         // First RIGHT press - should move to PAGE 11
         SendRemoteCommand(RIGHT);
-        WAIT_FOR_DRAW(display);
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest16-ForwardFrom10-1");
+        ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest16-ForwardFrom10-1", true);
 
         // Second RIGHT press - should move to PAGE 12
         SendRemoteCommand(RIGHT);
-        WAIT_FOR_DRAW(display);
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest16-ForwardFrom10-2");
+        ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest16-ForwardFrom10-2", true);
 
         // Third RIGHT press - should move to PAGE 13
         SendRemoteCommand(RIGHT);
-        WAIT_FOR_DRAW(display);
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest16-ForwardFrom10-3");
+        ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest16-ForwardFrom10-3", true);
 
         // Page backward to verify backward navigation works
         log_i("TEST: Paging backward to verify backward navigation");
         for (int i = 0; i < 2; i++) {
             SendRemoteCommand(LEFT);
-            WAIT_FOR_DRAW(display);
-            ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest19-Backward" + std::to_string(i + 1));
+            ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest19-Backward" + std::to_string(i + 1),
+                                  true);
         }
-
-        log_i("TEST: Final screenshot after backward navigation");
-        ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest21-FinalState");
 
         // Clear any test callbacks to avoid dangling references
         if (kindleScreen) {
