@@ -180,9 +180,7 @@ def write_summary_file(
             fh.write(f"Timeout runs: {', '.join(str(i) for i in timeouts)}\n")
         if failures_without_diff:
             fh.write(
-                "Non-zero exit without diff runs: "
-                + ", ".join(str(i) for i in failures_without_diff)
-                + "\n"
+                "Non-zero exit without diff runs: " + ", ".join(str(i) for i in failures_without_diff) + "\n"
             )
         fh.write("\nDiff image failures:\n")
         if diff_counter:
