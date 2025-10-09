@@ -24,7 +24,10 @@ void SetImagesFolder(std::string folder);
 
 void SendRemoteCommand(RemoteCommand command);
 
-auto WaitForDraw(DisplayEinkET013TT1 &display, long timeoutSeconds = 10) -> bool;
+auto WaitForDraw(DisplayEinkET013TT1 &display, long timeoutSeconds = 10,
+                 bool continueAfterDraw = true) -> bool;
+
+auto HasQueuedDraw(DisplayEinkET013TT1 &display) -> bool;
 
 #define WAIT_FOR_DRAW(display) REQUIRE(WaitForDraw(display))
 
@@ -36,12 +39,14 @@ struct ViewTestResult {
     std::string diffImagePath;
 };
 
-auto CheckViewUnchanged(DisplayEinkET013TT1 &display, std::string key) -> ViewTestResult;
-
-auto CheckViewUnchanged(std::shared_ptr<DisplayEinkET013TT1> display, std::string key)
+auto CheckViewUnchanged(DisplayEinkET013TT1 &display, std::string key, bool waitForDraw = false)
     -> ViewTestResult;
 
-#define ASSERT_VIEW_UNCHANGED(display, key) CHECK(CheckViewUnchanged(display, key).passed)
+auto CheckViewUnchanged(std::shared_ptr<DisplayEinkET013TT1> display, std::string key,
+                        bool waitForDraw = false) -> ViewTestResult;
+
+#define ASSERT_VIEW_UNCHANGED(display, key, ...)                                                   \
+    CHECK(CheckViewUnchanged(display, key, ##__VA_ARGS__).passed)
 
 auto GetRootDisplay() -> DisplayEinkET013TT1 &;
 

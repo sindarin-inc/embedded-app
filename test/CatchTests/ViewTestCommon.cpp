@@ -20,6 +20,7 @@
 #pragma clang diagnostic pop
 
 #include "Displays/FakeEinkET013TT1.hpp"
+#include "Misc/Defer.hpp"
 #include "Misc/Dispatch.hpp"
 #include "Storage/PosixFileSystem.hpp"
 #include "sindarin-debug.h"
@@ -135,7 +136,8 @@ void StopFreeRtos() {
     log_i("Stopped FreeRTOS scheduler");
 }
 
-auto WaitForDraw(DisplayEinkET013TT1 &display, long timeoutSeconds) -> bool {
+auto WaitForDraw(DisplayEinkET013TT1 &display, long timeoutSeconds, bool continueAfterDraw)
+    -> bool {
     struct timespec startTime;
     clock_gettime(CLOCK_MONOTONIC, &startTime);
 
@@ -143,7 +145,7 @@ auto WaitForDraw(DisplayEinkET013TT1 &display, long timeoutSeconds) -> bool {
     uint8_t out;
     useconds_t sleep = 1000;
     while (display.renderQueue() == nullptr ||
-           xQueueReceiveFromISR(display.renderQueue(), &out, nullptr) == pdFALSE) {
+           xQueuePeekFromISR(display.renderQueue(), &out) == pdFALSE) {
         if (elapsedTime > timeoutSeconds) {
             UNSCOPED_INFO("Timed out waiting for draw " << display.renderQueue());
             return false;
@@ -154,10 +156,25 @@ auto WaitForDraw(DisplayEinkET013TT1 &display, long timeoutSeconds) -> bool {
         clock_gettime(CLOCK_MONOTONIC, &endTime); // get current time
         elapsedTime = endTime.tv_sec - startTime.tv_sec;
     }
+
+    if (continueAfterDraw) {
+        xQueueReceiveFromISR(display.renderQueue(), &out, nullptr);
+    }
+
     return true;
 }
 
+auto HasQueuedDraw(DisplayEinkET013TT1 &display) -> bool {
+    uint8_t out;
+    return display.renderQueue() != nullptr &&
+           xQueuePeekFromISR(display.renderQueue(), &out) == pdTRUE;
+}
+
 void SendRemoteCommand(RemoteCommand command) {
+    if (HasQueuedDraw(GetRootDisplay())) {
+        log_w("Warning: Remote command %s sent while there is a queued draw",
+              CodeToString(command));
+    }
     log_i("Dispatching remote command %s", CodeToString(command));
     DispatchGetUiQueue()->dispatchFromISR([command]() { UIInnerLoop(command); });
 }
@@ -185,7 +202,8 @@ auto GetDirectory(std::string filename = "") -> std::string {
 }
 
 // TODO: How do we use the test name also for the key
-auto CheckViewUnchanged(DisplayEinkET013TT1 &display, std::string key) -> ViewTestResult {
+auto CheckViewUnchanged(DisplayEinkET013TT1 &display, std::string key, bool waitForDraw)
+    -> ViewTestResult {
     log_i("Checking view unchanged for %s", key.c_str());
     auto directory = GetDirectory();
     ViewTestResult result = {
@@ -198,6 +216,16 @@ auto CheckViewUnchanged(DisplayEinkET013TT1 &display, std::string key) -> ViewTe
     // This handles both the base TestRun directory and any subdirectories in the key
     std::filesystem::create_directories(
         std::filesystem::path(result.renderedImagePath).parent_path());
+
+    if (waitForDraw) {
+        WaitForDraw(display, 10, false);
+    }
+    defer {
+        if (waitForDraw) {
+            uint8_t out;
+            xQueueReceiveFromISR(display.renderQueue(), &out, nullptr);
+        }
+    };
 
     log_i("Saving image to %s (width=%d, height=%d)", result.renderedImagePath.c_str(),
           CONFIG_DISPLAY_WIDTH, CONFIG_DISPLAY_HEIGHT);
@@ -285,9 +313,9 @@ auto CheckViewUnchanged(DisplayEinkET013TT1 &display, std::string key) -> ViewTe
     return result;
 }
 
-auto CheckViewUnchanged(std::shared_ptr<DisplayEinkET013TT1> display, std::string key)
-    -> ViewTestResult {
-    return CheckViewUnchanged(*display, key);
+auto CheckViewUnchanged(std::shared_ptr<DisplayEinkET013TT1> display, std::string key,
+                        bool waitForDraw) -> ViewTestResult {
+    return CheckViewUnchanged(*display, key, waitForDraw);
 }
 
 auto GetRootDisplay() -> DisplayEinkET013TT1 & { return myDisplay; }
