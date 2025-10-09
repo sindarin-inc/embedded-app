@@ -147,7 +147,7 @@ auto WaitForDraw(DisplayEinkET013TT1 &display, long timeoutSeconds, bool continu
     while (display.renderQueue() == nullptr ||
            xQueuePeekFromISR(display.renderQueue(), &out) == pdFALSE) {
         if (elapsedTime > timeoutSeconds) {
-            UNSCOPED_INFO("Timed out waiting for draw " << display.renderQueue());
+            UNSCOPED_INFO("Timed out waiting for draw");
             return false;
         }
         usleep(sleep);
@@ -218,7 +218,12 @@ auto CheckViewUnchanged(DisplayEinkET013TT1 &display, std::string key, bool wait
         std::filesystem::path(result.renderedImagePath).parent_path());
 
     if (waitForDraw) {
-        WaitForDraw(display, 10, false);
+        auto success = WaitForDraw(display, 10, false);
+        if (!success) {
+            UNSCOPED_INFO("CheckViewUnchanged timeout for key " << key);
+            result.passed = false;
+            return result;
+        }
     }
     defer {
         if (waitForDraw) {
