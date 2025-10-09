@@ -129,18 +129,38 @@ public:
 
     void drawInRect(SolRect rect) override {
         if (splitLines_.size() > maxLines_) {
-            int i = 1;
-            while ((splitLines_[maxLines_ - 1][splitLines_[maxLines_ - 1].size() - i] != ' ') &&
-                   (splitLines_[maxLines_ - 1][splitLines_[maxLines_ - 1].size() - i] != '\t') &&
-                   (splitLines_[maxLines_ - 1][splitLines_[maxLines_ - 1].size() - i] != '-')) {
-                i++;
+            // Determine which displayed line should receive the ellipses: normally the last
+            // displayed line, but if that line is blank whitespace, move up one line.
+            size_t targetIndex = maxLines_ - 1;
+            if (targetIndex < splitLines_.size()) {
+                const std::string &candidate = splitLines_[targetIndex];
+                bool isBlank = true;
+                for (char ch : candidate) {
+                    if (ch != ' ' && ch != '\t') {
+                        isBlank = false;
+                        break;
+                    }
+                }
+                if (isBlank && targetIndex > 0) {
+                    targetIndex -= 1;
+                }
             }
-            if (i < splitLines_.size() - 1) {
-                splitLines_[maxLines_ - 1] = Utf8Substr(splitLines_[maxLines_ - 1], 0,
-                                                        splitLines_[maxLines_ - 1].size() - i) +
-                                             "...";
-            } else {
-                log_i("Didn't find a good delimeter for the ... addition");
+
+            if (targetIndex < splitLines_.size()) {
+                std::string &lineRef = splitLines_[targetIndex];
+                // Prevent repeated ellipses on multiple draws
+                if (!(lineRef.size() >= 3 && lineRef.substr(lineRef.size() - 3) == "...")) {
+                    // Trim trailing whitespace/hyphen/period before appending ellipses
+                    while (!lineRef.empty() && (lineRef.back() == ' ' || lineRef.back() == '\t' ||
+                                                lineRef.back() == '-' || lineRef.back() == '.')) {
+                        lineRef.pop_back();
+                    }
+                    lineRef += "...";
+                }
+            }
+            log_i("splitLines_.size() > maxLines_: %zu > %zu", splitLines_.size(), maxLines_);
+            for (auto &line : splitLines_) {
+                log_i("Line: %s", line.c_str());
             }
         }
         for (int i = 0; i < maxLines_ && i < splitLines_.size(); i++) {
@@ -157,7 +177,7 @@ public:
 
 protected:
     std::string text_;
-    int maxLines_;
+    size_t maxLines_;
     int spacingOffset_;
     std::vector<std::string> splitLines_;
     std::vector<int> lineXOffsets_;
