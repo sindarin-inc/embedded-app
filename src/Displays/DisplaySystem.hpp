@@ -283,6 +283,18 @@ public:
 #endif
     };
 
+    inline void setSupSubFontSize(FontHandle font) override {
+#if CONFIG_TINYFONT_TTF
+        reinterpret_cast<Font *>(font.ptr)->setSupSubFontSize();
+#endif
+    }
+
+    inline void setNormalFontSize(FontHandle font) override {
+#if CONFIG_TINYFONT_TTF
+        reinterpret_cast<Font *>(font.ptr)->setNormalFontSize();
+#endif
+    }
+
     inline auto drawSingleLineOfText(const char *cstr, int16_t x, int16_t y, bool invert,
                                      FontHandle font) -> int16_t override {
         if (!font.ptr || !cstr) {
