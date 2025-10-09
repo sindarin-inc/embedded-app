@@ -11,7 +11,7 @@ For each run the script:
   * Produces an aggregate summary file in TestOutput/ summarising successes, failures, and diff image counts.
 
 Example:
-  ./scripts/kindle_short_inventory.py --runs 10 --timeout 10
+  ./scripts/kindle_test_runner.py --runs 10 --timeout 10
 """
 
 from __future__ import annotations
@@ -165,6 +165,7 @@ def write_run_log(
 def write_summary_file(
     output_root: Path,
     total_runs: int,
+    completed_runs: int,
     success_count: int,
     failure_count: int,
     diff_counter: collections.Counter[str],
@@ -173,9 +174,12 @@ def write_summary_file(
 ) -> None:
     summary_path = output_root / "summary.txt"
     with summary_path.open("w", encoding="utf-8") as fh:
-        fh.write(f"Total runs: {total_runs}\n")
+        remaining_runs = max(total_runs - completed_runs, 0)
+        fh.write(f"Total planned runs: {total_runs}\n")
+        fh.write(f"Completed runs: {completed_runs}\n")
         fh.write(f"Successes: {success_count}\n")
         fh.write(f"Failures: {failure_count}\n")
+        fh.write(f"Remaining runs: {remaining_runs}\n")
         if timeouts:
             fh.write(f"Timeout runs: {', '.join(str(i) for i in timeouts)}\n")
         if failures_without_diff:
@@ -207,6 +211,17 @@ def main() -> int:
     success_count = 0
     failure_count = 0
 
+    write_summary_file(
+        TEST_OUTPUT_ROOT,
+        args.runs,
+        0,
+        success_count,
+        failure_count,
+        diff_counter,
+        timeouts,
+        failures_without_diff,
+    )
+
     print(f"Running {args.cmd!r} {args.runs} times with {args.timeout}s timeout...")
 
     for run_index in range(1, args.runs + 1):
@@ -225,22 +240,38 @@ def main() -> int:
 
         write_run_log(run_dir, run_index, outcome, diff_names, args.timeout)
 
+        message = None
+
         if outcome["timeout"]:
             timeouts.append(run_index)
             failure_count += 1
-            print(f"Run {run_index}: timeout after {args.timeout}s")
-            continue
-
-        if diff_names:
+            message = f"Run {run_index}: timeout after {args.timeout}s"
+        elif diff_names:
             diff_counter.update(diff_names)
             failure_count += 1
-            print(f"Run {run_index}: diff -> {', '.join(diff_names)}")
+            message = f"Run {run_index}: diff -> {', '.join(diff_names)}"
         elif outcome["return_code"]:
             failures_without_diff.append(run_index)
             failure_count += 1
-            print(f"Run {run_index}: non-zero exit ({outcome['return_code']}) without diff output")
+            message = f"Run {run_index}: non-zero exit ({outcome['return_code']}) without diff output"
         else:
             success_count += 1
+
+        completed_runs = success_count + failure_count
+
+        write_summary_file(
+            TEST_OUTPUT_ROOT,
+            args.runs,
+            completed_runs,
+            success_count,
+            failure_count,
+            diff_counter,
+            timeouts,
+            failures_without_diff,
+        )
+
+        if message:
+            print(message)
 
     print("\nSummary:")
     if diff_counter:
@@ -260,6 +291,7 @@ def main() -> int:
     write_summary_file(
         TEST_OUTPUT_ROOT,
         args.runs,
+        success_count + failure_count,
         success_count,
         failure_count,
         diff_counter,

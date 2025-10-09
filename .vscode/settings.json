@@ -164,4 +164,5 @@
     "files.exclude": {
         "build-*/*": true
     },
+    "idf.pythonInstallPath": "/usr/local/bin/python",
 }

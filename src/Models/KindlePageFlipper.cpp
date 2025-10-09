@@ -830,17 +830,6 @@ void KindlePageFlipper::updatePlace(const std::shared_ptr<Place> &place) {
 
             if (currentOffset != previousOffset) {
                 lastRenderedPlace_ = std::dynamic_pointer_cast<TxtPlace>(place);
-
-#if TESTS
-                // TODO: This callback shouldn't be called for cached navigation.
-                // Tests should hook into the renderer's callbacks to know when a page is displayed.
-                // Currently tests rely on this callback for synchronization via
-                // WAIT_FOR_CONTENT_RENDER()
-                if (onContentReady_) {
-                    size_t contentLength = pageStream_->getOcrTextLength();
-                    onContentReady_(contentLength);
-                }
-#endif
             }
             return;
         }
