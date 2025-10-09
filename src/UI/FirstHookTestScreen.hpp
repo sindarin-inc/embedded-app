@@ -1,8 +1,9 @@
 #pragma once
 
+#include <Renderer/Renderer.hpp>
+
 #include "Misc/Battery.hpp"
 #include "Misc/Telemetry.hpp"
-#include "Renderers/Renderer.hpp"
 #include "Storage/PreferencesStore.hpp"
 #include "UI/Screen.hpp"
 

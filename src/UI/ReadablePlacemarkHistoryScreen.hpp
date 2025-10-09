@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Renderer/Renderer.hpp>
 #include <memory>
 #include <utility>
 #include <vector>
@@ -7,7 +8,6 @@
 #include "Misc/Telemetry.hpp"
 #include "Models/Readable.hpp"
 #include "Models/UserReadablePlacemarkHistory.hpp"
-#include "Renderers/Renderer.hpp"
 #include "Storage/PreferencesStore.hpp"
 #include "UI/Components/ArrowLabelView.hpp"
 #include "UI/Components/BoxView.hpp"

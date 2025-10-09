@@ -6,8 +6,10 @@
 #include <functional>
 #include <utility>
 
+#include "Displays/TextInsets.hpp"
 #include "Misc/Platform.hpp"
 #include "Models/UserReadablePartialChapterSummary.hpp"
+#include "Storage/EPubAdditions.hpp"
 #include "UI/AppDownloadScreen.hpp"
 #include "UI/Bitmaps/Auto_Pilot_Icons.hpp"
 #include "UI/BookQuestionsScreen.hpp"
@@ -27,9 +29,11 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
                                FileSystem &fileSystem, LightingController &lightingController,
                                LocalStore &localStore, Font *font)
     : EinkView(display), stream_(stream),
-      renderer_(display, GetTextRectFromPrefs(display, prefs), font), readable_(readable),
-      prefs_(prefs), telemetry_(telemetry), fileSystem_(fileSystem),
+      renderer_(display, GetTextRectFromPrefs(display, prefs), FontHandle{font}),
+      readable_(readable), prefs_(prefs), telemetry_(telemetry), fileSystem_(fileSystem),
       lightingController_(lightingController), display_(display), localStore_(localStore) {
+
+    assert(stream != nullptr && "stream cannot be nullptr");
 
     renderer_.setLineSpacing(prefs.lineSpacing.get().value_or(0));
 
@@ -82,14 +86,14 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
 
         auto stream = renderer_.getStream();
         if (stream && stream->isFor(DocType::EPUB) &&
-            std::dynamic_pointer_cast<EPubFile>(stream)->hasToc()) {
+            std::dynamic_pointer_cast<EPubFileRendererStream>(stream)->epubFile->hasToc()) {
             menuItem = std::make_shared<MenuItemSingleLine>("Contents", [this]() {
                 auto toc = std::make_shared<ReadableTableOfContentsScreen>(
                     prefs_, readable_, renderer_, display_, telemetry_);
 
                 auto stream = renderer_.getStream();
                 if (stream->isFor(DocType::EPUB) &&
-                    std::dynamic_pointer_cast<EPubFile>(stream)->hasToc()) {
+                    std::dynamic_pointer_cast<EPubFileRendererStream>(stream)->epubFile->hasToc()) {
                     toc->loadMenuItems();
                     toc->setNearestChapterSelection(renderer_.getCurrentPlace());
                     toc->setFirstLoad();
@@ -157,8 +161,9 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
                 // readablesToDelete dynamic_pointer_cast the stream_ to an EPubFile and
                 // close it It's always an EPubFile if they uploaded it to us! Print out the
                 // dynamic type of stream_ to make sure it's always an EPubFile
-                std::shared_ptr<EPubFile> temp = std::dynamic_pointer_cast<EPubFile>(stream_);
-                temp->close();
+                auto epubFile =
+                    std::dynamic_pointer_cast<EPubFileRendererStream>(stream_)->epubFile;
+                epubFile->close();
                 readablesToDelete.emplace_back();
                 readablesToDelete.back().uuid = readable_->shortenedUuid;
                 readablesToDelete.back().isArchived = false;
@@ -257,7 +262,8 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
         menuItems->emplace_back(menuItem);
 
         if (renderer_.getCurrentPlace()->isFor(DocType::EPUB)) {
-            auto stream = std::dynamic_pointer_cast<EPubFile>(renderer_.getStream());
+            auto epubFile =
+                std::dynamic_pointer_cast<EPubFileRendererStream>(renderer_.getStream())->epubFile;
             auto placeHref =
                 std::dynamic_pointer_cast<EPubPlace>(renderer_.getCurrentPlace())->getHRef();
 
@@ -289,7 +295,7 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
                 setCurrentScreen(bookQuestionsScreen_);
             }));
 
-            if (stream->hasSummary(placeHref)) {
+            if (HasSummary(epubFile, placeHref)) {
                 menuItems->emplace_back(std::make_shared<MenuItemSingleLine>("Summary", [this]() {
                     auto epubPlace =
                         std::dynamic_pointer_cast<EPubPlace>(renderer_.getCurrentPlace());
@@ -391,7 +397,7 @@ ReadableScreen::ReadableScreen(const std::shared_ptr<RendererStream> &stream,
             fontMenu->setBackCallback([this]() {
                 Font *font = FontFromPrefs(prefs_.font.get().value_or(PREFS_SOL_SMALL));
                 if (font) {
-                    this->renderer_.setFont(font);
+                    this->renderer_.setFont(FontHandle{font});
                 }
                 setCurrentScreen(nullptr);
             });
@@ -606,7 +612,8 @@ void ReadableScreen::updateBookmarkStatus() {
 }
 
 auto ReadableScreen::getScreenCurrentCharOffset() -> uint32_t {
-    auto epubFile = std::dynamic_pointer_cast<EPubFile>(renderer_.getStream());
+    auto epubFile =
+        std::dynamic_pointer_cast<EPubFileRendererStream>(renderer_.getStream())->epubFile;
     auto epubPlace = std::dynamic_pointer_cast<EPubPlace>(readable_->place);
     if ((epubFile != nullptr) && (epubPlace != nullptr)) {
         return epubFile->findCharOffsetAtFileOffset(epubPlace->getHRef(), epubPlace->getOffset());

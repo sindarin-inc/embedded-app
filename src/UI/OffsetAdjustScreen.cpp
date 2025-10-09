@@ -3,6 +3,7 @@
 #include <memory>
 #include <utility>
 
+#include "Displays/TextInsets.hpp"
 #include "UI/Fonts.hpp"
 #include "sindarin-debug.h"
 
@@ -12,7 +13,7 @@ OffsetAdjustScreen::OffsetAdjustScreen(DisplaySystem &display, PreferencesStore 
                                        Telemetry &telemetry)
     : EinkView(display), display_(display),
       renderer_(display, GetTextRectFromPrefs(display, prefs),
-                FontFromPrefs(prefs.font.get().value_or(PREFS_SOL_SMALL))),
+                FontHandle{FontFromPrefs(prefs.font.get().value_or(PREFS_SOL_SMALL))}),
       prefs_(prefs), telemetry_(telemetry), rendererRef_(renderer_), outerBoxView_(display, 5),
       backgroundBoxView_(display, 5), explanationView_(display, 5) {
     std::string message;
@@ -40,7 +41,7 @@ OffsetAdjustScreen::OffsetAdjustScreen(DisplaySystem &display, PreferencesStore 
                                        std::shared_ptr<Place> place)
     : EinkView(display), display_(display),
       renderer_(display, GetTextRectFromPrefs(display, prefs),
-                FontFromPrefs(prefs.font.get().value_or(PREFS_SOL_SMALL))),
+                FontHandle{FontFromPrefs(prefs.font.get().value_or(PREFS_SOL_SMALL))}),
       place_(std::move(place)), prefs_(prefs), telemetry_(telemetry), rendererRef_(renderer),
       outerBoxView_(display, 5), backgroundBoxView_(display, 5), explanationView_(display, 5) {
     setupInstructions();

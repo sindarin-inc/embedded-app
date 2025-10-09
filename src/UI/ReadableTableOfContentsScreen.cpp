@@ -1,6 +1,9 @@
-#include "ReadableTableOfContentsScreen.hpp"
+#include "UI/ReadableTableOfContentsScreen.hpp"
 
 #include <StringUtil/StringUtil.hpp>
+
+#include "Displays/TextInsets.hpp"
+#include "sindarin-debug.h"
 
 void ReadableTableOfContentsScreen::moveSelection(int delta) {
     auto newPage = menuView_.moveSelection(delta);
@@ -70,9 +73,10 @@ void ReadableTableOfContentsScreen::processCommand(RemoteCommand command) {
 
 void ReadableTableOfContentsScreen::loadMenuItems() {
     menuView_.resetMenuItems();
-    auto stream = std::dynamic_pointer_cast<EPubFile>(renderer_.getStream());
+    auto epubFile =
+        std::dynamic_pointer_cast<EPubFileRendererStream>(renderer_.getStream())->epubFile;
 
-    for (const ReadableTableOfContentsChapter &chapter : stream->getToc()) {
+    for (const EPubTocChapter &chapter : epubFile->getToc()) {
         std::string title = std::string(chapter.title);
         if (!chapter.inSubsectionHref.empty()) {
             title = StringFormat("  %s", chapter.title.c_str());
@@ -83,8 +87,9 @@ void ReadableTableOfContentsScreen::loadMenuItems() {
 }
 
 void ReadableTableOfContentsScreen::setPlacemark() {
-    auto stream = std::dynamic_pointer_cast<EPubFile>(renderer_.getStream());
-    auto chapter = stream->getToc()[menuView_.getSelectedIndex()];
+    auto epubFile =
+        std::dynamic_pointer_cast<EPubFileRendererStream>(renderer_.getStream())->epubFile;
+    auto chapter = epubFile->getToc()[menuView_.getSelectedIndex()];
     if (renderer_.getStream()->isFor(DocType::EPUB)) {
         readable_->place = std::make_shared<EPubPlace>(0, std::string(chapter.href));
     }
@@ -99,13 +104,13 @@ void ReadableTableOfContentsScreen::setPlacemark() {
 
 void ReadableTableOfContentsScreen::setNearestChapterSelection(
     const std::shared_ptr<Place> &placeInFile) {
-    auto stream = std::dynamic_pointer_cast<EPubFile>(renderer_.getStream());
     int nearestChapter = 0;
     if (placeInFile->isFor(DocType::EPUB)) {
-        auto stream = std::dynamic_pointer_cast<EPubFile>(renderer_.getStream());
+        auto epubFile =
+            std::dynamic_pointer_cast<EPubFileRendererStream>(renderer_.getStream())->epubFile;
         auto ePubPlace = std::dynamic_pointer_cast<EPubPlace>(placeInFile);
 
-        nearestChapter = stream->getChapterIdx(ePubPlace);
+        nearestChapter = epubFile->getChapterIdx(ePubPlace->getHRef());
 
         if (nearestChapter == -1) {
             log_w("Unable to find nearest chapter for %s", ePubPlace->getHRef().c_str());

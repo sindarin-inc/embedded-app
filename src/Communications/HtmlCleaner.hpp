@@ -1,11 +1,11 @@
 #pragma once
 
+#include <Renderer/RendererStream.hpp>
 #include <Spiram/String.hpp>
 #include <iostream>
 #include <sstream>
 #include <string>
 
-#include "Renderers/RendererStream.hpp"
 #include "Storage/SFile.hpp"
 
 enum StripHtmlState {

@@ -3,7 +3,7 @@
 LetsFocusWelcomeMenuScreen::LetsFocusWelcomeMenuScreen(DisplaySystem &display,
                                                        PreferencesStore &prefs)
     : EinkView(display), prefs_(prefs), menuView_(display),
-      renderer_(display, DisplayRect({0, 0, 0, 0}), static_cast<Font *>(&fontFace0)),
+      renderer_(display, DisplayRect({0, 0, 0, 0}), FontHandle{&fontFace0}),
       rendererView_(display, renderer_),
       leftArrowView_(display, "Prev", ArrowDirection::ArrowLeft, ArrowSide::Left),
       rightArrowView_(display, "Next", ArrowDirection::ArrowRight, ArrowSide::Right) {

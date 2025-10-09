@@ -1,10 +1,10 @@
+#include <Renderer/RendererStream.hpp>
 #include <utility>
 
 #include "Misc/PowerManager.hpp"
 #include "Misc/Telemetry.hpp"
 #include "Models/Readable.hpp"
 #include "Models/ReadableBookmark.hpp"
-#include "Renderers/RendererStream.hpp"
 #include "Sensors/LightingController.hpp"
 #include "Storage/LocalStore.hpp"
 #include "Storage/PreferencesStore.hpp"

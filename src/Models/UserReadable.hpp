@@ -1,11 +1,11 @@
 #pragma once
 
+#include <Renderer/Place.hpp>
 #include <Spiram/String.hpp>
 #include <Spiram/Vector.hpp>
 
 #include "Models/Json.hpp"
 #include "Models/JsonSerializable.hpp"
-#include "Models/Place.hpp"
 #include "Models/Readable.hpp"
 #include "Models/UserReadablePartialChapterSummary.hpp"
 #include "Models/UserReadablePlacemarkHistory.hpp"

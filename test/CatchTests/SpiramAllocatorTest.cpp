@@ -1,9 +1,9 @@
+#include <Renderer/RendererStream.hpp>
 #include <Spiram/Memory.hpp>
 #include <Spiram/String.hpp>
 #include <StringUtil/StringUtil.hpp>
 #include <catch_amalgamated.hpp>
 
-#include "Renderers/RendererStream.hpp"
 #include "sindarin-debug.h"
 
 int mallocSize;

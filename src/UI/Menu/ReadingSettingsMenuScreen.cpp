@@ -9,7 +9,7 @@ ReadingSettingsMenuScreen::ReadingSettingsMenuScreen(DisplaySystem &display,
                                                      PushScreenFunc pushScreen,
                                                      PopScreenFunc popScreen)
     : EinkView(display), menuView_(display), backLabelView_(display, backTitle),
-      renderer_(display, DisplayRect({0, 0, 0, 0}), static_cast<Font *>(&fontFace0)),
+      renderer_(display, DisplayRect({0, 0, 0, 0}), FontHandle{&fontFace0}),
       rendererView_(display, renderer_), prefs_(prefs), telemetry_(telemetry),
       pushScreen_(std::move(pushScreen)), popScreen_(std::move(popScreen)) {
     menuView_.padding = 1;
@@ -71,7 +71,7 @@ void ReadingSettingsMenuScreen::resetFont() {
     Font *font = FontFromPrefs(prefs_.font.get().value_or(PREFS_SOL_SMALL));
 
     if (font) {
-        renderer_.setFont(font);
+        renderer_.setFont(FontHandle{font});
     }
 }
 

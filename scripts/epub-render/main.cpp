@@ -10,9 +10,12 @@
 #include <stb_image.h>
 #pragma clang diagnostic pop
 
+#include <EPubFile/EPubFile.hpp>
+#include <Renderer/Renderer.hpp>
+#include <Unzipper/UnzipperFileStream.hpp>
+
 #include "DisplayUtil.hpp"
-#include "EPub/EPubFile.hpp"
-#include "Renderers/Renderer.hpp"
+#include "Storage/SFileUnzipperStream.hpp"
 #include "UI/Fonts.hpp"
 
 int main(int argc, char **argv) {
@@ -121,11 +124,14 @@ int main(int argc, char **argv) {
     readable->readableType = readableType;
 
     PreferencesStore prefs;
-    SolDrm solDrm(prefs);
-    auto epubFile = std::make_shared<EPubFile>(file, readable, solDrm);
+    auto solDrm = std::make_shared<SolDrm>(prefs);
+    auto unzipperStream = std::make_shared<SFileUnzipperStream>(file);
+    auto epubFile = std::make_shared<EPubFile>(unzipperStream, solDrm);
+    epubFile->setIsAnArticle(readable->readableType == "article");
+    auto epubStream = std::make_shared<EPubFileRendererStream>(epubFile);
 
-    Renderer renderer(*display, boundingBoxRect, font);
-    renderer.setStream(epubFile);
+    Renderer renderer(*display, boundingBoxRect, FontHandle{font});
+    renderer.setStream(epubStream);
     renderer.renderPage(place);
     renderer.setLineSpacing(lineSpacing);
 

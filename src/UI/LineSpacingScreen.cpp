@@ -1,5 +1,6 @@
 #include "UI/LineSpacingScreen.hpp"
 
+#include "Displays/TextInsets.hpp"
 #include "UI/Fonts.hpp"
 #include "sindarin-debug.h"
 
@@ -10,7 +11,7 @@ LineSpacingScreen::LineSpacingScreen(DisplaySystem &display, PreferencesStore &p
                                      Telemetry &telemetry)
     : EinkView(display), display_(display),
       renderer_(display, GetTextRectFromPrefs(display, prefs),
-                FontFromPrefs(prefs.font.get().value_or(PREFS_SOL_SMALL))),
+                FontHandle{FontFromPrefs(prefs.font.get().value_or(PREFS_SOL_SMALL))}),
       prefs_(prefs), telemetry_(telemetry), lineSpacing_(prefs.lineSpacing.get().value_or(0)),
       rendererRef_(renderer_), outerBoxView_(display, 5), backgroundBoxView_(display, 5),
       explanationView_(display, 3) {
@@ -60,7 +61,7 @@ LineSpacingScreen::LineSpacingScreen(DisplaySystem &display, PreferencesStore &p
                                      std::shared_ptr<Place> place)
     : EinkView(display), display_(display),
       renderer_(display, GetTextRectFromPrefs(display, prefs),
-                FontFromPrefs(prefs.font.get().value_or(PREFS_SOL_SMALL))),
+                FontHandle{FontFromPrefs(prefs.font.get().value_or(PREFS_SOL_SMALL))}),
       place_(std::move(place)), prefs_(prefs), telemetry_(telemetry),
       lineSpacing_(prefs.lineSpacing.get().value_or(0)), rendererRef_(renderer),
       outerBoxView_(display, 5), backgroundBoxView_(display, 5), explanationView_(display, 5) {

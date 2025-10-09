@@ -1,5 +1,6 @@
 #pragma once
 
+#include <EPubFile/EPubDrm.hpp>
 #include <array>
 #include <mbedtls/aes.h>
 #include <mbedtls/ctr_drbg.h>
@@ -11,16 +12,17 @@
 
 #include "Storage/PreferencesStore.hpp"
 
-class SolDrm {
+class SolDrm : public EPubDrm {
 public:
     SolDrm(PreferencesStore &prefs) : prefs_(prefs){};
-    ~SolDrm();
+    ~SolDrm() override;
 
     auto publicKeyPem() -> std::string;
-    auto parseKeyfile(const uint8_t *data, size_t length) -> std::optional<std::vector<uint8_t>>;
+    auto parseKeyfile(const uint8_t *data, size_t length)
+        -> std::optional<std::vector<uint8_t>> override;
     auto decryptInPlaceIfNecessary(const std::vector<uint8_t> &aesKey,
                                    const std::shared_ptr<uint8_t[]> &data, size_t length)
-        -> std::pair<std::shared_ptr<uint8_t[]>, size_t>;
+        -> std::pair<std::shared_ptr<uint8_t[]>, size_t> override;
 
 private:
     class FileHeader {

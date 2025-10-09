@@ -1,8 +1,9 @@
 #ifndef ALIGNMENT_SCREEN_HPP
 #define ALIGNMENT_SCREEN_HPP
 
+#include <Renderer/Renderer.hpp>
+
 #include "Misc/Battery.hpp"
-#include "Renderers/Renderer.hpp"
 #include "Sensors/LightingController.hpp"
 #include "Storage/PreferencesStore.hpp"
 #include "UI/Screen.hpp"

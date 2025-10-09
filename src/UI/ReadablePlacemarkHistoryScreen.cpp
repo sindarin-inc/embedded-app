@@ -1,5 +1,6 @@
 #include "UI/ReadablePlacemarkHistoryScreen.hpp"
 
+#include <EPubFile/EPubToc.hpp>
 #include <StringUtil/StringUtil.hpp>
 
 void ReadablePlacemarkHistoryScreen::moveSelection(int delta) {
@@ -77,10 +78,11 @@ void ReadablePlacemarkHistoryScreen::loadMenuItems() {
     }
 
     // Load a map of chapter href to title and accumulated offset
-    auto stream = std::dynamic_pointer_cast<EPubFile>(renderer_.getStream());
+    auto epubFile =
+        std::dynamic_pointer_cast<EPubFileRendererStream>(renderer_.getStream())->epubFile;
     std::unordered_map<SpiramString, std::string> chapterHrefToTitle;
     std::unordered_map<SpiramString, int> chapterHrefToOffset;
-    for (const ReadableTableOfContentsChapter &chapter : stream->getToc()) {
+    for (const EPubTocChapter &chapter : epubFile->getToc()) {
         SpiramString href = chapter.href;
         if (chapter.title.empty()) {
             // Use book title if chapter title is empty
@@ -123,7 +125,8 @@ void ReadablePlacemarkHistoryScreen::loadMenuItems() {
 }
 
 void ReadablePlacemarkHistoryScreen::setPlacemark(const std::shared_ptr<Place> &place) {
-    auto stream = std::dynamic_pointer_cast<EPubFile>(renderer_.getStream());
+    auto epubFile =
+        std::dynamic_pointer_cast<EPubFileRendererStream>(renderer_.getStream())->epubFile;
     readable_->place = place;
     renderer_.setCurrentPlace(readable_->place);
     prefs_.readablePlace.set(readable_->shortenedUuid.c_str(), readable_->place->str());

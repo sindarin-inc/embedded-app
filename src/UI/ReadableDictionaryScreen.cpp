@@ -1,7 +1,9 @@
-#include "ReadableDictionaryScreen.hpp"
+#include "UI/ReadableDictionaryScreen.hpp"
 
-#include <Spiram/String.hpp>
-#include <pugixml.hpp>
+#include "Displays/TextInsets.hpp"
+#include "Storage/EPubAdditions.hpp"
+#include "UI/Fonts.hpp"
+#include "sindarin-debug.h"
 
 auto ReadableDictionaryScreen::layout(LayoutContext &context, SolSize size) -> SolSize {
     auto fullFrame = SolRect::fromSize(size);
@@ -54,12 +56,12 @@ void ReadableDictionaryScreen::render(DisplaySystem &display) {
         if (rendererStream_ == nullptr) {
             rendererStream_ = renderer_.getStream();
         }
-        auto epubStream = std::dynamic_pointer_cast<EPubFile>(rendererStream_);
+        auto epubFile =
+            std::dynamic_pointer_cast<EPubFileRendererStream>(rendererStream_)->epubFile;
         int currentOffset = placeInReadable_->getOffset();
         log_d("Loading dictionary for place: %s : %d", placeInReadable_->str().c_str(),
               currentOffset);
-        auto dictionaryString =
-            epubStream->getDictionaryContent(placeInReadable_, placeInDictionary);
+        auto dictionaryString = GetDictionaryContent(epubFile, placeInReadable_, placeInDictionary);
 
         if (preservePlace_) {
             placeInDictionary = preservePlace_;

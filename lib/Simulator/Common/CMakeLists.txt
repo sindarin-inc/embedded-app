@@ -43,16 +43,35 @@ add_subdirectory(${REPO_ROOT_DIR}/components/miniz ${CMAKE_CURRENT_BINARY_DIR}/m
 
 add_subdirectory(${REPO_ROOT_DIR}/components/Adafruit-GFX-Library ${CMAKE_CURRENT_BINARY_DIR}/Adafruit-GFX-Library)
 
+# Compile configs to have libraries use our esp-idf stubs
+add_library(stubs_config INTERFACE)
+target_compile_definitions(stubs_config INTERFACE
+  CONFIG_LOG_TIMESTAMP_SOURCE_RTOS=1
+  CONFIG_LOG_MAXIMUM_LEVEL=4
+  ESP_PLATFORM=1
+)
+target_include_directories(stubs_config INTERFACE ${REPO_ROOT_DIR}/lib/Simulator/stubs/esp-idf)
+
 add_subdirectory("${REPO_ROOT_DIR}/components/cpp-misc/defer" ${CMAKE_CURRENT_BINARY_DIR}/defer)
 
 add_subdirectory("${REPO_ROOT_DIR}/components/cpp-misc/spiram-cpp" ${CMAKE_CURRENT_BINARY_DIR}/spiram-cpp)
-# Have spiram-cpp use our esp-idf stubs
-target_include_directories(spiram-cpp PUBLIC ${REPO_ROOT_DIR}/lib/Simulator/stubs/esp-idf)
-target_compile_definitions(spiram-cpp PUBLIC ESP_PLATFORM=1)
+target_link_libraries(spiram-cpp PUBLIC stubs_config)
 
 add_subdirectory("${REPO_ROOT_DIR}/components/cpp-misc/stringutil" ${CMAKE_CURRENT_BINARY_DIR}/stringutil)
 
+add_subdirectory("${REPO_ROOT_DIR}/components/cpp-misc/bmpimage" ${CMAKE_CURRENT_BINARY_DIR}/bmpimage)
+target_link_libraries(bmpimage PUBLIC stubs_config)
+
+add_subdirectory("${REPO_ROOT_DIR}/components/cpp-misc/unzipper" ${CMAKE_CURRENT_BINARY_DIR}/unzipper)
+target_link_libraries(unzipper PUBLIC stubs_config)
+
+add_subdirectory("${REPO_ROOT_DIR}/components/cpp-misc/idflog" ${CMAKE_CURRENT_BINARY_DIR}/idflog)
+
 add_subdirectory(${REPO_ROOT_DIR}/components/tiny-font ${CMAKE_CURRENT_BINARY_DIR}/tiny-font)
+
+add_subdirectory(${REPO_ROOT_DIR}/components/tiny-epub/epubfile ${CMAKE_CURRENT_BINARY_DIR}/epubfile)
+
+add_subdirectory(${REPO_ROOT_DIR}/components/tiny-epub/renderer ${CMAKE_CURRENT_BINARY_DIR}/renderer)
 
 # Conditionally link freetype if we're using 8-bit or 16-bit display
 if(DISPLAY_TYPE STREQUAL "DISPLAY_SIM_24BIT" OR DISPLAY_TYPE STREQUAL "DISPLAY_SIM_16BIT" OR DISPLAY_TYPE STREQUAL "DISPLAY_SIM_8BIT")
@@ -67,10 +86,18 @@ if(DISPLAY_TYPE STREQUAL "DISPLAY_SIM_24BIT" OR DISPLAY_TYPE STREQUAL "DISPLAY_S
         CONFIG_TINYFONT_IBMF=0
         CONFIG_TINYFONT_DISPLAY_DPI=${TTF_SCREEN_RES_PER_INCH}
     )
+    target_compile_definitions(renderer PRIVATE
+        CONFIG_EPUB_RENDERER_REPLACE_SUPERSUBSCRIPT_CHARACTERS=0
+        CONFIG_EPUB_RENDERER_NATIVE_SUPERSUBSCRIPT_CHARACTERS=1
+    )
 else()
     target_compile_definitions(tiny-font PUBLIC
         CONFIG_TINYFONT_TTF=0
         CONFIG_TINYFONT_IBMF=1
+    )
+    target_compile_definitions(renderer PRIVATE
+        CONFIG_EPUB_RENDERER_REPLACE_SUPERSUBSCRIPT_CHARACTERS=1
+        CONFIG_EPUB_RENDERER_NATIVE_SUPERSUBSCRIPT_CHARACTERS=0
     )
 endif()
 
@@ -90,7 +117,16 @@ endif()
 
 add_library(${PROJECT_NAME} STATIC ${SOURCES} ${HTTP_CLIENT_SOURCE})
 
-target_link_libraries(${PROJECT_NAME} PUBLIC pugixml ArduinoJson miniz astubs esp-idf-stubs nvs_flash Adafruit-GFX-Library tiny-font mbedtls mbedx509 mbedcrypto esp_ringbuf defer spiram-cpp stringutil)
+target_link_libraries(${PROJECT_NAME} PUBLIC ArduinoJson miniz astubs esp-idf-stubs nvs_flash Adafruit-GFX-Library tiny-font mbedtls mbedx509 mbedcrypto esp_ringbuf defer spiram-cpp stringutil epubfile renderer)
+
+target_compile_definitions(renderer PUBLIC
+    CONFIG_EPUB_RENDERER_MAX_BYTES_PER_PARAGRAPH=5003
+    CONFIG_EPUB_RENDERER_MAX_BYTES_PER_DISPLAY_PAGE=2400
+    CONFIG_EPUB_RENDERER_CSTR_POOL_SIZE=2000
+    CONFIG_EPUB_RENDERER_TOKENS_SIZE=500
+    CONFIG_EPUB_RENDERER_MAX_BYTES_PER_LINE=200
+    CONFIG_EPUB_RENDERER_LINES_SIZE=36
+)
 
 target_include_directories(${PROJECT_NAME} PUBLIC
     "${REPO_ROOT_DIR}/src"

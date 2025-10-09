@@ -8,7 +8,7 @@
 auto CalculateFileHash(const FileSystem &fileSystem, const char *path) -> std::string {
     SFile file = fileSystem.open(path);
     if (!file) {
-        log_e("Failed to open file: %s is the filename", path);
+        log_e("Failed to open file: %s", path);
         return "";
     }
 

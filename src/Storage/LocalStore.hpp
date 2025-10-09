@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Renderer/Place.hpp>
 #include <algorithm>
 #include <vector>
 
@@ -8,7 +9,6 @@
 #include "Misc/Telemetry.hpp"
 #include "Models/CheckSync.hpp"
 #include "Models/KindleBook.hpp"
-#include "Models/Place.hpp"
 #include "Models/Readable.hpp"
 #include "Models/UserReadable.hpp"
 #include "Models/UserReadablePartialChapterSummary.hpp"
@@ -84,7 +84,7 @@ using UserReadablesVector = SpiramVector<UserReadable>;
 class LocalStore {
 public:
     LocalStore(FileSystem &fileSystem, PreferencesStore &prefs, Battery &battery,
-               Telemetry &telemetry, SolDrm &solDrm)
+               Telemetry &telemetry, const std::shared_ptr<SolDrm> &solDrm)
         : fileSystem(fileSystem), prefs_(prefs), battery_(battery), telemetry_(telemetry),
           solDrm_(solDrm){};
     LocalStore(LocalStore const &) = delete;
@@ -193,7 +193,7 @@ private:
     PreferencesStore &prefs_;
     Battery &battery_;
     Telemetry &telemetry_;
-    SolDrm &solDrm_;
+    const std::shared_ptr<SolDrm> &solDrm_;
 
     ReadablesVector books_;
     ReadablesVector articles_;

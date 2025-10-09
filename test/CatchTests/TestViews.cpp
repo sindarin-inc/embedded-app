@@ -1,14 +1,12 @@
 #include <Defer/Defer.hpp>
+#include <Renderer/RendererStream.hpp>
 #include <catch_amalgamated.hpp>
 
 // Allow access to protected methods from tests
 #define protected public
 #define private public
-
 #include "Communications/USBSerial.hpp"
-#include "Misc/BMPImage.hpp"
 #include "Misc/Telemetry.hpp"
-#include "Renderers/RendererStream.hpp"
 #include "Storage/PosixFileSystem.hpp"
 #include "UI/AboutScreen.hpp"
 #include "UI/BitmapScreen.hpp"
@@ -346,7 +344,7 @@ TEST_CASE("Test some views independently") {
         PosixFileSystem fileSystem("./test/CatchTests/TestData");
         Telemetry telemetry = Telemetry(fileSystem, prefs);
         USBSerial usbSerial;
-        SolDrm solDrm(prefs);
+        auto solDrm = std::make_shared<SolDrm>(prefs);
 
         SECTION("Test things that need power") {
             LightingController lightingController(prefs);
@@ -482,10 +480,9 @@ TEST_CASE("Test some views independently") {
             auto prefs = PreferencesStore();
             readable->fromJson((*readablesJsonDoc)["readables"][1]);
 
-            Renderer renderer(*display, display->defaultTextRect(),
-                              static_cast<Font *>(&fontFace0));
+            Renderer renderer(*display, display->defaultTextRect(), FontHandle{&fontFace0});
             auto [path, size] = LocalStore::readableFilePathForReading(fileSystem, readable);
-            auto stream = fileSystem.newEPubRendererStream(path.c_str(), readable, solDrm);
+            auto stream = fileSystem.newEPubRendererStream(path.c_str(), solDrm);
             renderer.setStream(stream);
             auto screen = std::make_shared<ReadableTableOfContentsScreen>(prefs, readable, renderer,
                                                                           *display, telemetry);
@@ -506,11 +503,8 @@ TEST_CASE("Test some views independently") {
             auto readablesJsonDoc = LoadJsonDoc(fileSystem, "/readables.json");
             readable->fromJson((*readablesJsonDoc)["readables"][0]);
 
-            Renderer renderer(*display, display->defaultTextRect(),
-                              static_cast<Font *>(&fontFace0));
             auto [path, size] = LocalStore::readableFilePathForReading(fileSystem, readable);
             auto stream = fileSystem.newGzipRendererStream(path.c_str());
-            renderer.setStream(stream);
 
             auto readableScreen = std::make_shared<ReadableScreen>(
                 stream, *display, readable, prefs, telemetry, fileSystem, lightingController,
@@ -526,10 +520,8 @@ TEST_CASE("Test some views independently") {
             auto readablesJsonDoc = LoadJsonDoc(fileSystem, "/readables-lq-epub.json");
             readable->fromJson((*readablesJsonDoc)["readables"][0]);
 
-            Renderer renderer(*display, {10, 20, 236, 236}, static_cast<Font *>(&fontFace0));
             auto [path, size] = LocalStore::readableFilePathForReading(fileSystem, readable);
-            auto stream = fileSystem.newEPubRendererStream(path.c_str(), readable, solDrm);
-            renderer.setStream(stream);
+            auto stream = fileSystem.newEPubRendererStream(path.c_str(), solDrm);
 
             auto readableScreen = std::make_shared<ReadableScreen>(
                 stream, *display, readable, prefs, telemetry, fileSystem, lightingController,
@@ -567,36 +559,5 @@ TEST_CASE("Test some views independently") {
             screen.render(*display);
             ASSERT_VIEW_UNCHANGED(display, "ContentSyncScreen3");
         }
-    }
-}
-
-TEST_CASE("Test bmp file rendering") {
-    PosixFileSystem fs("./test/CatchTests/TestData");
-    fs.begin();
-    // create and render a full screen bitmap view
-    auto display = createDisplay();
-
-    SECTION("Test bitmap view Books (grayscale)") {
-        SFile file = fs.open("/books.bmp");
-        ContainerStream<SFile> stream(file);
-        BMPImage image;
-        image.readFromStream(stream);
-
-        auto screen =
-            std::make_shared<BitmapScreen>(image.getBuffer(), image.getWidth(), image.getHeight());
-        screen->render(*display);
-        ASSERT_VIEW_UNCHANGED(display, "BitmapViewBooks");
-    }
-
-    SECTION("Test bitmap view Books (pre-dithered)") {
-        SFile file = fs.open("/books_dithered.bmp");
-        ContainerStream<SFile> stream(file);
-        BMPImage image;
-        image.readFromStream(stream);
-
-        auto screen =
-            std::make_shared<BitmapScreen>(image.getBuffer(), image.getWidth(), image.getHeight());
-        screen->render(*display);
-        ASSERT_VIEW_UNCHANGED(display, "BitmapViewBooks");
     }
 }

@@ -1,9 +1,10 @@
 #pragma once
 
+#include <Renderer/Renderer.hpp>
+
 #include "Misc/Platform.hpp"
 #include "Misc/PowerManager.hpp"
 #include "Misc/SecretCode.hpp"
-#include "Renderers/Renderer.hpp"
 #include "Storage/PreferencesStore.hpp"
 #include "UI/Bitmaps/sol-logo.hpp"
 #include "UI/Components/EinkView.hpp"

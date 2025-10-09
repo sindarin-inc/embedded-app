@@ -4,11 +4,11 @@
 // Allow access to protected methods from tests
 #define protected public
 #define private public
-#include "Misc/BMPImage.hpp"
+#include <Renderer/RendererStream.hpp>
+
 #include "Misc/Telemetry.hpp"
-#include "Renderers/RendererDefs.hpp"
-#include "Renderers/RendererStream.hpp"
 #include "Storage/PosixFileSystem.hpp"
+#include "Storage/SFileUnzipperStream.hpp"
 #include "UI/BitmapScreen.hpp"
 #include "UI/LayoutTestScreen.hpp"
 #include "UI/LineSpacingScreen.hpp"
@@ -40,11 +40,13 @@ TEST_CASE("Test some individual EPub formatting edge cases", "[epub-format]") {
 
         auto file = fs.open("/Fixtures/epub/formatting.epub");
         auto prefs = PreferencesStore();
-        SolDrm solDrm(prefs);
-        auto epubFile = std::make_shared<EPubFile>(file, readable, solDrm);
+        auto solDrm = std::make_shared<SolDrm>(prefs);
+        auto epubFile =
+            std::make_shared<EPubFile>(std::make_shared<SFileUnzipperStream>(file), solDrm);
+        auto epubStream = std::make_shared<EPubFileRendererStream>(epubFile);
 
-        Renderer renderer(*display, display->defaultTextRect(), static_cast<Font *>(&fontFace0));
-        renderer.setStream(epubFile);
+        Renderer renderer(*display, display->defaultTextRect(), FontHandle{&fontFace0});
+        renderer.setStream(epubStream);
         renderer.renderPage(std::make_shared<EPubPlace>(0, "newlines_without_spaces.xhtml"));
         display->updateDisplay(DisplaySystem::UpdateType::FULL, true);
 
@@ -57,11 +59,13 @@ TEST_CASE("Test some individual EPub formatting edge cases", "[epub-format]") {
 
         auto file = fs.open("/Fixtures/epub/formatting.epub");
         auto prefs = PreferencesStore();
-        SolDrm solDrm(prefs);
-        auto epubFile = std::make_shared<EPubFile>(file, readable, solDrm);
+        auto solDrm = std::make_shared<SolDrm>(prefs);
+        auto epubFile =
+            std::make_shared<EPubFile>(std::make_shared<SFileUnzipperStream>(file), solDrm);
+        auto epubStream = std::make_shared<EPubFileRendererStream>(epubFile);
 
-        Renderer renderer(*display, display->defaultTextRect(), static_cast<Font *>(&fontFace0));
-        renderer.setStream(epubFile);
+        Renderer renderer(*display, display->defaultTextRect(), FontHandle{&fontFace0});
+        renderer.setStream(epubStream);
         renderer.renderPage(std::make_shared<EPubPlace>(0, "multiple_nbsp.xhtml"));
         display->updateDisplay(DisplaySystem::UpdateType::FULL, true);
 
@@ -75,17 +79,20 @@ TEST_CASE("Test some individual EPub formatting edge cases", "[epub-format]") {
 
         auto file = fs.open("/Fixtures/epub/glyphs.epub");
         auto prefs = PreferencesStore();
-        SolDrm solDrm(prefs);
-        auto epubFile = std::make_shared<EPubFile>(file, readable, solDrm);
+        auto solDrm = std::make_shared<SolDrm>(prefs);
+        auto epubFile =
+            std::make_shared<EPubFile>(std::make_shared<SFileUnzipperStream>(file), solDrm);
+        auto epubStream = std::make_shared<EPubFileRendererStream>(epubFile);
 
-        Renderer renderer(*display, display->defaultTextRect(), static_cast<Font *>(&fontFace0));
-        renderer.setStream(epubFile);
+        Renderer renderer(*display, display->defaultTextRect(), FontHandle{&fontFace0});
+        renderer.setStream(epubStream);
         auto place = std::make_shared<EPubPlace>(0, "Basic Latin.xhtml");
 
         // Render all pages
         int i = 0;
         while (!renderer.atEndOfFile()) {
-            auto chapter = epubFile->getToc()[epubFile->getChapterIdx(place)];
+            auto spineIdx = epubFile->getSpineIdx(place->getHRef());
+            auto chapter = epubFile->getToc()[epubFile->getChapterIdx(spineIdx)];
             auto [newPlace, _] = renderer.renderPage(place);
             place = std::dynamic_pointer_cast<EPubPlace>(newPlace);
             display->updateDisplay(DisplaySystem::UpdateType::FULL, true);
@@ -127,7 +134,9 @@ TEST_CASE("Test EPub Books Rendering", "[.][epub]") {
 
             int pageNbr = 1;
             ChapterIdx chapterIdx = 0;
-            auto epubFile = std::dynamic_pointer_cast<EPubFile>(readableScreen->getStream());
+            auto epubFile =
+                std::dynamic_pointer_cast<EPubFileRendererStream>(readableScreen->getStream())
+                    ->epubFile;
 
             if (epubFile != nullptr) {
                 for (;;) {

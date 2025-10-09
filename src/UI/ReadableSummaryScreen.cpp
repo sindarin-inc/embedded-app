@@ -3,7 +3,10 @@
 #include <Spiram/String.hpp>
 #include <utility>
 
+#include "Displays/TextInsets.hpp"
 #include "Models/UserReadablePartialChapterSummary.hpp"
+#include "Storage/EPubAdditions.hpp"
+#include "sindarin-debug.h"
 
 #define HEIGHT_EVEN(x) ((((x) % 2 == 0) ? (x) : ((x) + 1)))
 
@@ -69,12 +72,13 @@ void ReadableSummaryScreen::render(DisplaySystem &display) {
         if (rendererStream_ == nullptr) {
             rendererStream_ = renderer_.getStream();
         }
-        auto epubStream = std::dynamic_pointer_cast<EPubFile>(rendererStream_);
+        auto epubFile =
+            std::dynamic_pointer_cast<EPubFileRendererStream>(rendererStream_)->epubFile;
 
         auto partialChapterSummary =
             UserReadablePartialChapterSummary::loadForReadable(fileSystem_, readable_);
-        auto summaryString = epubStream->getSummaryContent(placeInReadable_, placeInSummary,
-                                                           partialChapterSummary, showUnread_);
+        auto summaryString = GetSummaryContent(epubFile, placeInReadable_, placeInSummary,
+                                               partialChapterSummary, showUnread_);
 
         if (preservePlace_) {
             placeInSummary = preservePlace_;

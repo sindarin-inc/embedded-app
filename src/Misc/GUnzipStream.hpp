@@ -1,10 +1,10 @@
 #pragma once
 
+#include <Renderer/DocType.hpp>
+#include <Renderer/RendererStream.hpp>
 #include <utility>
 
 #include "Misc/GUnzip.hpp"
-#include "Models/DocType.hpp"
-#include "Renderers/RendererStream.hpp"
 #include "Storage/SFile.hpp"
 #include "sindarin-debug.h"
 

@@ -1,9 +1,9 @@
 #pragma once
 
+#include <Renderer/Renderer.hpp>
 #include <utility>
 
 #include "Models/Readable.hpp"
-#include "Renderers/Renderer.hpp"
 #include "Storage/PreferencesStore.hpp"
 #include "UI/Screen.hpp"
 

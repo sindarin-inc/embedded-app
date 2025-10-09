@@ -132,7 +132,7 @@ TTRemoteInput ttRemoteInput(prefs, telemetry);
 USBSerial usbSerial;
 
 PowerManager powerManager(fileSystem, prefs, lightingController, myDisplay, telemetry, usbSerial);
-SolDrm solDrm(prefs);
+auto solDrm = std::make_shared<SolDrm>(prefs);
 LocalStore localStore(fileSystem, prefs, powerManager.battery, telemetry, solDrm);
 RootUI rootUi(myDisplay, prefs, powerManager, telemetry, solDrm);
 SolClock solClock(prefs);

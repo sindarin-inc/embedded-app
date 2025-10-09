@@ -7,6 +7,7 @@
 #endif
 #include "Communications/SindarinAPI.hpp"
 #include "Communications/WiFi.hpp"
+#include "Displays/TextInsets.hpp"
 #include "Menu/ReadingSettingsMenuScreen.hpp"
 #include "Models/Readable.hpp"
 #include "UI/Fonts.hpp"
@@ -20,7 +21,7 @@ KindleReadableScreen::KindleReadableScreen(DisplaySystem &display,
                                            FileSystem &fileSystem,
                                            LightingController &lightingController,
                                            LocalStore &localStore, Font *font)
-    : EinkView(display), renderer_(display, GetTextRectFromPrefs(display, prefs), font),
+    : EinkView(display), renderer_(display, GetTextRectFromPrefs(display, prefs), FontHandle{font}),
       prefs_(prefs), telemetry_(telemetry), fileSystem_(fileSystem),
       lightingController_(lightingController), localStore_(localStore), kindleBook_(kindleBook),
       cancelFlag_(std::make_shared<CancelFlag>()),
@@ -137,7 +138,7 @@ KindleReadableScreen::KindleReadableScreen(DisplaySystem &display,
             fontMenu->setBackCallback([this]() {
                 Font *font = FontFromPrefs(prefs_.font.get().value_or(PREFS_SOL_SMALL));
                 if (font) {
-                    renderer_.setFont(font);
+                    renderer_.setFont(FontHandle{font});
                 }
                 setCurrentScreen(nullptr);
             });

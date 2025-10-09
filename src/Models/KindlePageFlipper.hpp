@@ -1,5 +1,7 @@
 #pragma once
 
+#include <Renderer/Place.hpp>
+#include <Renderer/RendererStream.hpp>
 #include <memory>
 #include <string>
 #include <utility>
@@ -9,8 +11,6 @@
 #include "Misc/Telemetry.hpp"
 #include "Models/KindleBook.hpp"
 #include "Models/KindlePageResponse.hpp"
-#include "Models/Place.hpp"
-#include "Renderers/RendererStream.hpp"
 
 class DispatchQueue;
 

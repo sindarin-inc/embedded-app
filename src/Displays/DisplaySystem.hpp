@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Adafruit_GFX.h>
+#include <Renderer/RendererDisplay.hpp>
 #include <StringUtil/StringUtil.hpp>
 #include <array>
 #include <freertos/FreeRTOS.h>
@@ -65,13 +66,19 @@ struct DisplayRect {
     [[nodiscard]] auto inset(uint16_t xAmount, uint16_t yAmount) const -> DisplayRect {
         return inset(xAmount, xAmount, yAmount, yAmount);
     }
+
+    // Implicit conversion to tiny-epub RendererDisplayRect
+    operator RendererDisplayRect() const {
+        return {static_cast<int16_t>(x), static_cast<int16_t>(y), static_cast<int16_t>(width),
+                static_cast<int16_t>(height)};
+    }
 };
 
-class DisplaySystem {
+class DisplaySystem : public RendererDisplay {
 public:
     DisplaySystem();
     DisplaySystem(DisplaySystem const &) = delete;
-    virtual ~DisplaySystem() = default;
+    ~DisplaySystem() override = default;
 
     // Constant text-box inset defaults during reading. These should be overridden to sane values in
     // subclasses.
@@ -124,14 +131,14 @@ public:
     // Use these methods for normal drawing as they'll take into account the offsets and focus area
     // automatically. Any methods we need from Adafruit_GFX that need to respect the focus area
     // should be copied in here.
-    [[nodiscard]] auto width() const -> int16_t {
+    [[nodiscard]] inline auto width() const -> int16_t override {
         return nativeWidth() - displayInsets().left - displayInsets().right;
     };
-    [[nodiscard]] auto height() const -> int16_t {
+    [[nodiscard]] inline auto height() const -> int16_t override {
         return nativeHeight() - displayInsets().top - displayInsets().bottom;
     };
 
-    void fillScreen(uint16_t color) { gfxClass_->fillScreen(color); }
+    void fillScreen(uint16_t color) override { gfxClass_->fillScreen(color); }
     void fillTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2,
                       uint16_t color) {
         gfxClass_->fillTriangle(xOffset(x0), yOffset(y0), xOffset(x1), yOffset(y1), xOffset(x2),
@@ -141,7 +148,7 @@ public:
     void fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color) {
         gfxClass_->fillRect(xOffset(x), yOffset(y), w, h, color);
     }
-    void drawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint16_t color) {
+    void drawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint16_t color) override {
         gfxClass_->drawLine(xOffset(x0), yOffset(y0), xOffset(x1), yOffset(y1), color);
     }
     void drawRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color) {
@@ -205,12 +212,11 @@ public:
         -> int;
     auto getTextWidth(const std::string &buffer, Font *font = static_cast<Font *>(&fontFace0))
         -> int;
-    inline auto getTextWidthQuick(const char *buffer, Font *font = static_cast<Font *>(&fontFace0))
-        -> int {
-        if (font == nullptr) {
+    inline auto getTextWidthQuick(const char *cstr, FontHandle font) -> uint16_t override {
+        if (font.ptr == nullptr) {
             return -1;
         } else {
-            return font->getTextWidthQuick(buffer);
+            return reinterpret_cast<Font *>(font.ptr)->getTextWidthQuick(cstr);
         }
     }
 
@@ -227,7 +233,64 @@ public:
 
     // Draw a bitmap
     void drawXBitmap(int16_t x, int16_t y, const uint8_t bitmap[], int16_t w, int16_t h,
-                     uint16_t color);
+                     uint16_t color) override;
+
+    inline auto lineHeight(FontHandle font) -> uint16_t override {
+        return font.ptr ? reinterpret_cast<Font *>(font.ptr)->lineHeight() : 0;
+    }
+
+    inline auto getTextWidth(const char *cstr, FontHandle font) -> uint16_t override {
+        if (!font.ptr || cstr == nullptr) {
+            return 0;
+        }
+        return reinterpret_cast<Font *>(font.ptr)->getTextWidth(cstr);
+    }
+
+    inline void getTextSize(const char *cstr, uint16_t *outWidth, uint16_t *outHeight,
+                            FontHandle font) override {
+        if (!outWidth || !outHeight) {
+            return;
+        }
+        if (!font.ptr || !cstr) {
+            *outWidth = 0;
+            *outHeight = 0;
+            return;
+        }
+        Dim dim = reinterpret_cast<Font *>(font.ptr)->getTextSize(std::string(cstr));
+        *outWidth = dim.width;
+        *outHeight = dim.height;
+    }
+
+    [[nodiscard]] auto getSuperscriptCharacter(const char inputChar, FontHandle font) const -> const
+        char * override {
+#if CONFIG_TINYFONT_IBMF
+        return reinterpret_cast<Font *>(font.ptr)->getSuperscriptCharacter(inputChar);
+#elif CONFIG_TINYFONT_TTF
+        return nullptr;
+#else
+#error "No font system selected"
+#endif
+    };
+
+    [[nodiscard]] auto getSubscriptCharacter(const char inputChar, FontHandle font) const -> const
+        char * override {
+#if CONFIG_TINYFONT_IBMF
+        return reinterpret_cast<Font *>(font.ptr)->getSubscriptCharacter(inputChar);
+#elif CONFIG_TINYFONT_TTF
+        return nullptr;
+#else
+#error "No font system selected"
+#endif
+    };
+
+    inline auto drawSingleLineOfText(const char *cstr, int16_t x, int16_t y, bool invert,
+                                     FontHandle font) -> int16_t override {
+        if (!font.ptr || !cstr) {
+            return x;
+        }
+        return static_cast<int16_t>(this->drawSingleLineOfText(std::string(cstr), x, y, invert,
+                                                               reinterpret_cast<Font *>(font.ptr)));
+    }
 
     // Draw a bitmap scaled by a multiplier
     void drawScaledXBitmap(int16_t x, int16_t y, const uint8_t bitmap[], int16_t w, int16_t h,

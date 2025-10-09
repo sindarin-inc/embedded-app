@@ -21,7 +21,7 @@
 class RootUI : public Screen {
 public:
     RootUI(DisplaySystem &display, PreferencesStore &prefs, PowerManager &power,
-           Telemetry &telemetry, SolDrm &solDrm) noexcept
+           Telemetry &telemetry, const std::shared_ptr<SolDrm> &solDrm) noexcept
         : display_(display), prefs_(prefs), power_(power), telemetry_(telemetry), solDrm_(solDrm) {}
     RootUI(RootUI const &) = delete;
 
@@ -95,5 +95,5 @@ protected:
     PreferencesStore &prefs_;
     PowerManager &power_;
     Telemetry &telemetry_;
-    SolDrm &solDrm_;
+    std::shared_ptr<SolDrm> solDrm_;
 };

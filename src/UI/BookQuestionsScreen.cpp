@@ -9,6 +9,7 @@
 #endif
 
 #include "Communications/WiFi.hpp"
+#include "Displays/TextInsets.hpp"
 #include "UI/Fonts.hpp"
 #include "sindarin-debug.h"
 

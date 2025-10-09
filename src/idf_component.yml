@@ -19,9 +19,21 @@ dependencies:
     version: "*"
     rules:
       - if: target == esp32p4
+  miniz:
+    path: ../components/miniz
+  bmpimage:
+    path: ../components/cpp-misc/bmpimage
   defer:
     path: ../components/cpp-misc/defer
+  idflog:
+    path: ../components/cpp-misc/idflog
   spiram-cpp:
     path: ../components/cpp-misc/spiram-cpp
   stringutil:
     path: ../components/cpp-misc/stringutil
+  unzipper:
+    path: ../components/cpp-misc/unzipper
+  renderer:
+    path: ../components/tiny-epub/renderer
+  epubfile:
+    path: ../components/tiny-epub/epubfile

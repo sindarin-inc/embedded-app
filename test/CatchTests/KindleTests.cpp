@@ -378,7 +378,7 @@ TEST_CASE("Test KindleReadableScreen views independently", "[.][no-kindle]") {
 
         Telemetry telemetry(fileSystem, prefs);
         Battery battery(fileSystem, prefs, telemetry);
-        SolDrm solDrm(prefs);
+        auto solDrm = std::make_shared<SolDrm>(prefs);
         LocalStore localStore(fileSystem, prefs, battery, telemetry, solDrm);
         LightingController lightingController(prefs);
 
@@ -812,7 +812,7 @@ TEST_CASE("Test mock server URL override", "[.][no-kindle]") {
 
     Telemetry telemetry(fileSystem, prefs);
     Battery battery(fileSystem, prefs, telemetry);
-    SolDrm solDrm(prefs);
+    auto solDrm = std::make_shared<SolDrm>(prefs);
     LocalStore localStore(fileSystem, prefs, battery, telemetry, solDrm);
 
     auto display = createDisplay();

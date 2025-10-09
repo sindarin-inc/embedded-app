@@ -25,3 +25,6 @@
 [submodule "components/cpp-misc"]
 	path = components/cpp-misc
 	url = git@github.com:sindarin-inc/cpp-misc.git
+[submodule "components/tiny-epub"]
+	path = components/tiny-epub
+	url = git@github.com:sindarin-inc/tiny-epub.git

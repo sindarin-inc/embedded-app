@@ -7,7 +7,7 @@ ExperimentalMenuScreen::ExperimentalMenuScreen(DisplaySystem &display, const std
                                                PreferencesStore &prefs, Telemetry &telemetry,
                                                PushScreenFunc pushScreen)
     : EinkView(display), menuView_(display), backLabelView_(display, backTitle),
-      renderer_(display, DisplayRect({0, 0, 0, 0}), static_cast<Font *>(&fontFace0)), prefs_(prefs),
+      renderer_(display, DisplayRect({0, 0, 0, 0}), FontHandle{&fontFace0}), prefs_(prefs),
       telemetry_(telemetry), pushScreen_(std::move(pushScreen)) {
     menuView_.padding = 1;
     menuView_.itemsPerPage = 8;
@@ -21,7 +21,7 @@ void ExperimentalMenuScreen::resetFont() {
     Font *font = FontFromPrefs(prefs_.font.get().value_or(PREFS_SOL_SMALL));
 
     if (font) {
-        renderer_.setFont(font);
+        renderer_.setFont(FontHandle{font});
     }
 }
 

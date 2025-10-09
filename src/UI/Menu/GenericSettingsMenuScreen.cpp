@@ -1,6 +1,6 @@
 #include "GenericSettingsMenuScreen.hpp"
 
-#include "Renderers/Renderer.hpp"
+#include <Renderer/Renderer.hpp>
 
 GenericSettingsMenuScreen::GenericSettingsMenuScreen(DisplaySystem &display,
                                                      const std::string &backTitle)

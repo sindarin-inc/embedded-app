@@ -11,13 +11,14 @@ void NewReadablePopupMenuScreen::setUpPopupMenu() {
     footer3TextView_.setText("");
 
     if (place->isFor(DocType::EPUB)) {
-        auto stream = std::dynamic_pointer_cast<EPubFile>(renderer_.getStream());
+        auto epubFile =
+            std::dynamic_pointer_cast<EPubFileRendererStream>(renderer_.getStream())->epubFile;
         auto ePubPlace = std::dynamic_pointer_cast<EPubPlace>(place);
         auto &chapterHref = ePubPlace->getHRef();
-        currentChapterIdx_ = stream->getChapterIdx(chapterHref);
+        currentChapterIdx_ = epubFile->getChapterIdx(chapterHref);
 
         if (currentChapterIdx_ >= 0) {
-            const auto &toc = stream->getToc();
+            const auto &toc = epubFile->getToc();
             auto &chapter = toc[currentChapterIdx_];
             auto spineIdx = renderer_.getStreamPlace(renderer_.getCurrentPlace()).getSpineIdx();
             // TODO(john): This isn't exactly right because `place->getOffset()` is a byte offset,
@@ -26,16 +27,16 @@ void NewReadablePopupMenuScreen::setUpPopupMenu() {
 
             // If current spine item is not the first in the chapter, add offsets of previous spine
             // items in chapter to get the correct offset
-            auto previousSpineOffset = stream->getOffsetPreviousSpineItemsInChapter(spineIdx);
+            auto previousSpineOffset = epubFile->getOffsetPreviousSpineItemsInChapter(spineIdx);
             auto currentOffset =
                 chapter.epubOffset + previousSpineOffset + renderer_.getCurrentPlace()->getOffset();
 
             // Get the end offset of the last chapter (to determine the length of the book)
-            auto &lastChapter = toc[stream->getToc().size() - 1];
+            auto &lastChapter = toc[epubFile->getToc().size() - 1];
             auto lastChapterEndOffset = lastChapter.endEpubOffset;
 
             if (currentOffset < lastChapterEndOffset) {
-                if (stream->isAnArticle()) {
+                if (readable_->isArticle()) {
                     placeStringForBottom =
                         StringFormat("%d of %d page%s", SOL_PAGE_NUMBER(currentOffset),
                                      SOL_PAGE_NUMBER(lastChapterEndOffset),
@@ -47,7 +48,7 @@ void NewReadablePopupMenuScreen::setUpPopupMenu() {
             }
 
             // Determine how many Sol Pages are left in the chapter
-            if (chapter.endEpubOffset > currentOffset && !stream->isAnArticle()) {
+            if (chapter.endEpubOffset > currentOffset && !readable_->isArticle()) {
                 auto chapterPagesRemaining = chapter.endEpubOffset - currentOffset;
                 chapterPagesRemainingString =
                     StringFormat("%d page%s left", SOL_PAGE_NUMBER(chapterPagesRemaining),

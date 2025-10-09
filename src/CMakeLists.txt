@@ -10,7 +10,6 @@ set(components
     miniz
     ulp
     astubs
-    pugixml
     improv
     ArduinoJson
     Adafruit-GFX-Library

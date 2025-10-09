@@ -87,7 +87,7 @@ TEST_CASE("Run a basic content sync", "[.][content-sync]") {
     battery.loop();
     auto api = SindarinAPI::getInstance();
     api->overrideBaseUrl("http://localhost:55011");
-    SolDrm solDrm(prefs);
+    auto solDrm = std::make_shared<SolDrm>(prefs);
 
     LocalStore localStore(fs, prefs, battery, telemetry, solDrm);
 

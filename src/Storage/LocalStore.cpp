@@ -1,6 +1,8 @@
 #include "LocalStore.hpp"
 
 #include <Defer/Defer.hpp>
+#include <Renderer/Place.hpp>
+#include <Renderer/RendererStream.hpp>
 #include <StringUtil/StringUtil.hpp>
 #include <algorithm>
 #include <cmath>
@@ -27,9 +29,7 @@
 #include "Misc/SemVer.hpp"
 #include "Models/BookQuestion.hpp"
 #include "Models/Json.hpp"
-#include "Models/Place.hpp"
 #include "Models/ReadableBookmark.hpp"
-#include "Renderers/RendererStream.hpp"
 #include "Version.hpp"
 #include "sindarin-debug.h"
 
@@ -890,7 +890,7 @@ auto LocalStore::syncFromRemote(bool wifiConnected, bool bleConnected, SyncReaso
     log_d("Syncing books and articles");
     progressCallback(ContentSyncState{.state = ContentSyncState::State::CheckingSync});
 
-    std::string publicKey = solDrm_.publicKeyPem();
+    std::string publicKey = solDrm_->publicKeyPem();
 
     // Collect Kindle book UUIDs for sync
     StoredUuidsVector kindleUuids;

@@ -1,6 +1,7 @@
 #pragma once
 
-#include "Renderers/Renderer.hpp"
+#include <Renderer/Renderer.hpp>
+
 #include "UI/Components/BoxView.hpp"
 #include "UI/Components/EinkView.hpp"
 

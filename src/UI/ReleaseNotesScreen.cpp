@@ -2,6 +2,7 @@
 
 #include <Update.h>
 
+#include "Displays/TextInsets.hpp"
 #include "Misc/Platform.hpp"
 #include "UI/Fonts.hpp"
 #include "UI/Menu/MenuItemSingleLine.hpp"
@@ -11,7 +12,7 @@ ReleaseNotesScreen::ReleaseNotesScreen(DisplaySystem &display, PreferencesStore 
                                        PowerManager &power, LocalStore &localStore,
                                        const Firmware &firmware)
     : display_(display),
-      renderer_(display, GetTextRectFromPrefs(display, prefs), static_cast<Font *>(&fontFace0)),
+      renderer_(display, GetTextRectFromPrefs(display, prefs), FontHandle{&fontFace0}),
       prefs_(prefs), power_(power), localStore_(localStore), firmware_(firmware),
       menu_(prefs, display) {
 

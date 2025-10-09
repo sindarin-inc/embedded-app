@@ -1,10 +1,10 @@
 #pragma once
 
+#include <Renderer/Place.hpp>
 #include <Spiram/String.hpp>
 #include <string>
 
 #include "Models/JsonSerializable.hpp"
-#include "Models/Place.hpp"
 #include "Storage/SFile.hpp"
 
 enum BookmarkStatus { BOOKMARK_OFF = 0, BOOKMARK_ON = 1 };

@@ -2,7 +2,7 @@
 
 DRMFreeWelcomeMenuScreen::DRMFreeWelcomeMenuScreen(DisplaySystem &display)
     : EinkView(display), menuView_(display),
-      renderer_(display, DisplayRect({0, 0, 0, 0}), static_cast<Font *>(&fontFace0)),
+      renderer_(display, DisplayRect({0, 0, 0, 0}), FontHandle{&fontFace0}),
       rendererView_(display, renderer_) {
     menuView_.padding = 5;
     menuView_.itemsPerPage = 4;
