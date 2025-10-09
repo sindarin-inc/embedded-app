@@ -301,6 +301,22 @@ static void teardownHttpServer(std::unique_ptr<httplib::Server> &httpServer,
     }
 }
 
+static auto waitForLastReadPostCount(int targetCount,
+                                     std::chrono::milliseconds timeout = std::chrono::seconds(5))
+    -> bool {
+    auto start = std::chrono::steady_clock::now();
+    while (mockLastReadChoiceCallCount.load() < targetCount) {
+        if (std::chrono::steady_clock::now() - start > timeout) {
+            UNSCOPED_INFO("TEST: Timed out waiting for /kindle/last-read-page-dialog POSTs");
+            UNSCOPED_INFO("(want=" << targetCount << ", have=" << mockLastReadChoiceCallCount.load()
+                                   << ")");
+            return false;
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
+    return true;
+}
+
 extern PreferencesStore prefs;
 
 TEST_CASE("Test Kindle multi-page fetching with short pages visual", "[.][kindle-short-pages]") {
@@ -366,14 +382,6 @@ TEST_CASE("Test Kindle multi-page fetching with short pages visual", "[.][kindle
         WAIT_FOR_DRAW(display);
         ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest05-FirstLastReadDialog", true);
 
-        // log_i("TEST: Accepting first last-read dialog to go to Chapter 42");
-        std::atomic<bool> postCompleted1{false};
-        // TODO: could this come from the server?
-        kindleScreen->setOnTestLastReadDialogPostComplete([&postCompleted1](bool success) {
-            log_i("TEST: First dialog POST completed, success=%d", success);
-            postCompleted1 = true;
-        });
-
         // Accept the first dialog - should go to Chapter 42
         SendRemoteCommand(ENTER);
 
@@ -385,16 +393,8 @@ TEST_CASE("Test Kindle multi-page fetching with short pages visual", "[.][kindle
         // Wait for content to render - this will be Chapter 42
         ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest07-Chapter42Initial", true);
 
-        // Wait for POST to complete
-        auto waitStart = std::chrono::steady_clock::now();
-        while (!postCompleted1.load()) {
-            if (std::chrono::steady_clock::now() - waitStart > std::chrono::seconds(5)) {
-                log_e("TEST: Timed out waiting for first POST completion");
-                FAIL("Timed out waiting for first last-read dialog POST");
-            }
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
-        }
-        REQUIRE(mockLastReadChoiceCallCount.load() == 1);
+        // Wait for POST to complete via mock server
+        REQUIRE(waitForLastReadPostCount(1));
 
         // Page forward through Chapter 42
         log_i("TEST: Paging forward through Chapter 42");
@@ -419,14 +419,6 @@ TEST_CASE("Test Kindle multi-page fetching with short pages visual", "[.][kindle
         WAIT_FOR_DRAW(display);
         ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest12-SecondLastReadDialog", true);
 
-        // Accept the second dialog - should go to page 10
-        log_i("TEST: Accepting second last-read dialog to go to page 10");
-        std::atomic<bool> postCompleted2{false};
-        kindleScreen->setOnTestLastReadDialogPostComplete([&postCompleted2](bool success) {
-            log_i("TEST: Second dialog POST completed, success=%d", success);
-            postCompleted2 = true;
-        });
-
         SendRemoteCommand(ENTER);
 
         // Wait for the "Sync to last read page" message
@@ -437,16 +429,8 @@ TEST_CASE("Test Kindle multi-page fetching with short pages visual", "[.][kindle
         // Wait for content to render - this will be Page 10
         ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest14-Page10Initial", true);
 
-        // Wait for POST to complete
-        waitStart = std::chrono::steady_clock::now();
-        while (!postCompleted2.load()) {
-            if (std::chrono::steady_clock::now() - waitStart > std::chrono::seconds(5)) {
-                log_e("TEST: Timed out waiting for second POST completion");
-                FAIL("Timed out waiting for second last-read dialog POST");
-            }
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
-        }
-        REQUIRE(mockLastReadChoiceCallCount.load() == 2);
+        // Wait for POST to complete via mock server
+        REQUIRE(waitForLastReadPostCount(2));
 
         // Page forward a few more times from page 10
         log_i("TEST: Paging forward from page 10");
@@ -478,7 +462,6 @@ TEST_CASE("Test Kindle multi-page fetching with short pages visual", "[.][kindle
         if (kindleScreen) {
             kindleScreen->setOnTestLastReadDialogShown(nullptr);
             kindleScreen->setOnTestLastReadDialogChoice(nullptr);
-            kindleScreen->setOnTestLastReadDialogPostComplete(nullptr);
             kindleScreen->pageFlipper_.setOnTestContentReady(nullptr);
         }
 
