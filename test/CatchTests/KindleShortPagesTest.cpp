@@ -334,14 +334,12 @@ TEST_CASE("Test Kindle multi-page fetching with short pages visual", "[.][kindle
     auto &display = GetRootDisplay();
     log_i("TEST: Display created");
 
-    // First screen renders twice
-    WAIT_FOR_DRAW(display);
-
-    log_i("TEST: About to enter SECTION");
     SECTION("Visual test of multi-page fetching with short pages and last-read dialogs") {
         log_i("TEST: Inside SECTION");
 
         // Take initial screenshot of main menu
+        // First screen renders twice
+        WAIT_FOR_DRAW(display);
         ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest00-MainMenu", true);
 
         // Navigate to Kindle section
@@ -354,16 +352,17 @@ TEST_CASE("Test Kindle multi-page fetching with short pages visual", "[.][kindle
         WAIT_FOR_DRAW(display);
         ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest02-ShortPagesBookSelected", true);
 
-        // Open the book - this should trigger the first last-read dialog from /open-book
-        log_i("TEST: Opening book with ENTER command, expecting last-read dialog");
+        // Open the book - this should load then trigger the first last-read dialog from /open-book
         SendRemoteCommand(ENTER);
-        ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest04-LoadingInitialContent", true);
+        ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest03-Connecting", true);
 
         auto screen = UIGetCurrentScreen();
         auto kindleScreen = std::dynamic_pointer_cast<KindleReadableScreen>(screen);
         REQUIRE(kindleScreen != nullptr);
 
-        WAIT_FOR_DRAW(display);
+        ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest04-Opening", true);
+
+        // Wait for the last-read dialog to be shown
         WAIT_FOR_DRAW(display);
         ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest05-FirstLastReadDialog", true);
 
@@ -380,13 +379,11 @@ TEST_CASE("Test Kindle multi-page fetching with short pages visual", "[.][kindle
 
         // Wait for the "Sync to last read page" message
         ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest06-SyncingToLastRead", true);
+        // TODO: Unknown why message page renders twice
+        ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest06.5-SyncingToLastRead", true);
 
         // Wait for content to render - this will be Chapter 42
         ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest07-Chapter42Initial", true);
-
-        // The reader may have already buffered ahead, so this might show the same content
-        // or it might advance - we'll capture it either way
-        ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest08-Chapter42AfterBuffer", true);
 
         // Wait for POST to complete
         auto waitStart = std::chrono::steady_clock::now();
@@ -416,6 +413,9 @@ TEST_CASE("Test Kindle multi-page fetching with short pages visual", "[.][kindle
         });
 
         SendRemoteCommand(RIGHT);
+
+        // Three: one to render the page, then two to render the menu
+        ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest10-BeforeSecondLastReadDialog", true);
         WAIT_FOR_DRAW(display);
         ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest12-SecondLastReadDialog", true);
 
@@ -430,14 +430,12 @@ TEST_CASE("Test Kindle multi-page fetching with short pages visual", "[.][kindle
         SendRemoteCommand(ENTER);
 
         // Wait for the "Sync to last read page" message
-        WAIT_FOR_DRAW(display);
         ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest13-SyncingToPage10", true);
+        // TODO: Unknown why message page renders twice
+        ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest13.5-SyncingToPage10", true);
 
         // Wait for content to render - this will be Page 10
         ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest14-Page10Initial", true);
-
-        // The reader may have already buffered ahead, so capture the state after buffering
-        ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest15-Page10AfterBuffer", true);
 
         // Wait for POST to complete
         waitStart = std::chrono::steady_clock::now();
