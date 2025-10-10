@@ -1,6 +1,8 @@
 #include "ViewTestCommon.hpp"
 
 #include <catch_amalgamated.hpp>
+#include <cctype>
+#include <cstdlib>
 #include <cstring>
 #include <filesystem>
 #include <freertos/FreeRTOS.h>
@@ -25,7 +27,23 @@
 #include "Storage/PosixFileSystem.hpp"
 #include "sindarin-debug.h"
 
-#define ACCEPT_CHANGES 1
+// TESTS_ACCEPT_CHANGES=1|true|yes|on (default: off)
+static auto TestsAcceptChanges() -> bool {
+    static int cached = -1;
+    if (cached == -1) {
+        bool enabled = false;
+        const char *env = std::getenv("TESTS_ACCEPT_CHANGES");
+        if (env != nullptr) {
+            std::string value(env);
+            for (char &ch : value) {
+                ch = static_cast<char>(std::tolower(static_cast<unsigned char>(ch)));
+            }
+            enabled = (value == "1" || value == "true" || value == "yes" || value == "on");
+        }
+        cached = enabled ? 1 : 0;
+    }
+    return cached == 1;
+}
 
 extern bool useSimulatorTestTime;
 extern int simulatorTestHours;
@@ -201,6 +219,11 @@ auto GetDirectory(std::string filename = "") -> std::string {
     return dir;
 }
 
+// Convert back to a repo-relative path for logging only.
+static auto RepoRelative(const std::string &absolutePath) -> std::string {
+    return "test/CatchTests/" + absolutePath.substr(GetDirectory().size());
+}
+
 // TODO: How do we use the test name also for the key
 auto CheckViewUnchanged(DisplayEinkET013TT1 &display, std::string key, bool waitForDraw)
     -> ViewTestResult {
@@ -232,12 +255,14 @@ auto CheckViewUnchanged(DisplayEinkET013TT1 &display, std::string key, bool wait
         }
     };
 
-    log_i("Saving image to %s (width=%d, height=%d)", result.renderedImagePath.c_str(),
-          CONFIG_DISPLAY_WIDTH, CONFIG_DISPLAY_HEIGHT);
+    log_i("Saving image to %s (width=%d, height=%d)",
+          RepoRelative(result.renderedImagePath).c_str(), CONFIG_DISPLAY_WIDTH,
+          CONFIG_DISPLAY_HEIGHT);
 
     if (!stbi_write_png(result.renderedImagePath.c_str(), CONFIG_DISPLAY_WIDTH,
                         CONFIG_DISPLAY_HEIGHT, 1, display.buffer().get(), 0)) {
-        log_e("Unable to save rendered image to %s", result.renderedImagePath.c_str());
+        log_e("Unable to save rendered image to %s",
+              RepoRelative(result.renderedImagePath).c_str());
     }
 
     // Load up the known-good png from the key
@@ -247,23 +272,22 @@ auto CheckViewUnchanged(DisplayEinkET013TT1 &display, std::string key, bool wait
 
     // Check if the image was successfully loaded
     if (data == nullptr) {
-#ifdef ACCEPT_CHANGES
-        UNSCOPED_INFO("Accepted image not found. Auto-accepting new image.");
-        // Create the accepted directory if it doesn't exist
-        std::filesystem::create_directories(
-            std::filesystem::path(result.acceptedImagePath).parent_path());
-        std::filesystem::copy(result.renderedImagePath, result.acceptedImagePath,
-                              std::filesystem::copy_options::overwrite_existing);
-        result.passed = true;
+        UNSCOPED_INFO("Failed to find test image.");
+        UNSCOPED_INFO("  Missing : " << RepoRelative(result.acceptedImagePath));
+        UNSCOPED_INFO("  Rendered: " << RepoRelative(result.renderedImagePath));
+
+        if (TestsAcceptChanges()) {
+            WARN("Saving new test image (TESTS_ACCEPT_CHANGES=1)\n  New: "
+                 << RepoRelative(result.acceptedImagePath));
+            // Create the accepted directory if it doesn't exist
+            std::filesystem::create_directories(
+                std::filesystem::path(result.acceptedImagePath).parent_path());
+            std::filesystem::copy(result.renderedImagePath, result.acceptedImagePath,
+                                  std::filesystem::copy_options::overwrite_existing);
+            result.passed = true;
+            return result;
+        }
         return result;
-#else
-        UNSCOPED_INFO("Failed to load accepted image.");
-        UNSCOPED_INFO("This is expected when testing the first time.");
-        UNSCOPED_INFO("Run the following command to create an accepted test image:");
-        UNSCOPED_INFO("  cp " << result.renderedImagePath << " \\\n  " << result.acceptedImagePath);
-        CHECK(data != nullptr);
-        return result;
-#endif
     };
 
     // Bonus: Render a pixel-by-pixel diff image, save to png
@@ -286,29 +310,23 @@ auto CheckViewUnchanged(DisplayEinkET013TT1 &display, std::string key, bool wait
         result.diffImagePath = directory + testRunPrefix + key + "_diff.png";
         if (!stbi_write_png(result.diffImagePath.c_str(), CONFIG_DISPLAY_WIDTH,
                             CONFIG_DISPLAY_HEIGHT, 1, diffData, 0)) {
-            log_e("Unable to save diff image to %s", result.diffImagePath.c_str());
+            log_e("Unable to save diff image to %s", RepoRelative(result.diffImagePath).c_str());
         }
 
         UNSCOPED_INFO("Images do not match:");
-        UNSCOPED_INFO("  Accepted (old): " << result.acceptedImagePath.c_str());
-        UNSCOPED_INFO("  Rendered (new): " << result.renderedImagePath.c_str());
-        UNSCOPED_INFO("  Diff: " << result.diffImagePath.c_str());
-        UNSCOPED_INFO("  Quickly open all three with command: ");
-        UNSCOPED_INFO("    open " << result.acceptedImagePath.c_str() << " \\\n    "
-                                  << result.renderedImagePath.c_str() << " \\\n    "
-                                  << result.diffImagePath.c_str());
-        UNSCOPED_INFO("  Accept this change: ");
-        UNSCOPED_INFO("    cp " << result.renderedImagePath.c_str() << " \\\n    "
-                                << result.acceptedImagePath.c_str());
-        // If ACCEPT_CHANGES is defined, automatically accept the changes
-#ifdef ACCEPT_CHANGES
-        UNSCOPED_INFO("  ---> Accepting changes");
-        // Create the accepted directory if it doesn't exist
-        std::filesystem::create_directories(
-            std::filesystem::path(result.acceptedImagePath).parent_path());
-        std::filesystem::copy(result.renderedImagePath, result.acceptedImagePath,
-                              std::filesystem::copy_options::overwrite_existing);
-#endif
+        UNSCOPED_INFO("  Accepted: " << RepoRelative(result.acceptedImagePath));
+        UNSCOPED_INFO("  Rendered: " << RepoRelative(result.renderedImagePath));
+        UNSCOPED_INFO("  Diff:     " << RepoRelative(result.diffImagePath));
+        if (TestsAcceptChanges()) {
+            WARN("Updating test image (TESTS_ACCEPT_CHANGES=1)\n  Updated: "
+                 << RepoRelative(result.acceptedImagePath));
+            // Create the accepted directory if it doesn't exist
+            std::filesystem::create_directories(
+                std::filesystem::path(result.acceptedImagePath).parent_path());
+            std::filesystem::copy(result.renderedImagePath, result.acceptedImagePath,
+                                  std::filesystem::copy_options::overwrite_existing);
+            result.passed = true;
+        }
     } else {
         // Delete generated image files for passing tests
         remove(result.renderedImagePath.c_str());

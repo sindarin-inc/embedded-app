@@ -118,6 +118,10 @@ test: test-build
 	./test/CatchTests/build/tests '[kindle]'
 	./test/CatchTests/build/tests '[kindle-short-pages]'
 
+.PHONY: test-accept
+test-accept: test-build
+	TESTS_ACCEPT_CHANGES=1 make test
+
 .PHONY: test-content-sync
 test-content-sync: test-build
 	./test/CatchTests/build/tests '[content-sync]'

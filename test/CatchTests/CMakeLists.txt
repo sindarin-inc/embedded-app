@@ -23,6 +23,7 @@ list(FILTER SOURCES EXCLUDE REGEX "${PROJECT_SOURCE_DIR}/build/.*")
 add_subdirectory(${REPO_ROOT_DIR}/lib/Simulator/Common ${CMAKE_CURRENT_BINARY_DIR}/Common)
 
 add_subdirectory(${REPO_ROOT_DIR}/lib/Catch2 ${CMAKE_CURRENT_BINARY_DIR}/Catch2)
+target_compile_definitions(catch2 PUBLIC CATCH_CONFIG_CONSOLE_WIDTH=120)
 
 add_executable(${PROJECT_NAME} ${SOURCES})
 
