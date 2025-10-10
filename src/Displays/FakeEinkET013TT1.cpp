@@ -41,7 +41,7 @@ void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *b
     if (skipWaveform_) {
         uint8_t in = 1;
         while (xQueuePeekFromISR(renderQueue_, &in) == pdTRUE) {
-            vTaskDelay(pdMS_TO_TICKS(1));
+            vTaskDelay(pdMS_TO_TICKS(10));
         }
 
         // Skip waveform processing and just move the pixel all the way one way or another
