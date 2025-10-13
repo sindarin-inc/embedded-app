@@ -24,12 +24,12 @@ void SetImagesFolder(std::string folder);
 
 void SendRemoteCommand(RemoteCommand command);
 
-auto WaitForDraw(DisplayEinkET013TT1 &display, long timeoutSeconds = 10,
-                 bool continueAfterDraw = true) -> bool;
+auto WaitForDraw(DisplayEinkET013TT1 &display, bool continueAfterDraw = true,
+                 long timeoutSeconds = 10) -> bool;
 
 auto HasQueuedDraw(DisplayEinkET013TT1 &display) -> bool;
 
-#define WAIT_FOR_DRAW(display) REQUIRE(WaitForDraw(display))
+#define WAIT_FOR_DRAW(display, ...) REQUIRE(WaitForDraw(display, ##__VA_ARGS__))
 
 // TODO: This struct is probably overkill
 struct ViewTestResult {
@@ -39,14 +39,12 @@ struct ViewTestResult {
     std::string diffImagePath;
 };
 
-auto CheckViewUnchanged(DisplayEinkET013TT1 &display, std::string key, bool waitForDraw = false)
+auto CheckViewUnchanged(DisplayEinkET013TT1 &display, std::string key) -> ViewTestResult;
+
+auto CheckViewUnchanged(std::shared_ptr<DisplayEinkET013TT1> display, std::string key)
     -> ViewTestResult;
 
-auto CheckViewUnchanged(std::shared_ptr<DisplayEinkET013TT1> display, std::string key,
-                        bool waitForDraw = false) -> ViewTestResult;
-
-#define ASSERT_VIEW_UNCHANGED(display, key, ...)                                                   \
-    CHECK(CheckViewUnchanged(display, key, ##__VA_ARGS__).passed)
+#define ASSERT_VIEW_UNCHANGED(display, key) CHECK(CheckViewUnchanged(display, key).passed)
 
 auto GetRootDisplay() -> DisplayEinkET013TT1 &;
 

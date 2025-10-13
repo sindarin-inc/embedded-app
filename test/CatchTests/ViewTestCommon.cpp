@@ -154,7 +154,7 @@ void StopFreeRtos() {
     log_i("Stopped FreeRTOS scheduler");
 }
 
-auto WaitForDraw(DisplayEinkET013TT1 &display, long timeoutSeconds, bool continueAfterDraw)
+auto WaitForDraw(DisplayEinkET013TT1 &display, bool continueAfterDraw, long timeoutSeconds)
     -> bool {
     struct timespec startTime;
     clock_gettime(CLOCK_MONOTONIC, &startTime);
@@ -174,9 +174,11 @@ auto WaitForDraw(DisplayEinkET013TT1 &display, long timeoutSeconds, bool continu
         clock_gettime(CLOCK_MONOTONIC, &endTime); // get current time
         elapsedTime = endTime.tv_sec - startTime.tv_sec;
     }
-
     if (continueAfterDraw) {
-        xQueueReceiveFromISR(display.renderQueue(), &out, nullptr);
+        auto result = xQueueReceiveFromISR(display.renderQueue(), &out, nullptr);
+        if (result == pdFALSE) {
+            log_w("Warning: Failed to empty render queue after waiting");
+        }
     }
 
     return true;
@@ -225,8 +227,7 @@ static auto RepoRelative(const std::string &absolutePath) -> std::string {
 }
 
 // TODO: How do we use the test name also for the key
-auto CheckViewUnchanged(DisplayEinkET013TT1 &display, std::string key, bool waitForDraw)
-    -> ViewTestResult {
+auto CheckViewUnchanged(DisplayEinkET013TT1 &display, std::string key) -> ViewTestResult {
     log_i("Checking view unchanged for %s", key.c_str());
     auto directory = GetDirectory();
     ViewTestResult result = {
@@ -240,19 +241,10 @@ auto CheckViewUnchanged(DisplayEinkET013TT1 &display, std::string key, bool wait
     std::filesystem::create_directories(
         std::filesystem::path(result.renderedImagePath).parent_path());
 
-    if (waitForDraw) {
-        auto success = WaitForDraw(display, 10, false);
-        if (!success) {
-            UNSCOPED_INFO("CheckViewUnchanged timeout for key " << key);
-            result.passed = false;
-            return result;
-        }
-    }
     defer {
-        if (waitForDraw) {
-            uint8_t out;
-            xQueueReceiveFromISR(display.renderQueue(), &out, nullptr);
-        }
+        // Before returning, allow the display to continue
+        uint8_t out;
+        xQueueReceiveFromISR(display.renderQueue(), &out, nullptr);
     };
 
     log_i("Saving image to %s (width=%d, height=%d)",
@@ -336,9 +328,9 @@ auto CheckViewUnchanged(DisplayEinkET013TT1 &display, std::string key, bool wait
     return result;
 }
 
-auto CheckViewUnchanged(std::shared_ptr<DisplayEinkET013TT1> display, std::string key,
-                        bool waitForDraw) -> ViewTestResult {
-    return CheckViewUnchanged(*display, key, waitForDraw);
+auto CheckViewUnchanged(std::shared_ptr<DisplayEinkET013TT1> display, std::string key)
+    -> ViewTestResult {
+    return CheckViewUnchanged(*display, key);
 }
 
 auto GetRootDisplay() -> DisplayEinkET013TT1 & { return myDisplay; }
