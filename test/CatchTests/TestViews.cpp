@@ -44,7 +44,7 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
 
     // First screen renders twice once with a full refresh and once with a AU4
     WAIT_FOR_DRAW(display);
-    WAIT_FOR_DRAW(display);
+    WAIT_FOR_DRAW(display, false);
 
     ASSERT_VIEW_UNCHANGED(display, "FirstScreen");
 
@@ -62,7 +62,7 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
 
         SendRemoteCommand(ENTER);
         WAIT_FOR_DRAW(display);
-        WAIT_FOR_DRAW(display);
+        WAIT_FOR_DRAW(display, false);
 
         ASSERT_VIEW_UNCHANGED(display, "ContentSettings");
 
@@ -77,12 +77,12 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
 
         // Render a bunch of readable pages
         SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW(display);
+        WAIT_FOR_DRAW(display, false);
 
         ASSERT_VIEW_UNCHANGED(display, "ReadableIntro");
 
         SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW(display);
+        WAIT_FOR_DRAW(display, false);
         ASSERT_VIEW_UNCHANGED(display, "LastQuestion1");
 
         // Check to make sure going forward from page 1 and then back
@@ -90,7 +90,7 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
         SendRemoteCommand(ENTER);
         WAIT_FOR_DRAW(display);
         SendRemoteCommand(LEFT);
-        WAIT_FOR_DRAW(display);
+        WAIT_FOR_DRAW(display, false);
         ASSERT_VIEW_UNCHANGED(display, "LastQuestion1");
 
         // This is the new default way to get a bookmark on a page
@@ -101,13 +101,13 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
         WAIT_FOR_DRAW(display);
         WAIT_FOR_DRAW(display);
         SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW(display);
+        WAIT_FOR_DRAW(display, false);
         ASSERT_VIEW_UNCHANGED(display, "LastQuestion1Bookmarked");
 
         // Render the popup menu to confirm page 1
         SendRemoteCommand(UP);
         WAIT_FOR_DRAW(display);
-        WAIT_FOR_DRAW(display);
+        WAIT_FOR_DRAW(display, false);
         ASSERT_VIEW_UNCHANGED(display, "PopupMenu1");
 
         // Return to book on page 1
@@ -118,27 +118,27 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
 
         // Start paging through the book
         SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW(display);
+        WAIT_FOR_DRAW(display, false);
         ASSERT_VIEW_UNCHANGED(display, "LastQuestion2");
 
         SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW(display);
+        WAIT_FOR_DRAW(display, false);
         ASSERT_VIEW_UNCHANGED(display, "LastQuestion3");
 
         SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW(display);
+        WAIT_FOR_DRAW(display, false);
         ASSERT_VIEW_UNCHANGED(display, "LastQuestion4");
 
         SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW(display);
+        WAIT_FOR_DRAW(display, false);
         ASSERT_VIEW_UNCHANGED(display, "LastQuestion5");
 
         SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW(display);
+        WAIT_FOR_DRAW(display, false);
         ASSERT_VIEW_UNCHANGED(display, "LastQuestion6");
 
         SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW(display);
+        WAIT_FOR_DRAW(display, false);
         ASSERT_VIEW_UNCHANGED(display, "LastQuestion7");
 
         // Navigate to seek in the popup menu
@@ -149,7 +149,7 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
         WAIT_FOR_DRAW(display);
         WAIT_FOR_DRAW(display);
         SendRemoteCommand(DOWN);
-        WAIT_FOR_DRAW(display);
+        WAIT_FOR_DRAW(display, false);
         ASSERT_VIEW_UNCHANGED(display, "PopupMenu2");
 
         // Seek to the end of the book, then confirm page number
@@ -170,7 +170,7 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
         WAIT_FOR_DRAW(display);
         SendRemoteCommand(UP); // Show popup menu and we are on seek item still
         WAIT_FOR_DRAW(display);
-        WAIT_FOR_DRAW(display);
+        WAIT_FOR_DRAW(display, false);
         ASSERT_VIEW_UNCHANGED(display, "PopupMenu3");
 
         // Go back to the main menu
@@ -208,7 +208,7 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
         ASSERT_VIEW_UNCHANGED(display, "PopupTOC");
 
         SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW(display);
+        WAIT_FOR_DRAW(display, false);
 
         ASSERT_VIEW_UNCHANGED(display, "Dawn");
 
@@ -228,7 +228,7 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
         SendRemoteCommand(UP);
         WAIT_FOR_DRAW(display);
         SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW(display);
+        WAIT_FOR_DRAW(display, false);
         ASSERT_VIEW_UNCHANGED(display, "Dawn1");
 
         // Render the popup menu, navigate to Contents
@@ -237,19 +237,19 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
         WAIT_FOR_DRAW(display);
         SendRemoteCommand(LEFT);
         WAIT_FOR_DRAW(display);
-        WAIT_FOR_DRAW(display);
+        WAIT_FOR_DRAW(display, false);
         ASSERT_VIEW_UNCHANGED(display, "PopupMenu5");
 
         // Open the next chapter to ensure the dictionary shows something different
         SendRemoteCommand(ENTER);
         WAIT_FOR_DRAW(display);
-        WAIT_FOR_DRAW(display);
+        WAIT_FOR_DRAW(display, false);
         ASSERT_VIEW_UNCHANGED(display, "DawnToC");
         SendRemoteCommand(DOWN);
-        WAIT_FOR_DRAW(display);
+        WAIT_FOR_DRAW(display, false);
         ASSERT_VIEW_UNCHANGED(display, "DawnToC2");
         SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW(display);
+        WAIT_FOR_DRAW(display, false);
 
         ASSERT_VIEW_UNCHANGED(display, "Dawn2");
 
@@ -263,36 +263,36 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
         SendRemoteCommand(DOWN);
         WAIT_FOR_DRAW(display);
         SendRemoteCommand(DOWN);
-        WAIT_FOR_DRAW(display);
+        WAIT_FOR_DRAW(display, false);
         ASSERT_VIEW_UNCHANGED(display, "PopupMenu6");
 
         // Open the summary
         SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW(display);
+        WAIT_FOR_DRAW(display, false);
         ASSERT_VIEW_UNCHANGED(display, "Summary1");
         SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW(display);
+        WAIT_FOR_DRAW(display, false);
         ASSERT_VIEW_UNCHANGED(display, "Summary2");
         SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW(display);
+        WAIT_FOR_DRAW(display, false);
         ASSERT_VIEW_UNCHANGED(display, "Summary3");
         SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW(display);
+        WAIT_FOR_DRAW(display, false);
         ASSERT_VIEW_UNCHANGED(display, "Summary4");
         SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW(display);
+        WAIT_FOR_DRAW(display, false);
         ASSERT_VIEW_UNCHANGED(display, "Summary5");
         SendRemoteCommand(DOWN);
-        WAIT_FOR_DRAW(display);
+        WAIT_FOR_DRAW(display, false);
         ASSERT_VIEW_UNCHANGED(display, "Summary6");
         SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW(display);
+        WAIT_FOR_DRAW(display, false);
         ASSERT_VIEW_UNCHANGED(display, "Summary7");
         SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW(display);
+        WAIT_FOR_DRAW(display, false);
         ASSERT_VIEW_UNCHANGED(display, "Summary8");
         SendRemoteCommand(UP);
-        WAIT_FOR_DRAW(display);
+        WAIT_FOR_DRAW(display, false);
         ASSERT_VIEW_UNCHANGED(display, "Dawn4");
 
         // Render the popup menu and go to placemark history
@@ -300,18 +300,18 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
         WAIT_FOR_DRAW(display);
         WAIT_FOR_DRAW(display);
         SendRemoteCommand(DOWN);
-        WAIT_FOR_DRAW(display);
+        WAIT_FOR_DRAW(display, false);
         ASSERT_VIEW_UNCHANGED(display, "PopupMenu7");
 
         // Open the placemark history
         SendRemoteCommand(ENTER);
         WAIT_FOR_DRAW(display);
-        WAIT_FOR_DRAW(display);
+        WAIT_FOR_DRAW(display, false);
         ASSERT_VIEW_UNCHANGED(display, "PlacemarkHistory1");
         SendRemoteCommand(DOWN);
         WAIT_FOR_DRAW(display);
         SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW(display);
+        WAIT_FOR_DRAW(display, false);
         ASSERT_VIEW_UNCHANGED(display, "Dawn5");
     }
 }

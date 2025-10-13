@@ -108,7 +108,7 @@ TEST_CASE("Test EPub Books Rendering", "[.][epub]") {
 
     // First screen renders twice once with a full refresh and once with a AU4
     WAIT_FOR_DRAW(display);
-    WAIT_FOR_DRAW(display);
+    WAIT_FOR_DRAW(display, false);
 
     ASSERT_VIEW_UNCHANGED(display, "FirstScreen");
 
@@ -158,13 +158,13 @@ TEST_CASE("Test EPub Books Rendering", "[.][epub]") {
 
         SendRemoteCommand(UP);
         WAIT_FOR_DRAW(display);
-        WAIT_FOR_DRAW(display);
+        WAIT_FOR_DRAW(display, false);
 
         ASSERT_VIEW_UNCHANGED(display, "LastPagePopupMenu");
 
         SendRemoteCommand(ENTER);
         WAIT_FOR_DRAW(display);
-        WAIT_FOR_DRAW(display);
+        WAIT_FOR_DRAW(display, false);
 
         ASSERT_VIEW_UNCHANGED(display, "MainMenu");
 
@@ -218,13 +218,13 @@ TEST_CASE("Test EPub Books Rendering", "[.][epub]") {
 
         SendRemoteCommand(UP);
         WAIT_FOR_DRAW(display);
-        WAIT_FOR_DRAW(display);
+        WAIT_FOR_DRAW(display, false);
 
         ASSERT_VIEW_UNCHANGED(display, "MainMenu");
 
         SendRemoteCommand(ENTER);
         WAIT_FOR_DRAW(display);
-        WAIT_FOR_DRAW(display);
+        WAIT_FOR_DRAW(display, false);
 
         ASSERT_VIEW_UNCHANGED(display, "ThirdScreen");
 
