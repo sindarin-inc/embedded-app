@@ -277,7 +277,6 @@ auto CheckViewUnchanged(DisplayEinkET013TT1 &display, std::string key) -> ViewTe
             std::filesystem::copy(result.renderedImagePath, result.acceptedImagePath,
                                   std::filesystem::copy_options::overwrite_existing);
             result.passed = true;
-            return result;
         }
         return result;
     };

@@ -163,7 +163,8 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
         WAIT_FOR_DRAW(display);
         for (int i = 0; i < 10; i++) {
             SendRemoteCommand(RIGHT);
-            WAIT_FOR_DRAW(display);
+            // Only wait on the last one
+            WAIT_FOR_DRAW(display, i != 9);
         }
         ASSERT_VIEW_UNCHANGED(display, "SeekingAround");
         SendRemoteCommand(UP);
@@ -202,7 +203,7 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
 
         for (int i = 0; i < 6; i++) {
             SendRemoteCommand(DOWN);
-            WAIT_FOR_DRAW(display);
+            WAIT_FOR_DRAW(display, i != 5);
         }
 
         ASSERT_VIEW_UNCHANGED(display, "PopupTOC");
@@ -220,7 +221,7 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
         WAIT_FOR_DRAW(display);
         WAIT_FOR_DRAW(display);
         SendRemoteCommand(DOWN);
-        WAIT_FOR_DRAW(display);
+        WAIT_FOR_DRAW(display, false);
         // Should show the updated seeked spot from the TOC
         ASSERT_VIEW_UNCHANGED(display, "PopupMenu4");
 
