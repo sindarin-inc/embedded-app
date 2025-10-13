@@ -887,7 +887,8 @@ TEST_CASE("Test Kindle navigation visual traversal", "[.][kindle]") {
         // 0. Open Kindle book
         SendRemoteCommand(RIGHT);
         WAIT_FOR_DRAW(display);
-        ASSERT_VIEW_UNCHANGED(display, "KindleNavTest00-BookMenu", true);
+        WAIT_FOR_DRAW(display, false);
+        ASSERT_VIEW_UNCHANGED(display, "KindleNavTest00-BookMenu");
 
         SendRemoteCommand(ENTER);
 
@@ -902,66 +903,85 @@ TEST_CASE("Test Kindle navigation visual traversal", "[.][kindle]") {
         // Capture the initial page 0 (Lines 1-20)
         // Note: Initial content is already rendered before we can set up the callback,
         // so we just wait for the draw
-        ASSERT_VIEW_UNCHANGED(display, "KindleNavTest01-InitialPage0", true);
+        WAIT_FOR_DRAW(display, false);
+        ASSERT_VIEW_UNCHANGED(display, "KindleNavTest01-InitialPage0");
 
         // 1. Navigate forward through 6 pages to pages 1-6 (clears buffer)
         SendRemoteCommand(ENTER);
-        ASSERT_VIEW_UNCHANGED(display, "KindleNavTest02-ForwardToPage1", true);
+        WAIT_FOR_DRAW(display, false);
+        ASSERT_VIEW_UNCHANGED(display, "KindleNavTest02-ForwardToPage1");
 
         SendRemoteCommand(ENTER);
-        ASSERT_VIEW_UNCHANGED(display, "KindleNavTest03-ForwardToPage2", true);
+        WAIT_FOR_DRAW(display, false);
+        ASSERT_VIEW_UNCHANGED(display, "KindleNavTest03-ForwardToPage2");
 
         SendRemoteCommand(ENTER);
-        ASSERT_VIEW_UNCHANGED(display, "KindleNavTest04-ForwardToPage3", true);
+        WAIT_FOR_DRAW(display, false);
+        ASSERT_VIEW_UNCHANGED(display, "KindleNavTest04-ForwardToPage3");
 
         SendRemoteCommand(ENTER);
-        ASSERT_VIEW_UNCHANGED(display, "KindleNavTest05-ForwardToPage4", true);
+        WAIT_FOR_DRAW(display, false);
+        ASSERT_VIEW_UNCHANGED(display, "KindleNavTest05-ForwardToPage4");
 
         SendRemoteCommand(ENTER);
-        ASSERT_VIEW_UNCHANGED(display, "KindleNavTest06-ForwardToPage5", true);
+        WAIT_FOR_DRAW(display, false);
+        ASSERT_VIEW_UNCHANGED(display, "KindleNavTest06-ForwardToPage5");
 
         SendRemoteCommand(ENTER);
-        ASSERT_VIEW_UNCHANGED(display, "KindleNavTest07-ForwardToPage6", true);
+        WAIT_FOR_DRAW(display, false);
+        ASSERT_VIEW_UNCHANGED(display, "KindleNavTest07-ForwardToPage6");
 
         // 2. Navigate backward through 6 pages
         // We're now on page 6, navigate back to page 0
         // Navigate back 6 pages: 6 -> 5 -> 4 -> 3 -> 2 -> 1 -> 0
         SendRemoteCommand(LEFT);
-        ASSERT_VIEW_UNCHANGED(display, "KindleNavTest08-BackToPage5", true);
+        WAIT_FOR_DRAW(display, false);
+        ASSERT_VIEW_UNCHANGED(display, "KindleNavTest08-BackToPage5");
 
         SendRemoteCommand(LEFT);
-        ASSERT_VIEW_UNCHANGED(display, "KindleNavTest09-BackToPage4", true);
+        WAIT_FOR_DRAW(display, false);
+        ASSERT_VIEW_UNCHANGED(display, "KindleNavTest09-BackToPage4");
 
         SendRemoteCommand(LEFT);
-        ASSERT_VIEW_UNCHANGED(display, "KindleNavTest10-BackToPage3", true);
+        WAIT_FOR_DRAW(display, false);
+        ASSERT_VIEW_UNCHANGED(display, "KindleNavTest10-BackToPage3");
 
         SendRemoteCommand(LEFT);
-        ASSERT_VIEW_UNCHANGED(display, "KindleNavTest11-BackToPage2", true);
+        WAIT_FOR_DRAW(display, false);
+        ASSERT_VIEW_UNCHANGED(display, "KindleNavTest11-BackToPage2");
 
         SendRemoteCommand(LEFT);
-        ASSERT_VIEW_UNCHANGED(display, "KindleNavTest12-BackToPage1", true);
+        WAIT_FOR_DRAW(display, false);
+        ASSERT_VIEW_UNCHANGED(display, "KindleNavTest12-BackToPage1");
 
         SendRemoteCommand(LEFT);
-        ASSERT_VIEW_UNCHANGED(display, "KindleNavTest13-BackToPage0", true);
+        WAIT_FOR_DRAW(display, false);
+        ASSERT_VIEW_UNCHANGED(display, "KindleNavTest13-BackToPage0");
 
         // 3. Navigate forward again through 6 pages from page 0 to page 6
         SendRemoteCommand(ENTER);
-        ASSERT_VIEW_UNCHANGED(display, "KindleNavTest14-ForwardAgainToPage1", true);
+        WAIT_FOR_DRAW(display, false);
+        ASSERT_VIEW_UNCHANGED(display, "KindleNavTest14-ForwardAgainToPage1");
 
         SendRemoteCommand(ENTER);
-        ASSERT_VIEW_UNCHANGED(display, "KindleNavTest15-ForwardAgainToPage2", true);
+        WAIT_FOR_DRAW(display, false);
+        ASSERT_VIEW_UNCHANGED(display, "KindleNavTest15-ForwardAgainToPage2");
 
         SendRemoteCommand(ENTER);
-        ASSERT_VIEW_UNCHANGED(display, "KindleNavTest16-ForwardAgainToPage3", true);
+        WAIT_FOR_DRAW(display, false);
+        ASSERT_VIEW_UNCHANGED(display, "KindleNavTest16-ForwardAgainToPage3");
 
         SendRemoteCommand(ENTER);
-        ASSERT_VIEW_UNCHANGED(display, "KindleNavTest17-ForwardAgainToPage4", true);
+        WAIT_FOR_DRAW(display, false);
+        ASSERT_VIEW_UNCHANGED(display, "KindleNavTest17-ForwardAgainToPage4");
 
         SendRemoteCommand(ENTER);
-        ASSERT_VIEW_UNCHANGED(display, "KindleNavTest18-ForwardAgainToPage5", true);
+        WAIT_FOR_DRAW(display, false);
+        ASSERT_VIEW_UNCHANGED(display, "KindleNavTest18-ForwardAgainToPage5");
 
         SendRemoteCommand(ENTER);
-        ASSERT_VIEW_UNCHANGED(display, "KindleNavTest19-ForwardAgainToPage6", true);
+        WAIT_FOR_DRAW(display, false);
+        ASSERT_VIEW_UNCHANGED(display, "KindleNavTest19-ForwardAgainToPage6");
 
         // Verify mock server was called the expected number of times
         // With the buffer filling logic and 6-page navigation, we expect more calls:
@@ -978,7 +998,8 @@ TEST_CASE("Test Kindle navigation visual traversal", "[.][kindle]") {
 
         // 4. Navigate to page 7 and beyond to trigger new server request
         SendRemoteCommand(ENTER);
-        ASSERT_VIEW_UNCHANGED(display, "KindleNavTest20-ForwardToPage7", true);
+        WAIT_FOR_DRAW(display, false);
+        ASSERT_VIEW_UNCHANGED(display, "KindleNavTest20-ForwardToPage7");
 
         // After navigating to page 4, we should have more calls
         log_i("Mock server: Total navigate calls after page 4: %d", mockNavigateCallCount.load());

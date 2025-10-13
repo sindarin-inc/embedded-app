@@ -349,42 +349,51 @@ TEST_CASE("Test Kindle multi-page fetching with short pages visual", "[.][kindle
         // Take initial screenshot of main menu
         // First screen renders twice
         WAIT_FOR_DRAW(display);
-        ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest00-MainMenu", true);
+        WAIT_FOR_DRAW(display, false);
+        ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest00-MainMenu");
 
         // Navigate to Kindle section
         SendRemoteCommand(RIGHT);
         WAIT_FOR_DRAW(display);
-        ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest01-KindleSection", true);
+        WAIT_FOR_DRAW(display, false);
+        ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest01-KindleSection");
 
         // Go to the last book in the list
         SendRemoteCommand(UP);
         WAIT_FOR_DRAW(display);
-        ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest02-ShortPagesBookSelected", true);
+        WAIT_FOR_DRAW(display, false);
+        ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest02-ShortPagesBookSelected");
 
         // Open the book - this should load then trigger the first last-read dialog from /open-book
         SendRemoteCommand(ENTER);
-        ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest03-Connecting", true);
+        WAIT_FOR_DRAW(display, false);
+        ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest03-Connecting");
 
         auto screen = UIGetCurrentScreen();
         auto kindleScreen = std::dynamic_pointer_cast<KindleReadableScreen>(screen);
         REQUIRE(kindleScreen != nullptr);
 
-        ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest04-Opening", true);
+        WAIT_FOR_DRAW(display, false);
+        ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest04-Opening");
 
         // Wait for the last-read dialog to be shown
         WAIT_FOR_DRAW(display);
-        ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest05-FirstLastReadDialog", true);
+        WAIT_FOR_DRAW(display, false);
+        ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest05-FirstLastReadDialog");
 
         // Accept the first dialog - should go to Chapter 42
         SendRemoteCommand(ENTER);
 
         // Wait for the "Sync to last read page" message
-        ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest06-SyncingToLastRead", true);
+        WAIT_FOR_DRAW(display, false);
+        ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest06-SyncingToLastRead");
         // TODO: Unknown why message page renders twice
-        ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest06.5-SyncingToLastRead", true);
+        WAIT_FOR_DRAW(display, false);
+        ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest06.5-SyncingToLastRead");
 
         // Wait for content to render - this will be Chapter 42
-        ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest07-Chapter42Initial", true);
+        WAIT_FOR_DRAW(display, false);
+        ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest07-Chapter42Initial");
 
         // Wait for POST to complete via mock server
         REQUIRE(waitForLastReadPostCount(1));
@@ -393,27 +402,33 @@ TEST_CASE("Test Kindle multi-page fetching with short pages visual", "[.][kindle
         log_i("TEST: Paging forward through Chapter 42");
         for (int i = 0; i < 3; i++) {
             SendRemoteCommand(RIGHT);
-            ASSERT_VIEW_UNCHANGED(
-                display, "ShortPagesTest09-Chapter42Forward" + std::to_string(i + 1), true);
+            WAIT_FOR_DRAW(display, false);
+            ASSERT_VIEW_UNCHANGED(display,
+                                  "ShortPagesTest09-Chapter42Forward" + std::to_string(i + 1));
         }
 
         // Navigate to page 4 - should trigger second last-read dialog
         SendRemoteCommand(RIGHT);
 
         // Three: one to render the page, then two to render the menu
-        ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest10-BeforeSecondLastReadDialog", true);
+        WAIT_FOR_DRAW(display, false);
+        ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest10-BeforeSecondLastReadDialog");
         WAIT_FOR_DRAW(display);
-        ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest12-SecondLastReadDialog", true);
+        WAIT_FOR_DRAW(display, false);
+        ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest12-SecondLastReadDialog");
 
         SendRemoteCommand(ENTER);
 
         // Wait for the "Sync to last read page" message
-        ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest13-SyncingToPage10", true);
+        WAIT_FOR_DRAW(display, false);
+        ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest13-SyncingToPage10");
         // TODO: Unknown why message page renders twice
-        ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest13.5-SyncingToPage10", true);
+        WAIT_FOR_DRAW(display, false);
+        ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest13.5-SyncingToPage10");
 
         // Wait for content to render - this will be Page 10
-        ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest14-Page10Initial", true);
+        WAIT_FOR_DRAW(display, false);
+        ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest14-Page10Initial");
 
         // Wait for POST to complete via mock server
         REQUIRE(waitForLastReadPostCount(2));
@@ -426,22 +441,25 @@ TEST_CASE("Test Kindle multi-page fetching with short pages visual", "[.][kindle
 
         // First RIGHT press - should move to PAGE 11
         SendRemoteCommand(RIGHT);
-        ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest16-ForwardFrom10-1", true);
+        WAIT_FOR_DRAW(display, false);
+        ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest16-ForwardFrom10-1");
 
         // Second RIGHT press - should move to PAGE 12
         SendRemoteCommand(RIGHT);
-        ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest16-ForwardFrom10-2", true);
+        WAIT_FOR_DRAW(display, false);
+        ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest16-ForwardFrom10-2");
 
         // Third RIGHT press - should move to PAGE 13
         SendRemoteCommand(RIGHT);
-        ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest16-ForwardFrom10-3", true);
+        WAIT_FOR_DRAW(display, false);
+        ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest16-ForwardFrom10-3");
 
         // Page backward to verify backward navigation works
         log_i("TEST: Paging backward to verify backward navigation");
         for (int i = 0; i < 2; i++) {
             SendRemoteCommand(LEFT);
-            ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest19-Backward" + std::to_string(i + 1),
-                                  true);
+            WAIT_FOR_DRAW(display, false);
+            ASSERT_VIEW_UNCHANGED(display, "ShortPagesTest19-Backward" + std::to_string(i + 1));
         }
     }
 
