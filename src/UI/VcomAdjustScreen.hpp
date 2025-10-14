@@ -1,8 +1,9 @@
 #ifndef VCOM_ADJUST_SCREEN_HPP
 #define VCOM_ADJUST_SCREEN_HPP
 
+#include <Renderer/Renderer.hpp>
+
 #include "Misc/Battery.hpp"
-#include "Renderers/Renderer.hpp"
 #include "Storage/PreferencesStore.hpp"
 #include "UI/Screen.hpp"
 

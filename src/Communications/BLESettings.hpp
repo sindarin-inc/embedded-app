@@ -2,6 +2,7 @@
 
 #include <NimBLEClient.h>
 #include <NimBLEDevice.h>
+#include <StringUtil/StringUtil.hpp>
 #include <esp_wifi.h>
 
 #include "BLEAbstractions.hpp"
@@ -9,7 +10,7 @@
 #if CONFIG_USE_TURN_TOUCH_REMOTE
 #include "Inputs/TTRemoteInput.hpp"
 #endif
-#include "Misc/StringUtil.hpp"
+
 #include "Storage/PreferencesStore.hpp"
 #include "sindarin-debug.h"
 

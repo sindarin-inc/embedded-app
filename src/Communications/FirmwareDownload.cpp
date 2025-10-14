@@ -1,5 +1,6 @@
 #include "FirmwareDownload.hpp"
 
+#include <StringUtil/StringUtil.hpp>
 #include <Update.h>
 #include <cstdio>
 #include <string>
@@ -8,7 +9,6 @@
 #include "Communications/FileDownload.hpp"
 #include "Communications/WiFi.hpp"
 #include "Misc/SemVer.hpp"
-#include "Misc/StringUtil.hpp"
 #include "Version.hpp"
 #include "sindarin-debug.h"
 

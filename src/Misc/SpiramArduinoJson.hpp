@@ -1,8 +1,7 @@
 #pragma once
 
 #include <ArduinoJson.h>
-
-#include "SpiramAllocator.hpp"
+#include <Spiram/String.hpp>
 
 namespace ARDUINOJSON_NAMESPACE {
 template <>

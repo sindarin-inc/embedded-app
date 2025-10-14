@@ -1,5 +1,9 @@
 #pragma once
 
+#include <Renderer/Place.hpp>
+#include <Spiram/String.hpp>
+#include <Spiram/Vector.hpp>
+#include <StringUtil/StringUtil.hpp>
 #include <cstdint>
 #include <deque>
 #include <iomanip>
@@ -8,19 +12,15 @@
 #include <variant>
 #include <vector>
 
-#include "Misc/SpiramAllocator.hpp"
-#include "Misc/StringUtil.hpp"
 #include "Misc/TelemetryVariant.hpp"
 #include "Models/Author.hpp"
 #include "Models/Json.hpp"
 #include "Models/JsonSerializable.hpp"
-#include "Models/Place.hpp"
 #include "Models/ReadableArchive.hpp"
 #include "Models/ReadableBookmark.hpp"
 #include "Models/ReadableDictionary.hpp"
 #include "Models/ReadableFile.hpp"
 #include "Models/ReadablePlacemark.hpp"
-#include "Models/ReadableTableOfContentsChapter.hpp"
 
 // This is #define because there might be different types passed in
 #define SOL_PAGE_NUMBER(x) ((x) / 1000 + 1)
@@ -32,7 +32,6 @@ using ReadableFileVector = SpiramVector<ReadableFile>;
 using ReadableArchivesVector = SpiramVector<ReadableArchive>;
 using ReadablePlacemarksVector = SpiramVector<ReadablePlacemark>;
 using ReadableBookmarksVector = SpiramVector<ReadableBookmark>;
-using ReadableTableOfContentsChapterVector = SpiramVector<ReadableTableOfContentsChapter>;
 
 class Readable : JsonSerializable {
 public:

@@ -3,6 +3,9 @@
 // Uncomment to enable simulated connection loss for debugging reconnection issues
 // #define DEBUG_KINDLE_RECONNECTION
 
+#include <Renderer/Place.hpp>
+#include <Renderer/Renderer.hpp>
+#include <Renderer/RendererStream.hpp>
 #include <freertos/FreeRTOS.h>
 #include <freertos/timers.h>
 #include <functional>
@@ -13,9 +16,6 @@
 #include "Models/KindleBook.hpp"
 #include "Models/KindlePageFlipper.hpp"
 #include "Models/KindlePageResponse.hpp"
-#include "Models/Place.hpp"
-#include "Renderers/Renderer.hpp"
-#include "Renderers/RendererStream.hpp"
 #include "Storage/LocalStore.hpp"
 #include "Storage/PreferencesStore.hpp"
 #include "UI/Components/MultiLineTextView.hpp"
@@ -156,28 +156,5 @@ private:
     void scheduleTestDisconnect();
     void cancelTestDisconnect();
     static void testDisconnectTimerCallback(TimerHandle_t timer);
-#endif
-
-#ifdef TESTS
-public:
-    void setOnTestLastReadDialogShown(std::function<void()> callback) {
-        log_i("TEST: registering last-read dialog shown callback on instance=%p",
-              static_cast<void *>(this));
-        onTestLastReadDialogShown_ = std::move(callback);
-    }
-    void setOnTestLastReadDialogChoice(std::function<void(bool)> callback) {
-        log_i("TEST: registering last-read dialog choice callback on instance=%p",
-              static_cast<void *>(this));
-        onTestLastReadDialogChoice_ = std::move(callback);
-    }
-
-    void setOnTestLastReadDialogPostComplete(std::function<void(bool)> callback) {
-        onTestLastReadDialogPostComplete_ = std::move(callback);
-    }
-
-private:
-    std::function<void()> onTestLastReadDialogShown_;
-    std::function<void(bool)> onTestLastReadDialogChoice_;
-    std::function<void(bool)> onTestLastReadDialogPostComplete_;
 #endif
 };

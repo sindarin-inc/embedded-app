@@ -1,9 +1,10 @@
 #pragma once
 
+#include <Renderer/Renderer.hpp>
+
 #include "Misc/CancelFlag.hpp"
 #include "Misc/PowerManager.hpp"
 #include "Misc/Telemetry.hpp"
-#include "Renderers/Renderer.hpp"
 #include "Storage/LocalStore.hpp"
 #include "Storage/PreferencesStore.hpp"
 #include "UI/Bitmaps/CheckMark.xbm"

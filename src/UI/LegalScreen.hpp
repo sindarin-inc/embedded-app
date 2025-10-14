@@ -1,9 +1,10 @@
 #ifndef LEGAL_SCREEN_HPP
 #define LEGAL_SCREEN_HPP
 
+#include <Renderer/Renderer.hpp>
+
 #include "Misc/Platform.hpp"
 #include "Misc/PowerManager.hpp"
-#include "Renderers/Renderer.hpp"
 #include "Storage/PreferencesStore.hpp"
 #include "UI/Bitmaps/bacl.hpp"
 #include "UI/Bitmaps/ce.hpp"

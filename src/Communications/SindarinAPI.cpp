@@ -1,5 +1,7 @@
 #include "SindarinAPI.hpp"
 
+#include <Defer/Defer.hpp>
+#include <StringUtil/StringUtil.hpp>
 #include <utility>
 
 #if CONFIG_USE_BLE_SERVER_PROXY
@@ -8,13 +10,12 @@
 #include "Communications/BLEProxy.hpp"
 #include "Communications/BLESyncService.hpp"
 #endif
+
 #include "Communications/UrlEncode.hpp"
 #include "Communications/WiFiHttpClient.hpp"
 #include "FileDownload.hpp"
 #include "Misc/Battery.hpp"
-#include "Misc/Defer.hpp"
 #include "Misc/Platform.hpp"
-#include "Misc/StringUtil.hpp"
 #include "Models/Json.hpp"
 #include "Models/UserReadable.hpp"
 #include "Version.hpp"
@@ -78,7 +79,7 @@ auto SindarinAPI::checkSync(const std::string &url, CheckSyncRequest &req, Check
     ConvertToJson(req, body);
 
     size_t serializedMaxSize = (*doc).memoryUsage() * 2;
-    auto reqBody = SpiRamArrayPtr<char>(serializedMaxSize);
+    auto reqBody = SpiramArrayPtr<char>(serializedMaxSize);
     size_t bodyLength = serializeJson(*doc, reqBody.get(), serializedMaxSize);
 
     err = client->open(bodyLength);
@@ -328,7 +329,7 @@ auto SindarinAPI::uploadTelemetryFile(SFile &telemetryFile, const std::string &l
 
     // Write the file data in chunks
     size_t bufferSize = 4096;
-    auto buffer = SpiRamArrayPtr<char>(bufferSize);
+    auto buffer = SpiramArrayPtr<char>(bufferSize);
     int totalBytesWritten = 0;
     int writeSize = telemetryFile.size();
     while (totalBytesWritten < writeSize) {
@@ -386,7 +387,7 @@ auto SindarinAPI::uploadCrashReport(SFile &crashFile, const std::string &content
     defer { client->close(); };
 
     size_t bufferSize = 4096;
-    auto buffer = SpiRamArrayPtr<char>(bufferSize);
+    auto buffer = SpiramArrayPtr<char>(bufferSize);
 
     int totalBytesWritten = 0;
     while (totalBytesWritten < writeSize) {
@@ -433,7 +434,7 @@ auto SindarinAPI::getServerTime(time_t *time, bool useBle,
     }
 
     // Read the timestamp directly as a string
-    auto buffer = SpiRamArrayPtr<char>(contentLength + 1);
+    auto buffer = SpiramArrayPtr<char>(contentLength + 1);
     auto stream = client->makeReadStream();
     size_t totalRead = 0;
 
@@ -484,7 +485,7 @@ auto SindarinAPI::askQuestion(const BookQuestionRequest &req, BookQuestionRespon
     req.toJson(body);
 
     size_t serializedMaxSize = (*doc).memoryUsage() * 2;
-    auto reqBody = SpiRamArrayPtr<char>(serializedMaxSize);
+    auto reqBody = SpiramArrayPtr<char>(serializedMaxSize);
     size_t bodyLength = serializeJson(*doc, reqBody.get(), serializedMaxSize);
 
     err = client->open(bodyLength);
@@ -678,7 +679,7 @@ auto SindarinAPI::submitLastReadPageChoice(bool gotoLastReadPage, bool useBle,
     body["goto_last_read_page"] = gotoLastReadPage;
 
     size_t serializedMaxSize = (*doc).memoryUsage() * 2;
-    auto reqBody = SpiRamArrayPtr<char>(serializedMaxSize);
+    auto reqBody = SpiramArrayPtr<char>(serializedMaxSize);
     size_t bodyLength = serializeJson(*doc, reqBody.get(), serializedMaxSize);
 
     err = client->open(bodyLength);
@@ -743,7 +744,7 @@ auto SindarinAPI::fetchKindleChaptersWithUuids(const std::string &kindleUuid, in
     body["page"] = currentPage;
 
     size_t serializedMaxSize = (*doc).memoryUsage() * 2;
-    auto reqBody = SpiRamArrayPtr<char>(serializedMaxSize);
+    auto reqBody = SpiramArrayPtr<char>(serializedMaxSize);
     size_t serializedSize = serializeJson(*doc, reqBody.get(), serializedMaxSize);
 
     log_d("Request body: %s", reqBody.get());
@@ -826,7 +827,7 @@ auto SindarinAPI::navigateKindleToChapter(const std::string &kindleUuid,
     body["page"] = currentPage;
 
     size_t serializedMaxSize = (*doc).memoryUsage() * 2;
-    auto reqBody = SpiRamArrayPtr<char>(serializedMaxSize);
+    auto reqBody = SpiramArrayPtr<char>(serializedMaxSize);
     size_t serializedSize = serializeJson(*doc, reqBody.get(), serializedMaxSize);
 
     log_d("Request body: %s", reqBody.get());

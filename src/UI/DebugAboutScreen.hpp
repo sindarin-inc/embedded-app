@@ -1,9 +1,9 @@
 #pragma once
 
+#include <Renderer/Renderer.hpp>
 #include <vector>
 
 #include "Misc/Platform.hpp"
-#include "Renderers/Renderer.hpp"
 #include "UI/Components/EinkView.hpp"
 #include "UI/Components/SingleLineTextView.hpp"
 #include "UI/Screen.hpp"

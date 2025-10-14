@@ -1,13 +1,13 @@
 #include "KindleTableOfContentsScreen.hpp"
 
 #include <ArduinoJson.h>
+#include <StringUtil/StringUtil.hpp>
 #include <algorithm>
 #include <climits>
 #include <cmath>
 
 #include "Communications/SindarinAPI.hpp"
 #include "Misc/Dispatch.hpp"
-#include "Misc/StringUtil.hpp"
 #include "Models/Json.hpp"
 #include "Models/KindleChaptersResponse.hpp"
 #include "UI/Menu/MenuItemTOC.hpp"

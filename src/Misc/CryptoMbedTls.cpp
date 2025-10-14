@@ -1,14 +1,14 @@
+#include <StringUtil/StringUtil.hpp>
 #include <mbedtls/md.h>
 
 #include "Crypto.hpp"
 #include "Storage/FileSystem.hpp"
-#include "StringUtil.hpp"
 #include "sindarin-debug.h"
 
 auto CalculateFileHash(const FileSystem &fileSystem, const char *path) -> std::string {
     SFile file = fileSystem.open(path);
     if (!file) {
-        log_e("Failed to open file: %s is the filename", path);
+        log_e("Failed to open file: %s", path);
         return "";
     }
 

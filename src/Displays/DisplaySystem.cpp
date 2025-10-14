@@ -1,5 +1,6 @@
 #include "DisplaySystem.hpp"
 
+#include <StringUtil/StringUtil.hpp>
 #include <algorithm>
 #include <freertos/FreeRTOS.h>
 #include <freertos/timers.h>
@@ -8,9 +9,7 @@
 #include "Inputs/RemoteInput.hpp"
 #include "Misc/Dispatch.hpp"
 #include "Misc/PBMImage.hpp"
-#include "Misc/StringUtil.hpp"
-#include "UI/Fonts/Font.hpp"
-#include "UI/Fonts/Fonts.hpp"
+#include "UI/Fonts.hpp"
 #include "sindarin-debug.h"
 
 DisplaySystem::DisplaySystem() = default;
@@ -268,7 +267,7 @@ void DisplaySystem::drawPBM(int16_t x, int16_t y, RendererStream &stream) {
     } else {
         // not fullscreen
         // load bitmap into memory
-        auto bitmap = SpiRamArrayPtr<uint8_t>(byteSize);
+        auto bitmap = SpiramArrayPtr<uint8_t>(byteSize);
         if (stream.readBytes(bitmap.get(), byteSize) != byteSize) {
             log_e("failed to read bitmap");
             return;

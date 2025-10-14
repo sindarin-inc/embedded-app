@@ -1,13 +1,13 @@
 #include "SolDrm.hpp"
 
+#include <Defer/Defer.hpp>
+#include <Spiram/Memory.hpp>
 #include <cstdio>
 #include <mbedtls/error.h>
 #include <mbedtls/gcm.h>
 #include <mbedtls/rsa.h>
 #include <miniz/miniz.h>
 
-#include "Misc/Defer.hpp"
-#include "Misc/SpiramAllocator.hpp"
 #include "sindarin-debug.h"
 
 SolDrm::~SolDrm() {
@@ -70,8 +70,8 @@ auto SolDrm::generateKeypair(unsigned int keySize) -> int {
 
     // Allocate enough space for DER format
     size_t outputBufferSize = (keySize / 8) * 8 + 64;
-    char *outputBuffer = static_cast<char *>(SpiRamMalloc(outputBufferSize));
-    defer { SpiRamFree(outputBuffer); };
+    char *outputBuffer = static_cast<char *>(SpiramMalloc(outputBufferSize));
+    defer { SpiramFree(outputBuffer); };
 
     // Write the private key in DER format (~609 bytes)
     ret = mbedtls_pk_write_key_der(&key, reinterpret_cast<unsigned char *>(outputBuffer),
@@ -116,12 +116,12 @@ auto SolDrm::publicKeyPem() -> std::string {
     }
 
     size_t estimatedPemSize = (privateKey.size() / 3) * 4 + 100;
-    auto *outputBuffer = static_cast<unsigned char *>(SpiRamMalloc(estimatedPemSize));
+    auto *outputBuffer = static_cast<unsigned char *>(SpiramMalloc(estimatedPemSize));
     if (outputBuffer == nullptr) {
         log_e("Failed to allocate memory for output buffer");
         return "";
     }
-    defer { SpiRamFree(outputBuffer); };
+    defer { SpiramFree(outputBuffer); };
 
     ret = mbedtls_pk_write_pubkey_pem(&key, outputBuffer, estimatedPemSize);
     if (ret != 0) {
@@ -274,7 +274,7 @@ auto SolDrm::decryptInPlaceIfNecessary(const std::vector<uint8_t> &aesKey,
     log_d("Input buffer: next_in=%p, avail_in=%u", (void *)stream.next_in, stream.avail_in);
     log_d("First two bytes at next_in: 0x%02x 0x%02x", stream.next_in[0], stream.next_in[1]);
 
-    auto decompressedData = SpiRamArrayPtr<uint8_t>(fileHeader->decompressedSize);
+    auto decompressedData = SpiramArrayPtr<uint8_t>(fileHeader->decompressedSize);
 
     while (true) {
         // Reset stream for each attempt

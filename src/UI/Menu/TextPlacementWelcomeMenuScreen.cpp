@@ -2,7 +2,7 @@
 
 TextPlacementWelcomeMenuScreen::TextPlacementWelcomeMenuScreen(DisplaySystem &display)
     : EinkView(display), menuView_(display),
-      renderer_(display, DisplayRect({0, 0, 0, 0}), static_cast<Font *>(&fontFace0)),
+      renderer_(display, DisplayRect({0, 0, 0, 0}), FontHandle{&fontFace0}),
       rendererView_(display, renderer_), leftArrowView_(display, ArrowDirection::ArrowLeft),
       rightArrowView_(display, ArrowDirection::ArrowRight) {
     menuView_.padding = 5;
@@ -100,15 +100,15 @@ void TextPlacementWelcomeMenuScreen::drawInRect(SolRect rect) {
     switch (textSelection_) {
     case 0:
         renderer_.setLineSpacing(0);
-        renderer_.setFont(&fontFace0);
+        renderer_.setFont(FontHandle{&fontFace0});
         break;
     case 1:
         renderer_.setLineSpacing(-2);
-        renderer_.setFont(&fontFace0);
+        renderer_.setFont(FontHandle{&fontFace0});
         break;
     case 2:
         renderer_.setLineSpacing(0);
-        renderer_.setFont(&fontFace1);
+        renderer_.setFont(FontHandle{&fontFace1});
         break;
     }
     if (textSelection_ != 0) {

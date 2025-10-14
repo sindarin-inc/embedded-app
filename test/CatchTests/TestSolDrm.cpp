@@ -6,9 +6,11 @@
 #undef protected
 #undef private
 
+#include <Renderer/Renderer.hpp>
+
 #include "DisplayUtil.hpp"
-#include "Renderers/Renderer.hpp"
 #include "Storage/PosixFileSystem.hpp"
+#include "Storage/SFileUnzipperStream.hpp"
 #include "ViewTestCommon.hpp"
 
 TEST_CASE("Test generateKeypair", "[SolDrm]") {
@@ -86,11 +88,13 @@ TEST_CASE("Test DRM'd EPub", "[SolDrm]") {
             0x34, 0x3a, 0x3d, 0xbe, 0x6f, 0x54, 0x96, 0x75, 0x4f, 0x81, 0xf0, 0x2f, 0xed, 0x43,
             0x39, 0x65, 0x8f, 0x54, 0xba, 0x7d, 0xef, 0x50};
         prefs.privateKey.set(privateKey);
-        SolDrm solDrm(prefs);
-        auto epubFile = std::make_shared<EPubFile>(file, readable, solDrm);
+        auto solDrm = std::make_shared<SolDrm>(prefs);
+        auto epubFile =
+            std::make_shared<EPubFile>(std::make_shared<SFileUnzipperStream>(file), solDrm);
+        auto epubStream = std::make_shared<EPubFileRendererStream>(epubFile);
 
-        Renderer renderer(*display, display->defaultTextRect(), static_cast<Font *>(&fontFace0));
-        renderer.setStream(epubFile);
+        Renderer renderer(*display, display->defaultTextRect(), FontHandle{&fontFace0});
+        renderer.setStream(epubStream);
         renderer.renderPage(std::make_shared<EPubPlace>(0, "OEBPS/9781665515849_split_006.xhtml"));
         display->updateDisplay(DisplaySystem::UpdateType::FULL, true);
 

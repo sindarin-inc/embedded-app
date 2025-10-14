@@ -1,5 +1,8 @@
 #include "RootUI.hpp"
 
+#include <EPubFile/EPubFile.hpp>
+#include <Renderer/Renderer.hpp>
+#include <StringUtil/StringUtil.hpp>
 #include <esp_sleep.h>
 #include <esp_system.h>
 #include <esp_timer.h>
@@ -9,7 +12,6 @@
 #include "Communications/HtmlCleaner.hpp"
 #include "Communications/SindarinAPI.hpp"
 #include "Communications/WiFi.hpp"
-#include "EPub/EPubFile.hpp"
 #include "Inputs/RemoteInput.hpp"
 #include "Misc/BootLoopDetection.hpp"
 #include "Misc/FactoryReset.hpp"
@@ -17,16 +19,15 @@
 #include "Misc/Platform.hpp"
 #include "Misc/PowerManager.hpp"
 #include "Misc/SolClock.hpp"
-#include "Misc/StringUtil.hpp"
 #include "Misc/Telemetry.hpp"
 #include "Models/KindleBook.hpp"
 #include "Models/Readable.hpp"
-#include "Renderers/Renderer.hpp"
 #if CONFIG_INCLUDE_DEFAULT_CONTENT
 #include "Storage/EPubs/LastQuestion.epub.hpp"
 #include "Storage/EPubs/PsalmsAndProverbs.epub.hpp"
 #endif
 #include "Storage/LocalStore.hpp"
+#include "Storage/SFileUnzipperStream.hpp"
 #include "UI/AboutScreen.hpp"
 #include "UI/AlignmentScreen.hpp"
 #include "UI/AppDownloadScreen.hpp"
@@ -38,7 +39,7 @@
 #include "UI/DebugAboutScreen.hpp"
 #include "UI/DemoScreen.hpp"
 #include "UI/FirmwareUpdateScreen.hpp"
-#include "UI/Fonts/Fonts.hpp"
+#include "UI/Fonts.hpp"
 #include "UI/KindleReadableScreen.hpp"
 #include "UI/LayoutTestScreen.hpp"
 #include "UI/LegalScreen.hpp"
@@ -253,12 +254,16 @@ void RootUI::setup(LocalStore &localStore, FileSystem &fileSystem,
             // Handle this is an in-memory epub
             auto file =
                 SFile(std::make_shared<RamFile>(readable->localBytes, readable->localBytesSize));
-            stream = std::make_shared<EPubFile>(file, readable, solDrm_);
+            auto unzipperStream = std::make_shared<SFileUnzipperStream>(file);
+            auto epubFile = std::make_shared<EPubFile>(unzipperStream, solDrm_);
+            stream = std::make_shared<EPubFileRendererStream>(epubFile);
         } else {
             auto [path, size] = localStore.readableFilePathForReading(readable);
             if (HasSuffix(path, ".epub")) {
                 log_i("Opening %s as epub", path.c_str());
-                stream = fileSystem.newEPubRendererStream(path.c_str(), readable, solDrm_);
+                auto epubStream = fileSystem.newEPubRendererStream(path.c_str(), solDrm_);
+                epubStream->epubFile->setIsAnArticle(readable->isArticle());
+                stream = epubStream;
             } else if (HasSuffix(path, ".txt.gz")) {
                 log_i("Opening %s as gzip", path.c_str());
                 stream = fileSystem.newGzipRendererStream(path.c_str());

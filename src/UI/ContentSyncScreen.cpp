@@ -4,10 +4,11 @@
 #if !SIMULATOR
 #include "Communications/BLEManager.hpp"
 #endif
+#include <Renderer/RendererStream.hpp>
+
 #include "Communications/WiFi.hpp"
 #include "Misc/Platform.hpp"
 #include "Misc/RateLimiter.hpp"
-#include "Renderers/RendererStream.hpp"
 
 ContentSyncScreen::ContentSyncScreen(DisplaySystem &display, LocalStore &localStore,
                                      PreferencesStore &prefs, Telemetry &telemetry,

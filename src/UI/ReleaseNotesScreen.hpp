@@ -1,9 +1,10 @@
 #pragma once
 
+#include <Renderer/Renderer.hpp>
+
 #include "Misc/Battery.hpp"
 #include "Misc/PowerManager.hpp"
 #include "Models/Firmware.hpp"
-#include "Renderers/Renderer.hpp"
 #include "Storage/LocalStore.hpp"
 #include "Storage/PreferencesStore.hpp"
 #include "UI/LineMenuScreen.hpp"

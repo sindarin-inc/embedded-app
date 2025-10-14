@@ -3,7 +3,7 @@
 // Allow access to protected methods from tests
 #define protected public
 #define private public
-#include "Models/Place.hpp"
+#include <Renderer/Place.hpp>
 #undef protected
 #undef private
 

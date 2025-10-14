@@ -42,7 +42,7 @@ endif
 IDF_PROFILE = -B build-$(TARGET) -DSDKCONFIG_DEFAULTS="$(SDKCONFIG_DEFAULTS)"
 
 # Optional variables for the Simulator builds
-CMAKE_SIM_DISPLAY_OPTIONS := $(if $(DISPLAY_WIDTH),-DDISPLAY_WIDTH=$(DISPLAY_WIDTH)) $(if $(DISPLAY_HEIGHT),-DDISPLAY_HEIGHT=$(DISPLAY_HEIGHT)) $(if $(DISPLAY_SCALE),-DDISPLAY_SCALE=$(DISPLAY_SCALE)) $(if $(SIM_LAYOUT_DEBUG),-DSIM_LAYOUT_DEBUG=$(SIM_LAYOUT_DEBUG)) $(if $(DISPLAY_TYPE),-DDISPLAY_TYPE=$(DISPLAY_TYPE)) $(if $(TTF_SCREEN_RES_PER_INCH),-DTTF_SCREEN_RES_PER_INCH=$(TTF_SCREEN_RES_PER_INCH))
+CMAKE_SIM_DISPLAY_OPTIONS := $(if $(DISPLAY_WIDTH),-DDISPLAY_WIDTH=$(DISPLAY_WIDTH)) $(if $(DISPLAY_HEIGHT),-DDISPLAY_HEIGHT=$(DISPLAY_HEIGHT)) $(if $(DISPLAY_SCALE),-DDISPLAY_SCALE=$(DISPLAY_SCALE)) $(if $(SIM_LAYOUT_DEBUG),-DSIM_LAYOUT_DEBUG=$(SIM_LAYOUT_DEBUG)) $(if $(DISPLAY_TYPE),-DDISPLAY_TYPE=$(DISPLAY_TYPE)) $(if $(TTF_SCREEN_RES_PER_INCH),-DCONFIG_TINYFONT_DISPLAY_DPI=$(TTF_SCREEN_RES_PER_INCH))
 
 .PHONY: sim-build
 sim-build:
@@ -117,6 +117,10 @@ test: test-build
 	./test/CatchTests/build/tests '[telemetry]'
 	./test/CatchTests/build/tests '[kindle]'
 	./test/CatchTests/build/tests '[kindle-short-pages]'
+
+.PHONY: test-accept
+test-accept: test-build
+	TESTS_ACCEPT_CHANGES=1 make test
 
 .PHONY: test-content-sync
 test-content-sync: test-build

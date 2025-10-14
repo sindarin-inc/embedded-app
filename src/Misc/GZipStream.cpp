@@ -17,7 +17,7 @@ auto GZipStream::init() -> bool {
         return false;
     }
 
-    outputBuffer_ = SpiRamArrayPtr<uint8_t>(MAX_GZIP_CHUNK_SIZE + 10);
+    outputBuffer_ = SpiramArrayPtr<uint8_t>(MAX_GZIP_CHUNK_SIZE + 10);
 
     // writing gz header
     // fixed 10 bytes

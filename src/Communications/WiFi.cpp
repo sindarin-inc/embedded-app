@@ -1,10 +1,10 @@
 #include "Communications/WiFi.hpp"
 
+#include <Defer/Defer.hpp>
+#include <Spiram/Memory.hpp>
 #include <cstring>
 #include <string>
 
-#include "Misc/Defer.hpp"
-#include "Misc/SpiramAllocator.hpp"
 #include "config.h"
 #include "sindarin-debug.h"
 
@@ -198,7 +198,7 @@ auto WiFi::scanNetworks(const std::function<void(std::shared_ptr<wifi_ap_record_
             continue;
         }
 
-        auto apRecords = SpiRamArrayPtr<wifi_ap_record_t>(apNum);
+        auto apRecords = SpiramArrayPtr<wifi_ap_record_t>(apNum);
 
         err = esp_wifi_scan_get_ap_records(&apNum, apRecords.get());
         if (err != ESP_OK) {

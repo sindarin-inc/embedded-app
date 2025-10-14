@@ -10,7 +10,6 @@ set(components
     miniz
     ulp
     astubs
-    pugixml
     improv
     ArduinoJson
     Adafruit-GFX-Library
@@ -41,6 +40,7 @@ set(components
     app_update
     usb
     freetype
+    tiny-font
 )
 
 # Note on conditional components:

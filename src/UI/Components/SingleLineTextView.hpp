@@ -4,8 +4,8 @@
 #include <utility>
 
 #include "EinkView.hpp"
-#include "UI/Fonts/Fonts.hpp"
-#include "UI/Fonts/TextTruncation.hpp"
+#include "UI/Fonts.hpp"
+#include "UI/TextTruncation.hpp"
 
 // A view that draws a line of text
 class SingleLineTextView : public EinkView {

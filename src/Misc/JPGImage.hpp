@@ -1,13 +1,13 @@
 #if USE_JPG_DECODER
 #pragma once
 
-#include "Misc/SpiramAllocator.hpp"
+#include <Spiram/Memory.hpp>
 
 class JPGImage {
 public:
     JPGImage() {
         outputBuffer_ = std::shared_ptr<uint8_t[]>(
-            (uint8_t *)SpiRamMalloc(sizeof(uint8_t) * 256 * 256 * 3), free);
+            (uint8_t *)SpiramMalloc(sizeof(uint8_t) * 256 * 256 * 3), free);
     }
     ~JPGImage() = default;
 

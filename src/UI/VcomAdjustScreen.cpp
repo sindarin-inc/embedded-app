@@ -1,18 +1,19 @@
 #if CONFIG_DISPLAY_EINKET013TT1
 #include "UI/VcomAdjustScreen.hpp"
 
-#include "Displays/DisplayEinkET013TT1.hpp"
-#include "Misc/StringUtil.hpp"
-#include "UI/Fonts/Fonts.hpp"
-#include "sindarin-debug.h"
+#include <StringUtil/StringUtil.hpp>
 
+#include "Displays/DisplayEinkET013TT1.hpp"
+#include "Displays/TextInsets.hpp"
+#include "UI/Fonts.hpp"
+#include "sindarin-debug.h"
 #define STEP_IN_MV 50
 #define MIN_VCOM_IN_MV (-4500)
 #define MAX_VCOM_IN_MV (-3500)
 
 VcomAdjustScreen::VcomAdjustScreen(DisplaySystem &display, PreferencesStore &prefs)
     : display_(display),
-      renderer_(display, GetTextRectFromPrefs(display, prefs), static_cast<Font *>(&fontFace0)),
+      renderer_(display, GetTextRectFromPrefs(display, prefs), FontHandle{&fontFace0}),
       prefs_(prefs) {
 
     auto *driver = (dynamic_cast<DisplayEinkET013TT1 *>(&display))->getDriver();

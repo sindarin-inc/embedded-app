@@ -76,4 +76,7 @@ jobs:
         if: failure()
         with:
           name: test-images
-          path: test/CatchTests/Images/TestRun/*.png
+          path: |
+            test/CatchTests/Images/TestRun/*.png
+            test/CatchTests/EPubImages/TestRun/*.png
+            test/CatchTests/KindleImages/TestRun/*.png

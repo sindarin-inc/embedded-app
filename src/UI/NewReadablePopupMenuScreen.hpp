@@ -1,9 +1,9 @@
 #pragma once
 
+#include <Renderer/RendererStream.hpp>
 #include <utility>
 
 #include "Misc/Telemetry.hpp"
-#include "Renderers/RendererStream.hpp"
 #include "Storage/LocalStore.hpp"
 #include "UI/Components/EinkView.hpp"
 #include "UI/LightingAdjustScreen.hpp"

@@ -39,6 +39,11 @@ void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *b
                           int32_t overrideVcom, const EinkET013TT1Waveform &altWaveform,
                           ScreenSide screen, EinkBox box) {
     if (skipWaveform_) {
+        uint8_t in = 1;
+        while (xQueuePeekFromISR(renderQueue_, &in) == pdTRUE) {
+            vTaskDelay(pdMS_TO_TICKS(10));
+        }
+
         // Skip waveform processing and just move the pixel all the way one way or another
         log_d("Skipping waveform processing (would have used \"%s\")", waveform.name);
         for (int x = 0; x < CONFIG_DISPLAY_WIDTH; x++) {
@@ -48,7 +53,6 @@ void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *b
             }
         }
         // Signal that we've drawn something
-        uint8_t in = 1;
         if (!skipSignalling_) {
             xQueueSend(renderQueue_, &in, portMAX_DELAY);
         }

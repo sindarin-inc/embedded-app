@@ -2,15 +2,16 @@
 
 #include <Update.h>
 
+#include "Displays/TextInsets.hpp"
 #include "Misc/Platform.hpp"
-#include "UI/Fonts/Fonts.hpp"
+#include "UI/Fonts.hpp"
 #include "UI/Menu/MenuItemSingleLine.hpp"
 #include "sindarin-debug.h"
 
 TutorialScreen::TutorialScreen(DisplaySystem &display, PreferencesStore &prefs, SpiramString text,
                                int bit)
     : display_(display),
-      renderer_(display, GetTextRectFromPrefs(display, prefs), static_cast<Font *>(&fontFace0)),
+      renderer_(display, GetTextRectFromPrefs(display, prefs), FontHandle{&fontFace0}),
       prefs_(prefs), menu_(prefs, display) {
 
     auto stream = std::make_shared<StdStringStream>(text);

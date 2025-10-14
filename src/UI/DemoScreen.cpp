@@ -4,6 +4,7 @@
 #include <freertos/queue.h>
 
 #include "Communications/WiFi.hpp"
+#include "Displays/TextInsets.hpp"
 #include "Misc/Dispatch.hpp"
 #include "Misc/Platform.hpp"
 #include "UI/Bitmaps/mani-astronaut.hpp"
@@ -36,13 +37,13 @@
 #include "UI/Bitmaps/mani-volcano.hpp"
 #include "UI/Bitmaps/mani-warrior.hpp"
 #include "UI/Bitmaps/sol-logo.hpp"
-#include "UI/Fonts/Fonts.hpp"
+#include "UI/Fonts.hpp"
 #include "UI/Layout/Types.hpp"
 #include "sindarin-debug.h"
 
 DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs, bool fullManifesto)
     : display_(display),
-      renderer_(display, GetTextRectFromPrefs(display, prefs), static_cast<Font *>(&fontFace0)),
+      renderer_(display, GetTextRectFromPrefs(display, prefs), FontHandle{&fontFace0}),
       prefs_(prefs), originalInversion_(display_.getInversion()), fullManifesto_(fullManifesto) {
     // We want to control exactly when full and partial will happen.
     // This allows us to cross ownership boundaries and to force a partial update

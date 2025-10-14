@@ -1,6 +1,7 @@
 #pragma once
 
-#include "Renderers/Renderer.hpp"
+#include <Renderer/Renderer.hpp>
+
 #include "Storage/PreferencesStore.hpp"
 #include "UI/LineMenuScreen.hpp"
 

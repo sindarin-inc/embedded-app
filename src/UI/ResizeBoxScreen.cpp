@@ -1,6 +1,7 @@
 #include "UI/ResizeBoxScreen.hpp"
 
-#include "UI/Fonts/Fonts.hpp"
+#include "Displays/TextInsets.hpp"
+#include "UI/Fonts.hpp"
 #include "sindarin-debug.h"
 
 #define BOX_OFFSET_ADJUST_AMOUNT 10
@@ -12,7 +13,7 @@ ResizeBoxScreen::ResizeBoxScreen(DisplaySystem &display, PreferencesStore &prefs
                                  Telemetry &telemetry)
     : EinkView(display), display_(display),
       renderer_(display, GetTextRectFromPrefs(display, prefs),
-                FontFromPrefs(prefs.font.get().value_or(PREFS_SOL_SMALL))),
+                FontHandle{FontFromPrefs(prefs.font.get().value_or(PREFS_SOL_SMALL))}),
       prefs_(prefs), telemetry_(telemetry), rendererRef_(renderer_), outerBoxView_(display, 5),
       backgroundBoxView_(display, 5), explanationView_(display, 5) {
     std::string message;
@@ -39,7 +40,7 @@ ResizeBoxScreen::ResizeBoxScreen(DisplaySystem &display, PreferencesStore &prefs
                                  std::shared_ptr<Place> place)
     : EinkView(display), display_(display),
       renderer_(display, GetTextRectFromPrefs(display, prefs),
-                FontFromPrefs(prefs.font.get().value_or(PREFS_SOL_SMALL))),
+                FontHandle{FontFromPrefs(prefs.font.get().value_or(PREFS_SOL_SMALL))}),
       place_(std::move(place)), prefs_(prefs), telemetry_(telemetry), rendererRef_(renderer),
       outerBoxView_(display, 5), backgroundBoxView_(display, 5), explanationView_(display, 5) {
     setupInstructions();

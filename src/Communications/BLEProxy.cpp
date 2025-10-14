@@ -2,11 +2,11 @@
 
 #include "BLEProxy.hpp"
 
+#include <StringUtil/StringUtil.hpp>
 #include <utility>
 
 #include "Misc/Dispatch.hpp"
 #include "Misc/Platform.hpp"
-#include "Misc/StringUtil.hpp"
 #include "sindarin-debug.h"
 
 #define BLEPROXY_CHARACTERISTIC_UUID "611f68af-5ffe-4944-9b8f-c0f4f5a623ee"

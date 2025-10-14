@@ -1,7 +1,8 @@
 #pragma once
+#include <Renderer/DocType.hpp>
+#include <Renderer/RendererStream.hpp>
+
 #include "Misc/CircBuffer.hpp"
-#include "Models/DocType.hpp"
-#include "Renderers/RendererStream.hpp"
 
 #define LOOKBACK_BUFFER_SIZE 32768
 

@@ -1,7 +1,9 @@
 #include "LayoutContext.hpp"
 
-#include "Misc/StringUtil.hpp"
+#include <StringUtil/StringUtil.hpp>
+
 #include "View.hpp"
+#include "sindarin-debug.h"
 
 LayoutContext::LayoutContext(View &view)
     : view_(&view), layout_([this, &view](LayoutContext &layoutContext, SolSize size) {

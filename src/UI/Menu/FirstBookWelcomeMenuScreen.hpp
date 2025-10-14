@@ -1,8 +1,9 @@
 #pragma once
 
+#include <Renderer/Renderer.hpp>
+
 #include "Displays/DisplaySystem.hpp"
 #include "Inputs/RemoteInput.hpp"
-#include "Renderers/Renderer.hpp"
 #include "UI/Components/EinkView.hpp"
 #include "UI/Components/RendererView.hpp"
 #include "UI/Menu/MenuView.hpp"

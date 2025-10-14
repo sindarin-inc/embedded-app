@@ -1,5 +1,7 @@
 #pragma once
 
+#include <Spiram/Vector.hpp>
+#include <StringUtil/StringUtil.hpp>
 #include <cinttypes>
 #include <cstring>
 #include <freertos/FreeRTOS.h>
@@ -12,7 +14,6 @@
 #include <NimBLEDevice.h>
 #endif
 
-#include "Misc/StringUtil.hpp"
 #include "config.h"
 #include "sindarin-debug.h"
 

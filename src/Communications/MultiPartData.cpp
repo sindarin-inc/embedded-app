@@ -1,8 +1,7 @@
 #include "MultiPartData.hpp"
 
+#include <StringUtil/StringUtil.hpp>
 #include <cstring>
-
-#include "Misc/StringUtil.hpp"
 
 std::string MultiPartData::boundary = "SIND12345";
 

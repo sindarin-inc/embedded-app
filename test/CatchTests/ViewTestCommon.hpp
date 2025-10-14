@@ -24,9 +24,12 @@ void SetImagesFolder(std::string folder);
 
 void SendRemoteCommand(RemoteCommand command);
 
-auto WaitForDraw(DisplayEinkET013TT1 &display, long timeoutSeconds = 10) -> bool;
+auto WaitForDraw(DisplayEinkET013TT1 &display, bool continueAfterDraw = true,
+                 long timeoutSeconds = 10) -> bool;
 
-#define WAIT_FOR_DRAW(display) REQUIRE(WaitForDraw(display))
+auto HasQueuedDraw(DisplayEinkET013TT1 &display) -> bool;
+
+#define WAIT_FOR_DRAW(display, ...) REQUIRE(WaitForDraw(display, ##__VA_ARGS__))
 
 // TODO: This struct is probably overkill
 struct ViewTestResult {

@@ -1,6 +1,6 @@
 #include "ReadableBookmark.hpp"
 
-#include "Models/Place.hpp"
+#include <Renderer/Place.hpp>
 
 // Simply reads from the bookmark file for this Readable and returns whether it was
 // a turn on or turn off bookmark.

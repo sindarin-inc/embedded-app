@@ -1,10 +1,11 @@
 #ifndef OFFSET_ADJUST_SCREEN_HPP
 #define OFFSET_ADJUST_SCREEN_HPP
 
+#include <Renderer/Renderer.hpp>
+
 #include "Misc/Battery.hpp"
 #include "Misc/Telemetry.hpp"
 #include "Models/Readable.hpp"
-#include "Renderers/Renderer.hpp"
 #include "Storage/PreferencesStore.hpp"
 #include "UI/Components/BoxView.hpp"
 #include "UI/Components/EinkView.hpp"

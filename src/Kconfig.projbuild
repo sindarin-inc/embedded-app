@@ -31,14 +31,6 @@ menu "Sol Options"
 
         endchoice
 
-        config DISPLAY_PIXEL_RESOLUTION_IS_FIX
-            bool "Display pixel resolution is unchangeable at runtime."
-            default y
-
-        config TTF_SCREEN_RES_PER_INCH
-            int "Screen resolution per inch (for TTF sizing)"
-            default 150
-
         config DISPLAY_WIDTH
             int "Display Width"
             default 1440 if DISPLAY_WAVESHARE_6INHD
@@ -301,19 +293,6 @@ menu "Sol Options"
         config LINES_SIZE
             int "Lines Size"
             default 36
-
-        choice
-            prompt "Font System"
-            default FONT_IBMF if DISPLAY_EINKET013TT1 || DISPLAY_SHARP_27IN
-            default FONT_TTF
-    
-            config FONT_IBMF
-                bool "IBMF 1bpp Sol Sans Font"
-
-            config FONT_TTF
-                bool "TTF Font via FreeType"
-
-        endchoice
         
     endmenu
 

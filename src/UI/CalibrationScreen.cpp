@@ -2,7 +2,7 @@
 
 #include <cmath>
 
-#include "UI/Fonts/Fonts.hpp"
+#include "UI/Fonts.hpp"
 
 #define NUM_SPIKES 24
 

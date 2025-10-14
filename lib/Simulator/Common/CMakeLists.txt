@@ -43,6 +43,64 @@ add_subdirectory(${REPO_ROOT_DIR}/components/miniz ${CMAKE_CURRENT_BINARY_DIR}/m
 
 add_subdirectory(${REPO_ROOT_DIR}/components/Adafruit-GFX-Library ${CMAKE_CURRENT_BINARY_DIR}/Adafruit-GFX-Library)
 
+# Compile configs to have libraries use our esp-idf stubs
+add_library(stubs_config INTERFACE)
+target_compile_definitions(stubs_config INTERFACE
+  CONFIG_LOG_TIMESTAMP_SOURCE_RTOS=1
+  CONFIG_LOG_MAXIMUM_LEVEL=4
+  ESP_PLATFORM=1
+)
+target_include_directories(stubs_config INTERFACE ${REPO_ROOT_DIR}/lib/Simulator/stubs/esp-idf)
+
+add_subdirectory("${REPO_ROOT_DIR}/components/cpp-misc/defer" ${CMAKE_CURRENT_BINARY_DIR}/defer)
+
+add_subdirectory("${REPO_ROOT_DIR}/components/cpp-misc/spiram-cpp" ${CMAKE_CURRENT_BINARY_DIR}/spiram-cpp)
+target_link_libraries(spiram-cpp PUBLIC stubs_config)
+
+add_subdirectory("${REPO_ROOT_DIR}/components/cpp-misc/stringutil" ${CMAKE_CURRENT_BINARY_DIR}/stringutil)
+
+add_subdirectory("${REPO_ROOT_DIR}/components/cpp-misc/bmpimage" ${CMAKE_CURRENT_BINARY_DIR}/bmpimage)
+target_link_libraries(bmpimage PUBLIC stubs_config)
+
+add_subdirectory("${REPO_ROOT_DIR}/components/cpp-misc/unzipper" ${CMAKE_CURRENT_BINARY_DIR}/unzipper)
+target_link_libraries(unzipper PUBLIC stubs_config)
+
+add_subdirectory("${REPO_ROOT_DIR}/components/cpp-misc/idflog" ${CMAKE_CURRENT_BINARY_DIR}/idflog)
+
+add_subdirectory(${REPO_ROOT_DIR}/components/tiny-font ${CMAKE_CURRENT_BINARY_DIR}/tiny-font)
+
+add_subdirectory(${REPO_ROOT_DIR}/components/tiny-epub/epubfile ${CMAKE_CURRENT_BINARY_DIR}/epubfile)
+
+add_subdirectory(${REPO_ROOT_DIR}/components/tiny-epub/renderer ${CMAKE_CURRENT_BINARY_DIR}/renderer)
+
+# Conditionally link freetype if we're using 8-bit or 16-bit display
+if(DISPLAY_TYPE STREQUAL "DISPLAY_SIM_24BIT" OR DISPLAY_TYPE STREQUAL "DISPLAY_SIM_16BIT" OR DISPLAY_TYPE STREQUAL "DISPLAY_SIM_8BIT")
+    # Set FreeType options before adding the subdirectory
+    set(FT_DISABLE_PNG ON CACHE BOOL "Disable PNG support in FreeType" FORCE)
+    set(FT_DISABLE_HARFBUZZ ON CACHE BOOL "Disable HarfBuzz support in FreeType" FORCE)
+    set(FT_DISABLE_BROTLI ON CACHE BOOL "Disable Brotli support in FreeType" FORCE)
+    add_subdirectory(${REPO_ROOT_DIR}/components/tiny-font/freetype/freetype ${CMAKE_CURRENT_BINARY_DIR}/freetype)
+    target_link_libraries(tiny-font PUBLIC freetype)
+    target_compile_definitions(tiny-font PUBLIC
+        CONFIG_TINYFONT_TTF=1
+        CONFIG_TINYFONT_IBMF=0
+        CONFIG_TINYFONT_DISPLAY_DPI=${TTF_SCREEN_RES_PER_INCH}
+    )
+    target_compile_definitions(renderer PRIVATE
+        CONFIG_EPUB_RENDERER_REPLACE_SUPERSUBSCRIPT_CHARACTERS=0
+        CONFIG_EPUB_RENDERER_NATIVE_SUPERSUBSCRIPT_CHARACTERS=1
+    )
+else()
+    target_compile_definitions(tiny-font PUBLIC
+        CONFIG_TINYFONT_TTF=0
+        CONFIG_TINYFONT_IBMF=1
+    )
+    target_compile_definitions(renderer PRIVATE
+        CONFIG_EPUB_RENDERER_REPLACE_SUPERSUBSCRIPT_CHARACTERS=1
+        CONFIG_EPUB_RENDERER_NATIVE_SUPERSUBSCRIPT_CHARACTERS=0
+    )
+endif()
+
 add_subdirectory(${REPO_ROOT_DIR}/lib/esp_ringbuf ${CMAKE_CURRENT_BINARY_DIR}/esp_ringbuf)
 
 # Before adding mbedtls, set options to disable tests and programs
@@ -59,7 +117,16 @@ endif()
 
 add_library(${PROJECT_NAME} STATIC ${SOURCES} ${HTTP_CLIENT_SOURCE})
 
-target_link_libraries(${PROJECT_NAME} PUBLIC pugixml ArduinoJson miniz astubs esp-idf-stubs nvs_flash Adafruit-GFX-Library mbedtls mbedx509 mbedcrypto esp_ringbuf)
+target_link_libraries(${PROJECT_NAME} PUBLIC ArduinoJson miniz astubs esp-idf-stubs nvs_flash Adafruit-GFX-Library tiny-font mbedtls mbedx509 mbedcrypto esp_ringbuf defer spiram-cpp stringutil epubfile renderer)
+
+target_compile_definitions(renderer PUBLIC
+    CONFIG_EPUB_RENDERER_MAX_BYTES_PER_PARAGRAPH=5003
+    CONFIG_EPUB_RENDERER_MAX_BYTES_PER_DISPLAY_PAGE=2400
+    CONFIG_EPUB_RENDERER_CSTR_POOL_SIZE=2000
+    CONFIG_EPUB_RENDERER_TOKENS_SIZE=500
+    CONFIG_EPUB_RENDERER_MAX_BYTES_PER_LINE=200
+    CONFIG_EPUB_RENDERER_LINES_SIZE=36
+)
 
 target_include_directories(${PROJECT_NAME} PUBLIC
     "${REPO_ROOT_DIR}/src"
@@ -71,45 +138,41 @@ target_include_directories(${PROJECT_NAME} PUBLIC
     "${REPO_ROOT_DIR}/lib/argparse"
 )
 
-# Conditionally link freetype if we're using 8-bit or 16-bit display
-if(DISPLAY_TYPE STREQUAL "DISPLAY_SIM_24BIT" OR DISPLAY_TYPE STREQUAL "DISPLAY_SIM_16BIT" OR DISPLAY_TYPE STREQUAL "DISPLAY_SIM_8BIT")
-    # Set FreeType options before adding the subdirectory
-    set(FT_DISABLE_PNG ON CACHE BOOL "Disable PNG support in FreeType" FORCE)
-    set(FT_DISABLE_HARFBUZZ ON CACHE BOOL "Disable HarfBuzz support in FreeType" FORCE)
-    set(FT_DISABLE_BROTLI ON CACHE BOOL "Disable Brotli support in FreeType" FORCE)
-    add_subdirectory(${REPO_ROOT_DIR}/components/freetype/freetype ${CMAKE_CURRENT_BINARY_DIR}/freetype)
-    target_link_libraries(${PROJECT_NAME} PUBLIC freetype)
-    target_compile_definitions(${PROJECT_NAME} PUBLIC
-        CONFIG_FONT_TTF=1
-        CONFIG_FONT_IBMF=0
-    )
-else()
-    target_compile_definitions(${PROJECT_NAME} PUBLIC
-        CONFIG_FONT_TTF=0
-        CONFIG_FONT_IBMF=1
-    )
-endif()
-
 # Set compile definitions based on the selected DISPLAY_TYPE
 if(DISPLAY_TYPE STREQUAL "DISPLAY_SIM_24BIT")
     target_compile_definitions(${PROJECT_NAME} PUBLIC
         CONFIG_DISPLAY_SIM_24BIT=1
     )
+    target_compile_definitions(tiny-font PUBLIC
+        CONFIG_TINYFONT_PIXEL_RESOLUTION_TWENTY_FOUR_BIT=1
+    )
 elseif(DISPLAY_TYPE STREQUAL "DISPLAY_SIM_16BIT")
     target_compile_definitions(${PROJECT_NAME} PUBLIC
         CONFIG_DISPLAY_SIM_16BIT=1
+    )
+    target_compile_definitions(tiny-font PUBLIC
+        CONFIG_TINYFONT_PIXEL_RESOLUTION_SIXTEEN_BIT=1
     )
 elseif(DISPLAY_TYPE STREQUAL "DISPLAY_SIM_8BIT")
     target_compile_definitions(${PROJECT_NAME} PUBLIC
         CONFIG_DISPLAY_SIM_8BIT=1
     )
+    target_compile_definitions(tiny-font PUBLIC
+        CONFIG_TINYFONT_PIXEL_RESOLUTION_EIGHT_BIT=1
+    )
 elseif(DISPLAY_TYPE STREQUAL "DISPLAY_SIM_1BIT")
     target_compile_definitions(${PROJECT_NAME} PUBLIC
         CONFIG_DISPLAY_SIM_1BIT=1
     )
+    target_compile_definitions(tiny-font PUBLIC
+        CONFIG_TINYFONT_PIXEL_RESOLUTION_ONE_BIT=1
+    )
 elseif(DISPLAY_TYPE STREQUAL "DISPLAY_EINKET013TT1")
     target_compile_definitions(${PROJECT_NAME} PUBLIC
         CONFIG_DISPLAY_EINKET013TT1=1
+    )
+    target_compile_definitions(tiny-font PUBLIC
+        CONFIG_TINYFONT_PIXEL_RESOLUTION_ONE_BIT=1
     )
 else()
     message(FATAL_ERROR "Invalid DISPLAY_TYPE: ${DISPLAY_TYPE}")
@@ -145,7 +208,6 @@ target_compile_definitions(${PROJECT_NAME} PUBLIC
     CONFIG_DISABLE_POWER_MANAGEMENT=1
     RTC_SLOW_ATTR=
     RTC_NOINIT_ATTR=
-    CONFIG_TTF_SCREEN_RES_PER_INCH=${TTF_SCREEN_RES_PER_INCH}
     CONFIG_DEFAULT_INACTIVITY_MINUTES=10
     CONFIG_DISPLAY_POWER=-1
     CONFIG_DISPLAY_WIDTH=${DISPLAY_WIDTH}

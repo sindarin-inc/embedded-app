@@ -1,9 +1,10 @@
 #ifndef RESIZE_BOX_SCREEN_HPP
 #define RESIZE_BOX_SCREEN_HPP
 
+#include <Renderer/Renderer.hpp>
+
 #include "Misc/Battery.hpp"
 #include "Misc/Telemetry.hpp"
-#include "Renderers/Renderer.hpp"
 #include "Storage/PreferencesStore.hpp"
 #include "UI/Components/BoxView.hpp"
 #include "UI/Components/EinkView.hpp"

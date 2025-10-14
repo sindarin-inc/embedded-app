@@ -73,6 +73,20 @@
             "cStandard": "c17",
             "cppStandard": "c++17",
             "compileCommands": "${workspaceFolder}/components/esp_lcd_seeya103/test_apps/build-esp32p4/compile_commands.json"
+        },
+        {
+            "name": "sim",
+            "includePath": [
+                "${default}"
+            ],
+            "defines": [
+                "_DEBUG",
+                "UNICODE",
+                "_UNICODE"
+            ],
+            "cStandard": "c17",
+            "cppStandard": "c++17",
+            "compileCommands": "${workspaceFolder}/lib/Simulator/build/compile_commands.json"
         }
     ],
     "version": 4

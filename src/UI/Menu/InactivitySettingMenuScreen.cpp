@@ -1,6 +1,6 @@
 #include "InactivitySettingMenuScreen.hpp"
 
-#include "Renderers/Renderer.hpp"
+#include <Renderer/Renderer.hpp>
 
 InactivitySettingMenuScreen::InactivitySettingMenuScreen(DisplaySystem &display,
                                                          const std::string &backTitle)

@@ -1,8 +1,11 @@
 #include "FileSystem.hpp"
 
-#include "EPub/EPubFile.hpp"
+#include <EPubFile/EPubFile.hpp>
+#include <Unzipper/UnzipperFileStream.hpp>
+
 #include "Misc/GUnzipStream.hpp"
 #include "Misc/LookBackStream.hpp"
+#include "Storage/SFileUnzipperStream.hpp"
 #include "sindarin-debug.h"
 
 auto FileSystem::newRendererStream(const char *path) const -> std::shared_ptr<RendererStream> {
@@ -15,28 +18,31 @@ auto FileSystem::newRendererStream(const char *path) const -> std::shared_ptr<Re
     return std::make_shared<ContainerStream<SFile>>(file, RendererStream::parseDocType(path));
 }
 
-auto FileSystem::newEPubRendererStream(const char *path, const std::shared_ptr<Readable> &readable,
-                                       SolDrm &solDrm) const -> std::shared_ptr<EPubFile> {
+auto FileSystem::newEPubRendererStream(const char *path,
+                                       const std::shared_ptr<SolDrm> &solDrm) const
+    -> std::shared_ptr<EPubFileRendererStream> {
     log_d("Attempting to open: %s", path);
     auto file = open(path);
     if (!file) {
-        log_e("Failed to open file: %s is the filename", path);
+        log_e("Failed to open file: %s", path);
         return nullptr;
     }
-    auto stream = std::make_shared<EPubFile>(file, readable, solDrm);
-    if (!stream->isOpen()) {
-        log_e("Failed to open stream for: %s is the filename", path);
+    auto unzipperStream = std::make_shared<SFileUnzipperStream>(file);
+    auto epubFile = std::make_shared<EPubFile>(unzipperStream, solDrm);
+
+    if (!epubFile->isOpen()) {
+        log_e("Failed to open stream for: %s", path);
         return nullptr;
     }
 
-    return stream;
+    return std::make_shared<EPubFileRendererStream>(epubFile);
 }
 
 auto FileSystem::newGzipRendererStream(const char *path) const -> std::shared_ptr<RendererStream> {
     log_d("Attempting to open: %s", path);
     auto file = open(path);
     if (!file) {
-        log_e("Failed to open file: %s is the filename", path);
+        log_e("Failed to open file: %s", path);
         return nullptr;
     }
 

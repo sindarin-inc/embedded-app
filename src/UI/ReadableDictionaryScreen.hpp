@@ -1,15 +1,15 @@
 #pragma once
 
+#include <Renderer/Place.hpp>
+#include <Renderer/Renderer.hpp>
+#include <Spiram/String.hpp>
 #include <memory>
 #include <unordered_map>
 #include <utility>
 #include <vector>
 
-#include "Misc/SpiramAllocator.hpp"
 #include "Misc/Telemetry.hpp"
-#include "Models/Place.hpp"
 #include "Models/Readable.hpp"
-#include "Renderers/Renderer.hpp"
 #include "Storage/PreferencesStore.hpp"
 #include "UI/Components/ArrowLabelView.hpp"
 #include "UI/Components/BoxView.hpp"

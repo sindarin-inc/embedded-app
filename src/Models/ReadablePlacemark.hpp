@@ -1,10 +1,10 @@
 #pragma once
 
+#include <Renderer/Place.hpp>
+#include <Spiram/String.hpp>
 #include <string>
 
-#include "Misc/SpiramAllocator.hpp"
 #include "Models/JsonSerializable.hpp"
-#include "Models/Place.hpp"
 
 class ReadablePlacemark : public JsonSerializable {
 public:

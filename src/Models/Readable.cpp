@@ -1,6 +1,6 @@
 #include "Readable.hpp"
 
-#include "ReadableTableOfContentsChapter.hpp"
+#include <EPubFile/EPubToc.hpp>
 
 // NOLINTNEXTLINE(readability-identifier-naming) - ArduinoJson requires this name
 auto convertToJson(const Readable &src, JsonVariant dst) -> bool {

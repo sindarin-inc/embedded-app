@@ -1,5 +1,6 @@
 #pragma once
 
+#include <StringUtil/StringUtil.hpp>
 #include <map>
 #include <memory>
 
@@ -13,7 +14,6 @@
 #include "Communications/HttpClient.hpp"
 #include "Misc/CircBuffer.hpp"
 #include "Misc/Dispatch.hpp"
-#include "Misc/StringUtil.hpp"
 
 #define MAX_BUFFER_SIZE (1 * 1024 * 1024) // 1MB
 

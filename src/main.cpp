@@ -10,6 +10,7 @@
 #include <tusb.h>
 #endif
 
+#include <StringUtil/StringUtil.hpp>
 #include <freertos/FreeRTOS.h>
 #include <freertos/queue.h>
 
@@ -26,7 +27,6 @@
 #include "Misc/PowerManager.hpp"
 #include "Misc/SolClock.hpp"
 #include "Misc/SolMorse.hpp"
-#include "Misc/StringUtil.hpp"
 #include "Models/Readable.hpp"
 #include "Storage/CrashReportWriter.hpp"
 #include "Storage/LocalStore.hpp"
@@ -132,7 +132,7 @@ TTRemoteInput ttRemoteInput(prefs, telemetry);
 USBSerial usbSerial;
 
 PowerManager powerManager(fileSystem, prefs, lightingController, myDisplay, telemetry, usbSerial);
-SolDrm solDrm(prefs);
+auto solDrm = std::make_shared<SolDrm>(prefs);
 LocalStore localStore(fileSystem, prefs, powerManager.battery, telemetry, solDrm);
 RootUI rootUi(myDisplay, prefs, powerManager, telemetry, solDrm);
 SolClock solClock(prefs);

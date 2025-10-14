@@ -1,12 +1,13 @@
 #pragma once
 
+#include <EPubFile/EPubFile.hpp>
+#include <Renderer/Renderer.hpp>
+#include <Renderer/RendererStream.hpp>
+
 #include "Communications/SindarinAPI.hpp"
-#include "EPub/EPubFile.hpp"
 #include "Misc/CancelFlag.hpp"
 #include "Misc/Telemetry.hpp"
 #include "Models/BookQuestion.hpp"
-#include "Renderers/Renderer.hpp"
-#include "Renderers/RendererStream.hpp"
 #include "Storage/FileSystem.hpp"
 #include "Storage/PreferencesStore.hpp"
 #include "UI/Components/ArrowLabelView.hpp"

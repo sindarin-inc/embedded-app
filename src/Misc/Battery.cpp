@@ -1,10 +1,10 @@
 #include "Battery.hpp"
 
+#include <StringUtil/StringUtil.hpp>
 #include <algorithm>
 
 #include "Misc/Dispatch.hpp"
 #include "Misc/Platform.hpp"
-#include "Misc/StringUtil.hpp"
 #include "sindarin-debug.h"
 
 auto Battery::takeMeasurement() -> std::pair<float, float> {

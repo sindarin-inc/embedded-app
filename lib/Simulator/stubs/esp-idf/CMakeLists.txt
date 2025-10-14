@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.5)
 project(esp-idf-stubs)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 # Path to the root of the repo
 set(REPO_ROOT_DIR "${PROJECT_SOURCE_DIR}/../../../..")
 

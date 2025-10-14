@@ -1,10 +1,10 @@
 #include "Telemetry.hpp"
 
+#include <StringUtil/StringUtil.hpp>
 #include <iomanip>
 
 #include "Misc/Dispatch.hpp"
 #include "Misc/Platform.hpp"
-#include "Misc/StringUtil.hpp"
 #include "Storage/LocalStore.hpp"
 #include "sindarin-debug.h"
 

@@ -1,13 +1,14 @@
 #pragma once
 
 #include <ArduinoJson.h>
+#include <Spiram/String.hpp>
+#include <Spiram/Vector.hpp>
 #include <algorithm>
 #include <cmath>
 #include <ctime>
 #include <functional>
 #include <string>
 
-#include "Misc/SpiramAllocator.hpp"
 #include "Models/JsonSerializable.hpp"
 #include "Models/Readable.hpp"
 

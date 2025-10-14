@@ -2,6 +2,7 @@
 
 #if CONFIG_USE_WIFI
 
+#include <StringUtil/StringUtil.hpp>
 #include <cstring>
 #include <esp_crt_bundle.h>
 #include <iostream>
@@ -9,7 +10,6 @@
 #include <string>
 
 #include "Communications/HttpClient.hpp"
-#include "Misc/StringUtil.hpp"
 #include "Version.hpp"
 #include "sindarin-debug.h"
 

@@ -2,11 +2,11 @@
 
 #include <NimBLEClient.h>
 #include <NimBLEDevice.h>
+#include <StringUtil/StringUtil.hpp>
 #include <esp_wifi.h>
 
 #include "Communications/BLEAbstractions.hpp"
 #include "Communications/BLEManager.hpp"
-#include "Misc/StringUtil.hpp"
 #include "Storage/PreferencesStore.hpp"
 #include "sindarin-debug.h"
 

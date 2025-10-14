@@ -1,15 +1,15 @@
 #include "FileDownload.hpp"
 
+#include <Defer/Defer.hpp>
+#include <Spiram/Memory.hpp>
 #include <esp_heap_caps.h>
 #include <esp_timer.h>
 #include <freertos/ringbuf.h>
 #include <utility>
 
 #include "Communications/SindarinAPI.hpp"
-#include "Misc/Defer.hpp"
 #include "Misc/GUnzipStream.hpp"
 #include "Misc/RateLimiter.hpp"
-#include "Misc/SpiramAllocator.hpp"
 #include "sindarin-debug.h"
 
 // There's three ways DownloadFileToPath can run:
@@ -204,7 +204,7 @@ auto DownloadFileWithWriteBytes(
     -> int {
 
     constexpr int bufferSize = 4096;
-    auto buffer = SpiRamArrayPtr<uint8_t>(bufferSize);
+    auto buffer = SpiramArrayPtr<uint8_t>(bufferSize);
 
     return DownloadFileCommon(
         url, openedConnection,
