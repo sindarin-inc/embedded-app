@@ -24,7 +24,7 @@ FirmwareUpdateScreen::FirmwareUpdateScreen(DisplaySystem &display, Telemetry &te
     }
     for (auto &checkmarkView : checkmarkViews_) {
         checkmarkView =
-            std::make_shared<IconView>(display, CHECK_MARK_BITS, CheckMark_width, CheckMark_height);
+            std::make_shared<IconView>(display, checkMarkBits, CheckMark_width, CheckMark_height);
         checkmarkView->setHidden(true);
     }
     textViews_[0]->setText("Connecting WiFi");
