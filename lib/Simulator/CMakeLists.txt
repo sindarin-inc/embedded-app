@@ -12,6 +12,7 @@ set(SIM_SCALE "1" CACHE STRING "Scale of the simulator display")
 file(GLOB_RECURSE SOURCES
     "${PROJECT_SOURCE_DIR}/native.cpp"
     "${PROJECT_SOURCE_DIR}/SimAutomation.cpp"
+    "${PROJECT_SOURCE_DIR}/SimulatorAutomation.cpp"
 )
 
 add_subdirectory(${PROJECT_SOURCE_DIR}/Common ${CMAKE_CURRENT_BINARY_DIR}/Common)

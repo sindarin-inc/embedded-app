@@ -43,3 +43,6 @@ docs/*
 
 # Log files
 logs/* 
+
+# Simulator automation socket
+sol_simulator_automation.sock 

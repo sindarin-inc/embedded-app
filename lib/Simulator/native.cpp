@@ -16,6 +16,7 @@
 #include "Misc/Platform.hpp"
 #include "Sensors/LightingController.hpp"
 #include "SimAutomation.hpp"
+#include "SimulatorAutomation.hpp"
 #include "Storage/PreferencesStore.hpp"
 #include "sindarin-debug.h"
 
@@ -335,6 +336,9 @@ auto main(int argc, char *argv[]) -> int {
     // Pre-initialize PreferencesStore to point to simprefs.ini
     prefs.begin("simprefs.ini");
 
+    // Start simulator automation
+    SimulatorAutomation::getInstance().start();
+
     // Start the FreeRTOS scheduler
     std::thread schedulerThread([]() {
         // ESP-IDF does `app_main` in a task as well. We need to do this so we can use
@@ -350,6 +354,9 @@ auto main(int argc, char *argv[]) -> int {
     }
 
     log_i("Shutting down");
+
+    // Stop automation
+    SimulatorAutomation::getInstance().stop();
 
     vTaskEndScheduler();
     schedulerThread.join();
