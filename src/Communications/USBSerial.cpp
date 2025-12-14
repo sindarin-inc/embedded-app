@@ -4,6 +4,9 @@
 #include <esp_system.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
+#if SOC_USB_SERIAL_JTAG_SUPPORTED
+#include <hal/usb_serial_jtag_hal.h>
+#endif
 
 RTC_NOINIT_ATTR bool USBSerial::usbLoggingEnabled;
 RTC_NOINIT_ATTR esp_log_level_t USBSerial::logLevel;
@@ -21,7 +24,19 @@ void USBSerial::initJtag() {
     phyConf.controller = USB_PHY_CTRL_SERIAL_JTAG;
 
     usb_phy_handle_t jtagPhy;
-    usb_new_phy(&phyConf, &jtagPhy);
+    auto err = usb_new_phy(&phyConf, &jtagPhy);
+    if (err != ESP_OK) {
+        log_e("Failed to create JTAG PHY: %s", esp_err_to_name(err));
+    }
+    // This is a workaround for the bug discussed in
+    // https://github.com/espressif/esp-idf/issues/15912 which breaks the ability to switch back to
+    // the USB/JTAG peripheral. We may be able to remove this after the fix in this PR
+    // https://github.com/espressif/esp-idf/pull/15932
+    // makes it into IDF
+#if SOC_USB_SERIAL_JTAG_SUPPORTED
+    usb_serial_jtag_hal_phy_set_external(nullptr, false);
+#endif
+
 #endif
 }
 
@@ -29,8 +44,14 @@ void USBSerial::disableLogging() {
     if (USBSerial::usbLoggingEnabled) {
         log_i("Disabling logging");
 #if CONFIG_USE_TINYUSB_SERIAL
-        esp_tusb_deinit_console(TINYUSB_CDC_ACM_1); // turn off log to usb
-        tusb_cdc_acm_deinit(TINYUSB_CDC_ACM_1);
+        auto err = esp_tusb_deinit_console(TINYUSB_CDC_ACM_1); // turn off log to usb
+        if (err != ESP_OK) {
+            log_e("Failed to disable logging: %s", esp_err_to_name(err));
+        }
+        err = tusb_cdc_acm_deinit(TINYUSB_CDC_ACM_1);
+        if (err != ESP_OK) {
+            log_e("Failed to disable logging: %s", esp_err_to_name(err));
+        }
 #endif
         USBSerial::usbLoggingEnabled = false;
     }
@@ -176,8 +197,14 @@ void USBSerial::begin() {
 
 void USBSerial::end() {
 #if CONFIG_USE_TINYUSB_SERIAL
-    tusb_cdc_acm_deinit(TINYUSB_CDC_ACM_0);
-    tusb_cdc_acm_deinit(TINYUSB_CDC_ACM_1);
+    auto err = tusb_cdc_acm_deinit(TINYUSB_CDC_ACM_0);
+    if (err != ESP_OK) {
+        log_e("tusb_cdc_acm_deinit(TINYUSB_CDC_ACM_0): %s", esp_err_to_name(err));
+    }
+    err = tusb_cdc_acm_deinit(TINYUSB_CDC_ACM_1);
+    if (err != ESP_OK) {
+        log_e("tusb_cdc_acm_deinit(TINYUSB_CDC_ACM_1): %s", esp_err_to_name(err));
+    }
     tinyusb_driver_uninstall();
 #endif
 }
